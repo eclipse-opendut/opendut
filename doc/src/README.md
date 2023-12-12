@@ -12,6 +12,10 @@ Eclipse openDuT provides an open framework to automate the testing and validatio
 
 <img alt="Funded by the European Union" src="resources/logos/funded_by_the_european_union.png">
 
+## Developer Setup
+
+[getting started](development/getting-started.md)
+
 ## Usage
 tbd.
 
