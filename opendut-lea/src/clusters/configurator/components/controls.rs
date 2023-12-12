@@ -1,8 +1,8 @@
 use leptos::*;
 
 use opendut_types::cluster::{ClusterConfiguration, ClusterId};
+use crate::app::{ExpectGlobals, use_app_globals};
 
-use crate::api::use_carl;
 use crate::components::{ButtonColor, ButtonState, ButtonStateSignalProvider, ConfirmationButton, FontAwesomeIcon, IconButton};
 use crate::clusters::configurator::types::UserClusterConfiguration;
 use crate::routing::{navigate_to, WellKnownRoutes};
@@ -21,7 +21,7 @@ pub fn Controls(cluster_configuration: ReadSignal<UserClusterConfiguration>) -> 
 #[component]
 fn SaveClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>) -> impl IntoView {
 
-    let carl = use_carl();
+    let globals = use_app_globals();
 
     let store_action = create_action(move |_: &()| {
 
@@ -31,7 +31,7 @@ fn SaveClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>
             // TODO: Implement some kind of toast to show the result of the store action.
             match configuration {
                 Ok(configuration) => {
-                    let mut carl = carl.get_untracked();
+                    let mut carl = globals.expect_client();
                     let result = carl.cluster.store_cluster_configuration(configuration).await;
                     match result {
                         Ok(cluster_id) => {
@@ -81,12 +81,12 @@ fn SaveClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>
 #[component]
 fn DeleteClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>) -> impl IntoView {
 
-    let carl = use_carl();
+    let globals = use_app_globals();
 
     let delete_action = create_action(move |id: &ClusterId| {
         let id = id.to_owned();
         async move {
-            let mut carl = carl.get_untracked();
+            let mut carl = globals.expect_client();
             let _ = carl.cluster.delete_cluster_configuration(id).await; // TODO: Check the result and display a toast on failure.
             navigate_to(WellKnownRoutes::ClustersOverview);
         }

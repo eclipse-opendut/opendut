@@ -66,7 +66,6 @@ mod routes {
 
     #[component]
     pub fn AppRoutes() -> impl IntoView {
-
         view! {
             <Router>
                 <main>

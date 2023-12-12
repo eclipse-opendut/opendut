@@ -2,8 +2,8 @@ use leptos::*;
 use leptos_router::use_params_map;
 
 use opendut_types::peer::PeerId;
+use crate::app::{ExpectGlobals, use_app_globals};
 
-use crate::api::use_carl;
 use crate::components::{BasePageContainer, Breadcrumb, UserInputError, UserInputValue};
 use crate::components::use_active_tab;
 use crate::peers::configurator::components::Controls;
@@ -18,7 +18,7 @@ mod types;
 #[component]
 pub fn PeerConfigurator() -> impl IntoView {
 
-    let carl = use_carl();
+    let globals = use_app_globals();
     let params = use_params_map();
 
     let active_tab = use_active_tab::<TabIdentifier>();
@@ -52,7 +52,7 @@ pub fn PeerConfigurator() -> impl IntoView {
         });
 
         create_local_resource(|| {}, move |_| {
-            let mut carl = carl.get_untracked();
+            let mut carl = globals.expect_client();
             async move {
                 if let Ok(configuration) = carl.peers.get_peer(peer_id).await {
                     peer_configuration.update(|user_configuration| {

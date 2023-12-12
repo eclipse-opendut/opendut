@@ -1,8 +1,5 @@
-use leptos::{ReadSignal, use_context};
-
 pub use licenses::ComponentLicenses;
 pub use licenses::get_licenses;
-use opendut_carl_api::carl::wasm::CarlClient;
 
 pub use crate::util::url::{UrlDecodable, UrlEncodable};
 
@@ -18,11 +15,6 @@ pub enum ApiError {
     JsonParseError {
         message: String,
     },
-}
-
-pub fn use_carl() -> ReadSignal<CarlClient> {
-    use_context::<ReadSignal<CarlClient>>()
-        .expect("A client CARL should be provided in the context.")
 }
 
 mod licenses {

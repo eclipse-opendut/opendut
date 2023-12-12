@@ -8,6 +8,7 @@ pub use inputs::user_input::UserInput;
 pub use page::BasePageContainer;
 pub use util::ButtonStateSignalProvider;
 pub use util::use_active_tab;
+pub use initialized::Initialized;
 
 pub mod health;
 pub mod tooltip;
@@ -18,6 +19,7 @@ mod util;
 mod inputs;
 mod buttons;
 mod breadcrumbs;
+mod initialized;
 
 #[derive(Clone, Copy, Debug)]
 #[allow(dead_code)]

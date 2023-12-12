@@ -1,77 +1,89 @@
 use leptos::*;
 use leptos::html::Div;
 use leptos_use::on_click_outside;
-use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
-use crate::api::use_carl;
-use crate::components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonState, FontAwesomeIcon, IconButton};
-use crate::clusters::components::CreateClusterButton;
 
-#[component]
+use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
+
+use crate::app::{ExpectGlobals, use_app_globals};
+use crate::clusters::components::CreateClusterButton;
+use crate::components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonState, FontAwesomeIcon, IconButton, Initialized};
+
+#[component(transparent)]
 pub fn ClustersOverview() -> impl IntoView {
 
-    let carl = use_carl();
+    #[component]
+    fn inner() -> impl IntoView {
 
-    let clusters = create_local_resource(|| {}, move |_| {
-        let mut carl = carl.get_untracked();
-        async move {
-            carl.cluster.list_cluster_configurations().await
-                .expect("Failed to request the list of clusters")
-        }
-    });
+        let globals = use_app_globals();
 
-    let deploy_cluster = create_action(move |id: &ClusterId| {
-        let id = Clone::clone(id);
-        async move {
-            let mut carl = carl.get_untracked();
-            let _ = carl.cluster.store_cluster_deployment(&ClusterDeployment { id }).await;
-        }
-    });
-
-    let rows = move || {
-        match clusters.get() {
-            Some(configurations) => {
-                configurations.iter().cloned().map(|configuration| {
-                    let cluster_id = configuration.id;
-                    view! {
-                        <Row
-                            configuration
-                            on_deploy=move || deploy_cluster.dispatch(cluster_id)
-                        />
-                    }
-                }).collect::<Vec<_>>()
+        let clusters = create_local_resource(|| {}, move |_| {
+            let mut carl = globals.expect_client();
+            async move {
+                carl.cluster.list_cluster_configurations().await
+                    .expect("Failed to request the list of clusters")
             }
-            None => {
-                Vec::new()
-            }
-        }
-    };
+        });
 
-    let breadcrumbs = vec![
-        Breadcrumb::new("Dashboard", "/"),
-        Breadcrumb::new("Clusters", "/clusters")
-    ];
+        let deploy_cluster = create_action(move |id: &ClusterId| {
+            let mut carl = globals.expect_client();
+            let id = Clone::clone(id);
+            async move {
+                let _ = carl.cluster.store_cluster_deployment(&ClusterDeployment { id }).await;
+            }
+        });
+
+        let rows = move || {
+            match clusters.get() {
+                Some(configurations) => {
+                    configurations.iter().cloned().map(|configuration| {
+                        let cluster_id = configuration.id;
+                        view! {
+                            <Row
+                                configuration
+                                on_deploy=move || deploy_cluster.dispatch(cluster_id)
+                            />
+                        }
+                    }).collect::<Vec<_>>()
+                }
+                None => {
+                    Vec::new()
+                }
+            }
+        };
+
+        let breadcrumbs = vec![
+            Breadcrumb::new("Dashboard", "/"),
+            Breadcrumb::new("Clusters", "/clusters")
+        ];
+
+        view! {
+            <BasePageContainer
+                title="Clusters"
+                breadcrumbs=breadcrumbs
+                controls=view! {
+                    <CreateClusterButton />
+                }
+            >
+                <table class="table is-hoverable is-fullwidth">
+                    <thead>
+                        <tr>
+                            <th class="is-narrow">"Health"</th>
+                            <th>"ID"</th>
+                            <th class="is-narrow">"Action"</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        { rows }
+                    </tbody>
+                </table>
+            </BasePageContainer>
+        }
+    }
 
     view! {
-        <BasePageContainer
-            title="Clusters"
-            breadcrumbs=breadcrumbs
-            controls=view! {
-                <CreateClusterButton />
-            }
-        >
-            <table class="table is-hoverable is-fullwidth">
-                <thead>
-                    <tr>
-                        <th class="is-narrow">"Health"</th>
-                        <th>"ID"</th>
-                        <th class="is-narrow">"Action"</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    { rows }
-                </tbody>
-            </table>
-        </BasePageContainer>
+        <Initialized>
+            <Inner />
+        </Initialized>
     }
 }
 

@@ -13,6 +13,7 @@ mod error;
 mod routing;
 mod util;
 mod licenses;
+mod nav;
 
 
 fn main() {

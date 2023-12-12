@@ -1,12 +1,12 @@
 use leptos::*;
+use crate::app::use_app_globals;
 
-use crate::api::use_carl;
 use crate::clusters::components::CreateClusterButton;
 
 #[component]
 pub fn ClustersCard() -> impl IntoView {
 
-    let _carl = use_carl();
+    let _globals = use_app_globals();
 
     view! {
         <div class="card">
