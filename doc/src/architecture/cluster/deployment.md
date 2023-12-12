@@ -1,16 +1,16 @@
 
 # Cluster
 
-## Cluster creation
+## Cluster Creation
 
 ```mermaid
 sequenceDiagram
     participant LEA
     participant carl as CARL
-    LEA->>carl: StoreClusterConfigration
+    LEA->>carl: StoreClusterConfiguration
     activate carl
-    carl->>carl: PersistClusterConfigration
-    carl-->>LEA: StoreClusterConfigrationSuccess
+    carl->>carl: PersistClusterConfiguration
+    carl-->>LEA: StoreClusterConfigurationSuccess
     deactivate carl
 ```
 

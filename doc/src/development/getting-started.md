@@ -19,7 +19,7 @@
 2. Open the UI by going to https://localhost:8080/ in your web browser.
 3. Run EDGAR:
     ```sh
-    cargo run edgar -- service
+    cargo edgar service
     ```
 
 ## UI Development
