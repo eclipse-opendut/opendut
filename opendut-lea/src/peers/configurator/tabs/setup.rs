@@ -1,8 +1,8 @@
-use leptos::{component, create_local_resource, IntoView, ReadSignal, RwSignal, SignalGet, SignalGetUntracked, SignalSet, view};
+use leptos::{component, create_local_resource, IntoView, ReadSignal, RwSignal, SignalGet, SignalSet, view};
 
 use opendut_types::peer::PeerId;
 
-use crate::api::use_carl;
+use crate::app::{ExpectGlobals, use_app_globals};
 use crate::components::{ButtonColor, SimpleButton};
 use crate::components::ButtonStateSignalProvider;
 use crate::peers::configurator::types::UserPeerConfiguration;
@@ -10,14 +10,14 @@ use crate::peers::configurator::types::UserPeerConfiguration;
 #[component]
 pub fn SetupTab(peer_configuration: ReadSignal<UserPeerConfiguration>) -> impl IntoView {
 
-    let carl = use_carl();
+    let globals = use_app_globals();
 
     let trigger_generation: RwSignal<Option<PeerId>> = RwSignal::new(None);
 
     let setup_string = create_local_resource(move || trigger_generation.get(), move |peer_id| {
         async move {
             if let Some(peer_id) = peer_id {
-                let mut carl = carl.get_untracked();
+                let mut carl = globals.expect_client();
                 let setup = carl.peers.create_peer_setup(peer_id).await
                     .expect("Failed to request the setup string.");
                 let setup_string = setup.encode()

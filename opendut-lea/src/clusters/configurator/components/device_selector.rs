@@ -2,8 +2,8 @@ use std::collections::HashSet;
 use leptos::*;
 
 use opendut_types::topology::{Device, DeviceId};
+use crate::app::{ExpectGlobals, use_app_globals};
 
-use crate::api::use_carl;
 use crate::clusters::configurator::types::UserClusterConfiguration;
 use crate::util::{Ior, NON_BREAKING_SPACE};
 
@@ -13,7 +13,7 @@ pub type DeviceSelection = Ior<DeviceSelectionError, HashSet<DeviceId>>;
 #[component]
 pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>) -> impl IntoView {
 
-    let carl = use_carl();
+    let globals = use_app_globals();
 
     let getter = create_read_slice(cluster_configuration,
         |config| {
@@ -23,7 +23,7 @@ pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
 
     let devices: Resource<(), Vec<Device>> = create_local_resource(|| {}, move |_| {
         async move {
-            let mut carl = carl.get_untracked();
+            let mut carl = globals.expect_client();
             carl.peers.list_devices().await
                 .expect("Failed to request the list of devices.")
         }

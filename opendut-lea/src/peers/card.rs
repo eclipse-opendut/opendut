@@ -1,6 +1,5 @@
 use leptos::*;
-
-use crate::api::use_carl;
+use crate::app::{ExpectGlobals, use_app_globals};
 
 #[derive(Clone)]
 struct Peers {
@@ -11,11 +10,11 @@ struct Peers {
 #[component]
 pub fn PeersCard() -> impl IntoView {
 
-    let carl = use_carl();
+    let globals = use_app_globals();
 
     let peers: Resource<(), Peers> = create_local_resource(|| {}, move |_| {
         async move {
-            let mut carl = carl.get_untracked();
+            let mut carl = globals.expect_client();
             let registered = carl.peers.list_peers().await
                 .expect("Failed to request the list of peers.")
                 .len();

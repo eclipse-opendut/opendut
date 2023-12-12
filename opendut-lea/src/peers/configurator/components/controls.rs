@@ -1,7 +1,7 @@
 use leptos::*;
 use opendut_types::peer::{PeerDescriptor, PeerId};
+use crate::app::{ExpectGlobals, use_app_globals};
 
-use crate::api::use_carl;
 use crate::components::{ButtonColor, ButtonState, ButtonStateSignalProvider, ConfirmationButton, FontAwesomeIcon, IconButton};
 use crate::peers::configurator::types::UserPeerConfiguration;
 use crate::routing::{navigate_to, WellKnownRoutes};
@@ -20,11 +20,11 @@ pub fn Controls(configuration: ReadSignal<UserPeerConfiguration>) -> impl IntoVi
 #[component]
 fn SavePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl IntoView {
 
-    let carl = use_carl();
+    let globals = use_app_globals();
 
     let store_action = create_action(move |_: &()| {
         async move {
-            let mut carl = carl.get_untracked();
+            let mut carl = globals.expect_client();
             let peer_descriptor = PeerDescriptor::try_from(configuration.get_untracked());
             match peer_descriptor {
                 Ok(peer_descriptor) => {
@@ -78,11 +78,11 @@ fn SavePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl Into
 #[component]
 fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl IntoView {
 
-    let carl = use_carl();
+    let globals = use_app_globals();
 
     let delete_action = create_action(move |_: &PeerId| {
         async move {
-            let mut carl = carl.get_untracked();
+            let mut carl = globals.expect_client();
             let peer_id = configuration.get_untracked().id;
             let result = carl.peers.delete_peer(peer_id).await;
             match result {

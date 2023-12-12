@@ -4,116 +4,126 @@ use leptos_use::on_click_outside;
 
 use opendut_types::peer::PeerId;
 
-use crate::api::use_carl;
-use crate::components::{BasePageContainer, IconButton, ButtonColor, ButtonState, FontAwesomeIcon, Breadcrumb};
+use crate::app::{ExpectGlobals, use_app_globals};
+use crate::components::{BasePageContainer, IconButton, ButtonColor, ButtonState, FontAwesomeIcon, Breadcrumb, Initialized};
 use crate::components::health;
 use crate::components::health::Health;
 use crate::routing::{navigate_to, WellKnownRoutes};
 
-#[component]
+#[component(transparent)]
 pub fn PeersOverview() -> impl IntoView {
 
-    let carl = use_carl();
+    #[component]
+    fn inner() -> impl IntoView {
 
-    let registered_peers: Resource<(), Vec<PeerId>> = create_local_resource(|| {}, move |_| {
-        async move {
-            let mut carl = carl.get_untracked();
-            carl.peers.list_peers().await
-                .expect("Failed to request the list of peers.")
-                .iter().map(|peer| peer.id) // TODO: Don't discard the other information.
-                .collect::<Vec<_>>()
-        }
-    });
+        let globals = use_app_globals();
 
-    let connected_peers: Resource<(), Vec<PeerId>> = create_local_resource(|| {}, move |_| {
-        async move {
-            let mut carl = carl.get_untracked();
-            carl.broker.list_peers().await
-                .expect("Failed to request the list of connected peers.")
-        }
-    });
-
-    let remove_peer = create_action(move |id: &PeerId| {
-        let id = Clone::clone(id);
-        async move {
-            let mut carl = carl.get_untracked();
-            let _ = carl.peers.delete_peer(id).await;
-            registered_peers.refetch();
-        }
-    });
-
-    let peers_table_rows = move || {
-
-        if let (Some(registered_peers), Some(connected_peers)) = (registered_peers.get(), connected_peers.get()) {
-            registered_peers.into_iter().map(|peer| {
-                view! {
-                    <Row
-                        id={peer}
-                        is_connected={connected_peers.contains(&peer)}
-                        on_remove=move || remove_peer.dispatch(peer)
-                    />
-                }
-            }).collect::<Vec<_>>()
-        }
-        else {
-            Vec::new()
-        }
-    };
-
-    let breadcrumbs = vec![
-        Breadcrumb::new("Dashboard", "/"),
-        Breadcrumb::new("Peers", "/peers")
-    ];
-
-    view!{
-        <BasePageContainer
-            title="Peers"
-            breadcrumbs=breadcrumbs
-            controls=view! {
-                <div class="buttons">
-                    <IconButton
-                        icon=FontAwesomeIcon::Plus
-                        color=ButtonColor::Success
-                        state=ButtonState::Enabled
-                        label="Create peer"
-                        on_action=move || {
-                            navigate_to(WellKnownRoutes::PeerConfigurator {
-                                id: PeerId::random()
-                            });
-                        }
-                    />
-                    <IconButton
-                        icon=FontAwesomeIcon::ArrowsRotate
-                        color=ButtonColor::Light
-                        state=ButtonState::Enabled
-                        label="Refresh table of peers"
-                        on_action=move || {
-                            registered_peers.refetch();
-                            connected_peers.refetch();
-                        }
-                    />
-                </div>
+        let registered_peers: Resource<(), Vec<PeerId>> = create_local_resource(|| {}, move |_| {
+            let mut carl = globals.expect_client();
+            async move {
+                carl.peers.list_peers().await
+                    .expect("Failed to request the list of peers.")
+                    .iter().map(|peer| peer.id) // TODO: Don't discard the other information.
+                    .collect::<Vec<_>>()
             }
-        >
-            <div class="mt-4">
-                <Transition
-                    fallback=move || view! { <p>"Loading..."</p> }
-                >
-                    <table class="table is-hoverable is-fullwidth">
-                        <thead>
-                            <tr>
-                                <th class="is-narrow">"Health"</th>
-                                <th>"ID"</th>
-                                <th class="is-narrow">"Action"</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            { peers_table_rows() }
-                        </tbody>
-                    </table>
-                </Transition>
-            </div>
-        </BasePageContainer>
+        });
+
+        let connected_peers: Resource<(), Vec<PeerId>> = create_local_resource(|| {}, move |_| {
+            let mut carl = globals.expect_client();
+            async move {
+                carl.broker.list_peers().await
+                    .expect("Failed to request the list of connected peers.")
+            }
+        });
+
+        let remove_peer = create_action(move |id: &PeerId| {
+            let mut carl = globals.expect_client();
+            let id = Clone::clone(id);
+            async move {
+                let _ = carl.peers.delete_peer(id).await;
+                registered_peers.refetch();
+            }
+        });
+
+        let peers_table_rows = move || {
+
+            if let (Some(registered_peers), Some(connected_peers)) = (registered_peers.get(), connected_peers.get()) {
+                registered_peers.into_iter().map(|peer| {
+                    view! {
+                        <Row
+                            id={peer}
+                            is_connected={connected_peers.contains(&peer)}
+                            on_remove=move || remove_peer.dispatch(peer)
+                        />
+                    }
+                }).collect::<Vec<_>>()
+            }
+            else {
+                Vec::new()
+            }
+        };
+
+        let breadcrumbs = vec![
+            Breadcrumb::new("Dashboard", "/"),
+            Breadcrumb::new("Peers", "/peers")
+        ];
+
+        view!{
+            <BasePageContainer
+                title="Peers"
+                breadcrumbs=breadcrumbs
+                controls=view! {
+                    <div class="buttons">
+                        <IconButton
+                            icon=FontAwesomeIcon::Plus
+                            color=ButtonColor::Success
+                            state=ButtonState::Enabled
+                            label="Create peer"
+                            on_action=move || {
+                                navigate_to(WellKnownRoutes::PeerConfigurator {
+                                    id: PeerId::random()
+                                });
+                            }
+                        />
+                        <IconButton
+                            icon=FontAwesomeIcon::ArrowsRotate
+                            color=ButtonColor::Light
+                            state=ButtonState::Enabled
+                            label="Refresh table of peers"
+                            on_action=move || {
+                                registered_peers.refetch();
+                                connected_peers.refetch();
+                            }
+                        />
+                    </div>
+                }
+            >
+                <div class="mt-4">
+                    <Transition
+                        fallback=move || view! { <p>"Loading..."</p> }
+                    >
+                        <table class="table is-hoverable is-fullwidth">
+                            <thead>
+                                <tr>
+                                    <th class="is-narrow">"Health"</th>
+                                    <th>"ID"</th>
+                                    <th class="is-narrow">"Action"</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                { peers_table_rows() }
+                            </tbody>
+                        </table>
+                    </Transition>
+                </div>
+            </BasePageContainer>
+        }
+    }
+
+    view! {
+        <Initialized>
+            <Inner />
+        </Initialized>
     }
 }
 
