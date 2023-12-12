@@ -1,0 +1,347 @@
+use std::ops::Not;
+use std::path::PathBuf;
+use std::str::FromStr;
+
+use clap::{Parser, Subcommand, ValueEnum};
+use console::Style;
+use uuid::Uuid;
+
+use opendut_carl_api::carl::CarlClient;
+use opendut_types::peer::PeerSetup;
+use opendut_types::topology::InterfaceName;
+use opendut_util::settings::{FileFormat, load_config};
+
+mod commands;
+
+type Error = String;
+type Result<T> = std::result::Result<T, Error>;
+
+opendut_util::app_info!();
+
+/// CLEO is a command line tool to manage openDuT resources.
+#[derive(Parser, Debug)]
+#[command(author, about, long_about = None)]
+#[command(long_version = crate::app_info::formatted())]
+struct Args {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand, Debug)]
+enum Commands {
+    ///Display openDuT resources
+    List {
+        #[command(subcommand)]
+        resource: ListResource,
+        ///JSON, prettified JSON or table as output format
+        #[arg(value_enum, short, long, default_value_t=ListOutputFormat::Table)]
+        output: ListOutputFormat,
+    },
+    ///Create openDuT resource
+    Create {
+        #[command(subcommand)]
+        resource: CreateResource,
+    },
+    ///Generate a setup string
+    GeneratePeerSetup {
+        ///PeerID
+        #[arg(short, long)]
+        id: Uuid,
+    },
+    DecodePeerSetup {
+        ///Setup string
+        #[arg()]
+        setup_string: ParseablePeerSetup,
+        ///Text, JSON or prettified JSON as output format
+        #[arg(value_enum, short, long, default_value_t=DecodePeerSetupOutputFormat::Json)]
+        output: DecodePeerSetupOutputFormat,
+    },
+    ///Describe openDuT resource
+    Describe {
+        ///Name of openDuT resource
+        #[command(subcommand)]
+        resource: DescribeResource,
+        ///JSON, prettified JSON or table as output format
+        #[arg(value_enum, short, long, default_value_t=DescribeOutputFormat::Text)]
+        output: DescribeOutputFormat,
+    },
+    ///Find openDuT resource
+    Find {
+        ///Name of openDuT resource
+        #[command(subcommand)]
+        resource: FindResource,
+        ///JSON, prettified JSON or table as output format
+        #[arg(value_enum, short, long, default_value_t=ListOutputFormat::Table)]
+        output: ListOutputFormat,
+    },
+    ///Delete openDuT resource
+    Delete {
+        ///Name of openDuT resource
+        #[command(subcommand)]
+        resource: DeleteResource,
+    }
+}
+
+#[derive(Subcommand, Clone, Debug)]
+enum ListResource {
+    ClusterConfigurations,
+    ClusterDeployments,
+    Peers,
+    Devices,
+}
+
+#[derive(Subcommand, Clone, Debug)]
+enum CreateResource {
+    ClusterConfiguration {
+        ///Name of the cluster
+        #[arg(short, long)]
+        name: String,
+        ///ClusterID
+        #[arg(short, long)]
+        cluster_id: Option<Uuid>,
+        ///PeerID of the leader
+        #[arg(short, long)]
+        leader_id: Uuid,
+        ///List of devices in cluster
+        #[arg(required = true, short, long, num_args = 2..)]
+        device_names: Vec<String>,
+    },
+    ClusterDeployment {
+        ///ClusterID
+        #[arg(short, long)]
+        id: Uuid,
+    },
+    Peer {
+        ///Name of peer
+        #[arg(short, long)]
+        name: String,
+        ///PeerID
+        #[arg(short, long)]
+        id: Option<Uuid>,
+    },
+    Device {
+        ///ID of the peer to add the device to
+        #[arg(long)]
+        peer_id: Uuid,
+        ///ID of the device to be added or updated
+        #[arg(long)]
+        device_id: Option<Uuid>,
+        ///Name of the device
+        #[arg(long)]
+        name: Option<String>,
+        ///Description of device
+        #[arg(long)]
+        description: Option<String>,
+        ///Location of device
+        #[arg(long)]
+        location: Option<String>,
+        ///Interface of device
+        #[arg(long)]
+        interface: Option<InterfaceName>,
+        /// Tags of device
+        #[arg(long)]
+        tags: Option<Vec<String>>,
+    }
+}
+
+#[derive(Subcommand, Clone, Debug)]
+enum DescribeResource {
+    ClusterConfiguration {
+        ///ClusterID
+        #[arg(short, long)]
+        id: Uuid,
+    },
+    Peer {
+        ///PeerID
+        #[arg(short, long)]
+        id: Uuid,
+    },
+    Device {
+        ///DeviceID
+        #[arg(short, long)]
+        id: Uuid,
+    },
+}
+
+#[derive(Subcommand, Clone, Debug)]
+enum FindResource {
+    Device {
+        ///Criteria for search
+        #[arg(required = true, value_delimiter = ' ', num_args = 1..)]
+        criteria: Vec<String>,
+    },
+}
+
+#[derive(Subcommand, Clone, Debug)]
+enum DeleteResource {
+    ClusterConfiguration {
+        ///ClusterID
+        #[arg(short, long)]
+        id: Uuid,
+    },
+    ClusterDeployment {
+        ///ClusterID
+        #[arg(short, long)]
+        id: Uuid,
+    },
+    Peer {
+        ///PeerID
+        #[arg(short, long)]
+        id: Uuid,
+    },
+    Device {
+        ///DeviceID
+        #[arg(short, long)]
+        id: Uuid,
+    },
+}
+
+#[derive(ValueEnum, Clone, Debug)]
+enum ListOutputFormat {
+    Table,
+    Json,
+    PrettyJson,
+}
+
+#[derive(ValueEnum, Clone, Debug)]
+enum DescribeOutputFormat {
+    Text,
+    Json,
+    PrettyJson,
+}
+
+#[derive(ValueEnum, Clone, Debug)]
+enum DecodePeerSetupOutputFormat {
+    Text,
+    Json,
+    PrettyJson,
+}
+
+
+
+#[tokio::main]
+async fn main() {
+    let red = Style::new().red();
+    if let Err(error) = execute().await {
+        eprintln!("{}", red.apply_to(error));
+    }
+}
+
+async fn execute() -> Result<()> {
+
+    let config = load_config("cleo", include_str!("../cleo.toml"), FileFormat::Toml, config::Config::default())
+        .expect("Failed to load config") // TODO: Point the user to the source of the error.
+        .config;
+
+    let mut carl = {
+
+        let host = config.get_string("network.carl.host")
+            .expect("Configuration should contain a valid host name to connect to CARL");
+
+        let port = config.get_int("network.carl.port")
+            .expect("Configuration should contain a valid port number to connect to CARL");
+
+        let ca_path = PathBuf::from(config.get_string("network.tls.ca.certificate")
+            .expect("Configuration should contain a valid path to a CA certificate to connect to CARL"));
+
+        let domain_name_override = config.get_string("network.tls.domain.name.override")
+            .expect("Configuration should contain a field for 'domain.name.override'.");
+        let domain_name_override = domain_name_override.is_empty().not().then_some(domain_name_override);
+
+        CarlClient::create(host, port as u16, ca_path, domain_name_override)
+            .expect("Failed to create CARL client")
+    };
+
+    let args = Args::parse();
+
+    match args.command {
+        Commands::List { resource, output } => {
+            match resource {
+                ListResource::ClusterConfigurations => {
+                    commands::cluster_configuration::list::execute(&mut carl, output).await?;
+                }
+                ListResource::ClusterDeployments => {
+                    commands::cluster_deployment::list::execute(&mut carl, output).await?;
+                }
+                ListResource::Peers => {
+                    commands::peer::list::execute(&mut carl, output).await?;
+                }
+                ListResource::Devices => {
+                    commands::device::list_devices(&mut carl, output).await?;
+                }
+            }
+        }
+        Commands::Create { resource } => {
+            match resource {
+                CreateResource::ClusterConfiguration { name, cluster_id, leader_id, device_names  } => {
+                    commands::cluster_configuration::create::execute(&mut carl, name, cluster_id, leader_id, device_names).await?;
+                }
+                CreateResource::ClusterDeployment { id} => {
+                    commands::cluster_deployment::create::execute(&mut carl, id).await?;
+                }
+                CreateResource::Peer { name, id } => {
+                    commands::peer::create::execute(&mut carl, name, id).await?;
+                }
+                CreateResource::Device { peer_id, device_id, name, description, location, interface, tags } => {
+                    commands::device::create::execute(&mut carl, peer_id, device_id, name, description, location, interface, tags).await?;
+                }
+            }
+        }
+        Commands::GeneratePeerSetup { id } => {
+            commands::peer::generate_peer_setup::execute(&mut carl, id).await?;
+        }
+        Commands::DecodePeerSetup { setup_string, output } => {
+            commands::peer::decode_peer_setup::execute(setup_string.0, output).await?;
+        }
+        Commands::Describe { resource, output } => {
+            match resource {
+                DescribeResource::ClusterConfiguration { id } => {
+                    commands::cluster_configuration::describe::execute(&mut carl, id, output).await?
+                }
+                DescribeResource::Peer { id } => {
+                    commands::peer::describe::execute(&mut carl, id, output).await?
+                }
+                DescribeResource::Device { id } => {
+                    commands::device::describe::execute(&mut carl, id, output).await?
+                }
+            }
+        }
+        Commands::Delete { resource} => {
+            match resource {
+                DeleteResource::ClusterConfiguration { id } => {
+                    commands::cluster_configuration::delete::execute(&mut carl, id).await?;
+                }
+                DeleteResource::ClusterDeployment { id } => {
+                    commands::cluster_deployment::delete::execute(&mut carl, id).await?;
+                }
+                DeleteResource::Peer { id } => {
+                    commands::peer::delete::execute(&mut carl, id).await?;
+                }
+                DeleteResource::Device { id } => {
+                    commands::device::delete::execute(&mut carl, id).await?;
+                }
+            }
+        }
+        Commands::Find { resource, output } => {
+            match resource {
+                FindResource::Device { criteria } => {
+                    commands::device::find::execute(&mut carl, criteria, output).await?;
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+
+#[derive(Clone, Debug)]
+struct ParseablePeerSetup(PeerSetup);
+impl FromStr for ParseablePeerSetup {
+    type Err = String;
+    fn from_str(string: &str) -> std::result::Result<Self, Self::Err> {
+        PeerSetup::decode(string)
+            .map(ParseablePeerSetup)
+            .map_err(|error| error.to_string())
+    }
+}
+

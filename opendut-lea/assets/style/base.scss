@@ -1,0 +1,57 @@
+@import "theme";
+
+@import "../fontawesome/scss/fontawesome.scss";
+@import "../fontawesome/scss/brands.scss";
+@import "../fontawesome/scss/solid.scss";
+
+@import "bulma/bulma";
+
+@import "doorhanger";
+@import "nav-flyout";
+@import "tooltip";
+@import "health-light";
+@import "util";
+
+.dut-title {
+  @extend .title;
+  color: $text;
+}
+
+.dut-base-page {
+  padding-top: 1.0rem;
+  padding-bottom: 1.5rem;
+}
+
+.dut-base-page-header {
+}
+
+.dut-base-page-content {
+
+}
+
+.dut-base-page-title {
+  @extend .title;
+  color: $text;
+}
+
+.dut-hr-title {
+  @extend .title;
+  color: $text;
+  display: flex;
+  flex-direction: row;
+}
+
+.dut-hr-title:before, .dut-hr-title:after{
+  content: "";
+  flex: 1 1;
+  border-bottom: 1px solid $text;
+  margin: auto;
+}
+
+.dut-hr-title:before {
+  margin-right: 10px
+}
+
+.dut-hr-title:after {
+  margin-left: 10px
+}

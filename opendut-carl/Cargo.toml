@@ -1,0 +1,42 @@
+[package]
+name = "opendut-carl"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+opendut-carl-api = { workspace = true }
+opendut-vpn-netbird = { workspace = true }
+opendut-types = { workspace = true }
+opendut-util = { workspace = true }
+opendut-vpn = { workspace = true }
+
+anyhow = { workspace = true }
+axum = { workspace = true }
+axum-server = { workspace = true, features = ["tls-rustls"] }
+axum-server-dual-protocol = { workspace = true }
+config = { workspace = true }
+futures = { workspace = true }
+googletest = { workspace = true }
+http = { workspace = true }
+http-body = { workspace = true }
+hyper = { workspace = true }
+log = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+shadow-rs = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tokio-stream = { workspace = true, features = ["full"] }
+tonic = { workspace = true, features = ["default"] }
+tonic-web = { workspace = true }
+tower = { workspace = true, features = ["make", "steer"] }
+tower-http = { workspace = true }
+url = { workspace = true, features = ["serde"] }
+uuid = { workspace = true }
+
+[dev-dependencies]
+rstest = { workspace = true }
+uuid = { workspace = true, features = ["v4"] }
+
+[build-dependencies]
+shadow-rs = { workspace = true }

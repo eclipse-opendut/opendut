@@ -1,0 +1,41 @@
+[package]
+name = "opendut-carl-api"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[features]
+default = ["codegen"]
+codegen = ["tonic/prost", "tonic/codegen", "tonic-build/prost"]
+client = [
+    "codegen",
+    "tokio",
+    "tonic/default",
+    "tonic/tls",
+    "tonic-build/default",
+]
+wasm-client = [
+    "codegen",
+    "dep:tonic-web-wasm-client"
+]
+
+[dependencies]
+opendut-types = { workspace = true }
+
+cfg-if = { workspace = true }
+log = { workspace = true }
+prost = { workspace = true }
+serde = { workspace = true, features = ["std", "derive"] }
+thiserror = { workspace = true }
+tokio = { workspace = true, optional = true }
+tonic = { workspace = true }
+tonic-web-wasm-client = { workspace = true, optional = true }
+url = { workspace = true }
+uuid = { workspace = true, features = ["v4", "serde"] }
+
+[build-dependencies]
+protobuf-src = { workspace = true }
+tonic-build = { workspace = true }
+
+[dev-dependencies]
+googletest = { workspace = true }

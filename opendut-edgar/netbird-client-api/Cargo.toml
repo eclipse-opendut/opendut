@@ -1,0 +1,25 @@
+[package]
+name = "opendut-netbird-client-api"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+opendut-types = { workspace = true }
+
+prost = { workspace = true, default-features = true }
+prost-types = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tonic = { workspace = true, default-features = true }
+tower = { workspace = true }
+uuid = { workspace = true }
+url = { workspace = true }
+
+[build-dependencies]
+opendut-util = { workspace = true }
+
+cargo_metadata = { workspace = true }
+reqwest = { workspace = true, features = ["blocking"] }
+tonic-build = { workspace = true, default-features = true }
+protobuf-src = { workspace = true }

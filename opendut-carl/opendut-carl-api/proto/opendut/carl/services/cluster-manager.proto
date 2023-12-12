@@ -1,0 +1,207 @@
+syntax = "proto3";
+
+package opendut.carl.services.cluster_manager;
+
+import "opendut/types/cluster/cluster.proto";
+
+service ClusterManager {
+  rpc CreateClusterConfiguration(CreateClusterConfigurationRequest) returns (CreateClusterConfigurationResponse) {}
+  rpc DeleteClusterConfiguration(DeleteClusterConfigurationRequest) returns (DeleteClusterConfigurationResponse) {}
+  rpc GetClusterConfiguration(GetClusterConfigurationRequest) returns (GetClusterConfigurationResponse) {}
+  rpc ListClusterConfigurations(ListClusterConfigurationsRequest) returns (ListClusterConfigurationsResponse) {}
+  
+  rpc StoreClusterDeployment(StoreClusterDeploymentRequest) returns (StoreClusterDeploymentResponse) {}
+  rpc DeleteClusterDeployment(DeleteClusterDeploymentRequest) returns (DeleteClusterDeploymentResponse) {}
+  rpc ListClusterDeployments(ListClusterDeploymentsRequest) returns (ListClusterDeploymentsResponse) {}
+}
+
+//
+// CreateClusterConfiguration
+//
+message CreateClusterConfigurationRequest {
+  opendut.types.cluster.ClusterConfiguration cluster_configuration = 1;
+}
+
+message CreateClusterConfigurationResponse {
+  oneof reply {
+    CreateClusterConfigurationFailure failure = 1;
+    CreateClusterConfigurationSuccess success = 2;
+  }
+}
+
+message CreateClusterConfigurationSuccess {
+  opendut.types.cluster.ClusterId cluster_id = 1;
+}
+
+message CreateClusterConfigurationFailure {
+  oneof error {
+    CreateClusterConfigurationFailureClusterConfigurationAlreadyExists cluster_configuration_already_exists = 1;
+    CreateClusterConfigurationFailureInternal internal = 2;
+  }
+}
+
+message CreateClusterConfigurationFailureClusterConfigurationAlreadyExists {
+  opendut.types.cluster.ClusterId actual_id = 1;
+  opendut.types.cluster.ClusterName actual_name = 2;
+  opendut.types.cluster.ClusterId other_id = 3;
+  opendut.types.cluster.ClusterName other_name = 4;
+}
+
+message CreateClusterConfigurationFailureInternal {
+  opendut.types.cluster.ClusterId cluster_id = 1;
+  opendut.types.cluster.ClusterName cluster_name = 2;
+  string cause = 3;
+}
+
+//
+// DeleteClusterConfiguration
+//
+message DeleteClusterConfigurationRequest {
+  opendut.types.cluster.ClusterId cluster_id = 1;
+}
+
+message DeleteClusterConfigurationResponse {
+  oneof reply {
+    DeleteClusterConfigurationSuccess success = 1;
+    DeleteClusterConfigurationFailure failure = 2;
+  }
+}
+
+message DeleteClusterConfigurationSuccess {
+  opendut.types.cluster.ClusterConfiguration cluster_configuration = 1;
+}
+
+message DeleteClusterConfigurationFailure {
+  oneof error {
+    DeleteClusterConfigurationFailureClusterConfigurationNotFound cluster_configuration_not_found = 1;
+    DeleteClusterConfigurationFailureIllegalClusterState illegal_cluster_state = 2;
+    DeleteClusterConfigurationFailureInternal internal = 3;
+  }
+}
+
+message DeleteClusterConfigurationFailureClusterConfigurationNotFound {
+  opendut.types.cluster.ClusterId cluster_id = 1;
+}
+
+message DeleteClusterConfigurationFailureIllegalClusterState {
+  opendut.types.cluster.ClusterId cluster_id = 1;
+  opendut.types.cluster.ClusterName cluster_name = 2;
+  opendut.types.cluster.ClusterState actual_state = 3;
+  repeated opendut.types.cluster.ClusterState required_states = 4;
+}
+
+message DeleteClusterConfigurationFailureInternal {
+  opendut.types.cluster.ClusterId cluster_id = 1;
+  opendut.types.cluster.ClusterName cluster_name = 2;
+  string cause = 3;
+}
+
+//
+// GetClusterConfiguration
+//
+message GetClusterConfigurationRequest {
+  opendut.types.cluster.ClusterId id = 1;
+}
+
+message GetClusterConfigurationResponse {
+  oneof result {
+    GetClusterConfigurationFailure failure = 1;
+    GetClusterConfigurationSuccess success = 15;
+  }
+}
+
+message GetClusterConfigurationSuccess {
+  opendut.types.cluster.ClusterConfiguration configuration = 1;
+}
+
+message GetClusterConfigurationFailure {}
+
+//
+// ListClusterConfigurations
+//
+message ListClusterConfigurationsRequest {}
+
+message ListClusterConfigurationsResponse {
+  oneof result {
+    ListClusterConfigurationsFailure failure = 1;
+    ListClusterConfigurationsSuccess success = 15;
+  }
+}
+
+message ListClusterConfigurationsSuccess {
+  repeated opendut.types.cluster.ClusterConfiguration configurations = 1;
+}
+
+message ListClusterConfigurationsFailure {}
+
+//
+// StoreClusterDeployment
+//
+message StoreClusterDeploymentRequest {
+  opendut.types.cluster.ClusterDeployment deployment = 1;
+}
+
+message StoreClusterDeploymentResponse {
+  oneof result {
+    StoreClusterDeploymentFailure failure = 1;
+    StoreClusterDeploymentSuccess success = 15;
+  }
+}
+
+message StoreClusterDeploymentSuccess {}
+
+message StoreClusterDeploymentFailure {}
+
+//
+// DeleteClusterDeployment
+//
+message DeleteClusterDeploymentRequest {
+  opendut.types.cluster.ClusterId id = 1;
+}
+
+message DeleteClusterDeploymentResponse {
+  oneof result {
+    DeleteClusterDeploymentFailure failure = 1;
+    DeleteClusterDeploymentSuccess success = 15;
+  }
+}
+
+message DeleteClusterDeploymentSuccess {
+  opendut.types.cluster.ClusterDeployment deployment = 1;
+}
+
+message DeleteClusterDeploymentFailure {
+  oneof reason {
+    DeleteClusterDeploymentFailureClusterIdRequired cluster_id_required = 1;
+    DeleteClusterDeploymentFailureInvalidClusterId invalid_cluster_id = 2;
+    DeleteClusterDeploymentFailureNotFound cluster_not_found = 3;
+  }
+}
+
+message DeleteClusterDeploymentFailureClusterIdRequired {}
+
+message DeleteClusterDeploymentFailureInvalidClusterId {
+  string cause = 1;
+}
+
+message DeleteClusterDeploymentFailureNotFound {
+  opendut.types.cluster.ClusterId id = 1;
+}
+
+//
+// ListClusterDeployments
+//
+message ListClusterDeploymentsRequest {}
+
+message ListClusterDeploymentsResponse {
+  oneof result {
+    ListClusterDeploymentsFailure failure = 1;
+    ListClusterDeploymentsSuccess success = 15;
+  }
+}
+
+message ListClusterDeploymentsSuccess {
+  repeated opendut.types.cluster.ClusterDeployment deployments = 1;
+}
+
+message ListClusterDeploymentsFailure {}

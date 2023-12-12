@@ -1,0 +1,27 @@
+// Based on  KEYSCORE's legendary health light
+// component which indicates the status of a pipeline.
+
+.health-light {
+  width: 20px;
+  height: 20px;
+  margin-right: 5px;
+  background-color: #808080;
+  box-shadow: inset #323232 0 -1px 9px;
+  border-radius: 50%;
+  border: solid 1px grey;
+}
+
+.health-light.red {
+  background-color: red;
+  box-shadow: inset #c80000 0 -1px 9px;
+}
+
+.health-light.yellow {
+  background-color: #ffc800;
+  box-shadow: inset #e6b400 0 -1px 9px;
+}
+
+.health-light.green {
+  background-color: #00c800;
+  box-shadow: inset #64b400 0 -1px 9px;
+}

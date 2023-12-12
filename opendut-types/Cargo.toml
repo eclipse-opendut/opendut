@@ -1,0 +1,22 @@
+[package]
+name = "opendut-types"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+base64 = { workspace = true }
+brotli = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true, features = ["derive", "std"] }
+serde_json = { workspace = true }
+url = { workspace = true, features = ["serde"] }
+uuid = { workspace = true, features = ["v4", "serde"] }
+prost = { workspace = true }
+
+[dev-dependencies]
+googletest = { workspace = true }
+
+[build-dependencies]
+prost-build = { workspace = true }
+protobuf-src = { workspace = true }

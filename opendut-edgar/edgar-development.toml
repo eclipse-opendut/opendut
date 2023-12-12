@@ -1,0 +1,11 @@
+# Configuration overrides during development
+
+[peer]
+id = "defe10bb-a12a-4ad9-b18e-8149099dd044"
+
+[network]
+connect.interval.ms = 250
+
+[network.tls]
+ca.certificate = "resources/development/tls/insecure-development-ca.pem"
+domain.name.override = "localhost"

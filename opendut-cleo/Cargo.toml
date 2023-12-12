@@ -1,0 +1,34 @@
+[package]
+name = "opendut-cleo"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+opendut-carl-api = { workspace = true, features = ["client"] }
+opendut-types = { workspace = true }
+opendut-util = { workspace = true }
+
+
+clap = { workspace = true, features = ["derive"] }
+cli-table = { workspace = true }
+config = { workspace = true }
+console = { workspace = true }
+glob = { workspace = true }
+indoc = { workspace = true }
+serde_json = { workspace = true }
+shadow-rs = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tonic = { workspace = true, features = ["tls"] }
+uuid = { workspace = true, features = ["v4"] }
+serde = { version = "1.0.189", features = ["derive"] }
+
+[dev-dependencies]
+anyhow = { workspace = true }
+assert_fs = { workspace = true }
+googletest = { workspace = true }
+predicates = { workspace = true }
+rstest = { workspace = true }
+
+[build-dependencies]
+shadow-rs = { workspace = true }

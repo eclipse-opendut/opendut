@@ -1,0 +1,4 @@
+
+[network.tls]
+ca.certificate = "resources/development/tls/insecure-development-ca.pem"
+domain.name.override = "localhost"

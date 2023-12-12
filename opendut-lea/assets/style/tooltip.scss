@@ -1,0 +1,12 @@
+.tooltip {
+  @extend .dropdown;
+}
+
+.tooltip-container {
+  @extend .dropdown-menu;
+  min-width: auto;
+}
+
+.tooltip-content {
+  @extend .dropdown-content;
+}

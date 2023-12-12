@@ -1,0 +1,30 @@
+use anyhow::{bail, Result};
+
+use crate::setup::task::{Success, Task, TaskFulfilled};
+use crate::setup::util::chown;
+
+const DIRS: &[&str] = &[
+    "/opt/opendut-network/",
+    "/etc/opendut-network/",
+];
+
+pub struct ClaimFileOwnership;
+impl Task for ClaimFileOwnership {
+    fn description(&self) -> String {
+        String::from("Claim File Ownership")
+    }
+    fn check_fulfilled(&self) -> Result<TaskFulfilled> {
+        Ok(TaskFulfilled::Unchecked)
+    }
+    fn execute(&self) -> Result<Success> {
+        for dir in DIRS {
+            for path_result in walkdir::WalkDir::new(dir) {
+                match path_result {
+                    Ok(path) => chown(path.path())?,
+                    Err(cause) => bail!("Error while setting ownership for a sub-path in directory '{dir}': {cause}"),
+                }
+            }
+        }
+        Ok(Success::default())
+    }
+}
