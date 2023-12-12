@@ -16,14 +16,17 @@ lazy_static! {
     };
 }
 
+/// The root of the Cargo Workspace. Should be the repository root.
 pub fn workspace_dir() -> PathBuf {
-    WORKSPACE_DIR.to_path_buf()
+    WORKSPACE_DIR.to_owned()
 }
 
-pub fn target_dir() -> PathBuf {
+/// The generic Cargo target directory.
+pub fn cargo_target_dir() -> PathBuf {
     workspace_dir().join("target")
 }
 
-pub fn ci_dir() -> PathBuf {
-    target_dir().join("ci")
+/// Sub-directory of the Cargo target directory, which we use for any of our own build artifacts.
+pub fn target_dir() -> PathBuf {
+    cargo_target_dir().join("ci")
 }

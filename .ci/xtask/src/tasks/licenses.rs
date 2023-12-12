@@ -2,17 +2,15 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 use crate::{constants, util};
-use crate::util::Package;
+use crate::Package;
 
 
 #[tracing::instrument]
-pub fn generate_licenses(package: Package) -> anyhow::Result<()> {
+pub fn generate_licenses(package: &Package) -> anyhow::Result<PathBuf> {
     util::install_crate("cargo-deny")?;
 
-    let licenses_dir = licenses_dir();
-    fs::create_dir_all(&licenses_dir)?;
-
-    let target = licenses_dir.join(format!("{package}.licenses.json"));
+    let target = licenses_file(package);
+    fs::create_dir_all(&target.parent().unwrap())?;
 
     Command::new("sh")
         .arg("-c")
@@ -21,9 +19,9 @@ pub fn generate_licenses(package: Package) -> anyhow::Result<()> {
 
     log::debug!("Wrote licenses for package '{package}' to path: {}", target.display());
 
-    Ok(())
+    Ok(target)
 }
 
-fn licenses_dir() -> PathBuf {
-    constants::ci_dir().join("licenses")
+fn licenses_file(package: &Package) -> PathBuf {
+    constants::target_dir().join("licenses").join(format!("{}.licenses.json", package.ident()))
 }

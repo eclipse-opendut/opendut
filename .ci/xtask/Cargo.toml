@@ -6,8 +6,16 @@ license = "Apache-2.0"
 
 [dependencies]
 anyhow = { workspace = true }
+cargo_metadata = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
+flate2 = { workspace = true }
 lazy_static = { workspace = true }
 log = { workspace = true }
+reqwest = { workspace = true, features = ["blocking"] }
+shadow-rs = { workspace = true }
+tar = { workspace = true }
 tracing = { workspace = true }
-tracing-subscriber = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+
+[build-dependencies]
+shadow-rs = { workspace = true }

@@ -1,7 +1,6 @@
 
 [workspace]
 members = [
-    ".ci/xtask",
     "opendut-carl",
     "opendut-carl/opendut-carl-api",
     "opendut-cleo",
@@ -12,6 +11,7 @@ members = [
     "opendut-util",
     "opendut-vpn",
     "opendut-vpn/opendut-vpn-netbird",
+    ".ci/xtask",
     "tests",
 ]
 resolver = "2"
