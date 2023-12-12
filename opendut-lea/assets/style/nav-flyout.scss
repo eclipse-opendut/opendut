@@ -1,0 +1,39 @@
+.dut-nav-flyout {
+  @extend .dropdown;
+}
+
+.dut-nav-flyout-container {
+  display: none;
+}
+
+.dut-nav-flyout.is-active > .dut-nav-flyout-container {
+  display: block;
+  position: absolute;
+  top: calc(100% + 4px);
+  z-index: 20;
+}
+
+.dut-nav-flyout-content {
+  @extend .dropdown-content;
+  display: flex !important;
+  flex-direction: column;
+  justify-content: space-between;
+  height: calc(100vh - 64px);
+  width: 300px;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.dut-nav-flyout-item {
+  @extend .dropdown-item;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+}
+
+.dut-nav-flyout-item:hover {
+  background-color: hsl(0, 0%, 98%);
+}
+
+.dut-nav-flyout-divider {
+  @extend .dropdown-divider;
+}

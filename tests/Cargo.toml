@@ -1,0 +1,18 @@
+[package]
+name = "opendut-integration-tests"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[dev-dependencies]
+opendut-carl = { workspace = true }
+opendut-carl-api = { workspace = true, features = ["client"] }
+opendut-edgar = { workspace = true }
+opendut-types = { workspace = true }
+opendut-util = { workspace = true }
+
+config = { workspace = true }
+googletest = { workspace = true }
+log = { workspace = true }
+tokio = { workspace = true, features = ["full", "test-util"] }
+tonic = { workspace = true }

@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package opendut.types.util;
+
+message Uuid {
+  uint64 msb = 1;
+  uint64 lsb = 2;
+}

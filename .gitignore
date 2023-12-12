@@ -1,0 +1,39 @@
+#####################################################
+#             Development Configuration             #
+#####################################################
+.env
+/carl.toml
+/edgar.toml
+.env*
+
+#####################################################
+#             Build, Binaries and Libs              #
+#####################################################
+target/
+opendut-lea/dist/
+.vagrant/
+/doc/book/
+rustc-ice-*
+
+# NetBird proto files get downloaded from the web.
+/opendut-edgar/netbird-client-api/proto/netbird-v*
+
+#####################################################
+#                      IntelliJ                     #
+#####################################################
+*.iml
+.idea/
+.run
+
+#####################################################
+#                OS generated files                 #
+#####################################################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+ehthumbs.db
+Thumbs.db
+.directory

@@ -1,0 +1,11 @@
+[package]
+name = "opendut-vpn"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+opendut-types = { workspace = true }
+
+async-trait = { workspace = true }
+thiserror = { workspace = true }

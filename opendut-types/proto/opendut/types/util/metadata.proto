@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package opendut.types.util;
+
+message VersionInfo {
+  // Semantic version identifier, e.g. "1.2.3"
+  string name = 1;
+}

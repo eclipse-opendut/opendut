@@ -1,0 +1,48 @@
+[package]
+name = "opendut-edgar"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+opendut-carl-api = { workspace = true, features = ["client"] }
+opendut-netbird-client-api = { workspace = true }
+opendut-types = { workspace = true }
+opendut-util = { workspace = true }
+
+anyhow = { workspace = true }
+clap = { workspace = true, features = ["derive"] }
+config = { workspace = true }
+console = { workspace = true }
+digest = { workspace = true }
+env_logger = { workspace = true }
+flate2 = { workspace = true }
+futures = { workspace = true }
+indicatif = { workspace = true }
+indoc = { workspace = true }
+log = { workspace = true }
+netlink-packet-route = { workspace = true }
+netlink-packet-utils = { workspace = true }
+nix = { workspace = true, features = ["user", "fs"] }
+rtnetlink = { workspace = true }
+serde = { workspace = true, features = ["std", "derive"] }
+shadow-rs = { workspace = true }
+sha2 = { workspace = true }
+sudo = { workspace = true }
+tar = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tokio-stream = { workspace = true, features = ["full"] }
+toml_edit = { workspace = true }
+tonic = { workspace = true, features = ["tls"] }
+uuid = { workspace = true, features = ["v4"] }
+url = { workspace = true }
+walkdir = { workspace = true }
+
+[dev-dependencies]
+assert_fs = { workspace = true }
+googletest = { workspace = true }
+predicates = { workspace = true }
+
+[build-dependencies]
+shadow-rs = { workspace = true }

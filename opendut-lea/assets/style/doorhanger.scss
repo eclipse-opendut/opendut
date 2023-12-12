@@ -1,0 +1,29 @@
+.doorhanger {
+  @extend .dropdown;
+}
+
+.doorhanger-trigger {
+}
+
+.doorhanger.is-active > .doorhanger-trigger::after {
+  background-color: $white;
+  position: absolute;
+  top: 2.75rem;
+  left: 0;
+  right: 0;
+  margin: auto;
+  height: 1.0rem;
+  width: 1.0rem;
+  content: "";
+  box-shadow: $shadow;
+  transform: rotate(45deg);
+}
+
+.doorhanger-container {
+  @extend .dropdown-menu;
+  min-width: auto;
+}
+
+.doorhanger-content {
+  @extend .dropdown-content;
+}

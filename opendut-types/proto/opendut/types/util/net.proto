@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package opendut.types.util;
+
+message Url {
+  string value = 1;
+}
+
+message Hostname {
+  string value = 1;
+}
+
+message Port {
+  uint32 value = 1;
+}

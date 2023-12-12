@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package opendut.types.cluster;
+
+import "opendut/types/util/uuid.proto";
+import "opendut/types/peer/peer.proto";
+import "opendut/types/topology/device.proto";
+
+message ClusterId {
+  opendut.types.util.Uuid uuid = 1;
+}
+
+message ClusterName {
+  string value = 1;
+}
+
+// ANCHOR: ClusterConfiguration
+message ClusterConfiguration {
+  ClusterId id = 1;
+  string name = 2;
+  opendut.types.peer.PeerId leader = 3;
+  repeated opendut.types.topology.DeviceId devices = 4;
+}
+// ANCHOR_END: ClusterConfiguration
+
+message ClusterDeployment {
+  ClusterId id = 1;
+}
+
+// ANCHOR: ClusterAssignment
+message ClusterAssignment {
+  ClusterId id = 1;
+  opendut.types.peer.PeerId leader = 3;
+  repeated PeerClusterAssignment assignments = 4;
+}
+// ANCHOR_END: ClusterAssignment
+
+// ANCHOR: PeerClusterAssignment
+message PeerClusterAssignment {
+/**
+  map <DeviceId, BridgeIP> bridge_addresses = 1;
+  repeated opendut.types.topology.DeviceId devices = 2;
+**/
+}
+// ANCHOR_END: PeerClusterAssignment
+
+message ClusterState {
+  oneof inner {
+    ClusterStateUndeployed undeployed = 1;
+    ClusterStateDeploying deploying = 2;
+    ClusterStateDeployed deployed = 3;
+  }
+}
+
+message ClusterStateUndeployed {}
+
+message ClusterStateDeploying {}
+
+message ClusterStateDeployed {
+  oneof inner {
+    ClusterStateDeployedUnhealthy unhealthy = 1;
+    ClusterStateDeployedHealthy healthy = 2;
+  }
+}
+
+message ClusterStateDeployedUnhealthy {}
+
+message ClusterStateDeployedHealthy {}

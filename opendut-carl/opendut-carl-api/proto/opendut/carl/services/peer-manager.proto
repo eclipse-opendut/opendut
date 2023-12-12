@@ -1,0 +1,222 @@
+syntax = "proto3";
+
+package opendut.carl.services.peer_manager;
+
+import "opendut/types/topology/device.proto";
+import "opendut/types/topology/topology.proto";
+import "opendut/types/peer/peer.proto";
+
+service PeerManager {
+  rpc CreatePeer(CreatePeerRequest) returns (CreatePeerResponse) {}
+  rpc DeletePeer(DeletePeerRequest) returns (DeletePeerResponse) {}
+  rpc GetPeer(GetPeerRequest) returns (GetPeerResponse) {}
+  rpc ListPeers(ListPeersRequest) returns (ListPeersResponse) {}
+  rpc CreatePeerSetup(CreatePeerSetupRequest) returns (CreatePeerSetupResponse) {}
+  rpc ListDevices(ListDevicesRequest) returns (ListDevicesResponse) {}
+}
+
+//
+// CreatePeerRequest
+//
+message CreatePeerRequest {
+  opendut.types.peer.PeerDescriptor peer = 1;
+}
+
+message CreatePeerResponse {
+  oneof reply {
+    CreatePeerSuccess success = 1;
+    CreatePeerFailure failure = 2;
+  }
+}
+
+message CreatePeerSuccess {
+  opendut.types.peer.PeerId peer_id = 1;
+}
+
+message CreatePeerFailure {
+  oneof error {
+    CreatePeerFailurePeerAlreadyExists peer_already_exists = 1;
+    CreatePeerFailureIllegalDevices illegal_devices = 2;
+    CreatePeerFailureInternal internal = 3;
+  }
+}
+
+message CreatePeerFailurePeerAlreadyExists {
+  opendut.types.peer.PeerId actual_id = 1;
+  opendut.types.peer.PeerName actual_name = 2;
+  opendut.types.peer.PeerId other_id = 3;
+  opendut.types.peer.PeerName other_name = 4;
+}
+
+message CreatePeerFailureIllegalDevices {
+    opendut.types.peer.PeerId peer_id = 1;
+    opendut.types.peer.PeerName peer_name = 2;
+    RegisterDevicesError error = 3;
+}
+
+message CreatePeerFailureInternal {
+    opendut.types.peer.PeerId peer_id = 1;
+    opendut.types.peer.PeerName peer_name = 2;
+    string cause = 3;
+}
+
+//
+// DeletePeerRequest
+//
+message DeletePeerRequest {
+  opendut.types.peer.PeerId peer_id = 1;
+}
+
+message DeletePeerResponse {
+  oneof reply {
+    DeletePeerSuccess success = 1;
+    DeletePeerFailure failure = 2;
+  }
+}
+
+message DeletePeerSuccess {
+  opendut.types.peer.PeerId peer_id = 1;
+}
+
+message DeletePeerFailure {
+  oneof error {
+    DeletePeerFailurePeerNotFound peer_not_found = 1;
+    DeletePeerFailureIllegalPeerState illegal_peer_state = 2;
+    DeletePeerFailureIllegalDevices illegal_devices = 3;
+    DeletePeerFailureInternal internal = 4;
+  }
+}
+
+message DeletePeerFailurePeerNotFound {
+  opendut.types.peer.PeerId peer_id = 1;
+}
+
+message DeletePeerFailureIllegalPeerState {
+  opendut.types.peer.PeerId peer_id = 1;
+  opendut.types.peer.PeerName peer_name = 2;
+  opendut.types.peer.PeerState actual_state = 3;
+  repeated opendut.types.peer.PeerState required_states = 4;
+}
+
+message DeletePeerFailureIllegalDevices {
+  opendut.types.peer.PeerId peer_id = 1;
+  opendut.types.peer.PeerName peer_name = 2;
+  UnregisterDevicesError error = 3;
+}
+
+message DeletePeerFailureInternal {
+  opendut.types.peer.PeerId peer_id = 1;
+  opendut.types.peer.PeerName peer_name = 2;
+  string cause = 3;
+}
+
+//
+// GetPeerRequest
+//
+message GetPeerRequest {
+  opendut.types.peer.PeerId peer_id = 1;
+}
+
+message GetPeerResponse {
+  oneof reply {
+    GetPeerSuccess success = 1;
+    GetPeerFailure failure = 2;
+  }
+}
+
+message GetPeerSuccess {
+  opendut.types.peer.PeerDescriptor descriptor = 1;
+}
+
+message GetPeerFailure {
+  oneof error {
+    GetPeerFailurePeerNotFound peer_not_found = 1;
+    GetPeerFailureInternal internal = 2;
+  }
+}
+
+message GetPeerFailurePeerNotFound {
+  opendut.types.peer.PeerId peer_id = 1;
+}
+
+message GetPeerFailureInternal {
+  opendut.types.peer.PeerId peer_id = 1;
+  string cause = 2;
+}
+
+//
+// ListPeerRequest
+//
+message ListPeersRequest {}
+
+message ListPeersResponse {
+  oneof reply {
+    ListPeersSuccess success = 1;
+    ListPeersFailure failure = 2;
+  }
+}
+
+message ListPeersSuccess {
+  repeated opendut.types.peer.PeerDescriptor peers = 1;
+}
+
+message ListPeersFailure {
+  oneof error {
+      ListPeersFailureInternal internal = 1;
+  }
+}
+
+message ListPeersFailureInternal {
+  string cause = 1;
+}
+
+//
+// CreatePeerSetupRequest
+//
+message CreatePeerSetupRequest {
+  opendut.types.peer.PeerId peer = 1;
+}
+
+message CreatePeerSetupResponse {
+  oneof reply {
+    CreatePeerSetupSuccess success = 1;
+    CreatePeerSetupFailure failure = 2;
+  }
+}
+
+message CreatePeerSetupSuccess {
+  opendut.types.peer.PeerId peer = 1;
+  opendut.types.peer.PeerSetup setup = 2;
+}
+
+message CreatePeerSetupFailure {
+}
+
+//
+// ListDevicesRequest
+//
+message ListDevicesRequest {}
+
+message ListDevicesResponse {
+  repeated opendut.types.topology.Device devices = 1;
+}
+
+message RegisterDevicesError {
+  oneof error {
+      RegisterDevicesErrorDeviceAlreadyExists device_already_exists = 1;
+  }
+}
+
+message RegisterDevicesErrorDeviceAlreadyExists {
+  opendut.types.topology.DeviceId device_id = 1;
+}
+
+message UnregisterDevicesError {
+  oneof error {
+    UnregisterDevicesErrorDeviceNotFound device_not_found = 1;
+  }
+}
+
+message UnregisterDevicesErrorDeviceNotFound {
+  opendut.types.topology.DeviceId device_id = 1;
+}

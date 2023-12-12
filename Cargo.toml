@@ -1,0 +1,100 @@
+
+[workspace]
+members = [
+    "opendut-carl",
+    "opendut-carl/opendut-carl-api",
+    "opendut-cleo",
+    "opendut-edgar",
+    "opendut-lea",
+    "opendut-edgar/netbird-client-api",
+    "opendut-types",
+    "opendut-util",
+    "opendut-vpn",
+    "opendut-vpn/opendut-vpn-netbird",
+    "tests",
+]
+resolver = "2"
+
+[workspace.dependencies]
+opendut-carl = { path = "opendut-carl" }
+opendut-carl-api = { path = "opendut-carl/opendut-carl-api" }
+opendut-ci = { path = ".ci/xtask" }
+opendut-edgar = { path = "opendut-edgar" }
+opendut-netbird-client-api = { path = "opendut-edgar/netbird-client-api" }
+opendut-vpn-netbird = { path = "opendut-vpn/opendut-vpn-netbird" }
+opendut-types = { path = "opendut-types" }
+opendut-util = { path = "opendut-util" }
+opendut-vpn = { path = "opendut-vpn" }
+
+anyhow = "1.0.75"
+assert_fs = "1.0.13"
+async-trait = "0.1.73"
+axum = "0.6.20"
+axum-server = "0.5.1"
+axum-server-dual-protocol = "0.5.2"
+base64 = "0.21.4"
+brotli = "3.4.0"
+cargo_metadata = "0.18.0"
+cfg-if = "1.0.0"
+clap = "4.4.6"
+cli-table = "0.4"
+config = { version = "0.13.3", features = ["toml"] }
+console = "0.15.7"
+console_error_panic_hook = "0.1.7"
+console_log = "1.0.0"
+digest = "0.10.7"
+env_logger = "0.10.0"
+flate2 = "1.0.27"
+futures = "0.3.28"
+glob = "0.3.1"
+gloo-net = { version = "0.4.0" }
+gloo-timers = { version = "0.3.0" }
+googletest = { version = "0.10.0" }
+home = "0.5.5"
+http = "0.2.9"
+http-body = "0.4.5"
+hyper = "0.14.27"
+indicatif = "0.17.7"
+indoc = "2.0.4"
+lazy_static = "1.4.0"
+leptos = { version = "0.5.4" }
+leptos_router = { version = "0.5.4" }
+leptos-use = { version = "0.9.0" }
+log = "0.4.20"
+mime = "0.3.17"
+netlink-packet-route = "0.17.1"
+netlink-packet-utils = "0.5.2"
+nix = "0.27.1"
+predicates = "3.0.4"
+prost = "0.12.1"
+prost-build = "0.12.1"
+prost-types = "0.12.1"
+protobuf-src = "1.1.0"
+reqwest = { version = "0.11.22", default-features = false, features = ["rustls-tls-native-roots"] }
+rstest = "0.18.2"
+rtnetlink = "0.13.1"
+serde = { version = "1.0.188", default-features = false }
+serde_json = "1.0.107"
+shadow-rs = "0.24.0"
+sha2 = "0.10.8"
+sudo = "0.6.0"
+tar = "0.4.40"
+time = "0.3.29"
+thiserror = "1.0.49"
+tokio = { version = "1.32.0", default-features = false }
+tokio-stream = { version = "0.1.14", default-features = false }
+toml_edit = "0.21.0"
+tonic = { version = "0.10.2", default-features = false }
+tonic-build = { version = "0.10.2", default-features = false }
+tonic-web = "0.10.2"
+tonic-web-wasm-client = { version = "0.5.0" }
+tower = "0.4.13"
+tower-http = { version = "0.4.4", features = ["cors", "fs"] }
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
+url = "2.4.1"
+uuid = "1.4.1"
+walkdir = "2.4.0"
+
+[workspace.metadata.ci]
+netbird.version = "0.23.9-8de14ad"

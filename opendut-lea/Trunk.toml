@@ -1,0 +1,9 @@
+[build]
+target = "index.html"
+
+[watch]
+watch = ["src", "assets", "../opendut-carl/opendut-carl-api", "../opendut-types"]
+
+[serve]
+address = "0.0.0.0"
+port = 8000

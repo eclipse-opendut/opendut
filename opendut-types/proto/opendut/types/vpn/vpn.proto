@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+import "opendut/types/util/net.proto";
+import "opendut/types/util/uuid.proto";
+
+package opendut.types.vpn;
+
+message VpnPeerConfig {
+  oneof config {
+    VpnPeerConfigDisabled disabled = 1;
+    VpnPeerConfigNetbird netbird = 2;
+  }
+}
+
+message VpnPeerConfigDisabled {}
+
+message VpnPeerConfigNetbird {
+  opendut.types.util.Url management_url = 1;
+  SetupKey setup_key = 2;
+}
+
+message SetupKey {
+  opendut.types.util.Uuid uuid = 1;
+}

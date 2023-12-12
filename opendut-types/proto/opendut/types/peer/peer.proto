@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package opendut.types.peer;
+
+import "opendut/types/topology/topology.proto";
+import "opendut/types/util/net.proto";
+import "opendut/types/util/uuid.proto";
+import "opendut/types/vpn/vpn.proto";
+
+message PeerId {
+  opendut.types.util.Uuid uuid = 1;
+}
+
+message PeerName {
+  string value = 1;
+}
+
+message PeerDescriptor {
+  opendut.types.peer.PeerId id = 1;
+  opendut.types.peer.PeerName name = 2;
+  opendut.types.topology.Topology topology = 3;
+}
+
+message PeerSetup {
+  opendut.types.peer.PeerId id = 1;
+  opendut.types.util.Url carl = 5;
+  opendut.types.vpn.VpnPeerConfig vpn = 11;
+}
+
+message PeerState {
+  oneof inner {
+    PeerStateDown down = 1;
+    PeerStateUp up = 2;
+  }
+}
+
+message PeerStateDown {}
+
+message PeerStateUp {
+  oneof inner {
+    PeerStateUpAvailable available = 1;
+    PeerStateUpBlocked blocked = 2;
+  }
+}
+
+message PeerStateUpAvailable {}
+
+message PeerStateUpBlocked {
+  oneof inner {
+    PeerStateUpBlockedDeploying deploying = 1;
+    PeerStateUpBlockedMember member = 2;
+    PeerStateUpBlockedUndeploying undeploying = 3;
+  }
+}
+
+message PeerStateUpBlockedDeploying {}
+
+message PeerStateUpBlockedMember {}
+
+message PeerStateUpBlockedUndeploying {}

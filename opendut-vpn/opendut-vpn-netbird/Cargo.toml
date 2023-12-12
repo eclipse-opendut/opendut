@@ -1,0 +1,26 @@
+[package]
+name = "opendut-vpn-netbird"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+opendut-types = { workspace = true }
+opendut-vpn = { workspace = true }
+opendut-util = { workspace = true, features = ["serde"] }
+
+async-trait = { workspace = true }
+anyhow = { workspace = true }
+http = { workspace = true }
+log = { workspace = true }
+mime = { workspace = true }
+reqwest = { workspace = true, features = ["json"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+time = { workspace = true, features = ["serde-well-known"] }
+tokio = { workspace = true, features = ["full"] }
+uuid = { workspace = true, features = ["serde"] }
+
+[dev-dependencies]
+googletest = { workspace = true }

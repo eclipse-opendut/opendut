@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package opendut.carl.services.peer_messaging_broker;
+
+import "opendut/types/cluster/cluster.proto";
+import "opendut/types/peer/peer.proto";
+import "opendut/types/vpn/vpn.proto";
+
+service PeerMessagingBroker {
+  rpc ListPeers(ListPeersRequest) returns (ListPeersResponse);
+  rpc Open(stream Upstream) returns (stream Downstream);
+}
+
+message ListPeersRequest {}
+
+message ListPeersResponse {
+  repeated opendut.types.peer.PeerId peers = 1;
+}
+
+message Upstream {
+  oneof message {
+    Ping ping = 1;
+  }
+}
+
+message Downstream {
+  oneof message {
+    Pong pong = 1;
+    ApplyVpnConfig applyVpnConfig = 2;
+    AssignCluster assign_cluster = 3;
+  }
+}
+
+message Ping {}
+message Pong {}
+
+message ApplyVpnConfig {
+  opendut.types.vpn.VpnPeerConfig config = 1;
+}
+
+message AssignCluster {
+  opendut.types.cluster.ClusterAssignment assignment = 1;
+}

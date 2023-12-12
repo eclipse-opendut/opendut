@@ -1,0 +1,9 @@
+[target.armv7-unknown-linux-gnueabihf]
+linker = "arm-linux-gnueabihf-gcc"
+
+[alias]
+ci = "run --package opendut-ci --"
+carl = "run --package opendut-carl --"
+cleo = "run --package opendut-cleo --"
+edgar = "run --package opendut-edgar --"
+lea = "make lea-watch"

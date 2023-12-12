@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package opendut.types.topology;
+
+import "opendut/types/topology/device.proto";
+
+message Topology {
+  repeated Device devices = 1;
+}

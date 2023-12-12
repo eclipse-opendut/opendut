@@ -1,0 +1,12 @@
+# Configuration overrides during development
+# Paths are relative to repository root
+
+[network.tls]
+certificate = "resources/development/tls/insecure-development-carl.pem"
+key = "resources/development/tls/insecure-development-carl.key"
+
+[serve]
+ui.directory = "./opendut-lea/dist/"
+
+[vpn]
+enabled = false
