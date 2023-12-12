@@ -1,0 +1,52 @@
+version: "3.9"
+
+services:
+
+  carl:
+    build:
+      # use git root as build context
+      context: ../../..
+      dockerfile: ./.ci/docker/carl/Dockerfile
+      args:
+        - VERSION=$OPENDUT_CARL_VERSION
+    image: "${OPENDUT_DOCKER_IMAGE_HOST}/${OPENDUT_DOCKER_IMAGE_NAMESPACE}/opendut-carl:${OPENDUT_CARL_VERSION}"
+    command: ["/opt/opendut-carl/opendut-carl"]
+    volumes:
+      - "../../../resources/development/tls/insecure-development-ca.pem:/etc/opendut-network/tls/ca.pem"
+      - "../../../resources/development/tls/carl.pem:/etc/opendut-network/tls/carl.pem"
+      - "../../../resources/development/tls/carl.key:/etc/opendut-network/tls/carl.key"
+    #env_file:
+    #  - .env  # required variables: SETUP_KEY
+
+    environment:
+      #- OPENDUT_CARL_NETWORK_TLS_CERTIFICATE=/etc/opendut-network/tls/insecure-development-ca.pem
+      - OPENDUT_CARL_NETWORK_BIND_PORT=443
+      - OPENDUT_CARL_VPN_ENABLED=false
+      - OPENDUT_CARL_VPN_NETBIRD_BASE-URL=http://netbird:8080
+      - OPENDUT_CARL_VPN_NETBIRD_AUTH_SECRET=""
+      - OPENDUT_CARL_VPN_NETBIRD_AUTH_TYPE=bearer-token
+    # dynamically provided
+      - OPENDUT_DOCKER_IMAGE_NAMESPACE
+      - OPENDUT_DOCKER_IMAGE_HOST
+      - OPENDUT_CARL_VERSION
+      - NETBIRD_MANAGEMENT_API
+      - OPENDUT_CUSTOM_CA1
+      - OPENDUT_CUSTOM_CA2
+      - OPENDUT_HOSTS
+    healthcheck:
+      test: ["CMD", "curl", "--cacert", "/etc/opendut-network/tls/ca.pem", "-f", "https://carl"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    ports:
+      - "443"
+    networks:
+      opendutnet:
+        ipv4_address: 192.168.32.200
+
+networks:
+  opendutnet:
+    name: opendut_network
+    external: true  # Use a pre-existing network

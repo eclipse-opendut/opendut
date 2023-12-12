@@ -1,0 +1,69 @@
+version: "3.9"
+
+services:
+
+  router:
+    container_name: edgar_router  # defined DNS for the container
+    build:
+      context: ../../..
+      dockerfile: ./.ci/docker/edgar/Dockerfile
+    command: /opt/prepare.sh router
+    volumes:
+      - ../../../target/ci/distribution/x86_64-unknown-linux-gnu/:/opt/artifacts
+      - "../../../resources/development/tls/insecure-development-ca.pem:/etc/opendut-network/tls/ca.pem"
+    cap_add:
+      - NET_ADMIN
+    environment:
+      # cleo
+      - OPENDUT_CLEO_NETWORK_CARL_HOST=carl
+      - OPENDUT_CLEO_NETWORK_CARL_PORT=443
+      # testenv
+      - NETBIRD_GROUP=testenv
+      - OPENDUT_EDGAR_REPLICAS=4
+      # dynamically provided
+      - NETBIRD_SETUP_KEY
+      - NETBIRD_API_TOKEN
+      - NETBIRD_MANAGEMENT_API
+      - OPENDUT_CUSTOM_CA1
+      - OPENDUT_CUSTOM_CA2
+      - OPENDUT_HOSTS
+
+    networks:
+      - opendutnet
+
+  peer:
+    build:
+      context: ../../..
+      dockerfile: ./.ci/docker/edgar/Dockerfile
+    command: /opt/prepare.sh
+    volumes:
+      - ../../../target/ci/distribution/x86_64-unknown-linux-gnu/:/opt/artifacts
+      - "../../../resources/development/tls/insecure-development-ca.pem:/etc/opendut-network/tls/ca.pem"
+    cap_add:
+      - NET_ADMIN
+    environment:
+      # cleo
+      - OPENDUT_CLEO_NETWORK_CARL_HOST=carl
+      - OPENDUT_CLEO_NETWORK_CARL_PORT=443
+      # testenv
+      - NETBIRD_GROUP=testenv
+      - OPENDUT_EDGAR_REPLICAS=4
+      # dynamically provided
+      - NETBIRD_SETUP_KEY
+      - NETBIRD_API_TOKEN
+      - NETBIRD_MANAGEMENT_API
+      - OPENDUT_CUSTOM_CA1
+      - OPENDUT_CUSTOM_CA2
+      - OPENDUT_HOSTS
+
+    deploy:
+      mode: replicated
+      # edgar replica count (e.g. 3)
+      replicas: ${OPENDUT_EDGAR_REPLICAS}
+    networks:
+      - opendutnet
+
+networks:
+  opendutnet:
+    name: opendut_network
+    external: true  # Use a pre-existing network

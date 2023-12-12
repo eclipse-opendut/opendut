@@ -1,0 +1,9 @@
+ARG NETBIRD_MANAGEMENT_VERSION
+
+FROM netbirdio/management:${NETBIRD_MANAGEMENT_VERSION}
+RUN apt update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata ca-certificates curl
+
+COPY ./.ci/docker/netbird/management_init.sh /management_init.sh
+
+ENTRYPOINT [ "/management_init.sh" ]
+#HEALTHCHECK --interval=15s --timeout=3s --start-period=60s CMD curl -sf "$KEYCLOAK_URL" --output /dev/null

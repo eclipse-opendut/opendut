@@ -1,0 +1,54 @@
+version: "3.9"
+
+services:
+
+  opendut_dev:
+    build:
+      context: ../../..
+      dockerfile: ./.ci/docker/dev/Dockerfile
+      args:
+        - PUID=$PUID
+        - PGID=$PGID
+        - PUSER=$PUSER
+        - PGROUP=$PGROUP
+        - DOCKER_GID=$DOCKER_GID
+        - OPENDUT_REPO_ROOT=$OPENDUT_REPO_ROOT
+    environment:
+      - PUID
+      - PGID
+      - PUSER
+      - PGROUP
+      - DOCKER_GID
+      - OPENDUT_REPO_ROOT
+      # cleo
+      - OPENDUT_CLEO_NETWORK_CARL_HOST=carl
+      - OPENDUT_CLEO_NETWORK_CARL_PORT=443
+      # CA/hosts
+      - OPENDUT_CUSTOM_CA1
+      - OPENDUT_CUSTOM_CA2
+      - OPENDUT_HOSTS
+
+    command: sleep infinity
+    user: $DOCKER_USER # ${UID}:${GID}
+    volumes:
+      - ../../../:$OPENDUT_REPO_ROOT
+      - /var/run/docker.sock:/var/run/docker.sock
+#      - /usr/bin/docker:/usr/bin/docker
+
+      - $HOME/opendut_dev/:/opendut_dev/
+      - $HOME/.cargo/:/home/$PUSER/.cargo/
+      - $HOME/.rustup/:/home/$PUSER/.rustup/
+      - $HOME/.cache/rust-script/:/home/$PUSER/.cache/rust-script/
+      - $HOME/.cache/cargo-make//:/home/$PUSER/.cache/cargo-make/
+
+    networks:
+      - opendutnet
+
+networks:
+  opendutnet:
+    name: opendut_network
+    external: true  # Use a pre-existing network
+
+volumes:
+  opendut_dev:
+    name: opendut_dev

@@ -1,6 +1,7 @@
 
 [workspace]
 members = [
+    ".ci/xtask",
     "opendut-carl",
     "opendut-carl/opendut-carl-api",
     "opendut-cleo",
