@@ -7,7 +7,7 @@ use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId}
 use opendut_types::proto::cluster::ClusterAssignment;
 
 use crate::actions;
-use crate::actions::ListPeerParams;
+use crate::actions::ListPeerDescriptorsParams;
 use crate::peer::broker::broker::PeerMessagingBrokerRef;
 use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
@@ -50,7 +50,7 @@ impl ClusterManager {
         }).await
         .ok_or(DeployClusterError::ClusterNotFound(cluster_id))?;
 
-        let peers = actions::list_peer(ListPeerParams {
+        let peers = actions::list_peer_descriptors(ListPeerDescriptorsParams {
             resources_manager: Arc::clone(&self.resources_manager),
         }).await.map_err(|cause| DeployClusterError::Internal { cluster_id, cause: cause.to_string() })?;
 
@@ -135,7 +135,7 @@ mod test {
     use opendut_types::cluster::ClusterName;
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerName};
     use opendut_types::topology::{Device, DeviceId, InterfaceName, Topology};
-    use crate::actions::{CreateClusterConfigurationParams, CreatePeerParams};
+    use crate::actions::{CreateClusterConfigurationParams, StorePeerDescriptorParams};
 
     use crate::peer::broker::broker::PeerMessagingBroker;
     use crate::resources::manager::ResourcesManager;
@@ -201,16 +201,16 @@ mod test {
             devices: HashSet::from([peer_a_device_1, peer_b_device_1]),
         };
 
-        actions::create_peer(CreatePeerParams {
+        actions::store_peer_descriptor(StorePeerDescriptorParams {
             resources_manager: Arc::clone(&resources_manager),
             vpn: Vpn::Disabled,
-            peer: peer_a,
+            peer_descriptor: peer_a,
         }).await?;
 
-        actions::create_peer(CreatePeerParams {
+        actions::store_peer_descriptor(StorePeerDescriptorParams {
             resources_manager: Arc::clone(&resources_manager),
             vpn: Vpn::Disabled,
-            peer: peer_b,
+            peer_descriptor: peer_b,
         }).await?;
 
         let (_peer_a_tx, mut peer_a_rx) = broker.open(peer_a_id).await;

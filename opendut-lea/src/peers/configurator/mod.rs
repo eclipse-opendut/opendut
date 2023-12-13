@@ -54,7 +54,7 @@ pub fn PeerConfigurator() -> impl IntoView {
         create_local_resource(|| {}, move |_| {
             let mut carl = globals.expect_client();
             async move {
-                if let Ok(configuration) = carl.peers.get_peer(peer_id).await {
+                if let Ok(configuration) = carl.peers.get_peer_descriptor(peer_id).await {
                     peer_configuration.update(|user_configuration| {
                         user_configuration.name = UserInputValue::Right(configuration.name.value());
                         user_configuration.is_new = false;

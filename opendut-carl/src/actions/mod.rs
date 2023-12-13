@@ -13,9 +13,9 @@ pub use clusters::{
 };
 
 pub use peers::{
-    create_peer,
-    CreatePeerParams,
-    CreatePeerError,
+    store_peer_descriptor,
+    StorePeerDescriptorParams,
+    StorePeerDescriptorError,
 };
 
 pub use peers::{
@@ -25,15 +25,15 @@ pub use peers::{
 };
 
 pub use peers::{
-    delete_peer,
-    DeletePeerParams,
-    DeletePeerError,
+    delete_peer_descriptor,
+    DeletePeerDescriptorParams,
+    DeletePeerDescriptorError,
 };
 
 pub use peers::{
-    list_peer,
-    ListPeerParams,
-    ListPeersError,
+    list_peer_descriptors,
+    ListPeerDescriptorsParams,
+    ListPeerDescriptorsError,
 };
 
 pub use peers::{

@@ -53,7 +53,7 @@ pub mod create {
         let peer_id = PeerId::from(peer_id);
         let device_id = device_id.map(DeviceId::from).unwrap_or(DeviceId::random());
 
-        let mut peer_descriptor = carl.peers.get_peer(peer_id).await
+        let mut peer_descriptor = carl.peers.get_peer_descriptor(peer_id).await
             .map_err(|_| format!("Failed to get peer with ID <{}>.", peer_id))?;
         let maybe_existing_device = peer_descriptor.topology.devices.iter_mut().find(|device| device.id == device_id) ;
         match maybe_existing_device {
@@ -88,7 +88,7 @@ pub mod create {
                 }
             }
         }
-        carl.peers.create_peer(Clone::clone(&peer_descriptor)).await
+        carl.peers.store_peer_descriptor(Clone::clone(&peer_descriptor)).await
             .map_err(|error| format!("Failed to update peer <{}>.\n  {}", peer_id, error))?;
         crate::commands::peer::describe::render_peer_descriptor(peer_descriptor, DescribeOutputFormat::Text);
         
@@ -178,7 +178,7 @@ pub mod delete {
     pub async fn execute(carl: &mut CarlClient, device_id: Uuid) -> crate::Result<()> {
         let device_id = DeviceId::from(device_id);
 
-        let mut peers = carl.peers.list_peers().await
+        let mut peers = carl.peers.list_peer_descriptors().await
             .map_err(|error| format!("Could not list peers.\n  {}", error))?;
 
         let peer = peers.iter_mut().find(|peer| {
@@ -189,7 +189,7 @@ pub mod delete {
 
         peer.topology.devices.retain(|device| device.id != device_id);
 
-        carl.peers.create_peer(Clone::clone(peer)).await
+        carl.peers.store_peer_descriptor(Clone::clone(peer)).await
             .map_err(|error| format!("Failed to delete peer.\n  {}", error))?;
 
         Ok(())

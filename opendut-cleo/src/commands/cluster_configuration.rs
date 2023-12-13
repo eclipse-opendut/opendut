@@ -223,7 +223,7 @@ pub mod describe {
         };
 
         let cluster_peers = {
-            let peers = carl.peers.list_peers().await
+            let peers = carl.peers.list_peer_descriptors().await
                 .map_err(|_| String::from("Failed to get list of peers!"))?;
             peers.into_iter()
                 .filter(|peer| {

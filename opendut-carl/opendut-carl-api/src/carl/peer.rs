@@ -6,19 +6,19 @@ use opendut_types::peer::state::{PeerState, PeerStates};
 use opendut_types::topology::DeviceId;
 
 #[derive(thiserror::Error, Debug)]
-pub enum CreatePeerError {
-    #[error("Peer '{actual_name}' <{actual_id}> could not be created, because peer '{other_name}' <{other_id}> is already registered with the same PeerId!")]
-    PeerAlreadyExists {
-        actual_id: PeerId,
-        actual_name: PeerName,
-        other_id: PeerId,
-        other_name: PeerName
+pub enum StorePeerDescriptorError {
+    #[error("Peer '{peer_name}' <{peer_id}> cannot be updated in state '{actual_state}'! A peer can be updated when: {required_states}")]
+    IllegalPeerState {
+        peer_id: PeerId,
+        peer_name: PeerName,
+        actual_state: PeerState,
+        required_states: PeerStates,
     },
-    #[error("Peer '{peer_name}' <{peer_id}> could not be created, due to illegal devices:\n  {error}")]
+    #[error("Peer '{peer_name}' <{peer_id}> could not be stored, due to illegal devices:\n  {error}")]
     IllegalDevices {
         peer_id: PeerId,
         peer_name: PeerName,
-        error: RegisterDevicesError
+        error: IllegalDevicesError
     },
     #[error("Peer '{peer_name}' <{peer_id}> could not be created, due to internal errors:\n  {cause}")]
     Internal {
@@ -29,7 +29,7 @@ pub enum CreatePeerError {
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum DeletePeerError {
+pub enum DeletePeerDescriptorError {
     #[error("Peer <{peer_id}> could not be deleted, because a peer with that id does not exist!")]
     PeerNotFound {
         peer_id: PeerId
@@ -41,12 +41,6 @@ pub enum DeletePeerError {
         actual_state: PeerState,
         required_states: PeerStates,
     },
-    #[error("Peer '{peer_name}' <{peer_id}> could not be deleted, due to illegal devices:\n  {error}")]
-    IllegalDevices {
-        peer_id: PeerId,
-        peer_name: PeerName,
-        error: UnregisterDevicesError
-    },
     #[error("Peer '{peer_name}' <{peer_id}> deleted with internal errors:\n  {cause}")]
     Internal {
         peer_id: PeerId,
@@ -56,7 +50,7 @@ pub enum DeletePeerError {
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum GetPeerError {
+pub enum GetPeerDescriptorError {
     #[error("A peer with id <{peer_id}> could not be found!")]
     PeerNotFound {
         peer_id: PeerId
@@ -69,7 +63,7 @@ pub enum GetPeerError {
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum ListPeersError {
+pub enum ListPeerDescriptorsError {
     #[error("An internal error occurred computing the list of peers:\n  {cause}")]
     Internal {
         cause: String
@@ -91,17 +85,9 @@ pub struct  CreateSetupError {
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum RegisterDevicesError {
+pub enum IllegalDevicesError {
     #[error("Device <{device_id}> already registered!")]
     DeviceAlreadyExists {
-        device_id: DeviceId,
-    }
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum UnregisterDevicesError {
-    #[error("Device <{device_id}> does not exist!")]
-    DeviceNotFound {
         device_id: DeviceId,
     }
 }
@@ -114,7 +100,7 @@ mod client {
     use opendut_types::topology::Device;
 
     use crate::carl::{ClientError, extract};
-    use crate::carl::peer::{CreatePeerError, CreateSetupError, GetPeerError, ListPeersError, DeletePeerError, ListDevicesError};
+    use crate::carl::peer::{StorePeerDescriptorError, CreateSetupError, GetPeerDescriptorError, ListPeerDescriptorsError, DeletePeerDescriptorError, ListDevicesError};
     use crate::proto::services::peer_manager;
     use crate::proto::services::peer_manager::peer_manager_client::PeerManagerClient;
 
@@ -135,104 +121,87 @@ mod client {
             }
         }
 
-        pub async fn create_peer(&mut self, descriptor: PeerDescriptor) -> Result<PeerId, ClientError<CreatePeerError>> {
+        pub async fn store_peer_descriptor(&mut self, descriptor: PeerDescriptor) -> Result<PeerId, ClientError<StorePeerDescriptorError>> {
 
-            let request = tonic::Request::new(peer_manager::CreatePeerRequest {
+            let request = tonic::Request::new(peer_manager::StorePeerDescriptorRequest {
                 peer: Some(descriptor.into()),
             });
 
-            let response = self.inner.create_peer(request).await?
+            let response = self.inner.store_peer_descriptor(request).await?
                 .into_inner();
 
             match extract!(response.reply)? {
-                peer_manager::create_peer_response::Reply::Failure(failure) => {
-                    let error = CreatePeerError::try_from(failure)?;
+                peer_manager::store_peer_descriptor_response::Reply::Failure(failure) => {
+                    let error = StorePeerDescriptorError::try_from(failure)?;
                     Err(ClientError::UsageError(error))
                 }
-                peer_manager::create_peer_response::Reply::Success(success) => {
+                peer_manager::store_peer_descriptor_response::Reply::Success(success) => {
                     let peer_id = extract!(success.peer_id)?;
                     Ok(peer_id)
                 }
             }
         }
 
-        pub async fn delete_peer(&mut self, peer_id: PeerId) -> Result<PeerId, ClientError<DeletePeerError>> {
+        pub async fn delete_peer_descriptor(&mut self, peer_id: PeerId) -> Result<PeerId, ClientError<DeletePeerDescriptorError>> {
 
-            let request = tonic::Request::new(peer_manager::DeletePeerRequest {
+            let request = tonic::Request::new(peer_manager::DeletePeerDescriptorRequest {
                 peer_id: Some(peer_id.into()),
             });
 
-            let response = self.inner.delete_peer(request).await?
+            let response = self.inner.delete_peer_descriptor(request).await?
                 .into_inner();
 
             match extract!(response.reply)? {
-                peer_manager::delete_peer_response::Reply::Failure(failure) => {
-                    let error = DeletePeerError::try_from(failure)?;
+                peer_manager::delete_peer_descriptor_response::Reply::Failure(failure) => {
+                    let error = DeletePeerDescriptorError::try_from(failure)?;
                     Err(ClientError::UsageError(error))
                 }
-                peer_manager::delete_peer_response::Reply::Success(success) => {
+                peer_manager::delete_peer_descriptor_response::Reply::Success(success) => {
                     let peer_id = extract!(success.peer_id)?;
                     Ok(peer_id)
                 }
             }
         }
 
-        pub async fn get_peer(&mut self, peer_id: PeerId) -> Result<PeerDescriptor, ClientError<GetPeerError>> {
+        pub async fn get_peer_descriptor(&mut self, peer_id: PeerId) -> Result<PeerDescriptor, ClientError<GetPeerDescriptorError>> {
 
-            let request = tonic::Request::new(peer_manager::GetPeerRequest {
+            let request = tonic::Request::new(peer_manager::GetPeerDescriptorRequest {
                 peer_id: Some(peer_id.into()),
             });
 
-            let response = self.inner.get_peer(request).await?
+            let response = self.inner.get_peer_descriptor(request).await?
                 .into_inner();
 
             match extract!(response.reply)? {
-                peer_manager::get_peer_response::Reply::Failure(failure) => {
-                    let error = GetPeerError::try_from(failure)?;
+                peer_manager::get_peer_descriptor_response::Reply::Failure(failure) => {
+                    let error = GetPeerDescriptorError::try_from(failure)?;
                     Err(ClientError::UsageError(error))
                 }
-                peer_manager::get_peer_response::Reply::Success(success) => {
+                peer_manager::get_peer_descriptor_response::Reply::Success(success) => {
                     let peer_descriptor = extract!(success.descriptor)?;
                     Ok(peer_descriptor)
                 }
             }
         }
 
-        pub async fn list_peers(&mut self) -> Result<Vec<PeerDescriptor>, ClientError<ListPeersError>> {
+        pub async fn list_peer_descriptors(&mut self) -> Result<Vec<PeerDescriptor>, ClientError<ListPeerDescriptorsError>> {
 
-            let request = tonic::Request::new(peer_manager::ListPeersRequest {});
+            let request = tonic::Request::new(peer_manager::ListPeerDescriptorsRequest {});
 
-            let response = self.inner.list_peers(request).await?
+            let response = self.inner.list_peer_descriptors(request).await?
                 .into_inner();
 
             match extract!(response.reply)? {
-                peer_manager::list_peers_response::Reply::Failure(failure) => {
-                    let error = ListPeersError::try_from(failure)?;
+                peer_manager::list_peer_descriptors_response::Reply::Failure(failure) => {
+                    let error = ListPeerDescriptorsError::try_from(failure)?;
                     Err(ClientError::UsageError(error))
                 }
-                peer_manager::list_peers_response::Reply::Success(success) => {
+                peer_manager::list_peer_descriptors_response::Reply::Success(success) => {
                     Ok(success.peers.into_iter()
                         .map(PeerDescriptor::try_from)
                         .collect::<Result<Vec<_>, _>>()?
                     )
                 }
-            }
-        }
-
-        pub async fn list_devices(&mut self) -> Result<Vec<Device>, ListDevicesError> {
-            let request = tonic::Request::new(peer_manager::ListDevicesRequest {});
-
-            match self.inner.list_devices(request).await {
-                Ok(response) => {
-                    response.into_inner().devices
-                        .into_iter()
-                        .map(Device::try_from)
-                        .collect::<Result<_, _>>()
-                        .map_err(|cause| ListDevicesError::Internal { cause: cause.to_string() })
-                },
-                Err(status) => {
-                    Err(ListDevicesError::Internal { cause: format!("gRPC failure: {status}") })
-                },
             }
         }
 
@@ -263,6 +232,23 @@ mod client {
                 Err(status) => {
                     Err(CreateSetupError { message: format!("gRPC failure: {status}") })
                 }
+            }
+        }
+
+        pub async fn list_devices(&mut self) -> Result<Vec<Device>, ListDevicesError> {
+            let request = tonic::Request::new(peer_manager::ListDevicesRequest {});
+
+            match self.inner.list_devices(request).await {
+                Ok(response) => {
+                    response.into_inner().devices
+                        .into_iter()
+                        .map(Device::try_from)
+                        .collect::<Result<_, _>>()
+                        .map_err(|cause| ListDevicesError::Internal { cause: cause.to_string() })
+                },
+                Err(status) => {
+                    Err(ListDevicesError::Internal { cause: format!("gRPC failure: {status}") })
+                },
             }
         }
     }

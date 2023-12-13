@@ -29,7 +29,7 @@ fn SavePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl Into
             match peer_descriptor {
                 Ok(peer_descriptor) => {
                     let peer_id = peer_descriptor.id;
-                    let result = carl.peers.create_peer(peer_descriptor).await;
+                    let result = carl.peers.store_peer_descriptor(peer_descriptor).await;
                     match result {
                         Ok(_) => {
                             log::info!("Successfully create peer: {}", peer_id);
@@ -84,7 +84,7 @@ fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl In
         async move {
             let mut carl = globals.expect_client();
             let peer_id = configuration.get_untracked().id;
-            let result = carl.peers.delete_peer(peer_id).await;
+            let result = carl.peers.delete_peer_descriptor(peer_id).await;
             match result {
                 Ok(_) => {
                     log::info!("Successfully deleted peer: {}", peer_id);
