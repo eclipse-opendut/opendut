@@ -4,12 +4,11 @@ use std::sync::Arc;
 use url::Url;
 
 pub use opendut_carl_api::carl::peer::{
-    CreatePeerError,
-    DeletePeerError,
+    StorePeerDescriptorError,
+    DeletePeerDescriptorError,
     ListDevicesError,
-    ListPeersError,
-    RegisterDevicesError,
-    UnregisterDevicesError
+    ListPeerDescriptorsError,
+    IllegalDevicesError,
 };
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerSetup};
 use opendut_types::topology::{Device, DeviceId};
@@ -20,64 +19,83 @@ use opendut_util::logging::LogError;
 use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
 
-pub struct CreatePeerParams {
+pub struct StorePeerDescriptorParams {
     pub resources_manager: ResourcesManagerRef,
     pub vpn: Vpn,
-    pub peer: PeerDescriptor,
+    pub peer_descriptor: PeerDescriptor,
 }
 
-pub async fn create_peer(params: CreatePeerParams) -> Result<PeerId, CreatePeerError> {
+pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<PeerId, StorePeerDescriptorError> {
 
-    async fn inner(params: CreatePeerParams) -> Result<PeerId, CreatePeerError> {
+    async fn inner(params: StorePeerDescriptorParams) -> Result<PeerId, StorePeerDescriptorError> {
 
-        let peer_id = params.peer.id;
-        let peer_name = Clone::clone(&params.peer.name);
+        let peer_id = params.peer_descriptor.id;
+        let peer_name = Clone::clone(&params.peer_descriptor.name);
+        let peer_descriptor = params.peer_descriptor;
         let resources_manager = params.resources_manager;
 
-        log::debug!("Creating peer '{peer_name}' <{peer_id}>.");
+        let is_new_peer = resources_manager.resources_mut(|resources| {
 
-        if params.peer.topology.devices.is_empty() {
-            log::warn!("Peer '{peer_name}' <{peer_id}> will be created without any devices!")
+            let old_peer_descriptor = resources.get::<PeerDescriptor>(peer_id);
+            let is_new_peer = old_peer_descriptor.is_none();
+
+            let (devices_to_add, devices_to_remove): (Vec<Device>, Vec<Device>) = if let Some(old_peer_descriptor) = old_peer_descriptor {
+                log::debug!("Updating peer descriptor of '{peer_name}' <{peer_id}>.\n  Old: {old_peer_descriptor:?}\n  New: {peer_descriptor:?}");
+                let devices_to_add = peer_descriptor.topology.devices.iter()
+                    .cloned()
+                    .filter(|device| old_peer_descriptor.topology.devices.contains(device).not())
+                    .collect();
+                let devices_to_remove = old_peer_descriptor.topology.devices.into_iter()
+                    .filter(|device| peer_descriptor.topology.devices.contains(device).not())
+                    .collect();
+                (devices_to_add, devices_to_remove)
+            }
+            else {
+                log::debug!("Storing peer descriptor of '{peer_name}' <{peer_id}>.\n  {peer_descriptor:?}");
+                (peer_descriptor.topology.devices.iter().cloned().collect(), Vec::<Device>::new())
+            };
+
+            devices_to_remove.iter().for_each(|device| {
+                let device_id = device.id;
+                let device_name = &device.name;
+                resources.remove(device.id);
+                log::info!("Removed device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}>.");
+            });
+
+            devices_to_add.iter().for_each(|device| {
+                let device_id = device.id;
+                let device_name = &device.name;
+                resources.insert(device.id, Clone::clone(device));
+                log::info!("Added device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}>.");
+            });
+
+            resources.insert(peer_id, peer_descriptor);
+
+            is_new_peer
+        }).await;
+
+        if is_new_peer {
+            if let Vpn::Enabled { vpn_client } = params.vpn {
+                log::debug!("Creating vpn peer <{peer_id}>.");
+                vpn_client.create_peer(peer_id)
+                    .await
+                    .map_err(|cause| StorePeerDescriptorError::Internal {
+                        peer_id,
+                        peer_name: Clone::clone(&peer_name),
+                        cause: cause.to_string()
+                    })?; // TODO: When a failure happen we should rollback previously made changes made to resources.
+                log::info!("Successfully created vpn peer <{peer_id}>.");
+            } else {
+                log::warn!("VPN disabled. Skipping vpn peer creation!");
+            }
+        }
+
+        if is_new_peer {
+            log::info!("Successfully stored peer descriptor of '{peer_name}' <{peer_id}>.");
         }
         else {
-            register_devices(Arc::clone(&resources_manager), &params.peer)
-                .await
-                .map_err(|error| CreatePeerError::IllegalDevices {
-                    peer_id,
-                    peer_name: Clone::clone(&peer_name),
-                    error
-                })?;
+            log::info!("Successfully updated peer descriptor of '{peer_name}' <{peer_id}>.");
         }
-
-        resources_manager.resources_mut(|resources| {
-            if let Some(other_peer) = resources.get::<PeerDescriptor>(peer_id) {
-                Err(CreatePeerError::PeerAlreadyExists {
-                    actual_id: peer_id,
-                    actual_name: Clone::clone(&peer_name),
-                    other_id: other_peer.id,
-                    other_name: Clone::clone(&other_peer.name),
-                })
-            } else {
-                resources.insert(peer_id, params.peer);
-                Ok(())
-            }
-        }).await?; // TODO: When a failure happen we should rollback previously made changes made to resources.
-
-        if let Vpn::Enabled { vpn_client } = params.vpn {
-            log::debug!("Creating vpn peer <{peer_id}>.");
-            vpn_client.create_peer(peer_id)
-                .await
-                .map_err(|cause| CreatePeerError::Internal {
-                    peer_id,
-                    peer_name: Clone::clone(&peer_name),
-                    cause: cause.to_string()
-                })?; // TODO: When a failure happen we should rollback previously made changes made to resources.
-            log::info!("Successfully created vpn peer <{peer_id}>.");
-        } else {
-            log::warn!("VPN disabled. Skipping vpn peer creation!");
-        }
-
-        log::info!("Successfully created peer '{peer_name}' <{peer_id}>.");
 
         Ok(peer_id)
     }
@@ -86,42 +104,45 @@ pub async fn create_peer(params: CreatePeerParams) -> Result<PeerId, CreatePeerE
         .log_err()
 }
 
-pub struct DeletePeerParams {
+pub struct DeletePeerDescriptorParams {
     pub resources_manager: ResourcesManagerRef,
     pub vpn: Vpn,
     pub peer: PeerId,
 }
 
-pub async fn delete_peer(params: DeletePeerParams) -> Result<PeerDescriptor, DeletePeerError> {
+pub async fn delete_peer_descriptor(params: DeletePeerDescriptorParams) -> Result<PeerDescriptor, DeletePeerDescriptorError> {
 
-    async fn inner(params: DeletePeerParams) -> Result<PeerDescriptor, DeletePeerError> {
+    async fn inner(params: DeletePeerDescriptorParams) -> Result<PeerDescriptor, DeletePeerDescriptorError> {
 
         let peer_id = params.peer;
         let resources_manager = params.resources_manager;
 
-        log::debug!("Deleting peer <{peer_id}>.");
+        log::debug!("Deleting peer descriptor of peer <{peer_id}>.");
 
-        let peer = resources_manager.resources_mut(|resources| {
-            resources.remove::<PeerDescriptor>(peer_id)
-                .ok_or_else(|| DeletePeerError::PeerNotFound { peer_id })
+        let peer_descriptor = resources_manager.resources_mut(|resources| {
+
+            let peer_descriptor = resources.remove::<PeerDescriptor>(peer_id)
+                .ok_or_else(|| DeletePeerDescriptorError::PeerNotFound { peer_id })?;
+
+            let peer_name = &peer_descriptor.name;
+
+            peer_descriptor.topology.devices.iter().for_each(|device| {
+                let device_id = device.id;
+                let device_name = &device.name;
+                resources.remove(device_id);
+                log::debug!("Deleted device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}>.");
+            });
+
+            Ok(peer_descriptor)
         }).await?;
 
-        let peer_name = Clone::clone(&peer.name);
-
-        unregister_devices(Arc::clone(&resources_manager), &peer)
-            .await
-            .map_err(|error| DeletePeerError::IllegalDevices {
-                peer_id,
-                peer_name: Clone::clone(&peer_name),
-                error
-            })
-            .err_logged(); // TODO: Decide how to handle the abort?
+        let peer_name = &peer_descriptor.name;
 
         if let Vpn::Enabled { vpn_client } = params.vpn {
             log::debug!("Deleting vpn peer <{peer_id}>.");
             vpn_client.delete_peer(peer_id)
                 .await
-                .map_err(|cause| DeletePeerError::Internal {
+                .map_err(|cause| DeletePeerDescriptorError::Internal {
                     peer_id,
                     peer_name: Clone::clone(&peer_name),
                     cause: cause.to_string()
@@ -131,26 +152,26 @@ pub async fn delete_peer(params: DeletePeerParams) -> Result<PeerDescriptor, Del
             log::warn!("VPN disabled. Skipping vpn peer deletion!");
         }
 
-        log::info!("Successfully deleted peer '{peer_name}' <{peer_id}>.");
+        log::info!("Successfully deleted peer descriptor of '{peer_name}' <{peer_id}>.");
 
-        Ok(peer)
+        Ok(peer_descriptor)
     }
 
     inner(params).await
         .log_err()
 }
 
-pub struct ListPeerParams {
+pub struct ListPeerDescriptorsParams {
     pub resources_manager: ResourcesManagerRef,
 }
 
-pub async fn list_peer(params: ListPeerParams) -> Result<Vec<PeerDescriptor>, ListPeersError> {
+pub async fn list_peer_descriptors(params: ListPeerDescriptorsParams) -> Result<Vec<PeerDescriptor>, ListPeerDescriptorsError> {
 
-    async fn inner(params: ListPeerParams) -> Result<Vec<PeerDescriptor>, ListPeersError> {
+    async fn inner(params: ListPeerDescriptorsParams) -> Result<Vec<PeerDescriptor>, ListPeerDescriptorsError> {
 
         let resources_manager = params.resources_manager;
 
-        log::debug!("Querying all peers.");
+        log::debug!("Querying all peers descriptors.");
 
         let peers = resources_manager.resources(|resources| {
             resources.iter::<PeerDescriptor>()
@@ -158,7 +179,7 @@ pub async fn list_peer(params: ListPeerParams) -> Result<Vec<PeerDescriptor>, Li
                 .collect::<Vec<PeerDescriptor>>()
         }).await;
 
-        log::info!("Successfully queried all peers.");
+        log::info!("Successfully queried all peers descriptors.");
 
         Ok(peers)
     }
@@ -249,48 +270,6 @@ pub async fn create_peer_setup(params: CreatePeerSetupParams) -> Result<PeerSetu
         .log_err()
 }
 
-async fn register_devices(resources_manager: ResourcesManagerRef, peer: &PeerDescriptor) -> Result<(), RegisterDevicesError> {
-    let peer_id = peer.id;
-    let peer_name = Clone::clone(&peer.name);
-    let device_count = peer.topology.devices.len();
-    log::debug!("Registering devices of peer '{peer_name}' <{peer_id}>.");
-    resources_manager.resources_mut(|resources| {
-        if let Some(error) = peer.topology.devices.iter().find_map(|device| {
-            resources.contains::<Device>(device.id)
-                .then_some(RegisterDevicesError::DeviceAlreadyExists { // TODO: Look up other device and peer (owner) to create a more meaningful error message
-                    device_id: device.id,
-                })
-        }) {
-            Err(error)
-        } else {
-            peer.topology.devices.iter()
-                .cloned()
-                .enumerate()
-                .for_each(|(index, device)| {
-                    let device_id = device.id;
-                    let device_name = Clone::clone(&device.name);
-                    resources.insert(device_id, device);
-                    log::debug!("Registered device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}> ({index}/{device_count}).", index=index + 1)
-                });
-            log::info!("Successfully registered {device_count} devices of peer '{peer_name}' <{peer_id}>.");
-            Ok(())
-        }
-    }).await
-}
-
-async fn unregister_devices(resources_manager: ResourcesManagerRef, peer: &PeerDescriptor) -> Result<(), UnregisterDevicesError> {
-    resources_manager.resources_mut(|resources| {
-        peer.topology.devices.iter()
-            .find(|device| resources.contains::<Device>(device.id).not())
-            .map(|device| UnregisterDevicesError::DeviceNotFound { device_id: device.id })
-            .err_or(())?;
-        peer.topology.devices.iter().for_each(|device| {
-            resources.remove::<Device>(device.id);
-        });
-        Ok(())
-    }).await
-}
-
 #[cfg(test)]
 mod test {
     use std::sync::Arc;
@@ -304,7 +283,7 @@ mod test {
 
     use super::*;
 
-    mod create_peer {
+    mod store_peer_descriptor {
         use googletest::prelude::*;
         use rstest::*;
 
@@ -312,126 +291,50 @@ mod test {
 
         #[rstest]
         #[tokio::test]
-        async fn should_add_expected_resources(fixture: Fixture) -> anyhow::Result<()> {
+        async fn should_update_expected_resources(fixture: Fixture) -> anyhow::Result<()> {
 
             let resources_manager = fixture.resources_manager;
 
-            create_peer(CreatePeerParams {
+            store_peer_descriptor(StorePeerDescriptorParams {
                 resources_manager: Arc::clone(&resources_manager),
-                vpn: fixture.vpn,
-                peer: Clone::clone(&fixture.peer_a_descriptor),
+                vpn: Clone::clone(&fixture.vpn),
+                peer_descriptor: Clone::clone(&fixture.peer_a_descriptor),
             }).await?;
 
             assert_that!(resources_manager.get(fixture.peer_a_id).await.as_ref(), some(eq(&fixture.peer_a_descriptor)));
             assert_that!(resources_manager.get(fixture.peer_a_device_1).await.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[0])));
             assert_that!(resources_manager.get(fixture.peer_a_device_2).await.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[1])));
 
-            Ok(())
-        }
-    }
+            let additional_device_id = DeviceId::random();
+            let additional_device = Device {
+                id: additional_device_id,
+                name: String::from("PeerA Device 42"),
+                description: String::from("Additional device for peerA"),
+                location: String::from("somewhere"),
+                interface: InterfaceName::try_from("eth1").unwrap(),
+                tags: vec![],
+            };
 
-    mod list_devices {
-        use std::sync::Arc;
+            let changed_descriptor = PeerDescriptor {
+                topology: Topology {
+                    devices: vec![
+                        Clone::clone(&fixture.peer_a_descriptor.topology.devices[0]),
+                        Clone::clone(&additional_device),
+                    ]
+                },
+                ..Clone::clone(&fixture.peer_a_descriptor)
+            };
 
-        use googletest::prelude::*;
-        use rstest::*;
-
-        use super::*;
-
-        #[rstest]
-        #[tokio::test]
-        async fn should_return_all_devices(fixture: Fixture) -> anyhow::Result<()> {
-            let resources_manager = fixture.resources_manager;
-
-            let devices = list_devices(ListDevicesParams {
+            store_peer_descriptor(StorePeerDescriptorParams {
                 resources_manager: Arc::clone(&resources_manager),
-            }).await;
+                vpn: Clone::clone(&fixture.vpn),
+                peer_descriptor: Clone::clone(&changed_descriptor),
+            }).await?;
 
-            assert_that!(devices, ok(empty()));
-
-            register_devices(Arc::clone(&resources_manager), &fixture.peer_a_descriptor).await?;
-
-            let devices = list_devices(ListDevicesParams {
-                resources_manager: Arc::clone(&resources_manager),
-            }).await;
-
-            assert_that!(devices, ok(unordered_elements_are![
-                eq_deref_of(&fixture.peer_a_descriptor.topology.devices[0]),
-                eq_deref_of(&fixture.peer_a_descriptor.topology.devices[1]),
-            ]));
-
-            Ok(())
-        }
-    }
-
-    mod register_devices {
-        use std::sync::Arc;
-
-        use googletest::prelude::*;
-        use rstest::*;
-
-        use super::*;
-
-        #[rstest]
-        #[tokio::test]
-        async fn should_add_expected_resources(fixture: Fixture) -> anyhow::Result<()> {
-            let resources_manager = fixture.resources_manager;
-
-            register_devices(Arc::clone(&resources_manager), &fixture.peer_a_descriptor).await?;
-
+            assert_that!(resources_manager.get(fixture.peer_a_id).await.as_ref(), some(eq(&changed_descriptor)));
             assert_that!(resources_manager.get(fixture.peer_a_device_1).await.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[0])));
-            assert_that!(resources_manager.get(fixture.peer_a_device_2).await.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[1])));
-
-            Ok(())
-        }
-
-        #[rstest]
-        #[tokio::test]
-        async fn should_fail_if_a_device_with_the_same_id_already_exists(fixture: Fixture) -> anyhow::Result<()> {
-            let resources_manager = fixture.resources_manager;
-
-            register_devices(Arc::clone(&resources_manager), &fixture.peer_a_descriptor).await?;
-
-            assert_that!(register_devices(Arc::clone(&resources_manager), &fixture.peer_a_descriptor).await,
-                err(matches_pattern!(RegisterDevicesError::DeviceAlreadyExists {
-                    device_id: eq(fixture.peer_a_descriptor.topology.devices[0].id),
-                })));
-
-            Ok(())
-        }
-    }
-
-    mod unregister_devices {
-        use std::sync::Arc;
-
-        use googletest::prelude::*;
-        use rstest::*;
-
-        use super::*;
-
-        #[rstest]
-        #[tokio::test]
-        async fn should_remove_all_related_resources(fixture: Fixture) -> anyhow::Result<()> {
-            let resources_manager = fixture.resources_manager;
-
-            register_devices(Arc::clone(&resources_manager), &fixture.peer_a_descriptor).await?;
-
-            assert_that!(resources_manager.is_not_empty().await, eq(true));
-
-            unregister_devices(Arc::clone(&resources_manager), &fixture.peer_a_descriptor).await?;
-
-            assert_that!(resources_manager.is_empty().await, eq(true));
-
-            Ok(())
-        }
-
-        #[rstest]
-        #[tokio::test]
-        async fn should_fail_when_a_device_to_remove_does_not_exist(fixture: Fixture) -> anyhow::Result<()> {
-            let resources_manager = fixture.resources_manager;
-
-            assert_that!(unregister_devices(Arc::clone(&resources_manager), &fixture.peer_a_descriptor).await,
-                err(anything()));
+            assert_that!(resources_manager.get(additional_device_id).await.as_ref(), some(eq(&additional_device)));
+            assert_that!(resources_manager.get(fixture.peer_a_device_2).await.as_ref(), none());
 
             Ok(())
         }

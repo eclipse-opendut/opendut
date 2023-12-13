@@ -21,7 +21,7 @@ pub fn PeersOverview() -> impl IntoView {
         let registered_peers: Resource<(), Vec<PeerId>> = create_local_resource(|| {}, move |_| {
             let mut carl = globals.expect_client();
             async move {
-                carl.peers.list_peers().await
+                carl.peers.list_peer_descriptors().await
                     .expect("Failed to request the list of peers.")
                     .iter().map(|peer| peer.id) // TODO: Don't discard the other information.
                     .collect::<Vec<_>>()
@@ -40,7 +40,7 @@ pub fn PeersOverview() -> impl IntoView {
             let mut carl = globals.expect_client();
             let id = Clone::clone(id);
             async move {
-                let _ = carl.peers.delete_peer(id).await;
+                let _ = carl.peers.delete_peer_descriptor(id).await;
                 registered_peers.refetch();
             }
         });

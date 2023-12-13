@@ -15,7 +15,7 @@ pub fn PeersCard() -> impl IntoView {
     let peers: Resource<(), Peers> = create_local_resource(|| {}, move |_| {
         async move {
             let mut carl = globals.expect_client();
-            let registered = carl.peers.list_peers().await
+            let registered = carl.peers.list_peer_descriptors().await
                 .expect("Failed to request the list of peers.")
                 .len();
             let connected = carl.broker.list_peers().await

@@ -4,14 +4,14 @@ use tonic::{Request, Response, Status};
 use tonic_web::CorsGrpcWeb;
 use url::Url;
 
-use opendut_carl_api::carl::peer::GetPeerError;
+use opendut_carl_api::carl::peer::GetPeerDescriptorError;
 use opendut_carl_api::proto::services::peer_manager;
 use opendut_carl_api::proto::services::peer_manager::*;
 use opendut_carl_api::proto::services::peer_manager::peer_manager_server::{PeerManager as PeerManagerService, PeerManagerServer};
 use opendut_types::peer::{PeerDescriptor, PeerId};
 
 use crate::actions;
-use crate::actions::{CreatePeerParams, CreatePeerSetupParams, DeletePeerParams, ListDevicesParams, ListPeerParams};
+use crate::actions::{StorePeerDescriptorParams, CreatePeerSetupParams, DeletePeerDescriptorParams, ListDevicesParams, ListPeerDescriptorsParams};
 use crate::grpc::extract;
 use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
@@ -40,29 +40,29 @@ impl PeerManagerFacade {
 #[tonic::async_trait]
 impl PeerManagerService for PeerManagerFacade {
 
-    async fn create_peer(&self, request: Request<CreatePeerRequest>) -> Result<Response<CreatePeerResponse>, Status> {
+    async fn store_peer_descriptor(&self, request: Request<StorePeerDescriptorRequest>) -> Result<Response<StorePeerDescriptorResponse>, Status> {
 
         log::trace!("Received request: {:?}", request);
 
         let request = request.into_inner();
         let peer_descriptor: PeerDescriptor = extract!(request.peer)?;
 
-        let result = actions::create_peer(CreatePeerParams {
+        let result = actions::store_peer_descriptor(StorePeerDescriptorParams {
             resources_manager: Arc::clone(&self.resources_manager),
             vpn: Clone::clone(&self.vpn),
-            peer: Clone::clone(&peer_descriptor),
+            peer_descriptor: Clone::clone(&peer_descriptor),
         }).await;
 
         match result {
             Err(error) => {
-                Ok(Response::new(CreatePeerResponse {
-                    reply: Some(create_peer_response::Reply::Failure(error.into()))
+                Ok(Response::new(StorePeerDescriptorResponse {
+                    reply: Some(store_peer_descriptor_response::Reply::Failure(error.into()))
                 }))
             }
             Ok(peer_id) => {
-                Ok(Response::new(CreatePeerResponse {
-                    reply: Some(create_peer_response::Reply::Success(
-                        CreatePeerSuccess {
+                Ok(Response::new(StorePeerDescriptorResponse {
+                    reply: Some(store_peer_descriptor_response::Reply::Success(
+                        StorePeerDescriptorSuccess {
                             peer_id: Some(peer_id.into())
                         }
                     ))
@@ -71,7 +71,7 @@ impl PeerManagerService for PeerManagerFacade {
         }
     }
 
-    async fn delete_peer(&self, request: Request<DeletePeerRequest>) -> Result<Response<DeletePeerResponse>, Status> {
+    async fn delete_peer_descriptor(&self, request: Request<DeletePeerDescriptorRequest>) -> Result<Response<DeletePeerDescriptorResponse>, Status> {
 
         log::trace!("Received request: {:?}", request);
 
@@ -79,7 +79,7 @@ impl PeerManagerService for PeerManagerFacade {
         let peer_id: PeerId = extract!(request.peer_id)?;
 
         let result =
-            actions::delete_peer(DeletePeerParams {
+            actions::delete_peer_descriptor(DeletePeerDescriptorParams {
                 resources_manager: Arc::clone(&self.resources_manager),
                 vpn: Clone::clone(&self.vpn),
                 peer: peer_id,
@@ -87,14 +87,14 @@ impl PeerManagerService for PeerManagerFacade {
 
         match result {
             Err(error) => {
-                Ok(Response::new(DeletePeerResponse {
-                    reply: Some(delete_peer_response::Reply::Failure(error.into()))
+                Ok(Response::new(DeletePeerDescriptorResponse {
+                    reply: Some(delete_peer_descriptor_response::Reply::Failure(error.into()))
                 }))
             }
             Ok(peer) => {
-                Ok(Response::new(DeletePeerResponse {
-                    reply: Some(peer_manager::delete_peer_response::Reply::Success(
-                        DeletePeerSuccess {
+                Ok(Response::new(DeletePeerDescriptorResponse {
+                    reply: Some(peer_manager::delete_peer_descriptor_response::Reply::Success(
+                        DeletePeerDescriptorSuccess {
                             peer_id: Some(peer.id.into())
                         }
                     ))
@@ -103,7 +103,7 @@ impl PeerManagerService for PeerManagerFacade {
         }
     }
 
-    async fn get_peer(&self, request: Request<GetPeerRequest>) -> Result<Response<GetPeerResponse>, Status> {
+    async fn get_peer_descriptor(&self, request: Request<GetPeerDescriptorRequest>) -> Result<Response<GetPeerDescriptorResponse>, Status> {
 
         log::trace!("Received request: {:?}", request);
 
@@ -111,26 +111,26 @@ impl PeerManagerService for PeerManagerFacade {
         let peer_id: PeerId = extract!(request.peer_id)?;
 
         let result =
-            actions::list_peer(ListPeerParams {
+            actions::list_peer_descriptors(ListPeerDescriptorsParams {
                 resources_manager: Arc::clone(&self.resources_manager),
             }).await
-            .map_err(|error| GetPeerError::Internal { peer_id, cause: error.to_string() })
+            .map_err(|error| GetPeerDescriptorError::Internal { peer_id, cause: error.to_string() })
             .and_then(|peers| peers.iter()
                 .find(|peer| peer.id == peer_id)
-                .ok_or_else(|| GetPeerError::PeerNotFound { peer_id })
+                .ok_or_else(|| GetPeerDescriptorError::PeerNotFound { peer_id })
                 .cloned()
             );
 
         match result {
             Err(error) => {
-                Ok(Response::new(GetPeerResponse {
-                    reply: Some(get_peer_response::Reply::Failure(error.into()))
+                Ok(Response::new(GetPeerDescriptorResponse {
+                    reply: Some(get_peer_descriptor_response::Reply::Failure(error.into()))
                 }))
             }
             Ok(descriptor) => {
-                Ok(Response::new(GetPeerResponse {
-                    reply: Some(get_peer_response::Reply::Success(
-                        GetPeerSuccess {
+                Ok(Response::new(GetPeerDescriptorResponse {
+                    reply: Some(get_peer_descriptor_response::Reply::Success(
+                        GetPeerDescriptorSuccess {
                             descriptor: Some(descriptor.into())
                         }
                     ))
@@ -139,12 +139,12 @@ impl PeerManagerService for PeerManagerFacade {
         }
     }
 
-    async fn list_peers(&self, request: Request<ListPeersRequest>) -> Result<Response<ListPeersResponse>, Status> {
+    async fn list_peer_descriptors(&self, request: Request<ListPeerDescriptorsRequest>) -> Result<Response<ListPeerDescriptorsResponse>, Status> {
 
         log::trace!("Received request: {:?}", request);
 
         let result =
-            actions::list_peer(ListPeerParams {
+            actions::list_peer_descriptors(ListPeerDescriptorsParams {
                 resources_manager: Arc::clone(&self.resources_manager),
             }).await
             .map(|peers| peers.into_iter()
@@ -154,14 +154,14 @@ impl PeerManagerService for PeerManagerFacade {
 
         match result {
             Err(error) => {
-                Ok(Response::new(ListPeersResponse {
-                    reply: Some(list_peers_response::Reply::Failure(error.into()))
+                Ok(Response::new(ListPeerDescriptorsResponse {
+                    reply: Some(list_peer_descriptors_response::Reply::Failure(error.into()))
                 }))
             }
             Ok(peers) => {
-                Ok(Response::new(ListPeersResponse {
-                    reply: Some(list_peers_response::Reply::Success(
-                        ListPeersSuccess {
+                Ok(Response::new(ListPeerDescriptorsResponse {
+                    reply: Some(list_peer_descriptors_response::Reply::Success(
+                        ListPeerDescriptorsSuccess {
                             peers
                         }
                     ))
@@ -241,8 +241,8 @@ mod tests {
             topology: Topology::default(),
         };
 
-        let create_peer_reply = testee.create_peer(Request::new(
-            CreatePeerRequest {
+        let create_peer_reply = testee.store_peer_descriptor(Request::new(
+            StorePeerDescriptorRequest {
                 peer: Some(Clone::clone(&peer_descriptor).into()),
             }
         )).await?;
@@ -250,40 +250,40 @@ mod tests {
         verify_that!(
             create_peer_reply.get_ref().reply,
             some(matches_pattern!(
-                create_peer_response::Reply::Success(
-                    matches_pattern!(peer_manager::CreatePeerSuccess {
+                store_peer_descriptor_response::Reply::Success(
+                    matches_pattern!(peer_manager::StorePeerDescriptorSuccess {
                         peer_id: some(eq(proto::peer::PeerId::from(Clone::clone(&peer_id))))
                     })
                 )
             ))
         )?;
 
-        let list_reply = testee.list_peers(Request::new(
-            ListPeersRequest {}
+        let list_reply = testee.list_peer_descriptors(Request::new(
+            ListPeerDescriptorsRequest {}
         )).await?;
 
         verify_that!(
             list_reply.get_ref().reply,
-            some(matches_pattern!(list_peers_response::Reply::Success(
-                matches_pattern!(ListPeersSuccess {
+            some(matches_pattern!(list_peer_descriptors_response::Reply::Success(
+                matches_pattern!(ListPeerDescriptorsSuccess {
                     peers: container_eq([peer_descriptor.into()])
                 })
             )))
         )?;
 
-        let _ = testee.delete_peer(Request::new(
-            peer_manager::DeletePeerRequest {
+        let _ = testee.delete_peer_descriptor(Request::new(
+            peer_manager::DeletePeerDescriptorRequest {
                 peer_id: Some(peer_id.into()),
             }
         )).await?;
 
-        let list_reply = testee.list_peers(Request::new(
-            peer_manager::ListPeersRequest {}
+        let list_reply = testee.list_peer_descriptors(Request::new(
+            peer_manager::ListPeerDescriptorsRequest {}
         )).await?;
 
         verify_that!(list_reply.get_ref().reply,
-            some(matches_pattern!(list_peers_response::Reply::Success(
-                matches_pattern!(ListPeersSuccess {
+            some(matches_pattern!(list_peer_descriptors_response::Reply::Success(
+                matches_pattern!(ListPeerDescriptorsSuccess {
                     peers: empty()
                 })
             )))
@@ -298,8 +298,8 @@ mod tests {
         let resources_manager = Arc::new(ResourcesManager::new());
         let testee = PeerManagerFacade::new(Arc::clone(&resources_manager), Vpn::Disabled, Url::parse("https://example.com:1234").unwrap());
 
-        let create_peer_reply = testee.create_peer(Request::new(
-            CreatePeerRequest {
+        let create_peer_reply = testee.store_peer_descriptor(Request::new(
+            StorePeerDescriptorRequest {
                 peer: None
             }
         )).await;
@@ -309,14 +309,14 @@ mod tests {
             err(anything())
         )?;
 
-        let list_reply = testee.list_peers(Request::new(
-            peer_manager::ListPeersRequest {}
+        let list_reply = testee.list_peer_descriptors(Request::new(
+            peer_manager::ListPeerDescriptorsRequest {}
         )).await?;
 
         verify_that!(
             list_reply.get_ref().reply,
-            some(matches_pattern!(list_peers_response::Reply::Success(
-                matches_pattern!(ListPeersSuccess {
+            some(matches_pattern!(list_peer_descriptors_response::Reply::Success(
+                matches_pattern!(ListPeerDescriptorsSuccess {
                     peers: empty()
                 })
             )))
@@ -331,8 +331,8 @@ mod tests {
         let resources_manager = Arc::new(ResourcesManager::new());
         let testee = PeerManagerFacade::new(Arc::clone(&resources_manager), Vpn::Disabled, Url::parse("https://example.com:1234").unwrap());
 
-        let delete_peer_reply = testee.delete_peer(Request::new(
-            peer_manager::DeletePeerRequest {
+        let delete_peer_reply = testee.delete_peer_descriptor(Request::new(
+            peer_manager::DeletePeerDescriptorRequest {
                 peer_id: None,
             }
         )).await;
@@ -342,14 +342,14 @@ mod tests {
             err(anything())
         )?;
 
-        let list_reply = testee.list_peers(Request::new(
-            peer_manager::ListPeersRequest {}
+        let list_reply = testee.list_peer_descriptors(Request::new(
+            peer_manager::ListPeerDescriptorsRequest {}
         )).await?;
 
         verify_that!(
             list_reply.get_ref().reply,
-            some(matches_pattern!(list_peers_response::Reply::Success(
-                matches_pattern!(ListPeersSuccess {
+            some(matches_pattern!(list_peer_descriptors_response::Reply::Success(
+                matches_pattern!(ListPeerDescriptorsSuccess {
                     peers: empty()
                 })
             )))

@@ -38,7 +38,7 @@ pub mod list {
     pub async fn execute(carl: &mut CarlClient, output: ListOutputFormat) -> crate::Result<()> {
         let connected_peers = carl.broker.list_peers().await
             .map_err(|error| format!("Could not list connected peers. {}", error))?;
-        let all_peers = carl.peers.list_peers().await
+        let all_peers = carl.peers.list_peer_descriptors().await
             .map_err(|error| format!("Could not list peers.\n  {}", error))?;
         let peers_table = filter_connected_peers(&all_peers, &connected_peers);
 
@@ -121,7 +121,7 @@ pub mod describe {
     pub async fn execute(carl: &mut CarlClient, peer_id: Uuid, output: DescribeOutputFormat) -> crate::Result<()> {
         let peer_id = PeerId::from(peer_id);
 
-        let peer_descriptor = carl.peers.get_peer(peer_id).await
+        let peer_descriptor = carl.peers.get_peer_descriptor(peer_id).await
             .map_err(|_| format!("Failed to retrieve peer descriptor for peer <{}>", peer_id))?;
 
         render_peer_descriptor(peer_descriptor, output);
@@ -212,7 +212,7 @@ pub mod create {
         match PeerName::try_from(name) {
             Ok(name) => {
                 let descriptor: PeerDescriptor = PeerDescriptor { id, name: Clone::clone(&name), topology: Default::default() };
-                carl.peers.create_peer(descriptor).await
+                carl.peers.store_peer_descriptor(descriptor).await
                     .map_err(|error| format!("Failed to create new peer.\n  {error}"))?;
                 let bold = Style::new().bold();
                 println!("Created the peer '{}' with the ID: <{}>", name, bold.apply_to(id));
@@ -233,7 +233,7 @@ pub mod delete {
 
     pub async fn execute(carl: &mut CarlClient, id: Uuid) -> crate::Result<()> {
         let id = PeerId::from(id);
-        carl.peers.delete_peer(id).await
+        carl.peers.delete_peer_descriptor(id).await
             .map_err(|error| format!("Failed to delete peer with the id '{}'.\n  {}", id, error.to_string()))?;
         println!("Deleted peer with the PeerID: {}", id);
 
