@@ -5,24 +5,29 @@ use crate::{Arch, Package};
 const PACKAGE: &Package = &Package::Carl;
 
 
+pub fn build_release(target: &Arch) -> anyhow::Result<()> {
+    crate::tasks::build::build_release(PACKAGE, target)?;
+    Ok(())
+}
+
 pub mod distribution {
     use super::*;
 
     #[tracing::instrument]
     pub fn carl(target: &Arch) -> anyhow::Result<()> {
-        use crate::tasks::distribution as common;
+        use crate::tasks::distribution;
 
-        let distribution_out_dir = common::package_dir(PACKAGE, target);
+        let distribution_out_dir = distribution::package_dir(PACKAGE, target);
 
-        common::clean()?;
+        distribution::clean()?;
 
-        let build_dir = common::build::build_release(PACKAGE, target)?;
+        let build_dir = crate::tasks::build::build_release(PACKAGE, target)?;
 
-        common::collect_executables(build_dir, PACKAGE, target)?;
+        distribution::collect_executables(build_dir, PACKAGE, target)?;
 
         collect_carl_specific_files(PACKAGE, target, &distribution_out_dir)?;
 
-        common::bundle_collected_files(PACKAGE, target)?;
+        distribution::bundle_collected_files(PACKAGE, target)?;
 
         Ok(())
     }

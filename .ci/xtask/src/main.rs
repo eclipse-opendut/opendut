@@ -20,11 +20,18 @@ struct Cli {
 }
 #[derive(Subcommand)]
 enum Task {
+    /// Perform a release build, without bundling a distribution.
+    Build {
+        #[arg(long)]
+        package: Option<Package>,
+        #[arg(long)]
+        target: Option<Arch>,
+    },
     /// Build a release distribution
     Distribution {
-        #[arg(short, long)]
+        #[arg(long)]
         package: Option<Package>,
-        #[arg(short, long)]
+        #[arg(long)]
         target: Option<Arch>,
     },
     /// Generate a license representation in JSON
@@ -32,6 +39,7 @@ enum Task {
         #[arg()]
         package: Package,
     },
+    /// Start a development server for LEA which watches for file changes.
     LeaWatch,
 }
 
@@ -42,19 +50,24 @@ fn main() -> anyhow::Result<()> {
 
     let cli = Cli::parse();
     match cli.task {
+        Task::Build { package, target } => {
+            let target = target_or_default(target);
+            match package {
+                Some(Package::Carl) => crate::packages::carl::build_release(&target)?,
+                Some(Package::Edgar) => crate::packages::edgar::build_release(&target)?,
+                Some(package) => unimplemented!("Building a distribution for {package} is not currently implemented."),
+                None => {
+                    //build distribution of everything
+                    crate::packages::carl::build_release(&target)?;
+                    crate::packages::edgar::build_release(&target)?;
+                }
+            }
+        }
         Task::GenerateLicenses { package } => {
             tasks::licenses::generate_licenses(&package)?;
         }
         Task::Distribution { package, target } => {
-            use clap::ValueEnum;
-
-            let target = target.unwrap_or_else(|| {
-                let arch_triple = crate::build::BUILD_TARGET;
-                log::info!("No target specified. Using default target of machine: {arch_triple}");
-                let ignore_case = true;
-                Arch::from_str(arch_triple, ignore_case).unwrap()
-            });
-
+            let target = target_or_default(target);
             match package {
                 Some(Package::Carl) => crate::packages::carl::distribution::carl(&target)?,
                 Some(Package::Edgar) => crate::packages::edgar::distribution::edgar(&target)?,
@@ -63,12 +76,23 @@ fn main() -> anyhow::Result<()> {
                     //build distribution of everything
                     crate::packages::carl::distribution::carl(&target)?;
                     crate::packages::edgar::distribution::edgar(&target)?;
-                },
+                }
             }
         }
         Task::LeaWatch => crate::packages::lea::lea_watch()?,
     };
     Ok(())
+}
+
+fn target_or_default(target: Option<Arch>) -> Arch {
+    use clap::ValueEnum;
+
+    target.unwrap_or_else(|| {
+        let arch_triple = crate::build::BUILD_TARGET;
+        log::info!("No target specified. Using default target of machine: {arch_triple}");
+        let ignore_case = true;
+        Arch::from_str(arch_triple, ignore_case).unwrap()
+    })
 }
 
 fn init_tracing() -> anyhow::Result<()> {

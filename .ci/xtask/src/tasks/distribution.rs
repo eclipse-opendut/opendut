@@ -3,8 +3,6 @@ use std::path::PathBuf;
 
 use crate::{constants, Package, Arch};
 
-pub mod build;
-
 
 #[tracing::instrument]
 pub fn clean() -> anyhow::Result<()> {
