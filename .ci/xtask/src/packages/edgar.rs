@@ -81,7 +81,7 @@ pub mod distribution {
             //Modelled after documentation here: https://docs.netbird.io/how-to/getting-started#binary-install
 
             let metadata = crate::metadata::cargo();
-            let version = metadata.workspace_metadata["ci"]["netbird"]["version"].as_str().clone()
+            let version = metadata.workspace_metadata["ci"]["netbird"]["version"].as_str()
                 .ok_or(anyhow!("NetBird version not defined."))?;
 
             let os = "linux";
@@ -96,7 +96,7 @@ pub mod distribution {
             let file_name = format!("netbird_{version}_{os}_{arch}.tar.gz");
 
             let netbird_artifact = download_dir().join(&folder_name).join(&file_name);
-            fs::create_dir_all(&netbird_artifact.parent().unwrap())?;
+            fs::create_dir_all(netbird_artifact.parent().unwrap())?;
 
             if !netbird_artifact.exists() { //download
                 let url = format!("https://github.com/reimarstier/netbird/releases/download/{folder_name}/{file_name}");
@@ -113,7 +113,7 @@ pub mod distribution {
             assert!(netbird_artifact.exists());
 
             let out_file = out_file(PACKAGE, target);
-            fs::create_dir_all(&out_file.parent().unwrap())?;
+            fs::create_dir_all(out_file.parent().unwrap())?;
 
             fs::copy(&netbird_artifact, &out_file)
                 .map_err(|cause| anyhow!("Error while copying from '{}' to '{}': {cause}", netbird_artifact.display(), out_file.display()))?;
@@ -144,8 +144,8 @@ pub mod distribution {
             fs::create_dir_all(&out_dir)?;
 
             fs::copy(
-                &licenses_file,
-                &out_dir.join(&licenses_file_name)
+                licenses_file,
+                out_dir.join(licenses_file_name)
             )?;
 
             Ok(())

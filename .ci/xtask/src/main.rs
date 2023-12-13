@@ -60,13 +60,13 @@ fn main() -> anyhow::Result<()> {
         Task::Build { package, target } => {
             let target = Arch::get_or_default(target);
             match package {
-                Some(Package::Carl) => crate::packages::carl::build::build_release(&target)?,
-                Some(Package::Edgar) => crate::packages::edgar::build::build_release(&target)?,
+                Some(Package::Carl) => packages::carl::build::build_release(&target)?,
+                Some(Package::Edgar) => packages::edgar::build::build_release(&target)?,
                 Some(package) => unimplemented!("Building a distribution for {package} is not currently implemented."),
                 None => {
                     //build distribution of everything
-                    crate::packages::carl::build::build_release(&target)?;
-                    crate::packages::edgar::build::build_release(&target)?;
+                    packages::carl::build::build_release(&target)?;
+                    packages::edgar::build::build_release(&target)?;
                 }
             }
         }
@@ -83,18 +83,18 @@ fn main() -> anyhow::Result<()> {
         Task::Distribution { package, target } => {
             let target = Arch::get_or_default(target);
             match package {
-                Some(Package::Carl) => crate::packages::carl::distribution::carl(&target)?,
-                Some(Package::Edgar) => crate::packages::edgar::distribution::edgar(&target)?,
+                Some(Package::Carl) => packages::carl::distribution::carl(&target)?,
+                Some(Package::Edgar) => packages::edgar::distribution::edgar(&target)?,
                 Some(package) => unimplemented!("Building a distribution for {package} is not currently implemented."),
                 None => {
                     //build distribution of everything
-                    crate::packages::carl::distribution::carl(&target)?;
-                    crate::packages::edgar::distribution::edgar(&target)?;
+                    packages::carl::distribution::carl(&target)?;
+                    packages::edgar::distribution::edgar(&target)?;
                 }
             }
         }
-        Task::Lea { task } => crate::packages::lea::LeaTask::handle_task(task)?,
-        Task::Edgar { task } => crate::packages::edgar::EdgarTask::handle_task(task)?,
+        Task::Lea { task } => packages::lea::LeaTask::handle_task(task)?,
+        Task::Edgar { task } => packages::edgar::EdgarTask::handle_task(task)?,
     };
     Ok(())
 }

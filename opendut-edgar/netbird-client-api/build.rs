@@ -30,7 +30,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .error_for_status()?
                 .bytes()?;
 
-            let target_file = proto_dir.join(&file_name);
+            let target_file = proto_dir.join(file_name);
 
             fs::write(&target_file, bytes)
                 .map_err(|cause| format!("Error while writing to '{}': {cause}", target_file.display()))?;

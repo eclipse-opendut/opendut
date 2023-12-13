@@ -31,7 +31,7 @@ pub mod distribution {
 
         distribution::collect_executables(PACKAGE, target)?;
 
-        collect_carl_specific_files(PACKAGE, target, &distribution_out_dir)?;
+        collect_carl_specific_files(&distribution_out_dir)?;
 
         distribution::bundle_collected_files(PACKAGE, target)?;
 
@@ -39,11 +39,11 @@ pub mod distribution {
     }
 
     #[tracing::instrument]
-    pub fn collect_carl_specific_files(package: &Package, target: &Arch, out_dir: &PathBuf) -> anyhow::Result<()> {
+    pub fn collect_carl_specific_files(out_dir: &PathBuf) -> anyhow::Result<()> {
 
-        lea::get_lea(&out_dir)?;
+        lea::get_lea(out_dir)?;
 
-        licenses::get_licenses(&out_dir)?;
+        licenses::get_licenses(out_dir)?;
 
         Ok(())
     }
@@ -62,7 +62,7 @@ pub mod distribution {
             fs::create_dir_all(&lea_out_dir)?;
 
             fs_extra::dir::copy(
-                &lea_build_dir,
+                lea_build_dir,
                 &lea_out_dir,
                 &fs_extra::dir::CopyOptions::default()
                     .overwrite(true)
@@ -101,7 +101,7 @@ pub mod distribution {
             }
 
             fs::write(
-                &licenses_dir.join("index.json"),
+                licenses_dir.join("index.json"),
                 json!({
                     "carl": carl_licenses_file.file_name().unwrap().to_str(),
                     "edgar": edgar_licenses_file.file_name().unwrap().to_str(),

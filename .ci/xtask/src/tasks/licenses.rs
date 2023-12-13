@@ -10,7 +10,7 @@ pub fn generate_licenses(package: &Package) -> anyhow::Result<()> {
     util::install_crate("cargo-deny")?;
 
     let out_file = out_file(package);
-    fs::create_dir_all(&out_file.parent().unwrap())?;
+    fs::create_dir_all(out_file.parent().unwrap())?;
 
     Command::new("sh")
         .arg("-c")
