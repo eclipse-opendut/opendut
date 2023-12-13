@@ -1,3 +1,6 @@
+use clap::builder::PossibleValue;
+use strum::IntoEnumIterator;
+
 #[derive(Clone, Debug, strum::EnumIter)]
 pub enum Package {
     Carl,
@@ -34,5 +37,15 @@ impl Package {
 impl std::fmt::Display for Package {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.ident())
+    }
+}
+
+
+impl clap::ValueEnum for Package {
+    fn value_variants<'a>() -> &'a [Package] {
+        Box::leak(Self::iter().collect::<Vec<Package>>().into())
+    }
+    fn to_possible_value(&self) -> Option<PossibleValue> {
+        Some(PossibleValue::new(self.ident()))
     }
 }
