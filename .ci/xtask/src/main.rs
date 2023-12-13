@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use strum::IntoEnumIterator;
 use tracing_subscriber::fmt::format::FmtSpan;
 
 mod constants;
@@ -36,8 +37,8 @@ enum Task {
     },
     /// Generate a license representation in JSON
     GenerateLicenses {
-        #[arg()]
-        package: Package,
+        #[arg(long)]
+        package: Option<Package>,
     },
     /// Start a development server for LEA which watches for file changes.
     LeaWatch,
@@ -64,7 +65,14 @@ fn main() -> anyhow::Result<()> {
             }
         }
         Task::GenerateLicenses { package } => {
-            tasks::licenses::generate_licenses(&package)?;
+            match package {
+                Some(package) => tasks::licenses::generate_licenses(&package)?,
+                None => {
+                    for package in Package::iter() {
+                        tasks::licenses::generate_licenses(&package)?
+                    }
+                }
+            }
         }
         Task::Distribution { package, target } => {
             let target = target_or_default(target);
@@ -117,7 +125,6 @@ mod parsing {
     use super::*;
 
     use clap::builder::PossibleValue;
-    use strum::IntoEnumIterator;
 
     impl clap::ValueEnum for Arch {
         fn value_variants<'a>() -> &'a [Arch] {
