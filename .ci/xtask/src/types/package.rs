@@ -1,32 +1,32 @@
-#[derive(Clone, Debug, clap::ValueEnum)]
+#[derive(Clone, Debug, strum::EnumIter)]
 pub enum Package {
-    OpendutCarl,
-    OpendutCarlApi,
-    OpendutCleo,
-    OpendutEdgar,
-    OpendutLea,
-    OpendutNetbirdClientApi,
-    OpendutTypes,
-    OpendutUtil,
-    OpendutVpn,
-    OpendutVpnNetbird,
-    OpendutIntegrationTests,
+    Carl,
+    CarlApi,
+    Cleo,
+    Edgar,
+    Lea,
+    NetbirdClientApi,
+    Types,
+    Util,
+    Vpn,
+    VpnNetbird,
+    IntegrationTests,
 }
 
 impl Package {
     pub fn ident(&self) -> String {
         match self {
-            Package::OpendutCarl => "opendut-carl",
-            Package::OpendutCarlApi => "opendut-carl-api",
-            Package::OpendutCleo => "opendut-cleo",
-            Package::OpendutEdgar => "opendut-edgar",
-            Package::OpendutLea => "opendut-lea",
-            Package::OpendutNetbirdClientApi => "opendut-netbird-client-api",
-            Package::OpendutTypes => "opendut-types",
-            Package::OpendutUtil => "opendut-util",
-            Package::OpendutVpn => "opendut-vpn",
-            Package::OpendutVpnNetbird => "opendut-vpn-netbird",
-            Package::OpendutIntegrationTests => "opendut-integration-tests",
+            Package::Carl => "opendut-carl",
+            Package::CarlApi => "opendut-carl-api",
+            Package::Cleo => "opendut-cleo",
+            Package::Edgar => "opendut-edgar",
+            Package::Lea => "opendut-lea",
+            Package::NetbirdClientApi => "opendut-netbird-client-api",
+            Package::Types => "opendut-types",
+            Package::Util => "opendut-util",
+            Package::Vpn => "opendut-vpn",
+            Package::VpnNetbird => "opendut-vpn-netbird",
+            Package::IntegrationTests => "opendut-integration-tests",
         }.to_string()
     }
 }

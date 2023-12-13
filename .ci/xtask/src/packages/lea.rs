@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use crate::Package;
 
-const PACKAGE: &Package = &Package::OpendutLea;
+const PACKAGE: &Package = &Package::Lea;
 
 
 pub mod distribution {
@@ -14,7 +14,7 @@ pub mod distribution {
         pub fn build_release() -> anyhow::Result<PathBuf> {
             crate::util::install_crate("trunk")?;
 
-            let working_dir = crate::packages::opendut_lea::self_dir();
+            let working_dir = crate::packages::lea::self_dir();
             let target_dir = working_dir.join("dist");
 
             Command::new("trunk")
@@ -41,5 +41,5 @@ pub mod licenses {
 
 pub fn self_dir() -> PathBuf {
     crate::constants::workspace_dir()
-        .join(crate::Package::OpendutLea.ident())
+        .join(PACKAGE.ident())
 }

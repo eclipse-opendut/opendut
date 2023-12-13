@@ -2,7 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 use crate::{Arch, Package};
 
-const PACKAGE: &Package = &Package::OpendutCarl;
+const PACKAGE: &Package = &Package::Carl;
 
 
 pub mod distribution {
@@ -43,7 +43,7 @@ pub mod distribution {
         #[tracing::instrument]
         pub fn get(out_dir: &PathBuf) -> anyhow::Result<()> {
 
-            let lea_build_dir = crate::packages::opendut_lea::distribution::build::build_release()?;
+            let lea_build_dir = crate::packages::lea::distribution::build::build_release()?;
             let lea_out_dir = out_dir.join("lea");
 
             fs::create_dir_all(&lea_out_dir)?;
@@ -68,8 +68,8 @@ pub mod distribution {
         pub fn get(out_dir: &PathBuf) -> anyhow::Result<()> {
 
             let carl_licenses = generate_licenses()?;
-            let lea_licenses = crate::packages::opendut_lea::licenses::generate_licenses()?;
-            let edgar_licenses = crate::packages::opendut_edgar::licenses::generate_licenses()?;
+            let lea_licenses = crate::packages::lea::licenses::generate_licenses()?;
+            let edgar_licenses = crate::packages::edgar::licenses::generate_licenses()?;
 
 
             let licenses_dir = out_dir.join("licenses");
