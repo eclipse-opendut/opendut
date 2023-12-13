@@ -30,9 +30,9 @@ pub mod distribution {
     #[tracing::instrument]
     pub fn collect_carl_specific_files(package: &Package, target: &Arch, out_dir: &PathBuf) -> anyhow::Result<()> {
 
-        lea::get(&out_dir)?;
+        lea::get_lea(&out_dir)?;
 
-        licenses::get(&out_dir)?;
+        licenses::get_licenses(&out_dir)?;
 
         Ok(())
     }
@@ -41,7 +41,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument]
-        pub fn get(out_dir: &PathBuf) -> anyhow::Result<()> {
+        pub fn get_lea(out_dir: &PathBuf) -> anyhow::Result<()> {
 
             let lea_build_dir = crate::packages::lea::distribution::build::build_release()?;
             let lea_out_dir = out_dir.join("lea");
@@ -65,7 +65,7 @@ pub mod distribution {
         use serde_json::json;
 
         #[tracing::instrument]
-        pub fn get(out_dir: &PathBuf) -> anyhow::Result<()> {
+        pub fn get_licenses(out_dir: &PathBuf) -> anyhow::Result<()> {
 
             let carl_licenses = generate_licenses()?;
             let lea_licenses = crate::packages::lea::licenses::generate_licenses()?;

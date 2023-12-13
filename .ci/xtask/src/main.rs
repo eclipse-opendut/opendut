@@ -25,7 +25,7 @@ enum Task {
         #[arg(short, long)]
         package: Option<Package>,
         #[arg(short, long)]
-        target: Arch,
+        target: Option<Arch>,
     },
     /// Generate a license representation in JSON
     GenerateLicenses {
@@ -45,6 +45,15 @@ fn main() -> anyhow::Result<()> {
             tasks::licenses::generate_licenses(&package)?;
         }
         Task::Distribution { package, target } => {
+            use clap::ValueEnum;
+
+            let target = target.unwrap_or_else(|| {
+                let arch_triple = crate::build::BUILD_TARGET;
+                log::info!("No target specified. Using default target of machine: {arch_triple}");
+                let ignore_case = true;
+                Arch::from_str(arch_triple, ignore_case).unwrap()
+            });
+
             match package {
                 Some(Package::Carl) => crate::packages::carl::distribution::carl(&target)?,
                 Some(Package::Edgar) => crate::packages::edgar::distribution::edgar(&target)?,
