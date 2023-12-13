@@ -1,5 +1,5 @@
-mod arch;
+pub mod arch;
 pub use arch::Arch;
 
-mod package;
+pub mod package;
 pub use package::Package;

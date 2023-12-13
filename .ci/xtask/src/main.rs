@@ -40,8 +40,14 @@ enum Task {
         #[arg(long)]
         package: Option<Package>,
     },
-    /// Start a development server for LEA which watches for file changes.
-    LeaWatch,
+    Lea {
+        #[command(subcommand)]
+        task: packages::lea::LeaTask,
+    },
+    Edgar {
+        #[command(subcommand)]
+        task: packages::edgar::EdgarTask,
+    }
 }
 
 fn main() -> anyhow::Result<()> {
@@ -52,7 +58,7 @@ fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     match cli.task {
         Task::Build { package, target } => {
-            let target = target_or_default(target);
+            let target = Arch::get_or_default(target);
             match package {
                 Some(Package::Carl) => crate::packages::carl::build::build_release(&target)?,
                 Some(Package::Edgar) => crate::packages::edgar::build::build_release(&target)?,
@@ -75,7 +81,7 @@ fn main() -> anyhow::Result<()> {
             }
         }
         Task::Distribution { package, target } => {
-            let target = target_or_default(target);
+            let target = Arch::get_or_default(target);
             match package {
                 Some(Package::Carl) => crate::packages::carl::distribution::carl(&target)?,
                 Some(Package::Edgar) => crate::packages::edgar::distribution::edgar(&target)?,
@@ -87,20 +93,10 @@ fn main() -> anyhow::Result<()> {
                 }
             }
         }
-        Task::LeaWatch => crate::packages::lea::lea_watch()?,
+        Task::Lea { task } => crate::packages::lea::LeaTask::handle_task(task)?,
+        Task::Edgar { task } => crate::packages::edgar::EdgarTask::handle_task(task)?,
     };
     Ok(())
-}
-
-fn target_or_default(target: Option<Arch>) -> Arch {
-    use clap::ValueEnum;
-
-    target.unwrap_or_else(|| {
-        let arch_triple = crate::build::BUILD_TARGET;
-        log::info!("No target specified. Using default target of machine: {arch_triple}");
-        let ignore_case = true;
-        Arch::from_str(arch_triple, ignore_case).unwrap()
-    })
 }
 
 fn init_tracing() -> anyhow::Result<()> {
@@ -118,29 +114,4 @@ fn init_tracing() -> anyhow::Result<()> {
         .compact()
         .init();
     Ok(())
-}
-
-
-mod parsing {
-    use super::*;
-
-    use clap::builder::PossibleValue;
-
-    impl clap::ValueEnum for Arch {
-        fn value_variants<'a>() -> &'a [Arch] {
-            Box::leak(Self::iter().collect::<Vec<Arch>>().into())
-        }
-        fn to_possible_value(&self) -> Option<PossibleValue> {
-            Some(PossibleValue::new(self.triple()))
-        }
-    }
-
-    impl clap::ValueEnum for Package {
-        fn value_variants<'a>() -> &'a [Package] {
-            Box::leak(Self::iter().collect::<Vec<Package>>().into())
-        }
-        fn to_possible_value(&self) -> Option<PossibleValue> {
-            Some(PossibleValue::new(self.ident()))
-        }
-    }
 }

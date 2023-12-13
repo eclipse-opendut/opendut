@@ -6,6 +6,28 @@ use crate::Package;
 const PACKAGE: &Package = &Package::Lea;
 
 
+#[derive(Debug, clap::Subcommand)]
+pub enum LeaTask {
+    /// Start a development server for LEA which watches for file changes.
+    Watch,
+}
+impl LeaTask {
+    #[tracing::instrument]
+    pub fn handle_task(self) -> anyhow::Result<()> {
+        match self {
+            LeaTask::Watch => {
+                crate::util::install_crate("trunk")?;
+
+                Command::new("trunk")
+                    .arg("watch")
+                    .current_dir(self_dir())
+                    .status()?;
+            }
+        };
+        Ok(())
+    }
+}
+
 pub mod build {
     use super::*;
 
@@ -41,18 +63,6 @@ pub mod licenses {
     pub fn out_file() -> PathBuf {
         crate::tasks::licenses::out_file(PACKAGE)
     }
-}
-
-#[tracing::instrument]
-pub fn lea_watch() -> anyhow::Result<()> {
-    crate::util::install_crate("trunk")?;
-
-    Command::new("trunk")
-        .arg("watch")
-        .current_dir(self_dir())
-        .status()?;
-
-    Ok(())
 }
 
 pub fn self_dir() -> PathBuf {

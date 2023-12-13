@@ -8,6 +8,28 @@ use crate::{Arch, Package};
 const PACKAGE: &Package = &Package::Edgar;
 
 
+#[derive(Debug, clap::Subcommand)]
+pub enum EdgarTask {
+    GetNetbirdClientArtifact {
+        #[arg(long)]
+        target: Option<Arch>,
+    },
+}
+impl EdgarTask {
+    #[tracing::instrument]
+    pub fn handle_task(self) -> anyhow::Result<()> {
+        match self {
+            EdgarTask::GetNetbirdClientArtifact { target } => {
+                let target = Arch::get_or_default(target);
+
+                distribution::netbird::get_netbird_client_artifact(&target)?;
+            }
+        };
+        Ok(())
+    }
+}
+
+
 pub mod build {
     use super::*;
 
@@ -51,7 +73,7 @@ pub mod distribution {
     }
 
 
-    mod netbird {
+    pub mod netbird {
         use super::*;
 
         #[tracing::instrument]
