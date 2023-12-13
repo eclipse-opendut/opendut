@@ -79,6 +79,7 @@ serde = { version = "1.0.188", default-features = false }
 serde_json = "1.0.107"
 shadow-rs = "0.24.0"
 sha2 = "0.10.8"
+strum = "0.25.0"
 sudo = "0.6.0"
 tar = "0.4.40"
 time = "0.3.29"
