@@ -32,9 +32,9 @@ pub mod distribution {
     #[tracing::instrument]
     fn collect_edgar_specific_files(package: &Package, target: &Arch) -> anyhow::Result<()> {
 
-        netbird::get_client_artifact(package, target)?;
+        netbird::get_netbird_client_artifact(package, target)?;
 
-        licenses::get(package, target)?;
+        licenses::get_licenses(package, target)?;
 
         Ok(())
     }
@@ -44,7 +44,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument]
-        pub fn get_client_artifact(package: &Package, target: &Arch) -> anyhow::Result<()> {
+        pub fn get_netbird_client_artifact(package: &Package, target: &Arch) -> anyhow::Result<()> {
             //Modelled after documentation here: https://docs.netbird.io/how-to/getting-started#binary-install
 
             let metadata = crate::metadata::cargo();
@@ -101,7 +101,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument]
-        pub fn get(package: &Package, target: &Arch) -> anyhow::Result<()> {
+        pub fn get_licenses(package: &Package, target: &Arch) -> anyhow::Result<()> {
 
             let licenses_file = crate::tasks::licenses::generate_licenses(package)?;
 
