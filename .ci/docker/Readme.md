@@ -16,7 +16,7 @@ This is a docker test environment for the examples. It is started with docker-co
 
 * Make distribution
 ```sh
-cargo make distribution
+cargo ci distribution
 ```
 * Start containers
 ```
@@ -39,7 +39,7 @@ docker compose -f .ci/docker/firefox/docker-compose.yml --env-file .env up -d
 
 * Create distribution
     ```sh
-    cargo make distribution
+    cargo ci distribution
     ```
 
 * Build carl image (other images are built automatically)
