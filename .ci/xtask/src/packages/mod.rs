@@ -1,3 +1,3 @@
-pub mod opendut_carl;
-pub mod opendut_edgar;
-pub mod opendut_lea;
+pub mod carl;
+pub mod edgar;
+pub mod lea;

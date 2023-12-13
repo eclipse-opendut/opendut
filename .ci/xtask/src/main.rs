@@ -46,13 +46,13 @@ fn main() -> anyhow::Result<()> {
         }
         Task::Distribution { package, target } => {
             match package {
-                Some(Package::OpendutCarl) => crate::packages::opendut_carl::distribution::carl(&target)?,
-                Some(Package::OpendutEdgar) => crate::packages::opendut_edgar::distribution::edgar(&target)?,
+                Some(Package::Carl) => crate::packages::carl::distribution::carl(&target)?,
+                Some(Package::Edgar) => crate::packages::edgar::distribution::edgar(&target)?,
                 Some(package) => unimplemented!("Building a distribution for {package} is not currently implemented."),
                 None => {
                     //build distribution of everything
-                    crate::packages::opendut_carl::distribution::carl(&target)?;
-                    crate::packages::opendut_edgar::distribution::edgar(&target)?;
+                    crate::packages::carl::distribution::carl(&target)?;
+                    crate::packages::edgar::distribution::edgar(&target)?;
                 },
             }
         }
@@ -78,19 +78,27 @@ fn init_tracing() -> anyhow::Result<()> {
 }
 
 
-use clap::builder::PossibleValue;
-use strum::IntoEnumIterator;
+mod parsing {
+    use super::*;
 
-impl clap::ValueEnum for Arch {
-    fn value_variants<'a>() -> &'a [Arch] {
-        Box::leak(Self::iter().collect::<Vec<Arch>>().into())
+    use clap::builder::PossibleValue;
+    use strum::IntoEnumIterator;
+
+    impl clap::ValueEnum for Arch {
+        fn value_variants<'a>() -> &'a [Arch] {
+            Box::leak(Self::iter().collect::<Vec<Arch>>().into())
+        }
+        fn to_possible_value(&self) -> Option<PossibleValue> {
+            Some(PossibleValue::new(self.triple()))
+        }
     }
 
-    fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
-        Some(match self {
-            Arch::X86_64 => PossibleValue::new("x86_64-unknown-linux-gnu"),
-            Arch::Armhf => PossibleValue::new("armv7-unknown-linux-gnueabihf"),
-            Arch::Arm64 => PossibleValue::new("aarch64-unknown-linux-gnu"),
-        })
+    impl clap::ValueEnum for Package {
+        fn value_variants<'a>() -> &'a [Package] {
+            Box::leak(Self::iter().collect::<Vec<Package>>().into())
+        }
+        fn to_possible_value(&self) -> Option<PossibleValue> {
+            Some(PossibleValue::new(self.ident()))
+        }
     }
 }

@@ -5,7 +5,7 @@ use anyhow::anyhow;
 
 use crate::{Arch, Package};
 
-const PACKAGE: &Package = &Package::OpendutEdgar;
+const PACKAGE: &Package = &Package::Edgar;
 
 
 pub mod distribution {
