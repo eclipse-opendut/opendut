@@ -3,53 +3,11 @@ use std::path::PathBuf;
 
 use crate::{constants, Package, Arch};
 
-mod build;
-mod opendut_carl;
-mod opendut_edgar;
-
-
-impl Package {
-    pub fn has_distribution(&self) -> bool {
-        match self {
-            Package::OpendutCarl => true,
-            Package::OpendutCarlApi => false,
-            Package::OpendutCleo => true,
-            Package::OpendutEdgar => true,
-            Package::OpendutLea => false,
-            Package::OpendutNetbirdClientApi => false,
-            Package::OpendutTypes => false,
-            Package::OpendutUtil => false,
-            Package::OpendutVpn => false,
-            Package::OpendutVpnNetbird => false,
-            Package::OpendutIntegrationTests => false,
-        }
-    }
-}
+pub mod build;
 
 
 #[tracing::instrument]
-pub fn distribution(package: &Package, target: &Arch) -> anyhow::Result<()> {
-
-    if package.has_distribution() {
-        clean()?;
-
-        build::build_release(package, target)?;
-
-        collect_executables(package, target)?;
-
-        collect_package_specific_files(package, target)?;
-
-        bundle_collected_files(package, target)?;
-    }
-    else {
-        println!("Skipping for library crate: {package}");
-    }
-
-    Ok(())
-}
-
-#[tracing::instrument]
-fn clean() -> anyhow::Result<()> {
+pub fn clean() -> anyhow::Result<()> {
     if distribution_dir().exists() {
         fs::remove_dir_all(distribution_dir())?;
         log::debug!("Cleaned distribution directory.");
@@ -58,34 +16,24 @@ fn clean() -> anyhow::Result<()> {
 }
 
 #[tracing::instrument]
-fn collect_executables(package: &Package, target: &Arch) -> anyhow::Result<()> {
+pub fn collect_executables(build_dir: PathBuf, package: &Package, target: &Arch) -> anyhow::Result<()> {
 
-    let out_dir = package_dir(target, package);
+    let out_dir = package_dir(package, target);
     fs::create_dir_all(&out_dir)?;
 
     fs::copy(
-        build::target_dir().join(&target.triple()).join("release").join(&package.ident()),
+        build_dir.join(&target.triple()).join("release").join(&package.ident()),
         out_dir.join(package.ident()),
     )?;
     Ok(())
 }
 
 #[tracing::instrument]
-fn collect_package_specific_files(package: &Package, target: &Arch) -> anyhow::Result<()> {
-    match package {
-        Package::OpendutEdgar => opendut_edgar::collect_edgar_specific_files(package, target)?,
-        Package::OpendutCarl => opendut_carl::collect_carl_specific_files()?,
-        _ => {}
-    };
-    Ok(())
-}
-
-#[tracing::instrument]
-fn bundle_collected_files(package: &Package, target: &Arch) -> anyhow::Result<()> {
+pub fn bundle_collected_files(package: &Package, target: &Arch) -> anyhow::Result<()> {
     use flate2::Compression;
     use flate2::write::GzEncoder;
 
-    let in_dir = package_dir(target, package);
+    let in_dir = package_dir(package, target);
 
     let out_dir = arch_dir(target);
     fs::create_dir_all(&out_dir)?;
@@ -109,10 +57,10 @@ pub fn distribution_dir() -> PathBuf {
     constants::target_dir().join("distribution")
 }
 
-fn arch_dir(target: &Arch) -> PathBuf {
+pub fn arch_dir(target: &Arch) -> PathBuf {
     distribution_dir().join(target.triple())
 }
 
-fn package_dir(target: &Arch, package: &Package) -> PathBuf {
+pub fn package_dir(package: &Package, target: &Arch) -> PathBuf {
     arch_dir(target).join(package.ident())
 }

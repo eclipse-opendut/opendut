@@ -3,6 +3,7 @@ use tracing_subscriber::fmt::format::FmtSpan;
 
 mod constants;
 mod metadata;
+pub mod packages;
 mod tasks;
 mod types;
 pub use types::{Arch, Package};
@@ -44,7 +45,11 @@ fn main() -> anyhow::Result<()> {
             tasks::licenses::generate_licenses(&package)?;
         }
         Task::Distribution { package, target } => {
-            tasks::distribution::distribution(&package, &target)?;
+            match package {
+                Package::OpendutCarl => crate::packages::opendut_carl::distribution::distribution(&target)?,
+                Package::OpendutEdgar => crate::packages::opendut_edgar::distribution::distribution(&target)?,
+                _ => unimplemented!("Building a distribution for {package} is not currently implemented."),
+            }
         }
     };
     Ok(())
