@@ -5,22 +5,23 @@ use crate::{constants, Package, Arch};
 
 
 #[tracing::instrument]
-pub fn clean() -> anyhow::Result<()> {
-    if distribution_dir().exists() {
-        fs::remove_dir_all(distribution_dir())?;
-        log::debug!("Cleaned distribution directory.");
+pub fn clean(package: &Package, target: &Arch) -> anyhow::Result<()> {
+    let package_dir = out_package_dir(package, target);
+    if package_dir.exists() {
+        fs::remove_dir_all(&package_dir)?;
+        log::debug!("Cleaned distribution directory at: {package_dir:?}");
     }
     Ok(())
 }
 
 #[tracing::instrument]
-pub fn collect_executables(build_dir: PathBuf, package: &Package, target: &Arch) -> anyhow::Result<()> {
+pub fn collect_executables(package: &Package, target: &Arch) -> anyhow::Result<()> {
 
-    let out_dir = package_dir(package, target);
+    let out_dir = out_package_dir(package, target);
     fs::create_dir_all(&out_dir)?;
 
     fs::copy(
-        build_dir.join(&target.triple()).join("release").join(&package.ident()),
+        crate::tasks::build::out_dir(package, target),
         out_dir.join(package.ident()),
     )?;
     Ok(())
@@ -31,9 +32,9 @@ pub fn bundle_collected_files(package: &Package, target: &Arch) -> anyhow::Resul
     use flate2::Compression;
     use flate2::write::GzEncoder;
 
-    let in_dir = package_dir(package, target);
+    let in_dir = out_package_dir(package, target);
 
-    let out_dir = arch_dir(target);
+    let out_dir = out_arch_dir(target);
     fs::create_dir_all(&out_dir)?;
 
     let platform = "linux";
@@ -51,14 +52,14 @@ pub fn bundle_collected_files(package: &Package, target: &Arch) -> anyhow::Resul
     Ok(())
 }
 
-pub fn distribution_dir() -> PathBuf {
+pub fn out_dir() -> PathBuf {
     constants::target_dir().join("distribution")
 }
 
-pub fn arch_dir(target: &Arch) -> PathBuf {
-    distribution_dir().join(target.triple())
+pub fn out_arch_dir(target: &Arch) -> PathBuf {
+    out_dir().join(target.triple())
 }
 
-pub fn package_dir(package: &Package, target: &Arch) -> PathBuf {
-    arch_dir(target).join(package.ident())
+pub fn out_package_dir(package: &Package, target: &Arch) -> PathBuf {
+    out_arch_dir(target).join(package.ident())
 }

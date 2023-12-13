@@ -6,22 +6,24 @@ use crate::Package;
 
 
 #[tracing::instrument]
-pub fn generate_licenses(package: &Package) -> anyhow::Result<PathBuf> {
+pub fn generate_licenses(package: &Package) -> anyhow::Result<()> {
     util::install_crate("cargo-deny")?;
 
-    let target = licenses_file(package);
-    fs::create_dir_all(&target.parent().unwrap())?;
+    let out_file = out_file(package);
+    fs::create_dir_all(&out_file.parent().unwrap())?;
 
     Command::new("sh")
         .arg("-c")
-        .arg(format!("cargo deny --exclude-dev list --layout crate --format json > {}", target.display()))
+        .arg(format!("cargo deny --exclude-dev list --layout crate --format json > {}", out_file.display()))
         .status()?;
 
-    log::debug!("Wrote licenses for package '{package}' to path: {}", target.display());
+    log::debug!("Wrote licenses for package '{package}' to path: {}", out_file.display());
 
-    Ok(target)
+    Ok(())
 }
 
-fn licenses_file(package: &Package) -> PathBuf {
-    constants::target_dir().join("licenses").join(format!("{}.licenses.json", package.ident()))
+pub fn out_file(package: &Package) -> PathBuf {
+    constants::target_dir()
+        .join("licenses")
+        .join(format!("{}.licenses.json", package.ident()))
 }

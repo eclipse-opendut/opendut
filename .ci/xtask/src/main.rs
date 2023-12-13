@@ -53,13 +53,13 @@ fn main() -> anyhow::Result<()> {
         Task::Build { package, target } => {
             let target = target_or_default(target);
             match package {
-                Some(Package::Carl) => crate::packages::carl::build_release(&target)?,
-                Some(Package::Edgar) => crate::packages::edgar::build_release(&target)?,
+                Some(Package::Carl) => crate::packages::carl::build::build_release(&target)?,
+                Some(Package::Edgar) => crate::packages::edgar::build::build_release(&target)?,
                 Some(package) => unimplemented!("Building a distribution for {package} is not currently implemented."),
                 None => {
                     //build distribution of everything
-                    crate::packages::carl::build_release(&target)?;
-                    crate::packages::edgar::build_release(&target)?;
+                    crate::packages::carl::build::build_release(&target)?;
+                    crate::packages::edgar::build::build_release(&target)?;
                 }
             }
         }

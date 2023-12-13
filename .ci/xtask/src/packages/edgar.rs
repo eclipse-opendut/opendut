@@ -8,9 +8,15 @@ use crate::{Arch, Package};
 const PACKAGE: &Package = &Package::Edgar;
 
 
-pub fn build_release(target: &Arch) -> anyhow::Result<()> {
-    crate::tasks::build::build_release(PACKAGE, target)?;
-    Ok(())
+pub mod build {
+    use super::*;
+
+    pub fn build_release(target: &Arch) -> anyhow::Result<()> {
+        crate::tasks::build::build_release(PACKAGE, target)
+    }
+    pub fn out_dir(target: &Arch) -> PathBuf {
+        crate::tasks::build::out_dir(PACKAGE, target)
+    }
 }
 
 pub mod distribution {
@@ -20,13 +26,13 @@ pub mod distribution {
     pub fn edgar(target: &Arch) -> anyhow::Result<()> {
         use crate::tasks::distribution;
 
-        distribution::clean()?;
+        distribution::clean(PACKAGE, target)?;
 
-        let build_dir = crate::tasks::build::build_release(PACKAGE, target)?;
+        crate::tasks::build::build_release(PACKAGE, target)?;
 
-        distribution::collect_executables(build_dir, PACKAGE, target)?;
+        distribution::collect_executables(PACKAGE, target)?;
 
-        collect_edgar_specific_files(PACKAGE, target)?;
+        collect_edgar_specific_files(target)?;
 
         distribution::bundle_collected_files(PACKAGE, target)?;
 
@@ -35,11 +41,11 @@ pub mod distribution {
 
 
     #[tracing::instrument]
-    fn collect_edgar_specific_files(package: &Package, target: &Arch) -> anyhow::Result<()> {
+    fn collect_edgar_specific_files(target: &Arch) -> anyhow::Result<()> {
 
-        netbird::get_netbird_client_artifact(package, target)?;
+        netbird::get_netbird_client_artifact(target)?;
 
-        licenses::get_licenses(package, target)?;
+        licenses::get_licenses(target)?;
 
         Ok(())
     }
@@ -49,7 +55,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument]
-        pub fn get_netbird_client_artifact(package: &Package, target: &Arch) -> anyhow::Result<()> {
+        pub fn get_netbird_client_artifact(target: &Arch) -> anyhow::Result<()> {
             //Modelled after documentation here: https://docs.netbird.io/how-to/getting-started#binary-install
 
             let metadata = crate::metadata::cargo();
@@ -84,7 +90,7 @@ pub mod distribution {
             }
             assert!(netbird_artifact.exists());
 
-            let out_file = distribution_file(package, target);
+            let out_file = out_file(PACKAGE, target);
             fs::create_dir_all(&out_file.parent().unwrap())?;
 
             fs::copy(&netbird_artifact, &out_file)
@@ -97,8 +103,8 @@ pub mod distribution {
             crate::constants::target_dir().join("netbird")
         }
 
-        pub fn distribution_file(package: &Package, target: &Arch) -> PathBuf {
-            crate::tasks::distribution::package_dir(package, target).join("install").join("netbird.tar.gz")
+        pub fn out_file(package: &Package, target: &Arch) -> PathBuf {
+            crate::tasks::distribution::out_package_dir(package, target).join("install").join("netbird.tar.gz")
         }
     }
 
@@ -106,12 +112,13 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument]
-        pub fn get_licenses(package: &Package, target: &Arch) -> anyhow::Result<()> {
+        pub fn get_licenses(target: &Arch) -> anyhow::Result<()> {
 
-            let licenses_file = crate::tasks::licenses::generate_licenses(package)?;
+            crate::packages::edgar::licenses::generate_licenses()?;
+            let licenses_file = crate::packages::edgar::licenses::out_file();
 
-            let out_dir = out_dir(package, target);
-            let licenses_file_name = format!("{}.licenses.json", package.ident());
+            let out_dir = out_dir(target);
+            let licenses_file_name = format!("{}.licenses.json", PACKAGE.ident());
             fs::create_dir_all(&out_dir)?;
 
             fs::copy(
@@ -121,9 +128,8 @@ pub mod distribution {
 
             Ok(())
         }
-
-        fn out_dir(package: &Package, target: &Arch) -> PathBuf {
-            crate::tasks::distribution::package_dir(package, target).join("licenses")
+        fn out_dir(target: &Arch) -> PathBuf {
+            crate::tasks::distribution::out_package_dir(PACKAGE, target).join("licenses")
         }
     }
 }
@@ -131,7 +137,10 @@ pub mod distribution {
 pub mod licenses {
     use super::*;
 
-    pub fn generate_licenses() -> anyhow::Result<PathBuf> {
+    pub fn generate_licenses() -> anyhow::Result<()> {
         crate::tasks::licenses::generate_licenses(PACKAGE)
+    }
+    pub fn out_file() -> PathBuf {
+        crate::tasks::licenses::out_file(PACKAGE)
     }
 }
