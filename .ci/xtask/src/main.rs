@@ -23,7 +23,7 @@ enum Task {
     /// Build a release distribution
     Distribution {
         #[arg(short, long)]
-        package: Package,
+        package: Option<Package>,
         #[arg(short, long)]
         target: Arch,
     },
@@ -46,9 +46,14 @@ fn main() -> anyhow::Result<()> {
         }
         Task::Distribution { package, target } => {
             match package {
-                Package::OpendutCarl => crate::packages::opendut_carl::distribution::distribution(&target)?,
-                Package::OpendutEdgar => crate::packages::opendut_edgar::distribution::distribution(&target)?,
-                _ => unimplemented!("Building a distribution for {package} is not currently implemented."),
+                Some(Package::OpendutCarl) => crate::packages::opendut_carl::distribution::carl(&target)?,
+                Some(Package::OpendutEdgar) => crate::packages::opendut_edgar::distribution::edgar(&target)?,
+                Some(package) => unimplemented!("Building a distribution for {package} is not currently implemented."),
+                None => {
+                    //build distribution of everything
+                    crate::packages::opendut_carl::distribution::carl(&target)?;
+                    crate::packages::opendut_edgar::distribution::edgar(&target)?;
+                },
             }
         }
     };
@@ -70,4 +75,22 @@ fn init_tracing() -> anyhow::Result<()> {
         .compact()
         .init();
     Ok(())
+}
+
+
+use clap::builder::PossibleValue;
+use strum::IntoEnumIterator;
+
+impl clap::ValueEnum for Arch {
+    fn value_variants<'a>() -> &'a [Arch] {
+        Box::leak(Self::iter().collect::<Vec<Arch>>().into())
+    }
+
+    fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
+        Some(match self {
+            Arch::X86_64 => PossibleValue::new("x86_64-unknown-linux-gnu"),
+            Arch::Armhf => PossibleValue::new("armv7-unknown-linux-gnueabihf"),
+            Arch::Arm64 => PossibleValue::new("aarch64-unknown-linux-gnu"),
+        })
+    }
 }

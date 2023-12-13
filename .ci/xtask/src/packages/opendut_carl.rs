@@ -9,7 +9,7 @@ pub mod distribution {
     use super::*;
 
     #[tracing::instrument]
-    pub fn distribution(target: &Arch) -> anyhow::Result<()> {
+    pub fn carl(target: &Arch) -> anyhow::Result<()> {
         use crate::tasks::distribution as common;
 
         let distribution_out_dir = common::package_dir(PACKAGE, target);

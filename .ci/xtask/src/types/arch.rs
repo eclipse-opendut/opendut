@@ -1,24 +1,16 @@
 use std::fmt::{Display, Formatter};
 
-#[derive(Clone, Debug, clap::ValueEnum)]
+#[derive(Clone, Debug, strum::EnumIter)]
 pub enum Arch {
-    X86,
+    X86_64,
     Armhf,
     Arm64,
 }
 
 impl Arch {
-    pub fn name(&self) -> String {
-        match self {
-            Arch::X86 => "x86",
-            Arch::Armhf => "armhf",
-            Arch::Arm64 => "arm64",
-        }.to_string()
-    }
-
     pub fn triple(&self) -> String {
         match self {
-            Arch::X86 => "x86_64-unknown-linux-gnu",
+            Arch::X86_64 => "x86_64-unknown-linux-gnu",
             Arch::Armhf => "armv7-unknown-linux-gnueabihf",
             Arch::Arm64 => "aarch64-unknown-linux-gnu",
         }.to_string()

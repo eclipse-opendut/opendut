@@ -12,7 +12,7 @@ pub mod distribution {
     use super::*;
 
     #[tracing::instrument]
-    pub fn distribution(target: &Arch) -> anyhow::Result<()> {
+    pub fn edgar(target: &Arch) -> anyhow::Result<()> {
         use crate::tasks::distribution::*;
 
         clean()?;
@@ -54,7 +54,7 @@ pub mod distribution {
             let os = "linux";
 
             let arch = match target {
-                Arch::X86 => "amd64",
+                Arch::X86_64 => "amd64",
                 Arch::Arm64 => "arm64",
                 Arch::Armhf => "armv6",
             };
