@@ -32,6 +32,7 @@ enum Task {
         #[arg()]
         package: Package,
     },
+    LeaWatch,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -65,6 +66,7 @@ fn main() -> anyhow::Result<()> {
                 },
             }
         }
+        Task::LeaWatch => crate::packages::lea::lea_watch()?,
     };
     Ok(())
 }

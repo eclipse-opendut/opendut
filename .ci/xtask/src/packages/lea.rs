@@ -1,14 +1,16 @@
 use std::path::PathBuf;
+use std::process::Command;
+
 use crate::Package;
 
 const PACKAGE: &Package = &Package::Lea;
 
 
 pub mod distribution {
+    use super::*;
 
     pub mod build {
-        use std::path::PathBuf;
-        use std::process::Command;
+        use super::*;
 
         #[tracing::instrument]
         pub fn build_release() -> anyhow::Result<PathBuf> {
@@ -37,6 +39,18 @@ pub mod licenses {
     pub fn generate_licenses() -> anyhow::Result<PathBuf> {
         crate::tasks::licenses::generate_licenses(PACKAGE)
     }
+}
+
+#[tracing::instrument]
+pub fn lea_watch() -> anyhow::Result<()> {
+    crate::util::install_crate("trunk")?;
+
+    Command::new("trunk")
+        .arg("watch")
+        .current_dir(self_dir())
+        .status()?;
+
+    Ok(())
 }
 
 pub fn self_dir() -> PathBuf {
