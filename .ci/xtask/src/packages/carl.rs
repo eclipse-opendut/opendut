@@ -5,9 +5,15 @@ use crate::{Arch, Package};
 const PACKAGE: &Package = &Package::Carl;
 
 
-pub fn build_release(target: &Arch) -> anyhow::Result<()> {
-    crate::tasks::build::build_release(PACKAGE, target)?;
-    Ok(())
+pub mod build {
+    use super::*;
+
+    pub fn build_release(target: &Arch) -> anyhow::Result<()> {
+        crate::tasks::build::build_release(PACKAGE, target)
+    }
+    pub fn out_dir(target: &Arch) -> PathBuf {
+        crate::tasks::build::out_dir(PACKAGE, target)
+    }
 }
 
 pub mod distribution {
@@ -17,13 +23,13 @@ pub mod distribution {
     pub fn carl(target: &Arch) -> anyhow::Result<()> {
         use crate::tasks::distribution;
 
-        let distribution_out_dir = distribution::package_dir(PACKAGE, target);
+        let distribution_out_dir = distribution::out_package_dir(PACKAGE, target);
 
-        distribution::clean()?;
+        distribution::clean(PACKAGE, target)?;
 
-        let build_dir = crate::tasks::build::build_release(PACKAGE, target)?;
+        crate::tasks::build::build_release(PACKAGE, target)?;
 
-        distribution::collect_executables(build_dir, PACKAGE, target)?;
+        distribution::collect_executables(PACKAGE, target)?;
 
         collect_carl_specific_files(PACKAGE, target, &distribution_out_dir)?;
 
@@ -48,7 +54,9 @@ pub mod distribution {
         #[tracing::instrument]
         pub fn get_lea(out_dir: &PathBuf) -> anyhow::Result<()> {
 
-            let lea_build_dir = crate::packages::lea::distribution::build::build_release()?;
+            crate::packages::lea::build::build_release()?;
+            let lea_build_dir = crate::packages::lea::build::out_dir();
+
             let lea_out_dir = out_dir.join("lea");
 
             fs::create_dir_all(&lea_out_dir)?;
@@ -72,15 +80,20 @@ pub mod distribution {
         #[tracing::instrument]
         pub fn get_licenses(out_dir: &PathBuf) -> anyhow::Result<()> {
 
-            let carl_licenses = generate_licenses()?;
-            let lea_licenses = crate::packages::lea::licenses::generate_licenses()?;
-            let edgar_licenses = crate::packages::edgar::licenses::generate_licenses()?;
+            generate_licenses()?;
+            let carl_licenses_file = out_file();
+
+            crate::packages::lea::licenses::generate_licenses()?;
+            let lea_licenses_file = crate::packages::lea::licenses::out_file();
+
+            crate::packages::edgar::licenses::generate_licenses()?;
+            let edgar_licenses_file = crate::packages::edgar::licenses::out_file();
 
 
             let licenses_dir = out_dir.join("licenses");
             fs::create_dir_all(&licenses_dir)?;
 
-            for license_file in [&carl_licenses, &lea_licenses, &edgar_licenses] {
+            for license_file in [&carl_licenses_file, &lea_licenses_file, &edgar_licenses_file] {
                 fs::copy(
                     license_file,
                     licenses_dir.join(license_file.file_name().unwrap())
@@ -90,18 +103,20 @@ pub mod distribution {
             fs::write(
                 &licenses_dir.join("index.json"),
                 json!({
-                    "carl": carl_licenses.file_name().unwrap().to_str(),
-                    "edgar": edgar_licenses.file_name().unwrap().to_str(),
-                    "lea": lea_licenses.file_name().unwrap().to_str(),
+                    "carl": carl_licenses_file.file_name().unwrap().to_str(),
+                    "edgar": edgar_licenses_file.file_name().unwrap().to_str(),
+                    "lea": lea_licenses_file.file_name().unwrap().to_str(),
                 }).to_string(),
             )?;
 
             Ok(())
         }
 
-
-        pub fn generate_licenses() -> anyhow::Result<PathBuf> {
+        pub fn generate_licenses() -> anyhow::Result<()> {
             crate::tasks::licenses::generate_licenses(PACKAGE)
+        }
+        pub fn out_file() -> PathBuf {
+            crate::tasks::licenses::out_file(PACKAGE)
         }
     }
 }
