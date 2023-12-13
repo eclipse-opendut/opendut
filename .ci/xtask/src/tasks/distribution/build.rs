@@ -6,7 +6,7 @@ use crate::Arch;
 
 
 #[tracing::instrument]
-pub fn build_release(package: &Package, target: &Arch) -> anyhow::Result<()> {
+pub fn build_release(package: &Package, target: &Arch) -> anyhow::Result<PathBuf> {
     util::install_crate("cross")?;
 
     Command::new("cross")
@@ -17,15 +17,14 @@ pub fn build_release(package: &Package, target: &Arch) -> anyhow::Result<()> {
             "--package",
             &package.ident(),
             "--target-dir",
-            &target_dir().display().to_string(), //explicitly set target-base-dir to fix unreliable caching behavior
+            &cross_target_dir().display().to_string(), //explicitly set target-base-dir to fix unreliable caching behavior
             "--target",
             &target.triple(),
         ])
         .status()?;
-
-    Ok(())
+    Ok(cross_target_dir()) //FIXME .join package && arch somehow
 }
 
-pub(super) fn target_dir() -> PathBuf {
+fn cross_target_dir() -> PathBuf {
     constants::target_dir().join("cross")
 }
