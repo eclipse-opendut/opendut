@@ -26,7 +26,7 @@ pub fn build_release(package: &Package, target: &Arch) -> anyhow::Result<()> {
 }
 
 pub fn out_dir(package: &Package, target: &Arch) -> PathBuf {
-    cross_target_dir().join(&target.triple()).join("release").join(&package.ident())
+    cross_target_dir().join(target.triple()).join("release").join(package.ident())
 }
 
 fn cross_target_dir() -> PathBuf {

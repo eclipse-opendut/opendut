@@ -35,7 +35,7 @@ pub mod build {
     pub fn build_release() -> anyhow::Result<()> {
         crate::util::install_crate("trunk")?;
 
-        let working_dir = crate::packages::lea::self_dir();
+        let working_dir = self_dir();
         let out_dir = out_dir();
 
         Command::new("trunk")
@@ -50,7 +50,7 @@ pub mod build {
         Ok(())
     }
     pub fn out_dir() -> PathBuf {
-        crate::packages::lea::self_dir().join("dist")
+        self_dir().join("dist")
     }
 }
 

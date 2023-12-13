@@ -16,13 +16,13 @@ pub fn initialize() -> Result<(), Error> {
 pub fn initialize_with_overrides(overrides: fn(&mut env_logger::Builder) -> &mut env_logger::Builder) -> Result<(), Error> {
     let mut builder = env_logger::builder();
 
-    let mut builder = builder
+    let builder = builder
         .format_timestamp_millis()
         .filter_level(log::LevelFilter::Info)
         .filter_module("opendut", log::LevelFilter::Trace)
         .parse_default_env();
 
-    let builder = overrides(&mut builder);
+    let builder = overrides(builder);
 
     builder
         .try_init()

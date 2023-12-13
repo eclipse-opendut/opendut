@@ -8,7 +8,7 @@
     ```
 3. Install required crates:
     ```sh
-    cargo install --force cargo-make trunk mdbook mdbook-mermaid mdbook-svgbob
+    cargo install --force trunk mdbook mdbook-mermaid mdbook-svgbob
     ```
 
 ## Starting the application
