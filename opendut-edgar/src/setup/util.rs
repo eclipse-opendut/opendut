@@ -10,23 +10,28 @@ use sha2::{Digest, Sha256};
 
 use crate::setup::constants;
 
-pub fn evaluate_requiring_success(command: &mut Command) -> anyhow::Result<Output> {
-    let output = command.output()?;
+pub(crate) trait EvaluateRequiringSuccess {
+    fn evaluate_requiring_success(&mut self) -> anyhow::Result<Output>;
+}
+impl EvaluateRequiringSuccess for Command {
+    fn evaluate_requiring_success(&mut self) -> anyhow::Result<Output> {
+        let output = self.output()?;
 
-    if !output.status.success() {
-        let mut error = format!("Error while running `{command:?}`:\n");
-        if let Some(status) = &output.status.code() {
-            error += format!("  Status Code: {}\n", status).as_ref();
+        if !output.status.success() {
+            let mut error = format!("Error while running `{self:?}`:\n");
+            if let Some(status) = &output.status.code() {
+                error += format!("  Status Code: {}\n", status).as_ref();
+            }
+            if !output.stdout.is_empty() {
+                error += format!("  Stdout: {}\n", String::from_utf8(output.stdout.clone())?).as_str();
+            }
+            if !output.stderr.is_empty() {
+                error += format!("  Stderr: {}\n", String::from_utf8(output.stderr.clone())?).as_str();
+            }
+            bail!(error)
         }
-        if !output.stdout.is_empty() {
-            error += format!("  Stdout: {}\n", String::from_utf8(output.stdout.clone())?).as_str();
-        }
-        if !output.stderr.is_empty() {
-            error += format!("  Stderr: {}\n", String::from_utf8(output.stderr.clone())?).as_str();
-        }
-        bail!(error)
+        Ok(output)
     }
-    Ok(output)
 }
 
 pub fn chown(path: impl AsRef<Path>) -> anyhow::Result<()> {

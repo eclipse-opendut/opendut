@@ -3,6 +3,7 @@ use std::path::PathBuf;
 
 use crate::{constants, util, Package};
 use crate::Arch;
+use crate::util::RunRequiringSuccess;
 
 
 #[tracing::instrument]
@@ -21,7 +22,7 @@ pub fn build_release(package: &Package, target: &Arch) -> anyhow::Result<()> {
             "--target",
             &target.triple(),
         ])
-        .status()?;
+        .run_requiring_success();
     Ok(())
 }
 

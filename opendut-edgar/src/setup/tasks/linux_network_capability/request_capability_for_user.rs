@@ -7,6 +7,7 @@ use anyhow::{Context, Result};
 use crate::setup::constants::USER_NAME;
 use crate::setup::task::{Success, Task, TaskFulfilled};
 use crate::setup::util;
+use crate::setup::util::EvaluateRequiringSuccess;
 
 fn capability_file() -> PathBuf {
     PathBuf::from("/etc/security/capability.conf")
@@ -26,12 +27,11 @@ impl Task for RequestCapabilityForUser {
                 .context(format!("Failed to read content of PAM file '{}'.", capability_file.display()))?;
             if file_content.contains(LINE_TO_ADD) {
 
-                let mut command = Command::new("su");
-                let command = command
+                Command::new("su")
                     .arg(USER_NAME)
                     .arg("-c")
-                    .arg("/sbin/capsh --has-i=cap_net_admin");
-                let _ = util::evaluate_requiring_success(command)?;
+                    .arg("/sbin/capsh --has-i=cap_net_admin")
+                    .evaluate_requiring_success()?;
 
                 return Ok(TaskFulfilled::Yes)
             }

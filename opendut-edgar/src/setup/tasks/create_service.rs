@@ -7,7 +7,7 @@ use anyhow::{Context, Result};
 use crate::setup::task::{Success, Task, TaskFulfilled};
 use crate::setup::constants::{executable_install_path, USER_NAME};
 use crate::setup::constants::SYSTEMD_SERVICE_FILE_NAME;
-use crate::setup::util::evaluate_requiring_success;
+use crate::setup::util::EvaluateRequiringSuccess;
 
 
 pub fn systemd_file_path() -> PathBuf {
@@ -62,10 +62,9 @@ impl Task for CreateServiceFile {
         fs::write(&out_path, systemd_file_content())
             .context(format!("Error while writing service file to '{}'", out_path.display()))?;
 
-        let mut command = Command::new("systemctl");
-        let command = command
-            .arg("daemon-reload");
-        let _ = evaluate_requiring_success(command)?;
+        let _ = Command::new("systemctl")
+            .arg("daemon-reload")
+            .evaluate_requiring_success()?;
 
         Ok(Success::default())
     }
