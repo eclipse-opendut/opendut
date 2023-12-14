@@ -11,12 +11,14 @@ services:
     volumes:
       - ../../../target/ci/distribution/x86_64-unknown-linux-gnu/:/opt/artifacts
       - "../../../resources/development/tls/insecure-development-ca.pem:/etc/opendut-network/tls/ca.pem"
+      - "../../../target/debug/opendut-cleo:/usr/bin/cleo"
     cap_add:
       - NET_ADMIN
     environment:
       # cleo
       - OPENDUT_CLEO_NETWORK_CARL_HOST=carl
       - OPENDUT_CLEO_NETWORK_CARL_PORT=443
+      - OPENDUT_CLEO_NETWORK_TLS_DOMAIN_NAME_OVERRIDE=carl  # default developer certificate is only valid for localhost
       # testenv
       - NETBIRD_GROUP=testenv
       - OPENDUT_EDGAR_REPLICAS=4
@@ -39,12 +41,14 @@ services:
     volumes:
       - ../../../target/ci/distribution/x86_64-unknown-linux-gnu/:/opt/artifacts
       - "../../../resources/development/tls/insecure-development-ca.pem:/etc/opendut-network/tls/ca.pem"
+      - "../../../target/debug/opendut-cleo:/usr/bin/cleo"
     cap_add:
       - NET_ADMIN
     environment:
       # cleo
       - OPENDUT_CLEO_NETWORK_CARL_HOST=carl
       - OPENDUT_CLEO_NETWORK_CARL_PORT=443
+      - OPENDUT_CLEO_NETWORK_TLS_DOMAIN_NAME_OVERRIDE=carl  # default developer certificate is only valid for localhost
       # testenv
       - NETBIRD_GROUP=testenv
       - OPENDUT_EDGAR_REPLICAS=4
