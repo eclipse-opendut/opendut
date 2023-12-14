@@ -1,13 +1,13 @@
 use clap::{Parser, Subcommand};
-use strum::IntoEnumIterator;
 use tracing_subscriber::fmt::format::FmtSpan;
+
+pub use types::{Arch, Package};
 
 mod constants;
 mod metadata;
 pub mod packages;
 mod tasks;
 mod types;
-pub use types::{Arch, Package};
 mod util;
 
 shadow_rs::shadow!(build);
@@ -35,10 +35,9 @@ enum Task {
         #[arg(long)]
         target: Option<Arch>,
     },
-    /// Generate a license representation in JSON
-    GenerateLicenses {
-        #[arg(long)]
-        package: Option<Package>,
+    Licenses {
+        #[command(subcommand)]
+        task: tasks::licenses::LicensesTask,
     },
     Lea {
         #[command(subcommand)]
@@ -70,16 +69,6 @@ fn main() -> anyhow::Result<()> {
                 }
             }
         }
-        Task::GenerateLicenses { package } => {
-            match package {
-                Some(package) => tasks::licenses::generate_licenses(&package)?,
-                None => {
-                    for package in Package::iter() {
-                        tasks::licenses::generate_licenses(&package)?
-                    }
-                }
-            }
-        }
         Task::Distribution { package, target } => {
             let target = Arch::get_or_default(target);
             match package {
@@ -93,6 +82,7 @@ fn main() -> anyhow::Result<()> {
                 }
             }
         }
+        Task::Licenses { task } => tasks::licenses::LicensesTask::handle_task(task)?,
         Task::Lea { task } => packages::lea::LeaTask::handle_task(task)?,
         Task::Edgar { task } => packages::edgar::EdgarTask::handle_task(task)?,
     };
