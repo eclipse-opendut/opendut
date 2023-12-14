@@ -12,6 +12,11 @@ on:
 # OPENDUT_GH_RUNNER_LARGE: runner labels for large jobs
 
 jobs:
+  legal:
+    uses: ./.github/workflows/legal.yaml
+#    with:
+#      runs-on: "${{ vars.OPENDUT_GH_RUNNER_SMALL }}"
+
   test:
     uses: ./.github/workflows/test.yaml
 #    with:
