@@ -7,6 +7,12 @@ pub struct Topology {
     pub devices: Vec<Device>,
 }
 
+impl Topology {
+    pub fn new(devices: Vec<Device>) -> Self {
+        Self { devices }
+    }
+}
+
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct DeviceId(pub uuid::Uuid);

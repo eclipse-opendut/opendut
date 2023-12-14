@@ -18,6 +18,7 @@ mod components;
 
 #[component(transparent)]
 pub fn ClusterConfigurator() -> impl IntoView {
+
     #[component]
     fn inner() -> impl IntoView {
 

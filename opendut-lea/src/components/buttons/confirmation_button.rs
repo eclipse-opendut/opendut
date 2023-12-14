@@ -1,7 +1,7 @@
 use leptos::*;
 use leptos::html::Div;
 use leptos_use::on_click_outside;
-use crate::components::IconButton;
+use crate::components::{ButtonSize, IconButton};
 use crate::components::{ButtonColor, ButtonState, FontAwesomeIcon};
 use crate::components::doorhanger::{Doorhanger, DoorhangerAlignment};
 
@@ -9,6 +9,7 @@ use crate::components::doorhanger::{Doorhanger, DoorhangerAlignment};
 pub fn ConfirmationButton<A>(
     #[prop(into)] icon: MaybeSignal<FontAwesomeIcon>,
     #[prop(into)] color: MaybeSignal<ButtonColor>,
+    #[prop(into)] size: MaybeSignal<ButtonSize>,
     #[prop(into)] state: MaybeSignal<ButtonState>,
     #[prop(into)] label: MaybeSignal<String>,
     on_conform: A,
@@ -36,6 +37,7 @@ where A: Fn() + 'static {
                         <IconButton
                             icon=icon
                             color=color
+                            size=size
                             state=state
                             label=aria_label
                             on_action=move || doorhanger_visible.set(true)
