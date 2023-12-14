@@ -66,7 +66,9 @@ impl fmt::Display for InterfaceName {
 impl TryFrom<String> for InterfaceName {
     type Error = InterfaceNameError;
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        if value.len() > 15 {
+        if value.is_empty() {
+            Err(InterfaceNameError { message: format!("Interface name may not be empty.") })
+        } else if value.len() > 15 {
             Err(InterfaceNameError { message: format!("Interface name '{value}' is longer than 15 characters. This is not supported by Linux.") })
         } else {
             Ok(Self { name: value })
