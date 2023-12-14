@@ -37,11 +37,10 @@ pub fn bundle_collected_files(package: &Package, target: &Arch) -> anyhow::Resul
     let out_dir = out_arch_dir(target);
     fs::create_dir_all(&out_dir)?;
 
-    let platform = "linux";
-    let arch = target.triple();
+    let target_triple = target.triple();
     let version = crate::build::PKG_VERSION;
 
-    let file = fs::File::create(out_dir.join(format!("{}-{platform}-{arch}-{version}.tar.gz", package.ident())))?;
+    let file = fs::File::create(out_dir.join(format!("{}-{target_triple}-{version}.tar.gz", package.ident())))?;
     let mut tar_gz = tar::Builder::new(
         GzEncoder::new(file, Compression::best())
     );

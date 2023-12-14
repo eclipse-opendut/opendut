@@ -377,20 +377,22 @@ fn enumerate_distribution_tar_files(dist_path: PathBuf) -> Vec<String> {
     files
 }
 
-fn assert_only_one_distribution_of_each_component(expected_dist_files: &Vec<&str>, files: &Vec<String>) {
+fn assert_exactly_one_distribution_of_each_component(expected_dist_files: &Vec<&str>, files: &Vec<String>) {
     for expected in expected_dist_files.clone() {
         let filtered_existing_files = files.iter().cloned()
             .filter(|file| file.contains(expected))
             .collect::<Vec<_>>();
         assert_eq!(filtered_existing_files.len(), 1,
-                   "There should be only one dist of '{}'. Found: {:?}", expected, filtered_existing_files);
+                   "There should be exactly one dist of '{}'. Found: {:?}", expected, filtered_existing_files);
     }
 }
+
+const TARGET_TRIPLE: &'static str = "x86_64-unknown-linux-gnu";
 
 fn check_if_distribution_tar_exists_of_each_component(expected_dist_files: &Vec<&str>, files: Vec<String>) -> bool {
     let stripped_version_of_files = files.iter().cloned()
         .map(|file| {
-            let pos = file.find("linux-x86_64").map(|i| i + 12).unwrap();
+            let pos = file.find(TARGET_TRIPLE).map(|i| i + 12).unwrap();
             file.index(..pos).to_owned()
         })
         .collect::<Vec<_>>();
@@ -402,9 +404,9 @@ fn check_if_distribution_tar_exists_of_each_component(expected_dist_files: &Vec<
 }
 
 fn make_distribution_with_cargo() {
-    println!("Create cargo distribution");
+    println!("Create distribution with cargo: 'cargo ci distribution'");
     let dist_status = Command::new("cargo")
-        .arg("make")
+        .arg("ci")
         .arg("distribution")
         .status()
         .expect("Failed to update distribution");
@@ -413,11 +415,11 @@ fn make_distribution_with_cargo() {
 fn make_distribution_if_not_present() {
     let root_dir = project_root_dir();
     let dist_directory_path = Path::new(root_dir.as_str())
-        .join("target/ci/distribution/x86_64-unknown-linux-gnu");
+        .join(format!("target/ci/distribution/{}", TARGET_TRIPLE));
     let expected_dist_files = vec!(
-        "opendut-cleo-linux-x86_64",
-        "opendut-edgar-linux-x86_64",
-        "opendut-carl-linux-x86_64",
+        //"opendut-cleo-linux-x86_64",
+        "opendut-edgar-x86_64-unknown-linux-gnu",
+        "opendut-carl-x86_64-unknown-linux-gnu",
     );
 
     if !dist_directory_path.exists() {
@@ -425,7 +427,7 @@ fn make_distribution_if_not_present() {
     }
 
     let present_dist_files = enumerate_distribution_tar_files(dist_directory_path);
-    assert_only_one_distribution_of_each_component(&expected_dist_files, &present_dist_files);
+    assert_exactly_one_distribution_of_each_component(&expected_dist_files, &present_dist_files);
 
     if check_if_distribution_tar_exists_of_each_component(&expected_dist_files, present_dist_files) {
         make_distribution_with_cargo();

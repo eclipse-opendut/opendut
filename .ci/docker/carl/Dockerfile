@@ -1,10 +1,11 @@
 FROM ubuntu:22.04
 ARG VERSION
+ENV TARGET_TRIPLE=x86_64-unknown-linux-gnu
 
 RUN apt update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata ca-certificates curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt
-ADD target/ci/distribution/x86_64-unknown-linux-gnu/opendut-carl-linux-x86_64-$VERSION.tar.gz /opt
+ADD target/ci/distribution/x86_64-unknown-linux-gnu/opendut-carl-$TARGET_TRIPLE-$VERSION.tar.gz /opt
 
 EXPOSE 8080
 

@@ -20,6 +20,8 @@ services:
 
     environment:
       #- OPENDUT_CARL_NETWORK_TLS_CERTIFICATE=/etc/opendut-network/tls/insecure-development-ca.pem
+      - OPENDUT_CARL_NETWORK_REMOTE_HOST=carl
+      - OPENDUT_CARL_NETWORK_REMOTE_PORT=443
       - OPENDUT_CARL_NETWORK_BIND_PORT=443
       - OPENDUT_CARL_VPN_ENABLED=false
       - OPENDUT_CARL_VPN_NETBIRD_BASE-URL=http://netbird:8080
