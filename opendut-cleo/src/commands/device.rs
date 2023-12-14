@@ -58,11 +58,13 @@ pub mod create {
         let maybe_existing_device = peer_descriptor.topology.devices.iter_mut().find(|device| device.id == device_id) ;
         match maybe_existing_device {
             None => {
+                //TODO provide separate `update device` command to not need this custom input handling
+                let name = name.ok_or(String::from("Cannot create new device because of missing device name."))?;
                 let interface = interface.ok_or(String::from("Cannot create new device because of missing interface name."))?;
 
                 let new_device = Device {
                     id: device_id,
-                    name: name.unwrap_or_default(),
+                    name,
                     description: description.unwrap_or_default(),
                     location: location.unwrap_or_default(),
                     interface,
@@ -71,20 +73,20 @@ pub mod create {
                 peer_descriptor.topology.devices.push(new_device);
             }
             Some(device) => {
-                if let Some(name) = name { 
-                    device.name = name; 
-                }            
-                if let Some(description) = description { 
+                if let Some(name) = name {
+                    device.name = name;
+                }
+                if let Some(description) = description {
                     device.description = description; 
-                }            
-                if let Some(location) = location { 
-                    device.location = location; 
-                }            
-                if let Some(interface) = interface { 
-                    device.interface = interface; 
-                }            
-                if let Some(tags) = tags { 
-                    device.tags = tags; 
+                }
+                if let Some(location) = location {
+                    device.location = location;
+                }
+                if let Some(interface) = interface {
+                    device.interface = interface;
+                }
+                if let Some(tags) = tags {
+                    device.tags = tags;
                 }
             }
         }
