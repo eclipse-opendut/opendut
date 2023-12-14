@@ -4,7 +4,7 @@ use anyhow::Result;
 
 use crate::setup::constants::SYSTEMD_SERVICE_FILE_NAME;
 use crate::setup::task::{Success, Task, TaskFulfilled};
-use crate::setup::util::evaluate_requiring_success;
+use crate::setup::util::EvaluateRequiringSuccess;
 
 pub struct StartService;
 impl Task for StartService {
@@ -24,11 +24,11 @@ impl Task for StartService {
         }
     }
     fn execute(&self) -> Result<Success> {
-        let mut command = Command::new("systemctl");
-        let command = command
+        let _ = Command::new("systemctl")
             .args(["enable", "--now"]) //enable and start
-            .arg(SYSTEMD_SERVICE_FILE_NAME);
-        let _ = evaluate_requiring_success(command)?;
+            .arg(SYSTEMD_SERVICE_FILE_NAME)
+            .evaluate_requiring_success()?;
+
         Ok(Success::default())
     }
 }

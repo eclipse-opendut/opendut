@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use crate::Package;
+use crate::util::RunRequiringSuccess;
 
 const PACKAGE: &Package = &Package::Lea;
 
@@ -21,7 +22,7 @@ impl LeaTask {
                 Command::new("trunk")
                     .arg("watch")
                     .current_dir(self_dir())
-                    .status()?;
+                    .run_requiring_success();
             }
         };
         Ok(())
@@ -45,7 +46,7 @@ pub mod build {
                 "--dist", &out_dir.display().to_string(),
             ])
             .current_dir(working_dir)
-            .status()?;
+            .run_requiring_success();
 
         Ok(())
     }

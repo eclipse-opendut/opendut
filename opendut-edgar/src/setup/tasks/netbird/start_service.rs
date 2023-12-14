@@ -5,7 +5,7 @@ use std::time::Duration;
 use anyhow::{anyhow, Result};
 
 use crate::setup::task::{Success, Task, TaskFulfilled};
-use crate::setup::util::evaluate_requiring_success;
+use crate::setup::util::EvaluateRequiringSuccess;
 
 const UP_CHECK_RETRIES: usize = 50;
 const UP_CHECK_INTERVAL: Duration = Duration::from_millis(200);
@@ -28,9 +28,10 @@ impl Task for StartService {
         }
     }
     fn execute(&self) -> Result<Success> {
-        let mut command = Command::new("systemctl");
-        let command = command.arg("start").arg("netbird");
-        let _ = evaluate_requiring_success(command)?;
+        let _ = Command::new("systemctl")
+            .arg("start")
+            .arg("netbird")
+            .evaluate_requiring_success()?;
 
         let socket_path = opendut_netbird_client_api::client::socket_path();
         for _ in 1..=UP_CHECK_RETRIES {

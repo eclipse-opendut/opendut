@@ -3,7 +3,7 @@ use std::process::Command;
 use anyhow::{Context, Result};
 
 use crate::setup::task::{Success, Task, TaskFulfilled};
-use crate::setup::util::evaluate_requiring_success;
+use crate::setup::util::EvaluateRequiringSuccess;
 
 pub struct CheckOsRequirements;
 impl Task for CheckOsRequirements {
@@ -15,9 +15,9 @@ impl Task for CheckOsRequirements {
     }
     fn execute(&self) -> Result<Success> {
 
-        let mut systemd = Command::new("systemctl");
-        let systemd = systemd.arg("--version");
-        evaluate_requiring_success(systemd)
+        Command::new("systemctl")
+            .arg("--version")
+            .evaluate_requiring_success()
             .context("SystemD is required.")?;
 
         Ok(Success::default())

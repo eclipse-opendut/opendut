@@ -7,9 +7,11 @@ use strum::IntoEnumIterator;
 
 use crate::{constants, util};
 use crate::Package;
+use crate::util::RunRequiringSuccess;
 
 #[derive(Debug, Subcommand)]
 pub enum LicensesTask {
+    Check,
     /// Generate a license representation in JSON
     Json {
         #[arg(long)]
@@ -20,6 +22,9 @@ impl LicensesTask {
     #[tracing::instrument]
     pub fn handle_task(self) -> anyhow::Result<()> {
         match self {
+            LicensesTask::Check => {
+                check::check_licenses()?;
+            }
             LicensesTask::Json { package } => match package {
                 Some(package) => json::export_json(&package)?,
                 None => {
@@ -33,6 +38,20 @@ impl LicensesTask {
     }
 }
 
+mod check {
+    use super::*;
+
+    #[tracing::instrument]
+    pub fn check_licenses() -> anyhow::Result<()> {
+        util::install_crate("cargo-deny")?;
+
+        Command::new("cargo-deny")
+            .arg("check")
+            .run_requiring_success();
+
+        Ok(())
+    }
+}
 
 pub mod json {
     use super::*;
@@ -47,7 +66,7 @@ pub mod json {
         Command::new("sh")
             .arg("-c")
             .arg(format!("cargo deny --exclude-dev list --layout crate --format json > {}", out_file.display()))
-            .status()?;
+            .run_requiring_success();
 
         log::debug!("Wrote licenses for package '{package}' to path: {}", out_file.display());
 
