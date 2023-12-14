@@ -1,0 +1,84 @@
+name: Rust common setup steps
+description: Setup rust with cached dependencies
+inputs:
+  cargo-deny:
+    description: |
+      Install cargo-deny. Default is false.
+    default: false
+  cargo-sbom:
+    description: |
+      Install cargo-sbom. Default is false.
+    default: false
+  cargo-tarpaulin:
+    description: |
+      Install cargo-tarpaulin. Default is false.
+    default: false
+  cargo-cross:
+    description: |
+      Install cross. Default is false.
+    default: false
+  cargo-trunk:
+    description: |
+      Install trunk. Default is false.
+    default: false
+
+# https://docs.github.com/en/actions/learn-github-actions/expressions#contains
+#
+runs:
+  using: "composite"
+  steps:
+    - name: Install Rust Toolchain
+      uses: dtolnay/rust-toolchain@8504a5cb1826786b18ef7a8819e6fddaf9f3eb8d
+      with:
+        toolchain: nightly
+        targets: x86_64-unknown-linux-gnu
+    - name: Prepare Rust Toolchain Cache
+      uses: actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84
+      with:
+        path: |
+          ~/.rustup/toolchains
+          ~/.rustup/update-hashes
+          ~/.rustup/settings.toml
+        key: rust-toolchain-${{ github.job }}
+    - name: Prepare Rust Script Cache
+      uses: actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84
+      with:
+        path: |
+          ~/.cache/rust-script/
+        key: rust-script-${{ github.job }}
+    - name: Prepare Rust Dependency Cache
+      uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
+    - name: Install Cargo Rust-Script
+      uses: taiki-e/cache-cargo-install-action@f6e15f71e967ea23e30091f4d38ca6300f5c7760
+      with:
+        tool: rust-script
+
+    - name: Install cargo-deny
+      uses: taiki-e/cache-cargo-install-action@f6e15f71e967ea23e30091f4d38ca6300f5c7760
+      with:
+        tool: cargo-deny
+      if: ${{ inputs.cargo-deny == 'true' || inputs.cargo-deny == 'yes' }}
+
+    - name: Install cargo-sbom
+      uses: taiki-e/cache-cargo-install-action@f6e15f71e967ea23e30091f4d38ca6300f5c7760
+      with:
+        tool: cargo-sbom
+      if: ${{ inputs.cargo-sbom == 'true' || inputs.cargo-sbom == 'yes' }}
+
+    - name: Install cargo-tarpaulin
+      uses: taiki-e/cache-cargo-install-action@f6e15f71e967ea23e30091f4d38ca6300f5c7760
+      with:
+          tool: cargo-tarpaulin
+      if: ${{ inputs.cargo-tarpaulin == 'true' || inputs.cargo-tarpaulin == 'yes' }}
+
+    - name: Install Cross
+      uses: taiki-e/cache-cargo-install-action@f6e15f71e967ea23e30091f4d38ca6300f5c7760
+      with:
+        tool: cross
+      if: ${{ inputs.cargo-cross == 'true' || inputs.cargo-cross == 'yes' }}
+
+    - name: Install Trunk
+      uses: taiki-e/cache-cargo-install-action@f6e15f71e967ea23e30091f4d38ca6300f5c7760
+      with:
+        tool: trunk
+      if: ${{ inputs.cargo-trunk == 'true' || inputs.cargo-trunk == 'yes' }}
