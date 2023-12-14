@@ -2,6 +2,7 @@ use clap::{Parser, Subcommand};
 use tracing_subscriber::fmt::format::FmtSpan;
 
 pub use types::{Arch, Package};
+use crate::types::package::PackageSelection;
 
 mod constants;
 mod metadata;
@@ -23,15 +24,15 @@ struct Cli {
 enum Task {
     /// Perform a release build, without bundling a distribution.
     Build {
-        #[arg(long)]
-        package: Option<Package>,
+        #[arg(long, default_value_t)]
+        package: PackageSelection,
         #[arg(long)]
         target: Option<Arch>,
     },
     /// Build a release distribution
     Distribution {
-        #[arg(long)]
-        package: Option<Package>,
+        #[arg(long, default_value_t)]
+        package: PackageSelection,
         #[arg(long)]
         target: Option<Arch>,
     },
@@ -59,10 +60,10 @@ fn main() -> anyhow::Result<()> {
         Task::Build { package, target } => {
             let target = Arch::get_or_default(target);
             match package {
-                Some(Package::Carl) => packages::carl::build::build_release(&target)?,
-                Some(Package::Edgar) => packages::edgar::build::build_release(&target)?,
-                Some(package) => unimplemented!("Building a distribution for {package} is not currently implemented."),
-                None => {
+                PackageSelection::Single(Package::Carl) => packages::carl::build::build_release(&target)?,
+                PackageSelection::Single(Package::Edgar) => packages::edgar::build::build_release(&target)?,
+                PackageSelection::Single(package) => unimplemented!("Building a distribution for {package} is not currently implemented."),
+                PackageSelection::All => {
                     //build distribution of everything
                     packages::carl::build::build_release(&target)?;
                     packages::edgar::build::build_release(&target)?;
@@ -72,10 +73,10 @@ fn main() -> anyhow::Result<()> {
         Task::Distribution { package, target } => {
             let target = Arch::get_or_default(target);
             match package {
-                Some(Package::Carl) => packages::carl::distribution::carl(&target)?,
-                Some(Package::Edgar) => packages::edgar::distribution::edgar(&target)?,
-                Some(package) => unimplemented!("Building a distribution for {package} is not currently implemented."),
-                None => {
+                PackageSelection::Single(Package::Carl) => packages::carl::distribution::carl(&target)?,
+                PackageSelection::Single(Package::Edgar) => packages::edgar::distribution::edgar(&target)?,
+                PackageSelection::Single(package) => unimplemented!("Building a distribution for {package} is not currently implemented."),
+                PackageSelection::All => {
                     //build distribution of everything
                     packages::carl::distribution::carl(&target)?;
                     packages::edgar::distribution::edgar(&target)?;
