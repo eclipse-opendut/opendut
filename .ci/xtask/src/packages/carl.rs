@@ -113,10 +113,10 @@ pub mod distribution {
         }
 
         pub fn generate_licenses() -> anyhow::Result<()> {
-            crate::tasks::licenses::generate_licenses(PACKAGE)
+            crate::tasks::licenses::json::export_json(PACKAGE)
         }
         pub fn out_file() -> PathBuf {
-            crate::tasks::licenses::out_file(PACKAGE)
+            crate::tasks::licenses::json::out_file(PACKAGE)
         }
     }
 }
