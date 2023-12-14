@@ -1,0 +1,37 @@
+name: test
+on:
+  workflow_call:  # allow this workflow to be called from other workflows
+    inputs:
+      runs-on:
+        default: "['ubuntu-latest']"
+        required: false
+        type: string
+
+jobs:
+  test:
+    name: Test and Verify
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+      - name: Rust setup
+        uses: ./.github/actions/rust-setup
+        with:
+          cargo-tarpaulin: true
+
+      - name: Test with Coverage
+        run: cargo tarpaulin --verbose --all-features --workspace --timeout 30 --out xml html lcov
+      - name: Prepare Coverage Reports
+        run: |
+          mkdir -p coverage
+          mv cobertura.xml ./coverage/coverage.cobertura.xml
+          mv tarpaulin-report.html ./coverage/coverage.tarpaulin.html
+          mv lcov.info ./coverage/coverage.lcov.info
+        shell: bash
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
+        with:
+          name: opendut-coverage
+          path: ./coverage
+          if-no-files-found: error
+          retention-days: 30
