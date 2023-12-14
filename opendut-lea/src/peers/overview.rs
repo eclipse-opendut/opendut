@@ -5,7 +5,7 @@ use leptos_use::on_click_outside;
 use opendut_types::peer::PeerId;
 
 use crate::app::{ExpectGlobals, use_app_globals};
-use crate::components::{BasePageContainer, IconButton, ButtonColor, ButtonState, FontAwesomeIcon, Breadcrumb, Initialized};
+use crate::components::{BasePageContainer, IconButton, ButtonColor, ButtonState, FontAwesomeIcon, Breadcrumb, Initialized, ButtonSize};
 use crate::components::health;
 use crate::components::health::Health;
 use crate::routing::{navigate_to, WellKnownRoutes};
@@ -77,6 +77,7 @@ pub fn PeersOverview() -> impl IntoView {
                         <IconButton
                             icon=FontAwesomeIcon::Plus
                             color=ButtonColor::Success
+                            size=ButtonSize::Normal
                             state=ButtonState::Enabled
                             label="Create peer"
                             on_action=move || {
@@ -88,6 +89,7 @@ pub fn PeersOverview() -> impl IntoView {
                         <IconButton
                             icon=FontAwesomeIcon::ArrowsRotate
                             color=ButtonColor::Light
+                            size=ButtonSize::Normal
                             state=ButtonState::Enabled
                             label="Refresh table of peers"
                             on_action=move || {
@@ -174,6 +176,7 @@ where OnRemove: Fn() + 'static {
                             <IconButton
                                 icon=FontAwesomeIcon::EllipsisVertical
                                 color=ButtonColor::White
+                                size=ButtonSize::Normal
                                 state=ButtonState::Enabled
                                 label="Show Peer Action Menu"
                                 on_action=move || {

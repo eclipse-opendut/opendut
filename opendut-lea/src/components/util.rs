@@ -1,4 +1,4 @@
-use leptos::{MaybeSignal, ReadSignal, Signal, SignalGet, SignalWith};
+use leptos::{MaybeSignal, ReadSignal, RwSignal, Signal, SignalGet, SignalUpdate, SignalWith};
 use leptos_router::use_params_map;
 
 use crate::components::ButtonState;
@@ -52,4 +52,61 @@ pub fn use_active_tab<T: for<'a> TryFrom<&'a str, Error=impl ToString> + Default
             }
         }
     }))
+}
+
+pub trait SignalToggle {
+    fn toggle(&self);
+}
+
+impl SignalToggle for RwSignal<bool> {
+    fn toggle(&self) {
+        self.update(|value| *value = !*value)
+    }
+}
+
+pub trait Toggled {
+    fn derive_toggled<T>(&self, on: T, off: T) -> MaybeSignal<T>
+    where T: Clone;
+}
+
+impl Toggled for ReadSignal<bool> {
+    fn derive_toggled<T>(&self, on: T, off: T) -> MaybeSignal<T>
+    where
+        T: Clone
+    {
+        derive_toggled(self, on, off)
+    }
+}
+
+impl Toggled for Signal<bool> {
+    fn derive_toggled<T>(&self, on: T, off: T) -> MaybeSignal<T>
+    where
+        T: Clone
+    {
+        derive_toggled(self, on, off)
+    }
+}
+
+impl Toggled for RwSignal<bool> {
+    fn derive_toggled<T>(&self, on: T, off: T) -> MaybeSignal<T>
+        where
+            T: Clone
+    {
+        derive_toggled(self, on, off)
+    }
+}
+
+fn derive_toggled<T>(signal: &(impl SignalGet<Value=bool> + Clone + 'static), on: T, off: T) -> MaybeSignal<T>
+where
+    T: Clone
+{
+    let signal = Clone::clone(signal);
+    MaybeSignal::derive(move || {
+        if signal.get() {
+            Clone::clone(&on)
+        }
+        else {
+            Clone::clone(&off)
+        }
+    })
 }

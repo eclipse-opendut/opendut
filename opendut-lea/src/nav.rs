@@ -1,7 +1,7 @@
 use leptos::{component, create_node_ref, create_rw_signal, IntoView, MaybeSignal, SignalGet, SignalSet, SignalUpdate, view};
 use leptos::html::Div;
 use leptos_use::on_click_outside;
-use crate::components::{ButtonColor, ButtonState, FontAwesomeIcon, IconButton};
+use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
 
 #[component]
 pub fn Navbar() -> impl IntoView {
@@ -45,6 +45,7 @@ pub fn Navbar() -> impl IntoView {
                         <IconButton
                             icon=menu_button_icon
                             color=ButtonColor::Light
+                            size=ButtonSize::Normal
                             state=ButtonState::Enabled
                             label="User"
                             on_action=move || menu_visible.update(|is_visible| *is_visible = !*is_visible)
@@ -85,6 +86,7 @@ pub fn Navbar() -> impl IntoView {
                         <IconButton
                             icon=profile_button_icon
                             color=ButtonColor::Light
+                            size=ButtonSize::Normal
                             state=ButtonState::Enabled
                             label="User"
                             on_action=move || profile_visible.update(|is_visible| *is_visible = !*is_visible)

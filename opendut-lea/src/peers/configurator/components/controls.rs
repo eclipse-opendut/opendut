@@ -2,7 +2,7 @@ use leptos::*;
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use crate::app::{ExpectGlobals, use_app_globals};
 
-use crate::components::{ButtonColor, ButtonState, ButtonStateSignalProvider, ConfirmationButton, FontAwesomeIcon, IconButton};
+use crate::components::{ButtonColor, ButtonSize, ButtonState, ButtonStateSignalProvider, ConfirmationButton, FontAwesomeIcon, IconButton};
 use crate::peers::configurator::types::UserPeerConfiguration;
 use crate::routing::{navigate_to, WellKnownRoutes};
 
@@ -32,7 +32,7 @@ fn SavePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl Into
                     let result = carl.peers.store_peer_descriptor(peer_descriptor).await;
                     match result {
                         Ok(_) => {
-                            log::info!("Successfully create peer: {}", peer_id);
+                            log::info!("Successfully stored peer: {peer_id}");
                         }
                         Err(cause) => {
                             log::error!("Failed to create peer <{peer_id}>, due to error: {cause:?}");
@@ -66,6 +66,7 @@ fn SavePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl Into
         <IconButton
             icon=FontAwesomeIcon::Save
             color=ButtonColor::Info
+            size=ButtonSize::Normal
             state=button_state
             label="Save Peer"
             on_action=move || {
@@ -105,6 +106,7 @@ fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl In
         <ConfirmationButton
             icon=FontAwesomeIcon::TrashCan
             color=ButtonColor::Danger
+            size=ButtonSize::Normal
             state=button_state
             label="Remove Peer?"
             on_conform=move || {

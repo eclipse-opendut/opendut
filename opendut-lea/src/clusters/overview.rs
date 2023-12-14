@@ -6,7 +6,7 @@ use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId}
 
 use crate::app::{ExpectGlobals, use_app_globals};
 use crate::clusters::components::CreateClusterButton;
-use crate::components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonState, FontAwesomeIcon, IconButton, Initialized};
+use crate::components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Initialized};
 
 #[component(transparent)]
 pub fn ClustersOverview() -> impl IntoView {
@@ -119,6 +119,7 @@ where OnDeploy: Fn() + 'static {
                             <IconButton
                                 icon=FontAwesomeIcon::EllipsisVertical
                                 color=ButtonColor::White
+                                size=ButtonSize::Normal
                                 state=ButtonState::Enabled
                                 label="Show Cluster Action Menu"
                                 on_action=move || {
