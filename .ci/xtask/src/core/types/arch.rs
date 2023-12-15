@@ -1,6 +1,7 @@
 use std::fmt::{Display, Formatter};
 
 use clap::builder::PossibleValue;
+use clap::ValueEnum;
 use strum::IntoEnumIterator;
 
 
@@ -19,16 +20,14 @@ impl Arch {
             Arch::Arm64 => "aarch64-unknown-linux-gnu",
         }.to_string()
     }
+}
 
-    pub fn get_or_default(target: Option<Arch>) -> Arch {
-        use clap::ValueEnum;
-
-        target.unwrap_or_else(|| {
-            let arch_triple = crate::build::BUILD_TARGET;
-            log::info!("No target specified. Using default target of machine: {arch_triple}");
-            let ignore_case = true;
-            Arch::from_str(arch_triple, ignore_case).unwrap()
-        })
+impl Default for Arch {
+    fn default() -> Self {
+        let arch_triple = crate::build::BUILD_TARGET;
+        log::info!("No target specified. Using default target of machine: {arch_triple}");
+        let ignore_case = true;
+        Arch::from_str(arch_triple, ignore_case).unwrap()
     }
 }
 

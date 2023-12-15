@@ -1,4 +1,5 @@
 use std::process::Command;
+use tracing_subscriber::fmt::format::FmtSpan;
 
 #[tracing::instrument(level = tracing::Level::TRACE)]
 pub fn install_crate(name: &str) -> anyhow::Result<()> {
@@ -10,7 +11,7 @@ pub fn install_crate(name: &str) -> anyhow::Result<()> {
 }
 
 
-pub(crate) trait RunRequiringSuccess {
+pub trait RunRequiringSuccess {
     fn run_requiring_success(&mut self);
 }
 impl RunRequiringSuccess for Command {
@@ -26,4 +27,22 @@ impl RunRequiringSuccess for Command {
             panic!("{}", error)
         }
     }
+}
+
+
+pub fn init_tracing() -> anyhow::Result<()> {
+    use tracing_subscriber::filter::{EnvFilter, LevelFilter};
+
+    let tracing_filter = EnvFilter::builder()
+        .with_default_directive(LevelFilter::DEBUG.into())
+        .from_env()?
+        .add_directive("opendut=trace".parse()?);
+
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::TRACE)
+        .with_span_events(FmtSpan::ENTER | FmtSpan::CLOSE)
+        .with_env_filter(tracing_filter)
+        .compact()
+        .init();
+    Ok(())
 }

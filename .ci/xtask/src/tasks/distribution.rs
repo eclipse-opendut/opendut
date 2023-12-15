@@ -40,12 +40,16 @@ pub fn bundle_collected_files(package: &Package, target: &Arch) -> anyhow::Resul
     let target_triple = target.triple();
     let version = crate::build::PKG_VERSION;
 
-    let file = fs::File::create(out_dir.join(format!("{}-{target_triple}-{version}.tar.gz", package.ident())))?;
+    let file = fs::File::create(
+        out_dir.join(format!("{}-{target_triple}-{version}.tar.gz", package.ident()))
+    )?;
+
     let mut tar_gz = tar::Builder::new(
         GzEncoder::new(file, Compression::best())
     );
     tar_gz.append_dir_all(package.ident(), &in_dir)?;
     tar_gz.finish()?;
+
     fs::remove_dir_all(in_dir)?;
 
     Ok(())

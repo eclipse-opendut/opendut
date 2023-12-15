@@ -5,8 +5,7 @@ use opendut_util::settings::LoadedConfig;
 #[allow(non_upper_case_globals)]
 pub mod key {
     pub mod peer {
-        pub const table: &str = "peer";
-        pub const id: &str    = "peer.id";
+        pub const id: &str = "peer.id";
     }
 }
 

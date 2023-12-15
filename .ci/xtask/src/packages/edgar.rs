@@ -4,25 +4,35 @@ use std::path::PathBuf;
 use anyhow::anyhow;
 
 use crate::{Arch, Package};
+use crate::core::types::parsing::arch::ArchSelection;
 
 const PACKAGE: &Package = &Package::Edgar;
 
 
 #[derive(Debug, clap::Subcommand)]
 pub enum EdgarTask {
+    Build {
+        #[arg(long, default_value_t)]
+        target: ArchSelection,
+    },
     GetNetbirdClientArtifact {
-        #[arg(long)]
-        target: Option<Arch>,
+        #[arg(long, default_value_t)]
+        target: ArchSelection,
     },
 }
 impl EdgarTask {
     #[tracing::instrument]
     pub fn handle_task(self) -> anyhow::Result<()> {
         match self {
+            EdgarTask::Build { target } => {
+                for target in target.iter() {
+                    build::build_release(&target)?;
+                }
+            }
             EdgarTask::GetNetbirdClientArtifact { target } => {
-                let target = Arch::get_or_default(target);
-
-                distribution::netbird::get_netbird_client_artifact(&target)?;
+                for target in target.iter() {
+                    distribution::netbird::get_netbird_client_artifact(&target)?;
+                }
             }
         };
         Ok(())
