@@ -9,19 +9,18 @@ use crate::core::types::parsing::arch::ArchSelection;
 const PACKAGE: &Package = &Package::Edgar;
 
 
+/// Tasks available or specific for EDGAR
+#[derive(Debug, clap::Parser)]
+#[command(alias="opendut-edgar")]
+pub struct EdgarCli {
+    #[command(subcommand)]
+    pub task: Task,
+}
+
 #[derive(Debug, clap::Subcommand)]
-pub enum EdgarTask {
-    /// Perform a release build, without bundling a distribution.
-    Build {
-        #[arg(long, default_value_t)]
-        target: ArchSelection,
-    },
-    /// Build and bundle a release distribution
-    #[command(alias="dist")]
-    Distribution {
-        #[arg(long, default_value_t)]
-        target: ArchSelection,
-    },
+pub enum Task {
+    Build(crate::tasks::build::Build),
+    Distribution(crate::tasks::distribution::Distribution),
 
     /// Download the NetBird Client artifact, as it normally happens when building a distribution.
     /// Intended for parallelization in CI/CD.
@@ -30,20 +29,21 @@ pub enum EdgarTask {
         target: ArchSelection,
     },
 }
-impl EdgarTask {
-    pub fn handle_task(self) -> anyhow::Result<()> {
-        match self {
-            EdgarTask::Build { target } => {
+
+impl EdgarCli {
+    pub fn handle(self) -> anyhow::Result<()> {
+        match self.task {
+            Task::Build(crate::tasks::build::Build { target }) => {
                 for target in target.iter() {
                     build::build_release(&target)?;
                 }
             }
-            EdgarTask::Distribution { target } => {
+            Task::Distribution(crate::tasks::distribution::Distribution { target }) => {
                 for target in target.iter() {
                     distribution::edgar_distribution(&target)?;
                 }
             }
-            EdgarTask::GetNetbirdClientArtifact { target } => {
+            Task::GetNetbirdClientArtifact { target } => {
                 for target in target.iter() {
                     distribution::netbird::get_netbird_client_artifact(&target)?;
                 }

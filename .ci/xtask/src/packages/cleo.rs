@@ -1,34 +1,33 @@
 use std::path::PathBuf;
 
 use crate::{Arch, Package};
-use crate::core::types::parsing::arch::ArchSelection;
 
 const PACKAGE: &Package = &Package::Cleo;
 
 
-#[derive(Debug, clap::Subcommand)]
-pub enum CleoTask {
-    /// Perform a release build, without bundling a distribution.
-    Build {
-        #[arg(long, default_value_t)]
-        target: ArchSelection,
-    },
-    /// Build and bundle a release distribution
-    #[command(alias="dist")]
-    Distribution {
-        #[arg(long, default_value_t)]
-        target: ArchSelection,
-    },
+/// Tasks available or specific for CLEO
+#[derive(Debug, clap::Parser)]
+#[command(alias="opendut-cleo")]
+pub struct CleoCli {
+    #[command(subcommand)]
+    pub task: Task,
 }
-impl CleoTask {
-    pub fn handle_task(self) -> anyhow::Result<()> {
-        match self {
-            CleoTask::Build { target } => {
+
+#[derive(Debug, clap::Subcommand)]
+pub enum Task {
+    Build(crate::tasks::build::Build),
+    Distribution(crate::tasks::distribution::Distribution),
+}
+
+impl CleoCli {
+    pub fn handle(self) -> anyhow::Result<()> {
+        match self.task {
+            Task::Build(crate::tasks::build::Build { target }) => {
                 for target in target.iter() {
                     build::build_release(&target)?;
                 }
             },
-            CleoTask::Distribution { target } => {
+            Task::Distribution(crate::tasks::distribution::Distribution { target }) => {
                 for target in target.iter() {
                     distribution::cleo_distribution(&target)?;
                 }
@@ -37,7 +36,6 @@ impl CleoTask {
         Ok(())
     }
 }
-
 
 pub mod build {
     use super::*;

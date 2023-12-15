@@ -1,11 +1,9 @@
-use clap::{Parser, Subcommand};
+use clap::Parser;
 
 pub(crate) use core::constants;
 pub(crate) use core::metadata;
 pub(crate) use core::types::{self, Arch, Package};
 pub(crate) use core::util;
-
-use crate::types::parsing::arch::ArchSelection;
 
 mod core;
 pub mod packages;
@@ -14,55 +12,22 @@ mod tasks;
 shadow_rs::shadow!(build);
 
 
-#[derive(Parser)]
+#[derive(clap::Parser)]
 #[command()]
 struct Cli {
     #[command(subcommand)]
     task: Task,
 }
-#[derive(Subcommand)]
+#[derive(clap::Subcommand)]
 enum Task {
-    /// Perform a release build, without bundling a distribution.
-    Build {
-        #[arg(long, default_value_t)]
-        target: ArchSelection,
-    },
-    /// Build and bundle a release distribution
-    #[command(alias="dist")]
-    Distribution {
-        #[arg(long, default_value_t)]
-        target: ArchSelection,
-    },
-    /// Check or export licenses
-    Licenses {
-        #[command(subcommand)]
-        task: tasks::licenses::LicensesTask,
-    },
+    Build(tasks::build::Build),
+    Distribution(tasks::distribution::Distribution),
+    Licenses(tasks::licenses::LicensesCli),
 
-    /// Tasks available or specific for CARL
-    #[command(alias="opendut-carl")]
-    Carl {
-        #[command(subcommand)]
-        task: packages::carl::CarlTask,
-    },
-    /// Tasks available or specific for CLEO
-    #[command(alias="opendut-cleo")]
-    Cleo {
-        #[command(subcommand)]
-        task: packages::cleo::CleoTask,
-    },
-    /// Tasks available or specific for EDGAR
-    #[command(alias="opendut-edgar")]
-    Edgar {
-        #[command(subcommand)]
-        task: packages::edgar::EdgarTask,
-    },
-    /// Tasks available or specific for LEA
-    #[command(alias="opendut-lea")]
-    Lea {
-        #[command(subcommand)]
-        task: packages::lea::LeaTask,
-    },
+    Carl(packages::carl::CarlCli),
+    Cleo(packages::cleo::CleoCli),
+    Edgar(packages::edgar::EdgarCli),
+    Lea(packages::lea::LeaCli),
 }
 
 fn main() -> anyhow::Result<()> {
@@ -72,7 +37,7 @@ fn main() -> anyhow::Result<()> {
 
     let cli = Cli::parse();
     match cli.task {
-        Task::Build { target } => {
+        Task::Build(tasks::build::Build { target }) => {
             for target in target.iter() {
                 packages::carl::build::build_release(&target)?;
                 packages::cleo::build::build_release(&target)?;
@@ -80,19 +45,19 @@ fn main() -> anyhow::Result<()> {
                 packages::lea::build::build_release()?;
             }
         }
-        Task::Distribution { target } => {
+        Task::Distribution(tasks::distribution::Distribution { target }) => {
             for target in target.iter() {
                 packages::carl::distribution::carl_distribution(&target)?;
                 packages::edgar::distribution::edgar_distribution(&target)?;
                 packages::cleo::distribution::cleo_distribution(&target)?;
             }
         }
-        Task::Licenses { task } => tasks::licenses::LicensesTask::handle_task(task)?,
+        Task::Licenses(implementation) => implementation.handle()?,
 
-        Task::Carl { task } => packages::carl::CarlTask::handle_task(task)?,
-        Task::Cleo { task } => packages::cleo::CleoTask::handle_task(task)?,
-        Task::Edgar { task } => packages::edgar::EdgarTask::handle_task(task)?,
-        Task::Lea { task } => packages::lea::LeaTask::handle_task(task)?,
+        Task::Carl(implementation) => implementation.handle()?,
+        Task::Cleo(implementation) => implementation.handle()?,
+        Task::Edgar(implementation) => implementation.handle()?,
+        Task::Lea(implementation) => implementation.handle()?,
     };
     Ok(())
 }

@@ -2,7 +2,16 @@ use std::fs;
 use std::path::PathBuf;
 
 use crate::{constants, Package, Arch};
+use crate::types::parsing::arch::ArchSelection;
 
+
+/// Build and bundle a release distribution
+#[derive(Debug, clap::Parser)]
+#[command(alias="dist")]
+pub struct Distribution {
+    #[arg(long, default_value_t)]
+    pub target: ArchSelection,
+}
 
 #[tracing::instrument]
 pub fn clean(package: &Package, target: &Arch) -> anyhow::Result<()> {

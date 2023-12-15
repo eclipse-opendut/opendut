@@ -3,8 +3,16 @@ use std::path::PathBuf;
 
 use crate::{constants, util, Package};
 use crate::Arch;
+use crate::core::types::parsing::arch::ArchSelection;
 use crate::util::RunRequiringSuccess;
 
+
+/// Perform a release build, without bundling a distribution.
+#[derive(Debug, clap::Parser)]
+pub struct Build {
+    #[arg(long, default_value_t)]
+    pub target: ArchSelection,
+}
 
 #[tracing::instrument]
 pub fn build_release(package: &Package, target: &Arch) -> anyhow::Result<()> {

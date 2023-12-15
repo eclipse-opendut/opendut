@@ -6,19 +6,27 @@ use crate::util::RunRequiringSuccess;
 
 const PACKAGE: &Package = &Package::Lea;
 
+/// Tasks available or specific for LEA
+#[derive(Debug, clap::Parser)]
+#[command(alias="opendut-lea")]
+pub struct LeaCli {
+    #[command(subcommand)]
+    pub task: Task,
+}
 
 #[derive(Debug, clap::Subcommand)]
-pub enum LeaTask {
+pub enum Task {
     /// Perform a release build, without bundling a distribution.
     Build,
     /// Start a development server for LEA which watches for file changes.
     Watch,
 }
-impl LeaTask {
-    pub fn handle_task(self) -> anyhow::Result<()> {
-        match self {
-            LeaTask::Build => build::build_release()?,
-            LeaTask::Watch => watch::watch()?,
+
+impl LeaCli {
+    pub fn handle(self) -> anyhow::Result<()> {
+        match self.task {
+            Task::Build => build::build_release()?,
+            Task::Watch => watch::watch()?,
         };
         Ok(())
     }

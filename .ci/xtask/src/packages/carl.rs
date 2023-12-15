@@ -1,34 +1,32 @@
 use std::fs;
 use std::path::PathBuf;
 use crate::{Arch, Package};
-use crate::core::types::parsing::arch::ArchSelection;
 
 const PACKAGE: &Package = &Package::Carl;
 
+/// Tasks available or specific for CARL
+#[derive(Debug, clap::Parser)]
+#[command(alias="opendut-carl")]
+pub struct CarlCli {
+    #[command(subcommand)]
+    pub task: Task,
+}
 
 #[derive(Debug, clap::Subcommand)]
-pub enum CarlTask {
-    /// Perform a release build, without bundling a distribution.
-    Build {
-        #[arg(long, default_value_t)]
-        target: ArchSelection,
-    },
-    /// Build and bundle a release distribution
-    #[command(alias="dist")]
-    Distribution {
-        #[arg(long, default_value_t)]
-        target: ArchSelection,
-    },
+pub enum Task {
+    Build(crate::tasks::build::Build),
+    Distribution(crate::tasks::distribution::Distribution),
 }
-impl CarlTask {
-    pub fn handle_task(self) -> anyhow::Result<()> {
-        match self {
-            CarlTask::Build { target } => {
+
+impl CarlCli {
+    pub fn handle(self) -> anyhow::Result<()> {
+        match self.task {
+            Task::Build(crate::tasks::build::Build { target }) => {
                 for target in target.iter() {
                     build::build_release(&target)?;
                 }
             },
-            CarlTask::Distribution { target } => {
+            Task::Distribution(crate::tasks::distribution::Distribution { target }) => {
                 for target in target.iter() {
                     distribution::carl_distribution(&target)?;
                 }
