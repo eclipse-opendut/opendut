@@ -6,7 +6,6 @@ pub(crate) use core::types::{self, Arch, Package};
 pub(crate) use core::util;
 
 use crate::types::parsing::arch::ArchSelection;
-use crate::types::parsing::package::PackageSelection;
 
 mod core;
 pub mod packages;
@@ -31,8 +30,6 @@ enum Task {
     /// Build and bundle a release distribution
     #[command(alias="dist")]
     Distribution {
-        #[arg(long, default_value_t)]
-        package: PackageSelection,
         #[arg(long, default_value_t)]
         target: ArchSelection,
     },
@@ -74,19 +71,11 @@ fn main() -> anyhow::Result<()> {
                 //TODO build cleo
             }
         }
-        Task::Distribution { package, target } => {
+        Task::Distribution { target } => {
             for target in target.iter() {
-                match package {
-                    PackageSelection::Single(Package::Carl) => packages::carl::distribution::carl(&target)?,
-                    PackageSelection::Single(Package::Edgar) => packages::edgar::distribution::edgar(&target)?,
-                    PackageSelection::Single(package) => unimplemented!("Building a distribution for {package} is not currently implemented."),
-                    PackageSelection::All => {
-                        //build distribution of everything
-                        packages::carl::distribution::carl(&target)?;
-                        packages::edgar::distribution::edgar(&target)?;
-                        //TODO distribution of cleo
-                    }
-                }
+                packages::carl::distribution::carl(&target)?;
+                packages::edgar::distribution::edgar(&target)?;
+                //TODO distribution of cleo
             }
         }
         Task::Licenses { task } => tasks::licenses::LicensesTask::handle_task(task)?,

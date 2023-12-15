@@ -12,6 +12,11 @@ pub enum CarlTask {
         #[arg(long, default_value_t)]
         target: ArchSelection,
     },
+    #[command(alias="dist")]
+    Distribution {
+        #[arg(long, default_value_t)]
+        target: ArchSelection,
+    },
 }
 impl CarlTask {
     #[tracing::instrument]
@@ -20,6 +25,11 @@ impl CarlTask {
             CarlTask::Build { target } => {
                 for target in target.iter() {
                     build::build_release(&target)?;
+                }
+            },
+            CarlTask::Distribution { target } => {
+                for target in target.iter() {
+                    distribution::carl(&target)?;
                 }
             },
         };
