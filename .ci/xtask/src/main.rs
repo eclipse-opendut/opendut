@@ -1,15 +1,16 @@
 use clap::{Parser, Subcommand};
 use tracing_subscriber::fmt::format::FmtSpan;
 
-pub use types::{Arch, Package};
-use crate::types::package::PackageSelection;
+use crate::core::types::package::PackageSelection;
 
-mod constants;
-mod metadata;
+mod core;
+pub use core::constants;
+pub use core::metadata;
+pub use core::types::{self, Arch, Package};
+pub use core::util;
+
 pub mod packages;
 mod tasks;
-mod types;
-mod util;
 
 shadow_rs::shadow!(build);
 

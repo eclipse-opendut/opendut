@@ -93,9 +93,6 @@ mod sbom {
 
     #[tracing::instrument]
     pub fn generate_sbom(package: &Package) -> anyhow::Result<()> {
-        //! [dependencies]
-        //! serde = { version = "*", features = ["derive"] } #only needed due to compile error in serde-spdx v0.8.4
-        //! ``` TODO needed?
         use serde_spdx::spdx::v_2_3::{Spdx, SpdxItemPackages};
 
         util::install_crate("cargo-sbom")?;
