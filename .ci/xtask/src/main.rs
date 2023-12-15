@@ -39,21 +39,25 @@ enum Task {
         task: tasks::licenses::LicensesTask,
     },
 
+    /// Tasks available or specific for CARL
     #[command(alias="opendut-carl")]
     Carl {
         #[command(subcommand)]
         task: packages::carl::CarlTask,
     },
+    /// Tasks available or specific for CLEO
     #[command(alias="opendut-cleo")]
     Cleo {
         #[command(subcommand)]
         task: packages::cleo::CleoTask,
     },
+    /// Tasks available or specific for EDGAR
     #[command(alias="opendut-edgar")]
     Edgar {
         #[command(subcommand)]
         task: packages::edgar::EdgarTask,
     },
+    /// Tasks available or specific for LEA
     #[command(alias="opendut-lea")]
     Lea {
         #[command(subcommand)]

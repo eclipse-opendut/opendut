@@ -11,15 +11,20 @@ const PACKAGE: &Package = &Package::Edgar;
 
 #[derive(Debug, clap::Subcommand)]
 pub enum EdgarTask {
+    /// Perform a release build, without bundling a distribution.
     Build {
         #[arg(long, default_value_t)]
         target: ArchSelection,
     },
+    /// Build and bundle a release distribution
     #[command(alias="dist")]
     Distribution {
         #[arg(long, default_value_t)]
         target: ArchSelection,
     },
+
+    /// Download the NetBird Client artifact, as it normally happens when building a distribution.
+    /// Intended for parallelization in CI/CD.
     GetNetbirdClientArtifact {
         #[arg(long, default_value_t)]
         target: ArchSelection,
