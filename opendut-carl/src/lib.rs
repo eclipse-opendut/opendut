@@ -37,8 +37,11 @@ mod resources;
 mod vpn;
 
 pub async fn create(settings_override: Config) -> Result<()> {
+    let carl_config_hide_secrets_override = config::Config::builder()
+        .set_override("vpn.netbird.auth.secret", "redacted")?
+        .build()?;
 
-    let settings = settings::load_config("carl", include_str!("../carl.toml"), config::FileFormat::Toml, settings_override)?;
+    let settings = settings::load_config("carl", include_str!("../carl.toml"), config::FileFormat::Toml, settings_override, carl_config_hide_secrets_override)?;
 
     log::info!("Started with configuration: {settings:?}");
 

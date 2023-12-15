@@ -28,6 +28,8 @@ services:
       - OPENDUT_CUSTOM_CA1
       - OPENDUT_CUSTOM_CA2
       - OPENDUT_HOSTS
+      # Rust backtrace
+      - RUST_BACKTRACE=1
 
     command: sleep infinity
     user: $DOCKER_USER # ${UID}:${GID}

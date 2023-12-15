@@ -12,6 +12,23 @@ pub enum VpnPeerConfig {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub enum HttpsOnly {
+    True,
+    False,
+}
+impl HttpsOnly {
+    pub fn to_bool(&self) -> bool {
+        match self {
+            HttpsOnly::True => true,
+            HttpsOnly::False => false,
+        }
+    }
+    pub fn default() -> Self {
+        HttpsOnly::True
+    }
+}
+
 pub mod netbird {
     use serde::{Deserialize, Serialize};
     use uuid::Uuid;

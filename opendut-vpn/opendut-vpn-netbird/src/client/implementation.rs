@@ -6,7 +6,7 @@ use serde::Serialize;
 
 use opendut_types::cluster::ClusterId;
 use opendut_types::peer::PeerId;
-use opendut_types::vpn::VpnPeerConfig;
+use opendut_types::vpn::{HttpsOnly, VpnPeerConfig};
 use opendut_vpn::{CreateClusterError, CreatePeerError, DeleteClusterError, DeletePeerError, GetOrCreateConfigurationError, VpnManagementClient};
 
 use crate::{netbird, NetbirdToken, routes};
@@ -134,7 +134,7 @@ impl VpnManagementClient for Client {
 
 impl Client {
 
-    pub fn create(base_url: Url, token: NetbirdToken) -> Result<Self, error::CreateClientError> {
+    pub fn create(base_url: Url, token: NetbirdToken, https_only: HttpsOnly) -> Result<Self, error::CreateClientError> {
         let headers = {
             let mut headers = HeaderMap::new();
             headers.append(header::ACCEPT, json_header_value());
@@ -145,9 +145,10 @@ impl Client {
 
             headers
         };
+
         let client = reqwest::Client::builder()
             .default_headers(headers)
-            .https_only(true)
+            .https_only(https_only.to_bool())
             .build()
             .expect("Failed to construct client.");
 
