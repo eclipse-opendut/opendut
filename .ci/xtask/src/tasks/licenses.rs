@@ -6,7 +6,7 @@ use clap::Subcommand;
 
 use crate::{constants, util};
 use crate::Package;
-use crate::types::package::PackageSelection;
+use crate::types::parsing::package::PackageSelection;
 use crate::util::RunRequiringSuccess;
 
 #[derive(Debug, Subcommand)]
@@ -107,7 +107,7 @@ mod sbom {
             .stdout;
         let sbom = std::str::from_utf8(&sbom)?;
 
-        let mut sbom: Spdx = serde_json::from_str(&sbom)?;
+        let mut sbom: Spdx = serde_json::from_str(sbom)?;
 
         { //override license information for crates with unclear license
             sbom.packages = sbom.packages.map(|packages|

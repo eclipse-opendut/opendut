@@ -9,6 +9,7 @@ const PACKAGE: &Package = &Package::Lea;
 
 #[derive(Debug, clap::Subcommand)]
 pub enum LeaTask {
+    Build,
     /// Start a development server for LEA which watches for file changes.
     Watch,
 }
@@ -16,14 +17,8 @@ impl LeaTask {
     #[tracing::instrument]
     pub fn handle_task(self) -> anyhow::Result<()> {
         match self {
-            LeaTask::Watch => {
-                crate::util::install_crate("trunk")?;
-
-                Command::new("trunk")
-                    .arg("watch")
-                    .current_dir(self_dir())
-                    .run_requiring_success();
-            }
+            LeaTask::Build => build::build_release()?,
+            LeaTask::Watch => watch::watch()?,
         };
         Ok(())
     }
@@ -63,6 +58,21 @@ pub mod licenses {
     }
     pub fn out_file() -> PathBuf {
         crate::tasks::licenses::json::out_file(PACKAGE)
+    }
+}
+
+pub mod watch {
+    use super::*;
+
+    #[tracing::instrument]
+    pub fn watch() -> anyhow::Result<()> {
+        crate::util::install_crate("trunk")?;
+
+        Command::new("trunk")
+            .arg("watch")
+            .current_dir(self_dir())
+            .run_requiring_success();
+        Ok(())
     }
 }
 

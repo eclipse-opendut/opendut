@@ -1,5 +1,7 @@
-pub mod arch;
+mod arch;
 pub use arch::Arch;
 
-pub mod package;
+mod package;
+pub mod parsing;
+
 pub use package::Package;

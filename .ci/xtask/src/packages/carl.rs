@@ -1,9 +1,31 @@
 use std::fs;
 use std::path::PathBuf;
 use crate::{Arch, Package};
+use crate::core::types::parsing::arch::ArchSelection;
 
 const PACKAGE: &Package = &Package::Carl;
 
+
+#[derive(Debug, clap::Subcommand)]
+pub enum CarlTask {
+    Build {
+        #[arg(long, default_value_t)]
+        target: ArchSelection,
+    },
+}
+impl CarlTask {
+    #[tracing::instrument]
+    pub fn handle_task(self) -> anyhow::Result<()> {
+        match self {
+            CarlTask::Build { target } => {
+                for target in target.iter() {
+                    build::build_release(&target)?;
+                }
+            },
+        };
+        Ok(())
+    }
+}
 
 pub mod build {
     use super::*;
