@@ -25,7 +25,6 @@ impl Arch {
 impl Default for Arch {
     fn default() -> Self {
         let arch_triple = crate::build::BUILD_TARGET;
-        log::info!("No target specified. Using default target of machine: {arch_triple}");
         let ignore_case = true;
         Arch::from_str(arch_triple, ignore_case).unwrap()
     }

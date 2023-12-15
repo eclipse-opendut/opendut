@@ -44,6 +44,11 @@ enum Task {
         #[command(subcommand)]
         task: packages::carl::CarlTask,
     },
+    #[command(alias="opendut-cleo")]
+    Cleo {
+        #[command(subcommand)]
+        task: packages::cleo::CleoTask,
+    },
     #[command(alias="opendut-edgar")]
     Edgar {
         #[command(subcommand)]
@@ -66,9 +71,9 @@ fn main() -> anyhow::Result<()> {
         Task::Build { target } => {
             for target in target.iter() {
                 packages::carl::build::build_release(&target)?;
+                packages::cleo::build::build_release(&target)?;
                 packages::edgar::build::build_release(&target)?;
                 packages::lea::build::build_release()?;
-                //TODO build cleo
             }
         }
         Task::Distribution { target } => {
@@ -81,6 +86,7 @@ fn main() -> anyhow::Result<()> {
         Task::Licenses { task } => tasks::licenses::LicensesTask::handle_task(task)?,
 
         Task::Carl { task } => packages::carl::CarlTask::handle_task(task)?,
+        Task::Cleo { task } => packages::cleo::CleoTask::handle_task(task)?,
         Task::Edgar { task } => packages::edgar::EdgarTask::handle_task(task)?,
         Task::Lea { task } => packages::lea::LeaTask::handle_task(task)?,
     };
