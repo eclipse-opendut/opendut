@@ -2,14 +2,19 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 
-use clap::Subcommand;
-
 use crate::{constants, util};
 use crate::Package;
 use crate::types::parsing::package::PackageSelection;
 use crate::util::RunRequiringSuccess;
 
-#[derive(Debug, Subcommand)]
+/// Check or export licenses
+#[derive(Debug, clap::Parser)]
+pub struct LicensesCli {
+    #[command(subcommand)]
+    pub task: LicensesTask,
+}
+
+#[derive(Debug, clap::Subcommand)]
 pub enum LicensesTask {
     /// Check for license violations and security vulnerabilities
     Check,
@@ -24,10 +29,11 @@ pub enum LicensesTask {
         package: PackageSelection,
     },
 }
-impl LicensesTask {
+
+impl LicensesCli {
     #[tracing::instrument]
-    pub fn handle_task(self) -> anyhow::Result<()> {
-        match self {
+    pub fn handle(self) -> anyhow::Result<()> {
+        match self.task {
             LicensesTask::Check => {
                 check::check_licenses()?;
             }
