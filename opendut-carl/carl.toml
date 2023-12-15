@@ -16,6 +16,7 @@ enabled = true
 kind = ""
 
 [vpn.netbird]
-base-url = ""
+url = ""
+https.only = true
 auth.type = ""
 auth.secret = ""

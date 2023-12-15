@@ -9,13 +9,16 @@
 //! strum_macros = { version = "0.25.3" }
 //! serde = { version = "1.0.193", features = ["derive"] }
 //! serde_json = "1.0.108"
+//! phf = { version = "0.11", features = ["macros"] }
 //! ```
 
 
 extern crate clap;
 extern crate dotenv;
 
-use serde::{Deserialize};
+use phf::phf_map;
+use std::net::Ipv4Addr;
+use serde::{de, Deserialize, Deserializer};
 use std::env;
 use std::fs;
 use std::process::{Command, Output};
@@ -26,7 +29,6 @@ use clap::{Parser, Subcommand};
 use dotenv::dotenv;
 use strum::VariantNames;
 use strum_macros::{EnumString, EnumVariantNames, Display};
-use serde_json::{Result, Value};
 
 fn project_root_dir() -> String {
     let output = Command::new("git")
@@ -175,6 +177,18 @@ fn docker_compose_network_delete() {
     assert!(output.success());
 }
 
+fn ip_address_from_str<'de, D>(deserializer: D) -> Result<Ipv4Addr, D::Error>
+    where D: Deserializer<'de>
+{
+    let string = String::deserialize(deserializer)?;
+    let ip_string = string
+        .trim_matches('\"')
+        .trim_end_matches("/24")
+        .to_string();
+    ip_string.parse::<Ipv4Addr>().map_err(de::Error::custom)
+    //ipaddress::IPAddress::parse(&s).map_err(de::Error::custom)
+}
+
 #[derive(Debug, Deserialize)]
 struct ContainerAddress {
     #[serde(rename = "Name")]
@@ -183,25 +197,47 @@ struct ContainerAddress {
     endpoint_id: String,
     #[serde(rename = "MacAddress")]
     mac_address: String,
-    #[serde(rename = "IPv4Address")]
-    ipv4address: String,
+    #[serde(rename = "IPv4Address", deserialize_with = "ip_address_from_str")]
+    ipv4address: Ipv4Addr,
     #[serde(rename = "IPv6Address")]
     ipv6address: String,
 }
 
-// const CONTAINER_NAME_MAP: HashMap<str, str> = HashMap::from([
-//     ("firefox", "firefox"),
-//     ("keycloak-keycloak-1", "keycloak"),
-//     ("keycloak-init_keycloak-1", "keycloak-init"),
-//     ("carl-carl-1", "carl"),
-//     ("netbird-coturn-1", "netbird-coturn"),
-//     ("netbird-signal-1", "netbird-signal"),
-//     ("netbird-management-1", "netbird-management"),
-//     ("netbird-management_init-1", "netbird-management_init"),
-//     ("netbird-dashboard-1", "netbird-dashboard"),
-// ]);
+enum DockerHostnames {
+    Carl,
+    Keycloak,
+    Edgar,
+    NetbirdManagement,
+    NetbirdDashboard,
+    NetbirdSignal,
+    NetbirdCoturn,
+    Firefox,
+}
+
+impl DockerHostnames {
+    fn as_str(&self) -> &'static str {
+        match self {
+            DockerHostnames::Carl => "carl",
+            DockerHostnames::Keycloak => "keycloak",
+            DockerHostnames::Edgar => "edgar",
+            DockerHostnames::NetbirdManagement => "netbird-management",
+            DockerHostnames::NetbirdDashboard => "netbird-dashboard",
+            DockerHostnames::NetbirdSignal => "netbird-signal",
+            DockerHostnames::NetbirdCoturn => "netbird-coturn",
+            DockerHostnames::Firefox => "firefox",
+        }
+    }
+}
+static CONTAINER_NAME_MAP: phf::Map<&'static str, DockerHostnames> = phf_map! {
+    "firefox" => DockerHostnames::Firefox,
+    "keycloak-keycloak-1" => DockerHostnames::Keycloak,
+    "carl-carl-1" => DockerHostnames::Carl,
+    "netbird-management-1" => DockerHostnames::NetbirdManagement,
+    "netbird-dashboard-1" => DockerHostnames::NetbirdDashboard,
+};
 
 fn docker_inspect_network() {
+    println!("# BEGIN OpenDuT docker network 'docker network inspect opendut_network'");
     let output = Command::new("docker")
         .arg("network")
         .arg("inspect")
@@ -212,20 +248,27 @@ fn docker_inspect_network() {
         .expect("Failed to inspect docker network.");
 
     let stdout = consume_output(output).trim_matches('\'').to_string();
-    let result: HashMap<String, ContainerAddress> =
+    let opendut_container_address_map: HashMap<String, ContainerAddress> =
         serde_json::from_str(&stdout).expect("JSON was not well-formatted");
+    let mut sorted_addresses: Vec<(&String, &ContainerAddress)> = opendut_container_address_map.iter().collect();
+    sorted_addresses
+        .sort_by(|a, b| a.1.ipv4address.cmp(&b.1.ipv4address));
 
-    for (key, value) in &result {
-        let ip_address = value.ipv4address
-            .trim_matches('\"')
-            .trim_end_matches("/24")
-            .to_string();
-        let hostname = value.name.clone();
-        let padding = std::cmp::max(0, 50 - hostname.clone().len());
+    for (key, value) in &sorted_addresses {
+        let ip_address = value.ipv4address.to_string();
+        let given_hostname = value.name.clone();
+        let hostname = if CONTAINER_NAME_MAP.contains_key(given_hostname.as_str()) {
+            CONTAINER_NAME_MAP.get(given_hostname.as_str()).unwrap().as_str().to_string()
+        } else {
+            given_hostname
+        };
+
+        let padding = std::cmp::max(0, 20 - ip_address.clone().len());
         let whitespace = std::iter::repeat(" ").take(padding).collect::<String>();
-        let padded_hostname = hostname.clone() + &whitespace;
-        println!("{}  {}", hostname, ip_address);
+        let padded_ip_address = ip_address.clone() + &whitespace;
+        println!("{}  {}", padded_ip_address, hostname);
     }
+    println!("# END OpenDuT docker network 'opendut_network'");
 }
 
 fn consume_output(output: Output) -> String {
@@ -260,7 +303,7 @@ fn start_testenv() {
     docker_compose_up(DockerCoreServices::Carl.as_str());
     docker_compose_up(DockerCoreServices::Netbird.as_str());
 
-    // TODO: start edgar requires:
+    // TODO: start edgar requires additional steps to run in managed mode
     println!("Go to OpenDuT Browser at http://localhost:3000/")
 }
 
@@ -457,7 +500,6 @@ fn main() {
             stop_testenv();
         }
         Commands::Network => {
-            println!("Inspecting docker network:\n");
             docker_inspect_network();
         }
         Commands::Destroy => {

@@ -8,10 +8,11 @@ services:
       context: ../../..
       dockerfile: ./.ci/docker/edgar/Dockerfile
     command: /opt/prepare.sh router
+    #command: sleep infinity
     volumes:
       - ../../../target/ci/distribution/x86_64-unknown-linux-gnu/:/opt/artifacts
       - "../../../resources/development/tls/insecure-development-ca.pem:/etc/opendut-network/tls/ca.pem"
-      - "../../../target/debug/opendut-cleo:/usr/bin/cleo"
+      - "../../../target/debug/opendut-cleo:/usr/bin/opendut-cleo"
     cap_add:
       - NET_ADMIN
     environment:
@@ -29,6 +30,8 @@ services:
       - OPENDUT_CUSTOM_CA1
       - OPENDUT_CUSTOM_CA2
       - OPENDUT_HOSTS
+      # Rust backtrace
+      - RUST_BACKTRACE=1
 
     networks:
       - opendutnet
@@ -38,10 +41,11 @@ services:
       context: ../../..
       dockerfile: ./.ci/docker/edgar/Dockerfile
     command: /opt/prepare.sh
+    #command: sleep infinity
     volumes:
       - ../../../target/ci/distribution/x86_64-unknown-linux-gnu/:/opt/artifacts
       - "../../../resources/development/tls/insecure-development-ca.pem:/etc/opendut-network/tls/ca.pem"
-      - "../../../target/debug/opendut-cleo:/usr/bin/cleo"
+      - "../../../target/debug/opendut-cleo:/usr/bin/opendut-cleo"
     cap_add:
       - NET_ADMIN
     environment:
@@ -59,6 +63,8 @@ services:
       - OPENDUT_CUSTOM_CA1
       - OPENDUT_CUSTOM_CA2
       - OPENDUT_HOSTS
+      # Rust backtrace
+      - RUST_BACKTRACE=1
 
     deploy:
       mode: replicated
