@@ -9,6 +9,7 @@ const PACKAGE: &Package = &Package::Lea;
 
 #[derive(Debug, clap::Subcommand)]
 pub enum LeaTask {
+    /// Perform a release build, without bundling a distribution.
     Build,
     /// Start a development server for LEA which watches for file changes.
     Watch,

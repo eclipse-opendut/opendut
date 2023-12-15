@@ -65,7 +65,7 @@ pub mod licenses {
         let licenses_file = crate::tasks::licenses::json::out_file(package);
 
         let out_dir = out_file(package, target);
-        fs::create_dir_all(&out_dir.parent().unwrap())?;
+        fs::create_dir_all(out_dir.parent().unwrap())?;
 
         fs::copy(licenses_file, out_dir)?;
 

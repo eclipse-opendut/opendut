@@ -8,10 +8,12 @@ const PACKAGE: &Package = &Package::Cleo;
 
 #[derive(Debug, clap::Subcommand)]
 pub enum CleoTask {
+    /// Perform a release build, without bundling a distribution.
     Build {
         #[arg(long, default_value_t)]
         target: ArchSelection,
     },
+    /// Build and bundle a release distribution
     #[command(alias="dist")]
     Distribution {
         #[arg(long, default_value_t)]
