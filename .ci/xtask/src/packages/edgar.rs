@@ -15,6 +15,11 @@ pub enum EdgarTask {
         #[arg(long, default_value_t)]
         target: ArchSelection,
     },
+    #[command(alias="dist")]
+    Distribution {
+        #[arg(long, default_value_t)]
+        target: ArchSelection,
+    },
     GetNetbirdClientArtifact {
         #[arg(long, default_value_t)]
         target: ArchSelection,
@@ -27,6 +32,11 @@ impl EdgarTask {
             EdgarTask::Build { target } => {
                 for target in target.iter() {
                     build::build_release(&target)?;
+                }
+            }
+            EdgarTask::Distribution { target } => {
+                for target in target.iter() {
+                    distribution::edgar(&target)?;
                 }
             }
             EdgarTask::GetNetbirdClientArtifact { target } => {
