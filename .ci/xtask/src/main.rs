@@ -78,9 +78,9 @@ fn main() -> anyhow::Result<()> {
         }
         Task::Distribution { target } => {
             for target in target.iter() {
-                packages::carl::distribution::carl(&target)?;
-                packages::edgar::distribution::edgar(&target)?;
-                //TODO distribution of cleo
+                packages::carl::distribution::carl_distribution(&target)?;
+                packages::edgar::distribution::edgar_distribution(&target)?;
+                packages::cleo::distribution::cleo_distribution(&target)?;
             }
         }
         Task::Licenses { task } => tasks::licenses::LicensesTask::handle_task(task)?,

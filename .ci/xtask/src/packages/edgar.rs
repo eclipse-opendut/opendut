@@ -26,7 +26,6 @@ pub enum EdgarTask {
     },
 }
 impl EdgarTask {
-    #[tracing::instrument]
     pub fn handle_task(self) -> anyhow::Result<()> {
         match self {
             EdgarTask::Build { target } => {
@@ -36,7 +35,7 @@ impl EdgarTask {
             }
             EdgarTask::Distribution { target } => {
                 for target in target.iter() {
-                    distribution::edgar(&target)?;
+                    distribution::edgar_distribution(&target)?;
                 }
             }
             EdgarTask::GetNetbirdClientArtifact { target } => {
@@ -65,7 +64,7 @@ pub mod distribution {
     use super::*;
 
     #[tracing::instrument]
-    pub fn edgar(target: &Arch) -> anyhow::Result<()> {
+    pub fn edgar_distribution(target: &Arch) -> anyhow::Result<()> {
         use crate::tasks::distribution;
 
         distribution::clean(PACKAGE, target)?;
@@ -74,20 +73,10 @@ pub mod distribution {
 
         distribution::collect_executables(PACKAGE, target)?;
 
-        collect_edgar_specific_files(target)?;
+        netbird::get_netbird_client_artifact(target)?;
+        distribution::licenses::get_licenses(PACKAGE, target)?;
 
         distribution::bundle_collected_files(PACKAGE, target)?;
-
-        Ok(())
-    }
-
-
-    #[tracing::instrument]
-    fn collect_edgar_specific_files(target: &Arch) -> anyhow::Result<()> {
-
-        netbird::get_netbird_client_artifact(target)?;
-
-        licenses::get_licenses(target)?;
 
         Ok(())
     }
@@ -148,41 +137,5 @@ pub mod distribution {
         pub fn out_file(package: &Package, target: &Arch) -> PathBuf {
             crate::tasks::distribution::out_package_dir(package, target).join("install").join("netbird.tar.gz")
         }
-    }
-
-    pub mod licenses {
-        use super::*;
-
-        #[tracing::instrument]
-        pub fn get_licenses(target: &Arch) -> anyhow::Result<()> {
-
-            crate::packages::edgar::licenses::generate_licenses()?;
-            let licenses_file = crate::packages::edgar::licenses::out_file();
-
-            let out_dir = out_dir(target);
-            let licenses_file_name = format!("{}.licenses.json", PACKAGE.ident());
-            fs::create_dir_all(&out_dir)?;
-
-            fs::copy(
-                licenses_file,
-                out_dir.join(licenses_file_name)
-            )?;
-
-            Ok(())
-        }
-        fn out_dir(target: &Arch) -> PathBuf {
-            crate::tasks::distribution::out_package_dir(PACKAGE, target).join("licenses")
-        }
-    }
-}
-
-pub mod licenses {
-    use super::*;
-
-    pub fn generate_licenses() -> anyhow::Result<()> {
-        crate::tasks::licenses::json::export_json(PACKAGE)
-    }
-    pub fn out_file() -> PathBuf {
-        crate::tasks::licenses::json::out_file(PACKAGE)
     }
 }

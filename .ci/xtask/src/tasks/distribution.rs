@@ -55,6 +55,28 @@ pub fn bundle_collected_files(package: &Package, target: &Arch) -> anyhow::Resul
     Ok(())
 }
 
+pub mod licenses {
+    use super::*;
+
+    #[tracing::instrument]
+    pub fn get_licenses(package: &Package, target: &Arch) -> anyhow::Result<()> {
+
+        crate::tasks::licenses::json::export_json(package)?;
+        let licenses_file = crate::tasks::licenses::json::out_file(package);
+
+        let out_dir = out_file(package, target);
+        fs::create_dir_all(&out_dir.parent().unwrap())?;
+
+        fs::copy(licenses_file, out_dir)?;
+
+        Ok(())
+    }
+    pub fn out_file(package: &Package, target: &Arch) -> PathBuf {
+        let licenses_file_name = format!("{}.licenses.json", package.ident());
+        out_package_dir(package, target).join("licenses").join(licenses_file_name)
+    }
+}
+
 pub fn out_dir() -> PathBuf {
     constants::target_dir().join("distribution")
 }

@@ -14,7 +14,6 @@ pub enum LeaTask {
     Watch,
 }
 impl LeaTask {
-    #[tracing::instrument]
     pub fn handle_task(self) -> anyhow::Result<()> {
         match self {
             LeaTask::Build => build::build_release()?,
@@ -47,17 +46,6 @@ pub mod build {
     }
     pub fn out_dir() -> PathBuf {
         self_dir().join("dist")
-    }
-}
-
-pub mod licenses {
-    use super::*;
-
-    pub fn generate_licenses() -> anyhow::Result<()> {
-        crate::tasks::licenses::json::export_json(PACKAGE)
-    }
-    pub fn out_file() -> PathBuf {
-        crate::tasks::licenses::json::out_file(PACKAGE)
     }
 }
 
