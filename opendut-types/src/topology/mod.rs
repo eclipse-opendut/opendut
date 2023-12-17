@@ -54,10 +54,11 @@ pub struct Device {
     pub tags: Vec<String>,
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct InterfaceName { name: String }
 impl InterfaceName {
+    pub const MAX_LENGTH: usize = 15;
     pub fn name(&self) -> String {
         self.name.clone()
     }
@@ -73,9 +74,9 @@ impl TryFrom<String> for InterfaceName {
     type Error = InterfaceNameError;
     fn try_from(value: String) -> Result<Self, Self::Error> {
         if value.is_empty() {
-            Err(InterfaceNameError { message: format!("Interface name may not be empty.") })
-        } else if value.len() > 15 {
-            Err(InterfaceNameError { message: format!("Interface name '{value}' is longer than 15 characters. This is not supported by Linux.") })
+            Err(InterfaceNameError::Empty)
+        } else if value.len() > Self::MAX_LENGTH {
+            Err(InterfaceNameError::TooLong { value, max: Self::MAX_LENGTH })
         } else {
             Ok(Self { name: value })
         }
@@ -96,6 +97,10 @@ impl std::str::FromStr for InterfaceName {
     }
 }
 
-#[derive(Debug, thiserror::Error)]
-#[error("{message}")]
-pub struct InterfaceNameError { message: String }
+#[derive(thiserror::Error, Debug)]
+pub enum InterfaceNameError {
+    #[error("Name for network interface may not be empty!")]
+    Empty,
+    #[error("Due to operating system limitations, the name for network interfaces may not be longer than {max} characters!")]
+    TooLong { value: String, max: usize }
+}

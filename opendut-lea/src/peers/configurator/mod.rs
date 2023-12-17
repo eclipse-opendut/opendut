@@ -2,8 +2,8 @@ use leptos::*;
 use leptos_router::use_params_map;
 
 use opendut_types::peer::PeerId;
-use crate::app::{ExpectGlobals, use_app_globals};
 
+use crate::app::{ExpectGlobals, use_app_globals};
 use crate::components::{BasePageContainer, Breadcrumb, Initialized, UserInputError, UserInputValue};
 use crate::components::use_active_tab;
 use crate::peers::configurator::components::Controls;
@@ -26,7 +26,7 @@ pub fn PeerConfigurator() -> impl IntoView {
 
         let active_tab = use_active_tab::<TabIdentifier>();
 
-        let peer_configuration = {
+        let (peer_configuration, peer_configuration_resource, is_valid_peer_configuration) = {
             let peer_id = {
                 let peer_id = params.with_untracked(|params| {
                     params.get("id").and_then(|id| PeerId::try_from(id.as_str()).ok())
@@ -54,7 +54,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                 is_new: true,
             });
 
-            create_local_resource(|| {}, move |_| {
+            let peer_configuration_resource = create_local_resource(|| {}, move |_| {
                 let mut carl = globals.expect_client();
                 async move {
                     if let Ok(configuration) = carl.peers.get_peer_descriptor(peer_id).await {
@@ -68,6 +68,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                                     location: UserInputValue::Right(device.location),
                                     interface: UserInputValue::Right(device.interface.name()),
                                     description: device.description,
+                                    is_collapsed: true
                                 })
                             }).collect::<Vec<_>>();
                         });
@@ -75,7 +76,19 @@ pub fn PeerConfigurator() -> impl IntoView {
                 }
             });
 
-            peer_configuration
+            let is_valid_peer_configuration = create_memo(move |_| {
+                peer_configuration.with(|peer_configuration| {
+                    peer_configuration.name.is_right()
+                    && peer_configuration.devices.iter().all(|device_configuration| {
+                        device_configuration.with(|device_configuration| {
+                            device_configuration.name.is_right()
+                            && device_configuration.interface.is_right()
+                        })
+                    })
+                })
+            });
+
+            (peer_configuration, peer_configuration_resource, is_valid_peer_configuration)
         };
 
         let peer_id_string = create_read_slice(peer_configuration, |config| config.id.to_string());
@@ -109,15 +122,18 @@ pub fn PeerConfigurator() -> impl IntoView {
             <BasePageContainer
                 title="Configure Peer"
                 breadcrumbs=breadcrumbs
-                controls=view! { <Controls configuration=peer_configuration.read_only() /> }
+                controls=view! { <Controls configuration=peer_configuration.read_only() is_valid_peer_configuration=is_valid_peer_configuration.into() /> }
             >
-                <div>
+                <Show
+                    when=move || !peer_configuration_resource.loading().get() // TODO: Check for errors
+                    fallback=move || view! { <p><i class="fa-solid fa-circle-notch fa-spin"></i></p> } // TODO: Display errors
+                >
                     <div class="tabs">
                         <ul>
                             <li class=("is-active", move || TabIdentifier::General == active_tab.get())>
                                 <a href={ TabIdentifier::General.to_str() }>
                                     <span>General</span>
-                                    // An icon could indicate a misconfiguration on a tabs
+                                    // An icon could indicate a misconfiguration on a tab
                                     // <span class="icon is-small has-text-danger"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i></span>
                                 </a>
                             </li>
@@ -140,7 +156,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                             <SetupTab peer_configuration=peer_configuration.read_only() />
                         </div>
                     </div>
-                </div>
+                </Show>
             </BasePageContainer>
         }
     }
