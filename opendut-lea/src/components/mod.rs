@@ -8,9 +8,9 @@ pub use inputs::readonly_input::ReadOnlyInput;
 pub use inputs::user_input::UserInput;
 pub use page::BasePageContainer;
 pub use util::ButtonStateSignalProvider;
-pub use util::SignalToggle;
-pub use util::use_active_tab;
 pub use util::Toggled;
+pub use util::ToggleSignal;
+pub use util::use_active_tab;
 
 pub mod health;
 pub mod tooltip;

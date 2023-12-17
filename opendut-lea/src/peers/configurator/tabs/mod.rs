@@ -3,8 +3,8 @@ pub use general::GeneralTab;
 pub use setup::SetupTab;
 
 mod general;
-mod setup;
 mod devices;
+mod setup;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TabIdentifier {

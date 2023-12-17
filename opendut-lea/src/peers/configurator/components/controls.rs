@@ -7,18 +7,24 @@ use crate::peers::configurator::types::UserPeerConfiguration;
 use crate::routing::{navigate_to, WellKnownRoutes};
 
 #[component]
-pub fn Controls(configuration: ReadSignal<UserPeerConfiguration>) -> impl IntoView {
+pub fn Controls(
+    configuration: ReadSignal<UserPeerConfiguration>,
+    is_valid_peer_configuration: Signal<bool>,
+) -> impl IntoView {
 
     view! {
         <div class="buttons">
-            <SavePeerButton configuration=configuration />
-            <DeletePeerButton configuration=configuration />
+            <SavePeerButton configuration is_valid_peer_configuration />
+            <DeletePeerButton configuration />
         </div>
     }
 }
 
 #[component]
-fn SavePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl IntoView {
+fn SavePeerButton(
+    configuration: ReadSignal<UserPeerConfiguration>,
+    is_valid_peer_configuration: Signal<bool>,
+) -> impl IntoView {
 
     let globals = use_app_globals();
 
@@ -39,8 +45,8 @@ fn SavePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl Into
                         }
                     }
                 }
-                Err(_) => {
-                    log::error!("Failed to dispatch create peer action, due to misconfiguration!");
+                Err(error) => {
+                    log::error!("Failed to dispatch create peer action, due to misconfiguration!\n  {error}");
                 }
             }
         }
@@ -51,14 +57,12 @@ fn SavePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl Into
             ButtonState::Loading
         }
         else {
-            configuration.with(|configuration| {
-                if configuration.is_valid() {
-                    ButtonState::Enabled
-                }
-                else {
-                    ButtonState::Disabled
-                }
-            })
+            if is_valid_peer_configuration.get() {
+                ButtonState::Enabled
+            }
+            else {
+                ButtonState::Disabled
+            }
         }
     });
 

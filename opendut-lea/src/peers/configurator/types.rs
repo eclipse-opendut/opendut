@@ -5,6 +5,9 @@ use opendut_types::topology::{Device, DeviceId, InterfaceName, Topology};
 
 use crate::components::UserInputValue;
 
+pub const EMPTY_DEVICE_NAME_ERROR_MESSAGE: &'static str = "The name of a device may not be empty!";
+pub const EMPTY_DEVICE_INTERFACE_ERROR_MESSAGE: &'static str = "Enter a valid interface name!";
+
 #[derive(thiserror::Error, Clone, Debug)]
 pub enum PeerMisconfigurationError {
     #[error("Invalid peer name")]
@@ -38,12 +41,7 @@ pub struct UserDeviceConfiguration {
     pub description: String,
     pub location: UserInputValue,
     pub interface: UserInputValue,
-}
-
-impl UserPeerConfiguration {
-    pub fn is_valid(&self) -> bool {
-        self.name.is_right()
-    }
+    pub is_collapsed: bool,
 }
 
 impl TryFrom<UserPeerConfiguration> for PeerDescriptor {

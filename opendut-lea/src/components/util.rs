@@ -54,11 +54,11 @@ pub fn use_active_tab<T: for<'a> TryFrom<&'a str, Error=impl ToString> + Default
     }))
 }
 
-pub trait SignalToggle {
+pub trait ToggleSignal {
     fn toggle(&self);
 }
 
-impl SignalToggle for RwSignal<bool> {
+impl ToggleSignal for RwSignal<bool> {
     fn toggle(&self) {
         self.update(|value| *value = !*value)
     }

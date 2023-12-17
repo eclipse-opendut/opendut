@@ -61,7 +61,7 @@ pub struct ClusterName(pub(crate) String);
 
 impl ClusterName {
 
-    pub const MIN_LENGTH: usize = 8;
+    pub const MIN_LENGTH: usize = 4;
     pub const MAX_LENGTH: usize = 16;
 
     pub fn value(self) -> String {
