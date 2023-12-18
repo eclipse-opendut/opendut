@@ -1,12 +1,34 @@
 use leptos::*;
-use crate::app::use_app_globals;
+use crate::app::{ExpectGlobals, use_app_globals};
 
 use crate::clusters::components::CreateClusterButton;
+
+#[derive(Clone)]
+struct Clusters {
+    deployed: usize,
+    undeployed: usize,
+}
 
 #[component]
 pub fn ClustersCard() -> impl IntoView {
 
-    let _globals = use_app_globals();
+    let globals = use_app_globals();
+
+    let clusters: Resource<(), Clusters> = create_local_resource(|| {}, move |_| {
+        let mut carl = globals.expect_client();
+        async move {
+            let configured = carl.cluster.list_cluster_configurations().await
+                .expect("Failed to request the list of cluster configurations.")
+                .len();
+            let deployed = carl.cluster.list_cluster_deployments().await
+                .expect("Failed to request the list of cluster deployments.")
+                .len();
+            Clusters {
+                deployed,
+                undeployed: configured - deployed
+            }
+        }
+    });
 
     view! {
         <div class="card">
@@ -19,7 +41,11 @@ pub fn ClustersCard() -> impl IntoView {
                         <div>
                             <p class="heading">Deployed</p>
                             <p class="title">
-                                -
+                                <Suspense
+                                    fallback={ move || view! { <span>"-"</span> }}
+                                >
+                                    <span>{ move || clusters.get().map(|peers| peers.deployed) }</span>
+                                </Suspense>
                             </p>
                         </div>
                     </div>
@@ -27,7 +53,11 @@ pub fn ClustersCard() -> impl IntoView {
                         <div>
                             <p class="heading">Undeployed</p>
                             <p class="title">
-                                -
+                                <Suspense
+                                    fallback={ move || view! { <span>"-"</span> }}
+                                >
+                                    <span>{ move || clusters.get().map(|peers| peers.undeployed) }</span>
+                                </Suspense>
                             </p>
                         </div>
                     </div>

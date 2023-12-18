@@ -1,4 +1,4 @@
-use leptos::{component, create_memo, create_read_slice, create_rw_signal, IntoView, RwSignal, SignalGet, SignalUpdate, SignalWith, view};
+use leptos::{component, create_memo, create_read_slice, create_rw_signal, IntoView, RwSignal, SignalUpdate, SignalWith, view};
 
 use opendut_types::topology::DeviceId;
 
