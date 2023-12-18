@@ -32,15 +32,24 @@ pub fn ClustersOverview() -> impl IntoView {
             }
         });
 
+        let undeploy_cluster = create_action(move |id: &ClusterId| {
+            let mut carl = globals.expect_client();
+            let id = Clone::clone(id);
+            async move {
+                let _ = carl.cluster.delete_cluster_deployment(id).await;
+            }
+        });
+
         let rows = move || {
             match clusters.get() {
                 Some(configurations) => {
-                    configurations.iter().cloned().map(|configuration| {
-                        let cluster_id = configuration.id;
+                    configurations.iter().cloned().map(|cluster_configuration| {
+                        let cluster_id = cluster_configuration.id;
                         view! {
                             <Row
-                                configuration
+                                cluster_configuration=create_rw_signal(cluster_configuration)
                                 on_deploy=move || deploy_cluster.dispatch(cluster_id)
+                                on_undeploy=move || undeploy_cluster.dispatch(cluster_id)
                             />
                         }
                     }).collect::<Vec<_>>()
@@ -68,7 +77,7 @@ pub fn ClustersOverview() -> impl IntoView {
                     <thead>
                         <tr>
                             <th class="is-narrow">"Health"</th>
-                            <th>"ID"</th>
+                            <th>"Name"</th>
                             <th class="is-narrow">"Action"</th>
                         </tr>
                     </thead>
@@ -88,16 +97,29 @@ pub fn ClustersOverview() -> impl IntoView {
 }
 
 #[component]
-fn Row<OnDeploy>(
-    configuration: ClusterConfiguration,
-    on_deploy: OnDeploy,
+fn Row<OnDeployFn, OnUndeployFn>(
+    cluster_configuration: RwSignal<ClusterConfiguration>,
+    on_deploy: OnDeployFn,
+    on_undeploy: OnUndeployFn,
 ) -> impl IntoView
-where OnDeploy: Fn() + 'static {
-    let id = configuration.id.to_string();
-    let href = {
-        let id = Clone::clone(&id);
-        move || { format!("/clusters/{}/configure/general", id) }
-    };
+where
+    OnDeployFn: Fn() + 'static,
+    OnUndeployFn: Fn() + 'static
+{
+
+    let cluster_id = create_read_slice(cluster_configuration,
+        |cluster_configuration| {
+            cluster_configuration.id
+        }
+    );
+
+    let cluster_name = create_read_slice(cluster_configuration,
+        |cluster_configuration| {
+            Clone::clone(&cluster_configuration.name).to_string()
+        }
+    );
+
+    let configurator_href = move || format!("/clusters/{}/configure/general", cluster_id.get());
 
     let dropdown_active = create_rw_signal(false);
     let dropdown = create_node_ref::<Div>();
@@ -110,7 +132,7 @@ where OnDeploy: Fn() + 'static {
                 // health
             </td>
             <td class="is-vcentered">
-                <a href={ href() } >{ Clone::clone(&id) }</a>
+                <a href={ configurator_href } >{ cluster_name }</a>
             </td>
             <td class="is-vcentered">
                 <div class="is-pulled-right">
@@ -138,9 +160,22 @@ where OnDeploy: Fn() + 'static {
                                     }
                                 >
                                     <span class="icon">
-                                        <i class="fa-solid fa-play"></i>
+                                        <i class="fa-solid fa-cloud-arrow-up"></i>
                                     </span>
                                     <span>"Deploy"</span>
+                                </button>
+                                <button
+                                    class="button is-white is-fullwidth is-justify-content-flex-start"
+                                    aria-label="Undeploy Cluster"
+                                    on:click=move |_| {
+                                        dropdown_active.set(false);
+                                        on_undeploy();
+                                    }
+                                >
+                                    <span class="icon">
+                                        <i class="fa-solid fa-cloud-arrow-down"></i>
+                                    </span>
+                                    <span>"Undeploy"</span>
                                 </button>
                             </div>
                         </div>

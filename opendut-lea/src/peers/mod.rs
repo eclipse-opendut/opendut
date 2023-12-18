@@ -5,3 +5,4 @@ pub use configurator::PeerConfigurator;
 mod overview;
 mod card;
 mod configurator;
+mod components;

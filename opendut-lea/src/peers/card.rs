@@ -1,5 +1,6 @@
 use leptos::*;
 use crate::app::{ExpectGlobals, use_app_globals};
+use crate::peers::components::CreatePeerButton;
 
 #[derive(Clone)]
 struct Peers {
@@ -13,8 +14,8 @@ pub fn PeersCard() -> impl IntoView {
     let globals = use_app_globals();
 
     let peers: Resource<(), Peers> = create_local_resource(|| {}, move |_| {
+        let mut carl = globals.expect_client();
         async move {
-            let mut carl = globals.expect_client();
             let registered = carl.peers.list_peer_descriptors().await
                 .expect("Failed to request the list of peers.")
                 .len();
@@ -59,6 +60,11 @@ pub fn PeersCard() -> impl IntoView {
                             </p>
                         </div>
                     </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="m-2">
+                    <CreatePeerButton />
                 </div>
             </div>
         </div>
