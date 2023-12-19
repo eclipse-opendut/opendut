@@ -14,14 +14,14 @@ shadow_rs::shadow!(build);
 
 #[derive(clap::Parser)]
 #[command()]
-struct Cli {
+struct RootCli {
     #[command(subcommand)]
-    task: Task,
+    task: TaskCli,
 }
 #[derive(clap::Subcommand)]
-enum Task {
-    Build(tasks::build::Build),
-    Distribution(tasks::distribution::Distribution),
+enum TaskCli {
+    Build(tasks::build::BuildCli),
+    Distribution(tasks::distribution::DistributionCli),
     Licenses(tasks::licenses::LicensesCli),
 
     Carl(packages::carl::CarlCli),
@@ -35,9 +35,9 @@ fn main() -> anyhow::Result<()> {
 
     std::env::set_current_dir(constants::workspace_dir())?;
 
-    let cli = Cli::parse();
+    let cli = RootCli::parse();
     match cli.task {
-        Task::Build(tasks::build::Build { target }) => {
+        TaskCli::Build(tasks::build::BuildCli { target }) => {
             for target in target.iter() {
                 packages::carl::build::build_release(&target)?;
                 packages::cleo::build::build_release(&target)?;
@@ -45,19 +45,19 @@ fn main() -> anyhow::Result<()> {
                 packages::lea::build::build_release()?;
             }
         }
-        Task::Distribution(tasks::distribution::Distribution { target }) => {
+        TaskCli::Distribution(tasks::distribution::DistributionCli { target }) => {
             for target in target.iter() {
                 packages::carl::distribution::carl_distribution(&target)?;
                 packages::edgar::distribution::edgar_distribution(&target)?;
                 packages::cleo::distribution::cleo_distribution(&target)?;
             }
         }
-        Task::Licenses(implementation) => implementation.handle()?,
+        TaskCli::Licenses(implementation) => implementation.handle()?,
 
-        Task::Carl(implementation) => implementation.handle()?,
-        Task::Cleo(implementation) => implementation.handle()?,
-        Task::Edgar(implementation) => implementation.handle()?,
-        Task::Lea(implementation) => implementation.handle()?,
+        TaskCli::Carl(implementation) => implementation.handle()?,
+        TaskCli::Cleo(implementation) => implementation.handle()?,
+        TaskCli::Edgar(implementation) => implementation.handle()?,
+        TaskCli::Lea(implementation) => implementation.handle()?,
     };
     Ok(())
 }

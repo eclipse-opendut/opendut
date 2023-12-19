@@ -10,24 +10,24 @@ const PACKAGE: &Package = &Package::Cleo;
 #[command(alias="opendut-cleo")]
 pub struct CleoCli {
     #[command(subcommand)]
-    pub task: Task,
+    pub task: TaskCli,
 }
 
 #[derive(Debug, clap::Subcommand)]
-pub enum Task {
-    Build(crate::tasks::build::Build),
-    Distribution(crate::tasks::distribution::Distribution),
+pub enum TaskCli {
+    Build(crate::tasks::build::BuildCli),
+    Distribution(crate::tasks::distribution::DistributionCli),
 }
 
 impl CleoCli {
     pub fn handle(self) -> anyhow::Result<()> {
         match self.task {
-            Task::Build(crate::tasks::build::Build { target }) => {
+            TaskCli::Build(crate::tasks::build::BuildCli { target }) => {
                 for target in target.iter() {
                     build::build_release(&target)?;
                 }
             },
-            Task::Distribution(crate::tasks::distribution::Distribution { target }) => {
+            TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target }) => {
                 for target in target.iter() {
                     distribution::cleo_distribution(&target)?;
                 }

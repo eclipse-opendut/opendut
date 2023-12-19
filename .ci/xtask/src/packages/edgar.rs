@@ -14,13 +14,13 @@ const PACKAGE: &Package = &Package::Edgar;
 #[command(alias="opendut-edgar")]
 pub struct EdgarCli {
     #[command(subcommand)]
-    pub task: Task,
+    pub task: TaskCli,
 }
 
 #[derive(Debug, clap::Subcommand)]
-pub enum Task {
-    Build(crate::tasks::build::Build),
-    Distribution(crate::tasks::distribution::Distribution),
+pub enum TaskCli {
+    Build(crate::tasks::build::BuildCli),
+    Distribution(crate::tasks::distribution::DistributionCli),
 
     /// Download the NetBird Client artifact, as it normally happens when building a distribution.
     /// Intended for parallelization in CI/CD.
@@ -33,17 +33,17 @@ pub enum Task {
 impl EdgarCli {
     pub fn handle(self) -> anyhow::Result<()> {
         match self.task {
-            Task::Build(crate::tasks::build::Build { target }) => {
+            TaskCli::Build(crate::tasks::build::BuildCli { target }) => {
                 for target in target.iter() {
                     build::build_release(&target)?;
                 }
             }
-            Task::Distribution(crate::tasks::distribution::Distribution { target }) => {
+            TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target }) => {
                 for target in target.iter() {
                     distribution::edgar_distribution(&target)?;
                 }
             }
-            Task::GetNetbirdClientArtifact { target } => {
+            TaskCli::GetNetbirdClientArtifact { target } => {
                 for target in target.iter() {
                     distribution::netbird::get_netbird_client_artifact(&target)?;
                 }

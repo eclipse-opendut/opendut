@@ -11,11 +11,11 @@ const PACKAGE: &Package = &Package::Lea;
 #[command(alias="opendut-lea")]
 pub struct LeaCli {
     #[command(subcommand)]
-    pub task: Task,
+    pub task: TaskCli,
 }
 
 #[derive(Debug, clap::Subcommand)]
-pub enum Task {
+pub enum TaskCli {
     /// Perform a release build, without bundling a distribution.
     Build,
     /// Start a development server for LEA which watches for file changes.
@@ -25,8 +25,8 @@ pub enum Task {
 impl LeaCli {
     pub fn handle(self) -> anyhow::Result<()> {
         match self.task {
-            Task::Build => build::build_release()?,
-            Task::Watch => watch::watch()?,
+            TaskCli::Build => build::build_release()?,
+            TaskCli::Watch => watch::watch()?,
         };
         Ok(())
     }
