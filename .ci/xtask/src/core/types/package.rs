@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter};
 
-#[derive(Clone, Debug, strum::EnumIter)]
+#[derive(Clone, Copy, Debug, strum::EnumIter)]
 pub enum Package {
     Carl,
     CarlApi,

@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::PathBuf;
 use crate::{Arch, Package};
+use crate::core::types::parsing::package::PackageSelection;
 
 const PACKAGE: &Package = &Package::Carl;
 
@@ -16,6 +17,7 @@ pub struct CarlCli {
 pub enum TaskCli {
     Build(crate::tasks::build::BuildCli),
     Distribution(crate::tasks::distribution::DistributionCli),
+    Licenses(crate::tasks::licenses::LicensesCli),
 }
 
 impl CarlCli {
@@ -25,12 +27,15 @@ impl CarlCli {
                 for target in target.iter() {
                     build::build_release(&target)?;
                 }
-            },
+            }
             TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target }) => {
                 for target in target.iter() {
                     distribution::carl_distribution(&target)?;
                 }
-            },
+            }
+            TaskCli::Licenses(implementation) => {
+                implementation.handle(PackageSelection::Single(*PACKAGE))?;
+            }
         };
         Ok(())
     }

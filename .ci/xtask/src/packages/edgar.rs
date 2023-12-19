@@ -5,6 +5,7 @@ use anyhow::anyhow;
 
 use crate::{Arch, Package};
 use crate::core::types::parsing::arch::ArchSelection;
+use crate::core::types::parsing::package::PackageSelection;
 
 const PACKAGE: &Package = &Package::Edgar;
 
@@ -21,10 +22,11 @@ pub struct EdgarCli {
 pub enum TaskCli {
     Build(crate::tasks::build::BuildCli),
     Distribution(crate::tasks::distribution::DistributionCli),
+    Licenses(crate::tasks::licenses::LicensesCli),
 
     /// Download the NetBird Client artifact, as it normally happens when building a distribution.
     /// Intended for parallelization in CI/CD.
-    GetNetbirdClientArtifact {
+    NetbirdClientDistribution {
         #[arg(long, default_value_t)]
         target: ArchSelection,
     },
@@ -43,9 +45,12 @@ impl EdgarCli {
                     distribution::edgar_distribution(&target)?;
                 }
             }
-            TaskCli::GetNetbirdClientArtifact { target } => {
+            TaskCli::Licenses(implementation) => {
+                implementation.handle(PackageSelection::Single(*PACKAGE))?;
+            }
+            TaskCli::NetbirdClientDistribution { target } => {
                 for target in target.iter() {
-                    distribution::netbird::get_netbird_client_artifact(&target)?;
+                    distribution::netbird::netbird_client_distribution(&target)?;
                 }
             }
         };
@@ -78,7 +83,7 @@ pub mod distribution {
 
         distribution::collect_executables(PACKAGE, target)?;
 
-        netbird::get_netbird_client_artifact(target)?;
+        netbird::netbird_client_distribution(target)?;
         distribution::licenses::get_licenses(PACKAGE, target)?;
 
         distribution::bundle_collected_files(PACKAGE, target)?;
@@ -91,7 +96,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument]
-        pub fn get_netbird_client_artifact(target: &Arch) -> anyhow::Result<()> {
+        pub fn netbird_client_distribution(target: &Arch) -> anyhow::Result<()> {
             //Modelled after documentation here: https://docs.netbird.io/how-to/getting-started#binary-install
 
             let metadata = crate::metadata::cargo();

@@ -3,8 +3,8 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use crate::{constants, util};
+use crate::core::types::parsing::package::PackageSelection;
 use crate::Package;
-use crate::types::parsing::package::PackageSelection;
 use crate::util::RunRequiringSuccess;
 
 /// Check or export licenses
@@ -19,31 +19,25 @@ pub enum TaskCli {
     /// Check for license violations and security vulnerabilities
     Check,
     /// Generate a license report in JSON format
-    Json {
-        #[arg(long, default_value_t)]
-        package: PackageSelection,
-    },
+    Json,
     /// Generate a license report in SBOM format
-    Sbom {
-        #[arg(long, default_value_t)]
-        package: PackageSelection,
-    },
+    Sbom,
 }
 
 impl LicensesCli {
     #[tracing::instrument]
-    pub fn handle(self) -> anyhow::Result<()> {
+    pub fn handle(self, packages: PackageSelection) -> anyhow::Result<()> {
         match self.task {
             TaskCli::Check => {
                 check::check_licenses()?;
             }
-            TaskCli::Json { package } => {
-                for package in package.iter() {
+            TaskCli::Json => {
+                for package in packages.iter() {
                     json::export_json(&package)?
                 }
             }
-            TaskCli::Sbom { package } => {
-                for package in package.iter() {
+            TaskCli::Sbom => {
+                for package in packages.iter() {
                     sbom::generate_sbom(&package)?
                 }
             }
@@ -96,6 +90,9 @@ pub mod json {
 
 mod sbom {
     use super::*;
+
+    #[derive(Debug, clap::Parser)]
+    pub struct SbomCli;
 
     #[tracing::instrument]
     pub fn generate_sbom(package: &Package) -> anyhow::Result<()> {

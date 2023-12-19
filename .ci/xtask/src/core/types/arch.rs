@@ -5,7 +5,7 @@ use clap::ValueEnum;
 use strum::IntoEnumIterator;
 
 
-#[derive(Clone, Debug, strum::EnumIter)]
+#[derive(Clone, Copy, Debug, strum::EnumIter)]
 pub enum Arch {
     X86_64,
     Armhf,
