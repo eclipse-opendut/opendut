@@ -1,0 +1,39 @@
+name: build-carl
+on:
+  workflow_call:  # allow this workflow to be called from other workflows
+    inputs:
+      runs-on:
+        default: "['ubuntu-latest']"
+        required: false
+        type: string
+
+jobs:
+  build-carl:
+    strategy:
+      matrix:
+        package:
+          - name: opendut-carl
+            target:
+              name: linux-x86_64
+              triple: x86_64-unknown-linux-gnu
+    name: "Build ${{ matrix.package.name }}-${{ matrix.package.target.name }}"
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    steps:
+      - name: Checkout Sources
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+      - name: Install ARM GCC
+        uses: ./.github/actions/install-arm-gcc
+      - name: Rust setup
+        uses: ./.github/actions/rust-setup
+        with:
+          cargo-cross: true
+
+      - name: Build
+        run: cargo ci opendut-carl build --target=${{ matrix.package.target.triple }}
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
+        with:
+          name: "${{ matrix.package.name }}-${{ matrix.package.target.name }}-${{ github.sha }}"
+          path: "./target/ci/cross/${{ matrix.package.target.triple }}/release/${{ matrix.package.name }}"
+          if-no-files-found: error
+          retention-days: 1
