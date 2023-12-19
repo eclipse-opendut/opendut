@@ -2,14 +2,14 @@
   @extend .dropdown;
 }
 
-.doorhanger-trigger {
-}
+.doorhanger-trigger {}
 
-.doorhanger.is-active > .doorhanger-trigger::after {
+.doorhanger.is-active .doorhanger-dog-ear {
   background-color: $white;
   position: absolute;
-  top: 2.75rem;
+  top:0;
   left: 0;
+  bottom:0;
   right: 0;
   margin: auto;
   height: 1.0rem;

@@ -1,6 +1,6 @@
-use leptos::{component, create_memo, create_read_slice, create_rw_signal, IntoView, RwSignal, SignalUpdate, SignalWith, view};
+use leptos::{component, create_memo, create_rw_signal, create_slice, IntoView, RwSignal, SignalGetUntracked, SignalUpdate, SignalWith, SignalWithUntracked, view};
 
-use opendut_types::topology::DeviceId;
+use opendut_types::topology::{Device, DeviceId};
 
 use crate::components::UserInputValue;
 use crate::peers::configurator::tabs::devices::device_panel::DevicePanel;
@@ -19,12 +19,25 @@ pub fn DevicesTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl I
 
 #[component]
 fn DevicesTable(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl IntoView {
-    let devices = create_read_slice(
-        peer_configuration,
-        |configuration| {
-            Clone::clone(&configuration.devices)
+
+    let (devices, devices_setter) = create_slice(peer_configuration,
+        |peer_configuration| {
+            Clone::clone(&peer_configuration.devices)
         },
+        |peer_configuration, value| {
+            peer_configuration.devices = value
+        }
     );
+
+    let on_device_delete = move |device_id: DeviceId| {
+        let remaining_devices = devices.with_untracked(|devices| {
+            devices.iter()
+                .filter(|device| device.with_untracked(|device| device_id != device.id))
+                .cloned()
+                .collect::<Vec<_>>()
+        });
+        devices_setter.set(remaining_devices)
+    };
 
     let panels = create_memo(move |_| {
         devices.with(|devices| {
@@ -32,7 +45,7 @@ fn DevicesTable(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl Int
                 .cloned()
                 .map(|device_configuration| {
                     view! {
-                        <DevicePanel device_configuration />
+                        <DevicePanel device_configuration on_delete=on_device_delete />
                     }
                 })
                 .collect::<Vec<_>>()
