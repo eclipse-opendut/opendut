@@ -1,8 +1,8 @@
 use std::fs;
 use std::path::PathBuf;
 
-use crate::{constants, Package, Arch};
-use crate::types::parsing::arch::ArchSelection;
+use crate::{constants, Package, Target};
+use crate::types::parsing::target::TargetSelection;
 
 
 /// Build and bundle a release distribution
@@ -10,11 +10,11 @@ use crate::types::parsing::arch::ArchSelection;
 #[command(alias="dist")]
 pub struct DistributionCli {
     #[arg(long, default_value_t)]
-    pub target: ArchSelection,
+    pub target: TargetSelection,
 }
 
 #[tracing::instrument]
-pub fn clean(package: &Package, target: &Arch) -> anyhow::Result<()> {
+pub fn clean(package: &Package, target: &Target) -> anyhow::Result<()> {
     let package_dir = out_package_dir(package, target);
     if package_dir.exists() {
         fs::remove_dir_all(&package_dir)?;
@@ -24,7 +24,7 @@ pub fn clean(package: &Package, target: &Arch) -> anyhow::Result<()> {
 }
 
 #[tracing::instrument]
-pub fn collect_executables(package: &Package, target: &Arch) -> anyhow::Result<()> {
+pub fn collect_executables(package: &Package, target: &Target) -> anyhow::Result<()> {
 
     let out_dir = out_package_dir(package, target);
     fs::create_dir_all(&out_dir)?;
@@ -37,7 +37,7 @@ pub fn collect_executables(package: &Package, target: &Arch) -> anyhow::Result<(
 }
 
 #[tracing::instrument]
-pub fn bundle_collected_files(package: &Package, target: &Arch) -> anyhow::Result<()> {
+pub fn bundle_collected_files(package: &Package, target: &Target) -> anyhow::Result<()> {
     use flate2::Compression;
     use flate2::write::GzEncoder;
 
@@ -68,7 +68,7 @@ pub mod licenses {
     use super::*;
 
     #[tracing::instrument]
-    pub fn get_licenses(package: &Package, target: &Arch) -> anyhow::Result<()> {
+    pub fn get_licenses(package: &Package, target: &Target) -> anyhow::Result<()> {
 
         crate::tasks::licenses::json::export_json(package)?;
         let licenses_file = crate::tasks::licenses::json::out_file(package);
@@ -80,7 +80,7 @@ pub mod licenses {
 
         Ok(())
     }
-    pub fn out_file(package: &Package, target: &Arch) -> PathBuf {
+    pub fn out_file(package: &Package, target: &Target) -> PathBuf {
         let licenses_file_name = format!("{}.licenses.json", package.ident());
         out_package_dir(package, target).join("licenses").join(licenses_file_name)
     }
@@ -90,10 +90,10 @@ pub fn out_dir() -> PathBuf {
     constants::target_dir().join("distribution")
 }
 
-pub fn out_arch_dir(target: &Arch) -> PathBuf {
+pub fn out_arch_dir(target: &Target) -> PathBuf {
     out_dir().join(target.triple())
 }
 
-pub fn out_package_dir(package: &Package, target: &Arch) -> PathBuf {
+pub fn out_package_dir(package: &Package, target: &Target) -> PathBuf {
     out_arch_dir(target).join(package.ident())
 }

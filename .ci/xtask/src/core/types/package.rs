@@ -1,5 +1,6 @@
 use std::fmt::{Display, Formatter};
 
+/// Package used somewhere in the build process.
 #[derive(Clone, Copy, Debug, strum::EnumIter)]
 pub enum Package {
     Carl,

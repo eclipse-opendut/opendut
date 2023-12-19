@@ -2,8 +2,8 @@ use std::process::Command;
 use std::path::PathBuf;
 
 use crate::{constants, util, Package};
-use crate::Arch;
-use crate::core::types::parsing::arch::ArchSelection;
+use crate::Target;
+use crate::core::types::parsing::target::TargetSelection;
 use crate::util::RunRequiringSuccess;
 
 
@@ -11,11 +11,11 @@ use crate::util::RunRequiringSuccess;
 #[derive(Debug, clap::Parser)]
 pub struct BuildCli {
     #[arg(long, default_value_t)]
-    pub target: ArchSelection,
+    pub target: TargetSelection,
 }
 
 #[tracing::instrument]
-pub fn build_release(package: &Package, target: &Arch) -> anyhow::Result<()> {
+pub fn build_release(package: &Package, target: &Target) -> anyhow::Result<()> {
     util::install_crate("cross")?;
 
     Command::new("cross")
@@ -34,7 +34,7 @@ pub fn build_release(package: &Package, target: &Arch) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn out_dir(package: &Package, target: &Arch) -> PathBuf {
+pub fn out_dir(package: &Package, target: &Target) -> PathBuf {
     cross_target_dir().join(target.triple()).join("release").join(package.ident())
 }
 

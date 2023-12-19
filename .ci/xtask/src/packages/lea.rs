@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 use std::process::Command;
-use crate::core::types::parsing::package::PackageSelection;
+use crate::Arch;
 
+use crate::core::types::parsing::package::PackageSelection;
 use crate::Package;
 use crate::util::RunRequiringSuccess;
 
@@ -42,7 +43,7 @@ pub mod build {
 
     #[tracing::instrument]
     pub fn build_release() -> anyhow::Result<()> {
-        crate::util::install_crate("trunk")?;
+        install_requirements()?;
 
         let working_dir = self_dir();
         let out_dir = out_dir();
@@ -58,6 +59,7 @@ pub mod build {
 
         Ok(())
     }
+
     pub fn out_dir() -> PathBuf {
         self_dir().join("dist")
     }
@@ -68,7 +70,7 @@ pub mod watch {
 
     #[tracing::instrument]
     pub fn watch() -> anyhow::Result<()> {
-        crate::util::install_crate("trunk")?;
+        install_requirements()?;
 
         Command::new("trunk")
             .arg("watch")
@@ -76,6 +78,15 @@ pub mod watch {
             .run_requiring_success();
         Ok(())
     }
+}
+
+#[tracing::instrument]
+fn install_requirements() -> anyhow::Result<()> {
+    crate::util::install_toolchain(&Arch::Wasm)?;
+
+    crate::util::install_crate("trunk")?;
+
+    Ok(())
 }
 
 pub fn self_dir() -> PathBuf {
