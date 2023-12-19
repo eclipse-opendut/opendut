@@ -46,6 +46,13 @@ fi
 echo API_KEY="$API_KEY"
 echo NETBIRD_SETUP_KEY_TESTENV_GROUP="$NETBIRD_SETUP_KEY_TESTENV_GROUP"
 
+# check if api token works
+if netbird_api_token_test "$API_KEY"; then
+  echo "API token works."
+else
+  echo "API token does not work."
+fi
+
 # Leave the container running
 sleep infinity &
 # Wait for any process to exit

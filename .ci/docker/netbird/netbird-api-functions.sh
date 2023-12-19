@@ -42,6 +42,22 @@ netbird_auth() {
   export TOKEN=$(get_user_oauth_token)
 }
 
+netbird_api_token_test() {
+  TOKEN="${1}"
+  RESULT=$(curl --fail --silent -H "Authorization: Token $TOKEN" $NETBIRD_MANAGEMENT_URL/api/groups)
+  # shellcheck disable=SC2181
+  if [ $? -ne 0 ]; then
+    echo "NetBird API token is not valid. Failed to retrieve groups: $RESULT"
+    curl --fail -H "Authorization: Token $TOKEN" $NETBIRD_MANAGEMENT_URL/api/groups
+    return 1
+  fi
+  if [ -z "$RESULT" ]; then
+    echo "NetBird API token is not valid. Failed to retrieve groups. Result is empty"
+    return 1
+  fi
+  echo "NetBird API token is valid"
+}
+
 group_list() {
     GROUP_RESPONSE=$(curl -s -H "Authorization: Bearer $TOKEN" $NETBIRD_MANAGEMENT_URL/api/groups)
     echo "$GROUP_RESPONSE"
