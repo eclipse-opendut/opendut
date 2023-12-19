@@ -17,6 +17,11 @@ jobs:
 #    with:
 #      runs-on: "${{ vars.OPENDUT_GH_RUNNER_SMALL }}"
 
+  generate-sbom:
+    uses: ./.github/workflows/sbom.yaml
+#    with:
+#      runs-on: "${{ vars.OPENDUT_GH_RUNNER_SMALL }}"
+
   test:
     uses: ./.github/workflows/test.yaml
 #    with:
