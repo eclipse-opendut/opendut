@@ -20,7 +20,7 @@ pub fn initialize_with_overrides(overrides: fn(&mut env_logger::Builder) -> &mut
         .format_timestamp_millis()
         .filter_level(log::LevelFilter::Info)
         .filter_module("opendut", log::LevelFilter::Trace)
-        .parse_default_env();
+        .parse_env("OPENDUT_LOG");
 
     let builder = overrides(builder);
 
