@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use std::process::Command;
+use crate::core::types::parsing::package::PackageSelection;
 
 use crate::Package;
 use crate::util::RunRequiringSuccess;
@@ -20,6 +21,7 @@ pub enum TaskCli {
     Build,
     /// Start a development server for LEA which watches for file changes.
     Watch,
+    Licenses(crate::tasks::licenses::LicensesCli),
 }
 
 impl LeaCli {
@@ -27,6 +29,9 @@ impl LeaCli {
         match self.task {
             TaskCli::Build => build::build_release()?,
             TaskCli::Watch => watch::watch()?,
+            TaskCli::Licenses(implementation) => {
+                implementation.handle(PackageSelection::Single(*PACKAGE))?;
+            }
         };
         Ok(())
     }

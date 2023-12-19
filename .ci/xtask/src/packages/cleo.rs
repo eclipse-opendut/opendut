@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use crate::{Arch, Package};
+use crate::core::types::parsing::package::PackageSelection;
 
 const PACKAGE: &Package = &Package::Cleo;
 
@@ -17,6 +18,7 @@ pub struct CleoCli {
 pub enum TaskCli {
     Build(crate::tasks::build::BuildCli),
     Distribution(crate::tasks::distribution::DistributionCli),
+    Licenses(crate::tasks::licenses::LicensesCli),
 }
 
 impl CleoCli {
@@ -26,11 +28,14 @@ impl CleoCli {
                 for target in target.iter() {
                     build::build_release(&target)?;
                 }
-            },
+            }
             TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target }) => {
                 for target in target.iter() {
                     distribution::cleo_distribution(&target)?;
                 }
+            }
+            TaskCli::Licenses(implementation) => {
+                implementation.handle(PackageSelection::Single(*PACKAGE))?;
             }
         };
         Ok(())

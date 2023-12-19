@@ -4,6 +4,7 @@ pub(crate) use core::constants;
 pub(crate) use core::metadata;
 pub(crate) use core::types::{self, Arch, Package};
 pub(crate) use core::util;
+use crate::core::types::parsing::package::PackageSelection;
 
 mod core;
 pub mod packages;
@@ -52,7 +53,7 @@ fn main() -> anyhow::Result<()> {
                 packages::cleo::distribution::cleo_distribution(&target)?;
             }
         }
-        TaskCli::Licenses(implementation) => implementation.handle()?,
+        TaskCli::Licenses(implementation) => implementation.handle(PackageSelection::All)?,
 
         TaskCli::Carl(implementation) => implementation.handle()?,
         TaskCli::Cleo(implementation) => implementation.handle()?,
