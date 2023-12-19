@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::{Arch, Package};
+use crate::{Target, Package};
 use crate::core::types::parsing::package::PackageSelection;
 
 const PACKAGE: &Package = &Package::Cleo;
@@ -45,10 +45,10 @@ impl CleoCli {
 pub mod build {
     use super::*;
 
-    pub fn build_release(target: &Arch) -> anyhow::Result<()> {
+    pub fn build_release(target: &Target) -> anyhow::Result<()> {
         crate::tasks::build::build_release(PACKAGE, target)
     }
-    pub fn out_dir(target: &Arch) -> PathBuf {
+    pub fn out_dir(target: &Target) -> PathBuf {
         crate::tasks::build::out_dir(PACKAGE, target)
     }
 }
@@ -57,7 +57,7 @@ pub mod distribution {
     use super::*;
 
     #[tracing::instrument]
-    pub fn cleo_distribution(target: &Arch) -> anyhow::Result<()> {
+    pub fn cleo_distribution(target: &Target) -> anyhow::Result<()> {
         use crate::tasks::distribution;
 
         distribution::clean(PACKAGE, target)?;

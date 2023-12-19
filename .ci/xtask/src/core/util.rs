@@ -1,11 +1,22 @@
 use std::process::Command;
+
 use tracing_subscriber::fmt::format::FmtSpan;
+
+use crate::core::types::Arch;
 
 #[tracing::instrument(level = tracing::Level::TRACE)]
 pub fn install_crate(name: &str) -> anyhow::Result<()> {
     Command::new("cargo")
         .arg("install")
         .arg(name)
+        .run_requiring_success();
+    Ok(())
+}
+
+#[tracing::instrument]
+pub fn install_toolchain(arch: &Arch) -> anyhow::Result<()> {
+    Command::new("rustup")
+        .args(["target", "add", &arch.triple()])
         .run_requiring_success();
     Ok(())
 }

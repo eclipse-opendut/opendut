@@ -1,6 +1,6 @@
 use std::fs;
 use std::path::PathBuf;
-use crate::{Arch, Package};
+use crate::{Target, Package};
 use crate::core::types::parsing::package::PackageSelection;
 
 const PACKAGE: &Package = &Package::Carl;
@@ -44,10 +44,10 @@ impl CarlCli {
 pub mod build {
     use super::*;
 
-    pub fn build_release(target: &Arch) -> anyhow::Result<()> {
+    pub fn build_release(target: &Target) -> anyhow::Result<()> {
         crate::tasks::build::build_release(PACKAGE, target)
     }
-    pub fn out_dir(target: &Arch) -> PathBuf {
+    pub fn out_dir(target: &Target) -> PathBuf {
         crate::tasks::build::out_dir(PACKAGE, target)
     }
 }
@@ -56,7 +56,7 @@ pub mod distribution {
     use super::*;
 
     #[tracing::instrument]
-    pub fn carl_distribution(target: &Arch) -> anyhow::Result<()> {
+    pub fn carl_distribution(target: &Target) -> anyhow::Result<()> {
         use crate::tasks::distribution;
 
         let distribution_out_dir = distribution::out_package_dir(PACKAGE, target);
@@ -105,7 +105,7 @@ pub mod distribution {
         use serde_json::json;
 
         #[tracing::instrument]
-        pub fn get_licenses(target: &Arch) -> anyhow::Result<()> {
+        pub fn get_licenses(target: &Target) -> anyhow::Result<()> {
 
             crate::tasks::distribution::licenses::get_licenses(PACKAGE, target)?;
             let carl_licenses_file = crate::tasks::distribution::licenses::out_file(PACKAGE, target);
