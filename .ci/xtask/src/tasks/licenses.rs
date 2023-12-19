@@ -11,11 +11,11 @@ use crate::util::RunRequiringSuccess;
 #[derive(Debug, clap::Parser)]
 pub struct LicensesCli {
     #[command(subcommand)]
-    pub task: LicensesTask,
+    pub task: TaskCli,
 }
 
 #[derive(Debug, clap::Subcommand)]
-pub enum LicensesTask {
+pub enum TaskCli {
     /// Check for license violations and security vulnerabilities
     Check,
     /// Generate a license report in JSON format
@@ -34,15 +34,15 @@ impl LicensesCli {
     #[tracing::instrument]
     pub fn handle(self) -> anyhow::Result<()> {
         match self.task {
-            LicensesTask::Check => {
+            TaskCli::Check => {
                 check::check_licenses()?;
             }
-            LicensesTask::Json { package } => {
+            TaskCli::Json { package } => {
                 for package in package.iter() {
                     json::export_json(&package)?
                 }
             }
-            LicensesTask::Sbom { package } => {
+            TaskCli::Sbom { package } => {
                 for package in package.iter() {
                     sbom::generate_sbom(&package)?
                 }

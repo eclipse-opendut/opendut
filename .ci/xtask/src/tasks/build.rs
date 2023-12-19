@@ -9,7 +9,7 @@ use crate::util::RunRequiringSuccess;
 
 /// Perform a release build, without bundling a distribution.
 #[derive(Debug, clap::Parser)]
-pub struct Build {
+pub struct BuildCli {
     #[arg(long, default_value_t)]
     pub target: ArchSelection,
 }

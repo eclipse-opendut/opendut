@@ -8,7 +8,7 @@ use crate::types::parsing::arch::ArchSelection;
 /// Build and bundle a release distribution
 #[derive(Debug, clap::Parser)]
 #[command(alias="dist")]
-pub struct Distribution {
+pub struct DistributionCli {
     #[arg(long, default_value_t)]
     pub target: ArchSelection,
 }
