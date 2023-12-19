@@ -1,19 +1,23 @@
 use leptos::{component, create_read_slice, create_slice, event_target_value, IntoView, MaybeSignal, RwSignal, SignalGet, SignalGetUntracked, view};
-use opendut_types::topology::InterfaceName;
+use opendut_types::topology::{DeviceId, InterfaceName};
 
-use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, ReadOnlyInput, Toggled, UserInput, UserInputValue};
+use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, IconButton, ReadOnlyInput, Toggled, UserInput, UserInputValue};
 use crate::peers::configurator::types::{EMPTY_DEVICE_NAME_ERROR_MESSAGE, UserDeviceConfiguration};
 
 #[component]
-pub fn DevicePanel(
+pub fn DevicePanel<OnDeleteFn>(
     device_configuration: RwSignal<UserDeviceConfiguration>,
-) -> impl IntoView {
+    on_delete: OnDeleteFn
+) -> impl IntoView
+where
+    OnDeleteFn: Fn(DeviceId) + 'static
+{
     let device_id_string = MaybeSignal::derive(move || device_configuration.get().id.to_string());
     let is_collapsed = move || device_configuration.get().is_collapsed;
 
     view! {
         <div class="panel is-light">
-            <PanelHeading device_configuration />
+            <DevicePanelHeading device_configuration on_delete />
             <div
                 class="panel-block"
                 class=("is-hidden", is_collapsed)
@@ -31,10 +35,13 @@ pub fn DevicePanel(
 }
 
 #[component]
-fn PanelHeading(
+fn DevicePanelHeading<OnDeleteFn>(
     device_configuration: RwSignal<UserDeviceConfiguration>,
-) -> impl IntoView {
-
+    on_delete: OnDeleteFn
+) -> impl IntoView
+where
+    OnDeleteFn: Fn(DeviceId) + 'static
+{
     let (is_collapsed, set_is_collapsed) = create_slice(device_configuration,
         move |device_configuration| {
             device_configuration.is_collapsed
@@ -58,8 +65,8 @@ fn PanelHeading(
 
     view! {
         <div
-            class="panel-heading is-clickable px-2 py-3"
-            on:click=move |_| set_is_collapsed.set(!is_collapsed.get_untracked())
+            class="panel-heading px-2 py-3"
+            // on:click=move |_| set_is_collapsed.set(!is_collapsed.get_untracked()) // Leads to problems with the door-hanger, because it tries to collapse a deleted device.
         >
             <div class="is-flex is-justify-content-space-between is-align-items-center">
                 <div>
@@ -76,13 +83,13 @@ fn PanelHeading(
                     <span class="is-size-5 has-text-weight-bold">{ device_name }</span>
                 </div>
                 <div>
-                    <IconButton
+                    <ConfirmationButton
                         icon=FontAwesomeIcon::TrashCan
                         color=ButtonColor::Light
                         size=ButtonSize::Small
-                        state=ButtonState::Disabled
-                        label="Delete Device"
-                        on_action=move || {}
+                        state=ButtonState::Enabled
+                        label="Delete Device?"
+                        on_conform=move || on_delete(device_configuration.get_untracked().id)
                     />
                 </div>
             </div>
