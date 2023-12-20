@@ -14,33 +14,33 @@ on:
 jobs:
   legal:
     uses: ./.github/workflows/legal.yaml
-#    with:
-#      runs-on: "${{ vars.OPENDUT_GH_RUNNER_SMALL }}"
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_SMALL }}"
 
   generate-sbom:
     uses: ./.github/workflows/sbom.yaml
-#    with:
-#      runs-on: "${{ vars.OPENDUT_GH_RUNNER_SMALL }}"
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_SMALL }}"
 
   test:
     uses: ./.github/workflows/test.yaml
-#    with:
-#      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
 
   build-carl:
     uses: ./.github/workflows/build-carl.yaml
     needs: [ test ]
-#    with:
-#      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
 
   build-edgar:
     uses: ./.github/workflows/build-edgar.yaml
     needs: [ test ]
-#    with:
-#      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
 
   build-lea:
     uses: ./.github/workflows/build-lea.yaml
     needs: [ test ]
-#    with:
-#      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
