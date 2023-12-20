@@ -47,11 +47,12 @@ impl LicensesCli {
 }
 
 mod check {
+    use crate::core::dependency::Crate;
     use super::*;
 
     #[tracing::instrument]
     pub fn check_licenses() -> anyhow::Result<()> {
-        util::install_crate("cargo-deny")?;
+        util::install_crate(Crate::CargoDeny)?;
 
         Command::new("cargo-deny")
             .arg("check")
@@ -62,11 +63,12 @@ mod check {
 }
 
 pub mod json {
+    use crate::core::dependency::Crate;
     use super::*;
 
     #[tracing::instrument]
     pub fn export_json(package: &Package) -> anyhow::Result<()> {
-        util::install_crate("cargo-deny")?;
+        util::install_crate(Crate::CargoDeny)?;
 
         let out_file = out_file(package);
         fs::create_dir_all(out_file.parent().unwrap())?;
@@ -89,6 +91,7 @@ pub mod json {
 }
 
 mod sbom {
+    use crate::core::dependency::Crate;
     use super::*;
 
     #[derive(Debug, clap::Parser)]
@@ -98,7 +101,7 @@ mod sbom {
     pub fn generate_sbom(package: &Package) -> anyhow::Result<()> {
         use serde_spdx::spdx::v_2_3::{Spdx, SpdxItemPackages};
 
-        util::install_crate("cargo-sbom")?;
+        util::install_crate(Crate::CargoSbom)?;
 
 
         let sbom_dir = out_dir();

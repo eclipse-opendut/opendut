@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use std::process::Command;
 use crate::Arch;
+use crate::core::dependency::Crate;
 
 use crate::core::types::parsing::package::PackageSelection;
 use crate::Package;
@@ -84,7 +85,7 @@ pub mod watch {
 fn install_requirements() -> anyhow::Result<()> {
     crate::util::install_toolchain(&Arch::Wasm)?;
 
-    crate::util::install_crate("trunk")?;
+    crate::util::install_crate(Crate::Trunk)?;
 
     Ok(())
 }
