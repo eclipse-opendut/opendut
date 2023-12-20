@@ -22,7 +22,7 @@ pub enum TaskCli {
 }
 
 impl CleoCli {
-    pub fn handle(self) -> anyhow::Result<()> {
+    pub fn default_handling(self) -> anyhow::Result<()> {
         match self.task {
             TaskCli::Build(crate::tasks::build::BuildCli { target }) => {
                 for target in target.iter() {
@@ -35,7 +35,7 @@ impl CleoCli {
                 }
             }
             TaskCli::Licenses(implementation) => {
-                implementation.handle(PackageSelection::Single(*PACKAGE))?;
+                implementation.default_handling(PackageSelection::Single(*PACKAGE))?;
             }
         };
         Ok(())

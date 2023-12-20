@@ -50,3 +50,10 @@ jobs:
     uses: ./.github/workflows/bundle-edgar.yaml
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+
+  bundle-carl:
+    needs: [ legal, build-carl, build-lea ]
+    uses: ./.github/workflows/bundle-carl.yaml
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+
