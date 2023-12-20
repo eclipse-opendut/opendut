@@ -18,6 +18,11 @@ pub enum TaskCli {
     Build(crate::tasks::build::BuildCli),
     Distribution(crate::tasks::distribution::DistributionCli),
     Licenses(crate::tasks::licenses::LicensesCli),
+
+    #[command(hide=true)]
+    DistributionCopyLicenseJson(crate::tasks::distribution::copy_license_json::CopyLicenseJsonCli),
+    #[command(hide=true)]
+    DistributionBundleFiles(crate::tasks::distribution::bundle::DistributionBundleFilesCli),
 }
 
 impl CarlCli {
@@ -36,6 +41,13 @@ impl CarlCli {
             TaskCli::Licenses(implementation) => {
                 implementation.handle(PackageSelection::Single(*PACKAGE))?;
             }
+
+            TaskCli::DistributionCopyLicenseJson(implementation) => {
+                implementation.handle(PACKAGE)?;
+            }
+            TaskCli::DistributionBundleFiles(implementation) => {
+                implementation.handle(PACKAGE)?;
+            }
         };
         Ok(())
     }
@@ -53,6 +65,7 @@ pub mod build {
 }
 
 pub mod distribution {
+    use crate::tasks::distribution::copy_license_json::SkipGenerate;
     use super::*;
 
     #[tracing::instrument]
@@ -68,9 +81,9 @@ pub mod distribution {
         distribution::collect_executables(PACKAGE, target)?;
 
         lea::get_lea(&distribution_out_dir)?;
-        licenses::get_licenses(target)?;
+        copy_license_json::copy_license_json(target, SkipGenerate::No)?;
 
-        distribution::bundle_collected_files(PACKAGE, target)?;
+        distribution::bundle::bundle_files(PACKAGE, target)?;
 
         Ok(())
     }
@@ -100,21 +113,22 @@ pub mod distribution {
         }
     }
 
-    mod licenses {
+    mod copy_license_json {
         use super::*;
         use serde_json::json;
+        use crate::tasks::distribution::copy_license_json::SkipGenerate;
 
         #[tracing::instrument]
-        pub fn get_licenses(target: &Target) -> anyhow::Result<()> {
+        pub fn copy_license_json(target: &Target, skip_generate: SkipGenerate) -> anyhow::Result<()> {
 
-            crate::tasks::distribution::licenses::get_licenses(PACKAGE, target)?;
-            let carl_licenses_file = crate::tasks::distribution::licenses::out_file(PACKAGE, target);
+            crate::tasks::distribution::copy_license_json::copy_license_json(PACKAGE, target, skip_generate)?;
+            let carl_licenses_file = crate::tasks::distribution::copy_license_json::out_file(PACKAGE, target);
 
-            crate::tasks::distribution::licenses::get_licenses(&Package::Lea, target)?;
-            let lea_licenses_file = crate::tasks::distribution::licenses::out_file(&Package::Lea, target);
+            crate::tasks::distribution::copy_license_json::copy_license_json(&Package::Lea, target, skip_generate)?;
+            let lea_licenses_file = crate::tasks::distribution::copy_license_json::out_file(&Package::Lea, target);
 
-            crate::tasks::distribution::licenses::get_licenses(&Package::Edgar, target)?;
-            let edgar_licenses_file = crate::tasks::distribution::licenses::out_file(&Package::Edgar, target);
+            crate::tasks::distribution::copy_license_json::copy_license_json(&Package::Edgar, target, skip_generate)?;
+            let edgar_licenses_file = crate::tasks::distribution::copy_license_json::out_file(&Package::Edgar, target);
 
 
             let out_dir = crate::tasks::distribution::out_package_dir(PACKAGE, target);

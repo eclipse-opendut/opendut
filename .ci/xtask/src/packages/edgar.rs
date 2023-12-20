@@ -24,12 +24,17 @@ pub enum TaskCli {
     Distribution(crate::tasks::distribution::DistributionCli),
     Licenses(crate::tasks::licenses::LicensesCli),
 
+    #[command(hide=true)]
     /// Download the NetBird Client artifact, as it normally happens when building a distribution.
     /// Intended for parallelization in CI/CD.
     NetbirdClientDistribution {
         #[arg(long, default_value_t)]
         target: TargetSelection,
     },
+    #[command(hide=true)]
+    DistributionCopyLicenseJson(crate::tasks::distribution::copy_license_json::CopyLicenseJsonCli),
+    #[command(hide=true)]
+    DistributionBundleFiles(crate::tasks::distribution::bundle::DistributionBundleFilesCli),
 }
 
 impl EdgarCli {
@@ -48,10 +53,17 @@ impl EdgarCli {
             TaskCli::Licenses(implementation) => {
                 implementation.handle(PackageSelection::Single(*PACKAGE))?;
             }
+
             TaskCli::NetbirdClientDistribution { target } => {
                 for target in target.iter() {
                     distribution::netbird::netbird_client_distribution(&target)?;
                 }
+            }
+            TaskCli::DistributionCopyLicenseJson(implementation) => {
+                implementation.handle(PACKAGE)?;
+            }
+            TaskCli::DistributionBundleFiles(implementation) => {
+                implementation.handle(PACKAGE)?;
             }
         };
         Ok(())
@@ -71,6 +83,7 @@ pub mod build {
 }
 
 pub mod distribution {
+    use crate::tasks::distribution::copy_license_json::SkipGenerate;
     use super::*;
 
     #[tracing::instrument]
@@ -84,9 +97,9 @@ pub mod distribution {
         distribution::collect_executables(PACKAGE, target)?;
 
         netbird::netbird_client_distribution(target)?;
-        distribution::licenses::get_licenses(PACKAGE, target)?;
+        distribution::copy_license_json::copy_license_json(PACKAGE, target, SkipGenerate::No)?;
 
-        distribution::bundle_collected_files(PACKAGE, target)?;
+        distribution::bundle::bundle_files(PACKAGE, target)?;
 
         Ok(())
     }
