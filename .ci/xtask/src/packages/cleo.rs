@@ -54,6 +54,7 @@ pub mod build {
 }
 
 pub mod distribution {
+    use crate::tasks::distribution::copy_license_json::SkipGenerate;
     use super::*;
 
     #[tracing::instrument]
@@ -66,9 +67,9 @@ pub mod distribution {
 
         distribution::collect_executables(PACKAGE, target)?;
 
-        distribution::licenses::get_licenses(PACKAGE, target)?;
+        distribution::copy_license_json::copy_license_json(PACKAGE, target, SkipGenerate::No)?;
 
-        distribution::bundle_collected_files(PACKAGE, target)?;
+        distribution::bundle::bundle_files(PACKAGE, target)?;
 
         Ok(())
     }
