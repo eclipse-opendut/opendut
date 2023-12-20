@@ -27,7 +27,7 @@ pub enum TaskCli {
     #[command(hide=true)]
     /// Download the NetBird Client artifact, as it normally happens when building a distribution.
     /// Intended for parallelization in CI/CD.
-    NetbirdClientDistribution {
+    DistributionNetbirdClient {
         #[arg(long, default_value_t)]
         target: TargetSelection,
     },
@@ -54,7 +54,7 @@ impl EdgarCli {
                 implementation.handle(PackageSelection::Single(*PACKAGE))?;
             }
 
-            TaskCli::NetbirdClientDistribution { target } => {
+            TaskCli::DistributionNetbirdClient { target } => {
                 for target in target.iter() {
                     distribution::netbird::netbird_client_distribution(&target)?;
                 }
