@@ -1,0 +1,59 @@
+name: build-edgar
+on:
+  workflow_call:  # allow this workflow to be called from other workflows
+    inputs:
+      runs-on:
+        default: "['ubuntu-latest']"
+        required: false
+        type: string
+
+jobs:
+  bundle-edgar:
+    strategy:
+      matrix:
+        package:
+          - name: opendut-edgar
+            target:
+              name: linux-x86_64
+              triple: x86_64-unknown-linux-gnu
+          - name: opendut-edgar
+            target:
+              name: linux-armhf
+              triple: armv7-unknown-linux-gnueabihf
+          - name: opendut-edgar
+            target:
+              name: linux-arm64
+              triple: aarch64-unknown-linux-gnu
+    name: "Bundle ${{ matrix.package.name }}-${{ matrix.package.target.name }}"
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    steps:
+      - name: Checkout Sources
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+      - name: Rust setup
+        uses: ./.github/actions/rust-setup
+
+      - name: Download opendut-edgar
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
+        with:
+          name: "${{ matrix.package.name }}-${{ matrix.package.target.name }}-${{ github.sha }}"
+          path: "./target/ci/distribution/${{ matrix.package.target.triple }}/${{ matrix.package.name }}/"
+      - name: Download Netbird Client
+        run: cargo ci opendut-edgar distribution-netbird-client --target=${{ matrix.package.target.triple }}
+      - name: Download licenses
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
+        with:
+          name: "licenses-${{ github.sha }}"
+          path: "./target/ci/licenses"
+      - name: Prepare Licenses
+        run: cargo ci opendut-edgar distribution-copy-license-json --skip-generate --target=${{ matrix.package.target.triple }}
+      - name: Prepare Executables
+        run: chmod +x ./target/ci/distribution/${{ matrix.package.target.triple }}/${{ matrix.package.name }}/${{ matrix.package.name }}
+      - name: Bundle
+        run: cargo ci opendut-edgar distribution-bundle-files --target=${{ matrix.package.target.triple }}
+      - name: "Upload EDGAR bundle artifact ${{ matrix.package.name }}-${{ matrix.package.target.name }}.tar.gz"
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
+        with:
+          name: "${{ matrix.package.name }}-${{ matrix.package.target.name }}-${{ github.sha }}.tar.gz"
+          path: "./target/ci/distribution/${{ matrix.package.target.triple }}/"
+          if-no-files-found: error
+          retention-days: 1

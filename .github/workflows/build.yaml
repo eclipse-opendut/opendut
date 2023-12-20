@@ -44,3 +44,9 @@ jobs:
     needs: [ test ]
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+
+  bundle-edgar:
+    needs: [ legal, build-edgar ]
+    uses: ./.github/workflows/bundle-edgar.yaml
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
