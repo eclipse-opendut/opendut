@@ -2,6 +2,7 @@ use std::process::Command;
 use std::path::PathBuf;
 
 use crate::{constants, util, Package};
+use crate::core::dependency::Crate;
 use crate::Target;
 use crate::core::types::parsing::target::TargetSelection;
 use crate::util::RunRequiringSuccess;
@@ -16,7 +17,7 @@ pub struct BuildCli {
 
 #[tracing::instrument]
 pub fn build_release(package: &Package, target: &Target) -> anyhow::Result<()> {
-    util::install_crate("cross")?;
+    util::install_crate(Crate::Cross)?;
 
     Command::new("cross")
         .args([

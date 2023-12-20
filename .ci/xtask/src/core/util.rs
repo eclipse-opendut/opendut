@@ -1,14 +1,15 @@
 use std::process::Command;
 
 use tracing_subscriber::fmt::format::FmtSpan;
+use crate::core::dependency::Crate;
 
 use crate::core::types::Arch;
 
 #[tracing::instrument(level = tracing::Level::TRACE)]
-pub fn install_crate(name: &str) -> anyhow::Result<()> {
+pub fn install_crate(install: Crate) -> anyhow::Result<()> {
     Command::new("cargo")
         .arg("install")
-        .arg(name)
+        .arg(install.ident())
         .run_requiring_success();
     Ok(())
 }
