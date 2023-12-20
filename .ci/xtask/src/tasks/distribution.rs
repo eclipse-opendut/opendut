@@ -36,12 +36,8 @@ pub fn collect_executables(package: &Package, target: &Target) -> anyhow::Result
     Ok(())
 }
 
-
 pub mod bundle {
-    use std::fs;
-    use crate::core::types::{Package, Target};
-    use crate::core::types::parsing::target::TargetSelection;
-    use crate::tasks::distribution::{out_arch_dir, out_package_dir};
+    use super::*;
 
     /// Directly bundle files from the distribution directory, as it normally happens when building a distribution.
     /// Intended for parallelization in CI/CD.
@@ -51,7 +47,7 @@ pub mod bundle {
         target: TargetSelection,
     }
     impl DistributionBundleFilesCli {
-        pub fn handle(&self, package: &Package) -> anyhow::Result<()> {
+        pub fn default_handling(&self, package: &Package) -> anyhow::Result<()> {
             for target in self.target.iter() {
                 bundle_files(package, &target)?;
             }
@@ -96,14 +92,14 @@ pub mod copy_license_json {
     #[derive(Debug, clap::Parser)]
     pub struct CopyLicenseJsonCli {
         #[arg(long, default_value_t)]
-        target: TargetSelection,
+        pub target: TargetSelection,
 
         #[arg(long)]
         /// Skip the generation of the license files and attempt to copy them directly.
-        skip_generate: bool,
+        pub skip_generate: bool,
     }
     impl CopyLicenseJsonCli {
-        pub fn handle(&self, package: &Package) -> anyhow::Result<()> {
+        pub fn default_handling(&self, package: &Package) -> anyhow::Result<()> {
             let skip_generate = SkipGenerate::from(self.skip_generate);
             for target in self.target.iter() {
                 copy_license_json(package, &target, skip_generate)?;

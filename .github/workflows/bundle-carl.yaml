@@ -1,0 +1,70 @@
+name: build-carl
+on:
+  workflow_call:  # allow this workflow to be called from other workflows
+    inputs:
+      runs-on:
+        default: "['ubuntu-latest']"
+        required: false
+        type: string
+
+    # https://docs.github.com/en/actions/using-workflows/reusing-workflows#using-outputs-from-a-reusable-workflow
+    outputs:
+      OPENDUT_CARL_VERSION:
+        description: "The version of the CARL build"
+        value: ${{ jobs.bundle-carl.outputs.OPENDUT_CARL_VERSION }}
+
+jobs:
+  bundle-carl:
+    strategy:
+      matrix:
+        package:
+          - name: opendut-carl
+            target:
+              name: linux-x86_64
+              triple: x86_64-unknown-linux-gnu
+    name: "Bundle ${{ matrix.package.name }}-${{ matrix.package.target.name }}"
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    outputs:
+      OPENDUT_CARL_VERSION: ${{ steps.extract_carl_version.outputs.OPENDUT_CARL_VERSION }}
+    steps:
+      - name: Checkout Sources
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+      - name: Rust setup
+        uses: ./.github/actions/rust-setup
+        with:
+          cargo-cross: true
+
+      - name: Extract carl version
+        id: extract_carl_version
+        working-directory: ./opendut-carl
+        run: |
+          VERSION=$(cargo metadata --format-version=1 --no-deps | jq -r '.packages[0].version')
+          echo "OPENDUT_CARL_VERSION=${VERSION}" >> $GITHUB_OUTPUT
+      - name: Download opendut-carl
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
+        with:
+          name: "${{ matrix.package.name }}-${{ matrix.package.target.name }}-${{ github.sha }}"
+          path: "./target/ci/distribution/${{ matrix.package.target.triple }}/${{ matrix.package.name }}/"
+      - name: Download opendut-lea
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
+        with:
+          name: "opendut-lea-${{ github.sha }}"
+          path: "./target/ci/distribution/${{ matrix.package.target.triple }}/${{ matrix.package.name }}/opendut-lea"
+      - name: Download licenses
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
+        with:
+          name: "licenses-${{ github.sha }}"
+          path: "./target/ci/licenses"
+      - name: Prepare Licenses
+        run: cargo ci opendut-carl distribution-copy-license-json --skip-generate --target=${{ matrix.package.target.triple }}
+      - name: Prepare Executables
+        run: chmod +x ./target/ci/distribution/${{ matrix.package.target.triple }}/${{ matrix.package.name }}/${{ matrix.package.name }}
+      - name: Bundle
+        run: cargo ci opendut-carl distribution-bundle-files --target=${{ matrix.package.target.triple }}
+      - name: "Upload CARL bundle artifact ${{ matrix.package.name }}-${{ matrix.package.target.name }}"
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
+        with:
+          name: "${{ matrix.package.name }}-${{ matrix.package.target.name }}-${{ github.sha }}.tar.gz"
+          path: "./target/ci/distribution/${{ matrix.package.target.triple }}/"
+          if-no-files-found: error
+          retention-days: 1

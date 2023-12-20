@@ -27,12 +27,12 @@ pub enum TaskCli {
 }
 
 impl LeaCli {
-    pub fn handle(self) -> anyhow::Result<()> {
+    pub fn default_handling(self) -> anyhow::Result<()> {
         match self.task {
             TaskCli::Build => build::build_release()?,
             TaskCli::Watch => watch::watch()?,
             TaskCli::Licenses(implementation) => {
-                implementation.handle(PackageSelection::Single(*PACKAGE))?;
+                implementation.default_handling(PackageSelection::Single(*PACKAGE))?;
             }
         };
         Ok(())

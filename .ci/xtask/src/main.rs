@@ -53,12 +53,12 @@ fn main() -> anyhow::Result<()> {
                 packages::cleo::distribution::cleo_distribution(&target)?;
             }
         }
-        TaskCli::Licenses(implementation) => implementation.handle(PackageSelection::All)?,
+        TaskCli::Licenses(implementation) => implementation.default_handling(PackageSelection::All)?,
 
-        TaskCli::Carl(implementation) => implementation.handle()?,
-        TaskCli::Cleo(implementation) => implementation.handle()?,
-        TaskCli::Edgar(implementation) => implementation.handle()?,
-        TaskCli::Lea(implementation) => implementation.handle()?,
+        TaskCli::Carl(implementation) => implementation.default_handling()?,
+        TaskCli::Cleo(implementation) => implementation.default_handling()?,
+        TaskCli::Edgar(implementation) => implementation.default_handling()?,
+        TaskCli::Lea(implementation) => implementation.default_handling()?,
     };
     Ok(())
 }

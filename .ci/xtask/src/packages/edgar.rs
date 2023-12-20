@@ -38,7 +38,7 @@ pub enum TaskCli {
 }
 
 impl EdgarCli {
-    pub fn handle(self) -> anyhow::Result<()> {
+    pub fn default_handling(self) -> anyhow::Result<()> {
         match self.task {
             TaskCli::Build(crate::tasks::build::BuildCli { target }) => {
                 for target in target.iter() {
@@ -51,7 +51,7 @@ impl EdgarCli {
                 }
             }
             TaskCli::Licenses(implementation) => {
-                implementation.handle(PackageSelection::Single(*PACKAGE))?;
+                implementation.default_handling(PackageSelection::Single(*PACKAGE))?;
             }
 
             TaskCli::DistributionNetbirdClient { target } => {
@@ -60,10 +60,10 @@ impl EdgarCli {
                 }
             }
             TaskCli::DistributionCopyLicenseJson(implementation) => {
-                implementation.handle(PACKAGE)?;
+                implementation.default_handling(PACKAGE)?;
             }
             TaskCli::DistributionBundleFiles(implementation) => {
-                implementation.handle(PACKAGE)?;
+                implementation.default_handling(PACKAGE)?;
             }
         };
         Ok(())

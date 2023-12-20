@@ -2,6 +2,8 @@ use std::fs;
 use std::path::PathBuf;
 use crate::{Target, Package};
 use crate::core::types::parsing::package::PackageSelection;
+use crate::packages::carl::distribution::copy_license_json::copy_license_json;
+use crate::tasks::distribution::copy_license_json::SkipGenerate;
 
 const PACKAGE: &Package = &Package::Carl;
 
@@ -26,7 +28,7 @@ pub enum TaskCli {
 }
 
 impl CarlCli {
-    pub fn handle(self) -> anyhow::Result<()> {
+    pub fn default_handling(self) -> anyhow::Result<()> {
         match self.task {
             TaskCli::Build(crate::tasks::build::BuildCli { target }) => {
                 for target in target.iter() {
@@ -39,14 +41,17 @@ impl CarlCli {
                 }
             }
             TaskCli::Licenses(implementation) => {
-                implementation.handle(PackageSelection::Single(*PACKAGE))?;
+                implementation.default_handling(PackageSelection::Single(*PACKAGE))?;
             }
 
             TaskCli::DistributionCopyLicenseJson(implementation) => {
-                implementation.handle(PACKAGE)?;
+                let skip_generate = SkipGenerate::from(implementation.skip_generate);
+                for target in implementation.target.iter() {
+                    copy_license_json(&target, skip_generate)?;
+                }
             }
             TaskCli::DistributionBundleFiles(implementation) => {
-                implementation.handle(PACKAGE)?;
+                implementation.default_handling(PACKAGE)?;
             }
         };
         Ok(())
@@ -113,7 +118,7 @@ pub mod distribution {
         }
     }
 
-    mod copy_license_json {
+    pub mod copy_license_json {
         use super::*;
         use serde_json::json;
         use crate::tasks::distribution::copy_license_json::SkipGenerate;
