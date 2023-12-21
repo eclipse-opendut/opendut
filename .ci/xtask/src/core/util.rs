@@ -1,8 +1,10 @@
+use std::fs;
 use std::process::Command;
 
+use assert_fs::fixture::ChildPath;
 use tracing_subscriber::fmt::format::FmtSpan;
-use crate::core::dependency::Crate;
 
+use crate::core::dependency::Crate;
 use crate::core::types::Arch;
 
 #[tracing::instrument(level = tracing::Level::TRACE)]
@@ -15,7 +17,7 @@ pub fn install_crate(install: Crate) -> anyhow::Result<()> {
 }
 
 #[tracing::instrument]
-pub fn install_toolchain(arch: &Arch) -> anyhow::Result<()> {
+pub fn install_toolchain(arch: Arch) -> anyhow::Result<()> {
     Command::new("rustup")
         .args(["target", "add", &arch.triple()])
         .run_requiring_success();
@@ -57,4 +59,31 @@ pub fn init_tracing() -> anyhow::Result<()> {
         .compact()
         .init();
     Ok(())
+}
+
+
+pub trait ChildPathExt {
+    fn file_name_str(&self) -> &str;
+    fn dir_contains_exactly_in_order(&self, paths: Vec<&ChildPath>);
+}
+impl ChildPathExt for ChildPath {
+    fn file_name_str(&self) -> &str {
+        self.file_name().unwrap()
+            .to_str().unwrap()
+    }
+
+    fn dir_contains_exactly_in_order(&self, paths: Vec<&ChildPath>) {
+        let mut sub_paths = fs::read_dir(self).unwrap()
+            .map(|entry| entry.unwrap().path())
+            .collect::<Vec<_>>();
+
+        sub_paths.sort();
+
+        let mut sub_paths = sub_paths.into_iter();
+
+        for entry in paths {
+            assert_eq!(sub_paths.next(), Some(entry.to_path_buf()));
+        }
+        assert_eq!(sub_paths.next(), None);
+    }
 }

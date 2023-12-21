@@ -2205,12 +2205,14 @@ name = "opendut-ci"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "assert_fs",
  "cargo_metadata",
  "clap",
  "flate2",
  "fs_extra",
  "lazy_static",
  "log",
+ "predicates",
  "reqwest",
  "serde-spdx",
  "serde_json",
