@@ -28,7 +28,7 @@ pub fn ClustersOverview() -> impl IntoView {
             let mut carl = globals.expect_client();
             let id = Clone::clone(id);
             async move {
-                let _ = carl.cluster.store_cluster_deployment(&ClusterDeployment { id }).await;
+                let _ = carl.cluster.store_cluster_deployment(ClusterDeployment { id }).await;
             }
         });
 
