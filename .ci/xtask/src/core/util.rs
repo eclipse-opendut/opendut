@@ -99,9 +99,19 @@ pub mod file {
             let mut sub_paths = sub_paths.into_iter();
 
             for entry in paths {
-                assert_eq!(sub_paths.next(), Some(entry.to_path_buf()));
+                let actual = sub_paths.next();
+                let expected = Some(entry.to_path_buf());
+                assert_eq!(
+                    actual, expected.clone(),
+                    "Found '{:?}' as next path in alphabetical order, but expected '{:?}'.", actual, expected
+                );
             }
-            assert_eq!(sub_paths.next(), None);
+
+            let actual = sub_paths.next();
+            assert_eq!(
+                actual, None,
+                "Found path '{:?}' in directory, but expected no further paths.", actual
+            );
         }
     }
 }

@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use crate::{Target, Package};
 use crate::core::types::parsing::package::PackageSelection;
 
-const PACKAGE: Package = Package::Cleo;
+const SELF_PACKAGE: Package = Package::Cleo;
 
 
 /// Tasks available or specific for CLEO
@@ -38,7 +38,7 @@ impl CleoCli {
                 }
             }
             TaskCli::Licenses(implementation) => {
-                implementation.default_handling(PackageSelection::Single(PACKAGE))?;
+                implementation.default_handling(PackageSelection::Single(SELF_PACKAGE))?;
             }
 
             TaskCli::DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli { target }) => {
@@ -55,10 +55,10 @@ pub mod build {
     use super::*;
 
     pub fn build_release(target: Target) -> anyhow::Result<()> {
-        crate::tasks::build::build_release(PACKAGE, target)
+        crate::tasks::build::build_release(SELF_PACKAGE, target)
     }
     pub fn out_dir(target: Target) -> PathBuf {
-        crate::tasks::build::out_dir(PACKAGE, target)
+        crate::tasks::build::out_dir(SELF_PACKAGE, target)
     }
 }
 
@@ -70,15 +70,15 @@ pub mod distribution {
     pub fn cleo_distribution(target: Target) -> anyhow::Result<()> {
         use crate::tasks::distribution;
 
-        distribution::clean(PACKAGE, target)?;
+        distribution::clean(SELF_PACKAGE, target)?;
 
-        crate::tasks::build::build_release(PACKAGE, target)?;
+        crate::tasks::build::build_release(SELF_PACKAGE, target)?;
 
-        distribution::collect_executables(PACKAGE, target)?;
+        distribution::collect_executables(SELF_PACKAGE, target)?;
 
-        distribution::copy_license_json::copy_license_json(PACKAGE, target, SkipGenerate::No)?;
+        distribution::copy_license_json::copy_license_json(SELF_PACKAGE, target, SkipGenerate::No)?;
 
-        distribution::bundle::bundle_files(PACKAGE, target)?;
+        distribution::bundle::bundle_files(SELF_PACKAGE, target)?;
 
         validate::validate_contents(target)?;
 
@@ -102,17 +102,17 @@ pub mod distribution {
 
             let unpack_dir = {
                 let unpack_dir = assert_fs::TempDir::new()?;
-                let archive = bundle::out_file(PACKAGE, target);
+                let archive = bundle::out_file(SELF_PACKAGE, target);
                 let mut archive = tar::Archive::new(GzDecoder::new(File::open(archive)?));
                 archive.set_preserve_permissions(true);
                 archive.unpack(&unpack_dir)?;
                 unpack_dir
             };
 
-            let cleo_dir = unpack_dir.child("opendut-cleo");
+            let cleo_dir = unpack_dir.child(SELF_PACKAGE.ident());
             cleo_dir.assert(path::is_dir());
 
-            let opendut_edgar_executable = cleo_dir.child("opendut-cleo");
+            let opendut_edgar_executable = cleo_dir.child(SELF_PACKAGE.ident());
             let licenses_dir = cleo_dir.child("licenses");
 
             cleo_dir.dir_contains_exactly_in_order(vec![

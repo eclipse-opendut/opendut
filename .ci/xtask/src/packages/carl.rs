@@ -5,7 +5,7 @@ use crate::{Package, Target};
 use crate::core::types::parsing::package::PackageSelection;
 use crate::packages::carl::distribution::copy_license_json::copy_license_json;
 
-const PACKAGE: Package = Package::Carl;
+const SELF_PACKAGE: Package = Package::Carl;
 
 /// Tasks available or specific for CARL
 #[derive(Debug, clap::Parser)]
@@ -43,7 +43,7 @@ impl CarlCli {
                 }
             }
             TaskCli::Licenses(implementation) => {
-                implementation.default_handling(PackageSelection::Single(PACKAGE))?;
+                implementation.default_handling(PackageSelection::Single(SELF_PACKAGE))?;
             }
 
             TaskCli::DistributionCopyLicenseJson(implementation) => {
@@ -52,7 +52,7 @@ impl CarlCli {
                 }
             }
             TaskCli::DistributionBundleFiles(implementation) => {
-                implementation.default_handling(PACKAGE)?;
+                implementation.default_handling(SELF_PACKAGE)?;
             }
             TaskCli::DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli { target }) => {
                 for target in target.iter() {
@@ -68,10 +68,10 @@ pub mod build {
     use super::*;
 
     pub fn build_release(target: Target) -> anyhow::Result<()> {
-        crate::tasks::build::build_release(PACKAGE, target)
+        crate::tasks::build::build_release(SELF_PACKAGE, target)
     }
     pub fn out_dir(target: Target) -> PathBuf {
-        crate::tasks::build::out_dir(PACKAGE, target)
+        crate::tasks::build::out_dir(SELF_PACKAGE, target)
     }
 }
 
@@ -84,18 +84,18 @@ pub mod distribution {
     pub fn carl_distribution(target: Target) -> anyhow::Result<()> {
         use crate::tasks::distribution;
 
-        let distribution_out_dir = distribution::out_package_dir(PACKAGE, target);
+        let distribution_out_dir = distribution::out_package_dir(SELF_PACKAGE, target);
 
-        distribution::clean(PACKAGE, target)?;
+        distribution::clean(SELF_PACKAGE, target)?;
 
-        crate::tasks::build::build_release(PACKAGE, target)?;
+        crate::tasks::build::build_release(SELF_PACKAGE, target)?;
 
-        distribution::collect_executables(PACKAGE, target)?;
+        distribution::collect_executables(SELF_PACKAGE, target)?;
 
         lea::get_lea(&distribution_out_dir)?;
         copy_license_json::copy_license_json(target, SkipGenerate::No)?;
 
-        distribution::bundle::bundle_files(PACKAGE, target)?;
+        distribution::bundle::bundle_files(SELF_PACKAGE, target)?;
 
         validate::validate_contents(target)?;
 
@@ -111,7 +111,7 @@ pub mod distribution {
             crate::packages::lea::build::build_release()?;
             let lea_build_dir = crate::packages::lea::build::out_dir();
 
-            let lea_out_dir = out_dir.join("lea");
+            let lea_out_dir = out_dir.join(Package::Lea.ident());
 
             fs::create_dir_all(&lea_out_dir)?;
 
@@ -140,14 +140,14 @@ pub mod distribution {
             match skip_generate {
                 SkipGenerate::Yes => log::info!("Skipping generation of licenses, as requested. Directly attempting to copy to target location."),
                 SkipGenerate::No => {
-                    for package in [PACKAGE, Package::Lea, Package::Edgar] {
+                    for package in [SELF_PACKAGE, Package::Lea, Package::Edgar] {
                         crate::tasks::licenses::json::export_json(package)?;
                     }
                 }
             };
 
-            let carl_in_file = crate::tasks::licenses::json::out_file(PACKAGE);
-            let carl_out_file = crate::tasks::distribution::copy_license_json::out_file(PACKAGE, target);
+            let carl_in_file = crate::tasks::licenses::json::out_file(SELF_PACKAGE);
+            let carl_out_file = crate::tasks::distribution::copy_license_json::out_file(SELF_PACKAGE, target);
             let out_dir = carl_out_file.parent().unwrap();
 
             let lea_in_file = crate::tasks::licenses::json::out_file(Package::Lea);
@@ -190,7 +190,7 @@ pub mod distribution {
 
             let unpack_dir = {
                 let unpack_dir = assert_fs::TempDir::new()?;
-                let archive = bundle::out_file(PACKAGE, target);
+                let archive = bundle::out_file(SELF_PACKAGE, target);
                 let mut archive = tar::Archive::new(GzDecoder::new(File::open(archive)?));
                 archive.set_preserve_permissions(true);
                 archive.unpack(&unpack_dir)?;
@@ -198,21 +198,21 @@ pub mod distribution {
             };
 
 
-            let carl_dir = unpack_dir.child("opendut-carl");
+            let carl_dir = unpack_dir.child(SELF_PACKAGE.ident());
             carl_dir.assert(path::is_dir());
 
-            let opendut_carl_executable = carl_dir.child("opendut-carl");
-            let lea_dir = carl_dir.child("lea");
+            let opendut_carl_executable = carl_dir.child(SELF_PACKAGE.ident());
+            let opendut_lea_dir = carl_dir.child(Package::Lea.ident());
             let licenses_dir = carl_dir.child("licenses");
 
             carl_dir.dir_contains_exactly_in_order(vec![
-                &lea_dir,
                 &licenses_dir,
                 &opendut_carl_executable,
+                &opendut_lea_dir,
             ]);
 
             opendut_carl_executable.assert_non_empty_file();
-            lea_dir.assert(path::is_dir());
+            opendut_lea_dir.assert(path::is_dir());
             licenses_dir.assert(path::is_dir());
 
             { //validate license dir contents

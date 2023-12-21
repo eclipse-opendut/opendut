@@ -9,7 +9,7 @@ certificate = "/etc/opendut-network/tls/carl.pem"
 key = "/etc/opendut-network/tls/carl.key"
 
 [serve]
-ui.directory = "lea/"
+ui.directory = "opendut-lea/"
 
 [vpn]
 enabled = true
