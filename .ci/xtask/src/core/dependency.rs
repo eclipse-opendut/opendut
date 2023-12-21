@@ -1,6 +1,3 @@
-
-pub trait Dependency {}
-
 #[derive(Debug, Clone, Copy)]
 pub enum Crate {
     CargoDeny,

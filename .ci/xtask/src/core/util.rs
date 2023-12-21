@@ -5,12 +5,19 @@ use assert_fs::assert::PathAssert;
 use tracing_subscriber::fmt::format::FmtSpan;
 
 use crate::core::dependency::Crate;
+use crate::core::metadata;
 use crate::core::types::Arch;
 
 #[tracing::instrument(level = tracing::Level::TRACE)]
 pub fn install_crate(install: Crate) -> anyhow::Result<()> {
+    let cargo_metadata = metadata::cargo();
+
+    let version = cargo_metadata.workspace_metadata["ci"]["xtask"][install.ident()]["version"].as_str()
+        .unwrap_or_else(|| panic!("No version information for crate '{}' in root Cargo.toml. Aborting installation.", install.ident()));
+
     Command::new("cargo")
         .arg("install")
+        .arg("--version").arg(version)
         .arg(install.ident())
         .run_requiring_success();
     Ok(())

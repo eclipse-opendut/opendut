@@ -1,4 +1,3 @@
-
 [workspace]
 members = [
     "opendut-carl",
@@ -103,3 +102,9 @@ walkdir = "2.4.0"
 
 [workspace.metadata.ci]
 netbird.version = "0.23.9-8de14ad"
+
+[workspace.metadata.ci.xtask] #CLI tool crates used in CI (not libraries)
+cargo-deny.version = "0.14.3"
+cargo-sbom.version = "0.8.4"
+cross.version = "0.2.5"
+trunk.version = "0.18.3"
