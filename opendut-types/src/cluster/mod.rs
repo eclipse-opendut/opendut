@@ -62,7 +62,7 @@ pub struct ClusterName(pub(crate) String);
 impl ClusterName {
 
     pub const MIN_LENGTH: usize = 4;
-    pub const MAX_LENGTH: usize = 16;
+    pub const MAX_LENGTH: usize = 64;
 
     pub fn value(self) -> String {
         self.0
@@ -105,7 +105,12 @@ impl TryFrom<String> for ClusterName {
                 actual: length,
             })
         }
-        else if value.chars().any(|c| !c.is_ascii_alphanumeric()) { // TODO: Relax this restriction.
+        else if ! crate::util::valid_start_and_end_of_a_name( & value) {
+            Err(IllegalClusterName::InvalidCharacter {
+                value
+            })
+        }
+        else if value.chars().any( | c| ! crate::util::valid_characters_in_name( & c)) { // TODO: Relax this restriction.
             Err(IllegalClusterName::InvalidCharacter {
                 value
             })
@@ -150,4 +155,26 @@ pub enum IllegalClusterConfiguration {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ClusterDeployment {
     pub id: ClusterId,
+}
+
+
+#[cfg(test)]
+#[allow(non_snake_case)]
+mod tests {
+    use googletest::prelude::*;
+
+    use super::*;
+
+    #[test]
+    fn A_PeerName_should_contain_valid_characters() -> Result<()> {
+        let peer_name = ClusterName::try_from("asd123".to_string()).expect("Failed to create peer name");
+        assert_eq!(peer_name.0, "asd123");
+        Ok(())
+    }
+
+    #[test]
+    fn A_PeerName_should_not_start_an_underscore() -> Result<()> {
+        let _peer_name = ClusterName::try_from("_asd123".to_string()).is_err();
+        Ok(())
+    }
 }

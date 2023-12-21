@@ -1,37 +1,10 @@
 #!/bin/bash
 
-if [ -n "$1" ]; then
-  ROUTER=true
-else
-  ROUTER=false
-fi
-
-if [ -z "$NETBIRD_SETUP_KEY" ]; then
-  echo "NETBIRD_SETUP_KEY is not set"
-  exit 1
-fi
-
 source "$(dirname "$0")/functions.sh"
-
-copy_custom_certificate_from_environment_variable "OPENDUT_CUSTOM_CA1"
-copy_custom_certificate_from_environment_variable "OPENDUT_CUSTOM_CA2"
-append_data_from_env_variable OPENDUT_HOSTS /etc/hosts
-
-ls -la /opt/artifacts
-
-# unpack binaries
-tar xf artifacts/opendut-edgar-x86_64-unknown-linux-gnu*
-#tar xf artifacts/opendut-cleo-x86_64-unknown-linux-gnu*
-
-# symlink binaries to known binary path
-ln -s /opt/opendut-network/edgar/netbird/netbird /usr/local/sbin/netbird
-ln -s /opt/opendut-edgar/opendut-edgar /usr/local/sbin/opendut-edgar
-
-
 trap die_with_error TERM
 
 
-if [ "$ROUTER" = true ] ; then
+if [ -n "$1" ] ; then
   echo y | /opt/opendut-edgar/opendut-edgar setup unmanaged --setup-key "$NETBIRD_SETUP_KEY" --management-url "${NETBIRD_MANAGEMENT_API}" --router=local
 
   while ! netbird status | grep IP; do

@@ -7,7 +7,7 @@ services:
     build:
       context: ../../..
       dockerfile: ./.ci/docker/edgar/Dockerfile
-    command: /opt/prepare.sh router
+    command: /opt/managed.sh router
     #command: sleep infinity
     volumes:
       - ../../../target/ci/distribution/x86_64-unknown-linux-gnu/:/opt/artifacts
@@ -23,6 +23,8 @@ services:
       # testenv
       - NETBIRD_GROUP=testenv
       - OPENDUT_EDGAR_REPLICAS=4
+      - OPENDUT_EDGAR_SERVICE_USER=root
+      - OPENDUT_EDGAR_CLUSTER_NAME
       # dynamically provided
       - NETBIRD_SETUP_KEY
       - NETBIRD_API_TOKEN
@@ -40,7 +42,7 @@ services:
     build:
       context: ../../..
       dockerfile: ./.ci/docker/edgar/Dockerfile
-    command: /opt/prepare.sh
+    command: /opt/managed.sh
     #command: sleep infinity
     volumes:
       - ../../../target/ci/distribution/x86_64-unknown-linux-gnu/:/opt/artifacts
@@ -56,6 +58,8 @@ services:
       # testenv
       - NETBIRD_GROUP=testenv
       - OPENDUT_EDGAR_REPLICAS=4
+      - OPENDUT_EDGAR_SERVICE_USER=root
+      - OPENDUT_EDGAR_CLUSTER_NAME
       # dynamically provided
       - NETBIRD_SETUP_KEY
       - NETBIRD_API_TOKEN

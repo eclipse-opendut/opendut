@@ -1,31 +1,84 @@
 #!/bin/bash
 
-if [ -n "$1" ]; then
-  ROUTER=true
-else
-  ROUTER=false
-fi
-
 source "$(dirname "$0")/functions.sh"
-
-copy_custom_certificate_from_environment_variable "OPENDUT_CUSTOM_CA1"
-copy_custom_certificate_from_environment_variable "OPENDUT_CUSTOM_CA2"
-append_data_from_env_variable OPENDUT_HOSTS /etc/hosts
-
-ls -la /opt/artifacts
-
-# unpack binaries
-tar xf artifacts/opendut-edgar-x86_64-unknown-linux-gnu*
-#tar xf artifacts/opendut-cleo-x86_64-unknown-linux-gnu*
-
-# symlink binaries to known binary path
-ln -s /opt/opendut-network/edgar/netbird/netbird /usr/local/sbin/netbird
-ln -s /opt/opendut-edgar/opendut-edgar /usr/local/sbin/opendut-edgar
+trap die_with_error TERM
 
 touch /etc/security/capability.conf
 
+PEER_ID=$(uuidgen)
+NAME="${OPENDUT_EDGAR_CLUSTER_NAME}_$(hostname)"
+echo "Creating peer with name $NAME and id $PEER_ID"
+opendut-cleo create peer --name "$NAME" --id "$PEER_ID"
+opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME" --interface eth0 --location "$NAME" --tags "$OPENDUT_EDGAR_CLUSTER_NAME"
 
-PEER_ID=$(uuid)
-opendut-cleo create peer --name router --id "$PEER_ID"
 PEER_SETUP_KEY=$(opendut-cleo generate-peer-setup --id "$PEER_ID" | grep -A1 "Copy the generated setup key" | tail -n1 | sed -e 's#"##g' | sed -e 's/\x1b\[[0-9;]*m//g')
+echo "Setting up peer with setup key $PEER_SETUP_KEY"
+
 echo y | opendut-edgar setup managed "$PEER_SETUP_KEY"
+
+cleo_get_peer_id() {
+  edgar_hostname="$1"
+  RESULT=$(opendut-cleo list --output json peers  | jq --arg NAME "$edgar_hostname" '.[] | select(.name==$NAME)')
+  if [ -n "$RESULT" ]; then
+      echo "$RESULT"
+  else
+      return 1
+  fi
+}
+
+cleo_count_connected_peers() {
+  expected="$1"
+  RESULT=$(opendut-cleo list --output json peers | jq -r '.[].status' | grep -c Connected)
+  if [ "$RESULT" -eq "$expected" ]; then
+      return 0
+  else
+      return 1
+  fi
+}
+
+cleo_count_connected_peers_in_cluster() {
+  expected="$1"
+  cluster="$2"
+  RESULT=$(opendut-cleo list --output json peers | jq --arg CLUSTER "$cluster" -r '. | map(select(.name | contains($CLUSTER))) | .[].status' | grep -c Connected)
+  if [ "$RESULT" -eq "$expected" ]; then
+      return 0
+  else
+      return 1
+  fi
+}
+
+while ! cleo_get_peer_id "$NAME"; do
+    echo "Waiting for edgar to register ..."
+    sleep 3
+done
+
+
+expected_peer_count=$(($OPENDUT_EDGAR_REPLICAS + 1))
+while ! cleo_count_connected_peers_in_cluster "$expected_peer_count" "$OPENDUT_EDGAR_CLUSTER_NAME"; do
+  echo "Waiting for all edgar peers in my cluster ..."
+  sleep 3
+done
+
+if [ "$1" == "router" ]; then
+  DEVICES="$(opendut-cleo list --output=json devices | jq --arg NAME "$OPENDUT_EDGAR_CLUSTER_NAME" -r '.[] | select(.tags==$NAME).name' | xargs echo)"
+
+  # currently CLEO does not split the string of the device names therefore passing it without quotes
+  # shellcheck disable=SC2086
+  opendut-cleo create cluster-configuration --name "$OPENDUT_EDGAR_CLUSTER_NAME" \
+      --leader-id "$PEER_ID" \
+      --device-names $DEVICES
+  CLUSTER_ID=$(opendut-cleo list --output=json cluster-configurations | jq --arg NAME "$OPENDUT_EDGAR_CLUSTER_NAME" -r '.[] | select(.name==$NAME).id')
+  opendut-cleo create cluster-deployment --id "$CLUSTER_ID"
+
+fi
+
+trap die_with_success TERM
+
+echo "Success"
+sleep infinity &
+
+# Wait for any process to exit
+wait -n
+
+# Exit with status of process that exited first
+exit $?
