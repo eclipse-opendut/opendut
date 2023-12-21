@@ -30,7 +30,7 @@ runs:
     - name: Install Rust Toolchain
       uses: dtolnay/rust-toolchain@8504a5cb1826786b18ef7a8819e6fddaf9f3eb8d
       with:
-        toolchain: nightly
+        toolchain: stable
         targets: x86_64-unknown-linux-gnu
     - name: Prepare Rust Toolchain Cache
       uses: actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84
