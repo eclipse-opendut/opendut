@@ -216,6 +216,15 @@ impl ClusterManagerService for ClusterManagerFacade {
                                     ))
                                 }))
                             }
+                            Err(DeleteClusterDeploymentError::Internal { id, cause }) => {
+                                Ok(Response::new( DeleteClusterDeploymentResponse {
+                                    result: Some(delete_cluster_deployment_response::Result::Failure(
+                                        DeleteClusterDeploymentFailure {
+                                            reason: Some(delete_cluster_deployment_failure::Reason::Internal(DeleteClusterDeploymentFailureInternal { id: Some(id.into()), cause } )),
+                                        }
+                                    )),
+                                }))
+                            }
                         }
                     }
                 }
