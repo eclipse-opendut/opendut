@@ -53,9 +53,8 @@ pub mod copy_license_json {
     }
     impl DistributionCopyLicenseJsonCli {
         pub fn default_handling(&self, package: Package) -> anyhow::Result<()> {
-            let skip_generate = SkipGenerate::from(self.skip_generate);
             for target in self.target.iter() {
-                copy_license_json(package, target, skip_generate)?;
+                copy_license_json(package, target, self.skip_generate.into())?;
             }
             Ok(())
         }

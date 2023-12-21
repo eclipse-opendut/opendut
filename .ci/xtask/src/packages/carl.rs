@@ -4,7 +4,6 @@ use std::path::PathBuf;
 use crate::{Package, Target};
 use crate::core::types::parsing::package::PackageSelection;
 use crate::packages::carl::distribution::copy_license_json::copy_license_json;
-use crate::tasks::distribution::copy_license_json::SkipGenerate;
 
 const PACKAGE: Package = Package::Carl;
 
@@ -48,9 +47,8 @@ impl CarlCli {
             }
 
             TaskCli::DistributionCopyLicenseJson(implementation) => {
-                let skip_generate = SkipGenerate::from(implementation.skip_generate);
                 for target in implementation.target.iter() {
-                    copy_license_json(target, skip_generate)?;
+                    copy_license_json(target, implementation.skip_generate.into())?;
                 }
             }
             TaskCli::DistributionBundleFiles(implementation) => {
