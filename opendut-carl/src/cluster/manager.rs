@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use opendut_carl_api::carl::cluster::DeleteClusterDeploymentError;
+use opendut_carl_api::carl::cluster::{DeleteClusterDeploymentError, StoreClusterDeploymentError};
 use opendut_carl_api::proto::services::peer_messaging_broker::AssignCluster;
 use opendut_carl_api::proto::services::peer_messaging_broker::downstream::Message;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
@@ -94,17 +94,35 @@ impl ClusterManager {
         }).await
     }
 
-    pub async fn create_deployment(&self, deployment: ClusterDeployment) -> Result<(), DeployClusterError> {
+    pub async fn store_cluster_deployment(&self, deployment: ClusterDeployment) -> Result<ClusterId, StoreClusterDeploymentError> {
         let cluster_id = deployment.id;
-        self.store_deployment(deployment).await;
-        self.deploy(cluster_id).await
-    }
-
-    pub async fn store_deployment(&self, deployment: ClusterDeployment) {
-        log::trace!("Storing deployment: {:?}", deployment);
         self.resources_manager.resources_mut(|resources| {
             resources.insert(deployment.id, deployment);
         }).await;
+        if let Err(error) = self.deploy(cluster_id).await {
+            log::error!("Failed to deploy cluster <{cluster_id}>, due to:\n  {error}");
+        }
+        Ok(cluster_id)
+    }
+
+    pub async fn delete_cluster_deployment(&self, cluster_id: ClusterId) -> Result<ClusterDeployment, DeleteClusterDeploymentError> {
+
+        let (deployment, configuration) = self.resources_manager
+            .resources_mut(|resources| {
+                resources.remove::<ClusterDeployment>(cluster_id)
+                    .map(|deployment| (deployment, resources.get::<ClusterConfiguration>(cluster_id)))
+            })
+            .await
+            .ok_or(DeleteClusterDeploymentError::ClusterDeploymentNotFound { cluster_id })?;
+
+        if let Some(configuration) = configuration {
+            if let Vpn::Enabled { vpn_client } = &self.vpn {
+                vpn_client.delete_cluster(cluster_id).await
+                    .map_err(|error| DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: configuration.name, cause: error.to_string() })?;
+            }
+        }
+
+        Ok(deployment)
     }
 
     pub async fn find_deployment(&self, id: ClusterId) -> Option<ClusterDeployment> {
@@ -118,32 +136,20 @@ impl ClusterManager {
             resources.iter::<ClusterDeployment>().cloned().collect::<Vec<_>>()
         }).await
     }
-
-    pub async fn delete_deployment(&self, id: ClusterId) -> Result<ClusterDeployment, DeleteClusterDeploymentError> {
-        let deployment = self.resources_manager.resources_mut(|resources| {
-            resources.remove::<ClusterDeployment>(id)
-        }).await;
-        let deployment = deployment.ok_or(DeleteClusterDeploymentError::ClusterNotFound { id })?;
-
-        if let Vpn::Enabled { vpn_client } = &self.vpn {
-            vpn_client.delete_cluster(id).await
-                .map_err(|error| DeleteClusterDeploymentError::Internal { id, cause: error.to_string() })?;
-        }
-        Ok(deployment)
-    }
-
 }
 
 #[cfg(test)]
 mod test {
     use std::collections::HashSet;
     use std::time::Duration;
+
     use googletest::prelude::*;
+
     use opendut_types::cluster::ClusterName;
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerName};
     use opendut_types::topology::{Device, DeviceId, InterfaceName, Topology};
-    use crate::actions::{CreateClusterConfigurationParams, StorePeerDescriptorParams};
 
+    use crate::actions::{CreateClusterConfigurationParams, StorePeerDescriptorParams};
     use crate::peer::broker::broker::PeerMessagingBroker;
     use crate::resources::manager::ResourcesManager;
 

@@ -1,6 +1,5 @@
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 pub use client::*;
-
 use opendut_types::cluster::{ClusterId, ClusterName};
 use opendut_types::cluster::state::{ClusterState, ClusterStates};
 
@@ -54,28 +53,42 @@ pub struct ListClusterConfigurationsError {
     message: String,
 }
 
-
 #[derive(thiserror::Error, Debug)]
-#[error("{message}")]
-pub struct StoreClusterDeploymentError {
-    message: String,
+pub enum StoreClusterDeploymentError {
+    #[error("ClusterDeployment for cluster '{cluster_name}' <{cluster_id}> cannot be changed when cluster is in state '{actual_state}'! A cluster can be updated when: {required_states}")]
+    IllegalClusterState {
+        cluster_id: ClusterId,
+        cluster_name: ClusterName,
+        actual_state: ClusterState,
+        required_states: ClusterStates,
+    },
+    #[error("ClusterDeployment for cluster '{cluster_name}' <{cluster_id}> could not be changed, due to internal errors:\n  {cause}")]
+    Internal {
+        cluster_id: ClusterId,
+        cluster_name: ClusterName,
+        cause: String
+    }
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum DeleteClusterDeploymentError {
-    #[error("Invalid ClusterId: {cause}")]
-    InvalidClusterId {
-        cause: String
+    #[error("ClusterDeployment for cluster <{cluster_id}> could not be deleted, because a ClusterDeployment with that id does not exist!")]
+    ClusterDeploymentNotFound {
+        cluster_id: ClusterId
     },
-    #[error("Unknown cluster id <{id}>")]
-    ClusterNotFound {
-        id: ClusterId
+    #[error("ClusterDeployment for cluster '{cluster_name}' <{cluster_id}> cannot be deleted when cluster is in state '{actual_state}'! A peer can be deleted when: {required_states}")]
+    IllegalClusterState {
+        cluster_id: ClusterId,
+        cluster_name: ClusterName,
+        actual_state: ClusterState,
+        required_states: ClusterStates,
     },
-    #[error("Internal error when deleting cluster with id <{id}>.\n{cause}")]
+    #[error("ClusterDeployment for cluster '{cluster_name}' <{cluster_id}> deleted with internal errors:\n  {cause}")]
     Internal {
-        id: ClusterId,
-        cause: String,
-    },
+        cluster_id: ClusterId,
+        cluster_name: ClusterName,
+        cause: String
+    }
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -150,8 +163,8 @@ mod client {
                     Err(ClientError::UsageError(error))
                 }
                 cluster_manager::delete_cluster_configuration_response::Reply::Success(success) => {
-                    let peer_id = extract!(success.cluster_configuration)?;
-                    Ok(peer_id)
+                    let cluster_id = extract!(success.cluster_configuration)?;
+                    Ok(cluster_id)
                 }
             }
         }
@@ -208,17 +221,23 @@ mod client {
             }
         }
 
-        pub async fn store_cluster_deployment(&mut self, deployment: &ClusterDeployment) -> Result<(), StoreClusterDeploymentError> {
+        pub async fn store_cluster_deployment(&mut self, deployment: ClusterDeployment) -> Result<ClusterId, ClientError<StoreClusterDeploymentError>> {
+
             let request = tonic::Request::new(cluster_manager::StoreClusterDeploymentRequest {
-                deployment: Some(Clone::clone(deployment).into()),
+                cluster_deployment: Some(deployment.into()),
             });
 
-            match self.inner.store_cluster_deployment(request).await {
-                Ok(_) => {
-                    Ok(())
-                },
-                Err(status) => {
-                    Err(StoreClusterDeploymentError { message: format!("gRPC failure: {status}") })
+            let response = self.inner.store_cluster_deployment(request).await?
+                .into_inner();
+
+            match extract!(response.reply)? {
+                cluster_manager::store_cluster_deployment_response::Reply::Failure(failure) => {
+                    let error = StoreClusterDeploymentError::try_from(failure)?;
+                    Err(ClientError::UsageError(error))
+                }
+                cluster_manager::store_cluster_deployment_response::Reply::Success(success) => {
+                    let cluster_id = extract!(success.cluster_id)?;
+                    Ok(cluster_id)
                 }
             }
         }
@@ -226,38 +245,20 @@ mod client {
         pub async fn delete_cluster_deployment(&mut self, cluster_id: ClusterId) -> Result<ClusterDeployment, ClientError<DeleteClusterDeploymentError>> {
 
             let request = tonic::Request::new(cluster_manager::DeleteClusterDeploymentRequest {
-                id: Some(cluster_id.into()),
+                cluster_id: Some(cluster_id.into()),
             });
 
-            let response = self.inner.delete_cluster_deployment(request)
-                .await?
+            let response = self.inner.delete_cluster_deployment(request).await?
                 .into_inner();
 
-            let result = extract!(response.result)?;
-
-            match result {
-                cluster_manager::delete_cluster_deployment_response::Result::Failure(failure) => {
-                    match failure.reason {
-                        Some(cluster_manager::delete_cluster_deployment_failure::Reason::ClusterNotFound(cluster_manager::DeleteClusterDeploymentFailureNotFound { .. })) => {
-                            Err(ClientError::UsageError(DeleteClusterDeploymentError::ClusterNotFound { id: cluster_id } ))
-                        }
-                        Some(cluster_manager::delete_cluster_deployment_failure::Reason::InvalidClusterId(cluster_manager::DeleteClusterDeploymentFailureInvalidClusterId { cause })) => {
-                            Err(ClientError::UsageError(DeleteClusterDeploymentError::InvalidClusterId { cause } ))
-                        }
-                        Some(cluster_manager::delete_cluster_deployment_failure::Reason::ClusterIdRequired(_)) => {
-                            Err(ClientError::InvalidRequest(format!("DeleteClusterDeploymentRequest requires ClusterId!")))
-                        }
-                        None => {
-                            Err(ClientError::InvalidRequest(format!("DeleteClusterDeploymentFailure contains no reason!")))
-                        }
-                        Some(cluster_manager::delete_cluster_deployment_failure::Reason::Internal(cluster_manager::DeleteClusterDeploymentFailureInternal { cause, .. })) => {
-                            Err(ClientError::UsageError(DeleteClusterDeploymentError::Internal { id: cluster_id, cause } ))
-                        }
-                    }
+            match extract!(response.reply)? {
+                cluster_manager::delete_cluster_deployment_response::Reply::Failure(failure) => {
+                    let error = DeleteClusterDeploymentError::try_from(failure)?;
+                    Err(ClientError::UsageError(error))
                 }
-                cluster_manager::delete_cluster_deployment_response::Result::Success(success) => {
-                    let cluster_deployment = extract!(success.deployment)?;
-                    Ok(cluster_deployment)
+                cluster_manager::delete_cluster_deployment_response::Reply::Success(success) => {
+                    let cluster_id = extract!(success.cluster_deployment)?;
+                    Ok(cluster_id)
                 }
             }
         }

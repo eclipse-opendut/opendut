@@ -9,7 +9,7 @@ pub mod create {
         let id = ClusterId::from(id);
 
         let deployment = ClusterDeployment { id };
-        carl.cluster.store_cluster_deployment(&deployment).await
+        carl.cluster.store_cluster_deployment(deployment).await
             .map_err(|error| format!("Could not create cluster deployment for ClusterID: '{}'.\n  {}", id, error))?;
 
         println!("Successfully created cluster deployment for cluster <{}>.", id);

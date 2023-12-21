@@ -3,7 +3,6 @@ use std::sync::Arc;
 use tonic::{Request, Response, Status};
 use tonic_web::CorsGrpcWeb;
 
-use opendut_carl_api::carl::cluster::DeleteClusterDeploymentError;
 use opendut_carl_api::proto::services::cluster_manager::*;
 use opendut_carl_api::proto::services::cluster_manager::cluster_manager_server::{ClusterManager as ClusterManagerService, ClusterManagerServer};
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
@@ -141,20 +140,27 @@ impl ClusterManagerService for ClusterManagerFacade {
         }))
     }
 
-    
-
     async fn store_cluster_deployment(&self, request: Request<StoreClusterDeploymentRequest>) -> Result<Response<StoreClusterDeploymentResponse>, Status> {
         log::trace!("Received request: {:?}", request);
-        match request.into_inner().deployment {
-            None => {
-                Err(Status::invalid_argument("ClusterDeployment is required."))
-            }
-            Some(deployment) => {
-                let deployment = ClusterDeployment::try_from(deployment);
-                self.cluster_manager.create_deployment(deployment.unwrap()).await.unwrap(); // TODO: Handle error
 
+        let request = request.into_inner();
+        let cluster_deployment: ClusterDeployment = extract!(request.cluster_deployment)?;
+
+        let result = self.cluster_manager.store_cluster_deployment(cluster_deployment).await;
+
+        match result {
+            Err(error) => {
                 Ok(Response::new(StoreClusterDeploymentResponse {
-                    result: Some(store_cluster_deployment_response::Result::Success(StoreClusterDeploymentSuccess {}))
+                    reply: Some(store_cluster_deployment_response::Reply::Failure(error.into()))
+                }))
+            }
+            Ok(cluster_id) => {
+                Ok(Response::new(StoreClusterDeploymentResponse {
+                    reply: Some(store_cluster_deployment_response::Reply::Success(
+                        StoreClusterDeploymentSuccess {
+                            cluster_id: Some(cluster_id.into())
+                        }
+                    ))
                 }))
             }
         }
@@ -162,72 +168,26 @@ impl ClusterManagerService for ClusterManagerFacade {
 
     async fn delete_cluster_deployment(&self, request: Request<DeleteClusterDeploymentRequest>) -> Result<Response<DeleteClusterDeploymentResponse>, Status> {
         log::trace!("Received request: {:?}", request);
-        match request.into_inner().id {
-            None => {
+
+        let request = request.into_inner();
+        let cluster_id: ClusterId = extract!(request.cluster_id)?;
+
+        let result = self.cluster_manager.delete_cluster_deployment(cluster_id).await; // TODO: Replace with action
+
+        match result {
+            Err(error) => {
                 Ok(Response::new(DeleteClusterDeploymentResponse {
-                    result: Some(delete_cluster_deployment_response::Result::Failure(
-                        DeleteClusterDeploymentFailure {
-                            reason: Some(delete_cluster_deployment_failure::Reason::ClusterIdRequired(DeleteClusterDeploymentFailureClusterIdRequired {}))
+                    reply: Some(delete_cluster_deployment_response::Reply::Failure(error.into()))
+                }))
+            }
+            Ok(cluster_configuration) => {
+                Ok(Response::new(DeleteClusterDeploymentResponse {
+                    reply: Some(delete_cluster_deployment_response::Reply::Success(
+                        DeleteClusterDeploymentSuccess {
+                            cluster_deployment: Some(cluster_configuration.into())
                         }
                     ))
                 }))
-            }
-            Some(id) => {
-                match ClusterId::try_from(id) {
-                    Err(cause) => {
-                        Ok(Response::new(DeleteClusterDeploymentResponse {
-                            result: Some(delete_cluster_deployment_response::Result::Failure(
-                                DeleteClusterDeploymentFailure {
-                                    reason: Some(delete_cluster_deployment_failure::Reason::InvalidClusterId(DeleteClusterDeploymentFailureInvalidClusterId {
-                                        cause: cause.to_string()
-                                    }))
-                                }
-                            ))
-                        }))
-                    }
-                    Ok(id) => {
-                        match self.cluster_manager.delete_deployment(id).await {
-                            Err(DeleteClusterDeploymentError::ClusterNotFound { id }) => {
-                                Ok(Response::new(DeleteClusterDeploymentResponse {
-                                    result: Some(delete_cluster_deployment_response::Result::Failure(
-                                        DeleteClusterDeploymentFailure {
-                                            reason: Some(delete_cluster_deployment_failure::Reason::ClusterNotFound(DeleteClusterDeploymentFailureNotFound {
-                                                id: Some(id.into())
-                                            }))
-                                        }
-                                    ))
-                                }))
-                            }
-                            Err(DeleteClusterDeploymentError::InvalidClusterId { cause }) => {
-                                Ok(Response::new(DeleteClusterDeploymentResponse {
-                                    result: Some(delete_cluster_deployment_response::Result::Failure(
-                                        DeleteClusterDeploymentFailure {
-                                            reason: Some(delete_cluster_deployment_failure::Reason::InvalidClusterId(DeleteClusterDeploymentFailureInvalidClusterId { cause }))
-                                        }
-                                    ))
-                                }))
-                            }
-                            Ok(cluster_deployment) => {
-                                Ok(Response::new(DeleteClusterDeploymentResponse {
-                                    result: Some(delete_cluster_deployment_response::Result::Success(
-                                        DeleteClusterDeploymentSuccess {
-                                            deployment: Some(cluster_deployment.into())
-                                        }
-                                    ))
-                                }))
-                            }
-                            Err(DeleteClusterDeploymentError::Internal { id, cause }) => {
-                                Ok(Response::new( DeleteClusterDeploymentResponse {
-                                    result: Some(delete_cluster_deployment_response::Result::Failure(
-                                        DeleteClusterDeploymentFailure {
-                                            reason: Some(delete_cluster_deployment_failure::Reason::Internal(DeleteClusterDeploymentFailureInternal { id: Some(id.into()), cause } )),
-                                        }
-                                    )),
-                                }))
-                            }
-                        }
-                    }
-                }
             }
         }
     }

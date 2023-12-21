@@ -413,7 +413,6 @@ fn json_header_value() -> HeaderValue {
         .expect("MIME type for application/json should always be convertable to a header value.")
 }
 
-
 ///Verify compatibility with examples from here: https://docs.netbird.io/api
 #[cfg(test)]
 mod tests {

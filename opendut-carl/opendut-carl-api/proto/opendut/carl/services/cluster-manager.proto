@@ -138,62 +138,82 @@ message ListClusterConfigurationsFailure {}
 // StoreClusterDeployment
 //
 message StoreClusterDeploymentRequest {
-  opendut.types.cluster.ClusterDeployment deployment = 1;
+  opendut.types.cluster.ClusterDeployment cluster_deployment = 1;
 }
 
 message StoreClusterDeploymentResponse {
-  oneof result {
+  oneof reply {
     StoreClusterDeploymentFailure failure = 1;
     StoreClusterDeploymentSuccess success = 15;
   }
 }
 
-message StoreClusterDeploymentSuccess {}
+message StoreClusterDeploymentSuccess {
+  opendut.types.cluster.ClusterId cluster_id = 1;
+}
 
-message StoreClusterDeploymentFailure {}
+message StoreClusterDeploymentFailure {
+  oneof error {
+    StoreClusterDeploymentFailureIllegalClusterState illegal_cluster_state = 1;
+    StoreClusterDeploymentFailureInternal internal = 2;
+  }
+}
+
+message StoreClusterDeploymentFailureIllegalClusterState {
+  opendut.types.cluster.ClusterId cluster_id = 1;
+  opendut.types.cluster.ClusterName cluster_name = 2;
+  opendut.types.cluster.ClusterState actual_state = 3;
+  repeated opendut.types.cluster.ClusterState required_states = 4;
+}
+
+message StoreClusterDeploymentFailureInternal {
+  opendut.types.cluster.ClusterId cluster_id = 1;
+  opendut.types.cluster.ClusterName cluster_name = 2;
+  string cause = 3;
+}
 
 //
 // DeleteClusterDeployment
 //
 message DeleteClusterDeploymentRequest {
-  opendut.types.cluster.ClusterId id = 1;
+  opendut.types.cluster.ClusterId cluster_id = 1;
 }
 
 message DeleteClusterDeploymentResponse {
-  oneof result {
+  oneof reply {
     DeleteClusterDeploymentFailure failure = 1;
     DeleteClusterDeploymentSuccess success = 15;
   }
 }
 
 message DeleteClusterDeploymentSuccess {
-  opendut.types.cluster.ClusterDeployment deployment = 1;
+  opendut.types.cluster.ClusterDeployment cluster_deployment = 1;
 }
 
 message DeleteClusterDeploymentFailure {
-  oneof reason {
-    DeleteClusterDeploymentFailureClusterIdRequired cluster_id_required = 1;
-    DeleteClusterDeploymentFailureInvalidClusterId invalid_cluster_id = 2;
-    DeleteClusterDeploymentFailureNotFound cluster_not_found = 3;
-    DeleteClusterDeploymentFailureInternal internal = 4;
+  oneof error {
+    DeleteClusterDeploymentFailureClusterDeploymentNotFound cluster_deployment_not_found = 1;
+    DeleteClusterDeploymentFailureIllegalClusterState illegal_cluster_state = 2;
+    DeleteClusterDeploymentFailureInternal internal = 3;
   }
 }
 
-message DeleteClusterDeploymentFailureClusterIdRequired {}
-
-message DeleteClusterDeploymentFailureInvalidClusterId {
-  string cause = 1;
+message DeleteClusterDeploymentFailureClusterDeploymentNotFound {
+  opendut.types.cluster.ClusterId cluster_id = 1;
 }
 
-message DeleteClusterDeploymentFailureNotFound {
-  opendut.types.cluster.ClusterId id = 1;
+message DeleteClusterDeploymentFailureIllegalClusterState {
+  opendut.types.cluster.ClusterId cluster_id = 1;
+  opendut.types.cluster.ClusterName cluster_name = 2;
+  opendut.types.cluster.ClusterState actual_state = 3;
+  repeated opendut.types.cluster.ClusterState required_states = 4;
 }
 
 message DeleteClusterDeploymentFailureInternal {
-  opendut.types.cluster.ClusterId id = 1;
-  string cause = 2;
+  opendut.types.cluster.ClusterId cluster_id = 1;
+  opendut.types.cluster.ClusterName cluster_name = 2;
+  string cause = 3;
 }
-
 
 //
 // ListClusterDeployments
