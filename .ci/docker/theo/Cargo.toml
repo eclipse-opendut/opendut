@@ -1,0 +1,17 @@
+[package]
+name = "opendut-theo"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+clap = { workspace = true, features = ["derive", "wrap_help", "env"] }
+dotenv = { workspace = true }
+phf = { workspace = true, features = ["macros"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+strum = { workspace = true, features = ["derive"] }
+
+
+[build-dependencies]
+shadow-rs = { workspace = true }
