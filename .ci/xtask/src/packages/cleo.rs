@@ -21,6 +21,10 @@ pub enum TaskCli {
     Licenses(crate::tasks::licenses::LicensesCli),
 
     #[command(hide=true)]
+    DistributionCopyLicenseJson(crate::tasks::distribution::copy_license_json::DistributionCopyLicenseJsonCli),
+    #[command(hide=true)]
+    DistributionBundleFiles(crate::tasks::distribution::bundle::DistributionBundleFilesCli),
+    #[command(hide=true)]
     DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli),
 }
 
@@ -41,6 +45,12 @@ impl CleoCli {
                 implementation.default_handling(PackageSelection::Single(SELF_PACKAGE))?;
             }
 
+            TaskCli::DistributionCopyLicenseJson(implementation) => {
+                implementation.default_handling(SELF_PACKAGE)?;
+            }
+            TaskCli::DistributionBundleFiles(implementation) => {
+                implementation.default_handling(SELF_PACKAGE)?;
+            }
             TaskCli::DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli { target }) => {
                 for target in target.iter() {
                     distribution::validate::validate_contents(target)?;

@@ -33,6 +33,12 @@ jobs:
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
 
+  build-cleo:
+    uses: ./.github/workflows/build-cleo.yaml
+    needs: [ test ]
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+
   build-edgar:
     uses: ./.github/workflows/build-edgar.yaml
     needs: [ test ]
@@ -48,6 +54,12 @@ jobs:
   bundle-edgar:
     needs: [ legal, build-edgar ]
     uses: ./.github/workflows/bundle-edgar.yaml
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+
+  bundle-cleo:
+    needs: [ legal, build-cleo ]
+    uses: ./.github/workflows/bundle-cleo.yaml
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
 
