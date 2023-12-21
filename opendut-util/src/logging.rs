@@ -1,12 +1,11 @@
-use std::backtrace::Backtrace;
 use std::fmt::Display;
 
 use log::SetLoggerError;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("Unable to set logger: {}\n{backtrace}", source)]
-    SetLogger { #[from] source: SetLoggerError, backtrace: Backtrace },
+    #[error("Unable to set logger: {source}")]
+    SetLogger { #[from] source: SetLoggerError },
 }
 
 pub fn initialize() -> Result<(), Error> {

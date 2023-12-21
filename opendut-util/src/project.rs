@@ -1,17 +1,16 @@
 use anyhow::anyhow;
 use std::{io, env};
-use std::backtrace::Backtrace;
 use std::path::{Path, PathBuf};
 
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("IO Error: {source}\n{backtrace}")]
-    Io { #[from] source: io::Error, backtrace: Backtrace },
-    #[error("UTF8 Error: {source}\n{backtrace}")]
-    Utf8 { #[from] source: std::str::Utf8Error, backtrace: Backtrace },
-    #[error("An error occurred: {source}\n{backtrace}")]
-    Other { #[from] source: anyhow::Error, backtrace: Backtrace },
+    #[error("IO Error: {source}")]
+    Io { #[from] source: io::Error },
+    #[error("UTF8 Error: {source}")]
+    Utf8 { #[from] source: std::str::Utf8Error },
+    #[error("An error occurred: {source}")]
+    Other { #[from] source: anyhow::Error },
 }
 type Result<T> = std::result::Result<T, Error>;
 
