@@ -17,7 +17,7 @@ message ClusterName {
 // ANCHOR: ClusterConfiguration
 message ClusterConfiguration {
   ClusterId id = 1;
-  string name = 2;
+  ClusterName name = 2;
   opendut.types.peer.PeerId leader = 3;
   repeated opendut.types.topology.DeviceId devices = 4;
 }

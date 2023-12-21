@@ -31,7 +31,6 @@ impl<From, To> ConversionErrorBuilder<From, To> {
 }
 
 pub mod cluster {
-    use crate::cluster::IllegalClusterName;
     use crate::proto::{ConversionError, ConversionErrorBuilder};
     use crate::proto::topology::DeviceId;
 
@@ -88,7 +87,7 @@ pub mod cluster {
         fn from(configuration: crate::cluster::ClusterConfiguration) -> Self {
             Self {
                 id: Some(configuration.id.into()),
-                name: configuration.name.0,
+                name: Some(configuration.name.into()),
                 leader: Some(configuration.leader.into()),
                 devices: configuration.devices.into_iter()
                             .map(DeviceId::from)
@@ -108,8 +107,8 @@ pub mod cluster {
                 .try_into()?;
 
             let cluster_name: crate::cluster::ClusterName = configuration.name
-                .try_into()
-                .map_err(|cause: IllegalClusterName| ErrorBuilder::new(cause.to_string()))?;
+                .ok_or(ErrorBuilder::new("Name not set"))?
+                .try_into()?;
 
             let leader: crate::peer::PeerId = configuration.leader
                 .ok_or(ErrorBuilder::new("Leader not set"))?
