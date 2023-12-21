@@ -33,12 +33,12 @@ impl LicensesCli {
             }
             TaskCli::Json => {
                 for package in packages.iter() {
-                    json::export_json(&package)?
+                    json::export_json(package)?
                 }
             }
             TaskCli::Sbom => {
                 for package in packages.iter() {
-                    sbom::generate_sbom(&package)?
+                    sbom::generate_sbom(package)?
                 }
             }
         };
@@ -67,7 +67,7 @@ pub mod json {
     use super::*;
 
     #[tracing::instrument]
-    pub fn export_json(package: &Package) -> anyhow::Result<()> {
+    pub fn export_json(package: Package) -> anyhow::Result<()> {
         util::install_crate(Crate::CargoDeny)?;
 
         let out_file = out_file(package);
@@ -83,10 +83,13 @@ pub mod json {
         Ok(())
     }
 
-    pub fn out_file(package: &Package) -> PathBuf {
+    pub fn out_file(package: Package) -> PathBuf {
         constants::target_dir()
             .join("licenses")
-            .join(format!("{}.licenses.json", package.ident()))
+            .join(out_file_name(package))
+    }
+    pub fn out_file_name(package: Package) -> String {
+        format!("{}.licenses.json", package.ident())
     }
 }
 
@@ -98,7 +101,7 @@ mod sbom {
     pub struct SbomCli;
 
     #[tracing::instrument]
-    pub fn generate_sbom(package: &Package) -> anyhow::Result<()> {
+    pub fn generate_sbom(package: Package) -> anyhow::Result<()> {
         use serde_spdx::spdx::v_2_3::{Spdx, SpdxItemPackages};
 
         util::install_crate(Crate::CargoSbom)?;

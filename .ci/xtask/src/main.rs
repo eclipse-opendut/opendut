@@ -40,17 +40,17 @@ fn main() -> anyhow::Result<()> {
     match cli.task {
         TaskCli::Build(tasks::build::BuildCli { target }) => {
             for target in target.iter() {
-                packages::carl::build::build_release(&target)?;
-                packages::cleo::build::build_release(&target)?;
-                packages::edgar::build::build_release(&target)?;
+                packages::carl::build::build_release(target)?;
+                packages::cleo::build::build_release(target)?;
+                packages::edgar::build::build_release(target)?;
                 packages::lea::build::build_release()?;
             }
         }
         TaskCli::Distribution(tasks::distribution::DistributionCli { target }) => {
             for target in target.iter() {
-                packages::carl::distribution::carl_distribution(&target)?;
-                packages::edgar::distribution::edgar_distribution(&target)?;
-                packages::cleo::distribution::cleo_distribution(&target)?;
+                packages::carl::distribution::carl_distribution(target)?;
+                packages::edgar::distribution::edgar_distribution(target)?;
+                packages::cleo::distribution::cleo_distribution(target)?;
             }
         }
         TaskCli::Licenses(implementation) => implementation.default_handling(PackageSelection::All)?,

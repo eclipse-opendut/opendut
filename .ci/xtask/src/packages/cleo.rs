@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use crate::{Target, Package};
 use crate::core::types::parsing::package::PackageSelection;
 
-const PACKAGE: &Package = &Package::Cleo;
+const PACKAGE: Package = Package::Cleo;
 
 
 /// Tasks available or specific for CLEO
@@ -26,16 +26,16 @@ impl CleoCli {
         match self.task {
             TaskCli::Build(crate::tasks::build::BuildCli { target }) => {
                 for target in target.iter() {
-                    build::build_release(&target)?;
+                    build::build_release(target)?;
                 }
             }
             TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target }) => {
                 for target in target.iter() {
-                    distribution::cleo_distribution(&target)?;
+                    distribution::cleo_distribution(target)?;
                 }
             }
             TaskCli::Licenses(implementation) => {
-                implementation.default_handling(PackageSelection::Single(*PACKAGE))?;
+                implementation.default_handling(PackageSelection::Single(PACKAGE))?;
             }
         };
         Ok(())
@@ -45,10 +45,10 @@ impl CleoCli {
 pub mod build {
     use super::*;
 
-    pub fn build_release(target: &Target) -> anyhow::Result<()> {
+    pub fn build_release(target: Target) -> anyhow::Result<()> {
         crate::tasks::build::build_release(PACKAGE, target)
     }
-    pub fn out_dir(target: &Target) -> PathBuf {
+    pub fn out_dir(target: Target) -> PathBuf {
         crate::tasks::build::out_dir(PACKAGE, target)
     }
 }
@@ -58,7 +58,7 @@ pub mod distribution {
     use super::*;
 
     #[tracing::instrument]
-    pub fn cleo_distribution(target: &Target) -> anyhow::Result<()> {
+    pub fn cleo_distribution(target: Target) -> anyhow::Result<()> {
         use crate::tasks::distribution;
 
         distribution::clean(PACKAGE, target)?;

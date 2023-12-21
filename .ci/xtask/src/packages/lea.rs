@@ -7,7 +7,7 @@ use crate::core::types::parsing::package::PackageSelection;
 use crate::Package;
 use crate::util::RunRequiringSuccess;
 
-const PACKAGE: &Package = &Package::Lea;
+const PACKAGE: Package = Package::Lea;
 
 /// Tasks available or specific for LEA
 #[derive(Debug, clap::Parser)]
@@ -32,7 +32,7 @@ impl LeaCli {
             TaskCli::Build => build::build_release()?,
             TaskCli::Watch => watch::watch()?,
             TaskCli::Licenses(implementation) => {
-                implementation.default_handling(PackageSelection::Single(*PACKAGE))?;
+                implementation.default_handling(PackageSelection::Single(PACKAGE))?;
             }
         };
         Ok(())
@@ -83,7 +83,7 @@ pub mod watch {
 
 #[tracing::instrument]
 fn install_requirements() -> anyhow::Result<()> {
-    crate::util::install_toolchain(&Arch::Wasm)?;
+    crate::util::install_toolchain(Arch::Wasm)?;
 
     crate::util::install_crate(Crate::Trunk)?;
 

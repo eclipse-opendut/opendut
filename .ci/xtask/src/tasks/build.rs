@@ -16,7 +16,7 @@ pub struct BuildCli {
 }
 
 #[tracing::instrument]
-pub fn build_release(package: &Package, target: &Target) -> anyhow::Result<()> {
+pub fn build_release(package: Package, target: Target) -> anyhow::Result<()> {
     util::install_crate(Crate::Cross)?;
 
     Command::new("cross")
@@ -35,7 +35,7 @@ pub fn build_release(package: &Package, target: &Target) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn out_dir(package: &Package, target: &Target) -> PathBuf {
+pub fn out_dir(package: Package, target: Target) -> PathBuf {
     cross_target_dir().join(target.triple()).join("release").join(package.ident())
 }
 
