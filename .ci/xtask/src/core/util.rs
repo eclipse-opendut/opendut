@@ -1,7 +1,7 @@
 use std::fs;
 use std::process::Command;
 
-use assert_fs::fixture::ChildPath;
+use assert_fs::assert::PathAssert;
 use tracing_subscriber::fmt::format::FmtSpan;
 
 use crate::core::dependency::Crate;
@@ -62,28 +62,46 @@ pub fn init_tracing() -> anyhow::Result<()> {
 }
 
 
-pub trait ChildPathExt {
-    fn file_name_str(&self) -> &str;
-    fn dir_contains_exactly_in_order(&self, paths: Vec<&ChildPath>);
-}
-impl ChildPathExt for ChildPath {
-    fn file_name_str(&self) -> &str {
-        self.file_name().unwrap()
-            .to_str().unwrap()
+pub mod file {
+    use std::os::unix::fs::MetadataExt;
+
+    use assert_fs::fixture::ChildPath;
+
+    use super::*;
+
+    pub trait ChildPathExt {
+        fn assert_non_empty_file(&self);
+        fn file_name_str(&self) -> &str;
+        fn dir_contains_exactly_in_order(&self, paths: Vec<&ChildPath>);
     }
+    impl ChildPathExt for ChildPath {
+        fn assert_non_empty_file(&self) {
+            self.assert(predicates::path::is_file());
 
-    fn dir_contains_exactly_in_order(&self, paths: Vec<&ChildPath>) {
-        let mut sub_paths = fs::read_dir(self).unwrap()
-            .map(|entry| entry.unwrap().path())
-            .collect::<Vec<_>>();
-
-        sub_paths.sort();
-
-        let mut sub_paths = sub_paths.into_iter();
-
-        for entry in paths {
-            assert_eq!(sub_paths.next(), Some(entry.to_path_buf()));
+            assert!(
+                self.metadata().unwrap().size() > 0,
+                "{:?} is empty", self.path()
+            );
         }
-        assert_eq!(sub_paths.next(), None);
+
+        fn file_name_str(&self) -> &str {
+            self.file_name().unwrap()
+                .to_str().unwrap()
+        }
+
+        fn dir_contains_exactly_in_order(&self, paths: Vec<&ChildPath>) {
+            let mut sub_paths = fs::read_dir(self).unwrap()
+                .map(|entry| entry.unwrap().path())
+                .collect::<Vec<_>>();
+
+            sub_paths.sort();
+
+            let mut sub_paths = sub_paths.into_iter();
+
+            for entry in paths {
+                assert_eq!(sub_paths.next(), Some(entry.to_path_buf()));
+            }
+            assert_eq!(sub_paths.next(), None);
+        }
     }
 }

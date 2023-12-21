@@ -3,9 +3,9 @@ use std::path::PathBuf;
 
 use anyhow::anyhow;
 
-use crate::{Target, Package};
-use crate::core::types::parsing::target::TargetSelection;
+use crate::{Package, Target};
 use crate::core::types::parsing::package::PackageSelection;
+use crate::core::types::parsing::target::TargetSelection;
 
 const PACKAGE: Package = Package::Edgar;
 
@@ -35,6 +35,8 @@ pub enum TaskCli {
     DistributionCopyLicenseJson(crate::tasks::distribution::copy_license_json::DistributionCopyLicenseJsonCli),
     #[command(hide=true)]
     DistributionBundleFiles(crate::tasks::distribution::bundle::DistributionBundleFilesCli),
+    #[command(hide=true)]
+    DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli),
 }
 
 impl EdgarCli {
@@ -65,6 +67,11 @@ impl EdgarCli {
             TaskCli::DistributionBundleFiles(implementation) => {
                 implementation.default_handling(PACKAGE)?;
             }
+            TaskCli::DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli { target }) => {
+                for target in target.iter() {
+                    distribution::validate::validate_contents(target)?;
+                }
+            }
         };
         Ok(())
     }
@@ -84,6 +91,7 @@ pub mod build {
 
 pub mod distribution {
     use crate::tasks::distribution::copy_license_json::SkipGenerate;
+
     use super::*;
 
     #[tracing::instrument]
@@ -100,6 +108,8 @@ pub mod distribution {
         distribution::copy_license_json::copy_license_json(PACKAGE, target, SkipGenerate::No)?;
 
         distribution::bundle::bundle_files(PACKAGE, target)?;
+
+        validate::validate_contents(target)?;
 
         Ok(())
     }
@@ -159,6 +169,71 @@ pub mod distribution {
 
         pub fn out_file(package: Package, target: Target) -> PathBuf {
             crate::tasks::distribution::out_package_dir(package, target).join("install").join("netbird.tar.gz")
+        }
+    }
+
+    pub mod validate {
+        use std::fs::File;
+
+        use assert_fs::prelude::*;
+        use flate2::read::GzDecoder;
+        use predicates::path;
+
+        use crate::core::util::file::ChildPathExt;
+        use crate::tasks::distribution::bundle;
+
+        use super::*;
+
+        #[tracing::instrument]
+        pub fn validate_contents(target: Target) -> anyhow::Result<()> {
+
+            let unpack_dir = {
+                let unpack_dir = assert_fs::TempDir::new()?;
+                let archive = bundle::out_file(PACKAGE, target);
+                let mut archive = tar::Archive::new(GzDecoder::new(File::open(archive)?));
+                archive.set_preserve_permissions(true);
+                archive.unpack(&unpack_dir)?;
+                unpack_dir
+            };
+
+            let edgar_dir = unpack_dir.child("opendut-edgar");
+            edgar_dir.assert(path::is_dir());
+
+            let opendut_edgar_executable = edgar_dir.child("opendut-edgar");
+            let install_dir = edgar_dir.child("install");
+            let licenses_dir = edgar_dir.child("licenses");
+
+            edgar_dir.dir_contains_exactly_in_order(vec![
+                &install_dir,
+                &licenses_dir,
+                &opendut_edgar_executable,
+            ]);
+
+            opendut_edgar_executable.assert_non_empty_file();
+            install_dir.assert(path::is_dir());
+            licenses_dir.assert(path::is_dir());
+
+            {   //validate install dir contents
+                let netbird_archive = install_dir.child("netbird.tar.gz");
+
+                install_dir.dir_contains_exactly_in_order(vec![
+                    &netbird_archive,
+                ]);
+
+                netbird_archive.assert_non_empty_file();
+            }
+
+            {   //validate licenses dir contents
+                let licenses_edgar_file = licenses_dir.child("opendut-edgar.licenses.json");
+
+                licenses_dir.dir_contains_exactly_in_order(vec![
+                    &licenses_edgar_file,
+                ]);
+
+                licenses_edgar_file.assert_non_empty_file();
+            }
+
+            Ok(())
         }
     }
 }
