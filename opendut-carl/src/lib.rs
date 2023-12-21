@@ -54,8 +54,11 @@ pub async fn create(settings_override: Config) -> Result<()> {
     let tls_config = {
         let cert_path = project::make_path_absolute(settings.config.get_string("network.tls.certificate")?)?;
         log::debug!("Using TLS certificate: {}", cert_path.display());
+        assert!(cert_path.exists(), "TLS certificate file at '{}' not found.", cert_path.display());
+
         let key_path = project::make_path_absolute(settings.config.get_string("network.tls.key")?)?;
         log::debug!("Using TLS key: {}", key_path.display());
+        assert!(key_path.exists(), "TLS key file at '{}' not found.", cert_path.display());
 
         RustlsConfig::from_pem_file(cert_path, key_path).await?
     };
