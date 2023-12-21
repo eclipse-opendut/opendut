@@ -16,7 +16,7 @@ pub struct BuildCli {
 }
 
 #[tracing::instrument]
-pub fn build_release(package: Package, target: Target) -> anyhow::Result<()> {
+pub fn build_release(package: Package, target: Target) -> crate::Result {
     util::install_crate(Crate::Cross)?;
 
     Command::new("cross")

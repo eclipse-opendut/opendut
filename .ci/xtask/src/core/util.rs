@@ -9,7 +9,7 @@ use crate::core::metadata;
 use crate::core::types::Arch;
 
 #[tracing::instrument(level = tracing::Level::TRACE)]
-pub fn install_crate(install: Crate) -> anyhow::Result<()> {
+pub fn install_crate(install: Crate) -> crate::Result {
     let cargo_metadata = metadata::cargo();
 
     let version = cargo_metadata.workspace_metadata["ci"]["xtask"][install.ident()]["version"].as_str()
@@ -24,7 +24,7 @@ pub fn install_crate(install: Crate) -> anyhow::Result<()> {
 }
 
 #[tracing::instrument]
-pub fn install_toolchain(arch: Arch) -> anyhow::Result<()> {
+pub fn install_toolchain(arch: Arch) -> crate::Result {
     Command::new("rustup")
         .args(["target", "add", &arch.triple()])
         .run_requiring_success();
@@ -51,7 +51,7 @@ impl RunRequiringSuccess for Command {
 }
 
 
-pub fn init_tracing() -> anyhow::Result<()> {
+pub fn init_tracing() -> crate::Result {
     use tracing_subscriber::filter::{EnvFilter, LevelFilter};
 
     let tracing_filter = EnvFilter::builder()

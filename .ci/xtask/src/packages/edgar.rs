@@ -40,7 +40,7 @@ pub enum TaskCli {
 }
 
 impl EdgarCli {
-    pub fn default_handling(self) -> anyhow::Result<()> {
+    pub fn default_handling(self) -> crate::Result {
         match self.task {
             TaskCli::Build(crate::tasks::build::BuildCli { target }) => {
                 for target in target.iter() {
@@ -81,7 +81,7 @@ impl EdgarCli {
 pub mod build {
     use super::*;
 
-    pub fn build_release(target: Target) -> anyhow::Result<()> {
+    pub fn build_release(target: Target) -> crate::Result {
         crate::tasks::build::build_release(SELF_PACKAGE, target)
     }
     pub fn out_dir(target: Target) -> PathBuf {
@@ -95,7 +95,7 @@ pub mod distribution {
     use super::*;
 
     #[tracing::instrument]
-    pub fn edgar_distribution(target: Target) -> anyhow::Result<()> {
+    pub fn edgar_distribution(target: Target) -> crate::Result {
         use crate::tasks::distribution;
 
         distribution::clean(SELF_PACKAGE, target)?;
@@ -119,7 +119,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument]
-        pub fn netbird_client_distribution(target: Target) -> anyhow::Result<()> {
+        pub fn netbird_client_distribution(target: Target) -> crate::Result {
             //Modelled after documentation here: https://docs.netbird.io/how-to/getting-started#binary-install
 
             let metadata = crate::metadata::cargo();
@@ -185,7 +185,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument]
-        pub fn validate_contents(target: Target) -> anyhow::Result<()> {
+        pub fn validate_contents(target: Target) -> crate::Result {
 
             let unpack_dir = {
                 let unpack_dir = assert_fs::TempDir::new()?;

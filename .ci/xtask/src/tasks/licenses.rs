@@ -26,7 +26,7 @@ pub enum TaskCli {
 
 impl LicensesCli {
     #[tracing::instrument]
-    pub fn default_handling(self, packages: PackageSelection) -> anyhow::Result<()> {
+    pub fn default_handling(self, packages: PackageSelection) -> crate::Result {
         match self.task {
             TaskCli::Check => {
                 check::check_licenses()?;
@@ -51,7 +51,7 @@ mod check {
     use super::*;
 
     #[tracing::instrument]
-    pub fn check_licenses() -> anyhow::Result<()> {
+    pub fn check_licenses() -> crate::Result {
         util::install_crate(Crate::CargoDeny)?;
 
         Command::new("cargo-deny")
@@ -67,7 +67,7 @@ pub mod json {
     use super::*;
 
     #[tracing::instrument]
-    pub fn export_json(package: Package) -> anyhow::Result<()> {
+    pub fn export_json(package: Package) -> crate::Result {
         util::install_crate(Crate::CargoDeny)?;
 
         let out_file = out_file(package);
@@ -101,7 +101,7 @@ mod sbom {
     pub struct SbomCli;
 
     #[tracing::instrument]
-    pub fn generate_sbom(package: Package) -> anyhow::Result<()> {
+    pub fn generate_sbom(package: Package) -> crate::Result {
         use serde_spdx::spdx::v_2_3::{Spdx, SpdxItemPackages};
 
         util::install_crate(Crate::CargoSbom)?;
@@ -230,7 +230,7 @@ mod sbom {
     }
 
     #[tracing::instrument]
-    fn clean() -> anyhow::Result<()> {
+    fn clean() -> crate::Result {
         let sbom_dir = out_dir();
         if sbom_dir.exists() {
             fs::remove_dir_all(sbom_dir)?;

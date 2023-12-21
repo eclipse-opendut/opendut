@@ -27,7 +27,7 @@ pub enum TaskCli {
 }
 
 impl LeaCli {
-    pub fn default_handling(self) -> anyhow::Result<()> {
+    pub fn default_handling(self) -> crate::Result {
         match self.task {
             TaskCli::Build => build::build_release()?,
             TaskCli::Watch => watch::watch()?,
@@ -43,7 +43,7 @@ pub mod build {
     use super::*;
 
     #[tracing::instrument]
-    pub fn build_release() -> anyhow::Result<()> {
+    pub fn build_release() -> crate::Result {
         install_requirements()?;
 
         let working_dir = self_dir();
@@ -70,7 +70,7 @@ pub mod watch {
     use super::*;
 
     #[tracing::instrument]
-    pub fn watch() -> anyhow::Result<()> {
+    pub fn watch() -> crate::Result {
         install_requirements()?;
 
         Command::new("trunk")
@@ -82,7 +82,7 @@ pub mod watch {
 }
 
 #[tracing::instrument]
-fn install_requirements() -> anyhow::Result<()> {
+fn install_requirements() -> crate::Result {
     crate::util::install_toolchain(Arch::Wasm)?;
 
     crate::util::install_crate(Crate::Trunk)?;
