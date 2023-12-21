@@ -2,7 +2,7 @@ use clap::Parser;
 
 pub(crate) use core::constants;
 pub(crate) use core::metadata;
-pub(crate) use core::types::{self, Arch, Target, Package};
+pub(crate) use core::types::{self, Arch, Package, Result, Target};
 pub(crate) use core::util;
 use crate::core::types::parsing::package::PackageSelection;
 
@@ -32,7 +32,7 @@ enum TaskCli {
     Lea(packages::lea::LeaCli),
 }
 
-fn main() -> anyhow::Result<()> {
+fn main() -> crate::Result {
     util::init_tracing()?;
 
     std::env::set_current_dir(constants::workspace_dir())?;

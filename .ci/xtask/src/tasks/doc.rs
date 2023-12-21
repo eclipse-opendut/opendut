@@ -26,7 +26,7 @@ enum BookCli {
 }
 
 impl DocCli {
-    pub fn default_handling(&self) -> anyhow::Result<()> {
+    pub fn default_handling(&self) -> crate::Result {
         match &self.kind {
             DocKindCli::Book { task } => match task {
                 BookCli::Open => book::serve()?,
@@ -40,7 +40,7 @@ pub mod book {
     use super::*;
 
     #[tracing::instrument]
-    pub fn serve() -> anyhow::Result<()> {
+    pub fn serve() -> crate::Result {
         util::install_crate(Crate::Mdbook)?;
         util::install_crate(Crate::MdbookMermaid)?;
 

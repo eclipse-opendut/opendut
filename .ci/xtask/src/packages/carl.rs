@@ -30,7 +30,7 @@ pub enum TaskCli {
 }
 
 impl CarlCli {
-    pub fn default_handling(self) -> anyhow::Result<()> {
+    pub fn default_handling(self) -> crate::Result {
         match self.task {
             TaskCli::Build(crate::tasks::build::BuildCli { target }) => {
                 for target in target.iter() {
@@ -67,7 +67,7 @@ impl CarlCli {
 pub mod build {
     use super::*;
 
-    pub fn build_release(target: Target) -> anyhow::Result<()> {
+    pub fn build_release(target: Target) -> crate::Result {
         crate::tasks::build::build_release(SELF_PACKAGE, target)
     }
     pub fn out_dir(target: Target) -> PathBuf {
@@ -81,7 +81,7 @@ pub mod distribution {
     use super::*;
 
     #[tracing::instrument]
-    pub fn carl_distribution(target: Target) -> anyhow::Result<()> {
+    pub fn carl_distribution(target: Target) -> crate::Result {
         use crate::tasks::distribution;
 
         let distribution_out_dir = distribution::out_package_dir(SELF_PACKAGE, target);
@@ -106,7 +106,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument]
-        pub fn get_lea(out_dir: &PathBuf) -> anyhow::Result<()> {
+        pub fn get_lea(out_dir: &PathBuf) -> crate::Result {
 
             crate::packages::lea::build::build_release()?;
             let lea_build_dir = crate::packages::lea::build::out_dir();
@@ -135,7 +135,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument]
-        pub fn copy_license_json(target: Target, skip_generate: SkipGenerate) -> anyhow::Result<()> {
+        pub fn copy_license_json(target: Target, skip_generate: SkipGenerate) -> crate::Result {
 
             match skip_generate {
                 SkipGenerate::Yes => log::info!("Skipping generation of licenses, as requested. Directly attempting to copy to target location."),
@@ -186,7 +186,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument]
-        pub fn validate_contents(target: Target) -> anyhow::Result<()> {
+        pub fn validate_contents(target: Target) -> crate::Result {
 
             let unpack_dir = {
                 let unpack_dir = assert_fs::TempDir::new()?;

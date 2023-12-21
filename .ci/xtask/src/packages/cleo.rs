@@ -29,7 +29,7 @@ pub enum TaskCli {
 }
 
 impl CleoCli {
-    pub fn default_handling(self) -> anyhow::Result<()> {
+    pub fn default_handling(self) -> crate::Result {
         match self.task {
             TaskCli::Build(crate::tasks::build::BuildCli { target }) => {
                 for target in target.iter() {
@@ -64,7 +64,7 @@ impl CleoCli {
 pub mod build {
     use super::*;
 
-    pub fn build_release(target: Target) -> anyhow::Result<()> {
+    pub fn build_release(target: Target) -> crate::Result {
         crate::tasks::build::build_release(SELF_PACKAGE, target)
     }
     pub fn out_dir(target: Target) -> PathBuf {
@@ -77,7 +77,7 @@ pub mod distribution {
     use super::*;
 
     #[tracing::instrument]
-    pub fn cleo_distribution(target: Target) -> anyhow::Result<()> {
+    pub fn cleo_distribution(target: Target) -> crate::Result {
         use crate::tasks::distribution;
 
         distribution::clean(SELF_PACKAGE, target)?;
@@ -108,7 +108,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument]
-        pub fn validate_contents(target: Target) -> anyhow::Result<()> {
+        pub fn validate_contents(target: Target) -> crate::Result {
 
             let unpack_dir = {
                 let unpack_dir = assert_fs::TempDir::new()?;
