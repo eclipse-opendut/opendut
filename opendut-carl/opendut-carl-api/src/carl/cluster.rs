@@ -71,6 +71,11 @@ pub enum DeleteClusterDeploymentError {
     ClusterNotFound {
         id: ClusterId
     },
+    #[error("Internal error when deleting cluster with id <{id}>.\n{cause}")]
+    Internal {
+        id: ClusterId,
+        cause: String,
+    },
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -244,6 +249,9 @@ mod client {
                         }
                         None => {
                             Err(ClientError::InvalidRequest(format!("DeleteClusterDeploymentFailure contains no reason!")))
+                        }
+                        Some(cluster_manager::delete_cluster_deployment_failure::Reason::Internal(cluster_manager::DeleteClusterDeploymentFailureInternal { cause, .. })) => {
+                            Err(ClientError::UsageError(DeleteClusterDeploymentError::Internal { id: cluster_id, cause } ))
                         }
                     }
                 }

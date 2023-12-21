@@ -175,6 +175,7 @@ message DeleteClusterDeploymentFailure {
     DeleteClusterDeploymentFailureClusterIdRequired cluster_id_required = 1;
     DeleteClusterDeploymentFailureInvalidClusterId invalid_cluster_id = 2;
     DeleteClusterDeploymentFailureNotFound cluster_not_found = 3;
+    DeleteClusterDeploymentFailureInternal internal = 4;
   }
 }
 
@@ -187,6 +188,12 @@ message DeleteClusterDeploymentFailureInvalidClusterId {
 message DeleteClusterDeploymentFailureNotFound {
   opendut.types.cluster.ClusterId id = 1;
 }
+
+message DeleteClusterDeploymentFailureInternal {
+  opendut.types.cluster.ClusterId id = 1;
+  string cause = 2;
+}
+
 
 //
 // ListClusterDeployments

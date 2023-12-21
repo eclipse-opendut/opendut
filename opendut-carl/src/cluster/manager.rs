@@ -123,8 +123,15 @@ impl ClusterManager {
         let deployment = self.resources_manager.resources_mut(|resources| {
             resources.remove::<ClusterDeployment>(id)
         }).await;
-        deployment.ok_or(DeleteClusterDeploymentError::ClusterNotFound { id })
+        let deployment = deployment.ok_or(DeleteClusterDeploymentError::ClusterNotFound { id })?;
+
+        if let Vpn::Enabled { vpn_client } = &self.vpn {
+            vpn_client.delete_cluster(id).await
+                .map_err(|error| DeleteClusterDeploymentError::Internal { id, cause: error.to_string() })?;
+        }
+        Ok(deployment)
     }
+
 }
 
 #[cfg(test)]
