@@ -1,8 +1,6 @@
 [book]
 title = "openDuT-Network"
 
-[preprocessor.svgbob]
-
 [preprocessor.mermaid]
 command = "mdbook-mermaid"
 

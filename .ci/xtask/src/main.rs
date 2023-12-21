@@ -24,6 +24,7 @@ enum TaskCli {
     Build(tasks::build::BuildCli),
     Distribution(tasks::distribution::DistributionCli),
     Licenses(tasks::licenses::LicensesCli),
+    Doc(tasks::doc::DocCli),
 
     Carl(packages::carl::CarlCli),
     Cleo(packages::cleo::CleoCli),
@@ -54,6 +55,7 @@ fn main() -> anyhow::Result<()> {
             }
         }
         TaskCli::Licenses(implementation) => implementation.default_handling(PackageSelection::All)?,
+        TaskCli::Doc(implementation) => implementation.default_handling()?,
 
         TaskCli::Carl(implementation) => implementation.default_handling()?,
         TaskCli::Cleo(implementation) => implementation.default_handling()?,
