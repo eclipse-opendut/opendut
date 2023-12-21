@@ -3,6 +3,8 @@ pub enum Crate {
     CargoDeny,
     CargoSbom,
     Cross,
+    Mdbook,
+    MdbookMermaid,
     Trunk,
 }
 impl Crate {
@@ -11,6 +13,8 @@ impl Crate {
             Crate::CargoDeny => "cargo-deny",
             Crate::CargoSbom => "cargo-sbom",
             Crate::Cross => "cross",
+            Crate::Mdbook => "mdbook",
+            Crate::MdbookMermaid => "mdbook-mermaid",
             Crate::Trunk => "trunk",
         }.to_string()
     }
