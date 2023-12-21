@@ -1,5 +1,3 @@
-#![feature(error_generic_member_access)]
-
 pub mod app_info;
 
 #[cfg(not(target_arch = "wasm32"))]
