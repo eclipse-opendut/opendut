@@ -1,6 +1,6 @@
-use leptos::{component, create_memo, create_rw_signal, create_slice, IntoView, RwSignal, SignalGetUntracked, SignalUpdate, SignalWith, SignalWithUntracked, view};
+use leptos::{component, create_memo, create_rw_signal, create_slice, IntoView, RwSignal, SignalUpdate, SignalWith, SignalWithUntracked, view};
 
-use opendut_types::topology::{Device, DeviceId};
+use opendut_types::topology::DeviceId;
 
 use crate::components::UserInputValue;
 use crate::peers::configurator::tabs::devices::device_panel::DevicePanel;

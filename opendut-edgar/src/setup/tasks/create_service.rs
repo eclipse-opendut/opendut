@@ -1,4 +1,4 @@
-use std::fs;
+use std::{env, fs};
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -14,7 +14,7 @@ pub fn systemd_file_path() -> PathBuf {
     PathBuf::from(format!("/etc/systemd/system/{SYSTEMD_SERVICE_FILE_NAME}"))
 }
 
-fn systemd_file_content() -> String {
+fn systemd_file_content(service_user: &str) -> String {
     let executable = executable_install_path().unwrap();
     let executable = executable.display();
 
@@ -30,8 +30,8 @@ StartLimitBurst=0
 ExecStart={executable} service
 Restart=always
 RestartSec=30s
-User={USER_NAME}
-Group={USER_NAME}
+User={service_user}
+Group={service_user}
 
 [Install]
 WantedBy=multi-user.target
@@ -59,7 +59,9 @@ impl Task for CreateServiceFile {
         let out_path = systemd_file_path();
         fs::create_dir_all(out_path.parent().unwrap())?;
 
-        fs::write(&out_path, systemd_file_content())
+        let service_user_name = env::var("OPENDUT_EDGAR_SERVICE_USER").unwrap_or(USER_NAME.to_string());
+        log::info!("Using service user '{}'", service_user_name);
+        fs::write(&out_path, systemd_file_content(&service_user_name))
             .context(format!("Error while writing service file to '{}'", out_path.display()))?;
 
         let _ = Command::new("systemctl")

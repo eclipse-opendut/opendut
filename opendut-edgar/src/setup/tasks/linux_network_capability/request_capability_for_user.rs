@@ -1,4 +1,4 @@
-use std::fs;
+use std::{env, fs};
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -21,6 +21,13 @@ impl Task for RequestCapabilityForUser {
     }
     fn check_fulfilled(&self) -> Result<TaskFulfilled> {
         let capability_file = capability_file();
+        let is_root = env::var("OPENDUT_EDGAR_SERVICE_USER")
+            .map(|user| "root" == user)
+            .unwrap_or(false);
+
+        if is_root {
+            return Ok(TaskFulfilled::Unchecked)
+        }
 
         if capability_file.exists() {
             let file_content = fs::read_to_string(&capability_file)
