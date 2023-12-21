@@ -77,7 +77,7 @@ services:
           - netbird-coturn
 
   dashboard:
-    image: wiretrustee/dashboard:latest
+    image: wiretrustee/dashboard:v1.17.12
     environment:
       # Endpoints
       - NETBIRD_MGMT_API_ENDPOINT=http://netbird-management
