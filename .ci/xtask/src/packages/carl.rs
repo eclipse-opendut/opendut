@@ -177,13 +177,12 @@ pub mod distribution {
 
     pub mod validate {
         use std::fs::File;
-        use std::ops::Not;
 
         use assert_fs::prelude::*;
         use flate2::read::GzDecoder;
         use predicates::path;
 
-        use crate::core::util::ChildPathExt;
+        use crate::core::util::file::ChildPathExt;
         use crate::tasks::distribution::bundle;
 
         use super::*;
@@ -214,7 +213,7 @@ pub mod distribution {
                 &opendut_carl_executable,
             ]);
 
-            opendut_carl_executable.assert(path::is_file());
+            opendut_carl_executable.assert_non_empty_file();
             lea_dir.assert(path::is_dir());
             licenses_dir.assert(path::is_dir());
 
@@ -240,13 +239,7 @@ pub mod distribution {
                         "The license index.json did not contain entry for expected file: {}", license_file.display()
                     );
 
-                    license_file.assert(path::is_file());
-
-                    let license_file_content = fs::read_to_string(&license_file)?;
-                    assert!(
-                        license_file_content.is_empty().not(),
-                        "{:?} is empty", license_file.to_path_buf()
-                    );
+                    license_file.assert_non_empty_file();
                 }
             }
 
