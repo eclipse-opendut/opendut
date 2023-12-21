@@ -11,6 +11,7 @@ members = [
     "opendut-vpn",
     "opendut-vpn/opendut-vpn-netbird",
     ".ci/xtask",
+    ".ci/docker/theo",
     "tests",
 ]
 resolver = "2"
@@ -23,6 +24,7 @@ opendut-edgar = { path = "opendut-edgar" }
 opendut-netbird-client-api = { path = "opendut-edgar/netbird-client-api" }
 opendut-vpn-netbird = { path = "opendut-vpn/opendut-vpn-netbird" }
 opendut-types = { path = "opendut-types" }
+opendut-theo = { path = ".ci/docker/theo" }
 opendut-util = { path = "opendut-util" }
 opendut-vpn = { path = "opendut-vpn" }
 
@@ -36,13 +38,14 @@ base64 = "0.21.4"
 brotli = "3.4.0"
 cargo_metadata = "0.18.0"
 cfg-if = "1.0.0"
-clap = "4.4.6"
+clap = "4.4.8"
 cli-table = "0.4"
 config = { version = "0.13.3", features = ["toml"] }
 console = "0.15.7"
 console_error_panic_hook = "0.1.7"
 console_log = "1.0.0"
 digest = "0.10.7"
+dotenv = "0.15.0"
 env_logger = "0.10.0"
 flate2 = "1.0.27"
 fs_extra = "1.3.0"
@@ -66,6 +69,7 @@ mime = "0.3.17"
 netlink-packet-route = "0.17.1"
 netlink-packet-utils = "0.5.2"
 nix = "0.27.1"
+phf = { version = "0.11", features = ["macros"] }
 predicates = "3.0.4"
 prost = "0.12.1"
 prost-build = "0.12.1"
