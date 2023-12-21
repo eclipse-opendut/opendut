@@ -619,7 +619,7 @@ mod tests {
             ok(
                 matches_pattern!(
                     netbird::Group {
-                        id: eq(netbird::GroupId::from("ch8i4ug6lnn4g9hqv7m0")),
+                        id: eq(netbird::group::GroupId::from("ch8i4ug6lnn4g9hqv7m0")),
                         name: eq(name()),
                         peers_count: eq(0),
                         peers: empty(),
@@ -664,7 +664,7 @@ mod tests {
 
                         let expectation = json!({
                             "name": name(),
-                            "type": "one-off",
+                            "type": "reusable",
                             "expires_in": 86400,
                             "revoked": false,
                             "auto_groups": [
@@ -682,7 +682,7 @@ mod tests {
                                     "key": "A616097E-FCF0-48FA-9354-CA4A61142761",
                                     "name": name(),
                                     "expires": "2023-06-01T14:47:22.291057Z",
-                                    "type": "one-off",
+                                    "type": "reusable",
                                     "valid": true,
                                     "revoked": false,
                                     "used_times": 2,
@@ -720,7 +720,7 @@ mod tests {
                     key: anything(),
                     name: eq(name()),
                     expires: anything(),
-                    r#type: eq(netbird::setup_key::Type::OneOff),
+                    r#type: eq(netbird::setup_key::Type::Reusable),
                     valid: eq(true),
                     revoked: eq(false),
                     used_times: anything(),
@@ -738,6 +738,10 @@ mod tests {
     #[tokio::test]
     async fn create_access_control_rule() -> anyhow::Result<()> {
         fn cluster_id() -> ClusterId { ClusterId::from(uuid!("999f8513-d7ab-43fe-9bf0-091abaff2a97")) }
+        fn name() -> String { RuleName::Cluster(cluster_id()).into() }
+        fn description() -> String {
+            RuleName::Cluster(cluster_id()).description()
+        }
 
         fn netbird_group_id() -> group::GroupId {
             group::GroupId::from("ch8i4ug6lnn4g9hqv7m0")
@@ -797,7 +801,7 @@ mod tests {
         };
         client.create_netbird_self_access_control_rule(
             group,
-            cluster_id(),
+            cluster_id().into(),
         ).await?;
 
         Ok(())
