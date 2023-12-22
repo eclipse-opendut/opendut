@@ -5,6 +5,7 @@ edition = "2021"
 license = "Apache-2.0"
 
 [dependencies]
+cargo_metadata.workspace = true
 clap = { workspace = true, features = ["derive", "wrap_help", "env"] }
 dotenv = { workspace = true }
 phf = { workspace = true, features = ["macros"] }

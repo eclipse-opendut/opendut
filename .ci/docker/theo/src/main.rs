@@ -1,6 +1,7 @@
-use clap::{Parser, Subcommand};
+use clap::{ArgAction, Parser, Subcommand};
 use dotenv::dotenv;
-use crate::project::check_dot_env_variables;
+
+use crate::project::{boolean_env_var, check_dot_env_variables, OPENDUT_THEO_DISABLE_ENV_CHECKS};
 use crate::project::make_dist::make_distribution_if_not_present;
 
 mod project;
@@ -14,6 +15,9 @@ mod docker;
 struct Cli {
     #[command(subcommand)]
     command: Commands,
+    /// Disable environment variable checks (OPENDUT_THEO_DISABLE_ENV_CHECKS=true)
+    #[clap(long, short, action=ArgAction::SetFalse)]
+    disable_env_checks: bool,
 }
 
 #[derive(Debug, Subcommand)]
@@ -35,8 +39,10 @@ enum Commands {
 
 fn main() {
     dotenv().ok();
-    check_dot_env_variables();
     let args = Cli::parse();
+    if !args.disable_env_checks && !boolean_env_var(OPENDUT_THEO_DISABLE_ENV_CHECKS) {
+        check_dot_env_variables();
+    }
 
     match args.command {
         Commands::Build => {
