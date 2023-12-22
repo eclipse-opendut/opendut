@@ -1,0 +1,27 @@
+name: publish-release
+on:
+  workflow_call:  # allow this workflow to be called from other workflows
+    inputs:
+      runs-on:
+        default: "['ubuntu-latest']"
+        required: false
+        type: string
+
+jobs:
+  publish-release:
+    name: "Publish release"
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    permissions:
+      contents: write
+    steps:
+    - name: Checkout Sources
+      uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+
+    - name: Download Artifacts
+      uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
+      with:
+        pattern: "./target/ci/distribution/*/*-${{ github.sha }}.tar.gz"  # all packages from all targets
+
+    - uses: ncipollo/release-action@6c75be85e571768fa31b40abf38de58ba0397db5
+      with:
+        artifacts: "*-${{ github.sha }}.tar.gz/*"
