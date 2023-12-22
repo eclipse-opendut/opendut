@@ -1,5 +1,4 @@
 pub(crate) mod make_dist;
-
 use std::collections::HashMap;
 use std::env;
 use std::process::Command;
@@ -8,6 +7,7 @@ use crate::util::consume_output;
 use strum::{VariantNames, EnumVariantNames, EnumString, Display};
 
 pub(crate) const TARGET_TRIPLE: &'static str = "x86_64-unknown-linux-gnu";
+pub(crate) const OPENDUT_THEO_DISABLE_ENV_CHECKS: &'static str = "OPENDUT_THEO_DISABLE_ENV_CHECKS";
 
 
 #[derive(Debug, PartialEq, EnumString, EnumVariantNames, Display)]
@@ -83,4 +83,11 @@ pub(crate) fn check_dot_env_variables() {
     }
 
     assert_eq!(["PUSER", "PGROUP", "PUID", "PGID", "DOCKER_USER", "DOCKER_GID", "OPENDUT_REPO_ROOT"], EnvVars::VARIANTS);
+}
+
+
+pub(crate) fn boolean_env_var(name: &str) -> bool {
+    let x = env::var(name).unwrap_or("false".to_string()) == "true".to_string();
+    println!("{}={}", name, x);
+    x
 }

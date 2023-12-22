@@ -2361,6 +2361,7 @@ dependencies = [
 name = "opendut-theo"
 version = "0.1.0"
 dependencies = [
+ "cargo_metadata",
  "clap",
  "dotenv",
  "phf",

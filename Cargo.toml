@@ -106,6 +106,9 @@ walkdir = "2.4.0"
 
 [workspace.metadata.ci]
 netbird.version = "0.23.9-8de14ad"
+netbird-signal.version="0.25.0"       # docker container version for netbirdio/signal: NETBIRD_SIGNAL_VERSION
+netbird-management.version="0.25.0"   # docker container version for netbirdio/management:  NETBIRD_MANAGEMENT_VERSION
+netbird-dashboard.version="v1.17.12"  # docker container version for wiretrustee/dashboard: NETBIRD_DASHBOARD_VERSION
 
 [workspace.metadata.ci.xtask] #CLI tool crates used in CI (not libraries)
 cargo-deny.version = "0.14.3"
