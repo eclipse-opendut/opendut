@@ -13,18 +13,12 @@ jobs:
       matrix:
         package:
           - name: opendut-cleo
-            target:
-              name: linux-x86_64
-              triple: x86_64-unknown-linux-gnu
+            target: x86_64-unknown-linux-gnu
           - name: opendut-cleo
-            target:
-              name: linux-armhf
-              triple: armv7-unknown-linux-gnueabihf
+            target: armv7-unknown-linux-gnueabihf
           - name: opendut-cleo
-            target:
-              name: linux-arm64
-              triple: aarch64-unknown-linux-gnu
-    name: "Bundle ${{ matrix.package.name }}-${{ matrix.package.target.name }}"
+            target: aarch64-unknown-linux-gnu
+    name: "Bundle ${{ matrix.package.name }}-${{ matrix.package.target }}"
     runs-on: ${{ fromJson(inputs.runs-on) }}
     steps:
       - name: Checkout Sources
@@ -35,25 +29,25 @@ jobs:
       - name: Download opendut-cleo
         uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
         with:
-          name: "${{ matrix.package.name }}-${{ matrix.package.target.name }}-${{ github.sha }}"
-          path: "./target/ci/distribution/${{ matrix.package.target.triple }}/${{ matrix.package.name }}/"
+          name: "${{ matrix.package.name }}-${{ matrix.package.target }}-${{ github.sha }}"
+          path: "./target/ci/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/"
       - name: Download licenses
         uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
         with:
           name: "licenses-${{ github.sha }}"
           path: "./target/ci/licenses"
       - name: Prepare Licenses
-        run: cargo ci opendut-cleo distribution-copy-license-json --skip-generate --target=${{ matrix.package.target.triple }}
+        run: cargo ci opendut-cleo distribution-copy-license-json --skip-generate --target=${{ matrix.package.target }}
       - name: Prepare Executables
-        run: chmod +x ./target/ci/distribution/${{ matrix.package.target.triple }}/${{ matrix.package.name }}/${{ matrix.package.name }}
+        run: chmod +x ./target/ci/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/${{ matrix.package.name }}
       - name: Bundle
-        run: cargo ci opendut-cleo distribution-bundle-files --target=${{ matrix.package.target.triple }}
+        run: cargo ci opendut-cleo distribution-bundle-files --target=${{ matrix.package.target }}
       - name: Validate distribution contents
-        run: cargo ci opendut-cleo distribution-validate-contents --target=${{ matrix.package.target.triple }}
-      - name: "Upload CLEO bundle artifact ${{ matrix.package.name }}-${{ matrix.package.target.name }}.tar.gz"
+        run: cargo ci opendut-cleo distribution-validate-contents --target=${{ matrix.package.target }}
+      - name: "Upload CLEO bundle artifact ${{ matrix.package.name }}-${{ matrix.package.target }}.tar.gz"
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
         with:
-          name: "${{ matrix.package.name }}-${{ matrix.package.target.name }}-${{ github.sha }}.tar.gz"
-          path: "./target/ci/distribution/${{ matrix.package.target.triple }}/"
+          name: "${{ matrix.package.name }}-${{ matrix.package.target }}-${{ github.sha }}.tar.gz"
+          path: "./target/ci/distribution/${{ matrix.package.target }}/"
           if-no-files-found: error
           retention-days: 1
