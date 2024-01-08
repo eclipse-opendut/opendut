@@ -19,10 +19,8 @@ jobs:
       matrix:
         package:
           - name: opendut-carl
-            target:
-              name: linux-x86_64
-              triple: x86_64-unknown-linux-gnu
-    name: "Bundle ${{ matrix.package.name }}-${{ matrix.package.target.name }}"
+            target: x86_64-unknown-linux-gnu
+    name: "Bundle ${{ matrix.package.name }}-${{ matrix.package.target }}"
     runs-on: ${{ fromJson(inputs.runs-on) }}
     outputs:
       OPENDUT_CARL_VERSION: ${{ steps.extract_carl_version.outputs.OPENDUT_CARL_VERSION }}
@@ -43,30 +41,30 @@ jobs:
       - name: Download opendut-carl
         uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
         with:
-          name: "${{ matrix.package.name }}-${{ matrix.package.target.name }}-${{ github.sha }}"
-          path: "./target/ci/distribution/${{ matrix.package.target.triple }}/${{ matrix.package.name }}/"
+          name: "${{ matrix.package.name }}-${{ matrix.package.target }}-${{ github.sha }}"
+          path: "./target/ci/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/"
       - name: Download opendut-lea
         uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
         with:
           name: "opendut-lea-${{ github.sha }}"
-          path: "./target/ci/distribution/${{ matrix.package.target.triple }}/${{ matrix.package.name }}/opendut-lea"
+          path: "./target/ci/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/opendut-lea"
       - name: Download licenses
         uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
         with:
           name: "licenses-${{ github.sha }}"
           path: "./target/ci/licenses"
       - name: Prepare Licenses
-        run: cargo ci opendut-carl distribution-copy-license-json --skip-generate --target=${{ matrix.package.target.triple }}
+        run: cargo ci opendut-carl distribution-copy-license-json --skip-generate --target=${{ matrix.package.target }}
       - name: Prepare Executables
-        run: chmod +x ./target/ci/distribution/${{ matrix.package.target.triple }}/${{ matrix.package.name }}/${{ matrix.package.name }}
+        run: chmod +x ./target/ci/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/${{ matrix.package.name }}
       - name: Bundle
-        run: cargo ci opendut-carl distribution-bundle-files --target=${{ matrix.package.target.triple }}
+        run: cargo ci opendut-carl distribution-bundle-files --target=${{ matrix.package.target }}
       - name: Validate distribution contents
-        run: cargo ci opendut-carl distribution-validate-contents --target=${{ matrix.package.target.triple }}
-      - name: "Upload CARL bundle artifact ${{ matrix.package.name }}-${{ matrix.package.target.name }}"
+        run: cargo ci opendut-carl distribution-validate-contents --target=${{ matrix.package.target }}
+      - name: "Upload CARL bundle artifact ${{ matrix.package.name }}-${{ matrix.package.target }}"
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
         with:
-          name: "${{ matrix.package.name }}-${{ matrix.package.target.name }}-${{ github.sha }}.tar.gz"
-          path: "./target/ci/distribution/${{ matrix.package.target.triple }}/"
+          name: "${{ matrix.package.name }}-${{ matrix.package.target }}-${{ github.sha }}.tar.gz"
+          path: "./target/ci/distribution/${{ matrix.package.target }}/"
           if-no-files-found: error
           retention-days: 1

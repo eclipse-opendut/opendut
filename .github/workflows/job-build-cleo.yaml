@@ -13,18 +13,12 @@ jobs:
       matrix:
         package:
           - name: opendut-cleo
-            target:
-              name: linux-x86_64
-              triple: x86_64-unknown-linux-gnu
+            target: x86_64-unknown-linux-gnu
           - name: opendut-cleo
-            target:
-              name: linux-armhf
-              triple: armv7-unknown-linux-gnueabihf
+            target: armv7-unknown-linux-gnueabihf
           - name: opendut-cleo
-            target:
-              name: linux-arm64
-              triple: aarch64-unknown-linux-gnu
-    name: "Build ${{ matrix.package.name }}-${{ matrix.package.target.name }}"
+            target: aarch64-unknown-linux-gnu
+    name: "Build ${{ matrix.package.name }}-${{ matrix.package.target }}"
     runs-on: ${{ fromJson(inputs.runs-on) }}
     steps:
       - name: Checkout Sources
@@ -37,11 +31,11 @@ jobs:
           cargo-cross: true
 
       - name: Build
-        run: cargo ci opendut-cleo build --target=${{ matrix.package.target.triple }}
-      - name: "Upload CLEO build artifact ${{ matrix.package.name }}-${{ matrix.package.target.name }}"
+        run: cargo ci opendut-cleo build --target=${{ matrix.package.target }}
+      - name: "Upload CLEO build artifact ${{ matrix.package.name }}-${{ matrix.package.target }}"
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
         with:
-          name: "${{ matrix.package.name }}-${{ matrix.package.target.name }}-${{ github.sha }}"
-          path: "./target/ci/cross/${{ matrix.package.target.triple }}/release/${{ matrix.package.name }}"
+          name: "${{ matrix.package.name }}-${{ matrix.package.target }}-${{ github.sha }}"
+          path: "./target/ci/cross/${{ matrix.package.target }}/release/${{ matrix.package.name }}"
           if-no-files-found: error
           retention-days: 1
