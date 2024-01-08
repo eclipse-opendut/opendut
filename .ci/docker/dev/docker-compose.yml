@@ -49,7 +49,3 @@ networks:
   opendutnet:
     name: opendut_network
     external: true  # Use a pre-existing network
-
-volumes:
-  opendut_dev:
-    name: opendut_dev

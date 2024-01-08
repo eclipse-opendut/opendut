@@ -1,8 +1,9 @@
+use std::process::Command;
+
+use crate::project::project_root_dir;
+
 pub(crate) mod testenv;
 pub(crate) mod network;
-
-use std::process::{Command};
-use crate::project::project_root_dir;
 
 enum DockerCoreServices {
     Network,
@@ -23,6 +24,12 @@ impl DockerCoreServices {
             DockerCoreServices::Network => "network",
             DockerCoreServices::Firefox => "firefox",
         }
+    }
+}
+
+impl std::fmt::Display for DockerCoreServices {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.as_str())
     }
 }
 
@@ -96,7 +103,7 @@ fn docker_compose_network_create() {
     let output = Command::new("docker")
         .arg("compose")
         .arg("-f")
-        .arg(format!("./.ci/docker/{}/docker-compose.yml", DockerCoreServices::Network.as_str()))
+        .arg(format!("./.ci/docker/{}/docker-compose.yml", DockerCoreServices::Network))
         .arg("up")
         .arg("--force-recreate")
         .current_dir(project_root_dir())

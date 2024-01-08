@@ -21,8 +21,6 @@ services:
       - netbird-letsencrypt:/etc/letsencrypt:ro
       - ./management.json:/etc/netbird/management.json
       - "../../../resources/development/tls/insecure-development-ca.pem:/usr/local/share/ca-certificates/insecure-development-ca.crt:ro"
-    environment:
-      KEYCLOAK_URL: http://keycloak/realms/netbird/.well-known/openid-configuration
     healthcheck:
       test: ["CMD", "curl", "-f", "http://netbird-management"]
       interval: 1m

@@ -1,7 +1,8 @@
 #!/bin/bash
 
-KEYCLOAK_URL=http://keycloak
-NETBIRD_MANAGEMENT_URL=http://netbird-management
+export KEYCLOAK_URL=http://keycloak
+export NETBIRD_MANAGEMENT_URL=http://netbird-management
+export KEYCLOAK_REALM_URL=http://keycloak/realms/netbird/.well-known/openid-configuration
 
 wait_for_url() {
   local url="$1"
@@ -23,6 +24,66 @@ wait_for_url() {
   done
 }
 
+
+############################################################################################
+# KEYCLOAK ADMIN TASKS
+get_admin_oauth_token() {
+  # requires public client and client with password grant enabled, directAccessGrantsEnabled=true
+  RESPONSE=$(curl -s -d "client_id=admin-cli" -d "username=admin" -d "password=admin123456" -d "grant_type=password" $KEYCLOAK_URL/realms/master/protocol/openid-connect/token)
+  ADMIN_TOKEN=$(echo "$RESPONSE" | jq -r '.access_token')
+  echo "$ADMIN_TOKEN"
+}
+
+keycloak_admin_auth() {
+  # ignore "Declare and assign separately to avoid masking return values."
+  # shellcheck disable=SC2155
+  export ADMIN_TOKEN=$(get_admin_oauth_token)
+}
+
+keycloak_list_clients_in_realm_netbird() {
+  CLIENTS=$(curl -s -H "Authorization: Bearer $ADMIN_TOKEN" "$KEYCLOAK_URL/admin/realms/netbird/clients?first=0&max=11")
+  echo "$CLIENTS"
+}
+
+keycloak_client_in_realm_netbird_is_present() {
+  CLIENT_ID="$1"
+
+  keycloak_admin_auth
+  CLIENTS=$(keycloak_list_clients_in_realm_netbird)
+  if [ -n "$CLIENTS" ]; then
+    KEYCLOAK_CLIENT=$(echo "$CLIENTS" | jq -r ".[] | select(.clientId==\"$CLIENT_ID\")" 2>/dev/null)
+    if [ -z "$KEYCLOAK_CLIENT" ]; then
+      echo "Keycloak client $CLIENT_ID is not present"
+      return 1
+    else
+      echo "Keycloak client $CLIENT_ID is present"
+      return 0
+    fi
+  else
+    echo "Keycloak client $CLIENT_ID is not present"
+    return 1
+  fi
+}
+
+wait_for_keycloak_client_in_realm_netbird() {
+  local user_name="${1:-netbird-backend}"
+  local timeout="${2:-60}"
+  local sleep_time="${3:-5}"
+  local start_time=$(date +%s)
+  local end_time=$((start_time + timeout))
+  while true; do
+    local now=$(date +%s)
+    if [ "$now" -gt "$end_time" ]; then
+      echo "Timeout ($timeout seconds) while waiting for netbird client in keycloak"
+      return 1
+    fi
+    keycloak_client_in_realm_netbird_is_present "$user_name" && break
+    echo "Waiting for $user_name to be available..."
+    sleep "$sleep_time"
+  done
+}
+############################################################################################
+
 get_user_oauth_token() {
   # requires public client and client with password grant enabled, directAccessGrantsEnabled=true
   RESPONSE=$(curl -s -d "client_id=netbird-mgmt-cli" -d "username=netbird" -d "password=netbird" -d "grant_type=password" $KEYCLOAK_URL/realms/netbird/protocol/openid-connect/token)
@@ -40,6 +101,27 @@ netbird_auth() {
   # ignore "Declare and assign separately to avoid masking return values."
   # shellcheck disable=SC2155
   export TOKEN=$(get_user_oauth_token)
+}
+
+wait_for_keycloak_client_auth_successful() {
+  local timeout="${1:-60}"
+  local sleep_time="${2:-5}"
+  local start_time=$(date +%s)
+  local end_time=$((start_time + timeout))
+  while true; do
+    local now=$(date +%s)
+    if [ "$now" -gt "$end_time" ]; then
+      echo "Timeout ($timeout seconds) while waiting for netbird management client to be authenticated"
+      return 1
+    fi
+    netbird_auth
+    if [ -n "$TOKEN" ]; then
+      echo "Netbird management client is authenticated."
+      break
+    fi
+    echo "Waiting for authentication to be available... sleeping $sleep_time seconds"
+    sleep "$sleep_time"
+  done
 }
 
 netbird_api_token_test() {
@@ -91,7 +173,7 @@ user_present() {
   netbird_auth
   USERS=$(users_list)
   if [ -n "$USERS" ]; then
-    NETBIRD_USER_ID=$(echo "$USERS" | jq -r ".[] | select(.name==\"$USER_NAME\").id")
+    NETBIRD_USER_ID=$(echo "$USERS" | jq -r ".[] | select(.name==\"$USER_NAME\").id" 2>/dev/null)
     if [ -z "$NETBIRD_USER_ID" ]; then
       echo "$USERS"
       echo "NetBird user $USER_NAME is not present"
