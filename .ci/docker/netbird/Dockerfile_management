@@ -1,8 +1,9 @@
 ARG NETBIRD_MANAGEMENT_VERSION
 
 FROM netbirdio/management:${NETBIRD_MANAGEMENT_VERSION}
-RUN apt update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata ca-certificates curl
+RUN apt update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata ca-certificates curl jq
 
+COPY ./.ci/docker/netbird/netbird-api-functions.sh /netbird-api-functions.sh
 COPY ./.ci/docker/netbird/management_init.sh /management_init.sh
 
 ENTRYPOINT [ "/management_init.sh" ]

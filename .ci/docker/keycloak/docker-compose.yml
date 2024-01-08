@@ -16,6 +16,8 @@ services:
       - KEYCLOAK_DB=dev-file
     ports:
       - "8081:80"
+    volumes:
+      - opendut_keycloak_data:/opt/keycloak/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://keycloak"]
       interval: 1m
@@ -54,3 +56,6 @@ networks:
   opendutnet:
     name: opendut_network
     external: true  # Use a pre-existing network
+
+volumes:
+  opendut_keycloak_data:

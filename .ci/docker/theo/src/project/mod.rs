@@ -1,4 +1,6 @@
 pub(crate) mod make_dist;
+pub(crate) mod metadata;
+
 use std::collections::HashMap;
 use std::env;
 use std::process::Command;
