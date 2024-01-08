@@ -4,6 +4,7 @@ on:
   pull_request:
     types: [ opened, reopened ]
   push:
+    branches: [ "**" ]
     paths-ignore:
       - 'doc/**'
       - 'README.md'
