@@ -41,8 +41,6 @@ services:
       - $HOME/opendut_dev/:/opendut_dev/
       - $HOME/.cargo/:/home/$PUSER/.cargo/
       - $HOME/.rustup/:/home/$PUSER/.rustup/
-      - $HOME/.cache/rust-script/:/home/$PUSER/.cache/rust-script/
-      - $HOME/.cache/cargo-make//:/home/$PUSER/.cache/cargo-make/
 
     networks:
       - opendutnet

@@ -40,18 +40,8 @@ runs:
           ~/.rustup/update-hashes
           ~/.rustup/settings.toml
         key: rust-toolchain-${{ github.job }}
-    - name: Prepare Rust Script Cache
-      uses: actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84
-      with:
-        path: |
-          ~/.cache/rust-script/
-        key: rust-script-${{ github.job }}
     - name: Prepare Rust Dependency Cache
       uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
-    - name: Install Cargo Rust-Script
-      uses: taiki-e/cache-cargo-install-action@f6e15f71e967ea23e30091f4d38ca6300f5c7760
-      with:
-        tool: rust-script
 
     - name: Install cargo-deny
       uses: taiki-e/cache-cargo-install-action@f6e15f71e967ea23e30091f4d38ca6300f5c7760
