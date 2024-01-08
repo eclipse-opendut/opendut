@@ -34,6 +34,8 @@ enum Commands {
     Network,
     #[command(about = "Destroy test environment.")]
     Destroy,
+    #[command(about = "Show netbird application versions.")]
+    NetbirdVersions,
 }
 
 
@@ -68,6 +70,9 @@ fn main() {
         }
         Commands::Edgar => {
             docker::testenv::edgar::run_edgar();
+        }
+        Commands::NetbirdVersions => {
+            project::metadata::cargo_versions();
         }
     }
 }
