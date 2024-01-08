@@ -228,8 +228,9 @@ async fn main() {
 }
 
 async fn execute() -> Result<()> {
+    let cleo_config_hide_secrets_override = opendut_util::settings::Config::default();
 
-    let config = load_config("cleo", include_str!("../cleo.toml"), FileFormat::Toml, config::Config::default())
+    let config = load_config("cleo", include_str!("../cleo.toml"), FileFormat::Toml, config::Config::default(), cleo_config_hide_secrets_override)
         .expect("Failed to load config") // TODO: Point the user to the source of the error.
         .config;
 

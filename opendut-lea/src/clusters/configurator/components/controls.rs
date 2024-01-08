@@ -3,7 +3,7 @@ use leptos::*;
 use opendut_types::cluster::{ClusterConfiguration, ClusterId};
 use crate::app::{ExpectGlobals, use_app_globals};
 
-use crate::components::{ButtonColor, ButtonState, ButtonStateSignalProvider, ConfirmationButton, FontAwesomeIcon, IconButton};
+use crate::components::{ButtonColor, ButtonSize, ButtonState, ButtonStateSignalProvider, ConfirmationButton, FontAwesomeIcon, IconButton};
 use crate::clusters::configurator::types::UserClusterConfiguration;
 use crate::routing::{navigate_to, WellKnownRoutes};
 
@@ -69,6 +69,7 @@ fn SaveClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>
         <IconButton
             icon=FontAwesomeIcon::Save
             color=ButtonColor::Info
+            size=ButtonSize::Normal
             state=button_state
             label="Save Cluster"
             on_action=move || {
@@ -100,6 +101,7 @@ fn DeleteClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguratio
         <ConfirmationButton
             icon=FontAwesomeIcon::TrashCan
             color=ButtonColor::Danger
+            size=ButtonSize::Normal
             state=button_state
             label="Remove Cluster?"
             on_conform=move || {

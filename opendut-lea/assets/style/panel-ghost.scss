@@ -1,0 +1,12 @@
+@import "bulma/sass/utilities/initial-variables";
+@import "bulma/sass/helpers/color";
+
+.dut-panel-ghost {
+  border-radius: 6px;
+  border-style: dashed;
+  border-width: 1px;
+  background-color: $white-bis;
+  font-size: $size-5;
+  font-weight: 700;
+  line-height: 1.25;
+}

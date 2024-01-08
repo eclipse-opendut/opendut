@@ -76,7 +76,7 @@ pub struct PeerName(pub(crate) String);
 impl PeerName {
 
     pub const MIN_LENGTH: usize = 4;
-    pub const MAX_LENGTH: usize = 16;
+    pub const MAX_LENGTH: usize = 64;
 
     pub fn value(self) -> String {
         self.0
@@ -118,8 +118,12 @@ impl TryFrom<String> for PeerName {
                 expected: Self::MAX_LENGTH,
                 actual: length,
             })
+        } else if !crate::util::valid_start_and_end_of_a_name(&value) {
+            Err(IllegalPeerName::InvalidCharacter {
+                value
+            })
         }
-        else if value.chars().any(|c| !c.is_ascii_alphanumeric()) { // TODO: Relax this restriction.
+        else if value.chars().any(|c| !crate::util::valid_characters_in_name(&c)) { // TODO: Relax this restriction.
             Err(IllegalPeerName::InvalidCharacter {
                 value
             })
@@ -235,6 +239,33 @@ mod tests {
         let decoded = PeerSetup::decode(&encoded)?;
         assert_that!(decoded, eq(setup));
 
+        Ok(())
+    }
+
+    #[test]
+    fn A_PeerName_should_contain_valid_characters() -> Result<()> {
+        let peer_name = PeerName::try_from("asd123".to_string()).expect("Failed to create peer name");
+        assert_eq!(peer_name.0, "asd123");
+        Ok(())
+    }
+
+    #[test]
+    fn A_PeerName_may_contain_a_hyphen() -> Result<()> {
+        let peer_name = PeerName::try_from("asd-123".to_string()).expect("Failed to create peer name");
+        assert_eq!(peer_name.0, "asd-123");
+        Ok(())
+    }
+
+    #[test]
+    fn A_PeerName_may_contain_an_underscore() -> Result<()> {
+        let peer_name = PeerName::try_from("asd-123".to_string()).expect("Failed to create peer name");
+        assert_eq!(peer_name.0, "asd-123");
+        Ok(())
+    }
+
+    #[test]
+    fn A_PeerName_should_not_start_with_a_hyphen() -> Result<()> {
+        let _ = PeerName::try_from("-123".to_string()).is_err();
         Ok(())
     }
 }

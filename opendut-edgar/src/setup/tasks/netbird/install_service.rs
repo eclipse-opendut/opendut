@@ -4,7 +4,7 @@ use anyhow::Result;
 
 use crate::setup::constants::netbird;
 use crate::setup::task::{Success, Task, TaskFulfilled};
-use crate::setup::util::evaluate_requiring_success;
+use crate::setup::util::EvaluateRequiringSuccess;
 
 pub struct InstallService;
 impl Task for InstallService {
@@ -26,9 +26,10 @@ impl Task for InstallService {
     fn execute(&self) -> Result<Success> {
         let netbird = netbird::unpacked_executable()?;
 
-        let mut command = Command::new(netbird);
-        let command = command.arg("service").arg("install");
-        let _ = evaluate_requiring_success(command)?;
+        let _ = Command::new(netbird)
+            .arg("service")
+            .arg("install")
+            .evaluate_requiring_success()?;
 
         Ok(Success::default())
     }

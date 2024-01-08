@@ -1,49 +1,103 @@
 use std::fs;
 use std::path::PathBuf;
-use crate::{Arch, Package};
 
-const PACKAGE: &Package = &Package::Carl;
+use crate::{Package, Target};
+use crate::core::types::parsing::package::PackageSelection;
+use crate::packages::carl::distribution::copy_license_json::copy_license_json;
 
+const SELF_PACKAGE: Package = Package::Carl;
+
+/// Tasks available or specific for CARL
+#[derive(clap::Parser)]
+#[command(alias="opendut-carl")]
+pub struct CarlCli {
+    #[command(subcommand)]
+    pub task: TaskCli,
+}
+
+#[derive(clap::Subcommand)]
+pub enum TaskCli {
+    Build(crate::tasks::build::BuildCli),
+    Distribution(crate::tasks::distribution::DistributionCli),
+    Licenses(crate::tasks::licenses::LicensesCli),
+    Run(crate::tasks::run::RunCli),
+
+    #[command(hide=true)]
+    DistributionCopyLicenseJson(crate::tasks::distribution::copy_license_json::DistributionCopyLicenseJsonCli),
+    #[command(hide=true)]
+    DistributionBundleFiles(crate::tasks::distribution::bundle::DistributionBundleFilesCli),
+    #[command(hide=true)]
+    DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli),
+}
+
+impl CarlCli {
+    pub fn default_handling(self) -> crate::Result {
+        match self.task {
+            TaskCli::Build(crate::tasks::build::BuildCli { target }) => {
+                for target in target.iter() {
+                    build::build_release(target)?;
+                }
+            }
+            TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target }) => {
+                for target in target.iter() {
+                    distribution::carl_distribution(target)?;
+                }
+            }
+            TaskCli::Licenses(cli) => cli.default_handling(PackageSelection::Single(SELF_PACKAGE))?,
+            TaskCli::Run(cli) => cli.default_handling(SELF_PACKAGE)?,
+
+            TaskCli::DistributionCopyLicenseJson(implementation) => {
+                for target in implementation.target.iter() {
+                    copy_license_json(target, implementation.skip_generate.into())?;
+                }
+            }
+            TaskCli::DistributionBundleFiles(implementation) => {
+                implementation.default_handling(SELF_PACKAGE)?;
+            }
+            TaskCli::DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli { target }) => {
+                for target in target.iter() {
+                    distribution::validate::validate_contents(target)?;
+                }
+            }
+        };
+        Ok(())
+    }
+}
 
 pub mod build {
     use super::*;
 
-    pub fn build_release(target: &Arch) -> anyhow::Result<()> {
-        crate::tasks::build::build_release(PACKAGE, target)
+    pub fn build_release(target: Target) -> crate::Result {
+        crate::tasks::build::build_release(SELF_PACKAGE, target)
     }
-    pub fn out_dir(target: &Arch) -> PathBuf {
-        crate::tasks::build::out_dir(PACKAGE, target)
+    pub fn out_dir(target: Target) -> PathBuf {
+        crate::tasks::build::out_dir(SELF_PACKAGE, target)
     }
 }
 
 pub mod distribution {
+    use crate::tasks::distribution::copy_license_json::SkipGenerate;
+
     use super::*;
 
     #[tracing::instrument]
-    pub fn carl(target: &Arch) -> anyhow::Result<()> {
+    pub fn carl_distribution(target: Target) -> crate::Result {
         use crate::tasks::distribution;
 
-        let distribution_out_dir = distribution::out_package_dir(PACKAGE, target);
+        let distribution_out_dir = distribution::out_package_dir(SELF_PACKAGE, target);
 
-        distribution::clean(PACKAGE, target)?;
+        distribution::clean(SELF_PACKAGE, target)?;
 
-        crate::tasks::build::build_release(PACKAGE, target)?;
+        crate::tasks::build::build_release(SELF_PACKAGE, target)?;
 
-        distribution::collect_executables(PACKAGE, target)?;
+        distribution::collect_executables(SELF_PACKAGE, target)?;
 
-        collect_carl_specific_files(&distribution_out_dir)?;
+        lea::get_lea(&distribution_out_dir)?;
+        copy_license_json::copy_license_json(target, SkipGenerate::No)?;
 
-        distribution::bundle_collected_files(PACKAGE, target)?;
+        distribution::bundle::bundle_files(SELF_PACKAGE, target)?;
 
-        Ok(())
-    }
-
-    #[tracing::instrument]
-    pub fn collect_carl_specific_files(out_dir: &PathBuf) -> anyhow::Result<()> {
-
-        lea::get_lea(out_dir)?;
-
-        licenses::get_licenses(out_dir)?;
+        validate::validate_contents(target)?;
 
         Ok(())
     }
@@ -52,12 +106,12 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument]
-        pub fn get_lea(out_dir: &PathBuf) -> anyhow::Result<()> {
+        pub fn get_lea(out_dir: &PathBuf) -> crate::Result {
 
             crate::packages::lea::build::build_release()?;
             let lea_build_dir = crate::packages::lea::build::out_dir();
 
-            let lea_out_dir = out_dir.join("lea");
+            let lea_out_dir = out_dir.join(Package::Lea.ident());
 
             fs::create_dir_all(&lea_out_dir)?;
 
@@ -73,50 +127,121 @@ pub mod distribution {
         }
     }
 
-    mod licenses {
-        use super::*;
+    pub mod copy_license_json {
         use serde_json::json;
 
+        use crate::tasks::distribution::copy_license_json::SkipGenerate;
+
+        use super::*;
+
         #[tracing::instrument]
-        pub fn get_licenses(out_dir: &PathBuf) -> anyhow::Result<()> {
+        pub fn copy_license_json(target: Target, skip_generate: SkipGenerate) -> crate::Result {
 
-            generate_licenses()?;
-            let carl_licenses_file = out_file();
+            match skip_generate {
+                SkipGenerate::Yes => log::info!("Skipping generation of licenses, as requested. Directly attempting to copy to target location."),
+                SkipGenerate::No => {
+                    for package in [SELF_PACKAGE, Package::Lea, Package::Edgar] {
+                        crate::tasks::licenses::json::export_json(package)?;
+                    }
+                }
+            };
 
-            crate::packages::lea::licenses::generate_licenses()?;
-            let lea_licenses_file = crate::packages::lea::licenses::out_file();
+            let carl_in_file = crate::tasks::licenses::json::out_file(SELF_PACKAGE);
+            let carl_out_file = crate::tasks::distribution::copy_license_json::out_file(SELF_PACKAGE, target);
+            let out_dir = carl_out_file.parent().unwrap();
 
-            crate::packages::edgar::licenses::generate_licenses()?;
-            let edgar_licenses_file = crate::packages::edgar::licenses::out_file();
+            let lea_in_file = crate::tasks::licenses::json::out_file(Package::Lea);
+            let lea_out_file = out_dir.join(crate::tasks::licenses::json::out_file_name(Package::Lea));
+            let edgar_in_file = crate::tasks::licenses::json::out_file(Package::Edgar);
+            let edgar_out_file = out_dir.join(crate::tasks::licenses::json::out_file_name(Package::Edgar));
 
-
-            let licenses_dir = out_dir.join("licenses");
-            fs::create_dir_all(&licenses_dir)?;
-
-            for license_file in [&carl_licenses_file, &lea_licenses_file, &edgar_licenses_file] {
-                fs::copy(
-                    license_file,
-                    licenses_dir.join(license_file.file_name().unwrap())
-                )?;
-            }
+            fs::create_dir_all(out_dir)?;
+            fs::copy(carl_in_file, &carl_out_file)?;
+            fs::copy(lea_in_file, &lea_out_file)?;
+            fs::copy(edgar_in_file, &edgar_out_file)?;
 
             fs::write(
-                licenses_dir.join("index.json"),
+                out_dir.join("index.json"),
                 json!({
-                    "carl": carl_licenses_file.file_name().unwrap().to_str(),
-                    "edgar": edgar_licenses_file.file_name().unwrap().to_str(),
-                    "lea": lea_licenses_file.file_name().unwrap().to_str(),
+                    "carl": carl_out_file.file_name().unwrap().to_str(),
+                    "edgar": edgar_out_file.file_name().unwrap().to_str(),
+                    "lea": lea_out_file.file_name().unwrap().to_str(),
                 }).to_string(),
             )?;
 
             Ok(())
         }
+    }
 
-        pub fn generate_licenses() -> anyhow::Result<()> {
-            crate::tasks::licenses::generate_licenses(PACKAGE)
-        }
-        pub fn out_file() -> PathBuf {
-            crate::tasks::licenses::out_file(PACKAGE)
+    pub mod validate {
+        use std::fs::File;
+
+        use assert_fs::prelude::*;
+        use flate2::read::GzDecoder;
+        use predicates::path;
+
+        use crate::core::util::file::ChildPathExt;
+        use crate::tasks::distribution::bundle;
+
+        use super::*;
+
+        #[tracing::instrument]
+        pub fn validate_contents(target: Target) -> crate::Result {
+
+            let unpack_dir = {
+                let unpack_dir = assert_fs::TempDir::new()?;
+                let archive = bundle::out_file(SELF_PACKAGE, target);
+                let mut archive = tar::Archive::new(GzDecoder::new(File::open(archive)?));
+                archive.set_preserve_permissions(true);
+                archive.unpack(&unpack_dir)?;
+                unpack_dir
+            };
+
+
+            let carl_dir = unpack_dir.child(SELF_PACKAGE.ident());
+            carl_dir.assert(path::is_dir());
+
+            let opendut_carl_executable = carl_dir.child(SELF_PACKAGE.ident());
+            let opendut_lea_dir = carl_dir.child(Package::Lea.ident());
+            let licenses_dir = carl_dir.child("licenses");
+
+            carl_dir.dir_contains_exactly_in_order(vec![
+                &licenses_dir,
+                &opendut_carl_executable,
+                &opendut_lea_dir,
+            ]);
+
+            opendut_carl_executable.assert_non_empty_file();
+            opendut_lea_dir.assert(path::is_dir());
+            licenses_dir.assert(path::is_dir());
+
+            { //validate license dir contents
+                let licenses_index_file = licenses_dir.child("index.json");
+                let licenses_carl_file = licenses_dir.child("opendut-carl.licenses.json");
+                let licenses_edgar_file = licenses_dir.child("opendut-edgar.licenses.json");
+                let licenses_lea_file = licenses_dir.child("opendut-lea.licenses.json");
+
+                licenses_dir.dir_contains_exactly_in_order(vec![
+                    &licenses_index_file,
+                    &licenses_carl_file,
+                    &licenses_edgar_file,
+                    &licenses_lea_file,
+                ]);
+
+                licenses_index_file.assert(path::is_file());
+                let licenses_index_content = fs::read_to_string(licenses_index_file)?;
+
+                for license_file in [&licenses_edgar_file, &licenses_carl_file, &licenses_lea_file] {
+                    assert!(
+                        licenses_index_content.contains(license_file.file_name_str()),
+                        "The license index.json did not contain entry for expected file: {}", license_file.display()
+                    );
+
+                    license_file.assert_non_empty_file();
+                }
+            }
+
+            Ok(())
         }
     }
 }

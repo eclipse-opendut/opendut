@@ -1,0 +1,31 @@
+name: build-lea
+on:
+  workflow_call:  # allow this workflow to be called from other workflows
+    inputs:
+      runs-on:
+        default: "['ubuntu-latest']"
+        required: false
+        type: string
+
+jobs:
+  build-lea:
+    name: "Build opendut-lea"
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    steps:
+      - name: Checkout Sources
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+      - name: Rust setup
+        uses: ./.github/actions/rust-setup
+        with:
+          cargo-cross: true
+          cargo-trunk: true
+
+      - name: Build
+        run: cargo ci opendut-lea build
+      - name: "Upload LEA build artifact"
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
+        with:
+          name: "opendut-lea-${{ github.sha }}"
+          path: "./opendut-lea/dist"
+          if-no-files-found: error
+          retention-days: 1

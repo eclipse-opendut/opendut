@@ -55,6 +55,8 @@ cfg_if! {
         pub enum InitializationError {
             #[error("Invalid URI '{uri}': {cause}")]
             InvalidUri { uri: String, cause: InvalidUri },
+            #[error("Expected https scheme. Given scheme: '{given_scheme}'")]
+            ExpectedHttpsScheme { given_scheme: String },
             #[error("{message}: {cause}")]
             TlsConfiguration { message: String, cause: Box<dyn std::error::Error + Send + Sync> },
         }
@@ -182,8 +184,12 @@ pub mod wasm {
         pub fn create(url: url::Url) -> Result<CarlClient, InitializationError> {
 
             let scheme = url.scheme();
+            if scheme != "https" {
+                return Err(InitializationError::ExpectedHttpsScheme { given_scheme: scheme.to_owned() });
+            }
+
             let host = url.host_str().unwrap_or("localhost");
-            let port = url.port().unwrap_or(8080_u16);
+            let port = url.port().unwrap_or(443_u16);
 
             let client = tonic_web_wasm_client::Client::new(format!("{}://{}:{}", scheme, host, port));
 

@@ -1,0 +1,17 @@
+name: Determine OpenDuT CARL version
+description: Use cargo metadata to determine OpenDuT CARL version
+outputs:
+  OPENDUT_CARL_VERSION:
+    description: The version of OpenDuT CARL
+    value: ${{ steps.extract_carl_version.outputs.OPENDUT_CARL_VERSION }}
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Extract carl version
+      id: extract_carl_version
+      working-directory: ./opendut-carl
+      shell: bash
+      run: |
+        VERSION=$(cargo metadata --format-version=1 --no-deps | jq -r '.packages[0].version')
+        echo "OPENDUT_CARL_VERSION=${VERSION}" >> $GITHUB_OUTPUT

@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::path::PathBuf;
 
 pub use config::{Config, ConfigError, FileFormat};
@@ -11,11 +12,22 @@ pub enum LoadError {
     ConfigError(#[from] ConfigError)
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct LoadedConfig {
     pub config: Config,
+    pub redacted_config: Config,
     pub config_files_used: Vec<PathBuf>,
     pub config_files_declared: Vec<PathBuf>,
+}
+
+impl Debug for LoadedConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("LoadedConfig")
+            .field("config", &self.redacted_config)
+            .field("config_files_used", &self.config_files_used)
+            .field("config_files_declared", &self.config_files_declared)
+            .finish()
+    }
 }
 
 /// Load configuration from files and environment variables used by openDuT.
@@ -28,7 +40,7 @@ pub struct LoadedConfig {
 /// * Environment variables prefixed with `OPENDUT_{NAME}_`
 /// * The `overrides` passed as parameter.
 ///
-pub fn load_config(name: &str, defaults: &str, defaults_format: FileFormat, overrides: Config) -> Result<LoadedConfig, LoadError> {
+pub fn load_config(name: &str, defaults: &str, defaults_format: FileFormat, overrides: Config, secret_redacted_overrides: Config) -> Result<LoadedConfig, LoadError> {
 
     let development_config = format!("opendut-{name}/{name}-development.toml");
     let system_config = format!("/etc/opendut-network/{name}.toml");
@@ -78,9 +90,12 @@ pub fn load_config(name: &str, defaults: &str, defaults_format: FileFormat, over
     );
 
     let settings = builder.add_source(overrides);
+    let secret_redacted_settings = settings.clone()
+        .add_source(secret_redacted_overrides);
 
     Ok(LoadedConfig {
         config: settings.build()?,
+        redacted_config: secret_redacted_settings.build()?,
         config_files_used: sources_used,
         config_files_declared: sources_declared,
     })

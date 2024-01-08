@@ -3,7 +3,7 @@ pub mod cluster_manager {
     use opendut_types::cluster::state::ClusterState;
     use opendut_types::proto::{ConversionError, ConversionErrorBuilder};
 
-    use crate::carl::cluster::{CreateClusterConfigurationError, DeleteClusterConfigurationError};
+    use crate::carl::cluster::{CreateClusterConfigurationError, DeleteClusterConfigurationError, DeleteClusterDeploymentError, StoreClusterDeploymentError};
 
     tonic::include_proto!("opendut.carl.services.cluster_manager");
 
@@ -178,6 +178,178 @@ pub mod cluster_manager {
             Ok(DeleteClusterConfigurationError::Internal { cluster_id, cluster_name, cause: failure.cause })
         }
     }
+
+    impl From<StoreClusterDeploymentError> for StoreClusterDeploymentFailure {
+        fn from(error: StoreClusterDeploymentError) -> Self {
+            let proto_error = match error {
+                StoreClusterDeploymentError::IllegalClusterState { cluster_id, cluster_name, actual_state, required_states } => {
+                    store_cluster_deployment_failure::Error::IllegalClusterState(StoreClusterDeploymentFailureIllegalClusterState {
+                        cluster_id: Some(cluster_id.into()),
+                        cluster_name: Some(cluster_name.into()),
+                        actual_state: Some(actual_state.into()),
+                        required_states: required_states.into(),
+                    })
+                }
+                StoreClusterDeploymentError::Internal { cluster_id, cluster_name, cause } => {
+                    store_cluster_deployment_failure::Error::Internal(StoreClusterDeploymentFailureInternal {
+                        cluster_id: Some(cluster_id.into()),
+                        cluster_name: Some(cluster_name.into()),
+                        cause
+                    })
+                }
+            };
+            StoreClusterDeploymentFailure {
+                error: Some(proto_error)
+            }
+        }
+    }
+
+    impl TryFrom<StoreClusterDeploymentFailure> for StoreClusterDeploymentError {
+        type Error = ConversionError;
+        fn try_from(failure: StoreClusterDeploymentFailure) -> Result<Self, Self::Error> {
+            type ErrorBuilder = ConversionErrorBuilder<StoreClusterDeploymentFailure, StoreClusterDeploymentError>;
+            let error = failure.error
+                .ok_or_else(|| ErrorBuilder::new("Field 'error' not set"))?;
+            let error = match error {
+                store_cluster_deployment_failure::Error::IllegalClusterState(error) => {
+                    error.try_into()?
+                }
+                store_cluster_deployment_failure::Error::Internal(error) => {
+                    error.try_into()?
+                }
+            };
+            Ok(error)
+        }
+    }
+
+    impl TryFrom<StoreClusterDeploymentFailureIllegalClusterState> for StoreClusterDeploymentError {
+        type Error = ConversionError;
+        fn try_from(failure: StoreClusterDeploymentFailureIllegalClusterState) -> Result<Self, Self::Error> {
+            type ErrorBuilder = ConversionErrorBuilder<StoreClusterDeploymentFailureIllegalClusterState, StoreClusterDeploymentError>;
+            let cluster_id: ClusterId = failure.cluster_id
+                .ok_or_else(|| ErrorBuilder::new("Field 'cluster_id' not set"))?
+                .try_into()?;
+            let cluster_name: ClusterName = failure.cluster_name
+                .ok_or_else(|| ErrorBuilder::new("Field 'cluster_name' not set"))?
+                .try_into()?;
+            let actual_state: ClusterState = failure.actual_state
+                .ok_or_else(|| ErrorBuilder::new("Field 'actual_state' not set"))?
+                .try_into()?;
+            let required_states = failure.required_states
+                .try_into()?;
+            Ok(StoreClusterDeploymentError::IllegalClusterState { cluster_id, cluster_name, actual_state, required_states })
+        }
+    }
+
+    impl TryFrom<StoreClusterDeploymentFailureInternal> for StoreClusterDeploymentError {
+        type Error = ConversionError;
+        fn try_from(failure: StoreClusterDeploymentFailureInternal) -> Result<Self, Self::Error> {
+            type ErrorBuilder = ConversionErrorBuilder<StoreClusterDeploymentFailureInternal, StoreClusterDeploymentError>;
+            let cluster_id: ClusterId = failure.cluster_id
+                .ok_or_else(|| ErrorBuilder::new("Field 'cluster_id' not set"))?
+                .try_into()?;
+            let cluster_name: ClusterName = failure.cluster_name
+                .ok_or_else(|| ErrorBuilder::new("Field 'cluster_name' not set"))?
+                .try_into()?;
+            Ok(StoreClusterDeploymentError::Internal { cluster_id, cluster_name, cause: failure.cause })
+        }
+    }
+
+    impl From<DeleteClusterDeploymentError> for DeleteClusterDeploymentFailure {
+        fn from(error: DeleteClusterDeploymentError) -> Self {
+            let proto_error = match error {
+                DeleteClusterDeploymentError::ClusterDeploymentNotFound { cluster_id } => {
+                    delete_cluster_deployment_failure::Error::ClusterDeploymentNotFound(DeleteClusterDeploymentFailureClusterDeploymentNotFound {
+                        cluster_id: Some(cluster_id.into())
+                    })
+                }
+                DeleteClusterDeploymentError::IllegalClusterState { cluster_id, cluster_name, actual_state, required_states } => {
+                    delete_cluster_deployment_failure::Error::IllegalClusterState(DeleteClusterDeploymentFailureIllegalClusterState {
+                        cluster_id: Some(cluster_id.into()),
+                        cluster_name: Some(cluster_name.into()),
+                        actual_state: Some(actual_state.into()),
+                        required_states: required_states.into(),
+                    })
+                }
+                DeleteClusterDeploymentError::Internal { cluster_id, cluster_name, cause } => {
+                    delete_cluster_deployment_failure::Error::Internal(DeleteClusterDeploymentFailureInternal {
+                        cluster_id: Some(cluster_id.into()),
+                        cluster_name: Some(cluster_name.into()),
+                        cause
+                    })
+                }
+            };
+            DeleteClusterDeploymentFailure {
+                error: Some(proto_error)
+            }
+        }
+    }
+
+    impl TryFrom<DeleteClusterDeploymentFailure> for DeleteClusterDeploymentError {
+        type Error = ConversionError;
+        fn try_from(failure: DeleteClusterDeploymentFailure) -> Result<Self, Self::Error> {
+            type ErrorBuilder = ConversionErrorBuilder<DeleteClusterDeploymentFailure, DeleteClusterDeploymentError>;
+            let error = failure.error
+                .ok_or_else(|| ErrorBuilder::new("Field 'error' not set"))?;
+            let error = match error {
+                delete_cluster_deployment_failure::Error::ClusterDeploymentNotFound(error) => {
+                    error.try_into()?
+                }
+                delete_cluster_deployment_failure::Error::IllegalClusterState(error) => {
+                    error.try_into()?
+                }
+                delete_cluster_deployment_failure::Error::Internal(error) => {
+                    error.try_into()?
+                }
+            };
+            Ok(error)
+        }
+    }
+
+    impl TryFrom<DeleteClusterDeploymentFailureClusterDeploymentNotFound> for DeleteClusterDeploymentError {
+        type Error = ConversionError;
+        fn try_from(failure: DeleteClusterDeploymentFailureClusterDeploymentNotFound) -> Result<Self, Self::Error> {
+            type ErrorBuilder = ConversionErrorBuilder<DeleteClusterDeploymentFailureClusterDeploymentNotFound, DeleteClusterDeploymentError>;
+            let cluster_id: ClusterId = failure.cluster_id
+                .ok_or_else(|| ErrorBuilder::new("Field 'cluster_id' not set"))?
+                .try_into()?;
+            Ok(DeleteClusterDeploymentError::ClusterDeploymentNotFound { cluster_id })
+        }
+    }
+
+    impl TryFrom<DeleteClusterDeploymentFailureIllegalClusterState> for DeleteClusterDeploymentError {
+        type Error = ConversionError;
+        fn try_from(failure: DeleteClusterDeploymentFailureIllegalClusterState) -> Result<Self, Self::Error> {
+            type ErrorBuilder = ConversionErrorBuilder<DeleteClusterDeploymentFailureIllegalClusterState, DeleteClusterDeploymentError>;
+            let cluster_id: ClusterId = failure.cluster_id
+                .ok_or_else(|| ErrorBuilder::new("Field 'cluster_id' not set"))?
+                .try_into()?;
+            let cluster_name: ClusterName = failure.cluster_name
+                .ok_or_else(|| ErrorBuilder::new("Field 'cluster_name' not set"))?
+                .try_into()?;
+            let actual_state: ClusterState = failure.actual_state
+                .ok_or_else(|| ErrorBuilder::new("Field 'actual_state' not set"))?
+                .try_into()?;
+            let required_states = failure.required_states
+                .try_into()?;
+            Ok(DeleteClusterDeploymentError::IllegalClusterState { cluster_id, cluster_name, actual_state, required_states })
+        }
+    }
+
+    impl TryFrom<DeleteClusterDeploymentFailureInternal> for DeleteClusterDeploymentError {
+        type Error = ConversionError;
+        fn try_from(failure: DeleteClusterDeploymentFailureInternal) -> Result<Self, Self::Error> {
+            type ErrorBuilder = ConversionErrorBuilder<DeleteClusterDeploymentFailureInternal, DeleteClusterDeploymentError>;
+            let cluster_id: ClusterId = failure.cluster_id
+                .ok_or_else(|| ErrorBuilder::new("Field 'cluster_id' not set"))?
+                .try_into()?;
+            let cluster_name: ClusterName = failure.cluster_name
+                .ok_or_else(|| ErrorBuilder::new("Field 'cluster_name' not set"))?
+                .try_into()?;
+            Ok(DeleteClusterDeploymentError::Internal { cluster_id, cluster_name, cause: failure.cause })
+        }
+    }
+
 }
 
 pub mod metadata_provider {

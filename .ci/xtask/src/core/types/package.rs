@@ -1,7 +1,7 @@
-use clap::builder::PossibleValue;
-use strum::IntoEnumIterator;
+use std::fmt::{Display, Formatter};
 
-#[derive(Clone, Debug, strum::EnumIter)]
+/// Package used somewhere in the build process.
+#[derive(Clone, Copy, Debug, strum::EnumIter)]
 pub enum Package {
     Carl,
     CarlApi,
@@ -34,18 +34,10 @@ impl Package {
     }
 }
 
-impl std::fmt::Display for Package {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Display for Package {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.ident())
     }
 }
 
 
-impl clap::ValueEnum for Package {
-    fn value_variants<'a>() -> &'a [Package] {
-        Box::leak(Self::iter().collect::<Vec<Package>>().into())
-    }
-    fn to_possible_value(&self) -> Option<PossibleValue> {
-        Some(PossibleValue::new(self.ident()))
-    }
-}
