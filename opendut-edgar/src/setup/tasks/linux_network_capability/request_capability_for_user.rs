@@ -1,4 +1,4 @@
-use std::fs;
+use std::{env, fs};
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -7,6 +7,7 @@ use anyhow::{Context, Result};
 use crate::setup::constants::USER_NAME;
 use crate::setup::task::{Success, Task, TaskFulfilled};
 use crate::setup::util;
+use crate::setup::util::EvaluateRequiringSuccess;
 
 fn capability_file() -> PathBuf {
     PathBuf::from("/etc/security/capability.conf")
@@ -20,18 +21,24 @@ impl Task for RequestCapabilityForUser {
     }
     fn check_fulfilled(&self) -> Result<TaskFulfilled> {
         let capability_file = capability_file();
+        let is_root = env::var("OPENDUT_EDGAR_SERVICE_USER")
+            .map(|user| "root" == user)
+            .unwrap_or(false);
+
+        if is_root {
+            return Ok(TaskFulfilled::Unchecked)
+        }
 
         if capability_file.exists() {
             let file_content = fs::read_to_string(&capability_file)
                 .context(format!("Failed to read content of PAM file '{}'.", capability_file.display()))?;
             if file_content.contains(LINE_TO_ADD) {
 
-                let mut command = Command::new("su");
-                let command = command
+                Command::new("su")
                     .arg(USER_NAME)
                     .arg("-c")
-                    .arg("/sbin/capsh --has-i=cap_net_admin");
-                let _ = util::evaluate_requiring_success(command)?;
+                    .arg("/sbin/capsh --has-i=cap_net_admin")
+                    .evaluate_requiring_success()?;
 
                 return Ok(TaskFulfilled::Yes)
             }

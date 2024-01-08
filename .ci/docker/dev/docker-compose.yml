@@ -23,23 +23,24 @@ services:
       # cleo
       - OPENDUT_CLEO_NETWORK_CARL_HOST=carl
       - OPENDUT_CLEO_NETWORK_CARL_PORT=443
+      - OPENDUT_CLEO_NETWORK_TLS_DOMAIN_NAME_OVERRIDE=carl  # default developer certificate is only valid for localhost
       # CA/hosts
       - OPENDUT_CUSTOM_CA1
       - OPENDUT_CUSTOM_CA2
       - OPENDUT_HOSTS
+      # Rust backtrace
+      - RUST_BACKTRACE=1
 
     command: sleep infinity
     user: $DOCKER_USER # ${UID}:${GID}
     volumes:
       - ../../../:$OPENDUT_REPO_ROOT
       - /var/run/docker.sock:/var/run/docker.sock
-#      - /usr/bin/docker:/usr/bin/docker
+      - /usr/bin/docker:/usr/bin/docker
 
       - $HOME/opendut_dev/:/opendut_dev/
       - $HOME/.cargo/:/home/$PUSER/.cargo/
       - $HOME/.rustup/:/home/$PUSER/.rustup/
-      - $HOME/.cache/rust-script/:/home/$PUSER/.cache/rust-script/
-      - $HOME/.cache/cargo-make//:/home/$PUSER/.cache/cargo-make/
 
     networks:
       - opendutnet

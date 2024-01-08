@@ -4,7 +4,7 @@ use anyhow::Result;
 
 use crate::setup::constants;
 use crate::setup::task::{Success, Task, TaskFulfilled};
-use crate::setup::util::evaluate_requiring_success;
+use crate::setup::util::EvaluateRequiringSuccess;
 
 pub struct RequestCapabilityForExecutable;
 impl Task for RequestCapabilityForExecutable {
@@ -12,11 +12,9 @@ impl Task for RequestCapabilityForExecutable {
         String::from("Linux Network Capability - Request for Executable")
     }
     fn check_fulfilled(&self) -> Result<TaskFulfilled> {
-        let mut command = Command::new("getcap");
-        let command = command
-            .arg(constants::executable_install_path()?);
-
-        let output = evaluate_requiring_success(command)?;
+        let output = Command::new("getcap")
+            .arg(constants::executable_install_path()?)
+            .evaluate_requiring_success()?;
 
         if output.stdout.is_empty() {
             Ok(TaskFulfilled::No)
@@ -25,12 +23,11 @@ impl Task for RequestCapabilityForExecutable {
         }
     }
     fn execute(&self) -> Result<Success> {
-        let mut command = Command::new("setcap");
-        let command = command
+        let _ = Command::new("setcap")
             .arg("CAP_NET_ADMIN=ei") //"effective" and "inheritable"
-            .arg(constants::executable_install_path()?);
+            .arg(constants::executable_install_path()?)
+            .evaluate_requiring_success()?;
 
-        let _ = evaluate_requiring_success(command)?;
         Ok(Success::default())
     }
 }

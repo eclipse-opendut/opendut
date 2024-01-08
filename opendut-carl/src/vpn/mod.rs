@@ -1,10 +1,12 @@
+use std::str::FromStr;
 use std::sync::Arc;
 
 use anyhow::bail;
 use config::Config;
-use serde::{Deserialize, Serialize};
+use serde::{de, Deserialize, Deserializer, Serialize};
 use serde::de::IntoDeserializer;
 use url::Url;
+use opendut_types::vpn::HttpsOnly;
 
 use opendut_vpn_netbird::NetbirdToken;
 use opendut_vpn::VpnManagementClient;
@@ -25,8 +27,8 @@ pub fn create(settings: &Config) -> anyhow::Result<Vpn> {
             Some(VpnKind::Netbird) => {
                 let netbird_config = settings.get::<VpnNetbirdConfig>("vpn.netbird")?;
 
-                match netbird_config.base_url {
-                    None => bail!("No configuration found for: vpn.netbird.base-url"),
+                match netbird_config.url {
+                    None => bail!("No configuration found for: vpn.netbird.base.url"),
                     Some(base_url) => {
                         match netbird_config.auth.secret {
                             None => bail!("No configuration found for: vpn.netbird.auth.secret"),
@@ -41,6 +43,7 @@ pub fn create(settings: &Config) -> anyhow::Result<Vpn> {
                                 let vpn_client = opendut_vpn_netbird::Client::create(
                                     base_url,
                                     token,
+                                    netbird_config.https.only,
                                 )?;
 
                                 Ok(Vpn::Enabled { vpn_client: Arc::new(vpn_client) })
@@ -80,12 +83,30 @@ enum VpnKind {
     Netbird,
 }
 
+fn deserialize_https_only_from_str<'de, D>(deserializer: D) -> Result<HttpsOnly, D::Error>
+    where D: Deserializer<'de>
+{
+    let s = String::deserialize(deserializer)?;
+    let result = bool::from_str(&s).map_err(de::Error::custom)?;
+    match result {
+        true => Ok(HttpsOnly::True),
+        false => Ok(HttpsOnly::False),
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all="kebab-case")]
 struct VpnNetbirdConfig {
     #[serde(deserialize_with = "empty_string_as_none")]
-    base_url: Option<Url>,
+    url: Option<Url>,
+    https: Https,
     auth: AuthConfig,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Https {
+    #[serde(default = "HttpsOnly::default", deserialize_with = "deserialize_https_only_from_str")]
+    only: HttpsOnly
 }
 
 #[derive(Debug, Serialize, Deserialize)]

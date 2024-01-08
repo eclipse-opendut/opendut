@@ -10,23 +10,28 @@ use sha2::{Digest, Sha256};
 
 use crate::setup::constants;
 
-pub fn evaluate_requiring_success(command: &mut Command) -> anyhow::Result<Output> {
-    let output = command.output()?;
+pub(crate) trait EvaluateRequiringSuccess {
+    fn evaluate_requiring_success(&mut self) -> anyhow::Result<Output>;
+}
+impl EvaluateRequiringSuccess for Command {
+    fn evaluate_requiring_success(&mut self) -> anyhow::Result<Output> {
+        let output = self.output()?;
 
-    if !output.status.success() {
-        let mut error = format!("Error while running `{command:?}`:\n");
-        if let Some(status) = &output.status.code() {
-            error += format!("  Status Code: {}\n", status).as_ref();
+        if !output.status.success() {
+            let mut error = format!("Error while running `{self:?}`:\n");
+            if let Some(status) = &output.status.code() {
+                error += format!("  Status Code: {}\n", status).as_ref();
+            }
+            if !output.stdout.is_empty() {
+                error += format!("  Stdout: {}\n", String::from_utf8(output.stdout.clone())?).as_str();
+            }
+            if !output.stderr.is_empty() {
+                error += format!("  Stderr: {}\n", String::from_utf8(output.stderr.clone())?).as_str();
+            }
+            bail!(error)
         }
-        if !output.stdout.is_empty() {
-            error += format!("  Stdout: {}\n", String::from_utf8(output.stdout.clone())?).as_str();
-        }
-        if !output.stderr.is_empty() {
-            error += format!("  Stderr: {}\n", String::from_utf8(output.stderr.clone())?).as_str();
-        }
-        bail!(error)
+        Ok(output)
     }
-    Ok(output)
 }
 
 pub fn chown(path: impl AsRef<Path>) -> anyhow::Result<()> {
@@ -45,8 +50,13 @@ pub fn prepend_line(line: impl AsRef<str>, file: impl AsRef<Path>) -> anyhow::Re
     let line = line.as_ref();
     let file = file.as_ref();
 
-    let file_content = fs::read_to_string(&file)
-        .context(format!("Failed to read content of file '{}' while prepending line '{line}'.", file.display()))?;
+    let file_content = if file.exists() {
+        fs::read_to_string(&file)
+            .context(format!("Failed to read content of file '{}' while prepending line '{line}'.", file.display()))?
+    } else {
+        fs::create_dir_all(file.parent().unwrap())?;
+        String::new()
+    };
 
     let new_file_content = format!("{line}\n{file_content}");
 
@@ -65,4 +75,46 @@ fn sha256_digest(mut reader: impl Read) -> Result<Vec<u8>, io::Error> {
     let _ = io::copy(&mut reader, &mut hasher)?;
     let hash = hasher.finalize();
     Ok(hash.to_vec())
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use assert_fs::prelude::*;
+    use assert_fs::TempDir;
+
+    #[test]
+    fn should_prepend_line() -> anyhow::Result<()> {
+        let temp = TempDir::new()?;
+
+        let test_file = temp.child("test_file");
+        let previous_content = "bbb";
+        test_file.write_str(previous_content)?;
+
+        let line_to_prepend = "aaa";
+
+        prepend_line(line_to_prepend, &test_file)?;
+
+        let result = fs::read_to_string(test_file)?;
+        assert_eq!(result, format!("{line_to_prepend}\n{previous_content}"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_prepend_line_when_file_not_exists() -> anyhow::Result<()> {
+        let temp = TempDir::new()?;
+
+        let test_file = temp.child("test_file");
+
+        let line_to_prepend = "aaa";
+
+        prepend_line(line_to_prepend, &test_file)?;
+
+        let result = fs::read_to_string(test_file)?;
+        assert_eq!(result, format!("{line_to_prepend}\n"));
+
+        Ok(())
+    }
 }

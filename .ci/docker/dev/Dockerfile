@@ -25,10 +25,12 @@ ARG OPENDUT_REPO_ROOT
 RUN apt update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata ca-certificates \
         build-essential \
         binutils-arm-linux-gnueabihf \
+        lib32z1-dev \
         gcc-arm-linux-gnueabihf \
         curl \
         git \
         sudo \
+        uuid \
         iproute2 bind9-dnsutils iputils-ping curl iptables wireguard-tools jq tcpdump
 
 # Get Rust

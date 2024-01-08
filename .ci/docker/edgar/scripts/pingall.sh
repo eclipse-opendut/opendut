@@ -8,7 +8,7 @@ echo "first ping may take multiple seconds"
 IPS=$(netbird status --json | jq -r '.peers.details[].netbirdIp')
 for ip in $IPS
 do
-  ping -c1 "$ip"
+  fping -c1 -t500 "$ip"
 done
 
 
@@ -20,7 +20,7 @@ echo "Running ping test"
 IPS=$(netbird status --json | jq -r '.peers.details[].netbirdIp')
 for ip in $IPS
 do
-  ping -c1 "$ip"
+  fping -c1 -t500 "$ip"
 done
 
 echo "SUCCESS"

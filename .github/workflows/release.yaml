@@ -1,0 +1,79 @@
+name: release
+on:
+  workflow_dispatch:  # manual trigger
+  push:
+    tags:
+    - v[0-9]+.[0-9]+.[0-9]+
+    - v[0-9]+.[0-9]+.[0-9]+-*
+    - nightly
+
+# Required GitHub repository variables:
+# https://docs.github.com/en/actions/using-jobs/choosing-the-runner-for-a-job
+# OPENDUT_GH_RUNNER_SMALL: runner labels for small jobs
+# OPENDUT_GH_RUNNER_LARGE: runner labels for large jobs
+
+jobs:
+  legal:
+    uses: ./.github/workflows/job-legal.yaml
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_SMALL }}"
+
+  generate-sbom:
+    uses: ./.github/workflows/job-sbom.yaml
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_SMALL }}"
+
+  test:
+    uses: ./.github/workflows/job-test.yaml
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+
+  build-carl:
+    uses: ./.github/workflows/job-build-carl.yaml
+    needs: [ test ]
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+
+  build-cleo:
+    uses: ./.github/workflows/job-build-cleo.yaml
+    needs: [ test ]
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+
+  build-edgar:
+    uses: ./.github/workflows/job-build-edgar.yaml
+    needs: [ test ]
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+
+  build-lea:
+    uses: ./.github/workflows/job-build-lea.yaml
+    needs: [ test ]
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+
+  bundle-edgar:
+    needs: [ legal, build-edgar ]
+    uses: ./.github/workflows/job-bundle-edgar.yaml
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+
+  bundle-cleo:
+    needs: [ legal, build-cleo ]
+    uses: ./.github/workflows/job-bundle-cleo.yaml
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+
+  bundle-carl:
+    needs: [ legal, build-carl, build-lea ]
+    uses: ./.github/workflows/job-bundle-carl.yaml
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+
+  publish-release:
+    needs: [ bundle-carl, bundle-cleo, bundle-edgar ]
+    uses: ./.github/workflows/job-publish-release.yaml
+    permissions:
+      contents: write
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_SMALL }}"

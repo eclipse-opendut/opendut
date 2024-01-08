@@ -14,37 +14,42 @@ pub struct AppGlobals {
     pub client: CarlClient,
 }
 
-pub fn use_app_globals() -> Resource<(), AppGlobals> {
-    use_context::<Resource<(), AppGlobals>>()
+pub fn use_app_globals() -> Resource<(), Result<AppGlobals, AppGlobalsError>> {
+    use_context::<Resource<(), Result<AppGlobals, AppGlobalsError>>>()
         .expect("The AppGlobals should be provided in the context.")
 }
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct AppConfig {
-    carl_url: Url
+    pub carl_url: Url
+}
+
+#[derive(thiserror::Error, Clone, Debug)]
+#[error("{message}")]
+pub struct AppGlobalsError {
+    pub message: String
 }
 
 #[component]
 pub fn App() -> impl IntoView {
 
-    let globals = create_local_resource(|| {}, |_| async move {
+    let globals: Resource<(), Result<AppGlobals, AppGlobalsError>> = create_local_resource(|| {}, |_| async move {
         let config = http::Request::get("/api/lea/config")
             .send()
             .await
-            .expect("Should be possible to fetch lea's config")
+            .map_err(|_| AppGlobalsError { message: String::from("Could not fetch configuration!")})?
             .json::<AppConfig>()
-            .await
-            .expect("Should be possible to parse lea's config");
+            .await.map_err(|_| AppGlobalsError { message: String::from("Could not parse configuration!")})?;
 
         log::info!("Configuration: {config:?}");
 
         let client = CarlClient::create(Clone::clone(&config.carl_url))
             .expect("Failed to create CARL client");
 
-        AppGlobals {
+        Ok(AppGlobals {
             config,
             client
-        }
+        })
     });
 
     provide_context(globals);
@@ -62,13 +67,19 @@ pub trait ExpectGlobals {
     fn expect_client(&self) -> CarlClient;
 }
 
-impl ExpectGlobals for Resource<(), AppGlobals> {
+impl ExpectGlobals for Resource<(), Result<AppGlobals, AppGlobalsError>> {
 
     fn expect_config(&self) -> AppConfig {
-        self.get().expect("AppGlobals should be loaded to get the config").config
+        self.get()
+            .expect("AppGlobals should be loaded to get the config")
+            .expect("AppGlobals should be loaded successfully to get the config")
+            .config
     }
 
     fn expect_client(&self) -> CarlClient {
-        self.get().expect("AppGlobals should be loaded to get the client").client
+        self.get()
+            .expect("AppGlobals should be loaded to get the client")
+            .expect("AppGlobals should be loaded successfully to get the client")
+            .client
     }
 }

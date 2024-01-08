@@ -1,26 +1,30 @@
 # Getting Started
 
 ## Development Setup
-1. Install Rust toolchain: [https://www.rust-lang.org/tools/install](https://www.rust-lang.org/tools/install)
-2. Install WASM toolchain:
+Install the Rust toolchain: [https://www.rust-lang.org/tools/install](https://www.rust-lang.org/tools/install)
+
+## Starting the Applications
+* Run CARL (backend):
     ```sh
-    rustup target add wasm32-unknown-unknown
+    cargo ci carl run
     ```
-3. Install required crates:
+You can then open the UI by going to https://localhost:8080/ in your web browser.
+
+* Run EDGAR (edge software):
     ```sh
-    cargo install --force trunk mdbook mdbook-mermaid mdbook-svgbob
+    cargo ci edgar run -- service
     ```
 
-## Starting the application
-1. Run CARL:
+* Run CLEO (CLI for managing CARL):
     ```sh
-    cargo carl
-    ```
-2. Open the UI by going to https://localhost:8080/ in your web browser.
-3. Run EDGAR:
-    ```sh
-    cargo edgar service
+    cargo ci cleo run
     ```
 
 ## UI Development
-Run `cargo lea` in a separate terminal in the root directory of the repository to continuously build the newest changes.
+Run `cargo ci lea run` in a separate terminal in the root directory of the repository to continuously build the newest changes.
+
+## Rendered Documentation
+To view this documentation fully rendered, run:
+```sh
+cargo ci doc book open
+```

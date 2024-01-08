@@ -1,12 +1,11 @@
-use std::backtrace::Backtrace;
 use std::fmt::Display;
 
 use log::SetLoggerError;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("Unable to set logger: {}\n{backtrace}", source)]
-    SetLogger { #[from] source: SetLoggerError, backtrace: Backtrace },
+    #[error("Unable to set logger: {source}")]
+    SetLogger { #[from] source: SetLoggerError },
 }
 
 pub fn initialize() -> Result<(), Error> {
@@ -20,7 +19,7 @@ pub fn initialize_with_overrides(overrides: fn(&mut env_logger::Builder) -> &mut
         .format_timestamp_millis()
         .filter_level(log::LevelFilter::Info)
         .filter_module("opendut", log::LevelFilter::Trace)
-        .parse_default_env();
+        .parse_env("OPENDUT_LOG");
 
     let builder = overrides(builder);
 

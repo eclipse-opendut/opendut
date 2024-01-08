@@ -1,0 +1,13 @@
+name: Install ARM GCC
+description: Install ARM GCC
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install GCC for ARM
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+           binutils-arm-linux-gnueabihf \
+           gcc-arm-linux-gnueabihf
