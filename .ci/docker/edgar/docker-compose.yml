@@ -26,7 +26,6 @@ services:
       - OPENDUT_EDGAR_SERVICE_USER=root
       - OPENDUT_EDGAR_CLUSTER_NAME
       # dynamically provided
-      - NETBIRD_SETUP_KEY
       - NETBIRD_API_TOKEN
       - NETBIRD_MANAGEMENT_API
       - OPENDUT_CUSTOM_CA1

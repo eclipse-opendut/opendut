@@ -1,5 +1,6 @@
 use clap::{ArgAction, Parser, Subcommand};
 use dotenv::dotenv;
+use crate::docker::testenv::edgar::TestEdgarCli;
 
 use crate::project::{boolean_env_var, check_dot_env_variables, OPENDUT_THEO_DISABLE_ENV_CHECKS};
 use crate::project::make_dist::make_distribution_if_not_present;
@@ -16,7 +17,7 @@ struct Cli {
     #[command(subcommand)]
     command: Commands,
     /// Disable environment variable checks (OPENDUT_THEO_DISABLE_ENV_CHECKS=true)
-    #[clap(long, short, action=ArgAction::SetFalse)]
+    #[clap(long, short, action=ArgAction::SetTrue)]
     disable_env_checks: bool,
 }
 
@@ -29,7 +30,7 @@ enum Commands {
     #[command(about = "Stop test environment.")]
     Stop,
     #[command(about = "Run edgar cluster creation.")]
-    Edgar,
+    Edgar(TestEdgarCli),
     #[command(about = "Show docker network.")]
     Network,
     #[command(about = "Destroy test environment.")]
@@ -44,6 +45,8 @@ fn main() {
     let args = Cli::parse();
     if !args.disable_env_checks && !boolean_env_var(OPENDUT_THEO_DISABLE_ENV_CHECKS) {
         check_dot_env_variables();
+    } else {
+        println!("Skipping environment variable checks.");
     }
 
     match args.command {
@@ -68,11 +71,10 @@ fn main() {
             println!("Destroying testenv");
             docker::testenv::destroy::destroy_testenv();
         }
-        Commands::Edgar => {
-            docker::testenv::edgar::run_edgar();
-        }
+        Commands::Edgar(implementation) => implementation.default_handling(),
+
         Commands::NetbirdVersions => {
-            project::metadata::cargo_versions();
+            project::metadata::cargo_netbird_versions();
         }
     }
 }

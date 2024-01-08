@@ -22,7 +22,7 @@ services:
       - ./management.json:/etc/netbird/management.json
       - "../../../resources/development/tls/insecure-development-ca.pem:/usr/local/share/ca-certificates/insecure-development-ca.crt:ro"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://netbird-management"]
+      test: ["CMD", "/netbird-management-health.sh"]
       interval: 1m
       timeout: 10s
       retries: 10
