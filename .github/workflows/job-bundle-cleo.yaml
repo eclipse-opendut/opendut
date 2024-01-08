@@ -1,4 +1,4 @@
-name: build-cleo
+name: bundle-cleo
 on:
   workflow_call:  # allow this workflow to be called from other workflows
     inputs:
