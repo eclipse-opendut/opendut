@@ -8,18 +8,19 @@ use crate::packages::carl::distribution::copy_license_json::copy_license_json;
 const SELF_PACKAGE: Package = Package::Carl;
 
 /// Tasks available or specific for CARL
-#[derive(Debug, clap::Parser)]
+#[derive(clap::Parser)]
 #[command(alias="opendut-carl")]
 pub struct CarlCli {
     #[command(subcommand)]
     pub task: TaskCli,
 }
 
-#[derive(Debug, clap::Subcommand)]
+#[derive(clap::Subcommand)]
 pub enum TaskCli {
     Build(crate::tasks::build::BuildCli),
     Distribution(crate::tasks::distribution::DistributionCli),
     Licenses(crate::tasks::licenses::LicensesCli),
+    Run(crate::tasks::run::RunCli),
 
     #[command(hide=true)]
     DistributionCopyLicenseJson(crate::tasks::distribution::copy_license_json::DistributionCopyLicenseJsonCli),
@@ -42,9 +43,8 @@ impl CarlCli {
                     distribution::carl_distribution(target)?;
                 }
             }
-            TaskCli::Licenses(implementation) => {
-                implementation.default_handling(PackageSelection::Single(SELF_PACKAGE))?;
-            }
+            TaskCli::Licenses(cli) => cli.default_handling(PackageSelection::Single(SELF_PACKAGE))?,
+            TaskCli::Run(cli) => cli.default_handling(SELF_PACKAGE)?,
 
             TaskCli::DistributionCopyLicenseJson(implementation) => {
                 for target in implementation.target.iter() {

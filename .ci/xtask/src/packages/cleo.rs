@@ -7,18 +7,19 @@ const SELF_PACKAGE: Package = Package::Cleo;
 
 
 /// Tasks available or specific for CLEO
-#[derive(Debug, clap::Parser)]
+#[derive(clap::Parser)]
 #[command(alias="opendut-cleo")]
 pub struct CleoCli {
     #[command(subcommand)]
     pub task: TaskCli,
 }
 
-#[derive(Debug, clap::Subcommand)]
+#[derive(clap::Subcommand)]
 pub enum TaskCli {
     Build(crate::tasks::build::BuildCli),
     Distribution(crate::tasks::distribution::DistributionCli),
     Licenses(crate::tasks::licenses::LicensesCli),
+    Run(crate::tasks::run::RunCli),
 
     #[command(hide=true)]
     DistributionCopyLicenseJson(crate::tasks::distribution::copy_license_json::DistributionCopyLicenseJsonCli),
@@ -41,16 +42,11 @@ impl CleoCli {
                     distribution::cleo_distribution(target)?;
                 }
             }
-            TaskCli::Licenses(implementation) => {
-                implementation.default_handling(PackageSelection::Single(SELF_PACKAGE))?;
-            }
+            TaskCli::Licenses(cli) => cli.default_handling(PackageSelection::Single(SELF_PACKAGE))?,
+            TaskCli::Run(cli) => cli.default_handling(SELF_PACKAGE)?,
 
-            TaskCli::DistributionCopyLicenseJson(implementation) => {
-                implementation.default_handling(SELF_PACKAGE)?;
-            }
-            TaskCli::DistributionBundleFiles(implementation) => {
-                implementation.default_handling(SELF_PACKAGE)?;
-            }
+            TaskCli::DistributionCopyLicenseJson(cli) => cli.default_handling(SELF_PACKAGE)?,
+            TaskCli::DistributionBundleFiles(cli) => cli.default_handling(SELF_PACKAGE)?,
             TaskCli::DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli { target }) => {
                 for target in target.iter() {
                     distribution::validate::validate_contents(target)?;
