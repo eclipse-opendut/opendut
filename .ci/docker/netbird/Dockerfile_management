@@ -5,6 +5,7 @@ RUN apt update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install
 
 COPY ./.ci/docker/netbird/netbird-api-functions.sh /netbird-api-functions.sh
 COPY ./.ci/docker/netbird/management_init.sh /management_init.sh
+COPY ./.ci/docker/netbird/netbird-management-health.sh /netbird-management-health.sh
 
 ENTRYPOINT [ "/management_init.sh" ]
 #HEALTHCHECK --interval=15s --timeout=3s --start-period=60s CMD curl -sf "$KEYCLOAK_URL" --output /dev/null

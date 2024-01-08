@@ -28,14 +28,14 @@ impl std::fmt::Display for NetbirdApplicationNames {
 
 
 #[derive(Debug)]
-pub struct CargoMetadataVersions {
+pub struct NetbirdMetadata {
     pub netbird_client_version: String,
     pub netbird_signal_version: String,
     pub netbird_management_version: String,
     pub netbird_dashboard_version: String,
 }
 
-pub fn cargo_versions() -> CargoMetadataVersions {
+pub fn cargo_netbird_versions() -> NetbirdMetadata {
     let cargo_toml_path = Path::new(&project_root_dir()).join("Cargo.toml");
     let metadata = cargo_metadata::MetadataCommand::new().manifest_path(cargo_toml_path).exec().expect("Failed to gather Cargo metadata.");
 
@@ -44,12 +44,11 @@ pub fn cargo_versions() -> CargoMetadataVersions {
             .unwrap_or_else(|| panic!("No version information for dependency '{}' in root Cargo.toml.", package_name)).into()
     }
 
-    let versions = CargoMetadataVersions {
+    let versions = NetbirdMetadata {
         netbird_client_version: get_version(&metadata, NetbirdApplicationNames::NetbirdClient.as_str()),
         netbird_signal_version: get_version(&metadata, NetbirdApplicationNames::NetbirdSignal.as_str()),
         netbird_management_version: get_version(&metadata, NetbirdApplicationNames::NetbirdManagement.as_str()),
         netbird_dashboard_version: get_version(&metadata, NetbirdApplicationNames::NetbirdDashboard.as_str()),
     };
-    println!("versions={:?}", versions);
     versions
 }
