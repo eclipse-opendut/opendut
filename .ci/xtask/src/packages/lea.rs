@@ -10,19 +10,19 @@ use crate::util::RunRequiringSuccess;
 const PACKAGE: Package = Package::Lea;
 
 /// Tasks available or specific for LEA
-#[derive(Debug, clap::Parser)]
+#[derive(clap::Parser)]
 #[command(alias="opendut-lea")]
 pub struct LeaCli {
     #[command(subcommand)]
     pub task: TaskCli,
 }
 
-#[derive(Debug, clap::Subcommand)]
+#[derive(clap::Subcommand)]
 pub enum TaskCli {
     /// Perform a release build, without bundling a distribution.
     Build,
-    /// Start a development server for LEA which watches for file changes.
-    Watch,
+    /// Start a development server which watches for file changes.
+    Run(crate::tasks::run::RunCli),
     Licenses(crate::tasks::licenses::LicensesCli),
 }
 
@@ -30,10 +30,8 @@ impl LeaCli {
     pub fn default_handling(self) -> crate::Result {
         match self.task {
             TaskCli::Build => build::build_release()?,
-            TaskCli::Watch => watch::watch()?,
-            TaskCli::Licenses(implementation) => {
-                implementation.default_handling(PackageSelection::Single(PACKAGE))?;
-            }
+            TaskCli::Run(cli) => run::run(cli.pass_through)?,
+            TaskCli::Licenses(cli) => cli.default_handling(PackageSelection::Single(PACKAGE))?,
         };
         Ok(())
     }
@@ -66,15 +64,16 @@ pub mod build {
     }
 }
 
-pub mod watch {
+pub mod run {
     use super::*;
 
     #[tracing::instrument]
-    pub fn watch() -> crate::Result {
+    pub fn run(pass_through: Vec<String>) -> crate::Result {
         install_requirements()?;
 
         Command::new("trunk")
             .arg("watch")
+            .args(pass_through)
             .current_dir(self_dir())
             .run_requiring_success();
         Ok(())

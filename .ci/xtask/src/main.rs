@@ -23,8 +23,8 @@ struct RootCli {
 enum TaskCli {
     Build(tasks::build::BuildCli),
     Distribution(tasks::distribution::DistributionCli),
-    Licenses(tasks::licenses::LicensesCli),
     Doc(tasks::doc::DocCli),
+    Licenses(tasks::licenses::LicensesCli),
 
     Carl(packages::carl::CarlCli),
     Cleo(packages::cleo::CleoCli),

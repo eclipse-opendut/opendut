@@ -3,8 +3,4 @@ linker = "arm-linux-gnueabihf-gcc"
 
 [alias]
 ci = "run --package opendut-ci --"
-carl = "run --package opendut-carl --"
-cleo = "run --package opendut-cleo --"
 theo = "run --package opendut-theo --"
-edgar = "run --package opendut-edgar --"
-lea = "ci lea watch"
