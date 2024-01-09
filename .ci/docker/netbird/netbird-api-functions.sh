@@ -53,14 +53,14 @@ keycloak_client_in_realm_netbird_is_present() {
   if [ -n "$CLIENTS" ]; then
     KEYCLOAK_CLIENT=$(echo "$CLIENTS" | jq -r ".[] | select(.clientId==\"$CLIENT_ID\")" 2>/dev/null)
     if [ -z "$KEYCLOAK_CLIENT" ]; then
-      echo "Keycloak client $CLIENT_ID is not present"
+      echo "Keycloak client \'$CLIENT_ID\' is not present"
       return 1
     else
-      echo "Keycloak client $CLIENT_ID is present"
+      echo "Keycloak client \'$CLIENT_ID\' is present"
       return 0
     fi
   else
-    echo "Keycloak client $CLIENT_ID is not present"
+    echo "Keycloak client \'$CLIENT_ID\' is not present"
     return 1
   fi
 }

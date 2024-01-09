@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 use std::process::Command;
-use crate::core::docker::{check_docker_compose_is_installed, docker_compose_network_create, docker_compose_up, DockerCommand, DockerCoreServices};
-use crate::core::project::ProjectRootDir;
 
+use crate::core::docker::{check_docker_compose_is_installed, docker_compose_network_create, docker_compose_up, DockerCommand, DockerCoreServices, wait_for_netbird_api_key};
+use crate::core::project::ProjectRootDir;
 
 fn start_carl_in_docker() {
     let mut command = Command::docker();
@@ -28,8 +28,10 @@ pub(crate) fn start_testenv() {
     // start services
     docker_compose_up(DockerCoreServices::Firefox.as_str());
     docker_compose_up(DockerCoreServices::Keycloak.as_str());
-    start_carl_in_docker();
     docker_compose_up(DockerCoreServices::Netbird.as_str());
+    wait_for_netbird_api_key();
+    start_carl_in_docker();
+
 
     // TODO: start edgar requires additional steps to run in managed mode
     println!("Go to OpenDuT Browser at http://localhost:3000/")
