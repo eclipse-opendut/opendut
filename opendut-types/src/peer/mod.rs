@@ -1,5 +1,6 @@
 use std::fmt;
 use std::io::{Read, Write};
+use std::ops::Not;
 
 use base64::Engine;
 use base64::prelude::BASE64_URL_SAFE;
@@ -118,15 +119,11 @@ impl TryFrom<String> for PeerName {
                 expected: Self::MAX_LENGTH,
                 actual: length,
             })
-        } else if !crate::util::valid_start_and_end_of_a_name(&value) {
-            Err(IllegalPeerName::InvalidCharacter {
-                value
-            })
-        }
-        else if value.chars().any(|c| !crate::util::valid_characters_in_name(&c)) { // TODO: Relax this restriction.
-            Err(IllegalPeerName::InvalidCharacter {
-                value
-            })
+        } else if crate::util::valid_start_and_end_of_a_name(&value).not()
+            || value.chars().any(|c| crate::util::valid_characters_in_name(&c).not()) {
+                Err(IllegalPeerName::InvalidCharacter {
+                    value
+                })
         }
         else {
             Ok(Self(value))
