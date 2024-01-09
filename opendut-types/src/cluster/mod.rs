@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::fmt;
+use std::ops::Not;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::peer::PeerId;
@@ -105,15 +106,11 @@ impl TryFrom<String> for ClusterName {
                 actual: length,
             })
         }
-        else if ! crate::util::valid_start_and_end_of_a_name( & value) {
-            Err(IllegalClusterName::InvalidCharacter {
-                value
-            })
-        }
-        else if value.chars().any( | c| ! crate::util::valid_characters_in_name( & c)) { // TODO: Relax this restriction.
-            Err(IllegalClusterName::InvalidCharacter {
-                value
-            })
+        else if crate::util::valid_start_and_end_of_a_name( & value).not()
+            || value.chars().any(|c| crate::util::valid_characters_in_name(&c).not()) {
+                Err(IllegalClusterName::InvalidCharacter {
+                    value
+                })
         }
         else {
             Ok(Self(value))
