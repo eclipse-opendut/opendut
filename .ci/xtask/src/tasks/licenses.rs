@@ -46,7 +46,7 @@ impl LicensesCli {
     }
 }
 
-mod check {
+pub mod check {
     use crate::core::dependency::Crate;
     use super::*;
 
