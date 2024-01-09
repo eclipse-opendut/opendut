@@ -1,8 +1,10 @@
 use std::fs;
 use std::ops::Index;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::Command;
-use crate::project::{project_root_dir, TARGET_TRIPLE};
+
+use crate::core::project::ProjectRootDir;
+use crate::core::TARGET_TRIPLE;
 
 fn make_distribution_with_cargo() {
     println!("Create distribution with cargo: 'cargo ci distribution'");
@@ -52,8 +54,7 @@ fn check_if_distribution_tar_exists_of_each_component(expected_dist_files: &Vec<
 
 
 pub(crate) fn make_distribution_if_not_present() {
-    let root_dir = project_root_dir();
-    let dist_directory_path = Path::new(root_dir.as_str())
+    let dist_directory_path = PathBuf::project_path_buf()
         .join(format!("target/ci/distribution/{}", TARGET_TRIPLE));
     let expected_dist_files = vec!(
         //"opendut-cleo-linux-x86_64",

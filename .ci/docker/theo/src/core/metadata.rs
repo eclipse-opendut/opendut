@@ -1,5 +1,6 @@
-use std::path::Path;
-use crate::project::project_root_dir;
+use std::path::PathBuf;
+
+use crate::core::project::ProjectRootDir;
 
 pub enum NetbirdApplicationNames {
     NetbirdClient,
@@ -36,7 +37,7 @@ pub struct NetbirdMetadata {
 }
 
 pub fn cargo_netbird_versions() -> NetbirdMetadata {
-    let cargo_toml_path = Path::new(&project_root_dir()).join("Cargo.toml");
+    let cargo_toml_path = PathBuf::project_path_buf().join("Cargo.toml");
     let metadata = cargo_metadata::MetadataCommand::new().manifest_path(cargo_toml_path).exec().expect("Failed to gather Cargo metadata.");
 
     fn get_version(metadata: &cargo_metadata::Metadata, package_name: &str) -> String {

@@ -3,7 +3,8 @@ use std::net::Ipv4Addr;
 use std::process::Command;
 use phf::phf_map;
 use serde::{Deserialize, Deserializer};
-use crate::util::consume_output;
+use crate::core::docker::DockerCommand;
+use crate::core::util::consume_output;
 
 fn ip_address_from_str<'de, D>(deserializer: D) -> Result<Ipv4Addr, D::Error>
     where D: Deserializer<'de>
@@ -59,16 +60,15 @@ static CONTAINER_NAME_MAP: phf::Map<&'static str, DockerHostnames> = phf_map! {
 
 pub(crate) fn docker_inspect_network() {
     println!("# BEGIN OpenDuT docker network 'docker network inspect opendut_network'");
-    let output = Command::new("docker")
+    let output = Command::docker()
         .arg("network")
         .arg("inspect")
         .arg("opendut_network")
         .arg("--format")
         .arg("'{{json .Containers}}'")
-        .output()
-        .expect("Failed to inspect docker network.");
+        .output();
 
-    let stdout = consume_output(output).trim_matches('\'').to_string();
+    let stdout = consume_output(output).expect("Failed to parse docker network output.").trim_matches('\'').to_string();
     let opendut_container_address_map: HashMap<String, ContainerAddress> =
         serde_json::from_str(&stdout).expect("JSON was not well-formatted");
     let mut sorted_addresses: Vec<(&String, &ContainerAddress)> = opendut_container_address_map.iter().collect();
