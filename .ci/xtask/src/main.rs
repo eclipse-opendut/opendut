@@ -22,6 +22,7 @@ struct RootCli {
 #[derive(clap::Subcommand)]
 enum TaskCli {
     Build(tasks::build::BuildCli),
+    Check(tasks::check::CheckCli),
     Distribution(tasks::distribution::DistributionCli),
     Doc(tasks::doc::DocCli),
     Licenses(tasks::licenses::LicensesCli),
@@ -46,6 +47,9 @@ fn main() -> crate::Result {
                 packages::edgar::build::build_release(target)?;
                 packages::lea::build::build_release()?;
             }
+        }
+        TaskCli::Check(implementation) => {
+            implementation.default_handling()?
         }
         TaskCli::Distribution(tasks::distribution::DistributionCli { target }) => {
             for target in target.iter() {
