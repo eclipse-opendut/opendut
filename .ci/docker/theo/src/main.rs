@@ -5,7 +5,7 @@ use dotenvy::dotenv;
 use crate::commands::edgar::TestEdgarCli;
 use crate::core::dist::make_distribution_if_not_present;
 use crate::core::OPENDUT_THEO_DISABLE_ENV_CHECKS;
-use crate::core::project::{boolean_env_var, check_dot_env_variables, ProjectRootDir};
+use crate::core::project::{boolean_env_var, check_dot_env_variables, check_user_provided_dot_env_variables, ProjectRootDir, write_theo_dynamic_env_vars};
 
 mod core;
 mod commands;
@@ -42,10 +42,19 @@ enum Commands {
 
 
 fn main() {
-    // load environment variables from .env file
-    dotenv().expect(".env file not found");
+    write_theo_dynamic_env_vars();
     let custom_env = PathBuf::project_path_buf().join(".env-theo");
     dotenvy::from_path(custom_env).expect(".env-theo file not found");
+
+    // load environment variables from .env file
+    match dotenv().is_ok() {
+        true => {}
+        false => {
+            check_user_provided_dot_env_variables();
+            panic!("Failed to load .env file.")
+        }
+    }
+    check_user_provided_dot_env_variables();
 
     let args = Cli::parse();
     if !args.disable_env_checks && !boolean_env_var(OPENDUT_THEO_DISABLE_ENV_CHECKS) {
@@ -79,7 +88,8 @@ fn main() {
         Commands::Edgar(implementation) => implementation.default_handling(),
 
         Commands::NetbirdVersions => {
-            core::metadata::cargo_netbird_versions();
+            let metadata = core::metadata::cargo_netbird_versions();
+            println!("Versions: {:?}", metadata);
         }
     }
 }

@@ -27,6 +27,12 @@ impl std::fmt::Display for NetbirdApplicationNames {
     }
 }
 
+#[derive(Debug)]
+pub struct Metadata {
+    pub netbird: NetbirdMetadata,
+    pub carl_version: String,
+}
+
 
 #[derive(Debug)]
 pub struct NetbirdMetadata {
@@ -36,7 +42,7 @@ pub struct NetbirdMetadata {
     pub netbird_dashboard_version: String,
 }
 
-pub fn cargo_netbird_versions() -> NetbirdMetadata {
+pub fn cargo_netbird_versions() -> Metadata {
     let cargo_toml_path = PathBuf::project_path_buf().join("Cargo.toml");
     let metadata = cargo_metadata::MetadataCommand::new().manifest_path(cargo_toml_path).exec().expect("Failed to gather Cargo metadata.");
 
@@ -51,5 +57,10 @@ pub fn cargo_netbird_versions() -> NetbirdMetadata {
         netbird_management_version: get_version(&metadata, NetbirdApplicationNames::NetbirdManagement.as_str()),
         netbird_dashboard_version: get_version(&metadata, NetbirdApplicationNames::NetbirdDashboard.as_str()),
     };
-    versions
+    let carl_version = metadata.packages.iter().find(|package| package.name == "opendut-carl").unwrap().version.to_string();
+
+    Metadata {
+        netbird: versions,
+        carl_version,
+    }
 }

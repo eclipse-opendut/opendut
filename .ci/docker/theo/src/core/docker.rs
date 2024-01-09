@@ -48,6 +48,8 @@ impl DockerCommand for Command {
             .arg("-f")
             .arg(format!("./.ci/docker/{}/docker-compose.yml", compose_dir))
             .arg("--env-file")
+            .arg(".env-theo")
+            .arg("--env-file")
             .arg(".env")
     }
 
@@ -135,6 +137,34 @@ pub(crate) fn docker_compose_network_delete() {
     assert!(output.success());
 }
 
+pub(crate) fn wait_for_netbird_api_key() {
+    let timeout = std::time::Duration::from_secs(120);
+    let start = std::time::Instant::now();
+    while !check_netbird_api_key_available() {
+        if start.elapsed() > timeout {
+            panic!("Timeout while waiting for netbird api key to be available.");
+        }
+        println!("Waiting for netbird api key to be available...");
+        std::thread::sleep(std::time::Duration::from_secs(5));
+    }
+}
+
+fn check_netbird_api_key_available() -> bool {
+    let mut command = Command::docker();
+    command.add_common_args(DockerCoreServices::Netbird.as_str());
+    let command_status = command
+        .arg("run")
+        .arg("--entrypoint")
+        .arg("")
+        .arg("--rm")
+        .arg("management_init")
+        .arg("ls")
+        .arg("/management/api_key")
+        .current_dir(PathBuf::project_dir())
+        .output().expect("Failed to check if netbird api key is available");
+
+    command_status.status.code().unwrap_or(1) == 0
+}
 
 fn get_netbird_api_key() -> String {
     let mut command = Command::docker();
@@ -143,6 +173,7 @@ fn get_netbird_api_key() -> String {
         .arg("run")
         .arg("--entrypoint")
         .arg("")
+        .arg("--rm")
         .arg("management_init")
         .arg("cat")
         .arg("/management/api_key")

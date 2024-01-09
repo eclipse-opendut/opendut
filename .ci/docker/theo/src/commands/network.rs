@@ -4,6 +4,7 @@ use std::process::Command;
 use phf::phf_map;
 use serde::{Deserialize, Deserializer};
 use crate::core::docker::DockerCommand;
+use crate::core::TheoError;
 use crate::core::util::consume_output;
 
 fn ip_address_from_str<'de, D>(deserializer: D) -> Result<Ipv4Addr, D::Error>
@@ -59,7 +60,6 @@ static CONTAINER_NAME_MAP: phf::Map<&'static str, DockerHostnames> = phf_map! {
 };
 
 pub(crate) fn docker_inspect_network() {
-    println!("# BEGIN OpenDuT docker network 'docker network inspect opendut_network'");
     let output = Command::docker()
         .arg("network")
         .arg("inspect")
@@ -68,13 +68,27 @@ pub(crate) fn docker_inspect_network() {
         .arg("'{{json .Containers}}'")
         .output();
 
-    let stdout = consume_output(output).expect("Failed to parse docker network output.").trim_matches('\'').to_string();
+    let stdout = match consume_output(output) {
+        Err(error) => {
+            match error.clone() {
+                TheoError::ConsumeOutputError(message) => {
+                    if message.contains("No such network") {
+                        println!("No such network 'opendut_network'.");
+                        return;
+                    }
+                }
+            }
+            panic!("Failed to inspect docker network: {:?}", error);
+        }
+        Ok(stdout) => { stdout }
+    };
     let opendut_container_address_map: HashMap<String, ContainerAddress> =
         serde_json::from_str(&stdout).expect("JSON was not well-formatted");
     let mut sorted_addresses: Vec<(&String, &ContainerAddress)> = opendut_container_address_map.iter().collect();
     sorted_addresses
         .sort_by(|a, b| a.1.ipv4address.cmp(&b.1.ipv4address));
 
+    println!("# BEGIN OpenDuT docker network 'docker network inspect opendut_network'");
     for (_key, value) in &sorted_addresses {
         let ip_address = value.ipv4address.to_string();
         let given_hostname = value.name.clone();
