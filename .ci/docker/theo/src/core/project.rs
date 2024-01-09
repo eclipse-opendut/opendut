@@ -1,16 +1,12 @@
-pub(crate) mod make_dist;
-pub(crate) mod metadata;
-
 use std::collections::HashMap;
 use std::env;
+use std::path::PathBuf;
 use std::process::Command;
-use crate::util::consume_output;
-// instead of use strum_macros::{EnumString, EnumVariantNames, Display};
 use strum::{VariantNames, EnumVariantNames, EnumString, Display};
-use crate::project::metadata::cargo_netbird_versions;
+use crate::core::metadata::cargo_netbird_versions;
+use crate::core::util::consume_output;
 
-pub(crate) const TARGET_TRIPLE: &'static str = "x86_64-unknown-linux-gnu";
-pub(crate) const OPENDUT_THEO_DISABLE_ENV_CHECKS: &'static str = "OPENDUT_THEO_DISABLE_ENV_CHECKS";
+
 
 
 #[derive(Debug, PartialEq, EnumString, EnumVariantNames, Display)]
@@ -28,34 +24,44 @@ pub enum EnvVars {
     NetbirdDashboardVersion,
 }
 
-pub(crate) fn project_root_dir() -> String {
-    let output = Command::new("git")
-        .arg("rev-parse")
-        .arg("--show-toplevel")
-        .output()
-        .expect("Failed to determine git project root directory");
-    consume_output(output)
+pub trait ProjectRootDir {
+    fn project_dir() -> String;
+    fn project_path_buf() -> PathBuf;
+}
+impl ProjectRootDir for PathBuf {
+    fn project_dir() -> String {
+        let output = Command::new("git")
+            .arg("rev-parse")
+            .arg("--show-toplevel")
+            .output();
+        consume_output(output).expect("Failed to determine git project root directory")
+    }
+
+    fn project_path_buf() -> PathBuf {
+        PathBuf::from(PathBuf::project_dir())
+    }
 }
 
+
 fn get_docker_group_id() -> String {
-    let docker_getent_group = consume_output(Command::new("getent").arg("group").arg("docker").output().expect("Failed to get group id"));
+    let docker_getent_group = consume_output(Command::new("getent").arg("group").arg("docker").output()).expect("Failed to get docker group.");
     let docker_group_id = docker_getent_group.split(":").nth(2).expect("Failed to get docker group id").to_string();
     docker_group_id
 }
 
 pub(crate) fn check_dot_env_variables() {
-    let user_name = consume_output(Command::new("id").arg("--user").arg("--name").output().expect("Failed to get user name"));
-    let user_id = consume_output(Command::new("id").arg("--user").output().expect("Failed to get user id"));
-    let group_name = match Command::new("id").arg("--group").arg("--name").output() {
-        Ok(output) => { consume_output(output) }
+    let user_name = consume_output(Command::new("id").arg("--user").arg("--name").output()).expect("Failed to get user name");
+    let user_id = consume_output(Command::new("id").arg("--user").output()).expect("Failed to get user id");
+    let group_name = match consume_output(Command::new("id").arg("--group").arg("--name").output()) {
+        Ok(group_name) => { group_name }
         Err(error) => {
             println!("Failed to get group name: {:?}. Using 'general' as fallback name for your group.", error);
             "general".to_string()
         }
     };
-    let group_id = consume_output(Command::new("id").arg("--group").output().expect("Failed to get group id"));
+    let group_id = consume_output(Command::new("id").arg("--group").output()).expect("Failed to get group id");
     let docker_gid = get_docker_group_id();
-    let git_repo_root = project_root_dir();
+    let git_repo_root = PathBuf::project_dir();
 
     let mut missing_env_vars = "".to_owned();
     let mut error_messages = "".to_owned();
