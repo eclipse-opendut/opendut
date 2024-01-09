@@ -2,16 +2,15 @@ use std::collections::HashMap;
 use std::env;
 use std::path::PathBuf;
 use std::process::Command;
-use strum::{VariantNames, EnumVariantNames, EnumString, Display};
+
+use strum::{Display, EnumString, EnumVariantNames, VariantNames};
+
 use crate::core::metadata::cargo_netbird_versions;
 use crate::core::util::consume_output;
 
-
-
-
 #[derive(Debug, PartialEq, EnumString, EnumVariantNames, Display)]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
-pub enum EnvVars {
+pub enum TheoEnvVars {
     Puser,
     Pgroup,
     Puid,
@@ -28,6 +27,7 @@ pub trait ProjectRootDir {
     fn project_dir() -> String;
     fn project_path_buf() -> PathBuf;
 }
+
 impl ProjectRootDir for PathBuf {
     fn project_dir() -> String {
         let output = Command::new("git")
@@ -49,38 +49,64 @@ fn get_docker_group_id() -> String {
     docker_group_id
 }
 
-pub(crate) fn check_dot_env_variables() {
-    let user_name = consume_output(Command::new("id").arg("--user").arg("--name").output()).expect("Failed to get user name");
-    let user_id = consume_output(Command::new("id").arg("--user").output()).expect("Failed to get user id");
-    let group_name = match consume_output(Command::new("id").arg("--group").arg("--name").output()) {
-        Ok(group_name) => { group_name }
-        Err(error) => {
-            println!("Failed to get group name: {:?}. Using 'general' as fallback name for your group.", error);
-            "general".to_string()
-        }
-    };
-    let group_id = consume_output(Command::new("id").arg("--group").output()).expect("Failed to get group id");
-    let docker_gid = get_docker_group_id();
-    let git_repo_root = PathBuf::project_dir();
+#[derive(Debug, Clone)]
+pub struct TheoDynamicEnvMap(HashMap<String, String>);
 
+impl Default for TheoDynamicEnvMap {
+    fn default() -> Self {
+        let user_id = consume_output(Command::new("id").arg("--user").output()).expect("Failed to get user id");
+
+        let group_name = match consume_output(Command::new("id").arg("--group").arg("--name").output()) {
+            Ok(group_name) => { group_name }
+            Err(error) => {
+                println!("Failed to get group name: {:?}. Using 'general' as fallback name for your group.", error);
+                "general".to_string()
+            }
+        };
+        let group_id = consume_output(Command::new("id").arg("--group").output()).expect("Failed to get group id");
+        let docker_gid = get_docker_group_id();
+        let git_repo_root = PathBuf::project_dir();
+        let docker_user = format!("{}:{}", user_id.clone(), group_id.clone());
+
+        let netbird = cargo_netbird_versions();
+
+        let mut env_map = HashMap::new();
+        env_map.insert(TheoEnvVars::Puser.to_string(),
+                       consume_output(Command::new("id").arg("--user").arg("--name").output()).expect("Failed to get user name"));
+        env_map.insert(TheoEnvVars::Puid.to_string(),
+                       user_id.clone());
+        env_map.insert(TheoEnvVars::Pgroup.to_string(), group_name);
+        env_map.insert(TheoEnvVars::Pgid.to_string(), group_id.clone());
+        env_map.insert(TheoEnvVars::DockerUser.to_string(), docker_user.clone());
+        env_map.insert(TheoEnvVars::DockerGid.to_string(), docker_gid.clone());
+        env_map.insert(TheoEnvVars::OpendutRepoRoot.to_string(), git_repo_root.clone());
+        env_map.insert(TheoEnvVars::NetbirdManagementVersion.to_string(), netbird.netbird_management_version.clone());
+        env_map.insert(TheoEnvVars::NetbirdSignalVersion.to_string(), netbird.netbird_signal_version.clone());
+        env_map.insert(TheoEnvVars::NetbirdDashboardVersion.to_string(), netbird.netbird_dashboard_version.clone());
+
+        Self(env_map)
+    }
+}
+
+impl From<TheoDynamicEnvMap> for String {
+    fn from(value: TheoDynamicEnvMap) -> Self {
+        value.0.into_iter()
+            .map(|(key, value)| format!("{}={}", key, value))
+            .collect::<Vec<String>>()
+            .join("\n")
+    }
+}
+
+
+pub(crate) fn check_dot_env_variables() {
     let mut missing_env_vars = "".to_owned();
     let mut error_messages = "".to_owned();
 
-    let netbird = cargo_netbird_versions();
-    let env_map = HashMap::from([
-        (EnvVars::Puser.to_string(), user_name.clone()),
-        (EnvVars::Puid.to_string(), user_id.clone()),
-        (EnvVars::Pgroup.to_string(), group_name.clone()),
-        (EnvVars::Pgid.to_string(), group_id.clone()),
-        (EnvVars::DockerUser.to_string(), format!("{}:{}", user_id, group_id)),
-        (EnvVars::DockerGid.to_string(), docker_gid.clone()),
-        (EnvVars::OpendutRepoRoot.to_string(), git_repo_root.clone()),
-        (EnvVars::NetbirdManagementVersion.to_string(), netbird.netbird_management_version),
-        (EnvVars::NetbirdSignalVersion.to_string(), netbird.netbird_signal_version),
-        (EnvVars::NetbirdDashboardVersion.to_string(), netbird.netbird_dashboard_version),
-    ]);
+    let env_map = TheoDynamicEnvMap::default();
+    let env_map_string: String = String::from(env_map.clone());
+    println!("TheoEnvVars:\n{}", env_map_string);
 
-    for (env_key, env_value) in &env_map {
+    for (env_key, env_value) in env_map.0.iter() {
         match env::var(env_key) {
             Ok(value) => {
                 // check if all environment variables are set correctly
@@ -105,7 +131,7 @@ pub(crate) fn check_dot_env_variables() {
         panic!("There are errors in the environment variables in file '.env': \n{}", error_messages);
     }
 
-    assert_eq!(["PUSER", "PGROUP", "PUID", "PGID", "DOCKER_USER", "DOCKER_GID", "OPENDUT_REPO_ROOT", "NETBIRD_SIGNAL_VERSION", "NETBIRD_MANAGEMENT_VERSION", "NETBIRD_DASHBOARD_VERSION"], EnvVars::VARIANTS);
+    assert_eq!(["PUSER", "PGROUP", "PUID", "PGID", "DOCKER_USER", "DOCKER_GID", "OPENDUT_REPO_ROOT", "NETBIRD_SIGNAL_VERSION", "NETBIRD_MANAGEMENT_VERSION", "NETBIRD_DASHBOARD_VERSION"], TheoEnvVars::VARIANTS);
 }
 
 
