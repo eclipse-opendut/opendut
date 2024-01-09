@@ -72,3 +72,9 @@ jobs:
     uses: ./.github/workflows/job-bundle-carl.yaml
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+
+  build:
+    needs: [ legal, test ]
+    runs-on: "${{ fromJson(vars.OPENDUT_GH_RUNNER_SMALL) }}"
+    steps:
+    - run: echo "All jobs required for the status check have been completed."
