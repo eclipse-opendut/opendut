@@ -25,7 +25,7 @@ pub fn ClustersCard() -> impl IntoView {
                 .len();
             Clusters {
                 deployed,
-                undeployed: configured - deployed
+                undeployed: configured.saturating_sub(deployed)
             }
         }
     });
