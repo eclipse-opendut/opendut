@@ -1,0 +1,15 @@
+[Unit]
+Description=x11vnc
+After=network.target xvfb.service
+StartLimitIntervalSec=5
+StartLimitBurst=5
+
+[Service]
+Type=simple
+ExecStart=x11vnc -display :1 -geometry 1920x1080x24 -repeat -noxdamage -ncache 10 -forever -loop
+
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=default.target

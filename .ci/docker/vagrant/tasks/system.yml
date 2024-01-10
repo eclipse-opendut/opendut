@@ -1,0 +1,20 @@
+- name: Update /etc/hosts
+  become: true
+  ansible.builtin.blockinfile:
+    path: /etc/hosts
+    block: |
+      192.168.32.200        carl
+      192.168.32.204        keycloak
+      192.168.32.211        netbird-management
+      192.168.32.213        netbird-dashboard netbird-ui
+    marker: "# {mark} ANSIBLE MANAGED BLOCK of services"
+- name: Copy insecure development certificate authority
+  become: true
+  copy:
+    src: "{{ opendut_repo_root }}/resources/development/tls/insecure-development-ca.pem"
+    dest: /usr/local/share/ca-certificates/insecure-development-ca.crt  # *.crt suffix required
+  register: development_ca_copy_task
+- name: Update ca certificates
+  become: true
+  shell: "update-ca-certificates"
+  when: development_ca_copy_task.changed

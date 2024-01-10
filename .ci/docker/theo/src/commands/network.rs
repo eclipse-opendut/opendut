@@ -80,15 +80,22 @@ pub(crate) fn docker_inspect_network() {
             }
             panic!("Failed to inspect docker network: {:?}", error);
         }
-        Ok(stdout) => { stdout }
+        Ok(stdout) => { stdout.trim_matches('\'').to_string() }
     };
-    let opendut_container_address_map: HashMap<String, ContainerAddress> =
-        serde_json::from_str(&stdout).expect("JSON was not well-formatted");
+
+    let opendut_container_address_map: HashMap<String, ContainerAddress> = match
+        serde_json::from_str(&stdout) {
+        Ok(map) => { map }
+        Err(error) => {
+            panic!("Failed to parse json: {:?}", error);
+        }
+    };
     let mut sorted_addresses: Vec<(&String, &ContainerAddress)> = opendut_container_address_map.iter().collect();
     sorted_addresses
         .sort_by(|a, b| a.1.ipv4address.cmp(&b.1.ipv4address));
 
-    println!("# BEGIN OpenDuT docker network 'docker network inspect opendut_network'");
+    let message = "OpenDuT docker network 'docker network inspect opendut_network'";
+    println!("# BEGIN {}", message);
     for (_key, value) in &sorted_addresses {
         let ip_address = value.ipv4address.to_string();
         let given_hostname = value.name.clone();
@@ -103,5 +110,5 @@ pub(crate) fn docker_inspect_network() {
         let padded_ip_address = ip_address.clone() + &whitespace;
         println!("{}  {}", padded_ip_address, hostname);
     }
-    println!("# END OpenDuT docker network 'opendut_network'");
+    println!("# END {}", message);
 }

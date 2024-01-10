@@ -1,0 +1,28 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: playbook
+  hosts: all
+  vars:
+  pre_tasks:
+  - name: Install required packages
+    apt:
+      pkg: ['htop', 'tmux', 'jq', 'libssl-dev', 'libnss3-tools', 'xvfb', 'firefox', 'x11vnc', 'xdotool', 'xpra']
+      state: 'present'
+      update_cache: yes
+      cache_valid_time: 3600
+  - name: Host configuration /etc/hosts, certificate authority
+    import_tasks: tasks/system.yml
+  - name: Configure firefox profile for vagrant user
+    import_tasks: tasks/firefox.yml
+    tags: "firefox"
+
+  roles:
+  # https://github.com/geerlingguy/ansible-role-docker
+  - {role: "geerlingguy.docker", docker_users: ["vagrant"], tags: ["docker"]}
+  # https://github.com/hurricanehrndz/ansible-rustup/blob/master/defaults/main.yml
+  - {role: "hurricanehrndz.rustup", rustup_user: "vagrant", rustup_default_version: "stable", tags: ["rustup"] }
+  # see local role in: local_roles/ansible-role-kde-desktop
+  - {role: "ansible-role-kde-desktop", tags: ["desktop"] }
+
+  post_tasks:
+    - debug: msg="all done"

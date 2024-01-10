@@ -27,6 +27,8 @@ pub enum TheoDynamicEnvVars {
     OpendutCustomCa1,
     OpendutCustomCa2,
     OpendutHosts,
+    OpendutEdgarReplicas,
+    OpendutEdgarClusterName,
 }
 
 #[derive(Debug, PartialEq, EnumString, EnumVariantNames, Display)]
@@ -129,6 +131,8 @@ impl Default for TheoDynamicEnvMap {
         env_map.insert(TheoDynamicEnvVars::OpendutCustomCa1.to_string(), format!("\"{}\"", read_pem_certificate()));
         env_map.insert(TheoDynamicEnvVars::OpendutCustomCa2.to_string(), format!("\"{}\"", read_pem_certificate()));
         env_map.insert(TheoDynamicEnvVars::OpendutHosts.to_string(), "".to_string());
+        env_map.insert(TheoDynamicEnvVars::OpendutEdgarReplicas.to_string(), "4".to_string());
+        env_map.insert(TheoDynamicEnvVars::OpendutEdgarClusterName.to_string(), "cluster1".to_string());
 
         Self(env_map)
     }
@@ -225,7 +229,7 @@ pub(crate) fn check_dot_env_variables() {
     }
 
     assert_eq!(["PUSER", "PGROUP", "PUID", "PGID", "DOCKER_USER", "DOCKER_GID", "OPENDUT_REPO_ROOT", "NETBIRD_SIGNAL_VERSION", "NETBIRD_MANAGEMENT_VERSION", "NETBIRD_DASHBOARD_VERSION",
-                   "OPENDUT_CARL_VERSION", "OPENDUT_CUSTOM_CA1", "OPENDUT_CUSTOM_CA2", "OPENDUT_HOSTS"], TheoDynamicEnvVars::VARIANTS);
+                   "OPENDUT_CARL_VERSION", "OPENDUT_CUSTOM_CA1", "OPENDUT_CUSTOM_CA2", "OPENDUT_HOSTS", "OPENDUT_EDGAR_REPLICAS", "OPENDUT_EDGAR_CLUSTER_NAME"], TheoDynamicEnvVars::VARIANTS);
 }
 
 

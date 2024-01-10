@@ -12,9 +12,9 @@ This is a Docker test environment for openDuT. It is started with docker-compose
 ## Getting started
 
 
-# THEO Setup
+### THEO Setup in Docker
 
-## Requirements
+#### Requirements
 
 * Install Docker
 
@@ -46,59 +46,41 @@ This is a Docker test environment for openDuT. It is started with docker-compose
 ```sh
 cargo ci distribution
 ```
+
 * Start containers
 ```
-.ci/docker/theo.rs start
+cargo theo start
 ```
-* Start firefox container
-```
-docker compose -f .ci/docker/firefox/docker-compose.yml --env-file .env up -d
-```
-* Open http://netbird-ui and create API key and setup key for peer group `testenv`
 
-* Other possible urls in remote session:
+* Start edgar cluster
+```
+cargo theo edgar start
+```
+
+### THEO Setup in Vagrant
+
+You may run all of the above also in a virtual machine, using Vagrant.
+Either via cargo:
+```
+cargo theo vagrant up
+```
+or directly via Vagrant (from the root of the repository):
+```
+export OPENDUT_REPO_ROOT=$(git rev-parse --show-toplevel)
+VAGRANT_VAGRANTFILE=.ci/docker/Vagrantfile vagrant up
+```
+
+## Start testing
+
+### User interface
+
+Open following address in your browser:
+  * docker mode: http://localhost:3000
+  * vagrant mode: http://192.168.56.10:3000/
+
+* Services with user interface:
   * https://carl
   * http://netbird-ui
   * http://keycloak
 
 
-## Manual testing
-* Commands are run from git repository root directory.
-
-* Create distribution
-    ```sh
-    cargo ci distribution
-    ```
-
-* Build carl image (other images are built automatically)
-    ```sh
-    docker compose -f .ci/docker/carl/docker-compose.yml build
-    ```
-    Carl adds artifact during build time. The container includes the artifact.
-    The other images are not published and therefore mount the artifacts from filesystem which is more dynamic.
-
-## Start containers
-
-
-    ```sh
-    docker compose -f .ci/docker/carl/docker-compose.yml --env-file .env up -d
-    docker compose -f .ci/docker/edgar/docker-compose.yml --env-file .env up -d
-    docker compose -f .ci/docker/firefox/docker-compose.yml --env-file .env up -d
-    ```
-
-## Special dev container
-
-* Prepare container environment variables
-    ```bash
-    echo PUID=$(id -u) >> .env
-    echo PGID=$(id -g) >> .env
-    echo PUSER=$(id -un) >> .env
-    echo PGROUP=$(id -gn) >> .env
-    echo DOCKER_GID=$(cut -d: -f3 < <(getent group docker)) >> .env
-    echo OPENDUT_REPO_ROOT=$(git rev-parse --show-toplevel) >> .env
-    ```
-* Build dev container
-    ```bash
-    docker compose -f .ci/docker/dev/docker-compose.yml --env-file .env build
-    docker compose -f .ci/docker/dev/docker-compose.yml --env-file .env up
-    ```

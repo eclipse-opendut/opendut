@@ -1,0 +1,94 @@
+- name: "Firefox profile location of vagrant user"
+  set_fact:
+    firefox_snap_dir: "/home/vagrant/snap/firefox/common/.mozilla/"
+
+- name: Ensure XAUTHORITY is exported for user vagrant
+  become: true
+  become_user: vagrant
+  ansible.builtin.lineinfile:
+    path: /home/vagrant/.bashrc
+    regexp: '^XAUTHORITY='
+    line: "export XAUTHORITY=$HOME/.Xauthority"
+
+- name: Check if firefox profile exists
+  stat:
+    path: "{{ firefox_snap_dir }}"
+  register: firefox_profile_exists
+
+- name: Configure firefox
+  become: true
+  become_user: vagrant
+  block:
+    - name: Create user directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        recurse: true
+        mode: 0755
+      loop: [ "/home/vagrant/.config/systemd/user/", "/home/vagrant/bin" ]
+
+    - name: Copy firefox script
+      copy:
+        src: files/x11vnc-firefox.sh
+        dest: /home/vagrant/bin/x11vnc-firefox.sh
+        mode: 0755
+
+    - name: Copy firefox service file
+      copy:
+        src: "files/{{ item }}.service"
+        dest: "/home/vagrant/.config/systemd/user/{{ item }}.service"
+        mode: 0755
+      loop: [ "xvfb", "x11vnc", "firefox" ]
+
+    - name: "Enable service {{ item }}"
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        state: started
+        daemon_reload: true
+        enabled: true
+        scope: user
+      loop: [ "xvfb", "x11vnc", "firefox" ]
+
+    - name: Wait for firefox to come up
+      ansible.builtin.pause:
+        seconds: 5
+
+    - name : Find profile location
+      find:
+        paths: "{{ firefox_snap_dir }}"
+        recurse: yes
+        file_type: directory
+        patterns: '*.default'
+      register: output
+    - debug: var=item.path
+      with_items: "{{ output.files }}"
+    - set_fact:
+        firefox_profile_dir: "{{ output.files[0].path }}"
+
+    #- name: Create cert store (if firefox did not do so)
+    #  command: "certutil -N --empty-password -d sql:{{ firefox_profile_dir }}"
+
+    - name: Import development CA
+      command: certutil -A -n "custom_ca1" -t "CT,c" -i /usr/local/share/ca-certificates/insecure-development-ca.crt -d "{{ firefox_profile_dir }}"
+
+    - name: Open firefox websites
+      #shell: "xvfb-run -a firefox {{ website }} 2>&1 > /tmp/firefox-sites.log &"
+      shell: "firefox --display=:1 {{ website }} 2>&1 > /tmp/firefox-sites.log"
+      changed_when: false
+      ignore_errors: true
+      loop: [ "https://carl", "http://keycloak", "http://netbird-ui", "http://netbird-dashboard" ]
+      loop_control:
+        loop_var: website
+
+    - name: "Disable firefox"
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        state: stopped
+        daemon_reload: true
+        enabled: true
+        scope: user
+      loop: [ "firefox" ]
+
+  #when: firefox_profile_exists.stat.exists == False
+
+

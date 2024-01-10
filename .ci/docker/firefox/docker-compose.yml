@@ -5,7 +5,6 @@ services:
     build:
       context: ../../..
       dockerfile: ./.ci/docker/firefox/Dockerfile
-    #image: lscr.io/linuxserver/firefox:latest
     container_name: firefox
     security_opt:
       - seccomp:unconfined #optional

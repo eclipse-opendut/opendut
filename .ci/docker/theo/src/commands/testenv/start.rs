@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::process::Command;
 
-use crate::core::docker::{check_docker_compose_is_installed, docker_compose_network_create, docker_compose_up, DockerCommand, DockerCoreServices, wait_for_netbird_api_key};
+use crate::core::docker::{docker_compose_network_create, docker_compose_up, DockerCommand, DockerCoreServices, wait_for_netbird_api_key};
 use crate::core::project::ProjectRootDir;
 
 fn start_carl_in_docker() {
@@ -22,7 +22,6 @@ fn start_carl_in_docker() {
 pub(crate) fn start_testenv() {
     // prerequisites
     println!("git project root: {}", PathBuf::project_dir());
-    check_docker_compose_is_installed();
     docker_compose_network_create();
 
     // start services

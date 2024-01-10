@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::process::Command;
-use crate::core::project::ProjectRootDir;
 
+use crate::core::project::ProjectRootDir;
 use crate::core::util::consume_output;
 
 pub(crate) enum DockerCoreServices {
@@ -34,6 +34,7 @@ impl std::fmt::Display for DockerCoreServices {
 
 pub trait DockerCommand {
     fn docker() -> Command;
+    fn docker_checks();
     fn add_common_args(&mut self, compose_dir: &str) -> &mut Self;
     fn add_netbird_api_key_to_env(&mut self) -> &mut Self;
 }
@@ -41,6 +42,11 @@ pub trait DockerCommand {
 impl DockerCommand for Command {
     fn docker() -> Command {
         Command::new("docker")
+    }
+
+    fn docker_checks() {
+        check_docker_compose_is_installed();
+        check_docker_daemon_communication();
     }
 
     fn add_common_args(&mut self, compose_dir: &str) -> &mut Self {
@@ -60,14 +66,19 @@ impl DockerCommand for Command {
 }
 
 
-pub(crate) fn check_docker_compose_is_installed() {
-    let output = Command::docker()
+fn check_docker_compose_is_installed() {
+    Command::docker()
         .arg("compose")
         .arg("version")
-        .status()
-        .expect("Failed to run docker compose. Check if docker compose plugin is installed. \
-                See https://docs.docker.com/compose/install/linux/ for instructions.");
-    assert!(output.success());
+        .output()
+        .expect("Failed to run docker compose. Check if docker compose plugin is installed.");
+}
+
+fn check_docker_daemon_communication() {
+    Command::docker()
+        .arg("ps")
+        .output()
+        .expect("Failed to communicate with docker daemon. Check privileges, e.g. membership of the 'docker' group.");
 }
 
 pub(crate) fn docker_compose_build(compose_dir: &str) {

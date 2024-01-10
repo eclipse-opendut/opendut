@@ -1,4 +1,5 @@
 use std::fs;
+use std::io::ErrorKind;
 use std::ops::Index;
 use std::path::PathBuf;
 use std::process::Command;
@@ -7,12 +8,24 @@ use crate::core::project::ProjectRootDir;
 use crate::core::TARGET_TRIPLE;
 
 fn make_distribution_with_cargo() {
-    println!("Create distribution with cargo: 'cargo ci distribution'");
-    let _dist_status = Command::new("cargo")
+    println!("Creating distribution with cargo: 'cargo ci distribution'");
+    let cargo_command = Command::new("cargo")
         .arg("ci")
         .arg("distribution")
-        .status()
-        .expect("Failed to update distribution");
+        .status();
+    match cargo_command {
+        Ok(_exit_status) => {}
+        Err(error) => {
+            match error.kind() {
+                ErrorKind::NotFound => {
+                    panic!("Could not find 'cargo': {}", error);
+                }
+                _ => {
+                    panic!("Failed to create distribution with cargo: {}", error);
+                }
+            }
+        }
+    }
 }
 
 fn enumerate_distribution_tar_files(dist_path: PathBuf) -> Vec<String> {
@@ -63,6 +76,7 @@ pub(crate) fn make_distribution_if_not_present() {
     );
 
     if !dist_directory_path.exists() {
+        println!("Distribution directory does not exist. Building distribution.");
         make_distribution_with_cargo();
     }
 
@@ -72,5 +86,4 @@ pub(crate) fn make_distribution_if_not_present() {
     if check_if_distribution_tar_exists_of_each_component(&expected_dist_files, present_dist_files) {
         make_distribution_with_cargo();
     }
-
 }

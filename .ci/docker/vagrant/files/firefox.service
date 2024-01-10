@@ -1,0 +1,17 @@
+[Unit]
+Description=firefox x11vnc
+After=network.target xvfb.service x11vnc.service
+StartLimitIntervalSec=5
+StartLimitBurst=5
+
+[Service]
+Type=simple
+ExecStart=firefox --display=":1"
+ExecStartPost=sleep 5
+ExecStartPost=/home/vagrant/bin/x11vnc-firefox.sh resize
+
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=default.target

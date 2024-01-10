@@ -1,0 +1,101 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+machine = {
+    :hostname => "opendut-vm",
+    :memory => 8192,
+    :cpu => 4,
+    :ip => "192.168.56.10",
+    :box_name => "ubuntu/jammy64",
+}
+
+repo_root = ENV["OPENDUT_REPO_ROOT"]
+if repo_root.nil? then
+    puts "Environment variable 'OPENDUT_REPO_ROOT' not set. Exiting."
+    exit(1)
+end
+puts "Repository mounted on #{repo_root}"
+
+Vagrant.configure("2") do |config|
+
+    config.vm.box = machine[:box_name]
+    config.vm.hostname = machine[:hostname]
+    config.vm.network "private_network", ip: machine[:ip]
+
+    # default shared folder required by provisioner (otherwise some files are not found)
+    config.vm.synced_folder ".", "/vagrant", disabled: false, SharedFoldersEnableSymlinksCreate: false
+    # share the root folder from the host (relative from where the Vagrantfile is located)
+    config.vm.synced_folder ".", repo_root, disabled: false, SharedFoldersEnableSymlinksCreate: false
+
+    # normal user is allowed to forward ports > 1024
+    #config.vm.network :forwarded_port, guest: 443, host: 8443
+
+    config.vm.provider "virtualbox" do |vb|
+        vb.name = machine[:hostname]
+        vb.cpus = machine[:cpu]
+        vb.memory = machine[:memory]
+
+        vb.gui = (ENV["SHOW_GUI"] ||= "false").to_s == "true"
+
+        # https://www.virtualbox.org/manual/ch08.html
+        vb.customize ["modifyvm", :id, "--vram", "128"]
+        vb.customize ["modifyvm", :id, "--graphicscontroller", "VBoxSVGA"]
+        vb.customize ["modifyvm", :id, "--accelerate3d", "off"]
+        vb.customize ["modifyvm", :id, "--accelerate2dvideo", "off"]
+
+    end
+
+    # add ssh key
+    if !File.file?("#{Dir.home}/.ssh/id_rsa.pub")
+        puts "No SSH key found."
+        puts "Run e.g. 'mkdir -p ~/.ssh; ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa' to generate one."
+    end
+
+    # automatically change directory to the repository root
+    config.ssh.extra_args = ["-t", "cd #{repo_root}; bash --login"]
+    config.ssh.forward_x11 = true
+
+    config.vm.provision "shell" do |s|
+    ssh_pub_key = File.readlines("#{Dir.home}/.ssh/id_rsa.pub").first.strip
+    s.inline = <<-SHELL
+      if grep -sq "#{ssh_pub_key}" /home/vagrant/.ssh/authorized_keys; then
+        echo "SSH keys already provisioned."
+        exit 0;
+      else
+        echo #{ssh_pub_key} >> /home/vagrant/.ssh/authorized_keys
+        mkdir -p /root/.ssh
+        echo #{ssh_pub_key} >> /root/.ssh/authorized_keys
+      fi
+    SHELL
+    end
+    # Set the name of the VM. See: http://stackoverflow.com/a/17864388/100134
+    config.vm.define machine[:hostname] do |box|
+    end
+
+  # Run Ansible from the Vagrant VM
+  config.vm.provision "ansible_local" do |ansible|
+    # ansible.compatibility_mode = "2.0"
+    ansible.playbook = "#{repo_root}/.ci/docker/vagrant/playbook.yml"
+    ansible.become = true
+    ansible.galaxy_role_file = "#{repo_root}/.ci/docker/vagrant/ansible-requirements.yml"
+    ansible.galaxy_roles_path = "#{repo_root}/.ci/docker/vagrant/local_roles/:#{repo_root}/.ci/docker/vagrant/downloaded_roles/"
+    ansible.galaxy_command = "ansible-galaxy install --role-file=%{role_file} --roles-path=#{repo_root}/.ci/docker/vagrant/downloaded_roles"
+
+    # https://developer.hashicorp.com/vagrant/docs/provisioning/ansible_common
+    ansible.tags = ENV["ANSIBLE_TAGS"] ||= "all"
+    ansible.skip_tags = ENV["ANSIBLE_SKIP_TAGS"] ||= "desktop"
+    ansible.verbose = ENV["ANSIBLE_VERBOSE"] ||= ""     # do not enable verbose by default
+    # ansible.verbose = ENV["ANSIBLE_VERBOSE"] ||= "v"  # enables verbose mode by default
+    ansible.extra_vars = {
+        "opendut_repo_root" => "#{repo_root}",
+    }
+  end
+
+  # start docker with script
+  config.vm.provision "shell" do |script|
+    script.path = "./.ci/docker/vagrant/vagrant-entrypoint.sh"
+    script.args   = ""
+  end
+
+
+end

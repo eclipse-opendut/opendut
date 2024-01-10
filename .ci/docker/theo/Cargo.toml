@@ -5,7 +5,6 @@ edition = "2021"
 license = "Apache-2.0"
 
 [dependencies]
-cargo_metadata.workspace = true
 clap = { workspace = true, features = ["derive", "wrap_help", "env"] }
 dotenvy = { workspace = true }
 phf = { workspace = true, features = ["macros"] }
@@ -13,6 +12,9 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
 thiserror = { workspace = true }
+cargo_toml = { workspace = true }
+ctrlc = { workspace = true }
+home = { workspace = true }
 
 [build-dependencies]
 shadow-rs = { workspace = true }

@@ -19,3 +19,13 @@ certutil -A -n "custom_ca1" -t "CT,c" -i /usr/local/share/ca-certificates/opendu
 certutil -A -n "custom_ca2" -t "CT,c" -i /usr/local/share/ca-certificates/opendut_custom_ca_OPENDUT_CUSTOM_CA2.crt -d "$FIREFOX_PROFILE_PATH"
 
 chown -R "$PUID":"$PGID" /config/.mozilla/firefox/
+
+
+if [ ! -e "/config/.firstrun" ]; then
+  echo "First run, opening a bunch of sites"
+  touch /config/.firstrun
+  # abc is the user firefox runs as
+  su - abc -c 'DISPLAY=:1 firefox http://keycloak'
+  su - abc -c 'DISPLAY=:1 firefox http://netbird-ui'
+  su - abc -c 'DISPLAY=:1 firefox https://carl'
+fi

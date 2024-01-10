@@ -1,0 +1,16 @@
+# ansible-galaxy list
+# ansible-galaxy install -r ansible-requirements.yml --roles-path downloaded_roles
+
+# format of the file: https://docs.ansible.com/ansible/latest/galaxy/user_guide.html#installing-multiple-roles-from-a-file
+
+# https://github.com/geerlingguy/ansible-role-docker
+# https://galaxy.ansible.com/ui/standalone/roles/geerlingguy/docker/versions/
+- src: "geerlingguy.docker"
+  version: "7.0.2"
+
+# https://github.com/hurricanehrndz/ansible-rustup/
+# https://galaxy.ansible.com/ui/standalone/roles/hurricanehrndz/rustup/versions/
+- src: "https://github.com/hurricanehrndz/ansible-rustup/"
+  #src: "hurricanehrndz.rustup"  # this is the name of the role in ansible galaxy (was not published with version annotation)
+  version: "v1.0.0"
+  name: "hurricanehrndz.rustup"

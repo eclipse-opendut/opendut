@@ -3,19 +3,6 @@
 source "$(dirname "$0")/functions.sh"
 trap die_with_error TERM
 
-touch /etc/security/capability.conf
-
-PEER_ID=$(uuidgen)
-NAME="${OPENDUT_EDGAR_CLUSTER_NAME}_$(hostname)"
-echo "Creating peer with name $NAME and id $PEER_ID"
-opendut-cleo create peer --name "$NAME" --id "$PEER_ID"
-opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME" --interface eth0 --location "$NAME" --tags "$OPENDUT_EDGAR_CLUSTER_NAME"
-
-PEER_SETUP_KEY=$(opendut-cleo generate-peer-setup --id "$PEER_ID" | grep -A1 "Copy the generated setup key" | tail -n1 | sed -e 's#"##g' | sed -e 's/\x1b\[[0-9;]*m//g')
-echo "Setting up peer with setup key $PEER_SETUP_KEY"
-
-echo y | opendut-edgar setup managed "$PEER_SETUP_KEY"
-
 cleo_get_peer_id() {
   edgar_hostname="$1"
   RESULT=$(opendut-cleo list --output json peers  | jq --arg NAME "$edgar_hostname" '.[] | select(.name==$NAME)')
@@ -47,13 +34,35 @@ cleo_count_connected_peers_in_cluster() {
   fi
 }
 
+pre_flight_tasks() {
+  touch /etc/security/capability.conf
+
+  if ! type opendut-cleo > /dev/null; then
+    echo "Command 'opendut-cleo' not found."
+    exit 1
+  fi
+}
+
+## MAIN TASKS
+pre_flight_tasks
+
+PEER_ID=$(uuidgen)
+NAME="${OPENDUT_EDGAR_CLUSTER_NAME}_$(hostname)"
+echo "Creating peer with name $NAME and id $PEER_ID"
+opendut-cleo create peer --name "$NAME" --id "$PEER_ID"
+opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME" --interface eth0 --location "$NAME" --tags "$OPENDUT_EDGAR_CLUSTER_NAME"
+
+PEER_SETUP_KEY=$(opendut-cleo generate-peer-setup --id "$PEER_ID" | grep -A1 "Copy the generated setup key" | tail -n1 | sed -e 's#"##g' | sed -e 's/\x1b\[[0-9;]*m//g')
+echo "Setting up peer with setup key $PEER_SETUP_KEY"
+
+echo y | opendut-edgar setup managed "$PEER_SETUP_KEY"
+
 while ! cleo_get_peer_id "$NAME"; do
     echo "Waiting for edgar to register ..."
     sleep 3
 done
 
-
-expected_peer_count=$(($OPENDUT_EDGAR_REPLICAS + 1))
+expected_peer_count=$((OPENDUT_EDGAR_REPLICAS + 1))
 while ! cleo_count_connected_peers_in_cluster "$expected_peer_count" "$OPENDUT_EDGAR_CLUSTER_NAME"; do
   echo "Waiting for all edgar peers in my cluster ..."
   sleep 3

@@ -1,0 +1,24 @@
+---
+# tasks file for ansible-role-kde-desktop
+- name: Install kde-desktop
+  become: true
+  ansible.builtin.package:
+    state: present
+    name:
+      - kde-plasma-desktop
+      - firefox
+      - lightdm
+
+- name: Disable wayland
+  become: true
+  ansible.builtin.replace:
+      path: /etc/gdm3/custom.conf
+      regexp: '^#WaylandEnable=false'
+      replace: 'WaylandEnable=false'
+
+- name: Enable lightdm
+  become: true
+  ansible.builtin.service:
+      name: lightdm
+      enabled: true
+      state: started

@@ -1,13 +1,23 @@
 use std::path::PathBuf;
 use std::process::Command;
 
-use crate::core::docker::{check_docker_compose_is_installed, docker_compose_build, docker_compose_down, DockerCommand, DockerCoreServices};
+use crate::core::docker::{docker_compose_build, docker_compose_down, DockerCommand, DockerCoreServices};
 use crate::core::project::ProjectRootDir;
 
 #[derive(Debug, clap::Parser)]
 pub struct TestEdgarCli {
     #[command(subcommand)]
     pub task: TaskCli,
+}
+
+#[derive(Debug, clap::Subcommand)]
+pub enum TaskCli {
+    #[command(about = "Start edgar cluster.")]
+    Start,
+    #[command(about = "Stop edgar cluster.")]
+    Stop,
+    #[command(about = "Build edgar.")]
+    Build,
 }
 
 impl TestEdgarCli {
@@ -19,21 +29,12 @@ impl TestEdgarCli {
             TaskCli::Stop => {
                 docker_compose_down(DockerCoreServices::Edgar.as_str(), false);
             }
+            TaskCli::Build => {
+                docker_compose_build(DockerCoreServices::Edgar.as_str());
+            }
         }
     }
 }
-
-#[derive(Debug, clap::Subcommand)]
-pub enum TaskCli {
-    Start,
-    Stop,
-}
-
-pub(crate) fn build_edgar() {
-    check_docker_compose_is_installed();
-    docker_compose_build(DockerCoreServices::Edgar.as_str());
-}
-
 
 fn start_edgar_in_docker() {
     let mut command = Command::docker();
@@ -51,7 +52,6 @@ fn start_edgar_in_docker() {
 }
 
 pub(crate) fn run_edgar() {
-    check_docker_compose_is_installed();
-    build_edgar();
+    docker_compose_build(DockerCoreServices::Edgar.as_str());
     start_edgar_in_docker();
 }

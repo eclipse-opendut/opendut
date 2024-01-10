@@ -1,0 +1,15 @@
+[Unit]
+Description=xvfb
+After=network.target
+StartLimitIntervalSec=5
+StartLimitBurst=5
+
+[Service]
+Type=simple
+ExecStart=Xvfb -screen 0 "1920x1080x24" ":1"
+
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=default.target
