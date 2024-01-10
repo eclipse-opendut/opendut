@@ -13,3 +13,22 @@ message Hostname {
 message Port {
   uint32 value = 1;
 }
+
+message IpAddress {
+  oneof address {
+    IpV4Address ipV4 = 1;
+    IpV6Address ipV6 = 2;
+  }
+}
+
+message IpV4Address {
+  bytes value = 1;
+}
+
+message IpV6Address {
+  bytes value = 1;
+}
+
+message NetworkInterfaceName {
+  string name = 1;
+}

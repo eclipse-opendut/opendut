@@ -5,7 +5,7 @@ use std::str::FromStr;
 use anyhow::{Context, Result};
 use futures::executor::block_on;
 
-use opendut_types::topology::InterfaceName;
+use opendut_types::util::net::NetworkInterfaceName;
 
 use crate::service::network_device::manager::NetworkDeviceManager;
 use crate::setup::Router;
@@ -16,7 +16,7 @@ const GRE_INTERFACE_NAME_PREFIX: &str = "gre-opendut";
 pub struct CreateGreInterfaces {
     pub network_device_manager: Rc<NetworkDeviceManager>,
     pub router: Router,
-    pub bridge_name: InterfaceName,
+    pub bridge_name: NetworkInterfaceName,
 }
 impl Task for CreateGreInterfaces {
     fn description(&self) -> String {
@@ -96,7 +96,7 @@ impl Task for CreateGreInterfaces {
 impl CreateGreInterfaces {
     fn create_interface(&self, local_ip: Ipv4Addr, remote_ip: Ipv4Addr, interface_index: usize) -> Result<()> {
         let interface_prefix = GRE_INTERFACE_NAME_PREFIX;
-        let interface_name = InterfaceName::try_from(format!("{}{}", interface_prefix, interface_index))
+        let interface_name = NetworkInterfaceName::try_from(format!("{}{}", interface_prefix, interface_index))
             .context("Error while constructing GRE interface name")?;
 
         let gre_interface = block_on(self.network_device_manager.create_gretap_v4_interface(&interface_name, &local_ip, &remote_ip))?;

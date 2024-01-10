@@ -61,7 +61,8 @@ pub mod create {
         use super::*;
         use googletest::prelude::*;
         use rstest::{fixture, rstest};
-        use opendut_types::topology::{DeviceId, InterfaceName};
+        use opendut_types::topology::DeviceId;
+        use opendut_types::util::net::NetworkInterfaceName;
 
         #[fixture]
         fn all_devices() -> Vec<Device> {
@@ -71,7 +72,7 @@ pub mod create {
                     name: String::from("MyDevice"),
                     description: String::new(),
                     location: String::new(),
-                    interface: InterfaceName::try_from("eth0").unwrap(),
+                    interface: NetworkInterfaceName::try_from("eth0").unwrap(),
                     tags: vec![],
                 },
                 Device {
@@ -79,7 +80,7 @@ pub mod create {
                     name: String::from("YourDevice"),
                     description: String::new(),
                     location: String::new(),
-                    interface: InterfaceName::try_from("eth0").unwrap(),
+                    interface: NetworkInterfaceName::try_from("eth0").unwrap(),
                     tags: vec![],
                 },
                 Device {
@@ -87,7 +88,7 @@ pub mod create {
                     name: String::from("HisDevice"),
                     description: String::new(),
                     location: String::new(),
-                    interface: InterfaceName::try_from("eth0").unwrap(),
+                    interface: NetworkInterfaceName::try_from("eth0").unwrap(),
                     tags: vec![],
                 }
             ]

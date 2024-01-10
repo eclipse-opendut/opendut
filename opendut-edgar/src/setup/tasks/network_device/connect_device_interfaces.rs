@@ -5,7 +5,8 @@ use anyhow::Result;
 use config::Config;
 use futures::executor::block_on;
 
-use opendut_types::topology::{InterfaceName, Topology};
+use opendut_types::topology::Topology;
+use opendut_types::util::net::NetworkInterfaceName;
 
 use crate::common::settings;
 use crate::service::network_device::manager::NetworkDeviceManager;
@@ -13,7 +14,7 @@ use crate::setup::task::{Success, Task, TaskFulfilled};
 
 pub struct ConnectDeviceInterfaces {
     pub network_device_manager: Rc<NetworkDeviceManager>,
-    pub bridge_name: InterfaceName,
+    pub bridge_name: NetworkInterfaceName,
 }
 impl Task for ConnectDeviceInterfaces {
     fn description(&self) -> String {

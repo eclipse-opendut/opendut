@@ -3,6 +3,7 @@ syntax = "proto3";
 package opendut.types.cluster;
 
 import "opendut/types/util/uuid.proto";
+import "opendut/types/util/net.proto";
 import "opendut/types/peer/peer.proto";
 import "opendut/types/topology/device.proto";
 
@@ -37,10 +38,9 @@ message ClusterAssignment {
 
 // ANCHOR: PeerClusterAssignment
 message PeerClusterAssignment {
-/**
-  map <DeviceId, BridgeIP> bridge_addresses = 1;
-  repeated opendut.types.topology.DeviceId devices = 2;
-**/
+  opendut.types.peer.PeerId peer_id = 1;
+  opendut.types.util.IpAddress vpn_address = 2;
+  repeated opendut.types.util.NetworkInterfaceName device_interfaces = 3;
 }
 // ANCHOR_END: PeerClusterAssignment
 

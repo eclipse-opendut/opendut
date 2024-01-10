@@ -1,7 +1,8 @@
 use leptos::{RwSignal, SignalGetUntracked};
 
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerName};
-use opendut_types::topology::{Device, DeviceId, InterfaceName, Topology};
+use opendut_types::topology::{Device, DeviceId, Topology};
+use opendut_types::util::net::NetworkInterfaceName;
 
 use crate::components::UserInputValue;
 
@@ -77,7 +78,7 @@ impl TryFrom<UserDeviceConfiguration> for Device {
             .right_ok_or(DeviceMisconfigurationError::InvalidDeviceLocation)?;
         let interface = configuration.interface
             .right_ok_or(DeviceMisconfigurationError::InvalidDeviceInterface)
-            .and_then(|interface_name| InterfaceName::try_from(interface_name)
+            .and_then(|interface_name| NetworkInterfaceName::try_from(interface_name)
                 .map_err(|_| DeviceMisconfigurationError::InvalidDeviceInterface)
             )?;
         Ok(Device{

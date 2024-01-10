@@ -8,7 +8,7 @@ use uuid::Uuid;
 
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::peer::PeerSetup;
-use opendut_types::topology::InterfaceName;
+use opendut_types::util::net::NetworkInterfaceName;
 use opendut_util::settings::{FileFormat, load_config};
 
 mod commands;
@@ -137,7 +137,7 @@ enum CreateResource {
         location: Option<String>,
         ///Interface of device
         #[arg(long)]
-        interface: Option<InterfaceName>,
+        interface: Option<NetworkInterfaceName>,
         /// Tags of device
         #[arg(long)]
         tags: Option<Vec<String>>,

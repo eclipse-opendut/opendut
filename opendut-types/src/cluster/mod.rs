@@ -1,12 +1,18 @@
 use std::collections::HashSet;
 use std::fmt;
 use std::ops::Not;
+
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+
+pub use assignment::*;
+
 use crate::peer::PeerId;
 use crate::topology::DeviceId;
 
+mod assignment;
 pub mod state;
+
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]

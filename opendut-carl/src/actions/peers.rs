@@ -277,7 +277,8 @@ mod test {
     use rstest::*;
 
     use opendut_types::peer::PeerName;
-    use opendut_types::topology::{InterfaceName, Topology};
+    use opendut_types::topology::Topology;
+    use opendut_types::util::net::NetworkInterfaceName;
 
     use crate::resources::manager::ResourcesManager;
 
@@ -286,6 +287,7 @@ mod test {
     mod store_peer_descriptor {
         use googletest::prelude::*;
         use rstest::*;
+        use opendut_types::util::net::NetworkInterfaceName;
 
         use super::*;
 
@@ -311,7 +313,7 @@ mod test {
                 name: String::from("PeerA Device 42"),
                 description: String::from("Additional device for peerA"),
                 location: String::from("somewhere"),
-                interface: InterfaceName::try_from("eth1").unwrap(),
+                interface: NetworkInterfaceName::try_from("eth1").unwrap(),
                 tags: vec![],
             };
 
@@ -364,7 +366,7 @@ mod test {
                         name: String::from("PeerA Device 1"),
                         description: String::from("Huii"),
                         location: String::from("Ulm"),
-                        interface: InterfaceName::try_from("eth0").unwrap(),
+                        interface: NetworkInterfaceName::try_from("eth0").unwrap(),
                         tags: vec![],
                     },
                     Device {
@@ -372,7 +374,7 @@ mod test {
                         name: String::from("PeerA Device 2"),
                         description: String::from("Huii"),
                         location: String::from("Stuttgart"),
-                        interface: InterfaceName::try_from("eth1").unwrap(),
+                        interface: NetworkInterfaceName::try_from("eth1").unwrap(),
                         tags: vec![],
                     }
                 ]

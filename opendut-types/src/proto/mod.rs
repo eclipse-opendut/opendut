@@ -231,8 +231,80 @@ pub mod cluster {
 
             value.into_iter().map(crate::cluster::state::ClusterState::try_from)
                 .collect::<Result<Vec<_>, _>>()
-                .map(|states| crate::cluster::state::ClusterStates(states))
+                .map(crate::cluster::state::ClusterStates)
                 .map_err(|cause| ErrorBuilder::new(cause.to_string()))
+        }
+    }
+
+    impl From<crate::cluster::ClusterAssignment> for ClusterAssignment {
+        fn from(value: crate::cluster::ClusterAssignment) -> Self {
+            Self {
+                id: Some(value.id.into()),
+                leader: Some(value.leader.into()),
+                assignments: value.assignments.into_iter().map(Into::into).collect(),
+            }
+        }
+    }
+    impl TryFrom<ClusterAssignment> for crate::cluster::ClusterAssignment {
+        type Error = ConversionError;
+
+        fn try_from(value: ClusterAssignment) -> Result<Self, Self::Error> {
+            type ErrorBuilder = ConversionErrorBuilder<ClusterAssignment, crate::cluster::ClusterAssignment>;
+
+            let cluster_id: crate::cluster::ClusterId = value.id
+                .ok_or(ErrorBuilder::new("field 'id' not set"))?
+                .try_into()?;
+
+            let leader: crate::peer::PeerId = value.leader
+                .ok_or(ErrorBuilder::new("field 'leader' not set"))?
+                .try_into()?;
+
+            let assignments: Vec<crate::cluster::PeerClusterAssignment> = value.assignments
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?;
+
+            Ok(Self {
+                id: cluster_id,
+                leader,
+                assignments,
+            })
+        }
+    }
+
+    impl From<crate::cluster::PeerClusterAssignment> for PeerClusterAssignment {
+        fn from(value: crate::cluster::PeerClusterAssignment) -> Self {
+            Self {
+                peer_id: Some(value.peer_id.into()),
+                vpn_address: Some(value.vpn_address.into()),
+                device_interfaces: value.device_interfaces.into_iter().map(Into::into).collect(),
+            }
+        }
+    }
+    impl TryFrom<PeerClusterAssignment> for crate::cluster::PeerClusterAssignment {
+        type Error = ConversionError;
+
+        fn try_from(value: PeerClusterAssignment) -> Result<Self, Self::Error> {
+            type ErrorBuilder = ConversionErrorBuilder<PeerClusterAssignment, crate::cluster::PeerClusterAssignment>;
+
+            let peer_id: crate::peer::PeerId = value.peer_id
+                .ok_or(ErrorBuilder::new("field 'peer_id' not set"))?
+                .try_into()?;
+
+            let vpn_address: std::net::IpAddr = value.vpn_address
+                .ok_or(ErrorBuilder::new("field 'vpn_address' not set"))?
+                .try_into()?;
+
+            let device_interfaces: Vec<crate::util::net::NetworkInterfaceName> = value.device_interfaces
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?;
+
+            Ok(Self {
+                peer_id,
+                vpn_address,
+                device_interfaces,
+            })
         }
     }
 
@@ -725,7 +797,7 @@ pub mod topology {
             let device_id: crate::topology::DeviceId = value.id
                 .ok_or(ErrorBuilder::new("Id not set"))?
                 .try_into()?;
-            let interface: crate::topology::InterfaceName = value.interface
+            let interface: crate::util::net::NetworkInterfaceName = value.interface
                 .ok_or(ErrorBuilder::new("Interface not set"))?
                 .try_into()?;
 
@@ -740,29 +812,12 @@ pub mod topology {
         }
     }
 
-    impl From<crate::topology::InterfaceName> for InterfaceName {
-        fn from(value: crate::topology::InterfaceName) -> Self {
-            Self {
-                name: value.name(),
-            }
-        }
-    }
-    impl TryFrom<InterfaceName> for crate::topology::InterfaceName {
-        type Error = ConversionError;
-
-        fn try_from(value: InterfaceName) -> Result<Self, Self::Error> {
-            type ErrorBuilder = ConversionErrorBuilder<Device, crate::topology::Device>;
-
-            crate::topology::InterfaceName::try_from(value.name)
-                .map_err(|cause| ErrorBuilder::new(format!("Failed to parse InterfaceName from proto: {cause}")))
-        }
-    }
-
     #[cfg(test)]
     #[allow(non_snake_case)]
     mod tests {
         use googletest::prelude::*;
         use uuid::Uuid;
+        use crate::proto::util::NetworkInterfaceName;
 
         use super::*;
 
@@ -779,7 +834,7 @@ pub mod topology {
                         name: String::from("device-1"),
                         description: String::from("Some device"),
                         location: String::from("Ulm"),
-                        interface: crate::topology::InterfaceName::try_from("tap0").unwrap(),
+                        interface: crate::util::net::NetworkInterfaceName::try_from("tap0").unwrap(),
                         tags: vec![String::from("tag-1"), String::from("tag-2")],
                     },
                     crate::topology::Device {
@@ -787,7 +842,7 @@ pub mod topology {
                         name: String::from("device-2"),
                         description: String::from("Some other device"),
                         location: String::from("Stuttgart"),
-                        interface: crate::topology::InterfaceName::try_from("tap1").unwrap(),
+                        interface: crate::util::net::NetworkInterfaceName::try_from("tap1").unwrap(),
                         tags: vec![String::from("tag-2")],
                     }
                 ],
@@ -800,7 +855,7 @@ pub mod topology {
                         name: String::from("device-1"),
                         description: String::from("Some device"),
                         location: String::from("Ulm"),
-                        interface: Some(InterfaceName { name: String::from("tap0") }),
+                        interface: Some(NetworkInterfaceName { name: String::from("tap0") }),
                         tags: vec![String::from("tag-1"), String::from("tag-2")],
                     },
                     Device {
@@ -808,7 +863,7 @@ pub mod topology {
                         name: String::from("device-2"),
                         description: String::from("Some other device"),
                         location: String::from("Stuttgart"),
-                        interface: Some(InterfaceName { name: String::from("tap1") }),
+                        interface: Some(NetworkInterfaceName { name: String::from("tap1") }),
                         tags: vec![String::from("tag-2")],
                     }
                 ],
@@ -831,7 +886,7 @@ pub mod topology {
                         name: String::from("device-1"),
                         description: String::from("Some device"),
                         location: String::from("Ulm"),
-                        interface: Some(InterfaceName { name: String::from("tap0") }),
+                        interface: Some(NetworkInterfaceName { name: String::from("tap0") }),
                         tags: vec![String::from("tag-1"), String::from("tag-2")],
                     },
                 ],
@@ -848,6 +903,7 @@ pub mod topology {
 
 pub mod util {
     use crate::proto::{ConversionError, ConversionErrorBuilder};
+    use crate::proto::util::ip_address::Address;
     use crate::util;
 
     include!(concat!(env!("OUT_DIR"), "/opendut.types.util.rs"));
@@ -941,6 +997,103 @@ pub mod util {
 
             url::Url::parse(&value.value)
                 .map_err(|cause| ErrorBuilder::new(format!("Url could not be parsed: {}", cause)))
+        }
+    }
+
+    impl From<std::net::IpAddr> for IpAddress {
+        fn from(value: std::net::IpAddr) -> Self {
+            match value {
+                std::net::IpAddr::V4(address) => Self {
+                    address: Some(ip_address::Address::IpV4(IpV4Address::from(address))),
+                },
+                std::net::IpAddr::V6(address) => Self {
+                    address: Some(ip_address::Address::IpV6(IpV6Address::from(address))),
+                },
+            }
+        }
+    }
+    impl TryFrom<IpAddress> for std::net::IpAddr {
+        type Error = ConversionError;
+
+        fn try_from(value: IpAddress) -> Result<Self, Self::Error> {
+            type ErrorBuilder = ConversionErrorBuilder<IpAddress, std::net::IpAddr>;
+
+            let address = value.address
+                .ok_or(ErrorBuilder::new("IP address not set"))?;
+
+            let address = match address {
+                Address::IpV4(address) => std::net::IpAddr::V4(
+                    std::net::Ipv4Addr::try_from(address)
+                        .map_err(|cause| ErrorBuilder::new(cause.to_string()))?
+                ),
+                Address::IpV6(address) => std::net::IpAddr::V6(
+                    std::net::Ipv6Addr::try_from(address)
+                        .map_err(|cause| ErrorBuilder::new(cause.to_string()))?
+                ),
+            };
+            Ok(address)
+        }
+    }
+
+    impl From<std::net::Ipv4Addr> for IpV4Address {
+        fn from(value: std::net::Ipv4Addr) -> Self {
+            Self {
+                value: Vec::from(value.octets()),
+            }
+        }
+    }
+    impl TryFrom<IpV4Address> for std::net::Ipv4Addr {
+        type Error = ConversionError;
+
+        fn try_from(value: IpV4Address) -> Result<Self, Self::Error> {
+            type ErrorBuilder = ConversionErrorBuilder<IpV4Address, std::net::Ipv4Addr>;
+
+            const IPV4_LENGTH: usize = 4; //bytes
+
+            let octets: [u8; IPV4_LENGTH] = value.value[0..IPV4_LENGTH].try_into()
+                .map_err(|cause| ErrorBuilder::new(format!("IPv4 address could not be parsed, because it did not have the correct length ({IPV4_LENGTH} bytes): {}", cause)))?;
+
+            Ok(std::net::Ipv4Addr::from(octets))
+        }
+    }
+
+    impl From<std::net::Ipv6Addr> for IpV6Address {
+        fn from(value: std::net::Ipv6Addr) -> Self {
+            Self {
+                value: Vec::from(value.octets()),
+            }
+        }
+    }
+    impl TryFrom<IpV6Address> for std::net::Ipv6Addr {
+        type Error = ConversionError;
+
+        fn try_from(value: IpV6Address) -> Result<Self, Self::Error> {
+            type ErrorBuilder = ConversionErrorBuilder<IpV6Address, std::net::Ipv6Addr>;
+
+            const IPV6_LENGTH: usize = 16; //bytes
+
+            let octets: [u8; IPV6_LENGTH] = value.value[0..IPV6_LENGTH].try_into()
+                .map_err(|cause| ErrorBuilder::new(format!("IPv6 address could not be parsed, because it did not have the correct length ({IPV6_LENGTH} bytes): {}", cause)))?;
+
+            Ok(std::net::Ipv6Addr::from(octets))
+        }
+    }
+
+    impl From<crate::util::net::NetworkInterfaceName> for NetworkInterfaceName {
+        fn from(value: crate::util::net::NetworkInterfaceName) -> Self {
+            Self {
+                name: value.name(),
+            }
+        }
+    }
+    impl TryFrom<NetworkInterfaceName> for crate::util::net::NetworkInterfaceName {
+        type Error = ConversionError;
+
+        fn try_from(value: NetworkInterfaceName) -> Result<Self, Self::Error> {
+            type ErrorBuilder = ConversionErrorBuilder<NetworkInterfaceName, crate::util::net::NetworkInterfaceName>;
+
+            crate::util::net::NetworkInterfaceName::try_from(value.name)
+                .map_err(|cause| ErrorBuilder::new(format!("Failed to parse InterfaceName from proto: {cause}")))
         }
     }
 }

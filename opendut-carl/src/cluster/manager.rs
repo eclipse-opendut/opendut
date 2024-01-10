@@ -147,7 +147,8 @@ mod test {
 
     use opendut_types::cluster::ClusterName;
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerName};
-    use opendut_types::topology::{Device, DeviceId, InterfaceName, Topology};
+    use opendut_types::topology::{Device, DeviceId, Topology};
+    use opendut_types::util::net::NetworkInterfaceName;
 
     use crate::actions::{CreateClusterConfigurationParams, StorePeerDescriptorParams};
     use crate::peer::broker::broker::PeerMessagingBroker;
@@ -181,7 +182,7 @@ mod test {
                         name: String::from("PeerA Device 1"),
                         description: String::from("Huii"),
                         location: String::from("Ulm"),
-                        interface: InterfaceName::try_from("eth0").unwrap(),
+                        interface: NetworkInterfaceName::try_from("eth0").unwrap(),
                         tags: vec![],
                     }
                 ]
@@ -199,7 +200,7 @@ mod test {
                         name: String::from("PeerB Device 1"),
                         description: String::from("Pfuii"),
                         location: String::from("New York"),
-                        interface: InterfaceName::try_from("can1").unwrap(),
+                        interface: NetworkInterfaceName::try_from("can1").unwrap(),
                         tags: vec![],
                     }
                 ]

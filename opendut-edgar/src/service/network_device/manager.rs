@@ -7,7 +7,7 @@ use futures::TryStreamExt;
 use netlink_packet_route::link::nlas;
 use netlink_packet_route::LinkMessage;
 
-use opendut_types::topology::InterfaceName;
+use opendut_types::util::net::NetworkInterfaceName;
 
 use crate::service::network_device::gretap::Gretap;
 
@@ -24,14 +24,14 @@ impl NetworkDeviceManager {
     }
 
     pub async fn list_interfaces(&self) -> Result<Vec<Interface>> {
-        fn interface_name_from(interface: LinkMessage) -> anyhow::Result<InterfaceName> {
+        fn interface_name_from(interface: LinkMessage) -> anyhow::Result<NetworkInterfaceName> {
             let interface_name = interface.nlas.into_iter()
                 .find_map(|nla| match nla {
                     nlas::Nla::IfName(name) => Some(name),
                     _ => None,
                 })
                 .ok_or(anyhow!("No name attribute found."))?;
-            let interface_name = InterfaceName::try_from(interface_name)?;
+            let interface_name = NetworkInterfaceName::try_from(interface_name)?;
             Ok(interface_name)
         }
 
@@ -56,17 +56,17 @@ impl NetworkDeviceManager {
         Ok(interfaces)
     }
 
-    pub async fn find_interface(&self, name: &InterfaceName) -> Result<Option<Interface>> {
+    pub async fn find_interface(&self, name: &NetworkInterfaceName) -> Result<Option<Interface>> {
         let interfaces = self.list_interfaces().await?;
         let maybe_interface = interfaces.into_iter().find(|interface| interface.name == *name);
         Ok(maybe_interface)
     }
-    pub async fn try_find_interface(&self, name: &InterfaceName) -> Result<Interface> {
+    pub async fn try_find_interface(&self, name: &NetworkInterfaceName) -> Result<Interface> {
         self.find_interface(name).await?
             .ok_or(Error::InterfaceNotFound { name: name.clone() })
     }
 
-    pub async fn create_empty_bridge(&self, name: &InterfaceName) -> Result<Interface> {
+    pub async fn create_empty_bridge(&self, name: &NetworkInterfaceName) -> Result<Interface> {
         self.handle
             .link()
             .add()
@@ -79,7 +79,7 @@ impl NetworkDeviceManager {
 
     // We only support IPv4 for now, as NetBird only assigns IPv4 addresses to peers.
     // This does not prevent IPv6 traffic from being routed between peers.
-    pub async fn create_gretap_v4_interface(&self, name: &InterfaceName, local_ip: &Ipv4Addr, remote_ip: &Ipv4Addr) -> Result<Interface> {
+    pub async fn create_gretap_v4_interface(&self, name: &NetworkInterfaceName, local_ip: &Ipv4Addr, remote_ip: &Ipv4Addr) -> Result<Interface> {
         self.handle
             .link()
             .add()
@@ -140,7 +140,7 @@ impl NetworkDeviceManager {
 #[derive(Clone, Debug)]
 pub struct Interface {
     pub index: u32,
-    pub name: InterfaceName,
+    pub name: NetworkInterfaceName,
 }
 impl std::fmt::Display for Interface {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -151,15 +151,15 @@ impl std::fmt::Display for Interface {
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Failure while creating bridge '{name}': {cause}")]
-    BridgeCreation { name: InterfaceName, cause: rtnetlink::Error },
+    BridgeCreation { name: NetworkInterfaceName, cause: rtnetlink::Error },
     #[error("Failed to establish connection to netlink: {cause}")]
     Connecting { cause: io::Error },
     #[error("Failure while deleting interface {interface}: {cause}")]
     DeleteInterface { interface: Interface, cause: rtnetlink::Error },
     #[error("Failure while creating gretap interface '{name}': {cause}")]
-    GretapCreation { name: InterfaceName, cause: rtnetlink::Error },
+    GretapCreation { name: NetworkInterfaceName, cause: rtnetlink::Error },
     #[error("Interface with name '{name}' not found.")]
-    InterfaceNotFound { name: InterfaceName },
+    InterfaceNotFound { name: NetworkInterfaceName },
     #[error("Failure while listing interfaces: {cause}")]
     ListInterfaces { cause: rtnetlink::Error },
     #[error("Failure while setting interface {interface} to state 'up': {cause}")]

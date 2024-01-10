@@ -36,7 +36,8 @@ pub mod create {
     use uuid::Uuid;
     use opendut_carl_api::carl::CarlClient;
     use opendut_types::peer::{PeerId};
-    use opendut_types::topology::{Device, DeviceId, InterfaceName};
+    use opendut_types::topology::{Device, DeviceId};
+    use opendut_types::util::net::NetworkInterfaceName;
     use crate::DescribeOutputFormat;
 
     #[allow(clippy::too_many_arguments)]
@@ -47,7 +48,7 @@ pub mod create {
         name: Option<String>,
         description: Option<String>,
         location: Option<String>,
-        interface: Option<InterfaceName>,
+        interface: Option<NetworkInterfaceName>,
         tags: Option<Vec<String>>
     ) -> crate::Result<()> {
         let peer_id = PeerId::from(peer_id);

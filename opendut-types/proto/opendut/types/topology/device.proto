@@ -3,6 +3,7 @@ syntax = "proto3";
 package opendut.types.topology;
 
 import "opendut/types/util/uuid.proto";
+import "opendut/types/util/net.proto";
 
 message DeviceId {
   opendut.types.util.Uuid uuid = 1;
@@ -13,10 +14,6 @@ message Device {
   string name = 2;
   string description = 3;
   string location = 4;
-  InterfaceName interface = 5;
+  opendut.types.util.NetworkInterfaceName interface = 5;
   repeated string tags = 6;
-}
-
-message InterfaceName {
-  string name = 1;
 }

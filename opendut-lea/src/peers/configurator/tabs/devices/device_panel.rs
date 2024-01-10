@@ -1,5 +1,6 @@
 use leptos::{component, create_read_slice, create_slice, event_target_value, IntoView, MaybeSignal, RwSignal, SignalGet, SignalGetUntracked, view};
-use opendut_types::topology::{DeviceId, InterfaceName};
+use opendut_types::topology::DeviceId;
+use opendut_types::util::net::NetworkInterfaceName;
 
 use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, IconButton, ReadOnlyInput, Toggled, UserInput, UserInputValue};
 use crate::peers::configurator::types::{EMPTY_DEVICE_NAME_ERROR_MESSAGE, UserDeviceConfiguration};
@@ -146,7 +147,7 @@ fn DeviceInterfaceInput(
     );
 
     let validator = |input: String| {
-        match InterfaceName::try_from(Clone::clone(&input)) {
+        match NetworkInterfaceName::try_from(Clone::clone(&input)) {
             Err(error) => {
                 UserInputValue::Both(error.to_string(), input)
             }

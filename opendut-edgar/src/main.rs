@@ -7,7 +7,7 @@ use uuid::Uuid;
 
 use opendut_edgar::setup;
 use opendut_types::peer::PeerId;
-use opendut_types::topology::InterfaceName;
+use opendut_types::util::net::NetworkInterfaceName;
 use opendut_types::vpn::netbird::SetupKey;
 
 #[derive(Debug, Parser)]
@@ -66,7 +66,7 @@ enum SetupMode {
 
         /// Name of the bridge to use, maximum 15 characters long
         #[arg(long, default_value="br-opendut")]
-        bridge: InterfaceName,
+        bridge: NetworkInterfaceName,
     },
 }
 

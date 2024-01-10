@@ -5,7 +5,7 @@ use anyhow::Context;
 use url::Url;
 
 use opendut_types::peer::PeerSetup;
-use opendut_types::topology::InterfaceName;
+use opendut_types::util::net::NetworkInterfaceName;
 use opendut_types::vpn::netbird::SetupKey;
 use opendut_types::vpn::VpnPeerConfig;
 use opendut_util::logging;
@@ -32,7 +32,7 @@ pub async fn managed(run_mode: RunMode, setup_string: String, mtu: u16) -> anyho
     };
 
     let network_device_manager = Rc::new(NetworkDeviceManager::create()?);
-    let bridge_name = InterfaceName::try_from("br-opendut").unwrap();
+    let bridge_name = NetworkInterfaceName::try_from("br-opendut").unwrap();
 
     let tasks: Vec<Box<dyn Task>> = vec![
         Box::new(tasks::CheckOsRequirements),
@@ -64,7 +64,7 @@ pub async fn managed(run_mode: RunMode, setup_string: String, mtu: u16) -> anyho
 }
 
 #[allow(clippy::box_default)]
-pub async fn unmanaged(run_mode: RunMode, management_url: Url, setup_key: SetupKey, bridge_name: InterfaceName, router: Router, mtu: u16) -> anyhow::Result<()> {
+pub async fn unmanaged(run_mode: RunMode, management_url: Url, setup_key: SetupKey, bridge_name: NetworkInterfaceName, router: Router, mtu: u16) -> anyhow::Result<()> {
 
     let network_device_manager = Rc::new(NetworkDeviceManager::create()?);
 

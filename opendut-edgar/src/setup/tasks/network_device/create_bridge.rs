@@ -3,14 +3,14 @@ use std::rc::Rc;
 use anyhow::Result;
 use futures::executor::block_on;
 
-use opendut_types::topology::InterfaceName;
+use opendut_types::util::net::NetworkInterfaceName;
 
 use crate::service::network_device::manager::NetworkDeviceManager;
 use crate::setup::task::{Success, Task, TaskFulfilled};
 
 pub struct CreateBridge {
     pub network_device_manager: Rc<NetworkDeviceManager>,
-    pub bridge_name: InterfaceName,
+    pub bridge_name: NetworkInterfaceName,
 }
 impl Task for CreateBridge {
     fn description(&self) -> String {
