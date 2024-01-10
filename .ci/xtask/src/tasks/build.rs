@@ -31,7 +31,7 @@ pub fn build_release(package: Package, target: Target) -> crate::Result {
             "--target",
             &target.triple(),
         ])
-        .run_requiring_success();
+        .run_requiring_success()?;
     Ok(())
 }
 

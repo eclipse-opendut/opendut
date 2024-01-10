@@ -48,7 +48,7 @@ pub mod book {
             .arg("serve")
             .arg("--open")
             .current_dir(doc_dir())
-            .run_requiring_success();
+            .run_requiring_success()?;
         Ok(())
     }
 

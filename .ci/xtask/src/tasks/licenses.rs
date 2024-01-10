@@ -56,9 +56,7 @@ pub mod check {
 
         Command::new("cargo-deny")
             .arg("check")
-            .run_requiring_success();
-
-        Ok(())
+            .run_requiring_success()
     }
 }
 
@@ -76,7 +74,7 @@ pub mod json {
         Command::new("sh")
             .arg("-c")
             .arg(format!("cargo deny --exclude-dev list --layout crate --format json > {}", out_file.display()))
-            .run_requiring_success();
+            .run_requiring_success()?;
 
         log::debug!("Wrote licenses for package '{package}' to path: {}", out_file.display());
 

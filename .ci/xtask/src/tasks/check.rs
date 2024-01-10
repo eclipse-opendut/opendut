@@ -18,9 +18,9 @@ impl CheckCli {
 #[tracing::instrument]
 pub fn check() -> crate::Result {
 
-    test();
+    test()?;
 
-    clippy();
+    clippy()?;
 
     check_licenses()?;
 
@@ -28,22 +28,22 @@ pub fn check() -> crate::Result {
 }
 
 #[tracing::instrument]
-fn test() {
+fn test() -> crate::Result {
     Command::new("cargo")
         .args([
             "test",
             "--all-features",
         ])
-        .run_requiring_success();
+        .run_requiring_success()
 }
 
 #[tracing::instrument]
-fn clippy() {
+fn clippy() -> crate::Result {
     Command::new("cargo")
         .args([
             "clippy",
             "--workspace",
             "--exclude=opendut-lea" // rustc (1.75.0) crashes for opendut-lea.
         ])
-        .run_requiring_success();
+        .run_requiring_success()
 }

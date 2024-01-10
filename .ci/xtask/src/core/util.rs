@@ -1,5 +1,6 @@
 use std::fs;
 use std::process::Command;
+use anyhow::anyhow;
 
 use assert_fs::assert::PathAssert;
 use tracing_subscriber::fmt::format::FmtSpan;
@@ -19,33 +20,33 @@ pub fn install_crate(install: Crate) -> crate::Result {
         .arg("install")
         .arg("--version").arg(version)
         .arg(install.ident())
-        .run_requiring_success();
-    Ok(())
+        .run_requiring_success()
 }
 
 #[tracing::instrument]
 pub fn install_toolchain(arch: Arch) -> crate::Result {
     Command::new("rustup")
         .args(["target", "add", &arch.triple()])
-        .run_requiring_success();
-    Ok(())
+        .run_requiring_success()
 }
 
 
 pub trait RunRequiringSuccess {
-    fn run_requiring_success(&mut self);
+    fn run_requiring_success(&mut self) -> crate::Result;
 }
 impl RunRequiringSuccess for Command {
-    fn run_requiring_success(&mut self) {
+    fn run_requiring_success(&mut self) -> crate::Result {
         let status = self.status()
             .expect("Error while running command.");
 
-        if !status.success() {
+        if status.success() {
+            Ok(())
+        } else {
             let mut error = format!("Error while running command: {self:?}\n");
             if let Some(status) = &status.code() {
                 error += format!("  Exited with status code {}.\n", status).as_ref();
             }
-            panic!("{}", error)
+            Err(anyhow!(error))
         }
     }
 }

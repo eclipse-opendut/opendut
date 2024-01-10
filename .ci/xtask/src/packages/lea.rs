@@ -54,7 +54,7 @@ pub mod build {
                 "--dist", &out_dir.display().to_string(),
             ])
             .current_dir(working_dir)
-            .run_requiring_success();
+            .run_requiring_success()?;
 
         Ok(())
     }
@@ -75,7 +75,7 @@ pub mod run {
             .arg("watch")
             .args(pass_through)
             .current_dir(self_dir())
-            .run_requiring_success();
+            .run_requiring_success()?;
         Ok(())
     }
 }
