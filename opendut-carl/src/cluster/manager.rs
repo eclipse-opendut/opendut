@@ -1,10 +1,15 @@
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
+use anyhow::bail;
 
 use opendut_carl_api::carl::cluster::{DeleteClusterDeploymentError, StoreClusterDeploymentError};
 use opendut_carl_api::proto::services::peer_messaging_broker::AssignCluster;
 use opendut_carl_api::proto::services::peer_messaging_broker::downstream::Message;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
+use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::proto::cluster::ClusterAssignment;
+use opendut_types::topology::DeviceId;
+use opendut_types::util::net::NetworkInterfaceName;
 
 use crate::actions;
 use crate::actions::ListPeerDescriptorsParams;
@@ -138,6 +143,42 @@ impl ClusterManager {
     }
 }
 
+fn determine_member_interface_mapping(
+    cluster_devices: HashSet<DeviceId>,
+    all_peers: Vec<PeerDescriptor>,
+    leader: PeerId,
+) -> anyhow::Result<HashMap<PeerId, Vec<NetworkInterfaceName>>> { //TODO replace anyhow::Result with proper result type
+
+    let mut result: HashMap<PeerId, Vec<NetworkInterfaceName>> = HashMap::new();
+
+    result.insert(leader, Vec::new()); //will later be replaced, if leader has devices
+
+    for device_id in cluster_devices {
+        let member_interfaces = all_peers.iter().find_map(|peer| {
+            let interfaces: Vec<NetworkInterfaceName> = peer.topology.devices.iter()
+                .filter(|device| device.id == device_id)
+                .map(|device| device.interface.clone())
+                .collect();
+
+            if interfaces.is_empty() {
+                None
+            } else {
+                Some((peer.id, interfaces))
+            }
+        });
+
+        if let Some((peer, interfaces)) = member_interfaces {
+            result.entry(peer)
+                .or_default()
+                .extend(interfaces);
+        } else {
+            bail!("Failed to find matching peer for device <{device_id}>.");
+        }
+    }
+
+    Ok(result)
+}
+
 #[cfg(test)]
 mod test {
     use std::collections::HashSet;
@@ -268,6 +309,57 @@ mod test {
 
         assert_that!(testee.deploy(unknown_cluster).await, err(eq(DeployClusterError::ClusterNotFound(unknown_cluster))));
 
+        Ok(())
+    }
+
+    #[test]
+    fn should_determine_member_interface_mapping() -> anyhow::Result<()> {
+
+        fn device(id: DeviceId, interface: NetworkInterfaceName) -> Device {
+            Device {
+                id,
+                name: format!("test-device-{id}"),
+                description: String::new(),
+                location: String::new(),
+                interface,
+                tags: Vec::new(),
+            }
+        }
+
+        let device_a = device(DeviceId::random(), NetworkInterfaceName::try_from("a")?);
+        let device_b = device(DeviceId::random(), NetworkInterfaceName::try_from("b")?);
+        let device_c = device(DeviceId::random(), NetworkInterfaceName::try_from("c")?);
+
+        let cluster_devices = HashSet::from([device_a.id, device_b.id, device_c.id]);
+
+        fn peer_descriptor(id: PeerId, devices: Vec<Device>) -> PeerDescriptor {
+            PeerDescriptor {
+                id,
+                name: PeerName::try_from(format!("peer-{id}")).unwrap(),
+                topology: Topology {
+                    devices,
+                },
+            }
+        }
+
+        let peer_1 = peer_descriptor(PeerId::random(), vec![device_a.clone()]);
+        let peer_2 = peer_descriptor(PeerId::random(), vec![device_b.clone(), device_c.clone()]);
+        let peer_leader = peer_descriptor(PeerId::random(), vec![]);
+
+
+        let all_peers = vec![peer_1.clone(), peer_2.clone(), peer_leader.clone()];
+        let leader = peer_leader.id;
+
+        let result = determine_member_interface_mapping(cluster_devices, all_peers, leader)?;
+
+        assert_that!(
+            result,
+            unordered_elements_are![
+                (eq(peer_1.id), unordered_elements_are![eq(device_a.interface)]),
+                (eq(peer_2.id), unordered_elements_are![eq(device_b.interface), eq(device_c.interface)]),
+                (eq(peer_leader.id), empty()),
+            ]
+        );
         Ok(())
     }
 }
