@@ -154,6 +154,7 @@ mod sbom {
                                 | "MIT"
                                 | "MIT AND Apache-2.0"
                                 | "MIT AND BSD-3-Clause"
+                                | "MIT-0"
                                 | "Zlib"
                                 | "MPL-2.0"
                                 => license, //leave unchanged
