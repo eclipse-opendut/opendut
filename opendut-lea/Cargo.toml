@@ -9,17 +9,18 @@ opendut-carl-api = { workspace = true, features = ["wasm-client"] }
 opendut-types = { workspace = true }
 
 console_error_panic_hook = { workspace = true }
-console_log = { workspace = true }
 gloo-net = { workspace = true, features = ["json"]}
 gloo-timers = { workspace = true, features = ["futures"] }
 leptos = { workspace = true, features = ["csr"] }
 leptos_router = { workspace = true, features = ["csr"] }
 leptos-use = { workspace = true }
-log = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 thiserror = { workspace = true }
 tonic = { workspace = true }
 tonic-web-wasm-client = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["ansi"] }
+tracing-web = { workspace = true }
 url = { workspace = true }
 uuid = { workspace = true, features = ["v4", "serde"] }
 

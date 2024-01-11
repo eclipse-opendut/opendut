@@ -1,6 +1,7 @@
 use gloo_net::http;
 use leptos::*;
 use serde::Deserialize;
+use tracing::info;
 use url::Url;
 
 use opendut_carl_api::carl::wasm::CarlClient;
@@ -41,7 +42,7 @@ pub fn App() -> impl IntoView {
             .json::<AppConfig>()
             .await.map_err(|_| AppGlobalsError { message: String::from("Could not parse configuration!")})?;
 
-        log::info!("Configuration: {config:?}");
+        info!("Configuration: {config:?}");
 
         let client = CarlClient::create(Clone::clone(&config.carl_url))
             .expect("Failed to create CARL client");

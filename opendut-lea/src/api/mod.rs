@@ -20,6 +20,7 @@ mod licenses {
 
     use gloo_net::http;
     use serde::Deserialize;
+    use tracing::debug;
 
     use crate::api::ApiError;
 
@@ -50,7 +51,7 @@ mod licenses {
 
     pub async fn get_licenses() -> Result<Vec<ComponentLicenses>, ApiError> {
 
-        log::debug!("Requesting licenses.");
+        debug!("Requesting licenses.");
 
         let index = {
             let licenses_index = http::Request::get("/api/licenses")
@@ -100,7 +101,7 @@ mod licenses {
             });
         }
 
-        log::debug!("Retrieved licenses.");
+        debug!("Retrieved licenses.");
 
         Ok(result)
     }

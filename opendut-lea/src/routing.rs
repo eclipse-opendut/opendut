@@ -1,5 +1,6 @@
 use leptos::*;
 use leptos_router::use_navigate;
+use tracing::info;
 use url::Url;
 
 use opendut_types::cluster::ClusterId;
@@ -104,7 +105,7 @@ pub fn navigate_to(route: WellKnownRoutes) {
         result
     };
 
-    log::info!("Navigating to {}", route);
+    info!("Navigating to {}", route);
 
     let navigate = use_navigate();
 

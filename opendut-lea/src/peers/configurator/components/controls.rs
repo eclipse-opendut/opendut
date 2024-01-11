@@ -1,4 +1,5 @@
 use leptos::*;
+use tracing::{error, info};
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use crate::app::{ExpectGlobals, use_app_globals};
 
@@ -38,15 +39,15 @@ fn SavePeerButton(
                     let result = carl.peers.store_peer_descriptor(peer_descriptor).await;
                     match result {
                         Ok(_) => {
-                            log::info!("Successfully stored peer: {peer_id}");
+                            info!("Successfully stored peer: {peer_id}");
                         }
                         Err(cause) => {
-                            log::error!("Failed to create peer <{peer_id}>, due to error: {cause:?}");
+                            error!("Failed to create peer <{peer_id}>, due to error: {cause:?}");
                         }
                     }
                 }
                 Err(error) => {
-                    log::error!("Failed to dispatch create peer action, due to misconfiguration!\n  {error}");
+                    error!("Failed to dispatch create peer action, due to misconfiguration!\n  {error}");
                 }
             }
         }
@@ -92,11 +93,11 @@ fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl In
             let result = carl.peers.delete_peer_descriptor(peer_id).await;
             match result {
                 Ok(_) => {
-                    log::info!("Successfully deleted peer: {}", peer_id);
+                    info!("Successfully deleted peer: {}", peer_id);
                     navigate_to(WellKnownRoutes::PeersOverview);
                 }
                 Err(cause) => {
-                    log::error!("Failed to delete peer <{peer_id}>, due to error: {cause:?}");
+                    error!("Failed to delete peer <{peer_id}>, due to error: {cause:?}");
                 }
             }
         }

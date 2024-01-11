@@ -1,4 +1,5 @@
 use leptos::*;
+use tracing::{error, info};
 
 use opendut_types::cluster::{ClusterConfiguration, ClusterId};
 use crate::app::{ExpectGlobals, use_app_globals};
@@ -35,15 +36,15 @@ fn SaveClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>
                     let result = carl.cluster.store_cluster_configuration(configuration).await;
                     match result {
                         Ok(cluster_id) => {
-                            log::info!("Successfully stored cluster: {}", cluster_id);
+                            info!("Successfully stored cluster: {}", cluster_id);
                         }
                         Err(cause) => {
-                            log::error!("Failed to store cluster <{}>, due to error: {:?}", "id", cause);
+                            error!("Failed to store cluster <{}>, due to error: {:?}", "id", cause);
                         }
                     }
                 }
                 Err(_) => {
-                    log::error!("Failed to dispatch store cluster action, due to misconfiguration!");
+                    error!("Failed to dispatch store cluster action, due to misconfiguration!");
                 }
             }
         }
