@@ -118,7 +118,7 @@ pub mod bundle {
         let in_dir = out_package_dir(package, target);
 
         let out_file = out_file(package, target);
-        fs::create_dir_all(&out_file.parent().unwrap())?;
+        fs::create_dir_all(out_file.parent().unwrap())?;
         let out_file = fs::File::create(out_file)?;
 
         let mut tar_gz = tar::Builder::new(

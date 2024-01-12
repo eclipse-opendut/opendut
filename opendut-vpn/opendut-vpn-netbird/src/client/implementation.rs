@@ -131,7 +131,7 @@ impl VpnManagementClient for Client {
         let self_group = self.get_netbird_group(&netbird::GroupName::from(peer_id)).await
             .map_err(|error| DeletePeerError::ResolutionFailure { peer_id, error: error.into() })?;
 
-        if let Some(peer_info) = self_group.peers.get(0) {
+        if let Some(peer_info) = self_group.peers.first() {
             self.delete_netbird_peer(&peer_info.id)
                 .await
                 .map_err(|error| DeletePeerError::DeletionFailure { peer_id, error: error.into() })?;
@@ -260,7 +260,7 @@ impl Client {
     }
 
     async fn delete_netbird_group(&self, group_id: &group::GroupId) -> Result<(), RequestError> {
-        let url = routes::group(Clone::clone(&self.base_url), &group_id);
+        let url = routes::group(Clone::clone(&self.base_url), group_id);
 
         let request = Request::new(Method::DELETE, url);
 
@@ -282,7 +282,7 @@ impl Client {
     }
 
     async fn delete_netbird_rule(&self, rule_id: &rules::RuleId) -> Result<(), RequestError> {
-        let url = routes::rule(Clone::clone(&self.base_url), &rule_id);
+        let url = routes::rule(Clone::clone(&self.base_url), rule_id);
 
         let request = Request::new(Method::DELETE, url);
 

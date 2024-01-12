@@ -4,8 +4,8 @@ pub(crate) enum TheoError {
     ConsumeOutputError(String)
 }
 
-pub(crate) const TARGET_TRIPLE: &'static str = "x86_64-unknown-linux-gnu";
-pub(crate) const OPENDUT_THEO_DISABLE_ENV_CHECKS: &'static str = "OPENDUT_THEO_DISABLE_ENV_CHECKS";
+pub(crate) const TARGET_TRIPLE: &str = "x86_64-unknown-linux-gnu";
+pub(crate) const OPENDUT_THEO_DISABLE_ENV_CHECKS: &str = "OPENDUT_THEO_DISABLE_ENV_CHECKS";
 
 pub(crate) mod project;
 pub(crate) mod docker;

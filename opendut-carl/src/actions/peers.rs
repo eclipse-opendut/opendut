@@ -52,7 +52,7 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
             }
             else {
                 log::debug!("Storing peer descriptor of '{peer_name}' <{peer_id}>.\n  {peer_descriptor:?}");
-                (peer_descriptor.topology.devices.iter().cloned().collect(), Vec::<Device>::new())
+                (peer_descriptor.topology.devices.to_vec(), Vec::<Device>::new())
             };
 
             devices_to_remove.iter().for_each(|device| {
@@ -144,7 +144,7 @@ pub async fn delete_peer_descriptor(params: DeletePeerDescriptorParams) -> Resul
                 .await
                 .map_err(|cause| DeletePeerDescriptorError::Internal {
                     peer_id,
-                    peer_name: Clone::clone(&peer_name),
+                    peer_name: Clone::clone(peer_name),
                     cause: cause.to_string()
                 })?;
             log::info!("Successfully deleted vpn peer <{peer_id}>.");

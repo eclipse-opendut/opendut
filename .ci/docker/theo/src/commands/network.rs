@@ -99,7 +99,7 @@ pub(crate) fn docker_inspect_network() {
         };
 
         let padding = std::cmp::max(0, 20 - ip_address.clone().len());
-        let whitespace = std::iter::repeat(" ").take(padding).collect::<String>();
+        let whitespace = " ".repeat(padding);
         let padded_ip_address = ip_address.clone() + &whitespace;
         println!("{}  {}", padded_ip_address, hostname);
     }

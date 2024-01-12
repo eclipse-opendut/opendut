@@ -80,7 +80,7 @@ impl ProjectRootDir for PathBuf {
 
 fn get_docker_group_id() -> String {
     let docker_getent_group = consume_output(Command::new("getent").arg("group").arg("docker").output()).expect("Failed to get docker group.");
-    let docker_group_id = docker_getent_group.split(":").nth(2).expect("Failed to get docker group id").to_string();
+    let docker_group_id = docker_getent_group.split(':').nth(2).expect("Failed to get docker group id").to_string();
     docker_group_id
 }
 
@@ -108,7 +108,7 @@ impl Default for TheoDynamicEnvMap {
         fn read_pem_certificate() -> String {
             let ca_pem_file = PathBuf::project_path_buf().join("resources").join("development").join("tls").join("insecure-development-ca.pem");
             let pem_file = ca_pem_file.to_str().unwrap();
-            let pem_file = std::fs::read_to_string(pem_file).expect("Failed to insecure development ca pem file.").replace("\n", "\\n").trim_end().to_string();
+            let pem_file = std::fs::read_to_string(pem_file).expect("Failed to insecure development ca pem file.").replace('\n', "\\n").trim_end().to_string();
             pem_file
         }
 
@@ -200,7 +200,7 @@ pub(crate) fn check_dot_env_variables() {
     for (env_key, env_value) in env_map.0.iter() {
         match env::var(env_key) {
             Ok(value) => {
-                let value_without_newlines = value.clone().replace("\n", "\\n");
+                let value_without_newlines = value.clone().replace('\n', "\\n");
                 let env_value = env_value.clone().trim_matches('"').to_string();
                 // check if all environment variables are set correctly
                 if value_without_newlines != *env_value {

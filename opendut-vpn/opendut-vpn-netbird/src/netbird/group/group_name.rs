@@ -43,12 +43,12 @@ impl TryFrom<&str> for GroupName {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         if let Some(uuid) = value.strip_prefix(GroupName::PEER_GROUP_PREFIX) {
             PeerId::try_from(uuid)
-                .map(|id| Self::Peer(id))
+                .map(Self::Peer)
                 .map_err(|cause| InvalidGroupNameError { value: value.to_owned(), cause: cause.into() })
         }
         else if let Some(uuid) = value.strip_prefix(GroupName::CLUSTER_GROUP_PREFIX) {
             ClusterId::try_from(uuid)
-                .map(|id| Self::Cluster(id))
+                .map(Self::Cluster)
                 .map_err(|cause| InvalidGroupNameError { value: value.to_owned(), cause: cause.into() })
         }
         else {

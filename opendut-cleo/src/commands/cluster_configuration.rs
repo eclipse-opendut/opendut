@@ -13,7 +13,7 @@ pub mod create {
             .map_err(|cause| format!("Error while creating cluster configuration: {}", cause))?;
 
         let leader = PeerId::from(leader_id); //TODO: check if peer exists
-        let cluster_id = ClusterId::from(cluster_id.unwrap_or_else(|| Uuid::new_v4()));
+        let cluster_id = ClusterId::from(cluster_id.unwrap_or_else(Uuid::new_v4));
 
         let all_devices = carl.peers.list_devices().await
             .map_err(|error| format!("Error while listing devices.\n  {}", error))?;

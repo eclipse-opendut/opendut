@@ -236,7 +236,7 @@ mod tests {
 
         let peer_id = PeerId::random();
         let peer_descriptor = PeerDescriptor {
-            id: peer_id.into(),
+            id: peer_id,
             name: PeerName::try_from("TestPeer").unwrap(),
             topology: Topology::default(),
         };

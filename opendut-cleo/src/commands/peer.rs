@@ -60,7 +60,7 @@ pub mod list {
     }
 
     fn filter_connected_peers(all_peers: &Vec<PeerDescriptor>, connected_peers: &Vec<PeerId>) -> Vec<PeerTable> {
-        all_peers.into_iter().map(|peer| {
+        all_peers.iter().map(|peer| {
             let status = if connected_peers.contains(&peer.id) {
                 PeerStatus::Connected
             } else {
@@ -208,7 +208,7 @@ pub mod create {
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerName};
 
     pub async fn execute(carl: &mut CarlClient, name: String, id: Option<Uuid>) -> crate::Result<()> {
-        let id = PeerId::from(id.unwrap_or_else(|| Uuid::new_v4()));
+        let id = PeerId::from(id.unwrap_or_else(Uuid::new_v4));
         match PeerName::try_from(name) {
             Ok(name) => {
                 let descriptor: PeerDescriptor = PeerDescriptor { id, name: Clone::clone(&name), topology: Default::default() };
@@ -234,7 +234,7 @@ pub mod delete {
     pub async fn execute(carl: &mut CarlClient, id: Uuid) -> crate::Result<()> {
         let id = PeerId::from(id);
         carl.peers.delete_peer_descriptor(id).await
-            .map_err(|error| format!("Failed to delete peer with the id '{}'.\n  {}", id, error.to_string()))?;
+            .map_err(|error| format!("Failed to delete peer with the id '{}'.\n  {}", id, error))?;
         println!("Deleted peer with the PeerID: {}", id);
 
         Ok(())

@@ -125,13 +125,13 @@ fn print_error(context: impl AsRef<str>, error: Option<anyhow::Error>) {
     let message = {
         let mut message = String::new();
         message.push_str(context.as_ref());
-        message.push_str("\n");
+        message.push('\n');
 
         if let Some(error) = error {
             let error = format!("{:#}", error);
             for line in error.lines() {
                 message.push_str(line);
-                message.push_str("\n");
+                message.push('\n');
             }
         }
         message

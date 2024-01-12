@@ -135,9 +135,7 @@ where R: Any + Send + Sync {
     }
 
     pub fn or_insert(self, resource: R) {
-        if !self.column.contains_key(&self.id) {
-            self.column.insert(self.id, Box::new(resource));
-        }
+        self.column.entry(self.id).or_insert_with(|| Box::new(resource));
     }
 }
 
@@ -152,7 +150,7 @@ where R: Any + Send + Sync {
     fn new(column: Option<Values<'a, Id, Box<dyn Any + Send + Sync>>>) -> Iter<'a, R> {
         Self {
             column,
-            marker: PhantomData::default()
+            marker: PhantomData
         }
     }
 }
@@ -181,7 +179,7 @@ where R: Any + Send + Sync {
     fn new(column: Option<ValuesMut<'a, Id, Box<dyn Any + Send + Sync>>>) -> IterMut<'a, R> {
         Self {
             column,
-            marker: PhantomData::default()
+            marker: PhantomData
         }
     }
 }

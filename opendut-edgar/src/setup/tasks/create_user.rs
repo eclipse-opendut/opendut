@@ -15,7 +15,7 @@ impl Task for CreateUser {
         format!("Create User \"{USER_NAME}\"")
     }
     fn check_fulfilled(&self) -> Result<TaskFulfilled> {
-        let passwd = fs::read_to_string(&passwd_file())?;
+        let passwd = fs::read_to_string(passwd_file())?;
         let user_exists = passwd.lines()
             .any(|line| line.starts_with(USER_NAME));
         if user_exists {

@@ -28,7 +28,7 @@ impl Task for CopyExecutable {
     }
     fn execute(&self) -> Result<Success> {
         let target_path = executable_install_path()?;
-        fs::create_dir_all(&target_path.parent().unwrap())?;
+        fs::create_dir_all(target_path.parent().unwrap())?;
 
         let executable_path = std::env::current_exe()?;
         let executable_name = executable_path.file_name()

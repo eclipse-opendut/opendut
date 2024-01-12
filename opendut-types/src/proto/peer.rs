@@ -244,7 +244,7 @@ impl TryFrom<Vec<PeerState>> for crate::peer::state::PeerStates {
 
         value.into_iter().map(crate::peer::state::PeerState::try_from)
             .collect::<Result<Vec<_>, _>>()
-            .map(|states| crate::peer::state::PeerStates(states))
+            .map(crate::peer::state::PeerStates)
             .map_err(|cause| ErrorBuilder::new(cause.to_string()))
     }
 }

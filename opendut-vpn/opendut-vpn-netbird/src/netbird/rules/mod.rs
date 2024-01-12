@@ -42,7 +42,7 @@ impl TryFrom<&str> for RuleName {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         if let Some(uuid) = value.strip_prefix(RuleName::CLUSTER_RULE_PREFIX) {
             ClusterId::try_from(uuid)
-                .map(|id| Self::Cluster(id))
+                .map(Self::Cluster)
                 .map_err(|cause| InvalidRuleNameError { value: value.to_owned(), cause: cause.into() })
         }
         else {

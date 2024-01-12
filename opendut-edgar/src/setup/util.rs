@@ -51,7 +51,7 @@ pub fn prepend_line(line: impl AsRef<str>, file: impl AsRef<Path>) -> anyhow::Re
     let file = file.as_ref();
 
     let file_content = if file.exists() {
-        fs::read_to_string(&file)
+        fs::read_to_string(file)
             .context(format!("Failed to read content of file '{}' while prepending line '{line}'.", file.display()))?
     } else {
         fs::create_dir_all(file.parent().unwrap())?;
@@ -60,7 +60,7 @@ pub fn prepend_line(line: impl AsRef<str>, file: impl AsRef<Path>) -> anyhow::Re
 
     let new_file_content = format!("{line}\n{file_content}");
 
-    fs::write(&file, new_file_content)
+    fs::write(file, new_file_content)
         .context(format!("Failed to write content of file '{}' while prepending line '{line}'.", file.display()))?;
     Ok(())
 }
