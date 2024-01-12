@@ -11,7 +11,7 @@ use opendut_types::vpn::{HttpsOnly, VpnPeerConfig};
 use opendut_vpn::{CreateClusterError, CreatePeerError, DeleteClusterError, DeletePeerError, GetOrCreateConfigurationError, GetPeerVpnAddressError, VpnManagementClient};
 
 use crate::{netbird, NetbirdToken, routes};
-use crate::client::request_handler::{DefaultRequestHandler, RequestHandler};
+use crate::client::request_handler::{DefaultRequestHandler, RequestHandler, RequestHandlerConfig};
 use crate::netbird::{error, group, rules};
 use crate::netbird::error::{CreateSetupKeyError, GetGroupError, GetRulesError, RequestError};
 use crate::netbird::rules::{RuleName};
@@ -200,7 +200,10 @@ impl Client {
             .build()
             .expect("Failed to construct client.");
 
-        let requester = Box::new(DefaultRequestHandler::from(client));
+        let requester = Box::new(DefaultRequestHandler::new(
+            client,
+            RequestHandlerConfig::default(), //TODO pass in from the outside
+        ));
         Ok(Self {
             base_url,
             requester,
