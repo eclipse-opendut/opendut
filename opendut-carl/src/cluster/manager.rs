@@ -1,7 +1,9 @@
 use std::collections::{HashMap, HashSet};
 use std::net::IpAddr;
-use std::str::FromStr;
 use std::sync::Arc;
+
+use futures::{FutureExt, TryFutureExt};
+use futures::future::join_all;
 
 use opendut_carl_api::carl::cluster::{DeleteClusterDeploymentError, StoreClusterDeploymentError};
 use opendut_carl_api::proto::services::peer_messaging_broker::AssignCluster;
@@ -92,19 +94,24 @@ impl ClusterManager {
             log::debug!("VPN disabled. Not creating VPN group.")
         }
 
-        let member_assignments = member_interface_mapping.into_iter()
-            .map(|(peer_id, device_interfaces)| {
-                PeerClusterAssignment {
-                    peer_id,
-                    vpn_address: determine_vpn_address(peer_id),
-                    device_interfaces,
-                }
-            })
-            .collect::<Vec<_>>();
 
-        fn determine_vpn_address(peer_id: PeerId) -> IpAddr {
-            IpAddr::from_str("127.12.34.56").unwrap() //TODO actual addres
-        }
+        let member_assignments: Vec<Result<PeerClusterAssignment, DeployClusterError>> = {
+            let assignment_futures = member_interface_mapping.into_iter()
+                .map(|(peer_id, device_interfaces)| {
+                    let address_future = determine_vpn_address(&self.vpn, peer_id)
+                        .map_err(|error| DeployClusterError::Internal { cluster_id, cause: error.message });
+
+                    address_future.map(move |vpn_address|
+                        vpn_address.map(|vpn_address|
+                            PeerClusterAssignment { peer_id, vpn_address, device_interfaces }
+                        )
+                    )
+                })
+                .collect::<Vec<_>>();
+
+            join_all(assignment_futures).await
+        };
+        let member_assignments: Vec<PeerClusterAssignment> = member_assignments.into_iter().collect::<Result<_, _>>()?;
 
         for member_id in member_ids {
             self.peer_messaging_broker.send_to_peer(member_id, Message::AssignCluster(AssignCluster {
@@ -215,10 +222,24 @@ enum DetermineMemberInterfaceMappingError {
     PeerForDeviceNotFound { device_id: DeviceId },
 }
 
+async fn determine_vpn_address(vpn: &Vpn, peer_id: PeerId) -> Result<IpAddr, DetermineVpnAddressError> {
+    if let Vpn::Enabled { vpn_client } = vpn {
+        let address = vpn_client.get_peer_vpn_address(peer_id).await
+            .map_err(|error| DetermineVpnAddressError { message: format!("Failed to determine VPN IP address of peer <{peer_id}>:\n  {error}") })?;
+        Ok(address)
+    } else {
+        unimplemented!("VPN is disabled. Proper handling is not yet implemented.\n  Should use the remote IP address with which Peer connected to CARL.");
+    }
+}
+struct DetermineVpnAddressError {
+    pub message: String,
+}
+
 
 #[cfg(test)]
 mod test {
     use std::collections::HashSet;
+    use std::str::FromStr;
     use std::time::Duration;
 
     use googletest::prelude::*;
@@ -228,6 +249,8 @@ mod test {
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerName};
     use opendut_types::topology::{Device, DeviceId, Topology};
     use opendut_types::util::net::NetworkInterfaceName;
+    use opendut_types::vpn::VpnPeerConfig;
+    use opendut_vpn::{CreateClusterError, CreatePeerError, DeleteClusterError, DeletePeerError, GetOrCreateConfigurationError, GetPeerVpnAddressError, VpnManagementClient};
 
     use crate::actions::{CreateClusterConfigurationParams, StorePeerDescriptorParams};
     use crate::peer::broker::broker::PeerMessagingBroker;
@@ -240,11 +263,12 @@ mod test {
 
         let resources_manager = Arc::new(ResourcesManager::new());
         let broker = Arc::new(PeerMessagingBroker::new());
+        let vpn_client = Arc::new(MockVpnClient);
 
         let testee = ClusterManager::new(
             Arc::clone(&resources_manager),
             Arc::clone(&broker),
-            Vpn::Disabled,
+            Vpn::Enabled { vpn_client },
         );
 
         let peer_a_device_1 = DeviceId::random();
@@ -422,5 +446,31 @@ mod test {
             ]
         );
         Ok(())
+    }
+
+
+    struct MockVpnClient;
+
+    #[async_trait::async_trait]
+    impl VpnManagementClient for MockVpnClient {
+        async fn create_cluster(&self, cluster_id: ClusterId, peers: &Vec<PeerId>) -> std::result::Result<(), CreateClusterError> {
+            log::info!("Pretending to create cluster <{cluster_id}> with peers: {peers:?}");
+            Ok(())
+        }
+        async fn delete_cluster(&self, _cluster_id: ClusterId) -> std::result::Result<(), DeleteClusterError> {
+            unimplemented!("Not needed in tests...")
+        }
+        async fn create_peer(&self, _peer_id: PeerId) -> std::result::Result<(), CreatePeerError> {
+            unimplemented!("Not needed in tests...")
+        }
+        async fn delete_peer(&self, _peer_id: PeerId) -> std::result::Result<(), DeletePeerError> {
+            unimplemented!("Not needed in tests...")
+        }
+        async fn get_or_create_configuration(&self, _peer_id: PeerId) -> std::result::Result<VpnPeerConfig, GetOrCreateConfigurationError> {
+            unimplemented!("Not needed in tests...")
+        }
+        async fn get_peer_vpn_address(&self, _peer_id: PeerId) -> std::result::Result<IpAddr, GetPeerVpnAddressError> {
+            Ok(IpAddr::from_str("127.12.34.56").unwrap())
+        }
     }
 }

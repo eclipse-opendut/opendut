@@ -352,7 +352,7 @@ impl Client {
             .error_for_status().map_err(RequestError::IllegalStatus)?;
 
         let result = response.json::<netbird::Peer>().await
-            .map_err(|cause| RequestError::JsonDeserialization(cause))?;
+            .map_err(RequestError::JsonDeserialization)?;
 
         Ok(result)
     }

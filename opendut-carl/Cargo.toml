@@ -35,6 +35,7 @@ url = { workspace = true, features = ["serde"] }
 uuid = { workspace = true }
 
 [dev-dependencies]
+async-trait = { workspace = true }
 rstest = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
 
