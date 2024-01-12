@@ -60,6 +60,7 @@ home = "0.5.5"
 http = "0.2.11"
 indicatif = "0.17.7"
 indoc = "2.0.4"
+itertools = "0.12.0"
 lazy_static = "1.4.0"
 leptos = { version = "0.5.7" }
 leptos_router = { version = "0.5.7" }
@@ -75,6 +76,7 @@ prost = "0.12.1"
 prost-build = "0.12.1"
 prost-types = "0.12.1"
 protobuf-src = "1.1.0"
+regex = "1.10.2"
 reqwest = { version = "0.11.23", default-features = false, features = ["rustls-tls-native-roots"] }
 rstest = "0.18.2"
 rtnetlink = "0.13.1"

@@ -20,10 +20,12 @@ flate2 = { workspace = true }
 futures = { workspace = true }
 indicatif = { workspace = true }
 indoc = { workspace = true }
+itertools = { workspace = true }
 log = { workspace = true }
 netlink-packet-route = { workspace = true }
 netlink-packet-utils = { workspace = true }
 nix = { workspace = true, features = ["user", "fs"] }
+regex = { workspace = true }
 rtnetlink = { workspace = true }
 serde = { workspace = true, features = ["std", "derive"] }
 shadow-rs = { workspace = true }
