@@ -1,13 +1,13 @@
 use std::collections::{HashMap, HashSet};
+use std::net::IpAddr;
+use std::str::FromStr;
 use std::sync::Arc;
-use anyhow::bail;
 
 use opendut_carl_api::carl::cluster::{DeleteClusterDeploymentError, StoreClusterDeploymentError};
 use opendut_carl_api::proto::services::peer_messaging_broker::AssignCluster;
 use opendut_carl_api::proto::services::peer_messaging_broker::downstream::Message;
-use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
+use opendut_types::cluster::{ClusterAssignment, ClusterConfiguration, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
 use opendut_types::peer::{PeerDescriptor, PeerId};
-use opendut_types::proto::cluster::ClusterAssignment;
 use opendut_types::topology::DeviceId;
 use opendut_types::util::net::NetworkInterfaceName;
 
@@ -21,8 +21,20 @@ pub type ClusterManagerRef = Arc<ClusterManager>;
 
 #[derive(thiserror::Error, Debug, PartialEq)]
 pub enum DeployClusterError {
-    #[error("Cluster with id <{0}> not found!")]
-    ClusterNotFound(ClusterId),
+    #[error("Cluster <{0}> not found!")]
+    ClusterConfigurationNotFound(ClusterId),
+    #[error("A peer for device <{device_id}> of cluster '{cluster_name}' <{cluster_id}> not found.")]
+    PeerForDeviceNotFound {
+        device_id: DeviceId,
+        cluster_id: ClusterId,
+        cluster_name: ClusterName,
+    },
+    #[error("Peer designated as leader <{leader_id}> of cluster '{cluster_name}' <{cluster_id}> not found.")]
+    LeaderNotFound {
+        leader_id: PeerId,
+        cluster_id: ClusterId,
+        cluster_name: ClusterName,
+    },
     #[error("An error occurred while deploying cluster <{cluster_id}>:\n  {cause}")]
     Internal {
         cluster_id: ClusterId,
@@ -50,37 +62,57 @@ impl ClusterManager {
     }
 
     pub async fn deploy(&self, cluster_id: ClusterId) -> Result<(), DeployClusterError> {
-        let config = self.resources_manager.resources(|resources| {
+
+        let cluster_config = self.resources_manager.resources(|resources| {
             resources.get::<ClusterConfiguration>(cluster_id)
         }).await
-        .ok_or(DeployClusterError::ClusterNotFound(cluster_id))?;
+        .ok_or(DeployClusterError::ClusterConfigurationNotFound(cluster_id))?;
 
-        let peers = actions::list_peer_descriptors(ListPeerDescriptorsParams {
+        let cluster_name = cluster_config.name;
+
+        let all_peers = actions::list_peer_descriptors(ListPeerDescriptorsParams {
             resources_manager: Arc::clone(&self.resources_manager),
         }).await.map_err(|cause| DeployClusterError::Internal { cluster_id, cause: cause.to_string() })?;
 
-        let peers = peers.iter()
-            .filter(|peer| peer.topology.devices.iter().any(|device| config.devices.contains(&device.id)))
-            .map(|peer| peer.id)
-            .collect::<Vec<_>>();
+
+        let member_interface_mapping = determine_member_interface_mapping(cluster_config.devices, all_peers, cluster_config.leader)
+            .map_err(|cause| match cause {
+                DetermineMemberInterfaceMappingError::PeerForDeviceNotFound { device_id } => DeployClusterError::PeerForDeviceNotFound { device_id, cluster_id, cluster_name },
+            })?;
+
+        let member_ids = member_interface_mapping.keys().cloned().collect();
 
         if let Vpn::Enabled { vpn_client } = &self.vpn {
-            vpn_client.create_cluster(cluster_id, &peers).await
+            vpn_client.create_cluster(cluster_id, &member_ids).await
                 .unwrap(); // TODO: escalate error
 
-            let peers_string = peers.iter().map(|peer| peer.to_string()).collect::<Vec<_>>().join(",");
+            let peers_string = member_ids.iter().map(|peer| peer.to_string()).collect::<Vec<_>>().join(",");
             log::debug!("Created group for cluster <{cluster_id}> in VPN service, using peers: {peers_string}");
         } else {
             log::debug!("VPN disabled. Not creating VPN group.")
         }
 
-        for peer in peers {
-            self.peer_messaging_broker.send_to_peer(peer, Message::AssignCluster(AssignCluster {
+        let member_assignments = member_interface_mapping.into_iter()
+            .map(|(peer_id, device_interfaces)| {
+                PeerClusterAssignment {
+                    peer_id,
+                    vpn_address: determine_vpn_address(peer_id),
+                    device_interfaces,
+                }
+            })
+            .collect::<Vec<_>>();
+
+        fn determine_vpn_address(peer_id: PeerId) -> IpAddr {
+            IpAddr::from_str("127.12.34.56").unwrap() //TODO actual addres
+        }
+
+        for member_id in member_ids {
+            self.peer_messaging_broker.send_to_peer(member_id, Message::AssignCluster(AssignCluster {
                 assignment: Some(ClusterAssignment {
-                    id: Some(cluster_id.into()),
-                    leader: None,
-                    assignments: vec![],
-                }),
+                    id: cluster_id,
+                    leader: cluster_config.leader,
+                    assignments: member_assignments.clone(),
+                }.into()),
             })).await.expect("Send message should be possible");
         }
 
@@ -147,7 +179,7 @@ fn determine_member_interface_mapping(
     cluster_devices: HashSet<DeviceId>,
     all_peers: Vec<PeerDescriptor>,
     leader: PeerId,
-) -> anyhow::Result<HashMap<PeerId, Vec<NetworkInterfaceName>>> { //TODO replace anyhow::Result with proper result type
+) -> Result<HashMap<PeerId, Vec<NetworkInterfaceName>>, DetermineMemberInterfaceMappingError> {
 
     let mut result: HashMap<PeerId, Vec<NetworkInterfaceName>> = HashMap::new();
 
@@ -172,12 +204,17 @@ fn determine_member_interface_mapping(
                 .or_default()
                 .extend(interfaces);
         } else {
-            bail!("Failed to find matching peer for device <{device_id}>.");
+            return Err(DetermineMemberInterfaceMappingError::PeerForDeviceNotFound { device_id });
         }
     }
-
     Ok(result)
 }
+#[derive(Debug, thiserror::Error)]
+enum DetermineMemberInterfaceMappingError {
+    #[error("Peer for device <{device_id}> not found.")]
+    PeerForDeviceNotFound { device_id: DeviceId },
+}
+
 
 #[cfg(test)]
 mod test {
@@ -185,6 +222,7 @@ mod test {
     use std::time::Duration;
 
     use googletest::prelude::*;
+    use tokio::sync::mpsc;
 
     use opendut_types::cluster::ClusterName;
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerName};
@@ -248,24 +286,25 @@ mod test {
             },
         };
 
+        let leader_id = peer_a_id;
         let cluster_id = ClusterId::random();
         let cluster_configuration = ClusterConfiguration {
             id: cluster_id,
             name: ClusterName::try_from("MyAwesomeCluster").unwrap(),
-            leader: peer_a_id,
+            leader: leader_id,
             devices: HashSet::from([peer_a_device_1, peer_b_device_1]),
         };
 
         actions::store_peer_descriptor(StorePeerDescriptorParams {
             resources_manager: Arc::clone(&resources_manager),
             vpn: Vpn::Disabled,
-            peer_descriptor: peer_a,
+            peer_descriptor: Clone::clone(&peer_a),
         }).await?;
 
         actions::store_peer_descriptor(StorePeerDescriptorParams {
             resources_manager: Arc::clone(&resources_manager),
             vpn: Vpn::Disabled,
-            peer_descriptor: peer_b,
+            peer_descriptor: Clone::clone(&peer_b),
         }).await?;
 
         let (_peer_a_tx, mut peer_a_rx) = broker.open(peer_a_id).await;
@@ -279,16 +318,38 @@ mod test {
 
         assert_that!(testee.deploy(cluster_id).await, ok(eq(())));
 
-        let expected_assign_message = Message::AssignCluster(AssignCluster {
-            assignment: Some(ClusterAssignment {
-                id: Some(cluster_id.into()),
-                leader: None,
-                assignments: vec![],
-            })
-        });
 
-        assert_that!(tokio::time::timeout(Duration::from_millis(500), peer_a_rx.recv()).await, ok(some(eq(Clone::clone(&expected_assign_message)))));
-        assert_that!(tokio::time::timeout(Duration::from_millis(500), peer_b_rx.recv()).await, ok(some(eq(expected_assign_message))));
+        let expectation = || {
+            matches_pattern!(ClusterAssignment {
+                id: eq(cluster_id),
+                leader: eq(leader_id),
+                assignments: unordered_elements_are![
+                    eq(PeerClusterAssignment {
+                        peer_id: peer_a_id,
+                        vpn_address: IpAddr::from_str("127.12.34.56").unwrap(), //TODO actual address
+                        device_interfaces: peer_a.topology.devices.into_iter().map(|device| device.interface).collect(),
+                    }),
+                    eq(PeerClusterAssignment {
+                        peer_id: peer_b_id,
+                        vpn_address: IpAddr::from_str("127.12.34.56").unwrap(), //TODO actual address
+                        device_interfaces: peer_b.topology.devices.into_iter().map(|device| device.interface).collect(),
+                    }),
+                ],
+            })
+        };
+
+        async fn receive_cluster_assignment(peer_rx: &mut mpsc::Receiver<Message>) -> ClusterAssignment {
+            let message = tokio::time::timeout(Duration::from_millis(500), peer_rx.recv()).await;
+
+            if let Ok(Some(Message::AssignCluster(AssignCluster { assignment: Some(cluster_assignment) }))) = message {
+                cluster_assignment.try_into().unwrap()
+            } else {
+                panic!("Did not receive valid message. Received this instead: {message:?}")
+            }
+        }
+
+        assert_that!(receive_cluster_assignment(&mut peer_a_rx).await, Clone::clone(&expectation)());
+        assert_that!(receive_cluster_assignment(&mut peer_b_rx).await, expectation());
 
         Ok(())
     }
@@ -307,7 +368,7 @@ mod test {
 
         let unknown_cluster = ClusterId::random();
 
-        assert_that!(testee.deploy(unknown_cluster).await, err(eq(DeployClusterError::ClusterNotFound(unknown_cluster))));
+        assert_that!(testee.deploy(unknown_cluster).await, err(eq(DeployClusterError::ClusterConfigurationNotFound(unknown_cluster))));
 
         Ok(())
     }
