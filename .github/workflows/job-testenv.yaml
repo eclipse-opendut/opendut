@@ -1,0 +1,69 @@
+name: run-testenv
+on:
+  workflow_call:  # allow this workflow to be called from other workflows
+    inputs:
+      runs-on:
+        default: "['ubuntu-latest']"
+        required: false
+        type: string
+
+jobs:
+  run-testenv:
+    name: "Run Test Environment"
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    if: inputs.run-testenv == 'true'
+
+    steps:
+      - name: Checkout Sources
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+
+      - name: Download opendut-CARL bundle
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
+        with:
+          name: "opendut-carl-x86_64-unknown-linux-gnu-${{ github.sha }}.tar.gz"
+          path: "./target/ci/distribution/x86_64-unknown-linux-gnu/"
+      - name: Download opendut-EDGAR bundle
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
+        with:
+          name: "opendut-edgar-x86_64-unknown-linux-gnu-${{ github.sha }}.tar.gz"
+          path: "./target/ci/distribution/x86_64-unknown-linux-gnu/"
+
+      - name: Download opendut-CLEO bundle
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
+        with:
+          name: "opendut-cleo-x86_64-unknown-linux-gnu-${{ github.sha }}.tar.gz"
+          path: "./target/ci/distribution/x86_64-unknown-linux-gnu/"
+
+      - name: Download opendut-THEO artifact
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
+        with:
+          name: "opendut-theo-x86_64-unknown-linux-gnu-${{ github.sha }}"
+          path: "./opendut-theo"
+
+      - name: List files, make theo executable
+        run: |
+          find ./target/ci/distribution/x86_64-unknown-linux-gnu/
+          echo "list local directory"
+          ls -la
+          chmod +x ./opendut-theo
+
+      - name: Start test environment
+        run: |
+          ./opendut-theo start
+
+      - name: Start edgar cluster
+        run: |
+          ./opendut-theo edgar start
+
+      - name: Wait for all peers
+        run: |
+          docker exec edgar_router /opt/wait_until_ready.sh
+
+      - name: Run ping all script on one of the peers
+        run: |
+          docker exec edgar-peer-1 /opt/pingall.sh
+
+      - name: Stop test environment
+        if: always()
+        run: |
+          ./opendut-theo stop

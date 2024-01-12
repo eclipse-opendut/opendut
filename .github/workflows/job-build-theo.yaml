@@ -1,0 +1,33 @@
+name: build-theo
+on:
+  workflow_call:  # allow this workflow to be called from other workflows
+    inputs:
+      runs-on:
+        default: "['ubuntu-latest']"
+        required: false
+        type: string
+
+jobs:
+  build-theo:
+    strategy:
+      matrix:
+        package:
+          - name: opendut-theo
+            target: x86_64-unknown-linux-gnu
+    name: "Build ${{ matrix.package.name }}-${{ matrix.package.target }}"
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    steps:
+      - name: Checkout Sources
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+      - name: Rust setup
+        uses: ./.github/actions/rust-setup
+
+      - name: Build
+        run: cargo ci opendut-theo build --target=${{ matrix.package.target }}
+      - name: "Upload theo build artifact ${{ matrix.package.name }}-${{ matrix.package.target }}"
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
+        with:
+          name: "${{ matrix.package.name }}-${{ matrix.package.target }}-${{ github.sha }}"
+          path: "./target/ci/cross/${{ matrix.package.target }}/release/${{ matrix.package.name }}"
+          if-no-files-found: error
+          retention-days: 1

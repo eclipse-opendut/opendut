@@ -745,6 +745,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "ctrlc"
+version = "3.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b467862cc8610ca6fc9a1532d7777cee0804e678ab45410897b9396495994a0b"
+dependencies = [
+ "nix 0.27.1",
+ "windows-sys 0.52.0",
+]
+
+[[package]]
 name = "darling"
 version = "0.14.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2387,13 +2397,13 @@ version = "0.1.0"
 dependencies = [
  "cargo_toml",
  "clap",
+ "ctrlc",
  "dotenvy",
  "home",
  "phf",
  "serde",
  "serde_json",
  "shadow-rs",
- "signal-hook",
  "strum",
  "thiserror",
 ]
@@ -3504,16 +3514,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f40ca3c46823713e0d4209592e8d6e826aa57e928f09752619fc696c499637f6"
 dependencies = [
  "lazy_static",
-]
-
-[[package]]
-name = "signal-hook"
-version = "0.3.17"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8621587d4798caf8eb44879d42e56b9a93ea5dcd315a6487c357130095b62801"
-dependencies = [
- "libc",
- "signal-hook-registry",
 ]
 
 [[package]]

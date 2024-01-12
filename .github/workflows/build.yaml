@@ -43,6 +43,12 @@ jobs:
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
 
+  build-theo:
+    uses: ./.github/workflows/job-build-theo.yaml
+    needs: [ test ]
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+
   build-edgar:
     uses: ./.github/workflows/job-build-edgar.yaml
     needs: [ test ]
@@ -78,3 +84,10 @@ jobs:
     runs-on: "${{ fromJson(vars.OPENDUT_GH_RUNNER_SMALL) }}"
     steps:
     - run: echo "All jobs required for the status check have been completed."
+
+  run-testenv:
+    uses: ./.github/workflows/job-testenv.yaml
+    needs: [ legal, bundle-carl, bundle-edgar, build-cleo ]
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+    secrets: inherit
