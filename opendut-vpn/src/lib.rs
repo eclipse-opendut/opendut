@@ -1,3 +1,4 @@
+use std::net::IpAddr;
 use async_trait::async_trait;
 use opendut_types::cluster::ClusterId;
 
@@ -16,6 +17,8 @@ pub trait VpnManagementClient {
     async fn delete_peer(&self, peer_id: PeerId) -> Result<(), DeletePeerError>;
 
     async fn get_or_create_configuration(&self, peer_id: PeerId) -> Result<VpnPeerConfig, GetOrCreateConfigurationError>;
+
+    async fn get_peer_vpn_address(&self, peer_id: PeerId) -> Result<IpAddr, GetPeerVpnAddressError>;
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -59,6 +62,15 @@ pub enum CreatePeerError {
         peer_id: PeerId,
         error: Box<dyn std::error::Error>
     }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum GetPeerVpnAddressError {
+    #[error("Peer <{peer_id}> could not be resolved:\n  {error}")]
+    ResolutionFailure {
+        peer_id: PeerId,
+        error: Box<dyn std::error::Error>
+    },
 }
 
 #[derive(thiserror::Error, Debug)]
