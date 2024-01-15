@@ -1,9 +1,10 @@
 use std::path::PathBuf;
+
 use clap::{Parser, Subcommand};
 
 use crate::commands::testenv::TestenvCli;
 use crate::commands::vagrant::VagrantCli;
-use crate::core::project::ProjectRootDir;
+use crate::core::project::{dot_env_create_defaults, ProjectRootDir};
 
 mod core;
 mod commands;
@@ -29,6 +30,9 @@ enum TaskCli {
 fn main() {
     let args = Cli::parse();
     PathBuf::project_dir_verify();
+
+    // load environment variables from .env file
+    dot_env_create_defaults();
 
     match args.command {
         TaskCli::Testenv(implementation) => { implementation.default_handling() }

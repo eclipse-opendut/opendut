@@ -57,13 +57,18 @@ echo "Setting up peer with setup key $PEER_SETUP_KEY"
 
 echo y | opendut-edgar setup managed "$PEER_SETUP_KEY"
 
+START_TIME="$(date +%s)"
 while ! cleo_get_peer_id "$NAME"; do
+    check_timeout "$START_TIME" 600 || { echo "Timeout while waiting for edgar to register"; exit 1; }
     echo "Waiting for edgar to register ..."
     sleep 3
 done
 
 expected_peer_count=$((OPENDUT_EDGAR_REPLICAS + 1))
+START_TIME="$(date +%s)"
 while ! cleo_count_connected_peers_in_cluster "$expected_peer_count" "$OPENDUT_EDGAR_CLUSTER_NAME"; do
+  check_timeout "$START_TIME" 600 || { echo "Timeout while waiting for other edgar peers in my cluster."; exit 1; }
+
   echo "Waiting for all edgar peers in my cluster ..."
   sleep 3
 done

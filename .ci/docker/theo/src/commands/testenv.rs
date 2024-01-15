@@ -1,23 +1,16 @@
 use std::path::PathBuf;
 use std::process::Command;
 
-use clap::ArgAction;
-use dotenvy::dotenv;
-
 use crate::commands::edgar::TestEdgarCli;
 use crate::core::dist::make_distribution_if_not_present;
 use crate::core::docker::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_network_delete, docker_compose_up, DockerCommand, DockerCoreServices, wait_for_netbird_api_key};
-use crate::core::OPENDUT_THEO_DISABLE_ENV_CHECKS;
-use crate::core::project::{boolean_env_var, check_dot_env_variables, check_user_provided_dot_env_variables, ProjectRootDir, write_theo_dynamic_env_vars};
+use crate::core::project::{dot_env_create_theo_specific_defaults, ProjectRootDir};
 
 /// Build and start test environment.
 #[derive(Debug, clap::Parser)]
 pub struct TestenvCli {
     #[command(subcommand)]
     pub(crate) task: TaskCli,
-    /// Disable environment variable checks (OPENDUT_THEO_DISABLE_ENV_CHECKS=true)
-    #[clap(long, short, action = ArgAction::SetTrue)]
-    disable_env_checks: bool,
 }
 
 #[derive(Debug, clap::Subcommand)]
@@ -88,26 +81,10 @@ impl TestenvCli {
     }
 
     fn check_environment_variables(&self) {
-        write_theo_dynamic_env_vars();
+        dot_env_create_theo_specific_defaults();
         let custom_env = PathBuf::project_path_buf().join(".env-theo");
         dotenvy::from_path(custom_env).expect(".env-theo file not found");
 
-        // load environment variables from .env file
-        match dotenv().is_ok() {
-            true => {}
-            false => {
-                check_user_provided_dot_env_variables();
-                println!("Deliberately exiting here to review changes to '.env' file.");
-                return;
-            }
-        }
-        check_user_provided_dot_env_variables();
-
-        if self.disable_env_checks && !boolean_env_var(OPENDUT_THEO_DISABLE_ENV_CHECKS) {
-            check_dot_env_variables();
-        } else {
-            println!("Skipping environment variable checks.");
-        }
 
     }
 }
