@@ -6,6 +6,10 @@ on:
         default: "['ubuntu-latest']"
         required: false
         type: string
+      run-testenv:
+        default: false
+        required: false
+        type: string
 
 jobs:
   run-testenv:
@@ -51,11 +55,11 @@ jobs:
 
       - name: Start test environment
         run: |
-          ./opendut-theo start
+          ./opendut-theo testenv start
 
       - name: Start edgar cluster
         run: |
-          ./opendut-theo edgar start
+          ./opendut-theo testenv edgar start
 
       - name: Wait for all peers
         run: |
@@ -68,4 +72,4 @@ jobs:
       - name: Stop test environment
         if: always()
         run: |
-          ./opendut-theo stop
+          ./opendut-theo testenv stop

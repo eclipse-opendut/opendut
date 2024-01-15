@@ -1,6 +1,13 @@
 name: build
 on:
   workflow_dispatch:  # manual trigger
+    inputs:
+      run-testenv:
+        description: "Run test environment if 'true'"
+        required: false
+        type: string
+        default: "false"
+
   pull_request:
     types: [ opened, reopened ]
   push:
@@ -90,4 +97,6 @@ jobs:
     needs: [ legal, bundle-carl, bundle-edgar, build-cleo ]
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+      # run-testenv: "${{ github.event.inputs.run-testenv }}"
+      run-testenv: "true"
     secrets: inherit
