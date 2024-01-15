@@ -5,19 +5,19 @@ use cargo_toml::{Manifest, Value};
 use crate::core::project::ProjectRootDir;
 
 pub enum NetbirdApplicationNames {
-    NetbirdClient,
-    NetbirdManagement,
-    NetbirdSignal,
-    NetbirdDashboard,
+    Client,
+    Management,
+    Signal,
+    Dashboard,
 }
 
 impl NetbirdApplicationNames {
     fn as_str(&self) -> &'static str {
         match self {
-            NetbirdApplicationNames::NetbirdClient => "netbird",
-            NetbirdApplicationNames::NetbirdManagement => "netbird-management",
-            NetbirdApplicationNames::NetbirdSignal => "netbird-signal",
-            NetbirdApplicationNames::NetbirdDashboard => "netbird-dashboard",
+            NetbirdApplicationNames::Client => "netbird",
+            NetbirdApplicationNames::Management => "netbird-management",
+            NetbirdApplicationNames::Signal => "netbird-signal",
+            NetbirdApplicationNames::Dashboard => "netbird-dashboard",
         }
     }
 }
@@ -73,20 +73,19 @@ fn get_ci_package_version(manifest: &Manifest, package_name: &str) -> Option<Str
 
 fn get_package_version(package_name: &str) -> String {
     let package_toml_path = PathBuf::project_path_buf().join(format!("{}/Cargo.toml", package_name));
-    let package_manifest = Manifest::from_path(&package_toml_path).unwrap();
-    let package_version = package_manifest.package.unwrap().version.unwrap();
-    package_version
+    let package_manifest = Manifest::from_path(package_toml_path).unwrap();
+    package_manifest.package.unwrap().version.unwrap()
 }
 
 pub fn cargo_netbird_versions() -> Metadata {
     let workspace_cargo_toml_path = PathBuf::project_path_buf().join("Cargo.toml");
-    let workspace_manifest = Manifest::from_path(&workspace_cargo_toml_path).unwrap();
+    let workspace_manifest = Manifest::from_path(workspace_cargo_toml_path).unwrap();
 
     let versions = NetbirdMetadata {
-        netbird_client_version: get_ci_package_version(&workspace_manifest, NetbirdApplicationNames::NetbirdClient.as_str()).unwrap(),
-        netbird_signal_version: get_ci_package_version(&workspace_manifest, NetbirdApplicationNames::NetbirdSignal.as_str()).unwrap(),
-        netbird_management_version: get_ci_package_version(&workspace_manifest, NetbirdApplicationNames::NetbirdManagement.as_str()).unwrap(),
-        netbird_dashboard_version: get_ci_package_version(&workspace_manifest, NetbirdApplicationNames::NetbirdDashboard.as_str()).unwrap(),
+        netbird_client_version: get_ci_package_version(&workspace_manifest, NetbirdApplicationNames::Client.as_str()).unwrap(),
+        netbird_signal_version: get_ci_package_version(&workspace_manifest, NetbirdApplicationNames::Signal.as_str()).unwrap(),
+        netbird_management_version: get_ci_package_version(&workspace_manifest, NetbirdApplicationNames::Management.as_str()).unwrap(),
+        netbird_dashboard_version: get_ci_package_version(&workspace_manifest, NetbirdApplicationNames::Dashboard.as_str()).unwrap(),
     };
     let carl_version = get_package_version("opendut-carl");
 

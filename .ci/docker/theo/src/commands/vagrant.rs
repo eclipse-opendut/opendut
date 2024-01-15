@@ -1,3 +1,4 @@
+use std::env;
 use std::path::PathBuf;
 use std::process::Command;
 use std::sync::Arc;
@@ -6,13 +7,15 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use clap::ArgAction;
+use crate::core::OPENDUT_REPO_ROOT;
 
 use crate::core::project::ProjectRootDir;
 
+/// Create virtual machine for test environment.
 #[derive(Debug, clap::Parser)]
 pub struct VagrantCli {
     #[command(subcommand)]
-    pub task: TaskCli,
+    pub(crate) task: TaskCli,
 }
 
 #[derive(Debug, clap::Subcommand)]
@@ -51,8 +54,12 @@ impl VagrantCommand for Command {
     }
 
     fn vagrant_common_args(&mut self) -> &mut Self {
+        let project_root_override = env::var(OPENDUT_REPO_ROOT)
+            .unwrap_or_else(|_| PathBuf::project_path_buf().into_os_string().into_string().expect("Could not determine project root directory."));
+
         self.current_dir(PathBuf::project_dir())
             .env("VAGRANT_VAGRANTFILE", ".ci/docker/Vagrantfile")
+            .env(OPENDUT_REPO_ROOT, project_root_override)
     }
     fn run(&mut self) {
         if let Ok(mut child) = self.spawn() {
@@ -124,9 +131,9 @@ impl VagrantCli {
                 let vagrant_file_path = project_root.join(".ci/docker/Vagrantfile");
                 let vagrant_dot_file_path = project_root.join(".vagrant");
                 println!("# export the following environment variables to run vagrant commands");
-                println!("export OPENDUT_REPO_ROOT={:?}", project_root);
-                println!("export VAGRANT_DOTFILE_PATH={:?}", vagrant_dot_file_path);
-                println!("export VAGRANT_VAGRANTFILE={:?}", vagrant_file_path);
+                println!("export {}={:?}", OPENDUT_REPO_ROOT, project_root.into_os_string());
+                println!("export VAGRANT_DOTFILE_PATH={:?}", vagrant_dot_file_path.into_os_string());
+                println!("export VAGRANT_VAGRANTFILE={:?}", vagrant_file_path.into_os_string());
                 println!("# then run 'vagrant <other-command>'")
             }
             TaskCli::Firefox => {

@@ -31,6 +31,7 @@ enum TaskCli {
     Cleo(packages::cleo::CleoCli),
     Edgar(packages::edgar::EdgarCli),
     Lea(packages::lea::LeaCli),
+    Theo(packages::theo::TheoCli),
 }
 
 fn main() -> crate::Result {
@@ -65,6 +66,7 @@ fn main() -> crate::Result {
         TaskCli::Cleo(implementation) => implementation.default_handling()?,
         TaskCli::Edgar(implementation) => implementation.default_handling()?,
         TaskCli::Lea(implementation) => implementation.default_handling()?,
+        TaskCli::Theo(implementation) => implementation.default_handling()?,
     };
     Ok(())
 }

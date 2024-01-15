@@ -41,10 +41,9 @@ fn enumerate_distribution_tar_files(dist_path: PathBuf) -> Vec<String> {
     files
 }
 
-fn assert_exactly_one_distribution_of_each_component(expected_dist_files: &Vec<&str>, files: &Vec<String>) {
-    for expected in expected_dist_files.clone() {
-        let filtered_existing_files = files.iter().cloned()
-            .filter(|file| file.contains(expected))
+fn assert_exactly_one_distribution_of_each_component(expected_dist_files: &[&str], files: &[String]) {
+    for expected in expected_dist_files.iter().copied() {
+        let filtered_existing_files = files.iter().filter(|&file| file.contains(expected)).cloned()
             .collect::<Vec<_>>();
         assert_eq!(filtered_existing_files.len(), 1,
                    "There should be exactly one dist of '{}'. Found: {:?}", expected, filtered_existing_files);

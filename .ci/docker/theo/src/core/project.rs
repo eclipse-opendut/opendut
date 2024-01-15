@@ -8,6 +8,7 @@ use std::io::Write;
 use strum::{Display, EnumString, EnumVariantNames, VariantNames};
 
 use crate::core::metadata::cargo_netbird_versions;
+use crate::core::{OPENDUT_REPO_ROOT, TheoError};
 use crate::core::util::consume_output;
 
 #[derive(Debug, PartialEq, EnumString, EnumVariantNames, Display)]
@@ -62,16 +63,40 @@ impl From<TheoUserEnvMap> for String {
 
 pub trait ProjectRootDir {
     fn project_dir() -> String;
+    fn project_dir_verify();
     fn project_path_buf() -> PathBuf;
+}
+
+fn git_repo_root() -> Result<String, TheoError> {
+    let output = Command::new("git")
+        .arg("rev-parse")
+        .arg("--show-toplevel")
+        .output();
+    consume_output(output)
 }
 
 impl ProjectRootDir for PathBuf {
     fn project_dir() -> String {
-        let output = Command::new("git")
-            .arg("rev-parse")
-            .arg("--show-toplevel")
-            .output();
-        consume_output(output).expect("Failed to determine git project root directory")
+        env::var(OPENDUT_REPO_ROOT)
+            .unwrap_or_else(|_| git_repo_root().expect("Failed to determine git project root directory"))
+    }
+
+    fn project_dir_verify() {
+        let repo_root_env = env::var(OPENDUT_REPO_ROOT);
+        let project_dir = match repo_root_env {
+            Ok(repo_root) => {
+                PathBuf::from(repo_root)
+            }
+            Err(_) => {
+                PathBuf::from(git_repo_root().expect("Failed to determine git project root directory. You may use the 'OPENDUT_REPO_ROOT' environment variable instead."))
+            }
+        };
+        if !project_dir.exists() {
+            panic!("Could not determine project root directory. Check if you are in the correct directory or set environment variable OPENDUT_REPO_ROOT.");
+        }
+        if !project_dir.join("Cargo.toml").exists() {
+            panic!("Could not find 'Cargo.toml'. Check if you are in the correct directory or set environment variable OPENDUT_REPO_ROOT.");
+        }
     }
 
     fn project_path_buf() -> PathBuf {
@@ -166,7 +191,7 @@ pub(crate) fn check_user_provided_dot_env_variables() {
     let mut missing_env_vars = false;
     for (env_key, env_value) in env_map.0.iter() {
         match env::var(env_key) {
-            Ok(_) => { }
+            Ok(_) => {}
             Err(error) => {
                 match error {
                     VarError::NotPresent => {
@@ -192,7 +217,6 @@ pub(crate) fn check_user_provided_dot_env_variables() {
     if missing_env_vars {
         println!("Some environment variables were not set. Default values were used. Please check/update them in the .env file.");
     }
-
 }
 
 pub(crate) fn check_dot_env_variables() {
@@ -224,15 +248,15 @@ pub(crate) fn check_dot_env_variables() {
     if !missing_env_vars.is_empty() {
         println!("Missing environment variables in file '.env': \n{}", missing_env_vars);
     }
-    if missing_env_vars.len() > 0 || error_messages.len() > 0 {
+    if !missing_env_vars.is_empty() || !error_messages.is_empty() {
         panic!("There are errors in the environment variables in file '.env': \n{}", error_messages);
     }
 
-    assert_eq!(["PUSER", "PGROUP", "PUID", "PGID", "DOCKER_USER", "DOCKER_GID", "OPENDUT_REPO_ROOT", "NETBIRD_SIGNAL_VERSION", "NETBIRD_MANAGEMENT_VERSION", "NETBIRD_DASHBOARD_VERSION",
+    assert_eq!(["PUSER", "PGROUP", "PUID", "PGID", "DOCKER_USER", "DOCKER_GID", OPENDUT_REPO_ROOT, "NETBIRD_SIGNAL_VERSION", "NETBIRD_MANAGEMENT_VERSION", "NETBIRD_DASHBOARD_VERSION",
                    "OPENDUT_CARL_VERSION", "OPENDUT_CUSTOM_CA1", "OPENDUT_CUSTOM_CA2", "OPENDUT_HOSTS", "OPENDUT_EDGAR_REPLICAS", "OPENDUT_EDGAR_CLUSTER_NAME"], TheoDynamicEnvVars::VARIANTS);
 }
 
 
 pub(crate) fn boolean_env_var(name: &str) -> bool {
-    env::var(name).unwrap_or("false".to_string()) == "true".to_string()
+    env::var(name).unwrap_or("false".to_string()) == *"true"
 }
