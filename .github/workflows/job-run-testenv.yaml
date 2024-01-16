@@ -68,6 +68,25 @@ jobs:
         run: |
           docker exec edgar-peer-1 /opt/pingall.sh # TODO RM
 
+      - name: Show container logs
+        if: always()
+        run: |
+          mkdir docker-logs
+          DOCKER_CONTAINERS="$(docker ps --format='{{.Names}}')"
+          for DOCKER_NAME in $DOCKER_CONTAINERS; do
+            echo "Logs for $DOCKER_NAME"
+            docker logs $DOCKER_NAME > ./docker-logs/docker-$DOCKER_NAME.log 2>&1
+          done
+
+      - name: "Upload docker logs"
+        if: always()
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
+        with:
+          name: "docker-logs-${{ github.sha }}"
+          path: "./docker-logs/"
+          if-no-files-found: error
+          retention-days: 1
+
       - name: Stop test environment
         if: always()
         run: |
@@ -77,6 +96,7 @@ jobs:
         if: always()
         run: |
           ./opendut-theo/opendut-theo testenv destroy
+          echo "Result: $?"
           echo "Show all remaining containers"
           docker ps -a
         continue-on-error: true

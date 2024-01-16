@@ -10,6 +10,7 @@ machine = {
 }
 
 repo_root = ENV["OPENDUT_REPO_ROOT"]
+custom_root_ca = ENV["CUSTOM_ROOT_CA"]
 if repo_root.nil? then
     puts "Environment variable 'OPENDUT_REPO_ROOT' not set. Exiting."
     exit(1)
@@ -20,7 +21,7 @@ Vagrant.configure("2") do |config|
 
     config.vm.box = machine[:box_name]
     config.vm.hostname = machine[:hostname]
-    config.vm.network "private_network", ip: machine[:ip]
+    #config.vm.network "private_network", ip: machine[:ip]
 
     # default shared folder required by provisioner (otherwise some files are not found)
     config.vm.synced_folder ".", "/vagrant", disabled: false, SharedFoldersEnableSymlinksCreate: false
@@ -54,6 +55,20 @@ Vagrant.configure("2") do |config|
     # automatically change directory to the repository root
     config.ssh.extra_args = ["-t", "cd #{repo_root}; bash --login"]
     config.ssh.forward_x11 = true
+
+    # add custom root ca
+    if !custom_root_ca.nil? then
+        if !File.file?("#{custom_root_ca}") then
+            puts "Custom root CA not found."
+        else
+            puts "Custom root CA found. Adding to VM."
+            config.vm.provision "file", source: "#{custom_root_ca}", destination: "/tmp/custom_root_ca.crt"
+            config.vm.provision "shell" do |s|
+               s.inline = "cp /tmp/custom_root_ca.crt /usr/local/share/ca-certificates; update-ca-certificates"
+               s.privileged = true
+            end
+        end
+    end
 
     config.vm.provision "shell" do |s|
     ssh_pub_key = File.readlines("#{Dir.home}/.ssh/id_rsa.pub").first.strip
