@@ -21,12 +21,12 @@ services:
       - OPENDUT_CLEO_NETWORK_CARL_PORT=443
       - OPENDUT_CLEO_NETWORK_TLS_DOMAIN_NAME_OVERRIDE=carl  # default developer certificate is only valid for localhost
       # testenv
-      - NETBIRD_GROUP=testenv
-      - OPENDUT_EDGAR_REPLICAS=4
+      - NETBIRD_GROUP=testenv  # only used by unmanaged mode
+      - OPENDUT_EDGAR_REPLICAS
       - OPENDUT_EDGAR_SERVICE_USER=root
       - OPENDUT_EDGAR_CLUSTER_NAME
       # dynamically provided
-      - NETBIRD_API_TOKEN
+      - NETBIRD_API_TOKEN  # only used by unmanaged mode
       - NETBIRD_MANAGEMENT_API=http://netbird-management
       - OPENDUT_CUSTOM_CA1
       - OPENDUT_CUSTOM_CA2
@@ -55,13 +55,13 @@ services:
       - OPENDUT_CLEO_NETWORK_CARL_PORT=443
       - OPENDUT_CLEO_NETWORK_TLS_DOMAIN_NAME_OVERRIDE=carl  # default developer certificate is only valid for localhost
       # testenv
-      - NETBIRD_GROUP=testenv
-      - OPENDUT_EDGAR_REPLICAS=4
+      - NETBIRD_GROUP=testenv  # only used by unmanaged mode
+      - OPENDUT_EDGAR_REPLICAS
       - OPENDUT_EDGAR_SERVICE_USER=root
       - OPENDUT_EDGAR_CLUSTER_NAME
       # dynamically provided
       - NETBIRD_SETUP_KEY
-      - NETBIRD_API_TOKEN
+      - NETBIRD_API_TOKEN  # only used by unmanaged mode
       - NETBIRD_MANAGEMENT_API=http://netbird-management
       - OPENDUT_CUSTOM_CA1
       - OPENDUT_CUSTOM_CA2

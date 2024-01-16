@@ -49,10 +49,8 @@ jobs:
       - name: List files, make theo executable
         run: |
           find ./target/ci/distribution/x86_64-unknown-linux-gnu/
-          echo "list local directory"
-          ls -la
-          find . -name opendut-theo -type f
-          ls -la ./opendut-theo/opendut-theo
+          find . -name opendut-theo -type f -exec ls -la {} +
+          chmod +x ./opendut-theo/opendut-theo
 
       - name: Start test environment
         run: |
