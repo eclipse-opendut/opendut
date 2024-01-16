@@ -51,15 +51,16 @@ jobs:
           find ./target/ci/distribution/x86_64-unknown-linux-gnu/
           echo "list local directory"
           ls -la
-          chmod +x ./opendut-theo
+          find . -name opendut-theo -type f
+          ls -la ./opendut-theo/opendut-theo
 
       - name: Start test environment
         run: |
-          ./opendut-theo testenv start
+          ./opendut-theo/opendut-theo testenv start
 
       - name: Start edgar cluster
         run: |
-          ./opendut-theo testenv edgar start
+          ./opendut-theo/opendut-theo testenv edgar start
 
       - name: Wait for all peers
         run: |
@@ -72,4 +73,9 @@ jobs:
       - name: Stop test environment
         if: always()
         run: |
-          ./opendut-theo testenv stop
+          ./opendut-theo/opendut-theo testenv stop
+
+      - name: Destroy test environment
+        if: always()
+        run: |
+          ./opendut-theo/opendut-theo testenv destroy

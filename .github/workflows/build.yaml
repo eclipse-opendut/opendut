@@ -93,7 +93,7 @@ jobs:
     - run: echo "All jobs required for the status check have been completed."
 
   run-testenv:
-    uses: ./.github/workflows/job-testenv.yaml
+    uses: ./.github/workflows/job-run-testenv.yaml
     needs: [ legal, bundle-carl, bundle-edgar, build-cleo ]
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
