@@ -19,8 +19,6 @@ config = { workspace = true }
 futures = { workspace = true }
 googletest = { workspace = true }
 http = { workspace = true }
-http-body = { workspace = true }
-hyper = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 shadow-rs = { workspace = true }

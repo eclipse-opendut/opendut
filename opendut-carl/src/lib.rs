@@ -11,7 +11,6 @@ use config::Config;
 use futures::future::BoxFuture;
 use futures::TryFutureExt;
 use http::{header::CONTENT_TYPE, Request};
-use hyper::Body;
 use serde::Serialize;
 use tonic::transport::Server;
 use tower::{BoxError, make::Shared, ServiceExt, steer::Steer};
@@ -147,7 +146,7 @@ pub async fn create(settings_override: Config) -> Result<()> {
             .map_err(BoxError::from)
             .boxed_clone();
 
-        let http_grpc = Steer::new(vec![grpc, http], |request: &Request<Body>, _services: &[_]| {
+        let http_grpc = Steer::new(vec![grpc, http], |request: &Request<_>, _services: &[_]| {
             request.headers()
                 .get(CONTENT_TYPE)
                 .map(|content_type| {

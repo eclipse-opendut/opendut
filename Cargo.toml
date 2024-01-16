@@ -55,9 +55,7 @@ gloo-net = { version = "0.4.0" }
 gloo-timers = { version = "0.3.0" }
 googletest = { version = "0.10.0" }
 home = "0.5.5"
-http = "0.2.9"
-http-body = "0.4.5"
-hyper = "0.14.27"
+http = "0.2.11"
 indicatif = "0.17.7"
 indoc = "2.0.4"
 lazy_static = "1.4.0"
@@ -75,7 +73,7 @@ prost = "0.12.1"
 prost-build = "0.12.1"
 prost-types = "0.12.1"
 protobuf-src = "1.1.0"
-reqwest = { version = "0.11.22", default-features = false, features = ["rustls-tls-native-roots"] }
+reqwest = { version = "0.11.23", default-features = false, features = ["rustls-tls-native-roots"] }
 rstest = "0.18.2"
 rtnetlink = "0.13.1"
 serde = { version = "1.0.188", default-features = false }
