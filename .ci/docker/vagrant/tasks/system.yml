@@ -8,13 +8,23 @@
       192.168.32.211        netbird-management
       192.168.32.213        netbird-dashboard netbird-ui
     marker: "# {mark} ANSIBLE MANAGED BLOCK of services"
+
 - name: Copy insecure development certificate authority
   become: true
   copy:
     src: "{{ opendut_repo_root }}/resources/development/tls/insecure-development-ca.pem"
     dest: /usr/local/share/ca-certificates/insecure-development-ca.crt  # *.crt suffix required
   register: development_ca_copy_task
+
+- name: Add custom certificate authority
+  copy:
+    src: "{{ custom_root_ca_path }}"
+    dest: /usr/local/share/ca-certificates/custom_root_ca.crt
+    mode: 0644
+  when: custom_root_ca_path is defined
+  register: custom_root_ca_task
+
 - name: Update ca certificates
   become: true
   shell: "update-ca-certificates"
-  when: development_ca_copy_task.changed
+  when: development_ca_copy_task.changed or custom_root_ca_task.changed

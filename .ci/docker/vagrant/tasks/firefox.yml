@@ -1,6 +1,53 @@
-- name: "Firefox profile location of vagrant user"
+- name: "Mozilla firefox home location of vagrant user"
   set_fact:
-    firefox_snap_dir: "/home/vagrant/snap/firefox/common/.mozilla/"
+    mozilla_home_dir: "/home/vagrant/.mozilla/firefox/"
+
+- name: Install tools for remote access
+  apt:
+    pkg: ['libnss3-tools', 'xvfb', 'x11vnc', 'xdotool', 'xpra']
+    state: 'present'
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Apt key for mozillateam PPA
+  ansible.builtin.get_url:
+    url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x9bdb3d89ce49ec21
+    dest: /etc/apt/keyrings/mozillateam.asc
+    checksum: sha256:9e8dea71928497ab368eeffb022273da157885dad77179305e56af3f804c0ae5
+
+- name: Add firefox apt repository.
+  apt_repository:
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/mozillateam.asc] https://ppa.launchpadcontent.net/mozillateam/ppa/ubuntu {{ ansible_distribution_release }} main "
+    state: present
+    filename: "mozillateam-ubuntu-ppa-jammy.list"
+    update_cache: true
+
+- name: Prioritize firefox apt repository.
+  copy:
+    dest: "/etc/apt/preferences.d/mozilla-firefox"
+    mode: 0644
+    content: |
+      Package: *
+      Pin: release o=LP-PPA-mozillateam
+      Pin-Priority: 1001
+      
+      Package: firefox
+      Pin: version 1:1snap1-0ubuntu2
+      Pin-Priority: -1
+
+- name: Ensure unattended upgrades does not reinstall firefox
+  copy:
+    dest: "/etc/apt/apt.conf.d/51unattended-upgrades-firefox"
+    mode: 0644
+    content: |
+      Unattended-Upgrade::Allowed-Origins:: "LP-PPA-mozillateam:${distro_codename}";
+
+- name: Install firefox
+  apt:
+    pkg: ['firefox']
+    state: 'present'
+    update_cache: yes
+    cache_valid_time: 3600
 
 - name: Ensure XAUTHORITY is exported for user vagrant
   become: true
@@ -12,7 +59,7 @@
 
 - name: Check if firefox profile exists
   stat:
-    path: "{{ firefox_snap_dir }}"
+    path: "{{ mozilla_home_dir }}"
   register: firefox_profile_exists
 
 - name: Configure firefox
@@ -55,30 +102,23 @@
 
     - name : Find profile location
       find:
-        paths: "{{ firefox_snap_dir }}"
+        paths: "{{ mozilla_home_dir }}"
         recurse: yes
         file_type: directory
-        patterns: '*.default'
+        patterns: '*.default,*.default-release'
       register: output
-    - debug: var=item.path
+
+    - name: Show profile location
+      debug: var=item.path
       with_items: "{{ output.files }}"
-    - set_fact:
-        firefox_profile_dir: "{{ output.files[0].path }}"
+      failed_when: "{{ output.files | length == 0 }}"
 
-    #- name: Create cert store (if firefox did not do so)
-    #  command: "certutil -N --empty-password -d sql:{{ firefox_profile_dir }}"
-
-    - name: Import development CA
-      command: certutil -A -n "custom_ca1" -t "CT,c" -i /usr/local/share/ca-certificates/insecure-development-ca.crt -d "{{ firefox_profile_dir }}"
-
-    - name: Open firefox websites
-      #shell: "xvfb-run -a firefox {{ website }} 2>&1 > /tmp/firefox-sites.log &"
-      shell: "firefox --display=:1 {{ website }} 2>&1 > /tmp/firefox-sites.log"
-      changed_when: false
-      ignore_errors: true
-      loop: [ "https://carl", "http://keycloak", "http://netbird-ui", "http://netbird-dashboard" ]
+    - name: Add certificate authority to found profiles
+      include_tasks: tasks/firefox-profile-ca.yml
+      loop: "{{ output.files }}"
       loop_control:
-        loop_var: website
+        loop_var: profile
+      when: output.files | length > 0
 
     - name: "Disable firefox"
       ansible.builtin.systemd_service:
@@ -89,6 +129,5 @@
         scope: user
       loop: [ "firefox" ]
 
-  #when: firefox_profile_exists.stat.exists == False
-
+  when: firefox_profile_exists.stat.exists == False
 

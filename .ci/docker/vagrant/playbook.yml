@@ -4,14 +4,17 @@
   hosts: all
   vars:
   pre_tasks:
+  - name: Host configuration /etc/hosts, certificate authority
+    import_tasks: tasks/system.yml
+    tags: "system"
+
   - name: Install required packages
     apt:
-      pkg: ['htop', 'tmux', 'jq', 'libssl-dev', 'libnss3-tools', 'xvfb', 'firefox', 'x11vnc', 'xdotool', 'xpra']
+      pkg: ['htop', 'tmux', 'jq', 'libssl-dev']
       state: 'present'
       update_cache: yes
       cache_valid_time: 3600
-  - name: Host configuration /etc/hosts, certificate authority
-    import_tasks: tasks/system.yml
+
   - name: Configure firefox profile for vagrant user
     import_tasks: tasks/firefox.yml
     tags: "firefox"

@@ -78,10 +78,16 @@ You may run all of the above also in a virtual machine, using Vagrant.
   ```
   cargo theo vagrant up
   ```
-* or directly via Vagrant (from the root of the repository):
+* or directly via Vagrant's cli (bash commands run from the root of the repository):
   ```
   export OPENDUT_REPO_ROOT=$(git rev-parse --show-toplevel)
-  VAGRANT_VAGRANTFILE=.ci/docker/Vagrantfile vagrant up
+  export VAGRANT_DOTFILE_PATH=$OPENDUT_REPO_ROOT/.vagrant
+  export VAGRANT_VAGRANTFILE=$OPENDUT_REPO_ROOT/.ci/docker/Vagrantfile
+  vagrant up
+  ```
+* provision vagrant with desktop environment
+  ```
+  ANSIBLE_SKIP_TAGS="" vagrant provision
   ```
 
 ##### Known issue

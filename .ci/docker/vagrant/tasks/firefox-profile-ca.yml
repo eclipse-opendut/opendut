@@ -1,0 +1,18 @@
+- name: Firefox profile directory
+  set_fact:
+    firefox_profile_dir: "{{ profile.path }}"
+
+#- name: Create cert store (if firefox did not do so)
+#  command: "certutil -N --empty-password -d sql:{{ firefox_profile_dir }}"
+
+- name: "Import development CA for profile {{ firefox_profile_dir }}"
+  command: certutil -A -n "custom_ca1" -t "CT,c" -i /usr/local/share/ca-certificates/insecure-development-ca.crt -d "{{ firefox_profile_dir }}"
+
+- name: Open firefox websites
+  #shell: "xvfb-run -a firefox {{ website }} 2>&1 > /tmp/firefox-sites.log &"
+  shell: "firefox --display=:1 {{ website }} 2>&1 > /tmp/firefox-sites.log"
+  changed_when: false
+  ignore_errors: true
+  loop: [ "https://carl", "http://keycloak", "http://netbird-ui", "http://netbird-dashboard" ]
+  loop_control:
+    loop_var: website

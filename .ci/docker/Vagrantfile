@@ -89,6 +89,8 @@ Vagrant.configure("2") do |config|
     ansible.extra_vars = {
         "opendut_repo_root" => "/vagrant",
     }
+    # ANSIBLE_ARGS="-v -e arg='value' --tags firefox" vagrant provision
+    ansible.raw_arguments = Shellwords.shellsplit(ENV['ANSIBLE_ARGS']) if ENV['ANSIBLE_ARGS']
   end
 
   # start docker with script

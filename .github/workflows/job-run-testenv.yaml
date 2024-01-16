@@ -66,7 +66,7 @@ jobs:
 
       - name: Run ping all script on one of the peers
         run: |
-          docker exec edgar-peer-1 /opt/pingall.sh
+          docker exec edgar-peer-1 /opt/pingall.sh # TODO RM
 
       - name: Stop test environment
         if: always()
@@ -77,3 +77,6 @@ jobs:
         if: always()
         run: |
           ./opendut-theo/opendut-theo testenv destroy
+          echo "Show all remaining containers"
+          docker ps -a
+        continue-on-error: true
