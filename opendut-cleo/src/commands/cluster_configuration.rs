@@ -6,8 +6,9 @@ pub mod create {
     use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
     use opendut_types::peer::PeerId;
     use opendut_types::topology::Device;
+    use crate::CreateOutputFormat;
 
-    pub async fn execute(carl: &mut CarlClient, name: String, cluster_id: Option<Uuid>, leader_id: Uuid, device_names: Vec<String>) -> crate::Result<()> {
+    pub async fn execute(carl: &mut CarlClient, name: String, cluster_id: Option<Uuid>, leader_id: Uuid, device_names: Vec<String>, output: CreateOutputFormat) -> crate::Result<()> {
 
         let name = ClusterName::try_from(name)
             .map_err(|cause| format!("Error while creating cluster configuration: {}", cause))?;
@@ -29,15 +30,29 @@ pub mod create {
         }
 
         let configuration = ClusterConfiguration { id: cluster_id, name: Clone::clone(&name), leader, devices };
-        carl.cluster.store_cluster_configuration(configuration).await
-            .map_err(|_| format!("Could not store cluster configuration. Make sure the application is running"))?;
-        println!("Successfully stored new cluster configuration.");
+        carl.cluster.store_cluster_configuration(configuration.clone()).await
+            .map_err(|err| format!("Could not store cluster configuration. Make sure the application is running. Error: {}", err))?;
 
-        println!("Name of the Cluster: {}", name);
-        println!("The following devices are part of the cluster configuration:");
-        for device_name in device_names.iter() {
-            println!("\x09{}", device_name);
-        };
+        match output {
+            CreateOutputFormat::Text => {
+                println!("Successfully stored new cluster configuration.");
+
+                println!("ClusterID: {:?}", cluster_id);
+                println!("Name of the Cluster: {:?}", name);
+                println!("The following devices are part of the cluster configuration:");
+                for device_name in device_names.iter() {
+                    println!("\x09{}", device_name);
+                };
+            }
+            CreateOutputFormat::Json => {
+                let json = serde_json::to_string(&configuration).unwrap();
+                println!("{}", json);
+            }
+            CreateOutputFormat::PrettyJson => {
+                let json = serde_json::to_string_pretty(&configuration).unwrap();
+                println!("{}", json);
+            }
+        }
 
         Ok(())
     }

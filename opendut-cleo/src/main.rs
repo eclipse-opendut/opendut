@@ -41,6 +41,9 @@ enum Commands {
     Create {
         #[command(subcommand)]
         resource: CreateResource,
+        ///Text, JSON or prettified JSON as output format
+        #[arg(value_enum, short, long, default_value_t=CreateOutputFormat::Text)]
+        output: CreateOutputFormat,
     },
     ///Generate a setup string
     GeneratePeerSetup {
@@ -197,6 +200,13 @@ enum DeleteResource {
 }
 
 #[derive(ValueEnum, Clone, Debug)]
+pub(crate) enum CreateOutputFormat {
+    Text,
+    Json,
+    PrettyJson,
+}
+
+#[derive(ValueEnum, Clone, Debug)]
 enum ListOutputFormat {
     Table,
     Json,
@@ -208,6 +218,16 @@ enum DescribeOutputFormat {
     Text,
     Json,
     PrettyJson,
+}
+
+impl From<CreateOutputFormat> for DescribeOutputFormat {
+    fn from(value: CreateOutputFormat) -> Self {
+        match value {
+            CreateOutputFormat::Text => DescribeOutputFormat::Text,
+            CreateOutputFormat::Json => DescribeOutputFormat::Json,
+            CreateOutputFormat::PrettyJson => DescribeOutputFormat::PrettyJson,
+        }
+    }
 }
 
 #[derive(ValueEnum, Clone, Debug)]
@@ -272,19 +292,19 @@ async fn execute() -> Result<()> {
                 }
             }
         }
-        Commands::Create { resource } => {
+        Commands::Create { resource, output } => {
             match resource {
                 CreateResource::ClusterConfiguration { name, cluster_id, leader_id, device_names  } => {
-                    commands::cluster_configuration::create::execute(&mut carl, name, cluster_id, leader_id, device_names).await?;
+                    commands::cluster_configuration::create::execute(&mut carl, name, cluster_id, leader_id, device_names, output).await?;
                 }
                 CreateResource::ClusterDeployment { id} => {
-                    commands::cluster_deployment::create::execute(&mut carl, id).await?;
+                    commands::cluster_deployment::create::execute(&mut carl, id, output).await?;
                 }
                 CreateResource::Peer { name, id } => {
-                    commands::peer::create::execute(&mut carl, name, id).await?;
+                    commands::peer::create::execute(&mut carl, name, id, output).await?;
                 }
                 CreateResource::Device { peer_id, device_id, name, description, location, interface, tags } => {
-                    commands::device::create::execute(&mut carl, peer_id, device_id, name, description, location, interface, tags).await?;
+                    commands::device::create::execute(&mut carl, peer_id, device_id, name, description, location, interface, tags, output).await?;
                 }
             }
         }

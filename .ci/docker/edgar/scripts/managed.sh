@@ -1,6 +1,9 @@
 #!/bin/bash
 
 source "$(dirname "$0")/functions.sh"
+
+set -e  # exit on error
+set -x  # print commands
 trap die_with_error TERM
 
 cleo_get_peer_id() {
@@ -75,13 +78,18 @@ done
 
 if [ "$1" == "router" ]; then
   DEVICES="$(opendut-cleo list --output=json devices | jq --arg NAME "$OPENDUT_EDGAR_CLUSTER_NAME" -r '.[] | select(.tags==$NAME).name' | xargs echo)"
+  echo "Enumerating devices to join cluster: $DEVICES"
 
+  echo "Creating cluster configuration"
   # currently CLEO does not split the string of the device names therefore passing it without quotes
   # shellcheck disable=SC2086
-  opendut-cleo create cluster-configuration --name "$OPENDUT_EDGAR_CLUSTER_NAME" \
+  RESPONSE=$(opendut-cleo create --output=json cluster-configuration --name "$OPENDUT_EDGAR_CLUSTER_NAME" \
       --leader-id "$PEER_ID" \
-      --device-names $DEVICES
-  CLUSTER_ID=$(opendut-cleo list --output=json cluster-configurations | jq --arg NAME "$OPENDUT_EDGAR_CLUSTER_NAME" -r '.[] | select(.name==$NAME).id')
+      --device-names $DEVICES)
+  echo "Cluster create result: $RESPONSE"
+
+  CLUSTER_ID=$(echo "$RESPONSE" | jq -r '.id')
+  echo "Creating cluster deployment for id=$CLUSTER_ID"
   opendut-cleo create cluster-deployment --id "$CLUSTER_ID"
 
 fi

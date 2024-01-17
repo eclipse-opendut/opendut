@@ -38,7 +38,7 @@ pub mod create {
     use opendut_types::peer::{PeerId};
     use opendut_types::topology::{Device, DeviceId};
     use opendut_types::util::net::NetworkInterfaceName;
-    use crate::DescribeOutputFormat;
+    use crate::{CreateOutputFormat, DescribeOutputFormat};
 
     #[allow(clippy::too_many_arguments)]
     pub async fn execute(
@@ -49,7 +49,8 @@ pub mod create {
         description: Option<String>,
         location: Option<String>,
         interface: Option<NetworkInterfaceName>,
-        tags: Option<Vec<String>>
+        tags: Option<Vec<String>>,
+        output: CreateOutputFormat,
     ) -> crate::Result<()> {
         let peer_id = PeerId::from(peer_id);
         let device_id = device_id.map(DeviceId::from).unwrap_or(DeviceId::random());
@@ -93,7 +94,8 @@ pub mod create {
         }
         carl.peers.store_peer_descriptor(Clone::clone(&peer_descriptor)).await
             .map_err(|error| format!("Failed to update peer <{}>.\n  {}", peer_id, error))?;
-        crate::commands::peer::describe::render_peer_descriptor(peer_descriptor, DescribeOutputFormat::Text);
+        let output_format = DescribeOutputFormat::from(output);
+        crate::commands::peer::describe::render_peer_descriptor(peer_descriptor, output_format);
         
         Ok(())
     }
