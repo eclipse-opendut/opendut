@@ -1,7 +1,7 @@
 <picture style="padding-bottom: 1em;">
-  <source media="(prefers-color-scheme: dark)" srcset="resources/logos/logo_dark.png">
-  <source media="(prefers-color-scheme: light)" srcset="resources/logos/logo_light.png">
-  <img alt="Eclipse openDuT logo" src="resources/logos/logo_light.png">
+  <source media="(prefers-color-scheme: dark)" srcset="resources/logos/logo_dark.png" />
+  <source media="(prefers-color-scheme: light)" srcset="resources/logos/logo_light.png" />
+  <img alt="Eclipse openDuT logo" src="resources/logos/logo_light.png" width="33%" />
 </picture>
 
 # Eclipse openDuT
