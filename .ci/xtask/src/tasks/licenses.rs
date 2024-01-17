@@ -116,6 +116,10 @@ mod sbom {
 
         let mut sbom: Spdx = serde_json::from_str(sbom)?;
 
+        { //remove erronous file information added by cargo-sbom (was two entries for the respective package's binary, without additional information)
+            sbom.files = None;
+        }
+
         { //override license information for crates with unclear license
             sbom.packages = sbom.packages.map(|packages|
                 packages.into_iter().map(|package| {
