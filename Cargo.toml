@@ -28,39 +28,38 @@ opendut-theo = { path = ".ci/docker/theo" }
 opendut-util = { path = "opendut-util" }
 opendut-vpn = { path = "opendut-vpn" }
 
-anyhow = "1.0.75"
-assert_fs = "1.0.13"
-async-trait = "0.1.73"
+anyhow = "1.0.79"
+assert_fs = "1.1.1"
+async-trait = "0.1.77"
 axum = "0.6.20"
 axum-server = "0.5.1"
 axum-server-dual-protocol = "0.5.2"
-base64 = "0.21.4"
+base64 = "0.21.7"
 brotli = "3.4.0"
-cargo_metadata = "0.18.0"
+cargo_metadata = "0.18.1"
 cfg-if = "1.0.0"
-clap = "4.4.8"
+clap = "4.4.18"
 cli-table = "0.4"
 config = { version = "0.13.3", features = ["toml"] }
-console = "0.15.7"
+console = "0.15.8"
 console_error_panic_hook = "0.1.7"
-console_log = "1.0.0"
 digest = "0.10.7"
 dotenvy = "0.15.7"
 env_logger = "0.10.0"
 flate2 = "1.0.27"
 fs_extra = "1.3.0"
-futures = "0.3.28"
+futures = "0.3.30"
 glob = "0.3.1"
-gloo-net = { version = "0.4.0" }
+gloo-net = { version = "0.5.0" }
 gloo-timers = { version = "0.3.0" }
-googletest = { version = "0.10.0" }
+googletest = { version = "0.11.0" }
 home = "0.5.5"
 http = "0.2.11"
 indicatif = "0.17.7"
 indoc = "2.0.4"
 lazy_static = "1.4.0"
-leptos = { version = "0.5.4" }
-leptos_router = { version = "0.5.4" }
+leptos = { version = "0.5.6" }
+leptos_router = { version = "0.5.6" }
 leptos-use = { version = "0.9.0" }
 log = "0.4.20"
 mime = "0.3.17"
@@ -76,18 +75,18 @@ protobuf-src = "1.1.0"
 reqwest = { version = "0.11.23", default-features = false, features = ["rustls-tls-native-roots"] }
 rstest = "0.18.2"
 rtnetlink = "0.13.1"
-serde = { version = "1.0.188", default-features = false }
-serde_json = "1.0.107"
+serde = { version = "1.0.195", default-features = false }
+serde_json = "1.0.111"
 serde-spdx = "0.8.4"
-shadow-rs = "0.24.0"
+shadow-rs = "0.26.1"
 sha1 = "0.10.6"
 sha2 = "0.10.8"
 strum = "0.25.0"
 sudo = "0.6.0"
 tar = "0.4.40"
-time = "0.3.29"
-thiserror = "1.0.49"
-tokio = { version = "1.32.0", default-features = false }
+time = "0.3.31"
+thiserror = "1.0.56"
+tokio = { version = "1.35.1", default-features = false }
 tokio-stream = { version = "0.1.14", default-features = false }
 toml_edit = "0.21.0"
 tonic = { version = "0.10.2", default-features = false }
@@ -99,8 +98,8 @@ tower-http = { version = "0.4.4", features = ["cors", "fs"] }
 tracing = { version = "0.1.40" }
 tracing-subscriber = { version = "0.3.18", default-features = false }
 tracing-web = { version = "0.1.3" }
-url = "2.4.1"
-uuid = "1.4.1"
+url = "2.5.0"
+uuid = "1.6.1"
 walkdir = "2.4.0"
 
 [workspace.metadata.ci]

@@ -115,7 +115,7 @@ mod test {
         testee.insert(cluster_resource_id, Clone::clone(&cluster_configuration)).await;
 
         assert_that!(testee.get(peer_resource_id).await, some(eq(Clone::clone(&peer))));
-        assert_that!(testee.get(cluster_resource_id).await, some(eq(Clone::clone(&cluster_configuration))));
+        assert_that!(testee.get::<ClusterConfiguration>(cluster_resource_id).await, some(eq(Clone::clone(&cluster_configuration))));
 
         assert_that!(testee.contains::<PeerDescriptor>(peer_resource_id).await, eq(true));
 
