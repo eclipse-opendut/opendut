@@ -56,7 +56,7 @@ impl WellKnownRoutes {
 
 mod routes {
     use leptos::*;
-    use leptos_router::{Route, Router, Routes};
+    use leptos_router::{Route, Router, Routes, TrailingSlash};
 
     use crate::clusters::{ClusterConfigurator, ClustersOverview};
     use crate::dashboard::Dashboard;
@@ -72,12 +72,12 @@ mod routes {
                 <main>
                     <Routes>
                         <Route path="/" view=|| view! { <Dashboard /> } />
-                        <Route path="/clusters" view=|| view! { <ClustersOverview /> } />
-                        <Route path="/clusters/:id/configure/:tab" view=|| view! { <ClusterConfigurator /> } />
-                        <Route path="/peers" view=|| view! { <PeersOverview /> } />
-                        <Route path="/peers/:id/configure/:tab" view=|| view! { <PeerConfigurator /> } />
-                        <Route path="/licenses" view=|| view! { <LicensesOverview /> } />
-                        <Route path="/error" view=|| view! { <ErrorPage /> } />
+                        <Route trailing_slash=TrailingSlash::Redirect path="/clusters" view=|| view! { <ClustersOverview /> } />
+                        <Route trailing_slash=TrailingSlash::Redirect path="/clusters/:id/configure/:tab" view=|| view! { <ClusterConfigurator /> } />
+                        <Route trailing_slash=TrailingSlash::Redirect path="/peers" view=|| view! { <PeersOverview /> } />
+                        <Route trailing_slash=TrailingSlash::Redirect path="/peers/:id/configure/:tab" view=|| view! { <PeerConfigurator /> } />
+                        <Route trailing_slash=TrailingSlash::Redirect path="/licenses" view=|| view! { <LicensesOverview /> } />
+                        <Route trailing_slash=TrailingSlash::Redirect path="/error" view=|| view! { <ErrorPage /> } />
                         <Route path="/*any" view=|| view! { <NotFound /> } />
                     </Routes>
                 </main>

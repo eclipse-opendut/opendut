@@ -1,3 +1,4 @@
+use std::ops::{Add, Not};
 use leptos::*;
 
 #[derive(Debug, Clone)]
@@ -27,15 +28,15 @@ pub fn Breadcrumbs(
             base.push_str(&breadcrumb.href);
 
             let is_last = index == breadcrumbs.len() - 1;
-            if !(base.ends_with("/") || is_last) {
-                base.push_str("/");
-            }
-
             let text = Clone::clone(&breadcrumb.text);
             let href = Clone::clone(&base);
             let is_active = is_last;
 
-            result.push(view! { <Item text=text href=href is_active=is_active /> });
+            result.push(view! { <Item text href is_active /> });
+
+            if base.ends_with("/").not() && is_last.not() {
+                base.push_str("/");
+            }
 
             (result, base)
         })
