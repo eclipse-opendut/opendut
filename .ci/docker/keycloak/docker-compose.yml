@@ -14,8 +14,8 @@ services:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin123456
       - KEYCLOAK_DB=dev-file
-    ports:
-      - "8081:80"
+    #ports:
+    #  - "8081:80"
     volumes:
       - opendut_keycloak_data:/opt/keycloak/data
     healthcheck:

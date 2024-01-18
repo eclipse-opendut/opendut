@@ -7,6 +7,7 @@ use std::process::Command;
 use std::io::Write;
 use dotenvy::dotenv;
 use strum::{Display, EnumString, EnumVariantNames};
+use crate::commands::vagrant::running_in_opendut_vm;
 
 use crate::core::metadata::cargo_netbird_versions;
 use crate::core::{OPENDUT_REPO_ROOT, TheoError};
@@ -31,6 +32,7 @@ pub enum TheoDynamicEnvVars {
     OpendutHosts,
     OpendutEdgarReplicas,
     OpendutEdgarClusterName,
+    OpendutFirefoxExposePort,
 }
 
 #[derive(Debug, PartialEq, EnumString, EnumVariantNames, Display)]
@@ -94,6 +96,13 @@ impl TheoEnvMap {
         env_map.insert(TheoDynamicEnvVars::OpendutHosts.to_string(), "".to_string());
         env_map.insert(TheoDynamicEnvVars::OpendutEdgarReplicas.to_string(), "4".to_string());
         env_map.insert(TheoDynamicEnvVars::OpendutEdgarClusterName.to_string(), "cluster1".to_string());
+        if running_in_opendut_vm() {
+            println!("Automatically exposing firefox port!");
+            env_map.insert(TheoDynamicEnvVars::OpendutFirefoxExposePort.to_string(), "true".to_string());
+        } else {
+            println!("Firefox only available on localhost.");
+            env_map.insert(TheoDynamicEnvVars::OpendutFirefoxExposePort.to_string(), "false".to_string());
+        }
 
         Self(env_map)
     }
@@ -206,7 +215,6 @@ pub(crate) fn dot_env_create_defaults() {
                         missing_env_vars = true;
                         println!("Environment variable '{}' is not set. Using a default value '{}'.", env_key, env_value);
                         let mut file = OpenOptions::new()
-                            .write(true)
                             .append(true)
                             .open(env_file.clone())
                             .unwrap();

@@ -1,0 +1,7 @@
+---
+version: "2.1"
+services:
+  firefox:
+    ports:
+      - "3000:3000"
+      - "3001:3001"

@@ -7,7 +7,7 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use clap::ArgAction;
-use crate::core::OPENDUT_REPO_ROOT;
+use crate::core::{OPENDUT_REPO_ROOT, OPENDUT_VM_NAME};
 
 use crate::core::project::ProjectRootDir;
 
@@ -102,7 +102,9 @@ impl VagrantCommand for Command {
 
 impl VagrantCli {
     pub(crate) fn default_handling(&self) {
-        check_hostname();
+        if running_in_opendut_vm() {
+            panic!("Command should not be run within the vagrant vm.")
+        }
 
         match self.task {
             TaskCli::Up => {
@@ -131,6 +133,7 @@ impl VagrantCli {
                 let vagrant_file_path = project_root.join(".ci/docker/Vagrantfile");
                 let vagrant_dot_file_path = project_root.join(".vagrant");
                 println!("# export the following environment variables to run vagrant commands");
+                println!("# Be sure to run the commands from the repository root");
                 println!("export {}={:?}", OPENDUT_REPO_ROOT, project_root.into_os_string());
                 println!("export VAGRANT_DOTFILE_PATH={:?}", vagrant_dot_file_path.into_os_string());
                 println!("export VAGRANT_VAGRANTFILE={:?}", vagrant_file_path.into_os_string());
@@ -155,10 +158,11 @@ impl VagrantCli {
     }
 }
 
-fn check_hostname() {
+pub fn running_in_opendut_vm() -> bool {
     let hostname = Command::new("hostname")
         .output()
         .unwrap_or_else(|cause| panic!("Failed to execute hostname. {}", cause));
-    let hostname = String::from_utf8(hostname.stdout).unwrap();
-    assert_ne!(hostname.trim(), "opendut-vm", "Command should not be run within the vagrant vm.");
+    let hostname = String::from_utf8(hostname.stdout).expect("Could not determine hostname!");
+    let opendut_vm_name = String::from(OPENDUT_VM_NAME);
+    opendut_vm_name.eq(hostname.trim())
 }

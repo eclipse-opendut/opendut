@@ -1,9 +1,11 @@
 use std::path::PathBuf;
 use std::process::Command;
 
+use clap::ArgAction;
+
 use crate::commands::edgar::TestEdgarCli;
 use crate::core::dist::make_distribution_if_not_present;
-use crate::core::docker::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_network_delete, docker_compose_up, DockerCommand, DockerCoreServices, wait_for_netbird_api_key};
+use crate::core::docker::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_network_delete, docker_compose_up, DockerCommand, DockerCoreServices, start_opendut_firefox_container, wait_for_netbird_api_key};
 use crate::core::project::{load_theo_environment_variables, ProjectRootDir};
 
 /// Build and start test environment.
@@ -18,7 +20,11 @@ pub enum TaskCli {
     #[command(about = "Build docker containers.")]
     Build,
     #[command(about = "Start test environment.")]
-    Start,
+    Start {
+        /// Expose firefox container port (3000), or set OPENDUT_FIREFOX_EXPOSE_PORT=true
+        #[arg(long, short, action = ArgAction::SetTrue)]
+        expose: bool,
+    },
     #[command(about = "Stop test environment.")]
     Stop,
     #[command(about = "Show docker network.")]
@@ -44,12 +50,12 @@ impl TestenvCli {
                 docker_compose_build(DockerCoreServices::Carl.as_str());
                 docker_compose_build(DockerCoreServices::Netbird.as_str());
             }
-            TaskCli::Start => {
+            TaskCli::Start { expose } => {
                 // prerequisites
                 docker_compose_network_create();
 
                 // start services
-                docker_compose_up(DockerCoreServices::Firefox.as_str());
+                start_opendut_firefox_container(expose);
                 docker_compose_up(DockerCoreServices::Keycloak.as_str());
                 docker_compose_up(DockerCoreServices::Netbird.as_str());
                 wait_for_netbird_api_key();
@@ -79,7 +85,6 @@ impl TestenvCli {
             }
         }
     }
-
 }
 
 fn start_carl_in_docker() {
