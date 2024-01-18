@@ -1,12 +1,10 @@
-use std::env;
 use std::path::PathBuf;
 use std::process::Command;
 
 use clap::ArgAction;
-use crate::commands::vagrant::running_in_opendut_vm;
 
+use crate::commands::vagrant::running_in_opendut_vm;
 use crate::core::docker::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_up, DockerCommand, DockerCoreServices, get_netbird_api_key, start_netbird, start_opendut_firefox_container, wait_for_netbird_api_key};
-use crate::core::OPENDUT_FIREFOX_EXPOSE_PORT;
 use crate::core::project::{load_theo_environment_variables, ProjectRootDir};
 
 #[derive(Debug, clap::Parser)]

@@ -5,8 +5,8 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::sleep;
 use std::time::Duration;
-use crate::core::OPENDUT_FIREFOX_EXPOSE_PORT;
 
+use crate::core::OPENDUT_FIREFOX_EXPOSE_PORT;
 use crate::core::project::ProjectRootDir;
 use crate::core::util::consume_output;
 
@@ -56,6 +56,7 @@ impl DockerCommand for Command {
     }
 
     fn docker_checks() {
+        check_docker_is_installed();
         check_docker_compose_is_installed();
         check_docker_daemon_communication();
     }
@@ -111,6 +112,12 @@ impl DockerCommand for Command {
     }
 }
 
+fn check_docker_is_installed() {
+    Command::docker()
+        .arg("version")
+        .output()
+        .expect("Failed to run docker version. Check if docker is installed.");
+}
 
 fn check_docker_compose_is_installed() {
     Command::docker()
@@ -266,7 +273,6 @@ pub fn start_opendut_firefox_container(expose: &bool) {
         .status()
         .unwrap_or_else(|cause| panic!("Failed to execute compose command for firefox: {}", cause));
     assert!(command_status.success());
-
 }
 
 pub fn start_netbird(expose: &bool) {
@@ -292,6 +298,5 @@ pub fn start_netbird(expose: &bool) {
         .status()
         .unwrap_or_else(|cause| panic!("Failed to execute compose command for netbird: {}", cause));
     assert!(command_status.success());
-
 }
 
