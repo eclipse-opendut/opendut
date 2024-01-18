@@ -3,9 +3,7 @@ use std::rc::Rc;
 use std::time::Duration;
 
 use chrono::{DateTime, Local};
-use leptos::{create_effect, create_rw_signal, document, IntoView, RwSignal, SignalGet, SignalGetUntracked, SignalSet, SignalUpdate, SignalWith, use_context, view, web_sys};
-use leptos::leptos_dom::Mountable;
-use leptos::web_sys::Node;
+use leptos::{create_effect, create_rw_signal, mount_to_body, RwSignal, SignalGet, SignalGetUntracked, SignalSet, SignalUpdate, SignalWith, use_context, view};
 use leptos_use::use_interval_fn;
 use leptos_use::utils::Pausable;
 use slotmap::{DefaultKey, SlotMap};
@@ -72,9 +70,6 @@ impl Toaster {
 
         debug!("Creating toaster.");
 
-        let parent: web_sys::HtmlElement = document().body()
-            .expect("There should be a html body");
-
         let toasts: RwSignal<ToastMap> = create_rw_signal(Default::default());
 
         let Pausable { pause: pause_toast_janitor, resume: resume_toast_janitor, is_active: is_toast_janitor_active } = use_interval_fn(move || {
@@ -113,12 +108,7 @@ impl Toaster {
             });
         });
 
-        let container: Node = {
-            view! { <Container toasts /> }
-        }.into_view().get_mountable_node();
-
-        let _ = parent.append_child(&container)
-            .expect("Toaster should be appendable to the body");
+        mount_to_body(move || view! { <Container toasts /> });
 
         info!("Toaster created.");
 
