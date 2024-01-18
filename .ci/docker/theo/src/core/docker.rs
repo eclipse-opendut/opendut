@@ -1,5 +1,9 @@
 use std::path::PathBuf;
 use std::process::Command;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::thread::sleep;
+use std::time::Duration;
 
 use crate::core::project::ProjectRootDir;
 use crate::core::util::consume_output;
@@ -7,6 +11,8 @@ use crate::core::util::consume_output;
 pub(crate) enum DockerCoreServices {
     Network,
     Carl,
+    CarlOnHost,
+    Dev,
     Keycloak,
     Edgar,
     Netbird,
@@ -17,6 +23,8 @@ impl DockerCoreServices {
     pub fn as_str(&self) -> &'static str {
         match self {
             DockerCoreServices::Carl => "carl",
+            DockerCoreServices::CarlOnHost => "carl-on-host",
+            DockerCoreServices::Dev => "dev",
             DockerCoreServices::Keycloak => "keycloak",
             DockerCoreServices::Edgar => "edgar",
             DockerCoreServices::Netbird => "netbird",
@@ -37,6 +45,7 @@ pub trait DockerCommand {
     fn docker_checks();
     fn add_common_args(&mut self, compose_dir: &str) -> &mut Self;
     fn add_netbird_api_key_to_env(&mut self) -> &mut Self;
+    fn run(&mut self);
 }
 
 impl DockerCommand for Command {
@@ -62,6 +71,41 @@ impl DockerCommand for Command {
     fn add_netbird_api_key_to_env(&mut self) -> &mut Self {
         let netbird_api_key = get_netbird_api_key();
         self.env("NETBIRD_API_TOKEN", &netbird_api_key)
+    }
+    fn run(&mut self) {
+        if let Ok(mut child) = self.spawn() {
+            let should_terminate = Arc::new(AtomicBool::new(false));
+
+            let signal_terminate = should_terminate.clone();
+            ctrlc::set_handler(move || {
+                signal_terminate.store(true, Ordering::Relaxed);
+            }).expect("Error setting Ctrl-C handler");
+
+            while !should_terminate.load(Ordering::Relaxed) {
+                match child.try_wait() {
+                    Ok(Some(status)) => {
+                        println!("exited with: {status}");
+                        break;
+                    }
+                    Ok(None) => {
+                        sleep(Duration::from_secs(1));
+                    }
+                    Err(e) => println!("error attempting to wait: {e}"),
+                }
+            }
+            if should_terminate.load(Ordering::Relaxed) {
+                println!("Terminating child process.");
+            }
+            println!("Waiting for child process to terminate.");
+            match child.kill() {
+                Ok(_) => {}
+                Err(error) => {
+                    println!("Error terminating child: {}", error);
+                }
+            }
+        } else {
+            println!("Failed to execute '{:?}'.", self);
+        }
     }
 }
 
@@ -177,7 +221,7 @@ fn check_netbird_api_key_available() -> bool {
     command_status.status.code().unwrap_or(1) == 0
 }
 
-fn get_netbird_api_key() -> String {
+pub fn get_netbird_api_key() -> String {
     let mut command = Command::docker();
     command.add_common_args(DockerCoreServices::Netbird.as_str());
     let command_status = command

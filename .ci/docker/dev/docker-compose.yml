@@ -20,6 +20,17 @@ services:
       - PGROUP
       - DOCKER_GID
       - OPENDUT_REPO_ROOT
+      # CARL
+      - OPENDUT_CARL_NETWORK_REMOTE_HOST=carl
+      - OPENDUT_CARL_NETWORK_REMOTE_PORT=443
+      - OPENDUT_CARL_NETWORK_BIND_PORT=443
+      - OPENDUT_CARL_VPN_ENABLED=true
+      - OPENDUT_CARL_VPN_KIND=netbird
+      - OPENDUT_CARL_VPN_NETBIRD_URL=http://netbird-management/api
+      - OPENDUT_CARL_VPN_NETBIRD_HTTPS_ONLY=false
+      - OPENDUT_CARL_VPN_NETBIRD_AUTH_SECRET=$NETBIRD_API_TOKEN
+      - OPENDUT_CARL_VPN_NETBIRD_AUTH_TYPE=personal-access-token
+
       # cleo
       - OPENDUT_CLEO_NETWORK_CARL_HOST=carl
       - OPENDUT_CLEO_NETWORK_CARL_PORT=443
@@ -37,6 +48,7 @@ services:
       - ../../../:$OPENDUT_REPO_ROOT
       - /var/run/docker.sock:/var/run/docker.sock
       - /usr/bin/docker:/usr/bin/docker
+      - "../../../resources/development/tls/insecure-development-ca.pem:/etc/opendut-network/tls/ca.pem"
 
       - $HOME/opendut_dev/:/opendut_dev/
       - $HOME/.cargo/:/home/$PUSER/.cargo/

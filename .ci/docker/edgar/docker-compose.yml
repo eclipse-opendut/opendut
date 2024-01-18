@@ -16,10 +16,14 @@ services:
     cap_add:
       - NET_ADMIN
     environment:
-      # cleo
+      # CLEO
       - OPENDUT_CLEO_NETWORK_CARL_HOST=carl
       - OPENDUT_CLEO_NETWORK_CARL_PORT=443
-      - OPENDUT_CLEO_NETWORK_TLS_DOMAIN_NAME_OVERRIDE=carl  # default developer certificate is only valid for localhost
+      - OPENDUT_CLEO_NETWORK_TLS_DOMAIN_NAME_OVERRIDE=localhost  # default developer certificate is only valid for localhost
+      # EDGAR
+      - OPENDUT_EDGAR_NETWORK_CARL_HOST=carl
+      - OPENDUT_EDGAR_NETWORK_CARL_PORT=443
+      - OPENDUT_EDGAR_NETWORK_TLS_DOMAIN_NAME_OVERRIDE=localhost  # default developer certificate is only valid for localhost
       # testenv
       - NETBIRD_GROUP=testenv  # only used by unmanaged mode
       - OPENDUT_EDGAR_REPLICAS
@@ -50,10 +54,14 @@ services:
     cap_add:
       - NET_ADMIN
     environment:
-      # cleo
+      # CLEO
       - OPENDUT_CLEO_NETWORK_CARL_HOST=carl
       - OPENDUT_CLEO_NETWORK_CARL_PORT=443
-      - OPENDUT_CLEO_NETWORK_TLS_DOMAIN_NAME_OVERRIDE=carl  # default developer certificate is only valid for localhost
+      - OPENDUT_CLEO_NETWORK_TLS_DOMAIN_NAME_OVERRIDE=localhost  # default developer certificate is only valid for localhost
+      # EDGAR
+      - OPENDUT_EDGAR_NETWORK_CARL_HOST=carl
+      - OPENDUT_EDGAR_NETWORK_CARL_PORT=443
+      - OPENDUT_EDGAR_NETWORK_TLS_DOMAIN_NAME_OVERRIDE=localhost  # default developer certificate is only valid for localhost
       # testenv
       - NETBIRD_GROUP=testenv  # only used by unmanaged mode
       - OPENDUT_EDGAR_REPLICAS

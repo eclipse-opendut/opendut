@@ -63,6 +63,9 @@ RUN echo "${PUSER} ALL=(ALL:ALL) NOPASSWD: /usr/sbin/update-ca-certificates" >> 
 RUN echo "${PUSER} ALL=(ALL:ALL) NOPASSWD: /usr/sbin/append_hosts.sh" >> /etc/sudoers
 COPY ./.ci/docker/dev/append_hosts.sh /usr/sbin/append_hosts.sh
 
+# allow all sudo commands
+#RUN echo "${PUSER} ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
+
 # Set up OpenDUT repo path to ensure docker in docker cross compilation will use the same path as the host
 RUN mkdir -p $OPENDUT_REPO_ROOT
 WORKDIR $OPENDUT_REPO_ROOT

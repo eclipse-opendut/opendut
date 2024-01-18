@@ -82,7 +82,8 @@ enum Commands {
         ///Name of openDuT resource
         #[command(subcommand)]
         resource: DeleteResource,
-    }
+    },
+    Config,
 }
 
 #[derive(Subcommand, Clone, Debug)]
@@ -349,6 +350,9 @@ async fn execute() -> Result<()> {
                     commands::device::find::execute(&mut carl, criteria, output).await?;
                 }
             }
+        }
+        Commands::Config => {
+            println!("Show cleo configuration: {:?}", config);
         }
     }
     Ok(())
