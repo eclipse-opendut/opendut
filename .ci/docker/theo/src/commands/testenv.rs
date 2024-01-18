@@ -57,7 +57,7 @@ impl TestenvCli {
                 // start services
                 start_opendut_firefox_container(expose);
                 docker_compose_up(DockerCoreServices::Keycloak.as_str());
-                start_netbird(&expose);
+                start_netbird(expose);
                 wait_for_netbird_api_key();
                 start_carl_in_docker();
 
