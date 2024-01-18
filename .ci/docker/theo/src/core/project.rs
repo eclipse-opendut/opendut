@@ -97,7 +97,7 @@ impl TheoEnvMap {
         env_map.insert(TheoDynamicEnvVars::OpendutEdgarReplicas.to_string(), "4".to_string());
         env_map.insert(TheoDynamicEnvVars::OpendutEdgarClusterName.to_string(), "cluster1".to_string());
         if running_in_opendut_vm() {
-            println!("Automatically exposing firefox port!");
+            println!("Running in virtual machine: Automatically exposing ports!");
             env_map.insert(TheoDynamicEnvVars::OpendutFirefoxExposePort.to_string(), "true".to_string());
         } else {
             println!("Firefox only available on localhost.");

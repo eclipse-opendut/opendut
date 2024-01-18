@@ -268,3 +268,30 @@ pub fn start_opendut_firefox_container(expose: &bool) {
     assert!(command_status.success());
 
 }
+
+pub fn start_netbird(expose: &bool) {
+    let mut command = Command::docker();
+    command.arg("compose")
+        .arg("-f")
+        .arg(".ci/docker/netbird/docker-compose.yml");
+
+    let expose_env_value = env::var(OPENDUT_FIREFOX_EXPOSE_PORT).unwrap_or("false".to_string()).eq("true");
+    if *expose || expose_env_value {
+        command.arg("-f")
+            .arg(".ci/docker/netbird/expose_ports.yml");
+    };
+    command.arg("--env-file")
+        .arg(".env-theo")
+        .arg("--env-file")
+        .arg(".env");
+
+    let command_status = command
+        .arg("up")
+        .arg("-d")
+        .current_dir(PathBuf::project_dir())
+        .status()
+        .unwrap_or_else(|cause| panic!("Failed to execute compose command for netbird: {}", cause));
+    assert!(command_status.success());
+
+}
+
