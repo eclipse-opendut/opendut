@@ -4,7 +4,7 @@ use std::process::Command;
 use crate::commands::edgar::TestEdgarCli;
 use crate::core::dist::make_distribution_if_not_present;
 use crate::core::docker::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_network_delete, docker_compose_up, DockerCommand, DockerCoreServices, wait_for_netbird_api_key};
-use crate::core::project::{dot_env_create_theo_specific_defaults, ProjectRootDir};
+use crate::core::project::{load_theo_environment_variables, ProjectRootDir};
 
 /// Build and start test environment.
 #[derive(Debug, clap::Parser)]
@@ -31,7 +31,7 @@ pub enum TaskCli {
 
 impl TestenvCli {
     pub(crate) fn default_handling(&self) {
-        self.check_environment_variables();
+        load_theo_environment_variables();
         Command::docker_checks();
 
         match &self.task {
@@ -80,13 +80,6 @@ impl TestenvCli {
         }
     }
 
-    fn check_environment_variables(&self) {
-        dot_env_create_theo_specific_defaults();
-        let custom_env = PathBuf::project_path_buf().join(".env-theo");
-        dotenvy::from_path(custom_env).expect(".env-theo file not found");
-
-
-    }
 }
 
 fn start_carl_in_docker() {

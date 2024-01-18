@@ -180,6 +180,14 @@ pub(crate) fn dot_env_create_theo_specific_defaults() {
     std::fs::write(theo_env_file, format!("{}\n", env_map_string)).expect("Failed to write .env-theo file.");
 }
 
+pub(crate) fn load_theo_environment_variables() {
+    dot_env_create_theo_specific_defaults();
+    let custom_env = PathBuf::project_path_buf().join(".env-theo");
+    dotenvy::from_path(custom_env).expect(".env-theo file not found");
+
+
+}
+
 pub(crate) fn dot_env_create_defaults() {
     let env_map = TheoEnvMap::user_default();
     let env_file = PathBuf::project_path_buf().join(".env");
