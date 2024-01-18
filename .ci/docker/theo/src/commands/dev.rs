@@ -1,9 +1,12 @@
+use std::env;
 use std::path::PathBuf;
 use std::process::Command;
 
 use clap::ArgAction;
+use crate::commands::vagrant::running_in_opendut_vm;
 
-use crate::core::docker::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_up, DockerCommand, DockerCoreServices, get_netbird_api_key, start_opendut_firefox_container, wait_for_netbird_api_key};
+use crate::core::docker::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_up, DockerCommand, DockerCoreServices, get_netbird_api_key, start_netbird, start_opendut_firefox_container, wait_for_netbird_api_key};
+use crate::core::OPENDUT_FIREFOX_EXPOSE_PORT;
 use crate::core::project::{load_theo_environment_variables, ProjectRootDir};
 
 #[derive(Debug, clap::Parser)]
@@ -44,14 +47,13 @@ impl DevCli {
                 println!("Starting services...");
                 start_opendut_firefox_container(&expose);
                 docker_compose_up(DockerCoreServices::Keycloak.as_str());
-                docker_compose_up(DockerCoreServices::Netbird.as_str());
+                start_netbird(&expose);
                 wait_for_netbird_api_key();
 
                 println!("Stopping carl in container (if present).");
                 docker_compose_down(DockerCoreServices::Carl.as_str(), false);
 
-                println!("Starting traefik to forward data to carl running on host system.");
-                docker_compose_up(DockerCoreServices::CarlOnHost.as_str());
+                start_carl_traefik_forwarder();
             }
             TaskCli::Stop => {
                 docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), false);
@@ -95,6 +97,11 @@ impl DevCli {
             }
             TaskCli::CarlConfig => {
                 let netbird_api_key = get_netbird_api_key();
+                let netbird_management_ip = if running_in_opendut_vm() {
+                    "192.168.56.10"
+                } else {
+                    "192.168.32.211"
+                };
 
                 println!("
 # These are the environment variables to run CARL in your IDE of choice.
@@ -103,12 +110,13 @@ OPENDUT_CARL_NETWORK_REMOTE_HOST=carl
 OPENDUT_CARL_NETWORK_REMOTE_PORT=443
 OPENDUT_CARL_VPN_ENABLED=true
 OPENDUT_CARL_VPN_KIND=netbird
-OPENDUT_CARL_VPN_NETBIRD_URL=http://192.168.32.211/api
+OPENDUT_CARL_VPN_NETBIRD_URL=http://{}/api
 OPENDUT_CARL_VPN_NETBIRD_HTTPS_ONLY=false
 OPENDUT_CARL_VPN_NETBIRD_AUTH_SECRET={}
 OPENDUT_CARL_VPN_NETBIRD_AUTH_TYPE=personal-access-token
 OPENDUT_CARL_VPN_NETBIRD_AUTH_HEADER=Authorization"
                          ,
+                         netbird_management_ip,
                          netbird_api_key
                 );
             }
@@ -116,3 +124,30 @@ OPENDUT_CARL_VPN_NETBIRD_AUTH_HEADER=Authorization"
     }
 }
 
+fn start_carl_traefik_forwarder() {
+    println!("Starting traefik to forward data to carl running on host system.");
+
+    let mut command = Command::docker();
+    command.arg("compose")
+        .arg("-f")
+        .arg(format!(".ci/docker/{}/docker-compose.yml", DockerCoreServices::CarlOnHost));
+
+    if running_in_opendut_vm() {
+        command.arg("-f").arg(format!(".ci/docker/{}/vm.yml", DockerCoreServices::CarlOnHost));
+    } else {
+        command.arg("-f").arg(format!(".ci/docker/{}/localhost.yml", DockerCoreServices::CarlOnHost));
+    };
+    command.arg("--env-file")
+        .arg(".env-theo")
+        .arg("--env-file")
+        .arg(".env");
+
+    let command_status = command
+        .arg("up")
+        .arg("-d")
+        .current_dir(PathBuf::project_dir())
+        .status()
+        .unwrap_or_else(|cause| panic!("Failed to execute compose command for netbird: {}", cause));
+    assert!(command_status.success());
+
+}

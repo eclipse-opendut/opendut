@@ -15,7 +15,6 @@ services:
       - "--log.level=DEBUG"
       - "--accesslog"
     volumes:
-      - ./traefik/:/etc/traefik/dynamic/:ro
       - "../../../resources/development/tls/:/etc/opendut-network/tls/:ro"
 
     #ports:
