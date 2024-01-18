@@ -9,3 +9,9 @@ connect.interval.ms = 250
 [network.tls]
 ca.certificate = "resources/development/tls/insecure-development-ca.pem"
 domain.name.override = "localhost"
+
+[vpn]
+enabled = false
+
+[vpn.disabled]
+remote.host = "127.0.0.1"

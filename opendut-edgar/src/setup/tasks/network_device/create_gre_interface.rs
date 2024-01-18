@@ -4,6 +4,7 @@ use std::str::FromStr;
 
 use anyhow::{Context, Result};
 use futures::executor::block_on;
+use opendut_netbird_client_api::extension::LocalPeerStateExtension;
 
 use opendut_types::util::net::NetworkInterfaceName;
 
@@ -41,13 +42,7 @@ impl Task for CreateGreInterfaces {
         let full_status = block_on(netbird_client.full_status())
             .context("Error during NetBird-Status")?;
 
-        let local_ip = {
-            let local_ip = full_status.local_peer_state.unwrap().ip;
-            let local_ip = local_ip.split('/').next() //strip CIDR mask
-                .context(format!("Iterator.split() should always return a first element. Did not do so when stripping CIDR mask off of local IP '{local_ip}'."))?;
-            Ipv4Addr::from_str(local_ip)
-                .context(format!("Local IP returned by NetBird '{local_ip}' could not be parsed."))?
-        };
+        let local_ip = full_status.local_peer_state.unwrap().local_ip()?;
 
         let router = {
             let mut router = self.router.clone();

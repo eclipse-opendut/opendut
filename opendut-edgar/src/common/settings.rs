@@ -7,6 +7,17 @@ pub mod key {
     pub mod peer {
         pub const id: &str = "peer.id";
     }
+    pub mod vpn {
+        pub const table: &str = "vpn";
+
+        pub mod disabled {
+            pub const table: &str = "vpn.disabled";
+
+            pub mod remote {
+                pub const host: &str = "vpn.disabled.remote.host";
+            }
+        }
+    }
 }
 
 pub fn default_config_file_path() -> PathBuf {

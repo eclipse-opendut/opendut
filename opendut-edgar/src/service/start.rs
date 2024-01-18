@@ -9,6 +9,7 @@ use opendut_types::peer::PeerId;
 use opendut_util::logging;
 
 use crate::common::{carl, settings};
+use crate::service::vpn;
 
 const BANNER: &str = r"
                          _____     _______
@@ -44,13 +45,17 @@ pub async fn create(settings_override: Config) -> anyhow::Result<()> {
 
     log::info!("Started with ID <{id}> and configuration: {settings:?}");
 
+
+    let remote_address = vpn::retrieve_remote_host(&settings).await?;
+
+
     log::debug!("Connecting to CARL...");
     let mut carl = carl::connect(&settings.config).await?;
     log::debug!("Connected to CARL.");
 
     log::info!("Connecting to peer-messaging-broker...");
 
-    let (mut inbound, tx) = carl.broker.open_stream(id).await?;
+    let (mut inbound, tx) = carl.broker.open_stream(id, remote_address).await?;
 
     let message = peer_messaging_broker::Upstream {
         message: Some(peer_messaging_broker::upstream::Message::Ping(peer_messaging_broker::Ping {}))

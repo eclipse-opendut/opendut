@@ -13,12 +13,15 @@ pub mod error {
 
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 mod client {
+    use std::net::IpAddr;
+
     use cfg_if::cfg_if;
     use tonic::codegen::{Body, Bytes, StdError};
-    use opendut_types::peer::{PeerId};
-    use opendut_types::proto::ConversionError;
-    use crate::carl::broker::error;
 
+    use opendut_types::peer::PeerId;
+    use opendut_types::proto::ConversionError;
+
+    use crate::carl::broker::error;
     use crate::proto::services::peer_messaging_broker;
     use crate::proto::services::peer_messaging_broker::peer_messaging_broker_client::PeerMessagingBrokerClient;
 
@@ -75,12 +78,13 @@ mod client {
                   <T::ResponseBody as Body>::Error: Into<StdError> + Send,
             {
 
-                pub async fn open_stream(&mut self, id: PeerId) -> Result<(Downstream, Upstream), error::OpenStream> {
+                pub async fn open_stream(&mut self, id: PeerId, remote_address: IpAddr) -> Result<(Downstream, Upstream), error::OpenStream> {
                     let (tx, rx) = mpsc::channel(1024);
 
                     let response = {
                         let mut request = tonic::Request::new(ReceiverStream::new(rx));
                         request.metadata_mut().insert("id", MetadataValue::from_str(&id.to_string()).unwrap());
+                        request.metadata_mut().insert("remote-host", MetadataValue::from_str(&remote_address.to_string()).unwrap());
 
                         self.inner
                             .open(request)

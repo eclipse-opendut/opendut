@@ -22,6 +22,7 @@ async fn register_edgar_carl() -> Result<()> {
         .build()?;
     let _ = tokio::spawn(async {
         opendut_carl::create(carl_config_override).await
+            .expect("CARL crashed")
     });
 
     let settings_overrides = Config::builder()
@@ -37,6 +38,7 @@ async fn register_edgar_carl() -> Result<()> {
 
     let _ = tokio::spawn(async {
         opendut_edgar::service::start::create(edgar_config_override).await
+            .expect("EDGAR crashed")
     });
 
     let mut carl_client = opendut_edgar::common::carl::connect(&assert_channel_config).await
