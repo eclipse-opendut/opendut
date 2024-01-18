@@ -18,8 +18,8 @@ services:
       - ./traefik/:/etc/traefik/dynamic/:ro
       - "../../../resources/development/tls/:/etc/opendut-network/tls/:ro"
 
-    ports:
-      - "127.0.0.1:8082:8080"  # traefik dashboard
+    #ports:
+    #  - "127.0.0.1:8082:8080"  # traefik dashboard
     networks:
       opendutnet:
         aliases:

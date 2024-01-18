@@ -1,9 +1,11 @@
+use std::env;
 use std::path::PathBuf;
 use std::process::Command;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::sleep;
 use std::time::Duration;
+use crate::core::OPENDUT_FIREFOX_EXPOSE_PORT;
 
 use crate::core::project::ProjectRootDir;
 use crate::core::util::consume_output;
@@ -236,4 +238,33 @@ pub fn get_netbird_api_key() -> String {
         .output();
 
     consume_output(command_status).expect("Failed to get netbird api key from netbird_management_init container")
+}
+
+pub fn start_opendut_firefox_container(expose: &bool) {
+    let mut command = Command::docker();
+    command.arg("compose")
+        .arg("-f")
+        .arg(".ci/docker/firefox/docker-compose.yml");
+
+    let expose_env_value = env::var(OPENDUT_FIREFOX_EXPOSE_PORT).unwrap_or("false".to_string()).eq("true");
+    if *expose || expose_env_value {
+        command.arg("-f")
+            .arg(".ci/docker/firefox/expose_ports.yml")
+    } else {
+        command.arg("-f")
+            .arg(".ci/docker/firefox/localhost_ports.yml")
+    };
+    command.arg("--env-file")
+        .arg(".env-theo")
+        .arg("--env-file")
+        .arg(".env");
+
+    let command_status = command
+        .arg("up")
+        .arg("-d")
+        .current_dir(PathBuf::project_dir())
+        .status()
+        .unwrap_or_else(|cause| panic!("Failed to execute compose command for firefox: {}", cause));
+    assert!(command_status.success());
+
 }

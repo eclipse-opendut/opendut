@@ -50,7 +50,7 @@ fn assert_exactly_one_distribution_of_each_component(expected_dist_files: &[&str
     }
 }
 
-fn check_if_distribution_tar_exists_of_each_component(expected_dist_files: &Vec<&str>, files: Vec<String>) -> bool {
+fn check_if_distribution_tar_exists_of_each_component(expected_dist_files: &[&str], files: Vec<String>) -> bool {
     let stripped_version_of_files = files.iter().cloned()
         .map(|file| {
             let pos = file.find(TARGET_TRIPLE).map(|i| i + 12).unwrap();

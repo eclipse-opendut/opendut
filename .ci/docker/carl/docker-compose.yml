@@ -44,8 +44,8 @@ services:
       retries: 3
       start_period: 40s
 
-    ports:
-      - "443"
+    #ports:
+    #  - "443"
     networks:
       opendutnet:
         ipv4_address: 192.168.32.200

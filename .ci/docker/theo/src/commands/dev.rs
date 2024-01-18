@@ -1,6 +1,9 @@
 use std::path::PathBuf;
 use std::process::Command;
-use crate::core::docker::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_up, DockerCommand, DockerCoreServices, get_netbird_api_key, wait_for_netbird_api_key};
+
+use clap::ArgAction;
+
+use crate::core::docker::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_up, DockerCommand, DockerCoreServices, get_netbird_api_key, start_opendut_firefox_container, wait_for_netbird_api_key};
 use crate::core::project::{load_theo_environment_variables, ProjectRootDir};
 
 #[derive(Debug, clap::Parser)]
@@ -12,7 +15,11 @@ pub struct DevCli {
 #[derive(Debug, clap::Subcommand)]
 pub enum TaskCli {
     #[command(about = "Start dev containers.")]
-    Start,
+    Start {
+        /// Expose firefox container port (3000), or set OPENDUT_FIREFOX_EXPOSE_PORT=true
+        #[arg(long, short, action = ArgAction::SetTrue)]
+        expose: bool,
+    },
     #[command(about = "Stop dev containers.")]
     Stop,
     #[command(about = "Build dev container.")]
@@ -31,11 +38,11 @@ impl DevCli {
         Command::docker_checks();
 
         match self.task {
-            TaskCli::Start => {
+            TaskCli::Start { expose } => {
                 docker_compose_network_create();
 
                 println!("Starting services...");
-                docker_compose_up(DockerCoreServices::Firefox.as_str());
+                start_opendut_firefox_container(&expose);
                 docker_compose_up(DockerCoreServices::Keycloak.as_str());
                 docker_compose_up(DockerCoreServices::Netbird.as_str());
                 wait_for_netbird_api_key();
@@ -52,7 +59,6 @@ impl DevCli {
                 docker_compose_down(DockerCoreServices::Carl.as_str(), false);
                 docker_compose_down(DockerCoreServices::Netbird.as_str(), false);
                 docker_compose_down(DockerCoreServices::Firefox.as_str(), false);
-
             }
             TaskCli::Build => {
                 docker_compose_build(DockerCoreServices::Dev.as_str());
@@ -109,3 +115,4 @@ OPENDUT_CARL_VPN_NETBIRD_AUTH_HEADER=Authorization"
         }
     }
 }
+
