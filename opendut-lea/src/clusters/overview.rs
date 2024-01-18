@@ -6,7 +6,7 @@ use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId}
 
 use crate::app::{ExpectGlobals, use_app_globals};
 use crate::clusters::components::CreateClusterButton;
-use crate::components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Initialized};
+use crate::components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Initialized, Toast, use_toaster};
 
 #[component(transparent)]
 pub fn ClustersOverview() -> impl IntoView {
@@ -25,18 +25,46 @@ pub fn ClustersOverview() -> impl IntoView {
         });
 
         let deploy_cluster = create_action(move |id: &ClusterId| {
+            let toaster = use_toaster();
             let mut carl = globals.expect_client();
             let id = Clone::clone(id);
             async move {
-                let _ = carl.cluster.store_cluster_deployment(ClusterDeployment { id }).await;
+                match carl.cluster.store_cluster_deployment(ClusterDeployment { id }).await {
+                    Ok(_) => {
+                        toaster.toast(Toast::builder()
+                            .simple("Successfully stored cluster deployment!")
+                            .success()
+                        );
+                    }
+                    Err(_) => {
+                        toaster.toast(Toast::builder()
+                            .simple("Failed to store cluster deployment!")
+                            .error()
+                        );
+                    }
+                }
             }
         });
 
         let undeploy_cluster = create_action(move |id: &ClusterId| {
+            let toaster = use_toaster();
             let mut carl = globals.expect_client();
             let id = Clone::clone(id);
             async move {
-                let _ = carl.cluster.delete_cluster_deployment(id).await;
+                match carl.cluster.delete_cluster_deployment(id).await {
+                    Ok(_) => {
+                        toaster.toast(Toast::builder()
+                            .simple("Successfully deleted cluster deployment!")
+                            .success()
+                        );
+                    }
+                    Err(_) => {
+                        toaster.toast(Toast::builder()
+                            .simple("Failed to delete cluster deployment!")
+                            .error()
+                        );
+                    }
+                }
             }
         });
 

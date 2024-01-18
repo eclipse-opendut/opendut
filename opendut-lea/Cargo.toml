@@ -8,6 +8,7 @@ license = "Apache-2.0"
 opendut-carl-api = { workspace = true, features = ["wasm-client"] }
 opendut-types = { workspace = true }
 
+chrono = { workspace = true, features = ["clock", "wasmbind"] }
 console_error_panic_hook = { workspace = true }
 gloo-net = { workspace = true, features = ["json"]}
 gloo-timers = { workspace = true, features = ["futures"] }
@@ -15,6 +16,7 @@ leptos = { workspace = true, features = ["csr"] }
 leptos_router = { workspace = true, features = ["csr"] }
 leptos-use = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
+slotmap = { workspace = true }
 thiserror = { workspace = true }
 tonic = { workspace = true }
 tonic-web-wasm-client = { workspace = true }

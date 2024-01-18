@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use gloo_net::http;
 use leptos::*;
 use serde::Deserialize;
@@ -5,6 +6,7 @@ use tracing::info;
 use url::Url;
 
 use opendut_carl_api::carl::wasm::CarlClient;
+use crate::components::Toaster;
 
 use crate::nav::Navbar;
 use crate::routing::Routes;
@@ -54,6 +56,7 @@ pub fn App() -> impl IntoView {
     });
 
     provide_context(globals);
+    provide_context(Rc::new(Toaster::new()));
 
     view! {
         <Navbar />

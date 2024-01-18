@@ -20,10 +20,13 @@ mod nav;
 
 fn main() {
 
+    console_error_panic_hook::set_once();
+
     let fmt_layer = tracing_subscriber::fmt::layer()
         .with_ansi(false)
         .without_time()
-        .with_writer(tracing_web::MakeConsoleWriter);
+        .with_writer(tracing_web::MakeConsoleWriter)
+        .pretty();
     let perf_layer = tracing_web::performance_layer()
         .with_details_from_fields(Pretty::default());
 
@@ -31,8 +34,6 @@ fn main() {
         .with(fmt_layer)
         .with(perf_layer)
         .init();
-
-    console_error_panic_hook::set_once();
 
     info!("LEA started.");
 

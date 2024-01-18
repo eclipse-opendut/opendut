@@ -1,11 +1,13 @@
+use std::rc::Rc;
+
 use leptos::*;
-use tracing::{error, info};
+use tracing::{debug, error};
 
 use opendut_types::cluster::{ClusterConfiguration, ClusterId};
-use crate::app::{ExpectGlobals, use_app_globals};
 
-use crate::components::{ButtonColor, ButtonSize, ButtonState, ButtonStateSignalProvider, ConfirmationButton, FontAwesomeIcon, IconButton};
+use crate::app::{ExpectGlobals, use_app_globals};
 use crate::clusters::configurator::types::UserClusterConfiguration;
+use crate::components::{ButtonColor, ButtonSize, ButtonState, ButtonStateSignalProvider, ConfirmationButton, FontAwesomeIcon, IconButton, Toast, use_toaster};
 use crate::routing::{navigate_to, WellKnownRoutes};
 
 #[component]
@@ -23,23 +25,30 @@ pub fn Controls(cluster_configuration: ReadSignal<UserClusterConfiguration>) -> 
 fn SaveClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>) -> impl IntoView {
 
     let globals = use_app_globals();
+    let toaster = use_toaster();
 
     let store_action = create_action(move |_: &()| {
-
+        let toaster = Rc::clone(&toaster);
         let configuration = ClusterConfiguration::try_from(cluster_configuration.get_untracked());
-
         async move {
-            // TODO: Implement some kind of toast to show the result of the store action.
             match configuration {
                 Ok(configuration) => {
                     let mut carl = globals.expect_client();
                     let result = carl.cluster.store_cluster_configuration(configuration).await;
                     match result {
                         Ok(cluster_id) => {
-                            info!("Successfully stored cluster: {}", cluster_id);
+                            debug!("Successfully stored cluster: {}", cluster_id);
+                            toaster.toast(Toast::builder()
+                                .simple("Successfully stored cluster configuration.")
+                                .success()
+                            );
                         }
                         Err(cause) => {
                             error!("Failed to store cluster <{}>, due to error: {:?}", "id", cause);
+                            toaster.toast(Toast::builder()
+                                .simple("Failed to store cluster configuration!")
+                                .error()
+                            );
                         }
                     }
                 }

@@ -7,6 +7,7 @@ pub use inputs::{UserInputError, UserInputValue};
 pub use inputs::readonly_input::ReadOnlyInput;
 pub use inputs::user_input::UserInput;
 pub use page::BasePageContainer;
+pub use toast::{use_toaster, Toaster, Toast, ToastKind, ToastContent};
 pub use util::ButtonStateSignalProvider;
 pub use util::Toggled;
 pub use util::use_active_tab;
@@ -21,6 +22,7 @@ mod inputs;
 mod buttons;
 mod breadcrumbs;
 mod initialized;
+mod toast;
 
 #[derive(Clone, Copy, Debug)]
 #[allow(dead_code)]

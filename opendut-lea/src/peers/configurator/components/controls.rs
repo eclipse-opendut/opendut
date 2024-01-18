@@ -1,9 +1,12 @@
-use leptos::*;
-use tracing::{error, info};
-use opendut_types::peer::{PeerDescriptor, PeerId};
-use crate::app::{ExpectGlobals, use_app_globals};
+use std::rc::Rc;
 
-use crate::components::{ButtonColor, ButtonSize, ButtonState, ButtonStateSignalProvider, ConfirmationButton, FontAwesomeIcon, IconButton};
+use leptos::*;
+use tracing::{debug, error, info};
+
+use opendut_types::peer::{PeerDescriptor, PeerId};
+
+use crate::app::{ExpectGlobals, use_app_globals};
+use crate::components::{ButtonColor, ButtonSize, ButtonState, ButtonStateSignalProvider, ConfirmationButton, FontAwesomeIcon, IconButton, Toast, use_toaster};
 use crate::peers::configurator::types::UserPeerConfiguration;
 use crate::routing::{navigate_to, WellKnownRoutes};
 
@@ -28,8 +31,10 @@ fn SavePeerButton(
 ) -> impl IntoView {
 
     let globals = use_app_globals();
+    let toaster = use_toaster();
 
     let store_action = create_action(move |_: &()| {
+        let toaster = Rc::clone(&toaster);
         async move {
             let mut carl = globals.expect_client();
             let peer_descriptor = PeerDescriptor::try_from(configuration.get_untracked());
@@ -39,10 +44,18 @@ fn SavePeerButton(
                     let result = carl.peers.store_peer_descriptor(peer_descriptor).await;
                     match result {
                         Ok(_) => {
-                            info!("Successfully stored peer: {peer_id}");
+                            debug!("Successfully stored peer: {peer_id}");
+                            toaster.toast(Toast::builder()
+                                .simple("Successfully stored peer configuration.")
+                                .success()
+                            );
                         }
                         Err(cause) => {
                             error!("Failed to create peer <{peer_id}>, due to error: {cause:?}");
+                            toaster.toast(Toast::builder()
+                                .simple("Failed to store peer!")
+                                .error()
+                            );
                         }
                     }
                 }

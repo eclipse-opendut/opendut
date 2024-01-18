@@ -1,0 +1,60 @@
+.dut-toasts {
+  display: flex;
+  align-items: flex-end;
+  flex-direction: column-reverse;
+
+  height: 60%;
+  width: 60%;
+
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+
+  z-index: 8121;
+
+  margin-left: auto;
+  margin-right: auto;
+
+  overflow-x: hidden;
+  overflow-y: hidden;
+
+  overscroll-behavior-y: contain;
+  scroll-snap-type: y proximity;
+
+  pointer-events: none;
+}
+
+.dut-toasts * {
+  pointer-events: auto;
+}
+
+.dut-toast {
+  @extend .notification;
+  padding: 1.5rem 0 0 0;
+  margin: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.dut-toast:last-child {
+  scroll-snap-align: end;
+}
+
+.dut-toast:not(:last-child) {
+  margin: 1rem 0 0 0;
+}
+
+.dut-toast-content {
+  padding: 0 1.5rem 1.0rem 1.5rem;
+}
+
+.dut-toast-life-gauge {
+  width: 100%;
+  height: 0.35rem;
+  background-color: rgba(211, 211, 211, 0.40);
+}
+
+.dut-toast-life-gauge > div {
+  background-color: #2b79a2;
+  height: 0.35rem;
+}
