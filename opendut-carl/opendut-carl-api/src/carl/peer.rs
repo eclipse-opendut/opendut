@@ -2,17 +2,18 @@
 pub use client::*;
 
 use opendut_types::peer::{PeerId, PeerName};
-use opendut_types::peer::state::{PeerState, PeerStates};
+use opendut_types::peer::state::PeerState;
 use opendut_types::topology::DeviceId;
+use opendut_types::ShortName;
 
 #[derive(thiserror::Error, Debug)]
 pub enum StorePeerDescriptorError {
-    #[error("Peer '{peer_name}' <{peer_id}> cannot be updated in state '{actual_state}'! A peer can be updated when: {required_states}")]
+    #[error("Peer '{peer_name}' <{peer_id}> cannot be updated in state '{}'! A peer can be updated when: {}", actual_state.short_name(), PeerState::short_names_joined(required_states))]
     IllegalPeerState {
         peer_id: PeerId,
         peer_name: PeerName,
         actual_state: PeerState,
-        required_states: PeerStates,
+        required_states: Vec<PeerState>,
     },
     #[error("Peer '{peer_name}' <{peer_id}> could not be stored, due to illegal devices:\n  {error}")]
     IllegalDevices {
@@ -34,12 +35,12 @@ pub enum DeletePeerDescriptorError {
     PeerNotFound {
         peer_id: PeerId
     },
-    #[error("Peer '{peer_name}' <{peer_id}> cannot be deleted in state '{actual_state}'! A peer can be deleted when: {required_states}")]
+    #[error("Peer '{peer_name}' <{peer_id}> cannot be deleted in state '{}'! A peer can be deleted when: {}", actual_state.short_name(), PeerState::short_names_joined(required_states))]
     IllegalPeerState {
         peer_id: PeerId,
         peer_name: PeerName,
         actual_state: PeerState,
-        required_states: PeerStates,
+        required_states: Vec<PeerState>,
     },
     #[error("Peer '{peer_name}' <{peer_id}> deleted with internal errors:\n  {cause}")]
     Internal {

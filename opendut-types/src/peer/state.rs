@@ -1,5 +1,5 @@
-use std::fmt::{Display, Formatter};
 use serde::{Deserialize, Serialize};
+use crate::ShortName;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum PeerState {
@@ -20,33 +20,22 @@ pub enum PeerBlockedState {
     Undeploying,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub struct PeerStates(pub Vec<PeerState>);
-
 impl Default for PeerState {
     fn default() -> Self {
         Self::Down
     }
 }
 
-impl Display for PeerState {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+impl ShortName for PeerState {
+    fn short_name(&self) -> &'static str {
         match self {
-            PeerState::Up(PeerUpState::Available) => write!(f, "Available"),
-            PeerState::Up(PeerUpState::Blocked(PeerBlockedState::Deploying)) => write!(f, "Deploying"),
-            PeerState::Up(PeerUpState::Blocked(PeerBlockedState::Member)) => write!(f, "Member"),
-            PeerState::Up(PeerUpState::Blocked(PeerBlockedState::Undeploying)) => write!(f, "Undeploying"),
-            PeerState::Down => write!(f, "Down"),
+            PeerState::Up(inner) => match inner {
+                PeerUpState::Available => "Available",
+                PeerUpState::Blocked(PeerBlockedState::Deploying) => "Deploying",
+                PeerUpState::Blocked(PeerBlockedState::Member) => "Member",
+                PeerUpState::Blocked(PeerBlockedState::Undeploying) => "Undeploying",
+            }
+            PeerState::Down => "Down",
         }
-    }
-}
-
-impl Display for PeerStates {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let states = self.0.iter()
-            .map(|state| state.to_string())
-            .collect::<Vec<_>>()
-            .join(", ");
-        write!(f, "{states}")
     }
 }

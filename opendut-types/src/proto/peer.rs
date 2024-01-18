@@ -230,25 +230,6 @@ impl TryFrom<PeerState> for crate::peer::state::PeerState {
     }
 }
 
-impl From<crate::peer::state::PeerStates> for Vec<PeerState> {
-    fn from(value: crate::peer::state::PeerStates) -> Self {
-        value.0.into_iter().map(PeerState::from).collect::<Vec<_>>()
-    }
-}
-
-impl TryFrom<Vec<PeerState>> for crate::peer::state::PeerStates {
-    type Error = ConversionError;
-
-    fn try_from(value: Vec<PeerState>) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<Vec<PeerState>, crate::peer::state::PeerStates>;
-
-        value.into_iter().map(crate::peer::state::PeerState::try_from)
-            .collect::<Result<Vec<_>, _>>()
-            .map(crate::peer::state::PeerStates)
-            .map_err(|cause| ErrorBuilder::new(cause.to_string()))
-    }
-}
-
 #[cfg(test)]
 #[allow(non_snake_case)]
 mod tests {

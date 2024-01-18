@@ -359,6 +359,7 @@ pub mod metadata_provider {
 pub mod peer_manager {
     use opendut_types::peer::{PeerId, PeerName};
     use opendut_types::peer::state::PeerState;
+    use opendut_types::proto;
     use opendut_types::proto::{ConversionError, ConversionErrorBuilder};
     use opendut_types::topology::DeviceId;
 
@@ -374,7 +375,7 @@ pub mod peer_manager {
                         peer_id: Some(peer_id.into()),
                         peer_name: Some(peer_name.into()),
                         actual_state: Some(actual_state.into()),
-                        required_states: required_states.into(),
+                        required_states: required_states.into_iter().map(Into::into).collect(),
                     })
                 }
                 StorePeerDescriptorError::IllegalDevices { peer_id, peer_name, error } => {
@@ -432,8 +433,9 @@ pub mod peer_manager {
             let actual_state: PeerState = failure.actual_state
                 .ok_or_else(|| ErrorBuilder::new("Field 'actual_state' not set"))?
                 .try_into()?;
-            let required_states = failure.required_states
-                .try_into()?;
+            let required_states = failure.required_states.into_iter()
+                .map(proto::peer::PeerState::try_into)
+                .collect::<Result<_, _>>()?;
             Ok(StorePeerDescriptorError::IllegalPeerState { peer_id, peer_name, actual_state, required_states })
         }
     }
@@ -482,7 +484,7 @@ pub mod peer_manager {
                         peer_id: Some(peer_id.into()),
                         peer_name: Some(peer_name.into()),
                         actual_state: Some(actual_state.into()),
-                        required_states: required_states.into(),
+                        required_states: required_states.into_iter().map(Into::into).collect(),
                     })
                 }
                 DeletePeerDescriptorError::Internal { peer_id, peer_name, cause } => {
@@ -544,8 +546,9 @@ pub mod peer_manager {
             let actual_state: PeerState = failure.actual_state
                 .ok_or_else(|| ErrorBuilder::new("Field 'actual_state' not set"))?
                 .try_into()?;
-            let required_states = failure.required_states
-                .try_into()?;
+            let required_states = failure.required_states.into_iter()
+                .map(proto::peer::PeerState::try_into)
+                .collect::<Result<_, _>>()?;
             Ok(DeletePeerDescriptorError::IllegalPeerState { peer_id, peer_name, actual_state, required_states })
         }
     }
