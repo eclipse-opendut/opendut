@@ -184,25 +184,6 @@ impl TryFrom<ClusterState> for crate::cluster::state::ClusterState {
     }
 }
 
-impl From<crate::cluster::state::ClusterStates> for Vec<ClusterState> {
-    fn from(value: crate::cluster::state::ClusterStates) -> Self {
-        value.0.into_iter().map(ClusterState::from).collect::<Vec<_>>()
-    }
-}
-
-impl TryFrom<Vec<ClusterState>> for crate::cluster::state::ClusterStates {
-    type Error = ConversionError;
-
-    fn try_from(value: Vec<ClusterState>) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<Vec<ClusterState>, crate::cluster::state::ClusterStates>;
-
-        value.into_iter().map(crate::cluster::state::ClusterState::try_from)
-            .collect::<Result<Vec<_>, _>>()
-            .map(crate::cluster::state::ClusterStates)
-            .map_err(|cause| ErrorBuilder::new(cause.to_string()))
-    }
-}
-
 impl From<crate::cluster::ClusterAssignment> for ClusterAssignment {
     fn from(value: crate::cluster::ClusterAssignment) -> Self {
         Self {

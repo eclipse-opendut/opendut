@@ -1,6 +1,6 @@
-use std::fmt::{Display, Formatter};
-
 use serde::{Deserialize, Serialize};
+
+use crate::ShortName;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum ClusterState {
@@ -15,13 +15,15 @@ impl Default for ClusterState {
     }
 }
 
-impl Display for ClusterState {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+impl ShortName for ClusterState {
+    fn short_name(&self) -> &'static str {
         match self {
-            ClusterState::Undeployed => write!(f, "Undeployed"),
-            ClusterState::Deploying => write!(f, "Deploying"),
-            ClusterState::Deployed(DeployedClusterState::Unhealthy) => write!(f, "Unhealthy"),
-            ClusterState::Deployed(DeployedClusterState::Healthy) => write!(f, "Healthy"),
+            ClusterState::Undeployed => "Undeployed",
+            ClusterState::Deploying => "Deploying",
+            ClusterState::Deployed(inner) => match inner {
+                DeployedClusterState::Unhealthy => "Unhealthy",
+                DeployedClusterState::Healthy => "Healthy",
+            }
         }
     }
 }
@@ -35,18 +37,5 @@ pub enum DeployedClusterState {
 impl Default for DeployedClusterState {
     fn default() -> Self {
         Self::Unhealthy
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub struct ClusterStates(pub Vec<ClusterState>);
-
-impl Display for ClusterStates {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let states = self.0.iter()
-            .map(|state| state.to_string())
-            .collect::<Vec<_>>()
-            .join(", ");
-        write!(f, "{states}")
     }
 }
