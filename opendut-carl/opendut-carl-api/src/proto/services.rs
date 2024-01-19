@@ -1,6 +1,7 @@
 pub mod cluster_manager {
     use opendut_types::cluster::{ClusterId, ClusterName};
     use opendut_types::cluster::state::ClusterState;
+    use opendut_types::proto;
     use opendut_types::proto::{ConversionError, ConversionErrorBuilder};
 
     use crate::carl::cluster::{CreateClusterConfigurationError, DeleteClusterConfigurationError, DeleteClusterDeploymentError, StoreClusterDeploymentError};
@@ -97,7 +98,7 @@ pub mod cluster_manager {
                         cluster_id: Some(cluster_id.into()),
                         cluster_name: Some(cluster_name.into()),
                         actual_state: Some(actual_state.into()),
-                        required_states: required_states.into(),
+                        required_states: required_states.into_iter().map(Into::into).collect(),
                     })
                 }
                 DeleteClusterConfigurationError::Internal { cluster_id, cluster_name, cause } => {
@@ -159,8 +160,9 @@ pub mod cluster_manager {
             let actual_state: ClusterState = failure.actual_state
                 .ok_or_else(|| ErrorBuilder::new("Field 'actual_state' not set"))?
                 .try_into()?;
-            let required_states = failure.required_states
-                .try_into()?;
+            let required_states = failure.required_states.into_iter()
+                .map(proto::cluster::ClusterState::try_into)
+                .collect::<Result<_, _>>()?;
             Ok(DeleteClusterConfigurationError::IllegalClusterState { cluster_id, cluster_name, actual_state, required_states })
         }
     }
@@ -187,7 +189,7 @@ pub mod cluster_manager {
                         cluster_id: Some(cluster_id.into()),
                         cluster_name: Some(cluster_name.into()),
                         actual_state: Some(actual_state.into()),
-                        required_states: required_states.into(),
+                        required_states: required_states.into_iter().map(Into::into).collect(),
                     })
                 }
                 StoreClusterDeploymentError::Internal { cluster_id, cluster_name, cause } => {
@@ -235,8 +237,9 @@ pub mod cluster_manager {
             let actual_state: ClusterState = failure.actual_state
                 .ok_or_else(|| ErrorBuilder::new("Field 'actual_state' not set"))?
                 .try_into()?;
-            let required_states = failure.required_states
-                .try_into()?;
+            let required_states = failure.required_states.into_iter()
+                .map(proto::cluster::ClusterState::try_into)
+                .collect::<Result<_, _>>()?;
             Ok(StoreClusterDeploymentError::IllegalClusterState { cluster_id, cluster_name, actual_state, required_states })
         }
     }
@@ -268,7 +271,7 @@ pub mod cluster_manager {
                         cluster_id: Some(cluster_id.into()),
                         cluster_name: Some(cluster_name.into()),
                         actual_state: Some(actual_state.into()),
-                        required_states: required_states.into(),
+                        required_states: required_states.into_iter().map(Into::into).collect(),
                     })
                 }
                 DeleteClusterDeploymentError::Internal { cluster_id, cluster_name, cause } => {
@@ -330,8 +333,9 @@ pub mod cluster_manager {
             let actual_state: ClusterState = failure.actual_state
                 .ok_or_else(|| ErrorBuilder::new("Field 'actual_state' not set"))?
                 .try_into()?;
-            let required_states = failure.required_states
-                .try_into()?;
+            let required_states = failure.required_states.into_iter()
+                .map(proto::cluster::ClusterState::try_into)
+                .collect::<Result<_, _>>()?;
             Ok(DeleteClusterDeploymentError::IllegalClusterState { cluster_id, cluster_name, actual_state, required_states })
         }
     }

@@ -1,7 +1,8 @@
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 pub use client::*;
 use opendut_types::cluster::{ClusterId, ClusterName};
-use opendut_types::cluster::state::{ClusterState, ClusterStates};
+use opendut_types::cluster::state::{ClusterState};
+use opendut_types::ShortName;
 
 #[derive(thiserror::Error, Debug)]
 pub enum CreateClusterConfigurationError {
@@ -26,12 +27,12 @@ pub enum DeleteClusterConfigurationError {
     ClusterConfigurationNotFound {
         cluster_id: ClusterId
     },
-    #[error("ClusterConfiguration '{cluster_name}' <{cluster_id}> cannot be deleted when cluster is in state '{actual_state}'! A ClusterConfiguration can be deleted when cluster is in state: {required_states}")]
+    #[error("ClusterConfiguration '{cluster_name}' <{cluster_id}> cannot be deleted when cluster is in state '{}'! A ClusterConfiguration can be deleted when cluster is in state: {}", actual_state.short_name(), ClusterState::short_names_joined(required_states))]
     IllegalClusterState {
         cluster_id: ClusterId,
         cluster_name: ClusterName,
         actual_state: ClusterState,
-        required_states: ClusterStates,
+        required_states: Vec<ClusterState>,
     },
     #[error("ClusterConfiguration '{cluster_name}' <{cluster_id}> deleted with internal errors:\n  {cause}")]
     Internal {
@@ -55,12 +56,12 @@ pub struct ListClusterConfigurationsError {
 
 #[derive(thiserror::Error, Debug)]
 pub enum StoreClusterDeploymentError {
-    #[error("ClusterDeployment for cluster '{cluster_name}' <{cluster_id}> cannot be changed when cluster is in state '{actual_state}'! A cluster can be updated when: {required_states}")]
+    #[error("ClusterDeployment for cluster '{cluster_name}' <{cluster_id}> cannot be changed when cluster is in state '{}'! A cluster can be updated when: {}", actual_state.short_name(), ClusterState::short_names_joined(required_states))]
     IllegalClusterState {
         cluster_id: ClusterId,
         cluster_name: ClusterName,
         actual_state: ClusterState,
-        required_states: ClusterStates,
+        required_states: Vec<ClusterState>,
     },
     #[error("ClusterDeployment for cluster '{cluster_name}' <{cluster_id}> could not be changed, due to internal errors:\n  {cause}")]
     Internal {
@@ -76,12 +77,12 @@ pub enum DeleteClusterDeploymentError {
     ClusterDeploymentNotFound {
         cluster_id: ClusterId
     },
-    #[error("ClusterDeployment for cluster '{cluster_name}' <{cluster_id}> cannot be deleted when cluster is in state '{actual_state}'! A peer can be deleted when: {required_states}")]
+    #[error("ClusterDeployment for cluster '{cluster_name}' <{cluster_id}> cannot be deleted when cluster is in state '{}'! A peer can be deleted when: {}", actual_state.short_name(), ClusterState::short_names_joined(required_states))]
     IllegalClusterState {
         cluster_id: ClusterId,
         cluster_name: ClusterName,
         actual_state: ClusterState,
-        required_states: ClusterStates,
+        required_states: Vec<ClusterState>,
     },
     #[error("ClusterDeployment for cluster '{cluster_name}' <{cluster_id}> deleted with internal errors:\n  {cause}")]
     Internal {
@@ -116,10 +117,10 @@ mod client {
     }
 
     impl<T> ClusterManager<T>
-    where T: tonic::client::GrpcService<tonic::body::BoxBody>,
-          T::Error: Into<StdError>,
-          T::ResponseBody: Body<Data=Bytes> + Send + 'static,
-          <T::ResponseBody as Body>::Error: Into<StdError> + Send,
+        where T: tonic::client::GrpcService<tonic::body::BoxBody>,
+              T::Error: Into<StdError>,
+              T::ResponseBody: Body<Data=Bytes> + Send + 'static,
+              <T::ResponseBody as Body>::Error: Into<StdError> + Send,
     {
         pub fn new(inner: ClusterManagerClient<T>) -> ClusterManager<T> {
             ClusterManager {
