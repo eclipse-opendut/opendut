@@ -41,6 +41,7 @@ message PeerStateUp {
     PeerStateUpAvailable available = 1;
     PeerStateUpBlocked blocked = 2;
   }
+  opendut.types.util.IpAddress remote_host = 10;
 }
 
 message PeerStateUpAvailable {}

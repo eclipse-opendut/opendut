@@ -303,9 +303,9 @@ mod test {
                 peer_descriptor: Clone::clone(&fixture.peer_a_descriptor),
             }).await?;
 
-            assert_that!(resources_manager.get(fixture.peer_a_id).await.as_ref(), some(eq(&fixture.peer_a_descriptor)));
-            assert_that!(resources_manager.get(fixture.peer_a_device_1).await.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[0])));
-            assert_that!(resources_manager.get(fixture.peer_a_device_2).await.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[1])));
+            assert_that!(resources_manager.get::<PeerDescriptor>(fixture.peer_a_id).await.as_ref(), some(eq(&fixture.peer_a_descriptor)));
+            assert_that!(resources_manager.get::<Device>(fixture.peer_a_device_1).await.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[0])));
+            assert_that!(resources_manager.get::<Device>(fixture.peer_a_device_2).await.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[1])));
 
             let additional_device_id = DeviceId::random();
             let additional_device = Device {
@@ -333,7 +333,7 @@ mod test {
                 peer_descriptor: Clone::clone(&changed_descriptor),
             }).await?;
 
-            assert_that!(resources_manager.get(fixture.peer_a_id).await.as_ref(), some(eq(&changed_descriptor)));
+            assert_that!(resources_manager.get::<PeerDescriptor>(fixture.peer_a_id).await.as_ref(), some(eq(&changed_descriptor)));
             assert_that!(resources_manager.get(fixture.peer_a_device_1).await.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[0])));
             assert_that!(resources_manager.get(additional_device_id).await.as_ref(), some(eq(&additional_device)));
             assert_that!(resources_manager.get(fixture.peer_a_device_2).await.as_ref(), none());

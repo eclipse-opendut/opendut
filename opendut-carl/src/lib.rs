@@ -73,7 +73,9 @@ pub async fn create(settings_override: Config) -> Result<()> {
     };
 
     let resources_manager = Arc::new(ResourcesManager::new());
-    let peer_messaging_broker = Arc::new(PeerMessagingBroker::new());
+    let peer_messaging_broker = Arc::new(PeerMessagingBroker::new(
+        Arc::clone(&resources_manager)
+    ));
     let cluster_manager = Arc::new(ClusterManager::new(
         Arc::clone(&resources_manager),
         Arc::clone(&peer_messaging_broker),

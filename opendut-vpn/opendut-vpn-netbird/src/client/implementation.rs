@@ -1,4 +1,3 @@
-use std::net::IpAddr;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use reqwest::{Body, header, Method, Request, Response, Url};
@@ -8,13 +7,13 @@ use serde::Serialize;
 use opendut_types::cluster::ClusterId;
 use opendut_types::peer::PeerId;
 use opendut_types::vpn::{HttpsOnly, VpnPeerConfig};
-use opendut_vpn::{CreateClusterError, CreatePeerError, DeleteClusterError, DeletePeerError, GetOrCreateConfigurationError, GetPeerVpnAddressError, VpnManagementClient};
+use opendut_vpn::{CreateClusterError, CreatePeerError, DeleteClusterError, DeletePeerError, GetOrCreateConfigurationError, VpnManagementClient};
 
 use crate::{netbird, NetbirdToken, routes};
 use crate::client::request_handler::{DefaultRequestHandler, RequestHandler, RequestHandlerConfig};
 use crate::netbird::{error, group, rules};
 use crate::netbird::error::{CreateSetupKeyError, GetGroupError, GetRulesError, RequestError};
-use crate::netbird::rules::{RuleName};
+use crate::netbird::rules::RuleName;
 
 pub struct Client {
     base_url: Url,
@@ -164,20 +163,6 @@ impl VpnManagementClient for Client {
             management_url: self.base_url.clone(),
             setup_key: opendut_types::vpn::netbird::SetupKey::from(setup_key.key),
         })
-    }
-
-    async fn get_peer_vpn_address(&self, peer_id: PeerId) -> Result<IpAddr, GetPeerVpnAddressError> {
-
-        let self_group = self.get_netbird_group(&netbird::GroupName::from(peer_id)).await
-            .map_err(|error| GetPeerVpnAddressError::ResolutionFailure { peer_id, error: error.into() })?;
-
-        if let Some(peer_info) = self_group.peers.first() {
-            let peer = self.get_netbird_peer(&peer_info.id).await
-                .map_err(|error| GetPeerVpnAddressError::ResolutionFailure { peer_id, error: error.into() })?;
-            Ok(peer.ip)
-        } else {
-            Err(GetPeerVpnAddressError::ResolutionFailure { peer_id, error: anyhow!("Peer self-group did not contain a peer!").into() })
-        }
     }
 }
 
@@ -343,6 +328,7 @@ impl Client {
         Ok(())
     }
 
+    #[allow(unused)]
     async fn get_netbird_peer(&self, peer_id: &netbird::PeerId) -> Result<netbird::Peer, RequestError> {
         let url = routes::peer(Clone::clone(&self.base_url), peer_id);
 
@@ -447,15 +433,16 @@ fn json_header_value() -> HeaderValue {
 ///Verify compatibility with examples from here: https://docs.netbird.io/api
 #[cfg(test)]
 mod tests {
+    use std::result::Result;
+
     use async_trait::async_trait;
     use googletest::prelude::*;
-    use std::result::Result;
-    use std::str::FromStr;
     use reqwest::Response;
     use serde_json::json;
     use uuid::uuid;
 
     use opendut_types::cluster::ClusterId;
+
     use crate::netbird::group;
 
     use super::*;
@@ -834,103 +821,6 @@ mod tests {
             group,
             cluster_id().into(),
         ).await?;
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn get_peer_vpn_address() -> anyhow::Result<()> {
-        fn peer_id() -> PeerId { PeerId::from(uuid!("2d0fb51d-48bf-42c7-99a0-dfbfe49b1a91")) }
-        fn ip_address() -> IpAddr { IpAddr::from_str("1.2.3.4").unwrap() }
-
-        let requester = MockRequester {
-            on_request: |request| {
-                match request.url().path() {
-                    "/api/groups" => {
-                        assert_that!(request.body(), none());
-
-                        let response = http::Response::builder()
-                            .body(json!(
-                                [
-                                    {
-                                        "id": "aax77acflma44h075aa3",
-                                        "name": netbird::GroupName::from(peer_id()),
-                                        "peers_count": 1,
-                                        "issued": "api",
-                                        "peers": [
-                                            {
-                                                "id": "ah8cca16lmn67acg5s11",
-                                                "name": "some-peer"
-                                            }
-                                        ]
-                                    }
-                                ]
-                            ).to_string()).unwrap();
-
-                        Ok(Response::from(response))
-                    }
-                    path => {
-                        if path.starts_with("/api/peers/") {
-                            assert_that!(request.method(), eq(&Method::GET));
-                            assert_that!(request.url().path(), eq("/api/peers/ah8cca16lmn67acg5s11"));
-                            assert_that!(request.body(), none());
-
-                            let response = http::Response::builder()
-                                .body(json!(
-                                    {
-                                      "id": "chacbco6lnnbn6cg5s90",
-                                      "name": "some-peer",
-                                      "ip": ip_address(),
-                                      "connected": true,
-                                      "last_seen": "2023-05-05T10:05:26.420578Z",
-                                      "os": "Darwin 13.2.1",
-                                      "version": "0.14.0",
-                                      "groups": [
-                                        {
-                                          "id": "ch8i4ug6lnn4g9hqv7m0",
-                                          "name": "devs",
-                                          "peers_count": 2,
-                                          "issued": "api"
-                                        }
-                                      ],
-                                      "ssh_enabled": true,
-                                      "user_id": "google-oauth2|277474792786460067937",
-                                      "hostname": "stage-host-1",
-                                      "ui_version": "0.14.0",
-                                      "dns_label": "stage-host-1.netbird.cloud",
-                                      "login_expiration_enabled": false,
-                                      "login_expired": false,
-                                      "last_login": "2023-05-05T09:00:35.477782Z",
-                                      "approval_required": true,
-                                      "accessible_peers": [
-                                        {
-                                          "id": "chacbco6lnnbn6cg5s90",
-                                          "name": "some-peer",
-                                          "ip": "10.64.0.1",
-                                          "dns_label": "stage-host-1.netbird.cloud",
-                                          "user_id": "google-oauth2|277474792786460067937"
-                                        }
-                                      ]
-                                    }
-                                ).to_string()).unwrap();
-
-                            Ok(Response::from(response))
-                        } else {
-                            panic!("Unexpected url path: {path}");
-                        }
-                    }
-                }
-            },
-        };
-
-        let client = Client {
-            base_url: base_url(),
-            requester: Box::new(requester),
-        };
-
-        let result = client.get_peer_vpn_address(peer_id()).await;
-
-        assert_that!(result, ok(eq(ip_address())));
 
         Ok(())
     }

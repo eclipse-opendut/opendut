@@ -1,3 +1,4 @@
+use crate::proto;
 use crate::proto::{ConversionError, ConversionErrorBuilder};
 use crate::proto::vpn::VpnPeerConfig;
 
@@ -132,12 +133,17 @@ impl From<crate::peer::state::PeerState> for PeerState {
                     inner: Some(peer_state::Inner::Down(PeerStateDown {}))
                 }
             },
-            crate::peer::state::PeerState::Up(inner) => {
+            crate::peer::state::PeerState::Up { inner, remote_host } => {
+                let remote_host: proto::util::IpAddress = remote_host.into();
+                let remote_host = Some(remote_host);
+
+
                 match inner {
                     crate::peer::state::PeerUpState::Available => {
                         PeerState {
                             inner: Some(peer_state::Inner::Up(PeerStateUp {
-                                inner: Some(peer_state_up::Inner::Available(PeerStateUpAvailable {}))
+                                inner: Some(peer_state_up::Inner::Available(PeerStateUpAvailable {})),
+                                remote_host,
                             }))
                         }
                     },
@@ -148,7 +154,8 @@ impl From<crate::peer::state::PeerState> for PeerState {
                                     inner: Some(peer_state::Inner::Up(PeerStateUp {
                                         inner: Some(peer_state_up::Inner::Blocked(PeerStateUpBlocked {
                                             inner: Some(peer_state_up_blocked::Inner::Deploying(PeerStateUpBlockedDeploying {}))
-                                        }))
+                                        })),
+                                        remote_host,
                                     }))
                                 }
                             },
@@ -157,7 +164,8 @@ impl From<crate::peer::state::PeerState> for PeerState {
                                     inner: Some(peer_state::Inner::Up(PeerStateUp {
                                         inner: Some(peer_state_up::Inner::Blocked(PeerStateUpBlocked {
                                             inner: Some(peer_state_up_blocked::Inner::Member(PeerStateUpBlockedMember {}))
-                                        }))
+                                        })),
+                                        remote_host,
                                     }))
                                 }
                             },
@@ -166,7 +174,8 @@ impl From<crate::peer::state::PeerState> for PeerState {
                                     inner: Some(peer_state::Inner::Up(PeerStateUp {
                                         inner: Some(peer_state_up::Inner::Blocked(PeerStateUpBlocked {
                                             inner: Some(peer_state_up_blocked::Inner::Undeploying(PeerStateUpBlockedUndeploying {}))
-                                        }))
+                                        })),
+                                        remote_host,
                                     }))
                                 }
                             },
@@ -177,6 +186,7 @@ impl From<crate::peer::state::PeerState> for PeerState {
         }
     }
 }
+
 
 impl TryFrom<PeerState> for crate::peer::state::PeerState {
     type Error = ConversionError;
@@ -191,15 +201,22 @@ impl TryFrom<PeerState> for crate::peer::state::PeerState {
             peer_state::Inner::Down(_) => {
                 Ok(crate::peer::state::PeerState::Down)
             }
-            peer_state::Inner::Up(PeerStateUp { inner }) => {
+            peer_state::Inner::Up(PeerStateUp { inner, remote_host }) => {
+
+                let remote_host: std::net::IpAddr = remote_host
+                    .ok_or(ErrorBuilder::new("field 'remote_host' not set"))?
+                    .try_into()?;
+
 
                 let inner = inner
                     .ok_or(ErrorBuilder::new("Inner 'Up' state not set"))?;
 
                 match inner {
                     peer_state_up::Inner::Available(_) => {
-                        Ok(crate::peer::state::PeerState::Up(
-                            crate::peer::state::PeerUpState::Available))
+                        Ok(crate::peer::state::PeerState::Up {
+                            inner: crate::peer::state::PeerUpState::Available,
+                            remote_host,
+                        })
                     }
                     peer_state_up::Inner::Blocked(PeerStateUpBlocked { inner }) => {
 
@@ -208,19 +225,28 @@ impl TryFrom<PeerState> for crate::peer::state::PeerState {
 
                         match inner {
                             peer_state_up_blocked::Inner::Deploying(_) => {
-                                Ok(crate::peer::state::PeerState::Up(
-                                    crate::peer::state::PeerUpState::Blocked(
-                                        crate::peer::state::PeerBlockedState::Deploying)))
+                                Ok(crate::peer::state::PeerState::Up {
+                                    inner: crate::peer::state::PeerUpState::Blocked(
+                                        crate::peer::state::PeerBlockedState::Deploying
+                                    ),
+                                    remote_host,
+                                })
                             }
                             peer_state_up_blocked::Inner::Member(_) => {
-                                Ok(crate::peer::state::PeerState::Up(
-                                    crate::peer::state::PeerUpState::Blocked(
-                                        crate::peer::state::PeerBlockedState::Member)))
+                                Ok(crate::peer::state::PeerState::Up {
+                                    inner: crate::peer::state::PeerUpState::Blocked(
+                                        crate::peer::state::PeerBlockedState::Member
+                                    ),
+                                    remote_host,
+                                })
                             }
                             peer_state_up_blocked::Inner::Undeploying(_) => {
-                                Ok(crate::peer::state::PeerState::Up(
-                                    crate::peer::state::PeerUpState::Blocked(
-                                        crate::peer::state::PeerBlockedState::Undeploying)))
+                                Ok(crate::peer::state::PeerState::Up {
+                                    inner: crate::peer::state::PeerUpState::Blocked(
+                                        crate::peer::state::PeerBlockedState::Undeploying
+                                    ),
+                                    remote_host,
+                                })
                             }
                         }
                     }
@@ -233,6 +259,9 @@ impl TryFrom<PeerState> for crate::peer::state::PeerState {
 #[cfg(test)]
 #[allow(non_snake_case)]
 mod tests {
+    use std::net::IpAddr;
+    use std::str::FromStr;
+
     use googletest::prelude::*;
     use uuid::Uuid;
 
@@ -259,6 +288,8 @@ mod tests {
     #[test]
     fn A_PeerState_should_be_convertable_to_its_proto_and_vice_versa() -> Result<()> {
 
+        let native_remote_host = IpAddr::from_str("1.2.3.4")?;
+
         { // Down
             let native = crate::peer::state::PeerState::Down;
             let proto: PeerState = Clone::clone(&native).into();
@@ -270,9 +301,10 @@ mod tests {
         }
 
         { // Up/Available
-            let native = crate::peer::state::PeerState::Up(
-                crate::peer::state::PeerUpState::Available
-            );
+            let native = crate::peer::state::PeerState::Up {
+                inner: crate::peer::state::PeerUpState::Available,
+                remote_host: native_remote_host,
+            };
             let proto: PeerState = Clone::clone(&native).into();
 
             assert_that!(
@@ -282,11 +314,12 @@ mod tests {
         }
 
         { // Up/Blocked/Deploying
-            let native = crate::peer::state::PeerState::Up(
-                crate::peer::state::PeerUpState::Blocked(
+            let native = crate::peer::state::PeerState::Up {
+                inner: crate::peer::state::PeerUpState::Blocked(
                     crate::peer::state::PeerBlockedState::Deploying
-                )
-            );
+                ),
+                remote_host: native_remote_host,
+            };
             let proto: PeerState = Clone::clone(&native).into();
 
             assert_that!(
@@ -296,11 +329,12 @@ mod tests {
         }
 
         { // Up/Blocked/Member
-            let native = crate::peer::state::PeerState::Up(
-                crate::peer::state::PeerUpState::Blocked(
+            let native = crate::peer::state::PeerState::Up {
+                inner: crate::peer::state::PeerUpState::Blocked(
                     crate::peer::state::PeerBlockedState::Member
-                )
-            );
+                ),
+                remote_host: native_remote_host,
+            };
             let proto: PeerState = Clone::clone(&native).into();
 
             assert_that!(
@@ -310,11 +344,12 @@ mod tests {
         }
 
         { // Up/Blocked/Undeploying
-            let native = crate::peer::state::PeerState::Up(
-                crate::peer::state::PeerUpState::Blocked(
+            let native = crate::peer::state::PeerState::Up {
+                inner: crate::peer::state::PeerUpState::Blocked(
                     crate::peer::state::PeerBlockedState::Undeploying
-                )
-            );
+                ),
+                remote_host: native_remote_host,
+            };
             let proto: PeerState = Clone::clone(&native).into();
 
             assert_that!(
