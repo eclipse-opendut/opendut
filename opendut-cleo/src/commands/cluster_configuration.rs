@@ -57,7 +57,7 @@ pub mod create {
         Ok(())
     }
 
-    fn check_devices(all_devices: &Vec<Device>, device_names: &Vec<String>) -> Vec<Result<Device, crate::Error>> {
+    fn check_devices(all_devices: &[Device], device_names: &[String]) -> Vec<Result<Device, crate::Error>> {
         let checked_devices = device_names.iter().map(|device_name| {
             let maybe_device = all_devices.iter().find(|device| &device.name == device_name);
             if let Some(device) = maybe_device {

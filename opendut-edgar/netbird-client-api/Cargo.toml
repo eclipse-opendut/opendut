@@ -23,3 +23,6 @@ cargo_metadata = { workspace = true }
 reqwest = { workspace = true, features = ["blocking"] }
 tonic-build = { workspace = true, default-features = true }
 protobuf-src = { workspace = true }
+
+[lints]
+workspace = true

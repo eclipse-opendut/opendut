@@ -11,7 +11,7 @@ use opendut_carl_api::proto::services::peer_messaging_broker::{Downstream, ListP
 use opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_broker_server::PeerMessagingBrokerServer;
 use opendut_types::peer::PeerId;
 
-use crate::peer::broker::broker::PeerMessagingBrokerRef;
+use crate::peer::broker::PeerMessagingBrokerRef;
 
 pub struct PeerMessagingBrokerFacade {
     peer_messaging_broker: PeerMessagingBrokerRef,

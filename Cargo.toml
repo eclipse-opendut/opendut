@@ -119,3 +119,7 @@ cross.version = "0.2.5"
 mdbook.version = "0.4.36"
 mdbook-mermaid.version = "0.13.0"
 trunk.version = "0.18.3"
+
+
+[workspace.lints.clippy]
+unnecessary_lazy_evaluations = "allow"

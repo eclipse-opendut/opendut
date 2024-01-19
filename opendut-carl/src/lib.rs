@@ -21,7 +21,7 @@ use opendut_util::{project, settings};
 
 use crate::cluster::manager::{ClusterManager, ClusterManagerRef};
 use crate::grpc::{ClusterManagerService, MetadataProviderService, PeerManagerService, PeerMessagingBrokerService};
-use crate::peer::broker::broker::{PeerMessagingBroker, PeerMessagingBrokerRef};
+use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerRef};
 use crate::resources::manager::{ResourcesManager, ResourcesManagerRef};
 use crate::vpn::Vpn;
 
@@ -81,6 +81,7 @@ pub async fn create(settings_override: Config) -> Result<()> {
     ));
 
     /// Isolation in function returning BoxFuture needed due to this: https://github.com/rust-lang/rust/issues/102211#issuecomment-1397600424
+    #[allow(clippy::too_many_arguments)]
     fn spawn_server(
         address: SocketAddr,
         tls_config: RustlsConfig,
