@@ -15,7 +15,7 @@ use opendut_types::util::net::NetworkInterfaceName;
 
 use crate::actions;
 use crate::actions::ListPeerDescriptorsParams;
-use crate::peer::broker::broker::PeerMessagingBrokerRef;
+use crate::peer::broker::PeerMessagingBrokerRef;
 use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
 
@@ -253,7 +253,7 @@ mod test {
     use opendut_vpn::{CreateClusterError, CreatePeerError, DeleteClusterError, DeletePeerError, GetOrCreateConfigurationError, GetPeerVpnAddressError, VpnManagementClient};
 
     use crate::actions::{CreateClusterConfigurationParams, StorePeerDescriptorParams};
-    use crate::peer::broker::broker::PeerMessagingBroker;
+    use crate::peer::broker::PeerMessagingBroker;
     use crate::resources::manager::ResourcesManager;
 
     use super::*;

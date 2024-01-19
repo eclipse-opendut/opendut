@@ -21,7 +21,7 @@ use opendut_util::{project, settings};
 
 use crate::cluster::manager::{ClusterManager, ClusterManagerRef};
 use crate::grpc::{ClusterManagerService, MetadataProviderService, PeerManagerService, PeerMessagingBrokerService};
-use crate::peer::broker::broker::{PeerMessagingBroker, PeerMessagingBrokerRef};
+use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerRef};
 use crate::resources::manager::{ResourcesManager, ResourcesManagerRef};
 use crate::vpn::Vpn;
 
