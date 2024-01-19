@@ -93,10 +93,10 @@ impl DockerCommand {
         Ok(self)
     }
 
-    pub(crate) fn expect_output(&mut self, error_message: &str) -> crate::Result {
+    pub(crate) fn expect_output(&mut self, error_message: &str) -> Result<Output, anyhow::Error> {
         let result = self.command.output();
         match result {
-            Ok(_) => { Ok(())}
+            Ok(output) => { Ok(output) }
             Err(error) => {
                 Err(anyhow!(TheoError::DockerCommandFailed(format!("Failed to execute docker command. {}\nCause: {}", error_message, error))))
             }
@@ -126,23 +126,32 @@ impl DockerCommand {
         Ok(())
     }
 
-
+    pub(crate) fn check_output_status(output: Result<Output, Error>) -> Result<bool, Error> {
+        match output {
+            Ok(output) => {
+                Ok(output.status.code().unwrap_or(1) == 0)
+            }
+            Err(error) => {
+                Err(error)
+            }
+        }
+    }
 }
 
-fn check_docker_is_installed() -> crate::Result {
+fn check_docker_is_installed() -> Result<Output, Error> {
     DockerCommand::new()
         .arg("version")
         .expect_output("Failed to run docker version. Check if docker is installed.")
 }
 
-fn check_docker_compose_is_installed() -> crate::Result {
+fn check_docker_compose_is_installed() -> Result<Output, Error> {
     DockerCommand::new()
         .arg("compose")
         .arg("version")
         .expect_output("Failed to run docker compose. Check if docker compose plugin is installed.")
 }
 
-fn check_docker_daemon_communication() -> crate::Result {
+fn check_docker_daemon_communication() -> Result<Output, Error> {
     DockerCommand::new()
         .arg("ps")
         .expect_output("Failed to communicate with docker daemon. Check privileges, e.g. membership of the 'docker' group.")
@@ -225,7 +234,7 @@ pub(crate) fn wait_for_keycloak_provisioned() -> crate::Result {
 
 
 fn check_netbird_api_key_available() -> Result<bool, Error> {
-    let command_status = DockerCommand::new()
+    let command_output = DockerCommand::new()
         .add_common_args(DockerCoreServices::Netbird.as_str())
         .arg("run")
         .arg("--entrypoint")
@@ -234,13 +243,12 @@ fn check_netbird_api_key_available() -> Result<bool, Error> {
         .arg("management_init")
         .arg("ls")
         .arg("/management/api_key")
-        .expect_status("Failed to check if netbird api key is available")?;
-
-    Ok(command_status == 0)
+        .expect_output("Failed to check if netbird api key is available");
+    DockerCommand::check_output_status(command_output)
 }
 
 fn check_keycloak_provisioning_done() -> Result<bool, Error> {
-    let command_status = DockerCommand::new()
+    let command_output = DockerCommand::new()
         .add_common_args(DockerCoreServices::Keycloak.as_str())
         .arg("run")
         .arg("--entrypoint")
@@ -249,9 +257,8 @@ fn check_keycloak_provisioning_done() -> Result<bool, Error> {
         .arg("init_keycloak")
         .arg("ls")
         .arg("/opt/keycloak/data/provisioned")
-        .expect_status("Failed to check if keycloak was provisioned")?;
-
-    Ok(command_status == 0)
+        .expect_output("Failed to check if keycloak was provisioned");
+    DockerCommand::check_output_status(command_output)
 }
 
 pub fn get_netbird_api_key() -> Result<String, TheoError> {
