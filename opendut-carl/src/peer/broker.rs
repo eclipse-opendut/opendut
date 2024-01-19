@@ -84,6 +84,11 @@ impl PeerMessagingBroker {
     }
 }
 
+impl Default for PeerMessagingBroker {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {

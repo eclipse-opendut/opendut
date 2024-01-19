@@ -28,3 +28,6 @@ uuid = { workspace = true, features = ["v4", "serde"] }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.37"
+
+[lints]
+workspace = true

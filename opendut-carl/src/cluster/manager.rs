@@ -82,7 +82,7 @@ impl ClusterManager {
                 DetermineMemberInterfaceMappingError::PeerForDeviceNotFound { device_id } => DeployClusterError::PeerForDeviceNotFound { device_id, cluster_id, cluster_name },
             })?;
 
-        let member_ids = member_interface_mapping.keys().cloned().collect();
+        let member_ids = member_interface_mapping.keys().cloned().collect::<Vec<_>>();
 
         if let Vpn::Enabled { vpn_client } = &self.vpn {
             vpn_client.create_cluster(cluster_id, &member_ids).await
@@ -453,7 +453,7 @@ mod test {
 
     #[async_trait::async_trait]
     impl VpnManagementClient for MockVpnClient {
-        async fn create_cluster(&self, cluster_id: ClusterId, peers: &Vec<PeerId>) -> std::result::Result<(), CreateClusterError> {
+        async fn create_cluster(&self, cluster_id: ClusterId, peers: &[PeerId]) -> std::result::Result<(), CreateClusterError> {
             log::info!("Pretending to create cluster <{cluster_id}> with peers: {peers:?}");
             Ok(())
         }

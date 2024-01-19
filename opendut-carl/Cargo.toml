@@ -39,3 +39,6 @@ uuid = { workspace = true, features = ["v4"] }
 
 [build-dependencies]
 shadow-rs = { workspace = true }
+
+[lints]
+workspace = true

@@ -8,7 +8,7 @@ use opendut_types::vpn::VpnPeerConfig;
 #[async_trait]
 pub trait VpnManagementClient {
 
-    async fn create_cluster(&self, cluster_id: ClusterId, peers: &Vec<PeerId>) -> Result<(), CreateClusterError>;
+    async fn create_cluster(&self, cluster_id: ClusterId, peers: &[PeerId]) -> Result<(), CreateClusterError>;
 
     async fn delete_cluster(&self, cluster_id: ClusterId) -> Result<(), DeleteClusterError>;
 

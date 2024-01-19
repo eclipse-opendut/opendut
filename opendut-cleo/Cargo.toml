@@ -32,3 +32,6 @@ rstest = { workspace = true }
 
 [build-dependencies]
 shadow-rs = { workspace = true }
+
+[lints]
+workspace = true

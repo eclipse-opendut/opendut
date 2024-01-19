@@ -81,6 +81,7 @@ pub async fn create(settings_override: Config) -> Result<()> {
     ));
 
     /// Isolation in function returning BoxFuture needed due to this: https://github.com/rust-lang/rust/issues/102211#issuecomment-1397600424
+    #[allow(clippy::too_many_arguments)]
     fn spawn_server(
         address: SocketAddr,
         tls_config: RustlsConfig,

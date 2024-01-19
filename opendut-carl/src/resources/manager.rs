@@ -72,6 +72,12 @@ impl ResourcesManager {
     }
 }
 
+impl Default for ResourcesManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod test {
     use std::collections::HashSet;

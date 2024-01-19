@@ -23,3 +23,6 @@ env_logger = { workspace = true }
 
 [build-dependencies]
 shadow-rs = { workspace = true }
+
+[lints]
+workspace = true

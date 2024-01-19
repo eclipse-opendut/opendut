@@ -177,16 +177,16 @@ mod client {
             match self.inner.get_cluster_configuration(request).await {
                 Ok(response) => {
                     let result = response.into_inner().result
-                        .ok_or(GetClusterConfigurationError { message: format!("Response contains no result!") })?;
+                        .ok_or(GetClusterConfigurationError { message: String::from("Response contains no result!") })?;
                     match result {
                         cluster_manager::get_cluster_configuration_response::Result::Failure(_) => {
-                            Err(GetClusterConfigurationError { message: format!("Failed to get cluster configuration!") })
+                            Err(GetClusterConfigurationError { message: String::from("Failed to get cluster configuration!") })
                         }
                         cluster_manager::get_cluster_configuration_response::Result::Success(cluster_manager::GetClusterConfigurationSuccess { configuration }) => {
                             let configuration = configuration
-                                .ok_or(GetClusterConfigurationError { message: format!("Response contains no cluster configuration!") })?;
+                                .ok_or(GetClusterConfigurationError { message: String::from("Response contains no cluster configuration!") })?;
                             ClusterConfiguration::try_from(configuration)
-                                .map_err(|_| GetClusterConfigurationError { message: format!("Conversion failed for cluster configurations!") })
+                                .map_err(|_| GetClusterConfigurationError { message: String::from("Conversion failed for cluster configurations!") })
                         }
                     }
                 },
@@ -202,16 +202,16 @@ mod client {
             match self.inner.list_cluster_configurations(request).await {
                 Ok(response) => {
                     let result = response.into_inner().result
-                        .ok_or(ListClusterConfigurationsError { message: format!("Response contains no result!") })?;
+                        .ok_or(ListClusterConfigurationsError { message: String::from("Response contains no result!") })?;
                     match result {
                         cluster_manager::list_cluster_configurations_response::Result::Failure(_) => {
-                            Err(ListClusterConfigurationsError { message: format!("Failed to list clusters!") })
+                            Err(ListClusterConfigurationsError { message: String::from("Failed to list clusters!") })
                         }
                         cluster_manager::list_cluster_configurations_response::Result::Success(cluster_manager::ListClusterConfigurationsSuccess { configurations }) => {
                             configurations.into_iter()
                                 .map(ClusterConfiguration::try_from)
                                 .collect::<Result<Vec<ClusterConfiguration>, _>>()
-                                .map_err(|_| ListClusterConfigurationsError { message: format!("Conversion failed for list of cluster configurations!") })
+                                .map_err(|_| ListClusterConfigurationsError { message: String::from("Conversion failed for list of cluster configurations!") })
                         }
                     }
                 },
@@ -269,16 +269,16 @@ mod client {
             match self.inner.list_cluster_deployments(request).await {
                 Ok(response) => {
                     let result = response.into_inner().result
-                        .ok_or(ListClusterDeploymentsError { message: format!("Response contains no result!") })?;
+                        .ok_or(ListClusterDeploymentsError { message: String::from("Response contains no result!") })?;
                     match result {
                         cluster_manager::list_cluster_deployments_response::Result::Failure(_) => {
-                            Err(ListClusterDeploymentsError { message: format!("Failed to list clusters!") })
+                            Err(ListClusterDeploymentsError { message: String::from("Failed to list clusters!") })
                         }
                         cluster_manager::list_cluster_deployments_response::Result::Success(cluster_manager::ListClusterDeploymentsSuccess { deployments }) => {
                             deployments.into_iter()
                                 .map(ClusterDeployment::try_from)
                                 .collect::<Result<Vec<ClusterDeployment>, _>>()
-                                .map_err(|_| ListClusterDeploymentsError { message: format!("Conversion failed for list of cluster deployments!") })
+                                .map_err(|_| ListClusterDeploymentsError { message: String::from("Conversion failed for list of cluster deployments!") })
                         }
                     }
                 },
