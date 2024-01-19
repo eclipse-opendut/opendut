@@ -43,6 +43,8 @@ services:
     volumes:
       - ./keycloak_functions.sh:/keycloak_functions.sh
       - ./provision.sh:/provision.sh
+      # mount keycloak volume to store provisioning result in file
+      - opendut_keycloak_data:/opt/keycloak/data
     environment:
       - KCADM_PATH=/opt/keycloak/bin/kcadm.sh
       - KEYCLOAK_URL=http://keycloak:80

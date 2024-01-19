@@ -10,7 +10,7 @@ use strum::{Display, EnumString, EnumVariantNames};
 use crate::commands::vagrant::running_in_opendut_vm;
 
 use crate::core::metadata::cargo_netbird_versions;
-use crate::core::{OPENDUT_REPO_ROOT, TheoError};
+use crate::core::{OPENDUT_REPO_ROOT, OPENDUT_VM_NAME, TheoError};
 use crate::core::util::consume_output;
 
 #[derive(Debug, PartialEq, EnumString, EnumVariantNames, Display)]
@@ -97,7 +97,7 @@ impl TheoEnvMap {
         env_map.insert(TheoDynamicEnvVars::OpendutEdgarReplicas.to_string(), "4".to_string());
         env_map.insert(TheoDynamicEnvVars::OpendutEdgarClusterName.to_string(), "cluster1".to_string());
         if running_in_opendut_vm() {
-            println!("Running in virtual machine: Automatically exposing ports!");
+            println!("Running in virtual machine '{}': Automatically exposing ports!", OPENDUT_VM_NAME);
             env_map.insert(TheoDynamicEnvVars::OpendutFirefoxExposePort.to_string(), "true".to_string());
         } else {
             println!("Firefox only available on localhost.");

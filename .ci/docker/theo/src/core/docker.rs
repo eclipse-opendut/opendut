@@ -1,12 +1,14 @@
-use std::env;
+use std::{env, io};
+use std::ffi::OsStr;
 use std::path::PathBuf;
-use std::process::Command;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::process::{Command, Output};
 use std::thread::sleep;
 use std::time::Duration;
 
-use crate::core::OPENDUT_FIREFOX_EXPOSE_PORT;
+use anyhow::{anyhow, Error};
+
+use crate::core::{OPENDUT_FIREFOX_EXPOSE_PORT, SLEEP_TIME_SECONDS, TheoError, TIMEOUT_SECONDS};
+use crate::core::command_ext::TheoCommandExtensions;
 use crate::core::project::ProjectRootDir;
 use crate::core::util::consume_output;
 
@@ -42,26 +44,40 @@ impl std::fmt::Display for DockerCoreServices {
     }
 }
 
-pub trait DockerCommand {
-    fn docker() -> Command;
-    fn docker_checks();
-    fn add_common_args(&mut self, compose_dir: &str) -> &mut Self;
-    fn add_netbird_api_key_to_env(&mut self) -> &mut Self;
-    fn run(&mut self);
+
+pub struct DockerCommand {
+    command: Command,
 }
 
-impl DockerCommand for Command {
-    fn docker() -> Command {
-        Command::new("docker")
+impl DockerCommand {
+    pub(crate) fn arg<S: AsRef<OsStr>>(&mut self, arg: S) -> &mut Self {
+        self.command.arg(arg);
+        self
+    }
+    fn env<K, V>(&mut self, key: K, val: V) -> &mut Self
+        where
+            K: AsRef<OsStr>,
+            V: AsRef<OsStr>,
+    {
+        self.command.env(key, val);
+        self
     }
 
-    fn docker_checks() {
-        check_docker_is_installed();
-        check_docker_compose_is_installed();
-        check_docker_daemon_communication();
+    /// Create docker command in project root directory.
+    pub(crate) fn new() -> Self {
+        let mut command = Command::new("docker");
+        command.current_dir(PathBuf::project_dir());
+        Self { command }
     }
 
-    fn add_common_args(&mut self, compose_dir: &str) -> &mut Self {
+    pub(crate) fn docker_checks(&self) -> crate::Result {
+        check_docker_is_installed()?;
+        check_docker_compose_is_installed()?;
+        check_docker_daemon_communication()?;
+        Ok(())
+    }
+
+    pub(crate) fn add_common_args(&mut self, compose_dir: &str) -> &mut Self {
         self.arg("compose")
             .arg("-f")
             .arg(format!("./.ci/docker/{}/docker-compose.yml", compose_dir))
@@ -71,152 +87,146 @@ impl DockerCommand for Command {
             .arg(".env")
     }
 
-    fn add_netbird_api_key_to_env(&mut self) -> &mut Self {
-        let netbird_api_key = get_netbird_api_key();
-        self.env("NETBIRD_API_TOKEN", &netbird_api_key)
+    pub(crate) fn add_netbird_api_key_to_env(&mut self) -> Result<&mut Self, TheoError> {
+        let netbird_api_key = get_netbird_api_key()?;
+        self.env("NETBIRD_API_TOKEN", &netbird_api_key);
+        Ok(self)
     }
-    fn run(&mut self) {
-        if let Ok(mut child) = self.spawn() {
-            let should_terminate = Arc::new(AtomicBool::new(false));
 
-            let signal_terminate = should_terminate.clone();
-            ctrlc::set_handler(move || {
-                signal_terminate.store(true, Ordering::Relaxed);
-            }).expect("Error setting Ctrl-C handler");
-
-            while !should_terminate.load(Ordering::Relaxed) {
-                match child.try_wait() {
-                    Ok(Some(status)) => {
-                        println!("exited with: {status}");
-                        break;
-                    }
-                    Ok(None) => {
-                        sleep(Duration::from_secs(1));
-                    }
-                    Err(e) => println!("error attempting to wait: {e}"),
-                }
+    pub(crate) fn expect_output(&mut self, error_message: &str) -> crate::Result {
+        let result = self.command.output();
+        match result {
+            Ok(_) => { Ok(())}
+            Err(error) => {
+                Err(anyhow!(TheoError::DockerCommandFailed(format!("Failed to execute docker command. {}\nCause: {}", error_message, error))))
             }
-            if should_terminate.load(Ordering::Relaxed) {
-                println!("Terminating child process.");
-            }
-            println!("Waiting for child process to terminate.");
-            match child.kill() {
-                Ok(_) => {}
-                Err(error) => {
-                    println!("Error terminating child: {}", error);
-                }
-            }
-        } else {
-            println!("Failed to execute '{:?}'.", self);
         }
     }
+
+    pub(crate) fn expect_status(&mut self, error_message: &str) -> Result<i32, anyhow::Error> {
+        let command_status = self
+            .command
+            .status()
+            .map_err(|cause| anyhow!(TheoError::DockerCommandFailed(format!("{}. Cause: {}", error_message, cause))))?;
+
+        if command_status.success() {
+            Ok(command_status.code().unwrap_or(1))
+        } else {
+            Err(anyhow!(TheoError::DockerCommandFailed(error_message.to_string())))
+        }
+    }
+
+    pub(crate) fn output(&mut self) -> io::Result<Output> {
+        self.command.output()
+    }
+
+    pub(crate) fn run(&mut self) -> crate::Result {
+        self.command
+            .run();
+        Ok(())
+    }
+
+
 }
 
-fn check_docker_is_installed() {
-    Command::docker()
+fn check_docker_is_installed() -> crate::Result {
+    DockerCommand::new()
         .arg("version")
-        .output()
-        .expect("Failed to run docker version. Check if docker is installed.");
+        .expect_output("Failed to run docker version. Check if docker is installed.")
 }
 
-fn check_docker_compose_is_installed() {
-    Command::docker()
+fn check_docker_compose_is_installed() -> crate::Result {
+    DockerCommand::new()
         .arg("compose")
         .arg("version")
-        .output()
-        .expect("Failed to run docker compose. Check if docker compose plugin is installed.");
+        .expect_output("Failed to run docker compose. Check if docker compose plugin is installed.")
 }
 
-fn check_docker_daemon_communication() {
-    Command::docker()
+fn check_docker_daemon_communication() -> crate::Result {
+    DockerCommand::new()
         .arg("ps")
-        .output()
-        .expect("Failed to communicate with docker daemon. Check privileges, e.g. membership of the 'docker' group.");
+        .expect_output("Failed to communicate with docker daemon. Check privileges, e.g. membership of the 'docker' group.")
 }
 
-pub(crate) fn docker_compose_build(compose_dir: &str) {
-    let mut command = Command::docker();
-    command.add_common_args(compose_dir);
-    let command_status = command
+pub(crate) fn docker_compose_build(compose_dir: &str) -> Result<i32, Error> {
+    DockerCommand::new()
+        .add_common_args(compose_dir)
         .arg("build")
-        .current_dir(PathBuf::project_dir())
-        .status()
-        .unwrap_or_else(|cause| panic!("Failed to execute docker compose build for directory: {}. {}", compose_dir, cause));
-
-    assert!(command_status.success());
+        .expect_status(format!("Failed to execute docker compose build for directory: {}.", compose_dir).as_str())
 }
 
-pub(crate) fn docker_compose_up(compose_dir: &str) {
-    let mut command = Command::docker();
-    command.add_common_args(compose_dir);
-    let command_status = command
+pub(crate) fn docker_compose_up(compose_dir: &str) -> Result<i32, Error> {
+    DockerCommand::new()
+        .add_common_args(compose_dir)
         .arg("up")
         .arg("-d")
-        .current_dir(PathBuf::project_dir())
-        .status()
-        .unwrap_or_else(|cause| panic!("Failed to execute compose command for directory: {}. {}", compose_dir, cause));
-
-    assert!(command_status.success());
+        .expect_status(format!("Failed to execute docker compose up for directory: {}.", compose_dir).as_str())
 }
 
 
-pub(crate) fn docker_compose_down(compose_dir: &str, delete_volumes: bool) {
-    let mut command = Command::docker();
+pub(crate) fn docker_compose_down(compose_dir: &str, delete_volumes: bool) -> Result<i32, Error> {
+    let mut command = DockerCommand::new();
     command.add_common_args(compose_dir);
     if delete_volumes {
         command.arg("down").arg("--volumes");
     } else {
         command.arg("down");
     }
-    let command_status = command
-        .current_dir(PathBuf::project_dir())
-        .status()
-        .unwrap_or_else(|cause| panic!("Failed to execute compose command for directory: {}. {}", compose_dir, cause));
-
-    assert!(command_status.success());
+    command.expect_status(format!("Failed to execute docker compose down for directory: {}.", compose_dir).as_str())
 }
 
-pub(crate) fn docker_compose_network_create() {
-    let output = Command::docker()
+pub(crate) fn docker_compose_network_create() -> Result<i32, Error> {
+    DockerCommand::new()
         .arg("compose")
         .arg("-f")
         .arg(format!("./.ci/docker/{}/docker-compose.yml", DockerCoreServices::Network))
         .arg("up")
         .arg("--force-recreate")
-        .current_dir(PathBuf::project_dir())
-        .status()
-        .expect("Failed to create docker network.");
-
-    assert!(output.success());
+        .expect_status("Failed to create docker network.")
 }
 
-pub(crate) fn docker_compose_network_delete() {
-    let output = Command::docker()
+pub(crate) fn docker_compose_network_delete() -> Result<i32, Error> {
+    DockerCommand::new()
         .arg("network")
         .arg("rm")
         .arg("opendut_network")
-        .status()
-        .expect("Failed to create docker network.");
-
-    assert!(output.success());
+        .expect_status("Failed to create docker network.")
 }
 
-pub(crate) fn wait_for_netbird_api_key() {
-    let timeout = std::time::Duration::from_secs(120);
+pub(crate) fn wait_for_netbird_api_key() -> crate::Result {
+    let timeout = Duration::from_secs(TIMEOUT_SECONDS);
     let start = std::time::Instant::now();
-    while !check_netbird_api_key_available() {
+    while !check_netbird_api_key_available()? {
         if start.elapsed() > timeout {
-            panic!("Timeout while waiting for netbird api key to be available.");
+            return Err(anyhow!(
+                TheoError::Timeout(String::from("Timeout while waiting for netbird api key to be available."))
+            ));
         }
         println!("Waiting for netbird api key to be available...");
-        std::thread::sleep(std::time::Duration::from_secs(5));
+        sleep(Duration::from_secs(SLEEP_TIME_SECONDS));
     }
+    Ok(())
 }
 
-fn check_netbird_api_key_available() -> bool {
-    let mut command = Command::docker();
-    command.add_common_args(DockerCoreServices::Netbird.as_str());
-    let command_status = command
+pub(crate) fn wait_for_keycloak_provisioned() -> crate::Result {
+    let timeout = Duration::from_secs(TIMEOUT_SECONDS);
+    let start = std::time::Instant::now();
+    while !check_keycloak_provisioning_done()? {
+        if start.elapsed() > timeout {
+            return Err(anyhow!(
+                TheoError::Timeout(String::from("While waiting for keycloak provisioning to be done."))
+            ));
+        }
+        println!("Waiting for keycloak to be provisioned...");
+        sleep(Duration::from_secs(SLEEP_TIME_SECONDS));
+    }
+    Ok(())
+}
+
+
+fn check_netbird_api_key_available() -> Result<bool, Error> {
+    let command_status = DockerCommand::new()
+        .add_common_args(DockerCoreServices::Netbird.as_str())
         .arg("run")
         .arg("--entrypoint")
         .arg("")
@@ -224,16 +234,30 @@ fn check_netbird_api_key_available() -> bool {
         .arg("management_init")
         .arg("ls")
         .arg("/management/api_key")
-        .current_dir(PathBuf::project_dir())
-        .output().expect("Failed to check if netbird api key is available");
+        .expect_status("Failed to check if netbird api key is available")?;
 
-    command_status.status.code().unwrap_or(1) == 0
+    Ok(command_status == 0)
 }
 
-pub fn get_netbird_api_key() -> String {
-    let mut command = Command::docker();
-    command.add_common_args(DockerCoreServices::Netbird.as_str());
+fn check_keycloak_provisioning_done() -> Result<bool, Error> {
+    let command_status = DockerCommand::new()
+        .add_common_args(DockerCoreServices::Keycloak.as_str())
+        .arg("run")
+        .arg("--entrypoint")
+        .arg("")
+        .arg("--rm")
+        .arg("init_keycloak")
+        .arg("ls")
+        .arg("/opt/keycloak/data/provisioned")
+        .expect_status("Failed to check if keycloak was provisioned")?;
+
+    Ok(command_status == 0)
+}
+
+pub fn get_netbird_api_key() -> Result<String, TheoError> {
+    let mut command = DockerCommand::new();
     let command_status = command
+        .add_common_args(DockerCoreServices::Netbird.as_str())
         .arg("run")
         .arg("--entrypoint")
         .arg("")
@@ -241,14 +265,13 @@ pub fn get_netbird_api_key() -> String {
         .arg("management_init")
         .arg("cat")
         .arg("/management/api_key")
-        .current_dir(PathBuf::project_dir())
         .output();
 
-    consume_output(command_status).expect("Failed to get netbird api key from netbird_management_init container")
+    consume_output(command_status).map_err(|cause| TheoError::DockerCommandFailed(format!("Failed to get netbird api key from netbird_management_init container. Error: {}", cause)))
 }
 
-pub fn start_opendut_firefox_container(expose: &bool) {
-    let mut command = Command::docker();
+pub fn start_opendut_firefox_container(expose: &bool) -> crate::Result {
+    let mut command = DockerCommand::new();
     command.arg("compose")
         .arg("-f")
         .arg(".ci/docker/firefox/docker-compose.yml");
@@ -264,19 +287,15 @@ pub fn start_opendut_firefox_container(expose: &bool) {
     command.arg("--env-file")
         .arg(".env-theo")
         .arg("--env-file")
-        .arg(".env");
-
-    let command_status = command
+        .arg(".env")
         .arg("up")
         .arg("-d")
-        .current_dir(PathBuf::project_dir())
-        .status()
-        .unwrap_or_else(|cause| panic!("Failed to execute compose command for firefox: {}", cause));
-    assert!(command_status.success());
+        .expect_status("Failed to execute docker compose command for firefox.")?;
+    Ok(())
 }
 
-pub fn start_netbird(expose: &bool) {
-    let mut command = Command::docker();
+pub fn start_netbird(expose: &bool) -> Result<i32, Error> {
+    let mut command = DockerCommand::new();
     command.arg("compose")
         .arg("-f")
         .arg(".ci/docker/netbird/docker-compose.yml");
@@ -289,14 +308,9 @@ pub fn start_netbird(expose: &bool) {
     command.arg("--env-file")
         .arg(".env-theo")
         .arg("--env-file")
-        .arg(".env");
-
-    let command_status = command
+        .arg(".env")
         .arg("up")
         .arg("-d")
-        .current_dir(PathBuf::project_dir())
-        .status()
-        .unwrap_or_else(|cause| panic!("Failed to execute compose command for netbird: {}", cause));
-    assert!(command_status.success());
+        .expect_status("Failed to execute compose command for netbird")
 }
 

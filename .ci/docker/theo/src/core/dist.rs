@@ -3,25 +3,28 @@ use std::io::ErrorKind;
 use std::ops::Index;
 use std::path::PathBuf;
 use std::process::Command;
+use anyhow::anyhow;
 
 use crate::core::project::ProjectRootDir;
 use crate::core::TARGET_TRIPLE;
 
-fn make_distribution_with_cargo() {
+fn make_distribution_with_cargo() -> crate::Result {
     println!("Creating distribution with cargo: 'cargo ci distribution'");
     let cargo_command = Command::new("cargo")
         .arg("ci")
         .arg("distribution")
         .status();
     match cargo_command {
-        Ok(_exit_status) => {}
+        Ok(_exit_status) => {
+            Ok(())
+        }
         Err(error) => {
             match error.kind() {
                 ErrorKind::NotFound => {
-                    panic!("Could not find 'cargo': {}", error);
+                    Err(anyhow!("Could not find 'cargo': {}", error))
                 }
                 _ => {
-                    panic!("Failed to create distribution with cargo: {}", error);
+                    Err(anyhow!("Failed to create distribution with cargo: {}", error))
                 }
             }
         }
@@ -41,13 +44,15 @@ fn enumerate_distribution_tar_files(dist_path: PathBuf) -> Vec<String> {
     files
 }
 
-fn assert_exactly_one_distribution_of_each_component(expected_dist_files: &[&str], files: &[String]) {
+fn assert_exactly_one_distribution_of_each_component(expected_dist_files: &[&str], files: &[String]) -> crate::Result {
     for expected in expected_dist_files.iter().copied() {
         let filtered_existing_files = files.iter().filter(|&file| file.contains(expected)).cloned()
             .collect::<Vec<_>>();
-        assert_eq!(filtered_existing_files.len(), 1,
-                   "There should be exactly one dist of '{}'. Found: {:?}", expected, filtered_existing_files);
+        if filtered_existing_files.len() != 1 {
+            return Err(anyhow!("There should be exactly one dist of '{}'. Found: {:?}", expected, filtered_existing_files));
+        }
     }
+    Ok(())
 }
 
 fn check_if_distribution_tar_exists_of_each_component(expected_dist_files: &[&str], files: Vec<String>) -> bool {
@@ -65,7 +70,7 @@ fn check_if_distribution_tar_exists_of_each_component(expected_dist_files: &[&st
 }
 
 
-pub(crate) fn make_distribution_if_not_present() {
+pub(crate) fn make_distribution_if_not_present() -> crate::Result {
     let dist_directory_path = PathBuf::project_path_buf()
         .join(format!("target/ci/distribution/{}", TARGET_TRIPLE));
     let expected_dist_files = vec!(
@@ -76,13 +81,14 @@ pub(crate) fn make_distribution_if_not_present() {
 
     if !dist_directory_path.exists() {
         println!("Distribution directory does not exist. Building distribution.");
-        make_distribution_with_cargo();
+        make_distribution_with_cargo()?;
     }
 
     let present_dist_files = enumerate_distribution_tar_files(dist_directory_path);
-    assert_exactly_one_distribution_of_each_component(&expected_dist_files, &present_dist_files);
+    assert_exactly_one_distribution_of_each_component(&expected_dist_files, &present_dist_files)?;
 
     if check_if_distribution_tar_exists_of_each_component(&expected_dist_files, present_dist_files) {
-        make_distribution_with_cargo();
+        make_distribution_with_cargo()?;
     }
+    Ok(())
 }

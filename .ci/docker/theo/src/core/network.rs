@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 use std::net::Ipv4Addr;
-use std::process::Command;
+
+use anyhow::anyhow;
 use phf::phf_map;
 use serde::{Deserialize, Deserializer};
+
 use crate::core::docker::DockerCommand;
-use crate::core::TheoError;
 use crate::core::util::consume_output;
 
 fn ip_address_from_str<'de, D>(deserializer: D) -> Result<Ipv4Addr, D::Error>
@@ -59,8 +60,8 @@ static CONTAINER_NAME_MAP: phf::Map<&'static str, DockerHostnames> = phf_map! {
     "netbird-dashboard-1" => DockerHostnames::NetbirdDashboard,
 };
 
-pub(crate) fn docker_inspect_network() {
-    let output = Command::docker()
+pub(crate) fn docker_inspect_network() -> crate::Result {
+    let output = DockerCommand::new()
         .arg("network")
         .arg("inspect")
         .arg("opendut_network")
@@ -70,15 +71,7 @@ pub(crate) fn docker_inspect_network() {
 
     let stdout = match consume_output(output) {
         Err(error) => {
-            match error.clone() {
-                TheoError::ConsumeOutputError(message) => {
-                    if message.contains("No such network") {
-                        println!("No such network 'opendut_network'.");
-                        return;
-                    }
-                }
-            }
-            panic!("Failed to inspect docker network: {:?}", error);
+            return Err(anyhow!("Failed to inspect docker network: {:?}", error));
         }
         Ok(stdout) => { stdout.trim_matches('\'').to_string() }
     };
@@ -87,7 +80,7 @@ pub(crate) fn docker_inspect_network() {
         serde_json::from_str(&stdout) {
         Ok(map) => { map }
         Err(error) => {
-            panic!("Failed to parse json: {:?}", error);
+            return Err(anyhow!("Failed to parse json: {:?}", error));
         }
     };
     let mut sorted_addresses: Vec<(&String, &ContainerAddress)> = opendut_container_address_map.iter().collect();
@@ -111,4 +104,5 @@ pub(crate) fn docker_inspect_network() {
         println!("{}  {}", padded_ip_address, hostname);
     }
     println!("# END {}", message);
+    Ok(())
 }

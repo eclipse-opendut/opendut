@@ -1,8 +1,6 @@
-use std::path::PathBuf;
-use std::process::Command;
+use anyhow::Error;
 
 use crate::core::docker::{docker_compose_build, docker_compose_down, DockerCommand, DockerCoreServices};
-use crate::core::project::ProjectRootDir;
 
 #[derive(Debug, clap::Parser)]
 pub struct TestEdgarCli {
@@ -21,37 +19,31 @@ pub enum TaskCli {
 }
 
 impl TestEdgarCli {
-    pub(crate) fn default_handling(&self) {
+
+    pub(crate) fn default_handling(&self) -> crate::Result {
+
         match self.task {
             TaskCli::Start => {
-                run_edgar();
+                docker_compose_build(DockerCoreServices::Edgar.as_str())?;
+                start_edgar_in_docker()?;
             }
             TaskCli::Stop => {
-                docker_compose_down(DockerCoreServices::Edgar.as_str(), false);
+                docker_compose_down(DockerCoreServices::Edgar.as_str(), false)?;
             }
             TaskCli::Build => {
-                docker_compose_build(DockerCoreServices::Edgar.as_str());
+                docker_compose_build(DockerCoreServices::Edgar.as_str())?;
             }
         }
+        Ok(())
     }
 }
 
-fn start_edgar_in_docker() {
-    let mut command = Command::docker();
-    command.add_common_args(DockerCoreServices::Edgar.as_str());
-    command.add_netbird_api_key_to_env();
-
-    let command_status = command
+fn start_edgar_in_docker() -> Result<i32, Error> {
+    DockerCommand::new()
+        .add_common_args(DockerCoreServices::Edgar.as_str())
+        .add_netbird_api_key_to_env()?
         .arg("up")
         .arg("-d")
-        .current_dir(PathBuf::project_dir())
-        .status()
-        .unwrap_or_else(|cause| panic!("Failed to execute compose command for edgar. {}", cause));
-    assert!(command_status.success());
-
+        .expect_status("Failed to start edgar cluster in docker.")
 }
 
-pub(crate) fn run_edgar() {
-    docker_compose_build(DockerCoreServices::Edgar.as_str());
-    start_edgar_in_docker();
-}
