@@ -92,12 +92,11 @@ jobs:
     steps:
     - run: echo "All jobs required for the status check have been completed."
 
-# Disabled until #34
-#  run-testenv:
-#    uses: ./.github/workflows/job-run-testenv.yaml
-#    needs: [ legal, bundle-carl, bundle-edgar, build-cleo ]
-#    with:
-#      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
-#      # run-testenv: "${{ github.event.inputs.run-testenv }}"
-#      run-testenv: "true"
-#    secrets: inherit
+  run-testenv:
+    uses: ./.github/workflows/job-run-testenv.yaml
+    needs: [ legal, bundle-carl, bundle-edgar, build-cleo ]
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+      # run-testenv: "${{ github.event.inputs.run-testenv }}"
+      run-testenv: "true"
+    secrets: inherit
