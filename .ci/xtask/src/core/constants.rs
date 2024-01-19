@@ -21,6 +21,9 @@ pub fn workspace_dir() -> PathBuf {
     WORKSPACE_DIR.to_owned()
 }
 
+/// Where CI-related code is in the repository.
+pub fn ci_dir() -> PathBuf { workspace_dir().join(".ci") }
+
 /// The generic Cargo target directory.
 pub fn cargo_target_dir() -> PathBuf {
     workspace_dir().join("target")

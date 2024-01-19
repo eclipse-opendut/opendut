@@ -23,7 +23,7 @@ pub struct Client {
 
 #[async_trait]
 impl VpnManagementClient for Client {
-    async fn create_cluster(&self, cluster_id: ClusterId, peers: &Vec<PeerId>) -> Result<(), CreateClusterError> {
+    async fn create_cluster(&self, cluster_id: ClusterId, peers: &[PeerId]) -> Result<(), CreateClusterError> {
         match self.delete_cluster(cluster_id).await {
             Ok(_) => log::debug!("Deleted a previous cluster with ID <{cluster_id}> before creating the new cluster."),
             Err(cause) => match cause {

@@ -20,3 +20,6 @@ googletest = { workspace = true }
 [build-dependencies]
 prost-build = { workspace = true }
 protobuf-src = { workspace = true }
+
+[lints]
+workspace = true

@@ -12,8 +12,9 @@ pub enum VpnPeerConfig {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub enum HttpsOnly {
+    #[default]
     True,
     False,
 }
@@ -23,9 +24,6 @@ impl HttpsOnly {
             HttpsOnly::True => true,
             HttpsOnly::False => false,
         }
-    }
-    pub fn default() -> Self {
-        HttpsOnly::True
     }
 }
 

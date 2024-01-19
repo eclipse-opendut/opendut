@@ -1,4 +1,5 @@
 use std::fs;
+use std::fs::File;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -48,6 +49,7 @@ impl LicensesCli {
 
 pub mod check {
     use crate::core::dependency::Crate;
+
     use super::*;
 
     #[tracing::instrument]
@@ -56,12 +58,16 @@ pub mod check {
 
         Command::new("cargo-deny")
             .arg("check")
+            .arg("--config").arg(cargo_deny_toml())
             .run_requiring_success()
     }
 }
 
 pub mod json {
+    use std::process::Stdio;
+
     use crate::core::dependency::Crate;
+
     use super::*;
 
     #[tracing::instrument]
@@ -71,9 +77,13 @@ pub mod json {
         let out_file = out_file(package);
         fs::create_dir_all(out_file.parent().unwrap())?;
 
-        Command::new("sh")
-            .arg("-c")
-            .arg(format!("cargo deny --exclude-dev list --layout crate --format json > {}", out_file.display()))
+        Command::new("cargo-deny")
+            .arg("--exclude-dev")
+            .arg("list")
+            .arg("--config").arg(cargo_deny_toml())
+            .arg("--layout=crate")
+            .arg("--format=json")
+            .stdout(Stdio::from(File::create(&out_file)?))
             .run_requiring_success()?;
 
         log::debug!("Wrote licenses for package '{package}' to path: {}", out_file.display());
@@ -93,6 +103,7 @@ pub mod json {
 
 mod sbom {
     use crate::core::dependency::Crate;
+
     use super::*;
 
     #[derive(Debug, clap::Parser)]
@@ -244,4 +255,9 @@ mod sbom {
     pub fn out_dir() -> PathBuf {
         constants::target_dir().join("sbom")
     }
+}
+
+
+fn cargo_deny_toml() -> PathBuf {
+    constants::ci_dir().join("cargo-deny.toml")
 }

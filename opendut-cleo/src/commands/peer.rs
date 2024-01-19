@@ -59,7 +59,7 @@ pub mod list {
         Ok(())
     }
 
-    fn filter_connected_peers(all_peers: &Vec<PeerDescriptor>, connected_peers: &Vec<PeerId>) -> Vec<PeerTable> {
+    fn filter_connected_peers(all_peers: &[PeerDescriptor], connected_peers: &[PeerId]) -> Vec<PeerTable> {
         all_peers.iter().map(|peer| {
             let status = if connected_peers.contains(&peer.id) {
                 PeerStatus::Connected

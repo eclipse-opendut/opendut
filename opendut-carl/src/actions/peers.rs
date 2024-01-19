@@ -42,8 +42,8 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
             let (devices_to_add, devices_to_remove): (Vec<Device>, Vec<Device>) = if let Some(old_peer_descriptor) = old_peer_descriptor {
                 log::debug!("Updating peer descriptor of '{peer_name}' <{peer_id}>.\n  Old: {old_peer_descriptor:?}\n  New: {peer_descriptor:?}");
                 let devices_to_add = peer_descriptor.topology.devices.iter()
-                    .cloned()
                     .filter(|device| old_peer_descriptor.topology.devices.contains(device).not())
+                    .cloned()
                     .collect();
                 let devices_to_remove = old_peer_descriptor.topology.devices.into_iter()
                     .filter(|device| peer_descriptor.topology.devices.contains(device).not())
