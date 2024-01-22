@@ -91,12 +91,12 @@ if [ "$1" == "router" ]; then
   CLUSTER_ID=$(echo "$RESPONSE" | jq -r '.id')
   echo "Creating cluster deployment for id=$CLUSTER_ID"
   opendut-cleo create cluster-deployment --id "$CLUSTER_ID"
+  echo "Success" | tee -a > /opt/signal/success.txt
 
 fi
 
 trap die_with_success TERM
 
-echo "Success"
 sleep infinity &
 
 # Wait for any process to exit

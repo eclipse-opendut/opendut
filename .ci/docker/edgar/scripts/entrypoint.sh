@@ -4,38 +4,23 @@ set -x  # print commands
 
 source "$(dirname "$0")/functions.sh"
 
-copy_custom_certificate_from_environment_variable "OPENDUT_CUSTOM_CA1"
-copy_custom_certificate_from_environment_variable "OPENDUT_CUSTOM_CA2"
-append_data_from_env_variable OPENDUT_HOSTS /etc/hosts
 
-export OPENDUT_ARTIFACTS_DIR=/opt/artifacts
-ls -la $OPENDUT_ARTIFACTS_DIR
+main() {
+  OPENDUT_REQUIRE_DIST="${1:-true}"
 
-extract_opendut_artifact() {
-  NAME="$1"
-  REQUIRED="true"
+  copy_custom_certificate_from_environment_variable "OPENDUT_CUSTOM_CA1"
+  copy_custom_certificate_from_environment_variable "OPENDUT_CUSTOM_CA2"
+  append_data_from_env_variable OPENDUT_HOSTS /etc/hosts
 
-  OPENDUT_DIST_ARCHIVE_PATH=$(find $OPENDUT_ARTIFACTS_DIR -name "$NAME-x86_64-unknown-linux-gnu*.tar.gz" -print0 | head)
-  if [ -e "$OPENDUT_DIST_ARCHIVE_PATH" ]; then
-    tar xf "$OPENDUT_DIST_ARCHIVE_PATH"
-    OPENDUT_ARTIFACT_BINARY="/opt/$NAME/$NAME"
-    if [ -e "$OPENDUT_ARTIFACT_BINARY" ]; then
-      ln -sf /opt/"$NAME"/"$NAME" /usr/local/opendut/bin/distribution/"$NAME"
-    else
-      echo "Could not extract artifact binary \'$OPENDUT_ARTIFACT_BINARY\' from archive \'$OPENDUT_DIST_ARCHIVE_PATH\'."
-      exit 1
-    fi
-  else
-    echo "Could not find distribution archive for \'$NAME\'."
-    if [ "$REQUIRED" = true ] ; then
-      exit 1
-    fi
-  fi
+  export OPENDUT_ARTIFACTS_DIR=/opt/artifacts
+  ls -la $OPENDUT_ARTIFACTS_DIR
+
+  # unpack distribution archives
+  extract_opendut_artifact opendut-edgar "$OPENDUT_REQUIRE_DIST"
+  extract_opendut_artifact opendut-cleo "$OPENDUT_REQUIRE_DIST"
+
 }
 
-# unpack distribution archives
-extract_opendut_artifact opendut-edgar "true"
-extract_opendut_artifact opendut-cleo "true"
 
 # symlink netbird to known binary path
 #OPENDUT_EDGAR_NETBIRD_BINARY=/opt/opendut-network/edgar/netbird/netbird
@@ -46,5 +31,16 @@ extract_opendut_artifact opendut-cleo "true"
 #  exit 1
 #fi
 
+if [ -n "$1" ]; then
+  if [ "$1" == "bash" ]; then
+    main "${OPENDUT_REQUIRE_DIST:-false}"
+  else
+    # run by ci, requires artifacts
+    main "true"
+  fi
 
-exec "$@"
+  exec "$@"
+
+else
+  main "${OPENDUT_REQUIRE_DIST:-false}"
+fi

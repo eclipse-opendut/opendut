@@ -2,7 +2,8 @@ use anyhow::Error;
 use clap::ArgAction;
 
 use crate::commands::vagrant::running_in_opendut_vm;
-use crate::core::docker::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_up, DockerCommand, DockerCoreServices, get_netbird_api_key, start_netbird, start_opendut_firefox_container, wait_for_keycloak_provisioned, wait_for_netbird_api_key};
+use crate::core::docker::{DockerCommand, DockerCoreServices, start_netbird, start_opendut_firefox_container};
+use crate::core::docker::compose::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_up};
 use crate::core::project::load_theo_environment_variables;
 
 #[derive(Debug, clap::Parser)]
@@ -43,9 +44,9 @@ impl DevCli {
                 println!("Starting services...");
                 start_opendut_firefox_container(&expose)?;
                 docker_compose_up(DockerCoreServices::Keycloak.as_str())?;
-                wait_for_keycloak_provisioned()?;
+                crate::core::docker::keycloak::wait_for_keycloak_provisioned()?;
                 start_netbird(&expose)?;
-                wait_for_netbird_api_key()?;
+                crate::core::docker::netbird::wait_for_netbird_api_key()?;
 
                 println!("Stopping carl in container (if present).");
                 docker_compose_down(DockerCoreServices::Carl.as_str(), false)?;
@@ -82,14 +83,14 @@ impl DevCli {
                     .add_netbird_api_key_to_env()?
                     .arg("run")
                     .arg("--rm")
-                    .arg("--entrypoint=\"\"")
+                    //.arg("--entrypoint=\"\"")
                     .arg("-it")
                     .arg("router")
                     .arg("bash")
                     .run()?;
             }
             TaskCli::CarlConfig => {
-                let netbird_api_key = get_netbird_api_key()?;
+                let netbird_api_key = crate::core::docker::netbird::get_netbird_api_key()?;
                 let netbird_management_ip = if running_in_opendut_vm() {
                     "192.168.56.10"
                 } else {

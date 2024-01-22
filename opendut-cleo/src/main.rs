@@ -245,6 +245,8 @@ async fn main() {
     let red = Style::new().red();
     if let Err(error) = execute().await {
         eprintln!("{}", red.apply_to(error));
+        // indicate error to calling processes by setting exit code to 1
+        std::process::exit(1);
     }
 }
 

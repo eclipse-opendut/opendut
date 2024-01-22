@@ -3,7 +3,8 @@ use clap::ArgAction;
 
 use crate::commands::edgar::TestEdgarCli;
 use crate::core::dist::make_distribution_if_not_present;
-use crate::core::docker::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_network_delete, docker_compose_up, DockerCommand, DockerCoreServices, start_netbird, start_opendut_firefox_container, wait_for_keycloak_provisioned, wait_for_netbird_api_key};
+use crate::core::docker::{DockerCommand, DockerCoreServices, start_netbird, start_opendut_firefox_container};
+use crate::core::docker::compose::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_network_delete, docker_compose_up};
 use crate::core::project::load_theo_environment_variables;
 
 /// Build and start test environment.
@@ -55,9 +56,9 @@ impl TestenvCli {
                 // start services
                 start_opendut_firefox_container(expose)?;
                 docker_compose_up(DockerCoreServices::Keycloak.as_str())?;
-                wait_for_keycloak_provisioned()?;
+                crate::core::docker::keycloak::wait_for_keycloak_provisioned()?;
                 start_netbird(expose)?;
-                wait_for_netbird_api_key()?;
+                crate::core::docker::netbird::wait_for_netbird_api_key()?;
                 start_carl_in_docker()?;
 
 

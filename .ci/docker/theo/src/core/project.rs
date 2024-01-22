@@ -95,7 +95,9 @@ impl TheoEnvMap {
         env_map.insert(TheoDynamicEnvVars::OpendutCustomCa2.to_string(), format!("\"{}\"", read_pem_certificate()));
         env_map.insert(TheoDynamicEnvVars::OpendutHosts.to_string(), "".to_string());
         env_map.insert(TheoDynamicEnvVars::OpendutEdgarReplicas.to_string(), "4".to_string());
-        env_map.insert(TheoDynamicEnvVars::OpendutEdgarClusterName.to_string(), "cluster1".to_string());
+
+        let cluster_suffix = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).expect("Failed to get time since epoch").as_secs().to_string();
+        env_map.insert(TheoDynamicEnvVars::OpendutEdgarClusterName.to_string(), format!("cluster{}", cluster_suffix));
         if running_in_opendut_vm() {
             println!("Running in virtual machine '{}': Automatically exposing ports!", OPENDUT_VM_NAME);
             env_map.insert(TheoDynamicEnvVars::OpendutFirefoxExposePort.to_string(), "true".to_string());
