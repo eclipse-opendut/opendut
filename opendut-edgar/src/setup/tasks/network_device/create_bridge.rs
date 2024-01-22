@@ -27,8 +27,8 @@ impl Task for CreateBridge {
         }
     }
     fn execute(&self) -> Result<Success> {
-        let bridge = block_on(self.network_device_manager.create_empty_bridge(&self.bridge_name))?;
-        block_on(self.network_device_manager.set_interface_up(&bridge))?;
+        block_on(crate::service::network_device::bridge::create(&self.bridge_name, &self.network_device_manager))?;
+
         Ok(Success::default())
     }
 }

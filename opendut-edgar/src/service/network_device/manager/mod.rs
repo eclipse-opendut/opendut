@@ -7,9 +7,10 @@ use futures::TryStreamExt;
 use netlink_packet_route::link::nlas;
 use netlink_packet_route::LinkMessage;
 
+use gretap::Gretap;
 use opendut_types::util::net::NetworkInterfaceName;
 
-use crate::service::network_device::gretap::Gretap;
+mod gretap;
 
 pub struct NetworkDeviceManager {
     handle: rtnetlink::Handle,
