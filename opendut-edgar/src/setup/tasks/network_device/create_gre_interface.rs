@@ -7,12 +7,11 @@ use futures::executor::block_on;
 use opendut_netbird_client_api::extension::LocalPeerStateExtension;
 
 use opendut_types::util::net::NetworkInterfaceName;
+use crate::service::network_device::gre;
 
 use crate::service::network_device::manager::NetworkDeviceManager;
 use crate::setup::Router;
 use crate::setup::task::{Success, Task, TaskFulfilled};
-
-const GRE_INTERFACE_NAME_PREFIX: &str = "gre-opendut";
 
 pub struct CreateGreInterfaces {
     pub network_device_manager: Rc<NetworkDeviceManager>,
@@ -27,15 +26,7 @@ impl Task for CreateGreInterfaces {
         Ok(TaskFulfilled::Unchecked)
     }
     fn execute(&self) -> Result<Success> {
-        { //Remove previously created GRE interfaces.
-            let interfaces_to_remove = block_on(self.network_device_manager.list_interfaces())?
-                .into_iter()
-                .filter(|interface| interface.name.name().starts_with(GRE_INTERFACE_NAME_PREFIX));
-
-            for interface in interfaces_to_remove {
-                block_on(self.network_device_manager.delete_interface(&interface))?;
-            }
-        }
+        block_on(gre::remove_existing_interfaces(&self.network_device_manager))?;
 
         let mut netbird_client = block_on(opendut_netbird_client_api::client::Client::connect())?;
 
@@ -58,7 +49,7 @@ impl Task for CreateGreInterfaces {
         if let Router::Remote(remote_ip) = router {
             //Create GRE interface to router.
             let interface_index = 0;
-            self.create_interface(local_ip, remote_ip, interface_index)?;
+            block_on(gre::create_interface(local_ip, remote_ip, interface_index, &self.bridge_name, &self.network_device_manager))?;
             Ok(Success::message(String::from("Interface to router created")))
         }
         else {
@@ -81,27 +72,9 @@ impl Task for CreateGreInterfaces {
             let number_of_remote_ips = remote_ips.len();
 
             for (interface_index, remote_ip) in remote_ips.into_iter().enumerate() {
-                self.create_interface(local_ip, remote_ip, interface_index)?
+                block_on(gre::create_interface(local_ip, remote_ip, interface_index, &self.bridge_name, &self.network_device_manager))?
             }
             Ok(Success::message(format!("{number_of_remote_ips} interface(s) created; acting as router with IP address '{local_ip}'")))
         }
-    }
-}
-
-impl CreateGreInterfaces {
-    fn create_interface(&self, local_ip: Ipv4Addr, remote_ip: Ipv4Addr, interface_index: usize) -> Result<()> {
-        let interface_prefix = GRE_INTERFACE_NAME_PREFIX;
-        let interface_name = NetworkInterfaceName::try_from(format!("{}{}", interface_prefix, interface_index))
-            .context("Error while constructing GRE interface name")?;
-
-        let gre_interface = block_on(self.network_device_manager.create_gretap_v4_interface(&interface_name, &local_ip, &remote_ip))?;
-        log::trace!("Created GRE interface '{gre_interface}'.");
-        block_on(self.network_device_manager.set_interface_up(&gre_interface))?;
-        log::trace!("Set GRE interface '{interface_name}' to 'up'.");
-
-        let bridge = block_on(self.network_device_manager.try_find_interface(&self.bridge_name))?;
-        block_on(self.network_device_manager.join_interface_to_bridge(&gre_interface, &bridge))?;
-
-        Ok(())
     }
 }
