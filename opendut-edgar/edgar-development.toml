@@ -10,6 +10,9 @@ connect.interval.ms = 250
 ca.certificate = "resources/development/tls/insecure-development-ca.pem"
 domain.name.override = "localhost"
 
+[network.interface.management]
+enabled = false
+
 [vpn]
 enabled = false
 

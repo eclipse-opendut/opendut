@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Formatter};
 use std::io;
 use std::net::Ipv4Addr;
+use std::sync::Arc;
 
 use anyhow::anyhow;
 use futures::TryStreamExt;
@@ -12,10 +13,12 @@ use opendut_types::util::net::NetworkInterfaceName;
 
 mod gretap;
 
-pub struct NetworkDeviceManager {
+pub type NetworkInterfaceManagerRef = Arc<NetworkInterfaceManager>;
+
+pub struct NetworkInterfaceManager {
     handle: rtnetlink::Handle,
 }
-impl NetworkDeviceManager {
+impl NetworkInterfaceManager {
     pub fn create() -> Result<Self> {
         let (connection, handle, _) = rtnetlink::new_connection()
             .map_err(|cause| Error::Connecting { cause })?;

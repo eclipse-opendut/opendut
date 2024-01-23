@@ -22,7 +22,7 @@ pub mod linux_network_capability;
 
 pub mod netbird;
 
-pub mod network_device;
+pub mod network_interface;
 
 mod start_service;
 pub use start_service::StartService;

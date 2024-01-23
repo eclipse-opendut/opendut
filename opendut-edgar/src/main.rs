@@ -65,8 +65,8 @@ enum SetupMode {
         router: ParseableRouter, // We create a star topology to avoid loops between the GRE interfaces.
 
         /// Name of the bridge to use, maximum 15 characters long
-        #[arg(long, default_value="br-opendut")]
-        bridge: NetworkInterfaceName,
+        #[arg(long)]
+        bridge: Option<NetworkInterfaceName>,
     },
 }
 
@@ -98,6 +98,7 @@ async fn main() -> anyhow::Result<()> {
                 SetupMode::Unmanaged { management_url, setup_key, router, bridge } => {
                     let setup_key = SetupKey { uuid: setup_key };
                     let ParseableRouter(router) = router;
+                    let bridge = bridge.unwrap_or_else(opendut_edgar::common::default_bridge_name);
                     setup::start::unmanaged(run_mode, management_url, setup_key, bridge, router, mtu).await
                 }
             }

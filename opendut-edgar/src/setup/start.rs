@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use anyhow::Context;
 use url::Url;
@@ -10,7 +10,7 @@ use opendut_types::vpn::netbird::SetupKey;
 use opendut_types::vpn::VpnPeerConfig;
 use opendut_util::logging;
 
-use crate::service::network_device::manager::NetworkDeviceManager;
+use crate::service::network_interface::manager::NetworkInterfaceManager;
 use crate::setup::{Router, runner, tasks};
 use crate::setup::runner::RunMode;
 use crate::setup::task::Task;
@@ -21,9 +21,6 @@ pub async fn managed(run_mode: RunMode, setup_string: String, mtu: u16) -> anyho
 
     let peer_setup = PeerSetup::decode(&setup_string)
         .context("Failed to decode Setup String.")?;
-
-    let network_device_manager = Rc::new(NetworkDeviceManager::create()?);
-    let bridge_name = NetworkInterfaceName::try_from("br-opendut").unwrap();
 
     let mut tasks: Vec<Box<dyn Task>> = vec![
         Box::new(tasks::CheckOsRequirements),
@@ -57,7 +54,6 @@ pub async fn managed(run_mode: RunMode, setup_string: String, mtu: u16) -> anyho
         Box::new(tasks::linux_network_capability::MakePamAuthOptional::default()),
         Box::new(tasks::linux_network_capability::RequestCapabilityForUser),
         Box::new(tasks::linux_network_capability::RequestCapabilityForExecutable),
-        Box::new(tasks::network_device::CreateBridge { network_device_manager: network_device_manager.clone(), bridge_name }),
         Box::new(tasks::CreateServiceFile),
         Box::new(tasks::StartService),
     ];
@@ -69,7 +65,7 @@ pub async fn managed(run_mode: RunMode, setup_string: String, mtu: u16) -> anyho
 #[allow(clippy::box_default)]
 pub async fn unmanaged(run_mode: RunMode, management_url: Url, setup_key: SetupKey, bridge_name: NetworkInterfaceName, router: Router, mtu: u16) -> anyhow::Result<()> {
 
-    let network_device_manager = Rc::new(NetworkDeviceManager::create()?);
+    let network_interface_manager = Arc::new(NetworkInterfaceManager::create()?);
 
     let tasks: Vec<Box<dyn Task>> = vec![
         Box::new(tasks::CheckOsRequirements),
@@ -78,9 +74,9 @@ pub async fn unmanaged(run_mode: RunMode, management_url: Url, setup_key: SetupK
         Box::new(tasks::netbird::StartService),
         Box::new(tasks::netbird::Connect { management_url, setup_key, mtu }),
 
-        Box::new(tasks::network_device::CreateBridge { network_device_manager: network_device_manager.clone(), bridge_name: bridge_name.clone() }),
-        Box::new(tasks::network_device::CreateGreInterfaces { network_device_manager: network_device_manager.clone(), bridge_name: bridge_name.clone(), router }),
-        Box::new(tasks::network_device::ConnectDeviceInterfaces { network_device_manager, bridge_name }),
+        Box::new(tasks::network_interface::CreateBridge { network_interface_manager: Arc::clone(&network_interface_manager), bridge_name: bridge_name.clone() }),
+        Box::new(tasks::network_interface::CreateGreInterfaces { network_interface_manager: Arc::clone(&network_interface_manager), bridge_name: bridge_name.clone(), router }),
+        Box::new(tasks::network_interface::ConnectDeviceInterfaces { network_interface_manager, bridge_name }),
     ];
 
     runner::run(run_mode, &tasks).await

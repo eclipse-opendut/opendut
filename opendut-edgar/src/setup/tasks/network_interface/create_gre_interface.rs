@@ -1,20 +1,20 @@
 use std::net::Ipv4Addr;
-use std::rc::Rc;
 use std::str::FromStr;
+use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use futures::executor::block_on;
+
 use opendut_netbird_client_api::extension::LocalPeerStateExtension;
-
 use opendut_types::util::net::NetworkInterfaceName;
-use crate::service::network_device::gre;
 
-use crate::service::network_device::manager::NetworkDeviceManager;
+use crate::service::network_interface::gre;
+use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use crate::setup::Router;
 use crate::setup::task::{Success, Task, TaskFulfilled};
 
 pub struct CreateGreInterfaces {
-    pub network_device_manager: Rc<NetworkDeviceManager>,
+    pub network_interface_manager: NetworkInterfaceManagerRef,
     pub router: Router,
     pub bridge_name: NetworkInterfaceName,
 }
@@ -26,7 +26,9 @@ impl Task for CreateGreInterfaces {
         Ok(TaskFulfilled::Unchecked)
     }
     fn execute(&self) -> Result<Success> {
-        block_on(gre::remove_existing_interfaces(&self.network_device_manager))?;
+        block_on(
+            gre::remove_existing_interfaces(Arc::clone(&self.network_interface_manager))
+        )?;
 
         let mut netbird_client = block_on(opendut_netbird_client_api::client::Client::connect())?;
 
@@ -49,7 +51,7 @@ impl Task for CreateGreInterfaces {
         if let Router::Remote(remote_ip) = router {
             //Create GRE interface to router.
             let interface_index = 0;
-            block_on(gre::create_interface(local_ip, remote_ip, interface_index, &self.bridge_name, &self.network_device_manager))?;
+            block_on(gre::create_interface(local_ip, remote_ip, interface_index, &self.bridge_name, Arc::clone(&self.network_interface_manager)))?;
             Ok(Success::message(String::from("Interface to router created")))
         }
         else {
@@ -72,7 +74,7 @@ impl Task for CreateGreInterfaces {
             let number_of_remote_ips = remote_ips.len();
 
             for (interface_index, remote_ip) in remote_ips.into_iter().enumerate() {
-                block_on(gre::create_interface(local_ip, remote_ip, interface_index, &self.bridge_name, &self.network_device_manager))?
+                block_on(gre::create_interface(local_ip, remote_ip, interface_index, &self.bridge_name, Arc::clone(&self.network_interface_manager)))?;
             }
             Ok(Success::message(format!("{number_of_remote_ips} interface(s) created; acting as router with IP address '{local_ip}'")))
         }
