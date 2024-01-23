@@ -1,7 +1,7 @@
 use std::net::Ipv4Addr;
+use std::sync::Arc;
 
 use anyhow::Context;
-use futures::executor::block_on;
 
 use opendut_types::util::net::NetworkInterfaceName;
 
@@ -9,9 +9,25 @@ use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 
 const GRE_INTERFACE_NAME_PREFIX: &str = "gre-opendut";
 
+pub async fn setup_interfaces(
+    local_ip: &Ipv4Addr,
+    remote_ips: &[Ipv4Addr],
+    bridge_name: &NetworkInterfaceName,
+    network_interface_manager: NetworkInterfaceManagerRef,
+) -> anyhow::Result<()> {
 
-pub async fn remove_existing_interfaces(network_interface_manager: NetworkInterfaceManagerRef) -> anyhow::Result<()> {
-    let interfaces_to_remove = block_on(network_interface_manager.list_interfaces())?
+    remove_existing_interfaces(Arc::clone(&network_interface_manager)).await?;
+
+    for (interface_index, remote_ip) in remote_ips.iter().enumerate() {
+        create_interface(local_ip, remote_ip, interface_index, bridge_name, Arc::clone(&network_interface_manager)).await?;
+    }
+
+    Ok(())
+}
+
+async fn remove_existing_interfaces(network_interface_manager: NetworkInterfaceManagerRef) -> anyhow::Result<()> {
+
+    let interfaces_to_remove = network_interface_manager.list_interfaces().await?
         .into_iter()
         .filter(|interface| interface.name.name().starts_with(GRE_INTERFACE_NAME_PREFIX));
 
@@ -22,19 +38,18 @@ pub async fn remove_existing_interfaces(network_interface_manager: NetworkInterf
     Ok(())
 }
 
-
-pub async fn create_interface(
-    local_ip: Ipv4Addr,
-    remote_ip: Ipv4Addr,
+async fn create_interface(
+    local_ip: &Ipv4Addr,
+    remote_ip: &Ipv4Addr,
     interface_index: usize,
     bridge_name: &NetworkInterfaceName,
     network_interface_manager: NetworkInterfaceManagerRef,
 ) -> anyhow::Result<()> {
-    let interface_prefix = GRE_INTERFACE_NAME_PREFIX;
-    let interface_name = NetworkInterfaceName::try_from(format!("{}{}", interface_prefix, interface_index))
+
+    let interface_name = NetworkInterfaceName::try_from(format!("{}{}", GRE_INTERFACE_NAME_PREFIX, interface_index))
         .context("Error while constructing GRE interface name")?;
 
-    let gre_interface = network_interface_manager.create_gretap_v4_interface(&interface_name, &local_ip, &remote_ip).await?;
+    let gre_interface = network_interface_manager.create_gretap_v4_interface(&interface_name, local_ip, remote_ip).await?;
     log::trace!("Created GRE interface '{gre_interface}'.");
     network_interface_manager.set_interface_up(&gre_interface).await?;
     log::trace!("Set GRE interface '{interface_name}' to 'up'.");

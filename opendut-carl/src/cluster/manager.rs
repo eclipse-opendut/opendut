@@ -103,7 +103,10 @@ impl ClusterManager {
                             Some(PeerState::Up { remote_host, .. }) => {
                                 Ok(remote_host)
                             }
-                            _ => {
+                            Some(_) => {
+                                Err(DeployClusterError::Internal { cluster_id, cause: format!("Peer <{peer_id}> which is used in a cluster, should have a PeerState of 'Up'.") })
+                            }
+                            None => {
                                 Err(DeployClusterError::Internal { cluster_id, cause: format!("Peer <{peer_id}> which is used in a cluster, should have a PeerState associated.") })
                             }
                         };

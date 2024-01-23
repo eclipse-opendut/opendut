@@ -26,10 +26,6 @@ impl Task for CreateGreInterfaces {
         Ok(TaskFulfilled::Unchecked)
     }
     fn execute(&self) -> Result<Success> {
-        block_on(
-            gre::remove_existing_interfaces(Arc::clone(&self.network_interface_manager))
-        )?;
-
         let mut netbird_client = block_on(opendut_netbird_client_api::client::Client::connect())?;
 
         let full_status = block_on(netbird_client.full_status())
@@ -50,8 +46,8 @@ impl Task for CreateGreInterfaces {
 
         if let Router::Remote(remote_ip) = router {
             //Create GRE interface to router.
-            let interface_index = 0;
-            block_on(gre::create_interface(local_ip, remote_ip, interface_index, &self.bridge_name, Arc::clone(&self.network_interface_manager)))?;
+            block_on(gre::setup_interfaces(&local_ip, &[remote_ip], &self.bridge_name, Arc::clone(&self.network_interface_manager)))?;
+
             Ok(Success::message(String::from("Interface to router created")))
         }
         else {
@@ -73,9 +69,8 @@ impl Task for CreateGreInterfaces {
 
             let number_of_remote_ips = remote_ips.len();
 
-            for (interface_index, remote_ip) in remote_ips.into_iter().enumerate() {
-                block_on(gre::create_interface(local_ip, remote_ip, interface_index, &self.bridge_name, Arc::clone(&self.network_interface_manager)))?;
-            }
+            block_on(gre::setup_interfaces(&local_ip, &remote_ips, &self.bridge_name, Arc::clone(&self.network_interface_manager)))?;
+
             Ok(Success::message(format!("{number_of_remote_ips} interface(s) created; acting as router with IP address '{local_ip}'")))
         }
     }
