@@ -2,8 +2,8 @@ use anyhow::Error;
 use clap::ArgAction;
 
 use crate::commands::vagrant::running_in_opendut_vm;
-use crate::core::docker::{DockerCommand, DockerCoreServices, start_netbird, start_opendut_firefox_container};
-use crate::core::docker::compose::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_up};
+use crate::core::docker::{DockerCommand, DockerCoreServices, start_netbird};
+use crate::core::docker::compose::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_up_expose_ports};
 use crate::core::project::load_theo_environment_variables;
 
 #[derive(Debug, clap::Parser)]
@@ -16,7 +16,7 @@ pub struct DevCli {
 pub enum TaskCli {
     #[command(about = "Start dev containers.", alias = "up")]
     Start {
-        /// Expose firefox container port (3000), or set OPENDUT_FIREFOX_EXPOSE_PORT=true
+        /// Expose firefox container port (3000), or set OPENDUT_EXPOSE_PORTS=true
         #[arg(long, short, action = ArgAction::SetTrue)]
         expose: bool,
     },
@@ -42,8 +42,8 @@ impl DevCli {
                 docker_compose_network_create()?;
 
                 println!("Starting services...");
-                start_opendut_firefox_container(&expose)?;
-                docker_compose_up(DockerCoreServices::Keycloak.as_str())?;
+                docker_compose_up_expose_ports(DockerCoreServices::Firefox.as_str(), &expose)?;
+                docker_compose_up_expose_ports(DockerCoreServices::Keycloak.as_str(), &expose)?;
                 crate::core::docker::keycloak::wait_for_keycloak_provisioned()?;
                 start_netbird(&expose)?;
                 crate::core::docker::netbird::wait_for_netbird_api_key()?;

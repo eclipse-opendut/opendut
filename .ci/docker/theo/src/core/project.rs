@@ -2,15 +2,16 @@ use std::collections::HashMap;
 use std::env;
 use std::env::VarError;
 use std::fs::OpenOptions;
+use std::io::Write;
 use std::path::PathBuf;
 use std::process::Command;
-use std::io::Write;
+
 use dotenvy::dotenv;
 use strum::{Display, EnumString, EnumVariantNames};
-use crate::commands::vagrant::running_in_opendut_vm;
 
-use crate::core::metadata::cargo_netbird_versions;
+use crate::commands::vagrant::running_in_opendut_vm;
 use crate::core::{OPENDUT_REPO_ROOT, OPENDUT_VM_NAME, TheoError};
+use crate::core::metadata::cargo_netbird_versions;
 use crate::core::util::consume_output;
 
 #[derive(Debug, PartialEq, EnumString, EnumVariantNames, Display)]
@@ -32,7 +33,7 @@ pub enum TheoDynamicEnvVars {
     OpendutHosts,
     OpendutEdgarReplicas,
     OpendutEdgarClusterName,
-    OpendutFirefoxExposePort,
+    OpendutExposePorts,
 }
 
 #[derive(Debug, PartialEq, EnumString, EnumVariantNames, Display)]
@@ -100,10 +101,10 @@ impl TheoEnvMap {
         env_map.insert(TheoDynamicEnvVars::OpendutEdgarClusterName.to_string(), format!("cluster{}", cluster_suffix));
         if running_in_opendut_vm() {
             println!("Running in virtual machine '{}': Automatically exposing ports!", OPENDUT_VM_NAME);
-            env_map.insert(TheoDynamicEnvVars::OpendutFirefoxExposePort.to_string(), "true".to_string());
+            env_map.insert(TheoDynamicEnvVars::OpendutExposePorts.to_string(), "true".to_string());
         } else {
             println!("Firefox only available on localhost.");
-            env_map.insert(TheoDynamicEnvVars::OpendutFirefoxExposePort.to_string(), "false".to_string());
+            env_map.insert(TheoDynamicEnvVars::OpendutExposePorts.to_string(), "false".to_string());
         }
 
         Self(env_map)
@@ -195,8 +196,6 @@ pub(crate) fn load_theo_environment_variables() {
     dot_env_create_theo_specific_defaults();
     let custom_env = PathBuf::project_path_buf().join(".env-theo");
     dotenvy::from_path(custom_env).expect(".env-theo file not found");
-
-
 }
 
 pub(crate) fn dot_env_create_defaults() {

@@ -3,8 +3,8 @@ use clap::ArgAction;
 
 use crate::commands::edgar::TestEdgarCli;
 use crate::core::dist::make_distribution_if_not_present;
-use crate::core::docker::{DockerCommand, DockerCoreServices, start_netbird, start_opendut_firefox_container};
-use crate::core::docker::compose::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_network_delete, docker_compose_up};
+use crate::core::docker::{DockerCommand, DockerCoreServices, start_netbird};
+use crate::core::docker::compose::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_network_delete, docker_compose_up_expose_ports};
 use crate::core::project::load_theo_environment_variables;
 
 /// Build and start test environment.
@@ -20,7 +20,7 @@ pub enum TaskCli {
     Build,
     #[command(about = "Start test environment.", alias = "up")]
     Start {
-        /// Expose firefox container port (3000), or set OPENDUT_FIREFOX_EXPOSE_PORT=true
+        /// Expose firefox container port (3000), or set OPENDUT_EXPOSE_PORTS=true
         #[arg(long, short, action = ArgAction::SetTrue)]
         expose: bool,
     },
@@ -54,8 +54,8 @@ impl TestenvCli {
                 docker_compose_network_create()?;
 
                 // start services
-                start_opendut_firefox_container(expose)?;
-                docker_compose_up(DockerCoreServices::Keycloak.as_str())?;
+                docker_compose_up_expose_ports(DockerCoreServices::Firefox.as_str(), expose)?;
+                docker_compose_up_expose_ports(DockerCoreServices::Keycloak.as_str(), expose)?;
                 crate::core::docker::keycloak::wait_for_keycloak_provisioned()?;
                 start_netbird(expose)?;
                 crate::core::docker::netbird::wait_for_netbird_api_key()?;
@@ -66,6 +66,7 @@ impl TestenvCli {
             }
             TaskCli::Stop => {
                 docker_compose_down(DockerCoreServices::Keycloak.as_str(), false)?;
+                docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), false)?;
                 docker_compose_down(DockerCoreServices::Carl.as_str(), false)?;
                 docker_compose_down(DockerCoreServices::Netbird.as_str(), false)?;
                 docker_compose_down(DockerCoreServices::Firefox.as_str(), false)?;
@@ -76,6 +77,7 @@ impl TestenvCli {
             TaskCli::Destroy => {
                 docker_compose_down(DockerCoreServices::Firefox.as_str(), true)?;
                 docker_compose_down(DockerCoreServices::Carl.as_str(), true)?;
+                docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), true)?;
                 docker_compose_down(DockerCoreServices::Netbird.as_str(), true)?;
                 docker_compose_down(DockerCoreServices::Keycloak.as_str(), true)?;
                 docker_compose_network_delete()?;

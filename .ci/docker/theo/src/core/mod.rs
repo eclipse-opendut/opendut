@@ -10,7 +10,7 @@ pub(crate) enum TheoError {
 
 pub(crate) const TARGET_TRIPLE: &str = "x86_64-unknown-linux-gnu";
 pub(crate) const OPENDUT_REPO_ROOT: &str = "OPENDUT_REPO_ROOT";
-pub(crate) const OPENDUT_FIREFOX_EXPOSE_PORT: &str = "OPENDUT_FIREFOX_EXPOSE_PORT";
+pub(crate) const OPENDUT_EXPOSE_PORTS: &str = "OPENDUT_EXPOSE_PORTS";
 pub(crate) const OPENDUT_VM_NAME: &str = "opendut-vm";
 pub(crate) const TIMEOUT_SECONDS: u64 = 120;
 pub(crate) const SLEEP_TIME_SECONDS: u64 = 5;

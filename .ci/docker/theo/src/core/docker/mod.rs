@@ -5,7 +5,7 @@ use std::process::{Command, Output};
 
 use anyhow::{anyhow, Error};
 
-use crate::core::{OPENDUT_FIREFOX_EXPOSE_PORT, TheoError};
+use crate::core::{OPENDUT_EXPOSE_PORTS, TheoError};
 use crate::core::command_ext::TheoCommandExtensions;
 use crate::core::docker::netbird::get_netbird_api_key;
 use crate::core::project::ProjectRootDir;
@@ -167,37 +167,13 @@ impl DockerCommand {
 }
 
 
-pub fn start_opendut_firefox_container(expose: &bool) -> crate::Result {
-    let mut command = DockerCommand::new();
-    command.arg("compose")
-        .arg("-f")
-        .arg(".ci/docker/firefox/docker-compose.yml");
-
-    let expose_env_value = env::var(OPENDUT_FIREFOX_EXPOSE_PORT).unwrap_or("false".to_string()).eq("true");
-    if *expose || expose_env_value {
-        command.arg("-f")
-            .arg(".ci/docker/firefox/expose_ports.yml")
-    } else {
-        command.arg("-f")
-            .arg(".ci/docker/firefox/localhost_ports.yml")
-    };
-    command.arg("--env-file")
-        .arg(".env-theo")
-        .arg("--env-file")
-        .arg(".env")
-        .arg("up")
-        .arg("-d")
-        .expect_status("Failed to execute docker compose command for firefox.")?;
-    Ok(())
-}
-
 pub fn start_netbird(expose: &bool) -> Result<i32, Error> {
     let mut command = DockerCommand::new();
     command.arg("compose")
         .arg("-f")
         .arg(".ci/docker/netbird/docker-compose.yml");
 
-    let expose_env_value = env::var(OPENDUT_FIREFOX_EXPOSE_PORT).unwrap_or("false".to_string()).eq("true");
+    let expose_env_value = env::var(OPENDUT_EXPOSE_PORTS).unwrap_or("false".to_string()).eq("true");
     if *expose || expose_env_value {
         command.arg("-f")
             .arg(".ci/docker/netbird/expose_ports.yml");

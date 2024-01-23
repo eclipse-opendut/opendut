@@ -31,6 +31,8 @@ pub enum TaskCli {
     Halt,
     #[command(about = "Destroy virtual machine.")]
     Destroy,
+    #[command(about = "Reload virtual machine.", alias = "restart")]
+    Reload,
     #[command(about = "Run firefox remotely on the virtual machine (x11forwarding).")]
     Firefox,
     #[command(about = "Alternatives to run firefox remotely.")]
@@ -67,6 +69,9 @@ impl VagrantCli {
             }
             TaskCli::Destroy => {
                 Command::vagrant().arg("destroy").run();
+            }
+            TaskCli::Reload => {
+                Command::vagrant().arg("reload").run();
             }
             TaskCli::Other => {
                 let project_root = PathBuf::project_path_buf();
