@@ -58,13 +58,13 @@ EOF
 EOF
 
   if [ -n "$USER_GROUP" ]; then
-    echo "add user to group"
-    USER_GROUP_ID=$(kcadm get groups | jq -r ".[] | select(.name==\"${USER_GROUP}\").id")
+    echo "add user '$USER_NAME' to group '$USER_GROUP'"
+    USER_GROUP_ID=$(kcadm get groups -r "${USER_REALM}" | jq -r ".[] | select(.name==\"${USER_GROUP}\").id")
     kcadm update users/"$USER_ID"/groups/"$USER_GROUP_ID" -r "${USER_REALM}"
   fi
 
   if [ -n "$USER_ROLE" ]; then
-    echo "add user to role"
+    echo "add user '$USER_NAME' to role '$USER_ROLE'"
     USER_ROLE_ID=$(kcadm get roles -r "${USER_REALM}" | jq -r ".[] | select(.name==\"${USER_ROLE}\").id")
     USER_ROLE_CONTAINER_ID=$(kcadm get users/"$USER_ID"/role-mappings -r "${USER_REALM}" | jq -r '.realmMappings[] | select(.name=="default-roles-master").containerId')
     kcadm create users/"$USER_ID"/role-mappings/realm -r "${USER_REALM}" -f - << EOF
@@ -101,6 +101,24 @@ create_realm_role() {
         "attributes": {}
       }
 EOF
+  fi
+}
+
+list_realm_groups() {
+    REALM=${1:-$REALM}
+    kcadm get groups -r "${REALM}" 2>/dev/null | jq -r ".[].name"
+}
+
+create_realm_group() {
+  GROUP_NAME="$1"
+  GROUP_REALM="${2:-$REALM}"
+
+  EXISTING_REALM_GROUPS=$(list_realm_groups "${GROUP_REALM}")
+  if [[ "$EXISTING_REALM_GROUPS" == *"${GROUP_NAME}"* ]]; then
+    echo "Realm group ${GROUP_NAME} already exists"
+  else
+      echo "Create realm group ${GROUP_NAME}"
+      kcadm create groups -r "${GROUP_REALM}" -s name="${GROUP_NAME}"
   fi
 }
 
