@@ -22,19 +22,10 @@ pub async fn managed(run_mode: RunMode, setup_string: String, mtu: u16) -> anyho
     let peer_setup = PeerSetup::decode(&setup_string)
         .context("Failed to decode Setup String.")?;
 
-    let (management_url, setup_key) = match peer_setup.vpn {
-        VpnPeerConfig::Disabled => {
-            unimplemented!("Prepare EDGAR for disabled VPN")
-        }
-        VpnPeerConfig::Netbird { management_url, setup_key } => {
-            (management_url, setup_key)
-        }
-    };
-
     let network_device_manager = Rc::new(NetworkDeviceManager::create()?);
     let bridge_name = NetworkInterfaceName::try_from("br-opendut").unwrap();
 
-    let tasks: Vec<Box<dyn Task>> = vec![
+    let mut tasks: Vec<Box<dyn Task>> = vec![
         Box::new(tasks::CheckOsRequirements),
         Box::new(tasks::WriteConfiguration::with_override(write_configuration::ConfigOverride {
             peer_id: peer_setup.id,
@@ -42,14 +33,25 @@ pub async fn managed(run_mode: RunMode, setup_string: String, mtu: u16) -> anyho
         })),
         Box::new(tasks::CheckCarlReachable),
         Box::new(tasks::CreateUser),
+    ];
 
-        //NetBird
-        Box::new(tasks::netbird::Unpack::default()),
-        Box::new(tasks::netbird::InstallService),
-        Box::new(tasks::netbird::StartService),
-        Box::new(tasks::netbird::Connect { management_url, setup_key, mtu }),
+    match peer_setup.vpn {
+        VpnPeerConfig::Disabled => {
+            log::info!("VPN is disabled in PeerSetup. Not running VPN-related tasks.");
+        }
+        VpnPeerConfig::Netbird { management_url, setup_key } => {
+            log::info!("VPN is configured for NetBird in PeerSetup. Running NetBird-related tasks.");
+            let mut netbird_tasks: Vec<Box<dyn Task>> = vec![
+                Box::new(tasks::netbird::Unpack::default()),
+                Box::new(tasks::netbird::InstallService),
+                Box::new(tasks::netbird::StartService),
+                Box::new(tasks::netbird::Connect { management_url, setup_key, mtu }),
+            ];
+            tasks.append(&mut netbird_tasks);
+        }
+    };
 
-        //EDGAR Service
+    let mut service_tasks: Vec<Box<dyn Task>> = vec![
         Box::new(tasks::CopyExecutable),
         Box::new(tasks::ClaimFileOwnership),
         Box::new(tasks::linux_network_capability::MakePamAuthOptional::default()),
@@ -59,6 +61,7 @@ pub async fn managed(run_mode: RunMode, setup_string: String, mtu: u16) -> anyho
         Box::new(tasks::CreateServiceFile),
         Box::new(tasks::StartService),
     ];
+    tasks.append(&mut service_tasks);
 
     runner::run(run_mode, &tasks).await
 }
