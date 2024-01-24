@@ -1,10 +1,9 @@
-use std::sync::Arc;
 use std::any::Any;
 use std::fmt::Debug;
-use std::net::{IpAddr, Ipv4Addr};
+use std::sync::Arc;
 use std::time::Duration;
 
-use anyhow::{anyhow, bail, Context};
+use anyhow::Context;
 use config::Config;
 use tokio::time::sleep;
 
@@ -17,7 +16,6 @@ use opendut_types::util::net::NetworkInterfaceName;
 use opendut_util::logging;
 
 use crate::common::{carl, settings};
-use crate::service::network_interface::gre;
 use crate::service::network_interface::manager::{NetworkInterfaceManager, NetworkInterfaceManagerRef};
 use crate::service::vpn;
 
@@ -105,7 +103,7 @@ pub async fn create(settings_override: Config) -> anyhow::Result<()> {
                         log::trace!("Received ClusterAssignment: {cluster_assignment:?}");
                         log::info!("Was assigned to cluster <{}>", cluster_assignment.id);
 
-                        handle_cluster_assignment(
+                        crate::service::cluster_assignment::handle(
                             cluster_assignment,
                             id,
                             &bridge_name,
@@ -135,67 +133,6 @@ async fn create_bridge(bridge_name: &NetworkInterfaceName, network_interface_man
     } else {
         log::debug!("Not creating bridge '{bridge_name}', because it already exists.");
     }
-
-    Ok(())
-}
-
-async fn handle_cluster_assignment(
-    cluster_assignment: ClusterAssignment,
-    self_id: PeerId,
-    bridge_name: &NetworkInterfaceName,
-    network_interface_manager: NetworkInterfaceManagerRef,
-) -> anyhow::Result<()> { //TODO better error handling
-
-    let local_ip = cluster_assignment.assignments.iter().find_map(|assignment| { //TODO move into function + unit test
-        if assignment.peer_id == self_id {
-            Some(&assignment.vpn_address)
-        } else {
-            None
-        }
-    }).ok_or(anyhow!("Could not determine local IP address from ClusterAssignment."))?;
-
-    let local_ip = match local_ip {
-        IpAddr::V4(local_ip) => local_ip,
-        IpAddr::V6(_) => bail!("IPv6 isn't yet supported for GRE interfaces."),
-    };
-
-
-    let is_leader = cluster_assignment.leader == self_id;
-
-    let remote_ips = if is_leader { //TODO move into function + unit test
-        cluster_assignment.assignments.iter()
-            .map(|assignment| assignment.vpn_address)
-            .filter(|address| address != local_ip)
-            .map(|address| match address {
-                IpAddr::V4(address) => Ok(address),
-                IpAddr::V6(_) => Err::<Ipv4Addr, _>(anyhow!("IPv6 isn't yet supported for GRE interfaces.")),
-            })
-            .collect::<Result<Vec<_>, _>>()?
-    } else {
-        let leader_ip = cluster_assignment.assignments.iter().find_map(|peer_assignment| {
-            if peer_assignment.peer_id == cluster_assignment.leader {
-                Some(peer_assignment.vpn_address)
-            } else {
-                None
-            }
-        }).ok_or(anyhow!("Could not determine leader IP address from ClusterAssignment."))?;
-
-        let leader_ip = match leader_ip {
-            IpAddr::V4(ip_address) => ip_address,
-            IpAddr::V6(_) => bail!("IPv6 isn't yet supported for GRE interfaces.")
-        };
-
-        vec![leader_ip]
-    };
-
-    gre::setup_interfaces(
-        local_ip,
-        &remote_ips,
-        bridge_name,
-        Arc::clone(&network_interface_manager),
-    ).await?;
-
-    //TODO join device interfaces to bridge
 
     Ok(())
 }
