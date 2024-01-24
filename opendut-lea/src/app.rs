@@ -1,7 +1,7 @@
 use std::rc::Rc;
 use gloo_net::http;
 use leptos::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tracing::info;
 use url::Url;
 
@@ -23,8 +23,16 @@ pub fn use_app_globals() -> Resource<(), Result<AppGlobals, AppGlobalsError>> {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+struct LeaIdpConfig {
+    client_id: String,
+    issuer_url: Url,
+    scopes: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
 pub struct AppConfig {
-    pub carl_url: Url
+    pub carl_url: Url,
+    idp_config: Option<LeaIdpConfig>,
 }
 
 #[derive(thiserror::Error, Clone, Debug)]

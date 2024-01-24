@@ -11,7 +11,7 @@ use config::Config;
 use futures::future::BoxFuture;
 use futures::TryFutureExt;
 use http::{header::CONTENT_TYPE, Request};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tonic::transport::Server;
 use tower::{BoxError, make::Shared, ServiceExt, steer::Steer};
 use tower_http::services::{ServeDir, ServeFile};
@@ -124,9 +124,21 @@ pub async fn create(settings_override: Config) -> Result<()> {
         let licenses_dir = project::make_path_absolute("./licenses")
             .expect("licenses directory should be absolute");
 
+        let oidc_enabled = settings.get_bool("network.oidc.enabled").unwrap_or(false);
+        let lea_idp_config = if oidc_enabled {
+            let lea_idp_config = settings.get::<LeaIdpConfig>("network.oidc.lea")
+                .expect("Failed to find configuration for `network.oidc.lea`.");
+            log::info!("OIDC is enabled: {:?}", lea_idp_config);
+            Some(lea_idp_config)
+        } else {
+            log::info!("OIDC is disabled.");
+            None
+        };
+
         let app_state = AppState {
             lea_config: LeaConfig {
-                carl_url
+                carl_url,
+                idp_config: lea_idp_config,
             }
         };
 
@@ -191,9 +203,17 @@ struct AppState {
     lea_config: LeaConfig
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct LeaIdpConfig {
+    client_id: String,
+    issuer_url: Url,
+    scopes: Vec<String>,
+}
+
 #[derive(Clone, Serialize)]
 struct LeaConfig {
-    carl_url: Url
+    carl_url: Url,
+    idp_config: Option<LeaIdpConfig>,
 }
 
 impl FromRef<AppState> for LeaConfig {

@@ -32,7 +32,7 @@ impl Debug for LoadedConfig {
 
 /// Load configuration from files and environment variables used by openDuT.
 ///
-/// This includes:
+/// This includes in following order:
 /// * A default configuration, provided as a string
 /// * A development configuration, read from the crate's directory
 /// * A system configuration, read from `/etc/opendut-network/{name}.toml`
