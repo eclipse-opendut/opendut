@@ -37,16 +37,16 @@ fn user_confirmation(run_mode: RunMode) -> anyhow::Result<bool> {
         }
         RunMode::Normal => {
             println!("This will setup EDGAR on your system.");
-            print!("Do you want to continue? [y/N] ");
+            print!("Do you want to continue? [Y/n] ");
             io::stdout().flush()?;
             let mut input = String::new();
             io::stdin().read_line(&mut input)?;
 
             match input.trim().to_lowercase().as_ref() {
-                "y" | "yes" => Ok(true),
+                "" | "y" | "yes" => Ok(true),
                 _ => {
                     println!("Aborting.");
-                    log::info!("Aborting, since user did not confirm execution.");
+                    log::info!("Aborting, because user did not confirm execution.");
                     Ok(false)
                 }
             }

@@ -52,7 +52,7 @@ enum SetupMode {
     },
     /// Setup your system for network routing without automatic management. This setup method will be removed in the future.
     Unmanaged {
-        /// Url of the VPN management service
+        /// URL of the VPN management service
         #[arg(long)]
         management_url: Url,
 
