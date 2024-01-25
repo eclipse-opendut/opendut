@@ -5,9 +5,19 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 
+[features]
+default = []
+resources = [
+    "opendut-resources",
+    "opendut-resources/broker",
+    "opendut-types/resources",
+    "opendut-carl-api/resources",
+]
+
 [dependencies]
 opendut-carl-api = { workspace = true }
 opendut-vpn-netbird = { workspace = true }
+opendut-resources = { workspace = true, optional = true }
 opendut-types = { workspace = true }
 opendut-util = { workspace = true }
 opendut-vpn = { workspace = true }
@@ -25,6 +35,7 @@ pem = { workspace = true, features = ["serde"]}
 opentelemetry = { workspace = true }
 opentelemetry_sdk = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
+sha1 = { workspace = true }
 shadow-rs = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["full"] }

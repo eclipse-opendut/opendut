@@ -1,11 +1,13 @@
+use std::marker::PhantomData;
+
 pub mod cluster;
 pub mod peer;
 pub mod executor;
+#[cfg(feature = "resources")]
+pub mod resource;
 pub mod topology;
 pub mod util;
 pub mod vpn;
-
-use std::marker::PhantomData;
 
 #[derive(thiserror::Error, Debug, Eq, PartialEq)]
 #[error("Could not convert from `{from}` to `{to}`: {details}")]

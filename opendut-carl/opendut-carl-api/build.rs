@@ -8,6 +8,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "proto/opendut/carl/services/metadata-provider.proto",
         "proto/opendut/carl/services/peer-manager.proto",
         "proto/opendut/carl/services/peer-messaging-broker.proto",
+        "proto/opendut/carl/services/resources-manager.proto",
     ];
 
     let includes = [

@@ -29,6 +29,7 @@ wasm-client = [
     "dep:tonic-web-wasm-client",
     "dep:tracing",
 ]
+resources = ["opendut-types/resources"]
 
 [dependencies]
 opendut-types = { workspace = true }
@@ -43,6 +44,7 @@ leptos_oidc =  { workspace = true, optional = true }
 log = { workspace = true }
 oauth2 = { workspace = true, default-features = false, optional = true }
 prost = { workspace = true }
+prost-types = { workspace = true }
 reqwest = { workspace = true, default-features = false, features = ["rustls-tls-native-roots"] }
 serde = { workspace = true, features = ["std", "derive"] }
 thiserror = { workspace = true }

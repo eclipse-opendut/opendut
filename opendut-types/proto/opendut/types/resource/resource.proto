@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package opendut.types.resource;
+
+import "opendut/types/cluster/cluster.proto";
+import "opendut/types/peer/peer.proto";
+
+message Resource {
+  oneof resource {
+    opendut.types.cluster.ClusterConfiguration cluster_configuration = 1;
+    opendut.types.cluster.ClusterDeployment cluster_deployment = 2;
+    opendut.types.cluster.ClusterState cluster_state = 3;
+    opendut.types.peer.PeerDescriptor peer_descriptor = 4;
+    opendut.types.peer.PeerState peer_state = 5;
+  }
+}

@@ -7,12 +7,17 @@ use crate::resources::{Id, IntoId};
 
 impl IntoId<ClusterConfiguration> for ClusterId {
     fn into_id(self) -> Id {
-        Id::from(self.0)
+        Id {
+            value: self.id,
+        }
     }
 }
+
 impl IntoId<ClusterDeployment> for ClusterId {
     fn into_id(self) -> Id {
-        Id::from(self.0)
+        Id {
+            value: self.id,
+        }
     }
 }
 

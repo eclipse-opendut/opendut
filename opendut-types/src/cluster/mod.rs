@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::fmt;
+use std::hash::Hash;
 use std::ops::Not;
 
 use serde::{Deserialize, Serialize};
@@ -13,17 +14,56 @@ use crate::topology::DeviceId;
 mod assignment;
 pub mod state;
 
-
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct ClusterId(pub Uuid);
+#[cfg_attr(feature = "resources", derive(opendut_resources::prelude::ResourceRef))]
+pub struct ClusterId {
+    pub id: Uuid,
+    #[cfg(feature = "resources")]
+    pub current_hash: opendut_resources::prelude::RevisionHash,
+    #[cfg(feature = "resources")]
+    pub parent_hash: opendut_resources::prelude::RevisionHash,
+}
+
+#[cfg(feature = "resources")]
+opendut_resources::resource!(ClusterConfiguration, ClusterId);
+
+#[cfg(feature = "resources")]
+opendut_resources::resource!(ClusterDeployment, ClusterId);
 
 impl ClusterId {
 
-    pub const NIL: Self = Self(Uuid::from_bytes([0; 16]));
+    pub const NIL: Self = Self {
+        id: Uuid::from_bytes([0; 16]),
+        #[cfg(feature = "resources")]
+        current_hash: opendut_resources::prelude::ROOT_REVISION_HASH,
+        #[cfg(feature = "resources")]
+        parent_hash: opendut_resources::prelude::ROOT_REVISION_HASH
+    };
+
+    pub fn new(
+        id: Uuid,
+        #[cfg(feature = "resources")]
+        current_hash: opendut_resources::prelude::RevisionHash,
+        #[cfg(feature = "resources")]
+        parent_hash: opendut_resources::prelude::RevisionHash
+    ) -> Self {
+        Self {
+            id,
+            #[cfg(feature = "resources")]
+            current_hash,
+            #[cfg(feature = "resources")]
+            parent_hash,
+        }
+    }
 
     pub fn random() -> Self {
-        Self(Uuid::new_v4())
+        Self {
+            id: Uuid::new_v4(),
+            #[cfg(feature = "resources")]
+            current_hash: opendut_resources::prelude::RevisionHash::default(),
+            #[cfg(feature = "resources")]
+            parent_hash: opendut_resources::prelude::RevisionHash::default()
+        }
     }
 }
 
@@ -36,7 +76,13 @@ impl Default for ClusterId {
 impl From<Uuid> for ClusterId {
 
     fn from(value: Uuid) -> Self {
-        Self(value)
+        Self {
+            id: value,
+            #[cfg(feature = "resources")]
+            current_hash: opendut_resources::prelude::RevisionHash::default(),
+            #[cfg(feature = "resources")]
+            parent_hash: opendut_resources::prelude::RevisionHash::default()
+        }
     }
 }
 
@@ -52,14 +98,27 @@ impl TryFrom<&str> for ClusterId {
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         Uuid::parse_str(value)
-            .map(Self)
+            .map(|id| Self {
+                id,
+                #[cfg(feature = "resources")]
+                current_hash: opendut_resources::prelude::RevisionHash::default(),
+                #[cfg(feature = "resources")]
+                parent_hash: opendut_resources::prelude::RevisionHash::default()
+            })
             .map_err(|_| IllegalClusterId { value: String::from(value) })
     }
 }
 
 impl fmt::Display for ClusterId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+        let id = self.id;
+        write!(f, "{id}")?;
+        #[cfg(feature = "resources")] {
+            let hash = self.current_hash;
+            let parent = self.parent_hash;
+            write!(f, "@{hash}:{parent}")?;
+        }
+        Ok(())
     }
 }
 
@@ -163,7 +222,6 @@ pub enum IllegalClusterConfiguration {
 pub struct ClusterDeployment {
     pub id: ClusterId,
 }
-
 
 #[cfg(test)]
 #[allow(non_snake_case)]

@@ -5,7 +5,13 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 
+[features]
+default = []
+resources = ["opendut-resources"]
+
 [dependencies]
+opendut-resources = { workspace = true, optional = true }
+
 base64 = { workspace = true }
 brotli = { workspace = true }
 thiserror = { workspace = true }
@@ -16,6 +22,7 @@ url = { workspace = true, features = ["serde"] }
 uuid = { workspace = true, features = ["v4", "serde"] }
 pem = { workspace = true, features = ["serde"]}
 prost = { workspace = true }
+prost-types = { workspace = true }
 
 [dev-dependencies]
 googletest = { workspace = true }

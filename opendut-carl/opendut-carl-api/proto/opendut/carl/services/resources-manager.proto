@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package opendut.carl.services.resources_manager;
+
+import "google/protobuf/timestamp.proto";
+import "opendut/types/resource/resource.proto";
+
+service ResourcesManager {
+  rpc FetchSnapshot(FetchSnapshotRequest) returns (FetchSnapshotResponse);
+  rpc Subscribe(SubscribeRequest) returns (stream Event);
+}
+
+message FetchSnapshotRequest {
+  Stamp stamp = 1;
+}
+
+message FetchSnapshotResponse {
+  oneof reply {
+    FetchSnapshotResponseSuccess failure = 1;
+    FetchSnapshotResponseSuccess success = 15;
+  }
+}
+
+message FetchSnapshotResponseSuccess {
+  Snapshot snapshot = 1;
+}
+
+message FetchSnapshotResponseFailure {
+
+}
+
+message SubscribeRequest {
+
+}
+
+message Event {
+  Stamp stamp = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  oneof event {
+    ResourceEvent resource_event = 3;
+  }
+}
+
+message ResourceEvent {
+  oneof event {
+    ResourceCreatedEvent resource_created = 1;
+    ResourceUpdatedEvent resource_updated = 2;
+    ResourceDeletedEvent resource_deleted = 3;
+  }
+}
+
+message ResourceCreatedEvent {
+  opendut.types.resource.Resource resource = 1;
+}
+
+message ResourceUpdatedEvent {
+  opendut.types.resource.Resource resource = 1;
+}
+
+message ResourceDeletedEvent {
+  opendut.types.resource.Resource resource = 1;
+}
+
+message Snapshot {
+  Stamp stamp = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  repeated opendut.types.resource.Resource resources = 3;
+}
+
+message Stamp {
+  uint64 sequence_number = 1;
+}

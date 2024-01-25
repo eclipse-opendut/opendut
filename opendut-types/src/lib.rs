@@ -2,8 +2,8 @@ pub mod cluster;
 pub mod peer;
 pub mod proto;
 pub mod topology;
-pub mod vpn;
 pub mod util;
+pub mod vpn;
 
 pub trait ShortName {
     fn short_name(&self) -> &'static str;

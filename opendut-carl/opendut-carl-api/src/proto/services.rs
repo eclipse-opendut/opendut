@@ -713,3 +713,8 @@ pub mod peer_manager {
 pub mod peer_messaging_broker {
     tonic::include_proto!("opendut.carl.services.peer_messaging_broker");
 }
+
+#[cfg(feature = "resources")]
+pub mod resources_manager {
+    tonic::include_proto!("opendut.carl.services.resources_manager");
+}

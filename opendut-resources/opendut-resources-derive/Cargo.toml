@@ -1,0 +1,19 @@
+[package]
+name = "opendut-resources-derive"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+proc-macro = true
+
+[features]
+default = []
+
+[dependencies]
+quote = "1.0.35"
+syn = "2.0.52"
+proc-macro2 = "1.0.78"
+
+[lints]
+workspace = true

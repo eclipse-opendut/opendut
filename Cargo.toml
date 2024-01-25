@@ -7,6 +7,9 @@ members = [
     "opendut-edgar/netbird-client-api",
     "opendut-edgar/opendut-edgar-kernel-modules",
     "opendut-lea",
+    "opendut-resources",
+    "opendut-resources/opendut-resources-derive",
+    "opendut-resources/opendut-resources-tests",
     "opendut-types",
     "opendut-util",
     "opendut-vpn",
@@ -30,6 +33,8 @@ opendut-edgar = { path = "opendut-edgar" }
 opendut-netbird-client-api = { path = "opendut-edgar/netbird-client-api" }
 opendut-edgar-kernel-modules = { path = "opendut-edgar/opendut-edgar-kernel-modules" }
 opendut-vpn-netbird = { path = "opendut-vpn/opendut-vpn-netbird" }
+opendut-resources = { path = "opendut-resources" }
+opendut-resources-derive = { path = "opendut-resources/opendut-resources-derive" }
 opendut-types = { path = "opendut-types" }
 opendut-theo = { path = ".ci/docker/theo" }
 opendut-util = { path = "opendut-util" }
@@ -47,6 +52,7 @@ cargo_metadata = "0.18.1"
 cargo_toml = "0.18.0"
 cfg-if = "1.0.0"
 chrono = { version = "0.4.31", default-features = false }
+circular-buffer = "0.1.6"
 clap = "4.4.18"
 cli-table = "0.4"
 config = { version = "0.13.3", features = ["toml"] }
@@ -87,11 +93,14 @@ opentelemetry_sdk = "0.22.0"
 opentelemetry-semantic-conventions = "0.14.0"
 pem = {version = "3.0.3", features = ["serde"]}
 phf = { version = "0.11", features = ["macros"] }
+postcard = { version = "1.0.8", default-features = false }
 predicates = "3.0.4"
 prost = "0.12.1"
 prost-build = "0.12.1"
 prost-types = "0.12.1"
 protobuf-src = "1.1.0"
+proc-macro2 = "1.0.78"
+quote = "1.0.35"
 regex = "1.10.2"
 reqwest = { version = "0.11.23", default-features = false, features = ["rustls-tls-native-roots"] }
 reqwest-middleware = "0.2.4"
@@ -107,6 +116,7 @@ sha2 = "0.10.8"
 slotmap = { version = "1.0.7" }
 strum = "0.25.0"
 sudo = "0.6.0"
+syn = "2.0.52"
 tar = "0.4.40"
 task-local-extensions = "0.1.4"
 time = "0.3.31"
@@ -128,6 +138,7 @@ url = "2.5.0"
 uuid = "1.6.1"
 walkdir = "2.4.0"
 which = "6.0.0"
+xxhash-rust = { version = "0.8.8", default-features = false }
 
 [workspace.metadata.ci]
 netbird.version = "0.23.9-8de14ad"

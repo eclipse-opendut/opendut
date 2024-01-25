@@ -1,0 +1,16 @@
+[package]
+name = "opendut-resources-tests"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dev-dependencies]
+opendut-resources = { workspace = true, features = ["all"] }
+googletest = { workspace = true }
+rstest = { workspace = true }
+serde = { workspace = true }
+
+[lints]
+workspace = true
+[dependencies]
+uuid = { version = "1.7.0", features = ["v4"] }

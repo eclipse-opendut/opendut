@@ -11,6 +11,7 @@ fn main() -> Result<()> {
         "proto/opendut/types/topology/topology.proto",
         "proto/opendut/types/util/metadata.proto",
         "proto/opendut/types/util/net.proto",
+        "proto/opendut/types/resource/resource.proto",
         "proto/opendut/types/util/uuid.proto",
         "proto/opendut/types/vpn/vpn.proto",
     ];

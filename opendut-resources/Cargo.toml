@@ -1,0 +1,47 @@
+[package]
+name = "opendut-resources"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[features]
+default = ["derive"]
+all = ["derive", "broker", "replica", "repository"]
+broker = [
+    "repository",
+    "slotmap",
+    "tracing",
+    "tokio",
+    "tokio/rt",
+    "tokio/sync",
+    "tokio/time",
+]
+replica = [
+    "repository",
+    "tracing",
+]
+repository = []
+derive = ["dep:opendut-resources-derive"]
+
+[dependencies]
+opendut-resources-derive = { workspace = true, optional = true }
+
+circular-buffer = { workspace = true }
+postcard = { workspace = true, features = ["use-std"] }
+serde = { workspace = true, features = ["derive"] }
+slotmap = { workspace = true, optional = true }
+thiserror = { workspace = true }
+tracing = { workspace = true, optional = true }
+tokio = { workspace = true, optional = true, default-features = false, features = [] }
+uuid = { workspace = true, features = ["v4", "serde"] }
+xxhash-rust = { workspace = true, features = ["xxh3"] }
+
+[dev-dependencies]
+opendut-resources-derive = { workspace = true }
+googletest = { workspace = true }
+rstest = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+
+[lints]
+workspace = true

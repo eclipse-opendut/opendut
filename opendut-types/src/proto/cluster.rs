@@ -6,7 +6,7 @@ include!(concat!(env!("OUT_DIR"), "/opendut.types.cluster.rs"));
 impl From<crate::cluster::ClusterId> for ClusterId {
     fn from(value: crate::cluster::ClusterId) -> Self {
         Self {
-            uuid: Some(value.0.into())
+            uuid: Some(value.id.into())
         }
     }
 }
@@ -19,7 +19,13 @@ impl TryFrom<ClusterId> for crate::cluster::ClusterId {
 
         value.uuid
             .ok_or(ErrorBuilder::new("Uuid not set"))
-            .map(|uuid| Self(uuid.into()))
+            .map(|uuid| Self {
+                id: uuid.into(),
+                #[cfg(feature = "resources")]
+                current_hash: Default::default(),
+                #[cfg(feature = "resources")]
+                parent_hash: Default::default()
+            })
     }
 }
 

@@ -123,7 +123,7 @@ if [ "$1" == "leader" ]; then
       --device-names $DEVICES)
   echo "Cluster create result: $RESPONSE"
 
-  CLUSTER_ID=$(echo "$RESPONSE" | jq -r '.id')
+  CLUSTER_ID=$(echo "$RESPONSE" | jq -r '.id.id')
   echo "Creating cluster deployment for id=$CLUSTER_ID"
   opendut-cleo create cluster-deployment --id "$CLUSTER_ID"
 fi
