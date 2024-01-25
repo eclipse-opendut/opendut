@@ -76,17 +76,17 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
 
         if is_new_peer {
             if let Vpn::Enabled { vpn_client } = params.vpn {
-                log::debug!("Creating vpn peer <{peer_id}>.");
+                log::debug!("Creating VPN peer <{peer_id}>.");
                 vpn_client.create_peer(peer_id)
                     .await
                     .map_err(|cause| StorePeerDescriptorError::Internal {
                         peer_id,
                         peer_name: Clone::clone(&peer_name),
                         cause: cause.to_string()
-                    })?; // TODO: When a failure happen we should rollback previously made changes made to resources.
-                log::info!("Successfully created vpn peer <{peer_id}>.");
+                    })?; // TODO: When a failure happens, we should rollback changes previously made to resources.
+                log::info!("Successfully created VPN peer <{peer_id}>.");
             } else {
-                log::warn!("VPN disabled. Skipping vpn peer creation!");
+                log::warn!("VPN disabled. Skipping VPN peer creation!");
             }
         }
 
@@ -147,9 +147,9 @@ pub async fn delete_peer_descriptor(params: DeletePeerDescriptorParams) -> Resul
                     peer_name: Clone::clone(peer_name),
                     cause: cause.to_string()
                 })?;
-            log::info!("Successfully deleted vpn peer <{peer_id}>.");
+            log::info!("Successfully deleted VPN peer <{peer_id}>.");
         } else {
-            log::warn!("VPN disabled. Skipping vpn peer deletion!");
+            log::warn!("VPN disabled. Skipping VPN peer deletion!");
         }
 
         log::info!("Successfully deleted peer descriptor of '{peer_name}' <{peer_id}>.");
@@ -222,7 +222,7 @@ pub struct CreatePeerSetupParams {
 
 #[derive(thiserror::Error, Debug)]
 pub enum CreatePeerSetupError {
-    #[error("A PeerSetup for peer <{0}> could not be create, because a peer with that id does not exist!")]
+    #[error("A PeerSetup for peer <{0}> could not be create, because a peer with that ID does not exist!")]
     PeerNotFound(PeerId),
     #[error("An internal error occurred while creating a PeerSetup for peer '{peer_name}' <{peer_id}>:\n  {cause}")]
     Internal {
@@ -249,11 +249,11 @@ pub async fn create_peer_setup(params: CreatePeerSetupParams) -> Result<PeerSetu
             log::debug!("Retrieving VPN configuration for peer <{peer_id}>.");
             let vpn_config = vpn_client.get_or_create_configuration(params.peer).await
                 .map_err(|cause| CreatePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), cause: cause.to_string() })?;
-            log::info!("Successfully retreived vpn configuration for peer <{peer_id}>.");
+            log::info!("Successfully retrieved vpn configuration for peer <{peer_id}>.");
             vpn_config
         }
         else {
-            log::warn!("VPN is disabled. PeerSetup for peer '{peer_name}' <{peer_id}> will not contain any vpn information!");
+            log::warn!("VPN is disabled. PeerSetup for peer '{peer_name}' <{peer_id}> will not contain any VPN information!");
             VpnPeerConfig::Disabled
         };
 

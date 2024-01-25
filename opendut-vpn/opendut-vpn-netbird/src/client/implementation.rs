@@ -1,3 +1,4 @@
+use std::time::Duration;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use reqwest::{Body, header, Method, Request, Response, Url};
@@ -14,6 +15,9 @@ use crate::client::request_handler::{DefaultRequestHandler, RequestHandler, Requ
 use crate::netbird::{error, group, rules};
 use crate::netbird::error::{CreateSetupKeyError, GetGroupError, GetRulesError, RequestError};
 use crate::netbird::rules::RuleName;
+
+
+const SETUP_KEY_EXPIRY_DURATION: Duration = Duration::from_secs(24 * 60 * 60);
 
 pub struct Client {
     base_url: Url,
@@ -241,7 +245,7 @@ impl Client {
         }
     }
 
-    async fn get_netbird_group(&self, group_name: &netbird::GroupName) -> Result<netbird::Group, GetGroupError> { //TODO remove? Introduce error for multiple? Rename to 'find' and 'filter'?
+    async fn get_netbird_group(&self, group_name: &netbird::GroupName) -> Result<netbird::Group, GetGroupError> {
         let url = routes::groups(self.base_url.clone());
         let request = Request::new(Method::GET, url);
 
@@ -377,7 +381,7 @@ impl Client {
             CreateSetupKey {
                 name: netbird::setup_key::name_format(peer_id),
                 r#type: netbird::setup_key::Type::Reusable,
-                expires_in: 24 * 60 * 60, //TODO make configurable
+                expires_in: SETUP_KEY_EXPIRY_DURATION.as_secs(),
                 revoked: false,
                 auto_groups: vec![
                     peer_group.id.0
