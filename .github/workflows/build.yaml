@@ -25,69 +25,69 @@ jobs:
   legal:
     uses: ./.github/workflows/job-legal.yaml
     with:
-      runs-on: "${{ vars.OPENDUT_GH_RUNNER_SMALL }}"
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_SMALL || '[\"ubuntu-latest\"]' }}"
 
   generate-sbom:
     uses: ./.github/workflows/job-sbom.yaml
     with:
-      runs-on: "${{ vars.OPENDUT_GH_RUNNER_SMALL }}"
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_SMALL || '[\"ubuntu-latest\"]' }}"
 
   test:
     uses: ./.github/workflows/job-test.yaml
     with:
-      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
   build-carl:
     uses: ./.github/workflows/job-build-carl.yaml
     needs: [ test ]
     with:
-      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
   build-cleo:
     uses: ./.github/workflows/job-build-cleo.yaml
     needs: [ test ]
     with:
-      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
   build-theo:
     uses: ./.github/workflows/job-build-theo.yaml
     needs: [ test ]
     with:
-      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
   build-edgar:
     uses: ./.github/workflows/job-build-edgar.yaml
     needs: [ test ]
     with:
-      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
   build-lea:
     uses: ./.github/workflows/job-build-lea.yaml
     needs: [ test ]
     with:
-      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
   bundle-edgar:
     needs: [ legal, build-edgar ]
     uses: ./.github/workflows/job-bundle-edgar.yaml
     with:
-      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
   bundle-cleo:
     needs: [ legal, build-cleo ]
     uses: ./.github/workflows/job-bundle-cleo.yaml
     with:
-      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
   bundle-carl:
     needs: [ legal, build-carl, build-lea ]
     uses: ./.github/workflows/job-bundle-carl.yaml
     with:
-      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
   status-check:
     needs: [ legal, test ]
-    runs-on: "${{ fromJson(vars.OPENDUT_GH_RUNNER_SMALL) }}"
+    runs-on: "${{ fromJson(vars.OPENDUT_GH_RUNNER_SMALL || '[\"ubuntu-latest\"]') }}"
     steps:
     - run: echo "All jobs required for the status check have been completed."
 
@@ -95,7 +95,7 @@ jobs:
     uses: ./.github/workflows/job-run-testenv.yaml
     needs: [ legal, bundle-carl, bundle-edgar, build-cleo ]
     with:
-      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
       # run-testenv: "${{ github.event.inputs.run-testenv }}"
       run-testenv: "true"
     secrets: inherit
