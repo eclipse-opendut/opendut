@@ -1,0 +1,30 @@
+# forwards to carl running in developer IDE
+version: "3.9"
+
+services:
+  traefik-forwarder:
+    image: docker.io/traefik:v2.10.4
+    command:
+      - --api.insecure=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      # Redirect to HTTPS
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+      - "--log.level=DEBUG"
+      - "--accesslog"
+    volumes:
+      - "../../../resources/development/tls/:/etc/opendut-network/tls/:ro"
+
+    #ports:
+    #  - "127.0.0.1:8082:8080"  # traefik dashboard
+    networks:
+      opendutnet:
+        aliases:
+          - carl
+
+networks:
+  opendutnet:
+    name: opendut_network
+    external: true  # Use a pre-existing network

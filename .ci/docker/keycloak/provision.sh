@@ -26,7 +26,7 @@ main() {
   create_secret_client "netbird-backend" "871adc12-8a09-11ee-ab98-fb08e2456f00" "netbird"
   client__assign_service_account_role "netbird-backend" "realm-management" "view-users"
   echo "Keycloak provisioned"
-
+  echo "0" > /opt/keycloak/data/provisioned
 }
 
 main

@@ -11,6 +11,9 @@ connect.interval.ms = 5000
 ca.certificate = "/etc/opendut-network/tls/ca.pem"
 domain.name.override = ""
 
+[network.interface.management]
+enabled = true
+
 [vpn]
 enabled = true
 

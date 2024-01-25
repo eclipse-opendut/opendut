@@ -10,7 +10,7 @@
 
   - name: Install required packages
     apt:
-      pkg: ['htop', 'tmux', 'jq', 'libssl-dev']
+      pkg: ['htop', 'tmux', 'jq', 'libssl-dev', 'build-essential', 'pkg-config']
       state: 'present'
       update_cache: yes
       cache_valid_time: 3600

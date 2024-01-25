@@ -82,7 +82,8 @@ enum Commands {
         ///Name of openDuT resource
         #[command(subcommand)]
         resource: DeleteResource,
-    }
+    },
+    Config,
 }
 
 #[derive(Subcommand, Clone, Debug)]
@@ -244,6 +245,8 @@ async fn main() {
     let red = Style::new().red();
     if let Err(error) = execute().await {
         eprintln!("{}", red.apply_to(error));
+        // indicate error to calling processes by setting exit code to 1
+        std::process::exit(1);
     }
 }
 
@@ -349,6 +352,9 @@ async fn execute() -> Result<()> {
                     commands::device::find::execute(&mut carl, criteria, output).await?;
                 }
             }
+        }
+        Commands::Config => {
+            println!("Show cleo configuration: {:?}", config);
         }
     }
     Ok(())

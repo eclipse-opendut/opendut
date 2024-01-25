@@ -120,21 +120,21 @@ mod test {
 
         testee.insert(cluster_resource_id, Clone::clone(&cluster_configuration)).await;
 
-        assert_that!(testee.get(peer_resource_id).await, some(eq(Clone::clone(&peer))));
+        assert_that!(testee.get::<PeerDescriptor>(peer_resource_id).await, some(eq(Clone::clone(&peer))));
         assert_that!(testee.get::<ClusterConfiguration>(cluster_resource_id).await, some(eq(Clone::clone(&cluster_configuration))));
 
         assert_that!(testee.contains::<PeerDescriptor>(peer_resource_id).await, eq(true));
 
         assert_that!(testee.get::<PeerDescriptor>(PeerId::random()).await, none());
 
-        assert_that!(testee.remove(peer_resource_id).await, some(eq(Clone::clone(&peer))));
+        assert_that!(testee.remove::<PeerDescriptor>(peer_resource_id).await, some(eq(Clone::clone(&peer))));
 
         let id = testee.resources_mut(|resources| {
             resources.insert(peer_resource_id, Clone::clone(&peer));
             peer_resource_id
         }).await;
 
-        assert_that!(testee.get(id).await, some(eq(Clone::clone(&peer))));
+        assert_that!(testee.get::<PeerDescriptor>(id).await, some(eq(Clone::clone(&peer))));
 
         testee.resources(|resources| {
             resources.iter::<ClusterConfiguration>()
@@ -150,7 +150,7 @@ mod test {
                 });
         }).await;
 
-        assert_that!(testee.get(peer_resource_id).await, some(not(eq(Clone::clone(&peer)))));
+        assert_that!(testee.get::<PeerDescriptor>(peer_resource_id).await, some(not(eq(Clone::clone(&peer)))));
 
         Ok(())
     }

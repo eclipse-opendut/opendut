@@ -1,4 +1,4 @@
-# Docker test environment
+# Test Environment
 
 This is a Docker test environment for openDuT. It is started with docker-compose:
 - carl
@@ -60,6 +60,10 @@ cargo theo testenv edgar start
 ### THEO Setup in Vagrant
 
 You may run all of the above also in a virtual machine, using Vagrant.
+It will create a private network (subnet 192.168.56.0/24).
+The virtual machine itself has the IP address: `192.168.56.10`.
+The docker network has the IP subnet: `192.168.32.0/24`.
+Make sure those are not occupied.
 
 #### Requirements
 
@@ -89,6 +93,32 @@ You may run all of the above also in a virtual machine, using Vagrant.
   ```
   ANSIBLE_SKIP_TAGS="" vagrant provision
   ```
+
+#### Use virtual machine for development
+
+
+* Start vagrant: `cargo theo vagrant up`
+* Connect to virtual machine: `cargo theo vagrant ssh`
+* Start developer test mode by either:
+  * Running via cargo `cargo theo dev start` 
+  * Reusing the debug build from the host if applicable (same target architecture): `./target/debug/opendut-theo dev start` 
+* Once keycloak and netbird are provisioned, generate run configuration for CARL
+  `cargo theo dev carl-config`
+  * which should give you following output:
+```
+OPENDUT_CARL_NETWORK_REMOTE_HOST=carl
+OPENDUT_CARL_NETWORK_REMOTE_PORT=443
+OPENDUT_CARL_VPN_ENABLED=true
+OPENDUT_CARL_VPN_KIND=netbird
+OPENDUT_CARL_VPN_NETBIRD_URL=http://192.168.56.10/api
+OPENDUT_CARL_VPN_NETBIRD_HTTPS_ONLY=false
+OPENDUT_CARL_VPN_NETBIRD_AUTH_SECRET=<dynamic_api_secret>
+OPENDUT_CARL_VPN_NETBIRD_AUTH_TYPE=personal-access-token
+OPENDUT_CARL_VPN_NETBIRD_AUTH_HEADER=Authorization
+```
+* Use the environment variables in the run configuration for CARL 
+  * Command: 'run --package opendut-carl --bin opendut-carl' 
+
 
 ##### Known issue
 When running cargo tasks within the virtual machine, you may see following error:

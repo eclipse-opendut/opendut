@@ -1,21 +1,25 @@
 use std::fmt::{Debug, Formatter};
 use std::io;
 use std::net::Ipv4Addr;
+use std::sync::Arc;
 
 use anyhow::anyhow;
 use futures::TryStreamExt;
 use netlink_packet_route::link::nlas;
 use netlink_packet_route::LinkMessage;
 
+use gretap::Gretap;
 use opendut_types::util::net::NetworkInterfaceName;
 
-use crate::service::network_device::gretap::Gretap;
+mod gretap;
 
-pub struct NetworkDeviceManager {
+pub type NetworkInterfaceManagerRef = Arc<NetworkInterfaceManager>;
+
+pub struct NetworkInterfaceManager {
     handle: rtnetlink::Handle,
 }
-impl NetworkDeviceManager {
-    pub fn create() -> Result<Self> {
+impl NetworkInterfaceManager {
+    pub fn create() -> Result<Self, Error> {
         let (connection, handle, _) = rtnetlink::new_connection()
             .map_err(|cause| Error::Connecting { cause })?;
         tokio::spawn(connection);
@@ -23,7 +27,7 @@ impl NetworkDeviceManager {
         Ok(Self { handle })
     }
 
-    pub async fn list_interfaces(&self) -> Result<Vec<Interface>> {
+    pub async fn list_interfaces(&self) -> Result<Vec<Interface>, Error> {
         fn interface_name_from(interface: LinkMessage) -> anyhow::Result<NetworkInterfaceName> {
             let interface_name = interface.nlas.into_iter()
                 .find_map(|nla| match nla {
@@ -56,17 +60,17 @@ impl NetworkDeviceManager {
         Ok(interfaces)
     }
 
-    pub async fn find_interface(&self, name: &NetworkInterfaceName) -> Result<Option<Interface>> {
+    pub async fn find_interface(&self, name: &NetworkInterfaceName) -> Result<Option<Interface>, Error> {
         let interfaces = self.list_interfaces().await?;
         let maybe_interface = interfaces.into_iter().find(|interface| interface.name == *name);
         Ok(maybe_interface)
     }
-    pub async fn try_find_interface(&self, name: &NetworkInterfaceName) -> Result<Interface> {
+    pub async fn try_find_interface(&self, name: &NetworkInterfaceName) -> Result<Interface, Error> {
         self.find_interface(name).await?
             .ok_or(Error::InterfaceNotFound { name: name.clone() })
     }
 
-    pub async fn create_empty_bridge(&self, name: &NetworkInterfaceName) -> Result<Interface> {
+    pub async fn create_empty_bridge(&self, name: &NetworkInterfaceName) -> Result<Interface, Error> {
         self.handle
             .link()
             .add()
@@ -79,7 +83,7 @@ impl NetworkDeviceManager {
 
     // We only support IPv4 for now, as NetBird only assigns IPv4 addresses to peers.
     // This does not prevent IPv6 traffic from being routed between peers.
-    pub async fn create_gretap_v4_interface(&self, name: &NetworkInterfaceName, local_ip: &Ipv4Addr, remote_ip: &Ipv4Addr) -> Result<Interface> {
+    pub async fn create_gretap_v4_interface(&self, name: &NetworkInterfaceName, local_ip: &Ipv4Addr, remote_ip: &Ipv4Addr) -> Result<Interface, Error> {
         self.handle
             .link()
             .add()
@@ -90,7 +94,7 @@ impl NetworkDeviceManager {
         Ok(interface)
     }
 
-    pub async fn set_interface_up(&self, interface: &Interface) -> Result<()> {
+    pub async fn set_interface_up(&self, interface: &Interface) -> Result<(), Error> {
         self.handle
             .link()
             .set(interface.index)
@@ -100,7 +104,7 @@ impl NetworkDeviceManager {
         Ok(())
     }
 
-    pub async fn get_attributes(&self, interface: &Interface) -> Result<Vec<nlas::Nla>> {
+    pub async fn get_attributes(&self, interface: &Interface) -> Result<Vec<nlas::Nla>, Error> {
         let interface_list = self.handle
             .link()
             .get()
@@ -117,7 +121,7 @@ impl NetworkDeviceManager {
         Ok(nlas)
     }
 
-    pub async fn join_interface_to_bridge(&self, interface: &Interface, bridge: &Interface) -> Result<()> {
+    pub async fn join_interface_to_bridge(&self, interface: &Interface, bridge: &Interface) -> Result<(), Error> {
         self.handle
             .link()
             .set(interface.index)
@@ -127,7 +131,7 @@ impl NetworkDeviceManager {
         Ok(())
     }
 
-    pub async fn delete_interface(&self, interface: &Interface) -> Result<()> {
+    pub async fn delete_interface(&self, interface: &Interface) -> Result<(), Error> {
         self.handle
             .link()
             .del(interface.index)
@@ -169,4 +173,3 @@ pub enum Error {
     #[error("{message}")]
     Other { message: String },
 }
-pub type Result<T> = std::result::Result<T, Error>;

@@ -1,10 +1,14 @@
+use std::net::IpAddr;
 use serde::{Deserialize, Serialize};
 use crate::ShortName;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum PeerState {
     Down,
-    Up(PeerUpState),
+    Up {
+        inner: PeerUpState,
+        remote_host: IpAddr,
+    },
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -29,7 +33,7 @@ impl Default for PeerState {
 impl ShortName for PeerState {
     fn short_name(&self) -> &'static str {
         match self {
-            PeerState::Up(inner) => match inner {
+            PeerState::Up { inner, .. } => match inner {
                 PeerUpState::Available => "Available",
                 PeerUpState::Blocked(PeerBlockedState::Deploying) => "Deploying",
                 PeerUpState::Blocked(PeerBlockedState::Member) => "Member",

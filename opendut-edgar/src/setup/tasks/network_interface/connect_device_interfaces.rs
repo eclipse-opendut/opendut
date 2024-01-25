@@ -1,5 +1,4 @@
 use std::collections::HashSet;
-use std::rc::Rc;
 
 use anyhow::Result;
 use config::Config;
@@ -9,11 +8,11 @@ use opendut_types::topology::Topology;
 use opendut_types::util::net::NetworkInterfaceName;
 
 use crate::common::settings;
-use crate::service::network_device::manager::NetworkDeviceManager;
+use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use crate::setup::task::{Success, Task, TaskFulfilled};
 
 pub struct ConnectDeviceInterfaces {
-    pub network_device_manager: Rc<NetworkDeviceManager>,
+    pub network_interface_manager: NetworkInterfaceManagerRef,
     pub bridge_name: NetworkInterfaceName,
 }
 impl Task for ConnectDeviceInterfaces {
@@ -30,7 +29,7 @@ impl Task for ConnectDeviceInterfaces {
             .get::<Topology>("topology")
             .expect("Unable to load topology from configuration");
 
-        let bridge = block_on(self.network_device_manager.try_find_interface(&self.bridge_name))?;
+        let bridge = block_on(self.network_interface_manager.try_find_interface(&self.bridge_name))?;
 
         let interfaces = topology.devices
             .into_iter()
@@ -38,8 +37,8 @@ impl Task for ConnectDeviceInterfaces {
             .collect::<HashSet<_>>();
 
         for interface in interfaces {
-            let interface = block_on(self.network_device_manager.try_find_interface(&interface))?;
-            block_on(self.network_device_manager.join_interface_to_bridge(&interface, &bridge))?;
+            let interface = block_on(self.network_interface_manager.try_find_interface(&interface))?;
+            block_on(self.network_interface_manager.join_interface_to_bridge(&interface, &bridge))?;
         }
         Ok(Success::default())
     }

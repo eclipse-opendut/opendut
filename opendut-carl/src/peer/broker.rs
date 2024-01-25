@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::net::IpAddr;
 use std::sync::Arc;
 
 use tokio::sync::{mpsc, RwLock};
@@ -8,22 +9,27 @@ use opendut_carl_api::proto::services::peer_messaging_broker::downstream;
 use opendut_carl_api::proto::services::peer_messaging_broker::Pong;
 use opendut_carl_api::proto::services::peer_messaging_broker::upstream;
 use opendut_types::peer::PeerId;
+use opendut_types::peer::state::{PeerState, PeerUpState};
+
+use crate::resources::manager::ResourcesManagerRef;
 
 pub type PeerMessagingBrokerRef = Arc<PeerMessagingBroker>;
 
 
 #[derive(Clone)]
 pub struct PeerMessagingBroker {
-    peers: Arc<RwLock<HashMap<PeerId, PeerState>>>,
+    resources_manager: ResourcesManagerRef,
+    peers: Arc<RwLock<HashMap<PeerId, PeerMessagingRef>>>,
 }
-struct PeerState {
+struct PeerMessagingRef {
     downstream: mpsc::Sender<downstream::Message>,
 }
 
 
 impl PeerMessagingBroker {
-    pub fn new() -> Self {
+    pub fn new(resources_manager: ResourcesManagerRef) -> Self {
         Self {
+            resources_manager,
             peers: Default::default(),
         }
     }
@@ -50,17 +56,35 @@ impl PeerMessagingBroker {
     pub async fn open(
         &self,
         peer_id: PeerId,
+        remote_host: IpAddr,
     ) -> (mpsc::Sender<upstream::Message>, mpsc::Receiver<downstream::Message>) {
 
         let (tx_inbound, mut rx_inbound) = mpsc::channel::<upstream::Message>(1024);
         let (tx_outbound, rx_outbound) = mpsc::channel::<downstream::Message>(1024);
 
-        self.peers.write().await.insert(
-            peer_id,
-            PeerState {
-                downstream: Clone::clone(&tx_outbound),
-            }
-        );
+        let peer_messaging_ref = PeerMessagingRef {
+            downstream: Clone::clone(&tx_outbound),
+        };
+
+        self.peers.write().await.insert(peer_id, peer_messaging_ref);
+
+        fn new_peer_state(remote_host: IpAddr) -> PeerState {
+            PeerState::Up { inner: PeerUpState::Available, remote_host }
+        }
+
+        self.resources_manager.resources_mut(|resources| {
+            resources.update::<PeerState>(peer_id)
+                .modify(|peer_state| match peer_state {
+                    PeerState::Up { inner: _, remote_host: peer_remote_host } => {
+                        *peer_remote_host = remote_host
+                    }
+                    PeerState::Down => {
+                        *peer_state = new_peer_state(remote_host)
+                    }
+                })
+                .or_insert(new_peer_state(remote_host))
+        }).await;
+
 
         tokio::spawn(async move {
             while let Some(message) = rx_inbound.recv().await {
@@ -81,12 +105,6 @@ impl PeerMessagingBroker {
             Some(_) => Ok(()),
             None => Err(Error::PeerNotFound(peer_id)),
         }
-    }
-}
-
-impl Default for PeerMessagingBroker {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

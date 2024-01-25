@@ -21,7 +21,7 @@ Vagrant.configure("2") do |config|
 
     config.vm.box = machine[:box_name]
     config.vm.hostname = machine[:hostname]
-    #config.vm.network "private_network", ip: machine[:ip]
+    config.vm.network "private_network", ip: machine[:ip]
 
     # default shared folder required by provisioner (otherwise some files are not found)
     config.vm.synced_folder ".", "/vagrant", disabled: false, SharedFoldersEnableSymlinksCreate: false
