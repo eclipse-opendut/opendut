@@ -2,6 +2,8 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 
+use crate::core::Result;
+use crate::commands::dev::DevCli;
 use crate::commands::testenv::TestenvCli;
 use crate::commands::vagrant::VagrantCli;
 use crate::core::project::{dot_env_create_defaults, ProjectRootDir};
@@ -22,12 +24,13 @@ struct Cli {
 enum TaskCli {
     Testenv(TestenvCli),
     Vagrant(VagrantCli),
+    Dev(DevCli),
     #[command(about = "Show netbird application versions.")]
     NetbirdVersions,
 }
 
 
-fn main() {
+fn main() -> Result {
     let args = Cli::parse();
     PathBuf::project_dir_verify();
 
@@ -35,11 +38,13 @@ fn main() {
     dot_env_create_defaults();
 
     match args.command {
-        TaskCli::Testenv(implementation) => { implementation.default_handling() }
+        TaskCli::Testenv(implementation) => { implementation.default_handling()? }
         TaskCli::NetbirdVersions => {
             let metadata = core::metadata::cargo_netbird_versions();
             println!("Versions: {:?}", metadata);
         }
-        TaskCli::Vagrant(implementation) => { implementation.default_handling() }
+        TaskCli::Vagrant(implementation) => { implementation.default_handling()? }
+        TaskCli::Dev(implementation) => { implementation.default_handling()? }
     }
+    Ok(())
 }

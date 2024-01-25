@@ -1,5 +1,7 @@
 use crate::util::Ior::{Both, Left, Right};
 
+/// Generic representation of an Inclusive-Or.
+/// Similar to [std::result::Result], but both values can occur at the same time.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Ior<L, R> {
     Left(L),

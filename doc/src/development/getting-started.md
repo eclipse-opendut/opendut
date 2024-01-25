@@ -21,10 +21,12 @@ You can then open the UI by going to https://localhost:8080/ in your web browser
     ```
 
 ## UI Development
-Run `cargo ci lea run` in a separate terminal in the root directory of the repository to continuously build the newest changes.
+Run `cargo ci lea run` to continuously build the newest changes.
 
-## Rendered Documentation
-To view this documentation fully rendered, run:
-```sh
-cargo ci doc book open
-```
+## Tips & Tricks
+
+* `cargo ci` contains many utilities for development in general.
+
+* To view this documentation fully rendered, run `cargo ci doc book open`.
+
+* To have your code validated more extensively, e.g. before publishing your changes, run `cargo ci check`.

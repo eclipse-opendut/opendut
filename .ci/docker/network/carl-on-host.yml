@@ -1,0 +1,8 @@
+version: "3.9"
+
+services:
+
+  opendut_dev:
+    extra_hosts:
+    - "host.docker.internal:host-gateway"
+    - "carl:host-gateway"

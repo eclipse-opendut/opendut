@@ -32,7 +32,7 @@ create_user() {
   USER_ROLE="$4"
   USER_REALM="${5:-$REALM}"
 
-  echo "create user ${USER_NAME}"
+  echo "Create keycloak user ${USER_NAME} in realm ${USER_REALM}."
   kcadm create users -r "${USER_REALM}" -f - << EOF
   {
     "username": "${USER_NAME}",
@@ -48,7 +48,7 @@ create_user() {
 EOF
   USER_ID=$(kcadm get users -r "${USER_REALM}" | jq -r ".[] | select(.username==\"${USER_NAME}\").id")
 
-  echo "update user password for user \'${USER_NAME}\'"
+  echo "Update user password for user '${USER_NAME}'."
   kcadm update users/"$USER_ID"/reset-password -r "${USER_REALM}" -f - << EOF
   {
     "temporary": false,
@@ -118,7 +118,7 @@ create_public_client() {
 
   CLIENT_EXISTS=$(get_client_id "${CLIENT_NAME}" "${CLIENT_REALM}")
   if [ -z "$CLIENT_EXISTS" ]; then
-    echo "Create client ${CLIENT_NAME}"
+    echo "Create public client ${CLIENT_NAME} in realm ${CLIENT_REALM}."
     kcadm create clients -r "${CLIENT_REALM}" -f - << EOF
       {
         "enabled": true,
@@ -134,10 +134,10 @@ create_public_client() {
         }
       }
 EOF
-    echo "Client create result: $?"
+    echo "Public client ${CLIENT_NAME} created. Result code: $?"
 
   else
-    echo "Client ${CLIENT_NAME} already exists in realm ${CLIENT_REALM}."
+    echo "WARNING: Client ${CLIENT_NAME} already exists in realm ${CLIENT_REALM}."
     return
   fi
 
@@ -150,7 +150,7 @@ create_public_client_with_direct_access() {
 
   CLIENT_EXISTS=$(get_client_id "${CLIENT_NAME}" "${CLIENT_REALM}")
   if [ -z "$CLIENT_EXISTS" ]; then
-    echo "Create client ${CLIENT_NAME}"
+    echo "Create public client ${CLIENT_NAME} with direct access grant enabled (directAccessGrantsEnabled)."
     kcadm create clients -r "${CLIENT_REALM}" -f - << EOF
       {
         "protocol": "openid-connect",
@@ -179,10 +179,10 @@ create_public_client_with_direct_access() {
         ]
       }
 EOF
-    echo "Public client created. Result: $?"
+    echo "Public client ${CLIENT_NAME} created. Result code: $?"
 
   else
-    echo "Client ${CLIENT_NAME} already exists in realm ${CLIENT_REALM}."
+    echo "WARNING: Client ${CLIENT_NAME} already exists in realm ${CLIENT_REALM}."
     return
   fi
 
@@ -230,10 +230,10 @@ create_secret_client() {
         "baseUrl": ""
       }
 EOF
-    echo "Secret client created. Result: $?"
+    echo "Secret client ${CLIENT_NAME} created. Result code: $?"
 
     else
-      echo "Client ${CLIENT_NAME} already exists in realm ${CLIENT_REALM}."
+      echo "WARNING: Client ${CLIENT_NAME} already exists in realm ${CLIENT_REALM}."
       return
     fi
 
@@ -303,7 +303,7 @@ add_client_scope_to_client() {
   if [ $? -eq 0 ]; then
     echo "Added client scope $CLIENT_SCOPE_NAME to client $CLIENT_NAME"
   else
-    echo "Failed to add client scope $CLIENT_SCOPE_NAME to client $CLIENT_NAME"
+    echo "WARNING: Failed to add client scope $CLIENT_SCOPE_NAME to client $CLIENT_NAME"
     return 1
   fi
 }

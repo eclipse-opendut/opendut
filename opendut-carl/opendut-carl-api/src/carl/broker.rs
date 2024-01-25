@@ -13,8 +13,6 @@ pub mod error {
 
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 mod client {
-    use std::net::IpAddr;
-
     use cfg_if::cfg_if;
     use tonic::codegen::{Body, Bytes, StdError};
 
@@ -63,6 +61,8 @@ mod client {
 
     cfg_if! {
         if #[cfg(feature = "client")] {
+            use std::net::IpAddr;
+
             use tokio::sync::mpsc;
             use std::str::FromStr;
             use tonic::codegen::tokio_stream::wrappers::ReceiverStream;

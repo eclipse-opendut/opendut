@@ -1,9 +1,12 @@
+use std::net::IpAddr;
 use std::pin::Pin;
+use std::str::FromStr;
 
 use futures::StreamExt;
 use tokio_stream::Stream;
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::{Request, Response, Status, Streaming};
+use tonic::metadata::MetadataMap;
 use tonic_web::CorsGrpcWeb;
 use uuid::Uuid;
 
@@ -50,22 +53,24 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
 
     async fn open(&self, request: Request<Streaming<Upstream>>) -> Result<Response<Self::OpenStream>, Status> {
 
-        let peer_id = PeerId::from(
-            Uuid::parse_str(
-                request.metadata()
-                    .get("id")
-                    .expect("Client should have sent an ID")
-                    .to_str()
-                    .expect("Client ID should be a valid string")
-            ).expect("Client ID should be a valid UUID")
-        );
+        let peer_id = extract_peer_id(request.metadata())
+            .map_err(|message| {
+                log::warn!("Error while parsing PeerId from client request: {message}");
+                Status::invalid_argument(message)
+            })?;
 
-        let mut inbound = request.into_inner();
+        let remote_host = extract_remote_host(request.metadata())
+            .map_err(|message| {
+                log::warn!("Error while parsing remote host address from client request: {message}");
+                Status::invalid_argument(message)
+            })?;
 
-        let (tx_inbound, rx_outbound) = self.peer_messaging_broker.open(peer_id).await;
+
+        let (tx_inbound, rx_outbound) = self.peer_messaging_broker.open(peer_id, remote_host).await;
 
         let peer_messaging_broker = Clone::clone(&self.peer_messaging_broker);
 
+        let mut inbound = request.into_inner();
         tokio::spawn(async move {
             while let Some(result) = inbound.next().await {
                 match result {
@@ -93,3 +98,32 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
         Ok(Response::new(Box::pin(outbound)))
     }
 }
+
+
+fn extract_peer_id(metadata: &MetadataMap) -> Result<PeerId, UserError> {
+    let peer_id = PeerId::from(
+        Uuid::parse_str(
+            metadata
+                .get("id")
+                .ok_or("Client should have sent an ID")?
+                .to_str()
+                .map_err(|_| "Client ID should be a valid string")?
+        ).map_err(|_| "Client ID should be a valid UUID")?
+    );
+    Ok(peer_id)
+}
+
+fn extract_remote_host(metadata: &MetadataMap) -> Result<IpAddr, UserError> {
+    let remote_host = IpAddr::from_str(
+        metadata
+            .get("remote-host")
+            .ok_or("Client should have sent a remote host address")?
+            .to_str()
+            .map_err(|_| "Remote host address should be a valid string")?
+    ).map_err(|_| "Remote host address should be a valid IP address")?;
+
+    Ok(remote_host)
+}
+
+
+type UserError = String;

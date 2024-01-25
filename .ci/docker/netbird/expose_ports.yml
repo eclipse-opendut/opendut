@@ -1,0 +1,7 @@
+---
+version: "3.9"
+services:
+  management:
+    ports:
+      - "80:80"
+

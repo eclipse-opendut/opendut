@@ -69,8 +69,8 @@ impl TryFrom<String> for GroupName {
 impl From<&GroupName> for String {
     fn from(value: &GroupName) -> Self {
         match value {
-            GroupName::Peer(id) => format!("{}{}", GroupName::PEER_GROUP_PREFIX, id),
-            GroupName::Cluster(id) => format!("{}{}", GroupName::CLUSTER_GROUP_PREFIX, id),
+            GroupName::Peer(id) => format!("{}{}", GroupName::PEER_GROUP_PREFIX, id.0),
+            GroupName::Cluster(id) => format!("{}{}", GroupName::CLUSTER_GROUP_PREFIX, id.0),
             GroupName::Other(name) => name.to_owned(),
         }
     }

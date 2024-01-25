@@ -55,10 +55,10 @@ echo "Creating peer with name $NAME and id $PEER_ID"
 opendut-cleo create peer --name "$NAME" --id "$PEER_ID"
 opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME" --interface eth0 --location "$NAME" --tags "$OPENDUT_EDGAR_CLUSTER_NAME"
 
-PEER_SETUP_KEY=$(opendut-cleo generate-peer-setup --id "$PEER_ID" | grep -A1 "Copy the generated setup key" | tail -n1 | sed -e 's#"##g' | sed -e 's/\x1b\[[0-9;]*m//g')
+PEER_SETUP_KEY=$(opendut-cleo generate-peer-setup --id "$PEER_ID")
 echo "Setting up peer with setup key $PEER_SETUP_KEY"
 
-echo y | opendut-edgar setup managed "$PEER_SETUP_KEY"
+opendut-edgar setup --no-confirm managed "$PEER_SETUP_KEY"
 
 START_TIME="$(date +%s)"
 while ! cleo_get_peer_id "$NAME"; do
@@ -91,12 +91,12 @@ if [ "$1" == "router" ]; then
   CLUSTER_ID=$(echo "$RESPONSE" | jq -r '.id')
   echo "Creating cluster deployment for id=$CLUSTER_ID"
   opendut-cleo create cluster-deployment --id "$CLUSTER_ID"
+  echo "Success" | tee -a > /opt/signal/success.txt
 
 fi
 
 trap die_with_success TERM
 
-echo "Success"
 sleep infinity &
 
 # Wait for any process to exit

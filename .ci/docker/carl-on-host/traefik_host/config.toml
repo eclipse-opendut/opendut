@@ -1,0 +1,18 @@
+# As TOML Configuration File
+[tcp.routers]
+  [tcp.routers.router1]
+    service = "carl"
+    rule = "HostSNI(`*`)"
+    [tcp.routers.router1.tls]
+    passthrough = true
+
+[tcp.services]
+  [tcp.services.carl]
+    [tcp.services.carl.loadBalancer]
+    [[tcp.services.carl.loadBalancer.servers]]
+    address = "192.168.32.1:8080"
+
+[[tls.certificates]]
+    certFile = "/etc/opendut-network/tls/carl.pem"
+    keyFile = "/etc/opendut-network/tls/carl.key"
+    stores = ["default"]

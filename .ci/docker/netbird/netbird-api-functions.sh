@@ -65,7 +65,65 @@ keycloak_client_in_realm_netbird_is_present() {
   fi
 }
 
-wait_for_keycloak_client_in_realm_netbird() {
+keycloak_user_count() {
+  KEYCLOAK_REALM="${1:-netbird}"
+
+  keycloak_admin_auth
+  KEYCLOAK_USER_COUNT=$(curl -s -H "Authorization: Bearer $ADMIN_TOKEN" "$KEYCLOAK_URL/admin/realms/${KEYCLOAK_REALM}/users/count")
+  echo "$KEYCLOAK_USER_COUNT"
+}
+
+keycloak_user_list() {
+  KEYCLOAK_REALM="${1:-netbird}"
+
+  keycloak_admin_auth
+  KEYCLOAK_USERS=$(curl -s -H "Authorization: Bearer $ADMIN_TOKEN" "$KEYCLOAK_URL/admin/realms/${KEYCLOAK_REALM}/users")
+  echo "$KEYCLOAK_USERS"
+}
+
+keycloak_user_find() {
+  KEYCLOAK_REALM="${1:-netbird}"
+  KEYCLOAK_USER_NAME="${2:-netbird}"
+
+  KEYCLOAK_USER_LIST=$(keycloak_user_list "${KEYCLOAK_REALM}")
+  KEYCLOAK_USER_OBJ=$(echo "$KEYCLOAK_USER_LIST" | jq -r ".[] | select(.username==\"$KEYCLOAK_USER_NAME\")" 2>/dev/null)
+
+  echo "$KEYCLOAK_USER_OBJ"
+}
+
+keycloak_user_present() {
+  KEYCLOAK_REALM="${1:-netbird}"
+  KEYCLOAK_USER_NAME="${2:-netbird}"
+
+  KEYCLOAK_USER_OBJ=$(keycloak_user_find "${KEYCLOAK_REALM}" "${KEYCLOAK_USER_NAME}")
+  if [ -n "$KEYCLOAK_USER_OBJ" ]; then
+    echo "Keycloak user $KEYCLOAK_USER_NAME is present in realm $KEYCLOAK_REALM"
+    return 0
+  else
+    echo "Keycloak user $KEYCLOAK_USER_NAME is not yet available in realm $KEYCLOAK_REALM!"
+    return 1
+  fi
+}
+
+wait_for_keycloak_user__in_realm_netbird() {
+  local user_name="${1:-netbird}"
+  local timeout="${2:-60}"
+  local sleep_time="${3:-5}"
+  local start_time=$(date +%s)
+  local end_time=$((start_time + timeout))
+  while true; do
+    local now=$(date +%s)
+    if [ "$now" -gt "$end_time" ]; then
+      echo "Timeout ($timeout seconds) while waiting for netbird client in keycloak"
+      return 1
+    fi
+    keycloak_user_present "netbird" "$user_name" && break
+    echo "Waiting for user $user_name to be available in keycloak realm 'netbird' ..."
+    sleep "$sleep_time"
+  done
+}
+
+wait_for_keycloak_client__in_realm_netbird() {
   local user_name="${1:-netbird-backend}"
   local timeout="${2:-60}"
   local sleep_time="${3:-5}"
@@ -116,7 +174,7 @@ wait_for_keycloak_client_auth_successful() {
     fi
     netbird_auth
     if [ -n "$TOKEN" ]; then
-      echo "Netbird management client is authenticated."
+      echo "Netbird management client 'netbird-mgmt-cli' is authenticated."
       break
     fi
     echo "Waiting for authentication to be available... sleeping $sleep_time seconds"
@@ -203,7 +261,7 @@ wait_for_netbird_user_to_be_synced_from_keycloak() {
     if user_present "$user_name"; then
       break
     fi
-    echo "Waiting for $user_name to be available..."
+    echo "Waiting for user $user_name to become available..."
     sleep "$sleep_time"
   done
 }

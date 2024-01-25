@@ -34,7 +34,7 @@ wait_for_peers_to_connect() {
   END_TIME=$((START_TIME + timeout))
 
   connected=0
-  while [ $connected -lt "$expected_peer_count" ]; do
+  while [[ "$connected" -lt "$expected_peer_count" ]]; do
     local now
     now=$(date +%s)
     if [ "$now" -gt "$END_TIME" ]; then
@@ -100,4 +100,34 @@ debug_show_peers_requesting_router_ip() {
       sleep 1
     fi
   done
+}
+
+
+extract_opendut_artifact() {
+  NAME="$1"
+  REQUIRED="${2:-true}"
+
+  if [ "$REQUIRED" = false ] ; then
+    echo "Skipping extraction of distribution archive for \'$NAME\'."
+  else
+    echo "Extracting distribution archive for \'$NAME\'."
+    OPENDUT_DIST_ARCHIVE_PATH=$(find "$OPENDUT_ARTIFACTS_DIR" -name "$NAME-x86_64-unknown-linux-gnu*.tar.gz" -print0 | tr '\0' '\n' | head)
+    if [ -e "$OPENDUT_DIST_ARCHIVE_PATH" ]; then
+      tar xf "$OPENDUT_DIST_ARCHIVE_PATH"
+      OPENDUT_ARTIFACT_BINARY="/opt/$NAME/$NAME"
+      if [ -e "$OPENDUT_ARTIFACT_BINARY" ]; then
+        ln -sf /opt/"$NAME"/"$NAME" /usr/local/opendut/bin/distribution/"$NAME"
+      else
+        echo "Could not extract artifact binary \'$OPENDUT_ARTIFACT_BINARY\' from archive \'$OPENDUT_DIST_ARCHIVE_PATH\'."
+        exit 1
+      fi
+    else
+      echo "Could not find distribution archive for \'$NAME\'."
+      if [ "$REQUIRED" = true ] ; then
+        exit 1
+      fi
+    fi
+  fi
+
+
 }

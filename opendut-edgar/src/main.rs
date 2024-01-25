@@ -36,6 +36,10 @@ enum Commands {
         #[arg(long)]
         dry_run: bool,
 
+        /// Continue execution without asking for confirmation.
+        #[arg(long)]
+        no_confirm: bool,
+
         /// Specify the Maximum Transfer Unit for network packages in bytes.
         #[arg(long, default_value="1538")]
         mtu: u16,
@@ -52,7 +56,7 @@ enum SetupMode {
     },
     /// Setup your system for network routing without automatic management. This setup method will be removed in the future.
     Unmanaged {
-        /// Url of the VPN management service
+        /// URL of the VPN management service
         #[arg(long)]
         management_url: Url,
 
@@ -65,8 +69,8 @@ enum SetupMode {
         router: ParseableRouter, // We create a star topology to avoid loops between the GRE interfaces.
 
         /// Name of the bridge to use, maximum 15 characters long
-        #[arg(long, default_value="br-opendut")]
-        bridge: NetworkInterfaceName,
+        #[arg(long)]
+        bridge: Option<NetworkInterfaceName>,
     },
 }
 
@@ -82,7 +86,7 @@ async fn main() -> anyhow::Result<()> {
                 id_override,
             ).await
         },
-        Commands::Setup { mode, dry_run, mtu } => {
+        Commands::Setup { mode, dry_run, no_confirm, mtu } => {
             setup::start::init_logging()?;
 
             let command = std::env::args_os()
@@ -93,12 +97,13 @@ async fn main() -> anyhow::Result<()> {
 
             match mode {
                 SetupMode::Managed { setup_string } => {
-                    setup::start::managed(run_mode, setup_string, mtu).await
+                    setup::start::managed(run_mode, no_confirm, setup_string, mtu).await
                 },
                 SetupMode::Unmanaged { management_url, setup_key, router, bridge } => {
                     let setup_key = SetupKey { uuid: setup_key };
                     let ParseableRouter(router) = router;
-                    setup::start::unmanaged(run_mode, management_url, setup_key, bridge, router, mtu).await
+                    let bridge = bridge.unwrap_or_else(opendut_edgar::common::default_bridge_name);
+                    setup::start::unmanaged(run_mode, no_confirm, management_url, setup_key, bridge, router, mtu).await
                 }
             }
         },

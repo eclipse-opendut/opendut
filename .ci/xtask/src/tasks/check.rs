@@ -1,24 +1,29 @@
 use std::process::Command;
-use crate::tasks::licenses::check::check_licenses;
 
+use crate::tasks::licenses::check::check_licenses;
 use crate::util::RunRequiringSuccess;
 
 /// Performs verification tasks.
 #[derive(Debug, clap::Parser)]
 pub struct CheckCli {
-
+    /// activate all available features
+    #[arg(long, default_value="true")]
+    all_features: bool,
+    /// specify features to activate
+    #[arg(long)]
+    features: Vec<String>,
 }
 
 impl CheckCli {
     pub fn default_handling(self) -> crate::Result {
-        check()
+        check(self.all_features, self.features)
     }
 }
 
 #[tracing::instrument]
-pub fn check() -> crate::Result {
+pub fn check(all_features: bool, features: Vec<String>) -> crate::Result {
 
-    test()?;
+    test(all_features, features)?;
 
     clippy()?;
 
@@ -28,13 +33,25 @@ pub fn check() -> crate::Result {
 }
 
 #[tracing::instrument]
-fn test() -> crate::Result {
-    Command::new("cargo")
-        .args([
-            "test",
-            "--all-features",
-        ])
-        .run_requiring_success()
+fn test(all_features: bool, features: Vec<String>) -> crate::Result {
+
+    let mut command = Command::new("cargo");
+
+    command.arg("test");
+
+    if features.is_empty() {
+        if all_features {
+            command.arg("--all-features");
+        }
+    }
+    else {
+        command.arg("--features");
+        for feature in features {
+            command.arg(feature);
+        }
+    }
+
+    command.run_requiring_success()
 }
 
 #[tracing::instrument]
