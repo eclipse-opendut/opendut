@@ -8,6 +8,7 @@
     - [How to combine CLEO and jq](user-manual/cleo/jq.md)
 - [Developer Manual](development/_chapter.md)
   - [Getting Started](development/getting-started.md)
+  - [Test Environment](development/test-environment.md)
   - [Building a Release](development/building-a-release.md)
 - [Architecture](architecture/_chapter.md)
   - [Cluster](architecture/cluster/_chapter.md)

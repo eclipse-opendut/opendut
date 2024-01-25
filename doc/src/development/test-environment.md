@@ -1,4 +1,4 @@
-# Docker test environment
+# Test Environment
 
 This is a Docker test environment for openDuT. It is started with docker-compose:
 - carl
