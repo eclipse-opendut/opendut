@@ -13,8 +13,8 @@ enabled = true
 
 [network.oidc.lea]
 client_id = "opendut-lea-client"
-issuer_url = "http://keycloak/auth/realms/opendut"
-scopes = ["openid", "profile", "email"]
+issuer_url = "https://keycloak/realms/opendut"
+scopes = "openid profile email"
 
 [serve]
 ui.directory = "opendut-lea/"
