@@ -13,6 +13,6 @@
   shell: "firefox --display=:1 {{ website }} 2>&1 > /tmp/firefox-sites.log"
   changed_when: false
   ignore_errors: true
-  loop: [ "https://carl", "http://keycloak", "http://netbird-ui", "http://netbird-dashboard" ]
+  loop: [ "https://carl", "https://keycloak", "http://netbird-ui", "http://netbird-dashboard" ]
   loop_control:
     loop_var: website

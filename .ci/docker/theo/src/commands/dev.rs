@@ -2,6 +2,7 @@ use anyhow::Error;
 use clap::ArgAction;
 
 use crate::commands::vagrant::running_in_opendut_vm;
+use crate::core::carl_config::{print_carl_config_env, print_carl_config_toml};
 use crate::core::docker::{DockerCommand, DockerCoreServices, start_netbird};
 use crate::core::docker::compose::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_up_expose_ports};
 use crate::core::project::load_theo_environment_variables;
@@ -91,28 +92,14 @@ impl DevCli {
             }
             TaskCli::CarlConfig => {
                 let netbird_api_key = crate::core::docker::netbird::get_netbird_api_key()?;
-                let netbird_management_ip = if running_in_opendut_vm() {
-                    "192.168.56.10"
+                let netbird_management_url = if running_in_opendut_vm() {
+                    "http://192.168.56.10/api"
                 } else {
-                    "192.168.32.211"
+                    "http://192.168.32.211/api"
                 };
 
-                println!("
-# These are the environment variables to run CARL in your IDE of choice.
-
-OPENDUT_CARL_NETWORK_REMOTE_HOST=carl
-OPENDUT_CARL_NETWORK_REMOTE_PORT=443
-OPENDUT_CARL_VPN_ENABLED=true
-OPENDUT_CARL_VPN_KIND=netbird
-OPENDUT_CARL_VPN_NETBIRD_URL=http://{}/api
-OPENDUT_CARL_VPN_NETBIRD_HTTPS_ONLY=false
-OPENDUT_CARL_VPN_NETBIRD_AUTH_SECRET={}
-OPENDUT_CARL_VPN_NETBIRD_AUTH_TYPE=personal-access-token
-OPENDUT_CARL_VPN_NETBIRD_AUTH_HEADER=Authorization"
-                         ,
-                         netbird_management_ip,
-                         netbird_api_key
-                );
+                print_carl_config_env(netbird_management_url, &netbird_api_key);
+                print_carl_config_toml(netbird_management_url, &netbird_api_key);
             }
         }
         Ok(())

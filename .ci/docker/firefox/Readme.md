@@ -13,4 +13,4 @@ Following features are included:
 * Open url in remote session:
   * https://carl
   * http://netbird-ui
-  * http://keycloak
+  * https://keycloak

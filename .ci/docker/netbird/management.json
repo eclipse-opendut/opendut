@@ -33,23 +33,23 @@
         "CertFile": "",
         "CertKey": "",
         "AuthAudience": "netbird-client",
-        "AuthIssuer": "http://keycloak/realms/netbird",
+        "AuthIssuer": "https://keycloak/realms/netbird",
         "AuthUserIDClaim": "",
-        "AuthKeysLocation": "http://keycloak/realms/netbird/protocol/openid-connect/certs",
-        "OIDCConfigEndpoint": "http://keycloak/realms/netbird/.well-known/openid-configuration",
+        "AuthKeysLocation": "https://keycloak/realms/netbird/protocol/openid-connect/certs",
+        "OIDCConfigEndpoint": "https://keycloak/realms/netbird/.well-known/openid-configuration",
         "IdpSignKeyRefreshEnabled": false
     },
     "IdpManagerConfig": {
         "ManagerType": "keycloak",
         "ClientConfig": {
-            "Issuer": "http://keycloak/realms/netbird",
-            "TokenEndpoint": "http://keycloak/realms/netbird/protocol/openid-connect/token",
+            "Issuer": "https://keycloak/realms/netbird",
+            "TokenEndpoint": "https://keycloak/realms/netbird/protocol/openid-connect/token",
             "ClientID": "netbird-backend",
             "ClientSecret": "871adc12-8a09-11ee-ab98-fb08e2456f00",
             "GrantType": "client_credentials"
         },
         "ExtraConfig": {
-            "AdminEndpoint": "http://keycloak/admin/realms/netbird"
+            "AdminEndpoint": "https://keycloak/admin/realms/netbird"
         },
         "Auth0ClientCredentials": null,
         "AzureClientCredentials": null,
@@ -63,8 +63,8 @@
             "ClientSecret": "",
             "Domain": "keycloak",
             "Audience": "netbird-client",
-            "TokenEndpoint": "http://keycloak/realms/netbird/protocol/openid-connect/token",
-            "DeviceAuthEndpoint": "http://keycloak/realms/netbird/protocol/openid-connect/auth/device",
+            "TokenEndpoint": "https://keycloak/realms/netbird/protocol/openid-connect/token",
+            "DeviceAuthEndpoint": "https://keycloak/realms/netbird/protocol/openid-connect/auth/device",
             "AuthorizationEndpoint": "",
             "Scope": "openid",
             "UseIDToken": false,
@@ -77,9 +77,9 @@
             "ClientSecret": "",
             "Domain": "",
             "Audience": "netbird-client",
-            "TokenEndpoint": "http://keycloak/realms/netbird/protocol/openid-connect/token",
+            "TokenEndpoint": "https://keycloak/realms/netbird/protocol/openid-connect/token",
             "DeviceAuthEndpoint": "",
-            "AuthorizationEndpoint": "http://keycloak/realms/netbird/protocol/openid-connect/auth",
+            "AuthorizationEndpoint": "https://keycloak/realms/netbird/protocol/openid-connect/auth",
             "Scope": "openid profile email offline_access api",
             "UseIDToken": false,
             "RedirectURLs": [

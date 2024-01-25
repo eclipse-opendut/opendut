@@ -3,6 +3,10 @@ ARG NETBIRD_MANAGEMENT_VERSION
 FROM netbirdio/management:${NETBIRD_MANAGEMENT_VERSION}
 RUN apt update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata ca-certificates curl jq
 
+# add the insecure development CA to the trust store
+COPY ./resources/development/tls/insecure-development-ca.pem /usr/local/share/ca-certificates/insecure-development-ca.crt
+RUN update-ca-certificates
+
 COPY ./.ci/docker/netbird/netbird-api-functions.sh /netbird-api-functions.sh
 COPY ./.ci/docker/netbird/management_init.sh /management_init.sh
 COPY ./.ci/docker/netbird/netbird-management-health.sh /netbird-management-health.sh

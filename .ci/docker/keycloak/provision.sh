@@ -3,7 +3,7 @@
 source /keycloak_functions.sh
 
 main() {
-  set -ex
+  #set -ex
 
   echo "provisioning keycloak"
   wait_for_keycloak

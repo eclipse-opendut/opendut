@@ -25,3 +25,4 @@ pub(crate) mod dist;
 
 pub(crate) mod network;
 pub(crate) mod command_ext;
+pub(crate) mod carl_config;
