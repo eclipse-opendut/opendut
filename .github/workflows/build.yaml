@@ -7,9 +7,8 @@ on:
         required: false
         type: string
         default: "false"
-
   pull_request:
-    types: [ opened, reopened ]
+    types: [ opened, reopened, synchronize, edited, ready_for_review ]
   push:
     branches: [ "**" ]
     tags-ignore:
