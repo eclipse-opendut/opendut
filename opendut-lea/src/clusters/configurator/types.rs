@@ -1,5 +1,6 @@
 use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
 use opendut_types::peer::PeerId;
+use opendut_types::proto::topology::DeviceId;
 
 use crate::clusters::configurator::components::DeviceSelection;
 use crate::components::UserInputValue;
@@ -18,6 +19,7 @@ pub struct UserClusterConfiguration {
     pub id: ClusterId,
     pub name: UserInputValue,
     pub devices: DeviceSelection,
+    pub leader: PeerId,
 }
 
 impl UserClusterConfiguration {
@@ -41,7 +43,7 @@ impl TryFrom<UserClusterConfiguration> for ClusterConfiguration {
         Ok(ClusterConfiguration {
             id: configuration.id,
             name,
-            leader: PeerId::default(), // TODO: Insert the leader's PeerId here.
+            leader: configuration.leader, // TODO: Insert the leader's PeerId here.
             devices,
         })
     }

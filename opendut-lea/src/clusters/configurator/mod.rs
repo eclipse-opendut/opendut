@@ -2,11 +2,12 @@ use leptos::*;
 use leptos_router::use_params_map;
 
 use opendut_types::cluster::ClusterId;
+use opendut_types::peer::PeerId;
 
 use crate::app::{ExpectGlobals, use_app_globals};
 use crate::clusters::configurator::components::{DeviceSelection, DeviceSelector};
 use crate::clusters::configurator::components::Controls;
-use crate::clusters::configurator::tabs::{DevicesTab, GeneralTab, TabIdentifier};
+use crate::clusters::configurator::tabs::{DevicesTab, GeneralTab, LeaderTab, TabIdentifier};
 use crate::clusters::configurator::types::UserClusterConfiguration;
 use crate::components::{BasePageContainer, Breadcrumb, Initialized, use_active_tab};
 use crate::components::{UserInputError, UserInputValue};
@@ -48,10 +49,21 @@ pub fn ClusterConfigurator() -> impl IntoView {
                 }
             };
 
+            let cluster_leader = {
+                let cluster_leader = params.with_untracked(|params| {
+                    params.get("leader").and_then(|leader_id| PeerId::try_from(leader_id.as_str()).ok())
+                });
+                match cluster_leader {
+                    Some(cluster_leader) => cluster_leader,
+                    None => PeerId::try_from("5091447c-04d6-4955-8964-000000000000").unwrap(), // empty ID not possible at the moment, what do we do here?
+                }
+            };
+
             let user_configuration = create_rw_signal(UserClusterConfiguration {
                 id: cluster_id,
                 name: UserInputValue::Left(UserInputError::from("Enter a valid cluster name.")),
                 devices: DeviceSelection::Left(String::from("Select at least two devices.")),
+                leader: cluster_leader,
             });
 
             create_local_resource(|| {}, move |_| { // TODO: maybe a action suits better here
@@ -96,6 +108,9 @@ pub fn ClusterConfigurator() -> impl IntoView {
                             <li class=("is-active", move || TabIdentifier::Devices == active_tab.get())>
                                 <a href={ TabIdentifier::Devices.to_str() }>Devices</a>
                             </li>
+                            <li class=("is-active", move || TabIdentifier::Leader == active_tab.get())>
+                                <a href={ TabIdentifier::Leader.to_str() }>Leader</a>
+                            </li>
                         </ul>
                     </div>
                     <div class="container">
@@ -104,6 +119,9 @@ pub fn ClusterConfigurator() -> impl IntoView {
                         </div>
                         <div class=("is-hidden", move || TabIdentifier::Devices != active_tab.get())>
                             <DevicesTab cluster_configuration=cluster_configuration />
+                        </div>
+                        <div class=("is-hidden", move || TabIdentifier::Leader != active_tab.get())>
+                            <LeaderTab cluster_configuration=cluster_configuration />
                         </div>
                     </div>
                 </div>
