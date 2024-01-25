@@ -58,7 +58,7 @@ opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME" --interfac
 PEER_SETUP_KEY=$(opendut-cleo generate-peer-setup --id "$PEER_ID")
 echo "Setting up peer with setup key $PEER_SETUP_KEY"
 
-echo y | opendut-edgar setup managed "$PEER_SETUP_KEY"
+opendut-edgar setup --no-confirm managed "$PEER_SETUP_KEY"
 
 START_TIME="$(date +%s)"
 while ! cleo_get_peer_id "$NAME"; do

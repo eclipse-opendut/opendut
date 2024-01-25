@@ -8,7 +8,7 @@ use opendut_util::project;
 
 use crate::setup::task::{Success, Task, TaskFulfilled};
 
-pub async fn run(run_mode: RunMode, tasks: &[Box<dyn Task>]) -> anyhow::Result<()> {
+pub async fn run(run_mode: RunMode, no_confirm: bool, tasks: &[Box<dyn Task>]) -> anyhow::Result<()> {
     let run_mode = if project::is_running_in_development() {
         let log_message = "Running in development. Activating --dry-run to prevent changes to the system.";
         println!("{log_message}");
@@ -22,7 +22,7 @@ pub async fn run(run_mode: RunMode, tasks: &[Box<dyn Task>]) -> anyhow::Result<(
         sudo::with_env(&["OPENDUT_EDGAR_"]) //Request before doing anything else, as it restarts the process when sudo is not present.
             .expect("Failed to request sudo privileges.");
     }
-    if user_confirmation(run_mode)? {
+    if no_confirm || user_confirmation(run_mode)? {
         run_tasks(tasks, run_mode);
     }
     println!();

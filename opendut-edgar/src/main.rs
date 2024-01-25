@@ -36,6 +36,10 @@ enum Commands {
         #[arg(long)]
         dry_run: bool,
 
+        /// Continue execution without asking for confirmation.
+        #[arg(long)]
+        no_confirm: bool,
+
         /// Specify the Maximum Transfer Unit for network packages in bytes.
         #[arg(long, default_value="1538")]
         mtu: u16,
@@ -82,7 +86,7 @@ async fn main() -> anyhow::Result<()> {
                 id_override,
             ).await
         },
-        Commands::Setup { mode, dry_run, mtu } => {
+        Commands::Setup { mode, dry_run, no_confirm, mtu } => {
             setup::start::init_logging()?;
 
             let command = std::env::args_os()
@@ -93,13 +97,13 @@ async fn main() -> anyhow::Result<()> {
 
             match mode {
                 SetupMode::Managed { setup_string } => {
-                    setup::start::managed(run_mode, setup_string, mtu).await
+                    setup::start::managed(run_mode, no_confirm, setup_string, mtu).await
                 },
                 SetupMode::Unmanaged { management_url, setup_key, router, bridge } => {
                     let setup_key = SetupKey { uuid: setup_key };
                     let ParseableRouter(router) = router;
                     let bridge = bridge.unwrap_or_else(opendut_edgar::common::default_bridge_name);
-                    setup::start::unmanaged(run_mode, management_url, setup_key, bridge, router, mtu).await
+                    setup::start::unmanaged(run_mode, no_confirm, management_url, setup_key, bridge, router, mtu).await
                 }
             }
         },

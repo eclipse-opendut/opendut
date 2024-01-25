@@ -17,7 +17,7 @@ use crate::setup::task::Task;
 use crate::setup::tasks::write_configuration;
 
 #[allow(clippy::box_default)]
-pub async fn managed(run_mode: RunMode, setup_string: String, mtu: u16) -> anyhow::Result<()> {
+pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, mtu: u16) -> anyhow::Result<()> {
 
     let peer_setup = PeerSetup::decode(&setup_string)
         .context("Failed to decode Setup String.")?;
@@ -59,11 +59,11 @@ pub async fn managed(run_mode: RunMode, setup_string: String, mtu: u16) -> anyho
     ];
     tasks.append(&mut service_tasks);
 
-    runner::run(run_mode, &tasks).await
+    runner::run(run_mode, no_confirm, &tasks).await
 }
 
 #[allow(clippy::box_default)]
-pub async fn unmanaged(run_mode: RunMode, management_url: Url, setup_key: SetupKey, bridge_name: NetworkInterfaceName, router: Router, mtu: u16) -> anyhow::Result<()> {
+pub async fn unmanaged(run_mode: RunMode, no_confirm: bool, management_url: Url, setup_key: SetupKey, bridge_name: NetworkInterfaceName, router: Router, mtu: u16) -> anyhow::Result<()> {
 
     let network_interface_manager = Arc::new(NetworkInterfaceManager::create()?);
 
@@ -79,7 +79,7 @@ pub async fn unmanaged(run_mode: RunMode, management_url: Url, setup_key: SetupK
         Box::new(tasks::network_interface::ConnectDeviceInterfaces { network_interface_manager, bridge_name }),
     ];
 
-    runner::run(run_mode, &tasks).await
+    runner::run(run_mode, no_confirm, &tasks).await
 }
 
 

@@ -5,7 +5,7 @@ trap die_with_error TERM
 
 
 if [ -n "$1" ] ; then
-  echo y | /opt/opendut-edgar/opendut-edgar setup unmanaged --setup-key "$NETBIRD_SETUP_KEY" --management-url "${NETBIRD_MANAGEMENT_API}" --router=local
+  /opt/opendut-edgar/opendut-edgar setup --no-confirm unmanaged --setup-key "$NETBIRD_SETUP_KEY" --management-url "${NETBIRD_MANAGEMENT_API}" --router=local
 
   while ! netbird status | grep IP; do
     echo "Waiting for netbird to start up..."
@@ -20,7 +20,7 @@ if [ -n "$1" ] ; then
   debug_show_peers_requesting_router_ip
   wait_for_peers_to_connect
 
-  echo y | /opt/opendut-edgar/opendut-edgar setup unmanaged --setup-key "$NETBIRD_SETUP_KEY" --management-url "${NETBIRD_MANAGEMENT_API}" --router=local
+  /opt/opendut-edgar/opendut-edgar setup --no-confirm unmanaged --setup-key "$NETBIRD_SETUP_KEY" --management-url "${NETBIRD_MANAGEMENT_API}" --router=local
   echo setting bridge ip
   ip a a 192.168.100.1/24 dev br-opendut
 
@@ -33,7 +33,7 @@ else
 
   router_ip=$(curl --silent http://edgar_router:8000/router_ip.txt)
   echo "Using router router_ip address $router_ip"
-  echo y | /opt/opendut-edgar/opendut-edgar setup unmanaged --setup-key "$NETBIRD_SETUP_KEY" --management-url "${NETBIRD_MANAGEMENT_API}" --router="$router_ip"
+  /opt/opendut-edgar/opendut-edgar setup --no-confirm unmanaged --setup-key "$NETBIRD_SETUP_KEY" --management-url "${NETBIRD_MANAGEMENT_API}" --router="$router_ip"
 
   echo fetching bridge_ip
   bridge_ip=$(curl --silent http://edgar_router:5000/)
