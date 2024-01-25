@@ -167,9 +167,7 @@ pub mod generate_peer_setup {
 
         match created_setup.encode() {
             Ok(setup_key) => {
-                println!("Copy the generated setup key from the terminal:");
-                println!("\x1b[0;1m{:?}\x1b[0m", setup_key);
-                println!("to configure peer with the id {}.", peer_id);
+                println!("{}", setup_key);
             }
             Err(_) => {
                 println!("Could not configure setup key...")

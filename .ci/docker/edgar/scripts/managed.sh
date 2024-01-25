@@ -55,7 +55,7 @@ echo "Creating peer with name $NAME and id $PEER_ID"
 opendut-cleo create peer --name "$NAME" --id "$PEER_ID"
 opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME" --interface eth0 --location "$NAME" --tags "$OPENDUT_EDGAR_CLUSTER_NAME"
 
-PEER_SETUP_KEY=$(opendut-cleo generate-peer-setup --id "$PEER_ID" | grep -A1 "Copy the generated setup key" | tail -n1 | sed -e 's#"##g' | sed -e 's/\x1b\[[0-9;]*m//g')
+PEER_SETUP_KEY=$(opendut-cleo generate-peer-setup --id "$PEER_ID")
 echo "Setting up peer with setup key $PEER_SETUP_KEY"
 
 echo y | opendut-edgar setup managed "$PEER_SETUP_KEY"
