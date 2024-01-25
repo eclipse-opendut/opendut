@@ -49,21 +49,11 @@ pub fn ClusterConfigurator() -> impl IntoView {
                 }
             };
 
-            let cluster_leader = {
-                let cluster_leader = params.with_untracked(|params| {
-                    params.get("leader").and_then(|leader_id| PeerId::try_from(leader_id.as_str()).ok())
-                });
-                match cluster_leader {
-                    Some(cluster_leader) => cluster_leader,
-                    None => PeerId::try_from("5091447c-04d6-4955-8964-000000000000").unwrap(), // empty ID not possible at the moment, what do we do here?
-                }
-            };
-
             let user_configuration = create_rw_signal(UserClusterConfiguration {
                 id: cluster_id,
                 name: UserInputValue::Left(UserInputError::from("Enter a valid cluster name.")),
                 devices: DeviceSelection::Left(String::from("Select at least two devices.")),
-                leader: cluster_leader,
+                leader: PeerId::default(),
             });
 
             create_local_resource(|| {}, move |_| { // TODO: maybe a action suits better here
@@ -73,6 +63,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
                         user_configuration.update(|user_configuration| {
                             user_configuration.name = UserInputValue::Right(configuration.name.value());
                             user_configuration.devices = DeviceSelection::Right(configuration.devices);
+                            user_configuration.leader = configuration.leader;
                         });
                     }
                 }
