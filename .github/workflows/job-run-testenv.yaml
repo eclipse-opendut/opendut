@@ -95,8 +95,11 @@ jobs:
       - name: Destroy test environment
         if: always()
         run: |
-          ./opendut-theo/opendut-theo testenv destroy
-          echo "Result: $?"
+          echo "Show all containers"
+          docker ps --all
+          ./opendut-theo/opendut-theo testenv destroy || {echo Result $?; true}
           echo "Show all remaining containers"
-          docker ps -a
+          docker ps --all
+          echo "Remove all exited containers forcefully"
+          docker rm --volumes --force $(docker ps -a -q -f status=exited)
         continue-on-error: true
