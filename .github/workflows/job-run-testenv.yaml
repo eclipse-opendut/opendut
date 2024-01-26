@@ -72,7 +72,7 @@ jobs:
         if: always()
         run: |
           mkdir docker-logs
-          DOCKER_CONTAINERS="$(docker ps --format='{{.Names}}')"
+          DOCKER_CONTAINERS="$(docker ps --all --format='{{.Names}}')"
           for DOCKER_NAME in $DOCKER_CONTAINERS; do
             echo "Logs for $DOCKER_NAME"
             docker logs $DOCKER_NAME > ./docker-logs/docker-$DOCKER_NAME.log 2>&1
