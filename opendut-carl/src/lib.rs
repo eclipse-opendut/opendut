@@ -120,7 +120,7 @@ pub async fn create(settings_override: Config) -> Result<()> {
         let lea_dir = project::make_path_absolute(settings.get_string("serve.ui.directory")
             .expect("Failed to find configuration for `serve.ui.directory`."))
             .expect("Failure while making path absolute.");
-
+        let lea_presence_check = settings.get_bool("serve.ui.presence_check").unwrap_or(true);
         let licenses_dir = project::make_path_absolute("./licenses")
             .expect("licenses directory should be absolute");
 
@@ -143,15 +143,17 @@ pub async fn create(settings_override: Config) -> Result<()> {
         };
 
         let lea_index_html = lea_dir.join("index.html").clone();
-        // Check if LEA can be served
-        // if lea_index_html.exists() {
-        //     let lea_index_str = std::fs::read_to_string(lea_index_html.clone()).expect("Failed to read LEA index.html");
-        //     if !lea_index_str.contains("bg.wasm") || !lea_index_str.contains("opendut-lea") {
-        //         panic!("LEA index.html does not contain wasm link! Check configuration serve.ui.directory={:?} points to the correct directory.", lea_dir.into_os_string());
-        //     }
-        // } else {
-        //     panic!("Failed to check if LEA index.html exists in: {}", lea_index_html.canonicalize().unwrap().display());
-        // }
+        if lea_presence_check {
+            // Check if LEA can be served
+            if lea_index_html.exists() {
+                let lea_index_str = std::fs::read_to_string(lea_index_html.clone()).expect("Failed to read LEA index.html");
+                if !lea_index_str.contains("bg.wasm") || !lea_index_str.contains("opendut-lea") {
+                    panic!("LEA index.html does not contain wasm link! Check configuration serve.ui.directory={:?} points to the correct directory.", lea_dir.into_os_string());
+                }
+            } else {
+                panic!("Failed to check if LEA index.html exists in: {}", lea_index_html.canonicalize().unwrap().display());
+            }
+        }
         let http = axum::Router::new()
             .fallback_service(
                 axum::Router::new()

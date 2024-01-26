@@ -19,6 +19,7 @@ async fn register_edgar_carl() -> Result<()> {
         .set_override("network.bind.port", carl_port)?
         .set_override("network.remote.port", carl_port)?
         .set_override("vpn.enabled", false)?
+        .set_override("serve.ui.presence_check", false)?
         .build()?;
     let _ = tokio::spawn(async {
         opendut_carl::create(carl_config_override).await
