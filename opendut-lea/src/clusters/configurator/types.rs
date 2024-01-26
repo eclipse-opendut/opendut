@@ -9,7 +9,7 @@ pub enum ClusterMisconfiguration { // TODO: Maybe replace with IllegalClusterCon
     #[error("Invalid cluster name")]
     InvalidClusterName,
 
-    #[error("Invalid cluster name")]
+    #[error("Invalid device selection")]
     InvalidDeviceSelection
 }
 
