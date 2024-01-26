@@ -1,6 +1,5 @@
 use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
 use opendut_types::peer::PeerId;
-use opendut_types::proto::topology::DeviceId;
 
 use crate::clusters::configurator::components::DeviceSelection;
 use crate::components::UserInputValue;
@@ -43,7 +42,7 @@ impl TryFrom<UserClusterConfiguration> for ClusterConfiguration {
         Ok(ClusterConfiguration {
             id: configuration.id,
             name,
-            leader: configuration.leader, // TODO: Insert the leader's PeerId here.
+            leader: configuration.leader,
             devices,
         })
     }

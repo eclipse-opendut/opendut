@@ -4,7 +4,8 @@ use leptos::*;
 use opendut_types::peer::PeerId;
 
 use opendut_types::topology::{Device, DeviceId};
-use crate::app::{ExpectGlobals, use_app_globals};
+use crate::app::use_app_globals;
+use crate::clusters::configurator::components::{get_all_peers, get_all_selected_devices};
 
 use crate::clusters::configurator::types::UserClusterConfiguration;
 use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
@@ -17,13 +18,7 @@ pub type DeviceSelection = Ior<DeviceSelectionError, HashSet<DeviceId>>;
 pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>) -> impl IntoView {
     let globals = use_app_globals();
 
-    let peer_descriptors = create_local_resource(|| {}, move |_| {
-        async move {
-            let mut carl = globals.expect_client();
-            carl.peers.list_peer_descriptors().await
-                .expect("Failed to request the list of devices.")
-        }
-    });
+    let peer_descriptors = get_all_peers();
 
     let (getter, setter) = create_slice(cluster_configuration,
                                         |config| {
@@ -34,13 +29,7 @@ pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
                                         }
     );
 
-    let selected_devices = move || {
-        getter.with(|selection| match selection {
-            DeviceSelection::Left(_) => HashSet::new(),
-            DeviceSelection::Right(value) => value.to_owned(),
-            DeviceSelection::Both(_, value) => value.to_owned(),
-        })
-    };
+    let selected_devices = move || { get_all_selected_devices(getter) };
 
     let help_text = move || {
         getter.with(|selection| match selection {
@@ -147,34 +136,30 @@ pub fn DeviceInfo(
     view! {
         <td></td>
         <td colspan="3">
-            <div class="field" style="margin-bottom: 0;">
+            <div class="field">
                 <label class="label">ID</label>
                 <div class="control">
                     <p>{device.id.to_string()}</p>
                 </div>
             </div>
-            <hr width="30%" style="margin-bottom: 0; margin-top: 0;"/>
-            <div class="field" style="margin-bottom: 0;">
+            <div class="field">
                 <label class="label">Peer ID</label>
                 <div class="control">
                     <p>{peer_id.to_string()}</p>
                 </div>
             </div>
-            <hr width="30%" style="margin-bottom: 0; margin-top: 0;"/>
-            <div class="field" style="margin-bottom: 0;">
+            <div class="field">
                 <label class="label">Interface</label>
                 <div class="control">
                     <p>{device.interface.name()}</p>
                 </div>
             </div>
-            <hr width="30%" style="margin-bottom: 0; margin-top: 0;"/>
-            <div class="field" style="margin-bottom: 0;">
+            <div class="field">
                 <label class="label">Tags</label>
                 <div class="control">
                     <p>{device.tags}</p>
                 </div>
             </div>
-            <hr width="30%" style="margin-bottom: 0; margin-top: 0;"/>
             <div class="field">
                 <label class="label">Description</label>
                 <div class="control">
