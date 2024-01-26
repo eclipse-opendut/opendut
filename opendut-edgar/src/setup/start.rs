@@ -22,6 +22,9 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
     let peer_setup = PeerSetup::decode(&setup_string)
         .context("Failed to decode Setup String.")?;
 
+    println!("Using PeerId: {}", peer_setup.id);
+    println!("Will connect to CARL at: {}", peer_setup.carl);
+
     let mut tasks: Vec<Box<dyn Task>> = vec![
         Box::new(tasks::CheckOsRequirements),
         Box::new(tasks::WriteConfiguration::with_override(write_configuration::ConfigOverride {
