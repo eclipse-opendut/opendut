@@ -47,6 +47,7 @@ pub mod book {
         Command::new("mdbook")
             .arg("serve")
             .arg("--open")
+            .arg("--port=4000")
             .current_dir(doc_dir())
             .run_requiring_success()?;
         Ok(())
