@@ -14,7 +14,7 @@ on:
     tags-ignore:
       - v[0-9]+.[0-9]+.[0-9]+
       - v[0-9]+.[0-9]+.[0-9]+-*
-      - nightly
+      - canary
 
 # Required GitHub repository variables:
 # https://docs.github.com/en/actions/using-jobs/choosing-the-runner-for-a-job
