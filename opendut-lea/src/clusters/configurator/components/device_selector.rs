@@ -1,12 +1,12 @@
 use std::collections::HashSet;
 use std::ops::Not;
+
 use leptos::*;
+
 use opendut_types::peer::PeerId;
-
 use opendut_types::topology::{Device, DeviceId};
-use crate::app::use_app_globals;
-use crate::clusters::configurator::components::{get_all_peers, get_all_selected_devices};
 
+use crate::clusters::configurator::components::{get_all_peers, get_all_selected_devices};
 use crate::clusters::configurator::types::UserClusterConfiguration;
 use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
 use crate::util::{Ior, NON_BREAKING_SPACE};
@@ -16,17 +16,16 @@ pub type DeviceSelection = Ior<DeviceSelectionError, HashSet<DeviceId>>;
 
 #[component]
 pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>) -> impl IntoView {
-    let globals = use_app_globals();
 
     let peer_descriptors = get_all_peers();
 
     let (getter, setter) = create_slice(cluster_configuration,
-                                        |config| {
-                                            Clone::clone(&config.devices)
-                                        },
-                                        |config, input| {
-                                            config.devices = input;
-                                        }
+        |config| {
+            Clone::clone(&config.devices)
+        },
+        |config, input| {
+            config.devices = input;
+        }
     );
 
     let selected_devices = move || { get_all_selected_devices(getter) };
@@ -45,7 +44,6 @@ pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
 
         for peer in peer_descriptors.get().unwrap_or_default() {
             let mut devices = peer.topology.devices;
-            // let mut devices = devices.get().unwrap_or_default();
             let selected_devices = selected_devices();
 
             devices.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
@@ -53,26 +51,27 @@ pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
             let devices_per_peer = devices.clone().into_iter()
                 .map(|device| {
                     let collapsed_signal = create_rw_signal(true);
+                    let collapse_button_icon = MaybeSignal::derive(move || if collapsed_signal.get() { FontAwesomeIcon::ChevronDown } else {FontAwesomeIcon::ChevronUp} );
                     let selected_signal = create_rw_signal(selected_devices.contains(&device.id));
                     view! {
-                    <tr>
-                        <td class="is-narrow">
-                            <IconButton
-                                icon=FontAwesomeIcon::ChevronDown
-                                color=ButtonColor::White
-                                size=ButtonSize::Small
-                                state=ButtonState::Enabled
-                                label="More infos"
-                                on_action=move || collapsed_signal.update(|collapsed| *collapsed = collapsed.not())
-                            />
-                        </td>
-                        <td>
-                            {&device.name}
-                        </td>
-                        <td>
-                            {&device.location}
-                        </td>
-                        <td class="is-narrow">
+                        <tr>
+                            <td class="is-narrow">
+                                <IconButton
+                                    icon=collapse_button_icon
+                                    color=ButtonColor::White
+                                    size=ButtonSize::Small
+                                    state=ButtonState::Enabled
+                                    label="Show or hide device details"
+                                    on_action=move || collapsed_signal.update(|collapsed| *collapsed = collapsed.not())
+                                />
+                            </td>
+                            <td>
+                                {&device.name}
+                            </td>
+                            <td>
+                                {&device.location}
+                            </td>
+                            <td class="is-narrow">
                                 <IconButton
                                     icon=FontAwesomeIcon::Check
                                     color=MaybeSignal::derive(move || match selected_signal.get() {
@@ -83,21 +82,21 @@ pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
                                     state=ButtonState::Enabled
                                     label="More infos"
                                     on_action=move || icon_button_on_action(
-                                            selected_signal,
-                                            getter,
-                                            setter,
-                                            device.id,
-                                        )
+                                        selected_signal,
+                                        getter,
+                                        setter,
+                                        device.id,
+                                    )
+                                />
+                            </td>
+                        </tr>
+                        <tr hidden={collapsed_signal}>
+                            <DeviceInfo
+                                device = device
+                                peer_id = peer.id
                             />
-                        </td>
-                    </tr>
-                    <tr hidden={collapsed_signal}>
-                        <DeviceInfo
-                            device = device
-                            peer_id = peer.id
-                        />
-                    </tr>
-                }
+                        </tr>
+                    }
                 })
                 .collect::<Vec<_>>();
 
@@ -109,9 +108,9 @@ pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
     };
 
     view! {
-        <p class="help has-text-danger" align="right">{ help_text }</p>
-        <div class="table-container">
-            <table class="table is-narrow is-fullwidth">
+        <p class="help has-text-danger">{ help_text }</p>
+        <div class="table-container mt-2">
+            <table class="table is-fullwidth">
                 <thead>
                     <tr>
                         <th></th>
