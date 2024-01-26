@@ -1,8 +1,11 @@
 use std::net::{IpAddr, Ipv4Addr};
 use std::sync::Arc;
+
 use opendut_types::cluster::ClusterAssignment;
 use opendut_types::peer::PeerId;
 use opendut_types::util::net::NetworkInterfaceName;
+
+use crate::service::network_interface;
 use crate::service::network_interface::gre;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 
@@ -13,7 +16,11 @@ pub async fn handle(
     network_interface_manager: NetworkInterfaceManagerRef,
 ) -> Result<(), Error> {
 
-    let local_ip = determine_local_ip(&cluster_assignment, self_id)?;
+    let local_peer_assignment = cluster_assignment.assignments.iter().find(|assignment| {
+        assignment.peer_id == self_id
+    }).ok_or(Error::LocalPeerAssignmentNotFound { self_id })?;
+
+    let local_ip = local_peer_assignment.vpn_address;
 
     let remote_ips = determine_remote_ips(&cluster_assignment, self_id, &local_ip)?;
 
@@ -30,21 +37,11 @@ pub async fn handle(
     ).await
     .map_err(Error::GreInterfaceSetupFailed)?;
 
-    //TODO join device interfaces to bridge
+
+    join_device_interfaces_to_bridge(&local_peer_assignment.device_interfaces, bridge_name, Arc::clone(&network_interface_manager)).await
+        .map_err(Error::JoinDeviceInterfaceToBridgeFailed)?;
 
     Ok(())
-}
-
-fn determine_local_ip(cluster_assignment: &ClusterAssignment, self_id: PeerId) -> Result<IpAddr, Error> {
-
-    let local_ip = cluster_assignment.assignments.iter().find_map(|assignment| {
-        let is_local = assignment.peer_id == self_id;
-
-        is_local
-            .then_some(&assignment.vpn_address)
-    }).ok_or(Error::IpAddressNotDeterminable { kind: IpErrorKind::Local })?;
-
-    Ok(local_ip.to_owned())
 }
 
 fn determine_remote_ips(cluster_assignment: &ClusterAssignment, self_id: PeerId, local_ip: &IpAddr) -> Result<Vec<IpAddr>, Error> {
@@ -62,7 +59,7 @@ fn determine_remote_ips(cluster_assignment: &ClusterAssignment, self_id: PeerId,
 
             is_leader
                 .then_some(peer_assignment.vpn_address)
-        }).ok_or(Error::IpAddressNotDeterminable { kind: IpErrorKind::Leader })?;
+        }).ok_or(Error::LeaderIpAddressNotDeterminable)?;
 
         vec![leader_ip]
     };
@@ -77,18 +74,31 @@ fn require_ipv4_for_gre(ip_address: IpAddr) -> Result<Ipv4Addr, Error> {
     }
 }
 
+async fn join_device_interfaces_to_bridge(
+    device_interfaces: &Vec<NetworkInterfaceName>,
+    bridge_name: &NetworkInterfaceName,
+    network_interface_manager: NetworkInterfaceManagerRef
+) -> Result<(), network_interface::manager::Error> {
+    let bridge = network_interface_manager.try_find_interface(bridge_name).await?;
+
+    for interface in device_interfaces {
+        let interface = network_interface_manager.try_find_interface(interface).await?;
+        network_interface_manager.join_interface_to_bridge(&interface, &bridge).await?;
+        log::debug!("Joined device interface {interface} to bridge {bridge}.");
+    }
+    Ok(())
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("Could not determine {kind:?} IP address from ClusterAssignment.")]
-    IpAddressNotDeterminable { kind: IpErrorKind },
+    #[error("Could not find PeerAssignment for this peer (<{self_id}>) in the ClusterAssignment.")]
+    LocalPeerAssignmentNotFound { self_id: PeerId },
+    #[error("Could not determine leader IP address from ClusterAssignment.")]
+    LeaderIpAddressNotDeterminable,
     #[error("IPv6 isn't yet supported for GRE interfaces.")]
     Ipv6NotSupported,
     #[error("GRE interface setup failed: {0}")]
     GreInterfaceSetupFailed(gre::Error),
-}
-
-#[derive(Debug)]
-pub enum IpErrorKind {
-    Local,
-    Leader,
+    #[error("Joining device interface to bridge failed: {0}")]
+    JoinDeviceInterfaceToBridgeFailed(network_interface::manager::Error),
 }

@@ -57,9 +57,9 @@ async fn create_interface(
         .map_err(|cause| Error::Other { message: format!("Error while constructing GRE interface name: {cause}") })?;
 
     let gre_interface = network_interface_manager.create_gretap_v4_interface(&interface_name, local_ip, remote_ip).await?;
-    log::trace!("Created GRE interface '{gre_interface}'.");
+    log::debug!("Created GRE interface '{gre_interface}'.");
     network_interface_manager.set_interface_up(&gre_interface).await?;
-    log::trace!("Set GRE interface '{interface_name}' to 'up'.");
+    log::debug!("Set GRE interface '{interface_name}' to 'up'.");
 
     let bridge = network_interface_manager.try_find_interface(bridge_name).await?;
     network_interface_manager.join_interface_to_bridge(&gre_interface, &bridge).await?;
