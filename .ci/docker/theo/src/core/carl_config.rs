@@ -19,7 +19,7 @@ enabled = true
 [network.oidc.lea]
 client_id = "opendut-lea-client"
 issuer_url = "https://keycloak/realms/opendut"
-scopes = "openid profile email"
+scopes = "openid,profile,email"
 
 [serve]
 ui.directory = "./opendut-lea/dist/"
@@ -52,7 +52,7 @@ OPENDUT_CARL_NETWORK_TLS_CA_CERTIFICATE=resources/development/tls/insecure-devel
 OPENDUT_CARL_NETWORK_OIDC_ENABLED=true
 OPENDUT_CARL_NETWORK_OIDC_LEA_CLIENT_ID=opendut-lea-client
 OPENDUT_CARL_NETWORK_OIDC_LEA_ISSUER_URL=https://keycloak/realms/opendut
-OPENDUT_CARL_NETWORK_OIDC_LEA_SCOPES="openid profile email"
+OPENDUT_CARL_NETWORK_OIDC_LEA_SCOPES=openid,profile,email
 OPENDUT_CARL_SERVE_UI_DIRECTORY=./opendut-lea/dist/
 
 OPENDUT_CARL_VPN_ENABLED=true

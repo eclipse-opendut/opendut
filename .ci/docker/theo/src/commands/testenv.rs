@@ -59,6 +59,10 @@ impl TestenvCli {
                 crate::core::docker::keycloak::wait_for_keycloak_provisioned()?;
                 start_netbird(expose)?;
                 crate::core::docker::netbird::wait_for_netbird_api_key()?;
+
+                println!("Stopping carl traefik forward (if present).");
+                docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), false)?;
+
                 start_carl_in_docker()?;
 
 

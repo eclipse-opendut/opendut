@@ -128,8 +128,18 @@ pub async fn create(settings_override: Config) -> Result<()> {
         let lea_idp_config = if oidc_enabled {
             let lea_idp_config = settings.get::<LeaIdpConfig>("network.oidc.lea")
                 .expect("Failed to find configuration for `network.oidc.lea`.");
+            let scopes = lea_idp_config.scopes.split(",").collect::<Vec<_>>();
+            for scope in scopes.clone() {
+                if !scope.chars().all(|c|c.is_ascii_alphabetic()) {
+                    panic!("Failed to parse comma-separated OIDC scopes for LEA. Scopes must only contain ASCII alphabetic characters. Found: {:?}. Parsed as: {:?}", lea_idp_config.scopes, scopes);
+                }
+            }
             log::info!("OIDC is enabled: {:?}", lea_idp_config);
-            Some(lea_idp_config)
+            Some(LeaIdpConfig {
+                client_id: lea_idp_config.client_id,
+                issuer_url: lea_idp_config.issuer_url,
+                scopes: scopes.join(" "),  // Frontend expects space separated list of scopes
+            })
         } else {
             log::info!("OIDC is disabled.");
             None
