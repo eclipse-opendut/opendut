@@ -93,7 +93,7 @@ jobs:
 
   run-testenv:
     uses: ./.github/workflows/job-run-testenv.yaml
-    needs: [ legal, bundle-carl, bundle-edgar, build-cleo ]
+    needs: [ legal, bundle-carl, bundle-edgar, bundle-cleo ]
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
       # run-testenv: "${{ github.event.inputs.run-testenv }}"
