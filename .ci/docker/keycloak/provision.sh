@@ -46,6 +46,7 @@ main() {
 
   # Create keycloak realm test users: username, password, group, role
   create_user testuser testuser testgroup testrole "$REALM_OPENDUT"
+  create_user opendut opendut testgroup testrole "$REALM_OPENDUT"
   create_user manager manager managergroup managerrole "$REALM_OPENDUT"
   # Create user nobody (no group, no role)
   create_user nobody nobody "" "" "$REALM_OPENDUT"

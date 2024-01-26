@@ -9,7 +9,7 @@ certificate = "/etc/opendut-network/tls/carl.pem"
 key = "/etc/opendut-network/tls/carl.key"
 
 [network.oidc]
-enabled = true
+enabled = false
 
 [network.oidc.lea]
 client_id = "opendut-lea-client"
