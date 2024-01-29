@@ -1,6 +1,6 @@
 use async_trait::async_trait;
-use opendut_types::cluster::ClusterId;
 
+use opendut_types::cluster::ClusterId;
 use opendut_types::peer::PeerId;
 use opendut_types::vpn::VpnPeerConfig;
 
@@ -15,7 +15,7 @@ pub trait VpnManagementClient {
 
     async fn delete_peer(&self, peer_id: PeerId) -> Result<(), DeletePeerError>;
 
-    async fn get_or_create_configuration(&self, peer_id: PeerId) -> Result<VpnPeerConfig, GetOrCreateConfigurationError>;
+    async fn create_peer_configuration(&self, peer_id: PeerId) -> Result<VpnPeerConfig, GetOrCreateConfigurationError>;
 }
 
 #[derive(thiserror::Error, Debug)]
