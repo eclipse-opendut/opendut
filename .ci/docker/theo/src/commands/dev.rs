@@ -86,7 +86,7 @@ impl DevCli {
                     .arg("--rm")
                     //.arg("--entrypoint=\"\"")
                     .arg("-it")
-                    .arg("router")
+                    .arg("leader")
                     .arg("bash")
                     .run()?;
             }

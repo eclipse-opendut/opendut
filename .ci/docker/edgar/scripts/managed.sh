@@ -76,7 +76,7 @@ while ! cleo_count_connected_peers_in_cluster "$expected_peer_count" "$OPENDUT_E
   sleep 3
 done
 
-if [ "$1" == "router" ]; then
+if [ "$1" == "leader" ]; then
   DEVICES="$(opendut-cleo list --output=json devices | jq --arg NAME "$OPENDUT_EDGAR_CLUSTER_NAME" -r '.[] | select(.tags==$NAME).name' | xargs echo)"
   echo "Enumerating devices to join cluster: $DEVICES"
 

@@ -10,12 +10,12 @@ use opendut_types::util::net::NetworkInterfaceName;
 
 use crate::service::network_interface::gre;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
-use crate::setup::Router;
+use crate::setup::Leader;
 use crate::setup::task::{Success, Task, TaskFulfilled};
 
 pub struct CreateGreInterfaces {
     pub network_interface_manager: NetworkInterfaceManagerRef,
-    pub router: Router,
+    pub leader: Leader,
     pub bridge_name: NetworkInterfaceName,
 }
 impl Task for CreateGreInterfaces {
@@ -33,22 +33,22 @@ impl Task for CreateGreInterfaces {
 
         let local_ip = full_status.local_peer_state.unwrap().local_ip()?;
 
-        let router = {
-            let mut router = self.router.clone();
-            if let Router::Remote(remote_ip) = router {
+        let leader = {
+            let mut leader = self.leader.clone();
+            if let Leader::Remote(remote_ip) = leader {
                 if remote_ip == local_ip {
-                    log::debug!("Address of Router::Remote '{remote_ip}' is local address. Continuing as Router::Local.");
-                    router = Router::Local;
+                    log::debug!("Address of Leader::Remote '{remote_ip}' is local address. Continuing as Leader::Local.");
+                    leader = Leader::Local;
                 }
             }
-            router
+            leader
         };
 
-        if let Router::Remote(remote_ip) = router {
-            //Create GRE interface to router.
+        if let Leader::Remote(remote_ip) = leader {
+            //Create GRE interface to leader.
             block_on(gre::setup_interfaces(&local_ip, &[remote_ip], &self.bridge_name, Arc::clone(&self.network_interface_manager)))?;
 
-            Ok(Success::message(String::from("Interface to router created")))
+            Ok(Success::message(String::from("Interface to leader created")))
         }
         else {
             //Create GRE interfaces for all peers.
@@ -71,7 +71,7 @@ impl Task for CreateGreInterfaces {
 
             block_on(gre::setup_interfaces(&local_ip, &remote_ips, &self.bridge_name, Arc::clone(&self.network_interface_manager)))?;
 
-            Ok(Success::message(format!("{number_of_remote_ips} interface(s) created; acting as router with IP address '{local_ip}'")))
+            Ok(Success::message(format!("{number_of_remote_ips} interface(s) created; acting as leader with IP address '{local_ip}'")))
         }
     }
 }

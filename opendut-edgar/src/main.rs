@@ -64,9 +64,9 @@ enum SetupMode {
         #[arg(long)]
         setup_key: Uuid,
 
-        /// Whether this EDGAR should act as the router of this network or use another EDGAR for routing (specify "local" or the IP address of the routing EDGAR respectively)
+        /// Whether this EDGAR should act as the leader of this network or use another EDGAR for routing (specify "local" or the IP address of the routing EDGAR respectively)
         #[arg(long, value_name="local|IP_ADDRESS")]
-        router: ParseableRouter, // We create a star topology to avoid loops between the GRE interfaces.
+        leader: ParseableLeader, // We create a star topology to avoid loops between the GRE interfaces.
 
         /// Name of the bridge to use, maximum 15 characters long
         #[arg(long)]
@@ -99,11 +99,11 @@ async fn main() -> anyhow::Result<()> {
                 SetupMode::Managed { setup_string } => {
                     setup::start::managed(run_mode, no_confirm, setup_string, mtu).await
                 },
-                SetupMode::Unmanaged { management_url, setup_key, router, bridge } => {
+                SetupMode::Unmanaged { management_url, setup_key, leader, bridge } => {
                     let setup_key = SetupKey { uuid: setup_key };
-                    let ParseableRouter(router) = router;
+                    let ParseableLeader(leader) = leader;
                     let bridge = bridge.unwrap_or_else(opendut_edgar::common::default_bridge_name);
-                    setup::start::unmanaged(run_mode, no_confirm, management_url, setup_key, bridge, router, mtu).await
+                    setup::start::unmanaged(run_mode, no_confirm, management_url, setup_key, bridge, leader, mtu).await
                 }
             }
         },
@@ -111,18 +111,18 @@ async fn main() -> anyhow::Result<()> {
 }
 
 #[derive(Clone, Debug)]
-struct ParseableRouter(setup::Router);
-impl FromStr for ParseableRouter {
+struct ParseableLeader(setup::Leader);
+impl FromStr for ParseableLeader {
     type Err = String;
     fn from_str(string: &str) -> Result<Self, Self::Err> {
         let local_string = "local";
 
         if string.to_lowercase() == local_string {
-            Ok(ParseableRouter(setup::Router::Local))
+            Ok(ParseableLeader(setup::Leader::Local))
         } else {
             let ip = Ipv4Addr::from_str(string)
                 .map_err(|cause| format!("Specify either '{local_string}' or a valid IPv4 address ({cause})."))?;
-            Ok(ParseableRouter(setup::Router::Remote(ip)))
+            Ok(ParseableLeader(setup::Leader::Remote(ip)))
         }
     }
 }

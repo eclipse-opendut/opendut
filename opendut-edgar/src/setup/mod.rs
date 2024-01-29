@@ -11,4 +11,4 @@ mod tasks;
 mod util;
 
 #[derive(Clone, Debug)]
-pub enum Router { Local, Remote(Ipv4Addr) }
+pub enum Leader { Local, Remote(Ipv4Addr) }

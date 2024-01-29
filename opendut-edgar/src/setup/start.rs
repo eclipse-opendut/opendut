@@ -11,7 +11,7 @@ use opendut_types::vpn::VpnPeerConfig;
 use opendut_util::logging;
 
 use crate::service::network_interface::manager::NetworkInterfaceManager;
-use crate::setup::{Router, runner, tasks};
+use crate::setup::{Leader, runner, tasks};
 use crate::setup::runner::RunMode;
 use crate::setup::task::Task;
 use crate::setup::tasks::write_configuration;
@@ -66,7 +66,7 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
 }
 
 #[allow(clippy::box_default)]
-pub async fn unmanaged(run_mode: RunMode, no_confirm: bool, management_url: Url, setup_key: SetupKey, bridge_name: NetworkInterfaceName, router: Router, mtu: u16) -> anyhow::Result<()> {
+pub async fn unmanaged(run_mode: RunMode, no_confirm: bool, management_url: Url, setup_key: SetupKey, bridge_name: NetworkInterfaceName, leader: Leader, mtu: u16) -> anyhow::Result<()> {
 
     let network_interface_manager = Arc::new(NetworkInterfaceManager::create()?);
 
@@ -78,7 +78,7 @@ pub async fn unmanaged(run_mode: RunMode, no_confirm: bool, management_url: Url,
         Box::new(tasks::netbird::Connect { management_url, setup_key, mtu }),
 
         Box::new(tasks::network_interface::CreateBridge { network_interface_manager: Arc::clone(&network_interface_manager), bridge_name: bridge_name.clone() }),
-        Box::new(tasks::network_interface::CreateGreInterfaces { network_interface_manager: Arc::clone(&network_interface_manager), bridge_name: bridge_name.clone(), router }),
+        Box::new(tasks::network_interface::CreateGreInterfaces { network_interface_manager: Arc::clone(&network_interface_manager), bridge_name: bridge_name.clone(), leader }),
         Box::new(tasks::network_interface::ConnectDeviceInterfaces { network_interface_manager, bridge_name }),
     ];
 

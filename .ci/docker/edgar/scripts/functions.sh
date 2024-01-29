@@ -88,15 +88,15 @@ check_timeout() {
 }
 
 
-debug_show_peers_requesting_router_ip() {
+debug_show_peers_requesting_leader_ip() {
   while true; do
-    lookups=$(grep router_ip.txt logs.txt | nl | awk '{print $1}' | tail -n1)
+    lookups=$(grep leader_ip.txt logs.txt | nl | awk '{print $1}' | tail -n1)
     num_lookups=${lookups:-0}
-    echo "${num_lookups} of ${OPENDUT_EDGAR_REPLICAS} peers fetched the router_ip address."
+    echo "${num_lookups} of ${OPENDUT_EDGAR_REPLICAS} peers fetched the leader_ip address."
     if [ "${num_lookups}" == "${OPENDUT_EDGAR_REPLICAS}" ]; then
       break
     else
-      echo "Waiting for peers to fetch router_ip address."
+      echo "Waiting for peers to fetch leader_ip address."
       sleep 1
     fi
   done
