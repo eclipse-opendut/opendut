@@ -1,12 +1,15 @@
 use std::time::Duration;
+
 use http::{header, HeaderMap, HeaderValue, Method};
 use reqwest::{Body, Request, Response, Url};
 use serde::Serialize;
+
 use opendut_types::peer::PeerId;
 use opendut_types::vpn::HttpsOnly;
+
+use crate::{netbird, NetbirdToken, routes};
 use crate::client::request_handler::{DefaultRequestHandler, RequestHandler, RequestHandlerConfig};
 use crate::netbird::{error, group, rules};
-use crate::{netbird, NetbirdToken, routes};
 use crate::netbird::error::{CreateSetupKeyError, GetGroupError, GetRulesError, RequestError};
 use crate::netbird::rules::RuleName;
 
@@ -302,6 +305,7 @@ mod tests {
     use opendut_types::cluster::ClusterId;
 
     use crate::netbird::group;
+    use crate::netbird::group::GroupId;
 
     use super::*;
 
@@ -321,55 +325,16 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn delete_a_peer() -> anyhow::Result<()> {
-        fn peer_id() -> PeerId { PeerId::from(uuid!("f3fb5772-a259-400e-9e61-b5a69dc46c2a")) }
+    async fn delete_peer() -> anyhow::Result<()> {
 
         let requester = MockRequester {
             on_request: |request| {
-                match request.url().path() {
-                    "/api/groups" => {
-                        assert_that!(request.body(), none());
-
-                        let response = http::Response::builder()
-                            .body(json!(
-                                [
-                                    {
-                                        "id": "aax77acflma44h075aa3",
-                                        "name": netbird::GroupName::from(peer_id()),
-                                        "peers_count": 1,
-                                        "issued": "api",
-                                        "peers": [
-                                            {
-                                                "id": "ah8cca16lmn67acg5s11",
-                                                "name": "some-peer"
-                                            }
-                                        ]
-                                    }
-                                ]
-                            ).to_string()).unwrap();
-
-                        Ok(Response::from(response))
-                    }
-                    path => {
-                        if path.starts_with("/api/groups/") {
-                            assert_that!(request.method(), eq(&http::Method::DELETE));
-                            assert_that!(request.url().path(), eq("/api/groups/aax77acflma44h075aa3"));
-                            assert_that!(request.body(), none());
-                            Ok(Response::from(http::Response::builder()
-                                .body("")
-                                .unwrap()))
-                        } else if path.starts_with("/api/peers/") {
-                            assert_that!(request.method(), eq(&http::Method::DELETE));
-                            assert_that!(request.url().path(), eq("/api/peers/ah8cca16lmn67acg5s11"));
-                            assert_that!(request.body(), none());
-                            Ok(Response::from(http::Response::builder()
-                                .body("")
-                                .unwrap()))
-                        } else {
-                            panic!("Unexpected url path: {path}");
-                        }
-                    }
-                }
+                assert_that!(request.method(), eq(&Method::DELETE));
+                assert_that!(request.url().path(), eq("/api/peers/ah8cca16lmn67acg5s11"));
+                assert_that!(request.body(), none());
+                Ok(Response::from(http::Response::builder()
+                    .body("")
+                    .unwrap()))
             },
         };
 
@@ -378,10 +343,9 @@ mod tests {
             requester: Box::new(requester),
         };
 
-        // let result = client.delete_peer(peer_id()).await;
+        let result = client.delete_netbird_peer(&netbird::PeerId::from("ah8cca16lmn67acg5s11")).await;
 
-        // assert_that!(result, ok(anything()));
-        todo!("Split test and adapt to test only the client");
+        assert_that!(result, ok(anything()));
 
         Ok(())
     }
@@ -504,6 +468,32 @@ mod tests {
                 )
             )
         );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn delete_group() -> anyhow::Result<()> {
+
+        let requester = MockRequester {
+            on_request: |request| {
+                assert_that!(request.method(), eq(&Method::DELETE));
+                assert_that!(request.url().path(), eq("/api/groups/aax77acflma44h075aa3"));
+                assert_that!(request.body(), none());
+                Ok(Response::from(http::Response::builder()
+                    .body("")
+                    .unwrap()))
+            }
+        };
+
+        let client = Client {
+            base_url: base_url(),
+            requester: Box::new(requester),
+        };
+
+        let result = client.delete_netbird_group(&GroupId::from("aax77acflma44h075aa3")).await;
+
+        assert_that!(result, ok(anything()));
+
         Ok(())
     }
 

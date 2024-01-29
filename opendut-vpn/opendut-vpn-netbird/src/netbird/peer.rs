@@ -5,6 +5,11 @@ use serde::{Deserialize, Serialize};
 #[serde(transparent)]
 pub struct PeerId(pub String);
 
+impl From<&str> for PeerId {
+    fn from(value: &str) -> Self {
+        Self(String::from(value))
+    }
+}
 
 #[derive(Deserialize)]
 pub struct Peer {
