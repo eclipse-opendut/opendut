@@ -57,7 +57,8 @@ opendut-cleo create peer --name "$NAME" --id "$PEER_ID"
 DEVICE_INTERFACE="dut0"
 DEVICE_ADDRESS=$(ip -json address show dev eth0 | jq --raw-output '.[0].addr_info[0].local' | sed --expression 's#32#33#')  # derive from existing address, by replacing '32' with '33'
 ip link add $DEVICE_INTERFACE type dummy
-ip address add "$DEVICE_ADDRESS" dev "$DEVICE_INTERFACE"
+ip address add "$DEVICE_ADDRESS/24" dev "$DEVICE_INTERFACE"
+ip link set dev $DEVICE_INTERFACE up
 opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME" --interface "$DEVICE_INTERFACE" --location "$NAME" --tags "$OPENDUT_EDGAR_CLUSTER_NAME"
 
 PEER_SETUP_KEY=$(opendut-cleo generate-peer-setup --id "$PEER_ID")
