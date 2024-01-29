@@ -53,7 +53,12 @@ PEER_ID=$(uuidgen)
 NAME="${OPENDUT_EDGAR_CLUSTER_NAME}_$(hostname)"
 echo "Creating peer with name $NAME and id $PEER_ID"
 opendut-cleo create peer --name "$NAME" --id "$PEER_ID"
-opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME" --interface eth0 --location "$NAME" --tags "$OPENDUT_EDGAR_CLUSTER_NAME"
+
+DEVICE_INTERFACE="dut0"
+DEVICE_ADDRESS=$(ip -json address show dev eth0 | jq --raw-output '.[0].addr_info[0].local' | sed --expression 's#32#33#')  # derive from existing address, by replacing '32' with '33'
+ip link add $DEVICE_INTERFACE type dummy
+ip address add "$DEVICE_ADDRESS" dev "$DEVICE_INTERFACE"
+opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME" --interface "$DEVICE_INTERFACE" --location "$NAME" --tags "$OPENDUT_EDGAR_CLUSTER_NAME"
 
 PEER_SETUP_KEY=$(opendut-cleo generate-peer-setup --id "$PEER_ID")
 echo "Setting up peer with setup key $PEER_SETUP_KEY"
