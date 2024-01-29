@@ -242,8 +242,8 @@ mod test {
     use tokio::sync::mpsc;
 
     use opendut_types::cluster::ClusterName;
-    use opendut_types::peer::{PeerDescriptor, PeerId, PeerName};
-    use opendut_types::topology::{Device, DeviceId, Topology};
+    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
+    use opendut_types::topology::{DeviceDescriptor, DeviceId, Topology};
     use opendut_types::util::net::NetworkInterfaceName;
 
     use crate::actions::{CreateClusterConfigurationParams, StorePeerDescriptorParams};
@@ -274,13 +274,13 @@ mod test {
         let peer_a = PeerDescriptor {
             id: peer_a_id,
             name: PeerName::try_from("PeerA").unwrap(),
+            location: PeerLocation::new("Ulm"),
             topology: Topology {
                 devices: vec![
-                    Device {
+                    DeviceDescriptor {
                         id: peer_a_device_1,
                         name: String::from("PeerA Device 1"),
                         description: String::from("Huii"),
-                        location: String::from("Ulm"),
                         interface: NetworkInterfaceName::try_from("eth0").unwrap(),
                         tags: vec![],
                     }
@@ -293,13 +293,13 @@ mod test {
         let peer_b = PeerDescriptor {
             id: peer_b_id,
             name: PeerName::try_from("PeerB").unwrap(),
+            location: PeerLocation::new("Ulm"),
             topology: Topology {
                 devices: vec![
-                    Device {
+                    DeviceDescriptor {
                         id: peer_b_device_1,
                         name: String::from("PeerB Device 1"),
                         description: String::from("Pfuii"),
-                        location: String::from("New York"),
                         interface: NetworkInterfaceName::try_from("can1").unwrap(),
                         tags: vec![],
                     }
@@ -399,12 +399,11 @@ mod test {
     #[test]
     fn should_determine_member_interface_mapping() -> anyhow::Result<()> {
 
-        fn device(id: DeviceId, interface: NetworkInterfaceName) -> Device {
-            Device {
+        fn device(id: DeviceId, interface: NetworkInterfaceName) -> DeviceDescriptor {
+            DeviceDescriptor {
                 id,
                 name: format!("test-device-{id}"),
                 description: String::new(),
-                location: String::new(),
                 interface,
                 tags: Vec::new(),
             }
@@ -416,10 +415,11 @@ mod test {
 
         let cluster_devices = HashSet::from([device_a.id, device_b.id, device_c.id]);
 
-        fn peer_descriptor(id: PeerId, devices: Vec<Device>) -> PeerDescriptor {
+        fn peer_descriptor(id: PeerId, devices: Vec<DeviceDescriptor>) -> PeerDescriptor {
             PeerDescriptor {
                 id,
                 name: PeerName::try_from(format!("peer-{id}")).unwrap(),
+                location: PeerLocation::new("Ulm"),
                 topology: Topology {
                     devices,
                 },

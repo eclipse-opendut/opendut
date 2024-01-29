@@ -85,7 +85,7 @@ mod test {
     use googletest::prelude::*;
 
     use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
-    use opendut_types::peer::{PeerDescriptor, PeerId, PeerName};
+    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
     use opendut_types::topology::Topology;
 
     use super::*;
@@ -99,6 +99,7 @@ mod test {
         let peer = PeerDescriptor {
             id: peer_resource_id,
             name: PeerName::try_from("TestPeer").unwrap(),
+            location: PeerLocation::new("Ulm"),
             topology: Topology::default(),
         };
 

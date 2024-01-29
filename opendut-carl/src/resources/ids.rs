@@ -1,7 +1,7 @@
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::peer::state::PeerState;
-use opendut_types::topology::{Device, DeviceId};
+use opendut_types::topology::{DeviceDescriptor, DeviceId};
 
 use crate::resources::{Id, IntoId};
 
@@ -16,7 +16,7 @@ impl IntoId<ClusterDeployment> for ClusterId {
     }
 }
 
-impl IntoId<Device> for DeviceId {
+impl IntoId<DeviceDescriptor> for DeviceId {
     fn into_id(self) -> Id {
         Id::from(self.0)
     }

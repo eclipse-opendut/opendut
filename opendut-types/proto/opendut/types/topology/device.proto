@@ -9,11 +9,10 @@ message DeviceId {
   opendut.types.util.Uuid uuid = 1;
 }
 
-message Device {
+message DeviceDescriptor {
   opendut.types.topology.DeviceId id = 1;
   string name = 2;
   string description = 3;
-  string location = 4;
-  opendut.types.util.NetworkInterfaceName interface = 5;
-  repeated string tags = 6;
+  opendut.types.util.NetworkInterfaceName interface = 4;
+  repeated string tags = 5;
 }

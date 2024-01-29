@@ -52,11 +52,31 @@ impl TryFrom<PeerName> for crate::peer::PeerName {
     }
 }
 
+impl From<crate::peer::PeerLocation> for PeerLocation {
+    fn from(value: crate::peer::PeerLocation) -> Self {
+        Self {
+            value: value.0
+        }
+    }
+}
+
+impl TryFrom<PeerLocation> for crate::peer::PeerLocation {
+    type Error = ConversionError;
+
+    fn try_from(value: PeerLocation) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<PeerLocation, crate::peer::PeerLocation>;
+
+        crate::peer::PeerLocation::try_from(value.value)
+            .map_err(|cause| ErrorBuilder::new(cause.to_string()))
+    }
+}
+
 impl From<crate::peer::PeerDescriptor> for PeerDescriptor {
     fn from(value: crate::peer::PeerDescriptor) -> Self {
         Self {
             id: Some(value.id.into()),
             name: Some(value.name.into()),
+            location: Some(value.location.into()),
             topology: Some(value.topology.into()),
         }
     }
@@ -76,6 +96,10 @@ impl TryFrom<PeerDescriptor> for crate::peer::PeerDescriptor {
             .ok_or(ErrorBuilder::new("Name not set"))?
             .try_into()?;
 
+        let location = value.location
+            .ok_or(ErrorBuilder::new("Location not set"))?
+            .try_into()?;
+
         let topology = value.topology
             .ok_or(ErrorBuilder::new("Topology not set"))?
             .try_into()?;
@@ -83,6 +107,7 @@ impl TryFrom<PeerDescriptor> for crate::peer::PeerDescriptor {
         Ok(crate::peer::PeerDescriptor {
             id,
             name,
+            location,
             topology,
         })
     }

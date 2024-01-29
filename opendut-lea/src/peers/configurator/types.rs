@@ -1,13 +1,13 @@
 use leptos::{RwSignal, SignalGetUntracked};
 
-use opendut_types::peer::{PeerDescriptor, PeerId, PeerName};
-use opendut_types::topology::{Device, DeviceId, Topology};
+use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
+use opendut_types::topology::{DeviceDescriptor, DeviceId, Topology};
 use opendut_types::util::net::NetworkInterfaceName;
 
 use crate::components::UserInputValue;
 
-pub const EMPTY_DEVICE_NAME_ERROR_MESSAGE: &'static str = "The name of a device may not be empty!";
-pub const EMPTY_DEVICE_INTERFACE_ERROR_MESSAGE: &'static str = "Enter a valid interface name!";
+pub const EMPTY_DEVICE_NAME_ERROR_MESSAGE: &str = "The name of a device may not be empty!";
+pub const EMPTY_DEVICE_INTERFACE_ERROR_MESSAGE: &str = "Enter a valid interface name!";
 
 #[derive(thiserror::Error, Clone, Debug)]
 pub enum PeerMisconfigurationError {
@@ -31,6 +31,7 @@ pub enum DeviceMisconfigurationError {
 pub struct UserPeerConfiguration {
     pub id: PeerId,
     pub name: UserInputValue,
+    pub location: UserInputValue,
     pub devices: Vec<RwSignal<UserDeviceConfiguration>>,
     pub is_new: bool,
 }
@@ -40,52 +41,63 @@ pub struct UserDeviceConfiguration {
     pub id: DeviceId,
     pub name: UserInputValue,
     pub description: String,
-    pub location: UserInputValue,
     pub interface: UserInputValue,
     pub is_collapsed: bool,
 }
 
 impl TryFrom<UserPeerConfiguration> for PeerDescriptor {
-
     type Error = PeerMisconfigurationError;
 
     fn try_from(configuration: UserPeerConfiguration) -> Result<Self, Self::Error> {
-        let name = configuration.name
+        let name = configuration
+            .name
             .right_ok_or(PeerMisconfigurationError::InvalidPeerName)
-            .and_then(|name| PeerName::try_from(name)
-                .map_err(|_| PeerMisconfigurationError::InvalidPeerName))?;
-        let devices = configuration.devices.into_iter()
+            .and_then(|name| {
+                PeerName::try_from(name).map_err(|_| PeerMisconfigurationError::InvalidPeerName)
+            })?;
+        let location = configuration
+            .location
+            .right_ok_or(PeerMisconfigurationError::InvalidPeerName)
+            .and_then(|location| {
+                PeerLocation::try_from(location)
+                    .map_err(|_| PeerMisconfigurationError::InvalidPeerName)
+            })?;
+        let devices = configuration
+            .devices
+            .into_iter()
             .map(|signal| signal.get_untracked())
-            .map(|configuration| Device::try_from(configuration)
-                .map_err(PeerMisconfigurationError::InvalidDevice)
-            )
+            .map(|configuration| {
+                DeviceDescriptor::try_from(configuration)
+                    .map_err(PeerMisconfigurationError::InvalidDevice)
+            })
             .collect::<Result<Vec<_>, _>>()?;
         Ok(PeerDescriptor {
             id: configuration.id,
             name,
+            location,
             topology: Topology::new(devices),
         })
     }
 }
 
-impl TryFrom<UserDeviceConfiguration> for Device {
+impl TryFrom<UserDeviceConfiguration> for DeviceDescriptor {
     type Error = DeviceMisconfigurationError;
 
     fn try_from(configuration: UserDeviceConfiguration) -> Result<Self, Self::Error> {
-        let name = configuration.name
+        let name = configuration
+            .name
             .right_ok_or(DeviceMisconfigurationError::InvalidDeviceName)?;
-        let location = configuration.location
-            .right_ok_or(DeviceMisconfigurationError::InvalidDeviceLocation)?;
-        let interface = configuration.interface
+        let interface = configuration
+            .interface
             .right_ok_or(DeviceMisconfigurationError::InvalidDeviceInterface)
-            .and_then(|interface_name| NetworkInterfaceName::try_from(interface_name)
-                .map_err(|_| DeviceMisconfigurationError::InvalidDeviceInterface)
-            )?;
-        Ok(Device{
+            .and_then(|interface_name| {
+                NetworkInterfaceName::try_from(interface_name)
+                    .map_err(|_| DeviceMisconfigurationError::InvalidDeviceInterface)
+            })?;
+        Ok(DeviceDescriptor {
             id: configuration.id,
             name,
             description: configuration.description,
-            location,
             interface,
             tags: vec![],
         })

@@ -5,7 +5,7 @@ pub mod create {
     use opendut_carl_api::carl::CarlClient;
     use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
     use opendut_types::peer::PeerId;
-    use opendut_types::topology::Device;
+    use opendut_types::topology::DeviceDescriptor;
     use crate::CreateOutputFormat;
 
     pub async fn execute(carl: &mut CarlClient, name: String, cluster_id: Option<Uuid>, leader_id: Uuid, device_names: Vec<String>, output: CreateOutputFormat) -> crate::Result<()> {
@@ -57,7 +57,7 @@ pub mod create {
         Ok(())
     }
 
-    fn check_devices(all_devices: &[Device], device_names: &[String]) -> Vec<Result<Device, crate::Error>> {
+    fn check_devices(all_devices: &[DeviceDescriptor], device_names: &[String]) -> Vec<Result<DeviceDescriptor, crate::Error>> {
         let checked_devices = device_names.iter().map(|device_name| {
             let maybe_device = all_devices.iter().find(|device| &device.name == device_name);
             if let Some(device) = maybe_device {
@@ -80,29 +80,26 @@ pub mod create {
         use opendut_types::util::net::NetworkInterfaceName;
 
         #[fixture]
-        fn all_devices() -> Vec<Device> {
+        fn all_devices() -> Vec<DeviceDescriptor> {
             vec![
-                Device {
+                DeviceDescriptor {
                     id: DeviceId::random(),
                     name: String::from("MyDevice"),
                     description: String::new(),
-                    location: String::new(),
                     interface: NetworkInterfaceName::try_from("eth0").unwrap(),
                     tags: vec![],
                 },
-                Device {
+                DeviceDescriptor {
                     id: DeviceId::random(),
                     name: String::from("YourDevice"),
                     description: String::new(),
-                    location: String::new(),
                     interface: NetworkInterfaceName::try_from("eth0").unwrap(),
                     tags: vec![],
                 },
-                Device {
+                DeviceDescriptor {
                     id: DeviceId::random(),
                     name: String::from("HisDevice"),
                     description: String::new(),
-                    location: String::new(),
                     interface: NetworkInterfaceName::try_from("eth0").unwrap(),
                     tags: vec![],
                 }
@@ -110,7 +107,7 @@ pub mod create {
         }
 
         #[rstest]
-        fn test_check_devices(all_devices: Vec<Device>) {
+        fn test_check_devices(all_devices: Vec<DeviceDescriptor>) {
 
             let device_names = vec![
                 String::from("MyDevice"),
@@ -125,7 +122,7 @@ pub mod create {
         }
 
         #[rstest]
-        fn test_that_checked_devices_returns_an_error_for_missing_device(all_devices: Vec<Device>) {
+        fn test_that_checked_devices_returns_an_error_for_missing_device(all_devices: Vec<DeviceDescriptor>) {
             let device_names = vec![
                 String::from("NoDevice")
             ];
@@ -137,7 +134,7 @@ pub mod create {
         }
 
         #[rstest]
-        fn test_that_checked_devices_returns_errors_for_missing_devices(all_devices: Vec<Device>) {
+        fn test_that_checked_devices_returns_errors_for_missing_devices(all_devices: Vec<DeviceDescriptor>) {
             let device_names = vec![
                 String::from("NoDevice"),
                 String::from("UnknownDevice")

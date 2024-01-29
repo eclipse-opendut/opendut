@@ -191,7 +191,7 @@ message CreatePeerSetupFailure {
 message ListDevicesRequest {}
 
 message ListDevicesResponse {
-  repeated opendut.types.topology.Device devices = 1;
+  repeated opendut.types.topology.DeviceDescriptor devices = 1;
 }
 
 message IllegalDevicesError {

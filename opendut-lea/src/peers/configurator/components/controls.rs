@@ -5,8 +5,11 @@ use tracing::{debug, error, info};
 
 use opendut_types::peer::{PeerDescriptor, PeerId};
 
-use crate::app::{ExpectGlobals, use_app_globals};
-use crate::components::{ButtonColor, ButtonSize, ButtonState, ButtonStateSignalProvider, ConfirmationButton, FontAwesomeIcon, IconButton, Toast, use_toaster};
+use crate::app::{use_app_globals, ExpectGlobals};
+use crate::components::{
+    use_toaster, ButtonColor, ButtonSize, ButtonState, ButtonStateSignalProvider,
+    ConfirmationButton, FontAwesomeIcon, IconButton, Toast,
+};
 use crate::peers::configurator::types::UserPeerConfiguration;
 use crate::routing::{navigate_to, WellKnownRoutes};
 
@@ -15,7 +18,6 @@ pub fn Controls(
     configuration: ReadSignal<UserPeerConfiguration>,
     is_valid_peer_configuration: Signal<bool>,
 ) -> impl IntoView {
-
     view! {
         <div class="buttons">
             <SavePeerButton configuration is_valid_peer_configuration />
@@ -29,7 +31,6 @@ fn SavePeerButton(
     configuration: ReadSignal<UserPeerConfiguration>,
     is_valid_peer_configuration: Signal<bool>,
 ) -> impl IntoView {
-
     let globals = use_app_globals();
     let toaster = use_toaster();
 
@@ -45,17 +46,15 @@ fn SavePeerButton(
                     match result {
                         Ok(_) => {
                             debug!("Successfully stored peer: {peer_id}");
-                            toaster.toast(Toast::builder()
-                                .simple("Successfully stored peer configuration.")
-                                .success()
+                            toaster.toast(
+                                Toast::builder()
+                                    .simple("Successfully stored peer configuration.")
+                                    .success(),
                             );
                         }
                         Err(cause) => {
                             error!("Failed to create peer <{peer_id}>, due to error: {cause:?}");
-                            toaster.toast(Toast::builder()
-                                .simple("Failed to store peer!")
-                                .error()
-                            );
+                            toaster.toast(Toast::builder().simple("Failed to store peer!").error());
                         }
                     }
                 }
@@ -69,14 +68,10 @@ fn SavePeerButton(
     let button_state = MaybeSignal::derive(move || {
         if store_action.pending().get() {
             ButtonState::Loading
-        }
-        else {
-            if is_valid_peer_configuration.get() {
-                ButtonState::Enabled
-            }
-            else {
-                ButtonState::Disabled
-            }
+        } else if is_valid_peer_configuration.get() {
+            ButtonState::Enabled
+        } else {
+            ButtonState::Disabled
         }
     });
 
@@ -96,29 +91,24 @@ fn SavePeerButton(
 
 #[component]
 fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl IntoView {
-
     let globals = use_app_globals();
 
-    let delete_action = create_action(move |_: &PeerId| {
-        async move {
-            let mut carl = globals.expect_client();
-            let peer_id = configuration.get_untracked().id;
-            let result = carl.peers.delete_peer_descriptor(peer_id).await;
-            match result {
-                Ok(_) => {
-                    info!("Successfully deleted peer: {}", peer_id);
-                    navigate_to(WellKnownRoutes::PeersOverview);
-                }
-                Err(cause) => {
-                    error!("Failed to delete peer <{peer_id}>, due to error: {cause:?}");
-                }
+    let delete_action = create_action(move |_: &PeerId| async move {
+        let mut carl = globals.expect_client();
+        let peer_id = configuration.get_untracked().id;
+        let result = carl.peers.delete_peer_descriptor(peer_id).await;
+        match result {
+            Ok(_) => {
+                info!("Successfully deleted peer: {}", peer_id);
+                navigate_to(WellKnownRoutes::PeersOverview);
+            }
+            Err(cause) => {
+                error!("Failed to delete peer <{peer_id}>, due to error: {cause:?}");
             }
         }
     });
 
-    let button_state = delete_action
-        .pending()
-        .derive_loading();
+    let button_state = delete_action.pending().derive_loading();
 
     view! {
         <ConfirmationButton

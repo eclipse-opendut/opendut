@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use leptos::{component, create_read_slice, create_slice, IntoView, RwSignal, SignalGet, view};
+use leptos::{component, create_read_slice, create_slice, view, IntoView, RwSignal, SignalGet};
 
 use opendut_types::peer::PeerId;
 use opendut_types::topology::DeviceId;
@@ -10,33 +10,33 @@ use crate::clusters::configurator::types::UserClusterConfiguration;
 
 #[component]
 pub fn LeaderSelector(cluster_configuration: RwSignal<UserClusterConfiguration>) -> impl IntoView {
-
     let peer_descriptors = get_all_peers();
 
-    let getter_selected_devices = create_read_slice(cluster_configuration,
-        |config| {
-            Clone::clone(&config.devices)
-        },
-    );
+    let getter_selected_devices = create_read_slice(cluster_configuration, |config| {
+        Clone::clone(&config.devices)
+    });
 
-    let (getter_leader, setter_leader) = create_slice(cluster_configuration,
-        |config| {
-            Clone::clone(&config.leader)
-        },
+    let (getter_leader, setter_leader) = create_slice(
+        cluster_configuration,
+        |config| Clone::clone(&config.leader),
         |config, input| {
             config.leader = input;
-        }
+        },
     );
 
-    let selected_devices = move || { get_all_selected_devices(getter_selected_devices) };
+    let selected_devices = move || get_all_selected_devices(getter_selected_devices);
 
     let rows = move || {
-
         let selected_devices = selected_devices();
 
         let mut peers = peer_descriptors.get().unwrap_or_default();
 
-        peers.sort_by(|a, b| a.name.to_string().to_lowercase().cmp(&b.name.to_string().to_lowercase()));
+        peers.sort_by(|a, b| {
+            a.name
+                .to_string()
+                .to_lowercase()
+                .cmp(&b.name.to_string().to_lowercase())
+        });
 
         peers.clone().into_iter()
             .filter( |peer_descriptor| {
@@ -60,6 +60,9 @@ pub fn LeaderSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
                         <td>
                             {&peer.id.to_string()}
                         </td>
+                        <td>
+                            {&peer.location.to_string()}
+                        </td>
                         <td class="is-narrow" style="text-align: center">
                             <div class="control">
                                 <label class="radio">
@@ -80,7 +83,6 @@ pub fn LeaderSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
                 }
             })
             .collect::<Vec<_>>()
-
     };
 
     view! {
@@ -91,6 +93,7 @@ pub fn LeaderSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
                     <tr>
                         <th>Name</th>
                         <th>Peer ID</th>
+                        <th>Location</th>
                         <th>Leader</th>
                     </tr>
                 </thead>

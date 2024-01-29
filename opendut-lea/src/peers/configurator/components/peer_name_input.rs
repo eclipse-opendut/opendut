@@ -29,14 +29,14 @@ pub fn PeerNameInput(peer_configuration: RwSignal<UserPeerConfiguration>) -> imp
                             UserInputValue::Both(format!("A peer name must be at least {} characters long.", expected), value)
                         }
                         else {
-                            UserInputValue::Both(format!("Enter a valid peer name."), value)
+                            UserInputValue::Both("Enter a valid peer name.".to_string(), value)
                         }
                     },
                     IllegalPeerName::TooLong { expected, value, .. } => {
                         UserInputValue::Both(format!("A peer name must be at most {} characters long.", expected), value)
                     },
                     IllegalPeerName::InvalidCharacter { value } => {
-                        UserInputValue::Both(format!("The cluster name contains invalid characters."), value)
+                        UserInputValue::Both("The peer name contains invalid characters.".to_string(), value)
                     },
                 }
             }

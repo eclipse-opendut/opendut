@@ -6,7 +6,7 @@ pub mod list {
     use serde::Serialize;
 
     use opendut_carl_api::carl::CarlClient;
-    use opendut_types::peer::{PeerDescriptor, PeerId, PeerName};
+    use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerLocation};
 
     use crate::ListOutputFormat;
 
@@ -18,6 +18,8 @@ pub mod list {
         id: PeerId,
         #[table(title = "Status")]
         status: PeerStatus,
+        #[table(title = "Location")]
+        location: PeerLocation,
     }
 
     #[derive(Debug, PartialEq, Serialize)]
@@ -69,6 +71,7 @@ pub mod list {
             PeerTable {
                 name: Clone::clone(&peer.name),
                 id: peer.id,
+                location: Clone::clone(&peer.location),
                 status,
             }
         }).collect::<Vec<PeerTable>>()
@@ -78,7 +81,7 @@ pub mod list {
     mod test {
         use googletest::prelude::*;
 
-        use opendut_types::peer::{PeerDescriptor, PeerId, PeerName};
+        use opendut_types::peer::{PeerLocation, PeerDescriptor, PeerId, PeerName};
 
         use super::*;
 
@@ -88,6 +91,7 @@ pub mod list {
                 PeerDescriptor {
                     id: PeerId::random(),
                     name: PeerName::try_from("MyPeer").unwrap(),
+                    location: PeerLocation::new("SiFi"),
                     topology: Default::default(),
                 }
             ];
@@ -203,31 +207,43 @@ pub mod create {
     use uuid::Uuid;
 
     use opendut_carl_api::carl::CarlClient;
-    use opendut_types::peer::{PeerDescriptor, PeerId, PeerName};
+    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
     use crate::CreateOutputFormat;
 
-    pub async fn execute(carl: &mut CarlClient, name: String, id: Option<Uuid>, output: CreateOutputFormat) -> crate::Result<()> {
+    pub async fn execute(carl: &mut CarlClient, name: String, id: Option<Uuid>, location: Option<String>, output: CreateOutputFormat) -> crate::Result<()> {
         let id = PeerId::from(id.unwrap_or_else(Uuid::new_v4));
         match PeerName::try_from(name) {
             Ok(name) => {
-                let descriptor: PeerDescriptor = PeerDescriptor { id, name: Clone::clone(&name), topology: Default::default() };
-                carl.peers.store_peer_descriptor(descriptor.clone()).await
-                    .map_err(|error| format!("Failed to create new peer.\n  {error}"))?;
-                let bold = Style::new().bold();
-                match output {
-                    CreateOutputFormat::Text => {
-                        println!("Created the peer '{}' with the ID: <{}>", name, bold.apply_to(id));
+                match PeerLocation::try_from(location.unwrap_or_default()) {
+                    Ok(location) => {
+                        let descriptor: PeerDescriptor = PeerDescriptor {
+                            id,
+                            name: Clone::clone(&name),
+                            location,
+                            topology: Default::default()
+                        };
+                        carl.peers.store_peer_descriptor(descriptor.clone()).await
+                            .map_err(|error| format!("Failed to create new peer.\n  {error}"))?;
+                        let bold = Style::new().bold();
+                        match output {
+                            CreateOutputFormat::Text => {
+                                println!("Created the peer '{}' with the ID: <{}>", name, bold.apply_to(id));
+                            }
+                            CreateOutputFormat::Json => {
+                                let json = serde_json::to_string(&descriptor).unwrap();
+                                println!("{}", json);
+                            }
+                            CreateOutputFormat::PrettyJson => {
+                                let json = serde_json::to_string_pretty(&descriptor).unwrap();
+                                println!("{}", json);
+                            }
+                        }
+                        Ok(())
                     }
-                    CreateOutputFormat::Json => {
-                        let json = serde_json::to_string(&descriptor).unwrap();
-                        println!("{}", json);
-                    }
-                    CreateOutputFormat::PrettyJson => {
-                        let json = serde_json::to_string_pretty(&descriptor).unwrap();
-                        println!("{}", json);
+                    Err(error) => {
+                        Err(format!("Could not create peer.\n  {}", error))
                     }
                 }
-                Ok(())
             }
             Err(error) => {
                 Err(format!("Could not create peer.\n  {}", error))

@@ -219,7 +219,7 @@ mod tests {
     use googletest::prelude::*;
     use url::Url;
 
-    use opendut_types::peer::PeerName;
+    use opendut_types::peer::{PeerLocation, PeerName};
     use opendut_types::proto;
     use opendut_types::topology::Topology;
 
@@ -238,6 +238,7 @@ mod tests {
         let peer_descriptor = PeerDescriptor {
             id: peer_id,
             name: PeerName::try_from("TestPeer").unwrap(),
+            location: PeerLocation::new("SiFi"),
             topology: Topology::default(),
         };
 

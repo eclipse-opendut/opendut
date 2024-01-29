@@ -4,7 +4,7 @@ use std::ops::Not;
 use leptos::*;
 
 use opendut_types::peer::PeerId;
-use opendut_types::topology::{Device, DeviceId};
+use opendut_types::topology::{DeviceDescriptor, DeviceId};
 
 use crate::clusters::configurator::components::{get_all_peers, get_all_selected_devices};
 use crate::clusters::configurator::types::UserClusterConfiguration;
@@ -16,19 +16,17 @@ pub type DeviceSelection = Ior<DeviceSelectionError, HashSet<DeviceId>>;
 
 #[component]
 pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>) -> impl IntoView {
-
     let peer_descriptors = get_all_peers();
 
-    let (getter, setter) = create_slice(cluster_configuration,
-        |config| {
-            Clone::clone(&config.devices)
-        },
+    let (getter, setter) = create_slice(
+        cluster_configuration,
+        |config| Clone::clone(&config.devices),
         |config, input| {
             config.devices = input;
-        }
+        },
     );
 
-    let selected_devices = move || { get_all_selected_devices(getter) };
+    let selected_devices = move || get_all_selected_devices(getter);
 
     let help_text = move || {
         getter.with(|selection| match selection {
@@ -39,7 +37,6 @@ pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
     };
 
     let rows = move || {
-
         let mut all_devices_by_peer: Vec<_> = Vec::new();
 
         for peer in peer_descriptors.get().unwrap_or_default() {
@@ -68,9 +65,7 @@ pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
                             <td>
                                 {&device.name}
                             </td>
-                            <td>
-                                {&device.location}
-                            </td>
+                            <td>{peer.location.to_string()}</td>
                             <td class="is-narrow">
                                 <IconButton
                                     icon=FontAwesomeIcon::Check
@@ -115,7 +110,7 @@ pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
                     <tr>
                         <th></th>
                         <th>Name</th>
-                        <th>Location</th>
+                        <th>Peer Location</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -128,10 +123,7 @@ pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
 }
 
 #[component]
-pub fn DeviceInfo(
-    device: Device,
-    peer_id: PeerId,
-) -> impl IntoView {
+pub fn DeviceInfo(device: DeviceDescriptor, peer_id: PeerId) -> impl IntoView {
     view! {
         <td></td>
         <td colspan="3">
@@ -180,7 +172,10 @@ pub fn icon_button_on_action(
     let device_selection = match getter.get() {
         DeviceSelection::Left(error) => {
             if insert {
-                Ior::Both(String::from("Select at least one more device."), HashSet::from([device_id]))
+                Ior::Both(
+                    String::from("Select at least one more device."),
+                    HashSet::from([device_id]),
+                )
             } else {
                 Ior::Left(error)
             }
@@ -192,9 +187,9 @@ pub fn icon_button_on_action(
                 devices.remove(&device_id);
             }
             match devices.len() {
-                0 => {Ior::Left(String::from("Select at least two devices."))}
-                1 => {Ior::Both(String::from("Select at least one more device."), devices)}
-                _ => {Ior::Right(devices)}
+                0 => Ior::Left(String::from("Select at least two devices.")),
+                1 => Ior::Both(String::from("Select at least one more device."), devices),
+                _ => Ior::Right(devices),
             }
         }
     };

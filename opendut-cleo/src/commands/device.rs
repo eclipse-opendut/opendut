@@ -2,7 +2,7 @@ use cli_table::{Table, WithTitle};
 use serde::Serialize;
 
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::topology::{Device, DeviceId};
+use opendut_types::topology::{DeviceDescriptor, DeviceId};
 
 use crate::ListOutputFormat;
 
@@ -12,8 +12,6 @@ struct DeviceTable {
     name: String,
     #[table(title = "DeviceID")]
     id: DeviceId,
-    #[table(title = "Location")]
-    location: String,
     #[table(title = "Description")]
     description: String,
     #[table(title = "Tags")]
@@ -36,7 +34,7 @@ pub mod create {
     use uuid::Uuid;
     use opendut_carl_api::carl::CarlClient;
     use opendut_types::peer::{PeerId};
-    use opendut_types::topology::{Device, DeviceId};
+    use opendut_types::topology::{DeviceDescriptor, DeviceId};
     use opendut_types::util::net::NetworkInterfaceName;
     use crate::{CreateOutputFormat, DescribeOutputFormat};
 
@@ -47,7 +45,6 @@ pub mod create {
         device_id: Option<Uuid>,
         name: Option<String>,
         description: Option<String>,
-        location: Option<String>,
         interface: Option<NetworkInterfaceName>,
         tags: Option<Vec<String>>,
         output: CreateOutputFormat,
@@ -64,11 +61,10 @@ pub mod create {
                 let name = name.ok_or(String::from("Cannot create new device because of missing device name."))?;
                 let interface = interface.ok_or(String::from("Cannot create new device because of missing interface name."))?;
 
-                let new_device = Device {
+                let new_device = DeviceDescriptor {
                     id: device_id,
                     name,
                     description: description.unwrap_or_default(),
-                    location: location.unwrap_or_default(),
                     interface,
                     tags: tags.unwrap_or_default(),
                 };
@@ -80,9 +76,6 @@ pub mod create {
                 }
                 if let Some(description) = description {
                     device.description = description; 
-                }
-                if let Some(location) = location {
-                    device.location = location;
                 }
                 if let Some(interface) = interface {
                     device.interface = interface;
@@ -125,10 +118,9 @@ pub mod describe {
                     Device: {}
                       Id: {}
                       Description: {}
-                      Location: {}
                       Interface: {}
                       Tags: [{}]\
-                "), device.name, device.id, device.description, device.location, device.interface, device.tags.join(", "))
+                "), device.name, device.id, device.description, device.interface, device.tags.join(", "))
             }
             DescribeOutputFormat::Json => {
                 serde_json::to_string(&device).unwrap()
@@ -162,7 +154,6 @@ pub mod find {
                             || pattern.matches(&device.id.to_string().to_lowercase())
                             || pattern.matches(&device.description.to_lowercase())
                             || pattern.matches(&device.interface.to_string().to_lowercase())
-                            || pattern.matches(&device.location.to_lowercase())
                             || device.tags.iter().any(|tag| pattern.matches(&tag.to_lowercase()))
                     })
                 })
@@ -220,12 +211,11 @@ fn render_devices(devices: Vec<DeviceTable>, output: ListOutputFormat) -> String
     }
 }
 
-impl From<Device> for DeviceTable {
-    fn from(device: Device) -> Self {
+impl From<DeviceDescriptor> for DeviceTable {
+    fn from(device: DeviceDescriptor) -> Self {
         DeviceTable {
             name: device.name,
             id: device.id,
-            location: device.location,
             description: device.description,
             tags: device.tags.join(", "),
         }

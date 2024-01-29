@@ -11,7 +11,7 @@ pub use opendut_carl_api::carl::peer::{
     IllegalDevicesError,
 };
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerSetup};
-use opendut_types::topology::{Device, DeviceId};
+use opendut_types::topology::{DeviceDescriptor, DeviceId};
 use opendut_types::vpn::VpnPeerConfig;
 use opendut_util::ErrorOr;
 use opendut_util::logging::LogError;
@@ -39,7 +39,7 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
             let old_peer_descriptor = resources.get::<PeerDescriptor>(peer_id);
             let is_new_peer = old_peer_descriptor.is_none();
 
-            let (devices_to_add, devices_to_remove): (Vec<Device>, Vec<Device>) = if let Some(old_peer_descriptor) = old_peer_descriptor {
+            let (devices_to_add, devices_to_remove): (Vec<DeviceDescriptor>, Vec<DeviceDescriptor>) = if let Some(old_peer_descriptor) = old_peer_descriptor {
                 log::debug!("Updating peer descriptor of '{peer_name}' <{peer_id}>.\n  Old: {old_peer_descriptor:?}\n  New: {peer_descriptor:?}");
                 let devices_to_add = peer_descriptor.topology.devices.iter()
                     .filter(|device| old_peer_descriptor.topology.devices.contains(device).not())
@@ -52,7 +52,7 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
             }
             else {
                 log::debug!("Storing peer descriptor of '{peer_name}' <{peer_id}>.\n  {peer_descriptor:?}");
-                (peer_descriptor.topology.devices.to_vec(), Vec::<Device>::new())
+                (peer_descriptor.topology.devices.to_vec(), Vec::<DeviceDescriptor>::new())
             };
 
             devices_to_remove.iter().for_each(|device| {
@@ -192,16 +192,16 @@ pub struct ListDevicesParams {
     pub resources_manager: ResourcesManagerRef,
 }
 
-pub async fn list_devices(params: ListDevicesParams) -> Result<Vec<Device>, ListDevicesError> {
+pub async fn list_devices(params: ListDevicesParams) -> Result<Vec<DeviceDescriptor>, ListDevicesError> {
 
-    async fn inner(params: ListDevicesParams) -> Result<Vec<Device>, ListDevicesError> {
+    async fn inner(params: ListDevicesParams) -> Result<Vec<DeviceDescriptor>, ListDevicesError> {
 
         let resources_manager = params.resources_manager;
 
         log::debug!("Querying all devices.");
 
         let devices = resources_manager.resources(|resource| {
-            resource.iter::<Device>().cloned().collect::<Vec<_>>()
+            resource.iter::<DeviceDescriptor>().cloned().collect::<Vec<_>>()
         }).await;
 
         log::info!("Successfully queried all peers.");
@@ -276,7 +276,7 @@ mod test {
 
     use rstest::*;
 
-    use opendut_types::peer::PeerName;
+    use opendut_types::peer::{PeerLocation, PeerName};
     use opendut_types::topology::Topology;
     use opendut_types::util::net::NetworkInterfaceName;
 
@@ -304,15 +304,14 @@ mod test {
             }).await?;
 
             assert_that!(resources_manager.get::<PeerDescriptor>(fixture.peer_a_id).await.as_ref(), some(eq(&fixture.peer_a_descriptor)));
-            assert_that!(resources_manager.get::<Device>(fixture.peer_a_device_1).await.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[0])));
-            assert_that!(resources_manager.get::<Device>(fixture.peer_a_device_2).await.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[1])));
+            assert_that!(resources_manager.get::<DeviceDescriptor>(fixture.peer_a_device_1).await.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[0])));
+            assert_that!(resources_manager.get::<DeviceDescriptor>(fixture.peer_a_device_2).await.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[1])));
 
             let additional_device_id = DeviceId::random();
-            let additional_device = Device {
+            let additional_device = DeviceDescriptor {
                 id: additional_device_id,
                 name: String::from("PeerA Device 42"),
                 description: String::from("Additional device for peerA"),
-                location: String::from("somewhere"),
                 interface: NetworkInterfaceName::try_from("eth1").unwrap(),
                 tags: vec![],
             };
@@ -359,21 +358,20 @@ mod test {
         let peer_a_descriptor = PeerDescriptor {
             id: peer_a_id,
             name: PeerName::try_from("PeerA").unwrap(),
+            location: PeerLocation::new("Ulm"),
             topology: Topology {
                 devices: vec![
-                    Device {
+                    DeviceDescriptor {
                         id: peer_a_device_1,
                         name: String::from("PeerA Device 1"),
                         description: String::from("Huii"),
-                        location: String::from("Ulm"),
                         interface: NetworkInterfaceName::try_from("eth0").unwrap(),
                         tags: vec![],
                     },
-                    Device {
+                    DeviceDescriptor {
                         id: peer_a_device_2,
                         name: String::from("PeerA Device 2"),
                         description: String::from("Huii"),
-                        location: String::from("Stuttgart"),
                         interface: NetworkInterfaceName::try_from("eth1").unwrap(),
                         tags: vec![],
                     }

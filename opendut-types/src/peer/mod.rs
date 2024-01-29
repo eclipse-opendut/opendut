@@ -7,8 +7,8 @@ use base64::prelude::BASE64_URL_SAFE;
 use serde::{Deserialize, Serialize};
 use url::Url;
 use uuid::Uuid;
-use crate::topology::Topology;
 
+use crate::topology::Topology;
 use crate::vpn::VpnPeerConfig;
 
 pub mod state;
@@ -146,10 +146,84 @@ impl fmt::Display for PeerName {
     }
 }
 
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+pub struct PeerLocation(pub(crate) String);
+
+impl PeerLocation {
+
+    pub const MIN_LENGTH: usize = 0;
+    pub const MAX_LENGTH: usize = 64;
+
+    pub fn value(self) -> String {
+        self.0
+    }
+
+    pub fn new(location: &str) -> PeerLocation { Self { 0: String::from(location) } }
+}
+
+#[derive(thiserror::Error, Clone, Debug)]
+pub enum IllegalLocation {
+    #[error("Peer location '{value}' is too long. Expected at most {expected} characters, got {actual}.")]
+    TooLong { value: String, expected: usize, actual: usize },
+    #[error("Peer location '{value}' contains invalid characters.")]
+    InvalidCharacter { value: String },
+    #[error("Peer location '{value}' contains invalid start or end characters.")]
+    InvalidStartEndCharacter { value: String },
+}
+
+impl From<PeerLocation> for String {
+    fn from(value: PeerLocation) -> Self {
+        value.0
+    }
+}
+
+impl TryFrom<String> for PeerLocation {
+
+    type Error = IllegalLocation;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        let length = value.len();
+        if length > Self::MAX_LENGTH {
+            Err(IllegalLocation::TooLong {
+                value,
+                expected: Self::MAX_LENGTH,
+                actual: length,
+            })
+        } else if crate::util::valid_start_and_end_of_location(&value).not() {
+            Err(IllegalLocation::InvalidStartEndCharacter {
+                value
+            })
+        } else if value.chars().any(|c| crate::util::valid_characters_in_location(&c).not()) {
+            Err(IllegalLocation::InvalidCharacter {
+                value
+            })
+        }
+        else {
+            Ok(Self(value))
+        }
+    }
+}
+
+impl TryFrom<&str> for PeerLocation {
+
+    type Error = IllegalLocation;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        crate::peer::PeerLocation::try_from(value.to_owned())
+    }
+}
+
+impl fmt::Display for PeerLocation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PeerDescriptor {
     pub id: PeerId,
     pub name: PeerName,
+    pub location: PeerLocation,
     pub topology: Topology,
 }
 

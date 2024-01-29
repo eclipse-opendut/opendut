@@ -27,7 +27,6 @@ where
                     <ReadOnlyInput label="ID" value=device_id_string />
                     <DeviceNameInput device_configuration />
                     <DeviceInterfaceInput device_configuration />
-                    <DeviceLocationInput device_configuration />
                     <DeviceDescriptionInput device_configuration />
                 </div>
             </div>
@@ -98,7 +97,7 @@ where
     }
 }
 
-#[component(transparent)]
+#[component]
 fn DeviceNameInput(
     device_configuration: RwSignal<UserDeviceConfiguration>,
 ) -> impl IntoView {
@@ -132,7 +131,7 @@ fn DeviceNameInput(
     }
 }
 
-#[component(transparent)]
+#[component]
 fn DeviceInterfaceInput(
     device_configuration: RwSignal<UserDeviceConfiguration>,
 ) -> impl IntoView {
@@ -169,36 +168,7 @@ fn DeviceInterfaceInput(
     }
 }
 
-#[component(transparent)]
-fn DeviceLocationInput(
-    device_configuration: RwSignal<UserDeviceConfiguration>,
-) -> impl IntoView {
-
-    let (getter, setter) = create_slice(device_configuration,
-        |device_configuration| {
-            Clone::clone(&device_configuration.location)
-        },
-        |device_configuration, value| {
-            device_configuration.location = value;
-        }
-    );
-
-    let validator = |input: String| {
-        UserInputValue::Right(input)
-    };
-
-    view! {
-        <UserInput
-            getter=getter
-            setter=setter
-            label="Location"
-            placeholder="Ulm, Germany"
-            validator
-        />
-    }
-}
-
-#[component(transparent)]
+#[component]
 fn DeviceDescriptionInput(
     device_configuration: RwSignal<UserDeviceConfiguration>
 ) -> impl IntoView {

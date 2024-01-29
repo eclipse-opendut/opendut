@@ -98,7 +98,7 @@ mod client {
     use tonic::codegen::{Body, Bytes, StdError};
 
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerSetup};
-    use opendut_types::topology::Device;
+    use opendut_types::topology::DeviceDescriptor;
 
     use crate::carl::{ClientError, extract};
     use crate::carl::peer::{StorePeerDescriptorError, CreateSetupError, GetPeerDescriptorError, ListPeerDescriptorsError, DeletePeerDescriptorError, ListDevicesError};
@@ -236,14 +236,14 @@ mod client {
             }
         }
 
-        pub async fn list_devices(&mut self) -> Result<Vec<Device>, ListDevicesError> {
+        pub async fn list_devices(&mut self) -> Result<Vec<DeviceDescriptor>, ListDevicesError> {
             let request = tonic::Request::new(peer_manager::ListDevicesRequest {});
 
             match self.inner.list_devices(request).await {
                 Ok(response) => {
                     response.into_inner().devices
                         .into_iter()
-                        .map(Device::try_from)
+                        .map(DeviceDescriptor::try_from)
                         .collect::<Result<_, _>>()
                         .map_err(|cause| ListDevicesError::Internal { cause: cause.to_string() })
                 },

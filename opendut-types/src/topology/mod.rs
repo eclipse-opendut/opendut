@@ -5,11 +5,11 @@ use crate::util::net::NetworkInterfaceName;
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Topology {
-    pub devices: Vec<Device>,
+    pub devices: Vec<DeviceDescriptor>,
 }
 
 impl Topology {
-    pub fn new(devices: Vec<Device>) -> Self {
+    pub fn new(devices: Vec<DeviceDescriptor>) -> Self {
         Self { devices }
     }
 }
@@ -46,11 +46,10 @@ impl From<uuid::Uuid> for DeviceId {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub struct Device {
+pub struct DeviceDescriptor {
     pub id: DeviceId,
     pub name: String,
     pub description: String,
-    pub location: String,
     pub interface: NetworkInterfaceName,
     pub tags: Vec<String>,
 }

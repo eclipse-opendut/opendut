@@ -122,6 +122,9 @@ enum CreateResource {
         ///PeerID
         #[arg(short, long)]
         id: Option<Uuid>,
+        ///Location of peer
+        #[arg(long)]
+        location: Option<String>
     },
     Device {
         ///ID of the peer to add the device to
@@ -136,9 +139,6 @@ enum CreateResource {
         ///Description of device
         #[arg(long)]
         description: Option<String>,
-        ///Location of device
-        #[arg(long)]
-        location: Option<String>,
         ///Interface of device
         #[arg(long)]
         interface: Option<NetworkInterfaceName>,
@@ -303,11 +303,11 @@ async fn execute() -> Result<()> {
                 CreateResource::ClusterDeployment { id} => {
                     commands::cluster_deployment::create::execute(&mut carl, id, output).await?;
                 }
-                CreateResource::Peer { name, id } => {
-                    commands::peer::create::execute(&mut carl, name, id, output).await?;
+                CreateResource::Peer { name, id, location } => {
+                    commands::peer::create::execute(&mut carl, name, id, location, output).await?;
                 }
-                CreateResource::Device { peer_id, device_id, name, description, location, interface, tags } => {
-                    commands::device::create::execute(&mut carl, peer_id, device_id, name, description, location, interface, tags, output).await?;
+                CreateResource::Device { peer_id, device_id, name, description, interface, tags } => {
+                    commands::device::create::execute(&mut carl, peer_id, device_id, name, description, interface, tags, output).await?;
                 }
             }
         }

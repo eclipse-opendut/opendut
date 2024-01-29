@@ -15,10 +15,15 @@ message PeerName {
   string value = 1;
 }
 
+message PeerLocation {
+  string value = 1;
+}
+
 message PeerDescriptor {
   opendut.types.peer.PeerId id = 1;
   opendut.types.peer.PeerName name = 2;
-  opendut.types.topology.Topology topology = 3;
+  opendut.types.peer.PeerLocation location = 3;
+  opendut.types.topology.Topology topology = 4;
 }
 
 message PeerSetup {
