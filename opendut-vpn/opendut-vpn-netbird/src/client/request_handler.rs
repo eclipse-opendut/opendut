@@ -5,14 +5,15 @@ use reqwest::{Request, Response};
 use crate::netbird::error::RequestError;
 
 #[async_trait]
-pub(super) trait RequestHandler {
+pub trait RequestHandler {
     async fn handle(&self, request: Request) -> Result<Response, RequestError>;
 }
 
-pub(super) struct DefaultRequestHandler {
+pub struct DefaultRequestHandler {
     inner: reqwest::Client,
     config: RequestHandlerConfig,
 }
+
 impl DefaultRequestHandler {
     pub fn new(inner: reqwest::Client, config: RequestHandlerConfig) -> Self {
         Self { inner, config }
@@ -34,7 +35,7 @@ impl RequestHandler for DefaultRequestHandler {
     }
 }
 
-pub(super) struct RequestHandlerConfig {
+pub struct RequestHandlerConfig {
     default_timeout: Duration,
 }
 impl Default for RequestHandlerConfig {

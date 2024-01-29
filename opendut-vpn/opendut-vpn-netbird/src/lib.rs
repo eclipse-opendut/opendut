@@ -1,18 +1,18 @@
 use anyhow::anyhow;
 use async_trait::async_trait;
 use reqwest::Url;
-pub use netbird::token::Token as NetbirdToken;
 use opendut_types::cluster::ClusterId;
 use opendut_types::peer::PeerId;
-use opendut_types::vpn::{HttpsOnly, VpnPeerConfig};
+use opendut_types::vpn::VpnPeerConfig;
 use opendut_vpn::{CreateClusterError, CreatePeerError, DeleteClusterError, DeletePeerError, GetOrCreateConfigurationError, VpnManagementClient};
 use crate::client::Client;
 use crate::netbird::error::{CreateClientError, GetGroupError, GetRulesError, RequestError};
-use crate::netbird::rules::RuleName;
 
 mod client;
 mod routes;
 mod netbird;
+
+pub use netbird::Token as NetbirdToken;
 
 pub struct DefaultVpnManagementClient {
     inner: Client
@@ -20,12 +20,12 @@ pub struct DefaultVpnManagementClient {
 
 impl DefaultVpnManagementClient {
 
-    pub fn create(base_url: Url, token: NetbirdToken, https_only: HttpsOnly) -> Result<Self, CreateClientError> {
+    pub fn create(base_url: Url, token: NetbirdToken) -> Result<Self, CreateClientError> {
         Ok(Self {
             inner: Client::create(
                 base_url,
-                token,
-                https_only,
+                Some(token),
+                None,
             )?
         })
     }
@@ -68,8 +68,7 @@ impl VpnManagementClient for DefaultVpnManagementClient {
     }
 
     async fn delete_cluster(&self, cluster_id: ClusterId) -> Result<(), DeleteClusterError> {
-        // delete cluster rule (access control)
-        let rule_name = RuleName::Cluster(cluster_id);
+        let rule_name = netbird::RuleName::Cluster(cluster_id);
         match self.inner.get_netbird_rule(&rule_name).await {
             Ok(rule) => {
                 match self.inner.delete_netbird_rule(&rule.id).await {
@@ -160,7 +159,7 @@ impl VpnManagementClient for DefaultVpnManagementClient {
             .map_err(|error| GetOrCreateConfigurationError::QueryConfigurationsFailure { error: error.into() })?;
 
         let maybe_setup_key = setup_keys.into_iter()
-            .find(|setup_key| setup_key.name == netbird::setup_key::name_format(peer_id));
+            .find(|setup_key| setup_key.name == netbird::setup_key_name_format(peer_id));
 
         let setup_key = match maybe_setup_key {
             None => {

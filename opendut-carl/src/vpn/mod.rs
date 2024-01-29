@@ -43,7 +43,6 @@ pub fn create(settings: &Config) -> anyhow::Result<Vpn> {
                                 let vpn_client = DefaultVpnManagementClient::create(
                                     base_url,
                                     token,
-                                    netbird_config.https.only,
                                 )?;
 
                                 Ok(Vpn::Enabled { vpn_client: Arc::new(vpn_client) })
