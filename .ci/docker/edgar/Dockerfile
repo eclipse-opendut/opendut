@@ -1,4 +1,14 @@
+FROM rust:1-buster AS builder
+
+WORKDIR /src
+COPY ./ /src
+RUN cargo build --package opendut-theo --release
+RUN ls /src/target/release/opendut-theo
+
+
 FROM ubuntu:22.04
+
+COPY --from=builder /src/target/release/opendut-theo /usr/local/bin/opendut-theo
 
 RUN apt update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     tzdata ca-certificates \

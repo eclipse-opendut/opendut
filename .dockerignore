@@ -1,0 +1,8 @@
+target/
+.vagrant/
+.github/
+.git/
+.env*
+resources/
+doc/
+tests/
