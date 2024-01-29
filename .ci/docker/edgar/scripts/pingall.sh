@@ -8,9 +8,9 @@ ping_all_peers() {
   for ip in $IPS
   do
     if [ "$REQUIRED_SUCCESS" == "true" ]; then
-      fping -c1 -t500 "$ip" || { echo "$ip did not respond"; exit 1; }
+      fping --count=1 --timeout=1000 --retry=5 "$ip" || { echo "$ip did not respond"; return 1; }
     else
-      fping -c1 -t500 "$ip" || { echo "$ip did not respond"; sleep 3; }
+      fping --count=1 --timeout=1000 --retry=5 "$ip" || { echo "$ip did not respond"; sleep 10; }
     fi
   done
 }
