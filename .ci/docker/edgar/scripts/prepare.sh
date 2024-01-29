@@ -26,17 +26,17 @@ if [ -n "$1" ] ; then
 
 else
   echo waiting for router to come up
-  while ! curl -sf "http://edgar_router:8000" --output /dev/null; do
+  while ! curl -sf "http://edgar-router:8000" --output /dev/null; do
     echo "Waiting for router to start up..."
     sleep 3
   done
 
-  router_ip=$(curl --silent http://edgar_router:8000/router_ip.txt)
+  router_ip=$(curl --silent http://edgar-router:8000/router_ip.txt)
   echo "Using router router_ip address $router_ip"
   /opt/opendut-edgar/opendut-edgar setup --no-confirm unmanaged --setup-key "$NETBIRD_SETUP_KEY" --management-url "${NETBIRD_MANAGEMENT_API}" --router="$router_ip"
 
   echo fetching bridge_ip
-  bridge_ip=$(curl --silent http://edgar_router:5000/)
+  bridge_ip=$(curl --silent http://edgar-router:5000/)
   bridge_ip="192.168.100.${bridge_ip}/24"
   echo "Got bridge ip ${bridge_ip}"
   ip a a "${bridge_ip}" dev br-opendut

@@ -74,7 +74,7 @@ fn wait_for_edgar_router_provisioned() -> crate::Result {
         if first_check {
             first_check = false;
         } else if new_edgar_logs.chars().count() == edgar_logs.chars().count() {
-            println!("No progress in the logs. Check 'docker logs edgar_router'.");
+            println!("No progress in the logs. Check 'docker logs edgar-router'.");
         }
         edgar_logs = new_edgar_logs.to_string();
         println!("{:^width$} seconds - Waiting for edgar router to be deployed...", duration.as_secs(), width=6);
@@ -86,14 +86,14 @@ fn wait_for_edgar_router_provisioned() -> crate::Result {
 fn check_edgar_router_logs() -> Result<String, Error> {
     let command_output = DockerCommand::new()
         .arg("logs")
-        .arg("edgar_router")
+        .arg("edgar-router")
         .expect_output("Failed to get edgar router logs.")?;
     let output = String::from_utf8(command_output.stdout)?;
     Ok(output)
 }
 
 fn check_edgar_router_done() -> Result<bool, Error> {
-    let exists = DockerCommand::exists("edgar_router");
+    let exists = DockerCommand::exists("edgar-router");
     if !exists {
         Err(TheoError::DockerCommandFailed("Edgar router container has terminated or does not exists!".to_string()).into())
     } else {
@@ -102,7 +102,7 @@ fn check_edgar_router_done() -> Result<bool, Error> {
 }
 
 fn check_edgar_router_provisioning_finished() -> Result<bool, Error> {
-    let command_output = DockerCommand::new_exec("edgar_router")
+    let command_output = DockerCommand::new_exec("edgar-router")
         .arg("ls")
         .arg("/opt/signal/success.txt")
         .expect_output("Failed to check if edgar router was provisioned.");
@@ -111,7 +111,7 @@ fn check_edgar_router_provisioning_finished() -> Result<bool, Error> {
 
 
 fn check_edgar_router_ping_all() -> Result<i32, Error> {
-    DockerCommand::new_exec("edgar_router")
+    DockerCommand::new_exec("edgar-router")
         .arg("/opt/pingall.sh")
         .expect_status("Failed to check if all EDGAR peers respond to ping.")
 }

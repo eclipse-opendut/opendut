@@ -91,6 +91,10 @@ if [ "$1" == "router" ]; then
   CLUSTER_ID=$(echo "$RESPONSE" | jq -r '.id')
   echo "Creating cluster deployment for id=$CLUSTER_ID"
   opendut-cleo create cluster-deployment --id "$CLUSTER_ID"
+
+  # TODO: wait until opendut bridge device exists?
+  # TODO: wait until gre device exists?
+
   echo "Success" | tee -a > /opt/signal/success.txt
 
 fi

@@ -62,7 +62,7 @@ jobs:
 
       - name: Wait for all peers
         run: |
-          docker exec edgar_router /opt/wait_until_ready.sh
+          docker exec edgar-router /opt/wait_until_ready.sh
 
       - name: Run ping all script on one of the peers
         run: |

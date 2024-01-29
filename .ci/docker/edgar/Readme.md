@@ -43,7 +43,7 @@ awk 'NF {sub(/\r/, ""); printf "%s\\n",$0;}' resources/development/tls/insecure-
 ```
 docker compose build
 docker compose up -d
-docker exec -ti edgar_router /opt/wait_until_ready.sh
+docker exec -ti edgar-router /opt/wait_until_ready.sh
 docker exec -ti edgar-peer-1 /opt/wait_until_ready.sh
 docker exec -ti edgar-peer-1 /opt/pingall.sh
 docker exec -ti edgar-peer-1 python3 /opt/delete_peers.py

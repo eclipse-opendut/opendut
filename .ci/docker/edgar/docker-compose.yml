@@ -3,7 +3,7 @@ version: "3.9"
 services:
 
   router:
-    container_name: edgar_router  # defined DNS for the container
+    container_name: edgar-router  # defined DNS for the container
     build:
       context: ../../..
       dockerfile: ./.ci/docker/edgar/Dockerfile
