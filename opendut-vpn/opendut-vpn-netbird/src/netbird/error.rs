@@ -61,4 +61,8 @@ pub enum RequestError {
 pub enum CreateClientError {
     #[error("Invalid header: {0}")]
     InvalidHeader(InvalidHeaderValue),
+    #[error("Failed to instantiated client, due to an error: {cause}")]
+    InstantiationFailure {
+        cause: String
+    },
 }

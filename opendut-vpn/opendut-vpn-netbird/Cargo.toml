@@ -13,7 +13,6 @@ async-trait = { workspace = true }
 anyhow = { workspace = true }
 http = { workspace = true }
 log = { workspace = true }
-mime = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
@@ -24,6 +23,8 @@ uuid = { workspace = true, features = ["serde"] }
 
 [dev-dependencies]
 googletest = { workspace = true }
+rstest = { workspace = true }
+mockall = { workspace = true }
 
 [lints]
 workspace = true

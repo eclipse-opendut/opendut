@@ -247,7 +247,7 @@ pub async fn create_peer_setup(params: CreatePeerSetupParams) -> Result<PeerSetu
 
         let vpn_config = if let Vpn::Enabled { vpn_client } = &params.vpn {
             log::debug!("Retrieving VPN configuration for peer <{peer_id}>.");
-            let vpn_config = vpn_client.get_or_create_configuration(params.peer).await
+            let vpn_config = vpn_client.create_peer_configuration(params.peer).await
                 .map_err(|cause| CreatePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), cause: cause.to_string() })?;
             log::info!("Successfully retrieved vpn configuration for peer <{peer_id}>.");
             vpn_config

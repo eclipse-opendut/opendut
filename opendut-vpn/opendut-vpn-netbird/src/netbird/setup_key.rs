@@ -47,7 +47,7 @@ pub enum State {
 #[serde(transparent)]
 pub struct Timestamp {
     #[serde(with = "time::serde::rfc3339")]
-    inner: time::OffsetDateTime
+    pub inner: time::OffsetDateTime
 }
 impl Debug for Timestamp {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

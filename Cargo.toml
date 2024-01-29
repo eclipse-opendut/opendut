@@ -67,7 +67,7 @@ leptos_oidc = { git = "https://gitlab.com/kerkmann/leptos_oidc", rev = "8ab610f8
 leptos_router = { version = "0.5.7" }
 leptos-use = { version = "0.9.0" }
 log = "0.4.20"
-mime = "0.3.17"
+mockall = "0.12.1"
 netlink-packet-route = "0.17.1"
 netlink-packet-utils = "0.5.2"
 nix = "0.27.1"
