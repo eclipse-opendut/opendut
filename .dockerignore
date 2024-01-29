@@ -3,6 +3,4 @@ target/
 .github/
 .git/
 .env*
-resources/
 doc/
-tests/
