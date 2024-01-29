@@ -44,6 +44,12 @@ pre_flight_tasks() {
     echo "Command 'opendut-cleo' not found."
     exit 1
   fi
+
+  ip link add dev vcan0 type vcan
+  ip link add dev vcan1 type vcan
+  ip link set dev vcan0 up
+  ip link set dev vcan1 up
+  apt install -y can-utils
 }
 
 ## MAIN TASKS
@@ -54,6 +60,8 @@ NAME="${OPENDUT_EDGAR_CLUSTER_NAME}_$(hostname)"
 echo "Creating peer with name $NAME and id $PEER_ID"
 opendut-cleo create peer --name "$NAME" --id "$PEER_ID"
 opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME" --interface eth0 --location "$NAME" --tags "$OPENDUT_EDGAR_CLUSTER_NAME"
+opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME"-vcan0 --interface vcan0 --location "$NAME" --tags "$OPENDUT_EDGAR_CLUSTER_NAME"
+opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME"-vcan1 --interface vcan1 --location "$NAME" --tags "$OPENDUT_EDGAR_CLUSTER_NAME"
 
 PEER_SETUP_KEY=$(opendut-cleo generate-peer-setup --id "$PEER_ID")
 echo "Setting up peer with setup key $PEER_SETUP_KEY"

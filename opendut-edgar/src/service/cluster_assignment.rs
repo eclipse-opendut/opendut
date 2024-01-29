@@ -3,6 +3,7 @@ use std::sync::Arc;
 use opendut_types::cluster::ClusterAssignment;
 use opendut_types::peer::PeerId;
 use opendut_types::util::net::NetworkInterfaceName;
+use crate::service::network_interface::can;
 use crate::service::network_interface::gre;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 
@@ -31,6 +32,15 @@ pub async fn handle(
     .map_err(Error::GreInterfaceSetupFailed)?;
 
     //TODO join device interfaces to bridge
+
+    let can_bridge_name = crate::common::default_can_bridge_name();
+    let own_can_interfaces = get_own_can_interfaces(cluster_assignment, self_id)?;
+    can::setup_local_routing(
+        &can_bridge_name, 
+        own_can_interfaces,
+        Arc::clone(&network_interface_manager)
+    ).await
+    .map_err(Error::LocalCanRoutingSetupFailed)?;
 
     Ok(())
 }
@@ -77,6 +87,21 @@ fn require_ipv4_for_gre(ip_address: IpAddr) -> Result<Ipv4Addr, Error> {
     }
 }
 
+fn get_own_can_interfaces(
+    cluster_assignment: ClusterAssignment,
+    self_id: PeerId) -> Result<Vec<NetworkInterfaceName>, Error>{
+
+    let own_cluster_assignment = cluster_assignment.assignments.iter().find(|assignment| assignment.peer_id == self_id).unwrap();
+
+    // Use some proper way to determine whether an interface is a CAN one or not
+    let own_can_interfaces: Vec<NetworkInterfaceName> = own_cluster_assignment.device_interfaces.iter()
+        .filter(|interface| interface.name().contains("can"))
+        .cloned()
+        .collect();
+
+    Ok(own_can_interfaces)
+    }
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Could not determine {kind:?} IP address from ClusterAssignment.")]
@@ -85,6 +110,8 @@ pub enum Error {
     Ipv6NotSupported,
     #[error("GRE interface setup failed: {0}")]
     GreInterfaceSetupFailed(gre::Error),
+    #[error("Local CAN routing setup failed: {0}")]
+    LocalCanRoutingSetupFailed(can::Error),
 }
 
 #[derive(Debug)]

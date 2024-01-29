@@ -20,7 +20,6 @@ flate2 = { workspace = true }
 futures = { workspace = true }
 indicatif = { workspace = true }
 indoc = { workspace = true }
-itertools = { workspace = true }
 log = { workspace = true }
 netlink-packet-route = { workspace = true }
 netlink-packet-utils = { workspace = true }

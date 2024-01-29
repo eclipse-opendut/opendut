@@ -23,6 +23,12 @@ pub fn default_config_merge_suggestion_file_path() -> PathBuf {
     PathBuf::from("/etc/opendut-network/edgar-merge-suggestion.toml")
 }
 
+pub fn required_kernel_modules() -> Vec<String> {
+    vec![
+        "can-gw".to_string(), 
+        "vcan".to_string()
+        ]
+}
 
 pub mod netbird {
     use std::path::PathBuf;

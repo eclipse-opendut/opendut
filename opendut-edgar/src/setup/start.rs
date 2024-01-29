@@ -30,6 +30,7 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
         })),
         Box::new(tasks::CheckCarlReachable),
         Box::new(tasks::CreateUser),
+        Box::new(tasks::LoadKernelModules),
     ];
 
     match peer_setup.vpn {
