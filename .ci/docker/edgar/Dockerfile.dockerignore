@@ -1,0 +1,7 @@
+# Do not include everything in edgars build context
+target/
+.vagrant/
+.github/
+.git/
+.env*
+doc/

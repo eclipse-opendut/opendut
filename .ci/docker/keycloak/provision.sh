@@ -6,7 +6,7 @@ main() {
   #set -ex
 
   echo "provisioning keycloak"
-  wait_for_keycloak
+  wait_for_keycloak || { echo "Keycloak not ready, exiting"; exit 1;}
   kcauth
 
   # https://docs.netbird.io/selfhosted/identity-providers#keycloak

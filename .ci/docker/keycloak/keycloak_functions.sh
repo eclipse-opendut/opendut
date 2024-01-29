@@ -1,11 +1,24 @@
 #!/bin/bash
 
 wait_for_keycloak() {
+  local timeout="${1:-600}"
+  local sleep_time="${2:-5}"
+
+  START_TIME="$(date +%s)"
+  END_TIME=$((START_TIME + timeout))
+
   # wait until keycloak is ready and returns a status code < 400
-  while ! curl --silent --fail "$KEYCLOAK_URL" --output /dev/null; do
+  while ! curl --silent --fail --connect-timeout 2 --max-time 2 "$KEYCLOAK_URL" --output /dev/null; do
+    local now
+    now=$(date +%s)
+    if [ "$now" -gt "$END_TIME" ]; then
+      echo "Timeout while waiting for Keycloak to start up at: '$KEYCLOAK_URL'"
+      return 1
+    fi
     echo "Waiting for Keycloak to start up..."
-    sleep 5
+    sleep "$sleep_time"
   done
+
   echo "Keycloak ready"
 }
 kcadm() { local cmd="$1" ; shift ; "$KCADM_PATH" "$cmd" --config /tmp/kcadm.config "$@" ; }

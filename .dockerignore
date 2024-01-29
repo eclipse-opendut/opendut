@@ -1,6 +1,0 @@
-target/
-.vagrant/
-.github/
-.git/
-.env*
-doc/
