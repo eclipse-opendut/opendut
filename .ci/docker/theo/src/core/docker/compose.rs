@@ -63,5 +63,5 @@ pub(crate) fn docker_compose_network_delete() -> Result<i32, Error> {
         .arg("network")
         .arg("rm")
         .arg("opendut_network")
-        .expect_status("Failed to create docker network.")
+        .expect_status("Failed to delete docker network.")
 }

@@ -80,6 +80,7 @@ impl TestenvCli {
             }
             TaskCli::Destroy => {
                 docker_compose_down(DockerCoreServices::Firefox.as_str(), true)?;
+                docker_compose_down(DockerCoreServices::Edgar.as_str(), true)?;
                 docker_compose_down(DockerCoreServices::Carl.as_str(), true)?;
                 docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), true)?;
                 docker_compose_down(DockerCoreServices::Netbird.as_str(), true)?;
