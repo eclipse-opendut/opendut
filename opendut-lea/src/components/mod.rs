@@ -11,6 +11,7 @@ pub use toast::{use_toaster, Toaster, Toast, ToastKind, ToastContent};
 pub use util::ButtonStateSignalProvider;
 pub use util::Toggled;
 pub use util::use_active_tab;
+pub use auth::LeaAuthenticated;
 
 pub mod health;
 pub mod tooltip;
@@ -23,6 +24,7 @@ mod buttons;
 mod breadcrumbs;
 mod initialized;
 mod toast;
+mod auth;
 
 #[derive(Clone, Copy, Debug)]
 #[allow(dead_code)]

@@ -128,7 +128,7 @@ pub async fn create(settings_override: Config) -> Result<()> {
         let lea_idp_config = if oidc_enabled {
             let lea_idp_config = settings.get::<LeaIdpConfig>("network.oidc.lea")
                 .expect("Failed to find configuration for `network.oidc.lea`.");
-            let scopes = lea_idp_config.scopes.split(",").collect::<Vec<_>>();
+            let scopes = lea_idp_config.scopes.trim_matches('"').split(",").collect::<Vec<_>>();
             for scope in scopes.clone() {
                 if !scope.chars().all(|c|c.is_ascii_alphabetic()) {
                     panic!("Failed to parse comma-separated OIDC scopes for LEA. Scopes must only contain ASCII alphabetic characters. Found: {:?}. Parsed as: {:?}", lea_idp_config.scopes, scopes);

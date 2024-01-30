@@ -1,9 +1,9 @@
 use leptos::{component, create_node_ref, create_rw_signal, IntoView, MaybeSignal, SignalGet, SignalSet, SignalUpdate, view};
 use leptos::html::Div;
-use leptos_oidc::components::{Authenticated, LoginLink, LogoutLink};
+use leptos_oidc::components::{LoginLink, LogoutLink};
 use leptos_use::on_click_outside;
 
-use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Initialized};
+use crate::components::{LeaAuthenticated, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Initialized};
 
 #[component(transparent)]
 pub fn Navbar() -> impl IntoView {
@@ -96,19 +96,26 @@ pub fn Navbar() -> impl IntoView {
                         <div class="dut-nav-flyout-container mt-2 has-background-light right--3">
                             <div class="dut-nav-flyout-content">
                                 <div>
-                                    <Authenticated unauthenticated=move || {
+                                    <LeaAuthenticated unauthenticated=move || {
                                         view! {
                                             <LoginLink class="dut-nav-flyout-item">
                                                 <span class="ml-2 is-size-6">"Sign in"</span>
                                             </LoginLink>
 
                                         }
+                                        }
+                                        disabled_auth=move || {
+                                            view! {
+                                                <a href="/" class="dut-nav-flyout-item">
+                                                    <span class="ml-2 is-size-6">"Sign in"</span>
+                                                </a>
+                                            }
                                         }>
                                         <LogoutLink class="dut-nav-flyout-item">
                                             <span class="ml-2 is-size-6">"Sign out"</span>
                                         </LogoutLink>
 
-                                    </Authenticated>
+                                    </LeaAuthenticated>
                                 </div>
                             </div>
                         </div>
