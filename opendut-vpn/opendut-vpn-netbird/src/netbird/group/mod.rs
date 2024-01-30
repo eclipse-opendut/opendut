@@ -1,11 +1,12 @@
 use serde::{Deserialize, Serialize};
 
 pub use group_name::GroupName;
+
 use crate::netbird;
 
 mod group_name;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct Group {
     pub id: GroupId,
     pub name: GroupName,
@@ -15,7 +16,7 @@ pub struct Group {
     // fields omitted
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct GroupPeerInfo {
     pub id: netbird::PeerId,
     pub name: String,

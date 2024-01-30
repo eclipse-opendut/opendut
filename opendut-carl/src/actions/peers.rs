@@ -4,15 +4,15 @@ use std::sync::Arc;
 use url::Url;
 
 pub use opendut_carl_api::carl::peer::{
-    StorePeerDescriptorError,
     DeletePeerDescriptorError,
+    IllegalDevicesError,
     ListDevicesError,
     ListPeerDescriptorsError,
-    IllegalDevicesError,
+    StorePeerDescriptorError,
 };
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerSetup};
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
-use opendut_types::vpn::VpnPeerConfig;
+use opendut_types::vpn::VpnPeerConfiguration;
 use opendut_util::ErrorOr;
 use opendut_util::logging::LogError;
 
@@ -247,14 +247,14 @@ pub async fn create_peer_setup(params: CreatePeerSetupParams) -> Result<PeerSetu
 
         let vpn_config = if let Vpn::Enabled { vpn_client } = &params.vpn {
             log::debug!("Retrieving VPN configuration for peer <{peer_id}>.");
-            let vpn_config = vpn_client.create_peer_configuration(params.peer).await
+            let vpn_config = vpn_client.create_vpn_peer_configuration(params.peer).await
                 .map_err(|cause| CreatePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), cause: cause.to_string() })?;
             log::info!("Successfully retrieved vpn configuration for peer <{peer_id}>.");
             vpn_config
         }
         else {
             log::warn!("VPN is disabled. PeerSetup for peer '{peer_name}' <{peer_id}> will not contain any VPN information!");
-            VpnPeerConfig::Disabled
+            VpnPeerConfiguration::Disabled
         };
 
         log::debug!("Successfully created peer setup for peer '{peer_name}' <{peer_id}>.");
@@ -287,6 +287,7 @@ mod test {
     mod store_peer_descriptor {
         use googletest::prelude::*;
         use rstest::*;
+
         use opendut_types::topology::{DeviceDescription, DeviceName};
         use opendut_types::util::net::NetworkInterfaceName;
 

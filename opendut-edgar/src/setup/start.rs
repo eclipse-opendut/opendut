@@ -8,7 +8,7 @@ use url::Url;
 use opendut_types::peer::PeerSetup;
 use opendut_types::util::net::NetworkInterfaceName;
 use opendut_types::vpn::netbird::SetupKey;
-use opendut_types::vpn::VpnPeerConfig;
+use opendut_types::vpn::VpnPeerConfiguration;
 use opendut_util::logging;
 
 use crate::service::network_interface::manager::NetworkInterfaceManager;
@@ -37,10 +37,10 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
     ];
 
     match peer_setup.vpn {
-        VpnPeerConfig::Disabled => {
+        VpnPeerConfiguration::Disabled => {
             log::info!("VPN is disabled in PeerSetup. Not running VPN-related tasks.");
         }
-        VpnPeerConfig::Netbird { management_url, setup_key } => {
+        VpnPeerConfiguration::Netbird { management_url, setup_key } => {
             log::info!("VPN is configured for NetBird in PeerSetup. Running NetBird-related tasks.");
             let mut netbird_tasks: Vec<Box<dyn Task>> = vec![
                 Box::new(tasks::netbird::Unpack::default()),

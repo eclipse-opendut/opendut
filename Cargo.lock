@@ -2577,7 +2577,6 @@ dependencies = [
  "async-trait",
  "googletest",
  "http",
- "log",
  "mockall",
  "opendut-types",
  "opendut-util",
@@ -2589,6 +2588,7 @@ dependencies = [
  "thiserror",
  "time",
  "tokio",
+ "tracing",
  "uuid",
 ]
 

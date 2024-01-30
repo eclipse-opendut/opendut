@@ -2,14 +2,14 @@ use std::fmt;
 use std::io::{Read, Write};
 use std::ops::Not;
 
-use base64::prelude::BASE64_URL_SAFE;
 use base64::Engine;
+use base64::prelude::BASE64_URL_SAFE;
 use serde::{Deserialize, Serialize};
 use url::Url;
 use uuid::Uuid;
 
 use crate::topology::Topology;
-use crate::vpn::VpnPeerConfig;
+use crate::vpn::VpnPeerConfiguration;
 
 pub mod state;
 
@@ -231,7 +231,7 @@ pub struct PeerDescriptor {
 pub struct PeerSetup {
     pub id: PeerId,
     pub carl: Url,
-    pub vpn: VpnPeerConfig,
+    pub vpn: VpnPeerConfiguration,
 }
 
 impl PeerSetup {
@@ -307,7 +307,7 @@ mod tests {
         let setup = PeerSetup {
             id: PeerId::try_from("01bf3f8c-cc7c-4114-9520-91bce71dcead").unwrap(),
             carl: Url::parse("https://carl.opendut.local")?,
-            vpn: VpnPeerConfig::Netbird {
+            vpn: VpnPeerConfiguration::Netbird {
                 management_url: Url::parse("https://netbird.opendut.local/api")?,
                 setup_key: SetupKey::from(Uuid::parse_str("d79c202f-bbbf-4997-844e-678f27606e1c")?),
             },

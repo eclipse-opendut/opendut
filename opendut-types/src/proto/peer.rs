@@ -146,7 +146,7 @@ impl TryFrom<PeerSetup> for crate::peer::PeerSetup {
             .and_then(|url| url::Url::parse(&url.value)
                 .map_err(|cause| ErrorBuilder::new(format!("Carl URL could not be parsed: {}", cause))))?;
 
-        let vpn: crate::vpn::VpnPeerConfig = value.vpn
+        let vpn: crate::vpn::VpnPeerConfiguration = value.vpn
             .ok_or(ErrorBuilder::new("VpnConfig not set"))
             .and_then(VpnPeerConfig::try_into)?;
 

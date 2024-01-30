@@ -1,9 +1,10 @@
 use std::time::Duration;
-use async_trait::async_trait;
 
+use async_trait::async_trait;
 use http::{header, HeaderMap, Method};
 use reqwest::{Body, Request, Response, Url};
 use serde::Serialize;
+use tracing::error;
 
 use opendut_types::peer::PeerId;
 
@@ -304,7 +305,7 @@ async fn parse_response_status(response: Response, error_text: String) -> Result
         Err(status) => {
             let body = response.text().await.unwrap_or(String::from("<no body>"));
             let status_code = status.status().expect("Error should be generated from a response");
-            log::error!("Received status code '{code}' when deleting {error_text}:\n  {body}", code=status_code, error_text=error_text, body=body);
+            error!("Received status code '{code}' when deleting {error_text}:\n  {body}", code=status_code, error_text=error_text, body=body);
             Err(RequestError::IllegalRequest(status_code, body))
         }
     }

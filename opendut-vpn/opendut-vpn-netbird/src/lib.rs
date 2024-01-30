@@ -1,23 +1,27 @@
 use anyhow::anyhow;
 use async_trait::async_trait;
 use reqwest::Url;
+use tracing::{debug, error, info, trace, warn};
 
 pub use netbird::Token as NetbirdToken;
 use opendut_types::cluster::ClusterId;
 use opendut_types::peer::PeerId;
-use opendut_types::vpn::VpnPeerConfig;
-use opendut_vpn::{CreateClusterError, CreatePeerError, DeleteClusterError, DeletePeerError, GetOrCreateConfigurationError, VpnManagementClient};
+use opendut_types::vpn::VpnPeerConfiguration;
+use opendut_vpn::{CreateClusterError, CreatePeerError, CreateVpnPeerConfigurationError, DeleteClusterError, DeletePeerError, VpnManagementClient};
 
 use crate::client::{Client, DefaultClient};
-use crate::netbird::error::{CreateClientError, GetGroupError, GetRulesError, RequestError};
+use crate::netbird::error::{CreateClientError, CreateSetupKeyError, GetGroupError, GetRulesError, RequestError};
+use crate::netbird::GroupName;
 
 mod client;
 mod routes;
 mod netbird;
 
+type Inner = Box<dyn Client + Send + Sync>;
+
 pub struct NetbirdManagementClient {
     netbird_url: Url,
-    inner: Box<dyn Client + Send + Sync>
+    inner: Inner,
 }
 
 impl NetbirdManagementClient {
@@ -42,9 +46,9 @@ impl VpnManagementClient for NetbirdManagementClient {
     async fn create_cluster(&self, cluster_id: ClusterId, peers: &[PeerId]) -> Result<(), CreateClusterError> {
 
         match self.delete_cluster(cluster_id).await {
-            Ok(_) => log::debug!("Deleted a previous cluster with ID <{cluster_id}> before creating the new cluster."),
+            Ok(_) => debug!("Deleted a previous cluster with ID <{cluster_id}> before creating the new cluster."),
             Err(cause) => match cause {
-                DeleteClusterError::NotFound { cluster_id, message } => log::trace!("Did not need to delete a previous cluster with ID <{cluster_id}> before creating the new cluster. ({message})"),
+                DeleteClusterError::NotFound { cluster_id, message } => trace!("Did not need to delete a previous cluster with ID <{cluster_id}> before creating the new cluster. ({message})"),
                 DeleteClusterError::DeletionFailure { cluster_id, error } => {
                     return Err(CreateClusterError::CreationFailure { cluster_id, error: anyhow!("Failure while deleting a previous cluster with ID <{cluster_id}> before creating the new cluster: {error}").into() });
                 }
@@ -77,7 +81,7 @@ impl VpnManagementClient for NetbirdManagementClient {
         match self.inner.get_netbird_rule(&rule_name).await {
             Ok(rule) => {
                 match self.inner.delete_netbird_rule(&rule.id).await {
-                    Ok(_) => log::debug!("Deleted NetBird rule with name '{}' and NetBird Rule ID '{}'.", rule.name, rule.id.0),
+                    Ok(_) => debug!("Deleted NetBird rule with name '{}' and NetBird Rule ID '{}'.", rule.name, rule.id.0),
                     Err(cause) => return match cause {
                         RequestError::IllegalStatus(error) => {
                             if let Some(http::StatusCode::NOT_FOUND) = error.status() {
@@ -109,7 +113,7 @@ impl VpnManagementClient for NetbirdManagementClient {
             Ok(group) => {
                 match self.inner.delete_netbird_group(&group.id).await {
                     Ok(_) => {
-                        log::debug!("Deleted NetBird group with name '{}' and NetBird Group ID '{}'.", group.name, group.id.0) ;
+                        debug!("Deleted NetBird group with name '{}' and NetBird Group ID '{}'.", group.name, group.id.0) ;
                         Ok(())
                     },
                     Err(cause) => match cause {
@@ -159,24 +163,273 @@ impl VpnManagementClient for NetbirdManagementClient {
         Ok(())
     }
 
-    async fn create_peer_configuration(&self, peer_id: PeerId) -> Result<VpnPeerConfig, GetOrCreateConfigurationError> {
-        let setup_keys = self.inner.list_netbird_setup_keys().await
-            .map_err(|error| GetOrCreateConfigurationError::QueryConfigurationsFailure { error: error.into() })?;
+    async fn create_vpn_peer_configuration(&self, peer_id: PeerId) -> Result<VpnPeerConfiguration, CreateVpnPeerConfigurationError> {
 
-        let maybe_setup_key = setup_keys.into_iter()
-            .find(|setup_key| setup_key.name == netbird::setup_key_name_format(peer_id));
+        debug!("Creating vpn configuration for peer <{peer_id}>.");
 
-        let setup_key = match maybe_setup_key {
-            None => {
-                self.inner.create_netbird_setup_key(peer_id).await
-                    .map_err(|error| GetOrCreateConfigurationError::CreationFailure { peer_id, error: error.into() })?
+        let self_group_name = GroupName::Peer(peer_id);
+
+        match self.inner.get_netbird_group(&self_group_name).await {
+            Ok(group) => {
+                debug!("Deleting self group '{self_group_name}' of peer <{peer_id}>.");
+                self.inner.delete_netbird_group(&group.id).await
+                    .map_err(|error| {
+                        error!("Failed to create vpn configuration for peer <{peer_id}>, du to communication issues when deleting the peer's self group '{self_group_name}'!");
+                        CreateVpnPeerConfigurationError::CreationFailure { peer_id, error: Box::new(error) }
+                    })?;
+                info!("Successfully deleted self group '{self_group_name}' of peer <{peer_id}>.");
             }
-            Some(setup_key) => setup_key,
+            Err(GetGroupError::GroupNotFound { .. }) => {
+                warn!("There is no self group '{self_group_name}' for peer <{peer_id}> to delete. This might indicate an invalid state!")
+            }
+            Err(error @ GetGroupError::MultipleGroupsFound { .. }) => {
+                error!("Failed to create vpn configuration for peer <{peer_id}>, because there are multiple groups with the same name '{self_group_name}'! This is an invalid state!");
+                Err(CreateVpnPeerConfigurationError::CreationFailure { peer_id, error: Box::new(error) })?;
+            }
+            Err(error @ GetGroupError::RequestFailure { .. }) => {
+                error!("Failed to create vpn configuration for peer <{peer_id}>, due to communication issues when trying to look up the peer's self group!");
+                Err(CreateVpnPeerConfigurationError::CreationFailure { peer_id, error: Box::new(error) })?;
+            }
         };
 
-        Ok(VpnPeerConfig::Netbird {
+        debug!("Re-creating self group '{self_group_name}' for peer <{peer_id}>.");
+
+        self.inner.create_netbird_group(Clone::clone(&self_group_name), Vec::new()).await
+            .map_err(|error| {
+                error!("Failed to create vpn configuration for peer <{peer_id}>, due to communication issues when re-creating the peer's self group '{self_group_name}'!");
+                CreateVpnPeerConfigurationError::CreationFailure { peer_id, error: Box::new(error) }
+            })?;
+
+        debug!("Requesting setup key for peer <{peer_id}>.");
+
+        let setup_key = self.inner.create_netbird_setup_key(peer_id).await
+            .map_err(|error| match error {
+                CreateSetupKeyError::PeerGroupNotFound { cause: error, .. } => {
+                    error!("Failed to create vpn configuration for peer <{peer_id}>, because the peer's self group could not be found!");
+                    CreateVpnPeerConfigurationError::CreationFailure { peer_id, error: error.into() }
+                }
+                CreateSetupKeyError::RequestFailure { .. } => {
+                    error!("Failed to create vpn configuration for peer <{peer_id}>, du to communication issues when requesting the new setup key!");
+                    CreateVpnPeerConfigurationError::CreationFailure { peer_id, error: error.into() }
+                }
+            })?;
+
+        debug!("Successfully created vpn configuration for peer <{peer_id}>.");
+
+        Ok(VpnPeerConfiguration::Netbird {
             management_url: Clone::clone(&self.netbird_url),
             setup_key: opendut_types::vpn::netbird::SetupKey::from(setup_key.key),
         })
+    }
+}
+
+#[cfg(test)]
+#[allow(non_snake_case)]
+mod test {
+    use async_trait::async_trait;
+    use googletest::prelude::*;
+    use reqwest::Url;
+    use time::OffsetDateTime;
+    use uuid::uuid;
+
+    use opendut_types::cluster::ClusterId;
+    use opendut_types::peer::PeerId;
+    use opendut_types::vpn;
+    use opendut_types::vpn::VpnPeerConfiguration;
+    use opendut_vpn::VpnManagementClient;
+
+    use crate::{netbird, NetbirdManagementClient};
+    use crate::client::Client;
+    use crate::netbird::error::{CreateSetupKeyError, GetGroupError, GetRulesError, RequestError};
+    use crate::netbird::GroupPeerInfo;
+
+    #[tokio::test]
+    async fn A_NetbirdManagementClient_should_create_a_cluster_by_creating_a_netbird_group_containing_all_peers_of_the_cluster() -> Result<()> {
+
+        let cluster_id = ClusterId::from(uuid!("6a6510a9-031b-4834-a4f7-454cc401fe13"));
+        let peer_a_id = PeerId::from(uuid!("d61bed7b-2fec-4a5b-a937-d6a791cb5ff9"));
+        let peer_b_id = PeerId::from(uuid!("267ca2c0-942e-4780-857e-c153ddcf2328"));
+        let peer_a_group_name = netbird::GroupName::from(peer_a_id);
+        let peer_b_group_name = netbird::GroupName::from(peer_b_id);
+        let cluster_group_name = netbird::GroupName::from(cluster_id);
+        let cluster_group_id = netbird::GroupId::from("cluster-group");
+        let peer_a_group = netbird::Group {
+            id: netbird::GroupId::from("peer-a-group"),
+            name: Clone::clone(&peer_a_group_name),
+            peers_count: 0,
+            peers: vec![GroupPeerInfo { id: netbird::PeerId::from("peer-a"), name: String::from("peer-a")}],
+        };
+        let peer_b_group = netbird::Group {
+            id: netbird::GroupId::from("peer-b-group"),
+            name: Clone::clone(&peer_b_group_name),
+            peers_count: 0,
+            peers: vec![GroupPeerInfo { id: netbird::PeerId::from("peer-b"), name: String::from("peer-b")}],
+        };
+        let cluster_group = netbird::Group {
+            id: Clone::clone(&cluster_group_id),
+            name: Clone::clone(&peer_b_group_name),
+            peers_count: 0,
+            peers: vec![],
+        };
+
+        let fixture = Fixture::setup(|mock_client| {
+            mock_client.expect_get_netbird_rule()
+                .returning(|rule_name| Err(GetRulesError::RuleNotFound { rule_name: rule_name.to_owned() }));
+            mock_client.expect_get_netbird_group()
+                .returning({
+                    let cluster_group_name = Clone::clone(&cluster_group_name);
+                    let cluster_group = Clone::clone(&cluster_group);
+                    move |group_name| {
+                        if group_name == &peer_a_group_name {
+                            Ok(Clone::clone(&peer_a_group))
+                        }
+                        else if group_name == &peer_b_group_name {
+                            Ok(Clone::clone(&peer_b_group))
+                        }
+                        else if group_name == &cluster_group_name {
+                            Ok(Clone::clone(&cluster_group))
+                        }
+                        else {
+                            Err(GetGroupError::GroupNotFound { group_name: group_name.to_owned() })
+                        }
+                    }
+                });
+            mock_client.expect_delete_netbird_group()
+                .times(1)
+                .withf(move |actual_group_id| *actual_group_id == cluster_group_id)
+                .returning(|_| Ok(()));
+            mock_client.expect_create_netbird_group()
+                .times(1)
+                .withf(move |actual_cluster_group_name, _actual_peers| {
+                    actual_cluster_group_name == &cluster_group_name // TODO: Check that _actual_peers contains all relevant peers
+                })
+                .returning({
+                    let cluster_group = Clone::clone(&cluster_group);
+                    move |_, _| Ok(Clone::clone(&cluster_group))
+                });
+            mock_client.expect_create_netbird_self_access_control_rule()
+                .times(1)
+                .withf(move |actual_group, _rule_name| actual_group == &cluster_group)
+                .returning(|_, _| Ok(()));
+        });
+
+        assert_that!(fixture.testee.create_cluster(cluster_id, &vec![peer_a_id, peer_b_id]).await, ok(anything()));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn A_NetbirdManagementClient_should_delete_the_self_group_of_a_peer_when_creating_a_peer_configuration() -> Result<()> {
+
+        let peer_id = PeerId::from(uuid!("d61bed7b-2fec-4a5b-a937-d6a791cb5ff9"));
+        let peer_self_group_name = netbird::GroupName::from(peer_id);
+        let peer_self_group_id = netbird::GroupId::from("peer-self-group");
+        let peer_self_group = netbird::Group {
+            id: Clone::clone(&peer_self_group_id),
+            name: Clone::clone(&peer_self_group_name),
+            peers_count: 0,
+            peers: vec![],
+        };
+        let setup_key = netbird::SetupKey {
+            id: String::from("some-id"),
+            key: uuid!("4626c02a-bee7-4468-91c3-73c47fd0116c"),
+            name: netbird::setup_key_name_format(peer_id),
+            expires: netbird::SetupKetTimeStamp { inner: OffsetDateTime::now_utc() },
+            r#type: netbird::SetupKeyType::OneOff,
+            valid: true,
+            revoked: false,
+            used_times: 0,
+            last_used: netbird::SetupKetTimeStamp { inner: OffsetDateTime::now_utc() },
+            state: netbird::SetupKeyState::Valid,
+            auto_groups: vec![String::from("ch8i4ug6lnn4g9hqv7m0")],
+            updated_at: netbird::SetupKetTimeStamp { inner: OffsetDateTime::now_utc() },
+            usage_limit: 0,
+        };
+
+        let fixture = Fixture::setup(|mock_client| {
+            mock_client.expect_get_netbird_group()
+                .returning({
+                    let peer_self_group_name = Clone::clone(&peer_self_group_name);
+                    let peer_self_group = Clone::clone(&peer_self_group);
+                    move |group_name| {
+                        if group_name == &peer_self_group_name  {
+                            Ok(Clone::clone(&peer_self_group))
+                        }
+                        else {
+                            Err(GetGroupError::GroupNotFound { group_name: group_name.to_owned() })
+                        }
+                    }
+                });
+            mock_client.expect_delete_netbird_group()
+                .times(1)
+                .withf(move |actual_group_id| *actual_group_id == peer_self_group_id)
+                .returning(|_| Ok(()));
+            mock_client.expect_create_netbird_group()
+                .times(1)
+                .withf(move |actual_group_name, peers| {
+                    *actual_group_name == peer_self_group_name && peers.is_empty()
+                })
+                .returning(move |_, _| Ok(Clone::clone(&peer_self_group)));
+            mock_client.expect_create_netbird_setup_key()
+                .times(1)
+                .withf(move |actual_peer_id| actual_peer_id.0 == peer_id.0)
+                .returning({
+                    let setup_key = Clone::clone(&setup_key);
+                    move |_| {
+                        Ok(Clone::clone(&setup_key))
+                    }
+                });
+        });
+
+        assert_that!(fixture.testee.create_vpn_peer_configuration(peer_id).await,
+            ok(matches_pattern!(VpnPeerConfiguration::Netbird {
+                management_url: eq(Url::parse("https://localhost/api/").unwrap()),
+                setup_key: matches_pattern!(vpn::netbird::SetupKey {
+                    uuid: eq(setup_key.key)
+                }),
+            })
+        ));
+
+        Ok(())
+    }
+
+    struct Fixture {
+        testee: NetbirdManagementClient,
+
+    }
+
+    impl Fixture {
+        fn setup<F>(setup: F) -> Fixture
+        where
+            F: FnOnce(&mut MockMockClient) -> ()
+        {
+            let mut mock_client = MockMockClient::new();
+            setup(&mut mock_client);
+            let testee = NetbirdManagementClient {
+                netbird_url: Url::parse("https://localhost/api/").unwrap(),
+                inner: Box::new(mock_client),
+            };
+
+            Fixture {
+                testee,
+            }
+        }
+    }
+
+    mockall::mock! {
+        pub MockClient {}
+        #[async_trait]
+        impl Client for MockClient {
+            async fn create_netbird_group(&self, name: netbird::GroupName, peers: Vec<netbird::PeerId>) -> std::result::Result<netbird::Group, RequestError>;
+            async fn get_netbird_rule(&self, rule_name: &netbird::RuleName) -> std::result::Result<netbird::Rule, GetRulesError>;
+            async fn get_netbird_group(&self, group_name: &netbird::GroupName) -> std::result::Result<netbird::Group, GetGroupError>;
+            async fn delete_netbird_group(&self, group_id: &netbird::GroupId) -> std::result::Result<(), RequestError>;
+            async fn delete_netbird_rule(&self, rule_id: &netbird::RuleId) -> std::result::Result<(), RequestError>;
+            async fn create_netbird_self_access_control_rule(&self, group: netbird::Group, rule_name: netbird::RuleName) -> std::result::Result<(), RequestError>;
+            async fn get_netbird_peer(&self, peer_id: &netbird::PeerId) -> std::result::Result<netbird::Peer, RequestError>;
+            async fn delete_netbird_peer(&self, peer_id: &netbird::PeerId) -> std::result::Result<(), RequestError>;
+            async fn create_netbird_setup_key(&self, peer_id: PeerId) -> std::result::Result<netbird::SetupKey, CreateSetupKeyError>;
+            async fn list_netbird_setup_keys(&self) -> std::result::Result<Vec<netbird::SetupKey>, RequestError>;
+        }
     }
 }

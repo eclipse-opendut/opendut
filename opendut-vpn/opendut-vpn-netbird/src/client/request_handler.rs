@@ -1,6 +1,8 @@
 use std::time::Duration;
+
 use async_trait::async_trait;
 use reqwest::{Request, Response};
+use tracing::trace;
 
 use crate::netbird::error::RequestError;
 
@@ -27,9 +29,9 @@ impl RequestHandler for DefaultRequestHandler {
         let timeout = request.timeout_mut()
             .get_or_insert(self.config.default_timeout);
 
-        log::trace!("Starting network request with timeout {} milliseconds.", timeout.as_millis());
+        trace!("Starting network request with timeout {} milliseconds.", timeout.as_millis());
         let result = self.inner.execute(request).await.map_err(RequestError::Request);
-        log::trace!("Network request completed.");
+        trace!("Network request completed.");
 
         result
     }
