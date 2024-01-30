@@ -143,7 +143,7 @@ enum CreateResource {
         #[arg(long)]
         interface: Option<NetworkInterfaceName>,
         /// Tags of device
-        #[arg(long)]
+        #[arg(long("tag"))]
         tags: Option<Vec<String>>,
     }
 }

@@ -2,18 +2,18 @@ use cli_table::{Table, WithTitle};
 use serde::Serialize;
 
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::topology::{DeviceDescriptor, DeviceId};
+use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName};
 
 use crate::ListOutputFormat;
 
 #[derive(Table, Serialize)]
 struct DeviceTable {
     #[table(title = "Name")]
-    name: String,
+    name: DeviceName,
     #[table(title = "DeviceID")]
     id: DeviceId,
     #[table(title = "Description")]
-    description: String,
+    description: DeviceDescription,
     #[table(title = "Tags")]
     tags: String,
 }
@@ -34,7 +34,7 @@ pub mod create {
     use uuid::Uuid;
     use opendut_carl_api::carl::CarlClient;
     use opendut_types::peer::{PeerId};
-    use opendut_types::topology::{DeviceDescriptor, DeviceId};
+    use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag};
     use opendut_types::util::net::NetworkInterfaceName;
     use crate::{CreateOutputFormat, DescribeOutputFormat};
 
@@ -63,25 +63,41 @@ pub mod create {
 
                 let new_device = DeviceDescriptor {
                     id: device_id,
-                    name,
-                    description: description.unwrap_or_default(),
+                    name: DeviceName::try_from(name)
+                        .map_err(|error| error.to_string())?,
+                    description: description
+                        .map(DeviceDescription::try_from)
+                        .transpose()
+                        .map_err(|error| error.to_string())?,
                     interface,
-                    tags: tags.unwrap_or_default(),
+                    tags: tags
+                        .unwrap_or_default()
+                        .into_iter()
+                        .map(|value| DeviceTag::try_from(value))
+                        .collect::<Result<_, _>>()
+                        .map_err(|error| error.to_string())?,
                 };
                 peer_descriptor.topology.devices.push(new_device);
             }
             Some(device) => {
                 if let Some(name) = name {
-                    device.name = name;
+                    device.name = DeviceName::try_from(name)
+                        .map_err(|error| error.to_string())?;
                 }
                 if let Some(description) = description {
-                    device.description = description; 
+                    device.description = DeviceDescription::try_from(description)
+                        .map_err(|error| error.to_string())
+                        .ok();
                 }
                 if let Some(interface) = interface {
                     device.interface = interface;
                 }
                 if let Some(tags) = tags {
-                    device.tags = tags;
+                    device.tags = tags
+                        .into_iter()
+                        .map(DeviceTag::try_from)
+                        .collect::<Result<_, _>>()
+                        .map_err(|error| error.to_string())?;
                 }
             }
         }
@@ -99,7 +115,7 @@ pub mod describe {
     use uuid::Uuid;
 
     use opendut_carl_api::carl::CarlClient;
-    use opendut_types::topology::DeviceId;
+    use opendut_types::topology::{DeviceDescription, DeviceId};
 
     use crate::DescribeOutputFormat;
 
@@ -120,7 +136,18 @@ pub mod describe {
                       Description: {}
                       Interface: {}
                       Tags: [{}]\
-                "), device.name, device.id, device.description, device.interface, device.tags.join(", "))
+                "),
+                        device.name,
+                        device.id,
+                        device.description
+                            .map(DeviceDescription::from)
+                            .unwrap_or_default(),
+                        device.interface,
+                        device.tags
+                            .iter()
+                            .map(|tag| tag.value())
+                            .collect::<Vec<_>>()
+                            .join(", "))
             }
             DescribeOutputFormat::Json => {
                 serde_json::to_string(&device).unwrap()
@@ -150,11 +177,11 @@ pub mod find {
                 .filter(|device| {
                     criteria.iter().any(|criterion| {
                         let pattern = glob::Pattern::new(criterion).expect("Failed to read glob pattern");
-                        pattern.matches(&device.name.to_lowercase())
+                        pattern.matches(&device.name.value().to_lowercase())
                             || pattern.matches(&device.id.to_string().to_lowercase())
-                            || pattern.matches(&device.description.to_lowercase())
+                            || pattern.matches(&device.description.clone().unwrap().value().to_lowercase())
                             || pattern.matches(&device.interface.to_string().to_lowercase())
-                            || device.tags.iter().any(|tag| pattern.matches(&tag.to_lowercase()))
+                            || device.tags.iter().any(|tag| pattern.matches(&tag.value().to_lowercase()))
                     })
                 })
                 .map(DeviceTable::from)
@@ -216,8 +243,8 @@ impl From<DeviceDescriptor> for DeviceTable {
         DeviceTable {
             name: device.name,
             id: device.id,
-            description: device.description,
-            tags: device.tags.join(", "),
+            description: device.description.unwrap_or_default(),
+            tags: device.tags.iter().map(|tag| tag.value()).collect::<Vec<_>>().join(", "),
         }
     }
 }

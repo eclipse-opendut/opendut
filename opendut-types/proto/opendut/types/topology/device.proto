@@ -11,8 +11,20 @@ message DeviceId {
 
 message DeviceDescriptor {
   opendut.types.topology.DeviceId id = 1;
-  string name = 2;
-  string description = 3;
+  opendut.types.topology.DeviceName name = 2;
+  opendut.types.topology.DeviceDescription description = 3;
   opendut.types.util.NetworkInterfaceName interface = 4;
-  repeated string tags = 5;
+  repeated opendut.types.topology.DeviceTag tags = 5;
+}
+
+message DeviceName {
+  string value = 1;
+}
+
+message DeviceDescription {
+  string value = 1;
+}
+
+message DeviceTag {
+  string value = 1;
 }

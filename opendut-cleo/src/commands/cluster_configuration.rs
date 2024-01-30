@@ -59,7 +59,7 @@ pub mod create {
 
     fn check_devices(all_devices: &[DeviceDescriptor], device_names: &[String]) -> Vec<Result<DeviceDescriptor, crate::Error>> {
         let checked_devices = device_names.iter().map(|device_name| {
-            let maybe_device = all_devices.iter().find(|device| &device.name == device_name);
+            let maybe_device = all_devices.iter().find(|device| &String::from(device.name.value()) == device_name);
             if let Some(device) = maybe_device {
                 Ok(Clone::clone(device))
             }
@@ -76,7 +76,7 @@ pub mod create {
         use super::*;
         use googletest::prelude::*;
         use rstest::{fixture, rstest};
-        use opendut_types::topology::DeviceId;
+        use opendut_types::topology::{DeviceDescription, DeviceId, DeviceName};
         use opendut_types::util::net::NetworkInterfaceName;
 
         #[fixture]
@@ -84,22 +84,22 @@ pub mod create {
             vec![
                 DeviceDescriptor {
                     id: DeviceId::random(),
-                    name: String::from("MyDevice"),
-                    description: String::new(),
+                    name: DeviceName::try_from("MyDevice").unwrap(),
+                    description: DeviceDescription::try_from("").ok(),
                     interface: NetworkInterfaceName::try_from("eth0").unwrap(),
                     tags: vec![],
                 },
                 DeviceDescriptor {
                     id: DeviceId::random(),
-                    name: String::from("YourDevice"),
-                    description: String::new(),
+                    name: DeviceName::try_from("YourDevice").unwrap(),
+                    description: DeviceDescription::try_from("").ok(),
                     interface: NetworkInterfaceName::try_from("eth0").unwrap(),
                     tags: vec![],
                 },
                 DeviceDescriptor {
                     id: DeviceId::random(),
-                    name: String::from("HisDevice"),
-                    description: String::new(),
+                    name: DeviceName::try_from("HisDevice").unwrap(),
+                    description: DeviceDescription::try_from("").ok(),
                     interface: NetworkInterfaceName::try_from("eth0").unwrap(),
                     tags: vec![],
                 }
@@ -202,8 +202,9 @@ pub mod describe {
 
     use opendut_carl_api::carl::CarlClient;
     use opendut_types::cluster::{ClusterId, ClusterName};
-    use opendut_types::peer::PeerId;
+    use opendut_types::peer::{PeerId, PeerName};
     use serde::Serialize;
+    use opendut_types::topology::DeviceName;
 
     use crate::DescribeOutputFormat;
 
@@ -212,8 +213,8 @@ pub mod describe {
         name: ClusterName,
         id: ClusterId,
         leader: PeerId,
-        peers: Vec<String>,
-        devices: Vec<String>,
+        peers: Vec<PeerName>,
+        devices: Vec<DeviceName>,
     }
 
     pub async fn execute(carl: &mut CarlClient, id: Uuid, output: DescribeOutputFormat) -> crate::Result<()> {
@@ -242,7 +243,7 @@ pub mod describe {
                 .filter(|peer| {
                     peer.topology.devices.iter().any(|device| cluster_devices.contains(&device.name))
                 })
-                .map(|peer| String::from(peer.name))
+                .map(|peer| peer.name)
                 .collect::<Vec<_>>()
         };
 
@@ -260,9 +261,9 @@ pub mod describe {
                     Cluster Configuration: {}
                       Id: {}
                       Leader: {}
-                      Peers: [{}]
-                      Devices: [{}]
-                "), table.name, table.id, table.leader, table.peers.join(", "), table.devices.join(", "))
+                      Peers: [{:?}]
+                      Devices: [{:?}]
+                "), table.name, table.id, table.leader, table.peers, table.devices)
             }
             DescribeOutputFormat::Json => {
                 serde_json::to_string(&table).unwrap()

@@ -43,7 +43,8 @@ pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
             let mut devices = peer.topology.devices;
             let selected_devices = selected_devices();
 
-            devices.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+            devices.sort_by(|a, b|
+                a.name.value().to_lowercase().cmp(&b.name.value().to_lowercase()));
 
             let devices_per_peer = devices.clone().into_iter()
                 .map(|device| {
@@ -63,9 +64,9 @@ pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
                                 />
                             </td>
                             <td>
-                                {&device.name}
+                                {&device.name.to_string()}
                             </td>
-                            <td>{peer.location.to_string()}</td>
+                            <td>{peer.location.clone().unwrap_or_default().to_string()}</td>
                             <td class="is-narrow">
                                 <IconButton
                                     icon=FontAwesomeIcon::Check
@@ -148,13 +149,13 @@ pub fn DeviceInfo(device: DeviceDescriptor, peer_id: PeerId) -> impl IntoView {
             <div class="field">
                 <label class="label">Tags</label>
                 <div class="control">
-                    <p>{device.tags}</p>
+                    <p>{device.tags.iter().map(|tag| tag.value()).collect::<Vec<_>>().join("* ")}</p>
                 </div>
             </div>
             <div class="field">
                 <label class="label">Description</label>
                 <div class="control">
-                    <p>{device.description}</p>
+                    <p>{device.description.unwrap_or_default().to_string()}</p>
                 </div>
             </div>
         </td>

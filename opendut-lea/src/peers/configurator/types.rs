@@ -1,7 +1,7 @@
 use leptos::{RwSignal, SignalGetUntracked};
 
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
-use opendut_types::topology::{DeviceDescriptor, DeviceId, Topology};
+use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
 use opendut_types::util::net::NetworkInterfaceName;
 
 use crate::components::UserInputValue;
@@ -25,6 +25,8 @@ pub enum DeviceMisconfigurationError {
     InvalidDeviceLocation,
     #[error("Invalid device interface")]
     InvalidDeviceInterface,
+    #[error("Invalid device description")]
+    InvalidDeviceDescription,
 }
 
 #[derive(Clone, Debug)]
@@ -40,7 +42,7 @@ pub struct UserPeerConfiguration {
 pub struct UserDeviceConfiguration {
     pub id: DeviceId,
     pub name: UserInputValue,
-    pub description: String,
+    pub description: UserInputValue,
     pub interface: UserInputValue,
     pub is_collapsed: bool,
 }
@@ -74,7 +76,7 @@ impl TryFrom<UserPeerConfiguration> for PeerDescriptor {
         Ok(PeerDescriptor {
             id: configuration.id,
             name,
-            location,
+            location: Some(location),
             topology: Topology::new(devices),
         })
     }
@@ -86,7 +88,11 @@ impl TryFrom<UserDeviceConfiguration> for DeviceDescriptor {
     fn try_from(configuration: UserDeviceConfiguration) -> Result<Self, Self::Error> {
         let name = configuration
             .name
-            .right_ok_or(DeviceMisconfigurationError::InvalidDeviceName)?;
+            .right_ok_or(DeviceMisconfigurationError::InvalidDeviceName)
+            .and_then(|name| {
+                DeviceName::try_from(name)
+                    .map_err(|_| DeviceMisconfigurationError::InvalidDeviceName)
+            })?;
         let interface = configuration
             .interface
             .right_ok_or(DeviceMisconfigurationError::InvalidDeviceInterface)
@@ -94,10 +100,17 @@ impl TryFrom<UserDeviceConfiguration> for DeviceDescriptor {
                 NetworkInterfaceName::try_from(interface_name)
                     .map_err(|_| DeviceMisconfigurationError::InvalidDeviceInterface)
             })?;
+        let description = configuration
+            .description
+            .right_ok_or(DeviceMisconfigurationError::InvalidDeviceDescription)
+            .and_then(|description| {
+                DeviceDescription::try_from(description)
+                    .map_err(|_| DeviceMisconfigurationError::InvalidDeviceDescription)
+            })?;
         Ok(DeviceDescriptor {
             id: configuration.id,
             name,
-            description: configuration.description,
+            description: Some(description),
             interface,
             tags: vec![],
         })

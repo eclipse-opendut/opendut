@@ -60,6 +60,14 @@ impl From<crate::peer::PeerLocation> for PeerLocation {
     }
 }
 
+impl From<&str> for PeerLocation {
+    fn from(value: &str) -> Self {
+        Self {
+            value: String::from(value)
+        }
+    }
+}
+
 impl TryFrom<PeerLocation> for crate::peer::PeerLocation {
     type Error = ConversionError;
 
@@ -76,7 +84,7 @@ impl From<crate::peer::PeerDescriptor> for PeerDescriptor {
         Self {
             id: Some(value.id.into()),
             name: Some(value.name.into()),
-            location: Some(value.location.into()),
+            location: Some(value.location.unwrap_or_default().into()),
             topology: Some(value.topology.into()),
         }
     }
@@ -97,8 +105,8 @@ impl TryFrom<PeerDescriptor> for crate::peer::PeerDescriptor {
             .try_into()?;
 
         let location = value.location
-            .ok_or(ErrorBuilder::new("Location not set"))?
-            .try_into()?;
+            .map(crate::peer::PeerLocation::try_from)
+            .transpose()?;
 
         let topology = value.topology
             .ok_or(ErrorBuilder::new("Topology not set"))?
@@ -306,6 +314,38 @@ mod tests {
         );
 
         assert_that!(PeerId::from(native), eq(proto));
+
+        Ok(())
+    }
+
+    #[test]
+    fn A_PeerLocation_should_be_convertable_to_its_proto_and_vice_versa() -> Result<()> {
+
+        let peer_location = "Ulm";
+
+        let native = crate::peer::PeerLocation::try_from(peer_location).unwrap();
+        let proto = PeerLocation::from(peer_location);
+
+        assert_that!(
+            crate::peer::PeerLocation::try_from(Clone::clone(&proto)),
+            ok(eq(native.clone()))
+        );
+
+        assert_that!(PeerLocation::from(native), eq(proto));
+
+        Ok(())
+    }
+
+    #[test]
+    fn A_invalid_PeerLocation_should_not_be_convertable_to_its_proto_and_vice_versa() -> Result<()> {
+
+        let peer_location_with_invalid_start_char = "-Ulm";
+        let peer_location_with_invalid_characters = "Ul/&$#@m";
+        let peer_location_is_empty = "";
+
+        assert!(crate::peer::PeerLocation::try_from(peer_location_with_invalid_start_char).is_err());
+        assert!(crate::peer::PeerLocation::try_from(peer_location_with_invalid_characters).is_err());
+        assert!(crate::peer::PeerLocation::try_from(peer_location_is_empty).is_ok());
 
         Ok(())
     }

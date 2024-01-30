@@ -112,7 +112,7 @@ impl TryFrom<String> for ClusterName {
                 actual: length,
             })
         }
-        else if crate::util::valid_start_and_end_of_a_name( & value).not()
+        else if crate::util::invalid_start_and_end_of_a_name( & value)
             || value.chars().any(|c| crate::util::valid_characters_in_name(&c).not()) {
                 Err(IllegalClusterName::InvalidCharacter {
                     value

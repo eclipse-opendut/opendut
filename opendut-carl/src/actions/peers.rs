@@ -277,7 +277,7 @@ mod test {
     use rstest::*;
 
     use opendut_types::peer::{PeerLocation, PeerName};
-    use opendut_types::topology::Topology;
+    use opendut_types::topology::{DeviceDescription, DeviceName, Topology};
     use opendut_types::util::net::NetworkInterfaceName;
 
     use crate::resources::manager::ResourcesManager;
@@ -287,6 +287,7 @@ mod test {
     mod store_peer_descriptor {
         use googletest::prelude::*;
         use rstest::*;
+        use opendut_types::topology::{DeviceDescription, DeviceName};
         use opendut_types::util::net::NetworkInterfaceName;
 
         use super::*;
@@ -310,8 +311,8 @@ mod test {
             let additional_device_id = DeviceId::random();
             let additional_device = DeviceDescriptor {
                 id: additional_device_id,
-                name: String::from("PeerA Device 42"),
-                description: String::from("Additional device for peerA"),
+                name: DeviceName::try_from("PeerA_Device_42").unwrap(),
+                description: DeviceDescription::try_from("Additional device for peerA").ok(),
                 interface: NetworkInterfaceName::try_from("eth1").unwrap(),
                 tags: vec![],
             };
@@ -358,20 +359,20 @@ mod test {
         let peer_a_descriptor = PeerDescriptor {
             id: peer_a_id,
             name: PeerName::try_from("PeerA").unwrap(),
-            location: PeerLocation::new("Ulm"),
+            location: PeerLocation::try_from("Ulm").ok(),
             topology: Topology {
                 devices: vec![
                     DeviceDescriptor {
                         id: peer_a_device_1,
-                        name: String::from("PeerA Device 1"),
-                        description: String::from("Huii"),
+                        name: DeviceName::try_from("PeerA_Device_1").unwrap(),
+                        description: DeviceDescription::try_from("Huii").ok(),
                         interface: NetworkInterfaceName::try_from("eth0").unwrap(),
                         tags: vec![],
                     },
                     DeviceDescriptor {
                         id: peer_a_device_2,
-                        name: String::from("PeerA Device 2"),
-                        description: String::from("Huii"),
+                        name: DeviceName::try_from("PeerA_Device_2").unwrap(),
+                        description: DeviceDescription::try_from("Huii").ok(),
                         interface: NetworkInterfaceName::try_from("eth1").unwrap(),
                         tags: vec![],
                     }

@@ -99,7 +99,7 @@ mod test {
         let peer = PeerDescriptor {
             id: peer_resource_id,
             name: PeerName::try_from("TestPeer").unwrap(),
-            location: PeerLocation::new("Ulm"),
+            location: PeerLocation::try_from("Ulm").ok(),
             topology: Topology::default(),
         };
 

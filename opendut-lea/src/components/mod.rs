@@ -6,6 +6,7 @@ pub use initialized::Initialized;
 pub use inputs::{UserInputError, UserInputValue};
 pub use inputs::readonly_input::ReadOnlyInput;
 pub use inputs::user_input::UserInput;
+pub use inputs::user_textarea::UserTextarea;
 pub use page::BasePageContainer;
 pub use toast::{use_toaster, Toaster, Toast, ToastKind, ToastContent};
 pub use util::ButtonStateSignalProvider;

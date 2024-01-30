@@ -61,7 +61,7 @@ pub fn LeaderSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
                             {&peer.id.to_string()}
                         </td>
                         <td>
-                            {&peer.location.to_string()}
+                            {&peer.location.unwrap_or_default().to_string()}
                         </td>
                         <td class="is-narrow" style="text-align: center">
                             <div class="control">

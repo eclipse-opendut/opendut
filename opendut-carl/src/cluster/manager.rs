@@ -243,7 +243,7 @@ mod test {
 
     use opendut_types::cluster::ClusterName;
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
-    use opendut_types::topology::{DeviceDescriptor, DeviceId, Topology};
+    use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
     use opendut_types::util::net::NetworkInterfaceName;
 
     use crate::actions::{CreateClusterConfigurationParams, StorePeerDescriptorParams};
@@ -274,13 +274,13 @@ mod test {
         let peer_a = PeerDescriptor {
             id: peer_a_id,
             name: PeerName::try_from("PeerA").unwrap(),
-            location: PeerLocation::new("Ulm"),
+            location: PeerLocation::try_from("Ulm").ok(),
             topology: Topology {
                 devices: vec![
                     DeviceDescriptor {
                         id: peer_a_device_1,
-                        name: String::from("PeerA Device 1"),
-                        description: String::from("Huii"),
+                        name: DeviceName::try_from("PeerA_Device_1").unwrap(),
+                        description: DeviceDescription::try_from("Huii").ok(),
                         interface: NetworkInterfaceName::try_from("eth0").unwrap(),
                         tags: vec![],
                     }
@@ -293,13 +293,13 @@ mod test {
         let peer_b = PeerDescriptor {
             id: peer_b_id,
             name: PeerName::try_from("PeerB").unwrap(),
-            location: PeerLocation::new("Ulm"),
+            location: PeerLocation::try_from("Ulm").ok(),
             topology: Topology {
                 devices: vec![
                     DeviceDescriptor {
                         id: peer_b_device_1,
-                        name: String::from("PeerB Device 1"),
-                        description: String::from("Pfuii"),
+                        name: DeviceName::try_from("PeerB_Device_1").unwrap(),
+                        description: DeviceDescription::try_from("Pfuii").ok(),
                         interface: NetworkInterfaceName::try_from("can1").unwrap(),
                         tags: vec![],
                     }
@@ -402,8 +402,8 @@ mod test {
         fn device(id: DeviceId, interface: NetworkInterfaceName) -> DeviceDescriptor {
             DeviceDescriptor {
                 id,
-                name: format!("test-device-{id}"),
-                description: String::new(),
+                name: DeviceName::try_from(format!("test-device-{id}")).unwrap(),
+                description: None,
                 interface,
                 tags: Vec::new(),
             }
@@ -419,7 +419,7 @@ mod test {
             PeerDescriptor {
                 id,
                 name: PeerName::try_from(format!("peer-{id}")).unwrap(),
-                location: PeerLocation::new("Ulm"),
+                location: PeerLocation::try_from("Ulm").ok(),
                 topology: Topology {
                     devices,
                 },

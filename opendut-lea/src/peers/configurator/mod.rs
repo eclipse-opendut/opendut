@@ -62,13 +62,13 @@ pub fn PeerConfigurator() -> impl IntoView {
                         peer_configuration.update(|user_configuration| {
                             user_configuration.name = UserInputValue::Right(configuration.name.value());
                             user_configuration.is_new = false;
-                            user_configuration.location = UserInputValue::Right(configuration.location.value());
+                            user_configuration.location = UserInputValue::Right(configuration.location.unwrap_or_default().value());
                             user_configuration.devices = configuration.topology.devices.into_iter().map(|device| {
                                 create_rw_signal(UserDeviceConfiguration {
                                     id: device.id,
-                                    name: UserInputValue::Right(device.name),
+                                    name: UserInputValue::Right(device.name.to_string()),
                                     interface: UserInputValue::Right(device.interface.name()),
-                                    description: device.description,
+                                    description: UserInputValue::Right(device.description.unwrap_or_default().to_string()),
                                     is_collapsed: true
                                 })
                             }).collect::<Vec<_>>();

@@ -238,7 +238,7 @@ mod tests {
         let peer_descriptor = PeerDescriptor {
             id: peer_id,
             name: PeerName::try_from("TestPeer").unwrap(),
-            location: PeerLocation::new("SiFi"),
+            location: PeerLocation::try_from("SiFi").ok(),
             topology: Topology::default(),
         };
 
