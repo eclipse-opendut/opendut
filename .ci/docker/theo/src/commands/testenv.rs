@@ -8,29 +8,30 @@ use crate::core::docker::compose::{docker_compose_build, docker_compose_down, do
 use crate::core::project::load_theo_environment_variables;
 
 /// Build and start test environment.
-#[derive(Debug, clap::Parser)]
+#[derive(clap::Parser)]
 pub struct TestenvCli {
     #[command(subcommand)]
     pub(crate) task: TaskCli,
 }
 
-#[derive(Debug, clap::Subcommand)]
+#[derive(clap::Subcommand)]
 pub enum TaskCli {
-    #[command(about = "Build docker containers.")]
+    /// Build Docker containers.
     Build,
-    #[command(about = "Start test environment.", alias = "up")]
+    /// Start test environment.
+    #[command(alias = "up")]
     Start {
         /// Expose firefox container port (3000), or set OPENDUT_EXPOSE_PORTS=true
         #[arg(long, short, action = ArgAction::SetTrue)]
         expose: bool,
     },
-    #[command(about = "Stop test environment.")]
+    /// Stop test environment.
     Stop,
-    #[command(about = "Show docker network.")]
+    /// Show Docker network.
     Network,
-    #[command(about = "Destroy test environment.")]
+    /// Destroy test environment.
     Destroy,
-    #[command(about = "Run edgar cluster creation.")]
+    /// Run EDGAR cluster creation.
     Edgar(TestEdgarCli),
 }
 

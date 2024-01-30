@@ -8,19 +8,19 @@ use crate::core::docker::{DockerCommand, DockerCoreServices};
 use crate::core::docker::compose::{docker_compose_build, docker_compose_down};
 use crate::core::project::TheoDynamicEnvVars;
 
-#[derive(Debug, clap::Parser)]
+#[derive(clap::Parser)]
 pub struct TestEdgarCli {
     #[command(subcommand)]
     pub task: TaskCli,
 }
 
-#[derive(Debug, clap::Subcommand)]
+#[derive(clap::Subcommand)]
 pub enum TaskCli {
-    #[command(about = "Start edgar cluster.")]
+    /// Start EDGAR cluster
     Start,
-    #[command(about = "Stop edgar cluster.")]
+    /// Stop EDGAR cluster
     Stop,
-    #[command(about = "Build edgar.")]
+    /// Build EDGAR
     Build,
 }
 
@@ -32,7 +32,7 @@ impl TestEdgarCli {
                 docker_compose_build(DockerCoreServices::Edgar.as_str())?;
                 start_edgar_in_docker()?;
                 wait_for_edgar_leader_provisioned()?;
-                println!("Edgar leader is provisioned. Checking if all peers respond to ping...");
+                println!("EDGAR leader is provisioned. Checking if all peers respond to ping...");
                 check_edgar_leader_ping_all()?;
             }
             TaskCli::Stop => {

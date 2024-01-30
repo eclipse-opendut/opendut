@@ -32,7 +32,7 @@ pub fn docker_compose_up_expose_ports(compose_dir: &str, expose: &bool) -> crate
         .arg(".env")
         .arg("up")
         .arg("-d")
-        .expect_status(&*format!("Failed to execute docker compose command for {}.", compose_dir))?;
+        .expect_status(&format!("Failed to execute docker compose command for {}.", compose_dir))?;
     Ok(())
 }
 

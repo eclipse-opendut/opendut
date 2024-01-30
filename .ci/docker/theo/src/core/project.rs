@@ -198,7 +198,7 @@ pub(crate) fn load_theo_environment_variables() {
     dotenvy::from_path(custom_env).expect(".env-theo file not found");
 }
 
-pub(crate) fn dot_env_create_defaults() {
+pub(crate) fn load_environment_variables_from_dot_env_file() {
     let env_map = TheoEnvMap::user_default();
     let env_file = PathBuf::project_path_buf().join(".env");
     if !env_file.exists() {

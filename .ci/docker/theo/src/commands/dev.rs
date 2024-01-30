@@ -7,29 +7,31 @@ use crate::core::docker::{DockerCommand, DockerCoreServices, start_netbird};
 use crate::core::docker::compose::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_up_expose_ports};
 use crate::core::project::load_theo_environment_variables;
 
-#[derive(Debug, clap::Parser)]
+/// Build and start development environment
+#[derive(clap::Parser)]
 pub struct DevCli {
     #[command(subcommand)]
     pub task: TaskCli,
 }
 
-#[derive(Debug, clap::Subcommand)]
+#[derive(clap::Subcommand)]
 pub enum TaskCli {
-    #[command(about = "Start dev containers.", alias = "up")]
+    /// Start dev containers.
+    #[command(alias = "up")]
     Start {
         /// Expose firefox container port (3000), or set OPENDUT_EXPOSE_PORTS=true
         #[arg(long, short, action = ArgAction::SetTrue)]
         expose: bool,
     },
-    #[command(about = "Stop dev containers.")]
+    /// Stop dev containers.
     Stop,
-    #[command(about = "Build dev container.")]
+    /// Build dev container.
     Build,
-    #[command(about = "Shell in Dev container.")]
+    /// Shell in Dev container.
     Shell,
-    #[command(about = "Carl environment run configuration for your IDE.")]
+    /// CARL environment run configuration for your IDE.
     CarlConfig,
-    #[command(about = "Edgar container.")]
+    /// EDGAR container.
     EdgarShell,
 }
 
