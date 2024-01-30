@@ -49,7 +49,6 @@ pre_flight_tasks() {
   ip link add dev vcan1 type vcan
   ip link set dev vcan0 up
   ip link set dev vcan1 up
-  apt install -y can-utils
 }
 
 ## MAIN TASKS
