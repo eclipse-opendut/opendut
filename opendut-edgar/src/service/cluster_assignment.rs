@@ -93,7 +93,7 @@ fn get_own_can_interfaces(
 
     let own_cluster_assignment = cluster_assignment.assignments.iter().find(|assignment| assignment.peer_id == self_id).unwrap();
 
-    // Use some proper way to determine whether an interface is a CAN one or not
+    // TODO: Use some proper way to determine whether an interface is a CAN one or not
     let own_can_interfaces: Vec<NetworkInterfaceName> = own_cluster_assignment.device_interfaces.iter()
         .filter(|interface| interface.name().contains("can"))
         .cloned()

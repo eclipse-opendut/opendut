@@ -26,6 +26,7 @@ impl KernelModule {
             .map_err(|cause| Error::CheckModuleLoaded { cause: cause })?;
         let reader = BufReader::new(file);
 
+        // TODO: Should not only check that module is loaded but also that it's loaded with the correct options
         for mod_line in reader.lines() {
             match mod_line {
                 Ok(line) => {
