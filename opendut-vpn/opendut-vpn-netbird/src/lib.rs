@@ -127,7 +127,6 @@ impl VpnManagementClient for NetbirdManagementClient {
                         other => Err(DeleteClusterError::DeletionFailure { cluster_id, error: other.into() }),
                     }
                 }
-
             }
             Err(GetGroupError::GroupNotFound { .. }) => {
                 // No group found, so no need to delete it.
@@ -163,9 +162,9 @@ impl VpnManagementClient for NetbirdManagementClient {
         Ok(())
     }
 
-    async fn create_vpn_peer_configuration(&self, peer_id: PeerId) -> Result<VpnPeerConfiguration, CreateVpnPeerConfigurationError> {
+    async fn generate_vpn_peer_configuration(&self, peer_id: PeerId) -> Result<VpnPeerConfiguration, CreateVpnPeerConfigurationError> {
 
-        debug!("Creating vpn configuration for peer <{peer_id}>.");
+        debug!("Generating vpn configuration for peer <{peer_id}>.");
 
         let self_group_name = GroupName::Peer(peer_id);
 
@@ -174,7 +173,7 @@ impl VpnManagementClient for NetbirdManagementClient {
                 debug!("Deleting self group '{self_group_name}' of peer <{peer_id}>.");
                 self.inner.delete_netbird_group(&group.id).await
                     .map_err(|error| {
-                        error!("Failed to create vpn configuration for peer <{peer_id}>, du to communication issues when deleting the peer's self group '{self_group_name}'!");
+                        error!("Failed to generate vpn configuration for peer <{peer_id}>, du to communication issues when deleting the peer's self group '{self_group_name}'!");
                         CreateVpnPeerConfigurationError::CreationFailure { peer_id, error: Box::new(error) }
                     })?;
                 info!("Successfully deleted self group '{self_group_name}' of peer <{peer_id}>.");
@@ -183,11 +182,11 @@ impl VpnManagementClient for NetbirdManagementClient {
                 warn!("There is no self group '{self_group_name}' for peer <{peer_id}> to delete. This might indicate an invalid state!")
             }
             Err(error @ GetGroupError::MultipleGroupsFound { .. }) => {
-                error!("Failed to create vpn configuration for peer <{peer_id}>, because there are multiple groups with the same name '{self_group_name}'! This is an invalid state!");
+                error!("Failed to generate vpn configuration for peer <{peer_id}>, because there are multiple groups with the same name '{self_group_name}'! This is an invalid state!");
                 Err(CreateVpnPeerConfigurationError::CreationFailure { peer_id, error: Box::new(error) })?;
             }
             Err(error @ GetGroupError::RequestFailure { .. }) => {
-                error!("Failed to create vpn configuration for peer <{peer_id}>, due to communication issues when trying to look up the peer's self group!");
+                error!("Failed to generate vpn configuration for peer <{peer_id}>, due to communication issues when trying to look up the peer's self group!");
                 Err(CreateVpnPeerConfigurationError::CreationFailure { peer_id, error: Box::new(error) })?;
             }
         };
@@ -196,25 +195,25 @@ impl VpnManagementClient for NetbirdManagementClient {
 
         self.inner.create_netbird_group(Clone::clone(&self_group_name), Vec::new()).await
             .map_err(|error| {
-                error!("Failed to create vpn configuration for peer <{peer_id}>, due to communication issues when re-creating the peer's self group '{self_group_name}'!");
+                error!("Failed to generate vpn configuration for peer <{peer_id}>, due to communication issues when re-creating the peer's self group '{self_group_name}'!");
                 CreateVpnPeerConfigurationError::CreationFailure { peer_id, error: Box::new(error) }
             })?;
 
         debug!("Requesting setup key for peer <{peer_id}>.");
 
-        let setup_key = self.inner.create_netbird_setup_key(peer_id).await
+        let setup_key = self.inner.generate_netbird_setup_key(peer_id).await
             .map_err(|error| match error {
                 CreateSetupKeyError::PeerGroupNotFound { cause: error, .. } => {
-                    error!("Failed to create vpn configuration for peer <{peer_id}>, because the peer's self group could not be found!");
+                    error!("Failed to generate vpn configuration for peer <{peer_id}>, because the peer's self group could not be found!");
                     CreateVpnPeerConfigurationError::CreationFailure { peer_id, error: error.into() }
                 }
                 CreateSetupKeyError::RequestFailure { .. } => {
-                    error!("Failed to create vpn configuration for peer <{peer_id}>, du to communication issues when requesting the new setup key!");
+                    error!("Failed to generate vpn configuration for peer <{peer_id}>, du to communication issues when requesting the new setup key!");
                     CreateVpnPeerConfigurationError::CreationFailure { peer_id, error: error.into() }
                 }
             })?;
 
-        debug!("Successfully created vpn configuration for peer <{peer_id}>.");
+        debug!("Successfully generated vpn configuration for peer <{peer_id}>.");
 
         Ok(VpnPeerConfiguration::Netbird {
             management_url: Clone::clone(&self.netbird_url),
@@ -370,7 +369,7 @@ mod test {
                     *actual_group_name == peer_self_group_name && peers.is_empty()
                 })
                 .returning(move |_, _| Ok(Clone::clone(&peer_self_group)));
-            mock_client.expect_create_netbird_setup_key()
+            mock_client.expect_generate_netbird_setup_key()
                 .times(1)
                 .withf(move |actual_peer_id| actual_peer_id.0 == peer_id.0)
                 .returning({
@@ -381,7 +380,7 @@ mod test {
                 });
         });
 
-        assert_that!(fixture.testee.create_vpn_peer_configuration(peer_id).await,
+        assert_that!(fixture.testee.generate_vpn_peer_configuration(peer_id).await,
             ok(matches_pattern!(VpnPeerConfiguration::Netbird {
                 management_url: eq(Url::parse("https://localhost/api/").unwrap()),
                 setup_key: matches_pattern!(vpn::netbird::SetupKey {
@@ -395,7 +394,6 @@ mod test {
 
     struct Fixture {
         testee: NetbirdManagementClient,
-
     }
 
     impl Fixture {
@@ -421,15 +419,14 @@ mod test {
         #[async_trait]
         impl Client for MockClient {
             async fn create_netbird_group(&self, name: netbird::GroupName, peers: Vec<netbird::PeerId>) -> std::result::Result<netbird::Group, RequestError>;
-            async fn get_netbird_rule(&self, rule_name: &netbird::RuleName) -> std::result::Result<netbird::Rule, GetRulesError>;
             async fn get_netbird_group(&self, group_name: &netbird::GroupName) -> std::result::Result<netbird::Group, GetGroupError>;
             async fn delete_netbird_group(&self, group_id: &netbird::GroupId) -> std::result::Result<(), RequestError>;
-            async fn delete_netbird_rule(&self, rule_id: &netbird::RuleId) -> std::result::Result<(), RequestError>;
-            async fn create_netbird_self_access_control_rule(&self, group: netbird::Group, rule_name: netbird::RuleName) -> std::result::Result<(), RequestError>;
             async fn get_netbird_peer(&self, peer_id: &netbird::PeerId) -> std::result::Result<netbird::Peer, RequestError>;
             async fn delete_netbird_peer(&self, peer_id: &netbird::PeerId) -> std::result::Result<(), RequestError>;
-            async fn create_netbird_setup_key(&self, peer_id: PeerId) -> std::result::Result<netbird::SetupKey, CreateSetupKeyError>;
-            async fn list_netbird_setup_keys(&self) -> std::result::Result<Vec<netbird::SetupKey>, RequestError>;
+            async fn create_netbird_self_access_control_rule(&self, group: netbird::Group, rule_name: netbird::RuleName) -> std::result::Result<(), RequestError>;
+            async fn get_netbird_rule(&self, rule_name: &netbird::RuleName) -> std::result::Result<netbird::Rule, GetRulesError>;
+            async fn delete_netbird_rule(&self, rule_id: &netbird::RuleId) -> std::result::Result<(), RequestError>;
+            async fn generate_netbird_setup_key(&self, peer_id: PeerId) -> std::result::Result<netbird::SetupKey, CreateSetupKeyError>;
         }
     }
 }

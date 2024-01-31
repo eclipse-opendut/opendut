@@ -15,7 +15,7 @@ pub trait VpnManagementClient {
 
     async fn delete_peer(&self, peer_id: PeerId) -> Result<(), DeletePeerError>;
 
-    async fn create_vpn_peer_configuration(&self, peer_id: PeerId) -> Result<VpnPeerConfiguration, CreateVpnPeerConfigurationError>;
+    async fn generate_vpn_peer_configuration(&self, peer_id: PeerId) -> Result<VpnPeerConfiguration, CreateVpnPeerConfigurationError>;
 }
 
 #[derive(thiserror::Error, Debug)]

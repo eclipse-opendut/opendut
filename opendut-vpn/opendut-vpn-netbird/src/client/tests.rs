@@ -239,7 +239,7 @@ async fn create_a_setup_key(fixture: Fixture) -> anyhow::Result<()> {
 
     let client = DefaultClient::create(fixture.base_url(), None, Some(Box::new(requester)))?;
 
-    let result = client.create_netbird_setup_key(fixture.peer_id()).await?;
+    let result = client.generate_netbird_setup_key(fixture.peer_id()).await?;
 
     assert_that!(
             result,

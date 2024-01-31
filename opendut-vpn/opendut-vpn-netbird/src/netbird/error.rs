@@ -1,10 +1,12 @@
-use reqwest::header::InvalidHeaderValue;
 use std::fmt::Debug;
+
 use http::StatusCode;
+use reqwest::header::InvalidHeaderValue;
+
 use opendut_types::peer::PeerId;
+
 use crate::netbird::group::GroupName;
 use crate::netbird::rules::RuleName;
-
 
 #[derive(thiserror::Error, Debug)]
 pub enum GetGroupError {

@@ -20,15 +20,14 @@ mod tests;
 #[async_trait]
 pub trait Client {
     async fn create_netbird_group(&self, name: netbird::GroupName, peers: Vec<netbird::PeerId>) -> Result<netbird::Group, RequestError>;
-    async fn delete_netbird_group(&self, group_id: &netbird::GroupId) -> Result<(), RequestError>;
     async fn get_netbird_group(&self, group_name: &netbird::GroupName) -> Result<netbird::Group, GetGroupError>;
-    async fn delete_netbird_peer(&self, peer_id: &netbird::PeerId) -> Result<(), RequestError>;
+    async fn delete_netbird_group(&self, group_id: &netbird::GroupId) -> Result<(), RequestError>;
     async fn get_netbird_peer(&self, peer_id: &netbird::PeerId) -> Result<netbird::Peer, RequestError>;
-    async fn delete_netbird_rule(&self, rule_id: &netbird::RuleId) -> Result<(), RequestError>;
+    async fn delete_netbird_peer(&self, peer_id: &netbird::PeerId) -> Result<(), RequestError>;
     async fn create_netbird_self_access_control_rule(&self, group: netbird::Group, rule_name: netbird::RuleName) -> Result<(), RequestError>;
     async fn get_netbird_rule(&self, rule_name: &netbird::RuleName) -> Result<netbird::Rule, GetRulesError>;
-    async fn create_netbird_setup_key(&self, peer_id: PeerId) -> Result<netbird::SetupKey, CreateSetupKeyError>;
-    async fn list_netbird_setup_keys(&self) -> Result<Vec<netbird::SetupKey>, RequestError>;
+    async fn delete_netbird_rule(&self, rule_id: &netbird::RuleId) -> Result<(), RequestError>;
+    async fn generate_netbird_setup_key(&self, peer_id: PeerId) -> Result<netbird::SetupKey, CreateSetupKeyError>;
 }
 
 pub struct DefaultClient {
@@ -109,16 +108,6 @@ impl Client for DefaultClient {
         Ok(result)
     }
 
-    async fn delete_netbird_group(&self, group_id: &netbird::GroupId) -> Result<(), RequestError> {
-        let url = routes::group(Clone::clone(&self.netbird_url), group_id);
-
-        let request = Request::new(Method::DELETE, url);
-
-        let response = self.requester.handle(request).await?;
-
-        parse_response_status(response, format!("NetBird group with ID <{:?}>", group_id)).await
-    }
-
     async fn get_netbird_group(&self, group_name: &netbird::GroupName) -> Result<netbird::Group, GetGroupError> {
         let url = routes::groups(self.netbird_url.clone());
         let request = Request::new(Method::GET, url);
@@ -140,17 +129,14 @@ impl Client for DefaultClient {
         }
     }
 
-    async fn delete_netbird_peer(&self, peer_id: &netbird::PeerId) -> Result<(), RequestError> {
-        let url = routes::peer(Clone::clone(&self.netbird_url), peer_id);
+    async fn delete_netbird_group(&self, group_id: &netbird::GroupId) -> Result<(), RequestError> {
+        let url = routes::group(Clone::clone(&self.netbird_url), group_id);
 
         let request = Request::new(Method::DELETE, url);
 
         let response = self.requester.handle(request).await?;
 
-        response.error_for_status()
-            .map_err(RequestError::IllegalStatus)?;
-
-        Ok(())
+        parse_response_status(response, format!("NetBird group with ID <{:?}>", group_id)).await
     }
 
     async fn get_netbird_peer(&self, peer_id: &netbird::PeerId) -> Result<netbird::Peer, RequestError> {
@@ -167,14 +153,17 @@ impl Client for DefaultClient {
         Ok(result)
     }
 
-    async fn delete_netbird_rule(&self, rule_id: &netbird::RuleId) -> Result<(), RequestError> {
-        let url = routes::rule(Clone::clone(&self.netbird_url), rule_id);
+    async fn delete_netbird_peer(&self, peer_id: &netbird::PeerId) -> Result<(), RequestError> {
+        let url = routes::peer(Clone::clone(&self.netbird_url), peer_id);
 
         let request = Request::new(Method::DELETE, url);
 
         let response = self.requester.handle(request).await?;
 
-        parse_response_status(response, format!("NetBird rule with ID <{:?}>", rule_id)).await
+        response.error_for_status()
+            .map_err(RequestError::IllegalStatus)?;
+
+        Ok(())
     }
 
     async fn create_netbird_self_access_control_rule(&self, group: netbird::Group, rule_name: netbird::RuleName) -> Result<(), RequestError> {
@@ -230,7 +219,17 @@ impl Client for DefaultClient {
         }
     }
 
-    async fn create_netbird_setup_key(&self, peer_id: PeerId) -> Result<netbird::SetupKey, CreateSetupKeyError> {
+    async fn delete_netbird_rule(&self, rule_id: &netbird::RuleId) -> Result<(), RequestError> {
+        let url = routes::rule(Clone::clone(&self.netbird_url), rule_id);
+
+        let request = Request::new(Method::DELETE, url);
+
+        let response = self.requester.handle(request).await?;
+
+        parse_response_status(response, format!("NetBird rule with ID <{:?}>", rule_id)).await
+    }
+
+    async fn generate_netbird_setup_key(&self, peer_id: PeerId) -> Result<netbird::SetupKey, CreateSetupKeyError> {
         let peer_group_name = netbird::GroupName::from(peer_id);
         let peer_group = self.get_netbird_group(&peer_group_name).await
             .map_err(|cause| CreateSetupKeyError::PeerGroupNotFound { peer_id, cause })?;
@@ -269,17 +268,6 @@ impl Client for DefaultClient {
 
         let result = response.json().await
             .map_err(|cause| CreateSetupKeyError::RequestFailure { peer_id, cause: RequestError::JsonDeserialization(cause) })?;
-
-        Ok(result)
-    }
-
-    async fn list_netbird_setup_keys(&self) -> Result<Vec<netbird::SetupKey>, RequestError> {
-        let url = routes::setup_keys(self.netbird_url.clone());
-        let request = Request::new(Method::GET, url);
-
-        let response = self.requester.handle(request).await?;
-        let result = response.json::<Vec<netbird::SetupKey>>().await
-            .map_err(RequestError::JsonDeserialization)?;
 
         Ok(result)
     }

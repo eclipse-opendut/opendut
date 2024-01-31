@@ -1,6 +1,8 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+
 use serde::{Deserialize, Serialize};
+
 use opendut_types::cluster::ClusterId;
 use opendut_types::peer::PeerId;
 
@@ -91,7 +93,6 @@ impl Display for GroupName {
 #[cfg(test)]
 #[allow(non_snake_case)]
 mod test {
-
     use googletest::prelude::*;
 
     use super::*;

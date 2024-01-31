@@ -1,4 +1,5 @@
 use reqwest::Url;
+
 use crate::netbird;
 
 pub fn setup_keys(base_url: Url) -> Url {
@@ -43,8 +44,9 @@ fn join(mut base_url: Url, path: &str) -> Url {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use googletest::prelude::*;
+
+    use super::*;
 
     #[test]
     fn should_join_without_trailing_slash() -> anyhow::Result<()> {

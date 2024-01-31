@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Formatter};
-use reqwest::header::InvalidHeaderValue;
-use reqwest::header::HeaderValue;
 
+use reqwest::header::HeaderValue;
+use reqwest::header::InvalidHeaderValue;
 use serde::Deserialize;
 
 #[derive(Clone, Deserialize)]
