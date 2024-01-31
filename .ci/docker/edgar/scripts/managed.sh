@@ -55,9 +55,7 @@ echo "Creating peer with name $NAME and id $PEER_ID"
 opendut-cleo create peer --name "$NAME" --id "$PEER_ID"
 
 DEVICE_INTERFACE="dut0"
-DEVICE_ADDRESS=$(ip -json address show dev eth0 | jq --raw-output '.[0].addr_info[0].local' | sed --expression 's#32#33#')  # derive from existing address, by replacing '32' with '33'
 ip link add $DEVICE_INTERFACE type dummy
-ip address add "$DEVICE_ADDRESS/24" dev "$DEVICE_INTERFACE"
 ip link set dev $DEVICE_INTERFACE up
 opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME" --interface "$DEVICE_INTERFACE" --location "$NAME" --tags "$OPENDUT_EDGAR_CLUSTER_NAME"
 
@@ -82,6 +80,14 @@ while ! cleo_count_connected_peers_in_cluster "$expected_peer_count" "$OPENDUT_E
   sleep 3
 done
 
+
+#TODO properly wait for bridge to exist
+
+BRIDGE_NAME="br-opendut"  # needs to match EDGAR's default
+BRIDGE_ADDRESS=$(ip -json address show dev eth0 | jq --raw-output '.[0].addr_info[0].local' | sed --expression 's#32#33#')  # derive from existing address, by replacing '32' with '33'
+ip address add "$BRIDGE_ADDRESS/24" dev "$BRIDGE_NAME"
+
+
 if [ "$1" == "leader" ]; then
   DEVICES="$(opendut-cleo list --output=json devices | jq --arg NAME "$OPENDUT_EDGAR_CLUSTER_NAME" -r '.[] | select(.tags==$NAME).name' | xargs echo)"
   echo "Enumerating devices to join cluster: $DEVICES"
@@ -98,8 +104,7 @@ if [ "$1" == "leader" ]; then
   echo "Creating cluster deployment for id=$CLUSTER_ID"
   opendut-cleo create cluster-deployment --id "$CLUSTER_ID"
 
-  # TODO: wait until opendut bridge device exists?
-  # TODO: wait until gre device exists?
+  sleep 5 # TODO: properly wait until gre device exists
 
   echo "Success" | tee -a > /opt/signal/success.txt
 

@@ -5,6 +5,12 @@ source "$(dirname "$0")/functions.sh"
 ping_all_netbird_peers() {
   REQUIRED_SUCCESS="$1"
   IPS=$(netbird status --json | jq -r '.peers.details[].netbirdIp')
+
+  if [ -z "$IPS" ]; then #abort if no IPs returned
+    echo "Failed to determine IP addresses to ping."
+    return 1
+  fi
+
   for ip in $IPS
   do
     if [ "$REQUIRED_SUCCESS" == "true" ]; then
@@ -15,9 +21,15 @@ ping_all_netbird_peers() {
   done
 }
 
-ping_all_dut_interfaces() {
+ping_all_dut_bridges() {
   REQUIRED_SUCCESS="$1"
   IPS=$(wg show all endpoints | grep -Eo '192.168.32.[0-9]+' | sed -e 's#32#33#')
+
+  if [ -z "$IPS" ]; then #abort if no IPs returned
+    echo "Failed to determine IP addresses to ping."
+    return 1
+  fi
+
   for ip in $IPS
   do
     if [ "$REQUIRED_SUCCESS" == "true" ]; then
@@ -43,8 +55,8 @@ echo "Running ping test"
 echo "Pinging NetBird peers..."
 ping_all_netbird_peers "true"
 
-#echo "Pinging DUT interfaces..."  #TODO
-#ping_all_dut_interfaces "true"
+echo "Pinging DUT bridges..."
+ping_all_dut_bridges "true"
 
 echo "SUCCESS"
 exit 0
