@@ -2,7 +2,7 @@ use std::net::Ipv4Addr;
 
 pub use crate::setup::runner::RunMode;
 
-mod constants;
+pub mod constants;
 mod runner;
 pub mod start;
 mod task;

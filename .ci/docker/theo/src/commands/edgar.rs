@@ -1,6 +1,8 @@
 use std::thread::sleep;
 use std::time::Duration;
 
+use opendut_edgar::setup::constants::required_kernel_modules;
+
 use anyhow::{anyhow, Error};
 
 use crate::core::{SLEEP_TIME_SECONDS, TheoError, TIMEOUT_SECONDS};
@@ -28,6 +30,7 @@ impl TestEdgarCli {
     pub(crate) fn default_handling(&self) -> crate::Result {
         match self.task {
             TaskCli::Start => {
+                load_edgar_kernel_modules()?;
                 docker_compose_down(DockerCoreServices::Edgar.as_str(), false)?;
                 docker_compose_build(DockerCoreServices::Edgar.as_str())?;
                 start_edgar_in_docker()?;
@@ -114,4 +117,11 @@ fn check_edgar_router_ping_all() -> Result<i32, Error> {
     DockerCommand::new_exec("edgar_router")
         .arg("/opt/pingall.sh")
         .expect_status("Failed to check if all EDGAR peers respond to ping.")
+}
+
+fn load_edgar_kernel_modules() -> Result<(), Error> {
+    for kernel_module in required_kernel_modules() {
+        kernel_module.load()?;
+    }
+    Ok(())
 }

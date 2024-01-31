@@ -2424,6 +2424,7 @@ dependencies = [
  "ctrlc",
  "dotenvy",
  "home",
+ "opendut-edgar",
  "phf",
  "serde",
  "serde_json",

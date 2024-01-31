@@ -79,3 +79,5 @@ impl <E> ErrorOr<E> for Option<E> {
         }
     }
 }
+
+pub mod kernel_modules;
