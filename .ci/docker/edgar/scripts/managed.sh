@@ -16,17 +16,7 @@ cleo_get_peer_id() {
   fi
 }
 
-cleo_count_connected_peers() {
-  expected="$1"
-  RESULT=$(opendut-cleo list --output json peers | jq -r '.[].status' | grep -c Connected)
-  if [ "$RESULT" -eq "$expected" ]; then
-      return 0
-  else
-      return 1
-  fi
-}
-
-cleo_count_connected_peers_in_cluster() {
+check_expected_number_of_connected_peers_in_cluster() {
   expected="$1"
   cluster="$2"
   RESULT=$(opendut-cleo list --output json peers | jq --arg CLUSTER "$cluster" -r '. | map(select(.name | contains($CLUSTER))) | .[].status' | grep -c Connected)
@@ -38,8 +28,6 @@ cleo_count_connected_peers_in_cluster() {
 }
 
 pre_flight_tasks() {
-  touch /etc/security/capability.conf
-
   if ! type opendut-cleo > /dev/null; then
     echo "Command 'opendut-cleo' not found."
     exit 1
@@ -73,7 +61,7 @@ done
 
 expected_peer_count=$((OPENDUT_EDGAR_REPLICAS + 1))
 START_TIME="$(date +%s)"
-while ! cleo_count_connected_peers_in_cluster "$expected_peer_count" "$OPENDUT_EDGAR_CLUSTER_NAME"; do
+while ! check_expected_number_of_connected_peers_in_cluster "$expected_peer_count" "$OPENDUT_EDGAR_CLUSTER_NAME"; do
   check_timeout "$START_TIME" 600 || { echo "Timeout while waiting for other edgar peers in my cluster."; exit 1; }
 
   echo "Waiting for all edgar peers in my cluster ..."
@@ -81,7 +69,7 @@ while ! cleo_count_connected_peers_in_cluster "$expected_peer_count" "$OPENDUT_E
 done
 
 
-#TODO properly wait for bridge to exist
+sleep 5  # TODO properly wait for bridge to exist
 
 BRIDGE_NAME="br-opendut"  # needs to match EDGAR's default
 BRIDGE_ADDRESS=$(ip -json address show dev eth0 | jq --raw-output '.[0].addr_info[0].local' | sed --expression 's#32#33#')  # derive from existing address, by replacing '32' with '33'
@@ -104,10 +92,9 @@ if [ "$1" == "leader" ]; then
   echo "Creating cluster deployment for id=$CLUSTER_ID"
   opendut-cleo create cluster-deployment --id "$CLUSTER_ID"
 
-  sleep 5 # TODO: properly wait until gre device exists
+  sleep 5 # TODO: properly wait until GRE device exists
 
   echo "Success" | tee -a > /opt/signal/success.txt
-
 fi
 
 trap die_with_success TERM
