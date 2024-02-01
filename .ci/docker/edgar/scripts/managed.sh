@@ -27,6 +27,18 @@ check_expected_number_of_connected_peers_in_cluster() {
   fi
 }
 
+check_interface_exists() {
+  interface="$1"
+
+  ip link show dev "$interface" > /dev/null
+  EXISTS=$?
+
+  if [ $EXISTS -ne 0 ]; then
+    echo "Network interface '$interface' does not exist."
+    return 1
+  fi
+}
+
 pre_flight_tasks() {
   if ! type opendut-cleo > /dev/null; then
     echo "Command 'opendut-cleo' not found."
@@ -69,13 +81,6 @@ while ! check_expected_number_of_connected_peers_in_cluster "$expected_peer_coun
 done
 
 
-sleep 5  # TODO properly wait for bridge to exist
-
-BRIDGE_NAME="br-opendut"  # needs to match EDGAR's default
-BRIDGE_ADDRESS=$(ip -json address show dev eth0 | jq --raw-output '.[0].addr_info[0].local' | sed --expression 's#32#33#')  # derive from existing address, by replacing '32' with '33'
-ip address add "$BRIDGE_ADDRESS/24" dev "$BRIDGE_NAME"
-
-
 if [ "$1" == "leader" ]; then
   DEVICES="$(opendut-cleo list --output=json devices | jq --arg NAME "$OPENDUT_EDGAR_CLUSTER_NAME" -r '.[] | select(.tags==$NAME).name' | xargs echo)"
   echo "Enumerating devices to join cluster: $DEVICES"
@@ -91,9 +96,29 @@ if [ "$1" == "leader" ]; then
   CLUSTER_ID=$(echo "$RESPONSE" | jq -r '.id')
   echo "Creating cluster deployment for id=$CLUSTER_ID"
   opendut-cleo create cluster-deployment --id "$CLUSTER_ID"
+fi
 
-  sleep 5 # TODO: properly wait until GRE device exists
 
+BRIDGE="br-opendut"  # needs to match EDGAR's default
+GRE_INTERFACE="gre-opendut0"  # needs to match EDGAR's default prefix
+
+check_edgar_interfaces_exist() {
+  check_interface_exists "$BRIDGE"
+  check_interface_exists "$GRE_INTERFACE"
+}
+
+START_TIME="$(date +%s)"
+while ! check_edgar_interfaces_exist; do
+    check_timeout "$START_TIME" 600 || { echo "Timeout while waiting for the EDGAR-managed network interfaces to exist."; exit 1; }
+    echo "Waiting for the EDGAR-managed network interfaces to exist..."
+    sleep 3
+done
+
+BRIDGE_ADDRESS=$(ip -json address show dev eth0 | jq --raw-output '.[0].addr_info[0].local' | sed --expression 's#32#33#')  # derive from existing address, by replacing '32' with '33'
+ip address add "$BRIDGE_ADDRESS/24" dev "$BRIDGE"
+
+
+if [ "$1" == "leader" ]; then
   echo "Success" | tee -a > /opt/signal/success.txt
 fi
 
