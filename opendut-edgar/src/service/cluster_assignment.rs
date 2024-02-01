@@ -6,15 +6,18 @@ use opendut_types::peer::PeerId;
 use opendut_types::util::net::NetworkInterfaceName;
 
 use crate::service::network_interface;
-use crate::service::network_interface::gre;
+use crate::service::network_interface::{bridge, gre};
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 
-pub async fn handle(
+pub async fn network_interfaces_setup(
     cluster_assignment: ClusterAssignment,
     self_id: PeerId,
     bridge_name: &NetworkInterfaceName,
     network_interface_manager: NetworkInterfaceManagerRef,
 ) -> Result<(), Error> {
+
+    bridge::recreate(bridge_name, Arc::clone(&network_interface_manager)).await
+        .map_err(Error::BridgeRecreationFailed)?;
 
     let local_peer_assignment = cluster_assignment.assignments.iter().find(|assignment| {
         assignment.peer_id == self_id
@@ -91,6 +94,8 @@ async fn join_device_interfaces_to_bridge(
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error("(Re-)Creating the bridge failed: {0}")]
+    BridgeRecreationFailed(network_interface::manager::Error),
     #[error("Could not find PeerAssignment for this peer (<{self_id}>) in the ClusterAssignment.")]
     LocalPeerAssignmentNotFound { self_id: PeerId },
     #[error("Could not determine leader IP address from ClusterAssignment.")]
