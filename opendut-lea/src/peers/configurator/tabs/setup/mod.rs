@@ -46,13 +46,25 @@ pub fn SetupTab(peer_configuration: ReadSignal<UserPeerConfiguration>) -> impl I
                         }
                         _ => {
                             view! {
-                                <div class="control is-flex is-justify-content-center">
-                                    <SimpleButton
-                                        text="Generate"
-                                        color=ButtonColor::Info
-                                        state=button_state
-                                        on_action=move || trigger_generation.set(Some(peer_configuration.get().id))
-                                    />
+                                <div class="control is-flex is-flex-direction-column">
+                                    <div class="notification is-warning">
+                                        <div class="columns is-mobile is-vcentered">
+                                            <div class="column is-narrow">
+                                                <i class="fa-solid fa-triangle-exclamation fa-2xl"></i>
+                                            </div>
+                                            <div class="column">
+                                                <p>"After generating a new Setup-String, the peer will "<b>"not be unusable in clusters"</b>" until you re-run the setup with the newly generated Setup-String!"</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="is-flex is-justify-content-center">
+                                        <SimpleButton
+                                            text="Generate"
+                                            color=ButtonColor::Info
+                                            state=button_state
+                                            on_action=move || trigger_generation.set(Some(peer_configuration.get().id))
+                                        />
+                                    </div>
                                 </div>
                             }
                         }
