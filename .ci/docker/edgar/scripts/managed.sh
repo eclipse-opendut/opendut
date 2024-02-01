@@ -52,12 +52,12 @@ pre_flight_tasks
 PEER_ID=$(uuidgen)
 NAME="${OPENDUT_EDGAR_CLUSTER_NAME}_$(hostname)"
 echo "Creating peer with name $NAME and id $PEER_ID"
-opendut-cleo create peer --name "$NAME" --id "$PEER_ID"
+opendut-cleo create peer --name "$NAME" --id "$PEER_ID" --location "$NAME"
 
 DEVICE_INTERFACE="dut0"
 ip link add $DEVICE_INTERFACE type dummy
 ip link set dev $DEVICE_INTERFACE up
-opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME" --interface "$DEVICE_INTERFACE" --location "$NAME" --tags "$OPENDUT_EDGAR_CLUSTER_NAME"
+opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME" --interface "$DEVICE_INTERFACE" --tag "$OPENDUT_EDGAR_CLUSTER_NAME"
 
 PEER_SETUP_KEY=$(opendut-cleo generate-peer-setup --id "$PEER_ID")
 echo "Setting up peer with setup key $PEER_SETUP_KEY"
