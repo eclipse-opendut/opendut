@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::net::Ipv4Addr;
 use std::str::FromStr;
 
@@ -68,6 +69,10 @@ enum SetupMode {
         #[arg(long, value_name="local|IP_ADDRESS")]
         leader: ParseableLeader, // We create a star topology to avoid loops between the GRE interfaces.
 
+        /// Names of the device interfaces where the ECUs are connected
+        #[arg(long, required=true)]
+        device_interfaces: Vec<NetworkInterfaceName>,
+
         /// Name of the bridge to use, maximum 15 characters long
         #[arg(long)]
         bridge: Option<NetworkInterfaceName>,
@@ -99,11 +104,12 @@ async fn main() -> anyhow::Result<()> {
                 SetupMode::Managed { setup_string } => {
                     setup::start::managed(run_mode, no_confirm, setup_string, mtu).await
                 },
-                SetupMode::Unmanaged { management_url, setup_key, leader, bridge } => {
+                SetupMode::Unmanaged { management_url, setup_key, leader, bridge, device_interfaces } => {
                     let setup_key = SetupKey { uuid: setup_key };
                     let ParseableLeader(leader) = leader;
                     let bridge = bridge.unwrap_or_else(opendut_edgar::common::default_bridge_name);
-                    setup::start::unmanaged(run_mode, no_confirm, management_url, setup_key, bridge, leader, mtu).await
+                    let device_interfaces = HashSet::from_iter(device_interfaces);
+                    setup::start::unmanaged(run_mode, no_confirm, management_url, setup_key, bridge, device_interfaces, leader, mtu).await
                 }
             }
         },

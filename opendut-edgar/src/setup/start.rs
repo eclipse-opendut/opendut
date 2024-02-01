@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fs::File;
 use std::sync::Arc;
 
@@ -65,8 +66,17 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
     runner::run(run_mode, no_confirm, &tasks).await
 }
 
-#[allow(clippy::box_default)]
-pub async fn unmanaged(run_mode: RunMode, no_confirm: bool, management_url: Url, setup_key: SetupKey, bridge_name: NetworkInterfaceName, leader: Leader, mtu: u16) -> anyhow::Result<()> {
+#[allow(clippy::box_default, clippy::too_many_arguments)]
+pub async fn unmanaged(
+    run_mode: RunMode,
+    no_confirm: bool,
+    management_url: Url,
+    setup_key: SetupKey,
+    bridge_name: NetworkInterfaceName,
+    device_interfaces: HashSet<NetworkInterfaceName>,
+    leader: Leader,
+    mtu: u16,
+) -> anyhow::Result<()> {
 
     let network_interface_manager = Arc::new(NetworkInterfaceManager::create()?);
 
@@ -79,7 +89,7 @@ pub async fn unmanaged(run_mode: RunMode, no_confirm: bool, management_url: Url,
 
         Box::new(tasks::network_interface::CreateBridge { network_interface_manager: Arc::clone(&network_interface_manager), bridge_name: bridge_name.clone() }),
         Box::new(tasks::network_interface::CreateGreInterfaces { network_interface_manager: Arc::clone(&network_interface_manager), bridge_name: bridge_name.clone(), leader }),
-        Box::new(tasks::network_interface::ConnectDeviceInterfaces { network_interface_manager, bridge_name }),
+        Box::new(tasks::network_interface::ConnectDeviceInterfaces { network_interface_manager, bridge_name, device_interfaces }),
     ];
 
     runner::run(run_mode, no_confirm, &tasks).await
