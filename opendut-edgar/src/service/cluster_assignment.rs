@@ -33,14 +33,48 @@ pub async fn handle(
 
     //TODO join device interfaces to bridge
 
+    setup_can(&cluster_assignment, self_id, network_interface_manager).await?;
+
+    Ok(())
+}
+
+pub async fn setup_can(
+    cluster_assignment: &ClusterAssignment,
+    self_id: PeerId,
+    network_interface_manager: NetworkInterfaceManagerRef
+) -> Result<(), Error> {
+
     let can_bridge_name = crate::common::default_can_bridge_name();
-    let own_can_interfaces = get_own_can_interfaces(cluster_assignment, self_id)?;
+    let own_can_interfaces = get_own_can_interfaces(&cluster_assignment, self_id)?;
     can::setup_local_routing(
         &can_bridge_name, 
         own_can_interfaces,
         Arc::clone(&network_interface_manager)
     ).await
     .map_err(Error::LocalCanRoutingSetupFailed)?;
+
+    let local_ip = determine_local_ip(&cluster_assignment, self_id)?;
+    let is_leader = cluster_assignment.leader == self_id;
+
+    if is_leader {
+
+        let remote_ips = determine_remote_ips(&cluster_assignment, self_id, &local_ip)?;
+        can::setup_remote_routing_server(
+            &can_bridge_name, 
+            &remote_ips
+        ).await
+        .map_err(Error::RemoteCanRoutingSetupFailed)?;
+
+    } else {
+        
+        let leader_ip = determine_leader_ip(&cluster_assignment)?;
+        can::setup_remote_routing_client(
+            &can_bridge_name, 
+            &local_ip, 
+            &leader_ip
+        ).await
+        .map_err(Error::RemoteCanRoutingSetupFailed)?;
+    }
 
     Ok(())
 }
@@ -67,17 +101,23 @@ fn determine_remote_ips(cluster_assignment: &ClusterAssignment, self_id: PeerId,
             .collect()
     }
     else {
-        let leader_ip = cluster_assignment.assignments.iter().find_map(|peer_assignment| {
-            let is_leader = peer_assignment.peer_id == cluster_assignment.leader;
-
-            is_leader
-                .then_some(peer_assignment.vpn_address)
-        }).ok_or(Error::IpAddressNotDeterminable { kind: IpErrorKind::Leader })?;
+        let leader_ip = determine_leader_ip(cluster_assignment)?;
 
         vec![leader_ip]
     };
 
     Ok(remote_ips)
+}
+
+fn determine_leader_ip(cluster_assignment: &ClusterAssignment) -> Result<IpAddr, Error>{
+    let leader_ip = cluster_assignment.assignments.iter().find_map(|peer_assignment| {
+        let is_leader = peer_assignment.peer_id == cluster_assignment.leader;
+
+        is_leader
+            .then_some(peer_assignment.vpn_address)
+    }).ok_or(Error::IpAddressNotDeterminable { kind: IpErrorKind::Leader })?;
+
+    Ok(leader_ip)
 }
 
 fn require_ipv4_for_gre(ip_address: IpAddr) -> Result<Ipv4Addr, Error> {
@@ -88,7 +128,7 @@ fn require_ipv4_for_gre(ip_address: IpAddr) -> Result<Ipv4Addr, Error> {
 }
 
 fn get_own_can_interfaces(
-    cluster_assignment: ClusterAssignment,
+    cluster_assignment: &ClusterAssignment,
     self_id: PeerId) -> Result<Vec<NetworkInterfaceName>, Error>{
 
     let own_cluster_assignment = cluster_assignment.assignments.iter().find(|assignment| assignment.peer_id == self_id).unwrap();
@@ -112,6 +152,8 @@ pub enum Error {
     GreInterfaceSetupFailed(gre::Error),
     #[error("Local CAN routing setup failed: {0}")]
     LocalCanRoutingSetupFailed(can::Error),
+    #[error("Remote CAN routing setup failed: {0}")]
+    RemoteCanRoutingSetupFailed(can::Error),
 }
 
 #[derive(Debug)]
