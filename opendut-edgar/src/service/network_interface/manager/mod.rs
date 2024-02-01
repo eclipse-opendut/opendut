@@ -173,7 +173,7 @@ impl NetworkInterfaceManager {
         Ok(interface)
     }
 
-    pub async fn check_can_route_exists(&self, src: &NetworkInterfaceName, dst: &NetworkInterfaceName, can_fd: bool) -> Result<bool, Error> {
+    pub async fn check_can_route_exists(&self, src: &NetworkInterfaceName, dst: &NetworkInterfaceName, can_fd: bool, max_hops: u8) -> Result<bool, Error> {
         let output = Command::new("cangw")
                 .arg("-L")
                 .output()
@@ -183,11 +183,11 @@ impl NetworkInterfaceManager {
         
         let output_str = String::from_utf8_lossy(&output.stdout);
 
-        let re = Regex::new(r"(?m)^cangw -A -s ([^\n ]+) -d ([^\n ]+) ((?:-X )?)-e #.*$").unwrap();
+        let re = Regex::new(r"(?m)^cangw -A -s ([^\n ]+) -d ([^\n ]+) ((?:-X )?)-e -l ([0-9[^\n ]]+) #.*$").unwrap();
 
-        for (_, [exist_src, exist_dst, can_fd_flag]) in re.captures_iter(&output_str).map(|c| c.extract()) {
+        for (_, [exist_src, exist_dst, can_fd_flag, exist_max_hops]) in re.captures_iter(&output_str).map(|c| c.extract()) {
             let exist_can_fd = can_fd_flag.trim() == "-X";
-            if exist_src == src.to_string() && exist_dst == dst.to_string() && exist_can_fd == can_fd {
+            if exist_src == src.to_string() && exist_dst == dst.to_string() && exist_can_fd == can_fd && exist_max_hops == max_hops.to_string(){
                 return Ok(true)
             }
 
@@ -196,7 +196,7 @@ impl NetworkInterfaceManager {
         Ok(false)
     }
 
-    pub async fn create_can_route(&self, src: &NetworkInterfaceName, dst: &NetworkInterfaceName, can_fd: bool) -> Result<(), Error> {
+    pub async fn create_can_route(&self, src: &NetworkInterfaceName, dst: &NetworkInterfaceName, can_fd: bool, max_hops: u8) -> Result<(), Error> {
         self.try_find_interface(&src).await?;
         self.try_find_interface(&dst).await?;
 
@@ -206,7 +206,9 @@ impl NetworkInterfaceManager {
             .arg(src.name())
             .arg("-d")
             .arg(dst.name())
-            .arg("-e");
+            .arg("-e")
+            .arg("-l")
+            .arg(max_hops.to_string());
 
         if can_fd {
             cmd.arg("-X");
@@ -222,7 +224,7 @@ impl NetworkInterfaceManager {
                 cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim()) });
         }
 
-        self.check_can_route_exists(src, dst, can_fd).await?.then(|| ()).ok_or(Error::CanRouteCreationNoCause { src: src.clone(), dst: dst.clone() })?;
+        self.check_can_route_exists(src, dst, can_fd, max_hops).await?.then(|| ()).ok_or(Error::CanRouteCreationNoCause { src: src.clone(), dst: dst.clone() })?;
 
         Ok(())
     }

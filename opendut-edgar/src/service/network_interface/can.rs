@@ -22,10 +22,10 @@ pub async fn setup_local_routing(
         .map_err(|cause| Error::Other { message: format!("Error while creating CAN bridge: {cause}") })?;
 
     for interface in local_can_interfaces {
-        network_interface_manager.create_can_route(bridge_name, &interface, true).await?;
-        network_interface_manager.create_can_route(bridge_name, &interface, false).await?;
-        network_interface_manager.create_can_route(&interface, bridge_name, true).await?;
-        network_interface_manager.create_can_route(&interface, bridge_name, false).await?;
+        network_interface_manager.create_can_route(bridge_name, &interface, true, 2).await?;
+        network_interface_manager.create_can_route(bridge_name, &interface, false, 2).await?;
+        network_interface_manager.create_can_route(&interface, bridge_name, true, 2).await?;
+        network_interface_manager.create_can_route(&interface, bridge_name, false, 2).await?;
     }
 
     Ok(())
