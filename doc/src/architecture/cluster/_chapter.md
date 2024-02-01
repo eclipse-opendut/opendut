@@ -2,19 +2,26 @@
 
 ## ClusterState
 
-```mermaid
-stateDiagram-v2
-direction LR
+```plantuml
+@startuml
+hide empty description
 
-    [*] --> Undeployed
-    Undeployed --> Deploying: deploy
-    Deploying --> Deployed: success
-    Deploying --> Undeployed: failure
-    state Deployed {
-        [*] --> Unhealthy
-        Healthy --> Unhealthy
-        Unhealthy --> Healthy
-    }
-    Deployed --> Undeployed: undeploy
-    Undeployed --> [*]: delete
+state "Undeployed" as undeployed
+state "Deploying" as deploying
+state "Deployed" as deployed {
+  state "Healthy" as healthy
+  state "Unhealthy" as unhealthy
+  [*] -down-> unhealthy
+  unhealthy -down-> healthy
+  healthy -up-> unhealthy
+}
+
+[*] -right-> undeployed
+undeployed --> [*] : delete
+undeployed -right-> deploying : deploy
+deploying -left-> undeployed : error
+deploying -right-> deployed : success
+deployed --> undeployed : undeploy
+
+@enduml
 ```
