@@ -11,8 +11,8 @@ service PeerManager {
   rpc DeletePeerDescriptor(DeletePeerDescriptorRequest) returns (DeletePeerDescriptorResponse) {}
   rpc GetPeerDescriptor(GetPeerDescriptorRequest) returns (GetPeerDescriptorResponse) {}
   rpc ListPeerDescriptors(ListPeerDescriptorsRequest) returns (ListPeerDescriptorsResponse) {}
-  rpc CreatePeerSetup(CreatePeerSetupRequest) returns (CreatePeerSetupResponse) {}
   rpc ListDevices(ListDevicesRequest) returns (ListDevicesResponse) {}
+  rpc GeneratePeerSetup(GeneratePeerSetupRequest) returns (GeneratePeerSetupResponse) {}
 }
 
 //
@@ -164,25 +164,25 @@ message ListPeerDescriptorsFailureInternal {
 }
 
 //
-// CreatePeerSetupRequest
+// GeneratePeerSetupRequest
 //
-message CreatePeerSetupRequest {
+message GeneratePeerSetupRequest {
   opendut.types.peer.PeerId peer = 1;
 }
 
-message CreatePeerSetupResponse {
+message GeneratePeerSetupResponse {
   oneof reply {
-    CreatePeerSetupSuccess success = 1;
-    CreatePeerSetupFailure failure = 2;
+    GeneratePeerSetupSuccess success = 1;
+    GeneratePeerSetupFailure failure = 2;
   }
 }
 
-message CreatePeerSetupSuccess {
+message GeneratePeerSetupSuccess {
   opendut.types.peer.PeerId peer = 1;
   opendut.types.peer.PeerSetup setup = 2;
 }
 
-message CreatePeerSetupFailure {
+message GeneratePeerSetupFailure {
 }
 
 //

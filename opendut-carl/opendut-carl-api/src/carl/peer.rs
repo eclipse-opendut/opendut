@@ -1,10 +1,9 @@
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 pub use client::*;
-
 use opendut_types::peer::{PeerId, PeerName};
 use opendut_types::peer::state::PeerState;
-use opendut_types::topology::DeviceId;
 use opendut_types::ShortName;
+use opendut_types::topology::DeviceId;
 
 #[derive(thiserror::Error, Debug)]
 pub enum StorePeerDescriptorError {
@@ -101,7 +100,7 @@ mod client {
     use opendut_types::topology::DeviceDescriptor;
 
     use crate::carl::{ClientError, extract};
-    use crate::carl::peer::{StorePeerDescriptorError, CreateSetupError, GetPeerDescriptorError, ListPeerDescriptorsError, DeletePeerDescriptorError, ListDevicesError};
+    use crate::carl::peer::{CreateSetupError, DeletePeerDescriptorError, GetPeerDescriptorError, ListDevicesError, ListPeerDescriptorsError, StorePeerDescriptorError};
     use crate::proto::services::peer_manager;
     use crate::proto::services::peer_manager::peer_manager_client::PeerManagerClient;
 
@@ -208,15 +207,15 @@ mod client {
 
         pub async fn create_peer_setup(&mut self, peer_id: PeerId) -> Result<PeerSetup, CreateSetupError> {
             let request = tonic::Request::new(
-                peer_manager::CreatePeerSetupRequest {
+                peer_manager::GeneratePeerSetupRequest {
                     peer: Some(peer_id.into())
                 }
             );
 
-            match self.inner.create_peer_setup(request).await {
+            match self.inner.generate_peer_setup(request).await {
                 Ok(response) => {
                     match response.into_inner().reply {
-                        Some(peer_manager::create_peer_setup_response::Reply::Success(peer_manager::CreatePeerSetupSuccess { setup, .. })) => {
+                        Some(peer_manager::generate_peer_setup_response::Reply::Success(peer_manager::GeneratePeerSetupSuccess { setup, .. })) => {
                             setup
                                 .ok_or(CreateSetupError { message: format!("Failed to create setup-string for peer <{}>! Got no PeerSetup!", peer_id) })
                                 .and_then(|setup| PeerSetup::try_from(setup)

@@ -213,7 +213,7 @@ pub async fn list_devices(params: ListDevicesParams) -> Result<Vec<DeviceDescrip
         .log_err()
 }
 
-pub struct CreatePeerSetupParams {
+pub struct GeneratePeerSetupParams {
     pub resources_manager: ResourcesManagerRef,
     pub peer: PeerId,
     pub carl_url: Url,
@@ -221,7 +221,7 @@ pub struct CreatePeerSetupParams {
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum CreatePeerSetupError {
+pub enum GeneratePeerSetupError {
     #[error("A PeerSetup for peer <{0}> could not be create, because a peer with that ID does not exist!")]
     PeerNotFound(PeerId),
     #[error("An internal error occurred while creating a PeerSetup for peer '{peer_name}' <{peer_id}>:\n  {cause}")]
@@ -232,23 +232,23 @@ pub enum CreatePeerSetupError {
     }
 }
 
-pub async fn create_peer_setup(params: CreatePeerSetupParams) -> Result<PeerSetup, CreatePeerSetupError> {
+pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<PeerSetup, GeneratePeerSetupError> {
 
-    async fn inner(params: CreatePeerSetupParams) -> Result<PeerSetup, CreatePeerSetupError> {
+    async fn inner(params: GeneratePeerSetupParams) -> Result<PeerSetup, GeneratePeerSetupError> {
 
         let peer_id = params.peer;
 
-        log::debug!("Creating PeerSetup for peer <{peer_id}>");
+        log::debug!("Generating PeerSetup for peer <{peer_id}>");
 
         let peer_descriptor = params.resources_manager.get::<PeerDescriptor>(peer_id).await
-            .ok_or(CreatePeerSetupError::PeerNotFound(peer_id))?;
+            .ok_or(GeneratePeerSetupError::PeerNotFound(peer_id))?;
 
         let peer_name = peer_descriptor.name;
 
         let vpn_config = if let Vpn::Enabled { vpn_client } = &params.vpn {
             log::debug!("Retrieving VPN configuration for peer <{peer_id}>.");
             let vpn_config = vpn_client.generate_vpn_peer_configuration(params.peer).await
-                .map_err(|cause| CreatePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), cause: cause.to_string() })?;
+                .map_err(|cause| GeneratePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), cause: cause.to_string() })?;
             log::info!("Successfully retrieved vpn configuration for peer <{peer_id}>.");
             vpn_config
         }
@@ -257,7 +257,7 @@ pub async fn create_peer_setup(params: CreatePeerSetupParams) -> Result<PeerSetu
             VpnPeerConfiguration::Disabled
         };
 
-        log::debug!("Successfully created peer setup for peer '{peer_name}' <{peer_id}>.");
+        log::debug!("Successfully generated peer setup for peer '{peer_name}' <{peer_id}>.");
 
         Ok(PeerSetup {
             id: peer_id,

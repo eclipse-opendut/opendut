@@ -19,9 +19,9 @@ pub use peers::{
 };
 
 pub use peers::{
-    create_peer_setup,
-    CreatePeerSetupParams,
-    CreatePeerSetupError,
+    generate_peer_setup,
+    GeneratePeerSetupParams,
+    GeneratePeerSetupError,
 };
 
 pub use peers::{
