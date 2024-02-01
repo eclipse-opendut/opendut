@@ -2,7 +2,7 @@ use std::fmt::{Debug, Formatter};
 use std::io;
 use std::net::Ipv4Addr;
 use std::sync::Arc;
-use std::process::Command;
+use tokio::process::Command;
 use regex::Regex;
 
 use anyhow::anyhow;
@@ -146,6 +146,7 @@ impl NetworkInterfaceManager {
         let output = Command::new("cangw")
                     .arg("-F")
                     .output()
+                    .await
                     .map_err(|cause| Error::CommandLineProgramExecution { command: "cangw".to_string(), cause })?;
 
         if ! output.status.success() {
@@ -163,6 +164,7 @@ impl NetworkInterfaceManager {
                 .arg("type")
                 .arg("vcan")
                 .output()
+                .await
                 .map_err(|cause| Error::CommandLineProgramExecution { command: "cangw".to_string(), cause })?;
         
         if ! output.status.success() {
@@ -177,6 +179,7 @@ impl NetworkInterfaceManager {
         let output = Command::new("cangw")
                 .arg("-L")
                 .output()
+                .await
                 .map_err(|cause| Error::CommandLineProgramExecution { command: "cangw".to_string(), cause })?;
         
         // cangw -L returns non-zero exit code despite succeeding, so we don't check it here
@@ -214,7 +217,7 @@ impl NetworkInterfaceManager {
             cmd.arg("-X");
         } 
 
-        let output= cmd.output()
+        let output= cmd.output().await
                 .map_err(|cause| Error::CommandLineProgramExecution { command: "cangw".to_string(), cause })?;
 
         if ! output.status.success() {
