@@ -119,7 +119,7 @@ cargo-deny.version = "0.14.3"
 cargo-sbom.version = "0.8.4"
 cross.version = "0.2.5"
 mdbook.version = "0.4.36"
-mdbook-mermaid.version = "0.13.0"
+mdbook-plantuml.version = "0.8.0"
 trunk.version = "0.18.3"
 
 
