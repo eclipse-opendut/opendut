@@ -25,7 +25,7 @@ jobs:
       - name: Build
         run: cargo ci opendut-theo build --target=${{ matrix.package.target }}
       - name: "Upload theo build artifact ${{ matrix.package.name }}-${{ matrix.package.target }}"
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
+        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8
         with:
           name: "${{ matrix.package.name }}-${{ matrix.package.target }}-${{ github.sha }}"
           path: "./target/ci/cross/${{ matrix.package.target }}/release/${{ matrix.package.name }}"
