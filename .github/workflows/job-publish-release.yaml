@@ -14,14 +14,24 @@ jobs:
     permissions:
       contents: write
     steps:
-    - name: Checkout Sources
-      uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
-
-    - name: Download Artifacts
+    - name: Download Application Artifacts
       uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
       with:
-        pattern: "./target/ci/distribution/*/*-${{ github.sha }}.tar.gz"  # all packages from all targets
+        pattern: "*-${{ github.sha }}.tar.gz"
+
+    - name: Download SBOM Files
+      uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
+      with:
+        pattern: "opendut-sbom"
+
+    - run: |
+        echo "Extracting opendut-sbom.zip and deleting original file"
+        cd /home/runner/work/opendut/opendut/opendut-sbom
+        echo "Create ZIP with SBOM of Lea, Carl without API, Edgar and Cleo into opendut-sbom.zip"
+        zip opendut-sbom.zip opendut-carl-sbom.spdx.json opendut-lea-sbom.spdx.json opendut-edgar-sbom.spdx.json opendut-cleo-sbom.spdx.json
+        echo "Deleting all no longer needed files with extension .spdx.json"
+        find . -type f -name '*.spdx.json' -delete 
 
     - uses: ncipollo/release-action@6c75be85e571768fa31b40abf38de58ba0397db5
       with:
-        artifacts: "*-${{ github.sha }}.tar.gz/*"
+        artifacts: "*-${{ github.sha }}.tar.gz/*,opendut-sbom/*"

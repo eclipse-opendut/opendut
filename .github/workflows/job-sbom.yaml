@@ -28,4 +28,4 @@ jobs:
           name: opendut-sbom
           path: ./target/ci/sbom/
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 1
