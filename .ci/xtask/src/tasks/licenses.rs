@@ -23,6 +23,8 @@ pub enum TaskCli {
     Json,
     /// Generate a license report in SBOM format
     Sbom,
+    /// Collect the license texts
+    Texts,
 }
 
 impl LicensesCli {
@@ -41,6 +43,9 @@ impl LicensesCli {
                 for package in packages.iter() {
                     sbom::generate_sbom(package)?
                 }
+            }
+            TaskCli::Texts => {
+                texts::collect_license_texts()?
             }
         };
         Ok(())
@@ -254,6 +259,40 @@ mod sbom {
 
     pub fn out_dir() -> PathBuf {
         constants::target_dir().join("sbom")
+    }
+}
+
+mod texts {
+    use std::fs;
+    use std::path::PathBuf;
+    use std::process::Command;
+    use crate::core::{constants, util};
+    use crate::core::dependency::Crate;
+    use crate::core::util::RunRequiringSuccess;
+
+    #[derive(Debug, clap::Parser)]
+    pub struct TextsCli;
+
+    #[tracing::instrument]
+    pub fn collect_license_texts() -> crate::Result {
+        util::install_crate(Crate::CargoBundleLicenses)?;
+
+        let out_dir = out_dir();
+        fs::create_dir_all(&out_dir)?;
+
+        let out_path = out_dir.join("NOTICES.yaml");
+
+        Command::new("cargo-bundle-licenses")
+            .args(["--format=yaml", "--output", out_path.to_str().unwrap()])
+            .run_requiring_success()?;
+
+        log::info!("Generated bundle of license texts here: {}", out_path.display());
+
+        Ok(())
+    }
+
+    pub fn out_dir() -> PathBuf {
+        constants::target_dir().join("license-texts")
     }
 }
 

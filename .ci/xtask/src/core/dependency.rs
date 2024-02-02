@@ -2,6 +2,7 @@
 pub enum Crate {
     CargoDeny,
     CargoSbom,
+    CargoBundleLicenses,
     Cross,
     Mdbook,
     MdbookPlantuml,
@@ -12,6 +13,7 @@ impl Crate {
         match self {
             Crate::CargoDeny => "cargo-deny",
             Crate::CargoSbom => "cargo-sbom",
+            Crate::CargoBundleLicenses => "cargo-bundle-licenses",
             Crate::Cross => "cross",
             Crate::Mdbook => "mdbook",
             Crate::MdbookPlantuml => "mdbook-plantuml",
