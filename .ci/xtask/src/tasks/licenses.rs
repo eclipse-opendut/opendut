@@ -40,9 +40,7 @@ impl LicensesCli {
                 }
             }
             TaskCli::Sbom => {
-                for package in packages.iter() {
-                    sbom::generate_sbom(package)?
-                }
+                sbom::generate_sboms(packages)?
             }
             TaskCli::Texts => {
                 texts::collect_license_texts()?
@@ -115,11 +113,19 @@ mod sbom {
     pub struct SbomCli;
 
     #[tracing::instrument]
-    pub fn generate_sbom(package: Package) -> crate::Result {
-        use serde_spdx::spdx::v_2_3::{Spdx, SpdxItemPackages};
-
+    pub fn generate_sboms(packages: PackageSelection) -> crate::Result {
         util::install_crate(Crate::CargoSbom)?;
 
+        for package in packages.iter() {
+            generate_sbom(package)?
+        }
+
+        log::info!("Generated SBOMs in: {}", out_dir().display());
+        Ok(())
+    }
+
+    pub fn generate_sbom(package: Package) -> crate::Result {
+        use serde_spdx::spdx::v_2_3::{Spdx, SpdxItemPackages};
 
         let sbom_dir = out_dir();
         fs::create_dir_all(&sbom_dir)?;
