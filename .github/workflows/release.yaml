@@ -71,7 +71,7 @@ jobs:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE }}"
 
   publish-release:
-    needs: [ bundle-carl, bundle-cleo, bundle-edgar ]
+    needs: [ bundle-carl, bundle-cleo, bundle-edgar, generate-sbom ]
     uses: ./.github/workflows/job-publish-release.yaml
     permissions:
       contents: write

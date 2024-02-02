@@ -14,11 +14,16 @@ jobs:
     permissions:
       contents: write
     steps:
-    - name: Download Artifacts
+    - name: Download Application Artifacts
       uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
       with:
         pattern: "*-${{ github.sha }}.tar.gz"
 
+    - name: Download SBOM Files
+      uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
+      with:
+        pattern: "opendut-sbom"
+
     - uses: ncipollo/release-action@6c75be85e571768fa31b40abf38de58ba0397db5
       with:
-        artifacts: "*-${{ github.sha }}.tar.gz/*"
+        artifacts: "*-${{ github.sha }}.tar.gz/*,opendut-sbom/*"
