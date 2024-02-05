@@ -79,12 +79,62 @@ impl TryFrom<PeerLocation> for crate::peer::PeerLocation {
     }
 }
 
+impl From<crate::peer::PeerNetworkConfiguration> for PeerNetworkConfiguration {
+    fn from(value: crate::peer::PeerNetworkConfiguration) -> Self {
+        Self {
+            interfaces: value
+                .interfaces
+                .into_iter()
+                .map(PeerNetworkInterface::from)
+                .collect(),
+        }
+    }
+}
+
+impl TryFrom<PeerNetworkConfiguration> for crate::peer::PeerNetworkConfiguration {
+    type Error = ConversionError;
+
+    fn try_from(value: PeerNetworkConfiguration) -> Result<Self, Self::Error> {
+        value
+            .interfaces
+            .into_iter()
+            .map(PeerNetworkInterface::try_into)
+            .collect::<Result<_, _>>()
+            .map(|interfaces| Self { interfaces })
+    }
+}
+
+impl From<crate::peer::PeerNetworkInterface> for PeerNetworkInterface {
+    fn from(value: crate::peer::PeerNetworkInterface) -> Self {
+        Self {
+            name: Some(value.name.into())
+        }
+    }
+}
+
+impl TryFrom<PeerNetworkInterface> for crate::peer::PeerNetworkInterface {
+    type Error = ConversionError;
+
+    fn try_from(value: PeerNetworkInterface) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<PeerNetworkInterface, crate::peer::PeerNetworkInterface>;
+
+        let name = value.name
+            .ok_or(ErrorBuilder::new("Interface not set"))?
+            .try_into()?;
+
+        Ok(crate::peer::PeerNetworkInterface {
+            name
+        })
+    }
+}
+
 impl From<crate::peer::PeerDescriptor> for PeerDescriptor {
     fn from(value: crate::peer::PeerDescriptor) -> Self {
         Self {
             id: Some(value.id.into()),
             name: Some(value.name.into()),
             location: Some(value.location.unwrap_or_default().into()),
+            network_configuration: Some(value.network_configuration.into()),
             topology: Some(value.topology.into()),
         }
     }
@@ -108,6 +158,10 @@ impl TryFrom<PeerDescriptor> for crate::peer::PeerDescriptor {
             .map(crate::peer::PeerLocation::try_from)
             .transpose()?;
 
+        let network_configuration = value.network_configuration
+            .ok_or(ErrorBuilder::new("Network configuration not set"))?
+            .try_into()?;
+
         let topology = value.topology
             .ok_or(ErrorBuilder::new("Topology not set"))?
             .try_into()?;
@@ -116,6 +170,7 @@ impl TryFrom<PeerDescriptor> for crate::peer::PeerDescriptor {
             id,
             name,
             location,
+            network_configuration,
             topology,
         })
     }

@@ -54,13 +54,13 @@ pub fn ClustersOverview() -> impl IntoView {
                 match carl.cluster.delete_cluster_deployment(id).await {
                     Ok(_) => {
                         toaster.toast(Toast::builder()
-                            .simple("Successfully deleted cluster deployment!")
+                            .simple("Successfully deleted cluster deployment!", )
                             .success()
                         );
                     }
                     Err(_) => {
                         toaster.toast(Toast::builder()
-                            .simple("Failed to delete cluster deployment!")
+                            .simple("Failed to delete cluster deployment!", )
                             .error()
                         );
                     }

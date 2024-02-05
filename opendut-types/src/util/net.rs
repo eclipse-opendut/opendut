@@ -49,5 +49,5 @@ pub enum NetworkInterfaceNameError {
     #[error("Name for network interface may not be empty!")]
     Empty,
     #[error("Due to operating system limitations, the name for network interfaces may not be longer than {max} characters!")]
-    TooLong { value: String, max: usize }
+    TooLong { value: String, max: usize },
 }

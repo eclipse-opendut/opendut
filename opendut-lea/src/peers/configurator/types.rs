@@ -1,6 +1,6 @@
 use leptos::{RwSignal, SignalGetUntracked};
 
-use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
+use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkConfiguration, PeerNetworkInterface};
 use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
 use opendut_types::util::net::NetworkInterfaceName;
 
@@ -15,6 +15,8 @@ pub enum PeerMisconfigurationError {
     InvalidPeerName,
     #[error("{0}")]
     InvalidDevice(DeviceMisconfigurationError),
+    #[error("Invalid network configuration")]
+    InvalidPeerNetworkConfiguration,
 }
 
 #[derive(thiserror::Error, Clone, Debug)]
@@ -35,8 +37,15 @@ pub struct UserPeerConfiguration {
     pub name: UserInputValue,
     pub location: UserInputValue,
     pub devices: Vec<RwSignal<UserDeviceConfiguration>>,
+    pub network_interfaces: Vec<RwSignal<UserPeerNetworkInterface>>,
     pub is_new: bool,
 }
+
+#[derive(Clone, Debug)]
+pub struct UserPeerNetworkInterface {
+    pub name: NetworkInterfaceName,
+}
+
 
 #[derive(Clone, Debug)]
 pub struct UserDeviceConfiguration {
@@ -64,6 +73,15 @@ impl TryFrom<UserPeerConfiguration> for PeerDescriptor {
                 PeerLocation::try_from(location)
                     .map_err(|_| PeerMisconfigurationError::InvalidPeerName)
             })?;
+        let network_interfaces = configuration
+            .network_interfaces
+            .into_iter()
+            .map(|signal| signal.get_untracked())
+            .map(|interface| {
+                PeerNetworkInterface::try_from(interface)
+                    .map_err(|_|  PeerMisconfigurationError::InvalidPeerNetworkConfiguration)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
         let devices = configuration
             .devices
             .into_iter()
@@ -77,6 +95,7 @@ impl TryFrom<UserPeerConfiguration> for PeerDescriptor {
             id: configuration.id,
             name,
             location: Some(location),
+            network_configuration: PeerNetworkConfiguration::new(network_interfaces),
             topology: Topology::new(devices),
         })
     }
@@ -113,6 +132,16 @@ impl TryFrom<UserDeviceConfiguration> for DeviceDescriptor {
             description: Some(description),
             interface,
             tags: vec![],
+        })
+    }
+}
+
+impl TryFrom<UserPeerNetworkInterface> for PeerNetworkInterface {
+    type Error = PeerMisconfigurationError;
+
+    fn try_from(configuration: UserPeerNetworkInterface) -> Result<Self, Self::Error> {
+        Ok(PeerNetworkInterface {
+            name: configuration.name,
         })
     }
 }

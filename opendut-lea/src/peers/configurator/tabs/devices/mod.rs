@@ -45,7 +45,7 @@ fn DevicesTable(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl Int
                 .cloned()
                 .map(|device_configuration| {
                     view! {
-                        <DevicePanel device_configuration on_delete=on_device_delete />
+                        <DevicePanel peer_configuration device_configuration on_delete=on_device_delete />
                     }
                 })
                 .collect::<Vec<_>>()

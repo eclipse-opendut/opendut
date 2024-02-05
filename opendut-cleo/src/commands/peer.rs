@@ -19,6 +19,8 @@ pub mod list {
         status: PeerStatus,
         #[table(title = "Location")]
         location: PeerLocation,
+        #[table(title = "NetworkConfiguration")]
+        network_configuration: String,
     }
 
     #[derive(Debug, PartialEq, Serialize)]
@@ -78,10 +80,13 @@ pub mod list {
                 } else {
                     PeerStatus::Disconnected
                 };
+                let network_interfaces = Clone::clone(&peer.network_configuration.interfaces);
+                let interfaces = network_interfaces.into_iter().map(|interface| interface.name.to_string()).collect::<Vec<_>>();
                 PeerTable {
                     name: Clone::clone(&peer.name),
                     id: peer.id,
                     location: Clone::clone(&peer.location.clone().unwrap_or_default()),
+                    network_configuration: interfaces.join(","),
                     status,
                 }
             })
@@ -92,7 +97,8 @@ pub mod list {
     mod test {
         use googletest::prelude::*;
 
-        use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
+        use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkConfiguration, PeerNetworkInterface};
+        use opendut_types::util::net::NetworkInterfaceName;
 
         use super::*;
 
@@ -102,6 +108,11 @@ pub mod list {
                 id: PeerId::random(),
                 name: PeerName::try_from("MyPeer").unwrap(),
                 location: Some(PeerLocation::try_from("SiFi").unwrap()),
+                network_configuration: PeerNetworkConfiguration {
+                    interfaces: vec!(PeerNetworkInterface {
+                        name: NetworkInterfaceName::try_from("eth0").unwrap(),
+                    })
+                },
                 topology: Default::default(),
             }];
             let connected_peers = vec![all_peers[0].id];
@@ -249,6 +260,7 @@ pub mod create {
             id,
             name: Clone::clone(&name),
             location,
+            network_configuration: Default::default(),
             topology: Default::default(),
         };
         carl.peers
