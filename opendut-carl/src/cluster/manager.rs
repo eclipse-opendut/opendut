@@ -242,7 +242,7 @@ mod test {
     use tokio::sync::mpsc;
 
     use opendut_types::cluster::ClusterName;
-    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
+    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkConfiguration, PeerNetworkInterface};
     use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
     use opendut_types::util::net::NetworkInterfaceName;
 
@@ -279,6 +279,13 @@ mod test {
             id: peer_a_id,
             name: PeerName::try_from("PeerA").unwrap(),
             location: PeerLocation::try_from("Ulm").ok(),
+            network_configuration: PeerNetworkConfiguration {
+                interfaces: vec![
+                    PeerNetworkInterface {
+                        name: NetworkInterfaceName::try_from("eth0").unwrap(),
+                    }
+                ]
+            },
             topology: Topology {
                 devices: vec![
                     DeviceDescriptor {
@@ -298,6 +305,13 @@ mod test {
             id: peer_b_id,
             name: PeerName::try_from("PeerB").unwrap(),
             location: PeerLocation::try_from("Ulm").ok(),
+            network_configuration: PeerNetworkConfiguration {
+                interfaces: vec![
+                    PeerNetworkInterface {
+                        name: NetworkInterfaceName::try_from("eth0").unwrap(),
+                    }
+                ]
+            },
             topology: Topology {
                 devices: vec![
                     DeviceDescriptor {
@@ -427,6 +441,11 @@ mod test {
                 id,
                 name: PeerName::try_from(format!("peer-{id}")).unwrap(),
                 location: PeerLocation::try_from("Ulm").ok(),
+                network_configuration: PeerNetworkConfiguration {
+                    interfaces: vec!(PeerNetworkInterface {
+                        name: NetworkInterfaceName::try_from("eth0").unwrap(),
+                    })
+                },
                 topology: Topology {
                     devices,
                 },

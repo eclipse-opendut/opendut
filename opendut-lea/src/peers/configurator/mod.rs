@@ -7,8 +7,8 @@ use crate::app::{ExpectGlobals, use_app_globals};
 use crate::components::{BasePageContainer, Breadcrumb, Initialized, UserInputError, UserInputValue};
 use crate::components::use_active_tab;
 use crate::peers::configurator::components::Controls;
-use crate::peers::configurator::tabs::{DevicesTab, GeneralTab, SetupTab, TabIdentifier};
-use crate::peers::configurator::types::{UserDeviceConfiguration, UserPeerConfiguration};
+use crate::peers::configurator::tabs::{DevicesTab, GeneralTab, NetworkTab, SetupTab, TabIdentifier};
+use crate::peers::configurator::types::{UserDeviceConfiguration, UserPeerConfiguration, UserPeerNetworkInterface};
 use crate::routing::{navigate_to, WellKnownRoutes};
 
 mod components;
@@ -52,6 +52,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                 name: UserInputValue::Left(UserInputError::from("Enter a valid peer name.")),
                 location: UserInputValue::Right(String::from("")),
                 devices: Vec::new(),
+                network_interfaces: Vec::new(),
                 is_new: true,
             });
 
@@ -72,6 +73,13 @@ pub fn PeerConfigurator() -> impl IntoView {
                                     is_collapsed: true
                                 })
                             }).collect::<Vec<_>>();
+                            user_configuration.network_interfaces = configuration.network_configuration.interfaces.into_iter()
+                                .map(|interface| {
+                                    create_rw_signal(UserPeerNetworkInterface {
+                                        name: interface.name
+                                    })
+                                })
+                                .collect();
                         });
                     }
                 }
@@ -139,6 +147,9 @@ pub fn PeerConfigurator() -> impl IntoView {
                                     // <span class="icon is-small has-text-danger"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i></span>
                                 </a>
                             </li>
+                            <li class=("is-active", move || TabIdentifier::Network == active_tab.get())>
+                                <a href={ TabIdentifier::Network.to_str() }>Network</a>
+                            </li>
                             <li class=("is-active", move || TabIdentifier::Devices == active_tab.get())>
                                 <a href={ TabIdentifier::Devices.to_str() }>Devices</a>
                             </li>
@@ -150,6 +161,9 @@ pub fn PeerConfigurator() -> impl IntoView {
                     <div class="container">
                         <div class=("is-hidden", move || TabIdentifier::General != active_tab.get())>
                             <GeneralTab peer_configuration=peer_configuration />
+                        </div>
+                        <div class=("is-hidden", move || TabIdentifier::Network != active_tab.get())>
+                            <NetworkTab peer_configuration=peer_configuration />
                         </div>
                         <div class=("is-hidden", move || TabIdentifier::Devices != active_tab.get())>
                             <DevicesTab peer_configuration=peer_configuration />

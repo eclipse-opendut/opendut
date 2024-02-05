@@ -219,9 +219,10 @@ mod tests {
     use googletest::prelude::*;
     use url::Url;
 
-    use opendut_types::peer::{PeerLocation, PeerName};
+    use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkConfiguration, PeerNetworkInterface};
     use opendut_types::proto;
     use opendut_types::topology::Topology;
+    use opendut_types::util::net::NetworkInterfaceName;
 
     use crate::resources::manager::ResourcesManager;
     use crate::vpn::Vpn;
@@ -239,6 +240,13 @@ mod tests {
             id: peer_id,
             name: PeerName::try_from("TestPeer").unwrap(),
             location: PeerLocation::try_from("SiFi").ok(),
+            network_configuration: PeerNetworkConfiguration {
+                interfaces: vec![
+                    PeerNetworkInterface {
+                        name: NetworkInterfaceName::try_from("eth0").unwrap(),
+                    }
+                ],
+            },
             topology: Topology::default(),
         };
 
