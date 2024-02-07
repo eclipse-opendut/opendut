@@ -6,6 +6,7 @@ use anyhow::{Context, Result};
 use crate::setup::constants::USER_NAME;
 
 use crate::setup::task::{Success, Task, TaskFulfilled};
+use crate::setup::util::EvaluateRequiringSuccess;
 
 fn passwd_file() -> PathBuf { PathBuf::from("/etc/passwd") }
 
@@ -27,7 +28,7 @@ impl Task for CreateUser {
     fn execute(&self) -> Result<Success> {
         Command::new("useradd")
             .arg(USER_NAME)
-            .status()
+            .evaluate_requiring_success()
             .context("Error when trying to create user '{USER_NAME}'.")?;
         Ok(Success::default())
     }

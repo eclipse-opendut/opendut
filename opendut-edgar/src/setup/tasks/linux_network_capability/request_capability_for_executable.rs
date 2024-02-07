@@ -1,6 +1,6 @@
 use std::process::Command;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 use crate::setup::constants;
 use crate::setup::task::{Success, Task, TaskFulfilled};
@@ -14,7 +14,8 @@ impl Task for RequestCapabilityForExecutable {
     fn check_fulfilled(&self) -> Result<TaskFulfilled> {
         let output = Command::new("getcap")
             .arg(constants::executable_install_path()?)
-            .evaluate_requiring_success()?;
+            .evaluate_requiring_success()
+            .context(format!("Error while determining Linux Capabilities of executable at: {}", constants::executable_install_path()?.display()))?;
 
         if output.stdout.is_empty() {
             Ok(TaskFulfilled::No)

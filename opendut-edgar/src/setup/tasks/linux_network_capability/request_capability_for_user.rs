@@ -36,7 +36,7 @@ impl Task for RequestCapabilityForUser {
 
                 Command::new("su")
                     .arg(USER_NAME)
-                    .arg("-c")
+                    .arg("--command")
                     .arg("/sbin/capsh --has-i=cap_net_admin")
                     .evaluate_requiring_success()?;
 
