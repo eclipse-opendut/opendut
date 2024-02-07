@@ -27,6 +27,7 @@ impl Task for CreateUser {
     }
     fn execute(&self) -> Result<Success> {
         Command::new("useradd")
+            .arg("--no-create-home")
             .arg(USER_NAME)
             .evaluate_requiring_success()
             .context("Error when trying to create user '{USER_NAME}'.")?;
