@@ -67,7 +67,7 @@ impl<'de> Deserialize<'de> for AppConfig {
                         client_id: idp_config.client_id,
                         redirect_uri,
                         post_logout_redirect_uri,
-                        scope: Some(idp_config.scopes),  // TODO: fix invalid scopes
+                        scope: Some(idp_config.scopes),
                     }),
                 })
             },
@@ -98,8 +98,6 @@ pub fn App() -> impl IntoView {
             .await.map_err(|_| AppGlobalsError { message: String::from("Could not parse configuration!")})?;
 
         info!("Configuration: {config:?}");
-
-
 
         match config.auth_parameters {
             Some(ref auth_parameters) => {

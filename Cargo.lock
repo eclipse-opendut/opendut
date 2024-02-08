@@ -2341,6 +2341,7 @@ name = "opendut-carl-api"
 version = "0.1.0"
 dependencies = [
  "cfg-if",
+ "chrono",
  "googletest",
  "leptos_oidc",
  "log",
@@ -2353,6 +2354,7 @@ dependencies = [
  "tonic",
  "tonic-build",
  "tonic-web-wasm-client",
+ "tracing",
  "url",
  "uuid",
 ]
