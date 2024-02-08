@@ -197,7 +197,7 @@ async fn create_a_setup_key(fixture: Fixture) -> anyhow::Result<()> {
 
                 let expectation = json!({
                         "name": fixture.peer_setup_key_name(),
-                        "type": "reusable",
+                        "type": "one-off",
                         "expires_in": 86400,
                         "revoked": false,
                         "auto_groups": [
@@ -215,7 +215,7 @@ async fn create_a_setup_key(fixture: Fixture) -> anyhow::Result<()> {
                             "key": "A616097E-FCF0-48FA-9354-CA4A61142761",
                             "name": fixture.peer_setup_key_name(),
                             "expires": "2023-06-01T14:47:22.291057Z",
-                            "type": "reusable",
+                            "type": "one-off",
                             "valid": true,
                             "revoked": false,
                             "used_times": 2,
@@ -249,7 +249,7 @@ async fn create_a_setup_key(fixture: Fixture) -> anyhow::Result<()> {
                     key: anything(),
                     name: eq(fixture.peer_setup_key_name()),
                     expires: anything(),
-                    r#type: eq(netbird::SetupKeyType::Reusable),
+                    r#type: eq(netbird::SetupKeyType::OneOff),
                     valid: eq(true),
                     revoked: eq(false),
                     used_times: anything(),

@@ -249,7 +249,7 @@ impl Client for DefaultClient {
 
             CreateSetupKey {
                 name: netbird::setup_key_name_format(peer_id),
-                r#type: netbird::SetupKeyType::Reusable,
+                r#type: netbird::SetupKeyType::OneOff,
                 expires_in: DefaultClient::SETUP_KEY_EXPIRY_DURATION.as_secs(),
                 revoked: false,
                 auto_groups: vec![
