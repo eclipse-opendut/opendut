@@ -94,7 +94,7 @@ pub enum IllegalDevicesError {
 
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 mod client {
-    use tonic::codegen::{Body, Bytes, StdError};
+    use tonic::codegen::{Body, Bytes, http, InterceptedService, StdError};
 
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerSetup};
     use opendut_types::topology::DeviceDescriptor;
@@ -118,6 +118,29 @@ mod client {
         pub fn new(inner: PeerManagerClient<T>) -> PeersRegistrar<T> {
             PeersRegistrar {
                 inner
+            }
+        }
+
+        pub fn with_interceptor<F>(
+            inner: T,
+            interceptor: F,
+        ) -> PeersRegistrar<InterceptedService<T, F>>
+            where
+                F: tonic::service::Interceptor,
+                T::ResponseBody: Default,
+                T: tonic::codegen::Service<
+                    http::Request<tonic::body::BoxBody>,
+                    Response = http::Response<
+                        <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
+                    >,
+                >,
+                <T as tonic::codegen::Service<
+                    http::Request<tonic::body::BoxBody>,
+                >>::Error: Into<StdError> + Send + Sync,
+        {
+            let inner_client = PeerManagerClient::new(InterceptedService::new(inner, interceptor));
+            PeersRegistrar {
+                inner: inner_client
             }
         }
 

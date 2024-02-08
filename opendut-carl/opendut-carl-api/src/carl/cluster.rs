@@ -1,7 +1,7 @@
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 pub use client::*;
 use opendut_types::cluster::{ClusterId, ClusterName};
-use opendut_types::cluster::state::{ClusterState};
+use opendut_types::cluster::state::ClusterState;
 use opendut_types::ShortName;
 
 #[derive(thiserror::Error, Debug)]
@@ -101,7 +101,7 @@ pub struct ListClusterDeploymentsError {
 
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 mod client {
-    use tonic::codegen::{Body, Bytes, StdError};
+    use tonic::codegen::{Body, Bytes, http, InterceptedService, StdError};
 
     use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
 
@@ -125,6 +125,29 @@ mod client {
         pub fn new(inner: ClusterManagerClient<T>) -> ClusterManager<T> {
             ClusterManager {
                 inner
+            }
+        }
+
+        pub fn with_interceptor<F>(
+            inner: T,
+            interceptor: F,
+        ) -> ClusterManager<InterceptedService<T, F>>
+            where
+                F: tonic::service::Interceptor,
+                T::ResponseBody: Default,
+                T: tonic::codegen::Service<
+                    http::Request<tonic::body::BoxBody>,
+                    Response = http::Response<
+                        <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
+                    >,
+                >,
+                <T as tonic::codegen::Service<
+                    http::Request<tonic::body::BoxBody>,
+                >>::Error: Into<StdError> + Send + Sync,
+        {
+            let inner_client = ClusterManagerClient::new(InterceptedService::new(inner, interceptor));
+            ClusterManager {
+                inner: inner_client
             }
         }
 
