@@ -1,0 +1,12 @@
+name: Install Kernel Modules
+description: Install Kernel Modules
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install extra kernel modules (including vcan and can-gw)
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+           linux-modules-extra-$(uname -r)
