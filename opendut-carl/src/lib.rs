@@ -161,7 +161,7 @@ pub async fn create(settings_override: Config) -> Result<()> {
                     panic!("LEA index.html does not contain wasm link! Check configuration serve.ui.directory={:?} points to the correct directory.", lea_dir.into_os_string());
                 }
             } else {
-                panic!("Failed to check if LEA index.html exists in: {}", lea_index_html.canonicalize().unwrap().display());
+                panic!("Failed to check if LEA index.html exists in: {}", lea_index_html.display());
             }
         }
         let http = axum::Router::new()
