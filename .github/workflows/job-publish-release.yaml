@@ -25,9 +25,8 @@ jobs:
         pattern: "opendut-sbom"
 
     - run: |
-        echo "Extracting opendut-sbom.zip and deleting original file"
         cd /home/runner/work/opendut/opendut/opendut-sbom
-        echo "Create ZIP with SBOM of Lea, Carl without API, Edgar and Cleo into opendut-sbom.zip"
+        echo "Create ZIP with SBOM of LEA, CARL, EDGAR and CLEO into opendut-sbom.zip"
         zip opendut-sbom.zip opendut-carl-sbom.spdx.json opendut-lea-sbom.spdx.json opendut-edgar-sbom.spdx.json opendut-cleo-sbom.spdx.json
         echo "Deleting all no longer needed files with extension .spdx.json"
         find . -type f -name '*.spdx.json' -delete 
