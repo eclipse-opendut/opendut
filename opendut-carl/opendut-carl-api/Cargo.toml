@@ -16,7 +16,8 @@ client = [
 ]
 wasm-client = [
     "codegen",
-    "dep:tonic-web-wasm-client"
+    "dep:tonic-web-wasm-client",
+    "dep:leptos_oidc",
 ]
 
 [dependencies]
@@ -32,6 +33,7 @@ tonic = { workspace = true }
 tonic-web-wasm-client = { workspace = true, optional = true }
 url = { workspace = true }
 uuid = { workspace = true, features = ["v4", "serde"] }
+leptos_oidc =  { workspace = true, optional = true }
 
 [build-dependencies]
 protobuf-src = { workspace = true }

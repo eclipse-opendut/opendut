@@ -161,6 +161,8 @@ cfg_if! {
 
 #[cfg(feature = "wasm-client")]
 pub mod wasm {
+    use leptos_oidc::Auth;
+    use log::debug;
     use tonic::codegen::InterceptedService;
     use tonic::service::Interceptor;
     use tonic::Status;
@@ -172,13 +174,24 @@ pub mod wasm {
     use crate::carl::peer::PeersRegistrar;
 
     #[derive(Clone)]
-    pub struct AuthInterceptor;
+    pub struct AuthInterceptor {
+        pub(crate) auth: Option<Auth>
+    }
 
     impl Interceptor for AuthInterceptor {
         fn call(&mut self, mut request: tonic::Request<()>) -> Result<tonic::Request<()>, Status> {
-            let token: tonic::metadata::MetadataValue<_> = "Bearer some-auth-token".parse()
-                .map_err(|_err| Status::unauthenticated("could not parse token"))?;
-            request.metadata_mut().insert("authorization", token.clone());
+            if let Some(auth) = &self.auth {
+                let access_token = auth.access_token();
+                let token = match access_token {
+                    None => { "no-auth-token".to_string() }
+                    Some(token) => { token }
+                };
+                debug!("Token: {}", token);
+                let token: tonic::metadata::MetadataValue<_> = format!("Bearer {}", token).parse()
+                    .map_err(|_err| Status::unauthenticated("could not parse token"))?;
+                request.metadata_mut().insert("authorization", token.clone());
+            }
+
             Ok(request)
         }
     }
@@ -193,7 +206,7 @@ pub mod wasm {
 
     impl CarlClient {
 
-        pub fn create(url: url::Url) -> Result<CarlClient, InitializationError> {
+        pub fn create(url: url::Url, auth: Option<Auth>) -> Result<CarlClient, InitializationError> {
 
             let scheme = url.scheme();
             if scheme != "https" {
@@ -204,7 +217,7 @@ pub mod wasm {
             let port = url.port().unwrap_or(443_u16);
 
             let client = tonic_web_wasm_client::Client::new(format!("{}://{}:{}", scheme, host, port));
-            let auth_interceptor = AuthInterceptor {};
+            let auth_interceptor = AuthInterceptor { auth };
 
             Ok(CarlClient {
                 broker: PeerMessagingBroker::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
