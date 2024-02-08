@@ -22,6 +22,9 @@ jobs:
     steps:
       - name: Checkout Sources
         uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+      
+      - name: Install kernel modules
+        uses: ./.github/actions/install-kernel-modules
 
       - name: Download opendut-CARL bundle
         uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
