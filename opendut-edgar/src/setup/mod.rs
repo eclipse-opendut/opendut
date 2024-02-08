@@ -12,3 +12,11 @@ mod util;
 
 #[derive(Clone, Debug)]
 pub enum Leader { Local, Remote(Ipv4Addr) }
+
+#[derive(Clone, Debug)]
+struct User { pub name: String }
+impl User {
+    fn is_root(&self) -> bool {
+        self.name == "root"
+    }
+}

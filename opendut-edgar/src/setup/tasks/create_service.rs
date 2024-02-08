@@ -1,12 +1,13 @@
-use std::{env, fs};
+use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 
 use anyhow::{Context, Result};
 
 use crate::setup::task::{Success, Task, TaskFulfilled};
-use crate::setup::constants::{executable_install_path, USER_NAME};
+use crate::setup::constants::executable_install_path;
 use crate::setup::constants::SYSTEMD_SERVICE_FILE_NAME;
+use crate::setup::User;
 use crate::setup::util::EvaluateRequiringSuccess;
 
 
@@ -14,9 +15,10 @@ pub fn systemd_file_path() -> PathBuf {
     PathBuf::from(format!("/etc/systemd/system/{SYSTEMD_SERVICE_FILE_NAME}"))
 }
 
-fn systemd_file_content(service_user: &str) -> String {
+fn systemd_file_content(service_user: &User) -> String {
     let executable = executable_install_path().unwrap();
     let executable = executable.display();
+    let service_user = &service_user.name;
 
     format!(r#"
 [Unit]
@@ -43,7 +45,9 @@ WantedBy=multi-user.target
 // RestartSteps=5
 }
 
-pub struct CreateServiceFile;
+pub struct CreateServiceFile {
+    pub service_user: User,
+}
 impl Task for CreateServiceFile {
     fn description(&self) -> String {
         String::from("Create Service File")
@@ -59,9 +63,7 @@ impl Task for CreateServiceFile {
         let out_path = systemd_file_path();
         fs::create_dir_all(out_path.parent().unwrap())?;
 
-        let service_user_name = env::var("OPENDUT_EDGAR_SERVICE_USER").unwrap_or(USER_NAME.to_string());
-        log::info!("Using service user '{}'", service_user_name);
-        fs::write(&out_path, systemd_file_content(&service_user_name))
+        fs::write(&out_path, systemd_file_content(&self.service_user))
             .context(format!("Error while writing service file to '{}'", out_path.display()))?;
 
         let _ = Command::new("systemctl")

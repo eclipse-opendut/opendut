@@ -2,7 +2,6 @@ use std::path::PathBuf;
 
 use anyhow::Context;
 
-pub const USER_NAME: &str = "opendut-network";
 
 pub fn executable_install_path() -> anyhow::Result<PathBuf> {
     let executable_path = std::env::current_exe()?;

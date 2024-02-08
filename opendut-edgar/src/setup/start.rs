@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::env;
 use std::fs::File;
 use std::sync::Arc;
 
@@ -12,7 +13,7 @@ use opendut_types::vpn::VpnPeerConfiguration;
 use opendut_util::logging;
 
 use crate::service::network_interface::manager::NetworkInterfaceManager;
-use crate::setup::{Leader, runner, tasks};
+use crate::setup::{Leader, runner, tasks, User};
 use crate::setup::runner::RunMode;
 use crate::setup::task::Task;
 use crate::setup::tasks::write_configuration;
@@ -22,6 +23,9 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
 
     let peer_setup = PeerSetup::decode(&setup_string)
         .context("Failed to decode Setup String.")?;
+
+    let service_user = determine_service_user_name();
+    log::info!("Using service user '{}'.", service_user.name);
 
     println!("Using PeerId: {}", peer_setup.id);
     println!("Will connect to CARL at: {}", peer_setup.carl);
@@ -33,7 +37,7 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
             carl_url: peer_setup.carl,
         })),
         Box::new(tasks::CheckCarlReachable),
-        Box::new(tasks::CreateUser),
+        Box::new(tasks::CopyExecutable),
     ];
 
     match peer_setup.vpn {
@@ -42,26 +46,32 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
         }
         VpnPeerConfiguration::Netbird { management_url, setup_key } => {
             log::info!("VPN is configured for NetBird in PeerSetup. Running NetBird-related tasks.");
-            let mut netbird_tasks: Vec<Box<dyn Task>> = vec![
+            tasks.append(&mut vec![
                 Box::new(tasks::netbird::Unpack::default()),
                 Box::new(tasks::netbird::InstallService),
                 Box::new(tasks::netbird::StartService),
                 Box::new(tasks::netbird::Connect { management_url, setup_key, mtu }),
-            ];
-            tasks.append(&mut netbird_tasks);
+            ]);
         }
     };
 
-    let mut service_tasks: Vec<Box<dyn Task>> = vec![
-        Box::new(tasks::CopyExecutable),
-        Box::new(tasks::ClaimFileOwnership),
-        Box::new(tasks::linux_network_capability::MakePamAuthOptional::default()),
-        Box::new(tasks::linux_network_capability::RequestCapabilityForUser),
-        Box::new(tasks::linux_network_capability::RequestCapabilityForExecutable),
-        Box::new(tasks::CreateServiceFile),
+    if service_user.is_root() {
+        log::info!("Service should run via root user. Skipping setup of custom service user.");
+    } else {
+        log::info!("Setting up custom service user '{}'.", service_user.name);
+        tasks.append(&mut vec![
+            Box::new(tasks::CreateUser { service_user: service_user.clone() }),
+            Box::new(tasks::ClaimFileOwnership { service_user: service_user.clone() }),
+            Box::new(tasks::linux_network_capability::MakePamAuthOptional::default()),
+            Box::new(tasks::linux_network_capability::RequestCapabilityForUser { service_user: service_user.clone() }),
+            Box::new(tasks::linux_network_capability::RequestCapabilityForExecutable),
+        ]);
+    }
+
+    tasks.append(&mut vec![
+        Box::new(tasks::CreateServiceFile { service_user }),
         Box::new(tasks::StartService),
-    ];
-    tasks.append(&mut service_tasks);
+    ]);
 
     runner::run(run_mode, no_confirm, &tasks).await
 }
@@ -112,4 +122,13 @@ pub fn init_logging() -> anyhow::Result<()> {
         )
     })?;
     Ok(())
+}
+
+fn determine_service_user_name() -> User {
+    const DEFAULT_SERVICE_USER_NAME: &str = "opendut-network";
+
+    let name = env::var("OPENDUT_EDGAR_SERVICE_USER")
+        .unwrap_or(DEFAULT_SERVICE_USER_NAME.to_string());
+
+    User { name }
 }
