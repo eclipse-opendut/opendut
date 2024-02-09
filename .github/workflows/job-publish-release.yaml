@@ -37,7 +37,7 @@ jobs:
       name: "Create Versioned Release"
       if: ${{ github.ref != 'refs/tags/canary' }}
       with:
-        artifacts: $artifacts_pattern
+        artifacts: ${{ env.artifacts_pattern }}
 
     - uses: ncipollo/release-action@6c75be85e571768fa31b40abf38de58ba0397db5
       name: "Create Canary Release"
@@ -47,4 +47,4 @@ jobs:
         body: "Unstable release, intended for testing."
         prerelease: true
         allowUpdates: true  # overwrite existing canary release
-        artifacts: $artifacts_pattern
+        artifacts: ${{ env.artifacts_pattern }}
