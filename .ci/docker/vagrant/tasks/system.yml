@@ -42,5 +42,13 @@
   become_user: vagrant
   ansible.builtin.lineinfile:
     path: /home/vagrant/.bashrc
-    regexp: '^CARGO_TARGET_DIR='
+    regexp: '^export CARGO_TARGET_DIR='
     line: "export CARGO_TARGET_DIR=/home/vagrant/rust-target"
+
+- name: Include rust-target debug directory in PATH
+  become: true
+  become_user: vagrant
+  ansible.builtin.lineinfile:
+    path: /home/vagrant/.bashrc
+    regexp: '^export PATH='
+    line: "export PATH=/home/vagrant/rust-target/debug/:$PATH"

@@ -8,12 +8,14 @@ RUN mvn clean package
 
 
 FROM registry.access.redhat.com/ubi9 AS ubi-micro-build
+
+COPY ./resources/development/tls/ /opendut-tls/
+RUN cp /opendut-tls/*-ca.pem /etc/pki/ca-trust/source/anchors/ && update-ca-trust
+
 RUN mkdir -p /mnt/rootfs
 # Removes this warning "This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register."
 RUN dnf remove -y subscription-manager
 RUN dnf install --installroot /mnt/rootfs curl jq --releasever 9 --setopt install_weak_deps=false --nodocs -y; dnf --installroot /mnt/rootfs clean all
-COPY ./resources/development/tls/insecure-development-ca.pem /etc/pki/ca-trust/source/anchors/
-RUN update-ca-trust
 
 # Documentation:
 # https://www.keycloak.org/server/containers

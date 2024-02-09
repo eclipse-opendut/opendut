@@ -4,8 +4,9 @@ FROM netbirdio/management:${NETBIRD_MANAGEMENT_VERSION}
 RUN apt update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata ca-certificates curl jq
 
 # add the insecure development CA to the trust store
-COPY ./resources/development/tls/insecure-development-ca.pem /usr/local/share/ca-certificates/insecure-development-ca.crt
-RUN update-ca-certificates
+COPY ./resources/development/tls/ /opendut-tls/
+COPY ./.ci/docker/netbird/add-root-certificates.sh /opendut-tls/add-root-certificates.sh
+RUN chmod +x /opendut-tls/add-root-certificates.sh && /opendut-tls/add-root-certificates.sh
 
 COPY ./.ci/docker/netbird/netbird-api-functions.sh /netbird-api-functions.sh
 COPY ./.ci/docker/netbird/management_init.sh /management_init.sh

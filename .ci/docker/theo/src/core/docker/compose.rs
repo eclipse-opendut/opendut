@@ -9,6 +9,9 @@ pub(crate) fn docker_compose_build(compose_dir: &str) -> Result<i32, Error> {
     DockerCommand::new()
         .add_common_args(compose_dir)
         .arg("build")
+        // https://docs.docker.com/build/building/env-vars/
+        // Show more output during the build progress
+        .env("BUILDKIT_PROGRESS", "plain")
         .expect_status(format!("Failed to execute docker compose build for directory: {}.", compose_dir).as_str())
 }
 
