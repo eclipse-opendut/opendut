@@ -14,7 +14,6 @@ use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerSetup};
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
 use opendut_types::vpn::VpnPeerConfiguration;
 use opendut_util::ErrorOr;
-use opendut_util::logging::LogError;
 
 use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
@@ -101,7 +100,7 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
     }
 
     inner(params).await
-        .log_err()
+        .inspect_err(|err| log::error!("{err}"))
 }
 
 pub struct DeletePeerDescriptorParams {
@@ -158,7 +157,7 @@ pub async fn delete_peer_descriptor(params: DeletePeerDescriptorParams) -> Resul
     }
 
     inner(params).await
-        .log_err()
+        .inspect_err(|err| log::error!("{err}"))
 }
 
 pub struct ListPeerDescriptorsParams {
@@ -185,7 +184,7 @@ pub async fn list_peer_descriptors(params: ListPeerDescriptorsParams) -> Result<
     }
 
     inner(params).await
-        .log_err()
+        .inspect_err(|err| log::error!("{err}"))
 }
 
 pub struct ListDevicesParams {
@@ -210,7 +209,7 @@ pub async fn list_devices(params: ListDevicesParams) -> Result<Vec<DeviceDescrip
     }
 
     inner(params).await
-        .log_err()
+        .inspect_err(|err| log::error!("{err}"))
 }
 
 pub struct GeneratePeerSetupParams {
@@ -267,7 +266,7 @@ pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<Peer
     }
 
     inner(params).await
-        .log_err()
+        .inspect_err(|err| log::error!("{err}"))
 }
 
 #[cfg(test)]
