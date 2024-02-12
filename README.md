@@ -26,3 +26,6 @@ But before contributing, make sure to read the [contribution guideline](CONTRIBU
 
 ## License
 Eclipse openDuT is licensed using the Apache License Version 2.0.
+
+## Attribution
+openDuT uses [NetBird](https://netbird.io/) and [WireGuard](https://www.wireguard.com/) to establish a VPN network.
