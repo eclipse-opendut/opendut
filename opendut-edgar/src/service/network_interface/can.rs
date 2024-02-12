@@ -1,8 +1,8 @@
 use std::net::IpAddr;
-use tokio::process::Command;
 
 use opendut_types::util::net::NetworkInterfaceName;
 
+use crate::service::cannelloni_manager::CannelloniManager;
 use crate::service::network_interface;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 
@@ -49,6 +49,8 @@ async fn create_can_bridge(bridge_name: &NetworkInterfaceName, network_interface
     Ok(())
 }
 
+// TODO: determining the port for cannelloni like this is a bit dirty, we should get that information from CARL instead
+// Takes the last two bytes of the IP address to be used as the port
 fn peer_ip_to_leader_port(peer_ip: &IpAddr) -> anyhow::Result<u16>{
     assert!(peer_ip.is_ipv4());
     let ip_bytes: Vec<u8> = peer_ip.to_string().split(".").map(|b| b.parse::<u8>().unwrap()).collect();
@@ -60,43 +62,41 @@ pub async fn setup_remote_routing_client(bridge_name: &NetworkInterfaceName, loc
 
     let leader_port = peer_ip_to_leader_port(local_ip).unwrap();
 
-    println!("spawning cannelloni client process");
+    log::info!("Spawning cannelloni manager as client");
 
-    // TODO: We should do some monitoring of the cannelloni process to restart if needed. Should maybe also redirect its stdout and stderr
-    // TODO: We need some more configuration options here, like the aggregation timeout
-    let child = Command::new("cannelloni")
-        .arg("-I")
-        .arg(bridge_name.name())
-        .arg("-S")
-        .arg("c")
-        .arg("-r")
-        .arg(leader_port.to_string())
-        .arg("-R")
-        .arg(leader_ip.to_string())
-        .spawn()
-        .map_err(|cause| Error::CommandLineProgramExecution { command: "cannelloni".to_string(), cause })?;
+    // TODO: The buffer timeout here should likely be configurable through CARL
+    let mut cannelloni_manager = CannelloniManager {
+        is_server: false, 
+        can_if_name: bridge_name.clone(), 
+        server_port: leader_port, 
+        remote_ip: leader_ip.clone(), 
+        buffer_timeout: 20000,
+    };
+
+    tokio::spawn(async move {
+        cannelloni_manager.run().await;
+    });
 
     Ok(())
 }
 
 pub async fn setup_remote_routing_server(bridge_name: &NetworkInterfaceName, remote_ips: &Vec<IpAddr>) -> Result<(), Error>  {
 
-
     for remote_ip in remote_ips {
         let leader_port = peer_ip_to_leader_port(&remote_ip).unwrap();
-        println!("spawning cannelloni server process");
+        log::info!("Spawning cannelloni manager as server for peer with IP {}", remote_ip.to_string());
 
-        let child = Command::new("cannelloni")
-            .arg("-I")
-            .arg(bridge_name.name())
-            .arg("-S")
-            .arg("s")
-            .arg("-l")
-            .arg(leader_port.to_string())
-            .arg("-R")
-            .arg(remote_ip.to_string())
-            .spawn()
-            .map_err(|cause| Error::CommandLineProgramExecution { command: "cannelloni".to_string(), cause })?;
+        let mut cannelloni_manager = CannelloniManager {
+            is_server: true, 
+            can_if_name: bridge_name.clone(), 
+            server_port: leader_port, 
+            remote_ip: remote_ip.clone(), 
+            buffer_timeout: 20000,
+        };
+    
+        tokio::spawn(async move {
+            cannelloni_manager.run().await;
+        });
     }
 
     Ok(())
