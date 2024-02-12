@@ -126,7 +126,7 @@ pub async fn create(settings_override: Config) -> Result<()> {
 
         let oidc_enabled = settings.get_bool("network.oidc.enabled").unwrap_or(false);
         let lea_idp_config = if oidc_enabled {
-            let lea_idp_config = settings.get::<LeaIdpConfig>("network.oidc.lea")
+            let lea_idp_config = settings.get::<LeaIdentityProviderConfig>("network.oidc.lea")
                 .expect("Failed to find configuration for `network.oidc.lea`.");
             let scopes = lea_idp_config.scopes.trim_matches('"').split(',').collect::<Vec<_>>();
             for scope in scopes.clone() {
@@ -135,7 +135,7 @@ pub async fn create(settings_override: Config) -> Result<()> {
                 }
             }
             log::info!("OIDC is enabled: {:?}", lea_idp_config);
-            Some(LeaIdpConfig {
+            Some(LeaIdentityProviderConfig {
                 client_id: lea_idp_config.client_id,
                 issuer_url: lea_idp_config.issuer_url,
                 scopes: scopes.join(" "),  // Frontend expects space separated list of scopes
@@ -226,7 +226,7 @@ struct AppState {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-struct LeaIdpConfig {
+struct LeaIdentityProviderConfig {
     client_id: String,
     issuer_url: Url,
     scopes: String,
@@ -235,7 +235,7 @@ struct LeaIdpConfig {
 #[derive(Clone, Serialize)]
 struct LeaConfig {
     carl_url: Url,
-    idp_config: Option<LeaIdpConfig>,
+    idp_config: Option<LeaIdentityProviderConfig>,
 }
 
 impl FromRef<AppState> for LeaConfig {

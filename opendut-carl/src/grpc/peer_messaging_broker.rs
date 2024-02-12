@@ -1,7 +1,6 @@
 use std::net::IpAddr;
 use std::pin::Pin;
 use std::str::FromStr;
-use std::sync::Arc;
 
 use futures::StreamExt;
 use tokio_stream::Stream;

@@ -1,3 +1,7 @@
+use std::fs::File;
+use std::io::Read;
+use std::path::PathBuf;
+
 use anyhow::anyhow;
 use async_trait::async_trait;
 use reqwest::Url;
@@ -19,23 +23,40 @@ mod netbird;
 
 type Inner = Box<dyn Client + Send + Sync>;
 
+pub struct NetbirdManagementClientConfiguration {
+    pub management_url: Url,
+    pub authentication_token: Option<NetbirdToken>,
+    pub ca: Option<PathBuf>,
+}
+
 pub struct NetbirdManagementClient {
-    netbird_url: Url,
+    management_url: Url,
     inner: Inner,
 }
 
 impl NetbirdManagementClient {
 
-    pub fn create(netbird_url: Url, token: NetbirdToken) -> Result<Self, CreateClientError> {
+    pub fn create(configuration: NetbirdManagementClientConfiguration) -> Result<Self, CreateClientError> {
+        let management_url = configuration.management_url;
+        let management_ca_path = configuration.ca
+            .ok_or_else(|| CreateClientError::InstantiationFailure { cause: String::from("No ca certificate provided.") })?;
+        let management_ca = {
+            let mut file = File::open(management_ca_path)
+                .map_err(|cause| CreateClientError::InstantiationFailure { cause: format!("Failed to open ca certificate:\n  {cause}") })?;
+            let mut buffer = Vec::new();
+            file.read_to_end(&mut buffer)
+                .map_err(|cause| CreateClientError::InstantiationFailure { cause: format!("Failed to read ca certificate:\n  {cause}") })?;
+            buffer
+        };
+        let inner = Box::new(DefaultClient::create(
+            Clone::clone(&management_url),
+            Some(management_ca.as_slice()),
+            configuration.authentication_token,
+            None,
+        )?);
         Ok(Self {
-            netbird_url: Clone::clone(&netbird_url),
-            inner: Box::new(
-                DefaultClient::create(
-                    netbird_url,
-                    Some(token),
-                    None,
-                )?
-            )
+            management_url,
+            inner
         })
     }
 }
@@ -216,7 +237,7 @@ impl VpnManagementClient for NetbirdManagementClient {
         debug!("Successfully generated vpn configuration for peer <{peer_id}>.");
 
         Ok(VpnPeerConfiguration::Netbird {
-            management_url: Clone::clone(&self.netbird_url),
+            management_url: Clone::clone(&self.management_url),
             setup_key: opendut_types::vpn::netbird::SetupKey::from(setup_key.key),
         })
     }
@@ -404,7 +425,7 @@ mod test {
             let mut mock_client = MockMockClient::new();
             setup(&mut mock_client);
             let testee = NetbirdManagementClient {
-                netbird_url: Url::parse("https://localhost/api/").unwrap(),
+                management_url: Url::parse("https://localhost/api/").unwrap(),
                 inner: Box::new(mock_client),
             };
 

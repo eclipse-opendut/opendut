@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use async_trait::async_trait;
 use http::{header, HeaderMap, Method};
-use reqwest::{Body, Request, Response, Url};
+use reqwest::{Body, Certificate, Request, Response, Url};
 use serde::Serialize;
 use tracing::error;
 
@@ -11,7 +11,7 @@ use opendut_types::peer::PeerId;
 use crate::{netbird, routes};
 use crate::client::request_handler::{DefaultRequestHandler, RequestHandler, RequestHandlerConfig};
 use crate::netbird::error;
-use crate::netbird::error::{CreateSetupKeyError, GetGroupError, GetRulesError, RequestError};
+use crate::netbird::error::{CreateClientError, CreateSetupKeyError, GetGroupError, GetRulesError, RequestError};
 
 mod request_handler;
 
@@ -42,9 +42,10 @@ impl DefaultClient {
 
     pub fn create(
         netbird_url: Url,
+        ca: Option<&[u8]>,
         token: Option<netbird::Token>,
         requester: Option<Box<dyn RequestHandler + Send + Sync>>
-    ) -> Result<Self, error::CreateClientError>
+    ) -> Result<Self, CreateClientError>
     {
         let headers = {
             let mut headers = HeaderMap::new();
@@ -57,11 +58,21 @@ impl DefaultClient {
             headers
         };
 
-        let client = reqwest::Client::builder()
-            .default_headers(headers)
-            .https_only(false) // this is only required for theo's netbird setup and should be changed to use https only.
-            .build()
-            .expect("Failed to construct client.");
+        let client = {
+            let mut client = reqwest::Client::builder()
+                .default_headers(headers)
+                .https_only(false); // this is only required for theo's netbird setup and should be changed to use https only.
+
+            if let Some(ca) = ca {
+                let certificate = Certificate::from_pem(ca)
+                    .map_err(|cause| CreateClientError::InstantiationFailure { cause: format!("Failed to parse ca certificate:\n  {cause}") })?;
+                client = client.add_root_certificate(certificate);
+            }
+
+            client
+                .build()
+                .expect("Failed to construct client.")
+        };
 
         let requester = requester.unwrap_or_else(|| {
             Box::new(DefaultRequestHandler::new(
