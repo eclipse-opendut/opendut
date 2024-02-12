@@ -1,6 +1,7 @@
 use std::net::IpAddr;
 use std::pin::Pin;
 use std::str::FromStr;
+use std::sync::Arc;
 
 use futures::StreamExt;
 use tokio_stream::Stream;
@@ -83,11 +84,17 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
                         }
                     }
                     Err(status) => {
-                        let _ = peer_messaging_broker.remove_peer(peer_id).await;
                         log::error!("Error: {:?}", status);
                     }
                 }
             }
+
+            if let Err(cause) = peer_messaging_broker.remove_peer(peer_id).await {
+                log::error!("Failed to removed peer <{peer_id}>:\n  {cause}");
+            }
+            else {
+                log::info!("Removed peer <{peer_id}>.");
+            };
         });
 
         let outbound = ReceiverStream::new(rx_outbound)
