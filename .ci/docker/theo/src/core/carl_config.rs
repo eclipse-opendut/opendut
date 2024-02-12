@@ -1,4 +1,4 @@
-pub(crate) fn print_carl_config_toml(netbird_management_url: &str, netbird_token: &str) {
+pub(crate) fn print_carl_config_toml(netbird_management_url: &str, netbird_management_ca: &str, netbird_token: &str) {
     println!(r#"
 # CARL configuration environment variables for development.
 [network]
@@ -29,16 +29,16 @@ enabled = true
 kind = "netbird"
 
 [vpn.netbird]
-url = "{}"
+url = "{netbird_management_url}"
+ca = "{netbird_management_ca}"
 https.only = false
 auth.type = "personal-access-token"
-auth.secret = "{}"
+auth.secret = "{netbird_token}"
 
-"#, netbird_management_url, netbird_token);
-
+"#);
 }
 
-pub(crate) fn print_carl_config_env(netbird_management_url: &str, netbird_token: &str) {
+pub(crate) fn print_carl_config_env(netbird_management_url: &str, netbird_management_ca: &str, netbird_token: &str) {
     println!(r#"
 # CARL configuration toml for development.
 OPENDUT_CARL_NETWORK_BIND_HOST=0.0.0.0
@@ -57,10 +57,11 @@ OPENDUT_CARL_SERVE_UI_DIRECTORY=./opendut-lea/dist/
 
 OPENDUT_CARL_VPN_ENABLED=true
 OPENDUT_CARL_VPN_KIND=netbird
-OPENDUT_CARL_VPN_NETBIRD_URL={}
+OPENDUT_CARL_VPN_NETBIRD_URL={netbird_management_url}
+OPENDUT_CARL_VPN_NETBIRD_CA={netbird_management_ca}
 OPENDUT_CARL_VPN_NETBIRD_HTTPS_ONLY=false
 OPENDUT_CARL_VPN_NETBIRD_AUTH_TYPE=personal-access-token
-OPENDUT_CARL_VPN_NETBIRD_AUTH_SECRET={}
+OPENDUT_CARL_VPN_NETBIRD_AUTH_SECRET={netbird_token}
 
-        "#, netbird_management_url, netbird_token);
+"#);
 }

@@ -101,9 +101,10 @@ impl DevCli {
                 } else {
                     "http://192.168.32.211/api"
                 };
+                let netbird_management_ca = "/etc/opendut-network/tls/carl.pem";
 
-                print_carl_config_env(netbird_management_url, &netbird_api_key);
-                print_carl_config_toml(netbird_management_url, &netbird_api_key);
+                print_carl_config_env(netbird_management_url, netbird_management_ca, &netbird_api_key);
+                print_carl_config_toml(netbird_management_url, netbird_management_ca, &netbird_api_key);
             }
         }
         Ok(())
