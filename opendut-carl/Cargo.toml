@@ -1,8 +1,9 @@
 [package]
 name = "opendut-carl"
 version = "0.1.0"
-edition = "2021"
-license = "Apache-2.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
 
 [dependencies]
 opendut-carl-api = { workspace = true }
