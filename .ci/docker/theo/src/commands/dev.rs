@@ -97,9 +97,9 @@ impl DevCli {
             TaskCli::CarlConfig => {
                 let netbird_api_key = crate::core::docker::netbird::get_netbird_api_key()?;
                 let netbird_management_url = if running_in_opendut_vm() {
-                    "http://192.168.56.10/api"
+                    "https://192.168.56.10/api"
                 } else {
-                    "http://192.168.32.211/api"
+                    "https://192.168.32.211/api"
                 };
                 let netbird_management_ca = "/etc/opendut-network/tls/carl.pem";
 

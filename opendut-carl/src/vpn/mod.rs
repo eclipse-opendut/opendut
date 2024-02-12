@@ -1,14 +1,12 @@
 use std::path::PathBuf;
-use std::str::FromStr;
 use std::sync::Arc;
 
 use anyhow::{anyhow, bail};
 use config::Config;
-use serde::{de, Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 use serde::de::IntoDeserializer;
 use url::Url;
 
-use opendut_types::vpn::HttpsOnly;
 use opendut_vpn::VpnManagementClient;
 use opendut_vpn_netbird::{NetbirdManagementClient, NetbirdManagementClientConfiguration, NetbirdToken};
 
@@ -76,18 +74,6 @@ enum VpnKind {
     Netbird,
 }
 
-fn deserialize_https_only_from_str<'de, D>(deserializer: D) -> Result<HttpsOnly, D::Error>
-where
-    D: Deserializer<'de>
-{
-    let s = String::deserialize(deserializer)?;
-    let result = bool::from_str(&s).map_err(de::Error::custom)?;
-    match result {
-        true => Ok(HttpsOnly::True),
-        false => Ok(HttpsOnly::False),
-    }
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all="kebab-case")]
 struct VpnNetbirdConfig {
@@ -95,14 +81,7 @@ struct VpnNetbirdConfig {
     url: Option<Url>,
     #[serde(deserialize_with = "empty_string_as_none")]
     ca: Option<PathBuf>,
-    https: Https,
     auth: AuthConfig,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Https {
-    #[serde(default = "HttpsOnly::default", deserialize_with = "deserialize_https_only_from_str")]
-    only: HttpsOnly
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -31,7 +31,6 @@ kind = "netbird"
 [vpn.netbird]
 url = "{netbird_management_url}"
 ca = "{netbird_management_ca}"
-https.only = false
 auth.type = "personal-access-token"
 auth.secret = "{netbird_token}"
 
@@ -59,7 +58,6 @@ OPENDUT_CARL_VPN_ENABLED=true
 OPENDUT_CARL_VPN_KIND=netbird
 OPENDUT_CARL_VPN_NETBIRD_URL={netbird_management_url}
 OPENDUT_CARL_VPN_NETBIRD_CA={netbird_management_ca}
-OPENDUT_CARL_VPN_NETBIRD_HTTPS_ONLY=false
 OPENDUT_CARL_VPN_NETBIRD_AUTH_TYPE=personal-access-token
 OPENDUT_CARL_VPN_NETBIRD_AUTH_SECRET={netbird_token}
 

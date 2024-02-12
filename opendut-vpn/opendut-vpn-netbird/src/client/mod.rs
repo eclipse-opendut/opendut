@@ -61,7 +61,7 @@ impl DefaultClient {
         let client = {
             let mut client = reqwest::Client::builder()
                 .default_headers(headers)
-                .https_only(false); // this is only required for theo's netbird setup and should be changed to use https only.
+                .https_only(true);
 
             if let Some(ca) = ca {
                 let certificate = Certificate::from_pem(ca)
