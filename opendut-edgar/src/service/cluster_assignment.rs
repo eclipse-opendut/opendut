@@ -40,8 +40,8 @@ pub async fn network_interfaces_setup(
     ).await
     .map_err(Error::GreInterfaceSetupFailed)?;
 
-
-    join_device_interfaces_to_bridge(&local_peer_assignment.device_interfaces, bridge_name, Arc::clone(&network_interface_manager)).await
+    let own_ethernet_interfaces = get_own_ethernet_interfaces(&cluster_assignment, self_id)?;
+    join_device_interfaces_to_bridge(&own_ethernet_interfaces, bridge_name, Arc::clone(&network_interface_manager)).await
         .map_err(Error::JoinDeviceInterfaceToBridgeFailed)?;
 
     setup_can(&cluster_assignment, self_id, network_interface_manager).await?;
@@ -64,7 +64,12 @@ pub async fn setup_can(
     ).await
     .map_err(Error::LocalCanRoutingSetupFailed)?;
 
-    let local_ip = determine_local_ip(&cluster_assignment, self_id)?;
+    let local_peer_assignment = cluster_assignment.assignments.iter().find(|assignment| {
+        assignment.peer_id == self_id
+    }).ok_or(Error::LocalPeerAssignmentNotFound { self_id })?;
+
+    let local_ip = local_peer_assignment.vpn_address;
+
     let is_leader = cluster_assignment.leader == self_id;
 
     if is_leader {
@@ -119,7 +124,7 @@ fn determine_leader_ip(cluster_assignment: &ClusterAssignment) -> Result<IpAddr,
 
         is_leader
             .then_some(peer_assignment.vpn_address)
-    }).ok_or(Error::IpAddressNotDeterminable { kind: IpErrorKind::Leader })?;
+    }).ok_or(Error::LeaderIpAddressNotDeterminable)?;
 
     Ok(leader_ip)
 }
@@ -131,13 +136,26 @@ fn require_ipv4_for_gre(ip_address: IpAddr) -> Result<Ipv4Addr, Error> {
     }
 }
 
+// TODO: Use some proper way to determine whether an interface is an Ethernet or a CAN one
+fn get_own_ethernet_interfaces(cluster_assignment: &ClusterAssignment,
+    self_id: PeerId) -> Result<Vec<NetworkInterfaceName>, Error> {
+
+    let own_cluster_assignment = cluster_assignment.assignments.iter().find(|assignment| assignment.peer_id == self_id).unwrap();
+
+    let own_ethernet_interfaces: Vec<NetworkInterfaceName> = own_cluster_assignment.device_interfaces.iter()
+        .filter(|interface| !interface.name().contains("can"))
+        .cloned()
+        .collect();
+
+    Ok(own_ethernet_interfaces)
+}
+
 fn get_own_can_interfaces(
     cluster_assignment: &ClusterAssignment,
     self_id: PeerId) -> Result<Vec<NetworkInterfaceName>, Error>{
 
     let own_cluster_assignment = cluster_assignment.assignments.iter().find(|assignment| assignment.peer_id == self_id).unwrap();
 
-    // TODO: Use some proper way to determine whether an interface is a CAN one or not
     let own_can_interfaces: Vec<NetworkInterfaceName> = own_cluster_assignment.device_interfaces.iter()
         .filter(|interface| interface.name().contains("can"))
         .cloned()
