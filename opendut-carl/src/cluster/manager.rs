@@ -247,17 +247,21 @@ mod test {
     use opendut_types::util::net::NetworkInterfaceName;
 
     use crate::actions::{CreateClusterConfigurationParams, StorePeerDescriptorParams};
-    use crate::peer::broker::PeerMessagingBroker;
+    use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
     use crate::resources::manager::ResourcesManager;
+    use crate::settings;
 
     use super::*;
 
     #[tokio::test]
     async fn deploy_cluster() -> anyhow::Result<()> {
 
+        let settings = settings::load_defaults()?;
+
         let resources_manager = Arc::new(ResourcesManager::new());
         let broker = Arc::new(PeerMessagingBroker::new(
             Arc::clone(&resources_manager),
+            PeerMessagingBrokerOptions::load(&settings.config)?,
         ));
 
         let testee = ClusterManager::new(
@@ -378,9 +382,12 @@ mod test {
     #[tokio::test]
     async fn deploy_should_fail_for_unknown_cluster() -> anyhow::Result<()> {
 
+        let settings = settings::load_defaults()?;
+
         let resources_manager = Arc::new(ResourcesManager::new());
         let broker = Arc::new(PeerMessagingBroker::new(
             Arc::clone(&resources_manager),
+            PeerMessagingBrokerOptions::load(&settings.config)?,
         ));
 
         let testee = ClusterManager::new(

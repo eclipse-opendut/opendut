@@ -16,6 +16,9 @@ client_id = "opendut-lea-client"
 issuer_url = "https://keycloak/realms/opendut"
 scopes = "openid,profile,email"
 
+[peer]
+disconnect.timeout.ms = 30000
+
 [serve]
 ui.directory = "opendut-lea/"
 
