@@ -100,10 +100,9 @@ impl TheoEnvMap {
         let cluster_suffix = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).expect("Failed to get time since epoch").as_secs().to_string();
         env_map.insert(TheoDynamicEnvVars::OpendutEdgarClusterName.to_string(), format!("cluster{}", cluster_suffix));
         if running_in_opendut_vm() {
-            println!("Running in virtual machine '{}': Automatically exposing ports!", OPENDUT_VM_NAME);
+            println!("Running in virtual machine '{}'. Automatically exposing ports within the virtual machine!", OPENDUT_VM_NAME);
             env_map.insert(TheoDynamicEnvVars::OpendutExposePorts.to_string(), "true".to_string());
         } else {
-            println!("Firefox only available on localhost.");
             env_map.insert(TheoDynamicEnvVars::OpendutExposePorts.to_string(), "false".to_string());
         }
 

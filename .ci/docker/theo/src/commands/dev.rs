@@ -3,7 +3,7 @@ use clap::ArgAction;
 
 use crate::commands::vagrant::running_in_opendut_vm;
 use crate::core::carl_config::{print_carl_config_env, print_carl_config_toml};
-use crate::core::docker::{DockerCommand, DockerCoreServices, start_netbird};
+use crate::core::docker::{DockerCommand, DockerCoreServices, show_error_if_unhealthy_containers_were_found, start_netbird};
 use crate::core::docker::compose::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_up_expose_ports};
 use crate::core::project::load_theo_environment_variables;
 
@@ -55,6 +55,8 @@ impl DevCli {
                 docker_compose_down(DockerCoreServices::Carl.as_str(), false)?;
 
                 start_carl_traefik_forwarder()?;
+
+                show_error_if_unhealthy_containers_were_found()?;
             }
             TaskCli::Stop => {
                 docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), false)?;

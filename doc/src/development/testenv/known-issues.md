@@ -61,3 +61,31 @@ vagrant provision
 
 ## Ctrl+C in Vagrant SSH
 When using `cargo theo vagrant ssh` on Windows and pressing `Ctrl+C` to terminate a command, the ssh session may be closed.
+
+
+## Netbird management invalid credentials
+
+If keycloak was re-provisioned after the netbird management server, 
+the management server may not be able to authenticate with keycloak anymore.
+```
+# docker logs netbird-management-1
+[...]
+2024-02-14T09:51:57Z WARN management/server/account.go:1174: user 59896d1b-45e6-48bb-ae79-aa17d5a2af94 not found in IDP
+2024-02-14T09:51:57Z ERRO management/server/http/middleware/access_control.go:46: failed to get user from claims: failed to get account with token claims user 59896d1b-45e6-48bb-ae79-aa17d5a2af94 not found in the IdP
+
+docker logs edgar-leader
+[...]
+Failed to create new peer.
+[...]
+  Received status code indicating an error: HTTP status client error (403 Forbidden) for url (http://netbird-management/api/groups)
+```
+This may be fixed by destroying the netbird service:
+```shell
+cargo theo testenv destroy --service netbird
+```
+Afterward you may restart the netbird service:
+```shell
+cargo theo testenv start
+# or 
+cargo theo dev start
+```
