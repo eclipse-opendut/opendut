@@ -170,7 +170,7 @@ pub async fn list_peer_descriptors(params: ListPeerDescriptorsParams) -> Result<
 
         let resources_manager = params.resources_manager;
 
-        log::debug!("Querying all peers descriptors.");
+        log::debug!("Querying all peer descriptors.");
 
         let peers = resources_manager.resources(|resources| {
             resources.iter::<PeerDescriptor>()
@@ -178,7 +178,7 @@ pub async fn list_peer_descriptors(params: ListPeerDescriptorsParams) -> Result<
                 .collect::<Vec<PeerDescriptor>>()
         }).await;
 
-        log::info!("Successfully queried all peers descriptors.");
+        log::info!("Successfully queried all peer descriptors.");
 
         Ok(peers)
     }
