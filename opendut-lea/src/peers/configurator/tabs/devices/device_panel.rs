@@ -1,6 +1,6 @@
 use leptos::{component, create_read_slice, create_slice, IntoView, MaybeSignal, RwSignal, SignalGet, SignalGetUntracked, view};
 
-use opendut_types::topology::{DeviceDescription, DeviceId};
+use opendut_types::topology::{DeviceDescription, DeviceId, DeviceName, IllegalDeviceName};
 use opendut_types::util::net::NetworkInterfaceName;
 
 use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, IconButton, ReadOnlyInput, Toggled, UserInput, UserInputValue, UserTextarea};
@@ -113,11 +113,34 @@ fn DeviceNameInput(
     );
 
     let validator = |input: String| {
-        if input.is_empty() {
-            UserInputValue::Left(String::from(EMPTY_DEVICE_NAME_ERROR_MESSAGE))
-        }
-        else {
-            UserInputValue::Right(input)
+        match DeviceName::try_from(input) {
+            Ok(name) => {
+                UserInputValue::Right(String::from(name.value()))
+            }
+            Err(cause) => {
+                match cause {
+                    IllegalDeviceName::TooShort { expected, actual, value } => {
+                        if actual > 0 {
+                            UserInputValue::Both(format!("A device name must be at least {} characters long.", expected), value)
+
+                        }
+                        else {
+                            UserInputValue::Both(String::from(EMPTY_DEVICE_NAME_ERROR_MESSAGE), value)
+                        }
+                    },
+                    IllegalDeviceName::TooLong { expected, value, .. } => {
+                        UserInputValue::Both(format!("A device name must be at most {} characters long.", expected), value)
+                    },
+                    IllegalDeviceName::InvalidStartEndCharacter { value } => {
+                        UserInputValue::Both("The device name starts/ends with an invalid character. \
+                        Valid characters are a-z, A-Z and 0-9.".to_string(), value)
+                    }
+                    IllegalDeviceName::InvalidCharacter { value } => {
+                        UserInputValue::Both("The device name contains invalid characters. \
+                        Valid characters are a-z, A-Z, 0-9 and _-".to_string(), value)
+                    }
+                }
+            }
         }
     };
 
