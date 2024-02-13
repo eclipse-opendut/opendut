@@ -19,6 +19,7 @@ async fn register_edgar_carl() -> Result<()> {
         .set_override("network.bind.port", carl_port)?
         .set_override("network.remote.port", carl_port)?
         .set_override("vpn.enabled", false)?
+        .set_override("serve.ui.presence_check", false)?
         .build()?;
     let _ = tokio::spawn(async {
         opendut_carl::create(carl_config_override).await
@@ -28,8 +29,7 @@ async fn register_edgar_carl() -> Result<()> {
     let settings_overrides = Config::builder()
         .set_override(opendut_edgar::common::settings::key::peer::id, PeerId::random().to_string())?
         .set_override("network.carl.port", carl_port)?
-        .set_override("network.connect.retries", 999)?
-        .set_override("network.connect.interval.ms", 100)?
+        .set_override("network.connect.retries", 100)?
         .build()?;
     let edgar_config_override = opendut_edgar::common::settings::load_with_overrides(settings_overrides).unwrap()
         .config;

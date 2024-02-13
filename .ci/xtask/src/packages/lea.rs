@@ -72,7 +72,10 @@ pub mod run {
         install_requirements()?;
 
         Command::new("trunk")
-            .arg("watch")
+            .args([
+                "watch",
+                "--release",
+            ])
             .args(pass_through)
             .current_dir(self_dir())
             .run_requiring_success()?;

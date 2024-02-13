@@ -28,8 +28,9 @@ Vagrant.configure("2") do |config|
     # share the root folder from the host (relative from where the Vagrantfile is located)
     config.vm.synced_folder ".", repo_root, disabled: false, SharedFoldersEnableSymlinksCreate: false
 
-    # normal user is allowed to forward ports > 1024
+    # normal user is allowed to forward ports > 1024, restrict host_ip to localhost only (avoids publishing to all interfaces)
     config.vm.network :forwarded_port, guest: 3000, host: 3000, host_ip: "127.0.0.1"
+    config.vm.network :forwarded_port, guest: 8081, host: 8081, host_ip: "127.0.0.1"
 
     config.vm.provider "virtualbox" do |vb|
         vb.name = machine[:hostname]

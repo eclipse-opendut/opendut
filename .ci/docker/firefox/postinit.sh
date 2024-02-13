@@ -25,7 +25,7 @@ if [ ! -e "/config/.firstrun" ]; then
   echo "First run, opening a bunch of sites"
   touch /config/.firstrun
   # abc is the user firefox runs as
-  su - abc -c 'DISPLAY=:1 firefox http://keycloak'
+  su - abc -c 'DISPLAY=:1 firefox https://keycloak'
   su - abc -c 'DISPLAY=:1 firefox http://netbird-ui'
   su - abc -c 'DISPLAY=:1 firefox https://carl'
 fi

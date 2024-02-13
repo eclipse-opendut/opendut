@@ -12,12 +12,11 @@ use opendut_carl_api::proto::services::peer_messaging_broker::{AssignCluster, Do
 use opendut_carl_api::proto::services::peer_messaging_broker::downstream::Message;
 use opendut_types::cluster::ClusterAssignment;
 use opendut_types::peer::PeerId;
-use opendut_types::util::net::NetworkInterfaceName;
 use opendut_util::logging;
 
 use crate::common::{carl, settings};
 use crate::service::network_interface::manager::{NetworkInterfaceManager, NetworkInterfaceManagerRef};
-use crate::service::vpn;
+use crate::service::{cluster_assignment, vpn};
 
 const BANNER: &str = r"
                          _____     _______
@@ -59,10 +58,6 @@ pub async fn create(settings_override: Config) -> anyhow::Result<()> {
 
     let bridge_name = crate::common::default_bridge_name();
 
-    if network_interface_management_enabled {
-        create_bridge(&bridge_name, Arc::clone(&network_interface_manager)).await?;
-    }
-
     let remote_address = vpn::retrieve_remote_host(&settings).await?;
 
     log::debug!("Connecting to CARL...");
@@ -103,12 +98,16 @@ pub async fn create(settings_override: Config) -> anyhow::Result<()> {
                         log::trace!("Received ClusterAssignment: {cluster_assignment:?}");
                         log::info!("Was assigned to cluster <{}>", cluster_assignment.id);
 
-                        crate::service::cluster_assignment::handle(
-                            cluster_assignment,
-                            id,
-                            &bridge_name,
-                            Arc::clone(&network_interface_manager),
-                        ).await?;
+                        if network_interface_management_enabled {
+                            cluster_assignment::network_interfaces_setup(
+                                cluster_assignment,
+                                id,
+                                &bridge_name,
+                                Arc::clone(&network_interface_manager),
+                            ).await?;
+                        } else {
+                            log::debug!("Skipping changes to network interfaces after receiving ClusterAssignment, as this is disabled via configuration.");
+                        }
                     }
                     _ => ignore(message),
                 }
@@ -117,21 +116,6 @@ pub async fn create(settings_override: Config) -> anyhow::Result<()> {
         } else {
             ignore(message)
         }
-    }
-
-    Ok(())
-}
-
-async fn create_bridge(bridge_name: &NetworkInterfaceName, network_interface_manager: NetworkInterfaceManagerRef) -> anyhow::Result<()> {
-
-    if network_interface_manager.find_interface(bridge_name).await?.is_none() {
-        log::debug!("Creating bridge '{bridge_name}'.");
-        crate::service::network_interface::bridge::create(
-            bridge_name,
-            network_interface_manager,
-        ).await?;
-    } else {
-        log::debug!("Not creating bridge '{bridge_name}', because it already exists.");
     }
 
     Ok(())

@@ -17,10 +17,9 @@ services:
     volumes:
       - "../../../resources/development/tls/:/etc/opendut-network/tls/:ro"
 
-    #ports:
-    #  - "127.0.0.1:8082:8080"  # traefik dashboard
     networks:
       opendutnet:
+        ipv4_address: 192.168.32.200
         aliases:
           - carl
 

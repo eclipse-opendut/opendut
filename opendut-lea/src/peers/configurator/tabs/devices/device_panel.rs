@@ -1,8 +1,9 @@
-use leptos::{component, create_read_slice, create_slice, event_target_value, IntoView, MaybeSignal, RwSignal, SignalGet, SignalGetUntracked, view};
-use opendut_types::topology::DeviceId;
+use leptos::{component, create_read_slice, create_slice, IntoView, MaybeSignal, RwSignal, SignalGet, SignalGetUntracked, view};
+
+use opendut_types::topology::{DeviceDescription, DeviceId};
 use opendut_types::util::net::NetworkInterfaceName;
 
-use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, IconButton, ReadOnlyInput, Toggled, UserInput, UserInputValue};
+use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, IconButton, ReadOnlyInput, Toggled, UserInput, UserInputValue, UserTextarea};
 use crate::peers::configurator::types::{EMPTY_DEVICE_NAME_ERROR_MESSAGE, UserDeviceConfiguration};
 
 #[component]
@@ -27,7 +28,6 @@ where
                     <ReadOnlyInput label="ID" value=device_id_string />
                     <DeviceNameInput device_configuration />
                     <DeviceInterfaceInput device_configuration />
-                    <DeviceLocationInput device_configuration />
                     <DeviceDescriptionInput device_configuration />
                 </div>
             </div>
@@ -98,7 +98,7 @@ where
     }
 }
 
-#[component(transparent)]
+#[component]
 fn DeviceNameInput(
     device_configuration: RwSignal<UserDeviceConfiguration>,
 ) -> impl IntoView {
@@ -132,7 +132,7 @@ fn DeviceNameInput(
     }
 }
 
-#[component(transparent)]
+#[component]
 fn DeviceInterfaceInput(
     device_configuration: RwSignal<UserDeviceConfiguration>,
 ) -> impl IntoView {
@@ -169,36 +169,7 @@ fn DeviceInterfaceInput(
     }
 }
 
-#[component(transparent)]
-fn DeviceLocationInput(
-    device_configuration: RwSignal<UserDeviceConfiguration>,
-) -> impl IntoView {
-
-    let (getter, setter) = create_slice(device_configuration,
-        |device_configuration| {
-            Clone::clone(&device_configuration.location)
-        },
-        |device_configuration, value| {
-            device_configuration.location = value;
-        }
-    );
-
-    let validator = |input: String| {
-        UserInputValue::Right(input)
-    };
-
-    view! {
-        <UserInput
-            getter=getter
-            setter=setter
-            label="Location"
-            placeholder="Ulm, Germany"
-            validator
-        />
-    }
-}
-
-#[component(transparent)]
+#[component]
 fn DeviceDescriptionInput(
     device_configuration: RwSignal<UserDeviceConfiguration>
 ) -> impl IntoView {
@@ -212,20 +183,25 @@ fn DeviceDescriptionInput(
         }
     );
 
+    let validator = |input: String| {
+        match DeviceDescription::try_from(Clone::clone(&input)) {
+            Err(error) => {
+                UserInputValue::Both(error.to_string(), input)
+            }
+            Ok(_) => {
+                UserInputValue::Right(input)
+            }
+        }
+    };
+
     view! {
-        <div class="field">
-            <label class="label">"Description"</label>
-            <div class="control">
-                <textarea
-                    class="textarea"
-                    aria-label="Description"
-                    prop:value=getter
-                    on:input=move |event| {
-                        setter.set(event_target_value(&event));
-                    }
-                />
-            </div>
-        </div>
+        <UserTextarea
+            getter=getter
+            setter=setter
+            label="Description"
+            placeholder="Description"
+            validator
+        />
     }
 }
 

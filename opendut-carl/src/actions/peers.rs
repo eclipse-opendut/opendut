@@ -4,15 +4,15 @@ use std::sync::Arc;
 use url::Url;
 
 pub use opendut_carl_api::carl::peer::{
-    StorePeerDescriptorError,
     DeletePeerDescriptorError,
+    IllegalDevicesError,
     ListDevicesError,
     ListPeerDescriptorsError,
-    IllegalDevicesError,
+    StorePeerDescriptorError,
 };
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerSetup};
-use opendut_types::topology::{Device, DeviceId};
-use opendut_types::vpn::VpnPeerConfig;
+use opendut_types::topology::{DeviceDescriptor, DeviceId};
+use opendut_types::vpn::VpnPeerConfiguration;
 use opendut_util::ErrorOr;
 use opendut_util::logging::LogError;
 
@@ -39,7 +39,7 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
             let old_peer_descriptor = resources.get::<PeerDescriptor>(peer_id);
             let is_new_peer = old_peer_descriptor.is_none();
 
-            let (devices_to_add, devices_to_remove): (Vec<Device>, Vec<Device>) = if let Some(old_peer_descriptor) = old_peer_descriptor {
+            let (devices_to_add, devices_to_remove): (Vec<DeviceDescriptor>, Vec<DeviceDescriptor>) = if let Some(old_peer_descriptor) = old_peer_descriptor {
                 log::debug!("Updating peer descriptor of '{peer_name}' <{peer_id}>.\n  Old: {old_peer_descriptor:?}\n  New: {peer_descriptor:?}");
                 let devices_to_add = peer_descriptor.topology.devices.iter()
                     .filter(|device| old_peer_descriptor.topology.devices.contains(device).not())
@@ -52,7 +52,7 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
             }
             else {
                 log::debug!("Storing peer descriptor of '{peer_name}' <{peer_id}>.\n  {peer_descriptor:?}");
-                (peer_descriptor.topology.devices.to_vec(), Vec::<Device>::new())
+                (peer_descriptor.topology.devices.to_vec(), Vec::<DeviceDescriptor>::new())
             };
 
             devices_to_remove.iter().for_each(|device| {
@@ -192,16 +192,16 @@ pub struct ListDevicesParams {
     pub resources_manager: ResourcesManagerRef,
 }
 
-pub async fn list_devices(params: ListDevicesParams) -> Result<Vec<Device>, ListDevicesError> {
+pub async fn list_devices(params: ListDevicesParams) -> Result<Vec<DeviceDescriptor>, ListDevicesError> {
 
-    async fn inner(params: ListDevicesParams) -> Result<Vec<Device>, ListDevicesError> {
+    async fn inner(params: ListDevicesParams) -> Result<Vec<DeviceDescriptor>, ListDevicesError> {
 
         let resources_manager = params.resources_manager;
 
         log::debug!("Querying all devices.");
 
         let devices = resources_manager.resources(|resource| {
-            resource.iter::<Device>().cloned().collect::<Vec<_>>()
+            resource.iter::<DeviceDescriptor>().cloned().collect::<Vec<_>>()
         }).await;
 
         log::info!("Successfully queried all peers.");
@@ -213,7 +213,7 @@ pub async fn list_devices(params: ListDevicesParams) -> Result<Vec<Device>, List
         .log_err()
 }
 
-pub struct CreatePeerSetupParams {
+pub struct GeneratePeerSetupParams {
     pub resources_manager: ResourcesManagerRef,
     pub peer: PeerId,
     pub carl_url: Url,
@@ -221,7 +221,7 @@ pub struct CreatePeerSetupParams {
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum CreatePeerSetupError {
+pub enum GeneratePeerSetupError {
     #[error("A PeerSetup for peer <{0}> could not be create, because a peer with that ID does not exist!")]
     PeerNotFound(PeerId),
     #[error("An internal error occurred while creating a PeerSetup for peer '{peer_name}' <{peer_id}>:\n  {cause}")]
@@ -232,32 +232,32 @@ pub enum CreatePeerSetupError {
     }
 }
 
-pub async fn create_peer_setup(params: CreatePeerSetupParams) -> Result<PeerSetup, CreatePeerSetupError> {
+pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<PeerSetup, GeneratePeerSetupError> {
 
-    async fn inner(params: CreatePeerSetupParams) -> Result<PeerSetup, CreatePeerSetupError> {
+    async fn inner(params: GeneratePeerSetupParams) -> Result<PeerSetup, GeneratePeerSetupError> {
 
         let peer_id = params.peer;
 
-        log::debug!("Creating PeerSetup for peer <{peer_id}>");
+        log::debug!("Generating PeerSetup for peer <{peer_id}>");
 
         let peer_descriptor = params.resources_manager.get::<PeerDescriptor>(peer_id).await
-            .ok_or(CreatePeerSetupError::PeerNotFound(peer_id))?;
+            .ok_or(GeneratePeerSetupError::PeerNotFound(peer_id))?;
 
         let peer_name = peer_descriptor.name;
 
         let vpn_config = if let Vpn::Enabled { vpn_client } = &params.vpn {
             log::debug!("Retrieving VPN configuration for peer <{peer_id}>.");
-            let vpn_config = vpn_client.get_or_create_configuration(params.peer).await
-                .map_err(|cause| CreatePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), cause: cause.to_string() })?;
+            let vpn_config = vpn_client.generate_vpn_peer_configuration(params.peer).await
+                .map_err(|cause| GeneratePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), cause: cause.to_string() })?;
             log::info!("Successfully retrieved vpn configuration for peer <{peer_id}>.");
             vpn_config
         }
         else {
             log::warn!("VPN is disabled. PeerSetup for peer '{peer_name}' <{peer_id}> will not contain any VPN information!");
-            VpnPeerConfig::Disabled
+            VpnPeerConfiguration::Disabled
         };
 
-        log::debug!("Successfully created peer setup for peer '{peer_name}' <{peer_id}>.");
+        log::debug!("Successfully generated peer setup for peer '{peer_name}' <{peer_id}>.");
 
         Ok(PeerSetup {
             id: peer_id,
@@ -276,8 +276,8 @@ mod test {
 
     use rstest::*;
 
-    use opendut_types::peer::PeerName;
-    use opendut_types::topology::Topology;
+    use opendut_types::peer::{PeerLocation, PeerName};
+    use opendut_types::topology::{DeviceDescription, DeviceName, Topology};
     use opendut_types::util::net::NetworkInterfaceName;
 
     use crate::resources::manager::ResourcesManager;
@@ -287,6 +287,8 @@ mod test {
     mod store_peer_descriptor {
         use googletest::prelude::*;
         use rstest::*;
+
+        use opendut_types::topology::{DeviceDescription, DeviceName};
         use opendut_types::util::net::NetworkInterfaceName;
 
         use super::*;
@@ -304,15 +306,14 @@ mod test {
             }).await?;
 
             assert_that!(resources_manager.get::<PeerDescriptor>(fixture.peer_a_id).await.as_ref(), some(eq(&fixture.peer_a_descriptor)));
-            assert_that!(resources_manager.get::<Device>(fixture.peer_a_device_1).await.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[0])));
-            assert_that!(resources_manager.get::<Device>(fixture.peer_a_device_2).await.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[1])));
+            assert_that!(resources_manager.get::<DeviceDescriptor>(fixture.peer_a_device_1).await.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[0])));
+            assert_that!(resources_manager.get::<DeviceDescriptor>(fixture.peer_a_device_2).await.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[1])));
 
             let additional_device_id = DeviceId::random();
-            let additional_device = Device {
+            let additional_device = DeviceDescriptor {
                 id: additional_device_id,
-                name: String::from("PeerA Device 42"),
-                description: String::from("Additional device for peerA"),
-                location: String::from("somewhere"),
+                name: DeviceName::try_from("PeerA_Device_42").unwrap(),
+                description: DeviceDescription::try_from("Additional device for peerA").ok(),
                 interface: NetworkInterfaceName::try_from("eth1").unwrap(),
                 tags: vec![],
             };
@@ -359,21 +360,20 @@ mod test {
         let peer_a_descriptor = PeerDescriptor {
             id: peer_a_id,
             name: PeerName::try_from("PeerA").unwrap(),
+            location: PeerLocation::try_from("Ulm").ok(),
             topology: Topology {
                 devices: vec![
-                    Device {
+                    DeviceDescriptor {
                         id: peer_a_device_1,
-                        name: String::from("PeerA Device 1"),
-                        description: String::from("Huii"),
-                        location: String::from("Ulm"),
+                        name: DeviceName::try_from("PeerA_Device_1").unwrap(),
+                        description: DeviceDescription::try_from("Huii").ok(),
                         interface: NetworkInterfaceName::try_from("eth0").unwrap(),
                         tags: vec![],
                     },
-                    Device {
+                    DeviceDescriptor {
                         id: peer_a_device_2,
-                        name: String::from("PeerA Device 2"),
-                        description: String::from("Huii"),
-                        location: String::from("Stuttgart"),
+                        name: DeviceName::try_from("PeerA_Device_2").unwrap(),
+                        description: DeviceDescription::try_from("Huii").ok(),
                         interface: NetworkInterfaceName::try_from("eth1").unwrap(),
                         tags: vec![],
                     }

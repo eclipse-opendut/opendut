@@ -2,12 +2,13 @@ pub use devices::DevicesTab;
 pub use general::GeneralTab;
 pub use setup::SetupTab;
 
-mod general;
 mod devices;
+mod general;
 mod setup;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum TabIdentifier {
+    #[default]
     General,
     Devices,
     Setup,
@@ -27,12 +28,6 @@ impl TabIdentifier {
     }
 }
 
-impl Default for TabIdentifier {
-    fn default() -> Self {
-        TabIdentifier::General
-    }
-}
-
 impl TryFrom<&str> for TabIdentifier {
     type Error = InvalidTabIdentifier;
 
@@ -41,7 +36,9 @@ impl TryFrom<&str> for TabIdentifier {
             TabIdentifier::GENERAL_STR => Ok(TabIdentifier::General),
             TabIdentifier::DEVICES_STR => Ok(TabIdentifier::Devices),
             TabIdentifier::SETUP_STR => Ok(TabIdentifier::Setup),
-            _ => Err(InvalidTabIdentifier { value: String::from(value) }),
+            _ => Err(InvalidTabIdentifier {
+                value: String::from(value),
+            }),
         }
     }
 }

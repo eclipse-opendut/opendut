@@ -13,15 +13,38 @@ jobs:
     runs-on: ${{ fromJson(inputs.runs-on) }}
     permissions:
       contents: write
+    env:
+      artifacts_pattern: "*-${{ github.sha }}.tar.gz/*,opendut-sbom/*"
     steps:
-    - name: Checkout Sources
-      uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
-
-    - name: Download Artifacts
-      uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
+    - name: Download Application Artifacts
+      uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
       with:
-        pattern: "./target/ci/distribution/*/*-${{ github.sha }}.tar.gz"  # all packages from all targets
+        pattern: "*-${{ github.sha }}.tar.gz"
+
+    - name: Download SBOM Files
+      uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
+      with:
+        pattern: "opendut-sbom"
+
+    - run: |
+        cd /home/runner/work/opendut/opendut/opendut-sbom
+        echo "Create ZIP with SBOM of LEA, CARL, EDGAR and CLEO into opendut-sbom.zip"
+        zip opendut-sbom.zip opendut-carl-sbom.spdx.json opendut-lea-sbom.spdx.json opendut-edgar-sbom.spdx.json opendut-cleo-sbom.spdx.json
+        echo "Deleting all no longer needed files with extension .spdx.json"
+        find . -type f -name '*.spdx.json' -delete
 
     - uses: ncipollo/release-action@6c75be85e571768fa31b40abf38de58ba0397db5
+      name: "Create Versioned Release"
+      if: ${{ github.ref != 'refs/tags/canary' }}
       with:
-        artifacts: "*-${{ github.sha }}.tar.gz/*"
+        artifacts: ${{ env.artifacts_pattern }}
+
+    - uses: ncipollo/release-action@6c75be85e571768fa31b40abf38de58ba0397db5
+      name: "Create Canary Release"
+      if: ${{ github.ref == 'refs/tags/canary' }}
+      with:
+        name: "Canary"
+        body: "Unstable release, intended for testing."
+        prerelease: true
+        allowUpdates: true  # overwrite existing canary release
+        artifacts: ${{ env.artifacts_pattern }}

@@ -1,10 +1,14 @@
 use std::collections::HashSet;
+use std::ops::Not;
+
 use leptos::*;
 
-use opendut_types::topology::{Device, DeviceId};
-use crate::app::{ExpectGlobals, use_app_globals};
+use opendut_types::peer::PeerId;
+use opendut_types::topology::{DeviceDescriptor, DeviceId};
 
+use crate::clusters::configurator::components::{get_all_peers, get_all_selected_devices};
 use crate::clusters::configurator::types::UserClusterConfiguration;
+use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
 use crate::util::{Ior, NON_BREAKING_SPACE};
 
 pub type DeviceSelectionError = String;
@@ -12,22 +16,17 @@ pub type DeviceSelection = Ior<DeviceSelectionError, HashSet<DeviceId>>;
 
 #[component]
 pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>) -> impl IntoView {
+    let peer_descriptors = get_all_peers();
 
-    let globals = use_app_globals();
-
-    let getter = create_read_slice(cluster_configuration,
-        |config| {
-            Clone::clone(&config.devices)
+    let (getter, setter) = create_slice(
+        cluster_configuration,
+        |config| Clone::clone(&config.devices),
+        |config, input| {
+            config.devices = input;
         },
     );
 
-    let devices: Resource<(), Vec<Device>> = create_local_resource(|| {}, move |_| {
-        async move {
-            let mut carl = globals.expect_client();
-            carl.peers.list_devices().await
-                .expect("Failed to request the list of devices.")
-        }
-    });
+    let selected_devices = move || get_all_selected_devices(getter);
 
     let help_text = move || {
         getter.with(|selection| match selection {
@@ -37,144 +36,163 @@ pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
         })
     };
 
-    let table = move || {
-        devices.with(|devices| devices.as_ref().map(|devices| {
-            if devices.is_empty() {
-                view! {
-                    <div class="notification is-warning is-light">
-                        <p>"No devices available."</p>
-                    </div>
-                }
-            }
-            else {
-                let rows = devices.iter().map(|device| {
-                    let device_id = device.id;
-                    view! {
-                        <Row
-                            name={ Clone::clone(&device.name) }
-                            description={ Clone::clone(&device.description) }
-                            tags={ Clone::clone(&device.tags) }
-                            on_change=move |selected| {
-                                cluster_configuration.update(|configuration| {
-                                    match configuration.devices.as_mut() {
-                                        Ior::Left(_) => {
-                                            if selected {
-                                                configuration.devices = Ior::Both(String::from("Select at least one more device."), HashSet::from([device_id]));
-                                            }
-                                        },
-                                        Ior::Right(devices) | Ior::Both(_, devices) => {
-                                            if selected {
-                                                devices.insert(device_id);
-                                            }
-                                            else {
-                                                devices.remove(&device_id);
-                                            }
-                                            match devices.len() {
-                                                0 => configuration.devices = Ior::Left(String::from("Select at least two devices.")),
-                                                1 => configuration.devices = Ior::Both(String::from("Select at least one more device."), Clone::clone(devices)),
-                                                _ => configuration.devices = Ior::Right(Clone::clone(devices)),
-                                            }
-                                        },
-                                    }
-                                });
-                            }
-                        />
-                    }
-                }).collect::<Vec<_>>();
+    let rows = move || {
+        let mut all_devices_by_peer: Vec<_> = Vec::new();
 
-                view! {
-                    <div>
-                        <p class="help has-text-danger">{ help_text }</p>
-                        <div class="control">
-                            <table class="table is-hoverable is-fullwidth">
-                                <thead>
-                                    <tr>
-                                        <th></th>
-                                        <th>"Name"</th>
-                                        <th>"Description"</th>
-                                        <th>"Tags"</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    { rows }
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                }
+        for peer in peer_descriptors.get().unwrap_or_default() {
+            let mut devices = peer.topology.devices;
+            let selected_devices = selected_devices();
+
+            devices.sort_by(|a, b|
+                a.name.value().to_lowercase().cmp(&b.name.value().to_lowercase()));
+
+            let devices_per_peer = devices.clone().into_iter()
+                .map(|device| {
+                    let collapsed_signal = create_rw_signal(true);
+                    let collapse_button_icon = MaybeSignal::derive(move || if collapsed_signal.get() { FontAwesomeIcon::ChevronDown } else {FontAwesomeIcon::ChevronUp} );
+                    let selected_signal = create_rw_signal(selected_devices.contains(&device.id));
+                    view! {
+                        <tr>
+                            <td class="is-narrow">
+                                <IconButton
+                                    icon=collapse_button_icon
+                                    color=ButtonColor::White
+                                    size=ButtonSize::Small
+                                    state=ButtonState::Enabled
+                                    label="Show or hide device details"
+                                    on_action=move || collapsed_signal.update(|collapsed| *collapsed = collapsed.not())
+                                />
+                            </td>
+                            <td>
+                                {&device.name.to_string()}
+                            </td>
+                            <td>{peer.location.clone().unwrap_or_default().to_string()}</td>
+                            <td class="is-narrow">
+                                <IconButton
+                                    icon=FontAwesomeIcon::Check
+                                    color=MaybeSignal::derive(move || match selected_signal.get() {
+                                        false => ButtonColor::Light,
+                                        true => ButtonColor::Success,
+                                    })
+                                    size=ButtonSize::Small
+                                    state=ButtonState::Enabled
+                                    label="More infos"
+                                    on_action=move || icon_button_on_action(
+                                        selected_signal,
+                                        getter,
+                                        setter,
+                                        device.id,
+                                    )
+                                />
+                            </td>
+                        </tr>
+                        <tr hidden={collapsed_signal}>
+                            <DeviceInfo
+                                device = device
+                                peer_id = peer.id
+                            />
+                        </tr>
+                    }
+                })
+                .collect::<Vec<_>>();
+
+            for device in devices_per_peer {
+                all_devices_by_peer.push(device);
             }
-        }))
+        }
+        all_devices_by_peer
     };
 
     view! {
-        <div class="field pt-2">
-            <label class="label">"Devices"</label>
-            <Suspense fallback=move || view! { <p>"Loading..."</p> }>
-                { table }
-            </Suspense>
+        <p class="help has-text-danger">{ help_text }</p>
+        <div class="table-container mt-2">
+            <table class="table is-fullwidth">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Name</th>
+                        <th>Peer Location</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                    <tbody>
+                        { rows }
+                    </tbody>
+            </table>
         </div>
     }
 }
 
 #[component]
-fn Row<F>(
-    name: String,
-    description: String,
-    tags: Vec<String>,
-    on_change: F,
-) -> impl IntoView
-where F: Fn(bool) + 'static {
-
-    let tags = move || {
-        tags.iter()
-            .map(|tag| {
-                view! {
-                    <span class="tag is-info is-light">{ tag }</span>
-                }
-            })
-            .collect::<Vec<_>>()
-    };
-
-    let (is_selected, set_selected) = create_signal(false);
-
-    let checkbox_aria_label = {
-        let name = Clone::clone(&name);
-        move || {
-            if is_selected.get() {
-                format!("Deselect device {}", name)
-            }
-            else {
-                format!("Select device {}", name)
-            }
-        }
-    };
-
-    create_effect(move |_| {
-        on_change(is_selected.get());
-    });
-
+pub fn DeviceInfo(device: DeviceDescriptor, peer_id: PeerId) -> impl IntoView {
     view! {
-            <tr
-                class="is-clickable"
-                on:click={
-                    move |_| {
-                        set_selected.update(|value| *value = !*value);
-                    }
-                }
-            >
-                <td>
-                    <input
-                        type="checkbox"
-                        checked=move || { is_selected.get() }
-                        aria-label={ checkbox_aria_label }
-                        on:input=move |ev| {
-                            set_selected.update(|value| *value = event_target_checked(&ev));
-                        }
-                    />
-                </td>
-                <td>{ name }</td>
-                <td>{ description }</td>
-                <td><div class="tags">{ tags }</div></td>
-            </tr>
+        <td></td>
+        <td colspan="3">
+            <div class="field">
+                <label class="label">ID</label>
+                <div class="control">
+                    <p>{device.id.to_string()}</p>
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">Peer ID</label>
+                <div class="control">
+                    <p>{peer_id.to_string()}</p>
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">Interface</label>
+                <div class="control">
+                    <p>{device.interface.name()}</p>
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">Tags</label>
+                <div class="control">
+                    <p>{device.tags.iter().map(|tag| tag.value()).collect::<Vec<_>>().join("* ")}</p>
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">Description</label>
+                <div class="control">
+                    <p>{device.description.unwrap_or_default().to_string()}</p>
+                </div>
+            </div>
+        </td>
+    }
+}
+
+pub fn icon_button_on_action(
+    selected_signal: RwSignal<bool>,
+    getter: Signal<DeviceSelection>,
+    setter: SignalSetter<DeviceSelection>,
+    device_id: DeviceId,
+) {
+    selected_signal.update(|selected| *selected = selected.not());
+    let insert = selected_signal.get();
+    let device_selection = match getter.get() {
+        DeviceSelection::Left(error) => {
+            if insert {
+                Ior::Both(
+                    String::from("Select at least one more device."),
+                    HashSet::from([device_id]),
+                )
+            } else {
+                Ior::Left(error)
+            }
         }
+        DeviceSelection::Right(mut devices) | DeviceSelection::Both(_, mut devices) => {
+            if insert {
+                devices.insert(device_id);
+            } else {
+                devices.remove(&device_id);
+            }
+            match devices.len() {
+                0 => Ior::Left(String::from("Select at least two devices.")),
+                1 => Ior::Both(String::from("Select at least one more device."), devices),
+                _ => Ior::Right(devices),
+            }
+        }
+    };
+    setter.set(device_selection);
 }

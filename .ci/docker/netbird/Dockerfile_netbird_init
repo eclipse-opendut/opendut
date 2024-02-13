@@ -12,6 +12,10 @@ ARG PGROUP
 
 RUN apt update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata ca-certificates curl jq && rm -rf /var/lib/apt/lists/*
 
+# add the insecure development CA to the trust store
+COPY ./resources/development/tls/insecure-development-ca.pem /usr/local/share/ca-certificates/insecure-development-ca.crt
+RUN update-ca-certificates
+
 COPY ./.ci/docker/netbird/netbird-api-functions.sh /netbird-api-functions.sh
 COPY ./.ci/docker/netbird/netbird-api-init.sh /netbird-api-init.sh
 

@@ -143,6 +143,6 @@ Open following address in your browser:
 * Services with user interface:
   * https://carl
   * http://netbird-ui
-  * http://keycloak
+  * https://keycloak
 
 

@@ -3,34 +3,35 @@ use clap::ArgAction;
 
 use crate::commands::edgar::TestEdgarCli;
 use crate::core::dist::make_distribution_if_not_present;
-use crate::core::docker::{DockerCommand, DockerCoreServices, start_netbird, start_opendut_firefox_container};
-use crate::core::docker::compose::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_network_delete, docker_compose_up};
+use crate::core::docker::{DockerCommand, DockerCoreServices, start_netbird};
+use crate::core::docker::compose::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_network_delete, docker_compose_up_expose_ports};
 use crate::core::project::load_theo_environment_variables;
 
 /// Build and start test environment.
-#[derive(Debug, clap::Parser)]
+#[derive(clap::Parser)]
 pub struct TestenvCli {
     #[command(subcommand)]
     pub(crate) task: TaskCli,
 }
 
-#[derive(Debug, clap::Subcommand)]
+#[derive(clap::Subcommand)]
 pub enum TaskCli {
-    #[command(about = "Build docker containers.")]
+    /// Build Docker containers.
     Build,
-    #[command(about = "Start test environment.", alias = "up")]
+    /// Start test environment.
+    #[command(alias = "up")]
     Start {
-        /// Expose firefox container port (3000), or set OPENDUT_FIREFOX_EXPOSE_PORT=true
+        /// Expose firefox container port (3000), or set OPENDUT_EXPOSE_PORTS=true
         #[arg(long, short, action = ArgAction::SetTrue)]
         expose: bool,
     },
-    #[command(about = "Stop test environment.")]
+    /// Stop test environment.
     Stop,
-    #[command(about = "Show docker network.")]
+    /// Show Docker network.
     Network,
-    #[command(about = "Destroy test environment.")]
+    /// Destroy test environment.
     Destroy,
-    #[command(about = "Run edgar cluster creation.")]
+    /// Run EDGAR cluster creation.
     Edgar(TestEdgarCli),
 }
 
@@ -54,11 +55,15 @@ impl TestenvCli {
                 docker_compose_network_create()?;
 
                 // start services
-                start_opendut_firefox_container(expose)?;
-                docker_compose_up(DockerCoreServices::Keycloak.as_str())?;
+                docker_compose_up_expose_ports(DockerCoreServices::Firefox.as_str(), expose)?;
+                docker_compose_up_expose_ports(DockerCoreServices::Keycloak.as_str(), expose)?;
                 crate::core::docker::keycloak::wait_for_keycloak_provisioned()?;
                 start_netbird(expose)?;
                 crate::core::docker::netbird::wait_for_netbird_api_key()?;
+
+                println!("Stopping carl traefik forward (if present).");
+                docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), false)?;
+
                 start_carl_in_docker()?;
 
 
@@ -66,6 +71,7 @@ impl TestenvCli {
             }
             TaskCli::Stop => {
                 docker_compose_down(DockerCoreServices::Keycloak.as_str(), false)?;
+                docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), false)?;
                 docker_compose_down(DockerCoreServices::Carl.as_str(), false)?;
                 docker_compose_down(DockerCoreServices::Netbird.as_str(), false)?;
                 docker_compose_down(DockerCoreServices::Firefox.as_str(), false)?;
@@ -75,7 +81,9 @@ impl TestenvCli {
             }
             TaskCli::Destroy => {
                 docker_compose_down(DockerCoreServices::Firefox.as_str(), true)?;
+                docker_compose_down(DockerCoreServices::Edgar.as_str(), true)?;
                 docker_compose_down(DockerCoreServices::Carl.as_str(), true)?;
+                docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), true)?;
                 docker_compose_down(DockerCoreServices::Netbird.as_str(), true)?;
                 docker_compose_down(DockerCoreServices::Keycloak.as_str(), true)?;
                 docker_compose_network_delete()?;

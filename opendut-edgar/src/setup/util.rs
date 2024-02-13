@@ -1,14 +1,14 @@
 use std::{fs, io};
 use std::fs::File;
 use std::io::Read;
+use std::ops::Not;
 use std::path::Path;
 use std::process::{Command, Output};
 
 use anyhow::{anyhow, bail, Context};
-use nix::unistd::{Group, User};
 use sha2::{Digest, Sha256};
+use crate::setup::User;
 
-use crate::setup::constants;
 
 pub(crate) trait EvaluateRequiringSuccess {
     fn evaluate_requiring_success(&mut self) -> anyhow::Result<Output>;
@@ -17,7 +17,7 @@ impl EvaluateRequiringSuccess for Command {
     fn evaluate_requiring_success(&mut self) -> anyhow::Result<Output> {
         let output = self.output()?;
 
-        if !output.status.success() {
+        if output.status.success().not() {
             let mut error = format!("Error while running `{self:?}`:\n");
             if let Some(status) = &output.status.code() {
                 error += format!("  Status Code: {}\n", status).as_ref();
@@ -34,12 +34,14 @@ impl EvaluateRequiringSuccess for Command {
     }
 }
 
-pub fn chown(path: impl AsRef<Path>) -> anyhow::Result<()> {
+pub fn chown(user: &User, path: impl AsRef<Path>) -> anyhow::Result<()> {
     let path = path.as_ref();
-    let name = constants::USER_NAME;
+    let name = &user.name;
 
-    let user = User::from_name(name)?.ok_or(anyhow!("No user '{}' found.", name))?;
-    let group = Group::from_name(name)?.ok_or(anyhow!("No group '{}' found.", name))?;
+    let user = nix::unistd::User::from_name(name)?
+        .ok_or(anyhow!("No user '{}' found.", name))?;
+    let group = nix::unistd::Group::from_name(name)?
+        .ok_or(anyhow!("No group '{}' found.", name))?;
 
     nix::unistd::chown(path, Some(user.uid), Some(group.gid))
         .context(format!("Failed to set owner of '{}' to user '{}'.", path.display(), name))?;

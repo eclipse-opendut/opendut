@@ -1,11 +1,24 @@
 #!/bin/bash
 
 wait_for_keycloak() {
+  local timeout="${1:-600}"
+  local sleep_time="${2:-5}"
+
+  START_TIME="$(date +%s)"
+  END_TIME=$((START_TIME + timeout))
+
   # wait until keycloak is ready and returns a status code < 400
-  while ! curl --silent --fail "$KEYCLOAK_URL" --output /dev/null; do
+  while ! curl --silent --fail --connect-timeout 2 --max-time 2 "$KEYCLOAK_URL" --output /dev/null; do
+    local now
+    now=$(date +%s)
+    if [ "$now" -gt "$END_TIME" ]; then
+      echo "Timeout while waiting for Keycloak to start up at: '$KEYCLOAK_URL'"
+      return 1
+    fi
     echo "Waiting for Keycloak to start up..."
-    sleep 5
+    sleep "$sleep_time"
   done
+
   echo "Keycloak ready"
 }
 kcadm() { local cmd="$1" ; shift ; "$KCADM_PATH" "$cmd" --config /tmp/kcadm.config "$@" ; }
@@ -58,13 +71,13 @@ EOF
 EOF
 
   if [ -n "$USER_GROUP" ]; then
-    echo "add user to group"
-    USER_GROUP_ID=$(kcadm get groups | jq -r ".[] | select(.name==\"${USER_GROUP}\").id")
+    echo "add user '$USER_NAME' to group '$USER_GROUP'"
+    USER_GROUP_ID=$(kcadm get groups -r "${USER_REALM}" | jq -r ".[] | select(.name==\"${USER_GROUP}\").id")
     kcadm update users/"$USER_ID"/groups/"$USER_GROUP_ID" -r "${USER_REALM}"
   fi
 
   if [ -n "$USER_ROLE" ]; then
-    echo "add user to role"
+    echo "add user '$USER_NAME' to role '$USER_ROLE'"
     USER_ROLE_ID=$(kcadm get roles -r "${USER_REALM}" | jq -r ".[] | select(.name==\"${USER_ROLE}\").id")
     USER_ROLE_CONTAINER_ID=$(kcadm get users/"$USER_ID"/role-mappings -r "${USER_REALM}" | jq -r '.realmMappings[] | select(.name=="default-roles-master").containerId')
     kcadm create users/"$USER_ID"/role-mappings/realm -r "${USER_REALM}" -f - << EOF
@@ -101,6 +114,24 @@ create_realm_role() {
         "attributes": {}
       }
 EOF
+  fi
+}
+
+list_realm_groups() {
+    REALM=${1:-$REALM}
+    kcadm get groups -r "${REALM}" 2>/dev/null | jq -r ".[].name"
+}
+
+create_realm_group() {
+  GROUP_NAME="$1"
+  GROUP_REALM="${2:-$REALM}"
+
+  EXISTING_REALM_GROUPS=$(list_realm_groups "${GROUP_REALM}")
+  if [[ "$EXISTING_REALM_GROUPS" == *"${GROUP_NAME}"* ]]; then
+    echo "Realm group ${GROUP_NAME} already exists"
+  else
+      echo "Create realm group ${GROUP_NAME}"
+      kcadm create groups -r "${GROUP_REALM}" -s name="${GROUP_NAME}"
   fi
 }
 

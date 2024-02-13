@@ -39,17 +39,17 @@ jobs:
           VERSION=$(cargo metadata --format-version=1 --no-deps | jq -r '.packages[0].version')
           echo "OPENDUT_CARL_VERSION=${VERSION}" >> $GITHUB_OUTPUT
       - name: Download opendut-carl
-        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
+        uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
         with:
           name: "${{ matrix.package.name }}-${{ matrix.package.target }}-${{ github.sha }}"
           path: "./target/ci/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/"
       - name: Download opendut-lea
-        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
+        uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
         with:
           name: "opendut-lea-${{ github.sha }}"
           path: "./target/ci/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/opendut-lea"
       - name: Download licenses
-        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
+        uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
         with:
           name: "licenses-${{ github.sha }}"
           path: "./target/ci/licenses"
@@ -62,7 +62,7 @@ jobs:
       - name: Validate distribution contents
         run: cargo ci opendut-carl distribution-validate-contents --target=${{ matrix.package.target }}
       - name: "Upload CARL bundle artifact ${{ matrix.package.name }}-${{ matrix.package.target }}"
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
+        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8
         with:
           name: "${{ matrix.package.name }}-${{ matrix.package.target }}-${{ github.sha }}.tar.gz"
           path: "./target/ci/distribution/${{ matrix.package.target }}/"

@@ -1,18 +1,21 @@
 use std::time::Duration;
+
 use async_trait::async_trait;
 use reqwest::{Request, Response};
+use tracing::trace;
 
 use crate::netbird::error::RequestError;
 
 #[async_trait]
-pub(super) trait RequestHandler {
+pub trait RequestHandler {
     async fn handle(&self, request: Request) -> Result<Response, RequestError>;
 }
 
-pub(super) struct DefaultRequestHandler {
+pub struct DefaultRequestHandler {
     inner: reqwest::Client,
     config: RequestHandlerConfig,
 }
+
 impl DefaultRequestHandler {
     pub fn new(inner: reqwest::Client, config: RequestHandlerConfig) -> Self {
         Self { inner, config }
@@ -26,17 +29,18 @@ impl RequestHandler for DefaultRequestHandler {
         let timeout = request.timeout_mut()
             .get_or_insert(self.config.default_timeout);
 
-        log::trace!("Starting network request with timeout {} milliseconds.", timeout.as_millis());
+        trace!("Starting network request with timeout {} milliseconds.", timeout.as_millis());
         let result = self.inner.execute(request).await.map_err(RequestError::Request);
-        log::trace!("Network request completed.");
+        trace!("Network request completed.");
 
         result
     }
 }
 
-pub(super) struct RequestHandlerConfig {
+pub struct RequestHandlerConfig {
     default_timeout: Duration,
 }
+
 impl Default for RequestHandlerConfig {
     fn default() -> Self {
         Self {

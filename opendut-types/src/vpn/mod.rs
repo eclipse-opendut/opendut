@@ -3,7 +3,7 @@ use url::Url;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
-pub enum VpnPeerConfig {
+pub enum VpnPeerConfiguration {
     Disabled,
     #[serde(rename_all = "kebab-case")]
     Netbird {
@@ -39,6 +39,7 @@ pub mod netbird {
             Self { uuid: Uuid::new_v4() }
         }
     }
+
     impl From<Uuid> for SetupKey {
         fn from(value: Uuid) -> Self {
             Self { uuid: value }

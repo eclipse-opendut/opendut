@@ -11,7 +11,7 @@ use opendut_carl_api::proto::services::peer_manager::peer_manager_server::{PeerM
 use opendut_types::peer::{PeerDescriptor, PeerId};
 
 use crate::actions;
-use crate::actions::{StorePeerDescriptorParams, CreatePeerSetupParams, DeletePeerDescriptorParams, ListDevicesParams, ListPeerDescriptorsParams};
+use crate::actions::{DeletePeerDescriptorParams, GeneratePeerSetupParams, ListDevicesParams, ListPeerDescriptorsParams, StorePeerDescriptorParams};
 use crate::grpc::extract;
 use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
@@ -170,7 +170,7 @@ impl PeerManagerService for PeerManagerFacade {
         }
     }
 
-    async fn create_peer_setup(&self, request: Request<CreatePeerSetupRequest>) -> Result<Response<CreatePeerSetupResponse>, Status> { // TODO: Refactor error types.
+    async fn generate_peer_setup(&self, request: Request<GeneratePeerSetupRequest>) -> Result<Response<GeneratePeerSetupResponse>, Status> { // TODO: Refactor error types.
 
         log::trace!("Received request: {:?}", request);
 
@@ -179,21 +179,21 @@ impl PeerManagerService for PeerManagerFacade {
             Some(peer_id) => {
                 let peer_id = PeerId::try_from(peer_id)
                     .map_err(|cause| Status::invalid_argument(format!("PeerId could not be converted: {}", cause)))?;
-                let setup = actions::create_peer_setup(CreatePeerSetupParams {
+                let setup = actions::generate_peer_setup(GeneratePeerSetupParams {
                     resources_manager: Arc::clone(&self.resources_manager),
                     peer: peer_id,
                     carl_url: Clone::clone(&self.carl_url),
                     vpn: Clone::clone(&self.vpn),
                 }).await.map_err(|cause| Status::internal(format!("Peer setup could not be created: {}", cause)))?;
 
-                peer_manager::create_peer_setup_response::Reply::Success(peer_manager::CreatePeerSetupSuccess { peer: Some(peer_id.into()), setup: Some(setup.into()) })
+                peer_manager::generate_peer_setup_response::Reply::Success(peer_manager::GeneratePeerSetupSuccess { peer: Some(peer_id.into()), setup: Some(setup.into()) })
             }
             None => {
-                peer_manager::create_peer_setup_response::Reply::Failure(peer_manager::CreatePeerSetupFailure {})
+                peer_manager::generate_peer_setup_response::Reply::Failure(peer_manager::GeneratePeerSetupFailure {})
             }
         };
 
-        Ok(Response::new(CreatePeerSetupResponse { reply: Some(response) }))
+        Ok(Response::new(GeneratePeerSetupResponse { reply: Some(response) }))
     }
 
     async fn list_devices(&self, request: Request<ListDevicesRequest>) -> Result<Response<ListDevicesResponse>, Status> {
@@ -219,7 +219,7 @@ mod tests {
     use googletest::prelude::*;
     use url::Url;
 
-    use opendut_types::peer::PeerName;
+    use opendut_types::peer::{PeerLocation, PeerName};
     use opendut_types::proto;
     use opendut_types::topology::Topology;
 
@@ -238,6 +238,7 @@ mod tests {
         let peer_descriptor = PeerDescriptor {
             id: peer_id,
             name: PeerName::try_from("TestPeer").unwrap(),
+            location: PeerLocation::try_from("SiFi").ok(),
             topology: Topology::default(),
         };
 

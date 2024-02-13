@@ -9,7 +9,7 @@ pub enum ClusterMisconfiguration { // TODO: Maybe replace with IllegalClusterCon
     #[error("Invalid cluster name")]
     InvalidClusterName,
 
-    #[error("Invalid cluster name")]
+    #[error("Invalid device selection")]
     InvalidDeviceSelection
 }
 
@@ -18,6 +18,7 @@ pub struct UserClusterConfiguration {
     pub id: ClusterId,
     pub name: UserInputValue,
     pub devices: DeviceSelection,
+    pub leader: PeerId,
 }
 
 impl UserClusterConfiguration {
@@ -41,7 +42,7 @@ impl TryFrom<UserClusterConfiguration> for ClusterConfiguration {
         Ok(ClusterConfiguration {
             id: configuration.id,
             name,
-            leader: PeerId::default(), // TODO: Insert the leader's PeerId here.
+            leader: configuration.leader,
             devices,
         })
     }

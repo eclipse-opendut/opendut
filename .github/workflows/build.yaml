@@ -14,7 +14,7 @@ on:
     tags-ignore:
       - v[0-9]+.[0-9]+.[0-9]+
       - v[0-9]+.[0-9]+.[0-9]+-*
-      - nightly
+      - canary
 
 # Required GitHub repository variables:
 # https://docs.github.com/en/actions/using-jobs/choosing-the-runner-for-a-job
@@ -93,7 +93,7 @@ jobs:
 
   run-testenv:
     uses: ./.github/workflows/job-run-testenv.yaml
-    needs: [ legal, bundle-carl, bundle-edgar, build-cleo ]
+    needs: [ legal, bundle-carl, bundle-edgar, bundle-cleo ]
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
       # run-testenv: "${{ github.event.inputs.run-testenv }}"

@@ -8,6 +8,14 @@ remote.port = 8080
 certificate = "/etc/opendut-network/tls/carl.pem"
 key = "/etc/opendut-network/tls/carl.key"
 
+[network.oidc]
+enabled = false
+
+[network.oidc.lea]
+client_id = "opendut-lea-client"
+issuer_url = "https://keycloak/realms/opendut"
+scopes = "openid,profile,email"
+
 [serve]
 ui.directory = "opendut-lea/"
 

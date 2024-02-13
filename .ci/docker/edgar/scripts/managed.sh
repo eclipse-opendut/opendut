@@ -16,17 +16,7 @@ cleo_get_peer_id() {
   fi
 }
 
-cleo_count_connected_peers() {
-  expected="$1"
-  RESULT=$(opendut-cleo list --output json peers | jq -r '.[].status' | grep -c Connected)
-  if [ "$RESULT" -eq "$expected" ]; then
-      return 0
-  else
-      return 1
-  fi
-}
-
-cleo_count_connected_peers_in_cluster() {
+check_expected_number_of_connected_peers_in_cluster() {
   expected="$1"
   cluster="$2"
   RESULT=$(opendut-cleo list --output json peers | jq --arg CLUSTER "$cluster" -r '. | map(select(.name | contains($CLUSTER))) | .[].status' | grep -c Connected)
@@ -37,9 +27,19 @@ cleo_count_connected_peers_in_cluster() {
   fi
 }
 
-pre_flight_tasks() {
-  touch /etc/security/capability.conf
+check_interface_exists() {
+  interface="$1"
 
+  ip link show dev "$interface" > /dev/null
+  EXISTS=$?
+
+  if [ $EXISTS -ne 0 ]; then
+    echo "Network interface '$interface' does not exist."
+    return 1
+  fi
+}
+
+pre_flight_tasks() {
   if ! type opendut-cleo > /dev/null; then
     echo "Command 'opendut-cleo' not found."
     exit 1
@@ -57,8 +57,12 @@ pre_flight_tasks
 PEER_ID=$(uuidgen)
 NAME="${OPENDUT_EDGAR_CLUSTER_NAME}_$(hostname)"
 echo "Creating peer with name $NAME and id $PEER_ID"
-opendut-cleo create peer --name "$NAME" --id "$PEER_ID"
-opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME" --interface eth0 --location "$NAME" --tags "$OPENDUT_EDGAR_CLUSTER_NAME"
+opendut-cleo create peer --name "$NAME" --id "$PEER_ID" --location "$NAME"
+
+DEVICE_INTERFACE="dut0"
+ip link add $DEVICE_INTERFACE type dummy
+ip link set dev $DEVICE_INTERFACE up
+opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME" --interface "$DEVICE_INTERFACE" --tag "$OPENDUT_EDGAR_CLUSTER_NAME"
 opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME"-vcan0 --interface vcan0 --location "$NAME" --tags "$OPENDUT_EDGAR_CLUSTER_NAME"
 opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME"-vcan1 --interface vcan1 --location "$NAME" --tags "$OPENDUT_EDGAR_CLUSTER_NAME"
 
@@ -76,14 +80,15 @@ done
 
 expected_peer_count=$((OPENDUT_EDGAR_REPLICAS + 1))
 START_TIME="$(date +%s)"
-while ! cleo_count_connected_peers_in_cluster "$expected_peer_count" "$OPENDUT_EDGAR_CLUSTER_NAME"; do
+while ! check_expected_number_of_connected_peers_in_cluster "$expected_peer_count" "$OPENDUT_EDGAR_CLUSTER_NAME"; do
   check_timeout "$START_TIME" 600 || { echo "Timeout while waiting for other edgar peers in my cluster."; exit 1; }
 
   echo "Waiting for all edgar peers in my cluster ..."
   sleep 3
 done
 
-if [ "$1" == "router" ]; then
+
+if [ "$1" == "leader" ]; then
   DEVICES="$(opendut-cleo list --output=json devices | jq --arg NAME "$OPENDUT_EDGAR_CLUSTER_NAME" -r '.[] | select(.tags==$NAME).name' | xargs echo)"
   echo "Enumerating devices to join cluster: $DEVICES"
 
@@ -98,8 +103,30 @@ if [ "$1" == "router" ]; then
   CLUSTER_ID=$(echo "$RESPONSE" | jq -r '.id')
   echo "Creating cluster deployment for id=$CLUSTER_ID"
   opendut-cleo create cluster-deployment --id "$CLUSTER_ID"
-  echo "Success" | tee -a > /opt/signal/success.txt
+fi
 
+
+BRIDGE="br-opendut"  # needs to match EDGAR's default
+GRE_INTERFACE="gre-opendut0"  # needs to match EDGAR's default prefix
+
+check_edgar_interfaces_exist() {
+  check_interface_exists "$BRIDGE"
+  check_interface_exists "$GRE_INTERFACE"
+}
+
+START_TIME="$(date +%s)"
+while ! check_edgar_interfaces_exist; do
+    check_timeout "$START_TIME" 600 || { echo "Timeout while waiting for the EDGAR-managed network interfaces to exist."; exit 1; }
+    echo "Waiting for the EDGAR-managed network interfaces to exist..."
+    sleep 3
+done
+
+BRIDGE_ADDRESS=$(ip -json address show dev eth0 | jq --raw-output '.[0].addr_info[0].local' | sed --expression 's#32#33#')  # derive from existing address, by replacing '32' with '33'
+ip address add "$BRIDGE_ADDRESS/24" dev "$BRIDGE"
+
+
+if [ "$1" == "leader" ]; then
+  echo "Success" | tee -a > /opt/signal/success.txt
 fi
 
 trap die_with_success TERM

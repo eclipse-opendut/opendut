@@ -1,8 +1,8 @@
 use async_trait::async_trait;
-use opendut_types::cluster::ClusterId;
 
+use opendut_types::cluster::ClusterId;
 use opendut_types::peer::PeerId;
-use opendut_types::vpn::VpnPeerConfig;
+use opendut_types::vpn::VpnPeerConfiguration;
 
 #[async_trait]
 pub trait VpnManagementClient {
@@ -15,7 +15,7 @@ pub trait VpnManagementClient {
 
     async fn delete_peer(&self, peer_id: PeerId) -> Result<(), DeletePeerError>;
 
-    async fn get_or_create_configuration(&self, peer_id: PeerId) -> Result<VpnPeerConfig, GetOrCreateConfigurationError>;
+    async fn generate_vpn_peer_configuration(&self, peer_id: PeerId) -> Result<VpnPeerConfiguration, CreateVpnPeerConfigurationError>;
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -76,12 +76,8 @@ pub enum DeletePeerError {
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum GetOrCreateConfigurationError {
-    #[error("Failed to query configurations:\n  {error}")]
-    QueryConfigurationsFailure {
-        error: Box<dyn std::error::Error>
-    },
-    #[error("A configuration for peer <{peer_id}> could not be created:\n  {error}")]
+pub enum CreateVpnPeerConfigurationError {
+    #[error("An error occurred while creating a vpn configuration for peer <{peer_id}>:\n  {error}")]
     CreationFailure {
         peer_id: PeerId,
         error: Box<dyn std::error::Error>

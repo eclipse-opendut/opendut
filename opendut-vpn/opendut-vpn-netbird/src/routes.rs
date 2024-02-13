@@ -1,6 +1,6 @@
 use reqwest::Url;
+
 use crate::netbird;
-use crate::netbird::group;
 
 pub fn setup_keys(base_url: Url) -> Url {
     join(base_url, "setup-keys")
@@ -10,7 +10,7 @@ pub fn groups(base_url: Url) -> Url {
     join(base_url, "groups")
 }
 
-pub fn group(base_url: Url, group_id: &group::GroupId) -> Url {
+pub fn group(base_url: Url, group_id: &netbird::GroupId) -> Url {
     join(groups(base_url), &group_id.0)
 }
 
@@ -26,7 +26,7 @@ pub fn rules(base_url: Url) -> Url {
     join(base_url, "rules")
 }
 
-pub fn rule(base_url: Url, rule_id: &netbird::rules::RuleId) -> Url {
+pub fn rule(base_url: Url, rule_id: &netbird::RuleId) -> Url {
     join(rules(base_url), &rule_id.0)
 }
 
@@ -44,8 +44,9 @@ fn join(mut base_url: Url, path: &str) -> Url {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use googletest::prelude::*;
+
+    use super::*;
 
     #[test]
     fn should_join_without_trailing_slash() -> anyhow::Result<()> {

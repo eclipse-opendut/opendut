@@ -1,10 +1,9 @@
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 pub use client::*;
-
 use opendut_types::peer::{PeerId, PeerName};
 use opendut_types::peer::state::PeerState;
-use opendut_types::topology::DeviceId;
 use opendut_types::ShortName;
+use opendut_types::topology::DeviceId;
 
 #[derive(thiserror::Error, Debug)]
 pub enum StorePeerDescriptorError {
@@ -95,13 +94,13 @@ pub enum IllegalDevicesError {
 
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 mod client {
-    use tonic::codegen::{Body, Bytes, StdError};
+    use tonic::codegen::{Body, Bytes, http, InterceptedService, StdError};
 
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerSetup};
-    use opendut_types::topology::Device;
+    use opendut_types::topology::DeviceDescriptor;
 
     use crate::carl::{ClientError, extract};
-    use crate::carl::peer::{StorePeerDescriptorError, CreateSetupError, GetPeerDescriptorError, ListPeerDescriptorsError, DeletePeerDescriptorError, ListDevicesError};
+    use crate::carl::peer::{CreateSetupError, DeletePeerDescriptorError, GetPeerDescriptorError, ListDevicesError, ListPeerDescriptorsError, StorePeerDescriptorError};
     use crate::proto::services::peer_manager;
     use crate::proto::services::peer_manager::peer_manager_client::PeerManagerClient;
 
@@ -119,6 +118,29 @@ mod client {
         pub fn new(inner: PeerManagerClient<T>) -> PeersRegistrar<T> {
             PeersRegistrar {
                 inner
+            }
+        }
+
+        pub fn with_interceptor<F>(
+            inner: T,
+            interceptor: F,
+        ) -> PeersRegistrar<InterceptedService<T, F>>
+            where
+                F: tonic::service::Interceptor,
+                T::ResponseBody: Default,
+                T: tonic::codegen::Service<
+                    http::Request<tonic::body::BoxBody>,
+                    Response = http::Response<
+                        <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
+                    >,
+                >,
+                <T as tonic::codegen::Service<
+                    http::Request<tonic::body::BoxBody>,
+                >>::Error: Into<StdError> + Send + Sync,
+        {
+            let inner_client = PeerManagerClient::new(InterceptedService::new(inner, interceptor));
+            PeersRegistrar {
+                inner: inner_client
             }
         }
 
@@ -208,15 +230,15 @@ mod client {
 
         pub async fn create_peer_setup(&mut self, peer_id: PeerId) -> Result<PeerSetup, CreateSetupError> {
             let request = tonic::Request::new(
-                peer_manager::CreatePeerSetupRequest {
+                peer_manager::GeneratePeerSetupRequest {
                     peer: Some(peer_id.into())
                 }
             );
 
-            match self.inner.create_peer_setup(request).await {
+            match self.inner.generate_peer_setup(request).await {
                 Ok(response) => {
                     match response.into_inner().reply {
-                        Some(peer_manager::create_peer_setup_response::Reply::Success(peer_manager::CreatePeerSetupSuccess { setup, .. })) => {
+                        Some(peer_manager::generate_peer_setup_response::Reply::Success(peer_manager::GeneratePeerSetupSuccess { setup, .. })) => {
                             setup
                                 .ok_or(CreateSetupError { message: format!("Failed to create setup-string for peer <{}>! Got no PeerSetup!", peer_id) })
                                 .and_then(|setup| PeerSetup::try_from(setup)
@@ -236,14 +258,14 @@ mod client {
             }
         }
 
-        pub async fn list_devices(&mut self) -> Result<Vec<Device>, ListDevicesError> {
+        pub async fn list_devices(&mut self) -> Result<Vec<DeviceDescriptor>, ListDevicesError> {
             let request = tonic::Request::new(peer_manager::ListDevicesRequest {});
 
             match self.inner.list_devices(request).await {
                 Ok(response) => {
                     response.into_inner().devices
                         .into_iter()
-                        .map(Device::try_from)
+                        .map(DeviceDescriptor::try_from)
                         .collect::<Result<_, _>>()
                         .map_err(|cause| ListDevicesError::Internal { cause: cause.to_string() })
                 },

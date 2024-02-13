@@ -2,12 +2,12 @@ version: "3.9"
 
 services:
 
-  router:
-    container_name: edgar_router  # defined DNS for the container
+  leader:
+    container_name: edgar-leader  # defined DNS for the container
     build:
       context: ../../..
       dockerfile: ./.ci/docker/edgar/Dockerfile
-    command: /opt/managed.sh router
+    command: /opt/managed.sh leader
     #command: sleep infinity
     volumes:
       - ../../../target/ci/distribution/x86_64-unknown-linux-gnu/:/opt/artifacts

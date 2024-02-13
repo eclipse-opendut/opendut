@@ -11,7 +11,7 @@ use config::Config;
 use futures::future::BoxFuture;
 use futures::TryFutureExt;
 use http::{header::CONTENT_TYPE, Request};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tonic::transport::Server;
 use tower::{BoxError, make::Shared, ServiceExt, steer::Steer};
 use tower_http::services::{ServeDir, ServeFile};
@@ -120,16 +120,50 @@ pub async fn create(settings_override: Config) -> Result<()> {
         let lea_dir = project::make_path_absolute(settings.get_string("serve.ui.directory")
             .expect("Failed to find configuration for `serve.ui.directory`."))
             .expect("Failure while making path absolute.");
-
+        let lea_presence_check = settings.get_bool("serve.ui.presence_check").unwrap_or(true);
         let licenses_dir = project::make_path_absolute("./licenses")
             .expect("licenses directory should be absolute");
 
+        let oidc_enabled = settings.get_bool("network.oidc.enabled").unwrap_or(false);
+        let lea_idp_config = if oidc_enabled {
+            let lea_idp_config = settings.get::<LeaIdpConfig>("network.oidc.lea")
+                .expect("Failed to find configuration for `network.oidc.lea`.");
+            let scopes = lea_idp_config.scopes.trim_matches('"').split(',').collect::<Vec<_>>();
+            for scope in scopes.clone() {
+                if !scope.chars().all(|c|c.is_ascii_alphabetic()) {
+                    panic!("Failed to parse comma-separated OIDC scopes for LEA. Scopes must only contain ASCII alphabetic characters. Found: {:?}. Parsed as: {:?}", lea_idp_config.scopes, scopes);
+                }
+            }
+            log::info!("OIDC is enabled: {:?}", lea_idp_config);
+            Some(LeaIdpConfig {
+                client_id: lea_idp_config.client_id,
+                issuer_url: lea_idp_config.issuer_url,
+                scopes: scopes.join(" "),  // Frontend expects space separated list of scopes
+            })
+        } else {
+            log::info!("OIDC is disabled.");
+            None
+        };
+
         let app_state = AppState {
             lea_config: LeaConfig {
-                carl_url
+                carl_url,
+                idp_config: lea_idp_config,
             }
         };
 
+        let lea_index_html = lea_dir.join("index.html").clone();
+        if lea_presence_check {
+            // Check if LEA can be served
+            if lea_index_html.exists() {
+                let lea_index_str = std::fs::read_to_string(lea_index_html.clone()).expect("Failed to read LEA index.html");
+                if !lea_index_str.contains("bg.wasm") || !lea_index_str.contains("opendut-lea") {
+                    panic!("LEA index.html does not contain wasm link! Check configuration serve.ui.directory={:?} points to the correct directory.", lea_dir.into_os_string());
+                }
+            } else {
+                panic!("Failed to check if LEA index.html exists in: {}", lea_index_html.display());
+            }
+        }
         let http = axum::Router::new()
             .fallback_service(
                 axum::Router::new()
@@ -142,7 +176,7 @@ pub async fn create(settings_override: Config) -> Result<()> {
                     .nest_service(
                         "/",
                         ServeDir::new(&lea_dir)
-                            .fallback(ServeFile::new(lea_dir.join("index.html")))
+                            .fallback(ServeFile::new(lea_index_html))
                     )
                     .with_state(app_state)
             )
@@ -191,9 +225,17 @@ struct AppState {
     lea_config: LeaConfig
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct LeaIdpConfig {
+    client_id: String,
+    issuer_url: Url,
+    scopes: String,
+}
+
 #[derive(Clone, Serialize)]
 struct LeaConfig {
-    carl_url: Url
+    carl_url: Url,
+    idp_config: Option<LeaIdpConfig>,
 }
 
 impl FromRef<AppState> for LeaConfig {

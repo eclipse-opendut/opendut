@@ -6,10 +6,10 @@ use config::Config;
 use serde::{de, Deserialize, Deserializer, Serialize};
 use serde::de::IntoDeserializer;
 use url::Url;
-use opendut_types::vpn::HttpsOnly;
 
-use opendut_vpn_netbird::NetbirdToken;
+use opendut_types::vpn::HttpsOnly;
 use opendut_vpn::VpnManagementClient;
+use opendut_vpn_netbird::{NetbirdManagementClient, NetbirdToken};
 
 #[derive(Clone)]
 pub enum Vpn {
@@ -40,10 +40,9 @@ pub fn create(settings: &Config) -> anyhow::Result<Vpn> {
                                     None => return unknown_enum_variant(settings, "vpn.netbird.auth.type"),
                                 };
 
-                                let vpn_client = opendut_vpn_netbird::Client::create(
+                                let vpn_client = NetbirdManagementClient::create(
                                     base_url,
                                     token,
-                                    netbird_config.https.only,
                                 )?;
 
                                 Ok(Vpn::Enabled { vpn_client: Arc::new(vpn_client) })

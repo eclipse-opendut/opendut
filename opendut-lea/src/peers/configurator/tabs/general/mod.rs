@@ -1,7 +1,7 @@
 use leptos::{component, IntoView, MaybeSignal, RwSignal, SignalGet, view};
 
 use crate::components::ReadOnlyInput;
-use crate::peers::configurator::components::PeerNameInput;
+use crate::peers::configurator::components::{PeerLocationInput, PeerNameInput};
 use crate::peers::configurator::types::UserPeerConfiguration;
 
 #[component]
@@ -16,6 +16,9 @@ pub fn GeneralTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl I
                 value=peer_id
             />
             <PeerNameInput
+                peer_configuration=peer_configuration
+            />
+            <PeerLocationInput
                 peer_configuration=peer_configuration
             />
         </div>

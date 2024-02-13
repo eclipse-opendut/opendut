@@ -27,24 +27,24 @@ jobs:
         uses: ./.github/actions/install-kernel-modules
 
       - name: Download opendut-CARL bundle
-        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
+        uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
         with:
           name: "opendut-carl-x86_64-unknown-linux-gnu-${{ github.sha }}.tar.gz"
           path: "./target/ci/distribution/x86_64-unknown-linux-gnu/"
       - name: Download opendut-EDGAR bundle
-        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
+        uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
         with:
           name: "opendut-edgar-x86_64-unknown-linux-gnu-${{ github.sha }}.tar.gz"
           path: "./target/ci/distribution/x86_64-unknown-linux-gnu/"
 
       - name: Download opendut-CLEO bundle
-        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
+        uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
         with:
           name: "opendut-cleo-x86_64-unknown-linux-gnu-${{ github.sha }}.tar.gz"
           path: "./target/ci/distribution/x86_64-unknown-linux-gnu/"
 
       - name: Download opendut-THEO artifact
-        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
+        uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
         with:
           name: "opendut-theo-x86_64-unknown-linux-gnu-${{ github.sha }}"
           path: "./opendut-theo"
@@ -65,7 +65,7 @@ jobs:
 
       - name: Wait for all peers
         run: |
-          docker exec edgar_router /opt/wait_until_ready.sh
+          docker exec edgar-leader /opt/wait_until_ready.sh
 
       - name: Run ping all script on one of the peers
         run: |
@@ -75,7 +75,7 @@ jobs:
         if: always()
         run: |
           mkdir docker-logs
-          DOCKER_CONTAINERS="$(docker ps --format='{{.Names}}')"
+          DOCKER_CONTAINERS="$(docker ps --all --format='{{.Names}}')"
           for DOCKER_NAME in $DOCKER_CONTAINERS; do
             echo "Logs for $DOCKER_NAME"
             docker logs $DOCKER_NAME > ./docker-logs/docker-$DOCKER_NAME.log 2>&1
@@ -83,12 +83,12 @@ jobs:
 
       - name: "Upload docker logs"
         if: always()
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
+        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8
         with:
           name: "docker-logs-${{ github.sha }}"
           path: "./docker-logs/"
           if-no-files-found: error
-          retention-days: 1
+          retention-days: 7
 
       - name: Stop test environment
         if: always()
@@ -98,8 +98,11 @@ jobs:
       - name: Destroy test environment
         if: always()
         run: |
-          ./opendut-theo/opendut-theo testenv destroy
-          echo "Result: $?"
+          echo "Show all containers"
+          docker ps --all
+          ./opendut-theo/opendut-theo testenv destroy || {echo Result $?; true}
           echo "Show all remaining containers"
-          docker ps -a
+          docker ps --all
+          echo "Remove all exited containers forcefully"
+          docker rm --volumes --force $(docker ps -a -q -f status=exited)
         continue-on-error: true

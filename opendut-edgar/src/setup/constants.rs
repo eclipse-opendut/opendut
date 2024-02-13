@@ -3,7 +3,6 @@ use std::{collections::HashMap, path::PathBuf};
 use opendut_util::kernel_modules::KernelModule;
 use anyhow::Context;
 
-pub const USER_NAME: &str = "opendut-network";
 
 pub fn executable_install_path() -> anyhow::Result<PathBuf> {
     let executable_path = std::env::current_exe()?;

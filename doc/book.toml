@@ -4,5 +4,5 @@ title = "openDuT-Network"
 [preprocessor.mermaid]
 command = "mdbook-mermaid"
 
-[output.html]
-additional-js = ["mermaid.min.js", "mermaid-init.js"]
+[preprocessor.plantuml]
+plantuml-cmd="https://www.plantuml.com/plantuml"

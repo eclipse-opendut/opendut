@@ -84,7 +84,7 @@ services:
       - AUTH_AUDIENCE=netbird-client
       - AUTH_CLIENT_ID=netbird-client
       - AUTH_CLIENT_SECRET=
-      - AUTH_AUTHORITY=http://keycloak/realms/netbird
+      - AUTH_AUTHORITY=https://keycloak/realms/netbird
       - USE_AUTH0=false
       - AUTH_SUPPORTED_SCOPES=openid profile email offline_access api
       - AUTH_REDIRECT_URI=

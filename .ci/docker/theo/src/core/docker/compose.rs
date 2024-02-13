@@ -1,5 +1,9 @@
+use std::env;
+
 use anyhow::Error;
+
 use crate::core::docker::{DockerCommand, DockerCoreServices};
+use crate::core::OPENDUT_EXPOSE_PORTS;
 
 pub(crate) fn docker_compose_build(compose_dir: &str) -> Result<i32, Error> {
     DockerCommand::new()
@@ -8,12 +12,28 @@ pub(crate) fn docker_compose_build(compose_dir: &str) -> Result<i32, Error> {
         .expect_status(format!("Failed to execute docker compose build for directory: {}.", compose_dir).as_str())
 }
 
-pub(crate) fn docker_compose_up(compose_dir: &str) -> Result<i32, Error> {
-    DockerCommand::new()
-        .add_common_args(compose_dir)
+pub fn docker_compose_up_expose_ports(compose_dir: &str, expose: &bool) -> crate::Result {
+    let mut command = DockerCommand::new();
+    command.arg("compose")
+        .arg("-f")
+        .arg(format!(".ci/docker/{}/docker-compose.yml", compose_dir));
+
+    let expose_env_value = env::var(OPENDUT_EXPOSE_PORTS).unwrap_or("false".to_string()).eq("true");
+    if *expose || expose_env_value {
+        command.arg("-f")
+            .arg(format!(".ci/docker/{}/expose_ports.yml", compose_dir))
+    } else {
+        command.arg("-f")
+            .arg(format!(".ci/docker/{}/localhost_ports.yml", compose_dir))
+    };
+    command.arg("--env-file")
+        .arg(".env-theo")
+        .arg("--env-file")
+        .arg(".env")
         .arg("up")
         .arg("-d")
-        .expect_status(format!("Failed to execute docker compose up for directory: {}.", compose_dir).as_str())
+        .expect_status(&format!("Failed to execute docker compose command for {}.", compose_dir))?;
+    Ok(())
 }
 
 
@@ -43,5 +63,5 @@ pub(crate) fn docker_compose_network_delete() -> Result<i32, Error> {
         .arg("network")
         .arg("rm")
         .arg("opendut_network")
-        .expect_status("Failed to create docker network.")
+        .expect_status("Failed to delete docker network.")
 }

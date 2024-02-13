@@ -9,32 +9,40 @@ use crate::core::command_ext::TheoCommandExtensions;
 use crate::core::project::ProjectRootDir;
 
 /// Create virtual machine for test environment.
-#[derive(Debug, clap::Parser)]
+#[derive(clap::Parser)]
 pub struct VagrantCli {
     #[command(subcommand)]
     pub(crate) task: TaskCli,
 }
 
-#[derive(Debug, clap::Subcommand)]
+#[derive(clap::Subcommand)]
 pub enum TaskCli {
-    #[command(about = "Start virtual machine.", alias = "start")]
+    /// Start virtual machine.
+    #[command(alias = "start")]
     Up,
-    #[command(about = "Provision virtual machine.")]
+    /// Provision virtual machine.
     Provision {
         /// Install desktop to virtual machine
         #[arg(long, short, action = ArgAction::SetTrue)]
         desktop: bool,
     },
-    #[command(about = "Connect to virtual machine via ssh.")]
+    /// Connect to virtual machine via SSH.
     Ssh,
-    #[command(about = "Stop virtual machine.", alias = "stop")]
+    /// Stop virtual machine.
+    #[command(alias = "stop")]
     Halt,
-    #[command(about = "Destroy virtual machine.")]
+    /// Destroy virtual machine.
     Destroy,
-    #[command(about = "Run firefox remotely on the virtual machine (x11forwarding).")]
+    /// Reload virtual machine.
+    #[command(alias = "restart")]
+    Reload,
+    /// Get status of virtual machine.
+    Status,
+    /// Run Firefox remotely on the virtual machine (x11forwarding).
     Firefox,
-    #[command(about = "Alternatives to run firefox remotely.")]
+    /// Alternatives to run Firefox remotely.
     FirefoxRemote,
+    /// Run arbitrary Vagrant command.
     #[command(about = "Run arbitrary vagrant command.")]
     Other,
 }
@@ -67,6 +75,12 @@ impl VagrantCli {
             }
             TaskCli::Destroy => {
                 Command::vagrant().arg("destroy").run();
+            }
+            TaskCli::Reload => {
+                Command::vagrant().arg("reload").run();
+            }
+            TaskCli::Status => {
+                Command::vagrant().arg("status").run();
             }
             TaskCli::Other => {
                 let project_root = PathBuf::project_path_buf();

@@ -1,6 +1,8 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+
 use serde::{Deserialize, Serialize};
+
 use opendut_types::cluster::ClusterId;
 
 use crate::netbird::group::GroupId;

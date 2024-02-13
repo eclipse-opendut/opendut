@@ -19,7 +19,7 @@ services:
       - OPENDUT_HOSTS
 
     volumes:
-      - /path/to/config:/config
+      - opendut_firefox:/config
     shm_size: "1gb"
     #restart: unless-stopped
     networks:
@@ -29,3 +29,6 @@ networks:
   opendutnet:
     name: opendut_network
     external: true  # Use a pre-existing network
+
+volumes:
+  opendut_firefox:

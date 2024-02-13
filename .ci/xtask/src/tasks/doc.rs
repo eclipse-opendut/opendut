@@ -42,11 +42,12 @@ pub mod book {
     #[tracing::instrument]
     pub fn serve() -> crate::Result {
         util::install_crate(Crate::Mdbook)?;
-        util::install_crate(Crate::MdbookMermaid)?;
+        util::install_crate(Crate::MdbookPlantuml)?;
 
         Command::new("mdbook")
             .arg("serve")
             .arg("--open")
+            .arg("--port=4000")
             .current_dir(doc_dir())
             .run_requiring_success()?;
         Ok(())

@@ -1,18 +1,13 @@
-pub use licenses::ComponentLicenses;
 pub use licenses::get_licenses;
+pub use licenses::ComponentLicenses;
 
 #[derive(thiserror::Error, Debug, Clone)]
 pub enum ApiError {
+    #[error("{message}")]
+    HttpError { message: String },
 
     #[error("{message}")]
-    HttpError {
-        message: String,
-    },
-
-    #[error("{message}")]
-    JsonParseError {
-        message: String,
-    },
+    JsonParseError { message: String },
 }
 
 mod licenses {
@@ -50,16 +45,20 @@ mod licenses {
     }
 
     pub async fn get_licenses() -> Result<Vec<ComponentLicenses>, ApiError> {
-
         debug!("Requesting licenses.");
 
         let index = {
             let licenses_index = http::Request::get("/api/licenses")
-                .send().await
+                .send()
+                .await
                 .map_err(|cause| ApiError::HttpError {
-                    message: format!("Failed to request the licenses index file due to: {}", cause),
+                    message: format!(
+                        "Failed to request the licenses index file due to: {}",
+                        cause
+                    ),
                 })?
-                .json::<LicensesIndexJson>().await
+                .json::<LicensesIndexJson>()
+                .await
                 .map_err(|cause| ApiError::JsonParseError {
                     message: format!("Failed to parse the licenses index file due to: {}", cause),
                 })?;
@@ -67,25 +66,28 @@ mod licenses {
             [
                 ("carl", format!("/api/licenses/{}", licenses_index.carl)),
                 ("edgar", format!("/api/licenses/{}", licenses_index.edgar)),
-                ("lea", format!("/api/licenses/{}", licenses_index.lea))
+                ("lea", format!("/api/licenses/{}", licenses_index.lea)),
             ]
         };
 
         let mut result = Vec::<ComponentLicenses>::new();
         for (name, path) in index {
             let licenses = http::Request::get(&path)
-                .send().await
+                .send()
+                .await
                 .map_err(|cause| ApiError::HttpError {
                     message: format!("Failed to request the licenses file due to: {}", cause),
                 })?
-                .json::<BTreeMap<String, LicenseJsonEntry>>().await
+                .json::<BTreeMap<String, LicenseJsonEntry>>()
+                .await
                 .map_err(|cause| ApiError::HttpError {
                     message: format!("Failed to parse the licenses file due to: {}", cause),
                 })?;
 
-            let dependencies = licenses.iter()
-                .map(|(dependency, licenses) | {
-                    let split = dependency.split(" ").collect::<Vec<_>>();
+            let dependencies = licenses
+                .iter()
+                .map(|(dependency, licenses)| {
+                    let split = dependency.split(' ').collect::<Vec<_>>();
                     let dependency_name = split[0];
                     let dependency_version = split[1];
                     ComponentDependencyLicense {
@@ -93,7 +95,8 @@ mod licenses {
                         version: String::from(dependency_version),
                         licenses: licenses.licenses.clone(),
                     }
-                }).collect::<Vec<ComponentDependencyLicense>>();
+                })
+                .collect::<Vec<ComponentDependencyLicense>>();
 
             result.push(ComponentLicenses {
                 name: String::from(name),

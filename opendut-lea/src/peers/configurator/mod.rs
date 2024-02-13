@@ -50,6 +50,7 @@ pub fn PeerConfigurator() -> impl IntoView {
             let peer_configuration = create_rw_signal(UserPeerConfiguration {
                 id: peer_id,
                 name: UserInputValue::Left(UserInputError::from("Enter a valid peer name.")),
+                location: UserInputValue::Right(String::from("")),
                 devices: Vec::new(),
                 is_new: true,
             });
@@ -61,13 +62,13 @@ pub fn PeerConfigurator() -> impl IntoView {
                         peer_configuration.update(|user_configuration| {
                             user_configuration.name = UserInputValue::Right(configuration.name.value());
                             user_configuration.is_new = false;
+                            user_configuration.location = UserInputValue::Right(configuration.location.unwrap_or_default().value());
                             user_configuration.devices = configuration.topology.devices.into_iter().map(|device| {
                                 create_rw_signal(UserDeviceConfiguration {
                                     id: device.id,
-                                    name: UserInputValue::Right(device.name),
-                                    location: UserInputValue::Right(device.location),
+                                    name: UserInputValue::Right(device.name.to_string()),
                                     interface: UserInputValue::Right(device.interface.name()),
-                                    description: device.description,
+                                    description: UserInputValue::Right(device.description.unwrap_or_default().to_string()),
                                     is_collapsed: true
                                 })
                             }).collect::<Vec<_>>();
@@ -79,6 +80,7 @@ pub fn PeerConfigurator() -> impl IntoView {
             let is_valid_peer_configuration = create_memo(move |_| {
                 peer_configuration.with(|peer_configuration| {
                     peer_configuration.name.is_right()
+                        && peer_configuration.location.is_right()
                     && peer_configuration.devices.iter().all(|device_configuration| {
                         device_configuration.with(|device_configuration| {
                             device_configuration.name.is_right()

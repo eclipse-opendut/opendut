@@ -161,27 +161,58 @@ cfg_if! {
 
 #[cfg(feature = "wasm-client")]
 pub mod wasm {
+    use leptos_oidc::Auth;
+    use tonic::codegen::InterceptedService;
+    use tonic::service::Interceptor;
+    use tonic::Status;
+
     use crate::carl::broker::PeerMessagingBroker;
     use crate::carl::cluster::ClusterManager;
     use crate::carl::InitializationError;
     use crate::carl::metadata::MetadataProvider;
     use crate::carl::peer::PeersRegistrar;
-    use crate::proto::services::cluster_manager::cluster_manager_client::ClusterManagerClient;
-    use crate::proto::services::metadata_provider::metadata_provider_client::MetadataProviderClient;
-    use crate::proto::services::peer_manager::peer_manager_client::PeerManagerClient;
-    use crate::proto::services::peer_messaging_broker::peer_messaging_broker_client::PeerMessagingBrokerClient;
+
+    #[derive(Clone)]
+    pub struct AuthInterceptor {
+        pub(crate) auth: Option<Auth>
+    }
+
+    impl Interceptor for AuthInterceptor {
+        fn call(&mut self, mut request: tonic::Request<()>) -> Result<tonic::Request<()>, Status> {
+            if let Some(auth) = &self.auth {
+                if let Some(Some(token_storage)) = auth.ok() {
+                    let now = chrono::Utc::now().naive_utc();
+                    if now.gt(&token_storage.expires_in) {
+                        tracing::debug!("Token expired. Refreshing.");
+                        auth.refresh_token();
+                    }
+                };
+                let access_token = auth.access_token();
+                let token = match access_token {
+                    None => { "no-auth-token".to_string() }
+                    Some(token) => { token }
+                };
+                tracing::debug!("Token: {}", token);
+                let token: tonic::metadata::MetadataValue<_> = format!("Bearer {}", token).parse()
+                    .map_err(|_err| Status::unauthenticated("could not parse token"))?;
+                request.metadata_mut().insert("authorization", token.clone());
+            }
+
+            Ok(request)
+        }
+    }
 
     #[derive(Debug, Clone)]
     pub struct CarlClient {
-        pub broker: PeerMessagingBroker<tonic_web_wasm_client::Client>,
-        pub cluster: ClusterManager<tonic_web_wasm_client::Client>,
-        pub metadata: MetadataProvider<tonic_web_wasm_client::Client>,
-        pub peers: PeersRegistrar<tonic_web_wasm_client::Client>,
+        pub broker: PeerMessagingBroker<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
+        pub cluster: ClusterManager<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
+        pub metadata: MetadataProvider<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
+        pub peers: PeersRegistrar<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
     }
 
     impl CarlClient {
 
-        pub fn create(url: url::Url) -> Result<CarlClient, InitializationError> {
+        pub fn create(url: url::Url, auth: Option<Auth>) -> Result<CarlClient, InitializationError> {
 
             let scheme = url.scheme();
             if scheme != "https" {
@@ -192,12 +223,13 @@ pub mod wasm {
             let port = url.port().unwrap_or(443_u16);
 
             let client = tonic_web_wasm_client::Client::new(format!("{}://{}:{}", scheme, host, port));
+            let auth_interceptor = AuthInterceptor { auth };
 
             Ok(CarlClient {
-                broker: PeerMessagingBroker::new(PeerMessagingBrokerClient::new(Clone::clone(&client))),
-                cluster: ClusterManager::new(ClusterManagerClient::new(Clone::clone(&client))),
-                metadata: MetadataProvider::new(MetadataProviderClient::new(Clone::clone(&client))),
-                peers: PeersRegistrar::new(PeerManagerClient::new(Clone::clone(&client))),
+                broker: PeerMessagingBroker::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
+                cluster: ClusterManager::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
+                metadata: MetadataProvider::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
+                peers: PeersRegistrar::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
             })
         }
     }

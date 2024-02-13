@@ -14,7 +14,7 @@ pub mod error {
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 mod client {
     use cfg_if::cfg_if;
-    use tonic::codegen::{Body, Bytes, StdError};
+    use tonic::codegen::{Body, Bytes, http, InterceptedService, StdError};
 
     use opendut_types::peer::PeerId;
     use opendut_types::proto::ConversionError;
@@ -37,6 +37,29 @@ mod client {
         pub fn new(inner: PeerMessagingBrokerClient<T>) -> PeerMessagingBroker<T> {
             PeerMessagingBroker {
                 inner
+            }
+        }
+
+        pub fn with_interceptor<F>(
+            inner: T,
+            interceptor: F,
+        ) -> PeerMessagingBroker<InterceptedService<T, F>>
+            where
+                F: tonic::service::Interceptor,
+                T::ResponseBody: Default,
+                T: tonic::codegen::Service<
+                    http::Request<tonic::body::BoxBody>,
+                    Response = http::Response<
+                        <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
+                    >,
+                >,
+                <T as tonic::codegen::Service<
+                    http::Request<tonic::body::BoxBody>,
+                >>::Error: Into<StdError> + Send + Sync,
+        {
+            let inner_client = PeerMessagingBrokerClient::new(InterceptedService::new(inner, interceptor));
+            PeerMessagingBroker {
+                inner: inner_client
             }
         }
 
