@@ -12,6 +12,7 @@ pub struct CannelloniManager{
 }
 
 // TODO: Allow terminating cannelloni to set up everything new when new configs are pushed from CARL
+// TODO: Implement exponential back-off when restarting cannelloni?
 impl CannelloniManager {
     pub async fn run(&mut self) {
         loop {
@@ -33,9 +34,11 @@ impl CannelloniManager {
         match cannelloni_res {
             Ok(out) => {
                 log::error!(
-                    "Cannelloni for remote IP {} terminated prematurely with stderr:\n{}\n", 
+                    "Cannelloni for remote IP {} terminated prematurely with stderr:\n{}\nstdout:\n{}", 
                     self.remote_ip.to_string(), 
-                    String::from_utf8_lossy(&out.stderr))
+                    String::from_utf8_lossy(&out.stderr),
+                    String::from_utf8_lossy(&out.stdout)
+                )
             },
             Err(err) => {
                 log::error!("Cannelloni for remote IP {} terminated prematurely but failed to get output: '{}'.", self.remote_ip.to_string(), err)

@@ -4,7 +4,8 @@ RUN apt update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install
     tzdata ca-certificates \
     iproute2 bind9-dnsutils iputils-ping fping iptables wireguard-tools tcpdump \
     curl jq uuid-runtime \
-    python3 python3-requests python3-flask can-utils wget build-essential cmake libsctp-dev
+    python3 python3-requests python3-flask \
+    python3-can can-utils wget build-essential cmake libsctp-dev
 
 RUN mkdir /tmp/cannelloni
 WORKDIR /tmp/cannelloni

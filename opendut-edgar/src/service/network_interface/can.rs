@@ -64,13 +64,13 @@ pub async fn setup_remote_routing_client(bridge_name: &NetworkInterfaceName, loc
 
     log::info!("Spawning cannelloni manager as client");
 
-    // TODO: The buffer timeout here should likely be configurable through CARL
+    // TODO: The buffer timeout here should likely be configurable through CARL (cannot be 0)
     let mut cannelloni_manager = CannelloniManager {
         is_server: false, 
         can_if_name: bridge_name.clone(), 
         server_port: leader_port, 
         remote_ip: leader_ip.clone(), 
-        buffer_timeout: 20000,
+        buffer_timeout: 1,
     };
 
     tokio::spawn(async move {
@@ -91,7 +91,7 @@ pub async fn setup_remote_routing_server(bridge_name: &NetworkInterfaceName, rem
             can_if_name: bridge_name.clone(), 
             server_port: leader_port, 
             remote_ip: remote_ip.clone(), 
-            buffer_timeout: 20000,
+            buffer_timeout: 1,
         };
     
         tokio::spawn(async move {
