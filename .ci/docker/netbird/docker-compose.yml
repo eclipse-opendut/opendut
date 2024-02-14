@@ -18,22 +18,51 @@ services:
         NETBIRD_MANAGEMENT_VERSION: ${NETBIRD_MANAGEMENT_VERSION}
     volumes:
       - netbird-mgmt:/var/lib/netbird
-      - netbird-letsencrypt:/etc/letsencrypt:ro
       - ./management.json:/etc/netbird/management.json
       - "../../../resources/development/tls/insecure-development-ca.pem:/usr/local/share/ca-certificates/insecure-development-ca.crt:ro"
       - netbird-management-keys:/management
+      - "../../../resources/development/tls/:/opendut-tls/:ro"
     healthcheck:
       test: ["CMD", "/netbird-management-health.sh"]
       interval: 1m
       timeout: 10s
       retries: 10
       start_period: 90s
+    networks:
+      opendutnet:
+        aliases:
+          - netbird-management-container
 
+  # traefik performs tls offloading
+  traefik:
+    image: docker.io/traefik:v2.10.4
+    command:
+      - --api.insecure=true
+      - --providers.docker
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      # Redirect to HTTPS
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+      - "--providers.docker=false"
+      - "--log.level=DEBUG"
+      - "--accesslog"
+    environment:
+      - "LEGO_CA_CERTIFICATES=/opendut-tls/insecure-development-ca.pem"
+#    ports:
+#      - "127.0.0.1:8082:8080"
+#      - "80:80"
+#      - "443:443"
+    volumes:
+      - ./traefik/:/etc/traefik/dynamic:ro
+      - "../../../resources/development/tls/:/opendut-tls/:ro"
     networks:
       opendutnet:
         ipv4_address: 192.168.32.211
         aliases:
-          - netbird-management
+        - netbird-management
+        - netbird-dashboard
 
   management_init:
     build:
@@ -79,8 +108,8 @@ services:
     image: wiretrustee/dashboard:v1.17.12
     environment:
       # Endpoints
-      - NETBIRD_MGMT_API_ENDPOINT=http://netbird-management
-      - NETBIRD_MGMT_GRPC_API_ENDPOINT=http://netbird-management
+      - NETBIRD_MGMT_API_ENDPOINT=https://netbird-management
+      - NETBIRD_MGMT_GRPC_API_ENDPOINT=https://netbird-management
       # OIDC
       - AUTH_AUDIENCE=netbird-client
       - AUTH_CLIENT_ID=netbird-client
@@ -94,8 +123,7 @@ services:
       opendutnet:
         ipv4_address: 192.168.32.213
         aliases:
-          - netbird-dashboard
-          - netbird-ui
+          - netbird-dashboard-container
 
 networks:
   opendutnet:
@@ -105,5 +133,4 @@ networks:
 volumes:
   netbird-signal:
   netbird-mgmt:
-  netbird-letsencrypt:
   netbird-management-keys:

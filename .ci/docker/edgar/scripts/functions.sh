@@ -20,6 +20,12 @@ die_with_error() {
         echo "terminating with error"
         exit 1
 }
+
+error_stop_and_keep_running() {
+        echo "ERROR occurred. Keeping container running for debugging."
+        sleep infinity
+}
+
 die_with_success() {
         echo "terminating"
         return 0

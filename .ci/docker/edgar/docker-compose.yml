@@ -31,7 +31,7 @@ services:
       - OPENDUT_EDGAR_CLUSTER_NAME
       # dynamically provided
       - NETBIRD_API_TOKEN  # only used by unmanaged mode
-      - NETBIRD_MANAGEMENT_API=http://netbird-management
+      - NETBIRD_MANAGEMENT_API=https://netbird-management
       - OPENDUT_CUSTOM_CA1
       - OPENDUT_CUSTOM_CA2
       - OPENDUT_HOSTS
@@ -70,7 +70,7 @@ services:
       # dynamically provided
       - NETBIRD_SETUP_KEY
       - NETBIRD_API_TOKEN  # only used by unmanaged mode
-      - NETBIRD_MANAGEMENT_API=http://netbird-management
+      - NETBIRD_MANAGEMENT_API=https://netbird-management
       - OPENDUT_CUSTOM_CA1
       - OPENDUT_CUSTOM_CA2
       - OPENDUT_HOSTS

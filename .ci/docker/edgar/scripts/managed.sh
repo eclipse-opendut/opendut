@@ -4,7 +4,8 @@ source "$(dirname "$0")/functions.sh"
 
 set -e  # exit on error
 set -x  # print commands
-trap die_with_error TERM
+trap error_stop_and_keep_running TERM
+trap error_stop_and_keep_running EXIT
 
 cleo_get_peer_id() {
   edgar_hostname="$1"
@@ -123,6 +124,7 @@ if [ "$1" == "leader" ]; then
 fi
 
 trap die_with_success TERM
+trap die_with_success EXIT
 
 sleep infinity &
 

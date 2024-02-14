@@ -26,6 +26,6 @@ if [ ! -e "/config/.firstrun" ]; then
   touch /config/.firstrun
   # abc is the user firefox runs as
   su - abc -c 'DISPLAY=:1 firefox https://keycloak'
-  su - abc -c 'DISPLAY=:1 firefox http://netbird-ui'
+  su - abc -c 'DISPLAY=:1 firefox https://netbird-dashboard'
   su - abc -c 'DISPLAY=:1 firefox https://carl'
 fi

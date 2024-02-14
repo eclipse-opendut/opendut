@@ -2,7 +2,7 @@ use anyhow::Error;
 use clap::ArgAction;
 
 use crate::commands::vagrant::running_in_opendut_vm;
-use crate::core::carl_config::{print_carl_config_env, print_carl_config_toml};
+use crate::core::carl_config::{CarlConfiguration};
 use crate::core::docker::{DockerCommand, DockerCoreServices, show_error_if_unhealthy_containers_were_found, start_netbird};
 use crate::core::docker::compose::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_up_expose_ports};
 use crate::core::project::load_theo_environment_variables;
@@ -29,7 +29,7 @@ pub enum TaskCli {
     Build,
     /// Shell in Dev container.
     Shell,
-    /// CARL environment run configuration for your IDE.
+    /// CARL environment run configuration for your IDE (different output in VM and host!).
     CarlConfig,
     /// EDGAR container.
     EdgarShell,
@@ -96,15 +96,16 @@ impl DevCli {
             }
             TaskCli::CarlConfig => {
                 let netbird_api_key = crate::core::docker::netbird::get_netbird_api_key()?;
-                let netbird_management_url = if running_in_opendut_vm() {
-                    "https://192.168.56.10/api"
+                let carl_config = if running_in_opendut_vm() {
+                    println!("# Following configuration assumes services are running in virtual machine.");
+                    CarlConfiguration::testenv_in_vm_config(netbird_api_key)
                 } else {
-                    "https://192.168.32.211/api"
+                    println!("# Following configuration assumes services are running in docker on host.");
+                    CarlConfiguration::testenv_on_host_config(netbird_api_key)
                 };
-                let netbird_management_ca = "/etc/opendut-network/tls/carl.pem";
+                println!("{}", carl_config.config_env_variables());
+                println!("{}", carl_config.config_toml());
 
-                print_carl_config_env(netbird_management_url, netbird_management_ca, &netbird_api_key);
-                print_carl_config_toml(netbird_management_url, netbird_management_ca, &netbird_api_key);
             }
         }
         Ok(())

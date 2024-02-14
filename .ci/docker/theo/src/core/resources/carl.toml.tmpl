@@ -1,0 +1,33 @@
+# CARL configuration environment variables for development.
+[network]
+bind.host = "0.0.0.0"
+bind.port = 8080
+remote.host = "carl"
+remote.port = 443
+
+[network.tls]
+certificate = "resources/development/tls/carl.pem"
+key = "resources/development/tls/carl.key"
+[network.tls.ca]
+certificate = "resources/development/tls/insecure-development-ca.pem"
+
+[network.oidc]
+enabled = true
+
+[network.oidc.lea]
+client_id = "opendut-lea-client"
+issuer_url = "https://keycloak/realms/opendut"
+scopes = "openid,profile,email"
+
+[serve]
+ui.directory = "./opendut-lea/dist/"
+
+[vpn]
+enabled = true
+kind = "netbird"
+
+[vpn.netbird]
+url = "{netbird_management_url}"
+ca = "{netbird_management_ca_path}"
+auth.type = "personal-access-token"
+auth.secret = "{netbird_api_key}"
