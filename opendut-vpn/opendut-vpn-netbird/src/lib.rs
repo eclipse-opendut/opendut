@@ -27,6 +27,8 @@ pub struct NetbirdManagementClientConfiguration {
     pub management_url: Url,
     pub authentication_token: Option<NetbirdToken>,
     pub ca: Option<PathBuf>,
+    pub timeout: Option<u64>,
+    pub retries: Option<u32>
 }
 
 pub struct NetbirdManagementClient {
@@ -53,6 +55,8 @@ impl NetbirdManagementClient {
             Some(management_ca.as_slice()),
             configuration.authentication_token,
             None,
+            configuration.timeout,
+            configuration.retries
         )?);
         Ok(Self {
             management_url,

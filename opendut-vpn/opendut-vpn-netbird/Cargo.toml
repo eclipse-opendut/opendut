@@ -14,6 +14,8 @@ async-trait = { workspace = true }
 anyhow = { workspace = true }
 http = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
+reqwest-middleware = { workspace = true }
+reqwest-retry = { workspace = true}
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
@@ -21,6 +23,8 @@ time = { workspace = true, features = ["serde-well-known"] }
 tokio = { workspace = true, features = ["full"] }
 tracing = { workspace = true }
 uuid = { workspace = true, features = ["serde"] }
+task-local-extensions = { workspace = true }
+
 
 [dev-dependencies]
 googletest = { workspace = true }

@@ -47,8 +47,8 @@ pub enum CreateSetupKeyError {
 
 #[derive(thiserror::Error, Debug)]
 pub enum RequestError {
-    #[error("Request error: {0}")]
-    Request(reqwest::Error), //TODO can rename to Transport?
+    #[error("Request middleware error: {0}")]
+    RequestMiddleware(reqwest_middleware::Error),
     #[error("Received status code indicating an error: {0}")]
     IllegalStatus(reqwest::Error),
     #[error("Received status code '{0}' indicating an error: {1}")]

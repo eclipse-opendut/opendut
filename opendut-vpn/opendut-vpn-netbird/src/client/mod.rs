@@ -44,7 +44,9 @@ impl DefaultClient {
         netbird_url: Url,
         ca: Option<&[u8]>,
         token: Option<netbird::Token>,
-        requester: Option<Box<dyn RequestHandler + Send + Sync>>
+        requester: Option<Box<dyn RequestHandler + Send + Sync>>,
+        timeout: Option<u64>,
+        retries: Option<u32>,
     ) -> Result<Self, CreateClientError>
     {
         let headers = {
@@ -74,16 +76,21 @@ impl DefaultClient {
                 .expect("Failed to construct client.")
         };
 
+        let timeout = timeout.unwrap_or_else(|| 10);
+        let retries = retries.unwrap_or_else(|| 5);
+
+        let request_handler_config = RequestHandlerConfig::new(Duration::from_secs(timeout), retries);
+
         let requester = requester.unwrap_or_else(|| {
             Box::new(DefaultRequestHandler::new(
                 client,
-                RequestHandlerConfig::default(), //TODO pass in from the outside
+                request_handler_config, //TODO pass in from the outside
             ))
         });
 
         Ok(Self {
             netbird_url,
-            requester,
+            requester
         })
     }
 }
