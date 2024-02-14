@@ -67,7 +67,8 @@ def run_ping():
 
     latencies = []
     for _ in range(n_pings):
-        latencies.append(send_ping(bus))
+        if (latency := send_ping(bus)) is not None:
+            latencies.append(latency)
         time.sleep(ping_sleep)
 
     if len(latencies):
