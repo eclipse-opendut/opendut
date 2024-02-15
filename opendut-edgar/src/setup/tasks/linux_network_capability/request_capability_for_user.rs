@@ -26,12 +26,17 @@ impl Task for RequestCapabilityForUser {
         if capability_file.exists() {
             let file_content = fs::read_to_string(&capability_file)
                 .context(format!("Failed to read content of PAM file '{}'.", capability_file.display()))?;
+
             if file_content.contains(LINE_TO_ADD) {
+                const CAPSH_NAME: &str = "capsh";
+
+                let capsh_path = which::which(CAPSH_NAME) //determine absolute path, because capsh may be in the PATH of the root user without being in the PATH of the service user
+                    .context(format!("Failed to determine absolute path of {CAPSH_NAME}"))?;
 
                 Command::new("su")
                     .arg(&self.service_user.name)
                     .arg("--command")
-                    .arg("/sbin/capsh --has-i=cap_net_admin")
+                    .arg(&format!("{} --has-i=cap_net_admin", capsh_path.display()))
                     .evaluate_requiring_success()?;
 
                 return Ok(TaskFulfilled::Yes)
