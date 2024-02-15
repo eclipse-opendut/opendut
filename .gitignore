@@ -12,6 +12,7 @@
 target/
 opendut-lea/dist/
 .vagrant/
+docker-logs/
 /doc/book/
 /doc/src/mdbook-plantuml-img
 rustc-ice-*

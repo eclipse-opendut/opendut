@@ -68,15 +68,11 @@ jobs:
         run: |
           docker exec edgar-peer-1 /opt/pingall.sh # TODO RM
 
-      - name: Show container logs
+      - name: Collect container logs
         if: always()
         run: |
-          mkdir docker-logs
-          DOCKER_CONTAINERS="$(docker ps --all --format='{{.Names}}')"
-          for DOCKER_NAME in $DOCKER_CONTAINERS; do
-            echo "Logs for $DOCKER_NAME"
-            docker logs $DOCKER_NAME > ./docker-logs/docker-$DOCKER_NAME.log 2>&1
-          done
+          chmod +x .ci/docker/edgar/persist-edgar-logs.sh
+          .ci/docker/edgar/persist-edgar-logs.sh
 
       - name: "Upload docker logs"
         if: always()

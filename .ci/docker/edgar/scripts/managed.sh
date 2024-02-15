@@ -45,6 +45,25 @@ pre_flight_tasks() {
     echo "Command 'opendut-cleo' not found."
     exit 1
   fi
+
+  # prepare log directories
+  mkdir -p /logs/{opendut-edgar,netbird,journal}
+
+  # opendut-edgar setup.log
+  touch /logs/opendut-edgar/setup.log
+  if [ ! -e /opt/opendut-edgar/setup.log ]; then
+    touch /logs/opendut-edgar/setup.log
+    ln -s /logs/opendut-edgar/setup.log /opt/opendut-edgar/setup.log
+  fi
+  # systemd journal directory
+  if [ ! -e /var/log/journal ]; then
+    ln -s /logs/journal /var/log/journal
+  fi
+  # netbird log directory
+  if [ ! -e /var/log/netbird ]; then
+    ln -s /logs/netbird /var/log/netbird
+  fi
+
 }
 
 ## MAIN TASKS
