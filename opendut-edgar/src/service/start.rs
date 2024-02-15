@@ -15,6 +15,7 @@ use opendut_types::peer::PeerId;
 use opendut_util::logging;
 
 use crate::common::{carl, settings};
+use crate::service::can_manager::{CanManager, CanManagerRef};
 use crate::service::network_interface::manager::{NetworkInterfaceManager, NetworkInterfaceManagerRef};
 use crate::service::{cluster_assignment, vpn};
 
@@ -53,6 +54,7 @@ pub async fn create(settings_override: Config) -> anyhow::Result<()> {
     log::info!("Started with ID <{id}> and configuration: {settings:?}");
 
     let network_interface_manager: NetworkInterfaceManagerRef = Arc::new(NetworkInterfaceManager::create()?);
+    let can_manager: CanManagerRef = Arc::new(CanManager::create(Arc::clone(&network_interface_manager)));
 
     let network_interface_management_enabled = settings.config.get::<bool>("network.interface.management.enabled")?;
 
@@ -104,6 +106,7 @@ pub async fn create(settings_override: Config) -> anyhow::Result<()> {
                                 id,
                                 &bridge_name,
                                 Arc::clone(&network_interface_manager),
+                                Arc::clone(&can_manager)
                             ).await?;
                         } else {
                             log::debug!("Skipping changes to network interfaces after receiving ClusterAssignment, as this is disabled via configuration.");

@@ -6,14 +6,16 @@ use opendut_types::peer::PeerId;
 use opendut_types::util::net::NetworkInterfaceName;
 
 use crate::service::network_interface;
-use crate::service::network_interface::{bridge, gre, can};
+use crate::service::network_interface::{bridge, gre};
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
+use crate::service::can_manager::CanManagerRef;
 
 pub async fn network_interfaces_setup(
     cluster_assignment: ClusterAssignment,
     self_id: PeerId,
     bridge_name: &NetworkInterfaceName,
     network_interface_manager: NetworkInterfaceManagerRef,
+    can_manager: CanManagerRef,
 ) -> Result<(), Error> {
 
     bridge::recreate(bridge_name, Arc::clone(&network_interface_manager)).await
@@ -44,7 +46,7 @@ pub async fn network_interfaces_setup(
     join_device_interfaces_to_bridge(&own_ethernet_interfaces, bridge_name, Arc::clone(&network_interface_manager)).await
         .map_err(Error::JoinDeviceInterfaceToBridgeFailed)?;
 
-    setup_can(&cluster_assignment, self_id, network_interface_manager).await?;
+    setup_can(&cluster_assignment, self_id, can_manager).await?;
 
     Ok(())
 }
@@ -52,15 +54,14 @@ pub async fn network_interfaces_setup(
 pub async fn setup_can(
     cluster_assignment: &ClusterAssignment,
     self_id: PeerId,
-    network_interface_manager: NetworkInterfaceManagerRef
+    can_manager: CanManagerRef
 ) -> Result<(), Error> {
 
     let can_bridge_name = crate::common::default_can_bridge_name();
     let own_can_interfaces = get_own_can_interfaces(&cluster_assignment, self_id)?;
-    can::setup_local_routing(
+    can_manager.setup_local_routing(
         &can_bridge_name, 
         own_can_interfaces,
-        Arc::clone(&network_interface_manager)
     ).await
     .map_err(Error::LocalCanRoutingSetupFailed)?;
 
@@ -75,7 +76,7 @@ pub async fn setup_can(
     if is_leader {
 
         let remote_ips = determine_remote_ips(&cluster_assignment, self_id, &local_ip)?;
-        can::setup_remote_routing_server(
+        can_manager.setup_remote_routing_server(
             &can_bridge_name, 
             &remote_ips
         ).await
@@ -84,7 +85,7 @@ pub async fn setup_can(
     } else {
         
         let leader_ip = determine_leader_ip(&cluster_assignment)?;
-        can::setup_remote_routing_client(
+        can_manager.setup_remote_routing_client(
             &can_bridge_name, 
             &local_ip, 
             &leader_ip
@@ -192,9 +193,9 @@ pub enum Error {
     #[error("GRE interface setup failed: {0}")]
     GreInterfaceSetupFailed(gre::Error),
     #[error("Local CAN routing setup failed: {0}")]
-    LocalCanRoutingSetupFailed(can::Error),
+    LocalCanRoutingSetupFailed(crate::service::can_manager::Error),
     #[error("Remote CAN routing setup failed: {0}")]
-    RemoteCanRoutingSetupFailed(can::Error),
+    RemoteCanRoutingSetupFailed(crate::service::can_manager::Error),
     #[error("Joining device interface to bridge failed: {0}")]
     JoinDeviceInterfaceToBridgeFailed(network_interface::manager::Error),
 }

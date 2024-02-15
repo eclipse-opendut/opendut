@@ -3,7 +3,6 @@ use std::io;
 use std::net::Ipv4Addr;
 use std::sync::Arc;
 use tokio::process::Command;
-use regex::Regex;
 
 use anyhow::anyhow;
 use futures::TryStreamExt;
@@ -142,19 +141,6 @@ impl NetworkInterfaceManager {
         Ok(())
     }
 
-    pub async fn remove_all_can_routes(&self) -> Result<(), Error> {
-        let output = Command::new("cangw")
-                    .arg("-F")
-                    .output()
-                    .await
-                    .map_err(|cause| Error::CommandLineProgramExecution { command: "cangw".to_string(), cause })?;
-
-        if ! output.status.success() {
-            return Err(Error::CanRouteFlushing { cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim()) });
-        }
-        Ok(())
-    }
-
     pub async fn create_vcan_interface(&self, name: &NetworkInterfaceName) -> Result<Interface, Error> {
         let output = Command::new("ip")
                 .arg("link")
@@ -174,65 +160,6 @@ impl NetworkInterfaceManager {
         let interface = self.try_find_interface(name).await?;
         Ok(interface)
     }
-
-    pub async fn check_can_route_exists(&self, src: &NetworkInterfaceName, dst: &NetworkInterfaceName, can_fd: bool, max_hops: u8) -> Result<bool, Error> {
-        let output = Command::new("cangw")
-                .arg("-L")
-                .output()
-                .await
-                .map_err(|cause| Error::CommandLineProgramExecution { command: "cangw".to_string(), cause })?;
-        
-        // cangw -L returns non-zero exit code despite succeeding, so we don't check it here
-        
-        let output_str = String::from_utf8_lossy(&output.stdout);
-
-        let re = Regex::new(r"(?m)^cangw -A -s ([^\n ]+) -d ([^\n ]+) ((?:-X )?)-e -l ([0-9[^\n ]]+) #.*$").unwrap();
-
-        for (_, [exist_src, exist_dst, can_fd_flag, exist_max_hops]) in re.captures_iter(&output_str).map(|c| c.extract()) {
-            let exist_can_fd = can_fd_flag.trim() == "-X";
-            if exist_src == src.to_string() && exist_dst == dst.to_string() && exist_can_fd == can_fd && exist_max_hops == max_hops.to_string(){
-                return Ok(true)
-            }
-
-        }
-
-        Ok(false)
-    }
-
-    pub async fn create_can_route(&self, src: &NetworkInterfaceName, dst: &NetworkInterfaceName, can_fd: bool, max_hops: u8) -> Result<(), Error> {
-        self.try_find_interface(&src).await?;
-        self.try_find_interface(&dst).await?;
-
-        let mut cmd = Command::new("cangw");
-        cmd.arg("-A")
-            .arg("-s")
-            .arg(src.name())
-            .arg("-d")
-            .arg(dst.name())
-            .arg("-e")
-            .arg("-l")
-            .arg(max_hops.to_string());
-
-        if can_fd {
-            cmd.arg("-X");
-        } 
-
-        let output= cmd.output().await
-                .map_err(|cause| Error::CommandLineProgramExecution { command: "cangw".to_string(), cause })?;
-
-        if ! output.status.success() {
-            return Err(Error::CanRouteCreation { 
-                src: src.clone(), 
-                dst: dst.clone(), 
-                cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim()) });
-        }
-
-        self.check_can_route_exists(src, dst, can_fd, max_hops).await?.then(|| ()).ok_or(Error::CanRouteCreationNoCause { src: src.clone(), dst: dst.clone() })?;
-
-        Ok(())
-    }
-
-
     
 }
 
@@ -267,16 +194,6 @@ pub enum Error {
     JoinInterfaceToBridge { interface: Interface, bridge: Interface, cause: rtnetlink::Error },
     #[error("Failure while creating virtual CAN interface '{name}': {cause}")]
     VCanInterfaceCreation { name: NetworkInterfaceName, cause: String},
-    #[error("Failure while creating CAN route '{src}' -> '{dst}': {cause}")]
-    CanRouteCreation { src: NetworkInterfaceName, dst: NetworkInterfaceName, cause: String },
-    #[error("Failure while listing CAN routes: {cause}")]
-    ListCanRoutes { cause: String },
-    #[error("Failure while creating CAN route '{src}' -> '{dst}'")]
-    CanRouteCreationNoCause { src: NetworkInterfaceName, dst: NetworkInterfaceName},
-    #[error("Failure while loading can-gw kernel module: {cause}")]
-    CanGwModprobe { cause: std::io::Error },
-    #[error("Failure while flushing existing CAN routes: {cause}")]
-    CanRouteFlushing { cause: String },
     #[error("Failure while invoking command line program '{command}': {cause}")]
     CommandLineProgramExecution { command: String, cause: std::io::Error },
     #[error("{message}")]
