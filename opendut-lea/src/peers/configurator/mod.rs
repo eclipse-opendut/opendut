@@ -132,7 +132,7 @@ pub fn PeerConfigurator() -> impl IntoView {
             <BasePageContainer
                 title="Configure Peer"
                 breadcrumbs=breadcrumbs
-                controls=view! { <Controls configuration=peer_configuration.read_only() is_valid_peer_configuration=is_valid_peer_configuration.into() /> }
+                controls=view! { <Controls configuration=peer_configuration is_valid_peer_configuration=is_valid_peer_configuration.into() /> }
             >
                 <Show
                     when=move || !peer_configuration_resource.loading().get() // TODO: Check for errors
