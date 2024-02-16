@@ -130,7 +130,7 @@ fn check_edgar_can_ping() -> Result<i32, Error> {
         .arg("responder")
         .expect_status("Failed to start CAN ping responder on edgar-peer-1.")?;
 
-    sleep(Duration::from_secs(2));
+    sleep(Duration::from_secs(10));
 
     DockerCommand::new_exec("edgar-peer-2")
         .arg("python3")
