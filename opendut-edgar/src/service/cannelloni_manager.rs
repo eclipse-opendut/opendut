@@ -22,7 +22,6 @@ enum MonitorResult {
 
 const MONITOR_INTERVAL_MS: u64 = 100;
 
-// TODO: Allow terminating cannelloni to set up everything new when new configs are pushed from CARL
 // TODO: Implement exponential back-off when restarting cannelloni?
 impl CannelloniManager {
 
@@ -50,12 +49,21 @@ impl CannelloniManager {
 
                     match self.monitor_process().await {
                         MonitorResult::RestartCannelloni => (),
-                        MonitorResult::TerminateManager => return,
+                        MonitorResult::TerminateManager => {
+                            self.kill_cannelloni_process().await;
+                            return
+                        },
                     }
-                    
                 },
                 Err(err) => log::error!("Failed to start cannelloni instance for remote IP {}: '{}'.", self.remote_ip.to_string(), err),
             }
+        }
+    }
+
+    async fn kill_cannelloni_process(&mut self) {
+        match self.cannelloni_proc.as_mut().unwrap().kill().await {
+            Ok(_) => (),
+            Err(err) => log::error!("Failed to start cannelloni instance for remote IP {}: '{}'.", self.remote_ip.to_string(), err),
         }
     }
 
@@ -118,7 +126,7 @@ impl CannelloniManager {
     }
 
 
-    async fn fill_cannelloni_cmd(&mut self, cmd: &mut Command) {
+    async fn fill_cannelloni_cmd(&self, cmd: &mut Command) {
         let instance_type = if self.is_server {"s"} else {"c"};
         let port_arg = if self.is_server {"-l"} else {"-r"};
 
