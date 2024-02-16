@@ -1,8 +1,9 @@
 use tokio::process::{Child, Command};
 use tokio::io::{AsyncReadExt, BufReader};
-use tokio_util::sync::CancellationToken;
 use std::process::Stdio;
 use std::net::IpAddr;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use opendut_types::util::net::NetworkInterfaceName;
 
 pub struct CannelloniManager{
@@ -11,7 +12,7 @@ pub struct CannelloniManager{
     server_port: u16, 
     remote_ip: IpAddr, 
     buffer_timeout: u64,
-    cancellation_token: CancellationToken, 
+    termination_request_token: Arc<AtomicBool>,
     cannelloni_proc: Option<Child>,
 }
 
@@ -25,14 +26,14 @@ const MONITOR_INTERVAL_MS: u64 = 100;
 // TODO: Implement exponential back-off when restarting cannelloni?
 impl CannelloniManager {
 
-    pub fn new(is_server: bool, can_if_name: NetworkInterfaceName, server_port: u16, remote_ip: IpAddr, buffer_timeout: u64, cancellation_token: CancellationToken) -> Self {
+    pub fn new(is_server: bool, can_if_name: NetworkInterfaceName, server_port: u16, remote_ip: IpAddr, buffer_timeout: u64, termination_request_token: Arc<AtomicBool>) -> Self {
         Self { 
             is_server, 
             can_if_name, 
             server_port, 
             remote_ip,
             buffer_timeout, 
-            cancellation_token,
+            termination_request_token,
             cannelloni_proc: None
         }
     }
@@ -82,7 +83,7 @@ impl CannelloniManager {
                 Err(err) => log::error!("Failed to get status of cannelloni instance for remote IP {}: '{}'.", self.remote_ip.to_string(), err)
             }
 
-            if self.cancellation_token.is_cancelled() {
+            if self.termination_request_token.load(Ordering::Relaxed) {
                 return MonitorResult::TerminateManager
             }
 

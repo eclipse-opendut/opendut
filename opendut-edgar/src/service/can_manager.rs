@@ -1,9 +1,9 @@
 use std::net::IpAddr;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use regex::Regex;
 
 use tokio::process::Command;
-use tokio_util::sync::CancellationToken;
 
 use opendut_types::util::net::NetworkInterfaceName;
 
@@ -14,14 +14,14 @@ use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 pub type CanManagerRef = Arc<CanManager>;
 
 pub struct CanManager{
-    cannelloni_cancellation_token: Mutex<Option<CancellationToken>>,
+    cannelloni_termination_token: Mutex<Arc<AtomicBool>>,
     network_interface_manager: NetworkInterfaceManagerRef,
 }
 
 impl CanManager {
     pub fn create(network_interface_manager: NetworkInterfaceManagerRef) -> Self {
 
-        Self { cannelloni_cancellation_token: Mutex::new(None) , network_interface_manager}
+        Self { cannelloni_termination_token: Mutex::new(Arc::new(AtomicBool::new(false))) , network_interface_manager}
     }
 
     async fn check_can_route_exists(&self, src: &NetworkInterfaceName, dst: &NetworkInterfaceName, can_fd: bool, max_hops: u8) -> Result<bool, Error> {
@@ -139,14 +139,7 @@ impl CanManager {
     }
 
     async fn terminate_cannelloni_managers(&self) {
-        let mut guarded_cancellation_token = self.cannelloni_cancellation_token.lock().unwrap();
-        match &mut *guarded_cancellation_token {
-            Some(cancellation_token) => {
-                cancellation_token.cancel();
-                *guarded_cancellation_token = None;
-            },
-            None => (),
-        }
+        self.cannelloni_termination_token.lock().unwrap().store(true, Ordering::Relaxed);
     }
     
     pub async fn setup_remote_routing_client(&self, bridge_name: &NetworkInterfaceName, local_ip: &IpAddr, leader_ip: &IpAddr) -> Result<(), Error> {
@@ -155,10 +148,8 @@ impl CanManager {
     
         let leader_port = self.peer_ip_to_leader_port(local_ip).unwrap();
 
-        let token = CancellationToken::new();
-        let cloned_token = token.clone();
-        let mut guarded_cancellation_token = self.cannelloni_cancellation_token.lock().unwrap();
-        *guarded_cancellation_token = Some(token);
+        let mut guarded_termination_token = self.cannelloni_termination_token.lock().unwrap();
+        *guarded_termination_token = Arc::new(AtomicBool::new(false));
         
         log::info!("Spawning cannelloni manager as client");
     
@@ -169,7 +160,7 @@ impl CanManager {
             leader_port, 
             leader_ip.clone(), 
             1,
-            cloned_token,
+            guarded_termination_token.clone(),
         );
     
         tokio::spawn(async move {
@@ -183,13 +174,12 @@ impl CanManager {
 
         self.terminate_cannelloni_managers().await;
 
-        let cancellation_token = CancellationToken::new();
+        let mut guarded_termination_token = self.cannelloni_termination_token.lock().unwrap();
+        *guarded_termination_token = Arc::new(AtomicBool::new(false));
         
     
         for remote_ip in remote_ips {
             let leader_port = self.peer_ip_to_leader_port(&remote_ip).unwrap();
-
-            let cloned_cancellation_token = cancellation_token.clone();
 
             log::info!("Spawning cannelloni manager as server for peer with IP {}", remote_ip.to_string());
     
@@ -199,16 +189,13 @@ impl CanManager {
                 leader_port, 
                 remote_ip.clone(), 
                 1,
-                cloned_cancellation_token
+                guarded_termination_token.clone()
             );
         
             tokio::spawn(async move {
                 cannelloni_manager.run().await;
             });
         }
-
-        let mut guarded_cancellation_token = self.cannelloni_cancellation_token.lock().unwrap();
-        *guarded_cancellation_token = Some(cancellation_token);    
     
         Ok(())
     }
