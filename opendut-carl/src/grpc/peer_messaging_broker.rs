@@ -1,4 +1,5 @@
 use std::net::IpAddr;
+use std::ops::Not;
 use std::pin::Pin;
 use std::str::FromStr;
 
@@ -12,6 +13,7 @@ use uuid::Uuid;
 
 use opendut_carl_api::proto::services::peer_messaging_broker::{Downstream, ListPeersRequest, ListPeersResponse, Upstream};
 use opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_broker_server::PeerMessagingBrokerServer;
+use opendut_carl_api::proto::services::peer_messaging_broker::upstream::Message;
 use opendut_types::peer::PeerId;
 
 use crate::peer::broker::PeerMessagingBrokerRef;
@@ -75,19 +77,27 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
             while let Some(result) = inbound.next().await {
                 match result {
                     Ok(upstream) => {
-                        log::trace!("Received message from client <{}>: {:?}", peer_id, upstream);
                         if let Some(message) = upstream.message {
+                            if matches!(message, Message::Ping(_)).not() {
+                                log::trace!("Received message from client <{}>: {:?}", peer_id, message);
+                            }
                             tx_inbound.send(message).await.unwrap();
                         } else {
                             log::warn!("Ignoring empty message from client <{}>: {:?}", peer_id, upstream);
                         }
                     }
                     Err(status) => {
-                        let _ = peer_messaging_broker.remove_peer(peer_id).await;
                         log::error!("Error: {:?}", status);
                     }
                 }
             }
+
+            if let Err(cause) = peer_messaging_broker.remove_peer(peer_id).await {
+                log::error!("Failed to removed peer <{peer_id}>:\n  {cause}");
+            }
+            else {
+                log::info!("Removed peer <{peer_id}>.");
+            };
         });
 
         let outbound = ReceiverStream::new(rx_outbound)

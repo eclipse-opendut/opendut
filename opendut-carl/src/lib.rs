@@ -1,4 +1,5 @@
 use std::net::SocketAddr;
+use std::str::FromStr;
 use std::sync::Arc;
 
 use anyhow::{anyhow, Context, Result};
@@ -7,7 +8,6 @@ use axum::Json;
 use axum::routing::get;
 use axum_server::tls_rustls::RustlsConfig;
 use axum_server_dual_protocol::ServerExt;
-use config::Config;
 use futures::future::BoxFuture;
 use futures::TryFutureExt;
 use http::{header::CONTENT_TYPE, Request};
@@ -17,11 +17,11 @@ use tower::{BoxError, make::Shared, ServiceExt, steer::Steer};
 use tower_http::services::{ServeDir, ServeFile};
 use url::Url;
 
-use opendut_util::{project, settings};
+use opendut_util::project;
 
 use crate::cluster::manager::{ClusterManager, ClusterManagerRef};
 use crate::grpc::{ClusterManagerService, MetadataProviderService, PeerManagerService, PeerMessagingBrokerService};
-use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerRef};
+use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerOptions, PeerMessagingBrokerRef};
 use crate::resources::manager::{ResourcesManager, ResourcesManagerRef};
 use crate::vpn::Vpn;
 
@@ -33,21 +33,19 @@ mod actions;
 mod cluster;
 mod peer;
 mod resources;
+mod settings;
 mod vpn;
 
-pub async fn create(settings_override: Config) -> Result<()> {
-    let carl_config_hide_secrets_override = config::Config::builder()
-        .set_override("vpn.netbird.auth.secret", "redacted")?
-        .build()?;
+pub async fn create(settings_override: config::Config) -> Result<()> {
 
-    let settings = settings::load_config("carl", include_str!("../carl.toml"), config::FileFormat::Toml, settings_override, carl_config_hide_secrets_override)?;
+    let settings = settings::load_with_overrides(settings_override)?;
 
     log::info!("Started with configuration: {settings:?}");
 
     let address: SocketAddr = {
         let host = settings.config.get_string("network.bind.host")?;
         let port = settings.config.get_int("network.bind.port")?;
-        format!("{host}:{port}").parse()?
+        SocketAddr::from_str(&format!("{host}:{port}"))?
     };
 
     let tls_config = {
@@ -72,10 +70,14 @@ pub async fn create(settings_override: Config) -> Result<()> {
             .context(format!("Could not create CARL URL from given host '{host}' and {port}."))?
     };
 
+
     let resources_manager = Arc::new(ResourcesManager::new());
-    let peer_messaging_broker = Arc::new(PeerMessagingBroker::new(
-        Arc::clone(&resources_manager)
-    ));
+    let peer_messaging_broker = {
+        Arc::new(PeerMessagingBroker::new(
+            Arc::clone(&resources_manager),
+            PeerMessagingBrokerOptions::load(&settings.config)?,
+        ))
+    };
     let cluster_manager = Arc::new(ClusterManager::new(
         Arc::clone(&resources_manager),
         Arc::clone(&peer_messaging_broker),
@@ -92,7 +94,7 @@ pub async fn create(settings_override: Config) -> Result<()> {
         peer_messaging_broker: PeerMessagingBrokerRef,
         vpn: Vpn,
         carl_url: Url,
-        settings: Config
+        settings: config::Config,
     ) -> BoxFuture<'static, Result<()>> {
 
         let grpc = Server::builder()

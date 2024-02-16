@@ -35,6 +35,7 @@ RestartSec=30s
 User={service_user}
 Group={service_user}
 
+
 [Install]
 WantedBy=multi-user.target
 "#)

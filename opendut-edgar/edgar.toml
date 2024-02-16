@@ -1,3 +1,6 @@
+[carl]
+disconnect.timeout.ms = 30000
+
 [peer]
 id = ""
 

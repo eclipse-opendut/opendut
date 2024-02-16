@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 use log::SetLoggerError;
 
 #[derive(Debug, thiserror::Error)]
@@ -26,36 +24,4 @@ pub fn initialize_with_overrides(overrides: fn(&mut env_logger::Builder) -> &mut
     builder
         .try_init()
         .map_err(Error::from)
-}
-
-pub trait LogError<T, E>
-where
-    E: Display
-{
-    fn log_err(self) -> Result<T, E>;
-    fn err_logged(self);
-}
-
-impl <T, E> LogError<T, E> for Result<T, E>
-where
-    E: Display
-{
-    fn log_err(self) -> Result<T, E>
-    where
-        E: Display
-    {
-        match self {
-            Ok(t) => Ok(t),
-            Err(e) => {
-                log::error!("{e}");
-                Err(e)
-            },
-        }
-    }
-
-    fn err_logged(self) {
-        if let Err(err) = self {
-            log::error!("{err}");
-        }
-    }
 }

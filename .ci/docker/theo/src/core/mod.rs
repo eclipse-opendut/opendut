@@ -4,12 +4,16 @@ pub(crate) enum TheoError {
     ConsumeOutputError(String),
     #[error("Docker command failed: {0}")]
     DockerCommandFailed(String),
+    #[error("Found unhealthy docker containers: {0}")]
+    UnhealthyContainersFound(String),
     #[error("Timeout: {0}")]
     Timeout(String),
 }
 
 pub(crate) const TARGET_TRIPLE: &str = "x86_64-unknown-linux-gnu";
 pub(crate) const OPENDUT_REPO_ROOT: &str = "OPENDUT_REPO_ROOT";
+
+/// The environment variable is managed by THEO. Within the VM it is set to true.
 pub(crate) const OPENDUT_EXPOSE_PORTS: &str = "OPENDUT_EXPOSE_PORTS";
 pub(crate) const OPENDUT_VM_NAME: &str = "opendut-vm";
 pub(crate) const TIMEOUT_SECONDS: u64 = 300;

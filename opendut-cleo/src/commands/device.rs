@@ -73,7 +73,7 @@ pub mod create {
                     tags: tags
                         .unwrap_or_default()
                         .into_iter()
-                        .map(|value| DeviceTag::try_from(value))
+                        .map(DeviceTag::try_from)
                         .collect::<Result<_, _>>()
                         .map_err(|error| error.to_string())?,
                 };

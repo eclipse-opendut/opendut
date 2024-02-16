@@ -4,6 +4,8 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 
 use anyhow::{anyhow, Error};
+use serde::Serialize;
+use strum::EnumIter;
 
 use crate::core::{OPENDUT_EXPOSE_PORTS, TheoError};
 use crate::core::command_ext::TheoCommandExtensions;
@@ -16,6 +18,7 @@ pub(crate) mod compose;
 pub(crate) mod keycloak;
 pub(crate) mod netbird;
 
+#[derive(Debug, Clone, clap::ValueEnum, Default, Serialize, EnumIter)]
 pub(crate) enum DockerCoreServices {
     Network,
     Carl,
@@ -25,6 +28,8 @@ pub(crate) enum DockerCoreServices {
     Edgar,
     Netbird,
     Firefox,
+    #[default]
+    All,
 }
 
 impl DockerCoreServices {
@@ -38,6 +43,7 @@ impl DockerCoreServices {
             DockerCoreServices::Netbird => "netbird",
             DockerCoreServices::Network => "network",
             DockerCoreServices::Firefox => "firefox",
+            DockerCoreServices::All => "all",
         }
     }
 }
@@ -164,8 +170,39 @@ impl DockerCommand {
             }
         }
     }
+
+    pub(crate) fn enumerate_unhealthy_containers() -> Result<Vec<String>, Error> {
+        let output = DockerCommand::new()
+            .arg("ps")
+            .arg("--filter")
+            .arg("health=unhealthy")
+            .arg("--format")
+            .arg("{{.Names}}")
+            .output()?;
+        let stdout = String::from_utf8(output.stdout)?;
+        Ok(stdout.lines().map(|s| s.to_string()).collect())
+    }
 }
 
+/// The environment variable is managed by THEO.
+/// Within the VM it is set to true, outside the VM it defaults to false.
+/// Be careful when overriding this value.
+pub fn determine_if_ports_shall_be_exposed(user_intents_to_expose: bool) -> bool {
+    let expose_env_value = env::var(OPENDUT_EXPOSE_PORTS).unwrap_or("false".to_string()).eq("true");
+    user_intents_to_expose || expose_env_value
+}
+
+
+pub fn show_error_if_unhealthy_containers_were_found() -> Result<(), Error> {
+    let unhealthy_containers = DockerCommand::enumerate_unhealthy_containers()?;
+    if unhealthy_containers.len() > 0 {
+        println!("# Unhealthy containers: {:?}", unhealthy_containers);
+        return Err(TheoError::UnhealthyContainersFound(format!("Found unhealthy docker containers: {:?}", unhealthy_containers)).into());
+    } else {
+        println!("# No unhealthy containers found.");
+        Ok(())
+    }
+}
 
 pub fn start_netbird(expose: &bool) -> Result<i32, Error> {
     let mut command = DockerCommand::new();
@@ -173,8 +210,7 @@ pub fn start_netbird(expose: &bool) -> Result<i32, Error> {
         .arg("-f")
         .arg(".ci/docker/netbird/docker-compose.yml");
 
-    let expose_env_value = env::var(OPENDUT_EXPOSE_PORTS).unwrap_or("false".to_string()).eq("true");
-    if *expose || expose_env_value {
+    if determine_if_ports_shall_be_exposed(*expose) {
         command.arg("-f")
             .arg(".ci/docker/netbird/expose_ports.yml");
     };

@@ -24,7 +24,8 @@ pub fn PeerLocationInput(peer_configuration: RwSignal<UserPeerConfiguration>) ->
                         UserInputValue::Both(format!("A peer location must be at most {} characters long.", expected), value)
                     },
                     IllegalLocation::InvalidStartEndCharacter { value } => {
-                        UserInputValue::Both("The peer location must start or end with following characters: a-z, A-Z, 0-9 and ().".to_string(), value)
+                        UserInputValue::Both("The peer name starts/ends with an invalid character. \
+                        Valid characters are a-z, A-Z, 0-9 and ()".to_string(), value)
                     },
                     IllegalLocation::InvalidCharacter { value } => {
                         UserInputValue::Both("The peer location contains invalid characters. \

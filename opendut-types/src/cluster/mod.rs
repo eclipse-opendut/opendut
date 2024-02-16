@@ -84,6 +84,8 @@ pub enum IllegalClusterName {
     TooLong { value: String, expected: usize, actual: usize },
     #[error("Cluster name '{value}' contains invalid characters.")]
     InvalidCharacter { value: String },
+    #[error("Cluster name '{value}' contains invalid start or end characters.")]
+    InvalidStartEndCharacter { value: String },
 }
 
 impl From<ClusterName> for String {
@@ -112,11 +114,13 @@ impl TryFrom<String> for ClusterName {
                 actual: length,
             })
         }
-        else if crate::util::invalid_start_and_end_of_a_name( & value)
-            || value.chars().any(|c| crate::util::valid_characters_in_name(&c).not()) {
-                Err(IllegalClusterName::InvalidCharacter {
-                    value
-                })
+        else if crate::util::invalid_start_and_end_of_a_name(&value) {
+            Err(IllegalClusterName::InvalidStartEndCharacter { value })
+        }
+        else if value.chars().any(|c| crate::util::valid_characters_in_name(&c).not()) {
+            Err(IllegalClusterName::InvalidCharacter {
+                value
+            })
         }
         else {
             Ok(Self(value))

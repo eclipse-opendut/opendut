@@ -1,9 +1,9 @@
 use anyhow::Error;
-use clap::ArgAction;
+use clap::{ArgAction, Parser};
 
 use crate::commands::edgar::TestEdgarCli;
 use crate::core::dist::make_distribution_if_not_present;
-use crate::core::docker::{DockerCommand, DockerCoreServices, start_netbird};
+use crate::core::docker::{DockerCommand, DockerCoreServices, show_error_if_unhealthy_containers_were_found, start_netbird};
 use crate::core::docker::compose::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_network_delete, docker_compose_up_expose_ports};
 use crate::core::project::load_theo_environment_variables;
 
@@ -24,15 +24,25 @@ pub enum TaskCli {
         /// Expose firefox container port (3000), or set OPENDUT_EXPOSE_PORTS=true
         #[arg(long, short, action = ArgAction::SetTrue)]
         expose: bool,
+        ///
+        #[arg(long, short, action = ArgAction::SetTrue)]
+        skip_build: bool,
     },
     /// Stop test environment.
     Stop,
     /// Show Docker network.
     Network,
     /// Destroy test environment.
-    Destroy,
+    Destroy(DestroyArgs),
     /// Run EDGAR cluster creation.
     Edgar(TestEdgarCli),
+}
+
+#[derive(Parser, Debug)]
+#[clap(version)]
+pub struct DestroyArgs {
+    #[clap(short = 's', long, default_value = "all")]
+    service: DockerCoreServices,
 }
 
 impl TestenvCli {
@@ -42,18 +52,12 @@ impl TestenvCli {
 
         match &self.task {
             TaskCli::Build => {
-                make_distribution_if_not_present()?;
-
-                docker_compose_network_create()?;
-                docker_compose_build(DockerCoreServices::Firefox.as_str())?;
-                docker_compose_build(DockerCoreServices::Keycloak.as_str())?;
-                docker_compose_build(DockerCoreServices::Carl.as_str())?;
-                docker_compose_build(DockerCoreServices::Netbird.as_str())?;
+                Self::docker_compose_build_testenv_services()?;
             }
-            TaskCli::Start { expose } => {
-                // prerequisites
-                docker_compose_network_create()?;
-
+            TaskCli::Start { expose, skip_build } => {
+                if !skip_build {
+                    Self::docker_compose_build_testenv_services()?;
+                }
                 // start services
                 docker_compose_up_expose_ports(DockerCoreServices::Firefox.as_str(), expose)?;
                 docker_compose_up_expose_ports(DockerCoreServices::Keycloak.as_str(), expose)?;
@@ -65,7 +69,7 @@ impl TestenvCli {
                 docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), false)?;
 
                 start_carl_in_docker()?;
-
+                show_error_if_unhealthy_containers_were_found()?;
 
                 println!("Go to OpenDuT Browser at http://localhost:3000/")
             }
@@ -78,20 +82,45 @@ impl TestenvCli {
             }
             TaskCli::Network => {
                 crate::core::network::docker_inspect_network()?;
+                show_error_if_unhealthy_containers_were_found()?;
             }
-            TaskCli::Destroy => {
-                docker_compose_down(DockerCoreServices::Firefox.as_str(), true)?;
-                docker_compose_down(DockerCoreServices::Edgar.as_str(), true)?;
-                docker_compose_down(DockerCoreServices::Carl.as_str(), true)?;
-                docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), true)?;
-                docker_compose_down(DockerCoreServices::Netbird.as_str(), true)?;
-                docker_compose_down(DockerCoreServices::Keycloak.as_str(), true)?;
-                docker_compose_network_delete()?;
+            TaskCli::Destroy(service) => {
+                match service.service {
+                    DockerCoreServices::Network => { docker_compose_network_delete()?; }
+                    DockerCoreServices::Carl => { docker_compose_down(DockerCoreServices::Carl.as_str(), true)?; }
+                    DockerCoreServices::CarlOnHost => { docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), true)?; }
+                    DockerCoreServices::Dev => { docker_compose_down(DockerCoreServices::Dev.as_str(), true)?; }
+                    DockerCoreServices::Keycloak => { docker_compose_down(DockerCoreServices::Keycloak.as_str(), true)?; }
+                    DockerCoreServices::Edgar => { docker_compose_down(DockerCoreServices::Edgar.as_str(), true)?; }
+                    DockerCoreServices::Netbird => { docker_compose_down(DockerCoreServices::Netbird.as_str(), true)?; }
+                    DockerCoreServices::Firefox => { docker_compose_down(DockerCoreServices::Firefox.as_str(), true)?; }
+                    DockerCoreServices::All => {
+                        println!("Destroying all services.");
+                        docker_compose_down(DockerCoreServices::Firefox.as_str(), true)?;
+                        docker_compose_down(DockerCoreServices::Edgar.as_str(), true)?;
+                        docker_compose_down(DockerCoreServices::Carl.as_str(), true)?;
+                        docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), true)?;
+                        docker_compose_down(DockerCoreServices::Netbird.as_str(), true)?;
+                        docker_compose_down(DockerCoreServices::Keycloak.as_str(), true)?;
+                        docker_compose_network_delete()?;
+                    }
+                }
             }
             TaskCli::Edgar(cli) => {
                 cli.default_handling()?;
             }
         }
+        Ok(())
+    }
+
+    fn docker_compose_build_testenv_services() -> Result<(), Error> {
+        make_distribution_if_not_present()?;
+
+        docker_compose_network_create()?;
+        docker_compose_build(DockerCoreServices::Firefox.as_str())?;
+        docker_compose_build(DockerCoreServices::Keycloak.as_str())?;
+        docker_compose_build(DockerCoreServices::Carl.as_str())?;
+        docker_compose_build(DockerCoreServices::Netbird.as_str())?;
         Ok(())
     }
 }

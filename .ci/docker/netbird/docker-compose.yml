@@ -21,6 +21,7 @@ services:
       - netbird-letsencrypt:/etc/letsencrypt:ro
       - ./management.json:/etc/netbird/management.json
       - "../../../resources/development/tls/insecure-development-ca.pem:/usr/local/share/ca-certificates/insecure-development-ca.crt:ro"
+      - netbird-management-keys:/management
     healthcheck:
       test: ["CMD", "/netbird-management-health.sh"]
       interval: 1m

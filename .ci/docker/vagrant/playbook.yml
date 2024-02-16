@@ -10,7 +10,7 @@
 
   - name: Install required packages
     apt:
-      pkg: ['htop', 'tmux', 'jq', 'libssl-dev', 'build-essential', 'pkg-config']
+      pkg: ['htop', 'tmux', 'jq', 'libssl-dev', 'build-essential', 'pkg-config', 'clang']
       state: 'present'
       update_cache: yes
       cache_valid_time: 3600
@@ -28,4 +28,13 @@
   - {role: "ansible-role-kde-desktop", tags: ["desktop"] }
 
   post_tasks:
+    - name: Clone OpenDuT repository
+      become: true
+      become_user: vagrant
+      git:
+        repo: https://github.com/eclipse-opendut/opendut.git
+        dest: /home/vagrant/opendut/
+        version: development
+        clone: yes
+        update: yes
     - debug: msg="all done"

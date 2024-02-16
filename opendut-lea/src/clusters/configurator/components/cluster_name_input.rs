@@ -29,14 +29,19 @@ pub fn ClusterNameInput(cluster_configuration: RwSignal<UserClusterConfiguration
                             UserInputValue::Both(format!("A cluster name must be at least {} characters long.", expected), value)
                         }
                         else {
-                            UserInputValue::Both(format!("Enter a valid cluster name."), value)
+                            UserInputValue::Both("Enter a valid cluster name.".to_string(), value)
                         }
                     },
                     IllegalClusterName::TooLong { expected, value, .. } => {
                         UserInputValue::Both(format!("A cluster name must be at most {} characters long.", expected), value)
                     },
+                    IllegalClusterName::InvalidStartEndCharacter { value } => {
+                        UserInputValue::Both("The cluster name starts/ends with an invalid character. \
+                        Valid characters are a-z, A-Z and 0-9.".to_string(), value)
+                    }
                     IllegalClusterName::InvalidCharacter { value } => {
-                        UserInputValue::Both(format!("The cluster name contains invalid characters."), value)
+                        UserInputValue::Both("The cluster name contains invalid characters. \
+                        Valid characters are a-z, A-Z, 0-9 and _-".to_string(), value)
                     },
                 }
             }

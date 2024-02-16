@@ -99,6 +99,8 @@ pub enum IllegalPeerName {
     },
     #[error("Peer name '{value}' contains invalid characters.")]
     InvalidCharacter { value: String },
+    #[error("Peer name '{value}' contains invalid start or end characters.")]
+    InvalidStartEndCharacter { value: String },
 }
 
 impl From<PeerName> for String {
@@ -124,10 +126,11 @@ impl TryFrom<String> for PeerName {
                 expected: Self::MAX_LENGTH,
                 actual: length,
             })
-        } else if crate::util::invalid_start_and_end_of_a_name(&value)
-            || value
-                .chars()
-                .any(|c| crate::util::valid_characters_in_name(&c).not())
+        } else if crate::util::invalid_start_and_end_of_a_name(&value) {
+            Err(IllegalPeerName::InvalidStartEndCharacter { value })
+        } else if value
+            .chars()
+            .any(|c| crate::util::valid_characters_in_name(&c).not())
         {
             Err(IllegalPeerName::InvalidCharacter { value })
         } else {

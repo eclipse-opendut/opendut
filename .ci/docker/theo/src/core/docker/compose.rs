@@ -1,14 +1,14 @@
-use std::env;
-
 use anyhow::Error;
 
-use crate::core::docker::{DockerCommand, DockerCoreServices};
-use crate::core::OPENDUT_EXPOSE_PORTS;
+use crate::core::docker::{determine_if_ports_shall_be_exposed, DockerCommand, DockerCoreServices};
 
 pub(crate) fn docker_compose_build(compose_dir: &str) -> Result<i32, Error> {
     DockerCommand::new()
         .add_common_args(compose_dir)
         .arg("build")
+        // https://docs.docker.com/build/building/env-vars/
+        // Show more output during the build progress
+        .env("BUILDKIT_PROGRESS", "plain")
         .expect_status(format!("Failed to execute docker compose build for directory: {}.", compose_dir).as_str())
 }
 
@@ -18,8 +18,7 @@ pub fn docker_compose_up_expose_ports(compose_dir: &str, expose: &bool) -> crate
         .arg("-f")
         .arg(format!(".ci/docker/{}/docker-compose.yml", compose_dir));
 
-    let expose_env_value = env::var(OPENDUT_EXPOSE_PORTS).unwrap_or("false".to_string()).eq("true");
-    if *expose || expose_env_value {
+    if determine_if_ports_shall_be_exposed(*expose) {
         command.arg("-f")
             .arg(format!(".ci/docker/{}/expose_ports.yml", compose_dir))
     } else {

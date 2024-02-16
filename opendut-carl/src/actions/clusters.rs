@@ -3,7 +3,6 @@ pub use opendut_carl_api::carl::cluster::{
     DeleteClusterConfigurationError
 };
 use opendut_types::cluster::{ClusterConfiguration, ClusterId};
-use opendut_util::logging::LogError;
 
 use crate::resources::manager::ResourcesManagerRef;
 
@@ -32,7 +31,7 @@ pub async fn create_cluster_configuration(params: CreateClusterConfigurationPara
     }
 
     inner(params).await
-        .log_err()
+        .inspect_err(|err| log::error!("{err}"))
 }
 
 pub struct DeleteClusterConfigurationParams {
@@ -62,5 +61,5 @@ pub async fn delete_cluster_configuration(params: DeleteClusterConfigurationPara
     }
 
     inner(params).await
-        .log_err()
+        .inspect_err(|err| log::error!("{err}"))
 }
