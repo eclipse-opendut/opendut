@@ -95,6 +95,7 @@ pub async fn create(settings_override: Config) -> anyhow::Result<()> {
                         network_interface_management_enabled,
                         &bridge_name,
                         Arc::clone(&network_interface_manager),
+                        Arc::clone(&can_manager),
                         &tx_outbound,
                     ).await?
                 }
@@ -124,6 +125,7 @@ async fn handle_stream_message(
     network_interface_management_enabled: bool,
     bridge_name: &NetworkInterfaceName,
     network_interface_manager: NetworkInterfaceManagerRef,
+    can_manager: CanManagerRef,
     tx_outbound: &Sender<peer_messaging_broker::Upstream>,
 ) -> anyhow::Result<()> {
     fn ignore(message: impl Any + Debug) {
