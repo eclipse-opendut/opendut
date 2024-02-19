@@ -196,11 +196,11 @@ pub fn determine_if_ports_shall_be_exposed(user_intents_to_expose: bool) -> bool
 pub fn show_error_if_unhealthy_containers_were_found() -> Result<(), Error> {
     let unhealthy_containers = DockerCommand::enumerate_unhealthy_containers()?;
     if unhealthy_containers.is_empty() {
-        println!("# Unhealthy containers: {:?}", unhealthy_containers);
-        Err(TheoError::UnhealthyContainersFound(format!("Found unhealthy docker containers: {:?}", unhealthy_containers)).into())
-    } else {
         println!("# No unhealthy containers found.");
         Ok(())
+    } else {
+        println!("# Unhealthy containers: {:?}", unhealthy_containers);
+        Err(TheoError::UnhealthyContainersFound(format!("Found unhealthy docker containers: {:?}", unhealthy_containers)).into())
     }
 }
 
