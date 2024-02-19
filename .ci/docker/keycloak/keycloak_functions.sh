@@ -202,8 +202,8 @@ create_public_client_with_direct_access() {
           "oidc.ciba.grant.enabled": false
         },
         "alwaysDisplayInConsole": false,
-        "rootUrl": "http://netbird-ui",
-        "baseUrl": "http://netbird-ui",
+        "rootUrl": "https://netbird-dashboard",
+        "baseUrl": "https://netbird-dashboard",
         "redirectUris": [$CLIENT_REDIRECT_URI],
         "webOrigins": [
           "*"

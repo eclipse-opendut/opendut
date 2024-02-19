@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export KEYCLOAK_URL=https://keycloak
-export NETBIRD_MANAGEMENT_URL=http://netbird-management
+export NETBIRD_MANAGEMENT_URL=https://netbird-management
 export KEYCLOAK_REALM_URL=https://keycloak/realms/netbird/.well-known/openid-configuration
 
 wait_for_url() {

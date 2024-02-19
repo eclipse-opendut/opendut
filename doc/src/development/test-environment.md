@@ -70,6 +70,6 @@ You may use this **OpenDuT Browser** to access the services.
   * Netbird: netbird:netbird
 * Services with user interface:
   * https://carl
-  * http://netbird-dashboard
+  * https://netbird-dashboard
   * https://keycloak
 

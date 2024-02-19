@@ -18,7 +18,7 @@ RUN echo "01beb201d2045c5e548d012bde9b6ae6113392a57bbea7b3e81131aac995f77a /usr/
 RUN chmod +x /usr/bin/systemctl
 
 WORKDIR /opt
-RUN mkdir /opt/signal/
+RUN mkdir /opt/signal/ /logs/
 COPY ./.ci/docker/edgar/scripts/* /opt
 
 RUN mkdir -p /usr/local/opendut/bin/distribution /usr/local/opendut/bin/debug /opt/opendut-network/edgar/netbird/

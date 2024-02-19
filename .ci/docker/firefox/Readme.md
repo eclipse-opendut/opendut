@@ -12,5 +12,5 @@ Following features are included:
 * Open remote session to firefox in docker your browser via [link](http://localhost:3000).
 * Open url in remote session:
   * https://carl
-  * http://netbird-ui
+  * https://netbird-dashboard
   * https://keycloak

@@ -4,7 +4,8 @@ source "$(dirname "$0")/functions.sh"
 
 set -e  # exit on error
 set -x  # print commands
-trap die_with_error TERM
+trap error_stop_and_keep_running TERM
+trap error_stop_and_keep_running EXIT
 
 cleo_get_peer_id() {
   edgar_hostname="$1"
@@ -44,6 +45,25 @@ pre_flight_tasks() {
     echo "Command 'opendut-cleo' not found."
     exit 1
   fi
+
+  # prepare log directories
+  mkdir -p /logs/{opendut-edgar,netbird,journal}
+
+  # opendut-edgar setup.log
+  touch /logs/opendut-edgar/setup.log
+  if [ ! -e /opt/opendut-edgar/setup.log ]; then
+    touch /logs/opendut-edgar/setup.log
+    ln -s /logs/opendut-edgar/setup.log /opt/opendut-edgar/setup.log
+  fi
+  # systemd journal directory
+  if [ ! -e /var/log/journal ]; then
+    ln -s /logs/journal /var/log/journal
+  fi
+  # netbird log directory
+  if [ ! -e /var/log/netbird ]; then
+    ln -s /logs/netbird /var/log/netbird
+  fi
+
 
   ip link add dev vcan0 type vcan
   ip link add dev vcan1 type vcan
@@ -130,6 +150,7 @@ if [ "$1" == "leader" ]; then
 fi
 
 trap die_with_success TERM
+trap die_with_success EXIT
 
 sleep infinity &
 

@@ -1,0 +1,37 @@
+[http.routers]
+  [http.routers.netbird-management-api]
+    service = "netbird-management-api"
+    rule = "Host(`netbird-management`) && PathPrefix(`/api`) || Host(`192.168.56.10`) && PathPrefix(`/api`)"
+    tls = true
+
+  [http.routers.netbird-management-service]
+    service = "netbird-management-service"
+    rule = "Host(`netbird-management`) && PathPrefix(`/management.ManagementService/`) || Host(`192.168.56.10`) && PathPrefix(`/management.ManagementService/`)"
+    tls = true
+
+  [http.routers.netbird-dashboard]
+    service = "netbird-dashboard"
+    rule = "Host(`netbird-dashboard`)"
+    tls = true
+
+[http.services]
+  [http.services.netbird-management-api]
+    [http.services.netbird-management-api.loadBalancer]
+      [[http.services.netbird-management-api.loadBalancer.servers]]
+        url = "http://netbird-management-container:80"
+
+  [http.services.netbird-management-service]
+    [http.services.netbird-management-service.loadBalancer]
+      [[http.services.netbird-management-service.loadBalancer.servers]]
+        url = "h2c://netbird-management-container:80"
+
+  [http.services.netbird-dashboard]
+    [http.services.netbird-dashboard.loadBalancer]
+      [[http.services.netbird-dashboard.loadBalancer.servers]]
+        url = "http://netbird-dashboard-container:80"
+
+
+[[tls.certificates]]
+  certFile = "/opendut-tls/netbird-management.pem"
+  keyFile = "/opendut-tls/netbird-management.key"
+  stores = ["default"]

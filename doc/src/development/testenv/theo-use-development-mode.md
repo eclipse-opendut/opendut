@@ -17,13 +17,14 @@ OPENDUT_CARL_NETWORK_REMOTE_HOST=carl
 OPENDUT_CARL_NETWORK_REMOTE_PORT=443
 OPENDUT_CARL_VPN_ENABLED=true
 OPENDUT_CARL_VPN_KIND=netbird
-OPENDUT_CARL_VPN_NETBIRD_URL=http://192.168.56.10/api
-OPENDUT_CARL_VPN_NETBIRD_HTTPS_ONLY=false
+OPENDUT_CARL_VPN_NETBIRD_URL=https://192.168.56.10/api
+OPENDUT_CARL_VPN_NETBIRD_CA=<ca_certificate_filepath>
 OPENDUT_CARL_VPN_NETBIRD_AUTH_SECRET=<dynamic_api_secret>
 OPENDUT_CARL_VPN_NETBIRD_AUTH_TYPE=personal-access-token
 OPENDUT_CARL_VPN_NETBIRD_AUTH_HEADER=Authorization
 ```
-* You may also place the toml (also printed from the `carl-config` command) file in a special configuration file on your host at ``~/.config/opendut/carl/config.toml``.
+* You may also use the toml configuration (also printed from the `carl-config` command) file in a special configuration file on your host at ``~/.config/opendut/carl/config.toml``.
 * Use the environment variables in the run configuration for CARL
-    * Command on the **host**: `cargo run --package opendut-carl --bin opendut-carl` 
+    * Run CARL on the **host**: `cargo ci carl run` 
+    * Run LEA on the **host**: `cargo ci lea run` 
 * Or start CARL in your IDE of choice and add the environment variables to the run configuration.

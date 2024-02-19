@@ -1,66 +1,57 @@
-pub(crate) fn print_carl_config_toml(netbird_management_url: &str, netbird_token: &str) {
-    println!(r#"
-# CARL configuration environment variables for development.
-[network]
-bind.host = "0.0.0.0"
-bind.port = 8080
-remote.host = "carl"
-remote.port = 443
-
-[network.tls]
-certificate = "resources/development/tls/carl.pem"
-key = "resources/development/tls/carl.key"
-[network.tls.ca]
-certificate = "resources/development/tls/insecure-development-ca.pem"
-
-[network.oidc]
-enabled = true
-
-[network.oidc.lea]
-client_id = "opendut-lea-client"
-issuer_url = "https://keycloak/realms/opendut"
-scopes = "openid,profile,email"
-
-[serve]
-ui.directory = "./opendut-lea/dist/"
-
-[vpn]
-enabled = true
-kind = "netbird"
-
-[vpn.netbird]
-url = "{}"
-https.only = false
-auth.type = "personal-access-token"
-auth.secret = "{}"
-
-"#, netbird_management_url, netbird_token);
-
+#[derive(Debug)]
+pub struct CarlConfiguration {
+    netbird_management_url: String,
+    netbird_management_ca_path: String,
+    netbird_api_key: String,
 }
 
-pub(crate) fn print_carl_config_env(netbird_management_url: &str, netbird_token: &str) {
-    println!(r#"
-# CARL configuration toml for development.
-OPENDUT_CARL_NETWORK_BIND_HOST=0.0.0.0
-OPENDUT_CARL_NETWORK_BIND_PORT=8080
-OPENDUT_CARL_NETWORK_REMOTE_HOST=carl
-OPENDUT_CARL_NETWORK_REMOTE_PORT=443
+impl CarlConfiguration {
+    fn new(netbird_management_url: String, netbird_management_ca_path: String, netbird_api_key: String) -> Self {
+        Self {
+            netbird_management_url,
+            netbird_management_ca_path,
+            netbird_api_key,
+        }
+    }
 
-OPENDUT_CARL_NETWORK_TLS_CERTIFICATE=resources/development/tls/carl.pem
-OPENDUT_CARL_NETWORK_TLS_KEY=resources/development/tls/carl.key
-OPENDUT_CARL_NETWORK_TLS_CA_CERTIFICATE=resources/development/tls/insecure-development-ca.pem
-OPENDUT_CARL_NETWORK_OIDC_ENABLED=true
-OPENDUT_CARL_NETWORK_OIDC_LEA_CLIENT_ID=opendut-lea-client
-OPENDUT_CARL_NETWORK_OIDC_LEA_ISSUER_URL=https://keycloak/realms/opendut
-OPENDUT_CARL_NETWORK_OIDC_LEA_SCOPES=openid,profile,email
-OPENDUT_CARL_SERVE_UI_DIRECTORY=./opendut-lea/dist/
+    fn carl_toml_template() -> String {
+        include_str!("resources/carl.toml.tmpl").to_string()
+    }
 
-OPENDUT_CARL_VPN_ENABLED=true
-OPENDUT_CARL_VPN_KIND=netbird
-OPENDUT_CARL_VPN_NETBIRD_URL={}
-OPENDUT_CARL_VPN_NETBIRD_HTTPS_ONLY=false
-OPENDUT_CARL_VPN_NETBIRD_AUTH_TYPE=personal-access-token
-OPENDUT_CARL_VPN_NETBIRD_AUTH_SECRET={}
+    fn carl_environment_template() -> String {
+        include_str!("resources/carl.environment.tmpl").to_string()
+    }
 
-        "#, netbird_management_url, netbird_token);
+    /// This configuration expects the Netbird service to be running in the opendut virtual machine.
+    pub fn testenv_in_vm_config(netbird_api_key: String) -> Self {
+        Self::new(
+            "https://192.168.56.10/api".to_string(),
+            "resources/development/tls/insecure-development-ca.pem".to_string(),
+            netbird_api_key
+        )
+    }
+
+    /// This configuration expects the Netbird service to be running in docker on the host system.
+    pub fn testenv_on_host_config(netbird_api_key: String) -> Self {
+        Self::new(
+            "https://192.168.32.211/api".to_string(),
+            "resources/development/tls/insecure-development-ca.pem".to_string(),
+            netbird_api_key
+        )
+    }
+
+    pub fn config_toml(&self) -> String {
+        let template = Self::carl_toml_template();
+
+        template.replace("{netbird_management_url}", &self.netbird_management_url)
+                .replace("{netbird_management_ca_path}", &self.netbird_management_ca_path)
+                .replace("{netbird_api_key}", &self.netbird_api_key)
+    }
+    pub fn config_env_variables(&self) -> String {
+        let template = Self::carl_environment_template();
+
+        template.replace("{netbird_management_url}", &self.netbird_management_url)
+            .replace("{netbird_management_ca_path}", &self.netbird_management_ca_path)
+            .replace("{netbird_api_key}", &self.netbird_api_key)
+    }
 }
