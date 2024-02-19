@@ -1,12 +1,12 @@
 [http.routers]
   [http.routers.netbird-management-api]
     service = "netbird-management-api"
-    rule = "Host(`netbird-management`) && PathPrefix(`/api`) || Host(`192.168.56.10`) && PathPrefix(`/api`)"
+    rule = "Host(`netbird-management`) && PathPrefix(`/api`) || Host(`192.168.56.10`) && PathPrefix(`/api`) || Host(`192.168.32.211`) && PathPrefix(`/api`)"
     tls = true
 
   [http.routers.netbird-management-service]
     service = "netbird-management-service"
-    rule = "Host(`netbird-management`) && PathPrefix(`/management.ManagementService/`) || Host(`192.168.56.10`) && PathPrefix(`/management.ManagementService/`)"
+    rule = "Host(`netbird-management`) && PathPrefix(`/management.ManagementService/`) || Host(`192.168.56.10`) && PathPrefix(`/management.ManagementService/`) || Host(`192.168.32.211`) && PathPrefix(`/management.ManagementService/`)"
     tls = true
 
   [http.routers.netbird-dashboard]
