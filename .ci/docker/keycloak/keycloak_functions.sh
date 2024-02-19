@@ -298,6 +298,61 @@ create_client_scope() {
 EOF
 }
 
+create_client_scope_groups() {
+  SCOPE_NAME="${1:-groups}"
+  SCOPE_REALM="$2"
+
+  CLIENT_SCOPE_GROUP_ID=$(get_client_scope_id "$SCOPE_NAME" "$SCOPE_REALM")
+  if [ -z "$CLIENT_SCOPE_GROUP_ID" ]; then
+    echo "Client scope $SCOPE_NAME not found in realm $SCOPE_REALM"
+    return 1
+  fi
+
+  kcadm create client-scopes/"$CLIENT_SCOPE_GROUP_ID"/protocol-mappers/models -r "${SCOPE_REALM}" -f - << EOF
+    {
+      "protocol": "openid-connect",
+      "protocolMapper": "oidc-group-membership-mapper",
+      "name": "$SCOPE_NAME",
+      "config": {
+        "claim.name": "$SCOPE_NAME",
+        "full.path": "true",
+        "id.token.claim": "true",
+        "access.token.claim": "true",
+        "userinfo.token.claim": "true"
+      }
+    }
+EOF
+}
+
+update_existing_client_scope_realm_roles() {
+  CLIENT_SCOPE_NAME="$1"
+  CLIENT_SCOPE_REALM="$2"
+
+  CLIENT_SCOPE_ROLE_ID=$(kcadm get client-scopes -r "$CLIENT_SCOPE_REALM" | jq -r ".[] | select(.name==\"$CLIENT_SCOPE_NAME\").id")
+  CLIENT_SCOPE_ROLES_PROTOCOL_MAPPER_ROLES_ID=$(kcadm get client-scopes/"$CLIENT_SCOPE_ROLE_ID"/protocol-mappers/models/ -r "$CLIENT_SCOPE_REALM" | jq -r '.[] | select(.name=="realm roles").id')
+
+  # renames the protocol mapper 'realm_access.roles' to 'roles'
+  kcadm update client-scopes/"$CLIENT_SCOPE_ROLE_ID"/protocol-mappers/models/"$CLIENT_SCOPE_ROLES_PROTOCOL_MAPPER_ROLES_ID" -r "$CLIENT_SCOPE_REALM" -f - << EOF
+    {
+      "id": "$CLIENT_SCOPE_ROLES_PROTOCOL_MAPPER_ROLES_ID",
+      "protocol": "openid-connect",
+      "protocolMapper": "oidc-usermodel-realm-role-mapper",
+      "name": "realm roles",
+      "config": {
+        "usermodel.realmRoleMapping.rolePrefix": "",
+        "multivalued": "true",
+        "claim.name": "roles",
+        "jsonType.label": "String",
+        "id.token.claim": "true",
+        "access.token.claim": "true",
+        "userinfo.token.claim": "true",
+        "user.attribute": "foo"
+      },
+      "consentRequired": false
+    }
+EOF
+}
+
 client_scope_add_audience() {
   CLIENT_SCOPE_NAME="$1"
   CLIENT_SCOPE_AUDIENCE_NAME="$2"

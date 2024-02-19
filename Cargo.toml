@@ -65,6 +65,7 @@ home = "0.5.5"
 http = "0.2.11"
 indicatif = "0.17.7"
 indoc = "2.0.4"
+jsonwebtoken = "9.2.0"
 lazy_static = "1.4.0"
 leptos = { version = "0.5.7" }
 # latest version of leptos_oidc is not published on crates.io
