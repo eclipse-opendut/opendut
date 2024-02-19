@@ -23,14 +23,14 @@ impl KernelModule {
         let module = str::replace(self.name.as_str(), "-", "_");
 
         let file = File::open("/proc/modules")
-            .map_err(|cause| Error::CheckModuleLoaded { cause: cause })?;
+            .map_err(|cause| Error::CheckModuleLoaded { cause })?;
         let reader = BufReader::new(file);
 
         // TODO: Should not only check that module is loaded but also that it's loaded with the correct options
         for mod_line in reader.lines() {
             match mod_line {
                 Ok(line) => {
-                    match line.split(" ").collect::<Vec<&str>>().first() {
+                    match line.split(' ').collect::<Vec<&str>>().first() {
                         Some(mod_name) => {
                             if str::replace(mod_name, "-", "_") == module {
                                 return Ok(true)

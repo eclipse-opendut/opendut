@@ -72,12 +72,9 @@ impl CannelloniManager {
         loop {
             match self.cannelloni_proc.as_mut().unwrap().try_wait() {
                 Ok(op) => {
-                    match op {
-                        Some(_) => {
-                            self.handle_premature_termination().await;
-                            return MonitorResult::RestartCannelloni
-                        },
-                        None => (),
+                    if op.is_some() {
+                        self.handle_premature_termination().await;
+                        return MonitorResult::RestartCannelloni
                     }
                 },
                 Err(err) => log::error!("Failed to get status of cannelloni instance for remote IP {}: '{}'.", self.remote_ip.to_string(), err)

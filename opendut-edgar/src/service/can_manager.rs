@@ -8,7 +8,6 @@ use tokio::process::Command;
 use opendut_types::util::net::NetworkInterfaceName;
 
 use crate::service::cannelloni_manager::CannelloniManager;
-use crate::service::network_interface;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 
 pub type CanManagerRef = Arc<CanManager>;
@@ -49,9 +48,6 @@ impl CanManager {
     }
 
     async fn create_can_route(&self, src: &NetworkInterfaceName, dst: &NetworkInterfaceName, can_fd: bool, max_hops: u8) -> Result<(), Error> {
-        self.network_interface_manager.try_find_interface(&src).await?;
-        self.network_interface_manager.try_find_interface(&dst).await?;
-
         let mut cmd = Command::new("cangw");
         cmd.arg("-A")
             .arg("-s")
@@ -133,7 +129,7 @@ impl CanManager {
     // Takes the last two bytes of the IP address to be used as the port
     fn peer_ip_to_leader_port(&self, peer_ip: &IpAddr) -> anyhow::Result<u16>{
         assert!(peer_ip.is_ipv4());
-        let ip_bytes: Vec<u8> = peer_ip.to_string().split(".").map(|b| b.parse::<u8>().unwrap()).collect();
+        let ip_bytes: Vec<u8> = peer_ip.to_string().split('.').map(|b| b.parse::<u8>().unwrap()).collect();
         let port = ((ip_bytes[2] as u16) << 8) | ip_bytes[3] as u16;
         Ok(port)
     }
@@ -158,7 +154,7 @@ impl CanManager {
             false, 
             bridge_name.clone(), 
             leader_port, 
-            leader_ip.clone(), 
+            *leader_ip, 
             1,
             guarded_termination_token.clone(),
         );
@@ -179,7 +175,7 @@ impl CanManager {
         
     
         for remote_ip in remote_ips {
-            let leader_port = self.peer_ip_to_leader_port(&remote_ip).unwrap();
+            let leader_port = self.peer_ip_to_leader_port(remote_ip).unwrap();
 
             log::info!("Spawning cannelloni manager as server for peer with IP {}", remote_ip.to_string());
     
@@ -187,7 +183,7 @@ impl CanManager {
                 true, 
                 bridge_name.clone(), 
                 leader_port, 
-                remote_ip.clone(), 
+                *remote_ip, 
                 1,
                 guarded_termination_token.clone()
             );
@@ -204,8 +200,6 @@ impl CanManager {
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("Error while managing CAN interfaces: {0}")]
-    NetworkInterfaceError(#[from] network_interface::manager::Error),
     #[error("Failure while invoking command line program '{command}': {cause}")]
     CommandLineProgramExecution { command: String, cause: std::io::Error },
     #[error("Failure while creating CAN route '{src}' -> '{dst}': {cause}")]

@@ -58,7 +58,7 @@ pub async fn setup_can(
 ) -> Result<(), Error> {
 
     let can_bridge_name = crate::common::default_can_bridge_name();
-    let own_can_interfaces = get_own_can_interfaces(&cluster_assignment, self_id)?;
+    let own_can_interfaces = get_own_can_interfaces(cluster_assignment, self_id)?;
     can_manager.setup_local_routing(
         &can_bridge_name, 
         own_can_interfaces,
@@ -75,7 +75,7 @@ pub async fn setup_can(
 
     if is_leader {
 
-        let remote_ips = determine_remote_ips(&cluster_assignment, self_id, &local_ip)?;
+        let remote_ips = determine_remote_ips(cluster_assignment, self_id, &local_ip)?;
         can_manager.setup_remote_routing_server(
             &can_bridge_name, 
             &remote_ips
@@ -84,7 +84,7 @@ pub async fn setup_can(
 
     } else {
         
-        let leader_ip = determine_leader_ip(&cluster_assignment)?;
+        let leader_ip = determine_leader_ip(cluster_assignment)?;
         can_manager.setup_remote_routing_client(
             &can_bridge_name, 
             &local_ip, 
