@@ -22,6 +22,7 @@ pub fn default_config_merge_suggestion_file_path() -> PathBuf {
     PathBuf::from("/etc/opendut-network/edgar-merge-suggestion.toml")
 }
 
+
 pub mod netbird {
     use std::path::PathBuf;
 
