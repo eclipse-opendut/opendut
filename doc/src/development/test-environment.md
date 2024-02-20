@@ -27,7 +27,7 @@ The OpenDuT Browser is a web browser running in a docker container in the same n
 All certificates are pre-installed and the browser is running in headless mode.
 It is accessible from your host via http://localhost:3000.
 
-![OpenDuT-VM](..%2F..%2F..%2Fresources%2Fdiagrams%2Fopendut-vm-user.drawio.svg)
+![OpenDuT-VM](.img/opendut-vm-user.drawio.svg)
 
 ### Development mode
 
@@ -35,7 +35,7 @@ Run CARL on the host in your development environment of choice and the rest in D
 In this case there is a proxy running in the docker environment. 
 It works as a drop-in replacement for CARL in the docker environment, which is forwarding the traffic to CARL running in an integrated development environment on the host.
 
-![OpenDuT-VM](..%2F..%2F..%2Fresources%2Fdiagrams%2Fopendut-vm-development.drawio.svg)
+![OpenDuT-VM](.img/opendut-vm-development.drawio.svg)
 
 ## Getting started
 
