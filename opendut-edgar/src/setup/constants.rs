@@ -8,7 +8,7 @@ pub fn executable_install_path() -> anyhow::Result<PathBuf> {
     let executable_name = executable_path.file_name()
         .context("Failed to retrieve file name of executable.")?;
 
-    let install_dir = PathBuf::from("/opt/opendut-network/edgar/");
+    let install_dir = PathBuf::from("/opt/opendut/edgar/");
 
     Ok(install_dir.join(executable_name))
 }
@@ -19,7 +19,7 @@ pub fn PATH_dir() -> PathBuf { PathBuf::from("/usr/bin/") }
 pub const SYSTEMD_SERVICE_FILE_NAME: &str = "opendut-edgar.service";
 
 pub fn default_config_merge_suggestion_file_path() -> PathBuf {
-    PathBuf::from("/etc/opendut-network/edgar-merge-suggestion.toml")
+    PathBuf::from("/etc/opendut/edgar-merge-suggestion.toml")
 }
 
 
@@ -37,13 +37,13 @@ pub mod netbird {
     }
 
     pub fn unpack_dir() -> anyhow::Result<PathBuf> {
-        let path = "/opt/opendut-network/edgar/netbird/";
+        let path = "/opt/opendut/edgar/netbird/";
         project::make_path_absolute(path)
             .map_err(|cause| anyhow!("Failed to determine absolute path where NetBird should be unpacked to, which is supposed to be at '{path}': {cause}"))
     }
 
     pub fn checksum_unpack_file() -> PathBuf {
-        PathBuf::from("/opt/opendut-network/edgar/netbird.tar.gz.checksum")
+        PathBuf::from("/opt/opendut/edgar/netbird.tar.gz.checksum")
     }
 
     pub fn unpacked_executable() -> anyhow::Result<PathBuf> {

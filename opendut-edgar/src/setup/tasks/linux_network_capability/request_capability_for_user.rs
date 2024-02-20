@@ -11,7 +11,7 @@ use crate::setup::util::EvaluateRequiringSuccess;
 fn capability_file() -> PathBuf {
     PathBuf::from("/etc/security/capability.conf")
 }
-const LINE_TO_ADD: &str = "cap_net_admin opendut-network";
+const LINE_TO_ADD: &str = "cap_net_admin opendut";
 
 pub struct RequestCapabilityForUser {
     pub service_user: User,

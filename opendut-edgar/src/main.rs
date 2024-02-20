@@ -13,7 +13,7 @@ use opendut_types::vpn::netbird::SetupKey;
 
 #[derive(Debug, Parser)]
 #[command(name = "opendut-edgar")]
-#[command(about = "Connect your ECU to the openDuT-Network.")]
+#[command(about = "Connect your ECU to openDuT.")]
 #[command(long_version = opendut_edgar::app_info::formatted())]
 struct Cli {
     #[command(subcommand)]

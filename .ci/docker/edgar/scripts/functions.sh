@@ -48,7 +48,7 @@ wait_for_peers_to_connect() {
       return 1
     fi
 
-    netbird_status=$(/opt/opendut-network/edgar/netbird/netbird status --json 2>/dev/null | jq .peers.connected 2>/dev/null)
+    netbird_status=$(/opt/opendut/edgar/netbird/netbird status --json 2>/dev/null | jq .peers.connected 2>/dev/null)
     re='^[0-9]+$'
     if [[ $netbird_status =~ $re ]] ; then
       # peer count is a number

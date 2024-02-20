@@ -21,7 +21,7 @@ pub mod key {
 }
 
 pub fn default_config_file_path() -> PathBuf {
-    PathBuf::from("/etc/opendut-network/edgar.toml")
+    PathBuf::from("/etc/opendut/edgar.toml")
 }
 
 pub fn load_with_overrides(overrides: config::Config) -> anyhow::Result<LoadedConfig> {

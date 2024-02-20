@@ -125,7 +125,7 @@ pub fn init_logging() -> anyhow::Result<()> {
 }
 
 fn determine_service_user_name() -> User {
-    const DEFAULT_SERVICE_USER_NAME: &str = "opendut-network";
+    const DEFAULT_SERVICE_USER_NAME: &str = "opendut";
 
     let name = env::var("OPENDUT_EDGAR_SERVICE_USER")
         .unwrap_or(DEFAULT_SERVICE_USER_NAME.to_string());

@@ -15,7 +15,7 @@ services:
       - "--log.level=DEBUG"
       - "--accesslog"
     volumes:
-      - "../../../resources/development/tls/:/etc/opendut-network/tls/:ro"
+      - "../../../resources/development/tls/:/etc/opendut/tls/:ro"
 
     networks:
       opendutnet:

@@ -23,9 +23,9 @@ main() {
 
 
 # symlink netbird to known binary path
-#OPENDUT_EDGAR_NETBIRD_BINARY=/opt/opendut-network/edgar/netbird/netbird
+#OPENDUT_EDGAR_NETBIRD_BINARY=/opt/opendut/edgar/netbird/netbird
 #if [ -e "$OPENDUT_EDGAR_NETBIRD_BINARY" ]; then
-#  ln -sf /opt/opendut-network/edgar/netbird/netbird /usr/local/bin/distribution/netbird
+#  ln -sf /opt/opendut/edgar/netbird/netbird /usr/local/bin/distribution/netbird
 #else
 #  echo "Could not find netbird binary in $OPENDUT_EDGAR_NETBIRD_BINARY."
 #  exit 1

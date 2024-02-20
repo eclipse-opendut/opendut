@@ -3,5 +3,5 @@ carl.host = "localhost"
 carl.port = 8080
 
 [network.tls]
-ca.certificate = "/etc/opendut-network/tls/ca.pem"
+ca.certificate = "/etc/opendut/tls/ca.pem"
 domain.name.override = ""

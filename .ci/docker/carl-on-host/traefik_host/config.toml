@@ -13,6 +13,6 @@
     address = "192.168.32.1:8080"
 
 [[tls.certificates]]
-    certFile = "/etc/opendut-network/tls/carl.pem"
-    keyFile = "/etc/opendut-network/tls/carl.key"
+    certFile = "/etc/opendut/tls/carl.pem"
+    keyFile = "/etc/opendut/tls/carl.key"
     stores = ["default"]
