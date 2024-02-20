@@ -1,4 +1,4 @@
-#### Use virtual machine for development
+# Use virtual machine for development
 
 
 ![OpenDuT-VM](..%2F..%2F..%2F..%2Fresources%2Fdiagrams%2Fopendut-vm-development.drawio.svg)
