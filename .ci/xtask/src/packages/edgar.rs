@@ -41,6 +41,7 @@ pub enum TaskCli {
 }
 
 impl EdgarCli {
+    #[tracing::instrument(name="edgar", skip(self))]
     pub fn default_handling(self) -> crate::Result {
         match self.task {
             TaskCli::Build(crate::tasks::build::BuildCli { target }) => {

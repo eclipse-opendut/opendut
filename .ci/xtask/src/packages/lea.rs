@@ -27,6 +27,7 @@ pub enum TaskCli {
 }
 
 impl LeaCli {
+    #[tracing::instrument(name="lea", skip(self))]
     pub fn default_handling(self) -> crate::Result {
         match self.task {
             TaskCli::Build => build::build_release()?,

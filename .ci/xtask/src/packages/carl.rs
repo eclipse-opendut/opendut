@@ -31,6 +31,7 @@ pub enum TaskCli {
 }
 
 impl CarlCli {
+    #[tracing::instrument(name="carl", skip(self))]
     pub fn default_handling(self) -> crate::Result {
         match self.task {
             TaskCli::Build(crate::tasks::build::BuildCli { target }) => {
@@ -44,7 +45,12 @@ impl CarlCli {
                 }
             }
             TaskCli::Licenses(cli) => cli.default_handling(PackageSelection::Single(SELF_PACKAGE))?,
-            TaskCli::Run(cli) => cli.default_handling(SELF_PACKAGE)?,
+            TaskCli::Run(cli) => {
+                tracing::debug_span!("lea").in_scope(|| {
+                    crate::packages::lea::build::build_release().unwrap(); //ensure the LEA distribution exists and is up-to-date
+                });
+                cli.default_handling(SELF_PACKAGE)?
+            }
 
             TaskCli::DistributionCopyLicenseJson(implementation) => {
                 for target in implementation.target.iter() {

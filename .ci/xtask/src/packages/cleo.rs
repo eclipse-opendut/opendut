@@ -30,6 +30,7 @@ pub enum TaskCli {
 }
 
 impl CleoCli {
+    #[tracing::instrument(name="cleo", skip(self))]
     pub fn default_handling(self) -> crate::Result {
         match self.task {
             TaskCli::Build(crate::tasks::build::BuildCli { target }) => {
