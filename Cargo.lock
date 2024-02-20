@@ -2542,12 +2542,13 @@ dependencies = [
  "ctrlc",
  "dotenvy",
  "home",
- "opendut-edgar",
+ "opendut-util",
  "phf",
  "serde",
  "serde_json",
  "shadow-rs",
  "strum",
+ "sudo",
  "thiserror",
 ]
 

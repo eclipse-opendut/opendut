@@ -66,3 +66,17 @@ impl KernelModule {
 }
 
 
+pub fn edgar_required_kernel_modules() -> Vec<KernelModule> {
+    vec![
+        KernelModule {
+            name: "vcan".to_string(),
+            params: HashMap::new(),
+        },
+        KernelModule {
+            name: "can-gw".to_string(),
+            params: HashMap::from([
+                ("max_hops".to_string(), "2".to_string())
+            ]),
+        }
+        ]
+}

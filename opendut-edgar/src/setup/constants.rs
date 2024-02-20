@@ -1,6 +1,5 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::path::PathBuf;
 
-use opendut_util::kernel_modules::KernelModule;
 use anyhow::Context;
 
 
@@ -21,19 +20,6 @@ pub const SYSTEMD_SERVICE_FILE_NAME: &str = "opendut-edgar.service";
 
 pub fn default_config_merge_suggestion_file_path() -> PathBuf {
     PathBuf::from("/etc/opendut-network/edgar-merge-suggestion.toml")
-}
-
-pub fn required_kernel_modules() -> Vec<KernelModule> {
-    vec![
-        KernelModule {
-            name: "vcan".to_string(),
-            params: HashMap::new(),
-        },
-        KernelModule {
-            name: "can-gw".to_string(),
-            params: HashMap::new(),
-        }
-        ]
 }
 
 pub mod netbird {

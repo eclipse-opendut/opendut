@@ -4,11 +4,11 @@ description: Install Kernel Modules
 runs:
   using: "composite"
   steps:
-    - name: Install extra kernel modules (including vcan and can-gw)
+    - name: Install and load 'vcan' and 'can-gw' kernel modules
       shell: bash
       run: |
         sudo apt-get update
         sudo apt-get install -y \
            linux-modules-extra-$(uname -r)
         sudo modprobe vcan
-        sudo modprobe can-gw
+        sudo modprobe can-gw max_hops=2

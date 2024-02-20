@@ -38,7 +38,7 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
         })),
         Box::new(tasks::CheckCarlReachable),
         Box::new(tasks::CopyExecutable),
-        Box::new(tasks::LoadKernelModules), // TODO: This does not cause the modules to be automatically loaded at boot time, fix this
+        Box::new(tasks::CheckKernelModulesLoaded),
     ];
 
     match peer_setup.vpn {

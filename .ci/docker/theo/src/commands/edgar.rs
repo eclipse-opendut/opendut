@@ -1,7 +1,7 @@
 use std::thread::sleep;
 use std::time::Duration;
 
-use opendut_edgar::setup::constants::required_kernel_modules;
+use opendut_util::kernel_modules::edgar_required_kernel_modules;
 
 use anyhow::{anyhow, Error};
 
@@ -140,8 +140,11 @@ fn check_edgar_can_ping() -> Result<i32, Error> {
 }
 
 fn load_edgar_kernel_modules() -> Result<(), Error> {
-    for kernel_module in required_kernel_modules() {
-        kernel_module.load()?;
+    for kernel_module in edgar_required_kernel_modules() {
+        if !kernel_module.is_loaded()? {
+            sudo::escalate_if_needed().expect("Failed to request sudo privileges.");
+            kernel_module.load()?;
+        }        
     }
     Ok(())
 }

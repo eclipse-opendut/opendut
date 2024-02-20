@@ -6,7 +6,7 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-opendut-edgar = { workspace = true }
+opendut-util = { workspace = true }
 
 clap = { workspace = true, features = ["derive", "wrap_help", "env"] }
 dotenvy = { workspace = true }
@@ -14,6 +14,7 @@ phf = { workspace = true, features = ["macros"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
+sudo = { workspace = true }
 thiserror = { workspace = true }
 cargo_toml = { workspace = true }
 ctrlc = { workspace = true }
