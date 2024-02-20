@@ -1,29 +1,16 @@
 # Getting Started
 
 ## Development Setup
-Install the Rust toolchain: [https://www.rust-lang.org/tools/install](https://www.rust-lang.org/tools/install)  
-For compiling Rust, you additionally need a C linker. On Linux, you can install the `gcc` package from your distribution.
+Install the Rust toolchain: [https://www.rust-lang.org/tools/install](https://www.rust-lang.org/tools/install)
 
-## Starting the Applications
-* Run CARL (backend):
-    ```sh
-    cargo ci carl run
-    ```
-You can then open the UI by going to https://localhost:8080/ in your web browser.
+You may need additional dependencies. On Ubuntu/Debian, these can be installed with:
+```sh
+sudo apt install build-essential pkg-config libssl-dev
+```
 
-* Run EDGAR (edge software):
-    ```sh
-    cargo ci edgar run -- service
-    ```
+To see if your development setup is generally working, you can run `cargo ci check` in the project directory.  
+Mind that this runs the unit tests and additional code checks and may occasionally show warnings/errors related to those, rather than pure build errors.
 
-* Run CLEO (CLI for managing CARL):
-    ```sh
-    cargo ci cleo run
-    ```
-
-## UI Development
-Run `cargo ci lea run` to continuously build the newest changes.  
-During your first run, you may need to install additional system packages. On Linux, this may include the `pkg-config` package, as well as the package for OpenSSL development symbols.
 
 ## Tips & Tricks
 
