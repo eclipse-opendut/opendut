@@ -106,12 +106,7 @@ fn determine_remote_ips(cluster_assignment: &ClusterAssignment, self_id: PeerId,
             .collect()
     }
     else {
-        let leader_ip = cluster_assignment.assignments.iter().find_map(|peer_assignment| {
-            let is_leader = peer_assignment.peer_id == cluster_assignment.leader;
-
-            is_leader
-                .then_some(peer_assignment.vpn_address)
-        }).ok_or(Error::LeaderIpAddressNotDeterminable)?;
+        let leader_ip = determine_leader_ip(cluster_assignment)?;
 
         vec![leader_ip]
     };

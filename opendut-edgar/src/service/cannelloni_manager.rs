@@ -4,14 +4,16 @@ use std::process::Stdio;
 use std::net::IpAddr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::time::Duration;
 use opendut_types::util::net::NetworkInterfaceName;
+use opendut_types::util::Port;
 
 pub struct CannelloniManager{
     is_server: bool, 
     can_if_name: NetworkInterfaceName, 
-    server_port: u16, 
+    server_port: Port, 
     remote_ip: IpAddr, 
-    buffer_timeout: u64,
+    buffer_timeout: Duration,
     termination_request_token: Arc<AtomicBool>,
     cannelloni_proc: Option<Child>,
 }
@@ -26,7 +28,7 @@ const MONITOR_INTERVAL_MS: u64 = 100;
 // TODO: Implement exponential back-off when restarting cannelloni?
 impl CannelloniManager {
 
-    pub fn new(is_server: bool, can_if_name: NetworkInterfaceName, server_port: u16, remote_ip: IpAddr, buffer_timeout: u64, termination_request_token: Arc<AtomicBool>) -> Self {
+    pub fn new(is_server: bool, can_if_name: NetworkInterfaceName, server_port: Port, remote_ip: IpAddr, buffer_timeout: Duration, termination_request_token: Arc<AtomicBool>) -> Self {
         Self { 
             is_server, 
             can_if_name, 
@@ -133,7 +135,7 @@ impl CannelloniManager {
             .arg("-S")
             .arg(instance_type)
             .arg("-t")
-            .arg(self.buffer_timeout.to_string())
+            .arg(self.buffer_timeout.as_micros().to_string())
             .arg("-R")
             .arg(self.remote_ip.to_string())
             .arg(port_arg)

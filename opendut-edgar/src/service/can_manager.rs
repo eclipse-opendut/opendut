@@ -1,6 +1,8 @@
 use std::net::IpAddr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
+use opendut_types::util::Port;
 use regex::Regex;
 
 use tokio::process::Command;
@@ -72,9 +74,11 @@ impl CanManager {
                 cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim()) });
         }
 
-        self.check_can_route_exists(src, dst, can_fd, max_hops).await?.then(|| ()).ok_or(Error::CanRouteCreationNoCause { src: src.clone(), dst: dst.clone() })?;
-
-        Ok(())
+        if self.check_can_route_exists(src, dst, can_fd, max_hops).await? {
+            Ok(())
+        } else {
+            Err(Error::CanRouteCreationNoCause { src: src.clone(), dst: dst.clone() })
+        }
     }
 
     async fn remove_all_can_routes(&self) -> Result<(), Error> {
@@ -127,11 +131,11 @@ impl CanManager {
     
     // TODO: determining the port for cannelloni like this is a bit dirty, we should get that information from CARL instead
     // Takes the last two bytes of the IP address to be used as the port
-    fn peer_ip_to_leader_port(&self, peer_ip: &IpAddr) -> anyhow::Result<u16>{
+    fn peer_ip_to_leader_port(&self, peer_ip: &IpAddr) -> anyhow::Result<Port>{
         assert!(peer_ip.is_ipv4());
         let ip_bytes: Vec<u8> = peer_ip.to_string().split('.').map(|b| b.parse::<u8>().unwrap()).collect();
         let port = ((ip_bytes[2] as u16) << 8) | ip_bytes[3] as u16;
-        Ok(port)
+        Ok(Port(port))
     }
 
     async fn terminate_cannelloni_managers(&self) {
@@ -155,7 +159,7 @@ impl CanManager {
             bridge_name.clone(), 
             leader_port, 
             *leader_ip, 
-            1,
+            Duration::from_micros(1),
             guarded_termination_token.clone(),
         );
     
@@ -184,7 +188,7 @@ impl CanManager {
                 bridge_name.clone(), 
                 leader_port, 
                 *remote_ip, 
-                1,
+                Duration::from_micros(1),
                 guarded_termination_token.clone()
             );
         

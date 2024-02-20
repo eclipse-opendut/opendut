@@ -6,7 +6,7 @@ use crate::setup::task::{Success, Task, TaskFulfilled};
 pub struct LoadKernelModules;
 impl Task for LoadKernelModules {
     fn description(&self) -> String {
-        let kernel_modules_str = required_kernel_modules().iter().map(|m| m.name.clone()).collect::<Vec<String>>().join(", ");
+        let kernel_modules_str = required_kernel_modules().into_iter().map(|m| m.name).collect::<Vec<String>>().join(", ");
 
         format!("Load Kernel Modules \"{kernel_modules_str}\"")
     }

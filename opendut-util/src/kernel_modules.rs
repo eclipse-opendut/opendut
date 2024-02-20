@@ -19,7 +19,7 @@ pub struct KernelModule {
 }
 
 impl KernelModule {
-    pub fn is_loaded(self) -> Result<bool, Error> {
+    pub fn is_loaded(&self) -> Result<bool, Error> {
         let module = str::replace(self.name.as_str(), "-", "_");
 
         let file = File::open("/proc/modules")
@@ -46,12 +46,12 @@ impl KernelModule {
         Ok(false)
     }
 
-    pub fn load(self) -> Result<(), Error, >{
+    pub fn load(&self) -> Result<(), Error, >{
     
         let mut cmd = Command::new("modprobe");
-        cmd.arg(self.name);
+        cmd.arg(self.name.clone());
     
-        for (key, value) in self.params{
+        for (key, value) in &self.params{
             cmd.arg(format!("{key}={value}"));
         }
     

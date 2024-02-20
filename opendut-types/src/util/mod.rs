@@ -26,6 +26,12 @@ impl From<u16> for Port {
     }
 }
 
+impl ToString for Port {
+    fn to_string(&self) -> String {
+        self.0.to_string()
+    }
+}
+
 pub fn valid_characters_in_name(c: &char) -> bool {
     c.is_ascii_alphanumeric() || c.eq(&'-') || c.eq(&'_')
 }
