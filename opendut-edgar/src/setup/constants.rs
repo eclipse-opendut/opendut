@@ -18,6 +18,8 @@ pub fn PATH_dir() -> PathBuf { PathBuf::from("/usr/bin/") }
 
 pub const SYSTEMD_SERVICE_FILE_NAME: &str = "opendut-edgar.service";
 
+pub const KERNEL_MODULE_LOAD_RULE_PREFIX: &str = "opendut-edgar";
+
 pub fn default_config_merge_suggestion_file_path() -> PathBuf {
     PathBuf::from("/etc/opendut-network/edgar-merge-suggestion.toml")
 }
