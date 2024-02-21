@@ -143,7 +143,10 @@ impl CanManager {
     fn peer_ip_to_leader_port(&self, peer_ip: &IpAddr) -> anyhow::Result<Port>{
         assert!(peer_ip.is_ipv4());
         let ip_bytes: Vec<u8> = peer_ip.to_string().split('.').map(|b| b.parse::<u8>().unwrap()).collect();
-        let port = ((ip_bytes[2] as u16) << 8) | ip_bytes[3] as u16;
+        let mut port = ((ip_bytes[2] as u16) << 8) | ip_bytes[3] as u16;
+        if port < 1024 {
+            port += 1024; // Ensure no port reserved for privileged processes is used
+        }
         Ok(Port(port))
     }
 
