@@ -1,12 +1,14 @@
 use leptos::*;
 use leptos::html::Div;
 use leptos_use::on_click_outside;
+use serde::{Deserialize, Serialize};
 
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
 
 use crate::app::{ExpectGlobals, use_app_globals};
 use crate::clusters::components::CreateClusterButton;
-use crate::components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Initialized, Toast, use_toaster};
+use crate::components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, health, IconButton, Initialized, Toast, use_toaster};
+use crate::components::health::Health;
 
 #[component(transparent)]
 pub fn ClustersOverview() -> impl IntoView {
@@ -21,6 +23,14 @@ pub fn ClustersOverview() -> impl IntoView {
             async move {
                 carl.cluster.list_cluster_configurations().await
                     .expect("Failed to request the list of clusters")
+            }
+        });
+
+        let cluster_deployments = create_local_resource(|| {}, move |_| {
+            let mut carl = globals.expect_client();
+            async move {
+                carl.cluster.list_cluster_deployments().await
+                    .expect("Failed to request the list of cluster deployments")
             }
         });
 
@@ -68,16 +78,27 @@ pub fn ClustersOverview() -> impl IntoView {
             }
         });
 
+        let deployed_clusters = move || {
+            match cluster_deployments.get() {
+                Some(deployed_clusters) => {
+                    deployed_clusters.iter().map(|cluster_deployment| cluster_deployment.id).collect::<Vec<_>>()
+                }
+                None => Vec::new()
+            }
+        };
+        tracing::debug!("Cluster ids: {:?}", deployed_clusters());
         let rows = move || {
             match clusters.get() {
                 Some(configurations) => {
                     configurations.iter().cloned().map(|cluster_configuration| {
                         let cluster_id = cluster_configuration.id;
+                        //let is_deployed = deployed_clusters().contains(&cluster_id);
                         view! {
                             <Row
                                 cluster_configuration=create_rw_signal(cluster_configuration)
                                 on_deploy=move || deploy_cluster.dispatch(cluster_id)
                                 on_undeploy=move || undeploy_cluster.dispatch(cluster_id)
+                                is_deployed = create_rw_signal(IsDeployed(deployed_clusters().contains(&cluster_id)))
                             />
                         }
                     }).collect::<Vec<_>>()
@@ -123,16 +144,19 @@ pub fn ClustersOverview() -> impl IntoView {
         </Initialized>
     }
 }
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct IsDeployed (bool);
 
 #[component]
 fn Row<OnDeployFn, OnUndeployFn>(
     cluster_configuration: RwSignal<ClusterConfiguration>,
     on_deploy: OnDeployFn,
     on_undeploy: OnUndeployFn,
+    is_deployed: RwSignal<IsDeployed>,
 ) -> impl IntoView
 where
     OnDeployFn: Fn() + 'static,
-    OnUndeployFn: Fn() + 'static
+    OnUndeployFn: Fn() + 'static,
 {
 
     let cluster_id = create_read_slice(cluster_configuration,
@@ -154,10 +178,26 @@ where
 
     let _ = on_click_outside(dropdown, move |_| dropdown_active.set(false) );
 
+    let (health_state, _) = create_signal({
+        let state = if is_deployed.get().0 {
+            health::State {
+                kind: health::StateKind::Green,
+                text: String::from("Connected. No errors."),
+            }
+        }
+        else {
+            health::State {
+                kind: health::StateKind::Unknown,
+                text: String::from("Disconnected"),
+            }
+        };
+        state
+    });
+
     view! {
         <tr>
             <td class="is-vcentered">
-                // health
+                <Health state=health_state />
             </td>
             <td class="is-vcentered">
                 <a href={ configurator_href } >{ cluster_name }</a>
