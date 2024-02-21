@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use anyhow::anyhow;
 
-use crate::{Package, Target};
+use crate::{Arch, Package};
 use crate::core::types::parsing::package::PackageSelection;
 use crate::core::types::parsing::target::TargetSelection;
 
@@ -78,10 +78,10 @@ impl EdgarCli {
 pub mod build {
     use super::*;
 
-    pub fn build_release(target: Target) -> crate::Result {
+    pub fn build_release(target: Arch) -> crate::Result {
         crate::tasks::build::build_release(SELF_PACKAGE, target)
     }
-    pub fn out_dir(target: Target) -> PathBuf {
+    pub fn out_dir(target: Arch) -> PathBuf {
         crate::tasks::build::out_dir(SELF_PACKAGE, target)
     }
 }
@@ -92,8 +92,10 @@ pub mod distribution {
     use super::*;
 
     #[tracing::instrument]
-    pub fn edgar_distribution(target: Target) -> crate::Result {
+    pub fn edgar_distribution(target: Arch) -> crate::Result {
         use crate::tasks::distribution;
+
+        let _ = netbird::map_target(target)?; //check target supported
 
         distribution::clean(SELF_PACKAGE, target)?;
 
@@ -113,10 +115,11 @@ pub mod distribution {
 
 
     pub mod netbird {
+        use anyhow::bail;
         use super::*;
 
         #[tracing::instrument]
-        pub fn netbird_client_distribution(target: Target) -> crate::Result {
+        pub fn netbird_client_distribution(target: Arch) -> crate::Result {
             //Modelled after documentation here: https://docs.netbird.io/how-to/getting-started#binary-install
 
             let metadata = crate::metadata::cargo();
@@ -125,11 +128,7 @@ pub mod distribution {
 
             let os = "linux";
 
-            let arch = match target {
-                Target::X86_64 => "amd64",
-                Target::Arm64 => "arm64",
-                Target::Armhf => "armv6",
-            };
+            let arch = map_target(target)?;
 
             let folder_name = format!("v{version}");
             let file_name = format!("netbird_{version}_{os}_{arch}.tar.gz");
@@ -160,11 +159,25 @@ pub mod distribution {
             Ok(())
         }
 
+        pub(super) fn map_target(target: Arch) -> anyhow::Result<&'static str> {
+            match target {
+                Arch::X86_64 => Ok("amd64"),
+                Arch::Arm64 => Ok("arm64"),
+                Arch::Armhf => Ok("armv6"),
+                other => bail!(
+                    "Building a distribution for EDGAR isn't currently supported for '{}'.\n\
+                    Supported targets are: {}",
+                    other.triple(),
+                    [Arch::X86_64.triple(), Arch::Arm64.triple(), Arch::Armhf.triple()].join(", "),
+                ),
+            }
+        }
+
         fn download_dir() -> PathBuf {
             crate::constants::target_dir().join("netbird")
         }
 
-        pub fn out_file(package: Package, target: Target) -> PathBuf {
+        pub fn out_file(package: Package, target: Arch) -> PathBuf {
             crate::tasks::distribution::out_package_dir(package, target).join("install").join("netbird.tar.gz")
         }
     }
@@ -182,7 +195,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument]
-        pub fn validate_contents(target: Target) -> crate::Result {
+        pub fn validate_contents(target: Arch) -> crate::Result {
 
             let unpack_dir = {
                 let unpack_dir = assert_fs::TempDir::new()?;

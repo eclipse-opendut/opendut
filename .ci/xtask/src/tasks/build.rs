@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use crate::{constants, util, Package};
 use crate::core::dependency::Crate;
-use crate::Target;
+use crate::types::Arch;
 use crate::core::types::parsing::target::TargetSelection;
 use crate::util::RunRequiringSuccess;
 
@@ -16,7 +16,7 @@ pub struct BuildCli {
 }
 
 #[tracing::instrument]
-pub fn build_release(package: Package, target: Target) -> crate::Result {
+pub fn build_release(package: Package, target: Arch) -> crate::Result {
     util::install_crate(Crate::Cross)?;
 
     Command::new("cross")
@@ -35,7 +35,7 @@ pub fn build_release(package: Package, target: Target) -> crate::Result {
     Ok(())
 }
 
-pub fn out_dir(package: Package, target: Target) -> PathBuf {
+pub fn out_dir(package: Package, target: Arch) -> PathBuf {
     cross_target_dir().join(target.triple()).join("release").join(package.ident())
 }
 

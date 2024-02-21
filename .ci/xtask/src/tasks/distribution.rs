@@ -1,9 +1,8 @@
 use std::fs;
 use std::path::PathBuf;
 
-use crate::{constants, Package, Target};
+use crate::{Arch, constants, Package};
 use crate::types::parsing::target::TargetSelection;
-
 
 /// Build and bundle a release distribution
 #[derive(Debug, clap::Parser)]
@@ -14,7 +13,7 @@ pub struct DistributionCli {
 }
 
 #[tracing::instrument]
-pub fn clean(package: Package, target: Target) -> crate::Result {
+pub fn clean(package: Package, target: Arch) -> crate::Result {
     let package_dir = out_package_dir(package, target);
     if package_dir.exists() {
         fs::remove_dir_all(&package_dir)?;
@@ -24,7 +23,7 @@ pub fn clean(package: Package, target: Target) -> crate::Result {
 }
 
 #[tracing::instrument]
-pub fn collect_executables(package: Package, target: Target) -> crate::Result {
+pub fn collect_executables(package: Package, target: Arch) -> crate::Result {
 
     let out_dir = out_package_dir(package, target);
     fs::create_dir_all(&out_dir)?;
@@ -69,7 +68,7 @@ pub mod copy_license_json {
     }
 
     #[tracing::instrument]
-    pub fn copy_license_json(package: Package, target: Target, skip_generate: SkipGenerate) -> crate::Result {
+    pub fn copy_license_json(package: Package, target: Arch, skip_generate: SkipGenerate) -> crate::Result {
 
         match skip_generate {
             SkipGenerate::Yes => log::info!("Skipping generation of licenses, as requested. Directly attempting to copy to target location."),
@@ -84,7 +83,7 @@ pub mod copy_license_json {
 
         Ok(())
     }
-    pub fn out_file(package: Package, target: Target) -> PathBuf {
+    pub fn out_file(package: Package, target: Arch) -> PathBuf {
         out_package_dir(package, target)
             .join("licenses")
             .join(crate::tasks::licenses::json::out_file_name(package))
@@ -111,7 +110,7 @@ pub mod bundle {
     }
 
     #[tracing::instrument]
-    pub fn bundle_files(package: Package, target: Target) -> crate::Result {
+    pub fn bundle_files(package: Package, target: Arch) -> crate::Result {
         use flate2::Compression;
         use flate2::write::GzEncoder;
 
@@ -132,7 +131,7 @@ pub mod bundle {
         Ok(())
     }
 
-    pub fn out_file(package: Package, target: Target) -> PathBuf {
+    pub fn out_file(package: Package, target: Arch) -> PathBuf {
         let target_triple = target.triple();
         let version = crate::build::PKG_VERSION;
 
@@ -157,10 +156,10 @@ pub fn out_dir() -> PathBuf {
     constants::target_dir().join("distribution")
 }
 
-pub fn out_arch_dir(target: Target) -> PathBuf {
+pub fn out_arch_dir(target: Arch) -> PathBuf {
     out_dir().join(target.triple())
 }
 
-pub fn out_package_dir(package: Package, target: Target) -> PathBuf {
+pub fn out_package_dir(package: Package, target: Arch) -> PathBuf {
     out_arch_dir(target).join(package.ident())
 }

@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::PathBuf;
 
-use crate::{Package, Target};
+use crate::{Arch, Package};
 use crate::core::types::parsing::package::PackageSelection;
 use crate::packages::carl::distribution::copy_license_json::copy_license_json;
 
@@ -73,10 +73,10 @@ impl CarlCli {
 pub mod build {
     use super::*;
 
-    pub fn build_release(target: Target) -> crate::Result {
+    pub fn build_release(target: Arch) -> crate::Result {
         crate::tasks::build::build_release(SELF_PACKAGE, target)
     }
-    pub fn out_dir(target: Target) -> PathBuf {
+    pub fn out_dir(target: Arch) -> PathBuf {
         crate::tasks::build::out_dir(SELF_PACKAGE, target)
     }
 }
@@ -87,7 +87,7 @@ pub mod distribution {
     use super::*;
 
     #[tracing::instrument]
-    pub fn carl_distribution(target: Target) -> crate::Result {
+    pub fn carl_distribution(target: Arch) -> crate::Result {
         use crate::tasks::distribution;
 
         let distribution_out_dir = distribution::out_package_dir(SELF_PACKAGE, target);
@@ -141,7 +141,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument]
-        pub fn copy_license_json(target: Target, skip_generate: SkipGenerate) -> crate::Result {
+        pub fn copy_license_json(target: Arch, skip_generate: SkipGenerate) -> crate::Result {
 
             match skip_generate {
                 SkipGenerate::Yes => log::info!("Skipping generation of licenses, as requested. Directly attempting to copy to target location."),
@@ -192,7 +192,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument]
-        pub fn validate_contents(target: Target) -> crate::Result {
+        pub fn validate_contents(target: Arch) -> crate::Result {
 
             let unpack_dir = {
                 let unpack_dir = assert_fs::TempDir::new()?;
