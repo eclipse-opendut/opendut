@@ -10,7 +10,7 @@
 
   - name: Install required packages
     apt:
-      pkg: ['htop', 'tmux', 'jq', 'libssl-dev', 'build-essential', 'pkg-config', 'clang']
+      pkg: ['htop', 'tmux', 'jq', 'libssl-dev', 'build-essential', 'pkg-config', 'clang', 'linux-modules-extra-{{ ansible_kernel }}']
       state: 'present'
       update_cache: yes
       cache_valid_time: 3600
@@ -19,6 +19,19 @@
     import_tasks: tasks/firefox.yml
     tags: "firefox"
 
+  - name: Persistently load the 'vcan' kernel module
+    community.general.modprobe:
+      name: vcan
+      state: present
+      persistent: present
+  
+  - name: Persistently load the 'can-gw' kernel module
+    community.general.modprobe:
+      name: can-gw
+      state: present
+      params: "max_hops=2"
+      persistent: present
+      
   roles:
   # https://github.com/geerlingguy/ansible-role-docker
   - {role: "geerlingguy.docker", docker_users: ["vagrant"], tags: ["docker"]}
