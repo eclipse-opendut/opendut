@@ -2548,7 +2548,6 @@ dependencies = [
  "serde_json",
  "shadow-rs",
  "strum",
- "sudo",
  "thiserror",
 ]
 

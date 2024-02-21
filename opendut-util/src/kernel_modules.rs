@@ -48,7 +48,8 @@ impl KernelModule {
 
     pub fn load(&self) -> Result<(), Error, >{
     
-        let mut cmd = Command::new("modprobe");
+        let mut cmd = Command::new("sudo");
+        cmd.arg("modprobe");
         cmd.arg(self.name.clone());
     
         for (key, value) in &self.params{
