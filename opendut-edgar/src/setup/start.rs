@@ -62,9 +62,7 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
         tasks.append(&mut vec![
             Box::new(tasks::CreateUser { service_user: service_user.clone() }),
             Box::new(tasks::ClaimFileOwnership { service_user: service_user.clone() }),
-            Box::new(tasks::linux_network_capability::MakePamAuthOptional::default()),
-            Box::new(tasks::linux_network_capability::RequestCapabilityForUser { service_user: service_user.clone() }),
-            Box::new(tasks::linux_network_capability::RequestCapabilityForExecutable),
+            Box::new(tasks::RequestLinuxNetworkCapability),
         ]);
     }
 

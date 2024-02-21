@@ -67,9 +67,9 @@ pub async fn create(settings_override: Config) -> anyhow::Result<()> {
 
     log::debug!("Connecting to CARL...");
     let mut carl = carl::connect(&settings.config).await?;
-    log::debug!("Connected to CARL.");
+    log::info!("Connected to CARL.");
 
-    log::info!("Connecting to peer-messaging-broker...");
+    log::debug!("Connecting to peer-messaging-broker...");
 
     let (mut rx_inbound, tx_outbound) = carl.broker.open_stream(id, remote_address).await?;
 
@@ -79,6 +79,7 @@ pub async fn create(settings_override: Config) -> anyhow::Result<()> {
 
     tx_outbound.send(message).await
         .map_err(|cause| opendut_carl_api::carl::broker::error::OpenStream { message: format!("Error while sending initial ping: {cause}") })?;
+    log::info!("Connected to peer-messaging-broker...");
 
 
     loop {
