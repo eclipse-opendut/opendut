@@ -15,6 +15,15 @@ use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 pub type CanManagerRef = Arc<CanManager>;
 
 pub struct CanManager{
+    /*
+        The cannelloni_termination_token is used to signal the CannelloniManagers, running in separate threads, to terminate. Once it is read as 'true' 
+        by a CannelloniManager, it will terminate. 
+        The idea is that, with every Cluster Assignment pushed from CARL, a new AtomicBool ('false') is created that is shared between all newly started 
+        CannelloniManagers and the CanManager. 
+        Once a new Cluster Assignment is pushed, the CanManager sets the AtomicBool to 'true' and forgets it by replacing the content of 
+        cannelloni_termination_token with a new AtomicBool, to be used for the new generation of CannelloniManagers.
+        The old generation of CannelloniManagers can now read the old AtomicBool and terminate accordingly.
+     */
     cannelloni_termination_token: Mutex<Arc<AtomicBool>>,
     network_interface_manager: NetworkInterfaceManagerRef,
 }
