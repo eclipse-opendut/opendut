@@ -53,6 +53,7 @@ pub fn ClustersOverview() -> impl IntoView {
                         );
                     }
                 }
+                cluster_deployments.refetch();
             }
         });
 
@@ -75,6 +76,7 @@ pub fn ClustersOverview() -> impl IntoView {
                         );
                     }
                 }
+                cluster_deployments.refetch();
             }
         });
 
