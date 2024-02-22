@@ -2,7 +2,7 @@ use clap::Parser;
 
 pub(crate) use core::constants;
 pub(crate) use core::metadata;
-pub(crate) use core::types::{self, Arch, Package, Result, Target};
+pub(crate) use core::types::{self, Arch, Package, Result};
 pub(crate) use core::util;
 use crate::core::types::parsing::package::PackageSelection;
 

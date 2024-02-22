@@ -1,11 +1,9 @@
 mod arch;
 mod package;
 pub mod parsing;
-mod target;
 
 pub use arch::Arch;
 pub use package::Package;
-pub use target::Target;
 
 /// Result generally used for tasks.
 /// This does not allow returning data from tasks,

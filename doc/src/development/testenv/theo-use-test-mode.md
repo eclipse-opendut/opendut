@@ -1,4 +1,4 @@
-#### Use virtual machine for testing
+# Use virtual machine for testing
 
 This mode is used to test a distribution of OpenDuT. 
 

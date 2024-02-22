@@ -35,7 +35,7 @@ impl Debug for LoadedConfig {
 /// This includes in following order:
 /// * A default configuration, provided as a string
 /// * A development configuration, read from the crate's directory
-/// * A system configuration, read from `/etc/opendut-network/{name}.toml`
+/// * A system configuration, read from `/etc/opendut/{name}.toml`
 /// * A user configuration, read from `[XDG_CONFIG_HOME|~/.config]/opendut/{name}/config.toml`
 /// * Environment variables prefixed with `OPENDUT_{NAME}_`
 /// * The `overrides` passed as parameter.
@@ -43,7 +43,7 @@ impl Debug for LoadedConfig {
 pub fn load_config(name: &str, defaults: &str, defaults_format: FileFormat, overrides: Config, secret_redacted_overrides: Config) -> Result<LoadedConfig, LoadError> {
 
     let development_config = format!("opendut-{name}/{name}-development.toml");
-    let system_config = format!("/etc/opendut-network/{name}.toml");
+    let system_config = format!("/etc/opendut/{name}.toml");
     let user_config = format!("opendut/{name}/config.toml");
 
     let builder = Config::builder()

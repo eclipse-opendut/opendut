@@ -9,6 +9,7 @@ pub struct RunCli {
 }
 
 impl RunCli {
+    #[tracing::instrument(name="run", skip(self))]
     pub fn default_handling(&self, package: crate::Package) -> crate::Result {
         Command::new("cargo")
             .args(["run", "--package", &package.ident(), "--"])

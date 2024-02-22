@@ -1,12 +1,28 @@
-# Required, otherwise ggshield considers the file to use the deprecated v1 format
 version: 2
 
 secret:
-  # Exclude files and paths by globbing
+  ignored-matches:
+  - match: 02b9225ae1b240df001a0f365a43bca7bd5b2448c8b5d46de6d429bcd047f46f
+    name: Generic Private Key - commit://a8487a3a850925d47cd585d54d69f7dab1595910/resources/development/tls/netbird-management.key
+  - match: e64b2db93a60fd9ac1014561e88e72647b19b3da37fa20517aa9808ca0952006
+    name: Generic High Entropy Secret - commit://6cb977a8dd2629d398b9cfb574993bbaca22d7ad/.ci/docker/netbird/management.json
+  - match: 4e7a0b4fd848c83d866686d1bc0f33ad79ff27214ddacc09650f795d908b0419
+    name: Generic Private Key - commit://6cb977a8dd2629d398b9cfb574993bbaca22d7ad/resources/development/tls/keycloak.key
+  - match: ea5427a6828ab56e80a3aae66f3741ae3f4352ae2a83397cdf96530755013e23
+    name: Generic Password - commit://e00030ca420c79ba00526d2b4c6a1a398574ab58/.ci/docker/netbird/netbird-api-functions.sh
+  - match: 8e4d9db9b9a2d268abf0f503d25c9f9fdc9c65345ae937389831de720cc7a45b
+    name: Generic Password - commit://c547132b218533bf10b4a8a6a98783db0390fbf2/.ci/docker/netbird/management.json
+  - match: f3efcfd24d13e035fd2417cea9f8c1be637aa1a136fd55b3ee518e775d6d325d
+    name: Generic High Entropy Secret - commit://c547132b218533bf10b4a8a6a98783db0390fbf2/.ci/docker/netbird/netbird-api-functions.sh
+  - match: 55c778caa024efb28ec4fd2808eda667a37f14834fec508f44a3413bad113e34
+    name: Generic Private Key - commit://e34d30ad8ffc78af868567d22d27fa596010d11c/resources/development/tls/carl.key
+  - match: 003bf6997622667e7b150ed9dc2b4e5da4624c4d093baa6bec4146091c56251b
+    name: Generic Private Key - commit://e34d30ad8ffc78af868567d22d27fa596010d11c/resources/development/tls/insecure-development-ca.key
+  - match: b86fd3e00e1f5680d3af605a16a2be6131ee95be54b04fd6fc5c0d326ba49dae
+    name: Generic Private Key - commit://e34d30ad8ffc78af868567d22d27fa596010d11c/resources/development/tls/insecure-development-carl.key
   ignored-paths:
-    # Exclude private keys dedicated for the test environment (development)
-    - 'resources/development/tls/*.key'
-    - '.ci/docker/keycloak/provision.sh'
-    - '.ci/docker/netbird/management.json'
-    - '.ci/docker/netbird/netbird-api-functions.sh'
-    - '.ci/docker/netbird/turnserver.conf'
+  - .ci/docker/keycloak/provision.sh
+  - .ci/docker/netbird/netbird-api-functions.sh
+  - .ci/docker/netbird/turnserver.conf
+  - .ci/docker/netbird/management.json
+  - resources/development/tls/*.key

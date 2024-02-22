@@ -1,4 +1,4 @@
-### THEO Setup in Vagrant
+# THEO Setup in Vagrant
 
 You may run all the containers in a virtual machine, using Vagrant.
 This is the recommended way to run the test environment.
@@ -9,7 +9,7 @@ Make sure those network addresses are not occupied or in conflict with other net
 
 ![OpenDuT-VM](..%2F..%2F..%2F..%2Fresources%2Fdiagrams%2Fopendut-vm-user.drawio.svg)
 
-#### Requirements
+## Requirements
 
 * Install Vagrant
 
@@ -28,7 +28,7 @@ Make sure those network addresses are not occupied or in conflict with other net
   ssh-keygen -t rsa -b 4096 -C "opendut-vm" -f ~/.ssh/id_rsa
   ```
 
-#### Setup virtual machine
+## Setup virtual machine
 
 * Either via cargo:
   ```

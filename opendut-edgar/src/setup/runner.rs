@@ -191,13 +191,6 @@ fn print_outcome(task_name: String, outcome: Outcome) {
 pub mod test {
     use crate::setup::task::{Task, TaskFulfilled};
 
-    pub fn no_then_yes(task: impl Task) -> anyhow::Result<()> {
-        assert_eq!(task.check_fulfilled()?, TaskFulfilled::No);
-        task.execute()?;
-        assert_eq!(task.check_fulfilled()?, TaskFulfilled::Yes);
-        Ok(())
-    }
-
     pub fn unchecked(task: impl Task) -> anyhow::Result<()> {
         assert_eq!(task.check_fulfilled()?, TaskFulfilled::Unchecked);
         task.execute()?;

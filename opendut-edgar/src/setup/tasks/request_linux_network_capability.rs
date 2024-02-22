@@ -6,10 +6,12 @@ use crate::setup::constants;
 use crate::setup::task::{Success, Task, TaskFulfilled};
 use crate::setup::util::EvaluateRequiringSuccess;
 
-pub struct RequestCapabilityForExecutable;
-impl Task for RequestCapabilityForExecutable {
+/// The EDGAR Service needs to modify network interfaces.
+/// This tasks requests the Linux Capability "CAP_NET_ADMIN", which allows doing so without root permissions.
+pub struct RequestLinuxNetworkCapability;
+impl Task for RequestLinuxNetworkCapability {
     fn description(&self) -> String {
-        String::from("Linux Network Capability - Request for Executable")
+        String::from("Linux Network Capability")
     }
     fn check_fulfilled(&self) -> Result<TaskFulfilled> {
         let output = Command::new("getcap")
@@ -25,7 +27,7 @@ impl Task for RequestCapabilityForExecutable {
     }
     fn execute(&self) -> Result<Success> {
         let _ = Command::new("setcap")
-            .arg("CAP_NET_ADMIN=ei") //"effective" and "inheritable"
+            .arg("CAP_NET_ADMIN+pe") //"permitted" and "effective", see `man capabilities 7` -> "File capabilities"
             .arg(constants::executable_install_path()?)
             .evaluate_requiring_success()?;
 

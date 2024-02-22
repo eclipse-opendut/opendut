@@ -5,8 +5,8 @@ use crate::setup::User;
 use crate::setup::util::chown;
 
 const DIRS: &[&str] = &[
-    "/opt/opendut-network/",
-    "/etc/opendut-network/",
+    "/opt/opendut/",
+    "/etc/opendut/",
 ];
 
 pub struct ClaimFileOwnership {

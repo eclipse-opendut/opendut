@@ -2,33 +2,30 @@ use std::fmt::{Display, Formatter};
 use std::iter;
 
 use clap::builder::PossibleValue;
+use strum::IntoEnumIterator;
 
-use crate::core::types::Target;
+use crate::Arch;
 
 const TARGET_SELECTION_ALL: &str = "all";
-
-fn supported_target_variants() -> Vec<Target> {
-    vec![Target::Arm64, Target::Armhf, Target::X86_64]
-}
 
 #[derive(Clone, Debug, Default)]
 pub enum TargetSelection {
     #[default]
     Default,
     All,
-    Single(Target),
+    Single(Arch),
 }
 impl TargetSelection {
-    pub fn iter(&self) -> Box<dyn Iterator<Item=Target>> {
+    pub fn iter(&self) -> Box<dyn Iterator<Item=Arch>> {
         match self {
             TargetSelection::Single(target) => Box::new(
                 iter::once(Clone::clone(target))
             ),
             TargetSelection::Default => Box::new(
-                iter::once(Target::default())
+                iter::once(Arch::default())
             ),
             TargetSelection::All => Box::new(
-                supported_target_variants().into_iter()
+                Arch::iter()
             ),
         }
     }
@@ -36,8 +33,8 @@ impl TargetSelection {
 impl Display for TargetSelection {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            TargetSelection::Default => write!(f, "{}", Target::default().triple()),
-            TargetSelection::Single(target) => write!(f, "{}", target.triple()),
+            TargetSelection::Default => write!(f, "{}", Arch::default()),
+            TargetSelection::Single(target) => write!(f, "{}", target),
             TargetSelection::All => write!(f, "{}", TARGET_SELECTION_ALL),
         }
     }
@@ -45,7 +42,7 @@ impl Display for TargetSelection {
 
 impl clap::ValueEnum for TargetSelection {
     fn value_variants<'a>() -> &'a [TargetSelection] {
-        let variants = supported_target_variants().into_iter()
+        let variants = Arch::iter()
             .map(TargetSelection::Single)
             .chain(iter::once(TargetSelection::All))
             .collect::<Vec<TargetSelection>>();

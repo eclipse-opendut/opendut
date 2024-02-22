@@ -1,6 +1,6 @@
-### THEO Setup in Docker
+# THEO Setup in Docker
 
-#### Requirements
+## Requirements
 
 * Install Docker
 

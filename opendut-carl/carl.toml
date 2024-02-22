@@ -5,8 +5,8 @@ remote.host = "localhost"
 remote.port = 8080
 
 [network.tls]
-certificate = "/etc/opendut-network/tls/carl.pem"
-key = "/etc/opendut-network/tls/carl.key"
+certificate = "/etc/opendut/tls/carl.pem"
+key = "/etc/opendut/tls/carl.key"
 
 [network.oidc]
 enabled = false

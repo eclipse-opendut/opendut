@@ -11,7 +11,7 @@ services:
     #command: sleep infinity
     volumes:
       - ../../../target/ci/distribution/x86_64-unknown-linux-gnu/:/opt/artifacts
-      - "../../../resources/development/tls/insecure-development-ca.pem:/etc/opendut-network/tls/ca.pem"
+      - "../../../resources/development/tls/insecure-development-ca.pem:/etc/opendut/tls/ca.pem"
       - "../../../target/debug/:/usr/local/opendut/bin/debug/"
     cap_add:
       - NET_ADMIN
@@ -49,7 +49,7 @@ services:
     #command: sleep infinity
     volumes:
       - ../../../target/ci/distribution/x86_64-unknown-linux-gnu/:/opt/artifacts
-      - "../../../resources/development/tls/insecure-development-ca.pem:/etc/opendut-network/tls/ca.pem"
+      - "../../../resources/development/tls/insecure-development-ca.pem:/etc/opendut/tls/ca.pem"
       - "../../../target/debug/:/usr/local/opendut/bin/debug/"
     cap_add:
       - NET_ADMIN

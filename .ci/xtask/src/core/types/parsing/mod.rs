@@ -1,2 +1,2 @@
-pub mod target;
 pub mod package;
+pub mod target;

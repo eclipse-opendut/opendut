@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::{Target, Package};
+use crate::{Arch, Package};
 use crate::core::types::parsing::package::PackageSelection;
 
 const SELF_PACKAGE: Package = Package::Cleo;
@@ -30,6 +30,7 @@ pub enum TaskCli {
 }
 
 impl CleoCli {
+    #[tracing::instrument(name="cleo", skip(self))]
     pub fn default_handling(self) -> crate::Result {
         match self.task {
             TaskCli::Build(crate::tasks::build::BuildCli { target }) => {
@@ -60,10 +61,10 @@ impl CleoCli {
 pub mod build {
     use super::*;
 
-    pub fn build_release(target: Target) -> crate::Result {
+    pub fn build_release(target: Arch) -> crate::Result {
         crate::tasks::build::build_release(SELF_PACKAGE, target)
     }
-    pub fn out_dir(target: Target) -> PathBuf {
+    pub fn out_dir(target: Arch) -> PathBuf {
         crate::tasks::build::out_dir(SELF_PACKAGE, target)
     }
 }
@@ -73,7 +74,7 @@ pub mod distribution {
     use super::*;
 
     #[tracing::instrument]
-    pub fn cleo_distribution(target: Target) -> crate::Result {
+    pub fn cleo_distribution(target: Arch) -> crate::Result {
         use crate::tasks::distribution;
 
         distribution::clean(SELF_PACKAGE, target)?;
@@ -104,7 +105,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument]
-        pub fn validate_contents(target: Target) -> crate::Result {
+        pub fn validate_contents(target: Arch) -> crate::Result {
 
             let unpack_dir = {
                 let unpack_dir = assert_fs::TempDir::new()?;
