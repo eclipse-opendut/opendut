@@ -22,9 +22,9 @@ pub fn Breadcrumbs(
     #[prop(into)] breadcrumbs: MaybeSignal<Vec<Breadcrumb>>,
 ) -> impl IntoView {
 
-    let (items, _) = breadcrumbs.with(|breadcrumbs| breadcrumbs.iter()
+    let (items, back_items, _) = breadcrumbs.with(|breadcrumbs| breadcrumbs.iter()
         .enumerate()
-        .fold((Vec::new(), String::new()), |(mut result, mut base), (index, breadcrumb)| {
+        .fold((Vec::new(), Vec::new(), String::new()), |(mut result, mut href_result, mut base), (index, breadcrumb)| {
 
             base.push_str(&breadcrumb.href);
 
@@ -33,19 +33,20 @@ pub fn Breadcrumbs(
             let href = Clone::clone(&base);
             let is_active = is_last;
 
+            href_result.push(href.clone());
             result.push(view! { <Item text href is_active /> });
 
             if base.ends_with("/").not() && is_last.not() {
                 base.push_str("/");
             }
 
-            (result, base)
+            (result, href_result, base)
         })
     );
 
     view! {
         <nav class="is-hidden-tablet">
-            <a aria-label="breadcrumbs">Back</a>
+            <a href={ back_items.get(back_items.len()-2) } aria-label="breadcrumbs">Back</a>
         </nav>
         <nav class="breadcrumb mb-0 is-hidden-mobile" aria-label="breadcrumbs">
             <ul>
