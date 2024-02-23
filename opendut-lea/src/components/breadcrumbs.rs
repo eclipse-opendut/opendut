@@ -22,34 +22,42 @@ pub fn Breadcrumbs(
     #[prop(into)] breadcrumbs: MaybeSignal<Vec<Breadcrumb>>,
 ) -> impl IntoView {
 
-    let (items, _) = breadcrumbs.with(|breadcrumbs| breadcrumbs.iter()
-        .enumerate()
-        .fold((Vec::new(), String::new()), |(mut result, mut base), (index, breadcrumb)| {
+    let breadcrumb_items = move || {
+        let (items,_) = breadcrumbs.with(|breadcrumbs| breadcrumbs.iter()
+            .enumerate()
+            .fold((Vec::new(), String::new()), |(mut result, mut base), (index, breadcrumb)| {
 
-            base.push_str(&breadcrumb.href);
+                base.push_str(&breadcrumb.href);
 
-            let is_last = index == breadcrumbs.len() - 1;
-            let text = Clone::clone(&breadcrumb.text);
-            let href = Clone::clone(&base);
-            let is_active = is_last;
+                let is_last = index == breadcrumbs.len() - 1;
+                let text = Clone::clone(&breadcrumb.text);
+                let href = Clone::clone(&base);
+                let is_active = is_last;
 
-            result.push(view! { <Item text href is_active /> });
+                result.push(view! { <Item text href is_active /> });
 
-            if base.ends_with("/").not() && is_last.not() {
-                base.push_str("/");
-            }
+                if base.ends_with('/').not() && is_last.not() {
+                    base.push('/');
+                }
 
-            (result, base)
-        })
-    );
+                (result, base)
+            })
+        );
+        items
+    };
 
     view! {
-        <nav class="is-hidden-tablet">
-            <a aria-label="breadcrumbs">Back</a>
+         <nav class="breadcrumb mb-0 is-hidden-tablet" aria-label="backButton">
+            <ul>
+                { breadcrumb_items().iter().nth_back(1) }
+                <span class="icon ml-0">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </span>
+            </ul>
         </nav>
         <nav class="breadcrumb mb-0 is-hidden-mobile" aria-label="breadcrumbs">
             <ul>
-                { items }
+                { breadcrumb_items }
             </ul>
         </nav>
     }
