@@ -1,3 +1,4 @@
+use std::ops::Not;
 use leptos::*;
 
 use opendut_types::util::net::{NetworkInterfaceName, NetworkInterfaceNameError};
@@ -28,7 +29,7 @@ where A: Fn(NetworkInterfaceName) + 'static {
     let validator = move |input: String| {
         match NetworkInterfaceName::try_from(input) {
             Ok(name) => {
-                if name_filter(name.clone()).len() > 0 {
+                if name_filter(name.clone()).is_empty().not() {
                     UserInputValue::Both("A network interface with that name has already been configured.".to_string(), name.name())
                 } else {
                     UserInputValue::Right(name.name())
@@ -39,7 +40,7 @@ where A: Fn(NetworkInterfaceName) + 'static {
                     NetworkInterfaceNameError::TooLong { value, max } => {
                         UserInputValue::Both(format!("A network interface name must be at most {} characters long.", max), value)
                     },
-                    NetworkInterfaceNameError::Empty { } => {
+                    NetworkInterfaceNameError::Empty => {
                         UserInputValue::Both("The network interface name must not be empty.".to_string(), String::new())
                     },
                 }

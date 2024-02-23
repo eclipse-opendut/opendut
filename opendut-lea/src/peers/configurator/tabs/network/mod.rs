@@ -54,7 +54,15 @@ pub fn NetworkTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl I
                 let interface = user_input_string(device.get_untracked().interface);
                 &interface == interface_name
             })
-            .map(|device| user_input_string(device.get_untracked().name))
+            .map(|device| {
+                let device = device.get_untracked();
+                let name = user_input_string(device.name);
+                if name.is_empty() {
+                    device.id.to_string()
+                } else {
+                    name
+                }
+            })
             .collect::<Vec<_>>();
         async move {
             toaster.toast(
