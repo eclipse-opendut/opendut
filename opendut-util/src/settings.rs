@@ -100,3 +100,15 @@ pub fn load_config(name: &str, defaults: &str, defaults_format: FileFormat, over
         config_files_declared: sources_declared,
     })
 }
+
+pub fn load_with_overrides(overrides: Config) -> Result<LoadedConfig, LoadError> {
+    let carl_config_hide_secrets_override = Config::builder()
+        .set_override("vpn.netbird.auth.secret", "redacted")?
+        .build()?;
+
+    load_config("carl", include_str!("../../opendut-carl/carl.toml"), FileFormat::Toml, overrides, carl_config_hide_secrets_override)
+}
+
+pub fn load_defaults() -> Result<LoadedConfig, LoadError> {
+    load_with_overrides(Config::default())
+}

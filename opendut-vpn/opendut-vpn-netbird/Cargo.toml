@@ -24,6 +24,7 @@ tokio = { workspace = true, features = ["full"] }
 tracing = { workspace = true }
 uuid = { workspace = true, features = ["serde"] }
 task-local-extensions = { workspace = true }
+config = "0.13.4"
 
 
 [dev-dependencies]
