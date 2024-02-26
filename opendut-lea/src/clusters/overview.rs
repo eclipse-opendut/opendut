@@ -88,13 +88,11 @@ pub fn ClustersOverview() -> impl IntoView {
                 None => Vec::new()
             }
         };
-        tracing::debug!("Cluster ids: {:?}", deployed_clusters());
         let rows = move || {
             match clusters.get() {
                 Some(configurations) => {
                     configurations.iter().cloned().map(|cluster_configuration| {
                         let cluster_id = cluster_configuration.id;
-                        //let is_deployed = deployed_clusters().contains(&cluster_id);
                         view! {
                             <Row
                                 cluster_configuration=create_rw_signal(cluster_configuration)
@@ -147,7 +145,7 @@ pub fn ClustersOverview() -> impl IntoView {
     }
 }
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub struct IsDeployed (bool);
+pub struct IsDeployed(bool);
 
 #[component]
 fn Row<OnDeployFn, OnUndeployFn>(
