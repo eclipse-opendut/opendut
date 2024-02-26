@@ -2,10 +2,9 @@ use leptos::*;
 use leptos_router::use_params_map;
 
 use opendut_types::cluster::ClusterId;
-use opendut_types::peer::PeerId;
 
 use crate::app::{ExpectGlobals, use_app_globals};
-use crate::clusters::configurator::components::{DeviceSelection, DeviceSelector};
+use crate::clusters::configurator::components::{DeviceSelection, DeviceSelector, LeaderSelection};
 use crate::clusters::configurator::components::Controls;
 use crate::clusters::configurator::tabs::{DevicesTab, GeneralTab, LeaderTab, TabIdentifier};
 use crate::clusters::configurator::types::UserClusterConfiguration;
@@ -53,7 +52,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
                 id: cluster_id,
                 name: UserInputValue::Left(UserInputError::from("Enter a valid cluster name.")),
                 devices: DeviceSelection::Left(String::from("Select at least two devices.")),
-                leader: PeerId::default(),
+                leader: LeaderSelection::Left(String::from("Select a leader.")),
             });
 
             create_local_resource(|| {}, move |_| { // TODO: maybe a action suits better here
@@ -63,7 +62,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
                         user_configuration.update(|user_configuration| {
                             user_configuration.name = UserInputValue::Right(configuration.name.value());
                             user_configuration.devices = DeviceSelection::Right(configuration.devices);
-                            user_configuration.leader = configuration.leader;
+                            user_configuration.leader = LeaderSelection::Right(configuration.leader);
                         });
                     }
                 }

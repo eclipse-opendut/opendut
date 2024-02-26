@@ -19,16 +19,8 @@ pub mod state;
 pub struct PeerId(pub Uuid);
 
 impl PeerId {
-    pub const NIL: Self = Self(Uuid::from_bytes([0; 16]));
-
     pub fn random() -> Self {
         Self(Uuid::new_v4())
-    }
-}
-
-impl Default for PeerId {
-    fn default() -> Self {
-        Self::NIL
     }
 }
 

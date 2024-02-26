@@ -8,7 +8,7 @@ use leptos::{create_local_resource, Resource, Signal, SignalWith};
 pub use controls::Controls;
 pub use device_selector::{DeviceSelector, DeviceSelection};
 pub use cluster_name_input::ClusterNameInput;
-pub use leader_selector::LeaderSelector;
+pub use leader_selector::{LeaderSelector, LeaderSelection};
 use opendut_types::peer::PeerDescriptor;
 use opendut_types::topology::DeviceId;
 use crate::app::{ExpectGlobals, use_app_globals};
