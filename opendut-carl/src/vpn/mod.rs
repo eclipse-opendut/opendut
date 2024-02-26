@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::{anyhow, bail};
 use config::Config;
@@ -36,11 +37,14 @@ pub fn create(settings: &Config) -> anyhow::Result<Vpn> {
                     Some(AuthenticationType::BearerToken) => unimplemented!("Using a bearer token is not yet supported."),
                     None => return unknown_enum_variant(settings, "vpn.netbird.auth.type"),
                 };
+                log::debug!("Try to parse VPN configuration.");
                 let vpn_client = NetbirdManagementClient::create(
                     NetbirdManagementClientConfiguration {
                         management_url: base_url,
                         authentication_token: Some(auth_token),
                         ca: Some(ca),
+                        timeout: Duration::from_millis(netbird_config.timeout.ms),
+                        retries: netbird_config.retries,
                     }
                 )?;
                 Ok(Vpn::Enabled { vpn_client: Arc::new(vpn_client) })
@@ -82,7 +86,16 @@ struct VpnNetbirdConfig {
     #[serde(deserialize_with = "empty_string_as_none")]
     ca: Option<PathBuf>,
     auth: AuthConfig,
+    timeout: Timeout,
+    retries: u32,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all="kebab-case")]
+struct Timeout {
+    ms: u64,
+}
+
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all="kebab-case")]

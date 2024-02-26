@@ -44,7 +44,9 @@ impl DefaultClient {
         netbird_url: Url,
         ca: Option<&[u8]>,
         token: Option<netbird::Token>,
-        requester: Option<Box<dyn RequestHandler + Send + Sync>>
+        requester: Option<Box<dyn RequestHandler + Send + Sync>>,
+        timeout: Duration,
+        retries: u32,
     ) -> Result<Self, CreateClientError>
     {
         let headers = {
@@ -77,7 +79,7 @@ impl DefaultClient {
         let requester = requester.unwrap_or_else(|| {
             Box::new(DefaultRequestHandler::new(
                 client,
-                RequestHandlerConfig::default(), //TODO pass in from the outside
+                RequestHandlerConfig::new(timeout, retries),
             ))
         });
 

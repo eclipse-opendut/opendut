@@ -2,6 +2,10 @@ use std::time::Duration;
 
 use async_trait::async_trait;
 use reqwest::{Request, Response};
+use reqwest_middleware::{ClientBuilder, Middleware, Next};
+use reqwest_retry::{RetryTransientMiddleware};
+use reqwest_retry::policies::ExponentialBackoff;
+use task_local_extensions::Extensions;
 use tracing::trace;
 
 use crate::netbird::error::RequestError;
@@ -22,29 +26,52 @@ impl DefaultRequestHandler {
     }
 }
 
+struct LoggingMiddleWare ;
+
+#[async_trait::async_trait]
+impl Middleware for LoggingMiddleWare {
+    async fn handle (
+        &self,
+        req: Request,
+        extensions: &mut Extensions,
+        next: Next<'_>,
+    ) -> reqwest_middleware::Result<Response> {
+        trace!("Sending request {} {}", req.method(), req.url());
+        let resp = next.run (req, extensions).await?;
+        trace!("Got response {}", resp.status());
+        Ok(resp)
+    }
+}
+
 #[async_trait]
 impl RequestHandler for DefaultRequestHandler {
     async fn handle(&self, mut request: Request) -> Result<Response, RequestError> {
 
         let timeout = request.timeout_mut()
-            .get_or_insert(self.config.default_timeout);
+            .get_or_insert(self.config.timeout);
 
         trace!("Starting network request with timeout {} milliseconds.", timeout.as_millis());
-        let result = self.inner.execute(request).await.map_err(RequestError::Request);
+        let retry_policy = ExponentialBackoff::builder().build_with_max_retries(self.config.retries);
+        let client = ClientBuilder::new(self.inner.to_owned())
+            .with(LoggingMiddleWare)
+            .with(RetryTransientMiddleware::new_with_policy(retry_policy))
+            .build();
+        let result = client.execute(request).await.map_err(RequestError::RequestMiddleware);
         trace!("Network request completed.");
 
         result
     }
 }
-
 pub struct RequestHandlerConfig {
-    default_timeout: Duration,
+    pub timeout: Duration,
+    pub retries: u32,
 }
 
-impl Default for RequestHandlerConfig {
-    fn default() -> Self {
+impl RequestHandlerConfig {
+    pub fn new(timeout: Duration, retries: u32) -> Self {
         Self {
-            default_timeout: Duration::from_secs(10),
+            timeout,
+            retries
         }
     }
 }

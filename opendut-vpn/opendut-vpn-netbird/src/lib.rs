@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
+use std::time::Duration;
 
 use anyhow::anyhow;
 use async_trait::async_trait;
@@ -27,6 +28,8 @@ pub struct NetbirdManagementClientConfiguration {
     pub management_url: Url,
     pub authentication_token: Option<NetbirdToken>,
     pub ca: Option<PathBuf>,
+    pub timeout: Duration,
+    pub retries: u32
 }
 
 pub struct NetbirdManagementClient {
@@ -53,6 +56,8 @@ impl NetbirdManagementClient {
             Some(management_ca.as_slice()),
             configuration.authentication_token,
             None,
+            configuration.timeout,
+            configuration.retries
         )?);
         Ok(Self {
             management_url,

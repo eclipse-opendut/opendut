@@ -31,3 +31,5 @@ url = ""
 ca = ""
 auth.type = ""
 auth.secret = ""
+timeout.ms = 10000
+retries = 5
