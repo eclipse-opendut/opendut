@@ -22,35 +22,41 @@ pub fn Breadcrumbs(
     #[prop(into)] breadcrumbs: MaybeSignal<Vec<Breadcrumb>>,
 ) -> impl IntoView {
 
-    let (items, back_items, _) = breadcrumbs.with(|breadcrumbs| breadcrumbs.iter()
-        .enumerate()
-        .fold((Vec::new(), Vec::new(), String::new()), |(mut result, mut href_result, mut base), (index, breadcrumb)| {
+    let breadcrumb_items= MaybeSignal::derive(move || {
+        breadcrumbs.with(|breadcrumbs| breadcrumbs.iter()
+            .enumerate()
+            .fold((Vec::new(), String::new()), |(mut result, mut base), (index, breadcrumb)| {
 
-            base.push_str(&breadcrumb.href);
+                base.push_str(&breadcrumb.href);
 
-            let is_last = index == breadcrumbs.len() - 1;
-            let text = Clone::clone(&breadcrumb.text);
-            let href = Clone::clone(&base);
-            let is_active = is_last;
+                let is_last = index == breadcrumbs.len() - 1;
+                let text = Clone::clone(&breadcrumb.text);
+                let href = Clone::clone(&base);
+                let is_active = is_last;
 
-            href_result.push(href.clone());
-            result.push(view! { <Item text href is_active /> });
+                result.push(view! { <Item text href is_active /> });
 
-            if base.ends_with("/").not() && is_last.not() {
-                base.push_str("/");
-            }
+                if base.ends_with('/').not() && is_last.not() {
+                    base.push('/');
+                }
 
-            (result, href_result, base)
-        })
-    );
+                (result, base)
+            })
+        )
+    });
 
     view! {
-        <nav class="is-hidden-tablet">
-            <a href={ back_items.get(back_items.len()-2) } aria-label="breadcrumbs">Back</a>
+         <nav class="breadcrumb mb-0 is-hidden-tablet" aria-label="backButton">
+            <ul>
+                { breadcrumb_items.get().0.iter().nth_back(1) }
+                <span class="icon ml-0">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </span>
+            </ul>
         </nav>
         <nav class="breadcrumb mb-0 is-hidden-mobile" aria-label="breadcrumbs">
             <ul>
-                { items }
+                { breadcrumb_items.get().0 }
             </ul>
         </nav>
     }
