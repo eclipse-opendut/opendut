@@ -11,8 +11,6 @@ pub mod serde;
 #[cfg(all(feature = "settings", not(target_arch = "wasm32")))]
 pub mod settings;
 
-pub mod kernel_modules;
-
 pub trait ErrorOr<E> {
 
     fn err_or<T>(self, value: T) -> Result<T, E>;

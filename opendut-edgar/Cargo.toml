@@ -7,6 +7,7 @@ license.workspace = true
 
 [dependencies]
 opendut-carl-api = { workspace = true, features = ["client"] }
+opendut-edgar-kernel-modules = { workspace = true }
 opendut-netbird-client-api = { workspace = true }
 opendut-types = { workspace = true }
 opendut-util = { workspace = true }

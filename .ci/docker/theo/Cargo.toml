@@ -6,7 +6,7 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-opendut-util = { workspace = true }
+opendut-edgar-kernel-modules = { workspace = true }
 
 clap = { workspace = true, features = ["derive", "wrap_help", "env"] }
 dotenvy = { workspace = true }

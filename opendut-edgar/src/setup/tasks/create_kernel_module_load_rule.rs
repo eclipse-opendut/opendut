@@ -2,7 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
-use opendut_util::kernel_modules::{edgar_required_kernel_modules, KernelModule};
+use opendut_edgar_kernel_modules::{edgar_required_kernel_modules, KernelModule};
 
 use crate::setup::task::{Success, Task, TaskFulfilled};
 use crate::setup::constants::KERNEL_MODULE_LOAD_RULE_PREFIX;

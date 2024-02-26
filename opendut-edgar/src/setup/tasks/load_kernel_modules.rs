@@ -1,6 +1,6 @@
 use anyhow::{Result, Error};
 
-use opendut_util::kernel_modules::edgar_required_kernel_modules;
+use opendut_edgar_kernel_modules::edgar_required_kernel_modules;
 
 use crate::setup::util::running_in_docker;
 use crate::setup::task::{Success, Task, TaskFulfilled};

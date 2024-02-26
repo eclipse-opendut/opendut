@@ -1,7 +1,7 @@
 use std::thread::sleep;
 use std::time::Duration;
 
-use opendut_util::kernel_modules::edgar_required_kernel_modules;
+use opendut_edgar_kernel_modules::edgar_required_kernel_modules;
 
 use anyhow::{anyhow, Error};
 

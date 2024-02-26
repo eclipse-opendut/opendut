@@ -1,0 +1,12 @@
+[package]
+name = "opendut-edgar-kernel-modules"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+thiserror = { workspace = true }
+
+[lints]
+workspace = true

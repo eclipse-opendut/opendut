@@ -5,6 +5,7 @@ members = [
     "opendut-cleo",
     "opendut-edgar",
     "opendut-edgar/netbird-client-api",
+    "opendut-edgar/opendut-edgar-kernel-modules",
     "opendut-lea",
     "opendut-types",
     "opendut-util",
@@ -27,6 +28,7 @@ opendut-carl-api = { path = "opendut-carl/opendut-carl-api" }
 opendut-ci = { path = ".ci/xtask" }
 opendut-edgar = { path = "opendut-edgar" }
 opendut-netbird-client-api = { path = "opendut-edgar/netbird-client-api" }
+opendut-edgar-kernel-modules = { path = "opendut-edgar/opendut-edgar-kernel-modules" }
 opendut-vpn-netbird = { path = "opendut-vpn/opendut-vpn-netbird" }
 opendut-types = { path = "opendut-types" }
 opendut-theo = { path = ".ci/docker/theo" }

@@ -41,28 +41,26 @@ impl KernelModule {
                 }
                 Err(why) => return Err(Error::CheckModuleLoaded { cause: why }),
             }
-            
         }
         Ok(false)
     }
 
-    pub fn load(&self) -> Result<(), Error, >{
-    
+    pub fn load(&self) -> Result<(), Error> {
+
         let mut cmd = Command::new("sudo");
         cmd.arg("modprobe");
         cmd.arg(self.name.clone());
-    
+
         for (key, value) in &self.params{
             cmd.arg(format!("{key}={value}"));
         }
-    
+
         let output = cmd.output().map_err(|cause| Error::LoadModule { cause })?;
-    
-        if ! output.status.success(){
+
+        if ! output.status.success() {
             return Err(Error::LoadModuleExecution { cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim()) });
         }
         Ok(())
-    
     }
 }
 
@@ -79,5 +77,5 @@ pub fn edgar_required_kernel_modules() -> Vec<KernelModule> {
                 ("max_hops".to_string(), "2".to_string())
             ]),
         }
-        ]
+    ]
 }
