@@ -59,12 +59,15 @@ pub mod create {
 
     fn check_devices(all_devices: &[DeviceDescriptor], device_names: &[String]) -> Vec<Result<DeviceDescriptor, crate::Error>> {
         let checked_devices = device_names.iter().map(|device_name| {
-            let maybe_device = all_devices.iter().find(|device| &String::from(device.name.value()) == device_name);
-            if let Some(device) = maybe_device {
-                Ok(Clone::clone(device))
-            }
-            else {
-                Err(format!("Device '{}' not found", device_name))
+            let devices = all_devices.iter()
+                .filter(|device| device.name.value() == device_name)
+                .cloned()
+                .collect::<Vec<_>>();
+
+            match devices.as_slice() {
+                [] => Err(format!("Device '{}' not found", device_name)),
+                [device] => Ok(Clone::clone(device)),
+                _ => Err(format!("Multiple devices found for the name '{}'", device_name)),
             }
         }).collect::<Vec<_>>();
 
