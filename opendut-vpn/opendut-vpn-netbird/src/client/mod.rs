@@ -85,7 +85,7 @@ impl DefaultClient {
 
         Ok(Self {
             netbird_url,
-            requester
+            requester,
         })
     }
 }

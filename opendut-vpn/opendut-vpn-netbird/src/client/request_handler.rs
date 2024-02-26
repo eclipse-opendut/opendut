@@ -74,16 +74,4 @@ impl RequestHandlerConfig {
             retries
         }
     }
-
-    pub fn load(config: &config::Config) -> Result<Self, opendut_util::settings::LoadError> {
-        let timeout = Duration::from_millis(
-            config.get::<u64>("vpn.netbird.timeout.ms")?
-        );
-        let retries = config.get::<u32>("vpn.netbird.retries")?;
-
-        Ok(RequestHandlerConfig {
-            timeout,
-            retries
-        })
-    }
 }

@@ -12,9 +12,10 @@ use serde_json::json;
 use uuid::uuid;
 
 use opendut_types::cluster::ClusterId;
-use opendut_util::settings;
 
 use super::*;
+const RETRIES: u32 = 5;
+const TIMEOUT: Duration = Duration::from_secs(10000);
 
 #[rstest]
 #[tokio::test]
@@ -29,10 +30,7 @@ async fn delete_peer(fixture: Fixture) -> anyhow::Result<()> {
             .unwrap()))
     });
 
-    let settings = settings::load_defaults()?;
-    let request_handler_config = RequestHandlerConfig::load(&settings.config)?;
-
-    let client = DefaultClient::create(fixture.base_url(), None, None, Some(Box::new(requester)), request_handler_config.timeout, request_handler_config.retries)?;
+    let client = DefaultClient::create(fixture.base_url(), None, None, Some(Box::new(requester)), TIMEOUT, RETRIES)?;
 
     let result = client.delete_netbird_peer(&netbird::PeerId::from("ah8cca16lmn67acg5s11")).await;
 
@@ -76,10 +74,7 @@ async fn create_group(fixture: Fixture) -> anyhow::Result<()> {
         Ok(Response::from(response))
     });
 
-    let settings = settings::load_defaults()?;
-    let request_handler_config = RequestHandlerConfig::load(&settings.config)?;
-
-    let client = DefaultClient::create(fixture.base_url(), None, None, Some(Box::new(requester)), request_handler_config.timeout, request_handler_config.retries)?;
+    let client = DefaultClient::create(fixture.base_url(), None, None, Some(Box::new(requester)), TIMEOUT, RETRIES)?;
 
     let result = client.create_netbird_group(
         fixture.cluster_id().into(),
@@ -131,10 +126,7 @@ async fn find_group(fixture: Fixture) -> anyhow::Result<()> {
         Ok(Response::from(response))
     });
 
-    let settings = settings::load_defaults()?;
-    let request_handler_config = RequestHandlerConfig::load(&settings.config)?;
-
-    let client = DefaultClient::create(fixture.base_url(), None, None, Some(Box::new(requester)), request_handler_config.timeout, request_handler_config.retries)?;
+    let client = DefaultClient::create(fixture.base_url(), None, None, Some(Box::new(requester)), TIMEOUT, RETRIES)?;
 
     let result = client.get_netbird_group(&fixture.peer_netbird_group_name).await;
 
@@ -168,10 +160,7 @@ async fn delete_group(fixture: Fixture) -> anyhow::Result<()> {
     }
     );
 
-    let settings = settings::load_defaults()?;
-    let request_handler_config = RequestHandlerConfig::load(&settings.config)?;
-
-    let client = DefaultClient::create(fixture.base_url(), None, None, Some(Box::new(requester)), request_handler_config.timeout, request_handler_config.retries)?;
+    let client = DefaultClient::create(fixture.base_url(), None, None, Some(Box::new(requester)), TIMEOUT, RETRIES)?;
 
     let result = client.delete_netbird_group(&netbird::GroupId::from("aax77acflma44h075aa3")).await;
 
@@ -250,10 +239,7 @@ async fn create_a_setup_key(fixture: Fixture) -> anyhow::Result<()> {
         }
     });
 
-    let settings = settings::load_defaults()?;
-    let request_handler_config = RequestHandlerConfig::load(&settings.config)?;
-
-    let client = DefaultClient::create(fixture.base_url(), None, None, Some(Box::new(requester)), request_handler_config.timeout, request_handler_config.retries)?;
+    let client = DefaultClient::create(fixture.base_url(), None, None, Some(Box::new(requester)), TIMEOUT, RETRIES)?;
 
     let result = client.generate_netbird_setup_key(fixture.peer_id()).await?;
 
@@ -322,10 +308,7 @@ async fn create_access_control_rule(fixture: Fixture) -> anyhow::Result<()> {
         Ok(Response::from(response))
     });
 
-    let settings = settings::load_defaults()?;
-    let request_handler_config = RequestHandlerConfig::load(&settings.config)?;
-
-    let client = DefaultClient::create(fixture.base_url(), None, None, Some(Box::new(requester)), request_handler_config.timeout, request_handler_config.retries)?;
+    let client = DefaultClient::create(fixture.base_url(), None, None, Some(Box::new(requester)), TIMEOUT, RETRIES)?;
 
     let group = netbird::Group {
         id: fixture.netbird_group_id(),

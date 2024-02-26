@@ -18,14 +18,12 @@ reqwest-middleware = { workspace = true }
 reqwest-retry = { workspace = true}
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
+task-local-extensions = { workspace = true }
 thiserror = { workspace = true }
 time = { workspace = true, features = ["serde-well-known"] }
 tokio = { workspace = true, features = ["full"] }
 tracing = { workspace = true }
 uuid = { workspace = true, features = ["serde"] }
-task-local-extensions = { workspace = true }
-config = "0.13.4"
-
 
 [dev-dependencies]
 googletest = { workspace = true }
