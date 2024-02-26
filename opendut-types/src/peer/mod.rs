@@ -26,12 +26,6 @@ impl PeerId {
     }
 }
 
-impl Default for PeerId {
-    fn default() -> Self {
-        Self::NIL
-    }
-}
-
 impl From<Uuid> for PeerId {
     fn from(value: Uuid) -> Self {
         Self(value)

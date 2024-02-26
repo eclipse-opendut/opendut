@@ -38,8 +38,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                             text: String::from("Could not parse the provided value as PeerId!"),
                             details: None,
                         });
-
-                        PeerId::default()
+                        PeerId::random()
                     }
                     Some(peer_id) => {
                         peer_id
