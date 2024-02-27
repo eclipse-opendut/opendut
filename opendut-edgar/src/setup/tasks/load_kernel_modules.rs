@@ -1,4 +1,4 @@
-use anyhow::{Result, Error};
+use anyhow::{Result, bail};
 
 use opendut_edgar_kernel_modules::edgar_required_kernel_modules;
 
@@ -22,7 +22,7 @@ impl Task for LoadKernelModules {
     }
     fn execute(&self) -> Result<Success> {
         if running_in_docker() {
-            return Err(Error::msg("Cannot load kernel modules from within Docker. Modules must be loaded from the host."))
+            bail!("Cannot load kernel modules from within Docker. Modules must be loaded from the host.");
         }
 
         for kernel_module in edgar_required_kernel_modules() {

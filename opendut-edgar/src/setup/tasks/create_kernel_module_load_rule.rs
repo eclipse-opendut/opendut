@@ -7,13 +7,13 @@ use opendut_edgar_kernel_modules::{edgar_required_kernel_modules, KernelModule};
 use crate::setup::task::{Success, Task, TaskFulfilled};
 use crate::setup::constants::KERNEL_MODULE_LOAD_RULE_PREFIX;
 
+// Returns the file path for the configuation file that causes the kernel module to be loaded during boot
 fn load_rule_file_path(kernel_module: &KernelModule) -> PathBuf {
-    // Returns the file path for the configuation file that causes the kernel module to be loaded during boot
     PathBuf::from(format!("/etc/modules-load.d/{KERNEL_MODULE_LOAD_RULE_PREFIX}-{}.conf", kernel_module.name))
 }
 
+// Returns the file path for the configuation file that causes the kernel modules loaded at boot time to be loaded with the correct parameters
 fn options_rule_file_path(kernel_module: &KernelModule) -> PathBuf {
-    // Returns the file path for the configuation file that causes the kernel modules loaded at boot time to be loaded with the correct parameters
     PathBuf::from(format!("/etc/modprobe.d/{KERNEL_MODULE_LOAD_RULE_PREFIX}-{}.conf", kernel_module.name))
 }
 
