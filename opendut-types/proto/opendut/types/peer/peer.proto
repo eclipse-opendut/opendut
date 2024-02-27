@@ -19,11 +19,20 @@ message PeerLocation {
   string value = 1;
 }
 
+message PeerNetworkInterface {
+  opendut.types.util.NetworkInterfaceName name = 1;
+}
+
+message PeerNetworkConfiguration {
+  repeated PeerNetworkInterface interfaces = 1;
+}
+
 message PeerDescriptor {
   opendut.types.peer.PeerId id = 1;
   opendut.types.peer.PeerName name = 2;
   opendut.types.peer.PeerLocation location = 3;
-  opendut.types.topology.Topology topology = 4;
+  opendut.types.peer.PeerNetworkConfiguration network_configuration = 4;
+  opendut.types.topology.Topology topology = 5;
 }
 
 message PeerSetup {

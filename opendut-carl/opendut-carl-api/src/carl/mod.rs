@@ -161,7 +161,8 @@ cfg_if! {
 
 #[cfg(feature = "wasm-client")]
 pub mod wasm {
-    use leptos_oidc::Auth;
+    use leptos::{create_signal, provide_context};
+    use leptos_oidc::{Auth};
     use tonic::codegen::InterceptedService;
     use tonic::service::Interceptor;
     use tonic::Status;
@@ -187,8 +188,8 @@ pub mod wasm {
                         auth.refresh_token();
                     }
                 };
-                let access_token = auth.access_token();
-                let token = match access_token {
+
+                let token = match auth.access_token() {
                     None => { "no-auth-token".to_string() }
                     Some(token) => { token }
                 };
@@ -208,11 +209,32 @@ pub mod wasm {
         pub cluster: ClusterManager<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
         pub metadata: MetadataProvider<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
         pub peers: PeersRegistrar<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
+
     }
+
+    #[derive(Clone, Debug)]
+    pub struct OptionalAuthData {
+        pub auth_data: Option<AuthData>,
+    }
+
+    #[derive(Clone, Debug)]
+    pub struct AuthData {
+        pub access_token: String,
+        pub preferred_username: String,
+        pub name: String,
+        pub email: String,
+        pub groups: Vec<String>,
+        pub roles: Vec<String>,
+    }
+
 
     impl CarlClient {
 
         pub fn create(url: url::Url, auth: Option<Auth>) -> Result<CarlClient, InitializationError> {
+            let auth_data_signal = create_signal(
+                OptionalAuthData { auth_data: None }
+            );
+            provide_context(auth_data_signal);
 
             let scheme = url.scheme();
             if scheme != "https" {

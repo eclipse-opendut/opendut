@@ -15,24 +15,31 @@ use crate::routing::{navigate_to, WellKnownRoutes};
 
 #[component]
 pub fn Controls(
-    configuration: ReadSignal<UserPeerConfiguration>,
+    configuration: RwSignal<UserPeerConfiguration>,
     is_valid_peer_configuration: Signal<bool>,
 ) -> impl IntoView {
     view! {
         <div class="buttons">
             <SavePeerButton configuration is_valid_peer_configuration />
-            <DeletePeerButton configuration />
+            <DeletePeerButton configuration=configuration.read_only() />
         </div>
     }
 }
 
 #[component]
 fn SavePeerButton(
-    configuration: ReadSignal<UserPeerConfiguration>,
+    configuration: RwSignal<UserPeerConfiguration>,
     is_valid_peer_configuration: Signal<bool>,
 ) -> impl IntoView {
     let globals = use_app_globals();
     let toaster = use_toaster();
+
+    let setter = create_write_slice(
+        configuration,
+        |config, input| {
+            config.is_new = input;
+        },
+    );
 
     let store_action = create_action(move |_: &()| {
         let toaster = Rc::clone(&toaster);
@@ -51,6 +58,7 @@ fn SavePeerButton(
                                     .simple("Successfully stored peer configuration.")
                                     .success(),
                             );
+                            setter.set(false);
                         }
                         Err(cause) => {
                             error!("Failed to create peer <{peer_id}>, due to error: {cause:?}");

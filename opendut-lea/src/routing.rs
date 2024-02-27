@@ -64,6 +64,7 @@ mod routes {
     use crate::licenses::LicensesOverview;
     use crate::peers::{PeerConfigurator, PeersOverview};
     use crate::routing::NotFound;
+    use crate::user::UserOverview;
 
     #[component]
     pub fn AppRoutes() -> impl IntoView {
@@ -76,6 +77,7 @@ mod routes {
                         <Route path="/clusters/:id/configure/:tab" view=|| view! { <ClusterConfigurator /> } />
                         <Route path="/peers" view=|| view! { <PeersOverview /> } />
                         <Route path="/peers/:id/configure/:tab" view=|| view! { <PeerConfigurator /> } />
+                        <Route path="/user" view=|| view! { <UserOverview /> } />
                         <Route path="/licenses" view=|| view! { <LicensesOverview /> } />
                         <Route path="/error" view=|| view! { <ErrorPage /> } />
                         <Route path="/*any" view=|| view! { <NotFound /> } />

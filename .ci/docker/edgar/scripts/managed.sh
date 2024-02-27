@@ -82,6 +82,7 @@ opendut-cleo create peer --name "$NAME" --id "$PEER_ID" --location "$NAME"
 DEVICE_INTERFACE="dut0"
 ip link add $DEVICE_INTERFACE type dummy
 ip link set dev $DEVICE_INTERFACE up
+opendut-cleo create network-configuration --peer-id "$PEER_ID" --interface "$DEVICE_INTERFACE"
 opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME" --interface "$DEVICE_INTERFACE" --tag "$OPENDUT_EDGAR_CLUSTER_NAME"
 opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME"-vcan0 --interface vcan0 --tag "$OPENDUT_EDGAR_CLUSTER_NAME"
 opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME"-vcan1 --interface vcan1 --tag "$OPENDUT_EDGAR_CLUSTER_NAME"

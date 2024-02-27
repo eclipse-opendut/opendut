@@ -4,6 +4,9 @@ use leptos_oidc::components::{LoginLink, LogoutLink};
 use leptos_use::on_click_outside;
 
 use crate::components::{LeaAuthenticated, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Initialized};
+use crate::use_context;
+use opendut_carl_api::carl::wasm::OptionalAuthData;
+use crate::{WriteSignal, ReadSignal};
 
 #[component(transparent)]
 pub fn Navbar() -> impl IntoView {
@@ -111,10 +114,10 @@ pub fn Navbar() -> impl IntoView {
                                                 </a>
                                             }
                                         }>
+                                        <LoggedInUser></LoggedInUser>
                                         <LogoutLink class="dut-nav-flyout-item">
-                                            <span class="ml-2 is-size-6">"Sign out"</span>
+                                            <span class="ml-1 is-size-6">"Sign out"</span>
                                         </LogoutLink>
-
                                     </LeaAuthenticated>
                                 </div>
                             </div>
@@ -129,5 +132,24 @@ pub fn Navbar() -> impl IntoView {
         <Initialized>
             <Inner />
         </Initialized>
+    }
+}
+
+#[component]
+pub fn LoggedInUser() -> impl IntoView {
+
+    let (auth_data, _) = use_context::<(ReadSignal<OptionalAuthData>, WriteSignal<OptionalAuthData>)>().expect("AuthData should be provided in the context.");
+    let user_name  = move || {
+        match auth_data.get().auth_data {
+            None => { "Unknown User".to_string() }
+            Some(auth_data) => { auth_data.preferred_username }
+        }
+    };
+
+    view! {
+        <span class="ml-1 is-size-6">"Logged in as: " { user_name }</span>
+        <a href="/user" class="dut-nav-flyout-item">
+            <span class="ml-1 is-size-6">"Profile"</span>
+        </a>
     }
 }

@@ -17,6 +17,7 @@ mod routing;
 mod util;
 mod licenses;
 mod nav;
+mod user;
 
 fn main() {
 

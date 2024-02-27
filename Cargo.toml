@@ -67,6 +67,7 @@ home = "0.5.5"
 http = "0.2.11"
 indicatif = "0.17.7"
 indoc = "2.0.4"
+jsonwebtoken = "9.2.0"
 lazy_static = "1.4.0"
 leptos = { version = "0.5.7" }
 # latest version of leptos_oidc is not published on crates.io
@@ -86,6 +87,8 @@ prost-types = "0.12.1"
 protobuf-src = "1.1.0"
 regex = "1.10.2"
 reqwest = { version = "0.11.23", default-features = false, features = ["rustls-tls-native-roots"] }
+reqwest-middleware = "0.2.4"
+reqwest-retry = "0.3.0"
 rstest = "0.18.2"
 rtnetlink = "0.13.1"
 serde = { version = "1.0.195", default-features = false }
@@ -98,6 +101,7 @@ slotmap = { version = "1.0.7" }
 strum = "0.25.0"
 sudo = "0.6.0"
 tar = "0.4.40"
+task-local-extensions = "0.1.4"
 time = "0.3.31"
 thiserror = "1.0.56"
 tokio = { version = "1.35.1", default-features = false }

@@ -13,6 +13,7 @@ chrono = { workspace = true, features = ["clock", "wasmbind"] }
 console_error_panic_hook = { workspace = true }
 gloo-net = { workspace = true, features = ["json"]}
 gloo-timers = { workspace = true, features = ["futures"] }
+jsonwebtoken = { workspace = true }
 leptos = { workspace = true, features = ["csr"] }
 leptos_router = { workspace = true, features = ["csr"] }
 leptos-use = { workspace = true }

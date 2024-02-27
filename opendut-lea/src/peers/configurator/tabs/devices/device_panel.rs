@@ -1,13 +1,14 @@
-use leptos::{component, create_read_slice, create_slice, IntoView, MaybeSignal, RwSignal, SignalGet, SignalGetUntracked, view};
+use leptos::{component, create_read_slice, create_slice, event_target_value, IntoView, MaybeSignal, RwSignal, SignalGet, SignalGetUntracked, SignalWith, view};
 
 use opendut_types::topology::{DeviceDescription, DeviceId, DeviceName, IllegalDeviceName};
-use opendut_types::util::net::NetworkInterfaceName;
 
 use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, IconButton, ReadOnlyInput, Toggled, UserInput, UserInputValue, UserTextarea};
-use crate::peers::configurator::types::{EMPTY_DEVICE_NAME_ERROR_MESSAGE, UserDeviceConfiguration};
+use crate::peers::configurator::types::{EMPTY_DEVICE_INTERFACE_ERROR_MESSAGE, EMPTY_DEVICE_NAME_ERROR_MESSAGE, UserDeviceConfiguration, UserPeerConfiguration};
+use crate::util::NON_BREAKING_SPACE;
 
 #[component]
 pub fn DevicePanel<OnDeleteFn>(
+    peer_configuration: RwSignal<UserPeerConfiguration>,
     device_configuration: RwSignal<UserDeviceConfiguration>,
     on_delete: OnDeleteFn
 ) -> impl IntoView
@@ -27,7 +28,7 @@ where
                 <div class="container">
                     <ReadOnlyInput label="ID" value=device_id_string />
                     <DeviceNameInput device_configuration />
-                    <DeviceInterfaceInput device_configuration />
+                    <DeviceInterfaceInput peer_configuration device_configuration />
                     <DeviceDescriptionInput device_configuration />
                 </div>
             </div>
@@ -157,8 +158,15 @@ fn DeviceNameInput(
 
 #[component]
 fn DeviceInterfaceInput(
+    peer_configuration: RwSignal<UserPeerConfiguration>,
     device_configuration: RwSignal<UserDeviceConfiguration>,
 ) -> impl IntoView {
+
+    let peer_network_interfaces = create_read_slice(peer_configuration,
+        |peer_network_interfaces| {
+            Clone::clone(&peer_network_interfaces.network_interfaces)
+        }
+    );
 
     let (getter, setter) = create_slice(device_configuration,
         |device_configuration| {
@@ -169,26 +177,61 @@ fn DeviceInterfaceInput(
         }
     );
 
-    let validator = |input: String| {
-        match NetworkInterfaceName::try_from(Clone::clone(&input)) {
-            Err(error) => {
-                UserInputValue::Both(error.to_string(), input)
-            }
-            Ok(_) => {
-                UserInputValue::Right(input)
-            }
-        }
+    let value_text = getter.with(|input| match input {
+            UserInputValue::Left(_) => String::from("Select interface"),
+            UserInputValue::Right(value) => value.to_owned(),
+            UserInputValue::Both(_, value) => value.to_owned(),
+        });
 
+    let help_text = move || {
+        getter.with(|input| match input {
+            UserInputValue::Right(_) => String::from(NON_BREAKING_SPACE),
+            UserInputValue::Left(error) => error.to_owned(),
+            UserInputValue::Both(error, _) => error.to_owned(),
+        })
+    };
+
+    let dropdown_options = move || {
+        peer_network_interfaces.with(|interfaces| {
+            interfaces.iter()
+                .map(|interface| {
+                    let name = interface.get_untracked().name.name();
+                    if value_text == name {
+                        view! {
+                            <option selected>{name}</option>
+                        }
+                    } else {
+                        view! {
+                            <option>{name}</option>
+                        }
+                    }
+
+                })
+                .collect::<Vec<_>>()
+        })
     };
 
     view! {
-        <UserInput
-            getter=getter
-            setter=setter
-            label="Interface"
-            placeholder="eth0"
-            validator
-        />
+        <div class="field">
+            <label class="label">Interface</label>
+            <div class="control">
+                <div class="select"
+                    on:change=move |ev| {
+                        let target_value = event_target_value(&ev);
+                        if target_value == "Select interface" {
+                            setter.set(UserInputValue::Left(String::from(EMPTY_DEVICE_INTERFACE_ERROR_MESSAGE)));
+                        } else {
+                            setter.set(UserInputValue::Right(target_value));
+                        }
+                    }>
+                    <select>
+                        <option>Select interface</option>
+                        { dropdown_options }
+                    </select>
+                </div>
+            </div>
+            <p class="help has-text-danger">{ help_text }</p>
+        </div>
     }
 }
 

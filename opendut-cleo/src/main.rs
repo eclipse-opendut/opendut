@@ -124,7 +124,15 @@ enum CreateResource {
         id: Option<Uuid>,
         ///Location of peer
         #[arg(long)]
-        location: Option<String>
+        location: Option<String>,
+    },
+    NetworkConfiguration {
+        ///ID of the peer to add the network interface to
+        #[arg(long)]
+        peer_id: Uuid,
+        ///Device interfaces per peer
+        #[arg(long("interface"))]
+        interfaces: Option<Vec<String>>,
     },
     Device {
         ///ID of the peer to add the device to
@@ -192,6 +200,14 @@ enum DeleteResource {
         ///PeerID
         #[arg(short, long)]
         id: Uuid,
+    },
+    NetworkConfiguration {
+        ///ID of the peer to delete the network configuration from
+        #[arg(long)]
+        peer_id: Uuid,
+        ///NetworkConfiguration Interface
+        #[arg(long("interface"))]
+        interfaces: Vec<String>,
     },
     Device {
         ///DeviceID
@@ -306,6 +322,9 @@ async fn execute() -> Result<()> {
                 CreateResource::Peer { name, id, location } => {
                     commands::peer::create::execute(&mut carl, name, id, location, output).await?;
                 }
+                CreateResource::NetworkConfiguration { peer_id, interfaces} => {
+                    commands::network_configuration::create::execute(&mut carl, peer_id, interfaces, output).await?;
+                }
                 CreateResource::Device { peer_id, device_id, name, description, interface, tags } => {
                     commands::device::create::execute(&mut carl, peer_id, device_id, name, description, interface, tags, output).await?;
                 }
@@ -340,6 +359,9 @@ async fn execute() -> Result<()> {
                 }
                 DeleteResource::Peer { id } => {
                     commands::peer::delete::execute(&mut carl, id).await?;
+                }
+                DeleteResource::NetworkConfiguration { peer_id,  interfaces} => {
+                    commands::network_configuration::delete::execute(&mut carl, peer_id, interfaces).await?;
                 }
                 DeleteResource::Device { id } => {
                     commands::device::delete::execute(&mut carl, id).await?;

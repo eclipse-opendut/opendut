@@ -3,4 +3,8 @@ linker = "arm-linux-gnueabihf-gcc"
 
 [alias]
 ci = "run --package opendut-ci --"
-theo = "run --package opendut-theo --"
+cleo = "ci cleo run --"
+carl = "ci carl run --"
+edgar = "ci edgar run --"
+lea = "ci lea run --"
+theo = "ci theo run --"

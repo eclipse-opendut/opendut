@@ -31,6 +31,7 @@ pub async fn list_devices(carl: &mut CarlClient, output: ListOutputFormat) -> cr
 }
 
 pub mod create {
+    use std::ops::Not;
     use uuid::Uuid;
     use opendut_carl_api::carl::CarlClient;
     use opendut_types::peer::{PeerId};
@@ -54,12 +55,20 @@ pub mod create {
 
         let mut peer_descriptor = carl.peers.get_peer_descriptor(peer_id).await
             .map_err(|_| format!("Failed to get peer with ID <{}>.", peer_id))?;
+        let peer_network_interface_names = peer_descriptor.network_configuration.interfaces.iter().map(|peer_interface| {
+            peer_interface.name.clone()
+        }).collect::<Vec<_>>();
         let maybe_existing_device = peer_descriptor.topology.devices.iter_mut().find(|device| device.id == device_id) ;
         match maybe_existing_device {
             None => {
                 //TODO provide separate `update device` command to not need this custom input handling
                 let name = name.ok_or(String::from("Cannot create new device because of missing device name."))?;
                 let interface = interface.ok_or(String::from("Cannot create new device because of missing interface name."))?;
+
+                if peer_network_interface_names.contains(&interface).not() {
+                    Err(format!("Cannot create new device because interface is not one of the allowed values: {} \nAllowed interfaces are configured on the peer.",
+                                peer_network_interface_names.into_iter().map(|name| name.name()).collect::<Vec<_>>().join(", ")))?;
+                }
 
                 let new_device = DeviceDescriptor {
                     id: device_id,
@@ -90,6 +99,10 @@ pub mod create {
                         .ok();
                 }
                 if let Some(interface) = interface {
+                    if peer_network_interface_names.contains(&interface).not() {
+                        Err(format!("Cannot update device because interface is not one of the allowed values: {} \nAllowed interfaces are configured on the peer.",
+                                    peer_network_interface_names.into_iter().map(|name| name.name()).collect::<Vec<_>>().join(", ")))?;
+                    }
                     device.interface = interface;
                 }
                 if let Some(tags) = tags {

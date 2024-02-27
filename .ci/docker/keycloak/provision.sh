@@ -33,6 +33,13 @@ main() {
   # Create keycloak client for opendut-lea
   create_public_client "opendut-lea-client" '"https://carl/*"' "$REALM_OPENDUT"
 
+  # groups scope
+  GROUP_SCOPE_NAME="groups"
+  create_client_scope "$GROUP_SCOPE_NAME" "default" "$REALM_OPENDUT"
+  create_client_scope_groups "$GROUP_SCOPE_NAME" "$REALM_OPENDUT"
+  add_client_scope_to_client "opendut-lea-client" "$GROUP_SCOPE_NAME" "$REALM_OPENDUT"
+  update_existing_client_scope_realm_roles "roles" "$REALM_OPENDUT"
+
   # Create keycloak client for opendut-carl
   create_secret_client "opendut-carl-client" "6754d533-9442-4ee6-952a-97e332eca38e" "$REALM_OPENDUT"
 

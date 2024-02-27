@@ -14,7 +14,7 @@ enabled = false
 [network.oidc.lea]
 client_id = "opendut-lea-client"
 issuer_url = "https://keycloak/realms/opendut"
-scopes = "openid,profile,email"
+scopes = "openid,profile,email,roles,groups"
 
 [peer]
 disconnect.timeout.ms = 30000
@@ -31,3 +31,5 @@ url = ""
 ca = ""
 auth.type = ""
 auth.secret = ""
+timeout.ms = 10000
+retries = 5

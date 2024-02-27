@@ -8,7 +8,8 @@ use serde::{Deserialize, Serialize};
 use url::Url;
 use uuid::Uuid;
 
-use crate::topology::Topology;
+use crate::topology::{Topology};
+use crate::util::net::{NetworkInterfaceName};
 use crate::vpn::VpnPeerConfiguration;
 
 pub mod state;
@@ -222,11 +223,34 @@ impl fmt::Display for PeerLocation {
     }
 }
 
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+pub struct PeerNetworkConfiguration {
+    pub interfaces: Vec<PeerNetworkInterface>,
+}
+
+impl PeerNetworkConfiguration {
+    pub fn new(interfaces: Vec<PeerNetworkInterface>) -> Self {
+        Self { interfaces }
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct PeerNetworkInterface {
+    pub name: NetworkInterfaceName,
+}
+
+impl PeerNetworkInterface {
+    pub fn new(name: NetworkInterfaceName) -> Self {
+        Self { name }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PeerDescriptor {
     pub id: PeerId,
     pub name: PeerName,
     pub location: Option<PeerLocation>,
+    pub network_configuration: PeerNetworkConfiguration,
     pub topology: Topology,
 }
 
