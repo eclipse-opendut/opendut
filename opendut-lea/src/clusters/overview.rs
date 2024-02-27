@@ -10,7 +10,7 @@ use crate::clusters::components::CreateClusterButton;
 use crate::components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, health, IconButton, Initialized, Toast, use_toaster};
 use crate::components::health::Health;
 
-#[component(transparent)]
+#[component]
 pub fn ClustersOverview() -> impl IntoView {
 
     #[component]

@@ -129,7 +129,9 @@ pub fn Navbar() -> impl IntoView {
     }
 
     view! {
-        <Initialized>
+        <Initialized
+            authentication_required=false
+        >
             <Inner />
         </Initialized>
     }

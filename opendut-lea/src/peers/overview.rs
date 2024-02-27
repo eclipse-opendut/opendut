@@ -5,7 +5,7 @@ use leptos_use::on_click_outside;
 use opendut_types::peer::{PeerDescriptor, PeerId};
 
 use crate::app::{ExpectGlobals, use_app_globals};
-use crate::components::{BasePageContainer, IconButton, ButtonColor, ButtonState, FontAwesomeIcon, Breadcrumb, Initialized, ButtonSize};
+use crate::components::{BasePageContainer, IconButton, ButtonColor, ButtonState, FontAwesomeIcon, Breadcrumb, ButtonSize, Initialized};
 use crate::components::health;
 use crate::components::health::Health;
 use crate::peers::components::CreatePeerButton;
