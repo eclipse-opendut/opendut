@@ -58,6 +58,10 @@ main() {
   # Create user nobody (no group, no role)
   create_user nobody nobody "" "" "$REALM_OPENDUT"
 
+  # Create keycloak client for opendut CLIs CLEO/EDGAR
+  create_secret_client "opendut-cleo-client" "918642e0-4ec4-4ef5-8ae0-ba92de7da3f9" "$REALM_OPENDUT"
+  create_secret_client "opendut-edgar-client" "c7d6ace0-b90f-471a-bb62-a4ecac4150f8" "$REALM_OPENDUT"
+
   # Provisioning done signal for opendut-theo
   echo "Keycloak provisioned"
   echo "0" > /opt/keycloak/data/provisioned

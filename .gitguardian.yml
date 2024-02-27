@@ -20,6 +20,10 @@ secret:
     name: Generic Private Key - commit://e34d30ad8ffc78af868567d22d27fa596010d11c/resources/development/tls/insecure-development-ca.key
   - match: b86fd3e00e1f5680d3af605a16a2be6131ee95be54b04fd6fc5c0d326ba49dae
     name: Generic Private Key - commit://e34d30ad8ffc78af868567d22d27fa596010d11c/resources/development/tls/insecure-development-carl.key
+  - match: 7b5b29e2913fcb81e5f0b729f18b88645bf50fb09120a9c8b2fae1ace5ee620e
+    name: Generic High Entropy Secret - commit://staged/.ci/docker/edgar/docker-compose.yml
+  - match: 24c47b03a061227dbec83414ef0e810e3be2f962c7e041d80bec7a76348ff7ec
+    name: Generic High Entropy Secret - commit://staged/.ci/docker/edgar/docker-compose.yml
   ignored-paths:
   - .ci/docker/keycloak/provision.sh
   - .ci/docker/netbird/netbird-api-functions.sh

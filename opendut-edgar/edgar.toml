@@ -14,6 +14,16 @@ connect.interval.ms = 5000
 ca.certificate = "/etc/opendut/tls/ca.pem"
 domain.name.override = ""
 
+[network.oidc]
+enabled = false
+
+[network.oidc.client]
+id = "opendut-edgar-client"
+issuer_url = "https://keycloak/realms/opendut"
+scopes = "openid,profile,email,roles,groups"
+secret = "<tbd>"
+
+
 [network.interface.management]
 enabled = true
 

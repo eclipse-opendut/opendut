@@ -58,6 +58,8 @@ cfg_if! {
             #[error("Expected https scheme. Given scheme: '{given_scheme}'")]
             ExpectedHttpsScheme { given_scheme: String },
             #[error("{message}: {cause}")]
+            OidcConfiguration { message: String, cause: Box<dyn std::error::Error + Send + Sync> },
+            #[error("{message}: {cause}")]
             TlsConfiguration { message: String, cause: Box<dyn std::error::Error + Send + Sync> },
         }
 
@@ -98,6 +100,8 @@ cfg_if! {
 
 cfg_if! {
     if #[cfg(feature = "client")] {
+        mod auth;
+
         use crate::carl::cluster::ClusterManager;
         use crate::carl::metadata::MetadataProvider;
         use crate::carl::peer::PeersRegistrar;
@@ -108,17 +112,34 @@ cfg_if! {
         use crate::proto::services::peer_manager::peer_manager_client::PeerManagerClient;
         use crate::proto::services::peer_messaging_broker::peer_messaging_broker_client::PeerMessagingBrokerClient;
 
+        use std::sync::Arc;
+        use tower::ServiceBuilder;
+        use crate::carl::auth::manager::AuthenticationManager;
+        use crate::carl::auth::service::AuthenticationService;
+        use serde::Deserialize;
+        use url::Url;
+
         #[derive(Debug, Clone)]
         pub struct CarlClient {
-            pub broker: PeerMessagingBroker<tonic::transport::Channel>,
-            pub cluster: ClusterManager<tonic::transport::Channel>,
-            pub metadata: MetadataProvider<tonic::transport::Channel>,
-            pub peers: PeersRegistrar<tonic::transport::Channel>,
+            pub broker: PeerMessagingBroker<AuthenticationService>,
+            pub cluster: ClusterManager<AuthenticationService>,
+            pub metadata: MetadataProvider<AuthenticationService>,
+            pub peers: PeersRegistrar<AuthenticationService>,
         }
+
+        #[derive(Clone, Debug, Deserialize)]
+        pub struct OidcIdentityProviderConfig {
+            id: String,
+            issuer_url: Url,
+            scopes: String,
+            secret: String,
+        }
+
 
         impl CarlClient {
 
-            pub fn create(host: impl Into<String>, port: u16, ca_cert_path: std::path::PathBuf, domain_name_override: Option<String>) -> Result<CarlClient, InitializationError> {
+            pub fn create(host: impl Into<String>, port: u16, ca_cert_path: std::path::PathBuf,
+                          domain_name_override: Option<String>, settings: &config::Config) -> Result<CarlClient, InitializationError> {
 
                 let address = format!("https://{}:{}", host.into(), port);
 
@@ -145,14 +166,29 @@ cfg_if! {
                     .tls_config(tls_config)
                     .map_err(|cause| InitializationError::TlsConfiguration { message: String::from("Failed to initialize secure channel with specified TLS configuration"), cause: cause.into() })?;
 
+                let oidc_enabled = settings.get_bool("network.oidc.enabled").unwrap_or(false);
+                let auth_manager = if oidc_enabled {
+                    let oidc_config = settings.get::<OidcIdentityProviderConfig>("network.oidc.client")
+                        .map_err(|error| InitializationError::OidcConfiguration { message: String::from("Failed to load OIDC configuration"), cause: error.into() })?;
+                    log::debug!("OIDC configuration loaded: id={:?} issuer_url={:?}", oidc_config.id, oidc_config.issuer_url);
+                    Some(Arc::new(AuthenticationManager::new(oidc_config)))
+                } else {
+                    log::debug!("OIDC is disabled.");
+                    None
+                };
+
                 log::debug!("Set up endpoint for connection to CARL at '{address}'.");
                 let channel = endpoint.connect_lazy();
 
+                let auth_svc = ServiceBuilder::new()
+                    .layer_fn(|channel| AuthenticationService::new(channel, auth_manager.clone()))
+                    .service(channel);
+
                 Ok(CarlClient {
-                    broker: PeerMessagingBroker::new(PeerMessagingBrokerClient::new(Clone::clone(&channel))),
-                    cluster: ClusterManager::new(ClusterManagerClient::new(Clone::clone(&channel))),
-                    metadata: MetadataProvider::new(MetadataProviderClient::new(Clone::clone(&channel))),
-                    peers: PeersRegistrar::new(PeerManagerClient::new(Clone::clone(&channel))),
+                    broker: PeerMessagingBroker::new(PeerMessagingBrokerClient::new(Clone::clone(&auth_svc))),
+                    cluster: ClusterManager::new(ClusterManagerClient::new(Clone::clone(&auth_svc))),
+                    metadata: MetadataProvider::new(MetadataProviderClient::new(Clone::clone(&auth_svc))),
+                    peers: PeersRegistrar::new(PeerManagerClient::new(Clone::clone(&auth_svc))),
                 })
             }
         }

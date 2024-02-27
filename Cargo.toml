@@ -79,6 +79,7 @@ mockall = "0.12.1"
 netlink-packet-route = "0.17.1"
 netlink-packet-utils = "0.5.2"
 nix = "0.27.1"
+oauth2 = { version = "4.4.2", default-features = false }
 phf = { version = "0.11", features = ["macros"] }
 predicates = "3.0.4"
 prost = "0.12.1"

@@ -2330,6 +2330,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "830b246a0e5f20af87141b25c173cd1b609bd7779a4617d6ec582abaf90870f3"
 
 [[package]]
+name = "oauth2"
+version = "4.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c38841cdd844847e3e7c8d29cef9dcfed8877f8f56f9071f77843ecf3baf937f"
+dependencies = [
+ "base64 0.13.1",
+ "chrono",
+ "getrandom",
+ "http",
+ "rand",
+ "serde",
+ "serde_json",
+ "serde_path_to_error",
+ "sha2",
+ "thiserror",
+ "url",
+]
+
+[[package]]
 name = "object"
 version = "0.32.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2384,20 +2403,25 @@ version = "0.1.0"
 dependencies = [
  "cfg-if",
  "chrono",
+ "config",
  "googletest",
+ "http",
  "jsonwebtoken",
  "leptos",
  "leptos_oidc",
  "log",
+ "oauth2",
  "opendut-types",
  "prost",
  "protobuf-src",
+ "reqwest",
  "serde",
  "thiserror",
  "tokio",
  "tonic",
  "tonic-build",
  "tonic-web-wasm-client",
+ "tower",
  "tracing",
  "url",
  "uuid",

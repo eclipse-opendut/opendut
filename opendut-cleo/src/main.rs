@@ -267,7 +267,12 @@ async fn main() {
 }
 
 async fn execute() -> Result<()> {
-    let cleo_config_hide_secrets_override = opendut_util::settings::Config::default();
+    // TODO: make it actually hide secrets in the logging output
+    let cleo_config_hide_secrets_override = config::Config::builder()
+        .set_override("network.oidc.client.secret", "redacted")
+        .map_err(|_error| "Failed to hide cleo secrets.")?
+        .build()
+        .map_err(|_error| "Failed to hide cleo secrets.")?;
 
     let config = load_config("cleo", include_str!("../cleo.toml"), FileFormat::Toml, config::Config::default(), cleo_config_hide_secrets_override)
         .expect("Failed to load config") // TODO: Point the user to the source of the error.
@@ -288,7 +293,7 @@ async fn execute() -> Result<()> {
             .expect("Configuration should contain a field for 'domain.name.override'.");
         let domain_name_override = domain_name_override.is_empty().not().then_some(domain_name_override);
 
-        CarlClient::create(host, port as u16, ca_path, domain_name_override)
+        CarlClient::create(host, port as u16, ca_path, domain_name_override, &config)
             .expect("Failed to create CARL client")
     };
 
