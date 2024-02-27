@@ -46,7 +46,7 @@ impl CarlCli {
             }
             TaskCli::Licenses(cli) => cli.default_handling(PackageSelection::Single(SELF_PACKAGE))?,
             TaskCli::Run(cli) => {
-                tracing::debug_span!("lea").in_scope(|| {
+                tracing::info_span!("lea").in_scope(|| {
                     crate::packages::lea::build::build_release().unwrap(); //ensure the LEA distribution exists and is up-to-date
                 });
                 cli.default_handling(SELF_PACKAGE)?
