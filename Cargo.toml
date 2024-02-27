@@ -5,6 +5,7 @@ members = [
     "opendut-cleo",
     "opendut-edgar",
     "opendut-edgar/netbird-client-api",
+    "opendut-edgar/opendut-edgar-kernel-modules",
     "opendut-lea",
     "opendut-types",
     "opendut-util",
@@ -27,6 +28,7 @@ opendut-carl-api = { path = "opendut-carl/opendut-carl-api" }
 opendut-ci = { path = ".ci/xtask" }
 opendut-edgar = { path = "opendut-edgar" }
 opendut-netbird-client-api = { path = "opendut-edgar/netbird-client-api" }
+opendut-edgar-kernel-modules = { path = "opendut-edgar/opendut-edgar-kernel-modules" }
 opendut-vpn-netbird = { path = "opendut-vpn/opendut-vpn-netbird" }
 opendut-types = { path = "opendut-types" }
 opendut-theo = { path = ".ci/docker/theo" }
@@ -83,6 +85,7 @@ prost = "0.12.1"
 prost-build = "0.12.1"
 prost-types = "0.12.1"
 protobuf-src = "1.1.0"
+regex = "1.10.2"
 reqwest = { version = "0.11.23", default-features = false, features = ["rustls-tls-native-roots"] }
 reqwest-middleware = "0.2.4"
 reqwest-retry = "0.3.0"

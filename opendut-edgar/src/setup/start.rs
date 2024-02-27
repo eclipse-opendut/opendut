@@ -17,6 +17,7 @@ use crate::setup::{Leader, runner, tasks, User};
 use crate::setup::runner::RunMode;
 use crate::setup::task::Task;
 use crate::setup::tasks::write_configuration;
+use crate::setup::util::running_in_docker;
 
 #[allow(clippy::box_default)]
 pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, mtu: u16) -> anyhow::Result<()> {
@@ -38,7 +39,12 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
         })),
         Box::new(tasks::CheckCarlReachable),
         Box::new(tasks::CopyExecutable),
+        Box::new(tasks::LoadKernelModules),
     ];
+
+    if !running_in_docker() {
+        tasks.push(Box::new(tasks::CreateKernelModuleLoadRule))
+    }
 
     match peer_setup.vpn {
         VpnPeerConfiguration::Disabled => {

@@ -29,3 +29,9 @@ pub use start_service::StartService;
 pub mod write_configuration;
 
 pub use write_configuration::WriteConfiguration;
+
+pub mod load_kernel_modules;
+pub use load_kernel_modules::LoadKernelModules;
+
+pub mod create_kernel_module_load_rule;
+pub use create_kernel_module_load_rule::CreateKernelModuleLoadRule;

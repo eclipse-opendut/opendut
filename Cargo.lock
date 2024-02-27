@@ -2473,10 +2473,12 @@ dependencies = [
  "netlink-packet-utils",
  "nix 0.27.1",
  "opendut-carl-api",
+ "opendut-edgar-kernel-modules",
  "opendut-netbird-client-api",
  "opendut-types",
  "opendut-util",
  "predicates",
+ "regex",
  "rtnetlink",
  "serde",
  "sha2",
@@ -2492,6 +2494,13 @@ dependencies = [
  "uuid",
  "walkdir",
  "which 6.0.0",
+]
+
+[[package]]
+name = "opendut-edgar-kernel-modules"
+version = "0.1.0"
+dependencies = [
+ "thiserror",
 ]
 
 [[package]]
@@ -2569,6 +2578,7 @@ dependencies = [
  "ctrlc",
  "dotenvy",
  "home",
+ "opendut-edgar-kernel-modules",
  "phf",
  "serde",
  "serde_json",

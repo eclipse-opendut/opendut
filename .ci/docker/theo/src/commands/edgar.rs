@@ -1,6 +1,8 @@
 use std::thread::sleep;
 use std::time::Duration;
 
+use opendut_edgar_kernel_modules::edgar_required_kernel_modules;
+
 use anyhow::{anyhow, Error};
 
 use crate::core::{SLEEP_TIME_SECONDS, TheoError, TIMEOUT_SECONDS};
@@ -28,12 +30,14 @@ impl TestEdgarCli {
     pub(crate) fn default_handling(&self) -> crate::Result {
         match self.task {
             TaskCli::Start => {
+                load_edgar_kernel_modules()?;
                 docker_compose_down(DockerCoreServices::Edgar.as_str(), false)?;
                 docker_compose_build(DockerCoreServices::Edgar.as_str())?;
                 start_edgar_in_docker()?;
                 wait_for_edgar_leader_provisioned()?;
                 println!("EDGAR leader is provisioned. Checking if all peers respond to ping...");
                 check_edgar_leader_ping_all()?;
+                check_edgar_can_ping()?;
             }
             TaskCli::Stop => {
                 docker_compose_down(DockerCoreServices::Edgar.as_str(), false)?;
@@ -114,4 +118,32 @@ fn check_edgar_leader_ping_all() -> Result<i32, Error> {
     DockerCommand::new_exec("edgar-leader")
         .arg("/opt/pingall.sh")
         .expect_status("Failed to check if all EDGAR peers respond to ping.")
+}
+
+fn check_edgar_can_ping() -> Result<i32, Error> {
+    DockerCommand::new()
+        .arg("exec")
+        .arg("-d")
+        .arg("edgar-peer-1")
+        .arg("python3")
+        .arg("/opt/pingall_can.py")
+        .arg("responder")
+        .expect_status("Failed to start CAN ping responder on edgar-peer-1.")?;
+
+    sleep(Duration::from_secs(10));
+
+    DockerCommand::new_exec("edgar-peer-2")
+        .arg("python3")
+        .arg("/opt/pingall_can.py")
+        .arg("sender")
+        .expect_status("Failed to start CAN ping sender on edgar-peer-2.")
+}
+
+fn load_edgar_kernel_modules() -> Result<(), Error> {
+    for kernel_module in edgar_required_kernel_modules() {
+        if !kernel_module.is_loaded()? {
+            kernel_module.load()?;
+        }        
+    }
+    Ok(())
 }

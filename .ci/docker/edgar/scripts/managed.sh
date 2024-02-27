@@ -64,6 +64,11 @@ pre_flight_tasks() {
     ln -s /logs/netbird /var/log/netbird
   fi
 
+
+  ip link add dev vcan0 type vcan
+  ip link add dev vcan1 type vcan
+  ip link set dev vcan0 up
+  ip link set dev vcan1 up
 }
 
 ## MAIN TASKS
@@ -78,7 +83,11 @@ DEVICE_INTERFACE="dut0"
 ip link add $DEVICE_INTERFACE type dummy
 ip link set dev $DEVICE_INTERFACE up
 opendut-cleo create network-configuration --peer-id "$PEER_ID" --interface "$DEVICE_INTERFACE"
+opendut-cleo create network-configuration --peer-id "$PEER_ID" --interface vcan0
+opendut-cleo create network-configuration --peer-id "$PEER_ID" --interface vcan1
 opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME" --interface "$DEVICE_INTERFACE" --tag "$OPENDUT_EDGAR_CLUSTER_NAME"
+opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME"-vcan0 --interface vcan0 --tag "$OPENDUT_EDGAR_CLUSTER_NAME"
+opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME"-vcan1 --interface vcan1 --tag "$OPENDUT_EDGAR_CLUSTER_NAME"
 
 PEER_SETUP_KEY=$(opendut-cleo generate-peer-setup --id "$PEER_ID")
 echo "Setting up peer with setup key $PEER_SETUP_KEY"

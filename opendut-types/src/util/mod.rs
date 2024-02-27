@@ -1,5 +1,7 @@
 pub mod net;
 
+use std::fmt::Display;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -23,6 +25,12 @@ pub struct Port(pub u16);
 impl From<u16> for Port {
     fn from(value: u16) -> Self {
         Self(value)
+    }
+}
+
+impl Display for Port {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 

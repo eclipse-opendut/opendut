@@ -59,3 +59,7 @@ fn sha256_digest(mut reader: impl Read) -> Result<Vec<u8>, io::Error> {
     let hash = hasher.finalize();
     Ok(hash.to_vec())
 }
+
+pub fn running_in_docker() -> bool {
+    return Path::new("/.dockerenv").exists();
+}

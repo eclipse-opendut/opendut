@@ -7,6 +7,7 @@ license.workspace = true
 
 [dependencies]
 opendut-carl-api = { workspace = true, features = ["client"] }
+opendut-edgar-kernel-modules = { workspace = true }
 opendut-netbird-client-api = { workspace = true }
 opendut-types = { workspace = true }
 opendut-util = { workspace = true }
@@ -25,6 +26,7 @@ log = { workspace = true }
 netlink-packet-route = { workspace = true }
 netlink-packet-utils = { workspace = true }
 nix = { workspace = true, features = ["user", "fs"] }
+regex = { workspace = true }
 rtnetlink = { workspace = true }
 serde = { workspace = true, features = ["std", "derive"] }
 shadow-rs = { workspace = true }

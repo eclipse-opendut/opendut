@@ -2,6 +2,7 @@ use std::fmt::{Debug, Formatter};
 use std::io;
 use std::net::Ipv4Addr;
 use std::sync::Arc;
+use tokio::process::Command;
 
 use anyhow::anyhow;
 use futures::TryStreamExt;
@@ -139,6 +140,27 @@ impl NetworkInterfaceManager {
             .map_err(|cause| Error::DeleteInterface { interface: interface.clone(), cause })?;
         Ok(())
     }
+
+    pub async fn create_vcan_interface(&self, name: &NetworkInterfaceName) -> Result<Interface, Error> {
+        let output = Command::new("ip")
+                .arg("link")
+                .arg("add")
+                .arg("dev")
+                .arg(name.name())
+                .arg("type")
+                .arg("vcan")
+                .output()
+                .await
+                .map_err(|cause| Error::CommandLineProgramExecution { command: "cangw".to_string(), cause })?;
+        
+        if ! output.status.success() {
+            return Err(Error::VCanInterfaceCreation { name: name.clone(), cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim()) });
+        }
+
+        let interface = self.try_find_interface(name).await?;
+        Ok(interface)
+    }
+    
 }
 
 #[derive(Clone, Debug)]
@@ -170,6 +192,10 @@ pub enum Error {
     SetInterfaceUp { interface: Interface, cause: rtnetlink::Error },
     #[error("Failure while joining interface {interface} to bridge {bridge}: {cause}")]
     JoinInterfaceToBridge { interface: Interface, bridge: Interface, cause: rtnetlink::Error },
+    #[error("Failure while creating virtual CAN interface '{name}': {cause}")]
+    VCanInterfaceCreation { name: NetworkInterfaceName, cause: String},
+    #[error("Failure while invoking command line program '{command}': {cause}")]
+    CommandLineProgramExecution { command: String, cause: std::io::Error },
     #[error("{message}")]
     Other { message: String },
 }
