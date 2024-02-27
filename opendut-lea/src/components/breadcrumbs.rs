@@ -22,8 +22,8 @@ pub fn Breadcrumbs(
     #[prop(into)] breadcrumbs: MaybeSignal<Vec<Breadcrumb>>,
 ) -> impl IntoView {
 
-    let breadcrumb_items= MaybeSignal::derive(move || {
-        breadcrumbs.with(|breadcrumbs| breadcrumbs.iter()
+    let breadcrumb_items = move || {
+        let (items,_) = breadcrumbs.with(|breadcrumbs| breadcrumbs.iter()
             .enumerate()
             .fold((Vec::new(), String::new()), |(mut result, mut base), (index, breadcrumb)| {
 
@@ -42,13 +42,14 @@ pub fn Breadcrumbs(
 
                 (result, base)
             })
-        )
-    });
+        );
+        items
+    };
 
     view! {
          <nav class="breadcrumb mb-0 is-hidden-tablet" aria-label="backButton">
             <ul>
-                { breadcrumb_items.get().0.iter().nth_back(1) }
+                { breadcrumb_items().iter().nth_back(1) }
                 <span class="icon ml-0">
                     <i class="fa-solid fa-arrow-left"></i>
                 </span>
@@ -56,7 +57,7 @@ pub fn Breadcrumbs(
         </nav>
         <nav class="breadcrumb mb-0 is-hidden-mobile" aria-label="breadcrumbs">
             <ul>
-                { breadcrumb_items.get().0 }
+                { breadcrumb_items }
             </ul>
         </nav>
     }
