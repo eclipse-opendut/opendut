@@ -1,5 +1,6 @@
 use std::fmt;
 use std::ops::Not;
+use std::str::FromStr;
 
 use crate::util::net::NetworkInterfaceName;
 use serde::{Deserialize, Serialize};
@@ -120,6 +121,14 @@ impl TryFrom<&str> for DeviceName {
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         DeviceName::try_from(value.to_owned())
+    }
+}
+
+impl FromStr for DeviceName {
+    type Err = IllegalDeviceName;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        DeviceName::try_from(value)
     }
 }
 
