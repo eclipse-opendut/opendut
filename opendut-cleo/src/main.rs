@@ -94,6 +94,15 @@ enum ListResource {
     Devices,
 }
 
+#[derive(Debug, Clone, clap::Args)]
+#[group(required=true, multiple = true)]
+struct ClusterConfigurationDevices {
+    #[arg(long, num_args = 0..)]
+    device_names: Vec<String>,
+    #[arg(long, num_args = 0..)]
+    device_ids: Vec<String>,
+}
+
 #[derive(Subcommand, Clone, Debug)]
 enum CreateResource {
     ClusterConfiguration {
@@ -107,8 +116,8 @@ enum CreateResource {
         #[arg(short, long)]
         leader_id: Uuid,
         ///List of devices in cluster
-        #[arg(required = true, short, long, num_args = 2..)]
-        device_names: Vec<String>,
+        #[clap(flatten)]
+        devices: ClusterConfigurationDevices,
     },
     ClusterDeployment {
         ///ClusterID
@@ -318,8 +327,8 @@ async fn execute() -> Result<()> {
         }
         Commands::Create { resource, output } => {
             match resource {
-                CreateResource::ClusterConfiguration { name, cluster_id, leader_id, device_names  } => {
-                    commands::cluster_configuration::create::execute(&mut carl, name, cluster_id, leader_id, device_names, output).await?;
+                CreateResource::ClusterConfiguration { name, cluster_id, leader_id, devices  } => {
+                    commands::cluster_configuration::create::execute(&mut carl, name, cluster_id, leader_id, devices.device_names, devices.device_ids, output).await?;
                 }
                 CreateResource::ClusterDeployment { id} => {
                     commands::cluster_deployment::create::execute(&mut carl, id, output).await?;
