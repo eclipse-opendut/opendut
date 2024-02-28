@@ -1,8 +1,5 @@
 [book]
 title = "openDuT"
 
-[preprocessor.mermaid]
-command = "mdbook-mermaid"
-
 [preprocessor.plantuml]
 plantuml-cmd="https://www.plantuml.com/plantuml"
