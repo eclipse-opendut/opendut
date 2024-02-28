@@ -1,6 +1,6 @@
 # Overview
 
-![overview.excalidraw.svg](.img/overview.excalidraw.svg)
+![overview.excalidraw.svg](img/overview.excalidraw.svg)
 
 ### Components
 - **CARL** (Control And Registration Logic)
@@ -17,13 +17,13 @@ EDGAR registers with the **Control and Registration Logic** (CARL) and reports t
 Multiple EDGARs can be linked to clusters via the graphical **Leasing ECU Access** (LEA) UI or the **Command-Line ECU Orchestrator** (CLEO) of CARL,
 and the openDuT cluster can be provisioned for the user.
 
-![opendut-functional-diagram.svg](.img/opendut-functional-diagram.svg)
+![opendut-functional-diagram.svg](img/opendut-functional-diagram.svg)
 
 openDuT uses NetBird technology and provides its own NetBird server, including a TURN server in CARL and NetBird clients in the EDGARs.
 The NetBird clients of the clustered EDGARs automatically build a WireGuard network in star topology.
 If a direct connection between two EDGARs is not possible, the tunnel is routed through the TURN server in CARL.
 
-![edgar-gre-bridging.excalidraw.svg](.img/edgar-bridging.excalidraw.svg)
+![edgar-gre-bridging.excalidraw.svg](img/edgar-bridging.excalidraw.svg)
 
 Within EDGAR, the openDUT ETH Bridge manages Ethernet communication and routes outgoing packets to the GRE-Bridge(s).
 The GRE-Bridges encapsulate the packets and send them over fixed-assigned sources to fixed-assigned targets.
