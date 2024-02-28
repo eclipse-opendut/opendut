@@ -2373,6 +2373,7 @@ dependencies = [
  "tonic-web",
  "tower",
  "tower-http",
+ "tracing",
  "url",
  "uuid",
 ]
@@ -2490,6 +2491,7 @@ dependencies = [
  "tokio-stream",
  "toml_edit 0.21.1",
  "tonic",
+ "tracing",
  "url",
  "uuid",
  "walkdir",
@@ -2610,12 +2612,12 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "config",
- "env_logger",
  "home",
- "log",
  "serde",
  "shadow-rs",
  "thiserror",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

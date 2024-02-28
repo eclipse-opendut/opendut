@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 use std::env;
-use std::fs::File;
 use std::sync::Arc;
 
 use anyhow::Context;
@@ -111,20 +110,16 @@ pub async fn unmanaged(
 
 
 pub fn init_logging() -> anyhow::Result<()> {
-    logging::initialize_with_overrides(|builder| {
-        let log_file = std::env::current_exe().unwrap()
-            .parent().unwrap()
-            .join("setup.log");
 
-        let log_file = File::create(&log_file)
-            .unwrap_or_else(|cause| panic!("Failed to open log file at '{}': {cause}", log_file.display()));
+    let log_file = std::env::current_exe().unwrap()
+        .parent().unwrap()
+        .join("setup.log");
 
-        builder
-            .target(env_logger::Target::Pipe(
-                Box::new(log_file)
-            )
-        )
-    })?;
+    let config = logging::LoggingConfig {
+        file_logging: Some(log_file),
+    };
+    logging::initialize_with_config(config)?;
+
     Ok(())
 }
 

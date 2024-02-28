@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 use tonic::transport::Server;
 use tower::{BoxError, make::Shared, ServiceExt, steer::Steer};
 use tower_http::services::{ServeDir, ServeFile};
+use tracing::{debug, info};
 use url::Url;
 
 use opendut_util::project;
@@ -40,7 +41,7 @@ pub async fn create(settings_override: config::Config) -> Result<()> {
 
     let settings = settings::load_with_overrides(settings_override)?;
 
-    log::info!("Started with configuration: {settings:?}");
+    info!("Started with configuration: {settings:?}");
 
     let address: SocketAddr = {
         let host = settings.config.get_string("network.bind.host")?;
@@ -50,11 +51,11 @@ pub async fn create(settings_override: config::Config) -> Result<()> {
 
     let tls_config = {
         let cert_path = project::make_path_absolute(settings.config.get_string("network.tls.certificate")?)?;
-        log::debug!("Using TLS certificate: {}", cert_path.display());
+        debug!("Using TLS certificate: {}", cert_path.display());
         assert!(cert_path.exists(), "TLS certificate file at '{}' not found.", cert_path.display());
 
         let key_path = project::make_path_absolute(settings.config.get_string("network.tls.key")?)?;
-        log::debug!("Using TLS key: {}", key_path.display());
+        debug!("Using TLS key: {}", key_path.display());
         assert!(key_path.exists(), "TLS key file at '{}' not found.", cert_path.display());
 
         RustlsConfig::from_pem_file(cert_path, key_path).await?
@@ -136,14 +137,14 @@ pub async fn create(settings_override: config::Config) -> Result<()> {
                     panic!("Failed to parse comma-separated OIDC scopes for LEA. Scopes must only contain ASCII alphabetic characters. Found: {:?}. Parsed as: {:?}", lea_idp_config.scopes, scopes);
                 }
             }
-            log::info!("OIDC is enabled: {:?}", lea_idp_config);
+            info!("OIDC is enabled: {:?}", lea_idp_config);
             Some(LeaIdentityProviderConfig {
                 client_id: lea_idp_config.client_id,
                 issuer_url: lea_idp_config.issuer_url,
                 scopes: scopes.join(" "),  // Frontend expects space separated list of scopes
             })
         } else {
-            log::info!("OIDC is disabled.");
+            info!("OIDC is disabled.");
             None
         };
 
@@ -207,7 +208,7 @@ pub async fn create(settings_override: config::Config) -> Result<()> {
         )
     }
 
-    log::info!("Server listening at {address}...");
+    info!("Server listening at {address}...");
     spawn_server(
         address,
         tls_config,
