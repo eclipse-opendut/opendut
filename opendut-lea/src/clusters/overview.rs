@@ -179,7 +179,7 @@ where
     let _ = on_click_outside(dropdown, move |_| dropdown_active.set(false) );
 
     let (health_state, _) = create_signal({
-        let state = if is_deployed.get().0 {
+        if is_deployed.get().0 {
             health::State {
                 kind: health::StateKind::Green,
                 text: String::from("Connected. No errors."),
@@ -190,8 +190,7 @@ where
                 kind: health::StateKind::Unknown,
                 text: String::from("Disconnected"),
             }
-        };
-        state
+        }
     });
 
     view! {

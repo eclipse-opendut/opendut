@@ -23,7 +23,7 @@ impl TabIdentifier {
     const NETWORK_STR: &'static str = "network";
     const SETUP_STR: &'static str = "setup";
 
-    pub fn to_str(&self) -> &'static str {
+    pub fn as_str(&self) -> &'static str {
         match self {
             TabIdentifier::General => TabIdentifier::GENERAL_STR,
             TabIdentifier::Devices => TabIdentifier::DEVICES_STR,

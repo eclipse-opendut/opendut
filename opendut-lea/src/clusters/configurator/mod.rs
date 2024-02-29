@@ -94,13 +94,13 @@ pub fn ClusterConfigurator() -> impl IntoView {
                     <div class="tabs">
                         <ul>
                             <li class=("is-active", move || TabIdentifier::General == active_tab.get())>
-                                <a href={ TabIdentifier::General.to_str() }>General</a>
+                                <a href={ TabIdentifier::General.as_str() }>General</a>
                             </li>
                             <li class=("is-active", move || TabIdentifier::Devices == active_tab.get())>
-                                <a href={ TabIdentifier::Devices.to_str() }>Devices</a>
+                                <a href={ TabIdentifier::Devices.as_str() }>Devices</a>
                             </li>
                             <li class=("is-active", move || TabIdentifier::Leader == active_tab.get())>
-                                <a href={ TabIdentifier::Leader.to_str() }>Leader</a>
+                                <a href={ TabIdentifier::Leader.as_str() }>Leader</a>
                             </li>
                         </ul>
                     </div>

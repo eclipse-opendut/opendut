@@ -60,7 +60,6 @@ fn clippy() -> crate::Result {
         .args([
             "clippy",
             "--workspace",
-            "--exclude=opendut-lea" // rustc (1.75.0) crashes for opendut-lea.
         ])
         .run_requiring_success()
 }

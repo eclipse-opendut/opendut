@@ -10,6 +10,7 @@ pub const EMPTY_DEVICE_NAME_ERROR_MESSAGE: &str = "Enter a valid device name.";
 pub const EMPTY_DEVICE_INTERFACE_ERROR_MESSAGE: &str = "Enter a valid interface name!";
 
 #[derive(thiserror::Error, Clone, Debug)]
+#[allow(clippy::enum_variant_names)] // "all variants have the same prefix: `Invalid`"
 pub enum PeerMisconfigurationError {
     #[error("Invalid peer name")]
     InvalidPeerName,
@@ -20,6 +21,7 @@ pub enum PeerMisconfigurationError {
 }
 
 #[derive(thiserror::Error, Clone, Debug)]
+#[allow(clippy::enum_variant_names)] // "all variants have the same prefix: `Invalid`"
 pub enum DeviceMisconfigurationError {
     #[error("Invalid device name")]
     InvalidDeviceName,

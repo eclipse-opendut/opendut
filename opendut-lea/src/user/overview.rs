@@ -8,7 +8,7 @@ pub fn UserOverview() -> impl IntoView {
 
     fn Inner() -> impl IntoView {
 
-        const DEFAULT_KEYCLOAK_ROLES: [&'static str; 4] = [
+        const DEFAULT_KEYCLOAK_ROLES: [&str; 4] = [
             "offline_access",
             "uma_authorization",
             "managerrole",

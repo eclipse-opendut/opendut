@@ -112,7 +112,7 @@ pub fn navigate_to(route: WellKnownRoutes) {
     let navigate = use_navigate();
 
     request_animation_frame(move || {
-        _ = navigate(&route, Default::default());
+        navigate(&route, Default::default());
     });
 }
 

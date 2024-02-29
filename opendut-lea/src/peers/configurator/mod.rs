@@ -123,7 +123,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                 vec![
                     Breadcrumb::new("Dashboard", "/"),
                     Breadcrumb::new("Peers", "peers"),
-                    Breadcrumb::new(Clone::clone(&peer_id), format!("{}/configure/{}", peer_id, active_tab.to_str())),
+                    Breadcrumb::new(Clone::clone(&peer_id), format!("{}/configure/{}", peer_id, active_tab.as_str())),
                 ]
             })
         };
@@ -141,20 +141,20 @@ pub fn PeerConfigurator() -> impl IntoView {
                     <div class="tabs">
                         <ul>
                             <li class=("is-active", move || TabIdentifier::General == active_tab.get())>
-                                <a href={ TabIdentifier::General.to_str() }>
+                                <a href={ TabIdentifier::General.as_str() }>
                                     <span>General</span>
                                     // An icon could indicate a misconfiguration on a tab
                                     // <span class="icon is-small has-text-danger"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i></span>
                                 </a>
                             </li>
                             <li class=("is-active", move || TabIdentifier::Network == active_tab.get())>
-                                <a href={ TabIdentifier::Network.to_str() }>Network</a>
+                                <a href={ TabIdentifier::Network.as_str() }>Network</a>
                             </li>
                             <li class=("is-active", move || TabIdentifier::Devices == active_tab.get())>
-                                <a href={ TabIdentifier::Devices.to_str() }>Devices</a>
+                                <a href={ TabIdentifier::Devices.as_str() }>Devices</a>
                             </li>
                             <li class=setup_tab_classes>
-                                <a href={ TabIdentifier::Setup.to_str() }>Setup</a>
+                                <a href={ TabIdentifier::Setup.as_str() }>Setup</a>
                             </li>
                         </ul>
                     </div>

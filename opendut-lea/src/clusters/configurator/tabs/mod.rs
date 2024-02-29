@@ -6,8 +6,9 @@ mod general;
 mod devices;
 mod leader;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum TabIdentifier {
+    #[default]
     General,
     Devices,
     Leader,
@@ -16,21 +17,14 @@ pub enum TabIdentifier {
 impl TabIdentifier {
     const GENERAL_STR: &'static str = "general";
     const DEVICES_STR: &'static str = "devices";
-
     const LEADER_STR: &'static str = "leader";
 
-    pub fn to_str(&self) -> &'static str {
+    pub fn as_str(&self) -> &'static str {
         match self {
             TabIdentifier::General => TabIdentifier::GENERAL_STR,
             TabIdentifier::Devices => TabIdentifier::DEVICES_STR,
             TabIdentifier::Leader => TabIdentifier::LEADER_STR,
         }
-    }
-}
-
-impl Default for TabIdentifier {
-    fn default() -> Self {
-        TabIdentifier::General
     }
 }
 
