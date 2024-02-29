@@ -18,7 +18,8 @@ if [ -n "$1" ] ; then
   python3 ip_provider.py 2> provider.txt &
 
   debug_show_peers_requesting_leader_ip
-  wait_for_peers_to_connect
+  wait_for_netbird_peers_to_connect "$OPENDUT_EDGAR_REPLICAS"
+  wait_for_wireguard_peers_to_connect "$OPENDUT_EDGAR_REPLICAS"
 
   /opt/opendut-edgar/opendut-edgar setup --no-confirm unmanaged --setup-key "$NETBIRD_SETUP_KEY" --management-url "${NETBIRD_MANAGEMENT_API}" --leader=local
   echo setting bridge ip

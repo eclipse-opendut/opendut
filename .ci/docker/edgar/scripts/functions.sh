@@ -18,11 +18,13 @@ append_data_from_env_variable() {
 
 die_with_error() {
         echo "terminating with error"
+        echo "Error" | tee -a > /opt/signal/result.txt
         exit 1
 }
 
 error_stop_and_keep_running() {
         echo "ERROR occurred. Keeping container running for debugging."
+        echo "Error" | tee -a > /opt/signal/result.txt
         sleep infinity
 }
 
@@ -31,7 +33,8 @@ die_with_success() {
         return 0
 }
 
-wait_for_peers_to_connect() {
+wait_for_netbird_peers_to_connect() {
+  # expected peers count in cluster without the leader
   local expected_peer_count="$1"
   local timeout="${2:-600}"
   local sleep_time="${3:-5}"
@@ -54,7 +57,65 @@ wait_for_peers_to_connect() {
       # peer count is a number
       connected=$netbird_status
     fi
-    echo "Waiting for peers to connect. Currently connected ${connected} of ${expected_peer_count}"
+    echo "Waiting for netbird peers to connect. Currently connected ${connected} of ${expected_peer_count}"
+    sleep "$sleep_time"
+  done
+}
+
+wait_for_wireguard_peers_to_connect() {
+  # expected peers count in cluster without the leader
+  local expected_peer_count="$1"
+  local timeout="${2:-600}"
+  local sleep_time="${3:-5}"
+
+  START_TIME="$(date +%s)"
+  END_TIME=$((START_TIME + timeout))
+
+  connected=0
+  while [[ "$connected" -lt "$expected_peer_count" ]]; do
+    local now
+    now=$(date +%s)
+    if [ "$now" -gt "$END_TIME" ]; then
+      echo "Timeout while waiting for binary to be extracted by edgar: $file"
+      return 1
+    fi
+
+    wireguard_peer_count=$(wg show all endpoints 2>/dev/null | nl | awk '{print $1}' | tail -n1)
+    re='^[0-9]+$'
+    if [[ $wireguard_peer_count =~ $re ]] ; then
+      # peer count is a number
+      connected=$wireguard_peer_count
+    fi
+    echo "Waiting for wireguard peers to connect. Currently connected ${connected} of ${expected_peer_count}"
+    sleep "$sleep_time"
+  done
+}
+
+wait_for_edgar_to_create_gre_interfaces() {
+  # expected peers count in cluster without the leader
+  local expected_peer_count="$1"
+  local timeout="${2:-600}"
+  local sleep_time="${3:-5}"
+
+  START_TIME="$(date +%s)"
+  END_TIME=$((START_TIME + timeout))
+
+  connected=0
+  while [[ "$connected" -lt "$expected_peer_count" ]]; do
+    local now
+    now=$(date +%s)
+    if [ "$now" -gt "$END_TIME" ]; then
+      echo "Timeout while waiting for binary to be extracted by edgar: $file"
+      return 1
+    fi
+
+    gre_interface_count=$(ip -json a | jq -r ".[] | select(.ifname | test(\"gre-opendut*\")) | select(.operstate!=\"DOWN\") | .ifname" 2>/dev/null | nl | awk '{print $1}' | tail -n1)
+    re='^[0-9]+$'
+    if [[ $gre_interface_count =~ $re ]] ; then
+      # peer count is a number
+      connected=$gre_interface_count
+    fi
+    echo "Waiting for EDGAR to create GRE interfaces. Currently connected ${connected} of ${expected_peer_count}."
     sleep "$sleep_time"
   done
 }

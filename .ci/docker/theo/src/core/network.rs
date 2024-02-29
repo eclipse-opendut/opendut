@@ -5,7 +5,7 @@ use anyhow::anyhow;
 use phf::phf_map;
 use serde::{Deserialize, Deserializer};
 
-use crate::core::docker::DockerCommand;
+use crate::core::docker::command::DockerCommand;
 use crate::core::util::consume_output;
 
 fn ip_address_from_str<'de, D>(deserializer: D) -> Result<Ipv4Addr, D::Error>

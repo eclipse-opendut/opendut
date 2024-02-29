@@ -2,9 +2,11 @@ use anyhow::Error;
 use clap::ArgAction;
 
 use crate::commands::vagrant::running_in_opendut_vm;
-use crate::core::carl_config::{CarlConfiguration};
-use crate::core::docker::{DockerCommand, DockerCoreServices, show_error_if_unhealthy_containers_were_found, start_netbird};
+use crate::core::carl_config::CarlConfiguration;
+use crate::core::docker::{show_error_if_unhealthy_containers_were_found, start_netbird};
+use crate::core::docker::command::DockerCommand;
 use crate::core::docker::compose::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_up_expose_ports};
+use crate::core::docker::services::DockerCoreServices;
 use crate::core::project::load_theo_environment_variables;
 
 /// Build and start development environment

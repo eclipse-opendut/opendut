@@ -1,6 +1,6 @@
 use std::process::Output;
 use anyhow::Error;
-use crate::core::docker::DockerCommand;
+use crate::core::docker::command::DockerCommand;
 
 pub(crate) fn check_docker_is_installed() -> Result<Output, Error> {
     DockerCommand::new()

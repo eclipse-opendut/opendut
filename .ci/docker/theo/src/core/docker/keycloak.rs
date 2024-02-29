@@ -2,7 +2,8 @@ use std::thread::sleep;
 use std::time::Duration;
 use anyhow::{anyhow, Error};
 use crate::core::{SLEEP_TIME_SECONDS, TheoError, TIMEOUT_SECONDS};
-use crate::core::docker::{DockerCommand, DockerCoreServices};
+use crate::core::docker::services::DockerCoreServices;
+use crate::core::docker::command::DockerCommand;
 
 pub(crate) fn wait_for_keycloak_provisioned() -> crate::Result {
     let timeout = Duration::from_secs(TIMEOUT_SECONDS);

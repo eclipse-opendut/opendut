@@ -63,14 +63,6 @@ jobs:
         run: |
           ./opendut-theo/opendut-theo testenv edgar start
 
-      - name: Wait for all peers
-        run: |
-          docker exec edgar-leader /opt/wait_until_ready.sh
-
-      - name: Run ping all script on one of the peers
-        run: |
-          docker exec edgar-peer-1 /opt/pingall.sh # TODO RM
-
       - name: Collect container logs
         if: always()
         run: |

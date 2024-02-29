@@ -3,8 +3,10 @@ use clap::{ArgAction, Parser};
 
 use crate::commands::edgar::TestEdgarCli;
 use crate::core::dist::make_distribution_if_not_present;
-use crate::core::docker::{DockerCommand, DockerCoreServices, show_error_if_unhealthy_containers_were_found, start_netbird};
+use crate::core::docker::{show_error_if_unhealthy_containers_were_found, start_netbird};
+use crate::core::docker::command::DockerCommand;
 use crate::core::docker::compose::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_network_delete, docker_compose_up_expose_ports};
+use crate::core::docker::services::DockerCoreServices;
 use crate::core::project::load_theo_environment_variables;
 
 /// Build and start test environment.

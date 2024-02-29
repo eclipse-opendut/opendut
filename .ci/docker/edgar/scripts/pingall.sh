@@ -14,9 +14,9 @@ ping_all_netbird_peers() {
   for ip in $IPS
   do
     if [ "$REQUIRED_SUCCESS" == "true" ]; then
-      fping --count=1 --timeout=1000 --retry=5 "$ip" || { echo "$ip did not respond"; return 1; }
+      fping --count=1 --timeout=1000 --retry=20 "$ip" || { echo "$ip did not respond"; return 1; }
     else
-      fping --count=1 --timeout=1000 --retry=5 "$ip" || { echo "$ip did not respond"; sleep 10; }
+      fping --count=1 --timeout=1000 --retry=20 "$ip" || { echo "$ip did not respond"; sleep 10; }
     fi
   done
 }
@@ -33,15 +33,17 @@ ping_all_dut_bridges() {
   for ip in $IPS
   do
     if [ "$REQUIRED_SUCCESS" == "true" ]; then
-      fping --count=1 --timeout=1000 --retry=5 "$ip" || { echo "$ip did not respond"; return 1; }
+      fping --count=1 --timeout=1000 --retry=20 "$ip" || { echo "$ip did not respond"; return 1; }
     else
-      fping --count=1 --timeout=1000 --retry=5 "$ip" || { echo "$ip did not respond"; sleep 10; }
+      fping --count=1 --timeout=1000 --retry=20 "$ip" || { echo "$ip did not respond"; sleep 10; }
     fi
   done
 }
 
 
-wait_for_peers_to_connect
+wait_for_netbird_peers_to_connect "$OPENDUT_EDGAR_REPLICAS"
+wait_for_wireguard_peers_to_connect "$OPENDUT_EDGAR_REPLICAS"
+wait_for_edgar_to_create_gre_interfaces "$OPENDUT_EDGAR_REPLICAS"
 
 echo "first ping may take multiple seconds"
 ping_all_netbird_peers "false"
@@ -51,11 +53,12 @@ set -e  # exit on error
 set -x  # print each command
 
 echo "-------------------------------------------------------------------------"
-echo "Running ping test"
-echo "Pinging NetBird peers..."
+echo " STAGE 1: Running ping test"
+echo "          Pinging NetBird peers..."
 ping_all_netbird_peers "true"
 
-echo "Pinging DUT bridges..."
+echo "-------------------------------------------------------------------------"
+echo " STAGE 2: Pinging DUT bridges..."
 ping_all_dut_bridges "true"
 
 echo "SUCCESS"
