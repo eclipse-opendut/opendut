@@ -23,7 +23,7 @@ jobs:
         uses: ./.github/actions/rust-setup
 
       - name: Build
-        run: cargo ci opendut-theo build --target=${{ matrix.package.target }}
+        run: cargo ci opendut-theo distribution-build --target=${{ matrix.package.target }}
       - name: "Upload theo build artifact ${{ matrix.package.name }}-${{ matrix.package.target }}"
         uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8
         with:

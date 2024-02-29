@@ -14,16 +14,13 @@ pub struct TheoCli {
 
 #[derive(clap::Subcommand)]
 pub enum TaskCli {
-    Build(crate::tasks::build::BuildCli),
     Distribution(crate::tasks::distribution::DistributionCli),
     Licenses(crate::tasks::licenses::LicensesCli),
     Run(crate::tasks::run::RunCli),
 
-    #[command(hide=true)]
+    DistributionBuild(crate::tasks::build::DistributionBuildCli),
     DistributionCopyLicenseJson(crate::tasks::distribution::copy_license_json::DistributionCopyLicenseJsonCli),
-    #[command(hide=true)]
     DistributionBundleFiles(crate::tasks::distribution::bundle::DistributionBundleFilesCli),
-    #[command(hide=true)]
     DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli),
 }
 
@@ -31,7 +28,7 @@ impl TheoCli {
     #[tracing::instrument(name="theo", skip(self))]
     pub fn default_handling(self) -> crate::Result {
         match self.task {
-            TaskCli::Build(crate::tasks::build::BuildCli { target }) => {
+            TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target }) => {
                 for target in target.iter() {
                     build::build_release(target)?;
                 }
@@ -60,7 +57,7 @@ pub mod build {
     use super::*;
 
     pub fn build_release(target: Arch) -> crate::Result {
-        crate::tasks::build::build_release(SELF_PACKAGE, target)
+        crate::tasks::build::distribution_build(SELF_PACKAGE, target)
     }
 }
 
@@ -75,7 +72,7 @@ pub mod distribution {
 
         distribution::clean(SELF_PACKAGE, target)?;
 
-        crate::tasks::build::build_release(SELF_PACKAGE, target)?;
+        crate::tasks::build::distribution_build(SELF_PACKAGE, target)?;
 
         distribution::collect_executables(SELF_PACKAGE, target)?;
 

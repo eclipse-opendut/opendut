@@ -42,6 +42,7 @@ pub mod copy_license_json {
     /// Copy license files to the distribution directory, as it normally happens when building a distribution.
     /// Intended for parallelization in CI/CD.
     #[derive(Debug, clap::Parser)]
+    #[command(hide=true)]
     pub struct DistributionCopyLicenseJsonCli {
         #[arg(long, default_value_t)]
         pub target: TargetSelection,
@@ -96,6 +97,7 @@ pub mod bundle {
     /// Directly bundle files from the distribution directory, as it normally happens when building a distribution.
     /// Intended for parallelization in CI/CD.
     #[derive(Debug, clap::Parser)]
+    #[command(hide=true)]
     pub struct DistributionBundleFilesCli {
         #[arg(long, default_value_t)]
         target: TargetSelection,
@@ -146,6 +148,7 @@ pub mod validate {
     /// Unpack and verify the contents of the distribution, as it normally happens when building a distribution.
     /// Intended for parallelization in CI/CD.
     #[derive(Debug, clap::Parser)]
+    #[command(hide=true)]
     pub struct DistributionValidateContentsCli {
         #[arg(long, default_value_t)]
         pub target: TargetSelection,

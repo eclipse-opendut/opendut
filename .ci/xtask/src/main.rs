@@ -21,7 +21,6 @@ struct RootCli {
 }
 #[derive(clap::Subcommand)]
 enum TaskCli {
-    Build(tasks::build::BuildCli),
     Check(tasks::check::CheckCli),
     Distribution(tasks::distribution::DistributionCli),
     Doc(tasks::doc::DocCli),
@@ -41,14 +40,6 @@ fn main() -> crate::Result {
 
     let cli = RootCli::parse();
     match cli.task {
-        TaskCli::Build(tasks::build::BuildCli { target }) => {
-            for target in target.iter() {
-                packages::carl::build::build_release(target)?;
-                packages::cleo::build::build_release(target)?;
-                packages::edgar::build::build_release(target)?;
-                packages::lea::build::build_release()?;
-            }
-        }
         TaskCli::Check(implementation) => {
             implementation.default_handling()?
         }

@@ -89,7 +89,7 @@ pub mod json {
             .stdout(Stdio::from(File::create(&out_file)?))
             .run_requiring_success()?;
 
-        log::debug!("Wrote licenses for package '{package}' to path: {}", out_file.display());
+        log::info!("Wrote licenses for package '{package}' to path: {}", out_file.display());
 
         Ok(())
     }

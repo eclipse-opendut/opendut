@@ -10,13 +10,14 @@ use crate::util::RunRequiringSuccess;
 
 /// Perform a release build, without bundling a distribution.
 #[derive(Debug, clap::Parser)]
-pub struct BuildCli {
+#[command(hide=true)]
+pub struct DistributionBuildCli {
     #[arg(long, default_value_t)]
     pub target: TargetSelection,
 }
 
 #[tracing::instrument]
-pub fn build_release(package: Package, target: Arch) -> crate::Result {
+pub fn distribution_build(package: Package, target: Arch) -> crate::Result {
     util::install_crate(Crate::Cross)?;
 
     Command::new("cross")

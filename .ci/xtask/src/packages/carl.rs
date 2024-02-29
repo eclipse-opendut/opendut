@@ -17,16 +17,13 @@ pub struct CarlCli {
 
 #[derive(clap::Subcommand)]
 pub enum TaskCli {
-    Build(crate::tasks::build::BuildCli),
     Distribution(crate::tasks::distribution::DistributionCli),
     Licenses(crate::tasks::licenses::LicensesCli),
     Run(crate::tasks::run::RunCli),
 
-    #[command(hide=true)]
+    DistributionBuild(crate::tasks::build::DistributionBuildCli),
     DistributionCopyLicenseJson(crate::tasks::distribution::copy_license_json::DistributionCopyLicenseJsonCli),
-    #[command(hide=true)]
     DistributionBundleFiles(crate::tasks::distribution::bundle::DistributionBundleFilesCli),
-    #[command(hide=true)]
     DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli),
 }
 
@@ -34,7 +31,7 @@ impl CarlCli {
     #[tracing::instrument(name="carl", skip(self))]
     pub fn default_handling(self) -> crate::Result {
         match self.task {
-            TaskCli::Build(crate::tasks::build::BuildCli { target }) => {
+            TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target }) => {
                 for target in target.iter() {
                     build::build_release(target)?;
                 }
@@ -47,7 +44,7 @@ impl CarlCli {
             TaskCli::Licenses(cli) => cli.default_handling(PackageSelection::Single(SELF_PACKAGE))?,
             TaskCli::Run(cli) => {
                 tracing::info_span!("lea").in_scope(|| {
-                    crate::packages::lea::build::build_release().unwrap(); //ensure the LEA distribution exists and is up-to-date
+                    crate::packages::lea::build::build().unwrap(); //ensure the LEA distribution exists and is up-to-date
                 });
                 cli.default_handling(SELF_PACKAGE)?
             }
@@ -74,7 +71,7 @@ pub mod build {
     use super::*;
 
     pub fn build_release(target: Arch) -> crate::Result {
-        crate::tasks::build::build_release(SELF_PACKAGE, target)
+        crate::tasks::build::distribution_build(SELF_PACKAGE, target)
     }
     pub fn out_dir(target: Arch) -> PathBuf {
         crate::tasks::build::out_dir(SELF_PACKAGE, target)
@@ -94,7 +91,7 @@ pub mod distribution {
 
         distribution::clean(SELF_PACKAGE, target)?;
 
-        crate::tasks::build::build_release(SELF_PACKAGE, target)?;
+        crate::tasks::build::distribution_build(SELF_PACKAGE, target)?;
 
         distribution::collect_executables(SELF_PACKAGE, target)?;
 
@@ -114,7 +111,7 @@ pub mod distribution {
         #[tracing::instrument]
         pub fn get_lea(out_dir: &PathBuf) -> crate::Result {
 
-            crate::packages::lea::build::build_release()?;
+            crate::packages::lea::build::build()?;
             let lea_build_dir = crate::packages::lea::build::out_dir();
 
             let lea_out_dir = out_dir.join(Package::Lea.ident());

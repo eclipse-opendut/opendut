@@ -62,11 +62,16 @@ pub mod book {
         util::install_crate(Crate::Mdbook)?;
         util::install_crate(Crate::MdbookPlantuml)?;
 
+        let out_dir = out_dir();
+
         Command::new("mdbook")
             .arg("build")
-            .arg("--dest-dir").arg(out_dir())
+            .arg("--dest-dir").arg(&out_dir)
             .current_dir(doc_dir())
             .run_requiring_success()?;
+
+        log::info!("Placed distribution into: {}", out_dir.display());
+
         Ok(())
     }
 
