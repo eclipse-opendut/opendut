@@ -1,8 +1,8 @@
+pub use authenticated::Initialized;
 pub use breadcrumbs::{Breadcrumb, Breadcrumbs};
 pub use buttons::button::SimpleButton;
 pub use buttons::confirmation_button::ConfirmationButton;
 pub use buttons::icon_button::IconButton;
-pub use initialized::Initialized;
 pub use inputs::{UserInputError, UserInputValue};
 pub use inputs::readonly_input::ReadOnlyInput;
 pub use inputs::user_input::UserInput;
@@ -23,9 +23,9 @@ mod util;
 mod inputs;
 mod buttons;
 mod breadcrumbs;
-mod initialized;
 mod toast;
 mod auth;
+mod authenticated;
 
 #[derive(Clone, Copy, Debug)]
 #[allow(dead_code)]

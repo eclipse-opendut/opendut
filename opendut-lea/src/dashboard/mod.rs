@@ -4,11 +4,10 @@ use crate::clusters::ClustersCard;
 use crate::components::Initialized;
 use crate::peers::PeersCard;
 
-
 #[component]
 pub fn Dashboard() -> impl IntoView {
 
-    view!{
+    view! {
         <Initialized>
             <div class="mt-6">
                 <div class="columns is-full">
