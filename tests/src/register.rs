@@ -18,8 +18,13 @@ async fn register_edgar_carl() -> Result<()> {
     let carl_config_override = config::Config::builder()
         .set_override("network.bind.port", carl_port)?
         .set_override("network.remote.port", carl_port)?
+        .set_override("network.remote.host", "localhost")?
         .set_override("vpn.enabled", false)?
         .set_override("serve.ui.presence_check", false)?
+        // ensure the development certificates are used
+        // even if ~/.config/opendut/carl/config.toml is present with different values for the test environment in opendut-vm
+        .set_override("network.tls.certificate", "resources/development/tls/insecure-development-carl.pem")?
+        .set_override("network.tls.key", "resources/development/tls/insecure-development-carl.key")?
         .build()?;
     let _ = tokio::spawn(async {
         opendut_carl::create(carl_config_override).await
