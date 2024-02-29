@@ -26,18 +26,19 @@ message Upstream {
 message Downstream {
   oneof message {
     Pong pong = 1;
-    ApplyVpnConfig applyVpnConfig = 2;
     AssignCluster assign_cluster = 3;
+    ApplyPeerConfiguration apply_peer_configuration = 4;
   }
 }
 
 message Ping {}
 message Pong {}
 
-message ApplyVpnConfig {
-  opendut.types.vpn.VpnPeerConfig config = 1;
-}
 
 message AssignCluster {
   opendut.types.cluster.ClusterAssignment assignment = 1;
+}
+
+message ApplyPeerConfiguration {
+  opendut.types.peer.PeerConfiguration configuration = 1;
 }

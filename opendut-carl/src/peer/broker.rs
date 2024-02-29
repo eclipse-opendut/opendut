@@ -5,11 +5,13 @@ use std::time::Duration;
 
 use tokio::sync::{mpsc, RwLock};
 use tokio::sync::mpsc::error::SendError;
+use tracing::error;
 
-use opendut_carl_api::proto::services::peer_messaging_broker::downstream;
+use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, downstream};
+use opendut_carl_api::proto::services::peer_messaging_broker::downstream::Message;
 use opendut_carl_api::proto::services::peer_messaging_broker::Pong;
 use opendut_carl_api::proto::services::peer_messaging_broker::upstream;
-use opendut_types::peer::PeerId;
+use opendut_types::peer::{PeerConfiguration, PeerId};
 use opendut_types::peer::state::{PeerState, PeerUpState};
 
 use crate::resources::manager::ResourcesManagerRef;
@@ -86,6 +88,17 @@ impl PeerMessagingBroker {
                 .or_insert(new_peer_up_state(remote_host))
         }).await;
 
+        if let Some(configuration) = self.resources_manager.get::<PeerConfiguration>(peer_id).await {
+            if let Err(error) = self.send_to_peer(peer_id, Message::ApplyPeerConfiguration(
+                ApplyPeerConfiguration {
+                    configuration: Some(configuration.into())
+                }
+            )).await {
+                error!("Failed to send ApplyPeerConfiguration message: {error}")
+            };
+        } else {
+            error!("Failed to send ApplyPeerConfiguration message, because no PeerConfiguration found for peer: {peer_id}")
+        }
 
         let timeout_duration = self.options.peer_disconnect_timeout;
 

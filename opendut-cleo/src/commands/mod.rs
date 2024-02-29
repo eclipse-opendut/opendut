@@ -3,3 +3,4 @@ pub mod cluster_deployment;
 pub mod device;
 pub mod peer;
 pub mod network_configuration;
+pub mod executor;

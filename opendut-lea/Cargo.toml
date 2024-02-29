@@ -19,6 +19,7 @@ leptos_router = { workspace = true, features = ["csr"] }
 leptos-use = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 slotmap = { workspace = true }
+strum = { workspace = true }
 thiserror = { workspace = true }
 tonic = { workspace = true }
 tonic-web-wasm-client = { workspace = true }

@@ -3,6 +3,7 @@ use crate::util::Ior;
 pub mod readonly_input;
 pub mod user_input;
 pub mod user_textarea;
+pub mod vector_user_input;
 
 pub type UserInputError = String;
 pub type UserInputValue = Ior<UserInputError, String>;

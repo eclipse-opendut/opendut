@@ -1,6 +1,7 @@
 use crate::proto;
 use crate::proto::{ConversionError, ConversionErrorBuilder};
 use crate::proto::vpn::VpnPeerConfig;
+use crate::proto::executor;
 
 include!(concat!(env!("OUT_DIR"), "/opendut.types.peer.rs"));
 
@@ -136,6 +137,7 @@ impl From<crate::peer::PeerDescriptor> for PeerDescriptor {
             location: Some(value.location.unwrap_or_default().into()),
             network_configuration: Some(value.network_configuration.into()),
             topology: Some(value.topology.into()),
+            executors: Some(value.executors.into()),
         }
     }
 }
@@ -166,12 +168,41 @@ impl TryFrom<PeerDescriptor> for crate::peer::PeerDescriptor {
             .ok_or(ErrorBuilder::new("Topology not set"))?
             .try_into()?;
 
+        let executors = value.executors
+            .ok_or(ErrorBuilder::new("Executor not set"))?
+            .try_into()?;
+        
         Ok(crate::peer::PeerDescriptor {
             id,
             name,
             location,
             network_configuration,
             topology,
+            executors,
+        })
+    }
+}
+
+impl From<crate::peer::PeerConfiguration> for PeerConfiguration {
+    fn from(value: crate::peer::PeerConfiguration) -> Self {
+        Self {
+            executors: Some(value.executors.into()),
+        }
+    }
+}
+
+impl TryFrom<PeerConfiguration> for crate::peer::PeerConfiguration {
+    type Error = ConversionError;
+
+    fn try_from(value: PeerConfiguration) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<PeerConfiguration, crate::peer::PeerConfiguration>;
+
+        let executors = value.executors
+            .ok_or(ErrorBuilder::new("Executor not set"))?
+            .try_into()?;
+
+        Ok(crate::peer::PeerConfiguration {
+            executors,
         })
     }
 }

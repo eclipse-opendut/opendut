@@ -1,6 +1,7 @@
 use leptos::{RwSignal, SignalGetUntracked};
 
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkConfiguration, PeerNetworkInterface};
+use opendut_types::peer::executor::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine, ExecutorDescriptor, ExecutorDescriptors};
 use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
 use opendut_types::util::net::NetworkInterfaceName;
 
@@ -8,6 +9,7 @@ use crate::components::UserInputValue;
 
 pub const EMPTY_DEVICE_NAME_ERROR_MESSAGE: &str = "Enter a valid device name.";
 pub const EMPTY_DEVICE_INTERFACE_ERROR_MESSAGE: &str = "Enter a valid interface name!";
+pub const EMPTY_CONTAINER_IMAGE_ERROR_MESSAGE: &str = "Enter a valid container image.";
 
 #[derive(thiserror::Error, Clone, Debug)]
 #[allow(clippy::enum_variant_names)] // "all variants have the same prefix: `Invalid`"
@@ -18,6 +20,8 @@ pub enum PeerMisconfigurationError {
     InvalidDevice(DeviceMisconfigurationError),
     #[error("Invalid network configuration")]
     InvalidPeerNetworkConfiguration,
+    #[error("Invalid peer executor")]
+    InvalidPeerExecutor,
 }
 
 #[derive(thiserror::Error, Clone, Debug)]
@@ -40,8 +44,32 @@ pub struct UserPeerConfiguration {
     pub location: UserInputValue,
     pub devices: Vec<RwSignal<UserDeviceConfiguration>>,
     pub network_interfaces: Vec<RwSignal<UserPeerNetworkInterface>>,
+    pub executors: Vec<RwSignal<UserPeerExecutor>>,
     pub is_new: bool,
 }
+
+#[derive(Clone, Debug)]
+pub enum UserPeerExecutor {
+    Container {
+        engine: Engine,
+        name: UserInputValue,
+        image: UserInputValue,
+        volumes: Vec<RwSignal<UserInputValue>>,
+        devices: Vec<RwSignal<UserInputValue>>,
+        envs: Vec<RwSignal<UserContainerEnv>>,
+        ports: Vec<RwSignal<UserInputValue>>,
+        command: UserInputValue,
+        args: Vec<RwSignal<UserInputValue>>,
+        is_collapsed: bool,
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct UserContainerEnv {
+    pub name: UserInputValue,
+    pub value: UserInputValue
+}
+
 
 #[derive(Clone, Debug)]
 pub struct UserPeerNetworkInterface {
@@ -93,12 +121,24 @@ impl TryFrom<UserPeerConfiguration> for PeerDescriptor {
                     .map_err(PeerMisconfigurationError::InvalidDevice)
             })
             .collect::<Result<Vec<_>, _>>()?;
+        let executors = configuration
+            .executors
+            .into_iter()
+            .map(|signal| signal.get_untracked())
+            .map(|executor| {
+                ExecutorDescriptor::try_from(executor)
+                    .map_err(|_|  PeerMisconfigurationError::InvalidPeerExecutor)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(PeerDescriptor {
             id: configuration.id,
             name,
             location: Some(location),
             network_configuration: PeerNetworkConfiguration::new(network_interfaces),
             topology: Topology::new(devices),
+            executors: ExecutorDescriptors {
+                executors
+            },
         })
     }
 }
@@ -147,3 +187,99 @@ impl TryFrom<UserPeerNetworkInterface> for PeerNetworkInterface {
         })
     }
 }
+
+impl TryFrom<UserPeerExecutor> for ExecutorDescriptor {
+    type Error = PeerMisconfigurationError;
+
+    fn try_from(configuration: UserPeerExecutor) -> Result<Self, Self::Error> {
+        match configuration {
+            UserPeerExecutor::Container {
+                engine,
+                name,
+                image,
+                volumes,
+                devices,
+                envs,
+                ports,
+                command,
+                args,
+                ..
+            } => {
+                let name = name
+                    .right_ok_or(PeerMisconfigurationError::InvalidPeerExecutor)
+                    .and_then(|name| {
+                        ContainerName::try_from(name)
+                            .map_err(|_| PeerMisconfigurationError::InvalidPeerExecutor)
+                    })?;
+                let image = image
+                    .right_ok_or(PeerMisconfigurationError::InvalidPeerExecutor)
+                    .and_then(|description| {
+                        ContainerImage::try_from(description)
+                            .map_err(|_| PeerMisconfigurationError::InvalidPeerExecutor)
+                    })?;
+                let command = command
+                    .right_ok_or(PeerMisconfigurationError::InvalidPeerExecutor)
+                    .and_then(|command| {
+                        ContainerCommand::try_from(command)
+                            .map_err(|_| PeerMisconfigurationError::InvalidPeerExecutor)
+                    })?;
+                let volumes = volumes
+                    .into_iter()
+                    .map(|signal| signal.get_untracked())
+                    .map(|volume| {
+                        volume.right_ok_or(PeerMisconfigurationError::InvalidPeerExecutor)
+                            .and_then(|volume| ContainerVolume::try_from(volume).map_err(|_| PeerMisconfigurationError::InvalidPeerExecutor))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                let devices = devices
+                    .into_iter()
+                    .map(|signal| signal.get_untracked())
+                    .map(|device| {
+                        device.right_ok_or(PeerMisconfigurationError::InvalidPeerExecutor)
+                            .and_then(|device| ContainerDevice::try_from(device).map_err(|_| PeerMisconfigurationError::InvalidPeerExecutor))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                let ports = ports
+                    .into_iter()
+                    .map(|signal| signal.get_untracked())
+                    .map(|port| {
+                        port.right_ok_or(PeerMisconfigurationError::InvalidPeerExecutor)
+                            .and_then(|port| ContainerPortSpec::try_from(port).map_err(|_| PeerMisconfigurationError::InvalidPeerExecutor))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                let args = args
+                    .into_iter()
+                    .map(|signal| signal.get_untracked())
+                    .map(|arg| {
+                        arg.right_ok_or(PeerMisconfigurationError::InvalidPeerExecutor)
+                            .and_then(|arg| ContainerCommandArgument::try_from(arg).map_err(|_| PeerMisconfigurationError::InvalidPeerExecutor))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                let envs = envs
+                    .into_iter()
+                    .map(|signal| signal.get_untracked())
+                    .map(|env| {
+                        env.name.right_ok_or(PeerMisconfigurationError::InvalidPeerExecutor)
+                            .and_then(|name| env.value.right_ok_or(PeerMisconfigurationError::InvalidPeerExecutor)
+                                .and_then(|value| ContainerEnvironmentVariable::new(name, value)
+                                    .map_err(|_| PeerMisconfigurationError::InvalidPeerExecutor)))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                Ok(ExecutorDescriptor::Container {
+                    engine,
+                    name,
+                    image,
+                    volumes,
+                    devices,
+                    envs,
+                    ports,
+                    command,
+                    args,
+                })
+                
+            }
+        }
+        
+    }
+}
+

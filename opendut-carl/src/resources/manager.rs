@@ -81,11 +81,13 @@ impl Default for ResourcesManager {
 #[cfg(test)]
 mod test {
     use std::collections::HashSet;
+    use std::vec;
 
     use googletest::prelude::*;
 
     use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkConfiguration, PeerNetworkInterface};
+    use opendut_types::peer::executor::{ContainerCommand, ContainerImage, ContainerName, Engine, ExecutorDescriptor, ExecutorDescriptors};
     use opendut_types::topology::Topology;
     use opendut_types::util::net::NetworkInterfaceName;
 
@@ -109,6 +111,18 @@ mod test {
                 ]
             },
             topology: Topology::default(),
+            executors: ExecutorDescriptors {
+                executors: vec![ExecutorDescriptor::Container { 
+                    engine: Engine::Docker, 
+                    name: ContainerName::Empty, 
+                    image: ContainerImage::try_from("testUrl").unwrap(), 
+                    volumes: vec![], 
+                    devices: vec![], 
+                    envs: vec![], 
+                    ports: vec![], 
+                    command: ContainerCommand::Default, 
+                    args: vec![] }],
+            }
         };
 
         let cluster_resource_id = ClusterId::random();

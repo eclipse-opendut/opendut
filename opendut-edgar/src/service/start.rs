@@ -6,14 +6,17 @@ use std::time::Duration;
 
 use anyhow::Context;
 use config::Config;
+use tokio::process::Command;
 use tokio::sync::mpsc::Sender;
 use tokio::time::sleep;
+use tracing::debug;
 
 use opendut_carl_api::proto::services::peer_messaging_broker;
-use opendut_carl_api::proto::services::peer_messaging_broker::AssignCluster;
+use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, AssignCluster};
 use opendut_carl_api::proto::services::peer_messaging_broker::downstream::Message;
 use opendut_types::cluster::ClusterAssignment;
-use opendut_types::peer::PeerId;
+use opendut_types::peer::{PeerConfiguration, PeerId};
+use opendut_types::peer::executor::{ContainerCommand, ContainerName, Engine, ExecutorDescriptor};
 use opendut_types::util::net::NetworkInterfaceName;
 use opendut_util::logging;
 
@@ -171,7 +174,67 @@ async fn handle_stream_message(
                 }
                 _ => ignore(message),
             }
-            Message::ApplyVpnConfig(_) => {}
+            Message::ApplyPeerConfiguration(message) => match message {
+                ApplyPeerConfiguration { configuration: Some(configuration) } => {
+                    log::info!("Received configuration: {configuration:?}");
+                    match PeerConfiguration::try_from(configuration) {
+                        Err(error) => log::error!("Illegal PeerConfiguration: {error}"),
+                        Ok(configuration) => {
+                            for executor in configuration.executors.executors {
+                                match executor {
+                                    ExecutorDescriptor::Executable => log::warn!("Executing Executable not yet implemented."),
+                                    ExecutorDescriptor::Container {
+                                        engine,
+                                        name,
+                                        image,
+                                        volumes,
+                                        devices,
+                                        envs,
+                                        ports,
+                                        command,
+                                        args
+                                    } => {
+                                        let engine = match engine {
+                                            Engine::Docker => { "docker" }
+                                            Engine::Podman => { "podman" }
+                                        };
+                                        let mut cmd = Command::new(engine);
+                                        cmd.arg("run");
+                                        if let ContainerName::Value(name) = name {
+                                            cmd.args(["--name", name.as_str()]);
+                                        }
+                                        for port in ports {
+                                            cmd.args(["--publish", port.value()]);
+                                        }
+                                        for volume in volumes {
+                                            cmd.args(["--volume", volume.value()]);
+                                        }
+                                        for device in devices {
+                                            cmd.args(["--devices", device.value()]);
+                                        }
+                                        for env in envs {
+                                            cmd.args(["--env", &format!("{}={}", env.name(), env.value())]);
+                                        }
+                                        cmd.arg(image.value());
+                                        if let ContainerCommand::Value(command) = command {
+                                            cmd.arg(command.as_str());
+                                        }
+                                        for arg in args {
+                                            cmd.arg(arg.value());
+                                        }
+                                        debug!("Command: {:?}", cmd);
+                                        match cmd.spawn() {
+                                            Ok(_) => { log::info!("Container started.") }
+                                            Err(_) => { log::error!("Failed to start container.") }
+                                        };
+                                    }
+                                }
+                            }
+                        }
+                    };
+                }
+                _ => ignore(message),
+            }
         }
     } else {
         ignore(message)

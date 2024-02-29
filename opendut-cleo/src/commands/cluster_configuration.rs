@@ -32,18 +32,18 @@ pub mod create {
         let devices = devices.into_iter()
             .map(Result::unwrap)
             .collect::<Vec<_>>();
-        if devices.len() < 2 {
-            Err("Specify at least 2 devices per cluster configuration.".to_string())?
-        }
         let device_names = devices.clone().into_iter()
             .map(|device| device.name)
             .collect::<Vec<_>>();
-        let device_ids = devices.into_iter()
+        let device_ids = devices.clone().into_iter()
             .map(|device| device.id)
             .collect::<HashSet<_>>();
         let errors = errors.into_iter().map(Result::unwrap_err).collect::<Vec<_>>();
         if !errors.is_empty() {
             Err(format!("Could not create cluster configuration:\n  {}", errors.join("\n  ")))?
+        }
+        if devices.len() < 2 {
+            Err("Specify at least 2 devices per cluster configuration.".to_string())?
         }
 
         let configuration = ClusterConfiguration { id: cluster_id, name: Clone::clone(&name), leader, devices: device_ids };

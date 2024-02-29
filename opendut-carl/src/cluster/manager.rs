@@ -272,6 +272,7 @@ mod test {
 
     use opendut_types::cluster::ClusterName;
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkConfiguration, PeerNetworkInterface};
+    use opendut_types::peer::executor::{ContainerCommand, ContainerImage, ContainerName, Engine, ExecutorDescriptor, ExecutorDescriptors};
     use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
     use opendut_types::util::net::NetworkInterfaceName;
 
@@ -329,6 +330,18 @@ mod test {
                     }
                 ]
             },
+            executors: ExecutorDescriptors {
+                executors: vec![ExecutorDescriptor::Container {
+                    engine: Engine::Docker,
+                    name: ContainerName::Empty,
+                    image: ContainerImage::try_from("testUrl").unwrap(),
+                    volumes: vec![],
+                    devices: vec![],
+                    envs: vec![],
+                    ports: vec![],
+                    command: ContainerCommand::Default,
+                    args: vec![] }],
+            },
         };
 
         let peer_b_id = PeerId::random();
@@ -354,6 +367,18 @@ mod test {
                         tags: vec![],
                     }
                 ]
+            },
+            executors: ExecutorDescriptors {
+                executors: vec![ExecutorDescriptor::Container {
+                    engine: Engine::Docker,
+                    name: ContainerName::Empty,
+                    image: ContainerImage::try_from("testUrl").unwrap(),
+                    volumes: vec![],
+                    devices: vec![],
+                    envs: vec![],
+                    ports: vec![],
+                    command: ContainerCommand::Default,
+                    args: vec![] }],
             },
         };
 
@@ -427,6 +452,15 @@ mod test {
             })
         };
 
+        async fn receive_peer_configuration_message(peer_rx: &mut mpsc::Receiver<Message>) {
+            let message = tokio::time::timeout(Duration::from_millis(500), peer_rx.recv()).await;
+
+            match message {
+                Ok(Some(Message::ApplyPeerConfiguration(_))) => {}
+                _ => panic!("Did not receive valid message. Received this instead: {message:?}")
+            }
+        }
+
         async fn receive_cluster_assignment(peer_rx: &mut mpsc::Receiver<Message>) -> ClusterAssignment {
             let message = tokio::time::timeout(Duration::from_millis(500), peer_rx.recv()).await;
 
@@ -437,6 +471,9 @@ mod test {
             }
         }
 
+        receive_peer_configuration_message(&mut peer_a_rx).await;
+        receive_peer_configuration_message(&mut peer_b_rx).await;
+        
         assert_that!(receive_cluster_assignment(&mut peer_a_rx).await, Clone::clone(&expectation)());
         assert_that!(receive_cluster_assignment(&mut peer_b_rx).await, expectation());
 
@@ -499,6 +536,18 @@ mod test {
                 },
                 topology: Topology {
                     devices,
+                },
+                executors: ExecutorDescriptors {
+                    executors: vec![ExecutorDescriptor::Container {
+                        engine: Engine::Docker,
+                        name: ContainerName::Empty,
+                        image: ContainerImage::try_from("testUrl").unwrap(),
+                        volumes: vec![],
+                        devices: vec![],
+                        envs: vec![],
+                        ports: vec![],
+                        command: ContainerCommand::Default,
+                        args: vec![] }],
                 },
             }
         }

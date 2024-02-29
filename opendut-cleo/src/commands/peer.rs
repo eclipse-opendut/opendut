@@ -20,7 +20,7 @@ pub mod list {
         #[table(title = "Location")]
         location: PeerLocation,
         #[table(title = "NetworkConfiguration")]
-        network_configuration: String,
+        network_configuration: String
     }
 
     #[derive(Debug, PartialEq, Serialize)]
@@ -87,7 +87,7 @@ pub mod list {
                     id: peer.id,
                     location: Clone::clone(&peer.location.clone().unwrap_or_default()),
                     network_configuration: interfaces.join(", "),
-                    status,
+                    status
                 }
             })
             .collect::<Vec<PeerTable>>()
@@ -98,6 +98,7 @@ pub mod list {
         use googletest::prelude::*;
 
         use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkConfiguration, PeerNetworkInterface};
+        use opendut_types::peer::executor::ExecutorDescriptors;
         use opendut_types::util::net::NetworkInterfaceName;
 
         use super::*;
@@ -114,6 +115,9 @@ pub mod list {
                     })
                 },
                 topology: Default::default(),
+                executors: ExecutorDescriptors {
+                    executors: vec![]
+                }
             }];
             let connected_peers = vec![all_peers[0].id];
             assert_that!(
@@ -235,9 +239,10 @@ pub mod create {
     use console::Style;
     use uuid::Uuid;
 
-    use crate::CreateOutputFormat;
+    use crate::{CreateOutputFormat};
     use opendut_carl_api::carl::CarlClient;
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
+    use opendut_types::peer::executor::{ExecutorDescriptors};
 
     pub async fn execute(
         carl: &mut CarlClient,
@@ -255,13 +260,16 @@ pub mod create {
             .map(PeerLocation::try_from)
             .transpose()
             .map_err(|error| format!("Could not create peer.\n  {}", error))?;
-
+        
         let descriptor: PeerDescriptor = PeerDescriptor {
             id,
             name: Clone::clone(&name),
             location,
             network_configuration: Default::default(),
             topology: Default::default(),
+            executors: ExecutorDescriptors {
+                executors: vec![],
+            }
         };
         carl.peers
             .store_peer_descriptor(descriptor.clone())

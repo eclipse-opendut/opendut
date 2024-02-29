@@ -231,6 +231,7 @@ mod tests {
     use url::Url;
 
     use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkConfiguration, PeerNetworkInterface};
+    use opendut_types::peer::executor::{ContainerCommand, ContainerImage, ContainerName, Engine, ExecutorDescriptor, ExecutorDescriptors};
     use opendut_types::proto;
     use opendut_types::topology::Topology;
     use opendut_types::util::net::NetworkInterfaceName;
@@ -275,6 +276,18 @@ mod tests {
                 ],
             },
             topology: Topology::default(),
+            executors: ExecutorDescriptors {
+                executors: vec![ExecutorDescriptor::Container {
+                    engine: Engine::Docker,
+                    name: ContainerName::Empty,
+                    image: ContainerImage::try_from("testUrl").unwrap(),
+                    volumes: vec![],
+                    devices: vec![],
+                    envs: vec![],
+                    ports: vec![],
+                    command: ContainerCommand::Default,
+                    args: vec![] }],
+            },
         };
 
         let create_peer_reply = testee.store_peer_descriptor(Request::new(

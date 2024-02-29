@@ -11,7 +11,7 @@ pub use opendut_carl_api::carl::peer::{
     ListPeerDescriptorsError,
     StorePeerDescriptorError,
 };
-use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerSetup};
+use opendut_types::peer::{PeerConfiguration, PeerDescriptor, PeerId, PeerName, PeerSetup};
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
 use opendut_types::util::net::Certificate;
 use opendut_types::vpn::VpnPeerConfiguration;
@@ -70,6 +70,9 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
                 resources.insert(device.id, Clone::clone(device));
                 log::info!("Added device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}>.");
             });
+
+            let peer_configuration = PeerConfiguration{ executors: Clone::clone(&peer_descriptor.executors) };
+            resources.insert(peer_id, peer_configuration);
 
             resources.insert(peer_id, peer_descriptor);
 
@@ -285,6 +288,7 @@ mod test {
     use rstest::*;
 
     use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkConfiguration, PeerNetworkInterface};
+    use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorDescriptors};
     use opendut_types::topology::{DeviceDescription, DeviceName, Topology};
     use opendut_types::util::net::NetworkInterfaceName;
 
@@ -394,6 +398,9 @@ mod test {
                     }
                 ]
             },
+            executors: ExecutorDescriptors {
+                executors: vec![],
+            }
         };
         Fixture {
             resources_manager: Arc::new(ResourcesManager::new()),
