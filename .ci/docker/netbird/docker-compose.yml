@@ -30,6 +30,7 @@ services:
       start_period: 90s
     networks:
       opendutnet:
+        ipv4_address: 192.168.32.214
         aliases:
           - netbird-management-container
 

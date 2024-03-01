@@ -53,11 +53,6 @@ vagrant up
 vagrant ssh
 ```
 
-## Custom root certificate authority
-Provision the virtual machine when running behind an intercepting http proxy and when the private network is disabled.
-
-```sh
-export CUSTOM_ROOT_CA=resources/development/tls/custom-ca.pem
-export OPENDUT_DISABLE_PRIVATE_NETWORK=true
-vagrant provision
-```
+## Additional notes
+You may want to configure a http proxy or a custom certificate authority. 
+Details are in the **Advance usage** section.

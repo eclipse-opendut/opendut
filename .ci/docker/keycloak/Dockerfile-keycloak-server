@@ -4,6 +4,8 @@ FROM maven:3.9-eclipse-temurin-21 as extension
 WORKDIR /src
 RUN git clone https://github.com/thomasdarimont/keycloak-extension-playground
 WORKDIR /src/keycloak-extension-playground/github-enterprise-identity-provider
+COPY ./.ci/docker/keycloak/maven-proxy.sh /tmp
+RUN /tmp/maven-proxy.sh
 RUN mvn clean package
 
 
