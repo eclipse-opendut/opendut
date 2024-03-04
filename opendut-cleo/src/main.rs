@@ -284,26 +284,26 @@ async fn execute() -> Result<()> {
         .build()
         .map_err(|_error| "Failed to hide cleo secrets.")?;
 
-    let config = load_config("cleo", include_str!("../cleo.toml"), FileFormat::Toml, config::Config::default(), cleo_config_hide_secrets_override)
-        .expect("Failed to load config") // TODO: Point the user to the source of the error.
-        .config;
+    let settings = load_config("cleo", include_str!("../cleo.toml"), FileFormat::Toml, config::Config::default(), cleo_config_hide_secrets_override)
+        .expect("Failed to load config"); // TODO: Point the user to the source of the error.
+
 
     let mut carl = {
 
-        let host = config.get_string("network.carl.host")
+        let host = settings.config.get_string("network.carl.host")
             .expect("Configuration should contain a valid host name to connect to CARL");
 
-        let port = config.get_int("network.carl.port")
+        let port = settings.config.get_int("network.carl.port")
             .expect("Configuration should contain a valid port number to connect to CARL");
 
-        let ca_path = PathBuf::from(config.get_string("network.tls.ca.certificate")
+        let ca_path = PathBuf::from(settings.config.get_string("network.tls.ca.certificate")
             .expect("Configuration should contain a valid path to a CA certificate to connect to CARL"));
 
-        let domain_name_override = config.get_string("network.tls.domain.name.override")
+        let domain_name_override = settings.config.get_string("network.tls.domain.name.override")
             .expect("Configuration should contain a field for 'domain.name.override'.");
         let domain_name_override = domain_name_override.is_empty().not().then_some(domain_name_override);
 
-        CarlClient::create(host, port as u16, ca_path, domain_name_override, &config)
+        CarlClient::create(host, port as u16, ca_path, domain_name_override, &settings.config)
             .expect("Failed to create CARL client")
     };
 
@@ -391,7 +391,7 @@ async fn execute() -> Result<()> {
             }
         }
         Commands::Config => {
-            println!("Show cleo configuration: {:?}", config);
+            println!("Show cleo configuration: {:?}", settings);
         }
     }
     Ok(())
