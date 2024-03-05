@@ -172,6 +172,12 @@ async fn handle_stream_message(
                 _ => ignore(message),
             }
             Message::ApplyVpnConfig(_) => {}
+            // Message::ExecuteTest(config_file_path) => {
+            //     log::trace!("Received message to start exeucting the test using config found at: {config_file_path:?}");
+
+            //     let test_executor = TestExecutor::create(network_interface_manager, config_file_path);
+                
+            // }
         }
     } else {
         ignore(message)

@@ -29,6 +29,7 @@ nix = { workspace = true, features = ["user", "fs"] }
 regex = { workspace = true }
 rtnetlink = { workspace = true }
 serde = { workspace = true, features = ["std", "derive"] }
+serde_yaml = { workspace = true}
 shadow-rs = { workspace = true }
 sha2 = { workspace = true }
 sudo = { workspace = true }
