@@ -2,15 +2,29 @@
 
 ## Pull requests
 
+### Update Branch
+
+Our goal is to maintain a linear Git history. Therefor we prefer `git rebase` over `git merge`[^ff-only]. The same applies when using the GitHub WebUI to update a PR's branch.
+
+![The Rust Logo](img/gh-ui-update-branch.png)
+
+1. __Update with merge commit__:
+
+   The first option creates a merge commit to pull in the changes from the PR's target branch and this is against our goal of a linear history, so we do __not__ use this option.
+
+2. __Update with rebase__:
+
+   The second option rebases the changes of the feature branch on top of the PR's target branch. This is the preferred option we use.
+
 ### Rebase and Merge
 
-Our goal is to maintain a linear Git history. Therefor we prefer `git rebase` over `git merge`[^ff-only]. A problem arises when working with [pull requests (PR)](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests), because the GitHub WebUI offers ineligible options to merge a feature-branch:
+As sayed above, our goal is to maintain a linear Git history. A problem arises when we want to merge [pull requests (PR)](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests), because the GitHub WebUI offers ineligible options to merge a branch:
 
 ![The Rust Logo](img/gh-ui-merge-branch.png)
 
 1. __Create a merge commit__:
 
-    The first option creates a merge commit to pull in the changes from the PR's target branch and this is against our goal of a linear history, so we disabled this option.
+    The first option creates a merge commit to pull in the changes from the PR's branch and this is against our goal of a linear history, so we disabled this option.
 
 2. __Squash and merge__:
 
@@ -40,7 +54,7 @@ This example illustrates the procedure to merge a feature branch `fubar` into a 
    ```shell
    git rebase development
    ```
-   At this point it can happen that you have to resolve merge conflicts. It is also a good moment to run test and validation tasks to verify the changes.
+   This is a good moment to run test and validation tasks locally to verify the changes.
 
 4. Switch to the target branch.
    ```shell
@@ -76,7 +90,7 @@ This example illustrates the procedure to merge a feature branch `foo` from a fo
    ```shell
    git rebase development
    ```
-   At this point it can happen that you have to resolve merge conflicts. It is also a good moment to run test and validation tasks to verify the changes.
+   This is a good moment to run test and validation tasks locally to verify the changes.
 
 4. Switch to the target branch.
    ```shell
