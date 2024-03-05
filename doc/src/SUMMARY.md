@@ -9,6 +9,7 @@
 - [Developer Manual](development/index.md)
   - [Getting Started](development/getting-started.md)
   - [Starting Applications](development/starting-applications.md)
+  - [Git Workflow](development/git-workflow.md)
   - [Building a Release](development/building-a-release.md)
   - [Test Environment](development/testenv/index.md)
     - [Setup openDuT VM on Linux](development/testenv/theo-setup-vm-linux.md)
