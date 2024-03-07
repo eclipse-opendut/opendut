@@ -22,7 +22,7 @@ use opendut_util::{logging, project};
 use opendut_util::logging::LoggingConfig;
 use opendut_util::settings::LoadedConfig;
 
-use crate::cluster::manager::{ClusterManager, ClusterManagerRef};
+use crate::cluster::manager::{ClusterManager, ClusterManagerOptions, ClusterManagerRef};
 use crate::grpc::{ClusterManagerService, MetadataProviderService, PeerManagerService, PeerMessagingBrokerService};
 use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerOptions, PeerMessagingBrokerRef};
 use crate::resources::manager::{ResourcesManager, ResourcesManagerRef};
@@ -96,6 +96,7 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
         Arc::clone(&resources_manager),
         Arc::clone(&peer_messaging_broker),
         Clone::clone(&vpn),
+        ClusterManagerOptions::load(&settings.config)?,
     ));
 
     /// Isolation in function returning BoxFuture needed due to this: https://github.com/rust-lang/rust/issues/102211#issuecomment-1397600424

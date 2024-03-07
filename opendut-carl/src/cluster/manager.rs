@@ -12,6 +12,7 @@ use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::peer::state::PeerState;
 use opendut_types::topology::DeviceId;
 use opendut_types::util::net::NetworkInterfaceName;
+use opendut_types::util::Port;
 
 use crate::actions;
 use crate::actions::ListPeerDescriptorsParams;
@@ -48,18 +49,21 @@ pub struct ClusterManager {
     resources_manager: ResourcesManagerRef,
     peer_messaging_broker: PeerMessagingBrokerRef,
     vpn: Vpn,
+    options: ClusterManagerOptions,
 }
 
 impl ClusterManager {
     pub fn new(
         resources_manager: ResourcesManagerRef,
         peer_messaging_broker: PeerMessagingBrokerRef,
-        vpn: Vpn
+        vpn: Vpn,
+        options: ClusterManagerOptions,
     ) -> Self {
         Self {
             resources_manager,
             peer_messaging_broker,
             vpn,
+            options,
         }
     }
     #[tracing::instrument(name = "cluster::manager::deploy", skip(self), level="trace")]
@@ -94,11 +98,16 @@ impl ClusterManager {
             log::debug!("VPN disabled. Not creating VPN group.")
         }
 
+        let port_start = self.options.can_server_port_range_start;
+        let port_end = self.options.can_server_port_range_start + u16::try_from(member_interface_mapping.len()).unwrap();
+        let can_server_ports = (port_start..port_end)
+            .map(Port)
+            .collect::<Vec<_>>();
 
         let member_assignments: Vec<Result<PeerClusterAssignment, DeployClusterError>> = {
-            let assignment_futures = member_interface_mapping.into_iter()
-                .map(|(peer_id, device_interfaces)| {
-                    self.resources_manager.get::<PeerState>(peer_id).map(move |peer_state| {
+            let assignment_futures = std::iter::zip(member_interface_mapping, can_server_ports)
+                .map(|((peer_id, device_interfaces), can_server_port)| {
+                    self.resources_manager.get::<PeerState>(peer_id).map(move |peer_state: Option<PeerState>| {
                         let vpn_address = match peer_state {
                             Some(PeerState::Up { remote_host, .. }) => {
                                 Ok(remote_host)
@@ -111,7 +120,7 @@ impl ClusterManager {
                             }
                         };
                         vpn_address.map(|vpn_address|
-                            PeerClusterAssignment { peer_id, vpn_address, device_interfaces }
+                            PeerClusterAssignment { peer_id, vpn_address, can_server_port, device_interfaces }
                         )
                     })
                 })
@@ -229,6 +238,20 @@ fn determine_member_interface_mapping(
     }
     Ok(result)
 }
+
+#[derive(Clone)]
+pub struct ClusterManagerOptions {
+    pub can_server_port_range_start: u16,
+}
+impl ClusterManagerOptions {
+    pub fn load(config: &config::Config) -> Result<Self, opendut_util::settings::LoadError> {
+        let can_server_port_range_start = config.get::<u16>("peer.can.server_port_range_start")?;
+
+        Ok(ClusterManagerOptions {
+            can_server_port_range_start,
+        })
+    }
+}
 #[derive(Debug, thiserror::Error)]
 enum DetermineMemberInterfaceMappingError {
     #[error("Peer for device <{device_id}> not found.")]
@@ -269,10 +292,13 @@ mod test {
             PeerMessagingBrokerOptions::load(&settings.config)?,
         ));
 
+        let cluster_manager_options = ClusterManagerOptions::load(&settings.config)?;
+
         let testee = ClusterManager::new(
             Arc::clone(&resources_manager),
             Arc::clone(&broker),
             Vpn::Disabled,
+            cluster_manager_options.clone(),
         );
 
         let peer_a_device_1 = DeviceId::random();
@@ -367,18 +393,36 @@ mod test {
             matches_pattern!(ClusterAssignment {
                 id: eq(cluster_id),
                 leader: eq(leader_id),
-                assignments: unordered_elements_are![
-                    eq(PeerClusterAssignment {
-                        peer_id: peer_a_id,
-                        vpn_address: peer_a_remote_host,
-                        device_interfaces: peer_a.topology.devices.into_iter().map(|device| device.interface).collect(),
-                    }),
-                    eq(PeerClusterAssignment {
-                        peer_id: peer_b_id,
-                        vpn_address: peer_b_remote_host,
-                        device_interfaces: peer_b.topology.devices.into_iter().map(|device| device.interface).collect(),
-                    }),
-                ],
+                assignments: any![
+                    unordered_elements_are![
+                        eq(PeerClusterAssignment {
+                            peer_id: peer_a_id,
+                            vpn_address: peer_a_remote_host,
+                            can_server_port: Port(cluster_manager_options.can_server_port_range_start + 1),
+                            device_interfaces: peer_a.topology.devices.clone().into_iter().map(|device| device.interface).collect(),
+                        }),
+                        eq(PeerClusterAssignment {
+                            peer_id: peer_b_id,
+                            vpn_address: peer_b_remote_host,
+                            can_server_port: Port(cluster_manager_options.can_server_port_range_start),
+                            device_interfaces: peer_b.topology.devices.clone().into_iter().map(|device| device.interface).collect(),
+                        }),
+                    ],
+                    unordered_elements_are![
+                        eq(PeerClusterAssignment {
+                            peer_id: peer_a_id,
+                            vpn_address: peer_a_remote_host,
+                            can_server_port: Port(cluster_manager_options.can_server_port_range_start),
+                            device_interfaces: peer_a.topology.devices.into_iter().map(|device| device.interface).collect(),
+                        }),
+                        eq(PeerClusterAssignment {
+                            peer_id: peer_b_id,
+                            vpn_address: peer_b_remote_host,
+                            can_server_port: Port(cluster_manager_options.can_server_port_range_start + 1),
+                            device_interfaces: peer_b.topology.devices.into_iter().map(|device| device.interface).collect(),
+                        }),
+                    ],
+                ]
             })
         };
 
@@ -413,6 +457,7 @@ mod test {
             Arc::clone(&resources_manager),
             Arc::clone(&broker),
             Vpn::Disabled,
+            ClusterManagerOptions::load(&settings.config)?,
         );
 
         let unknown_cluster = ClusterId::random();

@@ -40,7 +40,8 @@ message ClusterAssignment {
 message PeerClusterAssignment {
   opendut.types.peer.PeerId peer_id = 1;
   opendut.types.util.IpAddress vpn_address = 2;
-  repeated opendut.types.util.NetworkInterfaceName device_interfaces = 3;
+  opendut.types.util.Port can_server_port = 3;
+  repeated opendut.types.util.NetworkInterfaceName device_interfaces = 4;
 }
 // ANCHOR_END: PeerClusterAssignment
 
