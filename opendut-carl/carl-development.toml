@@ -13,3 +13,7 @@ ui.directory = "./opendut-lea/dist/"
 
 [vpn]
 enabled = false
+
+[opentelemetry]
+enabled = true
+endpoint = "http://localhost:4317"

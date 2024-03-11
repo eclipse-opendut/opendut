@@ -33,3 +33,8 @@ auth.type = ""
 auth.secret = ""
 timeout.ms = 10000
 retries = 5
+
+[opentelemetry]
+enabled = false
+endpoint = ""
+service_name = "opendut-carl"

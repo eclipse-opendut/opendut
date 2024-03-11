@@ -18,7 +18,9 @@ use tower_http::services::{ServeDir, ServeFile};
 use tracing::{debug, info};
 use url::Url;
 
-use opendut_util::project;
+use opendut_util::{logging, project};
+use opendut_util::logging::LoggingConfig;
+use opendut_util::settings::LoadedConfig;
 
 use crate::cluster::manager::{ClusterManager, ClusterManagerRef};
 use crate::grpc::{ClusterManagerService, MetadataProviderService, PeerManagerService, PeerMessagingBrokerService};
@@ -34,13 +36,24 @@ mod actions;
 mod cluster;
 mod peer;
 mod resources;
-mod settings;
+pub mod settings;
 mod vpn;
 
-pub async fn create(settings_override: config::Config) -> Result<()> {
-
+#[tracing::instrument]
+pub async fn create_with_logging(settings_override: config::Config) -> Result<()> {
     let settings = settings::load_with_overrides(settings_override)?;
 
+    let logging_config = LoggingConfig::load(&settings.config)?;
+    let mut shutdown = logging::initialize_with_config(logging_config)?;
+
+    create(settings).await?;
+
+    shutdown.shutdown();
+
+    Ok(())
+}
+
+pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
     info!("Started with configuration: {settings:?}");
 
     let address: SocketAddr = {
@@ -87,6 +100,7 @@ pub async fn create(settings_override: config::Config) -> Result<()> {
 
     /// Isolation in function returning BoxFuture needed due to this: https://github.com/rust-lang/rust/issues/102211#issuecomment-1397600424
     #[allow(clippy::too_many_arguments)]
+    #[tracing::instrument(name = "spawn_server", skip(peer_messaging_broker, cluster_manager, resources_manager, vpn), level="TRACE")]
     fn spawn_server(
         address: SocketAddr,
         tls_config: RustlsConfig,
@@ -97,7 +111,6 @@ pub async fn create(settings_override: config::Config) -> Result<()> {
         carl_url: Url,
         settings: config::Config,
     ) -> BoxFuture<'static, Result<()>> {
-
         let grpc = Server::builder()
             .accept_http1(true) //gRPC-web uses HTTP1
             .add_service(
@@ -133,7 +146,7 @@ pub async fn create(settings_override: config::Config) -> Result<()> {
                 .expect("Failed to find configuration for `network.oidc.lea`.");
             let scopes = lea_idp_config.scopes.trim_matches('"').split(',').collect::<Vec<_>>();
             for scope in scopes.clone() {
-                if !scope.chars().all(|c|c.is_ascii_alphabetic()) {
+                if !scope.chars().all(|c| c.is_ascii_alphabetic()) {
                     panic!("Failed to parse comma-separated OIDC scopes for LEA. Scopes must only contain ASCII alphabetic characters. Found: {:?}. Parsed as: {:?}", lea_idp_config.scopes, scopes);
                 }
             }

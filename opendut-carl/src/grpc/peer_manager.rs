@@ -40,6 +40,7 @@ impl PeerManagerFacade {
 #[tonic::async_trait]
 impl PeerManagerService for PeerManagerFacade {
 
+    #[tracing::instrument(name = "grpc::peer_manager::store_peer_descriptor", skip(self), level="trace")]
     async fn store_peer_descriptor(&self, request: Request<StorePeerDescriptorRequest>) -> Result<Response<StorePeerDescriptorResponse>, Status> {
 
         log::trace!("Received request: {:?}", request);
@@ -71,6 +72,7 @@ impl PeerManagerService for PeerManagerFacade {
         }
     }
 
+    #[tracing::instrument(name = "grpc::peer_manager::delete_peer_descriptor", skip(self), level="trace")]
     async fn delete_peer_descriptor(&self, request: Request<DeletePeerDescriptorRequest>) -> Result<Response<DeletePeerDescriptorResponse>, Status> {
 
         log::trace!("Received request: {:?}", request);
@@ -103,6 +105,7 @@ impl PeerManagerService for PeerManagerFacade {
         }
     }
 
+    #[tracing::instrument(name = "grpc::peer_manager::get_peer_descriptor", skip(self), level="trace")]
     async fn get_peer_descriptor(&self, request: Request<GetPeerDescriptorRequest>) -> Result<Response<GetPeerDescriptorResponse>, Status> {
 
         log::trace!("Received request: {:?}", request);
@@ -139,6 +142,7 @@ impl PeerManagerService for PeerManagerFacade {
         }
     }
 
+    #[tracing::instrument(name = "grpc::peer_manager::list_peer_descriptor", skip(self), level="trace")]
     async fn list_peer_descriptors(&self, request: Request<ListPeerDescriptorsRequest>) -> Result<Response<ListPeerDescriptorsResponse>, Status> {
 
         log::trace!("Received request: {:?}", request);
@@ -170,6 +174,7 @@ impl PeerManagerService for PeerManagerFacade {
         }
     }
 
+    #[tracing::instrument(name = "grpc::peer_manager::generate_peer_setup", skip(self), level="trace")]
     async fn generate_peer_setup(&self, request: Request<GeneratePeerSetupRequest>) -> Result<Response<GeneratePeerSetupResponse>, Status> { // TODO: Refactor error types.
 
         log::trace!("Received request: {:?}", request);
@@ -196,6 +201,7 @@ impl PeerManagerService for PeerManagerFacade {
         Ok(Response::new(GeneratePeerSetupResponse { reply: Some(response) }))
     }
 
+    #[tracing::instrument(name = "grpc::peer_manager::list_devices", skip(self), level="trace")]
     async fn list_devices(&self, request: Request<ListDevicesRequest>) -> Result<Response<ListDevicesResponse>, Status> {
 
         log::trace!("Received request: {:?}", request);

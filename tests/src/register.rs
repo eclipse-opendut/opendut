@@ -26,8 +26,9 @@ async fn register_edgar_carl() -> Result<()> {
         .set_override("network.tls.certificate", "resources/development/tls/insecure-development-carl.pem")?
         .set_override("network.tls.key", "resources/development/tls/insecure-development-carl.key")?
         .build()?;
+    let carl_settings = opendut_carl::settings::load_with_overrides(carl_config_override)?;
     let _ = tokio::spawn(async {
-        opendut_carl::create(carl_config_override).await
+        opendut_carl::create(carl_settings).await
             .expect("CARL crashed")
     });
 

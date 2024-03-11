@@ -39,7 +39,7 @@ const BANNER: &str = r"
 pub async fn launch(id_override: Option<PeerId>) -> anyhow::Result<()> {
     println!("{}", crate::app_info::formatted_with_banner(BANNER));
 
-    logging::initialize()?;
+    let _ = logging::initialize()?;
 
     let settings_override = Config::builder()
         .set_override_option(settings::key::peer::id, id_override.map(|id| id.to_string()))?
