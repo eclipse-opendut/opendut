@@ -5,7 +5,7 @@ This guide will help you set up THEO on Windows.
 ## Requirements
 The following instructions use chocolatey to install the required software. 
 If you don't have chocolatey installed, you can find the installation instructions [here](https://chocolatey.org/install).
-You may also install the required software manually or use the Windows Package Manager `winget` (Hashicorp.Vagrant, Oracle.VirtualBox, Git.Git).
+You may also install the required software manually or use the Windows Package Manager [`winget`](https://learn.microsoft.com/en-us/windows/package-manager/) (Hashicorp.Vagrant, Oracle.VirtualBox, Git.Git).
 
 * Install vagrant and virtualbox
     ```sh
