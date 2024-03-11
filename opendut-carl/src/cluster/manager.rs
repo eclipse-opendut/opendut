@@ -99,7 +99,8 @@ impl ClusterManager {
         }
 
         let port_start = self.options.can_server_port_range_start;
-        let port_end = self.options.can_server_port_range_start + u16::try_from(member_interface_mapping.len()).unwrap();
+        let port_end = self.options.can_server_port_range_start + u16::try_from(member_interface_mapping.len())
+            .map_err(|cause| DeployClusterError::Internal { cluster_id, cause: cause.to_string() })?;
         let can_server_ports = (port_start..port_end)
             .map(Port)
             .collect::<Vec<_>>();
