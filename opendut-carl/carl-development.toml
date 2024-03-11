@@ -4,6 +4,7 @@
 [network.tls]
 certificate = "resources/development/tls/insecure-development-carl.pem"
 key = "resources/development/tls/insecure-development-carl.key"
+ca = "resources/development/tls/insecure-development-ca.pem"
 
 [network.oidc]
 enabled = false

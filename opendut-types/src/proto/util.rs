@@ -1,3 +1,4 @@
+use pem::Pem;
 use crate::proto::{ConversionError, ConversionErrorBuilder};
 use crate::proto::util::ip_address::Address;
 use crate::util;
@@ -190,5 +191,22 @@ impl TryFrom<NetworkInterfaceName> for crate::util::net::NetworkInterfaceName {
 
         crate::util::net::NetworkInterfaceName::try_from(value.name)
             .map_err(|cause| ErrorBuilder::new(format!("Failed to parse InterfaceName from proto: {cause}")))
+    }
+}
+
+impl From<crate::util::net::Certificate> for Certificate {
+    fn from(value: crate::util::net::Certificate) -> Self {
+        Certificate {
+            tag: value.0.tag().to_owned(),
+            content: Vec::from(value.0.contents()),
+        }
+    }
+}
+
+impl TryFrom<Certificate> for crate::util::net::Certificate {
+    type Error = ConversionError;
+
+    fn try_from(value: Certificate) -> Result<Self, Self::Error> {
+        Ok(util::net::Certificate(Pem::new(value.tag, value.content)))
     }
 }

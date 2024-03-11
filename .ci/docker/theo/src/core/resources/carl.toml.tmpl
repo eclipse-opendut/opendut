@@ -8,8 +8,7 @@ remote.port = 443
 [network.tls]
 certificate = "resources/development/tls/carl.pem"
 key = "resources/development/tls/carl.key"
-[network.tls.ca]
-certificate = "resources/development/tls/insecure-development-ca.pem"
+ca = "resources/development/tls/insecure-development-ca.pem"
 
 [network.oidc]
 enabled = true

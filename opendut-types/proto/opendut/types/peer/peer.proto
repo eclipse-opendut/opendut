@@ -38,6 +38,7 @@ message PeerDescriptor {
 message PeerSetup {
   opendut.types.peer.PeerId id = 1;
   opendut.types.util.Url carl = 5;
+  opendut.types.util.Certificate ca = 6;
   opendut.types.vpn.VpnPeerConfig vpn = 11;
 }
 

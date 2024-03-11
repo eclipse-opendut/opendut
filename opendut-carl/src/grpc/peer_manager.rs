@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use pem::Pem;
 
 use tonic::{Request, Response, Status};
 use tonic_web::CorsGrpcWeb;
@@ -20,15 +21,17 @@ pub struct PeerManagerFacade {
     resources_manager: ResourcesManagerRef,
     vpn: Vpn,
     carl_url: Url,
+    ca: Pem,
 }
 
 impl PeerManagerFacade {
 
-    pub fn new(resources_manager: ResourcesManagerRef, vpn: Vpn, carl_url: Url) -> Self {
+    pub fn new(resources_manager: ResourcesManagerRef, vpn: Vpn, carl_url: Url, ca: Pem) -> Self {
         PeerManagerFacade {
             resources_manager,
             vpn,
             carl_url,
+            ca,
         }
     }
 
@@ -188,6 +191,7 @@ impl PeerManagerService for PeerManagerFacade {
                     resources_manager: Arc::clone(&self.resources_manager),
                     peer: peer_id,
                     carl_url: Clone::clone(&self.carl_url),
+                    ca: Clone::clone(&self.ca),
                     vpn: Clone::clone(&self.vpn),
                 }).await.map_err(|cause| Status::internal(format!("Peer setup could not be created: {}", cause)))?;
 
@@ -220,6 +224,7 @@ impl PeerManagerService for PeerManagerFacade {
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
     use std::sync::Arc;
 
     use googletest::prelude::*;
@@ -235,11 +240,27 @@ mod tests {
 
     use super::*;
 
+    pub fn get_cert() -> Pem {
+        match Pem::from_str(CERTIFICATE_AUTHORITY_STRING) {
+            Ok(cert) => { cert }
+            Err(_) => { panic!("Not a valid certificate!") }
+        }
+    }
+
+    const CERTIFICATE_AUTHORITY_STRING: &str = include_str!("../../../resources/development/tls/insecure-development-ca.pem");
+
     #[tokio::test]
     async fn test_successful_create_delete() -> Result<()> {
 
+
+
         let resources_manager = Arc::new(ResourcesManager::new());
-        let testee = PeerManagerFacade::new(Arc::clone(&resources_manager), Vpn::Disabled, Url::parse("https://example.com:1234").unwrap());
+        let testee = PeerManagerFacade::new(
+            Arc::clone(&resources_manager),
+            Vpn::Disabled,
+            Url::parse("https://example.com:1234").unwrap(),
+            get_cert(),
+        );
 
         let peer_id = PeerId::random();
         let peer_descriptor = PeerDescriptor {
@@ -311,7 +332,12 @@ mod tests {
     async fn register_fails_when_no_id_specified() -> Result<()> {
 
         let resources_manager = Arc::new(ResourcesManager::new());
-        let testee = PeerManagerFacade::new(Arc::clone(&resources_manager), Vpn::Disabled, Url::parse("https://example.com:1234").unwrap());
+        let testee = PeerManagerFacade::new(
+            Arc::clone(&resources_manager),
+            Vpn::Disabled,
+            Url::parse("https://example.com:1234").unwrap(),
+            get_cert(),
+        );
 
         let create_peer_reply = testee.store_peer_descriptor(Request::new(
             StorePeerDescriptorRequest {
@@ -344,7 +370,12 @@ mod tests {
     async fn unregister_fails_when_no_id_specified() -> Result<()> {
 
         let resources_manager = Arc::new(ResourcesManager::new());
-        let testee = PeerManagerFacade::new(Arc::clone(&resources_manager), Vpn::Disabled, Url::parse("https://example.com:1234").unwrap());
+        let testee = PeerManagerFacade::new(
+            Arc::clone(&resources_manager),
+            Vpn::Disabled,
+            Url::parse("https://example.com:1234").unwrap(),
+            get_cert(),
+        );
 
         let delete_peer_reply = testee.delete_peer_descriptor(Request::new(
             peer_manager::DeletePeerDescriptorRequest {

@@ -7,6 +7,7 @@ remote.port = 8080
 [network.tls]
 certificate = "/etc/opendut/tls/carl.pem"
 key = "/etc/opendut/tls/carl.key"
+ca = "/etc/opendut/tls/ca.pem"
 
 [network.oidc]
 enabled = false

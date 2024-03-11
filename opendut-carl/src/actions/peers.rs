@@ -1,5 +1,6 @@
 use std::ops::Not;
 use std::sync::Arc;
+use pem::Pem;
 
 use url::Url;
 
@@ -12,6 +13,7 @@ pub use opendut_carl_api::carl::peer::{
 };
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerSetup};
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
+use opendut_types::util::net::Certificate;
 use opendut_types::vpn::VpnPeerConfiguration;
 use opendut_util::ErrorOr;
 
@@ -220,6 +222,7 @@ pub struct GeneratePeerSetupParams {
     pub resources_manager: ResourcesManagerRef,
     pub peer: PeerId,
     pub carl_url: Url,
+    pub ca: Pem,
     pub vpn: Vpn,
 }
 
@@ -266,7 +269,8 @@ pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<Peer
         Ok(PeerSetup {
             id: peer_id,
             carl: params.carl_url,
-            vpn: vpn_config
+            ca: Certificate(params.ca),
+            vpn: vpn_config,
         })
     }
 

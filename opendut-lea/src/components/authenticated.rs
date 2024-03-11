@@ -75,7 +75,7 @@ pub fn InitializedAndAuthenticated(
 }
 
 fn fallback(error_message: &'static str, fallback_loading_message: &'static str) -> HtmlElement<P> {
-    return match use_app_globals().get() {
+    match use_app_globals().get() {
         Some(Err(error)) => {
             navigate_to(WellKnownRoutes::ErrorPage {
                 title: String::from(error_message),
@@ -95,5 +95,5 @@ fn fallback(error_message: &'static str, fallback_loading_message: &'static str)
                 </p>
             }
         }
-    };
+    }
 }

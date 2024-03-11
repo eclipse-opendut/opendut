@@ -10,7 +10,7 @@ use crate::util;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn register_edgar_carl() -> Result<()> {
-    logging::initialize()?;
+    let _ = logging::initialize()?;
 
     let carl_port = util::select_free_port();
     log::info!("Running test with CARL port {carl_port}.");

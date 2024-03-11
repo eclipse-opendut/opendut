@@ -17,7 +17,7 @@ services:
       - "../../../resources/development/tls/carl.key:/etc/opendut/tls/carl.key"
 
     environment:
-      #- OPENDUT_CARL_NETWORK_TLS_CERTIFICATE=/etc/opendut/tls/insecure-development-ca.pem
+      - OPENDUT_CARL_NETWORK_TLS_CA=/etc/opendut/tls/ca.pem
       - OPENDUT_CARL_NETWORK_REMOTE_HOST=carl
       - OPENDUT_CARL_NETWORK_REMOTE_PORT=443
       - OPENDUT_CARL_NETWORK_BIND_PORT=443

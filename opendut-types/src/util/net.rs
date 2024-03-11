@@ -1,4 +1,5 @@
 use std::fmt;
+use pem::Pem;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
@@ -51,3 +52,7 @@ pub enum NetworkInterfaceNameError {
     #[error("Due to operating system limitations, the name for network interfaces may not be longer than {max} characters!")]
     TooLong { value: String, max: usize }
 }
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct Certificate(pub Pem);

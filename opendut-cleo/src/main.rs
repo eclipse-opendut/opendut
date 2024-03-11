@@ -296,7 +296,7 @@ async fn execute() -> Result<()> {
         let port = settings.config.get_int("network.carl.port")
             .expect("Configuration should contain a valid port number to connect to CARL");
 
-        let ca_path = PathBuf::from(settings.config.get_string("network.tls.ca.certificate")
+        let ca_path = PathBuf::from(settings.config.get_string("network.tls.ca")
             .expect("Configuration should contain a valid path to a CA certificate to connect to CARL"));
 
         let domain_name_override = settings.config.get_string("network.tls.domain.name.override")

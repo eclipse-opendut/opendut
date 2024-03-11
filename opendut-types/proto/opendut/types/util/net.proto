@@ -6,6 +6,11 @@ message Url {
   string value = 1;
 }
 
+message Certificate {
+  string tag = 1;
+  bytes content = 2;
+}
+
 message Hostname {
   string value = 1;
 }

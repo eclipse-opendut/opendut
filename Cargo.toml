@@ -84,6 +84,7 @@ opentelemetry = "0.21.0"
 opentelemetry-otlp = "0.14.0"
 opentelemetry_sdk = "0.21.0"
 opentelemetry-semantic-conventions = "0.14.0"
+pem = {version = "3.0.3", features = ["serde"]}
 phf = { version = "0.11", features = ["macros"] }
 predicates = "3.0.4"
 prost = "0.12.1"

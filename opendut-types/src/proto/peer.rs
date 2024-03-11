@@ -180,7 +180,8 @@ impl From<crate::peer::PeerSetup> for PeerSetup {
     fn from(value: crate::peer::PeerSetup) -> Self {
         Self {
             id: Some(value.id.into()),
-            carl:  Some(value.carl.into()),
+            carl: Some(value.carl.into()),
+            ca: Some(value.ca.into()),
             vpn: Some(value.vpn.into()),
         }
     }
@@ -201,6 +202,10 @@ impl TryFrom<PeerSetup> for crate::peer::PeerSetup {
             .and_then(|url| url::Url::parse(&url.value)
                 .map_err(|cause| ErrorBuilder::new(format!("Carl URL could not be parsed: {}", cause))))?;
 
+        let ca: crate::util::net::Certificate = value.ca
+            .ok_or(ErrorBuilder::new("No CA Certificate provided."))
+            .and_then(crate::util::net::Certificate::try_from)?;
+
         let vpn: crate::vpn::VpnPeerConfiguration = value.vpn
             .ok_or(ErrorBuilder::new("VpnConfig not set"))
             .and_then(VpnPeerConfig::try_into)?;
@@ -208,6 +213,7 @@ impl TryFrom<PeerSetup> for crate::peer::PeerSetup {
         Ok(Self {
             id,
             carl,
+            ca,
             vpn,
         })
     }

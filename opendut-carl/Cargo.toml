@@ -21,6 +21,7 @@ futures = { workspace = true }
 googletest = { workspace = true }
 http = { workspace = true }
 log = { workspace = true }
+pem = { workspace = true, features = ["serde"]}
 opentelemetry = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 shadow-rs = { workspace = true }

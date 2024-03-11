@@ -9,7 +9,7 @@ use url::Url;
 use uuid::Uuid;
 
 use crate::topology::{Topology};
-use crate::util::net::{NetworkInterfaceName};
+use crate::util::net::{Certificate, NetworkInterfaceName};
 use crate::vpn::VpnPeerConfiguration;
 
 pub mod state;
@@ -250,6 +250,7 @@ pub struct PeerDescriptor {
 pub struct PeerSetup {
     pub id: PeerId,
     pub carl: Url,
+    pub ca: Certificate,
     pub vpn: VpnPeerConfiguration,
 }
 
@@ -315,6 +316,7 @@ pub struct PeerSetupDecodeError {
 #[allow(non_snake_case)]
 mod tests {
     use googletest::prelude::*;
+    use pem::Pem;
     use uuid::Uuid;
 
     use crate::vpn::netbird::SetupKey;
@@ -326,6 +328,7 @@ mod tests {
         let setup = PeerSetup {
             id: PeerId::try_from("01bf3f8c-cc7c-4114-9520-91bce71dcead").unwrap(),
             carl: Url::parse("https://carl.opendut.local")?,
+            ca: Certificate(Pem::new("Test Tag".to_string(), vec![])),
             vpn: VpnPeerConfiguration::Netbird {
                 management_url: Url::parse("https://netbird.opendut.local/api")?,
                 setup_key: SetupKey::from(Uuid::parse_str("d79c202f-bbbf-4997-844e-678f27606e1c")?),
@@ -333,7 +336,7 @@ mod tests {
         };
 
         let encoded = setup.encode()?;
-        assert_that!(encoded, eq("F80A4BwHzrk8ZiEIvG69VCJ7i3MqH11CJ0PdEVOHpU8nB-z_LoHFkbTAUo3iACy3MfC5PN7KI78f7QUIkVZegy1zZ1tiLHbWFOyMxNqjsKJAGB8n4GFTwNypkPfL5Q0ejM_tArroq19ASuv2va2BSo63PVnZjT3qH5A-OYW0LBH5UObsdpSitvWxUm-haWT4AQ=="));
+        assert_that!(encoded, eq("FwsBIBwHzrk8VikIvG69lCJUe4_mSp3OTjz1ObJXTR2WPlseeRiI9ZUUUBzJLrChDmg8ANs3LYdykUQoPLv2x_YMWLdq0EpIVAijcxFb8habW0mKY5KFIbQ8TsC3TQHRJWx-v7qqaeIEA8VmgbcXatmQ-0d_QZzF7DxDPrcL2EVeOwpr6XjHdwceNnEttz3p2t_gUf4Al0beesV1XfVDbK1gjVEwl6q-ZJvFEfw="));
 
         let decoded = PeerSetup::decode(&encoded)?;
         assert_that!(decoded, eq(setup));

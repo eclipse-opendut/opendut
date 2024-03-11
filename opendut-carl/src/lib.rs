@@ -1,3 +1,5 @@
+extern crate core;
+
 use std::net::SocketAddr;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -11,7 +13,9 @@ use axum_server_dual_protocol::ServerExt;
 use futures::future::BoxFuture;
 use futures::TryFutureExt;
 use http::{header::CONTENT_TYPE, Request};
+use pem::Pem;
 use serde::{Deserialize, Serialize};
+use tokio::fs;
 use tonic::transport::Server;
 use tower::{BoxError, make::Shared, ServiceExt, steer::Steer};
 use tower_http::services::{ServeDir, ServeFile};
@@ -69,10 +73,20 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
 
         let key_path = project::make_path_absolute(settings.config.get_string("network.tls.key")?)?;
         debug!("Using TLS key: {}", key_path.display());
-        assert!(key_path.exists(), "TLS key file at '{}' not found.", cert_path.display());
+        assert!(key_path.exists(), "TLS key file at '{}' not found.", key_path.display());
 
         RustlsConfig::from_pem_file(cert_path, key_path).await?
     };
+
+
+    let ca_string = fs::read_to_string(project::make_path_absolute(settings.config.get_string("network.tls.ca")?)?).await?;
+    let ca_certificate = match Pem::from_str(ca_string.as_str()) {
+        Ok(pem) => { pem }
+        Err(error) => {
+            panic!("Missing CA certificate file in CARL's configuration TOML. {:?}", error)
+        }
+    };
+
 
     let vpn = vpn::create(&settings.config)
         .context("Error while parsing VPN configuration.")?;
@@ -111,6 +125,7 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
         vpn: Vpn,
         carl_url: Url,
         settings: config::Config,
+        ca: Pem,
     ) -> BoxFuture<'static, Result<()>> {
         let grpc = Server::builder()
             .accept_http1(true) //gRPC-web uses HTTP1
@@ -123,7 +138,7 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
                     .into_grpc_service()
             )
             .add_service(
-                PeerManagerService::new(Arc::clone(&resources_manager), vpn, Clone::clone(&carl_url))
+                PeerManagerService::new(Arc::clone(&resources_manager), vpn, Clone::clone(&carl_url), ca)
                     .into_grpc_service()
             )
             .add_service(
@@ -232,6 +247,7 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
         vpn,
         carl_url,
         settings.config,
+        ca_certificate,
     ).await.unwrap();
 
     Ok(())
