@@ -3,9 +3,13 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 use opentelemetry::{global, KeyValue};
+use opentelemetry::global::{GlobalLoggerProvider, logger_provider};
+use opentelemetry::logs::LogError;
 use opentelemetry::trace::TraceError;
+use opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge;
 use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_sdk::{Resource, runtime};
+use opentelemetry_sdk::logs::Logger;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 use tracing_subscriber::filter::Directive;
 use tracing_subscriber::filter::EnvFilter;
@@ -40,7 +44,7 @@ pub fn initialize_with_config(config: LoggingConfig) -> Result<ShutdownHandle, E
         .with_env_var("OPENDUT_LOG")
         .from_env()?;
 
-    let logging_layer = tracing_subscriber::fmt::layer()
+    let stdout_logging_layer = tracing_subscriber::fmt::layer()
         .compact();
 
     let file_logging_layer =
@@ -55,33 +59,65 @@ pub fn initialize_with_config(config: LoggingConfig) -> Result<ShutdownHandle, E
             None
         };
 
+    let (tracer, logger, logger_layer) = if let Some(endpoint) = config.opentelemetry_endpoint {
+        let service_name: String = config.opentelemetry_service_name.clone()
+            .unwrap_or_default();
+        let tracer = init_tracer(&endpoint, service_name).expect("Failed to initialize tracer.");
 
-    let opentelemetry_layer = config.opentelemetry_endpoint.clone().map(|endpoint| {
-        let otlp_exporter = opentelemetry_otlp::new_exporter()
-            .tonic().with_endpoint(endpoint.url);
         let service_name: String = config.opentelemetry_service_name
-            .map_or_else(String::new, |service_name| service_name.to_string());
-        let tracer = opentelemetry_otlp::new_pipeline()
-            .tracing()
-            .with_exporter(otlp_exporter)
-            .with_trace_config(
-                opentelemetry_sdk::trace::config().with_resource(Resource::new(vec![KeyValue::new(
-                    opentelemetry_semantic_conventions::resource::SERVICE_NAME,
-                    service_name,
-                )])),
-            ).install_batch(runtime::Tokio)
-            .expect("Failed to install OpenTelemetry tracer.");
-        tracing_opentelemetry::layer().with_tracer(tracer)
-    });
+            .unwrap_or_default();
+        let logger = init_logger(&endpoint, service_name).expect("Failed to initialize logs.");
+
+        let logger_provider: GlobalLoggerProvider = logger_provider();
+        let logger_layer = OpenTelemetryTracingBridge::new(&logger_provider);
+        (Some(tracer), Some(logger), Some(logger_layer))
+    } else {
+        (None, None, None)
+    };
 
     tracing_subscriber::registry()
-        .with(opentelemetry_layer)
-        .with(logging_layer)
+        .with(stdout_logging_layer)
         .with(tracing_filter)
         .with(file_logging_layer)
+        .with(tracer.map(|tracer| tracing_opentelemetry::layer().with_tracer(tracer)))
+        .with(logger_layer)
         .try_init()?;
 
-    Ok(ShutdownHandle)
+    Ok(ShutdownHandle { _logger: logger })
+}
+
+fn init_tracer(endpoint: &Endpoint, service_name: impl Into<String>) -> Result<opentelemetry_sdk::trace::Tracer, TraceError> {
+    opentelemetry_otlp::new_pipeline()
+        .tracing()
+        .with_exporter(
+            opentelemetry_otlp::new_exporter()
+                .tonic()
+                .with_endpoint(Clone::clone(&endpoint.url)),
+        )
+        .with_trace_config(
+            opentelemetry_sdk::trace::config().with_resource(Resource::new(vec![KeyValue::new(
+                opentelemetry_semantic_conventions::resource::SERVICE_NAME,
+                service_name.into(),
+            )])),
+        )
+        .install_batch(runtime::Tokio)
+}
+
+fn init_logger(endpoint: &Endpoint, service_name: impl Into<String>) -> Result<opentelemetry_sdk::logs::Logger, LogError> {
+    opentelemetry_otlp::new_pipeline()
+        .logging()
+        .with_log_config(
+            opentelemetry_sdk::logs::Config::default().with_resource(Resource::new(vec![KeyValue::new(
+                opentelemetry_semantic_conventions::resource::SERVICE_NAME,
+                service_name.into(),
+            )])),
+        )
+        .with_exporter(
+            opentelemetry_otlp::new_exporter()
+                .tonic()
+                .with_endpoint(Clone::clone(&endpoint.url)),
+        )
+        .install_batch(runtime::Tokio)
 }
 
 #[derive(Default)]
@@ -137,10 +173,13 @@ pub struct Endpoint {
     pub url: Url,
 }
 #[must_use]
-pub struct ShutdownHandle;
+pub struct ShutdownHandle {
+    _logger: Option<Logger>,
+}
 impl ShutdownHandle {
     pub fn shutdown(&mut self) {
         global::shutdown_tracer_provider();
+        global::shutdown_logger_provider();
     }
 }
 impl Drop for ShutdownHandle {
