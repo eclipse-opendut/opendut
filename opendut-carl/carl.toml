@@ -18,7 +18,6 @@ scopes = "openid,profile,email,roles,groups"
 
 [peer]
 disconnect.timeout.ms = 30000
-can.server_port_range_start = 10000
 
 [serve]
 ui.directory = "opendut-lea/"
@@ -34,8 +33,3 @@ auth.type = ""
 auth.secret = ""
 timeout.ms = 10000
 retries = 5
-
-[opentelemetry]
-enabled = false
-endpoint = ""
-service_name = "opendut-carl"

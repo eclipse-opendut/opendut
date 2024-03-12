@@ -33,7 +33,7 @@ impl PeerMessagingBrokerFacade {
 
 #[tonic::async_trait]
 impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_broker_server::PeerMessagingBroker for PeerMessagingBrokerFacade {
-    #[tracing::instrument(name = "grpc::peer_messaging_broker::list_peers", skip(self), level="trace")]
+
     async fn list_peers(&self, request: Request<ListPeersRequest>) -> Result<Response<ListPeersResponse>, Status> {
 
         log::trace!("Received request: {:?}", request);
@@ -53,7 +53,6 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
 
     type OpenStream = Pin<Box<dyn Stream<Item = Result<Downstream, Status>> + Send>>;
 
-    #[tracing::instrument(name = "grpc::peer_messaging_broker::open", skip(self), level="trace")]
     async fn open(&self, request: Request<Streaming<Upstream>>) -> Result<Response<Self::OpenStream>, Status> {
 
         let peer_id = extract_peer_id(request.metadata())

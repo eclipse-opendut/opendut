@@ -10,7 +10,7 @@ Test Electronic Control Units around the world in a transparent network.
 
 Eclipse openDuT provides an open framework to automate the testing and validation process for automotive software and applications in a reliable, repeatable and observable way. Eclipse openDuT is hardware-agnostic with respect to the execution environment and accompanies different hardware interfaces and standards regarding the usability of the framework. Thereby, it is supporting both on-premise installations and hosting in a cloud infrastructure. Eclipse openDuT considers an eventually distributed network of real (HIL) and virtual devices (SIL) under test. Eclipse openDuT reflects hardware capabilities and constraints along with the chosen test method. Test cases are not limited to a specific domain, but it especially realizes functional and explorative security tests.
 
-<img alt="Funded by the European Union" src="resources/logos/funded_by_the_european_union.svg" width="50%">
+<img alt="Funded by the European Union" src="resources/logos/funded_by_the_european_union.png">
 
 ## Developer Setup
 

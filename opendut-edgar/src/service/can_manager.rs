@@ -2,7 +2,6 @@ use std::net::IpAddr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use opendut_types::cluster::PeerClusterAssignment;
 use opendut_types::util::Port;
 use regex::Regex;
 
@@ -138,15 +137,29 @@ impl CanManager {
     
         Ok(())
     }
+    
+    // TODO: determining the port for cannelloni like this is a bit dirty, we should get that information from CARL instead
+    // Takes the last two bytes of the IP address to be used as the port
+    fn peer_ip_to_leader_port(&self, peer_ip: &IpAddr) -> anyhow::Result<Port>{
+        assert!(peer_ip.is_ipv4());
+        let ip_bytes: Vec<u8> = peer_ip.to_string().split('.').map(|b| b.parse::<u8>().unwrap()).collect();
+        let mut port = ((ip_bytes[2] as u16) << 8) | ip_bytes[3] as u16;
+        if port < 1024 {
+            port += 1024; // Ensure no port reserved for privileged processes is used
+        }
+        Ok(Port(port))
+    }
 
     async fn terminate_cannelloni_managers(&self) {
         self.cannelloni_termination_token.lock().unwrap().store(true, Ordering::Relaxed);
     }
     
-    pub async fn setup_remote_routing_client(&self, bridge_name: &NetworkInterfaceName, leader_ip: &IpAddr, leader_port: &Port) -> Result<(), Error> {
+    pub async fn setup_remote_routing_client(&self, bridge_name: &NetworkInterfaceName, local_ip: &IpAddr, leader_ip: &IpAddr) -> Result<(), Error> {
 
         self.terminate_cannelloni_managers().await;
     
+        let leader_port = self.peer_ip_to_leader_port(local_ip).unwrap();
+
         let mut guarded_termination_token = self.cannelloni_termination_token.lock().unwrap();
         *guarded_termination_token = Arc::new(AtomicBool::new(false));
         
@@ -156,7 +169,7 @@ impl CanManager {
         let mut cannelloni_manager = CannelloniManager::new (
             false, 
             bridge_name.clone(), 
-            *leader_port, 
+            leader_port, 
             *leader_ip, 
             Duration::from_micros(1),
             guarded_termination_token.clone(),
@@ -169,7 +182,7 @@ impl CanManager {
         Ok(())
     }
     
-    pub async fn setup_remote_routing_server(&self, bridge_name: &NetworkInterfaceName, remote_assignments: &Vec<PeerClusterAssignment>) -> Result<(), Error>  {
+    pub async fn setup_remote_routing_server(&self, bridge_name: &NetworkInterfaceName, remote_ips: &Vec<IpAddr>) -> Result<(), Error>  {
 
         self.terminate_cannelloni_managers().await;
 
@@ -177,14 +190,16 @@ impl CanManager {
         *guarded_termination_token = Arc::new(AtomicBool::new(false));
         
     
-        for remote_assignment in remote_assignments {
-            log::info!("Spawning cannelloni manager as server for peer with IP {}", remote_assignment.vpn_address.to_string());
+        for remote_ip in remote_ips {
+            let leader_port = self.peer_ip_to_leader_port(remote_ip).unwrap();
+
+            log::info!("Spawning cannelloni manager as server for peer with IP {}", remote_ip.to_string());
     
             let mut cannelloni_manager = CannelloniManager::new(
                 true, 
                 bridge_name.clone(), 
-                remote_assignment.can_server_port, 
-                remote_assignment.vpn_address, 
+                leader_port, 
+                *remote_ip, 
                 Duration::from_micros(1),
                 guarded_termination_token.clone()
             );

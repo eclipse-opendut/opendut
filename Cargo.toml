@@ -80,10 +80,6 @@ netlink-packet-route = "0.17.1"
 netlink-packet-utils = "0.5.2"
 nix = "0.27.1"
 oauth2 = { version = "4.4.2", default-features = false }
-opentelemetry = "0.21.0"
-opentelemetry-otlp = "0.14.0"
-opentelemetry_sdk = "0.21.0"
-opentelemetry-semantic-conventions = "0.14.0"
 phf = { version = "0.11", features = ["macros"] }
 predicates = "3.0.4"
 prost = "0.12.1"
@@ -119,7 +115,6 @@ tonic-web-wasm-client = { version = "0.5.0" }
 tower = "0.4.13"
 tower-http = { version = "0.4.4", features = ["cors", "fs"] }
 tracing = { version = "0.1.40" }
-tracing-opentelemetry = "0.22.0"
 tracing-subscriber = { version = "0.3.18", default-features = false }
 tracing-web = { version = "0.1.3" }
 url = "2.5.0"

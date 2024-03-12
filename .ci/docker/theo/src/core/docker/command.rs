@@ -136,4 +136,13 @@ impl DockerCommand {
         let stdout = String::from_utf8(output.stdout)?;
         Ok(stdout.lines().map(|s| s.to_string()).collect())
     }
+
+    pub(crate) fn container_logs(&mut self, container_name: &str) -> Result<String, Error> {
+        self.command
+            .arg("logs")
+            .arg(container_name);
+        let command_output = self.expect_output(format!("Failed to get container logs of '{}'.", container_name).as_str())?;
+        let output = String::from_utf8(command_output.stdout)?;
+        Ok(output)
+    }
 }

@@ -1,7 +1,7 @@
 use std::net::{IpAddr, Ipv4Addr};
 use std::sync::Arc;
 
-use opendut_types::cluster::{ClusterAssignment, PeerClusterAssignment};
+use opendut_types::cluster::ClusterAssignment;
 use opendut_types::peer::PeerId;
 use opendut_types::util::net::NetworkInterfaceName;
 
@@ -27,7 +27,7 @@ pub async fn network_interfaces_setup(
 
     let local_ip = local_peer_assignment.vpn_address;
 
-    let remote_ips = determine_remote_ips(&cluster_assignment, self_id)?;
+    let remote_ips = determine_remote_ips(&cluster_assignment, self_id, &local_ip)?;
 
     let local_ip = require_ipv4_for_gre(local_ip)?;
     let remote_ips = remote_ips.into_iter()
@@ -69,26 +69,26 @@ pub async fn setup_can(
         assignment.peer_id == self_id
     }).ok_or(Error::LocalPeerAssignmentNotFound { self_id })?;
 
-    let is_leader = cluster_assignment.leader == self_id;
+    let local_ip = local_peer_assignment.vpn_address;
 
-    let server_port = local_peer_assignment.can_server_port;
+    let is_leader = cluster_assignment.leader == self_id;
 
     if is_leader {
 
-        let remote_assignments = determine_remote_assignments(cluster_assignment, self_id)?;
+        let remote_ips = determine_remote_ips(cluster_assignment, self_id, &local_ip)?;
         can_manager.setup_remote_routing_server(
             &can_bridge_name, 
-            &remote_assignments
+            &remote_ips
         ).await
         .map_err(Error::RemoteCanRoutingSetupFailed)?;
 
-    } else {        
-
-        let leader_assignment = determine_leader_assignment(cluster_assignment)?;
+    } else {
+        
+        let leader_ip = determine_leader_ip(cluster_assignment)?;
         can_manager.setup_remote_routing_client(
             &can_bridge_name, 
-            &leader_assignment.vpn_address,
-            &server_port
+            &local_ip, 
+            &leader_ip
         ).await
         .map_err(Error::RemoteCanRoutingSetupFailed)?;
     }
@@ -96,37 +96,33 @@ pub async fn setup_can(
     Ok(())
 }
 
-fn determine_remote_ips(cluster_assignment: &ClusterAssignment, self_id: PeerId) -> Result<Vec<IpAddr>, Error> {
-    let remote_assignments = determine_remote_assignments(cluster_assignment, self_id);
-    let remote_ips = remote_assignments?.iter().map(|remote_assignment| remote_assignment.vpn_address).collect();
+fn determine_remote_ips(cluster_assignment: &ClusterAssignment, self_id: PeerId, local_ip: &IpAddr) -> Result<Vec<IpAddr>, Error> {
+    let is_leader = cluster_assignment.leader == self_id;
+
+    let remote_ips = if is_leader {
+        cluster_assignment.assignments.iter()
+            .map(|assignment| assignment.vpn_address)
+            .filter(|address| address != local_ip)
+            .collect()
+    }
+    else {
+        let leader_ip = determine_leader_ip(cluster_assignment)?;
+
+        vec![leader_ip]
+    };
 
     Ok(remote_ips)
 }
 
-fn determine_remote_assignments(cluster_assignment: &ClusterAssignment, self_id: PeerId) -> Result<Vec<PeerClusterAssignment>, Error> {
-    let is_leader = cluster_assignment.leader == self_id;
+fn determine_leader_ip(cluster_assignment: &ClusterAssignment) -> Result<IpAddr, Error>{
+    let leader_ip = cluster_assignment.assignments.iter().find_map(|peer_assignment| {
+        let is_leader = peer_assignment.peer_id == cluster_assignment.leader;
 
-    let remote_peer_cluster_assignments = if is_leader {
-        cluster_assignment.assignments.iter()
-            .filter(|assignment| assignment.peer_id != self_id).cloned()
-            .collect::<Vec<PeerClusterAssignment>>()
-    }
-    else {
-        let leader_ip = determine_leader_assignment(cluster_assignment)?;
+        is_leader
+            .then_some(peer_assignment.vpn_address)
+    }).ok_or(Error::LeaderIpAddressNotDeterminable)?;
 
-        vec![leader_ip.clone()]
-    };
-
-    Ok(remote_peer_cluster_assignments)
-}
-
-fn determine_leader_assignment(cluster_assignment: &ClusterAssignment) -> Result<&PeerClusterAssignment, Error>{
-    let leader_assignment = cluster_assignment.assignments
-        .iter().find(|peer_assignment| 
-            peer_assignment.peer_id == cluster_assignment.leader
-            ).ok_or(Error::LeaderNotDeterminable)?;
-
-    Ok(leader_assignment)
+    Ok(leader_ip)
 }
 
 fn require_ipv4_for_gre(ip_address: IpAddr) -> Result<Ipv4Addr, Error> {
@@ -185,8 +181,8 @@ pub enum Error {
     BridgeRecreationFailed(network_interface::manager::Error),
     #[error("Could not find PeerAssignment for this peer (<{self_id}>) in the ClusterAssignment.")]
     LocalPeerAssignmentNotFound { self_id: PeerId },
-    #[error("Could not determine leader from ClusterAssignment.")]
-    LeaderNotDeterminable,
+    #[error("Could not determine leader IP address from ClusterAssignment.")]
+    LeaderIpAddressNotDeterminable,
     #[error("IPv6 isn't yet supported for GRE interfaces.")]
     Ipv6NotSupported,
     #[error("GRE interface setup failed: {0}")]

@@ -65,6 +65,17 @@ vagrant up
 vagrant ssh
 ```
 
-## Additional notes
-You may want to configure a http proxy or a custom certificate authority. 
-Details are in the **Advance usage** section.
+## Custom root certificate authority
+Provision the virtual machine when running behind an intercepting http proxy, disable the private network if needed and run the provisioning again.  
+Git Bash:
+  ```sh
+  export CUSTOM_ROOT_CA=resources/development/tls/custom-ca.pem
+  export OPENDUT_DISABLE_PRIVATE_NETWORK=true
+  vagrant provision
+  ```  
+PowerShell:
+  ```powershell
+  $env:CUSTOM_ROOT_CA="resources/development/tls/custom-ca.pem"
+  $env:OPENDUT_DISABLE_PRIVATE_NETWORK="true"
+  vagrant provision
+  ```

@@ -117,10 +117,8 @@ pub fn init_logging() -> anyhow::Result<()> {
 
     let config = logging::LoggingConfig {
         file_logging: Some(log_file),
-        opentelemetry_endpoint: None,
-        opentelemetry_service_name: None
     };
-    let _ = logging::initialize_with_config(config)?;
+    logging::initialize_with_config(config)?;
 
     Ok(())
 }

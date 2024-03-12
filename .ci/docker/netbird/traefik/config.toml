@@ -18,17 +18,17 @@
   [http.services.netbird-management-api]
     [http.services.netbird-management-api.loadBalancer]
       [[http.services.netbird-management-api.loadBalancer.servers]]
-        url = "http://192.168.32.214:80"
+        url = "http://netbird-management-container:80"
 
   [http.services.netbird-management-service]
     [http.services.netbird-management-service.loadBalancer]
       [[http.services.netbird-management-service.loadBalancer.servers]]
-        url = "h2c://192.168.32.214:80"
+        url = "h2c://netbird-management-container:80"
 
   [http.services.netbird-dashboard]
     [http.services.netbird-dashboard.loadBalancer]
       [[http.services.netbird-dashboard.loadBalancer.servers]]
-        url = "http://192.168.32.213:80"
+        url = "http://netbird-dashboard-container:80"
 
 
 [[tls.certificates]]

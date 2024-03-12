@@ -225,7 +225,6 @@ impl From<crate::cluster::PeerClusterAssignment> for PeerClusterAssignment {
         Self {
             peer_id: Some(value.peer_id.into()),
             vpn_address: Some(value.vpn_address.into()),
-            can_server_port: Some(value.can_server_port.into()),
             device_interfaces: value.device_interfaces.into_iter().map(Into::into).collect(),
         }
     }
@@ -244,10 +243,6 @@ impl TryFrom<PeerClusterAssignment> for crate::cluster::PeerClusterAssignment {
             .ok_or(ErrorBuilder::new("field 'vpn_address' not set"))?
             .try_into()?;
 
-        let can_server_port: crate::util::Port = value.can_server_port
-            .ok_or(ErrorBuilder::new("field 'can_server_port' not set"))?
-            .try_into()?;
-
         let device_interfaces: Vec<crate::util::net::NetworkInterfaceName> = value.device_interfaces
             .into_iter()
             .map(TryInto::try_into)
@@ -256,7 +251,6 @@ impl TryFrom<PeerClusterAssignment> for crate::cluster::PeerClusterAssignment {
         Ok(Self {
             peer_id,
             vpn_address,
-            can_server_port,
             device_interfaces,
         })
     }

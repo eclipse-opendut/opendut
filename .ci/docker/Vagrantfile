@@ -94,7 +94,7 @@ Vagrant.configure("2") do |config|
 
     # https://developer.hashicorp.com/vagrant/docs/provisioning/ansible_common
     ansible.tags = ENV["ANSIBLE_TAGS"] ||= "all"
-    ansible.skip_tags = ENV["ANSIBLE_SKIP_TAGS"] ||= "desktop,firefox"
+    ansible.skip_tags = ENV["ANSIBLE_SKIP_TAGS"] ||= "desktop"
     ansible.verbose = ENV["ANSIBLE_VERBOSE"] ||= ""     # do not enable verbose by default
     # ansible.verbose = ENV["ANSIBLE_VERBOSE"] ||= "v"  # enables verbose mode by default
     ansible.extra_vars = {

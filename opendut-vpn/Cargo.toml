@@ -10,7 +10,6 @@ opendut-types = { workspace = true }
 
 async-trait = { workspace = true }
 thiserror = { workspace = true }
-tracing = { workspace = true }
 
 [lints]
 workspace = true

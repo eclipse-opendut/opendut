@@ -69,7 +69,6 @@ impl NetbirdManagementClient {
 #[async_trait]
 impl VpnManagementClient for NetbirdManagementClient {
 
-    #[tracing::instrument(skip(self), level="trace")]
     async fn create_cluster(&self, cluster_id: ClusterId, peers: &[PeerId]) -> Result<(), CreateClusterError> {
 
         match self.delete_cluster(cluster_id).await {
@@ -103,7 +102,6 @@ impl VpnManagementClient for NetbirdManagementClient {
         Ok(())
     }
 
-    #[tracing::instrument(skip(self), level="trace")]
     async fn delete_cluster(&self, cluster_id: ClusterId) -> Result<(), DeleteClusterError> {
         let rule_name = netbird::RuleName::Cluster(cluster_id);
         match self.inner.get_netbird_rule(&rule_name).await {
@@ -166,7 +164,6 @@ impl VpnManagementClient for NetbirdManagementClient {
         }
     }
 
-    #[tracing::instrument(skip(self), level="trace")]
     async fn create_peer(&self, peer_id: PeerId) -> Result<(), CreatePeerError> {
         let peers = vec![]; //Peer self-group does not have peers
         self.inner.create_netbird_group(peer_id.into(), peers).await
@@ -174,7 +171,6 @@ impl VpnManagementClient for NetbirdManagementClient {
         Ok(())
     }
 
-    #[tracing::instrument(skip(self), level="trace")]
     async fn delete_peer(&self, peer_id: PeerId) -> Result<(), DeletePeerError> {
         let self_group = self.inner.get_netbird_group(&netbird::GroupName::from(peer_id)).await
             .map_err(|error| DeletePeerError::ResolutionFailure { peer_id, error: error.into() })?;
@@ -192,7 +188,6 @@ impl VpnManagementClient for NetbirdManagementClient {
         Ok(())
     }
 
-    #[tracing::instrument(skip(self), level="trace")]
     async fn generate_vpn_peer_configuration(&self, peer_id: PeerId) -> Result<VpnPeerConfiguration, CreateVpnPeerConfigurationError> {
 
         debug!("Generating vpn configuration for peer <{peer_id}>.");
