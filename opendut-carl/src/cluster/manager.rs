@@ -11,7 +11,7 @@ use opendut_types::cluster::{ClusterAssignment, ClusterConfiguration, ClusterDep
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::peer::state::PeerState;
 use opendut_types::topology::DeviceId;
-use opendut_types::util::net::NetworkInterfaceName;
+use opendut_types::util::net::NetworkInterfaceDescriptor;
 use opendut_types::util::Port;
 
 use crate::actions;
@@ -209,15 +209,15 @@ fn determine_member_interface_mapping(
     cluster_devices: HashSet<DeviceId>,
     all_peers: Vec<PeerDescriptor>,
     leader: PeerId,
-) -> Result<HashMap<PeerId, Vec<NetworkInterfaceName>>, DetermineMemberInterfaceMappingError> {
+) -> Result<HashMap<PeerId, Vec<NetworkInterfaceDescriptor>>, DetermineMemberInterfaceMappingError> {
 
-    let mut result: HashMap<PeerId, Vec<NetworkInterfaceName>> = HashMap::new();
+    let mut result: HashMap<PeerId, Vec<NetworkInterfaceDescriptor>> = HashMap::new();
 
     result.insert(leader, Vec::new()); //will later be replaced, if leader has devices
 
     for device_id in cluster_devices {
         let member_interfaces = all_peers.iter().find_map(|peer| {
-            let interfaces: Vec<NetworkInterfaceName> = peer.topology.devices.iter()
+            let interfaces: Vec<NetworkInterfaceDescriptor> = peer.topology.devices.iter()
                 .filter(|device| device.id == device_id)
                 .map(|device| device.interface.clone())
                 .collect();
@@ -271,10 +271,10 @@ mod test {
     use tokio::sync::mpsc;
 
     use opendut_types::cluster::ClusterName;
-    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkConfiguration, PeerNetworkInterface};
+    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkConfiguration};
     use opendut_types::peer::executor::{ContainerCommand, ContainerImage, ContainerName, Engine, ExecutorDescriptor, ExecutorDescriptors};
     use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
-    use opendut_types::util::net::NetworkInterfaceName;
+    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceName};
 
     use crate::actions::{CreateClusterConfigurationParams, StorePeerDescriptorParams};
     use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
@@ -314,8 +314,9 @@ mod test {
             location: PeerLocation::try_from("Ulm").ok(),
             network_configuration: PeerNetworkConfiguration {
                 interfaces: vec![
-                    PeerNetworkInterface {
+                    NetworkInterfaceDescriptor {
                         name: NetworkInterfaceName::try_from("eth0").unwrap(),
+                        configuration: NetworkInterfaceConfiguration::Ethernet,
                     }
                 ]
             },
@@ -325,7 +326,10 @@ mod test {
                         id: peer_a_device_1,
                         name: DeviceName::try_from("PeerA_Device_1").unwrap(),
                         description: DeviceDescription::try_from("Huii").ok(),
-                        interface: NetworkInterfaceName::try_from("eth0").unwrap(),
+                        interface: NetworkInterfaceDescriptor {
+                            name: NetworkInterfaceName::try_from("eth0").unwrap(),
+                            configuration: NetworkInterfaceConfiguration::Ethernet,
+                        },
                         tags: vec![],
                     }
                 ]
@@ -352,8 +356,9 @@ mod test {
             location: PeerLocation::try_from("Ulm").ok(),
             network_configuration: PeerNetworkConfiguration {
                 interfaces: vec![
-                    PeerNetworkInterface {
+                    NetworkInterfaceDescriptor {
                         name: NetworkInterfaceName::try_from("eth0").unwrap(),
+                        configuration: NetworkInterfaceConfiguration::Ethernet,
                     }
                 ]
             },
@@ -363,7 +368,10 @@ mod test {
                         id: peer_b_device_1,
                         name: DeviceName::try_from("PeerB_Device_1").unwrap(),
                         description: DeviceDescription::try_from("Pfuii").ok(),
-                        interface: NetworkInterfaceName::try_from("can1").unwrap(),
+                        interface: NetworkInterfaceDescriptor {
+                            name: NetworkInterfaceName::try_from("can1").unwrap(),
+                            configuration: NetworkInterfaceConfiguration::Ethernet,
+                        },
                         tags: vec![],
                     }
                 ]
@@ -508,12 +516,15 @@ mod test {
     #[test]
     fn should_determine_member_interface_mapping() -> anyhow::Result<()> {
 
-        fn device(id: DeviceId, interface: NetworkInterfaceName) -> DeviceDescriptor {
+        fn device(id: DeviceId, interface_name: NetworkInterfaceName) -> DeviceDescriptor {
             DeviceDescriptor {
                 id,
                 name: DeviceName::try_from(format!("test-device-{id}")).unwrap(),
                 description: None,
-                interface,
+                interface: NetworkInterfaceDescriptor {
+                    name: interface_name,
+                    configuration: NetworkInterfaceConfiguration::Ethernet,
+                },
                 tags: Vec::new(),
             }
         }
@@ -530,8 +541,9 @@ mod test {
                 name: PeerName::try_from(format!("peer-{id}")).unwrap(),
                 location: PeerLocation::try_from("Ulm").ok(),
                 network_configuration: PeerNetworkConfiguration {
-                    interfaces: vec!(PeerNetworkInterface {
+                    interfaces: vec!(NetworkInterfaceDescriptor {
                         name: NetworkInterfaceName::try_from("eth0").unwrap(),
+                        configuration: NetworkInterfaceConfiguration::Ethernet,
                     })
                 },
                 topology: Topology {

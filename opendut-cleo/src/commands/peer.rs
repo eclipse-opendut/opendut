@@ -97,9 +97,9 @@ pub mod list {
     mod test {
         use googletest::prelude::*;
 
-        use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkConfiguration, PeerNetworkInterface};
+        use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkConfiguration};
         use opendut_types::peer::executor::ExecutorDescriptors;
-        use opendut_types::util::net::NetworkInterfaceName;
+        use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
 
         use super::*;
 
@@ -110,8 +110,9 @@ pub mod list {
                 name: PeerName::try_from("MyPeer").unwrap(),
                 location: Some(PeerLocation::try_from("SiFi").unwrap()),
                 network_configuration: PeerNetworkConfiguration {
-                    interfaces: vec!(PeerNetworkInterface {
+                    interfaces: vec!(NetworkInterfaceDescriptor {
                         name: NetworkInterfaceName::try_from("eth0").unwrap(),
+                        configuration: NetworkInterfaceConfiguration::Ethernet,
                     })
                 },
                 topology: Default::default(),

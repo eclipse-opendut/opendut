@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use opendut_types::cluster::{ClusterAssignment, PeerClusterAssignment};
 use opendut_types::peer::PeerId;
-use opendut_types::util::net::NetworkInterfaceName;
+use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
 
 use crate::service::network_interface;
 use crate::service::network_interface::{bridge, gre};
@@ -138,12 +138,12 @@ fn require_ipv4_for_gre(ip_address: IpAddr) -> Result<Ipv4Addr, Error> {
 
 // TODO: Use some proper way to determine whether an interface is an Ethernet or a CAN one
 fn get_own_ethernet_interfaces(cluster_assignment: &ClusterAssignment,
-    self_id: PeerId) -> Result<Vec<NetworkInterfaceName>, Error> {
+    self_id: PeerId) -> Result<Vec<NetworkInterfaceDescriptor>, Error> {
 
     let own_cluster_assignment = cluster_assignment.assignments.iter().find(|assignment| assignment.peer_id == self_id).unwrap();
 
-    let own_ethernet_interfaces: Vec<NetworkInterfaceName> = own_cluster_assignment.device_interfaces.iter()
-        .filter(|interface| !interface.name().contains("can"))
+    let own_ethernet_interfaces: Vec<NetworkInterfaceDescriptor> = own_cluster_assignment.device_interfaces.iter()
+        .filter(|interface| !interface.name.name().contains("can"))
         .cloned()
         .collect();
 
@@ -152,12 +152,12 @@ fn get_own_ethernet_interfaces(cluster_assignment: &ClusterAssignment,
 
 fn get_own_can_interfaces(
     cluster_assignment: &ClusterAssignment,
-    self_id: PeerId) -> Result<Vec<NetworkInterfaceName>, Error>{
+    self_id: PeerId) -> Result<Vec<NetworkInterfaceDescriptor>, Error>{
 
     let own_cluster_assignment = cluster_assignment.assignments.iter().find(|assignment| assignment.peer_id == self_id).unwrap();
 
-    let own_can_interfaces: Vec<NetworkInterfaceName> = own_cluster_assignment.device_interfaces.iter()
-        .filter(|interface| interface.name().contains("can"))
+    let own_can_interfaces: Vec<NetworkInterfaceDescriptor> = own_cluster_assignment.device_interfaces.iter()
+        .filter(|interface| interface.name.name().contains("can"))
         .cloned()
         .collect();
 
@@ -165,14 +165,14 @@ fn get_own_can_interfaces(
     }
 
 async fn join_device_interfaces_to_bridge(
-    device_interfaces: &Vec<NetworkInterfaceName>,
+    device_interfaces: &Vec<NetworkInterfaceDescriptor>,
     bridge_name: &NetworkInterfaceName,
     network_interface_manager: NetworkInterfaceManagerRef
 ) -> Result<(), network_interface::manager::Error> {
     let bridge = network_interface_manager.try_find_interface(bridge_name).await?;
 
     for interface in device_interfaces {
-        let interface = network_interface_manager.try_find_interface(interface).await?;
+        let interface = network_interface_manager.try_find_interface(&interface.name).await?;
         network_interface_manager.join_interface_to_bridge(&interface, &bridge).await?;
         log::debug!("Joined device interface {interface} to bridge {bridge}.");
     }

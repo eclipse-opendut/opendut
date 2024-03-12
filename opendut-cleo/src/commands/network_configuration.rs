@@ -2,8 +2,8 @@ pub mod create {
     use uuid::Uuid;
 
     use opendut_carl_api::carl::CarlClient;
-    use opendut_types::peer::{PeerId, PeerNetworkInterface};
-    use opendut_types::util::net::NetworkInterfaceName;
+    use opendut_types::peer::PeerId;
+    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
 
     use crate::{CreateOutputFormat, DescribeOutputFormat};
 
@@ -18,7 +18,8 @@ pub mod create {
         let mut peer_descriptor = carl.peers.get_peer_descriptor(peer_id).await
             .map_err(|_| format!("Failed to get peer with ID <{}>.", peer_id))?;
 
-        let peer_interfaces = peer_descriptor.network_configuration.interfaces.clone();
+        let peer_interface_names = peer_descriptor.network_configuration.interfaces
+            .iter().map(|interface| interface.name.clone()).collect::<Vec<_>>();
 
         let new_network_configurations = network_configuration
                 .unwrap_or_default()
@@ -27,11 +28,11 @@ pub mod create {
                 .collect::<Result<Vec<_>, _>>()
                 .map_err(|error| error.to_string())?
                 .into_iter()
-                .map(|interface_name| PeerNetworkInterface { name: interface_name })
+                .map(|interface_name| NetworkInterfaceDescriptor { name: interface_name, configuration: NetworkInterfaceConfiguration::Ethernet}) // TODO: Do not assume Ethernet here
                 .collect::<Vec<_>>();
 
         for network_config in new_network_configurations {
-            if peer_interfaces.contains(&network_config) {
+            if peer_interface_names.contains(&network_config.name) {
                 Err(format!("Could not create peer network configuration with name '{}' because it already exists", network_config.name))?
             } else {
                 peer_descriptor.network_configuration.interfaces.push(network_config);
@@ -70,7 +71,7 @@ pub mod delete {
 
         let mut device_interfaces_map: HashMap<NetworkInterfaceName,Vec<String>> = HashMap::new();
         for device in peer.topology.devices.clone() {
-            device_interfaces_map.entry(device.interface).or_default().push(device.name.to_string());
+            device_interfaces_map.entry(device.interface.name).or_default().push(device.name.to_string());
         };
 
         for name in network_interface_names {

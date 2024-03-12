@@ -56,3 +56,95 @@ pub enum NetworkInterfaceNameError {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct Certificate(pub Pem);
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, Hash)]
+pub struct CanSamplePoint {
+    sample_point_times_1000: i32
+}
+
+impl TryFrom<f32> for CanSamplePoint {
+    type Error = CanSamplePointError;
+
+    fn try_from(value: f32) -> Result<Self, Self::Error> {
+        let sample_point_times_1000 = (value * 1000.0).round() as i32;
+        if (0..1000).contains(&sample_point_times_1000) {
+            Ok(CanSamplePoint{sample_point_times_1000})
+        } else {
+            Err(CanSamplePointError::OutOfRangeFloat { value: value.to_string() })
+        }
+    }
+}
+
+impl TryFrom<i32> for CanSamplePoint {
+    type Error = CanSamplePointError;
+
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        if (0..1000).contains(&value) {
+            Ok(CanSamplePoint{sample_point_times_1000: value})
+        } else {
+            Err(CanSamplePointError::OutOfRangeInt { value: value.to_string() })
+        }
+    }
+}
+
+impl From<CanSamplePoint> for i32 {
+    fn from(value: CanSamplePoint) -> Self {
+        value.sample_point_times_1000
+    }
+}
+
+impl fmt::Display for CanSamplePoint {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "0.{:0>3}", self.sample_point_times_1000)
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum CanSamplePointError {
+    #[error("Sample point must be in the range [0.000, 0.999] but is {value}")]
+    OutOfRangeFloat { value: String },
+    #[error("Integer to create sample point from must be in the range [0, 999] but is {value}")]
+    OutOfRangeInt { value: String },
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, Hash)]
+pub enum NetworkInterfaceConfiguration {
+    Ethernet,
+    Can {
+        bitrate: i32,
+        sample_point: CanSamplePoint,
+        fd: bool,
+        data_bitrate: i32,
+        data_sample_point: CanSamplePoint,
+    },
+}
+
+impl fmt::Display for NetworkInterfaceConfiguration {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            NetworkInterfaceConfiguration::Ethernet => write!(f, "Ethernet"),
+            NetworkInterfaceConfiguration::Can { 
+                bitrate, 
+                sample_point, 
+                fd, 
+                data_bitrate, 
+                data_sample_point 
+            } => write!(f, "CAN [bitrate: {bitrate}, sample point: {sample_point}, fd: {fd}, data bitrate: {data_bitrate}, data sample point: {data_sample_point}]"),
+        }
+        
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, Hash)]
+pub struct NetworkInterfaceDescriptor {
+    pub name: NetworkInterfaceName,
+    pub configuration: NetworkInterfaceConfiguration,
+}
+
+impl fmt::Display for NetworkInterfaceDescriptor {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} ({})", self.name, self.configuration)
+        
+    }
+}
+

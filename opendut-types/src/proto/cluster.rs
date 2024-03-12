@@ -248,7 +248,7 @@ impl TryFrom<PeerClusterAssignment> for crate::cluster::PeerClusterAssignment {
             .ok_or(ErrorBuilder::new("field 'can_server_port' not set"))?
             .try_into()?;
 
-        let device_interfaces: Vec<crate::util::net::NetworkInterfaceName> = value.device_interfaces
+        let device_interfaces: Vec<crate::util::net::NetworkInterfaceDescriptor> = value.device_interfaces
             .into_iter()
             .map(TryInto::try_into)
             .collect::<Result<_, _>>()?;

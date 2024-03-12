@@ -8,7 +8,7 @@ use regex::Regex;
 
 use tokio::process::Command;
 
-use opendut_types::util::net::NetworkInterfaceName;
+use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
 
 use crate::service::cannelloni_manager::CannelloniManager;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
@@ -107,7 +107,7 @@ impl CanManager {
     pub async fn setup_local_routing(
         &self,
         bridge_name: &NetworkInterfaceName,
-        local_can_interfaces: Vec<NetworkInterfaceName>,
+        local_can_interfaces: Vec<NetworkInterfaceDescriptor>,
     ) -> Result<(), Error> {
     
     
@@ -117,10 +117,10 @@ impl CanManager {
         self.remove_all_can_routes().await?;
     
         for interface in local_can_interfaces {
-            self.create_can_route(bridge_name, &interface, true, 2).await?;
-            self.create_can_route(bridge_name, &interface, false, 2).await?;
-            self.create_can_route(&interface, bridge_name, true, 2).await?;
-            self.create_can_route(&interface, bridge_name, false, 2).await?;
+            self.create_can_route(bridge_name, &interface.name, true, 2).await?;
+            self.create_can_route(bridge_name, &interface.name, false, 2).await?;
+            self.create_can_route(&interface.name, bridge_name, true, 2).await?;
+            self.create_can_route(&interface.name, bridge_name, false, 2).await?;
         }
     
         Ok(())

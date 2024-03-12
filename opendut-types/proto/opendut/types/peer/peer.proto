@@ -21,12 +21,8 @@ message PeerLocation {
   string value = 1;
 }
 
-message PeerNetworkInterface {
-  opendut.types.util.NetworkInterfaceName name = 1;
-}
-
 message PeerNetworkConfiguration {
-  repeated PeerNetworkInterface interfaces = 1;
+  repeated opendut.types.util.NetworkInterfaceDescriptor interfaces = 1;
 }
 
 message PeerDescriptor {

@@ -2,6 +2,7 @@ use pem::Pem;
 use crate::proto::{ConversionError, ConversionErrorBuilder};
 use crate::proto::util::ip_address::Address;
 use crate::util;
+use crate::util::net::NetworkInterfaceConfiguration;
 
 include!(concat!(env!("OUT_DIR"), "/opendut.types.util.rs"));
 
@@ -208,5 +209,63 @@ impl TryFrom<Certificate> for crate::util::net::Certificate {
 
     fn try_from(value: Certificate) -> Result<Self, Self::Error> {
         Ok(util::net::Certificate(Pem::new(value.tag, value.content)))
+    }
+}
+
+impl From<crate::util::net::NetworkInterfaceDescriptor> for NetworkInterfaceDescriptor {
+    fn from(value: crate::util::net::NetworkInterfaceDescriptor) -> Self {
+        let config = match value.configuration {
+            NetworkInterfaceConfiguration::Ethernet => network_interface_descriptor::Configuration::Ethernet(EthernetInterfaceConfiguration {}),
+            NetworkInterfaceConfiguration::Can { 
+                bitrate, 
+                sample_point, 
+                fd: flexible_data_rate, 
+                data_bitrate, 
+                data_sample_point } => network_interface_descriptor::Configuration::Can({
+                    CanInterfaceConfiguration { 
+                        bitrate, 
+                        sample_point: sample_point.into(), 
+                        flexible_data_rate, 
+                        data_bitrate, 
+                        data_sample_point: data_sample_point.into() 
+                    }
+                }),
+        };
+
+        Self {
+            name: Some(value.name.into()),
+            configuration: Some(config),
+        }
+    }
+}
+
+impl TryFrom<NetworkInterfaceDescriptor> for crate::util::net::NetworkInterfaceDescriptor {
+    type Error = ConversionError;
+
+    fn try_from(value: NetworkInterfaceDescriptor) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<NetworkInterfaceDescriptor, crate::util::net::NetworkInterfaceDescriptor>;
+
+        let name = value.name
+            .ok_or(ErrorBuilder::new("Interface not set"))?
+            .try_into()?;
+
+        let configuration = match value.configuration
+            .ok_or(ErrorBuilder::new("Configuration not set"))? {
+                network_interface_descriptor::Configuration::Ethernet(_) => NetworkInterfaceConfiguration::Ethernet,
+                network_interface_descriptor::Configuration::Can(can_config) => NetworkInterfaceConfiguration::Can { 
+                    bitrate: can_config.bitrate, 
+                    sample_point: can_config.sample_point.try_into()
+                        .map_err(|cause| ErrorBuilder::new(format!("Sample point could not be converted: {}", cause)))?, 
+                    fd: can_config.flexible_data_rate, 
+                    data_bitrate: can_config.data_bitrate, 
+                    data_sample_point: can_config.data_sample_point.try_into()
+                        .map_err(|cause| ErrorBuilder::new(format!("Sample point could not be converted: {}", cause)))?, 
+                },
+            };
+
+        Ok(Self {
+            name,
+            configuration,
+        })
     }
 }

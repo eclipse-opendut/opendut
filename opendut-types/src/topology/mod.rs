@@ -2,7 +2,7 @@ use std::fmt;
 use std::ops::Not;
 use std::str::FromStr;
 
-use crate::util::net::NetworkInterfaceName;
+use crate::util::net::NetworkInterfaceDescriptor;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
@@ -263,6 +263,6 @@ pub struct DeviceDescriptor {
     pub id: DeviceId,
     pub name: DeviceName,
     pub description: Option<DeviceDescription>,
-    pub interface: NetworkInterfaceName,
+    pub interface: NetworkInterfaceDescriptor,
     pub tags: Vec<DeviceTag>,
 }

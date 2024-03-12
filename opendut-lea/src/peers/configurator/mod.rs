@@ -68,7 +68,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                                 create_rw_signal(UserDeviceConfiguration {
                                     id: device.id,
                                     name: UserInputValue::Right(device.name.to_string()),
-                                    interface: UserInputValue::Right(device.interface.name()),
+                                    interface: UserInputValue::Right(device.interface.name.name()),
                                     description: UserInputValue::Right(device.description.unwrap_or_default().to_string()),
                                     is_collapsed: true
                                 })

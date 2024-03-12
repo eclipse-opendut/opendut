@@ -287,10 +287,10 @@ mod test {
 
     use rstest::*;
 
-    use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkConfiguration, PeerNetworkInterface};
+    use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkConfiguration};
     use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorDescriptors};
     use opendut_types::topology::{DeviceDescription, DeviceName, Topology};
-    use opendut_types::util::net::NetworkInterfaceName;
+    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
 
     use crate::resources::manager::ResourcesManager;
 
@@ -301,7 +301,7 @@ mod test {
         use rstest::*;
 
         use opendut_types::topology::{DeviceDescription, DeviceName};
-        use opendut_types::util::net::NetworkInterfaceName;
+        use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
 
         use super::*;
 
@@ -326,7 +326,10 @@ mod test {
                 id: additional_device_id,
                 name: DeviceName::try_from("PeerA_Device_42").unwrap(),
                 description: DeviceDescription::try_from("Additional device for peerA").ok(),
-                interface: NetworkInterfaceName::try_from("eth1").unwrap(),
+                interface: NetworkInterfaceDescriptor {
+                    name: NetworkInterfaceName::try_from("eth1").unwrap(),
+                    configuration: NetworkInterfaceConfiguration::Ethernet,
+                },
                 tags: vec![],
             };
 
@@ -375,9 +378,10 @@ mod test {
             location: PeerLocation::try_from("Ulm").ok(),
             network_configuration: PeerNetworkConfiguration {
                 interfaces: vec![
-                    PeerNetworkInterface {
+                    NetworkInterfaceDescriptor {
                         name: NetworkInterfaceName::try_from("eth0").unwrap(),
-                    }
+                        configuration: NetworkInterfaceConfiguration::Ethernet,
+                    },
                 ]
             },
             topology: Topology {
@@ -386,14 +390,20 @@ mod test {
                         id: peer_a_device_1,
                         name: DeviceName::try_from("PeerA_Device_1").unwrap(),
                         description: DeviceDescription::try_from("Huii").ok(),
-                        interface: NetworkInterfaceName::try_from("eth0").unwrap(),
+                        interface: NetworkInterfaceDescriptor {
+                            name: NetworkInterfaceName::try_from("eth0").unwrap(),
+                            configuration: NetworkInterfaceConfiguration::Ethernet,
+                        },
                         tags: vec![],
                     },
                     DeviceDescriptor {
                         id: peer_a_device_2,
                         name: DeviceName::try_from("PeerA_Device_2").unwrap(),
                         description: DeviceDescription::try_from("Huii").ok(),
-                        interface: NetworkInterfaceName::try_from("eth1").unwrap(),
+                        interface: NetworkInterfaceDescriptor {
+                            name: NetworkInterfaceName::try_from("eth1").unwrap(),
+                            configuration: NetworkInterfaceConfiguration::Ethernet,
+                        },
                         tags: vec![],
                     }
                 ]

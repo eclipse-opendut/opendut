@@ -1,9 +1,9 @@
 use leptos::{RwSignal, SignalGetUntracked};
 
-use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkConfiguration, PeerNetworkInterface};
+use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkConfiguration};
 use opendut_types::peer::executor::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine, ExecutorDescriptor, ExecutorDescriptors};
 use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
-use opendut_types::util::net::NetworkInterfaceName;
+use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
 
 use crate::components::UserInputValue;
 
@@ -108,7 +108,7 @@ impl TryFrom<UserPeerConfiguration> for PeerDescriptor {
             .into_iter()
             .map(|signal| signal.get_untracked())
             .map(|interface| {
-                PeerNetworkInterface::try_from(interface)
+                NetworkInterfaceDescriptor::try_from(interface)
                     .map_err(|_|  PeerMisconfigurationError::InvalidPeerNetworkConfiguration)
             })
             .collect::<Result<Vec<_>, _>>()?;
@@ -172,18 +172,22 @@ impl TryFrom<UserDeviceConfiguration> for DeviceDescriptor {
             id: configuration.id,
             name,
             description: Some(description),
-            interface,
+            interface: NetworkInterfaceDescriptor {
+                name: interface,
+                configuration: NetworkInterfaceConfiguration::Ethernet, // TODO: Do not assume Ethernet here
+            },
             tags: vec![],
         })
     }
 }
 
-impl TryFrom<UserPeerNetworkInterface> for PeerNetworkInterface {
+impl TryFrom<UserPeerNetworkInterface> for NetworkInterfaceDescriptor {
     type Error = PeerMisconfigurationError;
 
     fn try_from(configuration: UserPeerNetworkInterface) -> Result<Self, Self::Error> {
-        Ok(PeerNetworkInterface {
+        Ok(Self {
             name: configuration.name,
+            configuration: NetworkInterfaceConfiguration::Ethernet, // TODO: Do not assume Ethernet here
         })
     }
 }

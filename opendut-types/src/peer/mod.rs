@@ -9,8 +9,8 @@ use url::Url;
 use uuid::Uuid;
 use crate::peer::executor::{ExecutorDescriptors};
 
-use crate::topology::{Topology};
-use crate::util::net::{Certificate, NetworkInterfaceName};
+use crate::topology::Topology;
+use crate::util::net::{Certificate, NetworkInterfaceDescriptor};
 use crate::vpn::VpnPeerConfiguration;
 
 pub mod state;
@@ -219,23 +219,12 @@ impl fmt::Display for PeerLocation {
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct PeerNetworkConfiguration {
-    pub interfaces: Vec<PeerNetworkInterface>,
+    pub interfaces: Vec<NetworkInterfaceDescriptor>,
 }
 
 impl PeerNetworkConfiguration {
-    pub fn new(interfaces: Vec<PeerNetworkInterface>) -> Self {
+    pub fn new(interfaces: Vec<NetworkInterfaceDescriptor>) -> Self {
         Self { interfaces }
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub struct PeerNetworkInterface {
-    pub name: NetworkInterfaceName,
-}
-
-impl PeerNetworkInterface {
-    pub fn new(name: NetworkInterfaceName) -> Self {
-        Self { name }
     }
 }
 
