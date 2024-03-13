@@ -1,0 +1,9 @@
+---
+version: "3.9"
+services:
+  otel-collector:
+    ports:
+      - "4317:4317"
+  grafana:
+    ports:
+      - "3500:3000"

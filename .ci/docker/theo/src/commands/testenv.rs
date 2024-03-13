@@ -62,6 +62,7 @@ impl TestenvCli {
                 }
                 // start services
                 docker_compose_up_expose_ports(DockerCoreServices::Firefox.as_str(), expose)?;
+                docker_compose_up_expose_ports(DockerCoreServices::Telemetry.as_str(), expose)?;
                 docker_compose_up_expose_ports(DockerCoreServices::Keycloak.as_str(), expose)?;
                 crate::core::docker::keycloak::wait_for_keycloak_provisioned()?;
                 start_netbird(expose)?;
@@ -81,6 +82,7 @@ impl TestenvCli {
                 docker_compose_down(DockerCoreServices::Carl.as_str(), false)?;
                 docker_compose_down(DockerCoreServices::Netbird.as_str(), false)?;
                 docker_compose_down(DockerCoreServices::Firefox.as_str(), false)?;
+                docker_compose_down(DockerCoreServices::Telemetry.as_str(), false)?;
             }
             TaskCli::Network => {
                 crate::core::network::docker_inspect_network()?;
@@ -96,6 +98,7 @@ impl TestenvCli {
                     DockerCoreServices::Edgar => { docker_compose_down(DockerCoreServices::Edgar.as_str(), true)?; }
                     DockerCoreServices::Netbird => { docker_compose_down(DockerCoreServices::Netbird.as_str(), true)?; }
                     DockerCoreServices::Firefox => { docker_compose_down(DockerCoreServices::Firefox.as_str(), true)?; }
+                    DockerCoreServices::Telemetry => { docker_compose_down(DockerCoreServices::Telemetry.as_str(), true)?; }
                     DockerCoreServices::All => {
                         println!("Destroying all services.");
                         docker_compose_down(DockerCoreServices::Firefox.as_str(), true)?;

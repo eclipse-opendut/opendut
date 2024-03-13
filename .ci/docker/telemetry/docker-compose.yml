@@ -1,0 +1,111 @@
+version: "3.9"
+services:
+ prometheus:
+   container_name: prometheus
+   image: prom/prometheus:latest
+   restart: always
+   volumes:
+     - ./prometheus.yaml:/etc/prometheus/prometheus.yml
+   networks:
+     - opendutnet
+
+ tempo:
+    container_name: tempo
+    image: grafana/tempo:latest
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+       - ./tempo.yaml:/etc/tempo.yaml
+       - tempo-data:/tmp/tempo
+    healthcheck:
+      interval: 5s
+      retries: 10
+      test: wget --no-verbose --tries=1 --spider http://localhost:3200/status || exit 1
+    networks:
+      - opendutnet
+
+ loki:
+    container_name: loki
+    image: grafana/loki:latest
+    volumes:
+      - ./loki-config.yml:/etc/loki/loki-config.yml
+    command: ["-config.file=/etc/loki/loki-config.yml", "-config.expand-env=true"]
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1
+      interval: 10s
+      timeout: 7s
+      retries: 5
+    networks:
+      - opendutnet
+
+ minio:
+    container_name: minio
+    image: minio/minio:latest
+    entrypoint:
+      - sh
+      - -euc
+      - |
+        mkdir -p /data/loki-data && \
+        mkdir -p /data/loki-ruler && \
+        mkdir -p /data/tempo && \
+        minio server /data \
+        --console-address ':9001'
+    environment:
+      - MINIO_ROOT_USER=minio
+      - MINIO_ROOT_PASSWORD=minio123
+      - MINIO_PROMETHEUS_AUTH_TYPE=public
+    volumes:
+      - minio-data:/data
+    ports:
+      - 9001
+    networks:
+      - opendutnet
+
+ otel-collector:
+   container_name: otel-collector
+   image: otel/opentelemetry-collector-contrib:latest
+   volumes:
+     - ./otel-collector.yaml:/etc/collector-gateway.yaml
+   command: [ "--config=/etc/collector-gateway.yaml" ]
+   depends_on:
+     - tempo
+     - loki
+   networks:
+     - opendutnet
+
+ grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+  #  deploy:
+  #    resources:
+  #      limits:
+  #        memory: 100M
+    restart: unless-stopped
+    depends_on:
+      tempo:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+    environment:
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      #- GF_AUTH_ANONYMOUS_ENABLED=true
+      #- GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      #- GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
+    volumes:
+     # - ./grafana/grafana.ini:/etc/grafana/grafana.ini
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - ./grafana/grafana-datasources.yml:/etc/grafana/provisioning/datasources/ds.yaml
+      - ./grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
+      - grafana-storage:/var/lib/grafana
+    networks:
+      - opendutnet
+
+volumes:
+  grafana-storage:
+  tempo-data:
+  minio-data:
+
+networks:
+  opendutnet:
+    name: opendut_network
+    external: true  # Use a pre-existing network
