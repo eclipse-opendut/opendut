@@ -40,16 +40,18 @@ metrics_generator:
   storage:
     path: /tmp/tempo/generator/wal
     remote_write:
-      - url: http://prometheus:9090/api/v1/write
+      - url: http://prometheus:8889/api/v1/write
         send_exemplars: true
 
 storage:
   trace:
-    backend: local                     # backend configuration to use
-    wal:
-      path: /tmp/tempo/wal             # where to store the the wal locally
-    local:
-      path: /tmp/tempo/blocks
+    backend: s3
+    s3:
+      bucket: tempo-data
+      endpoint: minio:9000
+      insecure: true
+      access_key: minio
+      secret_key: minio123
 
 overrides:
   defaults:

@@ -15,7 +15,7 @@ services:
     command: [ "-config.file=/etc/tempo.yaml" ]
     volumes:
        - ./tempo.yaml:/etc/tempo.yaml
-       - tempo-data:/tmp/tempo
+       #- tempo-data:/tmp/tempo
     healthcheck:
       interval: 5s
       retries: 10
@@ -45,6 +45,7 @@ services:
       - -euc
       - |
         mkdir -p /data/loki-data && \
+        mkdir -p /data/tempo-data && \
         mkdir -p /data/loki-ruler && \
         mkdir -p /data/tempo && \
         minio server /data \
