@@ -5,7 +5,7 @@ This guide will help you set up THEO on Windows.
 ## Requirements
 The following instructions use chocolatey to install the required software. 
 If you don't have chocolatey installed, you can find the installation instructions [here](https://chocolatey.org/install).
-You may also install the required software manually or e.g. use the Windows Package Manager [`winget`](https://learn.microsoft.com/en-us/windows/package-manager/) (Hashicorp.Vagrant, Oracle.VirtualBox, Git.Git).
+You may also install the required software manually or use the Windows Package Manager [`winget`](https://learn.microsoft.com/en-us/windows/package-manager/) (Hashicorp.Vagrant, Oracle.VirtualBox, Git.Git).
 
 * Install vagrant and virtualbox
     ```sh
@@ -13,22 +13,28 @@ You may also install the required software manually or e.g. use the Windows Pack
     ```
 * Install git and configure git to respect line endings
     ```sh
-    choco install git.install --params "'/GitAndUnixToolsOnPath /WindowsTerminal'"
+    choco install git.install --params "'/GitAndUnixToolsOnPath /WindowsTerminal /NoAutoCrlf'"
     ```
 
+> **Warning**  
+> If you already have installed git, you may need to reconfigure it to respect line endings.
+> If you already have checked out the repository without this setting, you need to do it again.
 
-* Create or check if a ssh key pair is present in `~/.ssh/id_rsa`
+  * Redo git configuration
+    ```sh
+    git config --global core.autocrlf false
+    ```
+
+* Create or check if an ssh key pair is present in `~/.ssh/id_rsa`
   ```sh
   mkdir -p ~/.ssh
   ssh-keygen -t rsa -b 4096 -C "opendut-vm" -f ~/.ssh/id_rsa
   ```
 
-> **Info**  
-> Vagrant creates a VM which mounts a Windows file share on `/vagrant`, where the openDuT repository was cloned. The openDuT project contains bash scripts that would break if the end of line conversion to `crlf` on windows would happen.
-> Therefore a [.gitattributes](https://git-scm.com/docs/gitattributes) file containing  
-```*.sh text eol=lf```  
-was added to the repository in order to make sure the bash scripts also keep the eol=`lf` when cloned on Windows.
-> As an alternative, you may consider using the cloned opendut repo on the Windows host only for the vagrant VM setup part. For working with THEO, you can use the cloned opendut repository inside the Linux guest system instead (`/home/vagrant/opendut`).  
+> **Hint**  
+> If you do not want to change your global Windows git configuration, in order to avoid any 'crlf' issues on other repositories, you may consider using the cloned opendut repo on the Windows host only for the vagrant VM setup part.  
+> For working with THEO, use the cloned opendut repository inside the Linux guest system instead (`/home/vagrant/opendut`).  
+> You may also consult with [.gitattributes](https://git-scm.com/docs/gitattributes)
 
 ## Setup virtual machine
 
