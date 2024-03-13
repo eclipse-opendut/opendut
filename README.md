@@ -1,8 +1,14 @@
-<picture style="padding-bottom: 1em;">
-  <source media="(prefers-color-scheme: dark)" srcset="resources/logos/logo_dark.png" />
-  <source media="(prefers-color-scheme: light)" srcset="resources/logos/logo_light.png" />
-  <img alt="Eclipse openDuT logo" src="resources/logos/logo_light.png" width="33%" />
-</picture>
+<p align="center">
+    <picture style="padding-bottom: 3em;">
+      <source media="(prefers-color-scheme: dark)" srcset="resources/logos/logo_dark.png" />
+      <source media="(prefers-color-scheme: light)" srcset="resources/logos/logo_light.png" />
+      <img alt="Eclipse openDuT logo" src="resources/logos/logo_light.png" width="60%" />
+    </picture>
+</p>
+
+[![projects.eclipse.org](https://img.shields.io/badge/Eclipse_Project---?style=for-the-badge&logo=eclipseide&labelColor=%236C54C6&color=%235C5C5C)](https://projects.eclipse.org/projects/automotive.opendut)
+[![projects.eclipse.org](https://img.shields.io/github/actions/workflow/status/eclipse-opendut/opendut/build.yaml?branch=main&style=for-the-badge&logo=githubactions&label=main)](https://github.com/eclipse-opendut/opendut/actions?query=branch%3Amain)
+[![projects.eclipse.org](https://img.shields.io/github/actions/workflow/status/eclipse-opendut/opendut/build.yaml?branch=development&style=for-the-badge&logo=githubactions&label=development)](https://github.com/eclipse-opendut/opendut/actions?query=branch%3Adevelopment)
 
 # Eclipse openDuT
 
