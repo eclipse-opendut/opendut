@@ -11,6 +11,7 @@ use crate::broker::event::Event;
 use crate::broker::protocol::CommitReply;
 
 use crate::repository::{Repository};
+use crate::resource::generic::GenericMarshaller;
 
 mod protocol;
 mod snapshot;
@@ -27,11 +28,11 @@ pub struct ResourcesBroker {
 
 impl ResourcesBroker {
 
-    pub fn create(config: ResourcesBrokerConfig) -> (mpsc::Sender<Command>, JoinHandle<()>) {
-        let (sender, mut receiver) = mpsc::channel::<Command>(config.message_buffer_size);
+    pub fn create(config: ResourcesBrokerConfig, marshaller: Box<dyn GenericMarshaller>) -> (mpsc::Sender<Command>, JoinHandle<()>) {
+        let (sender, receiver) = mpsc::channel::<Command>(config.message_buffer_size);
         let handle = tokio::spawn(async move {
             let broker = ResourcesBroker {
-                repository: Default::default(),
+                repository: Repository::new(marshaller),
                 subscribers: Default::default(),
                 mailbox: receiver,
             };
@@ -57,11 +58,11 @@ impl ResourcesBroker {
     fn receive(&mut self, command: Command) -> Result<(), ()> {
         match command {
             Command::Subscribe { subscriber } => {
-                let key = self.subscribers.insert(subscriber);
+                let _key = self.subscribers.insert(subscriber);
             }
             Command::Snapshot { .. } => {}
             Command::Commit { resources, reply_to } => {
-                for resource in resources {
+                for _resource in resources {
                     // self.storage.commit(resource).unwrap();
                 }
                 reply_to.send(CommitReply::Success)

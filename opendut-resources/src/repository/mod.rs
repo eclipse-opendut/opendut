@@ -1,5 +1,6 @@
 use std::any::Any;
 use std::collections::HashMap;
+use std::mem::size_of;
 use std::ops::Not;
 
 use circular_buffer::CircularBuffer;
@@ -8,30 +9,36 @@ use xxhash_rust::xxh3::xxh3_128;
 
 pub use change::{Change, ChangeKind};
 pub use errors::{CommitError, GetError, HeadError};
+use crate::repository::change::Patch;
 use crate::resource::{Resource, ResourceRef};
+use crate::resource::generic::GenericMarshaller;
 
 use crate::resource::versioning::ROOT_REVISION_HASH;
-use crate::resource::versioning::{BorrowRevision, RevisionHash, Revision, ToRevision, Versioned, VersionedMut};
+use crate::resource::versioning::{BorrowRevision, RevisionHash, Revision, ToRevision, Versioned};
 
 mod errors;
 mod change;
 
-#[derive(Default)]
+
 pub struct Repository<const N: usize> {
     index: HashMap<Uuid, CircularBuffer<N, Revision>>,
     store: HashMap<RevisionHash, Box<dyn Any + Send + Sync>>,
+    marshaller: Box<dyn GenericMarshaller>,
 }
 
 impl <const N: usize> Repository<N> {
 
-    pub fn new() -> Self {
-        Default::default()
+    pub fn new(marshaller: Box<dyn GenericMarshaller>) -> Self {
+        Self {
+            index: Default::default(),
+            store: Default::default(),
+            marshaller,
+        }
     }
 
-    #[cfg(feature = "broker")]
-    pub fn commit<R, RR>(&mut self, resource: R) -> Result<Change<R, RR>, CommitError>
+    pub fn commit<R, RR>(&mut self, resource: R) -> Result<Change, CommitError>
     where
-        R: Any + Resource<ResourceRef=RR> + Send + Sync,
+        R: Any + Resource<ResourceRef=RR> + Send + Sync + Clone,
         RR: ResourceRef<R> + BorrowRevision + ToRevision
     {
         let mut resource = resource;
@@ -42,11 +49,11 @@ impl <const N: usize> Repository<N> {
             .entry(resource_ref.uuid().to_owned())
             .or_default();
 
-        let revision = resource.resource_ref().borrow_revision();
+        let revision = resource.resource_ref().revision();
 
         let (parent, is_new) = if let Some(head_revision) = revisions.front() {
             if revision.current_hash() == head_revision.current_hash() {
-                let change = Change::nothing(resource);
+                let change = Change::nothing(uuid, revision.into());
                 return Ok(change);
             }
             if revision.parent_hash() != head_revision.current_hash() {
@@ -72,12 +79,12 @@ impl <const N: usize> Repository<N> {
         resource.resource_ref_mut()
             .clear_revision();
 
-        let hash: RevisionHash = postcard::to_stdvec(&resource)
+        let (hash, bytes): (RevisionHash, Vec<u8>) = self.marshaller.marshal(&resource)
             .map_err(|cause| CommitError::SerializationError { uuid, cause: cause.to_string() })
-            .map(|bytes| RevisionHash::from(xxh3_128(&bytes)))?;
+            .map(|bytes| (RevisionHash::from(xxh3_128(&bytes)), bytes))?;
 
         if hash == parent {
-            Ok(Change::nothing(resource))
+            Ok(Change::nothing(uuid, revision.into()))
         }
         else {
             resource.resource_ref_mut()
@@ -96,16 +103,16 @@ impl <const N: usize> Repository<N> {
             self.store.insert(hash, Box::new(Clone::clone(&resource)));
 
             if is_new {
-                Ok(Change::created(resource))
+                Ok(Change::created(uuid, revision, bytes))
             } else {
-                Ok(Change::updated(resource))
+                Ok(Change::updated(uuid, revision, bytes))
             }
         }
     }
 
     pub fn head<R, RR>(&self, resource_ref: &RR) -> Result<R, HeadError>
     where
-        R: Any + Resource,
+        R: Any + Resource<ResourceRef=RR> + Clone,
         RR: ResourceRef<R>
     {
         let uuid = resource_ref.uuid();
@@ -127,8 +134,8 @@ impl <const N: usize> Repository<N> {
 
     pub fn get<R, RR>(&self, resource_ref: &RR) -> Result<R, GetError>
     where
-        R: Any + Resource,
-        RR: ResourceRef<R> + Versioned + BorrowRevision
+        R: Any + Resource<ResourceRef=RR> + Clone,
+        RR: ResourceRef<R> + BorrowRevision
     {
         let uuid = resource_ref.uuid();
         let revision = resource_ref.borrow_revision();
@@ -149,5 +156,16 @@ impl <const N: usize> Repository<N> {
             .to_owned();
 
         Ok(resource)
+    }
+
+    pub fn apply(&self, patch: Patch) -> Result<(), ()> {
+        let kind = ChangeKind::try_from_tag(patch.bytes[0]).unwrap();
+        let uuid = Uuid::from_bytes(TryInto::<[u8; 16]>::try_into(&patch.bytes[1..1 + size_of::<Uuid>()]).unwrap());
+        let bytes = &patch.bytes[1 + size_of::<Uuid>()..];
+        let resource = self.marshaller.unmarshal(&bytes).unwrap();
+        // let resource: Box<Box<dyn Resource<_, _>>> = resource.downcast::<Box<dyn Resource<_, _>>>().unwrap();
+
+        // Ok(Change::new(kind, resource, bytes.to_vec()))
+        Ok(())
     }
 }

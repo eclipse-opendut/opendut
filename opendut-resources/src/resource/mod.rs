@@ -1,30 +1,25 @@
-use crate::resource::versioning::{Versioned, VersionedMut};
+use std::any::Any;
+use crate::resource::versioning::VersionedMut;
 
+pub mod generic;
+pub mod marshalling;
 pub mod versioning;
 
-pub trait Resource : Clone + serde::Serialize {
+pub trait Resource: Any + Clone {
 
-    type ResourceRef : ResourceRef<Self>;
-    type ResourceRefMut : ResourceRefMut<Self>;
+    type ResourceRef: ResourceRef<Self>;
 
     fn resource_ref(&self) -> &Self::ResourceRef;
 
-    fn resource_ref_mut(&mut self) -> &mut Self::ResourceRefMut;
-
-    fn into_resource_ref(self) -> Self::ResourceRef;
+    fn resource_ref_mut(&mut self) -> &mut Self::ResourceRef;
 }
 
-pub trait ResourceRef<R> : Versioned + Clone
+pub trait ResourceRef<R>: VersionedMut
 where
-    R: Resource
+    R: Resource,
 {
     fn uuid(&self) -> &uuid::Uuid;
-}
 
-pub trait ResourceRefMut<R> : ResourceRef<R> + VersionedMut
-where
-    R: Resource
-{
     fn uuid_mut(&mut self) -> &mut uuid::Uuid;
 }
 
@@ -72,28 +67,22 @@ macro_rules! resource {
         impl opendut_resources::resource::Resource for $resource {
 
             type ResourceRef = $resource_ref;
-            type ResourceRefMut = $resource_ref;
 
-            fn resource_ref(&self) -> &$resource_ref {
+            fn resource_ref(&self) -> &Self::ResourceRef {
                 &self.id
             }
 
-            fn resource_ref_mut(&mut self) -> &mut $resource_ref {
+            fn resource_ref_mut(&mut self) -> &mut Self::ResourceRef {
                 &mut self.id
-            }
-
-            fn into_resource_ref(self) -> $resource_ref {
-                self.id
             }
         }
 
         impl opendut_resources::resource::ResourceRef<$resource> for $resource_ref {
+
             fn uuid(&self) -> &opendut_resources::prelude::Uuid {
                 &self.id
             }
-        }
 
-        impl opendut_resources::resource::ResourceRefMut<$resource> for $resource_ref {
             fn uuid_mut(&mut self) -> &mut opendut_resources::prelude::Uuid {
                 &mut self.id
             }

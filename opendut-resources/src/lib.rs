@@ -17,8 +17,11 @@ pub mod prelude {
     pub use uuid::Uuid;
     #[cfg(feature = "derive")]
     pub use opendut_resources_derive::ResourceRef;
+    #[cfg(feature = "derive")]
+    pub use opendut_resources_derive::Marshaller;
     pub use crate::resource;
-    pub use crate::resource::{Resource, ResourceRef, ResourceRefMut};
+    pub use crate::resource::{Resource, ResourceRef};
+    pub use crate::resource::marshalling::Marshaller;
     pub use crate::resource::versioning::{RevisionHash, ROOT_REVISION_HASH};
 }
 

@@ -28,7 +28,6 @@ derive = ["dep:opendut-resources-derive"]
 opendut-resources-derive = { workspace = true, optional = true }
 
 circular-buffer = { workspace = true }
-postcard = { workspace = true, features = ["use-std"] }
 serde = { workspace = true, features = ["derive"] }
 slotmap = { workspace = true, optional = true }
 thiserror = { workspace = true }

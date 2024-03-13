@@ -2629,7 +2629,6 @@ dependencies = [
  "circular-buffer",
  "googletest",
  "opendut-resources-derive",
- "postcard",
  "rstest",
  "serde",
  "slotmap",
@@ -2655,6 +2654,7 @@ version = "0.0.0"
 dependencies = [
  "googletest",
  "opendut-resources",
+ "postcard",
  "rstest",
  "serde",
  "uuid",

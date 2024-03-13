@@ -6,11 +6,11 @@ license.workspace = true
 
 [dev-dependencies]
 opendut-resources = { workspace = true, features = ["all"] }
+uuid = { version = "1.7.0", features = ["v4"] }
 googletest = { workspace = true }
 rstest = { workspace = true }
 serde = { workspace = true }
+postcard = { workspace = true, features = ["use-std"] }
 
 [lints]
 workspace = true
-[dependencies]
-uuid = { version = "1.7.0", features = ["v4"] }

@@ -6,13 +6,9 @@ pub const ROOT_REVISION_HASH: RevisionHash = 0;
 
 pub trait Versioned {
 
-    type Derived;
-
     fn current_hash(&self) -> &RevisionHash;
 
     fn parent_hash(&self) -> &RevisionHash;
-
-    fn derived_revision(&self) -> Self::Derived;
 }
 
 pub trait VersionedMut: Versioned {
@@ -30,13 +26,13 @@ pub trait VersionedMut: Versioned {
         self.reset_revision(ROOT_REVISION_HASH, *self.current_hash())
     }
 
-    fn reset_revision(&mut self, hash: impl Into<RevisionHash>, parent: impl Into<RevisionHash>) {
-        *self.current_hash_mut() = hash.into();
-        *self.parent_hash_mut() = parent.into();
+    fn reset_revision(&mut self, hash: RevisionHash, parent: RevisionHash) {
+        *self.current_hash_mut() = hash;
+        *self.parent_hash_mut() = parent;
     }
 
-    fn update_revision(&mut self, hash: impl Into<RevisionHash>) {
-        *self.current_hash_mut() = hash.into();
+    fn update_revision(&mut self, hash: RevisionHash) {
+        *self.current_hash_mut() = hash;
     }
 }
 
@@ -44,17 +40,11 @@ pub trait ToRevision {
     fn revision(&self) -> Revision;
 }
 
-pub trait BorrowRevision
-where
-    Self: Versioned + Sized
-{
+pub trait BorrowRevision: Versioned {
     fn borrow_revision(&self) -> BorrowedRevision<Self>;
 }
 
-pub trait BorrowMutRevision
-where
-    Self: VersionedMut + Sized
-{
+pub trait BorrowMutRevision: VersionedMut {
     fn borrow_mut_revision(&mut self) -> BorrowedMutRevision<Self>;
 }
 
@@ -71,18 +61,18 @@ impl Revision {
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
-pub struct BorrowedRevision<'a, R>
+pub struct BorrowedRevision<'a, V>
 where
-    R: Versioned
+    V: Versioned + ?Sized
 {
-    pub inner: &'a R,
+    pub inner: &'a V,
 }
 
-impl <'a, R> BorrowedRevision<'a, R>
+impl <'a, V> BorrowedRevision<'a, V>
 where
-    R: Versioned
+    V: Versioned + ?Sized
 {
-    pub fn new(inner: &'a R) -> Self {
+    pub fn new(inner: &'a V) -> Self {
         Self { inner }
     }
 }
@@ -90,23 +80,14 @@ where
 #[derive(Debug)]
 pub struct BorrowedMutRevision<'a, V>
 where
-    V: VersionedMut
+    V: VersionedMut + ?Sized
 {
     inner: &'a mut V,
 }
 
-impl <R> From<BorrowedRevision<'_, R>> for Revision
-where
-    R: Versioned
-{
-    fn from(value: BorrowedRevision<'_, R>) -> Self {
-        Self::new(*value.inner.current_hash(), *value.inner.parent_hash())
-    }
-}
-
 impl <'a, V> BorrowedMutRevision<'a, V>
 where
-    V: VersionedMut
+    V: VersionedMut + ?Sized
 {
     pub fn new(inner: &'a mut V) -> Self {
         Self { inner }
@@ -114,8 +95,6 @@ where
 }
 
 impl Versioned for Revision {
-
-    type Derived = Revision;
 
     fn current_hash(&self) -> &RevisionHash {
         &self.current
@@ -125,9 +104,9 @@ impl Versioned for Revision {
         &self.parent
     }
 
-    fn derived_revision(&self) -> Self::Derived {
-        Self::new(ROOT_REVISION_HASH, self.current)
-    }
+    // fn derived_revision(&self) -> Revision {
+    //     Self::new(ROOT_REVISION_HASH, self.current)
+    // }
 }
 
 impl VersionedMut for Revision {
@@ -145,8 +124,6 @@ impl <V> Versioned for BorrowedRevision<'_, V>
 where
     V: Versioned
 {
-    type Derived = Revision;
-
     fn current_hash(&self) -> &RevisionHash {
         self.inner.current_hash()
     }
@@ -155,17 +132,15 @@ where
         self.inner.parent_hash()
     }
 
-    fn derived_revision(&self) -> Self::Derived {
-        Revision::new(ROOT_REVISION_HASH, *self.inner.current_hash())
-    }
+    // fn derived_revision(&self) -> Revision {
+    //     Revision::new(ROOT_REVISION_HASH, *self.inner.current_hash())
+    // }
 }
 
 impl <V> Versioned for BorrowedMutRevision<'_, V>
 where
     V: VersionedMut
 {
-    type Derived = Revision;
-
     fn current_hash(&self) -> &RevisionHash {
         self.inner.current_hash()
     }
@@ -174,9 +149,9 @@ where
         self.inner.parent_hash()
     }
 
-    fn derived_revision(&self) -> Self::Derived {
-        Revision::new(ROOT_REVISION_HASH, *self.inner.current_hash())
-    }
+    // fn derived_revision(&self) -> Revision {
+    //     Revision::new(ROOT_REVISION_HASH, *self.inner.current_hash())
+    // }
 }
 
 impl <V> VersionedMut for BorrowedMutRevision<'_, V>
@@ -195,6 +170,24 @@ where
 impl Display for Revision {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}:{}", self.current, self.parent)
+    }
+}
+
+impl <V> From<BorrowedRevision<'_, V>> for Revision
+where
+    V: Versioned
+{
+    fn from(value: BorrowedRevision<'_, V>) -> Self {
+        Self::new(*value.inner.current_hash(), *value.inner.parent_hash())
+    }
+}
+
+impl <V> From<BorrowedMutRevision<'_, V>> for Revision
+where
+    V: VersionedMut
+{
+    fn from(value: BorrowedMutRevision<'_, V>) -> Self {
+        Self::new(*value.inner.current_hash(), *value.inner.parent_hash())
     }
 }
 

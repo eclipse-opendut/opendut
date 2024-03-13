@@ -1,87 +1,95 @@
+use std::mem::size_of;
 use uuid::Uuid;
 
-use crate::resource::{Resource, ResourceRef};
-use crate::resource::versioning::{BorrowedRevision, BorrowRevision, RevisionHash, Versioned};
+use crate::resource::versioning::{Revision, RevisionHash, Versioned};
 
 #[derive(Clone, Debug)]
-pub struct Change<R, RR>
-where
-    R: Resource<ResourceRef=RR>,
-    RR: ResourceRef<R>
-{
-    resource: R,
+pub struct Change {
     kind: ChangeKind,
+    uuid: Uuid,
+    revision: Revision,
+    bytes: Vec<u8>,
 }
 
-impl <R, RR> Change<R, RR>
-where
-    R: Resource<ResourceRef=RR>,
-    RR: ResourceRef<R> + Versioned + BorrowRevision
-{
-    pub fn nothing(resource: R) -> Self {
+impl Change {
+    pub fn new(kind: ChangeKind, uuid: Uuid, revision: Revision, bytes: Vec<u8>) -> Self {
+        Self { kind, uuid, revision, bytes }
+    }
+
+    pub fn nothing(uuid: Uuid, revision: Revision) -> Self {
         Self {
-            resource,
             kind: ChangeKind::Nothing,
+            uuid,
+            revision,
+            bytes: Vec::new(),
         }
     }
 
-    pub fn created(resource: R) -> Self {
+    pub fn created(uuid: Uuid, revision: Revision, bytes: Vec<u8>) -> Self {
         Self {
-            resource,
             kind: ChangeKind::Created,
+            uuid,
+            revision,
+            bytes,
         }
     }
 
-    pub fn updated(resource: R) -> Self {
+    pub fn updated(uuid: Uuid, revision: Revision, bytes: Vec<u8>) -> Self {
         Self {
-            resource,
             kind: ChangeKind::Updated,
+            uuid,
+            revision,
+            bytes,
         }
     }
 
-    pub fn removed(resource: R) -> Self {
+    pub fn removed(uuid: Uuid, revision: Revision) -> Self {
         Self {
-            resource,
             kind: ChangeKind::Removed,
+            uuid,
+            revision,
+            bytes: Vec::new(),
         }
     }
 
-    pub fn uuid(&self) -> &Uuid {
-        self.resource.resource_ref().uuid()
+    pub fn uuid(&self) -> &uuid::Uuid {
+        &self.uuid
     }
 
-    pub fn revision(&self) -> BorrowedRevision<RR> {
-        self.resource.resource_ref().borrow_revision()
+    pub fn revision(&self) -> &Revision {
+        &self.revision
     }
 
     pub fn revision_hash(&self) -> &RevisionHash {
-        self.resource.resource_ref().current_hash()
+        &self.revision.current_hash()
     }
 
     pub fn revision_parent(&self) -> &RevisionHash {
-        self.resource.resource_ref().parent_hash()
-    }
-
-    pub fn resource(&self) -> &R {
-        &self.resource
-    }
-
-    pub fn resource_ref(&self) -> &RR
-    {
-        self.resource.resource_ref()
+        &self.revision.parent_hash()
     }
 
     pub fn kind(&self) -> &ChangeKind {
         &self.kind
     }
 
-    pub fn into_resource(self) -> R {
-        self.resource
+    pub fn into_patch(self) -> Patch {
+
+        let mut bytes = Vec::<u8>::with_capacity(size_of::<u8>() + size_of::<uuid::Uuid>() + self.bytes.len());
+
+        bytes.push(self.kind.tag());
+        bytes.extend_from_slice(self.uuid().as_bytes());
+        bytes.extend(self.bytes);
+
+        Patch::new(bytes)
     }
 
-    pub fn into_resource_ref(self) -> RR {
-        self.resource.into_resource_ref()
-    }
+    // pub fn into_resource(self) -> R {
+    //     self.resource
+    // }
+
+    // pub fn into_resource_ref(self) -> RR {
+    //     self.resource.into_resource_ref()
+    // }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -90,4 +98,37 @@ pub enum ChangeKind {
     Created,
     Updated,
     Removed,
+}
+
+impl ChangeKind {
+
+    pub(crate) fn try_from_tag(tag: u8) -> Result<Self, ()> {
+        match tag {
+            1 => Ok(ChangeKind::Nothing),
+            2 => Ok(ChangeKind::Created),
+            3 => Ok(ChangeKind::Updated),
+            4 => Ok(ChangeKind::Removed),
+            _ => Err(()),
+        }
+    }
+
+    pub(crate) fn tag(&self) -> u8 {
+        match self {
+            ChangeKind::Nothing => 1,
+            ChangeKind::Created => 2,
+            ChangeKind::Updated => 3,
+            ChangeKind::Removed => 4,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct Patch {
+    pub bytes: Vec<u8>
+}
+
+impl Patch {
+    pub fn new(bytes: Vec<u8>) -> Self {
+        Patch { bytes }
+    }
 }
