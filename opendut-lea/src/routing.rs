@@ -65,6 +65,7 @@ mod routes {
     use crate::peers::{PeerConfigurator, PeersOverview};
     use crate::routing::NotFound;
     use crate::user::UserOverview;
+    use crate::about::AboutOverview;
 
     #[component]
     pub fn AppRoutes() -> impl IntoView {
@@ -79,6 +80,7 @@ mod routes {
                         <Route path="/peers/:id/configure/:tab" view=|| view! { <PeerConfigurator /> } />
                         <Route path="/user" view=|| view! { <UserOverview /> } />
                         <Route path="/licenses" view=|| view! { <LicensesOverview /> } />
+                        <Route path="/about" view=|| view! { <AboutOverview /> } />
                         <Route path="/error" view=|| view! { <ErrorPage /> } />
                         <Route path="/*any" view=|| view! { <NotFound /> } />
                     </Routes>

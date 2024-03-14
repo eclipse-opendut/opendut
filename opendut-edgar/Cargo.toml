@@ -32,7 +32,7 @@ opentelemetry_sdk = { workspace = true }
 regex = { workspace = true }
 rtnetlink = { workspace = true }
 serde = { workspace = true, features = ["std", "derive"] }
-shadow-rs = { workspace = true }
+shadow-rs = { workspace = true, default-features = true }
 sha2 = { workspace = true }
 sudo = { workspace = true }
 tar = { workspace = true }
@@ -54,7 +54,7 @@ googletest = { workspace = true }
 predicates = { workspace = true }
 
 [build-dependencies]
-shadow-rs = { workspace = true }
+shadow-rs = { workspace = true, default-features = true }
 
 [lints]
 workspace = true

@@ -32,6 +32,9 @@ impl MetadataProvider for MetadataProviderFacade {
         let reply = VersionResponse {
             version_info: Some(VersionInfo {
                 name: String::from(crate::app_info::CRATE_VERSION),
+                revision: String::from(crate::app_info::REVISION),
+                revision_date: String::from(crate::app_info::REVISION_DATE),
+                build_date: String::from(crate::app_info::BUILD_DATE),
             })
         };
 

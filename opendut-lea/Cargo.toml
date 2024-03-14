@@ -18,6 +18,7 @@ leptos = { workspace = true, features = ["csr"] }
 leptos_router = { workspace = true, features = ["csr"] }
 leptos-use = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
+shadow-rs = { workspace = true, default-features = false, features = ["tzdb"] }
 slotmap = { workspace = true }
 strum = { workspace = true }
 thiserror = { workspace = true }
@@ -30,6 +31,9 @@ url = { workspace = true }
 uuid = { workspace = true, features = ["v4", "serde"] }
 leptos_oidc =  { workspace = true }
 serde_json = { workspace = true }
+
+[build-dependencies]
+shadow-rs = { workspace = true }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.37"
