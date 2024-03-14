@@ -5,17 +5,17 @@ services:
    image: prom/prometheus:latest
    restart: always
    volumes:
-     - ./prometheus.yaml:/etc/prometheus/prometheus.yml
+     - ./prometheus.yml:/etc/prometheus/prometheus.yml
    networks:
      - opendutnet
 
  tempo:
     container_name: tempo
     image: grafana/tempo:latest
-    command: [ "-config.file=/etc/tempo.yaml" ]
+    command: [ "-config.file=/etc/tempo.yml" ]
     volumes:
-       - ./tempo.yaml:/etc/tempo.yaml
-       #- tempo-data:/tmp/tempo
+       - ./tempo.yml:/etc/tempo.yml
+       - tempo-data:/tmp/tempo
     healthcheck:
       interval: 5s
       retries: 10
@@ -27,8 +27,9 @@ services:
     container_name: loki
     image: grafana/loki:latest
     volumes:
-      - ./loki-config.yml:/etc/loki/loki-config.yml
-    command: ["-config.file=/etc/loki/loki-config.yml", "-config.expand-env=true"]
+      - ./loki.yml:/etc/loki/loki.yml
+      - loki-data:/loki
+    command: ["-config.file=/etc/loki/loki.yml", "-config.expand-env=true"]
     healthcheck:
       test: wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1
       interval: 10s
@@ -37,35 +38,11 @@ services:
     networks:
       - opendutnet
 
- minio:
-    container_name: minio
-    image: minio/minio:latest
-    entrypoint:
-      - sh
-      - -euc
-      - |
-        mkdir -p /data/loki-data && \
-        mkdir -p /data/tempo-data && \
-        mkdir -p /data/loki-ruler && \
-        mkdir -p /data/tempo && \
-        minio server /data \
-        --console-address ':9001'
-    environment:
-      - MINIO_ROOT_USER=minio
-      - MINIO_ROOT_PASSWORD=minio123
-      - MINIO_PROMETHEUS_AUTH_TYPE=public
-    volumes:
-      - minio-data:/data
-    ports:
-      - 9001
-    networks:
-      - opendutnet
-
  otel-collector:
    container_name: otel-collector
    image: otel/opentelemetry-collector-contrib:latest
    volumes:
-     - ./otel-collector.yaml:/etc/collector-gateway.yaml
+     - ./otel-collector.yml:/etc/collector-gateway.yaml
    command: [ "--config=/etc/collector-gateway.yaml" ]
    depends_on:
      - tempo
@@ -95,8 +72,8 @@ services:
     volumes:
      # - ./grafana/grafana.ini:/etc/grafana/grafana.ini
       - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - ./grafana/dashboard.yml:/etc/grafana/provisioning/dashboards/main.yaml
       - ./grafana/grafana-datasources.yml:/etc/grafana/provisioning/datasources/ds.yaml
-      - ./grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
       - grafana-storage:/var/lib/grafana
     networks:
       - opendutnet
@@ -104,7 +81,7 @@ services:
 volumes:
   grafana-storage:
   tempo-data:
-  minio-data:
+  loki-data:
 
 networks:
   opendutnet:
