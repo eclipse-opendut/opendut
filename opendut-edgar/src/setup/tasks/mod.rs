@@ -34,4 +34,7 @@ pub mod load_kernel_modules;
 pub use load_kernel_modules::LoadKernelModules;
 
 pub mod create_kernel_module_load_rule;
+pub mod create_ca_authority;
+pub use create_ca_authority::CaCertificate;
+
 pub use create_kernel_module_load_rule::CreateKernelModuleLoadRule;

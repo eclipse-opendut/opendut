@@ -2502,6 +2502,7 @@ dependencies = [
  "opendut-netbird-client-api",
  "opendut-types",
  "opendut-util",
+ "pem",
  "predicates",
  "regex",
  "rtnetlink",

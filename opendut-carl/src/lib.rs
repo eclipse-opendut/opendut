@@ -166,7 +166,7 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
                     panic!("Failed to parse comma-separated OIDC scopes for LEA. Scopes must only contain ASCII alphabetic characters. Found: {:?}. Parsed as: {:?}", lea_idp_config.scopes, scopes);
                 }
             }
-            info!("OIDC is enabled: {:?}", lea_idp_config);
+            info!("OIDC is enabled.");
             Some(LeaIdentityProviderConfig {
                 client_id: lea_idp_config.client_id,
                 issuer_url: lea_idp_config.issuer_url,
