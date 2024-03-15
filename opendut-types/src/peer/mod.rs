@@ -338,7 +338,7 @@ mod tests {
         };
 
         let encoded = setup.encode()?;
-        assert_that!(encoded, eq("FwsBIBwHzrk8VikIvG69lCJUe4_mSp3OTjz1ObJXTR2WPlseeRiI9ZUUUBzJLrChDmg8ANs3LYdykUQoPLv2x_YMWLdq0EpIVAijcxFb8habW0mKY5KFIbQ8TsC3TQHRJWx-v7qqaeIEA8VmgbcXatmQ-0d_QZzF7DxDPrcL2EVeOwpr6XjHdwceNnEttz3p2t_gUf4Al0beesV1XfVDbK1gjVEwl6q-ZJvFEfw="));
+        assert_that!(encoded, eq("F78BIBwHdiz4lWbaSDYvtcjeFlWr5lS6N1PXfcBE-dIHAFqHpavv4S2wCQwHQt-LW_10GkbPi4GFFnAAlm4TPII-CSnSNn266h-pM0LIpNBFlCJNfQojpUFslUAskzT3MkvzkFHSsHTEs025eLYhZPvGvAa-jjUPlVzwuxe8UIK8l_cAXhbXkwtK2LfqxwWQHPa5_HbX0za_024MLae671ceBfcvefC_cx1NlMR9RPQ3AE8PkBeRIh7oAsKGfO5x4TN78PSSEsNKLrkDZEJ7jmkItxnyra64dUD5BtGrZVfA1WGquyjVd7T5TWQ-TpVQBRKl4wcTxx6RMTmcjwrlnXC5TOk_"));
 
         let decoded = PeerSetup::decode(&encoded)?;
         assert_that!(decoded, eq(setup));

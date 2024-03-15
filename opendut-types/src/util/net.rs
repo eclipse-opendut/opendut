@@ -376,3 +376,14 @@ pub struct AuthConfig {
     pub scopes: Vec<OAuthScope>,
 }
 
+impl AuthConfig {
+    pub fn disabled() -> Self {
+        let disabled_auth_url = url::Url::parse("https://no-auth-url").unwrap();
+        Self {
+            issuer_url: disabled_auth_url,
+            client_id: ClientId::from("disabled"),
+            client_secret: ClientSecret::from("disabled-secret-with-some-length"),
+            scopes: vec![],
+        }
+    }
+}

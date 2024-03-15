@@ -1,9 +1,9 @@
 use chrono::{NaiveDateTime, Utc};
 use oauth2::{AccessToken, AuthUrl, ClientId, ClientSecret, Scope, TokenResponse, TokenUrl};
 use oauth2::basic::{BasicClient, BasicTokenResponse};
+use oauth2::reqwest::async_http_client;
 use tokio::sync::{RwLock, RwLockWriteGuard};
 
-use crate::carl::auth::reqwest_client::async_http_client;
 use crate::carl::OidcIdentityProviderConfig;
 
 #[derive(Debug)]

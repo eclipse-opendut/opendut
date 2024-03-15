@@ -41,7 +41,7 @@ jsonwebtoken = { workspace = true, optional = true }
 leptos = { workspace = true, optional = true }
 leptos_oidc =  { workspace = true, optional = true }
 log = { workspace = true }
-oauth2 = { workspace = true, default-features = false, optional = true }
+oauth2 = { workspace = true, default-features = false, optional = true, features = ["reqwest"] }
 prost = { workspace = true }
 reqwest = { workspace = true, default-features = false, features = ["rustls-tls-native-roots"] }
 serde = { workspace = true, features = ["std", "derive"] }

@@ -12,6 +12,12 @@ ca = "/etc/opendut/tls/ca.pem"
 [network.oidc]
 enabled = false
 
+[network.oidc.client]
+client_id = "opendut-carl-client"
+issuer_url = "https://keycloak/realms/opendut"
+scopes = "openid,profile,email,roles,groups"
+
+
 [network.oidc.lea]
 client_id = "opendut-lea-client"
 issuer_url = "https://keycloak/realms/opendut"

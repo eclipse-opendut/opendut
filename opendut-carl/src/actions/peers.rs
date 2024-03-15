@@ -18,7 +18,7 @@ use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerSetup};
 use opendut_types::peer::configuration::PeerConfiguration;
 use opendut_types::proto;
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
-use opendut_types::util::net::Certificate;
+use opendut_types::util::net::{AuthConfig, Certificate};
 use opendut_types::vpn::VpnPeerConfiguration;
 use opendut_util::ErrorOr;
 use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerRef};
@@ -282,6 +282,7 @@ pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<Peer
             id: peer_id,
             carl: params.carl_url,
             ca: Certificate(params.ca),
+            auth_config: AuthConfig::disabled(),
             vpn: vpn_config,
         })
     }

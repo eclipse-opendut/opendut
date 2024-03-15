@@ -62,6 +62,16 @@ main() {
   create_secret_client "opendut-cleo-client" "918642e0-4ec4-4ef5-8ae0-ba92de7da3f9" "$REALM_OPENDUT"
   create_secret_client "opendut-edgar-client" "c7d6ace0-b90f-471a-bb62-a4ecac4150f8" "$REALM_OPENDUT"
 
+  # Create keycloak client privileges for openDuT-CARL
+  # add service account role admin to openDuT-CARL keycloak client
+  # this is an all-powerful role, use with caution
+  # kcadm add-roles -r opendut --uusername service-account-<CLIENT_ID> --rolename <ROLE_NAME>
+  # kcadm get-roles -r opendut
+  create_realm_role carl-admin "$REALM_OPENDUT"
+  kcadm add-roles -r "$REALM_OPENDUT" --uusername service-account-opendut-carl-client --rolename carl-admin
+  make_realm_role_admin "carl-admin" "$REALM_OPENDUT"
+
+
   # Provisioning done signal for opendut-theo
   echo "Keycloak provisioned"
   echo "0" > /opt/keycloak/data/provisioned
