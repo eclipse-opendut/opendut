@@ -1,6 +1,9 @@
 use std::fmt;
+use std::fmt::{Debug, Formatter};
+use std::ops::Not;
 use pem::Pem;
 use serde::{Deserialize, Serialize};
+use url::Url;
 
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(transparent)]
@@ -148,3 +151,262 @@ impl fmt::Display for NetworkInterfaceDescriptor {
     }
 }
 
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ClientId(pub String);
+
+impl ClientId {
+    pub const MIN_LENGTH: usize = 8;
+    pub const MAX_LENGTH: usize = 64;
+    pub fn value(self) -> String {
+        self.0
+    }
+}
+
+
+#[derive(Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ClientSecret(pub String);
+impl Debug for ClientSecret {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str("ClientSecret([redacted])")
+    }
+}
+
+impl ClientSecret {
+    pub const MIN_LENGTH: usize = 20;
+    pub const MAX_LENGTH: usize = 512;
+    pub fn value(self) -> String {
+        self.0
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct OAuthScope(pub String);
+
+impl OAuthScope {
+    pub const MIN_LENGTH: usize = 4;
+    pub const MAX_LENGTH: usize = 48;
+    pub fn value(self) -> String {
+        self.0
+    }
+}
+
+#[derive(thiserror::Error, Clone, Debug)]
+pub enum IllegalOAuthScope {
+    #[error(
+    "OAuthScope '{value}' is too short. Expected at least {expected} characters, got {actual}."
+    )]
+    TooShort {
+        value: String,
+        expected: usize,
+        actual: usize,
+    },
+    #[error(
+    "OAuthScope '{value}' is too long. Expected at most {expected} characters, got {actual}."
+    )]
+    TooLong {
+        value: String,
+        expected: usize,
+        actual: usize,
+    },
+    #[error("OAuthScope '{value}' contains invalid characters.")]
+    InvalidCharacter { value: String },
+    #[error("OAuthScope '{value}' contains invalid start or end characters.")]
+    InvalidStartEndCharacter { value: String },
+}
+
+impl From<OAuthScope> for String {
+    fn from(value: OAuthScope) -> Self { value.0 }
+}
+
+impl From<&str> for OAuthScope {
+    fn from(value: &str) -> Self {
+        Self(String::from(value))
+    }
+}
+
+
+impl TryFrom<String> for OAuthScope {
+    type Error = IllegalOAuthScope;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        let length = value.len();
+        if length < Self::MIN_LENGTH {
+            Err(IllegalOAuthScope::TooShort {
+                value,
+                expected: Self::MIN_LENGTH,
+                actual: length,
+            })
+        } else if length > Self::MAX_LENGTH {
+            Err(IllegalOAuthScope::TooLong {
+                value,
+                expected: Self::MAX_LENGTH,
+                actual: length,
+            })
+        } else if crate::util::invalid_start_and_end_of_a_name(&value) {
+            Err(IllegalOAuthScope::InvalidStartEndCharacter { value })
+        } else if value
+            .chars()
+            .any(|c| crate::util::valid_characters_in_name(&c).not())
+        {
+            Err(IllegalOAuthScope::InvalidCharacter { value })
+        } else {
+            Ok(Self(value))
+        }
+    }
+}
+
+
+#[derive(thiserror::Error, Clone, Debug)]
+pub enum IllegalClientId {
+    #[error(
+    "Client id '{value}' is too short. Expected at least {expected} characters, got {actual}."
+    )]
+    TooShort {
+        value: String,
+        expected: usize,
+        actual: usize,
+    },
+    #[error(
+    "Client id '{value}' is too long. Expected at most {expected} characters, got {actual}."
+    )]
+    TooLong {
+        value: String,
+        expected: usize,
+        actual: usize,
+    },
+    #[error("Client id '{value}' contains invalid characters.")]
+    InvalidCharacter { value: String },
+    #[error("Client id '{value}' contains invalid start or end characters.")]
+    InvalidStartEndCharacter { value: String },
+}
+
+impl From<ClientId> for String {
+    fn from(value: ClientId) -> Self { value.0 }
+}
+
+impl From<&str> for ClientId {
+    fn from(value: &str) -> Self {
+        Self(String::from(value))
+    }
+}
+
+impl TryFrom<String> for ClientId {
+    type Error = IllegalClientId;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        let length = value.len();
+        if length < Self::MIN_LENGTH {
+            Err(IllegalClientId::TooShort {
+                value,
+                expected: Self::MIN_LENGTH,
+                actual: length,
+            })
+        } else if length > Self::MAX_LENGTH {
+            Err(IllegalClientId::TooLong {
+                value,
+                expected: Self::MAX_LENGTH,
+                actual: length,
+            })
+        } else if crate::util::invalid_start_and_end_of_a_name(&value) {
+            Err(IllegalClientId::InvalidStartEndCharacter { value })
+        } else if value
+            .chars()
+            .any(|c| crate::util::valid_characters_in_name(&c).not())
+        {
+            Err(IllegalClientId::InvalidCharacter { value })
+        } else {
+            Ok(Self(value))
+        }
+    }
+}
+
+#[derive(thiserror::Error, Clone, Debug)]
+pub enum IllegalClientSecret {
+    #[error(
+    "Client secret '{value}' is too short. Expected at least {expected} characters, got {actual}."
+    )]
+    TooShort {
+        value: String,
+        expected: usize,
+        actual: usize,
+    },
+    #[error(
+    "Client secret '{value}' is too long. Expected at most {expected} characters, got {actual}."
+    )]
+    TooLong {
+        value: String,
+        expected: usize,
+        actual: usize,
+    },
+}
+
+impl From<ClientSecret> for String {
+    fn from(value: ClientSecret) -> Self { value.0 }
+}
+
+impl From<&str> for ClientSecret {
+    fn from(value: &str) -> Self {
+        Self(String::from(value))
+    }
+}
+
+impl TryFrom<String> for ClientSecret {
+    type Error = IllegalClientSecret;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        let length = value.len();
+        if length < Self::MIN_LENGTH {
+            Err(IllegalClientSecret::TooShort {
+                value,
+                expected: Self::MIN_LENGTH,
+                actual: length,
+            })
+        } else if length > Self::MAX_LENGTH {
+            Err(IllegalClientSecret::TooLong {
+                value,
+                expected: Self::MAX_LENGTH,
+                actual: length,
+            })
+        } else {
+            Ok(Self(value))
+        }
+    }
+}
+
+
+#[derive(Debug)]
+pub struct ClientCredentials {
+    pub client_id: ClientId,
+    pub client_secret: ClientSecret,
+}
+
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AuthConfig {
+    pub issuer_url: Url,
+    pub client_id: ClientId,
+    pub client_secret: ClientSecret,
+    pub scopes: Vec<OAuthScope>,
+}
+
+impl AuthConfig {
+    pub fn disabled() -> Self {
+        let disabled_auth_url = Url::parse("https://no-auth-url").unwrap();
+        Self {
+            issuer_url: disabled_auth_url,
+            client_id: ClientId::from("disabled"),
+            client_secret: ClientSecret::from("disabled-secret-with-some-length"),
+            scopes: vec![],
+        }
+    }
+    pub fn from_credentials(issuer_url: Url, client_credentials: ClientCredentials) -> Self {
+
+        Self {
+            issuer_url,
+            client_id: client_credentials.client_id,
+            client_secret: client_credentials.client_secret,
+            scopes: vec![],
+        }
+    }
+}

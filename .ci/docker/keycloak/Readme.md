@@ -12,3 +12,9 @@ This image is based on the official Keycloak docker image.
 
 It adds the GitHub enterprise extension to the image:
 * [github-enterprise-identity-provider](https://github.com/thomasdarimont/keycloak-extension-playground)
+
+## Commands of interest
+
+* List realm roles: `kcadm get-roles -r opendut`
+* Add realm role to client: `kcadm add-roles -r opendut --uusername service-account-<CLIENT_ID> --rolename <ROLE_NAME>`
+

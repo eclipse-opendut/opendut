@@ -14,6 +14,7 @@ use opendut_types::peer::{PeerDescriptor, PeerId};
 use crate::actions;
 use crate::actions::{DeletePeerDescriptorParams, GeneratePeerSetupParams, ListDevicesParams, ListPeerDescriptorsParams, StorePeerDescriptorParams};
 use crate::grpc::extract;
+use crate::peer::oidc_client_manager::OpenIdConnectClientManager;
 use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
 
@@ -22,16 +23,18 @@ pub struct PeerManagerFacade {
     vpn: Vpn,
     carl_url: Url,
     ca: Pem,
+    oidc_client_manager: Option<OpenIdConnectClientManager>,
 }
 
 impl PeerManagerFacade {
 
-    pub fn new(resources_manager: ResourcesManagerRef, vpn: Vpn, carl_url: Url, ca: Pem) -> Self {
+    pub fn new(resources_manager: ResourcesManagerRef, vpn: Vpn, carl_url: Url, ca: Pem, oidc_client_manager: Option<OpenIdConnectClientManager>) -> Self {
         PeerManagerFacade {
             resources_manager,
             vpn,
             carl_url,
             ca,
+            oidc_client_manager,
         }
     }
 
@@ -178,34 +181,6 @@ impl PeerManagerService for PeerManagerFacade {
     }
 
     #[tracing::instrument(skip(self, request), level="trace")]
-    async fn generate_peer_setup(&self, request: Request<GeneratePeerSetupRequest>) -> Result<Response<GeneratePeerSetupResponse>, Status> { // TODO: Refactor error types.
-
-        log::trace!("Received request: {:?}", request);
-
-        let message = request.into_inner();
-        let response = match message.peer {
-            Some(peer_id) => {
-                let peer_id = PeerId::try_from(peer_id)
-                    .map_err(|cause| Status::invalid_argument(format!("PeerId could not be converted: {}", cause)))?;
-                let setup = actions::generate_peer_setup(GeneratePeerSetupParams {
-                    resources_manager: Arc::clone(&self.resources_manager),
-                    peer: peer_id,
-                    carl_url: Clone::clone(&self.carl_url),
-                    ca: Clone::clone(&self.ca),
-                    vpn: Clone::clone(&self.vpn),
-                }).await.map_err(|cause| Status::internal(format!("Peer setup could not be created: {}", cause)))?;
-
-                peer_manager::generate_peer_setup_response::Reply::Success(peer_manager::GeneratePeerSetupSuccess { peer: Some(peer_id.into()), setup: Some(setup.into()) })
-            }
-            None => {
-                peer_manager::generate_peer_setup_response::Reply::Failure(peer_manager::GeneratePeerSetupFailure {})
-            }
-        };
-
-        Ok(Response::new(GeneratePeerSetupResponse { reply: Some(response) }))
-    }
-
-    #[tracing::instrument(skip(self, request), level="trace")]
     async fn list_devices(&self, request: Request<ListDevicesRequest>) -> Result<Response<ListDevicesResponse>, Status> {
 
         log::trace!("Received request: {:?}", request);
@@ -220,6 +195,34 @@ impl PeerManagerService for PeerManagerFacade {
 
         Ok(Response::new(ListDevicesResponse { devices }))
     }
+
+    #[tracing::instrument(skip(self, request), level="trace")]
+    async fn generate_peer_setup(&self, request: Request<GeneratePeerSetupRequest>) -> Result<Response<GeneratePeerSetupResponse>, Status> { // TODO: Refactor error types.
+        log::trace!("Received request: {:?}", request);
+
+        let message = request.into_inner();
+        let response = match message.peer {
+            Some(peer_id) => {
+                let peer_id = PeerId::try_from(peer_id)
+                    .map_err(|cause| Status::invalid_argument(format!("PeerId could not be converted: {}", cause)))?;
+                let setup = actions::generate_peer_setup(GeneratePeerSetupParams {
+                    resources_manager: Arc::clone(&self.resources_manager),
+                    peer: peer_id,
+                    carl_url: Clone::clone(&self.carl_url),
+                    ca: Clone::clone(&self.ca),
+                    vpn: Clone::clone(&self.vpn),
+                    oidc_client_manager: self.oidc_client_manager.clone(),
+                }).await.map_err(|cause| Status::internal(format!("Peer setup could not be created: {}", cause)))?;
+
+                peer_manager::generate_peer_setup_response::Reply::Success(peer_manager::GeneratePeerSetupSuccess { peer: Some(peer_id.into()), setup: Some(setup.into()) })
+            }
+            None => {
+                peer_manager::generate_peer_setup_response::Reply::Failure(peer_manager::GeneratePeerSetupFailure {})
+            }
+        };
+
+        Ok(Response::new(GeneratePeerSetupResponse { reply: Some(response) }))
+    }
 }
 
 #[cfg(test)]
@@ -228,6 +231,8 @@ mod tests {
     use std::sync::Arc;
 
     use googletest::prelude::*;
+    use rstest::rstest;
+    use crate::peer::oidc_client_manager::tests::oidc_client_manager;
     use url::Url;
 
     use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkConfiguration};
@@ -250,8 +255,9 @@ mod tests {
 
     const CERTIFICATE_AUTHORITY_STRING: &str = include_str!("../../../resources/development/tls/insecure-development-ca.pem");
 
+    #[rstest]
     #[tokio::test]
-    async fn test_successful_create_delete() -> Result<()> {
+    async fn test_successful_create_delete(oidc_client_manager: OpenIdConnectClientManager) -> Result<()> {
 
 
 
@@ -261,6 +267,7 @@ mod tests {
             Vpn::Disabled,
             Url::parse("https://example.com:1234").unwrap(),
             get_cert(),
+            Some(oidc_client_manager),
         );
 
         let peer_id = PeerId::random();
@@ -342,8 +349,9 @@ mod tests {
         Ok(())
     }
 
+    #[rstest]
     #[tokio::test]
-    async fn register_fails_when_no_id_specified() -> Result<()> {
+    async fn register_fails_when_no_id_specified(oidc_client_manager: OpenIdConnectClientManager) -> Result<()> {
 
         let resources_manager = ResourcesManager::new();
         let testee = PeerManagerFacade::new(
@@ -351,6 +359,7 @@ mod tests {
             Vpn::Disabled,
             Url::parse("https://example.com:1234").unwrap(),
             get_cert(),
+            Some(oidc_client_manager),
         );
 
         let create_peer_reply = testee.store_peer_descriptor(Request::new(
@@ -380,8 +389,9 @@ mod tests {
         Ok(())
     }
 
+    #[rstest]
     #[tokio::test]
-    async fn unregister_fails_when_no_id_specified() -> Result<()> {
+    async fn unregister_fails_when_no_id_specified(oidc_client_manager: OpenIdConnectClientManager) -> Result<()> {
 
         let resources_manager = ResourcesManager::new();
         let testee = PeerManagerFacade::new(
@@ -389,6 +399,7 @@ mod tests {
             Vpn::Disabled,
             Url::parse("https://example.com:1234").unwrap(),
             get_cert(),
+            Some(oidc_client_manager),
         );
 
         let delete_peer_reply = testee.delete_peer_descriptor(Request::new(

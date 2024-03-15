@@ -162,6 +162,7 @@ mod sbom {
                                 | "Apache-2.0 OR BSL-1.0"
                                 | "Apache-2.0 OR ISC OR MIT"
                                 | "MIT OR Apache-2.0"
+                                | "MIT OR Apache-2.0 OR BSD-1-Clause"
                                 | "MIT OR Apache-2.0 OR Zlib"
                                 | "MIT OR Zlib OR Apache-2.0"
                                 | "Zlib OR Apache-2.0 OR MIT"

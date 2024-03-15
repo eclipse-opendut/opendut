@@ -10,7 +10,10 @@
 
   - name: Install required packages
     apt:
-      pkg: ['htop', 'tmux', 'jq', 'libssl-dev', 'build-essential', 'pkg-config', 'clang', 'linux-modules-extra-{{ ansible_kernel }}']
+      # linux-generic is required for the 'vcan' kernel module
+      # This meta package will install the linux-modules-extra-{{ ansible_kernel }} for the current kernel.
+      # It will also install the proper modules on the next kernel update.
+      pkg: ['htop', 'tmux', 'jq', 'libssl-dev', 'build-essential', 'pkg-config', 'clang', 'linux-generic']
       state: 'present'
       update_cache: yes
       cache_valid_time: 3600
@@ -50,4 +53,5 @@
         version: development
         clone: yes
         update: yes
+        force: yes
     - debug: msg="all done"

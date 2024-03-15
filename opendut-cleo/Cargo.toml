@@ -6,7 +6,7 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-opendut-carl-api = { workspace = true, features = ["client"] }
+opendut-carl-api = { workspace = true, features = ["client", "oidc_client"] }
 opendut-types = { workspace = true }
 opendut-util = { workspace = true }
 

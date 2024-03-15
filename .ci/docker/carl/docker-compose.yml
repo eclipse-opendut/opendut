@@ -15,6 +15,7 @@ services:
       - "../../../resources/development/tls/insecure-development-ca.pem:/etc/opendut/tls/ca.pem"
       - "../../../resources/development/tls/carl.pem:/etc/opendut/tls/carl.pem"
       - "../../../resources/development/tls/carl.key:/etc/opendut/tls/carl.key"
+      # to test toml config file: - "./config.toml:/etc/opendut/carl.toml"
 
     environment:
       - OPENDUT_CARL_NETWORK_TLS_CA=/etc/opendut/tls/ca.pem
@@ -31,8 +32,16 @@ services:
       - OPENDUT_CARL_OPENTELEMETRY_ENDPOINT=http://otel-collector:4317
       # OIDC
       - OPENDUT_CARL_NETWORK_OIDC_ENABLED=true
+      - OPENDUT_CARL_NETWORK_OIDC_CLIENT_CLIENT_ID=opendut-carl-client
+      - OPENDUT_CARL_NETWORK_OIDC_CLIENT_CLIENT_SECRET=6754d533-9442-4ee6-952a-97e332eca38e
+      - OPENDUT_CARL_NETWORK_OIDC_CLIENT_PEER_ID=opendut-edgar-client
+      - OPENDUT_CARL_NETWORK_OIDC_CLIENT_PEER_SECRET=c7d6ace0-b90f-471a-bb62-a4ecac4150f8
+      - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_URL=https://keycloak/realms/opendut/
+      - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_REMOTE_URL=https://keycloak/realms/opendut/
+      - OPENDUT_CARL_NETWORK_OIDC_CLIENT_SCOPES=
+
       - OPENDUT_CARL_NETWORK_OIDC_LEA_CLIENT_ID=opendut-lea-client
-      - OPENDUT_CARL_NETWORK_OIDC_LEA_ISSUER_URL=https://keycloak/realms/opendut
+      - OPENDUT_CARL_NETWORK_OIDC_LEA_ISSUER_URL=https://keycloak/realms/opendut/
       - OPENDUT_CARL_NETWORK_OIDC_LEA_SCOPES=openid,profile,email
 
       # dynamically provided

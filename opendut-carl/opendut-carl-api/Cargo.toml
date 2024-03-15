@@ -8,6 +8,12 @@ license.workspace = true
 [features]
 default = ["codegen"]
 codegen = ["tonic/prost", "tonic/codegen", "tonic-build/prost"]
+oidc_client = [
+    "dep:anyhow",
+    "dep:config",
+    "dep:oauth2",
+    "dep:shadow-rs",
+]
 client = [
     "codegen",
     "dep:chrono",
@@ -33,6 +39,7 @@ wasm-client = [
 [dependencies]
 opendut-types = { workspace = true }
 
+anyhow = { workspace = true, optional = true }
 chrono = { workspace = true, optional = true, default-features = false, features = ["clock", "serde", "wasmbind"] }
 cfg-if = { workspace = true }
 config = { workspace = true, optional = true }
@@ -41,10 +48,11 @@ jsonwebtoken = { workspace = true, optional = true }
 leptos = { workspace = true, optional = true }
 leptos_oidc =  { workspace = true, optional = true }
 log = { workspace = true }
-oauth2 = { workspace = true, default-features = false, optional = true }
+oauth2 = { workspace = true, default-features = false, optional = true, features = ["reqwest"] }
 prost = { workspace = true }
 reqwest = { workspace = true, default-features = false, features = ["rustls-tls-native-roots"] }
 serde = { workspace = true, features = ["std", "derive"] }
+shadow-rs = { workspace = true, default-features = false, optional = true, features = ["tzdb"] }
 thiserror = { workspace = true }
 tokio = { workspace = true, optional = true }
 tonic = { workspace = true }
@@ -57,9 +65,11 @@ uuid = { workspace = true, features = ["v4", "serde"] }
 [build-dependencies]
 protobuf-src = { workspace = true }
 tonic-build = { workspace = true }
+shadow-rs = { workspace = true, default-features = true }
 
 [dev-dependencies]
 googletest = { workspace = true }
+rstest = { workspace = true }
 
 [lints]
 workspace = true

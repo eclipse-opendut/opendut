@@ -8,11 +8,16 @@ services:
       dockerfile: ./.ci/docker/keycloak/Dockerfile-keycloak-server
       args:
         KEYCLOAK_VERSION: 22.0.2
-    command: [ "start-dev", "--http-port=80", "--https-port=443", "--https-certificate-file=/opt/keycloak/data/keycloak.pem", "--https-certificate-key-file=/opt/keycloak/data/keycloak.key" ]
+
+    # start-dev and hostname-strict=false are required to run keycloak in test environment; not acceptable for production
+    # see https://www.keycloak.org/server/hostname for details
+    command: [ "start-dev", "--http-port=80", "--https-port=443", "--https-certificate-file=/opt/keycloak/data/keycloak.pem", "--https-certificate-key-file=/opt/keycloak/data/keycloak.key",
+               "--hostname-strict=false", "--hostname-debug=true" ]
     environment:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin123456
       - KEYCLOAK_DB=dev-file
+      #- KC_LOG_LEVEL=DEBUG  # debugging keycloak
     volumes:
       - opendut_keycloak_data:/opt/keycloak/data
       - "../../../resources/development/tls/insecure-development-ca.pem:/usr/share/ca-certificates/ca.pem:ro"

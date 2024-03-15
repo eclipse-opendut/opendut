@@ -1,9 +1,9 @@
 use chrono::{NaiveDateTime, Utc};
-use oauth2::{AccessToken, AuthUrl, ClientId, ClientSecret, Scope, TokenResponse, TokenUrl};
+use oauth2::{AccessToken, AuthUrl, Scope, TokenResponse, TokenUrl};
 use oauth2::basic::{BasicClient, BasicTokenResponse};
+use oauth2::reqwest::async_http_client;
 use tokio::sync::{RwLock, RwLockWriteGuard};
 
-use crate::carl::auth::reqwest_client::async_http_client;
 use crate::carl::OidcIdentityProviderConfig;
 
 #[derive(Debug)]
@@ -33,31 +33,31 @@ pub struct Token {
 }
 
 
-impl AuthenticationManager {
-    pub fn new(oidc_identity_provider_config: OidcIdentityProviderConfig) -> Self {
-        let auth_url = AuthUrl::new(
-            format!("{}/protocol/openid-connect/auth", oidc_identity_provider_config.issuer_url)
-        ).expect("Invalid oidc authorization endpoint URL");
-        let token_url = TokenUrl::new(
-            format!("{}/protocol/openid-connect/token", oidc_identity_provider_config.issuer_url)
-        ).expect("Invalid oidc token endpoint URL");
+impl TryFrom<OidcIdentityProviderConfig> for AuthenticationManager {
+    type Error = anyhow::Error;
+
+    fn try_from(idp_config: OidcIdentityProviderConfig) -> anyhow::Result<Self> {
+        let auth_endpoint = idp_config.issuer_url.join("protocol/openid-connect/auth")
+            .map_err(|error| anyhow::anyhow!("Failed to derive auth url from issuer url: {}", error))?;
+        let token_endpoint = idp_config.issuer_url.join("protocol/openid-connect/token")
+            .map_err(|error| anyhow::anyhow!("Failed to derive token url from issuer url: {}", error))?;
 
         let client = BasicClient::new(
-            ClientId::new(oidc_identity_provider_config.id),
-            Some(ClientSecret::new(oidc_identity_provider_config.secret)),
-            auth_url,
-            Some(token_url),
+            idp_config.client_id,
+            Some(idp_config.client_secret),
+            AuthUrl::from_url(auth_endpoint),
+            Some(TokenUrl::from_url(token_endpoint)),
         );
-        let scopes = oidc_identity_provider_config.scopes.trim_matches('"')
-            .split(',').map(|s| Scope::new(s.to_string())).collect::<Vec<_>>();
 
-        AuthenticationManager {
+        Ok(Self {
             client,
-            scopes,
+            scopes: idp_config.scopes,
             state: Default::default(),
-        }
+        })
     }
+}
 
+impl AuthenticationManager {
     fn update_storage_token(response: &BasicTokenResponse, state: &mut RwLockWriteGuard<Option<TokenStorage>>) -> Result<Token, AuthError> {
         let access_token = response.access_token().clone();
         let expires_in = match response.expires_in() {
@@ -81,7 +81,7 @@ impl AuthenticationManager {
             .map_err(|error|
                 AuthError::FailedToGetToken {
                     message: "Fetching authentication token failed!".to_string(),
-                    cause: error.to_string()
+                    cause: error.to_string(),
                 }
             )?;
 
@@ -109,4 +109,41 @@ impl AuthenticationManager {
 
         Ok(access_token)
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use googletest::assert_that;
+    use googletest::matchers::eq;
+    use oauth2::{ClientId, ClientSecret};
+    use rstest::{fixture, rstest};
+    use url::Url;
+    use crate::carl::auth::auth_config::OidcIdentityProviderConfig;
+    use crate::carl::auth::manager::AuthenticationManager;
+
+    #[fixture]
+    fn authentication_manager() -> AuthenticationManager {
+        let idp_config: OidcIdentityProviderConfig = OidcIdentityProviderConfig {
+            client_id: ClientId::new("opendut-edgar-client".to_string()),
+            client_secret: ClientSecret::new("c7d6ace0-b90f-471a-bb62-a4ecac4150f8".to_string()),
+            issuer_url: Url::parse("http://localhost:8081/realms/opendut/").unwrap(),
+            scopes: vec![],
+        };
+
+        AuthenticationManager::try_from(idp_config).unwrap()
+    }
+
+    #[rstest]
+    #[tokio::test]
+    #[ignore]
+    async fn test_auth_manager_get_token(authentication_manager: AuthenticationManager) {
+        /*
+         * This test is ignored because it requires a running keycloak server from the test environment.
+         * To run this test, execute the following command: cargo test -- --include-ignored
+         */
+        let token = authentication_manager.get_token().await.unwrap();
+        assert!(token.value.len() > 100);
+    }
+
+
 }

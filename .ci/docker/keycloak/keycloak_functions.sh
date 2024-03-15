@@ -24,6 +24,21 @@ wait_for_keycloak() {
 kcadm() { local cmd="$1" ; shift ; "$KCADM_PATH" "$cmd" --config /tmp/kcadm.config "$@" ; }
 kcauth() { kcadm config credentials config --server "$KEYCLOAK_URL" --realm master --user "$KEYCLOAK_ADMIN" --password "$KEYCLOAK_ADMIN_PASSWORD" ; }
 
+get_admin_oauth_token() {
+  # for debugging: may be used to get an admin token
+  RESPONSE=$(curl -s -d "client_id=admin-cli" -d "username=admin" -d "password=admin123456" -d "grant_type=password" "$KEYCLOAK_URL"/realms/master/protocol/openid-connect/token)
+  ADMIN_TOKEN=$(echo "$RESPONSE" | jq -r '.access_token')
+  echo "$ADMIN_TOKEN"
+}
+
+curl_keycloak_get() {
+  # for debugging: may be used to get any resource from keycloak
+  ADMIN_TOKEN="$(get_admin_oauth_token)"
+  ARGS="$1"
+
+  curl -H "Authorization: Bearer $ADMIN_TOKEN" -X GET "$KEYCLOAK_URL/$ARGS"
+}
+
 list_realms() {
   kcadm get realms 2>/dev/null | jq -r ".[].realm"
 }
@@ -96,6 +111,30 @@ EOF
 list_realm_roles() {
   REALM=${1:-$REALM}
   kcadm get roles -r "${REALM}" 2>/dev/null | jq -r ".[].name"
+}
+
+get_realm_role_by_name() {
+  ROLE_NAME="$1"
+  ROLE_REALM="${2:-$REALM}"
+
+  kcadm get roles -r "${ROLE_REALM}" | jq -r ".[] | select(.name==\"${ROLE_NAME}\")"
+}
+
+make_realm_role_admin() {
+  # example usage: 'create_realm_role carl-admin opendut'
+  REALM_ROLE_NAME="$1"
+  REALM_NAME="$2"
+
+  # get ID for required realm role
+  REALM_ROLE_ID=$(get_realm_role_by_name "$REALM_ROLE_NAME" "$REALM_NAME" | jq -r ".id")
+
+  # get ID for required client role: realm-admin
+  ADMIN_ROLE_ID=$(kcadm get ui-ext/available-roles/roles/"$REALM_ROLE_ID"?max=100 -r "$REALM_NAME" | jq -r ".[] | select(.role==\"realm-admin\").id")
+
+  # name and description fields must match the expected data for the assigned role ID
+  kcadm create roles-by-id/"$REALM_ROLE_ID"/composites -r "$REALM_NAME" -f - << EOF
+  [{"id":"$ADMIN_ROLE_ID","name":"realm-admin","description":"${role_realm-admin}"}]
+EOF
 }
 
 create_realm_role() {

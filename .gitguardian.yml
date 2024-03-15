@@ -24,6 +24,20 @@ secret:
     name: Generic High Entropy Secret - commit://staged/.ci/docker/edgar/docker-compose.yml
   - match: 24c47b03a061227dbec83414ef0e810e3be2f962c7e041d80bec7a76348ff7ec
     name: Generic High Entropy Secret - commit://staged/.ci/docker/edgar/docker-compose.yml
+  - match: 6c7b027edc34802f4d1b1c4c1c2efe299ffeab09e77e1d47f93903c370295c13
+    name: Keycloak Api Keys - commit://staged/.ci/docker/carl/docker-compose.yml
+  - match: b3cd75c599c4bc2d50d64413a473053bd13b8ad2308b9711134e2dce68ee6cc6
+    name: Keycloak Api Keys - commit://staged/.ci/docker/carl/docker-compose.yml
+  - match: 67684a8a079f17aca0cf2f1d768b1ff759a3566702ce74a10808cfa4bfa89ed1
+    name: Generic High Entropy Secret - commit://staged/.ci/docker/theo/src/core/resources/carl.environment.tmpl
+  - match: a3ae2f97f31f817e0221b04c42971739d7d722fc847755d5d1ab1d28841ec99f
+    name: Keycloak Api Keys - commit://staged/.ci/docker/edgar/docker-compose.yml
+  - match: 715cb0c0ba1a872a99712ddf6a024548c06dab357f1471968f0ef7b6a3cd248f
+    name: Keycloak Api Keys - commit://staged/.ci/docker/edgar/docker-compose.yml
+  - match: 7e349bafcf6fa18651a787a42ffb5c6cca1aabcac5517fd652fbd32ead5f9c00
+    name: Keycloak Api Keys - commit://staged/.ci/docker/carl/docker-compose.yml
+  - match: 41a81f8a9873701cdda23917cb74e18c4fbd2ab01d6ff1eae27eda47cc6273ad
+    name: Keycloak Api Keys - commit://staged/.ci/docker/carl/docker-compose.yml
   ignored-paths:
   - .ci/docker/keycloak/provision.sh
   - .ci/docker/netbird/netbird-api-functions.sh

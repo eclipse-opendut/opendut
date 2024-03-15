@@ -55,3 +55,22 @@ message NetworkInterfaceDescriptor {
     CanInterfaceConfiguration can = 3;
   }
 }
+
+message AuthConfig {
+  Url issuer_url = 1;
+  ClientId client_id = 2;
+  ClientSecret client_secret = 3;
+  repeated OAuthScope scopes = 4;
+}
+
+message ClientId {
+  string value = 1;
+}
+
+message ClientSecret {
+  string value = 1;
+}
+
+message OAuthScope {
+  string value = 1;
+}

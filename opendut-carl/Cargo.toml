@@ -6,7 +6,7 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-opendut-carl-api = { workspace = true }
+opendut-carl-api = { workspace = true, features = ["oidc_client"] }
 opendut-vpn-netbird = { workspace = true }
 opendut-types = { workspace = true }
 opendut-util = { workspace = true }
@@ -20,8 +20,11 @@ config = { workspace = true }
 futures = { workspace = true }
 googletest = { workspace = true }
 http = { workspace = true }
+itertools = { workspace = true }
 log = { workspace = true }
 pem = { workspace = true, features = ["serde"]}
+oauth2 = { workspace = true, default-features = false, features = ["reqwest"] }
+openidconnect = { workspace = true, default-features = false, features = ["reqwest"] }
 opentelemetry = { workspace = true }
 opentelemetry_sdk = { workspace = true }
 serde = { workspace = true, features = ["derive"] }

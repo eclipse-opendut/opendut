@@ -1,5 +1,7 @@
 # Advanced Usage
 
+## Use vagrant directly
+
 Run vagrant commands directly instead of through THEO:
 * or directly via Vagrant's cli (bash commands run from the root of the repository):
   ```
@@ -12,6 +14,22 @@ Run vagrant commands directly instead of through THEO:
   ```
   ANSIBLE_SKIP_TAGS="" vagrant provision
   ```
+
+## Re-provision the virtual machine
+
+This is recommended after potentially breaking changes to the virtual machine.
+
+* Following command will re-run the ansible playbook to re-provision the virtual machine.
+Run from host:
+```shell
+cargo theo vagrant provision
+```
+* Destroy test environment and re-create it, run within the virtual machine:
+```shell
+cargo theo vagrant ssh
+cargo theo testenv destroy
+cargo theo testenv start
+```
 
 ## Cross compile THEO for Windows on Linux
 

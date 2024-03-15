@@ -12,9 +12,18 @@ ca = "/etc/opendut/tls/ca.pem"
 [network.oidc]
 enabled = false
 
+[network.oidc.client]
+client.id = "tbd"
+client.secret = "tbd"
+# issuer url that CARL uses
+issuer.url = "https://keycloak/realms/opendut/"
+# issuer url that CARL tells the clients to use (required in test environment)
+issuer.remote.url = "https://keycloak/realms/opendut/"
+scopes = ""
+
 [network.oidc.lea]
-client_id = "opendut-lea-client"
-issuer_url = "https://keycloak/realms/opendut"
+client.id = "opendut-lea-client"
+issuer.url = "https://keycloak/realms/opendut/"
 scopes = "openid,profile,email,roles,groups"
 
 [peer]

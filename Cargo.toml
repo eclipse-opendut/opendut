@@ -67,6 +67,7 @@ home = "0.5.5"
 http = "0.2.11"
 indicatif = "0.17.7"
 indoc = "2.0.4"
+itertools = "0.12.1"
 jsonwebtoken = "9.2.0"
 lazy_static = "1.4.0"
 leptos = { version = "0.6.9" }
@@ -79,6 +80,7 @@ netlink-packet-route = "0.19.0"
 netlink-packet-utils = "0.5.2"
 nix = "0.27.1"
 oauth2 = { version = "4.4.2", default-features = false }
+openidconnect = { version = "3.5.0", default-features = false }
 opentelemetry = "0.22.0"
 opentelemetry-appender-tracing = "0.3.0"
 opentelemetry-otlp = "0.15.0"

@@ -1,14 +1,14 @@
-# CARL configuration environment variables for development.
+# Example configuration file for OpenDuT-CARL in the test environment
 [network]
 bind.host = "0.0.0.0"
-bind.port = 8080
+bind.port = 443
 remote.host = "carl"
 remote.port = 443
 
 [network.tls]
-certificate = "resources/development/tls/carl.pem"
-key = "resources/development/tls/carl.key"
-ca = "resources/development/tls/insecure-development-ca.pem"
+certificate = "/etc/opendut/tls/carl.pem"
+key = "/etc/opendut/tls/carl.key"
+ca = "/etc/opendut/tls/ca.pem"
 
 [network.oidc]
 enabled = true
@@ -16,9 +16,12 @@ enabled = true
 [network.oidc.client]
 client.id = "opendut-carl-client"
 client.secret = "6754d533-9442-4ee6-952a-97e332eca38e"
-issuer.url = "http://localhost:8081/realms/opendut/"
+issuer.url = "https://keycloak/realms/opendut/"
 issuer.remote.url = "https://keycloak/realms/opendut/"
 scopes = ""
+# temporary workaround
+peer.id = "opendut-edgar-client"
+peer.secret = "c7d6ace0-b90f-471a-bb62-a4ecac4150f8"
 
 [network.oidc.lea]
 client.id = "opendut-lea-client"
@@ -26,18 +29,18 @@ issuer.url = "https://keycloak/realms/opendut/"
 scopes = "openid,profile,email"
 
 [serve]
-ui.directory = "./opendut-lea/dist/"
+ui.directory = "opendut-lea/"
 
 [vpn]
 enabled = true
 kind = "netbird"
 
 [vpn.netbird]
-url = "{netbird_management_url}"
-ca = "{netbird_management_ca_path}"
+url = "https://netbird-management/api"
+ca = "/etc/opendut/tls/ca.pem"
 auth.type = "personal-access-token"
-auth.secret = "{netbird_api_key}"
+#auth.secret added dynamically via environment variable
 
 [opentelemetry]
 enabled = true
-endpoint = "{opentelemetry_collector_url}"
+endpoint = "http://otel-collector:4317"
