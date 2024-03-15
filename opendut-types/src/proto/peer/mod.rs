@@ -170,6 +170,7 @@ impl From<crate::peer::PeerSetup> for PeerSetup {
             carl: Some(value.carl.into()),
             ca: Some(value.ca.into()),
             vpn: Some(value.vpn.into()),
+            auth_config: Some(value.auth_config.into()),
         }
     }
 }
@@ -197,10 +198,15 @@ impl TryFrom<PeerSetup> for crate::peer::PeerSetup {
             .ok_or(ErrorBuilder::new("VpnConfig not set"))
             .and_then(VpnPeerConfig::try_into)?;
 
+        let auth_config = value.auth_config
+            .ok_or(ErrorBuilder::new("PeerId not set"))?
+            .try_into()?;
+
         Ok(Self {
             id,
             carl,
             ca,
+            auth_config,
             vpn,
         })
     }

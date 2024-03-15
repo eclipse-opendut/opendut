@@ -10,7 +10,8 @@ use uuid::Uuid;
 
 use crate::peer::executor::ExecutorDescriptors;
 use crate::topology::Topology;
-use crate::util::net::{Certificate, NetworkInterfaceDescriptor};
+
+use crate::util::net::{Certificate, NetworkInterfaceDescriptor, AuthConfig};
 use crate::vpn::VpnPeerConfiguration;
 
 pub mod state;
@@ -244,6 +245,7 @@ pub struct PeerSetup {
     pub id: PeerId,
     pub carl: Url,
     pub ca: Certificate,
+    pub auth_config: AuthConfig,
     pub vpn: VpnPeerConfiguration,
 }
 
@@ -315,6 +317,7 @@ mod tests {
     use crate::vpn::netbird::SetupKey;
 
     use super::*;
+    use crate::util::net::{ClientId, ClientSecret, OAuthScope};
 
     #[test]
     fn A_PeerSetup_should_be_encodable() -> Result<()> {
@@ -322,6 +325,12 @@ mod tests {
             id: PeerId::try_from("01bf3f8c-cc7c-4114-9520-91bce71dcead").unwrap(),
             carl: Url::parse("https://carl.opendut.local")?,
             ca: Certificate(Pem::new("Test Tag".to_string(), vec![])),
+            auth_config: AuthConfig {
+                client_id: ClientId::try_from("client_id").unwrap(),
+                client_secret: ClientSecret::try_from("my-secure!-random-string-with-at-least-x-chars%").unwrap(),
+                scopes: vec![OAuthScope::try_from("manage-realm").unwrap()],
+                issuer_url: Url::parse("https://keycloak/realms/opendut/").unwrap(),
+            },
             vpn: VpnPeerConfiguration::Netbird {
                 management_url: Url::parse("https://netbird.opendut.local/api")?,
                 setup_key: SetupKey::from(Uuid::parse_str("d79c202f-bbbf-4997-844e-678f27606e1c")?),

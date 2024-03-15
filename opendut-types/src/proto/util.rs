@@ -269,3 +269,108 @@ impl TryFrom<NetworkInterfaceDescriptor> for crate::util::net::NetworkInterfaceD
         })
     }
 }
+
+
+impl From<crate::util::net::ClientSecret> for ClientSecret {
+    fn from(value: crate::util::net::ClientSecret) -> Self {
+        Self {
+            value: value.0
+        }
+    }
+}
+
+impl TryFrom<ClientSecret> for crate::util::net::ClientSecret {
+    type Error = ConversionError;
+
+    fn try_from(value: ClientSecret) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<ClientSecret, crate::util::net::ClientSecret>;
+
+        crate::util::net::ClientSecret::try_from(value.value)
+            .map_err(|cause| ErrorBuilder::new(cause.to_string()))
+    }
+}
+
+impl From<crate::util::net::ClientId> for ClientId {
+    fn from(value: crate::util::net::ClientId) -> Self {
+        Self {
+            value: value.0
+        }
+    }
+}
+
+impl TryFrom<ClientId> for crate::util::net::ClientId {
+    type Error = ConversionError;
+
+    fn try_from(value: ClientId) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<ClientId, crate::util::net::ClientId>;
+
+        crate::util::net::ClientId::try_from(value.value)
+            .map_err(|cause| ErrorBuilder::new(cause.to_string()))
+    }
+}
+
+
+impl From<crate::util::net::OAuthScope> for OAuthScope {
+    fn from(value: crate::util::net::OAuthScope) -> Self {
+        Self {
+            value: value.0
+        }
+    }
+}
+
+impl TryFrom<OAuthScope> for crate::util::net::OAuthScope {
+    type Error = ConversionError;
+
+    fn try_from(value: OAuthScope) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<OAuthScope, crate::util::net::OAuthScope>;
+
+        crate::util::net::OAuthScope::try_from(value.value)
+            .map_err(|cause| ErrorBuilder::new(cause.to_string()))
+    }
+}
+
+impl From<crate::util::net::AuthConfig> for AuthConfig {
+    fn from(value: crate::util::net::AuthConfig) -> Self {
+        Self {
+            issuer_url: Some(value.issuer_url.into()),
+            client_id: Some(value.client_id.into()),
+            client_secret: Some(value.client_secret.into()),
+            scopes: value.scopes.into_iter().map(|scope| scope.into()).collect(),
+        }
+    }
+}
+
+impl TryFrom<AuthConfig> for crate::util::net::AuthConfig {
+    type Error = ConversionError;
+
+    fn try_from(value: AuthConfig) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<AuthConfig, crate::util::net::AuthConfig>;
+
+        let issuer_url = value.issuer_url
+            .ok_or(ErrorBuilder::new("Authorization Provider Issuer URL not set"))
+            .and_then(|url| url::Url::parse(&url.value)
+                .map_err(|cause| ErrorBuilder::new(format!("Authorization Provider Issuer URL could not be parsed: {}", cause)))
+            )?;
+
+        let client_id: crate::util::net::ClientId = value.client_id
+            .ok_or(ErrorBuilder::new("ClientId not set"))?
+            .try_into()?;
+
+        let client_secret: crate::util::net::ClientSecret = value.client_secret
+            .ok_or(ErrorBuilder::new("ClientSecret not set"))?
+            .try_into()?;
+
+        let scopes: Vec<crate::util::net::OAuthScope> = value
+            .scopes
+            .into_iter()
+            .map(TryFrom::try_from)
+            .collect::<Result<_, _>>()?;
+
+        Ok(Self {
+            issuer_url,
+            client_id,
+            client_secret,
+            scopes,
+        })
+    }
+}
