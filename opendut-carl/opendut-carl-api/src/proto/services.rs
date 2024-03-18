@@ -360,6 +360,7 @@ pub mod metadata_provider {
     tonic::include_proto!("opendut.carl.services.metadata_provider");
 }
 
+#[allow(clippy::large_enum_variant)]
 pub mod peer_manager {
     use opendut_types::peer::{PeerId, PeerName};
     use opendut_types::peer::state::PeerState;

@@ -7,4 +7,5 @@
 
 # document breaking change
 Note to developers: Required to destroy testenv and redeploy keycloak 
+- New privileges of keycloak client for CARL
 

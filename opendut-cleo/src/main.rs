@@ -416,7 +416,7 @@ async fn execute() -> Result<()> {
             commands::peer::generate_peer_setup::execute(&mut carl, id).await?;
         }
         Commands::DecodePeerSetup { setup_string, output } => {
-            commands::peer::decode_peer_setup::execute(setup_string.0, output).await?;
+            commands::peer::decode_peer_setup::execute(*setup_string.0, output).await?;
         }
         Commands::Describe { resource, output } => {
             match resource {
@@ -469,12 +469,12 @@ async fn execute() -> Result<()> {
 
 
 #[derive(Clone, Debug)]
-struct ParseablePeerSetup(PeerSetup);
+struct ParseablePeerSetup(Box<PeerSetup>);
 impl FromStr for ParseablePeerSetup {
     type Err = String;
     fn from_str(string: &str) -> std::result::Result<Self, Self::Err> {
         PeerSetup::decode(string)
-            .map(ParseablePeerSetup)
+            .map(|setup| ParseablePeerSetup(Box::new(setup)))
             .map_err(|error| error.to_string())
     }
 }
