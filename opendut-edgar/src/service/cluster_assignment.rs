@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use opendut_types::cluster::{ClusterAssignment, PeerClusterAssignment};
 use opendut_types::peer::PeerId;
-use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
+use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
 
 use crate::service::network_interface;
 use crate::service::network_interface::{bridge, gre};
@@ -137,14 +137,13 @@ fn require_ipv4_for_gre(ip_address: IpAddr) -> Result<Ipv4Addr, Error> {
     }
 }
 
-// TODO: Use some proper way to determine whether an interface is an Ethernet or a CAN one
 fn get_own_ethernet_interfaces(cluster_assignment: &ClusterAssignment,
     self_id: PeerId) -> Result<Vec<NetworkInterfaceDescriptor>, Error> {
 
     let own_cluster_assignment = cluster_assignment.assignments.iter().find(|assignment| assignment.peer_id == self_id).unwrap();
 
     let own_ethernet_interfaces: Vec<NetworkInterfaceDescriptor> = own_cluster_assignment.device_interfaces.iter()
-        .filter(|interface| !interface.name.name().contains("can"))
+        .filter(|interface| interface.configuration == NetworkInterfaceConfiguration::Ethernet)
         .cloned()
         .collect();
 
@@ -158,7 +157,7 @@ fn get_own_can_interfaces(
     let own_cluster_assignment = cluster_assignment.assignments.iter().find(|assignment| assignment.peer_id == self_id).unwrap();
 
     let own_can_interfaces: Vec<NetworkInterfaceDescriptor> = own_cluster_assignment.device_interfaces.iter()
-        .filter(|interface| interface.name.name().contains("can"))
+        .filter(|interface| matches!(interface.configuration, NetworkInterfaceConfiguration::Can{ .. }))
         .cloned()
         .collect();
 
