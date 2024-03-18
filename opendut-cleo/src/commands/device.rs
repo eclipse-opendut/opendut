@@ -31,12 +31,11 @@ pub async fn list_devices(carl: &mut CarlClient, output: ListOutputFormat) -> cr
 }
 
 pub mod create {
-    use std::ops::Not;
     use uuid::Uuid;
     use opendut_carl_api::carl::CarlClient;
     use opendut_types::peer::PeerId;
     use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag};
-    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
+    use opendut_types::util::net::NetworkInterfaceName;
     use crate::{CreateOutputFormat, DescribeOutputFormat};
 
     #[allow(clippy::too_many_arguments)]
@@ -65,14 +64,12 @@ pub mod create {
                 let name = name.ok_or(String::from("Cannot create new device because of missing device name."))?;
                 let interface_name = interface_name.ok_or(String::from("Cannot create new device because of missing interface name."))?;
 
-                if peer_network_interface_names.contains(&interface_name).not() {
-                    Err(format!("Cannot create new device because interface is not one of the allowed values: {} \nAllowed interfaces are configured on the peer.",
-                                peer_network_interface_names.into_iter().map(|name| name.name()).collect::<Vec<_>>().join(", ")))?;
-                }
-
-                let interface = NetworkInterfaceDescriptor {
-                    name: interface_name,
-                    configuration: NetworkInterfaceConfiguration::Ethernet, // TODO: do not assume Ethernet here
+                let interface = match peer_descriptor.network_configuration.interfaces.iter().find(|descriptor| descriptor.name == interface_name) {
+                    Some(network_interface_descriptor) => network_interface_descriptor.clone(),
+                    None => {
+                        Err(format!("Cannot create new device because interface is not one of the allowed values: {} \nAllowed interfaces are configured on the peer.",
+                                peer_network_interface_names.into_iter().map(|name| name.name()).collect::<Vec<_>>().join(", ")))?
+                    },
                 };
 
                 let new_device = DeviceDescriptor {
@@ -104,13 +101,12 @@ pub mod create {
                         .ok();
                 }
                 if let Some(interface_name) = interface_name {
-                    if peer_network_interface_names.contains(&interface_name).not() {
-                        Err(format!("Cannot update device because interface is not one of the allowed values: {} \nAllowed interfaces are configured on the peer.",
-                                    peer_network_interface_names.into_iter().map(|name| name.name()).collect::<Vec<_>>().join(", ")))?;
-                    }
-                    device.interface = NetworkInterfaceDescriptor {
-                        name: interface_name,
-                        configuration: NetworkInterfaceConfiguration::Ethernet, // TODO: do not assume Ethernet here
+                    device.interface = match peer_descriptor.network_configuration.interfaces.iter().find(|descriptor| descriptor.name == interface_name) {
+                        Some(network_interface_descriptor) => network_interface_descriptor.clone(),
+                        None => {
+                            Err(format!("Cannot create new device because interface is not one of the allowed values: {} \nAllowed interfaces are configured on the peer.",
+                                    peer_network_interface_names.into_iter().map(|name| name.name()).collect::<Vec<_>>().join(", ")))?
+                        },
                     };
                 }
                 if let Some(tags) = tags {

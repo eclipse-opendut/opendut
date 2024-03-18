@@ -3,14 +3,15 @@ pub mod create {
 
     use opendut_carl_api::carl::CarlClient;
     use opendut_types::peer::PeerId;
-    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
+    use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
 
-    use crate::{CreateOutputFormat, DescribeOutputFormat};
+    use crate::{CreateOutputFormat, DescribeOutputFormat, NetworkInterfaceType};
 
     pub async fn execute(
         carl: &mut CarlClient,
         peer_id: Uuid,
-        network_configuration: Option<Vec<String>>,
+        interface_type: NetworkInterfaceType,
+        interface_name: Option<String>,
         output: CreateOutputFormat,
     ) -> crate::Result<()> {
         let peer_id = PeerId::from(peer_id);
@@ -21,22 +22,29 @@ pub mod create {
         let peer_interface_names = peer_descriptor.network_configuration.interfaces
             .iter().map(|interface| interface.name.clone()).collect::<Vec<_>>();
 
-        let new_network_configurations = network_configuration
-                .unwrap_or_default()
-                .into_iter()
-                .map(NetworkInterfaceName::try_from)
-                .collect::<Result<Vec<_>, _>>()
-                .map_err(|error| error.to_string())?
-                .into_iter()
-                .map(|interface_name| NetworkInterfaceDescriptor { name: interface_name, configuration: NetworkInterfaceConfiguration::Ethernet}) // TODO: Do not assume Ethernet here
-                .collect::<Vec<_>>();
+        let interface_name = NetworkInterfaceName::try_from(interface_name.unwrap_or_default()).map_err(|error| error.to_string())?;
 
-        for network_config in new_network_configurations {
-            if peer_interface_names.contains(&network_config.name) {
-                Err(format!("Could not create peer network configuration with name '{}' because it already exists", network_config.name))?
-            } else {
-                peer_descriptor.network_configuration.interfaces.push(network_config);
-            }
+        // TODO: Properly implement CAN parameter configuration
+        let interface_configuration = match interface_type {
+            NetworkInterfaceType::Ethernet => NetworkInterfaceConfiguration::Ethernet,
+            NetworkInterfaceType::Can => NetworkInterfaceConfiguration::Can { 
+                bitrate: 500000, 
+                sample_point: CanSamplePoint::try_from(0.7).unwrap(), 
+                fd: true, 
+                data_bitrate: 2000000, 
+                data_sample_point: CanSamplePoint::try_from(0.7).unwrap(), 
+            },
+        };
+
+        if peer_interface_names.contains(&interface_name) {
+                Err(format!("Could not create peer network configuration with name '{}' because it already exists", &interface_name))?
+        } else {
+            peer_descriptor.network_configuration.interfaces.push(
+                NetworkInterfaceDescriptor {
+                    name: interface_name,
+                    configuration: interface_configuration,
+                }
+            );
         }
 
         carl.peers.store_peer_descriptor(Clone::clone(&peer_descriptor)).await
