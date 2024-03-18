@@ -100,7 +100,7 @@ where
                             on_action=move || set_is_collapsed.set(!is_collapsed.get_untracked())
                         />
                     </span>
-                    <span class="is-size-5 has-text-weight-bold pr-3">Container:</span>
+                    <span class="is-size-5 has-text-weight-bold pr-3">"Container:"</span>
                     <span class="is-size-5 has-text-weight-bold">{ executor_heading }</span>
                 </div>
                 <div>
