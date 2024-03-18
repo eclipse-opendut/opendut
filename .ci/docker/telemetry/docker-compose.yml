@@ -48,7 +48,8 @@ services:
      - tempo
      - loki
    networks:
-     - opendutnet
+     opendutnet:
+       ipv4_address: 192.168.32.220
 
  grafana:
     container_name: grafana

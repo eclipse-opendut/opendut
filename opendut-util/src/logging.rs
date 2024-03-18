@@ -62,11 +62,13 @@ pub fn initialize_with_config(config: LoggingConfig) -> Result<ShutdownHandle, E
     let (tracer, logger, logger_layer) = if let Some(endpoint) = config.opentelemetry_endpoint {
         let service_name: String = config.opentelemetry_service_name.clone()
             .unwrap_or_default();
-        let tracer = init_tracer(&endpoint, service_name).expect("Failed to initialize tracer.");
+        let service_instance_id = config.opentelemetry_service_instance_id.clone().unwrap_or_else(|| String::from("carl_instance"));
+        let tracer = init_tracer(&endpoint, service_name, service_instance_id).expect("Failed to initialize tracer.");
 
         let service_name: String = config.opentelemetry_service_name
             .unwrap_or_default();
-        let logger = init_logger(&endpoint, service_name).expect("Failed to initialize logs.");
+        let service_instance_id = config.opentelemetry_service_instance_id.unwrap_or_else(|| String::from("carl_instance"));
+        let logger = init_logger(&endpoint, service_name, service_instance_id).expect("Failed to initialize logs.");
 
         let logger_provider: GlobalLoggerProvider = logger_provider();
         let logger_layer = OpenTelemetryTracingBridge::new(&logger_provider);
@@ -86,7 +88,7 @@ pub fn initialize_with_config(config: LoggingConfig) -> Result<ShutdownHandle, E
     Ok(ShutdownHandle { _logger: logger })
 }
 
-fn init_tracer(endpoint: &Endpoint, service_name: impl Into<String>) -> Result<opentelemetry_sdk::trace::Tracer, TraceError> {
+fn init_tracer(endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>) -> Result<opentelemetry_sdk::trace::Tracer, TraceError> {
     opentelemetry_otlp::new_pipeline()
         .tracing()
         .with_exporter(
@@ -96,21 +98,27 @@ fn init_tracer(endpoint: &Endpoint, service_name: impl Into<String>) -> Result<o
         )
         .with_trace_config(
             opentelemetry_sdk::trace::config().with_resource(Resource::new(vec![KeyValue::new(
-                opentelemetry_semantic_conventions::resource::SERVICE_NAME,
-                service_name.into(),
-            )])),
+                    opentelemetry_semantic_conventions::resource::SERVICE_NAME,
+                    service_name.into()),
+                KeyValue::new(
+                    opentelemetry_semantic_conventions::resource::SERVICE_INSTANCE_ID,
+                    service_instance_id.into())
+            ])),
         )
         .install_batch(runtime::Tokio)
 }
 
-fn init_logger(endpoint: &Endpoint, service_name: impl Into<String>) -> Result<opentelemetry_sdk::logs::Logger, LogError> {
+fn init_logger(endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>) -> Result<opentelemetry_sdk::logs::Logger, LogError> {
     opentelemetry_otlp::new_pipeline()
         .logging()
         .with_log_config(
             opentelemetry_sdk::logs::Config::default().with_resource(Resource::new(vec![KeyValue::new(
-                opentelemetry_semantic_conventions::resource::SERVICE_NAME,
-                service_name.into(),
-            )])),
+                    opentelemetry_semantic_conventions::resource::SERVICE_NAME,
+                    service_name.into()),
+                 KeyValue::new(
+                    opentelemetry_semantic_conventions::resource::SERVICE_INSTANCE_ID,
+                    service_instance_id.into())
+            ])),
         )
         .with_exporter(
             opentelemetry_otlp::new_exporter()
@@ -125,6 +133,7 @@ pub struct LoggingConfig {
     pub file_logging: Option<PathBuf>,
     pub opentelemetry_endpoint: Option<Endpoint>,
     pub opentelemetry_service_name: Option<String>,
+    pub opentelemetry_service_instance_id: Option<String>,
 }
 impl LoggingConfig {
     pub fn load(config: &config::Config) -> Result<Self, LoggingConfigError> {
@@ -151,10 +160,18 @@ impl LoggingConfig {
             None
         };
 
+        let opentelemetry_service_instance_id: Option<String> = if opentelemetry_enabled {
+            let field = String::from("peer.id");
+            config.get_string(&field).ok()
+        } else {
+            None
+        };
+
         Ok(LoggingConfig {
             file_logging,
             opentelemetry_endpoint,
             opentelemetry_service_name,
+            opentelemetry_service_instance_id,
         })
     }
 }

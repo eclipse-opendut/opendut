@@ -18,3 +18,7 @@ enabled = false
 
 [vpn.disabled]
 remote.host = "127.0.0.1"
+
+[opentelemetry]
+enabled = true
+endpoint = "http://localhost:4317"

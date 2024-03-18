@@ -40,7 +40,7 @@ impl CarlConfiguration {
             "https://192.168.32.211/api".to_string(),
             "resources/development/tls/insecure-development-ca.pem".to_string(),
             netbird_api_key,
-            "http://192.168.32.211:4317".to_string(),
+            "http://192.168.32.220:4317".to_string(),
         )
     }
 

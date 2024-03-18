@@ -22,7 +22,7 @@ ingester:
 
 compactor:
   compaction:
-    block_retention: 336h  #default 14 days, after 14 days the blocks are deleted
+    block_retention: 120h  #value in hours, default 14 days, after 14 days the blocks are deleted
 
 metrics_generator:
   registry:

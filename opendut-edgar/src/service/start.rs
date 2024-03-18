@@ -19,6 +19,8 @@ use opendut_types::peer::{PeerConfiguration, PeerId};
 use opendut_types::peer::executor::{ContainerCommand, ContainerName, Engine, ExecutorDescriptor};
 use opendut_types::util::net::NetworkInterfaceName;
 use opendut_util::logging;
+use opendut_util::logging::LoggingConfig;
+use opendut_util::settings::LoadedConfig;
 
 use crate::common::{carl, settings};
 use crate::service::{cluster_assignment, vpn};
@@ -42,18 +44,27 @@ const BANNER: &str = r"
 pub async fn launch(id_override: Option<PeerId>) -> anyhow::Result<()> {
     println!("{}", crate::app_info::formatted_with_banner(BANNER));
 
-    let _ = logging::initialize()?;
-
     let settings_override = Config::builder()
         .set_override_option(settings::key::peer::id, id_override.map(|id| id.to_string()))?
         .build()?;
 
-    create(settings_override).await
+    create_with_logging(settings_override).await
 }
 
-pub async fn create(settings_override: Config) -> anyhow::Result<()> {
-
+pub async fn create_with_logging(settings_override: config::Config) -> anyhow::Result<()> {
     let settings = settings::load_with_overrides(settings_override)?;
+
+    let logging_config = LoggingConfig::load(&settings.config)?;
+    let mut shutdown = logging::initialize_with_config(logging_config)?;
+
+    create(settings).await?;
+
+    shutdown.shutdown();
+
+    Ok(())
+}
+
+pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
     let id = settings.config.get::<PeerId>(settings::key::peer::id)
         .context("Failed to read ID from configuration.\n\nRun `edgar setup` before launching the service.")?;
 

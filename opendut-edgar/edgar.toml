@@ -32,3 +32,8 @@ enabled = true
 
 [vpn.disabled]
 remote.host = ""
+
+[opentelemetry]
+enabled = false
+endpoint = ""
+service_name = "opendut-edgar"
