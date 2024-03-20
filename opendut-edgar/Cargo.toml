@@ -27,6 +27,8 @@ netlink-packet-route = { workspace = true }
 netlink-packet-utils = { workspace = true }
 nix = { workspace = true, features = ["user", "fs"] }
 pem = { workspace = true }
+opentelemetry = { workspace = true }
+opentelemetry_sdk = { workspace = true }
 regex = { workspace = true }
 rtnetlink = { workspace = true }
 serde = { workspace = true, features = ["std", "derive"] }
@@ -40,6 +42,7 @@ tokio-stream = { workspace = true, features = ["full"] }
 toml_edit = { workspace = true }
 tonic = { workspace = true, features = ["tls"] }
 tracing = { workspace = true }
+tracing-opentelemetry = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
 url = { workspace = true }
 walkdir = { workspace = true }

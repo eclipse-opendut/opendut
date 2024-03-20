@@ -6,13 +6,16 @@ use std::time::Duration;
 
 use anyhow::Context;
 use config::Config;
+use opentelemetry::propagation::text_map_propagator::TextMapPropagator;
+use opentelemetry_sdk::propagation::TraceContextPropagator;
 use tokio::process::Command;
 use tokio::sync::mpsc::Sender;
 use tokio::time::sleep;
-use tracing::debug;
+use tracing::{debug, Span};
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 use opendut_carl_api::proto::services::peer_messaging_broker;
-use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, AssignCluster};
+use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, AssignCluster, TracingContext};
 use opendut_carl_api::proto::services::peer_messaging_broker::downstream::Message;
 use opendut_types::cluster::ClusterAssignment;
 use opendut_types::peer::{PeerConfiguration, PeerId};
@@ -90,7 +93,8 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
     let (mut rx_inbound, tx_outbound) = carl.broker.open_stream(id, remote_address).await?;
 
     let message = peer_messaging_broker::Upstream {
-        message: Some(peer_messaging_broker::upstream::Message::Ping(peer_messaging_broker::Ping {}))
+        message: Some(peer_messaging_broker::upstream::Message::Ping(peer_messaging_broker::Ping {})),
+        context: None
     };
 
     tx_outbound.send(message).await
@@ -147,7 +151,7 @@ async fn handle_stream_message(
         log::warn!("Ignoring illegal message: {message:?}");
     }
 
-    if let peer_messaging_broker::Downstream { message: Some(message) } = message {
+    if let peer_messaging_broker::Downstream { message: Some(message), context } = message {
         if matches!(message, Message::Pong(_)).not() {
             log::trace!("Received message: {:?}", message);
         }
@@ -156,7 +160,8 @@ async fn handle_stream_message(
             Message::Pong(_) => {
                 sleep(Duration::from_secs(5)).await;
                 let message = peer_messaging_broker::Upstream {
-                    message: Some(peer_messaging_broker::upstream::Message::Ping(peer_messaging_broker::Ping {}))
+                    message: Some(peer_messaging_broker::upstream::Message::Ping(peer_messaging_broker::Ping {})),
+                    context: None
                 };
                 let _ignore_error =
                     tx_outbound.send(message).await
@@ -164,6 +169,11 @@ async fn handle_stream_message(
             }
             Message::AssignCluster(message) => match message {
                 AssignCluster { assignment: Some(cluster_assignment) } => {
+
+                    let span = tracing::span!(tracing::Level::INFO, "service::assign_cluster");
+                    set_parent_context(&span, context);
+                    let _span = span.enter();
+
                     let cluster_assignment = ClusterAssignment::try_from(cluster_assignment)?;
                     log::trace!("Received ClusterAssignment: {cluster_assignment:?}");
                     log::info!("Was assigned to cluster <{}>", cluster_assignment.id);
@@ -187,6 +197,11 @@ async fn handle_stream_message(
             }
             Message::ApplyPeerConfiguration(message) => match message {
                 ApplyPeerConfiguration { configuration: Some(configuration) } => {
+
+                    let span = tracing::span!(tracing::Level::INFO, "service::apply_peer_configuration");
+                    set_parent_context(&span, context);
+                    let _span = span.enter();
+
                     log::info!("Received configuration: {configuration:?}");
                     match PeerConfiguration::try_from(configuration) {
                         Err(error) => log::error!("Illegal PeerConfiguration: {error}"),
@@ -252,4 +267,12 @@ async fn handle_stream_message(
     }
 
     Ok(())
+}
+
+fn set_parent_context(span: &Span, context: Option<TracingContext>) {
+    if let Some(context) = context {
+        let propagator = TraceContextPropagator::new();
+        let parent_context = propagator.extract(&context.values);
+        span.set_parent(parent_context);
+    }
 }

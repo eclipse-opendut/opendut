@@ -234,7 +234,7 @@
             }
           ],
           "limit": 20,
-          "query": "{resource.service.name=\"opendut-carl\" || resource.service.name=\"opendut-edgar\"}",
+          "query": "{resource.service.name=~\"$service_name\" || resource.service.name=\"opendut-edgar\"}",
           "queryType": "traceql",
           "refId": "A",
           "tableType": "traces"
@@ -340,7 +340,7 @@
         "x": 12,
         "y": 1
       },
-      "id": 10,
+      "id": 12,
       "options": {
         "cellHeight": "sm",
         "footer": {
@@ -392,7 +392,7 @@
             }
           ],
           "limit": 20,
-          "query": "{resource.service.name=\"$service_name\"} | select(resource.service.instance.id, span.self_id)",
+          "query": "{resource.service.name=~\"$service_name\"} | select(resource.service.instance.id, span.self_id)",
           "queryType": "traceql",
           "refId": "A",
           "tableType": "traces"
@@ -743,10 +743,10 @@
         "current": {
           "selected": true,
           "text": [
-            "opendut-edgar"
+            "All"
           ],
           "value": [
-            "opendut-edgar"
+            "$__all"
           ]
         },
         "datasource": {
@@ -813,7 +813,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-5m",
     "to": "now"
   },
   "timepicker": {},

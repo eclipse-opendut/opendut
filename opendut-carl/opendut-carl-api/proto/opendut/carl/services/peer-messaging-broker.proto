@@ -18,14 +18,16 @@ message ListPeersResponse {
 }
 
 message Upstream {
+  TracingContext context = 1;
   oneof message {
-    Ping ping = 1;
+    Ping ping = 2;
   }
 }
 
 message Downstream {
+  TracingContext context = 1;
   oneof message {
-    Pong pong = 1;
+    Pong pong = 2;
     AssignCluster assign_cluster = 3;
     ApplyPeerConfiguration apply_peer_configuration = 4;
   }
@@ -41,4 +43,8 @@ message AssignCluster {
 
 message ApplyPeerConfiguration {
   opendut.types.peer.PeerConfiguration configuration = 1;
+}
+
+message TracingContext {
+  map<string, string> values = 1;
 }

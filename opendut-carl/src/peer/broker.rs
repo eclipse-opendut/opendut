@@ -37,6 +37,7 @@ impl PeerMessagingBroker {
         }
     }
 
+    #[tracing::instrument(name = "peer::broker::send_to_peer", skip(self), level="trace")]
     pub async fn send_to_peer(&self, peer_id: PeerId, message: downstream::Message) -> Result<(), Error> {
         let downstream = {
             let peers = self.peers.read().await;

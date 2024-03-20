@@ -1,7 +1,7 @@
 use std::ops::Not;
 use std::sync::Arc;
 use pem::Pem;
-
+use tracing::Span;
 use url::Url;
 
 pub use opendut_carl_api::carl::peer::{
@@ -288,7 +288,7 @@ mod test {
     use rstest::*;
 
     use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkConfiguration};
-    use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorDescriptors};
+    use opendut_types::peer::executor::ExecutorDescriptors;
     use opendut_types::topology::{DeviceDescription, DeviceName, Topology};
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
 

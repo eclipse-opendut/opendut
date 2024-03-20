@@ -23,6 +23,7 @@ http = { workspace = true }
 log = { workspace = true }
 pem = { workspace = true, features = ["serde"]}
 opentelemetry = { workspace = true }
+opentelemetry_sdk = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 shadow-rs = { workspace = true }
 thiserror = { workspace = true }
@@ -33,6 +34,7 @@ tonic-web = { workspace = true }
 tower = { workspace = true, features = ["make", "steer"] }
 tower-http = { workspace = true }
 tracing = { workspace = true }
+tracing-opentelemetry = { workspace = true }
 url = { workspace = true, features = ["serde"] }
 uuid = { workspace = true }
 
