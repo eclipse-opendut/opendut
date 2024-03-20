@@ -20,11 +20,12 @@ pub const SYSTEMD_SERVICE_FILE_NAME: &str = "opendut-edgar.service";
 
 pub const KERNEL_MODULE_LOAD_RULE_PREFIX: &str = "opendut-edgar";
 
-pub const SETUP_STRING_CERTIFICATE_STORE_LOCATION: &str = "/etc/opendut/tls/";
-pub const CA_CERTIFICATE_FILE_NAME_CA_PEM: &str = "ca.pem";
-
-pub const CA_CERTIFICATE_LOCATION: &str = "/usr/local/share/ca-certificates/";
-pub const CA_CERTIFICATE_FILE_NAME_OPENDUT_CA_CRT: &str = "opendut-ca.crt";
+pub fn carl_ca_certificate_path() -> PathBuf {
+    PathBuf::from("/etc/opendut/tls/ca.pem")
+}
+pub fn netbird_ca_certificate_path() -> PathBuf {
+    PathBuf::from("/usr/local/share/ca-certificates/opendut-ca.crt")
+}
 
 pub fn default_config_merge_suggestion_file_path() -> PathBuf {
     PathBuf::from("/etc/opendut/edgar-merge-suggestion.toml")
