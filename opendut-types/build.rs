@@ -6,6 +6,7 @@ fn main() -> Result<()> {
     let protos = [
         "proto/opendut/types/cluster/cluster.proto",
         "proto/opendut/types/peer/peer.proto",
+        "proto/opendut/types/peer/configuration.proto",
         "proto/opendut/types/peer/executor.proto",
         "proto/opendut/types/topology/device.proto",
         "proto/opendut/types/topology/topology.proto",

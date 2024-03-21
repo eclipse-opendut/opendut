@@ -4,6 +4,7 @@ package opendut.carl.services.peer_messaging_broker;
 
 import "opendut/types/cluster/cluster.proto";
 import "opendut/types/peer/peer.proto";
+import "opendut/types/peer/configuration.proto";
 import "opendut/types/vpn/vpn.proto";
 
 service PeerMessagingBroker {
@@ -42,7 +43,7 @@ message AssignCluster {
 }
 
 message ApplyPeerConfiguration {
-  opendut.types.peer.PeerConfiguration configuration = 1;
+  opendut.types.peer.configuration.PeerConfiguration configuration = 1;
 }
 
 message TracingContext {

@@ -1,6 +1,5 @@
 pub mod cluster;
 pub mod peer;
-pub mod executor;
 pub mod topology;
 pub mod util;
 pub mod vpn;

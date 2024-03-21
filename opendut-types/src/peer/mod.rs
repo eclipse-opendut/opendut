@@ -7,14 +7,15 @@ use base64::prelude::BASE64_URL_SAFE;
 use serde::{Deserialize, Serialize};
 use url::Url;
 use uuid::Uuid;
-use crate::peer::executor::{ExecutorDescriptors};
 
+use crate::peer::executor::ExecutorDescriptors;
 use crate::topology::Topology;
 use crate::util::net::{Certificate, NetworkInterfaceDescriptor};
 use crate::vpn::VpnPeerConfiguration;
 
 pub mod state;
 pub mod executor;
+pub mod configuration;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
@@ -235,11 +236,6 @@ pub struct PeerDescriptor {
     pub location: Option<PeerLocation>,
     pub network_configuration: PeerNetworkConfiguration,
     pub topology: Topology,
-    pub executors: ExecutorDescriptors,
-}
-
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PeerConfiguration {
     pub executors: ExecutorDescriptors,
 }
 

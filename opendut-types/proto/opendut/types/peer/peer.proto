@@ -73,7 +73,3 @@ message PeerStateUpBlockedDeploying {}
 message PeerStateUpBlockedMember {}
 
 message PeerStateUpBlockedUndeploying {}
-
-message PeerConfiguration {
-  opendut.types.peer.executor.ExecutorDescriptors executors = 1;
-}

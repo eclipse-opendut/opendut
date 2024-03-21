@@ -16,7 +16,8 @@ use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfigur
 use opendut_carl_api::proto::services::peer_messaging_broker::downstream::Message;
 use opendut_carl_api::proto::services::peer_messaging_broker::Pong;
 use opendut_carl_api::proto::services::peer_messaging_broker::upstream;
-use opendut_types::peer::{PeerConfiguration, PeerId};
+use opendut_types::peer::PeerId;
+use opendut_types::peer::configuration::PeerConfiguration;
 use opendut_types::peer::state::{PeerState, PeerUpState};
 
 use crate::resources::manager::ResourcesManagerRef;

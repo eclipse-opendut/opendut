@@ -12,7 +12,8 @@ pub use opendut_carl_api::carl::peer::{
     ListPeerDescriptorsError,
     StorePeerDescriptorError,
 };
-use opendut_types::peer::{PeerConfiguration, PeerDescriptor, PeerId, PeerName, PeerSetup};
+use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerSetup};
+use opendut_types::peer::configuration::PeerConfiguration;
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
 use opendut_types::util::net::Certificate;
 use opendut_types::vpn::VpnPeerConfiguration;
