@@ -7,4 +7,5 @@ import "opendut/types/peer/executor.proto";
 
 message PeerConfiguration {
   opendut.types.peer.executor.ExecutorDescriptors executors = 1;
+  optional opendut.types.cluster.ClusterAssignment cluster_assignment = 2;
 }

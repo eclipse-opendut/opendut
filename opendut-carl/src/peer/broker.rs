@@ -13,7 +13,6 @@ use tracing::{error, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, downstream, Downstream, TracingContext};
-use opendut_carl_api::proto::services::peer_messaging_broker::downstream::Message;
 use opendut_carl_api::proto::services::peer_messaging_broker::Pong;
 use opendut_carl_api::proto::services::peer_messaging_broker::upstream;
 use opendut_types::peer::PeerId;
@@ -35,12 +34,12 @@ struct PeerMessagingRef {
 }
 
 impl PeerMessagingBroker {
-    pub fn new(resources_manager: ResourcesManagerRef, options: PeerMessagingBrokerOptions) -> Self {
-        Self {
+    pub fn new(resources_manager: ResourcesManagerRef, options: PeerMessagingBrokerOptions) -> PeerMessagingBrokerRef {
+        Arc::new(Self {
             resources_manager,
             peers: Default::default(),
             options,
-        }
+        })
     }
 
     #[tracing::instrument(name = "peer::broker::send_to_peer", skip(self), level="trace")]
@@ -110,7 +109,7 @@ impl PeerMessagingBroker {
         }).await;
 
         if let Some(configuration) = self.resources_manager.get::<PeerConfiguration>(peer_id).await {
-            if let Err(error) = self.send_to_peer(peer_id, Message::ApplyPeerConfiguration(
+            if let Err(error) = self.send_to_peer(peer_id, downstream::Message::ApplyPeerConfiguration(
                 ApplyPeerConfiguration {
                     configuration: Some(configuration.into())
                 }

@@ -15,12 +15,12 @@ use tracing::{debug, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 use opendut_carl_api::proto::services::peer_messaging_broker;
-use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, AssignCluster, TracingContext};
+use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, TracingContext};
 use opendut_carl_api::proto::services::peer_messaging_broker::downstream::Message;
 use opendut_types::cluster::ClusterAssignment;
 use opendut_types::peer::PeerId;
 use opendut_types::peer::configuration::PeerConfiguration;
-use opendut_types::peer::executor::{ContainerCommand, ContainerName, Engine, ExecutorDescriptor};
+use opendut_types::peer::executor::{ContainerCommand, ContainerName, Engine, ExecutorDescriptor, ExecutorDescriptors};
 use opendut_types::util::net::NetworkInterfaceName;
 use opendut_util::logging;
 use opendut_util::logging::LoggingConfig;
@@ -69,10 +69,10 @@ pub async fn create_with_logging(settings_override: config::Config) -> anyhow::R
 }
 
 pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
-    let id = settings.config.get::<PeerId>(settings::key::peer::id)
+    let self_id = settings.config.get::<PeerId>(settings::key::peer::id)
         .context("Failed to read ID from configuration.\n\nRun `edgar setup` before launching the service.")?;
 
-    log::info!("Started with ID <{id}> and configuration: {settings:?}");
+    log::info!("Started with ID <{self_id}> and configuration: {settings:?}");
 
     let network_interface_manager: NetworkInterfaceManagerRef = Arc::new(NetworkInterfaceManager::create()?);
     let can_manager: CanManagerRef = Arc::new(CanManager::create(Arc::clone(&network_interface_manager)));
@@ -83,6 +83,14 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
 
     let remote_address = vpn::retrieve_remote_host(&settings).await?;
 
+    let setup_cluster_info = SetupClusterInfo {
+        self_id,
+        bridge_name,
+        network_interface_management_enabled,
+        network_interface_manager,
+        can_manager,
+    };
+
     let timeout_duration = Duration::from_millis(settings.config.get::<u64>("carl.disconnect.timeout.ms")?);
 
     log::debug!("Connecting to CARL...");
@@ -91,7 +99,7 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
 
     log::debug!("Connecting to peer-messaging-broker...");
 
-    let (mut rx_inbound, tx_outbound) = carl.broker.open_stream(id, remote_address).await?;
+    let (mut rx_inbound, tx_outbound) = carl.broker.open_stream(self_id, remote_address).await?;
 
     let message = peer_messaging_broker::Upstream {
         message: Some(peer_messaging_broker::upstream::Message::Ping(peer_messaging_broker::Ping {})),
@@ -111,11 +119,7 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
                 Ok(Some(message)) => {
                     handle_stream_message(
                         message,
-                        id,
-                        network_interface_management_enabled,
-                        &bridge_name,
-                        Arc::clone(&network_interface_manager),
-                        Arc::clone(&can_manager),
+                        &setup_cluster_info,
                         &tx_outbound,
                     ).await?
                 }
@@ -141,11 +145,7 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
 
 async fn handle_stream_message(
     message: peer_messaging_broker::Downstream,
-    self_id: PeerId,
-    network_interface_management_enabled: bool,
-    bridge_name: &NetworkInterfaceName,
-    network_interface_manager: NetworkInterfaceManagerRef,
-    can_manager: CanManagerRef,
+    setup_cluster_info: &SetupClusterInfo,
     tx_outbound: &Sender<peer_messaging_broker::Upstream>,
 ) -> anyhow::Result<()> {
     fn ignore(message: impl Any + Debug) {
@@ -168,34 +168,6 @@ async fn handle_stream_message(
                     tx_outbound.send(message).await
                         .inspect_err(|cause| log::debug!("Failed to send ping to CARL: {cause}"));
             }
-            Message::AssignCluster(message) => match message {
-                AssignCluster { assignment: Some(cluster_assignment) } => {
-
-                    let span = tracing::span!(tracing::Level::INFO, "service::assign_cluster");
-                    set_parent_context(&span, context);
-                    let _span = span.enter();
-
-                    let cluster_assignment = ClusterAssignment::try_from(cluster_assignment)?;
-                    log::trace!("Received ClusterAssignment: {cluster_assignment:?}");
-                    log::info!("Was assigned to cluster <{}>", cluster_assignment.id);
-
-                    if network_interface_management_enabled {
-                        cluster_assignment::network_interfaces_setup(
-                            cluster_assignment,
-                            self_id,
-                            bridge_name,
-                            Arc::clone(&network_interface_manager),
-                                Arc::clone(&can_manager)
-                        ).await
-                        .inspect_err(|error| {
-                            log::error!("Failed to configure network interfaces: {error}")
-                        })?;
-                    } else {
-                        log::debug!("Skipping changes to network interfaces after receiving ClusterAssignment, as this is disabled via configuration.");
-                    }
-                }
-                _ => ignore(message),
-            }
             Message::ApplyPeerConfiguration(message) => match message {
                 ApplyPeerConfiguration { configuration: Some(configuration) } => {
 
@@ -207,56 +179,11 @@ async fn handle_stream_message(
                     match PeerConfiguration::try_from(configuration) {
                         Err(error) => log::error!("Illegal PeerConfiguration: {error}"),
                         Ok(configuration) => {
-                            for executor in configuration.executors.executors {
-                                match executor {
-                                    ExecutorDescriptor::Executable => log::warn!("Executing Executable not yet implemented."),
-                                    ExecutorDescriptor::Container {
-                                        engine,
-                                        name,
-                                        image,
-                                        volumes,
-                                        devices,
-                                        envs,
-                                        ports,
-                                        command,
-                                        args
-                                    } => {
-                                        let engine = match engine {
-                                            Engine::Docker => { "docker" }
-                                            Engine::Podman => { "podman" }
-                                        };
-                                        let mut cmd = Command::new(engine);
-                                        cmd.arg("run");
-                                        if let ContainerName::Value(name) = name {
-                                            cmd.args(["--name", name.as_str()]);
-                                        }
-                                        for port in ports {
-                                            cmd.args(["--publish", port.value()]);
-                                        }
-                                        for volume in volumes {
-                                            cmd.args(["--volume", volume.value()]);
-                                        }
-                                        for device in devices {
-                                            cmd.args(["--devices", device.value()]);
-                                        }
-                                        for env in envs {
-                                            cmd.args(["--env", &format!("{}={}", env.name(), env.value())]);
-                                        }
-                                        cmd.arg(image.value());
-                                        if let ContainerCommand::Value(command) = command {
-                                            cmd.arg(command.as_str());
-                                        }
-                                        for arg in args {
-                                            cmd.arg(arg.value());
-                                        }
-                                        debug!("Command: {:?}", cmd);
-                                        match cmd.spawn() {
-                                            Ok(_) => { log::info!("Container started.") }
-                                            Err(_) => { log::error!("Failed to start container.") }
-                                        };
-                                    }
-                                }
-                            }
+                            setup_executors(configuration.executors);
+                            setup_cluster(
+                                configuration.cluster_assignment,
+                                setup_cluster_info,
+                            ).await?;
                         }
                     };
                 }
@@ -267,6 +194,101 @@ async fn handle_stream_message(
         ignore(message)
     }
 
+    Ok(())
+}
+
+#[tracing::instrument(skip(executors))]
+fn setup_executors(executors: ExecutorDescriptors) { //TODO make idempotent
+    for executor in executors.executors {
+        match executor {
+            ExecutorDescriptor::Executable => log::warn!("Executing Executable not yet implemented."),
+            ExecutorDescriptor::Container {
+                engine,
+                name,
+                image,
+                volumes,
+                devices,
+                envs,
+                ports,
+                command,
+                args
+            } => {
+                let engine = match engine {
+                    Engine::Docker => { "docker" }
+                    Engine::Podman => { "podman" }
+                };
+                let mut cmd = Command::new(engine);
+                cmd.arg("run");
+                if let ContainerName::Value(name) = name {
+                    cmd.args(["--name", name.as_str()]);
+                }
+                for port in ports {
+                    cmd.args(["--publish", port.value()]);
+                }
+                for volume in volumes {
+                    cmd.args(["--volume", volume.value()]);
+                }
+                for device in devices {
+                    cmd.args(["--devices", device.value()]);
+                }
+                for env in envs {
+                    cmd.args(["--env", &format!("{}={}", env.name(), env.value())]);
+                }
+                cmd.arg(image.value());
+                if let ContainerCommand::Value(command) = command {
+                    cmd.arg(command.as_str());
+                }
+                for arg in args {
+                    cmd.arg(arg.value());
+                }
+                debug!("Command: {:?}", cmd);
+                match cmd.spawn() {
+                    Ok(_) => { log::info!("Container started.") }
+                    Err(_) => { log::error!("Failed to start container.") }
+                };
+            }
+        }
+    }
+}
+
+struct SetupClusterInfo {
+    self_id: PeerId,
+    bridge_name: NetworkInterfaceName,
+    network_interface_management_enabled: bool,
+    network_interface_manager: NetworkInterfaceManagerRef,
+    can_manager: CanManagerRef,
+}
+#[tracing::instrument(skip(cluster_assignment, info))]
+async fn setup_cluster(
+    cluster_assignment: Option<ClusterAssignment>,
+    info: &SetupClusterInfo,
+) -> anyhow::Result<()> { //TODO make idempotent
+
+    match cluster_assignment {
+        Some(cluster_assignment) => {
+            log::trace!("Received ClusterAssignment: {cluster_assignment:?}");
+            log::info!("Was assigned to cluster <{}>", cluster_assignment.id);
+
+            if info.network_interface_management_enabled {
+                cluster_assignment::network_interfaces_setup(
+                    cluster_assignment,
+                    info.self_id,
+                    &info.bridge_name,
+                    Arc::clone(&info.network_interface_manager),
+                    Arc::clone(&info.can_manager)
+                ).await
+                .inspect_err(|error| {
+                    log::error!("Failed to configure network interfaces: {error}")
+                })?;
+            } else {
+                log::debug!("Skipping changes to network interfaces after receiving ClusterAssignment, as this is disabled via configuration.");
+            }
+        }
+        None => {
+            log::debug!("No ClusterAssignment in peer configuration.");
+            //TODO teardown cluster, if configuration changed
+        }
+    }
     Ok(())
 }
 

@@ -29,18 +29,13 @@ message Downstream {
   TracingContext context = 1;
   oneof message {
     Pong pong = 2;
-    AssignCluster assign_cluster = 3;
-    ApplyPeerConfiguration apply_peer_configuration = 4;
+    ApplyPeerConfiguration apply_peer_configuration = 3;
   }
 }
 
 message Ping {}
 message Pong {}
 
-
-message AssignCluster {
-  opendut.types.cluster.ClusterAssignment assignment = 1;
-}
 
 message ApplyPeerConfiguration {
   opendut.types.peer.configuration.PeerConfiguration configuration = 1;

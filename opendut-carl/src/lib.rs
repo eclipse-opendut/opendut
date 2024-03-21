@@ -100,12 +100,10 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
 
 
     let resources_manager = Arc::new(ResourcesManager::new());
-    let peer_messaging_broker = {
-        Arc::new(PeerMessagingBroker::new(
-            Arc::clone(&resources_manager),
-            PeerMessagingBrokerOptions::load(&settings.config)?,
-        ))
-    };
+    let peer_messaging_broker = PeerMessagingBroker::new(
+        Arc::clone(&resources_manager),
+        PeerMessagingBrokerOptions::load(&settings.config)?,
+    );
     let cluster_manager = Arc::new(ClusterManager::new(
         Arc::clone(&resources_manager),
         Arc::clone(&peer_messaging_broker),

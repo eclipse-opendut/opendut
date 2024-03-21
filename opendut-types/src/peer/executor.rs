@@ -4,12 +4,12 @@ use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExecutorDescriptors {
     pub executors: Vec<ExecutorDescriptor>,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ExecutorDescriptor {
     Executable,
@@ -27,7 +27,7 @@ pub enum ExecutorDescriptor {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, EnumIter)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, EnumIter)]
 #[serde(rename_all = "kebab-case")]
 pub enum Engine {
     Docker,

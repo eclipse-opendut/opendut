@@ -12,12 +12,16 @@ pub use opendut_carl_api::carl::peer::{
     ListPeerDescriptorsError,
     StorePeerDescriptorError,
 };
+use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, downstream};
+use opendut_types::cluster::ClusterAssignment;
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerSetup};
 use opendut_types::peer::configuration::PeerConfiguration;
+use opendut_types::proto;
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
 use opendut_types::util::net::Certificate;
 use opendut_types::vpn::VpnPeerConfiguration;
 use opendut_util::ErrorOr;
+use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerRef};
 
 use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
@@ -73,7 +77,10 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
                 log::info!("Added device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}>.");
             });
 
-            let peer_configuration = PeerConfiguration{ executors: Clone::clone(&peer_descriptor.executors) };
+            let peer_configuration = PeerConfiguration {
+                executors: Clone::clone(&peer_descriptor.executors),
+                cluster_assignment: None,
+            };
             resources.insert(peer_id, peer_configuration);
 
             resources.insert(peer_id, peer_descriptor);
@@ -233,7 +240,7 @@ pub struct GeneratePeerSetupParams {
 
 #[derive(thiserror::Error, Debug)]
 pub enum GeneratePeerSetupError {
-    #[error("A PeerSetup for peer <{0}> could not be create, because a peer with that ID does not exist!")]
+    #[error("A PeerSetup for peer <{0}> could not be created, because a peer with that ID does not exist!")]
     PeerNotFound(PeerId),
     #[error("An internal error occurred while creating a PeerSetup for peer '{peer_name}' <{peer_id}>:\n  {cause}")]
     Internal {
@@ -283,10 +290,58 @@ pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<Peer
         .inspect_err(|err| log::error!("{err}"))
 }
 
+
+pub struct AssignClusterParams {
+    pub resources_manager: ResourcesManagerRef,
+    pub peer_messaging_broker: PeerMessagingBrokerRef,
+    pub peer_id: PeerId,
+    pub cluster_assignment: ClusterAssignment,
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum AssignClusterError {
+    #[error("Assigning cluster for peer <{0}> failed, because a peer with that ID does not exist!")]
+    PeerNotFound(PeerId),
+    #[error("Sending PeerConfiguration with ClusterAssignment to peer <{peer_id}> failed: {cause}")]
+    SendingToPeerFailed { peer_id: PeerId, cause: String },
+}
+
+pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClusterError> {
+
+    let peer_id = params.peer_id;
+
+    let peer_configuration = params.resources_manager.resources_mut(|resources| {
+        resources.get::<PeerConfiguration>(peer_id)
+            .ok_or(AssignClusterError::PeerNotFound(peer_id))
+            .map(|peer_configuration| {
+                let peer_configuration = PeerConfiguration {
+                    cluster_assignment: Some(params.cluster_assignment),
+                    ..peer_configuration
+                };
+                resources.insert(peer_id, Clone::clone(&peer_configuration));
+                peer_configuration
+            })
+    }).await?;
+
+    params.peer_messaging_broker.send_to_peer(
+        peer_id,
+        downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
+            configuration: Some(peer_configuration.into()),
+        }),
+    ).await
+    .map_err(|cause| AssignClusterError::SendingToPeerFailed {
+        peer_id,
+        cause: cause.to_string()
+    })?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod test {
     use std::sync::Arc;
 
+    use googletest::prelude::*;
     use rstest::*;
 
     use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkConfiguration};
@@ -299,9 +354,6 @@ mod test {
     use super::*;
 
     mod store_peer_descriptor {
-        use googletest::prelude::*;
-        use rstest::*;
-
         use opendut_types::topology::{DeviceDescription, DeviceName};
         use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
 
@@ -355,6 +407,86 @@ mod test {
             assert_that!(resources_manager.get(fixture.peer_a_device_1).await.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[0])));
             assert_that!(resources_manager.get(additional_device_id).await.as_ref(), some(eq(&additional_device)));
             assert_that!(resources_manager.get(fixture.peer_a_device_2).await.as_ref(), none());
+
+            Ok(())
+        }
+    }
+
+    mod assign_cluster {
+        use std::net::IpAddr;
+        use std::str::FromStr;
+        use opendut_carl_api::proto::services::peer_messaging_broker::Pong;
+        use opendut_types::cluster::{ClusterAssignment, ClusterId};
+        use crate::peer::broker::PeerMessagingBrokerOptions;
+        use super::*;
+
+        #[rstest]
+        #[tokio::test]
+        async fn should_update_peer_configuration(fixture: Fixture) -> anyhow::Result<()> {
+
+            let settings = crate::settings::load_defaults()?;
+            let peer_id = fixture.peer_a_id;
+
+            let resources_manager = fixture.resources_manager;
+            let peer_messaging_broker = Arc::new(PeerMessagingBroker::new(
+                Arc::clone(&resources_manager),
+                PeerMessagingBrokerOptions::load(&settings.config).unwrap(),
+            ));
+
+            let peer_configuration = PeerConfiguration {
+                executors: ExecutorDescriptors { executors: vec![] },
+                cluster_assignment: None,
+            };
+            resources_manager.resources_mut(|resources| {
+                resources.insert(peer_id, Clone::clone(&peer_configuration));
+            }).await;
+
+            let (_, mut receiver) = peer_messaging_broker.open(peer_id, IpAddr::from_str("1.2.3.4")?).await;
+            let received = receiver.recv().await.unwrap()
+                .message.unwrap();
+            assert_that!(
+                received,
+                eq(downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
+                    configuration: Some(Clone::clone(&peer_configuration).into()),
+                }))
+            );
+
+
+            let cluster_assignment = ClusterAssignment {
+                id: ClusterId::random(),
+                leader: PeerId::random(),
+                assignments: vec![],
+            };
+
+
+            assign_cluster(AssignClusterParams {
+                resources_manager: Arc::clone(&resources_manager),
+                peer_messaging_broker: Arc::clone(&peer_messaging_broker),
+                peer_id,
+                cluster_assignment: Clone::clone(&cluster_assignment),
+            }).await?;
+
+
+            let peer_configuration = PeerConfiguration {
+                cluster_assignment: Some(cluster_assignment),
+                ..peer_configuration
+            };
+
+            assert_that!(
+                resources_manager.get::<PeerConfiguration>(peer_id).await.as_ref(),
+                some(eq(&peer_configuration))
+            );
+
+
+            let received = receiver.recv().await.unwrap()
+                .message.unwrap();
+
+            assert_that!(
+                received,
+                eq(downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
+                    configuration: Some(Clone::clone(&peer_configuration).into()),
+                }))
+            );
 
             Ok(())
         }
