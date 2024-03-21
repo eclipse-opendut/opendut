@@ -68,6 +68,7 @@ main() {
   # kcadm add-roles -r opendut --uusername service-account-<CLIENT_ID> --rolename <ROLE_NAME>
   # kcadm get-roles -r opendut
   create_realm_role carl-admin "$REALM_OPENDUT"
+  # add role to client
   kcadm add-roles -r "$REALM_OPENDUT" --uusername service-account-opendut-carl-client --rolename carl-admin
   make_realm_role_admin "carl-admin" "$REALM_OPENDUT"
 

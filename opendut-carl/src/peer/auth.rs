@@ -116,6 +116,7 @@ mod tests {
     #[test]
     // #[ignore]
     fn test_register_new_oidc_client() {
+        // TODO: cleanup of newly created client or omit this test entirely
         let client_id = "opendut-carl-client".to_string();
         let client_secret = "6754d533-9442-4ee6-952a-97e332eca38e".to_string();
         let issuer_url = "http://localhost:8081/realms/opendut".to_string();

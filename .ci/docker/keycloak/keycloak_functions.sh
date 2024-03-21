@@ -125,10 +125,12 @@ make_realm_role_admin() {
 
   REALM_ROLE_ID=$(get_realm_role_by_name "$REALM_ROLE_NAME" "$REALM_NAME" | jq -r ".id")
 
-  ADMIN_ROLE_ID=$(kcadm get ui-ext/available-roles/roles/"$REALM_ROLE_ID"?max=100 -r "$REALM_NAME" | jq -r ".[] | select(.role==\"manage-realm\").id")
+  # get ID for required client role: realm-admin
+  ADMIN_ROLE_ID=$(kcadm get ui-ext/available-roles/roles/"$REALM_ROLE_ID"?max=100 -r "$REALM_NAME" | jq -r ".[] | select(.role==\"realm-admin\").id")
 
+  # name and description fields must match the expected data for the assigned role ID
   kcadm create roles-by-id/"$REALM_ROLE_ID"/composites -r "$REALM_NAME" -f - << EOF
-  [{"id":"$ADMIN_ROLE_ID","name":"manage-realm","description":"${role_manage-realm}"}]
+  [{"id":"$ADMIN_ROLE_ID","name":"realm-admin","description":"${role_realm-admin}"}]
 EOF
 }
 
