@@ -6,6 +6,7 @@ license.workspace = true
 
 [dev-dependencies]
 opendut-resources = { workspace = true, features = ["all"] }
+byteorder = { workspace = true }
 uuid = { version = "1.7.0", features = ["v4"] }
 googletest = { workspace = true }
 rstest = { workspace = true }

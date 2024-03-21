@@ -79,7 +79,8 @@ impl <const N: usize> Repository<N> {
         resource.resource_ref_mut()
             .clear_revision();
 
-        let (hash, bytes): (RevisionHash, Vec<u8>) = self.marshaller.marshal(&resource)
+        let (hash, bytes): (RevisionHash, Vec<u8>) =
+            self.marshaller.marshal(&resource)
             .map_err(|cause| CommitError::SerializationError { uuid, cause: cause.to_string() })
             .map(|bytes| (RevisionHash::from(xxh3_128(&bytes)), bytes))?;
 
@@ -162,7 +163,7 @@ impl <const N: usize> Repository<N> {
         let kind = ChangeKind::try_from_tag(patch.bytes[0]).unwrap();
         let uuid = Uuid::from_bytes(TryInto::<[u8; 16]>::try_into(&patch.bytes[1..1 + size_of::<Uuid>()]).unwrap());
         let bytes = &patch.bytes[1 + size_of::<Uuid>()..];
-        let resource = self.marshaller.unmarshal(&bytes).unwrap();
+        // let resource = self.marshaller.unmarshal(&bytes).unwrap();
         // let resource: Box<Box<dyn Resource<_, _>>> = resource.downcast::<Box<dyn Resource<_, _>>>().unwrap();
 
         // Ok(Change::new(kind, resource, bytes.to_vec()))

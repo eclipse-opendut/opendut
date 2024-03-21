@@ -86,7 +86,7 @@ mod test {
     #[tokio::test(flavor = "multi_thread")]
     async fn test() -> Result<()> {
 
-        let (mut broker, rm_handle) = ResourcesBroker::create(Default::default());
+        let (mut broker, rm_handle) = ResourcesBroker::create(Default::default(), );
 
         let mut probe = testkit::probe::oneshot::<CommitReply>();
 

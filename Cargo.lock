@@ -2652,6 +2652,7 @@ dependencies = [
 name = "opendut-resources-tests"
 version = "0.0.0"
 dependencies = [
+ "byteorder",
  "googletest",
  "opendut-resources",
  "postcard",
