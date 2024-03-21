@@ -21,8 +21,8 @@ message Port {
 
 message IpAddress {
   oneof address {
-    IpV4Address ipV4 = 1;
-    IpV6Address ipV6 = 2;
+    IpV4Address ip_v4 = 1;
+    IpV6Address ip_v6 = 2;
   }
 }
 
