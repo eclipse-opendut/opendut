@@ -1,13 +1,18 @@
 use std::collections::HashMap;
 use std::net::IpAddr;
+use std::ops::Not;
 use std::sync::Arc;
 use std::time::Duration;
 
+use opentelemetry::propagation::TextMapPropagator;
+use opentelemetry_sdk::propagation::TraceContextPropagator;
 use tokio::sync::{mpsc, RwLock};
 use tokio::sync::mpsc::error::SendError;
-use tracing::error;
+use tokio::sync::mpsc::Sender;
+use tracing::{error, Span};
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 
-use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, downstream};
+use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, downstream, Downstream, TracingContext};
 use opendut_carl_api::proto::services::peer_messaging_broker::downstream::Message;
 use opendut_carl_api::proto::services::peer_messaging_broker::Pong;
 use opendut_carl_api::proto::services::peer_messaging_broker::upstream;
@@ -25,7 +30,7 @@ pub struct PeerMessagingBroker {
     options: PeerMessagingBrokerOptions,
 }
 struct PeerMessagingRef {
-    downstream: mpsc::Sender<downstream::Message>,
+    downstream: mpsc::Sender<Downstream>,
 }
 
 impl PeerMessagingBroker {
@@ -45,7 +50,21 @@ impl PeerMessagingBroker {
         };
         let downstream = downstream.ok_or(Error::PeerNotFound(peer_id))?;
 
-        downstream.send(message).await.map_err(Error::DownstreamSend)?;
+        let context = if matches!(message, downstream::Message::Pong(_)).not() {
+            let mut context = TracingContext { values: Default::default() };
+            let propagator = TraceContextPropagator::new();
+            let span = Span::current().entered();
+            propagator.inject_context(&span.context(), &mut context.values);
+            Some(context)
+        }
+        else {
+            None
+        };
+
+        downstream.send(Downstream {
+            context,
+            message: Some(message)
+        }).await.map_err(Error::DownstreamSend)?;
         Ok(())
     }
 
@@ -61,10 +80,10 @@ impl PeerMessagingBroker {
         &self,
         peer_id: PeerId,
         remote_host: IpAddr,
-    ) -> (mpsc::Sender<upstream::Message>, mpsc::Receiver<downstream::Message>) {
+    ) -> (mpsc::Sender<upstream::Message>, mpsc::Receiver<Downstream>) {
 
         let (tx_inbound, mut rx_inbound) = mpsc::channel::<upstream::Message>(1024);
-        let (tx_outbound, rx_outbound) = mpsc::channel::<downstream::Message>(1024);
+        let (tx_outbound, rx_outbound) = mpsc::channel::<Downstream>(1024);
 
         let peer_messaging_ref = PeerMessagingRef {
             downstream: Clone::clone(&tx_outbound),
@@ -152,14 +171,14 @@ impl PeerMessagingBroker {
 async fn handle_stream_message(
     message: upstream::Message,
     peer_id: PeerId,
-    tx_outbound: &mpsc::Sender<downstream::Message>,
+    tx_outbound: &Sender<Downstream>,
 ) {
     match message {
         upstream::Message::Ping(_) => {
-            let downstream = downstream::Message::Pong(Pong {});
-
+            let message = downstream::Message::Pong(Pong {});
+            let context = None;
             let _ignore_result =
-                tx_outbound.send(downstream).await
+                tx_outbound.send(Downstream{message:Some(message), context}).await
                     .inspect_err(|cause| log::warn!("Failed to send ping to peer <{peer_id}>: {cause}"));
         },
     }
@@ -180,7 +199,7 @@ async fn down_peer_impl(resources_manager: ResourcesManagerRef, peer_id: PeerId)
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("DownstreamSend Error: {0}")]
-    DownstreamSend(SendError<downstream::Message>),
+    DownstreamSend(SendError<Downstream>),
     #[error("PeerNotFound Error: {0}")]
     PeerNotFound(PeerId),
     #[error("Other Error: {message}")]
@@ -209,6 +228,8 @@ mod tests {
     use std::str::FromStr;
 
     use googletest::prelude::*;
+    use tokio::sync::mpsc;
+    use tokio::sync::mpsc::Receiver;
 
     use opendut_carl_api::proto::services::peer_messaging_broker::Ping;
 
@@ -281,12 +302,12 @@ mod tests {
         Ok(())
     }
 
-    async fn do_ping(sender: &mpsc::Sender<upstream::Message>, receiver: &mut mpsc::Receiver<downstream::Message>) {
+    async fn do_ping(sender: &mpsc::Sender<upstream::Message>, receiver: &mut Receiver<Downstream>) {
         sender.send(upstream::Message::Ping(Ping {})).await
             .unwrap();
 
         let received = receiver.recv().await.unwrap();
 
-        assert_eq!(received, downstream::Message::Pong(Pong {}));
+        assert_eq!(received.message, Some(downstream::Message::Pong(Pong {})));
     }
 }

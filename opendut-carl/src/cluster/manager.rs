@@ -269,6 +269,7 @@ mod test {
 
     use googletest::prelude::*;
     use tokio::sync::mpsc;
+    use opendut_carl_api::proto::services::peer_messaging_broker::Downstream;
 
     use opendut_types::cluster::ClusterName;
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkConfiguration};
@@ -460,22 +461,24 @@ mod test {
             })
         };
 
-        async fn receive_peer_configuration_message(peer_rx: &mut mpsc::Receiver<Message>) {
-            let message = tokio::time::timeout(Duration::from_millis(500), peer_rx.recv()).await;
+        async fn receive_peer_configuration_message(peer_rx: &mut mpsc::Receiver<Downstream>) {
+            let downstream = tokio::time::timeout(Duration::from_millis(500), peer_rx.recv()).await;
 
-            match message {
-                Ok(Some(Message::ApplyPeerConfiguration(_))) => {}
-                _ => panic!("Did not receive valid message. Received this instead: {message:?}")
+            if let Ok(Some(Downstream{ message: Some(message), context: _ })) = downstream {
+                match message {
+                    Message::ApplyPeerConfiguration(_) => {}
+                    _ => panic!("Did not receive valid message. Received this instead: {message:?}")
+                }
             }
         }
 
-        async fn receive_cluster_assignment(peer_rx: &mut mpsc::Receiver<Message>) -> ClusterAssignment {
-            let message = tokio::time::timeout(Duration::from_millis(500), peer_rx.recv()).await;
+        async fn receive_cluster_assignment(peer_rx: &mut mpsc::Receiver<Downstream>) -> ClusterAssignment {
+            let downstream = tokio::time::timeout(Duration::from_millis(500), peer_rx.recv()).await;
 
-            if let Ok(Some(Message::AssignCluster(AssignCluster { assignment: Some(cluster_assignment) }))) = message {
+            if let Ok(Some(Downstream{ message: Some(Message::AssignCluster(AssignCluster { assignment: Some(cluster_assignment) })), context: _ })) = downstream {
                 cluster_assignment.try_into().unwrap()
             } else {
-                panic!("Did not receive valid message. Received this instead: {message:?}")
+                panic!("Did not receive valid message. Received this instead: {downstream:?}")
             }
         }
 

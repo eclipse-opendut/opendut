@@ -4,17 +4,14 @@ use std::pin::Pin;
 use std::str::FromStr;
 
 use futures::StreamExt;
-use opentelemetry::propagation::text_map_propagator::TextMapPropagator;
-use opentelemetry_sdk::propagation::TraceContextPropagator;
 use tokio_stream::Stream;
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::{Request, Response, Status, Streaming};
 use tonic::metadata::MetadataMap;
 use tonic_web::CorsGrpcWeb;
-use tracing_opentelemetry::OpenTelemetrySpanExt;
 use uuid::Uuid;
 
-use opendut_carl_api::proto::services::peer_messaging_broker::{Downstream, downstream, ListPeersRequest, ListPeersResponse, TracingContext, Upstream};
+use opendut_carl_api::proto::services::peer_messaging_broker::{Downstream, ListPeersRequest, ListPeersResponse, Upstream};
 use opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_broker_server::PeerMessagingBrokerServer;
 use opendut_carl_api::proto::services::peer_messaging_broker::upstream;
 use opendut_types::peer::PeerId;
@@ -105,22 +102,8 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
         });
 
         let outbound = ReceiverStream::new(rx_outbound)
-            .map(|message| {
-                let context = if matches!(message, downstream::Message::Pong(_)).not() {
-                    let mut context = TracingContext { values: Default::default() };
-                    let propagator = TraceContextPropagator::new();
-                    let span = tracing::span!(tracing::Level::INFO, "grpc::open").entered();
-                    propagator.inject_context(&span.context(), &mut context.values);
-                    Some(context)
-                }
-                else {
-                    None
-                };
-
-                Ok(Downstream {
-                    context,
-                    message: Some(message)
-                })
+            .map(|downstream| {
+                Ok(downstream)
             });
 
         Ok(Response::new(Box::pin(outbound)))
