@@ -54,10 +54,6 @@ services:
  grafana:
     container_name: grafana
     image: grafana/grafana:latest
-  #  deploy:
-  #    resources:
-  #      limits:
-  #        memory: 100M
     restart: unless-stopped
     depends_on:
       tempo:
@@ -66,12 +62,8 @@ services:
         condition: service_healthy
     environment:
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
-      #- GF_AUTH_ANONYMOUS_ENABLED=true
-      #- GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
-      #- GF_AUTH_DISABLE_LOGIN_FORM=true
       - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
     volumes:
-     # - ./grafana/grafana.ini:/etc/grafana/grafana.ini
       - ./grafana/dashboards:/var/lib/grafana/dashboards
       - ./grafana/dashboard.yml:/etc/grafana/provisioning/dashboards/main.yaml
       - ./grafana/grafana-datasources.yml:/etc/grafana/provisioning/datasources/ds.yaml

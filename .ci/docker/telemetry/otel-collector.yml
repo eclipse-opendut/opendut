@@ -60,11 +60,11 @@ service:
  pipelines:
    traces:
      receivers: [otlp]
-     processors: [batch] #resource
+     processors: [batch]
      exporters: [logging, otlp/tempo, debug]
    metrics:
      receivers: [otlp]
-     processors: [batch] #resource
+     processors: [batch]
      exporters: [prometheus, debug, otlp/tempo]
    logs:
      receivers: [otlp]
