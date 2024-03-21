@@ -114,7 +114,7 @@ mod tests {
     use super::*;
 
     #[test]
-    // #[ignore]
+    #[ignore]
     fn test_register_new_oidc_client() {
         // TODO: cleanup of newly created client or omit this test entirely
         let client_id = "opendut-carl-client".to_string();
