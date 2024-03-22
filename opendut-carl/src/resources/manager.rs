@@ -17,12 +17,12 @@ struct State {
 
 impl ResourcesManager {
 
-    pub fn new() -> Self {
-        Self {
+    pub fn new() -> ResourcesManagerRef {
+        Arc::new(Self {
             state: RwLock::new(State {
                 resources: Default::default()
             })
-        }
+        })
     }
 
     pub async fn insert<R>(&self, id: impl IntoId<R>, resource: R) -> Option<R>
@@ -69,12 +69,6 @@ impl ResourcesManager {
     pub async fn is_not_empty(&self) -> bool {
         let state = self.state.read().await;
         state.resources.is_not_empty()
-    }
-}
-
-impl Default for ResourcesManager {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

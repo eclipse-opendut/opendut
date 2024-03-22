@@ -57,13 +57,13 @@ impl ClusterManager {
         peer_messaging_broker: PeerMessagingBrokerRef,
         vpn: Vpn,
         options: ClusterManagerOptions,
-    ) -> Self {
-        Self {
+    ) -> ClusterManagerRef {
+        Arc::new(Self {
             resources_manager,
             peer_messaging_broker,
             vpn,
             options,
-        }
+        })
     }
     #[tracing::instrument(name = "cluster::manager::deploy", skip(self), level="trace")]
     pub async fn deploy(&self, cluster_id: ClusterId) -> Result<(), DeployClusterError> {
@@ -493,7 +493,7 @@ mod test {
     fn fixture() -> Fixture {
         let settings = settings::load_defaults().unwrap();
 
-        let resources_manager = Arc::new(ResourcesManager::new());
+        let resources_manager = ResourcesManager::new();
         let peer_messaging_broker = PeerMessagingBroker::new(
             Arc::clone(&resources_manager),
             PeerMessagingBrokerOptions::load(&settings.config).unwrap(),
@@ -501,12 +501,12 @@ mod test {
 
         let cluster_manager_options = ClusterManagerOptions::load(&settings.config).unwrap();
 
-        let testee = Arc::new(ClusterManager::new(
+        let testee = ClusterManager::new(
             Arc::clone(&resources_manager),
             Arc::clone(&peer_messaging_broker),
             Vpn::Disabled,
             cluster_manager_options.clone(),
-        ));
+        );
         Fixture {
             testee,
             resources_manager,

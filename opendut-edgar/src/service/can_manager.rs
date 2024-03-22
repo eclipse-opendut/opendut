@@ -30,9 +30,11 @@ pub struct CanManager{
 }
 
 impl CanManager {
-    pub fn create(network_interface_manager: NetworkInterfaceManagerRef) -> Self {
-
-        Self { cannelloni_termination_token: Mutex::new(Arc::new(AtomicBool::new(false))) , network_interface_manager}
+    pub fn create(network_interface_manager: NetworkInterfaceManagerRef) -> CanManagerRef {
+        Arc::new(Self {
+            cannelloni_termination_token: Mutex::new(Arc::new(AtomicBool::new(false))),
+            network_interface_manager
+        })
     }
 
     async fn check_can_route_exists(&self, src: &NetworkInterfaceName, dst: &NetworkInterfaceName, can_fd: bool, max_hops: u8) -> Result<bool, Error> {

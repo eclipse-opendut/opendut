@@ -74,8 +74,8 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
 
     log::info!("Started with ID <{self_id}> and configuration: {settings:?}");
 
-    let network_interface_manager: NetworkInterfaceManagerRef = Arc::new(NetworkInterfaceManager::create()?);
-    let can_manager: CanManagerRef = Arc::new(CanManager::create(Arc::clone(&network_interface_manager)));
+    let network_interface_manager: NetworkInterfaceManagerRef = NetworkInterfaceManager::create()?;
+    let can_manager: CanManagerRef = CanManager::create(Arc::clone(&network_interface_manager));
 
     let network_interface_management_enabled = settings.config.get::<bool>("network.interface.management.enabled")?;
 

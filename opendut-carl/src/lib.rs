@@ -99,17 +99,17 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
     };
 
 
-    let resources_manager = Arc::new(ResourcesManager::new());
+    let resources_manager = ResourcesManager::new();
     let peer_messaging_broker = PeerMessagingBroker::new(
         Arc::clone(&resources_manager),
         PeerMessagingBrokerOptions::load(&settings.config)?,
     );
-    let cluster_manager = Arc::new(ClusterManager::new(
+    let cluster_manager = ClusterManager::new(
         Arc::clone(&resources_manager),
         Arc::clone(&peer_messaging_broker),
         Clone::clone(&vpn),
         ClusterManagerOptions::load(&settings.config)?,
-    ));
+    );
 
     /// Isolation in function returning BoxFuture needed due to this: https://github.com/rust-lang/rust/issues/102211#issuecomment-1397600424
     #[allow(clippy::too_many_arguments)]

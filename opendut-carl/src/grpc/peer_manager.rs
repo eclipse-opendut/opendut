@@ -255,7 +255,7 @@ mod tests {
 
 
 
-        let resources_manager = Arc::new(ResourcesManager::new());
+        let resources_manager = ResourcesManager::new();
         let testee = PeerManagerFacade::new(
             Arc::clone(&resources_manager),
             Vpn::Disabled,
@@ -345,7 +345,7 @@ mod tests {
     #[tokio::test]
     async fn register_fails_when_no_id_specified() -> Result<()> {
 
-        let resources_manager = Arc::new(ResourcesManager::new());
+        let resources_manager = ResourcesManager::new();
         let testee = PeerManagerFacade::new(
             Arc::clone(&resources_manager),
             Vpn::Disabled,
@@ -383,7 +383,7 @@ mod tests {
     #[tokio::test]
     async fn unregister_fails_when_no_id_specified() -> Result<()> {
 
-        let resources_manager = Arc::new(ResourcesManager::new());
+        let resources_manager = ResourcesManager::new();
         let testee = PeerManagerFacade::new(
             Arc::clone(&resources_manager),
             Vpn::Disabled,

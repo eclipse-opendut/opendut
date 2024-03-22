@@ -428,10 +428,10 @@ mod test {
             let peer_id = fixture.peer_a_id;
 
             let resources_manager = fixture.resources_manager;
-            let peer_messaging_broker = Arc::new(PeerMessagingBroker::new(
+            let peer_messaging_broker = PeerMessagingBroker::new(
                 Arc::clone(&resources_manager),
                 PeerMessagingBrokerOptions::load(&settings.config).unwrap(),
-            ));
+            );
 
             let peer_configuration = PeerConfiguration {
                 executors: ExecutorDescriptors { executors: vec![] },
@@ -547,7 +547,7 @@ mod test {
             }
         };
         Fixture {
-            resources_manager: Arc::new(ResourcesManager::new()),
+            resources_manager: ResourcesManager::new(),
             vpn: Vpn::Disabled,
             peer_a_id,
             peer_a_descriptor,

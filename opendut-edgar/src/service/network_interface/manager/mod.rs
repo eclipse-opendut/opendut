@@ -19,12 +19,12 @@ pub struct NetworkInterfaceManager {
     handle: rtnetlink::Handle,
 }
 impl NetworkInterfaceManager {
-    pub fn create() -> Result<Self, Error> {
+    pub fn create() -> Result<NetworkInterfaceManagerRef, Error> {
         let (connection, handle, _) = rtnetlink::new_connection()
             .map_err(|cause| Error::Connecting { cause })?;
         tokio::spawn(connection);
 
-        Ok(Self { handle })
+        Ok(Arc::new(Self { handle }))
     }
 
     pub async fn list_interfaces(&self) -> Result<Vec<Interface>, Error> {

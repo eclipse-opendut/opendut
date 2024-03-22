@@ -239,7 +239,7 @@ mod tests {
 
     #[tokio::test]
     async fn peer_stream() -> Result<()> {
-        let resources_manager = Arc::new(ResourcesManager::new());
+        let resources_manager = ResourcesManager::new();
 
         let options = PeerMessagingBrokerOptions {
             peer_disconnect_timeout: Duration::from_millis(200),

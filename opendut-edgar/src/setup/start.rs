@@ -92,7 +92,7 @@ pub async fn unmanaged(
     mtu: u16,
 ) -> anyhow::Result<()> {
 
-    let network_interface_manager = Arc::new(NetworkInterfaceManager::create()?);
+    let network_interface_manager = NetworkInterfaceManager::create()?;
 
     let tasks: Vec<Box<dyn Task>> = vec![
         Box::new(tasks::CheckOsRequirements),
