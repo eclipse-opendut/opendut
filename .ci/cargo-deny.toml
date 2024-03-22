@@ -75,6 +75,8 @@ notice = "warn"
 # output a note when they are encountered.
 ignore = [
 #    "RUSTSEC-2021-0139",
+    # TODO: ignore until https://github.com/RustCrypto/RSA/issues/19 is resolved, tracked by issue #144
+    "RUSTSEC-2023-0071",
 ]
 # Threshold for security vulnerabilities, any vulnerability with a CVSS score
 # lower than the range specified will be ignored. Note that ignored advisories
