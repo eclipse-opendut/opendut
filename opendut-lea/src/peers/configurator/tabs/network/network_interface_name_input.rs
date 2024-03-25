@@ -5,6 +5,7 @@ use opendut_types::util::net::{NetworkInterfaceName, NetworkInterfaceNameError};
 
 use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, UserInput, UserInputValue};
 use crate::peers::configurator::types::UserPeerNetworkInterface;
+use crate::util::NON_BREAKING_SPACE;
 
 #[component]
 pub fn NetworkInterfaceNameInput<A>(
@@ -13,7 +14,7 @@ pub fn NetworkInterfaceNameInput<A>(
 ) -> impl IntoView
 where A: Fn(NetworkInterfaceName) + 'static {
 
-    let (getter, setter) = create_signal(UserInputValue::Left(String::from("The network interface name must not be empty.")));
+    let (getter, setter) = create_signal(UserInputValue::Left(String::from(NON_BREAKING_SPACE)));
 
     let name_filter = move |name: NetworkInterfaceName| {
         interfaces.with(|interfaces| {
@@ -41,7 +42,7 @@ where A: Fn(NetworkInterfaceName) + 'static {
                         UserInputValue::Both(format!("A network interface name must be at most {} characters long.", max), value)
                     },
                     NetworkInterfaceNameError::Empty => {
-                        UserInputValue::Both("The network interface name must not be empty.".to_string(), String::new())
+                        UserInputValue::Left(String::from(NON_BREAKING_SPACE))
                     },
                 }
             }
@@ -76,7 +77,7 @@ where A: Fn(NetworkInterfaceName) + 'static {
                         if let UserInputValue::Right(value) = getter.get_untracked() {
                             if let Ok(name) = NetworkInterfaceName::try_from(value) {
                                 on_action(name);
-                                setter.set(UserInputValue::Both("The network interface name must not be empty.".to_string(), String::new()));
+                                setter.set(UserInputValue::Right(String::new()));
                             }
                         }
                     }

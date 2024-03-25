@@ -1,7 +1,7 @@
 use leptos::*;
 use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, UserInputError};
 use crate::components::inputs::{UserInputValidator, UserInputValue};
-use crate::util::Ior;
+use crate::util::{Ior, NON_BREAKING_SPACE};
 
 #[component]
 pub fn VectorUserInput<OnAddFn>(
@@ -109,7 +109,7 @@ fn VectorUserInputValue<A,OnDeleteFn>(
 
     let help_text = move || {
         getter.with(|input| match input {
-            UserInputValue::Right(_) => String::from(""),
+            UserInputValue::Right(_) => String::from(NON_BREAKING_SPACE),
             UserInputValue::Left(error) => error.to_owned(),
             UserInputValue::Both(error, _) => error.to_owned(),
         })

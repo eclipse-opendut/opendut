@@ -111,7 +111,7 @@ pub struct ContainerEnvironmentVariable {
 
 #[derive(thiserror::Error, Clone, Debug)]
 pub enum IllegalContainerEnvironmentVariable{
-    #[error("ContainerEnvironmentVariable name must not be empty.")]
+    #[error("Container env name must not be empty.")]
     EmptyName,
 }
 
@@ -219,7 +219,7 @@ impl ContainerVolume {
 
 #[derive(thiserror::Error, Clone, Debug)]
 pub enum IllegalContainerVolume{
-    #[error("ContainerVolume must not be empty.")]
+    #[error("Container volume must not be empty.")]
     Empty,
 }
 
@@ -274,7 +274,7 @@ impl ContainerDevice {
 
 #[derive(thiserror::Error, Clone, Debug)]
 pub enum IllegalContainerDevice{
-    #[error("ContainerDevice must not be empty.")]
+    #[error("Container device must not be empty.")]
     Empty,
 }
 
@@ -329,7 +329,7 @@ impl ContainerPortSpec{
 
 #[derive(thiserror::Error, Clone, Debug)]
 pub enum IllegalContainerPortSpec {
-    #[error("ContainerPortSpec must not be empty.")]
+    #[error("Container port specification must not be empty.")]
     Empty,
 }
 
@@ -446,7 +446,7 @@ impl ContainerCommandArgument {
 
 #[derive(thiserror::Error, Clone, Debug)]
 pub enum IllegalContainerCommandArgument{
-    #[error("ContainerPortSpec must not be empty.")]
+    #[error("Container command argument must not be empty.")]
     Empty,
 }
 

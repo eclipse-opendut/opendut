@@ -4,6 +4,7 @@ use strum::IntoEnumIterator;
 
 use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, IconButton, Toggled, UserInput, UserInputValue, VectorUserInput};
 use crate::peers::configurator::types::{EMPTY_CONTAINER_IMAGE_ERROR_MESSAGE, UserContainerEnv, UserPeerExecutor};
+use crate::util::NON_BREAKING_SPACE;
 
 #[component]
 pub fn ExecutorPanel<OnDeleteFn>(
@@ -170,7 +171,7 @@ fn ExecutorEngineInput<>(
     };
 
     view! {
-        <div class="field">
+        <div class="field pb-3">
             <label class="label">Engine</label>
             <div class="control">
                 <div class="select"
@@ -295,8 +296,8 @@ fn ExecutorContainerVolumesInput(
 
     let validator = |input: String| {
         match ContainerVolume::try_from(input.clone()) {
-            Ok(name) => {
-                UserInputValue::Right(String::from(name.value()))
+            Ok(volume) => {
+                UserInputValue::Right(String::from(volume.value()))
             }
             Err(cause) => {
                 UserInputValue::Both(cause.to_string(), input)
@@ -307,7 +308,7 @@ fn ExecutorContainerVolumesInput(
     let on_add_volume = move || {
         executor.update(|executor| {
             let volume = create_rw_signal(
-                UserInputValue::Right(String::from(""))
+                UserInputValue::Left(String::from("Container volume must not be empty."))
             );
             match executor {
                 UserPeerExecutor::Container{ volumes, .. } => {
@@ -350,8 +351,8 @@ fn ExecutorContainerDevicesInput(
 
     let validator = |input: String| {
         match ContainerDevice::try_from(input.clone()) {
-            Ok(name) => {
-                UserInputValue::Right(String::from(name.value()))
+            Ok(device) => {
+                UserInputValue::Right(String::from(device.value()))
             }
             Err(cause) => {
                 UserInputValue::Both(cause.to_string(), input)
@@ -362,7 +363,7 @@ fn ExecutorContainerDevicesInput(
     let on_add_device = move || {
         executor.update(|executor| {
             let device = create_rw_signal(
-                UserInputValue::Right(String::from(""))
+                UserInputValue::Left(String::from("Container device must not be empty."))
             );
             match executor {
                 UserPeerExecutor::Container{ devices, .. } => {
@@ -417,7 +418,7 @@ fn ExecutorContainerPortsInput(
     let on_add_port = move || {
         executor.update(|executor| {
             let port = create_rw_signal(
-                UserInputValue::Right(String::from(""))
+                UserInputValue::Left(String::from("Container port specification must not be empty."))
             );
             match executor {
                 UserPeerExecutor::Container{ ports, .. } => {
@@ -512,7 +513,7 @@ fn ExecutorContainerArgsInput(
     let on_add_arg = move || {
         executor.update(|executor| {
             let arg = create_rw_signal(
-                UserInputValue::Right(String::from(""))
+                UserInputValue::Left(String::from("Container command argument must not be empty."))
             );
             match executor {
                 UserPeerExecutor::Container{ args, .. } => {
@@ -557,7 +558,7 @@ fn ExecutorContainerEnvsInput(
         executor.update(|executor| {
             let env = create_rw_signal(
                 UserContainerEnv {
-                    name: UserInputValue::Right(String::from("")),
+                    name: UserInputValue::Left(String::from("Container environment variable name must not be empty.")),
                     value: UserInputValue::Right(String::from(""))
                 }
             );
@@ -585,6 +586,18 @@ fn ExecutorContainerEnvsInput(
         });
         setter.set(remaining_envs)
     };
+
+    let name_validator = |input: String| {
+        match input.is_empty() {
+            true => {
+                UserInputValue::Both(String::from("Container env name must not be empty."), input)
+            }
+            false => {
+                UserInputValue::Right(String::from(input))
+            }
+        }
+    };
+    
 
     let panels = move || {
         getter.with(|envs| {
@@ -627,7 +640,7 @@ fn ExecutorContainerEnvsInput(
 
                     let help_name_text = move || {
                         name_getter.with(|input| match input {
-                            UserInputValue::Right(_) => String::from(""),
+                            UserInputValue::Right(_) => String::from(NON_BREAKING_SPACE),
                             UserInputValue::Left(error) => error.to_owned(),
                             UserInputValue::Both(error, _) => error.to_owned(),
                         })
@@ -635,7 +648,7 @@ fn ExecutorContainerEnvsInput(
 
                     let help_value_text = move || {
                         value_getter.with(|input| match input {
-                            UserInputValue::Right(_) => String::from(""),
+                            UserInputValue::Right(_) => String::from(NON_BREAKING_SPACE),
                             UserInputValue::Left(error) => error.to_owned(),
                             UserInputValue::Both(error, _) => error.to_owned(),
                         })
@@ -652,8 +665,8 @@ fn ExecutorContainerEnvsInput(
                                     placeholder=""
                                     prop:value={ name_text }
                                     on:input=move |ev| {
-                                        let target_value = event_target_value(&ev);
-                                        name_setter.set(UserInputValue::Right(target_value));
+                                        let validated_value = name_validator(event_target_value(&ev));
+                                        name_setter.set(validated_value);
                                     }
                                 />
                                 <label class="label has-text-weight-normal mb-0">value</label>
@@ -684,8 +697,11 @@ fn ExecutorContainerEnvsInput(
                                     }
                                 />
                             </div>
-                            <p class="help has-text-danger">{ help_name_text }</p>
-                            <p class="help has-text-danger">{ help_value_text }</p>
+                            <div class="help has-text-danger">
+                                { help_name_text }
+                                { move || { String::from(NON_BREAKING_SPACE)} }
+                                { help_value_text }
+                            </div>
                         </div>
                     }
                 })

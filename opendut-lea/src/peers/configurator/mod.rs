@@ -151,6 +151,32 @@ pub fn PeerConfigurator() -> impl IntoView {
                             && device_configuration.interface.is_right()
                         })
                     })
+                    && peer_configuration.executors.iter().all(|executor| {
+                        executor.with(|executor| {
+                            match executor {
+                                UserPeerExecutor::Container {
+                                    name, 
+                                    image, 
+                                    volumes, 
+                                    devices, 
+                                    envs, 
+                                    ports, 
+                                    command, 
+                                    args, 
+                                    ..
+                                } => {
+                                    name.is_right() 
+                                        && image.is_right() 
+                                        && volumes.iter().all(|volume| volume.with(|volume| volume.is_right()))
+                                        && devices.iter().all(|device| device.with(|device| device.is_right()))
+                                        && envs.iter().all(|env| env.with(|env| env.name.is_right()))
+                                        && ports.iter().all(|port| port.with(|port| port.is_right()))
+                                        && command.is_right()
+                                        && args.iter().all(|arg| arg.with(|arg| arg.is_right()))
+                                }
+                            }
+                        })
+                    })
                 })
             });
 
