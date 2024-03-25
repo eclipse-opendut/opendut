@@ -1,0 +1,209 @@
+use oauth2::{AccessToken, AuthUrl, ClientId as OAuthClientId, ClientSecret as OAuthClientSecret, RedirectUrl, TokenResponse, TokenUrl};
+use oauth2::basic::BasicClient;
+use oauth2::reqwest::async_http_client;
+use openidconnect::core::{CoreClientRegistrationRequest, CoreGrantType};
+use openidconnect::registration::EmptyAdditionalClientMetadata;
+use openidconnect::RegistrationUrl;
+use serde::{Deserialize, Serialize};
+use url::Url;
+
+use opendut_types::util::net::{ClientCredentials, ClientId, ClientSecret};
+
+pub const DEVICE_REDIRECT_URL: &str = "http://localhost:12345/device";
+
+#[derive(Debug, Clone)]
+pub struct OpenIdConnectClientManager {
+    client: BasicClient,
+    registration_url: RegistrationUrl,
+    device_redirect_url: RedirectUrl,
+    pub issuer_url: Url,
+}
+
+#[derive(Debug)]
+pub struct OAuthClientCredentials {
+    pub client_id: OAuthClientId,
+    pub client_secret: OAuthClientSecret,
+}
+
+impl OAuthClientCredentials {
+    pub fn client_credentials(&self) -> ClientCredentials {
+        ClientCredentials {
+            client_id: ClientId(self.client_id.to_string()),
+            client_secret: ClientSecret(self.client_secret.secret().to_string()),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CarlScopes(pub String);
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CarlIdentityProviderConfig {
+    client_id: OAuthClientId,
+    client_secret: OAuthClientSecret,
+    issuer_url: Url,
+    scopes: CarlScopes,
+}
+
+
+#[derive(thiserror::Error, Debug)]
+pub enum AuthenticationClientManagerError {
+    #[error("Invalid configuration:\n  {error}")]
+    InvalidConfiguration {
+        error: String,
+    },
+    #[error("Invalid client credentials:\n  {error}")]
+    InvalidCredentials {
+        error: String,
+    },
+    #[error("Failed to register new client:\n  {error}")]
+    Registration {
+        error: String,
+    },
+}
+
+impl OpenIdConnectClientManager {
+    /// issuer_url for keycloak includes realm name: http://localhost:8081/realms/opendut
+    pub fn new(config: CarlIdentityProviderConfig) -> Result<Self, AuthenticationClientManagerError> {
+        if config.issuer_url.as_str().ends_with('/') {
+            // keycloak auth url: http://localhost:8081/realms/opendut/protocol/openid-connect/auth
+            let auth_url = AuthUrl::from_url(
+                config.issuer_url.join("protocol/openid-connect/auth")
+                    .map_err(|error| AuthenticationClientManagerError::InvalidConfiguration { error: format!("Invalid auth endpoint url: {}", error) })?
+            );
+            let token_url = TokenUrl::from_url(
+                config.issuer_url.join("protocol/openid-connect/token")
+                    .map_err(|error| AuthenticationClientManagerError::InvalidConfiguration { error: format!("Invalid token endpoint url: {}", error) })?
+            );
+            let registration_url = RegistrationUrl::from_url(
+                config.issuer_url.join("clients-registrations/openid-connect")
+                    .map_err(|error| AuthenticationClientManagerError::InvalidConfiguration { error: format!("Invalid registration endpoint URL: {}", error) })?
+            );
+
+            let device_redirect_url = RedirectUrl::new(DEVICE_REDIRECT_URL.to_string()).expect("Could not parse device redirect url");
+
+            let client =
+                BasicClient::new(
+                    config.client_id,
+                    Some(config.client_secret),
+                    auth_url,
+                    Some(token_url),
+                );
+
+            Ok(OpenIdConnectClientManager {
+                client,
+                registration_url,
+                device_redirect_url,
+                issuer_url: config.issuer_url.clone(),
+            })
+        } else {
+            Err(AuthenticationClientManagerError::InvalidConfiguration {
+                error: "Issuer URL must end with a slash".to_string(),
+            })
+        }
+    }
+
+    async fn get_token(&self) -> Result<AccessToken, AuthenticationClientManagerError> {
+        let response = self.client.exchange_client_credentials()
+            .request_async(async_http_client)
+            .await
+            .map_err(|error| AuthenticationClientManagerError::InvalidCredentials { error: error.to_string() })?;
+        Ok(response.access_token().clone())
+    }
+
+    pub async fn register_new_client(&self) -> Result<OAuthClientCredentials, AuthenticationClientManagerError> {
+        let access_token = self.get_token().await?;
+        let additional_metadata = EmptyAdditionalClientMetadata {};
+        let redirect_uris = vec![self.device_redirect_url.clone()];
+        let grant_types = vec![CoreGrantType::ClientCredentials];
+        let request: CoreClientRegistrationRequest =
+            openidconnect::registration::ClientRegistrationRequest::new(redirect_uris, additional_metadata)
+                .set_grant_types(Some(grant_types));
+        let registration_url = self.registration_url.clone();
+        let response = request
+            .set_initial_access_token(Some(access_token))
+            .register_async(&registration_url, async_http_client).await;
+
+        match response {
+            Ok(response) => {
+                let client_id = response.client_id();
+                let client_secret = response.client_secret().expect("Confidential client required!");
+
+                Ok(OAuthClientCredentials {
+                    client_id: client_id.clone(),
+                    client_secret: client_secret.clone(),
+                })
+            }
+            Err(error) => {
+                Err(AuthenticationClientManagerError::Registration {
+                    error: format!("{:?}", error),
+                })
+            }
+        }
+
+    }
+}
+
+
+#[cfg(test)]
+pub mod tests {
+    use http::{HeaderMap, HeaderValue};
+    use oauth2::HttpRequest;
+    use rstest::{fixture, rstest};
+    use url::Url;
+
+    use super::*;
+
+    async fn delete_client(manager: OpenIdConnectClientManager, client_id: &OAuthClientId) -> Result<(), AuthenticationClientManagerError> {
+        let access_token = manager.get_token().await?;
+        let request_base_url: Url = "http://localhost:8081/admin/realms/opendut/clients/".parse().unwrap();
+        let delete_client_url = request_base_url.join(&format!("{}", client_id.to_string()))
+            .map_err(|error| AuthenticationClientManagerError::InvalidConfiguration { error: format!("Invalid client URL: {}", error.to_string()) })?;
+
+        let mut headers = HeaderMap::new();
+        let bearer_header = format!("Bearer {}", access_token.secret().as_str());
+        let access_token_value = HeaderValue::from_str(&bearer_header)
+            .map_err(|error| AuthenticationClientManagerError::InvalidConfiguration { error: error.to_string() })?;
+        headers.insert(http::header::AUTHORIZATION, access_token_value);
+
+        let request = HttpRequest {
+            method: http::Method::DELETE,
+            url: delete_client_url,
+            headers,
+            body: vec![],
+        };
+        let response = async_http_client(request)
+            .await
+            .map_err(|error| AuthenticationClientManagerError::Registration { error: error.to_string() })?;
+        assert_eq!(response.status_code, 204, "Failed to delete client with id '{:?}': {:?}", client_id, response.body);
+
+        Ok(())
+    }
+
+    #[fixture]
+    pub fn oidc_client_manager() -> OpenIdConnectClientManager {
+        let client_id = "opendut-carl-client".to_string();
+        let client_secret = "6754d533-9442-4ee6-952a-97e332eca38e".to_string();
+        let issuer_url = "http://localhost:8081/realms/opendut/".to_string();
+        let carl_idp_config = CarlIdentityProviderConfig {
+            client_id: OAuthClientId::new(client_id),
+            client_secret: OAuthClientSecret::new(client_secret),
+            issuer_url: Url::parse(&issuer_url).unwrap(),
+            scopes: CarlScopes("".to_string()),
+        };
+        OpenIdConnectClientManager::new(carl_idp_config).unwrap()
+    }
+
+    #[rstest]
+    #[tokio::test]
+    #[ignore]
+    async fn test_register_new_oidc_client(oidc_client_manager: OpenIdConnectClientManager) {
+        /*
+         * This test is ignored because it requires a running keycloak server from the test environment.
+         */
+        println!("{:?}", oidc_client_manager);
+        let credentials = oidc_client_manager.register_new_client().await.unwrap();
+        println!("New client id: {}, secret: {}", credentials.client_id.to_string(), credentials.client_secret.secret().to_string());
+        delete_client(oidc_client_manager, &credentials.client_id).await.unwrap();
+    }
+}

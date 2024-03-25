@@ -22,6 +22,7 @@ use opendut_types::util::net::{AuthConfig, Certificate};
 use opendut_types::vpn::VpnPeerConfiguration;
 use opendut_util::ErrorOr;
 use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerRef};
+use crate::peer::oidc_client_manager::{OAuthClientCredentials, OpenIdConnectClientManager};
 
 use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
@@ -236,6 +237,7 @@ pub struct GeneratePeerSetupParams {
     pub carl_url: Url,
     pub ca: Pem,
     pub vpn: Vpn,
+    pub oidc_client_manager: OpenIdConnectClientManager,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -276,13 +278,19 @@ pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<Peer
             VpnPeerConfiguration::Disabled
         };
 
-        log::debug!("Successfully generated peer setup for peer '{peer_name}' <{peer_id}>.");
+        let client_credentials = params.oidc_client_manager.register_new_client()
+            .await
+            .map_err(|cause| GeneratePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), cause: cause.to_string() })?
+            .client_credentials();
+
+        log::debug!("Successfully generated peer setup for peer '{peer_name}' <{peer_id}>. OIDC client_id='{}'.", client_credentials.client_id.clone().value());
+        println!("-------------------- OIDC client_id created: '{}'.", client_credentials.client_id.clone().value());
 
         Ok(PeerSetup {
             id: peer_id,
             carl: params.carl_url,
             ca: Certificate(params.ca),
-            auth_config: AuthConfig::disabled(),
+            auth_config: AuthConfig::from_credentials(params.oidc_client_manager.issuer_url, client_credentials),
             vpn: vpn_config,
         })
     }

@@ -1,2 +1,2 @@
 pub mod broker;
-pub mod auth;
+pub mod oidc_client_manager;

@@ -29,6 +29,7 @@ use opendut_util::settings::LoadedConfig;
 use crate::cluster::manager::{ClusterManager, ClusterManagerOptions, ClusterManagerRef};
 use crate::grpc::{ClusterManagerService, MetadataProviderService, PeerManagerService, PeerMessagingBrokerService};
 use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerOptions, PeerMessagingBrokerRef};
+use crate::peer::oidc_client_manager::{CarlIdentityProviderConfig, OpenIdConnectClientManager};
 use crate::resources::manager::{ResourcesManager, ResourcesManagerRef};
 use crate::vpn::Vpn;
 
@@ -125,6 +126,11 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
         settings: config::Config,
         ca: Pem,
     ) -> BoxFuture<'static, Result<()>> {
+        let oidc_carl_config = settings.get::<CarlIdentityProviderConfig>("network.oidc.client")
+            .expect("Failed to find configuration for `network.oidc.client`.");
+        let oidc_client_manager = OpenIdConnectClientManager::new(oidc_carl_config)
+            .expect("Failed to create OpenIdConnectClientManager.");
+
         let grpc = Server::builder()
             .accept_http1(true) //gRPC-web uses HTTP1
             .add_service(
@@ -136,7 +142,7 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
                     .into_grpc_service()
             )
             .add_service(
-                PeerManagerService::new(Arc::clone(&resources_manager), vpn, Clone::clone(&carl_url), ca)
+                PeerManagerService::new(Arc::clone(&resources_manager), vpn, Clone::clone(&carl_url), ca, oidc_client_manager)
                     .into_grpc_service()
             )
             .add_service(

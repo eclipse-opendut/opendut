@@ -42,6 +42,8 @@ uuid = { workspace = true }
 
 [dev-dependencies]
 async-trait = { workspace = true }
+# TODO: evaluate if async-std import is necessary
+async-std = { workspace = true, features = ["attributes"] }
 rstest = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
 
