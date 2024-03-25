@@ -136,7 +136,7 @@ netbird-management.version="0.25.0"   # docker container version for netbirdio/m
 netbird-dashboard.version="v1.17.12"  # docker container version for wiretrustee/dashboard: NETBIRD_DASHBOARD_VERSION
 
 [workspace.metadata.ci.xtask] #CLI tool crates used in CI (not libraries)
-cargo-deny.version = "0.14.3"
+cargo-deny.version = "0.14.11"
 cargo-sbom.version = "0.8.4"
 cargo-bundle-licenses.version = "1.3.0"
 cross.version = "0.2.5"
