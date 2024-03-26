@@ -10,7 +10,7 @@ use crate::service::network_interface::{bridge, gre};
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use crate::service::can_manager::CanManagerRef;
 
-#[tracing::instrument(name = "network_interfaces_setup", skip(cluster_assignment, can_manager, network_interface_manager), level="trace")]
+#[tracing::instrument(skip(cluster_assignment, can_manager, network_interface_manager), level="trace")]
 pub async fn network_interfaces_setup(
     cluster_assignment: ClusterAssignment,
     self_id: PeerId,

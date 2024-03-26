@@ -65,7 +65,7 @@ impl ClusterManager {
             options,
         })
     }
-    #[tracing::instrument(name = "cluster::manager::deploy", skip(self), level="trace")]
+    #[tracing::instrument(skip(self), level="trace")]
     pub async fn deploy(&self, cluster_id: ClusterId) -> Result<(), DeployClusterError> {
 
         let cluster_config = self.resources_manager.resources(|resources| {
@@ -155,21 +155,21 @@ impl ClusterManager {
         Ok(())
     }
 
-    #[tracing::instrument(name = "cluster::manager::find_configuration", skip(self), level="trace")]
+    #[tracing::instrument(skip(self), level="trace")]
     pub async fn find_configuration(&self, id: ClusterId) -> Option<ClusterConfiguration> {
         self.resources_manager.resources(|resources| {
             resources.get::<ClusterConfiguration>(id)
         }).await
     }
 
-    #[tracing::instrument(name = "cluster::manager::list_configuration", skip(self), level="trace")]
+    #[tracing::instrument(skip(self), level="trace")]
     pub async fn list_configuration(&self) -> Vec<ClusterConfiguration> {
         self.resources_manager.resources(|resources| {
             resources.iter::<ClusterConfiguration>().cloned().collect::<Vec<_>>()
         }).await
     }
 
-    #[tracing::instrument(name = "cluster::manager::store_cluster_deployment", skip(self), level="trace")]
+    #[tracing::instrument(skip(self), level="trace")]
     pub async fn store_cluster_deployment(&self, deployment: ClusterDeployment) -> Result<ClusterId, StoreClusterDeploymentError> {
         let cluster_id = deployment.id;
         self.resources_manager.resources_mut(|resources| {
@@ -181,7 +181,7 @@ impl ClusterManager {
         Ok(cluster_id)
     }
 
-    #[tracing::instrument(name = "cluster::manager::delete_cluster_deployment", skip(self), level="trace")]
+    #[tracing::instrument(skip(self), level="trace")]
     pub async fn delete_cluster_deployment(&self, cluster_id: ClusterId) -> Result<ClusterDeployment, DeleteClusterDeploymentError> {
 
         let (deployment, configuration) = self.resources_manager
@@ -208,7 +208,7 @@ impl ClusterManager {
         }).await
     }
 
-    #[tracing::instrument(name = "cluster::manager::list_deployment", skip(self), level="trace")]
+    #[tracing::instrument(skip(self), level="trace")]
     pub async fn list_deployment(&self) -> Vec<ClusterDeployment> {
         self.resources_manager.resources(|resources| {
             resources.iter::<ClusterDeployment>().cloned().collect::<Vec<_>>()

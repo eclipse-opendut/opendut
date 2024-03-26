@@ -34,7 +34,7 @@ impl ClusterManagerFacade {
 
 #[tonic::async_trait]
 impl ClusterManagerService for ClusterManagerFacade {
-    #[tracing::instrument(name = "grpc::cluster_manager::create_cluster_configuration", skip(self), level="trace")]
+    #[tracing::instrument(skip(self, request), level="trace")]
     async fn create_cluster_configuration(&self, request: Request<CreateClusterConfigurationRequest>) -> Result<Response<CreateClusterConfigurationResponse>, Status> {
 
         log::trace!("Received request: {:?}", request);
@@ -64,7 +64,7 @@ impl ClusterManagerService for ClusterManagerFacade {
             }
         }
     }
-    #[tracing::instrument(name = "grpc::cluster_manager::delete_cluster_configuration", skip(self), level="trace")]
+    #[tracing::instrument(skip(self, request), level="trace")]
     async fn delete_cluster_configuration(&self, request: Request<DeleteClusterConfigurationRequest>) -> Result<Response<DeleteClusterConfigurationResponse>, Status> {
 
         log::trace!("Received request: {:?}", request);
@@ -95,7 +95,7 @@ impl ClusterManagerService for ClusterManagerFacade {
             }
         }
     }
-    #[tracing::instrument(name = "grpc::cluster_manager::get_cluster_configuration", skip(self), level="trace")]
+    #[tracing::instrument(skip(self, request), level="trace")]
     async fn get_cluster_configuration(&self, request: Request<GetClusterConfigurationRequest>) -> Result<Response<GetClusterConfigurationResponse>, Status> {
         log::trace!("Received request: {:?}", request);
         match request.into_inner().id {
@@ -127,7 +127,7 @@ impl ClusterManagerService for ClusterManagerFacade {
             }
         }
     }
-    #[tracing::instrument(name = "grpc::cluster_manager::list_cluster_configurations", skip(self), level="trace")]
+    #[tracing::instrument(skip(self, request), level="trace")]
     async fn list_cluster_configurations(&self, request: Request<ListClusterConfigurationsRequest>) -> Result<Response<ListClusterConfigurationsResponse>, Status> {
         log::trace!("Received request: {:?}", request);
         let configurations = self.cluster_manager.list_configuration().await;
@@ -140,7 +140,7 @@ impl ClusterManagerService for ClusterManagerFacade {
         }))
     }
 
-    #[tracing::instrument(name = "grpc::cluster_manager::store_cluster_deployment", skip(self), level="trace")]
+    #[tracing::instrument(skip(self, request), level="trace")]
     async fn store_cluster_deployment(&self, request: Request<StoreClusterDeploymentRequest>) -> Result<Response<StoreClusterDeploymentResponse>, Status> {
         log::trace!("Received request: {:?}", request);
 
@@ -166,7 +166,7 @@ impl ClusterManagerService for ClusterManagerFacade {
             }
         }
     }
-    #[tracing::instrument(name = "grpc::cluster_manager::delete_cluster_deployment", skip(self), level="trace")]
+    #[tracing::instrument(skip(self, request), level="trace")]
     async fn delete_cluster_deployment(&self, request: Request<DeleteClusterDeploymentRequest>) -> Result<Response<DeleteClusterDeploymentResponse>, Status> {
         log::trace!("Received request: {:?}", request);
 
@@ -193,7 +193,7 @@ impl ClusterManagerService for ClusterManagerFacade {
         }
     }
 
-    #[tracing::instrument(name = "grpc::cluster_manager::list_cluster_deployments", skip(self), level="trace")]
+    #[tracing::instrument(skip(self, request), level="trace")]
     async fn list_cluster_deployments(&self, request: Request<ListClusterDeploymentsRequest>) -> Result<Response<ListClusterDeploymentsResponse>, Status> {
         log::trace!("Received request: {:?}", request);
         let deployments = self.cluster_manager.list_deployment().await;

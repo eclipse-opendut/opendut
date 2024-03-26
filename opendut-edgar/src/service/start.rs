@@ -148,9 +148,6 @@ async fn handle_stream_message(
     setup_cluster_info: &SetupClusterInfo,
     tx_outbound: &Sender<peer_messaging_broker::Upstream>,
 ) -> anyhow::Result<()> {
-    fn ignore(message: impl Any + Debug) {
-        log::warn!("Ignoring illegal message: {message:?}");
-    }
 
     if let peer_messaging_broker::Downstream { message: Some(message), context } = message {
         if matches!(message, Message::Pong(_)).not() {
@@ -168,33 +165,38 @@ async fn handle_stream_message(
                     tx_outbound.send(message).await
                         .inspect_err(|cause| log::debug!("Failed to send ping to CARL: {cause}"));
             }
-            Message::ApplyPeerConfiguration(message) => match message {
-                ApplyPeerConfiguration { configuration: Some(configuration) } => {
-
-                    let span = tracing::span!(tracing::Level::INFO, "service::apply_peer_configuration");
-                    set_parent_context(&span, context);
-                    let _span = span.enter();
-
-                    log::info!("Received configuration: {configuration:?}");
-                    match PeerConfiguration::try_from(configuration) {
-                        Err(error) => log::error!("Illegal PeerConfiguration: {error}"),
-                        Ok(configuration) => {
-                            setup_executors(configuration.executors);
-                            setup_cluster(
-                                configuration.cluster_assignment,
-                                setup_cluster_info,
-                            ).await?;
-                        }
-                    };
-                }
-                _ => ignore(message),
-            }
+            Message::ApplyPeerConfiguration(message) => { apply_peer_configuration(message, context, setup_cluster_info).await }
         }
     } else {
         ignore(message)
     }
 
     Ok(())
+}
+
+#[tracing::instrument(skip(message, context, setup_cluster_info), level="trace")]
+async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Option<TracingContext>, setup_cluster_info: &SetupClusterInfo) {
+    match message.clone() {
+        ApplyPeerConfiguration { configuration: Some(configuration) } => {
+
+            let span = Span::current();
+            set_parent_context(&span, context);
+            let _span = span.enter();
+
+            log::info!("Received configuration: {configuration:?}");
+            match PeerConfiguration::try_from(configuration) {
+                Err(error) => log::error!("Illegal PeerConfiguration: {error}"),
+                Ok(configuration) => {
+                    setup_executors(configuration.executors);
+                    let _ = setup_cluster(
+                        configuration.cluster_assignment,
+                        setup_cluster_info,
+                    ).await;
+                }
+            };
+        }
+        _ => ignore(message),
+    }
 }
 
 #[tracing::instrument(skip(executors))]
@@ -278,9 +280,9 @@ async fn setup_cluster(
                     Arc::clone(&info.network_interface_manager),
                     Arc::clone(&info.can_manager)
                 ).await
-                .inspect_err(|error| {
-                    log::error!("Failed to configure network interfaces: {error}")
-                })?;
+                    .inspect_err(|error| {
+                        log::error!("Failed to configure network interfaces: {error}")
+                    })?;
             } else {
                 log::debug!("Skipping changes to network interfaces after receiving ClusterAssignment, as this is disabled via configuration.");
             }
@@ -299,4 +301,7 @@ fn set_parent_context(span: &Span, context: Option<TracingContext>) {
         let parent_context = propagator.extract(&context.values);
         span.set_parent(parent_context);
     }
+}
+fn ignore(message: impl Any + Debug) {
+    log::warn!("Ignoring illegal message: {message:?}");
 }

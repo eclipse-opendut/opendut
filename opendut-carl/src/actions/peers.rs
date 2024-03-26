@@ -32,7 +32,7 @@ pub struct StorePeerDescriptorParams {
     pub peer_descriptor: PeerDescriptor,
 }
 
-#[tracing::instrument(name = "actions::peers::store_peer_descriptor", skip(params), level="trace")]
+#[tracing::instrument(skip(params), level="trace")]
 pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<PeerId, StorePeerDescriptorError> {
 
     async fn inner(params: StorePeerDescriptorParams) -> Result<PeerId, StorePeerDescriptorError> {
@@ -124,7 +124,7 @@ pub struct DeletePeerDescriptorParams {
     pub peer: PeerId,
 }
 
-#[tracing::instrument(name = "actions::peers::delete_peer_descriptor", skip(params), level="trace")]
+#[tracing::instrument(skip(params), level="trace")]
 pub async fn delete_peer_descriptor(params: DeletePeerDescriptorParams) -> Result<PeerDescriptor, DeletePeerDescriptorError> {
 
     async fn inner(params: DeletePeerDescriptorParams) -> Result<PeerDescriptor, DeletePeerDescriptorError> {
@@ -180,7 +180,7 @@ pub struct ListPeerDescriptorsParams {
     pub resources_manager: ResourcesManagerRef,
 }
 
-#[tracing::instrument(name = "actions::peers::list_peer_descriptor", skip(params), level="trace")]
+#[tracing::instrument(skip(params), level="trace")]
 pub async fn list_peer_descriptors(params: ListPeerDescriptorsParams) -> Result<Vec<PeerDescriptor>, ListPeerDescriptorsError> {
 
     async fn inner(params: ListPeerDescriptorsParams) -> Result<Vec<PeerDescriptor>, ListPeerDescriptorsError> {
@@ -208,7 +208,7 @@ pub struct ListDevicesParams {
     pub resources_manager: ResourcesManagerRef,
 }
 
-#[tracing::instrument(name = "actions::peers::list_devices", skip(params), level="trace")]
+#[tracing::instrument(skip(params), level="trace")]
 pub async fn list_devices(params: ListDevicesParams) -> Result<Vec<DeviceDescriptor>, ListDevicesError> {
 
     async fn inner(params: ListDevicesParams) -> Result<Vec<DeviceDescriptor>, ListDevicesError> {
@@ -250,7 +250,7 @@ pub enum GeneratePeerSetupError {
     }
 }
 
-#[tracing::instrument(name = "actions::peers::generate_peer_setup", skip(params), level="trace")]
+#[tracing::instrument(skip(params), level="trace")]
 pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<PeerSetup, GeneratePeerSetupError> {
 
     async fn inner(params: GeneratePeerSetupParams) -> Result<PeerSetup, GeneratePeerSetupError> {

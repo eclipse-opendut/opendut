@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::net::IpAddr;
-use std::ops::Not;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -42,7 +41,7 @@ impl PeerMessagingBroker {
         })
     }
 
-    #[tracing::instrument(name = "peer::broker::send_to_peer", skip(self), level="trace")]
+    #[tracing::instrument(skip(self), level="trace")]
     pub async fn send_to_peer(&self, peer_id: PeerId, message: downstream::Message) -> Result<(), Error> {
         let downstream = {
             let peers = self.peers.read().await;
@@ -50,15 +49,12 @@ impl PeerMessagingBroker {
         };
         let downstream = downstream.ok_or(Error::PeerNotFound(peer_id))?;
 
-        let context = if matches!(message, downstream::Message::Pong(_)).not() {
+        let context = {
             let mut context = TracingContext { values: Default::default() };
             let propagator = TraceContextPropagator::new();
             let span = Span::current().entered();
             propagator.inject_context(&span.context(), &mut context.values);
             Some(context)
-        }
-        else {
-            None
         };
 
         downstream.send(Downstream {

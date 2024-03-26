@@ -113,7 +113,7 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
 
     /// Isolation in function returning BoxFuture needed due to this: https://github.com/rust-lang/rust/issues/102211#issuecomment-1397600424
     #[allow(clippy::too_many_arguments)]
-    #[tracing::instrument(name = "spawn_server", skip(peer_messaging_broker, cluster_manager, resources_manager, vpn), level="TRACE")]
+    #[tracing::instrument(skip(peer_messaging_broker, cluster_manager, resources_manager, vpn), level="TRACE")]
     fn spawn_server(
         address: SocketAddr,
         tls_config: RustlsConfig,

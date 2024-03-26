@@ -11,7 +11,7 @@ pub struct CreateClusterConfigurationParams {
     pub cluster_configuration: ClusterConfiguration,
 }
 
-#[tracing::instrument(name = "actions::clusters::create_cluster_configuration", skip(params), level="trace")]
+#[tracing::instrument(skip(params), level="trace")]
 pub async fn create_cluster_configuration(params: CreateClusterConfigurationParams) -> Result<ClusterId, CreateClusterConfigurationError> {
 
     async fn inner(params: CreateClusterConfigurationParams) -> Result<ClusterId, CreateClusterConfigurationError> {
@@ -40,7 +40,7 @@ pub struct DeleteClusterConfigurationParams {
     pub cluster_id: ClusterId,
 }
 
-#[tracing::instrument(name = "actions::clusters::delete_cluster_configuration", skip(params), level="trace")]
+#[tracing::instrument(skip(params), level="trace")]
 pub async fn delete_cluster_configuration(params: DeleteClusterConfigurationParams) -> Result<ClusterConfiguration, DeleteClusterConfigurationError> {
 
     async fn inner(params: DeleteClusterConfigurationParams) -> Result<ClusterConfiguration, DeleteClusterConfigurationError> {
