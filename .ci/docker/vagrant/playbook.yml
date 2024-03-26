@@ -50,4 +50,5 @@
         version: development
         clone: yes
         update: yes
+        force: yes
     - debug: msg="all done"

@@ -1,3 +1,5 @@
+use anyhow::anyhow;
+use config::Config;
 use oauth2::{AccessToken, AuthUrl, ClientId as OAuthClientId, ClientSecret as OAuthClientSecret, RedirectUrl, TokenResponse, TokenUrl};
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
@@ -5,6 +7,7 @@ use openidconnect::core::{CoreClientRegistrationRequest, CoreGrantType};
 use openidconnect::registration::EmptyAdditionalClientMetadata;
 use openidconnect::RegistrationUrl;
 use serde::{Deserialize, Serialize};
+use shadow_rs::formatcp;
 use url::Url;
 
 use opendut_types::util::net::{ClientCredentials, ClientId, ClientSecret};
@@ -37,6 +40,8 @@ impl OAuthClientCredentials {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CarlScopes(pub String);
 
+const CARL_OIDC_CONFIG_PREFIX: &str = "network.oidc.client";
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CarlIdentityProviderConfig {
     client_id: OAuthClientId,
@@ -45,6 +50,34 @@ pub struct CarlIdentityProviderConfig {
     scopes: CarlScopes,
 }
 
+impl TryFrom<&Config> for CarlIdentityProviderConfig {
+    type Error = anyhow::Error;
+
+    fn try_from(config: &Config) -> anyhow::Result<Self> {
+        let client_id = config.get_string(CarlIdentityProviderConfig::CLIENT_ID)
+            .map_err(|error| anyhow!("Failed to find configuration for `{}`. {}", CarlIdentityProviderConfig::CLIENT_ID, error.to_string()))?;
+        let client_secret = config.get_string(CarlIdentityProviderConfig::CLIENT_SECRET)
+            .map_err(|error| anyhow!("Failed to find configuration for `{}`. {}", CarlIdentityProviderConfig::CLIENT_SECRET, error.to_string()))?;
+        let issuer = config.get_string(CarlIdentityProviderConfig::ISSUER_URL)
+            .map_err(|error| anyhow!("Failed to find configuration for `{}`. {}", CarlIdentityProviderConfig::ISSUER_URL, error.to_string()))?;
+        let issuer_url = Url::parse(&issuer)
+            .map_err(|error| anyhow!("Failed to parse issuer URL: {}", error.to_string()))?;
+
+        Ok(Self {
+            client_id: OAuthClientId::new(client_id),
+            client_secret: OAuthClientSecret::new(client_secret),
+            issuer_url,
+            scopes: CarlScopes(config.get_string(CarlIdentityProviderConfig::SCOPES).unwrap_or_else(|_| "".to_string())),
+        })
+    }
+}
+
+impl CarlIdentityProviderConfig {
+    const CLIENT_ID: &'static str = formatcp!("{CARL_OIDC_CONFIG_PREFIX}.client.id");
+    const CLIENT_SECRET: &'static str = formatcp!("{CARL_OIDC_CONFIG_PREFIX}.client.secret");
+    const ISSUER_URL: &'static str = formatcp!("{CARL_OIDC_CONFIG_PREFIX}.issuer.url");
+    const SCOPES: &'static str = formatcp!("{CARL_OIDC_CONFIG_PREFIX}.scopes");
+}
 
 #[derive(thiserror::Error, Debug)]
 pub enum AuthenticationClientManagerError {
@@ -140,7 +173,6 @@ impl OpenIdConnectClientManager {
                 })
             }
         }
-
     }
 }
 

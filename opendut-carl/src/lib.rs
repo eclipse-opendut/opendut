@@ -10,17 +10,19 @@ use axum::Json;
 use axum::routing::get;
 use axum_server::tls_rustls::RustlsConfig;
 use axum_server_dual_protocol::ServerExt;
+use config::Config;
 use futures::future::BoxFuture;
 use futures::TryFutureExt;
 use http::{header::CONTENT_TYPE, Request};
 use pem::Pem;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use tokio::fs;
 use tonic::transport::Server;
 use tower::{BoxError, make::Shared, ServiceExt, steer::Steer};
 use tower_http::services::{ServeDir, ServeFile};
 use tracing::{debug, info};
 use url::Url;
+use shadow_rs::formatcp;
 
 use opendut_util::{logging, project};
 use opendut_util::logging::LoggingConfig;
@@ -129,9 +131,9 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
         let oidc_enabled = settings.get_bool("network.oidc.enabled").unwrap_or(false);
 
         let oidc_client_manager = if oidc_enabled {
-            let oidc_carl_config = settings.get::<CarlIdentityProviderConfig>("network.oidc.client")
-                .expect("Failed to find configuration for `network.oidc.client`.");
-            Some(OpenIdConnectClientManager::new(oidc_carl_config)
+            let carl_oidc_config = CarlIdentityProviderConfig::try_from(&settings)
+                .expect("Failed to create CarlIdentityProviderConfig from settings.");
+            Some(OpenIdConnectClientManager::new(carl_oidc_config)
                 .expect("Failed to create OpenIdConnectClientManager."))
         } else {
             None
@@ -167,20 +169,10 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
             .expect("licenses directory should be absolute");
 
         let lea_idp_config = if oidc_enabled {
-            let lea_idp_config = settings.get::<LeaIdentityProviderConfig>("network.oidc.lea")
-                .expect("Failed to find configuration for `network.oidc.lea`.");
-            let scopes = lea_idp_config.scopes.trim_matches('"').split(',').collect::<Vec<_>>();
-            for scope in scopes.clone() {
-                if !scope.chars().all(|c| c.is_ascii_alphabetic()) {
-                    panic!("Failed to parse comma-separated OIDC scopes for LEA. Scopes must only contain ASCII alphabetic characters. Found: {:?}. Parsed as: {:?}", lea_idp_config.scopes, scopes);
-                }
-            }
+            let lea_idp_config = LeaIdentityProviderConfig::try_from(&settings)
+                .expect("Failed to create LeaIdentityProviderConfig from settings.");
             info!("OIDC is enabled.");
-            Some(LeaIdentityProviderConfig {
-                client_id: lea_idp_config.client_id,
-                issuer_url: lea_idp_config.issuer_url,
-                scopes: scopes.join(" "),  // Frontend expects space separated list of scopes
-            })
+            Some(lea_idp_config)
         } else {
             info!("OIDC is disabled.");
             None
@@ -267,11 +259,45 @@ struct AppState {
     lea_config: LeaConfig
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize)]
 struct LeaIdentityProviderConfig {
     client_id: String,
     issuer_url: Url,
     scopes: String,
+}
+
+const LEA_OIDC_CONFIG_PREFIX: &'static str = "network.oidc.lea";
+impl TryFrom<&Config> for LeaIdentityProviderConfig {
+    type Error = anyhow::Error;
+
+    fn try_from(config: &Config) -> Result<Self> {
+
+        let client_id = config.get_string(LeaIdentityProviderConfig::CLIENT_ID)
+            .map_err(|error| anyhow!("Failed to find configuration for `{}`. {}", LeaIdentityProviderConfig::CLIENT_ID, error.to_string()))?;
+        let issuer = config.get_string(LeaIdentityProviderConfig::ISSUER_URL)
+            .map_err(|error| anyhow!("Failed to find configuration for `{}`. {}", LeaIdentityProviderConfig::ISSUER_URL, error.to_string()))?;
+
+        let issuer_url = Url::parse(&issuer)
+            .context(format!("Failed to parse OIDC issuer URL `{}`.", issuer))?;
+
+        let raw_scopes = config.get_string(LeaIdentityProviderConfig::SCOPES)
+            .map_err(|error| anyhow!("Failed to find configuration for `{}`. {}", LeaIdentityProviderConfig::SCOPES, error.to_string()))?;
+        let scopes_vector = raw_scopes.trim_matches('"').split(',').collect::<Vec<_>>();
+
+        for scope in scopes_vector.clone() {
+            if !scope.chars().all(|c| c.is_ascii_alphabetic()) {
+                panic!("Failed to parse comma-separated OIDC scopes for LEA. Scopes must only contain ASCII alphabetic characters. Found: {:?}. Parsed as: {:?}", raw_scopes, scopes_vector);
+            }
+        }
+        let scopes = scopes_vector.join(" ");  // Frontend expects space separated list of scopes
+
+        Ok(Self { client_id, issuer_url, scopes })
+    }
+}
+impl LeaIdentityProviderConfig {
+    const CLIENT_ID: &'static str = formatcp!("{LEA_OIDC_CONFIG_PREFIX}.client.id");
+    const ISSUER_URL: &'static str = formatcp!("{LEA_OIDC_CONFIG_PREFIX}.issuer.url");
+    const SCOPES: &'static str = formatcp!("{LEA_OIDC_CONFIG_PREFIX}.scopes");
 }
 
 #[derive(Clone, Serialize)]

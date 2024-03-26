@@ -185,7 +185,6 @@ impl OAuthScope {
     }
 }
 
-// TODO: create generic for those invalid name errors
 #[derive(thiserror::Error, Clone, Debug)]
 pub enum IllegalOAuthScope {
     #[error(
@@ -379,7 +378,7 @@ pub struct ClientCredentials {
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AuthConfig {
-    pub issuer_url: url::Url,
+    pub issuer_url: Url,
     pub client_id: ClientId,
     pub client_secret: ClientSecret,
     pub scopes: Vec<OAuthScope>,
@@ -387,7 +386,7 @@ pub struct AuthConfig {
 
 impl AuthConfig {
     pub fn disabled() -> Self {
-        let disabled_auth_url = url::Url::parse("https://no-auth-url").unwrap();
+        let disabled_auth_url = Url::parse("https://no-auth-url").unwrap();
         Self {
             issuer_url: disabled_auth_url,
             client_id: ClientId::from("disabled"),
