@@ -16,5 +16,4 @@ ui.directory = "./opendut-lea/dist/"
 enabled = false
 
 [opentelemetry]
-enabled = true
 endpoint = "http://localhost:4317"
