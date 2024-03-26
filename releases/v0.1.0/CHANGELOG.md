@@ -1,5 +1,6 @@
 # Fix TODO
 * Format of this file
+* Hide secrets in logging output
 * Move location of this file to releases/v0.1.0/CHANGELOG.md
 * Clippy warnings
 ```text

@@ -25,13 +25,14 @@ kcadm() { local cmd="$1" ; shift ; "$KCADM_PATH" "$cmd" --config /tmp/kcadm.conf
 kcauth() { kcadm config credentials config --server "$KEYCLOAK_URL" --realm master --user "$KEYCLOAK_ADMIN" --password "$KEYCLOAK_ADMIN_PASSWORD" ; }
 
 get_admin_oauth_token() {
-  # requires public client and client with password grant enabled, directAccessGrantsEnabled=true
+  # for debugging: may be used to get an admin token
   RESPONSE=$(curl -s -d "client_id=admin-cli" -d "username=admin" -d "password=admin123456" -d "grant_type=password" "$KEYCLOAK_URL"/realms/master/protocol/openid-connect/token)
   ADMIN_TOKEN=$(echo "$RESPONSE" | jq -r '.access_token')
   echo "$ADMIN_TOKEN"
 }
 
 curl_keycloak_get() {
+  # for debugging: may be used to get any resource from keycloak
   ADMIN_TOKEN="$(get_admin_oauth_token)"
   ARGS="$1"
 
@@ -120,9 +121,11 @@ get_realm_role_by_name() {
 }
 
 make_realm_role_admin() {
+  # example usage: 'create_realm_role carl-admin opendut'
   REALM_ROLE_NAME="$1"
   REALM_NAME="$2"
 
+  # get ID for required realm role
   REALM_ROLE_ID=$(get_realm_role_by_name "$REALM_ROLE_NAME" "$REALM_NAME" | jq -r ".id")
 
   # get ID for required client role: realm-admin

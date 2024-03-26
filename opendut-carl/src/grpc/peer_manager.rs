@@ -23,12 +23,12 @@ pub struct PeerManagerFacade {
     vpn: Vpn,
     carl_url: Url,
     ca: Pem,
-    oidc_client_manager: OpenIdConnectClientManager,
+    oidc_client_manager: Option<OpenIdConnectClientManager>,
 }
 
 impl PeerManagerFacade {
 
-    pub fn new(resources_manager: ResourcesManagerRef, vpn: Vpn, carl_url: Url, ca: Pem, oidc_client_manager: OpenIdConnectClientManager) -> Self {
+    pub fn new(resources_manager: ResourcesManagerRef, vpn: Vpn, carl_url: Url, ca: Pem, oidc_client_manager: Option<OpenIdConnectClientManager>) -> Self {
         PeerManagerFacade {
             resources_manager,
             vpn,
@@ -198,7 +198,6 @@ impl PeerManagerService for PeerManagerFacade {
 
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn generate_peer_setup(&self, request: Request<GeneratePeerSetupRequest>) -> Result<Response<GeneratePeerSetupResponse>, Status> { // TODO: Refactor error types.
-
         log::trace!("Received request: {:?}", request);
 
         let message = request.into_inner();
@@ -267,7 +266,7 @@ mod tests {
             Vpn::Disabled,
             Url::parse("https://example.com:1234").unwrap(),
             get_cert(),
-            oidc_client_manager,
+            Some(oidc_client_manager),
         );
 
         let peer_id = PeerId::random();
@@ -358,7 +357,7 @@ mod tests {
             Vpn::Disabled,
             Url::parse("https://example.com:1234").unwrap(),
             get_cert(),
-            oidc_client_manager,
+            Some(oidc_client_manager),
         );
 
         let create_peer_reply = testee.store_peer_descriptor(Request::new(
@@ -397,7 +396,7 @@ mod tests {
             Vpn::Disabled,
             Url::parse("https://example.com:1234").unwrap(),
             get_cert(),
-            oidc_client_manager,
+            Some(oidc_client_manager),
         );
 
         let delete_peer_reply = testee.delete_peer_descriptor(Request::new(

@@ -237,7 +237,7 @@ pub struct GeneratePeerSetupParams {
     pub carl_url: Url,
     pub ca: Pem,
     pub vpn: Vpn,
-    pub oidc_client_manager: OpenIdConnectClientManager,
+    pub oidc_client_manager: Option<OpenIdConnectClientManager>,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -278,19 +278,27 @@ pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<Peer
             VpnPeerConfiguration::Disabled
         };
 
-        let client_credentials = params.oidc_client_manager.register_new_client()
-            .await
-            .map_err(|cause| GeneratePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), cause: cause.to_string() })?
-            .client_credentials();
-
-        log::debug!("Successfully generated peer setup for peer '{peer_name}' <{peer_id}>. OIDC client_id='{}'.", client_credentials.client_id.clone().value());
-        println!("-------------------- OIDC client_id created: '{}'.", client_credentials.client_id.clone().value());
+        let auth_config = match params.oidc_client_manager {
+            None => {
+                AuthConfig::disabled()
+            }
+            Some(oidc_client_manager) => {
+                log::debug!("Generating OIDC client for peer '{peer_name}' <{peer_id}>.");
+                let issuer_url = oidc_client_manager.issuer_url.clone();
+                let client_credentials = oidc_client_manager.register_new_client()
+                    .await
+                    .map_err(|cause| GeneratePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), cause: cause.to_string() })?
+                    .client_credentials();
+                log::debug!("Successfully generated peer setup for peer '{peer_name}' <{peer_id}>. OIDC client_id='{}'.", client_credentials.client_id.clone().value());
+                AuthConfig::from_credentials(issuer_url, client_credentials)
+            }
+        };
 
         Ok(PeerSetup {
             id: peer_id,
             carl: params.carl_url,
             ca: Certificate(params.ca),
-            auth_config: AuthConfig::from_credentials(params.oidc_client_manager.issuer_url, client_credentials),
+            auth_config,
             vpn: vpn_config,
         })
     }

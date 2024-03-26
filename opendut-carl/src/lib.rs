@@ -126,10 +126,16 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
         settings: config::Config,
         ca: Pem,
     ) -> BoxFuture<'static, Result<()>> {
-        let oidc_carl_config = settings.get::<CarlIdentityProviderConfig>("network.oidc.client")
-            .expect("Failed to find configuration for `network.oidc.client`.");
-        let oidc_client_manager = OpenIdConnectClientManager::new(oidc_carl_config)
-            .expect("Failed to create OpenIdConnectClientManager.");
+        let oidc_enabled = settings.get_bool("network.oidc.enabled").unwrap_or(false);
+
+        let oidc_client_manager = if oidc_enabled {
+            let oidc_carl_config = settings.get::<CarlIdentityProviderConfig>("network.oidc.client")
+                .expect("Failed to find configuration for `network.oidc.client`.");
+            Some(OpenIdConnectClientManager::new(oidc_carl_config)
+                .expect("Failed to create OpenIdConnectClientManager."))
+        } else {
+            None
+        };
 
         let grpc = Server::builder()
             .accept_http1(true) //gRPC-web uses HTTP1
@@ -160,7 +166,6 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
         let licenses_dir = project::make_path_absolute("./licenses")
             .expect("licenses directory should be absolute");
 
-        let oidc_enabled = settings.get_bool("network.oidc.enabled").unwrap_or(false);
         let lea_idp_config = if oidc_enabled {
             let lea_idp_config = settings.get::<LeaIdentityProviderConfig>("network.oidc.lea")
                 .expect("Failed to find configuration for `network.oidc.lea`.");
