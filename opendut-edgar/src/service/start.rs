@@ -219,6 +219,7 @@ fn setup_executors(executors: ExecutorDescriptors) { //TODO make idempotent
                 };
                 let mut cmd = Command::new(engine);
                 cmd.arg("run");
+                cmd.arg("--restart=unless-stopped");
                 if let ContainerName::Value(name) = name {
                     cmd.args(["--name", name.as_str()]);
                 }
