@@ -247,6 +247,7 @@ pub mod tests {
     async fn test_register_new_oidc_client(oidc_client_manager: OpenIdConnectClientManager) {
         /*
          * This test is ignored because it requires a running keycloak server from the test environment.
+         * To run this test, execute the following command: cargo test -- --include-ignored
          */
         println!("{:?}", oidc_client_manager);
         let credentials = oidc_client_manager.register_new_client().await.unwrap();

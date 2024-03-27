@@ -24,11 +24,11 @@ impl OidcIdentityProviderConfig {
     pub fn parse_scopes(client_id: &str, raw_scopes: String) -> Vec<OAuthScope> {
         let scopes = raw_scopes.trim_matches('"').split(',').collect::<Vec<_>>();
         for scope in scopes.clone() {
-            if !scope.chars().all(|c| c.is_ascii_alphabetic()) {
+            if !scope.chars().all(|c| c.is_ascii_alphabetic() || c.is_ascii_digit()) {
                 panic!("Failed to parse comma-separated OIDC scopes for client_id='{}'. Scopes must only contain ASCII alphabetic characters. Found: {:?}. Parsed as: {:?}", client_id, raw_scopes, scopes);
             }
         }
-        scopes.into_iter().map(|scope| OAuthScope::new(scope.to_string())).collect()
+        scopes.into_iter().filter(|scope| !scope.is_empty()).map(|scope| OAuthScope::new(scope.to_string())).collect()
 
     }
 
@@ -46,15 +46,61 @@ impl TryFrom<&Config> for OidcIdentityProviderConfig {
             .map_err(|error| anyhow!("Failed to find configuration for `{}`. {}", OidcIdentityProviderConfig::ISSUER_URL, error.to_string()))?;
         let issuer_url = Url::parse(&issuer)
             .map_err(|error| anyhow!("Failed to parse issuer URL: {}", error.to_string()))?;
-        let raw_scopes = config.get_string(OidcIdentityProviderConfig::SCOPES)
-            .map_err(|error| anyhow!("Failed to find configuration for `{}`. {}", OidcIdentityProviderConfig::SCOPES, error.to_string()))?;
-        let scopes = OidcIdentityProviderConfig::parse_scopes(&client_id, raw_scopes);
+        if issuer_url.as_str().ends_with('/') {
+            let raw_scopes = config.get_string(OidcIdentityProviderConfig::SCOPES)
+                .map_err(|error| anyhow!("Failed to find configuration for `{}`. {}", OidcIdentityProviderConfig::SCOPES, error.to_string()))?;
+            let scopes = OidcIdentityProviderConfig::parse_scopes(&client_id, raw_scopes);
 
-        Ok(Self {
-            client_id: OAuthClientId::new(client_id),
-            client_secret: OAuthClientSecret::new(client_secret),
-            issuer_url,
-            scopes,
-        })
+            Ok(Self {
+                client_id: OAuthClientId::new(client_id),
+                client_secret: OAuthClientSecret::new(client_secret),
+                issuer_url,
+                scopes,
+            })
+        } else {
+            Err(anyhow!("Issuer URL must end with a `/`. Found: {}", issuer_url))
+        }
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::carl::auth::auth_config::OidcIdentityProviderConfig;
+
+    #[test]
+    fn test_parse_scopes() {
+        let client_id = "test_client_id";
+        let raw_scopes = "scope1,scope2,scope3";
+        let scopes = OidcIdentityProviderConfig::parse_scopes(client_id, raw_scopes.to_string());
+        assert_eq!(scopes.len(), 3);
+        assert_eq!(scopes[0].as_str(), "scope1");
+        assert_eq!(scopes[1].as_str(), "scope2");
+        assert_eq!(scopes[2].as_str(), "scope3");
+    }
+
+    #[test]
+    fn test_parse_empty_scopes() {
+        let client_id = "test_client_id";
+        let raw_scopes = ",";
+        let scopes = OidcIdentityProviderConfig::parse_scopes(client_id, raw_scopes.to_string());
+        assert_eq!(scopes.len(), 0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_parse_invalid_scope_delimiter() {
+        let client_id = "test_client_id";
+        let raw_scopes = "foo asd";
+        let _ = OidcIdentityProviderConfig::parse_scopes(client_id, raw_scopes.to_string());
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_parse_invalid_scope_characters() {
+        let client_id = "test_client_id";
+        let raw_scopes = "foo!bar";
+        let _ = OidcIdentityProviderConfig::parse_scopes(client_id, raw_scopes.to_string());
+    }
+
+
 }

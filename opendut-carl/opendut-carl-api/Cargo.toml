@@ -68,7 +68,9 @@ tonic-build = { workspace = true }
 shadow-rs = { workspace = true, default-features = true }
 
 [dev-dependencies]
+async-std = { workspace = true, features = ["attributes"] }
 googletest = { workspace = true }
+rstest = { workspace = true }
 
 [lints]
 workspace = true

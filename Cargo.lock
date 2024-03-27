@@ -3000,6 +3000,7 @@ name = "opendut-carl-api"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-std",
  "cfg-if",
  "chrono",
  "config 0.13.4",
@@ -3014,6 +3015,7 @@ dependencies = [
  "prost",
  "protobuf-src",
  "reqwest",
+ "rstest",
  "serde",
  "shadow-rs",
  "thiserror",
