@@ -1,6 +1,6 @@
 use anyhow::anyhow;
 use config::Config;
-use oauth2::{AccessToken, AuthUrl, ClientId as OAuthClientId, ClientSecret as OAuthClientSecret, RedirectUrl, TokenResponse, TokenUrl};
+use oauth2::{AccessToken, AuthUrl, ClientId as OAuthClientId, ClientSecret as OAuthClientSecret, Scope as OAuthScope, RedirectUrl, TokenResponse, TokenUrl};
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
 use openidconnect::core::{CoreClientRegistrationRequest, CoreGrantType};
@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use shadow_rs::formatcp;
 use tracing::debug;
 use url::Url;
+use opendut_carl_api::carl::auth::auth_config::OidcIdentityProviderConfig;
 
 use opendut_types::util::net::{ClientCredentials, ClientId, ClientSecret};
 
@@ -50,7 +51,7 @@ pub struct CarlIdentityProviderConfig {
     client_secret: OAuthClientSecret,
     issuer_url: Url,
     issuer_remote_url: Url,
-    scopes: CarlScopes,
+    scopes: Vec<OAuthScope>,
 }
 
 impl TryFrom<&Config> for CarlIdentityProviderConfig {
@@ -71,12 +72,14 @@ impl TryFrom<&Config> for CarlIdentityProviderConfig {
         let issuer_remote_url = Url::parse(&issuer_remote)
             .map_err(|error| anyhow!("Failed to parse issuer remote URL: {}", error.to_string()))?;
 
+        let raw_scopes = config.get_string(CarlIdentityProviderConfig::SCOPES).unwrap_or_else(|_| "".to_string());
+
         Ok(Self {
-            client_id: OAuthClientId::new(client_id),
+            client_id: OAuthClientId::new(client_id.clone()),
             client_secret: OAuthClientSecret::new(client_secret),
             issuer_url,
             issuer_remote_url,
-            scopes: CarlScopes(config.get_string(CarlIdentityProviderConfig::SCOPES).unwrap_or_else(|_| "".to_string())),
+            scopes: OidcIdentityProviderConfig::parse_scopes(&client_id, raw_scopes),
         })
     }
 }
@@ -229,6 +232,7 @@ pub mod tests {
     pub fn oidc_client_manager() -> OpenIdConnectClientManager {
         let client_id = "opendut-carl-client".to_string();
         let client_secret = "6754d533-9442-4ee6-952a-97e332eca38e".to_string();
+        // let issuer_url = "http://192.168.56.10:8081/realms/opendut/".to_string();
         let issuer_url = "http://localhost:8081/realms/opendut/".to_string();
         let issuer_remote_url = "https://keycloak/realms/opendut/".to_string();
         let carl_idp_config = CarlIdentityProviderConfig {
@@ -236,7 +240,7 @@ pub mod tests {
             client_secret: OAuthClientSecret::new(client_secret),
             issuer_url: Url::parse(&issuer_url).unwrap(),
             issuer_remote_url: Url::parse(&issuer_remote_url).unwrap(),
-            scopes: CarlScopes("".to_string()),
+            scopes: vec![],
         };
         OpenIdConnectClientManager::new(carl_idp_config).unwrap()
     }

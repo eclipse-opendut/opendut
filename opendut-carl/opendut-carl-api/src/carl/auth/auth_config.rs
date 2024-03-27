@@ -22,10 +22,11 @@ impl OidcIdentityProviderConfig {
     const SCOPES: &'static str = formatcp!("{OIDC_CLIENT_CONFIG_PREFIX}.scopes");
 
     pub fn parse_scopes(client_id: &str, raw_scopes: String) -> Vec<OAuthScope> {
-        let scopes = raw_scopes.trim_matches('"').split(',').collect::<Vec<_>>();
+        let raw_scopes_no_quotations = raw_scopes.replace("\"", "");
+        let scopes = raw_scopes_no_quotations.split(',').collect::<Vec<_>>();
         for scope in scopes.clone() {
             if !scope.chars().all(|c| c.is_ascii_alphabetic() || c.is_ascii_digit()) {
-                panic!("Failed to parse comma-separated OIDC scopes for client_id='{}'. Scopes must only contain ASCII alphabetic characters. Found: {:?}. Parsed as: {:?}", client_id, raw_scopes, scopes);
+                panic!("Failed to parse comma-separated OIDC scopes for client_id='{}'. Scopes must only contain ASCII alphabetic characters or digits. Found: {:?}. Parsed as: {:?}", client_id, raw_scopes, scopes);
             }
         }
         scopes.into_iter().filter(|scope| !scope.is_empty()).map(|scope| OAuthScope::new(scope.to_string())).collect()
@@ -87,6 +88,14 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_empty_quoted_scopes() {
+        let client_id = "test_client_id";
+        let raw_scopes = "\"\"";
+        let scopes = OidcIdentityProviderConfig::parse_scopes(client_id, raw_scopes.to_string());
+        assert_eq!(scopes.len(), 0);
+    }
+
+    #[test]
     #[should_panic]
     fn test_parse_invalid_scope_delimiter() {
         let client_id = "test_client_id";
@@ -100,6 +109,17 @@ mod tests {
         let client_id = "test_client_id";
         let raw_scopes = "foo!bar";
         let _ = OidcIdentityProviderConfig::parse_scopes(client_id, raw_scopes.to_string());
+    }
+
+    #[test]
+    fn test_parse_scopes_should_ignore_quotations() {
+        let client_id = "test_client_id";
+        let raw_scopes = "\"scope1\",\"scope2\",\"scope3\"";
+        let scopes = OidcIdentityProviderConfig::parse_scopes(client_id, raw_scopes.to_string());
+        assert_eq!(scopes.len(), 3);
+        assert_eq!(scopes[0].as_str(), "scope1");
+        assert_eq!(scopes[1].as_str(), "scope2");
+        assert_eq!(scopes[2].as_str(), "scope3");
     }
 
 

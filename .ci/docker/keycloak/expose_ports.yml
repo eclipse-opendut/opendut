@@ -4,3 +4,4 @@ services:
   keycloak:
     ports:
       - "8081:80"
+      - "8443:443"  # TODO: requires keycloak certificate to be valid for 192.168.56.10
