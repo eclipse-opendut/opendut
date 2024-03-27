@@ -593,7 +593,7 @@ fn ExecutorContainerEnvsInput(
                 UserInputValue::Both(String::from("Container env name must not be empty."), input)
             }
             false => {
-                UserInputValue::Right(String::from(input))
+                UserInputValue::Right(input)
             }
         }
     };

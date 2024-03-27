@@ -45,7 +45,9 @@ impl PeerMessagingBroker {
     pub async fn send_to_peer(&self, peer_id: PeerId, message: downstream::Message) -> Result<(), Error> {
         let downstream = {
             let peers = self.peers.read().await;
-            peers.get(&peer_id).map(|peer| Clone::clone(&peer.downstream))
+            peers.get(&peer_id)
+                .map(|peer| &peer.downstream)
+                .cloned()
         };
         let downstream = downstream.ok_or(Error::PeerNotFound(peer_id))?;
 
