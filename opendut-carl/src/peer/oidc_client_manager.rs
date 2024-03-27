@@ -8,6 +8,7 @@ use openidconnect::registration::EmptyAdditionalClientMetadata;
 use openidconnect::RegistrationUrl;
 use serde::{Deserialize, Serialize};
 use shadow_rs::formatcp;
+use tracing::debug;
 use url::Url;
 
 use opendut_types::util::net::{ClientCredentials, ClientId, ClientSecret};
@@ -20,6 +21,7 @@ pub struct OpenIdConnectClientManager {
     registration_url: RegistrationUrl,
     device_redirect_url: RedirectUrl,
     pub issuer_url: Url,
+    pub issuer_remote_url: Url,
 }
 
 #[derive(Debug)]
@@ -47,6 +49,7 @@ pub struct CarlIdentityProviderConfig {
     client_id: OAuthClientId,
     client_secret: OAuthClientSecret,
     issuer_url: Url,
+    issuer_remote_url: Url,
     scopes: CarlScopes,
 }
 
@@ -60,13 +63,19 @@ impl TryFrom<&Config> for CarlIdentityProviderConfig {
             .map_err(|error| anyhow!("Failed to find configuration for `{}`. {}", CarlIdentityProviderConfig::CLIENT_SECRET, error.to_string()))?;
         let issuer = config.get_string(CarlIdentityProviderConfig::ISSUER_URL)
             .map_err(|error| anyhow!("Failed to find configuration for `{}`. {}", CarlIdentityProviderConfig::ISSUER_URL, error.to_string()))?;
+        let issuer_remote = config.get_string(CarlIdentityProviderConfig::ISSUER_REMOTE_URL)
+            .map_err(|error| anyhow!("Failed to find configuration for `{}`. {}", CarlIdentityProviderConfig::ISSUER_REMOTE_URL, error.to_string()))?;
+
         let issuer_url = Url::parse(&issuer)
             .map_err(|error| anyhow!("Failed to parse issuer URL: {}", error.to_string()))?;
+        let issuer_remote_url = Url::parse(&issuer_remote)
+            .map_err(|error| anyhow!("Failed to parse issuer remote URL: {}", error.to_string()))?;
 
         Ok(Self {
             client_id: OAuthClientId::new(client_id),
             client_secret: OAuthClientSecret::new(client_secret),
             issuer_url,
+            issuer_remote_url,
             scopes: CarlScopes(config.get_string(CarlIdentityProviderConfig::SCOPES).unwrap_or_else(|_| "".to_string())),
         })
     }
@@ -76,6 +85,7 @@ impl CarlIdentityProviderConfig {
     const CLIENT_ID: &'static str = formatcp!("{CARL_OIDC_CONFIG_PREFIX}.client.id");
     const CLIENT_SECRET: &'static str = formatcp!("{CARL_OIDC_CONFIG_PREFIX}.client.secret");
     const ISSUER_URL: &'static str = formatcp!("{CARL_OIDC_CONFIG_PREFIX}.issuer.url");
+    const ISSUER_REMOTE_URL: &'static str = formatcp!("{CARL_OIDC_CONFIG_PREFIX}.issuer.remote.url");
     const SCOPES: &'static str = formatcp!("{CARL_OIDC_CONFIG_PREFIX}.scopes");
 }
 
@@ -123,12 +133,15 @@ impl OpenIdConnectClientManager {
                     Some(token_url),
                 );
 
-            Ok(OpenIdConnectClientManager {
+            let manager = Ok(OpenIdConnectClientManager {
                 client,
                 registration_url,
                 device_redirect_url,
                 issuer_url: config.issuer_url.clone(),
-            })
+                issuer_remote_url: config.issuer_remote_url.clone(),
+            });
+            debug!("Created OpenIdConnectClientManager: {:?}", manager);
+            manager
         } else {
             Err(AuthenticationClientManagerError::InvalidConfiguration {
                 error: "Issuer URL must end with a slash".to_string(),
@@ -217,10 +230,12 @@ pub mod tests {
         let client_id = "opendut-carl-client".to_string();
         let client_secret = "6754d533-9442-4ee6-952a-97e332eca38e".to_string();
         let issuer_url = "http://localhost:8081/realms/opendut/".to_string();
+        let issuer_remote_url = "https://keycloak/realms/opendut/".to_string();
         let carl_idp_config = CarlIdentityProviderConfig {
             client_id: OAuthClientId::new(client_id),
             client_secret: OAuthClientSecret::new(client_secret),
             issuer_url: Url::parse(&issuer_url).unwrap(),
+            issuer_remote_url: Url::parse(&issuer_remote_url).unwrap(),
             scopes: CarlScopes("".to_string()),
         };
         OpenIdConnectClientManager::new(carl_idp_config).unwrap()

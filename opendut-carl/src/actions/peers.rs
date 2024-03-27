@@ -284,7 +284,7 @@ pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<Peer
             }
             Some(oidc_client_manager) => {
                 log::debug!("Generating OIDC client for peer '{peer_name}' <{peer_id}>.");
-                let issuer_url = oidc_client_manager.issuer_url.clone();
+                let issuer_url = oidc_client_manager.issuer_remote_url.clone();
                 let client_credentials = oidc_client_manager.register_new_client()
                     .await
                     .map_err(|cause| GeneratePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), cause: cause.to_string() })?
