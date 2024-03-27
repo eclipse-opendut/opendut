@@ -23,6 +23,8 @@ use tower_http::services::{ServeDir, ServeFile};
 use tracing::{debug, info};
 use url::Url;
 use shadow_rs::formatcp;
+use opendut_carl_api::carl::auth::auth_config::OidcIdentityProviderConfig;
+use itertools::Itertools;
 
 use opendut_util::{logging, project};
 use opendut_util::logging::LoggingConfig;
@@ -266,7 +268,7 @@ struct LeaIdentityProviderConfig {
     scopes: String,
 }
 
-const LEA_OIDC_CONFIG_PREFIX: &'static str = "network.oidc.lea";
+const LEA_OIDC_CONFIG_PREFIX: &str = "network.oidc.lea";
 impl TryFrom<&Config> for LeaIdentityProviderConfig {
     type Error = anyhow::Error;
 
@@ -282,14 +284,9 @@ impl TryFrom<&Config> for LeaIdentityProviderConfig {
 
         let raw_scopes = config.get_string(LeaIdentityProviderConfig::SCOPES)
             .map_err(|error| anyhow!("Failed to find configuration for `{}`. {}", LeaIdentityProviderConfig::SCOPES, error.to_string()))?;
-        let scopes_vector = raw_scopes.trim_matches('"').split(',').collect::<Vec<_>>();
 
-        for scope in scopes_vector.clone() {
-            if !scope.chars().all(|c| c.is_ascii_alphabetic()) {
-                panic!("Failed to parse comma-separated OIDC scopes for LEA. Scopes must only contain ASCII alphabetic characters. Found: {:?}. Parsed as: {:?}", raw_scopes, scopes_vector);
-            }
-        }
-        let scopes = scopes_vector.join(" ");  // Frontend expects space separated list of scopes
+        let scopes = OidcIdentityProviderConfig::parse_scopes(&client_id, raw_scopes).into_iter()
+            .map(|scope| scope.to_string()).join(" ");  // Required by leptos_oidc
 
         Ok(Self { client_id, issuer_url, scopes })
     }

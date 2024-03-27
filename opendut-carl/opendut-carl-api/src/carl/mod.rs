@@ -4,6 +4,7 @@ pub mod broker;
 pub mod cluster;
 pub mod metadata;
 pub mod peer;
+pub mod auth;
 
 cfg_if! {
     if #[cfg(any(feature = "client", feature = "wasm-client"))] {
@@ -100,7 +101,6 @@ cfg_if! {
 
 cfg_if! {
     if #[cfg(feature = "client")] {
-        mod auth;
 
         use crate::carl::cluster::ClusterManager;
         use crate::carl::metadata::MetadataProvider;
@@ -115,9 +115,8 @@ cfg_if! {
         use std::sync::Arc;
         use tower::ServiceBuilder;
         use crate::carl::auth::manager::AuthenticationManager;
+        use crate::carl::auth::auth_config::OidcIdentityProviderConfig;
         use crate::carl::auth::service::AuthenticationService;
-        use serde::Deserialize;
-        use url::Url;
 
         #[derive(Debug, Clone)]
         pub struct CarlClient {
@@ -126,15 +125,6 @@ cfg_if! {
             pub metadata: MetadataProvider<AuthenticationService>,
             pub peers: PeersRegistrar<AuthenticationService>,
         }
-
-        #[derive(Clone, Debug, Deserialize)]
-        pub struct OidcIdentityProviderConfig {
-            id: String,
-            issuer_url: Url,
-            scopes: String,
-            secret: String,
-        }
-
 
         impl CarlClient {
 
@@ -170,7 +160,7 @@ cfg_if! {
                 let auth_manager = if oidc_enabled {
                     let oidc_config = settings.get::<OidcIdentityProviderConfig>("network.oidc.client")
                         .map_err(|error| InitializationError::OidcConfiguration { message: String::from("Failed to load OIDC configuration"), cause: error.into() })?;
-                    log::debug!("OIDC configuration loaded: id={:?} issuer_url={:?}", oidc_config.id, oidc_config.issuer_url);
+                    log::debug!("OIDC configuration loaded: id={:?} issuer_url={:?}", oidc_config.client_id, oidc_config.issuer_url);
                     Some(Arc::new(AuthenticationManager::new(oidc_config)))
                 } else {
                     log::debug!("OIDC is disabled.");

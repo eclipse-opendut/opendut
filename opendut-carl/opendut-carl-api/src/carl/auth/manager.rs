@@ -1,5 +1,5 @@
 use chrono::{NaiveDateTime, Utc};
-use oauth2::{AccessToken, AuthUrl, ClientId, ClientSecret, Scope, TokenResponse, TokenUrl};
+use oauth2::{AccessToken, AuthUrl, Scope, TokenResponse, TokenUrl};
 use oauth2::basic::{BasicClient, BasicTokenResponse};
 use oauth2::reqwest::async_http_client;
 use tokio::sync::{RwLock, RwLockWriteGuard};
@@ -43,17 +43,15 @@ impl AuthenticationManager {
         ).expect("Invalid oidc token endpoint URL");
 
         let client = BasicClient::new(
-            ClientId::new(oidc_identity_provider_config.id),
-            Some(ClientSecret::new(oidc_identity_provider_config.secret)),
+            oidc_identity_provider_config.client_id,
+            Some(oidc_identity_provider_config.client_secret),
             auth_url,
             Some(token_url),
         );
-        let scopes = oidc_identity_provider_config.scopes.trim_matches('"')
-            .split(',').map(|s| Scope::new(s.to_string())).collect::<Vec<_>>();
 
         AuthenticationManager {
             client,
-            scopes,
+            scopes: oidc_identity_provider_config.scopes.clone(),
             state: Default::default(),
         }
     }

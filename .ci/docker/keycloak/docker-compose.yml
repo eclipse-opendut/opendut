@@ -13,6 +13,7 @@ services:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin123456
       - KEYCLOAK_DB=dev-file
+      - KC_LOG_LEVEL=DEBUG
     volumes:
       - opendut_keycloak_data:/opt/keycloak/data
       - "../../../resources/development/tls/insecure-development-ca.pem:/usr/share/ca-certificates/ca.pem:ro"

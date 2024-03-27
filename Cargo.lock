@@ -2967,6 +2967,7 @@ dependencies = [
  "futures",
  "googletest",
  "http 0.2.11",
+ "itertools 0.12.1",
  "log",
  "oauth2",
  "opendut-carl-api",
@@ -2998,6 +2999,7 @@ dependencies = [
 name = "opendut-carl-api"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "cfg-if",
  "chrono",
  "config 0.13.4",
@@ -3013,6 +3015,7 @@ dependencies = [
  "protobuf-src",
  "reqwest",
  "serde",
+ "shadow-rs",
  "thiserror",
  "tokio",
  "tonic",
@@ -3304,7 +3307,7 @@ dependencies = [
  "dyn-clone",
  "ed25519-dalek",
  "hmac",
- "http",
+ "http 0.2.11",
  "itertools 0.10.5",
  "log",
  "oauth2",
