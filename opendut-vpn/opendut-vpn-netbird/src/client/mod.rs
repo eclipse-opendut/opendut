@@ -93,6 +93,7 @@ impl DefaultClient {
 #[async_trait]
 impl Client for DefaultClient {
 
+    #[tracing::instrument(skip(self), level="trace")]
     async fn create_netbird_group(&self, name: netbird::GroupName, peers: Vec<netbird::PeerId>) -> Result<netbird::Group, RequestError> {
 
         let url = routes::groups(self.netbird_url.clone());
@@ -121,6 +122,7 @@ impl Client for DefaultClient {
         Ok(result)
     }
 
+    #[tracing::instrument(skip(self), level="trace")]
     async fn get_netbird_group(&self, group_name: &netbird::GroupName) -> Result<netbird::Group, GetGroupError> {
         let url = routes::groups(self.netbird_url.clone());
         let request = Request::new(Method::GET, url);
@@ -142,6 +144,7 @@ impl Client for DefaultClient {
         }
     }
 
+    #[tracing::instrument(skip(self), level="trace")]
     async fn delete_netbird_group(&self, group_id: &netbird::GroupId) -> Result<(), RequestError> {
         let url = routes::group(Clone::clone(&self.netbird_url), group_id);
 
@@ -152,6 +155,7 @@ impl Client for DefaultClient {
         parse_response_status(response, format!("NetBird group with ID <{:?}>", group_id)).await
     }
 
+    #[tracing::instrument(skip(self), level="trace")]
     async fn get_netbird_peer(&self, peer_id: &netbird::PeerId) -> Result<netbird::Peer, RequestError> {
         let url = routes::peer(Clone::clone(&self.netbird_url), peer_id);
 
@@ -166,6 +170,7 @@ impl Client for DefaultClient {
         Ok(result)
     }
 
+    #[tracing::instrument(skip(self), level="trace")]
     async fn delete_netbird_peer(&self, peer_id: &netbird::PeerId) -> Result<(), RequestError> {
         let url = routes::peer(Clone::clone(&self.netbird_url), peer_id);
 
@@ -179,6 +184,7 @@ impl Client for DefaultClient {
         Ok(())
     }
 
+    #[tracing::instrument(skip(self), level="trace")]
     async fn create_netbird_self_access_control_rule(&self, group: netbird::Group, rule_name: netbird::RuleName) -> Result<(), RequestError> {
         let url = routes::rules(self.netbird_url.clone());
 
@@ -213,6 +219,7 @@ impl Client for DefaultClient {
         Ok(())
     }
 
+    #[tracing::instrument(skip(self), level="trace")]
     async fn get_netbird_rule(&self, rule_name: &netbird::RuleName) -> Result<netbird::Rule, GetRulesError> {
         let url = routes::rules(self.netbird_url.clone());
         let request = Request::new(Method::GET, url);
@@ -232,6 +239,7 @@ impl Client for DefaultClient {
         }
     }
 
+    #[tracing::instrument(skip(self), level="trace")]
     async fn delete_netbird_rule(&self, rule_id: &netbird::RuleId) -> Result<(), RequestError> {
         let url = routes::rule(Clone::clone(&self.netbird_url), rule_id);
 
@@ -242,6 +250,7 @@ impl Client for DefaultClient {
         parse_response_status(response, format!("NetBird rule with ID <{:?}>", rule_id)).await
     }
 
+    #[tracing::instrument(skip(self), level="trace")]
     async fn generate_netbird_setup_key(&self, peer_id: PeerId) -> Result<netbird::SetupKey, CreateSetupKeyError> {
         let peer_group_name = netbird::GroupName::from(peer_id);
         let peer_group = self.get_netbird_group(&peer_group_name).await
