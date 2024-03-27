@@ -6,7 +6,7 @@ use anyhow::{anyhow, Error};
 use strum::Display;
 
 use EdgarDeploymentStatus::{Provisioned, Ready};
-use opendut_edgar_kernel_modules::edgar_required_kernel_modules;
+use opendut_edgar_kernel_modules::{default_builtin_module_dir, default_module_file, required_kernel_modules};
 
 use crate::core::{SLEEP_TIME_SECONDS, TheoError, TIMEOUT_SECONDS};
 use crate::core::docker::command::DockerCommand;
@@ -181,8 +181,8 @@ fn check_edgar_can_ping() -> Result<i32, Error> {
 }
 
 fn load_edgar_kernel_modules() -> Result<(), Error> {
-    for kernel_module in edgar_required_kernel_modules() {
-        if !kernel_module.is_loaded()? {
+    for kernel_module in required_kernel_modules() {
+        if !kernel_module.is_loaded(&default_module_file(), &default_builtin_module_dir())? {
             kernel_module.load()?;
         }        
     }

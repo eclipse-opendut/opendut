@@ -2,7 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
-use opendut_edgar_kernel_modules::{edgar_required_kernel_modules, KernelModule};
+use opendut_edgar_kernel_modules::{required_kernel_modules, KernelModule};
 
 use crate::setup::task::{Success, Task, TaskFulfilled};
 use crate::setup::constants::KERNEL_MODULE_LOAD_RULE_PREFIX;
@@ -37,12 +37,12 @@ fn options_rule_file_content(kernel_module: &KernelModule) -> String {
 pub struct CreateKernelModuleLoadRule;
 impl Task for CreateKernelModuleLoadRule {
     fn description(&self) -> String {
-        let kernel_modules_str = edgar_required_kernel_modules().into_iter().map(|m| m.name).collect::<Vec<String>>().join(", ");
+        let kernel_modules_str = required_kernel_modules().into_iter().map(|m| m.name).collect::<Vec<String>>().join(", ");
 
-        format!("Create rules to load kernel modules \"{kernel_modules_str}\" at boot time")
+        format!("Create rules to load kernel modules {kernel_modules_str} at boot time")
     }
     fn check_fulfilled(&self) -> Result<TaskFulfilled> {
-        for kernel_module in edgar_required_kernel_modules() {
+        for kernel_module in required_kernel_modules() {
             if !load_rule_file_path(&kernel_module).exists() {
                 return Ok(TaskFulfilled::No);
             }
@@ -53,7 +53,7 @@ impl Task for CreateKernelModuleLoadRule {
         Ok(TaskFulfilled::Yes)
     }
     fn execute(&self) -> Result<Success> {
-        for kernel_module in edgar_required_kernel_modules() {
+        for kernel_module in required_kernel_modules() {
             let load_path = load_rule_file_path(&kernel_module);
             fs::create_dir_all(load_path.parent().unwrap())?;
 

@@ -39,7 +39,7 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
         })),
         Box::new(tasks::CheckCarlReachable),
         Box::new(tasks::CopyExecutable),
-        Box::new(tasks::LoadKernelModules),
+        Box::new(tasks::LoadKernelModules::default()),
     ];
 
     if !running_in_docker() {

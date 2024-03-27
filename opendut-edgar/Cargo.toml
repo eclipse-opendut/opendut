@@ -52,6 +52,7 @@ which = { workspace = true }
 assert_fs = { workspace = true }
 googletest = { workspace = true }
 predicates = { workspace = true }
+rstest = { workspace = true }
 
 [build-dependencies]
 shadow-rs = { workspace = true, default-features = true }

@@ -2561,6 +2561,7 @@ dependencies = [
  "pem",
  "predicates",
  "regex",
+ "rstest",
  "rtnetlink",
  "serde",
  "sha2",
