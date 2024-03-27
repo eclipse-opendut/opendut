@@ -15,44 +15,34 @@ pub fn LeaAuthenticated(
 ) -> impl IntoView {
     let auth = use_app_globals().expect_auth();
     let app_config = use_app_globals().expect_config();
-    match auth {
-        None => {
-            disabled_auth.run()
-        }
-        Some(auth) => {
-            match app_config.idp_config {
-                None => {
-                    tracing::warn!("Warning: No issuer URL was provided by the config - not able to determine the authenticated user.");
-                }
-                Some(lea_idp_config) => {
-                    let auth_cloned = auth.clone();
-                    let auth_token = move || auth_cloned.access_token();
-                    create_effect(move |_| {
-                        let (_auth_data, auth_data_write) = use_context::<(ReadSignal<OptionalAuthData>, WriteSignal<OptionalAuthData>)>().expect("AuthData should be provided in the context.");
-                        if let Some(token) = auth_token() {
-                            tracing::debug!("AUTH Token: {}", token);
-                            let data = decode_token(&token, lea_idp_config.issuer_url.as_ref());
-                            auth_data_write.set(OptionalAuthData {
-                                auth_data: Some(
-                                    AuthData {
-                                        access_token: token.clone(),
-                                        preferred_username: data.claims.preferred_username.clone(),
-                                        name: data.claims.name.clone(),
-                                        email: data.claims.email.clone(),
-                                        groups: data.claims.groups.clone(),
-                                        roles: data.claims.roles.clone(),
-                                    }
-                                )
-                            });
-                            token
-                        } else {
-                            tracing::debug!("NO TOKEN");
-                            "no token".to_string()
-                        }
-                    });
-                }
-            }
 
+    match (app_config.idp_config, auth) {
+        (Some(lea_idp_config), Some(auth)) => {
+            let auth_cloned = auth.clone();
+            let auth_token = move || auth_cloned.access_token();
+            create_effect(move |_| {
+                let (_auth_data, auth_data_write) = use_context::<(ReadSignal<OptionalAuthData>, WriteSignal<OptionalAuthData>)>().expect("AuthData should be provided in the context.");
+                if let Some(token) = auth_token() {
+                    tracing::debug!("AUTH Token: {}", token);
+                    let data = decode_token(&token, lea_idp_config.issuer_url.as_ref());
+                    auth_data_write.set(OptionalAuthData {
+                        auth_data: Some(
+                            AuthData {
+                                access_token: token.clone(),
+                                preferred_username: data.claims.preferred_username.clone(),
+                                name: data.claims.name.clone(),
+                                email: data.claims.email.clone(),
+                                groups: data.claims.groups.clone(),
+                                roles: data.claims.roles.clone(),
+                            }
+                        )
+                    });
+                    token
+                } else {
+                    tracing::debug!("NO TOKEN");
+                    "no token".to_string()
+                }
+            });
             let unauthenticated = move || unauthenticated.run();
             let authenticated = move || auth.authenticated() ;
 
@@ -65,6 +55,11 @@ pub fn LeaAuthenticated(
                     />
                 </Transition>
             }
+
+        }
+        _ => {
+            tracing::warn!("Warning: Authentication disabled. No issuer URL was provided by the config - not able to determine the authenticated user.");
+            disabled_auth.run()
         }
     }
 }
