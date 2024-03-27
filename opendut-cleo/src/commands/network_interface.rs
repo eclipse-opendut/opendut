@@ -11,7 +11,7 @@ pub mod create {
         carl: &mut CarlClient,
         peer_id: Uuid,
         interface_type: NetworkInterfaceType,
-        interface_name: Option<String>,
+        interface_name: String,
         output: CreateOutputFormat,
     ) -> crate::Result<()> {
         let peer_id = PeerId::from(peer_id);
@@ -22,7 +22,7 @@ pub mod create {
         let peer_interface_names = peer_descriptor.network_configuration.interfaces
             .iter().map(|interface| interface.name.clone()).collect::<Vec<_>>();
 
-        let interface_name = NetworkInterfaceName::try_from(interface_name.unwrap_or_default()).map_err(|error| error.to_string())?;
+        let interface_name = NetworkInterfaceName::try_from(interface_name).map_err(|error| error.to_string())?;
 
         // TODO: Properly implement CAN parameter configuration
         let interface_configuration = match interface_type {
