@@ -7,6 +7,7 @@ remote.port = 8080
 [network.tls]
 certificate = "/etc/opendut/tls/carl.pem"
 key = "/etc/opendut/tls/carl.key"
+ca = "/etc/opendut/tls/ca.pem"
 
 [network.oidc]
 enabled = false
@@ -18,6 +19,7 @@ scopes = "openid,profile,email,roles,groups"
 
 [peer]
 disconnect.timeout.ms = 30000
+can.server_port_range_start = 10000
 
 [serve]
 ui.directory = "opendut-lea/"
@@ -33,3 +35,8 @@ auth.type = ""
 auth.secret = ""
 timeout.ms = 10000
 retries = 5
+
+[opentelemetry]
+enabled = false
+endpoint = ""
+service_name = "opendut-carl"

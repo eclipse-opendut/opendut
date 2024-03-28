@@ -31,6 +31,7 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
     println!("Will connect to CARL at: {}", peer_setup.carl);
 
     let mut tasks: Vec<Box<dyn Task>> = vec![
+        Box::new(tasks::WriteCaCertificate { certificate: peer_setup.ca }),
         Box::new(tasks::CheckOsRequirements),
         Box::new(tasks::WriteConfiguration::with_override(write_configuration::ConfigOverride {
             peer_id: peer_setup.id,
@@ -91,7 +92,7 @@ pub async fn unmanaged(
     mtu: u16,
 ) -> anyhow::Result<()> {
 
-    let network_interface_manager = Arc::new(NetworkInterfaceManager::create()?);
+    let network_interface_manager = NetworkInterfaceManager::create()?;
 
     let tasks: Vec<Box<dyn Task>> = vec![
         Box::new(tasks::CheckOsRequirements),
@@ -117,8 +118,11 @@ pub fn init_logging() -> anyhow::Result<()> {
 
     let config = logging::LoggingConfig {
         file_logging: Some(log_file),
+        opentelemetry_endpoint: None,
+        opentelemetry_service_name: None,
+        opentelemetry_service_instance_id: None,
     };
-    logging::initialize_with_config(config)?;
+    let _ = logging::initialize_with_config(config)?;
 
     Ok(())
 }

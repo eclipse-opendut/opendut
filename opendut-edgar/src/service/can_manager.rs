@@ -2,12 +2,13 @@ use std::net::IpAddr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
+use opendut_types::cluster::PeerClusterAssignment;
 use opendut_types::util::Port;
 use regex::Regex;
 
 use tokio::process::Command;
 
-use opendut_types::util::net::NetworkInterfaceName;
+use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
 
 use crate::service::cannelloni_manager::CannelloniManager;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
@@ -29,9 +30,11 @@ pub struct CanManager{
 }
 
 impl CanManager {
-    pub fn create(network_interface_manager: NetworkInterfaceManagerRef) -> Self {
-
-        Self { cannelloni_termination_token: Mutex::new(Arc::new(AtomicBool::new(false))) , network_interface_manager}
+    pub fn create(network_interface_manager: NetworkInterfaceManagerRef) -> CanManagerRef {
+        Arc::new(Self {
+            cannelloni_termination_token: Mutex::new(Arc::new(AtomicBool::new(false))),
+            network_interface_manager
+        })
     }
 
     async fn check_can_route_exists(&self, src: &NetworkInterfaceName, dst: &NetworkInterfaceName, can_fd: bool, max_hops: u8) -> Result<bool, Error> {
@@ -106,7 +109,7 @@ impl CanManager {
     pub async fn setup_local_routing(
         &self,
         bridge_name: &NetworkInterfaceName,
-        local_can_interfaces: Vec<NetworkInterfaceName>,
+        local_can_interfaces: Vec<NetworkInterfaceDescriptor>,
     ) -> Result<(), Error> {
     
     
@@ -116,10 +119,10 @@ impl CanManager {
         self.remove_all_can_routes().await?;
     
         for interface in local_can_interfaces {
-            self.create_can_route(bridge_name, &interface, true, 2).await?;
-            self.create_can_route(bridge_name, &interface, false, 2).await?;
-            self.create_can_route(&interface, bridge_name, true, 2).await?;
-            self.create_can_route(&interface, bridge_name, false, 2).await?;
+            self.create_can_route(bridge_name, &interface.name, true, 2).await?;
+            self.create_can_route(bridge_name, &interface.name, false, 2).await?;
+            self.create_can_route(&interface.name, bridge_name, true, 2).await?;
+            self.create_can_route(&interface.name, bridge_name, false, 2).await?;
         }
     
         Ok(())
@@ -137,29 +140,15 @@ impl CanManager {
     
         Ok(())
     }
-    
-    // TODO: determining the port for cannelloni like this is a bit dirty, we should get that information from CARL instead
-    // Takes the last two bytes of the IP address to be used as the port
-    fn peer_ip_to_leader_port(&self, peer_ip: &IpAddr) -> anyhow::Result<Port>{
-        assert!(peer_ip.is_ipv4());
-        let ip_bytes: Vec<u8> = peer_ip.to_string().split('.').map(|b| b.parse::<u8>().unwrap()).collect();
-        let mut port = ((ip_bytes[2] as u16) << 8) | ip_bytes[3] as u16;
-        if port < 1024 {
-            port += 1024; // Ensure no port reserved for privileged processes is used
-        }
-        Ok(Port(port))
-    }
 
     async fn terminate_cannelloni_managers(&self) {
         self.cannelloni_termination_token.lock().unwrap().store(true, Ordering::Relaxed);
     }
     
-    pub async fn setup_remote_routing_client(&self, bridge_name: &NetworkInterfaceName, local_ip: &IpAddr, leader_ip: &IpAddr) -> Result<(), Error> {
+    pub async fn setup_remote_routing_client(&self, bridge_name: &NetworkInterfaceName, leader_ip: &IpAddr, leader_port: &Port) -> Result<(), Error> {
 
         self.terminate_cannelloni_managers().await;
     
-        let leader_port = self.peer_ip_to_leader_port(local_ip).unwrap();
-
         let mut guarded_termination_token = self.cannelloni_termination_token.lock().unwrap();
         *guarded_termination_token = Arc::new(AtomicBool::new(false));
         
@@ -169,7 +158,7 @@ impl CanManager {
         let mut cannelloni_manager = CannelloniManager::new (
             false, 
             bridge_name.clone(), 
-            leader_port, 
+            *leader_port, 
             *leader_ip, 
             Duration::from_micros(1),
             guarded_termination_token.clone(),
@@ -182,7 +171,7 @@ impl CanManager {
         Ok(())
     }
     
-    pub async fn setup_remote_routing_server(&self, bridge_name: &NetworkInterfaceName, remote_ips: &Vec<IpAddr>) -> Result<(), Error>  {
+    pub async fn setup_remote_routing_server(&self, bridge_name: &NetworkInterfaceName, remote_assignments: &Vec<PeerClusterAssignment>) -> Result<(), Error>  {
 
         self.terminate_cannelloni_managers().await;
 
@@ -190,16 +179,14 @@ impl CanManager {
         *guarded_termination_token = Arc::new(AtomicBool::new(false));
         
     
-        for remote_ip in remote_ips {
-            let leader_port = self.peer_ip_to_leader_port(remote_ip).unwrap();
-
-            log::info!("Spawning cannelloni manager as server for peer with IP {}", remote_ip.to_string());
+        for remote_assignment in remote_assignments {
+            log::info!("Spawning cannelloni manager as server for peer with IP {}", remote_assignment.vpn_address.to_string());
     
             let mut cannelloni_manager = CannelloniManager::new(
                 true, 
                 bridge_name.clone(), 
-                leader_port, 
-                *remote_ip, 
+                remote_assignment.can_server_port, 
+                remote_assignment.vpn_address, 
                 Duration::from_micros(1),
                 guarded_termination_token.clone()
             );

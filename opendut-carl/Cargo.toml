@@ -21,8 +21,11 @@ futures = { workspace = true }
 googletest = { workspace = true }
 http = { workspace = true }
 log = { workspace = true }
+pem = { workspace = true, features = ["serde"]}
+opentelemetry = { workspace = true }
+opentelemetry_sdk = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
-shadow-rs = { workspace = true }
+shadow-rs = { workspace = true, default-features = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 tokio-stream = { workspace = true, features = ["full"] }
@@ -31,6 +34,7 @@ tonic-web = { workspace = true }
 tower = { workspace = true, features = ["make", "steer"] }
 tower-http = { workspace = true }
 tracing = { workspace = true }
+tracing-opentelemetry = { workspace = true }
 url = { workspace = true, features = ["serde"] }
 uuid = { workspace = true }
 
@@ -40,7 +44,7 @@ rstest = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
 
 [build-dependencies]
-shadow-rs = { workspace = true }
+shadow-rs = { workspace = true, default-features = true }
 
 [lints]
 workspace = true

@@ -13,7 +13,7 @@ use uuid::Uuid;
 
 use opendut_carl_api::proto::services::peer_messaging_broker::{Downstream, ListPeersRequest, ListPeersResponse, Upstream};
 use opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_broker_server::PeerMessagingBrokerServer;
-use opendut_carl_api::proto::services::peer_messaging_broker::upstream::Message;
+use opendut_carl_api::proto::services::peer_messaging_broker::upstream;
 use opendut_types::peer::PeerId;
 
 use crate::peer::broker::PeerMessagingBrokerRef;
@@ -33,7 +33,7 @@ impl PeerMessagingBrokerFacade {
 
 #[tonic::async_trait]
 impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_broker_server::PeerMessagingBroker for PeerMessagingBrokerFacade {
-
+    #[tracing::instrument(skip(self, request), level="trace")]
     async fn list_peers(&self, request: Request<ListPeersRequest>) -> Result<Response<ListPeersResponse>, Status> {
 
         log::trace!("Received request: {:?}", request);
@@ -53,6 +53,7 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
 
     type OpenStream = Pin<Box<dyn Stream<Item = Result<Downstream, Status>> + Send>>;
 
+    #[tracing::instrument(skip(self, request), level="trace")]
     async fn open(&self, request: Request<Streaming<Upstream>>) -> Result<Response<Self::OpenStream>, Status> {
 
         let peer_id = extract_peer_id(request.metadata())
@@ -78,7 +79,7 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
                 match result {
                     Ok(upstream) => {
                         if let Some(message) = upstream.message {
-                            if matches!(message, Message::Ping(_)).not() {
+                            if matches!(message, upstream::Message::Ping(_)).not() {
                                 log::trace!("Received message from client <{}>: {:?}", peer_id, message);
                             }
                             tx_inbound.send(message).await.unwrap();
@@ -101,9 +102,9 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
         });
 
         let outbound = ReceiverStream::new(rx_outbound)
-            .map(|message| Ok(Downstream {
-                message: Some(message)
-            }));
+            .map(|downstream| {
+                Ok(downstream)
+            });
 
         Ok(Response::new(Box::pin(outbound)))
     }

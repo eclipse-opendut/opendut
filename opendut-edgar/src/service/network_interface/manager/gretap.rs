@@ -1,11 +1,10 @@
 use std::mem::size_of;
 use std::net::Ipv4Addr;
 
-use netlink_packet_route::link::nlas::{InfoData, InfoKind};
-use netlink_packet_route::nlas::link::Nla;
-use netlink_packet_route::rtnl::link::nlas;
+use netlink_packet_route::link::{InfoData, InfoKind, LinkAttribute, LinkInfo};
+use netlink_packet_utils::{Emitable, Parseable};
 use netlink_packet_utils::byteorder::{ByteOrder, NativeEndian, WriteBytesExt};
-use netlink_packet_utils::Emitable;
+use netlink_packet_utils::nla::NlaBuffer;
 use rtnetlink::LinkAddRequest;
 
 pub trait Gretap {
@@ -33,21 +32,20 @@ impl Gretap for LinkAddRequest {
             InfoGreTap::EncapSPort(0),
             InfoGreTap::EncapDPort(0),
         ];
-        let total_length = attributes.iter().map(|attribute| attribute.buffer_len()).sum();
 
-        let mut info_data = vec![0u8; total_length];
+        let attributes = attributes.map(|attribute| {
+            let mut buffer = vec![0u8; attribute.buffer_len()];
+            attribute.emit(&mut buffer);
+            let buffer = NlaBuffer::new(&buffer);
+            netlink_packet_route::link::InfoGreTap::parse(&buffer)
+                .expect("GRE attribute should be parseable from constant") //if not, this is a bug in how we specify the attribute
+        });
 
-        let mut write_index = 0;
-        for attribute in attributes {
-            attribute.emit(&mut info_data[write_index..]);
-            write_index += attribute.buffer_len();
-        }
-
-        self.message_mut().nlas.extend(vec![
-            Nla::IfName(name.into()),
-            Nla::Info(vec![
-                nlas::Info::Kind(InfoKind::GreTap),
-                nlas::Info::Data(InfoData::GreTap(info_data[..total_length].to_vec()))
+        self.message_mut().attributes.extend(vec![
+            LinkAttribute::IfName(name.into()),
+            LinkAttribute::LinkInfo(vec![
+                LinkInfo::Kind(InfoKind::GreTap),
+                LinkInfo::Data(InfoData::GreTap(attributes.to_vec())),
             ]),
         ]);
         self

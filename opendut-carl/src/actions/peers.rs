@@ -1,6 +1,8 @@
 use std::ops::Not;
 use std::sync::Arc;
 
+use pem::Pem;
+use tracing::Span;
 use url::Url;
 
 pub use opendut_carl_api::carl::peer::{
@@ -10,10 +12,16 @@ pub use opendut_carl_api::carl::peer::{
     ListPeerDescriptorsError,
     StorePeerDescriptorError,
 };
+use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, downstream};
+use opendut_types::cluster::ClusterAssignment;
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerSetup};
+use opendut_types::peer::configuration::PeerConfiguration;
+use opendut_types::proto;
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
+use opendut_types::util::net::Certificate;
 use opendut_types::vpn::VpnPeerConfiguration;
 use opendut_util::ErrorOr;
+use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerRef};
 
 use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
@@ -24,6 +32,7 @@ pub struct StorePeerDescriptorParams {
     pub peer_descriptor: PeerDescriptor,
 }
 
+#[tracing::instrument(skip(params), level="trace")]
 pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<PeerId, StorePeerDescriptorError> {
 
     async fn inner(params: StorePeerDescriptorParams) -> Result<PeerId, StorePeerDescriptorError> {
@@ -68,6 +77,12 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
                 log::info!("Added device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}>.");
             });
 
+            let peer_configuration = PeerConfiguration {
+                executors: Clone::clone(&peer_descriptor.executors),
+                cluster_assignment: None,
+            };
+            resources.insert(peer_id, peer_configuration);
+
             resources.insert(peer_id, peer_descriptor);
 
             is_new_peer
@@ -109,6 +124,7 @@ pub struct DeletePeerDescriptorParams {
     pub peer: PeerId,
 }
 
+#[tracing::instrument(skip(params), level="trace")]
 pub async fn delete_peer_descriptor(params: DeletePeerDescriptorParams) -> Result<PeerDescriptor, DeletePeerDescriptorError> {
 
     async fn inner(params: DeletePeerDescriptorParams) -> Result<PeerDescriptor, DeletePeerDescriptorError> {
@@ -164,6 +180,7 @@ pub struct ListPeerDescriptorsParams {
     pub resources_manager: ResourcesManagerRef,
 }
 
+#[tracing::instrument(skip(params), level="trace")]
 pub async fn list_peer_descriptors(params: ListPeerDescriptorsParams) -> Result<Vec<PeerDescriptor>, ListPeerDescriptorsError> {
 
     async fn inner(params: ListPeerDescriptorsParams) -> Result<Vec<PeerDescriptor>, ListPeerDescriptorsError> {
@@ -191,6 +208,7 @@ pub struct ListDevicesParams {
     pub resources_manager: ResourcesManagerRef,
 }
 
+#[tracing::instrument(skip(params), level="trace")]
 pub async fn list_devices(params: ListDevicesParams) -> Result<Vec<DeviceDescriptor>, ListDevicesError> {
 
     async fn inner(params: ListDevicesParams) -> Result<Vec<DeviceDescriptor>, ListDevicesError> {
@@ -216,12 +234,13 @@ pub struct GeneratePeerSetupParams {
     pub resources_manager: ResourcesManagerRef,
     pub peer: PeerId,
     pub carl_url: Url,
+    pub ca: Pem,
     pub vpn: Vpn,
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum GeneratePeerSetupError {
-    #[error("A PeerSetup for peer <{0}> could not be create, because a peer with that ID does not exist!")]
+    #[error("A PeerSetup for peer <{0}> could not be created, because a peer with that ID does not exist!")]
     PeerNotFound(PeerId),
     #[error("An internal error occurred while creating a PeerSetup for peer '{peer_name}' <{peer_id}>:\n  {cause}")]
     Internal {
@@ -231,6 +250,7 @@ pub enum GeneratePeerSetupError {
     }
 }
 
+#[tracing::instrument(skip(params), level="trace")]
 pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<PeerSetup, GeneratePeerSetupError> {
 
     async fn inner(params: GeneratePeerSetupParams) -> Result<PeerSetup, GeneratePeerSetupError> {
@@ -261,7 +281,8 @@ pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<Peer
         Ok(PeerSetup {
             id: peer_id,
             carl: params.carl_url,
-            vpn: vpn_config
+            ca: Certificate(params.ca),
+            vpn: vpn_config,
         })
     }
 
@@ -269,26 +290,72 @@ pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<Peer
         .inspect_err(|err| log::error!("{err}"))
 }
 
+
+pub struct AssignClusterParams {
+    pub resources_manager: ResourcesManagerRef,
+    pub peer_messaging_broker: PeerMessagingBrokerRef,
+    pub peer_id: PeerId,
+    pub cluster_assignment: ClusterAssignment,
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum AssignClusterError {
+    #[error("Assigning cluster for peer <{0}> failed, because a peer with that ID does not exist!")]
+    PeerNotFound(PeerId),
+    #[error("Sending PeerConfiguration with ClusterAssignment to peer <{peer_id}> failed: {cause}")]
+    SendingToPeerFailed { peer_id: PeerId, cause: String },
+}
+
+pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClusterError> {
+
+    let peer_id = params.peer_id;
+
+    let peer_configuration = params.resources_manager.resources_mut(|resources| {
+        resources.get::<PeerConfiguration>(peer_id)
+            .ok_or(AssignClusterError::PeerNotFound(peer_id))
+            .map(|peer_configuration| {
+                let peer_configuration = PeerConfiguration {
+                    cluster_assignment: Some(params.cluster_assignment),
+                    ..peer_configuration
+                };
+                resources.insert(peer_id, Clone::clone(&peer_configuration));
+                peer_configuration
+            })
+    }).await?;
+
+    params.peer_messaging_broker.send_to_peer(
+        peer_id,
+        downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
+            configuration: Some(peer_configuration.into()),
+        }),
+    ).await
+    .map_err(|cause| AssignClusterError::SendingToPeerFailed {
+        peer_id,
+        cause: cause.to_string()
+    })?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod test {
     use std::sync::Arc;
 
+    use googletest::prelude::*;
     use rstest::*;
 
-    use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkConfiguration, PeerNetworkInterface};
+    use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkConfiguration};
+    use opendut_types::peer::executor::ExecutorDescriptors;
     use opendut_types::topology::{DeviceDescription, DeviceName, Topology};
-    use opendut_types::util::net::NetworkInterfaceName;
+    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
 
     use crate::resources::manager::ResourcesManager;
 
     use super::*;
 
     mod store_peer_descriptor {
-        use googletest::prelude::*;
-        use rstest::*;
-
         use opendut_types::topology::{DeviceDescription, DeviceName};
-        use opendut_types::util::net::NetworkInterfaceName;
+        use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
 
         use super::*;
 
@@ -313,7 +380,10 @@ mod test {
                 id: additional_device_id,
                 name: DeviceName::try_from("PeerA_Device_42").unwrap(),
                 description: DeviceDescription::try_from("Additional device for peerA").ok(),
-                interface: NetworkInterfaceName::try_from("eth1").unwrap(),
+                interface: NetworkInterfaceDescriptor {
+                    name: NetworkInterfaceName::try_from("eth1").unwrap(),
+                    configuration: NetworkInterfaceConfiguration::Ethernet,
+                },
                 tags: vec![],
             };
 
@@ -342,6 +412,86 @@ mod test {
         }
     }
 
+    mod assign_cluster {
+        use std::net::IpAddr;
+        use std::str::FromStr;
+        use opendut_carl_api::proto::services::peer_messaging_broker::Pong;
+        use opendut_types::cluster::{ClusterAssignment, ClusterId};
+        use crate::peer::broker::PeerMessagingBrokerOptions;
+        use super::*;
+
+        #[rstest]
+        #[tokio::test]
+        async fn should_update_peer_configuration(fixture: Fixture) -> anyhow::Result<()> {
+
+            let settings = crate::settings::load_defaults()?;
+            let peer_id = fixture.peer_a_id;
+
+            let resources_manager = fixture.resources_manager;
+            let peer_messaging_broker = PeerMessagingBroker::new(
+                Arc::clone(&resources_manager),
+                PeerMessagingBrokerOptions::load(&settings.config).unwrap(),
+            );
+
+            let peer_configuration = PeerConfiguration {
+                executors: ExecutorDescriptors { executors: vec![] },
+                cluster_assignment: None,
+            };
+            resources_manager.resources_mut(|resources| {
+                resources.insert(peer_id, Clone::clone(&peer_configuration));
+            }).await;
+
+            let (_, mut receiver) = peer_messaging_broker.open(peer_id, IpAddr::from_str("1.2.3.4")?).await;
+            let received = receiver.recv().await.unwrap()
+                .message.unwrap();
+            assert_that!(
+                received,
+                eq(downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
+                    configuration: Some(Clone::clone(&peer_configuration).into()),
+                }))
+            );
+
+
+            let cluster_assignment = ClusterAssignment {
+                id: ClusterId::random(),
+                leader: PeerId::random(),
+                assignments: vec![],
+            };
+
+
+            assign_cluster(AssignClusterParams {
+                resources_manager: Arc::clone(&resources_manager),
+                peer_messaging_broker: Arc::clone(&peer_messaging_broker),
+                peer_id,
+                cluster_assignment: Clone::clone(&cluster_assignment),
+            }).await?;
+
+
+            let peer_configuration = PeerConfiguration {
+                cluster_assignment: Some(cluster_assignment),
+                ..peer_configuration
+            };
+
+            assert_that!(
+                resources_manager.get::<PeerConfiguration>(peer_id).await.as_ref(),
+                some(eq(&peer_configuration))
+            );
+
+
+            let received = receiver.recv().await.unwrap()
+                .message.unwrap();
+
+            assert_that!(
+                received,
+                eq(downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
+                    configuration: Some(Clone::clone(&peer_configuration).into()),
+                }))
+            );
+
+            Ok(())
+        }
+    }
+
     struct Fixture {
         resources_manager: ResourcesManagerRef,
         vpn: Vpn,
@@ -362,9 +512,10 @@ mod test {
             location: PeerLocation::try_from("Ulm").ok(),
             network_configuration: PeerNetworkConfiguration {
                 interfaces: vec![
-                    PeerNetworkInterface {
+                    NetworkInterfaceDescriptor {
                         name: NetworkInterfaceName::try_from("eth0").unwrap(),
-                    }
+                        configuration: NetworkInterfaceConfiguration::Ethernet,
+                    },
                 ]
             },
             topology: Topology {
@@ -373,21 +524,30 @@ mod test {
                         id: peer_a_device_1,
                         name: DeviceName::try_from("PeerA_Device_1").unwrap(),
                         description: DeviceDescription::try_from("Huii").ok(),
-                        interface: NetworkInterfaceName::try_from("eth0").unwrap(),
+                        interface: NetworkInterfaceDescriptor {
+                            name: NetworkInterfaceName::try_from("eth0").unwrap(),
+                            configuration: NetworkInterfaceConfiguration::Ethernet,
+                        },
                         tags: vec![],
                     },
                     DeviceDescriptor {
                         id: peer_a_device_2,
                         name: DeviceName::try_from("PeerA_Device_2").unwrap(),
                         description: DeviceDescription::try_from("Huii").ok(),
-                        interface: NetworkInterfaceName::try_from("eth1").unwrap(),
+                        interface: NetworkInterfaceDescriptor {
+                            name: NetworkInterfaceName::try_from("eth1").unwrap(),
+                            configuration: NetworkInterfaceConfiguration::Ethernet,
+                        },
                         tags: vec![],
                     }
                 ]
             },
+            executors: ExecutorDescriptors {
+                executors: vec![],
+            }
         };
         Fixture {
-            resources_manager: Arc::new(ResourcesManager::new()),
+            resources_manager: ResourcesManager::new(),
             vpn: Vpn::Disabled,
             peer_a_id,
             peer_a_descriptor,

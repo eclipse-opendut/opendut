@@ -5,4 +5,7 @@ package opendut.types.util;
 message VersionInfo {
   // Semantic version identifier, e.g. "1.2.3"
   string name = 1;
+  string revision = 2;
+  string revision_date = 3;
+  string build_date = 4;
 }

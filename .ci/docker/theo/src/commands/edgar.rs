@@ -100,7 +100,7 @@ fn wait_for_all_edgar_peers_are(task: EdgarDeploymentStatus) -> crate::Result {
                     DockerCommand::new_exec(&edgar_name)
                         .arg("/opt/wait_until_ready.sh")
                         .arg(leader_arg)
-                        .expect_status(&*format!("Failed to check if EDGAR peer '{}' is ready.", edgar_name))?;
+                        .expect_status(&format!("Failed to check if EDGAR peer '{}' is ready.", edgar_name))?;
                     println!("EDGAR peer '{}' is ready.", edgar_name);
                     remaining_edgar_names.remove(&edgar_name);
                 }

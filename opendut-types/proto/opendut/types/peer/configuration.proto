@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package opendut.types.peer.configuration;
+
+import "opendut/types/cluster/cluster.proto";
+import "opendut/types/peer/executor.proto";
+
+message PeerConfiguration {
+  opendut.types.peer.executor.ExecutorDescriptors executors = 1;
+  optional opendut.types.cluster.ClusterAssignment cluster_assignment = 2;
+}

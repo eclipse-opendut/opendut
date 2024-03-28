@@ -6,6 +6,8 @@ import "opendut/types/topology/topology.proto";
 import "opendut/types/util/net.proto";
 import "opendut/types/util/uuid.proto";
 import "opendut/types/vpn/vpn.proto";
+import "opendut/types/peer/executor.proto";
+
 
 message PeerId {
   opendut.types.util.Uuid uuid = 1;
@@ -19,12 +21,8 @@ message PeerLocation {
   string value = 1;
 }
 
-message PeerNetworkInterface {
-  opendut.types.util.NetworkInterfaceName name = 1;
-}
-
 message PeerNetworkConfiguration {
-  repeated PeerNetworkInterface interfaces = 1;
+  repeated opendut.types.util.NetworkInterfaceDescriptor interfaces = 1;
 }
 
 message PeerDescriptor {
@@ -33,11 +31,13 @@ message PeerDescriptor {
   opendut.types.peer.PeerLocation location = 3;
   opendut.types.peer.PeerNetworkConfiguration network_configuration = 4;
   opendut.types.topology.Topology topology = 5;
+  opendut.types.peer.executor.ExecutorDescriptors executors = 6;
 }
 
 message PeerSetup {
   opendut.types.peer.PeerId id = 1;
   opendut.types.util.Url carl = 5;
+  opendut.types.util.Certificate ca = 6;
   opendut.types.vpn.VpnPeerConfig vpn = 11;
 }
 

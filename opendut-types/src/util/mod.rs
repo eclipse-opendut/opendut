@@ -19,7 +19,7 @@ impl From<&str> for Hostname {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Port(pub u16);
 
 impl From<u16> for Port {

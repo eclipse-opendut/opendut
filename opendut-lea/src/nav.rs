@@ -74,6 +74,9 @@ pub fn Navbar() -> impl IntoView {
                                 <div>
                                     <hr class="dut-nav-flyout-divider" />
                                     <div class="px-2">
+                                        <a class="is-size-7" href="/about">"About"</a>
+                                    </div>
+                                    <div class="px-2">
                                         <a class="is-size-7" href="/licenses">"Licenses"</a>
                                     </div>
                                 </div>

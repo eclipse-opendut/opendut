@@ -143,7 +143,7 @@ impl TryFrom<DeviceDescriptor> for crate::topology::DeviceDescriptor {
             .try_into()?;
         let device_description: Option<crate::topology::DeviceDescription> =
             value.description.map(TryFrom::try_from).transpose()?;
-        let interface: crate::util::net::NetworkInterfaceName = value
+        let interface: crate::util::net::NetworkInterfaceDescriptor = value
             .interface
             .ok_or(ErrorBuilder::new("Interface not set"))?
             .try_into()?;
@@ -166,8 +166,9 @@ impl TryFrom<DeviceDescriptor> for crate::topology::DeviceDescriptor {
 #[cfg(test)]
 #[allow(non_snake_case)]
 mod tests {
-    use crate::proto::util::NetworkInterfaceName;
+    use crate::proto::util::{network_interface_descriptor, EthernetInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
     use crate::topology::{DeviceDescription, DeviceName, DeviceTag};
+    use crate::util::net::NetworkInterfaceConfiguration;
     use googletest::prelude::*;
     use uuid::Uuid;
 
@@ -184,14 +185,20 @@ mod tests {
                     id: Clone::clone(&device_id_1).into(),
                     name: DeviceName::try_from("device-1")?,
                     description: DeviceDescription::try_from("Some device").ok(),
-                    interface: crate::util::net::NetworkInterfaceName::try_from("tap0")?,
+                    interface: crate::util::net::NetworkInterfaceDescriptor { 
+                        name: crate::util::net::NetworkInterfaceName::try_from("tap0")?,
+                        configuration: NetworkInterfaceConfiguration::Ethernet,
+                    },
                     tags: vec![DeviceTag::try_from("tag-1")?, DeviceTag::try_from("tag-2")?],
                 },
                 crate::topology::DeviceDescriptor {
                     id: Clone::clone(&device_id_2).into(),
                     name: DeviceName::try_from("device-2")?,
                     description: DeviceDescription::try_from("Some other device").ok(),
-                    interface: crate::util::net::NetworkInterfaceName::try_from("tap1")?,
+                    interface: crate::util::net::NetworkInterfaceDescriptor { 
+                        name: crate::util::net::NetworkInterfaceName::try_from("tap1")?,
+                        configuration: NetworkInterfaceConfiguration::Ethernet,
+                    },
                     tags: vec![DeviceTag::try_from("tag-2")?],
                 },
             ],
@@ -207,8 +214,13 @@ mod tests {
                     description: Some(crate::proto::topology::DeviceDescription {
                         value: String::from("Some device"),
                     }),
-                    interface: Some(NetworkInterfaceName {
-                        name: String::from("tap0"),
+                    interface: Some(NetworkInterfaceDescriptor{
+                        name: Some(NetworkInterfaceName {
+                            name: String::from("tap0"),
+                        }),
+                        configuration: Some(network_interface_descriptor::Configuration::Ethernet(
+                            EthernetInterfaceConfiguration{},
+                        )),
                     }),
                     tags: vec![
                         Some(crate::proto::topology::DeviceTag {
@@ -229,8 +241,13 @@ mod tests {
                     description: Some(crate::proto::topology::DeviceDescription {
                         value: String::from("Some other device"),
                     }),
-                    interface: Some(NetworkInterfaceName {
-                        name: String::from("tap1"),
+                    interface: Some(NetworkInterfaceDescriptor{
+                        name: Some(NetworkInterfaceName {
+                            name: String::from("tap1"),
+                        }),
+                        configuration: Some(network_interface_descriptor::Configuration::Ethernet(
+                            EthernetInterfaceConfiguration{},
+                        )),
                     }),
                     tags: vec![Some(crate::proto::topology::DeviceTag {
                         value: String::from("tag-2"),
@@ -262,8 +279,13 @@ mod tests {
                 description: Some(crate::proto::topology::DeviceDescription {
                     value: String::from("Some device"),
                 }),
-                interface: Some(NetworkInterfaceName {
-                    name: String::from("tap0"),
+                interface: Some(NetworkInterfaceDescriptor{
+                    name: Some(NetworkInterfaceName {
+                        name: String::from("tap0"),
+                    }),
+                    configuration: Some(network_interface_descriptor::Configuration::Ethernet(
+                        EthernetInterfaceConfiguration{},
+                    )),
                 }),
                 tags: vec![
                     Some(crate::proto::topology::DeviceTag {

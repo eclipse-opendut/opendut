@@ -1,15 +1,16 @@
 use std::net::{IpAddr, Ipv4Addr};
 use std::sync::Arc;
 
-use opendut_types::cluster::ClusterAssignment;
+use opendut_types::cluster::{ClusterAssignment, PeerClusterAssignment};
 use opendut_types::peer::PeerId;
-use opendut_types::util::net::NetworkInterfaceName;
+use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
 
 use crate::service::network_interface;
 use crate::service::network_interface::{bridge, gre};
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use crate::service::can_manager::CanManagerRef;
 
+#[tracing::instrument(skip(cluster_assignment, can_manager, network_interface_manager), level="trace")]
 pub async fn network_interfaces_setup(
     cluster_assignment: ClusterAssignment,
     self_id: PeerId,
@@ -27,7 +28,7 @@ pub async fn network_interfaces_setup(
 
     let local_ip = local_peer_assignment.vpn_address;
 
-    let remote_ips = determine_remote_ips(&cluster_assignment, self_id, &local_ip)?;
+    let remote_ips = determine_remote_ips(&cluster_assignment, self_id)?;
 
     let local_ip = require_ipv4_for_gre(local_ip)?;
     let remote_ips = remote_ips.into_iter()
@@ -69,26 +70,26 @@ pub async fn setup_can(
         assignment.peer_id == self_id
     }).ok_or(Error::LocalPeerAssignmentNotFound { self_id })?;
 
-    let local_ip = local_peer_assignment.vpn_address;
-
     let is_leader = cluster_assignment.leader == self_id;
+
+    let server_port = local_peer_assignment.can_server_port;
 
     if is_leader {
 
-        let remote_ips = determine_remote_ips(cluster_assignment, self_id, &local_ip)?;
+        let remote_assignments = determine_remote_assignments(cluster_assignment, self_id)?;
         can_manager.setup_remote_routing_server(
             &can_bridge_name, 
-            &remote_ips
+            &remote_assignments
         ).await
         .map_err(Error::RemoteCanRoutingSetupFailed)?;
 
-    } else {
-        
-        let leader_ip = determine_leader_ip(cluster_assignment)?;
+    } else {        
+
+        let leader_assignment = determine_leader_assignment(cluster_assignment)?;
         can_manager.setup_remote_routing_client(
             &can_bridge_name, 
-            &local_ip, 
-            &leader_ip
+            &leader_assignment.vpn_address,
+            &server_port
         ).await
         .map_err(Error::RemoteCanRoutingSetupFailed)?;
     }
@@ -96,33 +97,37 @@ pub async fn setup_can(
     Ok(())
 }
 
-fn determine_remote_ips(cluster_assignment: &ClusterAssignment, self_id: PeerId, local_ip: &IpAddr) -> Result<Vec<IpAddr>, Error> {
-    let is_leader = cluster_assignment.leader == self_id;
-
-    let remote_ips = if is_leader {
-        cluster_assignment.assignments.iter()
-            .map(|assignment| assignment.vpn_address)
-            .filter(|address| address != local_ip)
-            .collect()
-    }
-    else {
-        let leader_ip = determine_leader_ip(cluster_assignment)?;
-
-        vec![leader_ip]
-    };
+fn determine_remote_ips(cluster_assignment: &ClusterAssignment, self_id: PeerId) -> Result<Vec<IpAddr>, Error> {
+    let remote_assignments = determine_remote_assignments(cluster_assignment, self_id);
+    let remote_ips = remote_assignments?.iter().map(|remote_assignment| remote_assignment.vpn_address).collect();
 
     Ok(remote_ips)
 }
 
-fn determine_leader_ip(cluster_assignment: &ClusterAssignment) -> Result<IpAddr, Error>{
-    let leader_ip = cluster_assignment.assignments.iter().find_map(|peer_assignment| {
-        let is_leader = peer_assignment.peer_id == cluster_assignment.leader;
+fn determine_remote_assignments(cluster_assignment: &ClusterAssignment, self_id: PeerId) -> Result<Vec<PeerClusterAssignment>, Error> {
+    let is_leader = cluster_assignment.leader == self_id;
 
-        is_leader
-            .then_some(peer_assignment.vpn_address)
-    }).ok_or(Error::LeaderIpAddressNotDeterminable)?;
+    let remote_peer_cluster_assignments = if is_leader {
+        cluster_assignment.assignments.iter()
+            .filter(|assignment| assignment.peer_id != self_id).cloned()
+            .collect::<Vec<PeerClusterAssignment>>()
+    }
+    else {
+        let leader_ip = determine_leader_assignment(cluster_assignment)?;
 
-    Ok(leader_ip)
+        vec![leader_ip.clone()]
+    };
+
+    Ok(remote_peer_cluster_assignments)
+}
+
+fn determine_leader_assignment(cluster_assignment: &ClusterAssignment) -> Result<&PeerClusterAssignment, Error>{
+    let leader_assignment = cluster_assignment.assignments
+        .iter().find(|peer_assignment| 
+            peer_assignment.peer_id == cluster_assignment.leader
+            ).ok_or(Error::LeaderNotDeterminable)?;
+
+    Ok(leader_assignment)
 }
 
 fn require_ipv4_for_gre(ip_address: IpAddr) -> Result<Ipv4Addr, Error> {
@@ -132,14 +137,13 @@ fn require_ipv4_for_gre(ip_address: IpAddr) -> Result<Ipv4Addr, Error> {
     }
 }
 
-// TODO: Use some proper way to determine whether an interface is an Ethernet or a CAN one
 fn get_own_ethernet_interfaces(cluster_assignment: &ClusterAssignment,
-    self_id: PeerId) -> Result<Vec<NetworkInterfaceName>, Error> {
+    self_id: PeerId) -> Result<Vec<NetworkInterfaceDescriptor>, Error> {
 
     let own_cluster_assignment = cluster_assignment.assignments.iter().find(|assignment| assignment.peer_id == self_id).unwrap();
 
-    let own_ethernet_interfaces: Vec<NetworkInterfaceName> = own_cluster_assignment.device_interfaces.iter()
-        .filter(|interface| !interface.name().contains("can"))
+    let own_ethernet_interfaces: Vec<NetworkInterfaceDescriptor> = own_cluster_assignment.device_interfaces.iter()
+        .filter(|interface| interface.configuration == NetworkInterfaceConfiguration::Ethernet)
         .cloned()
         .collect();
 
@@ -148,12 +152,12 @@ fn get_own_ethernet_interfaces(cluster_assignment: &ClusterAssignment,
 
 fn get_own_can_interfaces(
     cluster_assignment: &ClusterAssignment,
-    self_id: PeerId) -> Result<Vec<NetworkInterfaceName>, Error>{
+    self_id: PeerId) -> Result<Vec<NetworkInterfaceDescriptor>, Error>{
 
     let own_cluster_assignment = cluster_assignment.assignments.iter().find(|assignment| assignment.peer_id == self_id).unwrap();
 
-    let own_can_interfaces: Vec<NetworkInterfaceName> = own_cluster_assignment.device_interfaces.iter()
-        .filter(|interface| interface.name().contains("can"))
+    let own_can_interfaces: Vec<NetworkInterfaceDescriptor> = own_cluster_assignment.device_interfaces.iter()
+        .filter(|interface| matches!(interface.configuration, NetworkInterfaceConfiguration::Can{ .. }))
         .cloned()
         .collect();
 
@@ -161,14 +165,14 @@ fn get_own_can_interfaces(
     }
 
 async fn join_device_interfaces_to_bridge(
-    device_interfaces: &Vec<NetworkInterfaceName>,
+    device_interfaces: &Vec<NetworkInterfaceDescriptor>,
     bridge_name: &NetworkInterfaceName,
     network_interface_manager: NetworkInterfaceManagerRef
 ) -> Result<(), network_interface::manager::Error> {
     let bridge = network_interface_manager.try_find_interface(bridge_name).await?;
 
     for interface in device_interfaces {
-        let interface = network_interface_manager.try_find_interface(interface).await?;
+        let interface = network_interface_manager.try_find_interface(&interface.name).await?;
         network_interface_manager.join_interface_to_bridge(&interface, &bridge).await?;
         log::debug!("Joined device interface {interface} to bridge {bridge}.");
     }
@@ -181,8 +185,8 @@ pub enum Error {
     BridgeRecreationFailed(network_interface::manager::Error),
     #[error("Could not find PeerAssignment for this peer (<{self_id}>) in the ClusterAssignment.")]
     LocalPeerAssignmentNotFound { self_id: PeerId },
-    #[error("Could not determine leader IP address from ClusterAssignment.")]
-    LeaderIpAddressNotDeterminable,
+    #[error("Could not determine leader from ClusterAssignment.")]
+    LeaderNotDeterminable,
     #[error("IPv6 isn't yet supported for GRE interfaces.")]
     Ipv6NotSupported,
     #[error("GRE interface setup failed: {0}")]

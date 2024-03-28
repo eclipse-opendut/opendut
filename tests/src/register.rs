@@ -10,7 +10,7 @@ use crate::util;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn register_edgar_carl() -> Result<()> {
-    logging::initialize()?;
+    let _ = logging::initialize()?;
 
     let carl_port = util::select_free_port();
     log::info!("Running test with CARL port {carl_port}.");
@@ -26,8 +26,9 @@ async fn register_edgar_carl() -> Result<()> {
         .set_override("network.tls.certificate", "resources/development/tls/insecure-development-carl.pem")?
         .set_override("network.tls.key", "resources/development/tls/insecure-development-carl.key")?
         .build()?;
+    let carl_settings = opendut_carl::settings::load_with_overrides(carl_config_override)?;
     let _ = tokio::spawn(async {
-        opendut_carl::create(carl_config_override).await
+        opendut_carl::create(carl_settings).await
             .expect("CARL crashed")
     });
 
@@ -36,17 +37,16 @@ async fn register_edgar_carl() -> Result<()> {
         .set_override("network.carl.port", carl_port)?
         .set_override("network.connect.retries", 100)?
         .build()?;
-    let edgar_config_override = opendut_edgar::common::settings::load_with_overrides(settings_overrides).unwrap()
-        .config;
+    let edgar_config = opendut_edgar::common::settings::load_with_overrides(settings_overrides).unwrap();
 
-    let assert_channel_config = edgar_config_override.clone();
+    let assert_channel_config = edgar_config.clone();
 
     let _ = tokio::spawn(async {
-        opendut_edgar::service::start::create(edgar_config_override).await
+        opendut_edgar::service::start::create(edgar_config).await
             .expect("EDGAR crashed")
     });
 
-    let mut carl_client = opendut_edgar::common::carl::connect(&assert_channel_config).await
+    let mut carl_client = opendut_edgar::common::carl::connect(&assert_channel_config.config).await
         .expect("Failed to connect to CARL for state checks");
 
     let retries = 5;

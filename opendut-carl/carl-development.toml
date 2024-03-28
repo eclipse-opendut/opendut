@@ -4,6 +4,7 @@
 [network.tls]
 certificate = "resources/development/tls/insecure-development-carl.pem"
 key = "resources/development/tls/insecure-development-carl.key"
+ca = "resources/development/tls/insecure-development-ca.pem"
 
 [network.oidc]
 enabled = false
@@ -13,3 +14,6 @@ ui.directory = "./opendut-lea/dist/"
 
 [vpn]
 enabled = false
+
+[opentelemetry]
+endpoint = "http://localhost:4317"

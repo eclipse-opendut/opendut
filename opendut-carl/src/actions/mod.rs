@@ -42,5 +42,11 @@ pub use peers::{
     ListDevicesError,
 };
 
+pub use peers::{
+    assign_cluster,
+    AssignClusterParams,
+    AssignClusterError,
+};
+
 mod peers;
 mod clusters;

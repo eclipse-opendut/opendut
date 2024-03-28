@@ -7,8 +7,8 @@ use crate::app::{ExpectGlobals, use_app_globals};
 use crate::components::{BasePageContainer, Breadcrumb, Initialized, UserInputError, UserInputValue};
 use crate::components::use_active_tab;
 use crate::peers::configurator::components::Controls;
-use crate::peers::configurator::tabs::{DevicesTab, GeneralTab, NetworkTab, SetupTab, TabIdentifier};
-use crate::peers::configurator::types::{UserDeviceConfiguration, UserPeerConfiguration, UserPeerNetworkInterface};
+use crate::peers::configurator::tabs::{DevicesTab, ExecutorTab, GeneralTab, NetworkTab, SetupTab, TabIdentifier};
+use crate::peers::configurator::types::{UserDeviceConfiguration, UserPeerConfiguration, UserPeerNetworkInterface, UserPeerExecutor, UserContainerEnv};
 use crate::routing::{navigate_to, WellKnownRoutes};
 
 mod components;
@@ -53,6 +53,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                 devices: Vec::new(),
                 network_interfaces: Vec::new(),
                 is_new: true,
+                executors: Vec::new(),
             });
 
             let peer_configuration_resource = create_local_resource(|| {}, move |_| {
@@ -67,7 +68,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                                 create_rw_signal(UserDeviceConfiguration {
                                     id: device.id,
                                     name: UserInputValue::Right(device.name.to_string()),
-                                    interface: UserInputValue::Right(device.interface.name()),
+                                    interface: UserInputValue::Right(device.interface.name.name()),
                                     description: UserInputValue::Right(device.description.unwrap_or_default().to_string()),
                                     is_collapsed: true
                                 })
@@ -79,6 +80,62 @@ pub fn PeerConfigurator() -> impl IntoView {
                                     })
                                 })
                                 .collect();
+                            for executor in configuration.executors.executors {
+                                if let opendut_types::peer::executor::ExecutorDescriptor::Container {
+                                    engine,
+                                    name,
+                                    image,
+                                    volumes,
+                                    devices,
+                                    envs,
+                                    ports,
+                                    command,
+                                    args
+                                } = executor {
+                                    let volumes = volumes.into_iter()
+                                        .map(|volume| {
+                                            create_rw_signal(UserInputValue::Right(volume.to_string()))
+                                        })
+                                        .collect::<Vec<_>>();
+                                    let devices = devices.into_iter()
+                                        .map(|device| {
+                                            create_rw_signal(UserInputValue::Right(device.to_string()))
+                                        })
+                                        .collect::<Vec<_>>();
+                                    let envs = envs.into_iter()
+                                        .map(|env| {
+                                            let (name, value) = env.into();
+                                            create_rw_signal(UserContainerEnv {
+                                                name: UserInputValue::Right(name),
+                                                value: UserInputValue::Right(value)
+                                            })
+                                        })
+                                        .collect::<Vec<_>>();
+                                    let ports = ports.into_iter()
+                                        .map(|port| {
+                                            create_rw_signal(UserInputValue::Right(port.to_string()))
+                                        })
+                                        .collect::<Vec<_>>();
+                                    let args = args.into_iter()
+                                        .map(|arg| {
+                                            create_rw_signal(UserInputValue::Right(arg.to_string()))
+                                        })
+                                        .collect::<Vec<_>>();
+                                    user_configuration.executors.push(
+                                        create_rw_signal(UserPeerExecutor::Container {
+                                            engine,
+                                            name: UserInputValue::Right(name.into()),
+                                            image: UserInputValue::Right(image.to_string()),
+                                            volumes,
+                                            devices,
+                                            envs,
+                                            ports,
+                                            command: UserInputValue::Right(command.into()),
+                                            args,
+                                            is_collapsed: true
+                                        }));
+                                }
+                            }
                         });
                     }
                 }
@@ -92,6 +149,32 @@ pub fn PeerConfigurator() -> impl IntoView {
                         device_configuration.with(|device_configuration| {
                             device_configuration.name.is_right()
                             && device_configuration.interface.is_right()
+                        })
+                    })
+                    && peer_configuration.executors.iter().all(|executor| {
+                        executor.with(|executor| {
+                            match executor {
+                                UserPeerExecutor::Container {
+                                    name, 
+                                    image, 
+                                    volumes, 
+                                    devices, 
+                                    envs, 
+                                    ports, 
+                                    command, 
+                                    args, 
+                                    ..
+                                } => {
+                                    name.is_right() 
+                                        && image.is_right() 
+                                        && volumes.iter().all(|volume| volume.with(|volume| volume.is_right()))
+                                        && devices.iter().all(|device| device.with(|device| device.is_right()))
+                                        && envs.iter().all(|env| env.with(|env| env.name.is_right()))
+                                        && ports.iter().all(|port| port.with(|port| port.is_right()))
+                                        && command.is_right()
+                                        && args.iter().all(|arg| arg.with(|arg| arg.is_right()))
+                                }
+                            }
                         })
                     })
                 })
@@ -149,6 +232,9 @@ pub fn PeerConfigurator() -> impl IntoView {
                             <li class=("is-active", move || TabIdentifier::Network == active_tab.get())>
                                 <a href={ TabIdentifier::Network.as_str() }>Network</a>
                             </li>
+                            <li class=("is-active", move || TabIdentifier::Executor == active_tab.get())>
+                                <a href={ TabIdentifier::Executor.as_str() }>Executor</a>
+                            </li>
                             <li class=("is-active", move || TabIdentifier::Devices == active_tab.get())>
                                 <a href={ TabIdentifier::Devices.as_str() }>Devices</a>
                             </li>
@@ -163,6 +249,9 @@ pub fn PeerConfigurator() -> impl IntoView {
                         </div>
                         <div class=("is-hidden", move || TabIdentifier::Network != active_tab.get())>
                             <NetworkTab peer_configuration=peer_configuration />
+                        </div>
+                        <div class=("is-hidden", move || TabIdentifier::Executor != active_tab.get())>
+                            <ExecutorTab peer_configuration=peer_configuration />
                         </div>
                         <div class=("is-hidden", move || TabIdentifier::Devices != active_tab.get())>
                             <DevicesTab peer_configuration=peer_configuration />

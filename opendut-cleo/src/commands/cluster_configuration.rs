@@ -32,18 +32,18 @@ pub mod create {
         let devices = devices.into_iter()
             .map(Result::unwrap)
             .collect::<Vec<_>>();
-        if devices.len() < 2 {
-            Err("Specify at least 2 devices per cluster configuration.".to_string())?
-        }
         let device_names = devices.clone().into_iter()
             .map(|device| device.name)
             .collect::<Vec<_>>();
-        let device_ids = devices.into_iter()
+        let device_ids = devices.clone().into_iter()
             .map(|device| device.id)
             .collect::<HashSet<_>>();
         let errors = errors.into_iter().map(Result::unwrap_err).collect::<Vec<_>>();
         if !errors.is_empty() {
             Err(format!("Could not create cluster configuration:\n  {}", errors.join("\n  ")))?
+        }
+        if devices.len() < 2 {
+            Err("Specify at least 2 devices per cluster configuration.".to_string())?
         }
 
         let configuration = ClusterConfiguration { id: cluster_id, name: Clone::clone(&name), leader, devices: device_ids };
@@ -119,7 +119,7 @@ pub mod create {
         use googletest::prelude::*;
         use rstest::{fixture, rstest};
         use opendut_types::topology::{DeviceDescription, DeviceId, DeviceName};
-        use opendut_types::util::net::NetworkInterfaceName;
+        use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
 
         #[fixture]
         fn all_devices() -> Vec<DeviceDescriptor> {
@@ -128,21 +128,30 @@ pub mod create {
                     id: DeviceId::random(),
                     name: DeviceName::try_from("MyDevice").unwrap(),
                     description: DeviceDescription::try_from("").ok(),
-                    interface: NetworkInterfaceName::try_from("eth0").unwrap(),
+                    interface: NetworkInterfaceDescriptor {
+                        name: NetworkInterfaceName::try_from("eth0").unwrap(),
+                        configuration: NetworkInterfaceConfiguration::Ethernet,
+                    },
                     tags: vec![],
                 },
                 DeviceDescriptor {
                     id: DeviceId::random(),
                     name: DeviceName::try_from("YourDevice").unwrap(),
                     description: DeviceDescription::try_from("").ok(),
-                    interface: NetworkInterfaceName::try_from("eth0").unwrap(),
+                    interface: NetworkInterfaceDescriptor {
+                        name: NetworkInterfaceName::try_from("eth0").unwrap(),
+                        configuration: NetworkInterfaceConfiguration::Ethernet,
+                    },
                     tags: vec![],
                 },
                 DeviceDescriptor {
                     id: DeviceId::random(),
                     name: DeviceName::try_from("HisDevice").unwrap(),
                     description: DeviceDescription::try_from("").ok(),
-                    interface: NetworkInterfaceName::try_from("eth0").unwrap(),
+                    interface: NetworkInterfaceDescriptor {
+                        name: NetworkInterfaceName::try_from("eth0").unwrap(),
+                        configuration: NetworkInterfaceConfiguration::Ethernet,
+                    },
                     tags: vec![],
                 }
             ]

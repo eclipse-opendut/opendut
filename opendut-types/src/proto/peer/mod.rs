@@ -2,6 +2,11 @@ use crate::proto;
 use crate::proto::{ConversionError, ConversionErrorBuilder};
 use crate::proto::vpn::VpnPeerConfig;
 
+use super::util::NetworkInterfaceDescriptor;
+
+pub mod configuration;
+pub mod executor;
+
 include!(concat!(env!("OUT_DIR"), "/opendut.types.peer.rs"));
 
 impl From<crate::peer::PeerId> for PeerId {
@@ -85,7 +90,7 @@ impl From<crate::peer::PeerNetworkConfiguration> for PeerNetworkConfiguration {
             interfaces: value
                 .interfaces
                 .into_iter()
-                .map(PeerNetworkInterface::from)
+                .map(NetworkInterfaceDescriptor::from)
                 .collect(),
         }
     }
@@ -98,33 +103,9 @@ impl TryFrom<PeerNetworkConfiguration> for crate::peer::PeerNetworkConfiguration
         value
             .interfaces
             .into_iter()
-            .map(PeerNetworkInterface::try_into)
+            .map(NetworkInterfaceDescriptor::try_into)
             .collect::<Result<_, _>>()
             .map(|interfaces| Self { interfaces })
-    }
-}
-
-impl From<crate::peer::PeerNetworkInterface> for PeerNetworkInterface {
-    fn from(value: crate::peer::PeerNetworkInterface) -> Self {
-        Self {
-            name: Some(value.name.into())
-        }
-    }
-}
-
-impl TryFrom<PeerNetworkInterface> for crate::peer::PeerNetworkInterface {
-    type Error = ConversionError;
-
-    fn try_from(value: PeerNetworkInterface) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<PeerNetworkInterface, crate::peer::PeerNetworkInterface>;
-
-        let name = value.name
-            .ok_or(ErrorBuilder::new("Interface not set"))?
-            .try_into()?;
-
-        Ok(crate::peer::PeerNetworkInterface {
-            name
-        })
     }
 }
 
@@ -136,6 +117,7 @@ impl From<crate::peer::PeerDescriptor> for PeerDescriptor {
             location: Some(value.location.unwrap_or_default().into()),
             network_configuration: Some(value.network_configuration.into()),
             topology: Some(value.topology.into()),
+            executors: Some(value.executors.into()),
         }
     }
 }
@@ -166,12 +148,17 @@ impl TryFrom<PeerDescriptor> for crate::peer::PeerDescriptor {
             .ok_or(ErrorBuilder::new("Topology not set"))?
             .try_into()?;
 
+        let executors = value.executors
+            .ok_or(ErrorBuilder::new("Executor not set"))?
+            .try_into()?;
+        
         Ok(crate::peer::PeerDescriptor {
             id,
             name,
             location,
             network_configuration,
             topology,
+            executors,
         })
     }
 }
@@ -180,7 +167,8 @@ impl From<crate::peer::PeerSetup> for PeerSetup {
     fn from(value: crate::peer::PeerSetup) -> Self {
         Self {
             id: Some(value.id.into()),
-            carl:  Some(value.carl.into()),
+            carl: Some(value.carl.into()),
+            ca: Some(value.ca.into()),
             vpn: Some(value.vpn.into()),
         }
     }
@@ -201,6 +189,10 @@ impl TryFrom<PeerSetup> for crate::peer::PeerSetup {
             .and_then(|url| url::Url::parse(&url.value)
                 .map_err(|cause| ErrorBuilder::new(format!("Carl URL could not be parsed: {}", cause))))?;
 
+        let ca: crate::util::net::Certificate = value.ca
+            .ok_or(ErrorBuilder::new("No CA Certificate provided."))
+            .and_then(crate::util::net::Certificate::try_from)?;
+
         let vpn: crate::vpn::VpnPeerConfiguration = value.vpn
             .ok_or(ErrorBuilder::new("VpnConfig not set"))
             .and_then(VpnPeerConfig::try_into)?;
@@ -208,6 +200,7 @@ impl TryFrom<PeerSetup> for crate::peer::PeerSetup {
         Ok(Self {
             id,
             carl,
+            ca,
             vpn,
         })
     }

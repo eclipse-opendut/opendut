@@ -8,8 +8,7 @@ remote.port = 443
 [network.tls]
 certificate = "resources/development/tls/carl.pem"
 key = "resources/development/tls/carl.key"
-[network.tls.ca]
-certificate = "resources/development/tls/insecure-development-ca.pem"
+ca = "resources/development/tls/insecure-development-ca.pem"
 
 [network.oidc]
 enabled = true
@@ -31,3 +30,7 @@ url = "{netbird_management_url}"
 ca = "{netbird_management_ca_path}"
 auth.type = "personal-access-token"
 auth.secret = "{netbird_api_key}"
+
+[opentelemetry]
+enabled = true
+endpoint = "{opentelemetry_collector_url}"

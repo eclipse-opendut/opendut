@@ -20,6 +20,13 @@ pub const SYSTEMD_SERVICE_FILE_NAME: &str = "opendut-edgar.service";
 
 pub const KERNEL_MODULE_LOAD_RULE_PREFIX: &str = "opendut-edgar";
 
+pub fn carl_ca_certificate_path() -> PathBuf {
+    PathBuf::from("/etc/opendut/tls/ca.pem")
+}
+pub fn netbird_ca_certificate_path() -> PathBuf {
+    PathBuf::from("/usr/local/share/ca-certificates/opendut-ca.crt")
+}
+
 pub fn default_config_merge_suggestion_file_path() -> PathBuf {
     PathBuf::from("/etc/opendut/edgar-merge-suggestion.toml")
 }

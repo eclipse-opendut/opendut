@@ -3,7 +3,6 @@ syntax = "proto3";
 package opendut.carl.services.peer_manager;
 
 import "opendut/types/topology/device.proto";
-import "opendut/types/topology/topology.proto";
 import "opendut/types/peer/peer.proto";
 
 service PeerManager {

@@ -31,10 +31,9 @@ pub async fn list_devices(carl: &mut CarlClient, output: ListOutputFormat) -> cr
 }
 
 pub mod create {
-    use std::ops::Not;
     use uuid::Uuid;
     use opendut_carl_api::carl::CarlClient;
-    use opendut_types::peer::{PeerId};
+    use opendut_types::peer::PeerId;
     use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag};
     use opendut_types::util::net::NetworkInterfaceName;
     use crate::{CreateOutputFormat, DescribeOutputFormat};
@@ -46,7 +45,7 @@ pub mod create {
         device_id: Option<Uuid>,
         name: Option<String>,
         description: Option<String>,
-        interface: Option<NetworkInterfaceName>,
+        interface_name: Option<NetworkInterfaceName>,
         tags: Option<Vec<String>>,
         output: CreateOutputFormat,
     ) -> crate::Result<()> {
@@ -63,12 +62,15 @@ pub mod create {
             None => {
                 //TODO provide separate `update device` command to not need this custom input handling
                 let name = name.ok_or(String::from("Cannot create new device because of missing device name."))?;
-                let interface = interface.ok_or(String::from("Cannot create new device because of missing interface name."))?;
+                let interface_name = interface_name.ok_or(String::from("Cannot create new device because of missing interface name."))?;
 
-                if peer_network_interface_names.contains(&interface).not() {
-                    Err(format!("Cannot create new device because interface is not one of the allowed values: {} \nAllowed interfaces are configured on the peer.",
-                                peer_network_interface_names.into_iter().map(|name| name.name()).collect::<Vec<_>>().join(", ")))?;
-                }
+                let interface = match peer_descriptor.network_configuration.interfaces.iter().find(|descriptor| descriptor.name == interface_name) {
+                    Some(network_interface_descriptor) => network_interface_descriptor.clone(),
+                    None => {
+                        Err(format!("Cannot create new device because interface is not one of the allowed values: {} \nAllowed interfaces are configured on the peer.",
+                                peer_network_interface_names.into_iter().map(|name| name.name()).collect::<Vec<_>>().join(", ")))?
+                    },
+                };
 
                 let new_device = DeviceDescriptor {
                     id: device_id,
@@ -98,12 +100,14 @@ pub mod create {
                         .map_err(|error| error.to_string())
                         .ok();
                 }
-                if let Some(interface) = interface {
-                    if peer_network_interface_names.contains(&interface).not() {
-                        Err(format!("Cannot update device because interface is not one of the allowed values: {} \nAllowed interfaces are configured on the peer.",
-                                    peer_network_interface_names.into_iter().map(|name| name.name()).collect::<Vec<_>>().join(", ")))?;
-                    }
-                    device.interface = interface;
+                if let Some(interface_name) = interface_name {
+                    device.interface = match peer_descriptor.network_configuration.interfaces.iter().find(|descriptor| descriptor.name == interface_name) {
+                        Some(network_interface_descriptor) => network_interface_descriptor.clone(),
+                        None => {
+                            Err(format!("Cannot create new device because interface is not one of the allowed values: {} \nAllowed interfaces are configured on the peer.",
+                                    peer_network_interface_names.into_iter().map(|name| name.name()).collect::<Vec<_>>().join(", ")))?
+                        },
+                    };
                 }
                 if let Some(tags) = tags {
                     device.tags = tags

@@ -11,6 +11,7 @@ pub(crate) enum DockerCoreServices {
     Edgar,
     Netbird,
     Firefox,
+    Telemetry,
     #[default]
     All,
 }
@@ -26,6 +27,7 @@ impl DockerCoreServices {
             DockerCoreServices::Netbird => "netbird",
             DockerCoreServices::Network => "network",
             DockerCoreServices::Firefox => "firefox",
+            DockerCoreServices::Telemetry => "telemetry",
             DockerCoreServices::All => "all",
         }
     }

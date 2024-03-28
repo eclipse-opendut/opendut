@@ -17,12 +17,12 @@ struct State {
 
 impl ResourcesManager {
 
-    pub fn new() -> Self {
-        Self {
+    pub fn new() -> ResourcesManagerRef {
+        Arc::new(Self {
             state: RwLock::new(State {
                 resources: Default::default()
             })
-        }
+        })
     }
 
     pub async fn insert<R>(&self, id: impl IntoId<R>, resource: R) -> Option<R>
@@ -72,22 +72,18 @@ impl ResourcesManager {
     }
 }
 
-impl Default for ResourcesManager {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 #[cfg(test)]
 mod test {
     use std::collections::HashSet;
+    use std::vec;
 
     use googletest::prelude::*;
 
     use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
-    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkConfiguration, PeerNetworkInterface};
+    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkConfiguration};
+    use opendut_types::peer::executor::{ContainerCommand, ContainerImage, ContainerName, Engine, ExecutorDescriptor, ExecutorDescriptors};
     use opendut_types::topology::Topology;
-    use opendut_types::util::net::NetworkInterfaceName;
+    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
 
     use super::*;
 
@@ -103,12 +99,25 @@ mod test {
             location: PeerLocation::try_from("Ulm").ok(),
             network_configuration: PeerNetworkConfiguration {
                 interfaces: vec![
-                    PeerNetworkInterface {
+                    NetworkInterfaceDescriptor {
                         name: NetworkInterfaceName::try_from("eth0").unwrap(),
-                    }
+                        configuration: NetworkInterfaceConfiguration::Ethernet,
+                    },
                 ]
             },
             topology: Topology::default(),
+            executors: ExecutorDescriptors {
+                executors: vec![ExecutorDescriptor::Container { 
+                    engine: Engine::Docker, 
+                    name: ContainerName::Empty, 
+                    image: ContainerImage::try_from("testUrl").unwrap(), 
+                    volumes: vec![], 
+                    devices: vec![], 
+                    envs: vec![], 
+                    ports: vec![], 
+                    command: ContainerCommand::Default, 
+                    args: vec![] }],
+            }
         };
 
         let cluster_resource_id = ClusterId::random();

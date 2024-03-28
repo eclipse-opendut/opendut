@@ -1,0 +1,82 @@
+version: "3.9"
+services:
+ prometheus:
+   container_name: prometheus
+   image: prom/prometheus:latest
+   restart: always
+   volumes:
+     - ./prometheus.yml:/etc/prometheus/prometheus.yml
+   networks:
+     - opendutnet
+
+ tempo:
+    container_name: tempo
+    image: grafana/tempo:latest
+    command: [ "-config.file=/etc/tempo.yml" ]
+    volumes:
+       - ./tempo.yml:/etc/tempo.yml
+       - tempo-data:/tmp/tempo
+    healthcheck:
+      interval: 5s
+      retries: 10
+      test: wget --no-verbose --tries=1 --spider http://localhost:3200/status || exit 1
+    networks:
+      - opendutnet
+
+ loki:
+    container_name: loki
+    image: grafana/loki:latest
+    volumes:
+      - ./loki.yml:/etc/loki/loki.yml
+      - loki-data:/loki
+    command: ["-config.file=/etc/loki/loki.yml", "-config.expand-env=true"]
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1
+      interval: 10s
+      timeout: 7s
+      retries: 5
+    networks:
+      - opendutnet
+
+ otel-collector:
+   container_name: otel-collector
+   image: otel/opentelemetry-collector-contrib:latest
+   volumes:
+     - ./otel-collector.yml:/etc/collector-gateway.yaml
+   command: [ "--config=/etc/collector-gateway.yaml" ]
+   depends_on:
+     - tempo
+     - loki
+   networks:
+     opendutnet:
+       ipv4_address: 192.168.32.220
+
+ grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    depends_on:
+      tempo:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+    environment:
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
+    volumes:
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - ./grafana/dashboard.yml:/etc/grafana/provisioning/dashboards/main.yaml
+      - ./grafana/grafana-datasources.yml:/etc/grafana/provisioning/datasources/ds.yaml
+      - grafana-storage:/var/lib/grafana
+    networks:
+      - opendutnet
+
+volumes:
+  grafana-storage:
+  tempo-data:
+  loki-data:
+
+networks:
+  opendutnet:
+    name: opendut_network
+    external: true  # Use a pre-existing network

@@ -2,12 +2,11 @@ use std::fmt::{Debug, Formatter};
 use std::io;
 use std::net::Ipv4Addr;
 use std::sync::Arc;
-use tokio::process::Command;
 
 use anyhow::anyhow;
 use futures::TryStreamExt;
-use netlink_packet_route::link::nlas;
-use netlink_packet_route::LinkMessage;
+use netlink_packet_route::link::{LinkAttribute, LinkMessage};
+use tokio::process::Command;
 
 use gretap::Gretap;
 use opendut_types::util::net::NetworkInterfaceName;
@@ -20,19 +19,19 @@ pub struct NetworkInterfaceManager {
     handle: rtnetlink::Handle,
 }
 impl NetworkInterfaceManager {
-    pub fn create() -> Result<Self, Error> {
+    pub fn create() -> Result<NetworkInterfaceManagerRef, Error> {
         let (connection, handle, _) = rtnetlink::new_connection()
             .map_err(|cause| Error::Connecting { cause })?;
         tokio::spawn(connection);
 
-        Ok(Self { handle })
+        Ok(Arc::new(Self { handle }))
     }
 
     pub async fn list_interfaces(&self) -> Result<Vec<Interface>, Error> {
         fn interface_name_from(interface: LinkMessage) -> anyhow::Result<NetworkInterfaceName> {
-            let interface_name = interface.nlas.into_iter()
+            let interface_name = interface.attributes.into_iter()
                 .find_map(|nla| match nla {
-                    nlas::Nla::IfName(name) => Some(name),
+                    LinkAttribute::IfName(name) => Some(name),
                     _ => None,
                 })
                 .ok_or(anyhow!("No name attribute found."))?;
@@ -105,7 +104,7 @@ impl NetworkInterfaceManager {
         Ok(())
     }
 
-    pub async fn get_attributes(&self, interface: &Interface) -> Result<Vec<nlas::Nla>, Error> {
+    pub async fn get_attributes(&self, interface: &Interface) -> Result<Vec<LinkAttribute>, Error> {
         let interface_list = self.handle
             .link()
             .get()
@@ -114,19 +113,19 @@ impl NetworkInterfaceManager {
             .try_collect::<Vec<_>>().await
             .map_err(|cause| Error::ListInterfaces { cause })?;
 
-        let nlas = interface_list
+        let attributes = interface_list
             .first() //only one should match index
             .ok_or(Error::InterfaceNotFound { name: interface.name.clone() })?
-            .nlas.clone();
+            .attributes.clone();
 
-        Ok(nlas)
+        Ok(attributes)
     }
 
     pub async fn join_interface_to_bridge(&self, interface: &Interface, bridge: &Interface) -> Result<(), Error> {
         self.handle
             .link()
             .set(interface.index)
-            .master(bridge.index)
+            .controller(bridge.index)
             .execute().await
             .map_err(|cause| Error::JoinInterfaceToBridge { interface: interface.clone(), bridge: bridge.clone(), cause })?;
         Ok(())

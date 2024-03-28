@@ -13,7 +13,7 @@ message DeviceDescriptor {
   opendut.types.topology.DeviceId id = 1;
   opendut.types.topology.DeviceName name = 2;
   opendut.types.topology.DeviceDescription description = 3;
-  opendut.types.util.NetworkInterfaceName interface = 4;
+  opendut.types.util.NetworkInterfaceDescriptor interface = 4;
   repeated opendut.types.topology.DeviceTag tags = 5;
 }
 

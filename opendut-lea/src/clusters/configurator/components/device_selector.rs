@@ -143,7 +143,7 @@ pub fn DeviceInfo(device: DeviceDescriptor, peer_id: PeerId) -> impl IntoView {
             <div class="field">
                 <label class="label">Interface</label>
                 <div class="control">
-                    <p>{device.interface.name()}</p>
+                    <p>{device.interface.name.name()}</p>
                 </div>
             </div>
             <div class="field">

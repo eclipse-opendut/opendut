@@ -1,0 +1,72 @@
+receivers:
+ otlp:
+   protocols:
+     http:
+       endpoint: 0.0.0.0:4318
+     grpc:
+       endpoint: 0.0.0.0:4317
+processors:
+  batch:
+
+  attributes:
+    actions:
+      - action: insert
+        key: loki.attribute.labels
+        value: test
+
+  resource:
+    attributes:
+      - action: insert
+        key: loki.resource.labels
+        value: test
+
+exporters:
+ logging:
+   verbosity: detailed
+   sampling_initial: 5
+   sampling_thereafter: 200
+ debug:
+   verbosity: detailed
+ prometheus:
+    endpoint: 0.0.0.0:8889
+    const_labels:
+      label1: value1
+ otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+ loki:
+    endpoint: "http://loki:3100/loki/api/v1/push"
+    tls:
+      insecure: true
+    headers:
+      "X-Scope-OrgID": "tenant1"
+    default_labels_enabled:
+      exporter: true
+      job: true
+
+extensions:
+ health_check:
+ pprof:
+   endpoint: :1888
+ zpages:
+   endpoint: :55679
+
+service:
+ extensions: [pprof, zpages, health_check]
+ telemetry:
+    logs:
+        level: "debug"
+ pipelines:
+   traces:
+     receivers: [otlp]
+     processors: [batch]
+     exporters: [logging, otlp/tempo, debug]
+   metrics:
+     receivers: [otlp]
+     processors: [batch]
+     exporters: [prometheus, debug, otlp/tempo]
+   logs:
+     receivers: [otlp]
+     processors: [batch, resource, attributes]
+     exporters: [debug, loki]

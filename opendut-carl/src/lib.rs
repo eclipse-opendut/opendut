@@ -1,3 +1,5 @@
+extern crate core;
+
 use std::net::SocketAddr;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -11,16 +13,20 @@ use axum_server_dual_protocol::ServerExt;
 use futures::future::BoxFuture;
 use futures::TryFutureExt;
 use http::{header::CONTENT_TYPE, Request};
+use pem::Pem;
 use serde::{Deserialize, Serialize};
+use tokio::fs;
 use tonic::transport::Server;
 use tower::{BoxError, make::Shared, ServiceExt, steer::Steer};
 use tower_http::services::{ServeDir, ServeFile};
 use tracing::{debug, info};
 use url::Url;
 
-use opendut_util::project;
+use opendut_util::{logging, project};
+use opendut_util::logging::LoggingConfig;
+use opendut_util::settings::LoadedConfig;
 
-use crate::cluster::manager::{ClusterManager, ClusterManagerRef};
+use crate::cluster::manager::{ClusterManager, ClusterManagerOptions, ClusterManagerRef};
 use crate::grpc::{ClusterManagerService, MetadataProviderService, PeerManagerService, PeerMessagingBrokerService};
 use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerOptions, PeerMessagingBrokerRef};
 use crate::resources::manager::{ResourcesManager, ResourcesManagerRef};
@@ -34,13 +40,24 @@ mod actions;
 mod cluster;
 mod peer;
 mod resources;
-mod settings;
+pub mod settings;
 mod vpn;
 
-pub async fn create(settings_override: config::Config) -> Result<()> {
-
+#[tracing::instrument]
+pub async fn create_with_logging(settings_override: config::Config) -> Result<()> {
     let settings = settings::load_with_overrides(settings_override)?;
 
+    let logging_config = LoggingConfig::load(&settings.config)?;
+    let mut shutdown = logging::initialize_with_config(logging_config)?;
+
+    create(settings).await?;
+
+    shutdown.shutdown();
+
+    Ok(())
+}
+
+pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
     info!("Started with configuration: {settings:?}");
 
     let address: SocketAddr = {
@@ -56,10 +73,20 @@ pub async fn create(settings_override: config::Config) -> Result<()> {
 
         let key_path = project::make_path_absolute(settings.config.get_string("network.tls.key")?)?;
         debug!("Using TLS key: {}", key_path.display());
-        assert!(key_path.exists(), "TLS key file at '{}' not found.", cert_path.display());
+        assert!(key_path.exists(), "TLS key file at '{}' not found.", key_path.display());
 
         RustlsConfig::from_pem_file(cert_path, key_path).await?
     };
+
+
+    let ca_string = fs::read_to_string(project::make_path_absolute(settings.config.get_string("network.tls.ca")?)?).await?;
+    let ca_certificate = match Pem::from_str(ca_string.as_str()) {
+        Ok(pem) => { pem }
+        Err(error) => {
+            panic!("Missing CA certificate file in CARL's configuration TOML. {:?}", error)
+        }
+    };
+
 
     let vpn = vpn::create(&settings.config)
         .context("Error while parsing VPN configuration.")?;
@@ -72,21 +99,21 @@ pub async fn create(settings_override: config::Config) -> Result<()> {
     };
 
 
-    let resources_manager = Arc::new(ResourcesManager::new());
-    let peer_messaging_broker = {
-        Arc::new(PeerMessagingBroker::new(
-            Arc::clone(&resources_manager),
-            PeerMessagingBrokerOptions::load(&settings.config)?,
-        ))
-    };
-    let cluster_manager = Arc::new(ClusterManager::new(
+    let resources_manager = ResourcesManager::new();
+    let peer_messaging_broker = PeerMessagingBroker::new(
+        Arc::clone(&resources_manager),
+        PeerMessagingBrokerOptions::load(&settings.config)?,
+    );
+    let cluster_manager = ClusterManager::new(
         Arc::clone(&resources_manager),
         Arc::clone(&peer_messaging_broker),
         Clone::clone(&vpn),
-    ));
+        ClusterManagerOptions::load(&settings.config)?,
+    );
 
     /// Isolation in function returning BoxFuture needed due to this: https://github.com/rust-lang/rust/issues/102211#issuecomment-1397600424
     #[allow(clippy::too_many_arguments)]
+    #[tracing::instrument(skip(peer_messaging_broker, cluster_manager, resources_manager, vpn), level="TRACE")]
     fn spawn_server(
         address: SocketAddr,
         tls_config: RustlsConfig,
@@ -96,8 +123,8 @@ pub async fn create(settings_override: config::Config) -> Result<()> {
         vpn: Vpn,
         carl_url: Url,
         settings: config::Config,
+        ca: Pem,
     ) -> BoxFuture<'static, Result<()>> {
-
         let grpc = Server::builder()
             .accept_http1(true) //gRPC-web uses HTTP1
             .add_service(
@@ -109,7 +136,7 @@ pub async fn create(settings_override: config::Config) -> Result<()> {
                     .into_grpc_service()
             )
             .add_service(
-                PeerManagerService::new(Arc::clone(&resources_manager), vpn, Clone::clone(&carl_url))
+                PeerManagerService::new(Arc::clone(&resources_manager), vpn, Clone::clone(&carl_url), ca)
                     .into_grpc_service()
             )
             .add_service(
@@ -133,11 +160,11 @@ pub async fn create(settings_override: config::Config) -> Result<()> {
                 .expect("Failed to find configuration for `network.oidc.lea`.");
             let scopes = lea_idp_config.scopes.trim_matches('"').split(',').collect::<Vec<_>>();
             for scope in scopes.clone() {
-                if !scope.chars().all(|c|c.is_ascii_alphabetic()) {
+                if !scope.chars().all(|c| c.is_ascii_alphabetic()) {
                     panic!("Failed to parse comma-separated OIDC scopes for LEA. Scopes must only contain ASCII alphabetic characters. Found: {:?}. Parsed as: {:?}", lea_idp_config.scopes, scopes);
                 }
             }
-            info!("OIDC is enabled: {:?}", lea_idp_config);
+            info!("OIDC is enabled.");
             Some(LeaIdentityProviderConfig {
                 client_id: lea_idp_config.client_id,
                 issuer_url: lea_idp_config.issuer_url,
@@ -218,6 +245,7 @@ pub async fn create(settings_override: config::Config) -> Result<()> {
         vpn,
         carl_url,
         settings.config,
+        ca_certificate,
     ).await.unwrap();
 
     Ok(())

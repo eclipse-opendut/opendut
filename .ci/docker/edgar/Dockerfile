@@ -4,7 +4,9 @@ RUN apt update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install
 
 RUN mkdir /tmp/cannelloni
 WORKDIR /tmp/cannelloni
-RUN wget -c https://github.com/mguentner/cannelloni/archive/refs/tags/v1.1.0.tar.gz -O - | tar --strip-components=1 -xz
+RUN wget https://github.com/mguentner/cannelloni/archive/refs/tags/v1.1.0.tar.gz -O cannelloni-1.1.0.tar.gz 
+RUN echo "0dcb9277b21f916f5646574b9b2229d3b8e97d5e99b935a4d0b7509a5f0ccdcd cannelloni-1.1.0.tar.gz" | sha256sum --check --status
+RUN tar --strip-components=1 -xvf cannelloni-1.1.0.tar.gz 
 RUN cmake -DCMAKE_BUILD_TYPE=Release && make
 
 FROM ubuntu:22.04

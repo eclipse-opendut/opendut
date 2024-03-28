@@ -66,10 +66,7 @@ where
     );
 
     view! {
-        <div
-            class="panel-heading px-2 py-3"
-            // on:click=move |_| set_is_collapsed.set(!is_collapsed.get_untracked()) // Leads to problems with the door-hanger, because it tries to collapse a deleted device.
-        >
+        <div class="panel-heading px-2 py-3">
             <div class="is-flex is-justify-content-space-between is-align-items-center">
                 <div>
                     <span class="pr-1">
