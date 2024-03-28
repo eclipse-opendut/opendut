@@ -53,7 +53,7 @@ pub fn SetupTab(peer_configuration: ReadSignal<UserPeerConfiguration>) -> impl I
                                                 <i class="fa-solid fa-triangle-exclamation fa-2xl"></i>
                                             </div>
                                             <div class="column">
-                                                <p>"After generating a new Setup-String, the peer will "<b>"not be unusable in clusters"</b>" until you re-run the setup with the newly generated Setup-String!"</p>
+                                                <p>"After generating a new Setup-String, the peer will "<b>"not be usable in clusters"</b>" until you re-run the setup with the newly generated Setup-String!"</p>
                                             </div>
                                         </div>
                                     </div>

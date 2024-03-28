@@ -1,7 +1,9 @@
 use std::collections::HashMap;
+use std::fs;
 use std::process::Command;
-use std::fs::File;
+use std::fs::{File};
 use std::io::{self, prelude::*, BufReader};
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -19,10 +21,10 @@ pub struct KernelModule {
 }
 
 impl KernelModule {
-    pub fn is_loaded(&self) -> Result<bool, Error> {
+    pub fn is_loaded(&self, loaded_module_file: &Path, builtin_module_dir: &Path) -> Result<bool, Error> {
         let module = str::replace(self.name.as_str(), "-", "_");
-
-        let file = File::open("/proc/modules")
+        
+        let file = File::open(loaded_module_file)
             .map_err(|cause| Error::CheckModuleLoaded { cause })?;
         let reader = BufReader::new(file);
 
@@ -42,7 +44,11 @@ impl KernelModule {
                 Err(why) => return Err(Error::CheckModuleLoaded { cause: why }),
             }
         }
-        Ok(false)
+        if fs::metadata(builtin_module_dir.join(str::replace(self.name.as_str(), "-", "_"))).is_ok() {
+            Ok(true)
+        } else {
+            Ok(false)
+        }
     }
 
     pub fn load(&self) -> Result<(), Error> {
@@ -64,7 +70,7 @@ impl KernelModule {
 }
 
 
-pub fn edgar_required_kernel_modules() -> Vec<KernelModule> {
+pub fn required_kernel_modules() -> Vec<KernelModule> {
     vec![
         KernelModule {
             name: "vcan".to_string(),
@@ -77,4 +83,12 @@ pub fn edgar_required_kernel_modules() -> Vec<KernelModule> {
             ]),
         }
     ]
+}
+
+pub fn default_module_file() -> PathBuf {
+    PathBuf::from("/proc/modules")
+}
+
+pub fn default_builtin_module_dir() -> PathBuf {
+    PathBuf::from("/sys/module")
 }
