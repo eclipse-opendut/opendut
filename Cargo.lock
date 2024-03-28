@@ -2584,7 +2584,9 @@ dependencies = [
 name = "opendut-edgar-kernel-modules"
 version = "0.1.0"
 dependencies = [
+ "nix",
  "thiserror",
+ "tracing",
 ]
 
 [[package]]

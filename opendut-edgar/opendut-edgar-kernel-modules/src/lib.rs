@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::process::Command;
 use std::fs::File;
 use std::io::{self, prelude::*, BufReader};
+use tracing::debug;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -47,10 +48,18 @@ impl KernelModule {
 
     pub fn load(&self) -> Result<(), Error> {
 
-        let mut cmd = Command::new("modprobe");
-        cmd.arg(self.name.clone());
+        let mut cmd =
+            if nix::unistd::geteuid() == nix::unistd::ROOT {
+                Command::new("modprobe")
+            } else {
+                debug!("Not running with effective UID of root. Using sudo to run `modprobe`.");
+                let mut cmd = Command::new("sudo");
+                cmd.arg("modprobe");
+                cmd
+            };
+        cmd.arg(&self.name);
 
-        for (key, value) in &self.params{
+        for (key, value) in &self.params {
             cmd.arg(format!("{key}={value}"));
         }
 
