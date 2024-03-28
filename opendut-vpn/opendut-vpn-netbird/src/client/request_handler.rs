@@ -26,23 +26,6 @@ impl DefaultRequestHandler {
     }
 }
 
-struct LoggingMiddleWare ;
-
-#[async_trait::async_trait]
-impl Middleware for LoggingMiddleWare {
-    async fn handle (
-        &self,
-        req: Request,
-        extensions: &mut Extensions,
-        next: Next<'_>,
-    ) -> reqwest_middleware::Result<Response> {
-        trace!("Sending request {} {}", req.method(), req.url());
-        let resp = next.run (req, extensions).await?;
-        trace!("Got response {}", resp.status());
-        Ok(resp)
-    }
-}
-
 #[async_trait]
 impl RequestHandler for DefaultRequestHandler {
     async fn handle(&self, mut request: Request) -> Result<Response, RequestError> {
@@ -73,5 +56,22 @@ impl RequestHandlerConfig {
             timeout,
             retries
         }
+    }
+}
+
+struct LoggingMiddleWare ;
+
+#[async_trait::async_trait]
+impl Middleware for LoggingMiddleWare {
+    async fn handle (
+        &self,
+        req: Request,
+        extensions: &mut Extensions,
+        next: Next<'_>,
+    ) -> reqwest_middleware::Result<Response> {
+        trace!("Sending request {} {}", req.method(), req.url());
+        let resp = next.run (req, extensions).await?;
+        trace!("Got response {}", resp.status());
+        Ok(resp)
     }
 }

@@ -6,9 +6,35 @@ use std::path::Path;
 use std::process::{Command, Output};
 
 use anyhow::{anyhow, bail, Context};
+use cfg_if::cfg_if;
 use sha2::{Digest, Sha256};
 
 use crate::setup::User;
+
+pub trait CommandRunner {
+    fn run(&self, command: &mut Command) -> anyhow::Result<Output>;
+}
+pub struct DefaultCommandRunner;
+impl CommandRunner for DefaultCommandRunner {
+    fn run(&self, command: &mut Command) -> anyhow::Result<Output> {
+        command.evaluate_requiring_success()
+    }
+}
+cfg_if! {
+     if #[cfg(test)] {
+        pub struct NoopCommandRunner;
+        impl CommandRunner for NoopCommandRunner {
+            fn run(&self, _command: &mut Command) -> anyhow::Result<Output> {
+                //do nothing
+                Ok(Output {
+                    status: std::process::ExitStatus::default(),
+                    stdout: b"dummy".to_vec(),
+                    stderr: b"dummy".to_vec(),
+                })
+            }
+        }
+     }
+}
 
 pub(crate) trait EvaluateRequiringSuccess {
     fn evaluate_requiring_success(&mut self) -> anyhow::Result<Output>;
@@ -53,7 +79,7 @@ pub fn file_checksum(path: impl AsRef<Path>) -> Result<Vec<u8>, io::Error> {
     sha256_digest(file)
 }
 
-fn sha256_digest(mut reader: impl Read) -> Result<Vec<u8>, io::Error> {
+pub fn sha256_digest(mut reader: impl Read) -> Result<Vec<u8>, io::Error> {
     let mut hasher = Sha256::new();
     let _ = io::copy(&mut reader, &mut hasher)?;
     let hash = hasher.finalize();

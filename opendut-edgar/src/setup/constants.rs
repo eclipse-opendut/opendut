@@ -20,11 +20,17 @@ pub const SYSTEMD_SERVICE_FILE_NAME: &str = "opendut-edgar.service";
 
 pub const KERNEL_MODULE_LOAD_RULE_PREFIX: &str = "opendut-edgar";
 
-pub fn carl_ca_certificate_path() -> PathBuf {
+pub fn default_carl_ca_certificate_path() -> PathBuf {
     PathBuf::from("/etc/opendut/tls/ca.pem")
 }
-pub fn netbird_ca_certificate_path() -> PathBuf {
+pub fn default_checksum_carl_ca_certificate_file() -> PathBuf {
+    PathBuf::from("/etc/opendut/tls/.ca.pem.checksum")
+}
+pub fn default_netbird_ca_certificate_path() -> PathBuf {
     PathBuf::from("/usr/local/share/ca-certificates/opendut-ca.crt")
+}
+pub fn default_checksum_netbird_ca_certificate_file() -> PathBuf {
+    PathBuf::from("/usr/local/share/ca-certificates/.opendut-ca.crt.checksum")
 }
 
 pub fn default_config_merge_suggestion_file_path() -> PathBuf {
@@ -51,7 +57,7 @@ pub mod netbird {
             .map_err(|cause| anyhow!("Failed to determine absolute path where NetBird should be unpacked to, which is supposed to be at '{path}': {cause}"))
     }
 
-    pub fn checksum_unpack_file() -> PathBuf {
+    pub fn default_checksum_unpack_file() -> PathBuf {
         PathBuf::from("/opt/opendut/edgar/netbird.tar.gz.checksum")
     }
 

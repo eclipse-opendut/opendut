@@ -13,6 +13,7 @@ opendut-types = { workspace = true }
 opendut-util = { workspace = true }
 
 anyhow = { workspace = true }
+cfg-if = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 config = { workspace = true }
 console = { workspace = true }

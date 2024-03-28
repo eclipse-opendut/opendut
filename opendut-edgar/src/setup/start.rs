@@ -32,7 +32,7 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
     println!("Will connect to CARL at: {}", peer_setup.carl);
 
     let mut tasks: Vec<Box<dyn Task>> = vec![
-        Box::new(tasks::WriteCaCertificate { certificate: peer_setup.ca }),
+        Box::new(tasks::WriteCaCertificate::with_certificate(peer_setup.ca)),
         Box::new(tasks::CheckOsRequirements),
         Box::new(tasks::WriteConfiguration::with_override(write_configuration::ConfigOverride {
             peer_id: peer_setup.id,
@@ -74,7 +74,7 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
     }
 
     tasks.append(&mut vec![
-        Box::new(tasks::CreateServiceFile { service_user }),
+        Box::new(tasks::CreateServiceFile::with_service_user(service_user)),
         Box::new(tasks::StartService),
     ]);
 
