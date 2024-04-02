@@ -10,7 +10,7 @@ object constructor: {} e.g. `jq  '[ { "name:" .[].name, "id:" .[].id } ]'` or: `
 
 **input**
 ```shell
- cleo list --output=json peers
+opendut-cleo list --output=json peers
 ```
 
 **output**
@@ -36,7 +36,7 @@ object constructor: {} e.g. `jq  '[ { "name:" .[].name, "id:" .[].id } ]'` or: `
 ```
 **input**
 ```shell
-cleo list --output=json peers | jq '[.[].name]'
+opendut-cleo list --output=json peers | jq '[.[].name]'
 ```
 
 
@@ -53,7 +53,7 @@ can also be put into an array with `cleo list --output=json peers | jq '[.[].nam
 
 **input**
 ```shell
-cleo list --output=json peers | jq '[.[] | select(.status=="Disconnected")]'
+opendut-cleo list --output=json peers | jq '[.[] | select(.status=="Disconnected")]'
 ```
 
 **output**    
@@ -75,7 +75,7 @@ cleo list --output=json peers | jq '[.[] | select(.status=="Disconnected")]'
 
 **input**
 ```shell
-cleo list --output=json peers | jq '.[] | select(.status=="Connected") | .id' | xargs -I{} cleo describe peer -i {}
+opendut-cleo list --output=json peers | jq '.[] | select(.status=="Connected") | .id' | xargs -I{} cleo describe peer -i {}
 ```
 **output**
 ```
@@ -86,10 +86,10 @@ Peer: Edgar
 
 **to get the number of the peers**
 ```shell
-cleo list --output=json peers | jq 'length'
+opendut-cleo list --output=json peers | jq 'length'
 ```
 
 **to sort peers by name**
 ```shell
-cleo list --output=json peers | jq 'sort_by(.name)'
+opendut-cleo list --output=json peers | jq 'sort_by(.name)'
 ```
