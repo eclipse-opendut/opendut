@@ -4,6 +4,7 @@ use std::pin::Pin;
 use std::str::FromStr;
 
 use futures::StreamExt;
+use opentelemetry::global;
 use tokio_stream::Stream;
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::{Request, Response, Status, Streaming};
@@ -44,6 +45,27 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
         let peers = peers.into_iter()
             .map(From::from)
             .collect::<Vec<_>>();
+
+        let peer_quantity = peers.len() as f64;
+
+        let meter = global::meter("opendut_meter");
+        let connected_peers = meter.f64_observable_gauge("connected_peers").init();
+        /*
+        let mut gauge_values = Vec::new();
+        for (index, value) in peers.iter().enumerate() {
+            let key = format!("{}", index + 1);
+            let value = format!("PeerId:{:?}", value);
+            gauge_values.push(KeyValue::new(key, value));
+        }
+        */
+        meter.register_callback(&[connected_peers.as_any()], move |observer| {
+            observer.observe_f64(
+                &connected_peers,
+                peer_quantity,
+                &[]
+                //&gauge_values, // this creates a new time series each
+            )
+        }).expect("meter failed");
 
         let reply = ListPeersResponse {
             peers,

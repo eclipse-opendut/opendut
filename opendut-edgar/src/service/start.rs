@@ -60,6 +60,7 @@ pub async fn create_with_logging(settings_override: config::Config) -> anyhow::R
 
     let logging_config = LoggingConfig::load(&settings.config)?;
     let mut shutdown = logging::initialize_with_config(logging_config)?;
+    logging::create_metrics();
 
     create(settings).await?;
 
@@ -96,7 +97,6 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
     let mut carl = carl::connect(&settings.config).await?;
 
     let (mut rx_inbound, tx_outbound) = carl::open_stream(self_id, &remote_address, &mut carl).await?;
-
 
     loop {
         let received = tokio::time::timeout(timeout_duration, rx_inbound.message()).await;
