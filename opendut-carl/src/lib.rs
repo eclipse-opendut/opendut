@@ -54,6 +54,7 @@ pub async fn create_with_logging(settings_override: config::Config) -> Result<()
 
     let logging_config = LoggingConfig::load(&settings.config)?;
     let mut shutdown = logging::initialize_with_config(logging_config)?;
+    logging::create_metrics();
 
     create(settings).await?;
 
@@ -118,7 +119,7 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
 
     /// Isolation in function returning BoxFuture needed due to this: https://github.com/rust-lang/rust/issues/102211#issuecomment-1397600424
     #[allow(clippy::too_many_arguments)]
-    #[tracing::instrument(skip(peer_messaging_broker, cluster_manager, resources_manager, vpn), level="TRACE")]
+    #[tracing::instrument(skip_all, level="TRACE")]
     fn spawn_server(
         address: SocketAddr,
         tls_config: RustlsConfig,

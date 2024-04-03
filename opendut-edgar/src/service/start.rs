@@ -18,9 +18,9 @@ use opendut_carl_api::proto::services::peer_messaging_broker;
 use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, TracingContext};
 use opendut_carl_api::proto::services::peer_messaging_broker::downstream::Message;
 use opendut_types::cluster::ClusterAssignment;
-use opendut_types::peer::PeerId;
 use opendut_types::peer::configuration::PeerConfiguration;
 use opendut_types::peer::executor::{ContainerCommand, ContainerName, Engine, ExecutorDescriptor, ExecutorDescriptors};
+use opendut_types::peer::PeerId;
 use opendut_types::util::net::NetworkInterfaceName;
 use opendut_util::logging;
 use opendut_util::logging::LoggingConfig;
@@ -60,6 +60,7 @@ pub async fn create_with_logging(settings_override: config::Config) -> anyhow::R
 
     let logging_config = LoggingConfig::load(&settings.config)?;
     let mut shutdown = logging::initialize_with_config(logging_config)?;
+    logging::create_metrics();
 
     create(settings).await?;
 
@@ -96,7 +97,6 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
     let mut carl = carl::connect(&settings.config).await?;
 
     let (mut rx_inbound, tx_outbound) = carl::open_stream(self_id, &remote_address, &mut carl).await?;
-
 
     loop {
         let received = tokio::time::timeout(timeout_duration, rx_inbound.message()).await;
