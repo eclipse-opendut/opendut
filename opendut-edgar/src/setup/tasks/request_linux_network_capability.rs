@@ -14,7 +14,10 @@ impl Task for RequestLinuxNetworkCapability {
         String::from("Linux Network Capability")
     }
     fn check_fulfilled(&self) -> Result<TaskFulfilled> {
-        let output = Command::new("getcap")
+        let getcap = which::which("getcap")
+            .context(String::from("No command `getcap` found. Ensure your system provides this command."))?;
+
+        let output = Command::new(getcap)
             .arg(constants::executable_install_path()?)
             .evaluate_requiring_success()
             .context(format!("Error while determining Linux Capabilities of executable at: {}", constants::executable_install_path()?.display()))?;
@@ -26,7 +29,10 @@ impl Task for RequestLinuxNetworkCapability {
         }
     }
     fn execute(&self) -> Result<Success> {
-        let _ = Command::new("setcap")
+        let setcap = which::which("setcap")
+            .context(String::from("No command `setcap` found. Ensure your system provides this command."))?;
+
+        let _ = Command::new(setcap)
             .arg("CAP_NET_ADMIN+pe") //"permitted" and "effective", see `man capabilities 7` -> "File capabilities"
             .arg(constants::executable_install_path()?)
             .evaluate_requiring_success()?;
