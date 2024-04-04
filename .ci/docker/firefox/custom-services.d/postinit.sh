@@ -1,11 +1,12 @@
-#!/bin/bash
+#!/usr/bin/with-contenv bash
 
-# This is a post init script that runs after the entrypoint.sh script.in background
-# It adds custom certificates to the firefox profile once firefox is available
+# https://docs.linuxserver.io/general/container-customization/#custom-services
 
-# s6-overlay hints:
-# How to run any post-service scripts? #185
-# https://github.com/just-containers/s6-overlay/issues/185
+# This script configures the firefox profile
+# - It runs as custom service at the same time as firefox
+# - Adds custom certificates to firefox profile
+# - On first startup opens known pages in opendut
+# - Keeps running to avoid re-run
 
 echo "Waiting for firefox profile to exist"
 sleep 5
@@ -29,3 +30,6 @@ if [ ! -e "/config/.firstrun" ]; then
   su - abc -c 'DISPLAY=:1 firefox https://netbird-dashboard'
   su - abc -c 'DISPLAY=:1 firefox https://carl'
 fi
+
+# keep running to avoid constant re-run
+sleep infinity
