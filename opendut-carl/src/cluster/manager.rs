@@ -285,7 +285,7 @@ mod test {
     use opendut_carl_api::proto::services::peer_messaging_broker::Downstream;
     use opendut_carl_api::proto::services::peer_messaging_broker::downstream;
     use opendut_types::cluster::ClusterName;
-    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkConfiguration};
+    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_types::peer::executor::{ContainerCommand, ContainerImage, ContainerName, Engine, ExecutorDescriptor, ExecutorDescriptors};
     use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceName};
@@ -300,6 +300,7 @@ mod test {
     mod deploy_cluster {
         use opendut_carl_api::proto::services::peer_messaging_broker::ApplyPeerConfiguration;
         use opendut_types::peer::configuration::PeerConfiguration;
+        use crate::actions::StorePeerDescriptorOptions;
 
         use super::*;
 
@@ -320,16 +321,21 @@ mod test {
                 devices: HashSet::from([peer_a.device, peer_b.device]),
             };
 
+            let store_peer_descriptor_options = StorePeerDescriptorOptions {
+                bridge_name_default: NetworkInterfaceName::try_from("br-opendut").unwrap(),
+            };
             actions::store_peer_descriptor(StorePeerDescriptorParams {
                 resources_manager: Arc::clone(&fixture.resources_manager),
                 vpn: Vpn::Disabled,
                 peer_descriptor: Clone::clone(&peer_a.descriptor),
+                options: store_peer_descriptor_options.clone(),
             }).await?;
 
             actions::store_peer_descriptor(StorePeerDescriptorParams {
                 resources_manager: Arc::clone(&fixture.resources_manager),
                 vpn: Vpn::Disabled,
                 peer_descriptor: Clone::clone(&peer_b.descriptor),
+                options: store_peer_descriptor_options,
             }).await?;
 
 
@@ -449,11 +455,12 @@ mod test {
                 id,
                 name: PeerName::try_from(format!("peer-{id}")).unwrap(),
                 location: PeerLocation::try_from("Ulm").ok(),
-                network_configuration: PeerNetworkConfiguration {
+                network: PeerNetworkDescriptor {
                     interfaces: vec!(NetworkInterfaceDescriptor {
                         name: NetworkInterfaceName::try_from("eth0").unwrap(),
                         configuration: NetworkInterfaceConfiguration::Ethernet,
-                    })
+                    }),
+                    bridge_name: Some(NetworkInterfaceName::try_from("br-custom").unwrap()),
                 },
                 topology: Topology {
                     devices,
@@ -539,13 +546,14 @@ mod test {
             id,
             name: PeerName::try_from(peer_name).unwrap(),
             location: PeerLocation::try_from("Ulm").ok(),
-            network_configuration: PeerNetworkConfiguration {
+            network: PeerNetworkDescriptor {
                 interfaces: vec![
                     NetworkInterfaceDescriptor {
                         name: NetworkInterfaceName::try_from("eth0").unwrap(),
                         configuration: NetworkInterfaceConfiguration::Ethernet,
                     }
-                ]
+                ],
+                bridge_name: Some(NetworkInterfaceName::try_from("br-opendut-1").unwrap()),
             },
             topology: Topology {
                 devices: vec![

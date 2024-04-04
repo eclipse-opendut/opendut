@@ -37,6 +37,7 @@ async fn register_edgar_carl() -> Result<()> {
     let peer_id = PeerId::random();
     let settings_overrides = Config::builder()
         .set_override(opendut_edgar::common::settings::key::peer::id, peer_id.to_string())?
+        .set_override("network.carl.host", "localhost")?
         .set_override("network.carl.port", carl_port)?
         .set_override("network.connect.retries", 100)?
         .set_override("network.oidc.enabled", false)?

@@ -40,7 +40,7 @@ impl DeleteNetworkInterfaceCli {
                 Err(format!("Network interface '{}' could not be deleted due to it being used in following devices: {}", name,
                             device_interfaces_map.get(&name).unwrap().join(", ")))?
             }
-            peer.network_configuration.interfaces.retain(|interface| interface.name.name() != name.name())
+            peer.network.interfaces.retain(|interface| interface.name.name() != name.name())
         };
 
         carl.peers.store_peer_descriptor(peer).await

@@ -11,9 +11,10 @@ use opendut_carl_api::proto::services::peer_manager;
 use opendut_carl_api::proto::services::peer_manager::*;
 use opendut_carl_api::proto::services::peer_manager::peer_manager_server::{PeerManager as PeerManagerService, PeerManagerServer};
 use opendut_types::peer::{PeerDescriptor, PeerId};
+use opendut_types::util::net::NetworkInterfaceName;
 
 use crate::actions;
-use crate::actions::{DeletePeerDescriptorParams, GeneratePeerSetupParams, ListDevicesParams, ListPeerDescriptorsParams, StorePeerDescriptorParams};
+use crate::actions::{DeletePeerDescriptorParams, GeneratePeerSetupParams, ListDevicesParams, ListPeerDescriptorsParams, StorePeerDescriptorOptions, StorePeerDescriptorParams};
 use crate::grpc::extract;
 use crate::peer::oidc_client_manager::OpenIdConnectClientManager;
 use crate::resources::manager::ResourcesManagerRef;
@@ -25,17 +26,26 @@ pub struct PeerManagerFacade {
     carl_url: Url,
     ca: Pem,
     oidc_client_manager: Option<OpenIdConnectClientManager>,
+    options: PeerManagerFacadeOptions,
 }
 
 impl PeerManagerFacade {
 
-    pub fn new(resources_manager: ResourcesManagerRef, vpn: Vpn, carl_url: Url, ca: Pem, oidc_client_manager: Option<OpenIdConnectClientManager>) -> Self {
+    pub fn new(
+        resources_manager: ResourcesManagerRef, 
+        vpn: Vpn, 
+        carl_url: Url, 
+        ca: Pem, 
+        oidc_client_manager: Option<OpenIdConnectClientManager>,
+        options: PeerManagerFacadeOptions
+    ) -> Self {
         PeerManagerFacade {
             resources_manager,
             vpn,
             carl_url,
             ca,
             oidc_client_manager,
+            options
         }
     }
 
@@ -59,6 +69,9 @@ impl PeerManagerService for PeerManagerFacade {
             resources_manager: Arc::clone(&self.resources_manager),
             vpn: Clone::clone(&self.vpn),
             peer_descriptor: Clone::clone(&peer_descriptor),
+            options: StorePeerDescriptorOptions {
+                bridge_name_default: Clone::clone(&self.options.bridge_name_default),
+            }
         }).await;
 
         match result {
@@ -226,6 +239,30 @@ impl PeerManagerService for PeerManagerFacade {
     }
 }
 
+#[derive(Clone)]
+pub struct PeerManagerFacadeOptions {
+    pub bridge_name_default: NetworkInterfaceName,
+}
+impl PeerManagerFacadeOptions {
+    pub fn load(config: &config::Config) -> Result<Self, PeerManagerFacadeOptionsLoadError> {
+        let bridge_name_default = config.get_string("peer.ethernet.bridge.name.default")
+            .map_err(|cause| PeerManagerFacadeOptionsLoadError { message: cause.to_string() })?;
+        
+        let bridge_name_default = NetworkInterfaceName::try_from(bridge_name_default)
+            .map_err(|cause| PeerManagerFacadeOptionsLoadError { message: cause.to_string() })?;
+
+        Ok(PeerManagerFacadeOptions {
+            bridge_name_default,
+        })
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+#[error("Error while loading PeerManagerFacadeOptions: {message}")]
+pub struct PeerManagerFacadeOptionsLoadError {
+    message: String,
+}
+
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
@@ -236,7 +273,7 @@ mod tests {
     use crate::peer::oidc_client_manager::tests::oidc_client_manager;
     use url::Url;
 
-    use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkConfiguration};
+    use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_types::peer::executor::{ContainerCommand, ContainerImage, ContainerName, Engine, ExecutorDescriptor, ExecutorDescriptors};
     use opendut_types::proto;
     use opendut_types::topology::Topology;
@@ -260,7 +297,7 @@ mod tests {
     #[tokio::test]
     async fn test_successful_create_delete(oidc_client_manager: OpenIdConnectClientManager) -> Result<()> {
 
-
+        let settings = crate::settings::load_defaults()?;
 
         let resources_manager = ResourcesManager::new();
         let testee = PeerManagerFacade::new(
@@ -269,6 +306,7 @@ mod tests {
             Url::parse("https://example.com:1234").unwrap(),
             get_cert(),
             Some(oidc_client_manager),
+            PeerManagerFacadeOptions::load(&settings.config)?
         );
 
         let peer_id = PeerId::random();
@@ -276,13 +314,14 @@ mod tests {
             id: peer_id,
             name: PeerName::try_from("TestPeer").unwrap(),
             location: PeerLocation::try_from("SiFi").ok(),
-            network_configuration: PeerNetworkConfiguration {
+            network: PeerNetworkDescriptor {
                 interfaces: vec![
                     NetworkInterfaceDescriptor {
                         name: NetworkInterfaceName::try_from("eth0").unwrap(),
                         configuration: NetworkInterfaceConfiguration::Ethernet,
                     },
                 ],
+                bridge_name: Some(NetworkInterfaceName::try_from("br-opendut-1").unwrap()),
             },
             topology: Topology::default(),
             executors: ExecutorDescriptors {
@@ -354,6 +393,8 @@ mod tests {
     #[tokio::test]
     async fn register_fails_when_no_id_specified(oidc_client_manager: OpenIdConnectClientManager) -> Result<()> {
 
+        let settings = crate::settings::load_defaults()?;
+        
         let resources_manager = ResourcesManager::new();
         let testee = PeerManagerFacade::new(
             Arc::clone(&resources_manager),
@@ -361,6 +402,7 @@ mod tests {
             Url::parse("https://example.com:1234").unwrap(),
             get_cert(),
             Some(oidc_client_manager),
+            PeerManagerFacadeOptions::load(&settings.config)?
         );
 
         let create_peer_reply = testee.store_peer_descriptor(Request::new(
@@ -394,6 +436,8 @@ mod tests {
     #[tokio::test]
     async fn unregister_fails_when_no_id_specified(oidc_client_manager: OpenIdConnectClientManager) -> Result<()> {
 
+        let settings = crate::settings::load_defaults()?;
+        
         let resources_manager = ResourcesManager::new();
         let testee = PeerManagerFacade::new(
             Arc::clone(&resources_manager),
@@ -401,6 +445,7 @@ mod tests {
             Url::parse("https://example.com:1234").unwrap(),
             get_cert(),
             Some(oidc_client_manager),
+            PeerManagerFacadeOptions::load(&settings.config)?
         );
 
         let delete_peer_reply = testee.delete_peer_descriptor(Request::new(

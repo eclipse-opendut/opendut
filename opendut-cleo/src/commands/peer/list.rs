@@ -22,8 +22,8 @@ struct PeerTable {
     status: PeerStatus,
     #[table(title = "Location")]
     location: PeerLocation,
-    #[table(title = "NetworkConfiguration")]
-    network_configuration: String
+    #[table(title = "NetworkInterfaces")]
+    network_interfaces: String,
 }
 
 #[derive(Debug, PartialEq, Serialize)]
@@ -85,13 +85,13 @@ fn filter_connected_peers(
             } else {
                 PeerStatus::Disconnected
             };
-            let network_interfaces = Clone::clone(&peer.network_configuration.interfaces);
+            let network_interfaces = Clone::clone(&peer.network.interfaces);
             let interfaces = network_interfaces.into_iter().map(|interface| interface.name.to_string()).collect::<Vec<_>>();
             PeerTable {
                 name: Clone::clone(&peer.name),
                 id: peer.id,
                 location: Clone::clone(&peer.location.clone().unwrap_or_default()),
-                network_configuration: interfaces.join(", "),
+                network_interfaces: interfaces.join(", "),
                 status
             }
         })
@@ -102,7 +102,7 @@ fn filter_connected_peers(
 mod test {
     use googletest::prelude::*;
 
-    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkConfiguration};
+    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_types::peer::executor::ExecutorDescriptors;
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
 
@@ -114,11 +114,12 @@ mod test {
             id: PeerId::random(),
             name: PeerName::try_from("MyPeer").unwrap(),
             location: Some(PeerLocation::try_from("SiFi").unwrap()),
-            network_configuration: PeerNetworkConfiguration {
+            network: PeerNetworkDescriptor{
                 interfaces: vec!(NetworkInterfaceDescriptor {
                     name: NetworkInterfaceName::try_from("eth0").unwrap(),
                     configuration: NetworkInterfaceConfiguration::Ethernet,
-                })
+                }),
+                bridge_name: Some(NetworkInterfaceName::try_from("br-opendut-1").unwrap())
             },
             topology: Default::default(),
             executors: ExecutorDescriptors {

@@ -10,8 +10,7 @@ use uuid::Uuid;
 
 use crate::peer::executor::ExecutorDescriptors;
 use crate::topology::Topology;
-
-use crate::util::net::{Certificate, NetworkInterfaceDescriptor, AuthConfig};
+use crate::util::net::{Certificate, NetworkInterfaceDescriptor, AuthConfig, NetworkInterfaceName};
 use crate::vpn::VpnPeerConfiguration;
 
 pub mod state;
@@ -220,13 +219,14 @@ impl fmt::Display for PeerLocation {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
-pub struct PeerNetworkConfiguration {
+pub struct PeerNetworkDescriptor {
     pub interfaces: Vec<NetworkInterfaceDescriptor>,
+    pub bridge_name: Option<NetworkInterfaceName>,
 }
 
-impl PeerNetworkConfiguration {
-    pub fn new(interfaces: Vec<NetworkInterfaceDescriptor>) -> Self {
-        Self { interfaces }
+impl PeerNetworkDescriptor {
+    pub fn new(interfaces: Vec<NetworkInterfaceDescriptor>, bridge_name: Option<NetworkInterfaceName>) -> Self {
+        Self { interfaces, bridge_name}
     }
 }
 
@@ -235,7 +235,7 @@ pub struct PeerDescriptor {
     pub id: PeerId,
     pub name: PeerName,
     pub location: Option<PeerLocation>,
-    pub network_configuration: PeerNetworkConfiguration,
+    pub network: PeerNetworkDescriptor,
     pub topology: Topology,
     pub executors: ExecutorDescriptors,
 }

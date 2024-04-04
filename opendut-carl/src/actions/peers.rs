@@ -15,10 +15,10 @@ pub use opendut_carl_api::carl::peer::{
 use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, downstream};
 use opendut_types::cluster::ClusterAssignment;
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerSetup};
-use opendut_types::peer::configuration::PeerConfiguration;
+use opendut_types::peer::configuration::{PeerConfiguration, PeerNetworkConfiguration};
 use opendut_types::proto;
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
-use opendut_types::util::net::{AuthConfig, Certificate, ClientCredentials};
+use opendut_types::util::net::{AuthConfig, Certificate, ClientCredentials, NetworkInterfaceName};
 use opendut_types::vpn::VpnPeerConfiguration;
 use opendut_util::ErrorOr;
 use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerRef};
@@ -31,6 +31,12 @@ pub struct StorePeerDescriptorParams {
     pub resources_manager: ResourcesManagerRef,
     pub vpn: Vpn,
     pub peer_descriptor: PeerDescriptor,
+    pub options: StorePeerDescriptorOptions
+}
+
+#[derive(Clone)]
+pub struct StorePeerDescriptorOptions {
+    pub bridge_name_default: NetworkInterfaceName
 }
 
 #[tracing::instrument(skip(params), level="trace")]
@@ -78,9 +84,18 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
                 info!("Added device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}>.");
             });
 
+            let peer_network_configuration = {
+                let bridge_name = peer_descriptor.clone().network.bridge_name
+                    .unwrap_or_else(|| params.options.bridge_name_default);
+                PeerNetworkConfiguration {
+                    bridge_name,
+                }
+            };
+
             let peer_configuration = PeerConfiguration {
                 executors: Clone::clone(&peer_descriptor.executors),
                 cluster_assignment: None,
+                network: peer_network_configuration
             };
             resources.insert(peer_id, peer_configuration);
 
@@ -361,7 +376,7 @@ mod test {
     use googletest::prelude::*;
     use rstest::*;
 
-    use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkConfiguration};
+    use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_types::peer::executor::ExecutorDescriptors;
     use opendut_types::topology::{DeviceDescription, DeviceName, Topology};
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
@@ -378,7 +393,7 @@ mod test {
 
         #[rstest]
         #[tokio::test]
-        async fn should_update_expected_resources(fixture: Fixture) -> anyhow::Result<()> {
+        async fn should_update_expected_resources(fixture: Fixture, store_peer_descriptor_options: StorePeerDescriptorOptions) -> anyhow::Result<()> {
 
             let resources_manager = fixture.resources_manager;
 
@@ -386,6 +401,7 @@ mod test {
                 resources_manager: Arc::clone(&resources_manager),
                 vpn: Clone::clone(&fixture.vpn),
                 peer_descriptor: Clone::clone(&fixture.peer_a_descriptor),
+                options: store_peer_descriptor_options.clone(),
             }).await?;
 
             assert_that!(resources_manager.get::<PeerDescriptor>(fixture.peer_a_id).await.as_ref(), some(eq(&fixture.peer_a_descriptor)));
@@ -418,6 +434,7 @@ mod test {
                 resources_manager: Arc::clone(&resources_manager),
                 vpn: Clone::clone(&fixture.vpn),
                 peer_descriptor: Clone::clone(&changed_descriptor),
+                options: store_peer_descriptor_options,
             }).await?;
 
             assert_that!(resources_manager.get::<PeerDescriptor>(fixture.peer_a_id).await.as_ref(), some(eq(&changed_descriptor)));
@@ -453,6 +470,9 @@ mod test {
             let peer_configuration = PeerConfiguration {
                 executors: ExecutorDescriptors { executors: vec![] },
                 cluster_assignment: None,
+                network: PeerNetworkConfiguration {
+                    bridge_name: NetworkInterfaceName::try_from("br-opendut-1").unwrap()
+                }
             };
             resources_manager.resources_mut(|resources| {
                 resources.insert(peer_id, Clone::clone(&peer_configuration));
@@ -527,13 +547,14 @@ mod test {
             id: peer_a_id,
             name: PeerName::try_from("PeerA").unwrap(),
             location: PeerLocation::try_from("Ulm").ok(),
-            network_configuration: PeerNetworkConfiguration {
+            network: PeerNetworkDescriptor {
                 interfaces: vec![
                     NetworkInterfaceDescriptor {
                         name: NetworkInterfaceName::try_from("eth0").unwrap(),
                         configuration: NetworkInterfaceConfiguration::Ethernet,
                     },
-                ]
+                ],
+                bridge_name: Some(NetworkInterfaceName::try_from("br-opendut-1").unwrap()),
             },
             topology: Topology {
                 devices: vec![
@@ -570,6 +591,13 @@ mod test {
             peer_a_descriptor,
             peer_a_device_1,
             peer_a_device_2,
+        }
+    }
+
+    #[fixture]
+    fn store_peer_descriptor_options() -> StorePeerDescriptorOptions {
+        StorePeerDescriptorOptions {
+            bridge_name_default: NetworkInterfaceName::try_from("br-opendut").unwrap(),
         }
     }
 }

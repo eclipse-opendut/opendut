@@ -26,7 +26,7 @@ impl CreateNetworkInterfaceCli {
         let mut peer_descriptor = carl.peers.get_peer_descriptor(peer_id).await
             .map_err(|_| format!("Failed to get peer with ID <{}>.", peer_id))?;
 
-        let peer_interface_names = peer_descriptor.network_configuration.interfaces
+        let peer_interface_names = peer_descriptor.network.interfaces
             .iter().map(|interface| interface.name.clone()).collect::<Vec<_>>();
 
         let interface_name = NetworkInterfaceName::try_from(self.interface_name).map_err(|error| error.to_string())?;
@@ -46,7 +46,7 @@ impl CreateNetworkInterfaceCli {
         if peer_interface_names.contains(&interface_name) {
             Err(format!("Could not create peer network configuration with name '{}' because it already exists", &interface_name))?
         } else {
-            peer_descriptor.network_configuration.interfaces.push(
+            peer_descriptor.network.interfaces.push(
                 NetworkInterfaceDescriptor {
                     name: interface_name,
                     configuration: interface_configuration,

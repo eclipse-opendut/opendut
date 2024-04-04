@@ -32,7 +32,7 @@ use opendut_util::logging::LoggingConfig;
 use opendut_util::settings::LoadedConfig;
 
 use crate::cluster::manager::{ClusterManager, ClusterManagerOptions, ClusterManagerRef};
-use crate::grpc::{ClusterManagerFacade, MetadataProviderFacade, PeerManagerFacade, PeerMessagingBrokerFacade};
+use crate::grpc::{ClusterManagerFacade, MetadataProviderFacade, PeerManagerFacade, PeerManagerFacadeOptions, PeerMessagingBrokerFacade};
 use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerOptions, PeerMessagingBrokerRef};
 use crate::peer::oidc_client_manager::{CarlIdentityProviderConfig, OpenIdConnectClientManager};
 use crate::resources::manager::{ResourcesManager, ResourcesManagerRef};
@@ -151,25 +151,27 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
         } else {
             None
         };
+        
+        let cluster_manager_facade = ClusterManagerFacade::new(Arc::clone(&cluster_manager), Arc::clone(&resources_manager));
+        let metadata_provider_facade = MetadataProviderFacade::new();
+        
+        let peer_manager_facade_options = PeerManagerFacadeOptions::load(&settings).expect("Error while loading PeerManagerFacadeOptions.");
+        let peer_manager_facade = PeerManagerFacade::new(
+            Arc::clone(&resources_manager), 
+            vpn, 
+            Clone::clone(&carl_url), 
+            ca, 
+            oidc_client_manager,
+            peer_manager_facade_options
+        );
+        let peer_messaging_broker_facade = PeerMessagingBrokerFacade::new(Arc::clone(&peer_messaging_broker));
 
         let grpc = Server::builder()
             .accept_http1(true) //gRPC-web uses HTTP1
-            .add_service(
-                ClusterManagerFacade::new(Arc::clone(&cluster_manager), Arc::clone(&resources_manager))
-                    .into_grpc_service()
-            )
-            .add_service(
-                MetadataProviderFacade::new()
-                    .into_grpc_service()
-            )
-            .add_service(
-                PeerManagerFacade::new(Arc::clone(&resources_manager), vpn, Clone::clone(&carl_url), ca, oidc_client_manager)
-                    .into_grpc_service()
-            )
-            .add_service(
-                PeerMessagingBrokerFacade::new(Arc::clone(&peer_messaging_broker))
-                    .into_grpc_service()
-            )
+            .add_service(cluster_manager_facade.into_grpc_service())
+            .add_service(metadata_provider_facade.into_grpc_service())
+            .add_service(peer_manager_facade.into_grpc_service())
+            .add_service(peer_messaging_broker_facade.into_grpc_service())
             .into_service()
             .map_response(|response| response.map(axum::body::boxed))
             .boxed_clone();

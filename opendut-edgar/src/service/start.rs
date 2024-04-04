@@ -87,13 +87,10 @@ pub async fn create(self_id: PeerId, settings: LoadedConfig) -> anyhow::Result<(
 
     let network_interface_management_enabled = settings.config.get::<bool>("network.interface.management.enabled")?;
 
-    let bridge_name = crate::common::default_bridge_name();
-
     let remote_address = vpn::retrieve_remote_host(&settings).await?;
 
     let setup_cluster_info = SetupClusterInfo {
         self_id,
-        bridge_name,
         network_interface_management_enabled,
         network_interface_manager,
         can_manager,
@@ -159,7 +156,7 @@ async fn handle_stream_message(
                     tx_outbound.send(message).await
                         .inspect_err(|cause| debug!("Failed to send ping to CARL: {cause}"));
             }
-            Message::ApplyPeerConfiguration(message) => { apply_peer_configuration(message, context, setup_cluster_info).await }
+            Message::ApplyPeerConfiguration(message) => { apply_peer_configuration(message, context, setup_cluster_info).await? }
         }
     } else {
         ignore(message)
@@ -169,7 +166,7 @@ async fn handle_stream_message(
 }
 
 #[tracing::instrument(skip(message, context, setup_cluster_info), level="trace")]
-async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Option<TracingContext>, setup_cluster_info: &SetupClusterInfo) {
+async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Option<TracingContext>, setup_cluster_info: &SetupClusterInfo) -> anyhow::Result<()> {
     match message.clone() {
         ApplyPeerConfiguration { configuration: Some(configuration) } => {
 
@@ -182,15 +179,17 @@ async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Opti
                 Err(error) => error!("Illegal PeerConfiguration: {error}"),
                 Ok(configuration) => {
                     setup_executors(configuration.executors);
-                    let _ = setup_cluster(
+                    setup_cluster(
                         configuration.cluster_assignment,
                         setup_cluster_info,
-                    ).await;
+                        configuration.network.bridge_name,
+                    ).await?
                 }
             };
         }
         _ => ignore(message),
     }
+    Ok(())
 }
 
 #[tracing::instrument(skip(executors))]
@@ -250,7 +249,6 @@ fn setup_executors(executors: ExecutorDescriptors) { //TODO make idempotent
 
 struct SetupClusterInfo {
     self_id: PeerId,
-    bridge_name: NetworkInterfaceName,
     network_interface_management_enabled: bool,
     network_interface_manager: NetworkInterfaceManagerRef,
     can_manager: CanManagerRef,
@@ -259,6 +257,7 @@ struct SetupClusterInfo {
 async fn setup_cluster(
     cluster_assignment: Option<ClusterAssignment>,
     info: &SetupClusterInfo,
+    bridge_name: NetworkInterfaceName,
 ) -> anyhow::Result<()> { //TODO make idempotent
 
     match cluster_assignment {
@@ -270,7 +269,7 @@ async fn setup_cluster(
                 cluster_assignment::network_interfaces_setup(
                     cluster_assignment,
                     info.self_id,
-                    &info.bridge_name,
+                    &bridge_name,
                     Arc::clone(&info.network_interface_manager),
                     Arc::clone(&info.can_manager)
                 ).await

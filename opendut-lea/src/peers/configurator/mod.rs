@@ -8,7 +8,7 @@ use crate::components::{BasePageContainer, Breadcrumb, Initialized, UserInputErr
 use crate::components::use_active_tab;
 use crate::peers::configurator::components::Controls;
 use crate::peers::configurator::tabs::{DevicesTab, ExecutorTab, GeneralTab, NetworkTab, SetupTab, TabIdentifier};
-use crate::peers::configurator::types::{UserDeviceConfiguration, UserPeerConfiguration, UserPeerNetworkInterface, UserPeerExecutor, UserContainerEnv};
+use crate::peers::configurator::types::{UserDeviceConfiguration, UserPeerConfiguration, UserPeerNetworkInterface, UserPeerExecutor, UserContainerEnv, UserPeerNetwork};
 use crate::routing::{navigate_to, WellKnownRoutes};
 
 mod components;
@@ -51,7 +51,10 @@ pub fn PeerConfigurator() -> impl IntoView {
                 name: UserInputValue::Left(UserInputError::from("Enter a valid peer name.")),
                 location: UserInputValue::Right(String::from("")),
                 devices: Vec::new(),
-                network_interfaces: Vec::new(),
+                network: UserPeerNetwork {
+                    network_interfaces: Vec::new(),
+                    bridge_name: UserInputValue::Right(String::from("")),
+                },
                 is_new: true,
                 executors: Vec::new(),
             });
@@ -73,7 +76,10 @@ pub fn PeerConfigurator() -> impl IntoView {
                                     is_collapsed: true
                                 })
                             }).collect::<Vec<_>>();
-                            user_configuration.network_interfaces = configuration.network_configuration.interfaces.into_iter()
+                            if let Some(bridge_name) = configuration.network.bridge_name {
+                                user_configuration.network.bridge_name = UserInputValue::Right(bridge_name.name());
+                            }
+                            user_configuration.network.network_interfaces = configuration.network.interfaces.into_iter()
                                 .map(|interface| {
                                     create_rw_signal(UserPeerNetworkInterface {
                                         name: interface.name

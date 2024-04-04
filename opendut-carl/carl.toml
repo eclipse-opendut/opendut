@@ -29,6 +29,7 @@ scopes = "openid,profile,email,roles,groups"
 [peer]
 disconnect.timeout.ms = 30000
 can.server_port_range_start = 10000
+ethernet.bridge.name.default = "br-opendut"
 
 [serve]
 ui.directory = "opendut-lea/"

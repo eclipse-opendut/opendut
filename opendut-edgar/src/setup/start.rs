@@ -105,7 +105,7 @@ pub async fn unmanaged(
         Box::new(tasks::netbird::InstallService),
         Box::new(tasks::netbird::StartService),
         Box::new(tasks::netbird::Connect { management_url, setup_key, mtu }),
-
+        
         Box::new(tasks::network_interface::CreateBridge { network_interface_manager: Arc::clone(&network_interface_manager), bridge_name: bridge_name.clone() }),
         Box::new(tasks::network_interface::CreateGreInterfaces { network_interface_manager: Arc::clone(&network_interface_manager), bridge_name: bridge_name.clone(), leader }),
         Box::new(tasks::network_interface::ConnectDeviceInterfaces { network_interface_manager, bridge_name, device_interfaces }),

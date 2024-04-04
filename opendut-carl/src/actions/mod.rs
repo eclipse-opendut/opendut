@@ -15,6 +15,7 @@ pub use clusters::{
 pub use peers::{
     store_peer_descriptor,
     StorePeerDescriptorParams,
+    StorePeerDescriptorOptions,
     StorePeerDescriptorError,
 };
 

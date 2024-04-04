@@ -4,8 +4,14 @@ package opendut.types.peer.configuration;
 
 import "opendut/types/cluster/cluster.proto";
 import "opendut/types/peer/executor.proto";
+import "opendut/types/util/net.proto";
 
 message PeerConfiguration {
   opendut.types.peer.executor.ExecutorDescriptors executors = 1;
   optional opendut.types.cluster.ClusterAssignment cluster_assignment = 2;
+  opendut.types.peer.configuration.PeerNetworkConfiguration network = 3;
+}
+
+message PeerNetworkConfiguration {
+  opendut.types.util.NetworkInterfaceName bridge_name = 1;
 }

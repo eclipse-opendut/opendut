@@ -1,6 +1,6 @@
 use leptos::{RwSignal, SignalGetUntracked};
 
-use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkConfiguration};
+use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
 use opendut_types::peer::executor::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine, ExecutorDescriptor, ExecutorDescriptors};
 use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
 use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
@@ -18,8 +18,8 @@ pub enum PeerMisconfigurationError {
     InvalidPeerName,
     #[error("{0}")]
     InvalidDevice(DeviceMisconfigurationError),
-    #[error("Invalid network configuration")]
-    InvalidPeerNetworkConfiguration,
+    #[error("Invalid peer network descriptor")]
+    InvalidPeerNetwork,
     #[error("Invalid peer executor")]
     InvalidPeerExecutor,
 }
@@ -43,7 +43,7 @@ pub struct UserPeerConfiguration {
     pub name: UserInputValue,
     pub location: UserInputValue,
     pub devices: Vec<RwSignal<UserDeviceConfiguration>>,
-    pub network_interfaces: Vec<RwSignal<UserPeerNetworkInterface>>,
+    pub network: UserPeerNetwork,
     pub executors: Vec<RwSignal<UserPeerExecutor>>,
     pub is_new: bool,
 }
@@ -70,6 +70,11 @@ pub struct UserContainerEnv {
     pub value: UserInputValue
 }
 
+#[derive(Clone, Debug)]
+pub struct UserPeerNetwork {
+    pub network_interfaces: Vec<RwSignal<UserPeerNetworkInterface>>,
+    pub bridge_name: UserInputValue,
+}
 
 #[derive(Clone, Debug)]
 pub struct UserPeerNetworkInterface {
@@ -103,13 +108,26 @@ impl TryFrom<UserPeerConfiguration> for PeerDescriptor {
                 PeerLocation::try_from(location)
                     .map_err(|_| PeerMisconfigurationError::InvalidPeerName)
             })?;
-        let network_interfaces = configuration
+        let bridge_name = configuration.network
+            .bridge_name
+            .right_ok_or(PeerMisconfigurationError::InvalidPeerNetwork)
+            .and_then(|bridge_name| {
+                if bridge_name.is_empty() {
+                    Ok(None)
+                } else {
+                     match NetworkInterfaceName::try_from(bridge_name) {
+                         Ok(name) => Ok(Some(name)),
+                         Err(_) => Err(PeerMisconfigurationError::InvalidPeerNetwork)
+                     }
+                }
+            })?;
+        let network_interfaces = configuration.network
             .network_interfaces
             .into_iter()
             .map(|signal| signal.get_untracked())
             .map(|interface| {
                 NetworkInterfaceDescriptor::try_from(interface)
-                    .map_err(|_|  PeerMisconfigurationError::InvalidPeerNetworkConfiguration)
+                    .map_err(|_|  PeerMisconfigurationError::InvalidPeerNetwork)
             })
             .collect::<Result<Vec<_>, _>>()?;
         let devices = configuration
@@ -134,7 +152,7 @@ impl TryFrom<UserPeerConfiguration> for PeerDescriptor {
             id: configuration.id,
             name,
             location: Some(location),
-            network_configuration: PeerNetworkConfiguration::new(network_interfaces),
+            network: PeerNetworkDescriptor::new(network_interfaces, bridge_name),
             topology: Topology::new(devices),
             executors: ExecutorDescriptors {
                 executors

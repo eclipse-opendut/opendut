@@ -36,7 +36,7 @@ impl CreateDeviceCli {
 
         let mut peer_descriptor = carl.peers.get_peer_descriptor(peer_id).await
             .map_err(|_| format!("Failed to get peer with ID <{}>.", peer_id))?;
-        let peer_network_interface_names = peer_descriptor.network_configuration.interfaces.iter().map(|peer_interface| {
+        let peer_network_interface_names = peer_descriptor.network.interfaces.iter().map(|peer_interface| {
             peer_interface.name.clone()
         }).collect::<Vec<_>>();
         let maybe_existing_device = peer_descriptor.topology.devices.iter_mut().find(|device| device.id == device_id);
@@ -46,7 +46,7 @@ impl CreateDeviceCli {
                 let name = self.name.ok_or(String::from("Cannot create new device because of missing device name."))?;
                 let interface_name = self.interface.ok_or(String::from("Cannot create new device because of missing interface name."))?;
 
-                let interface = match peer_descriptor.network_configuration.interfaces.iter().find(|descriptor| descriptor.name == interface_name) {
+                let interface = match peer_descriptor.network.interfaces.iter().find(|descriptor| descriptor.name == interface_name) {
                     Some(network_interface_descriptor) => network_interface_descriptor.clone(),
                     None => {
                         Err(format!("Cannot create new device because interface is not one of the allowed values: {} \nAllowed interfaces are configured on the peer.",
@@ -83,7 +83,7 @@ impl CreateDeviceCli {
                         .ok();
                 }
                 if let Some(interface_name) = self.interface {
-                    device.interface = match peer_descriptor.network_configuration.interfaces.iter().find(|descriptor| descriptor.name == interface_name) {
+                    device.interface = match peer_descriptor.network.interfaces.iter().find(|descriptor| descriptor.name == interface_name) {
                         Some(network_interface_descriptor) => network_interface_descriptor.clone(),
                         None => {
                             Err(format!("Cannot create new device because interface is not one of the allowed values: {} \nAllowed interfaces are configured on the peer.",

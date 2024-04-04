@@ -80,7 +80,7 @@ mod test {
     use googletest::prelude::*;
 
     use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
-    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkConfiguration};
+    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_types::peer::executor::{ContainerCommand, ContainerImage, ContainerName, Engine, ExecutorDescriptor, ExecutorDescriptors};
     use opendut_types::topology::Topology;
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
@@ -97,13 +97,14 @@ mod test {
             id: peer_resource_id,
             name: PeerName::try_from("TestPeer").unwrap(),
             location: PeerLocation::try_from("Ulm").ok(),
-            network_configuration: PeerNetworkConfiguration {
+            network: PeerNetworkDescriptor {
                 interfaces: vec![
                     NetworkInterfaceDescriptor {
                         name: NetworkInterfaceName::try_from("eth0").unwrap(),
                         configuration: NetworkInterfaceConfiguration::Ethernet,
                     },
-                ]
+                ],
+                bridge_name: Some(NetworkInterfaceName::try_from("br-opendut-1").unwrap()),
             },
             topology: Topology::default(),
             executors: ExecutorDescriptors {

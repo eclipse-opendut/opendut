@@ -161,7 +161,7 @@ fn DeviceInterfaceInput(
 
     let peer_network_interfaces = create_read_slice(peer_configuration,
         |peer_network_interfaces| {
-            Clone::clone(&peer_network_interfaces.network_interfaces)
+            Clone::clone(&peer_network_interfaces.network.network_interfaces)
         }
     );
 

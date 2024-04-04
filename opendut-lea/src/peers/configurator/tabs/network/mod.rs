@@ -4,9 +4,11 @@ use leptos::{component, create_action, create_read_slice, create_rw_signal, crea
 
 use crate::components::{Toast, use_toaster, UserInputValue};
 use crate::peers::configurator::tabs::network::network_interface_name_input::NetworkInterfaceNameInput;
+use crate::peers::configurator::tabs::network::bridge_name_input::BridgeNameInput;
 use crate::peers::configurator::types::{UserPeerConfiguration, UserPeerNetworkInterface};
 
 mod network_interface_name_input;
+mod bridge_name_input;
 
 #[component]
 pub fn NetworkTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl IntoView {
@@ -15,10 +17,10 @@ pub fn NetworkTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl I
 
     let (interfaces_getter, interfaces_setter) = create_slice(peer_configuration,
          |peer_configuration| {
-             Clone::clone(&peer_configuration.network_interfaces)
+             Clone::clone(&peer_configuration.network.network_interfaces)
          },
          |peer_configuration, value| {
-             peer_configuration.network_interfaces = value
+             peer_configuration.network.network_interfaces = value
          }
     );
 
@@ -105,7 +107,10 @@ pub fn NetworkTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl I
     };
 
     view! {
-       <NetworkInterfaceNameInput
+        <BridgeNameInput 
+            peer_configuration=peer_configuration
+        />
+        <NetworkInterfaceNameInput
             interfaces = interfaces_getter
             on_action = move |name| {
                 let mut interface_names = interfaces_getter.get_untracked();

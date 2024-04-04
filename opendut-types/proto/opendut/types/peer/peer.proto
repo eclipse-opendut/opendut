@@ -21,15 +21,16 @@ message PeerLocation {
   string value = 1;
 }
 
-message PeerNetworkConfiguration {
+message PeerNetworkDescriptor {
   repeated opendut.types.util.NetworkInterfaceDescriptor interfaces = 1;
+  opendut.types.util.NetworkInterfaceName bridge_name = 2;
 }
 
 message PeerDescriptor {
   opendut.types.peer.PeerId id = 1;
   opendut.types.peer.PeerName name = 2;
   opendut.types.peer.PeerLocation location = 3;
-  opendut.types.peer.PeerNetworkConfiguration network_configuration = 4;
+  opendut.types.peer.PeerNetworkDescriptor network = 4;
   opendut.types.topology.Topology topology = 5;
   opendut.types.peer.executor.ExecutorDescriptors executors = 6;
 }

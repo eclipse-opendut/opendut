@@ -7,6 +7,7 @@ impl From<crate::peer::configuration::PeerConfiguration> for PeerConfiguration {
         Self {
             executors: Some(value.executors.into()),
             cluster_assignment: value.cluster_assignment.map(|assignment| assignment.into()),
+            network: Some(value.network.into())
         }
     }
 }
@@ -25,9 +26,38 @@ impl TryFrom<PeerConfiguration> for crate::peer::configuration::PeerConfiguratio
             .map(TryInto::try_into)
             .transpose()?;
 
+        let network = value.network
+            .ok_or(ErrorBuilder::field_not_set("network"))?
+            .try_into()?;
+
         Ok(crate::peer::configuration::PeerConfiguration {
             executors,
-            cluster_assignment
+            cluster_assignment,
+            network
+        })
+    }
+}
+
+impl From<crate::peer::configuration::PeerNetworkConfiguration> for PeerNetworkConfiguration {
+    fn from(value: crate::peer::configuration::PeerNetworkConfiguration) -> Self {
+        Self {
+            bridge_name: Some(value.bridge_name.into())
+        }
+    }
+}
+
+impl TryFrom<PeerNetworkConfiguration> for crate::peer::configuration::PeerNetworkConfiguration {
+    type Error = ConversionError;
+
+    fn try_from(value: PeerNetworkConfiguration) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<PeerNetworkConfiguration, crate::peer::configuration::PeerNetworkConfiguration>;
+
+        let bridge_name = value.bridge_name
+            .ok_or(ErrorBuilder::field_not_set("bridge_name"))?
+            .try_into()?;
+
+        Ok(crate::peer::configuration::PeerNetworkConfiguration {
+            bridge_name,
         })
     }
 }
