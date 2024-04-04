@@ -50,7 +50,7 @@ pub fn initialize_with_config(config: LoggingConfig) -> Result<ShutdownHandle, E
         .from_env()?;
 
     let stdout_logging_layer =
-        if config.stdout_logging {
+        if config.logging_stdout {
             let stdout_logging_layer = tracing_subscriber::fmt::layer()
                 .compact();
             Some(stdout_logging_layer)
@@ -211,7 +211,7 @@ pub fn create_metrics() {
 #[derive(Default)]
 pub struct LoggingConfig {
     pub file_logging: Option<PathBuf>,
-    pub stdout_logging: bool,
+    pub logging_stdout: bool,
     pub opentelemetry_endpoint: Option<Endpoint>,
     pub opentelemetry_service_name: Option<String>,
     pub opentelemetry_service_instance_id: Option<String>,
@@ -219,7 +219,7 @@ pub struct LoggingConfig {
 impl LoggingConfig {
     pub fn load(config: &config::Config) -> Result<Self, LoggingConfigError> {
         let file_logging = None; //TODO load from config
-        let stdout_logging = config.get_bool("opentelemetry.stdout_logging")?;
+        let logging_stdout = config.get_bool("opentelemetry.logging.stdout")?;
 
         let opentelemetry_enabled = config.get_bool("opentelemetry.enabled")?;
         let opentelemetry_endpoint = if opentelemetry_enabled {
@@ -235,7 +235,7 @@ impl LoggingConfig {
             None
         };
         let opentelemetry_service_name = if opentelemetry_enabled {
-            let field = String::from("opentelemetry.service_name");
+            let field = String::from("opentelemetry.service.name");
             let service = config.get_string(&field)?;
             Some(service)
         } else {
@@ -251,7 +251,7 @@ impl LoggingConfig {
 
         Ok(LoggingConfig {
             file_logging,
-            stdout_logging,
+            logging_stdout,
             opentelemetry_endpoint,
             opentelemetry_service_name,
             opentelemetry_service_instance_id,

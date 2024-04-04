@@ -118,7 +118,7 @@ pub fn init_logging() -> anyhow::Result<()> {
 
     let config = logging::LoggingConfig {
         file_logging: Some(log_file),
-        stdout_logging: false,
+        logging_stdout: false,
         opentelemetry_endpoint: None,
         opentelemetry_service_name: None,
         opentelemetry_service_instance_id: None,

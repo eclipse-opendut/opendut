@@ -47,6 +47,6 @@ retries = 5
 
 [opentelemetry]
 enabled = false
-stdout_logging = true
+logging.stdout = true
 endpoint = ""
-service_name = "opendut-carl"
+service.name = "opendut-carl"
