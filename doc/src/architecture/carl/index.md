@@ -7,25 +7,26 @@ node "LEA/CLEO" as UI
 frame CARL {
   agent ClusterManager
   agent PeerManager
+  portout VpnManagementClient
   agent PeerMessagingBroker
   agent ResourcesManager
-  portout VpnManagementClient
 }
-node "VPN Management Server"
+node "VPN\nManagement\nServer" as VpnManagementServer
 node EDGAR
 
 UI --> ClusterManager
 UI --> PeerManager
+UI ...> PeerMessagingBroker : list_peers()
 
 ClusterManager --> PeerMessagingBroker
 ClusterManager ---> ResourcesManager
 PeerManager -- VpnManagementClient
 PeerManager ---> ResourcesManager
-PeerMessagingBroker --> ResourcesManager
+ResourcesManager <- PeerMessagingBroker
 
-PeerMessagingBroker <===> EDGAR : Stream
+PeerMessagingBroker <==> EDGAR : Stream (PeerConfiguration)
 
-VpnManagementClient -> "VPN Management Server"
+VpnManagementClient -> VpnManagementServer
 
 @enduml
 ```

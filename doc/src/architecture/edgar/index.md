@@ -7,19 +7,21 @@ node "LEA/CLEO" as UI
 actor "User"
 
 frame Peer {
-  node VpnClient
   agent EDGAR
+  node VpnClient
+  node Filesystem
 }
 node CARL
 node "VPN Management Server"
 
-UI <-- User : Configure Peer
+UI <-- User : Create Peer & Get Setup-String
 User -> EDGAR : Setup-String
-UI -> CARL
+UI -> CARL : PeerDescriptor
 
-CARL <-- EDGAR : Retrieve Configuration
+CARL <-- EDGAR : Fetch configuration
 
 EDGAR -> VpnClient : Install & Configure
+EDGAR --> Filesystem : Configure Service, certificates etc.
 
 "VPN Management Server" <-- VpnClient : Login
 
@@ -37,20 +39,22 @@ frame Peer {
     agent CanManager
   }
   node "Network Interfaces" as Interfaces
+  node Executor
 }
 node CARL
 node "VPN Management Server"
 
-CARL <==> EdgarService : Stream
+CARL <==> EdgarService : Stream (PeerConfiguration)
 CARL -> "VPN Management Server"
 
 "VPN Management Server" --> VpnClient : Configure Peers
 
-EdgarService --> NetworkInterfaceManager : GRE & Bridge
+EdgarService --> NetworkInterfaceManager
 EdgarService --> CanManager
-NetworkInterfaceManager -> Interfaces
-CanManager -> Interfaces : CAN
-Interfaces <- VpnClient : WireGuard
+EdgarService --> Executor
+NetworkInterfaceManager --> Interfaces : GRE & Bridge
+CanManager --> Interfaces : CAN
+VpnClient --> Interfaces : WireGuard
 
 @enduml
 ```
