@@ -2,7 +2,8 @@ FROM ubuntu:22.04 as builder
 RUN apt update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends libnss3-tools
 
 # version of firefox from here: https://github.com/linuxserver/docker-firefox/releases
-FROM lscr.io/linuxserver/firefox:124.0.1-r0-ls156
+# added a copy to ghcr due to connectivity issues with the original source
+FROM ghcr.io/eclipse-opendut/firefox:124.0.1-r0-ls156
 
 COPY --from=builder /usr/bin/certutil /usr/bin/certutil
 

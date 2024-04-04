@@ -14,3 +14,19 @@ Following features are included:
   * https://carl
   * https://netbird-dashboard
   * https://keycloak
+
+
+## GitHub container registry
+
+Added a copy to GHCR due to connectivity issues with the original source.
+* [GitHub GHCR Documentation](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)
+* Change visibility of the package to public in the [settings](https://github.com/orgs/eclipse-opendut/packages/container/firefox/settings).
+* Manage GitHub actions access in the settings to allow access to the package from the opendut repository.
+* Update container in GitHub container registry
+```shell
+VERSION=124.0.1-r0-ls156
+docker pull lscr.io/linuxserver/firefox:$VERSION
+docker tag lscr.io/linuxserver/firefox:$VERSION ghcr.io/eclipse-opendut/firefox:$VERSION
+docker login ghcr.io -u <USERNAME>
+docker push ghcr.io/eclipse-opendut/firefox:$VERSION
+```
