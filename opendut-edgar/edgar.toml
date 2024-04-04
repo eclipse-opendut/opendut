@@ -35,5 +35,6 @@ remote.host = ""
 
 [opentelemetry]
 enabled = false
+stdout_logging = true
 endpoint = ""
 service_name = "opendut-edgar"
