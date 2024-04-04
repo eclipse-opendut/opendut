@@ -49,8 +49,14 @@ pub fn initialize_with_config(config: LoggingConfig) -> Result<ShutdownHandle, E
         .with_env_var("OPENDUT_LOG")
         .from_env()?;
 
-    let stdout_logging_layer = tracing_subscriber::fmt::layer()
-        .compact();
+    let stdout_logging_layer =
+        if config.stdout_logging {
+            let stdout_logging_layer = tracing_subscriber::fmt::layer()
+                .compact();
+            Some(stdout_logging_layer)
+        } else {
+            None
+        };
 
     let file_logging_layer =
         if let Some(log_file) = config.file_logging {
@@ -205,6 +211,7 @@ pub fn create_metrics() {
 #[derive(Default)]
 pub struct LoggingConfig {
     pub file_logging: Option<PathBuf>,
+    pub stdout_logging: bool,
     pub opentelemetry_endpoint: Option<Endpoint>,
     pub opentelemetry_service_name: Option<String>,
     pub opentelemetry_service_instance_id: Option<String>,
@@ -212,6 +219,7 @@ pub struct LoggingConfig {
 impl LoggingConfig {
     pub fn load(config: &config::Config) -> Result<Self, LoggingConfigError> {
         let file_logging = None; //TODO load from config
+        let stdout_logging = config.get_bool("opentelemetry.stdout_logging")?;
 
         let opentelemetry_enabled = config.get_bool("opentelemetry.enabled")?;
         let opentelemetry_endpoint = if opentelemetry_enabled {
@@ -243,6 +251,7 @@ impl LoggingConfig {
 
         Ok(LoggingConfig {
             file_logging,
+            stdout_logging,
             opentelemetry_endpoint,
             opentelemetry_service_name,
             opentelemetry_service_instance_id,
