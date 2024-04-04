@@ -91,8 +91,8 @@ mod client {
             use tonic::codegen::tokio_stream::wrappers::ReceiverStream;
             use tonic::metadata::MetadataValue;
 
-            type Downstream = tonic::Streaming<peer_messaging_broker::Downstream>;
-            type Upstream = mpsc::Sender<peer_messaging_broker::Upstream>;
+            pub type Downstream = tonic::Streaming<peer_messaging_broker::Downstream>;
+            pub type Upstream = mpsc::Sender<peer_messaging_broker::Upstream>;
 
             impl<T> PeerMessagingBroker<T>
             where T: tonic::client::GrpcService<tonic::body::BoxBody>,
@@ -101,7 +101,7 @@ mod client {
                   <T::ResponseBody as Body>::Error: Into<StdError> + Send,
             {
 
-                pub async fn open_stream(&mut self, id: PeerId, remote_address: IpAddr) -> Result<(Downstream, Upstream), error::OpenStream> {
+                pub async fn open_stream(&mut self, id: PeerId, remote_address: &IpAddr) -> Result<(Downstream, Upstream), error::OpenStream> {
                     let (tx, rx) = mpsc::channel(1024);
 
                     let response = {

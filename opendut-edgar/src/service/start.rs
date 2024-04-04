@@ -93,22 +93,9 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
 
     let timeout_duration = Duration::from_millis(settings.config.get::<u64>("carl.disconnect.timeout.ms")?);
 
-    log::debug!("Connecting to CARL...");
     let mut carl = carl::connect(&settings.config).await?;
-    log::info!("Connected to CARL.");
 
-    log::debug!("Connecting to peer-messaging-broker...");
-
-    let (mut rx_inbound, tx_outbound) = carl.broker.open_stream(self_id, remote_address).await?;
-
-    let message = peer_messaging_broker::Upstream {
-        message: Some(peer_messaging_broker::upstream::Message::Ping(peer_messaging_broker::Ping {})),
-        context: None
-    };
-
-    tx_outbound.send(message).await
-        .map_err(|cause| opendut_carl_api::carl::broker::error::OpenStream { message: format!("Error while sending initial ping: {cause}") })?;
-    log::info!("Connected to peer-messaging-broker...");
+    let (mut rx_inbound, tx_outbound) = carl::open_stream(self_id, &remote_address, &mut carl).await?;
 
 
     loop {
