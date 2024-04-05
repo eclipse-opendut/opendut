@@ -18,6 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
+  "id": 17,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -100,7 +101,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Duration"
+              "options": "traceDuration"
             },
             "properties": [
               {
@@ -110,7 +111,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "green",
+                  "fixedColor": "blue",
                   "mode": "fixed"
                 }
               }
