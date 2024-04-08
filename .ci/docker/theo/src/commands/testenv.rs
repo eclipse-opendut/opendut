@@ -29,6 +29,12 @@ pub enum TaskCli {
         ///
         #[arg(long, short, action = ArgAction::SetTrue)]
         skip_build: bool,
+
+        #[arg(long, short='f', action = ArgAction::SetTrue)]
+        skip_firefox: bool,
+
+        #[arg(long, short='t', action = ArgAction::SetTrue)]
+        skip_telemetry: bool,
     },
     /// Stop test environment.
     Stop,
@@ -56,13 +62,17 @@ impl TestenvCli {
             TaskCli::Build => {
                 Self::docker_compose_build_testenv_services()?;
             }
-            TaskCli::Start { expose, skip_build } => {
+            TaskCli::Start { expose, skip_build, skip_firefox, skip_telemetry } => {
                 if !skip_build {
                     Self::docker_compose_build_testenv_services()?;
                 }
                 // start services
-                docker_compose_up_expose_ports(DockerCoreServices::Firefox.as_str(), expose)?;
-                docker_compose_up_expose_ports(DockerCoreServices::Telemetry.as_str(), expose)?;
+                if !skip_firefox {
+                    docker_compose_up_expose_ports(DockerCoreServices::Firefox.as_str(), expose)?;
+                }
+                if !skip_telemetry {
+                    docker_compose_up_expose_ports(DockerCoreServices::Telemetry.as_str(), expose)?;
+                }
                 docker_compose_up_expose_ports(DockerCoreServices::Keycloak.as_str(), expose)?;
                 crate::core::docker::keycloak::wait_for_keycloak_provisioned()?;
                 start_netbird(expose)?;

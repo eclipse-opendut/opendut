@@ -57,7 +57,7 @@ jobs:
 
       - name: Start test environment
         run: |
-          ./opendut-theo/opendut-theo testenv start
+          ./opendut-theo/opendut-theo testenv start -f -t
 
       - name: Start edgar cluster
         run: |
