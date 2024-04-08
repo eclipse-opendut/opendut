@@ -2,7 +2,8 @@ version: "3.9"
 services:
  prometheus:
    container_name: prometheus
-   image: prom/prometheus:latest
+   image: prom/prometheus:v2.51.1
+   command: [ "--config.file=/etc/prometheus/prometheus.yml" ]
    restart: always
    volumes:
      - ./prometheus.yml:/etc/prometheus/prometheus.yml
@@ -11,7 +12,7 @@ services:
 
  tempo:
     container_name: tempo
-    image: grafana/tempo:latest
+    image: grafana/tempo:2.4.1
     command: [ "-config.file=/etc/tempo.yml" ]
     volumes:
        - ./tempo.yml:/etc/tempo.yml
@@ -25,7 +26,7 @@ services:
 
  loki:
     container_name: loki
-    image: grafana/loki:latest
+    image: grafana/loki:2.9.6
     volumes:
       - ./loki.yml:/etc/loki/loki.yml
       - loki-data:/loki
@@ -40,7 +41,7 @@ services:
 
  otel-collector:
    container_name: otel-collector
-   image: otel/opentelemetry-collector-contrib:latest
+   image: otel/opentelemetry-collector-contrib:0.97.0
    volumes:
      - ./otel-collector.yml:/etc/collector-gateway.yaml
    command: [ "--config=/etc/collector-gateway.yaml" ]
@@ -53,7 +54,7 @@ services:
 
  grafana:
     container_name: grafana
-    image: grafana/grafana:latest
+    image: grafana/grafana:10.4.1
     restart: unless-stopped
     depends_on:
       tempo:
@@ -64,6 +65,7 @@ services:
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
       - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
     volumes:
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
       - ./grafana/dashboards:/var/lib/grafana/dashboards
       - ./grafana/dashboard.yml:/etc/grafana/provisioning/dashboards/main.yaml
       - ./grafana/grafana-datasources.yml:/etc/grafana/provisioning/datasources/ds.yaml
