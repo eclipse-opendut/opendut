@@ -14,6 +14,8 @@ struct DeviceTable {
     id: DeviceId,
     #[table(title = "Description")]
     description: DeviceDescription,
+    #[table(title = "Tags")]
+    tags: String,
 }
 
 pub async fn list_devices(carl: &mut CarlClient, output: ListOutputFormat) -> crate::Result<()> {
@@ -103,7 +105,7 @@ pub mod create {
                         Some(network_interface_descriptor) => network_interface_descriptor.clone(),
                         None => {
                             Err(format!("Cannot create new device because interface is not one of the allowed values: {} \nAllowed interfaces are configured on the peer.",
-                                        peer_network_interface_names.into_iter().map(|name| name.name()).collect::<Vec<_>>().join(", ")))?
+                                    peer_network_interface_names.into_iter().map(|name| name.name()).collect::<Vec<_>>().join(", ")))?
                         },
                     };
                 }
@@ -120,7 +122,7 @@ pub mod create {
             .map_err(|error| format!("Failed to update peer <{}>.\n  {}", peer_id, error))?;
         let output_format = DescribeOutputFormat::from(output);
         crate::commands::peer::describe::render_peer_descriptor(peer_descriptor, output_format);
-
+        
         Ok(())
     }
 }
@@ -259,6 +261,7 @@ impl From<DeviceDescriptor> for DeviceTable {
             name: device.name,
             id: device.id,
             description: device.description.unwrap_or_default(),
+            tags: device.tags.iter().map(|tag| tag.value()).collect::<Vec<_>>().join(", "),
         }
     }
 }
