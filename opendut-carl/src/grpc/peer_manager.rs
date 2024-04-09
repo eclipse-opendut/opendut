@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use opentelemetry::global;
 use pem::Pem;
 
 use tonic::{Request, Response, Status};
@@ -171,17 +170,6 @@ impl PeerManagerService for PeerManagerFacade {
                 }))
             }
             Ok(peers) => {
-                let peer_quantity = peers.len() as f64;
-                let meter = global::meter("opendut_meter");
-                let registered_peers = meter.f64_observable_gauge("registered_peers").init();
-                meter.register_callback(&[registered_peers.as_any()], move |observer| {
-                    observer.observe_f64(
-                        &registered_peers,
-                        peer_quantity,
-                        &[]
-                    )
-                }).expect("meter failed");
-
                 Ok(Response::new(ListPeerDescriptorsResponse {
                     reply: Some(list_peer_descriptors_response::Reply::Success(
                         ListPeerDescriptorsSuccess {

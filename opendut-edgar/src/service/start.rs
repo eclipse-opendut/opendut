@@ -60,7 +60,7 @@ pub async fn create_with_logging(settings_override: config::Config) -> anyhow::R
 
     let logging_config = LoggingConfig::load(&settings.config)?;
     let mut shutdown = logging::initialize_with_config(logging_config)?;
-    logging::create_metrics();
+    logging::initialize_metrics_collection();
 
     create(settings).await?;
 

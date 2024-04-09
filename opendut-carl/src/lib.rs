@@ -43,6 +43,7 @@ opendut_util::app_info!();
 
 mod actions;
 mod cluster;
+mod metrics;
 mod peer;
 mod resources;
 pub mod settings;
@@ -54,7 +55,7 @@ pub async fn create_with_logging(settings_override: config::Config) -> Result<()
 
     let logging_config = LoggingConfig::load(&settings.config)?;
     let mut shutdown = logging::initialize_with_config(logging_config)?;
-    logging::create_metrics();
+    logging::initialize_metrics_collection();
 
     create(settings).await?;
 
@@ -106,6 +107,8 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
 
 
     let resources_manager = ResourcesManager::new();
+    metrics::initialize_metrics_collection(Arc::clone(&resources_manager));
+    
     let peer_messaging_broker = PeerMessagingBroker::new(
         Arc::clone(&resources_manager),
         PeerMessagingBrokerOptions::load(&settings.config)?,

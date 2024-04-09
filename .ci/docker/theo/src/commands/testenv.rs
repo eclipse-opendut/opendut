@@ -30,10 +30,10 @@ pub enum TaskCli {
         #[arg(long, short, action = ArgAction::SetTrue)]
         skip_build: bool,
 
-        #[arg(long, short='f', action = ArgAction::SetTrue)]
+        #[arg(long, action = ArgAction::SetTrue)]
         skip_firefox: bool,
 
-        #[arg(long, short='t', action = ArgAction::SetTrue)]
+        #[arg(long, action = ArgAction::SetTrue)]
         skip_telemetry: bool,
     },
     /// Stop test environment.
