@@ -1,7 +1,6 @@
 use std::fs::File;
 use std::path::PathBuf;
 use std::str::FromStr;
-use std::time;
 use sysinfo::{Pid, System};
 
 use opentelemetry::{global, KeyValue};
@@ -15,7 +14,6 @@ use opentelemetry_sdk::{Resource, runtime};
 use opentelemetry_sdk::logs::Logger;
 use opentelemetry_sdk::metrics::SdkMeterProvider;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
-use tokio::time::sleep;
 use tracing_subscriber::filter::Directive;
 use tracing_subscriber::filter::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
@@ -114,12 +112,14 @@ fn init_tracer(endpoint: &Endpoint, service_name: impl Into<String>, service_ins
                 .with_endpoint(Clone::clone(&endpoint.url)),
         )
         .with_trace_config(
-            opentelemetry_sdk::trace::config().with_resource(Resource::new(vec![KeyValue::new(
+            opentelemetry_sdk::trace::config().with_resource(Resource::new(vec![
+                KeyValue::new(
                     opentelemetry_semantic_conventions::resource::SERVICE_NAME,
                     service_name.into()),
                 KeyValue::new(
                     opentelemetry_semantic_conventions::resource::SERVICE_INSTANCE_ID,
-                    service_instance_id.into())
+                    service_instance_id.into()
+                )
             ])),
         )
         .install_batch(runtime::Tokio)
@@ -129,12 +129,14 @@ fn init_logger(endpoint: &Endpoint, service_name: impl Into<String>, service_ins
     opentelemetry_otlp::new_pipeline()
         .logging()
         .with_log_config(
-            opentelemetry_sdk::logs::Config::default().with_resource(Resource::new(vec![KeyValue::new(
+            opentelemetry_sdk::logs::Config::default().with_resource(Resource::new(vec![
+                KeyValue::new(
                     opentelemetry_semantic_conventions::resource::SERVICE_NAME,
                     service_name.into()),
                  KeyValue::new(
                     opentelemetry_semantic_conventions::resource::SERVICE_INSTANCE_ID,
-                    service_instance_id.into())
+                    service_instance_id.into()
+                 ),
             ])),
         )
         .with_exporter(
@@ -153,58 +155,36 @@ fn init_metrics(endpoint: &Endpoint, service_name: impl Into<String>, service_in
                 .tonic()
                 .with_endpoint(Clone::clone(&endpoint.url))
         )
-        .with_resource(Resource::new(vec![KeyValue::new(
+        .with_resource(Resource::new(vec![
+            KeyValue::new(
                 opentelemetry_semantic_conventions::resource::SERVICE_NAME,
-                service_name.into()),
+                service_name.into()
+            ),
             KeyValue::new(
                 opentelemetry_semantic_conventions::resource::SERVICE_INSTANCE_ID,
                 service_instance_id.into()
-        )]))
+            ),
+        ]))
         .build()
 }
-pub fn create_metrics() {
-    tokio::spawn( async move {
-        loop {
-            let period = time::Duration::from_millis(60000); //collecting metrics every 1 minute
-            sleep(period).await;
+pub fn initialize_metrics_collection() {
+    let meter = global::meter("opendut_meter");
+    
+    let current_pid = std::process::id() as usize;
+    let process_ram_used = meter.u64_observable_gauge("process_ram_used").init();
+    let process_cpu_used = meter.f64_observable_gauge("process_cpu_used").init();
+    let host_ram_used = meter.u64_observable_gauge("host_ram_used").init();
+    
+    meter.register_callback(&[process_ram_used.as_any(),process_cpu_used.as_any(),host_ram_used.as_any()], move |observer| {
+        let mut sys = System::new_all();
+        sys.refresh_processes();
 
-            let meter = global::meter("opendut_meter"); //initialize a meter
-
-            let mut sys = System::new_all();
-            sys.refresh_all();
-
-            let current_pid = std::process::id() as usize;
-            if let Some(process) = sys.process(Pid::from(current_pid)) {
-                let process_ram_usage = process.memory();
-                let process_cpu_usage = process.cpu_usage();
-
-                let edgar_process_ram_used = meter.u64_observable_gauge("process_ram_used").init();
-                meter.register_callback(&[edgar_process_ram_used.as_any()], move |observer| {
-                    observer.observe_u64(
-                        &edgar_process_ram_used,
-                        process_ram_usage,
-                        &[]
-                    )
-                }).expect("meter failed");
-                let edgar_process_cpu_used = meter.f64_observable_gauge("process_cpu_used").init();
-                meter.register_callback(&[edgar_process_cpu_used.as_any()], move |observer| {
-                    observer.observe_f64(
-                        &edgar_process_cpu_used,
-                        process_cpu_usage as f64,
-                        &[]
-                    )
-                }).expect("meter failed");
-            }
-            let edgar_host_ram_used = meter.u64_observable_gauge("host_ram_used").init();
-            meter.register_callback(&[edgar_host_ram_used.as_any()], move |observer| {
-                observer.observe_u64(
-                    &edgar_host_ram_used,
-                    sys.used_memory(),
-                    &[]
-                )
-            }).expect("meter failed");
+        if let Some(process) = sys.process(Pid::from(current_pid)) {
+            observer.observe_u64(&process_ram_used, process.memory(),&[]);
+            observer.observe_f64(&process_cpu_used, process.cpu_usage() as f64,&[]);
+            observer.observe_u64(&host_ram_used, sys.used_memory(),&[]);                
         }
-    });
+    }).expect("could not register metrics collection callback");
 }
 
 
@@ -281,7 +261,7 @@ impl ShutdownHandle {
     pub fn shutdown(&mut self) {
         global::shutdown_tracer_provider();
         global::shutdown_logger_provider();
-        //global::shutdown_meter_provider(); //TODO when opentelemetry #1623 appears in release
+        //global::shutdown_meter_provider(); //TODO re-include when this appears in a release: https://github.com/open-telemetry/opentelemetry-rust/pull/1623
     }
 }
 impl Drop for ShutdownHandle {

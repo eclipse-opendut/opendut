@@ -29,7 +29,7 @@ if [ ! -e "/config/.firstrun" ]; then
   su - abc -c 'DISPLAY=:1 firefox https://keycloak'
   su - abc -c 'DISPLAY=:1 firefox https://netbird-dashboard'
   su - abc -c 'DISPLAY=:1 firefox https://carl'
-  su -abc -c 'DISPLAY=:1 firefox http://grafana'
+  su - abc -c 'DISPLAY=:1 firefox http://grafana'
 fi
 
 # keep running to avoid constant re-run

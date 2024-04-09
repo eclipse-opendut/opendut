@@ -57,7 +57,7 @@ jobs:
 
       - name: Start test environment
         run: |
-          ./opendut-theo/opendut-theo testenv start -f -t
+          ./opendut-theo/opendut-theo testenv start --skip-firefox --skip-telemetry
 
       - name: Start edgar cluster
         run: |
