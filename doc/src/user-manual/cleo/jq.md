@@ -1,12 +1,14 @@
 ## CLEO and jq
 
-jq is a command-line-tool to pipe outputs from json into pretty json or extract values.
-That's how jq can automate cli-applications.
+jq is a command line tool to pipe outputs from json into pretty json or extract values.
+That is how jq can automate cli-applications.
 
 #### Basic jq 
-jq -r removes " from strings.
-[] constructs array
-object constructor: {} e.g. `jq  '[ { "name:" .[].name, "id:" .[].id } ]'` or: `jq '[ .[] | { title, name } ]'`
+- jq -r removes " from strings.
+- [] constructs an array
+- {} constructs an object
+
+e.g. `jq  '[ { "name:" .[].name, "id:" .[].id } ]'` or: `jq '[ .[] | { title, name } ]'`
 
 **input**
 ```shell
@@ -49,7 +51,7 @@ jq extracts the names of every json element in the list of peers.
   "SecondPeer" 
 ]
 ```
-can also be put into an array with `cleo list --output=json peers | jq '[.[].name']`
+which can also be put into an array with `cleo list --output=json peers | jq '[.[].name']`
 
 **input**
 ```shell
@@ -84,12 +86,12 @@ Peer: Edgar
   Devices: [device-1, The Device, Another Device, Fubar Device, Lost Device]
 ```
 
-**to get the number of the peers**
+**Get the number of the peers**
 ```shell
 opendut-cleo list --output=json peers | jq 'length'
 ```
 
-**to sort peers by name**
+**Sort peers by name**
 ```shell
 opendut-cleo list --output=json peers | jq 'sort_by(.name)'
 ```

@@ -9,32 +9,36 @@ The default output format is a table which is displayed by not using the `--outp
 
 ## Creating resources
 
-To create resources it depends on the resource whether an ID or connected devices have to be added to the command.
+To create resources it depends on the type of resource whether an ID or connected devices have to be added to the command.
 
     opendut-cleo create <resource>
 
 ## Generating PeerSetup Strings
 
-To create a PeerSetup, providing the PeerID of the peer to be set up is necessary:
+To create a PeerSetup, it is necessary to provide the PeerID of the peer:
 
     opendut-cleo generate-setup-key --id <PeerID>
 
 ## Decoding Setup Strings
 
+If you have a setup string, and you want to analyze its content, you can use the `decode` command.  
+
     opendut-cleo decode --setup-string <String>
 
 ## Describing resources
 
-To describe a resource, their ID is to be provided. The output can be displayed via text or JSON-format.
+To describe a resource, the ID of the resource has to be provided. The output can be displayed as text or JSON-format.
 
     opendut-cleo describe --output=<output format> <resource> --id 
 
 ## Finding resources
 
-Wildcards such as '*' can be used to find resources.
+You can search for resources by specifying a search criteria string with the `find` command. Wildcards such as `'*'` are also supported.
 
-    opendut-cleo find <resource> "<at least search criteria>"
+    opendut-cleo find <resource> "<at least one search criteria>"
 
 ## Delete resources
+
+Specify the type of resource and its ID you want to delete in CARL.
 
     opendut-cleo delete <resource> --id <ID of resource>
