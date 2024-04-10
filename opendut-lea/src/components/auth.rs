@@ -14,19 +14,17 @@ pub fn LeaAuthenticated(
     #[prop(optional, into)] disabled_auth: ViewFn,
 ) -> impl IntoView {
     let auth = use_app_globals().expect_auth();
-    match auth {
-        None => {
-            disabled_auth.run()
-        }
-        Some(auth) => {
+    let app_config = use_app_globals().expect_config();
 
+    match (app_config.idp_config, auth) {
+        (Some(lea_idp_config), Some(auth)) => {
             let auth_cloned = auth.clone();
             let auth_token = move || auth_cloned.access_token();
             create_effect(move |_| {
                 let (_auth_data, auth_data_write) = use_context::<(ReadSignal<OptionalAuthData>, WriteSignal<OptionalAuthData>)>().expect("AuthData should be provided in the context.");
                 if let Some(token) = auth_token() {
                     tracing::debug!("AUTH Token: {}", token);
-                    let data = decode_token(&token);
+                    let data = decode_token(&token, lea_idp_config.issuer_url.as_ref());
                     auth_data_write.set(OptionalAuthData {
                         auth_data: Some(
                             AuthData {
@@ -45,7 +43,6 @@ pub fn LeaAuthenticated(
                     "no token".to_string()
                 }
             });
-
             let unauthenticated = move || unauthenticated.run();
             let authenticated = move || auth.authenticated();
 
@@ -58,6 +55,19 @@ pub fn LeaAuthenticated(
                     />
                 </Transition>
             }
+
+        }
+        (Some(_lea_idp_config), None) => {
+            tracing::warn!("Warning: Authentication enabled - User not authenticated.");
+            disabled_auth.run()
+        }
+        (None, Some(_auth)) => {
+            tracing::warn!("Warning: Authentication disabled - No authentication config provided.");
+            disabled_auth.run()
+        }
+        _ => {
+            tracing::warn!("Warning: Authentication disabled - Neither an authentication config provided, nor is the user authenticated.");
+            disabled_auth.run()
         }
     }
 }
@@ -98,14 +108,13 @@ impl Claims {
     pub(crate) fn empty_vector() -> Vec<String> { Vec::new() }
 }
 
-pub(crate) fn decode_token(token: &str) -> TokenData<Claims> {
+pub(crate) fn decode_token(token: &str, issuer_url: &str) -> TokenData<Claims> {
     let mut validation = Validation::new(Algorithm::RS256);
-    validation.set_issuer(&["https://keycloak/realms/opendut".to_string()]);  // TODO: get from config
+    validation.set_issuer(&[issuer_url.trim_end_matches('/')]);
     validation.set_audience(&["account".to_string()]);
     validation.insecure_disable_signature_validation();
 
     let decoding_key = DecodingKey::from_secret(&[]);
 
     jsonwebtoken::decode::<Claims>(token, &decoding_key, &validation).expect("failed to decode")
-
 }
