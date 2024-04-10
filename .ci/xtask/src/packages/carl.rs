@@ -18,6 +18,7 @@ pub struct CarlCli {
 #[derive(clap::Subcommand)]
 pub enum TaskCli {
     Distribution(crate::tasks::distribution::DistributionCli),
+    Docker(crate::tasks::docker::DockerCli),
     Licenses(crate::tasks::licenses::LicensesCli),
     Run(crate::tasks::run::RunCli),
 
@@ -60,6 +61,12 @@ impl CarlCli {
             TaskCli::DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli { target }) => {
                 for target in target.iter() {
                     distribution::validate::validate_contents(target)?;
+                }
+            }
+            TaskCli::Docker(crate::tasks::docker::DockerCli { tag, publish }) => {
+                crate::tasks::docker::build_carl_docker_image(tag.clone())?;
+                if publish {
+                    crate::tasks::docker::publish_carl_docker_image(tag)?;
                 }
             }
         };

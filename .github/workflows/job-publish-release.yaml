@@ -35,15 +35,15 @@ jobs:
 
     - uses: ncipollo/release-action@6c75be85e571768fa31b40abf38de58ba0397db5
       name: "Create Versioned Release"
-      if: ${{ github.ref != 'refs/tags/canary' }}
+      if: ${{ !startsWith( github.ref, 'refs/tags/canary' ) }}
       with:
         artifacts: ${{ env.artifacts_pattern }}
 
     - uses: ncipollo/release-action@6c75be85e571768fa31b40abf38de58ba0397db5
       name: "Create Canary Release"
-      if: ${{ github.ref == 'refs/tags/canary' }}
+      if: ${{ startsWith( github.ref, 'refs/tags/canary' ) }}
       with:
-        name: "Canary"
+        name: ${{ github.ref_name }}
         body: "Unstable release, intended for testing."
         prerelease: true
         allowUpdates: true  # overwrite existing canary release

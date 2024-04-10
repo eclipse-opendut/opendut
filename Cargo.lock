@@ -2655,6 +2655,7 @@ dependencies = [
  "anyhow",
  "assert_fs",
  "cargo_metadata",
+ "chrono",
  "clap",
  "flate2",
  "fs_extra",
