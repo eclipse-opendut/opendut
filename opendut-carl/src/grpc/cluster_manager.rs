@@ -131,7 +131,6 @@ impl ClusterManagerService for ClusterManagerFacade {
     async fn list_cluster_configurations(&self, request: Request<ListClusterConfigurationsRequest>) -> Result<Response<ListClusterConfigurationsResponse>, Status> {
         log::trace!("Received request: {:?}", request);
         let configurations = self.cluster_manager.list_configuration().await;
-
         Ok(Response::new(ListClusterConfigurationsResponse {
             result: Some(list_cluster_configurations_response::Result::Success(
                 ListClusterConfigurationsSuccess {
@@ -198,7 +197,6 @@ impl ClusterManagerService for ClusterManagerFacade {
     async fn list_cluster_deployments(&self, request: Request<ListClusterDeploymentsRequest>) -> Result<Response<ListClusterDeploymentsResponse>, Status> {
         log::trace!("Received request: {:?}", request);
         let deployments = self.cluster_manager.list_deployment().await;
-
         Ok(Response::new(ListClusterDeploymentsResponse {
             result: Some(list_cluster_deployments_response::Result::Success(
                 ListClusterDeploymentsSuccess {

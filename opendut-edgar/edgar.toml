@@ -38,3 +38,4 @@ enabled = false
 logging.stdout = true
 endpoint = ""
 service.name = "opendut-edgar"
+metrics.interval.ms = 60000
