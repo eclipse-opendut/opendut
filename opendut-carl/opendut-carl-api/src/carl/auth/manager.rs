@@ -113,8 +113,6 @@ impl AuthenticationManager {
 
 #[cfg(test)]
 mod tests {
-    use googletest::assert_that;
-    use googletest::matchers::eq;
     use oauth2::{ClientId, ClientSecret};
     use rstest::{fixture, rstest};
     use url::Url;
