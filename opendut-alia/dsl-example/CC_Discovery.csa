@@ -1,0 +1,9 @@
+PreConditions:
+
+Actions:
+    File_Path: "{File_Path}" default "/home/kali/CyberSec/Tools/CANtools/CC/cc_discovery.sh"
+    canIF: "{canIF}" default "can0"
+
+    CanDiscoverySH: execute(tool:"bash", params:["{File_Path}", "-i", "{canIF}"], duration:long)
+
+PostConditions:

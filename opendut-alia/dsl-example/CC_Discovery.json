@@ -1,0 +1,19 @@
+{
+   "name": "CC_Discovery.json",
+   "preconditions":[
+   ],
+   "actions":[
+   {"identifier":"File_Path", "result":"File_Path", "DSLStep":"File_Path: \"{File_Path}\" default \"/home/kali/CyberSec/Tools/CANtools/CC/cc_discovery.sh\"" , "value":"{File_Path}", "default":"/home/kali/CyberSec/Tools/CANtools/CC/cc_discovery.sh"},
+   {"identifier":"canIF", "result":"canIF", "DSLStep":"canIF: \"{canIF}\" default \"can0\"" , "value":"{canIF}", "default":"can0"},
+   {"identifier":"CanDiscoverySH", "result":"CanDiscoverySH", "DSLStep":"CanDiscoverySH: execute(tool:\"bash\", params:[\"{File_Path}\", \"-i\", \"{canIF}\"], duration:long)" , "commands":[{
+   				"name":"CanDiscoverySH",
+   				"result":"CanDiscoverySH"
+   				, "environment":"{ENVIRONMENT}" 
+   				, "tool":"bash"
+   				, "parameters":["{File_Path}", "-i", "{canIF}"]
+   				, "duration":"long"
+   			}]}
+   ],
+   "postconditions":[
+   ]
+}
