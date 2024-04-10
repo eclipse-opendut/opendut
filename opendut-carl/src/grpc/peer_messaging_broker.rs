@@ -44,6 +44,7 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
         let peers = peers.into_iter()
             .map(From::from)
             .collect::<Vec<_>>();
+
         let reply = ListPeersResponse {
             peers,
         };

@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::time::Duration;
 use sysinfo::{Pid, System};
 
 use opentelemetry::{global, KeyValue};
@@ -85,7 +86,8 @@ pub fn initialize_with_config(config: LoggingConfig) -> Result<ShutdownHandle, E
         let service_name: String = config.opentelemetry_service_name
             .unwrap_or_default();
         let service_instance_id = config.opentelemetry_service_instance_id.unwrap_or_else(|| String::from("carl_instance"));
-        let meter_provider = init_metrics(&endpoint, service_name, service_instance_id).expect("Failed to initialize metrics.");
+        let metrics_interval = config.opentelemetry_metrics_interval_ms.unwrap_or_default();
+        let meter_provider = init_metrics(&endpoint, service_name, service_instance_id, metrics_interval).expect("Failed to initialize metrics.");
 
         (Some(tracer), Some(logger), Some(logger_layer), Some(meter_provider))
     } else {
@@ -147,7 +149,7 @@ fn init_logger(endpoint: &Endpoint, service_name: impl Into<String>, service_ins
         .install_batch(runtime::Tokio)
 }
 
-fn init_metrics(endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>) -> Result<SdkMeterProvider, MetricsError> {
+fn init_metrics(endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>, metrics_interval: Duration) -> Result<SdkMeterProvider, MetricsError> {
     opentelemetry_otlp::new_pipeline()
         .metrics(runtime::Tokio)
         .with_exporter(
@@ -165,6 +167,7 @@ fn init_metrics(endpoint: &Endpoint, service_name: impl Into<String>, service_in
                 service_instance_id.into()
             ),
         ]))
+        .with_period(metrics_interval)
         .build()
 }
 pub fn initialize_metrics_collection() {
@@ -195,6 +198,7 @@ pub struct LoggingConfig {
     pub opentelemetry_endpoint: Option<Endpoint>,
     pub opentelemetry_service_name: Option<String>,
     pub opentelemetry_service_instance_id: Option<String>,
+    pub opentelemetry_metrics_interval_ms: Option<Duration>,
 }
 impl LoggingConfig {
     pub fn load(config: &config::Config) -> Result<Self, LoggingConfigError> {
@@ -228,6 +232,23 @@ impl LoggingConfig {
         } else {
             None
         };
+        let opentelemetry_metrics_interval_ms:Option<Duration> = if opentelemetry_enabled {
+            let field = String::from("opentelemetry.metrics.interval.ms");
+            let result =
+                if let Ok(interval_i64) = config.get_int(&field) {
+                    let interval_u64 = u64::try_from(interval_i64);
+                    if let Ok(result_u64) = interval_u64 {
+                        Duration::from_millis(result_u64)
+                    } else {
+                        Duration::from_millis(60000)
+                    }
+                } else {
+                    Duration::from_millis(60000)
+                };
+            Some(result)
+        } else {
+            None
+        };
 
         Ok(LoggingConfig {
             file_logging,
@@ -235,6 +256,7 @@ impl LoggingConfig {
             opentelemetry_endpoint,
             opentelemetry_service_name,
             opentelemetry_service_instance_id,
+            opentelemetry_metrics_interval_ms
         })
     }
 }
