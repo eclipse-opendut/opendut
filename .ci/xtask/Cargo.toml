@@ -9,6 +9,7 @@ license.workspace = true
 anyhow = { workspace = true }
 assert_fs = { workspace = true }
 cargo_metadata = { workspace = true }
+chrono = { workspace = true, default-features = true }
 clap = { workspace = true, features = ["derive", "string"] }
 flate2 = { workspace = true }
 fs_extra = { workspace = true }
