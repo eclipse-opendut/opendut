@@ -10,11 +10,11 @@ while getopts ":i:" opt; do
     i)
       CAN_INTERFACE=${OPTARG}
       ;;
-    :)                                    
-      echo "Error: ${OPTARG} argument missing."    
+    :)
+      echo "Error: ${OPTARG} argument missing."
       usage
-      exit 1                   
-      ;;  
+      exit 1
+      ;;
     *)
       usage
       exit 1
@@ -36,6 +36,6 @@ shift $((OPTIND-1))
 cd /home/kali/Documents/CAN/CC/caringcaribou/
 
 # Get Arbitration IDs from discovery
-cc.py -i $CAN_INTERFACE uds discovery
+cc.py -i "$CAN_INTERFACE" uds discovery
 
 echo "Finished execution!"
