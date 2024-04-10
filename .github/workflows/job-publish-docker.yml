@@ -1,0 +1,51 @@
+name: publish-docker
+on:
+  workflow_call:  # allow this workflow to be called from other workflows
+    inputs:
+      runs-on:
+        default: "['ubuntu-latest']"
+        required: false
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: "opendut-carl"
+
+jobs:
+  publish-docker:
+    name: "Publish docker"
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout Sources
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+      - name: Rust setup
+        uses: ./.github/actions/rust-setup
+
+      - name: Download opendut-CARL bundle
+        uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
+        with:
+          name: "opendut-carl-x86_64-unknown-linux-gnu-${{ github.sha }}.tar.gz"
+          path: "./target/ci/distribution/x86_64-unknown-linux-gnu/"
+
+      # Publish Docker image to GitHub Packages
+      # https://docs.github.com/en/actions/publishing-packages/publishing-docker-images#publishing-images-to-github-packages
+
+      # Configure access to repository packages
+      # - Goto https://github.com/orgs/eclipse-opendut/packages/container/opendut-carl/settings
+      # - Click on "Manage Actions access" -> Add Repository
+      # - Select the repository 'opendut' and click on "Add repository"
+      # - Change role to "Write"
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish Docker image
+        run: cargo ci carl docker

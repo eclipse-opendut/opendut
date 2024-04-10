@@ -77,3 +77,12 @@ jobs:
       contents: write
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_SMALL || '[\"ubuntu-latest\"]' }}"
+
+  publish-docker:
+    needs: [ bundle-carl ]
+    uses: ./.github/workflows/job-publish-docker.yml
+    permissions:
+      contents: write
+      packages: write
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_SMALL || '[\"ubuntu-latest\"]' }}"
