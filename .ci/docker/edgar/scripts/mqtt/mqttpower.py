@@ -104,7 +104,7 @@ retryer = Retrying(stop=stop_after_attempt(10), reraise=True)
 
 model = retryer(powersupply.get_model)
 logging.info(f"{model=}")
-client.publish(topic=localtopic + "/model", payload=model, qos=2, retain=False)
+client.publish(topic=localtopic + "/model", payload=model, qos=1, retain=True)
 
 # client.publish(topic=localtopic + "/update_interval", payload=update_interval, qos=2, retain=False)
 client.loop_start()
