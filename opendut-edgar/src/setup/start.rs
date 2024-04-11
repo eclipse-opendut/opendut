@@ -124,6 +124,7 @@ pub fn init_logging() -> anyhow::Result<()> {
         opentelemetry_service_name: None,
         opentelemetry_service_instance_id: None,
         opentelemetry_metrics_interval_ms: None,
+        opentelemetry_cpu_collection_interval_ms: None,
     };
     let _ = logging::initialize_with_config(config)?;
 

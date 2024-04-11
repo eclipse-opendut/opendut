@@ -59,8 +59,9 @@ pub async fn create_with_logging(settings_override: config::Config) -> anyhow::R
     let settings = settings::load_with_overrides(settings_override)?;
 
     let logging_config = LoggingConfig::load(&settings.config)?;
+    let opentelemetry_cpu_collection_interval_ms = logging_config.opentelemetry_cpu_collection_interval_ms.unwrap_or_default();
     let mut shutdown = logging::initialize_with_config(logging_config)?;
-    logging::initialize_metrics_collection();
+    logging::initialize_metrics_collection(opentelemetry_cpu_collection_interval_ms);
 
     create(settings).await?;
 

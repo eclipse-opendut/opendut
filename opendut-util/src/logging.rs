@@ -1,8 +1,8 @@
 use std::fs::File;
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::sync::Arc;
 use std::time::Duration;
-use sysinfo::{Pid, System};
 
 use opentelemetry::{global, KeyValue};
 use opentelemetry::global::{GlobalLoggerProvider, logger_provider};
@@ -15,6 +15,10 @@ use opentelemetry_sdk::{Resource, runtime};
 use opentelemetry_sdk::logs::Logger;
 use opentelemetry_sdk::metrics::SdkMeterProvider;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
+use simple_moving_average::{SMA, SumTreeSMA};
+use sysinfo::{Pid, System};
+use tokio::sync::Mutex;
+use tokio::time::sleep;
 use tracing_subscriber::filter::Directive;
 use tracing_subscriber::filter::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
@@ -170,7 +174,7 @@ fn init_metrics(endpoint: &Endpoint, service_name: impl Into<String>, service_in
         .with_period(metrics_interval)
         .build()
 }
-pub fn initialize_metrics_collection() {
+pub fn initialize_metrics_collection(opentelemetry_cpu_collection_interval_ms: Duration) {
     let meter = global::meter("opendut_meter");
     
     let current_pid = std::process::id() as usize;
@@ -178,13 +182,22 @@ pub fn initialize_metrics_collection() {
     let process_cpu_used = meter.f64_observable_gauge("process_cpu_used").init();
     let host_ram_used = meter.u64_observable_gauge("host_ram_used").init();
     
+    let moving_average = SumTreeSMA::<f64, f64, 5>::new();
+    let mutex = Arc::new(Mutex::new(moving_average));
+    let mutex_cloned = Arc::clone(&mutex);
+
+    collect_cpu_usage(mutex_cloned, opentelemetry_cpu_collection_interval_ms);
+    
     meter.register_callback(&[process_ram_used.as_any(),process_cpu_used.as_any(),host_ram_used.as_any()], move |observer| {
         let mut sys = System::new_all();
         sys.refresh_processes();
 
+        let average_cpu_usage = mutex.try_lock().unwrap().get_average();
+        println!("The current average is: {}", average_cpu_usage);
+
         if let Some(process) = sys.process(Pid::from(current_pid)) {
             observer.observe_u64(&process_ram_used, process.memory(),&[]);
-            observer.observe_f64(&process_cpu_used, process.cpu_usage() as f64,&[]);
+            observer.observe_f64(&process_cpu_used, average_cpu_usage,&[]);
             observer.observe_u64(&host_ram_used, sys.used_memory(),&[]);                
         }
     }).expect("could not register metrics collection callback");
@@ -199,6 +212,7 @@ pub struct LoggingConfig {
     pub opentelemetry_service_name: Option<String>,
     pub opentelemetry_service_instance_id: Option<String>,
     pub opentelemetry_metrics_interval_ms: Option<Duration>,
+    pub opentelemetry_cpu_collection_interval_ms: Option<Duration>,
 }
 impl LoggingConfig {
     pub fn load(config: &config::Config) -> Result<Self, LoggingConfigError> {
@@ -249,6 +263,24 @@ impl LoggingConfig {
         } else {
             None
         };
+        let opentelemetry_cpu_collection_interval_ms:Option<Duration> = if opentelemetry_enabled {
+            let field = String::from("opentelemetry.cpu.collection.interval.ms");
+            let result =
+                if let Ok(interval_i64) = config.get_int(&field) {
+                    let interval_u64 = u64::try_from(interval_i64);
+                    if let Ok(result_u64) = interval_u64 {
+                        println!("read the correct millis");
+                        Duration::from_millis(result_u64)
+                    } else {
+                        Duration::from_millis(5000)
+                    }
+                } else {
+                    Duration::from_millis(5000)
+                };
+            Some(result)
+        } else {
+            None
+        };
 
         Ok(LoggingConfig {
             file_logging,
@@ -256,9 +288,26 @@ impl LoggingConfig {
             opentelemetry_endpoint,
             opentelemetry_service_name,
             opentelemetry_service_instance_id,
-            opentelemetry_metrics_interval_ms
+            opentelemetry_metrics_interval_ms,
+            opentelemetry_cpu_collection_interval_ms,
         })
     }
+}
+fn collect_cpu_usage(moving_average: Arc<Mutex<SumTreeSMA<f64, f64, 5>>>, period: Duration) {
+    tokio::spawn( async move {
+        let current_pid = std::process::id() as usize;
+        let mut sys = System::new_all();
+        loop {
+            sys.refresh_processes();
+            sleep(period).await;
+            sys.refresh_processes();
+            if let Some(process) = sys.process(Pid::from(current_pid)) {
+                let result = process.cpu_usage();
+                moving_average.lock().await.add_sample(result as f64); // add more samples in a loop
+                println!("{}", result);
+            }
+        }
+    });
 }
 #[derive(Debug, thiserror::Error)]
 pub enum LoggingConfigError {
