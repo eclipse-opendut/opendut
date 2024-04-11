@@ -7,6 +7,7 @@ use opendut_types::util::Port;
 use regex::Regex;
 
 use tokio::process::Command;
+use tracing::{debug, info};
 
 use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
 
@@ -131,11 +132,11 @@ impl CanManager {
     async fn create_can_bridge(&self, bridge_name: &NetworkInterfaceName) -> anyhow::Result<()> {
     
         if self.network_interface_manager.find_interface(bridge_name).await?.is_none() {
-            log::debug!("Creating CAN bridge '{bridge_name}'.");
+            debug!("Creating CAN bridge '{bridge_name}'.");
             let bridge = self.network_interface_manager.create_vcan_interface(bridge_name).await?;
             self.network_interface_manager.set_interface_up(&bridge).await?;
         } else {
-            log::debug!("Not creating CAN bridge '{bridge_name}', because it already exists.");
+            debug!("Not creating CAN bridge '{bridge_name}', because it already exists.");
         }
     
         Ok(())
@@ -152,7 +153,7 @@ impl CanManager {
         let mut guarded_termination_token = self.cannelloni_termination_token.lock().unwrap();
         *guarded_termination_token = Arc::new(AtomicBool::new(false));
         
-        log::info!("Spawning cannelloni manager as client");
+        info!("Spawning cannelloni manager as client");
     
         // TODO: The buffer timeout here should likely be configurable through CARL (cannot be 0)
         let mut cannelloni_manager = CannelloniManager::new (
@@ -180,7 +181,7 @@ impl CanManager {
         
     
         for remote_assignment in remote_assignments {
-            log::info!("Spawning cannelloni manager as server for peer with IP {}", remote_assignment.vpn_address.to_string());
+            info!("Spawning cannelloni manager as server for peer with IP {}", remote_assignment.vpn_address.to_string());
     
             let mut cannelloni_manager = CannelloniManager::new(
                 true, 

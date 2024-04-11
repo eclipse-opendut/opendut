@@ -1,5 +1,6 @@
 use std::net::{IpAddr, Ipv4Addr};
 use std::sync::Arc;
+use tracing::debug;
 
 use opendut_types::cluster::{ClusterAssignment, PeerClusterAssignment};
 use opendut_types::peer::PeerId;
@@ -174,7 +175,7 @@ async fn join_device_interfaces_to_bridge(
     for interface in device_interfaces {
         let interface = network_interface_manager.try_find_interface(&interface.name).await?;
         network_interface_manager.join_interface_to_bridge(&interface, &bridge).await?;
-        log::debug!("Joined device interface {interface} to bridge {bridge}.");
+        debug!("Joined device interface {interface} to bridge {bridge}.");
     }
     Ok(())
 }

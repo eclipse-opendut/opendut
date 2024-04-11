@@ -132,6 +132,7 @@ pub mod distribution {
 
     pub mod copy_license_json {
         use serde_json::json;
+        use tracing::info;
 
         use crate::tasks::distribution::copy_license_json::SkipGenerate;
 
@@ -141,7 +142,7 @@ pub mod distribution {
         pub fn copy_license_json(target: Arch, skip_generate: SkipGenerate) -> crate::Result {
 
             match skip_generate {
-                SkipGenerate::Yes => log::info!("Skipping generation of licenses, as requested. Directly attempting to copy to target location."),
+                SkipGenerate::Yes => info!("Skipping generation of licenses, as requested. Directly attempting to copy to target location."),
                 SkipGenerate::No => {
                     for package in [SELF_PACKAGE, Package::Lea, Package::Edgar] {
                         crate::tasks::licenses::json::export_json(package)?;

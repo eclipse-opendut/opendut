@@ -1,5 +1,6 @@
 use tonic::{Request, Response, Status};
 use tonic_web::CorsGrpcWeb;
+use tracing::trace;
 
 use opendut_carl_api::proto::services::metadata_provider::{VersionRequest, VersionResponse};
 use opendut_carl_api::proto::services::metadata_provider::metadata_provider_server::{MetadataProvider, MetadataProviderServer};
@@ -27,7 +28,7 @@ impl MetadataProvider for MetadataProviderFacade {
         request: Request<VersionRequest>,
     ) -> Result<Response<VersionResponse>, Status> {
 
-        log::trace!("Received request: {:?}", request);
+        trace!("Received request: {:?}", request);
 
         let reply = VersionResponse {
             version_info: Some(VersionInfo {

@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use config::Config;
 use googletest::prelude::*;
+use tracing::info;
 
 use opendut_types::peer::PeerId;
 use opendut_util::logging;
@@ -13,7 +14,7 @@ async fn register_edgar_carl() -> Result<()> {
     let _ = logging::initialize()?;
 
     let carl_port = util::select_free_port();
-    log::info!("Running test with CARL port {carl_port}.");
+    info!("Running test with CARL port {carl_port}.");
 
     let carl_config_override = config::Config::builder()
         .set_override("network.bind.port", carl_port)?

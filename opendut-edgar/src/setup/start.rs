@@ -3,6 +3,7 @@ use std::env;
 use std::sync::Arc;
 
 use anyhow::Context;
+use tracing::info;
 use url::Url;
 
 use opendut_types::peer::PeerSetup;
@@ -25,7 +26,7 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
         .context("Failed to decode Setup String.")?;
 
     let service_user = determine_service_user_name();
-    log::info!("Using service user '{}'.", service_user.name);
+    info!("Using service user '{}'.", service_user.name);
 
     println!("Using PeerId: {}", peer_setup.id);
     println!("Will connect to CARL at: {}", peer_setup.carl);
@@ -48,10 +49,10 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
 
     match peer_setup.vpn {
         VpnPeerConfiguration::Disabled => {
-            log::info!("VPN is disabled in PeerSetup. Not running VPN-related tasks.");
+            info!("VPN is disabled in PeerSetup. Not running VPN-related tasks.");
         }
         VpnPeerConfiguration::Netbird { management_url, setup_key } => {
-            log::info!("VPN is configured for NetBird in PeerSetup. Running NetBird-related tasks.");
+            info!("VPN is configured for NetBird in PeerSetup. Running NetBird-related tasks.");
             tasks.append(&mut vec![
                 Box::new(tasks::netbird::Unpack::default()),
                 Box::new(tasks::netbird::InstallService),
@@ -62,9 +63,9 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
     };
 
     if service_user.is_root() {
-        log::info!("Service should run via root user. Skipping setup of custom service user.");
+        info!("Service should run via root user. Skipping setup of custom service user.");
     } else {
-        log::info!("Setting up custom service user '{}'.", service_user.name);
+        info!("Setting up custom service user '{}'.", service_user.name);
         tasks.append(&mut vec![
             Box::new(tasks::CreateUser { service_user: service_user.clone() }),
             Box::new(tasks::ClaimFileOwnership { service_user: service_user.clone() }),

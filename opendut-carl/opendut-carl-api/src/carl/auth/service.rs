@@ -6,6 +6,7 @@ use http::{HeaderValue, Request, Response};
 use tonic::body::BoxBody;
 use tonic::codegen::Service;
 use tonic::transport::{Body, Channel};
+use tracing::error;
 use crate::carl::auth::manager::AuthenticationManager;
 
 #[derive(Clone, Debug)]
@@ -69,7 +70,7 @@ impl Service<Request<BoxBody>> for AuthenticationService {
                             Ok(response)
                         }
                         Err(error) => {
-                            log::error!("Failed to get token: {}", error);
+                            error!("Failed to get token: {}", error);
                             Err(error.into())
                         }
                     }

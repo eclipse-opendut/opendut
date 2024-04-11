@@ -95,6 +95,7 @@ pub enum IllegalDevicesError {
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 mod client {
     use tonic::codegen::{Body, Bytes, http, InterceptedService, StdError};
+    use tracing::error;
 
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerSetup};
     use opendut_types::topology::DeviceDescriptor;
@@ -247,7 +248,7 @@ mod client {
                         }
                         _ => {
                             let error = CreateSetupError { message: format!("Failed to create setup-string for peer <{}>!", peer_id) };
-                            log::error!("{}", error);
+                            error!("{}", error);
                             Err(error)
                         }
                     }

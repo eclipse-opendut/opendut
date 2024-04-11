@@ -80,7 +80,7 @@ impl TryFrom<&Config> for CarlIdentityProviderConfig {
 
         let peer_credentials = match (peer_id, peer_secret) {
             (Some(id), Some(secret)) => {
-                log::debug!("Using defined common peer credentials for all peers with id='{}'", id);
+                debug!("Using defined common peer credentials for all peers with id='{}'", id);
                 Some(CommonPeerCredentials {
                     client_id: ClientId(id),
                     client_secret: ClientSecret(secret),

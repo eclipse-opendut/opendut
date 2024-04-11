@@ -1,5 +1,6 @@
 use std::fs;
 use std::path::PathBuf;
+use tracing::debug;
 
 use crate::{Arch, constants, Package};
 use crate::types::parsing::target::TargetSelection;
@@ -17,7 +18,7 @@ pub fn clean(package: Package, target: Arch) -> crate::Result {
     let package_dir = out_package_dir(package, target);
     if package_dir.exists() {
         fs::remove_dir_all(&package_dir)?;
-        log::debug!("Cleaned distribution directory at: {package_dir:?}");
+        debug!("Cleaned distribution directory at: {package_dir:?}");
     }
     Ok(())
 }
@@ -37,6 +38,7 @@ pub fn collect_executables(package: Package, target: Arch) -> crate::Result {
 
 
 pub mod copy_license_json {
+    use tracing::info;
     use super::*;
 
     /// Copy license files to the distribution directory, as it normally happens when building a distribution.
@@ -72,7 +74,7 @@ pub mod copy_license_json {
     pub fn copy_license_json(package: Package, target: Arch, skip_generate: SkipGenerate) -> crate::Result {
 
         match skip_generate {
-            SkipGenerate::Yes => log::info!("Skipping generation of licenses, as requested. Directly attempting to copy to target location."),
+            SkipGenerate::Yes => info!("Skipping generation of licenses, as requested. Directly attempting to copy to target location."),
             SkipGenerate::No => crate::tasks::licenses::json::export_json(package)?,
         };
         let licenses_file = crate::tasks::licenses::json::out_file(package);

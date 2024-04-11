@@ -2599,7 +2599,6 @@ dependencies = [
  "googletest",
  "http 0.2.11",
  "itertools 0.12.1",
- "log",
  "oauth2",
  "opendut-carl-api",
  "opendut-types",
@@ -2639,7 +2638,6 @@ dependencies = [
  "jsonwebtoken",
  "leptos",
  "leptos_oidc",
- "log",
  "oauth2",
  "opendut-types",
  "prost",
@@ -2670,7 +2668,6 @@ dependencies = [
  "flate2",
  "fs_extra",
  "lazy_static",
- "log",
  "predicates",
  "reqwest",
  "serde-spdx",
@@ -2725,7 +2722,6 @@ dependencies = [
  "googletest",
  "indicatif",
  "indoc",
- "log",
  "netlink-packet-route",
  "netlink-packet-utils",
  "nix",
@@ -2774,7 +2770,6 @@ version = "0.1.0"
 dependencies = [
  "config",
  "googletest",
- "log",
  "opendut-carl",
  "opendut-carl-api",
  "opendut-edgar",
@@ -2782,6 +2777,7 @@ dependencies = [
  "opendut-util",
  "tokio",
  "tonic",
+ "tracing",
 ]
 
 [[package]]

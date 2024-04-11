@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use futures::executor::block_on;
+use tracing::{debug, warn};
 
 use opendut_netbird_client_api::extension::LocalPeerStateExtension;
 use opendut_types::util::net::NetworkInterfaceName;
@@ -37,7 +38,7 @@ impl Task for CreateGreInterfaces {
             let mut leader = self.leader.clone();
             if let Leader::Remote(remote_ip) = leader {
                 if remote_ip == local_ip {
-                    log::debug!("Address of Leader::Remote '{remote_ip}' is local address. Continuing as Leader::Local.");
+                    debug!("Address of Leader::Remote '{remote_ip}' is local address. Continuing as Leader::Local.");
                     leader = Leader::Local;
                 }
             }
@@ -60,7 +61,7 @@ impl Task for CreateGreInterfaces {
                     match address {
                         Ok(address) => Some(address),
                         Err(cause) => {
-                            log::warn!("Discarding IP address returned by NetBird: {cause}");
+                            warn!("Discarding IP address returned by NetBird: {cause}");
                             None
                         }
                     }

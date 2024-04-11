@@ -40,6 +40,7 @@ impl DocCli {
 }
 
 pub mod book {
+    use tracing::info;
     use super::*;
 
     #[tracing::instrument]
@@ -70,7 +71,7 @@ pub mod book {
             .current_dir(doc_dir())
             .run_requiring_success()?;
 
-        log::info!("Placed distribution into: {}", out_dir.display());
+        info!("Placed distribution into: {}", out_dir.display());
 
         Ok(())
     }

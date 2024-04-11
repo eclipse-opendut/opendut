@@ -101,6 +101,7 @@ cfg_if! {
 
 cfg_if! {
     if #[cfg(feature = "client")] {
+        use tracing::debug;
 
         use crate::carl::cluster::ClusterManager;
         use crate::carl::metadata::MetadataProvider;
@@ -134,7 +135,7 @@ cfg_if! {
                 let address = format!("https://{}:{}", host.into(), port);
 
                 let tls_config = {
-                    log::debug!("Using TLS CA certificate: {}", ca_cert_path.display());
+                    debug!("Using TLS CA certificate: {}", ca_cert_path.display());
                     let ca_cert = std::fs::read_to_string(&ca_cert_path)
                         .map_err(|cause| InitializationError::TlsConfiguration { message: format!("Failed to read CA certificate from path '{}'", ca_cert_path.display()), cause: cause.into() })?;
 
@@ -142,7 +143,7 @@ cfg_if! {
                         .ca_certificate(tonic::transport::Certificate::from_pem(ca_cert));
 
                     if let Some(domain_name_override) = domain_name_override {
-                        log::debug!("Using override for verified domain name of '{domain_name_override}'.");
+                        debug!("Using override for verified domain name of '{domain_name_override}'.");
                         config = config.domain_name(domain_name_override);
                     }
                     config
@@ -160,18 +161,18 @@ cfg_if! {
                 let auth_manager = if oidc_enabled {
                     let oidc_config = OidcIdentityProviderConfig::try_from(settings)
                         .map_err(|cause| InitializationError::OidcConfiguration { message: String::from("Failed to load OIDC configuration"), cause: cause.into() })?;
-                    log::debug!("OIDC configuration loaded: id={:?} issuer_url={:?}", oidc_config.client_id, oidc_config.issuer_url);
+                    debug!("OIDC configuration loaded: id={:?} issuer_url={:?}", oidc_config.client_id, oidc_config.issuer_url);
 
                     let auth_manager = AuthenticationManager::try_from(oidc_config)
                         .map_err(|cause| InitializationError::OidcConfiguration { message: String::from("Failed to initialize OIDC authentication manager"), cause: cause.into() })?;
 
                     Some(Arc::new(auth_manager))
                 } else {
-                    log::debug!("OIDC is disabled.");
+                    debug!("OIDC is disabled.");
                     None
                 };
 
-                log::debug!("Set up endpoint for connection to CARL at '{address}'.");
+                debug!("Set up endpoint for connection to CARL at '{address}'.");
                 let channel = endpoint.connect_lazy();
 
                 let auth_svc = ServiceBuilder::new()

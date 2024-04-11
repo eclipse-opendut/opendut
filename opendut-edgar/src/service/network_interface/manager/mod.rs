@@ -7,6 +7,7 @@ use anyhow::anyhow;
 use futures::TryStreamExt;
 use netlink_packet_route::link::{LinkAttribute, LinkMessage};
 use tokio::process::Command;
+use tracing::warn;
 
 use gretap::Gretap;
 use opendut_types::util::net::NetworkInterfaceName;
@@ -51,7 +52,7 @@ impl NetworkInterfaceManager {
                 match interface_name_from(interface) {
                     Ok(name) => Some(Interface { index, name }),
                     Err(cause) => {
-                        log::warn!("Could not determine name of interface with index '{index}': {cause}");
+                        warn!("Could not determine name of interface with index '{index}': {cause}");
                         None
                     }
                 }

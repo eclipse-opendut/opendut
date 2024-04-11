@@ -11,16 +11,16 @@ use opentelemetry_sdk::propagation::TraceContextPropagator;
 use tokio::process::Command;
 use tokio::sync::mpsc::Sender;
 use tokio::time::sleep;
-use tracing::{debug, Span};
+use tracing::{debug, error, info, Span, trace, warn};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 use opendut_carl_api::proto::services::peer_messaging_broker;
 use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, TracingContext};
 use opendut_carl_api::proto::services::peer_messaging_broker::downstream::Message;
 use opendut_types::cluster::ClusterAssignment;
-use opendut_types::peer::PeerId;
 use opendut_types::peer::configuration::PeerConfiguration;
 use opendut_types::peer::executor::{ContainerCommand, ContainerName, Engine, ExecutorDescriptor, ExecutorDescriptors};
+use opendut_types::peer::PeerId;
 use opendut_types::util::net::NetworkInterfaceName;
 use opendut_util::logging;
 use opendut_util::logging::LoggingConfig;
@@ -72,7 +72,7 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
     let self_id = settings.config.get::<PeerId>(settings::key::peer::id)
         .context("Failed to read ID from configuration.\n\nRun `edgar setup` before launching the service.")?;
 
-    log::info!("Started with ID <{self_id}> and configuration: {settings:?}");
+    info!("Started with ID <{self_id}> and configuration: {settings:?}");
 
     let network_interface_manager: NetworkInterfaceManagerRef = NetworkInterfaceManager::create()?;
     let can_manager: CanManagerRef = CanManager::create(Arc::clone(&network_interface_manager));
@@ -111,16 +111,16 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
                     ).await?
                 }
                 Err(status) => {
-                    log::warn!("CARL sent a gRPC error status: {status}");
+                    warn!("CARL sent a gRPC error status: {status}");
                     //TODO exit?
                 }
                 Ok(None) => {
-                    log::info!("CARL disconnected!");
+                    info!("CARL disconnected!");
                     break;
                 }
             }
             Err(_) => {
-                log::error!("No message from CARL within {} ms.", timeout_duration.as_millis());
+                error!("No message from CARL within {} ms.", timeout_duration.as_millis());
                 break;
             }
         }
@@ -138,7 +138,7 @@ async fn handle_stream_message(
 
     if let peer_messaging_broker::Downstream { message: Some(message), context } = message {
         if matches!(message, Message::Pong(_)).not() {
-            log::trace!("Received message: {:?}", message);
+            trace!("Received message: {:?}", message);
         }
 
         match message {
@@ -150,7 +150,7 @@ async fn handle_stream_message(
                 };
                 let _ignore_error =
                     tx_outbound.send(message).await
-                        .inspect_err(|cause| log::debug!("Failed to send ping to CARL: {cause}"));
+                        .inspect_err(|cause| debug!("Failed to send ping to CARL: {cause}"));
             }
             Message::ApplyPeerConfiguration(message) => { apply_peer_configuration(message, context, setup_cluster_info).await }
         }
@@ -170,9 +170,9 @@ async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Opti
             set_parent_context(&span, context);
             let _span = span.enter();
 
-            log::info!("Received configuration: {configuration:?}");
+            info!("Received configuration: {configuration:?}");
             match PeerConfiguration::try_from(configuration) {
-                Err(error) => log::error!("Illegal PeerConfiguration: {error}"),
+                Err(error) => error!("Illegal PeerConfiguration: {error}"),
                 Ok(configuration) => {
                     setup_executors(configuration.executors);
                     let _ = setup_cluster(
@@ -190,7 +190,7 @@ async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Opti
 fn setup_executors(executors: ExecutorDescriptors) { //TODO make idempotent
     for executor in executors.executors {
         match executor {
-            ExecutorDescriptor::Executable => log::warn!("Executing Executable not yet implemented."),
+            ExecutorDescriptor::Executable => warn!("Executing Executable not yet implemented."),
             ExecutorDescriptor::Container {
                 engine,
                 name,
@@ -233,8 +233,8 @@ fn setup_executors(executors: ExecutorDescriptors) { //TODO make idempotent
                 }
                 debug!("Command: {:?}", cmd);
                 match cmd.spawn() {
-                    Ok(_) => { log::info!("Container started.") }
-                    Err(_) => { log::error!("Failed to start container.") }
+                    Ok(_) => { info!("Container started.") }
+                    Err(_) => { error!("Failed to start container.") }
                 };
             }
         }
@@ -256,8 +256,8 @@ async fn setup_cluster(
 
     match cluster_assignment {
         Some(cluster_assignment) => {
-            log::trace!("Received ClusterAssignment: {cluster_assignment:?}");
-            log::info!("Was assigned to cluster <{}>", cluster_assignment.id);
+            trace!("Received ClusterAssignment: {cluster_assignment:?}");
+            info!("Was assigned to cluster <{}>", cluster_assignment.id);
 
             if info.network_interface_management_enabled {
                 cluster_assignment::network_interfaces_setup(
@@ -268,14 +268,14 @@ async fn setup_cluster(
                     Arc::clone(&info.can_manager)
                 ).await
                     .inspect_err(|error| {
-                        log::error!("Failed to configure network interfaces: {error}")
+                        error!("Failed to configure network interfaces: {error}")
                     })?;
             } else {
-                log::debug!("Skipping changes to network interfaces after receiving ClusterAssignment, as this is disabled via configuration.");
+                debug!("Skipping changes to network interfaces after receiving ClusterAssignment, as this is disabled via configuration.");
             }
         }
         None => {
-            log::debug!("No ClusterAssignment in peer configuration.");
+            debug!("No ClusterAssignment in peer configuration.");
             //TODO teardown cluster, if configuration changed
         }
     }
@@ -290,5 +290,5 @@ fn set_parent_context(span: &Span, context: Option<TracingContext>) {
     }
 }
 fn ignore(message: impl Any + Debug) {
-    log::warn!("Ignoring illegal message: {message:?}");
+    warn!("Ignoring illegal message: {message:?}");
 }

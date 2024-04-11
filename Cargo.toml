@@ -74,7 +74,6 @@ leptos = { version = "0.6.9" }
 leptos_oidc = { version = "0.4.1" }
 leptos_router = { version = "0.6.9" }
 leptos-use = { version = "0.10.5" }
-log = "0.4.20"
 mockall = "0.12.1"
 netlink-packet-route = "0.19.0"
 netlink-packet-utils = "0.5.2"

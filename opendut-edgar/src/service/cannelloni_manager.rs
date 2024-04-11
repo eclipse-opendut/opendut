@@ -5,6 +5,7 @@ use std::net::IpAddr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
+use tracing::{error, info};
 use opendut_types::util::net::NetworkInterfaceName;
 use opendut_types::util::Port;
 
@@ -47,7 +48,7 @@ impl CannelloniManager {
 
             match cmd.spawn() {
                 Ok(child) => {
-                    log::info!("Spawned cannelloni thread for remote IP {}.", self.remote_ip.to_string());
+                    info!("Spawned cannelloni thread for remote IP {}.", self.remote_ip.to_string());
                     self.cannelloni_proc = Some(child);
 
                     match self.monitor_process().await {
@@ -58,7 +59,7 @@ impl CannelloniManager {
                         },
                     }
                 },
-                Err(err) => log::error!("Failed to start cannelloni instance for remote IP {}: '{}'.", self.remote_ip.to_string(), err),
+                Err(err) => error!("Failed to start cannelloni instance for remote IP {}: '{}'.", self.remote_ip.to_string(), err),
             }
         }
     }
@@ -66,7 +67,7 @@ impl CannelloniManager {
     async fn kill_cannelloni_process(&mut self) {
         match self.cannelloni_proc.as_mut().unwrap().kill().await {
             Ok(_) => (),
-            Err(err) => log::error!("Failed to start cannelloni instance for remote IP {}: '{}'.", self.remote_ip.to_string(), err),
+            Err(err) => error!("Failed to start cannelloni instance for remote IP {}: '{}'.", self.remote_ip.to_string(), err),
         }
     }
 
@@ -79,7 +80,7 @@ impl CannelloniManager {
                         return MonitorResult::RestartCannelloni
                     }
                 },
-                Err(err) => log::error!("Failed to get status of cannelloni instance for remote IP {}: '{}'.", self.remote_ip.to_string(), err)
+                Err(err) => error!("Failed to get status of cannelloni instance for remote IP {}: '{}'.", self.remote_ip.to_string(), err)
             }
 
             if self.termination_request_token.load(Ordering::Relaxed) {
@@ -96,7 +97,7 @@ impl CannelloniManager {
         let stdout = match self.cannelloni_proc.as_mut().unwrap().stdout.take() {
             Some(stdout) => stdout,
             None => {
-                log::error!("Cannelloni for remote IP {} terminated prematurely but failed to get stdout.", self.remote_ip.to_string());
+                error!("Cannelloni for remote IP {} terminated prematurely but failed to get stdout.", self.remote_ip.to_string());
                 return;
             }
         };
@@ -108,7 +109,7 @@ impl CannelloniManager {
         let stderr = match self.cannelloni_proc.as_mut().unwrap().stderr.take() {
             Some(stderr) => stderr,
             None => {
-                log::error!("Cannelloni for remote IP {} terminated prematurely but failed to get stderr.", self.remote_ip.to_string());
+                error!("Cannelloni for remote IP {} terminated prematurely but failed to get stderr.", self.remote_ip.to_string());
                 return;
             }
         };
@@ -117,7 +118,7 @@ impl CannelloniManager {
         let _ = stderr_reader.read_to_end(&mut stderr_u8).await;
         let stderr_str = String::from_utf8_lossy(&stderr_u8);
 
-        log::error!(
+        error!(
             "Cannelloni for remote IP {} terminated prematurely with stderr:\n{}\nstdout:\n{}", 
             self.remote_ip.to_string(), 
             stdout_str,

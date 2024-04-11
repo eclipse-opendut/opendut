@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
+use tracing::info;
 use crate::Arch;
 use crate::core::dependency::Crate;
 
@@ -118,7 +119,7 @@ fn build_impl(out_dir: PathBuf) -> crate::Result {
         .current_dir(working_dir)
         .run_requiring_success()?;
 
-    log::info!("Placed distribution into: {}", out_dir.display());
+    info!("Placed distribution into: {}", out_dir.display());
 
     Ok(())
 }

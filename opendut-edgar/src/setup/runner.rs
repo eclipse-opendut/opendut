@@ -3,6 +3,7 @@ use std::io::Write;
 use std::time::Duration;
 
 use indicatif::{ProgressBar, ProgressStyle};
+use tracing::{error, info};
 
 use opendut_util::project;
 
@@ -12,7 +13,7 @@ pub async fn run(run_mode: RunMode, no_confirm: bool, tasks: &[Box<dyn Task>]) -
     let run_mode = if project::is_running_in_development() {
         let log_message = "Running in development. Activating --dry-run to prevent changes to the system.";
         println!("{log_message}");
-        log::info!("{log_message}");
+        info!("{log_message}");
         RunMode::DryRun
     } else {
         run_mode
@@ -46,7 +47,7 @@ fn user_confirmation(run_mode: RunMode) -> anyhow::Result<bool> {
                 "" | "y" | "yes" => Ok(true),
                 _ => {
                     println!("Aborting.");
-                    log::info!("Aborting, because user did not confirm execution.");
+                    info!("Aborting, because user did not confirm execution.");
                     Ok(false)
                 }
             }
@@ -139,7 +140,7 @@ fn print_error(context: impl AsRef<str>, error: Option<anyhow::Error>) {
     for line in message.lines() {
         eprintln!("    {}", line);
     }
-    log::error!("{message}");
+    error!("{message}");
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -183,7 +184,7 @@ fn print_outcome(task_name: String, outcome: Outcome) {
     }
 
     println!("{}", message(&task_name, &outcome, console::user_attended()));
-    log::info!("{}", message(&task_name, &outcome, false));
+    info!("{}", message(&task_name, &outcome, false));
 }
 
 

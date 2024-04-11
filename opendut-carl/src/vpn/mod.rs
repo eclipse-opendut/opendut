@@ -6,6 +6,7 @@ use anyhow::{anyhow, bail};
 use config::Config;
 use serde::{Deserialize, Serialize};
 use serde::de::IntoDeserializer;
+use tracing::debug;
 use url::Url;
 
 use opendut_vpn::VpnManagementClient;
@@ -37,7 +38,7 @@ pub fn create(settings: &Config) -> anyhow::Result<Vpn> {
                     Some(AuthenticationType::BearerToken) => unimplemented!("Using a bearer token is not yet supported."),
                     None => return unknown_enum_variant(settings, "vpn.netbird.auth.type"),
                 };
-                log::debug!("Try to parse VPN configuration.");
+                debug!("Try to parse VPN configuration.");
                 let vpn_client = NetbirdManagementClient::create(
                     NetbirdManagementClientConfiguration {
                         management_url: base_url,

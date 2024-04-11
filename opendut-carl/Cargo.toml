@@ -21,7 +21,6 @@ futures = { workspace = true }
 googletest = { workspace = true }
 http = { workspace = true }
 itertools = { workspace = true }
-log = { workspace = true }
 pem = { workspace = true, features = ["serde"]}
 oauth2 = { workspace = true, default-features = false, features = ["reqwest"] }
 openidconnect = { workspace = true, default-features = false, features = ["reqwest"] }

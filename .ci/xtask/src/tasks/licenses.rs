@@ -68,6 +68,7 @@ pub mod check {
 
 pub mod json {
     use std::process::Stdio;
+    use tracing::info;
 
     use crate::core::dependency::Crate;
 
@@ -89,7 +90,7 @@ pub mod json {
             .stdout(Stdio::from(File::create(&out_file)?))
             .run_requiring_success()?;
 
-        log::info!("Wrote licenses for package '{package}' to path: {}", out_file.display());
+        info!("Wrote licenses for package '{package}' to path: {}", out_file.display());
 
         Ok(())
     }
@@ -105,6 +106,7 @@ pub mod json {
 }
 
 mod sbom {
+    use tracing::info;
     use crate::core::dependency::Crate;
 
     use super::*;
@@ -120,7 +122,7 @@ mod sbom {
             generate_sbom(package)?
         }
 
-        log::info!("Generated SBOMs in: {}", out_dir().display());
+        info!("Generated SBOMs in: {}", out_dir().display());
         Ok(())
     }
 
@@ -273,6 +275,7 @@ mod texts {
     use std::fs;
     use std::path::PathBuf;
     use std::process::Command;
+    use tracing::info;
     use crate::core::{constants, util};
     use crate::core::dependency::Crate;
     use crate::core::util::RunRequiringSuccess;
@@ -293,7 +296,7 @@ mod texts {
             .args(["--format=yaml", "--output", out_path.to_str().unwrap()])
             .run_requiring_success()?;
 
-        log::info!("Generated bundle of license texts here: {}", out_path.display());
+        info!("Generated bundle of license texts here: {}", out_path.display());
 
         Ok(())
     }

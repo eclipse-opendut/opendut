@@ -3,6 +3,7 @@ use std::net::Ipv4Addr;
 use std::str::FromStr;
 
 use clap::{Parser, Subcommand};
+use tracing::info;
 use url::Url;
 use uuid::Uuid;
 
@@ -96,7 +97,7 @@ async fn main() -> anyhow::Result<()> {
 
             let command = std::env::args_os()
                 .collect::<Vec<_>>();
-            log::info!("Setup command being executed: {:?}", command);
+            info!("Setup command being executed: {:?}", command);
 
             let run_mode = if dry_run { setup::RunMode::DryRun } else { setup::RunMode::Normal };
 

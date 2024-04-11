@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use anyhow::{anyhow, Context};
+use tracing::{debug, error};
 use url::Url;
 
 use opendut_types::peer::PeerId;
@@ -33,7 +34,7 @@ impl Task for WriteConfiguration {
     fn execute(&self) -> anyhow::Result<Success> {
         let original_settings = self.load_current_settings()
             .unwrap_or_else(|| {
-                log::debug!("Could not load settings from configuration file at '{}'. Continuing as if no previous configuration exists.", self.config_file_to_write_to.display());
+                debug!("Could not load settings from configuration file at '{}'. Continuing as if no previous configuration exists.", self.config_file_to_write_to.display());
                 toml_edit::Document::new()
             });
 
@@ -61,7 +62,7 @@ impl Task for WriteConfiguration {
         };
 
         if original_settings.to_string() == new_settings_string {
-            log::debug!("The configuration on disk already matches the overrides we wanted to apply.");
+            debug!("The configuration on disk already matches the overrides we wanted to apply.");
             return Ok(Success::message("Configuration on disk matches."))
         }
 
@@ -99,7 +100,7 @@ impl WriteConfiguration {
         let current_settings = match fs::read_to_string(&self.config_file_to_write_to) {
             Ok(content) => content,
             Err(cause) => {
-                log::error!("Failed to read existing configuration file at '{}'.\n  {cause}", self.config_file_to_write_to.display());
+                error!("Failed to read existing configuration file at '{}'.\n  {cause}", self.config_file_to_write_to.display());
                 return None;
             }
         };
@@ -107,7 +108,7 @@ impl WriteConfiguration {
         match toml_edit::Document::from_str(&current_settings) {
             Ok(current_settings) => Some(current_settings),
             Err(cause) => {
-                log::error!("Failed to parse existing configuration as TOML.\n  {cause}");
+                error!("Failed to parse existing configuration as TOML.\n  {cause}");
                 None
             }
         }

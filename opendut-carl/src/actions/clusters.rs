@@ -1,3 +1,4 @@
+use tracing::{debug, error, info};
 pub use opendut_carl_api::carl::cluster::{
     CreateClusterConfigurationError,
     DeleteClusterConfigurationError
@@ -20,19 +21,19 @@ pub async fn create_cluster_configuration(params: CreateClusterConfigurationPara
         let cluster_name = Clone::clone(&params.cluster_configuration.name);
         let resources_manager = params.resources_manager;
 
-        log::debug!("Creating cluster configuration '{cluster_name}' <{cluster_id}>.");
+        debug!("Creating cluster configuration '{cluster_name}' <{cluster_id}>.");
 
         resources_manager.resources_mut(|resources| {
             resources.insert(cluster_id, params.cluster_configuration);
         }).await;
 
-        log::info!("Successfully created cluster configuration '{cluster_name}' <{cluster_id}>.");
+        info!("Successfully created cluster configuration '{cluster_name}' <{cluster_id}>.");
 
         Ok(cluster_id)
     }
 
     inner(params).await
-        .inspect_err(|err| log::error!("{err}"))
+        .inspect_err(|err| error!("{err}"))
 }
 
 pub struct DeleteClusterConfigurationParams {
@@ -48,7 +49,7 @@ pub async fn delete_cluster_configuration(params: DeleteClusterConfigurationPara
         let cluster_id = params.cluster_id;
         let resources_manager = params.resources_manager;
 
-        log::debug!("Deleting cluster configuration <{cluster_id}>.");
+        debug!("Deleting cluster configuration <{cluster_id}>.");
 
         let cluster_configuration = resources_manager.resources_mut(|resources| {
             resources.remove::<ClusterConfiguration>(cluster_id)
@@ -57,11 +58,11 @@ pub async fn delete_cluster_configuration(params: DeleteClusterConfigurationPara
 
         let cluster_name = Clone::clone(&cluster_configuration.name);
 
-        log::info!("Successfully deleted cluster configuration '{cluster_name}' <{cluster_id}>.");
+        info!("Successfully deleted cluster configuration '{cluster_name}' <{cluster_id}>.");
 
         Ok(cluster_configuration)
     }
 
     inner(params).await
-        .inspect_err(|err| log::error!("{err}"))
+        .inspect_err(|err| error!("{err}"))
 }

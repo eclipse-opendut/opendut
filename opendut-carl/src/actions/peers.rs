@@ -2,7 +2,7 @@ use std::ops::Not;
 use std::sync::Arc;
 
 use pem::Pem;
-use tracing::Span;
+use tracing::{debug, error, info, Span, warn};
 use url::Url;
 
 pub use opendut_carl_api::carl::peer::{
@@ -49,7 +49,7 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
             let is_new_peer = old_peer_descriptor.is_none();
 
             let (devices_to_add, devices_to_remove): (Vec<DeviceDescriptor>, Vec<DeviceDescriptor>) = if let Some(old_peer_descriptor) = old_peer_descriptor {
-                log::debug!("Updating peer descriptor of '{peer_name}' <{peer_id}>.\n  Old: {old_peer_descriptor:?}\n  New: {peer_descriptor:?}");
+                debug!("Updating peer descriptor of '{peer_name}' <{peer_id}>.\n  Old: {old_peer_descriptor:?}\n  New: {peer_descriptor:?}");
                 let devices_to_add = peer_descriptor.topology.devices.iter()
                     .filter(|device| old_peer_descriptor.topology.devices.contains(device).not())
                     .cloned()
@@ -60,7 +60,7 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
                 (devices_to_add, devices_to_remove)
             }
             else {
-                log::debug!("Storing peer descriptor of '{peer_name}' <{peer_id}>.\n  {peer_descriptor:?}");
+                debug!("Storing peer descriptor of '{peer_name}' <{peer_id}>.\n  {peer_descriptor:?}");
                 (peer_descriptor.topology.devices.to_vec(), Vec::<DeviceDescriptor>::new())
             };
 
@@ -68,14 +68,14 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
                 let device_id = device.id;
                 let device_name = &device.name;
                 resources.remove(device.id);
-                log::info!("Removed device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}>.");
+                info!("Removed device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}>.");
             });
 
             devices_to_add.iter().for_each(|device| {
                 let device_id = device.id;
                 let device_name = &device.name;
                 resources.insert(device.id, Clone::clone(device));
-                log::info!("Added device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}>.");
+                info!("Added device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}>.");
             });
 
             let peer_configuration = PeerConfiguration {
@@ -91,7 +91,7 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
 
         if is_new_peer {
             if let Vpn::Enabled { vpn_client } = params.vpn {
-                log::debug!("Creating VPN peer <{peer_id}>.");
+                debug!("Creating VPN peer <{peer_id}>.");
                 vpn_client.create_peer(peer_id)
                     .await
                     .map_err(|cause| StorePeerDescriptorError::Internal {
@@ -99,24 +99,24 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
                         peer_name: Clone::clone(&peer_name),
                         cause: cause.to_string()
                     })?; // TODO: When a failure happens, we should rollback changes previously made to resources.
-                log::info!("Successfully created VPN peer <{peer_id}>.");
+                info!("Successfully created VPN peer <{peer_id}>.");
             } else {
-                log::warn!("VPN disabled. Skipping VPN peer creation!");
+                warn!("VPN disabled. Skipping VPN peer creation!");
             }
         }
 
         if is_new_peer {
-            log::info!("Successfully stored peer descriptor of '{peer_name}' <{peer_id}>.");
+            info!("Successfully stored peer descriptor of '{peer_name}' <{peer_id}>.");
         }
         else {
-            log::info!("Successfully updated peer descriptor of '{peer_name}' <{peer_id}>.");
+            info!("Successfully updated peer descriptor of '{peer_name}' <{peer_id}>.");
         }
 
         Ok(peer_id)
     }
 
     inner(params).await
-        .inspect_err(|err| log::error!("{err}"))
+        .inspect_err(|err| error!("{err}"))
 }
 
 pub struct DeletePeerDescriptorParams {
@@ -133,7 +133,7 @@ pub async fn delete_peer_descriptor(params: DeletePeerDescriptorParams) -> Resul
         let peer_id = params.peer;
         let resources_manager = params.resources_manager;
 
-        log::debug!("Deleting peer descriptor of peer <{peer_id}>.");
+        debug!("Deleting peer descriptor of peer <{peer_id}>.");
 
         let peer_descriptor = resources_manager.resources_mut(|resources| {
 
@@ -146,7 +146,7 @@ pub async fn delete_peer_descriptor(params: DeletePeerDescriptorParams) -> Resul
                 let device_id = device.id;
                 let device_name = &device.name;
                 resources.remove(device_id);
-                log::debug!("Deleted device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}>.");
+                debug!("Deleted device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}>.");
             });
 
             Ok(peer_descriptor)
@@ -155,7 +155,7 @@ pub async fn delete_peer_descriptor(params: DeletePeerDescriptorParams) -> Resul
         let peer_name = &peer_descriptor.name;
 
         if let Vpn::Enabled { vpn_client } = params.vpn {
-            log::debug!("Deleting vpn peer <{peer_id}>.");
+            debug!("Deleting vpn peer <{peer_id}>.");
             vpn_client.delete_peer(peer_id)
                 .await
                 .map_err(|cause| DeletePeerDescriptorError::Internal {
@@ -163,18 +163,18 @@ pub async fn delete_peer_descriptor(params: DeletePeerDescriptorParams) -> Resul
                     peer_name: Clone::clone(peer_name),
                     cause: cause.to_string()
                 })?;
-            log::info!("Successfully deleted VPN peer <{peer_id}>.");
+            info!("Successfully deleted VPN peer <{peer_id}>.");
         } else {
-            log::warn!("VPN disabled. Skipping VPN peer deletion!");
+            warn!("VPN disabled. Skipping VPN peer deletion!");
         }
 
-        log::info!("Successfully deleted peer descriptor of '{peer_name}' <{peer_id}>.");
+        info!("Successfully deleted peer descriptor of '{peer_name}' <{peer_id}>.");
 
         Ok(peer_descriptor)
     }
 
     inner(params).await
-        .inspect_err(|err| log::error!("{err}"))
+        .inspect_err(|err| error!("{err}"))
 }
 
 pub struct ListPeerDescriptorsParams {
@@ -188,7 +188,7 @@ pub async fn list_peer_descriptors(params: ListPeerDescriptorsParams) -> Result<
 
         let resources_manager = params.resources_manager;
 
-        log::debug!("Querying all peer descriptors.");
+        debug!("Querying all peer descriptors.");
 
         let peers = resources_manager.resources(|resources| {
             resources.iter::<PeerDescriptor>()
@@ -196,13 +196,13 @@ pub async fn list_peer_descriptors(params: ListPeerDescriptorsParams) -> Result<
                 .collect::<Vec<PeerDescriptor>>()
         }).await;
 
-        log::info!("Successfully queried all peer descriptors.");
+        info!("Successfully queried all peer descriptors.");
 
         Ok(peers)
     }
 
     inner(params).await
-        .inspect_err(|err| log::error!("{err}"))
+        .inspect_err(|err| error!("{err}"))
 }
 
 pub struct ListDevicesParams {
@@ -216,19 +216,19 @@ pub async fn list_devices(params: ListDevicesParams) -> Result<Vec<DeviceDescrip
 
         let resources_manager = params.resources_manager;
 
-        log::debug!("Querying all devices.");
+        debug!("Querying all devices.");
 
         let devices = resources_manager.resources(|resource| {
             resource.iter::<DeviceDescriptor>().cloned().collect::<Vec<_>>()
         }).await;
 
-        log::info!("Successfully queried all peers.");
+        info!("Successfully queried all peers.");
 
         Ok(devices)
     }
 
     inner(params).await
-        .inspect_err(|err| log::error!("{err}"))
+        .inspect_err(|err| error!("{err}"))
 }
 
 pub struct GeneratePeerSetupParams {
@@ -259,7 +259,7 @@ pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<Peer
 
         let peer_id = params.peer;
 
-        log::debug!("Generating PeerSetup for peer <{peer_id}>");
+        debug!("Generating PeerSetup for peer <{peer_id}>");
 
         let peer_descriptor = params.resources_manager.get::<PeerDescriptor>(peer_id).await
             .ok_or(GeneratePeerSetupError::PeerNotFound(peer_id))?;
@@ -267,14 +267,14 @@ pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<Peer
         let peer_name = peer_descriptor.name;
 
         let vpn_config = if let Vpn::Enabled { vpn_client } = &params.vpn {
-            log::debug!("Retrieving VPN configuration for peer <{peer_id}>.");
+            debug!("Retrieving VPN configuration for peer <{peer_id}>.");
             let vpn_config = vpn_client.generate_vpn_peer_configuration(params.peer).await
                 .map_err(|cause| GeneratePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), cause: cause.to_string() })?;
-            log::info!("Successfully retrieved vpn configuration for peer <{peer_id}>.");
+            info!("Successfully retrieved vpn configuration for peer <{peer_id}>.");
             vpn_config
         }
         else {
-            log::warn!("VPN is disabled. PeerSetup for peer '{peer_name}' <{peer_id}> will not contain any VPN information!");
+            warn!("VPN is disabled. PeerSetup for peer '{peer_name}' <{peer_id}> will not contain any VPN information!");
             VpnPeerConfiguration::Disabled
         };
 
@@ -283,13 +283,13 @@ pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<Peer
                 AuthConfig::disabled()
             }
             Some(oidc_client_manager) => {
-                log::debug!("Generating OIDC client for peer '{peer_name}' <{peer_id}>.");
+                debug!("Generating OIDC client for peer '{peer_name}' <{peer_id}>.");
                 let issuer_url = oidc_client_manager.issuer_remote_url.clone();
                 let client_credentials = ClientCredentials::from(oidc_client_manager.register_new_client()
                     .await
                     .map_err(|cause| GeneratePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), cause: cause.to_string() })?
                 );
-                log::debug!("Successfully generated peer setup for peer '{peer_name}' <{peer_id}>. OIDC client_id='{}'.", client_credentials.client_id.clone().value());
+                debug!("Successfully generated peer setup for peer '{peer_name}' <{peer_id}>. OIDC client_id='{}'.", client_credentials.client_id.clone().value());
                 AuthConfig::from_credentials(issuer_url, client_credentials)
             }
         };
@@ -304,7 +304,7 @@ pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<Peer
     }
 
     inner(params).await
-        .inspect_err(|err| log::error!("{err}"))
+        .inspect_err(|err| error!("{err}"))
 }
 
 

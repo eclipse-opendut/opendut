@@ -8,7 +8,7 @@ use opentelemetry_sdk::propagation::TraceContextPropagator;
 use tokio::sync::{mpsc, RwLock};
 use tokio::sync::mpsc::error::SendError;
 use tokio::sync::mpsc::Sender;
-use tracing::{error, Span};
+use tracing::{debug, error, info, Span, warn};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, downstream, Downstream, TracingContext};
@@ -131,22 +131,22 @@ impl PeerMessagingBroker {
                     match received {
                         Ok(Some(message)) => handle_stream_message(message, peer_id, &tx_outbound).await,
                         Ok(None) => {
-                            log::info!("Peer <{peer_id}> disconnected!");
+                            info!("Peer <{peer_id}> disconnected!");
                             break;
                         }
                         Err(_) => {
-                            log::error!("No message from peer <{peer_id}> within {} ms.", timeout_duration.as_millis());
+                            error!("No message from peer <{peer_id}> within {} ms.", timeout_duration.as_millis());
                             break;
                         }
                     }
                 }
                 down_peer_impl(resources_manager, peer_id).await;
 
-                log::debug!("Removing peer <{peer_id}> from list of peers connected to message broker.");
+                debug!("Removing peer <{peer_id}> from list of peers connected to message broker.");
                 let mut peers = peers.write().await;
                 let removed = peers.remove(&peer_id);
                 if removed.is_none() {
-                    log::error!("Failed to remove peer from list of peers connected to message broker.")
+                    error!("Failed to remove peer from list of peers connected to message broker.")
                 }
             });
         }
@@ -177,13 +177,13 @@ async fn handle_stream_message(
             let context = None;
             let _ignore_result =
                 tx_outbound.send(Downstream{message:Some(message), context}).await
-                    .inspect_err(|cause| log::warn!("Failed to send ping to peer <{peer_id}>: {cause}"));
+                    .inspect_err(|cause| warn!("Failed to send ping to peer <{peer_id}>: {cause}"));
         },
     }
 }
 
 async fn down_peer_impl(resources_manager: ResourcesManagerRef, peer_id: PeerId) {
-    log::debug!("Setting state of peer <{peer_id}> to Down.");
+    debug!("Setting state of peer <{peer_id}> to Down.");
 
     resources_manager.resources_mut(|resources| {
         resources.update::<PeerState>(peer_id)

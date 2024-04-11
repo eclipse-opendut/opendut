@@ -3,6 +3,7 @@ use pem::Pem;
 
 use tonic::{Request, Response, Status};
 use tonic_web::CorsGrpcWeb;
+use tracing::trace;
 use url::Url;
 
 use opendut_carl_api::carl::peer::GetPeerDescriptorError;
@@ -49,7 +50,7 @@ impl PeerManagerService for PeerManagerFacade {
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn store_peer_descriptor(&self, request: Request<StorePeerDescriptorRequest>) -> Result<Response<StorePeerDescriptorResponse>, Status> {
 
-        log::trace!("Received request: {:?}", request);
+        trace!("Received request: {:?}", request);
 
         let request = request.into_inner();
         let peer_descriptor: PeerDescriptor = extract!(request.peer)?;
@@ -81,7 +82,7 @@ impl PeerManagerService for PeerManagerFacade {
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn delete_peer_descriptor(&self, request: Request<DeletePeerDescriptorRequest>) -> Result<Response<DeletePeerDescriptorResponse>, Status> {
 
-        log::trace!("Received request: {:?}", request);
+        trace!("Received request: {:?}", request);
 
         let request = request.into_inner();
         let peer_id: PeerId = extract!(request.peer_id)?;
@@ -114,7 +115,7 @@ impl PeerManagerService for PeerManagerFacade {
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn get_peer_descriptor(&self, request: Request<GetPeerDescriptorRequest>) -> Result<Response<GetPeerDescriptorResponse>, Status> {
 
-        log::trace!("Received request: {:?}", request);
+        trace!("Received request: {:?}", request);
 
         let request = request.into_inner();
         let peer_id: PeerId = extract!(request.peer_id)?;
@@ -151,7 +152,7 @@ impl PeerManagerService for PeerManagerFacade {
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn list_peer_descriptors(&self, request: Request<ListPeerDescriptorsRequest>) -> Result<Response<ListPeerDescriptorsResponse>, Status> {
 
-        log::trace!("Received request: {:?}", request);
+        trace!("Received request: {:?}", request);
 
         let result =
             actions::list_peer_descriptors(ListPeerDescriptorsParams {
@@ -183,7 +184,7 @@ impl PeerManagerService for PeerManagerFacade {
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn list_devices(&self, request: Request<ListDevicesRequest>) -> Result<Response<ListDevicesResponse>, Status> {
 
-        log::trace!("Received request: {:?}", request);
+        trace!("Received request: {:?}", request);
 
         let devices = actions::list_devices(ListDevicesParams {
             resources_manager: Arc::clone(&self.resources_manager),
@@ -198,7 +199,7 @@ impl PeerManagerService for PeerManagerFacade {
 
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn generate_peer_setup(&self, request: Request<GeneratePeerSetupRequest>) -> Result<Response<GeneratePeerSetupResponse>, Status> { // TODO: Refactor error types.
-        log::trace!("Received request: {:?}", request);
+        trace!("Received request: {:?}", request);
 
         let message = request.into_inner();
         let response = match message.peer {

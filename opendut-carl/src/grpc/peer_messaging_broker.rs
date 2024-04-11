@@ -9,6 +9,7 @@ use tokio_stream::wrappers::ReceiverStream;
 use tonic::{Request, Response, Status, Streaming};
 use tonic::metadata::MetadataMap;
 use tonic_web::CorsGrpcWeb;
+use tracing::{error, info, trace, warn};
 use uuid::Uuid;
 
 use opendut_carl_api::proto::services::peer_messaging_broker::{Downstream, ListPeersRequest, ListPeersResponse, Upstream};
@@ -36,7 +37,7 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn list_peers(&self, request: Request<ListPeersRequest>) -> Result<Response<ListPeersResponse>, Status> {
 
-        log::trace!("Received request: {:?}", request);
+        trace!("Received request: {:?}", request);
 
         let peers = self.peer_messaging_broker.list_peers().await;
 
@@ -58,13 +59,13 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
 
         let peer_id = extract_peer_id(request.metadata())
             .map_err(|message| {
-                log::warn!("Error while parsing PeerId from client request: {message}");
+                warn!("Error while parsing PeerId from client request: {message}");
                 Status::invalid_argument(message)
             })?;
 
         let remote_host = extract_remote_host(request.metadata())
             .map_err(|message| {
-                log::warn!("Error while parsing remote host address from client request: {message}");
+                warn!("Error while parsing remote host address from client request: {message}");
                 Status::invalid_argument(message)
             })?;
 
@@ -80,24 +81,24 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
                     Ok(upstream) => {
                         if let Some(message) = upstream.message {
                             if matches!(message, upstream::Message::Ping(_)).not() {
-                                log::trace!("Received message from client <{}>: {:?}", peer_id, message);
+                                trace!("Received message from client <{}>: {:?}", peer_id, message);
                             }
                             tx_inbound.send(message).await.unwrap();
                         } else {
-                            log::warn!("Ignoring empty message from client <{}>: {:?}", peer_id, upstream);
+                            warn!("Ignoring empty message from client <{}>: {:?}", peer_id, upstream);
                         }
                     }
                     Err(status) => {
-                        log::error!("Error: {:?}", status);
+                        error!("Error: {:?}", status);
                     }
                 }
             }
 
             if let Err(cause) = peer_messaging_broker.remove_peer(peer_id).await {
-                log::error!("Failed to removed peer <{peer_id}>:\n  {cause}");
+                error!("Failed to removed peer <{peer_id}>:\n  {cause}");
             }
             else {
-                log::info!("Removed peer <{peer_id}>.");
+                info!("Removed peer <{peer_id}>.");
             };
         });
 
