@@ -63,9 +63,9 @@ impl CarlCli {
                     distribution::validate::validate_contents(target)?;
                 }
             }
-            TaskCli::Docker(crate::tasks::docker::DockerCli {}) => {
-                crate::tasks::docker::build_carl_docker_image()?;
-                crate::tasks::docker::publish_carl_docker_image()?;
+            TaskCli::Docker(crate::tasks::docker::DockerCli { tag }) => {
+                crate::tasks::docker::build_carl_docker_image(tag.clone())?;
+                crate::tasks::docker::publish_carl_docker_image(tag)?;
             }
         };
         Ok(())

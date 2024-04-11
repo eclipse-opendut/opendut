@@ -9,7 +9,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: "opendut-carl"
 
 jobs:
   publish-docker:
@@ -47,5 +46,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish Docker image
+      - name: "Publish Docker image - Versioned Release"
+        if: ${{ !startsWith( github.ref, 'refs/tags/canary' ) }}
         run: cargo ci carl docker
+
+      - name: "Publish Docker image - Canary Release"
+        if: ${{ startsWith( github.ref, 'refs/tags/canary' ) }}
+        run: cargo ci carl docker --tag ${{ github.ref_name }}
