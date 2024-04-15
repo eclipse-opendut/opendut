@@ -11,6 +11,7 @@ use opendut_types::util::net::NetworkInterfaceName;
 use opendut_types::vpn::netbird::SetupKey;
 use opendut_types::vpn::VpnPeerConfiguration;
 use opendut_util::logging;
+use opendut_util::logging::OpenTelemetryConfig;
 
 use crate::service::network_interface::manager::NetworkInterfaceManager;
 use crate::setup::{Leader, runner, tasks, User};
@@ -120,11 +121,7 @@ pub fn init_logging() -> anyhow::Result<()> {
     let config = logging::LoggingConfig {
         file_logging: Some(log_file),
         logging_stdout: false,
-        opentelemetry_endpoint: None,
-        opentelemetry_service_name: None,
-        opentelemetry_service_instance_id: None,
-        opentelemetry_metrics_interval_ms: None,
-        opentelemetry_cpu_collection_interval_ms: None,
+        opentelemetry: OpenTelemetryConfig::Disabled,
     };
     let _ = logging::initialize_with_config(config)?;
 

@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 17,
+  "id": 18,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -94,8 +94,7 @@
                 "value": 80
               }
             ]
-          },
-          "unitScale": true
+          }
         },
         "overrides": [
           {
@@ -306,8 +305,7 @@
                 "value": 80
               }
             ]
-          },
-          "unitScale": true
+          }
         },
         "overrides": [
           {
@@ -360,7 +358,7 @@
           }
         ]
       },
-      "pluginVersion": "10.3.3",
+      "pluginVersion": "10.4.1",
       "targets": [
         {
           "datasource": {
@@ -470,8 +468,7 @@
                 "value": 80
               }
             ]
-          },
-          "unitScale": true
+          }
         },
         "overrides": [
           {
@@ -586,8 +583,7 @@
                 "value": 80
               }
             ]
-          },
-          "unitScale": true
+          }
         },
         "overrides": [
           {
@@ -717,8 +713,7 @@
                 "value": 80
               }
             ]
-          },
-          "unitScale": true
+          }
         },
         "overrides": []
       },
@@ -817,8 +812,7 @@
                 "value": 80
               }
             ]
-          },
-          "unitScale": true
+          }
         },
         "overrides": [
           {
@@ -934,8 +928,7 @@
               }
             ]
           },
-          "unit": "decbytes",
-          "unitScale": true
+          "unit": "decbytes"
         },
         "overrides": [
           {
@@ -982,7 +975,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "host_ram_used{exported_instance!=\"carl_instance\"}",
+          "expr": "host_ram_used{exported_job!=\"opendut-carl\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -1051,8 +1044,7 @@
               }
             ]
           },
-          "unit": "decbytes",
-          "unitScale": true
+          "unit": "decbytes"
         },
         "overrides": [
           {
@@ -1099,7 +1091,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "process_ram_used{exported_instance!=\"carl_instance\"}",
+          "expr": "process_ram_used{exported_job!=\"opendut-carl\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -1168,8 +1160,7 @@
               }
             ]
           },
-          "unit": "percent",
-          "unitScale": true
+          "unit": "percent"
         },
         "overrides": [
           {
@@ -1216,7 +1207,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "process_cpu_used{exported_instance!=\"carl_instance\"}",
+          "expr": "process_cpu_used{exported_job!=\"opendut-carl\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -1285,8 +1276,7 @@
               }
             ]
           },
-          "unit": "decbytes",
-          "unitScale": true
+          "unit": "decbytes"
         },
         "overrides": [
           {
@@ -1333,7 +1323,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "host_ram_used{exported_instance=\"carl_instance\"}",
+          "expr": "host_ram_used{exported_job=\"opendut-carl\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -1402,8 +1392,7 @@
               }
             ]
           },
-          "unit": "decbytes",
-          "unitScale": true
+          "unit": "decbytes"
         },
         "overrides": [
           {
@@ -1450,7 +1439,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "process_ram_used{exported_instance=\"carl_instance\"}",
+          "expr": "process_ram_used{exported_job=\"opendut-carl\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -1519,8 +1508,7 @@
               }
             ]
           },
-          "unit": "percent",
-          "unitScale": true
+          "unit": "percent"
         },
         "overrides": [
           {
@@ -1567,7 +1555,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "process_cpu_used{exported_instance=\"carl_instance\"}",
+          "expr": "process_cpu_used{exported_job=\"opendut-carl\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -1590,10 +1578,10 @@
         "current": {
           "selected": true,
           "text": [
-            "All"
+            "opendut-carl"
           ],
           "value": [
-            "$__all"
+            "opendut-carl"
           ]
         },
         "datasource": {
@@ -1622,10 +1610,10 @@
         "current": {
           "selected": true,
           "text": [
-            "All"
+            "354ca246-079b-4434-8629-938c17d7ff16"
           ],
           "value": [
-            "$__all"
+            "354ca246-079b-4434-8629-938c17d7ff16"
           ]
         },
         "datasource": {
@@ -1635,7 +1623,7 @@
         "definition": "",
         "hide": 0,
         "includeAll": true,
-        "label": "Peer ID",
+        "label": "Service Instance ID",
         "multi": true,
         "name": "peer_id",
         "options": [],

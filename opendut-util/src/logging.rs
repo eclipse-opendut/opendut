@@ -24,6 +24,7 @@ use tracing_subscriber::filter::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use url::Url;
+use uuid::Uuid;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -73,24 +74,22 @@ pub fn initialize_with_config(config: LoggingConfig) -> Result<ShutdownHandle, E
             None
         };
 
-    let (tracer, logger, logger_layer, meter_provider) = if let Some(endpoint) = config.opentelemetry_endpoint {
-        let service_name: String = config.opentelemetry_service_name.clone()
-            .unwrap_or_default();
-        let service_instance_id = config.opentelemetry_service_instance_id.clone().unwrap_or_else(|| String::from("carl_instance"));
-        let tracer = init_tracer(&endpoint, service_name, service_instance_id).expect("Failed to initialize tracer.");
+    let (tracer, logger, logger_layer, meter_provider) =
+        if let OpenTelemetryConfig::Enabled { endpoint, service_name, service_instance_id, metrics_interval_ms, ..} = config.opentelemetry {
 
-        let service_name: String = config.opentelemetry_service_name.clone()
-            .unwrap_or_default();
-        let service_instance_id = config.opentelemetry_service_instance_id.clone().unwrap_or_else(|| String::from("carl_instance"));
-        let logger = init_logger(&endpoint, service_name, service_instance_id).expect("Failed to initialize logs.");
+        let service_name: String = service_name.clone();
+        let service_instance_id = service_instance_id.clone();
+        let tracer = init_tracer(&endpoint, service_name.clone(), service_instance_id.clone()).expect("Failed to initialize tracer.");
+
+        let service_name: String = service_name.clone();
+        let service_instance_id = service_instance_id.clone();
+        let logger = init_logger(&endpoint, service_name.clone(), service_instance_id.clone()).expect("Failed to initialize logs.");
 
         let logger_provider: GlobalLoggerProvider = logger_provider();
         let logger_layer = OpenTelemetryTracingBridge::new(&logger_provider);
 
-        let service_name: String = config.opentelemetry_service_name
-            .unwrap_or_default();
-        let service_instance_id = config.opentelemetry_service_instance_id.unwrap_or_else(|| String::from("carl_instance"));
-        let metrics_interval = config.opentelemetry_metrics_interval_ms.unwrap_or_default();
+        let service_name: String = service_name;
+        let metrics_interval = metrics_interval_ms;
         let meter_provider = init_metrics(&endpoint, service_name, service_instance_id, metrics_interval).expect("Failed to initialize metrics.");
 
         (Some(tracer), Some(logger), Some(logger_layer), Some(meter_provider))
@@ -174,19 +173,34 @@ fn init_metrics(endpoint: &Endpoint, service_name: impl Into<String>, service_in
         .with_period(metrics_interval)
         .build()
 }
-pub fn initialize_metrics_collection(opentelemetry_cpu_collection_interval_ms: Duration) {
+pub fn initialize_metrics_collection(cpu_collection_interval_ms: Duration) {
     let meter = global::meter("opendut_meter");
     
     let current_pid = std::process::id() as usize;
     let process_ram_used = meter.u64_observable_gauge("process_ram_used").init();
     let process_cpu_used = meter.f64_observable_gauge("process_cpu_used").init();
     let host_ram_used = meter.u64_observable_gauge("host_ram_used").init();
+
+    const WINDOW_SIZE: usize = 5;
     
-    let moving_average = SumTreeSMA::<f64, f64, 5>::new();
+    let moving_average = SumTreeSMA::<f64, f64, WINDOW_SIZE>::new();
     let mutex = Arc::new(Mutex::new(moving_average));
     let mutex_cloned = Arc::clone(&mutex);
 
-    collect_cpu_usage(mutex_cloned, opentelemetry_cpu_collection_interval_ms);
+    tokio::spawn( async move {
+        let current_pid = std::process::id() as usize;
+        let mut sys = System::new_all();
+        loop {
+            sys.refresh_processes();
+            sleep(cpu_collection_interval_ms).await;
+            sys.refresh_processes();
+            if let Some(process) = sys.process(Pid::from(current_pid)) {
+                let result = process.cpu_usage();
+                mutex_cloned.lock().await.add_sample(result as f64); // add more samples in a loop
+                println!("{}", result);
+            }
+        }
+    });
     
     meter.register_callback(&[process_ram_used.as_any(),process_cpu_used.as_any(),host_ram_used.as_any()], move |observer| {
         let mut sys = System::new_all();
@@ -204,15 +218,23 @@ pub fn initialize_metrics_collection(opentelemetry_cpu_collection_interval_ms: D
 }
 
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct LoggingConfig {
     pub file_logging: Option<PathBuf>,
     pub logging_stdout: bool,
-    pub opentelemetry_endpoint: Option<Endpoint>,
-    pub opentelemetry_service_name: Option<String>,
-    pub opentelemetry_service_instance_id: Option<String>,
-    pub opentelemetry_metrics_interval_ms: Option<Duration>,
-    pub opentelemetry_cpu_collection_interval_ms: Option<Duration>,
+    pub opentelemetry: OpenTelemetryConfig,
+}
+#[derive(Default, Clone)]
+pub enum OpenTelemetryConfig {
+    Enabled {
+        endpoint: Endpoint,
+        service_name: String,
+        service_instance_id: String,
+        metrics_interval_ms: Duration,
+        cpu_collection_interval_ms: Duration,
+    },
+    #[default]
+    Disabled,
 }
 impl LoggingConfig {
     pub fn load(config: &config::Config) -> Result<Self, LoggingConfigError> {
@@ -220,7 +242,9 @@ impl LoggingConfig {
         let logging_stdout = config.get_bool("opentelemetry.logging.stdout")?;
 
         let opentelemetry_enabled = config.get_bool("opentelemetry.enabled")?;
-        let opentelemetry_endpoint = if opentelemetry_enabled {
+
+
+        let endpoint = {
             let field = String::from("opentelemetry.endpoint");
             let url = config.get_string(&field)?;
             let url = Url::parse(&url)
@@ -228,87 +252,75 @@ impl LoggingConfig {
                     field,
                     message: cause.to_string()
                 })?;
-            Some(Endpoint { url })
-        } else {
-            None
+            Endpoint { url }
         };
-        let opentelemetry_service_name = if opentelemetry_enabled {
+        let service_name = {
             let field = String::from("opentelemetry.service.name");
-            let service = config.get_string(&field)?;
-            Some(service)
-        } else {
-            None
+            config.get_string(&field)
+                .map_err(|_cause| LoggingConfigError::InvalidFieldValue { field: field.clone(), message: String::from("Failed to parse configuration from field") })?
         };
 
-        let opentelemetry_service_instance_id: Option<String> = if opentelemetry_enabled {
+        let service_instance_id = {
             let field = String::from("peer.id");
-            config.get_string(&field).ok()
-        } else {
-            None
+            let result = config.get_string(&field).unwrap_or_default();
+            if result.is_empty() {
+                String::from("carl-") + &Uuid::new_v4().to_string()
+            } else {
+                result
+            }
         };
-        let opentelemetry_metrics_interval_ms:Option<Duration> = if opentelemetry_enabled {
+
+        let metrics_interval_ms =  {
             let field = String::from("opentelemetry.metrics.interval.ms");
-            let result =
-                if let Ok(interval_i64) = config.get_int(&field) {
-                    let interval_u64 = u64::try_from(interval_i64);
-                    if let Ok(result_u64) = interval_u64 {
-                        Duration::from_millis(result_u64)
-                    } else {
-                        Duration::from_millis(60000)
-                    }
-                } else {
-                    Duration::from_millis(60000)
-                };
-            Some(result)
-        } else {
-            None
+
+            let interval_i64 = config.get_int(&field)
+                .map_err(|_cause| LoggingConfigError::InvalidFieldValue { field: field.clone(), message: String::from("Failed to parse configuration from field") })?;
+
+            let interval_u64 = u64::try_from(interval_i64)
+                .map_err(|_cause| LoggingConfigError::InvalidFieldValue { field: field.clone(), message: String::from("Failed to convert to u64.") })?;
+
+            Duration::from_millis(interval_u64)
         };
-        let opentelemetry_cpu_collection_interval_ms:Option<Duration> = if opentelemetry_enabled {
+
+        let cpu_collection_interval_ms = {
             let field = String::from("opentelemetry.cpu.collection.interval.ms");
-            let result =
-                if let Ok(interval_i64) = config.get_int(&field) {
-                    let interval_u64 = u64::try_from(interval_i64);
-                    if let Ok(result_u64) = interval_u64 {
-                        println!("read the correct millis");
-                        Duration::from_millis(result_u64)
-                    } else {
-                        Duration::from_millis(5000)
-                    }
-                } else {
-                    Duration::from_millis(5000)
-                };
-            Some(result)
+
+            let interval_i64 = config.get_int(&field)
+                .map_err(|_cause| LoggingConfigError::InvalidFieldValue { field: field.clone(), message: String::from("Failed to parse configuration from field.") })?;
+
+            let interval_u64 = u64::try_from(interval_i64)
+                .map_err(|_cause| LoggingConfigError::InvalidFieldValue { field: field.clone(), message: String::from("Failed to convert to u64.") })?;
+            let interval = Duration::from_millis(interval_u64);
+
+            if interval < sysinfo::MINIMUM_CPU_UPDATE_INTERVAL {
+                return Err(LoggingConfigError::InvalidFieldValue {
+                    field,
+                    message: format!("Provided configuration value needs to be higher than the minimum CPU update interval of {} ms.", sysinfo::MINIMUM_CPU_UPDATE_INTERVAL.as_millis())
+                });
+            }
+            interval
+        };
+
+        let opentelemetry = if opentelemetry_enabled {
+            OpenTelemetryConfig::Enabled {
+                endpoint,
+                service_name,
+                service_instance_id,
+                metrics_interval_ms,
+                cpu_collection_interval_ms
+            }
         } else {
-            None
+            OpenTelemetryConfig::Disabled
         };
 
         Ok(LoggingConfig {
             file_logging,
             logging_stdout,
-            opentelemetry_endpoint,
-            opentelemetry_service_name,
-            opentelemetry_service_instance_id,
-            opentelemetry_metrics_interval_ms,
-            opentelemetry_cpu_collection_interval_ms,
+            opentelemetry,
         })
     }
 }
-fn collect_cpu_usage(moving_average: Arc<Mutex<SumTreeSMA<f64, f64, 5>>>, period: Duration) {
-    tokio::spawn( async move {
-        let current_pid = std::process::id() as usize;
-        let mut sys = System::new_all();
-        loop {
-            sys.refresh_processes();
-            sleep(period).await;
-            sys.refresh_processes();
-            if let Some(process) = sys.process(Pid::from(current_pid)) {
-                let result = process.cpu_usage();
-                moving_average.lock().await.add_sample(result as f64); // add more samples in a loop
-                println!("{}", result);
-            }
-        }
-    });
-}
+
 #[derive(Debug, thiserror::Error)]
 pub enum LoggingConfigError {
     #[error("Error while loading config: {source}")]
