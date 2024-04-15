@@ -5,6 +5,7 @@
 /carl.toml
 /edgar.toml
 .env*
+.ci/deploy/localenv/data/secrets/
 
 #####################################################
 #             Build, Binaries and Libs              #

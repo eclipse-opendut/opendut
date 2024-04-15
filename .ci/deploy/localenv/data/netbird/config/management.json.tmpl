@@ -1,0 +1,93 @@
+{
+  "Stuns": [
+    {
+      "Proto": "udp",
+      "URI": "stun:$NETBIRD_SIGNAL_DOMAIN:$NETBIRD_SIGNAL_PORT",
+      "Username": "",
+      "Password": ""
+    }
+  ],
+  "TURNConfig": {
+    "TimeBasedCredentials": false,
+    "CredentialsTTL": "12h0m0s",
+    "Secret": "secret",
+    "Turns": [
+      {
+        "Proto": "udp",
+        "URI": "turn:$TURN_DOMAIN:$TURN_PORT",
+        "Username": "$TURN_USER",
+        "Password": "$TURN_PASSWORD"
+      }
+    ]
+  },
+  "Signal": {
+    "Proto": "http",
+    "URI": "$NETBIRD_SIGNAL_DOMAIN:$NETBIRD_SIGNAL_PORT",
+    "Username": "",
+    "Password": ""
+  },
+  "Datadir": "/var/lib/netbird/",
+  "DataStoreEncryptionKey": "$NETBIRD_DATASTORE_ENC_KEY",
+  "HttpConfig": {
+    "LetsEncryptDomain": "",
+    "CertFile": "",
+    "CertKey": "",
+    "AuthAudience": "$NETBIRD_MANAGEMENT_DEVICE_ID",
+    "AuthIssuer": "$NETBIRD_ISSUER_URL",
+    "AuthUserIDClaim": "",
+    "AuthKeysLocation": "$NETBIRD_ISSUER_URL/protocol/openid-connect/certs",
+    "OIDCConfigEndpoint": "$NETBIRD_ISSUER_URL/.well-known/openid-configuration",
+    "IdpSignKeyRefreshEnabled": false
+  },
+  "IdpManagerConfig": {
+    "ManagerType": "keycloak",
+    "ClientConfig": {
+      "Issuer": "$NETBIRD_ISSUER_URL",
+      "TokenEndpoint": "$NETBIRD_ISSUER_URL/protocol/openid-connect/token",
+      "ClientID": "$NETBIRD_MANAGEMENT_CLIENT_ID",
+      "ClientSecret": "$NETBIRD_MANAGEMENT_CLIENT_SECRET",
+      "GrantType": "client_credentials"
+    },
+    "ExtraConfig": {
+      "AdminEndpoint": "$KEYCLOAK_URL/admin/realms/netbird"
+    },
+    "Auth0ClientCredentials": null,
+    "AzureClientCredentials": null,
+    "KeycloakClientCredentials": null,
+    "ZitadelClientCredentials": null
+  },
+  "DeviceAuthorizationFlow": {
+    "Provider": "hosted",
+    "ProviderConfig": {
+      "ClientID": "$NETBIRD_MANAGEMENT_DEVICE_ID",
+      "ClientSecret": "",
+      "Domain": "$NETBIRD_ISSUER_DOMAIN",
+      "Audience": "$NETBIRD_MANAGEMENT_DEVICE_ID",
+      "TokenEndpoint": "$NETBIRD_ISSUER_URL/protocol/openid-connect/token",
+      "DeviceAuthEndpoint": "$NETBIRD_ISSUER_URL/protocol/openid-connect/auth/device",
+      "AuthorizationEndpoint": "",
+      "Scope": "openid",
+      "UseIDToken": false,
+      "RedirectURLs": null
+    }
+  },
+  "PKCEAuthorizationFlow": {
+    "ProviderConfig": {
+      "ClientID": "$NETBIRD_MANAGEMENT_DEVICE_ID",
+      "ClientSecret": "",
+      "Domain": "",
+      "Audience": "$NETBIRD_MANAGEMENT_DEVICE_ID",
+      "TokenEndpoint": "$NETBIRD_ISSUER_URL/protocol/openid-connect/token",
+      "DeviceAuthEndpoint": "",
+      "AuthorizationEndpoint": "$NETBIRD_ISSUER_URL/protocol/openid-connect/auth",
+      "Scope": "openid profile email offline_access api",
+      "UseIDToken": false,
+      "RedirectURLs": [
+        "http://localhost:53000"
+      ]
+    }
+  },
+  "StoreConfig": {
+    "Engine": ""
+  }
+}

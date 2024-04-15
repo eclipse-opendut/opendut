@@ -1,0 +1,117 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+machine = {
+    :hostname => "opendut-server",
+    :memory => 8192,
+    :cpu => 4,
+    :ip => "192.168.56.9",
+    :box_name => "ubuntu/jammy64",
+}
+
+custom_root_ca = ENV["CUSTOM_ROOT_CA"]
+disable_private_network = (ENV["OPENDUT_DISABLE_PRIVATE_NETWORK"] ||= "false").to_s == "true"
+expose_privileged_ports = (ENV["OPENDUT_EXPOSE_PRIVILEGED_PORTS"] ||= "false").to_s == "true"
+
+Vagrant.configure("2") do |config|
+
+    config.vm.box = machine[:box_name]
+    config.vm.hostname = machine[:hostname]
+    if !disable_private_network then
+        config.vm.network "private_network", ip: machine[:ip]
+    end
+
+    # default shared folder required by provisioner
+    config.vm.synced_folder ".", "/vagrant", disabled: false, SharedFoldersEnableSymlinksCreate: false
+
+    if expose_privileged_ports then
+        # privileged user is allowed to forward ports < 1024, expose those ports to the local network
+        config.vm.network :forwarded_port, guest: 80, host: 80
+        config.vm.network :forwarded_port, guest: 443, host: 443
+    else
+        # normal user is allowed to forward ports > 1024, restrict host_ip to localhost only (avoids publishing to all interfaces)
+        config.vm.network :forwarded_port, guest: 80, host: 8080, host_ip: "127.0.0.1"
+        config.vm.network :forwarded_port, guest: 443, host: 8443, host_ip: "127.0.0.1"
+    end
+
+    config.vm.provider "virtualbox" do |vb|
+        vb.name = machine[:hostname]
+        vb.cpus = machine[:cpu]
+        vb.memory = machine[:memory]
+
+        vb.gui = (ENV["SHOW_GUI"] ||= "false").to_s == "true"
+
+        # https://www.virtualbox.org/manual/ch08.html
+        vb.customize ["modifyvm", :id, "--vram", "128"]
+        vb.customize ["modifyvm", :id, "--graphicscontroller", "VBoxSVGA"]
+        vb.customize ["modifyvm", :id, "--accelerate3d", "off"]
+        vb.customize ["modifyvm", :id, "--accelerate2dvideo", "off"]
+
+    end
+
+    # add ssh key
+    if !File.file?("#{Dir.home}/.ssh/id_rsa.pub")
+        puts "No SSH key found."
+        puts "Run e.g. 'mkdir -p ~/.ssh; ssh-keygen -t rsa -b 4096 -C 'opendut-vm' -f ~/.ssh/id_rsa' to generate one."
+    end
+
+    # automatically change directory to the repository root
+    config.ssh.extra_args = ["-t", "cd /vagrant; bash --login"]
+    config.ssh.forward_x11 = true
+
+    # add custom root ca
+    if !custom_root_ca.nil? then
+        if !File.file?("#{custom_root_ca}") then
+            puts "Custom root CA not found."
+        else
+            puts "Custom root CA found. Adding to VM."
+            config.vm.provision "file", source: "#{custom_root_ca}", destination: "/tmp/custom_root_ca.crt"
+            config.vm.provision "shell" do |s|
+               s.inline = "cp /tmp/custom_root_ca.crt /usr/local/share/ca-certificates; update-ca-certificates"
+               s.privileged = true
+            end
+        end
+    end
+
+    config.vm.provision "shell" do |s|
+    ssh_pub_key = File.readlines("#{Dir.home}/.ssh/id_rsa.pub").first.strip
+    s.inline = <<-SHELL
+      if grep -sq "#{ssh_pub_key}" /home/vagrant/.ssh/authorized_keys; then
+        echo "SSH keys already provisioned."
+        exit 0;
+      else
+        echo #{ssh_pub_key} >> /home/vagrant/.ssh/authorized_keys
+        mkdir -p /root/.ssh
+        echo #{ssh_pub_key} >> /root/.ssh/authorized_keys
+      fi
+    SHELL
+    end
+    # Set the name of the VM. See: http://stackoverflow.com/a/17864388/100134
+    config.vm.define machine[:hostname] do |box|
+    end
+
+  # Run Ansible from the Vagrant VM
+  config.vm.provision "ansible_local" do |ansible|
+    # ansible.compatibility_mode = "2.0"
+    ansible.playbook = "/vagrant/.ci/deploy/localenv/data/ansible/playbook.yml"
+    ansible.become = true
+    ansible.galaxy_role_file = "/vagrant/.ci/deploy/localenv/data/ansible/ansible-requirements.yml"
+    ansible.galaxy_roles_path = "/vagrant/.ci/deploy/localenv/data/ansible/local_roles/:/vagrant/.ci/deploy/localenv/data/ansible/downloaded_roles/"
+    ansible.galaxy_command = "ansible-galaxy install --role-file=%{role_file} --roles-path=/vagrant/.ci/deploy/localenv/data/ansible/downloaded_roles"
+
+    # https://developer.hashicorp.com/vagrant/docs/provisioning/ansible_common
+    ansible.tags = ENV["ANSIBLE_TAGS"] ||= "all"
+    ansible.verbose = ENV["ANSIBLE_VERBOSE"] ||= ""     # do not enable verbose by default
+    ansible.extra_vars = {
+        "opendut_repo_root" => "/vagrant",
+    }
+    # ANSIBLE_ARGS="-v -e arg='value' --tags custom_tag" vagrant provision
+    ansible.raw_arguments = Shellwords.shellsplit(ENV['ANSIBLE_ARGS']) if ENV['ANSIBLE_ARGS']
+  end
+
+  # start docker with script
+  config.vm.provision "shell" do |script|
+    script.path = "./.ci/deploy/localenv/data/ansible/vagrant-entrypoint.sh"
+    script.args   = ""
+  end
+end

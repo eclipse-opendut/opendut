@@ -147,6 +147,7 @@ done
 # Derive the bridge address from the existing address, by replacing '32' with '33'
 # eth0 and ip range 192.168.32.0/24 is the main interface of the docker container
 # We use 192.168.33.0/24 for the bridge interfaces
+# TODO: make these hardcoded network ranges configurable/transparent
 BRIDGE_ADDRESS=$(ip -json address show dev eth0 | jq --raw-output '.[0].addr_info[0].local' | sed --expression 's#32#33#')  # derive from existing address, by replacing '32' with '33'
 ip address add "$BRIDGE_ADDRESS/24" dev "$BRIDGE"
 

@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 
+set -x
 source "$(dirname "$0")/functions.sh"
 
 ping_all_netbird_peers() {
   REQUIRED_SUCCESS="$1"
-  IPS=$(netbird status --json | jq -r '.peers.details[].netbirdIp')
+  IPS=$(netbird status --json | jq -r '.peers.details[] | select(.status=="Connected") | .netbirdIp')
 
   if [ -z "$IPS" ]; then #abort if no IPs returned
     echo "Failed to determine IP addresses to ping."

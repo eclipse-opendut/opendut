@@ -3,7 +3,9 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use anyhow::Context;
-use pem::Pem;
+use digest::Digest;
+use pem::{encode, Pem};
+use sha2::Sha256;
 
 use opendut_types::util::net::Certificate;
 
@@ -31,13 +33,17 @@ impl Task for WriteCaCertificate {
         let unpacked_netbird_checksum_file = &self.checksum_netbird_ca_certificate_file;
 
         if unpacked_carl_checksum_file.exists() && unpacked_netbird_checksum_file.exists() {
-            let carl_installed_digest = fs::read(unpacked_carl_checksum_file)?;
-            let carl_distribution_digest = util::file_checksum(&self.carl_ca_certificate_path)?;
-            let netbird_installed_digest = fs::read(unpacked_netbird_checksum_file)?;
-            let netbird_distribution_digest = util::file_checksum(&self.netbird_ca_certificate_path)?;
 
-            if carl_installed_digest == carl_distribution_digest
-                && netbird_installed_digest == netbird_distribution_digest {
+            let mut hasher = Sha256::new();
+            let pem_string: String = encode(&self.certificate.0);
+            hasher.update(pem_string);
+            let provided_certificate_checksum = hasher.finalize().to_vec();
+
+            let carl_installed_digest = fs::read(unpacked_carl_checksum_file)?;
+            let netbird_installed_digest = fs::read(unpacked_netbird_checksum_file)?;
+
+            if carl_installed_digest == provided_certificate_checksum
+                && netbird_installed_digest == provided_certificate_checksum {
                 return Ok(TaskFulfilled::Yes);
             }
         }
@@ -128,14 +134,16 @@ fn write_netbird_certificate(
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
     use assert_fs::prelude::*;
     use assert_fs::TempDir;
-    use pem::Pem;
+    use pem::{Pem};
 
     use opendut_types::util::net::Certificate;
 
     use crate::setup::task::{Task, TaskFulfilled};
     use crate::setup::tasks::WriteCaCertificate;
+    use crate::setup::util;
     use crate::setup::util::NoopCommandRunner;
 
     #[test]
@@ -161,6 +169,113 @@ mod tests {
 
         assert_eq!(task.check_fulfilled()?, TaskFulfilled::No);
         task.execute()?;
+        assert_eq!(task.check_fulfilled()?, TaskFulfilled::Yes);
+
+        Ok(())
+    }
+
+    #[test]
+    fn check_if_certificate_exists_but_does_not_match_checksum() -> anyhow::Result<()> {
+        let temp = TempDir::new().unwrap();
+
+        let carl_ca_certificate_path = temp.child("ca.pem");
+
+        let netbird_ca_certificate_path = temp.child("opendut-ca.crt");
+
+        let checksum_carl_ca_certificate_file = temp.child("ca.pem.checksum");
+
+        let checksum_netbird_ca_certificate_file = temp.child("opendut-ca.crt.checksum");
+
+        const PEM_STORED: &'static str = "-----BEGIN RSA PUBLIC KEY-----
+MIIBPQIBAAJBAOsfi5AGYhdRs/x6q5H7kScxA0Kzzqe6WI6gf6+tc6IvKQJo5rQc
+dWWSQ0nRGt2hOPDO+35NKhQEjBQxPh/v7n0CAwEAAQJBAOGaBAyuw0ICyENy5NsO
+2gkT00AWTSzM9Zns0HedY31yEabkuFvrMCHjscEF7u3Y6PB7An3IzooBHchsFDei
+AAECIQD/JahddzR5K3A6rzTidmAf1PBtqi7296EnWv8WvpfAAQIhAOvowIXZI4Un
+DXjgZ9ekuUjZN+GUQRAVlkEEohGLVy59AiEA90VtqDdQuWWpvJX0cM08V10tLXrT
+TTGsEtITid1ogAECIQDAaFl90ZgS5cMrL3wCeatVKzVUmuJmB/VAmlLFFGzK0QIh
+ANJGc7AFk4fyFD/OezhwGHbWmo/S+bfeAiIh2Ss2FxKJ
+-----END RSA PUBLIC KEY-----
+";
+
+        const NEW_PEM: &'static str = "-----BEGIN RSA PUBLIC KEY-----
+MIIBPQIBAAJBAOsfi5AGYhdRs/x6q5H7kScxA0Kzzqe6WI6gf6+tc6IvKQJo5rQc
+AAECIQD/JahddzR5K3A6rzTidmAf1PBtqi7296EnWv8WvpfAAQIhAOvowIXZI4Un
+DXjgZ9ekuUjZN+GUQRAVlkEEohGLVy59AiEA90VtqDdQuWWpvJX0cM08V10tLXrT
+dWWSQ0nRGt2hOPDO+35NKhQEjBQxPh/v7n0CAwEAAQJBAOGaBAyuw0ICyENy5NsO
+2gkT00AWTSzM9Zns0HedY31yEabkuFvrMCHjscEF7u3Y6PB7An3IzooBHchsFDei
+TTGsEtITid1ogAECIQDAaFl90ZgS5cMrL3wCeatVKzVUmuJmB/VAmlLFFGzK0QIh
+ANJGc7AFk4fyFD/OezhwGHbWmo/S+bfeAiIh2Ss2FxKJ
+-----END RSA PUBLIC KEY-----
+";
+
+        carl_ca_certificate_path.write_str(PEM_STORED).unwrap();
+        netbird_ca_certificate_path.write_str(PEM_STORED).unwrap();
+        let checksum_carl_netbird_cert = util::file_checksum(&carl_ca_certificate_path).unwrap();
+
+        let checksum_string = checksum_carl_netbird_cert.clone();
+        checksum_carl_ca_certificate_file.write_binary(&checksum_string).unwrap();
+        checksum_netbird_ca_certificate_file.write_binary(&checksum_string).unwrap();
+
+
+        let task = WriteCaCertificate {
+            certificate: Certificate(Pem::from_str(NEW_PEM)?),
+            carl_ca_certificate_path: carl_ca_certificate_path.to_path_buf(),
+            netbird_ca_certificate_path: netbird_ca_certificate_path.to_path_buf(),
+            checksum_carl_ca_certificate_file: checksum_carl_ca_certificate_file.to_path_buf(),
+            checksum_netbird_ca_certificate_file: checksum_netbird_ca_certificate_file.to_path_buf(),
+            command_runner: Box::new(NoopCommandRunner),
+        };
+
+        assert_eq!(task.check_fulfilled()?, TaskFulfilled::No);
+        task.execute()?;
+        assert_eq!(task.check_fulfilled()?, TaskFulfilled::Yes);
+
+        Ok(())
+    }
+
+    #[test]
+    fn check_if_certificate_exists_and_checksum_matches() -> anyhow::Result<()> {
+        let temp = TempDir::new().unwrap();
+
+        let carl_ca_certificate_path = temp.child("ca.pem");
+
+        let netbird_ca_certificate_path = temp.child("opendut-ca.crt");
+
+        let checksum_carl_ca_certificate_file = temp.child("ca.pem.checksum");
+
+        let checksum_netbird_ca_certificate_file = temp.child("opendut-ca.crt.checksum");
+
+        const PEM: &'static str = "-----BEGIN RSA PUBLIC KEY-----
+MIIBPQIBAAJBAOsfi5AGYhdRs/x6q5H7kScxA0Kzzqe6WI6gf6+tc6IvKQJo5rQc
+dWWSQ0nRGt2hOPDO+35NKhQEjBQxPh/v7n0CAwEAAQJBAOGaBAyuw0ICyENy5NsO
+2gkT00AWTSzM9Zns0HedY31yEabkuFvrMCHjscEF7u3Y6PB7An3IzooBHchsFDei
+AAECIQD/JahddzR5K3A6rzTidmAf1PBtqi7296EnWv8WvpfAAQIhAOvowIXZI4Un
+DXjgZ9ekuUjZN+GUQRAVlkEEohGLVy59AiEA90VtqDdQuWWpvJX0cM08V10tLXrT
+TTGsEtITid1ogAECIQDAaFl90ZgS5cMrL3wCeatVKzVUmuJmB/VAmlLFFGzK0QIh
+ANJGc7AFk4fyFD/OezhwGHbWmo/S+bfeAiIh2Ss2FxKJ
+-----END RSA PUBLIC KEY-----
+";
+        let pem = Pem::from_str(PEM)?.to_string();
+
+        carl_ca_certificate_path.write_str(pem.as_str()).unwrap();
+        netbird_ca_certificate_path.write_str(pem.as_str()).unwrap();
+        let checksum_carl_netbird_cert = util::file_checksum(&carl_ca_certificate_path).unwrap();
+
+        let checksum_string = checksum_carl_netbird_cert.clone();
+        checksum_carl_ca_certificate_file.write_binary(&checksum_string).unwrap();
+        checksum_netbird_ca_certificate_file.write_binary(&checksum_string).unwrap();
+
+
+        let task = WriteCaCertificate {
+            certificate: Certificate(Pem::from_str(PEM)?),
+            carl_ca_certificate_path: carl_ca_certificate_path.to_path_buf(),
+            netbird_ca_certificate_path: netbird_ca_certificate_path.to_path_buf(),
+            checksum_carl_ca_certificate_file: checksum_carl_ca_certificate_file.to_path_buf(),
+            checksum_netbird_ca_certificate_file: checksum_netbird_ca_certificate_file.to_path_buf(),
+            command_runner: Box::new(NoopCommandRunner),
+        };
+
+
         assert_eq!(task.check_fulfilled()?, TaskFulfilled::Yes);
 
         Ok(())

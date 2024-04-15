@@ -1,0 +1,19 @@
+tls:
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /pki/deploy/opendut.local.pem
+        keyFile: /pki/deploy/opendut.local.key
+  certificates:
+    - certFile: /pki/deploy/auth.opendut.local.pem
+      keyFile: /pki/deploy/auth.opendut.local.key
+    - certFile: /pki/deploy/opendut.local.pem
+      keyFile: /pki/deploy/opendut.local.key
+    - certFile: /pki/deploy/netbird.opendut.local.pem
+      keyFile: /pki/deploy/netbird.opendut.local.key
+    - certFile: /pki/deploy/netbird-api.opendut.local.pem
+      keyFile: /pki/deploy/netbird-api.opendut.local.key
+    - certFile: /pki/deploy/signal.opendut.local.pem
+      keyFile: /pki/deploy/signal.opendut.local.key
+    - certFile: /pki/deploy/carl.opendut.local.pem
+      keyFile: /pki/deploy/carl.opendut.local.key

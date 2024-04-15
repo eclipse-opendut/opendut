@@ -28,6 +28,7 @@
 - [Architecture](architecture/index.md)
   - [CARL](architecture/carl/index.md)
   - [EDGAR](architecture/edgar/index.md)
+  - [Deployment](architecture/deployment/index.md)
   - [Cluster](architecture/cluster/index.md)
     - [Deployment](architecture/cluster/deployment.md)
   - [Peer](architecture/peer/index.md)

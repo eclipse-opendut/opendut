@@ -60,6 +60,7 @@ pub fn build_carl_docker_image(tag: Option<DockerTag>) -> crate::Result {
         .current_dir(workspace_dir())
         .args([
             "build",
+            "--no-cache",
             "--file",
             ".ci/docker/carl/Dockerfile",
             "--build-arg",

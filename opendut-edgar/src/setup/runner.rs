@@ -9,11 +9,18 @@ use opendut_util::project;
 
 use crate::setup::task::{Success, Task, TaskFulfilled};
 
+const DRY_RUN_BANNER: &str = r"
+                Running in
+             Development mode
+                    --
+          Activating --dry-run to
+        prevent changes to the system.
+        ";
+
 pub async fn run(run_mode: RunMode, no_confirm: bool, tasks: &[Box<dyn Task>]) -> anyhow::Result<()> {
     let run_mode = if project::is_running_in_development() {
-        let log_message = "Running in development. Activating --dry-run to prevent changes to the system.";
-        println!("{log_message}");
-        info!("{log_message}");
+        println!("{DRY_RUN_BANNER}");
+        info!("{DRY_RUN_BANNER}");
         RunMode::DryRun
     } else {
         run_mode
@@ -63,7 +70,6 @@ fn run_tasks(
 
     let progress_style = ProgressStyle::with_template(" {spinner:.dim}  {msg}").unwrap()
         .tick_strings(&["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏", ""]);
-
     for task in tasks {
         let spinner = ProgressBar::new_spinner();
         spinner.enable_steady_tick(Duration::from_millis(120));

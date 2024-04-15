@@ -1,0 +1,19 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: playbook
+  hosts: all
+  vars:
+  pre_tasks:
+  - name: Install required packages
+    apt:
+      pkg: ['htop', 'tmux', 'jq', 'python3-docker', 'python3-pip', 'pwgen']
+      state: 'present'
+      update_cache: yes
+      cache_valid_time: 3600
+  - name: Install docker-compose python package
+    ansible.builtin.pip:
+      name: docker-compose
+
+  roles:
+  # https://github.com/geerlingguy/ansible-role-docker
+  - {role: "geerlingguy.docker", docker_users: ["vagrant"], tags: ["docker"]}

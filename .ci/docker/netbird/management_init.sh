@@ -16,4 +16,4 @@ echo "Keycloak ready"
 wait_for_keycloak_user__in_realm_netbird "netbird" 600 5 || exit 1
 wait_for_keycloak_client__in_realm_netbird "netbird-backend" 600 5 || exit 1
 
-/go/bin/netbird-mgmt management --port 80 --log-file console --disable-anonymous-metrics=true --single-account-mode-domain=netbird.opendut.local --dns-domain=netbird.opendut.local
+exec /go/bin/netbird-mgmt management --port 80 --log-file console --disable-anonymous-metrics=true --single-account-mode-domain=netbird.opendut.local --dns-domain=netbird.opendut.local

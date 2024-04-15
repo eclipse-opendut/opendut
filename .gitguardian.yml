@@ -1,7 +1,7 @@
 version: 2
 
 secret:
-  ignored-matches:
+  ignored_matches:
   - match: 02b9225ae1b240df001a0f365a43bca7bd5b2448c8b5d46de6d429bcd047f46f
     name: Generic Private Key - commit://a8487a3a850925d47cd585d54d69f7dab1595910/resources/development/tls/netbird-management.key
   - match: e64b2db93a60fd9ac1014561e88e72647b19b3da37fa20517aa9808ca0952006
@@ -38,7 +38,11 @@ secret:
     name: Keycloak Api Keys - commit://staged/.ci/docker/carl/docker-compose.yml
   - match: 41a81f8a9873701cdda23917cb74e18c4fbd2ab01d6ff1eae27eda47cc6273ad
     name: Keycloak Api Keys - commit://staged/.ci/docker/carl/docker-compose.yml
-  ignored-paths:
+  ignored_paths:
+  - .ci/deploy/localenv/data/create_docker_compose_env.sh
+  - .ci/deploy/localenv/data/pki/*.sh
+  - .ci/deploy/localenv/data/provision/entrypoint.sh
+  - .ci/deploy/localenv/data/secrets/
   - .ci/docker/keycloak/provision.sh
   - .ci/docker/netbird/netbird-api-functions.sh
   - .ci/docker/netbird/turnserver.conf

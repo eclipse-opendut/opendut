@@ -62,9 +62,9 @@ services:
     command: /opt/managed.sh
     #command: sleep infinity
     volumes:
-      - ../../../target/ci/distribution/x86_64-unknown-linux-gnu/:/opt/artifacts
+      - ../../../target/ci/distribution/x86_64-unknown-linux-gnu/:/opt/artifacts:ro
       - "../../../resources/development/tls/insecure-development-ca.pem:/etc/opendut/tls/ca.pem"
-      - "../../../target/debug/:/usr/local/opendut/bin/debug/"
+      - "../../../target/debug/:/usr/local/opendut/bin/debug/:ro"
     cap_add:
       - NET_ADMIN
     environment:

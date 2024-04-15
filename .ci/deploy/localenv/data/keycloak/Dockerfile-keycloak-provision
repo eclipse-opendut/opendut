@@ -1,0 +1,35 @@
+# Documentation:
+#  https://www.keycloak.org/server/containers
+# https://github.com/keycloak/keycloak/issues/17438
+
+ARG KEYCLOAK_VERSION
+FROM registry.access.redhat.com/ubi9 AS ubi-micro-build
+
+RUN mkdir -p /mnt/rootfs
+# Removes this warning "This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register."
+RUN dnf remove -y subscription-manager
+RUN dnf install --installroot /mnt/rootfs curl jq --releasever 9 --setopt install_weak_deps=false --nodocs -y; dnf --installroot /mnt/rootfs clean all
+#RUN find /mnt/rootfs -name '*jq*'
+
+# update custom certificates
+COPY ./.ci/deploy/localenv/data/secrets/pki/ /opendut-tls/
+RUN cp /opendut-tls/*-ca.pem /etc/pki/ca-trust/source/anchors/ && update-ca-trust
+
+
+FROM quay.io/keycloak/keycloak:$KEYCLOAK_VERSION
+USER root
+COPY --from=ubi-micro-build /mnt/rootfs/usr/bin/curl /usr/bin/curl
+COPY --from=ubi-micro-build /mnt/rootfs/usr/bin/jq /usr/bin/jq
+COPY --from=ubi-micro-build /mnt/rootfs/usr/lib64/ /usr/lib64/
+COPY --from=ubi-micro-build /etc/pki/ca-trust/extracted/ /etc/pki/ca-trust/extracted/
+
+COPY ./.ci/docker/keycloak/keycloak_functions.sh /keycloak_functions.sh
+COPY ./.ci/deploy/localenv/data/keycloak/provision.sh /provision.sh
+
+USER keycloak
+RUN curl --version
+RUN jq --version
+RUN echo 'kcadm() { local cmd="$1" ; shift ; "$KCADM_PATH" "$cmd" --config /tmp/kcadm.config "$@" ; }' >> /opt/keycloak/.bashrc
+RUN echo 'kcauth() { kcadm config credentials config --server "$KEYCLOAK_URL" --realm master --user "$KEYCLOAK_ADMIN" --password "$KEYCLOAK_ADMIN_PASSWORD" ; }' >> /opt/keycloak/.bashrc
+
+ENTRYPOINT [ "/provision.sh" ]

@@ -1,0 +1,12 @@
+services:
+  provision:
+    build:
+      # use git root as build context
+      context: ../../../../..
+      dockerfile: ./.ci/deploy/localenv/data/provision/Dockerfile
+    volumes:
+      - provision:/provision
+      - ../secrets:/secrets
+
+volumes:
+  provision:

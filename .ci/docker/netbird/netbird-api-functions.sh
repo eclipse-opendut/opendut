@@ -1,9 +1,5 @@
 #!/bin/bash
 
-export KEYCLOAK_URL=https://keycloak
-export NETBIRD_MANAGEMENT_URL=https://netbird-management
-export KEYCLOAK_REALM_URL=https://keycloak/realms/netbird/.well-known/openid-configuration
-
 wait_for_url() {
   local url="$1"
   local timeout="${2:-60}"
@@ -29,7 +25,7 @@ wait_for_url() {
 # KEYCLOAK ADMIN TASKS
 get_admin_oauth_token() {
   # requires public client and client with password grant enabled, directAccessGrantsEnabled=true
-  RESPONSE=$(curl -s -d "client_id=admin-cli" -d "username=admin" -d "password=admin123456" -d "grant_type=password" $KEYCLOAK_URL/realms/master/protocol/openid-connect/token)
+  RESPONSE=$(curl -s -d "client_id=admin-cli" -d "username=$KEYCLOAK_ADMIN" -d "password=$KEYCLOAK_ADMIN_PASSWORD" -d "grant_type=password" $KEYCLOAK_URL/realms/master/protocol/openid-connect/token)
   ADMIN_TOKEN=$(echo "$RESPONSE" | jq -r '.access_token')
   echo "$ADMIN_TOKEN"
 }
@@ -144,7 +140,7 @@ wait_for_keycloak_client__in_realm_netbird() {
 
 get_user_oauth_token() {
   # requires public client and client with password grant enabled, directAccessGrantsEnabled=true
-  RESPONSE=$(curl -s -d "client_id=netbird-mgmt-cli" -d "username=netbird" -d "password=netbird" -d "grant_type=password" $KEYCLOAK_URL/realms/netbird/protocol/openid-connect/token)
+  RESPONSE=$(curl -s -d "client_id=netbird-mgmt-cli" -d "username=netbird" -d "password=$NETBIRD_PASSWORD" -d "grant_type=password" $KEYCLOAK_URL/realms/netbird/protocol/openid-connect/token)
   TOKEN=$(echo "$RESPONSE" | jq -r '.access_token')
   echo "$TOKEN"
 }

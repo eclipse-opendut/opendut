@@ -1,0 +1,3 @@
+target/ci/cross
+target/debug
+target/release

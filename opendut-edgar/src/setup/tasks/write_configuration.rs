@@ -67,9 +67,11 @@ impl Task for WriteConfiguration {
                     }
                     new_settings["network"]["oidc"]["enabled"] = toml_edit::value(false);
                 }
-                AuthConfig::Enabled { client_id, client_secret, ..} => {
+                AuthConfig::Enabled { client_id, client_secret, issuer_url, scopes} => {
                     let network_oidc_client_id = client_id.clone().value();
                     let network_oidc_client_secret = client_secret.clone().value();
+                    let network_oidc_client_issuer_url: String = issuer_url.clone().into();
+                    let network_oidc_client_scopes = scopes.clone().into_iter().map(|scope| scope.value()).collect::<Vec<_>>().join(",");
 
                     if new_settings.get("network").and_then(|network| network.get("oidc")).is_none() {
                         new_settings["network"]["oidc"] = toml_edit::table();
@@ -82,9 +84,13 @@ impl Task for WriteConfiguration {
                         .is_none() {
 
                         new_settings["network"]["oidc"]["client"] = toml_edit::table();
+                        new_settings["network"]["oidc"]["client"]["issuer"] = toml_edit::table();
+                        new_settings["network"]["oidc"]["client"]["issuer"].as_table_mut().unwrap().set_dotted(true);
                     }
                     new_settings["network"]["oidc"]["client"]["id"] = toml_edit::value(network_oidc_client_id);
                     new_settings["network"]["oidc"]["client"]["secret"] = toml_edit::value(network_oidc_client_secret);
+                    new_settings["network"]["oidc"]["client"]["scopes"] = toml_edit::value(network_oidc_client_scopes);
+                    new_settings["network"]["oidc"]["client"]["issuer"]["url"] = toml_edit::value(network_oidc_client_issuer_url);
                 }
             };
 
@@ -181,6 +187,8 @@ mod tests {
     const CLIENT_ID: &str = "ClientId";
     const CLIENT_SECRET: &str = "ClientSecret";
     const OIDC_ENABLED: bool = true;
+    const ISSUER_URL: &str = "https://test.com:1234/";
+    const SCOPES: &str = "test";
 
     #[rstest]
     fn should_write_a_fresh_configuration_with_auth_config_enabled(
@@ -208,8 +216,10 @@ mod tests {
             enabled = true
 
             [network.oidc.client]
+            issuer.url = "https://test.com:1234/"
             id = "ClientId"
             secret = "ClientSecret"
+            scopes = "test"
         "#)));
 
         Ok(())
@@ -336,9 +346,11 @@ mod tests {
             enabled = {}
 
             [network.oidc.client]
+            issuer.url = "{}"
             id = "{}"
             secret = "{}"
-        "#), fixture.peer_id, HOST, PORT, OIDC_ENABLED, CLIENT_ID, CLIENT_SECRET))?;
+            scopes = "{}"
+        "#), fixture.peer_id, HOST, PORT, OIDC_ENABLED, ISSUER_URL, CLIENT_ID, CLIENT_SECRET, SCOPES))?;
 
         let file_content = fs::read_to_string(&config_file)?;
         assert!(predicate::str::is_empty().not().eval(&file_content));

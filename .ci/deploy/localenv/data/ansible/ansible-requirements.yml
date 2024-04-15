@@ -1,0 +1,9 @@
+# ansible-galaxy list
+# ansible-galaxy install -r ansible-requirements.yml --roles-path downloaded_roles
+
+# format of the file: https://docs.ansible.com/ansible/latest/galaxy/user_guide.html#installing-multiple-roles-from-a-file
+
+# https://github.com/geerlingguy/ansible-role-docker
+# https://galaxy.ansible.com/ui/standalone/roles/geerlingguy/docker/versions/
+- src: "geerlingguy.docker"
+  version: "7.0.2"

@@ -59,6 +59,18 @@ create_user() {
   USER_GROUP="$3"
   USER_ROLE="$4"
   USER_REALM="${5:-$REALM}"
+  if [ -z "$USER_NAME" ]; then
+    echo "ERROR: No username provided."
+    return 1
+  fi
+  if [ -z "$USER_PASSWORD" ]; then
+    echo "ERROR: No password provided."
+    return 1
+  fi
+  if [ -z "$USER_REALM" ]; then
+    echo "ERROR: No realm provided."
+    return 1
+  fi
 
   echo "Create keycloak user ${USER_NAME} in realm ${USER_REALM}."
   kcadm create users -r "${USER_REALM}" -f - << EOF
@@ -165,6 +177,11 @@ create_realm_group() {
   GROUP_NAME="$1"
   GROUP_REALM="${2:-$REALM}"
 
+  if [ -z "$GROUP_REALM" ]; then
+    echo "ERROR: No realm provided for realm group."
+    return 1
+  fi
+
   EXISTING_REALM_GROUPS=$(list_realm_groups "${GROUP_REALM}")
   if [[ "$EXISTING_REALM_GROUPS" == *"${GROUP_NAME}"* ]]; then
     echo "Realm group ${GROUP_NAME} already exists"
@@ -185,6 +202,11 @@ create_public_client() {
   CLIENT_NAME="$1"
   CLIENT_REDIRECT_URI="$2"
   CLIENT_REALM="${3:-$REALM}"
+
+  if [ -z "$CLIENT_REALM" ]; then
+    echo "ERROR: No realm provided for public client."
+    return 1
+  fi
 
   CLIENT_EXISTS=$(get_client_id "${CLIENT_NAME}" "${CLIENT_REALM}")
   if [ -z "$CLIENT_EXISTS" ]; then
@@ -217,6 +239,12 @@ create_public_client_with_direct_access() {
   CLIENT_NAME="$1"
   CLIENT_REDIRECT_URI="$2"
   CLIENT_REALM="${3:-$REALM}"
+  CLIENT_ROOT_URL="${4:-https://netbird-dashboard}"
+
+  if [ -z "$CLIENT_REALM" ]; then
+    echo "ERROR: No realm provided for public client with direct access."
+    return 1
+  fi
 
   CLIENT_EXISTS=$(get_client_id "${CLIENT_NAME}" "${CLIENT_REALM}")
   if [ -z "$CLIENT_EXISTS" ]; then
@@ -241,8 +269,8 @@ create_public_client_with_direct_access() {
           "oidc.ciba.grant.enabled": false
         },
         "alwaysDisplayInConsole": false,
-        "rootUrl": "https://netbird-dashboard",
-        "baseUrl": "https://netbird-dashboard",
+        "rootUrl": "$CLIENT_ROOT_URL",
+        "baseUrl": "$CLIENT_ROOT_URL",
         "redirectUris": [$CLIENT_REDIRECT_URI],
         "webOrigins": [
           "*"
@@ -270,6 +298,11 @@ create_secret_client() {
   CLIENT_NAME="$1"
   CLIENT_SECRET="$2"
   CLIENT_REALM="${3:-$REALM}"
+
+  if [ -z "$CLIENT_REALM" ]; then
+    echo "ERROR: No realm provided for secret client."
+    return 1
+  fi
 
   # see https://stackoverflow.com/questions/66374537/keycloak-set-static-client-secret
 
@@ -321,6 +354,10 @@ create_client_scope() {
   CLIENT_SCOPE_TYPE="${2:-default}"
   CLIENT_SCOPE_REALM="${3:-$REALM}"
 
+  if [ -z "$CLIENT_SCOPE_REALM" ]; then
+    echo "ERROR: No realm provided for client scope."
+    return 1
+  fi
   kcadm create client-scopes -r "${CLIENT_SCOPE_REALM}" -f - << EOF
     {
       "name": "$CLIENT_SCOPE_NAME",
@@ -340,6 +377,11 @@ EOF
 create_client_scope_groups() {
   SCOPE_NAME="${1:-groups}"
   SCOPE_REALM="$2"
+
+  if [ -z "$SCOPE_REALM" ]; then
+    echo "ERROR: No realm provided for client scope groups."
+    return 1
+  fi
 
   CLIENT_SCOPE_GROUP_ID=$(get_client_scope_id "$SCOPE_NAME" "$SCOPE_REALM")
   if [ -z "$CLIENT_SCOPE_GROUP_ID" ]; then
@@ -437,8 +479,8 @@ client__assign_service_account_role() {
   CLIENT_NAME="$1"
   CLIENT_ROLE_CLIENT_ID="$2"
   CLIENT_ROLE_NAME="$3"
-
   CLIENT_REALM="${4:-$REALM}"
+
   kcadm add-roles -r "$CLIENT_REALM" --uusername service-account-"$CLIENT_NAME" --cclientid "$CLIENT_ROLE_CLIENT_ID" --rolename "$CLIENT_ROLE_NAME"
 }
 

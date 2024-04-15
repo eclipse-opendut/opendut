@@ -89,3 +89,21 @@ cargo theo testenv start
 # or 
 cargo theo dev start
 ```
+
+## No space left on device
+
+```shell
+Error writing to file - write (28: No space left on device)
+```
+You may try to free up space on the virtual machine by (preferred order):
+* Cleaning up the cargo target directory:
+    ```shell
+    cargo clean
+    ls -l $CARGO_TARGET_DIR
+    ```
+* removing old docker images and containers:
+    ```shell
+    docker system prune --all
+    # and eventually with volumes
+    docker system prune --all --volumes
+    ```

@@ -19,5 +19,5 @@ if [ -e "/management/api_key" ]; then
 fi
 
 
-curl --silent --fail -H "Authorization: Bearer $TOKEN" "$NETBIRD_MANAGEMENT_URL"/api/groups > /dev/null
+curl --silent --fail -H "Authorization: Bearer $TOKEN" localhost/api/groups > /dev/null
 exit $?

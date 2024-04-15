@@ -42,3 +42,30 @@ You can search for resources by specifying a search criteria string with the `fi
 Specify the type of resource and its ID you want to delete in CARL.
 
     opendut-cleo delete <resource> --id <ID of resource>
+
+# Usage Examples
+## CAN Example
+    # CREATE PEER
+        opendut-cleo create peer --name "$NAME" --location "$NAME"
+
+	# CREATE NETWORK INTERFACE
+	    opendut-cleo create network-interface --peer-id "$PEER_ID" --type can --name vcan0
+
+	# CREATE DEVICE
+	    opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME"-vcan0 --interface vcan0 
+
+	# CREATE SETUP STRING
+	    opendut-cleo generate-setup-string --id "$PEER_ID"
+
+## Ethernet Example
+    # CREATE PEER
+        opendut-cleo create peer --name "$NAME" --location "$NAME"
+
+	# CREATE NETWORK INTERFACE
+	    opendut-cleo create network-interface --peer-id "$PEER_ID" --type eth --name eth0
+
+	# CREATE DEVICE
+	    opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME"-eth0 --interface eth0 
+
+	# CREATE SETUP STRING
+	    opendut-cleo generate-setup-string --id "$PEER_ID"
