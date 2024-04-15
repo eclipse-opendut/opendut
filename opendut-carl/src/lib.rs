@@ -1,6 +1,7 @@
 extern crate core;
 
 use std::net::SocketAddr;
+use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -15,14 +16,14 @@ use futures::future::BoxFuture;
 use futures::TryFutureExt;
 use http::{header::CONTENT_TYPE, Request};
 use itertools::Itertools;
-use pem::Pem;
-use serde::Serialize;
+use pem::{Pem};
+use serde::{Serialize};
 use shadow_rs::formatcp;
 use tokio::fs;
 use tonic::transport::Server;
 use tower::{BoxError, make::Shared, ServiceExt, steer::Steer};
 use tower_http::services::{ServeDir, ServeFile};
-use tracing::{debug, info};
+use tracing::{debug, info, warn};
 use url::Url;
 use uuid::Uuid;
 
@@ -35,10 +36,12 @@ use crate::cluster::manager::{ClusterManager, ClusterManagerOptions, ClusterMana
 use crate::grpc::{ClusterManagerFacade, MetadataProviderFacade, PeerManagerFacade, PeerManagerFacadeOptions, PeerMessagingBrokerFacade};
 use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerOptions, PeerMessagingBrokerRef};
 use crate::peer::oidc_client_manager::{CarlIdentityProviderConfig, OpenIdConnectClientManager};
+use crate::provisioning::cleo::CleoScript;
 use crate::resources::manager::{ResourcesManager, ResourcesManagerRef};
 use crate::vpn::Vpn;
 
 pub mod grpc;
+pub mod util;
 
 opendut_util::app_info!();
 
@@ -49,6 +52,8 @@ mod peer;
 mod resources;
 pub mod settings;
 mod vpn;
+mod handler;
+mod provisioning;
 
 #[tracing::instrument]
 pub async fn create_with_logging(settings_override: config::Config) -> Result<()> {
@@ -160,7 +165,7 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
             Arc::clone(&resources_manager), 
             vpn, 
             Clone::clone(&carl_url), 
-            ca, 
+            ca.clone(),
             oidc_client_manager,
             peer_manager_facade_options
         );
@@ -197,7 +202,8 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
             lea_config: LeaConfig {
                 carl_url,
                 idp_config: lea_idp_config,
-            }
+            },
+            cleo_installation_directory: CleoInstallPath(project::make_path_absolute(PathBuf::from(".")).expect("Could not determine installation directory."))
         };
 
         let lea_index_html = lea_dir.join("index.html").clone();
@@ -212,6 +218,15 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
                 panic!("Failed to check if LEA index.html exists in: {}", lea_index_html.display());
             }
         }
+
+        if !project::is_running_in_development() {
+            provisioning::cleo::create_cleo_install_script(
+                ca,
+                &app_state.cleo_installation_directory.0,
+                CleoScript::from_setting(&settings).expect("Could not read settings.")
+            ).expect("Could not create cleo install script.");
+        }
+
         let http = axum::Router::new()
             .fallback_service(
                 axum::Router::new()
@@ -220,6 +235,7 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
                         ServeDir::new(&licenses_dir)
                             .fallback(ServeFile::new(licenses_dir.join("index.json")))
                     )
+                    .route("/api/cleo/:architecture/download", get(handler::cleo::download_cleo))
                     .route("/api/lea/config", get(lea_config))
                     .nest_service(
                         "/",
@@ -271,7 +287,8 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
 
 #[derive(Clone)]
 struct AppState {
-    lea_config: LeaConfig
+    lea_config: LeaConfig,
+    cleo_installation_directory: CleoInstallPath,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -324,4 +341,13 @@ impl FromRef<AppState> for LeaConfig {
 
 async fn lea_config(State(config): State<LeaConfig>) -> Json<LeaConfig> {
     Json(Clone::clone(&config))
+}
+
+#[derive(Clone, Serialize)]
+pub struct CleoInstallPath(pub PathBuf);
+
+impl FromRef<AppState> for CleoInstallPath {
+    fn from_ref(app_state: &AppState) -> Self {
+        Clone::clone(&app_state.cleo_installation_directory)
+    }
 }

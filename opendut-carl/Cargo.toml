@@ -18,6 +18,7 @@ axum = { workspace = true }
 axum-server = { workspace = true, features = ["tls-rustls"] }
 axum-server-dual-protocol = { workspace = true }
 config = { workspace = true }
+flate2 = { workspace = true }
 futures = { workspace = true }
 googletest = { workspace = true }
 http = { workspace = true }
@@ -29,6 +30,7 @@ opentelemetry = { workspace = true }
 opentelemetry_sdk = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 shadow-rs = { workspace = true, default-features = true }
+tar = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 tokio-stream = { workspace = true, features = ["full"] }
@@ -42,6 +44,7 @@ url = { workspace = true, features = ["serde"] }
 uuid = { workspace = true }
 
 [dev-dependencies]
+assert_fs = { workspace = true }
 async-trait = { workspace = true }
 rstest = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }

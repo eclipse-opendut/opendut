@@ -2590,11 +2590,13 @@ name = "opendut-carl"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "assert_fs",
  "async-trait",
  "axum",
  "axum-server",
  "axum-server-dual-protocol",
  "config",
+ "flate2",
  "futures",
  "googletest",
  "http 0.2.12",
@@ -2612,6 +2614,7 @@ dependencies = [
  "rstest",
  "serde",
  "shadow-rs",
+ "tar",
  "thiserror",
  "tokio",
  "tokio-stream",

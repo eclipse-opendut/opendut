@@ -1,12 +1,13 @@
 use anyhow::Error;
 use clap::{ArgAction, Parser};
+use strum::IntoEnumIterator;
 
 use crate::commands::edgar::TestEdgarCli;
 use crate::core::dist::make_distribution_if_not_present;
 use crate::core::docker::{show_error_if_unhealthy_containers_were_found, start_netbird};
 use crate::core::docker::command::DockerCommand;
 use crate::core::docker::compose::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_network_delete, docker_compose_up_expose_ports};
-use crate::core::docker::services::DockerCoreServices;
+use crate::core::docker::services::{DockerCoreServices};
 use crate::core::project::load_theo_environment_variables;
 
 /// Build and start test environment.
@@ -49,8 +50,8 @@ pub enum TaskCli {
 #[derive(Parser, Debug)]
 #[clap(version)]
 pub struct DestroyArgs {
-    #[clap(short = 's', long, default_value = "all")]
-    service: DockerCoreServices,
+    #[clap(short = 's', long)]
+    service: Option<DockerCoreServices>,
 }
 
 impl TestenvCli {
@@ -99,25 +100,27 @@ impl TestenvCli {
                 show_error_if_unhealthy_containers_were_found()?;
             }
             TaskCli::Destroy(service) => {
-                match service.service {
-                    DockerCoreServices::Network => { docker_compose_network_delete()?; }
-                    DockerCoreServices::Carl => { docker_compose_down(DockerCoreServices::Carl.as_str(), true)?; }
-                    DockerCoreServices::CarlOnHost => { docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), true)?; }
-                    DockerCoreServices::Dev => { docker_compose_down(DockerCoreServices::Dev.as_str(), true)?; }
-                    DockerCoreServices::Keycloak => { docker_compose_down(DockerCoreServices::Keycloak.as_str(), true)?; }
-                    DockerCoreServices::Edgar => { docker_compose_down(DockerCoreServices::Edgar.as_str(), true)?; }
-                    DockerCoreServices::Netbird => { docker_compose_down(DockerCoreServices::Netbird.as_str(), true)?; }
-                    DockerCoreServices::Firefox => { docker_compose_down(DockerCoreServices::Firefox.as_str(), true)?; }
-                    DockerCoreServices::Telemetry => { docker_compose_down(DockerCoreServices::Telemetry.as_str(), true)?; }
-                    DockerCoreServices::All => {
-                        println!("Destroying all services.");
-                        docker_compose_down(DockerCoreServices::Firefox.as_str(), true)?;
-                        docker_compose_down(DockerCoreServices::Edgar.as_str(), true)?;
-                        docker_compose_down(DockerCoreServices::Carl.as_str(), true)?;
-                        docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), true)?;
-                        docker_compose_down(DockerCoreServices::Netbird.as_str(), true)?;
-                        docker_compose_down(DockerCoreServices::Keycloak.as_str(), true)?;
-                        docker_compose_network_delete()?;
+                match &service.service {
+                    Some(service) => {
+                        match service {
+                            DockerCoreServices::Network => { docker_compose_network_delete() ?; }
+                            DockerCoreServices::Carl => { docker_compose_down(DockerCoreServices::Carl.as_str(), true) ?; }
+                            DockerCoreServices::CarlOnHost => { docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), true) ?; }
+                            DockerCoreServices::Dev => { docker_compose_down(DockerCoreServices::Dev.as_str(), true) ?; }
+                            DockerCoreServices::Keycloak => { docker_compose_down(DockerCoreServices::Keycloak.as_str(), true) ?; }
+                            DockerCoreServices::Edgar => { docker_compose_down(DockerCoreServices::Edgar.as_str(), true) ?; }
+                            DockerCoreServices::Netbird => { docker_compose_down(DockerCoreServices::Netbird.as_str(), true) ?; }
+                            DockerCoreServices::Firefox => { docker_compose_down(DockerCoreServices::Firefox.as_str(), true) ?; }
+                            DockerCoreServices::Telemetry => { docker_compose_down(DockerCoreServices::Telemetry.as_str(), true) ?; }
+                        }
+                    }
+                    None => {
+                            println!("Destroying all services.");
+                            for docker_service in DockerCoreServices::iter() {
+                                docker_compose_down(docker_service.as_str(), true)?;
+                            }
+                            docker_compose_network_delete()?;
+
                     }
                 }
             }

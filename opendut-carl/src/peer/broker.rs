@@ -17,6 +17,7 @@ use opendut_carl_api::proto::services::peer_messaging_broker::upstream;
 use opendut_types::peer::PeerId;
 use opendut_types::peer::configuration::PeerConfiguration;
 use opendut_types::peer::state::{PeerState, PeerUpState};
+use opendut_types::ShortName;
 
 use crate::resources::manager::ResourcesManagerRef;
 
@@ -94,6 +95,15 @@ impl PeerMessagingBroker {
         }
 
         self.resources_manager.resources_mut(|resources| {
+            match resources.get::<PeerState>(peer_id) {
+                None => {
+                    info!("Peer <{}> opened stream which has not been seen before.", peer_id);
+                }
+                Some(peer_state) => {
+                    debug!("Peer <{}> opened stream which was previously in state: {}", peer_id, peer_state.short_name());
+                }
+            };
+
             resources.update::<PeerState>(peer_id)
                 .modify(|peer_state| match peer_state {
                     PeerState::Up { inner: _, remote_host: peer_remote_host } => {
@@ -115,7 +125,7 @@ impl PeerMessagingBroker {
                 error!("Failed to send ApplyPeerConfiguration message: {error}")
             };
         } else {
-            error!("Failed to send ApplyPeerConfiguration message, because no PeerConfiguration found for peer: {peer_id}")
+            error!("Failed to send ApplyPeerConfiguration message, because no PeerConfiguration found for peer <{peer_id}>.")
         }
 
         let timeout_duration = self.options.peer_disconnect_timeout;
