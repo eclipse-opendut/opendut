@@ -26,7 +26,7 @@ jobs:
 
   build_homepage:
     name: Build the homepage and upload artifact
-    if: ${{ needs.check_documentation_changed.outputs.documentation == 'true' && (github.ref_name == 'main' || github.ref_name == 'development' || github.ref_type == 'tag') }}
+    if: ${{ needs.check_documentation_changed.outputs.documentation == 'true' }}
     runs-on: ${{ fromJson(inputs.runs-on) }}
     needs: check_documentation_changed
     steps:
@@ -57,7 +57,7 @@ jobs:
 
   deploy_homepage:
     name: Deploy the created homepage artifacts to GitHub Pages
-    if: ${{ needs.check_documentation_changed.outputs.documentation == 'true' && (github.ref_name == 'main' || github.ref_name == 'development' || github.ref_type == 'tag') }}
+    if: ${{ needs.check_documentation_changed.outputs.documentation == 'true' }}
     permissions:
       contents: read
       pages: write
