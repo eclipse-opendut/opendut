@@ -25,6 +25,10 @@ compactor:
     block_retention: 120h
 
 metrics_generator:
+  processor:
+    service_graphs:
+    span_metrics:
+      enable_target_info: true
   registry:
     external_labels:
       source: tempo
@@ -32,7 +36,7 @@ metrics_generator:
   storage:
     path: /tmp/tempo/generator/wal
     remote_write:
-      - url: http://prometheus:8889/api/v1/write
+      - url: http://prometheus:9090/api/v1/write
         send_exemplars: true
 
 storage:
@@ -46,4 +50,4 @@ storage:
 overrides:
   defaults:
     metrics_generator:
-      processors: [service-graphs, span-metrics] # enables metrics generator
+      processors: [service-graphs, span-metrics]

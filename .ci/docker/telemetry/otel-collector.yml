@@ -21,16 +21,12 @@ processors:
         value: test
 
 exporters:
- logging:
-   verbosity: detailed
-   sampling_initial: 5
-   sampling_thereafter: 200
  debug:
    verbosity: detailed
  prometheus:
     endpoint: 0.0.0.0:8889
     const_labels:
-      label1: value1
+      project: opendut
  otlp/tempo:
     endpoint: tempo:4317
     tls:
@@ -61,11 +57,11 @@ service:
    traces:
      receivers: [otlp]
      processors: [batch]
-     exporters: [logging, otlp/tempo, debug]
+     exporters: [debug, otlp/tempo]
    metrics:
      receivers: [otlp]
      processors: [batch]
-     exporters: [prometheus, debug, otlp/tempo]
+     exporters: [debug, prometheus]
    logs:
      receivers: [otlp]
      processors: [batch, resource, attributes]
