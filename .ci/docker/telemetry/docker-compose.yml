@@ -7,6 +7,11 @@ services:
    restart: always
    volumes:
      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+   healthcheck:
+     test: [ "CMD", "wget", "http://localhost:9090" ]
+     interval: 10s
+     timeout: 5s
+     retries: 10
    networks:
      - opendutnet
 
@@ -60,6 +65,8 @@ services:
       tempo:
         condition: service_healthy
       loki:
+        condition: service_healthy
+      prometheus:
         condition: service_healthy
     environment:
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
