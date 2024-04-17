@@ -25,6 +25,7 @@ use url::Url;
 use shadow_rs::formatcp;
 use opendut_carl_api::carl::auth::auth_config::OidcIdentityProviderConfig;
 use itertools::Itertools;
+use uuid::Uuid;
 
 use opendut_util::{logging, project};
 use opendut_util::logging::LoggingConfig;
@@ -53,7 +54,9 @@ mod vpn;
 pub async fn create_with_logging(settings_override: config::Config) -> Result<()> {
     let settings = settings::load_with_overrides(settings_override)?;
 
-    let logging_config = LoggingConfig::load(&settings.config)?;
+    let service_instance_id = format!("carl-{}", Uuid::new_v4());
+    
+    let logging_config = LoggingConfig::load(&settings.config, service_instance_id)?;
     let mut shutdown = logging::initialize_with_config(logging_config.clone())?;
     
     if let logging::OpenTelemetryConfig::Enabled { cpu_collection_interval_ms, .. } = logging_config.opentelemetry {

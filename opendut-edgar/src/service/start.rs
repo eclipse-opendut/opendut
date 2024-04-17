@@ -58,23 +58,26 @@ pub async fn launch(id_override: Option<PeerId>) -> anyhow::Result<()> {
 pub async fn create_with_logging(settings_override: config::Config) -> anyhow::Result<()> {
     let settings = settings::load_with_overrides(settings_override)?;
 
-    let logging_config = LoggingConfig::load(&settings.config)?;
+    let self_id = settings.config.get::<PeerId>(settings::key::peer::id)
+        .context("Failed to read ID from configuration.\n\nRun `edgar setup` before launching the service.")?;
+
+    let service_instance_id = self_id.to_string();
+
+    let logging_config = LoggingConfig::load(&settings.config, service_instance_id)?;
     let mut shutdown = logging::initialize_with_config(logging_config.clone())?;
 
     if let logging::OpenTelemetryConfig::Enabled { cpu_collection_interval_ms, .. } = logging_config.opentelemetry {
         logging::initialize_metrics_collection(cpu_collection_interval_ms);   
     }
 
-    create(settings).await?;
+    create(self_id, settings).await?;
 
     shutdown.shutdown();
 
     Ok(())
 }
 
-pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
-    let self_id = settings.config.get::<PeerId>(settings::key::peer::id)
-        .context("Failed to read ID from configuration.\n\nRun `edgar setup` before launching the service.")?;
+pub async fn create(self_id: PeerId, settings: LoadedConfig) -> anyhow::Result<()> {
 
     info!("Started with ID <{self_id}> and configuration: {settings:?}");
 

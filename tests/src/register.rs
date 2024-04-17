@@ -33,8 +33,9 @@ async fn register_edgar_carl() -> Result<()> {
             .expect("CARL crashed")
     });
 
+    let peer_id = PeerId::random();
     let settings_overrides = Config::builder()
-        .set_override(opendut_edgar::common::settings::key::peer::id, PeerId::random().to_string())?
+        .set_override(opendut_edgar::common::settings::key::peer::id, peer_id.to_string())?
         .set_override("network.carl.port", carl_port)?
         .set_override("network.connect.retries", 100)?
         .build()?;
@@ -42,8 +43,8 @@ async fn register_edgar_carl() -> Result<()> {
 
     let assert_channel_config = edgar_config.clone();
 
-    let _ = tokio::spawn(async {
-        opendut_edgar::service::start::create(edgar_config).await
+    let _ = tokio::spawn(async move {
+        opendut_edgar::service::start::create(peer_id, edgar_config).await
             .expect("EDGAR crashed")
     });
 
