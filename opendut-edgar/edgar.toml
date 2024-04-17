@@ -40,4 +40,3 @@ endpoint = ""
 service.name = "opendut-edgar"
 metrics.interval.ms = 60000
 cpu.collection.interval.ms = 5000
-#cpu.average.measurements = 5

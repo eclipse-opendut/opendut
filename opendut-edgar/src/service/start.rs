@@ -13,6 +13,7 @@ use tokio::sync::mpsc::Sender;
 use tokio::time::sleep;
 use tracing::{debug, error, info, Span, trace, warn};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
+use uuid::Uuid;
 
 use opendut_carl_api::proto::services::peer_messaging_broker;
 use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, TracingContext};
@@ -58,7 +59,12 @@ pub async fn launch(id_override: Option<PeerId>) -> anyhow::Result<()> {
 pub async fn create_with_logging(settings_override: config::Config) -> anyhow::Result<()> {
     let settings = settings::load_with_overrides(settings_override)?;
 
-    let logging_config = LoggingConfig::load(&settings.config)?;
+    let service_instance_id = {
+        let field = String::from("peer.id");
+        &settings.config.get_string(&field).unwrap_or_default()
+    }.to_owned();
+    
+    let logging_config = LoggingConfig::load(&settings.config, service_instance_id)?;
     let mut shutdown = logging::initialize_with_config(logging_config.clone())?;
 
     if let logging::OpenTelemetryConfig::Enabled { cpu_collection_interval_ms, .. } = logging_config.opentelemetry {

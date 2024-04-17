@@ -24,7 +24,6 @@ use tracing_subscriber::filter::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use url::Url;
-use uuid::Uuid;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -76,21 +75,15 @@ pub fn initialize_with_config(config: LoggingConfig) -> Result<ShutdownHandle, E
 
     let (tracer, logger, logger_layer, meter_provider) =
         if let OpenTelemetryConfig::Enabled { endpoint, service_name, service_instance_id, metrics_interval_ms, ..} = config.opentelemetry {
-
-        let service_name: String = service_name.clone();
-        let service_instance_id = service_instance_id.clone();
+            
         let tracer = init_tracer(&endpoint, service_name.clone(), service_instance_id.clone()).expect("Failed to initialize tracer.");
-
-        let service_name: String = service_name.clone();
-        let service_instance_id = service_instance_id.clone();
+            
         let logger = init_logger(&endpoint, service_name.clone(), service_instance_id.clone()).expect("Failed to initialize logs.");
 
         let logger_provider: GlobalLoggerProvider = logger_provider();
         let logger_layer = OpenTelemetryTracingBridge::new(&logger_provider);
-
-        let service_name: String = service_name;
-        let metrics_interval = metrics_interval_ms;
-        let meter_provider = init_metrics(&endpoint, service_name, service_instance_id, metrics_interval).expect("Failed to initialize metrics.");
+            
+        let meter_provider = init_metrics(&endpoint, service_name, service_instance_id, metrics_interval_ms).expect("Failed to initialize metrics.");
 
         (Some(tracer), Some(logger), Some(logger_layer), Some(meter_provider))
     } else {
@@ -175,7 +168,6 @@ fn init_metrics(endpoint: &Endpoint, service_name: impl Into<String>, service_in
 }
 pub fn initialize_metrics_collection(cpu_collection_interval_ms: Duration) {
     let meter = global::meter("opendut_meter");
-    
     let current_pid = std::process::id() as usize;
     let process_ram_used = meter.u64_observable_gauge("process_ram_used").init();
     let process_cpu_used = meter.f64_observable_gauge("process_cpu_used").init();
@@ -190,14 +182,13 @@ pub fn initialize_metrics_collection(cpu_collection_interval_ms: Duration) {
     tokio::spawn( async move {
         let current_pid = std::process::id() as usize;
         let mut sys = System::new_all();
+        sys.refresh_processes();
         loop {
-            sys.refresh_processes();
             sleep(cpu_collection_interval_ms).await;
             sys.refresh_processes();
             if let Some(process) = sys.process(Pid::from(current_pid)) {
                 let result = process.cpu_usage();
                 mutex_cloned.lock().await.add_sample(result as f64); // add more samples in a loop
-                println!("{}", result);
             }
         }
     });
@@ -207,7 +198,6 @@ pub fn initialize_metrics_collection(cpu_collection_interval_ms: Duration) {
         sys.refresh_processes();
 
         let average_cpu_usage = mutex.try_lock().unwrap().get_average();
-        println!("The current average is: {}", average_cpu_usage);
 
         if let Some(process) = sys.process(Pid::from(current_pid)) {
             observer.observe_u64(&process_ram_used, process.memory(),&[]);
@@ -237,7 +227,7 @@ pub enum OpenTelemetryConfig {
     Disabled,
 }
 impl LoggingConfig {
-    pub fn load(config: &config::Config) -> Result<Self, LoggingConfigError> {
+    pub fn load(config: &config::Config, service_instance_id: String) -> Result<Self, LoggingConfigError> {
         let file_logging = None; //TODO load from config
         let logging_stdout = config.get_bool("opentelemetry.logging.stdout")?;
 
@@ -258,16 +248,6 @@ impl LoggingConfig {
             let field = String::from("opentelemetry.service.name");
             config.get_string(&field)
                 .map_err(|_cause| LoggingConfigError::InvalidFieldValue { field: field.clone(), message: String::from("Failed to parse configuration from field") })?
-        };
-
-        let service_instance_id = {
-            let field = String::from("peer.id");
-            let result = config.get_string(&field).unwrap_or_default();
-            if result.is_empty() {
-                String::from("carl-") + &Uuid::new_v4().to_string()
-            } else {
-                result
-            }
         };
 
         let metrics_interval_ms =  {
