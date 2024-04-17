@@ -21,22 +21,22 @@ message PeerNetworkConfiguration {
 
 // Configuration sent from CARL to Peer
 message PeerConfiguration2 {
-  repeated PeerConfigurationParameterTargetExecutor executors = 1;
-  //TODO migrate more fields
+  repeated PeerConfigurationParameterExecutor executors = 1;
+  //TODO migrate more parameters
 }
 
-message PeerConfigurationParameterTargetExecutor {
-  PeerConfigurationParameterTarget target = 1;
-  opendut.types.peer.executor.ExecutorDescriptor executor = 2;
+message PeerConfigurationParameterExecutor {
+  PeerConfigurationParameter parameter = 1;
+  opendut.types.peer.executor.ExecutorDescriptor value = 2;
 }
 
 
-message PeerConfigurationParameterTarget {
+message PeerConfigurationParameter {
    PeerConfigurationParameterId id = 1;
    repeated PeerConfigurationParameterId dependencies = 2;
    oneof target {
-     PeerConfigurationParameterPresent present = 11;
-     PeerConfigurationParameterAbsent absent = 12;
+     PeerConfigurationParameterTargetPresent present = 11;
+     PeerConfigurationParameterTargetAbsent absent = 12;
    }
 }
 
@@ -54,10 +54,10 @@ message PeerConfigurationParameterStateExecutor {
 message PeerConfigurationParameterState {
   PeerConfigurationParameterId id = 1;
   oneof state {
-    PeerConfigurationParameterPresent present = 11;
-    PeerConfigurationParameterAbsent absent = 12;
-    PeerConfigurationParameterWaitingForDependencies waiting_for_dependencies = 13;
-    PeerConfigurationParameterError error = 14;
+    PeerConfigurationParameterTargetPresent present = 11;
+    PeerConfigurationParameterTargetAbsent absent = 12;
+    PeerConfigurationParameterTargetWaitingForDependencies waiting_for_dependencies = 13;
+    PeerConfigurationParameterTargetError error = 14;
   }
 }
 
@@ -66,12 +66,12 @@ message PeerConfigurationParameterState {
 message PeerConfigurationParameterStatusReport {
   PeerConfigurationParameterId id = 1;
   oneof state {
-    PeerConfigurationParameterPresent present = 11;
-    PeerConfigurationParameterCreating creating = 12;
-    PeerConfigurationParameterAbsent absent = 13;
-    PeerConfigurationParameterRemoving removing = 14;
-    PeerConfigurationParameterWaitingForDependencies waiting_for_dependencies = 15;
-    PeerConfigurationParameterError error = 16;
+    PeerConfigurationParameterTargetPresent present = 11;
+    PeerConfigurationParameterTargetCreating creating = 12;
+    PeerConfigurationParameterTargetAbsent absent = 13;
+    PeerConfigurationParameterTargetRemoving removing = 14;
+    PeerConfigurationParameterTargetWaitingForDependencies waiting_for_dependencies = 15;
+    PeerConfigurationParameterTargetError error = 16;
   }
 }
 
@@ -81,26 +81,26 @@ message PeerConfigurationParameterId {
   opendut.types.util.Uuid uuid = 1;
 }
 
-message PeerConfigurationParameterPresent {}
-message PeerConfigurationParameterAbsent {}
-message PeerConfigurationParameterCreating {}
-message PeerConfigurationParameterRemoving {}
-message PeerConfigurationParameterWaitingForDependencies {
+message PeerConfigurationParameterTargetPresent {}
+message PeerConfigurationParameterTargetAbsent {}
+message PeerConfigurationParameterTargetCreating {}
+message PeerConfigurationParameterTargetRemoving {}
+message PeerConfigurationParameterTargetWaitingForDependencies {
   repeated PeerConfigurationParameterId incomplete_dependencies = 1;
 }
 
-message PeerConfigurationParameterError {
+message PeerConfigurationParameterTargetError {
   oneof error {
-    PeerConfigurationParameterErrorCreatingFailed creating_failed = 1;
-    PeerConfigurationParameterErrorRemovingFailed removing_failed = 2;
+    PeerConfigurationParameterTargetErrorCreatingFailed creating_failed = 1;
+    PeerConfigurationParameterTargetErrorRemovingFailed removing_failed = 2;
   }
 }
-message PeerConfigurationParameterErrorCreatingFailed {
+message PeerConfigurationParameterTargetErrorCreatingFailed {
   oneof error {
     UnclassifiedError unclassified = 1;
   }
 }
-message PeerConfigurationParameterErrorRemovingFailed {
+message PeerConfigurationParameterTargetErrorRemovingFailed {
   oneof error {
     UnclassifiedError unclassified = 1;
   }

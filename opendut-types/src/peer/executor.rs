@@ -9,7 +9,7 @@ pub struct ExecutorDescriptors {
     pub executors: Vec<ExecutorDescriptor>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ExecutorDescriptor {
     Executable,
@@ -27,7 +27,7 @@ pub enum ExecutorDescriptor {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, EnumIter)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, EnumIter)]
 #[serde(rename_all = "kebab-case")]
 pub enum Engine {
     Docker,
@@ -43,7 +43,7 @@ impl Display for Engine {
     }
 }
 
-#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum ContainerName {
     #[default]
     Empty,
@@ -103,7 +103,7 @@ impl fmt::Display for ContainerName {
 }
 
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ContainerEnvironmentVariable {
     name: String,
     value: String,
@@ -140,7 +140,7 @@ impl From<ContainerEnvironmentVariable> for (String, String) {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ContainerImage(String);
 
 impl ContainerImage {
@@ -208,7 +208,7 @@ impl fmt::Display for ContainerImage {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ContainerVolume(String);
 
 impl ContainerVolume {
@@ -263,7 +263,7 @@ impl fmt::Display for ContainerVolume {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ContainerDevice(String);
 
 impl ContainerDevice {
@@ -318,7 +318,7 @@ impl fmt::Display for ContainerDevice {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ContainerPortSpec(String);
 
 impl ContainerPortSpec{
@@ -373,7 +373,7 @@ impl fmt::Display for ContainerPortSpec {
     }
 }
 
-#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum ContainerCommand {
     #[default]
     Default,
@@ -435,7 +435,7 @@ impl fmt::Display for ContainerCommand {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ContainerCommandArgument(String);
 
 impl ContainerCommandArgument {

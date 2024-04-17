@@ -11,9 +11,10 @@ brotli = { workspace = true }
 thiserror = { workspace = true }
 serde = { workspace = true, features = ["derive", "std"] }
 serde_json = { workspace = true }
+sha1 = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
 url = { workspace = true, features = ["serde"] }
-uuid = { workspace = true, features = ["v4", "serde"] }
+uuid = { workspace = true, features = ["v4", "v5", "serde"] }
 pem = { workspace = true, features = ["serde"]}
 prost = { workspace = true }
 

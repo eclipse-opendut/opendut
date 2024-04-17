@@ -4,6 +4,7 @@ use std::sync::Arc;
 use pem::Pem;
 use tracing::{debug, error, info, Span, warn};
 use url::Url;
+use uuid::Uuid;
 
 pub use opendut_carl_api::carl::peer::{
     DeletePeerDescriptorError,
@@ -15,8 +16,9 @@ pub use opendut_carl_api::carl::peer::{
 use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, downstream};
 use opendut_types::cluster::ClusterAssignment;
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerSetup};
-use opendut_types::peer::configuration::{PeerConfiguration, PeerNetworkConfiguration};
-use opendut_types::proto;
+use opendut_types::{peer, proto};
+use opendut_types::peer::configuration::{PeerConfiguration, PeerNetworkConfiguration, PeerConfiguration2};
+use opendut_types::proto::peer::configuration::{peer_configuration_parameter, PeerConfigurationParameterTargetPresent, PeerConfigurationParameterExecutor};
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
 use opendut_types::util::net::{AuthConfig, Certificate, ClientCredentials, NetworkInterfaceName};
 use opendut_types::vpn::VpnPeerConfiguration;
@@ -98,6 +100,16 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
                 network: peer_network_configuration
             };
             resources.insert(peer_id, peer_configuration);
+
+
+            let peer_configuration2 = {
+                let mut peer_configuration2 = PeerConfiguration2::default();
+                for executor in Clone::clone(&peer_descriptor.executors).executors.into_iter() {
+                    peer_configuration2.insert_executor(executor, peer::configuration::ParameterTarget::Present); //TODO not always Present
+                }
+                peer_configuration2
+            };
+            resources.insert(peer_id, peer_configuration2); //FIXME don't just insert, but rather update existing values via ID with intelligent logic (in a separate action)
 
             resources.insert(peer_id, peer_descriptor);
 
@@ -342,8 +354,8 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
 
     let peer_id = params.peer_id;
 
-    let peer_configuration = params.resources_manager.resources_mut(|resources| {
-        resources.get::<PeerConfiguration>(peer_id)
+    let (peer_configuration, peer_configuration2) = params.resources_manager.resources_mut(|resources| {
+        let peer_configuration = resources.get::<PeerConfiguration>(peer_id)
             .ok_or(AssignClusterError::PeerNotFound(peer_id))
             .map(|peer_configuration| {
                 let peer_configuration = PeerConfiguration {
@@ -352,13 +364,19 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
                 };
                 resources.insert(peer_id, Clone::clone(&peer_configuration));
                 peer_configuration
-            })
+            })?;
+
+        let peer_configuration2 = resources.get::<PeerConfiguration2>(peer_id)
+            .ok_or(AssignClusterError::PeerNotFound(peer_id))?;
+
+        Ok((peer_configuration, peer_configuration2))
     }).await?;
 
     params.peer_messaging_broker.send_to_peer(
         peer_id,
         downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
             configuration: Some(peer_configuration.into()),
+            configuration2: Some(peer_configuration2.into()),
         }),
     ).await
     .map_err(|cause| AssignClusterError::SendingToPeerFailed {
@@ -477,6 +495,12 @@ mod test {
             resources_manager.resources_mut(|resources| {
                 resources.insert(peer_id, Clone::clone(&peer_configuration));
             }).await;
+            let peer_configuration2 = PeerConfiguration2 {
+                executors: vec![],
+            };
+            resources_manager.resources_mut(|resources| {
+                resources.insert(peer_id, Clone::clone(&peer_configuration2));
+            }).await;
 
             let (_, mut receiver) = peer_messaging_broker.open(peer_id, IpAddr::from_str("1.2.3.4")?).await;
             let received = receiver.recv().await.unwrap()
@@ -485,6 +509,7 @@ mod test {
                 received,
                 eq(downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
                     configuration: Some(Clone::clone(&peer_configuration).into()),
+                    configuration2: Some(Clone::clone(&peer_configuration2).into()),
                 }))
             );
 
@@ -522,6 +547,7 @@ mod test {
                 received,
                 eq(downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
                     configuration: Some(Clone::clone(&peer_configuration).into()),
+                    configuration2: Some(peer_configuration2.into()),
                 }))
             );
 

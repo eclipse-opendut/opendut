@@ -15,7 +15,7 @@ use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfigur
 use opendut_carl_api::proto::services::peer_messaging_broker::Pong;
 use opendut_carl_api::proto::services::peer_messaging_broker::upstream;
 use opendut_types::peer::PeerId;
-use opendut_types::peer::configuration::PeerConfiguration;
+use opendut_types::peer::configuration::{PeerConfiguration, PeerConfiguration2};
 use opendut_types::peer::state::{PeerState, PeerUpState};
 use opendut_types::ShortName;
 
@@ -117,13 +117,22 @@ impl PeerMessagingBroker {
         }).await;
 
         if let Some(configuration) = self.resources_manager.get::<PeerConfiguration>(peer_id).await {
-            if let Err(error) = self.send_to_peer(peer_id, downstream::Message::ApplyPeerConfiguration(
-                ApplyPeerConfiguration {
-                    configuration: Some(configuration.into())
+            if let Some(configuration2) = self.resources_manager.get::<PeerConfiguration2>(peer_id).await {
+
+                let result = self.send_to_peer(peer_id, downstream::Message::ApplyPeerConfiguration(
+                    ApplyPeerConfiguration {
+                        configuration: Some(configuration.into()),
+                        configuration2: Some(configuration2.into()),
+                    }
+                )).await;
+
+                if let Err(error) = result {
+                    error!("Failed to send ApplyPeerConfiguration message: {error}")
                 }
-            )).await {
-                error!("Failed to send ApplyPeerConfiguration message: {error}")
-            };
+            }
+            else {
+                error!("Failed to send ApplyPeerConfiguration message, because no PeerConfiguration2 found for peer: {peer_id}")
+            }
         } else {
             error!("Failed to send ApplyPeerConfiguration message, because no PeerConfiguration found for peer <{peer_id}>.")
         }

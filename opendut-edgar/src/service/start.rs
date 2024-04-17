@@ -18,8 +18,9 @@ use opendut_carl_api::proto::services::peer_messaging_broker;
 use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, TracingContext};
 use opendut_carl_api::proto::services::peer_messaging_broker::downstream::Message;
 use opendut_types::cluster::ClusterAssignment;
-use opendut_types::peer::configuration::PeerConfiguration;
-use opendut_types::peer::executor::{ContainerCommand, ContainerName, Engine, ExecutorDescriptor, ExecutorDescriptors};
+use opendut_types::peer;
+use opendut_types::peer::configuration::{PeerConfiguration, PeerConfiguration2};
+use opendut_types::peer::executor::{ContainerCommand, ContainerName, Engine, ExecutorDescriptor};
 use opendut_types::peer::PeerId;
 use opendut_types::util::net::NetworkInterfaceName;
 use opendut_util::logging;
@@ -168,7 +169,10 @@ async fn handle_stream_message(
 #[tracing::instrument(skip(message, context, setup_cluster_info), level="trace")]
 async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Option<TracingContext>, setup_cluster_info: &SetupClusterInfo) -> anyhow::Result<()> {
     match message.clone() {
-        ApplyPeerConfiguration { configuration: Some(configuration) } => {
+        ApplyPeerConfiguration {
+            configuration: Some(configuration),
+            configuration2: Some(configuration2),
+        } => {
 
             let span = Span::current();
             set_parent_context(&span, context);
@@ -178,12 +182,17 @@ async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Opti
             match PeerConfiguration::try_from(configuration) {
                 Err(error) => error!("Illegal PeerConfiguration: {error}"),
                 Ok(configuration) => {
-                    setup_executors(configuration.executors);
-                    setup_cluster(
-                        configuration.cluster_assignment,
-                        setup_cluster_info,
-                        configuration.network.bridge_name,
-                    ).await?
+                    match PeerConfiguration2::try_from(configuration2) {
+                        Err(error) => error!("Illegal PeerConfiguration2: {error}"),
+                        Ok(configuration2) => {
+                            setup_executors(configuration2.executors);
+                            let _ = setup_cluster(
+                                configuration.cluster_assignment,
+                                setup_cluster_info,
+                                configuration.network.bridge_name,
+                            ).await;
+                        }
+                    }
                 }
             };
         }
@@ -193,8 +202,18 @@ async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Opti
 }
 
 #[tracing::instrument(skip(executors))]
-fn setup_executors(executors: ExecutorDescriptors) { //TODO make idempotent
-    for executor in executors.executors {
+fn setup_executors(executors: Vec<peer::configuration::Parameter<ExecutorDescriptor>>) { //TODO make idempotent
+
+    let executors = executors.into_iter()
+        .filter_map(|executor| { //TODO properly handle Present vs. Absent
+            if matches!(executor.target, peer::configuration::ParameterTarget::Present) {
+                Some(executor.value)
+            } else {
+                None
+            }
+        });
+
+    for executor in executors {
         match executor {
             ExecutorDescriptor::Executable => warn!("Executing Executable not yet implemented."),
             ExecutorDescriptor::Container {

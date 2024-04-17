@@ -39,6 +39,7 @@ message Pong {}
 
 message ApplyPeerConfiguration {
   opendut.types.peer.configuration.PeerConfiguration configuration = 1;
+  opendut.types.peer.configuration.PeerConfiguration2 configuration2 = 2;
 }
 
 message TracingContext {
