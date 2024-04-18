@@ -325,10 +325,10 @@ mod tests {
             id: PeerId::try_from("01bf3f8c-cc7c-4114-9520-91bce71dcead").unwrap(),
             carl: Url::parse("https://carl.opendut.local")?,
             ca: Certificate(Pem::new("Test Tag".to_string(), vec![])),
-            auth_config: AuthConfig {
-                client_id: ClientId::try_from("client_id").unwrap(),
-                client_secret: ClientSecret::try_from("my-secure!-random-string-with-at-least-x-chars%").unwrap(),
-                scopes: vec![OAuthScope::try_from("manage-realm").unwrap()],
+            auth_config: AuthConfig::Enabled {
+                client_id: ClientId::from("client_id"),
+                client_secret: ClientSecret::from("my-secure!-random-string-with-at-least-x-chars%"),
+                scopes: vec![OAuthScope::from("manage-realm")],
                 issuer_url: Url::parse("https://keycloak/realms/opendut/").unwrap(),
             },
             vpn: VpnPeerConfiguration::Netbird {
@@ -338,7 +338,7 @@ mod tests {
         };
 
         let encoded = setup.encode()?;
-        assert_that!(encoded, eq("F78BIBwHdiz4lWbaSDYvtcjeFlWr5lS6N1PXfcBE-dIHAFqHpavv4S2wCQwHQt-LW_10GkbPi4GFFnAAlm4TPII-CSnSNn266h-pM0LIpNBFlCJNfQojpUFslUAskzT3MkvzkFHSsHTEs025eLYhZPvGvAa-jjUPlVzwuxe8UIK8l_cAXhbXkwtK2LfqxwWQHPa5_HbX0za_024MLae671ceBfcvefC_cx1NlMR9RPQ3AE8PkBeRIh7oAsKGfO5x4TN78PSSEsNKLrkDZEJ7jmkItxnyra64dUD5BtGrZVfA1WGquyjVd7T5TWQ-TpVQBRKl4wcTxx6RMTmcjwrlnXC5TOk_"));
+        assert_that!(encoded, eq("F8sBABwHzrk8VikIvG691CJ7W1Stsq0oZqoIe8UvyoH_PRFpnb4ullM3wV7g8UFoTRxt-svCaEwMLLSAA7DMXeWhPNSyiLPbPh7iH2lyQsi01GXIkGU-g5HSILFKIJFpVniZZ0XMabK49sS7TWmybMacHztb1vGBJFsITgY9fIGLFdBn_YygcXHdu6CJx17_kdGTXHZEVbbx5_p3wJh2xZP1U-w47d2wcUQUC-fE_u3xqINxDkbE8MD44QUiPdzFwtIZcYdvd7jxsT3zrsw9ho2cozsAmNJrznkEXI_FHmRUPZj8BvjFuCsrVnFuCovbd3TFQ-Q-yZRQJVKBGx9MkngEYwo4H0rlnXCFzKgC"));
 
         let decoded = PeerSetup::decode(&encoded)?;
         assert_that!(decoded, eq(setup));

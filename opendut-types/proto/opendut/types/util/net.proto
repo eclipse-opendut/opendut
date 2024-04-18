@@ -57,6 +57,15 @@ message NetworkInterfaceDescriptor {
 }
 
 message AuthConfig {
+  oneof config {
+    AuthConfigEnabled enabled = 1;
+    AuthConfigDisabled disabled = 2;
+  }
+}
+
+message AuthConfigDisabled {}
+
+message AuthConfigEnabled {
   Url issuer_url = 1;
   ClientId client_id = 2;
   ClientSecret client_secret = 3;

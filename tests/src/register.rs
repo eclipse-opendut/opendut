@@ -22,6 +22,7 @@ async fn register_edgar_carl() -> Result<()> {
         .set_override("network.remote.host", "localhost")?
         .set_override("vpn.enabled", false)?
         .set_override("serve.ui.presence_check", false)?
+        .set_override("network.oidc.enabled", false)?
         // ensure the development certificates are used
         // even if ~/.config/opendut/carl/config.toml is present with different values for the test environment in opendut-vm
         .set_override("network.tls.certificate", "resources/development/tls/insecure-development-carl.pem")?
@@ -38,6 +39,7 @@ async fn register_edgar_carl() -> Result<()> {
         .set_override(opendut_edgar::common::settings::key::peer::id, peer_id.to_string())?
         .set_override("network.carl.port", carl_port)?
         .set_override("network.connect.retries", 100)?
+        .set_override("network.oidc.enabled", false)?
         .build()?;
     let edgar_config = opendut_edgar::common::settings::load_with_overrides(settings_overrides).unwrap();
 

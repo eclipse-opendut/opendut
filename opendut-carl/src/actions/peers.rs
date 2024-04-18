@@ -280,7 +280,7 @@ pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<Peer
 
         let auth_config = match params.oidc_client_manager {
             None => {
-                AuthConfig::disabled()
+                AuthConfig::Disabled
             }
             Some(oidc_client_manager) => {
                 debug!("Generating OIDC client for peer '{peer_name}' <{peer_id}>.");
