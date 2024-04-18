@@ -1,5 +1,6 @@
 use pem::Pem;
 use crate::proto::{ConversionError, ConversionErrorBuilder};
+use crate::proto::util::auth_config::Config;
 use crate::proto::util::ip_address::Address;
 use crate::util;
 use crate::util::net::NetworkInterfaceConfiguration;
@@ -331,11 +332,24 @@ impl TryFrom<OAuthScope> for crate::util::net::OAuthScope {
 
 impl From<crate::util::net::AuthConfig> for AuthConfig {
     fn from(value: crate::util::net::AuthConfig) -> Self {
+        let config = match value {
+            crate::util::net::AuthConfig::Disabled => { auth_config::Config::Disabled( AuthConfigDisabled {}) }
+            crate::util::net::AuthConfig::Enabled {
+                issuer_url,
+                client_id,
+                client_secret,
+                scopes
+            }
+             => { auth_config::Config::Enabled ( AuthConfigEnabled {
+                issuer_url: Some(issuer_url.into()),
+                client_id: Some(client_id.into()),
+                client_secret: Some(client_secret.into()),
+                scopes: scopes.into_iter().map(|scope| scope.into()).collect()
+            }) }
+
+        };
         Self {
-            issuer_url: Some(value.issuer_url.into()),
-            client_id: Some(value.client_id.into()),
-            client_secret: Some(value.client_secret.into()),
-            scopes: value.scopes.into_iter().map(|scope| scope.into()).collect(),
+            config: Some(config),
         }
     }
 }
@@ -345,32 +359,39 @@ impl TryFrom<AuthConfig> for crate::util::net::AuthConfig {
 
     fn try_from(value: AuthConfig) -> Result<Self, Self::Error> {
         type ErrorBuilder = ConversionErrorBuilder<AuthConfig, crate::util::net::AuthConfig>;
+        
+        let config = match value.config
+            .ok_or(ErrorBuilder::new("Configuration not set"))? {
+            Config::Disabled(_) => crate::util::net::AuthConfig::Disabled,
+            Config::Enabled(auth_config) => {
+                let issuer_url = auth_config.issuer_url
+                    .ok_or(ErrorBuilder::new("Authorization Provider Issuer URL not set"))
+                    .and_then(|url| url::Url::parse(&url.value)
+                        .map_err(|cause| ErrorBuilder::new(format!("Authorization Provider Issuer URL could not be parsed: {}", cause)))
+                    )?;
 
-        let issuer_url = value.issuer_url
-            .ok_or(ErrorBuilder::new("Authorization Provider Issuer URL not set"))
-            .and_then(|url| url::Url::parse(&url.value)
-                .map_err(|cause| ErrorBuilder::new(format!("Authorization Provider Issuer URL could not be parsed: {}", cause)))
-            )?;
+                let client_id: crate::util::net::ClientId = auth_config.client_id
+                    .ok_or(ErrorBuilder::new("ClientId not set"))?
+                    .try_into()?;
 
-        let client_id: crate::util::net::ClientId = value.client_id
-            .ok_or(ErrorBuilder::new("ClientId not set"))?
-            .try_into()?;
+                let client_secret: crate::util::net::ClientSecret = auth_config.client_secret
+                    .ok_or(ErrorBuilder::new("ClientSecret not set"))?
+                    .try_into()?;
 
-        let client_secret: crate::util::net::ClientSecret = value.client_secret
-            .ok_or(ErrorBuilder::new("ClientSecret not set"))?
-            .try_into()?;
+                let scopes: Vec<crate::util::net::OAuthScope> = auth_config
+                    .scopes
+                    .into_iter()
+                    .map(TryFrom::try_from)
+                    .collect::<Result<_, _>>()?;
+                crate::util::net::AuthConfig::Enabled {
+                    issuer_url,
+                    client_id,
+                    client_secret,
+                    scopes,
+                }
+            }
+        };
 
-        let scopes: Vec<crate::util::net::OAuthScope> = value
-            .scopes
-            .into_iter()
-            .map(TryFrom::try_from)
-            .collect::<Result<_, _>>()?;
-
-        Ok(Self {
-            issuer_url,
-            client_id,
-            client_secret,
-            scopes,
-        })
+        Ok(config)
     }
 }

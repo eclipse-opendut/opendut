@@ -35,10 +35,13 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
     let mut tasks: Vec<Box<dyn Task>> = vec![
         Box::new(tasks::WriteCaCertificate::with_certificate(peer_setup.ca)),
         Box::new(tasks::CheckOsRequirements),
-        Box::new(tasks::WriteConfiguration::with_override(write_configuration::ConfigOverride {
-            peer_id: peer_setup.id,
-            carl_url: peer_setup.carl,
-        })),
+        Box::new(tasks::WriteConfiguration::with_override(
+            write_configuration::ConfigOverride {
+                peer_id: peer_setup.id,
+                carl_url: peer_setup.carl,
+                auth_config: peer_setup.auth_config,
+            }),
+        ),
         Box::new(tasks::CheckCarlReachable),
         Box::new(tasks::CopyExecutable),
         Box::new(tasks::LoadKernelModules::default()),

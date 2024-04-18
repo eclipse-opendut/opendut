@@ -381,28 +381,21 @@ pub struct ClientCredentials {
     pub client_secret: ClientSecret,
 }
 
-
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AuthConfig {
-    pub issuer_url: Url,
-    pub client_id: ClientId,
-    pub client_secret: ClientSecret,
-    pub scopes: Vec<OAuthScope>,
+pub enum AuthConfig {
+    Enabled {
+        issuer_url: Url,
+        client_id: ClientId,
+        client_secret: ClientSecret,
+        scopes: Vec<OAuthScope>,
+    },
+    Disabled,
 }
 
 impl AuthConfig {
-    pub fn disabled() -> Self {
-        let disabled_auth_url = Url::parse("https://no-auth-url").unwrap();
-        Self {
-            issuer_url: disabled_auth_url,
-            client_id: ClientId::from("disabled"),
-            client_secret: ClientSecret::from("disabled-secret-with-some-length"),
-            scopes: vec![],
-        }
-    }
-    pub fn from_credentials(issuer_url: Url, client_credentials: ClientCredentials) -> Self {
+     pub fn from_credentials(issuer_url: Url, client_credentials: ClientCredentials) -> Self {
 
-        Self {
+        Self::Enabled {
             issuer_url,
             client_id: client_credentials.client_id,
             client_secret: client_credentials.client_secret,

@@ -13,8 +13,8 @@ ca = "/etc/opendut/tls/ca.pem"
 enabled = false
 
 [network.oidc.client]
-client.id = "tbd"
-client.secret = "tbd"
+id = "tbd"
+secret = "tbd"
 # issuer url that CARL uses
 issuer.url = "https://keycloak/realms/opendut/"
 # issuer url that CARL tells the clients to use (required in test environment)

@@ -108,8 +108,8 @@ impl TryFrom<&Config> for CarlIdentityProviderConfig {
 }
 
 impl CarlIdentityProviderConfig {
-    const CLIENT_ID: &'static str = formatcp!("{CARL_OIDC_CONFIG_PREFIX}.client.id");
-    const CLIENT_SECRET: &'static str = formatcp!("{CARL_OIDC_CONFIG_PREFIX}.client.secret");
+    const CLIENT_ID: &'static str = formatcp!("{CARL_OIDC_CONFIG_PREFIX}.id");
+    const CLIENT_SECRET: &'static str = formatcp!("{CARL_OIDC_CONFIG_PREFIX}.secret");
     const COMMON_PEER_ID: &'static str = formatcp!("{CARL_OIDC_CONFIG_PREFIX}.peer.id");
     const COMMON_PEER_SECRET: &'static str = formatcp!("{CARL_OIDC_CONFIG_PREFIX}.peer.secret");
     const ISSUER_URL: &'static str = formatcp!("{CARL_OIDC_CONFIG_PREFIX}.issuer.url");
