@@ -18,7 +18,7 @@ impl TryFrom<PeerConfiguration> for crate::peer::configuration::PeerConfiguratio
         type ErrorBuilder = ConversionErrorBuilder<PeerConfiguration, crate::peer::configuration::PeerConfiguration>;
 
         let executors = value.executors
-            .ok_or(ErrorBuilder::new("Executor not set"))?
+            .ok_or(ErrorBuilder::field_not_set("executors"))?
             .try_into()?;
 
         let cluster_assignment = value.cluster_assignment

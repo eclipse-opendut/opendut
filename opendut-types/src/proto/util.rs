@@ -58,7 +58,7 @@ impl TryFrom<Port> for u16 {
 
         value.value
             .try_into()
-            .map_err(|_| ErrorBuilder::new("Port value is out of range"))
+            .map_err(|_| ErrorBuilder::message("Port value is out of range"))
     }
 }
 
@@ -76,7 +76,7 @@ impl TryFrom<Port> for util::Port {
 
         let port: u16 = value.value
             .try_into()
-            .map_err(|_| ErrorBuilder::new("Port value is out of range"))?;
+            .map_err(|_| ErrorBuilder::message("Port value is out of range"))?;
 
         Ok(util::Port(port))
     }
@@ -95,7 +95,7 @@ impl TryFrom<Url> for url::Url {
         type ErrorBuilder = ConversionErrorBuilder<Url, url::Url>;
 
         url::Url::parse(&value.value)
-            .map_err(|cause| ErrorBuilder::new(format!("Url could not be parsed: {}", cause)))
+            .map_err(|cause| ErrorBuilder::message(format!("Url could not be parsed: {}", cause)))
     }
 }
 
@@ -118,16 +118,16 @@ impl TryFrom<IpAddress> for std::net::IpAddr {
         type ErrorBuilder = ConversionErrorBuilder<IpAddress, std::net::IpAddr>;
 
         let address = value.address
-            .ok_or(ErrorBuilder::new("IP address not set"))?;
+            .ok_or(ErrorBuilder::field_not_set("address"))?;
 
         let address = match address {
             Address::IpV4(address) => std::net::IpAddr::V4(
                 std::net::Ipv4Addr::try_from(address)
-                    .map_err(|cause| ErrorBuilder::new(cause.to_string()))?
+                    .map_err(|cause| ErrorBuilder::message(cause.to_string()))?
             ),
             Address::IpV6(address) => std::net::IpAddr::V6(
                 std::net::Ipv6Addr::try_from(address)
-                    .map_err(|cause| ErrorBuilder::new(cause.to_string()))?
+                    .map_err(|cause| ErrorBuilder::message(cause.to_string()))?
             ),
         };
         Ok(address)
@@ -150,7 +150,7 @@ impl TryFrom<IpV4Address> for std::net::Ipv4Addr {
         const IPV4_LENGTH: usize = 4; //bytes
 
         let octets: [u8; IPV4_LENGTH] = value.value[0..IPV4_LENGTH].try_into()
-            .map_err(|cause| ErrorBuilder::new(format!("IPv4 address could not be parsed, because it did not have the correct length ({IPV4_LENGTH} bytes): {}", cause)))?;
+            .map_err(|cause| ErrorBuilder::message(format!("IPv4 address could not be parsed, because it did not have the correct length ({IPV4_LENGTH} bytes): {}", cause)))?;
 
         Ok(std::net::Ipv4Addr::from(octets))
     }
@@ -172,7 +172,7 @@ impl TryFrom<IpV6Address> for std::net::Ipv6Addr {
         const IPV6_LENGTH: usize = 16; //bytes
 
         let octets: [u8; IPV6_LENGTH] = value.value[0..IPV6_LENGTH].try_into()
-            .map_err(|cause| ErrorBuilder::new(format!("IPv6 address could not be parsed, because it did not have the correct length ({IPV6_LENGTH} bytes): {}", cause)))?;
+            .map_err(|cause| ErrorBuilder::message(format!("IPv6 address could not be parsed, because it did not have the correct length ({IPV6_LENGTH} bytes): {}", cause)))?;
 
         Ok(std::net::Ipv6Addr::from(octets))
     }
@@ -192,7 +192,7 @@ impl TryFrom<NetworkInterfaceName> for crate::util::net::NetworkInterfaceName {
         type ErrorBuilder = ConversionErrorBuilder<NetworkInterfaceName, crate::util::net::NetworkInterfaceName>;
 
         crate::util::net::NetworkInterfaceName::try_from(value.name)
-            .map_err(|cause| ErrorBuilder::new(format!("Failed to parse InterfaceName from proto: {cause}")))
+            .map_err(|cause| ErrorBuilder::message(format!("Failed to parse InterfaceName from proto: {cause}")))
     }
 }
 
@@ -247,20 +247,20 @@ impl TryFrom<NetworkInterfaceDescriptor> for crate::util::net::NetworkInterfaceD
         type ErrorBuilder = ConversionErrorBuilder<NetworkInterfaceDescriptor, crate::util::net::NetworkInterfaceDescriptor>;
 
         let name = value.name
-            .ok_or(ErrorBuilder::new("Interface not set"))?
+            .ok_or(ErrorBuilder::field_not_set("interface"))?
             .try_into()?;
 
         let configuration = match value.configuration
-            .ok_or(ErrorBuilder::new("Configuration not set"))? {
+            .ok_or(ErrorBuilder::field_not_set("configuration"))? {
                 network_interface_descriptor::Configuration::Ethernet(_) => NetworkInterfaceConfiguration::Ethernet,
                 network_interface_descriptor::Configuration::Can(can_config) => NetworkInterfaceConfiguration::Can { 
                     bitrate: can_config.bitrate, 
                     sample_point: can_config.sample_point.try_into()
-                        .map_err(|cause| ErrorBuilder::new(format!("Sample point could not be converted: {}", cause)))?, 
+                        .map_err(|cause| ErrorBuilder::message(format!("Sample point could not be converted: {}", cause)))?,
                     fd: can_config.flexible_data_rate, 
                     data_bitrate: can_config.data_bitrate, 
                     data_sample_point: can_config.data_sample_point.try_into()
-                        .map_err(|cause| ErrorBuilder::new(format!("Sample point could not be converted: {}", cause)))?, 
+                        .map_err(|cause| ErrorBuilder::message(format!("Sample point could not be converted: {}", cause)))?,
                 },
             };
 
@@ -287,7 +287,7 @@ impl TryFrom<ClientSecret> for crate::util::net::ClientSecret {
         type ErrorBuilder = ConversionErrorBuilder<ClientSecret, crate::util::net::ClientSecret>;
 
         crate::util::net::ClientSecret::try_from(value.value)
-            .map_err(|cause| ErrorBuilder::new(cause.to_string()))
+            .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
@@ -306,7 +306,7 @@ impl TryFrom<ClientId> for crate::util::net::ClientId {
         type ErrorBuilder = ConversionErrorBuilder<ClientId, crate::util::net::ClientId>;
 
         crate::util::net::ClientId::try_from(value.value)
-            .map_err(|cause| ErrorBuilder::new(cause.to_string()))
+            .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
@@ -326,7 +326,7 @@ impl TryFrom<OAuthScope> for crate::util::net::OAuthScope {
         type ErrorBuilder = ConversionErrorBuilder<OAuthScope, crate::util::net::OAuthScope>;
 
         crate::util::net::OAuthScope::try_from(value.value)
-            .map_err(|cause| ErrorBuilder::new(cause.to_string()))
+            .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
@@ -361,21 +361,21 @@ impl TryFrom<AuthConfig> for crate::util::net::AuthConfig {
         type ErrorBuilder = ConversionErrorBuilder<AuthConfig, crate::util::net::AuthConfig>;
         
         let config = match value.config
-            .ok_or(ErrorBuilder::new("Configuration not set"))? {
+            .ok_or(ErrorBuilder::field_not_set("configuration"))? {
             Config::Disabled(_) => crate::util::net::AuthConfig::Disabled,
             Config::Enabled(auth_config) => {
                 let issuer_url = auth_config.issuer_url
-                    .ok_or(ErrorBuilder::new("Authorization Provider Issuer URL not set"))
+                    .ok_or(ErrorBuilder::message("Authorization Provider Issuer URL not set"))
                     .and_then(|url| url::Url::parse(&url.value)
-                        .map_err(|cause| ErrorBuilder::new(format!("Authorization Provider Issuer URL could not be parsed: {}", cause)))
+                        .map_err(|cause| ErrorBuilder::message(format!("Authorization Provider Issuer URL could not be parsed: {}", cause)))
                     )?;
 
                 let client_id: crate::util::net::ClientId = auth_config.client_id
-                    .ok_or(ErrorBuilder::new("ClientId not set"))?
+                    .ok_or(ErrorBuilder::field_not_set("client_id"))?
                     .try_into()?;
 
                 let client_secret: crate::util::net::ClientSecret = auth_config.client_secret
-                    .ok_or(ErrorBuilder::new("ClientSecret not set"))?
+                    .ok_or(ErrorBuilder::field_not_set("client_secret"))?
                     .try_into()?;
 
                 let scopes: Vec<crate::util::net::OAuthScope> = auth_config

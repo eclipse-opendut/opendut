@@ -24,7 +24,7 @@ impl TryFrom<PeerId> for crate::peer::PeerId {
         type ErrorBuilder = ConversionErrorBuilder<PeerId, crate::peer::PeerId>;
 
         value.uuid
-            .ok_or(ErrorBuilder::new("Uuid not set"))
+            .ok_or(ErrorBuilder::field_not_set("uuid"))
             .map(|uuid| Self(uuid.into()))
     }
 }
@@ -53,7 +53,7 @@ impl TryFrom<PeerName> for crate::peer::PeerName {
         type ErrorBuilder = ConversionErrorBuilder<PeerName, crate::peer::PeerName>;
 
         crate::peer::PeerName::try_from(value.value)
-            .map_err(|cause| ErrorBuilder::new(cause.to_string()))
+            .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
@@ -80,7 +80,7 @@ impl TryFrom<PeerLocation> for crate::peer::PeerLocation {
         type ErrorBuilder = ConversionErrorBuilder<PeerLocation, crate::peer::PeerLocation>;
 
         crate::peer::PeerLocation::try_from(value.value)
-            .map_err(|cause| ErrorBuilder::new(cause.to_string()))
+            .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
@@ -129,11 +129,11 @@ impl TryFrom<PeerDescriptor> for crate::peer::PeerDescriptor {
         type ErrorBuilder = ConversionErrorBuilder<PeerDescriptor, crate::peer::PeerDescriptor>;
 
         let id = value.id
-            .ok_or(ErrorBuilder::new("Id not set"))?
+            .ok_or(ErrorBuilder::field_not_set("id"))?
             .try_into()?;
 
         let name = value.name
-            .ok_or(ErrorBuilder::new("Name not set"))?
+            .ok_or(ErrorBuilder::field_not_set("name"))?
             .try_into()?;
 
         let location = value.location
@@ -141,15 +141,15 @@ impl TryFrom<PeerDescriptor> for crate::peer::PeerDescriptor {
             .transpose()?;
 
         let network_configuration = value.network_configuration
-            .ok_or(ErrorBuilder::new("Network configuration not set"))?
+            .ok_or(ErrorBuilder::field_not_set("network_configuration"))?
             .try_into()?;
 
         let topology = value.topology
-            .ok_or(ErrorBuilder::new("Topology not set"))?
+            .ok_or(ErrorBuilder::field_not_set("topology"))?
             .try_into()?;
 
         let executors = value.executors
-            .ok_or(ErrorBuilder::new("Executor not set"))?
+            .ok_or(ErrorBuilder::field_not_set("executors"))?
             .try_into()?;
         
         Ok(crate::peer::PeerDescriptor {
@@ -182,24 +182,24 @@ impl TryFrom<PeerSetup> for crate::peer::PeerSetup {
         type ErrorBuilder = ConversionErrorBuilder<PeerSetup, crate::peer::PeerSetup>;
 
         let id: crate::peer::PeerId = value.id
-            .ok_or(ErrorBuilder::new("PeerId not set"))?
+            .ok_or(ErrorBuilder::field_not_set("id"))?
             .try_into()?;
 
         let carl: url::Url = value.carl
-            .ok_or(ErrorBuilder::new("Carl not set"))
+            .ok_or(ErrorBuilder::field_not_set("carl"))
             .and_then(|url| url::Url::parse(&url.value)
-                .map_err(|cause| ErrorBuilder::new(format!("Carl URL could not be parsed: {}", cause))))?;
+                .map_err(|cause| ErrorBuilder::message(format!("Carl URL could not be parsed: {}", cause))))?;
 
         let ca: crate::util::net::Certificate = value.ca
-            .ok_or(ErrorBuilder::new("No CA Certificate provided."))
+            .ok_or(ErrorBuilder::field_not_set("ca"))
             .and_then(crate::util::net::Certificate::try_from)?;
 
         let vpn: crate::vpn::VpnPeerConfiguration = value.vpn
-            .ok_or(ErrorBuilder::new("VpnConfig not set"))
+            .ok_or(ErrorBuilder::field_not_set("vpn"))
             .and_then(VpnPeerConfig::try_into)?;
 
         let auth_config = value.auth_config
-            .ok_or(ErrorBuilder::new("PeerId not set"))?
+            .ok_or(ErrorBuilder::field_not_set("auth_config"))?
             .try_into()?;
 
         Ok(Self {
@@ -282,7 +282,7 @@ impl TryFrom<PeerState> for crate::peer::state::PeerState {
         type ErrorBuilder = ConversionErrorBuilder<PeerState, crate::peer::state::PeerState>;
 
         let inner = state.inner
-            .ok_or(ErrorBuilder::new("Inner state not set"))?;
+            .ok_or(ErrorBuilder::field_not_set("inner"))?;
 
         match inner {
             peer_state::Inner::Down(_) => {
@@ -291,12 +291,12 @@ impl TryFrom<PeerState> for crate::peer::state::PeerState {
             peer_state::Inner::Up(PeerStateUp { inner, remote_host }) => {
 
                 let remote_host: std::net::IpAddr = remote_host
-                    .ok_or(ErrorBuilder::new("field 'remote_host' not set"))?
+                    .ok_or(ErrorBuilder::field_not_set("remote_host"))?
                     .try_into()?;
 
 
                 let inner = inner
-                    .ok_or(ErrorBuilder::new("Inner 'Up' state not set"))?;
+                    .ok_or(ErrorBuilder::message("Inner 'Up' state not set"))?;
 
                 match inner {
                     peer_state_up::Inner::Available(_) => {
@@ -308,7 +308,7 @@ impl TryFrom<PeerState> for crate::peer::state::PeerState {
                     peer_state_up::Inner::Blocked(PeerStateUpBlocked { inner }) => {
 
                         let inner = inner
-                            .ok_or(ErrorBuilder::new("Inner 'Blocked' state not set"))?;
+                            .ok_or(ErrorBuilder::message("Inner 'Blocked' state not set"))?;
 
                         match inner {
                             peer_state_up_blocked::Inner::Deploying(_) => {

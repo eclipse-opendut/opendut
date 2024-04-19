@@ -31,7 +31,11 @@ pub struct ConversionErrorBuilder<From, To> {
 
 #[allow(clippy::new_ret_no_self)]
 impl<From, To> ConversionErrorBuilder<From, To> {
-    pub fn new(details: impl Into<String>) -> ConversionError {
+    pub fn message(details: impl Into<String>) -> ConversionError {
+        ConversionError::new::<From, To>(details)
+    }
+    pub fn field_not_set(field: impl Into<String>) -> ConversionError {
+        let details = format!("Field '{}' not set", field.into());
         ConversionError::new::<From, To>(details)
     }
 }

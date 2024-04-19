@@ -38,7 +38,7 @@ pub mod cluster_manager {
         fn try_from(failure: CreateClusterConfigurationFailure) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<CreateClusterConfigurationFailure, CreateClusterConfigurationError>;
             let error = failure.error
-                .ok_or_else(|| ErrorBuilder::new("Field 'error' not set"))?;
+                .ok_or_else(|| ErrorBuilder::field_not_set("error"))?;
             let error = match error {
                 create_cluster_configuration_failure::Error::ClusterConfigurationAlreadyExists(error) => {
                     error.try_into()?
@@ -56,16 +56,16 @@ pub mod cluster_manager {
         fn try_from(failure: CreateClusterConfigurationFailureClusterConfigurationAlreadyExists) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<CreateClusterConfigurationFailureClusterConfigurationAlreadyExists, CreateClusterConfigurationError>;
             let actual_id: ClusterId = failure.actual_id
-                .ok_or_else(|| ErrorBuilder::new("Field 'actual_id' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("actual_id"))?
                 .try_into()?;
             let actual_name: ClusterName = failure.actual_name
-                .ok_or_else(|| ErrorBuilder::new("Field 'actual_name' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("actual_name"))?
                 .try_into()?;
             let other_id: ClusterId = failure.other_id
-                .ok_or_else(|| ErrorBuilder::new("Field 'other_id' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("other_id"))?
                 .try_into()?;
             let other_name: ClusterName = failure.other_name
-                .ok_or_else(|| ErrorBuilder::new("Field 'other_name' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("other_name"))?
                 .try_into()?;
             Ok(CreateClusterConfigurationError::ClusterConfigurationAlreadyExists { actual_id, actual_name, other_id, other_name })
         }
@@ -76,10 +76,10 @@ pub mod cluster_manager {
         fn try_from(failure: CreateClusterConfigurationFailureInternal) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<CreateClusterConfigurationFailureInternal, CreateClusterConfigurationError>;
             let cluster_id: ClusterId = failure.cluster_id
-                .ok_or_else(|| ErrorBuilder::new("Field 'cluster_id' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
                 .try_into()?;
             let cluster_name: ClusterName = failure.cluster_name
-                .ok_or_else(|| ErrorBuilder::new("Field 'cluster_name' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("cluster_name"))?
                 .try_into()?;
             Ok(CreateClusterConfigurationError::Internal { cluster_id, cluster_name, cause: failure.cause })
         }
@@ -120,7 +120,7 @@ pub mod cluster_manager {
         fn try_from(failure: DeleteClusterConfigurationFailure) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<DeleteClusterConfigurationFailure, DeleteClusterConfigurationError>;
             let error = failure.error
-                .ok_or_else(|| ErrorBuilder::new("Field 'error' not set"))?;
+                .ok_or_else(|| ErrorBuilder::field_not_set("error"))?;
             let error = match error {
                 delete_cluster_configuration_failure::Error::ClusterConfigurationNotFound(error) => {
                     error.try_into()?
@@ -141,7 +141,7 @@ pub mod cluster_manager {
         fn try_from(failure: DeleteClusterConfigurationFailureClusterConfigurationNotFound) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<DeleteClusterConfigurationFailureClusterConfigurationNotFound, DeleteClusterConfigurationError>;
             let cluster_id: ClusterId = failure.cluster_id
-                .ok_or_else(|| ErrorBuilder::new("Field 'cluster_id' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
                 .try_into()?;
             Ok(DeleteClusterConfigurationError::ClusterConfigurationNotFound { cluster_id })
         }
@@ -152,13 +152,13 @@ pub mod cluster_manager {
         fn try_from(failure: DeleteClusterConfigurationFailureIllegalClusterState) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<DeleteClusterConfigurationFailureIllegalClusterState, DeleteClusterConfigurationError>;
             let cluster_id: ClusterId = failure.cluster_id
-                .ok_or_else(|| ErrorBuilder::new("Field 'cluster_id' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
                 .try_into()?;
             let cluster_name: ClusterName = failure.cluster_name
-                .ok_or_else(|| ErrorBuilder::new("Field 'cluster_name' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("cluster_name"))?
                 .try_into()?;
             let actual_state: ClusterState = failure.actual_state
-                .ok_or_else(|| ErrorBuilder::new("Field 'actual_state' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("actual_state"))?
                 .try_into()?;
             let required_states = failure.required_states.into_iter()
                 .map(proto::cluster::ClusterState::try_into)
@@ -172,10 +172,10 @@ pub mod cluster_manager {
         fn try_from(failure: DeleteClusterConfigurationFailureInternal) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<DeleteClusterConfigurationFailureInternal, DeleteClusterConfigurationError>;
             let cluster_id: ClusterId = failure.cluster_id
-                .ok_or_else(|| ErrorBuilder::new("Field 'cluster_id' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
                 .try_into()?;
             let cluster_name: ClusterName = failure.cluster_name
-                .ok_or_else(|| ErrorBuilder::new("Field 'cluster_name' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("cluster_name"))?
                 .try_into()?;
             Ok(DeleteClusterConfigurationError::Internal { cluster_id, cluster_name, cause: failure.cause })
         }
@@ -211,7 +211,7 @@ pub mod cluster_manager {
         fn try_from(failure: StoreClusterDeploymentFailure) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<StoreClusterDeploymentFailure, StoreClusterDeploymentError>;
             let error = failure.error
-                .ok_or_else(|| ErrorBuilder::new("Field 'error' not set"))?;
+                .ok_or_else(|| ErrorBuilder::field_not_set("error"))?;
             let error = match error {
                 store_cluster_deployment_failure::Error::IllegalClusterState(error) => {
                     error.try_into()?
@@ -229,13 +229,13 @@ pub mod cluster_manager {
         fn try_from(failure: StoreClusterDeploymentFailureIllegalClusterState) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<StoreClusterDeploymentFailureIllegalClusterState, StoreClusterDeploymentError>;
             let cluster_id: ClusterId = failure.cluster_id
-                .ok_or_else(|| ErrorBuilder::new("Field 'cluster_id' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
                 .try_into()?;
             let cluster_name: ClusterName = failure.cluster_name
-                .ok_or_else(|| ErrorBuilder::new("Field 'cluster_name' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("cluster_name"))?
                 .try_into()?;
             let actual_state: ClusterState = failure.actual_state
-                .ok_or_else(|| ErrorBuilder::new("Field 'actual_state' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("actual_state"))?
                 .try_into()?;
             let required_states = failure.required_states.into_iter()
                 .map(proto::cluster::ClusterState::try_into)
@@ -249,10 +249,10 @@ pub mod cluster_manager {
         fn try_from(failure: StoreClusterDeploymentFailureInternal) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<StoreClusterDeploymentFailureInternal, StoreClusterDeploymentError>;
             let cluster_id: ClusterId = failure.cluster_id
-                .ok_or_else(|| ErrorBuilder::new("Field 'cluster_id' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
                 .try_into()?;
             let cluster_name: ClusterName = failure.cluster_name
-                .ok_or_else(|| ErrorBuilder::new("Field 'cluster_name' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("cluster_name"))?
                 .try_into()?;
             Ok(StoreClusterDeploymentError::Internal { cluster_id, cluster_name, cause: failure.cause })
         }
@@ -293,7 +293,7 @@ pub mod cluster_manager {
         fn try_from(failure: DeleteClusterDeploymentFailure) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<DeleteClusterDeploymentFailure, DeleteClusterDeploymentError>;
             let error = failure.error
-                .ok_or_else(|| ErrorBuilder::new("Field 'error' not set"))?;
+                .ok_or_else(|| ErrorBuilder::field_not_set("error"))?;
             let error = match error {
                 delete_cluster_deployment_failure::Error::ClusterDeploymentNotFound(error) => {
                     error.try_into()?
@@ -314,7 +314,7 @@ pub mod cluster_manager {
         fn try_from(failure: DeleteClusterDeploymentFailureClusterDeploymentNotFound) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<DeleteClusterDeploymentFailureClusterDeploymentNotFound, DeleteClusterDeploymentError>;
             let cluster_id: ClusterId = failure.cluster_id
-                .ok_or_else(|| ErrorBuilder::new("Field 'cluster_id' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
                 .try_into()?;
             Ok(DeleteClusterDeploymentError::ClusterDeploymentNotFound { cluster_id })
         }
@@ -325,13 +325,13 @@ pub mod cluster_manager {
         fn try_from(failure: DeleteClusterDeploymentFailureIllegalClusterState) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<DeleteClusterDeploymentFailureIllegalClusterState, DeleteClusterDeploymentError>;
             let cluster_id: ClusterId = failure.cluster_id
-                .ok_or_else(|| ErrorBuilder::new("Field 'cluster_id' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
                 .try_into()?;
             let cluster_name: ClusterName = failure.cluster_name
-                .ok_or_else(|| ErrorBuilder::new("Field 'cluster_name' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("cluster_name"))?
                 .try_into()?;
             let actual_state: ClusterState = failure.actual_state
-                .ok_or_else(|| ErrorBuilder::new("Field 'actual_state' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("actual_state"))?
                 .try_into()?;
             let required_states = failure.required_states.into_iter()
                 .map(proto::cluster::ClusterState::try_into)
@@ -345,10 +345,10 @@ pub mod cluster_manager {
         fn try_from(failure: DeleteClusterDeploymentFailureInternal) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<DeleteClusterDeploymentFailureInternal, DeleteClusterDeploymentError>;
             let cluster_id: ClusterId = failure.cluster_id
-                .ok_or_else(|| ErrorBuilder::new("Field 'cluster_id' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
                 .try_into()?;
             let cluster_name: ClusterName = failure.cluster_name
-                .ok_or_else(|| ErrorBuilder::new("Field 'cluster_name' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("cluster_name"))?
                 .try_into()?;
             Ok(DeleteClusterDeploymentError::Internal { cluster_id, cluster_name, cause: failure.cause })
         }
@@ -409,7 +409,7 @@ pub mod peer_manager {
         fn try_from(failure: StorePeerDescriptorFailure) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<StorePeerDescriptorFailure, StorePeerDescriptorError>;
             let error = failure.error
-                .ok_or_else(|| ErrorBuilder::new("Field 'error' not set"))?;
+                .ok_or_else(|| ErrorBuilder::field_not_set("error"))?;
             let error = match error {
                 store_peer_descriptor_failure::Error::IllegalPeerState(error) => {
                     error.try_into()?
@@ -430,13 +430,13 @@ pub mod peer_manager {
         fn try_from(failure: StorePeerDescriptorFailureIllegalPeerState) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<StorePeerDescriptorFailureIllegalPeerState, StorePeerDescriptorError>;
             let peer_id: PeerId = failure.peer_id
-                .ok_or_else(|| ErrorBuilder::new("Field 'peer_id' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("peer_id"))?
                 .try_into()?;
             let peer_name: PeerName = failure.peer_name
-                .ok_or_else(|| ErrorBuilder::new("Field 'peer_name' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("peer_name"))?
                 .try_into()?;
             let actual_state: PeerState = failure.actual_state
-                .ok_or_else(|| ErrorBuilder::new("Field 'actual_state' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("actual_state"))?
                 .try_into()?;
             let required_states = failure.required_states.into_iter()
                 .map(proto::peer::PeerState::try_into)
@@ -450,13 +450,13 @@ pub mod peer_manager {
         fn try_from(failure: StorePeerDescriptorFailureIllegalDevices) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<StorePeerDescriptorFailureIllegalDevices, StorePeerDescriptorError>;
             let peer_id: PeerId = failure.peer_id
-                .ok_or_else(|| ErrorBuilder::new("Field 'peer_id' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("peer_id"))?
                 .try_into()?;
             let peer_name: PeerName = failure.peer_name
-                .ok_or_else(|| ErrorBuilder::new("Field 'peer_name' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("peer_name"))?
                 .try_into()?;
             let error: crate::carl::peer::IllegalDevicesError = failure.error
-                .ok_or_else(|| ErrorBuilder::new("Field 'error' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("error"))?
                 .try_into()?;
             Ok(StorePeerDescriptorError::IllegalDevices { peer_id, peer_name, error })
         }
@@ -467,10 +467,10 @@ pub mod peer_manager {
         fn try_from(failure: StorePeerDescriptorFailureInternal) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<StorePeerDescriptorFailureInternal, StorePeerDescriptorError>;
             let peer_id: PeerId = failure.peer_id
-                .ok_or_else(|| ErrorBuilder::new("Field 'peer_id' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("peer_id"))?
                 .try_into()?;
             let peer_name: PeerName = failure.peer_name
-                .ok_or_else(|| ErrorBuilder::new("Field 'peer_name' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("peer_name"))?
                 .try_into()?;
             Ok(StorePeerDescriptorError::Internal { peer_id, peer_name, cause: failure.cause })
         }
@@ -511,7 +511,7 @@ pub mod peer_manager {
         fn try_from(failure: DeletePeerDescriptorFailure) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<DeletePeerDescriptorFailure, DeletePeerDescriptorError>;
             let error = failure.error
-                .ok_or_else(|| ErrorBuilder::new("Field 'error' not set"))?;
+                .ok_or_else(|| ErrorBuilder::field_not_set("error"))?;
             let error = match error {
                 delete_peer_descriptor_failure::Error::PeerNotFound(error) => {
                     error.try_into()?
@@ -532,7 +532,7 @@ pub mod peer_manager {
         fn try_from(failure: DeletePeerDescriptorFailurePeerNotFound) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<DeletePeerDescriptorFailurePeerNotFound, DeletePeerDescriptorError>;
             let peer_id: PeerId = failure.peer_id
-                .ok_or_else(|| ErrorBuilder::new("Field 'peer_id' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("peer_id"))?
                 .try_into()?;
             Ok(DeletePeerDescriptorError::PeerNotFound { peer_id })
         }
@@ -543,13 +543,13 @@ pub mod peer_manager {
         fn try_from(failure: DeletePeerDescriptorFailureIllegalPeerState) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<DeletePeerDescriptorFailureIllegalPeerState, DeletePeerDescriptorError>;
             let peer_id: PeerId = failure.peer_id
-                .ok_or_else(|| ErrorBuilder::new("Field 'peer_id' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("peer_id"))?
                 .try_into()?;
             let peer_name: PeerName = failure.peer_name
-                .ok_or_else(|| ErrorBuilder::new("Field 'peer_name' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("peer_name"))?
                 .try_into()?;
             let actual_state: PeerState = failure.actual_state
-                .ok_or_else(|| ErrorBuilder::new("Field 'actual_state' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("actual_state"))?
                 .try_into()?;
             let required_states = failure.required_states.into_iter()
                 .map(proto::peer::PeerState::try_into)
@@ -563,10 +563,10 @@ pub mod peer_manager {
         fn try_from(failure: DeletePeerDescriptorFailureInternal) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<DeletePeerDescriptorFailureInternal, DeletePeerDescriptorError>;
             let peer_id: PeerId = failure.peer_id
-                .ok_or_else(|| ErrorBuilder::new("Field 'peer_id' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("peer_id"))?
                 .try_into()?;
             let peer_name: PeerName = failure.peer_name
-                .ok_or_else(|| ErrorBuilder::new("Field 'peer_name' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("peer_name"))?
                 .try_into()?;
             Ok(DeletePeerDescriptorError::Internal { peer_id, peer_name, cause: failure.cause })
         }
@@ -591,7 +591,7 @@ pub mod peer_manager {
         fn try_from(error: IllegalDevicesError) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<IllegalDevicesError, crate::carl::peer::IllegalDevicesError>;
             let inner = error.error
-                .ok_or_else(|| ErrorBuilder::new("Field 'error' not set"))?;
+                .ok_or_else(|| ErrorBuilder::field_not_set("error"))?;
             match inner {
                 illegal_devices_error::Error::DeviceAlreadyExists(error) => {
                     error.try_into()
@@ -605,7 +605,7 @@ pub mod peer_manager {
         fn try_from(error: IllegalDevicesErrorDeviceAlreadyExists) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<IllegalDevicesErrorDeviceAlreadyExists, crate::carl::peer::IllegalDevicesError>;
             let device_id: DeviceId = error.device_id
-                .ok_or_else(|| ErrorBuilder::new("Field 'device_id' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("device_id"))?
                 .try_into()?;
             Ok(crate::carl::peer::IllegalDevicesError::DeviceAlreadyExists { device_id })
         }
@@ -637,7 +637,7 @@ pub mod peer_manager {
         fn try_from(failure: GetPeerDescriptorFailure) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<GetPeerDescriptorFailure, GetPeerDescriptorError>;
             let error = failure.error
-                .ok_or_else(|| ErrorBuilder::new("Field 'error' not set"))?;
+                .ok_or_else(|| ErrorBuilder::field_not_set("error"))?;
             let error = match error {
                 get_peer_descriptor_failure::Error::PeerNotFound(error) => {
                     error.try_into()?
@@ -655,7 +655,7 @@ pub mod peer_manager {
         fn try_from(failure: GetPeerDescriptorFailurePeerNotFound) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<GetPeerDescriptorFailurePeerNotFound, GetPeerDescriptorError>;
             let peer_id: PeerId = failure.peer_id
-                .ok_or_else(|| ErrorBuilder::new("Field 'peer_id' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("peer_id"))?
                 .try_into()?;
             Ok(GetPeerDescriptorError::PeerNotFound { peer_id })
         }
@@ -666,7 +666,7 @@ pub mod peer_manager {
         fn try_from(failure: GetPeerDescriptorFailureInternal) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<GetPeerDescriptorFailureInternal, GetPeerDescriptorError>;
             let peer_id: PeerId = failure.peer_id
-                .ok_or_else(|| ErrorBuilder::new("Field 'peer_id' not set"))?
+                .ok_or_else(|| ErrorBuilder::field_not_set("peer_id"))?
                 .try_into()?;
             Ok(GetPeerDescriptorError::Internal{ peer_id, cause: failure.cause})
         }
@@ -692,7 +692,7 @@ pub mod peer_manager {
         fn try_from(failure: ListPeerDescriptorsFailure) -> Result<Self, Self::Error> {
             type ErrorBuilder = ConversionErrorBuilder<ListPeerDescriptorsFailure, ListPeerDescriptorsError>;
             let error = failure.error
-                .ok_or_else(|| ErrorBuilder::new("Field 'error' not set"))?;
+                .ok_or_else(|| ErrorBuilder::field_not_set("error"))?;
             let error = match error {
                 list_peer_descriptors_failure::Error::Internal(error) => {
                     error.try_into()?

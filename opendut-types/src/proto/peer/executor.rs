@@ -75,7 +75,7 @@ impl TryFrom<ExecutorDescriptor> for crate::peer::executor::ExecutorDescriptor {
         type ErrorBuilder = ConversionErrorBuilder<ExecutorDescriptor, crate::peer::executor::ExecutorDescriptor>;
 
         let descriptor = value.descriptor
-            .ok_or(ErrorBuilder::new("Executor not set not set"))?;
+            .ok_or(ErrorBuilder::field_not_set("descriptor"))?;
 
         let result = match descriptor {
             executor_descriptor::Descriptor::Executable(_) => {
@@ -94,13 +94,13 @@ impl TryFrom<ExecutorDescriptor> for crate::peer::executor::ExecutorDescriptor {
                     args
                 } = descriptor;
                 let engine = engine
-                    .ok_or(ErrorBuilder::new("Engine not set"))?
+                    .ok_or(ErrorBuilder::field_not_set("engine"))?
                     .try_into()?;
                 let name = name
-                    .ok_or(ErrorBuilder::new("Container Name not set"))?
+                    .ok_or(ErrorBuilder::field_not_set("name"))?
                     .try_into()?;
                 let image = image
-                    .ok_or(ErrorBuilder::new("Container Image not set"))?
+                    .ok_or(ErrorBuilder::field_not_set("image"))?
                     .try_into()?;
                 let volumes = volumes
                     .into_iter()
@@ -119,7 +119,7 @@ impl TryFrom<ExecutorDescriptor> for crate::peer::executor::ExecutorDescriptor {
                     .map(TryFrom::try_from)
                     .collect::<Result<_, _>>()?;
                 let command = command
-                    .ok_or(ErrorBuilder::new("Container Command not set"))?
+                    .ok_or(ErrorBuilder::field_not_set("command"))?
                     .try_into()?;
                 let args = args
                     .into_iter()
@@ -171,7 +171,7 @@ impl TryFrom<Engine> for crate::peer::executor::Engine {
         type ErrorBuilder = ConversionErrorBuilder<Engine, crate::peer::executor::Engine>;
 
         let inner = value.inner
-            .ok_or(ErrorBuilder::new("Engine not set"))?;
+            .ok_or(ErrorBuilder::field_not_set("inner"))?;
 
         let result = match inner {
             engine::Inner::Docker(_) => {
@@ -202,7 +202,7 @@ impl TryFrom<ContainerName> for crate::peer::executor::ContainerName {
         type ErrorBuilder = ConversionErrorBuilder<ContainerName, crate::peer::executor::ContainerName>;
 
         crate::peer::executor::ContainerName::try_from(value.value)
-            .map_err(|cause| ErrorBuilder::new(cause.to_string()))
+            .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
@@ -221,7 +221,7 @@ impl TryFrom<ContainerImage> for crate::peer::executor::ContainerImage {
         type ErrorBuilder = ConversionErrorBuilder<ContainerImage, crate::peer::executor::ContainerImage>;
 
         crate::peer::executor::ContainerImage::try_from(value.value)
-            .map_err(|cause| ErrorBuilder::new(cause.to_string()))
+            .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
@@ -240,7 +240,7 @@ impl TryFrom<ContainerVolume> for crate::peer::executor::ContainerVolume {
         type ErrorBuilder = ConversionErrorBuilder<ContainerVolume, crate::peer::executor::ContainerVolume>;
 
         crate::peer::executor::ContainerVolume::try_from(value.value)
-            .map_err(|cause| ErrorBuilder::new(cause.to_string()))
+            .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
@@ -259,7 +259,7 @@ impl TryFrom<ContainerDevice> for crate::peer::executor::ContainerDevice {
         type ErrorBuilder = ConversionErrorBuilder<ContainerVolume, crate::peer::executor::ContainerVolume>;
 
         crate::peer::executor::ContainerDevice::try_from(value.value)
-            .map_err(|cause| ErrorBuilder::new(cause.to_string()))
+            .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
@@ -280,7 +280,7 @@ impl TryFrom<ContainerEnvironmentVariable> for crate::peer::executor::ContainerE
         type ErrorBuilder = ConversionErrorBuilder<ContainerEnvironmentVariable, crate::peer::executor::ContainerEnvironmentVariable>;
         
         crate::peer::executor::ContainerEnvironmentVariable::new(value.name, value.value)
-            .map_err(|cause| ErrorBuilder::new(cause.to_string()))
+            .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
@@ -299,7 +299,7 @@ impl TryFrom<ContainerPortSpec> for crate::peer::executor::ContainerPortSpec {
         type ErrorBuilder = ConversionErrorBuilder<ContainerPortSpec, crate::peer::executor::ContainerPortSpec>;
 
         crate::peer::executor::ContainerPortSpec::try_from(value.value)
-            .map_err(|cause| ErrorBuilder::new(cause.to_string()))
+            .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
@@ -310,7 +310,7 @@ impl TryFrom<ContainerCommand> for crate::peer::executor::ContainerCommand {
         type ErrorBuilder = ConversionErrorBuilder<ContainerCommand, crate::peer::executor::ContainerCommand>;
 
         crate::peer::executor::ContainerCommand::try_from(value.value)
-            .map_err(|cause| ErrorBuilder::new(cause.to_string()))
+            .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
@@ -337,6 +337,6 @@ impl TryFrom<ContainerCommandArgument> for crate::peer::executor::ContainerComma
         type ErrorBuilder = ConversionErrorBuilder<ContainerCommandArgument, crate::peer::executor::ContainerCommandArgument>;
 
         crate::peer::executor::ContainerCommandArgument::try_from(value.value)
-            .map_err(|cause| ErrorBuilder::new(cause.to_string()))
+            .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }

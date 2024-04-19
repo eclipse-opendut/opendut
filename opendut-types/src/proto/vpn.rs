@@ -33,7 +33,7 @@ impl TryFrom<VpnPeerConfig> for crate::vpn::VpnPeerConfiguration {
         type ErrorBuilder = ConversionErrorBuilder<VpnPeerConfig, crate::vpn::VpnPeerConfiguration>;
 
         let config = value.config
-            .ok_or(ErrorBuilder::new("Config not set"))?;
+            .ok_or(ErrorBuilder::field_not_set("config"))?;
 
         let result = match config {
             vpn_peer_config::Config::Disabled(_) => {
@@ -42,10 +42,10 @@ impl TryFrom<VpnPeerConfig> for crate::vpn::VpnPeerConfiguration {
             vpn_peer_config::Config::Netbird(config) => {
                 let VpnPeerConfigNetbird { management_url, setup_key } = config;
                 let management_url = management_url
-                    .ok_or(ErrorBuilder::new("Management URL not set"))?
+                    .ok_or(ErrorBuilder::field_not_set("management_url"))?
                     .try_into()?;
                 let setup_key = setup_key
-                    .ok_or(ErrorBuilder::new("Setup Key not set"))?
+                    .ok_or(ErrorBuilder::field_not_set("setup_key"))?
                     .try_into()?;
                 crate::vpn::VpnPeerConfiguration::Netbird {
                     management_url,
@@ -71,7 +71,7 @@ impl TryFrom<SetupKey> for crate::vpn::netbird::SetupKey {
         type ErrorBuilder = ConversionErrorBuilder<SetupKey, crate::vpn::netbird::SetupKey>;
 
         let uuid: uuid::Uuid = value.uuid
-            .ok_or(ErrorBuilder::new("Setup Key UUID not set"))?
+            .ok_or(ErrorBuilder::field_not_set("uuid"))?
             .into();
         let result = crate::vpn::netbird::SetupKey::from(uuid);
         Ok(result)

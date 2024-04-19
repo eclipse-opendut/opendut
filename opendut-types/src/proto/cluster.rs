@@ -18,7 +18,7 @@ impl TryFrom<ClusterId> for crate::cluster::ClusterId {
         type ErrorBuilder = ConversionErrorBuilder<ClusterId, crate::cluster::ClusterId>;
 
         value.uuid
-            .ok_or(ErrorBuilder::new("Uuid not set"))
+            .ok_or(ErrorBuilder::field_not_set("uuid"))
             .map(|uuid| Self(uuid.into()))
     }
 }
@@ -46,7 +46,7 @@ impl TryFrom<ClusterName> for crate::cluster::ClusterName {
         type ErrorBuilder = ConversionErrorBuilder<ClusterName, crate::cluster::ClusterName>;
 
         crate::cluster::ClusterName::try_from(value.value)
-            .map_err(|cause| ErrorBuilder::new(cause.to_string()))
+            .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
@@ -70,15 +70,15 @@ impl TryFrom<ClusterConfiguration> for crate::cluster::ClusterConfiguration {
         type ErrorBuilder = ConversionErrorBuilder<ClusterConfiguration, crate::cluster::ClusterConfiguration>;
 
         let cluster_id: crate::cluster::ClusterId = configuration.id
-            .ok_or(ErrorBuilder::new("Id not set"))?
+            .ok_or(ErrorBuilder::field_not_set("id"))?
             .try_into()?;
 
         let cluster_name: crate::cluster::ClusterName = configuration.name
-            .ok_or(ErrorBuilder::new("Name not set"))?
+            .ok_or(ErrorBuilder::field_not_set("name"))?
             .try_into()?;
 
         let leader: crate::peer::PeerId = configuration.leader
-            .ok_or(ErrorBuilder::new("Leader not set"))?
+            .ok_or(ErrorBuilder::field_not_set("leader"))?
             .try_into()?;
 
         Ok(Self {
@@ -107,7 +107,7 @@ impl TryFrom<ClusterDeployment> for crate::cluster::ClusterDeployment {
         type ErrorBuilder = ConversionErrorBuilder<ClusterDeployment, crate::cluster::ClusterDeployment>;
 
         let cluster_id: crate::cluster::ClusterId = deployment.id
-            .ok_or(ErrorBuilder::new("Id not set"))?
+            .ok_or(ErrorBuilder::field_not_set("id"))?
             .try_into()?;
 
         Ok(Self {
@@ -158,7 +158,7 @@ impl TryFrom<ClusterState> for crate::cluster::state::ClusterState {
         type ErrorBuilder = ConversionErrorBuilder<ClusterState, crate::cluster::state::ClusterState>;
 
         let inner = state.inner
-            .ok_or(ErrorBuilder::new("Inner state not set"))?;
+            .ok_or(ErrorBuilder::field_not_set("inner"))?;
 
         match inner {
             cluster_state::Inner::Undeployed(_) => {
@@ -169,7 +169,7 @@ impl TryFrom<ClusterState> for crate::cluster::state::ClusterState {
             }
             cluster_state::Inner::Deployed(state) => {
                 let inner = state.inner
-                    .ok_or(ErrorBuilder::new("Inner state not set"))?;
+                    .ok_or(ErrorBuilder::field_not_set("inner"))?;
                 let inner = match inner {
                     cluster_state_deployed::Inner::Unhealthy(_) => {
                         crate::cluster::state::DeployedClusterState::Unhealthy
@@ -200,11 +200,11 @@ impl TryFrom<ClusterAssignment> for crate::cluster::ClusterAssignment {
         type ErrorBuilder = ConversionErrorBuilder<ClusterAssignment, crate::cluster::ClusterAssignment>;
 
         let cluster_id: crate::cluster::ClusterId = value.id
-            .ok_or(ErrorBuilder::new("field 'id' not set"))?
+            .ok_or(ErrorBuilder::field_not_set("id"))?
             .try_into()?;
 
         let leader: crate::peer::PeerId = value.leader
-            .ok_or(ErrorBuilder::new("field 'leader' not set"))?
+            .ok_or(ErrorBuilder::field_not_set("leader"))?
             .try_into()?;
 
         let assignments: Vec<crate::cluster::PeerClusterAssignment> = value.assignments
@@ -237,15 +237,15 @@ impl TryFrom<PeerClusterAssignment> for crate::cluster::PeerClusterAssignment {
         type ErrorBuilder = ConversionErrorBuilder<PeerClusterAssignment, crate::cluster::PeerClusterAssignment>;
 
         let peer_id: crate::peer::PeerId = value.peer_id
-            .ok_or(ErrorBuilder::new("field 'peer_id' not set"))?
+            .ok_or(ErrorBuilder::field_not_set("peer_id"))?
             .try_into()?;
 
         let vpn_address: std::net::IpAddr = value.vpn_address
-            .ok_or(ErrorBuilder::new("field 'vpn_address' not set"))?
+            .ok_or(ErrorBuilder::field_not_set("vpn_address"))?
             .try_into()?;
 
         let can_server_port: crate::util::Port = value.can_server_port
-            .ok_or(ErrorBuilder::new("field 'can_server_port' not set"))?
+            .ok_or(ErrorBuilder::field_not_set("can_server_port"))?
             .try_into()?;
 
         let device_interfaces: Vec<crate::util::net::NetworkInterfaceDescriptor> = value.device_interfaces

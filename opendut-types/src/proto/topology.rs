@@ -18,7 +18,7 @@ impl TryFrom<DeviceId> for crate::topology::DeviceId {
 
         value
             .uuid
-            .ok_or(ErrorBuilder::new("Uuid not set"))
+            .ok_or(ErrorBuilder::field_not_set("uuid"))
             .map(|uuid| Self(uuid.into()))
     }
 }
@@ -71,7 +71,7 @@ impl TryFrom<DeviceName> for crate::topology::DeviceName {
         type ErrorBuilder = ConversionErrorBuilder<DeviceName, crate::topology::DeviceName>;
 
         crate::topology::DeviceName::try_from(value.value)
-            .map_err(|cause| ErrorBuilder::new(cause.to_string()))
+            .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
@@ -83,7 +83,7 @@ impl TryFrom<DeviceDescription> for crate::topology::DeviceDescription {
             ConversionErrorBuilder<DeviceDescription, crate::topology::DeviceDescription>;
 
         crate::topology::DeviceDescription::try_from(value.value)
-            .map_err(|cause| ErrorBuilder::new(cause.to_string()))
+            .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
@@ -94,7 +94,7 @@ impl TryFrom<DeviceTag> for crate::topology::DeviceTag {
         type ErrorBuilder = ConversionErrorBuilder<DeviceTag, crate::topology::DeviceTag>;
 
         crate::topology::DeviceTag::try_from(value.value)
-            .map_err(|cause| ErrorBuilder::new(cause.to_string()))
+            .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
@@ -135,17 +135,17 @@ impl TryFrom<DeviceDescriptor> for crate::topology::DeviceDescriptor {
 
         let device_id: crate::topology::DeviceId = value
             .id
-            .ok_or(ErrorBuilder::new("Id not set"))?
+            .ok_or(ErrorBuilder::field_not_set("id"))?
             .try_into()?;
         let device_name: crate::topology::DeviceName = value
             .name
-            .ok_or(ErrorBuilder::new("Name not set"))?
+            .ok_or(ErrorBuilder::field_not_set("name"))?
             .try_into()?;
         let device_description: Option<crate::topology::DeviceDescription> =
             value.description.map(TryFrom::try_from).transpose()?;
         let interface: crate::util::net::NetworkInterfaceDescriptor = value
             .interface
-            .ok_or(ErrorBuilder::new("Interface not set"))?
+            .ok_or(ErrorBuilder::field_not_set("interface"))?
             .try_into()?;
         let device_tags: Vec<crate::topology::DeviceTag> = value
             .tags
@@ -307,7 +307,7 @@ mod tests {
             err(eq(ConversionError::new::<
                 DeviceDescriptor,
                 crate::topology::DeviceDescriptor,
-            >("Id not set")))
+            >("Field 'id' not set")))
         )?;
 
         Ok(())
