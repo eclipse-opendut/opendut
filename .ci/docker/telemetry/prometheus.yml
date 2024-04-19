@@ -3,3 +3,9 @@ scrape_configs:
     scrape_interval: 60s
     static_configs:
       - targets: ['otel-collector:8889']
+  - job_name: 'netbird'
+    scheme: http
+    scrape_interval: 60s
+    static_configs:
+      - targets: ['netbird-management-container:8081']
+    metrics_path: /metrics
