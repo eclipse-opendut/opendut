@@ -56,8 +56,9 @@ pub async fn create_with_logging(settings_override: config::Config) -> Result<()
 
     let service_instance_id = format!("carl-{}", Uuid::new_v4());
     
+    let file_logging = None;
     let logging_config = LoggingConfig::load(&settings.config, service_instance_id)?;
-    let mut shutdown = logging::initialize_with_config(logging_config.clone())?;
+    let mut shutdown = logging::initialize_with_config(logging_config.clone(), file_logging)?;
     
     if let logging::OpenTelemetryConfig::Enabled { cpu_collection_interval_ms, .. } = logging_config.opentelemetry {
         logging::initialize_metrics_collection(cpu_collection_interval_ms);

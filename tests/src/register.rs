@@ -11,7 +11,7 @@ use crate::util;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn register_edgar_carl() -> Result<()> {
-    let _ = logging::initialize()?;
+    let _ = logging::initialize_with_defaults()?;
 
     let carl_port = util::select_free_port();
     info!("Running test with CARL port {carl_port}.");

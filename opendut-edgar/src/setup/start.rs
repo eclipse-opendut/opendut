@@ -117,16 +117,15 @@ pub async fn unmanaged(
 
 pub fn init_logging() -> anyhow::Result<()> {
 
-    let log_file = std::env::current_exe().unwrap()
-        .parent().unwrap()
-        .join("setup.log");
+    let mut log_file = std::env::current_exe().unwrap();
+    log_file.set_file_name("setup.log");
+    let file_logging = Some(log_file);
 
     let config = logging::LoggingConfig {
-        file_logging: Some(log_file),
         logging_stdout: false,
         opentelemetry: OpenTelemetryConfig::Disabled,
     };
-    let _ = logging::initialize_with_config(config)?;
+    let _ = logging::initialize_with_config(config, file_logging)?;
 
     Ok(())
 }
