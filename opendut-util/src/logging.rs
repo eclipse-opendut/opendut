@@ -39,11 +39,11 @@ pub enum Error {
     EndpointConfigurationMissing,
 }
 
-pub fn initialize() -> Result<ShutdownHandle, Error> {
-    initialize_with_config(LoggingConfig::default())
+pub fn initialize_with_defaults() -> Result<ShutdownHandle, Error> {
+    initialize_with_config(LoggingConfig::default(), None)
 }
 
-pub fn initialize_with_config(config: LoggingConfig) -> Result<ShutdownHandle, Error> {
+pub fn initialize_with_config(config: LoggingConfig, file_logging: Option<PathBuf>) -> Result<ShutdownHandle, Error> {
 
     global::set_text_map_propagator(TraceContextPropagator::new());
 
@@ -62,7 +62,7 @@ pub fn initialize_with_config(config: LoggingConfig) -> Result<ShutdownHandle, E
         };
 
     let file_logging_layer =
-        if let Some(log_file) = config.file_logging {
+        if let Some(log_file) = file_logging {
 
             let log_file = File::create(&log_file)
                 .unwrap_or_else(|cause| panic!("Failed to open log file at '{}': {cause}", log_file.display()));
@@ -211,7 +211,6 @@ pub fn initialize_metrics_collection(cpu_collection_interval_ms: Duration) {
 
 #[derive(Default, Clone)]
 pub struct LoggingConfig {
-    pub file_logging: Option<PathBuf>,
     pub logging_stdout: bool,
     pub opentelemetry: OpenTelemetryConfig,
 }
@@ -229,7 +228,6 @@ pub enum OpenTelemetryConfig {
 }
 impl LoggingConfig {
     pub fn load(config: &config::Config, service_instance_id: String) -> Result<Self, LoggingConfigError> {
-        let file_logging = None; //TODO load from config
         let logging_stdout = config.get_bool("opentelemetry.logging.stdout")?;
 
         let opentelemetry_enabled = config.get_bool("opentelemetry.enabled")?;
@@ -295,7 +293,6 @@ impl LoggingConfig {
         };
 
         Ok(LoggingConfig {
-            file_logging,
             logging_stdout,
             opentelemetry,
         })
