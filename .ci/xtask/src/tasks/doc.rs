@@ -1,5 +1,8 @@
+use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
+
+use tracing::info;
 
 use crate::core::dependency::Crate;
 use crate::util;
@@ -42,11 +45,17 @@ impl DocCli {
     pub fn default_handling(&self) -> crate::Result {
         match &self.kind {
             DocKindCli::Book { task } => match task {
-                BookCli::Build => book::build()?,
+                BookCli::Build => {
+                    book::build()?;
+                    info!("Placed distribution into: {}", book::out_dir().display());
+                },
                 BookCli::Open => book::open()?,
             },
             DocKindCli::Homepage { task } => match task {
-                HomepageCli::Build => homepage::build()?,
+                HomepageCli::Build => {
+                    homepage::build()?;
+                    info!("Placed distribution into: {}", homepage::out_dir().display());
+                },
             },
         };
         Ok(())
@@ -54,7 +63,6 @@ impl DocCli {
 }
 
 pub mod book {
-    use tracing::info;
     use super::*;
 
     #[tracing::instrument]
@@ -85,8 +93,6 @@ pub mod book {
             .current_dir(doc_dir())
             .run_requiring_success()?;
 
-        info!("Placed distribution into: {}", out_dir.display());
-
         Ok(())
     }
 
@@ -94,24 +100,26 @@ pub mod book {
         crate::constants::workspace_dir().join("doc")
     }
 
-    fn out_dir() -> PathBuf {
+    pub fn out_dir() -> PathBuf {
         crate::constants::target_dir().join("book")
     }
 }
 
 pub mod homepage {
-    use tracing::info;
     use super::*;
 
     #[tracing::instrument]
     pub fn build() -> crate::Result {
+        fs::create_dir_all(out_dir())?;
 
-        Command::new("mdbook")
-            .arg("build")
-            .arg("--dest-dir").arg(&out_dir().join("book"))
-            .current_dir(doc_dir())
-            .run_requiring_success()?;
-
+        book::build()?;
+        fs_extra::dir::copy(
+            book::out_dir(),
+            out_dir().join("book"),
+            &fs_extra::dir::CopyOptions::default()
+                .overwrite(true)
+                .content_only(true)
+        )?;
 
         fs_extra::dir::copy(
             homepage_source_dir(),
@@ -135,8 +143,6 @@ pub mod homepage {
             )?;
         }
 
-        info!("Placed distribution into: {}", out_dir().display());
-
         Ok(())
     }
 
@@ -144,9 +150,7 @@ pub mod homepage {
 
     fn logos_source_dir() -> PathBuf { crate::constants::workspace_dir().join("resources").join("logos") }
 
-    fn doc_dir() -> PathBuf { crate::constants::workspace_dir().join("doc") }
-
-    fn out_dir() -> PathBuf { crate::constants::target_dir().join("homepage") }
+    pub fn out_dir() -> PathBuf { crate::constants::target_dir().join("homepage") }
 
     fn logos_out_dir() -> PathBuf { out_dir().join("resources/logos") }
 
