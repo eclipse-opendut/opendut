@@ -8,6 +8,10 @@ use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
 
 use crate::ListOutputFormat;
 
+/// List all peers
+#[derive(clap::Parser)]
+pub struct ListPeersCli;
+
 #[derive(Table, Debug, Serialize)]
 struct PeerTable {
     #[table(title = "Name")]
@@ -37,34 +41,36 @@ impl Display for PeerStatus {
     }
 }
 
-pub async fn execute(carl: &mut CarlClient, output: ListOutputFormat) -> crate::Result<()> {
-    let connected_peers = carl
-        .broker
-        .list_peers()
-        .await
-        .map_err(|error| format!("Could not list connected peers. {}", error))?;
-    let all_peers = carl
-        .peers
-        .list_peer_descriptors()
-        .await
-        .map_err(|error| format!("Could not list peers.\n  {}", error))?;
-    let peers_table = filter_connected_peers(&all_peers, &connected_peers);
+impl ListPeersCli {
+    pub async fn execute(self, carl: &mut CarlClient, output: ListOutputFormat) -> crate::Result<()> {
+        let connected_peers = carl
+            .broker
+            .list_peers()
+            .await
+            .map_err(|error| format!("Could not list connected peers. {}", error))?;
+        let all_peers = carl
+            .peers
+            .list_peer_descriptors()
+            .await
+            .map_err(|error| format!("Could not list peers.\n  {}", error))?;
+        let peers_table = filter_connected_peers(&all_peers, &connected_peers);
 
-    match output {
-        ListOutputFormat::Table => {
-            print_stdout(peers_table.with_title())
-                .expect("List of clusters should be printable as table.");
+        match output {
+            ListOutputFormat::Table => {
+                print_stdout(peers_table.with_title())
+                    .expect("List of clusters should be printable as table.");
+            }
+            ListOutputFormat::Json => {
+                let json = serde_json::to_string(&peers_table).unwrap();
+                println!("{}", json);
+            }
+            ListOutputFormat::PrettyJson => {
+                let json = serde_json::to_string_pretty(&peers_table).unwrap();
+                println!("{}", json);
+            }
         }
-        ListOutputFormat::Json => {
-            let json = serde_json::to_string(&peers_table).unwrap();
-            println!("{}", json);
-        }
-        ListOutputFormat::PrettyJson => {
-            let json = serde_json::to_string_pretty(&peers_table).unwrap();
-            println!("{}", json);
-        }
+        Ok(())
     }
-    Ok(())
 }
 
 fn filter_connected_peers(

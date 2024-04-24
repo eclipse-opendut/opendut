@@ -8,51 +8,39 @@ use opendut_types::peer::executor::{ContainerImage, Engine, ExecutorDescriptor};
 
 use crate::{ListOutputFormat};
 
-#[derive(Table, Debug, Serialize)]
-struct ContainerExecutorTable {
-    #[table(title = "Engine")]
-    engine: Engine,
-    #[table(title = "Name")]
-    name: String,
-    #[table(title = "Image")]
-    image: ContainerImage,
-    #[table(title = "Volume")]
-    volumes: String,
-    #[table(title = "Devices")]
-    devices: String,
-    #[table(title = "Envs")]
-    envs: String,
-    #[table(title = "Ports")]
-    ports: String,
-    #[table(title = "Command")]
-    command: String,
-    #[table(title = "Args")]
-    args: String,
+/// List all container executors for one peer
+#[derive(clap::Parser)]
+pub struct ListContainerExecutorCli {
+    ///PeerID
+    #[arg(short, long)]
+    pub id: Uuid,
 }
 
-pub async fn execute(carl: &mut CarlClient, id: Uuid, output: ListOutputFormat) -> crate::Result<()> {
-    let peer_id = PeerId::from(id);
-    let peer = carl
-        .peers.get_peer_descriptor(peer_id)
-        .await
-        .map_err(|error| format!("Could not find peer.\n  {}", error))?;
-    let executor_table = filter_connected_peers(&peer);
+impl ListContainerExecutorCli {
+    pub async fn execute(self, carl: &mut CarlClient, output: ListOutputFormat) -> crate::Result<()> {
+        let peer_id = PeerId::from(self.id);
+        let peer = carl
+            .peers.get_peer_descriptor(peer_id)
+            .await
+            .map_err(|error| format!("Could not find peer.\n  {}", error))?;
+        let executor_table = filter_connected_peers(&peer);
 
-    match output {
-        ListOutputFormat::Table => {
-            print_stdout(executor_table.with_title())
-                .expect("List of executors should be printable as table.");
+        match output {
+            ListOutputFormat::Table => {
+                print_stdout(executor_table.with_title())
+                    .expect("List of executors should be printable as table.");
+            }
+            ListOutputFormat::Json => {
+                let json = serde_json::to_string(&executor_table).unwrap();
+                println!("{}", json);
+            }
+            ListOutputFormat::PrettyJson => {
+                let json = serde_json::to_string_pretty(&executor_table).unwrap();
+                println!("{}", json);
+            }
         }
-        ListOutputFormat::Json => {
-            let json = serde_json::to_string(&executor_table).unwrap();
-            println!("{}", json);
-        }
-        ListOutputFormat::PrettyJson => {
-            let json = serde_json::to_string_pretty(&executor_table).unwrap();
-            println!("{}", json);
-        }
+        Ok(())
     }
-    Ok(())
 }
 
 fn filter_connected_peers(
@@ -91,4 +79,26 @@ fn filter_connected_peers(
         }
     };
     executor_table
+}
+
+#[derive(Table, Debug, Serialize)]
+struct ContainerExecutorTable {
+    #[table(title = "Engine")]
+    engine: Engine,
+    #[table(title = "Name")]
+    name: String,
+    #[table(title = "Image")]
+    image: ContainerImage,
+    #[table(title = "Volume")]
+    volumes: String,
+    #[table(title = "Devices")]
+    devices: String,
+    #[table(title = "Envs")]
+    envs: String,
+    #[table(title = "Ports")]
+    ports: String,
+    #[table(title = "Command")]
+    command: String,
+    #[table(title = "Args")]
+    args: String,
 }

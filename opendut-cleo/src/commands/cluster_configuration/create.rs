@@ -5,71 +5,85 @@ use opendut_carl_api::carl::CarlClient;
 use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
 use opendut_types::peer::PeerId;
 use opendut_types::topology::{DeviceDescriptor, DeviceName};
-use crate::CreateOutputFormat;
+use crate::{ClusterConfigurationDevices, CreateOutputFormat};
 
-pub async fn execute(
-    carl: &mut CarlClient,
+/// Create a cluster configuration
+#[derive(clap::Parser)]
+pub struct CreateClusterConfigurationCli {
+    ///Name of the cluster
+    #[arg(short, long)]
     name: String,
+    ///ClusterID
+    #[arg(short, long)]
     cluster_id: Option<Uuid>,
+    ///PeerID of the leader
+    #[arg(short, long)]
     leader_id: Uuid,
-    device_names: Vec<DeviceName>,
-    device_ids: Vec<String>,
-    output: CreateOutputFormat,
-) -> crate::Result<()> {
+    ///List of devices in cluster
+    #[clap(flatten)]
+    devices: ClusterConfigurationDevices,
+}
 
-    let name = ClusterName::try_from(name)
-        .map_err(|cause| format!("Error while creating cluster configuration: {}", cause))?;
+impl CreateClusterConfigurationCli {
+    pub async fn execute(
+        self,
+        carl: &mut CarlClient,
+        output: CreateOutputFormat,
+    ) -> crate::Result<()> {
+        let name = ClusterName::try_from(self.name)
+            .map_err(|cause| format!("Error while creating cluster configuration: {}", cause))?;
 
-    let leader = PeerId::from(leader_id); //TODO: check if peer exists
-    let cluster_id = ClusterId::from(cluster_id.unwrap_or_else(Uuid::new_v4));
+        let leader = PeerId::from(self.leader_id); //TODO: check if peer exists
+        let cluster_id = ClusterId::from(self.cluster_id.unwrap_or_else(Uuid::new_v4));
 
-    let all_devices = carl.peers.list_devices().await
-        .map_err(|error| format!("Error while listing devices.\n  {}", error))?;
-    let checked_devices = check_devices(&all_devices, &device_names, &device_ids);
-    let (devices, errors): (Vec<_>, Vec<_>) = checked_devices.into_iter().partition(Result::is_ok);
-    let devices = devices.into_iter()
-        .map(Result::unwrap)
-        .collect::<Vec<_>>();
-    let device_names = devices.clone().into_iter()
-        .map(|device| device.name)
-        .collect::<Vec<_>>();
-    let device_ids = devices.clone().into_iter()
-        .map(|device| device.id)
-        .collect::<HashSet<_>>();
-    let errors = errors.into_iter().map(Result::unwrap_err).collect::<Vec<_>>();
-    if !errors.is_empty() {
-        Err(format!("Could not create cluster configuration:\n  {}", errors.join("\n  ")))?
-    }
-    if devices.len() < 2 {
-        Err("Specify at least 2 devices per cluster configuration.".to_string())?
-    }
-
-    let configuration = ClusterConfiguration { id: cluster_id, name: Clone::clone(&name), leader, devices: device_ids };
-    carl.cluster.store_cluster_configuration(configuration.clone()).await
-        .map_err(|err| format!("Could not store cluster configuration. Make sure the application is running. Error: {}", err))?;
-
-    match output {
-        CreateOutputFormat::Text => {
-            println!("Successfully stored new cluster configuration.");
-
-            println!("ClusterID: {:?}", cluster_id);
-            println!("Name of the Cluster: {:?}", name);
-            println!("The following devices are part of the cluster configuration:");
-            for device_name in device_names.iter() {
-                println!("\x09{}", device_name);
-            };
+        let all_devices = carl.peers.list_devices().await
+            .map_err(|error| format!("Error while listing devices.\n  {}", error))?;
+        let checked_devices = check_devices(&all_devices, &self.devices.device_names, &self.devices.device_ids);
+        let (devices, errors): (Vec<_>, Vec<_>) = checked_devices.into_iter().partition(Result::is_ok);
+        let devices = devices.into_iter()
+            .map(Result::unwrap)
+            .collect::<Vec<_>>();
+        let device_names = devices.clone().into_iter()
+            .map(|device| device.name)
+            .collect::<Vec<_>>();
+        let device_ids = devices.clone().into_iter()
+            .map(|device| device.id)
+            .collect::<HashSet<_>>();
+        let errors = errors.into_iter().map(Result::unwrap_err).collect::<Vec<_>>();
+        if !errors.is_empty() {
+            Err(format!("Could not create cluster configuration:\n  {}", errors.join("\n  ")))?
         }
-        CreateOutputFormat::Json => {
-            let json = serde_json::to_string(&configuration).unwrap();
-            println!("{}", json);
+        if devices.len() < 2 {
+            Err("Specify at least 2 devices per cluster configuration.".to_string())?
         }
-        CreateOutputFormat::PrettyJson => {
-            let json = serde_json::to_string_pretty(&configuration).unwrap();
-            println!("{}", json);
-        }
-    }
 
-    Ok(())
+        let configuration = ClusterConfiguration { id: cluster_id, name: Clone::clone(&name), leader, devices: device_ids };
+        carl.cluster.store_cluster_configuration(configuration.clone()).await
+            .map_err(|err| format!("Could not store cluster configuration. Make sure the application is running. Error: {}", err))?;
+
+        match output {
+            CreateOutputFormat::Text => {
+                println!("Successfully stored new cluster configuration.");
+
+                println!("ClusterID: {:?}", cluster_id);
+                println!("Name of the Cluster: {:?}", name);
+                println!("The following devices are part of the cluster configuration:");
+                for device_name in device_names.iter() {
+                    println!("\x09{}", device_name);
+                };
+            }
+            CreateOutputFormat::Json => {
+                let json = serde_json::to_string(&configuration).unwrap();
+                println!("{}", json);
+            }
+            CreateOutputFormat::PrettyJson => {
+                let json = serde_json::to_string_pretty(&configuration).unwrap();
+                println!("{}", json);
+            }
+        }
+
+        Ok(())
+    }
 }
 
 fn check_devices(all_devices: &[DeviceDescriptor], device_names: &[DeviceName], device_ids: &[String]) -> Vec<Result<DeviceDescriptor, crate::Error>> {

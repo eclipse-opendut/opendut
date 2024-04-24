@@ -5,13 +5,10 @@ use std::str::FromStr;
 
 use clap::{Parser, Subcommand, ValueEnum};
 use console::Style;
-use uuid::Uuid;
 
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::peer::executor::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume};
 use opendut_types::peer::PeerSetup;
 use opendut_types::topology::DeviceName;
-use opendut_types::util::net::NetworkInterfaceName;
 use opendut_util::settings::{FileFormat, load_config};
 
 mod commands;
@@ -22,7 +19,7 @@ type Result<T> = std::result::Result<T, Error>;
 opendut_util::app_info!();
 
 /// CLEO is a command line tool to manage openDuT resources.
-#[derive(Parser, Debug)]
+#[derive(Parser)]
 #[command(author, about, long_about = None)]
 #[command(long_version = crate::app_info::formatted())]
 struct Args {
@@ -30,7 +27,7 @@ struct Args {
     command: Commands,
 }
 
-#[derive(Subcommand, Debug)]
+#[derive(Subcommand)]
 enum Commands {
     ///Display openDuT resources
     List {
@@ -48,20 +45,8 @@ enum Commands {
         #[arg(value_enum, short, long, default_value_t=CreateOutputFormat::Text)]
         output: CreateOutputFormat,
     },
-    ///Generate a setup string
-    GeneratePeerSetup {
-        ///PeerID
-        #[arg(short, long)]
-        id: Uuid,
-    },
-    DecodePeerSetup {
-        ///Setup string
-        #[arg()]
-        setup_string: ParseablePeerSetup,
-        ///Text, JSON or prettified JSON as output format
-        #[arg(value_enum, short, long, default_value_t=DecodePeerSetupOutputFormat::Json)]
-        output: DecodePeerSetupOutputFormat,
-    },
+    GeneratePeerSetup(commands::generate_peer_setup::GeneratePeerSetupCli),
+    DecodePeerSetup(commands::decode_peer_setup::DecodePeerSetupCli),
     ///Describe openDuT resource
     Describe {
         ///Name of openDuT resource
@@ -89,20 +74,16 @@ enum Commands {
     Config,
 }
 
-#[derive(Subcommand, Clone, Debug)]
+#[derive(Subcommand)]
 enum ListResource {
-    ClusterConfigurations,
-    ClusterDeployments,
-    Peers,
-    Devices,
-    ContainerExecutor {
-        ///PeerID
-        #[arg(short, long)]
-        id: Uuid,
-    },
+    ClusterConfigurations(commands::cluster_configuration::list::ListClusterConfigurationsCli),
+    ClusterDeployments(commands::cluster_deployment::list::ListClusterDeploymentsCli),
+    Peers(commands::peer::list::ListPeersCli),
+    Devices(commands::device::list::ListDevicesCli),
+    ContainerExecutor(commands::executor::list::ListContainerExecutorCli),
 }
 
-#[derive(Debug, Clone, clap::Args)]
+#[derive(clap::Args)]
 #[group(required=true, multiple = true)]
 struct ClusterConfigurationDevices {
     #[arg(long, num_args = 0..)]
@@ -111,198 +92,65 @@ struct ClusterConfigurationDevices {
     device_ids: Vec<String>,
 }
 
-#[derive(Clone, Debug, ValueEnum)]
+#[derive(ValueEnum, Clone)]
 pub enum EngineVariants {
     Docker,
     Podman,
 }
 
-#[derive(Clone, Debug, ValueEnum)]
+#[derive(ValueEnum, Clone)]
 pub enum NetworkInterfaceType {
     Ethernet,
     Can,
 }
 
-#[derive(Subcommand, Clone, Debug)]
+#[derive(Subcommand)]
 enum CreateResource {
-    ClusterConfiguration {
-        ///Name of the cluster
-        #[arg(short, long)]
-        name: String,
-        ///ClusterID
-        #[arg(short, long)]
-        cluster_id: Option<Uuid>,
-        ///PeerID of the leader
-        #[arg(short, long)]
-        leader_id: Uuid,
-        ///List of devices in cluster
-        #[clap(flatten)]
-        devices: ClusterConfigurationDevices,
-    },
-    ClusterDeployment {
-        ///ClusterID
-        #[arg(short, long)]
-        id: Uuid,
-    },
-    Peer {
-        ///Name of peer
-        #[arg(short, long)]
-        name: String,
-        ///PeerID
-        #[arg(short, long)]
-        id: Option<Uuid>,
-        ///Location of peer
-        #[arg(long)]
-        location: Option<String>,
-    },
-    ContainerExecutor {
-        ///ID of the peer to add the container executor to
-        #[arg(long)]
-        peer_id: Uuid,
-        ///Engine
-        #[arg(short, long)]
-        engine: EngineVariants,
-        ///Container name
-        #[arg(short, long)]
-        name: Option<ContainerName>,
-        ///Container image
-        #[arg(short, long)]
-        image: ContainerImage,
-        ///Container volumes
-        #[arg(short, long, num_args = 1..)]
-        volumes: Option<Vec<ContainerVolume>>,
-        ///Container devices
-        #[arg(long, num_args = 1..)]
-        devices: Option<Vec<ContainerDevice>>,
-        ///Container envs
-        #[arg(long, num_args = 1..)]
-        envs: Option<Vec<String>>,
-        ///Container ports
-        #[arg(short, long, num_args = 1..)]
-        ports: Option<Vec<ContainerPortSpec>>,
-        ///Container command
-        #[arg(short, long)]
-        command: Option<ContainerCommand>,
-        ///Container arguments
-        #[arg(short, long, num_args = 1..)]
-        args: Option<Vec<ContainerCommandArgument>>,
-    },
-    NetworkInterface {
-        ///ID of the peer to add the network interface to
-        #[arg(long)]
-        peer_id: Uuid,
-        ///Type of the network interface
-        #[arg(long("type"))]
-        interface_type: NetworkInterfaceType,
-        ///Name of the network interface
-        #[arg(long("name"))]
-        interface_name: String,
-    },
-    Device {
-        ///ID of the peer to add the device to
-        #[arg(long)]
-        peer_id: Uuid,
-        ///ID of the device to be added or updated
-        #[arg(long)]
-        device_id: Option<Uuid>,
-        ///Name of the device
-        #[arg(long)]
-        name: Option<String>,
-        ///Description of device
-        #[arg(long)]
-        description: Option<String>,
-        ///Interface of device
-        #[arg(long)]
-        interface: Option<NetworkInterfaceName>,
-        /// Tags of device
-        #[arg(long("tag"))]
-        tags: Option<Vec<String>>,
-    }
+    ClusterConfiguration(commands::cluster_configuration::create::CreateClusterConfigurationCli),
+    ClusterDeployment(commands::cluster_deployment::create::CreateClusterDeploymentCli),
+    Peer(commands::peer::create::CreatePeerCli),
+    ContainerExecutor(commands::executor::create::CreateContainerExecutorCli),
+    NetworkInterface(commands::network_interface::create::CreateNetworkInterfaceCli),
+    Device(commands::device::create::CreateDeviceCli)
 }
 
-#[derive(Subcommand, Clone, Debug)]
+#[derive(Subcommand)]
 enum DescribeResource {
-    ClusterConfiguration {
-        ///ClusterID
-        #[arg(short, long)]
-        id: Uuid,
-    },
-    Peer {
-        ///PeerID
-        #[arg(short, long)]
-        id: Uuid,
-    },
-    Device {
-        ///DeviceID
-        #[arg(short, long)]
-        id: Uuid,
-    },
+    ClusterConfiguration(commands::cluster_configuration::describe::DescribeClusterConfigurationCli),
+    Peer(commands::peer::describe::DescribePeerCli),
+    Device(commands::device::describe::DescribeDeviceCli),
 }
 
-#[derive(Subcommand, Clone, Debug)]
+#[derive(Subcommand)]
 enum FindResource {
-    Device {
-        ///Criteria for search
-        #[arg(required = true, value_delimiter = ' ', num_args = 1..)]
-        criteria: Vec<String>,
-    },
+    Device(commands::device::find::FindDeviceCli),
 }
 
-#[derive(Subcommand, Clone, Debug)]
+#[derive(Subcommand)]
 enum DeleteResource {
-    ClusterConfiguration {
-        ///ClusterID
-        #[arg(short, long)]
-        id: Uuid,
-    },
-    ClusterDeployment {
-        ///ClusterID
-        #[arg(short, long)]
-        id: Uuid,
-    },
-    Peer {
-        ///PeerID
-        #[arg(short, long)]
-        id: Uuid,
-    },
-    ContainerExecutor {
-        ///ID of the peer to delete the container executor from
-        #[arg(long)]
-        peer_id: Uuid,
-        ///Container images to delete
-        #[arg(short, long)]
-        images: Vec<ContainerImage>,
-    },
-    NetworkInterface {
-        ///ID of the peer to delete the network configuration from
-        #[arg(long)]
-        peer_id: Uuid,
-        ///NetworkConfiguration Interface
-        #[arg(long("interface"))]
-        interfaces: Vec<String>,
-    },
-    Device {
-        ///DeviceID
-        #[arg(short, long)]
-        id: Uuid,
-    },
+    ClusterConfiguration(commands::cluster_configuration::delete::DeleteClusterConfigurationCli),
+    ClusterDeployment(commands::cluster_deployment::delete::DeleteClusterDeploymentCli),
+    Peer(commands::peer::delete::DeletePeerCli),
+    ContainerExecutor(commands::executor::delete::DeleteContainerExecutorCli),
+    NetworkInterface(commands::network_interface::delete::DeleteNetworkInterfaceCli),
+    Device(commands::device::delete::DeleteDeviceCli),
 }
 
-#[derive(ValueEnum, Clone, Debug)]
+#[derive(ValueEnum, Clone)]
 pub(crate) enum CreateOutputFormat {
     Text,
     Json,
     PrettyJson,
 }
 
-#[derive(ValueEnum, Clone, Debug)]
+#[derive(ValueEnum, Clone)]
 enum ListOutputFormat {
     Table,
     Json,
     PrettyJson,
 }
 
-#[derive(ValueEnum, Clone, Debug)]
+#[derive(ValueEnum, Clone)]
 enum DescribeOutputFormat {
     Text,
     Json,
@@ -319,14 +167,12 @@ impl From<CreateOutputFormat> for DescribeOutputFormat {
     }
 }
 
-#[derive(ValueEnum, Clone, Debug)]
+#[derive(ValueEnum, Clone)]
 enum DecodePeerSetupOutputFormat {
     Text,
     Json,
     PrettyJson,
 }
-
-
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -376,90 +222,90 @@ async fn execute() -> Result<()> {
     match args.command {
         Commands::List { resource, output } => {
             match resource {
-                ListResource::ClusterConfigurations => {
-                    commands::cluster_configuration::list::execute(&mut carl, output).await?;
+                ListResource::ClusterConfigurations(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
                 }
-                ListResource::ClusterDeployments => {
-                    commands::cluster_deployment::list::execute(&mut carl, output).await?;
+                ListResource::ClusterDeployments(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
                 }
-                ListResource::Peers => {
-                    commands::peer::list::execute(&mut carl, output).await?;
+                ListResource::Peers(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
                 }
-                ListResource::ContainerExecutor{ id }  => {
-                    commands::executor::list::execute(&mut carl, id, output).await?;
+                ListResource::ContainerExecutor(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
                 }
-                ListResource::Devices => {
-                    commands::device::list::execute(&mut carl, output).await?;
+                ListResource::Devices(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
                 }
             }
         }
         Commands::Create { resource, output } => {
             match resource {
-                CreateResource::ClusterConfiguration { name, cluster_id, leader_id, devices  } => {
-                    commands::cluster_configuration::create::execute(&mut carl, name, cluster_id, leader_id, devices.device_names, devices.device_ids, output).await?;
+                CreateResource::ClusterConfiguration(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
                 }
-                CreateResource::ClusterDeployment { id} => {
-                    commands::cluster_deployment::create::execute(&mut carl, id, output).await?;
+                CreateResource::ClusterDeployment(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
                 }
-                CreateResource::Peer { name, id, location} => {
-                    commands::peer::create::execute(&mut carl, name, id, location, output).await?;
+                CreateResource::Peer(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
                 }
-                CreateResource::ContainerExecutor { peer_id, engine, name, image, volumes, devices, envs, ports, command, args} => {
-                    commands::executor::create::execute(&mut carl, peer_id, engine, name, image, volumes, devices, envs, ports, command, args, output).await?;
+                CreateResource::ContainerExecutor(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
                 }
-                CreateResource::NetworkInterface { peer_id, interface_type, interface_name} => {
-                    commands::network_interface::create::execute(&mut carl, peer_id, interface_type, interface_name, output).await?;
+                CreateResource::NetworkInterface(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
                 }
-                CreateResource::Device { peer_id, device_id, name, description, interface, tags } => {
-                    commands::device::create::execute(&mut carl, peer_id, device_id, name, description, interface, tags, output).await?;
+                CreateResource::Device(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
                 }
             }
         }
-        Commands::GeneratePeerSetup { id } => {
-            commands::peer::generate_peer_setup::execute(&mut carl, id).await?;
+        Commands::GeneratePeerSetup(implementation) => {
+            implementation.execute(&mut carl).await?;
         }
-        Commands::DecodePeerSetup { setup_string, output } => {
-            commands::peer::decode_peer_setup::execute(*setup_string.0, output).await?;
+        Commands::DecodePeerSetup(implementation) => {
+            implementation.execute().await?;
         }
         Commands::Describe { resource, output } => {
             match resource {
-                DescribeResource::ClusterConfiguration { id } => {
-                    commands::cluster_configuration::describe::execute(&mut carl, id, output).await?
+                DescribeResource::ClusterConfiguration(implementation)=> {
+                    implementation.execute(&mut carl, output).await?
                 }
-                DescribeResource::Peer { id } => {
-                    commands::peer::describe::execute(&mut carl, id, output).await?
+                DescribeResource::Peer(implementation)=> {
+                    implementation.execute(&mut carl, output).await?
                 }
-                DescribeResource::Device { id } => {
-                    commands::device::describe::execute(&mut carl, id, output).await?
+                DescribeResource::Device (implementation)=> {
+                    implementation.execute(&mut carl, output).await?
                 }
             }
         }
         Commands::Delete { resource} => {
             match resource {
-                DeleteResource::ClusterConfiguration { id } => {
-                    commands::cluster_configuration::delete::execute(&mut carl, id).await?;
+                DeleteResource::ClusterConfiguration(implementation) => {
+                    implementation.execute(&mut carl).await?;
                 }
-                DeleteResource::ClusterDeployment { id } => {
-                    commands::cluster_deployment::delete::execute(&mut carl, id).await?;
+                DeleteResource::ClusterDeployment(implementation) => {
+                    implementation.execute(&mut carl).await?;
                 }
-                DeleteResource::Peer { id } => {
-                    commands::peer::delete::execute(&mut carl, id).await?;
+                DeleteResource::Peer(implementation) => {
+                    implementation.execute(&mut carl).await?;
                 }
-                DeleteResource::ContainerExecutor { peer_id, images} => {
-                    commands::executor::delete::execute(&mut carl, peer_id, images).await?;
+                DeleteResource::ContainerExecutor(implementation) => {
+                    implementation.execute(&mut carl).await?;
                 }
-                DeleteResource::NetworkInterface { peer_id,  interfaces} => {
-                    commands::network_interface::delete::execute(&mut carl, peer_id, interfaces).await?;
+                DeleteResource::NetworkInterface(implementation) => {
+                    implementation.execute(&mut carl).await?;
                 }
-                DeleteResource::Device { id } => {
-                    commands::device::delete::execute(&mut carl, id).await?;
+                DeleteResource::Device(implementation) => {
+                    implementation.execute(&mut carl).await?;
                 }
             }
         }
         Commands::Find { resource, output } => {
             match resource {
-                FindResource::Device { criteria } => {
-                    commands::device::find::execute(&mut carl, criteria, output).await?;
+                FindResource::Device(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
                 }
             }
         }
@@ -469,7 +315,6 @@ async fn execute() -> Result<()> {
     }
     Ok(())
 }
-
 
 #[derive(Clone, Debug)]
 struct ParseablePeerSetup(Box<PeerSetup>);

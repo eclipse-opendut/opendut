@@ -4,30 +4,43 @@ use opendut_carl_api::carl::CarlClient;
 use opendut_types::peer::executor::{ContainerImage, ExecutorDescriptor};
 use opendut_types::peer::PeerId;
 
-pub async fn execute(carl: &mut CarlClient, id: Uuid, images: Vec<ContainerImage>) -> crate::Result<()> {
-    let id = PeerId::from(id);
+/// Delete a container executor
+#[derive(clap::Parser)]
+pub struct DeleteContainerExecutorCli {
+    ///ID of the peer to delete the container executor from
+    #[arg(long)]
+    peer_id: Uuid,
+    ///Container images to delete
+    #[arg(short, long)]
+    images: Vec<ContainerImage>,
+}
 
-    let mut peer = carl.peers
-        .get_peer_descriptor(id)
-        .await
-        .map_err(|error| format!("Failed to get peer with the id '{}'.\n  {}", id, error))?;
+impl DeleteContainerExecutorCli {
+    pub async fn execute(self, carl: &mut CarlClient) -> crate::Result<()> {
+        let id = PeerId::from(self.peer_id);
 
-    let container_images = images.into_iter()
-        .map(ContainerImage::try_from)
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|error| error.to_string())?;
+        let mut peer = carl.peers
+            .get_peer_descriptor(id)
+            .await
+            .map_err(|error| format!("Failed to get peer with the id '{}'.\n  {}", id, error))?;
 
-    for container_image in container_images {
-        peer.executors.executors.retain(|executor| match executor {
-            ExecutorDescriptor::Executable => true,
-            ExecutorDescriptor::Container { image, .. } => {
-                image != &container_image
-            }
-        } )
-    };
+        let container_images = self.images.into_iter()
+            .map(ContainerImage::try_from)
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|error| error.to_string())?;
 
-    carl.peers.store_peer_descriptor(peer).await
-        .map_err(|error| format!("Failed to delete container executor for peer.\n  {}", error))?;
+        for container_image in container_images {
+            peer.executors.executors.retain(|executor| match executor {
+                ExecutorDescriptor::Executable => true,
+                ExecutorDescriptor::Container { image, .. } => {
+                    image != &container_image
+                }
+            })
+        };
 
-    Ok(())
+        carl.peers.store_peer_descriptor(peer).await
+            .map_err(|error| format!("Failed to delete container executor for peer.\n  {}", error))?;
+
+        Ok(())
+    }
 }

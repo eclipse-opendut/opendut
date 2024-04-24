@@ -5,6 +5,10 @@ use opendut_types::cluster::{ClusterId, ClusterName};
 
 use crate::ListOutputFormat;
 
+/// List all cluster configurations
+#[derive(clap::Parser)]
+pub struct ListClusterConfigurationsCli;
+
 #[derive(Table)]
 struct ClusterTable {
     #[table(title = "Name")]
@@ -13,31 +17,33 @@ struct ClusterTable {
     id: ClusterId,
 }
 
-pub async fn execute(carl: &mut CarlClient, output: ListOutputFormat) -> crate::Result<()> {
-    let clusters = carl.cluster.list_cluster_configurations().await
-        .map_err(|error| format!("Could not list any cluster configurations.\n  {error}"))?;
+impl ListClusterConfigurationsCli {
+    pub async fn execute(self, carl: &mut CarlClient, output: ListOutputFormat) -> crate::Result<()> {
+        let clusters = carl.cluster.list_cluster_configurations().await
+            .map_err(|error| format!("Could not list any cluster configurations.\n  {error}"))?;
 
-    match output {
-        ListOutputFormat::Table => {
-            let cluster_table = clusters.into_iter()
-                .map(|cluster| {
-                    ClusterTable {
-                        name: cluster.name,
-                        id: cluster.id,
-                    }
-                })
-                .collect::<Vec<_>>();
-            print_stdout(cluster_table.with_title())
-                .expect("List of cluster configurations should be printable as table.");
+        match output {
+            ListOutputFormat::Table => {
+                let cluster_table = clusters.into_iter()
+                    .map(|cluster| {
+                        ClusterTable {
+                            name: cluster.name,
+                            id: cluster.id,
+                        }
+                    })
+                    .collect::<Vec<_>>();
+                print_stdout(cluster_table.with_title())
+                    .expect("List of cluster configurations should be printable as table.");
+            }
+            ListOutputFormat::Json => {
+                let json = serde_json::to_string(&clusters).unwrap();
+                println!("{}", json);
+            }
+            ListOutputFormat::PrettyJson => {
+                let json = serde_json::to_string_pretty(&clusters).unwrap();
+                println!("{}", json);
+            }
         }
-        ListOutputFormat::Json => {
-            let json = serde_json::to_string(&clusters).unwrap();
-            println!("{}", json);
-        }
-        ListOutputFormat::PrettyJson => {
-            let json = serde_json::to_string_pretty(&clusters).unwrap();
-            println!("{}", json);
-        }
+        Ok(())
     }
-    Ok(())
 }
