@@ -2,6 +2,9 @@ version: "3.9"
 services:
   signal:
     image: netbirdio/signal:${NETBIRD_SIGNAL_VERSION}
+    labels:
+      logging: "promtail"
+      logging_job: "netbird-signal"
     volumes:
       - netbird-signal:/var/lib/netbird
     networks:
@@ -16,6 +19,9 @@ services:
       dockerfile: ./.ci/docker/netbird/Dockerfile_management
       args:
         NETBIRD_MANAGEMENT_VERSION: ${NETBIRD_MANAGEMENT_VERSION}
+    labels:
+      logging: "promtail"
+      logging_job: "netbird-management"
     volumes:
       - netbird-mgmt:/var/lib/netbird
       - ./management.json:/etc/netbird/management.json
@@ -51,6 +57,9 @@ services:
       - "--accesslog"
     environment:
       - "LEGO_CA_CERTIFICATES=/opendut-tls/insecure-development-ca.pem"
+    labels:
+      logging: "promtail"
+      logging_job: "netbird-traefik"
 #    ports:
 #      - "127.0.0.1:8082:8080"
 #      - "80:80"
@@ -75,6 +84,9 @@ services:
         - PUSER=$PUSER
         - PGROUP=$PGROUP
     user: $DOCKER_USER # ${UID}:${GID} run with user privileges
+    labels:
+      logging: "promtail"
+      logging_job: "netbird-management-init"
     volumes:
       #- ./management/:/management
       - netbird-management-keys:/management
@@ -95,6 +107,9 @@ services:
     # https://hub.docker.com/r/coturn/coturn/tags
     image: coturn/coturn:4.6.2
     hostname: netbird-coturn
+    labels:
+      logging: "promtail"
+      logging_job: "netbird-coturn"
     volumes:
       - ./turnserver.conf:/etc/turnserver.conf:ro
     command:
@@ -120,6 +135,9 @@ services:
       - AUTH_SUPPORTED_SCOPES=openid profile email offline_access api
       - AUTH_REDIRECT_URI=
       - AUTH_SILENT_REDIRECT_URI=
+    labels:
+      logging: "promtail"
+      logging_job: "netbird-dashboard"
     networks:
       opendutnet:
         ipv4_address: 192.168.32.213

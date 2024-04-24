@@ -1,0 +1,67 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker_logs_scrape
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: label
+            values: ["logging=promtail"]
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container'
+      - source_labels: ['__meta_docker_container_log_stream']
+        target_label: 'logstream'
+      - source_labels: ['__meta_docker_container_label_logging_job']
+        target_label: 'job'
+    pipeline_stages:
+      - match:
+          docker: { }
+          selector: '{job=~"netbird-traefik|netbird-coturn|netbird-dashboard|netbird-management|netbird-management-init|netbird-signal"}'
+          stages:
+            - static_labels:
+                level: DEFAULT
+            - regex:
+                expression: '.*level=(?P<level>[a-zA-Z]+).*'
+            - template:
+                source: level
+                template: '{{ ToUpper .Value }}'
+            - labels:
+                level:
+            - regex:
+                expression: '.*\([0-9]+\): (?P<level>[A-Z]+):.*'
+            - template:
+                source: level
+                template: '{{ ToUpper .Value }}'
+            - labels:
+                level:
+            - regex:
+                expression: '.*[0-9]{2}:[0-9]{2}:[0-9]{2},[0-9]+ (?P<level>[A-Z]+) .*'
+            - template:
+                source: level
+                template: '{{ ToUpper .Value }}'
+            - labels:
+                level:
+            - regex:
+                expression: '.*[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z (?P<level>[A-Z]+) .*'
+            - template:
+                source: level
+                template: '{{ ToUpper .Value }}'
+            - labels:
+                level:
+      - match:
+          docker: { }
+          selector: '{level="WARNING"}'
+          stages:
+            - static_labels:
+                level: WARN
