@@ -389,7 +389,7 @@ async fn execute() -> Result<()> {
                     commands::executor::list::execute(&mut carl, id, output).await?;
                 }
                 ListResource::Devices => {
-                    commands::device::list_devices(&mut carl, output).await?;
+                    commands::device::list::execute(&mut carl, output).await?;
                 }
             }
         }
