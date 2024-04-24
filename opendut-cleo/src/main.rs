@@ -1,5 +1,6 @@
 use std::ops::Not;
 use std::path::PathBuf;
+use std::process::ExitCode;
 use std::str::FromStr;
 
 use clap::{Parser, Subcommand, ValueEnum};
@@ -7,8 +8,8 @@ use console::Style;
 use uuid::Uuid;
 
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::peer::PeerSetup;
 use opendut_types::peer::executor::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume};
+use opendut_types::peer::PeerSetup;
 use opendut_types::topology::DeviceName;
 use opendut_types::util::net::NetworkInterfaceName;
 use opendut_util::settings::{FileFormat, load_config};
@@ -328,12 +329,14 @@ enum DecodePeerSetupOutputFormat {
 
 
 #[tokio::main]
-async fn main() {
+async fn main() -> ExitCode {
     let red = Style::new().red();
-    if let Err(error) = execute().await {
-        eprintln!("{}", red.apply_to(error));
-        // indicate error to calling processes by setting exit code to 1
-        std::process::exit(1);
+    match execute().await {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(error) => {
+            eprintln!("{}", red.apply_to(error));
+            ExitCode::FAILURE
+        }
     }
 }
 
