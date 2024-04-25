@@ -1,12 +1,11 @@
 # Setup of CARL
 
-- Download the opendut-carl binary from the openDuT GitHub project: https://github.com/eclipse-opendut/opendut/releases
-- Unpack the archive on your target system, into `/opt/opendut-carl/`.
-
-- Add a configuration file
-`/etc/opendut/carl.toml` (Linux)
-and configure as needed.
+- To configure CARL, you can create a configuration file under `/etc/opendut/carl.toml`.  
 The possible configuration values and their defaults can be seen here:  
 ```toml
 {{#include ../../../../opendut-carl/carl.toml}}
 ```
+
+## Additional notes
+- We're currently working on automating the setup of CARL, since a complete setup requires additional services.  
+  You can find a rough setup in the repository under `.ci/docker/`, which you may be able to adapt.
