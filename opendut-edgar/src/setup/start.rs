@@ -34,7 +34,7 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
 
     let mut tasks: Vec<Box<dyn Task>> = vec![
         Box::new(tasks::WriteCaCertificate::with_certificate(peer_setup.ca)),
-        Box::new(tasks::CheckOsRequirements),
+        Box::new(tasks::CheckCommandLinePrograms),
         Box::new(tasks::WriteConfiguration::with_override(
             write_configuration::ConfigOverride {
                 peer_id: peer_setup.id,
@@ -100,7 +100,7 @@ pub async fn unmanaged(
     let network_interface_manager = NetworkInterfaceManager::create()?;
 
     let tasks: Vec<Box<dyn Task>> = vec![
-        Box::new(tasks::CheckOsRequirements),
+        Box::new(tasks::CheckCommandLinePrograms),
         Box::new(tasks::netbird::Unpack::default()),
         Box::new(tasks::netbird::InstallService),
         Box::new(tasks::netbird::StartService),

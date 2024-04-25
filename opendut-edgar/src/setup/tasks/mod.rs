@@ -1,8 +1,8 @@
 mod check_carl_reachable;
 pub use check_carl_reachable::CheckCarlReachable;
 
-mod check_os_requirements;
-pub use check_os_requirements::CheckOsRequirements;
+mod check_command_line_programs;
+pub use check_command_line_programs::CheckCommandLinePrograms;
 
 mod claim_file_ownership;
 pub use claim_file_ownership::ClaimFileOwnership;
