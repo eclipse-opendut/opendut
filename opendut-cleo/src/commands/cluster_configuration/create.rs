@@ -1,21 +1,25 @@
 use std::collections::HashSet;
 use std::ops::Not;
+
 use uuid::Uuid;
+
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
+use opendut_types::cluster::{ClusterConfiguration, ClusterId};
 use opendut_types::peer::PeerId;
 use opendut_types::topology::{DeviceDescriptor, DeviceName};
+
 use crate::{ClusterConfigurationDevices, CreateOutputFormat};
+use crate::parse::cluster::{ParseableClusterId, ParseableClusterName};
 
 /// Create a cluster configuration
 #[derive(clap::Parser)]
 pub struct CreateClusterConfigurationCli {
     ///Name of the cluster
     #[arg(short, long)]
-    name: String,
+    name: ParseableClusterName,
     ///ClusterID
     #[arg(short, long)]
-    cluster_id: Option<Uuid>,
+    cluster_id: Option<ParseableClusterId>,
     ///PeerID of the leader
     #[arg(short, long)]
     leader_id: Uuid,
@@ -30,11 +34,12 @@ impl CreateClusterConfigurationCli {
         carl: &mut CarlClient,
         output: CreateOutputFormat,
     ) -> crate::Result<()> {
-        let name = ClusterName::try_from(self.name)
-            .map_err(|cause| format!("Error while creating cluster configuration: {}", cause))?;
+        let ParseableClusterName(cluster_name) = self.name;
 
         let leader = PeerId::from(self.leader_id); //TODO: check if peer exists
-        let cluster_id = ClusterId::from(self.cluster_id.unwrap_or_else(Uuid::new_v4));
+        let cluster_id = self.cluster_id
+            .map(|ParseableClusterId(id)| id)
+            .unwrap_or_else(ClusterId::random);
 
         let all_devices = carl.peers.list_devices().await
             .map_err(|error| format!("Error while listing devices.\n  {}", error))?;
@@ -57,7 +62,7 @@ impl CreateClusterConfigurationCli {
             Err("Specify at least 2 devices per cluster configuration.".to_string())?
         }
 
-        let configuration = ClusterConfiguration { id: cluster_id, name: Clone::clone(&name), leader, devices: device_ids };
+        let configuration = ClusterConfiguration { id: cluster_id, name: Clone::clone(&cluster_name), leader, devices: device_ids };
         carl.cluster.store_cluster_configuration(configuration.clone()).await
             .map_err(|err| format!("Could not store cluster configuration. Make sure the application is running. Error: {}", err))?;
 
@@ -65,8 +70,8 @@ impl CreateClusterConfigurationCli {
             CreateOutputFormat::Text => {
                 println!("Successfully stored new cluster configuration.");
 
-                println!("ClusterID: {:?}", cluster_id);
-                println!("Name of the Cluster: {:?}", name);
+                println!("ClusterID: {}", cluster_id);
+                println!("Name of the Cluster: {}", cluster_name);
                 println!("The following devices are part of the cluster configuration:");
                 for device_name in device_names.iter() {
                     println!("\x09{}", device_name);
@@ -127,11 +132,13 @@ fn check_devices(all_devices: &[DeviceDescriptor], device_names: &[DeviceName], 
 
 #[cfg(test)]
 mod test {
-    use super::*;
     use googletest::prelude::*;
     use rstest::{fixture, rstest};
+
     use opendut_types::topology::{DeviceDescription, DeviceId, DeviceName};
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
+
+    use super::*;
 
     #[fixture]
     fn all_devices() -> Vec<DeviceDescriptor> {

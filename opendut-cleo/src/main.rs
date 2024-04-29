@@ -12,6 +12,7 @@ use opendut_types::topology::DeviceName;
 use opendut_util::settings::{FileFormat, load_config};
 
 mod commands;
+pub mod parse;
 
 type Error = String;
 type Result<T> = std::result::Result<T, Error>;
