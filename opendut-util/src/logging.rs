@@ -232,55 +232,54 @@ impl LoggingConfig {
 
         let opentelemetry_enabled = config.get_bool("opentelemetry.enabled")?;
 
-
-        let endpoint = {
-            let field = String::from("opentelemetry.endpoint");
-            let url = config.get_string(&field)?;
-            let url = Url::parse(&url)
-                .map_err(|cause| LoggingConfigError::InvalidFieldValue {
-                    field,
-                    message: cause.to_string()
-                })?;
-            Endpoint { url }
-        };
-        let service_name = {
-            let field = String::from("opentelemetry.service.name");
-            config.get_string(&field)
-                .map_err(|_cause| LoggingConfigError::InvalidFieldValue { field: field.clone(), message: String::from("Failed to parse configuration from field") })?
-        };
-
-        let metrics_interval_ms =  {
-            let field = String::from("opentelemetry.metrics.interval.ms");
-
-            let interval_i64 = config.get_int(&field)
-                .map_err(|_cause| LoggingConfigError::InvalidFieldValue { field: field.clone(), message: String::from("Failed to parse configuration from field") })?;
-
-            let interval_u64 = u64::try_from(interval_i64)
-                .map_err(|_cause| LoggingConfigError::InvalidFieldValue { field: field.clone(), message: String::from("Failed to convert to u64.") })?;
-
-            Duration::from_millis(interval_u64)
-        };
-
-        let cpu_collection_interval_ms = {
-            let field = String::from("opentelemetry.cpu.collection.interval.ms");
-
-            let interval_i64 = config.get_int(&field)
-                .map_err(|_cause| LoggingConfigError::InvalidFieldValue { field: field.clone(), message: String::from("Failed to parse configuration from field.") })?;
-
-            let interval_u64 = u64::try_from(interval_i64)
-                .map_err(|_cause| LoggingConfigError::InvalidFieldValue { field: field.clone(), message: String::from("Failed to convert to u64.") })?;
-            let interval = Duration::from_millis(interval_u64);
-
-            if interval < sysinfo::MINIMUM_CPU_UPDATE_INTERVAL {
-                return Err(LoggingConfigError::InvalidFieldValue {
-                    field,
-                    message: format!("Provided configuration value needs to be higher than the minimum CPU update interval of {} ms.", sysinfo::MINIMUM_CPU_UPDATE_INTERVAL.as_millis())
-                });
-            }
-            interval
-        };
-
         let opentelemetry = if opentelemetry_enabled {
+            let endpoint = {
+                let field = String::from("opentelemetry.endpoint");
+                let url = config.get_string(&field)?;
+                let url = Url::parse(&url)
+                    .map_err(|cause| LoggingConfigError::InvalidFieldValue {
+                        field,
+                        message: cause.to_string()
+                    })?;
+                Endpoint { url }
+            };
+            let service_name = {
+                let field = String::from("opentelemetry.service.name");
+                config.get_string(&field)
+                    .map_err(|_cause| LoggingConfigError::InvalidFieldValue { field: field.clone(), message: String::from("Failed to parse configuration from field") })?
+            };
+
+            let metrics_interval_ms =  {
+                let field = String::from("opentelemetry.metrics.interval.ms");
+
+                let interval_i64 = config.get_int(&field)
+                    .map_err(|_cause| LoggingConfigError::InvalidFieldValue { field: field.clone(), message: String::from("Failed to parse configuration from field") })?;
+
+                let interval_u64 = u64::try_from(interval_i64)
+                    .map_err(|_cause| LoggingConfigError::InvalidFieldValue { field: field.clone(), message: String::from("Failed to convert to u64.") })?;
+
+                Duration::from_millis(interval_u64)
+            };
+
+            let cpu_collection_interval_ms = {
+                let field = String::from("opentelemetry.cpu.collection.interval.ms");
+
+                let interval_i64 = config.get_int(&field)
+                    .map_err(|_cause| LoggingConfigError::InvalidFieldValue { field: field.clone(), message: String::from("Failed to parse configuration from field.") })?;
+
+                let interval_u64 = u64::try_from(interval_i64)
+                    .map_err(|_cause| LoggingConfigError::InvalidFieldValue { field: field.clone(), message: String::from("Failed to convert to u64.") })?;
+                let interval = Duration::from_millis(interval_u64);
+
+                if interval < sysinfo::MINIMUM_CPU_UPDATE_INTERVAL {
+                    return Err(LoggingConfigError::InvalidFieldValue {
+                        field,
+                        message: format!("Provided configuration value needs to be higher than the minimum CPU update interval of {} ms.", sysinfo::MINIMUM_CPU_UPDATE_INTERVAL.as_millis())
+                    });
+                }
+                interval
+            };
+
             OpenTelemetryConfig::Enabled {
                 endpoint,
                 service_name,
