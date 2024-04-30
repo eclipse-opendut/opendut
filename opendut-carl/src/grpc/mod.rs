@@ -1,9 +1,9 @@
 use std::fmt::Display;
 
-pub use cluster_manager::ClusterManagerFacade as ClusterManagerService;
-pub use metadata_provider::MetadataProviderFacade as MetadataProviderService;
-pub use peer_manager::PeerManagerFacade as PeerManagerService;
-pub use peer_messaging_broker::PeerMessagingBrokerFacade as PeerMessagingBrokerService;
+pub use cluster_manager::ClusterManagerFacade;
+pub use metadata_provider::MetadataProviderFacade;
+pub use peer_manager::PeerManagerFacade;
+pub use peer_messaging_broker::PeerMessagingBrokerFacade;
 
 mod cluster_manager;
 mod peer_manager;

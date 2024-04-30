@@ -14,25 +14,25 @@ use config::Config;
 use futures::future::BoxFuture;
 use futures::TryFutureExt;
 use http::{header::CONTENT_TYPE, Request};
+use itertools::Itertools;
 use pem::Pem;
 use serde::Serialize;
+use shadow_rs::formatcp;
 use tokio::fs;
 use tonic::transport::Server;
 use tower::{BoxError, make::Shared, ServiceExt, steer::Steer};
 use tower_http::services::{ServeDir, ServeFile};
 use tracing::{debug, info};
 use url::Url;
-use shadow_rs::formatcp;
-use opendut_carl_api::carl::auth::auth_config::OidcIdentityProviderConfig;
-use itertools::Itertools;
 use uuid::Uuid;
 
+use opendut_carl_api::carl::auth::auth_config::OidcIdentityProviderConfig;
 use opendut_util::{logging, project};
 use opendut_util::logging::LoggingConfig;
 use opendut_util::settings::LoadedConfig;
 
 use crate::cluster::manager::{ClusterManager, ClusterManagerOptions, ClusterManagerRef};
-use crate::grpc::{ClusterManagerService, MetadataProviderService, PeerManagerService, PeerMessagingBrokerService};
+use crate::grpc::{ClusterManagerFacade, MetadataProviderFacade, PeerManagerFacade, PeerMessagingBrokerFacade};
 use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerOptions, PeerMessagingBrokerRef};
 use crate::peer::oidc_client_manager::{CarlIdentityProviderConfig, OpenIdConnectClientManager};
 use crate::resources::manager::{ResourcesManager, ResourcesManagerRef};
@@ -155,19 +155,19 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
         let grpc = Server::builder()
             .accept_http1(true) //gRPC-web uses HTTP1
             .add_service(
-                ClusterManagerService::new(Arc::clone(&cluster_manager), Arc::clone(&resources_manager))
+                ClusterManagerFacade::new(Arc::clone(&cluster_manager), Arc::clone(&resources_manager))
                     .into_grpc_service()
             )
             .add_service(
-                MetadataProviderService::new()
+                MetadataProviderFacade::new()
                     .into_grpc_service()
             )
             .add_service(
-                PeerManagerService::new(Arc::clone(&resources_manager), vpn, Clone::clone(&carl_url), ca, oidc_client_manager)
+                PeerManagerFacade::new(Arc::clone(&resources_manager), vpn, Clone::clone(&carl_url), ca, oidc_client_manager)
                     .into_grpc_service()
             )
             .add_service(
-                PeerMessagingBrokerService::new(Arc::clone(&peer_messaging_broker))
+                PeerMessagingBrokerFacade::new(Arc::clone(&peer_messaging_broker))
                     .into_grpc_service()
             )
             .into_service()
