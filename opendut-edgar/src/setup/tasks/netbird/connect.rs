@@ -3,6 +3,7 @@ use std::time::Duration;
 
 use anyhow::{anyhow, Context, Result};
 use futures::executor::block_on;
+use tracing::debug;
 use url::Url;
 
 use opendut_types::vpn::netbird::SetupKey;
@@ -42,10 +43,11 @@ impl Task for Connect {
         for _ in 1..=UP_CHECK_RETRIES {
             let is_up = block_on(client.check_is_up())?;
             if is_up {
+                debug!("NetBird Client reports that it is logged in and up.");
                 return Ok(Success::default())
             }
             thread::sleep(UP_CHECK_INTERVAL)
         }
-        Err(anyhow!("Connection to NetBird Management Service was not up after {UP_CHECK_RETRIES}*{} ms.", UP_CHECK_INTERVAL.as_millis()))
+        Err(anyhow!("Connection to NetBird Management Service at '{}' was not up after {}*{} ms.", self.management_url, UP_CHECK_RETRIES, UP_CHECK_INTERVAL.as_millis()))
     }
 }

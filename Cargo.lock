@@ -2830,6 +2830,7 @@ dependencies = [
  "tonic",
  "tonic-build",
  "tower",
+ "tracing",
  "url",
  "uuid",
 ]

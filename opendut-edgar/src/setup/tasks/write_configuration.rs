@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use anyhow::{anyhow, Context};
-use tracing::{debug, error};
+use tracing::{debug, error, info};
 use url::Url;
 
 use opendut_types::peer::PeerId;
@@ -108,6 +108,8 @@ impl Task for WriteConfiguration {
         } else {
             write_settings(&self.config_file_to_write_to, &new_settings_string)
                 .context("Error while writing new configuration file.")?;
+
+            info!("Successfully wrote peer configuration to: {}", self.config_file_to_write_to.display());
             Ok(Success::default())
         }
     }

@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use tokio::net::UnixStream;
 use tonic::transport::{Channel, Endpoint, Uri};
+use tracing::{debug, info};
 use url::Url;
 use opendut_types::vpn::netbird::SetupKey;
 
@@ -18,6 +19,7 @@ pub struct Client {
 
 impl Client {
     pub async fn connect() -> Result<Self> {
+        debug!("Connecting to NetBird Client...");
         let ignored_uri = "http://[::]"; //Valid URI has to be specified, but will be ignored. Taken from this example: https://github.com/hyperium/tonic/blob/2325e3293b8a54f3412a8c9a5fcac064fa82db56/examples/src/uds/client.rs
 
         let channel = Endpoint::try_from(ignored_uri)
@@ -29,6 +31,7 @@ impl Client {
 
         let client = DaemonServiceClient::new(channel);
 
+        info!("Connected to NetBird Client.");
         Ok(Self {
             inner: client,
         })
@@ -42,12 +45,16 @@ impl Client {
             ..Default::default()
         });
         let _ = self.inner.login(request).await?; //ignore response, only relevant for login without Setup Key
+
+        debug!("Logged NetBird Client into NetBird Management Service at '{}' with Setup-Key '{}'.", management_url, setup_key.uuid);
         Ok(())
     }
 
     pub async fn up(&mut self) -> Result<()> {
         let request = tonic::Request::new(UpRequest {});
         let _ = self.inner.up(request).await?;
+
+        debug!("Successfully set NetBird Client to 'up'.");
         Ok(())
     }
 
