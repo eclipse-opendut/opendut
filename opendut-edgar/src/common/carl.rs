@@ -20,15 +20,13 @@ pub async fn connect(settings: &Config) -> anyhow::Result<CarlClient> {
     let domain_name_override = settings.get_string("network.tls.domain.name.override")?;
     let domain_name_override = domain_name_override.is_empty().not().then_some(domain_name_override);
 
-    let mut carl = CarlClient::create(&host, port, ca_cert_path, domain_name_override, settings)?;
-
     let retries = settings.get_int("network.connect.retries")?;
     let interval = Duration::from_millis(u64::try_from(settings.get_int("network.connect.interval.ms")?)?);
 
     for retries_left in (0..retries).rev() {
-        match carl.metadata.version().await {
-            Ok(version) => {
-                info!("Connected to CARL with version {}.", version.name);
+        match CarlClient::create(&host, port, &ca_cert_path, &domain_name_override, settings).await {
+            Ok(carl) => {
+                info!("Connected to CARL.");
                 return Ok(carl);
             }
             Err(cause) => {

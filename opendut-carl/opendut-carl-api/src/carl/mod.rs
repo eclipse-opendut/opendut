@@ -62,6 +62,8 @@ cfg_if! {
             OidcConfiguration { message: String, cause: Box<dyn std::error::Error + Send + Sync> },
             #[error("{message}: {cause}")]
             TlsConfiguration { message: String, cause: Box<dyn std::error::Error + Send + Sync> },
+            #[error("Error while connecting to CARL at '{address}': {cause}")]
+            ConnectError { address: String, cause: Box<dyn std::error::Error + Send + Sync> },
         }
 
         pub trait ExtractOrClientError<A, B, E>
@@ -101,7 +103,8 @@ cfg_if! {
 
 cfg_if! {
     if #[cfg(feature = "client")] {
-        use tracing::debug;
+        use std::path::Path;
+        use tracing::{debug, info};
 
         use crate::carl::cluster::ClusterManager;
         use crate::carl::metadata::MetadataProvider;
@@ -129,14 +132,19 @@ cfg_if! {
 
         impl CarlClient {
 
-            pub fn create(host: impl Into<String>, port: u16, ca_cert_path: std::path::PathBuf,
-                          domain_name_override: Option<String>, settings: &config::Config) -> Result<CarlClient, InitializationError> {
+            pub async fn create(
+                host: impl Into<String>,
+                port: u16,
+                ca_cert_path: &Path,
+                domain_name_override: &Option<String>,
+                settings: &config::Config,
+            ) -> Result<CarlClient, InitializationError> {
 
                 let address = format!("https://{}:{}", host.into(), port);
 
                 let tls_config = {
                     debug!("Using TLS CA certificate: {}", ca_cert_path.display());
-                    let ca_cert = std::fs::read_to_string(&ca_cert_path)
+                    let ca_cert = std::fs::read_to_string(ca_cert_path)
                         .map_err(|cause| InitializationError::TlsConfiguration { message: format!("Failed to read CA certificate from path '{}'", ca_cert_path.display()), cause: cause.into() })?;
 
                     let mut config = tonic::transport::ClientTlsConfig::new()
@@ -173,7 +181,9 @@ cfg_if! {
                 };
 
                 debug!("Set up endpoint for connection to CARL at '{address}'.");
-                let channel = endpoint.connect_lazy();
+                let channel = endpoint.connect().await
+                    .map_err(|cause| InitializationError::ConnectError { address: address.clone(), cause: cause.into() })?;
+                info!("Connected to CARL at '{address}'.");
 
                 let auth_svc = ServiceBuilder::new()
                     .layer_fn(|channel| AuthenticationService::new(channel, auth_manager.clone()))
@@ -261,7 +271,7 @@ pub mod wasm {
 
     impl CarlClient {
 
-        pub fn create(url: url::Url, auth: Option<Auth>) -> Result<CarlClient, InitializationError> {
+        pub async fn create(url: url::Url, auth: Option<Auth>) -> Result<CarlClient, InitializationError> {
             let auth_data_signal = create_signal(
                 OptionalAuthData { auth_data: None }
             );

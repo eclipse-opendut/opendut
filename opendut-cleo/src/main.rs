@@ -214,7 +214,7 @@ async fn execute() -> Result<()> {
             .expect("Configuration should contain a field for 'domain.name.override'.");
         let domain_name_override = domain_name_override.is_empty().not().then_some(domain_name_override);
 
-        CarlClient::create(host, port as u16, ca_path, domain_name_override, &settings.config)
+        CarlClient::create(host, port as u16, &ca_path, &domain_name_override, &settings.config).await
             .expect("Failed to create CARL client")
     };
 

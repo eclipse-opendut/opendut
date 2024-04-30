@@ -107,7 +107,7 @@ pub fn App() -> impl IntoView {
             Some(ref auth_parameters) => {
                 info!("Auth parameters: {auth_parameters:?}");
                 let auth = Auth::init(auth_parameters.clone());
-                let client = CarlClient::create(Clone::clone(&config.carl_url), Some(auth.clone()))
+                let client = CarlClient::create(Clone::clone(&config.carl_url), Some(auth.clone())).await
                     .expect("Failed to create CARL client");
 
                 Ok(AppGlobals {
@@ -117,7 +117,7 @@ pub fn App() -> impl IntoView {
                 })
             },
             None => {
-                let client = CarlClient::create(Clone::clone(&config.carl_url), None)
+                let client = CarlClient::create(Clone::clone(&config.carl_url), None).await
                     .expect("Failed to create CARL client");
                 Ok(AppGlobals {
                     config,
