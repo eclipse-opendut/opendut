@@ -48,6 +48,18 @@ jobs:
         with:
           pattern: "opendut-cleo-*-${{ github.sha }}"
           path: "./target/ci/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/opendut-cleo"
+      - name: Remove SHA-1 hash from end of file name for CLEO artifacts
+        run: |
+          TARGET_DIR="./target/ci/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/opendut-cleo"
+          for file in $( find TARGET_DIR )  #`find` rather than `ls` to get relative paths
+          do
+              # Cut off 40 characters for SHA-1 hash + "-", at end of CLEO binary name.
+              NEW_NAME=$( echo $file | rev | cut --character 42- | rev )
+
+              if test -n "$NEW_NAME"; then
+                  mv $file $NEW_NAME
+              fi
+          done
       - name: Download opendut-lea
         uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
         with:
