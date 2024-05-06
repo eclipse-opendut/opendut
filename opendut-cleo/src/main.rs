@@ -46,8 +46,8 @@ enum Commands {
         #[arg(value_enum, short, long, default_value_t=CreateOutputFormat::Text)]
         output: CreateOutputFormat,
     },
-    GeneratePeerSetup(commands::generate_peer_setup::GeneratePeerSetupCli),
-    DecodePeerSetup(commands::decode_peer_setup::DecodePeerSetupCli),
+    GenerateSetupString(commands::generate_setup_string::GenerateSetupStringCli),
+    DecodeSetupString(commands::decode_setup_string::DecodeSetupStringCli),
     ///Describe openDuT resource
     Describe {
         ///Name of openDuT resource
@@ -169,7 +169,7 @@ impl From<CreateOutputFormat> for DescribeOutputFormat {
 }
 
 #[derive(ValueEnum, Clone)]
-enum DecodePeerSetupOutputFormat {
+enum DecodeSetupStringOutputFormat {
     Text,
     Json,
     PrettyJson,
@@ -262,10 +262,10 @@ async fn execute() -> Result<()> {
                 }
             }
         }
-        Commands::GeneratePeerSetup(implementation) => {
+        Commands::GenerateSetupString(implementation) => {
             implementation.execute(&mut carl).await?;
         }
-        Commands::DecodePeerSetup(implementation) => {
+        Commands::DecodeSetupString(implementation) => {
             implementation.execute().await?;
         }
         Commands::Describe { resource, output } => {
@@ -318,12 +318,12 @@ async fn execute() -> Result<()> {
 }
 
 #[derive(Clone, Debug)]
-struct ParseablePeerSetup(Box<PeerSetup>);
-impl FromStr for ParseablePeerSetup {
+struct ParseableSetupString(Box<PeerSetup>);
+impl FromStr for ParseableSetupString {
     type Err = String;
     fn from_str(string: &str) -> std::result::Result<Self, Self::Err> {
         PeerSetup::decode(string)
-            .map(|setup| ParseablePeerSetup(Box::new(setup)))
+            .map(|setup| ParseableSetupString(Box::new(setup)))
             .map_err(|error| error.to_string())
     }
 }

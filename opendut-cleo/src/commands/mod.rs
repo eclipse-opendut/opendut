@@ -4,5 +4,5 @@ pub mod device;
 pub mod peer;
 pub mod network_interface;
 pub mod executor;
-pub mod decode_peer_setup;
-pub mod generate_peer_setup;
+pub mod decode_setup_string;
+pub mod generate_setup_string;
