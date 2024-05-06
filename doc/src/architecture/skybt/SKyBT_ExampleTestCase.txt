@@ -1,0 +1,16 @@
+Vorbedingung
+
+Setze Klemme 15 = On
+Setze Fahrstufe = D
+
+
+Aktion
+
+Setze Geschwindigkeit = 75.0 km/h
+Warte für min. 2.5 s
+
+
+Erwartetes Ergebnis
+
+Vergleiche SKyBT_CAN::VECTOR__INDEPENDENT_SIG_MSG::Ex_Mode == Mode_aktiv
+Vergleiche Speed::currentSpeed::state == calculated
