@@ -57,7 +57,7 @@ mod test {
     use crate::CarlInstallDirectory;
 
     use crate::util::{CleoArch};
-    use crate::handler::cleo::download_cleo;
+    use crate::router::cleo::download_cleo;
 
     #[tokio::test()]
     async fn download_cleo_development_succeeds() -> anyhow::Result<()> {

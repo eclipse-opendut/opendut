@@ -1,24 +1,18 @@
 extern crate core;
 
 use std::net::SocketAddr;
-use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
 
+use ::http::header::CONTENT_TYPE;
+use ::http::Request;
 use anyhow::{anyhow, Context, Result};
-use axum::extract::{FromRef, State};
-use axum::Json;
 use axum::routing::get;
 use axum_server::tls_rustls::RustlsConfig;
 use axum_server_dual_protocol::ServerExt;
-use config::Config;
 use futures::future::BoxFuture;
 use futures::TryFutureExt;
-use http::{header::CONTENT_TYPE, Request};
-use itertools::Itertools;
-use pem::{Pem};
-use serde::{Serialize};
-use shadow_rs::formatcp;
+use pem::Pem;
 use tokio::fs;
 use tonic::transport::Server;
 use tower::{BoxError, make::Shared, ServiceExt, steer::Steer};
@@ -27,13 +21,14 @@ use tracing::{debug, info, warn};
 use url::Url;
 use uuid::Uuid;
 
-use opendut_carl_api::carl::auth::auth_config::OidcIdentityProviderConfig;
 use opendut_util::{logging, project};
 use opendut_util::logging::LoggingConfig;
 use opendut_util::settings::LoadedConfig;
 
 use crate::cluster::manager::{ClusterManager, ClusterManagerOptions, ClusterManagerRef};
 use crate::grpc::{ClusterManagerFacade, MetadataProviderFacade, PeerManagerFacade, PeerManagerFacadeOptions, PeerMessagingBrokerFacade};
+use crate::http::router;
+use crate::http::state::{CarlInstallDirectory, HttpState, LeaConfig, LeaIdentityProviderConfig};
 use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerOptions, PeerMessagingBrokerRef};
 use crate::peer::oidc_client_manager::{CarlIdentityProviderConfig, OpenIdConnectClientManager};
 use crate::provisioning::cleo_script::CleoScript;
@@ -52,7 +47,7 @@ mod peer;
 mod resources;
 pub mod settings;
 mod vpn;
-mod handler;
+mod http;
 mod provisioning;
 
 #[tracing::instrument]
@@ -198,7 +193,7 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
             None
         };
 
-        let app_state = AppState {
+        let app_state = HttpState {
             lea_config: LeaConfig {
                 carl_url,
                 idp_config: lea_idp_config,
@@ -235,8 +230,8 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
                         ServeDir::new(&licenses_dir)
                             .fallback(ServeFile::new(licenses_dir.join("index.json")))
                     )
-                    .route("/api/cleo/:architecture/download", get(handler::cleo::download_cleo))
-                    .route("/api/lea/config", get(lea_config))
+                    .route("/api/cleo/:architecture/download", get(router::cleo::download_cleo))
+                    .route("/api/lea/config", get(router::lea_config))
                     .nest_service(
                         "/",
                         ServeDir::new(&lea_dir)
@@ -283,82 +278,4 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
     ).await.unwrap();
 
     Ok(())
-}
-
-#[derive(Clone)]
-struct AppState {
-    lea_config: LeaConfig,
-    carl_installation_directory: CarlInstallDirectory,
-}
-
-#[derive(Clone, Debug, Serialize)]
-struct LeaIdentityProviderConfig {
-    client_id: String,
-    issuer_url: Url,
-    scopes: String,
-}
-
-const LEA_OIDC_CONFIG_PREFIX: &str = "network.oidc.lea";
-impl TryFrom<&Config> for LeaIdentityProviderConfig {
-    type Error = anyhow::Error;
-
-    fn try_from(config: &Config) -> Result<Self> {
-
-        let client_id = config.get_string(LeaIdentityProviderConfig::CLIENT_ID)
-            .map_err(|error| anyhow!("Failed to find configuration for `{}`. {}", LeaIdentityProviderConfig::CLIENT_ID, error))?;
-        let issuer = config.get_string(LeaIdentityProviderConfig::ISSUER_URL)
-            .map_err(|error| anyhow!("Failed to find configuration for `{}`. {}", LeaIdentityProviderConfig::ISSUER_URL, error))?;
-
-        let issuer_url = Url::parse(&issuer)
-            .context(format!("Failed to parse OIDC issuer URL `{}`.", issuer))?;
-
-        let lea_raw_scopes = config.get_string(LeaIdentityProviderConfig::SCOPES)
-            .map_err(|error| anyhow!("Failed to find configuration for `{}`. {}", LeaIdentityProviderConfig::SCOPES, error))?;
-
-        let scopes = OidcIdentityProviderConfig::parse_scopes(&client_id, lea_raw_scopes).into_iter()
-            .map(|scope| scope.to_string()).join(" ");  // Required by leptos_oidc
-
-        Ok(Self { client_id, issuer_url, scopes })
-    }
-}
-impl LeaIdentityProviderConfig {
-    const CLIENT_ID: &'static str = formatcp!("{LEA_OIDC_CONFIG_PREFIX}.client.id");
-    const ISSUER_URL: &'static str = formatcp!("{LEA_OIDC_CONFIG_PREFIX}.issuer.url");
-    const SCOPES: &'static str = formatcp!("{LEA_OIDC_CONFIG_PREFIX}.scopes");
-}
-
-#[derive(Clone, Serialize)]
-struct LeaConfig {
-    carl_url: Url,
-    idp_config: Option<LeaIdentityProviderConfig>,
-}
-
-impl FromRef<AppState> for LeaConfig {
-    fn from_ref(app_state: &AppState) -> Self {
-        Clone::clone(&app_state.lea_config)
-    }
-}
-
-async fn lea_config(State(config): State<LeaConfig>) -> Json<LeaConfig> {
-    Json(Clone::clone(&config))
-}
-
-#[derive(Clone, Serialize)]
-pub struct CarlInstallDirectory {
-    pub path: PathBuf,
-}
-
-impl CarlInstallDirectory {
-    fn determine() -> anyhow::Result<Self> {
-        let path = std::env::current_exe()?
-            .parent().ok_or_else(|| anyhow!("Current executable has no parent directory."))?
-            .to_owned();
-        Ok(Self { path })
-    }
-}
-
-impl FromRef<AppState> for CarlInstallDirectory {
-    fn from_ref(app_state: &AppState) -> Self {
-        Clone::clone(&app_state.carl_installation_directory)
-    }
 }

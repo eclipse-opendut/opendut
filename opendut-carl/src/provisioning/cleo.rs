@@ -27,7 +27,7 @@ pub fn create_cleo_install_script(
 
         let tar_gz = File::create(&file_path)
             .context(format!("Could not create path '{}' for CLEO archive.", &file_path.display()))?;
-       
+
         let enc = GzEncoder::new(tar_gz, Compression::default());
         let mut tar = tar::Builder::new(enc);
         tar.append_file(
