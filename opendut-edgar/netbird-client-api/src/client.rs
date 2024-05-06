@@ -19,7 +19,7 @@ pub struct Client {
 
 impl Client {
     pub async fn connect() -> Result<Self> {
-        debug!("Connecting to NetBird Client...");
+        debug!("Connecting to NetBird Client process via Unix domain socket at '{}'...", socket_path().display());
         let ignored_uri = "http://[::]"; //Valid URI has to be specified, but will be ignored. Taken from this example: https://github.com/hyperium/tonic/blob/2325e3293b8a54f3412a8c9a5fcac064fa82db56/examples/src/uds/client.rs
 
         let channel = Endpoint::try_from(ignored_uri)
@@ -27,11 +27,11 @@ impl Client {
             .connect_with_connector(tower::service_fn(|_: Uri| {
                 UnixStream::connect(socket_path())
             })).await
-            .map_err(|cause| Error::transport(cause, format!("Failed to connect to NetBird socket '{}'", socket_path().display())))?;
+            .map_err(|cause| Error::transport(cause, format!("Failed to connect to NetBird Unix domain socket at '{}'", socket_path().display())))?;
 
         let client = DaemonServiceClient::new(channel);
 
-        info!("Connected to NetBird Client.");
+        info!("Connected to NetBird Client process via Unix domain socket at '{}'.", socket_path().display());
         Ok(Self {
             inner: client,
         })
