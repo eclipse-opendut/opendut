@@ -1,88 +1,23 @@
-use std::fmt::{Display, Formatter};
 use std::fs::File;
-use std::os::unix::fs::PermissionsExt;
 use std::path::{Path};
-use config::Config;
 use flate2::Compression;
 use flate2::write::GzEncoder;
-use pem::{encode_config, EncodeConfig, LineEnding, Pem};
+use pem::{Pem};
+use tar::{Builder};
 use tracing::log::warn;
+use crate::provisioning::cleo_script::CleoScript;
 use crate::util::{CLEO_TARGET_DIRECTORY, CleoArch};
 
-const CA_CERTIFICATE_FILE_NAME: &str = "ca.pem";
-
-pub struct CleoScript {
-    carl_host: String,
-    carl_port: u16,
-    oidc_enabled: bool,
-    issuer_url: String,
-}
-
-impl CleoScript {
-    pub fn from_setting(settings: &Config) -> anyhow::Result<Self> {
-        Ok(Self {
-            carl_host: settings.get_string("network.remote.host")?,
-            carl_port: settings.get_int("network.remote.port")? as u16,
-            oidc_enabled: settings.get_bool("network.oidc.enabled")?,
-            issuer_url: settings.get_string("network.oidc.client.issuer.url")?,
-        })
-    }
-}
-
-impl Display for CleoScript {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(
-            format!(r#"#!/bin/bash
-
-DIR_PATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
-CERT_PATH=$DIR_PATH/{}
-
-export OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SCOPES=
-export OPENDUT_CLEO_NETWORK_TLS_DOMAIN_NAME_OVERRIDE={}
-export OPENDUT_CLEO_NETWORK_TLS_CA=$CERT_PATH
-export OPENDUT_CLEO_NETWORK_CARL_HOST={}
-export OPENDUT_CLEO_NETWORK_CARL_PORT={}
-export OPENDUT_CLEO_NETWORK_OIDC_ENABLED={}
-export OPENDUT_CLEO_NETWORK_OIDC_CLIENT_ISSUER_URL={}
-export SSL_CERT_FILE=$CERT_PATH"#,
-                    CA_CERTIFICATE_FILE_NAME,
-                    self.carl_host,
-                    self.carl_host,
-                    self.carl_port,
-                    self.oidc_enabled,
-                    self.issuer_url
-            ).as_str()
-        )
-    }
-}
+pub const CA_CERTIFICATE_FILE_NAME: &str = "ca.pem";
 
 pub fn create_cleo_install_script(
     ca: Pem,
     cleo_install_path: &Path,
     cleo_script: CleoScript,
 ) -> anyhow::Result<()> {
-    const SET_ENVIRONMENT_VARIABLES_SCRIPT_NAME: &str = "set-env-var.sh";
-    const PERMISSION_CODE: u32 = 0o775;
-
-    let ca_file_path = cleo_install_path.join(CLEO_TARGET_DIRECTORY).join(CA_CERTIFICATE_FILE_NAME);
-    std::fs::write(&ca_file_path, encode_config(&ca, EncodeConfig::new().set_line_ending(LineEnding::LF)))?;
-    let ca_file = &mut File::open(ca_file_path)?;
-
-    let script_path = cleo_install_path.join(CLEO_TARGET_DIRECTORY).join(SET_ENVIRONMENT_VARIABLES_SCRIPT_NAME);
-
-    match std::fs::write(
-        &script_path,
-        format!("{}", cleo_script)
-    )  {
-        Ok(_) => {}
-        Err(error) => { warn!("Could not write {}: {}", SET_ENVIRONMENT_VARIABLES_SCRIPT_NAME, error) }
-    };
-
-    let mut permissions = std::fs::metadata(&script_path)?.permissions();
-    permissions.set_mode(PERMISSION_CODE);
-    std::fs::set_permissions(&script_path, permissions)?;
-
-    let script_file = &mut File::open(script_path)?;
+    const SET_ENVIRONMENT_VARIABLES_SCRIPT_NAME: &str = "cleo-cli.sh";
+    const PERMISSION_CODE_SCRIPT: u32 = 0o775;
+    const PERMISSION_CODE_CA: u32 = 0o644;
 
     for arch in CleoArch::arch_iterator() {
         let cleo_file = cleo_install_path.join(CLEO_TARGET_DIRECTORY).join(&arch.file_name());
@@ -97,8 +32,8 @@ pub fn create_cleo_install_script(
                     &arch.file_name(),
                     &mut File::open(&cleo_file)?
                 )?;
-                tar.append_file(SET_ENVIRONMENT_VARIABLES_SCRIPT_NAME, script_file)?;
-                tar.append_file(CA_CERTIFICATE_FILE_NAME, ca_file)?;
+                tar.append_custom_data(&cleo_script.build_script(arch), SET_ENVIRONMENT_VARIABLES_SCRIPT_NAME, PERMISSION_CODE_SCRIPT)?;
+                tar.append_custom_data(&ca.to_string(), CA_CERTIFICATE_FILE_NAME, PERMISSION_CODE_CA)?;
                 tar.into_inner()?;
             }
             Err(_) => {
@@ -108,6 +43,19 @@ pub fn create_cleo_install_script(
     }
 
     Ok(())
+}
+
+pub trait AppendCustomData {
+    fn append_custom_data(&mut self, data: &str, file_name: &str, mode: u32) -> std::io::Result<()>;
+}
+impl AppendCustomData for Builder<GzEncoder<File>> {
+    fn append_custom_data(&mut self, data: &str, file_name: &str, mode: u32) -> std::io::Result<()> {
+        let mut header = tar::Header::new_gnu();
+        header.set_size(data.as_bytes().len() as u64);
+        header.set_mode(mode);
+        header.set_cksum();
+        self.append_data(&mut header, file_name, data.as_bytes())
+    }
 }
 
 #[cfg(test)]

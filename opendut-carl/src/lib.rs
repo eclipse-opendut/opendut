@@ -36,7 +36,7 @@ use crate::cluster::manager::{ClusterManager, ClusterManagerOptions, ClusterMana
 use crate::grpc::{ClusterManagerFacade, MetadataProviderFacade, PeerManagerFacade, PeerManagerFacadeOptions, PeerMessagingBrokerFacade};
 use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerOptions, PeerMessagingBrokerRef};
 use crate::peer::oidc_client_manager::{CarlIdentityProviderConfig, OpenIdConnectClientManager};
-use crate::provisioning::cleo::CleoScript;
+use crate::provisioning::cleo_script::CleoScript;
 use crate::resources::manager::{ResourcesManager, ResourcesManagerRef};
 use crate::vpn::Vpn;
 
