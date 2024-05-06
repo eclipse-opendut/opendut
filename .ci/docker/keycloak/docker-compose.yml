@@ -8,7 +8,9 @@ services:
       dockerfile: ./.ci/docker/keycloak/Dockerfile-keycloak-server
       args:
         KEYCLOAK_VERSION: 22.0.2
-
+    labels:
+      logging: "promtail"
+      logging_job: "keycloak"
     # start-dev and hostname-strict=false are required to run keycloak in test environment; not acceptable for production
     # see https://www.keycloak.org/server/hostname for details
     command: [ "start-dev", "--http-port=80", "--https-port=443", "--https-certificate-file=/opt/keycloak/data/keycloak.pem", "--https-certificate-key-file=/opt/keycloak/data/keycloak.key",
@@ -42,6 +44,9 @@ services:
       dockerfile: ./.ci/docker/keycloak/Dockerfile-keycloak-provision
       args:
         KEYCLOAK_VERSION: 22.0.2
+    labels:
+      logging: "promtail"
+      logging_job: "keycloak-init"
     # uncomment this to stop container after provisioning is done
     command: [ "sleep" ]
     # for fast update of provisioning the scripts are mounted as volumes

@@ -39,12 +39,28 @@ services:
     networks:
       - opendutnet
 
+ promtail:
+   image: grafana/promtail:2.9.6
+   container_name: promtail
+   volumes:
+     - ./promtail.yml:/etc/promtail/docker-config.yaml
+     - /var/lib/docker/containers:/var/lib/docker/containers:ro
+     - /var/run/docker.sock:/var/run/docker.sock:ro
+   command: -config.file=/etc/promtail/docker-config.yaml
+   depends_on:
+     - loki
+   networks:
+     - opendutnet
+
  otel-collector:
    container_name: otel-collector
    image: otel/opentelemetry-collector-contrib:0.97.0
    volumes:
      - ./otel-collector.yml:/etc/collector-gateway.yaml
+     - /var/lib/docker/containers:/var/lib/docker/containers:ro
+     - /var/run/docker.sock:/var/run/docker.sock:ro
    command: [ "--config=/etc/collector-gateway.yaml" ]
+   user: "0"
    depends_on:
      - tempo
      - loki

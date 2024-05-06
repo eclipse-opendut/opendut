@@ -5,6 +5,10 @@ receivers:
        endpoint: 0.0.0.0:4318
      grpc:
        endpoint: 0.0.0.0:4317
+ docker_stats:
+   endpoint: unix:///var/run/docker.sock
+   collection_interval: 15s
+   metrics:
 processors:
   batch:
 
@@ -27,6 +31,8 @@ exporters:
     endpoint: 0.0.0.0:8889
     const_labels:
       project: opendut
+    resource_to_telemetry_conversion: # include information about specific containers
+      enabled: true
  otlp/tempo:
     endpoint: tempo:4317
     tls:
@@ -59,7 +65,7 @@ service:
      processors: [batch]
      exporters: [debug, otlp/tempo]
    metrics:
-     receivers: [otlp]
+     receivers: [otlp, docker_stats]
      processors: [batch]
      exporters: [debug, prometheus]
    logs:
