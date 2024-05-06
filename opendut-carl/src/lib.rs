@@ -203,7 +203,7 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
                 carl_url,
                 idp_config: lea_idp_config,
             },
-            cleo_installation_directory: CleoInstallPath(project::make_path_absolute(PathBuf::from(".")).expect("Could not determine installation directory."))
+            carl_installation_directory: CarlInstallDirectory::determine().expect("Could not determine installation directory.")
         };
 
         let lea_index_html = lea_dir.join("index.html").clone();
@@ -222,7 +222,7 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
         if !project::is_running_in_development() {
             provisioning::cleo::create_cleo_install_script(
                 ca,
-                &app_state.cleo_installation_directory.0,
+                &app_state.carl_installation_directory.path,
                 CleoScript::from_setting(&settings).expect("Could not read settings.")
             ).expect("Could not create cleo install script.");
         }
@@ -288,7 +288,7 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
 #[derive(Clone)]
 struct AppState {
     lea_config: LeaConfig,
-    cleo_installation_directory: CleoInstallPath,
+    carl_installation_directory: CarlInstallDirectory,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -344,10 +344,21 @@ async fn lea_config(State(config): State<LeaConfig>) -> Json<LeaConfig> {
 }
 
 #[derive(Clone, Serialize)]
-pub struct CleoInstallPath(pub PathBuf);
+pub struct CarlInstallDirectory {
+    pub path: PathBuf,
+}
 
-impl FromRef<AppState> for CleoInstallPath {
+impl CarlInstallDirectory {
+    fn determine() -> anyhow::Result<Self> {
+        let path = std::env::current_exe()?
+            .parent().ok_or_else(|| anyhow!("Current executable has no parent directory."))?
+            .to_owned();
+        Ok(Self { path })
+    }
+}
+
+impl FromRef<AppState> for CarlInstallDirectory {
     fn from_ref(app_state: &AppState) -> Self {
-        Clone::clone(&app_state.cleo_installation_directory)
+        Clone::clone(&app_state.carl_installation_directory)
     }
 }

@@ -4,13 +4,13 @@ use axum::response::IntoResponse;
 use axum_server_dual_protocol::tokio_util::io::ReaderStream;
 use http::{header, StatusCode};
 use opendut_util::project;
-use crate::{CleoInstallPath};
+use crate::{CarlInstallDirectory};
 
 use crate::util::{CLEO_TARGET_DIRECTORY, CleoArch};
 
 pub async fn download_cleo(
     Path(architecture): Path<CleoArch>,
-    State(cleo_install_path): State<CleoInstallPath>,
+    State(carl_install_directory): State<CarlInstallDirectory>,
 ) -> impl IntoResponse {
     let mut file_name = architecture.file_name();
     let mut content_type = "application/gzip";
@@ -20,10 +20,10 @@ pub async fn download_cleo(
             return StatusCode::NOT_FOUND.into_response();
         }
         content_type = "application/octet-stream";
-        cleo_install_path.0.join("target/debug/opendut-cleo")
+        carl_install_directory.path.join("target/debug/opendut-cleo")
     } else {
         file_name = format!("{}.tar.gz", &file_name);
-        cleo_install_path.0.join(CLEO_TARGET_DIRECTORY).join(&file_name)
+        carl_install_directory.path.join(CLEO_TARGET_DIRECTORY).join(&file_name)
     };
     println!("Cleo install directory: {:?}", cleo_dir);
 
@@ -54,7 +54,7 @@ mod test {
     use googletest::assert_that;
     use googletest::matchers::eq;
     use http::header;
-    use crate::CleoInstallPath;
+    use crate::CarlInstallDirectory;
 
     use crate::util::{CleoArch};
     use crate::handler::cleo::download_cleo;
@@ -67,7 +67,7 @@ mod test {
         dir.touch().unwrap();
        
         let cleo_install_path = temp.to_path_buf();
-        let cleo_state = State::<CleoInstallPath>(CleoInstallPath(cleo_install_path));
+        let cleo_state = State::<CarlInstallDirectory>(CarlInstallDirectory { path: cleo_install_path });
         let cleo = download_cleo(Path(CleoArch::Development), cleo_state).await;
         let response = cleo.into_response();
         let header = response.headers().get(header::CONTENT_DISPOSITION).unwrap();
