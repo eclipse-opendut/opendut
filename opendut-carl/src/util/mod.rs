@@ -2,7 +2,7 @@ use std::slice::Iter;
 use serde::{Deserialize, Serialize};
 use crate::util::CleoArch::{Arm64, Armhf, X86_64, Development};
 
-pub const CLEO_TARGET_DIRECTORY: &str = "opendut-cleo";
+pub const CLEO_IDENTIFIER: &str = "opendut-cleo";
 
 #[derive(Serialize, Deserialize)]
 pub enum CleoArch {
@@ -16,7 +16,7 @@ pub enum CleoArch {
     Development,
 }
 impl CleoArch {
-    pub fn file_name(&self) -> String {
+    pub fn name(&self) -> String {
         match self {
             X86_64 => "opendut-cleo-x86_64-unknown-linux-gnu",
             Armhf => "opendut-cleo-armv7-unknown-linux-gnueabihf",

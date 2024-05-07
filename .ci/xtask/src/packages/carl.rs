@@ -123,17 +123,19 @@ pub mod distribution {
             let architectures = Arch::value_variants().iter()
                 .filter(|&&arch| arch != Arch::Wasm).collect::<Vec<_>>();
 
+            let cleo_out_dir = out_dir.join(Package::Cleo.ident());
+            fs::create_dir_all(cleo_out_dir)?;
+            
             for arch in architectures {
                 crate::packages::cleo::build::build_release(arch.to_owned())?;
                 let cleo_build_dir = crate::packages::cleo::build::out_dir(arch.to_owned());
 
-                let cleo_out_dir = out_dir.join(Package::Cleo.ident());
-
-                fs::create_dir_all(&cleo_out_dir)?;
-
+                let cleo_arch_dir = out_dir.join(Package::Cleo.ident()).join(format!("{}-{}", Package::Cleo.ident(), arch.triple()));
+                fs::create_dir_all(&cleo_arch_dir)?;
+                
                 fs_extra::file::copy(
                     cleo_build_dir,
-                    &cleo_out_dir.join(format!("{}-{}", Package::Cleo.ident(), arch.triple())),
+                    &cleo_arch_dir.join(Package::Cleo.ident()),
                     &fs_extra::file::CopyOptions::default()
                         .overwrite(true)
                 )?;

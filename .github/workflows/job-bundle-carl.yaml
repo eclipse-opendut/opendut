@@ -53,7 +53,6 @@ jobs:
           TARGET_DIR="./target/ci/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/opendut-cleo"
           for file in $( echo $TARGET_DIR/* )  #`find` rather than `ls` to get relative paths
           do
-              # Cut off 40 characters for SHA-1 hash + "-", at end of CLEO binary name.
               NEW_NAME=$( echo $file | rev | cut --character 42- | rev )
 
               if test -n "$NEW_NAME"; then

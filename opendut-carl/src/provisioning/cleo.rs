@@ -7,7 +7,7 @@ use flate2::write::GzEncoder;
 use pem::Pem;
 
 use crate::provisioning::cleo_script::CleoScript;
-use crate::util::{CLEO_TARGET_DIRECTORY, CleoArch};
+use crate::util::{CLEO_IDENTIFIER, CleoArch};
 
 pub const CA_CERTIFICATE_FILE_NAME: &str = "ca.pem";
 
@@ -21,9 +21,9 @@ pub fn create_cleo_install_script(
     const PERMISSION_CODE_CA: u32 = 0o644;
 
     for arch in CleoArch::arch_iterator() {
-        let cleo_file = carl_install_directory.join(CLEO_TARGET_DIRECTORY).join(&arch.file_name());
-        let file_name = format!("{}.tar.gz", &arch.file_name());
-        let file_path = carl_install_directory.join(CLEO_TARGET_DIRECTORY).join(&file_name);
+        let cleo_file = carl_install_directory.join(CLEO_IDENTIFIER).join(&arch.name()).join(CLEO_IDENTIFIER);
+        let file_name = format!("{}.tar.gz", &arch.name());
+        let file_path = carl_install_directory.join(CLEO_IDENTIFIER).join(&file_name);
 
         let tar_gz = File::create(&file_path)
             .context(format!("Could not create path '{}' for CLEO archive.", &file_path.display()))?;
@@ -31,7 +31,7 @@ pub fn create_cleo_install_script(
         let enc = GzEncoder::new(tar_gz, Compression::default());
         let mut tar = tar::Builder::new(enc);
         tar.append_file(
-            &arch.file_name(),
+            &arch.name(),
             &mut File::open(&cleo_file)
                 .context(format!("Failed to open CLEO executable file '{}'", cleo_file.display()))?
         )?;
@@ -68,17 +68,20 @@ mod test {
     use pem::Pem;
 
     use crate::provisioning::cleo::{CleoScript, create_cleo_install_script};
-    use crate::util::{CLEO_TARGET_DIRECTORY, CleoArch};
+    use crate::util::{CLEO_IDENTIFIER, CleoArch};
 
     #[tokio::test()]
     async fn creating_cleo_install_script_succeeds() -> anyhow::Result<()> {
 
         let temp = TempDir::new().unwrap();
-        let dir = temp.child(CLEO_TARGET_DIRECTORY);
+        let dir = temp.child(CLEO_IDENTIFIER);
         std::fs::create_dir_all(dir).unwrap();
 
         for arch in CleoArch::arch_iterator() {
-            let file = temp.child(PathBuf::from(CLEO_TARGET_DIRECTORY).join(arch.file_name()));
+            let cleo_dir = temp.child(PathBuf::from(CLEO_IDENTIFIER).join(arch.name()));
+            std::fs::create_dir_all(cleo_dir).unwrap();
+            
+            let file = temp.child(PathBuf::from(CLEO_IDENTIFIER).join(arch.name()).join(CLEO_IDENTIFIER));
             file.touch().unwrap();
         }
 
@@ -99,7 +102,7 @@ mod test {
         )?;
 
         for arch in CleoArch::arch_iterator() {
-            assert_that!(temp.join("opendut-cleo").join(format!("{}.tar.gz",arch.file_name())).exists(), eq(true));
+            assert_that!(temp.join("opendut-cleo").join(format!("{}.tar.gz",arch.name())).exists(), eq(true));
         }
 
         Ok(())

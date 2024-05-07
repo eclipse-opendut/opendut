@@ -7,7 +7,7 @@
 and configure at least the CARL host+port.
 The possible configuration values and their defaults can be seen here:  
 ```toml
-{{#include ../../../../opendut-cleo/cleo.toml}}
+ {{#include ../../../../opendut-cleo/cleo.toml}}
 ```
 
 ## Download CLEO from CARL
@@ -24,8 +24,17 @@ Available architectures are:
 This might be the go-to way, if you want to use CLEO in your pipeline. 
 Once downloaded, extract the files with the command `tar xvf opendut-cleo-{architecture}.tar.gz`. It will then be extracted into
 the folder which is the current work directory. You might want to use another directory of your choice.
-The tarball contains the `set-env-var.sh` shell script. It can be executed by the command `source set-env-var.sh`, which then sets the
-following environment variables to run CLEO:
+
+The script used to run CLEO will not set the environment variables for CLIENT_ID and CLIENT_SECRET. This has to be done by the users manually.
+This can easily be done by entering the following commands:
+````
+export OPENDUT_CLEO_NETWORK_OIDC_CLIENT_ID={{ CLIENT ID VARIABLE }} 
+export OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SECRET={{ CLIENT SECRET VARIABLE }} 
+````
+These two variables can be obtained by logging in to Keycloak.
+
+The tarball contains the `cleo-cli.sh` shell script. When executed it starts CLEO after setting the
+following environment variables:
 ````
 OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SCOPES
 OPENDUT_CLEO_NETWORK_TLS_DOMAIN_NAME_OVERRIDE
@@ -40,19 +49,16 @@ SSL_CERT_FILE
 `SSL_CERT_FILE` is a mandatory environment variable for the current state of the implementation and has the same value as the 
 `OPENDUT_CLEO_NETWORK_TLS_CA`. This might change in the future. 
 
-The script will not set the environment variables for CLIENT_ID and CLIENT_SECRET. This has to be done by the users themselves.
-This can easily be done by entering the following commands:
+Using CLEO with parameters works by adding the parameters when executing the script, e.g.:
 ````
-export OPENDUT_CLEO_NETWORK_OIDC_CLIENT_ID={{ CLIENT ID VARIABLE }} 
-export OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SECRET={{ CLIENT SECRET VARIABLE }} 
+./cleo-cli.sh list peers
 ````
-These two variables can be obtained by logging in to Keycloak.
 
 ### TL;DR
 1. Download archive from `https://{CARL-HOST}/api/cleo/{architecture}/download`
 2. Extract `tar xvf opendut-cleo-{architecture}.tar.gz`
-3. Execute `source set-env-var.sh`
-4. Add two environment variable `export OPENDUT_CLEO_NETWORK_OIDC_CLIENT_ID={{ CLIENT ID VARIABLE }}` and `export OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SECRET={{ CLIENT SECRET VARIABLE }}`
+3. Add two environment variable `export OPENDUT_CLEO_NETWORK_OIDC_CLIENT_ID={{ CLIENT ID VARIABLE }}` and `export OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SECRET={{ CLIENT SECRET VARIABLE }}`
+4. Execute `cleo-cli.sh` with parameters
 
 ## Additional notes
 - The CA certificate to be provided for CLEO depends on the used certificate authority used on server side for CARL.

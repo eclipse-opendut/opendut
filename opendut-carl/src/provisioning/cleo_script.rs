@@ -40,7 +40,7 @@ exec ./{} "$@""#,
                 self.carl_port,
                 self.oidc_enabled,
                 self.issuer_url,
-                architecture.file_name()
+                architecture.name()
         )
     }
 }

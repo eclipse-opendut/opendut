@@ -6,24 +6,24 @@ use http::{header, StatusCode};
 use opendut_util::project;
 use crate::{CarlInstallDirectory};
 
-use crate::util::{CLEO_TARGET_DIRECTORY, CleoArch};
+use crate::util::{CLEO_IDENTIFIER, CleoArch};
 
 pub async fn download_cleo(
     Path(architecture): Path<CleoArch>,
     State(carl_install_directory): State<CarlInstallDirectory>,
 ) -> impl IntoResponse {
-    let mut file_name = architecture.file_name();
+    let mut file_name = architecture.name();
     let mut content_type = "application/gzip";
 
     let cleo_dir = if project::is_running_in_development() {
-        if file_name !=  CleoArch::Development.file_name() {
+        if file_name !=  CleoArch::Development.name() {
             return StatusCode::NOT_FOUND.into_response();
         }
         content_type = "application/octet-stream";
         carl_install_directory.path.join("target/debug/opendut-cleo")
     } else {
         file_name = format!("{}.tar.gz", &file_name);
-        carl_install_directory.path.join(CLEO_TARGET_DIRECTORY).join(&file_name)
+        carl_install_directory.path.join(CLEO_IDENTIFIER).join(&file_name)
     };
     println!("Cleo install directory: {:?}", cleo_dir);
 
@@ -71,7 +71,7 @@ mod test {
         let cleo = download_cleo(Path(CleoArch::Development), cleo_state).await;
         let response = cleo.into_response();
         let header = response.headers().get(header::CONTENT_DISPOSITION).unwrap();
-        let expected_header = format!("attachment; filename=\"{}\"", CleoArch::Development.file_name());
+        let expected_header = format!("attachment; filename=\"{}\"", CleoArch::Development.name());
         assert_that!(header.clone().to_str().unwrap(), eq(expected_header.as_str()));
         
         Ok(())
