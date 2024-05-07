@@ -9,10 +9,10 @@ use opendut_types::util::net::NetworkInterfaceName;
 #[derive(clap::Parser)]
 pub struct DeleteNetworkInterfaceCli {
     ///ID of the peer to delete the network configuration from
-    #[arg(long)]
+    #[arg()]
     peer_id: Uuid,
-    ///NetworkConfiguration Interface
-    #[arg(long("interface"))]
+    ///NetworkConfiguration Interface (at least one)
+    #[arg(long("interface"), num_args = 1.., required = true)]
     interfaces: Vec<String>,
 }
 

@@ -6,7 +6,7 @@ use opendut_types::cluster::ClusterId;
 #[derive(clap::Parser)]
 pub struct DeleteClusterConfigurationCli {
     ///ClusterID
-    #[arg(short, long)]
+    #[arg()]
     id: Uuid,
 }
 

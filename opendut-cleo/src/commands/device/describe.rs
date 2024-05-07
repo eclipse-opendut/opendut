@@ -10,7 +10,7 @@ use crate::DescribeOutputFormat;
 #[derive(clap::Parser)]
 pub struct DescribeDeviceCli {
     ///DeviceID
-    #[arg(short, long)]
+    #[arg()]
     id: Uuid,
 }
 

@@ -6,7 +6,7 @@ use opendut_types::topology::DeviceId;
 #[derive(clap::Parser)]
 pub struct DeleteDeviceCli {
     ///DeviceID
-    #[arg(short, long)]
+    #[arg()]
     id: Uuid,
 }
 

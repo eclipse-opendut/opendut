@@ -6,7 +6,7 @@ use uuid::Uuid;
 #[derive(clap::Parser)]
 pub struct GenerateSetupStringCli {
     ///PeerID
-    #[arg(short, long)]
+    #[arg()]
     id: Uuid,
 }
 

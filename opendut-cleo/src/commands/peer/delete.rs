@@ -7,7 +7,7 @@ use opendut_types::peer::PeerId;
 #[derive(clap::Parser)]
 pub struct DeletePeerCli {
     ///PeerID
-    #[arg(short, long)]
+    #[arg()]
     id: Uuid,
 }
 

@@ -10,7 +10,7 @@ use crate::DescribeOutputFormat;
 #[derive(clap::Parser)]
 pub struct DescribePeerCli {
     ///PeerID
-    #[arg(short, long)]
+    #[arg()]
     id: Uuid,
 }
 

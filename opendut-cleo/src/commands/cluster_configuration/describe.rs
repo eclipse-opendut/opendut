@@ -14,7 +14,7 @@ use crate::DescribeOutputFormat;
 #[derive(clap::Parser)]
 pub struct DescribeClusterConfigurationCli {
     ///ClusterID
-    #[arg(short, long)]
+    #[arg()]
     id: Uuid,
 }
 

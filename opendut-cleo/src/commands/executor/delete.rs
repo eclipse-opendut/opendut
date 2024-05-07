@@ -8,10 +8,10 @@ use opendut_types::peer::PeerId;
 #[derive(clap::Parser)]
 pub struct DeleteContainerExecutorCli {
     ///ID of the peer to delete the container executor from
-    #[arg(long)]
+    #[arg()]
     peer_id: Uuid,
     ///Container images to delete
-    #[arg(short, long)]
+    #[arg(short, long, num_args = 1.., required = true)]
     images: Vec<ContainerImage>,
 }
 

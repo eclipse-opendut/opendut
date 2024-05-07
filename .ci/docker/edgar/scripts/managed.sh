@@ -89,7 +89,7 @@ opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME" --interfac
 opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME"-vcan0 --interface vcan0 --tag "$OPENDUT_EDGAR_CLUSTER_NAME"
 opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME"-vcan1 --interface vcan1 --tag "$OPENDUT_EDGAR_CLUSTER_NAME"
 
-PEER_SETUP_STRING=$(opendut-cleo generate-setup-string --id "$PEER_ID")
+PEER_SETUP_STRING=$(opendut-cleo generate-setup-string "$PEER_ID")
 echo "Setting up peer with Setup-String: $PEER_SETUP_STRING"
 
 opendut-edgar setup --no-confirm managed "$PEER_SETUP_STRING"
