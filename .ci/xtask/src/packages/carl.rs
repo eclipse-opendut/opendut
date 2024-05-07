@@ -102,6 +102,7 @@ pub mod distribution {
 
         distribution::collect_executables(SELF_PACKAGE, target)?;
 
+        cleo::get_cleo(&distribution_out_dir)?;
         lea::get_lea(&distribution_out_dir)?;
         copy_license_json::copy_license_json(target, SkipGenerate::No)?;
 
@@ -110,6 +111,38 @@ pub mod distribution {
         validate::validate_contents(target)?;
 
         Ok(())
+    }
+
+    mod cleo {
+        use clap::ValueEnum;
+        use super::*;
+
+        #[tracing::instrument]
+        pub fn get_cleo(out_dir: &PathBuf) -> crate::Result {
+
+            let architectures = Arch::value_variants().iter()
+                .filter(|&&arch| arch != Arch::Wasm).collect::<Vec<_>>();
+
+            let cleo_out_dir = out_dir.join(Package::Cleo.ident());
+            fs::create_dir_all(cleo_out_dir)?;
+            
+            for arch in architectures {
+                crate::packages::cleo::build::build_release(arch.to_owned())?;
+                let cleo_build_dir = crate::packages::cleo::build::out_dir(arch.to_owned());
+
+                let cleo_arch_dir = out_dir.join(Package::Cleo.ident()).join(format!("{}-{}", Package::Cleo.ident(), arch.triple()));
+                fs::create_dir_all(&cleo_arch_dir)?;
+                
+                fs_extra::file::copy(
+                    cleo_build_dir,
+                    &cleo_arch_dir.join(Package::Cleo.ident()),
+                    &fs_extra::file::CopyOptions::default()
+                        .overwrite(true)
+                )?;
+            }
+
+            Ok(())
+        }
     }
 
     mod lea {
@@ -151,7 +184,7 @@ pub mod distribution {
             match skip_generate {
                 SkipGenerate::Yes => info!("Skipping generation of licenses, as requested. Directly attempting to copy to target location."),
                 SkipGenerate::No => {
-                    for package in [SELF_PACKAGE, Package::Lea, Package::Edgar] {
+                    for package in [SELF_PACKAGE, Package::Lea, Package::Edgar, Package::Cleo] {
                         crate::tasks::licenses::json::export_json(package)?;
                     }
                 }
@@ -161,6 +194,8 @@ pub mod distribution {
             let carl_out_file = crate::tasks::distribution::copy_license_json::out_file(SELF_PACKAGE, target);
             let out_dir = carl_out_file.parent().unwrap();
 
+            let cleo_in_file = crate::tasks::licenses::json::out_file(Package::Cleo);
+            let cleo_out_file = out_dir.join(crate::tasks::licenses::json::out_file_name(Package::Cleo));
             let lea_in_file = crate::tasks::licenses::json::out_file(Package::Lea);
             let lea_out_file = out_dir.join(crate::tasks::licenses::json::out_file_name(Package::Lea));
             let edgar_in_file = crate::tasks::licenses::json::out_file(Package::Edgar);
@@ -168,6 +203,7 @@ pub mod distribution {
 
             fs::create_dir_all(out_dir)?;
             fs::copy(carl_in_file, &carl_out_file)?;
+            fs::copy(cleo_in_file, &cleo_out_file)?;
             fs::copy(lea_in_file, &lea_out_file)?;
             fs::copy(edgar_in_file, &edgar_out_file)?;
 
@@ -176,6 +212,7 @@ pub mod distribution {
                 json!({
                     "carl": carl_out_file.file_name().unwrap().to_str(),
                     "edgar": edgar_out_file.file_name().unwrap().to_str(),
+                    "cleo": cleo_out_file.file_name().unwrap().to_str(),
                     "lea": lea_out_file.file_name().unwrap().to_str(),
                 }).to_string(),
             )?;
@@ -213,16 +250,19 @@ pub mod distribution {
             carl_dir.assert(path::is_dir());
 
             let opendut_carl_executable = carl_dir.child(SELF_PACKAGE.ident());
+            let opendut_cleo_dir = carl_dir.child(Package::Cleo.ident());
             let opendut_lea_dir = carl_dir.child(Package::Lea.ident());
             let licenses_dir = carl_dir.child("licenses");
 
             carl_dir.dir_contains_exactly_in_order(vec![
                 &licenses_dir,
                 &opendut_carl_executable,
+                &opendut_cleo_dir,
                 &opendut_lea_dir,
             ]);
 
             opendut_carl_executable.assert_non_empty_file();
+            opendut_cleo_dir.assert(path::is_dir());
             opendut_lea_dir.assert(path::is_dir());
             licenses_dir.assert(path::is_dir());
 
@@ -230,11 +270,13 @@ pub mod distribution {
                 let licenses_index_file = licenses_dir.child("index.json");
                 let licenses_carl_file = licenses_dir.child("opendut-carl.licenses.json");
                 let licenses_edgar_file = licenses_dir.child("opendut-edgar.licenses.json");
+                let licenses_cleo_file = licenses_dir.child("opendut-cleo.licenses.json");
                 let licenses_lea_file = licenses_dir.child("opendut-lea.licenses.json");
 
                 licenses_dir.dir_contains_exactly_in_order(vec![
                     &licenses_index_file,
                     &licenses_carl_file,
+                    &licenses_cleo_file,
                     &licenses_edgar_file,
                     &licenses_lea_file,
                 ]);
@@ -242,7 +284,7 @@ pub mod distribution {
                 licenses_index_file.assert(path::is_file());
                 let licenses_index_content = fs::read_to_string(licenses_index_file)?;
 
-                for license_file in [&licenses_edgar_file, &licenses_carl_file, &licenses_lea_file] {
+                for license_file in [&licenses_edgar_file, &licenses_carl_file, &licenses_cleo_file, &licenses_lea_file] {
                     assert!(
                         licenses_index_content.contains(license_file.file_name_str()),
                         "The license index.json did not contain entry for expected file: {}", license_file.display()

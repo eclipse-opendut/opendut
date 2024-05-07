@@ -4,7 +4,7 @@ use clap::ValueEnum;
 use strum::IntoEnumIterator;
 
 /// General architecture used somewhere in the build process
-#[derive(Clone, Copy, Debug, strum::EnumIter)]
+#[derive(Clone, Copy, PartialEq, Debug, strum::EnumIter)]
 pub enum Arch {
     X86_64,
     Armhf,

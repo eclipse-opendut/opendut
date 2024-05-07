@@ -14,7 +14,9 @@ COPY ./.ci/docker/carl/entrypoint.sh /opt/entrypoint.sh
 RUN groupadd --gid 1000 carl
 RUN useradd --create-home --uid 1000 --gid carl --shell /bin/bash carl
 
+ENTRYPOINT ["/opt/entrypoint.sh"]
+
+RUN chown -R carl:carl /opt/opendut-carl/
 USER carl
 
-ENTRYPOINT ["/opt/entrypoint.sh"]
 CMD ["/opt/opendut-carl/opendut-carl"]

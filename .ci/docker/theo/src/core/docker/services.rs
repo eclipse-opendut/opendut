@@ -1,7 +1,7 @@
 use serde::Serialize;
 use strum::EnumIter;
 
-#[derive(Debug, Clone, clap::ValueEnum, Default, Serialize, EnumIter)]
+#[derive(Debug, Clone, clap::ValueEnum, Serialize, EnumIter)]
 pub(crate) enum DockerCoreServices {
     Network,
     Carl,
@@ -12,8 +12,6 @@ pub(crate) enum DockerCoreServices {
     Netbird,
     Firefox,
     Telemetry,
-    #[default]
-    All,
 }
 
 impl DockerCoreServices {
@@ -28,7 +26,6 @@ impl DockerCoreServices {
             DockerCoreServices::Network => "network",
             DockerCoreServices::Firefox => "firefox",
             DockerCoreServices::Telemetry => "telemetry",
-            DockerCoreServices::All => "all",
         }
     }
 }
