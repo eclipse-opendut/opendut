@@ -5,6 +5,7 @@ pub trait UrlEncodable {
     fn url_encode(&self) -> String;
 }
 
+#[allow(unused)]
 pub trait UrlDecodable<T, E> {
     fn url_decode(encoded: &str) -> Result<T, E>;
 }

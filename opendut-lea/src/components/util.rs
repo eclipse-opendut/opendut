@@ -54,6 +54,7 @@ pub fn use_active_tab<T: for<'a> TryFrom<&'a str, Error=impl ToString> + Default
     }))
 }
 
+#[allow(unused)]
 pub trait ToggleSignal {
     fn toggle(&self);
 }
