@@ -1,6 +1,6 @@
 use std::ops::Not;
 use leptos::*;
-use opendut_carl_api::carl::wasm::OptionalAuthData;
+use opendut_auth::public::OptionalAuthData;
 use crate::components::{BasePageContainer, Breadcrumb, Initialized};
 
 #[component]

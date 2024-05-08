@@ -24,7 +24,7 @@ scopes = ""
 [network.oidc.lea]
 client.id = "opendut-lea-client"
 issuer.url = "https://keycloak/realms/opendut/"
-scopes = "openid,profile,email,roles,groups"
+scopes = "openid,profile,email"
 
 [peer]
 disconnect.timeout.ms = 30000

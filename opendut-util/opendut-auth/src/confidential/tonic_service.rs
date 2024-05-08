@@ -4,30 +4,30 @@ use std::sync::Arc;
 use std::task::{Context, Poll};
 use http::{HeaderValue, Request, Response};
 use tonic::body::BoxBody;
-use tonic::codegen::Service;
 use tonic::transport::{Body, Channel};
+use tower::Service;
 use tracing::error;
-use crate::carl::auth::manager::AuthenticationManager;
+use crate::confidential::client::ConfidentialClient;
 
 #[derive(Clone, Debug)]
-pub struct AuthenticationService {
+pub struct TonicAuthenticationService {
     inner: Channel,
-    authentication_manager: Option<Arc<AuthenticationManager>>,
+    authentication_manager: Option<Arc<ConfidentialClient>>,
 }
 
-impl AuthenticationService {
+impl TonicAuthenticationService {
     pub fn new(
         inner: Channel,
-        authentication_manager: Option<Arc<AuthenticationManager>>,
+        authentication_manager: Option<Arc<ConfidentialClient>>,
     ) -> Self {
-        AuthenticationService {
+        TonicAuthenticationService {
             inner,
             authentication_manager,
         }
     }
 }
 
-impl Service<Request<BoxBody>> for AuthenticationService {
+impl Service<Request<BoxBody>> for TonicAuthenticationService {
     type Response = Response<Body>;
     type Error = Box<dyn std::error::Error + Send + Sync>;
     #[allow(clippy::type_complexity)]
@@ -59,7 +59,7 @@ impl Service<Request<BoxBody>> for AuthenticationService {
                     let token = token_future.await;
                     match token {
                         Ok(token) => {
-                            let token = token.value;
+                            let token = token.to_string();
 
                             let bearer_header =
                                 HeaderValue::from_str(format!("Bearer {}", token.as_str()).as_str())

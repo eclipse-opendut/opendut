@@ -1,0 +1,62 @@
+[package]
+name = "opendut-auth"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[features]
+confidential_client = [
+    "anyhow",
+    "chrono",
+    "config",
+    "http",
+    "tower",
+    "oauth2",
+    "pem",
+    "tokio",
+    "tonic/default",
+    "tonic/transport",
+    "tonic/tls",
+    "tracing",
+    "shadow-rs",
+    "opendut-types",
+]
+# registration_client requires confidential_client feature
+registration_client = [
+    "confidential_client",
+    "openidconnect",
+]
+public_client = [
+    "chrono",
+    "leptos_oidc",
+    "tracing",
+]
+
+[dependencies]
+opendut-util-core = { workspace = true }
+opendut-types = { workspace = true, optional = true }
+
+anyhow = { workspace = true, optional = true }
+cfg-if = { workspace = true }
+chrono = { workspace = true, optional = true, default-features = false, features = ["clock", "serde", "wasmbind"] }
+config = { workspace = true, optional = true }
+http = { workspace = true, optional = true }
+leptos_oidc =  { workspace = true, optional = true }
+openidconnect = { workspace = true, optional = true, default-features = false, features = ["reqwest"] }
+oauth2 = { workspace = true, default-features = false, optional = true, features = ["reqwest"] }
+pem = { workspace = true, optional = true, features = ["serde"]}
+reqwest = { workspace = true, default-features = false, features = ["rustls-tls-native-roots"] }
+serde = { workspace = true, features = ["std", "derive"] }
+shadow-rs = { workspace = true, default-features = false, optional = true, features = ["tzdb"] }
+thiserror = { workspace = true }
+tokio = { workspace = true, optional = true }
+tonic = { workspace = true }
+tower = { workspace = true, optional = true }
+tracing = { workspace = true, optional = true }
+url = { workspace = true }
+
+
+[dev-dependencies]
+rstest = { workspace = true }
+googletest = { workspace = true }

@@ -1,6 +1,7 @@
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::ops::Not;
+
 use pem::Pem;
 use serde::{Deserialize, Serialize};
 use url::Url;
@@ -375,7 +376,7 @@ impl TryFrom<String> for ClientSecret {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ClientCredentials {
     pub client_id: ClientId,
     pub client_secret: ClientSecret,
@@ -401,5 +402,32 @@ impl AuthConfig {
             client_secret: client_credentials.client_secret,
             scopes: vec![],
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use googletest::assert_that;
+    use googletest::matchers::eq;
+    use url::Url;
+
+    use crate::util::net::{AuthConfig, ClientCredentials, ClientId, ClientSecret, OAuthScope};
+
+    #[test]
+    pub fn test_create_auth_config() {
+        let client_id = ClientId("test".to_string());
+        let client_secret = ClientSecret("foobar".to_string());
+        let client_credentials = ClientCredentials { client_id: client_id.clone(), client_secret: client_secret.clone() };
+        let expected_scopes: Vec<OAuthScope> = vec![];
+        let issuer_url = Url::parse("https://some-address-idk.com").unwrap();
+        let auth_config = AuthConfig::from_credentials(issuer_url.clone(), client_credentials);
+
+        assert_that!(auth_config, eq(AuthConfig::Enabled {
+            issuer_url,
+            client_id,
+            client_secret,
+            scopes: expected_scopes,
+            
+        }));
     }
 }

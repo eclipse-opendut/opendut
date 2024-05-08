@@ -7,6 +7,7 @@ license.workspace = true
 
 [dependencies]
 opendut-carl-api = { workspace = true, features = ["wasm-client"] }
+opendut-auth = { workspace = true, features = ["public_client"] }
 opendut-types = { workspace = true }
 
 chrono = { workspace = true, features = ["clock", "wasmbind"] }

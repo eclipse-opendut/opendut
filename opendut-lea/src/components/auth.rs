@@ -1,7 +1,7 @@
 use leptos::{ChildrenFn, component, create_effect, IntoView, ReadSignal, Show, SignalSet, Transition, use_context, view, ViewFn, WriteSignal};
 use leptos_oidc::{Algorithm, DecodingKey, TokenData, Validation};
 use serde::{Deserialize, Serialize};
-use opendut_carl_api::carl::wasm::{AuthData, OptionalAuthData};
+use opendut_auth::public::{AuthData, OptionalAuthData};
 
 use crate::app::{ExpectGlobals, use_app_globals};
 

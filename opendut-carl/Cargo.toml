@@ -7,7 +7,8 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-opendut-carl-api = { workspace = true, features = ["oidc_client"] }
+opendut-auth = { workspace = true, features = ["registration_client"] }
+opendut-carl-api = { workspace = true }
 opendut-vpn-netbird = { workspace = true }
 opendut-types = { workspace = true }
 opendut-util = { workspace = true }
@@ -24,10 +25,9 @@ googletest = { workspace = true }
 http = { workspace = true }
 itertools = { workspace = true }
 pem = { workspace = true, features = ["serde"]}
-oauth2 = { workspace = true, default-features = false, features = ["reqwest"] }
-openidconnect = { workspace = true, default-features = false, features = ["reqwest"] }
 opentelemetry = { workspace = true }
 opentelemetry_sdk = { workspace = true }
+reqwest = { workspace = true, default-features = false, features = ["rustls-tls-native-roots"] }
 serde = { workspace = true, features = ["derive"] }
 shadow-rs = { workspace = true, default-features = true }
 tar = { workspace = true }
@@ -48,6 +48,7 @@ assert_fs = { workspace = true }
 async-trait = { workspace = true }
 rstest = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
+opendut-auth-tests = { workspace = true }
 
 [build-dependencies]
 shadow-rs = { workspace = true, default-features = true }

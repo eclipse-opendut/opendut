@@ -5,6 +5,7 @@ use tonic::{Request, Response, Status};
 use tonic_web::CorsGrpcWeb;
 use tracing::trace;
 use url::Url;
+use opendut_auth::registration::client::RegistrationClientRef;
 
 use opendut_carl_api::carl::peer::GetPeerDescriptorError;
 use opendut_carl_api::proto::services::peer_manager;
@@ -16,7 +17,6 @@ use opendut_types::util::net::NetworkInterfaceName;
 use crate::actions;
 use crate::actions::{DeletePeerDescriptorParams, GeneratePeerSetupParams, ListDevicesParams, ListPeerDescriptorsParams, StorePeerDescriptorOptions, StorePeerDescriptorParams};
 use crate::grpc::extract;
-use crate::peer::oidc_client_manager::OpenIdConnectClientManager;
 use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
 
@@ -25,18 +25,18 @@ pub struct PeerManagerFacade {
     vpn: Vpn,
     carl_url: Url,
     ca: Pem,
-    oidc_client_manager: Option<OpenIdConnectClientManager>,
+    oidc_registration_client: Option<RegistrationClientRef>,
     options: PeerManagerFacadeOptions,
 }
 
 impl PeerManagerFacade {
 
     pub fn new(
-        resources_manager: ResourcesManagerRef, 
-        vpn: Vpn, 
-        carl_url: Url, 
-        ca: Pem, 
-        oidc_client_manager: Option<OpenIdConnectClientManager>,
+        resources_manager: ResourcesManagerRef,
+        vpn: Vpn,
+        carl_url: Url,
+        ca: Pem,
+        oidc_registration_client: Option<RegistrationClientRef>,
         options: PeerManagerFacadeOptions
     ) -> Self {
         PeerManagerFacade {
@@ -44,7 +44,7 @@ impl PeerManagerFacade {
             vpn,
             carl_url,
             ca,
-            oidc_client_manager,
+            oidc_registration_client,
             options
         }
     }
@@ -225,7 +225,7 @@ impl PeerManagerService for PeerManagerFacade {
                     carl_url: Clone::clone(&self.carl_url),
                     ca: Clone::clone(&self.ca),
                     vpn: Clone::clone(&self.vpn),
-                    oidc_client_manager: self.oidc_client_manager.clone(),
+                    oidc_registration_client: self.oidc_registration_client.clone(),
                 }).await.map_err(|cause| Status::internal(format!("Peer setup could not be created: {}", cause)))?;
 
                 peer_manager::generate_peer_setup_response::Reply::Success(peer_manager::GeneratePeerSetupSuccess { peer: Some(peer_id.into()), setup: Some(setup.into()) })
@@ -270,7 +270,6 @@ mod tests {
 
     use googletest::prelude::*;
     use rstest::rstest;
-    use crate::peer::oidc_client_manager::tests::oidc_client_manager;
     use url::Url;
 
     use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkDescriptor};
@@ -278,6 +277,7 @@ mod tests {
     use opendut_types::proto;
     use opendut_types::topology::Topology;
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
+    use opendut_auth_tests::registration_client;
 
     use crate::resources::manager::ResourcesManager;
     use crate::vpn::Vpn;
@@ -295,7 +295,7 @@ mod tests {
 
     #[rstest]
     #[tokio::test]
-    async fn test_successful_create_delete(oidc_client_manager: OpenIdConnectClientManager) -> Result<()> {
+    async fn test_successful_create_delete(#[future] registration_client: RegistrationClientRef) -> Result<()> {
 
         let settings = crate::settings::load_defaults()?;
 
@@ -305,7 +305,7 @@ mod tests {
             Vpn::Disabled,
             Url::parse("https://example.com:1234").unwrap(),
             get_cert(),
-            Some(oidc_client_manager),
+            Some(registration_client.await),
             PeerManagerFacadeOptions::load(&settings.config)?
         );
 
@@ -391,7 +391,7 @@ mod tests {
 
     #[rstest]
     #[tokio::test]
-    async fn register_fails_when_no_id_specified(oidc_client_manager: OpenIdConnectClientManager) -> Result<()> {
+    async fn register_fails_when_no_id_specified(#[future] registration_client: RegistrationClientRef) -> Result<()> {
 
         let settings = crate::settings::load_defaults()?;
         
@@ -401,7 +401,7 @@ mod tests {
             Vpn::Disabled,
             Url::parse("https://example.com:1234").unwrap(),
             get_cert(),
-            Some(oidc_client_manager),
+            Some(registration_client.await),
             PeerManagerFacadeOptions::load(&settings.config)?
         );
 
@@ -434,7 +434,7 @@ mod tests {
 
     #[rstest]
     #[tokio::test]
-    async fn unregister_fails_when_no_id_specified(oidc_client_manager: OpenIdConnectClientManager) -> Result<()> {
+    async fn unregister_fails_when_no_id_specified(#[future] registration_client: RegistrationClientRef) -> Result<()> {
 
         let settings = crate::settings::load_defaults()?;
         
@@ -444,7 +444,7 @@ mod tests {
             Vpn::Disabled,
             Url::parse("https://example.com:1234").unwrap(),
             get_cert(),
-            Some(oidc_client_manager),
+            Some(registration_client.await),
             PeerManagerFacadeOptions::load(&settings.config)?
         );
 

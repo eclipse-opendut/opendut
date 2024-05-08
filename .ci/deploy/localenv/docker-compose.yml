@@ -304,8 +304,6 @@ services:
       - OPENDUT_CARL_NETWORK_OIDC_ENABLED=true
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ID=opendut-carl-client
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_SECRET
-      - OPENDUT_CARL_NETWORK_OIDC_CLIENT_PEER_ID=opendut-edgar-client
-      - OPENDUT_CARL_NETWORK_OIDC_CLIENT_PEER_SECRET
       - OPENDUT_CARL_NETWORK_OIDC_LEA_ISSUER_URL=https://auth.opendut.local/realms/opendut/
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_URL=https://auth.opendut.local/realms/opendut/
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_REMOTE_URL=https://auth.opendut.local/realms/opendut/

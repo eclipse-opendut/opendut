@@ -8,18 +8,12 @@ license.workspace = true
 [features]
 default = ["codegen"]
 codegen = ["tonic/prost", "tonic/codegen", "tonic-build/prost"]
-oidc_client = [
-    "dep:anyhow",
-    "dep:config",
-    "dep:oauth2",
-    "dep:shadow-rs",
-]
 client = [
     "codegen",
     "dep:chrono",
     "dep:config",
     "dep:http",
-    "dep:oauth2",
+    "opendut-auth/confidential_client",
     "dep:tower",
     "dep:tracing",
     "tokio",
@@ -32,23 +26,21 @@ wasm-client = [
     "dep:chrono",
     "dep:jsonwebtoken",
     "dep:leptos",
-    "dep:leptos_oidc",
+    "opendut-auth/public_client",
     "dep:tonic-web-wasm-client",
     "dep:tracing",
 ]
 
 [dependencies]
+opendut-auth = { workspace = true, optional = true }
 opendut-types = { workspace = true }
 
-anyhow = { workspace = true, optional = true }
 chrono = { workspace = true, optional = true, default-features = false, features = ["clock", "serde", "wasmbind"] }
 cfg-if = { workspace = true }
 config = { workspace = true, optional = true }
 http = { workspace = true, optional = true }
 jsonwebtoken = { workspace = true, optional = true }
 leptos = { workspace = true, optional = true }
-leptos_oidc =  { workspace = true, optional = true }
-oauth2 = { workspace = true, default-features = false, optional = true, features = ["reqwest"] }
 prost = { workspace = true }
 reqwest = { workspace = true, default-features = false, features = ["rustls-tls-native-roots"] }
 serde = { workspace = true, features = ["std", "derive"] }

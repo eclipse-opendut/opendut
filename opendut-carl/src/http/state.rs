@@ -7,7 +7,7 @@ use itertools::Itertools;
 use serde::Serialize;
 use shadow_rs::formatcp;
 use url::Url;
-use opendut_carl_api::carl::auth::auth_config::OidcIdentityProviderConfig;
+use opendut_auth::confidential::config::ConfidentialClientConfigData;
 
 
 #[derive(Clone)]
@@ -40,7 +40,7 @@ impl TryFrom<&Config> for LeaIdentityProviderConfig {
         let lea_raw_scopes = config.get_string(LeaIdentityProviderConfig::SCOPES)
             .map_err(|error| anyhow!("Failed to find configuration for `{}`. {}", LeaIdentityProviderConfig::SCOPES, error))?;
 
-        let scopes = OidcIdentityProviderConfig::parse_scopes(&client_id, lea_raw_scopes).into_iter()
+        let scopes = ConfidentialClientConfigData::parse_scopes(&client_id, lea_raw_scopes).into_iter()
             .map(|scope| scope.to_string()).join(" ");  // Required by leptos_oidc
 
         Ok(Self { client_id, issuer_url, scopes })

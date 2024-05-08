@@ -2,10 +2,10 @@ use leptos::{component, create_node_ref, create_rw_signal, IntoView, MaybeSignal
 use leptos::html::Div;
 use leptos_oidc::components::{LoginLink, LogoutLink};
 use leptos_use::on_click_outside;
+use opendut_auth::public::OptionalAuthData;
 
 use crate::components::{LeaAuthenticated, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Initialized};
 use crate::use_context;
-use opendut_carl_api::carl::wasm::OptionalAuthData;
 use crate::{WriteSignal, ReadSignal};
 
 #[component(transparent)]

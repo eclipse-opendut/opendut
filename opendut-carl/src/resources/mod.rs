@@ -3,15 +3,10 @@ use std::collections::hash_map::{Values, ValuesMut};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
-use uuid::Uuid;
+use opendut_types::resources::Id;
 
 pub mod manager;
 pub mod ids;
-
-#[derive(Copy, Clone, Eq, Hash, PartialEq)]
-pub struct Id {
-    value: Uuid,
-}
 
 pub trait IntoId<R: Any + Send + Sync> {
     fn into_id(self) -> Id;
@@ -193,13 +188,5 @@ where R: Any + Send + Sync {
         let column = self.column.as_mut()?;
         column.next()
             .and_then(|value| value.downcast_mut())
-    }
-}
-
-impl From<Uuid> for Id {
-    fn from(value: Uuid) -> Self {
-        Self {
-            value,
-        }
     }
 }

@@ -80,7 +80,7 @@ pub fn initialize_with_config(config: LoggingConfig, file_logging: Option<PathBu
         if let OpenTelemetryConfig::Enabled { endpoint, service_name, service_instance_id, metrics_interval_ms, ..} = config.opentelemetry {
             
         let tracer = init_tracer(&endpoint, service_name.clone(), service_instance_id.clone()).expect("Failed to initialize tracer.");
-            
+
         let logger = init_logger(&endpoint, service_name.clone(), service_instance_id.clone()).expect("Failed to initialize logs.");
 
         let logger_provider: GlobalLoggerProvider = logger_provider();

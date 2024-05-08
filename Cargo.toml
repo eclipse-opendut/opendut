@@ -9,6 +9,9 @@ members = [
     "opendut-lea",
     "opendut-types",
     "opendut-util",
+    "opendut-util/opendut-auth",
+    "opendut-util/opendut-auth/opendut-auth-tests",
+    "opendut-util/opendut-util-core",
     "opendut-vpn",
     "opendut-vpn/opendut-vpn-netbird",
     ".ci/xtask",
@@ -24,6 +27,8 @@ license = "Apache-2.0"
 repository = "https://github.com/eclipse-opendut/opendut"
 
 [workspace.dependencies]
+opendut-auth = { path = "opendut-util/opendut-auth" }
+opendut-auth-tests = { path = "opendut-util/opendut-auth/opendut-auth-tests" }
 opendut-carl = { path = "opendut-carl" }
 opendut-carl-api = { path = "opendut-carl/opendut-carl-api" }
 opendut-ci = { path = ".ci/xtask" }
@@ -34,6 +39,7 @@ opendut-vpn-netbird = { path = "opendut-vpn/opendut-vpn-netbird" }
 opendut-types = { path = "opendut-types" }
 opendut-theo = { path = ".ci/docker/theo" }
 opendut-util = { path = "opendut-util" }
+opendut-util-core = { path = "opendut-util/opendut-util-core" }
 opendut-vpn = { path = "opendut-vpn" }
 
 anyhow = "1.0.79"

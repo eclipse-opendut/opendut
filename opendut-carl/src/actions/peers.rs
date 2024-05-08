@@ -4,6 +4,7 @@ use std::sync::Arc;
 use pem::Pem;
 use tracing::{debug, error, info, Span, warn};
 use url::Url;
+use opendut_auth::registration::client::RegistrationClientRef;
 use uuid::Uuid;
 
 pub use opendut_carl_api::carl::peer::{
@@ -24,7 +25,7 @@ use opendut_types::util::net::{AuthConfig, Certificate, ClientCredentials, Netwo
 use opendut_types::vpn::VpnPeerConfiguration;
 use opendut_util::ErrorOr;
 use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerRef};
-use crate::peer::oidc_client_manager::{OAuthClientCredentials, OpenIdConnectClientManager};
+use crate::resources::IntoId;
 
 use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
@@ -263,7 +264,7 @@ pub struct GeneratePeerSetupParams {
     pub carl_url: Url,
     pub ca: Pem,
     pub vpn: Vpn,
-    pub oidc_client_manager: Option<OpenIdConnectClientManager>,
+    pub oidc_registration_client: Option<RegistrationClientRef>,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -304,17 +305,17 @@ pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<Peer
             VpnPeerConfiguration::Disabled
         };
 
-        let auth_config = match params.oidc_client_manager {
+        let auth_config = match params.oidc_registration_client {
             None => {
                 AuthConfig::Disabled
             }
-            Some(oidc_client_manager) => {
+            Some(registration_client) => {
+                let resource_id = peer_id.into();
                 debug!("Generating OIDC client for peer '{peer_name}' <{peer_id}>.");
-                let issuer_url = oidc_client_manager.issuer_remote_url.clone();
-                let client_credentials = ClientCredentials::from(oidc_client_manager.register_new_client()
+                let issuer_url = registration_client.config.issuer_remote_url.clone();
+                let client_credentials = registration_client.register_new_client(resource_id)
                     .await
-                    .map_err(|cause| GeneratePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), cause: cause.to_string() })?
-                );
+                    .map_err(|cause| GeneratePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), cause: cause.to_string() })?;
                 debug!("Successfully generated peer setup for peer '{peer_name}' <{peer_id}>. OIDC client_id='{}'.", client_credentials.client_id.clone().value());
                 AuthConfig::from_credentials(issuer_url, client_credentials)
             }

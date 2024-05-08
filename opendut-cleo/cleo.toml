@@ -13,5 +13,5 @@ enabled = false
 [network.oidc.client]
 id = "opendut-cleo-client"
 issuer.url = "https://keycloak/realms/opendut/"
-scopes = "openid,profile,email,roles,groups"
+scopes = "openid,profile,email"
 secret = "<tbd>"

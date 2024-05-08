@@ -13,31 +13,30 @@ use axum_server_dual_protocol::ServerExt;
 use futures::future::BoxFuture;
 use futures::TryFutureExt;
 use pem::Pem;
-use tokio::fs;
 use tonic::transport::Server;
 use tower::{BoxError, make::Shared, ServiceExt, steer::Steer};
 use tower_http::services::{ServeDir, ServeFile};
 use tracing::{debug, info, warn};
-use url::Url;
 use uuid::Uuid;
+use opendut_auth::confidential::pem::PemFromConfig;
+use opendut_auth::registration::client::{RegistrationClient, RegistrationClientRef};
+use opendut_auth::registration::resources::ResourceHomeUrl;
 
 use opendut_util::{logging, project};
 use opendut_util::logging::LoggingConfig;
 use opendut_util::settings::LoadedConfig;
-
 use crate::cluster::manager::{ClusterManager, ClusterManagerOptions, ClusterManagerRef};
+
 use crate::grpc::{ClusterManagerFacade, MetadataProviderFacade, PeerManagerFacade, PeerManagerFacadeOptions, PeerMessagingBrokerFacade};
 use crate::http::router;
 use crate::http::state::{CarlInstallDirectory, HttpState, LeaConfig, LeaIdentityProviderConfig};
 use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerOptions, PeerMessagingBrokerRef};
-use crate::peer::oidc_client_manager::{CarlIdentityProviderConfig, OpenIdConnectClientManager};
 use crate::provisioning::cleo_script::CleoScript;
 use crate::resources::manager::{ResourcesManager, ResourcesManagerRef};
 use crate::vpn::Vpn;
 
 pub mod grpc;
 pub mod util;
-
 opendut_util::app_info!();
 
 mod actions;
@@ -55,11 +54,11 @@ pub async fn create_with_logging(settings_override: config::Config) -> Result<()
     let settings = settings::load_with_overrides(settings_override)?;
 
     let service_instance_id = format!("carl-{}", Uuid::new_v4());
-    
+
     let file_logging = None;
     let logging_config = LoggingConfig::load(&settings.config, service_instance_id)?;
     let mut shutdown = logging::initialize_with_config(logging_config.clone(), file_logging)?;
-    
+
     if let logging::OpenTelemetryConfig::Enabled { cpu_collection_interval_ms, .. } = logging_config.opentelemetry {
         logging::initialize_metrics_collection(cpu_collection_interval_ms);
     }
@@ -91,31 +90,17 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
 
         RustlsConfig::from_pem_file(cert_path, key_path).await?
     };
+    let carl_url = ResourceHomeUrl::try_from(&settings.config)?;
 
-
-    let ca_string = fs::read_to_string(project::make_path_absolute(settings.config.get_string("network.tls.ca")?)?).await?;
-    let ca_certificate = match Pem::from_str(ca_string.as_str()) {
-        Ok(pem) => { pem }
-        Err(error) => {
-            panic!("Missing CA certificate file in CARL's configuration TOML. {:?}", error)
-        }
-    };
-
+    let ca_certificate = Pem::from_config_path("network.tls.ca", &settings.config).await?;
+    let oidc_registration_client = RegistrationClient::from_settings(&settings.config).await.expect("Failed to load oidc registration client!");
 
     let vpn = vpn::create(&settings.config)
         .context("Error while parsing VPN configuration.")?;
 
-    let carl_url = {
-        let host = settings.config.get_string("network.remote.host").expect("Configuration value for 'network.remote.host' should be set.");
-        let port = settings.config.get_int("network.remote.port").expect("Configuration value for 'network.remote.port' should be set.");
-        Url::parse(&format!("https://{host}:{port}"))
-            .context(format!("Could not create CARL URL from given host '{host}' and {port}."))?
-    };
-
-
     let resources_manager = ResourcesManager::new();
     metrics::initialize_metrics_collection(Arc::clone(&resources_manager));
-    
+
     let peer_messaging_broker = PeerMessagingBroker::new(
         Arc::clone(&resources_manager),
         PeerMessagingBrokerOptions::load(&settings.config)?,
@@ -137,31 +122,23 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
         cluster_manager: ClusterManagerRef,
         peer_messaging_broker: PeerMessagingBrokerRef,
         vpn: Vpn,
-        carl_url: Url,
+        carl_url: ResourceHomeUrl,
         settings: config::Config,
         ca: Pem,
+        oidc_registration_client: Option<RegistrationClientRef>,
     ) -> BoxFuture<'static, Result<()>> {
         let oidc_enabled = settings.get_bool("network.oidc.enabled").unwrap_or(false);
 
-        let oidc_client_manager = if oidc_enabled {
-            let carl_oidc_config = CarlIdentityProviderConfig::try_from(&settings)
-                .expect("Failed to create CarlIdentityProviderConfig from settings.");
-            Some(OpenIdConnectClientManager::new(carl_oidc_config)
-                .expect("Failed to create OpenIdConnectClientManager."))
-        } else {
-            None
-        };
-        
         let cluster_manager_facade = ClusterManagerFacade::new(Arc::clone(&cluster_manager), Arc::clone(&resources_manager));
         let metadata_provider_facade = MetadataProviderFacade::new();
-        
+
         let peer_manager_facade_options = PeerManagerFacadeOptions::load(&settings).expect("Error while loading PeerManagerFacadeOptions.");
         let peer_manager_facade = PeerManagerFacade::new(
-            Arc::clone(&resources_manager), 
-            vpn, 
-            Clone::clone(&carl_url), 
+            Arc::clone(&resources_manager),
+            vpn,
+            Clone::clone(&carl_url.value()),
             ca.clone(),
-            oidc_client_manager,
+            oidc_registration_client,
             peer_manager_facade_options
         );
         let peer_messaging_broker_facade = PeerMessagingBrokerFacade::new(Arc::clone(&peer_messaging_broker));
@@ -195,7 +172,7 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
 
         let app_state = HttpState {
             lea_config: LeaConfig {
-                carl_url,
+                carl_url: carl_url.value(),
                 idp_config: lea_idp_config,
             },
             carl_installation_directory: CarlInstallDirectory::determine().expect("Could not determine installation directory.")
@@ -275,6 +252,7 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
         carl_url,
         settings.config,
         ca_certificate,
+        oidc_registration_client,
     ).await.unwrap();
 
     Ok(())
