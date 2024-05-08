@@ -88,9 +88,9 @@ jobs:
         run: |
           echo "Show all containers"
           docker ps --all
-          ./opendut-theo/opendut-theo testenv destroy || {echo Result $?; true}
+          ./opendut-theo/opendut-theo testenv destroy || { echo Result $?; true; }
           echo "Show all remaining containers"
           docker ps --all
           echo "Remove all exited containers forcefully"
-          docker rm --volumes --force $(docker ps -a -q -f status=exited)
+          docker rm --volumes --force $(docker ps -a -q -f status=exited) || true
         continue-on-error: true
