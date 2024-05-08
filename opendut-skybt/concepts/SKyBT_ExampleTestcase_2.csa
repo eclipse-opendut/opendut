@@ -1,0 +1,25 @@
+PreConditions:
+
+ 
+Actions: 
+
+//PreConditions
+Cl15: execute(tool:"/programs/cl15.py", params:["set", "=", "on"])
+Gear: execute(tool:"/programs/gear.py", params:["set", "=", "D"])
+ACCstate: execute(tool:"/programs/accstate.py", params:["set", "=", "system active"])
+Vehiclespeed: execute(tool:"/programs/vehicespeed.py", params:["set", "=", "75.0", "kmh"])
+Wait: execute(tool:"programs/wait.py", params:["2000", "ms"])
+
+//Action
+Vehicespeed: execute(tool:"/programs/vehicespeed.py", params:["evaluateabort", "==", "75.0", "kmh"])
+ACC set button: execute(tool:"/programs/accsetbutton.py", params:["set", "=", "short pressed"])
+acceleratorpedal: execute(tool:"/programs/acceleratorpedal.py", params:["set", "=", "0", "%"])
+Wait: execute(tool:"programs/wait.py", params:["10000", "ms"])
+ 
+//Expected Results
+BusSignal: execute(tool:"/programs/bussignal.py", params:["evaluate", "==", "FCAN::ACC_01::ACC_state", "speed control active"])
+BusSignal: execute(tool:"/programs/bussignal.py", params:["evaluate", "==", "FCAN::ACC_01::ACC_set_speed", "75"])
+Vehiclespeed: execute(tool:"/programs/speed.py", params:["evaluate", "==", "75.0", "kmh"])
+ 
+PostConditions:
+
