@@ -39,7 +39,7 @@ impl Task for CreateUser {
             .arg("--no-create-home")
             .arg(&self.service_user.name)
             .evaluate_requiring_success()
-            .context("Error when trying to create user '{USER_NAME}'.")?;
+            .context(format!("Error when trying to create user '{}'.", self.service_user.name))?;
 
         Ok(Success::default())
     }
