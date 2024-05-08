@@ -31,3 +31,4 @@
   - [Cluster](architecture/cluster/index.md)
     - [Deployment](architecture/cluster/deployment.md)
   - [Peer](architecture/peer/index.md)
+  - [Telemetry](architecture/telemetry/index.md)
