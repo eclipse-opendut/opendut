@@ -1,0 +1,17 @@
+PreConditions:
+Set Clamp15 = On
+Set Gear = D
+Set ACC state = system active
+Set Vehicle speed = 75 km/h
+Wait 2 s
+
+Actions:
+EvaluateAbort Vehiclespeed == 75 km/h
+Set ACC set button = short pressed
+Set acceleratorpedal position = 0%
+Wait 10 s
+
+Expected Results:
+Evaluate FCAN::ACC_01::ACC_state == speed control active
+Evaluate FCAN::ACC_01::ACC_set_speed == 75
+Evaluate Vehicle speed == 75 km/h
