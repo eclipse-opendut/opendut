@@ -28,6 +28,15 @@ struct Args {
     command: Commands,
 }
 
+#[derive(clap::Args)]
+#[group(required = true)]
+struct CreateArgs {
+    #[command(subcommand)]
+    resource: Option<CreateResource>,
+    // #[arg(short, long)]
+    // filename: Option<String>,
+}
+
 #[derive(Subcommand)]
 enum Commands {
     ///Authenticate CLEO with setup string
@@ -50,8 +59,8 @@ enum Commands {
     },
     ///Create openDuT resource
     Create {
-        #[command(subcommand)]
-        resource: Box<CreateResource>,
+        #[clap(flatten)]
+        args: Box<CreateArgs>,
         ///Text, JSON or prettified JSON as output format
         #[arg(value_enum, short, long, default_value_t=CreateOutputFormat::Text)]
         output: CreateOutputFormat,
@@ -127,6 +136,7 @@ enum ApplyResource {
 }
 
 #[derive(Subcommand)]
+#[command(args_conflicts_with_subcommands = true)]
 enum CreateResource {
     ClusterConfiguration(commands::cluster_configuration::create::CreateClusterConfigurationCli),
     ClusterDeployment(commands::cluster_deployment::create::CreateClusterDeploymentCli),
@@ -258,27 +268,32 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
                 }
             }
         }
-        Commands::Create { resource, output } => {
-            let mut carl = create_carl_client(&settings.config).await;
-            match *resource {
-                CreateResource::ClusterConfiguration(implementation) => {
-                    implementation.execute(&mut carl, output).await?;
+        Commands::Create { args, output, .. } => {
+            if let Some(resource) = args.resource {
+                let mut carl = create_carl_client(&settings.config).await;
+                match resource {
+                    CreateResource::ClusterConfiguration(implementation) => {
+                        implementation.execute(&mut carl, output).await?;
+                    }
+                    CreateResource::ClusterDeployment(implementation) => {
+                        implementation.execute(&mut carl, output).await?;
+                    }
+                    CreateResource::Peer(implementation) => {
+                        implementation.execute(&mut carl, output).await?;
+                    }
+                    CreateResource::ContainerExecutor(implementation) => {
+                        implementation.execute(&mut carl, output).await?;
+                    }
+                    CreateResource::NetworkInterface(implementation) => {
+                        implementation.execute(&mut carl, output).await?;
+                    }
+                    CreateResource::Device(implementation) => {
+                        implementation.execute(&mut carl, output).await?;
+                    }
                 }
-                CreateResource::ClusterDeployment(implementation) => {
-                    implementation.execute(&mut carl, output).await?;
-                }
-                CreateResource::Peer(implementation) => {
-                    implementation.execute(&mut carl, output).await?;
-                }
-                CreateResource::ContainerExecutor(implementation) => {
-                    implementation.execute(&mut carl, output).await?;
-                }
-                CreateResource::NetworkInterface(implementation) => {
-                    implementation.execute(&mut carl, output).await?;
-                }
-                CreateResource::Device(implementation) => {
-                    implementation.execute(&mut carl, output).await?;
-                }
+            }
+            else {
+                todo!("Resource from file not yet implemented")
             }
         }
         Commands::GenerateSetupString(implementation) => {

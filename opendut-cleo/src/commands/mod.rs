@@ -8,3 +8,4 @@ pub mod decode_setup_string;
 pub mod generate_setup_string;
 pub mod completions;
 pub mod setup;
+mod util;

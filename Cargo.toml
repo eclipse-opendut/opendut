@@ -58,7 +58,7 @@ cargo_metadata = "0.18.1"
 cargo_toml = "0.20.3"
 cfg-if = "1.0.0"
 chrono = { version = "0.4.35", default-features = false }
-clap = "4.4.18"
+clap = "4.5.4"
 clap_complete = "4.5.2"
 cli-table = "0.4"
 
