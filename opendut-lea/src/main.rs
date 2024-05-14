@@ -1,3 +1,5 @@
+#![allow(clippy::empty_docs)]  //Temporarily ignore these, as they are currently buggy: https://github.com/rust-lang/rust-clippy/issues/12377 (as of 2024-05-14)
+
 use leptos::*;
 use tracing::info;
 use tracing_subscriber::fmt::format::Pretty;

@@ -27,7 +27,7 @@ pub enum TaskCli {
         /// Expose firefox container port (3000), or set OPENDUT_EXPOSE_PORTS=true
         #[arg(long, short, action = ArgAction::SetTrue)]
         expose: bool,
-        ///
+
         #[arg(long, short, action = ArgAction::SetTrue)]
         skip_build: bool,
 
