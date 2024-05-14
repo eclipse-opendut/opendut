@@ -18,6 +18,11 @@ docker-logs/
 rustc-ice-*
 .cache_ggshield
 
+#####################################
+#                Logs               #
+#####################################
+*.log
+
 # NetBird proto files get downloaded from the web.
 /opendut-edgar/netbird-client-api/proto/netbird-v*
 
