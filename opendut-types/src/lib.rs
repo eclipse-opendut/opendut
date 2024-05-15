@@ -9,6 +9,9 @@ pub mod util;
 pub mod resources;
 pub mod cleo;
 
+#[cfg(feature = "specs")]
+pub mod specs;
+
 pub trait ShortName {
     fn short_name(&self) -> &'static str;
 
