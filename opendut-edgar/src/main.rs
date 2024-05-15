@@ -97,22 +97,25 @@ async fn main() -> anyhow::Result<()> {
 
             let command = std::env::args_os()
                 .collect::<Vec<_>>();
+            info!("EDGAR Setup started!");
             info!("Setup command being executed: {:?}", command);
 
             let run_mode = if dry_run { setup::RunMode::DryRun } else { setup::RunMode::Normal };
 
             match mode {
                 SetupMode::Managed { setup_string } => {
-                    setup::start::managed(run_mode, no_confirm, setup_string, mtu).await
+                    setup::start::managed(run_mode, no_confirm, setup_string, mtu).await?;
                 },
                 SetupMode::Unmanaged { management_url, setup_key, leader, bridge, device_interfaces } => {
                     let setup_key = SetupKey { uuid: setup_key };
                     let ParseableLeader(leader) = leader;
                     let bridge = bridge.unwrap_or_else(opendut_edgar::common::default_bridge_name);
                     let device_interfaces = HashSet::from_iter(device_interfaces);
-                    setup::start::unmanaged(run_mode, no_confirm, management_url, setup_key, bridge, device_interfaces, leader, mtu).await
+                    setup::start::unmanaged(run_mode, no_confirm, management_url, setup_key, bridge, device_interfaces, leader, mtu).await?;
                 }
-            }
+            };
+            info!("EDGAR Setup finished!\n");
+            Ok(())
         },
     }
 }

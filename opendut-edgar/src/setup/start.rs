@@ -24,7 +24,7 @@ use crate::setup::util::running_in_docker;
 pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, mtu: u16) -> anyhow::Result<()> {
 
     let peer_setup = PeerSetup::decode(&setup_string)
-        .context("Failed to decode Setup String.")?;
+        .context("Failed to decode Setup-String.")?;
 
     let service_user = determine_service_user_name();
     info!("Using service user '{}'.", service_user.name);

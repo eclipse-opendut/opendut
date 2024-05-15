@@ -64,7 +64,10 @@ pub fn initialize_with_config(config: LoggingConfig, file_logging: Option<PathBu
     let file_logging_layer =
         if let Some(log_file) = file_logging {
 
-            let log_file = File::create(&log_file)
+            let log_file = File::options()
+                .append(true)
+                .create(true)
+                .open(&log_file)
                 .unwrap_or_else(|cause| panic!("Failed to open log file at '{}': {cause}", log_file.display()));
 
             Some(tracing_subscriber::fmt::layer()

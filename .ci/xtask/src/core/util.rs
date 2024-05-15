@@ -58,6 +58,7 @@ pub fn init_tracing() -> crate::Result {
     let tracing_filter = EnvFilter::builder()
         .with_default_directive(LevelFilter::DEBUG.into())
         .from_env()?
+        .add_directive("h2=info".parse()?)
         .add_directive("opendut=trace".parse()?);
 
     tracing_subscriber::fmt()
