@@ -35,15 +35,15 @@ enum Commands {
         mode: SetupMode,
 
         /// Run through all steps without changing the system
-        #[arg(long)]
+        #[arg(long, global=true)]
         dry_run: bool,
 
         /// Continue execution without asking for confirmation.
-        #[arg(long)]
+        #[arg(long, global=true)]
         no_confirm: bool,
 
         /// Specify the Maximum Transfer Unit for network packages in bytes.
-        #[arg(long, default_value="1538")]
+        #[arg(long, global=true, default_value="1538")]
         mtu: u16,
     },
 }
