@@ -1,0 +1,13 @@
+version: '3.7'
+services:
+  rumqttd:
+    image: bytebeamio/rumqttd
+    command: ["-v", "-c", "/rumqttd.toml"]
+    hostname: mqttd
+    container_name: mqttd
+    ports:
+      - 1883:1883
+      - 1884:1884
+    volumes:
+      - ./rumqttd.toml:/rumqttd.toml
+    restart: always
