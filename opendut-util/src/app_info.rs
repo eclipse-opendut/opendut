@@ -14,7 +14,11 @@ macro_rules! app_info {
             pub const REVISION: &'static str = __build_info::COMMIT_HASH;
             pub const REVISION_DATE: &'static str = __build_info::COMMIT_DATE;
             pub const BUILD_DATE: &'static str = __build_info::BUILD_TIME;
-            pub const BUILD_CLEAN: bool = __build_info::GIT_CLEAN;
+            pub const BUILD_CLEAN: &'static str = if __build_info::GIT_CLEAN {
+                "No uncommitted changes in build."
+            } else {
+                "Distribution was built with uncommitted changes! Revision does not reflect actual application code!"
+            };
             pub const RUST_VERSION: &'static str = __build_info::RUST_VERSION;
 
             pub const fn formatted() -> &'static str {
