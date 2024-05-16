@@ -138,8 +138,10 @@ fn require_ipv4_for_gre(ip_address: IpAddr) -> Result<Ipv4Addr, Error> {
     }
 }
 
-fn get_own_ethernet_interfaces(cluster_assignment: &ClusterAssignment,
-    self_id: PeerId) -> Result<Vec<NetworkInterfaceDescriptor>, Error> {
+fn get_own_ethernet_interfaces(
+    cluster_assignment: &ClusterAssignment,
+    self_id: PeerId,
+) -> Result<Vec<NetworkInterfaceDescriptor>, Error> {
 
     let own_cluster_assignment = cluster_assignment.assignments.iter().find(|assignment| assignment.peer_id == self_id).unwrap();
 
@@ -153,17 +155,18 @@ fn get_own_ethernet_interfaces(cluster_assignment: &ClusterAssignment,
 
 fn get_own_can_interfaces(
     cluster_assignment: &ClusterAssignment,
-    self_id: PeerId) -> Result<Vec<NetworkInterfaceDescriptor>, Error>{
+    self_id: PeerId,
+) -> Result<Vec<NetworkInterfaceDescriptor>, Error> {
 
     let own_cluster_assignment = cluster_assignment.assignments.iter().find(|assignment| assignment.peer_id == self_id).unwrap();
 
     let own_can_interfaces: Vec<NetworkInterfaceDescriptor> = own_cluster_assignment.device_interfaces.iter()
-        .filter(|interface| matches!(interface.configuration, NetworkInterfaceConfiguration::Can{ .. }))
+        .filter(|interface| matches!(interface.configuration, NetworkInterfaceConfiguration::Can { .. }))
         .cloned()
         .collect();
 
     Ok(own_can_interfaces)
-    }
+}
 
 async fn join_device_interfaces_to_bridge(
     device_interfaces: &Vec<NetworkInterfaceDescriptor>,

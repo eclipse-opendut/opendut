@@ -8,7 +8,6 @@ use anyhow::Context;
 use config::Config;
 use opentelemetry::propagation::text_map_propagator::TextMapPropagator;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
-use tokio::process::Command;
 use tokio::sync::mpsc::Sender;
 use tokio::time::sleep;
 use tracing::{debug, error, info, Span, trace, warn};
@@ -18,9 +17,7 @@ use opendut_carl_api::proto::services::peer_messaging_broker;
 use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, TracingContext};
 use opendut_carl_api::proto::services::peer_messaging_broker::downstream::Message;
 use opendut_types::cluster::ClusterAssignment;
-use opendut_types::peer;
 use opendut_types::peer::configuration::{PeerConfiguration, PeerConfiguration2};
-use opendut_types::peer::executor::{ContainerCommand, ContainerName, Engine, ExecutorDescriptor};
 use opendut_types::peer::PeerId;
 use opendut_types::util::net::NetworkInterfaceName;
 use opendut_util::logging;
@@ -166,7 +163,7 @@ async fn handle_stream_message(
     Ok(())
 }
 
-#[tracing::instrument(skip(message, context, setup_cluster_info), level="trace")]
+#[tracing::instrument(skip_all, level="trace")]
 async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Option<TracingContext>, setup_cluster_info: &SetupClusterInfo) -> anyhow::Result<()> {
     match message.clone() {
         ApplyPeerConfiguration {
@@ -185,7 +182,7 @@ async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Opti
                     match PeerConfiguration2::try_from(configuration2) {
                         Err(error) => error!("Illegal PeerConfiguration2: {error}"),
                         Ok(configuration2) => {
-                            setup_executors(configuration2.executors);
+                            crate::service::executor::setup_executors(configuration2.executors);
                             let _ = setup_cluster(
                                 configuration.cluster_assignment,
                                 setup_cluster_info,
@@ -201,78 +198,13 @@ async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Opti
     Ok(())
 }
 
-#[tracing::instrument(skip(executors))]
-fn setup_executors(executors: Vec<peer::configuration::Parameter<ExecutorDescriptor>>) { //TODO make idempotent
-
-    let executors = executors.into_iter()
-        .filter_map(|executor| { //TODO properly handle Present vs. Absent
-            if matches!(executor.target, peer::configuration::ParameterTarget::Present) {
-                Some(executor.value)
-            } else {
-                None
-            }
-        });
-
-    for executor in executors {
-        match executor {
-            ExecutorDescriptor::Executable => warn!("Executing Executable not yet implemented."),
-            ExecutorDescriptor::Container {
-                engine,
-                name,
-                image,
-                volumes,
-                devices,
-                envs,
-                ports,
-                command,
-                args
-            } => {
-                let engine = match engine {
-                    Engine::Docker => { "docker" }
-                    Engine::Podman => { "podman" }
-                };
-                let mut cmd = Command::new(engine);
-                cmd.arg("run");
-                cmd.arg("--restart=unless-stopped");
-                if let ContainerName::Value(name) = name {
-                    cmd.args(["--name", name.as_str()]);
-                }
-                for port in ports {
-                    cmd.args(["--publish", port.value()]);
-                }
-                for volume in volumes {
-                    cmd.args(["--volume", volume.value()]);
-                }
-                for device in devices {
-                    cmd.args(["--devices", device.value()]);
-                }
-                for env in envs {
-                    cmd.args(["--env", &format!("{}={}", env.name(), env.value())]);
-                }
-                cmd.arg(image.value());
-                if let ContainerCommand::Value(command) = command {
-                    cmd.arg(command.as_str());
-                }
-                for arg in args {
-                    cmd.arg(arg.value());
-                }
-                debug!("Command: {:?}", cmd);
-                match cmd.spawn() {
-                    Ok(_) => { info!("Container started.") }
-                    Err(_) => { error!("Failed to start container.") }
-                };
-            }
-        }
-    }
-}
-
 struct SetupClusterInfo {
     self_id: PeerId,
     network_interface_management_enabled: bool,
     network_interface_manager: NetworkInterfaceManagerRef,
     can_manager: CanManagerRef,
 }
-#[tracing::instrument(skip(cluster_assignment, info))]
+#[tracing::instrument(skip_all)]
 async fn setup_cluster(
     cluster_assignment: Option<ClusterAssignment>,
     info: &SetupClusterInfo,
