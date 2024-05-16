@@ -4,7 +4,7 @@ use opendut_types::topology::DeviceId;
 
 use crate::components::UserInputValue;
 use crate::peers::configurator::tabs::devices::device_panel::DevicePanel;
-use crate::peers::configurator::types::{EMPTY_DEVICE_INTERFACE_ERROR_MESSAGE, EMPTY_DEVICE_NAME_ERROR_MESSAGE, UserDeviceConfiguration, UserPeerConfiguration};
+use crate::peers::configurator::types::{EMPTY_DEVICE_NAME_ERROR_MESSAGE, UserDeviceConfiguration, UserPeerConfiguration};
 
 mod device_panel;
 
@@ -68,7 +68,7 @@ fn DevicesTable(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl Int
                                     id: device_id,
                                     name: UserInputValue::Left(String::from(EMPTY_DEVICE_NAME_ERROR_MESSAGE)),
                                     description: UserInputValue::Right(String::from("")),
-                                    interface: UserInputValue::Left(String::from(EMPTY_DEVICE_INTERFACE_ERROR_MESSAGE)),
+                                    interface: None,
                                     is_collapsed: false
                                 }
                             );

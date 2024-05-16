@@ -3,11 +3,11 @@ use std::rc::Rc;
 use leptos::{component, create_action, create_read_slice, create_rw_signal, create_slice, IntoView, RwSignal, SignalGetUntracked, SignalWith, SignalWithUntracked, view};
 
 use crate::components::{Toast, use_toaster, UserInputValue};
-use crate::peers::configurator::tabs::network::network_interface_name_input::NetworkInterfaceNameInput;
+use crate::peers::configurator::tabs::network::network_interface_input::NetworkInterfaceInput;
 use crate::peers::configurator::tabs::network::bridge_name_input::BridgeNameInput;
-use crate::peers::configurator::types::{UserPeerConfiguration, UserPeerNetworkInterface};
+use crate::peers::configurator::types::{UserPeerConfiguration, UserNetworkInterface};
 
-mod network_interface_name_input;
+mod network_interface_input;
 mod bridge_name_input;
 
 #[component]
@@ -38,23 +38,30 @@ pub fn NetworkTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl I
         }
     };
 
+    let interface_name = move | user_network_interface: Option<UserNetworkInterface> | {
+        match user_network_interface {
+            None => { String::new() }
+            Some(interface) => { interface.name.name() }
+        }
+    };
+
     let device_interfaces = move || {
         devices.with(|devices| {
             devices.iter()
                 .cloned()
                 .map(|device_configuration| {
-                    user_input_string(device_configuration.get_untracked().interface)
+                    interface_name(device_configuration.get_untracked().interface)
                 })
                 .collect::<Vec<_>>()
         })
     };
 
-    let deletion_failed_action = create_action(move |interface_name: &String| {
+    let deletion_failed_action = create_action(move |interface_name_to_delete: &String| {
         let toaster = Rc::clone(&toaster);
         let devices_with_interface = devices.get_untracked().into_iter()
             .filter(|device| {
-                let interface = user_input_string(device.get_untracked().interface);
-                &interface == interface_name
+                let device_interface_name = interface_name(device.get_untracked().interface);
+                &device_interface_name == interface_name_to_delete
             })
             .map(|device| {
                 let device = device.get_untracked();
@@ -81,9 +88,10 @@ pub fn NetworkTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl I
                 .cloned()
                 .map(|interface| {
                     let name = interface.get_untracked().name;
+                    let configuration_name = interface.get_untracked().configuration.display_name();
                     view! {
                         <span class="tag is-info is-primary">
-                            { &name.name() }
+                            { &name.name() } " (" { configuration_name } ")"
                                 <button class="delete" type="button"
                                     on:click=move |_| {
                                         if device_interfaces().contains(&name.name()) {
@@ -107,27 +115,31 @@ pub fn NetworkTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl I
     };
 
     view! {
-        <BridgeNameInput 
-            peer_configuration=peer_configuration
-        />
-        <NetworkInterfaceNameInput
-            interfaces = interfaces_getter
-            on_action = move |name| {
-                let mut interface_names = interfaces_getter.get_untracked();
-                let user_peer_network = create_rw_signal(
-                    UserPeerNetworkInterface {
-                        name
-                    }
-                );
-                interface_names.push(user_peer_network);
-                interfaces_setter.set(interface_names);
-            }
-        />
-        <form class="box">
-             <label class="label">Configured Network Interfaces</label>
-                <div class="tags are-medium">
-                    { interface_name_list }
-                </div>
-        </form>
+        <div class="box">
+            <h5 class="title is-5">Network Interfaces</h5>
+            <NetworkInterfaceInput
+                interfaces = interfaces_getter
+                on_action = move |name, configuration| {
+                    let mut interface_names = interfaces_getter.get_untracked();
+                    let user_peer_network = create_rw_signal(
+                        UserNetworkInterface {
+                            name,
+                            configuration
+                        }
+                    );
+                    interface_names.push(user_peer_network);
+                    interfaces_setter.set(interface_names);
+                }
+            />
+            <label class="label">Configured Network Interfaces</label>
+            <div class="tags are-medium">
+                { interface_name_list }
+            </div>
+        </div>
+        <div class="box">
+            <BridgeNameInput
+                peer_configuration=peer_configuration
+            />
+        </div>
     }
 }

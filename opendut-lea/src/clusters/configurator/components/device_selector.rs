@@ -10,6 +10,7 @@ use crate::clusters::configurator::components::{get_all_peers, get_all_selected_
 use crate::clusters::configurator::types::UserClusterConfiguration;
 use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
 use crate::util::{Ior, NON_BREAKING_SPACE};
+use crate::util::net::UserNetworkInterfaceConfiguration;
 
 pub type DeviceSelectionError = String;
 pub type DeviceSelection = Ior<DeviceSelectionError, HashSet<DeviceId>>;
@@ -143,7 +144,7 @@ pub fn DeviceInfo(device: DeviceDescriptor, peer_id: PeerId) -> impl IntoView {
             <div class="field">
                 <label class="label">Interface</label>
                 <div class="control">
-                    <p>{device.interface.name.name()}</p>
+                    <p>{device.interface.name.name()} " (" {UserNetworkInterfaceConfiguration::from(device.interface.configuration).display_name()} ")"</p>
                 </div>
             </div>
             <div class="field">

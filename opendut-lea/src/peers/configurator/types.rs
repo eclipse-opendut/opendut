@@ -3,12 +3,12 @@ use leptos::{RwSignal, SignalGetUntracked};
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
 use opendut_types::peer::executor::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine, ExecutorDescriptor, ExecutorDescriptors};
 use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
-use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
+use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
 
 use crate::components::UserInputValue;
+use crate::util::net::UserNetworkInterfaceConfiguration;
 
 pub const EMPTY_DEVICE_NAME_ERROR_MESSAGE: &str = "Enter a valid device name.";
-pub const EMPTY_DEVICE_INTERFACE_ERROR_MESSAGE: &str = "Enter a valid interface name!";
 pub const EMPTY_CONTAINER_IMAGE_ERROR_MESSAGE: &str = "Enter a valid container image.";
 
 #[derive(thiserror::Error, Clone, Debug)]
@@ -72,22 +72,22 @@ pub struct UserContainerEnv {
 
 #[derive(Clone, Debug)]
 pub struct UserPeerNetwork {
-    pub network_interfaces: Vec<RwSignal<UserPeerNetworkInterface>>,
+    pub network_interfaces: Vec<RwSignal<UserNetworkInterface>>,
     pub bridge_name: UserInputValue,
 }
 
-#[derive(Clone, Debug)]
-pub struct UserPeerNetworkInterface {
+#[derive(Clone, Debug, PartialEq)]
+pub struct UserNetworkInterface {
     pub name: NetworkInterfaceName,
+    pub configuration: UserNetworkInterfaceConfiguration,
 }
-
 
 #[derive(Clone, Debug)]
 pub struct UserDeviceConfiguration {
     pub id: DeviceId,
     pub name: UserInputValue,
     pub description: UserInputValue,
-    pub interface: UserInputValue,
+    pub interface: Option<UserNetworkInterface>,
     pub is_collapsed: bool,
 }
 
@@ -172,13 +172,9 @@ impl TryFrom<UserDeviceConfiguration> for DeviceDescriptor {
                 DeviceName::try_from(name)
                     .map_err(|_| DeviceMisconfigurationError::InvalidDeviceName)
             })?;
-        let interface = configuration
-            .interface
-            .right_ok_or(DeviceMisconfigurationError::InvalidDeviceInterface)
-            .and_then(|interface_name| {
-                NetworkInterfaceName::try_from(interface_name)
-                    .map_err(|_| DeviceMisconfigurationError::InvalidDeviceInterface)
-            })?;
+       
+        let interface= NetworkInterfaceDescriptor::try_from(configuration.interface.unwrap())
+                .map_err(|_|  DeviceMisconfigurationError::InvalidDeviceInterface)?;
         let description = configuration
             .description
             .right_ok_or(DeviceMisconfigurationError::InvalidDeviceDescription)
@@ -190,22 +186,19 @@ impl TryFrom<UserDeviceConfiguration> for DeviceDescriptor {
             id: configuration.id,
             name,
             description: Some(description),
-            interface: NetworkInterfaceDescriptor {
-                name: interface,
-                configuration: NetworkInterfaceConfiguration::Ethernet, // TODO: Do not assume Ethernet here
-            },
+            interface,
             tags: vec![],
         })
     }
 }
 
-impl TryFrom<UserPeerNetworkInterface> for NetworkInterfaceDescriptor {
+impl TryFrom<UserNetworkInterface> for NetworkInterfaceDescriptor {
     type Error = PeerMisconfigurationError;
 
-    fn try_from(configuration: UserPeerNetworkInterface) -> Result<Self, Self::Error> {
+    fn try_from(configuration: UserNetworkInterface) -> Result<Self, Self::Error> {
         Ok(Self {
             name: configuration.name,
-            configuration: NetworkInterfaceConfiguration::Ethernet, // TODO: Do not assume Ethernet here
+            configuration: configuration.configuration.inner,
         })
     }
 }

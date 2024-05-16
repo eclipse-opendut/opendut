@@ -9,9 +9,12 @@ pub fn IconButton<A>(
     #[prop(into)] size: MaybeSignal<ButtonSize>,
     #[prop(into)] state: MaybeSignal<ButtonState>,
     #[prop(into)] label: MaybeSignal<String>,
+    #[prop(into, default = MaybeSignal::from(false))] show_label: MaybeSignal<bool>,
     on_action: A,
 ) -> impl IntoView
 where A: Fn() + 'static {
+
+    let cloned_label = label.clone();
 
     view! {
         <button
@@ -34,6 +37,13 @@ where A: Fn() + 'static {
                     }
                 }/>
             </span>
+            {
+                show_label.get().then(|| {
+                    view! {
+                        <span>{ cloned_label.get() }</span>
+                    }
+                })
+            }
         </button>
     }
 }

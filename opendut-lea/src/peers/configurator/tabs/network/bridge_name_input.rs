@@ -33,6 +33,13 @@ pub fn BridgeNameInput(peer_configuration: RwSignal<UserPeerConfiguration>) -> i
 
     view! {
         <div>
+            <UserInput
+                getter=getter
+                setter=setter
+                label="Custom Bridge Name"
+                placeholder="br-opendut"
+                validator=validator
+            />
             <div class="notification is-warning">
                 <div class="columns is-mobile is-vcentered">
                     <div class="column is-narrow">
@@ -43,13 +50,6 @@ pub fn BridgeNameInput(peer_configuration: RwSignal<UserPeerConfiguration>) -> i
                     </div>
                 </div>
             </div>
-            <UserInput
-                getter=getter
-                setter=setter
-                label="Custom Bridge Name"
-                placeholder="br-opendut"
-                validator=validator
-            />
         </div>
     }
 }

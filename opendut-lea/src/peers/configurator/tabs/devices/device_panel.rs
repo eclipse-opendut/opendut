@@ -3,8 +3,7 @@ use leptos::{component, create_read_slice, create_slice, event_target_value, Int
 use opendut_types::topology::{DeviceDescription, DeviceId, DeviceName, IllegalDeviceName};
 
 use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, IconButton, ReadOnlyInput, Toggled, UserInput, UserInputValue, UserTextarea};
-use crate::peers::configurator::types::{EMPTY_DEVICE_INTERFACE_ERROR_MESSAGE, EMPTY_DEVICE_NAME_ERROR_MESSAGE, UserDeviceConfiguration, UserPeerConfiguration};
-use crate::util::NON_BREAKING_SPACE;
+use crate::peers::configurator::types::{EMPTY_DEVICE_NAME_ERROR_MESSAGE, UserDeviceConfiguration, UserPeerConfiguration};
 
 #[component]
 pub fn DevicePanel<OnDeleteFn>(
@@ -175,36 +174,40 @@ fn DeviceInterfaceInput(
     );
 
     let value_text = getter.with(|input| match input {
-            UserInputValue::Left(_) => String::from("Select interface"),
-            UserInputValue::Right(value) => value.to_owned(),
-            UserInputValue::Both(_, value) => value.to_owned(),
-        });
-
-    let help_text = move || {
-        getter.with(|input| match input {
-            UserInputValue::Right(_) => String::from(NON_BREAKING_SPACE),
-            UserInputValue::Left(error) => error.to_owned(),
-            UserInputValue::Both(error, _) => error.to_owned(),
-        })
-    };
+        None => String::from("Select interface"),
+        Some(interface) => format!("{} ({})", interface.name.name(), interface.configuration.display_name() ),
+    });
 
     let dropdown_options = move || {
-        peer_network_interfaces.with(|interfaces| {
-            interfaces.iter()
+        peer_network_interfaces.with(|interfaces | {
+            interfaces.iter().cloned()
                 .map(|interface| {
-                    let name = interface.get_untracked().name.name();
-                    if value_text == name {
+                    let name = interface.get().name.name();
+                    let interface_type = interface.get().configuration.display_name();
+                    if value_text == format!("{} ({})", name, interface_type) {
                         view! {
-                            <option selected>{name}</option>
+                            <option value={name.clone()} selected>{name} " ("{interface_type}")"</option>
                         }
                     } else {
                         view! {
-                            <option>{name}</option>
+                            <option value={name.clone()}>{name} " ("{interface_type}")"</option>
                         }
                     }
 
                 })
                 .collect::<Vec<_>>()
+        })
+    };
+
+    let configuration = move | selected_interface_name: String | {
+        peer_network_interfaces.with(|interfaces| {
+            interfaces.iter()
+                .find(|interface| {
+                    interface.get().name.name() == selected_interface_name
+                })
+                .map(| user_network_interface | {
+                    user_network_interface.get()
+                })
         })
     };
 
@@ -216,9 +219,11 @@ fn DeviceInterfaceInput(
                     on:change=move |ev| {
                         let target_value = event_target_value(&ev);
                         if target_value == "Select interface" {
-                            setter.set(UserInputValue::Left(String::from(EMPTY_DEVICE_INTERFACE_ERROR_MESSAGE)));
+                            setter.set(None);
                         } else {
-                            setter.set(UserInputValue::Right(target_value));
+                            setter.set(
+                                configuration(target_value)
+                            );
                         }
                     }>
                     <select>
@@ -227,7 +232,6 @@ fn DeviceInterfaceInput(
                     </select>
                 </div>
             </div>
-            <p class="help has-text-danger">{ help_text }</p>
         </div>
     }
 }
