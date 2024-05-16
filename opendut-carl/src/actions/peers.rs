@@ -95,7 +95,6 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
             };
 
             let peer_configuration = PeerConfiguration {
-                executors: Clone::clone(&peer_descriptor.executors),
                 cluster_assignment: None,
                 network: peer_network_configuration
             };
@@ -486,7 +485,6 @@ mod test {
             );
 
             let peer_configuration = PeerConfiguration {
-                executors: ExecutorDescriptors { executors: vec![] },
                 cluster_assignment: None,
                 network: PeerNetworkConfiguration {
                     bridge_name: NetworkInterfaceName::try_from("br-opendut-1").unwrap()

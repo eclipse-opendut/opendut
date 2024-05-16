@@ -6,12 +6,11 @@ use uuid::Uuid;
 
 use crate::cluster::ClusterAssignment;
 use crate::OPENDUT_UUID_NAMESPACE;
-use crate::peer::executor::{ExecutorDescriptor, ExecutorDescriptors};
+use crate::peer::executor::ExecutorDescriptor;
 use crate::util::net::NetworkInterfaceName;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PeerConfiguration {
-    pub executors: ExecutorDescriptors,
     pub cluster_assignment: Option<ClusterAssignment>,
     pub network: PeerNetworkConfiguration,
     // Please add new fields into PeerConfiguration2 instead.
