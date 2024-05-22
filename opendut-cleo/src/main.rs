@@ -31,13 +31,36 @@ struct Args {
     command: Commands,
 }
 
-#[derive(clap::Args)]
-#[group(multiple = false, required = true)]
-struct CreateArgs {
-    #[command(subcommand)]
-    resource: Option<CreateResource>,
-    #[arg(short, long)]
-    filename: Option<String>,
+#[derive(Clone, Debug)]
+enum Source {
+    File(PathBuf),
+    Url(String),
+    Inline(InlineSource)
+}
+
+#[derive(Clone, Debug)]
+enum InlineSource {
+    Json(String)
+}
+
+#[derive(thiserror::Error, Debug)]
+#[error("Failed to parse from source.")]
+struct SourceParsingError;
+
+fn parse_source(arg: &str) -> std::result::Result<Source, SourceParsingError> {
+
+    if arg.starts_with('{') && arg.ends_with('}') {
+        Ok(Source::Inline(InlineSource::Json(arg.to_owned())))
+    }
+    else {
+        let path = PathBuf::from(arg);
+        if path.is_file() || path.is_dir() {
+            Ok(Source::File(path))
+        }
+        else {
+            Err(SourceParsingError)
+        }
+    }
 }
 
 #[derive(Subcommand)]
@@ -62,10 +85,10 @@ enum Commands {
     },
     ///Create openDuT resource
     Create {
-        #[clap(flatten)]
-        args: Box<CreateArgs>,
+        #[arg(short, long, value_parser = parse_source)]
+        from: Source,
         ///Text, JSON or prettified JSON as output format
-        #[arg(value_enum, short, long, default_value_t=CreateOutputFormat::Text)]
+        #[arg(global = true, value_enum, short, long, default_value_t=CreateOutputFormat::Text)]
         output: CreateOutputFormat,
     },
     GenerateSetupString(commands::generate_setup_string::GenerateSetupStringCli),
@@ -271,44 +294,31 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
                 }
             }
         }
-        Commands::Create { args, output, .. } => {
-            if let Some(resource) = args.resource {
-                let mut carl = create_carl_client(&settings.config).await;
-                match resource {
-                    CreateResource::ClusterConfiguration(implementation) => {
-                        implementation.execute(&mut carl, output).await?;
-                    }
-                    CreateResource::ClusterDeployment(implementation) => {
-                        implementation.execute(&mut carl, output).await?;
-                    }
-                    CreateResource::Peer(implementation) => {
-                        implementation.execute(&mut carl, output).await?;
-                    }
-                    CreateResource::ContainerExecutor(implementation) => {
-                        implementation.execute(&mut carl, output).await?;
-                    }
-                    CreateResource::NetworkInterface(implementation) => {
-                        implementation.execute(&mut carl, output).await?;
-                    }
-                    CreateResource::Device(implementation) => {
-                        implementation.execute(&mut carl, output).await?;
-                    }
-                }
-            }
-            else if let Some(filename) = args.filename {
+        Commands::Create { from, output, .. } => {
+            match from {
+                Source::File(path) => {
+                    let content = fs::read_to_string(path).unwrap();
 
-                let content = fs::read_to_string(filename).unwrap();
-
-                for document in serde_yaml::Deserializer::from_str(&content) {
-
-                    match serde_yaml::Value::deserialize(document) {
-                        Ok(value) => {
-                            let spec = Specification::from_yaml_value(value).unwrap();
-                            println!("{spec:?}");
+                    for document in serde_yaml::Deserializer::from_str(&content) {
+                        match serde_yaml::Value::deserialize(document) {
+                            Ok(value) => {
+                                let spec = Specification::from_yaml_value(value).unwrap();
+                                println!("{spec:?}");
+                            }
+                            _ => {}
                         }
-                        _ => {}
                     }
                 }
+                Source::Inline(InlineSource::Json(json)) => {
+                    match Specification::from_json_str(json.as_str()) {
+                        Ok(_) => {}
+                        Err(_) => {}
+                    }
+                    todo!("unsupported source")
+                }
+                Source::Url(_) => {
+                    todo!("unsupported source")
+                } 
             }
         }
         Commands::GenerateSetupString(implementation) => {

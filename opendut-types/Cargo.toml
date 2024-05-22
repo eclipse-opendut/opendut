@@ -8,6 +8,7 @@ license.workspace = true
 [features]
 specs = []
 yaml-specs = ["specs", "dep:serde_yaml"]
+json-specs = ["specs"]
 
 [dependencies]
 base64 = { workspace = true }
