@@ -8,30 +8,20 @@ use crate::arxml_structs::*;
 use crate::arxml_utils::*;
 
 /*
-- Arxml parser that is able to extract all values necessary for a restbus simulation
-- See main method for usage example.
+ Arxml parser that is able to extract all values necessary for a restbus simulation
 */
 
 /* 
 - TODO: 
-    - finish parsing and fill up structures 
-    - What about TPConfig and get_init_value_from_signals and get_init_value_from_signals?
-    - create restbus simulation based on parsed data in a different source code file
     - include signal desc
 
 - Improvements at some stage:
     - Provide options to store parsed data for quicker restart
-    - Put structure defintions in separete source code file
     - be able to manually add stuff to restbus -> provide interface
 
 - Code inside DEBUG comments will be removed at a later stage
 */
 
-
-// Future restbus simulation structure used to setup and control restbus simulation. Will be moved to seprarate source code file.
-/*pub struct RestbusSimulation {
-
-}*/
 
 // Parser structure
 pub struct ArxmlParser {
@@ -318,7 +308,7 @@ impl ArxmlParser {
         let frame_name = get_required_item_name(
             &frame, "Frame");
 
-        let addressing_mode = if let Some(CharacterData::Enum(value)) = can_frame_triggering
+        let addressing_mode_str = if let Some(CharacterData::Enum(value)) = can_frame_triggering
             .get_sub_element(ElementName::CanAddressingMode)
             .and_then(|elem| elem.character_data()) 
         {
@@ -326,6 +316,11 @@ impl ArxmlParser {
         } else {
             EnumItem::Standard.to_string()
         };
+
+        let mut addressing_mode: bool = false;
+        if addressing_mode_str.to_uppercase() == String::from("EXTENDED") {
+            addressing_mode = true;
+        }
 
         let frame_rx_behavior = get_optional_string(
             can_frame_triggering,

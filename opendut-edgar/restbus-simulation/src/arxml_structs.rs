@@ -13,7 +13,7 @@ pub struct CanFrameTriggering {
     pub frame_triggering_name: String,
     pub frame_name: String,
     pub can_id: i64,
-    pub addressing_mode: String,
+    pub addressing_mode: bool,
     pub frame_rx_behavior: String,
     pub frame_tx_behavior: String,
     pub rx_range_lower: i64,

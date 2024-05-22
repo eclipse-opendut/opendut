@@ -478,3 +478,4 @@ pub fn process_signal_group(signal_group: &Element,
 
     Some(())
 }
+
