@@ -110,8 +110,11 @@ fn write_netbird_certificate(
         "Copying CA certificate from {:?} to {:?} was not possible.", carl_ca_certificate_path, netbird_ca_certificate_path
     ))?;
 
+    let update_ca_certificates = which::which("update-ca-certificates")
+        .context(String::from("No command `update-ca-certificates` found. Ensure your system provides this command."))?;
+
     command_runner.run(
-        &mut Command::new("update-ca-certificates") //Update OS certificate store, as NetBird reads from there
+        &mut Command::new(update_ca_certificates) //Update OS certificate store, as NetBird reads from there
     ).context("update-ca-certificates could not be executed successfully!")?;
 
     let checksum = util::file_checksum(netbird_ca_certificate_path)?;
