@@ -308,5 +308,5 @@ mod texts {
 
 
 fn cargo_deny_toml() -> PathBuf {
-    constants::ci_dir().join("cargo-deny.toml")
+    constants::ci_code_dir().join("cargo-deny.toml")
 }

@@ -20,18 +20,11 @@ jobs:
           cargo-tarpaulin: true
 
       - name: Test with Coverage
-        run: cargo tarpaulin --verbose --all-features --workspace --timeout 30 --out xml html lcov
-      - name: Prepare Coverage Reports
-        run: |
-          mkdir -p coverage
-          mv cobertura.xml ./coverage/coverage.cobertura.xml
-          mv tarpaulin-report.html ./coverage/coverage.tarpaulin.html
-          mv lcov.info ./coverage/coverage.lcov.info
-        shell: bash
+        run: cargo ci coverage
       - name: Upload coverage artifact
         uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8
         with:
           name: opendut-coverage
-          path: ./coverage
+          path: ./target/ci/coverage/
           if-no-files-found: error
           retention-days: 30

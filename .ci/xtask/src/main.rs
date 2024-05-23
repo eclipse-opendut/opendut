@@ -22,6 +22,7 @@ struct RootCli {
 #[derive(clap::Subcommand)]
 enum TaskCli {
     Check(tasks::check::CheckCli),
+    Coverage(tasks::coverage::CoverageCli),
     Distribution(tasks::distribution::DistributionCli),
     Doc(tasks::doc::DocCli),
     Licenses(tasks::licenses::LicensesCli),
@@ -40,9 +41,8 @@ fn main() -> crate::Result {
 
     let cli = RootCli::parse();
     match cli.task {
-        TaskCli::Check(implementation) => {
-            implementation.default_handling()?
-        }
+        TaskCli::Check(implementation) => implementation.default_handling()?,
+        TaskCli::Coverage(implementation) => implementation.default_handling()?,
         TaskCli::Distribution(tasks::distribution::DistributionCli { target }) => {
             for target in target.iter() {
                 packages::carl::distribution::carl_distribution(target)?;

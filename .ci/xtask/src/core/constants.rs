@@ -22,7 +22,7 @@ pub fn workspace_dir() -> PathBuf {
 }
 
 /// Where CI-related code is in the repository.
-pub fn ci_dir() -> PathBuf { workspace_dir().join(".ci") }
+pub fn ci_code_dir() -> PathBuf { workspace_dir().join(".ci") }
 
 /// The generic Cargo target directory.
 pub fn cargo_target_dir() -> PathBuf {
