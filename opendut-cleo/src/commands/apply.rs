@@ -1,9 +1,13 @@
 use std::fs;
 use std::path::PathBuf;
-use opendut_carl_api::carl::CarlClient;
-use opendut_types::specs::Specification;
-use crate::CreateOutputFormat;
+
 use serde::Deserialize;
+
+use opendut_carl_api::carl::CarlClient;
+use opendut_types::specs::{Specification, SpecificationDocument, yaml};
+use yaml::YamlSpecificationDocument;
+
+use crate::CreateOutputFormat;
 
 #[derive(clap::Parser)]
 ///Create openDuT resource form file
@@ -20,14 +24,25 @@ impl ApplyCli {
         match self.from {
             Source::File(path) => {
                 let content = fs::read_to_string(path).unwrap();
-                let documents = serde_yaml::Deserializer::from_str(&content).into_iter()
-                    .map(serde_yaml::Value::deserialize)
+                let documents = serde_yaml::Deserializer::from_str(&content)
+                    .map(|yaml_document| {
+                        serde_yaml::Value::deserialize(yaml_document)
+                            .and_then(|value| serde_yaml::from_value::<YamlSpecificationDocument>(value))
+                    })
                     .collect::<Result<Vec<_>, _>>();
 
                 match documents {
                     Ok(values) => {
-                        values.into_iter().for_each(|value| {
-                            let spec = Specification::from_yaml_value(value).unwrap();
+                        values.into_iter().for_each(|yaml_specification| {
+                            let spec = SpecificationDocument::try_from(yaml_specification).unwrap();
+                            // match spec {
+                            //     Specification::PeerDescriptorSpecification(PeerDescriptorSpecification::V1(peer)) => {
+                            // 
+                            // 
+                            // 
+                            //     }
+                            //     Specification::ClusterConfigurationSpecification(_) => {}
+                            // }
                             println!("{spec:?}");
                         });
                         Ok(())

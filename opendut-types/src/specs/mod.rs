@@ -5,8 +5,16 @@ pub mod yaml;
 pub mod json;
 
 use serde::Deserialize;
+use serde_json::Value;
 use uuid::Uuid;
 
+#[derive(Debug)]
+pub struct SpecificationDocument {
+    pub kind: String,
+    pub version: String,
+    pub metadata: SpecificationMetadata,
+    pub spec: Specification,
+} 
 
 #[derive(Debug)]
 pub enum Specification {
@@ -125,13 +133,13 @@ pub enum ClusterConfigurationSpecification {
 #[derive(Debug, Deserialize)]
 pub struct PeerDescriptorSpecificationV1 {
     #[serde(default)]
-    location: String,
+    pub location: String,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct ClusterConfigurationSpecificationV1 {
     #[serde(default)]
-    description: String,
+    pub description: String,
 }
 
 #[allow(non_snake_case)]
