@@ -2,6 +2,7 @@ use std::fs;
 use std::ops::Not;
 use std::path::PathBuf;
 use std::process::ExitCode;
+use std::str::FromStr;
 
 use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::Shell;
@@ -31,38 +32,6 @@ struct Args {
     command: Commands,
 }
 
-#[derive(Clone, Debug)]
-enum Source {
-    File(PathBuf),
-    Url(String),
-    Inline(InlineSource)
-}
-
-#[derive(Clone, Debug)]
-enum InlineSource {
-    Json(String)
-}
-
-#[derive(thiserror::Error, Debug)]
-#[error("Failed to parse from source.")]
-struct SourceParsingError;
-
-fn parse_source(arg: &str) -> std::result::Result<Source, SourceParsingError> {
-
-    if arg.starts_with('{') && arg.ends_with('}') {
-        Ok(Source::Inline(InlineSource::Json(arg.to_owned())))
-    }
-    else {
-        let path = PathBuf::from(arg);
-        if path.is_file() || path.is_dir() {
-            Ok(Source::File(path))
-        }
-        else {
-            Err(SourceParsingError)
-        }
-    }
-}
-
 #[derive(Subcommand)]
 enum Commands {
     ///Authenticate CLEO with setup string
@@ -83,12 +52,14 @@ enum Commands {
         #[arg(value_enum, short, long, default_value_t=CreateOutputFormat::Text)]
         output: CreateOutputFormat,
     },
+    /// Create openDuT resources from specifications.
+    Apply2(commands::apply::ApplyCli),
     ///Create openDuT resource
     Create {
-        #[arg(short, long, value_parser = parse_source)]
-        from: Source,
+        #[command(subcommand)]
+        resource: CreateResource,
         ///Text, JSON or prettified JSON as output format
-        #[arg(global = true, value_enum, short, long, default_value_t=CreateOutputFormat::Text)]
+        #[arg(value_enum, short, long, default_value_t=CreateOutputFormat::Text)]
         output: CreateOutputFormat,
     },
     GenerateSetupString(commands::generate_setup_string::GenerateSetupStringCli),
@@ -162,7 +133,6 @@ enum ApplyResource {
 }
 
 #[derive(Subcommand)]
-#[command(args_conflicts_with_subcommands = true)]
 enum CreateResource {
     ClusterConfiguration(commands::cluster_configuration::create::CreateClusterConfigurationCli),
     ClusterDeployment(commands::cluster_deployment::create::CreateClusterDeploymentCli),
@@ -294,31 +264,29 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
                 }
             }
         }
-        Commands::Create { from, output, .. } => {
-            match from {
-                Source::File(path) => {
-                    let content = fs::read_to_string(path).unwrap();
-
-                    for document in serde_yaml::Deserializer::from_str(&content) {
-                        match serde_yaml::Value::deserialize(document) {
-                            Ok(value) => {
-                                let spec = Specification::from_yaml_value(value).unwrap();
-                                println!("{spec:?}");
-                            }
-                            _ => {}
-                        }
-                    }
+        Commands::Apply2(implementation) => {
+            implementation.execute(&mut carl).await?;
+        }
+        Commands::Create { resource, output } => {
+            match resource {
+                CreateResource::ClusterConfiguration(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
                 }
-                Source::Inline(InlineSource::Json(json)) => {
-                    match Specification::from_json_str(json.as_str()) {
-                        Ok(_) => {}
-                        Err(_) => {}
-                    }
-                    todo!("unsupported source")
+                CreateResource::ClusterDeployment(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
                 }
-                Source::Url(_) => {
-                    todo!("unsupported source")
-                } 
+                CreateResource::Peer(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
+                }
+                CreateResource::ContainerExecutor(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
+                }
+                CreateResource::NetworkInterface(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
+                }
+                CreateResource::Device(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
+                }
             }
         }
         Commands::GenerateSetupString(implementation) => {
