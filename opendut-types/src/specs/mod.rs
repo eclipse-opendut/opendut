@@ -5,16 +5,30 @@ pub mod yaml;
 pub mod json;
 
 use serde::Deserialize;
-use serde_json::Value;
+use strum::Display;
 use uuid::Uuid;
 
 #[derive(Debug)]
 pub struct SpecificationDocument {
-    pub kind: String,
+    pub kind: ResourceKind,
     pub version: String,
     pub metadata: SpecificationMetadata,
     pub spec: Specification,
-} 
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Display)]
+pub enum ResourceKind {
+    PeerDescriptor,
+    ClusterConfiguration,
+}
+
+#[allow(dead_code)]
+#[derive(Clone, Copy, Debug, Deserialize, Display)]
+#[serde(rename_all = "camelCase")]
+pub enum SpecificationVersion {
+    V1,
+    V2,
+}
 
 #[derive(Debug)]
 pub enum Specification {
@@ -52,49 +66,7 @@ impl Specification {
                 Ok(Specification::PeerDescriptorSpecification(PeerDescriptorSpecification::V1(spec)))
             }
             _ => {
-                Err(ParseSpecificationError::UnknownResourceKind { kind: document.kind })
-            }
-        }
-    }
-
-    #[cfg(feature = "yaml-specs")]
-    pub fn from_yaml_str(s: &str) -> Vec<Result<Specification, ParseSpecificationError>> {
-        let mut result = Vec::new();
-        for document in serde_yaml::Deserializer::from_str(s) {
-            println!("2");
-            result.push(serde_yaml::Value::deserialize(document)
-                .map_err(|cause| ParseSpecificationError::IllegalYamlSpecification { cause })
-                .and_then(|value| {
-                    println!("3");
-                    Specification::from_yaml_value(value)
-                }))
-        }
-
-        result
-    }
-
-    #[cfg(feature = "yaml-specs")]
-    pub fn from_yaml_value(value: serde_yaml::Value) -> Result<Specification, ParseSpecificationError> {
-        let document = serde_yaml::from_value::<yaml::YamlSpecificationDocument>(value)
-            .map_err(|cause| ParseSpecificationError::IllegalYamlSpecification { cause} )?;
-        Self::from_yaml_document(document)
-    }
-
-    #[cfg(feature = "yaml-specs")]
-    pub fn from_yaml_document(document: yaml::YamlSpecificationDocument) -> Result<Specification, ParseSpecificationError> {
-        match document.kind.as_str() { // TODO: Check version too!
-            "ClusterConfiguration" => {
-                let spec = serde_yaml::from_value::<ClusterConfigurationSpecificationV1>(document.spec)
-                    .map_err(|cause| ParseSpecificationError::IllegalYamlSpecification { cause} )?;
-                Ok(Specification::ClusterConfigurationSpecification(ClusterConfigurationSpecification::V1(spec)))
-            }
-            "PeerDescriptor" => {
-                let spec = serde_yaml::from_value::<PeerDescriptorSpecificationV1>(document.spec)
-                    .map_err(|cause| ParseSpecificationError::IllegalYamlSpecification { cause} )?;
-                Ok(Specification::PeerDescriptorSpecification(PeerDescriptorSpecification::V1(spec)))
-            }
-            _ => {
-                Err(ParseSpecificationError::UnknownResourceKind { kind: document.kind })
+                Err(ParseSpecificationError::IllegalResourceKind { kind: document.kind })
             }
         }
     }
@@ -102,10 +74,12 @@ impl Specification {
 
 #[derive(Debug, thiserror::Error)]
 pub enum ParseSpecificationError {
-    #[error("Unknown kind '{kind}'!")]
-    UnknownResourceKind { kind: String },
-    #[error("Unknown version '{version}' for resource '{kind}'")]
-    UnknownVersion { kind: String, version: String },
+    #[error("Kind '{kind}' is not valid!")]
+    IllegalResourceKind { kind: String },
+    #[error("Version '{version}' is not valid!")]
+    IllegalSpecificationVersion { version: String },
+    #[error("Unknown version '{version}' for resource specification '{kind}'")]
+    UnknownVersion { kind: ResourceKind, version: SpecificationVersion },
     #[cfg(feature = "yaml-specs")]
     #[error("Failed to parse yaml specification, due to: {cause}")]
     IllegalYamlSpecification { cause: serde_yaml::Error },
@@ -116,8 +90,8 @@ pub enum ParseSpecificationError {
 
 #[derive(Debug, Deserialize)]
 pub struct SpecificationMetadata {
-    id: Uuid,
-    name: String,
+    pub id: Uuid,
+    pub name: String,
 }
 
 #[derive(Debug)]
@@ -145,60 +119,5 @@ pub struct ClusterConfigurationSpecificationV1 {
 #[allow(non_snake_case)]
 #[cfg(test)]
 mod tests {
-    use googletest::prelude::*;
-    use rstest::rstest;
 
-    use super::*;
-
-    //#[rstest]
-    //pub fn test_parse_ClusterConfiguration() -> Result<()> {
-//
-    //    let result = Specification::from_yaml_str(r#"
-    //        ---
-    //        kind: ClusterConfiguration
-    //        version: v1
-    //        metadata:
-    //            id: 140f29fd-336b-48f7-9936-6b1892574543
-    //            name: MyConfig
-    //        spec:
-    //            location: Ulm
-    //    "#);
-//
-    //    println!("{result:?}");
-    //    verify_that!(result, elements_are![ok(anything())])?;
-//
-    //    Ok(())
-    //}
-
-    #[rstest]
-    pub fn test_parse_PeerDescriptor() -> Result<()> {
-
-        let result = Specification::from_yaml_str(r#"
-            version: v1
-            kind: PeerDescriptor
-            metadata:
-              id: 140f29fd-336b-48f7-9936-6b1892574543
-              name: TestPeer
-            spec:
-              location: Ulm
-        "#);
-
-        verify_that!(result, elements_are![ok(anything())])?;
-
-        Ok(())
-    }
-
-    #[rstest]
-    pub fn test_failing_ClusterConfiguration() -> Result<()> {
-        let content = Specification::from_yaml_str(r#"
-            version: v1
-            kind: ClusterConfiguration
-            spec:
-              location: Ulm
-        "#);
-
-        verify_that!(content, elements_are![err(matches_pattern!(ParseSpecificationError::IllegalYamlSpecification { .. }))])?;
-
-        Ok(())
-    }
 }

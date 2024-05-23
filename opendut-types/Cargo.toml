@@ -6,16 +6,19 @@ rust-version.workspace = true
 license.workspace = true
 
 [features]
+default = ["json"]
 specs = []
-yaml-specs = ["specs", "dep:serde_yaml"]
-json-specs = ["specs"]
+json = ["dep:serde_json"]
+yaml = ["dep:serde_yaml"]
+yaml-specs = ["specs", "yaml"]
+json-specs = ["specs", "json"]
 
 [dependencies]
 base64 = { workspace = true }
 brotli = { workspace = true }
 thiserror = { workspace = true }
 serde = { workspace = true, features = ["derive", "std"] }
-serde_json = { workspace = true }
+serde_json = { workspace = true, optional = true  }
 serde_yaml = { workspace = true, optional = true }
 sha1 = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
@@ -23,9 +26,11 @@ url = { workspace = true, features = ["serde"] }
 uuid = { workspace = true, features = ["v4", "v5", "serde"] }
 pem = { workspace = true, features = ["serde"]}
 prost = { workspace = true }
+strum_macros = "0.25.3"
 
 [dev-dependencies]
 googletest = { workspace = true }
+indoc = { workspace = true }
 serde_yaml = { workspace = true }
 rstest = { workspace = true }
 

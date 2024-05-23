@@ -1,11 +1,9 @@
 use std::fs;
 use std::path::PathBuf;
 
-use serde::Deserialize;
-
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::specs::{Specification, SpecificationDocument, yaml};
-use yaml::YamlSpecificationDocument;
+use opendut_types::specs::{Specification, SpecificationDocument};
+use opendut_types::specs::yaml::YamlSpecificationFile;
 
 use crate::CreateOutputFormat;
 
@@ -20,20 +18,13 @@ pub struct ApplyCli {
 }
 
 impl ApplyCli {
-    pub async fn execute(self, carl: &mut CarlClient) -> crate::Result<()> {
+    pub async fn execute(self, _carl: &mut CarlClient) -> crate::Result<()> {
         match self.from {
             Source::File(path) => {
                 let content = fs::read_to_string(path).unwrap();
-                let documents = serde_yaml::Deserializer::from_str(&content)
-                    .map(|yaml_document| {
-                        serde_yaml::Value::deserialize(yaml_document)
-                            .and_then(|value| serde_yaml::from_value::<YamlSpecificationDocument>(value))
-                    })
-                    .collect::<Result<Vec<_>, _>>();
-
-                match documents {
-                    Ok(values) => {
-                        values.into_iter().for_each(|yaml_specification| {
+                match YamlSpecificationFile::try_from_yaml_str(&content) {
+                    Ok(file) => {
+                        file.documents.into_iter().for_each(|yaml_specification| {
                             let spec = SpecificationDocument::try_from(yaml_specification).unwrap();
                             // match spec {
                             //     Specification::PeerDescriptorSpecification(PeerDescriptorSpecification::V1(peer)) => {
@@ -66,6 +57,7 @@ impl ApplyCli {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub enum Source {
     File(PathBuf),

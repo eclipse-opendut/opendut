@@ -3,7 +3,7 @@ version: v1
 kind: ClusterConfiguration
 metadata:
   id: 140f29fd-336b-48f7-9936-6b1892574543
-  name: TestPeer
+  name: MyCluster
 spec:
   description: An awesome cluster
 
@@ -12,23 +12,6 @@ version: v1
 kind: PeerDescriptor
 metadata:
   id: 140f29fd-336b-48f7-9936-6b1892574543
-  name: TestPeer
+  name: MyPeer
 spec:
   location: Ulm
-#---
-#version: v1
-#kind: RealPeerDescriptor
-#metadata:
-#  id: 54cadbf9-0b04-49be-b13d-54e35da69b41
-#  name: SecondTestPeer
-#spec:
-#  location: Stuttgart
-#  network:
-#    interfaces:
-#      - name: eth0
-#        type: Ethernet
-#  topology:
-#    devices:
-#      - id: 82ed38a6-8385-450d-965e-464ce60da574
-#        name: TestDevice
-#        interface: eth0
