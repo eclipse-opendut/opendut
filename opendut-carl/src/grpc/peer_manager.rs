@@ -13,6 +13,7 @@ use opendut_carl_api::proto::services::peer_manager::*;
 use opendut_carl_api::proto::services::peer_manager::peer_manager_server::{PeerManager as PeerManagerService, PeerManagerServer};
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::util::net::NetworkInterfaceName;
+use opendut_util::logging::NonDisclosingRequestExtension;
 
 use crate::actions;
 use crate::actions::{DeletePeerDescriptorParams, GeneratePeerSetupParams, ListDevicesParams, ListPeerDescriptorsParams, StorePeerDescriptorOptions, StorePeerDescriptorParams};
@@ -60,7 +61,7 @@ impl PeerManagerService for PeerManagerFacade {
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn store_peer_descriptor(&self, request: Request<StorePeerDescriptorRequest>) -> Result<Response<StorePeerDescriptorResponse>, Status> {
 
-        trace!("Received request: {:?}", request);
+        trace!("Received request: {}", request.debug_output());
 
         let request = request.into_inner();
         let peer_descriptor: PeerDescriptor = extract!(request.peer)?;
@@ -95,7 +96,7 @@ impl PeerManagerService for PeerManagerFacade {
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn delete_peer_descriptor(&self, request: Request<DeletePeerDescriptorRequest>) -> Result<Response<DeletePeerDescriptorResponse>, Status> {
 
-        trace!("Received request: {:?}", request);
+        trace!("Received request: {}", request.debug_output());
 
         let request = request.into_inner();
         let peer_id: PeerId = extract!(request.peer_id)?;
@@ -128,7 +129,7 @@ impl PeerManagerService for PeerManagerFacade {
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn get_peer_descriptor(&self, request: Request<GetPeerDescriptorRequest>) -> Result<Response<GetPeerDescriptorResponse>, Status> {
 
-        trace!("Received request: {:?}", request);
+        trace!("Received request: {}", request.debug_output());
 
         let request = request.into_inner();
         let peer_id: PeerId = extract!(request.peer_id)?;
@@ -165,7 +166,7 @@ impl PeerManagerService for PeerManagerFacade {
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn list_peer_descriptors(&self, request: Request<ListPeerDescriptorsRequest>) -> Result<Response<ListPeerDescriptorsResponse>, Status> {
 
-        trace!("Received request: {:?}", request);
+        trace!("Received request: {}", request.debug_output());
 
         let result =
             actions::list_peer_descriptors(ListPeerDescriptorsParams {
@@ -197,7 +198,7 @@ impl PeerManagerService for PeerManagerFacade {
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn list_devices(&self, request: Request<ListDevicesRequest>) -> Result<Response<ListDevicesResponse>, Status> {
 
-        trace!("Received request: {:?}", request);
+        trace!("Received request: {}", request.debug_output());
 
         let devices = actions::list_devices(ListDevicesParams {
             resources_manager: Arc::clone(&self.resources_manager),
@@ -212,7 +213,7 @@ impl PeerManagerService for PeerManagerFacade {
 
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn generate_peer_setup(&self, request: Request<GeneratePeerSetupRequest>) -> Result<Response<GeneratePeerSetupResponse>, Status> { // TODO: Refactor error types.
-        trace!("Received request: {:?}", request);
+        trace!("Received request: {}", request.debug_output());
 
         let message = request.into_inner();
         let response = match message.peer {

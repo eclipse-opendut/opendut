@@ -4,8 +4,7 @@ use std::net::SocketAddr;
 use std::str::FromStr;
 use std::sync::Arc;
 
-use ::http::header::CONTENT_TYPE;
-use ::http::Request;
+use ::http::{header::CONTENT_TYPE, Request};
 use anyhow::{anyhow, Context, Result};
 use axum::routing::get;
 use axum_server::tls_rustls::RustlsConfig;
@@ -18,6 +17,7 @@ use tower::{BoxError, make::Shared, ServiceExt, steer::Steer};
 use tower_http::services::{ServeDir, ServeFile};
 use tracing::{debug, info, warn};
 use uuid::Uuid;
+use opendut_auth::confidential::client::ConfidentialClient;
 use opendut_auth::confidential::pem::PemFromConfig;
 use opendut_auth::registration::client::{RegistrationClient, RegistrationClientRef};
 use opendut_auth::registration::resources::ResourceHomeUrl;
@@ -57,8 +57,12 @@ pub async fn create_with_logging(settings_override: config::Config) -> Result<()
 
     let file_logging = None;
     let logging_config = LoggingConfig::load(&settings.config, service_instance_id)?;
-    let mut shutdown = logging::initialize_with_config(logging_config.clone(), file_logging)?;
 
+    let confidential_client = ConfidentialClient::from_settings(&settings.config).await
+        .context("Error while creating AuthenticationManager.")?;
+
+    let mut shutdown = logging::initialize_with_config(logging_config.clone(), file_logging, confidential_client).await?;
+    
     if let logging::OpenTelemetryConfig::Enabled { cpu_collection_interval_ms, .. } = logging_config.opentelemetry {
         logging::initialize_metrics_collection(cpu_collection_interval_ms);
     }

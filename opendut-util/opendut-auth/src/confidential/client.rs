@@ -1,5 +1,7 @@
 use std::fmt::Formatter;
+use std::ops::Add;
 use std::sync::Arc;
+use std::time::Duration;
 use chrono::{NaiveDateTime, Utc};
 use config::Config;
 use oauth2::{AccessToken, TokenResponse};
@@ -33,8 +35,9 @@ pub enum AuthError {
     ExpirationFieldMissing { message: String },
 }
 
+#[derive(Clone)]
 pub struct Token {
-    value: String,
+    pub value: String,
 }
 
 impl std::fmt::Display for Token {
@@ -62,10 +65,24 @@ impl ConfidentialClient {
         match client_config {
             ConfidentialClientConfig::Confidential(client_config) => {
                 debug!("OIDC configuration loaded: id={:?} issuer_url={:?}", client_config.client_id, client_config.issuer_url);
-                let reqwest_client = OidcReqwestClient::from_config(settings).await
-                    .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to create reqwest client."), cause: cause.into() })?;
-                let client = ConfidentialClient::from_client_config(client_config, reqwest_client).await?;
-                Ok(Some(client))
+
+                debug!("Connecting to KEYCLOAK...");
+
+                let connection_result = ConfidentialClient::check_connection(client_config.clone()).await;
+                
+                match connection_result {
+                    Ok(_) => {
+                        let reqwest_client = OidcReqwestClient::from_config(settings).await
+                            .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to create reqwest client."), cause: cause.into() })?;
+
+                        let client = ConfidentialClient::from_client_config(client_config, reqwest_client).await?;
+
+                        Ok(Some(client))
+                    }
+                    Err(error) => {
+                        Err(error)
+                    }
+                }
             }
             ConfidentialClientConfig::AuthenticationDisabled => {
                 debug!("OIDC is disabled.");
@@ -84,6 +101,33 @@ impl ConfidentialClient {
             state: Default::default(),
         };
         Ok(Arc::new(client))
+    }
+
+    async fn check_connection(idp_config: ConfidentialClientConfigData) -> Result<(), ConfidentialClientError> {
+
+        let token_endpoint = idp_config.issuer_url.join("protocol/openid-connect/token")
+            .map_err(|error| ConfidentialClientError::UrlParse { message: String::from("Failed to derive token url from issuer url: "), cause: error })?;
+
+        let token_endpoint_copy = token_endpoint.clone();
+
+        let mut error: Option<reqwest::Error> = None;
+
+        const MAX_RETRIES: u16 = 5;
+        for _retries_left in (0..MAX_RETRIES).rev() {
+            let token_url = token_endpoint_copy.clone();
+            let response = reqwest::get(token_url.clone()).await;
+            match response {
+                Ok(_) => {
+                    return Ok(());
+                }
+                Err(cause) => {
+                    error = Some(cause);
+                    tokio::time::sleep(Duration::from_millis(10000)).await;
+                    continue;
+                }
+            };
+        }
+        Err(ConfidentialClientError::KeycloakConnection { message: String::from("Could not connect to keycloak"), cause: error.unwrap() })
     }
 
     fn update_storage_token(response: &BasicTokenResponse, state: &mut RwLockWriteGuard<Option<TokenStorage>>) -> Result<Token, AuthError> {
@@ -127,7 +171,7 @@ impl ConfidentialClient {
                 self.fetch_token().await?
             }
             Some(token) => {
-                if Utc::now().naive_utc().lt(&token.expires_in) {
+                if Utc::now().naive_utc().add(Duration::new(30, 0)).lt(&token.expires_in) {
                     Token { value: token.access_token.secret().to_string() }
                 } else {
                     self.fetch_token().await?

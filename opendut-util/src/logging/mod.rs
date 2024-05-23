@@ -1,7 +1,9 @@
+use std::fmt::Debug;
 use std::fs::File;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
+use std::thread;
 use std::time::Duration;
 
 use opentelemetry::{global, KeyValue};
@@ -19,11 +21,17 @@ use simple_moving_average::{SMA, SumTreeSMA};
 use sysinfo::{Pid, System};
 use tokio::sync::Mutex;
 use tokio::time::sleep;
+use tonic::{Request, Status};
+use tonic::metadata::{KeyAndValueRef, MetadataMap, MetadataValue};
+use tonic::service::Interceptor;
+use tracing::error;
 use tracing_subscriber::filter::Directive;
 use tracing_subscriber::filter::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use url::Url;
+use opendut_auth::confidential::client::{AuthError, ConfidentialClientRef, Token};
+
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -37,15 +45,50 @@ pub enum Error {
     Tracer { #[from] source: TraceError },
     #[error("No endpoint configuration provided.")]
     EndpointConfigurationMissing,
+    #[error("Failed to get token from AuthenticationManager")]
+    FailedToGetTokenFromAuthenticationManager { #[from] source: AuthError },
 }
 
-pub fn initialize_with_defaults() -> Result<ShutdownHandle, Error> {
-    initialize_with_config(LoggingConfig::default(), None)
-}
-
-pub fn initialize_with_config(config: LoggingConfig, file_logging: Option<PathBuf>) -> Result<ShutdownHandle, Error> {
+pub async fn initialize_with_config(
+    config: LoggingConfig,
+    file_logging: Option<PathBuf>,
+    confidential_client: Option<ConfidentialClientRef>,
+) -> Result<ShutdownHandle, Error> {
 
     global::set_text_map_propagator(TraceContextPropagator::new());
+
+    let token = if let Some(confidential_client) = confidential_client.clone() {
+
+        let token = confidential_client.get_token().await
+            .map_err(|cause| Error::FailedToGetTokenFromAuthenticationManager {
+                source: cause,
+            })?;
+        Some(token)
+    } else {
+        None
+    };
+
+    let telemetry_interceptor = TelemetryInterceptor{ confidential_client_ref: confidential_client, token: token.clone() };
+
+    let telemetry_interceptor = Arc::new(Mutex::new(telemetry_interceptor));
+    let telemetry_interceptor_cloned = Arc::clone(&telemetry_interceptor);
+
+    tokio::spawn(async move {
+        loop {
+            sleep(Duration::from_millis(30000)).await;
+            telemetry_interceptor_cloned.lock().await.refresh_token().await;
+        }
+    });
+
+    let mut metadata_map = MetadataMap::new();
+    match token {
+        None => {}
+        Some(token) => {
+            let token_string = token.value.as_str();
+            let bearer_header = format!("Bearer {token_string}");
+            metadata_map.insert("authorization", MetadataValue::from_str(&bearer_header).expect("Cannot create metadata value from bearer header"));
+        }
+    }
 
     let tracing_filter = EnvFilter::builder()
         .with_default_directive(Directive::from_str("opendut=trace")?)
@@ -78,17 +121,18 @@ pub fn initialize_with_config(config: LoggingConfig, file_logging: Option<PathBu
 
     let (tracer, logger, logger_layer, meter_provider) =
         if let OpenTelemetryConfig::Enabled { endpoint, service_name, service_instance_id, metrics_interval_ms, ..} = config.opentelemetry {
-            
-        let tracer = init_tracer(&endpoint, service_name.clone(), service_instance_id.clone()).expect("Failed to initialize tracer.");
+            let my_arc_mutex = MyArcMutex(telemetry_interceptor);
 
-        let logger = init_logger(&endpoint, service_name.clone(), service_instance_id.clone()).expect("Failed to initialize logs.");
+            let tracer = init_tracer(my_arc_mutex.clone(), &endpoint, service_name.clone(), service_instance_id.clone()).expect("Failed to initialize tracer.");
 
-        let logger_provider: GlobalLoggerProvider = logger_provider();
-        let logger_layer = OpenTelemetryTracingBridge::new(&logger_provider);
-            
-        let meter_provider = init_metrics(&endpoint, service_name, service_instance_id, metrics_interval_ms).expect("Failed to initialize metrics.");
+            let logger = init_logger(my_arc_mutex.clone(), &endpoint, service_name.clone(), service_instance_id.clone()).expect("Failed to initialize logs.");
 
-        (Some(tracer), Some(logger), Some(logger_layer), Some(meter_provider))
+            let logger_provider: GlobalLoggerProvider = logger_provider();
+            let logger_layer = OpenTelemetryTracingBridge::new(&logger_provider);
+
+            let meter_provider = init_metrics(my_arc_mutex, &endpoint, service_name, service_instance_id, metrics_interval_ms).expect("Failed to initialize metrics.");
+
+            (Some(tracer), Some(logger), Some(logger_layer), Some(meter_provider))
     } else {
         (None, None, None, None)
     };
@@ -104,12 +148,13 @@ pub fn initialize_with_config(config: LoggingConfig, file_logging: Option<PathBu
     Ok(ShutdownHandle { _logger: logger, _meter_provider: meter_provider })
 }
 
-fn init_tracer(endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>) -> Result<opentelemetry_sdk::trace::Tracer, TraceError> {
+fn init_tracer(telemetry_interceptor: MyArcMutex<TelemetryInterceptor>, endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>) -> Result<opentelemetry_sdk::trace::Tracer, TraceError> {
     opentelemetry_otlp::new_pipeline()
         .tracing()
         .with_exporter(
             opentelemetry_otlp::new_exporter()
                 .tonic()
+                .with_interceptor(telemetry_interceptor)
                 .with_endpoint(Clone::clone(&endpoint.url)),
         )
         .with_trace_config(
@@ -126,7 +171,7 @@ fn init_tracer(endpoint: &Endpoint, service_name: impl Into<String>, service_ins
         .install_batch(runtime::Tokio)
 }
 
-fn init_logger(endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>) -> Result<opentelemetry_sdk::logs::Logger, LogError> {
+fn init_logger(telemetry_interceptor: MyArcMutex<TelemetryInterceptor>, endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>) -> Result<opentelemetry_sdk::logs::Logger, LogError> {
     opentelemetry_otlp::new_pipeline()
         .logging()
         .with_log_config(
@@ -143,17 +188,19 @@ fn init_logger(endpoint: &Endpoint, service_name: impl Into<String>, service_ins
         .with_exporter(
             opentelemetry_otlp::new_exporter()
                 .tonic()
+                .with_interceptor(telemetry_interceptor)
                 .with_endpoint(Clone::clone(&endpoint.url)),
         )
         .install_batch(runtime::Tokio)
 }
 
-fn init_metrics(endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>, metrics_interval: Duration) -> Result<SdkMeterProvider, MetricsError> {
+fn init_metrics(telemetry_interceptor: MyArcMutex<TelemetryInterceptor>, endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>, metrics_interval: Duration) -> Result<SdkMeterProvider, MetricsError> {
     opentelemetry_otlp::new_pipeline()
         .metrics(runtime::Tokio)
         .with_exporter(
             opentelemetry_otlp::new_exporter()
                 .tonic()
+                .with_interceptor(telemetry_interceptor)
                 .with_endpoint(Clone::clone(&endpoint.url))
         )
         .with_resource(Resource::new(vec![
@@ -211,6 +258,9 @@ pub fn initialize_metrics_collection(cpu_collection_interval_ms: Duration) {
     }).expect("could not register metrics collection callback");
 }
 
+pub async fn initialize_with_defaults() -> Result<ShutdownHandle, Error> {
+    initialize_with_config(LoggingConfig::default(), None, None).await
+}
 
 #[derive(Default, Clone)]
 pub struct LoggingConfig {
@@ -229,6 +279,66 @@ pub enum OpenTelemetryConfig {
     #[default]
     Disabled,
 }
+
+#[derive(Clone)]
+pub struct TelemetryInterceptor {
+    confidential_client_ref: Option<ConfidentialClientRef>,
+    token: Option<Token>,
+}
+#[derive(Clone)]
+struct MyArcMutex<T>(Arc<Mutex<T>>);
+
+impl TelemetryInterceptor {
+    async fn refresh_token(&mut self) {
+        let confidential_client = self.confidential_client_ref.clone();
+
+        if let Some(confidential_client) = confidential_client {
+            let token = confidential_client.get_token().await
+                .map_err(|cause| Error::FailedToGetTokenFromAuthenticationManager {
+                    source: cause,
+                });
+            if let Ok(token) = token {
+                self.token = Some(token);
+            }
+        };
+    }
+}
+
+impl Interceptor for MyArcMutex<TelemetryInterceptor> {
+    fn call(&mut self, mut request: Request<()>) -> Result<Request<()>, Status> {
+
+        let cloned_arc_mutex = Arc::clone(&self.0);
+
+        let token;
+        //creating a loop because is it not always possible to create a lock on a mutex object
+        // number of tries??
+        loop {
+            match cloned_arc_mutex.try_lock() {
+                Ok(mutex_guard) => {
+                    token = mutex_guard.clone().token;
+                    break;
+                }
+                Err(error) => {
+                    thread::sleep(Duration::from_millis(1000));
+                    println!("Unable to acquire lock at the moment. Cause: {:?}", error);
+                }
+            };
+        }
+
+        let mut metadata_map = MetadataMap::new();
+        return match token {
+            None => { Ok(request) }
+            Some(token) => {
+                let token_string = token.value.as_str();
+                let bearer_header = format!("Bearer {token_string}");
+                metadata_map.insert("authorization", MetadataValue::from_str(&bearer_header).expect("Cannot create metadata value from bearer header"));
+                request.metadata_mut().insert("authorization", MetadataValue::from_str(&bearer_header).expect("Cannot create metadata value from bearer header"));
+                Ok(request)
+            }
+        };
+    }
+}
+
 impl LoggingConfig {
     pub fn load(config: &config::Config, service_instance_id: String) -> Result<Self, LoggingConfigError> {
         let logging_stdout = config.get_bool("opentelemetry.logging.stdout")?;
@@ -298,6 +408,43 @@ impl LoggingConfig {
             logging_stdout,
             opentelemetry,
         })
+    }
+}
+
+pub trait NonDisclosingRequestExtension {
+    fn debug_output(&self) -> String;
+}
+impl <T:Debug> NonDisclosingRequestExtension for Request<T>
+    where
+        Request<T>: std::fmt::Debug {
+    fn debug_output(&self) -> String {
+        let metadata = self.metadata().clone();
+        let message = self.get_ref();
+        let extensions = self.extensions();
+
+        let mut headers = String::new();
+
+        for key_value in metadata.iter().filter_map(|key| match key {
+            KeyAndValueRef::Ascii(key, value) => {
+                if !key.as_str().to_lowercase().contains("authorization") {
+                    Some((key, value))
+                } else {
+                    None
+                }
+            }
+            KeyAndValueRef::Binary(_, _) => None,
+        }) {
+            let (key, value) = key_value;
+            let key_str = key.to_string();
+            let value_str = value.to_str().unwrap_or_default().to_string();
+            headers.push_str(&format!("{}: {}, ", key_str, value_str));
+        }
+        if headers.ends_with(", ") {
+            headers.pop();
+            headers.pop();
+        }
+
+        format!("Request {{ headers: {{ {} }}, message: {:?}, extensions: {:?} }}", headers, message, extensions)
     }
 }
 

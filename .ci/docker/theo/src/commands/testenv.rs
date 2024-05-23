@@ -71,11 +71,11 @@ impl TestenvCli {
                 if !skip_firefox {
                     docker_compose_up_expose_ports(DockerCoreServices::Firefox.as_str(), expose)?;
                 }
+                docker_compose_up_expose_ports(DockerCoreServices::Keycloak.as_str(), expose)?;
+                crate::core::docker::keycloak::wait_for_keycloak_provisioned()?;
                 if !skip_telemetry {
                     docker_compose_up_expose_ports(DockerCoreServices::Telemetry.as_str(), expose)?;
                 }
-                docker_compose_up_expose_ports(DockerCoreServices::Keycloak.as_str(), expose)?;
-                crate::core::docker::keycloak::wait_for_keycloak_provisioned()?;
                 start_netbird(expose)?;
                 crate::core::docker::netbird::wait_for_netbird_api_key()?;
 

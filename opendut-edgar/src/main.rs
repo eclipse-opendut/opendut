@@ -93,7 +93,7 @@ async fn main() -> anyhow::Result<()> {
             ).await
         },
         Commands::Setup { mode, dry_run, no_confirm, mtu } => {
-            setup::start::init_logging()?;
+            setup::start::init_logging().await?;
 
             let command = std::env::args_os()
                 .collect::<Vec<_>>();

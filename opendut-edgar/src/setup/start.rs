@@ -115,7 +115,7 @@ pub async fn unmanaged(
 }
 
 
-pub fn init_logging() -> anyhow::Result<()> {
+pub async fn init_logging() -> anyhow::Result<()> {
 
     let mut log_file = std::env::current_exe().unwrap();
     log_file.set_file_name("setup.log");
@@ -125,7 +125,8 @@ pub fn init_logging() -> anyhow::Result<()> {
         logging_stdout: false,
         opentelemetry: OpenTelemetryConfig::Disabled,
     };
-    let _ = logging::initialize_with_config(config, file_logging)?;
+    
+    let _ = logging::initialize_with_config(config, file_logging, None).await?;
 
     Ok(())
 }

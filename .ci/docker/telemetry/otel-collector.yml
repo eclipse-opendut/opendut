@@ -1,14 +1,14 @@
 receivers:
- otlp:
-   protocols:
-     http:
-       endpoint: 0.0.0.0:4318
-     grpc:
-       endpoint: 0.0.0.0:4317
- docker_stats:
-   endpoint: unix:///var/run/docker.sock
-   collection_interval: 15s
-   metrics:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+      grpc:
+        endpoint: 0.0.0.0:4317
+  docker_stats:
+    endpoint: unix:///var/run/docker.sock
+    collection_interval: 15s
+    metrics:
 processors:
   batch:
 
@@ -25,19 +25,19 @@ processors:
         value: test
 
 exporters:
- debug:
-   verbosity: detailed
- prometheus:
+  debug:
+    verbosity: detailed
+  prometheus:
     endpoint: 0.0.0.0:8889
     const_labels:
       project: opendut
     resource_to_telemetry_conversion: # include information about specific containers
       enabled: true
- otlp/tempo:
+  otlp/tempo:
     endpoint: tempo:4317
     tls:
       insecure: true
- loki:
+  loki:
     endpoint: "http://loki:3100/loki/api/v1/push"
     tls:
       insecure: true
@@ -48,27 +48,30 @@ exporters:
       job: true
 
 extensions:
- health_check:
- pprof:
-   endpoint: :1888
- zpages:
-   endpoint: :55679
+  health_check:
+  pprof:
+    endpoint: :1888
+  zpages:
+    endpoint: :55679
+  oidc:
+    issuer_url: https://keycloak/realms/opendut
+    audience: account
 
 service:
- extensions: [pprof, zpages, health_check]
- telemetry:
+  extensions: [ pprof, zpages, health_check, oidc ]
+  telemetry:
     logs:
-        level: "debug"
- pipelines:
-   traces:
-     receivers: [otlp]
-     processors: [batch]
-     exporters: [debug, otlp/tempo]
-   metrics:
-     receivers: [otlp, docker_stats]
-     processors: [batch]
-     exporters: [debug, prometheus]
-   logs:
-     receivers: [otlp]
-     processors: [batch, resource, attributes]
-     exporters: [debug, loki]
+      level: "debug"
+  pipelines:
+    traces:
+      receivers: [ otlp ]
+      processors: [ batch ]
+      exporters: [ debug, otlp/tempo ]
+    metrics:
+      receivers: [ otlp, docker_stats ]
+      processors: [ batch ]
+      exporters: [ debug, prometheus ]
+    logs:
+      receivers: [ otlp ]
+      processors: [ batch, resource, attributes ]
+      exporters: [ debug, loki ]

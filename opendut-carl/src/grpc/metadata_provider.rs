@@ -5,6 +5,7 @@ use tracing::trace;
 use opendut_carl_api::proto::services::metadata_provider::{VersionRequest, VersionResponse};
 use opendut_carl_api::proto::services::metadata_provider::metadata_provider_server::{MetadataProvider, MetadataProviderServer};
 use opendut_types::proto::util::VersionInfo;
+use opendut_util::logging::NonDisclosingRequestExtension;
 
 #[derive(Debug, Default)]
 pub struct MetadataProviderFacade {}
@@ -28,7 +29,7 @@ impl MetadataProvider for MetadataProviderFacade {
         request: Request<VersionRequest>,
     ) -> Result<Response<VersionResponse>, Status> {
 
-        trace!("Received request: {:?}", request);
+        trace!("Received request: {}", request.debug_output());
 
         let reply = VersionResponse {
             version_info: Some(VersionInfo {

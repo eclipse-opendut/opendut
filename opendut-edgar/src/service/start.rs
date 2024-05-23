@@ -13,6 +13,7 @@ use tokio::time::sleep;
 use tracing::{debug, error, info, Span, trace, warn};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
+use opendut_auth::confidential::client::ConfidentialClient;
 use opendut_carl_api::proto::services::peer_messaging_broker;
 use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, TracingContext};
 use opendut_carl_api::proto::services::peer_messaging_broker::downstream::Message;
@@ -63,7 +64,11 @@ pub async fn create_with_logging(settings_override: config::Config) -> anyhow::R
 
     let file_logging = None;
     let logging_config = LoggingConfig::load(&settings.config, service_instance_id)?;
-    let mut shutdown = logging::initialize_with_config(logging_config.clone(), file_logging)?;
+
+    let confidential_client = ConfidentialClient::from_settings(&settings.config).await
+        .context("Error while creating ConfidentialClient.")?;
+    
+    let mut shutdown = logging::initialize_with_config(logging_config.clone(), file_logging, confidential_client).await?;
 
     if let logging::OpenTelemetryConfig::Enabled { cpu_collection_interval_ms, .. } = logging_config.opentelemetry {
         logging::initialize_metrics_collection(cpu_collection_interval_ms);   
