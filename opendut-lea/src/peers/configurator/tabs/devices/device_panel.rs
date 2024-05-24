@@ -182,8 +182,8 @@ fn DeviceInterfaceInput(
         peer_network_interfaces.with(|interfaces | {
             interfaces.iter().cloned()
                 .map(|interface| {
-                    let name = interface.get().name.name();
-                    let interface_type = interface.get().configuration.display_name();
+                    let name = interface.get_untracked().name.name();
+                    let interface_type = interface.get_untracked().configuration.display_name();
                     if value_text == format!("{} ({})", name, interface_type) {
                         view! {
                             <option value={name.clone()} selected>{name} " ("{interface_type}")"</option>
