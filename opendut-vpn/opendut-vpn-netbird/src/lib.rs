@@ -6,7 +6,7 @@ use std::time::Duration;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use reqwest::Url;
-use tracing::{debug, error, info, trace, warn};
+use tracing::{debug, error, trace, warn};
 
 pub use netbird::Token as NetbirdToken;
 use opendut_types::cluster::ClusterId;
@@ -199,36 +199,38 @@ impl VpnManagementClient for NetbirdManagementClient {
 
         let self_group_name = GroupName::Peer(peer_id);
 
-        match self.inner.get_netbird_group(&self_group_name).await {
-            Ok(group) => {
-                debug!("Deleting self group '{self_group_name}' of peer <{peer_id}>.");
-                self.inner.delete_netbird_group(&group.id).await
-                    .map_err(|error| {
-                        error!("Failed to generate vpn configuration for peer <{peer_id}>, du to communication issues when deleting the peer's self group '{self_group_name}'!");
-                        CreateVpnPeerConfigurationError::CreationFailure { peer_id, error: Box::new(error) }
-                    })?;
-                info!("Successfully deleted self group '{self_group_name}' of peer <{peer_id}>.");
-            }
+        let group = match self.inner.get_netbird_group(&self_group_name).await {
+            Ok(group) => Some(group),
             Err(GetGroupError::GroupNotFound { .. }) => {
-                warn!("There is no self group '{self_group_name}' for peer <{peer_id}> to delete. This might indicate an invalid state!")
+                warn!("There is no self group '{self_group_name}' for peer <{peer_id}> to delete. This might indicate an invalid state!");
+                None
             }
             Err(error @ GetGroupError::MultipleGroupsFound { .. }) => {
                 error!("Failed to generate vpn configuration for peer <{peer_id}>, because there are multiple groups with the same name '{self_group_name}'! This is an invalid state!");
-                Err(CreateVpnPeerConfigurationError::CreationFailure { peer_id, error: Box::new(error) })?;
+                return Err(CreateVpnPeerConfigurationError::CreationFailure { peer_id, error: Box::new(error) });
             }
             Err(error @ GetGroupError::RequestFailure { .. }) => {
                 error!("Failed to generate vpn configuration for peer <{peer_id}>, due to communication issues when trying to look up the peer's self group!");
-                Err(CreateVpnPeerConfigurationError::CreationFailure { peer_id, error: Box::new(error) })?;
+                return Err(CreateVpnPeerConfigurationError::CreationFailure { peer_id, error: Box::new(error) });
             }
         };
 
-        debug!("Re-creating self group '{self_group_name}' for peer <{peer_id}>.");
+        if let Some(group) = group {
+            for netbird_peer in &group.peers {
+                self.inner.delete_netbird_peer(&netbird_peer.id).await //Delete NetBird peer to log it out. This means that during EDGAR Setup, it will be logged back in, which allows adjusting the MTU.
+                    .map_err(|cause| CreateVpnPeerConfigurationError::CreationFailure { peer_id, error: Box::new(cause) })?;
+                debug!("Deleted Peer <{peer_id}> from NetBird with NetBird-Peer-Id <{}>.", netbird_peer.id.0);
+            }
+        }
+        else {
+            debug!("Re-creating self group '{self_group_name}' for peer <{peer_id}>.");
 
-        self.inner.create_netbird_group(Clone::clone(&self_group_name), Vec::new()).await
-            .map_err(|error| {
-                error!("Failed to generate vpn configuration for peer <{peer_id}>, due to communication issues when re-creating the peer's self group '{self_group_name}'!");
-                CreateVpnPeerConfigurationError::CreationFailure { peer_id, error: Box::new(error) }
-            })?;
+            self.inner.create_netbird_group(Clone::clone(&self_group_name), Vec::new()).await
+                .map_err(|error| {
+                    error!("Failed to generate vpn configuration for peer <{peer_id}>, due to communication issues when re-creating the peer's self group '{self_group_name}'!");
+                    CreateVpnPeerConfigurationError::CreationFailure { peer_id, error: Box::new(error) }
+                })?;
+        }
 
         debug!("Requesting setup key for peer <{peer_id}>.");
 
@@ -239,7 +241,7 @@ impl VpnManagementClient for NetbirdManagementClient {
                     CreateVpnPeerConfigurationError::CreationFailure { peer_id, error: error.into() }
                 }
                 CreateSetupKeyError::RequestFailure { .. } => {
-                    error!("Failed to generate vpn configuration for peer <{peer_id}>, du to communication issues when requesting the new setup key!");
+                    error!("Failed to generate vpn configuration for peer <{peer_id}>, due to communication issues when requesting the new setup key!");
                     CreateVpnPeerConfigurationError::CreationFailure { peer_id, error: error.into() }
                 }
             })?;
@@ -349,30 +351,33 @@ mod test {
     }
 
     #[tokio::test]
-    async fn A_NetbirdManagementClient_should_delete_the_self_group_of_a_peer_when_creating_a_peer_configuration() -> Result<()> {
+    async fn A_NetbirdManagementClient_should_delete_the_peer_when_creating_a_peer_configuration() -> Result<()> {
 
         let peer_id = PeerId::from(uuid!("d61bed7b-2fec-4a5b-a937-d6a791cb5ff9"));
+        let netbird_peer_id = netbird::PeerId::from("netbird-peer-id");
         let peer_self_group_name = netbird::GroupName::from(peer_id);
         let peer_self_group_id = netbird::GroupId::from("peer-self-group");
         let peer_self_group = netbird::Group {
             id: Clone::clone(&peer_self_group_id),
             name: Clone::clone(&peer_self_group_name),
             peers_count: 0,
-            peers: vec![],
+            peers: vec![
+                GroupPeerInfo { id: netbird_peer_id.clone(), name: String::from("netbird-peer") },
+            ],
         };
         let setup_key = netbird::SetupKey {
             id: String::from("some-id"),
             key: uuid!("4626c02a-bee7-4468-91c3-73c47fd0116c"),
             name: netbird::setup_key_name_format(peer_id),
-            expires: netbird::SetupKetTimeStamp { inner: OffsetDateTime::now_utc() },
-            r#type: netbird::SetupKeyType::OneOff,
+            expires: netbird::SetupKeyTimeStamp { inner: OffsetDateTime::now_utc() },
+            r#type: netbird::SetupKeyType::Reusable,
             valid: true,
             revoked: false,
             used_times: 0,
-            last_used: netbird::SetupKetTimeStamp { inner: OffsetDateTime::now_utc() },
+            last_used: netbird::SetupKeyTimeStamp { inner: OffsetDateTime::now_utc() },
             state: netbird::SetupKeyState::Valid,
             auto_groups: vec![String::from("ch8i4ug6lnn4g9hqv7m0")],
-            updated_at: netbird::SetupKetTimeStamp { inner: OffsetDateTime::now_utc() },
+            updated_at: netbird::SetupKeyTimeStamp { inner: OffsetDateTime::now_utc() },
             usage_limit: 0,
         };
 
@@ -390,16 +395,10 @@ mod test {
                         }
                     }
                 });
-            mock_client.expect_delete_netbird_group()
+            mock_client.expect_delete_netbird_peer()
                 .times(1)
-                .withf(move |actual_group_id| *actual_group_id == peer_self_group_id)
-                .returning(|_| Ok(()));
-            mock_client.expect_create_netbird_group()
-                .times(1)
-                .withf(move |actual_group_name, peers| {
-                    *actual_group_name == peer_self_group_name && peers.is_empty()
-                })
-                .returning(move |_, _| Ok(Clone::clone(&peer_self_group)));
+                .withf(move |actual_peer_id| *actual_peer_id == netbird_peer_id)
+                .returning(move |_| Ok(()));
             mock_client.expect_generate_netbird_setup_key()
                 .times(1)
                 .withf(move |actual_peer_id| actual_peer_id.0 == peer_id.0)
