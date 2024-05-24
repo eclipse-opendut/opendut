@@ -7,7 +7,6 @@ use opentelemetry::propagation::TextMapPropagator;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 use tokio::sync::{mpsc, RwLock};
 use tokio::sync::mpsc::error::SendError;
-use tokio::sync::mpsc::Sender;
 use tracing::{debug, error, info, Span, warn};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
@@ -17,7 +16,6 @@ use opendut_carl_api::proto::services::peer_messaging_broker::upstream;
 use opendut_types::peer::PeerId;
 use opendut_types::peer::configuration::{PeerConfiguration, PeerConfiguration2};
 use opendut_types::peer::state::{PeerState, PeerUpState};
-use opendut_types::ShortName;
 
 use crate::resources::manager::ResourcesManagerRef;
 
@@ -79,7 +77,7 @@ impl PeerMessagingBroker {
         &self,
         peer_id: PeerId,
         remote_host: IpAddr,
-    ) -> (mpsc::Sender<upstream::Message>, mpsc::Receiver<Downstream>) {
+    ) -> Result<(mpsc::Sender<upstream::Message>, mpsc::Receiver<Downstream>), OpenError> {
 
         let (tx_inbound, mut rx_inbound) = mpsc::channel::<upstream::Message>(1024);
         let (tx_outbound, rx_outbound) = mpsc::channel::<Downstream>(1024);
@@ -98,23 +96,33 @@ impl PeerMessagingBroker {
             match resources.get::<PeerState>(peer_id) {
                 None => {
                     info!("Peer <{}> opened stream which has not been seen before.", peer_id);
+                    Ok(())
                 }
                 Some(peer_state) => {
-                    debug!("Peer <{}> opened stream which was previously in state: {}", peer_id, peer_state.short_name());
+                    match peer_state {
+                        PeerState::Down => {
+                            debug!("Peer <{peer_id}> opened stream which was previously down.");
+                            Ok(())
+                        }
+                        PeerState::Up { .. } => {
+                            Err(OpenError::PeerAlreadyConnected { peer_id })
+                        }
+                    }
                 }
-            };
-
-            resources.update::<PeerState>(peer_id)
-                .modify(|peer_state| match peer_state {
-                    PeerState::Up { inner: _, remote_host: peer_remote_host } => {
-                        *peer_remote_host = remote_host
-                    }
-                    PeerState::Down => {
-                        *peer_state = new_peer_up_state(remote_host)
-                    }
-                })
-                .or_insert(new_peer_up_state(remote_host))
-        }).await;
+            }
+            .map(|_| {
+                resources.update::<PeerState>(peer_id)
+                    .modify(|peer_state| match peer_state {
+                        PeerState::Up { inner: _, remote_host: peer_remote_host } => {
+                            *peer_remote_host = remote_host
+                        }
+                        PeerState::Down => {
+                            *peer_state = new_peer_up_state(remote_host)
+                        }
+                    })
+                    .or_insert(new_peer_up_state(remote_host))
+            })
+        }).await?;
 
         if let Some(configuration) = self.resources_manager.get::<PeerConfiguration>(peer_id).await {
             if let Some(configuration2) = self.resources_manager.get::<PeerConfiguration2>(peer_id).await {
@@ -170,7 +178,7 @@ impl PeerMessagingBroker {
             });
         }
 
-        (tx_inbound, rx_outbound)
+        Ok((tx_inbound, rx_outbound))
     }
 
     pub async fn remove_peer(&self, peer_id: PeerId) -> Result<(), Error> {
@@ -188,7 +196,7 @@ impl PeerMessagingBroker {
 async fn handle_stream_message(
     message: upstream::Message,
     peer_id: PeerId,
-    tx_outbound: &Sender<Downstream>,
+    tx_outbound: &mpsc::Sender<Downstream>,
 ) {
     match message {
         upstream::Message::Ping(_) => {
@@ -221,6 +229,16 @@ pub enum Error {
     PeerNotFound(PeerId),
     #[error("Other Error: {message}")]
     Other { message: String },
+}
+
+#[derive(Debug, thiserror::Error, PartialEq, Eq)]
+pub enum OpenError {
+    #[error(
+        "Peer <{peer_id}> opened stream, but we already have a connected stream with this PeerId. \
+        This likely means that someone set up a second host using the same PeerId. \
+        Rejecting connection."
+    )]
+    PeerAlreadyConnected { peer_id: PeerId },
 }
 
 #[derive(Clone)]
@@ -266,7 +284,7 @@ mod tests {
         let peer_id = PeerId::random();
         let remote_host = IpAddr::from_str("1.2.3.4")?;
 
-        let (sender, mut receiver) = testee.open(peer_id, remote_host).await;
+        let (sender, mut receiver) = testee.open(peer_id, remote_host).await?;
 
         { //assert state contains peer connected and up
             let peers = testee.peers.read().await;
@@ -315,6 +333,27 @@ mod tests {
                 }
             }
         }
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_reject_second_connection_for_peer() -> Result<()> {
+        let resources_manager = ResourcesManager::new();
+
+        let options = PeerMessagingBrokerOptions {
+            peer_disconnect_timeout: Duration::from_millis(200),
+        };
+        let testee = PeerMessagingBroker::new(Arc::clone(&resources_manager), options.clone());
+
+        let peer_id = PeerId::random();
+        let remote_host = IpAddr::from_str("1.2.3.4")?;
+
+        let result = testee.open(peer_id, remote_host).await;
+        assert!(result.is_ok());
+
+        let result = testee.open(peer_id, remote_host).await;
+        assert_that!(result.unwrap_err(), eq(OpenError::PeerAlreadyConnected { peer_id }));
 
         Ok(())
     }

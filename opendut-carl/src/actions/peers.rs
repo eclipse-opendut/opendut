@@ -500,7 +500,7 @@ mod test {
                 resources.insert(peer_id, Clone::clone(&peer_configuration2));
             }).await;
 
-            let (_, mut receiver) = peer_messaging_broker.open(peer_id, IpAddr::from_str("1.2.3.4")?).await;
+            let (_, mut receiver) = peer_messaging_broker.open(peer_id, IpAddr::from_str("1.2.3.4")?).await?;
             let received = receiver.recv().await.unwrap()
                 .message.unwrap();
             assert_that!(

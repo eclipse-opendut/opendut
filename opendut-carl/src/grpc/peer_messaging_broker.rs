@@ -17,7 +17,7 @@ use opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_bro
 use opendut_carl_api::proto::services::peer_messaging_broker::upstream;
 use opendut_types::peer::PeerId;
 
-use crate::peer::broker::PeerMessagingBrokerRef;
+use crate::peer::broker::{OpenError, PeerMessagingBrokerRef};
 
 pub struct PeerMessagingBrokerFacade {
     peer_messaging_broker: PeerMessagingBrokerRef,
@@ -70,7 +70,10 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
             })?;
 
 
-        let (tx_inbound, rx_outbound) = self.peer_messaging_broker.open(peer_id, remote_host).await;
+        let (tx_inbound, rx_outbound) = self.peer_messaging_broker.open(peer_id, remote_host).await
+            .map_err(|cause| match cause {
+                OpenError::PeerAlreadyConnected { .. } => Status::aborted(cause.to_string()),
+            })?;
 
         let peer_messaging_broker = Clone::clone(&self.peer_messaging_broker);
 

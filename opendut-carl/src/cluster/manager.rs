@@ -339,8 +339,8 @@ mod test {
             }).await?;
 
 
-            let mut peer_a_rx = peer_open(peer_a.id, peer_a.remote_host, Arc::clone(&fixture.peer_messaging_broker)).await;
-            let mut peer_b_rx = peer_open(peer_b.id, peer_b.remote_host, Arc::clone(&fixture.peer_messaging_broker)).await;
+            let mut peer_a_rx = peer_open(peer_a.id, peer_a.remote_host, Arc::clone(&fixture.peer_messaging_broker)).await?;
+            let mut peer_b_rx = peer_open(peer_b.id, peer_b.remote_host, Arc::clone(&fixture.peer_messaging_broker)).await?;
 
 
             actions::create_cluster_configuration(CreateClusterConfigurationParams {
@@ -397,10 +397,10 @@ mod test {
             Ok(())
         }
 
-        async fn peer_open(peer_id: PeerId, peer_remote_host: IpAddr, peer_messaging_broker: PeerMessagingBrokerRef) -> mpsc::Receiver<Downstream> {
-            let (_peer_tx, mut peer_rx) = peer_messaging_broker.open(peer_id, peer_remote_host).await;
+        async fn peer_open(peer_id: PeerId, peer_remote_host: IpAddr, peer_messaging_broker: PeerMessagingBrokerRef) -> anyhow::Result<mpsc::Receiver<Downstream>> {
+            let (_peer_tx, mut peer_rx) = peer_messaging_broker.open(peer_id, peer_remote_host).await?;
             receive_peer_configuration_message(&mut peer_rx).await; //initial peer configuration after connect
-            peer_rx
+            Ok(peer_rx)
         }
 
         async fn receive_peer_configuration_message(peer_rx: &mut mpsc::Receiver<Downstream>) -> (PeerConfiguration, PeerConfiguration2) {
