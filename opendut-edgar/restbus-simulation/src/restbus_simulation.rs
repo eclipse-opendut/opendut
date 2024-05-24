@@ -1,5 +1,5 @@
-use crate::arxml_structs::*;
 use crate::restbus_utils::*;
+use crate::restbus_structs::*;
 
 /*
  Restbus simulation that makes use of the structures parsed by the ARXML parser. Makes use of the Linux Kernel CAN Broadcast Manager 
@@ -16,17 +16,42 @@ pub struct RestbusSimulation {
 }
 
 impl RestbusSimulation {
-    /*pub fn play_from_can_cluster(&self, can_cluster: &CanCluster, interface: &String) {
-        let mut pdus: Vec<&PDU> = Vec::new();
+    pub fn play_all(&self, timed_can_frames: &Vec<TimedCanFrame>, ifname: &String) -> Result<bool, String> {
+        let sock = create_socket()?;
+        
+        connect_socket(sock, ifname)?;
 
-        for can_frame_triggering in can_cluster.can_frame_triggerings.values() {
-            for pdu_mapping in &can_frame_triggering.pdu_mappings { 
-                pdus.push(&pdu_mapping.pdu);
+        let mut write_bytes_global: Vec<Vec<u8>> = Vec::new();
+
+        for timed_can_frame in timed_can_frames { 
+            let mut write_bytes: Vec<u8> = Vec::new();
+
+            let mut can_frames: Vec<CanFrame> = Vec::new();
+
+            can_frames.push(
+                create_can_frame_structure(timed_can_frame.can_id, timed_can_frame.can_dlc, timed_can_frame.addressing_mode, &timed_can_frame.data_vector));
+        
+            create_bcm_structure_bytes(timed_can_frame.count, timed_can_frame.ival1.tv_sec, timed_can_frame.ival1.tv_usec, 
+                timed_can_frame.ival2.tv_sec, timed_can_frame.ival2.tv_usec, timed_can_frame.can_id, &can_frames, &mut write_bytes);
+            
+            println!("write byte is {}", write_bytes.len());
+            for byte in &write_bytes {
+                print!("{:02x} ", byte);
             }
-        }
-    }*/
+            println!("");
 
-    pub fn play_single_bcm_frame(&self, ifname: &String, count: u32, ival1_tv_sec: i64, ival1_tv_usec: i64, 
+            write_bytes_global.push(write_bytes);
+
+        }
+
+        for write_bytes in write_bytes_global {
+            write_socket(sock, &write_bytes, write_bytes.len())?;
+        } 
+
+        return Ok(true);
+    }
+
+    /*pub fn play_single_bcm_frame(&self, ifname: &String, count: u32, ival1_tv_sec: i64, ival1_tv_usec: i64, 
         ival2_tv_sec: i64, ival2_tv_usec: i64, can_id: u32, can_dlc: u8, addressing_mode: bool, data_vector: &Vec<u8>) -> Result<bool, String> 
         {
 
@@ -52,5 +77,5 @@ impl RestbusSimulation {
 
         return Ok(true);
     
-    }
+    }*/ 
 }

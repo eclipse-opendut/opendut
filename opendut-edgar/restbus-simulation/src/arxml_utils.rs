@@ -1,11 +1,14 @@
 /*
     HELPER METHODS 
 */
-use autosar_data::{CharacterData, Element, ElementName, EnumItem};
+use crate::arxml_structs::*;
+use crate::restbus_structs::*;
+use crate::restbus_utils::*;
 
 use std::collections::HashMap;
 
-use crate::arxml_structs::*;
+use autosar_data::{CharacterData, Element, ElementName, EnumItem};
+
 
 pub fn decode_integer(cdata: &CharacterData) -> Option<i64> {
     if let CharacterData::String(text) = cdata {
@@ -479,3 +482,74 @@ pub fn process_signal_group(signal_group: &Element,
     Some(())
 }
 
+// should normally only add one TimedCanFrame but multiple may be added in case multiple pdu mappings exist 
+pub fn get_timed_can_frame(can_frame_triggering: &CanFrameTriggering, timed_can_frames: &mut Vec<TimedCanFrame>) {
+    let can_id: u32 = can_frame_triggering.can_id as u32;
+    let can_dlc: u8 = can_frame_triggering.frame_length as u8;
+    let addressing_mode: bool = can_frame_triggering.addressing_mode;
+    for pdu_mapping in &can_frame_triggering.pdu_mappings {
+        let mut count: u32 = 0;
+        let mut ival1_tv_sec: i64 = 0;
+        let mut ival1_tv_usec: i64 = 0;
+        let mut ival2_tv_sec: i64 = 0;
+        let mut ival2_tv_usec: i64 = 0;
+        let init_values: Vec<u8>;
+        match &pdu_mapping.pdu {
+            PDU::ISignalIPDU(pdu) => {
+                count = pdu.number_of_repetitions as u32;
+                
+                if pdu.repetition_period_value != 0.0 {
+                    ival1_tv_sec = pdu.repetition_period_value.trunc() as i64;
+                    let fraction: f64 = pdu.repetition_period_value % 1.0;
+                    ival1_tv_usec = (fraction * 1_000_000.0).trunc() as i64;
+                }
+
+                if pdu.cyclic_timing_period_value != 0.0 {
+                    ival2_tv_sec = pdu.cyclic_timing_period_value.trunc() as i64;
+                    let fraction: f64 = pdu.cyclic_timing_period_value % 1.0;
+                    ival2_tv_usec = (fraction * 1_000_000.0).trunc() as i64;
+                }
+
+                init_values = extract_init_values(pdu.unused_bit_pattern,
+                        &pdu.ungrouped_signals,
+                        &pdu.grouped_signals,
+                        pdu_mapping.length,
+                        &pdu_mapping.byte_order);
+            }
+            PDU::NMPDU(pdu) => {
+                ival2_tv_usec = 100000; // every 100 ms
+                init_values = extract_init_values(pdu.unused_bit_pattern,
+                        &pdu.ungrouped_signals,
+                        &pdu.grouped_signals,
+                        pdu_mapping.length,
+                        &pdu_mapping.byte_order);
+            }
+        }
+        timed_can_frames.push(create_time_can_frame_structure(count, ival1_tv_sec, ival1_tv_usec, ival2_tv_sec,
+            ival2_tv_usec, can_id, can_dlc, addressing_mode, &init_values));
+    }
+}
+
+pub fn get_timed_can_frame_from_id(can_clusters: &HashMap<String, CanCluster>, bus_name: String, can_id: i64) -> Vec<TimedCanFrame> {
+    let mut timed_can_frames: Vec<TimedCanFrame> = Vec::new();
+
+    if let Some(can_cluster) = can_clusters.get(&bus_name) {
+        if let Some(can_frame_triggering) = can_cluster.can_frame_triggerings.get(&can_id) {
+            get_timed_can_frame(can_frame_triggering, &mut timed_can_frames);
+        }
+    }
+
+    return timed_can_frames
+}
+
+pub fn get_timed_can_frames_from_bus(can_clusters: &HashMap<String, CanCluster>, bus_name: String) -> Vec<TimedCanFrame> {
+    let mut timed_can_frames: Vec<TimedCanFrame> = Vec::new();
+
+    if let Some(can_cluster) = can_clusters.get(&bus_name) {
+        for can_frame_triggering in can_cluster.can_frame_triggerings.values() {
+            get_timed_can_frame(can_frame_triggering, &mut timed_can_frames)
+        }
+    }
+
+    return timed_can_frames
+}

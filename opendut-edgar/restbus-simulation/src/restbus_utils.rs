@@ -2,65 +2,14 @@
     HELPER METHODS just for restbus-simulation 
 */
 
-use nix::libc::{__c_anonymous_sockaddr_can_can_addr, __c_anonymous_sockaddr_can_tp, connect, if_nametoindex, sockaddr, sockaddr_can, socket, timeval, write, AF_CAN, CAN_BCM, CAN_EFF_FLAG, SOCK_DGRAM};
-use std::ffi::CString;
-use std::mem;
+use crate::restbus_structs::*;
+
+use std::{mem, slice};
 use std::io::Error;
-use std::slice;
 use std::os::raw::c_void;
+use std::ffi::CString;
 
-#[repr(C)]
-#[derive(Debug)]
-pub struct BcmMsgHead {
-    opcode: u32,
-    flags: u32,
-    count: u32,
-    ival1: timeval,
-    ival2: timeval,
-    can_id: u32,
-    nframes: u32,
-}
-
-#[repr(C, packed)]
-#[derive(Debug)]
-pub struct CanFrame {
-    can_id: u32,
-    can_dlc: u8,
-    __pad: u8,
-    __res0: u8,
-    __res1: u8,
-    data: [u8; 8],
-}
-
-pub enum OPCODE {
-        TxSetup = 1,
-/*        TxDelete,
-        TxRead,
-        TxSend,
-        RxSetup,
-        RxDelete,
-        RxRead,
-        TxStatus,
-        TxExpired,
-        RxStatus,
-        RxTimeout,
-        RxChanged*/
-}
-
-pub enum BCMFlags {
-    SetTimer = 0x0001,
-    StartTimer = 0x0002,
-/*    TxCountEvt = 0x0004,
-    TxAnnounce = 0x0008,
-    TxCpCanId = 0x0010,
-    RxFilterId = 0x0020,
-    RxCheckDlc = 0x0040,
-    RxNoAutotimer = 0x0080,
-    RxAnnounceResume = 0x0100,
-    TxResetMultiIdx = 0x0200,
-    RxRtrFrame = 0x0400,
-    CanFdFrame = 0x0800*/
-}
+use nix::libc::{__c_anonymous_sockaddr_can_can_addr, __c_anonymous_sockaddr_can_tp, connect, if_nametoindex, sockaddr, sockaddr_can, socket, timeval, write, AF_CAN, CAN_BCM, CAN_EFF_FLAG, SOCK_DGRAM};
 
 
 fn vec_to_c_void(vec: &Vec<u8>) -> *const c_void {
@@ -154,9 +103,29 @@ pub fn create_can_frame_structure(can_id: u32, can_dlc: u8, addressing_mode: boo
     };
 }
 
-pub fn create_bcm_structure_bytes(count: u32, ival1_tv_sec: i64, ival1_tv_usec: i64
-    , ival2_tv_sec: i64, ival2_tv_usec: i64, can_id: u32, frames: &Vec<CanFrame>, write_bytes: &mut Vec<u8>) {
-    let head: BcmMsgHead = BcmMsgHead {
+pub fn create_time_can_frame_structure(count: u32, ival1_tv_sec: i64, ival1_tv_usec: i64, ival2_tv_sec: i64, 
+    ival2_tv_usec: i64, can_id: u32, can_dlc: u8, addressing_mode: bool, data_vector: &Vec<u8>) -> TimedCanFrame {
+    let mut copy_data_vector: Vec<u8> = Vec::new();
+
+    for data in data_vector {
+        copy_data_vector.push(*data);
+    }
+
+    return TimedCanFrame {
+        can_id: can_id,
+        can_dlc: can_dlc,
+        addressing_mode: addressing_mode,
+        data_vector: copy_data_vector,
+        count: count,
+        ival1: timeval { tv_sec: ival1_tv_sec, tv_usec: ival1_tv_usec },
+        ival2: timeval { tv_sec: ival2_tv_sec, tv_usec: ival2_tv_usec },
+    }
+    
+}
+
+pub fn create_bcm_head(count: u32, ival1_tv_sec: i64, ival1_tv_usec: i64
+    , ival2_tv_sec: i64, ival2_tv_usec: i64, can_id: u32, frames: &Vec<CanFrame>) -> BcmMsgHead{
+    return BcmMsgHead {
         opcode: OPCODE::TxSetup as u32,
         flags: BCMFlags::SetTimer as u32 | BCMFlags::StartTimer as u32,
         count: count,
@@ -165,7 +134,12 @@ pub fn create_bcm_structure_bytes(count: u32, ival1_tv_sec: i64, ival1_tv_usec: 
         can_id: can_id,
         nframes: frames.len() as u32,
     };
-    
+}
+
+pub fn create_bcm_structure_bytes(count: u32, ival1_tv_sec: i64, ival1_tv_usec: i64
+    , ival2_tv_sec: i64, ival2_tv_usec: i64, can_id: u32, frames: &Vec<CanFrame>, write_bytes: &mut Vec<u8>) {
+    let head: BcmMsgHead = create_bcm_head(count, ival1_tv_sec, ival1_tv_usec, ival2_tv_sec, ival2_tv_usec, can_id, frames);
+
     let ptr: *const u8 = &head as *const BcmMsgHead as *const u8;
     let bytes: &[u8] = unsafe { slice::from_raw_parts(ptr, mem::size_of::<BcmMsgHead>()) };
 

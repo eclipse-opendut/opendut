@@ -51,12 +51,6 @@ pub enum PDU {
     diag_pdu_type: String
 }*/
 
-/*pub struct NMPDU { // Seems to be only needed for Ethernet, not CAN
-    nm_signal: String,
-    start_pos: i64,
-    length: i64
-}*/
-
 #[derive(Debug)]
 pub struct ISignalIPDU {
     pub cyclic_timing_period_value: f64,

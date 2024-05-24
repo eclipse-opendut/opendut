@@ -1,11 +1,13 @@
-use core::panic;
+use crate::arxml_structs::*;
+use crate::arxml_utils::*;
+
 use std::time::Instant;
 use std::collections::HashMap;
 
+use core::panic;
+
 use autosar_data::{AutosarModel, CharacterData, Element, ElementName, EnumItem};
 
-use crate::arxml_structs::*;
-use crate::arxml_utils::*;
 
 /*
  Arxml parser that is able to extract all values necessary for a restbus simulation
@@ -145,7 +147,7 @@ impl ArxmlParser {
         let mut ungrouped_signals: Vec<ISignal> = Vec::new();
 
         self.handle_isignals(pdu, &mut grouped_signals, &mut ungrouped_signals);
-        
+
         let isginal_ipdu: ISignalIPDU = ISignalIPDU {
             cyclic_timing_period_value: cyclic_timing_period_value,
             cyclic_timing_period_tolerance: cyclic_timing_period_tolerance,
