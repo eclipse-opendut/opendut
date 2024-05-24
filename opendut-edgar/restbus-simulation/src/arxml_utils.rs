@@ -485,8 +485,9 @@ pub fn process_signal_group(signal_group: &Element,
 // should normally only add one TimedCanFrame but multiple may be added in case multiple pdu mappings exist 
 pub fn get_timed_can_frame(can_frame_triggering: &CanFrameTriggering, timed_can_frames: &mut Vec<TimedCanFrame>) {
     let can_id: u32 = can_frame_triggering.can_id as u32;
-    let can_dlc: u8 = can_frame_triggering.frame_length as u8;
+    let len: u8 = can_frame_triggering.frame_length as u8;
     let addressing_mode: bool = can_frame_triggering.addressing_mode;
+    let frame_tx_behavior: bool = can_frame_triggering.frame_tx_behavior;
     for pdu_mapping in &can_frame_triggering.pdu_mappings {
         let mut count: u32 = 0;
         let mut ival1_tv_sec: i64 = 0;
@@ -526,7 +527,7 @@ pub fn get_timed_can_frame(can_frame_triggering: &CanFrameTriggering, timed_can_
             }
         }
         timed_can_frames.push(create_time_can_frame_structure(count, ival1_tv_sec, ival1_tv_usec, ival2_tv_sec,
-            ival2_tv_usec, can_id, can_dlc, addressing_mode, &init_values));
+            ival2_tv_usec, can_id, len, addressing_mode, frame_tx_behavior, &init_values));
     }
 }
 

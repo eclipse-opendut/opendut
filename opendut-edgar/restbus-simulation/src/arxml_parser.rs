@@ -324,13 +324,21 @@ impl ArxmlParser {
             addressing_mode = true;
         }
 
-        let frame_rx_behavior = get_optional_string(
+        let mut frame_rx_behavior = false; 
+        let frame_rx_behavior_str = get_required_string(
             can_frame_triggering,
             ElementName::CanFrameRxBehavior);
+        if frame_rx_behavior_str.to_uppercase() == String::from("CAN-FD") {
+            frame_rx_behavior = true;
+        }
         
-        let frame_tx_behavior = get_optional_string(
+        let mut frame_tx_behavior = false; 
+        let frame_tx_behavior_str = get_required_string(
             can_frame_triggering,
             ElementName::CanFrameTxBehavior);
+        if frame_tx_behavior_str.to_uppercase() == String::from("CAN-FD") {
+            frame_tx_behavior = true;
+        }
 
         let mut rx_range_lower: i64 = 0;
         let mut rx_range_upper: i64 = 0;

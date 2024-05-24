@@ -12,22 +12,40 @@ pub struct BcmMsgHead {
     pub nframes: u32,
 }
 
+#[derive(Debug)]
+pub enum CanFrame {
+    Can20Frame(Can20Frame),
+    CanFdFrame(CanFdFrame)
+}
+
 #[repr(C, packed)]
 #[derive(Debug)]
-pub struct CanFrame {
+pub struct Can20Frame {
     pub can_id: u32,
-    pub can_dlc: u8,
+    pub len: u8,
     pub __pad: u8,
     pub __res0: u8,
     pub __res1: u8,
     pub data: [u8; 8],
 }
 
+#[repr(C, packed)]
+#[derive(Debug)]
+pub struct CanFdFrame {
+    pub can_id: u32,
+    pub len: u8,
+    pub flags: u8,
+    pub __res0: u8,
+    pub __res1: u8,
+    pub data: [u8; 64],
+}
+
 #[derive(Debug)]
 pub struct TimedCanFrame {
     pub can_id: u32,
-    pub can_dlc: u8,
+    pub len: u8,
     pub addressing_mode: bool,
+    pub frame_tx_behavior: bool,
     pub data_vector: Vec<u8>,
     pub count: u32,
     pub ival1: timeval,
@@ -60,6 +78,6 @@ pub enum BCMFlags {
     RxNoAutotimer = 0x0080,
     RxAnnounceResume = 0x0100,
     TxResetMultiIdx = 0x0200,
-    RxRtrFrame = 0x0400,
-    CanFdFrame = 0x0800*/
+    RxRtrFrame = 0x0400,*/
+    CanFdFrame = 0x0800
 }

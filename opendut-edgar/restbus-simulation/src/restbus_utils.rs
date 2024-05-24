@@ -78,33 +78,52 @@ pub fn write_socket(sock: i32, write_bytes: &Vec<u8>, count: usize) -> Result<is
     return Ok(wres);
 }
 
-pub fn create_can_frame_structure(can_id: u32, can_dlc: u8, addressing_mode: bool, data_vector: &Vec<u8>) -> CanFrame {
-    let mut data: [u8; 8] = [0; 8];
-
+fn fill_data_array(data: &mut [u8], data_vector: &Vec<u8>) {
     let mut i = 0;
     while i < data_vector.len() {
         data[i] = data_vector[i];
         i += 1;
     }
+}
 
+pub fn create_can_frame_structure(can_id: u32, len: u8, addressing_mode: bool, frame_tx_behavior: bool, data_vector: &Vec<u8>) -> CanFrame {
     let mut eflag: u32 = 0x0;
     
     if addressing_mode {
         eflag = CAN_EFF_FLAG;
     }
 
-    return CanFrame {
-        can_id: can_id | eflag,
-        can_dlc: can_dlc,
-        __pad: 0,
-        __res0: 0,
-        __res1: 0,
-        data: data,
-    };
+    if frame_tx_behavior { 
+        let mut data: [u8; 64] = [0; 64];
+
+        fill_data_array(&mut data, data_vector);
+
+        return CanFrame::CanFdFrame( CanFdFrame {
+            can_id: can_id | eflag,
+            len: len,
+            flags: 0, // are there any relevant flags?
+            __res0: 0,
+            __res1: 0,
+            data: data,
+        });
+    } else {
+        let mut data: [u8; 8] = [0; 8];
+
+        fill_data_array(&mut data, data_vector);
+
+        return CanFrame::Can20Frame( Can20Frame {
+            can_id: can_id | eflag,
+            len: len,
+            __pad: 0,
+            __res0: 0,
+            __res1: 0,
+            data: data,
+        });
+    }
 }
 
 pub fn create_time_can_frame_structure(count: u32, ival1_tv_sec: i64, ival1_tv_usec: i64, ival2_tv_sec: i64, 
-    ival2_tv_usec: i64, can_id: u32, can_dlc: u8, addressing_mode: bool, data_vector: &Vec<u8>) -> TimedCanFrame {
+    ival2_tv_usec: i64, can_id: u32, len: u8, addressing_mode: bool, frame_tx_behavior: bool, data_vector: &Vec<u8>) -> TimedCanFrame {
     let mut copy_data_vector: Vec<u8> = Vec::new();
 
     for data in data_vector {
@@ -113,21 +132,26 @@ pub fn create_time_can_frame_structure(count: u32, ival1_tv_sec: i64, ival1_tv_u
 
     return TimedCanFrame {
         can_id: can_id,
-        can_dlc: can_dlc,
+        len: len,
         addressing_mode: addressing_mode,
+        frame_tx_behavior: frame_tx_behavior,
         data_vector: copy_data_vector,
         count: count,
         ival1: timeval { tv_sec: ival1_tv_sec, tv_usec: ival1_tv_usec },
         ival2: timeval { tv_sec: ival2_tv_sec, tv_usec: ival2_tv_usec },
     }
-    
 }
 
 pub fn create_bcm_head(count: u32, ival1_tv_sec: i64, ival1_tv_usec: i64
-    , ival2_tv_sec: i64, ival2_tv_usec: i64, can_id: u32, frames: &Vec<CanFrame>) -> BcmMsgHead{
+    , ival2_tv_sec: i64, ival2_tv_usec: i64, can_id: u32, frame_tx_behavior: bool, frames: &Vec<CanFrame>) -> BcmMsgHead {
+    let mut canfd_flag: u32 = 0x0;
+    
+    if frame_tx_behavior {
+        canfd_flag = BCMFlags::CanFdFrame as u32;
+    }
     return BcmMsgHead {
         opcode: OPCODE::TxSetup as u32,
-        flags: BCMFlags::SetTimer as u32 | BCMFlags::StartTimer as u32,
+        flags: BCMFlags::SetTimer as u32 | BCMFlags::StartTimer as u32 | canfd_flag,
         count: count,
         ival1: timeval { tv_sec: ival1_tv_sec, tv_usec: ival1_tv_usec },
         ival2: timeval { tv_sec: ival2_tv_sec, tv_usec: ival2_tv_usec },
@@ -137,8 +161,8 @@ pub fn create_bcm_head(count: u32, ival1_tv_sec: i64, ival1_tv_usec: i64
 }
 
 pub fn create_bcm_structure_bytes(count: u32, ival1_tv_sec: i64, ival1_tv_usec: i64
-    , ival2_tv_sec: i64, ival2_tv_usec: i64, can_id: u32, frames: &Vec<CanFrame>, write_bytes: &mut Vec<u8>) {
-    let head: BcmMsgHead = create_bcm_head(count, ival1_tv_sec, ival1_tv_usec, ival2_tv_sec, ival2_tv_usec, can_id, frames);
+    , ival2_tv_sec: i64, ival2_tv_usec: i64, can_id: u32, frame_tx_behavior: bool, frames: &Vec<CanFrame>, write_bytes: &mut Vec<u8>) {
+    let head: BcmMsgHead = create_bcm_head(count, ival1_tv_sec, ival1_tv_usec, ival2_tv_sec, ival2_tv_usec, can_id, frame_tx_behavior, frames);
 
     let ptr: *const u8 = &head as *const BcmMsgHead as *const u8;
     let bytes: &[u8] = unsafe { slice::from_raw_parts(ptr, mem::size_of::<BcmMsgHead>()) };
@@ -146,8 +170,17 @@ pub fn create_bcm_structure_bytes(count: u32, ival1_tv_sec: i64, ival1_tv_usec: 
     write_bytes.extend_from_slice(bytes);
     
     for frame in frames {
-        let ptr: *const u8 = frame as *const CanFrame as *const u8;
-        let bytes: &[u8] = unsafe { slice::from_raw_parts(ptr, mem::size_of::<CanFrame>()) };
-        write_bytes.extend_from_slice(bytes);
+        match frame {
+            CanFrame::Can20Frame(can20_frame) => {
+                let ptr: *const u8 = can20_frame as *const Can20Frame as *const u8;
+                let bytes: &[u8] = unsafe { slice::from_raw_parts(ptr, mem::size_of::<Can20Frame>()) };
+                write_bytes.extend_from_slice(bytes);
+            }
+            CanFrame::CanFdFrame(canfd_frame) => {
+                let ptr: *const u8 = canfd_frame as *const CanFdFrame as *const u8;
+                let bytes: &[u8] = unsafe { slice::from_raw_parts(ptr, mem::size_of::<CanFdFrame>()) };
+                write_bytes.extend_from_slice(bytes);
+            }
+        }
     }
 }
