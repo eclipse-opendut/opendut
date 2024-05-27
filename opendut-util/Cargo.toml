@@ -20,10 +20,7 @@ thiserror = { workspace = true }
 tracing = { workspace = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-chrono = { workspace = true, default-features = false, features = ["clock", "serde", "wasmbind"] }
 home = { workspace = true, optional = true }
-reqwest = { workspace = true }
-oauth2 = { workspace = true, default-features = false, features = ["reqwest"] }
 opentelemetry = { workspace = true, features = ["logs", "trace"] }
 opentelemetry-otlp = { workspace = true, features = ["logs", "trace", "metrics"] }
 opentelemetry_sdk = { workspace = true, features = ["rt-tokio", "logs", "logs_level_enabled"] }
@@ -41,9 +38,6 @@ url = { workspace = true }
 
 [build-dependencies]
 shadow-rs = { workspace = true }
-
-[dev-dependencies]
-rstest = { workspace = true }
 
 [lints]
 workspace = true

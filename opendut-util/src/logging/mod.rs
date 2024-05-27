@@ -3,7 +3,6 @@ use std::fs::File;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
-use std::thread;
 use std::time::Duration;
 
 use opentelemetry::{global, KeyValue};
@@ -21,16 +20,15 @@ use simple_moving_average::{SMA, SumTreeSMA};
 use sysinfo::{Pid, System};
 use tokio::sync::Mutex;
 use tokio::time::sleep;
-use tonic::{Request, Status};
-use tonic::metadata::{KeyAndValueRef, MetadataMap, MetadataValue};
-use tonic::service::Interceptor;
+use tonic::Request;
+use tonic::metadata::KeyAndValueRef;
 use tracing::error;
 use tracing_subscriber::filter::Directive;
 use tracing_subscriber::filter::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use url::Url;
-use opendut_auth::confidential::blocking_client::{AuthError, ConfidentialClientRef};
+use opendut_auth::confidential::blocking::client::{AuthError, ConfidentialClientRef, ConfClientArcMutex};
 
 
 #[derive(Debug, thiserror::Error)]
@@ -89,7 +87,7 @@ pub async fn initialize_with_config(
     let (tracer, logger, logger_layer, meter_provider) =
         if let OpenTelemetryConfig::Enabled { endpoint, service_name, service_instance_id, metrics_interval_ms, ..} = config.opentelemetry {
             let mutex_confidential_client = Arc::new(Mutex::new(confidential_client));
-            let my_arc_mutex = MyArcMutex(mutex_confidential_client);
+            let my_arc_mutex = ConfClientArcMutex(mutex_confidential_client);
 
             let tracer = init_tracer(my_arc_mutex.clone(), &endpoint, service_name.clone(), service_instance_id.clone()).expect("Failed to initialize tracer.");
 
@@ -116,7 +114,7 @@ pub async fn initialize_with_config(
     Ok(ShutdownHandle { _logger: logger, _meter_provider: meter_provider })
 }
 
-fn init_tracer(telemetry_interceptor: MyArcMutex<Option<ConfidentialClientRef>>, endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>) -> Result<opentelemetry_sdk::trace::Tracer, TraceError> {
+fn init_tracer(telemetry_interceptor: ConfClientArcMutex<Option<ConfidentialClientRef>>, endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>) -> Result<opentelemetry_sdk::trace::Tracer, TraceError> {
     opentelemetry_otlp::new_pipeline()
         .tracing()
         .with_exporter(
@@ -139,7 +137,7 @@ fn init_tracer(telemetry_interceptor: MyArcMutex<Option<ConfidentialClientRef>>,
         .install_batch(runtime::Tokio)
 }
 
-fn init_logger(telemetry_interceptor: MyArcMutex<Option<ConfidentialClientRef>>, endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>) -> Result<opentelemetry_sdk::logs::Logger, LogError> {
+fn init_logger(telemetry_interceptor: ConfClientArcMutex<Option<ConfidentialClientRef>>, endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>) -> Result<opentelemetry_sdk::logs::Logger, LogError> {
     opentelemetry_otlp::new_pipeline()
         .logging()
         .with_log_config(
@@ -162,7 +160,7 @@ fn init_logger(telemetry_interceptor: MyArcMutex<Option<ConfidentialClientRef>>,
         .install_batch(runtime::Tokio)
 }
 
-fn init_metrics(telemetry_interceptor: MyArcMutex<Option<ConfidentialClientRef>>, endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>, metrics_interval: Duration) -> Result<SdkMeterProvider, MetricsError> {
+fn init_metrics(telemetry_interceptor: ConfClientArcMutex<Option<ConfidentialClientRef>>, endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>, metrics_interval: Duration) -> Result<SdkMeterProvider, MetricsError> {
     opentelemetry_otlp::new_pipeline()
         .metrics(runtime::Tokio)
         .with_exporter(
@@ -248,50 +246,6 @@ pub enum OpenTelemetryConfig {
     Disabled,
 }
 
-#[derive(Clone)]
-struct MyArcMutex<T>(Arc<Mutex<T>>);
-
-impl Interceptor for MyArcMutex<Option<ConfidentialClientRef>> {
-    fn call(&mut self, mut request: Request<()>) -> Result<Request<()>, Status> {
-
-        let cloned_arc_mutex = Arc::clone(&self.0);
-
-        let mut token = None;
-        const MAX_RETRIES: i32 = 5;
-        
-        for _retries_left in (0..MAX_RETRIES).rev() {
-            match cloned_arc_mutex.try_lock() {
-                Ok(mutex_guard) => {
-                    let confidential_client= mutex_guard.clone();
-                    token = confidential_client.map(|client| client.get_token());
-                    break;
-                }
-                Err(error) => {
-                    thread::sleep(Duration::from_millis(500));
-                    eprintln!("Unable to acquire lock at the moment. Cause: {:?}", error);
-                }
-            };
-        }
-
-        let mut metadata_map = MetadataMap::new();
-        return match token {
-            None => { Ok(request) }
-            Some(token_result) => {
-                match token_result {
-                    Ok(token) => {
-                        let token_string = token.value.as_str();
-                        let bearer_header = format!("Bearer {token_string}");
-                        metadata_map.insert("authorization", MetadataValue::from_str(&bearer_header).expect("Cannot create metadata value from bearer header"));
-                        request.metadata_mut().insert("authorization", MetadataValue::from_str(&bearer_header).expect("Cannot create metadata value from bearer header"));
-                        Ok(request)
-                    }
-                    Err(error) => { Err(Status::unauthenticated(format!("{}", error))) }
-                }
-            }
-        };
-    }
-}
-
 impl LoggingConfig {
     pub fn load(config: &config::Config, service_instance_id: String) -> Result<Self, LoggingConfigError> {
         let logging_stdout = config.get_bool("opentelemetry.logging.stdout")?;
@@ -373,7 +327,6 @@ impl <T:Debug> NonDisclosingRequestExtension for Request<T>
     fn debug_output(&self) -> String {
         let metadata = self.metadata().clone();
         let message = self.get_ref();
-        let extensions = self.extensions();
 
         let mut headers = String::new();
 
@@ -397,7 +350,7 @@ impl <T:Debug> NonDisclosingRequestExtension for Request<T>
             headers.pop();
         }
 
-        format!("Request {{ headers: {{ {} }}, message: {:?}, extensions: {:?} }}", headers, message, extensions)
+        format!("Request {{ headers: {{ {} }}, message: {:?} }}", headers, message)
     }
 }
 

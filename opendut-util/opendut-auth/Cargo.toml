@@ -38,6 +38,7 @@ opendut-util-core = { workspace = true }
 opendut-types = { workspace = true, optional = true }
 
 anyhow = { workspace = true, optional = true }
+backoff = { workspace = true }
 cfg-if = { workspace = true }
 chrono = { workspace = true, optional = true, default-features = false, features = ["clock", "serde", "wasmbind"] }
 config = { workspace = true, optional = true }

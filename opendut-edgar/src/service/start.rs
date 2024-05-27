@@ -13,7 +13,7 @@ use tokio::time::sleep;
 use tracing::{debug, error, info, Span, trace, warn};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
-use opendut_auth::confidential::blocking_client::ConfidentialClient;
+use opendut_auth::confidential::blocking::client::ConfidentialClient;
 use opendut_carl_api::proto::services::peer_messaging_broker;
 use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, TracingContext};
 use opendut_carl_api::proto::services::peer_messaging_broker::downstream::Message;

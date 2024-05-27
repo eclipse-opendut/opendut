@@ -1,15 +1,20 @@
 use std::fmt::Formatter;
+use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
 use chrono::{NaiveDateTime, Utc};
 use config::Config;
 use oauth2::{AccessToken, TokenResponse};
 use oauth2::basic::{BasicClient, BasicTokenResponse};
+use backoff::ExponentialBackoffBuilder;
 use std::sync::{RwLock, RwLockWriteGuard};
-use tokio::task::JoinError;
+use tokio::sync::{Mutex, TryLockError};
+use tonic::{Request, Status};
+use tonic::metadata::MetadataValue;
+use tonic::service::Interceptor;
 use tracing::debug;
 use crate::confidential::config::{ConfidentialClientConfig, ConfidentialClientConfigData};
-use crate::confidential::blocking_reqwest_client::OidcBlockingReqwestClient;
+use crate::confidential::blocking::reqwest_client::OidcBlockingReqwestClient;
 use crate::confidential::error::{ConfidentialClientError, WrappedRequestTokenError};
 
 #[derive(Debug)]
@@ -34,7 +39,7 @@ pub enum AuthError {
     #[error("ExpirationFieldMissing: {message}.")]
     ExpirationFieldMissing { message: String },
     #[error("FailedToUpdateToken: {message} cause: {cause}.")]
-    FailedToUpdateToken { message: String, cause: JoinError },
+    FailedToLockConfidentialClient { message: String, cause: backoff::Error<TryLockError> },
     
 }
 
@@ -42,6 +47,9 @@ pub enum AuthError {
 pub struct Token {
     pub value: String,
 }
+
+#[derive(Clone)]
+pub struct ConfClientArcMutex<T>(pub Arc<Mutex<T>>);
 
 impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -71,20 +79,14 @@ impl ConfidentialClient {
 
                 debug!("Connecting to KEYCLOAK...");
 
-                let connection_result = ConfidentialClient::check_connection(client_config.clone()).await;
+                let reqwest_client = OidcBlockingReqwestClient::from_config(settings).await
+                    .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to create reqwest client."), cause: cause.into() })?;
+
+                let client = ConfidentialClient::from_client_config(client_config.clone(), reqwest_client).await?;
                 
-                match connection_result {
-                    Ok(_) => {
-                        let reqwest_client = OidcBlockingReqwestClient::from_config(settings).await
-                            .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to create reqwest client."), cause: cause.into() })?;
-
-                        let client = ConfidentialClient::from_client_config(client_config, reqwest_client).await?;
-
-                        Ok(Some(client))
-                    }
-                    Err(error) => {
-                        Err(error)
-                    }
+                match client.check_connection(client_config) {
+                    Ok(_) => { Ok(Some(client)) }
+                    Err(error) => { Err(error) }
                 }
             }
             ConfidentialClientConfig::AuthenticationDisabled => {
@@ -106,31 +108,28 @@ impl ConfidentialClient {
         Ok(Arc::new(client))
     }
 
-    async fn check_connection(idp_config: ConfidentialClientConfigData) -> Result<(), ConfidentialClientError> {
+    fn check_connection(&self, idp_config: ConfidentialClientConfigData) -> Result<(), ConfidentialClientError> {
 
         let token_endpoint = idp_config.issuer_url.join("protocol/openid-connect/token")
             .map_err(|error| ConfidentialClientError::UrlParse { message: String::from("Failed to derive token url from issuer url: "), cause: error })?;
+        
+        let exponential_backoff = ExponentialBackoffBuilder::default()
+            .with_max_elapsed_time(Some(Duration::from_secs(120)))
+            .build();
 
-        let token_endpoint_copy = token_endpoint.clone();
+        let operation = || {
+            self.reqwest_client.client.get(token_endpoint.clone()).send()?;
+            Ok(())
+        };
+        
+        let backoff_result = backoff::retry(exponential_backoff, operation);
 
-        let mut error: Option<reqwest::Error> = None;
-
-        const MAX_RETRIES: u16 = 5;
-        for _retries_left in (0..MAX_RETRIES).rev() {
-            let token_url = token_endpoint_copy.clone();
-            let response = reqwest::get(token_url.clone()).await;
-            match response {
-                Ok(_) => {
-                    return Ok(());
-                }
-                Err(cause) => {
-                    error = Some(cause);
-                    tokio::time::sleep(Duration::from_millis(10000)).await;
-                    continue;
-                }
-            };
+        match backoff_result {
+            Ok(_) => { Ok(()) }
+            Err(error) => {
+                Err(ConfidentialClientError::KeycloakConnection { message: String::from("Could not connect to keycloak"), cause: error })
+            }
         }
-        Err(ConfidentialClientError::KeycloakConnection { message: String::from("Could not connect to keycloak"), cause: error.unwrap() })
     }
 
     fn update_storage_token(response: &BasicTokenResponse, state: &mut RwLockWriteGuard<Option<TokenStorage>>) -> Result<Token, AuthError> {
@@ -183,6 +182,51 @@ impl ConfidentialClient {
     }
 }
 
+impl Interceptor for ConfClientArcMutex<Option<ConfidentialClientRef>> {
+    fn call(&mut self, mut request: Request<()>) -> Result<Request<()>, Status> {
+
+        let cloned_arc_mutex = Arc::clone(&self.0);
+        
+        let exponential_backoff = ExponentialBackoffBuilder::default()
+            .with_max_elapsed_time(Some(Duration::from_secs(120)))
+            .build();
+
+        let operation = || {
+            let mutex_guard = cloned_arc_mutex.try_lock()?;
+            Ok(mutex_guard)
+        };
+
+        let backoff_result = backoff::retry(exponential_backoff, operation);
+        
+        let token = match backoff_result {
+            Ok(mutex_guard) => { 
+                let confidential_client= mutex_guard.clone();
+                confidential_client.map(|client| client.get_token())
+            }
+            Err(error) => {
+                eprintln!("Failed to acquire lock on the Confidential Client definitively. The following telemetry data will not be transmitted.");
+                eprintln!("Failed request: {:?}", request);
+                Some(Err(AuthError::FailedToLockConfidentialClient {message: "Unable to acquire lock on the Confidential Client".to_owned(), cause: error}))
+            }
+        };
+        
+        return match token {
+            None => { Ok(request) }
+            Some(token_result) => {
+                match token_result {
+                    Ok(token) => {
+                        let token_string = token.value.as_str();
+                        let bearer_header = format!("Bearer {token_string}");
+                        request.metadata_mut().insert(http::header::AUTHORIZATION.as_str(), MetadataValue::from_str(&bearer_header).expect("Cannot create metadata value from bearer header"));
+                        Ok(request)
+                    }
+                    Err(error) => { Err(Status::unauthenticated(format!("{}", error))) }
+                }
+            }
+        };
+    }
+}
+
 #[cfg(test)]
 mod auth_tests {
     use chrono::Utc;
@@ -193,10 +237,16 @@ mod auth_tests {
     use opendut_util_core::project;
     use crate::confidential::config::ConfidentialClientConfigData;
     use crate::confidential::pem::read_pem_from_file_path;
-    use crate::confidential::blocking_reqwest_client;
+    use crate::confidential::blocking;
 
     #[test]
+    #[ignore]
     fn test_get_token_example() {
+        /*
+         * This test is ignored because it requires a running keycloak server from the test environment.
+         * To run this test, execute the following command:
+         * cargo test --package opendut-auth --all-features -- --include-ignored
+         */
         let client_config = ConfidentialClientConfigData::new(
             ClientId::new("opendut-edgar-client".to_string()),
             ClientSecret::new("c7d6ace0-b90f-471a-bb62-a4ecac4150f8".to_string()),
@@ -208,7 +258,7 @@ mod auth_tests {
         let client = client_config.get_client().unwrap();
         
         let certificate = read_pem_from_file_path(&ca_path).unwrap();
-        let reqwest_client = blocking_reqwest_client::OidcBlockingReqwestClient::from_pem(certificate).unwrap();
+        let reqwest_client = blocking::reqwest_client::OidcBlockingReqwestClient::from_pem(certificate).unwrap();
         let response = client.exchange_client_credentials()
             .add_scopes(vec![])
             .request(|request| reqwest_client.sync_http_client(request))
