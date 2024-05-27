@@ -5,16 +5,17 @@ use chrono::{NaiveDateTime, Utc};
 use config::Config;
 use oauth2::{AccessToken, TokenResponse};
 use oauth2::basic::{BasicClient, BasicTokenResponse};
-use tokio::sync::{RwLock, RwLockWriteGuard};
+use std::sync::{RwLock, RwLockWriteGuard};
+use tokio::task::JoinError;
 use tracing::debug;
 use crate::confidential::config::{ConfidentialClientConfig, ConfidentialClientConfigData};
-use crate::confidential::reqwest_client::OidcReqwestClient;
+use crate::confidential::blocking_reqwest_client::OidcBlockingReqwestClient;
 use crate::confidential::error::{ConfidentialClientError, WrappedRequestTokenError};
 
 #[derive(Debug)]
 pub struct ConfidentialClient {
     inner: BasicClient,
-    pub reqwest_client: OidcReqwestClient,
+    pub reqwest_client: OidcBlockingReqwestClient,
     pub config: ConfidentialClientConfigData,
 
     state: RwLock<Option<TokenStorage>>,
@@ -32,6 +33,9 @@ pub enum AuthError {
     FailedToGetToken { message: String, cause: WrappedRequestTokenError },
     #[error("ExpirationFieldMissing: {message}.")]
     ExpirationFieldMissing { message: String },
+    #[error("FailedToUpdateToken: {message} cause: {cause}.")]
+    FailedToUpdateToken { message: String, cause: JoinError },
+    
 }
 
 #[derive(Clone)]
@@ -71,7 +75,7 @@ impl ConfidentialClient {
                 
                 match connection_result {
                     Ok(_) => {
-                        let reqwest_client = OidcReqwestClient::from_config(settings).await
+                        let reqwest_client = OidcBlockingReqwestClient::from_config(settings).await
                             .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to create reqwest client."), cause: cause.into() })?;
 
                         let client = ConfidentialClient::from_client_config(client_config, reqwest_client).await?;
@@ -90,7 +94,7 @@ impl ConfidentialClient {
         }
     }
 
-    pub async fn from_client_config(client_config: ConfidentialClientConfigData, reqwest_client: OidcReqwestClient) -> Result<ConfidentialClientRef, ConfidentialClientError> {
+    pub async fn from_client_config(client_config: ConfidentialClientConfigData, reqwest_client: OidcBlockingReqwestClient) -> Result<ConfidentialClientRef, ConfidentialClientError> {
         let inner = client_config.get_client()?;
 
         let client = Self {
@@ -103,6 +107,7 @@ impl ConfidentialClient {
     }
 
     async fn check_connection(idp_config: ConfidentialClientConfigData) -> Result<(), ConfidentialClientError> {
+
         let token_endpoint = idp_config.issuer_url.join("protocol/openid-connect/token")
             .map_err(|error| ConfidentialClientError::UrlParse { message: String::from("Failed to derive token url from issuer url: "), cause: error })?;
 
@@ -143,11 +148,10 @@ impl ConfidentialClient {
         Ok(Token { value: response.access_token().secret().to_string() })
     }
 
-    async fn fetch_token(&self) -> Result<Token, AuthError> {
+    fn fetch_token(&self) -> Result<Token, AuthError> {
         let response = self.inner.exchange_client_credentials()
             .add_scopes(self.config.scopes.clone())
-            .request_async(|request| { self.reqwest_client.async_http_client(request) })
-            .await
+            .request(|request| { self.reqwest_client.sync_http_client(request) })
             .map_err(|error| {
                 AuthError::FailedToGetToken {
                     message: "Fetching authentication token failed!".to_string(),
@@ -155,51 +159,44 @@ impl ConfidentialClient {
                 }
             })?;
 
-        let mut state = self.state.write().await;
-
+        let mut state = self.state.write().expect("Failed to rewrite the token."); //TODO
+        
         Self::update_storage_token(&response, &mut state)?;
-
         Ok(Token { value: response.access_token().secret().to_string() })
     }
 
-    pub async fn get_token(&self) -> Result<Token, AuthError> {
-        let token_storage = self.state.read().await.clone();
+    pub fn get_token(&self) -> Result<Token, AuthError> {
+        let token_storage = self.state.read().unwrap().clone();
         let access_token = match token_storage {
             None => {
-                self.fetch_token().await?
+                self.fetch_token()?
             }
             Some(token) => {
                 if Utc::now().naive_utc().lt(&token.expires_in) {
                     Token { value: token.access_token.secret().to_string() }
                 } else {
-                    self.fetch_token().await?
+                    self.fetch_token()?
                 }
             }
         };
         Ok(access_token)
     }
-
-    pub async fn check_login(&self) -> Result<bool, AuthError> {
-        let token = self.get_token().await?;
-        Ok(!token.value.is_empty())
-    }
 }
 
 #[cfg(test)]
 mod auth_tests {
-    use anyhow::anyhow;
-    use oauth2::{ClientId, ClientSecret};
-    use pem::Pem;
-    use rstest::{fixture, rstest};
+    use chrono::Utc;
+    use googletest::assert_that;
+    use googletest::matchers::gt;
+    use oauth2::{ClientId, ClientSecret, TokenResponse};
     use url::Url;
     use opendut_util_core::project;
     use crate::confidential::config::ConfidentialClientConfigData;
-    use crate::confidential::client::{ConfidentialClient, ConfidentialClientRef};
-    use crate::confidential::pem::PemFromConfig;
-    use crate::confidential::reqwest_client::OidcReqwestClient;
+    use crate::confidential::pem::read_pem_from_file_path;
+    use crate::confidential::blocking_reqwest_client;
 
-    #[fixture]
-    async fn confidential_edgar_client() -> ConfidentialClientRef {
+    #[test]
+    fn test_get_token_example() {
         let client_config = ConfidentialClientConfigData::new(
             ClientId::new("opendut-edgar-client".to_string()),
             ClientSecret::new("c7d6ace0-b90f-471a-bb62-a4ecac4150f8".to_string()),
@@ -207,25 +204,23 @@ mod auth_tests {
             vec![],
         );
         let ca_path = project::make_path_absolute("resources/development/tls/insecure-development-ca.pem")
-            .expect("Could not resolve dev CA").into_os_string().into_string().unwrap();
-        let result = <Pem as PemFromConfig>::from_file_path(&ca_path).await;
-        let pem: Pem = result.expect("Could not load dev CA");
-        let reqwest_client = OidcReqwestClient::from_pem(pem)
-            .map_err(|cause| anyhow!("Failed to create reqwest client. Error: {}", cause)).unwrap();
-
-        ConfidentialClient::from_client_config(client_config, reqwest_client).await.unwrap()
-    }
-
-    #[rstest]
-    #[tokio::test]
-    #[ignore]
-    async fn test_confidential_client_get_token(#[future] confidential_edgar_client: ConfidentialClientRef) {
-        /*
-         * This test is ignored because it requires a running keycloak server from the test environment.
-         * To run this test, execute the following command:
-         * cargo test --package opendut-auth --all-features -- --include-ignored
-         */
-        let token = confidential_edgar_client.await.get_token().await.unwrap();
-        assert!(token.value.len() > 100);
+            .expect("Could not resolve dev CA");
+        let client = client_config.get_client().unwrap();
+        
+        let certificate = read_pem_from_file_path(&ca_path).unwrap();
+        let reqwest_client = blocking_reqwest_client::OidcBlockingReqwestClient::from_pem(certificate).unwrap();
+        let response = client.exchange_client_credentials()
+            .add_scopes(vec![])
+            .request(|request| reqwest_client.sync_http_client(request))
+            .expect("Failed to get token");
+        
+        let now = Utc::now().naive_utc();
+        let expires_in = now + response.expires_in().expect("Expiration field missing!");
+        let access_token = response.access_token();
+        let token = access_token
+            .secret()
+            .to_string();
+        assert_that!(token.len(), gt(10));
+        assert!(now.lt(&expires_in));
     }
 }

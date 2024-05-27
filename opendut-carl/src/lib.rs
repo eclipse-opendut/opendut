@@ -17,7 +17,7 @@ use tower::{BoxError, make::Shared, ServiceExt, steer::Steer};
 use tower_http::services::{ServeDir, ServeFile};
 use tracing::{debug, info, warn};
 use uuid::Uuid;
-use opendut_auth::confidential::client::ConfidentialClient;
+use opendut_auth::confidential::blocking_client::ConfidentialClient;
 use opendut_auth::confidential::pem::PemFromConfig;
 use opendut_auth::registration::client::{RegistrationClient, RegistrationClientRef};
 use opendut_auth::registration::resources::ResourceHomeUrl;

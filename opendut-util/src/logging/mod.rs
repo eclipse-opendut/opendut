@@ -30,7 +30,7 @@ use tracing_subscriber::filter::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use url::Url;
-use opendut_auth::confidential::client::{AuthError, ConfidentialClientRef, Token};
+use opendut_auth::confidential::blocking_client::{AuthError, ConfidentialClientRef};
 
 
 #[derive(Debug, thiserror::Error)]
@@ -56,40 +56,7 @@ pub async fn initialize_with_config(
 ) -> Result<ShutdownHandle, Error> {
 
     global::set_text_map_propagator(TraceContextPropagator::new());
-
-    let token = if let Some(confidential_client) = confidential_client.clone() {
-
-        let token = confidential_client.get_token().await
-            .map_err(|cause| Error::FailedToGetTokenFromAuthenticationManager {
-                source: cause,
-            })?;
-        Some(token)
-    } else {
-        None
-    };
-
-    let telemetry_interceptor = TelemetryInterceptor{ confidential_client_ref: confidential_client, token: token.clone() };
-
-    let telemetry_interceptor = Arc::new(Mutex::new(telemetry_interceptor));
-    let telemetry_interceptor_cloned = Arc::clone(&telemetry_interceptor);
-
-    tokio::spawn(async move {
-        loop {
-            sleep(Duration::from_millis(30000)).await;
-            telemetry_interceptor_cloned.lock().await.refresh_token().await;
-        }
-    });
-
-    let mut metadata_map = MetadataMap::new();
-    match token {
-        None => {}
-        Some(token) => {
-            let token_string = token.value.as_str();
-            let bearer_header = format!("Bearer {token_string}");
-            metadata_map.insert("authorization", MetadataValue::from_str(&bearer_header).expect("Cannot create metadata value from bearer header"));
-        }
-    }
-
+    
     let tracing_filter = EnvFilter::builder()
         .with_default_directive(Directive::from_str("opendut=trace")?)
         .with_env_var("OPENDUT_LOG")
@@ -121,7 +88,8 @@ pub async fn initialize_with_config(
 
     let (tracer, logger, logger_layer, meter_provider) =
         if let OpenTelemetryConfig::Enabled { endpoint, service_name, service_instance_id, metrics_interval_ms, ..} = config.opentelemetry {
-            let my_arc_mutex = MyArcMutex(telemetry_interceptor);
+            let mutex_confidential_client = Arc::new(Mutex::new(confidential_client));
+            let my_arc_mutex = MyArcMutex(mutex_confidential_client);
 
             let tracer = init_tracer(my_arc_mutex.clone(), &endpoint, service_name.clone(), service_instance_id.clone()).expect("Failed to initialize tracer.");
 
@@ -148,7 +116,7 @@ pub async fn initialize_with_config(
     Ok(ShutdownHandle { _logger: logger, _meter_provider: meter_provider })
 }
 
-fn init_tracer(telemetry_interceptor: MyArcMutex<TelemetryInterceptor>, endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>) -> Result<opentelemetry_sdk::trace::Tracer, TraceError> {
+fn init_tracer(telemetry_interceptor: MyArcMutex<Option<ConfidentialClientRef>>, endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>) -> Result<opentelemetry_sdk::trace::Tracer, TraceError> {
     opentelemetry_otlp::new_pipeline()
         .tracing()
         .with_exporter(
@@ -171,7 +139,7 @@ fn init_tracer(telemetry_interceptor: MyArcMutex<TelemetryInterceptor>, endpoint
         .install_batch(runtime::Tokio)
 }
 
-fn init_logger(telemetry_interceptor: MyArcMutex<TelemetryInterceptor>, endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>) -> Result<opentelemetry_sdk::logs::Logger, LogError> {
+fn init_logger(telemetry_interceptor: MyArcMutex<Option<ConfidentialClientRef>>, endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>) -> Result<opentelemetry_sdk::logs::Logger, LogError> {
     opentelemetry_otlp::new_pipeline()
         .logging()
         .with_log_config(
@@ -194,7 +162,7 @@ fn init_logger(telemetry_interceptor: MyArcMutex<TelemetryInterceptor>, endpoint
         .install_batch(runtime::Tokio)
 }
 
-fn init_metrics(telemetry_interceptor: MyArcMutex<TelemetryInterceptor>, endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>, metrics_interval: Duration) -> Result<SdkMeterProvider, MetricsError> {
+fn init_metrics(telemetry_interceptor: MyArcMutex<Option<ConfidentialClientRef>>, endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>, metrics_interval: Duration) -> Result<SdkMeterProvider, MetricsError> {
     opentelemetry_otlp::new_pipeline()
         .metrics(runtime::Tokio)
         .with_exporter(
@@ -281,46 +249,26 @@ pub enum OpenTelemetryConfig {
 }
 
 #[derive(Clone)]
-pub struct TelemetryInterceptor {
-    confidential_client_ref: Option<ConfidentialClientRef>,
-    token: Option<Token>,
-}
-#[derive(Clone)]
 struct MyArcMutex<T>(Arc<Mutex<T>>);
 
-impl TelemetryInterceptor {
-    async fn refresh_token(&mut self) {
-        let confidential_client = self.confidential_client_ref.clone();
-
-        if let Some(confidential_client) = confidential_client {
-            let token = confidential_client.get_token().await
-                .map_err(|cause| Error::FailedToGetTokenFromAuthenticationManager {
-                    source: cause,
-                });
-            if let Ok(token) = token {
-                self.token = Some(token);
-            }
-        };
-    }
-}
-
-impl Interceptor for MyArcMutex<TelemetryInterceptor> {
+impl Interceptor for MyArcMutex<Option<ConfidentialClientRef>> {
     fn call(&mut self, mut request: Request<()>) -> Result<Request<()>, Status> {
 
         let cloned_arc_mutex = Arc::clone(&self.0);
 
-        let token;
-        //creating a loop because is it not always possible to create a lock on a mutex object
-        // number of tries??
-        loop {
+        let mut token = None;
+        const MAX_RETRIES: i32 = 5;
+        
+        for _retries_left in (0..MAX_RETRIES).rev() {
             match cloned_arc_mutex.try_lock() {
                 Ok(mutex_guard) => {
-                    token = mutex_guard.clone().token;
+                    let confidential_client= mutex_guard.clone();
+                    token = confidential_client.map(|client| client.get_token());
                     break;
                 }
                 Err(error) => {
-                    thread::sleep(Duration::from_millis(1000));
-                    println!("Unable to acquire lock at the moment. Cause: {:?}", error);
+                    thread::sleep(Duration::from_millis(500));
+                    eprintln!("Unable to acquire lock at the moment. Cause: {:?}", error);
                 }
             };
         }
@@ -328,12 +276,17 @@ impl Interceptor for MyArcMutex<TelemetryInterceptor> {
         let mut metadata_map = MetadataMap::new();
         return match token {
             None => { Ok(request) }
-            Some(token) => {
-                let token_string = token.value.as_str();
-                let bearer_header = format!("Bearer {token_string}");
-                metadata_map.insert("authorization", MetadataValue::from_str(&bearer_header).expect("Cannot create metadata value from bearer header"));
-                request.metadata_mut().insert("authorization", MetadataValue::from_str(&bearer_header).expect("Cannot create metadata value from bearer header"));
-                Ok(request)
+            Some(token_result) => {
+                match token_result {
+                    Ok(token) => {
+                        let token_string = token.value.as_str();
+                        let bearer_header = format!("Bearer {token_string}");
+                        metadata_map.insert("authorization", MetadataValue::from_str(&bearer_header).expect("Cannot create metadata value from bearer header"));
+                        request.metadata_mut().insert("authorization", MetadataValue::from_str(&bearer_header).expect("Cannot create metadata value from bearer header"));
+                        Ok(request)
+                    }
+                    Err(error) => { Err(Status::unauthenticated(format!("{}", error))) }
+                }
             }
         };
     }
