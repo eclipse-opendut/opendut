@@ -356,8 +356,18 @@ pub fn extract_init_values(unused_bit_pattern: bool, ungrouped_signals: &Vec<ISi
 /*
     Extracts the bit value used for unused bits by the PDU and returns a bool representation.
 */
-pub fn get_unused_bit_pattern(pdu: &Element) -> bool {
-    let unused_bit_pattern_int = get_required_int_value(&pdu, ElementName::UnusedBitPattern);
+pub fn get_unused_bit_pattern(pdu: &Element, required: bool) -> bool {
+    let unused_bit_pattern_int;
+    if required {
+        unused_bit_pattern_int = get_required_int_value(&pdu, ElementName::UnusedBitPattern);
+    } else {
+        // in case the element is optional  (as for NMPdu), then use 0 when it does not exist
+        unused_bit_pattern_int = get_optional_int_value(&pdu, ElementName::UnusedBitPattern); 
+        /*match get_subelement_int_value(&pdu, ElementName::UnusedBitPattern) {
+            Some(value) => unused_bit_pattern_int = value,
+            _ => unused_bit_pattern_int = 1, // in case the element is optional (as for NMPdu) and not existing, then use 0 as default value
+        }*/
+    }
     let unused_bit_pattern: bool;
 
     if unused_bit_pattern_int == 0 {

@@ -141,7 +141,7 @@ impl ArxmlParser {
             }
         }
 
-        let unused_bit_pattern = get_unused_bit_pattern(&pdu);
+        let unused_bit_pattern = get_unused_bit_pattern(&pdu, true);
 
         let mut grouped_signals: Vec<ISignalGroup> = Vec::new();
         
@@ -170,7 +170,7 @@ impl ArxmlParser {
         2. Returns important data in a self-defined NMPDU structure.
     */
     fn handle_nm_pdu(&self, pdu: &Element) -> Option<NMPDU> {
-        let unused_bit_pattern = get_unused_bit_pattern(&pdu);
+        let unused_bit_pattern = get_unused_bit_pattern(&pdu, false);
 
         let mut grouped_signals: Vec<ISignalGroup> = Vec::new();
         
