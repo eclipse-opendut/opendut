@@ -11,11 +11,16 @@ use std::ffi::CString;
 
 use nix::libc::{__c_anonymous_sockaddr_can_can_addr, __c_anonymous_sockaddr_can_tp, connect, if_nametoindex, sockaddr, sockaddr_can, socket, timeval, write, AF_CAN, CAN_BCM, CAN_EFF_FLAG, SOCK_DGRAM};
 
-
+/* 
+    Convert Rust vector to C like pointer that is required when using C derived method
+*/
 fn vec_to_c_void(vec: &Vec<u8>) -> *const c_void {
     vec.as_ptr() as *const c_void
 }
 
+/* 
+    Create a socket using libc's socket function. This is required since not Rust equivalent library or method exists for establishing a BCM CAN socket
+*/
 pub fn create_socket() -> Result<i32, String>  {
     let sock = unsafe {
         socket(AF_CAN, SOCK_DGRAM, CAN_BCM)
@@ -28,6 +33,11 @@ pub fn create_socket() -> Result<i32, String>  {
     return Ok(sock);
 }
 
+/*
+    1. Get the interface index from the interface string
+    2. Setup libc sockaddr_can structure 
+    3. Connect the existing socket
+*/
 pub fn connect_socket(sock: i32, ifname: &String) -> Result<i32, String>  {
     let ifindex = unsafe {
         if let Ok(c_ifname) = CString::new(ifname.as_str()) {
@@ -67,6 +77,9 @@ pub fn connect_socket(sock: i32, ifname: &String) -> Result<i32, String>  {
     return Ok(connect_res);
 }
 
+/*
+    Writes to existing socket 
+*/
 pub fn write_socket(sock: i32, write_bytes: &Vec<u8>, count: usize) -> Result<isize, String>  {
     let wres = unsafe {
         write(sock, vec_to_c_void(&write_bytes), count)
@@ -78,6 +91,9 @@ pub fn write_socket(sock: i32, write_bytes: &Vec<u8>, count: usize) -> Result<is
     return Ok(wres);
 }
 
+/*
+    Fills u8 values from a vector into an array
+*/
 fn fill_data_array(data: &mut [u8], data_vector: &Vec<u8>) {
     let mut i = 0;
     while i < data_vector.len() {
@@ -86,6 +102,9 @@ fn fill_data_array(data: &mut [u8], data_vector: &Vec<u8>) {
     }
 }
 
+/*
+    Creates a self-defined CanFrame structure that is either a CanFdFrame or a Can20Frame
+ */
 pub fn create_can_frame_structure(can_id: u32, len: u8, addressing_mode: bool, frame_tx_behavior: bool, data_vector: &Vec<u8>) -> CanFrame {
     let mut eflag: u32 = 0x0;
     
@@ -122,6 +141,9 @@ pub fn create_can_frame_structure(can_id: u32, len: u8, addressing_mode: bool, f
     }
 }
 
+/*
+    Creates a self-defined TimedCanFrame structure that holds the necessary data used for creating a CanFrame later
+*/
 pub fn create_time_can_frame_structure(count: u32, ival1_tv_sec: i64, ival1_tv_usec: i64, ival2_tv_sec: i64, 
     ival2_tv_usec: i64, can_id: u32, len: u8, addressing_mode: bool, frame_tx_behavior: bool, data_vector: &Vec<u8>) -> TimedCanFrame {
     let mut copy_data_vector: Vec<u8> = Vec::new();
@@ -142,6 +164,10 @@ pub fn create_time_can_frame_structure(count: u32, ival1_tv_sec: i64, ival1_tv_u
     }
 }
 
+/*
+    Creates a BcmMsgHead structure, which is a header of messages send to/from the CAN Broadcast Manager 
+    See also https://github.com/linux-can/can-utils/blob/master/include/linux/can/bcm.h
+*/
 pub fn create_bcm_head(count: u32, ival1_tv_sec: i64, ival1_tv_usec: i64
     , ival2_tv_sec: i64, ival2_tv_usec: i64, can_id: u32, frame_tx_behavior: bool, frames: &Vec<CanFrame>) -> BcmMsgHead {
     let mut canfd_flag: u32 = 0x0;
@@ -160,6 +186,10 @@ pub fn create_bcm_head(count: u32, ival1_tv_sec: i64, ival1_tv_usec: i64
     };
 }
 
+/*
+    Converts a BcmMsgHead structure and the payload (which are CanFrames) to a byte representation. 
+    The write_bytes vector is filled with the bytes and can be then later be used by the caller.
+*/
 pub fn create_bcm_structure_bytes(count: u32, ival1_tv_sec: i64, ival1_tv_usec: i64
     , ival2_tv_sec: i64, ival2_tv_usec: i64, can_id: u32, frame_tx_behavior: bool, frames: &Vec<CanFrame>, write_bytes: &mut Vec<u8>) {
     let head: BcmMsgHead = create_bcm_head(count, ival1_tv_sec, ival1_tv_usec, ival2_tv_sec, ival2_tv_usec, can_id, frame_tx_behavior, frames);

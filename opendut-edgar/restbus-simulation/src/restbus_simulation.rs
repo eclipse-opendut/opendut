@@ -1,21 +1,22 @@
+/*
+    Restbus simulation that makes use of the structures parsed by the ARXML parser. Makes use of the Linux Kernel CAN Broadcast Manager.
+    Ideas for improvement:
+        - Be able to manually add stuff to restbus -> provide interface
+*/
+
 use crate::restbus_utils::*;
 use crate::restbus_structs::*;
-
-/*
- Restbus simulation that makes use of the structures parsed by the ARXML parser. Makes use of the Linux Kernel CAN Broadcast Manager 
-*/
-
-/* 
-- TODO: 
-    - create restbus simulation based on parsed data in a different source code file
-    - use 100ms for NM pdus
-*/
 
 
 pub struct RestbusSimulation {
 }
 
 impl RestbusSimulation {
+    /*
+        1. Creates a BCM socket.
+        2. Converts all TimedCanFrames into regular CAN frames and puts each CAN frame into a BCM struct.
+        3. All created BCM structs are written to the BCM socket (sent to the Broadcast Manager).
+    */
     pub fn play_all(&self, timed_can_frames: &Vec<TimedCanFrame>, ifname: &String) -> Result<bool, String> {
         let sock = create_socket()?;
         
@@ -39,14 +40,14 @@ impl RestbusSimulation {
         }
 
         for write_bytes in write_bytes_global {
-            println!("write byte is {}", write_bytes.len());
+            /*println!("write byte is {}", write_bytes.len());
             for byte in &write_bytes {
                 print!("{:02x} ", byte);
             }
-            println!("");
+            println!("");*/
 
             write_socket(sock, &write_bytes, write_bytes.len())?;
-            println!("successfully wrote to socket");
+            //println!("successfully wrote to socket");
         } 
 
         return Ok(true);

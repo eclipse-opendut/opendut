@@ -1,5 +1,13 @@
+/*
+    Also see https://www.autosar.org/fileadmin/standards/R22-11/CP/AUTOSAR_TPS_SystemTemplate.pdf.
+*/ 
+
+
 use std::collections::HashMap;
 
+/*
+    Represents important data from Autosar CanCluster element.
+*/
 #[derive(Debug)]
 pub struct CanCluster {
     pub name: String,
@@ -8,6 +16,9 @@ pub struct CanCluster {
     pub can_frame_triggerings: HashMap<i64, CanFrameTriggering>
 }
 
+/*
+    Represents important data from Autosar CanFrameTriggering element.
+*/
 #[derive(Debug)]
 pub struct CanFrameTriggering {
     pub frame_triggering_name: String,
@@ -24,6 +35,9 @@ pub struct CanFrameTriggering {
     pub pdu_mappings: Vec<PDUMapping>
 }
 
+/*
+    Represents important parent data from an Autosar *PDU element.
+*/
 #[derive(Debug)]
 pub struct PDUMapping {
     pub name: String,
@@ -37,6 +51,9 @@ pub struct PDUMapping {
     pub pdu: PDU
 }
 
+/*
+    Enum of all supported PDU types. 
+*/
 #[derive(Debug)]
 pub enum PDU {
     ISignalIPDU(ISignalIPDU),
@@ -47,10 +64,10 @@ pub enum PDU {
 //    Temp(i64)
 }
 
-/*pub struct DCMIPDU {  // Seems to be only DoIP relevant
-    diag_pdu_type: String
-}*/
 
+/*
+    Represents important data from an Autosar ISignalIPDU element.
+*/
 #[derive(Debug)]
 pub struct ISignalIPDU {
     pub cyclic_timing_period_value: f64,
@@ -65,6 +82,9 @@ pub struct ISignalIPDU {
     pub grouped_signals: Vec<ISignalGroup>,
 }
 
+/*
+    Represents important data from an Autosar NmPdu element.
+*/
 #[derive(Debug)]
 pub struct NMPDU {
     pub unused_bit_pattern: bool,
@@ -72,6 +92,9 @@ pub struct NMPDU {
     pub grouped_signals: Vec<ISignalGroup>,
 }
 
+/*
+    Represents important data from an Autosar ISignal element.
+*/
 #[derive(Debug)]
 pub struct ISignal {
     pub name: String,
@@ -81,6 +104,9 @@ pub struct ISignal {
     pub init_values: InitValues
 }
 
+/*
+    Enum of the initial values of an ISignal.
+*/
 #[derive(Debug)]
 #[derive(Clone)]
 pub enum InitValues {
@@ -89,6 +115,9 @@ pub enum InitValues {
     NotExist(bool),
 }
 
+/*
+    Represents important data from an Autosar ISignal element.
+*/
 #[derive(Debug)]
 pub struct E2EDataTransformationProps {
     pub transformer_name: String,

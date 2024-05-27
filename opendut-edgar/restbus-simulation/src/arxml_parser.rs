@@ -1,3 +1,11 @@
+/*
+    Arxml parser that is able to extract all values necessary for a restbus simulation.
+    Uses autosar-data library to parse data like in this example:
+    https://github.com/DanielT/autosar-data/blob/main/autosar-data/examples/businfo/main.rs
+    Ideas for improvement:
+        - Provide options to store parsed data for quicker restart
+*/
+
 use crate::arxml_structs::*;
 use crate::arxml_utils::*;
 
@@ -9,30 +17,15 @@ use core::panic;
 use autosar_data::{AutosarModel, CharacterData, Element, ElementName, EnumItem};
 
 
-/*
- Arxml parser that is able to extract all values necessary for a restbus simulation
-*/
-
-/* 
-- TODO: 
-    - include signal desc
-
-- Improvements at some stage:
-    - Provide options to store parsed data for quicker restart
-    - be able to manually add stuff to restbus -> provide interface
-
-- Code inside DEBUG comments will be removed at a later stage
-*/
-
-
-// Parser structure
 pub struct ArxmlParser {
 }
 
-// Use autosar-data library to parse data like in this example:
-// https://github.com/DanielT/autosar-data/blob/main/autosar-data/examples/businfo/main.rs
-// Do I have to add license to this file or is project license enough?
 impl ArxmlParser {
+    /*
+        1. Parses an Autosar ISignalToIPduMapping. 
+        2. Extracts Autosar ISignal and ISignalGroup elements.
+        2. Fills the important extracted data into the signals HashMap and signal_groups vectors. 
+    */
     fn handle_isignal_to_pdu_mappings(&self, mapping: &Element, 
         signals: &mut HashMap<String, (String, String, i64, i64, InitValues)>, 
         signal_groups: &mut Vec<Element>) 
@@ -69,6 +62,10 @@ impl ArxmlParser {
         }
     }
 
+    /*
+        1. Parses and processes all the ISignals defined in the parent ISignalIPdu.
+        2. Fills the important extracted data into the grouped_signals and ungrouped_signals vectors of structures. 
+    */
     fn handle_isignals(&self, pdu: &Element, grouped_signals: &mut Vec<ISignalGroup>, ungrouped_signals: &mut Vec<ISignal>) -> Option<()> {
         //let mut signals: HashMap<String, (String, Option<i64>, Option<i64>)> = HashMap::new();
         let mut signals: HashMap<String, (String, String, i64, i64, InitValues)> = HashMap::new();
@@ -105,6 +102,10 @@ impl ArxmlParser {
         Some(())
     }
 
+    /*
+        1. Parses an Autosar ISignalIPdu element.
+        2. Returns important data in a self-defined ISignalIPDU structure.
+    */
     fn handle_isignal_ipdu(&self, pdu: &Element) -> Option<ISignalIPDU> {
         // Find out these values: ...
         let mut cyclic_timing_period_value: f64 = 0_f64;
@@ -164,6 +165,10 @@ impl ArxmlParser {
         return Some(isginal_ipdu);
     }
     
+    /*
+        1. Parses an Autosar NmPdu element
+        2. Returns important data in a self-defined NMPDU structure.
+    */
     fn handle_nm_pdu(&self, pdu: &Element) -> Option<NMPDU> {
         let unused_bit_pattern = get_unused_bit_pattern(&pdu);
 
@@ -182,43 +187,11 @@ impl ArxmlParser {
         return Some(nm_pdu);
     }
 
-    /*// Add support in future in case it is needed 
-    fn handle_container_ipdu(&self, pdu: &Element){
-        let mut container_timeout: f64 = 0.0;
-
-        let header_type = self.get_optional_string(pdu, ElementName::HeaderType);
-
-        if let Some(container_timeout_tmp) = pdu
-            .get_sub_element(ElementName::ContainerTimeout)
-            .and_then(|elem| elem.character_data())
-            .and_then(|cdata| cdata.double_value())
-        {
-            container_timeout = container_timeout_tmp;
-        }
-
-        let container_trigger = self.get_optional_string(pdu, ElementName::ContainerTrigger);
-
-        if let Some(contained_pdu_refs) = pdu.get_sub_element(ElementName::ContainedPduTriggeringRefs) {
-            for contained_ref in contained_pdu_refs.sub_elements() {
-                if let Some(contained_pdu) = contained_ref
-                    .get_reference_target()
-                    .ok()
-                    .and_then(|elem| elem.get_sub_element(ElementName::IPduRef))
-                    .and_then(|elem| elem.get_reference_target().ok())
-                {
-                    let pdu_name = self.get_required_item_name(&contained_pdu, "ContainedPDU");
-                    display_pdu(&contained_pdu, indent + 1);
-                }
-            }
-        }
-        //...
-    }*/
-
-    /*// Add support in future in case it is needed 
-    fn handle_secured_ipdu(&self, pdu: &Element){
-
-    }*/
-
+    /*
+        1. Resolves the reference inside a PduToFrameMapping to get the PDU element.
+        2. Parses the Autosar PDU element
+        3. Returns important data in a self-defined PDU mapping structure.
+    */
     fn handle_pdu_mapping(&self, pdu_mapping: &Element) -> Result<PDUMapping, String> {
         let pdu = get_required_reference(
             pdu_mapping,
@@ -295,6 +268,10 @@ impl ArxmlParser {
         return Ok(pdu_mapping);     
     }
     
+    /*
+        1. Parses an Autosar CanFrameTriggering element.
+        2. Returns important data in a self-defined CanFrameTriggering structure.
+    */
     fn handle_can_frame_triggering(&self, can_frame_triggering: &Element) -> Result<CanFrameTriggering, String> {
         let can_frame_triggering_name= get_required_item_name(
             can_frame_triggering, "CanFrameTriggering");
@@ -389,6 +366,10 @@ impl ArxmlParser {
         return Ok(can_frame_triggering_struct);
     }
 
+    /*
+        1. Parses an Autosar CanCluster element
+        2. Returns important data in a self-defined CanCluster structure.
+    */
     fn handle_can_cluster(&self, can_cluster: &Element) -> Result<CanCluster, String> {
         let can_cluster_name = get_required_item_name(
             can_cluster, "CanCluster");
@@ -449,9 +430,12 @@ impl ArxmlParser {
         return Ok(can_cluster_struct);
     }
 
-    // Main parsing method. Uses autosar-data libray for parsing ARXML 
-    // In the future, it might be extended to support Etherneth, Flexray, ...
-    // Returns now a vector of CanCluster
+    /*
+        Main parsing method. Uses autosar-data libray for parsing ARXML.
+        In the future, it might be extended to support Ethernet, Flexray, ... 
+        The resources to develop that should not be thaat high, since it is basically just extending the current parser.
+        Returns a vector of CanCluster structures.
+    */
     pub fn parse_file(&self, file_name: String) -> Option<HashMap<String, CanCluster>> {
         let start = Instant::now();
 

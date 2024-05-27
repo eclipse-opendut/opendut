@@ -1,5 +1,10 @@
 use nix::libc::timeval;
 
+
+/*
+    Header of messages sent to or received from the BCM..
+    Same as in https://github.com/linux-can/can-utils/blob/master/include/linux/can/bcm.h.
+*/
 #[repr(C)]
 #[derive(Debug)]
 pub struct BcmMsgHead {
@@ -12,12 +17,18 @@ pub struct BcmMsgHead {
     pub nframes: u32,
 }
 
+/*
+    Enum of all supported Can frames. Currently, only Can-20 and Can-FD are supported.
+ */
 #[derive(Debug)]
 pub enum CanFrame {
     Can20Frame(Can20Frame),
     CanFdFrame(CanFdFrame)
 }
 
+/*
+    A Can-20 Frame. Same as in https://github.com/linux-can/can-utils/blob/master/include/linux/can.h.
+*/
 #[repr(C, packed)]
 #[derive(Debug)]
 pub struct Can20Frame {
@@ -29,6 +40,9 @@ pub struct Can20Frame {
     pub data: [u8; 8],
 }
 
+/*
+    A Can-Fd Frame. Same as in https://github.com/linux-can/can-utils/blob/master/include/linux/can.h.
+*/
 #[repr(C, packed)]
 #[derive(Debug)]
 pub struct CanFdFrame {
@@ -40,6 +54,9 @@ pub struct CanFdFrame {
     pub data: [u8; 64],
 }
 
+/*
+    A structure holding can frame information including timing, which is later used to create Can frames sent to the BCM.
+*/
 #[derive(Debug)]
 pub struct TimedCanFrame {
     pub can_id: u32,
@@ -52,6 +69,9 @@ pub struct TimedCanFrame {
     pub ival2: timeval,
 }
 
+/*
+    Opcodes defining the operation that the BCM should do. Same as in https://github.com/linux-can/can-utils/blob/master/include/linux/can/bcm.h. 
+*/
 pub enum OPCODE {
         TxSetup = 1,
 /*        TxDelete,
@@ -67,6 +87,9 @@ pub enum OPCODE {
         RxChanged*/
 }
 
+/*
+    BCM flags used in messages sent to the BCM. Same as in https://github.com/linux-can/can-utils/blob/master/include/linux/can/bcm.h.
+*/
 pub enum BCMFlags {
     SetTimer = 0x0001,
     StartTimer = 0x0002,

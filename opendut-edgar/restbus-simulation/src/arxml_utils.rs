@@ -1,5 +1,6 @@
 /*
-    HELPER METHODS 
+    HELPER METHODS.
+    Some are oriented on https://github.com/DanielT/autosar-data/blob/main/autosar-data/examples/businfo/main.rs.
 */
 use crate::arxml_structs::*;
 use crate::restbus_structs::*;
@@ -10,6 +11,10 @@ use std::collections::HashMap;
 use autosar_data::{CharacterData, Element, ElementName, EnumItem};
 
 
+/*
+    Converts a CharacterData type from the autosar_data library
+    Directly taken from https://github.com/DanielT/autosar-data/blob/main/autosar-data/examples/businfo/main.rs.
+*/
 pub fn decode_integer(cdata: &CharacterData) -> Option<i64> {
     if let CharacterData::String(text) = cdata {
         if text == "0" {
@@ -37,6 +42,9 @@ pub fn decode_integer(cdata: &CharacterData) -> Option<i64> {
     }
 }
 
+/*
+    Processes time-related element data (intended from a ISignalIPdu element) and returns a self-defined TimeRange struct.
+*/
 pub fn get_time_range(base: &Element) -> Option<TimeRange> {
     let value = base
         .get_sub_element(ElementName::Value)
@@ -61,6 +69,9 @@ pub fn get_time_range(base: &Element) -> Option<TimeRange> {
     Some(TimeRange { tolerance, value })
 }
 
+/*
+    Gets a sub-element and tries to extract time-related information.
+*/
 pub fn get_sub_element_and_time_range(base: &Element, sub_elem_name: ElementName, value: &mut f64, tolerance: &mut Option<TimeRangeTolerance>) {
     if let Some(time_range) = base 
         .get_sub_element(sub_elem_name)
@@ -71,6 +82,9 @@ pub fn get_sub_element_and_time_range(base: &Element, sub_elem_name: ElementName
     }
 }
 
+/*
+    Gets a required item name from the element. This has to be possible.
+*/
 pub fn get_required_item_name(element: &Element, element_name: &str) -> String {
     if let Some(item_name) = element.item_name() {
         return item_name; 
@@ -79,6 +93,9 @@ pub fn get_required_item_name(element: &Element, element_name: &str) -> String {
     } 
 }
 
+/*
+    Gets a required subsubelement from the element. This needs to succeed. 
+*/
 pub fn get_required_sub_subelement(element: &Element, subelement_name: ElementName, sub_subelement_name: ElementName) -> Element {
     if let Some(sub_subelement) = element 
         .get_sub_element(subelement_name)
@@ -92,6 +109,9 @@ pub fn get_required_sub_subelement(element: &Element, subelement_name: ElementNa
     } 
 }
 
+/*
+    Tries to get a subelement and convert it's value to i64.
+*/
 pub fn get_subelement_int_value(element: &Element, subelement_name: ElementName) -> Option<i64> {
     return element 
         .get_sub_element(subelement_name)
@@ -99,6 +119,9 @@ pub fn get_subelement_int_value(element: &Element, subelement_name: ElementName)
         .and_then(|cdata| decode_integer(&cdata));
 } 
 
+/*
+    Gets the i64 value for a element. This has to succeed.
+*/
 pub fn get_required_int_value(element: &Element, subelement_name: ElementName) -> i64 {
     if let Some(int_value) = get_subelement_int_value(element, subelement_name) {
         return int_value;
@@ -107,6 +130,9 @@ pub fn get_required_int_value(element: &Element, subelement_name: ElementName) -
     }
 }
 
+/*
+    Gets the i64 value for a element. This is optional. So, if the subelement does not exist, then 0 is returned.
+*/
 pub fn get_optional_int_value(element: &Element, subelement_name: ElementName) -> i64 {
     if let Some(int_value) = get_subelement_int_value(element, subelement_name) {
         return int_value;
@@ -115,6 +141,9 @@ pub fn get_optional_int_value(element: &Element, subelement_name: ElementName) -
     }
 }
 
+/*
+    Resolves a reference and returns the target Element. This has to succeed.
+*/
 pub fn get_required_reference(element: &Element, subelement_name: ElementName) -> Element {
     if let Some(subelement) = element.get_sub_element(subelement_name) {
         match subelement.get_reference_target() {
@@ -126,6 +155,9 @@ pub fn get_required_reference(element: &Element, subelement_name: ElementName) -
     panic!("Error getting required reference for {}", subelement_name);
 }
 
+/*
+    Tries to get a subelement and return it's String value. 
+*/
 pub fn get_subelement_string_value(element: &Element, subelement_name: ElementName) -> Option<String> {
     return element 
         .get_sub_element(subelement_name)
@@ -133,6 +165,9 @@ pub fn get_subelement_string_value(element: &Element, subelement_name: ElementNa
         .map(|cdata| cdata.to_string());
 }
 
+/*
+    Gets the String value for a element. This has to succeed.
+*/
 pub fn get_required_string(element: &Element, subelement_name: ElementName) -> String {
     if let Some(value) = get_subelement_string_value(element, subelement_name) {
         return value;
@@ -141,6 +176,9 @@ pub fn get_required_string(element: &Element, subelement_name: ElementName) -> S
     }
 }
 
+/*
+    Gets the String value for a element. This is optional. So, if the subelement does not exist, then "" is returned.
+*/
 pub fn get_optional_string(element: &Element, subelement_name: ElementName) -> String {
     if let Some(value) = get_subelement_string_value(element, subelement_name) {
         return value;
@@ -149,6 +187,9 @@ pub fn get_optional_string(element: &Element, subelement_name: ElementName) -> S
     }
 }
 
+/*
+    Gets the String value of a subsubelement. In case the subelement or subsubelement do not exist, then "" is returned.
+*/
 pub fn get_subelement_optional_string(element: &Element, subelement_name: ElementName, sub_subelement_name: ElementName) -> String {
     if let Some(value) = element.get_sub_element(subelement_name)
         .and_then(|elem| elem.get_sub_element(sub_subelement_name))
@@ -161,6 +202,9 @@ pub fn get_subelement_optional_string(element: &Element, subelement_name: Elemen
     }
 }
 
+/*
+    Retrieves the ECU name by resolving multiple references.
+*/
 pub fn ecu_of_frame_port(frame_port: &Element) -> Option<String> {
     let ecu_comm_port_instance = frame_port.parent().ok()??;
     let comm_connector = ecu_comm_port_instance.parent().ok()??;
@@ -169,7 +213,10 @@ pub fn ecu_of_frame_port(frame_port: &Element) -> Option<String> {
     ecu_instance.item_name()
 }
 
-// 1: Big Endian, 0: Little Endian
+/*
+    Helper method comparing a given String with a byte order indicator. 
+    Returns true for Big Endian, false for Little Endian
+*/
 pub fn get_byte_order(byte_order: &String) -> bool {
     if byte_order.eq("MOST-SIGNIFICANT-BYTE-LAST") {
         return false;
@@ -177,9 +224,12 @@ pub fn get_byte_order(byte_order: &String) -> bool {
     return true;
 }
 
-// See how endianess affects PDU in 6.2.2 https://www.autosar.org/fileadmin/standards/R22-11/CP/AUTOSAR_TPS_SystemTemplate.pdf
-// Currenlty assumes Little Endian byte ordering and has support for signals that are Little Endian or Big Endian
-// Bit positions in undefined ranges are set to 1
+/* 
+    Extracts the initial values for a PDU by processing contained ISignal and ISignalGroup elements related to that PDU.
+    See how endianess affects PDU in 6.2.2 https://www.autosar.org/fileadmin/standards/R22-11/CP/AUTOSAR_TPS_SystemTemplate.pdf
+    Currenlty assumes Little Endian byte ordering and has support for signals that are Little Endian or Big Endian.
+    Bit positions in undefined ranges are set to unused_bit_pattern.
+*/
 pub fn extract_init_values(unused_bit_pattern: bool, ungrouped_signals: &Vec<ISignal>, grouped_signals: &Vec<ISignalGroup>, length: i64, byte_order: &bool) -> Vec<u8> {
     // pre checks
     if grouped_signals.len() > 0 && ungrouped_signals.len() > 0 {
@@ -303,6 +353,9 @@ pub fn extract_init_values(unused_bit_pattern: bool, ungrouped_signals: &Vec<ISi
     return init_values;
 }
 
+/*
+    Extracts the bit value used for unused bits by the PDU and returns a bool representation.
+*/
 pub fn get_unused_bit_pattern(pdu: &Element) -> bool {
     let unused_bit_pattern_int = get_required_int_value(&pdu, ElementName::UnusedBitPattern);
     let unused_bit_pattern: bool;
@@ -318,6 +371,9 @@ pub fn get_unused_bit_pattern(pdu: &Element) -> bool {
     return unused_bit_pattern;
 }
 
+/*
+    Processes the Autosar FramePortRefs elements inside a CanFrameTriggering to find out the ECUs (names) that send and receive this underlying CAN frame.
+*/
 pub fn process_frame_ports(can_frame_triggering: &Element, can_frame_triggering_name: &String, rx_ecus: &mut Vec<String>, tx_ecus: &mut Vec<String>) -> Result<(), String> {
     if let Some(frame_ports) = can_frame_triggering.get_sub_element(ElementName::FramePortRefs) {
         let frame_ports: Vec<Element> = frame_ports.sub_elements()
@@ -350,6 +406,9 @@ pub fn process_frame_ports(can_frame_triggering: &Element, can_frame_triggering_
     Ok(())
 }
 
+/*
+    Processes the Autosar InitValue element of an ISignal. Extracts one or more of them an put them into passed init_values argument.
+*/
 pub fn process_init_value(init_value_elem: &Element, init_values: &mut InitValues, signal_name: &String) {
     let init_value_single: bool;
 
@@ -385,6 +444,11 @@ pub fn process_init_value(init_value_elem: &Element, init_values: &mut InitValue
     }
 }
 
+/*
+    -Processes an ISignalGroup element and extracts important data.
+    -Removes signals defined in ISignalGroup from signals HashMap (passed argument).
+    -Pushes the resulting self-defined ISignalGroup structure containing important data into the grouped_signals argument.
+*/
 pub fn process_signal_group(signal_group: &Element, 
     signals: &mut HashMap<String, (String, String, i64, i64, InitValues)>, 
     grouped_signals: &mut Vec<ISignalGroup>) -> Option<()> 
@@ -482,7 +546,11 @@ pub fn process_signal_group(signal_group: &Element,
     Some(())
 }
 
-// should normally only add one TimedCanFrame but multiple may be added in case multiple pdu mappings exist 
+/*
+    1. Extract data from CanFrameTriggering structure that is later needed by restbus-simulation. 
+    2. Create TimedCanFrame sructure out of data and put the structure into timed_can_frames vector. 
+    Note: Should normally only add one TimedCanFrame but multiple may be added in case multiple PDU Mappings exist for a Can frame.
+*/
 pub fn get_timed_can_frame(can_frame_triggering: &CanFrameTriggering, timed_can_frames: &mut Vec<TimedCanFrame>) {
     let can_id: u32 = can_frame_triggering.can_id as u32;
     let len: u8 = can_frame_triggering.frame_length as u8;
@@ -531,6 +599,10 @@ pub fn get_timed_can_frame(can_frame_triggering: &CanFrameTriggering, timed_can_
     }
 }
 
+/*
+    1. Find CanFrameTriggering structure based on CAN id.
+    2. Put its important data as TimedCanFrame structure into timed_can_frames vector. 
+*/
 pub fn get_timed_can_frame_from_id(can_clusters: &HashMap<String, CanCluster>, bus_name: String, can_id: i64) -> Vec<TimedCanFrame> {
     let mut timed_can_frames: Vec<TimedCanFrame> = Vec::new();
 
@@ -543,6 +615,10 @@ pub fn get_timed_can_frame_from_id(can_clusters: &HashMap<String, CanCluster>, b
     return timed_can_frames
 }
 
+/*
+    1. Iterate over all CanFrameTriggerings belonging to a CanCluster structure. 
+    2. Put all CanFrameTriggering important data as TimedCanFrame structures into timed_can_frames vector. 
+*/
 pub fn get_timed_can_frames_from_bus(can_clusters: &HashMap<String, CanCluster>, bus_name: String) -> Vec<TimedCanFrame> {
     let mut timed_can_frames: Vec<TimedCanFrame> = Vec::new();
 
