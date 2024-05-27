@@ -1,3 +1,5 @@
+use std::any::Any;
+
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::peer::configuration::{PeerConfiguration, PeerConfiguration2};
@@ -5,7 +7,10 @@ use opendut_types::peer::state::PeerState;
 use opendut_types::resources::Id;
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
 
-use crate::resources::IntoId;
+pub trait IntoId<R: Any + Send + Sync> {
+    fn into_id(self) -> Id;
+}
+
 
 impl IntoId<ClusterConfiguration> for ClusterId {
     fn into_id(self) -> Id {

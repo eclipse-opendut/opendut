@@ -531,7 +531,7 @@ mod test {
     fn fixture() -> Fixture {
         let settings = settings::load_defaults().unwrap();
 
-        let resources_manager = ResourcesManager::new();
+        let resources_manager = ResourcesManager::new_in_memory();
         let peer_messaging_broker = PeerMessagingBroker::new(
             Arc::clone(&resources_manager),
             PeerMessagingBrokerOptions::load(&settings.config).unwrap(),

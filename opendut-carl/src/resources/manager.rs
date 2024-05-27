@@ -1,9 +1,9 @@
-use std::any::Any;
 use std::sync::Arc;
 
 use tokio::sync::RwLock;
 
-use crate::resources::{IntoId, Resources};
+use crate::resources::{IntoId, Resource, Resources};
+use crate::resources::storage::ResourcesStorageOptions;
 
 pub type ResourcesManagerRef = Arc<ResourcesManager>;
 
@@ -17,28 +17,28 @@ struct State {
 
 impl ResourcesManager {
 
-    pub fn new() -> ResourcesManagerRef {
+    pub fn new(storage_options: ResourcesStorageOptions) -> ResourcesManagerRef {
         Arc::new(Self {
             state: RwLock::new(State {
-                resources: Default::default()
+                resources: Resources::new(storage_options),
             })
         })
     }
 
     pub async fn insert<R>(&self, id: impl IntoId<R>, resource: R)
-    where R: Any  + Send + Sync {
+    where R: Resource {
         let mut state = self.state.write().await;
         state.resources.insert(id, resource);
     }
 
     pub async fn remove<R>(&self, id: impl IntoId<R>) -> Option<R>
-    where R: Any  + Send + Sync {
+    where R: Resource {
         let mut state = self.state.write().await;
         state.resources.remove(id)
     }
 
     pub async fn get<R>(&self, id: impl IntoId<R>) -> Option<R>
-    where R: Any  + Send + Sync + Clone {
+    where R: Resource + Clone {
         let state = self.state.read().await;
         state.resources.get(id)
     }
@@ -58,15 +58,23 @@ impl ResourcesManager {
 
 #[cfg(test)]
 impl ResourcesManager {
+    pub fn new_in_memory() -> ResourcesManagerRef {
+        Arc::new(Self {
+            state: RwLock::new(State {
+                resources: Resources::new(ResourcesStorageOptions::Memory),
+            })
+        })
+    }
+
     async fn contains<R>(&self, id: impl IntoId<R>) -> bool
-    where R: Any + Send + Sync + Clone {
+    where R: Resource + Clone {
         let state = self.state.read().await;
-        state.resources.contains(id)
+        state.resources.contains(id).await
     }
 
     async fn is_empty(&self) -> bool {
         let state = self.state.read().await;
-        state.resources.is_empty()
+        state.resources.is_empty().await
     }
 }
 
@@ -80,7 +88,7 @@ mod test {
 
     use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
-    use opendut_types::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorKind, ExecutorDescriptors, ExecutorDescriptor};
+    use opendut_types::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorDescriptor, ExecutorDescriptors, ExecutorKind};
     use opendut_types::topology::Topology;
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
 
@@ -89,7 +97,7 @@ mod test {
     #[tokio::test]
     async fn test() -> Result<()> {
 
-        let testee = ResourcesManager::new();
+        let testee = ResourcesManager::new_in_memory();
 
         let peer_resource_id = PeerId::random();
         let peer = PeerDescriptor {

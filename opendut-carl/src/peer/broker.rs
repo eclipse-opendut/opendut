@@ -13,8 +13,8 @@ use tracing_opentelemetry::OpenTelemetrySpanExt;
 use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, downstream, Downstream, TracingContext};
 use opendut_carl_api::proto::services::peer_messaging_broker::Pong;
 use opendut_carl_api::proto::services::peer_messaging_broker::upstream;
-use opendut_types::peer::PeerId;
 use opendut_types::peer::configuration::{PeerConfiguration, PeerConfiguration2};
+use opendut_types::peer::PeerId;
 use opendut_types::peer::state::{PeerState, PeerUpState};
 
 use crate::resources::manager::ResourcesManagerRef;
@@ -274,7 +274,7 @@ mod tests {
 
     #[tokio::test]
     async fn peer_stream() -> Result<()> {
-        let resources_manager = ResourcesManager::new();
+        let resources_manager = ResourcesManager::new_in_memory();
 
         let options = PeerMessagingBrokerOptions {
             peer_disconnect_timeout: Duration::from_millis(200),
@@ -339,7 +339,7 @@ mod tests {
 
     #[tokio::test]
     async fn should_reject_second_connection_for_peer() -> Result<()> {
-        let resources_manager = ResourcesManager::new();
+        let resources_manager = ResourcesManager::new_in_memory();
 
         let options = PeerMessagingBrokerOptions {
             peer_disconnect_timeout: Duration::from_millis(200),

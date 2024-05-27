@@ -4,9 +4,9 @@ use std::sync::Arc;
 use pem::Pem;
 use tracing::{debug, error, info, Span, warn};
 use url::Url;
-use opendut_auth::registration::client::RegistrationClientRef;
 use uuid::Uuid;
 
+use opendut_auth::registration::client::RegistrationClientRef;
 pub use opendut_carl_api::carl::peer::{
     DeletePeerDescriptorError,
     IllegalDevicesError,
@@ -15,19 +15,18 @@ pub use opendut_carl_api::carl::peer::{
     StorePeerDescriptorError,
 };
 use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, downstream};
-use opendut_types::cluster::ClusterAssignment;
-use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerSetup};
 use opendut_types::{peer, proto};
 use opendut_types::cleo::{CleoId, CleoSetup};
-use opendut_types::peer::configuration::{PeerConfiguration, PeerNetworkConfiguration, PeerConfiguration2};
-use opendut_types::proto::peer::configuration::{peer_configuration_parameter, PeerConfigurationParameterTargetPresent, PeerConfigurationParameterExecutor};
+use opendut_types::cluster::ClusterAssignment;
+use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerSetup};
+use opendut_types::peer::configuration::{PeerConfiguration, PeerConfiguration2, PeerNetworkConfiguration};
+use opendut_types::proto::peer::configuration::{peer_configuration_parameter, PeerConfigurationParameterExecutor, PeerConfigurationParameterTargetPresent};
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
 use opendut_types::util::net::{AuthConfig, Certificate, ClientCredentials, NetworkInterfaceName};
 use opendut_types::vpn::VpnPeerConfiguration;
 use opendut_util::ErrorOr;
-use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerRef};
-use crate::resources::IntoId;
 
+use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerRef};
 use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
 
@@ -530,9 +529,12 @@ mod test {
     mod assign_cluster {
         use std::net::IpAddr;
         use std::str::FromStr;
+
         use opendut_carl_api::proto::services::peer_messaging_broker::Pong;
         use opendut_types::cluster::{ClusterAssignment, ClusterId};
+
         use crate::peer::broker::PeerMessagingBrokerOptions;
+
         use super::*;
 
         #[rstest]
@@ -619,6 +621,7 @@ mod test {
 
     mod create_setup_string {
         use std::str::FromStr;
+
         use opendut_auth_tests::registration_client;
 
         use super::*;
@@ -706,7 +709,7 @@ mod test {
             }
         };
         Fixture {
-            resources_manager: ResourcesManager::new(),
+            resources_manager: ResourcesManager::new_in_memory(),
             vpn: Vpn::Disabled,
             peer_a_id,
             peer_a_descriptor,

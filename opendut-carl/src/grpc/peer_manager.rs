@@ -321,7 +321,7 @@ mod tests {
 
         let settings = crate::settings::load_defaults()?;
 
-        let resources_manager = ResourcesManager::new();
+        let resources_manager = ResourcesManager::new_in_memory();
         let testee = PeerManagerFacade::new(
             Arc::clone(&resources_manager),
             Vpn::Disabled,
@@ -423,7 +423,7 @@ mod tests {
 
         let settings = crate::settings::load_defaults()?;
         
-        let resources_manager = ResourcesManager::new();
+        let resources_manager = ResourcesManager::new_in_memory();
         let testee = PeerManagerFacade::new(
             Arc::clone(&resources_manager),
             Vpn::Disabled,
@@ -466,7 +466,7 @@ mod tests {
 
         let settings = crate::settings::load_defaults()?;
         
-        let resources_manager = ResourcesManager::new();
+        let resources_manager = ResourcesManager::new_in_memory();
         let testee = PeerManagerFacade::new(
             Arc::clone(&resources_manager),
             Vpn::Disabled,

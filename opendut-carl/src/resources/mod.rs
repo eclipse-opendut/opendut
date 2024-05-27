@@ -1,108 +1,97 @@
-use std::any::{Any, TypeId};
+use std::any::Any;
 use std::collections::hash_map::{Values, ValuesMut};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
 use opendut_types::resources::Id;
 
+use crate::resources::storage::{ResourcesStorage, ResourcesStorageApi, ResourcesStorageOptions};
+
 pub mod manager;
 pub mod ids;
+pub(crate) mod storage;
+mod resource;
 
-pub trait IntoId<R: Any + Send + Sync> {
-    fn into_id(self) -> Id;
-}
+use ids::IntoId;
+use resource::Resource;
 
-#[derive(Default)]
 pub struct Resources {
-    storage: HashMap<TypeId, HashMap<Id, Box<dyn Any + Send + Sync>>>
+    storage: ResourcesStorage,
 }
 
 impl Resources {
+    pub fn new(storage_options: ResourcesStorageOptions) -> Self {
+        let storage = ResourcesStorage::new(storage_options);
+        Self { storage }
+    }
 
     pub fn insert<R>(&mut self, id: impl IntoId<R>, resource: R)
-    where R: Any + Send + Sync {
-        let column = self.storage
-            .entry(TypeId::of::<R>())
-            .or_default();
-        column.insert(id.into_id(), Box::new(resource));
+    where R: Resource {
+        match &mut self.storage {
+            ResourcesStorage::Database(storage) => storage.insert(id, resource),
+            ResourcesStorage::Memory(storage) => storage.insert(id, resource),
+        };
     }
 
     pub fn update<R>(&mut self, id: impl IntoId<R>) -> Update<R>
-    where R: Any + Send + Sync {
-        let column = self.storage
-            .entry(TypeId::of::<R>())
-            .or_default();
-        Update {
-            id: id.into_id(),
-            column,
-            marker: Default::default(),
+    where R: Resource {
+        match &mut self.storage {
+            ResourcesStorage::Database(storage) => storage.update(id),
+            ResourcesStorage::Memory(storage) => storage.update(id),
         }
     }
 
     pub fn remove<R>(&mut self, id: impl IntoId<R>) -> Option<R>
-    where R: Any + Send + Sync {
-        let type_id = TypeId::of::<R>();
-        let column = self.column_mut_of::<R>()?;
-        let result = column.remove(&id.into_id())
-            .and_then(|old_value| old_value
-                .downcast()
-                .map(|value| *value)
-                .ok()
-            );
-        if column.is_empty() {
-            self.storage.remove(&type_id);
+    where R: Resource {
+        match &mut self.storage {
+            ResourcesStorage::Database(storage) => storage.remove(id),
+            ResourcesStorage::Memory(storage) => storage.remove(id),
         }
-        result
     }
 
     pub fn get<R>(&self, id: impl IntoId<R>) -> Option<R>
-    where R: Any + Send + Sync + Clone {
-        let column = self.column_of::<R>()?;
-        column.get(&id.into_id())
-            .and_then(|resource| resource
-                .downcast_ref()
-                .cloned()
-            )
+    where R: Resource + Clone {
+        match &self.storage {
+            ResourcesStorage::Database(storage) => storage.get(id),
+            ResourcesStorage::Memory(storage) => storage.get(id),
+        }
     }
 
     pub fn iter<R>(&self) -> Iter<R>
-    where R: Any + Send + Sync {
-        Iter::new(self.column_of::<R>().map(HashMap::values))
+    where R: Resource {
+        match &self.storage {
+            ResourcesStorage::Database(storage) => storage.iter(),
+            ResourcesStorage::Memory(storage) => storage.iter(),
+        }
     }
 
     pub fn iter_mut<R>(&mut self) -> IterMut<R>
-    where R: Any + Send + Sync {
-        IterMut::new(self.column_mut_of::<R>().map(HashMap::values_mut))
-    }
-
-
-    fn column_of<R>(&self) -> Option<&HashMap<Id, Box<dyn Any + Send + Sync>>>
-    where R: Any + Send + Sync {
-        self.storage.get(&TypeId::of::<R>())
-    }
-
-    fn column_mut_of<R>(&mut self) -> Option<&mut HashMap<Id, Box<dyn Any + Send + Sync>>>
-        where R: Any + Send + Sync {
-        self.storage.get_mut(&TypeId::of::<R>())
+    where R: Resource {
+        match &mut self.storage {
+            ResourcesStorage::Database(storage) => storage.iter_mut(),
+            ResourcesStorage::Memory(storage) => storage.iter_mut(),
+        }
     }
 }
 
 #[cfg(test)]
 impl Resources {
-    pub(super) fn contains<R>(&self, id: impl IntoId<R>) -> bool
-    where R: Any + Send + Sync {
-        if let Some(column) = self.column_of::<R>() {
-            column.contains_key(&id.into_id())
-        }
-        else {
-            false
+    pub async fn contains<R>(&self, id: impl IntoId<R>) -> bool
+    where R: Resource + Clone {
+        match &self.storage {
+            ResourcesStorage::Database(_) => unimplemented!(),
+            ResourcesStorage::Memory(storage) => storage.contains(id),
         }
     }
 
-    pub(super) fn is_empty(&self) -> bool {
-        self.storage.is_empty()
+    pub async fn is_empty(&self) -> bool {
+        match &self.storage {
+            ResourcesStorage::Database(_) => unimplemented!(),
+            ResourcesStorage::Memory(storage) => storage.is_empty(),
+        }
     }
 }
+
 
 pub struct Update<'a, R>
 where R: Any + Send + Sync {
@@ -130,13 +119,13 @@ where R: Any + Send + Sync {
 }
 
 pub struct Iter<'a, R>
-where R: Any + Send + Sync {
+where R: Resource {
     column: Option<Values<'a, Id, Box<dyn Any + Send + Sync>>>,
     marker: PhantomData<R>
 }
 
 impl <'a, R> Iter<'a, R>
-where R: Any + Send + Sync {
+where R: Resource {
     fn new(column: Option<Values<'a, Id, Box<dyn Any + Send + Sync>>>) -> Iter<'a, R> {
         Self {
             column,
@@ -146,7 +135,7 @@ where R: Any + Send + Sync {
 }
 
 impl <'a, R> Iterator for Iter<'a, R>
-where R: Any + Send + Sync {
+where R: Resource {
 
     type Item = &'a R;
 
@@ -159,13 +148,13 @@ where R: Any + Send + Sync {
 
 
 pub struct IterMut<'a, R>
-where R: Any + Send + Sync {
+where R: Resource {
     column: Option<ValuesMut<'a, Id, Box<dyn Any + Send + Sync>>>,
     marker: PhantomData<R>
 }
 
 impl <'a, R> IterMut<'a, R>
-where R: Any + Send + Sync {
+where R: Resource {
     fn new(column: Option<ValuesMut<'a, Id, Box<dyn Any + Send + Sync>>>) -> IterMut<'a, R> {
         Self {
             column,
@@ -175,7 +164,7 @@ where R: Any + Send + Sync {
 }
 
 impl <'a, R> Iterator for IterMut<'a, R>
-where R: Any + Send + Sync {
+where R: Resource {
 
     type Item = &'a mut R;
 
