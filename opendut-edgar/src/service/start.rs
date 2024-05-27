@@ -13,6 +13,7 @@ use tokio::time::sleep;
 use tonic::Code;
 use tracing::{debug, error, info, Span, trace, warn};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
+use url::Url;
 
 use opendut_auth::confidential::blocking::client::ConfidentialClient;
 use opendut_carl_api::proto::services::peer_messaging_broker;
@@ -30,6 +31,7 @@ use crate::common::{carl, settings};
 use crate::service::{cluster_assignment, vpn};
 use crate::service::can_manager::{CanManager, CanManagerRef};
 use crate::service::network_interface::manager::{NetworkInterfaceManager, NetworkInterfaceManagerRef};
+use crate::service::test_execution::container_manager::{ContainerManager, DummyConfig};
 
 const BANNER: &str = r"
                          _____     _______
@@ -197,6 +199,21 @@ async fn handle_stream_message(
 
 #[tracing::instrument(skip_all, level="trace")]
 async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Option<TracingContext>, setup_cluster_info: &SetupClusterInfo) -> anyhow::Result<()> {
+    
+    let test_config = DummyConfig{ 
+        name: String::from("sampletest"), 
+        engine: String::from("docker"), 
+        image: String::from("nmap-test"), 
+        args: vec![String::from("-A"), String::from("-T4"), String::from("127.0.0.1")], 
+        env: vec![],
+        results_url: Url::parse("http://nginx-webdav:80/").unwrap(),
+    };
+    let mut container_manager = ContainerManager::new(test_config);
+
+    tokio::spawn(async move {
+        container_manager.start().await;
+    });
+    
     match message.clone() {
         ApplyPeerConfiguration {
             configuration: Some(configuration),

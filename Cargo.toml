@@ -140,6 +140,8 @@ url = "2.5.0"
 uuid = "1.8.0"
 walkdir = "2.4.0"
 which = "6.0.0"
+zip = "0.6"
+zip-extensions = "0.6"
 
 [workspace.metadata.ci]
 netbird.version = "0.23.9-8de14ad"

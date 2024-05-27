@@ -9,7 +9,7 @@ RUN echo "0dcb9277b21f916f5646574b9b2229d3b8e97d5e99b935a4d0b7509a5f0ccdcd canne
 RUN tar --strip-components=1 -xvf cannelloni-1.1.0.tar.gz 
 RUN cmake -DCMAKE_BUILD_TYPE=Release && make
 
-FROM ubuntu:22.04
+FROM cruizba/ubuntu-dind:jammy-26.0.1
 
 RUN apt update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     tzdata ca-certificates \
@@ -26,6 +26,8 @@ ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/lib"
 RUN curl --verbose https://raw.githubusercontent.com/gdraheim/docker-systemctl-replacement/b18d67e521f0d1cf1d705dbb8e0416bef23e377c/files/docker/systemctl3.py --output /usr/bin/systemctl
 RUN echo "01beb201d2045c5e548d012bde9b6ae6113392a57bbea7b3e81131aac995f77a /usr/bin/systemctl" | sha256sum --check --status
 RUN chmod +x /usr/bin/systemctl
+
+COPY ./.ci/docker/edgar/test_execution_container /opt/test_execution_container
 
 WORKDIR /opt
 RUN mkdir /opt/signal/ /logs/

@@ -54,6 +54,7 @@ services:
 
     networks:
       - opendutnet
+    privileged: true 
 
   peer:
     build:

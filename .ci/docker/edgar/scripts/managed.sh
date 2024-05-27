@@ -69,10 +69,16 @@ pre_flight_tasks() {
   ip link add dev vcan1 type vcan
   ip link set dev vcan0 up
   ip link set dev vcan1 up
+
+  if [ "$1" == "leader" ]; then
+    /usr/local/bin/start-docker.sh
+    echo "Building Docker image for Nmap test"
+    docker build --tag "nmap-test" /opt/test_execution_container
+  fi
 }
 
 ## MAIN TASKS
-pre_flight_tasks
+pre_flight_tasks $1
 
 PEER_ID=$(uuidgen)
 NAME="${OPENDUT_EDGAR_CLUSTER_NAME}_$(hostname)"
