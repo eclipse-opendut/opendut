@@ -128,7 +128,7 @@ pub mod bundle {
             GzEncoder::new(out_file, Compression::best())
         );
         tar_gz.append_dir_all(package.ident(), &in_dir)?;
-        tar_gz.finish()?;
+        tar_gz.into_inner()?.finish()?;
 
         fs::remove_dir_all(in_dir)?;
 
