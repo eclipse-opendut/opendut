@@ -186,6 +186,7 @@ mod sbom {
                                 | "MIT-0"
                                 | "Zlib"
                                 | "MPL-2.0"
+                                | "CC0-1.0"
                                 => license, //leave unchanged
 
                                 other => panic!("Unknown license '{}' for package '{}'. Please define a mapping.", other, package.name)
