@@ -63,5 +63,6 @@ Substitute the IP address with the of the host system when the ports are exposed
 192.168.56.9 netbird-api.opendut.local
 192.168.56.9 signal.opendut.local
 192.168.56.9 carl.opendut.local
+192.168.56.9 nginx-webdav.opendut.local
 
 ```

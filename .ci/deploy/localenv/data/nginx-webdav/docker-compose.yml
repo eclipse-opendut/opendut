@@ -1,0 +1,21 @@
+services:
+  nginx-webdav:
+    build:
+      context: ../../..
+      dockerfile: ./.ci/docker/nginx-webdav/Dockerfile
+    container_name: nginx-webdav
+
+    volumes:
+      - opendut_nginx-webdav:/media/data
+    shm_size: "1gb"
+    #restart: unless-stopped
+    networks:
+      - opendutnet
+
+networks:
+  opendutnet:
+    name: opendut_network
+    external: true  # Use a pre-existing network
+
+volumes:
+  opendut_nginx-webdav:

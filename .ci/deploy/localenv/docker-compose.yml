@@ -353,6 +353,31 @@ services:
     networks:
       - opendut_local
 
+  nginx-webdav:
+    build:
+      context: ../../..
+      dockerfile: ./.ci/deploy/localenv/data/nginx-webdav/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      traefik:
+        condition: service_started
+    volumes:
+      - opendut_nginx-webdav:/media/data
+    healthcheck:
+      <<: *common-healthcheck-params
+      test: ["CMD", "curl", "--resolve", "nginx-webdav.opendut.local:80:127.0.0.1", "http://nginx-webdav.opendut.local", "--output", "/dev/null"]
+
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.nginx-webdav.rule=Host(`nginx-webdav.opendut.local`)
+      - traefik.http.routers.nginx-webdav.tls=true
+      - traefik.http.services.nginx-webdav.loadbalancer.server.port=80
+
+    networks:
+      opendut_local:
+        aliases:
+          - nginx-webdav.opendut.local
+
 
 volumes:
   keycloak_postgres_data:
@@ -360,6 +385,7 @@ volumes:
   netbird-mgmt-config:
   netbird-signal:
   carl-config:
+  opendut_nginx-webdav:
 
 networks:
   opendut_local:

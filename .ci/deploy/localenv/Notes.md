@@ -29,6 +29,7 @@ apt-get install nano && nano /etc/hosts
 192.168.56.9 netbird-api.opendut.local
 192.168.56.9 signal.opendut.local
 192.168.56.9 carl.opendut.local
+192.168.56.9 nginx-webdav.opendut.local
 # ping should work
 ping carl.opendut.local
 
