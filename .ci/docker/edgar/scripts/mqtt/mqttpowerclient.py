@@ -152,7 +152,7 @@ class MqttSerialControl:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         prog="Powersupply MQTT Client",
-        description="connects to powersupply via MQTT",
+        description="connects to a remote powersupply via MQTT",
     )
     parser.add_argument("--server", type=str, default="localhost")
     parser.add_argument("--port", type=int, default=1884)
