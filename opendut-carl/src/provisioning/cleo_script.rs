@@ -1,5 +1,6 @@
 use config::Config;
-use crate::util::CleoArch;
+use indoc::formatdoc;
+use crate::util::CLEO_IDENTIFIER;
 
 pub struct CleoScript {
     pub carl_host: String,
@@ -18,29 +19,30 @@ impl CleoScript {
         })
     }
 
-    pub fn build_script(&self, architecture: &CleoArch) -> String {
-        format!(r#"#!/bin/bash
+    pub fn build_script(&self) -> String {
+
+        let ca_certificate_file_name = crate::provisioning::cleo::CA_CERTIFICATE_FILE_NAME;
+        let carl_host = &self.carl_host;
+        let carl_port = self.carl_port;
+        let oidc_enabled = self.oidc_enabled;
+        let issuer_url = &self.issuer_url;
+        let cleo_executable_name = CLEO_IDENTIFIER;
+
+        formatdoc!(r#"#!/bin/bash
 
 DIR_PATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
-CERT_PATH=$DIR_PATH/{}
+CERT_PATH=$DIR_PATH/{ca_certificate_file_name}
 
 export OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SCOPES=
-export OPENDUT_CLEO_NETWORK_TLS_DOMAIN_NAME_OVERRIDE={}
+export OPENDUT_CLEO_NETWORK_TLS_DOMAIN_NAME_OVERRIDE={carl_host}
 export OPENDUT_CLEO_NETWORK_TLS_CA=$CERT_PATH
-export OPENDUT_CLEO_NETWORK_CARL_HOST={}
-export OPENDUT_CLEO_NETWORK_CARL_PORT={}
-export OPENDUT_CLEO_NETWORK_OIDC_ENABLED={}
-export OPENDUT_CLEO_NETWORK_OIDC_CLIENT_ISSUER_URL={}
+export OPENDUT_CLEO_NETWORK_CARL_HOST={carl_host}
+export OPENDUT_CLEO_NETWORK_CARL_PORT={carl_port}
+export OPENDUT_CLEO_NETWORK_OIDC_ENABLED={oidc_enabled}
+export OPENDUT_CLEO_NETWORK_OIDC_CLIENT_ISSUER_URL={issuer_url}
 export SSL_CERT_FILE=$CERT_PATH
 
-exec ./{} "$@""#,
-                crate::provisioning::cleo::CA_CERTIFICATE_FILE_NAME,
-                self.carl_host,
-                self.carl_host,
-                self.carl_port,
-                self.oidc_enabled,
-                self.issuer_url,
-                architecture.name()
-        )
+exec ./{cleo_executable_name} "$@"
+"#).to_string()
     }
 }

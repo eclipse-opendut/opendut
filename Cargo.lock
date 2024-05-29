@@ -2665,6 +2665,7 @@ dependencies = [
  "futures",
  "googletest",
  "http 0.2.12",
+ "indoc",
  "itertools 0.12.1",
  "opendut-auth",
  "opendut-auth-tests",
@@ -2676,6 +2677,7 @@ dependencies = [
  "opentelemetry",
  "opentelemetry_sdk",
  "pem",
+ "predicates",
  "reqwest",
  "rstest",
  "serde",
@@ -2745,6 +2747,7 @@ dependencies = [
  "shadow-rs",
  "strum",
  "tar",
+ "tempfile",
  "tracing",
  "tracing-subscriber",
 ]

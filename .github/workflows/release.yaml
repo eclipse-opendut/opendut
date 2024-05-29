@@ -66,7 +66,7 @@ jobs:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
   bundle-carl:
-    needs: [ legal, build-carl, build-lea, bundle-cleo ]
+    needs: [ legal, build-carl, build-lea, bundle-cleo, build-edgar ]
     uses: ./.github/workflows/job-bundle-carl.yaml
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"

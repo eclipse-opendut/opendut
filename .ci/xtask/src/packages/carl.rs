@@ -103,6 +103,7 @@ pub mod distribution {
         distribution::collect_executables(SELF_PACKAGE, target)?;
 
         cleo::get_cleo(&distribution_out_dir)?;
+        edgar::get_edgar(&distribution_out_dir)?;
         lea::get_lea(&distribution_out_dir)?;
         copy_license_json::copy_license_json(target, SkipGenerate::No)?;
 
@@ -114,7 +115,9 @@ pub mod distribution {
     }
 
     mod cleo {
+        use anyhow::Context;
         use clap::ValueEnum;
+        use crate::tasks::distribution::bundle;
         use super::*;
 
         #[tracing::instrument]
@@ -127,15 +130,57 @@ pub mod distribution {
             fs::create_dir_all(cleo_out_dir)?;
             
             for arch in architectures {
-                crate::packages::cleo::build::build_release(arch.to_owned())?;
-                let cleo_build_dir = crate::packages::cleo::build::out_dir(arch.to_owned());
+                crate::packages::cleo::distribution::cleo_distribution(arch.to_owned())?;
+                let cleo_build_dir = crate::tasks::distribution::out_arch_dir(arch.to_owned());
 
-                let cleo_arch_dir = out_dir.join(Package::Cleo.ident()).join(format!("{}-{}", Package::Cleo.ident(), arch.triple()));
+                let cleo_arch_dir = out_dir.join(Package::Cleo.ident());
                 fs::create_dir_all(&cleo_arch_dir)?;
-                
+
+                let tar_file_name = bundle::out_file(Package::Cleo, *arch);
+
+                let cleo_tar_file_name = tar_file_name.file_name().context(format!("Could not extract file name {}", &tar_file_name.display()))?;
+
                 fs_extra::file::copy(
-                    cleo_build_dir,
-                    &cleo_arch_dir.join(Package::Cleo.ident()),
+                    cleo_build_dir.join(&tar_file_name),
+                    &cleo_arch_dir.join(cleo_tar_file_name),
+                    &fs_extra::file::CopyOptions::default()
+                        .overwrite(true)
+                )?;
+            }
+
+            Ok(())
+        }
+    }
+
+    mod edgar {
+        use anyhow::Context;
+        use clap::ValueEnum;
+        use crate::tasks::distribution::bundle;
+        use super::*;
+
+        #[tracing::instrument]
+        pub fn get_edgar(out_dir: &PathBuf) -> crate::Result {
+
+            let architectures = Arch::value_variants().iter()
+                .filter(|&&arch| arch != Arch::Wasm).collect::<Vec<_>>();
+
+            let edgar_out_dir = out_dir.join(Package::Edgar.ident());
+            fs::create_dir_all(edgar_out_dir)?;
+
+            for arch in architectures {
+                crate::packages::edgar::distribution::edgar_distribution(arch.to_owned())?;
+                let edgar_build_dir = crate::tasks::distribution::out_arch_dir(arch.to_owned());
+
+                let edgar_arch_dir = out_dir.join(Package::Edgar.ident());
+                fs::create_dir_all(&edgar_arch_dir)?;
+
+                let tar_file_name = bundle::out_file(Package::Edgar, *arch);
+
+                let edgar_tar_file_name = tar_file_name.file_name().context(format!("Could not extract file name {}", &tar_file_name.display()))?;
+
+                fs_extra::file::copy(
+                    edgar_build_dir.join(&tar_file_name),
+                    &edgar_arch_dir.join(edgar_tar_file_name),
                     &fs_extra::file::CopyOptions::default()
                         .overwrite(true)
                 )?;
@@ -251,6 +296,7 @@ pub mod distribution {
 
             let opendut_carl_executable = carl_dir.child(SELF_PACKAGE.ident());
             let opendut_cleo_dir = carl_dir.child(Package::Cleo.ident());
+            let opendut_edgar_dir = carl_dir.child(Package::Edgar.ident());
             let opendut_lea_dir = carl_dir.child(Package::Lea.ident());
             let licenses_dir = carl_dir.child("licenses");
 
@@ -258,11 +304,13 @@ pub mod distribution {
                 &licenses_dir,
                 &opendut_carl_executable,
                 &opendut_cleo_dir,
+                &opendut_edgar_dir,
                 &opendut_lea_dir,
             ]);
 
             opendut_carl_executable.assert_non_empty_file();
             opendut_cleo_dir.assert(path::is_dir());
+            opendut_edgar_dir.assert(path::is_dir());
             opendut_lea_dir.assert(path::is_dir());
             licenses_dir.assert(path::is_dir());
 
@@ -284,7 +332,7 @@ pub mod distribution {
                 licenses_index_file.assert(path::is_file());
                 let licenses_index_content = fs::read_to_string(licenses_index_file)?;
 
-                for license_file in [&licenses_edgar_file, &licenses_carl_file, &licenses_cleo_file, &licenses_lea_file] {
+                for license_file in [&licenses_carl_file, &licenses_cleo_file, &licenses_lea_file] {
                     assert!(
                         licenses_index_content.contains(license_file.file_name_str()),
                         "The license index.json did not contain entry for expected file: {}", license_file.display()

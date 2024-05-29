@@ -174,12 +174,14 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
             None
         };
 
+        let carl_installation_directory = CarlInstallDirectory::determine().expect("Could not determine installation directory.");
+
         let app_state = HttpState {
             lea_config: LeaConfig {
                 carl_url: carl_url.value(),
                 idp_config: lea_idp_config,
             },
-            carl_installation_directory: CarlInstallDirectory::determine().expect("Could not determine installation directory.")
+            carl_installation_directory
         };
 
         let lea_index_html = lea_dir.join("index.html").clone();
@@ -212,6 +214,7 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
                             .fallback(ServeFile::new(licenses_dir.join("index.json")))
                     )
                     .route("/api/cleo/:architecture/download", get(router::cleo::download_cleo))
+                    .route("/api/edgar/:architecture/download", get(router::edgar::download_edgar))
                     .route("/api/lea/config", get(router::lea_config))
                     .nest_service(
                         "/",
