@@ -11,9 +11,9 @@ use std::collections::HashMap;
 #[derive(Debug)]
 pub struct CanCluster {
     pub name: String,
-    pub baudrate: i64,
-    pub canfd_baudrate: i64,
-    pub can_frame_triggerings: HashMap<i64, CanFrameTriggering>
+    pub baudrate: u64,
+    pub canfd_baudrate: u64,
+    pub can_frame_triggerings: HashMap<u64, CanFrameTriggering>
 }
 
 /*
@@ -23,15 +23,15 @@ pub struct CanCluster {
 pub struct CanFrameTriggering {
     pub frame_triggering_name: String,
     pub frame_name: String,
-    pub can_id: i64,
+    pub can_id: u64,
     pub addressing_mode: bool,
     pub frame_rx_behavior: bool,
     pub frame_tx_behavior: bool,
-    pub rx_range_lower: i64,
-    pub rx_range_upper: i64,
+    pub rx_range_lower: u64,
+    pub rx_range_upper: u64,
     pub sender_ecus: Vec<String>,
     pub receiver_ecus: Vec<String>,
-    pub frame_length: i64,
+    pub frame_length: u64,
     pub pdu_mappings: Vec<PDUMapping>
 }
 
@@ -42,8 +42,8 @@ pub struct CanFrameTriggering {
 pub struct PDUMapping {
     pub name: String,
     pub byte_order: bool,
-    pub start_position: i64,
-    pub length: i64,
+//    pub start_position: u64,
+    pub length: u64,
     pub dynamic_length: String,
     pub category: String,
     pub contained_header_id_short: String,
@@ -74,7 +74,7 @@ pub struct ISignalIPDU {
     pub cyclic_timing_period_tolerance: Option<TimeRangeTolerance>,
     pub cyclic_timing_offset_value: f64,
     pub cyclic_timing_offset_tolerance: Option<TimeRangeTolerance>,
-    pub number_of_repetitions: i64,
+    pub number_of_repetitions: u64,
     pub repetition_period_value: f64,
     pub repetition_period_tolerance: Option<TimeRangeTolerance>,
     pub unused_bit_pattern: bool,
@@ -99,8 +99,8 @@ pub struct NMPDU {
 pub struct ISignal {
     pub name: String,
     pub byte_order: bool,
-    pub start_pos: i64,
-    pub length: i64,
+    pub start_pos: u64,
+    pub length: u64,
     pub init_values: InitValues
 }
 
@@ -110,8 +110,8 @@ pub struct ISignal {
 #[derive(Debug)]
 #[derive(Clone)]
 pub enum InitValues {
-    Single(i64),
-    Array(Vec<i64>),
+    Single(u64),
+    Array(Vec<u64>),
     NotExist(bool),
 }
 
@@ -121,8 +121,8 @@ pub enum InitValues {
 #[derive(Debug)]
 pub struct E2EDataTransformationProps {
     pub transformer_name: String,
-    pub data_id: i64,
-    pub data_length: i64
+    pub data_id: u64,
+    pub data_length: u64
 }
 
 #[derive(Debug)]
@@ -135,7 +135,7 @@ pub struct ISignalGroup {
 
 #[derive(Debug)]
 pub enum TimeRangeTolerance {
-    Relative(i64),
+    Relative(u64),
     Absolute(f64),
 }
 

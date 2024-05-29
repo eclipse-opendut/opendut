@@ -144,8 +144,8 @@ pub fn create_can_frame_structure(can_id: u32, len: u8, addressing_mode: bool, f
 /*
     Creates a self-defined TimedCanFrame structure that holds the necessary data used for creating a CanFrame later
 */
-pub fn create_time_can_frame_structure(count: u32, ival1_tv_sec: i64, ival1_tv_usec: i64, ival2_tv_sec: i64, 
-    ival2_tv_usec: i64, can_id: u32, len: u8, addressing_mode: bool, frame_tx_behavior: bool, data_vector: &Vec<u8>) -> TimedCanFrame {
+pub fn create_time_can_frame_structure(count: u32, ival1_tv_sec: u64, ival1_tv_usec: u64, ival2_tv_sec: u64, 
+    ival2_tv_usec: u64, can_id: u32, len: u8, addressing_mode: bool, frame_tx_behavior: bool, data_vector: &Vec<u8>) -> TimedCanFrame {
     let mut copy_data_vector: Vec<u8> = Vec::new();
 
     for data in data_vector {
@@ -159,8 +159,8 @@ pub fn create_time_can_frame_structure(count: u32, ival1_tv_sec: i64, ival1_tv_u
         frame_tx_behavior: frame_tx_behavior,
         data_vector: copy_data_vector,
         count: count,
-        ival1: timeval { tv_sec: ival1_tv_sec, tv_usec: ival1_tv_usec },
-        ival2: timeval { tv_sec: ival2_tv_sec, tv_usec: ival2_tv_usec },
+        ival1: timeval { tv_sec: ival1_tv_sec as i64, tv_usec: ival1_tv_usec as i64 },
+        ival2: timeval { tv_sec: ival2_tv_sec as i64, tv_usec: ival2_tv_usec as i64 },
     }
 }
 
@@ -168,8 +168,8 @@ pub fn create_time_can_frame_structure(count: u32, ival1_tv_sec: i64, ival1_tv_u
     Creates a BcmMsgHead structure, which is a header of messages send to/from the CAN Broadcast Manager 
     See also https://github.com/linux-can/can-utils/blob/master/include/linux/can/bcm.h
 */
-pub fn create_bcm_head(count: u32, ival1_tv_sec: i64, ival1_tv_usec: i64
-    , ival2_tv_sec: i64, ival2_tv_usec: i64, can_id: u32, frame_tx_behavior: bool, frames: &Vec<CanFrame>) -> BcmMsgHead {
+pub fn create_bcm_head(count: u32, ival1_tv_sec: u64, ival1_tv_usec: u64
+    , ival2_tv_sec: u64, ival2_tv_usec: u64, can_id: u32, frame_tx_behavior: bool, frames: &Vec<CanFrame>) -> BcmMsgHead {
     let mut canfd_flag: u32 = 0x0;
     
     if frame_tx_behavior {
@@ -179,8 +179,8 @@ pub fn create_bcm_head(count: u32, ival1_tv_sec: i64, ival1_tv_usec: i64
         opcode: OPCODE::TxSetup as u32,
         flags: BCMFlags::SetTimer as u32 | BCMFlags::StartTimer as u32 | canfd_flag,
         count: count,
-        ival1: timeval { tv_sec: ival1_tv_sec, tv_usec: ival1_tv_usec },
-        ival2: timeval { tv_sec: ival2_tv_sec, tv_usec: ival2_tv_usec },
+        ival1: timeval { tv_sec: ival1_tv_sec as i64, tv_usec: ival1_tv_usec as i64 },
+        ival2: timeval { tv_sec: ival2_tv_sec as i64, tv_usec: ival2_tv_usec as i64 },
         can_id: can_id,
         nframes: frames.len() as u32,
     };
@@ -190,8 +190,8 @@ pub fn create_bcm_head(count: u32, ival1_tv_sec: i64, ival1_tv_usec: i64
     Converts a BcmMsgHead structure and the payload (which are CanFrames) to a byte representation. 
     The write_bytes vector is filled with the bytes and can be then later be used by the caller.
 */
-pub fn create_bcm_structure_bytes(count: u32, ival1_tv_sec: i64, ival1_tv_usec: i64
-    , ival2_tv_sec: i64, ival2_tv_usec: i64, can_id: u32, frame_tx_behavior: bool, frames: &Vec<CanFrame>, write_bytes: &mut Vec<u8>) {
+pub fn create_bcm_structure_bytes(count: u32, ival1_tv_sec: u64, ival1_tv_usec: u64
+    , ival2_tv_sec: u64, ival2_tv_usec: u64, can_id: u32, frame_tx_behavior: bool, frames: &Vec<CanFrame>, write_bytes: &mut Vec<u8>) {
     let head: BcmMsgHead = create_bcm_head(count, ival1_tv_sec, ival1_tv_usec, ival2_tv_sec, ival2_tv_usec, can_id, frame_tx_behavior, frames);
 
     let ptr: *const u8 = &head as *const BcmMsgHead as *const u8;

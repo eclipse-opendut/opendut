@@ -27,7 +27,7 @@ impl ArxmlParser {
         2. Fills the important extracted data into the signals HashMap and signal_groups vectors. 
     */
     fn handle_isignal_to_pdu_mappings(&self, mapping: &Element, 
-        signals: &mut HashMap<String, (String, String, i64, i64, InitValues)>, 
+        signals: &mut HashMap<String, (String, String, u64, u64, InitValues)>, 
         signal_groups: &mut Vec<Element>) 
         {
         if let Some(signal) = mapping
@@ -48,9 +48,9 @@ impl ArxmlParser {
                 ElementName::Length);
 
             let mut init_values: InitValues = InitValues::NotExist(true);
-                
-            if let Some(init_value_elem) = signal.get_sub_element(ElementName::InitValue) {
-                process_init_value(&init_value_elem, &mut init_values, &name);
+
+            if let Some(mut init_value_elem) = signal.get_sub_element(ElementName::InitValue) {
+                process_init_value(&mut init_value_elem, &mut init_values, &name);
             }                     
             signals.insert(refpath, (name, byte_order, start_pos, length, init_values));
         } else if let Some(signal_group) = mapping
@@ -68,7 +68,7 @@ impl ArxmlParser {
     */
     fn handle_isignals(&self, pdu: &Element, grouped_signals: &mut Vec<ISignalGroup>, ungrouped_signals: &mut Vec<ISignal>) -> Option<()> {
         //let mut signals: HashMap<String, (String, Option<i64>, Option<i64>)> = HashMap::new();
-        let mut signals: HashMap<String, (String, String, i64, i64, InitValues)> = HashMap::new();
+        let mut signals: HashMap<String, (String, String, u64, u64, InitValues)> = HashMap::new();
         let mut signal_groups = Vec::new();
 
 
@@ -83,7 +83,7 @@ impl ArxmlParser {
             process_signal_group(signal_group, &mut signals, grouped_signals);
         }
 
-        let remaining_signals: Vec<(String, String, i64, i64, InitValues)> = signals.values().cloned().collect();
+        let remaining_signals: Vec<(String, String, u64, u64, InitValues)> = signals.values().cloned().collect();
         if remaining_signals.len() > 0 {
             for (name, byte_order, start_pos, length, init_values) in remaining_signals {
                 let isignal_struct: ISignal = ISignal {
@@ -114,7 +114,7 @@ impl ArxmlParser {
         let mut cyclic_timing_offset_value: f64 = 0_f64;
         let mut cyclic_timing_offset_tolerance: Option<TimeRangeTolerance> = None;
                 
-        let mut number_of_repetitions: i64 = 0;
+        let mut number_of_repetitions: u64 = 0;
         let mut repetition_period_value: f64 = 0_f64;
         let mut repetition_period_tolerance: Option<TimeRangeTolerance> = None;
 
@@ -141,7 +141,7 @@ impl ArxmlParser {
             }
         }
 
-        let unused_bit_pattern = get_unused_bit_pattern(&pdu, true);
+        let unused_bit_pattern = get_unused_bit_pattern(&pdu);
 
         let mut grouped_signals: Vec<ISignalGroup> = Vec::new();
         
@@ -170,7 +170,7 @@ impl ArxmlParser {
         2. Returns important data in a self-defined NMPDU structure.
     */
     fn handle_nm_pdu(&self, pdu: &Element) -> Option<NMPDU> {
-        let unused_bit_pattern = get_unused_bit_pattern(&pdu, false);
+        let unused_bit_pattern = get_unused_bit_pattern(&pdu);
 
         let mut grouped_signals: Vec<ISignalGroup> = Vec::new();
         
@@ -200,11 +200,9 @@ impl ArxmlParser {
         let pdu_name = get_required_item_name(
             &pdu, "Pdu");
 
-        let byte_order = get_required_string(pdu_mapping, 
+        //let byte_order = get_required_string(pdu_mapping, 
+        let byte_order = get_optional_string(pdu_mapping, 
             ElementName::PackingByteOrder);
-
-        let start_position = get_required_int_value(pdu_mapping, 
-            ElementName::StartPosition);
 
         let pdu_length = get_required_int_value(&pdu, 
             ElementName::Length);
@@ -256,7 +254,7 @@ impl ArxmlParser {
         let pdu_mapping: PDUMapping = PDUMapping {
             name: pdu_name,
             byte_order: get_byte_order(&byte_order),
-            start_position: start_position,
+        //    start_position: start_position,
             length: pdu_length,
             dynamic_length: pdu_dynamic_length,
             category: pdu_category,
@@ -272,7 +270,7 @@ impl ArxmlParser {
         1. Parses an Autosar CanFrameTriggering element.
         2. Returns important data in a self-defined CanFrameTriggering structure.
     */
-    fn handle_can_frame_triggering(&self, can_frame_triggering: &Element) -> Result<CanFrameTriggering, String> {
+    fn handle_can_frame_triggering(&self, can_frame_triggering: &Element, has_fd_baudrate: bool) -> Result<CanFrameTriggering, String> {
         let can_frame_triggering_name= get_required_item_name(
             can_frame_triggering, "CanFrameTriggering");
 
@@ -301,24 +299,30 @@ impl ArxmlParser {
             addressing_mode = true;
         }
 
+        // allow it to be missing. When missing, then derive value from CanCluster
         let mut frame_rx_behavior = false; 
-        let frame_rx_behavior_str = get_required_string(
+        let frame_rx_behavior_str = get_optional_string(
             can_frame_triggering,
             ElementName::CanFrameRxBehavior);
         if frame_rx_behavior_str.to_uppercase() == String::from("CAN-FD") {
             frame_rx_behavior = true;
+        } else if frame_rx_behavior_str == "" && has_fd_baudrate {
+            frame_rx_behavior = true;
         }
         
+        // allow it to be missing. When missing, then derive value from CanCluster
         let mut frame_tx_behavior = false; 
-        let frame_tx_behavior_str = get_required_string(
+        let frame_tx_behavior_str = get_optional_string(
             can_frame_triggering,
             ElementName::CanFrameTxBehavior);
         if frame_tx_behavior_str.to_uppercase() == String::from("CAN-FD") {
             frame_tx_behavior = true;
+        } else if frame_tx_behavior_str == "" && has_fd_baudrate {
+            frame_tx_behavior = true;
         }
 
-        let mut rx_range_lower: i64 = 0;
-        let mut rx_range_upper: i64 = 0;
+        let mut rx_range_lower: u64 = 0;
+        let mut rx_range_upper: u64 = 0;
         if let Some(range_elem) = can_frame_triggering.get_sub_element(ElementName::RxIdentifierRange) {
             rx_range_lower = get_required_int_value(&range_elem, ElementName::LowerCanId);
             rx_range_upper = get_required_int_value(&range_elem, ElementName::UpperCanId);
@@ -388,6 +392,8 @@ impl ArxmlParser {
             &can_cluster_conditional,
             ElementName::CanFdBaudrate);
 
+        let has_fd_baudrate = can_cluster_baudrate > 0;
+
         if can_cluster_baudrate == 0 && can_cluster_fd_baudrate == 0 {
             let msg = format!("Baudrate and FD Baudrate of CanCluster {} do not exist or are 0. Skipping this CanCluster.", can_cluster_name);
             return Err(msg.to_string());
@@ -406,11 +412,11 @@ impl ArxmlParser {
             return Err(msg.to_string());
         }
 
-        let mut can_frame_triggerings: HashMap<i64, CanFrameTriggering> = HashMap::new(); 
+        let mut can_frame_triggerings: HashMap<u64, CanFrameTriggering> = HashMap::new(); 
         for physical_channel in physical_channels {
             if let Some(frame_triggerings) = physical_channel.get_sub_element(ElementName::FrameTriggerings) {
                 for can_frame_triggering in frame_triggerings.sub_elements() {
-                    match self.handle_can_frame_triggering(&can_frame_triggering) {
+                    match self.handle_can_frame_triggering(&can_frame_triggering, has_fd_baudrate) {
                         Ok(value) => {
                             can_frame_triggerings.insert(value.can_id.clone(), value);
                         }
