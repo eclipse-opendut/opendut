@@ -65,6 +65,7 @@ pub fn init_tracing() -> crate::Result {
         .with_max_level(tracing::Level::TRACE)
         .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
         .with_env_filter(tracing_filter)
+        .with_writer(std::io::stderr)
         .compact()
         .init();
     Ok(())
