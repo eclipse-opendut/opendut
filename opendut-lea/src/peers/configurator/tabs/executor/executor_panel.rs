@@ -1,5 +1,5 @@
 use leptos::{component, create_read_slice, create_rw_signal, create_slice, event_target_value, IntoView, RwSignal,  SignalGet, SignalGetUntracked, SignalUpdate, SignalWith, SignalWithUntracked, view};
-use opendut_types::peer::executor::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine, IllegalContainerImage};
+use opendut_types::peer::executor::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine, IllegalContainerImage, ResultsUrl};
 use strum::IntoEnumIterator;
 
 use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, IconButton, Toggled, UserInput, UserInputValue, VectorUserInput};
@@ -34,6 +34,7 @@ where
                     <ExecutorContainerPortsInput executor />
                     <ExecutorContainerCommandInput executor />
                     <ExecutorContainerArgsInput executor />
+                    <ExecutorContainerResultsUrlInput executor />
                 </div>
             </div>
         </div>
@@ -726,5 +727,45 @@ fn ExecutorContainerEnvsInput(
                 </div>
             </div>
         </div>
+    }
+}
+
+#[component]
+fn ExecutorContainerResultsUrlInput(
+    executor: RwSignal<UserPeerExecutor>,
+) -> impl IntoView {
+
+    let (getter, setter) = create_slice(executor,
+        move |executor| {
+            match executor {
+                UserPeerExecutor::Container { results_url, .. } => { Clone::clone(results_url) }
+            }
+        },
+        move |executor, value| {
+            match executor {
+                UserPeerExecutor::Container { results_url, .. } => { *results_url = value; }
+            }
+        }
+    );
+
+    let validator = |input: String| {
+        match ResultsUrl::try_from(input.clone()) {
+            Ok(results_url) => {
+                UserInputValue::Right(String::from(results_url))
+            }
+            Err(cause) => {
+                UserInputValue::Both(cause.to_string(), input)
+            }
+        }
+    };
+
+    view! {
+        <UserInput
+            getter
+            setter
+            label="Results URL"
+            placeholder=""
+            validator
+        />
     }
 }

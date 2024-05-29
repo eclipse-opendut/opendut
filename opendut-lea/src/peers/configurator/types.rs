@@ -1,7 +1,7 @@
 use leptos::{RwSignal, SignalGetUntracked};
 
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
-use opendut_types::peer::executor::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine, ExecutorDescriptor, ExecutorDescriptors};
+use opendut_types::peer::executor::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine, ExecutorDescriptor, ExecutorDescriptors, ResultsUrl};
 use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
 use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
 
@@ -60,6 +60,7 @@ pub enum UserPeerExecutor {
         ports: Vec<RwSignal<UserInputValue>>,
         command: UserInputValue,
         args: Vec<RwSignal<UserInputValue>>,
+        results_url: UserInputValue,
         is_collapsed: bool,
     }
 }
@@ -218,6 +219,7 @@ impl TryFrom<UserPeerExecutor> for ExecutorDescriptor {
                 ports,
                 command,
                 args,
+                results_url,
                 ..
             } => {
                 let name = name
@@ -280,6 +282,17 @@ impl TryFrom<UserPeerExecutor> for ExecutorDescriptor {
                                     .map_err(|_| PeerMisconfigurationError::InvalidPeerExecutor)))
                     })
                     .collect::<Result<Vec<_>, _>>()?;
+                let results_url = results_url
+                    .right_ok_or(PeerMisconfigurationError::InvalidPeerExecutor)
+                    .and_then(|results_url| {
+                        if results_url.is_empty() { 
+                            Ok(None) 
+                        } else { 
+                            Some(ResultsUrl::try_from(results_url)
+                                .map_err(|_| PeerMisconfigurationError::InvalidPeerExecutor)).transpose()
+                        }
+                        
+                    })?;
                 Ok(ExecutorDescriptor::Container {
                     engine,
                     name,
@@ -290,7 +303,7 @@ impl TryFrom<UserPeerExecutor> for ExecutorDescriptor {
                     ports,
                     command,
                     args,
-                    results_url: None,
+                    results_url,
                 })
                 
             }

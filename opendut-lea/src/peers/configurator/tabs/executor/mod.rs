@@ -89,6 +89,7 @@ fn ExecutorTable(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl In
                                     ports: vec![],
                                     command: UserInputValue::Right(String::from("")),
                                     args: vec![],
+                                    results_url: UserInputValue::Right(String::from("")),
                                     is_collapsed: false
                                 }
                             );

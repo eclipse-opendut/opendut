@@ -146,6 +146,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                                             ports,
                                             command: UserInputValue::Right(command.into()),
                                             args,
+                                            results_url: UserInputValue::Right(results_url.map(|s| s.to_string()).unwrap_or(String::new())),
                                             is_collapsed: true
                                         }));
                                 }

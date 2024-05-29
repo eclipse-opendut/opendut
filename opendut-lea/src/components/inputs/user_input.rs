@@ -41,7 +41,7 @@ where A: UserInputValidator + 'static {
                     aria-label=move || aria_label.get()
                     placeholder=move || placeholder.get()
                     prop:value={ value_text }
-                    on:input=move |ev| {
+                    on:focusout=move |ev| {
                         if let Some(validator) = &validator {
                             let validated_value = validator.validate(event_target_value(&ev));
                             setter.set(validated_value);
