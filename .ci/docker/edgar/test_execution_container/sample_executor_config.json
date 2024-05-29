@@ -1,0 +1,34 @@
+{
+    "peer-id": "<PEER_ID>",
+    "executor-descriptor": {
+        "container": {
+            "engine": "docker",
+            "name": {
+                "Value": "nmap-test"
+            },
+            "image": "nmap-test",
+            "results-url": "http://nginx-webdav:80/",
+            "envs": [
+                {
+                "name": "ENVVAR1",
+                "value": "someenvironmentvariable"
+                },
+                {
+                "name": "ENVVAR2",
+                "value": "anotherenvironmentvariable"
+                }
+            ],
+            "args": [
+                "-A",
+                "-T4",
+                "127.0.0.1"
+            ],
+            "ports":  [],
+            "volumes": [],
+            "command": {
+                "Value": "test_command"
+            },
+            "devices": []
+        }
+    }
+}

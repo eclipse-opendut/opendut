@@ -1,5 +1,7 @@
 use std::{env, io::Cursor, path::PathBuf, process::Stdio};
 
+use opendut_types::peer::executor::{ContainerImage, ContainerName, Engine, ResultsUrl, ContainerCommandArgument, ContainerEnvironmentVariable};
+
 use tokio::{fs, io::{AsyncBufReadExt, BufReader}, process::{Child, Command}, sync::mpsc::Receiver};
 use tracing::{error, warn, info};
 use url::Url;
@@ -8,6 +10,7 @@ use zip::{CompressionMethod, ZipWriter};
 use zip_extensions::write::ZipWriterExtensions;
 
 use crate::service::test_execution::webdav_client::{self, WebdavClient};
+
 
 #[derive(Debug)]
 enum ContainerState {
@@ -19,17 +22,17 @@ enum ContainerState {
     Dead,
 }
 
-pub struct DummyConfig {
-    pub name: String,
-    pub engine: String,
-    pub image: String,
-    pub args: Vec<String>,
-    pub env: Vec<(String, String)>,
-    pub results_url: Url,
+pub struct ContainerConfiguration {
+    pub name: ContainerName,
+    pub engine: Engine,
+    pub image: ContainerImage,
+    pub args: Vec<ContainerCommandArgument>,
+    pub envs: Vec<ContainerEnvironmentVariable>,
+    pub results_url: Option<ResultsUrl>,
 }
 
 pub struct ContainerManager{
-    config: DummyConfig,
+    config: ContainerConfiguration,
     container_name: Option<String>,
     results_dir: PathBuf,
     webdav_client: WebdavClient,
@@ -42,9 +45,9 @@ const CONTAINER_RESULTS_DIRECTORY: &str = "/results";
 
 impl ContainerManager {
 
-    pub fn new(config: DummyConfig) -> Self {
+    pub fn new(container_configuration: ContainerConfiguration) -> Self {
         Self { 
-            config,
+            config: container_configuration,
             container_name: None,
             results_dir: env::temp_dir().join(format!("opendut-edgar-results_{}", Uuid::new_v4())),
             webdav_client: WebdavClient::new("some_dummy_token".to_string()), // TODO: Authenticate with actual token
@@ -64,7 +67,7 @@ impl ContainerManager {
         self.start_container().await?;
         self.log_reader = Some(
             ContainerLogReader::create(
-                self.config.engine.clone(), 
+                self.config.engine.to_string(), 
                 self.container_name.as_ref().unwrap().clone()
             )?);
 
@@ -97,11 +100,11 @@ impl ContainerManager {
     async fn get_container_state(&self) -> Result<ContainerState, Error> {
         match &self.container_name {
             Some(container_name) => {
-                let output = Command::new(&self.config.engine)
+                let output = Command::new(&self.config.engine.to_string())
                     .args(["inspect", "-f", "'{{.State.Status}}'", container_name])
                     .output()
                     .await
-                    .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} inspect", &self.config.engine), cause })?;
+                    .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} inspect", &self.config.engine.to_string()), cause })?;
                 
                 match String::from_utf8_lossy(&output.stdout).into_owned().replace('\'', "").trim() {
                     "created" => Ok(ContainerState::Created),
@@ -110,7 +113,7 @@ impl ContainerManager {
                     "exited" => Ok(ContainerState::Exited),
                     "paused" => Ok(ContainerState::Paused),
                     "dead" => Ok(ContainerState::Dead),
-                    unknown_state => Err(Error::Other { message: format!("Unknown container state returned by {} inspect: '{}'", &self.config.engine, unknown_state) } ),
+                    unknown_state => Err(Error::Other { message: format!("Unknown container state returned by {} inspect: '{}'", &self.config.engine.to_string(), unknown_state) } ),
                 }
             },
             None => Err(Error::Other { message: "get_container_state() called without container_name present".to_string()}),
@@ -120,7 +123,7 @@ impl ContainerManager {
 
     async fn start_container(&mut self) -> Result<(), Error>{
 
-        let mut cmd = Command::new(&self.config.engine);
+        let mut cmd = Command::new(&self.config.engine.to_string());
         cmd.arg("run");
         cmd.arg("--detach");
         cmd.arg("--net=host");
@@ -140,14 +143,14 @@ impl ContainerManager {
         
         // TODO: Add environment variables
 
-        cmd.arg(&self.config.image);
+        cmd.arg(&self.config.image.to_string());
 
         for arg in &self.config.args {
-            cmd.arg(arg);
+            cmd.arg(arg.to_string());
         }
         let output = cmd.output()
             .await
-            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} run", &self.config.engine), cause })?;
+            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} run", &self.config.engine.to_string()), cause })?;
 
         match output.status.success() {
             true => {
@@ -160,11 +163,11 @@ impl ContainerManager {
     }
 
     async fn check_container_name_exists(&self, name: &str) -> Result<bool, Error>{
-        let output = Command::new(&self.config.engine)
+        let output = Command::new(&self.config.engine.to_string())
             .args(["container", "inspect", name])
             .output()
             .await
-            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} inspect", &self.config.engine), cause })?;
+            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} inspect", &self.config.engine.to_string()), cause })?;
 
         Ok(output.status.success())
     }
@@ -172,11 +175,11 @@ impl ContainerManager {
     // async fn stop_container(&self) -> Result<(), Error>{
     //     match &self.container_name {
     //         Some(container_name) => {
-    //             let output = Command::new(&self.config.engine)
+    //             let output = Command::new(&self.config.engine.to_string())
     //                 .args(["stop", container_name])
     //                 .output()
     //                 .await
-    //                 .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} stop", &self.config.engine), cause })?;
+    //                 .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} stop", &self.config.engine.to_string()), cause })?;
 
     //             match output.status.success() {
     //                 true => Ok(()),
@@ -199,6 +202,13 @@ impl ContainerManager {
 
     async fn upload_results(&self) -> Result<(), Error>{
         info!("Starting upload for results of {}", self.config.name);
+        let results_url = match &self.config.results_url {
+            Some(results_url) => results_url.value(),
+            None => {
+                info!("Container {} has no results URL, won't upload results.", self.config.name);
+                return Ok(());
+            },
+        };
         
         let mut data = Vec::new();
         let buffer = Cursor::new(&mut data);
@@ -209,11 +219,11 @@ impl ContainerManager {
             .map_err(|cause| Error::ResultZipping { path: self.results_dir.clone(), cause })?;
         drop(zip);
 
-        self.webdav_client.create_collection_path(self.config.results_url.clone())
+        self.webdav_client.create_collection_path(results_url.clone())
             .await
-            .map_err(|cause| Error::ResultUploadingInternal { url: self.config.results_url.clone(), cause })?;
+            .map_err(|cause| Error::ResultUploadingInternal { url: results_url.clone(), cause })?;
 
-        let results_file_url = self.config.results_url.join(
+        let results_file_url = results_url.join(
             format!("test_output_{}.zip", chrono::offset::Local::now().format("%Y-%m-%d_%H-%M-%S")).as_str()
         ).map_err(|cause| Error::Other { message: format!("Failed to construct URL for results directory: {}", cause) })?;
 
@@ -226,7 +236,7 @@ impl ContainerManager {
                 info!("Successfully uploaded results of {}", self.config.name);
                 Ok(())
             },
-            false => Err(Error::ResultUploadingServer { test_name: self.config.name.clone(), url: results_file_url.clone(), status: response.status() }),
+            false => Err(Error::ResultUploadingServer { container_name: self.config.name.clone(), url: results_file_url.clone(), status: response.status() }),
         }
 
     }
@@ -261,8 +271,8 @@ pub enum Error {
     ResultZipping { path: PathBuf, cause: zip::result::ZipError },
     #[error("Failure while uploading test results to '{url}': {cause}")]
     ResultUploadingInternal { url: Url, cause: webdav_client::Error },
-    #[error("Failure while uploading test results for '{test_name}' to '{url}' (HTTP status {status})")]
-    ResultUploadingServer { test_name: String, url: Url, status: reqwest::StatusCode },
+    #[error("Failure while uploading test results for '{container_name}' to '{url}' (HTTP status {status})")]
+    ResultUploadingServer { container_name: ContainerName, url: Url, status: reqwest::StatusCode },
     #[error("{message}")]
     Other { message: String },
 }
@@ -274,7 +284,7 @@ struct ContainerLogReader {
 
 impl ContainerLogReader {
     pub fn create(engine: String, container_name: String) -> Result<Self, Error> {
-        let mut cmd = Command::new(engine.clone());
+        let mut cmd = Command::new(engine.to_string());
         cmd.args(["logs", "--timestamps", "--follow"]);
         cmd.arg(container_name);
         cmd.stdout(Stdio::piped());
@@ -282,9 +292,9 @@ impl ContainerLogReader {
         cmd.kill_on_drop(true);
 
         let mut child = cmd.spawn()
-            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} logs", engine.clone()), cause })?;
+            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} logs", engine.to_string()), cause })?;
 
-        let stdout = child.stdout.take().ok_or(Error::Other { message: format!("Failed to get stdout of '{} logs' process", engine)})?;
+        let stdout = child.stdout.take().ok_or(Error::Other { message: format!("Failed to get stdout of '{} logs' process", engine.to_string())})?;
 
         let mut stdout_reader = BufReader::new(stdout);
 

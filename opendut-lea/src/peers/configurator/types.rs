@@ -290,6 +290,7 @@ impl TryFrom<UserPeerExecutor> for ExecutorDescriptor {
                     ports,
                     command,
                     args,
+                    results_url: None,
                 })
                 
             }

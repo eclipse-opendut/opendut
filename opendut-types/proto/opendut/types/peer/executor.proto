@@ -25,6 +25,7 @@ message Container {
   repeated ContainerPortSpec ports = 7;
   ContainerCommand command = 8;
   repeated ContainerCommandArgument args = 9;
+  optional ResultsUrl results_url = 10;
 }
 
 message Engine {
@@ -68,5 +69,9 @@ message ContainerCommand {
 }
 
 message ContainerCommandArgument {
+  string value = 1;
+}
+
+message ResultsUrl {
   string value = 1;
 }

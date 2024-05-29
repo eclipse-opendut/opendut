@@ -57,7 +57,8 @@ fn filter_connected_peers(
             envs,
             ports,
             command,
-            args
+            args,
+            results_url,
         } = executor {
             let args = args.iter().map(|arg| arg.to_string()).collect::<Vec<_>>();
             let volumes = volumes.iter().map(|volume| volume.to_string()).collect::<Vec<_>>();
@@ -75,6 +76,7 @@ fn filter_connected_peers(
                 ports: ports.join(", "),
                 command: command.into(),
                 args: args.join(", "),
+                results_url: results_url.clone().map_or("None".to_string(), |results_url| results_url.into()),
             });
         }
     };
@@ -101,4 +103,6 @@ struct ContainerExecutorTable {
     command: String,
     #[table(title = "Args")]
     args: String,
+    #[table(title = "Results URL")]
+    results_url: String,
 }

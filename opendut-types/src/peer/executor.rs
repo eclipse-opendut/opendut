@@ -3,6 +3,7 @@ use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
+use url::Url;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExecutorDescriptors {
@@ -24,6 +25,7 @@ pub enum ExecutorDescriptor {
         ports: Vec<ContainerPortSpec>,
         command: ContainerCommand,
         args: Vec<ContainerCommandArgument>,
+        results_url: Option<ResultsUrl>,
     }
 }
 
@@ -37,8 +39,8 @@ pub enum Engine {
 impl Display for Engine {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Engine::Docker =>  write!(f, "Docker"),
-            Engine::Podman =>  write!(f, "Podman"),
+            Engine::Docker =>  write!(f, "docker"),
+            Engine::Podman =>  write!(f, "podman"),
         }
     }
 }
@@ -485,6 +487,61 @@ impl From<ContainerCommandArgument> for String {
 }
 
 impl fmt::Display for ContainerCommandArgument {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct ResultsUrl(Url);
+
+impl ResultsUrl {
+    pub fn value(&self) -> &Url {
+        &self.0
+    }
+}
+
+#[derive(thiserror::Error, Clone, Debug)]
+pub enum IllegalResultsUrl{
+    #[error("Failed to parse results URL: {cause}")]
+    ParseFailure {cause: url::ParseError},
+}
+
+impl TryFrom<&str> for ResultsUrl {
+    type Error = IllegalResultsUrl;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match Url::parse(value) {
+            Ok(url) => Ok(Self(url)),
+            Err(cause) => Err(IllegalResultsUrl::ParseFailure { cause}),
+        }
+    }
+}
+
+impl TryFrom<String> for ResultsUrl {
+    type Error = IllegalResultsUrl;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        ResultsUrl::try_from(value.as_str())
+    }
+}
+
+impl FromStr for ResultsUrl {
+    type Err = IllegalResultsUrl;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        ResultsUrl::try_from(value)
+    }
+}
+
+impl From<ResultsUrl> for String {
+    fn from(value: ResultsUrl) -> Self {
+        value.0.to_string()
+    }
+}
+
+impl fmt::Display for ResultsUrl {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }

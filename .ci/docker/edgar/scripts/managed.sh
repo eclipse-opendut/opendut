@@ -121,6 +121,10 @@ if [ "$1" == "leader" ]; then
   DEVICES="$(opendut-cleo list --output=json devices | jq --arg NAME "$OPENDUT_EDGAR_CLUSTER_NAME" -r '.[] | select(.tags==$NAME).name' | xargs echo)"
   echo "Enumerating devices to join cluster: $DEVICES"
 
+  sed -i -e "s/<PEER_ID>/$PEER_ID/g" /opt/test_execution_container/sample_executor_config.json
+  RESPONSE=$(opendut-cleo create container-executor --config-file test_execution_container/sample_executor_config.json)
+  echo "Container executor create result: $RESPONSE"
+
   echo "Creating cluster configuration."
   # currently CLEO does not split the string of the device names therefore passing it without quotes
   # shellcheck disable=SC2086

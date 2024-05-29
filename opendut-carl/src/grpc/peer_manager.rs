@@ -355,7 +355,9 @@ mod tests {
                     envs: vec![],
                     ports: vec![],
                     command: ContainerCommand::Default,
-                    args: vec![] }],
+                    args: vec![],
+                    results_url: None, 
+                }],
             },
         };
 

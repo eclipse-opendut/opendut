@@ -611,6 +611,7 @@ mod test {
                     ports: vec![],
                     command: ContainerCommand::Default,
                     args: vec![],
+                    results_url: None,
                 }],
             },
         };

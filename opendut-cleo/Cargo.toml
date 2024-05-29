@@ -23,6 +23,7 @@ shadow-rs = { workspace = true, default-features = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 tonic = { workspace = true, features = ["tls"] }
+url = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
 serde = { version = "1.0.189", features = ["derive"] }
 

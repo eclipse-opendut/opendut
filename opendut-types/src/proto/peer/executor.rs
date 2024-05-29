@@ -46,7 +46,8 @@ impl From<crate::peer::executor::ExecutorDescriptor> for ExecutorDescriptor {
                 envs,
                 ports,
                 command,
-                args
+                args,
+                results_url
             } => {
                 ExecutorDescriptor { 
                     descriptor: Some(executor_descriptor::Descriptor::Container(
@@ -60,6 +61,7 @@ impl From<crate::peer::executor::ExecutorDescriptor> for ExecutorDescriptor {
                             ports: ports.into_iter().map(|port| port.into()).collect(),
                             command: Some(command.into()),
                             args: args.into_iter().map(|arg| arg.into()).collect(),
+                            results_url: results_url.map(|results_url| results_url.into()),
                         }
                     ))
                 }
@@ -91,7 +93,8 @@ impl TryFrom<ExecutorDescriptor> for crate::peer::executor::ExecutorDescriptor {
                     envs,
                     ports,
                     command,
-                    args
+                    args,
+                    results_url
                 } = descriptor;
                 let engine = engine
                     .ok_or(ErrorBuilder::field_not_set("engine"))?
@@ -125,6 +128,8 @@ impl TryFrom<ExecutorDescriptor> for crate::peer::executor::ExecutorDescriptor {
                     .into_iter()
                     .map(TryFrom::try_from)
                     .collect::<Result<_, _>>()?;
+                let results_url = results_url
+                    .map(TryFrom::try_from).transpose()?;
                 crate::peer::executor::ExecutorDescriptor::Container {
                     engine,
                     name,
@@ -135,6 +140,7 @@ impl TryFrom<ExecutorDescriptor> for crate::peer::executor::ExecutorDescriptor {
                     ports,
                     command,
                     args,
+                    results_url,
                 }
             }
         };
@@ -337,6 +343,25 @@ impl TryFrom<ContainerCommandArgument> for crate::peer::executor::ContainerComma
         type ErrorBuilder = ConversionErrorBuilder<ContainerCommandArgument, crate::peer::executor::ContainerCommandArgument>;
 
         crate::peer::executor::ContainerCommandArgument::try_from(value.value)
+            .map_err(|cause| ErrorBuilder::message(cause.to_string()))
+    }
+}
+
+impl From<crate::peer::executor::ResultsUrl> for ResultsUrl {
+    fn from(value: crate::peer::executor::ResultsUrl) -> Self {
+        Self {
+            value: value.into()
+        }
+    }
+}
+
+impl TryFrom<ResultsUrl> for crate::peer::executor::ResultsUrl{
+    type Error = ConversionError;
+
+    fn try_from(value: ResultsUrl) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<ResultsUrl, crate::peer::executor::ResultsUrl>;
+
+        crate::peer::executor::ResultsUrl::try_from(value.value)
             .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
