@@ -1,5 +1,6 @@
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use std::ops::Not;
 use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
@@ -52,6 +53,17 @@ pub enum ContainerName {
     Value(String)
 }
 
+pub const CONTAINER_NAME_MIN_LENGTH: usize = 2;
+pub const CONTAINER_NAME_MAX_LENGTH: usize = 60;
+
+#[derive(thiserror::Error, Clone, Debug)]
+pub enum IllegalContainerName {
+    #[error("Container name '{value}' is too short. Expected between {min} and {max} characters, got {actual}.")]
+    InvalidLength { value: String, min: usize, max: usize, actual: usize },
+    #[error("Container name '{value}' contains invalid characters.")]
+    InvalidCharacter { value: String },
+}
+
 impl From<ContainerName> for String {
     fn from(value: ContainerName) -> Self {
         match value {
@@ -71,11 +83,20 @@ impl From<&ContainerName> for String {
 }
 
 impl TryFrom<String> for ContainerName {
-    type Error = IllegalContainerConfiguration;
+    type Error = IllegalContainerName;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         if value.is_empty() {
             Ok(ContainerName::Empty)
+        } else if value.len() < CONTAINER_NAME_MIN_LENGTH || value.len() > CONTAINER_NAME_MAX_LENGTH {
+            Err(IllegalContainerName::InvalidLength {
+                value: value.clone(), 
+                min: CONTAINER_NAME_MIN_LENGTH, 
+                max: CONTAINER_NAME_MAX_LENGTH, 
+                actual: value.len()
+            })
+        } else if value.chars().any(|c| crate::util::valid_characters_in_name(&c).not()) {
+            Err(IllegalContainerName::InvalidCharacter {value})
         } else {
             Ok(ContainerName::Value(value))
         }
@@ -83,7 +104,7 @@ impl TryFrom<String> for ContainerName {
 }
 
 impl TryFrom<&str> for ContainerName {
-    type Error = IllegalContainerConfiguration;
+    type Error = IllegalContainerName;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         ContainerName::try_from(value.to_owned())
@@ -91,7 +112,7 @@ impl TryFrom<&str> for ContainerName {
 }
 
 impl FromStr for ContainerName {
-    type Err = IllegalContainerConfiguration;
+    type Err = IllegalContainerName;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         ContainerName::try_from(value)

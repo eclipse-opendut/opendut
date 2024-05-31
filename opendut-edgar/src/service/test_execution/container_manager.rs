@@ -224,7 +224,7 @@ impl ContainerManager {
             .map_err(|cause| Error::ResultUploadingInternal { url: results_url.clone(), cause })?;
 
         let results_file_url = results_url.join(
-            format!("test_output_{}.zip", chrono::offset::Local::now().format("%Y-%m-%d_%H-%M-%S")).as_str()
+            format!("{}_{}.zip", chrono::offset::Local::now().format("%Y-%m-%d_%H-%M-%S"), self.config.name).as_str()
         ).map_err(|cause| Error::Other { message: format!("Failed to construct URL for results directory: {}", cause) })?;
 
         let response = self.webdav_client.put(data, results_file_url.clone())
