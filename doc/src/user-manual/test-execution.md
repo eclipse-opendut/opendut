@@ -33,7 +33,7 @@ In CLEO, test executors can be configured either by passing all configuration pa
         --config-file <CONFIG_FILE>  Path to the JSON-formatted executor configuration file
     -h, --help                       Print help
 
-Note that the `volumes`, `devices`, `ports`, and `command` arguments are currently unused and will not be considered during test execution.
+Note that the `volumes`, `devices`, and `ports` arguments are currently unused and will not be considered during test execution.
 
 ### Configuration File Format
 A JSON configuration file for a test executor that is passed to CLEO may look as follows.
@@ -66,9 +66,7 @@ A JSON configuration file for a test executor that is passed to CLEO may look as
             ],
             "ports":  [],
             "volumes": [],
-            "command": {
-                "Value": "test_command"
-            },
+            "command": {"Empty"},
             "devices": []
         }
     }

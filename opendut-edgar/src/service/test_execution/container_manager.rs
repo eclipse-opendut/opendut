@@ -1,6 +1,6 @@
 use std::{env, io::Cursor, path::PathBuf, process::Stdio};
 
-use opendut_types::peer::executor::{ContainerImage, ContainerName, Engine, ResultsUrl, ContainerCommandArgument, ContainerEnvironmentVariable};
+use opendut_types::peer::executor::{ContainerCommand, ContainerCommandArgument, ContainerEnvironmentVariable, ContainerImage, ContainerName, Engine, ResultsUrl};
 
 use tokio::{fs, io::{AsyncBufReadExt, BufReader}, process::{Child, Command}, sync::mpsc::Receiver};
 use tracing::{error, warn, info};
@@ -26,6 +26,7 @@ pub struct ContainerConfiguration {
     pub name: ContainerName,
     pub engine: Engine,
     pub image: ContainerImage,
+    pub command: ContainerCommand,
     pub args: Vec<ContainerCommandArgument>,
     pub envs: Vec<ContainerEnvironmentVariable>,
     pub results_url: Option<ResultsUrl>,
@@ -141,9 +142,15 @@ impl ContainerManager {
 
         cmd.args(["--mount", format!("type=bind,source={},target={}", self.results_dir.to_string_lossy(), CONTAINER_RESULTS_DIRECTORY).as_str()]);
         
-        // TODO: Add environment variables
+        for env in &self.config.envs {
+            cmd.args(["--env", &format!("{}={}", env.name(), env.value())]);
+        }
 
         cmd.arg(&self.config.image.to_string());
+
+        if let ContainerCommand::Value(command) = &self.config.command {
+            cmd.arg(command.as_str());
+        }
 
         for arg in &self.config.args {
             cmd.arg(arg.to_string());

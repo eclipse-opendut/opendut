@@ -30,7 +30,7 @@ pub fn setup_executors(executors: Vec<peer::configuration::Parameter<ExecutorDes
                 devices: _,
                 envs,
                 ports: _,
-                command: _,
+                command,
                 args,
                 results_url
             } => {
@@ -38,6 +38,7 @@ pub fn setup_executors(executors: Vec<peer::configuration::Parameter<ExecutorDes
                     name,
                     engine,
                     image,
+                    command,
                     args,
                     envs,
                     results_url,

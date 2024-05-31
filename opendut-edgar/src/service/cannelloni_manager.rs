@@ -46,7 +46,7 @@ impl CannelloniManager {
             Err(cause) => error!("{cause}"),
         }
     }
-    
+
     async fn run_internal(&mut self) -> Result<(), Error> {
         loop {
             let mut cmd = Command::new("cannelloni");
