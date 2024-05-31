@@ -124,7 +124,7 @@ impl ContainerManager {
 
     async fn start_container(&mut self) -> Result<(), Error>{
 
-        let mut cmd = Command::new(&self.config.engine.to_string());
+        let mut cmd = Command::new(self.config.engine.to_string());
         cmd.arg("run");
         cmd.arg("--detach");
         cmd.arg("--net=host");
@@ -291,7 +291,7 @@ struct ContainerLogReader {
 
 impl ContainerLogReader {
     pub fn create(engine: String, container_name: String) -> Result<Self, Error> {
-        let mut cmd = Command::new(engine.to_string());
+        let mut cmd = Command::new(&engine);
         cmd.args(["logs", "--timestamps", "--follow"]);
         cmd.arg(container_name);
         cmd.stdout(Stdio::piped());
@@ -299,9 +299,9 @@ impl ContainerLogReader {
         cmd.kill_on_drop(true);
 
         let mut child = cmd.spawn()
-            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} logs", engine.to_string()), cause })?;
+            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{engine} logs"), cause })?;
 
-        let stdout = child.stdout.take().ok_or(Error::Other { message: format!("Failed to get stdout of '{} logs' process", engine.to_string())})?;
+        let stdout = child.stdout.take().ok_or(Error::Other { message: format!("Failed to get stdout of '{engine} logs' process")})?;
 
         let mut stdout_reader = BufReader::new(stdout);
 
