@@ -11,6 +11,7 @@
     - [How to combine CLEO and jq](user-manual/cleo/jq.md)
   - [EDGAR](user-manual/edgar/index.md)
     - [Setup](user-manual/edgar/setup.md)
+  - [Test Execution](user-manual/test-execution.md)
 - [Developer Manual](development/index.md)
   - [Getting Started](development/getting-started.md)
   - [Starting Applications](development/starting-applications.md)
