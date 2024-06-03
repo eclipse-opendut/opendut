@@ -4,7 +4,7 @@ In a nutshell, test execution in openDuT works by executing containerized (Docke
 
 The container image specified by the `image` parameter in the test executor configuration can either be a container image already present on the peer or an image remotely available, e.g., in the Docker Hub.
 
-A containerized test application is expected to move all test results to be uploaded to the `/results/` directory within its container and create an empty file `/results/.results_ready` when all results have been copied there. When this file exists, or when the container exits, EDGAR creates a ZIP archive from the contents of the `/results` directory and uploads it to the WebDAV server specified by the `results-url` parameter in the test executor configuration.
+A containerized test application is expected to move all test results to be uploaded to the `/results/` directory within its container and create an empty file `/results/.results_ready` when all results have been copied there. When this file exists, or when the container exits and no results have been uploaded yet, EDGAR creates a ZIP archive from the contents of the `/results` directory and uploads it to the WebDAV server specified by the `results-url` parameter in the test executor configuration.
 
 In the `testenv` launched by THEO, a WebDAV server is started automatically and can be reached at `http://nginx-webdav/`. In the [Local Test Environment](https://github.com/eclipse-opendut/opendut/tree/development/.ci/deploy/localenv), a WebDAV server is also started automatically and reachable at `http://nginx-webdav.opendut.local`.
 

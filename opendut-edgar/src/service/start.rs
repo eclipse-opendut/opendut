@@ -27,6 +27,7 @@ use opendut_util::logging::LoggingConfig;
 use opendut_util::settings::LoadedConfig;
 
 use crate::common::{carl, settings};
+use crate::service::test_execution::executor_manager::{ExecutorManager, ExecutorManagerRef};
 use crate::service::{cluster_assignment, vpn};
 use crate::service::can_manager::{CanManager, CanManagerRef};
 use crate::service::network_interface::manager::{NetworkInterfaceManager, NetworkInterfaceManagerRef};
@@ -88,6 +89,7 @@ pub async fn create(self_id: PeerId, settings: LoadedConfig) -> anyhow::Result<(
 
     let network_interface_manager: NetworkInterfaceManagerRef = NetworkInterfaceManager::create()?;
     let can_manager: CanManagerRef = CanManager::create(Arc::clone(&network_interface_manager));
+    let executor_manager: ExecutorManagerRef = ExecutorManager::create();
 
     let network_interface_management_enabled = settings.config.get::<bool>("network.interface.management.enabled")?;
 
@@ -98,6 +100,7 @@ pub async fn create(self_id: PeerId, settings: LoadedConfig) -> anyhow::Result<(
         network_interface_management_enabled,
         network_interface_manager,
         can_manager,
+        executor_manager,
     };
 
     let timeout_duration = Duration::from_millis(settings.config.get::<u64>("carl.disconnect.timeout.ms")?);
@@ -220,7 +223,7 @@ async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Opti
                                 setup_cluster_info,
                                 configuration.network.bridge_name,
                             ).await;
-                            crate::service::executor::setup_executors(configuration2.executors);
+                            crate::service::executor::setup_executors(configuration2.executors, Arc::clone(&setup_cluster_info.executor_manager));
                         }
                     }
                 }
@@ -236,6 +239,7 @@ struct SetupClusterInfo {
     network_interface_management_enabled: bool,
     network_interface_manager: NetworkInterfaceManagerRef,
     can_manager: CanManagerRef,
+    executor_manager: ExecutorManagerRef,
 }
 #[tracing::instrument(skip_all)]
 async fn setup_cluster(

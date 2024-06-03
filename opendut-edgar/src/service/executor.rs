@@ -5,10 +5,10 @@ use tracing::warn;
 use opendut_types::peer::{self, executor::ExecutorDescriptor};
 //use opendut_types::peer::executor::{ContainerCommand, ContainerName, Engine, ExecutorDescriptor};
 
-use crate::service::test_execution::container_manager::{ContainerManager, ContainerConfiguration};
+use super::test_execution::executor_manager::ExecutorManagerRef;
 
 #[tracing::instrument(skip_all)]
-pub fn setup_executors(executors: Vec<peer::configuration::Parameter<ExecutorDescriptor>>) { //TODO make idempotent
+pub fn setup_executors(executors: Vec<peer::configuration::Parameter<ExecutorDescriptor>>, executor_manager: ExecutorManagerRef) { //TODO make idempotent
 
     let executors = executors.into_iter()
         .filter_map(|executor| { //TODO properly handle Present vs. Absent
@@ -19,33 +19,38 @@ pub fn setup_executors(executors: Vec<peer::configuration::Parameter<ExecutorDes
             }
         });
 
+    let mut executor_manager_unlocked = executor_manager.lock().unwrap();
+
+    executor_manager_unlocked.terminate_executors();
+
     for executor in executors {
-        match executor {
-            ExecutorDescriptor::Executable => warn!("Executing Executable not yet implemented."),
-            ExecutorDescriptor::Container {
-                engine,
-                name,
-                image,
-                volumes: _,
-                devices: _,
-                envs,
-                ports: _,
-                command,
-                args,
-                results_url
-            } => {
-                let container_config = ContainerConfiguration{
-                    name,
-                    engine,
-                    image,
-                    command,
-                    args,
-                    envs,
-                    results_url,
-                };
-                tokio::spawn(async move {
-                    ContainerManager::new(container_config).start().await;
-                });
+        executor_manager_unlocked.create_new_executor(executor);
+        // match executor {
+        //     ExecutorDescriptor::Executable => warn!("Executing Executable not yet implemented."),
+        //     ExecutorDescriptor::Container {
+        //         engine,
+        //         name,
+        //         image,
+        //         volumes: _,
+        //         devices: _,
+        //         envs,
+        //         ports: _,
+        //         command,
+        //         args,
+        //         results_url
+        //     } => {
+        //         let container_config = ContainerConfiguration{
+        //             name,
+        //             engine,
+        //             image,
+        //             command,
+        //             args,
+        //             envs,
+        //             results_url,
+        //         };
+        //         tokio::spawn(async move {
+        //             ContainerManager::new(container_config).start().await;
+        //         });
 
                 // let engine = match engine {
                 //     Engine::Docker => { "docker" }
@@ -81,7 +86,7 @@ pub fn setup_executors(executors: Vec<peer::configuration::Parameter<ExecutorDes
                 //     Ok(_) => { info!("Container started.") }
                 //     Err(_) => { error!("Failed to start container.") }
                 // };
-            }
-        }
+            //}
+        //}
     }
 }

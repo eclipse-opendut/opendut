@@ -1,8 +1,8 @@
-use std::{env, io::Cursor, path::PathBuf, process::Stdio};
+use std::{env, io::{Cursor, ErrorKind}, path::PathBuf, process::Stdio};
 
 use opendut_types::peer::executor::{ContainerCommand, ContainerCommandArgument, ContainerEnvironmentVariable, ContainerImage, ContainerName, Engine, ResultsUrl};
 
-use tokio::{fs, io::{AsyncBufReadExt, BufReader}, process::{Child, Command}, sync::mpsc::Receiver};
+use tokio::{fs, io::{AsyncBufReadExt, BufReader}, process::{Child, Command}, sync::{mpsc, watch}};
 use tracing::{error, warn, info};
 use url::Url;
 use uuid::Uuid;
@@ -38,6 +38,7 @@ pub struct ContainerManager{
     results_dir: PathBuf,
     webdav_client: WebdavClient,
     log_reader: Option<ContainerLogReader>,
+    termination_channel_rx: watch::Receiver<bool>,
 }
 
 const MONITOR_INTERVAL_MS: u64 = 1000;
@@ -46,13 +47,14 @@ const CONTAINER_RESULTS_DIRECTORY: &str = "/results";
 
 impl ContainerManager {
 
-    pub fn new(container_configuration: ContainerConfiguration) -> Self {
+    pub fn new(container_configuration: ContainerConfiguration, termination_channel_rx: watch::Receiver<bool>) -> Self {
         Self { 
             config: container_configuration,
             container_name: None,
             results_dir: env::temp_dir().join(format!("opendut-edgar-results_{}", Uuid::new_v4())),
             webdav_client: WebdavClient::new("some_dummy_token".to_string()), // TODO: Authenticate with actual token
             log_reader: None,
+            termination_channel_rx
         }
     }
 
@@ -64,6 +66,8 @@ impl ContainerManager {
     }
 
     async fn run(&mut self) -> Result<(), Error> {
+        let mut results_uploaded = false;
+
         self.create_results_dir().await?;
         self.start_container().await?;
         self.log_reader = Some(
@@ -74,20 +78,30 @@ impl ContainerManager {
 
         loop {
             self.log_reader.as_mut().unwrap().read().await;
+
+            // If the value in the channel has changed or the channel has been closed, we terminate
+            if self.termination_channel_rx.has_changed().unwrap_or(true) {
+                self.stop_container().await?;
+            }
+
+            if self.are_results_ready().await? {
+                self.remove_result_ready_indicator().await?;
+                self.upload_results().await?;
+                results_uploaded = true;
+            }
+
             match self.get_container_state().await? {
                 ContainerState::Running => (),
                 ContainerState::Exited => {
-                    self.remove_result_ready_indicator().await?;
-                    self.upload_results().await?;
+                    if ! results_uploaded {
+                        self.remove_result_ready_indicator().await?;
+                        self.upload_results().await?;
+                    }
                     break
                 },
                 state => {
                     warn!("Unexpected container state of '{}': {:?}", self.config.name, state)
                 },
-            }
-            if self.are_results_ready().await? {
-                self.remove_result_ready_indicator().await?;
-                self.upload_results().await?;
             }
 
             tokio::time::sleep(std::time::Duration::from_millis(MONITOR_INTERVAL_MS)).await;
@@ -179,32 +193,36 @@ impl ContainerManager {
         Ok(output.status.success())
     }
 
-    // async fn stop_container(&self) -> Result<(), Error>{
-    //     match &self.container_name {
-    //         Some(container_name) => {
-    //             let output = Command::new(&self.config.engine.to_string())
-    //                 .args(["stop", container_name])
-    //                 .output()
-    //                 .await
-    //                 .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} stop", &self.config.engine.to_string()), cause })?;
+    async fn stop_container(&self) -> Result<(), Error>{
+        match &self.container_name {
+            Some(container_name) => {
+                let output = Command::new(&self.config.engine.to_string())
+                    .args(["stop", container_name])
+                    .output()
+                    .await
+                    .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} stop", &self.config.engine.to_string()), cause })?;
 
-    //             match output.status.success() {
-    //                 true => Ok(()),
-    //                 false => Err(Error::Other { message: format!("Stopping container failed: {}", String::from_utf8_lossy(&output.stderr)).to_string()})
-    //             }
+                match output.status.success() {
+                    true => Ok(()),
+                    false => Err(Error::Other { message: format!("Stopping container failed: {}", String::from_utf8_lossy(&output.stderr)).to_string()})
+                }
 
-    //         },
-    //         None => Err(Error::Other { message: "stop_container() called without container_name present".to_string()}),
-    //     }
-    // }
+            },
+            None => Err(Error::Other { message: "stop_container() called without container_name present".to_string()}),
+        }
+    }
 
     async fn remove_result_ready_indicator(&self) -> Result<(), Error>{ 
         let mut indicator_file = self.results_dir.clone();
         indicator_file.push(RESULTS_READY_FILE);
-        fs::remove_file(&indicator_file)
-            .await
-            .map_err(|cause| Error::Other { message: format!("Failed to remove result indicator file '{}': {}", indicator_file.to_string_lossy(), cause) })?;
-        Ok(())
+        match fs::remove_file(&indicator_file).await {
+            Ok(_) => Ok(()),
+            Err(err) => match err.kind() {
+                ErrorKind::NotFound => Ok(()),
+                _ => Err(Error::Other { message: format!("Failed to remove result indicator file '{}': {}", indicator_file.to_string_lossy(), err) }),
+            },
+        }
+
     }
 
     async fn upload_results(&self) -> Result<(), Error>{
@@ -286,7 +304,7 @@ pub enum Error {
 
 struct ContainerLogReader {
     _log_proc: Child,
-    receiver: Receiver<Vec<u8>>,
+    receiver: mpsc::Receiver<Vec<u8>>,
 }
 
 impl ContainerLogReader {
