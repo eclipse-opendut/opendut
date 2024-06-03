@@ -223,7 +223,9 @@ async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Opti
                                 setup_cluster_info,
                                 configuration.network.bridge_name,
                             ).await;
-                            crate::service::executor::setup_executors(configuration2.executors, Arc::clone(&setup_cluster_info.executor_manager));
+                            let mut executor_manager = setup_cluster_info.executor_manager.lock().unwrap();
+                            executor_manager.terminate_executors();
+                            executor_manager.create_new_executors(configuration2.executors);
                         }
                     }
                 }
