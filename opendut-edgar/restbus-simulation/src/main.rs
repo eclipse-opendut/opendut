@@ -85,7 +85,7 @@ fn main() -> std::io::Result<()> {
     let arxml_parser: ArxmlParser = ArxmlParser {};
 
     if let Some(can_clusters) = arxml_parser
-        .parse_file(file_name.to_string()) 
+        .parse_file(&file_name.to_string(), true) 
     {
         let bus_name = "Cluster0";
         let target_file = "system.txt";

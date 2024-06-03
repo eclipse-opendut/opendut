@@ -5,10 +5,13 @@
 
 use std::collections::HashMap;
 
+use serde::{Serialize, Deserialize};
+
 /*
     Represents important data from Autosar CanCluster element.
 */
 #[derive(Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct CanCluster {
     pub name: String,
     pub baudrate: u64,
@@ -20,6 +23,7 @@ pub struct CanCluster {
     Represents important data from Autosar CanFrameTriggering element.
 */
 #[derive(Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct CanFrameTriggering {
     pub frame_triggering_name: String,
     pub frame_name: String,
@@ -39,6 +43,7 @@ pub struct CanFrameTriggering {
     Represents important parent data from an Autosar *PDU element.
 */
 #[derive(Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct PDUMapping {
     pub name: String,
     pub byte_order: bool,
@@ -55,6 +60,7 @@ pub struct PDUMapping {
     Enum of all supported PDU types. 
 */
 #[derive(Debug)]
+#[derive(Serialize, Deserialize)]
 pub enum PDU {
     ISignalIPDU(ISignalIPDU),
     NMPDU(NMPDU),
@@ -69,6 +75,7 @@ pub enum PDU {
     Represents important data from an Autosar ISignalIPDU element.
 */
 #[derive(Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct ISignalIPDU {
     pub cyclic_timing_period_value: f64,
     pub cyclic_timing_period_tolerance: Option<TimeRangeTolerance>,
@@ -86,6 +93,7 @@ pub struct ISignalIPDU {
     Represents important data from an Autosar NmPdu element.
 */
 #[derive(Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct NMPDU {
     pub unused_bit_pattern: bool,
     pub ungrouped_signals: Vec<ISignal>,
@@ -96,6 +104,7 @@ pub struct NMPDU {
     Represents important data from an Autosar ISignal element.
 */
 #[derive(Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct ISignal {
     pub name: String,
     pub byte_order: bool,
@@ -109,6 +118,7 @@ pub struct ISignal {
 */
 #[derive(Debug)]
 #[derive(Clone)]
+#[derive(Serialize, Deserialize)]
 pub enum InitValues {
     Single(u64),
     Array(Vec<u64>),
@@ -119,6 +129,7 @@ pub enum InitValues {
     Represents important data from an Autosar ISignal element.
 */
 #[derive(Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct E2EDataTransformationProps {
     pub transformer_name: String,
     pub data_id: u64,
@@ -126,6 +137,7 @@ pub struct E2EDataTransformationProps {
 }
 
 #[derive(Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct ISignalGroup {
     pub name: String,
     pub isignals: Vec<ISignal>,
@@ -134,12 +146,14 @@ pub struct ISignalGroup {
 }
 
 #[derive(Debug)]
+#[derive(Serialize, Deserialize)]
 pub enum TimeRangeTolerance {
     Relative(u64),
     Absolute(f64),
 }
 
 #[derive(Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct TimeRange {
     pub tolerance: Option<TimeRangeTolerance>,
     pub value: f64,

@@ -440,9 +440,23 @@ impl ArxmlParser {
         Main parsing method. Uses autosar-data libray for parsing ARXML.
         In the future, it might be extended to support Ethernet, Flexray, ... 
         The resources to develop that should not be thaat high, since it is basically just extending the current parser.
+        Param file_name: ARXML target file name without ".ser" extension
+        Param safe_or_load_serialized: First look if serialized parsed data already exists by looking for file_name + ".ser". 
+            If not exists, then parse and safe parsed structures as serialized data in file_name + ".ser"
         Returns a vector of CanCluster structures.
     */
-    pub fn parse_file(&self, file_name: String) -> Option<HashMap<String, CanCluster>> {
+    pub fn parse_file(&self, file_name: &String, safe_or_load_serialized: bool) -> Option<HashMap<String, CanCluster>> {
+        if safe_or_load_serialized {
+            println!("[+] Loading data from serialized file");
+            match load_serialized_data(file_name) {
+                Ok(value) => {
+                    println!("[+] Successfully loaded serialized data.");
+                    return Some(value)
+                }
+                _ => println!("[-] Could not load serialized data. Will continue parsing.")
+            }
+        }
+
         let start = Instant::now();
 
         let model = AutosarModel::new();
@@ -478,6 +492,14 @@ impl ArxmlParser {
         }
 
         println!("[+] Duration of parsing: {:?}", start.elapsed());
+
+        if safe_or_load_serialized {
+            println!("[+] Storing serialized data to file");
+            match store_serialized_data(file_name, &can_clusters) {
+                Ok(()) => println!("[+] Successfully stored serialized data."),
+                _ => println!("[-] Could not store serialized data.")
+            }
+        }
 
         return Some(can_clusters);
     }

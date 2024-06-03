@@ -7,6 +7,10 @@ use crate::restbus_structs::*;
 use crate::restbus_utils::*;
 
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::prelude::*;
+use std::io::Error;
+
 
 use autosar_data::{CharacterData, Element, ElementName, EnumItem};
 
@@ -295,7 +299,7 @@ fn process_isignal_init_value(isignal: &ISignal, bits: &mut Vec<bool>) {
         _ => return 
     }
 
-    if tmp_bit_array.len() != isignal.length.try_into().unwrap() {
+    if tmp_bit_array.len() != <u64 as TryInto<usize>>::try_into(isignal.length).unwrap() {
         panic!("Miscalculation for tmp_bit_array");
     }
 
@@ -661,4 +665,23 @@ pub fn get_timed_can_frames_from_bus(can_clusters: &HashMap<String, CanCluster>,
     }
 
     return timed_can_frames
+}
+
+pub fn load_serialized_data(file_name: &String) -> Result<HashMap<String, CanCluster>, Error> {
+    let mut file = File::open(file_name.to_owned() + ".ser")?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+   
+    let deserialized: HashMap<String, CanCluster> = serde_json::from_str(&contents)?;
+
+    return Ok(deserialized);
+}
+
+pub fn store_serialized_data(file_name: &String, can_clusters: &HashMap<String, CanCluster>) -> Result<(), Error> {
+    let serialized = serde_json::to_string(can_clusters)?;
+
+    let mut file = File::create(file_name.to_owned() + ".ser")?;
+    file.write_all(serialized.as_bytes())?;
+
+    Ok(())
 }
