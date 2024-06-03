@@ -48,7 +48,7 @@ jobs:
         with:
           pattern: "opendut-cleo-*-${{ github.sha }}.tar.gz"
           path: "./target/ci/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/opendut-cleo"
-      - name: Remove SHA-1 hash from end of file name for CLEO artifacts
+      - name: Move cleo tarballs and remove parent directory
         run: |
           TARGET_DIR="./target/ci/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/opendut-cleo"
           for file in $( echo $TARGET_DIR/* )  #`find` rather than `ls` to get relative paths
