@@ -53,6 +53,8 @@ jobs:
           TARGET_DIR="./target/ci/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/opendut-cleo"
           for file in $( echo $TARGET_DIR/* )  #`find` rather than `ls` to get relative paths
           do
+              echo $file
+              echo $file/*
               mv $file/* $TARGET_DIR
               rm -r $file
           done
