@@ -53,6 +53,7 @@ pub struct CreateContainerExecutorCli {
 #[serde(rename_all = "kebab-case")]
 struct ExecutorConfiguration {
     peer_id: PeerId,
+    #[serde(flatten)]
     executor_descriptor: ExecutorDescriptor,
 }
 

@@ -41,34 +41,24 @@ A JSON configuration file for a test executor that is passed to CLEO may look as
 ```json
 {
     "peer-id": "26ada545-e834-4af3-8b66-af860ad19dbe",
-    "executor-descriptor": {
-        "container": {
-            "engine": "docker",
-            "name": {
-                "Value": "nmap-test"
-            },
-            "image": "nmap-test",
-            "results-url": "http://nginx-webdav:80/",
-            "envs": [
-                {
-                "name": "ENVVAR1",
-                "value": "someenvironmentvariable"
-                },
-                {
-                "name": "ENVVAR2",
-                "value": "anotherenvironmentvariable"
-                }
-            ],
-            "args": [
-                "-A",
-                "-T4",
-                "127.0.0.1"
-            ],
-            "ports":  [],
-            "volumes": [],
-            "command": {"Empty"},
-            "devices": []
-        }
+    "container": {
+        "engine": "docker",
+        "name": "nmap-test",
+        "image": "nmap-test",
+        "results-url": "http://nginx-webdav:80/",
+        "envs": {
+            "ENVVAR1": "someenvironmentvariable",
+            "ENVVAR2": "anotherenvironmentvariable"
+        },
+        "args": [
+            "-A",
+            "-T4",
+            "127.0.0.1"
+        ],
+        "ports":  [],
+        "volumes": [],
+        "command": "",
+        "devices": []
     }
 }
 ``` 

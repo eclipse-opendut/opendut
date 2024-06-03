@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::ops::Not;
@@ -12,19 +13,25 @@ pub struct ExecutorDescriptors {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub enum ExecutorDescriptor {
     Executable,
     #[serde(rename_all = "kebab-case")]
     Container {
         engine: Engine,
+        #[serde(default)]
         name: ContainerName,
         image: ContainerImage,
         volumes: Vec<ContainerVolume>,
+        #[serde(default)]
         devices: Vec<ContainerDevice>,
+        #[serde(default, deserialize_with = "deserialize_container_environment_variable_vec")]
         envs: Vec<ContainerEnvironmentVariable>,
+        #[serde(default)]
         ports: Vec<ContainerPortSpec>,
+        #[serde(default)]
         command: ContainerCommand,
+        #[serde(default)]
         args: Vec<ContainerCommandArgument>,
         results_url: Option<ResultsUrl>,
     }
@@ -47,6 +54,7 @@ impl Display for Engine {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum ContainerName {
     #[default]
     Empty,
@@ -161,6 +169,17 @@ impl From<ContainerEnvironmentVariable> for (String, String) {
     fn from(value: ContainerEnvironmentVariable) -> Self {
         (value.name, value.value)
     }
+}
+
+fn deserialize_container_environment_variable_vec<'de, D>(deserializer: D) -> Result<Vec<ContainerEnvironmentVariable>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let map: HashMap<String, String> = HashMap::deserialize(deserializer)?;
+    Ok(map
+        .into_iter()
+        .map(|(name, value)| ContainerEnvironmentVariable { name, value })
+        .collect())
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
@@ -397,6 +416,7 @@ impl fmt::Display for ContainerPortSpec {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum ContainerCommand {
     #[default]
     Default,
