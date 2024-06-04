@@ -26,7 +26,6 @@ enum MonitorResult {
 
 const MONITOR_INTERVAL_MS: u64 = 100;
 
-// TODO: Implement exponential back-off when restarting cannelloni?
 impl CannelloniManager {
 
     pub fn new(is_server: bool, can_if_name: NetworkInterfaceName, server_port: Port, remote_ip: IpAddr, buffer_timeout: Duration, termination_request_token: Arc<AtomicBool>) -> Self {
@@ -40,35 +39,45 @@ impl CannelloniManager {
             cannelloni_proc: None
         }
     }
-    
+
     pub async fn run(&mut self) {
+        match self.run_internal().await {
+            Ok(_) => (),
+            Err(cause) => error!("{cause}"),
+        }
+    }
+    
+    async fn run_internal(&mut self) -> Result<(), Error> {
         loop {
             let mut cmd = Command::new("cannelloni");
             self.fill_cannelloni_cmd(&mut cmd).await;
 
-            match cmd.spawn() {
-                Ok(child) => {
-                    info!("Spawned cannelloni thread for remote IP {}.", self.remote_ip.to_string());
-                    self.cannelloni_proc = Some(child);
+            let child = cmd.spawn()
+                .map_err(|cause| Error::CommandLineProgramExecution { command: "cannelloni".to_string(), cause } )?;
 
-                    match self.monitor_process().await {
-                        MonitorResult::RestartCannelloni => (),
-                        MonitorResult::TerminateManager => {
-                            self.kill_cannelloni_process().await;
-                            return
-                        },
-                    }
+            info!("Spawned cannelloni thread for remote IP {}.", self.remote_ip.to_string());
+            self.cannelloni_proc = Some(child);
+
+            match self.monitor_process().await {
+                MonitorResult::RestartCannelloni => (),
+                MonitorResult::TerminateManager => {
+                    self.kill_cannelloni_process().await?;
+                    return Ok(())
                 },
-                Err(err) => error!("Failed to start cannelloni instance for remote IP {}: '{}'.", self.remote_ip.to_string(), err),
             }
+
         }
     }
 
-    async fn kill_cannelloni_process(&mut self) {
-        match self.cannelloni_proc.as_mut().unwrap().kill().await {
-            Ok(_) => (),
-            Err(err) => error!("Failed to start cannelloni instance for remote IP {}: '{}'.", self.remote_ip.to_string(), err),
-        }
+    async fn kill_cannelloni_process(&mut self) -> Result<(), Error> {
+        self.cannelloni_proc
+            .as_mut()
+            .ok_or(Error::Other { message: format!("Failed to get mutable reference of cannelloni process handle for remote IP {}.", self.remote_ip) })?
+            .kill()
+            .await
+            .map_err(|cause| Error::Other { message: format!("Failed to kill cannelloni process for remote IP {}: '{}'", self.remote_ip, cause) })?;
+
+        Ok(())
     }
 
     async fn monitor_process(&mut self) -> MonitorResult {
@@ -87,7 +96,7 @@ impl CannelloniManager {
                 return MonitorResult::TerminateManager
             }
 
-            tokio::time::sleep(std::time::Duration::from_millis(MONITOR_INTERVAL_MS)).await;
+            tokio::time::sleep(Duration::from_millis(MONITOR_INTERVAL_MS)).await;
         }
     }
 
@@ -146,4 +155,12 @@ impl CannelloniManager {
 
     }
     
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("Failure while invoking command line program '{command}': {cause}")]
+    CommandLineProgramExecution { command: String, cause: std::io::Error },
+    #[error("{message}")]
+    Other { message: String },
 }
