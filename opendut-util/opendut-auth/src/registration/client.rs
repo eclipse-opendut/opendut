@@ -9,8 +9,8 @@ use opendut_types::resources::Id;
 use opendut_types::util::net::{ClientCredentials, ClientId, ClientSecret};
 
 use crate::confidential::client::{ConfidentialClient, ConfidentialClientRef};
-use crate::confidential::error::WrappedClientRegistrationError;
 use crate::registration::config::RegistrationClientConfig;
+use crate::registration::error::WrappedClientRegistrationError;
 
 pub type RegistrationClientRef = Arc<RegistrationClient>;
 
