@@ -13,6 +13,7 @@ pub(crate) enum DockerCoreServices {
     Firefox,
     Telemetry,
     NginxWebdav,
+    Postgres,
 }
 
 impl DockerCoreServices {
@@ -28,6 +29,7 @@ impl DockerCoreServices {
             DockerCoreServices::Firefox => "firefox",
             DockerCoreServices::Telemetry => "telemetry",
             DockerCoreServices::NginxWebdav => "nginx-webdav",
+            DockerCoreServices::Postgres => "postgres",
         }
     }
 }
