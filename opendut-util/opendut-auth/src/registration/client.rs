@@ -9,6 +9,7 @@ use opendut_types::resources::Id;
 use opendut_types::util::net::{ClientCredentials, ClientId, ClientSecret};
 
 use crate::confidential::client::{ConfidentialClient, ConfidentialClientRef};
+use crate::confidential::error::WrappedClientRegistrationError;
 use crate::registration::config::RegistrationClientConfig;
 
 pub type RegistrationClientRef = Arc<RegistrationClient>;
@@ -27,14 +28,19 @@ pub enum RegistrationClientError {
     InvalidConfiguration {
         error: String,
     },
-    #[error("Failed request:\n {error}")]
+    #[error("Failed request: {error}.\nCause: {cause}")]
     RequestError {
         error: String,
-        inner: Box<dyn std::error::Error + Send + Sync>,  // RequestTokenError<OidcClientError<reqwest::Error>, BasicErrorResponse>
+        cause: Box<dyn std::error::Error + Send + Sync>,  // RequestTokenError<OidcClientError<reqwest::Error>, BasicErrorResponse>
     },
-    #[error("Failed to register new client:\n  {error}")]
+    #[error("Failed to register new client: {message}\nCause: {cause}")]
+    ClientParameter {
+        message: String,
+        cause: Box<dyn std::error::Error + Send + Sync>,
+    },
+    #[error("Failed to register new client. Cause: {cause}")]
     Registration {
-        error: String,
+        cause: WrappedClientRegistrationError,
     },
 }
 
@@ -63,10 +69,6 @@ impl RegistrationClient {
         })
     }
 
-    /*pub async fn from_config(config: RegistrationClientConfig) -> Result<Option<RegistrationClientRef>, RegistrationClientError> {
-        
-    }*/
-
     pub async fn register_new_client(&self, resource_id: Id) -> Result<ClientCredentials, RegistrationClientError> {
         match self.config.peer_credentials.clone() {
             Some(peer_credentials) => {
@@ -74,7 +76,7 @@ impl RegistrationClient {
             }
             None => {
                 let access_token = self.inner.get_token().await
-                    .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), inner: error.into() })?;
+                    .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), cause: Box::new(error) })?;
                 let additional_metadata = EmptyAdditionalClientMetadata {};
                 let redirect_uris = vec![self.config.device_redirect_url.clone()];
                 let grant_types = vec![CoreGrantType::ClientCredentials];
@@ -85,12 +87,14 @@ impl RegistrationClient {
 
                 let client_name: ClientName = ClientName::new(resource_id.to_string());
                 let resource_uri = self.config.client_home_base_url.resource_url(resource_id)
-                    .map_err(|error| RegistrationClientError::Registration {
-                        error: format!("Failed to forge client url: {:?}", error),
+                    .map_err(|error| RegistrationClientError::ClientParameter {
+                        message: format!("Failed to create resource url for client: {:?}", error),
+                        cause: Box::new(error),
                     })?;
                 let client_home_uri = ClientUrl::new(String::from(resource_uri))
-                    .map_err(|error| RegistrationClientError::Registration {
-                        error: format!("Failed to forge client url: {:?}", error),
+                    .map_err(|error| RegistrationClientError::ClientParameter {
+                        message: format!("Failed to create client home url: {:?}", error),
+                        cause: Box::new(error),
                     })?;
                 let response = request
                     .set_initial_access_token(Some(access_token.oauth_token()))
@@ -116,9 +120,7 @@ impl RegistrationClient {
                         })
                     }
                     Err(error) => {
-                        Err(RegistrationClientError::Registration {
-                            error: format!("{:?}", error),
-                        })
+                        Err(RegistrationClientError::Registration { cause: WrappedClientRegistrationError(error) })
                     }
                 }
             }
