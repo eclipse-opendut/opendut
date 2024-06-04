@@ -107,7 +107,7 @@ impl ClusterManagerService for ClusterManagerFacade {
             Some(id) => {
                 let id = ClusterId::try_from(id)
                     .map_err(|_| Status::invalid_argument("Invalid ClusterId."))?;
-                let configuration = self.cluster_manager.find_configuration(id).await;
+                let configuration = self.cluster_manager.lock().await.find_configuration(id).await;
                 match configuration {
                     Some(configuration) => {
                         Ok(Response::new(GetClusterConfigurationResponse {
@@ -132,7 +132,7 @@ impl ClusterManagerService for ClusterManagerFacade {
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn list_cluster_configurations(&self, request: Request<ListClusterConfigurationsRequest>) -> Result<Response<ListClusterConfigurationsResponse>, Status> {
         trace!("Received request: {}", request.debug_output());
-        let configurations = self.cluster_manager.list_configuration().await;
+        let configurations = self.cluster_manager.lock().await.list_configuration().await;
         Ok(Response::new(ListClusterConfigurationsResponse {
             result: Some(list_cluster_configurations_response::Result::Success(
                 ListClusterConfigurationsSuccess {
@@ -149,7 +149,7 @@ impl ClusterManagerService for ClusterManagerFacade {
         let request = request.into_inner();
         let cluster_deployment: ClusterDeployment = extract!(request.cluster_deployment)?;
 
-        let result = self.cluster_manager.store_cluster_deployment(cluster_deployment).await;
+        let result = self.cluster_manager.lock().await.store_cluster_deployment(cluster_deployment).await;
 
         match result {
             Err(error) => {
@@ -175,7 +175,7 @@ impl ClusterManagerService for ClusterManagerFacade {
         let request = request.into_inner();
         let cluster_id: ClusterId = extract!(request.cluster_id)?;
 
-        let result = self.cluster_manager.delete_cluster_deployment(cluster_id).await; // TODO: Replace with action
+        let result = self.cluster_manager.lock().await.delete_cluster_deployment(cluster_id).await; // TODO: Replace with action
 
         match result {
             Err(error) => {
@@ -198,7 +198,7 @@ impl ClusterManagerService for ClusterManagerFacade {
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn list_cluster_deployments(&self, request: Request<ListClusterDeploymentsRequest>) -> Result<Response<ListClusterDeploymentsResponse>, Status> {
         trace!("Received request: {}", request.debug_output());
-        let deployments = self.cluster_manager.list_deployment().await;
+        let deployments = self.cluster_manager.lock().await.list_deployment().await;
         Ok(Response::new(ListClusterDeploymentsResponse {
             result: Some(list_cluster_deployments_response::Result::Success(
                 ListClusterDeploymentsSuccess {

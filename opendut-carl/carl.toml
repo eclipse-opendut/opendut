@@ -29,6 +29,7 @@ scopes = "openid,profile,email"
 [peer]
 disconnect.timeout.ms = 30000
 can.server_port_range_start = 10000
+can.server_port_range_end = 20000
 ethernet.bridge.name.default = "br-opendut"
 
 [serve]

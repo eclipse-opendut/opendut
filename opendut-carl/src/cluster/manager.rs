@@ -1,9 +1,10 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
+use tokio::sync::Mutex;
 
 use futures::future::join_all;
 use futures::FutureExt;
-use tracing::{debug, error};
+use tracing::{debug, error, warn};
 
 use opendut_carl_api::carl::cluster::{DeleteClusterDeploymentError, StoreClusterDeploymentError};
 use opendut_types::cluster::{ClusterAssignment, ClusterConfiguration, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
@@ -19,7 +20,7 @@ use crate::peer::broker::PeerMessagingBrokerRef;
 use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
 
-pub type ClusterManagerRef = Arc<ClusterManager>;
+pub type ClusterManagerRef = Arc<Mutex<ClusterManager>>;
 
 #[derive(thiserror::Error, Debug, PartialEq)]
 pub enum DeployClusterError {
@@ -49,6 +50,7 @@ pub struct ClusterManager {
     peer_messaging_broker: PeerMessagingBrokerRef,
     vpn: Vpn,
     options: ClusterManagerOptions,
+    can_server_port_counter: u16,
 }
 
 impl ClusterManager {
@@ -58,15 +60,17 @@ impl ClusterManager {
         vpn: Vpn,
         options: ClusterManagerOptions,
     ) -> ClusterManagerRef {
-        Arc::new(Self {
+        let can_server_port_counter = options.can_server_port_range_start;
+        Arc::new(Mutex::new(Self {
             resources_manager,
             peer_messaging_broker,
             vpn,
             options,
-        })
+            can_server_port_counter
+        }))
     }
     #[tracing::instrument(skip(self), level="trace")]
-    pub async fn deploy(&self, cluster_id: ClusterId) -> Result<(), DeployClusterError> {
+    pub async fn deploy(&mut self, cluster_id: ClusterId) -> Result<(), DeployClusterError> {
 
         let cluster_config = self.resources_manager.resources(|resources| {
             resources.get::<ClusterConfiguration>(cluster_id)
@@ -101,12 +105,28 @@ impl ClusterManager {
             debug!("VPN disabled. Not creating VPN group.")
         }
 
-        let port_start = self.options.can_server_port_range_start;
-        let port_end = self.options.can_server_port_range_start + u16::try_from(member_interface_mapping.len())
+        let n_peers = u16::try_from(member_interface_mapping.len())
             .map_err(|cause| DeployClusterError::Internal { cluster_id, cause: cause.to_string() })?;
-        let can_server_ports = (port_start..port_end)
+        if self.options.can_server_port_range_start + n_peers >= self.options.can_server_port_range_end {
+            return Err(DeployClusterError::Internal { 
+                cluster_id, 
+                cause: format!("Failure while creating cluster <{}>. Port range [{}, {}) specified by 'can_server_port_range_start' 
+                and 'can_server_port_range_start' is too narrow for the configured number of peers ({})", 
+                cluster_id, self.options.can_server_port_range_start, self.options.can_server_port_range_end, n_peers) 
+            })
+        } else if self.options.can_server_port_range_start + n_peers * 2 >= self.options.can_server_port_range_end {
+            warn!("Port range [{}, {}) specified by 'can_server_port_range_start' 
+                and 'can_server_port_range_start' is very narrow for the configured number of peers ({}). This may cause errors on EDGAR.", 
+                self.options.can_server_port_range_start, self.options.can_server_port_range_end, n_peers);
+        }
+        if self.can_server_port_counter + n_peers >= self.options.can_server_port_range_end {
+            self.can_server_port_counter = self.options.can_server_port_range_end;
+        }
+        
+        let can_server_ports = (self.can_server_port_counter..self.can_server_port_counter + n_peers)
             .map(Port)
             .collect::<Vec<_>>();
+        self.can_server_port_counter += n_peers;
 
         let member_assignments: Vec<Result<PeerClusterAssignment, DeployClusterError>> = {
             let assignment_futures = std::iter::zip(member_interface_mapping, can_server_ports)
@@ -170,7 +190,7 @@ impl ClusterManager {
     }
 
     #[tracing::instrument(skip(self), level="trace")]
-    pub async fn store_cluster_deployment(&self, deployment: ClusterDeployment) -> Result<ClusterId, StoreClusterDeploymentError> {
+    pub async fn store_cluster_deployment(&mut self, deployment: ClusterDeployment) -> Result<ClusterId, StoreClusterDeploymentError> {
         let cluster_id = deployment.id;
         self.resources_manager.resources_mut(|resources| {
             resources.insert(deployment.id, deployment);
@@ -254,13 +274,16 @@ fn determine_member_interface_mapping(
 #[derive(Clone)]
 pub struct ClusterManagerOptions {
     pub can_server_port_range_start: u16,
+    pub can_server_port_range_end: u16,
 }
 impl ClusterManagerOptions {
     pub fn load(config: &config::Config) -> Result<Self, opendut_util::settings::LoadError> {
         let can_server_port_range_start = config.get::<u16>("peer.can.server_port_range_start")?;
+        let can_server_port_range_end = config.get::<u16>("peer.can.server_port_range_end")?;
 
         Ok(ClusterManagerOptions {
             can_server_port_range_start,
+            can_server_port_range_end,
         })
     }
 }
@@ -348,7 +371,7 @@ mod test {
                 cluster_configuration,
             }).await?;
 
-            assert_that!(fixture.testee.deploy(cluster_id).await, ok(eq(())));
+            assert_that!(fixture.testee.lock().await.deploy(cluster_id).await, ok(eq(())));
 
 
             let expectation = || {
@@ -427,7 +450,7 @@ mod test {
         let unknown_cluster = ClusterId::random();
 
         assert_that!(
-            fixture.testee.deploy(unknown_cluster).await,
+            fixture.testee.lock().await.deploy(unknown_cluster).await,
             err(eq(DeployClusterError::ClusterConfigurationNotFound(unknown_cluster)))
         );
 
