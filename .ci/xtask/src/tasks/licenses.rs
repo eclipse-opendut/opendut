@@ -179,14 +179,15 @@ mod sbom {
                                 "Apache-2.0"
                                 | "BSD-3-Clause"
                                 | "BSL-1.0"
+                                | "CC0-1.0"
                                 | "ISC"
                                 | "MIT"
                                 | "MIT AND Apache-2.0"
                                 | "MIT AND BSD-3-Clause"
                                 | "MIT-0"
-                                | "Zlib"
                                 | "MPL-2.0"
-                                | "CC0-1.0"
+                                | "PostgreSQL"
+                                | "Zlib"
                                 => license, //leave unchanged
 
                                 other => panic!("Unknown license '{}' for package '{}'. Please define a mapping.", other, package.name)

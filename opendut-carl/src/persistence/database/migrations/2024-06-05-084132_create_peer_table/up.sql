@@ -1,0 +1,5 @@
+CREATE TABLE peer (
+  id UUID PRIMARY KEY,
+  name VARCHAR NOT NULL,
+  location VARCHAR NULL
+)
