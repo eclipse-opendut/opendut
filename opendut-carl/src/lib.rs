@@ -46,6 +46,7 @@ opendut_util::app_info!();
 mod actions;
 mod cluster;
 mod metrics;
+mod persistence;
 mod peer;
 mod resources;
 pub mod settings;
@@ -77,7 +78,7 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> Result<
     Ok(())
 }
 
-pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
+pub async fn create(settings: LoadedConfig) -> Result<()> {
     info!("Started with configuration: {settings:?}");
 
     let address: SocketAddr = {

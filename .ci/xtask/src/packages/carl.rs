@@ -17,6 +17,7 @@ pub struct CarlCli {
 
 #[derive(clap::Subcommand)]
 pub enum TaskCli {
+    Diesel(diesel::DieselCli),
     Distribution(crate::tasks::distribution::DistributionCli),
     Docker(crate::tasks::docker::DockerCli),
     Licenses(crate::tasks::licenses::LicensesCli),
@@ -32,6 +33,7 @@ impl CarlCli {
     #[tracing::instrument(name="carl", skip(self))]
     pub fn default_handling(self) -> crate::Result {
         match self.task {
+            TaskCli::Diesel(implementation) => implementation.handle()?,
             TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target }) => {
                 for target in target.iter() {
                     build::build_release(target)?;
@@ -116,7 +118,9 @@ pub mod distribution {
 
     mod cleo {
         use anyhow::Context;
+
         use crate::tasks::distribution::bundle;
+
         use super::*;
 
         #[tracing::instrument]
@@ -150,7 +154,9 @@ pub mod distribution {
 
     mod edgar {
         use anyhow::Context;
+
         use crate::tasks::distribution::bundle;
+
         use super::*;
 
         #[tracing::instrument]
@@ -336,5 +342,48 @@ pub mod distribution {
 
             Ok(())
         }
+    }
+}
+
+pub mod diesel {
+    use std::process::Command;
+
+    use crate::core::dependency::Crate;
+    use crate::core::util::RunRequiringSuccess;
+    use crate::util;
+
+    use super::*;
+
+    /// Manage the database using `diesel`
+    #[derive(clap::Parser)]
+    pub struct DieselCli {
+        /// Additional parameters to pass through to the `diesel` CLI
+        #[arg(raw=true)]
+        pub pass_through: Vec<String>,
+    }
+    impl DieselCli {
+        pub fn handle(self) -> crate::Result {
+            util::install_crate(Crate::DieselCli)?;
+
+            let carl_database_dir = carl_database_dir();
+
+            assert!(
+                carl_database_dir.is_dir(),
+                "Could not find database directory in CARL, expected at {carl_database_dir:?}."
+            );
+
+            Command::new("diesel")
+                .args(self.pass_through)
+                .current_dir(carl_database_dir)
+                .run_requiring_success()
+        }
+    }
+
+    fn carl_database_dir() -> PathBuf {
+        crate::constants::workspace_dir()
+            .join(SELF_PACKAGE.ident())
+            .join("src")
+            .join("persistence")
+            .join("database")
     }
 }

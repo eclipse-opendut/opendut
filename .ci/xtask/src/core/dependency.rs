@@ -5,21 +5,29 @@ pub enum Crate {
     CargoSbom,
     CargoTarpaulin,
     Cross,
+    DieselCli,
     Mdbook,
     MdbookPlantuml,
     Trunk,
 }
 impl Crate {
-    pub fn ident(&self) -> String {
+    pub fn ident(&self) -> &'static str {
         match self {
             Crate::CargoDeny => "cargo-deny",
             Crate::CargoBundleLicenses => "cargo-bundle-licenses",
             Crate::CargoSbom => "cargo-sbom",
             Crate::Cross => "cross",
+            Crate::DieselCli => "diesel_cli",
             Crate::Mdbook => "mdbook",
             Crate::MdbookPlantuml => "mdbook-plantuml",
             Crate::CargoTarpaulin => "cargo-tarpaulin",
             Crate::Trunk => "trunk",
-        }.to_string()
+        }
+    }
+    pub fn install_command_args(&self) -> &[&'static str] {
+        match self {
+            Crate::DieselCli => &["--no-default-features", "--features", "postgres-bundled"],
+            _ => &[],
+        }
     }
 }
