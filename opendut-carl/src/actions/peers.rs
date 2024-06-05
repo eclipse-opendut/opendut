@@ -436,6 +436,7 @@ mod test {
                     configuration: NetworkInterfaceConfiguration::Ethernet,
                 },
                 tags: vec![],
+                accessories: vec![],
             };
 
             let changed_descriptor = PeerDescriptor {
@@ -592,6 +593,7 @@ mod test {
                             configuration: NetworkInterfaceConfiguration::Ethernet,
                         },
                         tags: vec![],
+                        accessories: vec![],
                     },
                     DeviceDescriptor {
                         id: peer_a_device_2,
@@ -602,6 +604,7 @@ mod test {
                             configuration: NetworkInterfaceConfiguration::Ethernet,
                         },
                         tags: vec![],
+                        accessories: vec![],
                     }
                 ]
             },

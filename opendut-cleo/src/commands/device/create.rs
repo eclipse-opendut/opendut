@@ -69,6 +69,7 @@ impl CreateDeviceCli {
                         .map(DeviceTag::try_from)
                         .collect::<Result<_, _>>()
                         .map_err(|error| error.to_string())?,
+                    accessories: vec![],
                 };
                 peer_descriptor.topology.devices.push(new_device);
             }

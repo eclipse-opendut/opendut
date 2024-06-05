@@ -188,6 +188,7 @@ impl TryFrom<UserDeviceConfiguration> for DeviceDescriptor {
             description: Some(description),
             interface,
             tags: vec![],
+            accessories: vec![],
         })
     }
 }

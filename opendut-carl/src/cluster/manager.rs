@@ -472,6 +472,7 @@ mod test {
                     configuration: NetworkInterfaceConfiguration::Ethernet,
                 },
                 tags: Vec::new(),
+                accessories: Vec::new(),
             }
         }
 
@@ -597,6 +598,7 @@ mod test {
                             configuration: NetworkInterfaceConfiguration::Ethernet,
                         },
                         tags: vec![],
+                        accessories: vec![],
                     }
                 ]
             },

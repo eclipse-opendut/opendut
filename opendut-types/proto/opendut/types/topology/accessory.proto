@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package opendut.types.topology;
+
+import "opendut/types/util/uuid.proto";
+
+message AccessoryId {
+  opendut.types.util.Uuid uuid = 1;
+}
+
+message AccessoryName {
+  string value = 1;
+}
+
+message AccessoryDescription {
+  string value = 1;
+}
+
+message AccessoryDescriptor {
+  opendut.types.topology.AccessoryId id = 1;
+  opendut.types.topology.AccessoryName name = 2;
+  opendut.types.topology.AccessoryDescription description = 3;
+  oneof model {
+    MansonHcs3304 manson_hcs3304 = 5;
+  }
+}
+
+message MansonHcs3304 {
+    string serial_port = 1;
+}
+
