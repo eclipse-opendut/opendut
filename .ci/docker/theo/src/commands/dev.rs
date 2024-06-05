@@ -47,10 +47,10 @@ impl DevCli {
                 docker_compose_network_create()?;
 
                 println!("Starting services...");
-                docker_compose_up_expose_ports(DockerCoreServices::Firefox.as_str(), &expose)?;
-                docker_compose_up_expose_ports(DockerCoreServices::Keycloak.as_str(), &expose)?;
+                docker_compose_up_expose_ports(DockerCoreServices::Firefox.as_str(), expose)?;
+                docker_compose_up_expose_ports(DockerCoreServices::Keycloak.as_str(), expose)?;
                 crate::core::docker::keycloak::wait_for_keycloak_provisioned()?;
-                start_netbird(&expose)?;
+                start_netbird(expose)?;
                 crate::core::docker::netbird::wait_for_netbird_api_key()?;
 
                 println!("Stopping carl in container (if present).");
@@ -119,13 +119,13 @@ fn start_carl_traefik_forwarder() -> Result<i32, Error> {
 
     let mut command = DockerCommand::new();
     command.arg("compose")
-        .arg("-f")
+        .arg("--file")
         .arg(format!(".ci/docker/{}/docker-compose.yml", DockerCoreServices::CarlOnHost));
 
     if running_in_opendut_vm() {
-        command.arg("-f").arg(format!(".ci/docker/{}/vm.yml", DockerCoreServices::CarlOnHost));
+        command.arg("--file").arg(format!(".ci/docker/{}/vm.yml", DockerCoreServices::CarlOnHost));
     } else {
-        command.arg("-f").arg(format!(".ci/docker/{}/localhost.yml", DockerCoreServices::CarlOnHost));
+        command.arg("--file").arg(format!(".ci/docker/{}/localhost.yml", DockerCoreServices::CarlOnHost));
     };
     command.arg("--env-file")
         .arg(".env-theo")
@@ -134,6 +134,6 @@ fn start_carl_traefik_forwarder() -> Result<i32, Error> {
 
     command
         .arg("up")
-        .arg("-d")
+        .arg("--detach")
         .expect_status("Failed to execute compose command for netbird traefik forwarder.")
 }
