@@ -3,13 +3,14 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use std::str::FromStr;
 
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
+use clap_complete::Shell;
 use console::Style;
 
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::peer::PeerSetup;
 use opendut_types::topology::DeviceName;
-use opendut_util::settings::{FileFormat, load_config};
+use opendut_util::settings::{FileFormat, load_config, LoadedConfig};
 
 mod commands;
 pub mod parse;
@@ -73,6 +74,12 @@ enum Commands {
         resource: DeleteResource,
     },
     Config,
+    /// Generates shell completion
+    Completions {
+        /// Shell to generate completions for
+        #[arg(value_enum)]
+        shell: Shell
+    },
 }
 
 #[derive(Subcommand)]
@@ -199,7 +206,7 @@ async fn execute() -> Result<()> {
         .expect("Failed to load config"); // TODO: Point the user to the source of the error.
 
 
-    let mut carl = {
+    let carl = {
 
         let host = settings.config.get_string("network.carl.host")
             .expect("Configuration should contain a valid host name to connect to CARL");
@@ -220,7 +227,12 @@ async fn execute() -> Result<()> {
 
     let args = Args::parse();
 
-    match args.command {
+    execute_command(args.command, carl, &settings).await?;
+    Ok(())
+}
+
+async fn execute_command(commands: Commands, mut carl: CarlClient, settings: &LoadedConfig) -> Result<()>{
+    match commands {
         Commands::List { resource, output } => {
             match resource {
                 ListResource::ClusterConfigurations(implementation) => {
@@ -312,6 +324,10 @@ async fn execute() -> Result<()> {
         }
         Commands::Config => {
             println!("Show cleo configuration: {:?}", settings);
+        }
+        Commands::Completions { shell } => {
+            let mut cmd = Args::command();
+            commands::completions::print_completions(shell, &mut cmd);
         }
     }
     Ok(())
