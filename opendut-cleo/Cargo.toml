@@ -12,6 +12,7 @@ opendut-util = { workspace = true }
 
 
 clap = { workspace = true, features = ["derive"] }
+clap_complete = { workspace = true}
 cli-table = { workspace = true }
 config = { workspace = true }
 console = { workspace = true }

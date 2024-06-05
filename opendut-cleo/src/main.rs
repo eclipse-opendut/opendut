@@ -1,15 +1,18 @@
+use std::io;
 use std::ops::Not;
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::str::FromStr;
 
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{Parser, CommandFactory, Subcommand, ValueEnum, Command};
+use clap_complete::{generate, Generator, Shell};
 use console::Style;
 
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::peer::PeerSetup;
 use opendut_types::topology::DeviceName;
 use opendut_util::settings::{FileFormat, load_config};
+use crate::commands::completions::CompletionsCli;
 
 mod commands;
 pub mod parse;
@@ -25,7 +28,10 @@ opendut_util::app_info!();
 #[command(long_version = crate::app_info::formatted())]
 struct Args {
     #[command(subcommand)]
-    command: Commands,
+    command: Option<Commands>,
+    /// Generates shell completion
+    #[arg(long = "generate", value_enum)]
+    generator: Option<Shell>
 }
 
 #[derive(Subcommand)]
@@ -218,10 +224,12 @@ async fn execute() -> Result<()> {
             .expect("Failed to create CARL client")
     };
 
-    let args = Args::parse();
+    let mut args = Args::parse();
+    generate_completions(&mut args).await?;
+
 
     match args.command {
-        Commands::List { resource, output } => {
+        Some(Commands::List { resource, output }) => {
             match resource {
                 ListResource::ClusterConfigurations(implementation) => {
                     implementation.execute(&mut carl, output).await?;
@@ -240,7 +248,7 @@ async fn execute() -> Result<()> {
                 }
             }
         }
-        Commands::Create { resource, output } => {
+        Some(Commands::Create { resource, output }) => {
             match resource {
                 CreateResource::ClusterConfiguration(implementation) => {
                     implementation.execute(&mut carl, output).await?;
@@ -262,13 +270,13 @@ async fn execute() -> Result<()> {
                 }
             }
         }
-        Commands::GenerateSetupString(implementation) => {
+        Some(Commands::GenerateSetupString(implementation)) => {
             implementation.execute(&mut carl).await?;
         }
-        Commands::DecodeSetupString(implementation) => {
+        Some(Commands::DecodeSetupString(implementation)) => {
             implementation.execute().await?;
         }
-        Commands::Describe { resource, output } => {
+        Some(Commands::Describe { resource, output }) => {
             match resource {
                 DescribeResource::ClusterConfiguration(implementation)=> {
                     implementation.execute(&mut carl, output).await?
@@ -281,7 +289,7 @@ async fn execute() -> Result<()> {
                 }
             }
         }
-        Commands::Delete { resource} => {
+        Some(Commands::Delete { resource}) => {
             match resource {
                 DeleteResource::ClusterConfiguration(implementation) => {
                     implementation.execute(&mut carl).await?;
@@ -303,16 +311,17 @@ async fn execute() -> Result<()> {
                 }
             }
         }
-        Commands::Find { resource, output } => {
+        Some(Commands::Find { resource, output }) => {
             match resource {
                 FindResource::Device(implementation) => {
                     implementation.execute(&mut carl, output).await?;
                 }
             }
         }
-        Commands::Config => {
+        Some(Commands::Config) => {
             println!("Show cleo configuration: {:?}", settings);
         }
+        None => { }
     }
     Ok(())
 }
@@ -326,4 +335,16 @@ impl FromStr for ParseableSetupString {
             .map(|setup| ParseableSetupString(Box::new(setup)))
             .map_err(|error| error.to_string())
     }
+}
+
+pub async fn generate_completions(args: &mut Args) -> crate::Result<()> {
+    if let Some(generator) = args.generator {
+        let mut cmd = Args::command();
+        crate::commands::completions::print_completions(generator, &mut cmd);
+
+    } else {
+        println!("no shell given to generate completions");
+    }
+
+    Ok(())
 }
