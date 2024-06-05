@@ -2,7 +2,8 @@
 
 - Download the opendut-edgar binary for your target from the openDuT GitHub project: https://github.com/eclipse-opendut/opendut/releases
 - Unpack the archive on your target system.
-- If you want to use CAN, follow the steps from [CAN Setup](#can-setup) before continuing
+- If you want to use CAN, follow the steps in [CAN Setup](#can-setup) before continuing.
+- If you want to use a self-hosted backend server without DNS name or with a self-signed certificate, follow the steps in [Self-Hosted Backend Server](#self-hosted-backend-server) before continuing.
 
 
 - EDGAR comes with a scripted setup, which you can initiate by running:  
@@ -62,6 +63,43 @@ install the packages:
   sudo cp libcannelloni-common.so.0 /lib
   sudo cp cannelloni /usr/local/bin
   ```
+
+## Self-Hosted Backend Server
+
+### DNS
+If your backend server does not have a public DNS entry, you will need to adjust the `/etc/hosts/` file, by appending entries like this (using your server's IP address):
+```
+123.456.789.101 opendut.local
+123.456.789.101 carl.opendut.local
+123.456.789.101 auth.opendut.local
+123.456.789.101 netbird.opendut.local
+123.456.789.101 netbird-api.opendut.local
+123.456.789.101 signal.opendut.local
+```
+
+Now the following command should complete without errors:
+```
+ping carl.opendut.local
+```
+
+### Self-Signed Certificate with Unmanaged Setup
+If you plan to use the unmanaged setup and your NetBird server uses a self-signed certificate, follow these steps:
+
+1. Create the certificate directory on the OLU: `mkdir -p /usr/local/share/ca-certificates/`
+
+2. Copy your NetBird server certificate onto the OLU, for example, by running the following from outside the OLU:  
+   ```sh
+   scp certificate.crt root@10.10.4.1:/usr/local/share/ca-certificates/
+   ```  
+   Ensure that the certificate has a file extension of "crt".
+
+3. Run `update-ca-certificates` on the OLU.  
+   It should output "1 added", if everything works correctly.  
+
+4. Now the following commands should complete without errors:
+   ```
+   curl https://netbird-api.opendut.local
+   ```
 
 ## Troubleshooting
 - In case of issues during the managed setup see:
