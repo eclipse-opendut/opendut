@@ -313,7 +313,6 @@ mod tests {
         let device_id_1 = Uuid::new_v4();
         let device_id_2 = Uuid::new_v4();
         let accessory_id_1 = Uuid::new_v4();
-        let accessory_id_2 = Uuid::new_v4();
 
         let native = crate::topology::Topology {
             devices: vec![
@@ -409,16 +408,6 @@ mod tests {
                         value: String::from("Some accessory"),
                     }), 
                     model: Some(Model::MansonHcs3304(MansonHcs3304 { serial_port: "ttyS0".to_string() })), 
-                },
-                crate::proto::topology::AccessoryDescriptor { 
-                    id: Some(Clone::clone(&accessory_id_2).into()), 
-                    name: Some(crate::proto::topology::AccessoryName {
-                        value: String::from("accessory-2"),
-                    }), 
-                    description: Some(crate::proto::topology::AccessoryDescription {
-                        value: String::from("Some other accessory"),
-                    }), 
-                    model: Some(Model::MansonHcs3304(MansonHcs3304 { serial_port: "ttyS1".to_string() })), 
                 },
             ]
         };
