@@ -3,6 +3,7 @@ syntax = "proto3";
 package opendut.carl.services.peer_manager;
 
 import "opendut/types/topology/device.proto";
+import "opendut/types/topology/accessory.proto";
 import "opendut/types/peer/peer.proto";
 
 service PeerManager {
@@ -11,6 +12,7 @@ service PeerManager {
   rpc GetPeerDescriptor(GetPeerDescriptorRequest) returns (GetPeerDescriptorResponse) {}
   rpc ListPeerDescriptors(ListPeerDescriptorsRequest) returns (ListPeerDescriptorsResponse) {}
   rpc ListDevices(ListDevicesRequest) returns (ListDevicesResponse) {}
+  rpc ListAccessories(ListAccessoriesRequest) returns (ListAccessoriesResponse) {}
   rpc GeneratePeerSetup(GeneratePeerSetupRequest) returns (GeneratePeerSetupResponse) {}
 }
 
@@ -201,4 +203,13 @@ message IllegalDevicesError {
 
 message IllegalDevicesErrorDeviceAlreadyExists {
   opendut.types.topology.DeviceId device_id = 1;
+}
+
+//
+// ListAccessoriesRequest
+//
+message ListAccessoriesRequest {}
+
+message ListAccessoriesResponse {
+  repeated opendut.types.topology.AccessoryDescriptor accessories = 1;
 }

@@ -16,7 +16,7 @@ use opendut_types::util::net::NetworkInterfaceName;
 use opendut_util::logging::NonDisclosingRequestExtension;
 
 use crate::actions;
-use crate::actions::{DeletePeerDescriptorParams, GeneratePeerSetupParams, ListDevicesParams, ListPeerDescriptorsParams, StorePeerDescriptorOptions, StorePeerDescriptorParams};
+use crate::actions::{DeletePeerDescriptorParams, GeneratePeerSetupParams, ListDevicesParams, ListAccessoriesParams, ListPeerDescriptorsParams, StorePeerDescriptorOptions, StorePeerDescriptorParams};
 use crate::grpc::extract;
 use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
@@ -209,6 +209,22 @@ impl PeerManagerService for PeerManagerFacade {
             .collect();
 
         Ok(Response::new(ListDevicesResponse { devices }))
+    }
+    
+    #[tracing::instrument(skip(self, request), level="trace")]
+    async fn list_accessories(&self, request: Request<ListAccessoriesRequest>) -> Result<Response<ListAccessoriesResponse>, Status> {
+
+        trace!("Received request: {:?}", request);
+
+        let accessories = actions::list_accessories(ListAccessoriesParams {
+            resources_manager: Arc::clone(&self.resources_manager),
+        }).await.expect("Accessories should be listable");
+
+        let accessories = accessories.into_iter()
+            .map(From::from)
+            .collect();
+
+        Ok(Response::new(ListAccessoriesResponse { accessories }))
     }
 
     #[tracing::instrument(skip(self, request), level="trace")]

@@ -44,6 +44,12 @@ pub use peers::{
 };
 
 pub use peers::{
+    list_accessories,
+    ListAccessoriesParams,
+    ListAccessoriesError,
+};
+
+pub use peers::{
     assign_cluster,
     AssignClusterParams,
     AssignClusterError,

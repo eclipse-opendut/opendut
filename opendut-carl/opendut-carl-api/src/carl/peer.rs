@@ -79,6 +79,14 @@ pub enum ListDevicesError {
 }
 
 #[derive(thiserror::Error, Debug)]
+pub enum ListAccessoriesError {
+    #[error("An internal error occurred computing the list of accessories:\n  {cause}")]
+    Internal {
+        cause: String
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
 #[error("{message}")]
 pub struct  CreateSetupError {
     message: String,
@@ -98,10 +106,10 @@ mod client {
     use tracing::error;
 
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerSetup};
-    use opendut_types::topology::DeviceDescriptor;
+    use opendut_types::topology::{DeviceDescriptor, AccessoryDescriptor};
 
     use crate::carl::{ClientError, extract};
-    use crate::carl::peer::{CreateSetupError, DeletePeerDescriptorError, GetPeerDescriptorError, ListDevicesError, ListPeerDescriptorsError, StorePeerDescriptorError};
+    use crate::carl::peer::{CreateSetupError, DeletePeerDescriptorError, GetPeerDescriptorError, ListDevicesError, ListAccessoriesError, ListPeerDescriptorsError, StorePeerDescriptorError};
     use crate::proto::services::peer_manager;
     use crate::proto::services::peer_manager::peer_manager_client::PeerManagerClient;
 
@@ -272,6 +280,23 @@ mod client {
                 },
                 Err(status) => {
                     Err(ListDevicesError::Internal { cause: format!("gRPC failure: {status}") })
+                },
+            }
+        }
+
+        pub async fn list_accessories(&mut self) -> Result<Vec<AccessoryDescriptor>, ListAccessoriesError> {
+            let request = tonic::Request::new(peer_manager::ListAccessoriesRequest {});
+
+            match self.inner.list_accessories(request).await {
+                Ok(response) => {
+                    response.into_inner().accessories
+                        .into_iter()
+                        .map(AccessoryDescriptor::try_from)
+                        .collect::<Result<_, _>>()
+                        .map_err(|cause| ListAccessoriesError::Internal { cause: cause.to_string() })
+                },
+                Err(status) => {
+                    Err(ListAccessoriesError::Internal { cause: format!("gRPC failure: {status}") })
                 },
             }
         }

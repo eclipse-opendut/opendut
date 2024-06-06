@@ -472,7 +472,6 @@ mod test {
                     configuration: NetworkInterfaceConfiguration::Ethernet,
                 },
                 tags: Vec::new(),
-                accessories: Vec::new(),
             }
         }
 
@@ -496,6 +495,7 @@ mod test {
                 },
                 topology: Topology {
                     devices,
+                    accessories: vec![],
                 },
                 executors: ExecutorDescriptors { executors: vec![] },
             }
@@ -598,9 +598,9 @@ mod test {
                             configuration: NetworkInterfaceConfiguration::Ethernet,
                         },
                         tags: vec![],
-                        accessories: vec![],
                     }
-                ]
+                ],
+                accessories: vec![],
             },
             executors: ExecutorDescriptors {
                 executors: vec![ExecutorDescriptor::Container {

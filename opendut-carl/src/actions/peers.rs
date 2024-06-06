@@ -11,6 +11,7 @@ pub use opendut_carl_api::carl::peer::{
     DeletePeerDescriptorError,
     IllegalDevicesError,
     ListDevicesError,
+    ListAccessoriesError,
     ListPeerDescriptorsError,
     StorePeerDescriptorError,
 };
@@ -20,7 +21,7 @@ use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerSetup};
 use opendut_types::{peer, proto};
 use opendut_types::peer::configuration::{PeerConfiguration, PeerNetworkConfiguration, PeerConfiguration2};
 use opendut_types::proto::peer::configuration::{peer_configuration_parameter, PeerConfigurationParameterTargetPresent, PeerConfigurationParameterExecutor};
-use opendut_types::topology::{DeviceDescriptor, DeviceId};
+use opendut_types::topology::{AccessoryDescriptor, DeviceDescriptor, DeviceId};
 use opendut_types::util::net::{AuthConfig, Certificate, ClientCredentials, NetworkInterfaceName};
 use opendut_types::vpn::VpnPeerConfiguration;
 use opendut_util::ErrorOr;
@@ -57,7 +58,9 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
             let old_peer_descriptor = resources.get::<PeerDescriptor>(peer_id);
             let is_new_peer = old_peer_descriptor.is_none();
 
-            let (devices_to_add, devices_to_remove): (Vec<DeviceDescriptor>, Vec<DeviceDescriptor>) = if let Some(old_peer_descriptor) = old_peer_descriptor {
+            let (devices_to_add, devices_to_remove, accessories_to_add, accessories_to_remove): 
+                (Vec<DeviceDescriptor>, Vec<DeviceDescriptor>, Vec<AccessoryDescriptor>, Vec<AccessoryDescriptor>) = if let Some(old_peer_descriptor) = old_peer_descriptor {
+
                 debug!("Updating peer descriptor of '{peer_name}' <{peer_id}>.\n  Old: {old_peer_descriptor:?}\n  New: {peer_descriptor:?}");
                 let devices_to_add = peer_descriptor.topology.devices.iter()
                     .filter(|device| old_peer_descriptor.topology.devices.contains(device).not())
@@ -66,11 +69,23 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
                 let devices_to_remove = old_peer_descriptor.topology.devices.into_iter()
                     .filter(|device| peer_descriptor.topology.devices.contains(device).not())
                     .collect();
-                (devices_to_add, devices_to_remove)
+                let accessories_to_add = peer_descriptor.topology.accessories.iter()
+                    .filter(|accessory| old_peer_descriptor.topology.accessories.contains(accessory).not())
+                    .cloned()
+                    .collect();
+                let accessories_to_remove = old_peer_descriptor.topology.accessories.into_iter()
+                    .filter(|accessory| peer_descriptor.topology.accessories.contains(accessory).not())
+                    .collect();
+                (devices_to_add, devices_to_remove, accessories_to_add, accessories_to_remove)
             }
             else {
                 debug!("Storing peer descriptor of '{peer_name}' <{peer_id}>.\n  {peer_descriptor:?}");
-                (peer_descriptor.topology.devices.to_vec(), Vec::<DeviceDescriptor>::new())
+                (
+                    peer_descriptor.topology.devices.to_vec(), 
+                    Vec::<DeviceDescriptor>::new(), 
+                    peer_descriptor.topology.accessories.to_vec(), 
+                    Vec::<AccessoryDescriptor>::new()
+                )
             };
 
             devices_to_remove.iter().for_each(|device| {
@@ -85,6 +100,20 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
                 let device_name = &device.name;
                 resources.insert(device.id, Clone::clone(device));
                 info!("Added device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}>.");
+            });
+
+            accessories_to_remove.iter().for_each(|accessory| {
+                let accessory_id = accessory.id;
+                let accessory_name = &accessory.name;
+                resources.remove(accessory.id);
+                info!("Removed accessory '{accessory_name}' <{accessory_id}> of peer '{peer_name}' <{peer_id}>.");
+            });
+
+            accessories_to_add.iter().for_each(|accessory| {
+                let accessory_id = accessory.id;
+                let accessory_name = &accessory.name;
+                resources.insert(accessory.id, Clone::clone(accessory));
+                info!("Added accessory '{accessory_name}' <{accessory_id}> of peer '{peer_name}' <{peer_id}>.");
             });
 
             let peer_network_configuration = {
@@ -252,6 +281,32 @@ pub async fn list_devices(params: ListDevicesParams) -> Result<Vec<DeviceDescrip
         info!("Successfully queried all peers.");
 
         Ok(devices)
+    }
+
+    inner(params).await
+        .inspect_err(|err| error!("{err}"))
+}
+
+pub struct ListAccessoriesParams {
+    pub resources_manager: ResourcesManagerRef,
+}
+
+#[tracing::instrument(skip(params), level="trace")]
+pub async fn list_accessories(params: ListAccessoriesParams) -> Result<Vec<AccessoryDescriptor>, ListAccessoriesError> {
+
+    async fn inner(params: ListAccessoriesParams) -> Result<Vec<AccessoryDescriptor>, ListAccessoriesError> {
+
+        let resources_manager = params.resources_manager;
+
+        debug!("Querying all accessories.");
+
+        let accessories = resources_manager.resources(|resource| {
+            resource.iter::<AccessoryDescriptor>().cloned().collect::<Vec<_>>()
+        }).await;
+
+        info!("Successfully queried all accessories.");
+
+        Ok(accessories)
     }
 
     inner(params).await
@@ -436,7 +491,6 @@ mod test {
                     configuration: NetworkInterfaceConfiguration::Ethernet,
                 },
                 tags: vec![],
-                accessories: vec![],
             };
 
             let changed_descriptor = PeerDescriptor {
@@ -444,7 +498,8 @@ mod test {
                     devices: vec![
                         Clone::clone(&fixture.peer_a_descriptor.topology.devices[0]),
                         Clone::clone(&additional_device),
-                    ]
+                    ],
+                    accessories: vec![]
                 },
                 ..Clone::clone(&fixture.peer_a_descriptor)
             };
@@ -593,7 +648,6 @@ mod test {
                             configuration: NetworkInterfaceConfiguration::Ethernet,
                         },
                         tags: vec![],
-                        accessories: vec![],
                     },
                     DeviceDescriptor {
                         id: peer_a_device_2,
@@ -604,9 +658,9 @@ mod test {
                             configuration: NetworkInterfaceConfiguration::Ethernet,
                         },
                         tags: vec![],
-                        accessories: vec![],
                     }
-                ]
+                ],
+                accessories: vec![]
             },
             executors: ExecutorDescriptors {
                 executors: vec![],
