@@ -12,17 +12,17 @@ use crate::confidential::client::ConfidentialClient;
 #[derive(Clone, Debug)]
 pub struct TonicAuthenticationService {
     inner: Channel,
-    authentication_manager: Option<Arc<ConfidentialClient>>,
+    confidential_client: Option<Arc<ConfidentialClient>>,
 }
 
 impl TonicAuthenticationService {
     pub fn new(
         inner: Channel,
-        authentication_manager: Option<Arc<ConfidentialClient>>,
+        confidential_client: Option<Arc<ConfidentialClient>>,
     ) -> Self {
         TonicAuthenticationService {
             inner,
-            authentication_manager,
+            confidential_client,
         }
     }
 }
@@ -43,10 +43,10 @@ impl Service<Request<BoxBody>> for TonicAuthenticationService {
         // for details on why this is necessary
         let clone = self.inner.clone();
         let mut inner = std::mem::replace(&mut self.inner, clone);
-        let authentication_manager = self.authentication_manager.clone();
+        let confidential_client = self.confidential_client.clone();
 
         Box::pin(async move {
-            let token_result = authentication_manager.as_ref()
+            let token_result = confidential_client.as_ref()
                 .map(|manager| manager.get_token());
 
             return match token_result {

@@ -7,6 +7,7 @@ use tracing::trace;
 use opendut_carl_api::proto::services::cluster_manager::*;
 use opendut_carl_api::proto::services::cluster_manager::cluster_manager_server::{ClusterManager as ClusterManagerService, ClusterManagerServer};
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
+use opendut_util::logging::NonDisclosingRequestExtension;
 
 use crate::actions;
 use crate::actions::{CreateClusterConfigurationParams, DeleteClusterConfigurationParams};
@@ -38,7 +39,7 @@ impl ClusterManagerService for ClusterManagerFacade {
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn create_cluster_configuration(&self, request: Request<CreateClusterConfigurationRequest>) -> Result<Response<CreateClusterConfigurationResponse>, Status> {
 
-        trace!("Received request: {:?}", request);
+        trace!("Received request: {}", request.debug_output());
 
         let request = request.into_inner();
         let cluster_configuration: ClusterConfiguration = extract!(request.cluster_configuration)?;
@@ -68,7 +69,7 @@ impl ClusterManagerService for ClusterManagerFacade {
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn delete_cluster_configuration(&self, request: Request<DeleteClusterConfigurationRequest>) -> Result<Response<DeleteClusterConfigurationResponse>, Status> {
 
-        trace!("Received request: {:?}", request);
+        trace!("Received request: {}", request.debug_output());
 
         let request = request.into_inner();
         let cluster_id: ClusterId = extract!(request.cluster_id)?;
@@ -98,7 +99,7 @@ impl ClusterManagerService for ClusterManagerFacade {
     }
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn get_cluster_configuration(&self, request: Request<GetClusterConfigurationRequest>) -> Result<Response<GetClusterConfigurationResponse>, Status> {
-        trace!("Received request: {:?}", request);
+        trace!("Received request: {}", request.debug_output());
         match request.into_inner().id {
             None => {
                 Err(Status::invalid_argument("ClusterId is required."))
@@ -130,7 +131,7 @@ impl ClusterManagerService for ClusterManagerFacade {
     }
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn list_cluster_configurations(&self, request: Request<ListClusterConfigurationsRequest>) -> Result<Response<ListClusterConfigurationsResponse>, Status> {
-        trace!("Received request: {:?}", request);
+        trace!("Received request: {}", request.debug_output());
         let configurations = self.cluster_manager.list_configuration().await;
         Ok(Response::new(ListClusterConfigurationsResponse {
             result: Some(list_cluster_configurations_response::Result::Success(
@@ -143,7 +144,7 @@ impl ClusterManagerService for ClusterManagerFacade {
 
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn store_cluster_deployment(&self, request: Request<StoreClusterDeploymentRequest>) -> Result<Response<StoreClusterDeploymentResponse>, Status> {
-        trace!("Received request: {:?}", request);
+        trace!("Received request: {}", request.debug_output());
 
         let request = request.into_inner();
         let cluster_deployment: ClusterDeployment = extract!(request.cluster_deployment)?;
@@ -169,7 +170,7 @@ impl ClusterManagerService for ClusterManagerFacade {
     }
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn delete_cluster_deployment(&self, request: Request<DeleteClusterDeploymentRequest>) -> Result<Response<DeleteClusterDeploymentResponse>, Status> {
-        trace!("Received request: {:?}", request);
+        trace!("Received request: {}", request.debug_output());
 
         let request = request.into_inner();
         let cluster_id: ClusterId = extract!(request.cluster_id)?;
@@ -196,7 +197,7 @@ impl ClusterManagerService for ClusterManagerFacade {
 
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn list_cluster_deployments(&self, request: Request<ListClusterDeploymentsRequest>) -> Result<Response<ListClusterDeploymentsResponse>, Status> {
-        trace!("Received request: {:?}", request);
+        trace!("Received request: {}", request.debug_output());
         let deployments = self.cluster_manager.list_deployment().await;
         Ok(Response::new(ListClusterDeploymentsResponse {
             result: Some(list_cluster_deployments_response::Result::Success(

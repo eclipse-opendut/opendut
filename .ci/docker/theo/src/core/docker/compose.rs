@@ -14,17 +14,17 @@ pub(crate) fn docker_compose_build(compose_dir: &str) -> Result<i32, Error> {
         .expect_status(format!("Failed to execute docker compose build for directory: {}.", compose_dir).as_str())
 }
 
-pub fn docker_compose_up_expose_ports(compose_dir: &str, expose: &bool) -> crate::Result {
+pub fn docker_compose_up_expose_ports(compose_dir: &str, expose: bool) -> crate::Result {
     let mut command = DockerCommand::new();
     command.arg("compose")
-        .arg("-f")
+        .arg("--file")
         .arg(format!(".ci/docker/{}/docker-compose.yml", compose_dir));
 
-    if determine_if_ports_shall_be_exposed(*expose) {
-        command.arg("-f")
+    if determine_if_ports_shall_be_exposed(expose) {
+        command.arg("--file")
             .arg(format!(".ci/docker/{}/expose_ports.yml", compose_dir))
     } else {
-        command.arg("-f")
+        command.arg("--file")
             .arg(format!(".ci/docker/{}/localhost_ports.yml", compose_dir))
     };
     command.arg("--env-file")
@@ -32,7 +32,7 @@ pub fn docker_compose_up_expose_ports(compose_dir: &str, expose: &bool) -> crate
         .arg("--env-file")
         .arg(".env")
         .arg("up")
-        .arg("-d")
+        .arg("--detach")
         .expect_status(&format!("Failed to execute docker compose command for {}.", compose_dir))?;
     Ok(())
 }
@@ -52,7 +52,7 @@ pub(crate) fn docker_compose_down(compose_dir: &str, delete_volumes: bool) -> Re
 pub(crate) fn docker_compose_network_create() -> Result<i32, Error> {
     DockerCommand::new()
         .arg("compose")
-        .arg("-f")
+        .arg("--file")
         .arg(format!("./.ci/docker/{}/docker-compose.yml", DockerCoreServices::Network))
         .arg("up")
         .arg("--force-recreate")

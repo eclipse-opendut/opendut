@@ -34,6 +34,7 @@ wasm-client = [
 [dependencies]
 opendut-auth = { workspace = true, optional = true }
 opendut-types = { workspace = true }
+opendut-util = { workspace = true }
 
 chrono = { workspace = true, optional = true, default-features = false, features = ["clock", "serde", "wasmbind"] }
 cfg-if = { workspace = true }

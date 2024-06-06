@@ -59,11 +59,15 @@ services:
      - ./otel-collector.yml:/etc/collector-gateway.yaml
      - /var/lib/docker/containers:/var/lib/docker/containers:ro
      - /var/run/docker.sock:/var/run/docker.sock:ro
+     - "../../../resources/development/tls/:/opendut-tls/:ro"
+   environment:
+     - "SSL_CERT_FILE=/opendut-tls/insecure-development-ca.pem"
    command: [ "--config=/etc/collector-gateway.yaml" ]
    user: "0"
    depends_on:
      - tempo
      - loki
+   restart: on-failure
    networks:
      opendutnet:
        ipv4_address: 192.168.32.220

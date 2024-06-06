@@ -1,4 +1,5 @@
 use std::fmt::Display;
+
 use oauth2::basic::BasicErrorResponse;
 use oauth2::RequestTokenError;
 use reqwest::Error;
@@ -22,10 +23,15 @@ pub enum OidcClientError {
 pub enum ConfidentialClientError {
     #[error("Failed to load OIDC configuration: '{message}'. Cause: '{cause}'")]
     Configuration { message: String, cause: Box<dyn std::error::Error + Send + Sync> },
+    #[error("{message}\n  {cause}")]
+    KeycloakConnection { message: String, cause: backoff::Error<reqwest::Error> },
+    #[error("{message}\n  {cause}")]
+    UrlParse { message: String, cause: url::ParseError },
     #[error("OIDC configuration error: '{message}'.")]
     Other { message: String },
 }
 
+/// Printable version of the RequestTokenError with complete error message
 #[derive(thiserror::Error, Debug)]
 pub struct WrappedRequestTokenError(pub RequestTokenError<OidcClientError, BasicErrorResponse>);
 impl Display for WrappedRequestTokenError {

@@ -9,6 +9,7 @@ use crate::confidential::error::OidcClientError;
 pub trait PemFromConfig {
     fn from_config_path(config_key: &str, config: &Config) -> impl std::future::Future<Output=Result<Pem, OidcClientError>> + Send;
     fn from_file_path(relative_file_path: &str) -> impl std::future::Future<Output=Result<Pem, OidcClientError>> + Send;
+    fn from_file_path_sync(relative_file_path: &str) -> Result<Pem, OidcClientError>;
 }
 
 impl PemFromConfig for Pem {
@@ -25,9 +26,15 @@ impl PemFromConfig for Pem {
             .map_err(|error| OidcClientError::LoadCustomCA(format!("Could not determine path for custom CA: {}. Error: {}", relative_file_path, error)))?;
         read_pem_from_file_path(&ca_file_path)
     }
+
+    fn from_file_path_sync(relative_file_path: &str) -> Result<Pem, OidcClientError> {
+        let ca_file_path = project::make_path_absolute(relative_file_path)
+            .map_err(|error| OidcClientError::LoadCustomCA(format!("Could not determine path for custom CA: {}. Error: {}", relative_file_path, error)))?;
+        read_pem_from_file_path(&ca_file_path)
+    }
 }
 
-fn read_pem_from_file_path(ca_file_path: &PathBuf) -> Result<Pem, OidcClientError> {
+pub fn read_pem_from_file_path(ca_file_path: &PathBuf) -> Result<Pem, OidcClientError> {
     let mut buffer = Vec::new();
     let ca_file_path_as_string = ca_file_path.clone().into_os_string().into_string()
         .map_err(|error| OidcClientError::LoadCustomCA(format!("Could not determine CA path. Error: {:?}", error)))?;

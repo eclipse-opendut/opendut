@@ -23,6 +23,7 @@ impl GenerateSetupStringCli {
         match created_setup.encode() {
             Ok(setup_string) => {
                 println!("{}", setup_string);
+                eprintln!("Setup-Strings may only be used to set up one host. For setting up multiple hosts, you should create a peer for each host.");
             }
             Err(_) => {
                 println!("Could not configure setup string...")

@@ -33,8 +33,9 @@ pub enum AuthError {
     ExpirationFieldMissing { message: String },
 }
 
+#[derive(Clone)]
 pub struct Token {
-    value: String,
+    pub value: String,
 }
 
 impl std::fmt::Display for Token {
@@ -85,7 +86,6 @@ impl ConfidentialClient {
         };
         Ok(Arc::new(client))
     }
-
     fn update_storage_token(response: &BasicTokenResponse, state: &mut RwLockWriteGuard<Option<TokenStorage>>) -> Result<Token, AuthError> {
         let access_token = response.access_token().clone();
         let expires_in = match response.expires_in() {
@@ -134,7 +134,6 @@ impl ConfidentialClient {
                 }
             }
         };
-
         Ok(access_token)
     }
 

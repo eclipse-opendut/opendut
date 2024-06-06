@@ -35,14 +35,14 @@ pub fn show_error_if_unhealthy_containers_were_found() -> Result<(), Error> {
     }
 }
 
-pub fn start_netbird(expose: &bool) -> Result<i32, Error> {
+pub fn start_netbird(expose: bool) -> Result<i32, Error> {
     let mut command = DockerCommand::new();
     command.arg("compose")
-        .arg("-f")
+        .arg("--file")
         .arg(".ci/docker/netbird/docker-compose.yml");
 
-    if determine_if_ports_shall_be_exposed(*expose) {
-        command.arg("-f")
+    if determine_if_ports_shall_be_exposed(expose) {
+        command.arg("--file")
             .arg(".ci/docker/netbird/expose_ports.yml");
     };
     command.arg("--env-file")
@@ -50,7 +50,7 @@ pub fn start_netbird(expose: &bool) -> Result<i32, Error> {
         .arg("--env-file")
         .arg(".env")
         .arg("up")
-        .arg("-d")
+        .arg("--detach")
         .expect_status("Failed to execute compose command for netbird")
 }
 

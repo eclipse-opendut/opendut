@@ -78,7 +78,7 @@ mod auth_tests {
     async fn delete_client(client: RegistrationClientRef, delete_client_id: String, issuer_ca: Pem) -> Result<(), RegistrationClientError> {
         let client_id = client.inner.config.client_id.clone().to_string();
         let access_token = client.inner.get_token().await
-            .map_err(|error| RegistrationClientError::RequestError { error: format!("Could not fetch token to delete client {}!", client_id), inner: error.into() })?;
+            .map_err(|error| RegistrationClientError::RequestError { error: format!("Could not fetch token to delete client {}!", client_id), cause: error.into() })?;
         let delete_client_url = client.inner.config.issuer_url.join("/admin/realms/opendut/clients/").unwrap().join(&delete_client_id.to_string())
             .map_err(|error| RegistrationClientError::InvalidConfiguration { error: format!("Invalid client URL: {}", error) })?;
 
@@ -100,7 +100,7 @@ mod auth_tests {
 
         let response = reqwest_client.async_http_client(request)
             .await
-            .map_err(|error| RegistrationClientError::Registration { error: error.to_string() })?;
+            .map_err(|error| RegistrationClientError::RequestError { error: "OIDC client delete request failed!".to_string(), cause: Box::new(error) })?;
         assert_eq!(response.status_code, 204, "Failed to delete client with id '{:?}': {:?}", client_id, response.body);
 
         Ok(())

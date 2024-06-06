@@ -55,11 +55,11 @@ pub struct DestroyArgs {
 }
 
 impl TestenvCli {
-    pub(crate) fn default_handling(&self) -> crate::Result {
+    pub(crate) fn default_handling(self) -> crate::Result {
         load_theo_environment_variables();
         DockerCommand::new().docker_checks()?;
 
-        match &self.task {
+        match self.task {
             TaskCli::Build => {
                 Self::docker_compose_build_testenv_services()?;
             }
@@ -71,21 +71,21 @@ impl TestenvCli {
                 if !skip_firefox {
                     docker_compose_up_expose_ports(DockerCoreServices::Firefox.as_str(), expose)?;
                 }
+                docker_compose_up_expose_ports(DockerCoreServices::Keycloak.as_str(), expose)?;
+                crate::core::docker::keycloak::wait_for_keycloak_provisioned()?;
                 if !skip_telemetry {
                     docker_compose_up_expose_ports(DockerCoreServices::Telemetry.as_str(), expose)?;
                 }
-                docker_compose_up_expose_ports(DockerCoreServices::Keycloak.as_str(), expose)?;
-                crate::core::docker::keycloak::wait_for_keycloak_provisioned()?;
                 start_netbird(expose)?;
                 crate::core::docker::netbird::wait_for_netbird_api_key()?;
 
-                println!("Stopping carl traefik forward (if present).");
+                println!("Stopping CARL Traefik forward (if present).");
                 docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), false)?;
 
                 start_carl_in_docker()?;
                 show_error_if_unhealthy_containers_were_found()?;
 
-                println!("Go to OpenDuT Browser at http://localhost:3000/")
+                println!("Go to OpenDuT Browser at http://localhost:3000/");
             }
             TaskCli::Stop => {
                 docker_compose_down(DockerCoreServices::Keycloak.as_str(), false)?;
@@ -148,7 +148,7 @@ fn start_carl_in_docker() -> Result<i32, Error> {
         .add_common_args(DockerCoreServices::Carl.as_str())
         .add_netbird_api_key_to_env()?
         .arg("up")
-        .arg("-d")
-        .expect_status("Failed to execute compose command for edgar.")
+        .arg("--detach")
+        .expect_status("Failed to execute compose command for CARL.")
 }
 

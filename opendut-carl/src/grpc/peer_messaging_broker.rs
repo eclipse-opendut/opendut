@@ -16,6 +16,7 @@ use opendut_carl_api::proto::services::peer_messaging_broker::{Downstream, ListP
 use opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_broker_server::PeerMessagingBrokerServer;
 use opendut_carl_api::proto::services::peer_messaging_broker::upstream;
 use opendut_types::peer::PeerId;
+use opendut_util::logging::NonDisclosingRequestExtension;
 
 use crate::peer::broker::{OpenError, PeerMessagingBrokerRef};
 
@@ -37,7 +38,7 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn list_peers(&self, request: Request<ListPeersRequest>) -> Result<Response<ListPeersResponse>, Status> {
 
-        trace!("Received request: {:?}", request);
+        trace!("Received request: {}", request.debug_output());
 
         let peers = self.peer_messaging_broker.list_peers().await;
 
