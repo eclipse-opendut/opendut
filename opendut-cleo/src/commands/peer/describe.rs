@@ -36,6 +36,13 @@ pub fn render_peer_descriptor(peer_descriptor: PeerDescriptor, output: DescribeO
         .map(|device| device.name.value())
         .collect::<Vec<_>>()
         .join(", ");
+    let peer_accessories = peer_descriptor
+        .topology
+        .accessories
+        .iter()
+        .map(|accessory| accessory.name.value())
+        .collect::<Vec<_>>()
+        .join(", ");
     let text = match output {
         DescribeOutputFormat::Text => {
             format!(
@@ -43,10 +50,11 @@ pub fn render_peer_descriptor(peer_descriptor: PeerDescriptor, output: DescribeO
                     "
                 Peer: {}
                   Id: {}
-                  Devices: [{}]\
+                  Devices: [{}]
+                  Accessories: [{}]\
             "
                 ),
-                peer_descriptor.name, peer_descriptor.id, peer_devices
+                peer_descriptor.name, peer_descriptor.id, peer_devices, peer_accessories
             )
         }
         DescribeOutputFormat::Json => serde_json::to_string(&peer_descriptor).unwrap(),

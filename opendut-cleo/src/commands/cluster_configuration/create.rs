@@ -152,7 +152,6 @@ mod test {
                     configuration: NetworkInterfaceConfiguration::Ethernet,
                 },
                 tags: vec![],
-                accessories: vec![],
             },
             DeviceDescriptor {
                 id: DeviceId::random(),
@@ -163,7 +162,6 @@ mod test {
                     configuration: NetworkInterfaceConfiguration::Ethernet,
                 },
                 tags: vec![],
-                accessories: vec![],
             },
             DeviceDescriptor {
                 id: DeviceId::random(),
@@ -174,7 +172,6 @@ mod test {
                     configuration: NetworkInterfaceConfiguration::Ethernet,
                 },
                 tags: vec![],
-                accessories: vec![],
             }
         ]
     }

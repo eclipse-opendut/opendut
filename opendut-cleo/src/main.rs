@@ -89,6 +89,7 @@ enum ListResource {
     Peers(commands::peer::list::ListPeersCli),
     Devices(commands::device::list::ListDevicesCli),
     ContainerExecutor(commands::executor::list::ListContainerExecutorCli),
+    Accessories(commands::accessory::list::ListAccessoriesCli),
 }
 
 #[derive(clap::Args)]
@@ -119,7 +120,8 @@ enum CreateResource {
     Peer(commands::peer::create::CreatePeerCli),
     ContainerExecutor(commands::executor::create::CreateContainerExecutorCli),
     NetworkInterface(commands::network_interface::create::CreateNetworkInterfaceCli),
-    Device(commands::device::create::CreateDeviceCli)
+    Device(commands::device::create::CreateDeviceCli),
+    Accessory(commands::accessory::create::CreateAccessoryCli),
 }
 
 #[derive(Subcommand)]
@@ -142,6 +144,7 @@ enum DeleteResource {
     ContainerExecutor(commands::executor::delete::DeleteContainerExecutorCli),
     NetworkInterface(commands::network_interface::delete::DeleteNetworkInterfaceCli),
     Device(commands::device::delete::DeleteDeviceCli),
+    Accessory(commands::accessory::delete::DeleteAccessoryCli),
 }
 
 #[derive(ValueEnum, Clone)]
@@ -232,6 +235,9 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
                 ListResource::Devices(implementation) => {
                     implementation.execute(&mut carl, output).await?;
                 }
+                ListResource::Accessories(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
+                }
             }
         }
         Commands::Create { resource, output } => {
@@ -253,6 +259,9 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
                     implementation.execute(&mut carl, output).await?;
                 }
                 CreateResource::Device(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
+                }
+                CreateResource::Accessory(implementation) => {
                     implementation.execute(&mut carl, output).await?;
                 }
             }
@@ -297,6 +306,9 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
                     implementation.execute(&mut carl).await?;
                 }
                 DeleteResource::Device(implementation) => {
+                    implementation.execute(&mut carl).await?;
+                }
+                DeleteResource::Accessory(implementation) => {
                     implementation.execute(&mut carl).await?;
                 }
             }
