@@ -4,7 +4,6 @@ package opendut.types.topology;
 
 import "opendut/types/util/uuid.proto";
 import "opendut/types/util/net.proto";
-import "opendut/types/topology/accessory.proto";
 
 message DeviceId {
   opendut.types.util.Uuid uuid = 1;
@@ -16,7 +15,6 @@ message DeviceDescriptor {
   opendut.types.topology.DeviceDescription description = 3;
   opendut.types.util.NetworkInterfaceDescriptor interface = 4;
   repeated opendut.types.topology.DeviceTag tags = 5;
-  repeated AccessoryDescriptor accessories = 6; 
 }
 
 message DeviceName {

@@ -8,11 +8,12 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Topology {
     pub devices: Vec<DeviceDescriptor>,
+    pub accessories: Vec<AccessoryDescriptor>,
 }
 
 impl Topology {
-    pub fn new(devices: Vec<DeviceDescriptor>) -> Self {
-        Self { devices }
+    pub fn new(devices: Vec<DeviceDescriptor>, accessories: Vec<AccessoryDescriptor>) -> Self {
+        Self { devices, accessories }
     }
 }
 
@@ -265,7 +266,6 @@ pub struct DeviceDescriptor {
     pub description: Option<DeviceDescription>,
     pub interface: NetworkInterfaceDescriptor,
     pub tags: Vec<DeviceTag>,
-    pub accessories: Vec<AccessoryDescriptor>,
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
@@ -306,12 +306,19 @@ pub enum AccessoryModel {
 }
 
 impl AccessoryModel {
-    pub fn pretty_name(&self) -> String {
+    pub fn display_name(&self) -> String {
         match self {
-            AccessoryModel::MansonHcs3304 { .. } => "Manson HCS-3304 Power Supply".to_string(),
+            AccessoryModel::MansonHcs3304 { .. } => String::from("Manson HCS-3304 Power Supply"),
         }
     }
 }
+
+impl fmt::Display for AccessoryModel {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 
 #[derive(Clone, Debug, Eq, Default, PartialEq, Serialize, Deserialize)]
 pub struct AccessoryDescription(pub(crate) String);

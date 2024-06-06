@@ -41,6 +41,11 @@ impl From<crate::topology::Topology> for Topology {
                 .into_iter()
                 .map(DeviceDescriptor::from)
                 .collect(),
+            accessory_descriptors: value
+                .accessories
+                .into_iter()
+                .map(AccessoryDescriptor::from)
+                .collect(),
         }
     }
 }
@@ -49,12 +54,18 @@ impl TryFrom<Topology> for crate::topology::Topology {
     type Error = ConversionError;
 
     fn try_from(value: Topology) -> Result<Self, Self::Error> {
-        value
-            .device_descriptors
-            .into_iter()
-            .map(DeviceDescriptor::try_into)
-            .collect::<Result<_, _>>()
-            .map(|devices| Self { devices })
+        Ok(Self { 
+            devices: value
+                .device_descriptors
+                .into_iter()
+                .map(DeviceDescriptor::try_into)
+                .collect::<Result<_, _>>()?,
+            accessories: value
+                .accessory_descriptors
+                .into_iter()
+                .map(AccessoryDescriptor::try_into)
+                .collect::<Result<_, _>>()?,
+        })
     }
 }
 
@@ -124,7 +135,6 @@ impl From<crate::topology::DeviceDescriptor> for DeviceDescriptor {
             description: Some(value.description.into()),
             interface: Some(value.interface.into()),
             tags: value.tags.into_iter().map(|value| value.into()).collect(),
-            accessories: value.accessories.into_iter().map(|value| value.into()).collect(),
         }
     }
 }
@@ -155,11 +165,6 @@ impl TryFrom<DeviceDescriptor> for crate::topology::DeviceDescriptor {
             .into_iter()
             .map(TryFrom::try_from)
             .collect::<Result<_, _>>()?;
-        let accessories: Vec<crate::topology::AccessoryDescriptor> = value
-            .accessories
-            .into_iter()
-            .map(TryFrom::try_from)
-            .collect::<Result<_, _>>()?;
 
         Ok(Self {
             id: device_id,
@@ -167,7 +172,6 @@ impl TryFrom<DeviceDescriptor> for crate::topology::DeviceDescriptor {
             description: device_description,
             interface,
             tags: device_tags,
-            accessories,
         })
     }
 }
@@ -240,28 +244,6 @@ impl TryFrom<AccessoryDescription> for crate::topology::AccessoryDescription {
             .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
-
-// impl From<Option<crate::topology::AccessoryModel>> for AccessoryModel {
-//     fn from(value: Option<crate::topology::AccessoryModel>) -> Self {
-//         Self {
-//             value: String::from(value.unwrap_or_default().value()),
-//         }
-//     }
-// }
-
-// impl TryFrom<AccessoryModel> for crate::topology::AccessoryModel {
-//     type Error = ConversionError;
-
-//     fn try_from(value: AccessoryModel) -> Result<Self, Self::Error> {
-//         type ErrorBuilder =
-//             ConversionErrorBuilder<AccessoryModel, crate::topology::AccessoryModel>;
-
-//         crate::topology::AccessoryModel::try_from(value.value)
-//             .map_err(|cause| ErrorBuilder::message(cause.to_string()))
-//     }
-// }
-
-
 
 impl From<crate::topology::AccessoryDescriptor> for AccessoryDescriptor {
     fn from(value: crate::topology::AccessoryDescriptor) -> Self {
@@ -344,12 +326,6 @@ mod tests {
                         configuration: NetworkInterfaceConfiguration::Ethernet,
                     },
                     tags: vec![DeviceTag::try_from("tag-1")?, DeviceTag::try_from("tag-2")?],
-                    accessories: vec![AccessoryDescriptor { 
-                        id: Clone::clone(&accessory_id_1).into(), 
-                        name: AccessoryName::try_from("accessory-1")?, 
-                        description: Some(AccessoryDescription::try_from("Some accessory")?), 
-                        model: AccessoryModel::MansonHcs3304 { serial_port: "ttyS0".to_string() } 
-                    }],
                 },
                 crate::topology::DeviceDescriptor {
                     id: Clone::clone(&device_id_2).into(),
@@ -360,12 +336,14 @@ mod tests {
                         configuration: NetworkInterfaceConfiguration::Ethernet,
                     },
                     tags: vec![DeviceTag::try_from("tag-2")?],
-                    accessories: vec![AccessoryDescriptor { 
-                        id: Clone::clone(&accessory_id_2).into(), 
-                        name: AccessoryName::try_from("accessory-2")?, 
-                        description: Some(AccessoryDescription::try_from("Some other accessory")?), 
-                        model: AccessoryModel::MansonHcs3304 { serial_port: "ttyS1".to_string() } 
-                    }],
+                },
+            ],
+            accessories: vec![
+                AccessoryDescriptor { 
+                    id: Clone::clone(&accessory_id_1).into(), 
+                    name: AccessoryName::try_from("accessory-1")?, 
+                    description: Some(AccessoryDescription::try_from("Some accessory")?), 
+                    model: AccessoryModel::MansonHcs3304 { serial_port: "ttyS0".to_string() } 
                 },
             ],
         };
@@ -398,18 +376,6 @@ mod tests {
                         })
                         .unwrap(),
                     ],
-                    accessories: vec![
-                        crate::proto::topology::AccessoryDescriptor { 
-                            id: Some(Clone::clone(&accessory_id_1).into()), 
-                            name: Some(crate::proto::topology::AccessoryName {
-                                value: String::from("accessory-1"),
-                            }), 
-                            description: Some(crate::proto::topology::AccessoryDescription {
-                                value: String::from("Some accessory"),
-                            }), 
-                            model: Some(Model::MansonHcs3304(MansonHcs3304 { serial_port: "ttyS0".to_string() })), 
-                        }
-                    ]
                 },
                 DeviceDescriptor {
                     id: Some(Clone::clone(&device_id_2).into()),
@@ -431,20 +397,30 @@ mod tests {
                         value: String::from("tag-2"),
                     })
                     .unwrap()],
-                    accessories: vec![
-                        crate::proto::topology::AccessoryDescriptor { 
-                            id: Some(Clone::clone(&accessory_id_2).into()), 
-                            name: Some(crate::proto::topology::AccessoryName {
-                                value: String::from("accessory-2"),
-                            }), 
-                            description: Some(crate::proto::topology::AccessoryDescription {
-                                value: String::from("Some other accessory"),
-                            }), 
-                            model: Some(Model::MansonHcs3304(MansonHcs3304 { serial_port: "ttyS1".to_string() })), 
-                        }
-                    ]
                 },
             ],
+            accessory_descriptors: vec![
+                crate::proto::topology::AccessoryDescriptor { 
+                    id: Some(Clone::clone(&accessory_id_1).into()), 
+                    name: Some(crate::proto::topology::AccessoryName {
+                        value: String::from("accessory-1"),
+                    }), 
+                    description: Some(crate::proto::topology::AccessoryDescription {
+                        value: String::from("Some accessory"),
+                    }), 
+                    model: Some(Model::MansonHcs3304(MansonHcs3304 { serial_port: "ttyS0".to_string() })), 
+                },
+                crate::proto::topology::AccessoryDescriptor { 
+                    id: Some(Clone::clone(&accessory_id_2).into()), 
+                    name: Some(crate::proto::topology::AccessoryName {
+                        value: String::from("accessory-2"),
+                    }), 
+                    description: Some(crate::proto::topology::AccessoryDescription {
+                        value: String::from("Some other accessory"),
+                    }), 
+                    model: Some(Model::MansonHcs3304(MansonHcs3304 { serial_port: "ttyS1".to_string() })), 
+                },
+            ]
         };
 
         verify_that!(
@@ -487,8 +463,8 @@ mod tests {
                     })
                     .unwrap(),
                 ],
-                accessories: vec![],
             }],
+            accessory_descriptors: vec![],
         };
 
         let result = crate::topology::Topology::try_from(proto);

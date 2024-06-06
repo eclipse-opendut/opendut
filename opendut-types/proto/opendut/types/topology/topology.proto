@@ -3,7 +3,9 @@ syntax = "proto3";
 package opendut.types.topology;
 
 import "opendut/types/topology/device.proto";
+import "opendut/types/topology/accessory.proto";
 
 message Topology {
   repeated DeviceDescriptor device_descriptors = 1;
+  repeated AccessoryDescriptor accessory_descriptors = 2;
 }
