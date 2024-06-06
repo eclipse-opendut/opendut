@@ -1,8 +1,8 @@
 use std::fs::File;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::Context;
-use assert_fs::TempDir;
+use tempfile::TempDir;
 use flate2::Compression;
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
@@ -23,7 +23,7 @@ pub fn create_cleo_install_script(
 ) -> anyhow::Result<()> {
 
     for arch in CleoArch::arch_iterator() {
-        let cleo_tar_file = carl_install_directory.join(CLEO_IDENTIFIER).join(format!("{}-{}.tar.gz", arch.name(), crate::app_info::CRATE_VERSION));
+        let cleo_tar_file = carl_install_directory.join(CLEO_IDENTIFIER).join(format!("{}-{}.tar.gz", arch.distribution_name(), crate::app_info::CRATE_VERSION));
         add_file_to_archive(
             &ca,
             &cleo_tar_file,
@@ -56,12 +56,12 @@ fn add_file_to_archive(
     tar.append_dir_all("", unpack_dir)?;
     tar.append_custom_data(
         &cleo_script.build_script(),
-        SET_ENVIRONMENT_VARIABLES_SCRIPT_NAME.append_prefix_file_name(CLEO_IDENTIFIER).as_str(),
+        PathBuf::from(CLEO_IDENTIFIER).join(SET_ENVIRONMENT_VARIABLES_SCRIPT_NAME),
         PERMISSION_CODE_SCRIPT
     )?;
     tar.append_custom_data(
         &ca.to_string(),
-        CA_CERTIFICATE_FILE_NAME.append_prefix_file_name(CLEO_IDENTIFIER).as_str(),
+        PathBuf::from(CLEO_IDENTIFIER).join(CA_CERTIFICATE_FILE_NAME),
         PERMISSION_CODE_CA
     )?;
     tar.into_inner()?.finish()?;
@@ -72,24 +72,15 @@ fn add_file_to_archive(
 
 
 pub trait AppendCustomData {
-    fn append_custom_data(&mut self, data: &str, file_name: &str, mode: u32) -> std::io::Result<()>;
+    fn append_custom_data(&mut self, data: &str, file_name: PathBuf, mode: u32) -> std::io::Result<()>;
 }
 impl AppendCustomData for tar::Builder<GzEncoder<File>> {
-    fn append_custom_data(&mut self, data: &str, file_name: &str, mode: u32) -> std::io::Result<()> {
+    fn append_custom_data(&mut self, data: &str, file_name: PathBuf, mode: u32) -> std::io::Result<()> {
         let mut header = tar::Header::new_gnu();
         header.set_size(data.as_bytes().len() as u64);
         header.set_mode(mode);
         header.set_cksum();
         self.append_data(&mut header, file_name, data.as_bytes())
-    }
-}
-
-pub trait AppendCustomString {
-    fn append_prefix_file_name(&self, prefix: &str) -> String;
-}
-impl AppendCustomString for &str {
-    fn append_prefix_file_name(&self, prefix: &str) -> String {
-        format!("{}/{}", prefix, &self)
     }
 }
 

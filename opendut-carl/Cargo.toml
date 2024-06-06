@@ -15,7 +15,7 @@ opendut-util = { workspace = true }
 opendut-vpn = { workspace = true }
 
 anyhow = { workspace = true }
-assert_fs = { workspace = true }
+tempfile = { workspace = true }
 axum = { workspace = true }
 axum-server = { workspace = true, features = ["tls-rustls"] }
 axum-server-dual-protocol = { workspace = true }

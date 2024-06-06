@@ -2683,6 +2683,7 @@ dependencies = [
  "serde",
  "shadow-rs",
  "tar",
+ "tempfile",
  "thiserror",
  "tokio",
  "tokio-stream",

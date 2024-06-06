@@ -13,16 +13,13 @@ pub enum CleoArch {
     Armhf,
     #[serde(rename="aarch64-unknown-linux-gnu")]
     Arm64,
-    #[serde(rename="development")]
-    Development,
 }
 impl CleoArch {
-    pub fn name(&self) -> String {
+    pub fn distribution_name(&self) -> String {
         match self {
             CleoArch::X86_64 => "opendut-cleo-x86_64-unknown-linux-gnu",
             CleoArch::Armhf => "opendut-cleo-armv7-unknown-linux-gnueabihf",
             CleoArch::Arm64 => "opendut-cleo-aarch64-unknown-linux-gnu",
-            CleoArch::Development => "opendut-cleo",
         }.to_string()
     }
 
@@ -40,16 +37,13 @@ pub enum EdgarArch {
     Armhf,
     #[serde(rename="aarch64-unknown-linux-gnu")]
     Arm64,
-    #[serde(rename="development")]
-    Development,
 }
 impl EdgarArch {
-    pub fn name(&self) -> String {
+    pub fn distribution_name(&self) -> String {
         match self {
             EdgarArch::X86_64 => "opendut-edgar-x86_64-unknown-linux-gnu",
             EdgarArch::Armhf => "opendut-edgar-armv7-unknown-linux-gnueabihf",
             EdgarArch::Arm64 => "opendut-edgar-aarch64-unknown-linux-gnu",
-            EdgarArch::Development => "opendut-edgar",
         }.to_string()
     }
 

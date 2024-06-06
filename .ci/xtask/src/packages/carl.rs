@@ -116,20 +116,16 @@ pub mod distribution {
 
     mod cleo {
         use anyhow::Context;
-        use clap::ValueEnum;
         use crate::tasks::distribution::bundle;
         use super::*;
 
         #[tracing::instrument]
         pub fn get_cleo(out_dir: &PathBuf) -> crate::Result {
 
-            let architectures = Arch::value_variants().iter()
-                .filter(|&&arch| arch != Arch::Wasm).collect::<Vec<_>>();
-
             let cleo_out_dir = out_dir.join(Package::Cleo.ident());
             fs::create_dir_all(cleo_out_dir)?;
             
-            for arch in architectures {
+            for arch in Arch::cleo_bundle_arch_iterator() {
                 crate::packages::cleo::distribution::cleo_distribution(arch.to_owned())?;
                 let cleo_build_dir = crate::tasks::distribution::out_arch_dir(arch.to_owned());
 
@@ -154,20 +150,16 @@ pub mod distribution {
 
     mod edgar {
         use anyhow::Context;
-        use clap::ValueEnum;
         use crate::tasks::distribution::bundle;
         use super::*;
 
         #[tracing::instrument]
         pub fn get_edgar(out_dir: &PathBuf) -> crate::Result {
 
-            let architectures = Arch::value_variants().iter()
-                .filter(|&&arch| arch != Arch::Wasm).collect::<Vec<_>>();
-
             let edgar_out_dir = out_dir.join(Package::Edgar.ident());
             fs::create_dir_all(edgar_out_dir)?;
 
-            for arch in architectures {
+            for arch in Arch::edgar_bundle_arch_iterator() {
                 crate::packages::edgar::distribution::edgar_distribution(arch.to_owned())?;
                 let edgar_build_dir = crate::tasks::distribution::out_arch_dir(arch.to_owned());
 
@@ -332,7 +324,7 @@ pub mod distribution {
                 licenses_index_file.assert(path::is_file());
                 let licenses_index_content = fs::read_to_string(licenses_index_file)?;
 
-                for license_file in [&licenses_carl_file, &licenses_cleo_file, &licenses_lea_file] {
+                for license_file in [&licenses_edgar_file, &licenses_carl_file, &licenses_cleo_file, &licenses_lea_file] {
                     assert!(
                         licenses_index_content.contains(license_file.file_name_str()),
                         "The license index.json did not contain entry for expected file: {}", license_file.display()
