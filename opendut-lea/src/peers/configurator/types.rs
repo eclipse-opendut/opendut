@@ -153,7 +153,7 @@ impl TryFrom<UserPeerConfiguration> for PeerDescriptor {
             name,
             location: Some(location),
             network: PeerNetworkDescriptor::new(network_interfaces, bridge_name),
-            topology: Topology::new(devices),
+            topology: Topology::new(devices, vec![]),
             executors: ExecutorDescriptors {
                 executors
             },
@@ -188,7 +188,6 @@ impl TryFrom<UserDeviceConfiguration> for DeviceDescriptor {
             description: Some(description),
             interface,
             tags: vec![],
-            accessories: vec![],
         })
     }
 }
