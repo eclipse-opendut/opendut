@@ -15,7 +15,7 @@ else
 
   TESTENV_NETBIRD_HOSTS="netbird-management,netbird-dashboard,netbird-signal,netbird-coturn"
   TESTENV_EDGAR_HOSTS="edgar-leader,edgar-*"
-  TESTENV_HOSTS="$TESTENV_NETBIRD_HOSTS,keycloak,$TESTENV_EDGAR_HOSTS,carl"
+  TESTENV_HOSTS="$TESTENV_NETBIRD_HOSTS,keycloak,$TESTENV_EDGAR_HOSTS,carl,loki,tempo,prometheus,promtail,otel-collector,grafana"
   # 192.168.56.0/24,192.168.32.0/24,192.168.33.0/24
   TESTENV_NETWORKS="192.168.0.0/16"
 

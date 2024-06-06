@@ -20,7 +20,7 @@ services:
     healthcheck:
       interval: 5s
       retries: 10
-      test: wget --no-verbose --tries=1 --spider http://localhost:3200/status || exit 1
+      test: wget --proxy off --no-verbose --tries=1 --spider http://tempo:3200/status || exit 1
     networks:
       - opendutnet
 
@@ -32,7 +32,7 @@ services:
       - loki-data:/loki
     command: ["-config.file=/etc/loki/loki.yml", "-config.expand-env=true"]
     healthcheck:
-      test: wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1
+      test: wget --proxy off --no-verbose --tries=1 --spider http://loki:3100/ready || exit 1
       interval: 10s
       timeout: 7s
       retries: 5
