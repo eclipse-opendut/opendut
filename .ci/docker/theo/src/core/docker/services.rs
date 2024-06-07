@@ -12,6 +12,7 @@ pub(crate) enum DockerCoreServices {
     Netbird,
     Firefox,
     Telemetry,
+    Mqtt,
 }
 
 impl DockerCoreServices {
@@ -26,6 +27,7 @@ impl DockerCoreServices {
             DockerCoreServices::Network => "network",
             DockerCoreServices::Firefox => "firefox",
             DockerCoreServices::Telemetry => "telemetry",
+            DockerCoreServices::Mqtt => "mqtt",
         }
     }
 }

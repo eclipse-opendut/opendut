@@ -72,6 +72,7 @@ impl TestenvCli {
                     docker_compose_up_expose_ports(DockerCoreServices::Firefox.as_str(), expose)?;
                 }
                 docker_compose_up_expose_ports(DockerCoreServices::Keycloak.as_str(), expose)?;
+                docker_compose_up_expose_ports(DockerCoreServices::Mqtt.as_str(), expose)?;
                 crate::core::docker::keycloak::wait_for_keycloak_provisioned()?;
                 if !skip_telemetry {
                     docker_compose_up_expose_ports(DockerCoreServices::Telemetry.as_str(), expose)?;
@@ -94,6 +95,7 @@ impl TestenvCli {
                 docker_compose_down(DockerCoreServices::Netbird.as_str(), false)?;
                 docker_compose_down(DockerCoreServices::Firefox.as_str(), false)?;
                 docker_compose_down(DockerCoreServices::Telemetry.as_str(), false)?;
+                docker_compose_down(DockerCoreServices::Mqtt.as_str(), false)?;
             }
             TaskCli::Network => {
                 crate::core::network::docker_inspect_network()?;
@@ -112,6 +114,7 @@ impl TestenvCli {
                             DockerCoreServices::Netbird => { docker_compose_down(DockerCoreServices::Netbird.as_str(), true) ?; }
                             DockerCoreServices::Firefox => { docker_compose_down(DockerCoreServices::Firefox.as_str(), true) ?; }
                             DockerCoreServices::Telemetry => { docker_compose_down(DockerCoreServices::Telemetry.as_str(), true) ?; }
+                            DockerCoreServices::Mqtt => { docker_compose_down(DockerCoreServices::Mqtt.as_str(), true) ?; }
                         }
                     }
                     None => {
@@ -139,6 +142,7 @@ impl TestenvCli {
         docker_compose_build(DockerCoreServices::Keycloak.as_str())?;
         docker_compose_build(DockerCoreServices::Carl.as_str())?;
         docker_compose_build(DockerCoreServices::Netbird.as_str())?;
+        docker_compose_build(DockerCoreServices::Mqtt.as_str())?;
         Ok(())
     }
 }
