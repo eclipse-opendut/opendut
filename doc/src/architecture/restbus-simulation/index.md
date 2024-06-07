@@ -60,9 +60,20 @@ The details to the API will follow and will be
 defined in the **RSIM API** section.
 Right now no API exists, and the RSIM just plays Frames with initial values to the Bus.
 
-### RSIM API
-Idea to discuss:
-  - TODO. 
+### AXP + RSIM API and Integration
+*_Idea to discuss:_*
+- Implement MQTT client (MC) that controls AXP and RSIM
+- MC builds basically the API. Every instance that can communicate with the MQTT server, also can communicate with our client.
+- MC gets started in a separate thread by main Edgar on startup (if enabled)
+- MC listens to instructions by polling pre-existing MQTT server and sends results/responses to MQTT server
+- AXP can be instructed via API (i.e. via MC) to parse files that are located on EDGAR
+    - ARXML file is assumed to be located on Edgar indepedently by transfer from CARL to EDGAR or previous manual transfer
+    - AXP can be instructed separately from RSIM or a setup can be combined, i.e., a single command leads to parsing of ARXML file and restbus-simulation setup
+- RSIM API provides control of RSIM by providing a simple API that can be used via MQTT (MC polls from server for commands)
+    - Even with the simple API, a very fine-grained control of RSIM is possible, since every important feature should be available.
+    - openDuT user provides updates of signals via API, while RSIM handles all the low-level details and ensures correctness of transmitted messages and their timings
+    - It's the user's task to provide the logic for dynamic changes of signals/timings/... during runtime
+    - Either the user logic is integrated via separate binaries/Python files/..., or we might be able to use (compiled) CAPL files, that already contain the logic for existing restbus simulations
 
 ### Configuration
 Currently, the implementation is somewhat independent of OpenDuT. In the future, everything will be integrated
