@@ -1,18 +1,16 @@
-use std::io;
 use std::ops::Not;
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::str::FromStr;
 
-use clap::{Parser, CommandFactory, Subcommand, ValueEnum, Command};
-use clap_complete::{generate, Generator, Shell};
+use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
+use clap_complete::Shell;
 use console::Style;
 
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::peer::PeerSetup;
 use opendut_types::topology::DeviceName;
-use opendut_util::settings::{FileFormat, load_config};
-use crate::commands::completions::CompletionsCli;
+use opendut_util::settings::{FileFormat, load_config, LoadedConfig};
 
 mod commands;
 pub mod parse;
@@ -205,7 +203,7 @@ async fn execute() -> Result<()> {
         .expect("Failed to load config"); // TODO: Point the user to the source of the error.
 
 
-    let mut carl = {
+    let carl = {
 
         let host = settings.config.get_string("network.carl.host")
             .expect("Configuration should contain a valid host name to connect to CARL");
@@ -224,12 +222,43 @@ async fn execute() -> Result<()> {
             .expect("Failed to create CARL client")
     };
 
-    let mut args = Args::parse();
-    generate_completions(&mut args).await?;
+    let args = Args::parse();
+    //generate_completions(&args).await?;
 
+    match args {
+        Args { command: Some(commands), .. } => {
+            execute_command(commands, carl, &settings).await?;
+        }
+        Args { generator: Some(shell), .. } => {
+            generate_completions(shell);
+        }
+        _ => {
+            //default ausgabe (zb version)
+        }
+    }
+   
+    Ok(())
+}
 
-    match args.command {
-        Some(Commands::List { resource, output }) => {
+#[derive(Clone, Debug)]
+struct ParseableSetupString(Box<PeerSetup>);
+impl FromStr for ParseableSetupString {
+    type Err = String;
+    fn from_str(string: &str) -> std::result::Result<Self, Self::Err> {
+        PeerSetup::decode(string)
+            .map(|setup| ParseableSetupString(Box::new(setup)))
+            .map_err(|error| error.to_string())
+    }
+}
+
+fn generate_completions(shell: Shell) {
+    let mut cmd = Args::command();
+    commands::completions::print_completions(shell, &mut cmd);
+}
+
+async fn execute_command(commands: Commands, mut carl: CarlClient, settings: &LoadedConfig) -> Result<()>{
+    match commands {
+        Commands::List { resource, output } => {
             match resource {
                 ListResource::ClusterConfigurations(implementation) => {
                     implementation.execute(&mut carl, output).await?;
@@ -248,7 +277,7 @@ async fn execute() -> Result<()> {
                 }
             }
         }
-        Some(Commands::Create { resource, output }) => {
+        Commands::Create { resource, output } => {
             match resource {
                 CreateResource::ClusterConfiguration(implementation) => {
                     implementation.execute(&mut carl, output).await?;
@@ -270,13 +299,13 @@ async fn execute() -> Result<()> {
                 }
             }
         }
-        Some(Commands::GenerateSetupString(implementation)) => {
+        Commands::GenerateSetupString(implementation) => {
             implementation.execute(&mut carl).await?;
         }
-        Some(Commands::DecodeSetupString(implementation)) => {
+        Commands::DecodeSetupString(implementation) => {
             implementation.execute().await?;
         }
-        Some(Commands::Describe { resource, output }) => {
+        Commands::Describe { resource, output } => {
             match resource {
                 DescribeResource::ClusterConfiguration(implementation)=> {
                     implementation.execute(&mut carl, output).await?
@@ -289,7 +318,7 @@ async fn execute() -> Result<()> {
                 }
             }
         }
-        Some(Commands::Delete { resource}) => {
+        Commands::Delete { resource} => {
             match resource {
                 DeleteResource::ClusterConfiguration(implementation) => {
                     implementation.execute(&mut carl).await?;
@@ -311,40 +340,16 @@ async fn execute() -> Result<()> {
                 }
             }
         }
-        Some(Commands::Find { resource, output }) => {
+        Commands::Find { resource, output } => {
             match resource {
                 FindResource::Device(implementation) => {
                     implementation.execute(&mut carl, output).await?;
                 }
             }
         }
-        Some(Commands::Config) => {
+        Commands::Config => {
             println!("Show cleo configuration: {:?}", settings);
         }
-        None => { }
     }
-    Ok(())
-}
-
-#[derive(Clone, Debug)]
-struct ParseableSetupString(Box<PeerSetup>);
-impl FromStr for ParseableSetupString {
-    type Err = String;
-    fn from_str(string: &str) -> std::result::Result<Self, Self::Err> {
-        PeerSetup::decode(string)
-            .map(|setup| ParseableSetupString(Box::new(setup)))
-            .map_err(|error| error.to_string())
-    }
-}
-
-pub async fn generate_completions(args: &mut Args) -> crate::Result<()> {
-    if let Some(generator) = args.generator {
-        let mut cmd = Args::command();
-        crate::commands::completions::print_completions(generator, &mut cmd);
-
-    } else {
-        println!("no shell given to generate completions");
-    }
-
     Ok(())
 }
