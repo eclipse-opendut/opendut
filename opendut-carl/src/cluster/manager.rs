@@ -119,8 +119,10 @@ impl ClusterManager {
                 and 'can_server_port_range_start' is very narrow for the configured number of peers ({}). This may cause errors on EDGAR.", 
                 self.options.can_server_port_range_start, self.options.can_server_port_range_end, n_peers);
         }
+
+        // Wrap-around the counter when we reached the end of the range of usable ports
         if self.can_server_port_counter + n_peers >= self.options.can_server_port_range_end {
-            self.can_server_port_counter = self.options.can_server_port_range_end;
+            self.can_server_port_counter = self.options.can_server_port_range_start;
         }
         
         let can_server_ports = (self.can_server_port_counter..self.can_server_port_counter + n_peers)
