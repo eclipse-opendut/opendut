@@ -3,6 +3,8 @@ use std::path::PathBuf;
 use crate::{Arch, Package};
 use crate::core::types::parsing::package::PackageSelection;
 
+pub const SUPPORTED_ARCHITECTURES: [Arch; 3] = [Arch::X86_64, Arch::Armhf, Arch::Arm64];
+
 const SELF_PACKAGE: Package = Package::Cleo;
 
 

@@ -125,14 +125,14 @@ pub mod distribution {
             let cleo_out_dir = out_dir.join(Package::Cleo.ident());
             fs::create_dir_all(cleo_out_dir)?;
             
-            for arch in Arch::cleo_bundle_arch_iterator() {
+            for arch in crate::packages::cleo::SUPPORTED_ARCHITECTURES {
                 crate::packages::cleo::distribution::cleo_distribution(arch.to_owned())?;
                 let cleo_build_dir = crate::tasks::distribution::out_arch_dir(arch.to_owned());
 
                 let cleo_arch_dir = out_dir.join(Package::Cleo.ident());
                 fs::create_dir_all(&cleo_arch_dir)?;
 
-                let tar_file_name = bundle::out_file(Package::Cleo, *arch);
+                let tar_file_name = bundle::out_file(Package::Cleo, arch);
 
                 let cleo_tar_file_name = tar_file_name.file_name().context(format!("Could not extract file name {}", &tar_file_name.display()))?;
 
@@ -159,14 +159,14 @@ pub mod distribution {
             let edgar_out_dir = out_dir.join(Package::Edgar.ident());
             fs::create_dir_all(edgar_out_dir)?;
 
-            for arch in Arch::edgar_bundle_arch_iterator() {
+            for arch in crate::packages::edgar::SUPPORTED_ARCHITECTURES {
                 crate::packages::edgar::distribution::edgar_distribution(arch.to_owned())?;
                 let edgar_build_dir = crate::tasks::distribution::out_arch_dir(arch.to_owned());
 
                 let edgar_arch_dir = out_dir.join(Package::Edgar.ident());
                 fs::create_dir_all(&edgar_arch_dir)?;
 
-                let tar_file_name = bundle::out_file(Package::Edgar, *arch);
+                let tar_file_name = bundle::out_file(Package::Edgar, arch);
 
                 let edgar_tar_file_name = tar_file_name.file_name().context(format!("Could not extract file name {}", &tar_file_name.display()))?;
 

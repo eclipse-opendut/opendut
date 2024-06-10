@@ -1,5 +1,4 @@
 use std::fmt::Formatter;
-use std::slice::Iter;
 use clap::builder::PossibleValue;
 use clap::ValueEnum;
 use strum::IntoEnumIterator;
@@ -20,16 +19,6 @@ impl Arch {
             Arch::Arm64 => "aarch64-unknown-linux-gnu",
             Arch::Wasm => "wasm32-unknown-unknown",
         }.to_string()
-    }
-
-    pub fn edgar_bundle_arch_iterator() -> Iter<'static, Arch> {
-        static EDGAR_ARCH: [Arch; 3] = [Arch::X86_64, Arch::Armhf, Arch::Arm64];
-        EDGAR_ARCH.iter()
-    }
-
-    pub fn cleo_bundle_arch_iterator() -> Iter<'static, Arch> {
-        static CLEO_ARCH: [Arch; 3] = [Arch::X86_64, Arch::Armhf, Arch::Arm64];
-        CLEO_ARCH.iter()
     }
 }
 

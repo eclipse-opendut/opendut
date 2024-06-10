@@ -7,6 +7,8 @@ use crate::{Arch, Package};
 use crate::core::types::parsing::package::PackageSelection;
 use crate::core::types::parsing::target::TargetSelection;
 
+pub const SUPPORTED_ARCHITECTURES: [Arch; 3] = [Arch::X86_64, Arch::Armhf, Arch::Arm64];
+
 const SELF_PACKAGE: Package = Package::Edgar;
 
 
@@ -157,6 +159,8 @@ pub mod distribution {
         }
 
         pub(super) fn map_target(target: Arch) -> anyhow::Result<&'static str> {
+            assert!(SUPPORTED_ARCHITECTURES.contains(&target));
+
             match target {
                 Arch::X86_64 => Ok("amd64"),
                 Arch::Arm64 => Ok("arm64"),
@@ -165,7 +169,7 @@ pub mod distribution {
                     "Building a distribution for EDGAR isn't currently supported for '{}'.\n\
                     Supported targets are: {}",
                     other.triple(),
-                    [Arch::X86_64.triple(), Arch::Arm64.triple(), Arch::Armhf.triple()].join(", "),
+                    SUPPORTED_ARCHITECTURES.map(|arch| arch.triple()).join(", "),
                 ),
             }
         }
