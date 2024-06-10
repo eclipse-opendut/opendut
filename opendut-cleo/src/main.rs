@@ -26,10 +26,7 @@ opendut_util::app_info!();
 #[command(long_version = crate::app_info::formatted())]
 struct Args {
     #[command(subcommand)]
-    command: Option<Commands>,
-    /// Generates shell completion
-    #[arg(long = "generate", value_enum)]
-    generator: Option<Shell>
+    command: Commands,
 }
 
 #[derive(Subcommand)]
@@ -77,6 +74,12 @@ enum Commands {
         resource: DeleteResource,
     },
     Config,
+    /// Generates shell completion
+    Completions {
+        /// Shell to generate completions for
+        #[arg(value_enum)]
+        shell: Shell
+    },
 }
 
 #[derive(Subcommand)]
@@ -223,37 +226,9 @@ async fn execute() -> Result<()> {
     };
 
     let args = Args::parse();
-    //generate_completions(&args).await?;
 
-    match args {
-        Args { command: Some(commands), .. } => {
-            execute_command(commands, carl, &settings).await?;
-        }
-        Args { generator: Some(shell), .. } => {
-            generate_completions(shell);
-        }
-        _ => {
-            //default ausgabe (zb version)
-        }
-    }
-   
+    execute_command(args.command, carl, &settings).await?;
     Ok(())
-}
-
-#[derive(Clone, Debug)]
-struct ParseableSetupString(Box<PeerSetup>);
-impl FromStr for ParseableSetupString {
-    type Err = String;
-    fn from_str(string: &str) -> std::result::Result<Self, Self::Err> {
-        PeerSetup::decode(string)
-            .map(|setup| ParseableSetupString(Box::new(setup)))
-            .map_err(|error| error.to_string())
-    }
-}
-
-fn generate_completions(shell: Shell) {
-    let mut cmd = Args::command();
-    commands::completions::print_completions(shell, &mut cmd);
 }
 
 async fn execute_command(commands: Commands, mut carl: CarlClient, settings: &LoadedConfig) -> Result<()>{
@@ -350,6 +325,21 @@ async fn execute_command(commands: Commands, mut carl: CarlClient, settings: &Lo
         Commands::Config => {
             println!("Show cleo configuration: {:?}", settings);
         }
+        Commands::Completions { shell } => {
+            let mut cmd = Args::command();
+            commands::completions::print_completions(shell, &mut cmd);
+        }
     }
     Ok(())
+}
+
+#[derive(Clone, Debug)]
+struct ParseableSetupString(Box<PeerSetup>);
+impl FromStr for ParseableSetupString {
+    type Err = String;
+    fn from_str(string: &str) -> std::result::Result<Self, Self::Err> {
+        PeerSetup::decode(string)
+            .map(|setup| ParseableSetupString(Box::new(setup)))
+            .map_err(|error| error.to_string())
+    }
 }
