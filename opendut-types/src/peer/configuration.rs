@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::cluster::ClusterAssignment;
+use crate::topology::AccessoryDescriptor;
 use crate::OPENDUT_UUID_NAMESPACE;
 use crate::peer::executor::ExecutorDescriptor;
 use crate::util::net::NetworkInterfaceName;
@@ -24,6 +25,7 @@ pub struct PeerNetworkConfiguration {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct PeerConfiguration2 {
     pub executors: Vec<Parameter<ExecutorDescriptor>>,
+    pub accessories: Vec<Parameter<AccessoryDescriptor>>,
     //TODO migrate more parameters
 }
 impl PeerConfiguration2 {
@@ -36,6 +38,17 @@ impl PeerConfiguration2 {
         };
 
         self.executors.push(parameter);
+    }
+
+    pub fn insert_accessory(&mut self, value: AccessoryDescriptor, target: ParameterTarget) { //TODO more generic solution
+        let parameter = Parameter {
+            id: value.parameter_identifier(),
+            dependencies: vec![], //TODO
+            target,
+            value,
+        };
+
+        self.accessories.push(parameter);
     }
 }
 
@@ -89,6 +102,17 @@ impl ParameterValue for ExecutorDescriptor {
             ExecutorDescriptor::Executable => self.hash(&mut hasher),
             ExecutorDescriptor::Container { name, .. } => name.hash(&mut hasher),
         }
+        let id = hasher.finish();
+
+        let id = Uuid::new_v5(&OPENDUT_UUID_NAMESPACE, &id.to_le_bytes());
+        ParameterId(id)
+    }
+}
+
+impl ParameterValue for AccessoryDescriptor {
+    fn parameter_identifier(&self) -> ParameterId {
+        let mut hasher = DefaultHasher::new(); //ID not stable across Rust releases
+        self.name.hash(&mut hasher);
         let id = hasher.finish();
 
         let id = Uuid::new_v5(&OPENDUT_UUID_NAMESPACE, &id.to_le_bytes());

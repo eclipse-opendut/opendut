@@ -6,6 +6,7 @@ import "opendut/types/cluster/cluster.proto";
 import "opendut/types/peer/executor.proto";
 import "opendut/types/util/net.proto";
 import "opendut/types/util/uuid.proto";
+import "opendut/types/topology/accessory.proto";
 
 message PeerConfiguration {
   optional opendut.types.cluster.ClusterAssignment cluster_assignment = 2;
@@ -21,6 +22,7 @@ message PeerNetworkConfiguration {
 // Configuration sent from CARL to Peer
 message PeerConfiguration2 {
   repeated PeerConfigurationParameterExecutor executors = 1;
+  repeated PeerConfigurationParameterAccessoryDescriptor accessories = 2;
   //TODO migrate more parameters
 }
 
@@ -29,6 +31,10 @@ message PeerConfigurationParameterExecutor {
   opendut.types.peer.executor.ExecutorDescriptor value = 2;
 }
 
+message PeerConfigurationParameterAccessoryDescriptor {
+  PeerConfigurationParameter parameter = 1;
+  opendut.types.topology.AccessoryDescriptor value = 2;
+}
 
 message PeerConfigurationParameter {
    PeerConfigurationParameterId id = 1;

@@ -298,7 +298,7 @@ impl From<uuid::Uuid> for AccessoryId {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum AccessoryModel {
     MansonHcs3304 {
         serial_port: String,
@@ -320,7 +320,7 @@ impl fmt::Display for AccessoryModel {
 }
 
 
-#[derive(Clone, Debug, Eq, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Default, Hash, Serialize, Deserialize)]
 pub struct AccessoryDescription(pub(crate) String);
 
 impl AccessoryDescription {
@@ -380,7 +380,7 @@ impl fmt::Display for AccessoryDescription {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct AccessoryName(pub(crate) String);
 
 impl AccessoryName {
@@ -472,7 +472,7 @@ impl fmt::Display for AccessoryName {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct AccessoryDescriptor {
     pub id: AccessoryId,
     pub name: AccessoryName,

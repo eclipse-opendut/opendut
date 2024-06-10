@@ -60,6 +60,7 @@ impl From<crate::peer::configuration::PeerConfiguration2> for PeerConfiguration2
     fn from(value: crate::peer::configuration::PeerConfiguration2) -> Self {
         Self {
             executors: value.executors.into_iter().map(PeerConfigurationParameterExecutor::from).collect(),
+            accessories: value.accessories.into_iter().map(PeerConfigurationParameterAccessoryDescriptor::from).collect(),
         }
     }
 }
@@ -69,6 +70,7 @@ impl TryFrom<PeerConfiguration2> for crate::peer::configuration::PeerConfigurati
     fn try_from(value: PeerConfiguration2) -> Result<Self, Self::Error> {
         Ok(crate::peer::configuration::PeerConfiguration2 {
             executors: value.executors.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
+            accessories: value.accessories.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
         })
     }
 }
@@ -103,6 +105,40 @@ impl TryFrom<PeerConfigurationParameterExecutor> for crate::peer::configuration:
             dependencies: parameter.dependencies.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
             target: parameter.target.ok_or(ErrorBuilder::field_not_set("target"))?.into(),
             value: executor,
+        })
+    }
+}
+
+impl From<crate::peer::configuration::Parameter<crate::topology::AccessoryDescriptor>> for PeerConfigurationParameterAccessoryDescriptor {
+    fn from(value: crate::peer::configuration::Parameter<crate::topology::AccessoryDescriptor>) -> Self {
+
+        let executor: crate::proto::topology::AccessoryDescriptor = value.value.clone().into();
+        let parameter = PeerConfigurationParameter::from(value);
+
+        Self {
+            parameter: Some(parameter),
+            value: Some(executor),
+        }
+    }
+}
+impl TryFrom<PeerConfigurationParameterAccessoryDescriptor> for crate::peer::configuration::Parameter<crate::topology::AccessoryDescriptor> {
+    type Error = ConversionError;
+
+    fn try_from(value: PeerConfigurationParameterAccessoryDescriptor) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<PeerConfigurationParameterAccessoryDescriptor, crate::peer::configuration::Parameter<crate::topology::AccessoryDescriptor>>;
+
+        let parameter = value.parameter
+            .ok_or(ErrorBuilder::field_not_set("parameter"))?;
+
+        let accessory: crate::topology::AccessoryDescriptor = value.value
+            .ok_or(ErrorBuilder::field_not_set("accessory"))?
+            .try_into()?;
+
+        Ok(Self {
+            id: parameter.id.ok_or(ErrorBuilder::field_not_set("id"))?.try_into()?,
+            dependencies: parameter.dependencies.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
+            target: parameter.target.ok_or(ErrorBuilder::field_not_set("target"))?.into(),
+            value: accessory,
         })
     }
 }
