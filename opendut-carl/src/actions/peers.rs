@@ -58,8 +58,8 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
             let old_peer_descriptor = resources.get::<PeerDescriptor>(peer_id);
             let is_new_peer = old_peer_descriptor.is_none();
 
-            let (devices_to_add, devices_to_remove, accessories_to_add, accessories_to_remove): 
-                (Vec<DeviceDescriptor>, Vec<DeviceDescriptor>, Vec<AccessoryDescriptor>, Vec<AccessoryDescriptor>) = if let Some(old_peer_descriptor) = old_peer_descriptor {
+            let (devices_to_add, devices_to_remove): 
+                (Vec<DeviceDescriptor>, Vec<DeviceDescriptor>) = if let Some(old_peer_descriptor) = old_peer_descriptor {
 
                 debug!("Updating peer descriptor of '{peer_name}' <{peer_id}>.\n  Old: {old_peer_descriptor:?}\n  New: {peer_descriptor:?}");
                 let devices_to_add = peer_descriptor.topology.devices.iter()
@@ -69,23 +69,11 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
                 let devices_to_remove = old_peer_descriptor.topology.devices.into_iter()
                     .filter(|device| peer_descriptor.topology.devices.contains(device).not())
                     .collect();
-                let accessories_to_add = peer_descriptor.topology.accessories.iter()
-                    .filter(|accessory| old_peer_descriptor.topology.accessories.contains(accessory).not())
-                    .cloned()
-                    .collect();
-                let accessories_to_remove = old_peer_descriptor.topology.accessories.into_iter()
-                    .filter(|accessory| peer_descriptor.topology.accessories.contains(accessory).not())
-                    .collect();
-                (devices_to_add, devices_to_remove, accessories_to_add, accessories_to_remove)
+                (devices_to_add, devices_to_remove)
             }
             else {
                 debug!("Storing peer descriptor of '{peer_name}' <{peer_id}>.\n  {peer_descriptor:?}");
-                (
-                    peer_descriptor.topology.devices.to_vec(), 
-                    Vec::<DeviceDescriptor>::new(), 
-                    peer_descriptor.topology.accessories.to_vec(), 
-                    Vec::<AccessoryDescriptor>::new()
-                )
+                (peer_descriptor.topology.devices.to_vec(), Vec::<DeviceDescriptor>::new())
             };
 
             devices_to_remove.iter().for_each(|device| {
@@ -100,20 +88,6 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
                 let device_name = &device.name;
                 resources.insert(device.id, Clone::clone(device));
                 info!("Added device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}>.");
-            });
-
-            accessories_to_remove.iter().for_each(|accessory| {
-                let accessory_id = accessory.id;
-                let accessory_name = &accessory.name;
-                resources.remove(accessory.id);
-                info!("Removed accessory '{accessory_name}' <{accessory_id}> of peer '{peer_name}' <{peer_id}>.");
-            });
-
-            accessories_to_add.iter().for_each(|accessory| {
-                let accessory_id = accessory.id;
-                let accessory_name = &accessory.name;
-                resources.insert(accessory.id, Clone::clone(accessory));
-                info!("Added accessory '{accessory_name}' <{accessory_id}> of peer '{peer_name}' <{peer_id}>.");
             });
 
             let peer_network_configuration = {
@@ -135,6 +109,9 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
                 let mut peer_configuration2 = PeerConfiguration2::default();
                 for executor in Clone::clone(&peer_descriptor.executors).executors.into_iter() {
                     peer_configuration2.insert_executor(executor, peer::configuration::ParameterTarget::Present); //TODO not always Present
+                }
+                for accessory in Clone::clone(&peer_descriptor.topology).accessories.into_iter() {
+                    peer_configuration2.insert_accessory(accessory, peer::configuration::ParameterTarget::Present); //TODO not always Present
                 }
                 peer_configuration2
             };
@@ -552,6 +529,7 @@ mod test {
             }).await;
             let peer_configuration2 = PeerConfiguration2 {
                 executors: vec![],
+                accessories: vec![],
             };
             resources_manager.resources_mut(|resources| {
                 resources.insert(peer_id, Clone::clone(&peer_configuration2));
