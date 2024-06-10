@@ -6,3 +6,4 @@ mod cannelloni_manager;
 mod can_manager;
 mod executor;
 mod vpn;
+mod accessory;

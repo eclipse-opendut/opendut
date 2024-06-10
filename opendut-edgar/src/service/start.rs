@@ -18,7 +18,7 @@ use opendut_carl_api::proto::services::peer_messaging_broker;
 use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, TracingContext};
 use opendut_carl_api::proto::services::peer_messaging_broker::downstream::Message;
 use opendut_types::cluster::ClusterAssignment;
-use opendut_types::peer::configuration::{PeerConfiguration, PeerConfiguration2};
+use opendut_types::peer::configuration::{ParameterTarget, PeerConfiguration, PeerConfiguration2};
 use opendut_types::peer::PeerId;
 use opendut_types::util::net::NetworkInterfaceName;
 use opendut_util::logging;
@@ -26,6 +26,7 @@ use opendut_util::logging::LoggingConfig;
 use opendut_util::settings::LoadedConfig;
 
 use crate::common::{carl, settings};
+use crate::service::accessory::accessory_manager::{AccessoryManager, AccessoryManagerRef};
 use crate::service::{cluster_assignment, vpn};
 use crate::service::can_manager::{CanManager, CanManagerRef};
 use crate::service::network_interface::manager::{NetworkInterfaceManager, NetworkInterfaceManagerRef};
@@ -87,6 +88,7 @@ pub async fn create(self_id: PeerId, settings: LoadedConfig) -> anyhow::Result<(
 
     let network_interface_manager: NetworkInterfaceManagerRef = NetworkInterfaceManager::create()?;
     let can_manager: CanManagerRef = CanManager::create(Arc::clone(&network_interface_manager));
+    let accessory_manager: AccessoryManagerRef = AccessoryManager::create();
 
     let network_interface_management_enabled = settings.config.get::<bool>("network.interface.management.enabled")?;
 
@@ -97,6 +99,7 @@ pub async fn create(self_id: PeerId, settings: LoadedConfig) -> anyhow::Result<(
         network_interface_management_enabled,
         network_interface_manager,
         can_manager,
+        accessory_manager,
     };
 
     let timeout_duration = Duration::from_millis(settings.config.get::<u64>("carl.disconnect.timeout.ms")?);
@@ -188,6 +191,14 @@ async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Opti
                         Err(error) => error!("Illegal PeerConfiguration2: {error}"),
                         Ok(configuration2) => {
                             crate::service::executor::setup_executors(configuration2.executors);
+
+                            setup_cluster_info.accessory_manager.undeploy_accessories().await; // TODO: Do this when cluster is undeployed instead
+                            for accessory_param in configuration2.accessories { //TODO properly handle Present vs. Absent
+                                if matches!(accessory_param.target, ParameterTarget::Present) {
+                                    setup_cluster_info.accessory_manager.deploy_accessory(accessory_param.value).await
+                                }
+                            }
+
                             let _ = setup_cluster(
                                 configuration.cluster_assignment,
                                 setup_cluster_info,
@@ -208,6 +219,7 @@ struct SetupClusterInfo {
     network_interface_management_enabled: bool,
     network_interface_manager: NetworkInterfaceManagerRef,
     can_manager: CanManagerRef,
+    accessory_manager: AccessoryManagerRef,
 }
 #[tracing::instrument(skip_all)]
 async fn setup_cluster(
