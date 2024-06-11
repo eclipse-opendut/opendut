@@ -1,6 +1,6 @@
 use std::{env, io::{Cursor, ErrorKind}, path::PathBuf, process::Stdio};
 
-use opendut_types::peer::executor::{ContainerCommand, ContainerCommandArgument, ContainerEnvironmentVariable, ContainerImage, ContainerName, Engine, ResultsUrl};
+use opendut_types::peer::executor::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine, ResultsUrl};
 
 use tokio::{fs, io::{AsyncBufReadExt, BufReader}, process::{Child, Command}, sync::{mpsc, watch}};
 use tracing::{error, warn, info};
@@ -29,6 +29,9 @@ pub struct ContainerConfiguration {
     pub command: ContainerCommand,
     pub args: Vec<ContainerCommandArgument>,
     pub envs: Vec<ContainerEnvironmentVariable>,
+    pub ports: Vec<ContainerPortSpec>,
+    pub devices: Vec<ContainerDevice>,
+    pub volumes: Vec<ContainerVolume>,
     pub results_url: Option<ResultsUrl>,
 }
 
@@ -158,6 +161,15 @@ impl ContainerManager {
         
         for env in &self.config.envs {
             cmd.args(["--env", &format!("{}={}", env.name(), env.value())]);
+        }
+        for port in &self.config.ports {
+            cmd.args(["--publish", port.value()]);
+        }
+        for volume in &self.config.volumes {
+            cmd.args(["--volume", volume.value()]);
+        }
+        for device in &self.config.devices {
+            cmd.args(["--devices", device.value()]);
         }
 
         cmd.arg(&self.config.image.to_string());

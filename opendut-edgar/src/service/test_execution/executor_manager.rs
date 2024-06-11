@@ -40,10 +40,10 @@ impl ExecutorManager {
                     engine,
                     name,
                     image,
-                    volumes: _,
-                    devices: _,
+                    volumes,
+                    devices,
                     envs,
-                    ports: _,
+                    ports,
                     command,
                     args,
                     results_url
@@ -56,6 +56,9 @@ impl ExecutorManager {
                         args,
                         envs,
                         results_url,
+                        ports,
+                        devices,
+                        volumes,
                     };
                     tokio::spawn(async move {
                         ContainerManager::new(container_config, rx).start().await;
