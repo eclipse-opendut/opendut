@@ -1,13 +1,14 @@
-use std::{env, io::{Cursor, ErrorKind}, path::PathBuf, process::Stdio};
+use std::{env, io::{Cursor, ErrorKind, Write}, path::PathBuf, process::Stdio};
 
 use opendut_types::peer::executor::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine, ResultsUrl};
 
-use tokio::{fs, io::{AsyncBufReadExt, BufReader}, process::{Child, Command}, sync::{mpsc, watch}};
+use tokio::{fs::{self, File}, io::{AsyncBufReadExt, AsyncReadExt, BufReader}, process::{Child, Command}, sync::{mpsc, watch}};
 use tracing::{error, warn, info};
 use url::Url;
 use uuid::Uuid;
-use zip::{CompressionMethod, ZipWriter};
-use zip_extensions::write::ZipWriterExtensions;
+use walkdir::WalkDir;
+use zip::{write::{FileOptionExtension, FileOptions, SimpleFileOptions}, CompressionMethod, ZipWriter};
+use anyhow::Result;
 
 use crate::service::test_execution::webdav_client::{self, WebdavClient};
 
@@ -247,14 +248,9 @@ impl ContainerManager {
             },
         };
         
-        let mut data = Vec::new();
-        let buffer = Cursor::new(&mut data);
-        let mut zip = ZipWriter::new(buffer);
-
-        let zip_options = zip::write::FileOptions::default().compression_method(CompressionMethod::BZIP2);
-        zip.create_from_directory_with_options(&self.results_dir, zip_options)
-            .map_err(|cause| Error::ResultZipping { path: self.results_dir.clone(), cause })?;
-        drop(zip);
+        let mut zipped_data = Vec::new();
+        let zip_options = SimpleFileOptions::default().compression_method(CompressionMethod::BZIP2);
+        create_zip_from_directory(&mut zipped_data, &self.results_dir, zip_options).await.map_err(|cause| Error::ResultZipping { path: self.results_dir.clone(), cause })?;
 
         self.webdav_client.create_collection_path(results_url.clone())
             .await
@@ -264,7 +260,7 @@ impl ContainerManager {
             format!("{}_{}.zip", chrono::offset::Local::now().format("%Y-%m-%d_%H-%M-%S"), self.config.name).as_str()
         ).map_err(|cause| Error::Other { message: format!("Failed to construct URL for results directory: {}", cause) })?;
 
-        let response = self.webdav_client.put(data, results_file_url.clone())
+        let response = self.webdav_client.put(zipped_data, results_file_url.clone())
             .await
             .map_err(|cause| Error::ResultUploadingInternal { url: results_file_url.clone(), cause })?;
 
@@ -300,12 +296,41 @@ impl ContainerManager {
 
 }
 
+async fn create_zip_from_directory<T>(data: &mut Vec<u8>, directory: &PathBuf, file_options: FileOptions<'_, T>) -> Result<()> 
+    where
+        T: FileOptionExtension + std::marker::Copy,
+    {
+        let mut file_buffer = Vec::new();
+        let zip_buffer = Cursor::new(data);
+        let mut zip = ZipWriter::new(zip_buffer);
+
+        for entry_res in WalkDir::new(directory) {
+            let entry = entry_res?;
+            let entry_path = entry.path();
+            let entry_metadata = entry.metadata()?;
+
+            if entry_metadata.is_file() {
+                let mut f = File::open(&entry_path).await?;
+                f.read_to_end(&mut file_buffer).await?;
+                let relative_path = entry_path.strip_prefix(directory)?;
+                zip.start_file(relative_path.to_string_lossy(), file_options)?;
+                zip.write_all(file_buffer.as_ref())?;
+                file_buffer.clear();
+            } else if entry_metadata.is_dir() {
+                let relative_path = entry_path.strip_prefix(directory)?;
+                zip.add_directory(relative_path.to_string_lossy(), file_options)?;
+            }
+        }
+
+        Ok(())
+    }
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Failure while invoking command line program '{command}': {cause}")]
     CommandLineProgramExecution { command: String, cause: std::io::Error },
     #[error("Failure while creating a ZIP archive of the test results at '{path}' : {cause}")]
-    ResultZipping { path: PathBuf, cause: zip::result::ZipError },
+    ResultZipping { path: PathBuf, cause: anyhow::Error },
     #[error("Failure while uploading test results to '{url}': {cause}")]
     ResultUploadingInternal { url: Url, cause: webdav_client::Error },
     #[error("Failure while uploading test results for '{container_name}' to '{url}' (HTTP status {status})")]

@@ -51,7 +51,6 @@ url = { workspace = true }
 walkdir = { workspace = true }
 which = { workspace = true }
 zip = { workspace = true }
-zip-extensions = { workspace = true }
 
 [dev-dependencies]
 assert_fs = { workspace = true }
