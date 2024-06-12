@@ -169,6 +169,7 @@ mod sbom {
                                 | "MIT OR Zlib OR Apache-2.0"
                                 | "Zlib OR Apache-2.0 OR MIT"
                                 | "0BSD OR MIT OR Apache-2.0"
+                                | "CC0-1.0 OR MIT-0 OR Apache-2.0"
                                 => "Apache-2.0",
 
                                 "BSD-3-Clause OR MIT" => "BSD-3-Clause",
