@@ -29,6 +29,8 @@ services:
       - OPENDUT_CARL_VPN_NETBIRD_AUTH_TYPE=personal-access-token
       - OPENDUT_CARL_OPENTELEMETRY_ENABLED=true
       - OPENDUT_CARL_OPENTELEMETRY_ENDPOINT=http://otel-collector:4317
+      - OPENDUT_CARL_MQTT_ENABLED=true
+      - OPENDUT_CARL_MQTT_BROKER_URL=mqtt://mqtt-broker:1883
       # OIDC
       - OPENDUT_CARL_NETWORK_OIDC_ENABLED=true
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ID=opendut-carl-client

@@ -1,3 +1,4 @@
+use std::ops::Not;
 use std::sync::Arc;
 use pem::Pem;
 
@@ -72,6 +73,7 @@ impl PeerManagerService for PeerManagerFacade {
             peer_descriptor: Clone::clone(&peer_descriptor),
             options: StorePeerDescriptorOptions {
                 bridge_name_default: Clone::clone(&self.options.bridge_name_default),
+                mqtt_broker_url: self.options.mqtt_broker_url.clone(),
             }
         }).await;
 
@@ -259,6 +261,7 @@ impl PeerManagerService for PeerManagerFacade {
 #[derive(Clone)]
 pub struct PeerManagerFacadeOptions {
     pub bridge_name_default: NetworkInterfaceName,
+    pub mqtt_broker_url: Option<Url>,
 }
 impl PeerManagerFacadeOptions {
     pub fn load(config: &config::Config) -> Result<Self, PeerManagerFacadeOptionsLoadError> {
@@ -268,8 +271,34 @@ impl PeerManagerFacadeOptions {
         let bridge_name_default = NetworkInterfaceName::try_from(bridge_name_default)
             .map_err(|cause| PeerManagerFacadeOptionsLoadError { message: cause.to_string() })?;
 
+        let mqtt_enabled = config.get_bool("mqtt.enabled").map_err(|cause| PeerManagerFacadeOptionsLoadError { message: cause.to_string() })?;
+        let mqtt_broker_url = match mqtt_enabled {
+            true => {
+                let mqtt_broker_url = config.get_string("mqtt.broker.url")
+                    .map_err(|cause| PeerManagerFacadeOptionsLoadError { message: cause.to_string() })?;
+                let mqtt_broker_url = Url::parse(mqtt_broker_url.as_str())
+                    .map_err(|cause| PeerManagerFacadeOptionsLoadError { message: cause.to_string() })?;
+                if mqtt_broker_url.host_str().is_none() {
+                    Err(PeerManagerFacadeOptionsLoadError {
+                        message: String::from("Configuration parameter 'mqtt.broker.url' must contain a URL with a host.")
+                    })?
+                } else if mqtt_broker_url.port().is_none() {
+                    Err(PeerManagerFacadeOptionsLoadError {
+                        message: String::from("Configuration parameter 'mqtt.broker.url' must contain a URL with a port.")
+                    })?
+                } else if mqtt_broker_url.path().is_empty().not() {
+                    Err(PeerManagerFacadeOptionsLoadError {
+                        message: String::from("Configuration parameter 'mqtt.broker.url' may not contain a URL with a path.")
+                    })?
+                }
+                Some(mqtt_broker_url)
+            },
+            false => None,
+        };
+        
         Ok(PeerManagerFacadeOptions {
             bridge_name_default,
+            mqtt_broker_url,
         })
     }
 }

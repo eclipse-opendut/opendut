@@ -17,3 +17,6 @@ enabled = false
 
 [opentelemetry]
 endpoint = "http://localhost:4317"
+
+[mqtt]
+broker.url = "mqtt://localhost:1883"

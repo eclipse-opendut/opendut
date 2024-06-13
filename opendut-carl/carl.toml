@@ -54,3 +54,6 @@ endpoint = ""
 service.name = "opendut-carl"
 metrics.interval.ms = 60000
 cpu.collection.interval.ms = 5000
+
+[mqtt]
+enabled = false

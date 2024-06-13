@@ -348,6 +348,7 @@ mod test {
 
             let store_peer_descriptor_options = StorePeerDescriptorOptions {
                 bridge_name_default: NetworkInterfaceName::try_from("br-opendut").unwrap(),
+                mqtt_broker_url: Some(url::Url::parse("mqtt://1.2.3.4:5678/").unwrap()),
             };
             actions::store_peer_descriptor(StorePeerDescriptorParams {
                 resources_manager: Arc::clone(&fixture.resources_manager),

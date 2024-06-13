@@ -40,7 +40,8 @@ pub struct StorePeerDescriptorParams {
 
 #[derive(Clone)]
 pub struct StorePeerDescriptorOptions {
-    pub bridge_name_default: NetworkInterfaceName
+    pub bridge_name_default: NetworkInterfaceName,
+    pub mqtt_broker_url: Option<Url>,
 }
 
 #[tracing::instrument(skip(params), level="trace")]
@@ -113,6 +114,7 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
                 for accessory in Clone::clone(&peer_descriptor.topology).accessories.into_iter() {
                     peer_configuration2.insert_accessory(accessory, peer::configuration::ParameterTarget::Present); //TODO not always Present
                 }
+                peer_configuration2.mqtt_broker_url = params.options.mqtt_broker_url;
                 peer_configuration2
             };
             resources.insert(peer_id, peer_configuration2); //FIXME don't just insert, but rather update existing values via ID with intelligent logic (in a separate action)
@@ -530,6 +532,7 @@ mod test {
             let peer_configuration2 = PeerConfiguration2 {
                 executors: vec![],
                 accessories: vec![],
+                mqtt_broker_url: None,
             };
             resources_manager.resources_mut(|resources| {
                 resources.insert(peer_id, Clone::clone(&peer_configuration2));
@@ -658,6 +661,7 @@ mod test {
     fn store_peer_descriptor_options() -> StorePeerDescriptorOptions {
         StorePeerDescriptorOptions {
             bridge_name_default: NetworkInterfaceName::try_from("br-opendut").unwrap(),
+            mqtt_broker_url: Some(Url::parse("mqtts://1.2.3.4:5678").unwrap()),
         }
     }
 }
