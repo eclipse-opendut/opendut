@@ -5,13 +5,15 @@ use tracing::info;
 pub struct MansonHcs3304 {
     rx_termination_channel: Receiver<bool>,
     serial_port: String,
+    mqtt_broker_url: Option<url::Url>
 }
 
 impl MansonHcs3304 {
-    pub fn new(rx_termination_channel: Receiver<bool>, serial_port: String) -> Self {
+    pub fn new(rx_termination_channel: Receiver<bool>, serial_port: String, mqtt_broker_url: Option<url::Url>) -> Self {
         Self { 
             rx_termination_channel,
             serial_port,
+            mqtt_broker_url,
         }
     }
 }

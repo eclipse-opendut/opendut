@@ -190,12 +190,12 @@ async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Opti
                     match PeerConfiguration2::try_from(configuration2) {
                         Err(error) => error!("Illegal PeerConfiguration2: {error}"),
                         Ok(configuration2) => {
-                            crate::service::executor::setup_executors(configuration2.executors);
+                            crate::service::executor::setup_executors(configuration2.executors); // TODO: Also pass the mqtt broker URL down here when the container manager PR is merged
 
                             setup_cluster_info.accessory_manager.undeploy_accessories().await; // TODO: Do this when cluster is undeployed instead
                             for accessory_param in configuration2.accessories { //TODO properly handle Present vs. Absent
                                 if matches!(accessory_param.target, ParameterTarget::Present) {
-                                    setup_cluster_info.accessory_manager.deploy_accessory(accessory_param.value).await
+                                    setup_cluster_info.accessory_manager.deploy_accessory(accessory_param.value, configuration2.mqtt_broker_url.clone()).await;
                                 }
                             }
 

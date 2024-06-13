@@ -27,12 +27,12 @@ impl AccessoryManager {
         )
     }
 
-    pub async fn deploy_accessory(&self, descriptor: AccessoryDescriptor) {
+    pub async fn deploy_accessory(&self, descriptor: AccessoryDescriptor, mqtt_broker_url: Option<url::Url>) {
         let (tx_termination_channel, rx_termination_channel) = watch::channel(false);
 
         let mut accessory = match &descriptor.model {
             AccessoryModel::MansonHcs3304 { serial_port } => {
-                MansonHcs3304::new(rx_termination_channel, serial_port.clone())
+                MansonHcs3304::new(rx_termination_channel, serial_port.clone(), mqtt_broker_url)
             },
         };
 
