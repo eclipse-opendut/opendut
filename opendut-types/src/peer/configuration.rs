@@ -2,6 +2,7 @@ use std::any::Any;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
 use serde::{Deserialize, Serialize};
+use url::Url;
 use uuid::Uuid;
 
 use crate::cluster::ClusterAssignment;
@@ -26,6 +27,7 @@ pub struct PeerNetworkConfiguration {
 pub struct PeerConfiguration2 {
     pub executors: Vec<Parameter<ExecutorDescriptor>>,
     pub accessories: Vec<Parameter<AccessoryDescriptor>>,
+    pub mqtt_broker_url: Option<Url>,
     //TODO migrate more parameters
 }
 impl PeerConfiguration2 {

@@ -61,6 +61,7 @@ impl From<crate::peer::configuration::PeerConfiguration2> for PeerConfiguration2
         Self {
             executors: value.executors.into_iter().map(PeerConfigurationParameterExecutor::from).collect(),
             accessories: value.accessories.into_iter().map(PeerConfigurationParameterAccessoryDescriptor::from).collect(),
+            mqtt_broker_url: value.mqtt_broker_url.map(|mqtt_broker_url| mqtt_broker_url.into()),
         }
     }
 }
@@ -71,6 +72,7 @@ impl TryFrom<PeerConfiguration2> for crate::peer::configuration::PeerConfigurati
         Ok(crate::peer::configuration::PeerConfiguration2 {
             executors: value.executors.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
             accessories: value.accessories.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
+            mqtt_broker_url: value.mqtt_broker_url.map(TryInto::try_into).transpose()?,
         })
     }
 }

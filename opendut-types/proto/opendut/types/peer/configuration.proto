@@ -23,6 +23,7 @@ message PeerNetworkConfiguration {
 message PeerConfiguration2 {
   repeated PeerConfigurationParameterExecutor executors = 1;
   repeated PeerConfigurationParameterAccessoryDescriptor accessories = 2;
+  optional opendut.types.util.Url mqtt_broker_url = 3;
   //TODO migrate more parameters
 }
 
