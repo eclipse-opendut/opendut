@@ -4,6 +4,7 @@ package opendut.carl.services.peer_manager;
 
 import "opendut/types/topology/device.proto";
 import "opendut/types/peer/peer.proto";
+import "opendut/types/cleo/cleo.proto";
 
 service PeerManager {
   rpc StorePeerDescriptor(StorePeerDescriptorRequest) returns (StorePeerDescriptorResponse) {}
@@ -12,6 +13,7 @@ service PeerManager {
   rpc ListPeerDescriptors(ListPeerDescriptorsRequest) returns (ListPeerDescriptorsResponse) {}
   rpc ListDevices(ListDevicesRequest) returns (ListDevicesResponse) {}
   rpc GeneratePeerSetup(GeneratePeerSetupRequest) returns (GeneratePeerSetupResponse) {}
+  rpc GenerateCleoSetup(GenerateCleoSetupRequest) returns (GenerateCleoSetupResponse) {}
 }
 
 //
@@ -182,6 +184,27 @@ message GeneratePeerSetupSuccess {
 }
 
 message GeneratePeerSetupFailure {
+}
+
+//
+// GenerateCleoSetupRequest
+//
+message GenerateCleoSetupRequest {
+}
+
+message GenerateCleoSetupResponse {
+  oneof reply {
+    GenerateCleoSetupSuccess success = 1;
+    GenerateCleoSetupFailure failure = 2;
+  }
+}
+
+message GenerateCleoSetupSuccess {
+  opendut.types.cleo.CleoId cleo = 1;
+  opendut.types.cleo.CleoSetup setup = 2;
+}
+
+message GenerateCleoSetupFailure {
 }
 
 //

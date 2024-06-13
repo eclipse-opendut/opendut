@@ -42,7 +42,7 @@ rm .ci/deploy/localenv/secrets/.env
 # configure project path
 export OPENDUT_REPO_ROOT=$(git rev-parse --show-toplevel)
 # start provisioning and create .env file
-docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/data/provision/docker-compose.yml up --detach --build
+docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/data/provision/docker-compose.yml up --build
 # start the environment
 docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/docker-compose.yml --env-file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/data/secrets/.env up --detach --build
 ```

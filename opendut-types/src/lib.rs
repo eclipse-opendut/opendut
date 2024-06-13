@@ -7,6 +7,7 @@ pub mod topology;
 pub mod vpn;
 pub mod util;
 pub mod resources;
+pub mod cleo;
 
 pub trait ShortName {
     fn short_name(&self) -> &'static str;

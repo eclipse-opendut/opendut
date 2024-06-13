@@ -21,6 +21,7 @@ mod licenses;
 mod nav;
 mod user;
 mod about;
+mod cleo;
 
 fn main() {
 

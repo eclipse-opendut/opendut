@@ -1,6 +1,7 @@
 use uuid::Uuid;
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use crate::cleo::CleoId;
 use crate::peer::PeerId;
 
 #[derive(Copy, Debug, Clone, Eq, Hash, PartialEq, Serialize, Deserialize)]
@@ -25,6 +26,14 @@ impl fmt::Display for Id {
 
 impl From<PeerId> for Id {
     fn from(value: PeerId) -> Self {
+        Self {
+            value: value.0,
+        }
+    }
+}
+
+impl From<CleoId> for Id {
+    fn from(value: CleoId) -> Self {
         Self {
             value: value.0,
         }

@@ -12,11 +12,12 @@ use opendut_carl_api::proto::services::peer_manager;
 use opendut_carl_api::proto::services::peer_manager::*;
 use opendut_carl_api::proto::services::peer_manager::peer_manager_server::{PeerManager as PeerManagerService, PeerManagerServer};
 use opendut_types::peer::{PeerDescriptor, PeerId};
+use opendut_types::cleo::{CleoId};
 use opendut_types::util::net::NetworkInterfaceName;
 use opendut_util::logging::NonDisclosingRequestExtension;
 
 use crate::actions;
-use crate::actions::{DeletePeerDescriptorParams, GeneratePeerSetupParams, ListDevicesParams, ListPeerDescriptorsParams, StorePeerDescriptorOptions, StorePeerDescriptorParams};
+use crate::actions::{DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, ListDevicesParams, ListPeerDescriptorsParams, StorePeerDescriptorOptions, StorePeerDescriptorParams};
 use crate::grpc::extract;
 use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
@@ -237,6 +238,26 @@ impl PeerManagerService for PeerManagerFacade {
         };
 
         Ok(Response::new(GeneratePeerSetupResponse { reply: Some(response) }))
+    }
+
+    async fn generate_cleo_setup(&self, request: Request<GenerateCleoSetupRequest>) -> Result<Response<GenerateCleoSetupResponse>, Status> {
+       trace!("Received request: {}", request.debug_output());
+        
+        let cleo_id = CleoId::random();
+        let setup = actions::generate_cleo_setup(GenerateCleoSetupParams {
+            resources_manager: Arc::clone(&self.resources_manager),
+            cleo: cleo_id,
+            carl_url: Clone::clone(&self.carl_url),
+            ca: Clone::clone(&self.ca),
+            oidc_registration_client: self.oidc_registration_client.clone(),
+        }).await.map_err(|cause| Status::internal(format!("Cleo setup could not be created: {}", cause)))?;
+        
+        let response = generate_cleo_setup_response::Reply::Success(GenerateCleoSetupSuccess { 
+            cleo: Some(cleo_id.into()), 
+            setup: Some(setup.into()) 
+        });
+
+        Ok(Response::new(GenerateCleoSetupResponse { reply: Some(response) }))
     }
 }
 

@@ -14,6 +14,7 @@ fn main() -> Result<()> {
         "proto/opendut/types/util/net.proto",
         "proto/opendut/types/util/uuid.proto",
         "proto/opendut/types/vpn/vpn.proto",
+        "proto/opendut/types/cleo/cleo.proto"
     ];
 
     let includes = [

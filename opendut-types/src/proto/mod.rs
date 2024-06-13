@@ -3,6 +3,7 @@ pub mod peer;
 pub mod topology;
 pub mod util;
 pub mod vpn;
+pub mod cleo;
 
 use std::marker::PhantomData;
 

@@ -96,6 +96,7 @@ pub enum IllegalDevicesError {
 mod client {
     use tonic::codegen::{Body, Bytes, http, InterceptedService, StdError};
     use tracing::error;
+    use opendut_types::cleo::CleoSetup;
 
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerSetup};
     use opendut_types::topology::DeviceDescriptor;
@@ -248,6 +249,35 @@ mod client {
                         }
                         _ => {
                             let error = CreateSetupError { message: format!("Failed to create setup-string for peer <{}>!", peer_id) };
+                            error!("{}", error);
+                            Err(error)
+                        }
+                    }
+                }
+                Err(status) => {
+                    Err(CreateSetupError { message: format!("gRPC failure: {status}") })
+                }
+            }
+        }
+
+        pub async fn create_cleo_setup(&mut self) -> Result<CleoSetup, CreateSetupError> {
+            let request = tonic::Request::new(
+                peer_manager::GenerateCleoSetupRequest {
+                }
+            );
+
+            match self.inner.generate_cleo_setup(request).await {
+                Ok(response) => {
+                    match response.into_inner().reply {
+                        Some(peer_manager::generate_cleo_setup_response::Reply::Success(peer_manager::GenerateCleoSetupSuccess { setup, .. })) => {
+                            setup
+                                .ok_or(CreateSetupError { message: "Failed to create setup-string for CLEO! Got no CleoSetup!".to_owned() })
+                                .and_then(|setup| CleoSetup::try_from(setup)
+                                    .map_err(|cause| CreateSetupError { message: cause.to_string() })
+                                )
+                        }
+                        _ => {
+                            let error = CreateSetupError { message: "Failed to create setup-string for CLEO!".to_owned() };
                             error!("{}", error);
                             Err(error)
                         }

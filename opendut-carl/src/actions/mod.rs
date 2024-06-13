@@ -26,6 +26,12 @@ pub use peers::{
 };
 
 pub use peers::{
+    generate_cleo_setup,
+    GenerateCleoSetupParams,
+    GenerateCleoSetupError,
+};
+
+pub use peers::{
     delete_peer_descriptor,
     DeletePeerDescriptorParams,
     DeletePeerDescriptorError,
