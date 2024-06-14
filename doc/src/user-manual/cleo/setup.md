@@ -25,6 +25,16 @@ This might be the go-to way, if you want to use CLEO in your pipeline.
 Once downloaded, extract the files with the command `tar xvf opendut-cleo-{architecture}.tar.gz`. It will then be extracted into
 the folder which is the current work directory. You might want to use another directory of your choice.
 
+## Setup via CLEO command (recommended)
+A setup string can be retrieved from LEA and used with the following command.
+
+    opendut-cleo cleo-setup <String> --persistent=<type>
+
+The persistent flag is optional. Without the flag, the needed environment variables will be printed out to the terminal. <br>
+If the persistent flag is set to `ùser` or without a value, a configuration file will be written to `~/.config/opendut/cleo/config.toml`,
+with it being set to `system` the cleo configuration file will be written to `/etc/opendut/cleo.toml`.
+
+## Setup via script
 The script used to run CLEO will not set the environment variables for CLIENT_ID and CLIENT_SECRET. This has to be done by the users manually.
 This can easily be done by entering the following commands:
 ````

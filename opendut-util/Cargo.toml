@@ -15,6 +15,7 @@ opendut-util-core = { workspace = true }
 
 anyhow = { workspace = true }
 config = { workspace = true, optional = true }
+pem = { workspace = true }
 serde = { workspace = true, optional = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }

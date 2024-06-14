@@ -134,6 +134,7 @@ cfg_if! {
                 host: impl Into<String>,
                 port: u16,
                 ca_cert_path: &Path,
+                ca_content: Option<String>,
                 domain_name_override: &Option<String>,
                 settings: &config::Config,
             ) -> Result<CarlClient, InitializationError> {
@@ -141,9 +142,17 @@ cfg_if! {
                 let address = format!("https://{}:{}", host.into(), port);
 
                 let tls_config = {
-                    debug!("Using TLS CA certificate: {}", ca_cert_path.display());
-                    let ca_cert = std::fs::read_to_string(ca_cert_path)
-                        .map_err(|cause| InitializationError::TlsConfiguration { message: format!("Failed to read CA certificate from path '{}'", ca_cert_path.display()), cause: cause.into() })?;
+                    let ca_cert = match ca_content {
+                        None => {
+                            debug!("Using TLS CA certificate: {}", ca_cert_path.display());
+                            std::fs::read_to_string(ca_cert_path)
+                                .map_err(|cause| InitializationError::TlsConfiguration { message: format!("Failed to read CA certificate from path '{}'", ca_cert_path.display()), cause: cause.into() })?
+                        }
+                        Some(content) => {
+                            debug!("Using TLS CA certificate from configuration file");
+                            content
+                        }
+                    };
 
                     let mut config = tonic::transport::ClientTlsConfig::new()
                         .ca_certificate(tonic::transport::Certificate::from_pem(ca_cert));
