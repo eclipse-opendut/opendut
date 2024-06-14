@@ -64,16 +64,16 @@ the folder which is the current work directory. You might want to use another di
 
 
 ### Cannelloni
-- Download Cannelloni from the openDuT GitHub project: https://github.com/eclipse-opendut/cannelloni/releases/ and 
-install the packages:
+1. Install the following packages:
   ```shell
-  sudo apt install -y python3-can can-utils libsctp1
+  sudo apt install -y python3-can can-utils
   ```
-- Unpack cannelloni tarball and copy the lib file `libcannelloni-common.so.0` to `/lib` and the cannelloni
-  binary has to be copied to `/usr/local/bin`
+- Download Cannelloni from here: https://github.com/eclipse-opendut/cannelloni/releases/
+- Unpack the Cannelloni tarball and copy the files into your filesystem like so:
   ```shell
-  sudo cp libcannelloni-common.so.0 /lib
-  sudo cp cannelloni /usr/local/bin
+  sudo cp libcannelloni-common.so.0 /lib/
+  sudo cp libsctp.so* /lib/
+  sudo cp cannelloni /usr/local/bin/
   ```
 
 ## Self-Hosted Backend Server
