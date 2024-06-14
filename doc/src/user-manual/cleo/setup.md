@@ -62,3 +62,9 @@ Using CLEO with parameters works by adding the parameters when executing the scr
 
 ## Additional notes
 - The CA certificate to be provided for CLEO depends on the used certificate authority used on server side for CARL.
+
+## Auto-Completion
+You can use auto-completions in CLEO, which will fill in commands when you press <kbd>TAB</kbd>.
+
+To set them up, run `opendut-cleo completions SHELL` where you need to replace `SHELL` with the shell that you use, e.g. `bash`, `zsh` or `fish`.  
+Then you need to pipe the output into a completions-file for your shell. See your shell's documentation for where to place these files.
