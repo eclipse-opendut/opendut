@@ -66,4 +66,4 @@ pub mod netbird {
     }
 }
 
-pub const REQUIRED_COMMAND_LINE_PROGRAMS: [(&str, &str);3] = [("systemctl", "--version"), ("cannelloni", "-h"), ("cangw", "-s")];
+pub const REQUIRED_COMMAND_LINE_PROGRAMS: [(&str, &str); 3] = [("systemctl", "--version"), ("cannelloni", "-h"), ("cangw", "-s")];
