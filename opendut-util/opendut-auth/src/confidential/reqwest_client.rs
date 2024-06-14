@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use anyhow::anyhow;
 use config::Config;
 use oauth2::{HttpRequest, HttpResponse};
@@ -12,6 +13,7 @@ pub struct OidcReqwestClient {
     pub(crate) client: reqwest::Client,
 }
 
+const CONFIG_KEY_GENERIC_CA_CONTENT: &str = "network.tls.ca.content";
 const CONFIG_KEY_GENERIC_CA: &str = "network.tls.ca";
 const CONFIG_KEY_OIDC_CA: &str = "network.oidc.client.ca";
 
@@ -24,12 +26,21 @@ impl OidcReqwestClient {
             }
             Err(_error) => {
                 // could not find specific OIDC CA, try generic CA
-                match Pem::from_config_path(CONFIG_KEY_GENERIC_CA, config).await {
-                    Ok(ca_certificate) => {
+                match config.get_string(CONFIG_KEY_GENERIC_CA_CONTENT) {
+                    Ok(ca_content) => {
+                        let ca_certificate = Pem::from_str(&ca_content)
+                            .map_err(|error| OidcClientError::LoadCustomCA(format!("Could not parse CA from configuration. Error: {}", error)))?;
                         Ok(Self { client: OidcReqwestClient::build_client(ca_certificate)? })
                     }
-                    Err(error) => {
-                        Err(anyhow!("Could not find any CA certificate in config. Error: {}", error))
+                    Err(_) => {
+                        match Pem::from_config_path(CONFIG_KEY_GENERIC_CA, config).await {
+                            Ok(ca_certificate) => {
+                                Ok(Self { client: OidcReqwestClient::build_client(ca_certificate)? })
+                            }
+                            Err(error) => {
+                                Err(anyhow!("Could not find any CA certificate in config. Error: {}", error))
+                            }
+                        }
                     }
                 }
             }

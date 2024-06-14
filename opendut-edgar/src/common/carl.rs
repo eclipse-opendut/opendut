@@ -24,7 +24,7 @@ pub async fn connect(settings: &Config) -> anyhow::Result<CarlClient> {
     let interval = Duration::from_millis(u64::try_from(settings.get_int("network.connect.interval.ms")?)?);
 
     for retries_left in (0..retries).rev() {
-        match CarlClient::create(&host, port, &ca_cert_path, &domain_name_override, settings).await {
+        match CarlClient::create(&host, port, &ca_cert_path, None, &domain_name_override, settings).await {
             Ok(carl) => {
                 info!("Connected to CARL.");
                 return Ok(carl);
