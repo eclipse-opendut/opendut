@@ -336,7 +336,6 @@ pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<Peer
 }
 
 pub struct GenerateCleoSetupParams {
-    pub resources_manager: ResourcesManagerRef,
     pub cleo: CleoId,
     pub carl_url: Url,
     pub ca: Pem,
@@ -613,11 +612,9 @@ mod test {
 
         use super::*;
 
-        #[rstest]
         #[tokio::test]
-        async fn should_create_setup_string_cleo(fixture: Fixture) -> anyhow::Result<()> {
+        async fn should_create_setup_string_cleo() -> anyhow::Result<()> {
             let generate_cleo_setup_params = GenerateCleoSetupParams {
-                resources_manager: fixture.resources_manager,
                 cleo: CleoId::try_from("787d0b11-51f3-4cfe-8131-c7d89d53f0e9")?,
                 carl_url: Url::parse("https://example.com:1234").unwrap(),
                 ca: get_cert(),

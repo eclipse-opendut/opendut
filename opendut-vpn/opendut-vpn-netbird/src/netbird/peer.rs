@@ -12,6 +12,7 @@ impl From<&str> for PeerId {
     }
 }
 
+#[allow(unused)] //Currently unused, but expected to be needed again
 #[derive(Deserialize)]
 pub struct Peer {
     pub id: PeerId,

@@ -104,20 +104,6 @@ impl From<String> for RuleId {
 pub struct Rule {
     pub id: RuleId,
     pub name: RuleName,
-    pub description: String,
-    pub disabled: bool,
-    pub flow: RuleFlow,
-
-    pub sources: Vec<GroupInfo>,
-    pub destinations: Vec<GroupInfo>,
-}
-
-
-#[derive(Debug, Deserialize)]
-pub struct GroupInfo {
-    pub id: GroupId,
-    pub name: String,
-    pub peers_count: usize,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

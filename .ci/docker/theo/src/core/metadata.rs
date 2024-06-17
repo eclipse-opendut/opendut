@@ -37,7 +37,7 @@ pub struct Metadata {
 
 #[derive(Debug)]
 pub struct NetbirdMetadata {
-    pub netbird_client_version: String,
+    #[allow(unused)] pub netbird_client_version: String,
     pub netbird_signal_version: String,
     pub netbird_management_version: String,
     pub netbird_dashboard_version: String,

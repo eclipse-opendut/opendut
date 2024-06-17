@@ -245,7 +245,6 @@ impl PeerManagerService for PeerManagerFacade {
         
         let cleo_id = CleoId::random();
         let setup = actions::generate_cleo_setup(GenerateCleoSetupParams {
-            resources_manager: Arc::clone(&self.resources_manager),
             cleo: cleo_id,
             carl_url: Clone::clone(&self.carl_url),
             ca: Clone::clone(&self.ca),
