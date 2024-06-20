@@ -181,14 +181,14 @@ where
     let (health_state, _) = create_signal({
         if is_deployed.get().0 {
             health::State {
-                kind: health::StateKind::Green,
-                text: String::from("Connected. No errors."),
+                kind: health::StateKind::Yellow,
+                text: String::from("Marked for deployment. Deployment-State unknown."),
             }
         }
         else {
             health::State {
                 kind: health::StateKind::Unknown,
-                text: String::from("Disconnected"),
+                text: String::from("Undeployed"),
             }
         }
     });
