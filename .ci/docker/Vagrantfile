@@ -1,8 +1,10 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+vm_name = (ENV["OPENDUT_VM_NAME"] ||= "opendut-vm").to_s
+
 machine = {
-    :hostname => "opendut-vm",
+    :hostname => vm_name,
     :memory => 8192,
     :cpu => 4,
     :ip => "192.168.56.10",

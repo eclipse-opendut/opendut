@@ -118,6 +118,5 @@ pub fn running_in_opendut_vm() -> bool {
         .output()
         .unwrap_or_else(|cause| panic!("Failed to execute hostname. {}", cause));
     let hostname = String::from_utf8(hostname.stdout).expect("Could not determine hostname!");
-    let opendut_vm_name = String::from(OPENDUT_VM_NAME);
-    opendut_vm_name.eq(hostname.trim())
+    hostname.trim().contains(OPENDUT_VM_NAME)
 }
