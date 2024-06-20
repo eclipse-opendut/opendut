@@ -1,17 +1,16 @@
 use std::{env, io::{Cursor, ErrorKind, Write}, path::PathBuf, process::Stdio};
 
-use opendut_types::peer::executor::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine, ResultsUrl};
-
+use anyhow::Result;
 use tokio::{fs::{self, File}, io::{AsyncBufReadExt, AsyncReadExt, BufReader}, process::{Child, Command}, sync::{mpsc, watch}};
-use tracing::{error, warn, info};
+use tracing::{error, info, warn};
 use url::Url;
 use uuid::Uuid;
 use walkdir::WalkDir;
-use zip::{write::{FileOptionExtension, FileOptions, SimpleFileOptions}, CompressionMethod, ZipWriter};
-use anyhow::Result;
+use zip::{CompressionMethod, write::{FileOptionExtension, FileOptions, SimpleFileOptions}, ZipWriter};
+
+use opendut_types::peer::executor::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine, ResultsUrl};
 
 use crate::service::test_execution::webdav_client::{self, WebdavClient};
-
 
 #[derive(Debug)]
 enum ContainerState {
@@ -249,7 +248,7 @@ impl ContainerManager {
         };
         
         let mut zipped_data = Vec::new();
-        let zip_options = SimpleFileOptions::default().compression_method(CompressionMethod::BZIP2).large_file(true);
+        let zip_options = default_compression_options();
         create_zip_from_directory(&mut zipped_data, &self.results_dir, zip_options).await.map_err(|cause| Error::ResultZipping { path: self.results_dir.clone(), cause })?;
 
         self.webdav_client.create_collection_path(results_url.clone())
@@ -325,6 +324,13 @@ async fn create_zip_from_directory<T>(data: &mut Vec<u8>, directory: &PathBuf, f
         Ok(())
     }
 
+fn default_compression_options<'k>() -> FileOptions<'k, ()> {
+    SimpleFileOptions::default()
+        .compression_method(CompressionMethod::BZIP2)
+        // https://github.com/zip-rs/zip2/issues/195 large_file(true) produces invalid zip file with crate version 2.1.3
+        .large_file(false)
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Failure while invoking command line program '{command}': {cause}")]
@@ -398,5 +404,75 @@ impl ContainerLogReader {
             info!("Received line: {:?}", String::from_utf8_lossy(&line))
         }
     }
-    
+}
+
+#[cfg(test)]
+mod tests {
+    use std::io::Read;
+    use std::path::PathBuf;
+    use std::process::Command;
+
+    use assert_fs::TempDir;
+    use tokio::fs;
+    use uuid::Uuid;
+
+    use crate::service::test_execution::container_manager::{create_zip_from_directory, default_compression_options};
+
+    fn read_file_from_zip(zip_file_name: &PathBuf, file_name: &str) -> String {
+        let zipfile = std::fs::File::open(zip_file_name)
+            .unwrap();
+        let mut archive = zip::ZipArchive::new(zipfile)
+            .unwrap();
+
+        let mut file = archive.by_name(file_name)
+            .expect(&format!("Failed to find file {file_name} in archive!"));
+        let mut contents = String::new();
+        file.read_to_string(&mut contents).expect("Failed to read file from zip archive!");
+
+        contents
+    }
+
+    fn check_unzip_with_system_binary(zip_file: &PathBuf) -> bool {
+        let working_directory = zip_file.parent().unwrap();
+        let mut command = Command::new("unzip");
+        let result = command.current_dir(working_directory)
+            .arg("-t").arg(zip_file).status();
+        match result {
+            Ok(status) => {
+                status.success()
+            }
+            Err(_error) => {
+                false
+            }
+        }
+    }
+
+    #[rstest::rstest]
+    #[tokio::test]
+    async fn test_create_zip_from_directory() {
+        let temp_dir = TempDir::new().unwrap();
+        let temp_sub_dir = temp_dir.join("results");
+        let zip_file_name = temp_dir.join("test.zip");
+        std::fs::create_dir_all(temp_sub_dir.clone()).unwrap();
+        let temp_path = temp_sub_dir.to_path_buf();
+
+        let results_file_name = format!("opendut-edgar-results_{}.txt", Uuid::new_v4());
+        let file_name = temp_sub_dir.join(results_file_name.clone());
+        let data = "Hello world!";
+        fs::write(file_name, data).await.expect("Failed to write data to test file!");
+
+        let mut zipped_data = Vec::new();
+        let zip_options = default_compression_options();
+        create_zip_from_directory(&mut zipped_data, &temp_path, zip_options)
+            .await
+            .expect("Failed to write zip");
+
+        fs::write(zip_file_name.clone(), zipped_data).await.expect("TODO: panic message");
+        let content = read_file_from_zip(&zip_file_name, &results_file_name);
+        assert!(content.eq(data));
+
+        let result_system_unzip = check_unzip_with_system_binary(&zip_file_name);
+        assert!(result_system_unzip.eq(&true))
+
+    }
 }
