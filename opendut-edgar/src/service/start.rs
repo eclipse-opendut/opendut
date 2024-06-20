@@ -10,6 +10,7 @@ use opentelemetry::propagation::text_map_propagator::TextMapPropagator;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 use tokio::sync::mpsc::Sender;
 use tokio::time::sleep;
+use tonic::Code;
 use tracing::{debug, error, info, Span, trace, warn};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
@@ -106,7 +107,10 @@ pub async fn create(self_id: PeerId, settings: LoadedConfig) -> anyhow::Result<(
     let (mut rx_inbound, tx_outbound) = carl::open_stream(self_id, &remote_address, &mut carl).await?;
 
     loop {
-        let received = tokio::time::timeout(timeout_duration, rx_inbound.message()).await;
+        let received = tokio::time::timeout(
+            timeout_duration,
+            rx_inbound.message()
+        ).await;
 
         match received {
             Ok(received) => match received {
@@ -119,7 +123,30 @@ pub async fn create(self_id: PeerId, settings: LoadedConfig) -> anyhow::Result<(
                 }
                 Err(status) => {
                     warn!("CARL sent a gRPC error status: {status}");
-                    //TODO exit?
+
+                    match status.code() {
+                        Code::Ok | Code::AlreadyExists => continue, //ignore
+
+                        Code::DeadlineExceeded | Code::Unavailable => { //ignore, but delay reading the stream again, as this may result in rapid triggering of errors otherwise
+                            tokio::time::sleep(Duration::from_secs(1)).await;
+                            continue
+                        }
+
+                        Code::Aborted
+                        | Code::Cancelled
+                        | Code::DataLoss
+                        | Code::FailedPrecondition
+                        | Code::Internal
+                        | Code::InvalidArgument
+                        | Code::NotFound
+                        | Code::OutOfRange
+                        | Code::PermissionDenied
+                        | Code::ResourceExhausted
+                        | Code::Unimplemented
+                        | Code::Unauthenticated
+                        | Code::Unknown
+                        => panic!("Received potentially bad gRPC error: {status}"), //In production, SystemD will restart EDGAR with a delay. A crash is mainly more visible.
+                    }
                 }
                 Ok(None) => {
                     info!("CARL disconnected!");
