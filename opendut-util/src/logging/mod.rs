@@ -8,7 +8,7 @@ use std::time::Duration;
 use opentelemetry::{global, KeyValue};
 use opentelemetry::global::{GlobalLoggerProvider, logger_provider};
 use opentelemetry::logs::LogError;
-use opentelemetry::metrics::MetricsError;
+use opentelemetry::metrics::{MeterProvider, MetricsError};
 use opentelemetry::trace::TraceError;
 use opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge;
 use opentelemetry_otlp::WithExportConfig;
@@ -30,6 +30,7 @@ use tracing_subscriber::util::SubscriberInitExt;
 use url::Url;
 use opendut_auth::confidential::blocking::client::{AuthError, ConfidentialClientRef, ConfClientArcMutex};
 
+pub const DEFAULT_METER_NAME: &str = "opendut_meter";
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -84,21 +85,44 @@ pub async fn initialize_with_config(
             None
         };
 
-    let (tracer, logger, logger_layer, meter_provider) =
-        if let OpenTelemetryConfig::Enabled { endpoint, service_name, service_instance_id, metrics_interval_ms, ..} = config.opentelemetry {
-            let mutex_confidential_client = Arc::new(Mutex::new(confidential_client));
-            let my_arc_mutex = ConfClientArcMutex(mutex_confidential_client);
+    let (tracer, logger, logger_layer, meter_providers) =
+        if let OpenTelemetryConfig::Enabled { endpoint, service_name, service_instance_id, metrics_interval_ms, cpu_collection_interval_ms, ..} = config.opentelemetry {
 
-            let tracer = init_tracer(my_arc_mutex.clone(), &endpoint, service_name.clone(), service_instance_id.clone()).expect("Failed to initialize tracer.");
+            let confidential_client = ConfClientArcMutex(Arc::new(Mutex::new(confidential_client)));
 
-            let logger = init_logger(my_arc_mutex.clone(), &endpoint, service_name.clone(), service_instance_id.clone()).expect("Failed to initialize logs.");
+            let tracer = init_tracer(confidential_client.clone(), &endpoint, service_name.clone(), service_instance_id.clone()).expect("Failed to initialize tracer.");
+            
+            let logger = init_logger(confidential_client.clone(), &endpoint, service_name.clone(), service_instance_id.clone()).expect("Failed to initialize logs.");
 
             let logger_provider: GlobalLoggerProvider = logger_provider();
             let logger_layer = OpenTelemetryTracingBridge::new(&logger_provider);
 
-            let meter_provider = init_metrics(my_arc_mutex, &endpoint, service_name, service_instance_id, metrics_interval_ms).expect("Failed to initialize metrics.");
+            let default_meter_provider = NamedMeterProvider {
+                kind: NamedMeterProviderKindDefault,
+                meter_provider: init_metrics(
+                    confidential_client.clone(),
+                    &endpoint,
+                    service_name.clone(),
+                    service_instance_id.clone(),
+                    metrics_interval_ms
+                ).expect("Failed to initialize default metrics.")
+            };
 
-            (Some(tracer), Some(logger), Some(logger_layer), Some(meter_provider))
+            let cpu_meter_provider = NamedMeterProvider {
+                kind: NamedMeterProviderKindCpu,
+                meter_provider: init_metrics(
+                    confidential_client,
+                    &endpoint,
+                    service_name,
+                    service_instance_id,
+                    cpu_collection_interval_ms
+                ).expect("Failed to initialize CPU metrics.")
+            };
+
+            global::set_meter_provider(default_meter_provider.meter_provider.clone());
+            let meter_providers: NamedMeterProviders = (default_meter_provider, cpu_meter_provider);
+
+            (Some(tracer), Some(logger), Some(logger_layer), Some(meter_providers))
     } else {
         (None, None, None, None)
     };
@@ -111,7 +135,7 @@ pub async fn initialize_with_config(
         .with(logger_layer)
         .try_init()?;
 
-    Ok(ShutdownHandle { _logger: logger, _meter_provider: meter_provider })
+    Ok(ShutdownHandle { _logger: logger, meter_providers })
 }
 
 fn init_tracer(telemetry_interceptor: ConfClientArcMutex<Option<ConfidentialClientRef>>, endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>) -> Result<opentelemetry_sdk::trace::Tracer, TraceError> {
@@ -182,12 +206,15 @@ fn init_metrics(telemetry_interceptor: ConfClientArcMutex<Option<ConfidentialCli
         .with_period(metrics_interval)
         .build()
 }
-pub fn initialize_metrics_collection(cpu_collection_interval_ms: Duration) {
-    let meter = global::meter("opendut_meter");
+pub fn initialize_metrics_collection(
+    cpu_collection_interval_ms: Duration,
+    meter_providers: &NamedMeterProviders,
+) {
+    let (default_meter_provider, cpu_meter_provider) = meter_providers;
+    let default_meter = default_meter_provider.meter_provider.meter(DEFAULT_METER_NAME);
 
-    let process_ram_used = meter.u64_observable_gauge("process_ram_used").init();
-    let process_cpu_used = meter.f64_observable_gauge("process_cpu_used").init();
-    let host_ram_used = meter.u64_observable_gauge("host_ram_used").init();
+    let process_ram_used = default_meter.u64_observable_gauge("process_ram_used").init();
+    let host_ram_used = default_meter.u64_observable_gauge("host_ram_used").init();
 
     const WINDOW_SIZE: usize = 5;
     
@@ -204,24 +231,29 @@ pub fn initialize_metrics_collection(cpu_collection_interval_ms: Duration) {
             sys.refresh_processes();
             if let Some(process) = sys.process(Pid::from(current_pid)) {
                 let result = process.cpu_usage();
-                mutex_cloned.lock().await.add_sample(result as f64); // add more samples in a loop
+                mutex_cloned.lock().await.add_sample(result as f64);
             }
         }
     });
 
+    let cpu_meter = cpu_meter_provider.meter_provider.meter(DEFAULT_METER_NAME);
+    let process_cpu_used = cpu_meter.f64_observable_gauge("process_cpu_used").init();
+    cpu_meter.register_callback(&[process_cpu_used.as_any()], move |observer| {
+        let average_cpu_usage = mutex.try_lock().unwrap().get_average();
+        observer.observe_f64(&process_cpu_used, average_cpu_usage,&[]);
+    }).expect("Could not register metrics collection callback");
+
     let current_pid = std::process::id() as usize;
-    meter.register_callback(&[process_ram_used.as_any(),process_cpu_used.as_any(),host_ram_used.as_any()], move |observer| {
+    default_meter.register_callback(&[process_ram_used.as_any(), host_ram_used.as_any()], move |observer| {
         let mut sys = System::new_all();
         sys.refresh_processes();
 
-        let average_cpu_usage = mutex.try_lock().unwrap().get_average();
-
         if let Some(process) = sys.process(Pid::from(current_pid)) {
             observer.observe_u64(&process_ram_used, process.memory(),&[]);
-            observer.observe_f64(&process_cpu_used, average_cpu_usage,&[]);
-            observer.observe_u64(&host_ram_used, sys.used_memory(),&[]);                
+            observer.observe_u64(&host_ram_used, sys.used_memory(),&[]);
         }
-    }).expect("could not register metrics collection callback");
+    }).expect("Could not register metrics collection callback");
+
 }
 
 pub async fn initialize_with_defaults() -> Result<ShutdownHandle, Error> {
@@ -368,10 +400,26 @@ pub enum LoggingConfigError {
 pub struct Endpoint {
     pub url: Url,
 }
+
+pub struct NamedMeterProvider<Kind: NamedMeterProviderKind> {
+    pub kind: Kind,
+    pub meter_provider: SdkMeterProvider,
+}
+pub type NamedMeterProviders = (NamedMeterProvider<NamedMeterProviderKindDefault>, NamedMeterProvider<NamedMeterProviderKindCpu>);
+
+pub trait NamedMeterProviderKind {}
+pub struct NamedMeterProviderKindDefault;
+impl NamedMeterProviderKind for NamedMeterProviderKindDefault {}
+pub struct NamedMeterProviderKindCpu;
+impl NamedMeterProviderKind for NamedMeterProviderKindCpu {}
+
 #[must_use]
 pub struct ShutdownHandle {
     _logger: Option<Logger>,
-    _meter_provider: Option<SdkMeterProvider>,
+    pub meter_providers: Option<(
+        NamedMeterProvider<NamedMeterProviderKindDefault>,
+        NamedMeterProvider<NamedMeterProviderKindCpu>
+    )>,
 }
 impl ShutdownHandle {
     pub fn shutdown(&mut self) {

@@ -10,7 +10,7 @@ use crate::resources::manager::ResourcesManagerRef;
 pub fn initialize_metrics_collection(
     resources_manager: ResourcesManagerRef,
 ) {
-    let meter = global::meter("opendut_meter");
+    let meter = global::meter(opendut_util::logging::DEFAULT_METER_NAME);
 
     let deployed_clusters_gauge = meter.u64_observable_gauge("deployed_clusters").init();
     let configured_clusters_gauge = meter.u64_observable_gauge("configured_clusters").init();

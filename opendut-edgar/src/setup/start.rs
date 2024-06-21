@@ -44,6 +44,8 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
         ),
         Box::new(tasks::CheckCarlReachable),
         Box::new(tasks::CopyExecutable),
+        Box::new(tasks::copy_rperf::CopyRperf),
+
         Box::new(tasks::LoadKernelModules::default()),
     ];
 
@@ -109,6 +111,8 @@ pub async fn unmanaged(
         Box::new(tasks::network_interface::CreateBridge { network_interface_manager: Arc::clone(&network_interface_manager), bridge_name: bridge_name.clone() }),
         Box::new(tasks::network_interface::CreateGreInterfaces { network_interface_manager: Arc::clone(&network_interface_manager), bridge_name: bridge_name.clone(), leader }),
         Box::new(tasks::network_interface::ConnectDeviceInterfaces { network_interface_manager, bridge_name, device_interfaces }),
+
+        Box::new(tasks::copy_rperf::CopyRperf),
     ];
 
     runner::run(run_mode, no_confirm, &tasks).await

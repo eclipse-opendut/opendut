@@ -13,7 +13,7 @@ use crate::service::can_manager::CanManagerRef;
 
 #[tracing::instrument(skip(cluster_assignment, can_manager, network_interface_manager), level="trace")]
 pub async fn network_interfaces_setup(
-    cluster_assignment: ClusterAssignment,
+    cluster_assignment: &ClusterAssignment,
     self_id: PeerId,
     bridge_name: &NetworkInterfaceName,
     network_interface_manager: NetworkInterfaceManagerRef,
@@ -29,7 +29,7 @@ pub async fn network_interfaces_setup(
 
     let local_ip = local_peer_assignment.vpn_address;
 
-    let remote_ips = determine_remote_ips(&cluster_assignment, self_id)?;
+    let remote_ips = determine_remote_ips(cluster_assignment, self_id)?;
 
     let local_ip = require_ipv4_for_gre(local_ip)?;
     let remote_ips = remote_ips.into_iter()
@@ -44,11 +44,11 @@ pub async fn network_interfaces_setup(
     ).await
     .map_err(Error::GreInterfaceSetupFailed)?;
 
-    let own_ethernet_interfaces = get_own_ethernet_interfaces(&cluster_assignment, self_id)?;
+    let own_ethernet_interfaces = get_own_ethernet_interfaces(cluster_assignment, self_id)?;
     join_device_interfaces_to_bridge(&own_ethernet_interfaces, bridge_name, Arc::clone(&network_interface_manager)).await
         .map_err(Error::JoinDeviceInterfaceToBridgeFailed)?;
 
-    setup_can(&cluster_assignment, self_id, can_manager).await?;
+    setup_can(cluster_assignment, self_id, can_manager).await?;
 
     Ok(())
 }

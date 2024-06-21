@@ -6,3 +6,4 @@ mod cannelloni_manager;
 mod can_manager;
 mod vpn;
 mod test_execution;
+mod network_metrics;

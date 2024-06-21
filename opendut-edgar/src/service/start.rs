@@ -18,11 +18,11 @@ use opendut_auth::confidential::blocking::client::ConfidentialClient;
 use opendut_carl_api::proto::services::peer_messaging_broker;
 use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, TracingContext};
 use opendut_carl_api::proto::services::peer_messaging_broker::downstream::Message;
-use opendut_types::cluster::ClusterAssignment;
+use opendut_types::cluster::{ClusterAssignment, PeerClusterAssignment};
 use opendut_types::peer::configuration::{PeerConfiguration, PeerConfiguration2};
 use opendut_types::peer::PeerId;
 use opendut_types::util::net::NetworkInterfaceName;
-use opendut_util::logging;
+use opendut_util::{logging, project};
 use opendut_util::logging::LoggingConfig;
 use opendut_util::settings::LoadedConfig;
 
@@ -30,6 +30,8 @@ use crate::common::{carl, settings};
 use crate::service::test_execution::executor_manager::{ExecutorManager, ExecutorManagerRef};
 use crate::service::{cluster_assignment, vpn};
 use crate::service::can_manager::{CanManager, CanManagerRef};
+use crate::service::cluster_assignment::Error;
+use crate::service::network_metrics;
 use crate::service::network_interface::manager::{NetworkInterfaceManager, NetworkInterfaceManagerRef};
 
 const BANNER: &str = r"
@@ -72,8 +74,8 @@ pub async fn create_with_logging(settings_override: config::Config) -> anyhow::R
     
     let mut shutdown = logging::initialize_with_config(logging_config.clone(), file_logging, confidential_client).await?;
 
-    if let logging::OpenTelemetryConfig::Enabled { cpu_collection_interval_ms, .. } = logging_config.opentelemetry {
-        logging::initialize_metrics_collection(cpu_collection_interval_ms);   
+    if let (logging::OpenTelemetryConfig::Enabled { cpu_collection_interval_ms, .. }, Some(meter_providers, ..)) = (logging_config.opentelemetry, &shutdown.meter_providers) {
+        logging::initialize_metrics_collection(cpu_collection_interval_ms, meter_providers);
     }
 
     create(self_id, settings).await?;
@@ -95,12 +97,19 @@ pub async fn create(self_id: PeerId, settings: LoadedConfig) -> anyhow::Result<(
 
     let remote_address = vpn::retrieve_remote_host(&settings).await?;
 
+    let ping_interval = Duration::from_millis(settings.config.get::<u64>("opentelemetry.cluster.ping.interval.ms")?);
+    let target_bandwidth_kbit_per_second = settings.config.get::<u64>("opentelemetry.cluster.target.bandwidth.kilobit.per.second")?;
+    let rperf_backoff_max_elapsed_time = Duration::from_millis(settings.config.get::<u64>("opentelemetry.cluster.rperf.backoff.max.elapsed.time.ms")?);
+
     let setup_cluster_info = SetupClusterInfo {
         self_id,
         network_interface_management_enabled,
         network_interface_manager,
         can_manager,
         executor_manager,
+        ping_interval,
+        target_bandwidth_kbit_per_second,
+        rperf_backoff_max_elapsed_time,
     };
 
     let timeout_duration = Duration::from_millis(settings.config.get::<u64>("carl.disconnect.timeout.ms")?);
@@ -219,13 +228,19 @@ async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Opti
                         Err(error) => error!("Illegal PeerConfiguration2: {error}"),
                         Ok(configuration2) => {
                             let _ = setup_cluster(
-                                configuration.cluster_assignment,
+                                &configuration.cluster_assignment,
                                 setup_cluster_info,
                                 configuration.network.bridge_name,
                             ).await;
+
                             let mut executor_manager = setup_cluster_info.executor_manager.lock().unwrap();
                             executor_manager.terminate_executors();
                             executor_manager.create_new_executors(configuration2.executors);
+
+                            setup_cluster_metrics(
+                                &configuration.cluster_assignment,
+                                setup_cluster_info,
+                            )?;
                         }
                     }
                 }
@@ -242,10 +257,13 @@ struct SetupClusterInfo {
     network_interface_manager: NetworkInterfaceManagerRef,
     can_manager: CanManagerRef,
     executor_manager: ExecutorManagerRef,
+    ping_interval: Duration,
+    target_bandwidth_kbit_per_second: u64,
+    rperf_backoff_max_elapsed_time: Duration,
 }
 #[tracing::instrument(skip_all)]
 async fn setup_cluster(
-    cluster_assignment: Option<ClusterAssignment>,
+    cluster_assignment: &Option<ClusterAssignment>,
     info: &SetupClusterInfo,
     bridge_name: NetworkInterfaceName,
 ) -> anyhow::Result<()> { //TODO make idempotent
@@ -273,6 +291,39 @@ async fn setup_cluster(
         None => {
             debug!("No ClusterAssignment in peer configuration.");
             //TODO teardown cluster, if configuration changed
+        }
+    }
+    Ok(())
+}
+
+fn setup_cluster_metrics(
+    cluster_assignment: &Option<ClusterAssignment>,
+    setup_cluster_info: &SetupClusterInfo,
+) -> anyhow::Result<()> { //TODO make idempotent
+    match cluster_assignment {
+        None => {}
+        Some(cluster_assignment) => {
+            let local_peer_assignment = cluster_assignment.assignments.iter().find(|assignment| {
+                assignment.peer_id == setup_cluster_info.self_id
+            }).ok_or(Error::LocalPeerAssignmentNotFound { self_id: setup_cluster_info.self_id })?;
+            let local_ip = local_peer_assignment.vpn_address;
+            let peers: Vec<PeerClusterAssignment> = cluster_assignment.assignments.iter()
+                .filter(|peer_cluster_assignment | peer_cluster_assignment.vpn_address != local_ip)
+                .cloned().collect();
+
+            let ping_interval_ms = setup_cluster_info.ping_interval;
+            let target_bandwidth_kbit_per_second = setup_cluster_info.target_bandwidth_kbit_per_second;
+            let rperf_backoff_max_elapsed_time_ms = setup_cluster_info.rperf_backoff_max_elapsed_time;
+
+            tokio::spawn(async move {
+                network_metrics::ping::cluster_ping(peers.clone(), ping_interval_ms).await;
+
+                if project::is_running_in_development().not() {
+                    let _ = network_metrics::rperf::server::exponential_backoff_launch_rperf_server(rperf_backoff_max_elapsed_time_ms).await //ignore errors during startup of rperf server, as we do not want to crash EDGAR for this
+                        .inspect_err(|cause| error!("Failed to start rperf server:\n  {cause}"));
+                    network_metrics::rperf::client::launch_rperf_clients(peers, target_bandwidth_kbit_per_second, rperf_backoff_max_elapsed_time_ms).await;
+                }
+            });
         }
     }
     Ok(())

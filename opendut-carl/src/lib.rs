@@ -63,8 +63,8 @@ pub async fn create_with_logging(settings_override: config::Config) -> Result<()
 
     let mut shutdown = logging::initialize_with_config(logging_config.clone(), file_logging, confidential_client).await?;
     
-    if let logging::OpenTelemetryConfig::Enabled { cpu_collection_interval_ms, .. } = logging_config.opentelemetry {
-        logging::initialize_metrics_collection(cpu_collection_interval_ms);
+    if let (logging::OpenTelemetryConfig::Enabled { cpu_collection_interval_ms, .. }, Some(meter_providers, ..)) = (logging_config.opentelemetry, &shutdown.meter_providers) {
+        logging::initialize_metrics_collection(cpu_collection_interval_ms, meter_providers);
     }
 
     create(settings).await?;

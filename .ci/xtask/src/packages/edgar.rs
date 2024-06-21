@@ -2,6 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use anyhow::anyhow;
+use tracing::debug;
 
 use crate::{Arch, Package};
 use crate::core::types::parsing::package::PackageSelection;
@@ -34,6 +35,11 @@ pub enum TaskCli {
         #[arg(long, default_value_t)]
         target: TargetSelection,
     },
+    #[command(hide=true)]
+    DistributionRperf{
+        #[arg(long, default_value_t)]
+        target: TargetSelection,
+    },
     DistributionCopyLicenseJson(crate::tasks::distribution::copy_license_json::DistributionCopyLicenseJsonCli),
     DistributionBundleFiles(crate::tasks::distribution::bundle::DistributionBundleFilesCli),
     DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli),
@@ -59,6 +65,11 @@ impl EdgarCli {
             TaskCli::DistributionNetbirdClient { target } => {
                 for target in target.iter() {
                     distribution::netbird::netbird_client_distribution(target)?;
+                }
+            }
+            TaskCli::DistributionRperf { target } => {
+                for target in target.iter() {
+                    distribution::rperf::rperf_distribution(target)?;
                 }
             }
             TaskCli::DistributionCopyLicenseJson(cli) => cli.default_handling(SELF_PACKAGE)?,
@@ -103,6 +114,9 @@ pub mod distribution {
         distribution::collect_executables(SELF_PACKAGE, target)?;
 
         netbird::netbird_client_distribution(target)?;
+        
+        rperf::rperf_distribution(target)?;
+        
         distribution::copy_license_json::copy_license_json(SELF_PACKAGE, target, SkipGenerate::No)?;
 
         distribution::bundle::bundle_files(SELF_PACKAGE, target)?;
@@ -138,11 +152,11 @@ pub mod distribution {
             if !netbird_artifact.exists() { //download
                 let url = format!("https://github.com/reimarstier/netbird/releases/download/{folder_name}/{file_name}");
 
-                println!("Downloading netbird_{version}_{os}_{arch}.tar.gz...");
+                debug!("Downloading netbird_{version}_{os}_{arch}.tar.gz...");
                 let bytes = reqwest::blocking::get(url)?
                     .error_for_status()?
                     .bytes()?;
-                println!("Retrieved {} bytes.", bytes.len());
+                debug!("Retrieved {} bytes.", bytes.len());
 
                 fs::write(&netbird_artifact, bytes)
                     .map_err(|cause| anyhow!("Error while writing to '{}': {cause}", netbird_artifact.display()))?;
@@ -154,6 +168,7 @@ pub mod distribution {
 
             fs::copy(&netbird_artifact, &out_file)
                 .map_err(|cause| anyhow!("Error while copying from '{}' to '{}': {cause}", netbird_artifact.display(), out_file.display()))?;
+            debug!("Placed NetBird distribution into: {}", out_file.display());
 
             Ok(())
         }
@@ -180,6 +195,96 @@ pub mod distribution {
 
         pub fn out_file(package: Package, target: Arch) -> PathBuf {
             crate::tasks::distribution::out_package_dir(package, target).join("install").join("netbird.tar.gz")
+        }
+    }
+    pub mod rperf {
+        use std::fs::File;
+        use std::path::Path;
+        use std::process::Command;
+        use flate2::read::GzDecoder;
+        use tar::Archive;
+        use crate::core::dependency::Crate;
+        use crate::core::util;
+        use crate::core::util::RunRequiringSuccess;
+        use super::*;
+
+        #[tracing::instrument]
+        pub fn rperf_distribution(target: Arch) -> crate::Result {
+            let metadata = crate::metadata::cargo();
+            let version = metadata.workspace_metadata["ci"]["rperf"]["version"].as_str()
+                .ok_or(anyhow!("Rperf version not defined."))?;
+
+            let rperf_archive_folder = download_dir().join(format!("archive_{version}"));
+            let rperf_archive = rperf_archive_folder.join(format!("rperf_{version}.tar.gz"));
+            fs::create_dir_all(rperf_archive.parent().unwrap())?;
+
+            if !rperf_archive.exists() {
+                download_rperf_repository(version, &rperf_archive)?;
+            }
+            assert!(rperf_archive.exists());
+
+            let temp_dir_path = std::env::temp_dir()
+                .join("opendut-ci-edgar-rperf-distribution-b31c2679-4669-4a9c-88bd-53ebd3e06373"); //build outside the target-dir, because otherwise rperf is thought to be part of this Cargo workspace
+            let temp_dir_subpath = unpack_rperf_repository(&rperf_archive, &temp_dir_path, version)?;
+            
+            let rperf_binary = build_rperf(&temp_dir_path, &temp_dir_subpath, target)?;
+
+            let out_file = out_file(SELF_PACKAGE, target);
+            fs::create_dir_all(out_file.parent().unwrap())?;
+            fs::copy(&rperf_binary, &out_file)
+                .map_err(|cause| anyhow!("Error while copying from '{}' to '{}': {cause}", rperf_binary.display(), out_file.display()))?;
+            debug!("Placed rperf distribution into: {}", out_file.display());
+
+            Ok(())
+        }
+        fn download_rperf_repository(version: &str, rperf_artifact: &Path) -> crate::Result {
+            let url = format!("https://github.com/opensource-3d-p/rperf/archive/refs/tags/v{version}.tar.gz");
+
+            debug!("Downloading rperf_v{version}.tar.gz...");
+            let bytes = reqwest::blocking::get(url)?
+                .error_for_status()?
+                .bytes()?;
+            debug!("Retrieved {} bytes.", bytes.len());
+
+            fs::write(rperf_artifact, bytes)
+                .map_err(|cause| anyhow!("Error while writing to '{}': {cause}", rperf_artifact.display()))?;
+            Ok(())
+        }
+        fn unpack_rperf_repository(rperf_artifact: &Path, temp_dir_path: &Path, version: &str) -> Result<PathBuf, anyhow::Error> {
+            let tar_gz = File::open(rperf_artifact)?;
+            let tar = GzDecoder::new(tar_gz);
+            let mut archive = Archive::new(tar);
+
+            archive.unpack(temp_dir_path)?;
+            let temp_dir_subpath = temp_dir_path.join(format!("rperf-{version}"));
+            debug!("The rperf repository was unpacked to {:?}", temp_dir_subpath);
+            
+            Ok(temp_dir_subpath)
+        }
+        fn build_rperf(target_directory: &Path, current_directory: &Path, target: Arch) -> Result<PathBuf, anyhow::Error>  {
+            util::install_crate(Crate::Cross)?;
+            
+            Command::new("cross")
+                .arg("build")
+                .arg("--release")
+                .arg("--all-features")
+                .arg("--target-dir").arg(target_directory)
+                .arg("--target").arg(target.triple())
+                .env("RUSTFLAGS", "-Awarnings") //ignore warnings from rperf source code
+                .current_dir(current_directory)
+                .run_requiring_success()?;
+
+            let out_dir = target_directory.join(target.triple()).join("release").join("rperf");
+            debug!("The rperf was built to {}", out_dir.display());
+            
+            Ok(out_dir)
+        }
+        fn download_dir() -> PathBuf {
+            crate::constants::target_dir().join("rperf")
+        }
+
+        pub fn out_file(package: Package, target: Arch) -> PathBuf {
+            crate::tasks::distribution::out_package_dir(package, target).join("install").join("rperf")
         }
     }
 
@@ -226,12 +331,15 @@ pub mod distribution {
 
             {   //validate install dir contents
                 let netbird_archive = install_dir.child("netbird.tar.gz");
+                let rperf_executable = install_dir.child("rperf");
 
                 install_dir.dir_contains_exactly_in_order(vec![
                     &netbird_archive,
+                    &rperf_executable,
                 ]);
 
                 netbird_archive.assert_non_empty_file();
+                rperf_executable.assert_non_empty_file();
             }
 
             {   //validate licenses dir contents

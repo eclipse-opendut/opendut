@@ -40,3 +40,6 @@ endpoint = ""
 service.name = "opendut-edgar"
 metrics.interval.ms = 60000
 cpu.collection.interval.ms = 5000
+cluster.ping.interval.ms = 30000
+cluster.target.bandwidth.kilobit.per.second = 100_000
+cluster.rperf.backoff.max.elapsed.time.ms = 120000
