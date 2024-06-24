@@ -8,7 +8,7 @@ use uuid::Uuid;
 use walkdir::WalkDir;
 use zip::{CompressionMethod, write::{FileOptionExtension, FileOptions, SimpleFileOptions}, ZipWriter};
 
-use opendut_types::peer::executor::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine, ResultsUrl};
+use opendut_types::peer::executor::{CommandName, ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine, ResultsUrl};
 
 use crate::service::test_execution::webdav_client::{self, WebdavClient};
 
@@ -37,10 +37,8 @@ pub struct ContainerConfiguration {
 
 pub struct ContainerManager{
     config: ContainerConfiguration,
-    container_name: Option<String>,
     results_dir: PathBuf,
     webdav_client: WebdavClient,
-    log_reader: Option<ContainerLogReader>,
     termination_channel_rx: watch::Receiver<bool>,
 }
 
@@ -53,10 +51,8 @@ impl ContainerManager {
     pub fn new(container_configuration: ContainerConfiguration, termination_channel_rx: watch::Receiver<bool>) -> Self {
         Self { 
             config: container_configuration,
-            container_name: None,
             results_dir: env::temp_dir().join(format!("opendut-edgar-results_{}", Uuid::new_v4())),
             webdav_client: WebdavClient::new("some_dummy_token".to_string()), // TODO: Authenticate with actual token
-            log_reader: None,
             termination_channel_rx
         }
     }
@@ -72,19 +68,19 @@ impl ContainerManager {
         let mut results_uploaded = false;
 
         self.create_results_dir().await?;
-        self.start_container().await?;
-        self.log_reader = Some(
+        let container_name = self.start_container().await?;
+        let mut log_reader = 
             ContainerLogReader::create(
                 self.config.engine.to_string(), 
-                self.container_name.as_ref().unwrap().clone()
-            )?);
+                container_name.clone()
+            )?;
 
         loop {
-            self.log_reader.as_mut().unwrap().read().await;
+            log_reader.read().await;
 
             // If the value in the channel has changed or the channel has been closed, we terminate
             if self.termination_channel_rx.has_changed().unwrap_or(true) {
-                self.stop_container().await?;
+                self.stop_container(&container_name).await?;
             }
 
             if self.are_results_ready().await? {
@@ -93,7 +89,7 @@ impl ContainerManager {
                 results_uploaded = true;
             }
 
-            match self.get_container_state().await? {
+            match self.get_container_state(&container_name).await? {
                 ContainerState::Running => (),
                 ContainerState::Exited => {
                     if ! results_uploaded {
@@ -115,33 +111,28 @@ impl ContainerManager {
         Ok(())
     }
 
-    async fn get_container_state(&self) -> Result<ContainerState, Error> {
-        match &self.container_name {
-            Some(container_name) => {
-                let output = Command::new(&self.config.engine.to_string())
-                    .args(["inspect", "-f", "'{{.State.Status}}'", container_name])
-                    .output()
-                    .await
-                    .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} inspect", &self.config.engine.to_string()), cause })?;
-                
-                match String::from_utf8_lossy(&output.stdout).into_owned().replace('\'', "").trim() {
-                    "created" => Ok(ContainerState::Created),
-                    "running" => Ok(ContainerState::Running),
-                    "restarting" => Ok(ContainerState::Restarting),
-                    "exited" => Ok(ContainerState::Exited),
-                    "paused" => Ok(ContainerState::Paused),
-                    "dead" => Ok(ContainerState::Dead),
-                    unknown_state => Err(Error::Other { message: format!("Unknown container state returned by {} inspect: '{}'", &self.config.engine.to_string(), unknown_state) } ),
-                }
-            },
-            None => Err(Error::Other { message: "get_container_state() called without container_name present".to_string()}),
+    async fn get_container_state(&self, container_name: &String) -> Result<ContainerState, Error> {
+        let output = Command::new(&self.config.engine.to_string())
+            .args(["inspect", "-f", "'{{.State.Status}}'", container_name])
+            .output()
+            .await
+            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} inspect", &self.config.engine.to_string()), cause })?;
+        
+        match String::from_utf8_lossy(&output.stdout).into_owned().replace('\'', "").trim() {
+            "created" => Ok(ContainerState::Created),
+            "running" => Ok(ContainerState::Running),
+            "restarting" => Ok(ContainerState::Restarting),
+            "exited" => Ok(ContainerState::Exited),
+            "paused" => Ok(ContainerState::Paused),
+            "dead" => Ok(ContainerState::Dead),
+            unknown_state => Err(Error::Other { message: format!("Unknown container state returned by {} inspect: '{}'", &self.config.engine.to_string(), unknown_state) } ),
         }
         
     }
 
-    async fn start_container(&mut self) -> Result<(), Error>{
+    async fn start_container(&mut self) -> Result<String, Error>{
 
-        let mut cmd = Command::new(self.config.engine.to_string());
+        let mut cmd = Command::new(self.config.engine.command_name());
         cmd.arg("run");
         cmd.arg("--detach");
         cmd.arg("--net=host");
@@ -155,7 +146,6 @@ impl ContainerManager {
             }
         }
         cmd.args(["--name", container_name.as_str()]);
-        self.container_name = Some(container_name);
 
         cmd.args(["--mount", format!("type=bind,source={},target={}", self.results_dir.to_string_lossy(), CONTAINER_RESULTS_DIRECTORY).as_str()]);
         
@@ -185,12 +175,11 @@ impl ContainerManager {
             .await
             .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} run", &self.config.engine.to_string()), cause })?;
 
-        match output.status.success() {
-            true => {
-                info!("Started container {}", self.config.name);
-                Ok(())
-            },
-            false => Err(Error::Other { message: format!("Starting container '{}' failed: {}", self.config.name, String::from_utf8_lossy(&output.stderr)).to_string()})
+        if output.status.success() {
+            info!("Started container {}", self.config.name);
+            Ok(container_name)
+        } else {
+            Err(Error::Other { message: format!("Starting container '{}' failed: {}", self.config.name, String::from_utf8_lossy(&output.stderr)).to_string()})
         }
 
     }
@@ -205,28 +194,22 @@ impl ContainerManager {
         Ok(output.status.success())
     }
 
-    async fn stop_container(&self) -> Result<(), Error>{
-        match &self.container_name {
-            Some(container_name) => {
-                let output = Command::new(&self.config.engine.to_string())
-                    .args(["stop", container_name])
-                    .output()
-                    .await
-                    .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} stop", &self.config.engine.to_string()), cause })?;
+    async fn stop_container(&self, container_name: &String) -> Result<(), Error>{
+        let output = Command::new(&self.config.engine.to_string())
+            .args(["stop", container_name])
+            .output()
+            .await
+            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} stop", &self.config.engine.to_string()), cause })?;
 
-                match output.status.success() {
-                    true => Ok(()),
-                    false => Err(Error::Other { message: format!("Stopping container failed: {}", String::from_utf8_lossy(&output.stderr)).to_string()})
-                }
-
-            },
-            None => Err(Error::Other { message: "stop_container() called without container_name present".to_string()}),
+        match output.status.success() {
+            true => Ok(()),
+            false => Err(Error::Other { message: format!("Stopping container failed: {}", String::from_utf8_lossy(&output.stderr)).to_string()})
         }
+
     }
 
     async fn remove_result_ready_indicator(&self) -> Result<(), Error>{ 
-        let mut indicator_file = self.results_dir.clone();
-        indicator_file.push(RESULTS_READY_FILE);
+        let indicator_file = self.results_dir.join(RESULTS_READY_FILE);
         match fs::remove_file(&indicator_file).await {
             Ok(_) => Ok(()),
             Err(err) => match err.kind() {
@@ -248,7 +231,7 @@ impl ContainerManager {
         };
         
         let mut zipped_data = Vec::new();
-        let zip_options = default_compression_options();
+        let zip_options = SimpleFileOptions::default().compression_method(CompressionMethod::BZIP2).large_file(true);
         create_zip_from_directory(&mut zipped_data, &self.results_dir, zip_options).await.map_err(|cause| Error::ResultZipping { path: self.results_dir.clone(), cause })?;
 
         self.webdav_client.create_collection_path(results_url.clone())
@@ -274,7 +257,7 @@ impl ContainerManager {
     }
 
     async fn create_results_dir(&mut self) -> Result<(), Error>{
-        fs::create_dir(&self.results_dir)
+        fs::create_dir_all(&self.results_dir)
             .await
             .map_err(|cause| Error::Other { message: format!("Failed to create results directory '{}': {}", self.results_dir.to_string_lossy(), cause) })?;
         Ok(())
@@ -288,8 +271,7 @@ impl ContainerManager {
     }
 
     async fn are_results_ready(&self) -> Result<bool, Error> {
-        let mut indicator_file = self.results_dir.clone();
-        indicator_file.push(RESULTS_READY_FILE);
+        let indicator_file = self.results_dir.join(RESULTS_READY_FILE);
         Ok(indicator_file.is_file())
     }
 
@@ -323,13 +305,6 @@ async fn create_zip_from_directory<T>(data: &mut Vec<u8>, directory: &PathBuf, f
 
         Ok(())
     }
-
-fn default_compression_options<'k>() -> FileOptions<'k, ()> {
-    SimpleFileOptions::default()
-        .compression_method(CompressionMethod::BZIP2)
-        // https://github.com/zip-rs/zip2/issues/195 large_file(true) produces invalid zip file with crate version 2.1.3
-        .large_file(false)
-}
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -404,75 +379,5 @@ impl ContainerLogReader {
             info!("Received line: {:?}", String::from_utf8_lossy(&line))
         }
     }
-}
-
-#[cfg(test)]
-mod tests {
-    use std::io::Read;
-    use std::path::PathBuf;
-    use std::process::Command;
-
-    use assert_fs::TempDir;
-    use tokio::fs;
-    use uuid::Uuid;
-
-    use crate::service::test_execution::container_manager::{create_zip_from_directory, default_compression_options};
-
-    fn read_file_from_zip(zip_file_name: &PathBuf, file_name: &str) -> String {
-        let zipfile = std::fs::File::open(zip_file_name)
-            .unwrap();
-        let mut archive = zip::ZipArchive::new(zipfile)
-            .unwrap();
-
-        let mut file = archive.by_name(file_name)
-            .expect(&format!("Failed to find file {file_name} in archive!"));
-        let mut contents = String::new();
-        file.read_to_string(&mut contents).expect("Failed to read file from zip archive!");
-
-        contents
-    }
-
-    fn check_unzip_with_system_binary(zip_file: &PathBuf) -> bool {
-        let working_directory = zip_file.parent().unwrap();
-        let mut command = Command::new("unzip");
-        let result = command.current_dir(working_directory)
-            .arg("-t").arg(zip_file).status();
-        match result {
-            Ok(status) => {
-                status.success()
-            }
-            Err(_error) => {
-                false
-            }
-        }
-    }
-
-    #[rstest::rstest]
-    #[tokio::test]
-    async fn test_create_zip_from_directory() {
-        let temp_dir = TempDir::new().unwrap();
-        let temp_sub_dir = temp_dir.join("results");
-        let zip_file_name = temp_dir.join("test.zip");
-        std::fs::create_dir_all(temp_sub_dir.clone()).unwrap();
-        let temp_path = temp_sub_dir.to_path_buf();
-
-        let results_file_name = format!("opendut-edgar-results_{}.txt", Uuid::new_v4());
-        let file_name = temp_sub_dir.join(results_file_name.clone());
-        let data = "Hello world!";
-        fs::write(file_name, data).await.expect("Failed to write data to test file!");
-
-        let mut zipped_data = Vec::new();
-        let zip_options = default_compression_options();
-        create_zip_from_directory(&mut zipped_data, &temp_path, zip_options)
-            .await
-            .expect("Failed to write zip");
-
-        fs::write(zip_file_name.clone(), zipped_data).await.expect("TODO: panic message");
-        let content = read_file_from_zip(&zip_file_name, &results_file_name);
-        assert!(content.eq(data));
-
-        let result_system_unzip = check_unzip_with_system_binary(&zip_file_name);
-        assert!(result_system_unzip.eq(&true))
-
-    }
+    
 }

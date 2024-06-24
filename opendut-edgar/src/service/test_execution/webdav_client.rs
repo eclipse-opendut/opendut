@@ -49,27 +49,6 @@ impl WebdavClient {
             .map_err(|cause| Error::Request { method: String::from("MKCOL"), cause } )
     }
 
-    /// List files and folders at the given path on Webdav server
-    ///
-    /// Depth of "0" applies only to the resource, "1" to the resource and it's children, "infinity" to the resource and all it's children recursively
-    /// The result will contain an xml list with the remote folder contents.
-    ///
-    /// Use absolute path to the webdav server folder location
-    // pub async fn list(&self, path: Url, depth: &str) -> Result<Response, Error> {
-    //     let body = r#"<?xml version="1.0" encoding="utf-8" ?>
-    //         <D:propfind xmlns:D="DAV:">
-    //             <D:allprop/>
-    //         </D:propfind>
-    //     "#;
-
-    //     self.start_request(Method::from_bytes(b"PROPFIND").unwrap(), path)
-    //         .headers(self.custom_header("depth", depth))
-    //         .body(body)
-    //         .send()
-    //         .await
-    //         .map_err(|cause| Error::Request { method: String::from("PROPFIND"), cause } )
-    // }
-
     pub async fn create_collection_path(&self, path: Url) -> Result<(), Error>{
         let mut accumulated_path = String::from("/");
         let path_segments = path.path_segments()

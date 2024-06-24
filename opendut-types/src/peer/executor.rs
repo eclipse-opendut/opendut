@@ -47,8 +47,20 @@ pub enum Engine {
 impl Display for Engine {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Engine::Docker =>  write!(f, "docker"),
-            Engine::Podman =>  write!(f, "podman"),
+            Engine::Docker =>  write!(f, "Docker"),
+            Engine::Podman =>  write!(f, "Podman"),
+        }
+    }
+}
+
+pub trait CommandName {
+    fn command_name(&self) -> &'static str;
+}
+impl CommandName for Engine {
+    fn command_name(&self) -> &'static str {
+        match self {
+            Engine::Docker => "docker",
+            Engine::Podman => "podman",
         }
     }
 }
