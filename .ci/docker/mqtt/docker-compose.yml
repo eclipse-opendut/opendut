@@ -1,0 +1,20 @@
+version: '3.7'
+services:
+ mqtt:
+    image: bytebeamio/rumqttd
+    command: ["-v", "-c", "/rumqttd.toml"]
+    hostname: mqtt
+    container_name: mqtt
+#    ports:
+#      - 1883:1883
+#      - 1884:1884
+    volumes:
+      - ./rumqttd.toml:/rumqttd.toml
+    restart: always
+    networks:
+      - opendutnet
+
+networks:
+  opendutnet:
+    name: opendut_network
+    external: true  # Use a pre-existing network

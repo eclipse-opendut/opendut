@@ -39,6 +39,7 @@ enum DockerHostnames {
     NetbirdManagement,
     NetbirdDashboard,
     Firefox,
+    Mqtt,
 }
 
 impl DockerHostnames {
@@ -49,6 +50,7 @@ impl DockerHostnames {
             DockerHostnames::NetbirdManagement => "netbird-management",
             DockerHostnames::NetbirdDashboard => "netbird-dashboard",
             DockerHostnames::Firefox => "firefox",
+            DockerHostnames::Mqtt => "mqtt",
         }
     }
 }
@@ -58,6 +60,7 @@ static CONTAINER_NAME_MAP: phf::Map<&'static str, DockerHostnames> = phf_map! {
     "carl-carl-1" => DockerHostnames::Carl,
     "netbird-management-1" => DockerHostnames::NetbirdManagement,
     "netbird-dashboard-1" => DockerHostnames::NetbirdDashboard,
+    "mqtt" => DockerHostnames::Mqtt,
 };
 
 pub(crate) fn docker_inspect_network() -> crate::Result {
