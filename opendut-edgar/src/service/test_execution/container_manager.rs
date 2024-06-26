@@ -71,7 +71,7 @@ impl ContainerManager {
         let container_name = self.start_container().await?;
         let mut log_reader = 
             ContainerLogReader::create(
-                self.config.engine.to_string(), 
+                self.config.engine.command_name(), 
                 container_name.clone()
             )?;
 
@@ -112,11 +112,11 @@ impl ContainerManager {
     }
 
     async fn get_container_state(&self, container_name: &String) -> Result<ContainerState, Error> {
-        let output = Command::new(&self.config.engine.to_string())
+        let output = Command::new(&self.config.engine.command_name())
             .args(["inspect", "-f", "'{{.State.Status}}'", container_name])
             .output()
             .await
-            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} inspect", &self.config.engine.to_string()), cause })?;
+            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} inspect", &self.config.engine.command_name()), cause })?;
         
         match String::from_utf8_lossy(&output.stdout).into_owned().replace('\'', "").trim() {
             "created" => Ok(ContainerState::Created),
@@ -125,7 +125,7 @@ impl ContainerManager {
             "exited" => Ok(ContainerState::Exited),
             "paused" => Ok(ContainerState::Paused),
             "dead" => Ok(ContainerState::Dead),
-            unknown_state => Err(Error::Other { message: format!("Unknown container state returned by {} inspect: '{}'", &self.config.engine.to_string(), unknown_state) } ),
+            unknown_state => Err(Error::Other { message: format!("Unknown container state returned by {} inspect: '{}'", &self.config.engine.command_name(), unknown_state) } ),
         }
         
     }
@@ -173,7 +173,7 @@ impl ContainerManager {
         }
         let output = cmd.output()
             .await
-            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} run", &self.config.engine.to_string()), cause })?;
+            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} run", &self.config.engine.command_name()), cause })?;
 
         if output.status.success() {
             info!("Started container {}", self.config.name);
@@ -185,21 +185,21 @@ impl ContainerManager {
     }
 
     async fn check_container_name_exists(&self, name: &str) -> Result<bool, Error>{
-        let output = Command::new(&self.config.engine.to_string())
+        let output = Command::new(&self.config.engine.command_name())
             .args(["container", "inspect", name])
             .output()
             .await
-            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} inspect", &self.config.engine.to_string()), cause })?;
+            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} inspect", &self.config.engine.command_name()), cause })?;
 
         Ok(output.status.success())
     }
 
     async fn stop_container(&self, container_name: &String) -> Result<(), Error>{
-        let output = Command::new(&self.config.engine.to_string())
+        let output = Command::new(&self.config.engine.command_name())
             .args(["stop", container_name])
             .output()
             .await
-            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} stop", &self.config.engine.to_string()), cause })?;
+            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{} stop", &self.config.engine.command_name()), cause })?;
 
         match output.status.success() {
             true => Ok(()),
@@ -326,8 +326,8 @@ struct ContainerLogReader {
 }
 
 impl ContainerLogReader {
-    pub fn create(engine: String, container_name: String) -> Result<Self, Error> {
-        let mut cmd = Command::new(&engine);
+    pub fn create(engine: &str, container_name: String) -> Result<Self, Error> {
+        let mut cmd = Command::new(engine);
         cmd.args(["logs", "--timestamps", "--follow"]);
         cmd.arg(container_name);
         cmd.stdout(Stdio::piped());
