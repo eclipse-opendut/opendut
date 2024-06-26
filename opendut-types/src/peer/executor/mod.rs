@@ -16,6 +16,7 @@ pub struct ExecutorDescriptors {
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct ExecutorDescriptor {
+    #[serde(flatten)]
     pub kind: ExecutorKind,
     pub results_url: Option<ResultsUrl>,
 }
