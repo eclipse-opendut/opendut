@@ -11,12 +11,12 @@ In the `testenv` launched by THEO, a WebDAV server is started automatically and 
 Note that the execution of executors is only triggered by deploying the cluster.
 
 ## Test Execution using CLEO
-In CLEO, test executors can be configured either by passing all configuration parameters as command line arguments or by providing a JSON-formatted configuration file.
+In CLEO, test executors can be configured either by passing all configuration parameters as command line arguments...
 
-    $ opendut-cleo create container-executor --help                                                            
-    Create a container executor. Parameters can either be provided as individual arguments or by means of a JSON-formatted configuration file
+    $ opendut-cleo create container-executor --help 
+    Create a container executor using command-line arguments
 
-    Usage: opendut-cleo create container-executor [OPTIONS]
+    Usage: opendut-cleo create container-executor [OPTIONS] --peer-id <PEER_ID> --engine <ENGINE> --image <IMAGE>
 
     Options:
         --peer-id <PEER_ID>          ID of the peer to add the container executor to
@@ -30,8 +30,20 @@ In CLEO, test executors can be configured either by passing all configuration pa
     -c, --command <COMMAND>          Container command
     -a, --args <ARGS>...             Container arguments
     -r, --results-url <RESULTS_URL>  URL to which results will be uploaded
-        --config-file <CONFIG_FILE>  Path to the JSON-formatted executor configuration file
     -h, --help                       Print help
+
+...or by providing a JSON-formatted configuration file.
+
+    $ opendut-cleo apply container-executor --help 
+    Create a container executor using a JSON-formatted configuration file
+
+    Usage: opendut-cleo apply container-executor <CONFIG_FILE>
+
+    Arguments:
+    <CONFIG_FILE>  Path to the JSON-formatted executor configuration file
+
+    Options:
+    -h, --help  Print help
 
 ### Configuration File Format
 A JSON configuration file for a test executor that is passed to CLEO may look as follows.

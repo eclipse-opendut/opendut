@@ -122,7 +122,7 @@ if [ "$1" == "leader" ]; then
   echo "Enumerating devices to join cluster: $DEVICES"
 
   sed -i -e "s/<PEER_ID>/$PEER_ID/g" /opt/test_execution_container/sample_executor_config.json
-  RESPONSE=$(opendut-cleo create container-executor --config-file test_execution_container/sample_executor_config.json)
+  RESPONSE=$(opendut-cleo apply container-executor test_execution_container/sample_executor_config.json)
   echo "Container executor create result: $RESPONSE"
 
   echo "Creating cluster configuration."

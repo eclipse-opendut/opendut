@@ -39,6 +39,14 @@ enum Commands {
         #[arg(value_enum, short, long, default_value_t=ListOutputFormat::Table)]
         output: ListOutputFormat,
     },
+    ///Create openDuT resource from configuration file
+    Apply {
+        #[command(subcommand)]
+        resource: ApplyResource,
+        ///Text, JSON or prettified JSON as output format
+        #[arg(value_enum, short, long, default_value_t=CreateOutputFormat::Text)]
+        output: CreateOutputFormat,
+    },
     ///Create openDuT resource
     Create {
         #[command(subcommand)]
@@ -110,6 +118,11 @@ pub enum EngineVariants {
 pub enum NetworkInterfaceType {
     Ethernet,
     Can,
+}
+
+#[derive(Subcommand)]
+enum ApplyResource {
+    ContainerExecutor(commands::executor::apply::ApplyContainerExecutorCli),
 }
 
 #[derive(Subcommand)]
@@ -230,6 +243,14 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
                     implementation.execute(&mut carl, output).await?;
                 }
                 ListResource::Devices(implementation) => {
+                    implementation.execute(&mut carl, output).await?;
+                }
+            }
+        }
+        Commands::Apply { resource, output } => {
+            let mut carl = create_carl_client(&settings.config).await;
+            match resource {
+                ApplyResource::ContainerExecutor(implementation) => {
                     implementation.execute(&mut carl, output).await?;
                 }
             }
