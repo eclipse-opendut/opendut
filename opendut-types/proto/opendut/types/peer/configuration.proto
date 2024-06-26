@@ -3,7 +3,7 @@ syntax = "proto3";
 package opendut.types.peer.configuration;
 
 import "opendut/types/cluster/cluster.proto";
-import "opendut/types/peer/executor.proto";
+import "opendut/types/peer/executor/executor.proto";
 import "opendut/types/util/net.proto";
 import "opendut/types/util/uuid.proto";
 

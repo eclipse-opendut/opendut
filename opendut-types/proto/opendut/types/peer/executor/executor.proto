@@ -2,15 +2,18 @@ syntax = "proto3";
 
 package opendut.types.peer.executor;
 
+import "opendut/types/peer/executor/container.proto";
+
 message ExecutorDescriptors {
   repeated opendut.types.peer.executor.ExecutorDescriptor executors = 1;
 }
 
 message ExecutorDescriptor {
-  oneof descriptor {
+  oneof kind {
     Executable executable = 2;
     Container container = 3;
   }
+  optional ResultsUrl results_url = 4; 
 }
 
 message Executable {}
@@ -25,51 +28,6 @@ message Container {
   repeated ContainerPortSpec ports = 7;
   ContainerCommand command = 8;
   repeated ContainerCommandArgument args = 9;
-  optional ResultsUrl results_url = 10;
-}
-
-message Engine {
-  oneof inner {
-    Docker docker = 1;
-    Podman podman = 2;
-  }
-}
-
-message Docker {}
-
-message Podman {}
-
-message ContainerName {
-  string value = 1;
-}
-
-message ContainerImage {
-  string value = 1;
-}
-
-message ContainerEnvironmentVariable {
-  string name = 1;
-  string value = 2;
-}
-
-message ContainerVolume {
-  string value = 1;
-}
-
-message ContainerDevice {
-  string value = 1;
-}
-
-message ContainerPortSpec {
-  string value = 1;
-}
-
-message ContainerCommand {
-  string value = 1;
-}
-
-message ContainerCommandArgument {
-  string value = 1;
 }
 
 message ResultsUrl {

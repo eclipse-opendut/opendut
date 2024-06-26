@@ -29,15 +29,14 @@ impl TryFrom<ExecutorDescriptors> for crate::peer::executor::ExecutorDescriptors
 
 impl From<crate::peer::executor::ExecutorDescriptor> for ExecutorDescriptor {
     fn from(value: crate::peer::executor::ExecutorDescriptor) -> Self {
-        match value {
-            crate::peer::executor::ExecutorDescriptor::Executable => {
-                ExecutorDescriptor {
-                    descriptor: Some(executor_descriptor::Descriptor::Executable(
+        let executor_kind = match value.kind {
+            crate::peer::executor::ExecutorKind::Executable => {
+                Some(executor_descriptor::Kind::Executable(
                        Executable {}
-                    ))
-                }
+                    )
+                )
             }
-            crate::peer::executor::ExecutorDescriptor::Container { 
+            crate::peer::executor::ExecutorKind::Container { 
                 engine,
                 name, 
                 image, 
@@ -47,10 +46,8 @@ impl From<crate::peer::executor::ExecutorDescriptor> for ExecutorDescriptor {
                 ports,
                 command,
                 args,
-                results_url
             } => {
-                ExecutorDescriptor { 
-                    descriptor: Some(executor_descriptor::Descriptor::Container(
+                Some(executor_descriptor::Kind::Container(
                         Container {
                             engine: Some(engine.into()),
                             name: Some(name.into()),
@@ -61,12 +58,17 @@ impl From<crate::peer::executor::ExecutorDescriptor> for ExecutorDescriptor {
                             ports: ports.into_iter().map(|port| port.into()).collect(),
                             command: Some(command.into()),
                             args: args.into_iter().map(|arg| arg.into()).collect(),
-                            results_url: results_url.map(|results_url| results_url.into()),
                         }
-                    ))
-                }
+                    )
+                )
             }
+        };
+
+        ExecutorDescriptor {
+            kind: executor_kind,
+            results_url: value.results_url.map(|results_url| results_url.into()),
         }
+        
     }
 }
 
@@ -76,14 +78,15 @@ impl TryFrom<ExecutorDescriptor> for crate::peer::executor::ExecutorDescriptor {
     fn try_from(value: ExecutorDescriptor) -> Result<Self, Self::Error> {
         type ErrorBuilder = ConversionErrorBuilder<ExecutorDescriptor, crate::peer::executor::ExecutorDescriptor>;
 
-        let descriptor = value.descriptor
-            .ok_or(ErrorBuilder::field_not_set("descriptor"))?;
+        let kind = value.kind
+            .ok_or(ErrorBuilder::field_not_set("kind"))?;
+        let results_url = value.results_url.map(TryFrom::try_from).transpose()?;
 
-        let result = match descriptor {
-            executor_descriptor::Descriptor::Executable(_) => {
-                crate::peer::executor::ExecutorDescriptor::Executable
+        let result_kind = match kind {
+            executor_descriptor::Kind::Executable(_) => {
+                crate::peer::executor::ExecutorKind::Executable
             },
-            executor_descriptor::Descriptor::Container(descriptor) => {
+            executor_descriptor::Kind::Container(descriptor) => {
                 let Container {
                     engine,
                     name,
@@ -94,7 +97,6 @@ impl TryFrom<ExecutorDescriptor> for crate::peer::executor::ExecutorDescriptor {
                     ports,
                     command,
                     args,
-                    results_url
                 } = descriptor;
                 let engine = engine
                     .ok_or(ErrorBuilder::field_not_set("engine"))?
@@ -128,9 +130,8 @@ impl TryFrom<ExecutorDescriptor> for crate::peer::executor::ExecutorDescriptor {
                     .into_iter()
                     .map(TryFrom::try_from)
                     .collect::<Result<_, _>>()?;
-                let results_url = results_url
-                    .map(TryFrom::try_from).transpose()?;
-                crate::peer::executor::ExecutorDescriptor::Container {
+                
+                crate::peer::executor::ExecutorKind::Container {
                     engine,
                     name,
                     image,
@@ -140,26 +141,31 @@ impl TryFrom<ExecutorDescriptor> for crate::peer::executor::ExecutorDescriptor {
                     ports,
                     command,
                     args,
-                    results_url,
                 }
             }
         };
 
-        Ok(result)
+        Ok(
+            crate::peer::executor::ExecutorDescriptor {
+                kind: result_kind,
+                results_url,
+            }
+        )
+
     }
 }
 
-impl From<crate::peer::executor::Engine> for Engine {
-    fn from(value: crate::peer::executor::Engine) -> Self {
+impl From<crate::peer::executor::container::Engine> for Engine {
+    fn from(value: crate::peer::executor::container::Engine) -> Self {
         match value {
-            crate::peer::executor::Engine::Docker => {
+            crate::peer::executor::container::Engine::Docker => {
                 Engine {
                     inner: Some(engine::Inner::Docker(
                         Docker {}
                     ))
                 }
             }
-            crate::peer::executor::Engine::Podman => {
+            crate::peer::executor::container::Engine::Podman => {
                 Engine {
                     inner: Some(engine::Inner::Podman(
                         Podman {}
@@ -170,21 +176,21 @@ impl From<crate::peer::executor::Engine> for Engine {
     }
 }
 
-impl TryFrom<Engine> for crate::peer::executor::Engine {
+impl TryFrom<Engine> for crate::peer::executor::container::Engine {
     type Error = ConversionError;
 
     fn try_from(value: Engine) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<Engine, crate::peer::executor::Engine>;
+        type ErrorBuilder = ConversionErrorBuilder<Engine, crate::peer::executor::container::Engine>;
 
         let inner = value.inner
             .ok_or(ErrorBuilder::field_not_set("inner"))?;
 
         let result = match inner {
             engine::Inner::Docker(_) => {
-                crate::peer::executor::Engine::Docker
+                crate::peer::executor::container::Engine::Docker
             },
             engine::Inner::Podman(_) => {
-                crate::peer::executor::Engine::Podman
+                crate::peer::executor::container::Engine::Podman
             },
         };
 
@@ -192,85 +198,85 @@ impl TryFrom<Engine> for crate::peer::executor::Engine {
     }
 }
 
-impl From<crate::peer::executor::ContainerName> for ContainerName {
-    fn from(value: crate::peer::executor::ContainerName) -> Self {
+impl From<crate::peer::executor::container::ContainerName> for ContainerName {
+    fn from(value: crate::peer::executor::container::ContainerName) -> Self {
         match value {
-            crate::peer::executor::ContainerName::Empty => { Self { value: String::new() } }
-            crate::peer::executor::ContainerName::Value(value) => { Self { value } }
+            crate::peer::executor::container::ContainerName::Empty => { Self { value: String::new() } }
+            crate::peer::executor::container::ContainerName::Value(value) => { Self { value } }
         }
     }
 }
 
-impl TryFrom<ContainerName> for crate::peer::executor::ContainerName {
+impl TryFrom<ContainerName> for crate::peer::executor::container::ContainerName {
     type Error = ConversionError;
 
     fn try_from(value: ContainerName) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<ContainerName, crate::peer::executor::ContainerName>;
+        type ErrorBuilder = ConversionErrorBuilder<ContainerName, crate::peer::executor::container::ContainerName>;
 
-        crate::peer::executor::ContainerName::try_from(value.value)
+        crate::peer::executor::container::ContainerName::try_from(value.value)
             .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
-impl From<crate::peer::executor::ContainerImage> for ContainerImage {
-    fn from(value: crate::peer::executor::ContainerImage) -> Self {
+impl From<crate::peer::executor::container::ContainerImage> for ContainerImage {
+    fn from(value: crate::peer::executor::container::ContainerImage) -> Self {
         Self {
             value: value.into()
         }
     }
 }
 
-impl TryFrom<ContainerImage> for crate::peer::executor::ContainerImage {
+impl TryFrom<ContainerImage> for crate::peer::executor::container::ContainerImage {
     type Error = ConversionError;
 
     fn try_from(value: ContainerImage) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<ContainerImage, crate::peer::executor::ContainerImage>;
+        type ErrorBuilder = ConversionErrorBuilder<ContainerImage, crate::peer::executor::container::ContainerImage>;
 
-        crate::peer::executor::ContainerImage::try_from(value.value)
+        crate::peer::executor::container::ContainerImage::try_from(value.value)
             .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
-impl From<crate::peer::executor::ContainerVolume> for ContainerVolume {
-    fn from(value: crate::peer::executor::ContainerVolume) -> Self {
+impl From<crate::peer::executor::container::ContainerVolume> for ContainerVolume {
+    fn from(value: crate::peer::executor::container::ContainerVolume) -> Self {
         Self {
             value: value.into()
         }
     }
 }
 
-impl TryFrom<ContainerVolume> for crate::peer::executor::ContainerVolume {
+impl TryFrom<ContainerVolume> for crate::peer::executor::container::ContainerVolume {
     type Error = ConversionError;
 
     fn try_from(value: ContainerVolume) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<ContainerVolume, crate::peer::executor::ContainerVolume>;
+        type ErrorBuilder = ConversionErrorBuilder<ContainerVolume, crate::peer::executor::container::ContainerVolume>;
 
-        crate::peer::executor::ContainerVolume::try_from(value.value)
+        crate::peer::executor::container::ContainerVolume::try_from(value.value)
             .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
-impl From<crate::peer::executor::ContainerDevice> for ContainerDevice {
-    fn from(value: crate::peer::executor::ContainerDevice) -> Self {
+impl From<crate::peer::executor::container::ContainerDevice> for ContainerDevice {
+    fn from(value: crate::peer::executor::container::ContainerDevice) -> Self {
         Self {
             value: value.into()
         }
     }
 }
 
-impl TryFrom<ContainerDevice> for crate::peer::executor::ContainerDevice {
+impl TryFrom<ContainerDevice> for crate::peer::executor::container::ContainerDevice {
     type Error = ConversionError;
 
     fn try_from(value: ContainerDevice) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<ContainerVolume, crate::peer::executor::ContainerVolume>;
+        type ErrorBuilder = ConversionErrorBuilder<ContainerVolume, crate::peer::executor::container::ContainerVolume>;
 
-        crate::peer::executor::ContainerDevice::try_from(value.value)
+        crate::peer::executor::container::ContainerDevice::try_from(value.value)
             .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
-impl From<crate::peer::executor::ContainerEnvironmentVariable> for ContainerEnvironmentVariable {
-    fn from(value: crate::peer::executor::ContainerEnvironmentVariable) -> Self {
+impl From<crate::peer::executor::container::ContainerEnvironmentVariable> for ContainerEnvironmentVariable {
+    fn from(value: crate::peer::executor::container::ContainerEnvironmentVariable) -> Self {
         let (name, value) = value.into();
         Self {
             name,
@@ -279,70 +285,70 @@ impl From<crate::peer::executor::ContainerEnvironmentVariable> for ContainerEnvi
     }
 }
 
-impl TryFrom<ContainerEnvironmentVariable> for crate::peer::executor::ContainerEnvironmentVariable {
+impl TryFrom<ContainerEnvironmentVariable> for crate::peer::executor::container::ContainerEnvironmentVariable {
     type Error = ConversionError;
 
     fn try_from(value: ContainerEnvironmentVariable) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<ContainerEnvironmentVariable, crate::peer::executor::ContainerEnvironmentVariable>;
+        type ErrorBuilder = ConversionErrorBuilder<ContainerEnvironmentVariable, crate::peer::executor::container::ContainerEnvironmentVariable>;
         
-        crate::peer::executor::ContainerEnvironmentVariable::new(value.name, value.value)
+        crate::peer::executor::container::ContainerEnvironmentVariable::new(value.name, value.value)
             .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
-impl From<crate::peer::executor::ContainerPortSpec> for ContainerPortSpec {
-    fn from(value: crate::peer::executor::ContainerPortSpec) -> Self {
+impl From<crate::peer::executor::container::ContainerPortSpec> for ContainerPortSpec {
+    fn from(value: crate::peer::executor::container::ContainerPortSpec) -> Self {
         Self {
             value: value.into()
         }
     }
 }
 
-impl TryFrom<ContainerPortSpec> for crate::peer::executor::ContainerPortSpec {
+impl TryFrom<ContainerPortSpec> for crate::peer::executor::container::ContainerPortSpec {
     type Error = ConversionError;
 
     fn try_from(value: ContainerPortSpec) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<ContainerPortSpec, crate::peer::executor::ContainerPortSpec>;
+        type ErrorBuilder = ConversionErrorBuilder<ContainerPortSpec, crate::peer::executor::container::ContainerPortSpec>;
 
-        crate::peer::executor::ContainerPortSpec::try_from(value.value)
+        crate::peer::executor::container::ContainerPortSpec::try_from(value.value)
             .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
-impl TryFrom<ContainerCommand> for crate::peer::executor::ContainerCommand {
+impl TryFrom<ContainerCommand> for crate::peer::executor::container::ContainerCommand {
     type Error = ConversionError;
 
     fn try_from(value: ContainerCommand) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<ContainerCommand, crate::peer::executor::ContainerCommand>;
+        type ErrorBuilder = ConversionErrorBuilder<ContainerCommand, crate::peer::executor::container::ContainerCommand>;
 
-        crate::peer::executor::ContainerCommand::try_from(value.value)
+        crate::peer::executor::container::ContainerCommand::try_from(value.value)
             .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
-impl From<crate::peer::executor::ContainerCommand> for ContainerCommand {
-    fn from(value: crate::peer::executor::ContainerCommand) -> Self {
+impl From<crate::peer::executor::container::ContainerCommand> for ContainerCommand {
+    fn from(value: crate::peer::executor::container::ContainerCommand) -> Self {
         Self {
             value: value.into()
         }
     }
 }
 
-impl From<crate::peer::executor::ContainerCommandArgument> for ContainerCommandArgument {
-    fn from(value: crate::peer::executor::ContainerCommandArgument) -> Self {
+impl From<crate::peer::executor::container::ContainerCommandArgument> for ContainerCommandArgument {
+    fn from(value: crate::peer::executor::container::ContainerCommandArgument) -> Self {
         Self {
             value: value.into()
         }
     }
 }
 
-impl TryFrom<ContainerCommandArgument> for crate::peer::executor::ContainerCommandArgument {
+impl TryFrom<ContainerCommandArgument> for crate::peer::executor::container::ContainerCommandArgument {
     type Error = ConversionError;
 
     fn try_from(value: ContainerCommandArgument) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<ContainerCommandArgument, crate::peer::executor::ContainerCommandArgument>;
+        type ErrorBuilder = ConversionErrorBuilder<ContainerCommandArgument, crate::peer::executor::container::ContainerCommandArgument>;
 
-        crate::peer::executor::ContainerCommandArgument::try_from(value.value)
+        crate::peer::executor::container::ContainerCommandArgument::try_from(value.value)
             .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }

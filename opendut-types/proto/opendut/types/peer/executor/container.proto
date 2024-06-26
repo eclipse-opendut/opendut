@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package opendut.types.peer.executor;
+
+message Engine {
+  oneof inner {
+    Docker docker = 1;
+    Podman podman = 2;
+  }
+}
+
+message Docker {}
+
+message Podman {}
+
+message ContainerName {
+  string value = 1;
+}
+
+message ContainerImage {
+  string value = 1;
+}
+
+message ContainerEnvironmentVariable {
+  string name = 1;
+  string value = 2;
+}
+
+message ContainerVolume {
+  string value = 1;
+}
+
+message ContainerDevice {
+  string value = 1;
+}
+
+message ContainerPortSpec {
+  string value = 1;
+}
+
+message ContainerCommand {
+  string value = 1;
+}
+
+message ContainerCommandArgument {
+  string value = 1;
+}

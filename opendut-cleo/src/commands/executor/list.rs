@@ -1,10 +1,11 @@
 use cli_table::{print_stdout, Table, WithTitle};
+use opendut_types::peer::executor::ExecutorDescriptor;
 use serde::Serialize;
 use uuid::Uuid;
 
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::peer::{PeerDescriptor, PeerId};
-use opendut_types::peer::executor::{ContainerImage, Engine, ExecutorDescriptor};
+use opendut_types::peer::executor::{container::{ContainerImage, Engine}, ExecutorKind};
 
 use crate::{ListOutputFormat};
 
@@ -48,7 +49,9 @@ fn filter_connected_peers(
 ) -> Vec<ContainerExecutorTable> {
     let mut executor_table = vec![];
     for executor in &peer.executors.executors {
-        if let ExecutorDescriptor::Container {
+        let ExecutorDescriptor {kind, results_url} = executor;
+        
+        if let ExecutorKind::Container {
             engine,
             name,
             image,
@@ -58,8 +61,7 @@ fn filter_connected_peers(
             ports,
             command,
             args,
-            results_url,
-        } = executor {
+        } = kind {
             let args = args.iter().map(|arg| arg.to_string()).collect::<Vec<_>>();
             let volumes = volumes.iter().map(|volume| volume.to_string()).collect::<Vec<_>>();
             let devices = devices.iter().map(|device| device.to_string()).collect::<Vec<_>>();

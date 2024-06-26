@@ -6,7 +6,7 @@ import "opendut/types/topology/topology.proto";
 import "opendut/types/util/net.proto";
 import "opendut/types/util/uuid.proto";
 import "opendut/types/vpn/vpn.proto";
-import "opendut/types/peer/executor.proto";
+import "opendut/types/peer/executor/executor.proto";
 
 
 message PeerId {

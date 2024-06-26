@@ -4,7 +4,6 @@
         "engine": "docker",
         "name": "nmap-test",
         "image": "nmap-test",
-        "results-url": "http://nginx-webdav:80/",
         "envs": {
             "ENVVAR1": "someenvironmentvariable",
             "ENVVAR2": "anotherenvironmentvariable"
@@ -18,5 +17,6 @@
         "volumes": [],
         "command": "",
         "devices": []
-    }
+    },
+    "results-url": "http://nginx-webdav:80/"
 }

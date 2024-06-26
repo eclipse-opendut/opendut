@@ -43,7 +43,6 @@ A JSON configuration file for a test executor that is passed to CLEO may look as
         "engine": "docker",
         "name": "nmap-test",
         "image": "nmap-test",
-        "results-url": "http://nginx-webdav:80/",
         "envs": {
             "ENVVAR1": "someenvironmentvariable",
             "ENVVAR2": "anotherenvironmentvariable"
@@ -57,7 +56,8 @@ A JSON configuration file for a test executor that is passed to CLEO may look as
         "volumes": [],
         "command": "",
         "devices": []
-    }
+    },
+    "results-url": "http://nginx-webdav:80/"
 }
 ``` 
 

@@ -1,5 +1,5 @@
 use leptos::{component, create_memo, create_rw_signal, create_slice, IntoView, RwSignal, SignalUpdate, SignalWith, SignalWithUntracked, view};
-use opendut_types::peer::executor::{Engine};
+use opendut_types::peer::executor::container::Engine;
 
 use crate::components::UserInputValue;
 use crate::peers::configurator::tabs::executor::executor_panel::ExecutorPanel;

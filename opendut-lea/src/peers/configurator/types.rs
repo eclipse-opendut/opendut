@@ -1,7 +1,8 @@
 use leptos::{RwSignal, SignalGetUntracked};
 
+use opendut_types::peer::executor::ExecutorDescriptor;
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
-use opendut_types::peer::executor::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine, ExecutorDescriptor, ExecutorDescriptors, ResultsUrl};
+use opendut_types::peer::executor::{container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine}, ExecutorKind, ExecutorDescriptors, ResultsUrl};
 use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
 use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
 
@@ -293,19 +294,20 @@ impl TryFrom<UserPeerExecutor> for ExecutorDescriptor {
                         }
                         
                     })?;
-                Ok(ExecutorDescriptor::Container {
-                    engine,
-                    name,
-                    image,
-                    volumes,
-                    devices,
-                    envs,
-                    ports,
-                    command,
-                    args,
+                Ok(ExecutorDescriptor {
+                    kind: ExecutorKind::Container {
+                        engine,
+                        name,
+                        image,
+                        volumes,
+                        devices,
+                        envs,
+                        ports,
+                        command,
+                        args,
+                    },
                     results_url,
                 })
-                
             }
         }
         

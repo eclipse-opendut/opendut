@@ -1,6 +1,7 @@
 use leptos::*;
 use leptos_router::use_params_map;
 
+use opendut_types::peer::executor::ExecutorDescriptor;
 use opendut_types::peer::PeerId;
 
 use crate::app::{ExpectGlobals, use_app_globals};
@@ -94,7 +95,9 @@ pub fn PeerConfigurator() -> impl IntoView {
                                 })
                                 .collect();
                             for executor in configuration.executors.executors {
-                                if let opendut_types::peer::executor::ExecutorDescriptor::Container {
+                                let ExecutorDescriptor {kind, results_url} = executor;
+
+                                if let opendut_types::peer::executor::ExecutorKind::Container {
                                     engine,
                                     name,
                                     image,
@@ -104,8 +107,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                                     ports,
                                     command,
                                     args,
-                                    results_url,
-                                } = executor {
+                                } = kind {
                                     let volumes = volumes.into_iter()
                                         .map(|volume| {
                                             create_rw_signal(UserInputValue::Right(volume.to_string()))

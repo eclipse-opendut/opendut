@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use opendut_types::peer::{self, executor::ExecutorDescriptor};
+use opendut_types::peer::{self, executor::{ExecutorDescriptor, ExecutorKind}};
 use tokio::sync::watch::{self, Sender};
 use tracing::warn;
 
@@ -34,9 +34,11 @@ impl ExecutorManager {
 
             let (tx, rx) = watch::channel(false);
 
-            match executor {
-                ExecutorDescriptor::Executable => warn!("Executing Executable not yet implemented."),
-                ExecutorDescriptor::Container {
+            let ExecutorDescriptor {kind, results_url} = executor;
+
+            match kind {
+                ExecutorKind::Executable => warn!("Executing Executable not yet implemented."),
+                ExecutorKind::Container {
                     engine,
                     name,
                     image,
@@ -46,7 +48,6 @@ impl ExecutorManager {
                     ports,
                     command,
                     args,
-                    results_url
                 } => {
                     let container_config = ContainerConfiguration{
                         name,

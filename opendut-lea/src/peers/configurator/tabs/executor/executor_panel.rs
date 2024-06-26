@@ -1,5 +1,5 @@
 use leptos::{component, create_read_slice, create_rw_signal, create_slice, event_target_value, IntoView, RwSignal,  SignalGet, SignalGetUntracked, SignalUpdate, SignalWith, SignalWithUntracked, view};
-use opendut_types::peer::executor::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine, IllegalContainerImage, ResultsUrl};
+use opendut_types::peer::executor::{container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine, IllegalContainerImage}, ResultsUrl};
 use strum::IntoEnumIterator;
 
 use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, IconButton, Toggled, UserInput, UserInputValue, VectorUserInput};

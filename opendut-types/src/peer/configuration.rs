@@ -6,7 +6,7 @@ use uuid::Uuid;
 
 use crate::cluster::ClusterAssignment;
 use crate::OPENDUT_UUID_NAMESPACE;
-use crate::peer::executor::ExecutorDescriptor;
+use crate::peer::executor::{ExecutorDescriptor, ExecutorKind};
 use crate::util::net::NetworkInterfaceName;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -85,10 +85,11 @@ pub trait ParameterValue: Any + Hash {
 impl ParameterValue for ExecutorDescriptor {
     fn parameter_identifier(&self) -> ParameterId {
         let mut hasher = DefaultHasher::new(); //ID not stable across Rust releases
-        match self {
-            ExecutorDescriptor::Executable => self.hash(&mut hasher),
-            ExecutorDescriptor::Container { name, .. } => name.hash(&mut hasher),
+        match &self.kind {
+            ExecutorKind::Executable => self.kind.hash(&mut hasher),
+            ExecutorKind::Container { name, .. } => name.hash(&mut hasher),
         }
+        self.results_url.hash(&mut hasher);
         let id = hasher.finish();
 
         let id = Uuid::new_v5(&OPENDUT_UUID_NAMESPACE, &id.to_le_bytes());
@@ -104,7 +105,10 @@ mod tests {
     fn insert_value_in_peer_configuration2() {
         let mut peer_configuration = PeerConfiguration2::default();
 
-        let value = ExecutorDescriptor::Executable;
+        let value = ExecutorDescriptor{
+            kind: ExecutorKind::Executable,
+            results_url: None
+        };
         let target = ParameterTarget::Present;
         peer_configuration.insert_executor(value.clone(), target);
 

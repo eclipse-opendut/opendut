@@ -1,9 +1,10 @@
+use opendut_types::peer::executor::ExecutorDescriptor;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::peer::PeerId;
-use opendut_types::peer::executor::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine, ExecutorDescriptor, ResultsUrl};
+use opendut_types::peer::executor::{container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine}, ExecutorKind, ResultsUrl};
 
 use crate::{CreateOutputFormat, DescribeOutputFormat, EngineVariants};
 
@@ -92,16 +93,18 @@ impl CreateContainerExecutorCli {
                     }
                 };
         
-                let executor_descriptor = ExecutorDescriptor::Container {
-                    engine,
-                    name: self.name.unwrap_or_default(),
-                    image: self.image.unwrap(),
-                    volumes,
-                    devices,
-                    envs: environment_variables,
-                    ports,
-                    command: self.command.unwrap_or_default(),
-                    args,
+                let executor_descriptor = ExecutorDescriptor {
+                    kind: ExecutorKind::Container {
+                        engine,
+                        name: self.name.unwrap_or_default(),
+                        image: self.image.unwrap(),
+                        volumes,
+                        devices,
+                        envs: environment_variables,
+                        ports,
+                        command: self.command.unwrap_or_default(),
+                        args,
+                    },
                     results_url: self.results_url,
                 };
         

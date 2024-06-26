@@ -311,7 +311,7 @@ mod test {
     use opendut_carl_api::proto::services::peer_messaging_broker::downstream;
     use opendut_types::cluster::ClusterName;
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
-    use opendut_types::peer::executor::{ContainerCommand, ContainerImage, ContainerName, Engine, ExecutorDescriptor, ExecutorDescriptors};
+    use opendut_types::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorKind, ExecutorDescriptors, ExecutorDescriptor};
     use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceName};
 
@@ -601,18 +601,22 @@ mod test {
                 ]
             },
             executors: ExecutorDescriptors {
-                executors: vec![ExecutorDescriptor::Container {
-                    engine: Engine::Docker,
-                    name: ContainerName::Empty,
-                    image: ContainerImage::try_from("testUrl").unwrap(),
-                    volumes: vec![],
-                    devices: vec![],
-                    envs: vec![],
-                    ports: vec![],
-                    command: ContainerCommand::Default,
-                    args: vec![],
-                    results_url: None,
-                }],
+                executors: vec![
+                    ExecutorDescriptor{
+                        kind: ExecutorKind::Container {
+                            engine: Engine::Docker,
+                            name: ContainerName::Empty,
+                            image: ContainerImage::try_from("testUrl").unwrap(),
+                            volumes: vec![],
+                            devices: vec![],
+                            envs: vec![],
+                            ports: vec![],
+                            command: ContainerCommand::Default,
+                            args: vec![],
+                        },
+                        results_url: None,
+                    }
+                ],
             },
         };
         PeerFixture {

@@ -1,7 +1,7 @@
 use uuid::Uuid;
 
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::peer::executor::{ContainerImage, ExecutorDescriptor};
+use opendut_types::peer::executor::{container::ContainerImage, ExecutorKind};
 use opendut_types::peer::PeerId;
 
 /// Delete a container executor
@@ -30,9 +30,9 @@ impl DeleteContainerExecutorCli {
             .map_err(|error| error.to_string())?;
 
         for container_image in container_images {
-            peer.executors.executors.retain(|executor| match executor {
-                ExecutorDescriptor::Executable => true,
-                ExecutorDescriptor::Container { image, .. } => {
+            peer.executors.executors.retain(|executor| match &executor.kind {
+                ExecutorKind::Executable => true,
+                ExecutorKind::Container { image, .. } => {
                     image != &container_image
                 }
             })

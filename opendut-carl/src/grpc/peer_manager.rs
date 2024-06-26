@@ -294,7 +294,7 @@ mod tests {
     use url::Url;
 
     use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkDescriptor};
-    use opendut_types::peer::executor::{ContainerCommand, ContainerImage, ContainerName, Engine, ExecutorDescriptor, ExecutorDescriptors};
+    use opendut_types::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorKind, ExecutorDescriptors, ExecutorDescriptor};
     use opendut_types::proto;
     use opendut_types::topology::Topology;
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
@@ -346,18 +346,22 @@ mod tests {
             },
             topology: Topology::default(),
             executors: ExecutorDescriptors {
-                executors: vec![ExecutorDescriptor::Container {
-                    engine: Engine::Docker,
-                    name: ContainerName::Empty,
-                    image: ContainerImage::try_from("testUrl").unwrap(),
-                    volumes: vec![],
-                    devices: vec![],
-                    envs: vec![],
-                    ports: vec![],
-                    command: ContainerCommand::Default,
-                    args: vec![],
-                    results_url: None, 
-                }],
+                executors: vec![
+                    ExecutorDescriptor{
+                        kind: ExecutorKind::Container {
+                            engine: Engine::Docker,
+                            name: ContainerName::Empty,
+                            image: ContainerImage::try_from("testUrl").unwrap(),
+                            volumes: vec![],
+                            devices: vec![],
+                            envs: vec![],
+                            ports: vec![],
+                            command: ContainerCommand::Default,
+                            args: vec![],
+                        },
+                        results_url: None,
+                    }
+                ],
             },
         };
 
