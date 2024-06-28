@@ -71,8 +71,8 @@ pub enum EdgarDeploymentStatus {
     Ready,
 }
 
-fn wait_for_all_edgar_peers_are(task: EdgarDeploymentStatus) -> crate::Result {
-    println!("STAGE: EDGAR {}", task);
+fn wait_for_all_edgar_peers_are(check_task: EdgarDeploymentStatus) -> crate::Result {
+    println!("STAGE: EDGAR {}", check_task);
     let timeout = Duration::from_secs(TIMEOUT_SECONDS);
     let start = std::time::Instant::now();
     let container_names = edgar_container_names()?;
@@ -87,7 +87,7 @@ fn wait_for_all_edgar_peers_are(task: EdgarDeploymentStatus) -> crate::Result {
         }
 
         for edgar_name in remaining_edgar_names.clone() {
-            match task {
+            match check_task {
                 Provisioned => {
                     if check_edgar_container_provisioning_done(&edgar_name)? {
                         println!("EDGAR peer '{}' is provisioned.", edgar_name);
@@ -107,7 +107,7 @@ fn wait_for_all_edgar_peers_are(task: EdgarDeploymentStatus) -> crate::Result {
             }
         }
         // Print message with duration in seconds, formatted to 6 characters
-        println!("{:^width$} seconds - Waiting for edgar leader to be deployed...", duration.as_secs(), width=6);
+        println!("{:^width$} seconds - Waiting for edgar cluster to be deployed...", duration.as_secs(), width=6);
         sleep(Duration::from_secs(SLEEP_TIME_SECONDS));
     }
 
@@ -137,7 +137,7 @@ fn check_edgar_provisioning_finished(container_name: &str) -> Result<bool, Error
                 if message.eq("Success") {
                     Ok(true)
                 } else {
-                    Err(anyhow!("Edgar leader provisioning failed: '{}'. Check 'docker logs edgar-leader'.", message))
+                    Err(anyhow!("Edgar provisioning failed for peer: {}. Check 'docker logs {}'.", message, container_name))
                 }
             } else {
                 Ok(false)
