@@ -231,7 +231,8 @@ impl ContainerManager {
         };
         
         let mut zipped_data = Vec::new();
-        let zip_options = SimpleFileOptions::default().compression_method(CompressionMethod::BZIP2).large_file(true);
+        // https://github.com/zip-rs/zip2/issues/195 large_file(true) produces invalid zip file with crate version 2.1.3
+        let zip_options = SimpleFileOptions::default().compression_method(CompressionMethod::BZIP2).large_file(false);
         create_zip_from_directory(&mut zipped_data, &self.results_dir, zip_options).await.map_err(|cause| Error::ResultZipping { path: self.results_dir.clone(), cause })?;
 
         self.webdav_client.create_collection_path(results_url.clone())
