@@ -13,6 +13,15 @@ pub struct DeleteClusterConfigurationCli {
 impl DeleteClusterConfigurationCli {
     pub async fn execute(self, carl: &mut CarlClient) -> crate::Result<()> {
         let id = ClusterId::from(self.id);
+
+        let cluster_deployments = carl.cluster.list_cluster_deployments().await
+            .map_err(|_| String::from("Failed to get list of cluster deployments!"))?;
+
+        if cluster_deployments.into_iter()
+            .any(|cluster_deployment| cluster_deployment.id == id) {
+            Err(format!("Cluster <{}> can not be deleted while it is deployed.", id))?
+        };
+        
         let cluster_configuration = carl.cluster.delete_cluster_configuration(id).await
             .map_err(|error| format!("Failed to delete ClusterConfiguration with id <{id}>.\n  {error}"))?;
 

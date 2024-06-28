@@ -7,22 +7,35 @@ use opendut_types::cluster::{ClusterConfiguration, ClusterId};
 
 use crate::app::{ExpectGlobals, use_app_globals};
 use crate::clusters::configurator::types::UserClusterConfiguration;
-use crate::components::{ButtonColor, ButtonSize, ButtonState, ButtonStateSignalProvider, ConfirmationButton, FontAwesomeIcon, IconButton, Toast, use_toaster};
+use crate::clusters::overview::IsDeployed;
+use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, IconButton, Toast, use_toaster};
 use crate::routing::{navigate_to, WellKnownRoutes};
 
 #[component]
-pub fn Controls(cluster_configuration: ReadSignal<UserClusterConfiguration>) -> impl IntoView {
+pub fn Controls(cluster_configuration: ReadSignal<UserClusterConfiguration>, deployed_signal: RwSignal<IsDeployed>) -> impl IntoView {
 
+    let (info_text, _) =
+        create_signal({
+            if deployed_signal.get().0 {
+                String::from("Cluster can not be updated or deleted while it is deployed.")
+            } else {
+                String::new()
+            }
+        });
+    
     view! {
-        <div class="buttons">
-            <SaveClusterButton cluster_configuration=cluster_configuration />
-            <DeleteClusterButton cluster_configuration=cluster_configuration />
+        <div class="is-flex is-align-items-center">
+            <p style="color: #C11B17; margin-right: 8px" >{info_text}</p>
+            <div class="buttons">
+                <SaveClusterButton cluster_configuration=cluster_configuration deployed_signal/>
+                <DeleteClusterButton cluster_configuration=cluster_configuration deployed_signal/>
+            </div>
         </div>
     }
 }
 
 #[component]
-fn SaveClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>) -> impl IntoView {
+fn SaveClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>, deployed_signal: RwSignal<IsDeployed>) -> impl IntoView {
 
     let globals = use_app_globals();
     let toaster = use_toaster();
@@ -60,7 +73,9 @@ fn SaveClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>
     });
 
     let button_state = MaybeSignal::derive(move || {
-        if store_action.pending().get() {
+        if deployed_signal.get().0 {
+            ButtonState::Disabled
+        } else if store_action.pending().get() {
             ButtonState::Loading
         }
         else {
@@ -90,7 +105,7 @@ fn SaveClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>
 }
 
 #[component]
-fn DeleteClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>) -> impl IntoView {
+fn DeleteClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>, deployed_signal: RwSignal<IsDeployed>) -> impl IntoView {
 
     let globals = use_app_globals();
 
@@ -103,10 +118,16 @@ fn DeleteClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguratio
         }
     });
 
-    let button_state = delete_action
-        .pending()
-        .derive_loading();
-
+    let button_state = MaybeSignal::derive(move || {
+        if deployed_signal.get().0 {
+            ButtonState::Disabled
+        } else if delete_action.pending().get() {
+            ButtonState::Loading
+        } else {
+            ButtonState::Default
+        }
+    });
+    
     view! {
         <ConfirmationButton
             icon=FontAwesomeIcon::TrashCan

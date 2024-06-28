@@ -8,7 +8,7 @@ pub fn DevicesTab(cluster_configuration: RwSignal<UserClusterConfiguration>) -> 
 
     view! {
         <div>
-            <DeviceSelector cluster_configuration=cluster_configuration />
+            <DeviceSelector cluster_configuration=cluster_configuration/>
         </div>
     }
 }

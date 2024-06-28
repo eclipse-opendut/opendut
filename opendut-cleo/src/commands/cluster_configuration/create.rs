@@ -36,10 +36,17 @@ impl CreateClusterConfigurationCli {
     ) -> crate::Result<()> {
         let ParseableClusterName(cluster_name) = self.name;
 
-        let leader = PeerId::from(self.leader_id); //TODO: check if peer exists
         let cluster_id = self.cluster_id
             .map(|ParseableClusterId(id)| id)
             .unwrap_or_else(ClusterId::random);
+        
+        let cluster_deployments = carl.cluster.list_cluster_deployments().await
+            .map_err(|_| String::from("Failed to get list of cluster deployments!"))?;
+        if cluster_deployments.into_iter().any(|cluster_deployment| cluster_deployment.id == cluster_id) {
+            Err(format!("Cluster <{}> can not be updated while it is deployed.", cluster_id))?
+        };
+
+        let leader = PeerId::from(self.leader_id); //TODO: check if peer exists
 
         let all_devices = carl.peers.list_devices().await
             .map_err(|error| format!("Error while listing devices.\n  {}", error))?;

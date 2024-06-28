@@ -145,7 +145,7 @@ pub fn ClustersOverview() -> impl IntoView {
     }
 }
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub struct IsDeployed(bool);
+pub struct IsDeployed(pub bool);
 
 #[component]
 fn Row<OnDeployFn, OnUndeployFn>(

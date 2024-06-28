@@ -1,13 +1,13 @@
 use leptos::*;
 use leptos_router::use_params_map;
-
-use opendut_types::cluster::ClusterId;
+use opendut_types::cluster::{ClusterId};
 
 use crate::app::{ExpectGlobals, use_app_globals};
 use crate::clusters::configurator::components::{DeviceSelection, DeviceSelector, LeaderSelection};
 use crate::clusters::configurator::components::Controls;
 use crate::clusters::configurator::tabs::{DevicesTab, GeneralTab, LeaderTab, TabIdentifier};
 use crate::clusters::configurator::types::UserClusterConfiguration;
+use crate::clusters::overview::IsDeployed;
 use crate::components::{BasePageContainer, Breadcrumb, Initialized, use_active_tab};
 use crate::components::{UserInputError, UserInputValue};
 use crate::routing::{navigate_to, WellKnownRoutes};
@@ -26,7 +26,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
         let params = use_params_map();
 
         let active_tab = use_active_tab::<TabIdentifier>();
-
+        
         let cluster_configuration = {
             let cluster_id = {
                 let cluster_id = params.with_untracked(|params| {
@@ -70,11 +70,11 @@ pub fn ClusterConfigurator() -> impl IntoView {
 
             user_configuration
         };
-
-        let cluster_id = create_read_slice(cluster_configuration, |config| config.id.to_string());
+        
+        let cluster_id = create_read_slice(cluster_configuration, |config| config.id);
 
         let breadcrumbs = MaybeSignal::derive(move || {
-            let cluster_id = cluster_id.get();
+            let cluster_id = cluster_id.get().0.to_string();
             vec![
                 Breadcrumb::new("Dashboard", "/"),
                 Breadcrumb::new("Clusters", "clusters"),
@@ -82,13 +82,48 @@ pub fn ClusterConfigurator() -> impl IntoView {
             ]
         });
 
+        let cluster_deployments = create_local_resource(|| {}, move |_| {
+            let mut carl = globals.expect_client();
+            async move {
+                carl.cluster.list_cluster_deployments().await
+                    .expect("Failed to request the list of cluster deployments")
+            }
+        });
+
+
+        let deployed_clusters = move || {
+            match cluster_deployments.get() {
+                Some(deployed_clusters) => {
+                    deployed_clusters.iter().map(|cluster_deployment| cluster_deployment.id).collect::<Vec<_>>()
+                }
+                None => Vec::new()
+            }
+        };
+        
+        let deployed_rw_signal = move || {
+            create_rw_signal(IsDeployed(deployed_clusters().contains(&cluster_id.get())))
+        };
+
+        let is_deployed = move || {
+            MaybeSignal::derive(move || {
+                IsDeployed(deployed_clusters().contains(&cluster_id.get())).0
+            })
+        };
+        
         view! {
             <BasePageContainer
                 title="Configure Cluster"
                 breadcrumbs=breadcrumbs
-                controls=view! { <Controls cluster_configuration=cluster_configuration.read_only() /> }
+                controls=move || { 
+                    view! {
+                        <Controls 
+                            cluster_configuration=cluster_configuration.read_only() 
+                            deployed_signal=deployed_rw_signal()
+                        /> 
+                    }
+                }
             >
-                <div>
+                <fieldset disabled=is_deployed()>
 
                     <div class="tabs">
                         <ul>
@@ -114,7 +149,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
                             <LeaderTab cluster_configuration=cluster_configuration />
                         </div>
                     </div>
-                </div>
+                </fieldset>
             </BasePageContainer>
         }
     }

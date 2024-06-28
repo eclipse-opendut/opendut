@@ -1,4 +1,5 @@
 use leptos::{component, IntoView, RwSignal, view};
+
 use crate::clusters::configurator::components::LeaderSelector;
 use crate::clusters::configurator::types::UserClusterConfiguration;
 
@@ -7,7 +8,7 @@ pub fn LeaderTab(cluster_configuration: RwSignal<UserClusterConfiguration>) -> i
 
     view! {
         <div>
-            <LeaderSelector cluster_configuration=cluster_configuration />
+            <LeaderSelector cluster_configuration=cluster_configuration/>
         </div>
     }
 }
