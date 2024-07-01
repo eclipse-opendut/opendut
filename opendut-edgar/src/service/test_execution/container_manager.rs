@@ -112,7 +112,7 @@ impl ContainerManager {
     }
 
     async fn get_container_state(&self, container_name: &String) -> Result<ContainerState, Error> {
-        let output = Command::new(&self.config.engine.command_name())
+        let output = Command::new(self.config.engine.command_name())
             .args(["inspect", "-f", "'{{.State.Status}}'", container_name])
             .output()
             .await
@@ -185,7 +185,7 @@ impl ContainerManager {
     }
 
     async fn check_container_name_exists(&self, name: &str) -> Result<bool, Error>{
-        let output = Command::new(&self.config.engine.command_name())
+        let output = Command::new(self.config.engine.command_name())
             .args(["container", "inspect", name])
             .output()
             .await
@@ -195,7 +195,7 @@ impl ContainerManager {
     }
 
     async fn stop_container(&self, container_name: &String) -> Result<(), Error>{
-        let output = Command::new(&self.config.engine.command_name())
+        let output = Command::new(self.config.engine.command_name())
             .args(["stop", container_name])
             .output()
             .await
