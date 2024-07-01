@@ -15,7 +15,7 @@ use crate::service::network_metrics::rperf::RperfRunError::RperfClientError;
 
 pub async fn launch_rperf_clients(peers: Vec<PeerClusterAssignment>, target_bandwidth_kbit_per_second: u64, rperf_backoff_max_elapsed_time_ms: Duration) {
 
-    let meter = global::meter(opendut_util::logging::DEFAULT_METER_NAME);
+    let meter = global::meter(opendut_util::telemetry::DEFAULT_METER_NAME);
 
     let megabits_second_send = meter.f64_gauge("megabits_second_send").init();
     let megabits_second_receive = meter.f64_gauge("megabits_second_receive").init();

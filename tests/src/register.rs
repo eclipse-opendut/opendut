@@ -5,13 +5,13 @@ use googletest::prelude::*;
 use tracing::info;
 
 use opendut_types::peer::PeerId;
-use opendut_util::logging;
+use opendut_util::telemetry;
 
 use crate::util;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn register_edgar_carl() -> Result<()> {
-    let _ = logging::initialize_with_defaults().await?;
+    let _ = telemetry::initialize_with_defaults().await?;
 
     let carl_port = util::select_free_port();
     info!("Running test with CARL port {carl_port}.");

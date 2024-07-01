@@ -47,10 +47,14 @@ auth.secret = ""
 timeout.ms = 10000
 retries = 5
 
+[logging]
+stdout = true
+
 [opentelemetry]
 enabled = false
-logging.stdout = true
-endpoint = ""
+collector.endpoint = ""
 service.name = "opendut-carl"
-metrics.interval.ms = 60000
+
+[opentelemetry.metrics]
+interval.ms = 60000
 cpu.collection.interval.ms = 5000

@@ -33,13 +33,19 @@ enabled = true
 [vpn.disabled]
 remote.host = ""
 
+[logging]
+stdout = true
+
 [opentelemetry]
 enabled = false
-logging.stdout = true
-endpoint = ""
+collector.endpoint = ""
 service.name = "opendut-edgar"
-metrics.interval.ms = 60000
+
+[opentelemetry.metrics]
+interval.ms = 60000
 cpu.collection.interval.ms = 5000
-cluster.ping.interval.ms = 30000
-cluster.target.bandwidth.kilobit.per.second = 100_000
-cluster.rperf.backoff.max.elapsed.time.ms = 120000
+
+[opentelemetry.metrics.cluster]
+ping.interval.ms = 30000
+target.bandwidth.kilobit.per.second = 100_000
+rperf.backoff.max.elapsed.time.ms = 120000

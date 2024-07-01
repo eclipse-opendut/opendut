@@ -10,8 +10,8 @@ use opendut_types::peer::PeerSetup;
 use opendut_types::util::net::NetworkInterfaceName;
 use opendut_types::vpn::netbird::SetupKey;
 use opendut_types::vpn::VpnPeerConfiguration;
-use opendut_util::logging;
-use opendut_util::logging::OpenTelemetryConfig;
+use opendut_util::telemetry;
+use opendut_util::telemetry::opentelemetry_types::Opentelemetry;
 
 use crate::service::network_interface::manager::NetworkInterfaceManager;
 use crate::setup::{Leader, runner, tasks, User};
@@ -125,12 +125,13 @@ pub async fn init_logging() -> anyhow::Result<()> {
     log_file.set_file_name("setup.log");
     let file_logging = Some(log_file);
 
-    let config = logging::LoggingConfig {
+    let logging_config = telemetry::logging::LoggingConfig {
         logging_stdout: false,
-        opentelemetry: OpenTelemetryConfig::Disabled,
+        file_logging,
     };
+    let opentelemetry_config = Opentelemetry::Disabled;
     
-    let _ = logging::initialize_with_config(config, file_logging, None).await?;
+    let _ = telemetry::initialize_with_config(logging_config, opentelemetry_config).await?;
 
     Ok(())
 }

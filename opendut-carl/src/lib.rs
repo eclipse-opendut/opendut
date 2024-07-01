@@ -17,13 +17,13 @@ use tower::{BoxError, make::Shared, ServiceExt, steer::Steer};
 use tower_http::services::{ServeDir, ServeFile};
 use tracing::{debug, info, warn};
 use uuid::Uuid;
-use opendut_auth::confidential::blocking::client::ConfidentialClient;
 use opendut_auth::confidential::pem::PemFromConfig;
 use opendut_auth::registration::client::{RegistrationClient, RegistrationClientRef};
 use opendut_auth::registration::resources::ResourceHomeUrl;
 
-use opendut_util::{logging, project};
-use opendut_util::logging::LoggingConfig;
+use opendut_util::{telemetry, project};
+use opendut_util::telemetry::logging::LoggingConfig;
+use opendut_util::telemetry::opentelemetry_types::Opentelemetry;
 use opendut_util::settings::LoadedConfig;
 use crate::cluster::manager::{ClusterManager, ClusterManagerOptions, ClusterManagerRef};
 
@@ -50,21 +50,19 @@ mod http;
 mod provisioning;
 
 #[tracing::instrument]
-pub async fn create_with_logging(settings_override: config::Config) -> Result<()> {
+pub async fn create_with_telemetry(settings_override: config::Config) -> Result<()> {
     let settings = settings::load_with_overrides(settings_override)?;
 
     let service_instance_id = format!("carl-{}", Uuid::new_v4());
 
-    let file_logging = None;
-    let logging_config = LoggingConfig::load(&settings.config, service_instance_id)?;
+    let logging_config = LoggingConfig::load(&settings.config)?;
+    let opentelemetry = Opentelemetry::load(&settings.config, service_instance_id).await?;
 
-    let confidential_client = ConfidentialClient::from_settings(&settings.config).await
-        .context("Error while creating AuthenticationManager.")?;
-
-    let mut shutdown = logging::initialize_with_config(logging_config.clone(), file_logging, confidential_client).await?;
+    let mut shutdown = telemetry::initialize_with_config(logging_config, opentelemetry.clone()).await?;
     
-    if let (logging::OpenTelemetryConfig::Enabled { cpu_collection_interval_ms, .. }, Some(meter_providers, ..)) = (logging_config.opentelemetry, &shutdown.meter_providers) {
-        logging::initialize_metrics_collection(cpu_collection_interval_ms, meter_providers);
+    if let (Opentelemetry::Enabled { cpu_collection_interval_ms, .. },
+        Some(meter_providers, ..)) = (opentelemetry, &shutdown.meter_providers) {
+        telemetry::metrics::initialize_metrics_collection(cpu_collection_interval_ms, meter_providers);
     }
 
     create(settings).await?;

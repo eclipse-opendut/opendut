@@ -5,7 +5,7 @@ use tracing::trace;
 use opendut_carl_api::proto::services::metadata_provider::{VersionRequest, VersionResponse};
 use opendut_carl_api::proto::services::metadata_provider::metadata_provider_server::{MetadataProvider, MetadataProviderServer};
 use opendut_types::proto::util::VersionInfo;
-use opendut_util::logging::NonDisclosingRequestExtension;
+use opendut_util::telemetry::logging::NonDisclosingRequestExtension;
 
 #[derive(Debug, Default)]
 pub struct MetadataProviderFacade {}

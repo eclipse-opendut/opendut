@@ -14,7 +14,7 @@ use opendut_carl_api::proto::services::peer_manager::peer_manager_server::{PeerM
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::cleo::{CleoId};
 use opendut_types::util::net::NetworkInterfaceName;
-use opendut_util::logging::NonDisclosingRequestExtension;
+use opendut_util::telemetry::logging::NonDisclosingRequestExtension;
 
 use crate::actions;
 use crate::actions::{DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, ListDevicesParams, ListPeerDescriptorsParams, StorePeerDescriptorOptions, StorePeerDescriptorParams};

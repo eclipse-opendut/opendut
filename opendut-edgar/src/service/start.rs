@@ -14,7 +14,6 @@ use tonic::Code;
 use tracing::{debug, error, info, Span, trace, warn};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
-use opendut_auth::confidential::blocking::client::ConfidentialClient;
 use opendut_carl_api::proto::services::peer_messaging_broker;
 use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, TracingContext};
 use opendut_carl_api::proto::services::peer_messaging_broker::downstream::Message;
@@ -22,8 +21,10 @@ use opendut_types::cluster::{ClusterAssignment, PeerClusterAssignment};
 use opendut_types::peer::configuration::{PeerConfiguration, PeerConfiguration2};
 use opendut_types::peer::PeerId;
 use opendut_types::util::net::NetworkInterfaceName;
-use opendut_util::{logging, project};
-use opendut_util::logging::LoggingConfig;
+use opendut_util::telemetry;
+use opendut_util::telemetry::logging::LoggingConfig;
+use opendut_util::telemetry::opentelemetry_types::Opentelemetry;
+use opendut_util::project;
 use opendut_util::settings::LoadedConfig;
 
 use crate::common::{carl, settings};
@@ -55,10 +56,10 @@ pub async fn launch(id_override: Option<PeerId>) -> anyhow::Result<()> {
         .set_override_option(settings::key::peer::id, id_override.map(|id| id.to_string()))?
         .build()?;
 
-    create_with_logging(settings_override).await
+    create_with_telemetry(settings_override).await
 }
 
-pub async fn create_with_logging(settings_override: config::Config) -> anyhow::Result<()> {
+pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow::Result<()> {
     let settings = settings::load_with_overrides(settings_override)?;
 
     let self_id = settings.config.get::<PeerId>(settings::key::peer::id)
@@ -66,16 +67,14 @@ pub async fn create_with_logging(settings_override: config::Config) -> anyhow::R
 
     let service_instance_id = self_id.to_string();
 
-    let file_logging = None;
-    let logging_config = LoggingConfig::load(&settings.config, service_instance_id)?;
-
-    let confidential_client = ConfidentialClient::from_settings(&settings.config).await
-        .context("Error while creating ConfidentialClient.")?;
+    let logging_config = LoggingConfig::load(&settings.config)?;
+    let opentelemetry = Opentelemetry::load(&settings.config, service_instance_id).await?;
     
-    let mut shutdown = logging::initialize_with_config(logging_config.clone(), file_logging, confidential_client).await?;
+    let mut shutdown = telemetry::initialize_with_config(logging_config, opentelemetry.clone()).await?;
 
-    if let (logging::OpenTelemetryConfig::Enabled { cpu_collection_interval_ms, .. }, Some(meter_providers, ..)) = (logging_config.opentelemetry, &shutdown.meter_providers) {
-        logging::initialize_metrics_collection(cpu_collection_interval_ms, meter_providers);
+    if let (Opentelemetry::Enabled { cpu_collection_interval_ms, .. },
+        Some(meter_providers, ..)) = (opentelemetry, &shutdown.meter_providers) {
+        telemetry::metrics::initialize_metrics_collection(cpu_collection_interval_ms, meter_providers);
     }
 
     create(self_id, settings).await?;
@@ -96,10 +95,10 @@ pub async fn create(self_id: PeerId, settings: LoadedConfig) -> anyhow::Result<(
     let network_interface_management_enabled = settings.config.get::<bool>("network.interface.management.enabled")?;
 
     let remote_address = vpn::retrieve_remote_host(&settings).await?;
-
-    let ping_interval = Duration::from_millis(settings.config.get::<u64>("opentelemetry.cluster.ping.interval.ms")?);
-    let target_bandwidth_kbit_per_second = settings.config.get::<u64>("opentelemetry.cluster.target.bandwidth.kilobit.per.second")?;
-    let rperf_backoff_max_elapsed_time = Duration::from_millis(settings.config.get::<u64>("opentelemetry.cluster.rperf.backoff.max.elapsed.time.ms")?);
+    
+    let ping_interval = Duration::from_millis(settings.config.get::<u64>("opentelemetry.metrics.cluster.ping.interval.ms")?);
+    let target_bandwidth_kbit_per_second = settings.config.get::<u64>("opentelemetry.metrics.cluster.target.bandwidth.kilobit.per.second")?;
+    let rperf_backoff_max_elapsed_time = Duration::from_millis(settings.config.get::<u64>("opentelemetry.metrics.cluster.rperf.backoff.max.elapsed.time.ms")?);
 
     let setup_cluster_info = SetupClusterInfo {
         self_id,

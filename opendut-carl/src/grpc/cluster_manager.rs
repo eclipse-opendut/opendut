@@ -7,7 +7,7 @@ use tracing::trace;
 use opendut_carl_api::proto::services::cluster_manager::*;
 use opendut_carl_api::proto::services::cluster_manager::cluster_manager_server::{ClusterManager as ClusterManagerService, ClusterManagerServer};
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
-use opendut_util::logging::NonDisclosingRequestExtension;
+use opendut_util::telemetry::logging::NonDisclosingRequestExtension;
 
 use crate::actions;
 use crate::actions::{CreateClusterConfigurationParams, DeleteClusterConfigurationParams};

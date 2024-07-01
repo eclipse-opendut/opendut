@@ -16,7 +16,7 @@ use opendut_carl_api::proto::services::peer_messaging_broker::{Downstream, ListP
 use opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_broker_server::PeerMessagingBrokerServer;
 use opendut_carl_api::proto::services::peer_messaging_broker::upstream;
 use opendut_types::peer::PeerId;
-use opendut_util::logging::NonDisclosingRequestExtension;
+use opendut_util::telemetry::logging::NonDisclosingRequestExtension;
 
 use crate::peer::broker::{OpenError, PeerMessagingBrokerRef};
 

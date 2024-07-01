@@ -37,7 +37,7 @@ services:
       - OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_ISSUER_URL=https://keycloak/realms/opendut/
       - OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_SCOPES=
       - OPENDUT_EDGAR_OPENTELEMETRY_ENABLED=true
-      - OPENDUT_EDGAR_OPENTELEMETRY_ENDPOINT=http://otel-collector:4317
+      - OPENDUT_EDGAR_OPENTELEMETRY_COLLECTOR_ENDPOINT=http://otel-collector:4317
 
       # testenv
       - NETBIRD_GROUP=testenv  # only used by unmanaged mode
@@ -91,7 +91,7 @@ services:
       - OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_ISSUER_URL=https://keycloak/realms/opendut/
       - OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_SCOPES=
       - OPENDUT_EDGAR_OPENTELEMETRY_ENABLED=true
-      - OPENDUT_EDGAR_OPENTELEMETRY_ENDPOINT=http://otel-collector:4317
+      - OPENDUT_EDGAR_OPENTELEMETRY_COLLECTOR_ENDPOINT=http://otel-collector:4317
 
       # testenv
       - NETBIRD_GROUP=testenv  # only used by unmanaged mode
