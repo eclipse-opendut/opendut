@@ -95,6 +95,21 @@ services:
     networks:
       - opendutnet
 
+ grafana_users:
+   container_name: grafana_users
+   image: alpine:latest
+   depends_on:
+     grafana:
+       condition: service_started
+   command: >
+     sh -c "apk --no-cache add curl && sleep 5 && curl -X POST -u admin:admin \
+     -H \"Accept: application/json\" \
+     -H \"Content-Type: application/json\" \
+     -d '{\"name\": \"openDuT\", \"login\": \"opendut\", \"password\": \"opendut\", \"OrgId\": 1}' \
+     http://grafana:80/api/admin/users"
+   networks:
+     - opendutnet
+
 volumes:
   grafana-storage:
   tempo-data:
