@@ -3,6 +3,7 @@ use oauth2::{ClientId, ClientSecret, RedirectUrl};
 use openidconnect::RegistrationUrl;
 use pem::Pem;
 use rstest::fixture;
+use serde::Deserialize;
 use url::Url;
 
 use opendut_auth::confidential::client::{ConfidentialClient, ConfidentialClientRef};
@@ -60,6 +61,15 @@ pub async fn registration_client(#[future] confidential_carl_client: Confidentia
     RegistrationClient::new(carl_idp_config, client)
 }
 
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct Client {
+    id: String,
+    client_id: String,
+    name: Option<String>,
+    base_url: Option<String>,
+}
+
 #[cfg(test)]
 mod auth_tests {
     use googletest::assert_that;
@@ -73,7 +83,7 @@ mod auth_tests {
     use opendut_auth::registration::client::{RegistrationClientError, RegistrationClientRef};
     use opendut_types::resources::Id;
 
-    use crate::{issuer_certificate_authority, registration_client};
+    use crate::{Client, issuer_certificate_authority, registration_client};
 
     async fn delete_client(client: RegistrationClientRef, delete_client_id: String, issuer_ca: Pem) -> Result<(), RegistrationClientError> {
         let client_id = client.inner.config.client_id.clone().to_string();
@@ -106,6 +116,40 @@ mod auth_tests {
         Ok(())
     }
 
+    async fn list_clients_for_user(client: RegistrationClientRef, user_id: String, issuer_ca: Pem) -> Result<(), RegistrationClientError> {
+        let client_id = client.inner.config.client_id.clone().to_string();
+        let access_token = client.inner.get_token().await
+            .map_err(|error| RegistrationClientError::RequestError { error: format!("Could not fetch token to delete client {}!", client_id), cause: error.into() })?;
+        let list_client_url = client.inner.config.issuer_url.join("/admin/realms/opendut/clients").unwrap();
+
+        let mut headers = HeaderMap::new();
+        let bearer_header = format!("Bearer {}", access_token);
+        let access_token_value = HeaderValue::from_str(&bearer_header)
+            .map_err(|error| RegistrationClientError::InvalidConfiguration { error: error.to_string() })?;
+        headers.insert(http::header::AUTHORIZATION, access_token_value);
+
+        let request = HttpRequest {
+            method: http::Method::GET,
+            url: list_client_url,
+            headers,
+            body: vec![],
+        };
+
+        let reqwest_client = OidcReqwestClient::from_pem(issuer_ca)
+            .map_err(|error| RegistrationClientError::InvalidConfiguration { error: format!("Failed to load certificate authority. {}", error) })?;
+
+        let response = reqwest_client.async_http_client(request)
+            .await
+            .map_err(|error| RegistrationClientError::RequestError { error: "OIDC client list request failed!".to_string(), cause: Box::new(error) })?;
+
+        let clients: Vec<Client> = serde_json::from_slice(&response.body).unwrap();
+        let filtered_clients: Vec<Client> = clients.into_iter().filter(|client| client.base_url.clone().is_some_and(|url| url.contains(&user_id))).collect();
+        assert_eq!(response.status_code, 200, "Failed to list clients for user'{:?}'", user_id);
+        assert!(!filtered_clients.is_empty());
+
+        Ok(())
+    }
+
     #[rstest]
     #[tokio::test]
     #[ignore]
@@ -118,9 +162,11 @@ mod auth_tests {
         let pem = issuer_certificate_authority.await;
         println!("{:?}", client);
         let resource_id = Id::random();
-        let credentials = client.register_new_client(resource_id).await.unwrap();
+        let user_id = String::from("testUser");
+        let credentials = client.register_new_client_for_user(resource_id, user_id.clone()).await.unwrap();
         let (client_id, client_secret) = (credentials.client_id.value(), credentials.client_secret.value());
         println!("New client id: {}, secret: {}", client_id, client_secret);
+        list_clients_for_user(client.clone(), user_id, pem.clone()).await.unwrap();
         delete_client(client, client_id.clone(), pem).await.unwrap();
         assert_that!(client_id.len().gt(&10), eq(true));
     }

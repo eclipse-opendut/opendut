@@ -69,7 +69,7 @@ impl RegistrationClient {
         })
     }
 
-    pub async fn register_new_client(&self, resource_id: Id) -> Result<ClientCredentials, RegistrationClientError> {
+    pub async fn register_new_client_for_user(&self, resource_id: Id, user_id: String) -> Result<ClientCredentials, RegistrationClientError> {
         match self.config.peer_credentials.clone() {
             Some(peer_credentials) => {
                 Ok(peer_credentials)
@@ -86,7 +86,7 @@ impl RegistrationClient {
                 let registration_url = self.config.registration_url.clone();
 
                 let client_name: ClientName = ClientName::new(resource_id.to_string());
-                let resource_uri = self.config.client_home_base_url.resource_url(resource_id)
+                let resource_uri = self.config.client_home_base_url.resource_url(resource_id, user_id)
                     .map_err(|error| RegistrationClientError::ClientParameter {
                         message: format!("Failed to create resource url for client: {:?}", error),
                         cause: Box::new(error),

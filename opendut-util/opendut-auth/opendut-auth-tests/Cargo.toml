@@ -20,3 +20,5 @@ openidconnect = { workspace = true, default-features = false, features = ["reqwe
 oauth2 = { workspace = true, default-features = false, features = ["reqwest"] }
 http = { workspace = true }
 tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }

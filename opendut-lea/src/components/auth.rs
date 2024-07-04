@@ -34,6 +34,7 @@ pub fn LeaAuthenticated(
                                 email: data.claims.email.clone(),
                                 groups: data.claims.groups.clone(),
                                 roles: data.claims.roles.clone(),
+                                subject: data.claims.subject.clone()
                             }
                         )
                     });

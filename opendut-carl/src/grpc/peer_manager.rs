@@ -228,7 +228,7 @@ impl PeerManagerService for PeerManagerFacade {
                     ca: Clone::clone(&self.ca),
                     vpn: Clone::clone(&self.vpn),
                     oidc_registration_client: self.oidc_registration_client.clone(),
-                }).await.map_err(|cause| Status::internal(format!("Peer setup could not be created: {}", cause)))?;
+                }, message.user_id).await.map_err(|cause| Status::internal(format!("Peer setup could not be created: {}", cause)))?;
 
                 peer_manager::generate_peer_setup_response::Reply::Success(peer_manager::GeneratePeerSetupSuccess { peer: Some(peer_id.into()), setup: Some(setup.into()) })
             }
@@ -249,7 +249,7 @@ impl PeerManagerService for PeerManagerFacade {
             carl_url: Clone::clone(&self.carl_url),
             ca: Clone::clone(&self.ca),
             oidc_registration_client: self.oidc_registration_client.clone(),
-        }).await.map_err(|cause| Status::internal(format!("Cleo setup could not be created: {}", cause)))?;
+        }, request.into_inner().user_id).await.map_err(|cause| Status::internal(format!("Cleo setup could not be created: {}", cause)))?;
         
         let response = generate_cleo_setup_response::Reply::Success(GenerateCleoSetupSuccess { 
             cleo: Some(cleo_id.into()), 

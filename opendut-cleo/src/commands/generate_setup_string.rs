@@ -12,11 +12,11 @@ pub struct GenerateSetupStringCli {
 
 impl GenerateSetupStringCli {
     //TODO: what happens if peer with the ID is already set up?
-    pub async fn execute(self, carl: &mut CarlClient) -> crate::Result<()> {
+    pub async fn execute(self, carl: &mut CarlClient, cleo_oidc_client_id: String,) -> crate::Result<()> {
         let peer_id = PeerId::from(self.id);
         let created_setup = carl
             .peers
-            .create_peer_setup(peer_id)
+            .create_peer_setup(peer_id, cleo_oidc_client_id)
             .await
             .map_err(|error| format!("Could not create setup string.\n  {}", error))?;
 

@@ -53,4 +53,5 @@ pub struct AuthData {
     pub email: String,
     pub groups: Vec<String>,
     pub roles: Vec<String>,
+    pub subject: String,
 }

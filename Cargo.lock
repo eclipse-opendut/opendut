@@ -2758,6 +2758,8 @@ dependencies = [
  "openidconnect",
  "pem",
  "rstest",
+ "serde",
+ "serde_json",
  "tokio",
  "url",
 ]

@@ -281,9 +281,9 @@ pub enum GeneratePeerSetupError {
 }
 
 #[tracing::instrument(skip(params), level="trace")]
-pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<PeerSetup, GeneratePeerSetupError> {
+pub async fn generate_peer_setup(params: GeneratePeerSetupParams, user_id: String) -> Result<PeerSetup, GeneratePeerSetupError> {
 
-    async fn inner(params: GeneratePeerSetupParams) -> Result<PeerSetup, GeneratePeerSetupError> {
+    async fn inner(params: GeneratePeerSetupParams, user_id: String) -> Result<PeerSetup, GeneratePeerSetupError> {
 
         let peer_id = params.peer;
 
@@ -314,7 +314,7 @@ pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<Peer
                 let resource_id = peer_id.into();
                 debug!("Generating OIDC client for peer '{peer_name}' <{peer_id}>.");
                 let issuer_url = registration_client.config.issuer_remote_url.clone();
-                let client_credentials = registration_client.register_new_client(resource_id)
+                let client_credentials = registration_client.register_new_client_for_user(resource_id, user_id)
                     .await
                     .map_err(|cause| GeneratePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), cause: cause.to_string() })?;
                 debug!("Successfully generated peer setup for peer '{peer_name}' <{peer_id}>. OIDC client_id='{}'.", client_credentials.client_id.clone().value());
@@ -331,7 +331,7 @@ pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<Peer
         })
     }
 
-    inner(params).await
+    inner(params, user_id).await
         .inspect_err(|err| error!("{err}"))
 }
 
@@ -351,9 +351,9 @@ pub enum GenerateCleoSetupError {
 }
 
 #[tracing::instrument(skip(params), level="trace")]
-pub async fn generate_cleo_setup(params: GenerateCleoSetupParams) -> Result<CleoSetup, GenerateCleoSetupError> {
+pub async fn generate_cleo_setup(params: GenerateCleoSetupParams, user_id: String) -> Result<CleoSetup, GenerateCleoSetupError> {
 
-    async fn inner(params: GenerateCleoSetupParams) -> Result<CleoSetup, GenerateCleoSetupError> {
+    async fn inner(params: GenerateCleoSetupParams, user_id: String) -> Result<CleoSetup, GenerateCleoSetupError> {
 
         let cleo_id = params.cleo;
         debug!("Generating CleoSetup");
@@ -366,7 +366,7 @@ pub async fn generate_cleo_setup(params: GenerateCleoSetupParams) -> Result<Cleo
                 let resource_id = cleo_id.into();
                 debug!("Generating OIDC client for CLEO: <{cleo_id}>.");
                 let issuer_url = registration_client.config.issuer_remote_url.clone();
-                let client_credentials = registration_client.register_new_client(resource_id)
+                let client_credentials = registration_client.register_new_client_for_user(resource_id, user_id)
                     .await
                     .map_err(|cause| GenerateCleoSetupError::Internal { cause: cause.to_string() })?;
                 debug!("Successfully generated cleo setup with id <{cleo_id}>. OIDC client_id='{}'.", client_credentials.client_id.clone().value());
@@ -382,7 +382,7 @@ pub async fn generate_cleo_setup(params: GenerateCleoSetupParams) -> Result<Cleo
         })
     }
 
-    inner(params).await
+    inner(params, user_id).await
         .inspect_err(|err| error!("{err}"))
 }
 
@@ -621,7 +621,7 @@ mod test {
                 oidc_registration_client: None,
             };
 
-            let cleo_setup = generate_cleo_setup(generate_cleo_setup_params).await?;
+            let cleo_setup = generate_cleo_setup(generate_cleo_setup_params, String::from("testUser")).await?;
             assert_that!(cleo_setup.id, eq(CleoId::try_from("787d0b11-51f3-4cfe-8131-c7d89d53f0e9")?));
             assert_that!(cleo_setup.auth_config, eq(AuthConfig::Disabled));
             assert_that!(cleo_setup.carl, eq(Url::parse("https://example.com:1234").unwrap()));

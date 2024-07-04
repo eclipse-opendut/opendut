@@ -1,4 +1,5 @@
-use leptos::{component, create_local_resource, IntoView, ReadSignal, RwSignal, SignalGet, SignalSet, view};
+use leptos::{component, create_local_resource, IntoView, ReadSignal, RwSignal, SignalGet, SignalSet, use_context, view, WriteSignal};
+use opendut_auth::public::OptionalAuthData;
 
 use opendut_types::peer::PeerId;
 
@@ -14,11 +15,17 @@ pub fn SetupTab(peer_configuration: ReadSignal<UserPeerConfiguration>) -> impl I
 
     let trigger_generation: RwSignal<Option<PeerId>> = RwSignal::new(None);
 
+    let (auth_data_signal, _) = use_context::<(ReadSignal<OptionalAuthData>, WriteSignal<OptionalAuthData>)>().expect("AuthData should be provided in the context.");
+
     let setup_string = create_local_resource(move || trigger_generation.get(), move |peer_id| {
         async move {
+            let user_id = match auth_data_signal.get().auth_data {
+                None => { String::from("UNKNOWN USER") }
+                Some(auth_data) => { auth_data.subject }
+            };
             if let Some(peer_id) = peer_id {
                 let mut carl = globals.expect_client();
-                let setup = carl.peers.create_peer_setup(peer_id).await
+                let setup = carl.peers.create_peer_setup(peer_id, user_id).await
                     .expect("Failed to request the setup string.");
                 let setup_string = setup.encode()
                     .expect("PeerSetup should be encodable into a setup-string");

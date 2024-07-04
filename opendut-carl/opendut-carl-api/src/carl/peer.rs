@@ -230,10 +230,11 @@ mod client {
             }
         }
 
-        pub async fn create_peer_setup(&mut self, peer_id: PeerId) -> Result<PeerSetup, CreateSetupError> {
+        pub async fn create_peer_setup(&mut self, peer_id: PeerId, user_id: String) -> Result<PeerSetup, CreateSetupError> {
             let request = tonic::Request::new(
                 peer_manager::GeneratePeerSetupRequest {
-                    peer: Some(peer_id.into())
+                    peer: Some(peer_id.into()),
+                    user_id,
                 }
             );
 
@@ -260,9 +261,10 @@ mod client {
             }
         }
 
-        pub async fn create_cleo_setup(&mut self) -> Result<CleoSetup, CreateSetupError> {
+        pub async fn create_cleo_setup(&mut self, user_id: String) -> Result<CleoSetup, CreateSetupError> {
             let request = tonic::Request::new(
                 peer_manager::GenerateCleoSetupRequest {
+                    user_id
                 }
             );
 

@@ -1,4 +1,5 @@
-use leptos::{component, create_local_resource, IntoView, MaybeSignal, RwSignal, SignalGet, SignalSet, view};
+use leptos::{component, create_local_resource, IntoView, MaybeSignal, ReadSignal, RwSignal, SignalGet, SignalSet, use_context, view, WriteSignal};
+use opendut_auth::public::OptionalAuthData;
 use crate::app::{ExpectGlobals, use_app_globals};
 use crate::components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonStateSignalProvider, Initialized, SimpleButton};
 
@@ -11,11 +12,17 @@ pub fn CleoSetup() -> impl IntoView {
 
         let trigger_cleo_setup_generation: RwSignal<bool> = RwSignal::new(false);
 
+        let (auth_data_signal, _) = use_context::<(ReadSignal<OptionalAuthData>, WriteSignal<OptionalAuthData>)>().expect("AuthData should be provided in the context.");
+
         let setup_string = create_local_resource(move || trigger_cleo_setup_generation.get(), move |action| {
             async move {
+                let user_id = match auth_data_signal.get().auth_data {
+                    None => { String::from("UNKNOWN USER") }
+                    Some(auth_data) => { auth_data.subject }
+                };
                 if action {
                     let mut carl = globals.expect_client();
-                    let setup = carl.peers.create_cleo_setup().await
+                    let setup = carl.peers.create_cleo_setup(user_id.clone()).await
                         .expect("Failed to request the setup string.");
                     let setup_string = setup.encode()
                         .expect("PeerSetup should be encodable into a setup-string");

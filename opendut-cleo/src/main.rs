@@ -282,7 +282,8 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
         }
         Commands::GenerateSetupString(implementation) => {
             let mut carl = create_carl_client(&settings.config).await;
-            implementation.execute(&mut carl).await?;
+            let cleo_oidc_client_id = get_cleo_oidc_client_id(&settings.config).await;
+            implementation.execute(&mut carl, cleo_oidc_client_id).await?;
         }
         Commands::DecodeSetupString(implementation) => {
             implementation.execute().await?;
@@ -349,7 +350,7 @@ pub async fn create_carl_client(config: &config::Config) -> CarlClient {
 
     let port = config.get_int("network.carl.port")
         .expect("Configuration should contain a valid port number to connect to CARL");
-    
+
     let ca_cert_info = match config.get_string("network.tls.ca.content") {
         Ok(content_string) => CaCertInfo::Content(content_string),
         Err(_) => {
@@ -365,4 +366,11 @@ pub async fn create_carl_client(config: &config::Config) -> CarlClient {
 
     CarlClient::create(host, port as u16, &ca_cert_info, &domain_name_override, config).await
         .expect("Failed to create CARL client")
+}
+
+pub async fn get_cleo_oidc_client_id(config: &config::Config) -> String {
+    match config.get_string("network.oidc.client.id") {
+        Ok(id) => { id }
+        Err(_) => { String::from("cleoCli") }
+    }
 }
