@@ -22,7 +22,7 @@ impl Task for Unpack {
         let unpacked_checksum_file = &self.checksum_unpack_file;
         if unpacked_checksum_file.exists() {
             let installed_digest = fs::read(unpacked_checksum_file)?;
-            let distribution_digest = util::file_checksum(&self.from)?;
+            let distribution_digest = util::checksum::file(&self.from)?;
 
             if installed_digest == distribution_digest {
                 return Ok(TaskFulfilled::Yes);
@@ -40,7 +40,7 @@ impl Task for Unpack {
         fs::create_dir_all(&self.to_dir)?;
         archive.unpack(&self.to_dir)?;
 
-        let checksum = util::file_checksum(&self.from)?;
+        let checksum = util::checksum::file(&self.from)?;
         let checksum_unpack_file = &self.checksum_unpack_file;
         fs::create_dir_all(checksum_unpack_file.parent().unwrap())?;
         fs::write(checksum_unpack_file, checksum)
@@ -87,7 +87,7 @@ mod tests {
 
         assert_eq!(task.check_fulfilled()?, TaskFulfilled::No);
         
-        checksum_file_path.write_binary(&util::file_checksum(from.path())?)?;
+        checksum_file_path.write_binary(&util::checksum::file(from.path())?)?;
 
         let task = Unpack {
             from: from.to_path_buf(),

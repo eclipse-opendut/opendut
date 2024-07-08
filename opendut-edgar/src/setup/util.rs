@@ -1,13 +1,9 @@
-use std::fs::File;
-use std::io;
-use std::io::Read;
 use std::ops::Not;
 use std::path::Path;
 use std::process::{Command, Output};
 
 use anyhow::{anyhow, bail, Context};
 use cfg_if::cfg_if;
-use sha2::{Digest, Sha256};
 
 use crate::setup::User;
 
@@ -74,16 +70,29 @@ pub fn chown(user: &User, path: impl AsRef<Path>) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn file_checksum(path: impl AsRef<Path>) -> Result<Vec<u8>, io::Error> {
-    let file = File::open(path.as_ref())?;
-    sha256_digest(file)
-}
+pub mod checksum {
+    use std::io;
+    use std::io::Read;
+    use sha2::{Digest, Sha256};
+    use std::path::Path;
+    use std::fs::File;
 
-pub fn sha256_digest(mut reader: impl Read) -> Result<Vec<u8>, io::Error> {
-    let mut hasher = Sha256::new();
-    let _ = io::copy(&mut reader, &mut hasher)?;
-    let hash = hasher.finalize();
-    Ok(hash.to_vec())
+    pub fn file(path: impl AsRef<Path>) -> Result<Vec<u8>, io::Error> {
+        let file = File::open(path.as_ref())?;
+        sha256_digest(file)
+    }
+
+    pub fn string(string: impl AsRef<str>) -> Result<Vec<u8>, io::Error> {
+        let bytes = string.as_ref().as_bytes();
+        sha256_digest(bytes)
+    }
+
+    fn sha256_digest(mut reader: impl Read) -> Result<Vec<u8>, io::Error> {
+        let mut hasher = Sha256::new();
+        let _ = io::copy(&mut reader, &mut hasher)?;
+        let hash = hasher.finalize();
+        Ok(hash.to_vec())
+    }
 }
 
 pub fn running_in_docker() -> bool {

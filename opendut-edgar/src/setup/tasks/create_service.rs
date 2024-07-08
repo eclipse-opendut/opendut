@@ -63,7 +63,7 @@ impl Task for CreateServiceFile {
         let unpacked_systemd_checksum_file = &self.checksum_systemd_file;
         if unpacked_systemd_checksum_file.exists() {
             let systemd_installed_digest = fs::read(unpacked_systemd_checksum_file)?;
-            let systemd_distribution_digest = util::sha256_digest(systemd_file_content(&self.service_user).as_bytes())?;
+            let systemd_distribution_digest = util::checksum::string(systemd_file_content(&self.service_user))?;
 
             if systemd_installed_digest == systemd_distribution_digest {
                 return Ok(TaskFulfilled::Yes);
@@ -84,7 +84,7 @@ impl Task for CreateServiceFile {
             Command::new("systemctl").arg("daemon-reload")
         ).context("systemctl daemon-reload could not be executed successfully!")?;
 
-        let checksum_systemd_file = util::sha256_digest(systemd_file_content.as_bytes())?;
+        let checksum_systemd_file = util::checksum::string(systemd_file_content)?;
         let checksum_systemd_file_unpack_file = &self.checksum_systemd_file;
         fs::create_dir_all(checksum_systemd_file_unpack_file.parent().unwrap())?;
         fs::write(checksum_systemd_file_unpack_file, checksum_systemd_file)

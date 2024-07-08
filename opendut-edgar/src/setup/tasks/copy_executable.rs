@@ -16,9 +16,9 @@ impl Task for CopyExecutable {
     fn check_fulfilled(&self) -> Result<TaskFulfilled> {
         let installed_path = executable_install_path()?;
         if installed_path.exists() {
-            let installed_digest = util::file_checksum(installed_path)?;
+            let installed_digest = util::checksum::file(installed_path)?;
             let unpacked_path = std::env::current_exe()?;
-            let unpacked_digest = util::file_checksum(unpacked_path)?;
+            let unpacked_digest = util::checksum::file(unpacked_path)?;
 
             if installed_digest == unpacked_digest {
                 return Ok(TaskFulfilled::Yes);
