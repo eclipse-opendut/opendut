@@ -1,18 +1,38 @@
-use reqwest::{Method, RequestBuilder, Url, Body, Response, header};
+use config::Config;
+use pem::Pem;
+use reqwest::{Method, RequestBuilder, Url, Body, Response, header, Certificate};
 use tracing::error;
+
+use opendut_auth::confidential::pem::PemFromConfig;
 
 pub struct WebdavClient {
     bearer_token: String,
     client: reqwest::Client,
 }
 
+const CONFIG_KEY_GENERIC_CA: &str = "network.tls.ca";
+
 impl WebdavClient {
 
-    pub fn new(bearer_token: String) -> Self {
-        Self { 
+    pub async fn new(bearer_token: String, config: &Config) -> Result<Self, Error> {
+        Ok(Self { 
             bearer_token,
-            client: reqwest::Client::new()
-        }
+            client: WebdavClient::build_client(config).await?,
+        })
+    }
+
+    async fn build_client(config: &Config) -> Result<reqwest::Client, Error> {
+        let ca_certificate = Pem::from_config_path(CONFIG_KEY_GENERIC_CA, config).await
+            .map_err(|cause| Error::LoadCustomCA { message: format!("Could not find any CA certificate in config: {cause}") })?;
+
+        let reqwest_certificate = Certificate::from_pem(ca_certificate.to_string().as_bytes().iter().as_slice())
+            .map_err(|cause| Error::LoadCustomCA { message: cause.to_string() } )?;
+        let client = reqwest::Client::builder()
+            .add_root_certificate(reqwest_certificate)
+            .build()
+            .map_err(|cause| Error::LoadCustomCA { message: cause.to_string() } )?;
+
+        Ok(client)
     }
 
     fn start_request(&self, method: Method, path: Url) -> RequestBuilder {
@@ -81,6 +101,8 @@ impl WebdavClient {
 pub enum Error {
     #[error("Failure while sending WebDAV '{method}' request: {cause}")]
     Request { method: String, cause: reqwest::Error },
+    #[error("Failed to load custom certificate authority: {message}")]
+    LoadCustomCA { message: String },
     #[error("{message}")]
     Other { message: String },
 }

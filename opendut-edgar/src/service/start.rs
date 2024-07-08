@@ -122,6 +122,7 @@ pub async fn create(self_id: PeerId, settings: LoadedConfig) -> anyhow::Result<(
                         message,
                         &setup_cluster_info,
                         &tx_outbound,
+                        &settings.config,
                     ).await?
                 }
                 Err(status) => {
@@ -171,6 +172,7 @@ async fn handle_stream_message(
     message: peer_messaging_broker::Downstream,
     setup_cluster_info: &SetupClusterInfo,
     tx_outbound: &Sender<peer_messaging_broker::Upstream>,
+    edgar_config: &Config,
 ) -> anyhow::Result<()> {
 
     if let peer_messaging_broker::Downstream { message: Some(message), context } = message {
@@ -189,7 +191,7 @@ async fn handle_stream_message(
                     tx_outbound.send(message).await
                         .inspect_err(|cause| debug!("Failed to send ping to CARL: {cause}"));
             }
-            Message::ApplyPeerConfiguration(message) => { apply_peer_configuration(message, context, setup_cluster_info).await? }
+            Message::ApplyPeerConfiguration(message) => { apply_peer_configuration(message, context, setup_cluster_info, edgar_config).await? }
         }
     } else {
         ignore(message)
@@ -199,7 +201,7 @@ async fn handle_stream_message(
 }
 
 #[tracing::instrument(skip_all, level="trace")]
-async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Option<TracingContext>, setup_cluster_info: &SetupClusterInfo) -> anyhow::Result<()> {
+async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Option<TracingContext>, setup_cluster_info: &SetupClusterInfo, edgar_config: &Config) -> anyhow::Result<()> {
 
     match message.clone() {
         ApplyPeerConfiguration {
@@ -225,7 +227,7 @@ async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Opti
                             ).await;
                             let mut executor_manager = setup_cluster_info.executor_manager.lock().unwrap();
                             executor_manager.terminate_executors();
-                            executor_manager.create_new_executors(configuration2.executors);
+                            executor_manager.create_new_executors(configuration2.executors, edgar_config);
                         }
                     }
                 }

@@ -1,6 +1,7 @@
 use std::{env, io::{Cursor, ErrorKind, Write}, path::PathBuf, process::Stdio};
 
 use anyhow::Result;
+use config::Config;
 use tokio::{fs::{self, File}, io::{AsyncBufReadExt, AsyncReadExt, BufReader}, process::{Child, Command}, sync::{mpsc, watch}};
 use tracing::{error, info, warn};
 use url::Url;
@@ -48,13 +49,14 @@ const CONTAINER_RESULTS_DIRECTORY: &str = "/results";
 
 impl ContainerManager {
 
-    pub fn new(container_configuration: ContainerConfiguration, termination_channel_rx: watch::Receiver<bool>) -> Self {
-        Self { 
+    pub async fn new(container_configuration: ContainerConfiguration, edgar_config: &Config, termination_channel_rx: watch::Receiver<bool>) -> Result<Self, Error> {
+        Ok(Self { 
             config: container_configuration,
             results_dir: env::temp_dir().join(format!("opendut-edgar-results_{}", Uuid::new_v4())),
-            webdav_client: WebdavClient::new("some_dummy_token".to_string()), // TODO: Authenticate with actual token
+            webdav_client: WebdavClient::new("some_dummy_token".to_string(), edgar_config).await
+                .map_err(|cause| Error::Other { message: format!("Failed to create WebDAV client: {cause}") })?, // TODO: Authenticate with actual token
             termination_channel_rx
-        }
+        })
     }
 
     pub async fn start(&mut self) {

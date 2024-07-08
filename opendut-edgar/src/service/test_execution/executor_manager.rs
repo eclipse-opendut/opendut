@@ -1,8 +1,9 @@
 use std::sync::{Arc, Mutex};
 
+use config::Config;
 use opendut_types::peer::{self, executor::{ExecutorDescriptor, ExecutorKind}};
 use tokio::sync::watch::{self, Sender};
-use tracing::warn;
+use tracing::{error, warn};
 
 use crate::service::test_execution::container_manager::{ContainerManager, ContainerConfiguration};
 
@@ -19,7 +20,7 @@ impl ExecutorManager {
         }))
     }
 
-    pub fn create_new_executors(&mut self, executors: Vec<peer::configuration::Parameter<ExecutorDescriptor>>) {
+    pub fn create_new_executors(&mut self, executors: Vec<peer::configuration::Parameter<ExecutorDescriptor>>, edgar_config: &Config) {
 
         let executors = executors.into_iter()
             .filter_map(|executor| { //TODO properly handle Present vs. Absent
@@ -61,8 +62,12 @@ impl ExecutorManager {
                         devices,
                         volumes,
                     };
+                    let edgar_config_cloned = edgar_config.clone();
                     tokio::spawn(async move {
-                        ContainerManager::new(container_config, rx).start().await;
+                        match ContainerManager::new(container_config, &edgar_config_cloned, rx).await {
+                            Ok(mut container_manager) => container_manager.start().await,
+                            Err(err) => error!("Failed to create ContainerManager: {}", err.to_string()),
+                        }
                     });
                 }
             }
