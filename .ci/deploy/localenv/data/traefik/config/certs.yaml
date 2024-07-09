@@ -17,3 +17,5 @@ tls:
       keyFile: /pki/deploy/signal.opendut.local.key
     - certFile: /pki/deploy/carl.opendut.local.pem
       keyFile: /pki/deploy/carl.opendut.local.key
+    - certFile: /pki/deploy/nginx-webdav.opendut.local.pem
+      keyFile: /pki/deploy/nginx-webdav.opendut.local.key
