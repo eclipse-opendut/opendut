@@ -26,10 +26,10 @@ pub fn default_carl_ca_certificate_path() -> PathBuf {
 pub fn default_checksum_carl_ca_certificate_file() -> PathBuf {
     PathBuf::from("/etc/opendut/tls/.ca.pem.checksum")
 }
-pub fn default_netbird_ca_certificate_path() -> PathBuf {
+pub fn default_os_cert_store_ca_certificate_path() -> PathBuf {
     PathBuf::from("/usr/local/share/ca-certificates/opendut-ca.crt")
 }
-pub fn default_checksum_netbird_ca_certificate_file() -> PathBuf {
+pub fn default_checksum_os_cert_store_ca_certificate_file() -> PathBuf {
     PathBuf::from("/usr/local/share/ca-certificates/.opendut-ca.crt.checksum")
 }
 
