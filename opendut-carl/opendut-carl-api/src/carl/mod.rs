@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use cfg_if::cfg_if;
 
 pub mod broker;
@@ -102,7 +104,6 @@ cfg_if! {
 
 cfg_if! {
     if #[cfg(feature = "client")] {
-        use std::path::Path;
         use tracing::{debug, info};
 
         use opendut_auth::confidential::client::ConfidentialClient;
@@ -128,13 +129,17 @@ cfg_if! {
             pub peers: PeersRegistrar<TonicAuthenticationService>,
         }
 
+        pub enum CaCertInfo {
+            Path(PathBuf),
+            Content(String),
+        }
+
         impl CarlClient {
 
             pub async fn create(
                 host: impl Into<String>,
                 port: u16,
-                ca_cert_path: &Path,
-                ca_content: Option<String>,
+                ca_cert_info: &CaCertInfo,
                 domain_name_override: &Option<String>,
                 settings: &config::Config,
             ) -> Result<CarlClient, InitializationError> {
@@ -142,13 +147,13 @@ cfg_if! {
                 let address = format!("https://{}:{}", host.into(), port);
 
                 let tls_config = {
-                    let ca_cert = match ca_content {
-                        None => {
+                    let ca_cert = match ca_cert_info {
+                        CaCertInfo::Path(ca_cert_path) => {
                             debug!("Using TLS CA certificate: {}", ca_cert_path.display());
-                            std::fs::read_to_string(ca_cert_path)
+                            &std::fs::read_to_string(ca_cert_path)
                                 .map_err(|cause| InitializationError::TlsConfiguration { message: format!("Failed to read CA certificate from path '{}'", ca_cert_path.display()), cause: cause.into() })?
                         }
-                        Some(content) => {
+                        CaCertInfo::Content(content) => {
                             debug!("Using TLS CA certificate from configuration file");
                             content
                         }
@@ -206,6 +211,7 @@ cfg_if! {
 pub mod wasm {
     use leptos::{create_signal, provide_context};
     use tonic::codegen::InterceptedService;
+
     use opendut_auth::public::{Auth, AuthInterceptor, OptionalAuthData};
 
     use crate::carl::broker::PeerMessagingBroker;

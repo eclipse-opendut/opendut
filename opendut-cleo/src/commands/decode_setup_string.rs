@@ -1,4 +1,6 @@
-use crate::{DecodeSetupStringOutputFormat, ParseableSetupString};
+use std::str::FromStr;
+use opendut_types::peer::PeerSetup;
+use crate::{DecodeSetupStringOutputFormat};
 
 /// Decode the setup string of a peer
 #[derive(clap::Parser)]
@@ -25,5 +27,16 @@ impl DecodeSetupStringCli {
         };
         println!("{text}");
         Ok(())
+    }
+}
+
+#[derive(Clone, Debug)]
+struct ParseableSetupString(Box<PeerSetup>);
+impl FromStr for ParseableSetupString {
+    type Err = String;
+    fn from_str(string: &str) -> std::result::Result<Self, Self::Err> {
+        PeerSetup::decode(string)
+            .map(|setup| ParseableSetupString(Box::new(setup)))
+            .map_err(|error| error.to_string())
     }
 }

@@ -1,4 +1,5 @@
 pub mod net;
+pub mod brotli;
 
 use std::fmt::Display;
 

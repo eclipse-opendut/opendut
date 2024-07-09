@@ -1,11 +1,5 @@
 # Commands
 
-## Setting up CLEO
-
-Setting up CLEO to be authenticated against CARL. Type can be `user` or `system`.
-
-    opendut-cleo cleo-setup <String> --persistent=<type>
-
 ## Listing resources
 
 To list resources you can decide whether to display the resources in a table or in JSON-format.
@@ -23,19 +17,19 @@ To create resources it depends on the type of resource whether an ID or connecte
 
 To create a PeerSetup, it is necessary to provide the PeerID of the peer:
 
-    opendut-cleo generate-setup-key --id <PeerID>
+    opendut-cleo generate-setup-string <PeerID>
 
 ## Decoding PeerSetup Strings
 
 If you have a peer setup string, and you want to analyze its content, you can use the `decode` command.  
 
-    opendut-cleo decode --setup-string <String>
+    opendut-cleo decode-setup-string <String>
 
 ## Describing resources
 
 To describe a resource, the ID of the resource has to be provided. The output can be displayed as text or JSON-format.
 
-    opendut-cleo describe --output=<output format> <resource> --id 
+    opendut-cleo describe --output=<output format> <resource> --id
 
 ## Finding resources
 

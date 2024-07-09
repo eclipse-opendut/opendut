@@ -1,8 +1,7 @@
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::ops::Not;
-
-use pem::Pem;
+use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -59,7 +58,23 @@ pub enum NetworkInterfaceNameError {
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(transparent)]
-pub struct Certificate(pub Pem);
+pub struct Certificate(pub pem::Pem);
+impl Certificate {
+    pub fn encode_as_string(&self) -> String {
+        let encode_config = pem::EncodeConfig::default()
+            .set_line_ending(pem::LineEnding::LF); //use LF, because `reqwest` fails loading certificate with CRLF with "malformedframing" error
+
+        pem::encode_config(&self.0, encode_config)
+    }
+}
+impl FromStr for Certificate {
+    type Err = pem::PemError;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        pem::Pem::from_str(value)
+            .map(Certificate)
+    }
+}
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, Hash)]
 pub struct CanSamplePoint {

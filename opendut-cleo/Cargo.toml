@@ -27,7 +27,6 @@ toml_edit = { workspace = true }
 tonic = { workspace = true, features = ["tls"] }
 url = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
-url = { workspace = true }
 
 [dev-dependencies]
 anyhow = { workspace = true }
@@ -35,7 +34,6 @@ assert_fs = { workspace = true }
 googletest = { workspace = true }
 predicates = { workspace = true }
 rstest = { workspace = true }
-pem = { workspace = true }
 
 [build-dependencies]
 shadow-rs = { workspace = true, default-features = true }

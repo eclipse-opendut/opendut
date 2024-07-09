@@ -1,5 +1,4 @@
 use std::fmt;
-use std::io::{Read, Write};
 use base64::Engine;
 use base64::prelude::BASE64_URL_SAFE;
 use serde::{Deserialize, Serialize};
@@ -69,8 +68,7 @@ impl CleoSetup {
 
         let compressed = {
             let mut buffer = Vec::new();
-            brotli::CompressorReader::new(json.as_bytes(), 4096, 11, 20)
-                .read_to_end(&mut buffer)
+            crate::util::brotli::compress(&mut buffer, json.as_bytes())
                 .map_err(|cause| CleoSetupEncodeError {
                     details: format!("Compression failed due to: {}", cause),
                 })?;
@@ -91,8 +89,7 @@ impl CleoSetup {
 
         let json = {
             let mut buffer = Vec::new();
-            brotli::DecompressorWriter::new(&mut buffer, 4096)
-                .write_all(compressed.as_slice())
+            crate::util::brotli::decompress(&mut buffer, compressed.as_slice())
                 .map_err(|cause| CleoSetupDecodeError {
                     details: format!("Decompression failed due to: {}", cause),
                 })?;

@@ -3,7 +3,6 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use anyhow::Context;
-use pem::Pem;
 use tracing::debug;
 
 use opendut_types::util::net::Certificate;
@@ -52,12 +51,9 @@ impl Task for WriteCaCertificate {
             }
         };
 
-        let provided_certificate_checksum = {
-            let Certificate(provided_certificate) = &self.certificate;
-            let provided_certificate = encode_certificate_as_string(provided_certificate);
-
-            util::checksum::string(provided_certificate)?
-        };
+        let provided_certificate_checksum = util::checksum::string(
+            self.certificate.encode_as_string()
+        )?;
 
         if installed_carl_checksum == provided_certificate_checksum
         && installed_os_cert_store_checksum == provided_certificate_checksum {
@@ -69,11 +65,9 @@ impl Task for WriteCaCertificate {
     }
 
     fn execute(&self) -> anyhow::Result<Success> {
-        let Certificate(new_certificate) = &self.certificate;
-
         let carl_ca_certificate_path = &self.carl_ca_certificate_path;
 
-        write_carl_certificate(new_certificate, carl_ca_certificate_path, &self.checksum_carl_ca_certificate_file)?;
+        write_carl_certificate(&self.certificate, carl_ca_certificate_path, &self.checksum_carl_ca_certificate_file)?;
 
         write_os_cert_store_certificate(carl_ca_certificate_path, &self.os_cert_store_ca_certificate_path, &self.checksum_os_cert_store_ca_certificate_file, self.command_runner.as_ref())?; //TODO this certificate doesn't have to be the same as for CARL and should instead be retrieved from CARL after the initial connection
 
@@ -94,7 +88,7 @@ impl WriteCaCertificate {
     }
 }
 
-fn write_carl_certificate(new_certificate: &Pem, carl_ca_certificate_path: &Path, checksum_carl_ca_certificate_file: &Path) -> anyhow::Result<()> {
+fn write_carl_certificate(new_certificate: &Certificate, carl_ca_certificate_path: &Path, checksum_carl_ca_certificate_file: &Path) -> anyhow::Result<()> {
 
     let carl_ca_certificate_dir = carl_ca_certificate_path.parent().unwrap();
     fs::create_dir_all(carl_ca_certificate_dir)
@@ -102,7 +96,7 @@ fn write_carl_certificate(new_certificate: &Pem, carl_ca_certificate_path: &Path
     
     fs::write(
         carl_ca_certificate_path,
-        encode_certificate_as_string(new_certificate)
+        new_certificate.encode_as_string()
     ).context(format!(
         "Write CA certificate was not successful at location {:?}", carl_ca_certificate_path
     ))?;
@@ -150,20 +144,12 @@ fn write_os_cert_store_certificate(
     Ok(())
 }
 
-fn encode_certificate_as_string(certificate: &Pem) -> String {
-    let encode_config = pem::EncodeConfig::default()
-        .set_line_ending(pem::LineEnding::LF); //use LF, because `reqwest` fails loading certificate with CRLF with "malformedframing" error
-
-    pem::encode_config(certificate, encode_config)
-}
-
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
 
     use assert_fs::prelude::*;
     use assert_fs::TempDir;
-    use pem::Pem;
 
     use opendut_types::util::net::Certificate;
 
@@ -182,8 +168,10 @@ mod tests {
         let checksum_carl_ca_certificate_file = temp.child("ca.pem.checksum");
         let checksum_os_cert_store_ca_certificate_file = temp.child("opendut-ca.crt.checksum");
 
+        let pem_string = PEM_STRING_1;
+
         let task = WriteCaCertificate {
-            certificate: Certificate(Pem::new("Test Tag".to_string(), vec![])),
+            certificate: Certificate::from_str(pem_string)?,
             carl_ca_certificate_path: carl_ca_certificate_path.to_path_buf(),
             os_cert_store_ca_certificate_path: os_cert_store_ca_certificate_path.to_path_buf(),
             checksum_carl_ca_certificate_file: checksum_carl_ca_certificate_file.to_path_buf(),
@@ -208,29 +196,11 @@ mod tests {
         let checksum_carl_ca_certificate_file = temp.child("ca.pem.checksum");
         let checksum_os_cert_store_ca_certificate_file = temp.child("opendut-ca.crt.checksum");
 
-        const STORED_PEM: &str = "-----BEGIN RSA PUBLIC KEY-----
-MIIBPQIBAAJBAOsfi5AGYhdRs/x6q5H7kScxA0Kzzqe6WI6gf6+tc6IvKQJo5rQc
-dWWSQ0nRGt2hOPDO+35NKhQEjBQxPh/v7n0CAwEAAQJBAOGaBAyuw0ICyENy5NsO
-2gkT00AWTSzM9Zns0HedY31yEabkuFvrMCHjscEF7u3Y6PB7An3IzooBHchsFDei
-AAECIQD/JahddzR5K3A6rzTidmAf1PBtqi7296EnWv8WvpfAAQIhAOvowIXZI4Un
-DXjgZ9ekuUjZN+GUQRAVlkEEohGLVy59AiEA90VtqDdQuWWpvJX0cM08V10tLXrT
-TTGsEtITid1ogAECIQDAaFl90ZgS5cMrL3wCeatVKzVUmuJmB/VAmlLFFGzK0QIh
-ANJGc7AFk4fyFD/OezhwGHbWmo/S+bfeAiIh2Ss2FxKJ
------END RSA PUBLIC KEY-----
-";
+        let stored_pem = PEM_STRING_1;
+        let new_pem = PEM_STRING_2;
 
-        const NEW_PEM: &str = "-----BEGIN RSA PUBLIC KEY-----
-MIIBPQIBAAJBAOsfi5AGYhdRs/x6q5H7kScxA0Kzzqe6WI6gf6+tc6IvKQJo5rQc
-AAECIQD/JahddzR5K3A6rzTidmAf1PBtqi7296EnWv8WvpfAAQIhAOvowIXZI4Un
-DXjgZ9ekuUjZN+GUQRAVlkEEohGLVy59AiEA90VtqDdQuWWpvJX0cM08V10tLXrT
-dWWSQ0nRGt2hOPDO+35NKhQEjBQxPh/v7n0CAwEAAQJBAOGaBAyuw0ICyENy5NsO
-2gkT00AWTSzM9Zns0HedY31yEabkuFvrMCHjscEF7u3Y6PB7An3IzooBHchsFDei
-TTGsEtITid1ogAECIQDAaFl90ZgS5cMrL3wCeatVKzVUmuJmB/VAmlLFFGzK0QIh
-ANJGc7AFk4fyFD/OezhwGHbWmo/S+bfeAiIh2Ss2FxKJ
------END RSA PUBLIC KEY-----
-";
-        carl_ca_certificate_path.write_str(STORED_PEM)?;
-        os_cert_store_ca_certificate_path.write_str(STORED_PEM)?;
+        carl_ca_certificate_path.write_str(stored_pem)?;
+        os_cert_store_ca_certificate_path.write_str(stored_pem)?;
 
         let checksum_carl_os_cert_store_cert = util::checksum::file(&carl_ca_certificate_path)?;
         checksum_carl_ca_certificate_file.write_binary(&checksum_carl_os_cert_store_cert)?;
@@ -238,7 +208,7 @@ ANJGc7AFk4fyFD/OezhwGHbWmo/S+bfeAiIh2Ss2FxKJ
 
 
         let task = WriteCaCertificate {
-            certificate: Certificate(Pem::from_str(NEW_PEM)?),
+            certificate: Certificate::from_str(new_pem)?,
             carl_ca_certificate_path: carl_ca_certificate_path.to_path_buf(),
             os_cert_store_ca_certificate_path: os_cert_store_ca_certificate_path.to_path_buf(),
             checksum_carl_ca_certificate_file: checksum_carl_ca_certificate_file.to_path_buf(),
@@ -261,18 +231,10 @@ ANJGc7AFk4fyFD/OezhwGHbWmo/S+bfeAiIh2Ss2FxKJ
         let checksum_carl_ca_certificate_file = temp.child("ca.pem.checksum");
         let checksum_os_cert_store_ca_certificate_file = temp.child("opendut-ca.crt.checksum");
 
-        const PEM_STRING: &str = "-----BEGIN RSA PUBLIC KEY-----
-MIIBPQIBAAJBAOsfi5AGYhdRs/x6q5H7kScxA0Kzzqe6WI6gf6+tc6IvKQJo5rQc
-dWWSQ0nRGt2hOPDO+35NKhQEjBQxPh/v7n0CAwEAAQJBAOGaBAyuw0ICyENy5NsO
-2gkT00AWTSzM9Zns0HedY31yEabkuFvrMCHjscEF7u3Y6PB7An3IzooBHchsFDei
-AAECIQD/JahddzR5K3A6rzTidmAf1PBtqi7296EnWv8WvpfAAQIhAOvowIXZI4Un
-DXjgZ9ekuUjZN+GUQRAVlkEEohGLVy59AiEA90VtqDdQuWWpvJX0cM08V10tLXrT
-TTGsEtITid1ogAECIQDAaFl90ZgS5cMrL3wCeatVKzVUmuJmB/VAmlLFFGzK0QIh
-ANJGc7AFk4fyFD/OezhwGHbWmo/S+bfeAiIh2Ss2FxKJ
------END RSA PUBLIC KEY-----
-";
-        carl_ca_certificate_path.write_str(PEM_STRING)?;
-        os_cert_store_ca_certificate_path.write_str(PEM_STRING)?;
+        let pem_string = PEM_STRING_1;
+
+        carl_ca_certificate_path.write_str(pem_string)?;
+        os_cert_store_ca_certificate_path.write_str(pem_string)?;
 
         let checksum_carl_os_cert_store_cert = util::checksum::file(&carl_ca_certificate_path)?;
         let checksum_string = checksum_carl_os_cert_store_cert.clone();
@@ -281,7 +243,7 @@ ANJGc7AFk4fyFD/OezhwGHbWmo/S+bfeAiIh2Ss2FxKJ
 
 
         let task = WriteCaCertificate {
-            certificate: Certificate(Pem::from_str(PEM_STRING)?),
+            certificate: Certificate::from_str(pem_string)?,
             carl_ca_certificate_path: carl_ca_certificate_path.to_path_buf(),
             os_cert_store_ca_certificate_path: os_cert_store_ca_certificate_path.to_path_buf(),
             checksum_carl_ca_certificate_file: checksum_carl_ca_certificate_file.to_path_buf(),
@@ -305,21 +267,13 @@ ANJGc7AFk4fyFD/OezhwGHbWmo/S+bfeAiIh2Ss2FxKJ
         let checksum_carl_ca_certificate_file = temp.child("ca.pem.checksum");
         let checksum_os_cert_store_ca_certificate_file = temp.child("opendut-ca.crt.checksum");
 
-        const PEM_STRING: &str = "-----BEGIN RSA PUBLIC KEY-----
-MIIBPQIBAAJBAOsfi5AGYhdRs/x6q5H7kScxA0Kzzqe6WI6gf6+tc6IvKQJo5rQc
-dWWSQ0nRGt2hOPDO+35NKhQEjBQxPh/v7n0CAwEAAQJBAOGaBAyuw0ICyENy5NsO
-2gkT00AWTSzM9Zns0HedY31yEabkuFvrMCHjscEF7u3Y6PB7An3IzooBHchsFDei
-AAECIQD/JahddzR5K3A6rzTidmAf1PBtqi7296EnWv8WvpfAAQIhAOvowIXZI4Un
-DXjgZ9ekuUjZN+GUQRAVlkEEohGLVy59AiEA90VtqDdQuWWpvJX0cM08V10tLXrT
-TTGsEtITid1ogAECIQDAaFl90ZgS5cMrL3wCeatVKzVUmuJmB/VAmlLFFGzK0QIh
-ANJGc7AFk4fyFD/OezhwGHbWmo/S+bfeAiIh2Ss2FxKJ
------END RSA PUBLIC KEY-----
-";
-        carl_ca_certificate_path.write_str(PEM_STRING)?;
-        os_cert_store_ca_certificate_path.write_str(PEM_STRING)?;
+        let pem_string = PEM_STRING_1;
+
+        carl_ca_certificate_path.write_str(pem_string)?;
+        os_cert_store_ca_certificate_path.write_str(pem_string)?;
 
         let task = WriteCaCertificate {
-            certificate: Certificate(Pem::from_str(PEM_STRING)?),
+            certificate: Certificate::from_str(pem_string)?,
             carl_ca_certificate_path: carl_ca_certificate_path.to_path_buf(),
             os_cert_store_ca_certificate_path: os_cert_store_ca_certificate_path.to_path_buf(),
             checksum_carl_ca_certificate_file: checksum_carl_ca_certificate_file.to_path_buf(),
@@ -331,4 +285,26 @@ ANJGc7AFk4fyFD/OezhwGHbWmo/S+bfeAiIh2Ss2FxKJ
 
         Ok(())
     }
+
+    const PEM_STRING_1: &str = "-----BEGIN RSA PUBLIC KEY-----
+MIIBPQIBAAJBAOsfi5AGYhdRs/x6q5H7kScxA0Kzzqe6WI6gf6+tc6IvKQJo5rQc
+dWWSQ0nRGt2hOPDO+35NKhQEjBQxPh/v7n0CAwEAAQJBAOGaBAyuw0ICyENy5NsO
+2gkT00AWTSzM9Zns0HedY31yEabkuFvrMCHjscEF7u3Y6PB7An3IzooBHchsFDei
+AAECIQD/JahddzR5K3A6rzTidmAf1PBtqi7296EnWv8WvpfAAQIhAOvowIXZI4Un
+DXjgZ9ekuUjZN+GUQRAVlkEEohGLVy59AiEA90VtqDdQuWWpvJX0cM08V10tLXrT
+TTGsEtITid1ogAECIQDAaFl90ZgS5cMrL3wCeatVKzVUmuJmB/VAmlLFFGzK0QIh
+ANJGc7AFk4fyFD/OezhwGHbWmo/S+bfeAiIh2Ss2FxKJ
+-----END RSA PUBLIC KEY-----
+";
+
+    const PEM_STRING_2: &str = "-----BEGIN RSA PUBLIC KEY-----
+MIIBPQIBAAJBAOsfi5AGYhdRs/x6q5H7kScxA0Kzzqe6WI6gf6+tc6IvKQJo5rQc
+AAECIQD/JahddzR5K3A6rzTidmAf1PBtqi7296EnWv8WvpfAAQIhAOvowIXZI4Un
+DXjgZ9ekuUjZN+GUQRAVlkEEohGLVy59AiEA90VtqDdQuWWpvJX0cM08V10tLXrT
+dWWSQ0nRGt2hOPDO+35NKhQEjBQxPh/v7n0CAwEAAQJBAOGaBAyuw0ICyENy5NsO
+2gkT00AWTSzM9Zns0HedY31yEabkuFvrMCHjscEF7u3Y6PB7An3IzooBHchsFDei
+TTGsEtITid1ogAECIQDAaFl90ZgS5cMrL3wCeatVKzVUmuJmB/VAmlLFFGzK0QIh
+ANJGc7AFk4fyFD/OezhwGHbWmo/S+bfeAiIh2Ss2FxKJ
+-----END RSA PUBLIC KEY-----
+";
 }

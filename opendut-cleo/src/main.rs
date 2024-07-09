@@ -1,17 +1,14 @@
 use std::ops::Not;
 use std::path::PathBuf;
 use std::process::ExitCode;
-use std::str::FromStr;
 
 use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::Shell;
 use console::Style;
 
-use opendut_carl_api::carl::CarlClient;
-use opendut_types::cleo::CleoSetup;
-use opendut_types::peer::PeerSetup;
+use opendut_carl_api::carl::{CaCertInfo, CarlClient};
 use opendut_types::topology::DeviceName;
-use opendut_util::settings::{FileFormat, load_config, LoadedConfig, SetupType};
+use opendut_util::settings::{FileFormat, load_config, LoadedConfig};
 
 mod commands;
 pub mod parse;
@@ -33,7 +30,7 @@ struct Args {
 #[derive(Subcommand)]
 enum Commands {
     ///Authenticate CLEO with setup string
-    CleoSetup(commands::cleo_setup::CleoSetupCli),
+    Setup(commands::setup::SetupCli),
     ///Display openDuT resources
     List {
         #[command(subcommand)]
@@ -229,7 +226,7 @@ async fn execute() -> Result<()> {
 
 async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<()>{
     match commands {
-        Commands::CleoSetup(implementation) => {
+        Commands::Setup(implementation) => {
             implementation.execute().await?;
         },
         Commands::List { resource, output } => {
@@ -353,13 +350,12 @@ pub async fn create_carl_client(config: &config::Config) -> CarlClient {
     let port = config.get_int("network.carl.port")
         .expect("Configuration should contain a valid port number to connect to CARL");
     
-    let mut ca_path= PathBuf::new();
-    let ca_content =  match config.get_string("network.tls.ca.content") {
-        Ok(content_string) => Some(content_string),
+    let ca_cert_info = match config.get_string("network.tls.ca.content") {
+        Ok(content_string) => CaCertInfo::Content(content_string),
         Err(_) => {
-            ca_path = PathBuf::from(config.get_string("network.tls.ca")
-                .expect("Configuration should contain a valid path to a CA certificate to connect to CARL"));
-            None
+            let path = config.get_string("network.tls.ca")
+                .expect("Configuration should contain a valid path to a CA certificate to connect to CARL.");
+            CaCertInfo::Path(PathBuf::from(path))
         },
     };
 
@@ -367,44 +363,6 @@ pub async fn create_carl_client(config: &config::Config) -> CarlClient {
         .expect("Configuration should contain a field for 'domain.name.override'.");
     let domain_name_override = domain_name_override.is_empty().not().then_some(domain_name_override);
 
-    CarlClient::create(host, port as u16, &ca_path, ca_content, &domain_name_override, config).await
+    CarlClient::create(host, port as u16, &ca_cert_info, &domain_name_override, config).await
         .expect("Failed to create CARL client")
 }
-
-#[derive(Clone, Debug)]
-struct ParseableSetupString(Box<PeerSetup>);
-impl FromStr for ParseableSetupString {
-    type Err = String;
-    fn from_str(string: &str) -> std::result::Result<Self, Self::Err> {
-        PeerSetup::decode(string)
-            .map(|setup| ParseableSetupString(Box::new(setup)))
-            .map_err(|error| error.to_string())
-    }
-}
-
-#[derive(Clone, Debug)]
-struct ParseableCleoSetupString(Box<CleoSetup>);
-impl FromStr for ParseableCleoSetupString {
-    type Err = String;
-    fn from_str(string: &str) -> std::result::Result<Self, Self::Err> {
-        CleoSetup::decode(string)
-            .map(|setup| ParseableCleoSetupString(Box::new(setup)))
-            .map_err(|error| error.to_string())
-    }
-}
-
-#[derive(ValueEnum, Clone, Debug)]
-pub enum CleoSetupType {
-    System,
-    User
-}
-
-impl From<CleoSetupType> for SetupType {
-    fn from(value: CleoSetupType) -> Self {
-        match value {
-            CleoSetupType::User => SetupType::User,
-            CleoSetupType::System => SetupType::System,
-        }
-    }
-}
-

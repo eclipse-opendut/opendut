@@ -67,7 +67,7 @@ impl Task for WriteConfiguration {
                     }
                     new_settings["network"]["oidc"]["enabled"] = toml_edit::value(false);
                 }
-                AuthConfig::Enabled { client_id, client_secret, issuer_url, scopes} => {
+                AuthConfig::Enabled { client_id, client_secret, issuer_url, scopes } => {
                     let network_oidc_client_id = client_id.clone().value();
                     let network_oidc_client_secret = client_secret.clone().value();
                     let network_oidc_client_issuer_url: String = issuer_url.clone().into();

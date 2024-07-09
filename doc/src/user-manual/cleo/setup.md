@@ -28,10 +28,10 @@ the folder which is the current work directory. You might want to use another di
 ## Setup via CLEO command (recommended)
 A setup string can be retrieved from LEA and used with the following command.
 
-    opendut-cleo cleo-setup <String> --persistent=<type>
+    opendut-cleo setup <String> --persistent=<type>
 
-The persistent flag is optional. Without the flag, the needed environment variables will be printed out to the terminal. <br>
-If the persistent flag is set to `ùser` or without a value, a configuration file will be written to `~/.config/opendut/cleo/config.toml`,
+The persistent flag is optional. Without the flag, the needed environment variables will be printed out to the terminal.  
+If the persistent flag is set to `user` or without a value, a configuration file will be written to `~/.config/opendut/cleo/config.toml`,
 with it being set to `system` the cleo configuration file will be written to `/etc/opendut/cleo.toml`.
 
 ## Setup via script

@@ -120,16 +120,16 @@ pub enum SetupType {
 /// * A system configuration, write to `/etc/opendut/{name}.toml`
 /// * A user configuration, write to `[XDG_CONFIG_HOME|~/.config]/opendut/{name}/config.toml`
 ///
-pub fn write_config(name: &str, settings_string: &str, user_type: SetupType) -> Result<(), WriteError> {
+pub fn write_config(name: &str, settings_string: &str, user_type: SetupType) {
     
     let config = match user_type {
-        SetupType::System => { format!("/etc/opendut/{name}.toml") }
-        SetupType::User => {  format!("opendut/{name}/config.toml") }
+        SetupType::System => { format!("/etc/opendut/{name}.toml") } //FIXME PathBuf::from
+        SetupType::User => { format!("opendut/{name}/config.toml") }
     };
 
     let config_path = match std::env::var("XDG_CONFIG_HOME") {
         Ok(xdg_config_home) => {
-            PathBuf::from(xdg_config_home).join(config)
+            PathBuf::from(xdg_config_home).join(config) //FIXME don't join when system
         }
         Err(_) => {
             home_dir().map(|path| path.join(".config").join(config)).unwrap()
@@ -139,10 +139,11 @@ pub fn write_config(name: &str, settings_string: &str, user_type: SetupType) -> 
     let parent_dir = config_path
         .parent()
         .ok_or_else(|| format!("Expected configuration file '{}' to have a parent directory.", config_path.display())).unwrap();
-    fs::create_dir_all(parent_dir).expect("Could not create directory");
+    fs::create_dir_all(parent_dir)
+        .unwrap_or_else(|_| panic!("Could not create configuration directory: {}", parent_dir.display()));
 
-    fs::write(config_path, settings_string).expect("Could not write file");
-    Ok(())
+    fs::write(&config_path, settings_string)
+        .unwrap_or_else(|_| panic!("Could not write configuration file: {}", config_path.display()));
 }
 
 /// Write certificate to one of the following paths:
@@ -150,11 +151,11 @@ pub fn write_config(name: &str, settings_string: &str, user_type: SetupType) -> 
 /// * A system configuration, write to `/etc/opendut/{name}-ca.pem`
 /// * A user configuration, write to `[XDG_DATA_HOME|~/.local/share]/opendut/{name}/ca.pem`
 ///
-pub fn write_certificate(name: &str, ca: Pem, user_type: SetupType) -> Result<PathBuf, WriteError> {
+pub fn try_write_certificate(name: &str, ca: Pem, user_type: SetupType) -> PathBuf {
 
     let certificate = match user_type {
         SetupType::System => { format!("/etc/opendut/{name}-ca.pem") }
-        SetupType::User => {  format!("opendut/{name}/ca.pem") }
+        SetupType::User => { format!("opendut/{name}/ca.pem") }
     };
 
     let certificate_path = match std::env::var("XDG_DATA_HOME") {
@@ -168,13 +169,13 @@ pub fn write_certificate(name: &str, ca: Pem, user_type: SetupType) -> Result<Pa
 
     let cleo_ca_certificate_dir = certificate_path.parent().unwrap();
     fs::create_dir_all(cleo_ca_certificate_dir)
-        .unwrap_or_else(|error| println!("Unable to create path {:?}: {}", certificate_path, error));
+        .unwrap_or_else(|error| panic!("Unable to create path {:?}: {}", certificate_path, error));
 
     fs::write(
         certificate_path.clone(),
-        ca.to_string()
-    ).unwrap_or_else(|error| println!(
+        ca.to_string() //FIXME use shared certificate encode library
+    ).unwrap_or_else(|error| panic!(
         "Write CA certificate was not successful at location {:?}: {}", &certificate_path, error
     ));
-    Ok(certificate_path)
+    certificate_path
 }

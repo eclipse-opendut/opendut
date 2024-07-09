@@ -1,5 +1,4 @@
 use std::fmt;
-use std::io::{Read, Write};
 use std::ops::Not;
 
 use base64::Engine;
@@ -257,8 +256,7 @@ impl PeerSetup {
 
         let compressed = {
             let mut buffer = Vec::new();
-            brotli::CompressorReader::new(json.as_bytes(), 4096, 11, 20)
-                .read_to_end(&mut buffer)
+            crate::util::brotli::compress(&mut buffer, json.as_bytes())
                 .map_err(|cause| PeerSetupEncodeError {
                     details: format!("Compression failed due to: {}", cause),
                 })?;
@@ -279,8 +277,7 @@ impl PeerSetup {
 
         let json = {
             let mut buffer = Vec::new();
-            brotli::DecompressorWriter::new(&mut buffer, 4096)
-                .write_all(compressed.as_slice())
+            crate::util::brotli::decompress(&mut buffer, compressed.as_slice())
                 .map_err(|cause| PeerSetupDecodeError {
                     details: format!("Decompression failed due to: {}", cause),
                 })?;
