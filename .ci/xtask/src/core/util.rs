@@ -37,7 +37,7 @@ pub trait RunRequiringSuccess {
 impl RunRequiringSuccess for Command {
     fn run_requiring_success(&mut self) -> crate::Result {
         let status = self.status()
-            .expect("Error while running command");
+            .unwrap_or_else(|cause| panic!("Error while running command: {self:?}\n  {cause}"));
 
         if status.success() {
             Ok(())
