@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use cfg_if::cfg_if;
 
 pub mod broker;
@@ -104,6 +102,8 @@ cfg_if! {
 
 cfg_if! {
     if #[cfg(feature = "client")] {
+        use std::path::PathBuf;
+        
         use tracing::{debug, info};
 
         use opendut_auth::confidential::client::ConfidentialClient;
