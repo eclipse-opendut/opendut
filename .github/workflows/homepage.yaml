@@ -10,6 +10,9 @@ on:
       - v[0-9]+.[0-9]+.[0-9]+
       - v[0-9]+.[0-9]+.[0-9]+-*
 
+env:
+  RUST_BACKTRACE: 1
+
 jobs:
   homepage:
     uses: ./.github/workflows/job-homepage.yaml

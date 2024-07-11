@@ -8,6 +8,9 @@ on:
     - canary
     - canary-*
 
+env:
+  RUST_BACKTRACE: 1
+
 # Required GitHub repository variables:
 # https://docs.github.com/en/actions/using-jobs/choosing-the-runner-for-a-job
 # OPENDUT_GH_RUNNER_SMALL: runner labels for small jobs
