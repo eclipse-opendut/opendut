@@ -10,7 +10,6 @@ default = ["codegen"]
 codegen = ["tonic/prost", "tonic/codegen", "tonic-build/prost"]
 client = [
     "codegen",
-    "dep:chrono",
     "dep:config",
     "dep:http",
     "opendut-auth/confidential_client",
@@ -23,7 +22,6 @@ client = [
 ]
 wasm-client = [
     "codegen",
-    "dep:chrono",
     "dep:jsonwebtoken",
     "dep:leptos",
     "opendut-auth/public_client",
@@ -34,17 +32,13 @@ wasm-client = [
 [dependencies]
 opendut-auth = { workspace = true, optional = true }
 opendut-types = { workspace = true }
-opendut-util = { workspace = true }
 
-chrono = { workspace = true, optional = true, default-features = false, features = ["clock", "serde", "wasmbind"] }
 cfg-if = { workspace = true }
 config = { workspace = true, optional = true }
 http = { workspace = true, optional = true }
 jsonwebtoken = { workspace = true, optional = true }
 leptos = { workspace = true, optional = true }
 prost = { workspace = true }
-reqwest = { workspace = true, default-features = false, features = ["rustls-tls-native-roots"] }
-serde = { workspace = true, features = ["std", "derive"] }
 shadow-rs = { workspace = true, default-features = false, optional = true, features = ["tzdb"] }
 thiserror = { workspace = true }
 tokio = { workspace = true, optional = true }
@@ -53,7 +47,6 @@ tonic-web-wasm-client = { workspace = true, optional = true }
 tower = { workspace = true, optional = true }
 tracing = { workspace = true, optional = true }
 url = { workspace = true }
-uuid = { workspace = true, features = ["v4", "serde"] }
 
 [build-dependencies]
 protobuf-src = { workspace = true }

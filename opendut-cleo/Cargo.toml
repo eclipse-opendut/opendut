@@ -18,21 +18,18 @@ config = { workspace = true }
 console = { workspace = true }
 glob = { workspace = true }
 indoc = { workspace = true }
-serde = { version = "1.0.189", features = ["derive"] }
+serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 shadow-rs = { workspace = true, default-features = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 toml_edit = { workspace = true }
-tonic = { workspace = true, features = ["tls"] }
 url = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
 
 [dev-dependencies]
 anyhow = { workspace = true }
-assert_fs = { workspace = true }
 googletest = { workspace = true }
-predicates = { workspace = true }
 rstest = { workspace = true }
 
 [build-dependencies]

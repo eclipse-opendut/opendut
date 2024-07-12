@@ -16,13 +16,11 @@ fs_extra = { workspace = true }
 lazy_static = { workspace = true }
 predicates = { workspace = true }
 reqwest = { workspace = true, features = ["blocking"] }
-sha1 = { workspace = true }
 shadow-rs = { workspace = true }
 serde_json = { workspace = true }
 serde-spdx = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
 tar = { workspace = true }
-tempfile = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter", "ansi", "tracing-log"] }
 

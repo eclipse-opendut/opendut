@@ -7,7 +7,6 @@ license.workspace = true
 
 [dev-dependencies]
 opendut-carl = { workspace = true }
-opendut-carl-api = { workspace = true, features = ["client"] }
 opendut-edgar = { workspace = true }
 opendut-types = { workspace = true }
 opendut-util = { workspace = true }
@@ -15,5 +14,4 @@ opendut-util = { workspace = true }
 config = { workspace = true }
 googletest = { workspace = true }
 tokio = { workspace = true, features = ["full", "test-util"] }
-tonic = { workspace = true }
 tracing = { workspace = true }

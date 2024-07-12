@@ -20,8 +20,6 @@ chrono = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 config = { workspace = true }
 console = { workspace = true }
-digest = { workspace = true }
-env_logger = { workspace = true }
 flate2 = { workspace = true }
 futures = { workspace = true }
 indicatif = { workspace = true }
@@ -29,7 +27,6 @@ indoc = { workspace = true }
 netlink-packet-route = { workspace = true }
 netlink-packet-utils = { workspace = true }
 nix = { workspace = true, features = ["user", "fs"] }
-pem = { workspace = true }
 opentelemetry = { workspace = true, features = ["otel_unstable"] }
 opentelemetry_sdk = { workspace = true }
 ping-rs = { workspace = true }
@@ -43,7 +40,6 @@ sudo = { workspace = true }
 tar = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
-tokio-stream = { workspace = true, features = ["full"] }
 toml_edit = { workspace = true }
 tonic = { workspace = true, features = ["tls"] }
 tracing = { workspace = true }

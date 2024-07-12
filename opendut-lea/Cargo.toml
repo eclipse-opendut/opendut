@@ -29,7 +29,6 @@ tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["ansi"] }
 tracing-web = { workspace = true }
 url = { workspace = true }
-uuid = { workspace = true, features = ["v4", "serde"] }
 leptos_oidc =  { workspace = true }
 serde_json = { workspace = true }
 
