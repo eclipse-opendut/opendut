@@ -8,6 +8,7 @@ license.workspace = true
 [dependencies]
 opendut-types = { workspace = true }
 
+hyper-util = { workspace = true, features = ["tokio"] }
 prost = { workspace = true, default-features = true }
 prost-types = { workspace = true }
 thiserror = { workspace = true }

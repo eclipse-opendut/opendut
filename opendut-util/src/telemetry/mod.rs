@@ -9,7 +9,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use opentelemetry::global;
-use opentelemetry::trace::TraceError;
+use opentelemetry::trace::{TraceError, TracerProvider};
 use opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 use tokio::sync::Mutex;
@@ -25,6 +25,7 @@ use crate::telemetry::metrics::{NamedMeterProvider, NamedMeterProviderKindCpu, N
 use crate::telemetry::opentelemetry_types::{Opentelemetry, OpentelemetryConfigError};
 
 pub const DEFAULT_METER_NAME: &str = "opendut_meter";
+pub const DEFAULT_TRACER_NAME: &str = "opendut_tracer";
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -84,7 +85,7 @@ pub async fn initialize_with_config(
             None
         };
 
-    let (tracer, logger_layer, meter_providers) =
+    let (tracer_provider, logger_layer, meter_providers) =
         if let Opentelemetry::Enabled {
             collector_endpoint,
             service_name, 
@@ -134,7 +135,10 @@ pub async fn initialize_with_config(
         .with(stdout_logging_layer)
         .with(tracing_filter)
         .with(file_logging_layer)
-        .with(tracer.map(|tracer| tracing_opentelemetry::layer().with_tracer(tracer)))
+        .with(tracer_provider.map(|tracer_provider|
+            tracing_opentelemetry::layer()
+                .with_tracer(tracer_provider.tracer(DEFAULT_TRACER_NAME))
+        ))
         .with(logger_layer)
         .try_init()?;
 
@@ -152,7 +156,6 @@ pub struct ShutdownHandle {
 impl ShutdownHandle {
     pub fn shutdown(&mut self) {
         global::shutdown_tracer_provider();
-        //global::shutdown_meter_provider(); //TODO re-include when this appears in a release: https://github.com/open-telemetry/opentelemetry-rust/pull/1623
     }
 }
 impl Drop for ShutdownHandle {

@@ -2,17 +2,17 @@ use std::ops::Not;
 use std::sync::Arc;
 
 use config::Config;
-use http::{HeaderMap, HeaderValue};
+use http::HeaderValue;
 use oauth2::{HttpRequest, HttpResponse};
-use openidconnect::{ClientName, ClientUrl};
+use opendut_types::resources::Id;
+use opendut_types::util::net::{ClientCredentials, ClientId, ClientSecret};
 use openidconnect::core::{CoreClientRegistrationRequest, CoreGrantType};
 use openidconnect::registration::EmptyAdditionalClientMetadata;
+use openidconnect::{ClientName, ClientUrl};
 use serde::Deserialize;
 use tracing::error;
 use url::Url;
-use opendut_types::resources::Id;
-use opendut_types::util::net::{ClientCredentials, ClientId, ClientSecret};
-
+use opendut_util_core::future::ExplicitSendFutureWrapper;
 use crate::confidential::client::{ConfidentialClient, ConfidentialClientRef};
 use crate::registration::config::RegistrationClientConfig;
 use crate::registration::error::WrappedClientRegistrationError;
@@ -108,19 +108,24 @@ impl RegistrationClient {
                         message: format!("Failed to create client home url: {:?}", error),
                         cause: Box::new(error),
                     })?;
-                let response = request
-                    .set_initial_access_token(Some(access_token.oauth_token()))
-                    .set_client_name(Some(
-                        vec![(None, client_name)]
-                            .into_iter()
-                            .collect(),
-                    ))
-                    .set_client_uri(Some(vec![(None, client_home_uri)]
-                        .into_iter()
-                        .collect()))
-                    .register_async(&registration_url, move |request| {
-                        self.inner.reqwest_client.async_http_client(request)
-                    }).await;
+                let response = ExplicitSendFutureWrapper::from(
+                    request
+                        .set_initial_access_token(Some(access_token.oauth_token()))
+                        .set_client_name(Some(
+                            vec![(None, client_name)]
+                                .into_iter()
+                                .collect()
+                        ))
+                        .set_client_uri(Some(
+                            vec![(None, client_home_uri)]
+                                .into_iter()
+                                .collect())
+                        )
+                        .register_async(&registration_url, &move |request| {
+                            self.inner.reqwest_client.async_http_client(request)
+                        })
+                ).await;
+
                 match response {
                     Ok(response) => {
                         let client_id = response.client_id();
@@ -143,11 +148,11 @@ impl RegistrationClient {
         let enumerate_clients_uri = self.config.issuer_admin_url.join("clients/")
             .map_err(|cause| RegistrationClientError::InvalidConfiguration { error: format!("Invalid admin api endpoint for issuer. {}", cause) })?;
         let request = self.create_http_request_with_auth_token(&enumerate_clients_uri, http::Method::GET).await?;
-        
+
         let response = self.inner.reqwest_client.async_http_client(request).await;
-        match response { 
+        match response {
             Ok(response) => {
-                 let clients: Clients = serde_json::from_slice(&response.body)
+                 let clients: Clients = serde_json::from_slice(response.body())
                      .map_err(|cause| RegistrationClientError::InvalidConfiguration { error: format!("Could not deserialize response body. {}", cause) })?;
                  Ok(clients)
             }
@@ -166,7 +171,7 @@ impl RegistrationClient {
         for client in filtered_clients {
             match self.delete_client(&client.client_id).await {
                 Ok(response) => {
-                    if response.status_code.is_success().not() {
+                    if response.status().is_success().not() {
                         failed_deletion_clients.push(client.client_id)
                     }
                 }
@@ -193,20 +198,23 @@ impl RegistrationClient {
     }
 
     async fn create_http_request_with_auth_token(&self, issuer_remote_url: &Url, http_method: http::Method) -> Result<HttpRequest, RegistrationClientError> {
-        let mut headers = HeaderMap::new();
         let access_token = self.inner.get_token().await
             .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), cause: error.into() })?;
         let bearer_header = format!("Bearer {}", access_token);
         let access_token_value = HeaderValue::from_str(&bearer_header)
             .map_err(|error| RegistrationClientError::InvalidConfiguration { error: error.to_string() })?;
-        headers.insert(http::header::AUTHORIZATION, access_token_value);
 
-        Ok(HttpRequest {
-            method: http_method,
-            url: issuer_remote_url.clone(),
-            headers,
-            body: vec![],
-        })
+        let issuer_remote_url = http::Uri::try_from(issuer_remote_url.to_string())
+            .expect("A valid URL should also always be a valid URI, therefore this conversion should never fail.");
+
+        let request = http::Request::builder()
+            .method(http_method)
+            .uri(issuer_remote_url)
+            .header(http::header::AUTHORIZATION, access_token_value)
+            .body(vec![])
+            .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), cause: error.into() })?;
+
+        Ok(request)
     }
 }
 

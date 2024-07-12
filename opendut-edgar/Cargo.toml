@@ -6,7 +6,6 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-opendut-auth = { workspace = true, features = ["registration_client"] }
 opendut-carl-api = { workspace = true, features = ["client"] }
 opendut-edgar-kernel-modules = { workspace = true }
 opendut-netbird-client-api = { workspace = true }

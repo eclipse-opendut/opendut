@@ -44,10 +44,10 @@ chrono = { workspace = true, optional = true, default-features = false, features
 config = { workspace = true, optional = true }
 http = { workspace = true, optional = true }
 leptos_oidc =  { workspace = true, optional = true }
-openidconnect = { workspace = true, optional = true, default-features = false, features = ["reqwest"] }
-oauth2 = { workspace = true, default-features = false, optional = true, features = ["reqwest"] }
+openidconnect = { workspace = true, optional = true, default-features = false, features = ["reqwest-blocking"] }
+oauth2 = { workspace = true, default-features = false, optional = true, features = ["reqwest-blocking"] }
 pem = { workspace = true, optional = true, features = ["serde"]}
-reqwest = { workspace = true, default-features = false, features = ["rustls-tls-native-roots"] }
+reqwest = { workspace = true, default-features = false, features = ["blocking", "rustls-tls-native-roots"] }
 serde = { workspace = true, features = ["std", "derive"] }
 shadow-rs = { workspace = true, default-features = false, optional = true, features = ["tzdb"] }
 thiserror = { workspace = true }

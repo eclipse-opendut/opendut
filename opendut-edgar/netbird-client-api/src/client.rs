@@ -1,9 +1,12 @@
 use opendut_types::vpn::netbird::SetupKey;
 use std::path::PathBuf;
+
 use tokio::net::UnixStream;
 use tonic::transport::{Channel, Endpoint, Uri};
 use tracing::{debug, error, info};
 use url::Url;
+
+use hyper_util::rt::TokioIo;
 
 use crate::error::{Error, Result};
 use crate::proto::daemon::daemon_service_client::DaemonServiceClient;
@@ -19,12 +22,15 @@ pub struct Client {
 
 impl Client {
     pub async fn connect() -> Result<Self> {
-        let ignored_uri = "http://[::]"; //Valid URI has to be specified, but will be ignored. Taken from this example: https://github.com/hyperium/tonic/blob/2325e3293b8a54f3412a8c9a5fcac064fa82db56/examples/src/uds/client.rs
+        debug!("Connecting to NetBird Client process via Unix domain socket at '{}'...", socket_path().display());
+        let ignored_uri = "http://[::]"; //Valid URI has to be specified, but will be ignored. Taken from this example: https://github.com/hyperium/tonic/blob/52a0f2f56cf578c7733d757aa548d23cee14c148/examples/src/uds/client.rs
 
         let channel_result = Endpoint::try_from(ignored_uri)
             .unwrap_or_else(|cause| panic!("Failed to create endpoint for static URL '{ignored_uri}': {cause}"))
-            .connect_with_connector(tower::service_fn(|_: Uri| {
-                UnixStream::connect(socket_path())
+            .connect_with_connector(tower::service_fn(|_: Uri| async {
+                Ok::<_, std::io::Error>(TokioIo::new(
+                    UnixStream::connect(socket_path()).await?
+                ))
             })).await
             .map_err(|cause| Error::transport(cause, format!("Failed to connect to NetBird Unix domain socket at '{}'", socket_path().display())));
 

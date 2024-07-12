@@ -17,8 +17,8 @@ pub async fn launch_rperf_clients(peers: Vec<PeerClusterAssignment>, target_band
 
     let meter = global::meter(opendut_util::telemetry::DEFAULT_METER_NAME);
 
-    let megabits_second_send = meter.f64_gauge("megabits_second_send").init();
-    let megabits_second_receive = meter.f64_gauge("megabits_second_receive").init();
+    let megabits_second_send = meter.f64_gauge("megabits_second_send").build();
+    let megabits_second_receive = meter.f64_gauge("megabits_second_receive").build();
 
     let megabits_second_send_mutex = Arc::new(Mutex::new(megabits_second_send));
     let megabits_second_receive_mutex = Arc::new(Mutex::new(megabits_second_receive));

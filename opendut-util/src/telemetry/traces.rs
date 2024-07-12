@@ -1,21 +1,28 @@
 use opentelemetry::KeyValue;
 use opentelemetry::trace::TraceError;
-use opentelemetry_otlp::WithExportConfig;
+use opentelemetry_otlp::{SpanExporter, WithExportConfig, WithTonicConfig};
 use opentelemetry_sdk::{Resource, runtime};
+use opentelemetry_sdk::trace::TracerProvider;
 use opendut_auth::confidential::blocking::client::{ConfClientArcMutex, ConfidentialClientRef};
 use crate::telemetry::opentelemetry_types::Endpoint;
 
-pub(crate) fn init_tracer(telemetry_interceptor: ConfClientArcMutex<Option<ConfidentialClientRef>>, endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>) -> Result<opentelemetry_sdk::trace::Tracer, TraceError> {
-    opentelemetry_otlp::new_pipeline()
-        .tracing()
-        .with_exporter(
-            opentelemetry_otlp::new_exporter()
-                .tonic()
-                .with_interceptor(telemetry_interceptor)
-                .with_endpoint(Clone::clone(&endpoint.url)),
-        )
-        .with_trace_config(
-            opentelemetry_sdk::trace::config().with_resource(Resource::new(vec![
+pub(crate) fn init_tracer(
+    telemetry_interceptor: ConfClientArcMutex<Option<ConfidentialClientRef>>,
+    endpoint: &Endpoint,
+    service_name: impl Into<String>,
+    service_instance_id: impl Into<String>
+) -> Result<TracerProvider, TraceError> {
+
+    let exporter = SpanExporter::builder()
+        .with_tonic()
+        .with_interceptor(telemetry_interceptor)
+        .with_endpoint(Clone::clone(&endpoint.url))
+        .build()?;
+
+    let provider = TracerProvider::builder()
+        .with_batch_exporter(exporter, runtime::Tokio)
+        .with_config(
+            opentelemetry_sdk::trace::Config::default().with_resource(Resource::new(vec![
                 KeyValue::new(
                     opentelemetry_semantic_conventions::resource::SERVICE_NAME,
                     service_name.into()),
@@ -25,5 +32,7 @@ pub(crate) fn init_tracer(telemetry_interceptor: ConfClientArcMutex<Option<Confi
                 )
             ])),
         )
-        .install_batch(runtime::Tokio)
+        .build();
+
+    Ok(provider)
 }

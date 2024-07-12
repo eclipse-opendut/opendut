@@ -14,7 +14,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             ".opendut.types",
             "opendut_types::proto"
         )
-        .compile(&protos, &includes)?;
+        .compile_protos(&protos, &includes)?;
 
     Ok(())
 }

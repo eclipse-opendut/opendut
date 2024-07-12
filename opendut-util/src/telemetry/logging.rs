@@ -1,8 +1,8 @@
 use std::fmt::Debug;
 use std::path::PathBuf;
 use opentelemetry::KeyValue;
-use opentelemetry::logs::LogError;
-use opentelemetry_otlp::WithExportConfig;
+use opentelemetry_sdk::logs::{LogError, LoggerProvider};
+use opentelemetry_otlp::{LogExporter, WithExportConfig, WithTonicConfig};
 use opentelemetry_sdk::{Resource, runtime};
 use opendut_auth::confidential::blocking::client::{ConfClientArcMutex, ConfidentialClientRef};
 use crate::telemetry::opentelemetry_types::Endpoint;
@@ -33,28 +33,28 @@ pub fn init_logger_provider(
     endpoint: &Endpoint,
     service_name: impl Into<String>,
     service_instance_id: impl Into<String>
-) -> Result<opentelemetry_sdk::logs::LoggerProvider, LogError> {
+) -> Result<LoggerProvider, LogError> {
 
-    opentelemetry_otlp::new_pipeline()
-        .logging()
-        .with_log_config(
-            opentelemetry_sdk::logs::Config::default().with_resource(Resource::new(vec![
-                KeyValue::new(
-                    opentelemetry_semantic_conventions::resource::SERVICE_NAME,
-                    service_name.into()),
-                KeyValue::new(
-                    opentelemetry_semantic_conventions::resource::SERVICE_INSTANCE_ID,
-                    service_instance_id.into()
-                ),
-            ])),
-        )
-        .with_exporter(
-            opentelemetry_otlp::new_exporter()
-                .tonic()
-                .with_interceptor(telemetry_interceptor)
-                .with_endpoint(Clone::clone(&endpoint.url)),
-        )
-        .install_batch(runtime::Tokio)
+    let exporter = LogExporter::builder()
+        .with_tonic()
+        .with_interceptor(telemetry_interceptor)
+        .with_endpoint(Clone::clone(&endpoint.url))
+        .build()?;
+
+    let provider = LoggerProvider::builder()
+        .with_resource(Resource::new(vec![
+            KeyValue::new(
+                opentelemetry_semantic_conventions::resource::SERVICE_NAME,
+                service_name.into()),
+            KeyValue::new(
+                opentelemetry_semantic_conventions::resource::SERVICE_INSTANCE_ID,
+                service_instance_id.into()
+            ),
+        ]))
+        .with_batch_exporter(exporter, runtime::Tokio)
+        .build();
+
+    Ok(provider)
 }
 
 #[derive(Debug, thiserror::Error)]

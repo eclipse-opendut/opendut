@@ -1,5 +1,7 @@
 pub mod app_info;
 
+pub use opendut_util_core::future;
+
 #[cfg(not(target_arch = "wasm32"))]
 pub mod telemetry;
 

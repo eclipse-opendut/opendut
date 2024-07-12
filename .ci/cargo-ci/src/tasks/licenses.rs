@@ -27,7 +27,7 @@ pub enum TaskCli {
 }
 
 impl LicensesCli {
-    #[tracing::instrument]
+    #[tracing::instrument(skip_all)]
     pub fn default_handling(self, packages: PackageSelection) -> crate::Result {
         match self.task {
             TaskCli::Check => {
@@ -54,7 +54,7 @@ pub mod check {
 
     use super::*;
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip_all)]
     pub fn check_licenses() -> crate::Result {
         util::install_crate(Crate::CargoDeny)?;
 
@@ -73,7 +73,7 @@ pub mod json {
 
     use super::*;
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip_all)]
     pub fn export_json(package: Package) -> crate::Result {
         util::install_crate(Crate::CargoDeny)?;
 
@@ -113,7 +113,7 @@ mod sbom {
     #[derive(Debug, clap::Parser)]
     pub struct SbomCli;
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip_all)]
     pub fn generate_sboms(packages: PackageSelection) -> crate::Result {
         util::install_crate(Crate::CargoSbom)?;
 
@@ -175,6 +175,8 @@ mod sbom {
 
                                 "BSD-3-Clause OR MIT" => "BSD-3-Clause",
                                 "GPL-2.0 OR BSD-3-Clause" => "BSD-3-Clause",
+                                "ISC AND (Apache-2.0 OR ISC) AND OpenSSL" => "ISC AND OpenSSL",
+                                "ISC AND (Apache-2.0 OR ISC)" => "ISC",
                                 "MIT AND (MIT OR Apache-2.0)" => "MIT",
                                 "Unlicense OR MIT" => "MIT",
                                 "(Apache-2.0 OR MIT) AND BSD-3-Clause" => "Apache-2.0 AND BSD-3-Clause",
@@ -267,7 +269,7 @@ mod sbom {
         Ok(())
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip_all)]
     fn clean() -> crate::Result {
         let sbom_dir = out_dir();
         if sbom_dir.exists() {
@@ -293,7 +295,7 @@ mod texts {
     #[derive(Debug, clap::Parser)]
     pub struct TextsCli;
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip_all)]
     pub fn collect_license_texts() -> crate::Result {
         util::install_crate(Crate::CargoBundleLicenses)?;
 

@@ -1,9 +1,9 @@
 use std::sync::Arc;
 use std::time::Duration;
 use opentelemetry::KeyValue;
-use opentelemetry::metrics::{MeterProvider, MetricsError};
-use opentelemetry_otlp::WithExportConfig;
-use opentelemetry_sdk::metrics::SdkMeterProvider;
+use opentelemetry::metrics::{MeterProvider};
+use opentelemetry_otlp::{MetricExporter, WithExportConfig, WithTonicConfig};
+use opentelemetry_sdk::metrics::{MetricError, SdkMeterProvider};
 use opentelemetry_sdk::{Resource, runtime};
 use simple_moving_average::{SMA, SumTreeSMA};
 use sysinfo::{Pid, System};
@@ -12,16 +12,28 @@ use tokio::time::sleep;
 use opendut_auth::confidential::blocking::client::{ConfClientArcMutex, ConfidentialClientRef};
 use crate::telemetry::DEFAULT_METER_NAME;
 use crate::telemetry::opentelemetry_types::Endpoint;
+use opentelemetry_sdk::metrics::PeriodicReader;
 
-pub fn init_metrics(telemetry_interceptor: ConfClientArcMutex<Option<ConfidentialClientRef>>, endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>, metrics_interval: Duration) -> Result<SdkMeterProvider, MetricsError> {
-    opentelemetry_otlp::new_pipeline()
-        .metrics(runtime::Tokio)
-        .with_exporter(
-            opentelemetry_otlp::new_exporter()
-                .tonic()
-                .with_interceptor(telemetry_interceptor)
-                .with_endpoint(Clone::clone(&endpoint.url))
-        )
+pub fn init_metrics(
+    telemetry_interceptor: ConfClientArcMutex<Option<ConfidentialClientRef>>,
+    endpoint: &Endpoint,
+    service_name: impl Into<String>,
+    service_instance_id: impl Into<String>,
+    metrics_interval: Duration
+) -> Result<SdkMeterProvider, MetricError> {
+
+    let exporter = MetricExporter::builder()
+        .with_tonic()
+        .with_interceptor(telemetry_interceptor)
+        .with_endpoint(Clone::clone(&endpoint.url))
+        .build()?;
+
+    let reader = PeriodicReader::builder(exporter, runtime::Tokio)
+        .with_interval(metrics_interval)
+        .build();
+
+    let provider = SdkMeterProvider::builder()
+        .with_reader(reader)
         .with_resource(Resource::new(vec![
             KeyValue::new(
                 opentelemetry_semantic_conventions::resource::SERVICE_NAME,
@@ -32,8 +44,9 @@ pub fn init_metrics(telemetry_interceptor: ConfClientArcMutex<Option<Confidentia
                 service_instance_id.into()
             ),
         ]))
-        .with_period(metrics_interval)
-        .build()
+        .build();
+
+    Ok(provider)
 }
 
 pub fn initialize_metrics_collection(
@@ -43,8 +56,24 @@ pub fn initialize_metrics_collection(
     let (default_meter_provider, cpu_meter_provider) = meter_providers;
     let default_meter = default_meter_provider.meter_provider.meter(DEFAULT_METER_NAME);
 
-    let process_ram_used = default_meter.u64_observable_gauge("process_ram_used").init();
-    let host_ram_used = default_meter.u64_observable_gauge("host_ram_used").init();
+    let current_pid = std::process::id() as usize;
+    default_meter.u64_observable_gauge("process_ram_used")
+        .with_callback(move |observer| {
+            let mut system = System::new_all();
+            system.refresh_processes();
+
+            if let Some(process) = system.process(Pid::from(current_pid)) {
+                observer.observe(process.memory(), &[]);
+            }
+        })
+        .build();
+
+    default_meter.u64_observable_gauge("host_ram_used")
+        .with_callback(|observer| {
+            let system = System::new_all();
+            observer.observe(system.used_memory(), &[]);
+        })
+        .build();
 
     const WINDOW_SIZE: usize = 5;
 
@@ -66,23 +95,14 @@ pub fn initialize_metrics_collection(
         }
     });
 
-    let cpu_meter = cpu_meter_provider.meter_provider.meter(DEFAULT_METER_NAME);
-    let process_cpu_used = cpu_meter.f64_observable_gauge("process_cpu_used").init();
-    cpu_meter.register_callback(&[process_cpu_used.as_any()], move |observer| {
-        let average_cpu_usage = mutex.try_lock().unwrap().get_average();
-        observer.observe_f64(&process_cpu_used, average_cpu_usage,&[]);
-    }).expect("Could not register metrics collection callback");
-
-    let current_pid = std::process::id() as usize;
-    default_meter.register_callback(&[process_ram_used.as_any(), host_ram_used.as_any()], move |observer| {
-        let mut sys = System::new_all();
-        sys.refresh_processes();
-
-        if let Some(process) = sys.process(Pid::from(current_pid)) {
-            observer.observe_u64(&process_ram_used, process.memory(),&[]);
-            observer.observe_u64(&host_ram_used, sys.used_memory(),&[]);
-        }
-    }).expect("Could not register metrics collection callback");
+    cpu_meter_provider.meter_provider
+        .meter(DEFAULT_METER_NAME)
+        .f64_observable_gauge("process_cpu_used")
+        .with_callback(move |observer| {
+            let average_cpu_usage = mutex.try_lock().unwrap().get_average();
+            observer.observe(average_cpu_usage, &[]);
+        })
+        .build();
 }
 
 pub struct NamedMeterProvider<Kind: NamedMeterProviderKind> {

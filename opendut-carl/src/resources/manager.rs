@@ -3,7 +3,7 @@ pub use crate::resources::subscription::SubscriptionEvent;
 use crate::persistence::error::PersistenceResult;
 use crate::persistence::resources::Persistable;
 use crate::resources::storage::{PersistenceOptions, ResourcesStorageApi};
-use crate::resources::subscription::{ResourceSubscriptionChannel, ResourceSubscriptionChannels, Subscribable, Subscription};
+use crate::resources::subscription::{ResourceSubscriptionChannels, Subscribable, Subscription};
 use crate::resources::transaction::RelayedSubscriptionEvents;
 use crate::resources::{storage, Resource, Resources, ResourcesTransaction};
 use std::sync::Arc;
@@ -34,7 +34,7 @@ impl ResourcesManager {
     pub async fn insert<R>(&self, id: R::Id, resource: R) -> PersistenceResult<()>
     where R: Resource + Persistable + Subscribable {
         let mut state = self.state.write().await;
-        
+
         let (result, relayed_subscription_events) = state.resources.transaction(|transaction| {
             transaction.insert(id.clone(), resource.clone())
         })?;
@@ -98,32 +98,50 @@ impl ResourcesManager {
         state: &mut RwLockWriteGuard<'_, State>,
     ) {
         let ResourceSubscriptionChannels {
-            cluster_configuration,
-            cluster_deployment,
-            old_peer_configuration,
-            peer_configuration,
-            peer_descriptor,
-            peer_state
+            mut cluster_configuration,
+            mut cluster_deployment,
+            mut old_peer_configuration,
+            mut peer_configuration,
+            mut peer_descriptor,
+            mut peer_state
         } = relayed_subscription_events;
 
-        async fn notify_for_relayed_subscription_events_on_channel<R: Resource + Subscribable + Clone>(
-            channel: ResourceSubscriptionChannel<R>,
-            state: &mut RwLockWriteGuard<'_, State>,
-        ) {
-            let (_, mut receiver) = channel;
-            while let Ok(event) = receiver.try_recv() {
-                state.subscribers
-                    .notify(event)
-                    .expect("should successfully send notification about event during resource transaction");
-            }
+
+        while let Ok(event) = cluster_configuration.1.try_recv() {
+            state.subscribers
+                .notify(event)
+                .expect("should successfully send notification about event during resource transaction");
         }
 
-        notify_for_relayed_subscription_events_on_channel(cluster_configuration, state).await;
-        notify_for_relayed_subscription_events_on_channel(cluster_deployment, state).await;
-        notify_for_relayed_subscription_events_on_channel(old_peer_configuration, state).await;
-        notify_for_relayed_subscription_events_on_channel(peer_configuration, state).await;
-        notify_for_relayed_subscription_events_on_channel(peer_descriptor, state).await;
-        notify_for_relayed_subscription_events_on_channel(peer_state, state).await;
+        while let Ok(event) = cluster_deployment.1.try_recv() {
+            state.subscribers
+                .notify(event)
+                .expect("should successfully send notification about event during resource transaction");
+        }
+
+        while let Ok(event) = old_peer_configuration.1.try_recv() {
+            state.subscribers
+                .notify(event)
+                .expect("should successfully send notification about event during resource transaction");
+        }
+
+        while let Ok(event) = peer_configuration.1.try_recv() {
+            state.subscribers
+                .notify(event)
+                .expect("should successfully send notification about event during resource transaction");
+        }
+
+        while let Ok(event) = peer_descriptor.1.try_recv() {
+            state.subscribers
+                .notify(event)
+                .expect("should successfully send notification about event during resource transaction");
+        }
+
+        while let Ok(event) = peer_state.1.try_recv() {
+            state.subscribers
+                .notify(event)
+                .expect("should successfully send notification about event during resource transaction");
+        }
     }
 }
 

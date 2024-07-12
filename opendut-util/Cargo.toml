@@ -23,9 +23,9 @@ tracing = { workspace = true }
 home = { workspace = true, optional = true }
 opentelemetry = { workspace = true, features = ["logs", "trace"] }
 opentelemetry-otlp = { workspace = true, features = ["logs", "trace", "metrics"] }
-opentelemetry_sdk = { workspace = true, features = ["rt-tokio", "logs", "logs_level_enabled"] }
+opentelemetry_sdk = { workspace = true, features = ["rt-tokio", "logs", "spec_unstable_logs_enabled"] }
 opentelemetry-appender-tracing = { workspace = true }
-opentelemetry-semantic-conventions = { workspace = true }
+opentelemetry-semantic-conventions = { workspace = true, features = ["semconv_experimental"] }
 opendut-auth = { workspace = true, features = ["confidential_client"] }
 serde = { workspace = true }
 simple_moving_average = { workspace = true }

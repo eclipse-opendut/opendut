@@ -8,7 +8,7 @@ use opendut_types::cluster::PeerClusterAssignment;
 
 pub async fn cluster_ping(peers: Vec<PeerClusterAssignment>, ping_interval_ms: Duration) {
     let meter = global::meter(opendut_util::telemetry::DEFAULT_METER_NAME);
-    let rtt = meter.f64_gauge("round_trip_time").init();
+    let rtt = meter.f64_gauge("round_trip_time").build();
 
     let rtt_mutex = Arc::new(Mutex::new(rtt));
 

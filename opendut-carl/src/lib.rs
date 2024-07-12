@@ -1,26 +1,22 @@
 extern crate core;
 
+use std::fs;
 use std::net::SocketAddr;
 use std::str::FromStr;
 use std::sync::Arc;
 
 use anyhow::{anyhow, Context};
 use axum::routing::get;
-use axum_server::tls_rustls::RustlsConfig;
-use axum_server_dual_protocol::ServerExt;
-use futures::future::BoxFuture;
-use futures::TryFutureExt;
-use ::http::{header::CONTENT_TYPE, Request};
 use pem::Pem;
-use tonic::transport::Server;
+use tonic::transport::{Identity, ServerTlsConfig};
 use tonic_async_interceptor::async_interceptor;
-use tower::{make::Shared, steer::Steer, BoxError, ServiceExt};
+use tower::ServiceExt;
 use tower_http::services::{ServeDir, ServeFile};
-use tracing::{debug, info, warn};
+use tracing::{debug, info};
 use uuid::Uuid;
 
 use opendut_auth::confidential::pem::PemFromConfig;
-use opendut_auth::registration::client::{RegistrationClient, RegistrationClientRef};
+use opendut_auth::registration::client::RegistrationClient;
 use opendut_auth::registration::resources::ResourceHomeUrl;
 use opendut_util::settings::LoadedConfig;
 use opendut_util::telemetry::logging::LoggingConfig;
@@ -30,15 +26,15 @@ use util::in_memory_cache::CustomInMemoryCache;
 
 use crate::auth::grpc_auth_layer::GrpcAuthenticationLayer;
 use crate::auth::json_web_key::JwkCacheValue;
-use crate::cluster::manager::{ClusterManager, ClusterManagerOptions, ClusterManagerRef};
+use crate::cluster::manager::{ClusterManager, ClusterManagerOptions};
 use crate::grpc::{ClusterManagerFacade, MetadataProviderFacade, PeerManagerFacade, PeerMessagingBrokerFacade};
 use crate::http::router;
 use crate::http::state::{CarlInstallDirectory, HttpState, LeaConfig, LeaIdentityProviderConfig};
-use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerOptions, PeerMessagingBrokerRef};
+use crate::multiplex_service::GrpcMultiplexLayer;
+use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
 use crate::provisioning::cleo_script::CleoScript;
-use crate::resources::manager::{ResourcesManager, ResourcesManagerRef};
+use crate::resources::manager::ResourcesManager;
 use crate::resources::storage::PersistenceOptions;
-use crate::vpn::Vpn;
 
 pub mod grpc;
 pub mod util;
@@ -55,6 +51,7 @@ mod vpn;
 mod http;
 mod provisioning;
 mod auth;
+mod multiplex_service;
 
 #[tracing::instrument]
 pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow::Result<()> {
@@ -81,42 +78,54 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
 
 pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
     info!("Started with configuration: {settings:?}");
+    let settings = settings.config;
 
     let address: SocketAddr = {
-        let host = settings.config.get_string("network.bind.host")?;
-        let port = settings.config.get_int("network.bind.port")?;
+        let host = settings.get_string("network.bind.host")?;
+        let port = settings.get_int("network.bind.port")?;
         SocketAddr::from_str(&format!("{host}:{port}"))?
     };
 
     let tls_config = {
-        let tls_enabled: bool = settings.config.get_bool("network.tls.enabled")
+        let tls_enabled: bool = settings.get_bool("network.tls.enabled")
             .map_err(|cause| anyhow!("Expected configuration flag 'network.tls.enabled' to be parseable as boolean! {}", cause))?;
 
         if tls_enabled {
-            let cert_path = project::make_path_absolute(settings.config.get_string("network.tls.certificate")?)?;
-            debug!("Using TLS certificate: {}", cert_path.display());
-            assert!(cert_path.exists(), "TLS certificate file at '{}' not found.", cert_path.display());
+            let cert = {
+                let cert_path = project::make_path_absolute(settings.get_string("network.tls.certificate")?)?;
+                debug!("Using TLS certificate: {}", cert_path.display());
+                assert!(cert_path.exists(), "TLS certificate file at '{}' not found.", cert_path.display());
+                fs::read(&cert_path)
+                    .context(format!("Error while reading TLS certificate at {}", cert_path.display()))?
+            };
 
-            let key_path = project::make_path_absolute(settings.config.get_string("network.tls.key")?)?;
-            debug!("Using TLS key: {}", key_path.display());
-            assert!(key_path.exists(), "TLS key file at '{}' not found.", key_path.display());
+            let key = {
+                let key_path = project::make_path_absolute(settings.get_string("network.tls.key")?)?;
+                debug!("Using TLS key: {}", key_path.display());
+                assert!(key_path.exists(), "TLS key file at '{}' not found.", key_path.display());
+                fs::read(&key_path)
+                    .context(format!("Error while reading TLS key at {}", key_path.display()))?
+            };
 
-            TlsConfig::Enabled(RustlsConfig::from_pem_file(cert_path, key_path).await?)
+            let tls_config = ServerTlsConfig::new()
+                .identity(Identity::from_pem(cert, key));
+
+            TlsConfig::Enabled(tls_config)
         } else {
             TlsConfig::Disabled
         }
     };
 
-    let carl_url = ResourceHomeUrl::try_from(&settings.config)?;
+    let carl_url = ResourceHomeUrl::try_from(&settings)?;
 
-    let ca_certificate = Pem::from_config_path("network.tls.ca", &settings.config).await?;
-    let oidc_registration_client = RegistrationClient::from_settings(&settings.config).await.expect("Failed to load oidc registration client!");
+    let ca_certificate = Pem::from_config_path("network.tls.ca", &settings).await?;
+    let oidc_registration_client = RegistrationClient::from_settings(&settings).await.expect("Failed to load oidc registration client!");
 
-    let vpn = vpn::create(&settings.config)
+    let vpn = vpn::create(&settings)
         .context("Error while parsing VPN configuration.")?;
 
     let resources_manager = {
-        let resources_storage_options = PersistenceOptions::load(&settings.config)?;
+        let resources_storage_options = PersistenceOptions::load(&settings)?;
 
         ResourcesManager::create(resources_storage_options).await
             .context("Creating ResourcesManager failed")?
@@ -126,62 +135,16 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
 
     let peer_messaging_broker = PeerMessagingBroker::new(
         Arc::clone(&resources_manager),
-        PeerMessagingBrokerOptions::load(&settings.config)?,
+        PeerMessagingBrokerOptions::load(&settings)?,
     );
     let cluster_manager = ClusterManager::create(
         Arc::clone(&resources_manager),
         Arc::clone(&peer_messaging_broker),
         Clone::clone(&vpn),
-        ClusterManagerOptions::load(&settings.config)?,
+        ClusterManagerOptions::load(&settings)?,
     ).await;
 
-    let grpc_auth_layer = match oidc_registration_client.clone() {
-        None => GrpcAuthenticationLayer::AuthDisabled,
-        Some(oidc_client_ref) => {
-            let jwk_cache: CustomInMemoryCache<String, JwkCacheValue> = CustomInMemoryCache::new();
 
-            GrpcAuthenticationLayer::GrpcAuthLayerEnabled {
-                issuer_url: oidc_client_ref.inner.config.issuer_url.clone(),
-                issuer_remote_url: oidc_client_ref.config.issuer_remote_url.clone(),
-                cache: jwk_cache,
-            }
-        }
-    };
-
-    info!("Server listening at {address}...");
-    spawn_server(
-        address,
-        tls_config,
-        resources_manager,
-        cluster_manager,
-        peer_messaging_broker,
-        vpn,
-        carl_url,
-        settings.config,
-        ca_certificate,
-        oidc_registration_client,
-        grpc_auth_layer,
-    ).await.unwrap();
-
-    Ok(())
-}
-
-/// Isolation in function returning BoxFuture needed due to this: https://github.com/rust-lang/rust/issues/102211#issuecomment-1397600424
-#[allow(clippy::too_many_arguments)]
-#[tracing::instrument(skip_all, level="TRACE")]
-fn spawn_server(
-    address: SocketAddr,
-    tls_config: TlsConfig,
-    resources_manager: ResourcesManagerRef,
-    cluster_manager: ClusterManagerRef,
-    peer_messaging_broker: PeerMessagingBrokerRef,
-    vpn: Vpn,
-    carl_url: ResourceHomeUrl,
-    settings: config::Config,
-    ca: Pem,
-    oidc_registration_client: Option<RegistrationClientRef>,
-    grpc_auth_layer: GrpcAuthenticationLayer,
-) -> BoxFuture<'static, anyhow::Result<()>> {
     let oidc_enabled = settings.get_bool("network.oidc.enabled").unwrap_or(false);
 
     let cluster_manager_facade = ClusterManagerFacade::new(Arc::clone(&cluster_manager), Arc::clone(&resources_manager));
@@ -191,23 +154,10 @@ fn spawn_server(
         Arc::clone(&resources_manager),
         vpn,
         Clone::clone(&carl_url.value()),
-        ca.clone(),
-        oidc_registration_client,
+        ca_certificate.clone(),
+        oidc_registration_client.clone(),
     );
     let peer_messaging_broker_facade = PeerMessagingBrokerFacade::new(Arc::clone(&peer_messaging_broker));
-
-    let grpc = Server::builder()
-        .layer(async_interceptor(move |request| {
-            Clone::clone(&grpc_auth_layer).auth_interceptor(request)
-        }))
-        .accept_http1(true) //gRPC-web uses HTTP1
-        .add_service(cluster_manager_facade.into_grpc_service())
-        .add_service(metadata_provider_facade.into_grpc_service())
-        .add_service(peer_manager_facade.into_grpc_service())
-        .add_service(peer_messaging_broker_facade.into_grpc_service())
-        .into_service()
-        .map_response(|response| response.map(axum::body::boxed))
-        .boxed_clone();
 
     let lea_dir = project::make_path_absolute(settings.get_string("serve.ui.directory")
         .expect("Failed to find configuration for `serve.ui.directory`."))
@@ -251,62 +201,71 @@ fn spawn_server(
 
     if !project::is_running_in_development() {
         provisioning::cleo::create_cleo_install_script(
-            ca,
+            ca_certificate,
             &app_state.carl_installation_directory.path,
             CleoScript::from_setting(&settings).expect("Could not read settings.")
         ).expect("Could not create cleo install script.");
     }
 
     let http = axum::Router::new()
-        .fallback_service(
-            axum::Router::new()
-                .nest_service(
-                    "/api/licenses",
-                    ServeDir::new(&licenses_dir)
-                        .fallback(ServeFile::new(licenses_dir.join("index.json")))
-                )
-                .route("/api/cleo/:architecture/download", get(router::cleo::download_cleo))
-                .route("/api/edgar/:architecture/download", get(router::edgar::download_edgar))
-                .route("/api/lea/config", get(router::lea_config))
-                .nest_service(
-                    "/",
-                    ServeDir::new(&lea_dir)
-                        .fallback(ServeFile::new(lea_index_html))
-                )
-                .with_state(app_state)
+        .nest_service(
+            "/api/licenses",
+            ServeDir::new(&licenses_dir)
+                .fallback(ServeFile::new(licenses_dir.join("index.json")))
         )
-        .map_err(BoxError::from)
-        .boxed_clone();
+        .route("/api/cleo/:architecture/download", get(router::cleo::download_cleo))
+        .route("/api/edgar/:architecture/download", get(router::edgar::download_edgar))
+        .route("/api/lea/config", get(router::lea_config))
+        .nest_service(
+            "/",
+            ServeDir::new(&lea_dir)
+                .fallback(ServeFile::new(lea_index_html))
+        )
+        .with_state(app_state)
+        .into_service()
+        .map_response(|response| response.map(tonic::body::boxed));
 
-    let http_grpc = Steer::new(vec![grpc, http], |request: &Request<_>, _services: &[_]| {
-        request.headers()
-            .get(CONTENT_TYPE)
-            .map(|content_type| {
-                let content_type = content_type.as_bytes();
+    let grpc_auth_layer = match oidc_registration_client {
+        None => GrpcAuthenticationLayer::AuthDisabled,
+        Some(oidc_client_ref) => {
+            let jwk_cache: CustomInMemoryCache<String, JwkCacheValue> = CustomInMemoryCache::new();
 
-                if content_type.starts_with(b"application/grpc") {
-                    0
-                } else {
-                    1
-                }
-            }).unwrap_or(1)
-    });
-
-    match tls_config {
-        TlsConfig::Enabled(tls_config) => {
-            Box::pin(axum_server_dual_protocol::bind_dual_protocol(address, tls_config)
-                .set_upgrade(true) //http -> https
-                .serve(Shared::new(http_grpc))
-                .map_err(|cause| anyhow!(cause)))
+            GrpcAuthenticationLayer::GrpcAuthLayerEnabled {
+                issuer_url: oidc_client_ref.inner.config.issuer_url.clone(),
+                issuer_remote_url: oidc_client_ref.config.issuer_remote_url.clone(),
+                cache: jwk_cache,
+            }
         }
-        TlsConfig::Disabled => {
-            // Disable TLS in case a load balancer with TLS termination is present
-            Box::pin(axum_server::bind(address).serve(Shared::new(http_grpc)).map_err(From::from))
-        }
-    }
+    };
+
+    let grpc = {
+        let grpc = tonic::transport::Server::builder()
+            .layer(async_interceptor(move |request| {
+                Clone::clone(&grpc_auth_layer).auth_interceptor(request)
+            }))
+            .accept_http1(true) //gRPC-web uses HTTP1
+            .layer(GrpcMultiplexLayer::new(http));
+
+        let mut grpc = if let TlsConfig::Enabled(tls_config) = tls_config {
+            grpc.tls_config(tls_config)?
+        } else {
+            grpc
+        };
+
+        grpc
+            .add_service(cluster_manager_facade.into_grpc_service())
+            .add_service(metadata_provider_facade.into_grpc_service())
+            .add_service(peer_manager_facade.into_grpc_service())
+            .add_service(peer_messaging_broker_facade.into_grpc_service())
+    };
+
+    info!("Server listening at {address}...");
+    grpc.serve(address).await?;
+
+    Ok(())
 }
 
 enum TlsConfig {
-    Enabled(RustlsConfig),
+    Enabled(ServerTlsConfig),
     Disabled
 }

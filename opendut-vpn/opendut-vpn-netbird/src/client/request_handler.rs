@@ -1,11 +1,11 @@
 use std::time::Duration;
 
 use async_trait::async_trait;
+use http::Extensions;
 use reqwest::{Request, Response};
 use reqwest_middleware::{ClientBuilder, Middleware, Next};
 use reqwest_retry::{RetryTransientMiddleware};
 use reqwest_retry::policies::ExponentialBackoff;
-use task_local_extensions::Extensions;
 use tracing::trace;
 
 use crate::netbird::error::RequestError;
@@ -70,7 +70,7 @@ impl Middleware for LoggingMiddleWare {
         next: Next<'_>,
     ) -> reqwest_middleware::Result<Response> {
         trace!("Sending request {} {}", req.method(), req.url());
-        let resp = next.run (req, extensions).await?;
+        let resp = next.run(req, extensions).await?;
         trace!("Got response {}", resp.status());
         Ok(resp)
     }

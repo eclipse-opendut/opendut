@@ -17,6 +17,8 @@ use std::str::FromStr;
     tokio::test(flavor = "multi_thread")
 )]
 async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<()> {
+    crate::install_crypto_provider();
+
     let fixture = Fixture::new();
 
     let carl_port = util::spawn_carl()?;
@@ -110,6 +112,8 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
     tokio::test(flavor = "multi_thread")
 )]
 async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_online_later() -> anyhow::Result<()> {
+    crate::install_crypto_provider();
+
     let fixture = Fixture::new();
 
     let carl_port = util::spawn_carl()?;

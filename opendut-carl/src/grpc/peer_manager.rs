@@ -264,6 +264,7 @@ impl PeerManagerService for PeerManagerFacade {
         Ok(Response::new(GeneratePeerSetupResponse { reply: Some(response) }))
     }
 
+    #[tracing::instrument(skip_all, level="trace")]
     async fn generate_cleo_setup(&self, request: Request<GenerateCleoSetupRequest>) -> Result<Response<GenerateCleoSetupResponse>, Status> {
         trace!("Received request to generate CLEO Setup information.");
 

@@ -1,11 +1,11 @@
 use crate::confidential::blocking::reqwest_client::OidcBlockingReqwestClient;
-use crate::confidential::config::{ConfidentialClientConfig, ConfidentialClientConfigData};
+use crate::confidential::config::{ConfidentialClientConfig, ConfidentialClientConfigData, ConfiguredClient};
 use crate::confidential::error::{ConfidentialClientError, WrappedRequestTokenError};
 use crate::TOKEN_GRACE_PERIOD;
 use backon::BlockingRetryable;
 use chrono::{NaiveDateTime, Utc};
 use config::Config;
-use oauth2::basic::{BasicClient, BasicTokenResponse};
+use oauth2::basic::BasicTokenResponse;
 use oauth2::{AccessToken, TokenResponse};
 use std::fmt::Formatter;
 use std::ops::Sub;
@@ -21,7 +21,7 @@ use tracing::debug;
 
 #[derive(Debug)]
 pub struct ConfidentialClient {
-    inner: BasicClient,
+    inner: ConfiguredClient,
     pub reqwest_client: OidcBlockingReqwestClient,
     pub config: ConfidentialClientConfigData,
 
@@ -48,9 +48,6 @@ pub enum AuthError {
 pub struct Token {
     pub value: String,
 }
-
-#[derive(Clone)]
-pub struct ConfClientArcMutex<T>(pub Arc<Mutex<T>>);
 
 impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -152,7 +149,7 @@ impl ConfidentialClient {
     fn fetch_token(&self) -> Result<Token, AuthError> {
         let response = self.inner.exchange_client_credentials()
             .add_scopes(self.config.scopes.clone())
-            .request(|request| { self.reqwest_client.sync_http_client(request) })
+            .request(&|request| { self.reqwest_client.sync_http_client(request) })
             .map_err(|error| {
                 AuthError::FailedToGetToken {
                     message: "Fetching authentication token failed!".to_string(),
@@ -183,6 +180,9 @@ impl ConfidentialClient {
         Ok(access_token)
     }
 }
+
+#[derive(Clone)]
+pub struct ConfClientArcMutex<T: Clone + Send + Sync + 'static>(pub Arc<Mutex<T>>);
 
 impl Interceptor for ConfClientArcMutex<Option<ConfidentialClientRef>> {
     fn call(&mut self, mut request: Request<()>) -> Result<Request<()>, Status> {
@@ -230,6 +230,8 @@ impl Interceptor for ConfClientArcMutex<Option<ConfidentialClientRef>> {
     }
 }
 
+
+
 #[cfg(test)]
 mod auth_tests {
     use crate::confidential::blocking;
@@ -264,7 +266,7 @@ mod auth_tests {
         let reqwest_client = blocking::reqwest_client::OidcBlockingReqwestClient::from_pem(certificate).unwrap();
         let response = client.exchange_client_credentials()
             .add_scopes(vec![])
-            .request(|request| reqwest_client.sync_http_client(request))
+            .request(&|request| reqwest_client.sync_http_client(request))
             .expect("Failed to get token");
         
         let now = Utc::now().naive_utc();

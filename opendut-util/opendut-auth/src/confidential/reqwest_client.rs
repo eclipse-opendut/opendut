@@ -72,9 +72,9 @@ impl OidcReqwestClient {
     ) -> Result<HttpResponse, OidcClientError> {
         let client = self.client.clone();
         let mut request_builder = client
-            .request(request.method, request.url.as_str())
-            .body(request.body);
-        for (name, value) in &request.headers {
+            .request(request.method().clone(), request.uri().to_string())
+            .body(request.body().clone());
+        for (name, value) in request.headers() {
             request_builder = request_builder.header(name.as_str(), value.as_bytes());
         }
         let request = request_builder.build()
@@ -91,10 +91,20 @@ impl OidcReqwestClient {
             .map_err(|cause| {
                 OidcClientError::AuthReqwest { message: cause.to_string(), status: cause.status().unwrap_or_default().to_string(), inner: cause }
             })?;
-        Ok(HttpResponse {
-            status_code,
-            headers,
-            body: data.to_vec(),
-        })
+
+        let returned_response = {
+            let mut returned_response = http::Response::builder()
+                .status(status_code);
+            for (name, value) in headers.iter() {
+                returned_response = returned_response.header(name, value);
+            }
+            returned_response
+                .body(data.to_vec())
+                .map_err(|cause| {
+                    OidcClientError::Other(format!("Failed to build response body: {cause}"))
+                })?
+        };
+
+        Ok(returned_response)
     }
 }

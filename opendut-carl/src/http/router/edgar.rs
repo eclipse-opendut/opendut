@@ -1,8 +1,8 @@
-use axum::body::StreamBody;
+use axum::body::{Body};
 use axum::extract::{Path, State};
 use axum::response::IntoResponse;
-use axum_server_dual_protocol::tokio_util::io::ReaderStream;
-use http::{header, StatusCode};
+use http::{header, HeaderValue, Request};
+use tower_http::services::ServeFile;
 use crate::http::state::CarlInstallDirectory;
 use crate::util::{EDGAR_IDENTIFIER, EdgarArch};
 
@@ -12,24 +12,19 @@ pub async fn download_edgar(
 ) -> impl IntoResponse {
 
     let file_name = format!("{}-{}.tar.gz", &architecture.distribution_name(), crate::app_info::CRATE_VERSION);
-    let edgar_dir = carl_install_directory.path.join(EDGAR_IDENTIFIER).join(&file_name);
+    let edgar_path = carl_install_directory.path.join(EDGAR_IDENTIFIER).join(&file_name);
 
-    let file = match tokio::fs::File::open(edgar_dir).await {
-        Ok(file) => { file }
-        Err(_) => { return StatusCode::NOT_FOUND.into_response(); }
-    };
+    let mut response = ServeFile::new_with_mime(edgar_path, &mime::APPLICATION_OCTET_STREAM)
+        .try_call(Request::new(Body::empty())).await
+        .unwrap();
 
-    let stream = ReaderStream::new(file);
-    let body = StreamBody::new(stream);
-    let content_disposition = format!("attachment; filename=\"{}\"", file_name);
-    let headers = [
-        (header::CONTENT_TYPE, "application/gzip"),
-        (
+    response.headers_mut()
+        .append(
             header::CONTENT_DISPOSITION,
-            content_disposition.as_str(),
-        ),
-    ];
-    (headers, body).into_response()
+            HeaderValue::from_str(&format!("attachment; filename=\"{}\"", file_name)).unwrap()
+        );
+
+    response
 }
 
 #[cfg(test)]
@@ -55,18 +50,22 @@ mod test {
         let dir = temp.child(EDGAR_IDENTIFIER);
         fs::create_dir_all(&dir).expect("Unable to create dir.");
 
-        let edgar_file_name = format!("{}-{}.tar.gz", &EdgarArch::X86_64.distribution_name(), crate::app_info::CRATE_VERSION);
+        let file_name = format!("{}-{}.tar.gz", &EdgarArch::X86_64.distribution_name(), crate::app_info::CRATE_VERSION);
 
-        let tar_file = dir.child(&edgar_file_name);
-        File::create(tar_file.to_path_buf())?;
+        let tar_file = dir.child(&file_name);
+        File::create(&tar_file)?;
 
-        let cleo_install_path = temp.to_path_buf();
-        let cleo_state = State::<CarlInstallDirectory>(CarlInstallDirectory { path: cleo_install_path });
-        let cleo = download_edgar(Path(EdgarArch::X86_64), cleo_state).await;
-        let response = cleo.into_response();
-        let header = response.headers().get(header::CONTENT_DISPOSITION).unwrap();
-        let expected_header = format!("attachment; filename=\"{}\"", edgar_file_name);
-        assert_that!(header.clone().to_str()?, eq(expected_header.as_str()));
+        let state = State::<CarlInstallDirectory>(CarlInstallDirectory { path: temp.to_path_buf() });
+
+        let result = download_edgar(Path(EdgarArch::X86_64), state).await;
+
+        let result = result.into_response();
+        let header = result.headers()
+            .get(header::CONTENT_DISPOSITION)
+            .unwrap();
+
+        let expected_header = format!("attachment; filename=\"{}\"", file_name);
+        assert_that!(header.to_str()?, eq(&expected_header));
 
         Ok(())
     }

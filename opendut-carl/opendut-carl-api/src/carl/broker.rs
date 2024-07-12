@@ -27,6 +27,7 @@ mod client {
     use crate::carl::broker::error;
     use crate::proto::services::peer_messaging_broker;
     use opendut_types::peer::PeerId;
+    use opendut_util_core::future::ExplicitSendFutureWrapper;
 
     #[derive(Clone, Debug)]
     pub struct PeerMessagingBroker<T> {
@@ -87,8 +88,10 @@ mod client {
                 request.metadata_mut().insert("id", MetadataValue::from_str(&id.to_string()).unwrap());
                 request.metadata_mut().insert("remote-host", MetadataValue::from_str(&remote_address.to_string()).unwrap());
 
-                self.inner
-                    .open(request)
+                ExplicitSendFutureWrapper::from(
+                    self.inner
+                        .open(request)
+                )
                     .await
                     .map_err(|cause| error::OpenStream { message: format!("Error while opening stream: {cause}") })?
             };

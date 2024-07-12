@@ -16,6 +16,7 @@ anyhow = { workspace = true }
 backon = { workspace = true, features = ["tokio-sleep"] }
 config = { workspace = true }
 googletest = { workspace = true }
+rustls = { workspace = true }
 test-log = { workspace = true }
 tokio = { workspace = true, features = ["full", "test-util"] }
 tracing = { workspace = true }

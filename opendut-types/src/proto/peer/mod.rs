@@ -384,7 +384,7 @@ mod tests {
             ok(eq(&native))
         );
 
-        assert_that!(PeerId::from(native), eq(&proto));
+        assert_that!(&PeerId::from(native), eq(&proto));
 
         Ok(())
     }

@@ -1,10 +1,24 @@
 use config::Config;
-use oauth2::{AuthUrl, ClientId as OAuthClientId, ClientSecret as OAuthClientSecret, Scope as OAuthScope, TokenUrl};
+use oauth2::{AuthUrl, ClientId as OAuthClientId, ClientSecret as OAuthClientSecret, EndpointNotSet, EndpointSet, Scope as OAuthScope, TokenUrl};
 use oauth2::basic::BasicClient;
 use shadow_rs::formatcp;
 use url::Url;
 
 use crate::confidential::error::ConfidentialClientError;
+
+pub type ConfiguredClient<
+    HasAuthUrl = EndpointSet,
+    HasDeviceAuthUrl = EndpointNotSet,
+    HasIntrospectionUrl = EndpointNotSet,
+    HasRevocationUrl = EndpointNotSet,
+    HasTokenUrl = EndpointSet,
+> = BasicClient<
+    HasAuthUrl,
+    HasDeviceAuthUrl,
+    HasIntrospectionUrl,
+    HasRevocationUrl,
+    HasTokenUrl,
+>;
 
 #[derive(Clone, Debug)]
 pub enum ConfidentialClientConfig {
@@ -61,18 +75,18 @@ impl ConfidentialClientConfigData {
         }
     }
 
-    pub fn get_client(&self) -> Result<BasicClient, ConfidentialClientError> {
+    pub fn get_client(&self) -> Result<ConfiguredClient, ConfidentialClientError> {
         let auth_endpoint = self.issuer_url.join("protocol/openid-connect/auth")
             .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to derive authorization url from issuer url."), cause: cause.into() })?;
         let token_endpoint = self.issuer_url.join("protocol/openid-connect/token")
             .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to derive token url from issuer url."), cause: cause.into() })?;
 
-        Ok(BasicClient::new(
-            self.client_id.clone(),
-            Some(self.client_secret.clone()),
-            AuthUrl::from_url(auth_endpoint),
-            Some(TokenUrl::from_url(token_endpoint)),
-        ))
+        let client = BasicClient::new(self.client_id.clone())
+            .set_client_secret(self.client_secret.clone())
+            .set_auth_uri(AuthUrl::from_url(auth_endpoint))
+            .set_token_uri(TokenUrl::from_url(token_endpoint));
+
+        Ok(client)
     }
 }
 
