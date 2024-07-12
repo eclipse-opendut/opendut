@@ -68,7 +68,7 @@ impl SetupCli {
 }
 
 fn prepare_cleo_configuration(setup_string: CleoSetup, cleo_ca_path: &Path) -> String {
-    let mut new_settings = toml_edit::Document::new();
+    let mut new_settings = toml_edit::DocumentMut::new();
 
     let carl_host = setup_string.carl.host_str().expect("Host name should be defined in CARL URL.");
     let carl_port = setup_string.carl.port().unwrap_or(443);

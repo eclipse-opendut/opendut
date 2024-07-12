@@ -37,7 +37,7 @@ impl Task for WriteConfiguration {
         let original_settings = self.load_current_settings()
             .unwrap_or_else(|| {
                 debug!("Could not load settings from configuration file at '{}'. Continuing as if no previous configuration exists.", self.config_file_to_write_to.display());
-                toml_edit::Document::new()
+                toml_edit::DocumentMut::new()
             });
 
         let new_settings_string = {
@@ -129,7 +129,7 @@ impl WriteConfiguration {
         }
     }
 
-    fn load_current_settings(&self) -> Option<toml_edit::Document> {
+    fn load_current_settings(&self) -> Option<toml_edit::DocumentMut> {
 
         if self.config_file_to_write_to.exists().not() {
             return None;
@@ -143,7 +143,7 @@ impl WriteConfiguration {
             }
         };
 
-        match toml_edit::Document::from_str(&current_settings) {
+        match toml_edit::DocumentMut::from_str(&current_settings) {
             Ok(current_settings) => Some(current_settings),
             Err(cause) => {
                 error!("Failed to parse existing configuration as TOML.\n  {cause}");

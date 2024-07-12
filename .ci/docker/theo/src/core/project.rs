@@ -7,14 +7,14 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use dotenvy::dotenv;
-use strum::{Display, EnumString, EnumVariantNames};
+use strum::{Display, EnumString, VariantNames};
 
 use crate::commands::vagrant::running_in_opendut_vm;
 use crate::core::{OPENDUT_REPO_ROOT, OPENDUT_VM_NAME, TheoError};
 use crate::core::metadata::cargo_netbird_versions;
 use crate::core::util::consume_output;
 
-#[derive(Debug, PartialEq, EnumString, EnumVariantNames, Display)]
+#[derive(Debug, PartialEq, EnumString, VariantNames, Display)]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 pub enum TheoDynamicEnvVars {
     Puser,
@@ -36,7 +36,7 @@ pub enum TheoDynamicEnvVars {
     OpendutExposePorts,
 }
 
-#[derive(Debug, PartialEq, EnumString, EnumVariantNames, Display)]
+#[derive(Debug, PartialEq, EnumString, VariantNames, Display)]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 pub enum TheoUserEnvVars {
     OpendutDockerImageNamespace,
