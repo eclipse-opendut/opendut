@@ -16,6 +16,8 @@ use core::panic;
 
 use autosar_data::{AutosarModel, CharacterData, Element, ElementName, EnumItem};
 
+use tracing::{error, info, warn};
+
 
 pub struct ArxmlParser {
 }
@@ -420,7 +422,7 @@ impl ArxmlParser {
                         Ok(value) => {
                             can_frame_triggerings.insert(value.can_id.clone(), value);
                         }
-                        Err(error) => println!("[-] WARNING: {}", error),
+                        Err(error) => error!("WARNING: {}", error),
                     }
                 }
             }
@@ -447,13 +449,13 @@ impl ArxmlParser {
     */
     pub fn parse_file(&self, file_name: &String, safe_or_load_serialized: bool) -> Option<HashMap<String, CanCluster>> {
         if safe_or_load_serialized {
-            println!("[+] Loading data from serialized file");
+            info!("Loading data from serialized file");
             match load_serialized_data(file_name) {
                 Ok(value) => {
-                    println!("[+] Successfully loaded serialized data.");
+                    info!("Successfully loaded serialized data.");
                     return Some(value)
                 }
-                _ => println!("[-] Could not load serialized data. Will continue parsing.")
+                _ => warn!("Could not load serialized data. Will continue parsing.")
             }
         }
 
@@ -466,7 +468,7 @@ impl ArxmlParser {
         }
 
         // DEBUG 
-        println!("[+] Duration of loading was: {:?}", start.elapsed());
+        info!("Duration of loading was: {:?}", start.elapsed());
         // DEBUG END
 
         let mut can_clusters: HashMap<String, CanCluster> = HashMap::new();
@@ -484,20 +486,20 @@ impl ArxmlParser {
                         Ok(value) => {
                             can_clusters.insert(value.name.clone(), value);
                         }
-                        Err(error) => println!("[-] WARNING: {}", error)
+                        Err(error) => warn!("WARNING: {}", error)
                     }
                 }
                 _ => {}
             }
         }
 
-        println!("[+] Duration of parsing: {:?}", start.elapsed());
+        info!("Duration of parsing: {:?}", start.elapsed());
 
         if safe_or_load_serialized {
-            println!("[+] Storing serialized data to file");
+            info!("Storing serialized data to file");
             match store_serialized_data(file_name, &can_clusters) {
-                Ok(()) => println!("[+] Successfully stored serialized data."),
-                _ => println!("[-] Could not store serialized data.")
+                Ok(()) => info!("Successfully stored serialized data."),
+                _ => error!("Could not store serialized data.")
             }
         }
 

@@ -282,6 +282,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
+name = "autosar-data"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "220cf40add8815bc13a6c409a2ad62304ec0354e149bbcfe3c3516a1cf3f1726"
+dependencies = [
+ "autosar-data-specification",
+ "parking_lot 0.12.3",
+ "rustc-hash",
+ "smallvec",
+ "thiserror",
+]
+
+[[package]]
+name = "autosar-data-specification"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4b10b95c5e9c2cf046261b1d71e4ef6d063569378ac6a95687a9a88fb053852d"
+dependencies = [
+ "num-derive",
+ "num-traits",
+]
+
+[[package]]
 name = "autotools"
 version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3452,6 +3475,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "51d515d32fb182ee37cda2ccdcb92950d6a3c2893aa280e540671c2cd0f3b1d9"
 
 [[package]]
+name = "num-derive"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ed3955f1a9c7c0c15e092f9c887db08b1fc683305fdf6eb6684f22555355e202"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.66",
+]
+
+[[package]]
 name = "num-integer"
 version = "0.1.46"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3759,6 +3793,7 @@ dependencies = [
  "opendut-edgar-kernel-modules",
  "opendut-edgar-plugin-api",
  "opendut-netbird-client-api",
+ "opendut-restbus-simulation",
  "opendut-types",
  "opendut-util",
  "opentelemetry",
@@ -3875,6 +3910,18 @@ dependencies = [
  "tower",
  "tracing",
  "url",
+]
+
+[[package]]
+name = "opendut-restbus-simulation"
+version = "0.1.0"
+dependencies = [
+ "autosar-data",
+ "nix 0.27.1",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -5748,7 +5795,7 @@ dependencies = [
 
 [[package]]
 name = "smallvec"
-version = "1.13.2"
+version = "1.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
 dependencies = [

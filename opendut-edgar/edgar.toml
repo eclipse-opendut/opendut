@@ -49,3 +49,10 @@ cpu.collection.interval.ms = 5000
 ping.interval.ms = 30000
 target.bandwidth.kilobit.per.second = 100_000
 rperf.backoff.max.elapsed.time.ms = 120000
+
+[restbus-simulation]
+enabled = false
+arxml.path = "./opendut-edgar/restbus-simulation/src/system-4.2.arxml"
+arxml.serialization = true
+simulation.target.cluster = "Cluster0"
+simulation.interface = "vcan0" 
