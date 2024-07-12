@@ -28,7 +28,13 @@ impl LoggingConfig {
     }
 }
 
-pub fn init_logger(telemetry_interceptor: ConfClientArcMutex<Option<ConfidentialClientRef>>, endpoint: &Endpoint, service_name: impl Into<String>, service_instance_id: impl Into<String>) -> Result<opentelemetry_sdk::logs::Logger, LogError> {
+pub fn init_logger_provider(
+    telemetry_interceptor: ConfClientArcMutex<Option<ConfidentialClientRef>>,
+    endpoint: &Endpoint,
+    service_name: impl Into<String>,
+    service_instance_id: impl Into<String>
+) -> Result<opentelemetry_sdk::logs::LoggerProvider, LogError> {
+
     opentelemetry_otlp::new_pipeline()
         .logging()
         .with_log_config(

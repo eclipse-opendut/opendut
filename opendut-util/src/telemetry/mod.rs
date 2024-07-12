@@ -9,10 +9,8 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use opentelemetry::global;
-use opentelemetry::global::{GlobalLoggerProvider, logger_provider};
 use opentelemetry::trace::TraceError;
 use opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge;
-use opentelemetry_sdk::logs::Logger;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 use tokio::sync::Mutex;
 use tracing::error;
@@ -86,7 +84,7 @@ pub async fn initialize_with_config(
             None
         };
 
-    let (tracer, logger, logger_layer, meter_providers) =
+    let (tracer, logger_layer, meter_providers) =
         if let Opentelemetry::Enabled {
             collector_endpoint,
             service_name, 
@@ -99,9 +97,7 @@ pub async fn initialize_with_config(
 
             let tracer = traces::init_tracer(confidential_client.clone(), &collector_endpoint, service_name.clone(), service_instance_id.clone()).expect("Failed to initialize tracer.");
             
-            let logger = logging::init_logger(confidential_client.clone(), &collector_endpoint, service_name.clone(), service_instance_id.clone()).expect("Failed to initialize logs.");
-
-            let logger_provider: GlobalLoggerProvider = logger_provider();
+            let logger_provider = logging::init_logger_provider(confidential_client.clone(), &collector_endpoint, service_name.clone(), service_instance_id.clone()).expect("Failed to initialize logs.");
             let logger_layer = OpenTelemetryTracingBridge::new(&logger_provider);
 
             let default_meter_provider = NamedMeterProvider {
@@ -129,9 +125,9 @@ pub async fn initialize_with_config(
             global::set_meter_provider(default_meter_provider.meter_provider.clone());
             let meter_providers: NamedMeterProviders = (default_meter_provider, cpu_meter_provider);
 
-            (Some(tracer), Some(logger), Some(logger_layer), Some(meter_providers))
+            (Some(tracer), Some(logger_layer), Some(meter_providers))
     } else {
-        (None, None, None, None)
+        (None, None, None)
     };
 
     tracing_subscriber::registry()
@@ -142,13 +138,12 @@ pub async fn initialize_with_config(
         .with(logger_layer)
         .try_init()?;
 
-    Ok(ShutdownHandle { _logger: logger, meter_providers })
+    Ok(ShutdownHandle { meter_providers })
 }
 
 
 #[must_use]
 pub struct ShutdownHandle {
-    pub(crate) _logger: Option<Logger>,
     pub meter_providers: Option<(
         NamedMeterProvider<NamedMeterProviderKindDefault>,
         NamedMeterProvider<NamedMeterProviderKindCpu>
@@ -157,7 +152,6 @@ pub struct ShutdownHandle {
 impl ShutdownHandle {
     pub fn shutdown(&mut self) {
         global::shutdown_tracer_provider();
-        global::shutdown_logger_provider();
         //global::shutdown_meter_provider(); //TODO re-include when this appears in a release: https://github.com/open-telemetry/opentelemetry-rust/pull/1623
     }
 }
