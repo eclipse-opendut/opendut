@@ -110,9 +110,9 @@ fn DeviceNameInput(
     );
 
     let validator = |input: String| {
-        match DeviceName::try_from(input) {
-            Ok(name) => {
-                UserInputValue::Right(String::from(name.value()))
+        match DeviceName::try_from(input.clone()) {
+            Ok(_) => {
+                UserInputValue::Right(input)
             }
             Err(cause) => {
                 match cause {

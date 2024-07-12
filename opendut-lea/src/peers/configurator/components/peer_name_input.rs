@@ -18,9 +18,9 @@ pub fn PeerNameInput(peer_configuration: RwSignal<UserPeerConfiguration>) -> imp
     );
 
     let validator = |input: String| {
-        match PeerName::try_from(input) {
-            Ok(name) => {
-                UserInputValue::Right(name.value())
+        match PeerName::try_from(input.clone()) {
+            Ok(_) => {
+                UserInputValue::Right(input)
             }
             Err(cause) => {
                 match cause {

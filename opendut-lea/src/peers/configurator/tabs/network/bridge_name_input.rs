@@ -14,9 +14,9 @@ pub fn BridgeNameInput(peer_configuration: RwSignal<UserPeerConfiguration>) -> i
     );
 
     let validator = |input: String| {
-        match NetworkInterfaceName::try_from(input) {
-            Ok(name) => {
-                UserInputValue::Right(name.name())
+        match NetworkInterfaceName::try_from(input.clone()) {
+            Ok(_) => {
+                UserInputValue::Right(input)
             }
             Err(cause) => {
                 match cause {

@@ -213,8 +213,8 @@ fn ExecutorContainerNameInput(
 
     let validator = |input: String| {
         match ContainerName::try_from(input.clone()) {
-            Ok(name) => {
-                UserInputValue::Right(String::from(name))
+            Ok(_) => {
+                UserInputValue::Right(input)
             }
             Err(cause) => {
                 UserInputValue::Both(cause.to_string(), input)
@@ -252,9 +252,9 @@ fn ExecutorContainerImageInput(
     );
 
     let validator = |input: String| {
-        match ContainerImage::try_from(input) {
-            Ok(name) => {
-                UserInputValue::Right(String::from(name.value()))
+        match ContainerImage::try_from(input.clone()) {
+            Ok(_) => {
+                UserInputValue::Right(input)
             }
             Err(cause) => {
                 match cause {
@@ -297,8 +297,8 @@ fn ExecutorContainerVolumesInput(
 
     let validator = |input: String| {
         match ContainerVolume::try_from(input.clone()) {
-            Ok(volume) => {
-                UserInputValue::Right(String::from(volume.value()))
+            Ok(_) => {
+                UserInputValue::Right(input)
             }
             Err(cause) => {
                 UserInputValue::Both(cause.to_string(), input)
@@ -352,8 +352,8 @@ fn ExecutorContainerDevicesInput(
 
     let validator = |input: String| {
         match ContainerDevice::try_from(input.clone()) {
-            Ok(device) => {
-                UserInputValue::Right(String::from(device.value()))
+            Ok(_) => {
+                UserInputValue::Right(input)
             }
             Err(cause) => {
                 UserInputValue::Both(cause.to_string(), input)
@@ -407,8 +407,8 @@ fn ExecutorContainerPortsInput(
 
     let validator = |input: String| {
         match ContainerPortSpec::try_from(input.clone()) {
-            Ok(port) => {
-                UserInputValue::Right(String::from(port.value()))
+            Ok(_) => {
+                UserInputValue::Right(input)
             }
             Err(cause) => {
                 UserInputValue::Both(cause.to_string(), input)
@@ -462,8 +462,8 @@ fn ExecutorContainerCommandInput(
 
     let validator = |input: String| {
         match ContainerCommand::try_from(input.clone()) {
-            Ok(command) => {
-                UserInputValue::Right(String::from(command))
+            Ok(_) => {
+                UserInputValue::Right(input)
             }
             Err(cause) => {
                 UserInputValue::Both(cause.to_string(), input)
@@ -502,8 +502,8 @@ fn ExecutorContainerArgsInput(
 
     let validator = |input: String| {
         match ContainerCommandArgument::try_from(input.clone()) {
-            Ok(arg) => {
-                UserInputValue::Right(String::from(arg.value()))
+            Ok(_) => {
+                UserInputValue::Right(input)
             }
             Err(cause) => {
                 UserInputValue::Both(cause.to_string(), input)
@@ -750,8 +750,8 @@ fn ExecutorContainerResultsUrlInput(
 
     let validator = |input: String| {
         match ResultsUrl::try_from(input.clone()) {
-            Ok(results_url) => {
-                UserInputValue::Right(String::from(results_url))
+            Ok(_) => {
+                UserInputValue::Right(input)
             }
             Err(cause) => {
                 UserInputValue::Both(cause.to_string(), input)

@@ -31,12 +31,12 @@ where A: Fn(NetworkInterfaceName, UserNetworkInterfaceConfiguration) + 'static {
     };
 
     let validator = move |input: String| {
-        match NetworkInterfaceName::try_from(input) {
+        match NetworkInterfaceName::try_from(input.clone()) {
             Ok(name) => {
                 if name_filter(name.clone()).is_empty().not() {
-                    UserInputValue::Both("A network interface with that name has already been configured.".to_string(), name.name())
+                    UserInputValue::Both("A network interface with that name has already been configured.".to_string(), input)
                 } else {
-                    UserInputValue::Right(name.name())
+                    UserInputValue::Right(input)
                 }
             }
             Err(cause) => {

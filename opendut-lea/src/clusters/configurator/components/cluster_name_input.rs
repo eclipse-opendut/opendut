@@ -18,9 +18,9 @@ pub fn ClusterNameInput(cluster_configuration: RwSignal<UserClusterConfiguration
     );
 
     let validator = |input: String| {
-        match ClusterName::try_from(input) {
-            Ok(name) => {
-                UserInputValue::Right(name.value())
+        match ClusterName::try_from(input.clone()) {
+            Ok(_) => {
+                UserInputValue::Right(input)
             }
             Err(cause) => {
                 match cause {
