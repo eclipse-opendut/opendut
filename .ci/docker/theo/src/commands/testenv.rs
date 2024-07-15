@@ -101,30 +101,27 @@ impl TestenvCli {
                 crate::core::network::docker_inspect_network()?;
                 show_error_if_unhealthy_containers_were_found()?;
             }
-            TaskCli::Destroy(service) => {
-                match &service.service {
-                    Some(service) => {
-                        match service {
-                            DockerCoreServices::Network => { docker_compose_network_delete() ?; }
-                            DockerCoreServices::Carl => { docker_compose_down(DockerCoreServices::Carl.as_str(), true) ?; }
-                            DockerCoreServices::CarlOnHost => { docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), true) ?; }
-                            DockerCoreServices::Dev => { docker_compose_down(DockerCoreServices::Dev.as_str(), true) ?; }
-                            DockerCoreServices::Keycloak => { docker_compose_down(DockerCoreServices::Keycloak.as_str(), true) ?; }
-                            DockerCoreServices::Edgar => { docker_compose_down(DockerCoreServices::Edgar.as_str(), true) ?; }
-                            DockerCoreServices::Netbird => { docker_compose_down(DockerCoreServices::Netbird.as_str(), true) ?; }
-                            DockerCoreServices::Firefox => { docker_compose_down(DockerCoreServices::Firefox.as_str(), true) ?; }
-                            DockerCoreServices::Telemetry => { docker_compose_down(DockerCoreServices::Telemetry.as_str(), true) ?; }
-                            DockerCoreServices::NginxWebdav => { docker_compose_down(DockerCoreServices::NginxWebdav.as_str(), true)?; }
-                        }
+            TaskCli::Destroy(service) => match &service.service {
+                Some(service) => {
+                    match service {
+                        DockerCoreServices::Network => docker_compose_network_delete()?,
+                        DockerCoreServices::Carl => docker_compose_down(DockerCoreServices::Carl.as_str(), true)?,
+                        DockerCoreServices::CarlOnHost => docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), true)?,
+                        DockerCoreServices::Dev => docker_compose_down(DockerCoreServices::Dev.as_str(), true)?,
+                        DockerCoreServices::Keycloak => docker_compose_down(DockerCoreServices::Keycloak.as_str(), true)?,
+                        DockerCoreServices::Edgar => docker_compose_down(DockerCoreServices::Edgar.as_str(), true)?,
+                        DockerCoreServices::Netbird => docker_compose_down(DockerCoreServices::Netbird.as_str(), true)?,
+                        DockerCoreServices::Firefox => docker_compose_down(DockerCoreServices::Firefox.as_str(), true)?,
+                        DockerCoreServices::Telemetry => docker_compose_down(DockerCoreServices::Telemetry.as_str(), true)?,
+                        DockerCoreServices::NginxWebdav => docker_compose_down(DockerCoreServices::NginxWebdav.as_str(), true)?,
+                    };
+                }
+                None => {
+                    println!("Destroying all services.");
+                    for docker_service in DockerCoreServices::iter() {
+                        docker_compose_down(docker_service.as_str(), true)?;
                     }
-                    None => {
-                            println!("Destroying all services.");
-                            for docker_service in DockerCoreServices::iter() {
-                                docker_compose_down(docker_service.as_str(), true)?;
-                            }
-                            docker_compose_network_delete()?;
-
-                    }
+                    docker_compose_network_delete()?;
                 }
             }
             TaskCli::Edgar(cli) => {
