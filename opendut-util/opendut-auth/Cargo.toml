@@ -56,6 +56,7 @@ tonic = { workspace = true }
 tower = { workspace = true, optional = true }
 tracing = { workspace = true, optional = true }
 url = { workspace = true }
+serde_json = { workspace = true }
 
 
 [dev-dependencies]

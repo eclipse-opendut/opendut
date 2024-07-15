@@ -151,6 +151,7 @@ pub struct DeletePeerDescriptorParams {
     pub resources_manager: ResourcesManagerRef,
     pub vpn: Vpn,
     pub peer: PeerId,
+    pub oidc_registration_client: Option<RegistrationClientRef>,
 }
 
 #[tracing::instrument(skip(params), level="trace")]
@@ -182,6 +183,16 @@ pub async fn delete_peer_descriptor(params: DeletePeerDescriptorParams) -> Resul
 
         let peer_name = &peer_descriptor.name;
 
+        if let Some(registration_client) = params.oidc_registration_client {
+            let resource_id = peer_id.into();
+            debug!("Deleting OIDC client for peer '{peer_name}' <{peer_id}>.");
+            let deleted_clients = registration_client.delete_client(resource_id)
+                .await
+                .map_err(|cause| DeletePeerDescriptorError::Internal { peer_id, peer_name: Clone::clone(peer_name), cause: cause.to_string() })?;
+            let deleted_client_ids =  deleted_clients.0.into_iter().map(|client| client.client_id).collect::<Vec<String>>();
+            debug!("Successfully deleted oidc clients for peer '{peer_name}' <{peer_id}>. OIDC client_ids='{}'.", deleted_client_ids.join(","));
+        };
+        
         if let Vpn::Enabled { vpn_client } = params.vpn {
             debug!("Deleting vpn peer <{peer_id}>.");
             vpn_client.delete_peer(peer_id)

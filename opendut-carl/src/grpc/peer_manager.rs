@@ -107,6 +107,7 @@ impl PeerManagerService for PeerManagerFacade {
                 resources_manager: Arc::clone(&self.resources_manager),
                 vpn: Clone::clone(&self.vpn),
                 peer: peer_id,
+                oidc_registration_client: self.oidc_registration_client.clone(),
             }).await;
 
         match result {

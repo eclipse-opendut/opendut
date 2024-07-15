@@ -3,7 +3,6 @@ use oauth2::{ClientId, ClientSecret, RedirectUrl};
 use openidconnect::RegistrationUrl;
 use pem::Pem;
 use rstest::fixture;
-use serde::Deserialize;
 use url::Url;
 
 use opendut_auth::confidential::client::{ConfidentialClient, ConfidentialClientRef};
@@ -14,12 +13,6 @@ use opendut_auth::registration::client::{DEVICE_REDIRECT_URL, RegistrationClient
 use opendut_auth::registration::config::RegistrationClientConfig;
 use opendut_auth::registration::resources::ResourceHomeUrl;
 use opendut_util_core::project;
-
-#[fixture]
-pub async fn issuer_certificate_authority() -> Pem {
-    Pem::from_file_path("resources/development/tls/insecure-development-ca.pem").await
-        .expect("Failed to resolve development ca in resources directory.")
-}
 
 #[fixture]
 pub async fn confidential_carl_client() -> ConfidentialClientRef {
@@ -61,114 +54,37 @@ pub async fn registration_client(#[future] confidential_carl_client: Confidentia
     RegistrationClient::new(carl_idp_config, client)
 }
 
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct Client {
-    id: String,
-    client_id: String,
-    name: Option<String>,
-    base_url: Option<String>,
-}
-
 #[cfg(test)]
 mod auth_tests {
     use googletest::assert_that;
     use googletest::matchers::eq;
-    use http::{HeaderMap, HeaderValue};
-    use oauth2::HttpRequest;
-    use pem::Pem;
     use rstest::rstest;
-
-    use opendut_auth::confidential::reqwest_client::OidcReqwestClient;
-    use opendut_auth::registration::client::{RegistrationClientError, RegistrationClientRef};
+    
+    use opendut_auth::registration::client::{RegistrationClientRef};
     use opendut_types::resources::Id;
 
-    use crate::{Client, issuer_certificate_authority, registration_client};
-
-    async fn delete_client(client: RegistrationClientRef, delete_client_id: String, issuer_ca: Pem) -> Result<(), RegistrationClientError> {
-        let client_id = client.inner.config.client_id.clone().to_string();
-        let access_token = client.inner.get_token().await
-            .map_err(|error| RegistrationClientError::RequestError { error: format!("Could not fetch token to delete client {}!", client_id), cause: error.into() })?;
-        let delete_client_url = client.inner.config.issuer_url.join("/admin/realms/opendut/clients/").unwrap().join(&delete_client_id.to_string())
-            .map_err(|error| RegistrationClientError::InvalidConfiguration { error: format!("Invalid client URL: {}", error) })?;
-
-        let mut headers = HeaderMap::new();
-        let bearer_header = format!("Bearer {}", access_token.to_string());
-        let access_token_value = HeaderValue::from_str(&bearer_header)
-            .map_err(|error| RegistrationClientError::InvalidConfiguration { error: error.to_string() })?;
-        headers.insert(http::header::AUTHORIZATION, access_token_value);
-
-        let request = HttpRequest {
-            method: http::Method::DELETE,
-            url: delete_client_url,
-            headers,
-            body: vec![],
-        };
-
-        let reqwest_client = OidcReqwestClient::from_pem(issuer_ca)
-            .map_err(|error| RegistrationClientError::InvalidConfiguration { error: format!("Failed to load certificate authority. {}", error) })?;
-
-        let response = reqwest_client.async_http_client(request)
-            .await
-            .map_err(|error| RegistrationClientError::RequestError { error: "OIDC client delete request failed!".to_string(), cause: Box::new(error) })?;
-        assert_eq!(response.status_code, 204, "Failed to delete client with id '{:?}': {:?}", client_id, response.body);
-
-        Ok(())
-    }
-
-    async fn list_clients_for_user(client: RegistrationClientRef, user_id: String, issuer_ca: Pem) -> Result<(), RegistrationClientError> {
-        let client_id = client.inner.config.client_id.clone().to_string();
-        let access_token = client.inner.get_token().await
-            .map_err(|error| RegistrationClientError::RequestError { error: format!("Could not fetch token to delete client {}!", client_id), cause: error.into() })?;
-        let list_client_url = client.inner.config.issuer_url.join("/admin/realms/opendut/clients").unwrap();
-
-        let mut headers = HeaderMap::new();
-        let bearer_header = format!("Bearer {}", access_token);
-        let access_token_value = HeaderValue::from_str(&bearer_header)
-            .map_err(|error| RegistrationClientError::InvalidConfiguration { error: error.to_string() })?;
-        headers.insert(http::header::AUTHORIZATION, access_token_value);
-
-        let request = HttpRequest {
-            method: http::Method::GET,
-            url: list_client_url,
-            headers,
-            body: vec![],
-        };
-
-        let reqwest_client = OidcReqwestClient::from_pem(issuer_ca)
-            .map_err(|error| RegistrationClientError::InvalidConfiguration { error: format!("Failed to load certificate authority. {}", error) })?;
-
-        let response = reqwest_client.async_http_client(request)
-            .await
-            .map_err(|error| RegistrationClientError::RequestError { error: "OIDC client list request failed!".to_string(), cause: Box::new(error) })?;
-
-        let clients: Vec<Client> = serde_json::from_slice(&response.body).unwrap();
-        let filtered_clients: Vec<Client> = clients.into_iter().filter(|client| client.base_url.clone().is_some_and(|url| url.contains(&user_id))).collect();
-        assert_eq!(response.status_code, 200, "Failed to list clients for user'{:?}'", user_id);
-        assert!(!filtered_clients.is_empty());
-
-        Ok(())
-    }
+    use crate::{registration_client};
 
     #[rstest]
     #[tokio::test]
     #[ignore]
-    async fn test_register_new_oidc_client(#[future] registration_client: RegistrationClientRef, #[future] issuer_certificate_authority: Pem) {
+    async fn test_register_new_oidc_client(#[future] registration_client: RegistrationClientRef) {
         /*
          * This test is ignored because it requires a running keycloak server from the test environment.
          * To run this test, execute the following command: cargo test -- --include-ignored
          */
         let client = registration_client.await;
-        let pem = issuer_certificate_authority.await;
         println!("{:?}", client);
         let resource_id = Id::random();
-        let user_id = String::from("testUser");
+        let user_id = String::from("deleteTest");
         let credentials = client.register_new_client_for_user(resource_id, user_id.clone()).await.unwrap();
         let (client_id, client_secret) = (credentials.client_id.value(), credentials.client_secret.value());
-        println!("New client id: {}, secret: {}", client_id, client_secret);
-        list_clients_for_user(client.clone(), user_id, pem.clone()).await.unwrap();
-        delete_client(client, client_id.clone(), pem).await.unwrap();
         assert_that!(client_id.len().gt(&10), eq(true));
+        println!("New client id: {}, secret: {}", client_id, client_secret);
+        let client_list = client.list_clients(resource_id).await.unwrap();
+        assert!(!client_list.0.is_empty());
+        client.delete_client(resource_id).await.unwrap();
+        let client_list = client.list_clients(resource_id).await.unwrap();
+        assert!(client_list.0.is_empty());
     }
-
 }

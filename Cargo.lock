@@ -2735,6 +2735,7 @@ dependencies = [
  "reqwest",
  "rstest",
  "serde",
+ "serde_json",
  "shadow-rs",
  "thiserror",
  "tokio",

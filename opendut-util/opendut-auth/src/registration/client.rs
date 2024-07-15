@@ -1,14 +1,18 @@
 use std::sync::Arc;
 
 use config::Config;
+use http::{HeaderMap, HeaderValue};
+use oauth2::HttpRequest;
 use openidconnect::{ClientName, ClientUrl};
 use openidconnect::core::{CoreClientRegistrationRequest, CoreGrantType};
 use openidconnect::registration::EmptyAdditionalClientMetadata;
-
+use serde::Deserialize;
+use tracing::error;
+use url::Url;
 use opendut_types::resources::Id;
 use opendut_types::util::net::{ClientCredentials, ClientId, ClientSecret};
 
-use crate::confidential::client::{ConfidentialClient, ConfidentialClientRef};
+use crate::confidential::client::{ConfidentialClient, ConfidentialClientRef, Token};
 use crate::registration::config::RegistrationClientConfig;
 use crate::registration::error::WrappedClientRegistrationError;
 
@@ -41,6 +45,12 @@ pub enum RegistrationClientError {
     #[error("Failed to register new client. Cause: {cause}")]
     Registration {
         cause: WrappedClientRegistrationError,
+    },
+    #[error("Client could not be found")]
+    ClientNotFound,
+    #[error("Following clients could not be deleted: {client_ids}")]
+    ClientDeletionError {
+        client_ids: String
     },
 }
 
@@ -126,4 +136,92 @@ impl RegistrationClient {
             }
         }
     }
+    
+    pub async fn list_clients(&self, resource_id: Id) -> Result<Clients, RegistrationClientError> {
+        let access_token = self.inner.get_token().await
+            .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), cause: Box::new(error) })?;
+
+        let issuer_remote_url = request_uri(&self.config.issuer_remote_url, None)?;
+        let request = create_http_request_client(&access_token, &issuer_remote_url, http::Method::GET)?;
+        
+        let response = self.inner.reqwest_client.async_http_client(request)
+            .await;
+        match response { 
+            Ok(response) => {
+                 let clients: Clients = serde_json::from_slice(&response.body).unwrap();
+                 let filtered_clients = clients.0.into_iter().filter(|client| client.base_url.clone().is_some_and(|url| url.contains(&resource_id.value().to_string()))).collect::<Vec<Client>>();
+    
+                 Ok(Clients(filtered_clients))
+            }
+            Err(error) => {
+                 Err(RegistrationClientError::RequestError { error: "OIDC client list request failed!".to_string(), cause: Box::new(error) })
+            }
+        }
+    }
+
+    pub async fn delete_client(&self, resource_id: Id) -> Result<Clients, RegistrationClientError> {
+        let access_token = self.inner.get_token().await
+            .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), cause: Box::new(error) })?;
+
+        let clients = self.list_clients(resource_id).await?;
+        
+        let mut failed_deletion_clients = Vec::new();
+        
+        for client in clients.clone().0 {
+            let delete_client_url = request_uri(&self.config.issuer_remote_url, Some(client.client_id.to_string()))?;
+
+            let request = create_http_request_client(&access_token, &delete_client_url, http::Method::DELETE)?;
+
+            let response = self.inner.reqwest_client.async_http_client(request)
+                .await;
+
+            if response.is_err() {
+                failed_deletion_clients.push(client.client_id);
+            }
+        }
+        
+        if failed_deletion_clients.is_empty() {
+            Ok(clients)
+        } else {
+            Err( RegistrationClientError::ClientDeletionError { client_ids: failed_deletion_clients.join(",") } )
+        }
+    }
+}
+
+fn request_uri(issuer_remote_url: &Url, client_id: Option<String>) -> Result<Url, RegistrationClientError> {
+    match client_id {
+        Some(client_id) => {
+            issuer_remote_url.join(format!("/admin/realms/opendut/clients/{}", client_id).as_str())
+                .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), cause: Box::new(error) })
+        }
+        None => {
+            issuer_remote_url.join("/admin/realms/opendut/clients/")
+                .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), cause: Box::new(error) })
+        }
+    }
+}
+
+fn create_http_request_client(access_token: &Token, issuer_remote_url: &Url, http_method: http::Method) -> Result<HttpRequest, RegistrationClientError> {
+    let mut headers = HeaderMap::new();
+    let bearer_header = format!("Bearer {}", access_token);
+    let access_token_value = HeaderValue::from_str(&bearer_header)
+        .map_err(|error| RegistrationClientError::InvalidConfiguration { error: error.to_string() })?;
+    headers.insert(http::header::AUTHORIZATION, access_token_value);
+
+    Ok(HttpRequest {
+        method: http_method,
+        url: issuer_remote_url.clone(),
+        headers,
+        body: vec![],
+    })
+}
+
+#[derive(Deserialize, Clone)]
+pub struct Clients(pub Vec<Client>);
+
+#[derive(Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Client {
+    pub client_id: String,
+    base_url: Option<String>,
 }
