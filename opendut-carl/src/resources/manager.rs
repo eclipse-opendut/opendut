@@ -54,27 +54,26 @@ impl ResourcesManager {
         let mut state = self.state.write().await;
         f(&mut state.resources)
     }
+}
 
-    pub async fn contains<R>(&self, id: impl IntoId<R>) -> bool
-    where R: Any  + Send + Sync + Clone {
+#[cfg(test)]
+impl ResourcesManager {
+    async fn contains<R>(&self, id: impl IntoId<R>) -> bool
+    where R: Any + Send + Sync + Clone {
         let state = self.state.read().await;
         state.resources.contains(id)
     }
 
-    pub async fn is_empty(&self) -> bool {
+    async fn is_empty(&self) -> bool {
         let state = self.state.read().await;
         state.resources.is_empty()
-    }
-
-    pub async fn is_not_empty(&self) -> bool {
-        let state = self.state.read().await;
-        state.resources.is_not_empty()
     }
 }
 
 #[cfg(test)]
 mod test {
     use std::collections::HashSet;
+    use std::ops::Not;
     use std::vec;
 
     use googletest::prelude::*;
@@ -135,20 +134,18 @@ mod test {
             devices: HashSet::new(),
         };
 
-        assert_that!(testee.is_empty().await, eq(true));
-        assert_that!(testee.is_not_empty().await, eq(false));
+        assert!(testee.is_empty().await);
 
         testee.insert(peer_resource_id, Clone::clone(&peer)).await;
 
-        assert_that!(testee.is_empty().await, eq(false));
-        assert_that!(testee.is_not_empty().await, eq(true));
+        assert!(testee.is_empty().await.not());
 
         testee.insert(cluster_resource_id, Clone::clone(&cluster_configuration)).await;
 
         assert_that!(testee.get::<PeerDescriptor>(peer_resource_id).await, some(eq(Clone::clone(&peer))));
         assert_that!(testee.get::<ClusterConfiguration>(cluster_resource_id).await, some(eq(Clone::clone(&cluster_configuration))));
 
-        assert_that!(testee.contains::<PeerDescriptor>(peer_resource_id).await, eq(true));
+        assert!(testee.contains::<PeerDescriptor>(peer_resource_id).await);
 
         assert_that!(testee.get::<PeerDescriptor>(PeerId::random()).await, none());
 

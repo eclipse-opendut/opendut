@@ -80,23 +80,6 @@ impl Resources {
         IterMut::new(self.column_mut_of::<R>().map(HashMap::values_mut))
     }
 
-    pub fn contains<R>(&self, id: impl IntoId<R>) -> bool
-    where R: Any + Send + Sync {
-        if let Some(column) = self.column_of::<R>() {
-            column.contains_key(&id.into_id())
-        }
-        else {
-            false
-        }
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.storage.is_empty()
-    }
-
-    pub fn is_not_empty(&self) -> bool {
-        !self.is_empty()
-    }
 
     fn column_of<R>(&self) -> Option<&HashMap<Id, Box<dyn Any + Send + Sync>>>
     where R: Any + Send + Sync {
@@ -106,6 +89,23 @@ impl Resources {
     fn column_mut_of<R>(&mut self) -> Option<&mut HashMap<Id, Box<dyn Any + Send + Sync>>>
         where R: Any + Send + Sync {
         self.storage.get_mut(&TypeId::of::<R>())
+    }
+}
+
+#[cfg(test)]
+impl Resources {
+    pub(super) fn contains<R>(&self, id: impl IntoId<R>) -> bool
+    where R: Any + Send + Sync {
+        if let Some(column) = self.column_of::<R>() {
+            column.contains_key(&id.into_id())
+        }
+        else {
+            false
+        }
+    }
+
+    pub(super) fn is_empty(&self) -> bool {
+        self.storage.is_empty()
     }
 }
 
