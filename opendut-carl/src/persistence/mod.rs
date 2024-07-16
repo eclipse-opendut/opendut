@@ -1,2 +1,2 @@
 mod database;
-mod model;
+pub mod model;

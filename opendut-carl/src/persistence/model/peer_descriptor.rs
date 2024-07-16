@@ -3,12 +3,12 @@ use uuid::Uuid;
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
 use opendut_types::peer::executor::ExecutorDescriptors;
 
-use crate::persistence::model::{Persistable, PersistableConversionError};
+use super::{Persistable, PersistableConversionError};
 
 #[derive(diesel::Queryable, diesel::Selectable, diesel::Insertable)]
 #[diesel(table_name = crate::persistence::database::schema::peer)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-struct PersistablePeerDescriptor {
+pub struct PersistablePeerDescriptor {
     pub id: Uuid,
     pub name: String,
     pub location: Option<String>,
