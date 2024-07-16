@@ -18,7 +18,7 @@ impl Persistable<PeerDescriptor> for PersistablePeerDescriptor {}
 impl From<PeerDescriptor> for PersistablePeerDescriptor {
     fn from(value: PeerDescriptor) -> Self {
         Self {
-            id: value.id.0,
+            id: value.id.uuid,
             name: value.name.value(),
             location: value.location.map(|location| location.value())
         }

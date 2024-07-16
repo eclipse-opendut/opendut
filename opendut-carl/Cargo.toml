@@ -30,9 +30,11 @@ indoc = { workspace = true }
 itertools = { workspace = true }
 jsonwebtoken = { workspace = true}
 openidconnect = { workspace = true }
+openssl-sys = { workspace = true }
 opentelemetry = { workspace = true }
 opentelemetry_sdk = { workspace = true }
 pem = { workspace = true, features = ["serde"]}
+pq-sys = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true}
