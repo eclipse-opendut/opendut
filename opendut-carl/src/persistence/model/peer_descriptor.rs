@@ -5,7 +5,7 @@ use opendut_types::peer::executor::ExecutorDescriptors;
 
 use super::{Persistable, PersistableConversionError};
 
-#[derive(diesel::Queryable, diesel::Selectable, diesel::Insertable)]
+#[derive(Debug, diesel::Queryable, diesel::Selectable, diesel::Insertable)]
 #[diesel(table_name = crate::persistence::database::schema::peer)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct PersistablePeerDescriptor {
@@ -13,7 +13,11 @@ pub struct PersistablePeerDescriptor {
     pub name: String,
     pub location: Option<String>,
 }
-impl Persistable<PeerDescriptor> for PersistablePeerDescriptor {}
+impl Persistable<PeerDescriptor> for PersistablePeerDescriptor {
+    fn insert(&self) -> Option<Self> {
+        todo!()
+    }
+}
 
 impl From<PeerDescriptor> for PersistablePeerDescriptor {
     fn from(value: PeerDescriptor) -> Self {

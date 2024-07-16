@@ -1,5 +1,5 @@
 use std::any::Any;
-
+use std::fmt::Debug;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment};
 use opendut_types::peer::configuration::{PeerConfiguration, PeerConfiguration2};
 use opendut_types::peer::PeerDescriptor;
@@ -15,9 +15,10 @@ use crate::persistence::model::peer_state::PersistablePeerState;
 use crate::persistence::model::PersistableConversionError;
 
 pub trait Resource: Any + Send + Sync
++ Debug
 + TryFrom<
-    <Self as Resource>::Persistable,
-    Error=PersistableConversionError<<Self as Resource>::Persistable, Self>
+    Self::Persistable,
+    Error=PersistableConversionError<Self::Persistable, Self>
 > {
     type Persistable: crate::persistence::model::Persistable<Self>;
 }

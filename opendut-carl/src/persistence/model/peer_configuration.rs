@@ -1,13 +1,17 @@
 use opendut_types::peer::configuration::PeerConfiguration;
 use crate::persistence::model::{Persistable, PersistableConversionError};
 
-// #[derive(diesel::Queryable, diesel::Selectable, diesel::Insertable)]
+#[derive(Debug)] //diesel::Queryable, diesel::Selectable, diesel::Insertable)]
 // #[diesel(table_name = crate::persistence::database::schema::)] //TODO create schema
 // #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct PersistablePeerConfiguration {
     //TODO
 }
-impl Persistable<PeerConfiguration> for PersistablePeerConfiguration {}
+impl Persistable<PeerConfiguration> for PersistablePeerConfiguration {
+    fn insert(&self) -> Option<Self> {
+        todo!()
+    }
+}
 
 impl From<PeerConfiguration> for PersistablePeerConfiguration {
     fn from(value: PeerConfiguration) -> Self {

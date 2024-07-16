@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::marker::PhantomData;
 
 pub mod cluster_configuration;
@@ -8,10 +9,12 @@ pub mod peer_configuration2;
 pub mod peer_descriptor;
 pub mod peer_state;
 
-pub trait Persistable<Model>: From<Model>
+pub trait Persistable<Model>: From<Model> + Debug
 where
     Model: TryFrom<Self, Error=PersistableConversionError<Self, Model>>
-{ }
+{
+    fn insert(&self) -> Option<Self>; //TODO
+}
 
 #[derive(Debug, thiserror::Error)]
 #[error("Could not convert persistable from `{}` to `{}`:\n  {cause}", std::any::type_name::<From>(), std::any::type_name::<To>())]
