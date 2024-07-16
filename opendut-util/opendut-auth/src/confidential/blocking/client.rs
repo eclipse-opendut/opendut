@@ -1,4 +1,5 @@
 use std::fmt::Formatter;
+use std::ops::{Sub};
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
@@ -16,6 +17,7 @@ use tracing::debug;
 use crate::confidential::config::{ConfidentialClientConfig, ConfidentialClientConfigData};
 use crate::confidential::blocking::reqwest_client::OidcBlockingReqwestClient;
 use crate::confidential::error::{ConfidentialClientError, WrappedRequestTokenError};
+use crate::TOKEN_GRACE_PERIOD;
 
 #[derive(Debug)]
 pub struct ConfidentialClient {
@@ -171,7 +173,7 @@ impl ConfidentialClient {
                 self.fetch_token()?
             }
             Some(token) => {
-                if Utc::now().naive_utc().lt(&token.expires_in) {
+                if Utc::now().naive_utc().lt(&token.expires_in.sub(TOKEN_GRACE_PERIOD)) {
                     Token { value: token.access_token.secret().to_string() }
                 } else {
                     self.fetch_token()?

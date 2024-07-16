@@ -1,6 +1,8 @@
+use std::ops::Sub;
 pub use leptos_oidc::Auth;
 use tonic::service::Interceptor;
 use tonic::Status;
+use crate::TOKEN_GRACE_PERIOD;
 
 #[derive(Clone)]
 pub struct AuthInterceptor {
@@ -18,7 +20,7 @@ impl Interceptor for AuthInterceptor {
         if let Some(auth) = &self.auth {
             if let Some(Some(token_storage)) = auth.ok() {
                 let now = chrono::Utc::now().naive_utc();
-                if now.gt(&token_storage.expires_in) {
+                if now.gt(&token_storage.expires_in.sub(TOKEN_GRACE_PERIOD)) {
                     tracing::debug!("Token expired. Refreshing.");
                     auth.refresh_token();
                 }
