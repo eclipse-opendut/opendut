@@ -18,19 +18,19 @@ use tower::{BoxError, make::Shared, ServiceExt, steer::Steer};
 use tower_http::services::{ServeDir, ServeFile};
 use tracing::{debug, info, warn};
 use uuid::Uuid;
+
 use opendut_auth::confidential::pem::PemFromConfig;
 use opendut_auth::registration::client::{RegistrationClient, RegistrationClientRef};
 use opendut_auth::registration::resources::ResourceHomeUrl;
-
-use opendut_util::{telemetry, project};
+use opendut_util::{project, telemetry};
+use opendut_util::settings::LoadedConfig;
 use opendut_util::telemetry::logging::LoggingConfig;
 use opendut_util::telemetry::opentelemetry_types::Opentelemetry;
-use opendut_util::settings::LoadedConfig;
-use crate::auth::grpc_auth_layer::{GrpcAuthenticationLayer};
-use crate::auth::json_web_key::JwkCacheValue;
 use util::in_memory_cache::CustomInMemoryCache;
-use crate::cluster::manager::{ClusterManager, ClusterManagerOptions, ClusterManagerRef};
 
+use crate::auth::grpc_auth_layer::GrpcAuthenticationLayer;
+use crate::auth::json_web_key::JwkCacheValue;
+use crate::cluster::manager::{ClusterManager, ClusterManagerOptions, ClusterManagerRef};
 use crate::grpc::{ClusterManagerFacade, MetadataProviderFacade, PeerManagerFacade, PeerManagerFacadeOptions, PeerMessagingBrokerFacade};
 use crate::http::router;
 use crate::http::state::{CarlInstallDirectory, HttpState, LeaConfig, LeaIdentityProviderConfig};
@@ -107,7 +107,7 @@ pub async fn create(settings: LoadedConfig) -> Result<()> {
     let vpn = vpn::create(&settings.config)
         .context("Error while parsing VPN configuration.")?;
 
-    let resources_storage_options = ResourcesStorageOptions::Memory; //TODO load from config
+    let resources_storage_options = ResourcesStorageOptions::load(&settings.config)?;
     let resources_manager = ResourcesManager::create(resources_storage_options)
         .context("Creating ResourcesManager failed")?;
     metrics::initialize_metrics_collection(Arc::clone(&resources_manager));

@@ -27,6 +27,10 @@ client.id = "opendut-lea-client"
 issuer.url = "https://keycloak/realms/opendut/"
 scopes = "openid,profile,email"
 
+[persistence]
+enabled = false
+database.url = ""
+
 [peer]
 disconnect.timeout.ms = 30000
 can.server_port_range_start = 10000

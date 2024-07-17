@@ -41,7 +41,17 @@ pub enum ResourcesStorageOptions {
 }
 impl ResourcesStorageOptions {
     pub fn load(config: &config::Config) -> Result<Self, opendut_util::settings::LoadError> {
-        todo!()
+        let persistence_enabled = config.get_bool("persistence.enabled")?;
+
+        if persistence_enabled {
+            let url_field = "persistence.database.url";
+            let url = config.get_string(url_field)?;
+            let url = Url::parse(&url)
+                .map_err(|cause| opendut_util::settings::LoadError::Parse { field: url_field.to_string(), source: Box::new(cause) })?;
+            Ok(ResourcesStorageOptions::Database { url })
+        } else {
+            Ok(ResourcesStorageOptions::Memory)
+        }
     }
 }
 

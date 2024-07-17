@@ -11,13 +11,15 @@ use crate::project;
 #[derive(thiserror::Error, Debug)]
 pub enum LoadError {
     #[error("Failed to load config: {0}")]
-    ConfigError(#[from] ConfigError)
+    Config(#[from] ConfigError),
+    #[error("Failed to parse field '{field}': {source}")]
+    Parse { field: String, source: Box<dyn std::error::Error + Send + Sync> },
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum WriteError {
     #[error("Failed to write config: {0}")]
-    ConfigError(#[from] ConfigError)
+    Config(#[from] ConfigError)
 }
 
 #[derive(Clone)]
