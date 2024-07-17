@@ -104,3 +104,9 @@ pub enum BCMFlags {
     RxRtrFrame = 0x0400,*/
     CanFdFrame = 0x0800
 }
+
+#[cfg(target_pointer_width = "64")]
+pub type TimevalNum = i64;
+
+#[cfg(target_pointer_width = "32")]
+pub type TimevalNum = i32;

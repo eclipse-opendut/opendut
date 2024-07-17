@@ -159,8 +159,8 @@ pub fn create_time_can_frame_structure(count: u32, ival1_tv_sec: u64, ival1_tv_u
         frame_tx_behavior: frame_tx_behavior,
         data_vector: copy_data_vector,
         count: count,
-        ival1: timeval { tv_sec: ival1_tv_sec as i64, tv_usec: ival1_tv_usec as i64 },
-        ival2: timeval { tv_sec: ival2_tv_sec as i64, tv_usec: ival2_tv_usec as i64 },
+        ival1: timeval { tv_sec: ival1_tv_sec as TimevalNum, tv_usec: ival1_tv_usec as TimevalNum},
+        ival2: timeval { tv_sec: ival2_tv_sec as TimevalNum, tv_usec: ival2_tv_usec as TimevalNum},
     }
 }
 
@@ -179,8 +179,8 @@ pub fn create_bcm_head(count: u32, ival1_tv_sec: u64, ival1_tv_usec: u64
         opcode: OPCODE::TxSetup as u32,
         flags: BCMFlags::SetTimer as u32 | BCMFlags::StartTimer as u32 | canfd_flag,
         count: count,
-        ival1: timeval { tv_sec: ival1_tv_sec as i64, tv_usec: ival1_tv_usec as i64 },
-        ival2: timeval { tv_sec: ival2_tv_sec as i64, tv_usec: ival2_tv_usec as i64 },
+        ival1: timeval { tv_sec: ival1_tv_sec as TimevalNum, tv_usec: ival1_tv_usec as TimevalNum },
+        ival2: timeval { tv_sec: ival2_tv_sec as TimevalNum, tv_usec: ival2_tv_usec as TimevalNum },
         can_id: can_id,
         nframes: frames.len() as u32,
     };
