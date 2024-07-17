@@ -108,7 +108,8 @@ pub async fn create(settings: LoadedConfig) -> Result<()> {
         .context("Error while parsing VPN configuration.")?;
 
     let resources_storage_options = ResourcesStorageOptions::Memory; //TODO load from config
-    let resources_manager = ResourcesManager::new(resources_storage_options);
+    let resources_manager = ResourcesManager::create(resources_storage_options)
+        .context("Creating ResourcesManager failed")?;
     metrics::initialize_metrics_collection(Arc::clone(&resources_manager));
 
     let peer_messaging_broker = PeerMessagingBroker::new(

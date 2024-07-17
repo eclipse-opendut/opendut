@@ -1,5 +1,5 @@
 use opendut_types::cluster::ClusterDeployment;
-
+use crate::persistence::database::Db;
 use super::{Persistable, PersistableConversionError};
 
 #[derive(Debug)] //diesel::Queryable, diesel::Selectable, diesel::Insertable)]
@@ -9,7 +9,7 @@ pub struct PersistableClusterDeployment {
     //TODO
 }
 impl Persistable<ClusterDeployment> for PersistableClusterDeployment {
-    fn insert(&self) -> Option<Self> {
+    fn insert(&self, db: Db) -> Option<Self> {
         todo!()
     }
 }

@@ -20,9 +20,9 @@ pub struct Resources {
 }
 
 impl Resources {
-    pub fn new(storage_options: ResourcesStorageOptions) -> Self {
-        let storage = ResourcesStorage::new(storage_options);
-        Self { storage }
+    pub fn connect(storage_options: ResourcesStorageOptions) -> Result<Self, storage::ConnectionError> {
+        let storage = ResourcesStorage::connect(storage_options)?;
+        Ok(Self { storage })
     }
 
     pub fn insert<R>(&mut self, id: impl IntoId<R>, resource: R)

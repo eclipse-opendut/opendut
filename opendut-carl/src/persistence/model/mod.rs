@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 use std::marker::PhantomData;
+use crate::persistence::database::Db;
 
 pub mod cluster_configuration;
 pub mod cluster_deployment;
@@ -13,7 +14,7 @@ pub trait Persistable<Model>: From<Model> + Debug
 where
     Model: TryFrom<Self, Error=PersistableConversionError<Self, Model>>
 {
-    fn insert(&self) -> Option<Self>; //TODO
+    fn insert(&self, db: Db) -> Option<Self>;
 }
 
 #[derive(Debug, thiserror::Error)]

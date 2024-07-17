@@ -1,4 +1,5 @@
 use opendut_types::peer::state::PeerState;
+use crate::persistence::database::Db;
 use crate::persistence::model::{Persistable, PersistableConversionError};
 
 #[derive(Debug)] //diesel::Queryable, diesel::Selectable, diesel::Insertable)]
@@ -8,7 +9,7 @@ pub struct PersistablePeerState {
     //TODO
 }
 impl Persistable<PeerState> for PersistablePeerState {
-    fn insert(&self) -> Option<Self> {
+    fn insert(&self, db: Db) -> Option<Self> {
         todo!()
     }
 }

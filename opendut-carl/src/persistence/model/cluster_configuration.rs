@@ -1,5 +1,5 @@
 use opendut_types::cluster::ClusterConfiguration;
-
+use crate::persistence::database::Db;
 use super::{Persistable, PersistableConversionError};
 
 #[derive(Debug)] //diesel::Queryable, diesel::Selectable, diesel::Insertable)]
@@ -9,7 +9,7 @@ pub struct PersistableClusterConfiguration {
     //TODO
 }
 impl Persistable<ClusterConfiguration> for PersistableClusterConfiguration {
-    fn insert(&self) -> Option<Self> {
+    fn insert(&self, db: Db) -> Option<Self> {
         todo!()
     }
 }

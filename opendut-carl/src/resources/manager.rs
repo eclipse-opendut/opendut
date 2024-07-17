@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use tokio::sync::RwLock;
 
-use crate::resources::{IntoId, Resource, Resources};
+use crate::resources::{IntoId, Resource, Resources, storage};
 use crate::resources::storage::ResourcesStorageOptions;
 
 pub type ResourcesManagerRef = Arc<ResourcesManager>;
@@ -17,12 +17,12 @@ struct State {
 
 impl ResourcesManager {
 
-    pub fn new(storage_options: ResourcesStorageOptions) -> ResourcesManagerRef {
-        Arc::new(Self {
-            state: RwLock::new(State {
-                resources: Resources::new(storage_options),
-            })
-        })
+    pub fn create(storage_options: ResourcesStorageOptions) -> Result<ResourcesManagerRef, storage::ConnectionError> {
+        let resources = Resources::connect(storage_options)?;
+
+        Ok(Arc::new(Self {
+            state: RwLock::new(State { resources })
+        }))
     }
 
     pub async fn insert<R>(&self, id: impl IntoId<R>, resource: R)
@@ -59,10 +59,11 @@ impl ResourcesManager {
 #[cfg(test)]
 impl ResourcesManager {
     pub fn new_in_memory() -> ResourcesManagerRef {
+        let resources = Resources::connect(ResourcesStorageOptions::Memory)
+            .expect("Creating in-memory storage for tests should not fail");
+
         Arc::new(Self {
-            state: RwLock::new(State {
-                resources: Resources::new(ResourcesStorageOptions::Memory),
-            })
+            state: RwLock::new(State { resources })
         })
     }
 

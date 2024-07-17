@@ -1,14 +1,25 @@
+use diesel::ConnectionError;
+use url::Url;
+use crate::persistence::database::Db;
 use crate::persistence::model::Persistable;
 use crate::resources::{IntoId, Iter, IterMut, Update};
 use crate::resources::storage::{Resource, ResourcesStorageApi};
 
-pub struct ResourcesDatabaseStorage;
+pub struct ResourcesDatabaseStorage {
+    db: Db,
+}
+impl ResourcesDatabaseStorage {
+    pub fn connect(url: &Url) -> Result<Self, ConnectionError> {
+        let db = crate::persistence::database::connect(url)?;
+        Ok(Self { db })
+    }
+}
 impl ResourcesStorageApi for ResourcesDatabaseStorage {
     fn insert<R>(&mut self, id: impl IntoId<R>, resource: R) -> Option<R>
     where R: Resource {
         let persistable = R::Persistable::from(resource);
 
-        let result = persistable.insert(); //TODO pass client, id, etc.?
+        let result = persistable.insert(self.db.clone());
 
         result.map(R::try_from)
             .transpose()
