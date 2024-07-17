@@ -1,11 +1,15 @@
 use std::ops::DerefMut;
-use diesel::RunQueryDsl;
+
+use diesel::{ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl, SelectableHelper};
 use uuid::Uuid;
 
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
 use opendut_types::peer::executor::ExecutorDescriptors;
-use crate::persistence::database::schema;
+use opendut_types::resources::Id;
+
 use crate::persistence::database::Db;
+use crate::persistence::database::schema;
+
 use super::{Persistable, PersistableConversionError};
 
 #[derive(Debug, diesel::Queryable, diesel::Selectable, diesel::Insertable)]
@@ -25,6 +29,15 @@ impl Persistable<PeerDescriptor> for PersistablePeerDescriptor {
             .expect("Error inserting PeerDescriptor into database"); //TODO don't expect()
 
         None //TODO
+    }
+
+    fn get(id: &Id, db: Db) -> Option<Self> {
+        schema::peer::table
+            .filter(schema::peer::id.eq(id.value()))
+            .select(PersistablePeerDescriptor::as_select())
+            .first(db.lock().unwrap().deref_mut()) //TODO don't unwrap()
+            .optional()
+            .expect("Error getting PeerDescriptor from database") //TODO don't expect()
     }
 }
 

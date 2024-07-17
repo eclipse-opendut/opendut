@@ -1,3 +1,4 @@
+use opendut_types::resources::Id;
 use opendut_types::topology::DeviceDescriptor;
 use crate::persistence::database::Db;
 use crate::persistence::model::{Persistable, PersistableConversionError};
@@ -10,6 +11,10 @@ pub struct PersistableDeviceDescriptor {
 }
 impl Persistable<DeviceDescriptor> for PersistableDeviceDescriptor {
     fn insert(&self, db: Db) -> Option<Self> {
+        todo!()
+    }
+
+    fn get(id: &Id, db: Db) -> Option<Self> {
         todo!()
     }
 }

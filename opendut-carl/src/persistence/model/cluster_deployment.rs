@@ -1,4 +1,5 @@
 use opendut_types::cluster::ClusterDeployment;
+use opendut_types::resources::Id;
 use crate::persistence::database::Db;
 use super::{Persistable, PersistableConversionError};
 
@@ -10,6 +11,10 @@ pub struct PersistableClusterDeployment {
 }
 impl Persistable<ClusterDeployment> for PersistableClusterDeployment {
     fn insert(&self, db: Db) -> Option<Self> {
+        todo!()
+    }
+
+    fn get(id: &Id, db: Db) -> Option<Self> {
         todo!()
     }
 }

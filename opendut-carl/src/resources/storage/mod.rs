@@ -45,9 +45,13 @@ impl ResourcesStorageOptions {
 
         if persistence_enabled {
             let url_field = "persistence.database.url";
-            let url = config.get_string(url_field)?;
-            let url = Url::parse(&url)
-                .map_err(|cause| opendut_util::settings::LoadError::Parse { field: url_field.to_string(), source: Box::new(cause) })?;
+            let url_value = config.get_string(url_field)?;
+            let url = Url::parse(&url_value)
+                .map_err(|cause| opendut_util::settings::LoadError::Parse {
+                    field: url_field.to_string(),
+                    value: url_value,
+                    source: Box::new(cause)
+                })?;
             Ok(ResourcesStorageOptions::Database { url })
         } else {
             Ok(ResourcesStorageOptions::Memory)

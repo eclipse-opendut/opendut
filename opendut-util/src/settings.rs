@@ -12,8 +12,8 @@ use crate::project;
 pub enum LoadError {
     #[error("Failed to load config: {0}")]
     Config(#[from] ConfigError),
-    #[error("Failed to parse field '{field}': {source}")]
-    Parse { field: String, source: Box<dyn std::error::Error + Send + Sync> },
+    #[error("Failed to parse field '{field}' with value '{value}'")]
+    Parse { field: String, value: String, #[source] source: Box<dyn std::error::Error + Send + Sync> },
 }
 
 #[derive(thiserror::Error, Debug)]

@@ -10,7 +10,7 @@ use crate::resources::storage::{ResourcesStorage, ResourcesStorageApi, Resources
 pub mod manager;
 pub mod ids;
 pub(crate) mod storage;
-mod resource;
+pub mod resource;
 
 use ids::IntoId;
 use resource::Resource;

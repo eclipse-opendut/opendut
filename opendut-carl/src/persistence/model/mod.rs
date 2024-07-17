@@ -1,6 +1,8 @@
 use std::fmt::Debug;
 use std::marker::PhantomData;
+use opendut_types::resources::Id;
 use crate::persistence::database::Db;
+use crate::resources::resource::Resource;
 
 pub mod cluster_configuration;
 pub mod cluster_deployment;
@@ -10,11 +12,13 @@ pub mod peer_configuration2;
 pub mod peer_descriptor;
 pub mod peer_state;
 
-pub trait Persistable<Model>: From<Model> + Debug
+pub trait Persistable<Model: Resource>: From<Model> + Debug
 where
     Model: TryFrom<Self, Error=PersistableConversionError<Self, Model>>
 {
     fn insert(&self, db: Db) -> Option<Self>;
+
+    fn get(id: &Id, db: Db) -> Option<Self>;
 }
 
 #[derive(Debug, thiserror::Error)]

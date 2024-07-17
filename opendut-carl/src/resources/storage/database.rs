@@ -23,7 +23,7 @@ impl ResourcesStorageApi for ResourcesDatabaseStorage {
 
         result.map(R::try_from)
             .transpose()
-            .unwrap_or_else(|_| panic!("Failed to insert resource into database: {persistable:?}"))
+            .unwrap_or_else(|_| panic!("Failed to insert resource into database: {persistable:?}")) //TODO don't unwrap()
     }
 
     fn update<R>(&mut self, id: impl IntoId<R>) -> Update<R>
@@ -38,7 +38,13 @@ impl ResourcesStorageApi for ResourcesDatabaseStorage {
 
     fn get<R>(&self, id: impl IntoId<R>) -> Option<R>
     where R: Resource + Clone {
-        todo!()
+        let id = id.into_id();
+
+        let result = R::Persistable::get(&id, self.db.clone());
+
+        result.map(R::try_from)
+            .transpose()
+            .unwrap_or_else(|_| panic!("Failed to get resource from database with id <{id:?}>.")) //TODO don't unwrap()
     }
 
     fn iter<R>(&self) -> Iter<R>

@@ -1,4 +1,5 @@
 use opendut_types::peer::configuration::PeerConfiguration;
+use opendut_types::resources::Id;
 use crate::persistence::database::Db;
 use crate::persistence::model::{Persistable, PersistableConversionError};
 
@@ -10,6 +11,10 @@ pub struct PersistablePeerConfiguration {
 }
 impl Persistable<PeerConfiguration> for PersistablePeerConfiguration {
     fn insert(&self, db: Db) -> Option<Self> {
+        todo!()
+    }
+
+    fn get(id: &Id, db: Db) -> Option<Self> {
         todo!()
     }
 }
