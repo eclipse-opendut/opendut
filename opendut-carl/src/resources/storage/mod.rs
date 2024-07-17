@@ -1,4 +1,5 @@
 use url::Url;
+use crate::persistence::database::ConnectError;
 use crate::resources::{IntoId, Iter, IterMut, Resource, Update};
 use crate::resources::storage::database::ResourcesDatabaseStorage;
 use crate::resources::storage::memory::ResourcesMemoryStorage;
@@ -15,7 +16,7 @@ impl ResourcesStorage {
         let storage = match options {
             ResourcesStorageOptions::Database { url } => {
                 let storage = ResourcesDatabaseStorage::connect(&url)
-                    .map_err(|cause| ConnectionError::Database { url, cause })?;
+                    .map_err(|cause| ConnectionError::Database { url, source: cause })?;
                 ResourcesStorage::Database(storage)
             }
             ResourcesStorageOptions::Memory => {
@@ -28,8 +29,8 @@ impl ResourcesStorage {
 
 #[derive(Debug, thiserror::Error)]
 pub enum ConnectionError {
-    #[error("Failed to connect to database at '{url}':\n  {cause}")]
-    Database { url: Url, cause: diesel::ConnectionError },
+    #[error("Failed to connect to database at '{url}'")]
+    Database { url: Url, #[source] source: ConnectError },
 }
 
 #[derive(Clone)]

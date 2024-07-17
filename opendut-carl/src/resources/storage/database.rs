@@ -1,6 +1,5 @@
-use diesel::ConnectionError;
 use url::Url;
-use crate::persistence::database::Db;
+use crate::persistence::database::{ConnectError, Db};
 use crate::persistence::model::Persistable;
 use crate::resources::{IntoId, Iter, IterMut, Update};
 use crate::resources::storage::{Resource, ResourcesStorageApi};
@@ -9,7 +8,7 @@ pub struct ResourcesDatabaseStorage {
     db: Db,
 }
 impl ResourcesDatabaseStorage {
-    pub fn connect(url: &Url) -> Result<Self, ConnectionError> {
+    pub fn connect(url: &Url) -> Result<Self, ConnectError> {
         let db = crate::persistence::database::connect(url)?;
         Ok(Self { db })
     }
