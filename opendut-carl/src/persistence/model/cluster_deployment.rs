@@ -24,10 +24,10 @@ impl From<ClusterDeployment> for PersistableClusterDeployment {
         todo!()
     }
 }
-impl TryFrom<PersistableClusterDeployment> for ClusterDeployment {
+impl TryInto<ClusterDeployment> for PersistableClusterDeployment {
     type Error = PersistableConversionError<PersistableClusterDeployment, ClusterDeployment>;
 
-    fn try_from(value: PersistableClusterDeployment) -> Result<Self, Self::Error> {
+    fn try_into(self) -> Result<ClusterDeployment, Self::Error> {
         todo!()
     }
 }

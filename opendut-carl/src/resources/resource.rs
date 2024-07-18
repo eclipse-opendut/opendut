@@ -12,14 +12,8 @@ use crate::persistence::model::peer_configuration2::PersistablePeerConfiguration
 use crate::persistence::model::peer_configuration::PersistablePeerConfiguration;
 use crate::persistence::model::peer_descriptor::PersistablePeerDescriptor;
 use crate::persistence::model::peer_state::PersistablePeerState;
-use crate::persistence::model::PersistableConversionError;
 
-pub trait Resource:
-Any + Send + Sync + Debug
-+ TryFrom<
-    Self::Persistable,
-    Error=PersistableConversionError<Self::Persistable, Self>
-> {
+pub trait Resource: Any + Send + Sync + Sized + Debug {
     type Persistable: crate::persistence::model::Persistable<Self>;
 }
 

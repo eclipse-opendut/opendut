@@ -20,7 +20,7 @@ impl ResourcesStorageApi for ResourcesDatabaseStorage {
 
         let result = persistable.insert(self.db.clone());
 
-        result.map(R::try_from)
+        result.map(R::Persistable::try_into)
             .transpose()
             .unwrap_or_else(|_| panic!("Failed to insert resource into database: {persistable:?}")) //TODO don't unwrap()
     }
@@ -41,7 +41,7 @@ impl ResourcesStorageApi for ResourcesDatabaseStorage {
 
         let result = R::Persistable::get(&id, self.db.clone());
 
-        result.map(R::try_from)
+        result.map(R::Persistable::try_into)
             .transpose()
             .unwrap_or_else(|_| panic!("Failed to get resource from database with id <{id:?}>.")) //TODO don't unwrap()
     }

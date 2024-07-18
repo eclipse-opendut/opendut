@@ -24,10 +24,10 @@ impl From<PeerState> for PersistablePeerState {
         todo!()
     }
 }
-impl TryFrom<PersistablePeerState> for PeerState {
+impl TryInto<PeerState> for PersistablePeerState {
     type Error = PersistableConversionError<PersistablePeerState, PeerState>;
 
-    fn try_from(value: PersistablePeerState) -> Result<Self, Self::Error> {
+    fn try_into(self) -> Result<PeerState, Self::Error> {
         todo!()
     }
 }

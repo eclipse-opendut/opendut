@@ -12,9 +12,12 @@ pub mod peer_configuration2;
 pub mod peer_descriptor;
 pub mod peer_state;
 
-pub trait Persistable<Model: Resource>: From<Model> + Debug
+pub trait Persistable<R>
 where
-    Model: TryFrom<Self, Error=PersistableConversionError<Self, Model>>
+    R: Resource,
+    Self: Debug,
+    Self: From<R>,
+    Self: TryInto<R, Error=PersistableConversionError<Self, R>>,
 {
     fn insert(&self, db: Db) -> Option<Self>;
 

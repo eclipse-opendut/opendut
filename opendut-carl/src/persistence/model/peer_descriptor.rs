@@ -50,21 +50,21 @@ impl From<PeerDescriptor> for PersistablePeerDescriptor {
         }
     }
 }
-impl TryFrom<PersistablePeerDescriptor> for PeerDescriptor {
+impl TryInto<PeerDescriptor> for PersistablePeerDescriptor {
     type Error = PersistableConversionError<PersistablePeerDescriptor, PeerDescriptor>;
 
-    fn try_from(value: PersistablePeerDescriptor) -> Result<Self, Self::Error> {
+    fn try_into(self) -> Result<PeerDescriptor, Self::Error> {
 
-        let name = PeerName::try_from(value.name)
+        let name = PeerName::try_from(self.name)
             .map_err(|cause| PersistableConversionError::new(Box::new(cause)))?;
 
-        let location = value.location
+        let location = self.location
             .map(PeerLocation::try_from)
             .transpose()
             .map_err(|cause| PersistableConversionError::new(Box::new(cause)))?;
 
-        Ok(Self {
-            id: PeerId::from(value.id),
+        Ok(PeerDescriptor {
+            id: PeerId::from(self.id),
             name,
             location,
             network: Default::default(), //TODO

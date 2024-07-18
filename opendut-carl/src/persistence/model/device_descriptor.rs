@@ -24,10 +24,10 @@ impl From<DeviceDescriptor> for PersistableDeviceDescriptor {
         todo!()
     }
 }
-impl TryFrom<PersistableDeviceDescriptor> for DeviceDescriptor {
+impl TryInto<DeviceDescriptor> for PersistableDeviceDescriptor {
     type Error = PersistableConversionError<PersistableDeviceDescriptor, DeviceDescriptor>;
 
-    fn try_from(value: PersistableDeviceDescriptor) -> Result<Self, Self::Error> {
+    fn try_into(self) -> Result<DeviceDescriptor, Self::Error> {
         todo!()
     }
 }
