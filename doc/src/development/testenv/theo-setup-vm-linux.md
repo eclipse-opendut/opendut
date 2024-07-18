@@ -7,8 +7,6 @@ The virtual machine itself has the IP address: `192.168.56.10`.
 The docker network has the IP subnet: `192.168.32.0/24`.
 Make sure those network addresses are not occupied or in conflict with other networks accessible from your machine.
 
-![OpenDuT-VM](..%2F..%2F..%2F..%2Fresources%2Fdiagrams%2Fopendut-vm-user.drawio.svg)
-
 ## Requirements
 
 * Install Vagrant
