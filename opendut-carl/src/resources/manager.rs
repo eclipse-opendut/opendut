@@ -25,10 +25,10 @@ impl ResourcesManager {
         })
     }
 
-    pub async fn insert<R>(&self, id: impl IntoId<R>, resource: R) -> Option<R>
+    pub async fn insert<R>(&self, id: impl IntoId<R>, resource: R)
     where R: Any  + Send + Sync {
         let mut state = self.state.write().await;
-        state.resources.insert(id, resource)
+        state.resources.insert(id, resource);
     }
 
     pub async fn remove<R>(&self, id: impl IntoId<R>) -> Option<R>

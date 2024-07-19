@@ -19,17 +19,12 @@ pub struct Resources {
 
 impl Resources {
 
-    pub fn insert<R>(&mut self, id: impl IntoId<R>, resource: R) -> Option<R>
+    pub fn insert<R>(&mut self, id: impl IntoId<R>, resource: R)
     where R: Any + Send + Sync {
         let column = self.storage
             .entry(TypeId::of::<R>())
             .or_default();
-        column.insert(id.into_id(), Box::new(resource))
-            .and_then(|old_value| old_value
-                .downcast()
-                .map(|value| *value)
-                .ok()
-            )
+        column.insert(id.into_id(), Box::new(resource));
     }
 
     pub fn update<R>(&mut self, id: impl IntoId<R>) -> Update<R>
