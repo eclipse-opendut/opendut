@@ -12,7 +12,7 @@ use url::Url;
 use opendut_types::resources::Id;
 use opendut_types::util::net::{ClientCredentials, ClientId, ClientSecret};
 
-use crate::confidential::client::{ConfidentialClient, ConfidentialClientRef, Token};
+use crate::confidential::client::{ConfidentialClient, ConfidentialClientRef};
 use crate::registration::config::RegistrationClientConfig;
 use crate::registration::error::WrappedClientRegistrationError;
 
@@ -138,18 +138,15 @@ impl RegistrationClient {
     }
     
     pub async fn list_clients(&self, resource_id: Id) -> Result<Clients, RegistrationClientError> {
-        let access_token = self.inner.get_token().await
-            .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), cause: Box::new(error) })?;
-
-        let issuer_remote_url = request_uri(&self.config.issuer_remote_url, None)?;
-        let request = create_http_request_client(&access_token, &issuer_remote_url, http::Method::GET)?;
+        let issuer_remote_url = create_request_uri(&self.config.issuer_remote_url, None)?;
+        let request = self.create_http_request_with_auth_token(&issuer_remote_url, http::Method::GET).await?;
         
         let response = self.inner.reqwest_client.async_http_client(request)
             .await;
         match response { 
             Ok(response) => {
                  let clients: Clients = serde_json::from_slice(&response.body).unwrap();
-                 let filtered_clients = clients.0.into_iter().filter(|client| client.base_url.clone().is_some_and(|url| url.contains(&resource_id.value().to_string()))).collect::<Vec<Client>>();
+                 let filtered_clients = clients.value().into_iter().filter(|client| client.base_url.clone().is_some_and(|url| url.contains(&resource_id.value().to_string()))).collect::<Vec<Client>>();
     
                  Ok(Clients(filtered_clients))
             }
@@ -160,17 +157,14 @@ impl RegistrationClient {
     }
 
     pub async fn delete_client(&self, resource_id: Id) -> Result<Clients, RegistrationClientError> {
-        let access_token = self.inner.get_token().await
-            .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), cause: Box::new(error) })?;
-
         let clients = self.list_clients(resource_id).await?;
         
         let mut failed_deletion_clients = Vec::new();
         
-        for client in clients.clone().0 {
-            let delete_client_url = request_uri(&self.config.issuer_remote_url, Some(client.client_id.to_string()))?;
+        for client in clients.value() {
+            let delete_client_url = create_request_uri(&self.config.issuer_remote_url, Some(client.client_id.to_string()))?;
 
-            let request = create_http_request_client(&access_token, &delete_client_url, http::Method::DELETE)?;
+            let request = self.create_http_request_with_auth_token(&delete_client_url, http::Method::DELETE).await?;
 
             let response = self.inner.reqwest_client.async_http_client(request)
                 .await;
@@ -186,9 +180,26 @@ impl RegistrationClient {
             Err( RegistrationClientError::ClientDeletionError { client_ids: failed_deletion_clients.join(",") } )
         }
     }
+
+    async fn create_http_request_with_auth_token(&self, issuer_remote_url: &Url, http_method: http::Method) -> Result<HttpRequest, RegistrationClientError> {
+        let mut headers = HeaderMap::new();
+        let access_token = self.inner.get_token().await
+            .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), cause: Box::new(error) })?;
+        let bearer_header = format!("Bearer {}", access_token);
+        let access_token_value = HeaderValue::from_str(&bearer_header)
+            .map_err(|error| RegistrationClientError::InvalidConfiguration { error: error.to_string() })?;
+        headers.insert(http::header::AUTHORIZATION, access_token_value);
+
+        Ok(HttpRequest {
+            method: http_method,
+            url: issuer_remote_url.clone(),
+            headers,
+            body: vec![],
+        })
+    }
 }
 
-fn request_uri(issuer_remote_url: &Url, client_id: Option<String>) -> Result<Url, RegistrationClientError> {
+fn create_request_uri(issuer_remote_url: &Url, client_id: Option<String>) -> Result<Url, RegistrationClientError> {
     match client_id {
         Some(client_id) => {
             issuer_remote_url.join(format!("/admin/realms/opendut/clients/{}", client_id).as_str())
@@ -201,23 +212,14 @@ fn request_uri(issuer_remote_url: &Url, client_id: Option<String>) -> Result<Url
     }
 }
 
-fn create_http_request_client(access_token: &Token, issuer_remote_url: &Url, http_method: http::Method) -> Result<HttpRequest, RegistrationClientError> {
-    let mut headers = HeaderMap::new();
-    let bearer_header = format!("Bearer {}", access_token);
-    let access_token_value = HeaderValue::from_str(&bearer_header)
-        .map_err(|error| RegistrationClientError::InvalidConfiguration { error: error.to_string() })?;
-    headers.insert(http::header::AUTHORIZATION, access_token_value);
-
-    Ok(HttpRequest {
-        method: http_method,
-        url: issuer_remote_url.clone(),
-        headers,
-        body: vec![],
-    })
-}
-
 #[derive(Deserialize, Clone)]
-pub struct Clients(pub Vec<Client>);
+pub struct Clients(Vec<Client>);
+
+impl Clients {
+    pub fn value(&self) -> Vec<Client> {
+        self.0.clone()
+    }
+}
 
 #[derive(Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]

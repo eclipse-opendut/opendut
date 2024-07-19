@@ -37,7 +37,7 @@ impl ResourceHomeUrl {
         self.0.clone()
     }
     pub fn resource_url(&self, resource_id: Id, user_id: String) -> Result<Url, ResourceHomeUrlError> {
-        let path = format!("/{}/{}", user_id, resource_id.value());
+        let path = format!("/resources/{}/{}", user_id, resource_id.value());
         self.0.join(&path)
             .map_err(|error| ResourceHomeUrlError(format!("Failed to create resource URL for resource_id='{}': {}", resource_id.value(), error)))
     }

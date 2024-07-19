@@ -60,7 +60,7 @@ mod auth_tests {
     use googletest::matchers::eq;
     use rstest::rstest;
     
-    use opendut_auth::registration::client::{RegistrationClientRef};
+    use opendut_auth::registration::client::{Clients, RegistrationClientRef};
     use opendut_types::resources::Id;
 
     use crate::{registration_client};
@@ -73,7 +73,7 @@ mod auth_tests {
          * This test is ignored because it requires a running keycloak server from the test environment.
          * To run this test, execute the following command: cargo test -- --include-ignored
          */
-        let client = registration_client.await;
+        let client: RegistrationClientRef = registration_client.await;
         println!("{:?}", client);
         let resource_id = Id::random();
         let user_id = String::from("deleteTest");
@@ -81,10 +81,10 @@ mod auth_tests {
         let (client_id, client_secret) = (credentials.client_id.value(), credentials.client_secret.value());
         assert_that!(client_id.len().gt(&10), eq(true));
         println!("New client id: {}, secret: {}", client_id, client_secret);
-        let client_list = client.list_clients(resource_id).await.unwrap();
-        assert!(!client_list.0.is_empty());
+        let client_list: Clients = client.list_clients(resource_id).await.unwrap();
+        assert!(!client_list.value().is_empty());
         client.delete_client(resource_id).await.unwrap();
         let client_list = client.list_clients(resource_id).await.unwrap();
-        assert!(client_list.0.is_empty());
+        assert!(client_list.value().is_empty());
     }
 }
