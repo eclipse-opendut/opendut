@@ -1,7 +1,9 @@
 use std::fmt::Debug;
 use std::marker::PhantomData;
+
 use opendut_types::resources::Id;
-use crate::persistence::database::Db;
+
+use crate::persistence::Storage;
 use crate::resources::resource::Resource;
 
 pub mod cluster_configuration;
@@ -12,16 +14,10 @@ pub mod peer_configuration2;
 pub mod peer_descriptor;
 pub mod peer_state;
 
-pub trait Persistable<R>
-where
-    R: Resource,
-    Self: Debug,
-    Self: From<R>,
-    Self: TryInto<R, Error=PersistableConversionError<Self, R>>,
-{
-    fn insert(&self, db: Db) -> Option<Self>;
+pub trait Persistable: Sized + Debug {
+    fn insert(self, id: Id, storage: &mut Storage);
 
-    fn get(id: &Id, db: Db) -> Option<Self>;
+    fn get(id: Id, storage: &Storage) -> Option<Self>;
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -40,3 +36,12 @@ impl<From, To> PersistableConversionError<From, To> {
         }
     }
 }
+
+#[allow(unused)] //marker trait to help implementing code structure consistently
+trait PersistableModel<R>
+where
+    R: Resource,
+    Self: Debug,
+    Self: From<R>,
+    Self: TryInto<R, Error=PersistableConversionError<Self, R>>,
+{ }

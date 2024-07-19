@@ -1,33 +1,17 @@
 use opendut_types::cluster::ClusterConfiguration;
 use opendut_types::resources::Id;
-use crate::persistence::database::Db;
-use super::{Persistable, PersistableConversionError};
 
-#[derive(Debug)] //diesel::Queryable, diesel::Selectable, diesel::Insertable)]
-// #[diesel(table_name = crate::persistence::database::schema::cluster_configuration)] //TODO create schema
-// #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct PersistableClusterConfiguration {
-    //TODO
-}
-impl Persistable<ClusterConfiguration> for PersistableClusterConfiguration {
-    fn insert(&self, db: Db) -> Option<Self> {
-        todo!()
+use crate::persistence::Storage;
+use crate::resources::storage::ResourcesStorageApi;
+
+use super::Persistable;
+
+impl Persistable for ClusterConfiguration {
+    fn insert(self, id: Id, storage: &mut Storage) {
+        storage.memory.insert(id, self)
     }
 
-    fn get(id: &Id, db: Db) -> Option<Self> {
-        todo!()
-    }
-}
-
-impl From<ClusterConfiguration> for PersistableClusterConfiguration {
-    fn from(value: ClusterConfiguration) -> Self {
-        todo!()
-    }
-}
-impl TryInto<ClusterConfiguration> for PersistableClusterConfiguration {
-    type Error = PersistableConversionError<PersistableClusterConfiguration, ClusterConfiguration>;
-
-    fn try_into(self) -> Result<ClusterConfiguration, Self::Error> {
-        todo!()
+    fn get(id: Id, storage: &Storage) -> Option<Self> {
+        storage.memory.get(id)
     }
 }

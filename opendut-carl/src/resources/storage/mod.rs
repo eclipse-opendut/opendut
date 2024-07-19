@@ -1,26 +1,29 @@
 use url::Url;
-use crate::persistence::database::ConnectError;
-use crate::resources::{IntoId, Iter, IterMut, Resource, Update};
-use crate::resources::storage::database::ResourcesDatabaseStorage;
-use crate::resources::storage::memory::ResourcesMemoryStorage;
 
-pub(super) mod memory;
-pub(super) mod database;
+use opendut_types::resources::Id;
+
+use crate::persistence::database::ConnectError;
+use crate::resources::{Iter, IterMut, Resource, Update};
+use crate::resources::storage::persistent::PersistentResourcesStorage;
+use crate::resources::storage::volatile::VolatileResourcesStorage;
+
+pub mod volatile;
+pub mod persistent;
 
 pub enum ResourcesStorage {
-    Database(ResourcesDatabaseStorage),
-    Memory(ResourcesMemoryStorage),
+    Persistent(PersistentResourcesStorage),
+    Volatile(VolatileResourcesStorage),
 }
 impl ResourcesStorage {
-    pub fn connect(options: ResourcesStorageOptions) -> Result<Self, ConnectionError> {
+    pub fn connect(options: PersistenceOptions) -> Result<Self, ConnectionError> {
         let storage = match options {
-            ResourcesStorageOptions::Database { url } => {
-                let storage = ResourcesDatabaseStorage::connect(&url)
+            PersistenceOptions::Enabled { database_url: url } => {
+                let storage = PersistentResourcesStorage::connect(&url)
                     .map_err(|cause| ConnectionError::Database { url, source: cause })?;
-                ResourcesStorage::Database(storage)
+                ResourcesStorage::Persistent(storage)
             }
-            ResourcesStorageOptions::Memory => {
-                ResourcesStorage::Memory(ResourcesMemoryStorage::default())
+            PersistenceOptions::Disabled => {
+                ResourcesStorage::Volatile(VolatileResourcesStorage::default())
             }
         };
         Ok(storage)
@@ -34,43 +37,43 @@ pub enum ConnectionError {
 }
 
 #[derive(Clone)]
-pub enum ResourcesStorageOptions {
-    Database {
-        url: Url,
+pub enum PersistenceOptions {
+    Enabled {
+        database_url: Url,
     },
-    Memory,
+    Disabled,
 }
-impl ResourcesStorageOptions {
+impl PersistenceOptions {
     pub fn load(config: &config::Config) -> Result<Self, opendut_util::settings::LoadError> {
         let persistence_enabled = config.get_bool("persistence.enabled")?;
 
         if persistence_enabled {
             let url_field = "persistence.database.url";
             let url_value = config.get_string(url_field)?;
-            let url = Url::parse(&url_value)
+            let database_url = Url::parse(&url_value)
                 .map_err(|cause| opendut_util::settings::LoadError::Parse {
                     field: url_field.to_string(),
                     value: url_value,
                     source: Box::new(cause)
                 })?;
-            Ok(ResourcesStorageOptions::Database { url })
+            Ok(PersistenceOptions::Enabled { database_url })
         } else {
-            Ok(ResourcesStorageOptions::Memory)
+            Ok(PersistenceOptions::Disabled)
         }
     }
 }
 
 pub trait ResourcesStorageApi {
-    fn insert<R>(&mut self, id: impl IntoId<R>, resource: R) -> Option<R>
+    fn insert<R>(&mut self, id: Id, resource: R)
     where R: Resource;
 
-    fn update<R>(&mut self, id: impl IntoId<R>) -> Update<R>
+    fn update<R>(&mut self, id: Id) -> Update<R>
     where R: Resource;
 
-    fn remove<R>(&mut self, id: impl IntoId<R>) -> Option<R>
+    fn remove<R>(&mut self, id: Id) -> Option<R>
     where R: Resource;
 
-    fn get<R>(&self, id: impl IntoId<R>) -> Option<R>
+    fn get<R>(&self, id: Id) -> Option<R>
     where R: Resource + Clone;
 
     fn iter<R>(&self) -> Iter<R>

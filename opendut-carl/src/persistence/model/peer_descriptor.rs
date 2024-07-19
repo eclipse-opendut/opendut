@@ -7,39 +7,45 @@ use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
 use opendut_types::peer::executor::ExecutorDescriptors;
 use opendut_types::resources::Id;
 
-use crate::persistence::database::Db;
 use crate::persistence::database::schema;
+use crate::persistence::Storage;
 
-use super::{Persistable, PersistableConversionError};
+use super::{Persistable, PersistableConversionError, PersistableModel};
+
+impl Persistable for PeerDescriptor {
+    fn insert(self, id: Id, storage: &mut Storage) {
+        let persistable = PersistablePeerDescriptor::from(self);
+
+        diesel::insert_into(schema::peer::table)
+            .values(persistable)
+            .execute(storage.db.lock().unwrap().deref_mut()) //TODO don't unwrap()
+            .expect("Error inserting PeerDescriptor into database"); //TODO don't expect()
+    }
+
+    fn get(id: Id, storage: &Storage) -> Option<Self> {
+        let persistable = schema::peer::table
+            .filter(schema::peer::id.eq(id.value()))
+            .select(PersistablePeerDescriptor::as_select())
+            .first(storage.db.lock().unwrap().deref_mut()) //TODO don't unwrap()
+            .optional()
+            .expect("Error getting PeerDescriptor from database"); //TODO don't expect()
+
+        persistable
+            .map(TryInto::try_into)
+            .transpose()
+            .expect("Failed to convert from PersistablePeerDescriptor.") //TODO don't expect
+    }
+}
 
 #[derive(Debug, diesel::Queryable, diesel::Selectable, diesel::Insertable)]
 #[diesel(table_name = schema::peer)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct PersistablePeerDescriptor {
+struct PersistablePeerDescriptor {
     pub id: Uuid,
     pub name: String,
     pub location: Option<String>,
 }
-impl Persistable<PeerDescriptor> for PersistablePeerDescriptor {
-    fn insert(&self, db: Db) -> Option<Self> {
-        diesel::insert_into(schema::peer::table)
-            .values(self)
-            // .returning(PersistablePeerDescriptor::as_returning()) //TODO
-            .execute(db.lock().unwrap().deref_mut()) //TODO don't unwrap() //TODO use .get_result() instead and return the value
-            .expect("Error inserting PeerDescriptor into database"); //TODO don't expect()
-
-        None //TODO
-    }
-
-    fn get(id: &Id, db: Db) -> Option<Self> {
-        schema::peer::table
-            .filter(schema::peer::id.eq(id.value()))
-            .select(PersistablePeerDescriptor::as_select())
-            .first(db.lock().unwrap().deref_mut()) //TODO don't unwrap()
-            .optional()
-            .expect("Error getting PeerDescriptor from database") //TODO don't expect()
-    }
-}
+impl PersistableModel<PeerDescriptor> for PersistablePeerDescriptor { }
 
 impl From<PeerDescriptor> for PersistablePeerDescriptor {
     fn from(value: PeerDescriptor) -> Self {

@@ -3,45 +3,40 @@ use std::collections::HashMap;
 
 use opendut_types::resources::Id;
 
-use crate::resources::{IntoId, Iter, IterMut, Resource, Update};
+use crate::resources::{Iter, IterMut, Resource, Update};
 use crate::resources::storage::ResourcesStorageApi;
 
 #[derive(Default)]
-pub struct ResourcesMemoryStorage {
+pub struct VolatileResourcesStorage {
     storage: HashMap<TypeId, HashMap<Id, Box<dyn Any + Send + Sync>>>,
 }
-impl ResourcesStorageApi for ResourcesMemoryStorage {
+impl ResourcesStorageApi for VolatileResourcesStorage {
 
-    fn insert<R>(&mut self, id: impl IntoId<R>, resource: R) -> Option<R>
+    fn insert<R>(&mut self, id: Id, resource: R)
     where R: Resource {
         let column = self.storage
             .entry(TypeId::of::<R>())
             .or_default();
-        column.insert(id.into_id(), Box::new(resource))
-            .and_then(|old_value| old_value
-                .downcast()
-                .map(|value| *value)
-                .ok()
-            )
+        column.insert(id, Box::new(resource));
     }
 
-    fn update<R>(&mut self, id: impl IntoId<R>) -> Update<R>
+    fn update<R>(&mut self, id: Id) -> Update<R>
     where R: Resource {
         let column = self.storage
             .entry(TypeId::of::<R>())
             .or_default();
         Update {
-            id: id.into_id(),
+            id,
             column,
             marker: Default::default(),
         }
     }
 
-    fn remove<R>(&mut self, id: impl IntoId<R>) -> Option<R>
+    fn remove<R>(&mut self, id: Id) -> Option<R>
     where R: Resource {
         let type_id = TypeId::of::<R>();
         let column = self.column_mut_of::<R>()?;
-        let result = column.remove(&id.into_id())
+        let result = column.remove(&id)
             .and_then(|old_value| old_value
                 .downcast()
                 .map(|value| *value)
@@ -53,10 +48,10 @@ impl ResourcesStorageApi for ResourcesMemoryStorage {
         result
     }
 
-    fn get<R>(&self, id: impl IntoId<R>) -> Option<R>
+    fn get<R>(&self, id: Id) -> Option<R>
     where R: Resource + Clone {
         let column = self.column_of::<R>()?;
-        column.get(&id.into_id())
+        column.get(&id)
             .and_then(|resource| resource
                 .downcast_ref()
                 .cloned()
@@ -73,7 +68,7 @@ impl ResourcesStorageApi for ResourcesMemoryStorage {
         IterMut::new(self.column_mut_of::<R>().map(HashMap::values_mut))
     }
 }
-impl ResourcesMemoryStorage {
+impl VolatileResourcesStorage {
     fn column_of<R>(&self) -> Option<&HashMap<Id, Box<dyn Any + Send + Sync>>>
     where R: Resource {
         self.storage.get(&TypeId::of::<R>())
@@ -86,11 +81,11 @@ impl ResourcesMemoryStorage {
 }
 
 #[cfg(test)]
-impl ResourcesMemoryStorage {
-    pub fn contains<R>(&self, id: impl IntoId<R>) -> bool
+impl VolatileResourcesStorage {
+    pub fn contains<R>(&self, id: Id) -> bool
     where R: Resource {
         if let Some(column) = self.column_of::<R>() {
-            column.contains_key(&id.into_id())
+            column.contains_key(&id)
         }
         else {
             false

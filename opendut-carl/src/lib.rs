@@ -37,7 +37,7 @@ use crate::http::state::{CarlInstallDirectory, HttpState, LeaConfig, LeaIdentity
 use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerOptions, PeerMessagingBrokerRef};
 use crate::provisioning::cleo_script::CleoScript;
 use crate::resources::manager::{ResourcesManager, ResourcesManagerRef};
-use crate::resources::storage::ResourcesStorageOptions;
+use crate::resources::storage::PersistenceOptions;
 use crate::vpn::Vpn;
 
 pub mod grpc;
@@ -107,7 +107,7 @@ pub async fn create(settings: LoadedConfig) -> Result<()> {
     let vpn = vpn::create(&settings.config)
         .context("Error while parsing VPN configuration.")?;
 
-    let resources_storage_options = ResourcesStorageOptions::load(&settings.config)?;
+    let resources_storage_options = PersistenceOptions::load(&settings.config)?;
     let resources_manager = ResourcesManager::create(resources_storage_options)
         .context("Creating ResourcesManager failed")?;
     metrics::initialize_metrics_collection(Arc::clone(&resources_manager));

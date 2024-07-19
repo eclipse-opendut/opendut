@@ -1,33 +1,16 @@
 use opendut_types::peer::state::PeerState;
 use opendut_types::resources::Id;
-use crate::persistence::database::Db;
-use crate::persistence::model::{Persistable, PersistableConversionError};
 
-#[derive(Debug)] //diesel::Queryable, diesel::Selectable, diesel::Insertable)]
-// #[diesel(table_name = crate::persistence::database::schema::)] //TODO create schema
-// #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct PersistablePeerState {
-    //TODO
-}
-impl Persistable<PeerState> for PersistablePeerState {
-    fn insert(&self, db: Db) -> Option<Self> {
-        todo!()
+use crate::persistence::model::Persistable;
+use crate::persistence::Storage;
+use crate::resources::storage::ResourcesStorageApi;
+
+impl Persistable for PeerState {
+    fn insert(self, id: Id, storage: &mut Storage) {
+        storage.memory.insert(id, self)
     }
 
-    fn get(id: &Id, db: Db) -> Option<Self> {
-        todo!()
-    }
-}
-
-impl From<PeerState> for PersistablePeerState {
-    fn from(value: PeerState) -> Self {
-        todo!()
-    }
-}
-impl TryInto<PeerState> for PersistablePeerState {
-    type Error = PersistableConversionError<PersistablePeerState, PeerState>;
-
-    fn try_into(self) -> Result<PeerState, Self::Error> {
-        todo!()
+    fn get(id: Id, storage: &Storage) -> Option<Self> {
+        storage.memory.get(id)
     }
 }

@@ -3,73 +3,76 @@ use std::collections::hash_map::{Values, ValuesMut};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
+use ids::IntoId;
 use opendut_types::resources::Id;
+use resource::Resource;
 
-use crate::resources::storage::{ResourcesStorage, ResourcesStorageApi, ResourcesStorageOptions};
+use crate::resources::storage::{PersistenceOptions, ResourcesStorage, ResourcesStorageApi};
 
 pub mod manager;
 pub mod ids;
 pub(crate) mod storage;
 pub mod resource;
 
-use ids::IntoId;
-use resource::Resource;
-
 pub struct Resources {
     storage: ResourcesStorage,
 }
 
 impl Resources {
-    pub fn connect(storage_options: ResourcesStorageOptions) -> Result<Self, storage::ConnectionError> {
+    pub fn connect(storage_options: PersistenceOptions) -> Result<Self, storage::ConnectionError> {
         let storage = ResourcesStorage::connect(storage_options)?;
         Ok(Self { storage })
     }
 
     pub fn insert<R>(&mut self, id: impl IntoId<R>, resource: R)
     where R: Resource {
+        let id = id.into_id();
         match &mut self.storage {
-            ResourcesStorage::Database(storage) => storage.insert(id, resource),
-            ResourcesStorage::Memory(storage) => storage.insert(id, resource),
+            ResourcesStorage::Persistent(storage) => storage.insert(id, resource),
+            ResourcesStorage::Volatile(storage) => storage.insert(id, resource),
         };
     }
 
     pub fn update<R>(&mut self, id: impl IntoId<R>) -> Update<R>
     where R: Resource {
+        let id = id.into_id();
         match &mut self.storage {
-            ResourcesStorage::Database(storage) => storage.update(id),
-            ResourcesStorage::Memory(storage) => storage.update(id),
+            ResourcesStorage::Persistent(storage) => storage.update(id),
+            ResourcesStorage::Volatile(storage) => storage.update(id),
         }
     }
 
     pub fn remove<R>(&mut self, id: impl IntoId<R>) -> Option<R>
     where R: Resource {
+        let id = id.into_id();
         match &mut self.storage {
-            ResourcesStorage::Database(storage) => storage.remove(id),
-            ResourcesStorage::Memory(storage) => storage.remove(id),
+            ResourcesStorage::Persistent(storage) => storage.remove(id),
+            ResourcesStorage::Volatile(storage) => storage.remove(id),
         }
     }
 
     pub fn get<R>(&self, id: impl IntoId<R>) -> Option<R>
     where R: Resource + Clone {
+        let id = id.into_id();
         match &self.storage {
-            ResourcesStorage::Database(storage) => storage.get(id),
-            ResourcesStorage::Memory(storage) => storage.get(id),
+            ResourcesStorage::Persistent(storage) => storage.get(id),
+            ResourcesStorage::Volatile(storage) => storage.get(id),
         }
     }
 
     pub fn iter<R>(&self) -> Iter<R>
     where R: Resource {
         match &self.storage {
-            ResourcesStorage::Database(storage) => storage.iter(),
-            ResourcesStorage::Memory(storage) => storage.iter(),
+            ResourcesStorage::Persistent(storage) => storage.iter(),
+            ResourcesStorage::Volatile(storage) => storage.iter(),
         }
     }
 
     pub fn iter_mut<R>(&mut self) -> IterMut<R>
     where R: Resource {
         match &mut self.storage {
-            ResourcesStorage::Database(storage) => storage.iter_mut(),
-            ResourcesStorage::Memory(storage) => storage.iter_mut(),
+            ResourcesStorage::Persistent(storage) => storage.iter_mut(),
+            ResourcesStorage::Volatile(storage) => storage.iter_mut(),
         }
     }
 }
@@ -78,16 +81,17 @@ impl Resources {
 impl Resources {
     pub async fn contains<R>(&self, id: impl IntoId<R>) -> bool
     where R: Resource + Clone {
+        let id = id.into_id();
         match &self.storage {
-            ResourcesStorage::Database(_) => unimplemented!(),
-            ResourcesStorage::Memory(storage) => storage.contains(id),
+            ResourcesStorage::Persistent(_) => unimplemented!(),
+            ResourcesStorage::Volatile(storage) => storage.contains::<R>(id),
         }
     }
 
     pub async fn is_empty(&self) -> bool {
         match &self.storage {
-            ResourcesStorage::Database(_) => unimplemented!(),
-            ResourcesStorage::Memory(storage) => storage.is_empty(),
+            ResourcesStorage::Persistent(_) => unimplemented!(),
+            ResourcesStorage::Volatile(storage) => storage.is_empty(),
         }
     }
 }

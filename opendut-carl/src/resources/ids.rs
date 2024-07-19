@@ -4,6 +4,7 @@ use opendut_types::peer::configuration::{PeerConfiguration, PeerConfiguration2};
 use opendut_types::peer::state::PeerState;
 use opendut_types::resources::Id;
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
+
 use crate::resources::resource::Resource;
 
 pub trait IntoId<R: Resource> {
