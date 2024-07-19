@@ -1,7 +1,7 @@
 use serde::Serialize;
 use strum::EnumIter;
 
-#[derive(Debug, Clone, clap::ValueEnum, Serialize, EnumIter)]
+#[derive(Debug, Clone, clap::ValueEnum, Serialize, EnumIter, PartialEq)]
 pub(crate) enum DockerCoreServices {
     Network,
     Carl,

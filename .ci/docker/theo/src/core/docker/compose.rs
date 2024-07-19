@@ -59,10 +59,16 @@ pub(crate) fn docker_compose_network_create() -> Result<i32, Error> {
         .expect_status("Failed to create docker network.")
 }
 
-pub(crate) fn docker_compose_network_delete() -> Result<i32, Error> {
-    DockerCommand::new()
+pub(crate) fn docker_compose_network_delete(force: bool) -> Result<i32, Error> {
+    let mut docker_command = DockerCommand::new();
+    let delete_command = docker_command
         .arg("network")
         .arg("rm")
-        .arg("opendut_network")
-        .expect_status("Failed to delete docker network.")
+        .arg("opendut_network");
+
+    // ignore if the network does not exist, force deletion even if other containers are still attached
+    if force {
+        delete_command.arg("--force");
+    }
+    delete_command.expect_status("Failed to delete docker network.")
 }

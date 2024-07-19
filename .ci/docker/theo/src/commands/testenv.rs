@@ -104,7 +104,7 @@ impl TestenvCli {
             TaskCli::Destroy(service) => match &service.service {
                 Some(service) => {
                     match service {
-                        DockerCoreServices::Network => docker_compose_network_delete()?,
+                        DockerCoreServices::Network => docker_compose_network_delete(false)?,
                         DockerCoreServices::Carl => docker_compose_down(DockerCoreServices::Carl.as_str(), true)?,
                         DockerCoreServices::CarlOnHost => docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), true)?,
                         DockerCoreServices::Dev => docker_compose_down(DockerCoreServices::Dev.as_str(), true)?,
@@ -117,11 +117,12 @@ impl TestenvCli {
                     };
                 }
                 None => {
-                    println!("Destroying all services.");
-                    for docker_service in DockerCoreServices::iter() {
+                    println!("Destroying all services."); // omit docker network
+                    for docker_service in DockerCoreServices::iter().filter(|service| service.ne(&DockerCoreServices::Network)) {
                         docker_compose_down(docker_service.as_str(), true)?;
                     }
-                    docker_compose_network_delete()?;
+                    // delete docker network as last step
+                    docker_compose_network_delete(true)?;
                 }
             }
             TaskCli::Edgar(cli) => {
