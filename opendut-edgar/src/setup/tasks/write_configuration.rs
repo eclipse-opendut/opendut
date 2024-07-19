@@ -1,4 +1,4 @@
-use std::fs;
+use crate::fs;
 use std::ops::Not;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;

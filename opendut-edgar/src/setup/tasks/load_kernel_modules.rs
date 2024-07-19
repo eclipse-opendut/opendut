@@ -51,7 +51,7 @@ impl Default for LoadKernelModules {
 
 #[cfg(test)]
 mod tests {
-    use std::fs;
+    use crate::fs;
     use assert_fs::fixture::ChildPath;
     use assert_fs::prelude::*;
     use assert_fs::TempDir;

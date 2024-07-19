@@ -75,7 +75,7 @@ pub mod checksum {
     use std::io::Read;
     use sha2::{Digest, Sha256};
     use std::path::Path;
-    use std::fs::File;
+    use crate::fs::File;
 
     pub fn file(path: impl AsRef<Path>) -> Result<Vec<u8>, io::Error> {
         let file = File::open(path.as_ref())?;

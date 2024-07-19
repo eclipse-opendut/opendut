@@ -1,4 +1,4 @@
-use std::fs;
+use crate::fs;
 use std::path::PathBuf;
 
 use crate::{Arch, Package};
@@ -259,7 +259,7 @@ pub mod distribution {
     }
 
     pub mod validate {
-        use std::fs::File;
+        use crate::fs::File;
 
         use assert_fs::prelude::*;
         use flate2::read::GzDecoder;

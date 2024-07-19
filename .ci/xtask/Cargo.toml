@@ -12,6 +12,7 @@ cargo_metadata = { workspace = true }
 chrono = { workspace = true, default-features = true }
 clap = { workspace = true, features = ["derive", "string"] }
 flate2 = { workspace = true }
+fs-err = { workspace = true }
 fs_extra = { workspace = true }
 lazy_static = { workspace = true }
 predicates = { workspace = true }

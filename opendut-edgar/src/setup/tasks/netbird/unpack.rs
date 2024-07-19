@@ -1,5 +1,5 @@
-use std::fs;
-use std::fs::File;
+use crate::fs;
+use crate::fs::File;
 use std::path::{PathBuf};
 
 use anyhow::{Context, Result};

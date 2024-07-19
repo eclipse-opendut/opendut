@@ -21,6 +21,7 @@ clap = { workspace = true, features = ["derive"] }
 config = { workspace = true }
 console = { workspace = true }
 flate2 = { workspace = true }
+fs-err = { workspace = true }
 futures = { workspace = true }
 indicatif = { workspace = true }
 indoc = { workspace = true }

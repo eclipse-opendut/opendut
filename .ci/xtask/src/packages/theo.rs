@@ -86,7 +86,7 @@ pub mod distribution {
     }
 
     pub mod validate {
-        use std::fs::File;
+        use crate::fs::File;
 
         use assert_fs::prelude::*;
         use flate2::read::GzDecoder;

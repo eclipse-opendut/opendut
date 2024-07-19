@@ -1,4 +1,4 @@
-use std::fs;
+use crate::fs;
 use std::process::Command;
 use anyhow::anyhow;
 
@@ -100,7 +100,7 @@ pub mod file {
         }
 
         fn dir_contains_exactly_in_order(&self, paths: Vec<&ChildPath>) {
-            let mut sub_paths = fs::read_dir(self).unwrap()
+            let mut sub_paths = fs::read_dir(self.to_path_buf()).unwrap()
                 .map(|entry| entry.unwrap().path())
                 .collect::<Vec<_>>();
 

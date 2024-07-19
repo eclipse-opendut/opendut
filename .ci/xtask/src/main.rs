@@ -1,5 +1,7 @@
 use clap::Parser;
 
+pub use fs_err as fs;
+
 pub(crate) use core::constants;
 pub(crate) use core::metadata;
 pub(crate) use core::types::{self, Arch, Package, Result};

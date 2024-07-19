@@ -1,5 +1,4 @@
-use std::fs;
-use std::fs::File;
+use crate::fs;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -87,7 +86,7 @@ pub mod json {
             .arg("--config").arg(cargo_deny_toml())
             .arg("--layout=crate")
             .arg("--format=json")
-            .stdout(Stdio::from(File::create(&out_file)?))
+            .stdout(Stdio::from(std::fs::File::create(&out_file)?))
             .run_requiring_success()?;
 
         info!("Wrote licenses for package '{package}' to path: {}", out_file.display());
@@ -274,7 +273,7 @@ mod sbom {
 }
 
 mod texts {
-    use std::fs;
+    use crate::fs;
     use std::path::PathBuf;
     use std::process::Command;
     use tracing::info;

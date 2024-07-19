@@ -1,4 +1,4 @@
-use std::fs;
+use crate::fs;
 use std::path::PathBuf;
 
 use anyhow::anyhow;
@@ -198,7 +198,7 @@ pub mod distribution {
         }
     }
     pub mod rperf {
-        use std::fs::File;
+        use crate::fs::File;
         use std::path::Path;
         use std::process::Command;
         use flate2::read::GzDecoder;
@@ -289,7 +289,7 @@ pub mod distribution {
     }
 
     pub mod validate {
-        use std::fs::File;
+        use crate::fs::File;
 
         use assert_fs::prelude::*;
         use flate2::read::GzDecoder;
