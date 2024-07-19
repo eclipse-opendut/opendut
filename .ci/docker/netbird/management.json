@@ -2,7 +2,7 @@
     "Stuns": [
         {
             "Proto": "udp",
-            "URI": "stun:netbird-signal:80",
+            "URI": "stun:netbird-coturn:3478",
             "Username": "",
             "Password": ""
         }
