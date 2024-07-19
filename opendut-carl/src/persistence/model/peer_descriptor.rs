@@ -16,7 +16,10 @@ impl Persistable for PeerDescriptor {
         let persistable = PersistablePeerDescriptor::from(self);
 
         diesel::insert_into(schema::peer::table)
-            .values(persistable)
+            .values(&persistable)
+            .on_conflict(schema::peer::id)
+            .do_update()
+            .set(&persistable)
             .execute(storage.db.lock().unwrap().deref_mut()) //TODO don't unwrap()
             .expect("Error inserting PeerDescriptor into database"); //TODO don't expect()
     }
@@ -49,7 +52,7 @@ impl Persistable for PeerDescriptor {
     }
 }
 
-#[derive(Debug, diesel::Queryable, diesel::Selectable, diesel::Insertable)]
+#[derive(Debug, diesel::Queryable, diesel::Selectable, diesel::Insertable, diesel::AsChangeset)]
 #[diesel(table_name = schema::peer)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 struct PersistablePeerDescriptor {
