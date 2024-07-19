@@ -4,7 +4,7 @@ use opendut_types::resources::Id;
 
 use crate::persistence::database::ConnectError;
 use crate::persistence::Storage;
-use crate::resources::{Iter, IterMut, Update};
+use crate::resources::{Update};
 use crate::resources::storage::{Resource, ResourcesStorageApi};
 use crate::resources::storage::volatile::VolatileResourcesStorage;
 
@@ -40,13 +40,8 @@ impl ResourcesStorageApi for PersistentResourcesStorage {
         R::get(id, &self.storage)
     }
 
-    fn iter<R>(&self) -> Iter<R>
-    where R: Resource {
-        todo!()
-    }
-
-    fn iter_mut<R>(&mut self) -> IterMut<R>
-    where R: Resource {
-        todo!()
+    fn list<R>(&self) -> Vec<R>
+    where R: Resource + Clone {
+        R::list(&self.storage)
     }
 }

@@ -9,7 +9,6 @@ use opendut_types::resources::Id;
 
 use crate::persistence::database::schema;
 use crate::persistence::Storage;
-
 use super::{Persistable, PersistableConversionError, PersistableModel};
 
 impl Persistable for PeerDescriptor {
@@ -34,6 +33,19 @@ impl Persistable for PeerDescriptor {
             .map(TryInto::try_into)
             .transpose()
             .expect("Failed to convert from PersistablePeerDescriptor.") //TODO don't expect
+    }
+
+    fn list(storage: &Storage) -> Vec<Self> {
+        let persistables = schema::peer::table
+            .select(PersistablePeerDescriptor::as_select())
+            .get_results(storage.db.lock().unwrap().deref_mut()) //TODO don't unwrap()
+            .expect("Error getting list of PeerDescriptors from database"); //TODO don't expect()
+
+        persistables
+            .into_iter()
+            .map(TryInto::try_into)
+            .collect::<Result<Vec<_>, _>>()
+            .expect("Failed to convert from list of PersistablePeerDescriptors.") //TODO don't expect
     }
 }
 

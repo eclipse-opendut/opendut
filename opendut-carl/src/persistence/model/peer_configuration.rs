@@ -13,4 +13,8 @@ impl Persistable for PeerConfiguration {
     fn get(id: Id, storage: &Storage) -> Option<Self> {
         storage.memory.get(id)
     }
+    
+    fn list(storage: &Storage) -> Vec<Self> {
+        storage.memory.list()
+    }
 }

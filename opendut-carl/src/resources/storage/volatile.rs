@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use opendut_types::resources::Id;
 
-use crate::resources::{Iter, IterMut, Resource, Update};
+use crate::resources::{Resource, Update};
 use crate::resources::storage::ResourcesStorageApi;
 
 #[derive(Default)]
@@ -58,14 +58,20 @@ impl ResourcesStorageApi for VolatileResourcesStorage {
             )
     }
 
-    fn iter<R>(&self) -> Iter<R>
+    fn list<R>(&self) -> Vec<R>
     where R: Resource {
-        Iter::new(self.column_of::<R>().map(HashMap::values))
-    }
-
-    fn iter_mut<R>(&mut self) -> IterMut<R>
-    where R: Resource {
-        IterMut::new(self.column_mut_of::<R>().map(HashMap::values_mut))
+        match self.column_of::<R>() {
+            Some(column) => {
+                column.values()
+                    .map(|value| value
+                        .downcast_ref::<R>()
+                        .cloned()
+                        .expect("It should always be possible to cast the stored data back to its own type while building an iterator.")
+                    )
+                    .collect()
+            }
+            None => Vec::new()
+        }
     }
 }
 impl VolatileResourcesStorage {

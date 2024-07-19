@@ -9,7 +9,7 @@ use opendut_types::topology::DeviceDescriptor;
 
 use crate::persistence::model::Persistable;
 
-pub trait Resource: Any + Send + Sync + Sized + Debug + Persistable {}
+pub trait Resource: Any + Send + Sync + Debug + Clone + Persistable {}
 
 impl Resource for ClusterConfiguration {}
 impl Resource for ClusterDeployment {}

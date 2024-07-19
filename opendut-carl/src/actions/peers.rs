@@ -229,9 +229,7 @@ pub async fn list_peer_descriptors(params: ListPeerDescriptorsParams) -> Result<
         debug!("Querying all peer descriptors.");
 
         let peers = resources_manager.resources(|resources| {
-            resources.iter::<PeerDescriptor>()
-                .cloned()
-                .collect::<Vec<PeerDescriptor>>()
+            resources.list::<PeerDescriptor>()
         }).await;
 
         info!("Successfully queried all peer descriptors.");
@@ -257,7 +255,7 @@ pub async fn list_devices(params: ListDevicesParams) -> Result<Vec<DeviceDescrip
         debug!("Querying all devices.");
 
         let devices = resources_manager.resources(|resource| {
-            resource.iter::<DeviceDescriptor>().cloned().collect::<Vec<_>>()
+            resource.list::<DeviceDescriptor>()
         }).await;
 
         info!("Successfully queried all peers.");

@@ -14,10 +14,12 @@ pub mod peer_configuration2;
 pub mod peer_descriptor;
 pub mod peer_state;
 
-pub trait Persistable: Sized + Debug {
+pub trait Persistable: Send + Sync + Sized + Debug {
     fn insert(self, id: Id, storage: &mut Storage);
 
     fn get(id: Id, storage: &Storage) -> Option<Self>;
+
+    fn list(storage: &Storage) -> Vec<Self>;
 }
 
 #[derive(Debug, thiserror::Error)]

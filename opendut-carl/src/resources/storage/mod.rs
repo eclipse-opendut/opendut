@@ -3,7 +3,7 @@ use url::Url;
 use opendut_types::resources::Id;
 
 use crate::persistence::database::ConnectError;
-use crate::resources::{Iter, IterMut, Resource, Update};
+use crate::resources::{Resource, Update};
 use crate::resources::storage::persistent::PersistentResourcesStorage;
 use crate::resources::storage::volatile::VolatileResourcesStorage;
 
@@ -76,9 +76,6 @@ pub trait ResourcesStorageApi {
     fn get<R>(&self, id: Id) -> Option<R>
     where R: Resource + Clone;
 
-    fn iter<R>(&self) -> Iter<R>
-    where R: Resource;
-
-    fn iter_mut<R>(&mut self) -> IterMut<R>
-    where R: Resource;
+    fn list<R>(&self) -> Vec<R>
+    where R: Resource + Clone;
 }

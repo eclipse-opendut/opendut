@@ -21,11 +21,11 @@ pub fn initialize_metrics_collection(
         let metrics = futures::executor::block_on(
             resources_manager.resources(|resources| {
                 Metrics {
-                    deployed_clusters: resources.iter::<ClusterDeployment>().cloned().collect::<Vec<_>>(),
-                    configured_clusters: resources.iter::<ClusterConfiguration>().cloned().collect::<Vec<_>>(),
-                    registered_peers: resources.iter::<PeerDescriptor>().cloned().collect::<Vec<_>>(),
+                    deployed_clusters: resources.list::<ClusterDeployment>(),
+                    configured_clusters: resources.list::<ClusterConfiguration>(),
+                    registered_peers: resources.list::<PeerDescriptor>(),
                     connected_peers: {
-                        let registered_peers = resources.iter::<PeerState>().cloned().collect::<Vec<PeerState>>();
+                        let registered_peers = resources.list::<PeerState>();
                         let mut online_peers: Vec<PeerState> = vec![];
                         registered_peers.iter().for_each(|state| {
                             if let PeerState::Up { .. } = state { online_peers.push(state.clone()) }

@@ -168,20 +168,12 @@ mod test {
         assert_that!(testee.get::<PeerDescriptor>(id).await, some(eq(Clone::clone(&peer))));
 
         testee.resources(|resources| {
-            resources.iter::<ClusterConfiguration>()
+            resources.list::<ClusterConfiguration>()
+                .into_iter()
                 .for_each(|cluster| {
-                    assert_that!(Clone::clone(cluster), eq(Clone::clone(&cluster_configuration)));
+                    assert_that!(cluster, eq(Clone::clone(&cluster_configuration)));
                 });
         }).await;
-
-        testee.resources_mut(|resources| {
-            resources.iter_mut::<PeerDescriptor>()
-                .for_each(|peer| {
-                    peer.name = PeerName::try_from("ChangedPeer").unwrap()
-                });
-        }).await;
-
-        assert_that!(testee.get::<PeerDescriptor>(peer_resource_id).await, some(not(eq(Clone::clone(&peer)))));
 
         Ok(())
     }

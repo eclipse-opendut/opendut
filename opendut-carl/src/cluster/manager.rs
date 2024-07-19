@@ -187,7 +187,7 @@ impl ClusterManager {
     #[tracing::instrument(skip(self), level="trace")]
     pub async fn list_configuration(&self) -> Vec<ClusterConfiguration> {
         self.resources_manager.resources(|resources| {
-            resources.iter::<ClusterConfiguration>().cloned().collect::<Vec<_>>()
+            resources.list::<ClusterConfiguration>()
         }).await
     }
 
@@ -233,7 +233,7 @@ impl ClusterManager {
     #[tracing::instrument(skip(self), level="trace")]
     pub async fn list_deployment(&self) -> Vec<ClusterDeployment> {
         self.resources_manager.resources(|resources| {
-            resources.iter::<ClusterDeployment>().cloned().collect::<Vec<_>>()
+            resources.list::<ClusterDeployment>()
         }).await
     }
 }

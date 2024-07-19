@@ -1,8 +1,6 @@
 use std::any::Any;
-use std::collections::hash_map::{Values, ValuesMut};
 use std::collections::HashMap;
 use std::marker::PhantomData;
-
 use ids::IntoId;
 use opendut_types::resources::Id;
 use resource::Resource;
@@ -52,7 +50,7 @@ impl Resources {
     }
 
     pub fn get<R>(&self, id: impl IntoId<R>) -> Option<R>
-    where R: Resource + Clone {
+    where R: Resource {
         let id = id.into_id();
         match &self.storage {
             ResourcesStorage::Persistent(storage) => storage.get(id),
@@ -60,19 +58,11 @@ impl Resources {
         }
     }
 
-    pub fn iter<R>(&self) -> Iter<R>
+    pub fn list<R>(&self) -> Vec<R>
     where R: Resource {
         match &self.storage {
-            ResourcesStorage::Persistent(storage) => storage.iter(),
-            ResourcesStorage::Volatile(storage) => storage.iter(),
-        }
-    }
-
-    pub fn iter_mut<R>(&mut self) -> IterMut<R>
-    where R: Resource {
-        match &mut self.storage {
-            ResourcesStorage::Persistent(storage) => storage.iter_mut(),
-            ResourcesStorage::Volatile(storage) => storage.iter_mut(),
+            ResourcesStorage::Persistent(storage) => storage.list(),
+            ResourcesStorage::Volatile(storage) => storage.list(),
         }
     }
 }
@@ -80,7 +70,7 @@ impl Resources {
 #[cfg(test)]
 impl Resources {
     pub async fn contains<R>(&self, id: impl IntoId<R>) -> bool
-    where R: Resource + Clone {
+    where R: Resource {
         let id = id.into_id();
         match &self.storage {
             ResourcesStorage::Persistent(_) => unimplemented!(),
@@ -119,62 +109,5 @@ where R: Any + Send + Sync {
 
     pub fn or_insert(self, resource: R) {
         self.column.entry(self.id).or_insert_with(|| Box::new(resource));
-    }
-}
-
-pub struct Iter<'a, R>
-where R: Resource {
-    column: Option<Values<'a, Id, Box<dyn Any + Send + Sync>>>,
-    marker: PhantomData<R>
-}
-
-impl <'a, R> Iter<'a, R>
-where R: Resource {
-    fn new(column: Option<Values<'a, Id, Box<dyn Any + Send + Sync>>>) -> Iter<'a, R> {
-        Self {
-            column,
-            marker: PhantomData
-        }
-    }
-}
-
-impl <'a, R> Iterator for Iter<'a, R>
-where R: Resource {
-
-    type Item = &'a R;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let column = self.column.as_mut()?;
-        column.next()
-            .and_then(|value| value.downcast_ref())
-    }
-}
-
-
-pub struct IterMut<'a, R>
-where R: Resource {
-    column: Option<ValuesMut<'a, Id, Box<dyn Any + Send + Sync>>>,
-    marker: PhantomData<R>
-}
-
-impl <'a, R> IterMut<'a, R>
-where R: Resource {
-    fn new(column: Option<ValuesMut<'a, Id, Box<dyn Any + Send + Sync>>>) -> IterMut<'a, R> {
-        Self {
-            column,
-            marker: PhantomData
-        }
-    }
-}
-
-impl <'a, R> Iterator for IterMut<'a, R>
-where R: Resource {
-
-    type Item = &'a mut R;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let column = self.column.as_mut()?;
-        column.next()
-            .and_then(|value| value.downcast_mut())
     }
 }
