@@ -28,3 +28,17 @@ OPENDUT_CARL_VPN_NETBIRD_AUTH_HEADER=Authorization
     * Run CARL on the **host**: `cargo ci carl run` 
     * Run LEA on the **host**: `cargo ci lea run` 
 * Or start CARL in your IDE of choice and add the environment variables to the run configuration.
+
+## Use CLEO
+
+When using CLEO in your IDE or generally on the host, 
+the address for keycloak needs to be overridden, as well as the address for CARL.
+
+```
+# Environment variables to use  CARL on host
+export OPENDUT_CLEO_NETWORK_CARL_HOST=localhost
+export OPENDUT_CLEO_NETWORK_CARL_PORT=8080
+# Environment variable to use keycloak in test environment
+export OPENDUT_CLEO_NETWORK_OIDC_CLIENT_ISSUER_URL=http://localhost:8081/realms/opendut/
+cargo ci cleo run -- list peers
+```

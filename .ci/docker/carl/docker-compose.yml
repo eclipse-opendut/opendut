@@ -17,6 +17,7 @@ services:
       - "../../../resources/development/tls/carl.key:/etc/opendut/tls/carl.key"
       # to test toml config file: - "./config.toml:/etc/opendut/carl.toml"
     environment:
+      - SSL_CERT_FILE=/etc/opendut/tls/ca.pem
       - OPENDUT_CARL_NETWORK_TLS_CA=/etc/opendut/tls/ca.pem
       - OPENDUT_CARL_NETWORK_REMOTE_HOST=carl
       - OPENDUT_CARL_NETWORK_REMOTE_PORT=443

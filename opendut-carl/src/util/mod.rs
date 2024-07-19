@@ -1,6 +1,7 @@
 use std::slice::Iter;
 use serde::{Deserialize, Serialize};
 
+pub mod in_memory_cache;
 
 pub const CLEO_IDENTIFIER: &str = "opendut-cleo";
 pub const EDGAR_IDENTIFIER: &str = "opendut-edgar";

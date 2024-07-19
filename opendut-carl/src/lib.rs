@@ -13,6 +13,7 @@ use futures::future::BoxFuture;
 use futures::TryFutureExt;
 use pem::Pem;
 use tonic::transport::Server;
+use tonic_async_interceptor::async_interceptor;
 use tower::{BoxError, make::Shared, ServiceExt, steer::Steer};
 use tower_http::services::{ServeDir, ServeFile};
 use tracing::{debug, info, warn};
@@ -25,6 +26,9 @@ use opendut_util::{telemetry, project};
 use opendut_util::telemetry::logging::LoggingConfig;
 use opendut_util::telemetry::opentelemetry_types::Opentelemetry;
 use opendut_util::settings::LoadedConfig;
+use crate::auth::grpc_auth_layer::{GrpcAuthenticationLayer};
+use crate::auth::json_web_key::JwkCacheValue;
+use util::in_memory_cache::CustomInMemoryCache;
 use crate::cluster::manager::{ClusterManager, ClusterManagerOptions, ClusterManagerRef};
 
 use crate::grpc::{ClusterManagerFacade, MetadataProviderFacade, PeerManagerFacade, PeerManagerFacadeOptions, PeerMessagingBrokerFacade};
@@ -48,6 +52,7 @@ pub mod settings;
 mod vpn;
 mod http;
 mod provisioning;
+mod auth;
 
 #[tracing::instrument]
 pub async fn create_with_telemetry(settings_override: config::Config) -> Result<()> {
@@ -114,6 +119,21 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
         ClusterManagerOptions::load(&settings.config)?,
     );
 
+    let jwk_cache: CustomInMemoryCache<String, JwkCacheValue> = CustomInMemoryCache::new();
+
+    let grpc_auth_layer = match oidc_registration_client.clone() {
+        None => {
+            GrpcAuthenticationLayer::AuthDisabled
+        }
+        Some(oidc_client_ref) => {
+            GrpcAuthenticationLayer::GrpcAuthLayerEnabled {
+                issuer_url: oidc_client_ref.inner.config.issuer_url.clone(),
+                issuer_remote_url: oidc_client_ref.config.issuer_remote_url.clone(),
+                cache: jwk_cache,
+            }
+        }
+    };
+
     /// Isolation in function returning BoxFuture needed due to this: https://github.com/rust-lang/rust/issues/102211#issuecomment-1397600424
     #[allow(clippy::too_many_arguments)]
     #[tracing::instrument(skip_all, level="TRACE")]
@@ -128,6 +148,7 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
         settings: config::Config,
         ca: Pem,
         oidc_registration_client: Option<RegistrationClientRef>,
+        grpc_auth_layer: GrpcAuthenticationLayer,
     ) -> BoxFuture<'static, Result<()>> {
         let oidc_enabled = settings.get_bool("network.oidc.enabled").unwrap_or(false);
 
@@ -146,6 +167,9 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
         let peer_messaging_broker_facade = PeerMessagingBrokerFacade::new(Arc::clone(&peer_messaging_broker));
 
         let grpc = Server::builder()
+            .layer(async_interceptor(move |request| {
+                Clone::clone(&grpc_auth_layer).auth_interceptor(request)
+            }))
             .accept_http1(true) //gRPC-web uses HTTP1
             .add_service(cluster_manager_facade.into_grpc_service())
             .add_service(metadata_provider_facade.into_grpc_service())
@@ -258,6 +282,7 @@ pub async fn create(settings: LoadedConfig) -> Result<()> { //TODO
         settings.config,
         ca_certificate,
         oidc_registration_client,
+        grpc_auth_layer,
     ).await.unwrap();
 
     Ok(())

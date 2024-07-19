@@ -2774,6 +2774,8 @@ dependencies = [
  "axum",
  "axum-server",
  "axum-server-dual-protocol",
+ "base64 0.22.1",
+ "chrono",
  "config",
  "flate2",
  "futures",
@@ -2781,6 +2783,7 @@ dependencies = [
  "http 0.2.12",
  "indoc",
  "itertools 0.13.0",
+ "jsonwebtoken",
  "opendut-auth",
  "opendut-auth-tests",
  "opendut-carl-api",
@@ -2788,12 +2791,15 @@ dependencies = [
  "opendut-util",
  "opendut-vpn",
  "opendut-vpn-netbird",
+ "openidconnect",
  "opentelemetry",
  "opentelemetry_sdk",
  "pem",
  "predicates",
+ "reqwest",
  "rstest",
  "serde",
+ "serde_json",
  "shadow-rs",
  "tar",
  "tempfile",
@@ -2801,6 +2807,7 @@ dependencies = [
  "tokio",
  "tokio-stream",
  "tonic",
+ "tonic-async-interceptor",
  "tonic-web",
  "tower",
  "tower-http",
@@ -5132,6 +5139,21 @@ dependencies = [
  "tower-layer",
  "tower-service",
  "tracing",
+]
+
+[[package]]
+name = "tonic-async-interceptor"
+version = "0.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c7cc780d2f5fa76ef7e7f66cdfc9d8e2340435789e8ddb96fb7a44773490fe6"
+dependencies = [
+ "bytes",
+ "http 0.2.12",
+ "http-body",
+ "pin-project",
+ "tonic",
+ "tower-layer",
+ "tower-service",
 ]
 
 [[package]]

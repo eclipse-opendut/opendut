@@ -17,7 +17,7 @@ use opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_bro
 use opendut_carl_api::proto::services::peer_messaging_broker::upstream;
 use opendut_types::peer::PeerId;
 use opendut_util::telemetry::logging::NonDisclosingRequestExtension;
-
+use crate::auth::CurrentUser;
 use crate::peer::broker::{OpenError, PeerMessagingBrokerRef};
 
 pub struct PeerMessagingBrokerFacade {

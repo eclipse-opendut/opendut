@@ -131,6 +131,7 @@ tonic = { version = "0.11.0", default-features = false }
 tonic-build = { version = "0.11.0", default-features = false }
 tonic-web = "0.11.0"
 tonic-web-wasm-client = { version = "0.5.1" }
+tonic-async-interceptor = { version = "0.11.0" }
 tower = "0.4.13"
 tower-http = { version = "0.4.4", features = ["cors", "fs"] }
 tracing = { version = "0.1.40" }
