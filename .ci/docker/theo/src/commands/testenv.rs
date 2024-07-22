@@ -80,10 +80,6 @@ impl TestenvCli {
                 start_netbird(expose)?;
                 crate::core::docker::netbird::wait_for_netbird_api_key()?;
 
-                docker_compose_up_expose_ports(DockerCoreServices::Postgres.as_str(), expose)?;
-                println!("To use the Diesel CLI, you'll want to run:
-    export DATABASE_URL=postgres://postgres:postgres12345@localhost/carl");
-
                 println!("Stopping CARL Traefik forward (if present).");
                 docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), false)?;
 
@@ -118,7 +114,6 @@ impl TestenvCli {
                         DockerCoreServices::Firefox => docker_compose_down(DockerCoreServices::Firefox.as_str(), true)?,
                         DockerCoreServices::Telemetry => docker_compose_down(DockerCoreServices::Telemetry.as_str(), true)?,
                         DockerCoreServices::NginxWebdav => docker_compose_down(DockerCoreServices::NginxWebdav.as_str(), true)?,
-                        DockerCoreServices::Postgres => docker_compose_down(DockerCoreServices::Postgres.as_str(), true)?,
                     };
                 }
                 None => {

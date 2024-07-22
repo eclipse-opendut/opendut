@@ -375,6 +375,7 @@ pub mod diesel {
             Command::new("diesel")
                 .args(self.pass_through)
                 .current_dir(carl_database_dir)
+                .env("DATABASE_URL", "postgres://postgres:postgres@localhost/carl")
                 .run_requiring_success()
         }
     }
