@@ -3,7 +3,7 @@ RUN apt update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install
 
 # version of firefox from here: https://github.com/linuxserver/docker-firefox/releases
 # added a copy to ghcr due to connectivity issues with the original source
-FROM ghcr.io/eclipse-opendut/firefox:124.0.1-r0-ls156
+FROM ghcr.io/eclipse-opendut/firefox:126.0.1-r0-ls176
 
 COPY --from=builder /usr/bin/certutil /usr/bin/certutil
 
