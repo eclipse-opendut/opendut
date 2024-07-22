@@ -15,9 +15,9 @@ impl Persistable for PeerDescriptor {
     fn insert(self, id: Id, storage: &mut Storage) {
         let persistable = PersistablePeerDescriptor::from(self);
 
-        diesel::insert_into(schema::peer::table)
+        diesel::insert_into(schema::peer_descriptor::table)
             .values(&persistable)
-            .on_conflict(schema::peer::id)
+            .on_conflict(schema::peer_descriptor::peer_id)
             .do_update()
             .set(&persistable)
             .execute(storage.db.lock().unwrap().deref_mut()) //TODO don't unwrap()
@@ -25,8 +25,8 @@ impl Persistable for PeerDescriptor {
     }
 
     fn get(id: Id, storage: &Storage) -> Option<Self> {
-        let persistable = schema::peer::table
-            .filter(schema::peer::id.eq(id.value()))
+        let persistable = schema::peer_descriptor::table
+            .filter(schema::peer_descriptor::peer_id.eq(id.value()))
             .select(PersistablePeerDescriptor::as_select())
             .first(storage.db.lock().unwrap().deref_mut()) //TODO don't unwrap()
             .optional()
@@ -39,7 +39,7 @@ impl Persistable for PeerDescriptor {
     }
 
     fn list(storage: &Storage) -> Vec<Self> {
-        let persistables = schema::peer::table
+        let persistables = schema::peer_descriptor::table
             .select(PersistablePeerDescriptor::as_select())
             .get_results(storage.db.lock().unwrap().deref_mut()) //TODO don't unwrap()
             .expect("Error getting list of PeerDescriptors from database"); //TODO don't expect()
@@ -53,10 +53,10 @@ impl Persistable for PeerDescriptor {
 }
 
 #[derive(Debug, diesel::Queryable, diesel::Selectable, diesel::Insertable, diesel::AsChangeset)]
-#[diesel(table_name = schema::peer)]
+#[diesel(table_name = schema::peer_descriptor)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 struct PersistablePeerDescriptor {
-    pub id: Uuid,
+    pub peer_id: Uuid,
     pub name: String,
     pub location: Option<String>,
 }
@@ -65,7 +65,7 @@ impl PersistableModel<PeerDescriptor> for PersistablePeerDescriptor { }
 impl From<PeerDescriptor> for PersistablePeerDescriptor {
     fn from(value: PeerDescriptor) -> Self {
         Self {
-            id: value.id.uuid,
+            peer_id: value.id.uuid,
             name: value.name.value(),
             location: value.location.map(|location| location.value())
         }
@@ -85,7 +85,7 @@ impl TryInto<PeerDescriptor> for PersistablePeerDescriptor {
             .map_err(|cause| PersistableConversionError::new(Box::new(cause)))?;
 
         Ok(PeerDescriptor {
-            id: PeerId::from(self.id),
+            id: PeerId::from(self.peer_id),
             name,
             location,
             network: Default::default(), //TODO
