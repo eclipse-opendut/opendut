@@ -41,11 +41,11 @@ message NetworkInterfaceName {
 message EthernetInterfaceConfiguration {}
 
 message CanInterfaceConfiguration {
-  int32 bitrate = 1;
-  int32 sample_point = 2;
+  uint32 bitrate = 1;
+  uint32 sample_point = 2;
   bool flexible_data_rate = 3;
-  int32 data_bitrate = 4;
-  int32 data_sample_point = 5;
+  uint32 data_bitrate = 4;
+  uint32 data_sample_point = 5;
 }
 
 message NetworkInterfaceDescriptor {

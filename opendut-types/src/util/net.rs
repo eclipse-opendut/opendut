@@ -78,37 +78,36 @@ impl FromStr for Certificate {
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, Hash)]
 pub struct CanSamplePoint {
-    sample_point_times_1000: i32
+    sample_point_times_1000: u32
+}
+impl CanSamplePoint {
+    pub fn sample_point_times_1000(&self) -> u32 {
+        self.sample_point_times_1000
+    }
 }
 
 impl TryFrom<f32> for CanSamplePoint {
     type Error = CanSamplePointError;
 
     fn try_from(value: f32) -> Result<Self, Self::Error> {
-        let sample_point_times_1000 = (value * 1000.0).round() as i32;
+        let sample_point_times_1000 = (value * 1000.0).round() as u32;
         if (0..1000).contains(&sample_point_times_1000) {
-            Ok(CanSamplePoint{sample_point_times_1000})
+            Ok(CanSamplePoint { sample_point_times_1000 })
         } else {
             Err(CanSamplePointError::OutOfRangeFloat { value: value.to_string() })
         }
     }
 }
 
-impl TryFrom<i32> for CanSamplePoint {
+impl TryFrom<u32> for CanSamplePoint {
     type Error = CanSamplePointError;
 
-    fn try_from(value: i32) -> Result<Self, Self::Error> {
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
         if (0..1000).contains(&value) {
-            Ok(CanSamplePoint{sample_point_times_1000: value})
+            Ok(CanSamplePoint { sample_point_times_1000: value })
         } else {
             Err(CanSamplePointError::OutOfRangeInt { value: value.to_string() })
         }
-    }
-}
-
-impl From<CanSamplePoint> for i32 {
-    fn from(value: CanSamplePoint) -> Self {
-        value.sample_point_times_1000
     }
 }
 
@@ -130,10 +129,10 @@ pub enum CanSamplePointError {
 pub enum NetworkInterfaceConfiguration {
     Ethernet,
     Can {
-        bitrate: i32,
+        bitrate: u32,
         sample_point: CanSamplePoint,
         fd: bool,
-        data_bitrate: i32,
+        data_bitrate: u32,
         data_sample_point: CanSamplePoint,
     },
 }

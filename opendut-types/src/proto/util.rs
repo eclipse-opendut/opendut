@@ -224,11 +224,11 @@ impl From<crate::util::net::NetworkInterfaceDescriptor> for NetworkInterfaceDesc
                 data_bitrate, 
                 data_sample_point } => network_interface_descriptor::Configuration::Can({
                     CanInterfaceConfiguration { 
-                        bitrate, 
-                        sample_point: sample_point.into(), 
-                        flexible_data_rate, 
-                        data_bitrate, 
-                        data_sample_point: data_sample_point.into() 
+                        bitrate,
+                        sample_point: sample_point.sample_point_times_1000(),
+                        flexible_data_rate,
+                        data_bitrate,
+                        data_sample_point: data_sample_point.sample_point_times_1000()
                     }
                 }),
         };
