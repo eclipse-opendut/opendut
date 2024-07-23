@@ -16,19 +16,23 @@ pub(crate) type Memory = VolatileResourcesStorage;
 pub(crate) mod error {
     use std::fmt::{Display, Formatter};
     use opendut_types::resources::Id;
-    use crate::resources::resource::Resource;
 
     #[derive(Debug, thiserror::Error)]
-    pub struct PersistenceError {
-        resource_name: &'static str,
-        operation: PersistenceOperation,
-        context_messages: Vec<String>,
-        id: Option<Id>,
-        #[source] source: Cause,
+    pub enum PersistenceError {
+        Custom {
+            resource_name: &'static str,
+            operation: PersistenceOperation,
+            context_messages: Vec<String>,
+            id: Option<Id>,
+            #[source] source: Cause,
+        },
+        DieselInternal {
+            #[from] source: diesel::result::Error,
+        }
     }
     impl PersistenceError {
-        pub fn insert<R: Resource>(id: Id, cause: impl Into<Cause>) -> Self {
-            Self {
+        pub fn insert<R>(id: Id, cause: impl Into<Cause>) -> Self {
+            Self::Custom {
                 resource_name: std::any::type_name::<R>(),
                 operation: PersistenceOperation::Inserting,
                 context_messages: Vec::new(),
@@ -36,8 +40,8 @@ pub(crate) mod error {
                 source: cause.into(),
             }
         }
-        pub fn get<R: Resource>(id: Id, cause: impl Into<Cause>) -> Self {
-            Self {
+        pub fn get<R>(id: Id, cause: impl Into<Cause>) -> Self {
+            Self::Custom {
                 resource_name: std::any::type_name::<R>(),
                 operation: PersistenceOperation::Getting,
                 context_messages: Vec::new(),
@@ -45,8 +49,8 @@ pub(crate) mod error {
                 source: cause.into(),
             }
         }
-        pub fn list<R: Resource>(cause: impl Into<Cause>) -> Self {
-            Self {
+        pub fn list<R>(cause: impl Into<Cause>) -> Self {
+            Self::Custom {
                 resource_name: std::any::type_name::<R>(),
                 operation: PersistenceOperation::Listing,
                 context_messages: Vec::new(),
@@ -56,22 +60,28 @@ pub(crate) mod error {
         }
 
         pub fn context(mut self, message: impl Into<String>) -> Self {
-            self.context_messages.push(message.into());
+            match &mut self {
+                PersistenceError::Custom { context_messages, .. } => context_messages.push(message.into()),
+                PersistenceError::DieselInternal { .. } => unimplemented!(),
+            }
             self
         }
     }
     impl Display for PersistenceError {
         fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-            let operation = self.operation;
-            let resource = self.resource_name;
-            let id = match &self.id {
-                Some(id) => format!(" <{id}>"),
-                None => String::from(""),
-            };
-            writeln!(f, "Error while {operation} resource '{resource}'{id}")?;
+            match self {
+                Self::Custom { resource_name, operation, context_messages, id, source: _ } => {
+                    let id = match &id {
+                        Some(id) => format!(" <{id}>"),
+                        None => String::from(""),
+                    };
+                    writeln!(f, "Error while {operation} resource '{resource_name}'{id}")?;
 
-            for message in &self.context_messages {
-                writeln!(f, "  Context: {message}")?;
+                    for message in context_messages {
+                        writeln!(f, "  Context: {message}")?;
+                    }
+                }
+                PersistenceError::DieselInternal { source } => writeln!(f, "{source}")?,
             }
             Ok(())
         }

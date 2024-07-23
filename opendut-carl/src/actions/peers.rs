@@ -87,7 +87,7 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
                 let device_name = &device.name;
                 resources.insert(device.id, Clone::clone(device))?;
                 info!("Added device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}>.");
-                Ok(())
+                Ok::<_, PersistenceError>(())
             })?;
 
             let peer_network_configuration = {

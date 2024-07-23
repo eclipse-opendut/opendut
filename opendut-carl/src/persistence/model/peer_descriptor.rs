@@ -1,13 +1,16 @@
 use std::ops::DerefMut;
-use diesel::{ExpressionMethods, OptionalExtension, PgConnection, QueryDsl, RunQueryDsl, SelectableHelper};
-use uuid::Uuid;
 
-use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
+use diesel::Connection;
+
+use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
 use opendut_types::peer::executor::ExecutorDescriptors;
 use opendut_types::resources::Id;
+use opendut_types::util::net::NetworkInterfaceConfiguration;
 
-use crate::persistence::database::schema;
 use crate::persistence::error::{PersistenceError, PersistenceResult};
+use crate::persistence::model::persistable::network_interface_descriptor::PersistableNetworkInterfaceDescriptor;
+use crate::persistence::model::persistable::network_interface_kind::PersistableNetworkInterfaceKind;
+use crate::persistence::model::persistable::peer_descriptor::PersistablePeerDescriptor;
 use crate::persistence::Storage;
 
 use super::{Persistable, PersistableConversionError};
@@ -15,16 +18,38 @@ use super::{Persistable, PersistableConversionError};
 impl Persistable for PeerDescriptor {
     fn insert(self, id: Id, storage: &mut Storage) -> PersistenceResult<()> {
         let PeerDescriptor { id: peer_id, name, location, network, topology, executors } = self;
+        let PeerNetworkDescriptor { interfaces, bridge_name } = network;
 
-        PersistablePeerDescriptor {
-            peer_id: peer_id.uuid,
-            name: name.value(),
-            location: location.map(|location| location.value())
-        }.insert(id, storage.db.lock().unwrap().deref_mut())?;
+        storage.db.lock().unwrap().deref_mut().transaction::<_, PersistenceError, _>(|connection| {
 
-        //TODO persist other fields
+            PersistablePeerDescriptor {
+                peer_id: peer_id.0,
+                name: name.value(),
+                location: location.map(|location| location.value()),
+                network_bridge_name: bridge_name.map(|name| name.name()),
+            }.insert(id, storage.db.lock().unwrap().deref_mut())?;
 
-        Ok(())
+            for interface in interfaces {
+                let (kind, maybe_configuration) = match interface.configuration {
+                    NetworkInterfaceConfiguration::Ethernet => {
+                        (PersistableNetworkInterfaceKind::Ethernet, None)
+                    }
+                    NetworkInterfaceConfiguration::Can { bitrate, sample_point, fd, data_bitrate, data_sample_point } => {
+                        (PersistableNetworkInterfaceKind::Can, Some("TODO configuration")) //TODO configuration
+                    }
+                };
+                PersistableNetworkInterfaceDescriptor {
+                    network_interface_id: interface.id.uuid,
+                    name: interface.name.name(),
+                    kind,
+                    peer_id: peer_id.0,
+                }.insert(id, connection)?;
+            }
+
+            // TODO persist other fields
+
+            Ok(())
+        })
     }
 
     fn get(id: Id, storage: &Storage) -> PersistenceResult<Option<Self>> {
@@ -50,44 +75,6 @@ impl Persistable for PeerDescriptor {
 }
 
 
-
-#[derive(Clone, Debug, PartialEq, diesel::Queryable, diesel::Selectable, diesel::Insertable, diesel::AsChangeset)]
-#[diesel(table_name = schema::peer_descriptor)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-struct PersistablePeerDescriptor {
-    pub peer_id: Uuid,
-    pub name: String,
-    pub location: Option<String>,
-}
-impl PersistablePeerDescriptor {
-    pub fn insert(&self, id: Id, connection: &mut PgConnection) -> PersistenceResult<()> {
-        diesel::insert_into(schema::peer_descriptor::table)
-            .values(self)
-            .on_conflict(schema::peer_descriptor::peer_id)
-            .do_update()
-            .set(self)
-            .execute(connection)
-            .map_err(|cause| PersistenceError::insert::<PeerDescriptor>(id, cause))?;
-        Ok(())
-    }
-
-    pub fn get(id: Id, connection: &mut PgConnection) -> PersistenceResult<Option<Self>> {
-        schema::peer_descriptor::table
-            .filter(schema::peer_descriptor::peer_id.eq(id.value()))
-            .select(PersistablePeerDescriptor::as_select())
-            .first(connection)
-            .optional()
-            .map_err(|cause| PersistenceError::get::<PeerDescriptor>(id, cause))
-    }
-
-    pub fn list(connection: &mut PgConnection) -> PersistenceResult<Vec<Self>> {
-        schema::peer_descriptor::table
-            .select(PersistablePeerDescriptor::as_select())
-            .get_results(connection)
-            .map_err(PersistenceError::list::<PeerDescriptor>)
-    }
-}
-
 impl TryInto<PeerDescriptor> for PersistablePeerDescriptor {
     type Error = PersistableConversionError<PersistablePeerDescriptor, PeerDescriptor>;
 
@@ -109,38 +96,5 @@ impl TryInto<PeerDescriptor> for PersistablePeerDescriptor {
             topology: Default::default(), //TODO
             executors: ExecutorDescriptors { executors: Default::default() }, //TODO
         })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::persistence::database;
-
-    #[tokio::test]
-    async fn should_persist_peer_descriptor_base_model() -> anyhow::Result<()> {
-        let mut db = database::testing::spawn_and_connect().await?;
-
-        let peer_id = PeerId::random();
-        let testee = PersistablePeerDescriptor {
-            peer_id: peer_id.uuid,
-            name: String::from("testee"),
-            location: None,
-        };
-
-        let result = PersistablePeerDescriptor::get(peer_id.into(), &mut db.connection)?;
-        assert!(result.is_none());
-        let result = PersistablePeerDescriptor::list(&mut db.connection)?;
-        assert!(result.is_empty());
-
-        testee.insert(peer_id.into(), &mut db.connection)?;
-
-        let result = PersistablePeerDescriptor::get(peer_id.into(), &mut db.connection)?;
-        assert_eq!(result, Some(testee.clone()));
-        let result = PersistablePeerDescriptor::list(&mut db.connection)?;
-        assert_eq!(result.len(), 1);
-        assert_eq!(result.first(), Some(&testee));
-
-        Ok(())
     }
 }
