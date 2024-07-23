@@ -15,12 +15,26 @@ pub struct RegistrationClientConfig {
     pub client_home_base_url: ResourceHomeUrl,
     pub registration_url: RegistrationUrl,
     pub issuer_remote_url: Url,
+    pub issuer_admin_url: Url,
 }
 
 pub(crate) const AUTH_CLIENT_CONFIG_PREFIX: &str = "network.oidc.client";
 
 impl RegistrationClientConfig {
     const ISSUER_REMOTE_URL: &'static str = formatcp!("{AUTH_CLIENT_CONFIG_PREFIX}.issuer.remote.url");
+    /*
+     Administrative API endpoint of the OIDC issuer (keycloak)
+     
+     https://www.keycloak.org/docs-api/latest/rest-api/index.html
+     
+     # List clients
+     GET /admin/realms/{realm}/clients/
+     
+     # Delete the client
+     DELETE /admin/realms/{realm}/clients/{client-uuid}
+     */
+    
+    const ISSUER_ADMIN_URL: &'static str = formatcp!("{AUTH_CLIENT_CONFIG_PREFIX}.issuer.admin.url");
     const COMMON_PEER_ID: &'static str = formatcp!("{AUTH_CLIENT_CONFIG_PREFIX}.peer.id");
     const COMMON_PEER_SECRET: &'static str = formatcp!("{AUTH_CLIENT_CONFIG_PREFIX}.peer.secret");
 
@@ -41,6 +55,14 @@ impl RegistrationClientConfig {
             .map_err(|error| RegistrationClientError::InvalidConfiguration { 
                 error: format!("Failed to parse issuer remote URL: {}", error) 
             })?;
+        let issuer_admin_url: Url = settings.get_string(RegistrationClientConfig::ISSUER_ADMIN_URL)
+            .map_err(|error| RegistrationClientError::InvalidConfiguration {
+                error: format!("Failed to load registration URL from config field {}: {}", RegistrationClientConfig::ISSUER_ADMIN_URL, error)
+            })?
+            .parse()
+            .map_err(|error| RegistrationClientError::InvalidConfiguration {
+                error: format!("Failed to parse issuer admin URL: {}", error)
+            })?;
         
         let peer_id = settings.get_string(RegistrationClientConfig::COMMON_PEER_ID).ok();
         let peer_secret = settings.get_string(RegistrationClientConfig::COMMON_PEER_SECRET).ok();
@@ -60,16 +82,19 @@ impl RegistrationClientConfig {
             client_home_base_url,
             registration_url,
             issuer_remote_url,
+            issuer_admin_url,
         })
     }
     
-    pub fn new(peer_credentials: Option<ClientCredentials>, device_redirect_url: RedirectUrl, client_home_base_url: ResourceHomeUrl, registration_url: RegistrationUrl, issuer_remote_url: Url) -> Self {
+    pub fn new(peer_credentials: Option<ClientCredentials>, device_redirect_url: RedirectUrl, client_home_base_url: ResourceHomeUrl, 
+               registration_url: RegistrationUrl, issuer_remote_url: Url, issuer_admin_url: Url) -> Self {
         Self {
             peer_credentials,
             device_redirect_url,
             client_home_base_url,
             registration_url,
             issuer_remote_url,
+            issuer_admin_url,
         }
     }
 }

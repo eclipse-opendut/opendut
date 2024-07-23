@@ -49,6 +49,7 @@ pub async fn registration_client(#[future] confidential_carl_client: Confidentia
         device_redirect_url: RedirectUrl::new(DEVICE_REDIRECT_URL.to_string()).unwrap(),
         client_home_base_url: ResourceHomeUrl::new(Url::parse("https://carl/resources/uuid-123").unwrap()),
         registration_url: RegistrationUrl::from_url(issuer_remote_url.join("clients-registrations/openid-connect").unwrap()),
+        issuer_admin_url: issuer_remote_url.join("https://keycloak/admin/realms/").unwrap(),
     };
     let client = confidential_carl_client.await;
     RegistrationClient::new(carl_idp_config, client)

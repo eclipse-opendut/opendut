@@ -35,6 +35,7 @@ services:
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_SECRET=6754d533-9442-4ee6-952a-97e332eca38e
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_URL=https://keycloak/realms/opendut/
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_REMOTE_URL=https://keycloak/realms/opendut/
+      - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_ADMIN_URL=https://keycloak/admin/realms/opendut/
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_SCOPES=
 
       - OPENDUT_CARL_NETWORK_OIDC_LEA_CLIENT_ID=opendut-lea-client

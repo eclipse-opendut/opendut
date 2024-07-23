@@ -138,8 +138,9 @@ impl RegistrationClient {
     }
     
     pub async fn list_clients(&self, resource_id: Id) -> Result<Clients, RegistrationClientError> {
-        let issuer_remote_url = create_request_uri(&self.config.issuer_remote_url, None)?;
-        let request = self.create_http_request_with_auth_token(&issuer_remote_url, http::Method::GET).await?;
+        let enumerate_clients_uri = self.config.issuer_admin_url.join("clients/")
+            .map_err(|cause| RegistrationClientError::InvalidConfiguration { error: format!("Invalid admin api endpoint for issuer. {}", cause) })?;
+        let request = self.create_http_request_with_auth_token(&enumerate_clients_uri, http::Method::GET).await?;
         
         let response = self.inner.reqwest_client.async_http_client(request)
             .await;
@@ -162,7 +163,9 @@ impl RegistrationClient {
         let mut failed_deletion_clients = Vec::new();
         
         for client in clients.value() {
-            let delete_client_url = create_request_uri(&self.config.issuer_remote_url, Some(client.client_id.to_string()))?;
+            let client_uri = format!("clients/{}", client.client_id);
+            let delete_client_url = self.config.issuer_admin_url.join(&client_uri)
+                .map_err(|cause| RegistrationClientError::InvalidConfiguration { error: format!("Invalid admin api endpoint for issuer. {}", cause) })?;
 
             let request = self.create_http_request_with_auth_token(&delete_client_url, http::Method::DELETE).await?;
 
@@ -184,7 +187,7 @@ impl RegistrationClient {
     async fn create_http_request_with_auth_token(&self, issuer_remote_url: &Url, http_method: http::Method) -> Result<HttpRequest, RegistrationClientError> {
         let mut headers = HeaderMap::new();
         let access_token = self.inner.get_token().await
-            .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), cause: Box::new(error) })?;
+            .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), cause: error.into() })?;
         let bearer_header = format!("Bearer {}", access_token);
         let access_token_value = HeaderValue::from_str(&bearer_header)
             .map_err(|error| RegistrationClientError::InvalidConfiguration { error: error.to_string() })?;
@@ -196,19 +199,6 @@ impl RegistrationClient {
             headers,
             body: vec![],
         })
-    }
-}
-
-fn create_request_uri(issuer_remote_url: &Url, client_id: Option<String>) -> Result<Url, RegistrationClientError> {
-    match client_id {
-        Some(client_id) => {
-            issuer_remote_url.join(format!("/admin/realms/opendut/clients/{}", client_id).as_str())
-                .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), cause: Box::new(error) })
-        }
-        None => {
-            issuer_remote_url.join("/admin/realms/opendut/clients/")
-                .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), cause: Box::new(error) })
-        }
     }
 }
 

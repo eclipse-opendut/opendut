@@ -307,6 +307,7 @@ services:
       - OPENDUT_CARL_NETWORK_OIDC_LEA_ISSUER_URL=https://auth.opendut.local/realms/opendut/
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_URL=https://auth.opendut.local/realms/opendut/
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_REMOTE_URL=https://auth.opendut.local/realms/opendut/
+      - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_ADMIN_URL=https://auth.opendut.local/admin/realms/opendut/
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_SCOPES=
 
       - KEYCLOAK_URL=https://auth.opendut.local/
