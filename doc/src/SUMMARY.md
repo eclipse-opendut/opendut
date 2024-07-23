@@ -28,6 +28,7 @@
     - [Secret Scanner](development/testenv/secret-scanner.md)
 - [Architecture](architecture/index.md)
   - [CARL](architecture/carl/index.md)
+    - [Database Schema](architecture/carl/database-schema.md)
   - [EDGAR](architecture/edgar/index.md)
   - [Deployment](architecture/deployment/index.md)
   - [Cluster](architecture/cluster/index.md)
