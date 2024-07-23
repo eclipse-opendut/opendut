@@ -3,6 +3,7 @@ use url::Url;
 use opendut_types::resources::Id;
 
 use crate::persistence::database::ConnectError;
+use crate::persistence::error::PersistenceResult;
 use crate::resources::{Resource, Update};
 use crate::resources::storage::persistent::PersistentResourcesStorage;
 use crate::resources::storage::volatile::VolatileResourcesStorage;
@@ -64,7 +65,7 @@ impl PersistenceOptions {
 }
 
 pub trait ResourcesStorageApi {
-    fn insert<R>(&mut self, id: Id, resource: R)
+    fn insert<R>(&mut self, id: Id, resource: R) -> PersistenceResult<()>
     where R: Resource;
 
     fn update<R>(&mut self, id: Id) -> Update<R>

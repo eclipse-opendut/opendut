@@ -8,11 +8,13 @@ use opendut_types::peer::executor::ExecutorDescriptors;
 use opendut_types::resources::Id;
 
 use crate::persistence::database::schema;
+use crate::persistence::error::{PersistenceError, PersistenceResult};
 use crate::persistence::Storage;
+
 use super::{Persistable, PersistableConversionError, PersistableModel};
 
 impl Persistable for PeerDescriptor {
-    fn insert(self, id: Id, storage: &mut Storage) {
+    fn insert(self, id: Id, storage: &mut Storage) -> PersistenceResult<()> {
         let persistable = PersistablePeerDescriptor::from(self);
 
         diesel::insert_into(schema::peer_descriptor::table)
@@ -20,35 +22,38 @@ impl Persistable for PeerDescriptor {
             .on_conflict(schema::peer_descriptor::peer_id)
             .do_update()
             .set(&persistable)
-            .execute(storage.db.lock().unwrap().deref_mut()) //TODO don't unwrap()
-            .expect("Error inserting PeerDescriptor into database"); //TODO don't expect()
+            .execute(storage.db.lock().unwrap().deref_mut())
+            .map_err(PersistenceError::insert::<Self>)?;
+        Ok(())
     }
 
-    fn get(id: Id, storage: &Storage) -> Option<Self> {
+    fn get(id: Id, storage: &Storage) -> PersistenceResult<Option<Self>> {
         let persistable = schema::peer_descriptor::table
             .filter(schema::peer_descriptor::peer_id.eq(id.value()))
             .select(PersistablePeerDescriptor::as_select())
-            .first(storage.db.lock().unwrap().deref_mut()) //TODO don't unwrap()
+            .first(storage.db.lock().unwrap().deref_mut())
             .optional()
-            .expect("Error getting PeerDescriptor from database"); //TODO don't expect()
+            .map_err(PersistenceError::get::<Self>)?;
 
-        persistable
+        let result = persistable
             .map(TryInto::try_into)
             .transpose()
-            .expect("Failed to convert from PersistablePeerDescriptor.") //TODO don't expect
+            .map_err(|cause| PersistenceError::get::<Self>(cause).context("Failed to convert from PersistablePeerDescriptor."))?;
+        Ok(result)
     }
 
-    fn list(storage: &Storage) -> Vec<Self> {
+    fn list(storage: &Storage) -> PersistenceResult<Vec<Self>> {
         let persistables = schema::peer_descriptor::table
             .select(PersistablePeerDescriptor::as_select())
-            .get_results(storage.db.lock().unwrap().deref_mut()) //TODO don't unwrap()
-            .expect("Error getting list of PeerDescriptors from database"); //TODO don't expect()
+            .get_results(storage.db.lock().unwrap().deref_mut())
+            .map_err(PersistenceError::list::<Self>)?;
 
-        persistables
+        let result = persistables
             .into_iter()
             .map(TryInto::try_into)
             .collect::<Result<Vec<_>, _>>()
-            .expect("Failed to convert from list of PersistablePeerDescriptors.") //TODO don't expect
+            .map_err(|cause| PersistenceError::list::<Self>(cause).context("Failed to convert from list of PersistablePeerDescriptors."))?;
+        Ok(result)
     }
 }
 

@@ -4,7 +4,7 @@ use std::marker::PhantomData;
 use ids::IntoId;
 use opendut_types::resources::Id;
 use resource::Resource;
-
+use crate::persistence::error::PersistenceResult;
 use crate::resources::storage::{PersistenceOptions, ResourcesStorage, ResourcesStorageApi};
 
 pub mod manager;
@@ -22,13 +22,13 @@ impl Resources {
         Ok(Self { storage })
     }
 
-    pub fn insert<R>(&mut self, id: impl IntoId<R>, resource: R)
+    pub fn insert<R>(&mut self, id: impl IntoId<R>, resource: R) -> PersistenceResult<()>
     where R: Resource {
         let id = id.into_id();
         match &mut self.storage {
             ResourcesStorage::Persistent(storage) => storage.insert(id, resource),
             ResourcesStorage::Volatile(storage) => storage.insert(id, resource),
-        };
+        }
     }
 
     pub fn update<R>(&mut self, id: impl IntoId<R>) -> Update<R>

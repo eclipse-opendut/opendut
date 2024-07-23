@@ -27,6 +27,7 @@ use opendut_types::vpn::VpnPeerConfiguration;
 use opendut_util::ErrorOr;
 
 use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerRef};
+use crate::persistence::error::PersistenceError;
 use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
 
@@ -80,12 +81,13 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
                 info!("Removed device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}>.");
             });
 
-            devices_to_add.iter().for_each(|device| {
+            devices_to_add.iter().try_for_each(|device| {
                 let device_id = device.id;
                 let device_name = &device.name;
-                resources.insert(device.id, Clone::clone(device));
+                resources.insert(device.id, Clone::clone(device))?;
                 info!("Added device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}>.");
-            });
+                Ok(())
+            })?;
 
             let peer_network_configuration = {
                 let bridge_name = peer_descriptor.clone().network.bridge_name
@@ -99,7 +101,7 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
                 cluster_assignment: None,
                 network: peer_network_configuration
             };
-            resources.insert(peer_id, peer_configuration);
+            resources.insert(peer_id, peer_configuration)?;
 
 
             let peer_configuration2 = {
@@ -109,12 +111,17 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
                 }
                 peer_configuration2
             };
-            resources.insert(peer_id, peer_configuration2); //FIXME don't just insert, but rather update existing values via ID with intelligent logic (in a separate action)
+            resources.insert(peer_id, peer_configuration2)?; //FIXME don't just insert, but rather update existing values via ID with intelligent logic (in a separate action)
 
-            resources.insert(peer_id, peer_descriptor);
+            resources.insert(peer_id, peer_descriptor)?;
 
-            is_new_peer
-        }).await;
+            Ok(is_new_peer)
+        }).await
+        .map_err(|cause: PersistenceError| StorePeerDescriptorError::Internal {
+            peer_id,
+            peer_name: Clone::clone(&peer_name),
+            cause: cause.to_string(),
+        })?;
 
         if is_new_peer {
             if let Vpn::Enabled { vpn_client } = params.vpn {
@@ -408,6 +415,8 @@ pub enum AssignClusterError {
     PeerNotFound(PeerId),
     #[error("Sending PeerConfiguration with ClusterAssignment to peer <{peer_id}> failed: {cause}")]
     SendingToPeerFailed { peer_id: PeerId, cause: String },
+    #[error("Error while persisting ClusterAssignment for peer <{peer_id}>.")]
+    Persistence { peer_id: PeerId, #[source] source: PersistenceError },
 }
 
 pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClusterError> {
@@ -417,13 +426,14 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
     let (peer_configuration, peer_configuration2) = params.resources_manager.resources_mut(|resources| {
         let peer_configuration = resources.get::<PeerConfiguration>(peer_id)
             .ok_or(AssignClusterError::PeerNotFound(peer_id))
-            .map(|peer_configuration| {
+            .and_then(|peer_configuration| {
                 let peer_configuration = PeerConfiguration {
                     cluster_assignment: Some(params.cluster_assignment),
                     ..peer_configuration
                 };
-                resources.insert(peer_id, Clone::clone(&peer_configuration));
-                peer_configuration
+                resources.insert(peer_id, Clone::clone(&peer_configuration))
+                    .map_err(|source| AssignClusterError::Persistence { peer_id, source })?;
+                Ok(peer_configuration)
             })?;
 
         let peer_configuration2 = resources.get::<PeerConfiguration2>(peer_id)
@@ -555,14 +565,14 @@ mod test {
                 }
             };
             resources_manager.resources_mut(|resources| {
-                resources.insert(peer_id, Clone::clone(&peer_configuration));
-            }).await;
+                resources.insert(peer_id, Clone::clone(&peer_configuration))
+            }).await?;
             let peer_configuration2 = PeerConfiguration2 {
                 executors: vec![],
             };
             resources_manager.resources_mut(|resources| {
-                resources.insert(peer_id, Clone::clone(&peer_configuration2));
-            }).await;
+                resources.insert(peer_id, Clone::clone(&peer_configuration2))
+            }).await?;
 
             let (_, mut receiver) = peer_messaging_broker.open(peer_id, IpAddr::from_str("1.2.3.4")?).await?;
             let received = receiver.recv().await.unwrap()

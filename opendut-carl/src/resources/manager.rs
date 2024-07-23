@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use tokio::sync::RwLock;
-
+use crate::persistence::error::PersistenceResult;
 use crate::resources::{IntoId, Resource, Resources, storage};
 use crate::resources::storage::PersistenceOptions;
 
@@ -25,10 +25,10 @@ impl ResourcesManager {
         }))
     }
 
-    pub async fn insert<R>(&self, id: impl IntoId<R>, resource: R)
+    pub async fn insert<R>(&self, id: impl IntoId<R>, resource: R) -> PersistenceResult<()>
     where R: Resource {
         let mut state = self.state.write().await;
-        state.resources.insert(id, resource);
+        state.resources.insert(id, resource)
     }
 
     pub async fn remove<R>(&self, id: impl IntoId<R>) -> Option<R>
@@ -145,11 +145,11 @@ mod test {
 
         assert!(testee.is_empty().await);
 
-        testee.insert(peer_resource_id, Clone::clone(&peer)).await;
+        testee.insert(peer_resource_id, Clone::clone(&peer)).await?;
 
         assert!(testee.is_empty().await.not());
 
-        testee.insert(cluster_resource_id, Clone::clone(&cluster_configuration)).await;
+        testee.insert(cluster_resource_id, Clone::clone(&cluster_configuration)).await?;
 
         assert_that!(testee.get::<PeerDescriptor>(peer_resource_id).await, some(eq(Clone::clone(&peer))));
         assert_that!(testee.get::<ClusterConfiguration>(cluster_resource_id).await, some(eq(Clone::clone(&cluster_configuration))));
@@ -161,7 +161,7 @@ mod test {
         assert_that!(testee.remove::<PeerDescriptor>(peer_resource_id).await, some(eq(Clone::clone(&peer))));
 
         let id = testee.resources_mut(|resources| {
-            resources.insert(peer_resource_id, Clone::clone(&peer));
+            resources.insert(peer_resource_id, Clone::clone(&peer)).unwrap();
             peer_resource_id
         }).await;
 

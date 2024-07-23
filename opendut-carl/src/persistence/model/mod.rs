@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 
 use opendut_types::resources::Id;
 
+use crate::persistence::error::PersistenceResult;
 use crate::persistence::Storage;
 use crate::resources::resource::Resource;
 
@@ -15,11 +16,11 @@ pub mod peer_descriptor;
 pub mod peer_state;
 
 pub trait Persistable: Send + Sync + Sized + Debug {
-    fn insert(self, id: Id, storage: &mut Storage);
+    fn insert(self, id: Id, storage: &mut Storage) -> PersistenceResult<()>;
 
-    fn get(id: Id, storage: &Storage) -> Option<Self>;
+    fn get(id: Id, storage: &Storage) -> PersistenceResult<Option<Self>>;
 
-    fn list(storage: &Storage) -> Vec<Self>;
+    fn list(storage: &Storage) -> PersistenceResult<Vec<Self>>;
 }
 
 #[derive(Debug, thiserror::Error)]

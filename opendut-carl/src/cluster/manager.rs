@@ -195,8 +195,12 @@ impl ClusterManager {
     pub async fn store_cluster_deployment(&mut self, deployment: ClusterDeployment) -> Result<ClusterId, StoreClusterDeploymentError> {
         let cluster_id = deployment.id;
         self.resources_manager.resources_mut(|resources| {
-            resources.insert(deployment.id, deployment);
-        }).await;
+            let cluster_name = resources.get::<ClusterConfiguration>(deployment.id)
+                .map(|cluster| cluster.name)
+                .unwrap_or_else(|| ClusterName::try_from("unknown_cluster").unwrap());
+            resources.insert(deployment.id, deployment)
+                .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: cluster_name.clone(), cause: cause.to_string() })
+        }).await?;
         if let Err(error) = self.deploy(cluster_id).await {
             error!("Failed to deploy cluster <{cluster_id}>, due to:\n  {error}");
         }

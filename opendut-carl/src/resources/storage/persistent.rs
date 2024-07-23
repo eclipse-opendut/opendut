@@ -3,6 +3,7 @@ use url::Url;
 use opendut_types::resources::Id;
 
 use crate::persistence::database::ConnectError;
+use crate::persistence::error::PersistenceResult;
 use crate::persistence::Storage;
 use crate::resources::{Update};
 use crate::resources::storage::{Resource, ResourcesStorageApi};
@@ -20,9 +21,9 @@ impl PersistentResourcesStorage {
     }
 }
 impl ResourcesStorageApi for PersistentResourcesStorage {
-    fn insert<R>(&mut self, id: Id, resource: R)
+    fn insert<R>(&mut self, id: Id, resource: R) -> PersistenceResult<()>
     where R: Resource {
-        resource.insert(id, &mut self.storage);
+        resource.insert(id, &mut self.storage)
     }
 
     fn update<R>(&mut self, id: Id) -> Update<R>
@@ -38,10 +39,12 @@ impl ResourcesStorageApi for PersistentResourcesStorage {
     fn get<R>(&self, id: Id) -> Option<R>
     where R: Resource + Clone {
         R::get(id, &self.storage)
+            .expect("TODO-1b12adcb-d6af-4526-b64b-bf9c2578a7e8")
     }
 
     fn list<R>(&self) -> Vec<R>
     where R: Resource + Clone {
         R::list(&self.storage)
+            .expect("TODO-6416b5c9-69ef-4278-ae70-ef79f2ae70ae")
     }
 }
