@@ -16,7 +16,7 @@ use opendut_carl_api::proto::services::peer_messaging_broker::upstream;
 use opendut_types::peer::configuration::{PeerConfiguration, PeerConfiguration2};
 use opendut_types::peer::PeerId;
 use opendut_types::peer::state::{PeerState, PeerUpState};
-
+use crate::persistence::error::PersistenceError;
 use crate::resources::manager::ResourcesManagerRef;
 
 pub type PeerMessagingBrokerRef = Arc<PeerMessagingBroker>;
@@ -93,7 +93,9 @@ impl PeerMessagingBroker {
         }
 
         self.resources_manager.resources_mut(|resources| {
-            match resources.get::<PeerState>(peer_id) {
+            let maybe_peer_state = resources.get::<PeerState>(peer_id)
+                .map_err(|source| OpenError::Persistence { peer_id, source })?;
+            match maybe_peer_state {
                 None => {
                     info!("Peer <{}> opened stream which has not been seen before.", peer_id);
                     Ok(())
@@ -124,25 +126,27 @@ impl PeerMessagingBroker {
             })
         }).await?;
 
-        if let Some(configuration) = self.resources_manager.get::<PeerConfiguration>(peer_id).await {
-            if let Some(configuration2) = self.resources_manager.get::<PeerConfiguration2>(peer_id).await {
+        let maybe_configuration = self.resources_manager.get::<PeerConfiguration>(peer_id).await
+            .map_err(|source| OpenError::Persistence { peer_id, source })?;
+        let maybe_configuration2 = self.resources_manager.get::<PeerConfiguration2>(peer_id).await
+            .map_err(|source| OpenError::Persistence { peer_id, source })?;
 
-                let result = self.send_to_peer(peer_id, downstream::Message::ApplyPeerConfiguration(
+        if let Some(configuration) = maybe_configuration {
+            if let Some(configuration2) = maybe_configuration2 {
+
+                self.send_to_peer(peer_id, downstream::Message::ApplyPeerConfiguration(
                     ApplyPeerConfiguration {
                         configuration: Some(configuration.into()),
                         configuration2: Some(configuration2.into()),
                     }
-                )).await;
-
-                if let Err(error) = result {
-                    error!("Failed to send ApplyPeerConfiguration message: {error}")
-                }
+                )).await
+                .map_err(|cause| OpenError::SendApplyPeerConfiguration { peer_id, cause: cause.to_string() })?;
             }
             else {
-                error!("Failed to send ApplyPeerConfiguration message, because no PeerConfiguration2 found for peer: {peer_id}")
+                return Err(OpenError::SendApplyPeerConfiguration { peer_id, cause: String::from("No PeerConfiguration2 found for peer") });
             }
         } else {
-            error!("Failed to send ApplyPeerConfiguration message, because no PeerConfiguration found for peer <{peer_id}>.")
+            return Err(OpenError::SendApplyPeerConfiguration { peer_id, cause: String::from("No PeerConfiguration found for peer") });
         }
 
         let timeout_duration = self.options.peer_disconnect_timeout;
@@ -161,8 +165,8 @@ impl PeerMessagingBroker {
                             info!("Peer <{peer_id}> disconnected!");
                             break;
                         }
-                        Err(_) => {
-                            error!("No message from peer <{peer_id}> within {} ms.", timeout_duration.as_millis());
+                        Err(cause) => {
+                            error!("No message from peer <{peer_id}> within {} ms: {cause}", timeout_duration.as_millis());
                             break;
                         }
                     }
@@ -231,7 +235,7 @@ pub enum Error {
     Other { message: String },
 }
 
-#[derive(Debug, thiserror::Error, PartialEq, Eq)]
+#[derive(Debug, thiserror::Error)]
 pub enum OpenError {
     #[error(
         "Peer <{peer_id}> opened stream, but we already have a connected stream with this PeerId. \
@@ -239,6 +243,12 @@ pub enum OpenError {
         Rejecting connection."
     )]
     PeerAlreadyConnected { peer_id: PeerId },
+
+    #[error("Error while sending peer configuration to peer:\n  {cause}")]
+    SendApplyPeerConfiguration { peer_id: PeerId, cause: String },
+
+    #[error("Error while accessing persistence after Peer <{peer_id}> opened stream.")]
+    Persistence { peer_id: PeerId, #[source] source: PersistenceError },
 }
 
 #[derive(Clone)]
@@ -267,21 +277,21 @@ mod tests {
     use tokio::sync::mpsc::Receiver;
 
     use opendut_carl_api::proto::services::peer_messaging_broker::Ping;
-
+    use opendut_types::peer::configuration::PeerNetworkConfiguration;
+    use opendut_types::util::net::NetworkInterfaceName;
     use crate::resources::manager::ResourcesManager;
 
     use super::*;
 
     #[tokio::test]
-    async fn peer_stream() -> Result<()> {
-        let resources_manager = ResourcesManager::new_in_memory();
+    async fn peer_stream() -> anyhow::Result<()> {
+        let Fixture { resources_manager, peer_id } = fixture().await?;
 
         let options = PeerMessagingBrokerOptions {
             peer_disconnect_timeout: Duration::from_millis(200),
         };
         let testee = PeerMessagingBroker::new(Arc::clone(&resources_manager), options.clone());
 
-        let peer_id = PeerId::random();
         let remote_host = IpAddr::from_str("1.2.3.4")?;
 
         let (sender, mut receiver) = testee.open(peer_id, remote_host).await?;
@@ -293,14 +303,27 @@ mod tests {
 
             let peer_state = resources_manager.resources(|resources| {
                 resources.get::<PeerState>(peer_id)
-            }).await;
+            }).await?;
             let peer_state = peer_state.expect("PeerState for peer <{peer_id}> should exist.");
             match peer_state {
                 PeerState::Up { .. } => {} //Success
                 _ => {
-                    fail!("PeerState should be 'Up'.")?;
+                    panic!("PeerState should be 'Up'.");
                 }
             }
+        }
+
+        { //Receive initial ApplyPeerConfiguration
+            let received = receiver.recv().await.unwrap().message.unwrap();
+
+            assert_that!(
+                received,
+                matches_pattern!(
+                    downstream::Message::ApplyPeerConfiguration(
+                        matches_pattern!(ApplyPeerConfiguration { .. })
+                    )
+                )
+            );
         }
 
         { //test repeated pings
@@ -324,12 +347,12 @@ mod tests {
 
             let peer_state = resources_manager.resources(|resources| {
                 resources.get::<PeerState>(peer_id)
-            }).await;
+            }).await?;
             let peer_state = peer_state.expect("PeerState for peer <{peer_id}> should exist.");
             match peer_state {
                 PeerState::Down { .. } => {} //Success
                 _ => {
-                    fail!("PeerState should be 'Down' after timeout.")?;
+                    panic!("PeerState should be 'Down' after timeout.");
                 }
             }
         }
@@ -338,22 +361,24 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_reject_second_connection_for_peer() -> Result<()> {
-        let resources_manager = ResourcesManager::new_in_memory();
+    async fn should_reject_second_connection_for_peer() -> anyhow::Result<()> {
+        let Fixture { resources_manager, peer_id } = fixture().await?;
 
         let options = PeerMessagingBrokerOptions {
             peer_disconnect_timeout: Duration::from_millis(200),
         };
         let testee = PeerMessagingBroker::new(Arc::clone(&resources_manager), options.clone());
 
-        let peer_id = PeerId::random();
         let remote_host = IpAddr::from_str("1.2.3.4")?;
 
         let result = testee.open(peer_id, remote_host).await;
         assert!(result.is_ok());
 
         let result = testee.open(peer_id, remote_host).await;
-        assert_that!(result.unwrap_err(), eq(OpenError::PeerAlreadyConnected { peer_id }));
+        assert_that!(
+            result.unwrap_err(),
+            matches_pattern!(OpenError::PeerAlreadyConnected { peer_id: eq(peer_id) })
+        );
 
         Ok(())
     }
@@ -365,5 +390,29 @@ mod tests {
         let received = receiver.recv().await.unwrap();
 
         assert_eq!(received.message, Some(downstream::Message::Pong(Pong {})));
+    }
+
+    struct Fixture {
+        resources_manager: ResourcesManagerRef,
+        peer_id: PeerId,
+    }
+    async fn fixture() -> anyhow::Result<Fixture> {
+        let resources_manager = ResourcesManager::new_in_memory();
+
+        let peer_id = PeerId::random();
+        resources_manager.insert(peer_id, PeerConfiguration {
+            cluster_assignment: None,
+            network: PeerNetworkConfiguration {
+                bridge_name: NetworkInterfaceName::try_from("br0")?,
+            },
+        }).await?;
+        resources_manager.insert(peer_id, PeerConfiguration2 {
+            executors: vec![],
+        }).await?;
+
+        Ok(Fixture {
+            resources_manager,
+            peer_id,
+        })
     }
 }

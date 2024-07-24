@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use std::ops::Not;
 use std::sync::Arc;
 
@@ -55,7 +56,7 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
 
         let is_new_peer = resources_manager.resources_mut(|resources| {
 
-            let old_peer_descriptor = resources.get::<PeerDescriptor>(peer_id);
+            let old_peer_descriptor = resources.get::<PeerDescriptor>(peer_id)?;
             let is_new_peer = old_peer_descriptor.is_none();
 
             let (devices_to_add, devices_to_remove): (Vec<DeviceDescriptor>, Vec<DeviceDescriptor>) = if let Some(old_peer_descriptor) = old_peer_descriptor {
@@ -287,6 +288,8 @@ pub struct GeneratePeerSetupParams {
 pub enum GeneratePeerSetupError {
     #[error("A PeerSetup for peer <{0}> could not be created, because a peer with that ID does not exist!")]
     PeerNotFound(PeerId),
+    #[error("An error occurred while accessing persistence for creating a PeerSetup for peer <{peer_id}>")]
+    Persistance { peer_id: PeerId, #[source] source: PersistenceError },
     #[error("An internal error occurred while creating a PeerSetup for peer '{peer_name}' <{peer_id}>:\n  {cause}")]
     Internal {
         peer_id: PeerId,
@@ -305,6 +308,7 @@ pub async fn generate_peer_setup(params: GeneratePeerSetupParams, user_id: Strin
         debug!("Generating PeerSetup for peer <{peer_id}>");
 
         let peer_descriptor = params.resources_manager.get::<PeerDescriptor>(peer_id).await
+            .map_err(|source| GeneratePeerSetupError::Persistance { peer_id, source })?
             .ok_or(GeneratePeerSetupError::PeerNotFound(peer_id))?;
 
         let peer_name = peer_descriptor.name;
@@ -425,6 +429,7 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
 
     let (peer_configuration, peer_configuration2) = params.resources_manager.resources_mut(|resources| {
         let peer_configuration = resources.get::<PeerConfiguration>(peer_id)
+            .map_err(|source| AssignClusterError::Persistence { peer_id, source })?
             .ok_or(AssignClusterError::PeerNotFound(peer_id))
             .and_then(|peer_configuration| {
                 let peer_configuration = PeerConfiguration {
@@ -437,6 +442,7 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
             })?;
 
         let peer_configuration2 = resources.get::<PeerConfiguration2>(peer_id)
+            .map_err(|source| AssignClusterError::Persistence { peer_id, source })?
             .ok_or(AssignClusterError::PeerNotFound(peer_id))?;
 
         Ok((peer_configuration, peer_configuration2))
@@ -492,17 +498,17 @@ mod test {
                 options: store_peer_descriptor_options.clone(),
             }).await?;
 
-            assert_that!(resources_manager.get::<PeerDescriptor>(fixture.peer_a_id).await.as_ref(), some(eq(&fixture.peer_a_descriptor)));
-            assert_that!(resources_manager.get::<DeviceDescriptor>(fixture.peer_a_device_1).await.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[0])));
-            assert_that!(resources_manager.get::<DeviceDescriptor>(fixture.peer_a_device_2).await.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[1])));
+            assert_that!(resources_manager.get::<PeerDescriptor>(fixture.peer_a_id).await?.as_ref(), some(eq(&fixture.peer_a_descriptor)));
+            assert_that!(resources_manager.get::<DeviceDescriptor>(fixture.peer_a_device_1).await?.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[0])));
+            assert_that!(resources_manager.get::<DeviceDescriptor>(fixture.peer_a_device_2).await?.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[1])));
 
             let additional_device_id = DeviceId::random();
             let additional_device = DeviceDescriptor {
                 id: additional_device_id,
-                name: DeviceName::try_from("PeerA_Device_42").unwrap(),
+                name: DeviceName::try_from("PeerA_Device_42")?,
                 description: DeviceDescription::try_from("Additional device for peerA").ok(),
                 interface: NetworkInterfaceDescriptor {
-                    name: NetworkInterfaceName::try_from("eth1").unwrap(),
+                    name: NetworkInterfaceName::try_from("eth1")?,
                     configuration: NetworkInterfaceConfiguration::Ethernet,
                 },
                 tags: vec![],
@@ -525,10 +531,10 @@ mod test {
                 options: store_peer_descriptor_options,
             }).await?;
 
-            assert_that!(resources_manager.get::<PeerDescriptor>(fixture.peer_a_id).await.as_ref(), some(eq(&changed_descriptor)));
-            assert_that!(resources_manager.get(fixture.peer_a_device_1).await.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[0])));
-            assert_that!(resources_manager.get(additional_device_id).await.as_ref(), some(eq(&additional_device)));
-            assert_that!(resources_manager.get(fixture.peer_a_device_2).await.as_ref(), none());
+            assert_that!(resources_manager.get::<PeerDescriptor>(fixture.peer_a_id).await?.as_ref(), some(eq(&changed_descriptor)));
+            assert_that!(resources_manager.get(fixture.peer_a_device_1).await?.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[0])));
+            assert_that!(resources_manager.get(additional_device_id).await?.as_ref(), some(eq(&additional_device)));
+            assert_that!(resources_manager.get(fixture.peer_a_device_2).await?.as_ref(), none());
 
             Ok(())
         }
@@ -607,7 +613,7 @@ mod test {
             };
 
             assert_that!(
-                resources_manager.get::<PeerConfiguration>(peer_id).await.as_ref(),
+                resources_manager.get::<PeerConfiguration>(peer_id).await?.as_ref(),
                 some(eq(&peer_configuration))
             );
 

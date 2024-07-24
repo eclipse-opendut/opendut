@@ -49,14 +49,12 @@ impl ResourcesStorageApi for VolatileResourcesStorage {
         result
     }
 
-    fn get<R>(&self, id: Id) -> Option<R>
+    fn get<R>(&self, id: Id) -> PersistenceResult<Option<R>>
     where R: Resource + Clone {
-        let column = self.column_of::<R>()?;
-        column.get(&id)
-            .and_then(|resource| resource
-                .downcast_ref()
-                .cloned()
-            )
+        let result = self.column_of::<R>()
+            .and_then(|column| column.get(&id))
+            .and_then(|resource| resource.downcast_ref().cloned());
+        Ok(result)
     }
 
     fn list<R>(&self) -> Vec<R>

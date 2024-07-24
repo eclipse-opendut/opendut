@@ -3,7 +3,6 @@ use std::sync::Arc;
 use tonic::{Request, Response, Status};
 use tonic_web::CorsGrpcWeb;
 use tracing::trace;
-
 use opendut_carl_api::proto::services::cluster_manager::*;
 use opendut_carl_api::proto::services::cluster_manager::cluster_manager_server::{ClusterManager as ClusterManagerService, ClusterManagerServer};
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
@@ -108,7 +107,10 @@ impl ClusterManagerService for ClusterManagerFacade {
             Some(id) => {
                 let id = ClusterId::try_from(id)
                     .map_err(|_| Status::invalid_argument("Invalid ClusterId."))?;
-                let configuration = self.cluster_manager.lock().await.find_configuration(id).await;
+
+                let configuration = self.cluster_manager.lock().await.get_configuration(id).await
+                    .map_err(|cause| Status::internal(cause.to_string()))?;
+
                 match configuration {
                     Some(configuration) => {
                         Ok(Response::new(GetClusterConfigurationResponse {

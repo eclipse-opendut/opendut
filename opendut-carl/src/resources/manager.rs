@@ -37,7 +37,7 @@ impl ResourcesManager {
         state.resources.remove(id)
     }
 
-    pub async fn get<R>(&self, id: impl IntoId<R>) -> Option<R>
+    pub async fn get<R>(&self, id: impl IntoId<R>) -> PersistenceResult<Option<R>>
     where R: Resource + Clone {
         let state = self.state.read().await;
         state.resources.get(id)
@@ -151,12 +151,12 @@ mod test {
 
         testee.insert(cluster_resource_id, Clone::clone(&cluster_configuration)).await?;
 
-        assert_that!(testee.get::<PeerDescriptor>(peer_resource_id).await, some(eq(Clone::clone(&peer))));
-        assert_that!(testee.get::<ClusterConfiguration>(cluster_resource_id).await, some(eq(Clone::clone(&cluster_configuration))));
+        assert_that!(testee.get::<PeerDescriptor>(peer_resource_id).await?, some(eq(Clone::clone(&peer))));
+        assert_that!(testee.get::<ClusterConfiguration>(cluster_resource_id).await?, some(eq(Clone::clone(&cluster_configuration))));
 
         assert!(testee.contains::<PeerDescriptor>(peer_resource_id).await);
 
-        assert_that!(testee.get::<PeerDescriptor>(PeerId::random()).await, none());
+        assert_that!(testee.get::<PeerDescriptor>(PeerId::random()).await?, none());
 
         assert_that!(testee.remove::<PeerDescriptor>(peer_resource_id).await, some(eq(Clone::clone(&peer))));
 
@@ -165,7 +165,7 @@ mod test {
             peer_resource_id
         }).await;
 
-        assert_that!(testee.get::<PeerDescriptor>(id).await, some(eq(Clone::clone(&peer))));
+        assert_that!(testee.get::<PeerDescriptor>(id).await?, some(eq(Clone::clone(&peer))));
 
         testee.resources(|resources| {
             resources.list::<ClusterConfiguration>()

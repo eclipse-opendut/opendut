@@ -12,7 +12,7 @@ impl Persistable for PeerConfiguration2 {
     }
 
     fn get(id: Id, storage: &Storage) -> PersistenceResult<Option<Self>> {
-        Ok(storage.memory.get(id))
+        storage.memory.get(id)
     }
     
     fn list(storage: &Storage) -> PersistenceResult<Vec<Self>> {

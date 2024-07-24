@@ -195,7 +195,7 @@ pub mod cluster_manager {
                 StoreClusterDeploymentError::Internal { cluster_id, cluster_name, cause } => {
                     store_cluster_deployment_failure::Error::Internal(StoreClusterDeploymentFailureInternal {
                         cluster_id: Some(cluster_id.into()),
-                        cluster_name: Some(cluster_name.into()),
+                        cluster_name: cluster_name.map(|name| name.into()),
                         cause
                     })
                 }
@@ -251,9 +251,9 @@ pub mod cluster_manager {
             let cluster_id: ClusterId = failure.cluster_id
                 .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
                 .try_into()?;
-            let cluster_name: ClusterName = failure.cluster_name
-                .ok_or_else(|| ErrorBuilder::field_not_set("cluster_name"))?
-                .try_into()?;
+            let cluster_name: Option<ClusterName> = failure.cluster_name
+                .map(TryInto::try_into)
+                .transpose()?;
             Ok(StoreClusterDeploymentError::Internal { cluster_id, cluster_name, cause: failure.cause })
         }
     }
@@ -277,7 +277,7 @@ pub mod cluster_manager {
                 DeleteClusterDeploymentError::Internal { cluster_id, cluster_name, cause } => {
                     delete_cluster_deployment_failure::Error::Internal(DeleteClusterDeploymentFailureInternal {
                         cluster_id: Some(cluster_id.into()),
-                        cluster_name: Some(cluster_name.into()),
+                        cluster_name: cluster_name.map(Into::into),
                         cause
                     })
                 }
@@ -347,9 +347,9 @@ pub mod cluster_manager {
             let cluster_id: ClusterId = failure.cluster_id
                 .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
                 .try_into()?;
-            let cluster_name: ClusterName = failure.cluster_name
-                .ok_or_else(|| ErrorBuilder::field_not_set("cluster_name"))?
-                .try_into()?;
+            let cluster_name: Option<ClusterName> = failure.cluster_name
+                .map(TryInto::try_into)
+                .transpose()?;
             Ok(DeleteClusterDeploymentError::Internal { cluster_id, cluster_name, cause: failure.cause })
         }
     }

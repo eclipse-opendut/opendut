@@ -23,7 +23,7 @@ impl Persistable for PeerDescriptor {
             .do_update()
             .set(&persistable)
             .execute(storage.db.lock().unwrap().deref_mut())
-            .map_err(PersistenceError::insert::<Self>)?;
+            .map_err(|cause| PersistenceError::insert::<Self>(id, cause))?;
         Ok(())
     }
 
@@ -33,12 +33,12 @@ impl Persistable for PeerDescriptor {
             .select(PersistablePeerDescriptor::as_select())
             .first(storage.db.lock().unwrap().deref_mut())
             .optional()
-            .map_err(PersistenceError::get::<Self>)?;
+            .map_err(|cause| PersistenceError::get::<Self>(id, cause))?;
 
         let result = persistable
             .map(TryInto::try_into)
             .transpose()
-            .map_err(|cause| PersistenceError::get::<Self>(cause).context("Failed to convert from PersistablePeerDescriptor."))?;
+            .map_err(|cause| PersistenceError::get::<Self>(id, cause).context("Failed to convert from PersistablePeerDescriptor."))?;
         Ok(result)
     }
 

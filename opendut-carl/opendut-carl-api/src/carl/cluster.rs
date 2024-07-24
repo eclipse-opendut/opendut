@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 pub use client::*;
 use opendut_types::cluster::{ClusterId, ClusterName};
@@ -43,9 +44,10 @@ pub enum DeleteClusterConfigurationError {
 }
 
 #[derive(thiserror::Error, Debug)]
-#[error("{message}")]
+#[error("ClusterConfiguration <{cluster_id}> could not be retrieved:\n  {message}")]
 pub struct GetClusterConfigurationError {
-    message: String,
+    pub cluster_id: ClusterId,
+    pub message: String
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -56,40 +58,78 @@ pub struct ListClusterConfigurationsError {
 
 #[derive(thiserror::Error, Debug)]
 pub enum StoreClusterDeploymentError {
-    #[error("ClusterDeployment for cluster '{cluster_name}' <{cluster_id}> cannot be changed when cluster is in state '{}'! A cluster can be updated when: {}", actual_state.short_name(), ClusterState::short_names_joined(required_states))]
     IllegalClusterState {
         cluster_id: ClusterId,
         cluster_name: ClusterName,
         actual_state: ClusterState,
         required_states: Vec<ClusterState>,
     },
-    #[error("ClusterDeployment for cluster '{cluster_name}' <{cluster_id}> could not be changed, due to internal errors:\n  {cause}")]
     Internal {
         cluster_id: ClusterId,
-        cluster_name: ClusterName,
+        cluster_name: Option<ClusterName>,
         cause: String
+    }
+}
+impl Display for StoreClusterDeploymentError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            StoreClusterDeploymentError::IllegalClusterState { cluster_id, cluster_name, actual_state, required_states } => {
+                let actual_state = actual_state.short_name();
+                let required_states = ClusterState::short_names_joined(required_states);
+                writeln!(f, "ClusterDeployment for cluster '{cluster_name}' <{cluster_id}> cannot be changed when cluster is in state '{actual_state}'! A cluster can be updated when: {required_states}")
+            }
+            StoreClusterDeploymentError::Internal { cluster_id, cluster_name, cause } => {
+                let cluster_name = match cluster_name {
+                    Some(cluster_name) => format!("'{cluster_name}' "),
+                    None => String::from(""),
+                };
+                writeln!(f, "ClusterDeployment for cluster {cluster_name}<{cluster_id}> could not be changed, due to internal errors:\n  {cause}")
+            }
+        }
     }
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum DeleteClusterDeploymentError {
-    #[error("ClusterDeployment for cluster <{cluster_id}> could not be deleted, because a ClusterDeployment with that id does not exist!")]
     ClusterDeploymentNotFound {
         cluster_id: ClusterId
     },
-    #[error("ClusterDeployment for cluster '{cluster_name}' <{cluster_id}> cannot be deleted when cluster is in state '{}'! A peer can be deleted when: {}", actual_state.short_name(), ClusterState::short_names_joined(required_states))]
     IllegalClusterState {
         cluster_id: ClusterId,
         cluster_name: ClusterName,
         actual_state: ClusterState,
         required_states: Vec<ClusterState>,
     },
-    #[error("ClusterDeployment for cluster '{cluster_name}' <{cluster_id}> deleted with internal errors:\n  {cause}")]
     Internal {
         cluster_id: ClusterId,
-        cluster_name: ClusterName,
+        cluster_name: Option<ClusterName>,
         cause: String
     }
+}
+impl Display for DeleteClusterDeploymentError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DeleteClusterDeploymentError::ClusterDeploymentNotFound { cluster_id } => {
+                writeln!(f, "ClusterDeployment for cluster <{cluster_id}> could not be deleted, because a ClusterDeployment with that id does not exist!")
+            }
+            DeleteClusterDeploymentError::IllegalClusterState { cluster_id, cluster_name, actual_state, required_states } => {
+                writeln!(f, "ClusterDeployment for cluster '{cluster_name}' <{cluster_id}> cannot be deleted when cluster is in state '{}'! A peer can be deleted when: {}", actual_state.short_name(), ClusterState::short_names_joined(required_states))
+            }
+            DeleteClusterDeploymentError::Internal { cluster_id, cluster_name, cause } => {
+                let cluster_name = match cluster_name {
+                    Some(cluster_name) => format!("'{cluster_name}' "),
+                    None => String::from(""),
+                };
+                writeln!(f, "ClusterDeployment for cluster {cluster_name}<{cluster_id}> deleted with internal errors:\n  {cause}")
+            }
+        }
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum GetClusterDeploymentError {
+    #[error("ClusterDeployment for cluster <{cluster_id}> could not be retrieved, due to internal errors:\n  {cause}")]
+    Internal { cluster_id: ClusterId, cause: String },
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -193,29 +233,29 @@ mod client {
             }
         }
 
-        pub async fn get_cluster_configuration(&mut self, id: ClusterId) -> Result<ClusterConfiguration, GetClusterConfigurationError> {
+        pub async fn get_cluster_configuration(&mut self, cluster_id: ClusterId) -> Result<ClusterConfiguration, GetClusterConfigurationError> {
             let request = tonic::Request::new(cluster_manager::GetClusterConfigurationRequest {
-                id: Some(id.into()),
+                id: Some(cluster_id.into()),
             });
 
             match self.inner.get_cluster_configuration(request).await {
                 Ok(response) => {
                     let result = response.into_inner().result
-                        .ok_or(GetClusterConfigurationError { message: String::from("Response contains no result!") })?;
+                        .ok_or(GetClusterConfigurationError { cluster_id, message: String::from("Response contains no result!") })?;
                     match result {
                         cluster_manager::get_cluster_configuration_response::Result::Failure(_) => {
-                            Err(GetClusterConfigurationError { message: String::from("Failed to get cluster configuration!") })
+                            Err(GetClusterConfigurationError { cluster_id, message: String::from("Failed to get cluster configuration!") })
                         }
                         cluster_manager::get_cluster_configuration_response::Result::Success(cluster_manager::GetClusterConfigurationSuccess { configuration }) => {
                             let configuration = configuration
-                                .ok_or(GetClusterConfigurationError { message: String::from("Response contains no cluster configuration!") })?;
+                                .ok_or(GetClusterConfigurationError { cluster_id, message: String::from("Response contains no cluster configuration!") })?;
                             ClusterConfiguration::try_from(configuration)
-                                .map_err(|_| GetClusterConfigurationError { message: String::from("Conversion failed for cluster configurations!") })
+                                .map_err(|_| GetClusterConfigurationError { cluster_id, message: String::from("Conversion failed for cluster configurations!") })
                         }
                     }
                 },
                 Err(status) => {
-                    Err(GetClusterConfigurationError { message: format!("gRPC failure: {status}") })
+                    Err(GetClusterConfigurationError { cluster_id, message: format!("gRPC failure: {status}") })
                 }
             }
         }

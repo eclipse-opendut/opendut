@@ -36,10 +36,9 @@ impl ResourcesStorageApi for PersistentResourcesStorage {
         todo!()
     }
 
-    fn get<R>(&self, id: Id) -> Option<R>
+    fn get<R>(&self, id: Id) -> PersistenceResult<Option<R>>
     where R: Resource + Clone {
         R::get(id, &self.storage)
-            .expect("TODO-1b12adcb-d6af-4526-b64b-bf9c2578a7e8")
     }
 
     fn list<R>(&self) -> Vec<R>

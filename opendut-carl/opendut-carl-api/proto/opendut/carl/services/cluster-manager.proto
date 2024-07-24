@@ -168,7 +168,7 @@ message StoreClusterDeploymentFailureIllegalClusterState {
 
 message StoreClusterDeploymentFailureInternal {
   opendut.types.cluster.ClusterId cluster_id = 1;
-  opendut.types.cluster.ClusterName cluster_name = 2;
+  optional opendut.types.cluster.ClusterName cluster_name = 2;
   string cause = 3;
 }
 

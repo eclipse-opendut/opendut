@@ -49,7 +49,7 @@ impl Resources {
         }
     }
 
-    pub fn get<R>(&self, id: impl IntoId<R>) -> Option<R>
+    pub fn get<R>(&self, id: impl IntoId<R>) -> PersistenceResult<Option<R>>
     where R: Resource {
         let id = id.into_id();
         match &self.storage {

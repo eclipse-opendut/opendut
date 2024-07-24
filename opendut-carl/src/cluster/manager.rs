@@ -6,7 +6,7 @@ use futures::future::join_all;
 use futures::FutureExt;
 use tracing::{debug, error, warn};
 
-use opendut_carl_api::carl::cluster::{DeleteClusterDeploymentError, StoreClusterDeploymentError};
+use opendut_carl_api::carl::cluster::{DeleteClusterDeploymentError, GetClusterConfigurationError, GetClusterDeploymentError, StoreClusterDeploymentError};
 use opendut_types::cluster::{ClusterAssignment, ClusterConfiguration, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::peer::state::PeerState;
@@ -17,6 +17,7 @@ use opendut_types::util::Port;
 use crate::actions;
 use crate::actions::{AssignClusterParams, ListPeerDescriptorsParams};
 use crate::peer::broker::PeerMessagingBrokerRef;
+use crate::persistence::error::PersistenceResult;
 use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
 
@@ -75,6 +76,7 @@ impl ClusterManager {
         let cluster_config = self.resources_manager.resources(|resources| {
             resources.get::<ClusterConfiguration>(cluster_id)
         }).await
+        .map_err(|cause| DeployClusterError::Internal { cluster_id, cause: cause.to_string() })?
         .ok_or(DeployClusterError::ClusterConfigurationNotFound(cluster_id))?;
 
         let cluster_name = cluster_config.name;
@@ -133,22 +135,30 @@ impl ClusterManager {
         let member_assignments: Vec<Result<PeerClusterAssignment, DeployClusterError>> = {
             let assignment_futures = std::iter::zip(member_interface_mapping, can_server_ports)
                 .map(|((peer_id, device_interfaces), can_server_port)| {
-                    self.resources_manager.get::<PeerState>(peer_id).map(move |peer_state: Option<PeerState>| {
-                        let vpn_address = match peer_state {
-                            Some(PeerState::Up { remote_host, .. }) => {
-                                Ok(remote_host)
-                            }
-                            Some(_) => {
-                                Err(DeployClusterError::Internal { cluster_id, cause: format!("Peer <{peer_id}> which is used in a cluster, should have a PeerState of 'Up'.") })
-                            }
-                            None => {
-                                Err(DeployClusterError::Internal { cluster_id, cause: format!("Peer <{peer_id}> which is used in a cluster, should have a PeerState associated.") })
-                            }
-                        };
-                        vpn_address.map(|vpn_address|
-                            PeerClusterAssignment { peer_id, vpn_address, can_server_port, device_interfaces }
-                        )
-                    })
+                    self.resources_manager.get::<PeerState>(peer_id)
+                        .map(move |peer_state: PersistenceResult<Option<PeerState>>| {
+                            let vpn_address = match peer_state {
+                                Ok(peer_state) => match peer_state {
+                                    Some(PeerState::Up { remote_host, .. }) => {
+                                        Ok(remote_host)
+                                    }
+                                    Some(_) => {
+                                        Err(DeployClusterError::Internal { cluster_id, cause: format!("Peer <{peer_id}> which is used in a cluster, should have a PeerState of 'Up'.") })
+                                    }
+                                    None => {
+                                        Err(DeployClusterError::Internal { cluster_id, cause: format!("Peer <{peer_id}> which is used in a cluster, should have a PeerState associated.") })
+                                    }
+                                }
+                                Err(cause) => {
+                                    let message = format!("Error while accessing persistence to read PeerState of peer <{peer_id}>");
+                                    error!("{message}:\n  {cause}");
+                                    Err(DeployClusterError::Internal { cluster_id, cause: message })
+                                }
+                            };
+                            vpn_address.map(|vpn_address|
+                                PeerClusterAssignment { peer_id, vpn_address, can_server_port, device_interfaces }
+                            )
+                        })
                 })
                 .collect::<Vec<_>>();
 
@@ -178,10 +188,11 @@ impl ClusterManager {
     }
 
     #[tracing::instrument(skip(self), level="trace")]
-    pub async fn find_configuration(&self, id: ClusterId) -> Option<ClusterConfiguration> {
+    pub async fn get_configuration(&self, cluster_id: ClusterId) -> Result<Option<ClusterConfiguration>, GetClusterConfigurationError> {
         self.resources_manager.resources(|resources| {
-            resources.get::<ClusterConfiguration>(id)
+            resources.get::<ClusterConfiguration>(cluster_id)
         }).await
+        .map_err(|cause| GetClusterConfigurationError { cluster_id, message: cause.to_string() })
     }
 
     #[tracing::instrument(skip(self), level="trace")]
@@ -196,10 +207,11 @@ impl ClusterManager {
         let cluster_id = deployment.id;
         self.resources_manager.resources_mut(|resources| {
             let cluster_name = resources.get::<ClusterConfiguration>(deployment.id)
+                .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?
                 .map(|cluster| cluster.name)
                 .unwrap_or_else(|| ClusterName::try_from("unknown_cluster").unwrap());
             resources.insert(deployment.id, deployment)
-                .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: cluster_name.clone(), cause: cause.to_string() })
+                .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: Some(cluster_name.clone()), cause: cause.to_string() })
         }).await?;
         if let Err(error) = self.deploy(cluster_id).await {
             error!("Failed to deploy cluster <{cluster_id}>, due to:\n  {error}");
@@ -213,25 +225,29 @@ impl ClusterManager {
         let (deployment, configuration) = self.resources_manager
             .resources_mut(|resources| {
                 resources.remove::<ClusterDeployment>(cluster_id)
-                    .map(|deployment| (deployment, resources.get::<ClusterConfiguration>(cluster_id)))
-            })
-            .await
+                    .map(|deployment| {
+                        resources.get::<ClusterConfiguration>(cluster_id)
+                            .map(|configuration| (deployment, configuration))
+                    }).transpose()
+            }).await
+            .map_err(|cause| DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?
             .ok_or(DeleteClusterDeploymentError::ClusterDeploymentNotFound { cluster_id })?;
 
         if let Some(configuration) = configuration {
             if let Vpn::Enabled { vpn_client } = &self.vpn {
                 vpn_client.delete_cluster(cluster_id).await
-                    .map_err(|error| DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: configuration.name, cause: error.to_string() })?;
+                    .map_err(|error| DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: Some(configuration.name), cause: error.to_string() })?;
             }
         }
 
         Ok(deployment)
     }
 
-    pub async fn find_deployment(&self, id: ClusterId) -> Option<ClusterDeployment> {
+    pub async fn get_deployment(&self, cluster_id: ClusterId) -> Result<Option<ClusterDeployment>, GetClusterDeploymentError> {
         self.resources_manager.resources(|resources| {
-            resources.get::<ClusterDeployment>(id)
+            resources.get::<ClusterDeployment>(cluster_id)
         }).await
+        .map_err(|cause| GetClusterDeploymentError::Internal { cluster_id, cause: cause.to_string() })
     }
 
     #[tracing::instrument(skip(self), level="trace")]

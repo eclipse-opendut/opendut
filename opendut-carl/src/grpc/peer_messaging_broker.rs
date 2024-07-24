@@ -73,6 +73,8 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
         let (tx_inbound, rx_outbound) = self.peer_messaging_broker.open(peer_id, remote_host).await
             .map_err(|cause| match cause {
                 OpenError::PeerAlreadyConnected { .. } => Status::aborted(cause.to_string()),
+                OpenError::SendApplyPeerConfiguration { .. } => Status::unavailable(cause.to_string()),
+                OpenError::Persistence { .. } => Status::internal(cause.to_string()),
             })?;
 
         let peer_messaging_broker = Clone::clone(&self.peer_messaging_broker);
