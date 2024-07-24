@@ -186,7 +186,7 @@ pub async fn delete_peer_descriptor(params: DeletePeerDescriptorParams) -> Resul
         if let Some(registration_client) = params.oidc_registration_client {
             let resource_id = peer_id.into();
             debug!("Deleting OIDC client for peer '{peer_name}' <{peer_id}>.");
-            let deleted_clients = registration_client.delete_client(resource_id)
+            let deleted_clients = registration_client.delete_client_by_resource_id(resource_id)
                 .await
                 .map_err(|cause| DeletePeerDescriptorError::Internal { peer_id, peer_name: Clone::clone(peer_name), cause: cause.to_string() })?;
             let deleted_client_ids =  deleted_clients.value().into_iter().map(|client| client.client_id).collect::<Vec<String>>();

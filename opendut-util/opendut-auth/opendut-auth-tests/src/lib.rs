@@ -49,7 +49,7 @@ pub async fn registration_client(#[future] confidential_carl_client: Confidentia
         device_redirect_url: RedirectUrl::new(DEVICE_REDIRECT_URL.to_string()).unwrap(),
         client_home_base_url: ResourceHomeUrl::new(Url::parse("https://carl/resources/uuid-123").unwrap()),
         registration_url: RegistrationUrl::from_url(issuer_remote_url.join("clients-registrations/openid-connect").unwrap()),
-        issuer_admin_url: issuer_remote_url.join("https://keycloak/admin/realms/").unwrap(),
+        issuer_admin_url: issuer_remote_url.join("https://keycloak/admin/realms/opendut/").unwrap(),
     };
     let client = confidential_carl_client.await;
     RegistrationClient::new(carl_idp_config, client)
@@ -82,10 +82,43 @@ mod auth_tests {
         let (client_id, client_secret) = (credentials.client_id.value(), credentials.client_secret.value());
         assert_that!(client_id.len().gt(&10), eq(true));
         println!("New client id: {}, secret: {}", client_id, client_secret);
-        let client_list: Clients = client.list_clients(resource_id).await.unwrap();
-        assert!(!client_list.value().is_empty());
-        client.delete_client(resource_id).await.unwrap();
-        let client_list = client.list_clients(resource_id).await.unwrap();
-        assert!(client_list.value().is_empty());
+        
+        let client_list: Clients = client.list_clients().await.unwrap();
+        let filtered_client_list = client_list.filter_clients_by_resource_id(resource_id);
+        assert!(!filtered_client_list.is_empty());
+        
+        client.delete_client_by_resource_id(resource_id).await.unwrap();
+
+        let client_list: Clients = client.list_clients().await.unwrap();
+        let filtered_client_list = client_list.filter_clients_by_resource_id(resource_id);
+        assert!(filtered_client_list.is_empty());
     }
+
+    /*
+    use opendut_auth::registration::resources::ResourceHomeUrl;
+ 
+    #[rstest]
+    #[tokio::test]
+    #[ignore]
+    async fn delete_all_oidc_clients(#[future] registration_client: RegistrationClientRef) {
+        /* 
+         * This test is ignored because it requires a running keycloak server from the test environment.
+         * To run this test, execute the following command: cargo test -- --include-ignored
+         */
+        let registration_client: RegistrationClientRef = registration_client.await;
+        println!("{:?}", registration_client);
+        let client_list: Clients = registration_client.list_clients().await.unwrap();
+        let path = ResourceHomeUrl::new(registration_client.config.client_home_base_url.value().join("/resources/").unwrap());
+        let filtered_client_list = client_list.filter_carl_clients(&path);
+        
+        let necessary_client_list_length = client_list.value().len() - filtered_client_list.len();
+
+        for client in filtered_client_list {
+            registration_client.delete_client(&client.client_id).await.unwrap();
+        }
+
+        let client_list_after_deletion: Clients = registration_client.list_clients().await.unwrap();
+        assert_eq!(necessary_client_list_length, client_list_after_deletion.value().len());
+    }
+    */
 }

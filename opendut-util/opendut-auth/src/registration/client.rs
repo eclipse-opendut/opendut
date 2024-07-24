@@ -1,8 +1,9 @@
+use std::ops::Not;
 use std::sync::Arc;
 
 use config::Config;
 use http::{HeaderMap, HeaderValue};
-use oauth2::HttpRequest;
+use oauth2::{HttpRequest, HttpResponse};
 use openidconnect::{ClientName, ClientUrl};
 use openidconnect::core::{CoreClientRegistrationRequest, CoreGrantType};
 use openidconnect::registration::EmptyAdditionalClientMetadata;
@@ -15,6 +16,7 @@ use opendut_types::util::net::{ClientCredentials, ClientId, ClientSecret};
 use crate::confidential::client::{ConfidentialClient, ConfidentialClientRef};
 use crate::registration::config::RegistrationClientConfig;
 use crate::registration::error::WrappedClientRegistrationError;
+use crate::registration::resources::ResourceHomeUrl;
 
 pub type RegistrationClientRef = Arc<RegistrationClient>;
 
@@ -137,19 +139,17 @@ impl RegistrationClient {
         }
     }
     
-    pub async fn list_clients(&self, resource_id: Id) -> Result<Clients, RegistrationClientError> {
+    pub async fn list_clients(&self) -> Result<Clients, RegistrationClientError> {
         let enumerate_clients_uri = self.config.issuer_admin_url.join("clients/")
             .map_err(|cause| RegistrationClientError::InvalidConfiguration { error: format!("Invalid admin api endpoint for issuer. {}", cause) })?;
         let request = self.create_http_request_with_auth_token(&enumerate_clients_uri, http::Method::GET).await?;
         
-        let response = self.inner.reqwest_client.async_http_client(request)
-            .await;
+        let response = self.inner.reqwest_client.async_http_client(request).await;
         match response { 
             Ok(response) => {
-                 let clients: Clients = serde_json::from_slice(&response.body).unwrap();
-                 let filtered_clients = clients.value().into_iter().filter(|client| client.base_url.clone().is_some_and(|url| url.contains(&resource_id.value().to_string()))).collect::<Vec<Client>>();
-    
-                 Ok(Clients(filtered_clients))
+                 let clients: Clients = serde_json::from_slice(&response.body)
+                     .map_err(|cause| RegistrationClientError::InvalidConfiguration { error: format!("Could not deserialize response body. {}", cause) })?;
+                 Ok(clients)
             }
             Err(error) => {
                  Err(RegistrationClientError::RequestError { error: "OIDC client list request failed!".to_string(), cause: Box::new(error) })
@@ -157,31 +157,39 @@ impl RegistrationClient {
         }
     }
 
-    pub async fn delete_client(&self, resource_id: Id) -> Result<Clients, RegistrationClientError> {
-        let clients = self.list_clients(resource_id).await?;
-        
+    pub async fn delete_client_by_resource_id(&self, resource_id: Id) -> Result<Clients, RegistrationClientError> {
+        let clients = self.list_clients().await?;
+        let filtered_clients = clients.filter_clients_by_resource_id(resource_id);
+
         let mut failed_deletion_clients = Vec::new();
-        
-        for client in clients.value() {
-            let client_uri = format!("clients/{}", client.client_id);
-            let delete_client_url = self.config.issuer_admin_url.join(&client_uri)
-                .map_err(|cause| RegistrationClientError::InvalidConfiguration { error: format!("Invalid admin api endpoint for issuer. {}", cause) })?;
 
-            let request = self.create_http_request_with_auth_token(&delete_client_url, http::Method::DELETE).await?;
-
-            let response = self.inner.reqwest_client.async_http_client(request)
-                .await;
-
-            if response.is_err() {
-                failed_deletion_clients.push(client.client_id);
-            }
+        for client in filtered_clients {
+            match self.delete_client(&client.client_id).await {
+                Ok(response) => {
+                    if response.status_code.is_success().not() {
+                        failed_deletion_clients.push(client.client_id)
+                    }
+                }
+                Err(_) => { failed_deletion_clients.push(client.client_id) }
+            };
         }
-        
+
         if failed_deletion_clients.is_empty() {
             Ok(clients)
         } else {
             Err( RegistrationClientError::ClientDeletionError { client_ids: failed_deletion_clients.join(",") } )
         }
+    }
+
+    pub async fn delete_client(&self, client_id: &String) -> Result<HttpResponse, RegistrationClientError> {
+        let client_uri = format!("clients/{}", client_id);
+        let delete_client_url = self.config.issuer_admin_url.join(&client_uri)
+            .map_err(|cause| RegistrationClientError::InvalidConfiguration { error: format!("Invalid admin api endpoint for issuer. {}", cause) })?;
+
+        let request = self.create_http_request_with_auth_token(&delete_client_url, http::Method::DELETE).await?;
+
+        self.inner.reqwest_client.async_http_client(request).await
+            .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), cause: error.into() })
     }
 
     async fn create_http_request_with_auth_token(&self, issuer_remote_url: &Url, http_method: http::Method) -> Result<HttpRequest, RegistrationClientError> {
@@ -208,6 +216,20 @@ pub struct Clients(Vec<Client>);
 impl Clients {
     pub fn value(&self) -> Vec<Client> {
         self.0.clone()
+    }
+    
+    pub fn filter_clients_by_resource_id(&self, resource_id: Id) -> Vec<Client> {
+        self.value()
+            .into_iter()
+            .filter(|client| client.base_url.clone().is_some_and(|url| url.contains(&resource_id.value().to_string())))
+            .collect::<Vec<Client>>()
+    }
+
+    pub fn filter_carl_clients(&self, base_url: &ResourceHomeUrl) -> Vec<Client> {
+        self.value()
+            .into_iter()
+            .filter(|client| client.base_url.clone().is_some_and(|url| url.contains(&base_url.value().to_string())))
+            .collect::<Vec<Client>>()
     }
 }
 
