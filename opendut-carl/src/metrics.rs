@@ -3,7 +3,7 @@ use tracing::trace;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment};
 use opendut_types::peer::PeerDescriptor;
 use opendut_types::peer::state::PeerState;
-
+use crate::persistence::error::PersistenceError;
 use crate::resources::manager::ResourcesManagerRef;
 
 
@@ -18,32 +18,36 @@ pub fn initialize_metrics_collection(
     let connected_peers_gauge = meter.u64_observable_gauge("connected_peers").init();
     meter.register_callback(&[deployed_clusters_gauge.as_any(), configured_clusters_gauge.as_any(), registered_peers_gauge.as_any(), connected_peers_gauge.as_any()], move |observer| {
 
-        let metrics = futures::executor::block_on(
+        let metrics: Result<Metrics, PersistenceError> = futures::executor::block_on(
             resources_manager.resources(|resources| {
-                Metrics {
-                    deployed_clusters: resources.list::<ClusterDeployment>(),
-                    configured_clusters: resources.list::<ClusterConfiguration>(),
-                    registered_peers: resources.list::<PeerDescriptor>(),
+                Ok(Metrics {
+                    deployed_clusters: resources.list::<ClusterDeployment>()?,
+                    configured_clusters: resources.list::<ClusterConfiguration>()?,
+                    registered_peers: resources.list::<PeerDescriptor>()?,
                     connected_peers: {
-                        let registered_peers = resources.list::<PeerState>();
+                        let registered_peers = resources.list::<PeerState>()?;
                         let mut online_peers: Vec<PeerState> = vec![];
                         registered_peers.iter().for_each(|state| {
                             if let PeerState::Up { .. } = state { online_peers.push(state.clone()) }
                         });
                         online_peers
                     },
-                }
+                })
             })
         );
-        match ObservableMetrics::try_from(metrics) {
-            Ok(metrics) => {
-                observer.observe_u64(&deployed_clusters_gauge, metrics.deployed_clusters, &[]);
-                observer.observe_u64(&configured_clusters_gauge, metrics.configured_clusters, &[]);
-                observer.observe_u64(&registered_peers_gauge, metrics.registered_peers, &[]);
-                observer.observe_u64(&connected_peers_gauge, metrics.connected_peers, &[]);
+
+        match metrics {
+            Ok(metrics) => match ObservableMetrics::try_from(metrics) {
+                Ok(metrics) => {
+                    observer.observe_u64(&deployed_clusters_gauge, metrics.deployed_clusters, &[]);
+                    observer.observe_u64(&configured_clusters_gauge, metrics.configured_clusters, &[]);
+                    observer.observe_u64(&registered_peers_gauge, metrics.registered_peers, &[]);
+                    observer.observe_u64(&connected_peers_gauge, metrics.connected_peers, &[]);
+                }
+                Err(cause) => trace!("Error while converting metrics into observable format:\n  {cause}")
             }
-            Err(cause) => trace!("Error while converting metrics into observable format:\n  {cause}")
-        };
+            Err(cause) => trace!("Error while loading metrics information from ResourcesManager:\n  {cause}")
+        }
 
     }).expect("could not register metrics collection callback for CARL");
 }

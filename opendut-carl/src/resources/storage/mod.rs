@@ -77,6 +77,6 @@ pub trait ResourcesStorageApi {
     fn get<R>(&self, id: Id) -> PersistenceResult<Option<R>>
     where R: Resource + Clone;
 
-    fn list<R>(&self) -> Vec<R>
+    fn list<R>(&self) -> PersistenceResult<Vec<R>>
     where R: Resource + Clone;
 }

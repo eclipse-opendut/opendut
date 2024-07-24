@@ -41,9 +41,8 @@ impl ResourcesStorageApi for PersistentResourcesStorage {
         R::get(id, &self.storage)
     }
 
-    fn list<R>(&self) -> Vec<R>
+    fn list<R>(&self) -> PersistenceResult<Vec<R>>
     where R: Resource + Clone {
         R::list(&self.storage)
-            .expect("TODO-6416b5c9-69ef-4278-ae70-ef79f2ae70ae")
     }
 }

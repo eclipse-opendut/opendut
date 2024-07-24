@@ -57,9 +57,9 @@ impl ResourcesStorageApi for VolatileResourcesStorage {
         Ok(result)
     }
 
-    fn list<R>(&self) -> Vec<R>
+    fn list<R>(&self) -> PersistenceResult<Vec<R>>
     where R: Resource {
-        match self.column_of::<R>() {
+        let result = match self.column_of::<R>() {
             Some(column) => {
                 column.values()
                     .map(|value| value
@@ -70,7 +70,8 @@ impl ResourcesStorageApi for VolatileResourcesStorage {
                     .collect()
             }
             None => Vec::new()
-        }
+        };
+        Ok(result)
     }
 }
 impl VolatileResourcesStorage {

@@ -16,6 +16,6 @@ impl Persistable for PeerConfiguration2 {
     }
     
     fn list(storage: &Storage) -> PersistenceResult<Vec<Self>> {
-        Ok(storage.memory.list())
+        storage.memory.list()
     }
 }

@@ -168,7 +168,7 @@ mod test {
         assert_that!(testee.get::<PeerDescriptor>(id).await?, some(eq(Clone::clone(&peer))));
 
         testee.resources(|resources| {
-            resources.list::<ClusterConfiguration>()
+            resources.list::<ClusterConfiguration>().unwrap()
                 .into_iter()
                 .for_each(|cluster| {
                     assert_that!(cluster, eq(Clone::clone(&cluster_configuration)));

@@ -53,7 +53,7 @@ pub struct GetClusterConfigurationError {
 #[derive(thiserror::Error, Debug)]
 #[error("{message}")]
 pub struct ListClusterConfigurationsError {
-    message: String,
+    pub message: String,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -135,7 +135,7 @@ pub enum GetClusterDeploymentError {
 #[derive(thiserror::Error, Debug)]
 #[error("{message}")]
 pub struct ListClusterDeploymentsError {
-    message: String,
+    pub message: String,
 }
 
 

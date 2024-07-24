@@ -99,7 +99,7 @@ impl ClusterManagerService for ClusterManagerFacade {
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn get_cluster_configuration(&self, request: Request<GetClusterConfigurationRequest>) -> Result<Response<GetClusterConfigurationResponse>, Status> {
         trace!("Received request: {}", request.debug_output());
-        
+
         match request.into_inner().id {
             None => {
                 Err(Status::invalid_argument("ClusterId is required."))
@@ -135,8 +135,10 @@ impl ClusterManagerService for ClusterManagerFacade {
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn list_cluster_configurations(&self, request: Request<ListClusterConfigurationsRequest>) -> Result<Response<ListClusterConfigurationsResponse>, Status> {
         trace!("Received request: {}", request.debug_output());
-        
-        let configurations = self.cluster_manager.lock().await.list_configuration().await;
+
+        let configurations = self.cluster_manager.lock().await.list_configuration().await
+            .map_err(|cause| Status::internal(cause.to_string()))?;
+
         Ok(Response::new(ListClusterConfigurationsResponse {
             result: Some(list_cluster_configurations_response::Result::Success(
                 ListClusterConfigurationsSuccess {
@@ -202,8 +204,10 @@ impl ClusterManagerService for ClusterManagerFacade {
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn list_cluster_deployments(&self, request: Request<ListClusterDeploymentsRequest>) -> Result<Response<ListClusterDeploymentsResponse>, Status> {
         trace!("Received request: {}", request.debug_output());
-        
-        let deployments = self.cluster_manager.lock().await.list_deployment().await;
+
+        let deployments = self.cluster_manager.lock().await.list_deployment().await
+            .map_err(|cause| Status::internal(cause.to_string()))?;
+
         Ok(Response::new(ListClusterDeploymentsResponse {
             result: Some(list_cluster_deployments_response::Result::Success(
                 ListClusterDeploymentsSuccess {

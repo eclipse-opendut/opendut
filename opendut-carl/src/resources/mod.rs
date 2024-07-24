@@ -58,7 +58,7 @@ impl Resources {
         }
     }
 
-    pub fn list<R>(&self) -> Vec<R>
+    pub fn list<R>(&self) -> PersistenceResult<Vec<R>>
     where R: Resource {
         match &self.storage {
             ResourcesStorage::Persistent(storage) => storage.list(),

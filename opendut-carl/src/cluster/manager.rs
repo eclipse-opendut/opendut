@@ -6,7 +6,7 @@ use futures::future::join_all;
 use futures::FutureExt;
 use tracing::{debug, error, warn};
 
-use opendut_carl_api::carl::cluster::{DeleteClusterDeploymentError, GetClusterConfigurationError, GetClusterDeploymentError, StoreClusterDeploymentError};
+use opendut_carl_api::carl::cluster::{DeleteClusterDeploymentError, GetClusterConfigurationError, GetClusterDeploymentError, ListClusterConfigurationsError, ListClusterDeploymentsError, StoreClusterDeploymentError};
 use opendut_types::cluster::{ClusterAssignment, ClusterConfiguration, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::peer::state::PeerState;
@@ -196,10 +196,11 @@ impl ClusterManager {
     }
 
     #[tracing::instrument(skip(self), level="trace")]
-    pub async fn list_configuration(&self) -> Vec<ClusterConfiguration> {
+    pub async fn list_configuration(&self) -> Result<Vec<ClusterConfiguration>, ListClusterConfigurationsError> {
         self.resources_manager.resources(|resources| {
             resources.list::<ClusterConfiguration>()
         }).await
+        .map_err(|cause| ListClusterConfigurationsError { message: cause.to_string() })
     }
 
     #[tracing::instrument(skip(self), level="trace")]
@@ -251,10 +252,11 @@ impl ClusterManager {
     }
 
     #[tracing::instrument(skip(self), level="trace")]
-    pub async fn list_deployment(&self) -> Vec<ClusterDeployment> {
+    pub async fn list_deployment(&self) -> Result<Vec<ClusterDeployment>, ListClusterDeploymentsError> {
         self.resources_manager.resources(|resources| {
             resources.list::<ClusterDeployment>()
         }).await
+        .map_err(|cause| ListClusterDeploymentsError { message: cause.to_string() })
     }
 }
 

@@ -238,7 +238,8 @@ pub async fn list_peer_descriptors(params: ListPeerDescriptorsParams) -> Result<
 
         let peers = resources_manager.resources(|resources| {
             resources.list::<PeerDescriptor>()
-        }).await;
+        }).await
+        .map_err(|cause| ListPeerDescriptorsError::Internal { cause: cause.to_string() })?;
 
         info!("Successfully queried all peer descriptors.");
 
@@ -264,7 +265,8 @@ pub async fn list_devices(params: ListDevicesParams) -> Result<Vec<DeviceDescrip
 
         let devices = resources_manager.resources(|resource| {
             resource.list::<DeviceDescriptor>()
-        }).await;
+        }).await
+        .map_err(|cause| ListDevicesError::Internal { cause: cause.to_string() })?;
 
         info!("Successfully queried all peers.");
 
