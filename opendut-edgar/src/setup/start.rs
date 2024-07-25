@@ -81,7 +81,7 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
 
     tasks.append(&mut vec![
         Box::new(tasks::CreateServiceFile::with_service_user(service_user)),
-        Box::new(tasks::StartService),
+        Box::new(tasks::RestartService),
     ]);
 
     runner::run(run_mode, no_confirm, &tasks).await

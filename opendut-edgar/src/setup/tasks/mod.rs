@@ -23,8 +23,8 @@ pub mod network_interface;
 mod request_linux_network_capability;
 pub use request_linux_network_capability::RequestLinuxNetworkCapability;
 
-mod start_service;
-pub use start_service::StartService;
+mod restart_service;
+pub use restart_service::RestartService;
 
 pub mod write_configuration;
 
