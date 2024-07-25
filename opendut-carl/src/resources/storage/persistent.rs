@@ -1,3 +1,4 @@
+use std::sync::Mutex;
 use url::Url;
 
 use opendut_types::resources::Id;
@@ -14,7 +15,9 @@ pub struct PersistentResourcesStorage {
 }
 impl PersistentResourcesStorage {
     pub fn connect(url: &Url) -> Result<Self, ConnectError> {
-        let db = crate::persistence::database::connect(url)?;
+        let db = Mutex::new(
+            crate::persistence::database::connect(url)?
+        );
         let memory = VolatileResourcesStorage::default();
         let storage = Storage { db, memory };
         Ok(Self { storage })

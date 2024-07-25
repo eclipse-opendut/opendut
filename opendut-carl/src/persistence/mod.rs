@@ -4,16 +4,16 @@ use diesel::PgConnection;
 use crate::resources::storage::volatile::VolatileResourcesStorage;
 
 pub mod database;
-pub mod model;
+pub(crate) mod model;
 
 pub struct Storage {
     pub db: Db,
     pub memory: Memory,
 }
-pub type Db = Mutex<PgConnection>; //Mutex rather than RwLock, because we share this between threads (i.e. we need it to implement `Sync`)
-pub type Memory = VolatileResourcesStorage;
+pub(crate) type Db = Mutex<PgConnection>; //Mutex rather than RwLock, because we share this between threads (i.e. we need it to implement `Sync`)
+pub(crate) type Memory = VolatileResourcesStorage;
 
-pub mod error {
+pub(crate) mod error {
     use std::fmt::{Display, Formatter};
     use opendut_types::resources::Id;
     use crate::resources::resource::Resource;

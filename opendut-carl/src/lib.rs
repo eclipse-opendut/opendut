@@ -47,7 +47,7 @@ opendut_util::app_info!();
 mod actions;
 mod cluster;
 mod metrics;
-mod persistence;
+pub mod persistence;
 mod peer;
 mod resources;
 pub mod settings;

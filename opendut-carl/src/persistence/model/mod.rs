@@ -5,7 +5,6 @@ use opendut_types::resources::Id;
 
 use crate::persistence::error::PersistenceResult;
 use crate::persistence::Storage;
-use crate::resources::resource::Resource;
 
 pub mod cluster_configuration;
 pub mod cluster_deployment;
@@ -39,12 +38,3 @@ impl<From, To> PersistableConversionError<From, To> {
         }
     }
 }
-
-#[allow(unused)] //marker trait to help implementing code structure consistently
-trait PersistableModel<R>
-where
-    R: Resource,
-    Self: Debug,
-    Self: From<R>,
-    Self: TryInto<R, Error=PersistableConversionError<Self, R>>,
-{ }

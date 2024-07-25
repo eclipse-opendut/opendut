@@ -58,6 +58,7 @@ uuid = { workspace = true }
 [dev-dependencies]
 assert_fs = { workspace = true }
 predicates = { workspace = true }
+testcontainers-modules = { workspace = true, features = ["postgres"] }
 rstest = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
 opendut-auth-tests = { workspace = true }
