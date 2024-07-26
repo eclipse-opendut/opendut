@@ -166,7 +166,7 @@ impl TryFrom<DeviceDescriptor> for crate::topology::DeviceDescriptor {
 #[cfg(test)]
 #[allow(non_snake_case)]
 mod tests {
-    use crate::proto::util::{network_interface_descriptor, EthernetInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
+    use crate::proto::util::{network_interface_descriptor, EthernetInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName, NetworkInterfaceId};
     use crate::topology::{DeviceDescription, DeviceName, DeviceTag};
     use crate::util::net::NetworkInterfaceConfiguration;
     use googletest::prelude::*;
@@ -178,6 +178,8 @@ mod tests {
     fn A_Topology_should_be_convertable_to_its_proto_and_vice_versa() -> Result<()> {
         let device_id_1 = Uuid::new_v4();
         let device_id_2 = Uuid::new_v4();
+        let network_interface_id1 = Uuid::new_v4();
+        let network_interface_id2 = Uuid::new_v4();
 
         let native = crate::topology::Topology {
             devices: vec![
@@ -185,7 +187,8 @@ mod tests {
                     id: Clone::clone(&device_id_1).into(),
                     name: DeviceName::try_from("device-1")?,
                     description: DeviceDescription::try_from("Some device").ok(),
-                    interface: crate::util::net::NetworkInterfaceDescriptor { 
+                    interface: crate::util::net::NetworkInterfaceDescriptor {
+                        id: network_interface_id1.into(),
                         name: crate::util::net::NetworkInterfaceName::try_from("tap0")?,
                         configuration: NetworkInterfaceConfiguration::Ethernet,
                     },
@@ -195,7 +198,8 @@ mod tests {
                     id: Clone::clone(&device_id_2).into(),
                     name: DeviceName::try_from("device-2")?,
                     description: DeviceDescription::try_from("Some other device").ok(),
-                    interface: crate::util::net::NetworkInterfaceDescriptor { 
+                    interface: crate::util::net::NetworkInterfaceDescriptor {
+                        id: network_interface_id2.into(),
                         name: crate::util::net::NetworkInterfaceName::try_from("tap1")?,
                         configuration: NetworkInterfaceConfiguration::Ethernet,
                     },
@@ -214,7 +218,10 @@ mod tests {
                     description: Some(crate::proto::topology::DeviceDescription {
                         value: String::from("Some device"),
                     }),
-                    interface: Some(NetworkInterfaceDescriptor{
+                    interface: Some(NetworkInterfaceDescriptor {
+                        id: Some(NetworkInterfaceId {
+                            uuid: Some(network_interface_id1.clone().into()),
+                        }),
                         name: Some(NetworkInterfaceName {
                             name: String::from("tap0"),
                         }),
@@ -241,7 +248,10 @@ mod tests {
                     description: Some(crate::proto::topology::DeviceDescription {
                         value: String::from("Some other device"),
                     }),
-                    interface: Some(NetworkInterfaceDescriptor{
+                    interface: Some(NetworkInterfaceDescriptor {
+                        id: Some(NetworkInterfaceId {
+                            uuid: Some(network_interface_id2.clone().into()),
+                        }),
                         name: Some(NetworkInterfaceName {
                             name: String::from("tap1"),
                         }),
@@ -268,8 +278,7 @@ mod tests {
     }
 
     #[test]
-    fn Converting_a_proto_Topology_to_a_native_Topology_should_fail_if_the_id_of_a_device_is_not_set(
-    ) -> Result<()> {
+    fn Converting_a_proto_Topology_to_a_native_Topology_should_fail_if_the_id_of_a_device_is_not_set() -> Result<()> {
         let proto = Topology {
             device_descriptors: vec![DeviceDescriptor {
                 id: None,
@@ -279,7 +288,10 @@ mod tests {
                 description: Some(crate::proto::topology::DeviceDescription {
                     value: String::from("Some device"),
                 }),
-                interface: Some(NetworkInterfaceDescriptor{
+                interface: Some(NetworkInterfaceDescriptor {
+                    id: Some(NetworkInterfaceId {
+                        uuid: Some(Uuid::new_v4().into()),
+                    }),
                     name: Some(NetworkInterfaceName {
                         name: String::from("tap0"),
                     }),

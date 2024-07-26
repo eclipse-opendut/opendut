@@ -2,7 +2,7 @@ use uuid::Uuid;
 
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::peer::PeerId;
-use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
+use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
 use crate::{CreateOutputFormat, DescribeOutputFormat, NetworkInterfaceType};
 
@@ -29,6 +29,8 @@ impl CreateNetworkInterfaceCli {
         let peer_interface_names = peer_descriptor.network.interfaces
             .iter().map(|interface| interface.name.clone()).collect::<Vec<_>>();
 
+        let interface_id = NetworkInterfaceId::random();
+
         let interface_name = NetworkInterfaceName::try_from(self.interface_name).map_err(|error| error.to_string())?;
 
         // TODO: Properly implement CAN parameter configuration
@@ -48,6 +50,7 @@ impl CreateNetworkInterfaceCli {
         } else {
             peer_descriptor.network.interfaces.push(
                 NetworkInterfaceDescriptor {
+                    id: interface_id,
                     name: interface_name,
                     configuration: interface_configuration,
                 }

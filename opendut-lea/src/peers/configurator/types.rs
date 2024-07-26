@@ -4,7 +4,7 @@ use opendut_types::peer::executor::ExecutorDescriptor;
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
 use opendut_types::peer::executor::{container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine}, ExecutorKind, ExecutorDescriptors, ResultsUrl};
 use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
-use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
+use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
 use crate::components::UserInputValue;
 use crate::util::net::UserNetworkInterfaceConfiguration;
@@ -80,6 +80,7 @@ pub struct UserPeerNetwork {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct UserNetworkInterface {
+    pub id: NetworkInterfaceId,
     pub name: NetworkInterfaceName,
     pub configuration: UserNetworkInterfaceConfiguration,
 }
@@ -194,11 +195,21 @@ impl TryFrom<UserDeviceConfiguration> for DeviceDescriptor {
     }
 }
 
+impl From<NetworkInterfaceDescriptor> for UserNetworkInterface {
+    fn from(interface: NetworkInterfaceDescriptor) -> Self {
+        Self {
+            id: interface.id,
+            name: interface.name,
+            configuration: UserNetworkInterfaceConfiguration::from(interface.configuration),
+        }
+    }
+}
 impl TryFrom<UserNetworkInterface> for NetworkInterfaceDescriptor {
     type Error = PeerMisconfigurationError;
 
     fn try_from(configuration: UserNetworkInterface) -> Result<Self, Self::Error> {
         Ok(Self {
+            id: configuration.id,
             name: configuration.name,
             configuration: configuration.configuration.inner,
         })

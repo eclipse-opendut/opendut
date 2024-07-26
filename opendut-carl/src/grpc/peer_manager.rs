@@ -298,7 +298,7 @@ mod tests {
     use opendut_types::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorKind, ExecutorDescriptors, ExecutorDescriptor};
     use opendut_types::proto;
     use opendut_types::topology::Topology;
-    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
+    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
     use opendut_auth_tests::registration_client;
 
     use crate::resources::manager::ResourcesManager;
@@ -339,6 +339,7 @@ mod tests {
             network: PeerNetworkDescriptor {
                 interfaces: vec![
                     NetworkInterfaceDescriptor {
+                        id: NetworkInterfaceId::random(),
                         name: NetworkInterfaceName::try_from("eth0").unwrap(),
                         configuration: NetworkInterfaceConfiguration::Ethernet,
                     },

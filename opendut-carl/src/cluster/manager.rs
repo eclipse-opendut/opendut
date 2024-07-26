@@ -335,7 +335,7 @@ mod test {
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_types::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorKind, ExecutorDescriptors, ExecutorDescriptor};
     use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
-    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceName};
+    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceId, NetworkInterfaceName};
 
     use crate::actions::{CreateClusterConfigurationParams, StorePeerDescriptorParams};
     use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
@@ -490,6 +490,7 @@ mod test {
                 name: DeviceName::try_from(format!("test-device-{id}")).unwrap(),
                 description: None,
                 interface: NetworkInterfaceDescriptor {
+                    id: NetworkInterfaceId::random(),
                     name: interface_name,
                     configuration: NetworkInterfaceConfiguration::Ethernet,
                 },
@@ -510,6 +511,7 @@ mod test {
                 location: PeerLocation::try_from("Ulm").ok(),
                 network: PeerNetworkDescriptor {
                     interfaces: vec!(NetworkInterfaceDescriptor {
+                        id: NetworkInterfaceId::random(),
                         name: NetworkInterfaceName::try_from("eth0").unwrap(),
                         configuration: NetworkInterfaceConfiguration::Ethernet,
                     }),
@@ -602,6 +604,7 @@ mod test {
             network: PeerNetworkDescriptor {
                 interfaces: vec![
                     NetworkInterfaceDescriptor {
+                        id: NetworkInterfaceId::random(),
                         name: NetworkInterfaceName::try_from("eth0").unwrap(),
                         configuration: NetworkInterfaceConfiguration::Ethernet,
                     }
@@ -615,6 +618,7 @@ mod test {
                         name: DeviceName::try_from(format!("{peer_name}_Device_1")).unwrap(),
                         description: DeviceDescription::try_from("Huii").ok(),
                         interface: NetworkInterfaceDescriptor {
+                            id: NetworkInterfaceId::random(),
                             name: NetworkInterfaceName::try_from("eth0").unwrap(),
                             configuration: NetworkInterfaceConfiguration::Ethernet,
                         },

@@ -104,7 +104,7 @@ mod test {
 
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_types::peer::executor::ExecutorDescriptors;
-    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
+    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
     use super::*;
 
@@ -116,6 +116,7 @@ mod test {
             location: Some(PeerLocation::try_from("SiFi").unwrap()),
             network: PeerNetworkDescriptor{
                 interfaces: vec!(NetworkInterfaceDescriptor {
+                    id: NetworkInterfaceId::random(),
                     name: NetworkInterfaceName::try_from("eth0").unwrap(),
                     configuration: NetworkInterfaceConfiguration::Ethernet,
                 }),

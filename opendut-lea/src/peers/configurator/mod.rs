@@ -11,7 +11,6 @@ use crate::peers::configurator::components::Controls;
 use crate::peers::configurator::tabs::{DevicesTab, ExecutorTab, GeneralTab, NetworkTab, SetupTab, TabIdentifier};
 use crate::peers::configurator::types::{UserDeviceConfiguration, UserPeerConfiguration, UserNetworkInterface, UserPeerExecutor, UserContainerEnv, UserPeerNetwork};
 use crate::routing::{navigate_to, WellKnownRoutes};
-use crate::util::net::UserNetworkInterfaceConfiguration;
 
 mod components;
 mod tabs;
@@ -73,12 +72,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                                 create_rw_signal(UserDeviceConfiguration {
                                     id: device.id,
                                     name: UserInputValue::Right(device.name.to_string()),
-                                    interface: Some(
-                                        UserNetworkInterface {
-                                            name: device.interface.name,
-                                            configuration: UserNetworkInterfaceConfiguration::from(device.interface.configuration),
-                                        }
-                                    ),
+                                    interface: Some(UserNetworkInterface::from(device.interface)),
                                     description: UserInputValue::Right(device.description.unwrap_or_default().to_string()),
                                     is_collapsed: true
                                 })
@@ -88,10 +82,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                             }
                             user_configuration.network.network_interfaces = configuration.network.interfaces.into_iter()
                                 .map(|interface| {
-                                    create_rw_signal(UserNetworkInterface {
-                                        name: interface.name,
-                                        configuration: UserNetworkInterfaceConfiguration::from(interface.configuration)
-                                    })
+                                    create_rw_signal(UserNetworkInterface::from(interface))
                                 })
                                 .collect();
                             for executor in configuration.executors.executors {

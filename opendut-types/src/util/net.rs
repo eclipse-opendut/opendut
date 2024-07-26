@@ -4,6 +4,7 @@ use std::ops::Not;
 use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use url::Url;
+use uuid::Uuid;
 
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(transparent)]
@@ -136,7 +137,6 @@ pub enum NetworkInterfaceConfiguration {
         data_sample_point: CanSamplePoint,
     },
 }
-
 impl fmt::Display for NetworkInterfaceConfiguration {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -155,17 +155,29 @@ impl fmt::Display for NetworkInterfaceConfiguration {
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, Hash)]
 pub struct NetworkInterfaceDescriptor {
+    pub id: NetworkInterfaceId,
     pub name: NetworkInterfaceName,
     pub configuration: NetworkInterfaceConfiguration,
 }
-
 impl fmt::Display for NetworkInterfaceDescriptor {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{} ({})", self.name, self.configuration)
-        
     }
 }
 
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, Hash)]
+#[serde(transparent)]
+pub struct NetworkInterfaceId { pub uuid: Uuid }
+impl NetworkInterfaceId {
+    pub fn random() -> Self {
+        Self { uuid: Uuid::new_v4() }
+    }
+}
+impl From<Uuid> for NetworkInterfaceId {
+    fn from(uuid: Uuid) -> Self {
+        Self { uuid }
+    }
+}
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ClientId(pub String);

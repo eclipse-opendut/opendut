@@ -234,6 +234,7 @@ impl From<crate::util::net::NetworkInterfaceDescriptor> for NetworkInterfaceDesc
         };
 
         Self {
+            id: Some(value.id.into()),
             name: Some(value.name.into()),
             configuration: Some(config),
         }
@@ -246,8 +247,12 @@ impl TryFrom<NetworkInterfaceDescriptor> for crate::util::net::NetworkInterfaceD
     fn try_from(value: NetworkInterfaceDescriptor) -> Result<Self, Self::Error> {
         type ErrorBuilder = ConversionErrorBuilder<NetworkInterfaceDescriptor, crate::util::net::NetworkInterfaceDescriptor>;
 
+        let id = value.id
+            .ok_or(ErrorBuilder::field_not_set("id"))?
+            .try_into()?;
+
         let name = value.name
-            .ok_or(ErrorBuilder::field_not_set("interface"))?
+            .ok_or(ErrorBuilder::field_not_set("name"))?
             .try_into()?;
 
         let configuration = match value.configuration
@@ -265,12 +270,32 @@ impl TryFrom<NetworkInterfaceDescriptor> for crate::util::net::NetworkInterfaceD
             };
 
         Ok(Self {
+            id,
             name,
             configuration,
         })
     }
 }
 
+impl From<crate::util::net::NetworkInterfaceId> for NetworkInterfaceId {
+    fn from(value: crate::util::net::NetworkInterfaceId) -> Self {
+        Self {
+            uuid: Some(value.uuid.into()),
+        }
+    }
+}
+
+impl TryFrom<NetworkInterfaceId> for crate::util::net::NetworkInterfaceId {
+    type Error = ConversionError;
+
+    fn try_from(value: NetworkInterfaceId) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<NetworkInterfaceId, crate::util::net::NetworkInterfaceId>;
+
+        value.uuid
+            .ok_or(ErrorBuilder::field_not_set("uuid"))
+            .map(|uuid| Self { uuid: uuid.into() })
+    }
+}
 
 impl From<crate::util::net::ClientSecret> for ClientSecret {
     fn from(value: crate::util::net::ClientSecret) -> Self {

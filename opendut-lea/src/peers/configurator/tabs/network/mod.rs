@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use leptos::{component, create_action, create_read_slice, create_rw_signal, create_slice, IntoView, RwSignal, SignalGetUntracked, SignalWith, SignalWithUntracked, view};
-
+use opendut_types::util::net::NetworkInterfaceId;
 use crate::components::{Toast, use_toaster, UserInputValue};
 use crate::peers::configurator::tabs::network::network_interface_input::NetworkInterfaceInput;
 use crate::peers::configurator::tabs::network::bridge_name_input::BridgeNameInput;
@@ -120,15 +120,16 @@ pub fn NetworkTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl I
             <NetworkInterfaceInput
                 interfaces = interfaces_getter
                 on_action = move |name, configuration| {
-                    let mut interface_names = interfaces_getter.get_untracked();
+                    let mut interfaces = interfaces_getter.get_untracked();
                     let user_peer_network = create_rw_signal(
                         UserNetworkInterface {
+                            id: NetworkInterfaceId::random(),
                             name,
                             configuration
                         }
                     );
-                    interface_names.push(user_peer_network);
-                    interfaces_setter.set(interface_names);
+                    interfaces.push(user_peer_network);
+                    interfaces_setter.set(interfaces);
                 }
             />
             <label class="label">Configured Network Interfaces</label>

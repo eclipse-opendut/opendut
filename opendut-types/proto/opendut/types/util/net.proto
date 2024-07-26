@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package opendut.types.util;
 
+import "opendut/types/util/uuid.proto";
+
 message Url {
   string value = 1;
 }
@@ -49,11 +51,16 @@ message CanInterfaceConfiguration {
 }
 
 message NetworkInterfaceDescriptor {
+  NetworkInterfaceId id = 4;
   NetworkInterfaceName name = 1;
   oneof configuration {
     EthernetInterfaceConfiguration ethernet = 2;
     CanInterfaceConfiguration can = 3;
   }
+}
+
+message NetworkInterfaceId {
+  opendut.types.util.Uuid uuid = 1;
 }
 
 message AuthConfig {
