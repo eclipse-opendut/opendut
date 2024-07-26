@@ -138,7 +138,7 @@ pub mod distribution {
 
                 fs_extra::file::copy(
                     cleo_build_dir.join(&tar_file_name),
-                    &cleo_arch_dir.join(cleo_tar_file_name),
+                    cleo_arch_dir.join(cleo_tar_file_name),
                     &fs_extra::file::CopyOptions::default()
                         .overwrite(true)
                 )?;
@@ -172,7 +172,7 @@ pub mod distribution {
 
                 fs_extra::file::copy(
                     edgar_build_dir.join(&tar_file_name),
-                    &edgar_arch_dir.join(edgar_tar_file_name),
+                    edgar_arch_dir.join(edgar_tar_file_name),
                     &fs_extra::file::CopyOptions::default()
                         .overwrite(true)
                 )?;

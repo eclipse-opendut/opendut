@@ -136,8 +136,8 @@ pub mod homepage {
 
         for logo in RESOURCES_TO_INCLUDE {
             fs_extra::file::copy(
-                &logos_source_dir().join(logo),
-                &logos_out_dir().join(logo),
+                logos_source_dir().join(logo),
+                logos_out_dir().join(logo),
                 &fs_extra::file::CopyOptions::default()
                     .overwrite(true)
             )?;

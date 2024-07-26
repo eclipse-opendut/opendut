@@ -162,7 +162,7 @@ impl ContainerManager {
             cmd.args(["--devices", device.value()]);
         }
 
-        cmd.arg(&self.config.image.to_string());
+        cmd.arg(self.config.image.to_string());
 
         if let ContainerCommand::Value(command) = &self.config.command {
             cmd.arg(command.as_str());
