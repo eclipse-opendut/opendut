@@ -1,6 +1,6 @@
-use diesel::{ExpressionMethods, OptionalExtension, PgConnection, QueryDsl, RunQueryDsl, SelectableHelper};
+use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl, SelectableHelper};
 use uuid::Uuid;
-
+use opendut_types::peer::PeerId;
 use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceId};
 
 use crate::persistence::database::schema;
@@ -9,6 +9,7 @@ use crate::persistence::model::persistable::network_interface_kind::PersistableN
 
 #[derive(diesel::Queryable, diesel::Selectable, diesel::Insertable, diesel::AsChangeset)]
 #[diesel(table_name = schema::network_interface)]
+#[diesel(belongs_to(PeerDescriptor, foreign_key = peer_id))]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct PersistableNetworkInterfaceDescriptor {
     pub network_interface_id: Uuid,
@@ -28,17 +29,9 @@ impl PersistableNetworkInterfaceDescriptor {
         Ok(())
     }
 
-    pub fn get(network_interface_id: NetworkInterfaceId, connection: &mut PgConnection) -> PersistenceResult<Option<Self>> {
+    pub fn list_filtered_by_peer_id(peer_id: PeerId, connection: &mut PgConnection) -> PersistenceResult<Vec<Self>> {
         schema::network_interface::table
-            .filter(schema::network_interface::network_interface_id.eq(network_interface_id.uuid))
-            .select(Self::as_select())
-            .first(connection)
-            .optional()
-            .map_err(|cause| PersistenceError::get::<NetworkInterfaceDescriptor>(network_interface_id.uuid, cause))
-    }
-
-    pub fn list(connection: &mut PgConnection) -> PersistenceResult<Vec<Self>> {
-        schema::network_interface::table
+            .filter(schema::network_interface::peer_id.eq(peer_id.uuid))
             .select(Self::as_select())
             .get_results(connection)
             .map_err(PersistenceError::list::<NetworkInterfaceDescriptor>)
