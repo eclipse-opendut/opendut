@@ -18,17 +18,17 @@ pub mod configuration;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
-pub struct PeerId(pub Uuid);
+pub struct PeerId { pub uuid: Uuid }
 
 impl PeerId {
     pub fn random() -> Self {
-        Self(Uuid::new_v4())
+        Self { uuid: Uuid::new_v4() }
     }
 }
 
 impl From<Uuid> for PeerId {
-    fn from(value: Uuid) -> Self {
-        Self(value)
+    fn from(uuid: Uuid) -> Self {
+        Self { uuid }
     }
 }
 
@@ -42,7 +42,7 @@ impl TryFrom<&str> for PeerId {
     type Error = IllegalPeerId;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        Uuid::parse_str(value).map(Self).map_err(|_| IllegalPeerId {
+        Uuid::parse_str(value).map(|uuid| Self { uuid }).map_err(|_| IllegalPeerId {
             value: String::from(value),
         })
     }
@@ -58,7 +58,7 @@ impl TryFrom<String> for PeerId {
 
 impl fmt::Display for PeerId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+        write!(f, "{}", self.uuid)
     }
 }
 

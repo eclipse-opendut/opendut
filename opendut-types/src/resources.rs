@@ -27,7 +27,7 @@ impl fmt::Display for Id {
 impl From<PeerId> for Id {
     fn from(value: PeerId) -> Self {
         Self {
-            value: value.0,
+            value: value.uuid,
         }
     }
 }

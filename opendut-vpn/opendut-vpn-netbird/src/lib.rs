@@ -401,7 +401,7 @@ mod test {
                 .returning(move |_| Ok(()));
             mock_client.expect_generate_netbird_setup_key()
                 .times(1)
-                .withf(move |actual_peer_id| actual_peer_id.0 == peer_id.0)
+                .withf(move |actual_peer_id| *actual_peer_id == peer_id)
                 .returning({
                     let setup_key = Clone::clone(&setup_key);
                     move |_| {

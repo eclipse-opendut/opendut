@@ -12,7 +12,7 @@ include!(concat!(env!("OUT_DIR"), "/opendut.types.peer.rs"));
 impl From<crate::peer::PeerId> for PeerId {
     fn from(value: crate::peer::PeerId) -> Self {
         Self {
-            uuid: Some(value.0.into())
+            uuid: Some(value.uuid.into())
         }
     }
 }
@@ -25,7 +25,7 @@ impl TryFrom<PeerId> for crate::peer::PeerId {
 
         value.uuid
             .ok_or(ErrorBuilder::field_not_set("uuid"))
-            .map(|uuid| Self(uuid.into()))
+            .map(|uuid| Self { uuid: uuid.into() })
     }
 }
 

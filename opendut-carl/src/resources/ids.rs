@@ -26,22 +26,22 @@ impl IntoId<DeviceDescriptor> for DeviceId {
 
 impl IntoId<PeerDescriptor> for PeerId {
     fn into_id(self) -> Id {
-        Id::from(self.0)
+        Id::from(self.uuid)
     }
 }
 impl IntoId<PeerState> for PeerId {
     fn into_id(self) -> Id {
-        Id::from(self.0)
+        Id::from(self.uuid)
     }
 }
 impl IntoId<PeerConfiguration> for PeerId {
     fn into_id(self) -> Id {
-        Id::from(self.0)
+        Id::from(self.uuid)
     }
 }
 
 impl IntoId<PeerConfiguration2> for PeerId {
     fn into_id(self) -> Id {
-        Id::from(self.0)
+        Id::from(self.uuid)
     }
 }
