@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use opendut_types::resources::Id;
 use crate::persistence::error::PersistenceResult;
 use crate::resources::{Resource, Update};
+use crate::resources::ids::IntoId;
 use crate::resources::storage::ResourcesStorageApi;
 
 #[derive(Default)]
@@ -12,8 +13,9 @@ pub struct VolatileResourcesStorage {
 }
 impl ResourcesStorageApi for VolatileResourcesStorage {
 
-    fn insert<R>(&mut self, id: Id, resource: R) -> PersistenceResult<()>
+    fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
     where R: Resource {
+        let id = id.into_id();
         let column = self.storage
             .entry(TypeId::of::<R>())
             .or_default();
@@ -21,8 +23,9 @@ impl ResourcesStorageApi for VolatileResourcesStorage {
         Ok(())
     }
 
-    fn update<R>(&mut self, id: Id) -> Update<R>
+    fn update<R>(&mut self, id: R::Id) -> Update<R>
     where R: Resource {
+        let id = id.into_id();
         let column = self.storage
             .entry(TypeId::of::<R>())
             .or_default();
@@ -33,8 +36,9 @@ impl ResourcesStorageApi for VolatileResourcesStorage {
         }
     }
 
-    fn remove<R>(&mut self, id: Id) -> Option<R>
+    fn remove<R>(&mut self, id: R::Id) -> Option<R>
     where R: Resource {
+        let id = id.into_id();
         let type_id = TypeId::of::<R>();
         let column = self.column_mut_of::<R>()?;
         let result = column.remove(&id)
@@ -49,8 +53,9 @@ impl ResourcesStorageApi for VolatileResourcesStorage {
         result
     }
 
-    fn get<R>(&self, id: Id) -> PersistenceResult<Option<R>>
+    fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Clone {
+        let id = id.into_id();
         let result = self.column_of::<R>()
             .and_then(|column| column.get(&id))
             .and_then(|resource| resource.downcast_ref().cloned());
@@ -88,8 +93,9 @@ impl VolatileResourcesStorage {
 
 #[cfg(test)]
 impl VolatileResourcesStorage {
-    pub fn contains<R>(&self, id: Id) -> bool
+    pub fn contains<R>(&self, id: R::Id) -> bool
     where R: Resource {
+        let id = id.into_id();
         if let Some(column) = self.column_of::<R>() {
             column.contains_key(&id)
         }

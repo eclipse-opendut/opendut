@@ -4,7 +4,6 @@ use diesel::Connection;
 
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
 use opendut_types::peer::executor::ExecutorDescriptors;
-use opendut_types::resources::Id;
 use opendut_types::util::net::NetworkInterfaceConfiguration;
 
 use crate::persistence::error::{PersistenceError, PersistenceResult};
@@ -16,18 +15,18 @@ use crate::persistence::Storage;
 use super::{Persistable, PersistableConversionError};
 
 impl Persistable for PeerDescriptor {
-    fn insert(self, id: Id, storage: &mut Storage) -> PersistenceResult<()> {
+    fn insert(self, peer_id: PeerId, storage: &mut Storage) -> PersistenceResult<()> {
         let PeerDescriptor { id: peer_id, name, location, network, topology, executors } = self;
         let PeerNetworkDescriptor { interfaces, bridge_name } = network;
 
         storage.db.lock().unwrap().deref_mut().transaction::<_, PersistenceError, _>(|connection| {
 
             PersistablePeerDescriptor {
-                peer_id: peer_id.0,
+                peer_id: peer_id.uuid,
                 name: name.value(),
                 location: location.map(|location| location.value()),
                 network_bridge_name: bridge_name.map(|name| name.name()),
-            }.insert(id, storage.db.lock().unwrap().deref_mut())?;
+            }.insert(peer_id, storage.db.lock().unwrap().deref_mut())?;
 
             for interface in interfaces {
                 let (kind, maybe_configuration) = match interface.configuration {
@@ -42,8 +41,8 @@ impl Persistable for PeerDescriptor {
                     network_interface_id: interface.id.uuid,
                     name: interface.name.name(),
                     kind,
-                    peer_id: peer_id.0,
-                }.insert(id, connection)?;
+                    peer_id: peer_id.uuid,
+                }.insert(interface.id, connection)?;
             }
 
             // TODO persist other fields
@@ -52,13 +51,13 @@ impl Persistable for PeerDescriptor {
         })
     }
 
-    fn get(id: Id, storage: &Storage) -> PersistenceResult<Option<Self>> {
-        let persistable = PersistablePeerDescriptor::get(id, storage.db.lock().unwrap().deref_mut())?;
+    fn get(peer_id: PeerId, storage: &Storage) -> PersistenceResult<Option<Self>> {
+        let persistable = PersistablePeerDescriptor::get(peer_id, storage.db.lock().unwrap().deref_mut())?;
 
         let result = persistable
             .map(TryInto::try_into)
             .transpose()
-            .map_err(|cause| PersistenceError::get::<Self>(id, cause).context("Failed to convert from PersistablePeerDescriptor."))?;
+            .map_err(|cause| PersistenceError::get::<Self>(peer_id.uuid, cause).context("Failed to convert from PersistablePeerDescriptor."))?;
         Ok(result)
     }
 

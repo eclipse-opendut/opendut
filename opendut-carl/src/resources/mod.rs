@@ -1,10 +1,10 @@
 use std::any::Any;
 use std::collections::HashMap;
 use std::marker::PhantomData;
-use ids::IntoId;
 use opendut_types::resources::Id;
 use resource::Resource;
 use crate::persistence::error::PersistenceResult;
+use crate::persistence::model::Persistable;
 use crate::resources::storage::{PersistenceOptions, ResourcesStorage, ResourcesStorageApi};
 
 pub mod manager;
@@ -22,36 +22,32 @@ impl Resources {
         Ok(Self { storage })
     }
 
-    pub fn insert<R>(&mut self, id: impl IntoId<R>, resource: R) -> PersistenceResult<()>
-    where R: Resource {
-        let id = id.into_id();
+    pub fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
+    where R: Resource + Persistable {
         match &mut self.storage {
             ResourcesStorage::Persistent(storage) => storage.insert(id, resource),
             ResourcesStorage::Volatile(storage) => storage.insert(id, resource),
         }
     }
 
-    pub fn update<R>(&mut self, id: impl IntoId<R>) -> Update<R>
-    where R: Resource {
-        let id = id.into_id();
+    pub fn update<R>(&mut self, id: R::Id) -> Update<R>
+    where R: Resource + Persistable {
         match &mut self.storage {
             ResourcesStorage::Persistent(storage) => storage.update(id),
             ResourcesStorage::Volatile(storage) => storage.update(id),
         }
     }
 
-    pub fn remove<R>(&mut self, id: impl IntoId<R>) -> Option<R>
-    where R: Resource {
-        let id = id.into_id();
+    pub fn remove<R>(&mut self, id: R::Id) -> Option<R>
+    where R: Resource + Persistable {
         match &mut self.storage {
             ResourcesStorage::Persistent(storage) => storage.remove(id),
             ResourcesStorage::Volatile(storage) => storage.remove(id),
         }
     }
 
-    pub fn get<R>(&self, id: impl IntoId<R>) -> PersistenceResult<Option<R>>
-    where R: Resource {
-        let id = id.into_id();
+    pub fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
+    where R: Resource + Persistable {
         match &self.storage {
             ResourcesStorage::Persistent(storage) => storage.get(id),
             ResourcesStorage::Volatile(storage) => storage.get(id),
@@ -59,7 +55,7 @@ impl Resources {
     }
 
     pub fn list<R>(&self) -> PersistenceResult<Vec<R>>
-    where R: Resource {
+    where R: Resource + Persistable {
         match &self.storage {
             ResourcesStorage::Persistent(storage) => storage.list(),
             ResourcesStorage::Volatile(storage) => storage.list(),
@@ -69,9 +65,8 @@ impl Resources {
 
 #[cfg(test)]
 impl Resources {
-    pub async fn contains<R>(&self, id: impl IntoId<R>) -> bool
+    pub async fn contains<R>(&self, id: R::Id) -> bool
     where R: Resource {
-        let id = id.into_id();
         match &self.storage {
             ResourcesStorage::Persistent(_) => unimplemented!(),
             ResourcesStorage::Volatile(storage) => storage.contains::<R>(id),

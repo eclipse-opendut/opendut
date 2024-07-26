@@ -1,5 +1,4 @@
-use opendut_types::resources::Id;
-use opendut_types::topology::DeviceDescriptor;
+use opendut_types::topology::{DeviceDescriptor, DeviceId};
 
 use crate::persistence::error::PersistenceResult;
 use crate::persistence::model::Persistable;
@@ -7,11 +6,11 @@ use crate::persistence::Storage;
 use crate::resources::storage::ResourcesStorageApi;
 
 impl Persistable for DeviceDescriptor {
-    fn insert(self, id: Id, storage: &mut Storage) -> PersistenceResult<()> {
+    fn insert(self, id: DeviceId, storage: &mut Storage) -> PersistenceResult<()> {
         storage.memory.insert(id, self)
     }
 
-    fn get(id: Id, storage: &Storage) -> PersistenceResult<Option<Self>> {
+    fn get(id: DeviceId, storage: &Storage) -> PersistenceResult<Option<Self>> {
         storage.memory.get(id)
     }
     

@@ -1,9 +1,8 @@
 use url::Url;
 
-use opendut_types::resources::Id;
-
 use crate::persistence::database::ConnectError;
 use crate::persistence::error::PersistenceResult;
+use crate::persistence::model::Persistable;
 use crate::resources::{Resource, Update};
 use crate::resources::storage::persistent::PersistentResourcesStorage;
 use crate::resources::storage::volatile::VolatileResourcesStorage;
@@ -65,18 +64,18 @@ impl PersistenceOptions {
 }
 
 pub trait ResourcesStorageApi {
-    fn insert<R>(&mut self, id: Id, resource: R) -> PersistenceResult<()>
-    where R: Resource;
+    fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
+    where R: Resource + Persistable;
 
-    fn update<R>(&mut self, id: Id) -> Update<R>
-    where R: Resource;
+    fn update<R>(&mut self, id: R::Id) -> Update<R>
+    where R: Resource + Persistable;
 
-    fn remove<R>(&mut self, id: Id) -> Option<R>
-    where R: Resource;
+    fn remove<R>(&mut self, id: R::Id) -> Option<R>
+    where R: Resource + Persistable;
 
-    fn get<R>(&self, id: Id) -> PersistenceResult<Option<R>>
-    where R: Resource + Clone;
+    fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
+    where R: Resource + Persistable + Clone;
 
     fn list<R>(&self) -> PersistenceResult<Vec<R>>
-    where R: Resource + Clone;
+    where R: Resource + Persistable + Clone;
 }

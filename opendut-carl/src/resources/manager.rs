@@ -2,7 +2,8 @@ use std::sync::Arc;
 
 use tokio::sync::RwLock;
 use crate::persistence::error::PersistenceResult;
-use crate::resources::{IntoId, Resource, Resources, storage};
+use crate::persistence::model::Persistable;
+use crate::resources::{Resource, Resources, storage};
 use crate::resources::storage::PersistenceOptions;
 
 pub type ResourcesManagerRef = Arc<ResourcesManager>;
@@ -25,20 +26,20 @@ impl ResourcesManager {
         }))
     }
 
-    pub async fn insert<R>(&self, id: impl IntoId<R>, resource: R) -> PersistenceResult<()>
-    where R: Resource {
+    pub async fn insert<R>(&self, id: R::Id, resource: R) -> PersistenceResult<()>
+    where R: Resource + Persistable {
         let mut state = self.state.write().await;
         state.resources.insert(id, resource)
     }
 
-    pub async fn remove<R>(&self, id: impl IntoId<R>) -> Option<R>
-    where R: Resource {
+    pub async fn remove<R>(&self, id: R::Id) -> Option<R>
+    where R: Resource + Persistable {
         let mut state = self.state.write().await;
         state.resources.remove(id)
     }
 
-    pub async fn get<R>(&self, id: impl IntoId<R>) -> PersistenceResult<Option<R>>
-    where R: Resource + Clone {
+    pub async fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
+    where R: Resource + Persistable + Clone {
         let state = self.state.read().await;
         state.resources.get(id)
     }
@@ -67,10 +68,10 @@ impl ResourcesManager {
         })
     }
 
-    async fn contains<R>(&self, id: impl IntoId<R>) -> bool
+    async fn contains<R>(&self, id: R::Id) -> bool
     where R: Resource + Clone {
         let state = self.state.read().await;
-        state.resources.contains(id).await
+        state.resources.contains::<R>(id).await
     }
 
     async fn is_empty(&self) -> bool {

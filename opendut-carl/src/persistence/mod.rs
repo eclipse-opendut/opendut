@@ -15,7 +15,7 @@ pub(crate) type Memory = VolatileResourcesStorage;
 
 pub(crate) mod error {
     use std::fmt::{Display, Formatter};
-    use opendut_types::resources::Id;
+    use uuid::Uuid;
 
     #[derive(Debug, thiserror::Error)]
     pub enum PersistenceError {
@@ -23,7 +23,7 @@ pub(crate) mod error {
             resource_name: &'static str,
             operation: PersistenceOperation,
             context_messages: Vec<String>,
-            id: Option<Id>,
+            id: Option<Uuid>,
             #[source] source: Cause,
         },
         DieselInternal {
@@ -31,30 +31,22 @@ pub(crate) mod error {
         }
     }
     impl PersistenceError {
-        pub fn insert<R>(id: Id, cause: impl Into<Cause>) -> Self {
-            Self::Custom {
-                resource_name: std::any::type_name::<R>(),
-                operation: PersistenceOperation::Inserting,
-                context_messages: Vec::new(),
-                id: Some(id),
-                source: cause.into(),
-            }
+        pub fn insert<R>(id: impl Into<Uuid>, cause: impl Into<Cause>) -> Self {
+            Self::new::<R>(Some(id.into()), PersistenceOperation::Insert, cause)
         }
-        pub fn get<R>(id: Id, cause: impl Into<Cause>) -> Self {
-            Self::Custom {
-                resource_name: std::any::type_name::<R>(),
-                operation: PersistenceOperation::Getting,
-                context_messages: Vec::new(),
-                id: Some(id),
-                source: cause.into(),
-            }
+        pub fn get<R>(id: impl Into<Uuid>, cause: impl Into<Cause>) -> Self {
+            Self::new::<R>(Some(id.into()), PersistenceOperation::Get, cause)
         }
         pub fn list<R>(cause: impl Into<Cause>) -> Self {
+            Self::new::<R>(Option::<Uuid>::None, PersistenceOperation::List, cause)
+        }
+        pub fn new<R>(id: Option<impl Into<Uuid>>, operation: PersistenceOperation, cause: impl Into<Cause>) -> Self {
+            let id = id.map(Into::into);
             Self::Custom {
                 resource_name: std::any::type_name::<R>(),
-                operation: PersistenceOperation::Listing,
+                operation,
                 context_messages: Vec::new(),
-                id: None,
+                id,
                 source: cause.into(),
             }
         }
@@ -75,6 +67,7 @@ pub(crate) mod error {
                         Some(id) => format!(" <{id}>"),
                         None => String::from(""),
                     };
+                    let operation = operation.verb();
                     writeln!(f, "Error while {operation} resource '{resource_name}'{id}")?;
 
                     for message in context_messages {
@@ -91,18 +84,17 @@ pub(crate) mod error {
 
     #[derive(Clone, Copy, Debug, PartialEq)]
     pub enum PersistenceOperation {
-        Inserting,
-        Getting,
-        Listing,
+        Insert,
+        Get,
+        List,
     }
-    impl Display for PersistenceOperation {
-        fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-            let string = match self {
-                PersistenceOperation::Inserting => "inserting",
-                PersistenceOperation::Getting => "getting",
-                PersistenceOperation::Listing => "listing",
-            };
-            write!(f, "{string}")
+    impl PersistenceOperation {
+        fn verb(&self) -> &'static str {
+            match self {
+                PersistenceOperation::Insert => "inserting",
+                PersistenceOperation::Get => "getting",
+                PersistenceOperation::List => "listing",
+            }
         }
     }
 

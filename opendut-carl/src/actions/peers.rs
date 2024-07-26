@@ -78,7 +78,7 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
             devices_to_remove.iter().for_each(|device| {
                 let device_id = device.id;
                 let device_name = &device.name;
-                resources.remove(device.id);
+                resources.remove::<DeviceDescriptor>(device.id);
                 info!("Removed device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}>.");
             });
 
@@ -181,7 +181,7 @@ pub async fn delete_peer_descriptor(params: DeletePeerDescriptorParams) -> Resul
             peer_descriptor.topology.devices.iter().for_each(|device| {
                 let device_id = device.id;
                 let device_name = &device.name;
-                resources.remove(device_id);
+                resources.remove::<DeviceDescriptor>(device_id);
                 debug!("Deleted device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}>.");
             });
 
@@ -535,9 +535,9 @@ mod test {
             }).await?;
 
             assert_that!(resources_manager.get::<PeerDescriptor>(fixture.peer_a_id).await?.as_ref(), some(eq(&changed_descriptor)));
-            assert_that!(resources_manager.get(fixture.peer_a_device_1).await?.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[0])));
-            assert_that!(resources_manager.get(additional_device_id).await?.as_ref(), some(eq(&additional_device)));
-            assert_that!(resources_manager.get(fixture.peer_a_device_2).await?.as_ref(), none());
+            assert_that!(resources_manager.get::<DeviceDescriptor>(fixture.peer_a_device_1).await?.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[0])));
+            assert_that!(resources_manager.get::<DeviceDescriptor>(additional_device_id).await?.as_ref(), some(eq(&additional_device)));
+            assert_that!(resources_manager.get::<DeviceDescriptor>(fixture.peer_a_device_2).await?.as_ref(), none());
 
             Ok(())
         }

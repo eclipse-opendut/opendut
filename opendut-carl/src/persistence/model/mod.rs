@@ -1,10 +1,9 @@
 use std::fmt::Debug;
 use std::marker::PhantomData;
 
-use opendut_types::resources::Id;
-
 use crate::persistence::error::PersistenceResult;
 use crate::persistence::Storage;
+use crate::resources::resource::Resource;
 
 pub mod cluster_configuration;
 pub mod cluster_deployment;
@@ -15,10 +14,10 @@ pub mod peer_descriptor;
 pub mod peer_state;
 mod persistable;
 
-pub trait Persistable: Send + Sync + Sized + Debug {
-    fn insert(self, id: Id, storage: &mut Storage) -> PersistenceResult<()>;
+pub trait Persistable: Send + Sync + Sized + Debug + Resource {
+    fn insert(self, id: Self::Id, storage: &mut Storage) -> PersistenceResult<()>;
 
-    fn get(id: Id, storage: &Storage) -> PersistenceResult<Option<Self>>;
+    fn get(id: Self::Id, storage: &Storage) -> PersistenceResult<Option<Self>>;
 
     fn list(storage: &Storage) -> PersistenceResult<Vec<Self>>;
 }
