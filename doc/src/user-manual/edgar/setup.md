@@ -161,7 +161,7 @@ devices and clusters from scratch.
   sudo wg
   ```
 
-- If this ERROR appears: ERROR opendut_edgar::service::cannelloni_manager: Failed to start cannelloni instance for remote IP 100.80.171.237: 'No such file or directory (os error 2)'.
+- If this ERROR appears: ERROR opendut_edgar::service::cannelloni_manager: Failure while invoking command line program 'cannelloni': 'No such file or directory (os error 2)'.
 (OPTIONAL) Copy cannelloni to custom location. This is the way to go, if the step before is
     not possible to be done. This can happen for whatever reason, i.e. missing root rights.
   ```shell
