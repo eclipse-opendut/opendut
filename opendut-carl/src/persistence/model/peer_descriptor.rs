@@ -1,18 +1,17 @@
 use std::ops::DerefMut;
 
 use diesel::{Connection, PgConnection};
-
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
 use opendut_types::peer::executor::ExecutorDescriptors;
-use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
+use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
 use crate::persistence::error::{PersistenceError, PersistenceOperation, PersistenceResult};
-use crate::persistence::model::persistable::network_interface_descriptor::PersistableNetworkInterfaceDescriptor;
+use crate::persistence::model::persistable::network_interface_descriptor::{PersistableNetworkInterfaceDescriptor, PersistableNetworkInterfaceKindCan};
 use crate::persistence::model::persistable::network_interface_kind::PersistableNetworkInterfaceKind;
 use crate::persistence::model::persistable::peer_descriptor::PersistablePeerDescriptor;
 use crate::persistence::Storage;
 
-use super::Persistable;
+use super::{Persistable, persistable};
 
 impl Persistable for PeerDescriptor {
     fn insert(self, peer_id: PeerId, storage: &mut Storage) -> PersistenceResult<()> {
@@ -42,20 +41,41 @@ fn insert(peer_descriptor: PeerDescriptor, peer_id: PeerId, connection: &mut PgC
     }.insert(peer_id, connection)?;
 
     for interface in interfaces {
-        let (kind, maybe_configuration) = match interface.configuration {
+        let network_interface_id = interface.id.uuid;
+
+        let (kind, network_interface_kind_can) = match interface.configuration {
             NetworkInterfaceConfiguration::Ethernet => {
                 (PersistableNetworkInterfaceKind::Ethernet, None)
             }
             NetworkInterfaceConfiguration::Can { bitrate, sample_point, fd, data_bitrate, data_sample_point } => {
-                (PersistableNetworkInterfaceKind::Can, Some("TODO configuration")) //TODO configuration
+                let bitrate = i32::try_from(bitrate)
+                    .map_err(|cause| PersistenceError::insert::<PersistableNetworkInterfaceKindCan>(network_interface_id, cause))?;
+                let sample_point_times_1000 = i32::try_from(sample_point.sample_point_times_1000())
+                    .map_err(|cause| PersistenceError::insert::<PersistableNetworkInterfaceKindCan>(network_interface_id, cause))?;
+                let data_bitrate = i32::try_from(data_bitrate)
+                    .map_err(|cause| PersistenceError::insert::<PersistableNetworkInterfaceKindCan>(network_interface_id, cause))?;
+                let data_sample_point_times_1000 = i32::try_from(data_sample_point.sample_point_times_1000())
+                    .map_err(|cause| PersistenceError::insert::<PersistableNetworkInterfaceKindCan>(network_interface_id, cause))?;
+
+                let network_interface_kind_can = PersistableNetworkInterfaceKindCan {
+                    network_interface_id,
+                    bitrate,
+                    sample_point_times_1000,
+                    fd,
+                    data_bitrate,
+                    data_sample_point_times_1000,
+                };
+                (PersistableNetworkInterfaceKind::Can, Some(network_interface_kind_can))
             }
         };
-        PersistableNetworkInterfaceDescriptor {
-            network_interface_id: interface.id.uuid,
+        let network_interface_descriptor = PersistableNetworkInterfaceDescriptor {
+            network_interface_id,
             name: interface.name.name(),
             kind,
             peer_id: peer_id.uuid,
-        }.insert(interface.id, connection)?;
+        };
+
+        persistable::network_interface_descriptor::insert(network_interface_descriptor, network_interface_kind_can, interface.id, connection)?;
     }
 
     // TODO persist other fields
@@ -102,10 +122,10 @@ fn load_other_peer_descriptor_tables(
     let PersistablePeerDescriptor { peer_id, name, location, network_bridge_name } = persistable_peer_descriptor;
     let peer_id = PeerId::from(peer_id);
 
-    let persistable_network_interface_descriptors = PersistableNetworkInterfaceDescriptor::list_filtered_by_peer_id(peer_id, connection)?;
+    let persistable_network_interface_descriptors = persistable::network_interface_descriptor::list_filtered_by_peer_id(peer_id, connection)?;
 
     let error = |cause: Box<dyn std::error::Error + Send + Sync>| {
-        PersistenceError::new::<PeerDescriptor>(Some(peer_id.uuid), operation, cause)
+        PersistenceError::new::<PeerDescriptor>(Some(peer_id.uuid), operation, Some(cause))
     };
 
     let name = PeerName::try_from(name)
@@ -113,28 +133,48 @@ fn load_other_peer_descriptor_tables(
     let location = location.map(PeerLocation::try_from).transpose()
         .map_err(|cause| error(Box::new(cause)))?;
 
-    let network_interfaces = persistable_network_interface_descriptors.into_iter().map(|persistable_network_interface_descriptor| {
-        let PersistableNetworkInterfaceDescriptor { network_interface_id, name, kind, peer_id: _ } = persistable_network_interface_descriptor;
+    let network_interfaces = persistable_network_interface_descriptors.into_iter()
+        .map(|(persistable_network_interface_descriptor, persistable_network_interface_kind_can)| {
+            let PersistableNetworkInterfaceDescriptor { network_interface_id, name, kind, peer_id: _ } = persistable_network_interface_descriptor;
 
-        let id = NetworkInterfaceId::from(network_interface_id);
-        let name = NetworkInterfaceName::try_from(name)
-            .map_err(|cause| error(Box::new(cause)))?;
+            let id = NetworkInterfaceId::from(network_interface_id);
+            let name = NetworkInterfaceName::try_from(name)
+                .map_err(|cause| error(Box::new(cause)))?;
 
-        let configuration = match kind {
-            PersistableNetworkInterfaceKind::Ethernet => NetworkInterfaceConfiguration::Ethernet,
-            PersistableNetworkInterfaceKind::Can => {
-                NetworkInterfaceConfiguration::Can {
-                    bitrate: todo!("Load NetworkInterfaceConfiguration::Can from database."),
-                    sample_point: todo!("Load NetworkInterfaceConfiguration::Can from database."),
-                    fd: todo!("Load NetworkInterfaceConfiguration::Can from database."),
-                    data_bitrate: todo!("Load NetworkInterfaceConfiguration::Can from database."),
-                    data_sample_point: todo!("Load NetworkInterfaceConfiguration::Can from database."),
+            let configuration = match kind {
+                PersistableNetworkInterfaceKind::Ethernet => NetworkInterfaceConfiguration::Ethernet,
+                PersistableNetworkInterfaceKind::Can => {
+                    let PersistableNetworkInterfaceKindCan { network_interface_id: _, bitrate, sample_point_times_1000, fd, data_bitrate, data_sample_point_times_1000 } = persistable_network_interface_kind_can
+                        .ok_or(PersistenceError::new::<PeerDescriptor>(Some(peer_id.uuid), operation, Option::<PersistenceError>::None))?;
+
+                    let bitrate = u32::try_from(bitrate)
+                        .map_err(|cause| error(Box::new(cause)))?;
+
+                    let sample_point = u32::try_from(sample_point_times_1000)
+                        .map_err(|cause| error(Box::new(cause)))?;
+                    let sample_point = CanSamplePoint::try_from(sample_point)
+                        .map_err(|cause| error(Box::new(cause)))?;
+
+                    let data_bitrate = u32::try_from(data_bitrate)
+                        .map_err(|cause| error(Box::new(cause)))?;
+
+                    let data_sample_point = u32::try_from(data_sample_point_times_1000)
+                        .map_err(|cause| error(Box::new(cause)))?;
+                    let data_sample_point = CanSamplePoint::try_from(data_sample_point)
+                        .map_err(|cause| error(Box::new(cause)))?;
+
+                    NetworkInterfaceConfiguration::Can {
+                        bitrate,
+                        sample_point,
+                        fd,
+                        data_bitrate,
+                        data_sample_point,
+                    }
                 }
-            }
-        };
+            };
 
-        Ok(NetworkInterfaceDescriptor { id, name, configuration })
-    }).collect::<PersistenceResult<Vec<_>>>()?;
+            Ok(NetworkInterfaceDescriptor { id, name, configuration })
+        }).collect::<PersistenceResult<Vec<_>>>()?;
 
     let network_bridge_name = network_bridge_name.map(NetworkInterfaceName::try_from)
         .transpose()
@@ -180,17 +220,17 @@ mod tests {
                         name: NetworkInterfaceName::try_from("eth0")?,
                         configuration: NetworkInterfaceConfiguration::Ethernet,
                     },
-                    // NetworkInterfaceDescriptor { //TODO implement
-                    //     id: NetworkInterfaceId::random(),
-                    //     name: NetworkInterfaceName::try_from("can0")?,
-                    //     configuration: NetworkInterfaceConfiguration::Can {
-                    //         bitrate: 11111,
-                    //         sample_point: CanSamplePoint::try_from(0.222)?,
-                    //         fd: true,
-                    //         data_bitrate: 33333,
-                    //         data_sample_point: CanSamplePoint::try_from(0.444)?,
-                    //     },
-                    // },
+                    NetworkInterfaceDescriptor {
+                        id: NetworkInterfaceId::random(),
+                        name: NetworkInterfaceName::try_from("can0")?,
+                        configuration: NetworkInterfaceConfiguration::Can {
+                            bitrate: 11111,
+                            sample_point: CanSamplePoint::try_from(0.222)?,
+                            fd: true,
+                            data_bitrate: 33333,
+                            data_sample_point: CanSamplePoint::try_from(0.444)?,
+                        },
+                    },
                 ],
                 bridge_name: Some(NetworkInterfaceName::try_from("br0")?),
             },

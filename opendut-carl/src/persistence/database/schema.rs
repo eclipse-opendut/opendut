@@ -22,10 +22,10 @@ diesel::table! {
     network_interface_kind_can (network_interface_id) {
         network_interface_id -> Uuid,
         bitrate -> Int4,
-        sample_point -> Int4,
+        sample_point_times_1000 -> Int4,
         fd -> Bool,
         data_bitrate -> Int4,
-        data_sample_point -> Int4,
+        data_sample_point_times_1000 -> Int4,
     }
 }
 

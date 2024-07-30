@@ -11,8 +11,8 @@ CREATE TABLE network_interface_kind_can (
     network_interface_id uuid PRIMARY KEY REFERENCES network_interface(network_interface_id),
 
     bitrate integer NOT NULL,
-    sample_point integer NOT NULL,
+    sample_point_times_1000 integer NOT NULL,
     fd boolean NOT NULL,
     data_bitrate integer NOT NULL,
-    data_sample_point integer NOT NULL
+    data_sample_point_times_1000 integer NOT NULL
 );

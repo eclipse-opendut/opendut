@@ -24,7 +24,7 @@ pub(crate) mod error {
             operation: PersistenceOperation,
             context_messages: Vec<String>,
             id: Option<Uuid>,
-            #[source] source: Cause,
+            #[source] source: Option<Cause>,
         },
         DieselInternal {
             #[from] source: diesel::result::Error,
@@ -32,22 +32,22 @@ pub(crate) mod error {
     }
     impl PersistenceError {
         pub fn insert<R>(id: impl Into<Uuid>, cause: impl Into<Cause>) -> Self {
-            Self::new::<R>(Some(id.into()), PersistenceOperation::Insert, cause)
+            Self::new::<R>(Some(id.into()), PersistenceOperation::Insert, Some(cause))
         }
         pub fn get<R>(id: impl Into<Uuid>, cause: impl Into<Cause>) -> Self {
-            Self::new::<R>(Some(id.into()), PersistenceOperation::Get, cause)
+            Self::new::<R>(Some(id.into()), PersistenceOperation::Get, Some(cause))
         }
         pub fn list<R>(cause: impl Into<Cause>) -> Self {
-            Self::new::<R>(Option::<Uuid>::None, PersistenceOperation::List, cause)
+            Self::new::<R>(Option::<Uuid>::None, PersistenceOperation::List, Some(cause))
         }
-        pub fn new<R>(id: Option<impl Into<Uuid>>, operation: PersistenceOperation, cause: impl Into<Cause>) -> Self {
+        pub fn new<R>(id: Option<impl Into<Uuid>>, operation: PersistenceOperation, cause: Option<impl Into<Cause>>) -> Self {
             let id = id.map(Into::into);
             Self::Custom {
                 resource_name: std::any::type_name::<R>(),
                 operation,
                 context_messages: Vec::new(),
                 id,
-                source: cause.into(),
+                source: cause.map(Into::into),
             }
         }
 
