@@ -64,7 +64,7 @@ impl ConfidentialClient {
 
         match client_config {
             ConfidentialClientConfig::Confidential(client_config) => {
-                debug!("OIDC configuration loaded: id={:?} issuer_url={:?}", client_config.client_id, client_config.issuer_url);
+                debug!("OIDC configuration loaded: client_id='{}', issuer_url='{}'", client_config.client_id.as_str(), client_config.issuer_url.as_str());
                 let reqwest_client = OidcReqwestClient::from_config(settings).await
                     .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to create reqwest client."), cause: cause.into() })?;
                 let client = ConfidentialClient::from_client_config(client_config, reqwest_client).await?;
