@@ -5,7 +5,6 @@ use crate::persistence::database::ConnectError;
 use crate::persistence::error::PersistenceResult;
 use crate::persistence::model::Persistable;
 use crate::persistence::Storage;
-use crate::resources::{Update};
 use crate::resources::storage::{Resource, ResourcesStorageApi};
 use crate::resources::storage::volatile::VolatileResourcesStorage;
 
@@ -26,11 +25,6 @@ impl ResourcesStorageApi for PersistentResourcesStorage {
     fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
     where R: Resource + Persistable {
         resource.insert(id, &mut self.storage)
-    }
-
-    fn update<R>(&mut self, id: R::Id) -> Update<R>
-    where R: Resource + Persistable {
-        todo!()
     }
 
     fn remove<R>(&mut self, id: R::Id) -> Option<R>

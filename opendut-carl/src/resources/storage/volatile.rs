@@ -2,9 +2,10 @@ use std::any::{Any, TypeId};
 use std::collections::HashMap;
 
 use opendut_types::resources::Id;
+
 use crate::persistence::error::PersistenceResult;
-use crate::resources::{Resource, Update};
 use crate::resources::ids::IntoId;
+use crate::resources::Resource;
 use crate::resources::storage::ResourcesStorageApi;
 
 #[derive(Default)]
@@ -21,19 +22,6 @@ impl ResourcesStorageApi for VolatileResourcesStorage {
             .or_default();
         column.insert(id, Box::new(resource));
         Ok(())
-    }
-
-    fn update<R>(&mut self, id: R::Id) -> Update<R>
-    where R: Resource {
-        let id = id.into_id();
-        let column = self.storage
-            .entry(TypeId::of::<R>())
-            .or_default();
-        Update {
-            id,
-            column,
-            marker: Default::default(),
-        }
     }
 
     fn remove<R>(&mut self, id: R::Id) -> Option<R>

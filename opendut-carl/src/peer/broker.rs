@@ -16,6 +16,7 @@ use opendut_carl_api::proto::services::peer_messaging_broker::upstream;
 use opendut_types::peer::configuration::{PeerConfiguration, PeerConfiguration2};
 use opendut_types::peer::PeerId;
 use opendut_types::peer::state::{PeerState, PeerUpState};
+
 use crate::persistence::error::PersistenceError;
 use crate::resources::manager::ResourcesManagerRef;
 
@@ -95,34 +96,26 @@ impl PeerMessagingBroker {
         self.resources_manager.resources_mut(|resources| {
             let maybe_peer_state = resources.get::<PeerState>(peer_id)
                 .map_err(|source| OpenError::Persistence { peer_id, source })?;
+                
             match maybe_peer_state {
                 None => {
                     info!("Peer <{}> opened stream which has not been seen before.", peer_id);
-                    Ok(())
+                    Ok(new_peer_up_state(remote_host))
                 }
-                Some(peer_state) => {
-                    match peer_state {
-                        PeerState::Down => {
-                            debug!("Peer <{peer_id}> opened stream which was previously down.");
-                            Ok(())
-                        }
-                        PeerState::Up { .. } => {
-                            Err(OpenError::PeerAlreadyConnected { peer_id })
-                        }
+                Some(peer_state) => match peer_state {
+                    PeerState::Down => {
+                        debug!("Peer <{peer_id}> opened stream which was previously down.");
+                        Ok(new_peer_up_state(remote_host))
+                    }
+                    PeerState::Up { .. } => {
+                        error!("Peer <{peer_id}> opened stream which was already connected.");
+                        Err(OpenError::PeerAlreadyConnected { peer_id })
                     }
                 }
             }
-            .map(|_| {
-                resources.update::<PeerState>(peer_id)
-                    .modify(|peer_state| match peer_state {
-                        PeerState::Up { inner: _, remote_host: peer_remote_host } => {
-                            *peer_remote_host = remote_host
-                        }
-                        PeerState::Down => {
-                            *peer_state = new_peer_up_state(remote_host)
-                        }
-                    })
-                    .or_insert(new_peer_up_state(remote_host))
+            .and_then(|new_peer_state| {
+                resources.insert(peer_id, new_peer_state)
+                    .map_err(|source| OpenError::Persistence { peer_id, source })
             })
         }).await?;
 
@@ -171,28 +164,32 @@ impl PeerMessagingBroker {
                         }
                     }
                 }
-                down_peer_impl(resources_manager, peer_id).await;
-
-                debug!("Removing peer <{peer_id}> from list of peers connected to message broker.");
-                let mut peers = peers.write().await;
-                let removed = peers.remove(&peer_id);
-                if removed.is_none() {
-                    error!("Failed to remove peer from list of peers connected to message broker.")
-                }
+                Self::remove_peer_impl(peer_id, resources_manager, peers).await
+                    .unwrap_or_else(|cause| error!("Error while removing peer after its stream ended: {cause}"));
             });
         }
 
         Ok((tx_inbound, rx_outbound))
     }
 
-    pub async fn remove_peer(&self, peer_id: PeerId) -> Result<(), Error> {
-        let mut peers = self.peers.write().await;
+    pub async fn remove_peer(&self, peer_id: PeerId) -> Result<(), RemovePeerError> {
+        Self::remove_peer_impl(peer_id, Arc::clone(&self.resources_manager), Arc::clone(&self.peers)).await
+    }
 
-        down_peer_impl(Arc::clone(&self.resources_manager), peer_id).await;
+    async fn remove_peer_impl(
+        peer_id: PeerId,
+        resources_manager: ResourcesManagerRef,
+        peers: Arc<RwLock<HashMap<PeerId, PeerMessagingRef>>>
+    ) -> Result<(), RemovePeerError> {
+        debug!("Setting state of peer <{peer_id}> to Down.");
+        resources_manager.insert(peer_id, PeerState::Down).await
+            .map_err(|source| RemovePeerError::Persistence { peer_id, source })?;
 
+        debug!("Removing peer <{peer_id}> from list of peers connected to message broker.");
+        let mut peers = peers.write().await;
         match peers.remove(&peer_id) {
             Some(_) => Ok(()),
-            None => Err(Error::PeerNotFound(peer_id)),
+            None => Err(RemovePeerError::PeerNotFound(peer_id)),
         }
     }
 }
@@ -211,18 +208,6 @@ async fn handle_stream_message(
                     .inspect_err(|cause| warn!("Failed to send ping to peer <{peer_id}>: {cause}"));
         },
     }
-}
-
-async fn down_peer_impl(resources_manager: ResourcesManagerRef, peer_id: PeerId) {
-    debug!("Setting state of peer <{peer_id}> to Down.");
-
-    resources_manager.resources_mut(|resources| {
-        resources.update::<PeerState>(peer_id)
-            .modify(|peer_state| {
-                *peer_state = PeerState::Down;
-            })
-            .or_insert(PeerState::Down)
-    }).await;
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -248,6 +233,14 @@ pub enum OpenError {
     SendApplyPeerConfiguration { peer_id: PeerId, cause: String },
 
     #[error("Error while accessing persistence after Peer <{peer_id}> opened stream.")]
+    Persistence { peer_id: PeerId, #[source] source: PersistenceError },
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum RemovePeerError {
+    #[error("PeerNotFound Error while removing peer: {0}")]
+    PeerNotFound(PeerId),
+    #[error("Error while accessing persistence when removing Peer <{peer_id}>.")]
     Persistence { peer_id: PeerId, #[source] source: PersistenceError },
 }
 
@@ -279,6 +272,7 @@ mod tests {
     use opendut_carl_api::proto::services::peer_messaging_broker::Ping;
     use opendut_types::peer::configuration::PeerNetworkConfiguration;
     use opendut_types::util::net::NetworkInterfaceName;
+
     use crate::resources::manager::ResourcesManager;
 
     use super::*;

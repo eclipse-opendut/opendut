@@ -3,7 +3,7 @@ use url::Url;
 use crate::persistence::database::ConnectError;
 use crate::persistence::error::PersistenceResult;
 use crate::persistence::model::Persistable;
-use crate::resources::{Resource, Update};
+use crate::resources::Resource;
 use crate::resources::storage::persistent::PersistentResourcesStorage;
 use crate::resources::storage::volatile::VolatileResourcesStorage;
 
@@ -65,9 +65,6 @@ impl PersistenceOptions {
 
 pub trait ResourcesStorageApi {
     fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
-    where R: Resource + Persistable;
-
-    fn update<R>(&mut self, id: R::Id) -> Update<R>
     where R: Resource + Persistable;
 
     fn remove<R>(&mut self, id: R::Id) -> Option<R>
