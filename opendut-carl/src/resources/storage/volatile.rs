@@ -24,21 +24,25 @@ impl ResourcesStorageApi for VolatileResourcesStorage {
         Ok(())
     }
 
-    fn remove<R>(&mut self, id: R::Id) -> Option<R>
+    fn remove<R>(&mut self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource {
         let id = id.into_id();
         let type_id = TypeId::of::<R>();
-        let column = self.column_mut_of::<R>()?;
-        let result = column.remove(&id)
-            .and_then(|old_value| old_value
-                .downcast()
-                .map(|value| *value)
-                .ok()
-            );
-        if column.is_empty() {
-            self.storage.remove(&type_id);
+        match self.column_mut_of::<R>() {
+            None => Ok(None),
+            Some(column) => {
+                let result = column.remove(&id)
+                    .and_then(|old_value| old_value
+                        .downcast()
+                        .map(|value| *value)
+                        .ok()
+                    );
+                if column.is_empty() {
+                    self.storage.remove(&type_id);
+                }
+                Ok(result)
+            }
         }
-        result
     }
 
     fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>

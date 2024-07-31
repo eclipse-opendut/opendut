@@ -104,7 +104,7 @@ pub mod cluster_manager {
                 DeleteClusterConfigurationError::Internal { cluster_id, cluster_name, cause } => {
                     delete_cluster_configuration_failure::Error::Internal(DeleteClusterConfigurationFailureInternal {
                         cluster_id: Some(cluster_id.into()),
-                        cluster_name: Some(cluster_name.into()),
+                        cluster_name: cluster_name.map(Into::into),
                         cause
                     })
                 }
@@ -174,9 +174,9 @@ pub mod cluster_manager {
             let cluster_id: ClusterId = failure.cluster_id
                 .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
                 .try_into()?;
-            let cluster_name: ClusterName = failure.cluster_name
-                .ok_or_else(|| ErrorBuilder::field_not_set("cluster_name"))?
-                .try_into()?;
+            let cluster_name: Option<ClusterName> = failure.cluster_name
+                .map(TryInto::try_into)
+                .transpose()?;
             Ok(DeleteClusterConfigurationError::Internal { cluster_id, cluster_name, cause: failure.cause })
         }
     }
@@ -495,7 +495,7 @@ pub mod peer_manager {
                 DeletePeerDescriptorError::Internal { peer_id, peer_name, cause } => {
                     delete_peer_descriptor_failure::Error::Internal(DeletePeerDescriptorFailureInternal {
                         peer_id: Some(peer_id.into()),
-                        peer_name: Some(peer_name.into()),
+                        peer_name: peer_name.map(Into::into),
                         cause
                     })
                 }
@@ -565,9 +565,9 @@ pub mod peer_manager {
             let peer_id: PeerId = failure.peer_id
                 .ok_or_else(|| ErrorBuilder::field_not_set("peer_id"))?
                 .try_into()?;
-            let peer_name: PeerName = failure.peer_name
-                .ok_or_else(|| ErrorBuilder::field_not_set("peer_name"))?
-                .try_into()?;
+            let peer_name: Option<PeerName> = failure.peer_name
+                .map(TryInto::try_into)
+                .transpose()?;
             Ok(DeletePeerDescriptorError::Internal { peer_id, peer_name, cause: failure.cause })
         }
     }

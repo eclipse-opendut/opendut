@@ -28,7 +28,7 @@ impl Resources {
         }
     }
 
-    pub fn remove<R>(&mut self, id: R::Id) -> Option<R>
+    pub fn remove<R>(&mut self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable {
         match &mut self.storage {
             ResourcesStorage::Persistent(storage) => storage.remove(id),

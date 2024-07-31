@@ -10,7 +10,6 @@ use crate::persistence::model::persistable::network_interface_descriptor::{Persi
 use crate::persistence::model::persistable::network_interface_kind::PersistableNetworkInterfaceKind;
 use crate::persistence::model::persistable::peer_descriptor::PersistablePeerDescriptor;
 use crate::persistence::Storage;
-
 use super::{Persistable, persistable};
 
 impl Persistable for PeerDescriptor {
@@ -18,6 +17,10 @@ impl Persistable for PeerDescriptor {
         storage.db.lock().unwrap().deref_mut().transaction::<_, PersistenceError, _>(|connection| {
             insert(self, peer_id, connection)
         })
+    }
+
+    fn remove(_peer_id: PeerId, _storage: &mut Storage) -> PersistenceResult<Option<Self>> {
+        todo!("implement removal of peer_descriptors from database")
     }
 
     fn get(peer_id: PeerId, storage: &Storage) -> PersistenceResult<Option<Self>> {
@@ -29,8 +32,8 @@ impl Persistable for PeerDescriptor {
     }
 }
 
-fn insert(peer_descriptor: PeerDescriptor, peer_id: PeerId, connection: &mut PgConnection) -> PersistenceResult<()> {
-    let PeerDescriptor { id: peer_id, name, location, network, topology, executors } = peer_descriptor;
+fn insert(peer_descriptor: PeerDescriptor, _peer_id: PeerId, connection: &mut PgConnection) -> PersistenceResult<()> {
+    let PeerDescriptor { id: peer_id, name, location, network, topology: _, executors: _ } = peer_descriptor; //TODO persist topology and executors
     let PeerNetworkDescriptor { interfaces, bridge_name } = network;
 
     PersistablePeerDescriptor {

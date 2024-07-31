@@ -11,6 +11,10 @@ impl Persistable for ClusterDeployment {
         storage.memory.insert(id, self)
     }
 
+    fn remove(id: Self::Id, storage: &mut Storage) -> PersistenceResult<Option<Self>> {
+        storage.memory.remove(id)
+    }
+
     fn get(id: ClusterId, storage: &Storage) -> PersistenceResult<Option<Self>> {
         storage.memory.get(id)
     }

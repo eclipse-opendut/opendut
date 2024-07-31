@@ -226,12 +226,13 @@ impl ClusterManager {
         let (deployment, configuration) = self.resources_manager
             .resources_mut(|resources| {
                 resources.remove::<ClusterDeployment>(cluster_id)
+                    .map_err(|cause| DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?
                     .map(|deployment| {
-                        resources.get::<ClusterConfiguration>(cluster_id)
-                            .map(|configuration| (deployment, configuration))
+                        let configuration = resources.get::<ClusterConfiguration>(cluster_id)
+                            .map_err(|cause| DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?;
+                        Ok((deployment, configuration))
                     }).transpose()
-            }).await
-            .map_err(|cause| DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?
+            }).await?
             .ok_or(DeleteClusterDeploymentError::ClusterDeploymentNotFound { cluster_id })?;
 
         if let Some(configuration) = configuration {

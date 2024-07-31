@@ -100,7 +100,7 @@ message DeletePeerDescriptorFailureIllegalPeerState {
 
 message DeletePeerDescriptorFailureInternal {
   opendut.types.peer.PeerId peer_id = 1;
-  opendut.types.peer.PeerName peer_name = 2;
+  optional opendut.types.peer.PeerName peer_name = 2;
   string cause = 3;
 }
 

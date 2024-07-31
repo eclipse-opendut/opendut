@@ -27,9 +27,9 @@ impl ResourcesStorageApi for PersistentResourcesStorage {
         resource.insert(id, &mut self.storage)
     }
 
-    fn remove<R>(&mut self, id: R::Id) -> Option<R>
+    fn remove<R>(&mut self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable {
-        todo!()
+        R::remove(id, &mut self.storage)
     }
 
     fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>

@@ -32,7 +32,7 @@ impl ResourcesManager {
         state.resources.insert(id, resource)
     }
 
-    pub async fn remove<R>(&self, id: R::Id) -> Option<R>
+    pub async fn remove<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable {
         let mut state = self.state.write().await;
         state.resources.remove(id)
@@ -160,7 +160,7 @@ mod test {
 
         assert_that!(testee.get::<PeerDescriptor>(PeerId::random()).await?, none());
 
-        assert_that!(testee.remove::<PeerDescriptor>(peer_resource_id).await, some(eq(Clone::clone(&peer))));
+        assert_that!(testee.remove::<PeerDescriptor>(peer_resource_id).await?, some(eq(Clone::clone(&peer))));
 
         let id = testee.resources_mut(|resources| {
             resources.insert(peer_resource_id, Clone::clone(&peer)).unwrap();

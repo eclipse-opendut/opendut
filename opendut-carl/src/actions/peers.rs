@@ -75,12 +75,13 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
                 (peer_descriptor.topology.devices.to_vec(), Vec::<DeviceDescriptor>::new())
             };
 
-            devices_to_remove.iter().for_each(|device| {
+            devices_to_remove.iter().try_for_each(|device| {
                 let device_id = device.id;
                 let device_name = &device.name;
-                resources.remove::<DeviceDescriptor>(device.id);
+                resources.remove::<DeviceDescriptor>(device.id)?;
                 info!("Removed device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}>.");
-            });
+                Ok::<_, PersistenceError>(())
+            })?;
 
             devices_to_add.iter().try_for_each(|device| {
                 let device_id = device.id;
@@ -174,16 +175,19 @@ pub async fn delete_peer_descriptor(params: DeletePeerDescriptorParams) -> Resul
         let peer_descriptor = resources_manager.resources_mut(|resources| {
 
             let peer_descriptor = resources.remove::<PeerDescriptor>(peer_id)
+                .map_err(|cause| DeletePeerDescriptorError::Internal { peer_id, peer_name: None, cause: cause.to_string() })?
                 .ok_or_else(|| DeletePeerDescriptorError::PeerNotFound { peer_id })?;
 
             let peer_name = &peer_descriptor.name;
 
-            peer_descriptor.topology.devices.iter().for_each(|device| {
+            peer_descriptor.topology.devices.iter().try_for_each(|device| {
                 let device_id = device.id;
                 let device_name = &device.name;
-                resources.remove::<DeviceDescriptor>(device_id);
+                resources.remove::<DeviceDescriptor>(device_id)
+                    .map_err(|cause| DeletePeerDescriptorError::Internal { peer_id, peer_name: Some(peer_name.clone()), cause: cause.to_string() })?;
                 debug!("Deleted device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}>.");
-            });
+                Ok(())
+            })?;
 
             Ok(peer_descriptor)
         }).await?;
@@ -195,7 +199,7 @@ pub async fn delete_peer_descriptor(params: DeletePeerDescriptorParams) -> Resul
             debug!("Deleting OIDC client for peer '{peer_name}' <{peer_id}>.");
             let deleted_clients = registration_client.delete_client_by_resource_id(resource_id)
                 .await
-                .map_err(|cause| DeletePeerDescriptorError::Internal { peer_id, peer_name: Clone::clone(peer_name), cause: cause.to_string() })?;
+                .map_err(|cause| DeletePeerDescriptorError::Internal { peer_id, peer_name: Some(peer_name.clone()), cause: cause.to_string() })?;
             let deleted_client_ids =  deleted_clients.value().into_iter().map(|client| client.client_id).collect::<Vec<String>>();
             debug!("Successfully deleted oidc clients for peer '{peer_name}' <{peer_id}>. OIDC client_ids='{}'.", deleted_client_ids.join(","));
         };
@@ -206,7 +210,7 @@ pub async fn delete_peer_descriptor(params: DeletePeerDescriptorParams) -> Resul
                 .await
                 .map_err(|cause| DeletePeerDescriptorError::Internal {
                     peer_id,
-                    peer_name: Clone::clone(peer_name),
+                    peer_name: Some(peer_name.clone()),
                     cause: cause.to_string()
                 })?;
             info!("Successfully deleted VPN peer <{peer_id}>.");

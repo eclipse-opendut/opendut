@@ -67,7 +67,7 @@ pub trait ResourcesStorageApi {
     fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
     where R: Resource + Persistable;
 
-    fn remove<R>(&mut self, id: R::Id) -> Option<R>
+    fn remove<R>(&mut self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable;
 
     fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>

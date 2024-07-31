@@ -16,6 +16,8 @@ mod persistable;
 pub trait Persistable: Send + Sync + Sized + Debug + Resource {
     fn insert(self, id: Self::Id, storage: &mut Storage) -> PersistenceResult<()>;
 
+    fn remove(id: Self::Id, storage: &mut Storage) -> PersistenceResult<Option<Self>>;
+
     fn get(id: Self::Id, storage: &Storage) -> PersistenceResult<Option<Self>>;
 
     fn list(storage: &Storage) -> PersistenceResult<Vec<Self>>;

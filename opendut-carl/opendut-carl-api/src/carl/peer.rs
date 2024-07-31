@@ -1,3 +1,5 @@
+use std::fmt;
+use std::fmt::Formatter;
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 pub use client::*;
 use opendut_types::peer::{PeerId, PeerName};
@@ -30,22 +32,38 @@ pub enum StorePeerDescriptorError {
 
 #[derive(thiserror::Error, Debug)]
 pub enum DeletePeerDescriptorError {
-    #[error("Peer <{peer_id}> could not be deleted, because a peer with that id does not exist!")]
     PeerNotFound {
         peer_id: PeerId
     },
-    #[error("Peer '{peer_name}' <{peer_id}> cannot be deleted in state '{}'! A peer can be deleted when: {}", actual_state.short_name(), PeerState::short_names_joined(required_states))]
     IllegalPeerState {
         peer_id: PeerId,
         peer_name: PeerName,
         actual_state: PeerState,
         required_states: Vec<PeerState>,
     },
-    #[error("Peer '{peer_name}' <{peer_id}> deleted with internal errors:\n  {cause}")]
     Internal {
         peer_id: PeerId,
-        peer_name: PeerName,
+        peer_name: Option<PeerName>,
         cause: String
+    }
+}
+impl fmt::Display for DeletePeerDescriptorError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            DeletePeerDescriptorError::PeerNotFound { peer_id } => writeln!(f, "Peer <{peer_id}> could not be deleted, because a peer with that id does not exist!"),
+            DeletePeerDescriptorError::IllegalPeerState { peer_id, peer_name, actual_state, required_states } => {
+                let actual_state = actual_state.short_name();
+                let required_states = PeerState::short_names_joined(required_states);
+                writeln!(f, "Peer '{peer_name}' <{peer_id}> cannot be deleted in state '{actual_state}'! A peer can be deleted when: {required_states}")
+            }
+            DeletePeerDescriptorError::Internal { peer_id, peer_name, cause } => {
+                let peer_name = match peer_name {
+                    Some(peer_name) => format!("'{peer_name}' "),
+                    None => String::new(),
+                };
+                writeln!(f, "Peer {peer_name}<{peer_id}> deleted with internal errors:\n  {cause}")
+            }
+        }
     }
 }
 
