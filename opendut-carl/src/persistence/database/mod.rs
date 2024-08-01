@@ -1,7 +1,7 @@
 use std::time::Duration;
 use diesel::{Connection as _, ConnectionError, PgConnection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
-use tracing::{info, warn};
+use tracing::{debug, info, warn};
 use url::Url;
 
 pub mod schema;
@@ -40,11 +40,16 @@ const MIGRATIONS: EmbeddedMigrations = embed_migrations!("src/persistence/databa
 
 fn run_pending_migrations(connection: &mut PgConnection) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let migrated_versions = connection.run_pending_migrations(MIGRATIONS)?;
-    let migrated_versions = migrated_versions.into_iter()
-        .map(|version| version.to_string())
-        .collect::<Vec<String>>()
-        .join(", ");
-    info!("Completed running pending database migrations: {migrated_versions}");
+
+    if migrated_versions.is_empty() {
+        debug!("No database migrations had to be applied.");
+    } else {
+        let migrated_versions = migrated_versions.into_iter()
+            .map(|version| version.to_string())
+            .collect::<Vec<String>>()
+            .join(", ");
+        info!("Completed running pending database migrations: {migrated_versions}");
+    }
     Ok(())
 }
 

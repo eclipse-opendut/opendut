@@ -10,7 +10,7 @@ impl Persistable for DeviceDescriptor {
         storage.memory.insert(id, self)
     }
 
-    fn remove(id: Self::Id, storage: &mut Storage) -> PersistenceResult<Option<Self>> {
+    fn remove(id: DeviceId, storage: &mut Storage) -> PersistenceResult<Option<Self>> {
         storage.memory.remove(id)
     }
 

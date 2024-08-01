@@ -11,7 +11,7 @@ impl Persistable for PeerConfiguration {
         storage.memory.insert(id, self)
     }
 
-    fn remove(id: Self::Id, storage: &mut Storage) -> PersistenceResult<Option<Self>> {
+    fn remove(id: PeerId, storage: &mut Storage) -> PersistenceResult<Option<Self>> {
         storage.memory.remove(id)
     }
 

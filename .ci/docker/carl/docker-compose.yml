@@ -25,7 +25,7 @@ services:
       - OPENDUT_CARL_NETWORK_REMOTE_PORT=443
       - OPENDUT_CARL_NETWORK_BIND_PORT=443
       - OPENDUT_CARL_PERSISTENCE_ENABLED=false
-      - OPENDUT_CARL_PERSISTENCE_DATABASE_URL=postgres://postgres:postgres@carl-postgres-1/
+      - OPENDUT_CARL_PERSISTENCE_DATABASE_URL=postgres://postgres:postgres@carl-postgres-1/carl
       - OPENDUT_CARL_VPN_ENABLED=true
       - OPENDUT_CARL_VPN_KIND=netbird
       - OPENDUT_CARL_VPN_NETBIRD_URL=https://netbird-management/api
@@ -73,7 +73,7 @@ services:
     image: "postgres:14.4"
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "pg_isready", "--quiet", "--dbname=postgres", "--username=postgres" ]
+      test: [ "CMD", "pg_isready", "--quiet", "--dbname=carl", "--username=postgres" ]
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:

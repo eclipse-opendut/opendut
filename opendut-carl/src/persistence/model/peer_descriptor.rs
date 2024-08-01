@@ -125,8 +125,6 @@ fn load_other_peer_descriptor_tables(
     let PersistablePeerDescriptor { peer_id, name, location, network_bridge_name } = persistable_peer_descriptor;
     let peer_id = PeerId::from(peer_id);
 
-    let persistable_network_interface_descriptors = persistable::network_interface_descriptor::list_filtered_by_peer_id(peer_id, connection)?;
-
     let error = |cause: Box<dyn std::error::Error + Send + Sync>| {
         PersistenceError::new::<PeerDescriptor>(Some(peer_id.uuid), operation, Some(cause))
     };
@@ -135,6 +133,8 @@ fn load_other_peer_descriptor_tables(
         .map_err(|cause| error(Box::new(cause)))?;
     let location = location.map(PeerLocation::try_from).transpose()
         .map_err(|cause| error(Box::new(cause)))?;
+
+    let persistable_network_interface_descriptors = persistable::network_interface_descriptor::list_filtered_by_peer_id(peer_id, connection)?;
 
     let network_interfaces = persistable_network_interface_descriptors.into_iter()
         .map(|(persistable_network_interface_descriptor, persistable_network_interface_kind_can)| {

@@ -62,7 +62,7 @@ pub(crate) mod error {
     impl Display for PersistenceError {
         fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
             match self {
-                Self::Custom { resource_name, operation, context_messages, id, source: _ } => {
+                Self::Custom { resource_name, operation, context_messages, id, source } => {
                     let id = match &id {
                         Some(id) => format!(" <{id}>"),
                         None => String::from(""),
@@ -73,6 +73,9 @@ pub(crate) mod error {
                     for message in context_messages {
                         writeln!(f, "  Context: {message}")?;
                     }
+                    source.as_ref().map(|source|
+                        writeln!(f, "  Source: {source}")
+                    ).transpose()?;
                 }
                 PersistenceError::DieselInternal { source } => writeln!(f, "{source}")?,
             }

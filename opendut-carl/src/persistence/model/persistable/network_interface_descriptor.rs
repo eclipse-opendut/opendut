@@ -9,7 +9,7 @@ use crate::persistence::error::{PersistenceError, PersistenceResult};
 use crate::persistence::model::persistable::network_interface_kind::PersistableNetworkInterfaceKind;
 
 #[derive(diesel::Queryable, diesel::Selectable, diesel::Insertable, diesel::AsChangeset)]
-#[diesel(table_name = schema::network_interface)]
+#[diesel(table_name = schema::network_interface_descriptor)]
 #[diesel(belongs_to(PeerDescriptor, foreign_key = peer_id))]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct PersistableNetworkInterfaceDescriptor {
@@ -42,9 +42,9 @@ pub fn insert(
 
     connection.transaction::<_, PersistenceError, _>(|connection| {
 
-        diesel::insert_into(schema::network_interface::table)
+        diesel::insert_into(schema::network_interface_descriptor::table)
             .values(&network_interface_descriptor)
-            .on_conflict(schema::network_interface::network_interface_id)
+            .on_conflict(schema::network_interface_descriptor::network_interface_id)
             .do_update()
             .set(&network_interface_descriptor)
             .execute(connection)
@@ -73,9 +73,9 @@ pub fn list_filtered_by_peer_id(
     PersistableNetworkInterfaceDescriptor,
     Option<PersistableNetworkInterfaceKindCan>
 )>> {
-    schema::network_interface::table
+    schema::network_interface_descriptor::table
         .left_join(schema::network_interface_kind_can::table)
-        .filter(schema::network_interface::peer_id.eq(peer_id.uuid))
+        .filter(schema::network_interface_descriptor::peer_id.eq(peer_id.uuid))
         .select((PersistableNetworkInterfaceDescriptor::as_select(), Option::<PersistableNetworkInterfaceKindCan>::as_select()))
         .get_results(connection)
         .map_err(PersistenceError::list::<NetworkInterfaceDescriptor>)

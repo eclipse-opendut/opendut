@@ -10,7 +10,7 @@ diesel::table! {
     use diesel::sql_types::*;
     use super::sql_types::NetworkInterfaceKind;
 
-    network_interface (network_interface_id) {
+    network_interface_descriptor (network_interface_id) {
         network_interface_id -> Uuid,
         name -> Text,
         kind -> NetworkInterfaceKind,
@@ -38,11 +38,11 @@ diesel::table! {
     }
 }
 
-diesel::joinable!(network_interface -> peer_descriptor (peer_id));
-diesel::joinable!(network_interface_kind_can -> network_interface (network_interface_id));
+diesel::joinable!(network_interface_descriptor -> peer_descriptor (peer_id));
+diesel::joinable!(network_interface_kind_can -> network_interface_descriptor (network_interface_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
-    network_interface,
+    network_interface_descriptor,
     network_interface_kind_can,
     peer_descriptor,
 );
