@@ -18,7 +18,6 @@ use opendut_util::telemetry::logging::NonDisclosingRequestExtension;
 
 use crate::actions;
 use crate::actions::{DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, ListDevicesParams, ListPeerDescriptorsParams, StorePeerDescriptorOptions, StorePeerDescriptorParams};
-use crate::auth::CurrentUser;
 use crate::grpc::extract;
 use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;

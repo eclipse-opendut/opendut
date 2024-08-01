@@ -11,7 +11,6 @@ use opendut_util::telemetry::logging::NonDisclosingRequestExtension;
 
 use crate::actions;
 use crate::actions::{CreateClusterConfigurationParams, DeleteClusterConfigurationParams};
-use crate::auth::CurrentUser;
 use crate::cluster::manager::ClusterManagerRef;
 use crate::grpc::extract;
 use crate::resources::manager::ResourcesManagerRef;
