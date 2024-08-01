@@ -27,31 +27,45 @@ Available architectures are:
 Once downloaded, extract the files with the command `tar xvf opendut-edgar-{architecture}.tar.gz`. It will then be extracted into
 the folder which is the current work directory. You might want to use another directory of your choice.
 
+
 ## CAN Setup
-- Only if you want to use CAN, it is mandatory to set the environment variable `OPENDUT_EDGAR_SERVICE_USER`.
+If you want to use CAN, it is mandatory to set the environment variable `OPENDUT_EDGAR_SERVICE_USER` as follows:
+```shell
+export OPENDUT_EDGAR_SERVICE_USER=root
+```
+
+When a cluster is deployed, EDGAR automatically creates a virtual CAN interface (by default: `br-vcan-opendut`) that is used as a bridge between Cannelloni instances and physical CAN interfaces. EDGAR automatically connects all CAN interfaces defined for the peer in CARL to this bridge interface. 
+
+This also works with virtual CAN interfaces, so if you do not have a physical CAN interface and want to test the CAN functionality nevertheless, you can create a virtual CAN interface as follows. Afterwards, you will need to configure it for the peer in CARL.
+
+```shell 
+# Optionally, replace vcan0 with another name
+ip link add dev vcan0 type vcan
+ip link set dev vcan0 up
+  ```
+
+### Preparation
+EDGAR relies on the Linux socketcan stack to perform local CAN routing and uses Cannelloni for CAN routing between EDGARs.
+Therefore, we have some dependencies.
+1. Install the following packages:
   ```shell
-  export OPENDUT_EDGAR_SERVICE_USER=root
+  sudo apt install -y can-utils
   ```
-- It is possible that there are no bridges configured, in that case use those two commands:
-
-  ```shell 
-  # Replace vcan0 with your bridge name
-  ip link add dev vcan0 type vcan
-  ip link set dev vcan0 up
-  ```
-
-- Install wireguard-tools:
+2. Download Cannelloni from here: https://github.com/eclipse-opendut/cannelloni/releases/
+3. Unpack the Cannelloni tarball and copy the files into your filesystem like so:
   ```shell
-  sudo apt install wireguard-tools
-  # You can use it with `sudo wg`
-  # To view a more comprehensive information use `/opt/opendut/edgar/netbird/netbird status -d`
+  sudo cp libcannelloni-common.so.0 /lib/
+  sudo cp libsctp.so* /lib/
+  sudo cp cannelloni /usr/local/bin/
   ```
 
-- Test CAN connection with multiple EDGARs, execute on EDGAR leader:
+### Testing
+When you configured everything and deployed the cluster, you can test the CAN connection between different EDGARs as follows:
+- Execute on EDGAR leader, assuming the configured CAN interface on it is `can0`:
   ```shell
   candump -d can0
   ```
-  On EDGAR peer execute:
+- On EDGAR peer execute (again, assuming can0 is configured here):
   ```shell
   cansend can0 01a#01020304
   ```
@@ -59,21 +73,6 @@ the folder which is the current work directory. You might want to use another di
   ```text
   root@host:~# candump -d can0
   can0  01A   [4]  01 02 03 04
-  ```
-
-
-
-### Cannelloni
-1. Install the following packages:
-  ```shell
-  sudo apt install -y python3-can can-utils
-  ```
-- Download Cannelloni from here: https://github.com/eclipse-opendut/cannelloni/releases/
-- Unpack the Cannelloni tarball and copy the files into your filesystem like so:
-  ```shell
-  sudo cp libcannelloni-common.so.0 /lib/
-  sudo cp libsctp.so* /lib/
-  sudo cp cannelloni /usr/local/bin/
   ```
 
 ## Self-Hosted Backend Server
