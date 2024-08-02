@@ -121,7 +121,26 @@ pub mod bundle {
         let in_dir = out_package_dir(package, target);
 
         let out_file = out_file(package, target);
-        fs::create_dir_all(out_file.parent().unwrap())?;
+        let out_parent_dir = out_file.parent().unwrap();
+        fs::create_dir_all(out_parent_dir)?;
+
+        { //delete previous distribution files
+            let file_name_prefix = out_file_name_without_version(package, target);
+
+            let files = std::fs::read_dir(out_parent_dir)?
+                .map(|entry| entry.unwrap())
+                .filter(|entry| entry.path().is_file())
+                .filter(|entry|
+                    entry.path().file_name().unwrap()
+                        .to_str().unwrap()
+                        .starts_with(&file_name_prefix)
+                );
+
+            for file in files {
+                fs::remove_file(file.path())?;
+            }
+        }
+
         let out_file = fs::File::create(out_file)?;
 
         let mut tar_gz = tar::Builder::new(
@@ -136,11 +155,17 @@ pub mod bundle {
     }
 
     pub fn out_file(package: Package, target: Arch) -> PathBuf {
-        let target_triple = target.triple();
+        let out_file_name_without_version = out_file_name_without_version(package, target);
         let version = crate::build::PKG_VERSION;
 
         out_arch_dir(target)
-            .join(format!("{}-{target_triple}-{version}.tar.gz", package.ident()))
+            .join(format!("{out_file_name_without_version}{version}.tar.gz"))
+    }
+
+    fn out_file_name_without_version(package: Package, target: Arch) -> String {
+        let package = package.ident();
+        let target = target.triple();
+        format!("{package}-{target}-")
     }
 }
 
