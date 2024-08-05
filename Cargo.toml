@@ -160,7 +160,7 @@ rperf.version = "0.1.8"
 
 [workspace.metadata.ci.xtask] #CLI tool crates used in CI (not libraries)
 cargo-bundle-licenses.version = "1.3.0"
-cargo-deny.version = "0.14.11"
+cargo-deny.version = "0.16.1"
 cargo-sbom.version = "0.9.1"
 cargo-tarpaulin.version = "0.30.0"
 cross.version = "0.2.5"
