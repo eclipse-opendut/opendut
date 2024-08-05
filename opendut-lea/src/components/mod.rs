@@ -2,6 +2,7 @@ pub use authenticated::Initialized;
 pub use breadcrumbs::{Breadcrumb, Breadcrumbs};
 pub use buttons::button::SimpleButton;
 pub use buttons::confirmation_button::ConfirmationButton;
+pub use buttons::doorhanger_button::DoorhangerButton;
 pub use buttons::icon_button::IconButton;
 pub use inputs::{UserInputError, UserInputValue};
 pub use inputs::readonly_input::ReadOnlyInput;

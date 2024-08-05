@@ -1,15 +1,11 @@
+use std::ops::Not;
 use std::rc::Rc;
 
 use leptos::*;
 use tracing::{debug, error, info};
-
 use opendut_types::peer::{PeerDescriptor, PeerId};
-
 use crate::app::{use_app_globals, ExpectGlobals};
-use crate::components::{
-    use_toaster, ButtonColor, ButtonSize, ButtonState, ButtonStateSignalProvider,
-    ConfirmationButton, FontAwesomeIcon, IconButton, Toast,
-};
+use crate::components::{use_toaster, ButtonColor, ButtonSize, ButtonState, ButtonStateSignalProvider, ConfirmationButton, FontAwesomeIcon, IconButton, Toast, DoorhangerButton};
 use crate::peers::configurator::types::UserPeerConfiguration;
 use crate::routing::{navigate_to, WellKnownRoutes};
 
@@ -118,18 +114,57 @@ fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl In
 
     let button_state = delete_action.pending().derive_loading();
 
-    view! {
-        <ConfirmationButton
-            icon=FontAwesomeIcon::TrashCan
-            color=ButtonColor::Danger
-            size=ButtonSize::Normal
-            state=button_state
-            label="Remove Peer?"
-            on_conform=move || {
-                configuration.with_untracked(|config| {
-                    delete_action.dispatch(config.id);
-                });
+
+    let delete_button = MaybeSignal::derive(move || {
+        let mut used_clusters = vec![];
+        let _ = configuration.get().devices
+            .into_iter()
+            .filter(|device| device.get().part_of_cluster.is_empty().not() )
+            .map(|device| for clusterId in device.get().part_of_cluster {
+                used_clusters.push(clusterId);
+            })
+            .collect::<Vec<_>>();
+        
+        let used_clusters_length = used_clusters.len();
+        
+        if used_clusters_length > 0 {
+            let text = view! {
+                        <div style="white-space: nowrap">
+                            "Peer can not be removed while it is configured in "{used_clusters_length}
+                            <a class="has-text-link" href="/clusters">" cluster(s)"</a>
+                        </div>
+                    };
+            view! {
+                <DoorhangerButton
+                    icon=FontAwesomeIcon::TrashCan
+                    color=ButtonColor::Danger
+                    size=ButtonSize::Normal
+                    state=button_state
+                    label="Remove peer ?"
+                    text
+                />
             }
-        />
+        } else {
+            view! {
+                <ConfirmationButton
+                    icon=FontAwesomeIcon::TrashCan
+                    color=ButtonColor::Danger
+                    size=ButtonSize::Normal
+                    state=button_state
+                    label="Remove peer ?"
+                    on_conform=move || {
+                        configuration.with_untracked(|config| {
+                            delete_action.dispatch(config.id);
+                        });
+                    }
+                />
+            }
+        }
+    });
+    
+    view! {
+        <div>
+            { delete_button }
+        </div>
     }
 }

@@ -2,7 +2,7 @@ use leptos::{component, create_read_slice, create_slice, event_target_value, Int
 use opendut_types::topology::{DeviceDescription, DeviceId, DeviceName, IllegalDeviceName};
 use opendut_types::util::net::NetworkInterfaceId;
 use uuid::Uuid;
-use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, IconButton, ReadOnlyInput, Toggled, UserInput, UserInputValue, UserTextarea};
+use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, DoorhangerButton, FontAwesomeIcon, IconButton, ReadOnlyInput, Toggled, UserInput, UserInputValue, UserTextarea};
 use crate::peers::configurator::types::{EMPTY_DEVICE_NAME_ERROR_MESSAGE, UserDeviceConfiguration, UserPeerConfiguration};
 
 #[component]
@@ -12,7 +12,7 @@ pub fn DevicePanel<OnDeleteFn>(
     on_delete: OnDeleteFn
 ) -> impl IntoView
 where
-    OnDeleteFn: Fn(DeviceId) + 'static
+    OnDeleteFn: Fn(DeviceId) + 'static + Copy
 {
     let device_id_string = MaybeSignal::derive(move || device_configuration.get().id.to_string());
     let is_collapsed = move || device_configuration.get().is_collapsed;
@@ -41,7 +41,7 @@ fn DevicePanelHeading<OnDeleteFn>(
     on_delete: OnDeleteFn
 ) -> impl IntoView
 where
-    OnDeleteFn: Fn(DeviceId) + 'static
+    OnDeleteFn: Fn(DeviceId) + 'static + Copy
 {
     let (is_collapsed, set_is_collapsed) = create_slice(device_configuration,
         move |device_configuration| {
@@ -64,6 +64,42 @@ where
         }
     );
 
+    let delete_button = MaybeSignal::derive(move || {
+        let used_clusters = device_configuration.get().part_of_cluster.len();
+
+        if used_clusters > 0 {
+            let text = view! {
+                        <div style="white-space: nowrap">
+                            "Device can not be removed while it is configured in "{used_clusters}
+                            <a class="has-text-link" href="/clusters">" cluster(s)"</a>
+                        </div>
+                    };
+            view! {
+                <DoorhangerButton
+                    icon=FontAwesomeIcon::TrashCan
+                    color=ButtonColor::Light
+                    size=ButtonSize::Small
+                    state=ButtonState::Enabled
+                    label="Remove peer ?"
+                    text
+                />
+            }
+        } else {
+            view! {
+                <ConfirmationButton
+                    icon=FontAwesomeIcon::TrashCan
+                    color=ButtonColor::Light
+                    size=ButtonSize::Small
+                    state=ButtonState::Enabled
+                    label="Remove peer ?"
+                    on_conform={
+                        move || on_delete(device_configuration.get_untracked().id)
+                    }
+                />
+            }
+        }
+    });
+
     view! {
         <div class="panel-heading px-2 py-3">
             <div class="is-flex is-justify-content-space-between is-align-items-center">
@@ -81,14 +117,7 @@ where
                     <span class="is-size-5 has-text-weight-bold">{ device_name }</span>
                 </div>
                 <div>
-                    <ConfirmationButton
-                        icon=FontAwesomeIcon::TrashCan
-                        color=ButtonColor::Light
-                        size=ButtonSize::Small
-                        state=ButtonState::Enabled
-                        label="Delete Device?"
-                        on_conform=move || on_delete(device_configuration.get_untracked().id)
-                    />
+                    { delete_button }
                 </div>
             </div>
         </div>

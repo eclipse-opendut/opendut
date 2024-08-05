@@ -69,7 +69,8 @@ fn DevicesTable(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl Int
                                     name: UserInputValue::Left(String::from(EMPTY_DEVICE_NAME_ERROR_MESSAGE)),
                                     description: UserInputValue::Right(String::from("")),
                                     interface: None,
-                                    is_collapsed: false
+                                    is_collapsed: false,
+                                    part_of_cluster: vec![]
                                 }
                             );
                             peer_configuration.devices.push(user_device_configuration);

@@ -64,17 +64,31 @@ pub fn PeerConfigurator() -> impl IntoView {
                 let mut carl = globals.expect_client();
                 async move {
                     if let Ok(configuration) = carl.peers.get_peer_descriptor(peer_id).await {
+                        let clusters = match carl.cluster.list_cluster_configurations().await {
+                            Ok(clusters) => {clusters}
+                            Err(_) => { vec![] }
+                        };
                         peer_configuration.update(|user_configuration| {
                             user_configuration.name = UserInputValue::Right(configuration.name.value());
                             user_configuration.is_new = false;
                             user_configuration.location = UserInputValue::Right(configuration.location.unwrap_or_default().value());
                             user_configuration.devices = configuration.topology.devices.into_iter().map(|device| {
+                                let mut configured_clusters = vec![];
+                                
+                                for cluster in &clusters {
+                                    for deviceId in &cluster.devices {
+                                        if device.id.eq(deviceId) {
+                                            configured_clusters.push(cluster.id);
+                                        }
+                                    }
+                                }
                                 create_rw_signal(UserDeviceConfiguration {
                                     id: device.id,
                                     name: UserInputValue::Right(device.name.to_string()),
                                     interface: Some(device.interface),
                                     description: UserInputValue::Right(device.description.unwrap_or_default().to_string()),
-                                    is_collapsed: true
+                                    is_collapsed: true,
+                                    part_of_cluster: configured_clusters,
                                 })
                             }).collect::<Vec<_>>();
                             if let Some(bridge_name) = configuration.network.bridge_name {
