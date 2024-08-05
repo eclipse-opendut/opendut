@@ -1,0 +1,1 @@
+doc/src/user-manual/changelog.md
