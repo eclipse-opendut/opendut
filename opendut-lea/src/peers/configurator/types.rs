@@ -1,5 +1,5 @@
 use leptos::{RwSignal, SignalGetUntracked};
-
+use opendut_types::cluster::ClusterId;
 use opendut_types::peer::executor::ExecutorDescriptor;
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
 use opendut_types::peer::executor::{container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine}, ExecutorKind, ExecutorDescriptors, ResultsUrl};
@@ -92,6 +92,7 @@ pub struct UserDeviceConfiguration {
     pub description: UserInputValue,
     pub interface: Option<NetworkInterfaceId>,
     pub is_collapsed: bool,
+    pub part_of_cluster: Vec<ClusterId>
 }
 
 impl TryFrom<UserPeerConfiguration> for PeerDescriptor {

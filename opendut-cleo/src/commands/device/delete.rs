@@ -1,3 +1,4 @@
+use std::ops::Not;
 use uuid::Uuid;
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::topology::DeviceId;
@@ -22,6 +23,23 @@ impl DeleteDeviceCli {
                 .iter()
                 .any(|device| device.id == device_id)
         }).ok_or(format!("Cannot find a peer with the device <{}>.", device_id))?;
+
+        let clusters = carl.cluster
+            .list_cluster_configurations()
+            .await
+            .map_err(|error| format!("Failed to list cluster configurations.\n  {}", error))?;
+
+        let mut devices_in_cluster: Vec<String> = vec![];
+        for cluster in clusters {
+            for device in cluster.devices {
+                if device.0.eq(&device_id.0) {
+                    devices_in_cluster.push(cluster.id.to_string());
+                }
+            }
+        }
+        if devices_in_cluster.is_empty().not() {
+            Err(format!("Cannot delete device because it is used in following clusters: {}", devices_in_cluster.join(", ")))?
+        }
 
         peer.topology.devices.retain(|device| device.id != device_id);
 
