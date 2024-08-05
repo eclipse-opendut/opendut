@@ -1,9 +1,8 @@
 use leptos::*;
 use leptos::html::Div;
 use leptos_use::on_click_outside;
-
 use opendut_types::peer::{PeerDescriptor, PeerId};
-
+use opendut_types::cluster::ClusterConfiguration;
 use crate::app::{ExpectGlobals, use_app_globals};
 use crate::components::{BasePageContainer, IconButton, ButtonColor, ButtonState, FontAwesomeIcon, Breadcrumb, ButtonSize, Initialized};
 use crate::components::health;
@@ -34,25 +33,23 @@ pub fn PeersOverview() -> impl IntoView {
             }
         });
 
-        let remove_peer = create_action(move |id: &PeerId| {
+        let configured_clusters: Resource<(), Vec<ClusterConfiguration>> = create_local_resource(|| {}, move |_| {
             let mut carl = globals.expect_client();
-            let id = Clone::clone(id);
             async move {
-                let _ = carl.peers.delete_peer_descriptor(id).await;
-                registered_peers.refetch();
+                carl.cluster.list_cluster_configurations().await
+                    .expect("Failed to request the list of peers.")
             }
         });
-
+        
         let peers_table_rows = move || {
-
-            if let (Some(registered_peers), Some(connected_peers)) = (registered_peers.get(), connected_peers.get()) {
+            if let (Some(registered_peers), Some(connected_peers), Some(configured_clusters)) = (registered_peers.get(), connected_peers.get(), configured_clusters.get()) {
                 registered_peers.into_iter().map(|peer_descriptor| {
                     let peer_id = peer_descriptor.id;
                     view! {
                         <Row
                             peer_descriptor=create_rw_signal(peer_descriptor)
+                            cluster_configuration=create_rw_signal(configured_clusters.clone())
                             is_connected={connected_peers.contains(&peer_id)}
-                            on_remove=move || remove_peer.dispatch(peer_id)
                         />
                     }
                 }).collect::<Vec<_>>()
@@ -97,6 +94,7 @@ pub fn PeersOverview() -> impl IntoView {
                                 <tr>
                                     <th class="is-narrow">"Health"</th>
                                     <th>"Name"</th>
+                                    <th>"Used in Clusters"</th>
                                     <th class="is-narrow">"Action"</th>
                                 </tr>
                             </thead>
@@ -118,12 +116,11 @@ pub fn PeersOverview() -> impl IntoView {
 }
 
 #[component]
-fn Row<OnRemove>(
+fn Row(
     peer_descriptor: RwSignal<PeerDescriptor>,
+    cluster_configuration: RwSignal<Vec<ClusterConfiguration>>,
     is_connected: bool,
-    on_remove: OnRemove
-) -> impl IntoView
-where OnRemove: Fn() + 'static {
+) -> impl IntoView {
 
     let peer_id = create_read_slice(peer_descriptor,
         |peer_descriptor| {
@@ -161,6 +158,33 @@ where OnRemove: Fn() + 'static {
 
     let _ = on_click_outside(dropdown, move |_| dropdown_active.set(false) );
 
+    let cluster_columns = MaybeSignal::derive(move || {
+        let devices_in_peer = peer_descriptor.get().topology.devices.into_iter().map(|device| device.id).collect::<Vec<_>>();
+        let devices_in_cluster =  cluster_configuration.get().into_iter().map(|cluster| (cluster.id, cluster.name, cluster.devices)).collect::<Vec<(_,_,_)>>();
+        
+        let cluster_view_list = devices_in_cluster.into_iter()
+            .filter(|(_, _, devices)| devices_in_peer.clone().into_iter().any(|device| devices.contains(&device)))
+            .map(|(clusterId, clusterName, _)| {
+                let cluster_name = move || { clusterName.to_string() };
+                let configurator_href = move || { format!("/clusters/{}/configure/general", clusterId) };
+                view! {
+                    <span><a href={ configurator_href } >{ cluster_name }</a></span>
+                }
+            }).collect::<Vec<_>>();
+
+        let cluster_view_list_length = cluster_view_list.len();
+        let mut cluster_view_list_with_seperator: Vec<HtmlElement<_>> = Vec::new();
+        for (i, e) in cluster_view_list.into_iter().enumerate() {
+            cluster_view_list_with_seperator.push(e);
+            if i < (cluster_view_list_length - 1) {
+                cluster_view_list_with_seperator.push(
+                    view! { <span>", "</span> }
+                );
+            }
+        }
+        cluster_view_list_with_seperator
+    });
+
     view! {
         <tr>
             <td class="is-vcentered">
@@ -168,6 +192,9 @@ where OnRemove: Fn() + 'static {
             </td>
             <td class="is-vcentered">
                 <a href={ configurator_href } >{ peer_name }</a>
+            </td>
+            <td class="is-vcentered">
+                { cluster_columns }
             </td>
             <td class="is-vcentered">
                 <div class="is-pulled-right">
@@ -196,19 +223,6 @@ where OnRemove: Fn() + 'static {
                                     </span>
                                     <span>"Setup"</span>
                                 </a>
-                                <button
-                                    class="button is-white is-fullwidth is-justify-content-flex-start"
-                                    aria-label="Remove Peer"
-                                    on:click=move |_| {
-                                        dropdown_active.set(false);
-                                        on_remove();
-                                    }
-                                >
-                                    <span class="icon">
-                                        <i class="fa-solid fa-trash-can has-text-danger"></i>
-                                    </span>
-                                    <span>"Remove Peer"</span>
-                                </button>
                             </div>
                         </div>
                     </div>

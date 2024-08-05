@@ -1,8 +1,10 @@
+use std::collections::{HashSet};
 use std::ops::Not;
 use std::rc::Rc;
 
 use leptos::*;
 use tracing::{debug, error, info};
+use opendut_types::cluster::ClusterId;
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use crate::app::{use_app_globals, ExpectGlobals};
 use crate::components::{use_toaster, ButtonColor, ButtonSize, ButtonState, ButtonStateSignalProvider, ConfirmationButton, FontAwesomeIcon, IconButton, Toast, DoorhangerButton};
@@ -116,12 +118,12 @@ fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl In
 
 
     let delete_button = MaybeSignal::derive(move || {
-        let mut used_clusters = vec![];
+        let mut used_clusters: HashSet<ClusterId> = HashSet::new();
         let _ = configuration.get().devices
             .into_iter()
             .filter(|device| device.get().part_of_cluster.is_empty().not() )
             .map(|device| for clusterId in device.get().part_of_cluster {
-                used_clusters.push(clusterId);
+                used_clusters.insert(clusterId);
             })
             .collect::<Vec<_>>();
         
