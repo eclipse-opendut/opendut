@@ -1,1 +1,1 @@
-doc/src/user-manual/changelog.md
+doc/src/changelog.md
