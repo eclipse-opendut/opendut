@@ -1,2 +1,6 @@
 # Declare that shell scripts will always have LF line endings on checkout.
 *.sh text eol=lf
+
+# Declare that certificate files will always have LF line endings on checkout.
+*.pem text eol=lf
+*.key text eol=lf
