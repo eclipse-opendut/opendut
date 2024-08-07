@@ -121,8 +121,8 @@ fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl In
         let mut used_clusters: HashSet<ClusterId> = HashSet::new();
         let _ = configuration.get().devices
             .into_iter()
-            .filter(|device| device.get().part_of_cluster.is_empty().not() )
-            .map(|device| for clusterId in device.get().part_of_cluster {
+            .filter(|device| device.get().contained_in_clusters.is_empty().not() )
+            .map(|device| for clusterId in device.get().contained_in_clusters {
                 used_clusters.insert(clusterId);
             })
             .collect::<Vec<_>>();
@@ -142,7 +142,7 @@ fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl In
                     color=ButtonColor::Danger
                     size=ButtonSize::Normal
                     state=button_state
-                    label="Remove peer ?"
+                    label="Remove Peer?"
                     text
                 />
             }
@@ -153,7 +153,7 @@ fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl In
                     color=ButtonColor::Danger
                     size=ButtonSize::Normal
                     state=button_state
-                    label="Remove peer ?"
+                    label="Remove Peer?"
                     on_conform=move || {
                         configuration.with_untracked(|config| {
                             delete_action.dispatch(config.id);

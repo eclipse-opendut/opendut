@@ -92,7 +92,7 @@ pub struct UserDeviceConfiguration {
     pub description: UserInputValue,
     pub interface: Option<NetworkInterfaceId>,
     pub is_collapsed: bool,
-    pub part_of_cluster: Vec<ClusterId>
+    pub contained_in_clusters: Vec<ClusterId>
 }
 
 impl TryFrom<UserPeerConfiguration> for PeerDescriptor {

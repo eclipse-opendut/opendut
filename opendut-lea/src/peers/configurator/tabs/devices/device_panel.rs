@@ -65,7 +65,7 @@ where
     );
 
     let delete_button = MaybeSignal::derive(move || {
-        let used_clusters = device_configuration.get().part_of_cluster.len();
+        let used_clusters = device_configuration.get().contained_in_clusters.len();
 
         if used_clusters > 0 {
             let text = view! {
@@ -80,7 +80,7 @@ where
                     color=ButtonColor::Light
                     size=ButtonSize::Small
                     state=ButtonState::Enabled
-                    label="Remove peer ?"
+                    label="Delete Device?"
                     text
                 />
             }
@@ -91,7 +91,7 @@ where
                     color=ButtonColor::Light
                     size=ButtonSize::Small
                     state=ButtonState::Enabled
-                    label="Remove peer ?"
+                    label="Delete Device?"
                     on_conform={
                         move || on_delete(device_configuration.get_untracked().id)
                     }
