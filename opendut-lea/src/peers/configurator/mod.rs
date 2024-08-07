@@ -88,7 +88,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                                     interface: Some(device.interface),
                                     description: UserInputValue::Right(device.description.unwrap_or_default().to_string()),
                                     is_collapsed: true,
-                                    part_of_cluster: configured_clusters,
+                                    contained_in_clusters: configured_clusters,
                                 })
                             }).collect::<Vec<_>>();
                             if let Some(bridge_name) = configuration.network.bridge_name {
