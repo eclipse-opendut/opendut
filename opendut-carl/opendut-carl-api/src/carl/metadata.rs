@@ -1,19 +1,12 @@
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 pub use client::*;
 
-#[derive(thiserror::Error, Debug)]
-#[error("{message}")]
-pub struct VersionError {
-    message: String,
-}
-
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 mod client {
     use tonic::codegen::{Body, Bytes, http, InterceptedService, StdError};
 
     use opendut_types::proto::util::VersionInfo;
 
-    use crate::carl::metadata::VersionError;
     use crate::proto::services::metadata_provider;
     use crate::proto::services::metadata_provider::metadata_provider_client::MetadataProviderClient;
 
@@ -70,5 +63,11 @@ mod client {
                 },
             }
         }
+    }
+
+    #[derive(thiserror::Error, Debug)]
+    #[error("{message}")]
+    pub struct VersionError {
+        message: String,
     }
 }

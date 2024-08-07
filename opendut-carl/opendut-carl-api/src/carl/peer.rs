@@ -97,12 +97,6 @@ pub enum ListDevicesError {
 }
 
 #[derive(thiserror::Error, Debug)]
-#[error("{message}")]
-pub struct  CreateSetupError {
-    message: String,
-}
-
-#[derive(thiserror::Error, Debug)]
 pub enum IllegalDevicesError {
     #[error("Device <{device_id}> already registered!")]
     DeviceAlreadyExists {
@@ -120,7 +114,7 @@ mod client {
     use opendut_types::topology::DeviceDescriptor;
 
     use crate::carl::{ClientError, extract};
-    use crate::carl::peer::{CreateSetupError, DeletePeerDescriptorError, GetPeerDescriptorError, ListDevicesError, ListPeerDescriptorsError, StorePeerDescriptorError};
+    use crate::carl::peer::{DeletePeerDescriptorError, GetPeerDescriptorError, ListDevicesError, ListPeerDescriptorsError, StorePeerDescriptorError};
     use crate::proto::services::peer_manager;
     use crate::proto::services::peer_manager::peer_manager_client::PeerManagerClient;
 
@@ -325,5 +319,11 @@ mod client {
                 },
             }
         }
+    }
+
+    #[derive(thiserror::Error, Debug)]
+    #[error("{message}")]
+    pub struct CreateSetupError {
+        message: String,
     }
 }
