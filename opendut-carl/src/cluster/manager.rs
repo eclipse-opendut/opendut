@@ -10,7 +10,7 @@ use opendut_carl_api::carl::cluster::{DeleteClusterDeploymentError, GetClusterCo
 use opendut_types::cluster::{ClusterAssignment, ClusterConfiguration, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::peer::state::PeerState;
-use opendut_types::topology::DeviceId;
+use opendut_types::topology::{DeviceDescriptor, DeviceId};
 use opendut_types::util::net::NetworkInterfaceDescriptor;
 use opendut_types::util::Port;
 
@@ -273,14 +273,20 @@ fn determine_member_interface_mapping(
 
     for device_id in cluster_devices {
         let member_interfaces = all_peers.iter().find_map(|peer| {
-            let interfaces: Vec<NetworkInterfaceDescriptor> = peer.topology.devices.iter()
+
+            let devices: Vec<DeviceDescriptor> = peer.topology.devices.iter()
                 .filter(|device| device.id == device_id)
-                .map(|device| device.interface.clone())
+                .cloned()
                 .collect();
 
-            if interfaces.is_empty() {
+            if devices.is_empty() {
                 None
             } else {
+                let interfaces = peer.network.interfaces_zipped_with_devices(&devices)
+                    .into_iter()
+                    .map(|(interface, _)| interface)
+                    .collect::<Vec<_>>();
+
                 Some((peer.id, interfaces))
             }
         });
@@ -409,13 +415,13 @@ mod test {
                                 peer_id: peer_a.id,
                                 vpn_address: peer_a.remote_host,
                                 can_server_port: Port(fixture.cluster_manager_options.can_server_port_range_start + 1),
-                                device_interfaces: peer_a.descriptor.topology.devices.clone().into_iter().map(|device| device.interface).collect(),
+                                device_interfaces: peer_a.interfaces.clone(),
                             }),
                             eq(PeerClusterAssignment {
                                 peer_id: peer_b.id,
                                 vpn_address: peer_b.remote_host,
                                 can_server_port: Port(fixture.cluster_manager_options.can_server_port_range_start),
-                                device_interfaces: peer_b.descriptor.topology.devices.clone().into_iter().map(|device| device.interface).collect(),
+                                device_interfaces: peer_b.interfaces.clone(),
                             }),
                         ],
                         unordered_elements_are![
@@ -423,13 +429,13 @@ mod test {
                                 peer_id: peer_a.id,
                                 vpn_address: peer_a.remote_host,
                                 can_server_port: Port(fixture.cluster_manager_options.can_server_port_range_start),
-                                device_interfaces: peer_a.descriptor.topology.devices.into_iter().map(|device| device.interface).collect(),
+                                device_interfaces: peer_a.interfaces,
                             }),
                             eq(PeerClusterAssignment {
                                 peer_id: peer_b.id,
                                 vpn_address: peer_b.remote_host,
                                 can_server_port: Port(fixture.cluster_manager_options.can_server_port_range_start + 1),
-                                device_interfaces: peer_b.descriptor.topology.devices.into_iter().map(|device| device.interface).collect(),
+                                device_interfaces: peer_b.interfaces,
                             }),
                         ],
                     ]
@@ -485,37 +491,35 @@ mod test {
     #[rstest]
     fn should_determine_member_interface_mapping() -> anyhow::Result<()> {
 
-        fn device(id: DeviceId, interface_name: NetworkInterfaceName) -> DeviceDescriptor {
-            DeviceDescriptor {
+        fn device_and_interface(id: DeviceId, interface_name: NetworkInterfaceName) -> (DeviceDescriptor, NetworkInterfaceDescriptor) {
+            let network_interface = NetworkInterfaceDescriptor {
+                id: NetworkInterfaceId::random(),
+                name: interface_name,
+                configuration: NetworkInterfaceConfiguration::Ethernet,
+            };
+            let device = DeviceDescriptor {
                 id,
                 name: DeviceName::try_from(format!("test-device-{id}")).unwrap(),
                 description: None,
-                interface: NetworkInterfaceDescriptor {
-                    id: NetworkInterfaceId::random(),
-                    name: interface_name,
-                    configuration: NetworkInterfaceConfiguration::Ethernet,
-                },
+                interface: network_interface.id,
                 tags: Vec::new(),
-            }
+            };
+            (device, network_interface)
         }
 
-        let device_a = device(DeviceId::random(), NetworkInterfaceName::try_from("a")?);
-        let device_b = device(DeviceId::random(), NetworkInterfaceName::try_from("b")?);
-        let device_c = device(DeviceId::random(), NetworkInterfaceName::try_from("c")?);
+        let (device_a, interface_a) = device_and_interface(DeviceId::random(), NetworkInterfaceName::try_from("a")?);
+        let (device_b, interface_b) = device_and_interface(DeviceId::random(), NetworkInterfaceName::try_from("b")?);
+        let (device_c, interface_c) = device_and_interface(DeviceId::random(), NetworkInterfaceName::try_from("c")?);
 
         let cluster_devices = HashSet::from([device_a.id, device_b.id, device_c.id]);
 
-        fn peer_descriptor(id: PeerId, devices: Vec<DeviceDescriptor>) -> PeerDescriptor {
+        fn peer_descriptor(id: PeerId, devices: Vec<DeviceDescriptor>, interfaces: Vec<NetworkInterfaceDescriptor>) -> PeerDescriptor {
             PeerDescriptor {
                 id,
                 name: PeerName::try_from(format!("peer-{id}")).unwrap(),
                 location: PeerLocation::try_from("Ulm").ok(),
                 network: PeerNetworkDescriptor {
-                    interfaces: vec!(NetworkInterfaceDescriptor {
-                        id: NetworkInterfaceId::random(),
-                        name: NetworkInterfaceName::try_from("eth0").unwrap(),
-                        configuration: NetworkInterfaceConfiguration::Ethernet,
-                    }),
+                    interfaces,
                     bridge_name: Some(NetworkInterfaceName::try_from("br-custom").unwrap()),
                 },
                 topology: Topology {
@@ -525,9 +529,9 @@ mod test {
             }
         }
 
-        let peer_1 = peer_descriptor(PeerId::random(), vec![device_a.clone()]);
-        let peer_2 = peer_descriptor(PeerId::random(), vec![device_b.clone(), device_c.clone()]);
-        let peer_leader = peer_descriptor(PeerId::random(), vec![]);
+        let peer_1 = peer_descriptor(PeerId::random(), vec![device_a.clone()], vec![interface_a.clone()]);
+        let peer_2 = peer_descriptor(PeerId::random(), vec![device_b.clone(), device_c.clone()], vec![interface_b.clone(), interface_c.clone()]);
+        let peer_leader = peer_descriptor(PeerId::random(), vec![], vec![]);
 
 
         let all_peers = vec![peer_1.clone(), peer_2.clone(), peer_leader.clone()];
@@ -538,8 +542,8 @@ mod test {
         assert_that!(
             result,
             unordered_elements_are![
-                (eq(peer_1.id), unordered_elements_are![eq(device_a.interface)]),
-                (eq(peer_2.id), unordered_elements_are![eq(device_b.interface), eq(device_c.interface)]),
+                (eq(peer_1.id), unordered_elements_are![eq(interface_a)]),
+                (eq(peer_2.id), unordered_elements_are![eq(interface_b), eq(interface_c)]),
                 (eq(peer_leader.id), empty()),
             ]
         );
@@ -590,6 +594,7 @@ mod test {
     struct PeerFixture {
         id: PeerId,
         device: DeviceId,
+        interfaces: Vec<NetworkInterfaceDescriptor>,
         remote_host: IpAddr,
         descriptor: PeerDescriptor,
     }
@@ -598,18 +603,21 @@ mod test {
 
         let id = PeerId::random();
         let remote_host = IpAddr::from_str("1.1.1.1").unwrap();
+        let network_interface_id = NetworkInterfaceId::random();
+        let interfaces = vec![
+            NetworkInterfaceDescriptor {
+                id: network_interface_id,
+                name: NetworkInterfaceName::try_from("eth0").unwrap(),
+                configuration: NetworkInterfaceConfiguration::Ethernet,
+            }
+        ];
+
         let descriptor = PeerDescriptor {
             id,
             name: PeerName::try_from(peer_name).unwrap(),
             location: PeerLocation::try_from("Ulm").ok(),
             network: PeerNetworkDescriptor {
-                interfaces: vec![
-                    NetworkInterfaceDescriptor {
-                        id: NetworkInterfaceId::random(),
-                        name: NetworkInterfaceName::try_from("eth0").unwrap(),
-                        configuration: NetworkInterfaceConfiguration::Ethernet,
-                    }
-                ],
+                interfaces: interfaces.clone(),
                 bridge_name: Some(NetworkInterfaceName::try_from("br-opendut-1").unwrap()),
             },
             topology: Topology {
@@ -618,11 +626,7 @@ mod test {
                         id: device,
                         name: DeviceName::try_from(format!("{peer_name}_Device_1")).unwrap(),
                         description: DeviceDescription::try_from("Huii").ok(),
-                        interface: NetworkInterfaceDescriptor {
-                            id: NetworkInterfaceId::random(),
-                            name: NetworkInterfaceName::try_from("eth0").unwrap(),
-                            configuration: NetworkInterfaceConfiguration::Ethernet,
-                        },
+                        interface: network_interface_id,
                         tags: vec![],
                     }
                 ]
@@ -649,6 +653,7 @@ mod test {
         PeerFixture {
             id,
             device,
+            interfaces,
             remote_host,
             descriptor
         }

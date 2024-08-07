@@ -16,9 +16,11 @@ gloo-net = { workspace = true, features = ["json"]}
 gloo-timers = { workspace = true, features = ["futures"] }
 jsonwebtoken = { workspace = true }
 leptos = { workspace = true, features = ["csr"] }
+leptos_oidc =  { workspace = true }
 leptos_router = { workspace = true, features = ["csr"] }
 leptos-use = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 shadow-rs = { workspace = true, default-features = false, features = ["tzdb"] }
 slotmap = { workspace = true }
 strum = { workspace = true }
@@ -29,8 +31,7 @@ tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["ansi"] }
 tracing-web = { workspace = true }
 url = { workspace = true }
-leptos_oidc =  { workspace = true }
-serde_json = { workspace = true }
+uuid = { workspace = true }
 
 [build-dependencies]
 shadow-rs = { workspace = true }

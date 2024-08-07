@@ -3459,6 +3459,7 @@ dependencies = [
  "tracing-subscriber",
  "tracing-web",
  "url",
+ "uuid",
  "wasm-bindgen-test",
 ]
 

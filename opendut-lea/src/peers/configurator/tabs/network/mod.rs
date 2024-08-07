@@ -38,30 +38,20 @@ pub fn NetworkTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl I
         }
     };
 
-    let interface_name = move | user_network_interface: Option<UserNetworkInterface> | {
-        match user_network_interface {
-            None => { String::new() }
-            Some(interface) => { interface.name.name() }
-        }
-    };
-
-    let device_interfaces = move || {
+    let interfaces_used_by_a_device = move || {
         devices.with(|devices| {
             devices.iter()
                 .cloned()
-                .map(|device_configuration| {
-                    interface_name(device_configuration.get_untracked().interface)
-                })
+                .flat_map(|device_configuration| device_configuration.get_untracked().interface)
                 .collect::<Vec<_>>()
         })
     };
 
-    let deletion_failed_action = create_action(move |interface_name_to_delete: &String| {
+    let deletion_failed_action = create_action(move |interface_to_delete: &NetworkInterfaceId| {
         let toaster = Rc::clone(&toaster);
         let devices_with_interface = devices.get_untracked().into_iter()
             .filter(|device| {
-                let device_interface_name = interface_name(device.get_untracked().interface);
-                &device_interface_name == interface_name_to_delete
+                device.get_untracked().interface == Some(*interface_to_delete)
             })
             .map(|device| {
                 let device = device.get_untracked();
@@ -87,6 +77,7 @@ pub fn NetworkTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl I
             interface_names.iter()
                 .cloned()
                 .map(|interface| {
+                    let id = interface.get_untracked().id;
                     let name = interface.get_untracked().name;
                     let configuration_name = interface.get_untracked().configuration.display_name();
                     view! {
@@ -94,12 +85,12 @@ pub fn NetworkTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl I
                             { &name.name() } " (" { configuration_name } ")"
                                 <button class="delete" type="button"
                                     on:click=move |_| {
-                                        if device_interfaces().contains(&name.name()) {
-                                            deletion_failed_action.dispatch(name.name().clone());
+                                        if interfaces_used_by_a_device().contains(&id) {
+                                            deletion_failed_action.dispatch(id);
                                         } else {
                                             let remaining_interfaces = interfaces_getter.with_untracked(|interfaces| {
                                                 interfaces.iter()
-                                                    .filter(|&interface_name| name != interface_name.get_untracked().name)
+                                                    .filter(|&interface| id != interface.get_untracked().id)
                                                     .cloned()
                                                     .collect::<Vec<_>>()
                                             });

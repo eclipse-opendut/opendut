@@ -1,7 +1,7 @@
 use leptos::{component, create_read_slice, create_slice, event_target_value, IntoView, MaybeSignal, RwSignal, SignalGet, SignalGetUntracked, SignalWith, view};
-
 use opendut_types::topology::{DeviceDescription, DeviceId, DeviceName, IllegalDeviceName};
-
+use opendut_types::util::net::NetworkInterfaceId;
+use uuid::Uuid;
 use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, IconButton, ReadOnlyInput, Toggled, UserInput, UserInputValue, UserTextarea};
 use crate::peers::configurator::types::{EMPTY_DEVICE_NAME_ERROR_MESSAGE, UserDeviceConfiguration, UserPeerConfiguration};
 
@@ -164,7 +164,7 @@ fn DeviceInterfaceInput(
         }
     );
 
-    let (getter, setter) = create_slice(device_configuration,
+    let (device_interface_id, set_device_interface_id) = create_slice(device_configuration,
         |device_configuration| {
             Clone::clone(&device_configuration.interface)
         },
@@ -173,42 +173,33 @@ fn DeviceInterfaceInput(
         }
     );
 
-    let value_text = getter.with(|input| match input {
-        None => String::from("Select interface"),
-        Some(interface) => format!("{} ({})", interface.name.name(), interface.configuration.display_name() ),
-    });
-
     let dropdown_options = move || {
         peer_network_interfaces.with(|interfaces | {
             interfaces.iter().cloned()
                 .map(|interface| {
+                    let id = interface.get_untracked().id;
                     let name = interface.get_untracked().name.name();
                     let interface_type = interface.get_untracked().configuration.display_name();
-                    if value_text == format!("{} ({})", name, interface_type) {
+
+                    if device_interface_id.get_untracked() == Some(interface.get_untracked().id) {
                         view! {
-                            <option value={name.clone()} selected>{name} " ("{interface_type}")"</option>
+                            <option value={id.to_string()} selected>{name} " ("{interface_type}")"</option>
                         }
                     } else {
                         view! {
-                            <option value={name.clone()}>{name} " ("{interface_type}")"</option>
+                            <option value={id.to_string()}>{name} " ("{interface_type}")"</option>
                         }
                     }
-
                 })
                 .collect::<Vec<_>>()
         })
     };
 
-    let configuration = move | selected_interface_name: String | {
-        peer_network_interfaces.with(|interfaces| {
-            interfaces.iter()
-                .find(|interface| {
-                    interface.get().name.name() == selected_interface_name
-                })
-                .map(| user_network_interface | {
-                    user_network_interface.get()
-                })
-        })
+    let parse_selected_interface_id = move |selected_interface_id: String| {
+        NetworkInterfaceId::from(
+            Uuid::parse_str(&selected_interface_id)
+                .expect("Should be a valid UUID, which we passed in as option-value.")
+        )
     };
 
     view! {
@@ -219,10 +210,10 @@ fn DeviceInterfaceInput(
                     on:change=move |ev| {
                         let target_value = event_target_value(&ev);
                         if target_value == "Select interface" {
-                            setter.set(None);
+                            set_device_interface_id.set(None);
                         } else {
-                            setter.set(
-                                configuration(target_value)
+                            set_device_interface_id.set(
+                                Some(parse_selected_interface_id(target_value))
                             );
                         }
                     }>

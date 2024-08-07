@@ -513,11 +513,7 @@ mod test {
                 id: additional_device_id,
                 name: DeviceName::try_from("PeerA_Device_42")?,
                 description: DeviceDescription::try_from("Additional device for peerA").ok(),
-                interface: NetworkInterfaceDescriptor {
-                    id: NetworkInterfaceId::random(),
-                    name: NetworkInterfaceName::try_from("eth1")?,
-                    configuration: NetworkInterfaceConfiguration::Ethernet,
-                },
+                interface: NetworkInterfaceId::random(),
                 tags: vec![],
             };
 
@@ -708,22 +704,14 @@ mod test {
                         id: peer_a_device_1,
                         name: DeviceName::try_from("PeerA_Device_1").unwrap(),
                         description: DeviceDescription::try_from("Huii").ok(),
-                        interface: NetworkInterfaceDescriptor {
-                            id: NetworkInterfaceId::random(),
-                            name: NetworkInterfaceName::try_from("eth0").unwrap(),
-                            configuration: NetworkInterfaceConfiguration::Ethernet,
-                        },
+                        interface: NetworkInterfaceId::random(),
                         tags: vec![],
                     },
                     DeviceDescriptor {
                         id: peer_a_device_2,
                         name: DeviceName::try_from("PeerA_Device_2").unwrap(),
                         description: DeviceDescription::try_from("Huii").ok(),
-                        interface: NetworkInterfaceDescriptor {
-                            id: NetworkInterfaceId::random(),
-                            name: NetworkInterfaceName::try_from("eth1").unwrap(),
-                            configuration: NetworkInterfaceConfiguration::Ethernet,
-                        },
+                        interface: NetworkInterfaceId::random(),
                         tags: vec![],
                     }
                 ]

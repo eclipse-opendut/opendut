@@ -62,7 +62,7 @@ impl CreateDeviceCli {
                         .map(DeviceDescription::try_from)
                         .transpose()
                         .map_err(|error| error.to_string())?,
-                    interface,
+                    interface: interface.id,
                     tags: self.tags
                         .unwrap_or_default()
                         .into_iter()
@@ -84,7 +84,7 @@ impl CreateDeviceCli {
                 }
                 if let Some(interface_name) = self.interface {
                     device.interface = match peer_descriptor.network.interfaces.iter().find(|descriptor| descriptor.name == interface_name) {
-                        Some(network_interface_descriptor) => network_interface_descriptor.clone(),
+                        Some(network_interface_descriptor) => network_interface_descriptor.id,
                         None => {
                             Err(format!("Cannot create new device because interface is not one of the allowed values: {} \nAllowed interfaces are configured on the peer.",
                                         peer_network_interface_names.into_iter().map(|name| name.name()).collect::<Vec<_>>().join(", ")))?

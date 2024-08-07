@@ -90,7 +90,7 @@ pub struct UserDeviceConfiguration {
     pub id: DeviceId,
     pub name: UserInputValue,
     pub description: UserInputValue,
-    pub interface: Option<UserNetworkInterface>,
+    pub interface: Option<NetworkInterfaceId>,
     pub is_collapsed: bool,
 }
 
@@ -176,8 +176,7 @@ impl TryFrom<UserDeviceConfiguration> for DeviceDescriptor {
                     .map_err(|_| DeviceMisconfigurationError::InvalidDeviceName)
             })?;
        
-        let interface= NetworkInterfaceDescriptor::try_from(configuration.interface.unwrap())
-                .map_err(|_|  DeviceMisconfigurationError::InvalidDeviceInterface)?;
+        let interface = configuration.interface.unwrap();
         let description = configuration
             .description
             .right_ok_or(DeviceMisconfigurationError::InvalidDeviceDescription)

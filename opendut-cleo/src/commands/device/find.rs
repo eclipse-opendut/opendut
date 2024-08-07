@@ -24,7 +24,6 @@ impl FindDeviceCli {
                         pattern.matches(&device.name.value().to_lowercase())
                             || pattern.matches(&device.id.to_string().to_lowercase())
                             || pattern.matches(&device.description.clone().unwrap().value().to_lowercase())
-                            || pattern.matches(&device.interface.to_string().to_lowercase())
                             || device.tags.iter().any(|tag| pattern.matches(&tag.value().to_lowercase()))
                     })
                 })

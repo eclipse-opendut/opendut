@@ -8,7 +8,7 @@ use url::Url;
 use uuid::Uuid;
 
 use crate::peer::executor::ExecutorDescriptors;
-use crate::topology::Topology;
+use crate::topology::{DeviceDescriptor, Topology};
 use crate::util::net::{Certificate, NetworkInterfaceDescriptor, AuthConfig, NetworkInterfaceName};
 use crate::vpn::VpnPeerConfiguration;
 
@@ -226,6 +226,17 @@ pub struct PeerNetworkDescriptor {
 impl PeerNetworkDescriptor {
     pub fn new(interfaces: Vec<NetworkInterfaceDescriptor>, bridge_name: Option<NetworkInterfaceName>) -> Self {
         Self { interfaces, bridge_name}
+    }
+    pub fn interfaces_zipped_with_devices(&self, devices: &[DeviceDescriptor]) -> Vec<(NetworkInterfaceDescriptor, DeviceDescriptor)> {
+        devices.iter()
+            .cloned()
+            .map(|device| {
+                let interface = self.interfaces.iter()
+                    .find(|interface_descriptor| interface_descriptor.id == device.interface)
+                    .expect("Should always have a NetworkInterfaceDescriptor for device's network interface on a PeerDescriptor.")
+                    .clone();
+                (interface, device)
+            }).collect()
     }
 }
 

@@ -165,7 +165,7 @@ impl fmt::Display for NetworkInterfaceDescriptor {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize, Hash)]
 #[serde(transparent)]
 pub struct NetworkInterfaceId { pub uuid: Uuid }
 impl NetworkInterfaceId {
@@ -176,6 +176,11 @@ impl NetworkInterfaceId {
 impl From<Uuid> for NetworkInterfaceId {
     fn from(uuid: Uuid) -> Self {
         Self { uuid }
+    }
+}
+impl fmt::Display for NetworkInterfaceId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.uuid)
     }
 }
 

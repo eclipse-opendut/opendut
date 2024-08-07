@@ -143,7 +143,7 @@ mod test {
     use rstest::{fixture, rstest};
 
     use opendut_types::topology::{DeviceDescription, DeviceId, DeviceName};
-    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
+    use opendut_types::util::net::NetworkInterfaceId;
 
     use super::*;
 
@@ -154,33 +154,21 @@ mod test {
                 id: DeviceId::random(),
                 name: DeviceName::try_from("MyDevice").unwrap(),
                 description: DeviceDescription::try_from("").ok(),
-                interface: NetworkInterfaceDescriptor {
-                    id: NetworkInterfaceId::random(),
-                    name: NetworkInterfaceName::try_from("eth0").unwrap(),
-                    configuration: NetworkInterfaceConfiguration::Ethernet,
-                },
+                interface: NetworkInterfaceId::random(),
                 tags: vec![],
             },
             DeviceDescriptor {
                 id: DeviceId::random(),
                 name: DeviceName::try_from("YourDevice").unwrap(),
                 description: DeviceDescription::try_from("").ok(),
-                interface: NetworkInterfaceDescriptor {
-                    id: NetworkInterfaceId::random(),
-                    name: NetworkInterfaceName::try_from("eth0").unwrap(),
-                    configuration: NetworkInterfaceConfiguration::Ethernet,
-                },
+                interface: NetworkInterfaceId::random(),
                 tags: vec![],
             },
             DeviceDescriptor {
                 id: DeviceId::random(),
                 name: DeviceName::try_from("HisDevice").unwrap(),
                 description: DeviceDescription::try_from("").ok(),
-                interface: NetworkInterfaceDescriptor {
-                    id: NetworkInterfaceId::random(),
-                    name: NetworkInterfaceName::try_from("eth0").unwrap(),
-                    configuration: NetworkInterfaceConfiguration::Ethernet,
-                },
+                interface: NetworkInterfaceId::random(),
                 tags: vec![],
             }
         ]

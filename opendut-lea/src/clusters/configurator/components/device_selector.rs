@@ -5,7 +5,7 @@ use leptos::*;
 
 use opendut_types::peer::PeerId;
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
-
+use opendut_types::util::net::NetworkInterfaceDescriptor;
 use crate::clusters::configurator::components::{get_all_peers, get_all_selected_devices};
 use crate::clusters::configurator::types::UserClusterConfiguration;
 use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
@@ -47,8 +47,10 @@ pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
             devices.sort_by(|a, b|
                 a.name.value().to_lowercase().cmp(&b.name.value().to_lowercase()));
 
-            let devices_per_peer = devices.clone().into_iter()
-                .map(|device| {
+            let interfaces_and_devices = peer.network.interfaces_zipped_with_devices(&devices);
+
+            let devices_per_peer = interfaces_and_devices.into_iter()
+                .map(|(network_interface, device)| {
                     let collapsed_signal = create_rw_signal(true);
                     let collapse_button_icon = MaybeSignal::derive(move || if collapsed_signal.get() { FontAwesomeIcon::ChevronDown } else {FontAwesomeIcon::ChevronUp} );
                     let selected_signal = create_rw_signal(selected_devices.contains(&device.id));
@@ -90,6 +92,7 @@ pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
                         <tr hidden={collapsed_signal}>
                             <DeviceInfo
                                 device = device
+                                network_interface = network_interface
                                 peer_id = peer.id
                             />
                         </tr>
@@ -125,7 +128,7 @@ pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
 }
 
 #[component]
-pub fn DeviceInfo(device: DeviceDescriptor, peer_id: PeerId) -> impl IntoView {
+pub fn DeviceInfo(device: DeviceDescriptor, network_interface: NetworkInterfaceDescriptor, peer_id: PeerId) -> impl IntoView {
     view! {
         <td></td>
         <td colspan="3">
@@ -144,7 +147,7 @@ pub fn DeviceInfo(device: DeviceDescriptor, peer_id: PeerId) -> impl IntoView {
             <div class="field">
                 <label class="label">Interface</label>
                 <div class="control">
-                    <p>{device.interface.name.name()} " (" {UserNetworkInterfaceConfiguration::from(device.interface.configuration).display_name()} ")"</p>
+                    <p>{network_interface.name.name()} " (" {UserNetworkInterfaceConfiguration::from(network_interface.configuration).display_name()} ")"</p>
                 </div>
             </div>
             <div class="field">
