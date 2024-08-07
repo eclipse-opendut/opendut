@@ -27,6 +27,7 @@ impl Crate {
     pub fn install_command_args(&self) -> &[&'static str] {
         match self {
             Crate::DieselCli => &["--no-default-features", "--features", "postgres-bundled"],
+            Crate::Trunk => &["--locked"],
             _ => &[],
         }
     }
