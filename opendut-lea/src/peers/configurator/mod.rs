@@ -64,10 +64,9 @@ pub fn PeerConfigurator() -> impl IntoView {
                 let mut carl = globals.expect_client();
                 async move {
                     if let Ok(configuration) = carl.peers.get_peer_descriptor(peer_id).await {
-                        let clusters = match carl.cluster.list_cluster_configurations().await {
-                            Ok(clusters) => {clusters}
-                            Err(_) => { vec![] }
-                        };
+                        let clusters = carl.cluster.list_cluster_configurations().await
+                            .unwrap_or(vec![]);
+
                         peer_configuration.update(|user_configuration| {
                             user_configuration.name = UserInputValue::Right(configuration.name.value());
                             user_configuration.is_new = false;
@@ -77,7 +76,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                                 
                                 for cluster in &clusters {
                                     for deviceId in &cluster.devices {
-                                        if device.id.eq(deviceId) {
+                                        if device.id == *deviceId {
                                             configured_clusters.push(cluster.id);
                                         }
                                     }
