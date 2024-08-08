@@ -1,5 +1,8 @@
 use std::collections::HashSet;
-use std::env;
+use std::{env, fs};
+use std::ffi::OsStr;
+use std::fs::FileType;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use anyhow::Context;
@@ -14,11 +17,14 @@ use opendut_util::telemetry;
 use opendut_util::telemetry::opentelemetry_types::Opentelemetry;
 
 use crate::service::network_interface::manager::NetworkInterfaceManager;
+use crate::setup::plugin_runtime::PluginRuntime;
 use crate::setup::{Leader, runner, tasks, User};
 use crate::setup::runner::RunMode;
 use crate::setup::task::Task;
 use crate::setup::tasks::write_configuration;
 use crate::setup::util::running_in_docker;
+
+use super::constants::setup_plugins;
 
 #[allow(clippy::box_default)]
 pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, mtu: u16) -> anyhow::Result<()> {
@@ -32,7 +38,16 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
     println!("Using PeerId: {}", peer_setup.id);
     println!("Will connect to CARL at: {}", peer_setup.carl);
 
-    let mut tasks: Vec<Box<dyn Task>> = vec![
+    let mut tasks: Vec<Box<dyn Task>> = vec![];
+    
+    let plugin_paths = discover_plugins().unwrap();
+    
+    let plugin_runtime = PluginRuntime::new();
+    let mut plugins: Vec<Box<dyn Task>> = plugin_paths.iter().map(|path|Box::new(plugin_runtime.create_plugin_from_wasm(plugin_paths))).collect();
+
+    tasks.append(&mut plugins);
+
+    tasks.append(&mut vec![
         Box::new(tasks::WriteCaCertificate::with_certificate(peer_setup.ca)),
         Box::new(tasks::CheckCommandLinePrograms),
         Box::new(tasks::WriteConfiguration::with_override(
@@ -47,7 +62,7 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
         Box::new(tasks::copy_rperf::CopyRperf),
 
         Box::new(tasks::LoadKernelModules::default()),
-    ];
+    ]);
 
     if !running_in_docker() {
         tasks.push(Box::new(tasks::CreateKernelModuleLoadRule))
@@ -84,7 +99,7 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
         Box::new(tasks::RestartService),
     ]);
 
-    runner::run(run_mode, no_confirm, &tasks).await
+    runner::run(run_mode, no_confirm, &tasks, plugin_runtime).await
 }
 
 #[allow(clippy::box_default, clippy::too_many_arguments)]
@@ -101,7 +116,16 @@ pub async fn unmanaged(
 
     let network_interface_manager = NetworkInterfaceManager::create()?;
 
-    let tasks: Vec<Box<dyn Task>> = vec![
+    let mut tasks: Vec<Box<dyn Task>> = vec![];
+    
+    let plugin_paths = discover_plugins().unwrap();
+    
+    let plugin_runtime = PluginRuntime::new();
+    let mut plugins: Vec<Box<dyn Task>> = plugin_paths.iter().map(|path|Box::new(plugin_runtime.create_plugin_from_wasm(plugin_paths))).collect();
+
+    tasks.append(&mut plugins);
+
+    tasks.append(&mut vec![
         Box::new(tasks::CheckCommandLinePrograms),
         Box::new(tasks::netbird::Unpack::default()),
         Box::new(tasks::netbird::InstallService),
@@ -113,9 +137,9 @@ pub async fn unmanaged(
         Box::new(tasks::network_interface::ConnectDeviceInterfaces { network_interface_manager, bridge_name, device_interfaces }),
 
         Box::new(tasks::copy_rperf::CopyRperf),
-    ];
+    ]);
 
-    runner::run(run_mode, no_confirm, &tasks).await
+    runner::run(run_mode, no_confirm, &tasks, plugin_runtime).await
 }
 
 
@@ -143,4 +167,23 @@ fn determine_service_user_name() -> User {
         .unwrap_or(DEFAULT_SERVICE_USER_NAME.to_string());
 
     User { name }
+}
+
+fn discover_plugins() -> anyhow::Result<Vec<PathBuf>> {
+	let path = setup_plugins::path_in_edgar_distribution()?;
+	let paths = fs::read_dir(&path)?;
+
+	let result: Vec<PathBuf> = paths
+		.filter_map(|item| {
+			item.ok().and_then(|entry| {
+				if entry.path().extension().and_then(OsStr::to_str) == Some("wasm") {
+					Some(entry.path())
+				} else {
+					None
+				}
+			})
+		})
+		.collect();
+
+	Ok(result)
 }

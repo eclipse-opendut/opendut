@@ -1,0 +1,23 @@
+package edgar: setup;
+
+world setup-plugin {
+    export task;
+}
+
+interface task {
+    description : func()-> string;
+
+    enum task-fulfilled {
+      yes,
+      no,
+      unchecked
+    }
+
+    check-fulfilled: func()-> result<task-fulfilled>;
+
+    record success {
+      message:string
+    }
+
+    execute:func () -> result<success>;
+}
