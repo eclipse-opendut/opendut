@@ -94,7 +94,7 @@ pub fn PeersOverview() -> impl IntoView {
                                 <tr>
                                     <th class="is-narrow">"Health"</th>
                                     <th>"Name"</th>
-                                    <th>"Used in Clusters"</th>
+                                    <th>"Configured in Clusters"</th>
                                     <th class="is-narrow">"Action"</th>
                                 </tr>
                             </thead>
@@ -160,29 +160,29 @@ fn Row(
 
     let cluster_columns = MaybeSignal::derive(move || {
         let devices_in_peer = peer_descriptor.get().topology.devices.into_iter().map(|device| device.id).collect::<Vec<_>>();
-        let devices_in_cluster =  cluster_configuration.get().into_iter().map(|cluster| (cluster.id, cluster.name, cluster.devices)).collect::<Vec<(_,_,_)>>();
-        
-        let cluster_view_list = devices_in_cluster.into_iter()
+
+        let devices_in_cluster = {
+            let mut devices_in_cluster = cluster_configuration.get().into_iter()
+                .map(|cluster| (cluster.id, cluster.name, cluster.devices))
+                .collect::<Vec<(_,_,_)>>();
+
+            devices_in_cluster.sort_by(|(_, name_a, _), (_, name_b, _)|
+                name_a.to_string().cmp(&name_b.to_string())
+            );
+            devices_in_cluster
+        };
+
+        let cluster_view_list: Vec<View> = devices_in_cluster.into_iter()
             .filter(|(_, _, devices)| devices_in_peer.clone().into_iter().any(|device| devices.contains(&device)))
             .map(|(clusterId, clusterName, _)| {
                 let cluster_name = move || { clusterName.to_string() };
                 let configurator_href = move || { format!("/clusters/{}/configure/general", clusterId) };
                 view! {
-                    <span><a href={ configurator_href } >{ cluster_name }</a></span>
-                }
-            }).collect::<Vec<_>>();
+                    <a href={ configurator_href }>{ cluster_name }</a>
+                }.into_view()
+            }).collect();
 
-        let cluster_view_list_length = cluster_view_list.len();
-        let mut cluster_view_list_with_seperator: Vec<HtmlElement<_>> = Vec::new();
-        for (i, e) in cluster_view_list.into_iter().enumerate() {
-            cluster_view_list_with_seperator.push(e);
-            if i < (cluster_view_list_length - 1) {
-                cluster_view_list_with_seperator.push(
-                    view! { <span>", "</span> }
-                );
-            }
-        }
-        cluster_view_list_with_seperator
+        join_with_comma_spans(cluster_view_list)
     });
 
     view! {
@@ -230,4 +230,22 @@ fn Row(
             </td>
         </tr>
     }
+}
+
+fn join_with_comma_spans(elements: Vec<View>) -> Vec<View> {
+    let elements_length = elements.len();
+
+    let mut elements_with_separator = Vec::new();
+
+    for (index, element) in elements.into_iter().enumerate() {
+        elements_with_separator.push(element);
+
+        if index < (elements_length - 1) {
+            elements_with_separator.push(
+                view! { <span>", "</span> }
+                    .into_view()
+            );
+        }
+    }
+    elements_with_separator
 }
