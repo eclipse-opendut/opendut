@@ -1,0 +1,24 @@
+[package]
+name = "opendut-edgar-plugin-api"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+host = ["dep:wasmtime"]
+plugin = ["dep:wit-bindgen"]
+
+[dependencies]
+wasmtime = {workspace = true, optional = true}
+wit-bindgen = {workspace = true, optional = true}
+
+[package.metadata.component]
+package="edgar:setup"
+
+[package.metadata.component.target]
+path="wit"

@@ -1,9 +1,12 @@
 use std::collections::HashSet;
+use std::fs::read_to_string;
 use std::env;
+use std::ffi::OsStr;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use anyhow::Context;
-use tracing::info;
+use anyhow::{Context, Ok};
+use tracing::{debug, error, info, warn};
 use url::Url;
 
 use opendut_types::peer::PeerSetup;
@@ -20,6 +23,9 @@ use crate::common::task::{runner, Task};
 use crate::setup::tasks::write_configuration;
 use crate::setup::util::running_in_docker;
 
+use super::constants::setup_plugins;
+use super::plugin_runtime::PluginRuntime;
+
 #[allow(clippy::box_default)]
 pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, mtu: u16) -> anyhow::Result<()> {
 
@@ -32,7 +38,18 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
     println!("Using PeerId: {}", peer_setup.id);
     println!("Will connect to CARL at: {}", peer_setup.carl);
 
-    let mut tasks: Vec<Box<dyn Task>> = vec![
+    let mut tasks: Vec<Box<dyn Task>> = vec![];
+
+    #[cfg(target_arch = "arm")]
+    {
+        println!("Running on ARMv7 / ARM32. Plugins cannot be used on this architecture. https://github.com/bytecodealliance/wasmtime/issues/1173");
+        info("Running on ARMv7 / ARM32. Plugins cannot be used on this architecture. https://github.com/bytecodealliance/wasmtime/issues/1173")
+    }
+    #[cfg(not(target_arch = "arm"))]
+    let _ = create_plugin_runtime(&mut tasks);
+
+
+    tasks.append(&mut vec![
         Box::new(tasks::WriteCaCertificate::with_certificate(peer_setup.ca)),
         Box::new(tasks::CheckCommandLinePrograms),
         Box::new(tasks::WriteConfiguration::with_override(
@@ -47,7 +64,7 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
         Box::new(tasks::copy_rperf::CopyRperf),
 
         Box::new(tasks::LoadKernelModules::default()),
-    ];
+    ]);
 
     if !running_in_docker() {
         tasks.push(Box::new(tasks::CreateKernelModuleLoadRule))
@@ -101,7 +118,17 @@ pub async fn unmanaged(
 
     let network_interface_manager = NetworkInterfaceManager::create()?;
 
-    let tasks: Vec<Box<dyn Task>> = vec![
+    let mut tasks: Vec<Box<dyn Task>> = vec![];
+    
+    #[cfg(target_arch = "arm")]
+    {
+        println!("Running on ARMv7 / ARM32. Plugins cannot be used on this architecture. https://github.com/bytecodealliance/wasmtime/issues/1173");
+        info("Running on ARMv7 / ARM32. Plugins cannot be used on this architecture. https://github.com/bytecodealliance/wasmtime/issues/1173")
+    }
+    #[cfg(not(target_arch = "arm"))]
+    let _ = create_plugin_runtime(&mut tasks);
+
+    tasks.append(&mut vec![
         Box::new(tasks::CheckCommandLinePrograms),
         Box::new(tasks::netbird::Unpack::default()),
         Box::new(tasks::netbird::InstallService),
@@ -113,7 +140,7 @@ pub async fn unmanaged(
         Box::new(tasks::network_interface::ConnectDeviceInterfaces { network_interface_manager, bridge_name, device_interfaces }),
 
         Box::new(tasks::copy_rperf::CopyRperf),
-    ];
+    ]);
 
     runner::run(run_mode, no_confirm, &tasks).await
 }
@@ -143,4 +170,91 @@ fn determine_service_user_name() -> User {
         .unwrap_or(DEFAULT_SERVICE_USER_NAME.to_string());
 
     User { name }
+}
+
+fn create_plugin_runtime(tasks: &mut Vec<Box<dyn Task>>) -> PluginRuntime {
+    use crate::setup::plugin_runtime::PluginRuntime;
+
+    let plugin_runtime = PluginRuntime::new();
+    let plugin_paths = discover_plugins().unwrap();
+
+    let mut plugins: Vec<Box<dyn Task>> = plugin_paths.iter()
+        .map(|path|Box::new(plugin_runtime.create_plugin_from_wasm(path)) as Box<dyn Task>)
+        .collect();
+
+    tasks.append(&mut plugins);
+
+    plugin_runtime
+}
+
+fn discover_plugins() -> anyhow::Result<Vec<PathBuf>> {
+	let path = setup_plugins::path_in_edgar_distribution()?;
+
+    discover_plugins_in_path(&path)
+}
+
+fn discover_plugins_in_path(path: &Path) -> anyhow::Result<Vec<PathBuf>>{
+    if !path.exists() {
+        warn!("file or folder {} does not exist", path.to_str().unwrap());
+        return Ok(vec![]);
+    }
+
+
+    let plugin_order = read_plugin_order(&path).unwrap();
+
+    let mut plugin_paths: Vec<PathBuf> = vec![];
+
+    for entry in plugin_order{
+        if entry.is_dir(){
+            
+            plugin_paths.append(&mut discover_plugins_in_path(&entry).unwrap());
+        }else{
+            if entry.extension().and_then(OsStr::to_str) == Some("wasm"){
+                debug!("Found plugin at {}", entry.clone().into_os_string().into_string().unwrap());
+                plugin_paths.push(entry);
+            }
+        }
+    }
+
+
+
+    Ok(plugin_paths)
+}
+
+fn read_plugin_order(path: &Path) -> anyhow::Result<Vec<PathBuf>>{
+    let config_path = path.join("plugins.txt");
+
+    if !config_path.exists() {
+        warn!("No plugin configuration found at {}", path.to_str().unwrap());
+        return Ok(vec![]);
+    }
+
+    let mut paths:Vec<PathBuf> = vec![];
+
+    for line in read_to_string(&config_path).unwrap().lines(){
+        let line = line.trim();
+
+        if line == ""{
+            continue;
+        }
+
+        let mut potential_path = PathBuf::from(line);
+
+        if !potential_path.is_absolute(){
+            potential_path = path.join(&potential_path);
+        }
+
+        if potential_path == path{
+            warn!("plugins.txt at {} refers to itself. Ignoring this reference.", config_path.to_str().unwrap());
+            continue;
+        }
+        
+        if potential_path.exists() {
+            paths.push(potential_path);
+        }else{
+            error!("Plugin {} specified in {}/plugins.txt does not exist", potential_path.to_str().unwrap(), path.to_str().unwrap());
+        }
+    };
+
+    Ok(paths)
 }

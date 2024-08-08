@@ -4,6 +4,10 @@ pub use crate::common::task::runner::RunMode;
 
 mod constants;
 pub mod start;
+#[cfg(not(target_arch = "arm"))]
+mod setup_plugin;
+#[cfg(not(target_arch = "arm"))]
+mod plugin_runtime;
 #[allow(non_camel_case_types)]
 mod tasks;
 mod util;

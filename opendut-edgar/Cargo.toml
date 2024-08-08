@@ -51,6 +51,13 @@ walkdir = { workspace = true }
 which = { workspace = true }
 zip = { workspace = true }
 
+# Wasmtime is not available for armv7 so plugin support needs to be disabled
+# https://docs.wasmtime.dev/stability-tiers.html#unsupported-features-and-platforms
+[target.'cfg(not(target_arch = "arm"))'.dependencies]
+opendut-edgar-plugin-api = { workspace = true, features = ["host"] }
+wasmtime = { workspace = true }
+wasmtime-wasi = { workspace = true }
+
 [dev-dependencies]
 assert_fs = { workspace = true }
 googletest = { workspace = true }

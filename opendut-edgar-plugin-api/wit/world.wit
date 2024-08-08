@@ -1,0 +1,38 @@
+package edgar:setup;
+
+world setup-plugin {
+    export task;
+    import host;
+}
+
+interface task {
+    description: func() -> string;
+
+    enum task-fulfilled {
+      yes,
+      no,
+      unchecked
+    }
+
+    check-fulfilled: func() -> result<task-fulfilled>;
+
+    record success {
+      message: option<string>
+    }
+
+    execute:func () -> result<success>;
+}
+
+interface host {
+    call-command: func(command:string, args:list<string>) -> result<string, string>;
+    
+    log: func(level: log-level, message: string);
+
+    enum log-level {
+      trace,
+      debug,
+      info,
+      warn,
+      error
+    }
+}
