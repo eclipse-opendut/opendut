@@ -16,7 +16,7 @@ interface task {
     check-fulfilled: func()-> result<task-fulfilled>;
 
     record success {
-      message:string
+      message:option<string>
     }
 
     execute:func () -> result<success>;

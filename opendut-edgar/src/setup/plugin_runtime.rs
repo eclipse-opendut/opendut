@@ -1,3 +1,4 @@
+use std::path::Path;
 use wasmtime::component::{bindgen, Component, Linker, ResourceTable};
 use wasmtime::{Config, Engine, Store};
 use wasmtime_wasi::{DirPerms, FilePerms, WasiCtx, WasiCtxBuilder, WasiView};
@@ -22,7 +23,9 @@ impl PluginRuntime{
         let mut linker = Linker::new(&engine);
 
         wasmtime_wasi::add_to_linker_sync(&mut linker).expect("Could not add wasi to linker");
-        SetupPlugin::add_to_linker(&mut linker, |state: &mut PluginState| state).expect("Could not add PluginState to linker");
+
+        // Necessary if Interface defines Imports
+        // SetupPlugin::add_to_linker(&mut linker, |state: &mut PluginState| state).expect("Could not add PluginState to linker");
 
         Self{
             config,
@@ -37,9 +40,9 @@ impl PluginRuntime{
             PluginState::new()
         );
 
-        let component = Component::from_file(&engine,plugin_path).unwrap();
+        let component = Component::from_file(&self.engine,plugin_path).unwrap();
 
-        let instance = SetupPlugin::instantiate(&mut store, &component, &self.linker);
+        let instance = SetupPlugin::instantiate(&mut store, &component, &self.linker).expect("Could not instantiate plugin");
 
         SetupPluginStore::new(store, component, instance)
     }

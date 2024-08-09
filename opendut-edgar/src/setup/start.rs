@@ -20,6 +20,7 @@ use crate::service::network_interface::manager::NetworkInterfaceManager;
 use crate::setup::plugin_runtime::PluginRuntime;
 use crate::setup::{Leader, runner, tasks, User};
 use crate::setup::runner::RunMode;
+use crate::setup::setup_plugin::SetupPluginStore;
 use crate::setup::task::Task;
 use crate::setup::tasks::write_configuration;
 use crate::setup::util::running_in_docker;
@@ -43,7 +44,7 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
     let plugin_paths = discover_plugins().unwrap();
     
     let plugin_runtime = PluginRuntime::new();
-    let mut plugins: Vec<Box<dyn Task>> = plugin_paths.iter().map(|path|Box::new(plugin_runtime.create_plugin_from_wasm(plugin_paths))).collect();
+    let mut plugins: Vec<Box<dyn Task>> = plugin_paths.iter().map(|path|Box::new(plugin_runtime.create_plugin_from_wasm(path)) as Box<dyn Task>).collect();
 
     tasks.append(&mut plugins);
 
@@ -121,7 +122,7 @@ pub async fn unmanaged(
     let plugin_paths = discover_plugins().unwrap();
     
     let plugin_runtime = PluginRuntime::new();
-    let mut plugins: Vec<Box<dyn Task>> = plugin_paths.iter().map(|path|Box::new(plugin_runtime.create_plugin_from_wasm(plugin_paths))).collect();
+    let mut plugins: Vec<Box<dyn Task>> = plugin_paths.iter().map(|path|Box::new(plugin_runtime.create_plugin_from_wasm(path)) as Box<dyn Task>).collect();
 
     tasks.append(&mut plugins);
 
