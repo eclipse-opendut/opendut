@@ -30,6 +30,20 @@ pub fn insert(persistable: PersistablePeerDescriptor, connection: &mut PgConnect
     Ok(())
 }
 
+pub fn remove(peer_id: PeerId, connection: &mut PgConnection) -> PersistenceResult<Option<PeerDescriptor>> {
+    let result = list(Filter::By(peer_id), connection)?
+        .first().cloned();
+
+    diesel::delete(
+        schema::peer_descriptor::table
+            .filter(schema::peer_descriptor::peer_id.eq(peer_id.uuid))
+    )
+    .execute(connection)
+    .map_err(|cause| PersistenceError::remove::<PeerDescriptor>(peer_id.uuid, cause))?;
+
+    Ok(result)
+}
+
 pub fn list(filter_by_peer_id: Filter<PeerId>, connection: &mut PgConnection) -> PersistenceResult<Vec<PeerDescriptor>> {
     let mut query = schema::peer_descriptor::table.into_boxed();
 

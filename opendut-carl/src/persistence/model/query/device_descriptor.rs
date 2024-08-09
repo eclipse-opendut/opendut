@@ -31,6 +31,20 @@ pub fn insert(persistable: PersistableDeviceDescriptor, connection: &mut PgConne
     Ok(())
 }
 
+pub fn remove(device_id: DeviceId, connection: &mut PgConnection) -> PersistenceResult<Option<DeviceDescriptor>> {
+    let result = list(Filter::By(device_id), connection)?
+        .first().cloned();
+
+    diesel::delete(
+        schema::device_descriptor::table
+            .filter(schema::device_descriptor::device_id.eq(device_id.0))
+    )
+    .execute(connection)
+    .map_err(|cause| PersistenceError::remove::<DeviceDescriptor>(device_id.0, cause))?;
+
+    Ok(result)
+}
+
 pub fn list(filter_by_device_id: Filter<DeviceId>, connection: &mut PgConnection) -> PersistenceResult<Vec<DeviceDescriptor>> {
     let mut query = schema::device_descriptor::table.into_boxed();
 

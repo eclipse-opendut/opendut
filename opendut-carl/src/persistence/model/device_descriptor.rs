@@ -16,8 +16,8 @@ impl Persistable for DeviceDescriptor {
         })
     }
 
-    fn remove(_device_id: DeviceId, _storage: &mut Storage) -> PersistenceResult<Option<Self>> {
-        todo!("implement removal of device_descriptors from database")
+    fn remove(device_id: DeviceId, storage: &mut Storage) -> PersistenceResult<Option<Self>> {
+        query::device_descriptor::remove(device_id, storage.db.lock().unwrap().deref_mut())
     }
 
     fn get(device_id: DeviceId, storage: &Storage) -> PersistenceResult<Option<Self>> {

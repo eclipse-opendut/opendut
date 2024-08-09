@@ -34,6 +34,9 @@ pub(crate) mod error {
         pub fn insert<R>(id: impl Into<Uuid>, cause: impl Into<Cause>) -> Self {
             Self::new::<R>(Some(id.into()), PersistenceOperation::Insert, Some(cause))
         }
+        pub fn remove<R>(id: impl Into<Uuid>, cause: impl Into<Cause>) -> Self {
+            Self::new::<R>(Some(id.into()), PersistenceOperation::Remove, Some(cause))
+        }
         pub fn get<R>(id: impl Into<Uuid>, cause: impl Into<Cause>) -> Self {
             Self::new::<R>(Some(id.into()), PersistenceOperation::Get, Some(cause))
         }
@@ -88,6 +91,7 @@ pub(crate) mod error {
     #[derive(Clone, Copy, Debug, PartialEq)]
     pub enum PersistenceOperation {
         Insert,
+        Remove,
         Get,
         List,
     }
@@ -95,6 +99,7 @@ pub(crate) mod error {
         fn verb(&self) -> &'static str {
             match self {
                 PersistenceOperation::Insert => "inserting",
+                PersistenceOperation::Remove => "removing",
                 PersistenceOperation::Get => "getting",
                 PersistenceOperation::List => "listing",
             }

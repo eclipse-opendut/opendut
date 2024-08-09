@@ -17,8 +17,8 @@ impl Persistable for PeerDescriptor {
         })
     }
 
-    fn remove(_peer_id: PeerId, _storage: &mut Storage) -> PersistenceResult<Option<Self>> {
-        todo!("implement removal of peer_descriptors from database")
+    fn remove(peer_id: PeerId, storage: &mut Storage) -> PersistenceResult<Option<Self>> {
+        remove_from_database(peer_id, storage.db.lock().unwrap().deref_mut())
     }
 
     fn get(peer_id: PeerId, storage: &Storage) -> PersistenceResult<Option<Self>> {
@@ -56,6 +56,10 @@ pub(super) fn insert_into_database(peer_descriptor: PeerDescriptor, connection: 
     Ok(())
 }
 
+fn remove_from_database(peer_id: PeerId, connection: &mut PgConnection) -> PersistenceResult<Option<PeerDescriptor>> {
+    query::peer_descriptor::remove(peer_id, connection)
+}
+
 fn get_from_database(peer_id: PeerId, connection: &mut PgConnection) -> PersistenceResult<Option<PeerDescriptor>> {
     let result = query::peer_descriptor::list(Filter::By(peer_id), connection)?
         .first().cloned();
@@ -82,20 +86,30 @@ pub(super) mod tests {
         let mut db = database::testing::spawn_and_connect().await?;
 
         let testee = peer_descriptor()?;
-        let peer_id = testee.id;
 
-        let result = get_from_database(peer_id, &mut db.connection)?;
+        let result = get_from_database(testee.id, &mut db.connection)?;
         assert!(result.is_none());
         let result = list_database(&mut db.connection)?;
         assert!(result.is_empty());
 
         insert_into_database(testee.clone(), &mut db.connection)?;
 
-        let result = get_from_database(peer_id, &mut db.connection)?;
+        let result = get_from_database(testee.id, &mut db.connection)?;
         assert_eq!(result, Some(testee.clone()));
         let result = list_database(&mut db.connection)?;
         assert_eq!(result.len(), 1);
         assert_eq!(result.first(), Some(&testee));
+
+        let result = remove_from_database(testee.id, &mut db.connection)?;
+        assert_eq!(result, Some(testee.clone()));
+
+        let result = get_from_database(testee.id, &mut db.connection)?;
+        assert!(result.is_none());
+        let result = list_database(&mut db.connection)?;
+        assert!(result.is_empty());
+
+        let result = remove_from_database(testee.id, &mut db.connection)?;
+        assert_eq!(result, None);
 
         Ok(())
     }
