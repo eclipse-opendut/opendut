@@ -2,7 +2,7 @@ use diesel::{Connection, ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl,
 use uuid::Uuid;
 
 use opendut_types::peer::PeerId;
-use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceId};
+use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId};
 
 use crate::persistence::database::schema;
 use crate::persistence::error::{PersistenceError, PersistenceResult};
@@ -33,7 +33,46 @@ pub struct PersistableNetworkInterfaceKindCan {
     pub data_sample_point_times_1000: i32,
 }
 
-pub fn insert(
+pub fn insert_into_database(interface: &NetworkInterfaceDescriptor, peer_id: PeerId, connection: &mut PgConnection) -> PersistenceResult<()> {
+    let network_interface_id = interface.id.uuid;
+
+    let (kind, network_interface_kind_can) = match &interface.configuration {
+        NetworkInterfaceConfiguration::Ethernet => {
+            (PersistableNetworkInterfaceKind::Ethernet, None)
+        }
+        NetworkInterfaceConfiguration::Can { bitrate, sample_point, fd, data_bitrate, data_sample_point } => {
+            let bitrate = i32::try_from(*bitrate)
+                .map_err(|cause| PersistenceError::insert::<PersistableNetworkInterfaceKindCan>(network_interface_id, cause))?;
+            let sample_point_times_1000 = i32::try_from(sample_point.sample_point_times_1000())
+                .map_err(|cause| PersistenceError::insert::<PersistableNetworkInterfaceKindCan>(network_interface_id, cause))?;
+            let data_bitrate = i32::try_from(*data_bitrate)
+                .map_err(|cause| PersistenceError::insert::<PersistableNetworkInterfaceKindCan>(network_interface_id, cause))?;
+            let data_sample_point_times_1000 = i32::try_from(data_sample_point.sample_point_times_1000())
+                .map_err(|cause| PersistenceError::insert::<PersistableNetworkInterfaceKindCan>(network_interface_id, cause))?;
+
+            let network_interface_kind_can = PersistableNetworkInterfaceKindCan {
+                network_interface_id,
+                bitrate,
+                sample_point_times_1000,
+                fd: *fd,
+                data_bitrate,
+                data_sample_point_times_1000,
+            };
+            (PersistableNetworkInterfaceKind::Can, Some(network_interface_kind_can))
+        }
+    };
+    let network_interface_descriptor = PersistableNetworkInterfaceDescriptor {
+        network_interface_id,
+        name: interface.name.name(),
+        kind,
+        peer_id: peer_id.uuid,
+    };
+
+    insert_persistable(network_interface_descriptor, network_interface_kind_can, interface.id, connection)
+}
+
+
+fn insert_persistable(
     network_interface_descriptor: PersistableNetworkInterfaceDescriptor,
     maybe_network_interface_kind_can: Option<PersistableNetworkInterfaceKindCan>,
     network_interface_id: NetworkInterfaceId,

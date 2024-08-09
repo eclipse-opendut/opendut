@@ -2,7 +2,6 @@ use diesel::{ExpressionMethods, OptionalExtension, PgConnection, QueryDsl, RunQu
 use uuid::Uuid;
 
 use opendut_types::peer::{PeerDescriptor, PeerId};
-
 use crate::persistence::database::schema;
 use crate::persistence::error::{PersistenceError, PersistenceResult};
 
