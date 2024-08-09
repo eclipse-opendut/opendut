@@ -11,6 +11,7 @@ service PeerManager {
   rpc DeletePeerDescriptor(DeletePeerDescriptorRequest) returns (DeletePeerDescriptorResponse) {}
   rpc GetPeerDescriptor(GetPeerDescriptorRequest) returns (GetPeerDescriptorResponse) {}
   rpc ListPeerDescriptors(ListPeerDescriptorsRequest) returns (ListPeerDescriptorsResponse) {}
+  rpc GetPeerState(GetPeerStateRequest) returns (GetPeerStateResponse) {}
   rpc ListDevices(ListDevicesRequest) returns (ListDevicesResponse) {}
   rpc GeneratePeerSetup(GeneratePeerSetupRequest) returns (GeneratePeerSetupResponse) {}
   rpc GenerateCleoSetup(GenerateCleoSetupRequest) returns (GenerateCleoSetupResponse) {}
@@ -162,6 +163,40 @@ message ListPeerDescriptorsFailure {
 
 message ListPeerDescriptorsFailureInternal {
   string cause = 1;
+}
+
+//
+// GetPeerStateRequest
+//
+message GetPeerStateRequest {
+  opendut.types.peer.PeerId peer_id = 1;
+}
+
+message GetPeerStateResponse {
+  oneof reply {
+    GetPeerStateSuccess success = 1;
+    GetPeerStateFailure failure = 2;
+  }
+}
+
+message GetPeerStateSuccess {
+  opendut.types.peer.PeerState state = 1;
+}
+
+message GetPeerStateFailure {
+  oneof error {
+    GetPeerStateFailurePeerNotFound peer_not_found = 1;
+    GetPeerStateFailureInternal internal = 2;
+  }
+}
+
+message GetPeerStateFailurePeerNotFound {
+  opendut.types.peer.PeerId peer_id = 1;
+}
+
+message GetPeerStateFailureInternal {
+  opendut.types.peer.PeerId peer_id = 1;
+  string cause = 2;
 }
 
 //

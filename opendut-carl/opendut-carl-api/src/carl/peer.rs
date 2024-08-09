@@ -89,6 +89,19 @@ pub enum ListPeerDescriptorsError {
 }
 
 #[derive(thiserror::Error, Debug)]
+pub enum GetPeerStateError {
+    #[error("A peer with id <{peer_id}> could not be found!")]
+    PeerNotFound {
+        peer_id: PeerId
+    },
+    #[error("An internal error occurred searching for the state of a peer with id <{peer_id}>:\n  {cause}")]
+    Internal {
+        peer_id: PeerId,
+        cause: String
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
 pub enum ListDevicesError {
     #[error("An internal error occurred computing the list of devices:\n  {cause}")]
     Internal {
@@ -111,10 +124,11 @@ mod client {
     use opendut_types::cleo::CleoSetup;
 
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerSetup};
+    use opendut_types::peer::state::PeerState;
     use opendut_types::topology::DeviceDescriptor;
 
     use crate::carl::{ClientError, extract};
-    use crate::carl::peer::{DeletePeerDescriptorError, GetPeerDescriptorError, ListDevicesError, ListPeerDescriptorsError, StorePeerDescriptorError};
+    use crate::carl::peer::{DeletePeerDescriptorError, GetPeerDescriptorError, GetPeerStateError, ListDevicesError, ListPeerDescriptorsError, StorePeerDescriptorError};
     use crate::proto::services::peer_manager;
     use crate::proto::services::peer_manager::peer_manager_client::PeerManagerClient;
 
@@ -242,6 +256,27 @@ mod client {
             }
         }
 
+        pub async fn get_peer_state(&mut self, peer_id: PeerId) -> Result<PeerState, ClientError<GetPeerStateError>> {
+
+            let request = tonic::Request::new(peer_manager::GetPeerStateRequest {
+                peer_id: Some(peer_id.into()),
+            });
+
+            let response = self.inner.get_peer_state(request).await?
+                .into_inner();
+
+            match extract!(response.reply)? {
+                peer_manager::get_peer_state_response::Reply::Failure(failure) => {
+                    let error = GetPeerStateError::try_from(failure)?;
+                    Err(ClientError::UsageError(error))
+                }
+                peer_manager::get_peer_state_response::Reply::Success(success) => {
+                    let peer_descriptor = extract!(success.state)?;
+                    Ok(peer_descriptor)
+                }
+            }
+        }
+        
         pub async fn create_peer_setup(&mut self, peer_id: PeerId, user_id: String) -> Result<PeerSetup, CreateSetupError> {
             let request = tonic::Request::new(
                 peer_manager::GeneratePeerSetupRequest {

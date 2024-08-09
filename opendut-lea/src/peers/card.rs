@@ -1,4 +1,5 @@
 use leptos::*;
+use opendut_types::peer::state::PeerState;
 use crate::app::{ExpectGlobals, use_app_globals};
 use crate::peers::components::CreatePeerButton;
 
@@ -17,14 +18,22 @@ pub fn PeersCard() -> impl IntoView {
         let mut carl = globals.expect_client();
         async move {
             let registered = carl.peers.list_peer_descriptors().await
-                .expect("Failed to request the list of peers.")
-                .len();
-            let connected = carl.broker.list_peers().await
-                .expect("Failed to request the list of connected peers.")
-                .len();
+                .expect("Failed to request the list of peers.");
+
+            let mut online_counter = 0;
+            let mut offline_counter = 0;
+            
+            for peer in registered {
+                let peer_state = carl.peers.get_peer_state(peer.id).await.expect("Failed to request state of peer.");
+                match peer_state {
+                    PeerState::Down => { offline_counter += 1 }
+                    PeerState::Up { .. } => { online_counter += 1}
+                }
+            };
+            
             Peers {
-                offline: registered.saturating_sub(connected), // TODO: A simple `sub` may fail, due to a bug in the registration/un-registration process of CARL, there can be connected peers that are not registered.
-                online: connected
+                offline: offline_counter,
+                online: online_counter
             }
         }
     });

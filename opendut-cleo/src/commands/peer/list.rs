@@ -5,7 +5,7 @@ use serde::Serialize;
 
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
-
+use opendut_types::peer::state::PeerState;
 use crate::ListOutputFormat;
 
 /// List all peers
@@ -43,18 +43,19 @@ impl Display for PeerStatus {
 
 impl ListPeersCli {
     pub async fn execute(self, carl: &mut CarlClient, output: ListOutputFormat) -> crate::Result<()> {
-        let connected_peers = carl
-            .broker
-            .list_peers()
-            .await
-            .map_err(|error| format!("Could not list connected peers. {}", error))?;
         let all_peers = carl
             .peers
             .list_peer_descriptors()
             .await
             .map_err(|error| format!("Could not list peers.\n  {}", error))?;
-        let peers_table = filter_connected_peers(&all_peers, &connected_peers);
-
+        
+        let mut peers_table = vec![];
+        for peer in all_peers {
+            let peer_state = carl.peers.get_peer_state(peer.id).await.map_err(|_| {
+                format!("Failed to retrieve state for peer <{}>", peer.id)
+            })?;
+            peers_table.push(add_peer_status(peer, peer_state));
+        };
         match output {
             ListOutputFormat::Table => {
                 print_stdout(peers_table.with_title())
@@ -73,29 +74,23 @@ impl ListPeersCli {
     }
 }
 
-fn filter_connected_peers(
-    all_peers: &[PeerDescriptor],
-    connected_peers: &[PeerId],
-) -> Vec<PeerTable> {
-    all_peers
-        .iter()
-        .map(|peer| {
-            let status = if connected_peers.contains(&peer.id) {
-                PeerStatus::Connected
-            } else {
-                PeerStatus::Disconnected
-            };
-            let network_interfaces = Clone::clone(&peer.network.interfaces);
-            let interfaces = network_interfaces.into_iter().map(|interface| interface.name.to_string()).collect::<Vec<_>>();
-            PeerTable {
-                name: Clone::clone(&peer.name),
-                id: peer.id,
-                location: Clone::clone(&peer.location.clone().unwrap_or_default()),
-                network_interfaces: interfaces.join(", "),
-                status
-            }
-        })
-        .collect::<Vec<PeerTable>>()
+fn add_peer_status(
+    peer: PeerDescriptor,
+    peer_state: PeerState
+) -> PeerTable {
+    let status = match peer_state {
+        PeerState::Down => { PeerStatus::Disconnected }
+        PeerState::Up { .. } => { PeerStatus::Connected }
+    };
+    let network_interfaces = Clone::clone(&peer.network.interfaces);
+    let interfaces = network_interfaces.into_iter().map(|interface| interface.name.to_string()).collect::<Vec<_>>();
+    PeerTable {
+        name: Clone::clone(&peer.name),
+        id: peer.id,
+        location: Clone::clone(&peer.location.clone().unwrap_or_default()),
+        network_interfaces: interfaces.join(", "),
+        status
+    }
 }
 
 #[cfg(test)]
@@ -110,7 +105,7 @@ mod test {
 
     #[test]
     fn test() {
-        let all_peers = vec![PeerDescriptor {
+        let peer = PeerDescriptor {
             id: PeerId::random(),
             name: PeerName::try_from("MyPeer").unwrap(),
             location: Some(PeerLocation::try_from("SiFi").unwrap()),
@@ -126,15 +121,14 @@ mod test {
             executors: ExecutorDescriptors {
                 executors: vec![]
             }
-        }];
-        let connected_peers = vec![all_peers[0].id];
+        };
         assert_that!(
-            filter_connected_peers(&all_peers, &connected_peers),
-            unordered_elements_are!(matches_pattern!(PeerTable {
-                name: eq(Clone::clone(&all_peers[0].name)),
-                id: eq(all_peers[0].id),
-                status: eq(PeerStatus::Connected),
-            }))
+            add_peer_status(peer.clone(), PeerState::Down),
+            matches_pattern!(PeerTable {
+                name: eq(Clone::clone(&peer.name)),
+                id: eq(peer.id),
+                status: eq(PeerStatus::Disconnected),
+            })
         );
     }
 }

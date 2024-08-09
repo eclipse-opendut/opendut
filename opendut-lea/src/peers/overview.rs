@@ -1,8 +1,9 @@
 use leptos::*;
 use leptos::html::Div;
 use leptos_use::on_click_outside;
-use opendut_types::peer::{PeerDescriptor, PeerId};
+use opendut_types::peer::{PeerDescriptor};
 use opendut_types::cluster::ClusterConfiguration;
+use opendut_types::peer::state::PeerState;
 use crate::app::{ExpectGlobals, use_app_globals};
 use crate::components::{BasePageContainer, IconButton, ButtonColor, ButtonState, FontAwesomeIcon, Breadcrumb, ButtonSize, Initialized};
 use crate::components::health;
@@ -17,19 +18,19 @@ pub fn PeersOverview() -> impl IntoView {
 
         let globals = use_app_globals();
 
-        let registered_peers: Resource<(), Vec<PeerDescriptor>> = create_local_resource(|| {}, move |_| {
+        let registered_peers: Resource<(), Vec<(PeerDescriptor, PeerState)>> = create_local_resource(|| {}, move |_| {
             let mut carl = globals.expect_client();
             async move {
-                carl.peers.list_peer_descriptors().await
-                    .expect("Failed to request the list of peers.")
-            }
-        });
+                let peers = carl.peers.list_peer_descriptors().await
+                    .expect("Failed to request the list of peers.");
+                
+                let mut peers_with_state: Vec<(PeerDescriptor, PeerState)> = vec![];
+                for peer in peers {
+                    let peer_state = carl.peers.get_peer_state(peer.id).await.expect("Failed to request state of peer.");
+                    peers_with_state.push((peer, peer_state));
+                };
 
-        let connected_peers: Resource<(), Vec<PeerId>> = create_local_resource(|| {}, move |_| {
-            let mut carl = globals.expect_client();
-            async move {
-                carl.broker.list_peers().await
-                    .expect("Failed to request the list of connected peers.")
+                peers_with_state
             }
         });
 
@@ -42,14 +43,13 @@ pub fn PeersOverview() -> impl IntoView {
         });
         
         let peers_table_rows = move || {
-            if let (Some(registered_peers), Some(connected_peers), Some(configured_clusters)) = (registered_peers.get(), connected_peers.get(), configured_clusters.get()) {
-                registered_peers.into_iter().map(|peer_descriptor| {
-                    let peer_id = peer_descriptor.id;
+            if let (Some(registered_peers), Some(configured_clusters)) = (registered_peers.get(), configured_clusters.get()) {
+                registered_peers.into_iter().map(|(peer_descriptor, peer_state)| {
                     view! {
                         <Row
                             peer_descriptor=create_rw_signal(peer_descriptor)
+                            peer_state=create_rw_signal(peer_state)
                             cluster_configuration=create_rw_signal(configured_clusters.clone())
-                            is_connected={connected_peers.contains(&peer_id)}
                         />
                     }
                 }).collect::<Vec<_>>()
@@ -79,7 +79,6 @@ pub fn PeersOverview() -> impl IntoView {
                             label="Refresh table of peers"
                             on_action=move || {
                                 registered_peers.refetch();
-                                connected_peers.refetch();
                             }
                         />
                     </div>
@@ -118,8 +117,8 @@ pub fn PeersOverview() -> impl IntoView {
 #[component]
 fn Row(
     peer_descriptor: RwSignal<PeerDescriptor>,
+    peer_state: RwSignal<PeerState>,
     cluster_configuration: RwSignal<Vec<ClusterConfiguration>>,
-    is_connected: bool,
 ) -> impl IntoView {
 
     let peer_id = create_read_slice(peer_descriptor,
@@ -138,16 +137,18 @@ fn Row(
     let setup_href = move || { format!("/peers/{}/configure/setup", peer_id.get()) };
 
     let (health_state, _) = {
-        let state = if is_connected {
-            health::State {
-                kind: health::StateKind::Green,
-                text: String::from("Connected. No errors."),
+        let state = match peer_state.get() {
+            PeerState::Down => {
+                health::State {
+                    kind: health::StateKind::Unknown,
+                    text: String::from("Disconnected"),
+                }
             }
-        }
-        else {
-            health::State {
-                kind: health::StateKind::Unknown,
-                text: String::from("Disconnected"),
+            PeerState::Up { .. } => {
+                health::State {
+                    kind: health::StateKind::Green,
+                    text: String::from("Connected. No errors."),
+                }
             }
         };
         create_signal(state)

@@ -14,6 +14,7 @@ pub use opendut_carl_api::carl::peer::{
     ListDevicesError,
     ListPeerDescriptorsError,
     StorePeerDescriptorError,
+    GetPeerStateError
 };
 use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, downstream};
 use opendut_types::{peer, proto};
@@ -21,6 +22,7 @@ use opendut_types::cleo::{CleoId, CleoSetup};
 use opendut_types::cluster::ClusterAssignment;
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerSetup};
 use opendut_types::peer::configuration::{PeerConfiguration, PeerConfiguration2, PeerNetworkConfiguration};
+use opendut_types::peer::state::PeerState;
 use opendut_types::proto::peer::configuration::{peer_configuration_parameter, PeerConfigurationParameterExecutor, PeerConfigurationParameterTargetPresent};
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
 use opendut_types::util::net::{AuthConfig, Certificate, ClientCredentials, NetworkInterfaceName};
@@ -115,8 +117,9 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
             };
             resources.insert(peer_id, peer_configuration2)?; //FIXME don't just insert, but rather update existing values via ID with intelligent logic (in a separate action)
 
+            resources.insert(peer_id, PeerState::Down)?;
             resources.insert(peer_id, peer_descriptor)?;
-
+            
             Ok(is_new_peer)
         }).await
         .map_err(|cause: PersistenceError| StorePeerDescriptorError::Internal {
@@ -248,6 +251,37 @@ pub async fn list_peer_descriptors(params: ListPeerDescriptorsParams) -> Result<
         info!("Successfully queried all peer descriptors.");
 
         Ok(peers)
+    }
+
+    inner(params).await
+        .inspect_err(|err| error!("{err}"))
+}
+
+pub struct GetPeerStateParams {
+    pub peer: PeerId,
+    pub resources_manager: ResourcesManagerRef,
+}
+
+#[tracing::instrument(skip(params), level="trace")]
+pub async fn get_peer_state(params: GetPeerStateParams) -> Result<PeerState, GetPeerStateError> {
+
+    async fn inner(params: GetPeerStateParams) -> Result<PeerState, GetPeerStateError> {
+
+        let peer_id = params.peer;
+        let resources_manager = params.resources_manager;
+
+        debug!("Querying state of peer.");
+        
+        let peer_state = resources_manager.resources_mut(|resources| {
+            resources.get::<PeerState>(peer_id)
+        }).await
+            .map_err(|cause| GetPeerStateError::Internal {  peer_id ,cause: cause.to_string() })?
+            .ok_or(GetPeerStateError::PeerNotFound { peer_id })?;
+        
+        
+        info!("Successfully queried state of peer.");
+
+        Ok(peer_state)
     }
 
     inner(params).await
@@ -507,6 +541,7 @@ mod test {
             assert_that!(resources_manager.get::<PeerDescriptor>(fixture.peer_a_id).await?.as_ref(), some(eq(&fixture.peer_a_descriptor)));
             assert_that!(resources_manager.get::<DeviceDescriptor>(fixture.peer_a_device_1).await?.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[0])));
             assert_that!(resources_manager.get::<DeviceDescriptor>(fixture.peer_a_device_2).await?.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[1])));
+            assert_that!(resources_manager.get::<PeerState>(fixture.peer_a_id).await?.as_ref(), some(eq(&PeerState::Down)));
 
             let additional_device_id = DeviceId::random();
             let additional_device = DeviceDescriptor {
@@ -538,6 +573,7 @@ mod test {
             assert_that!(resources_manager.get::<DeviceDescriptor>(fixture.peer_a_device_1).await?.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[0])));
             assert_that!(resources_manager.get::<DeviceDescriptor>(additional_device_id).await?.as_ref(), some(eq(&additional_device)));
             assert_that!(resources_manager.get::<DeviceDescriptor>(fixture.peer_a_device_2).await?.as_ref(), none());
+            assert_that!(resources_manager.get::<PeerState>(fixture.peer_a_id).await?.as_ref(), some(eq(&PeerState::Down)));
 
             Ok(())
         }

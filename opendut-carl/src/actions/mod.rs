@@ -44,6 +44,12 @@ pub use peers::{
 };
 
 pub use peers::{
+    get_peer_state,
+    GetPeerStateParams,
+    GetPeerStateError,
+};
+
+pub use peers::{
     list_devices,
     ListDevicesParams,
     ListDevicesError,
