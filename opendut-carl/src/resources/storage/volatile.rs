@@ -5,8 +5,8 @@ use opendut_types::resources::Id;
 
 use crate::persistence::error::PersistenceResult;
 use crate::resources::ids::IntoId;
-use crate::resources::Resource;
 use crate::resources::storage::ResourcesStorageApi;
+use crate::resources::Resource;
 
 #[derive(Default)]
 pub struct VolatileResourcesStorage {

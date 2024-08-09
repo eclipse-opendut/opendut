@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
-use tokio::sync::RwLock;
 use crate::persistence::error::PersistenceResult;
 use crate::persistence::model::Persistable;
-use crate::resources::{Resource, Resources, storage};
 use crate::resources::storage::PersistenceOptions;
+use crate::resources::{storage, Resource, Resources};
+use tokio::sync::RwLock;
 
 pub type ResourcesManagerRef = Arc<ResourcesManager>;
 
@@ -89,8 +89,8 @@ mod test {
     use googletest::prelude::*;
 
     use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
-    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_types::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorDescriptor, ExecutorDescriptors, ExecutorKind};
+    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_types::topology::Topology;
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 

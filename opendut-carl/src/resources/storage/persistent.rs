@@ -5,8 +5,8 @@ use crate::persistence::database::ConnectError;
 use crate::persistence::error::PersistenceResult;
 use crate::persistence::model::Persistable;
 use crate::persistence::Storage;
-use crate::resources::storage::{Resource, ResourcesStorageApi};
 use crate::resources::storage::volatile::VolatileResourcesStorage;
+use crate::resources::storage::{Resource, ResourcesStorageApi};
 
 pub struct PersistentResourcesStorage {
     storage: Storage,

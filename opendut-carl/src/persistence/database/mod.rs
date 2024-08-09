@@ -1,6 +1,6 @@
-use std::time::Duration;
 use diesel::{Connection as _, ConnectionError, PgConnection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+use std::time::Duration;
 use tracing::{debug, info, warn};
 use url::Url;
 
@@ -64,11 +64,11 @@ pub enum ConnectError {
 
 #[cfg(any(test, doc))] //needed for doctests to compile
 pub mod testing {
-    use diesel::{Connection, PgConnection};
-    use testcontainers_modules::{postgres, testcontainers::runners::AsyncRunner};
-    use testcontainers_modules::testcontainers::ContainerAsync;
-    use url::Url;
     use crate::persistence::database;
+    use diesel::{Connection, PgConnection};
+    use testcontainers_modules::testcontainers::ContainerAsync;
+    use testcontainers_modules::{postgres, testcontainers::runners::AsyncRunner};
+    use url::Url;
 
     /// Spawns a Postgres Container and returns a connection for testing.
     /// ```no_run

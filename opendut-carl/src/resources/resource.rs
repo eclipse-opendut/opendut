@@ -3,8 +3,8 @@ use std::fmt::Debug;
 
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
 use opendut_types::peer::configuration::{PeerConfiguration, PeerConfiguration2};
-use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::peer::state::PeerState;
+use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
 
 use crate::resources::ids::IntoId;

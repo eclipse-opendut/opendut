@@ -2,11 +2,11 @@ use diesel::{Connection, ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl,
 use uuid::Uuid;
 
 use opendut_types::peer::PeerId;
-use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId};
+use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
 use crate::persistence::database::schema;
-use crate::persistence::error::{PersistenceError, PersistenceResult};
-use crate::persistence::model::persistable::network_interface_kind::PersistableNetworkInterfaceKind;
+use crate::persistence::error::{PersistenceError, PersistenceOperation, PersistenceResult};
+use crate::persistence::model::query::network_interface_kind::PersistableNetworkInterfaceKind;
 
 #[derive(diesel::Queryable, diesel::Selectable, diesel::Insertable, diesel::AsChangeset)]
 #[diesel(table_name = schema::network_interface_descriptor)]
@@ -108,6 +108,27 @@ fn insert_persistable(
 pub fn list_filtered_by_peer_id(
     peer_id: PeerId,
     connection: &mut PgConnection
+) -> PersistenceResult<Vec<NetworkInterfaceDescriptor>> {
+    let persistables = list_filtered_by_peer_id_persistable(peer_id, connection)?;
+
+    let result = persistables.into_iter().map(|(persistable_network_interface_descriptor, persistable_network_interface_kind_can)| {
+        let PersistableNetworkInterfaceDescriptor { network_interface_id, name, kind, peer_id: _ } = persistable_network_interface_descriptor;
+
+        let id = NetworkInterfaceId::from(network_interface_id);
+        let name = NetworkInterfaceName::try_from(name)
+            .map_err(PersistenceError::list::<NetworkInterfaceDescriptor>)?;
+
+        let configuration = network_interface_configuration_from_persistable(kind, persistable_network_interface_kind_can)?;
+
+        Ok(NetworkInterfaceDescriptor { id, name, configuration })
+    }).collect::<PersistenceResult<_>>()?;
+
+    Ok(result)
+}
+
+fn list_filtered_by_peer_id_persistable(
+    peer_id: PeerId,
+    connection: &mut PgConnection
 ) -> PersistenceResult<Vec<(
     PersistableNetworkInterfaceDescriptor,
     Option<PersistableNetworkInterfaceKindCan>
@@ -118,4 +139,45 @@ pub fn list_filtered_by_peer_id(
         .select((PersistableNetworkInterfaceDescriptor::as_select(), Option::<PersistableNetworkInterfaceKindCan>::as_select()))
         .get_results(connection)
         .map_err(PersistenceError::list::<NetworkInterfaceDescriptor>)
+}
+
+fn network_interface_configuration_from_persistable(
+    persistable_network_interface_kind: PersistableNetworkInterfaceKind,
+    persistable_network_interface_kind_can: Option<PersistableNetworkInterfaceKindCan>,
+) -> PersistenceResult<NetworkInterfaceConfiguration> {
+    let result = match persistable_network_interface_kind {
+        PersistableNetworkInterfaceKind::Ethernet => NetworkInterfaceConfiguration::Ethernet,
+        PersistableNetworkInterfaceKind::Can => {
+            let persistable_network_interface_kind_can = persistable_network_interface_kind_can
+                .ok_or(PersistenceError::new::<NetworkInterfaceConfiguration>(None::<Uuid>, PersistenceOperation::List, Option::<PersistenceError>::None))?;
+
+            let PersistableNetworkInterfaceKindCan { network_interface_id: _, bitrate, sample_point_times_1000, fd, data_bitrate, data_sample_point_times_1000 } = persistable_network_interface_kind_can;
+
+
+            let bitrate = u32::try_from(bitrate)
+                .map_err(PersistenceError::list::<NetworkInterfaceConfiguration>)?;
+
+            let sample_point = u32::try_from(sample_point_times_1000)
+                .map_err(PersistenceError::list::<NetworkInterfaceConfiguration>)?;
+            let sample_point = CanSamplePoint::try_from(sample_point)
+                .map_err(PersistenceError::list::<NetworkInterfaceConfiguration>)?;
+
+            let data_bitrate = u32::try_from(data_bitrate)
+                .map_err(PersistenceError::list::<NetworkInterfaceConfiguration>)?;
+
+            let data_sample_point = u32::try_from(data_sample_point_times_1000)
+                .map_err(PersistenceError::list::<NetworkInterfaceConfiguration>)?;
+            let data_sample_point = CanSamplePoint::try_from(data_sample_point)
+                .map_err(PersistenceError::list::<NetworkInterfaceConfiguration>)?;
+
+            NetworkInterfaceConfiguration::Can {
+                bitrate,
+                sample_point,
+                fd,
+                data_bitrate,
+                data_sample_point,
+            }
+        }
+    };
+    Ok(result)
 }

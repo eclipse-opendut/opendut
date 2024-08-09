@@ -1,9 +1,9 @@
 use std::io::Write;
 
-use diesel::{AsExpression, FromSqlRow};
 use diesel::deserialize::FromSql;
 use diesel::pg::{Pg, PgValue};
 use diesel::serialize::{IsNull, Output, ToSql};
+use diesel::{AsExpression, FromSqlRow};
 
 use crate::persistence::database::schema::sql_types;
 

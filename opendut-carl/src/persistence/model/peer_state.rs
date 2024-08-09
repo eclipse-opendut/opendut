@@ -1,5 +1,5 @@
-use opendut_types::peer::PeerId;
 use opendut_types::peer::state::PeerState;
+use opendut_types::peer::PeerId;
 
 use crate::persistence::error::PersistenceResult;
 use crate::persistence::model::Persistable;

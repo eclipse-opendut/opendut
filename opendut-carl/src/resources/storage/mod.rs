@@ -3,9 +3,9 @@ use url::Url;
 use crate::persistence::database::ConnectError;
 use crate::persistence::error::PersistenceResult;
 use crate::persistence::model::Persistable;
-use crate::resources::Resource;
 use crate::resources::storage::persistent::PersistentResourcesStorage;
 use crate::resources::storage::volatile::VolatileResourcesStorage;
+use crate::resources::Resource;
 
 pub mod volatile;
 pub mod persistent;
