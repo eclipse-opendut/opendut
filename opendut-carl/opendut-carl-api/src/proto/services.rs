@@ -368,7 +368,7 @@ pub mod peer_manager {
     use opendut_types::proto::{ConversionError, ConversionErrorBuilder};
     use opendut_types::topology::DeviceId;
 
-    use crate::carl::peer::{StorePeerDescriptorError, DeletePeerDescriptorError, GetPeerDescriptorError, ListPeerDescriptorsError};
+    use crate::carl::peer::{StorePeerDescriptorError, DeletePeerDescriptorError, GetPeerDescriptorError, ListPeerDescriptorsError, GetPeerStateError};
 
     tonic::include_proto!("opendut.carl.services.peer_manager");
 
@@ -707,6 +707,67 @@ pub mod peer_manager {
         fn try_from(failure: ListPeerDescriptorsFailureInternal) -> Result<Self, Self::Error> {
             // type ErrorBuilder = ConversionErrorBuilder<ListPeersFailureInternal, ListPeersError>;
             Ok(ListPeerDescriptorsError::Internal{ cause: failure.cause})
+        }
+    }
+
+    impl From<GetPeerStateError> for GetPeerStateFailure {
+        fn from(error: GetPeerStateError) -> Self {
+            let proto_error = match error {
+                GetPeerStateError::PeerNotFound { peer_id } => {
+                    get_peer_state_failure::Error::PeerNotFound(GetPeerStateFailurePeerNotFound {
+                        peer_id: Some(peer_id.into()),
+                    })
+                }
+                GetPeerStateError::Internal { peer_id, cause } => {
+                    get_peer_state_failure::Error::Internal(GetPeerStateFailureInternal {
+                        peer_id: Some(peer_id.into()),
+                        cause
+                    })
+                }
+            };
+            GetPeerStateFailure {
+                error: Some(proto_error)
+            }
+        }
+    }
+
+    impl TryFrom<GetPeerStateFailurePeerNotFound> for GetPeerStateError {
+        type Error = ConversionError;
+        fn try_from(failure: GetPeerStateFailurePeerNotFound) -> Result<Self, Self::Error> {
+            type ErrorBuilder = ConversionErrorBuilder<GetPeerStateFailurePeerNotFound, GetPeerDescriptorError>;
+            let peer_id: PeerId = failure.peer_id
+                .ok_or_else(|| ErrorBuilder::field_not_set("peer_id"))?
+                .try_into()?;
+            Ok(GetPeerStateError::PeerNotFound { peer_id })
+        }
+    }
+
+    impl TryFrom<GetPeerStateFailureInternal> for GetPeerStateError {
+        type Error = ConversionError;
+        fn try_from(failure: GetPeerStateFailureInternal) -> Result<Self, Self::Error> {
+            type ErrorBuilder = ConversionErrorBuilder<GetPeerStateFailureInternal, GetPeerStateError>;
+            let peer_id: PeerId = failure.peer_id
+                .ok_or_else(|| ErrorBuilder::field_not_set("peer_id"))?
+                .try_into()?;
+            Ok(GetPeerStateError::Internal{ peer_id, cause: failure.cause})
+        }
+    }
+
+    impl TryFrom<GetPeerStateFailure> for GetPeerStateError {
+        type Error = ConversionError;
+        fn try_from(failure: GetPeerStateFailure) -> Result<Self, Self::Error> {
+            type ErrorBuilder = ConversionErrorBuilder<GetPeerStateFailure, GetPeerStateError>;
+            let error = failure.error
+                .ok_or_else(|| ErrorBuilder::field_not_set("error"))?;
+            let error = match error {
+                get_peer_state_failure::Error::PeerNotFound(error) => {
+                    error.try_into()?
+                }
+                get_peer_state_failure::Error::Internal(error) => {
+                    error.try_into()?
+                }
+            };
+            Ok(error)
         }
     }
 }

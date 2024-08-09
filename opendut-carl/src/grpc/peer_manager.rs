@@ -7,7 +7,7 @@ use tracing::trace;
 use url::Url;
 use opendut_auth::registration::client::RegistrationClientRef;
 
-use opendut_carl_api::carl::peer::GetPeerDescriptorError;
+use opendut_carl_api::carl::peer::{GetPeerDescriptorError, GetPeerStateError};
 use opendut_carl_api::proto::services::peer_manager;
 use opendut_carl_api::proto::services::peer_manager::*;
 use opendut_carl_api::proto::services::peer_manager::peer_manager_server::{PeerManager as PeerManagerService, PeerManagerServer};
@@ -17,7 +17,7 @@ use opendut_types::util::net::NetworkInterfaceName;
 use opendut_util::telemetry::logging::NonDisclosingRequestExtension;
 
 use crate::actions;
-use crate::actions::{DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, ListDevicesParams, ListPeerDescriptorsParams, StorePeerDescriptorOptions, StorePeerDescriptorParams};
+use crate::actions::{DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, GetPeerStateParams, ListDevicesParams, ListPeerDescriptorsParams, StorePeerDescriptorOptions, StorePeerDescriptorParams};
 use crate::grpc::extract;
 use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
@@ -190,6 +190,39 @@ impl PeerManagerService for PeerManagerFacade {
                     reply: Some(list_peer_descriptors_response::Reply::Success(
                         ListPeerDescriptorsSuccess {
                             peers
+                        }
+                    ))
+                }))
+            }
+        }
+    }
+
+    #[tracing::instrument(skip(self, request), level="trace")]
+    async fn get_peer_state(&self, request: Request<GetPeerStateRequest>) -> Result<Response<GetPeerStateResponse>, Status> {
+
+        trace!("Received request: {}", request.debug_output());
+
+        let request = request.into_inner();
+        let peer_id: PeerId = extract!(request.peer_id)?;
+
+        let result =
+            actions::get_peer_state(GetPeerStateParams {
+                peer: peer_id,
+                resources_manager: Arc::clone(&self.resources_manager),
+            }).await
+                .map_err(|error| GetPeerStateError::Internal { peer_id, cause: error.to_string() });
+
+        match result {
+            Err(error) => {
+                Ok(Response::new(GetPeerStateResponse {
+                    reply: Some(get_peer_state_response::Reply::Failure(error.into()))
+                }))
+            }
+            Ok(state) => {
+                Ok(Response::new(GetPeerStateResponse {
+                    reply: Some(get_peer_state_response::Reply::Success(
+                        GetPeerStateSuccess {
+                            state: Some(state.into())
                         }
                     ))
                 }))
