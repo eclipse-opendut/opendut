@@ -16,6 +16,13 @@ diesel::table! {
 }
 
 diesel::table! {
+    device_tag (device_id, name) {
+        device_id -> Uuid,
+        name -> Text,
+    }
+}
+
+diesel::table! {
     use diesel::sql_types::*;
     use super::sql_types::NetworkInterfaceKind;
 
@@ -48,11 +55,13 @@ diesel::table! {
 }
 
 diesel::joinable!(device_descriptor -> network_interface_descriptor (network_interface_id));
+diesel::joinable!(device_tag -> device_descriptor (device_id));
 diesel::joinable!(network_interface_descriptor -> peer_descriptor (peer_id));
 diesel::joinable!(network_interface_kind_can -> network_interface_descriptor (network_interface_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     device_descriptor,
+    device_tag,
     network_interface_descriptor,
     network_interface_kind_can,
     peer_descriptor,

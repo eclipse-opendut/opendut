@@ -34,7 +34,7 @@ impl Persistable for PeerDescriptor {
 }
 
 pub(super) fn insert_into_database(peer_descriptor: PeerDescriptor, connection: &mut PgConnection) -> PersistenceResult<()> {
-    let PeerDescriptor { id: peer_id, name, location, network, topology, executors: _ } = peer_descriptor; //TODO persist topology and executors
+    let PeerDescriptor { id: peer_id, name, location, network, topology, executors: _ } = peer_descriptor; //TODO persist executors
     let PeerNetworkDescriptor { interfaces, bridge_name } = network;
 
     PersistablePeerDescriptor {
@@ -54,7 +54,7 @@ pub(super) fn insert_into_database(peer_descriptor: PeerDescriptor, connection: 
         crate::persistence::model::device_descriptor::insert_into_database(device, connection)?;
     }
 
-    // TODO persist other fields
+    // TODO persist executors
 
     Ok(())
 }
@@ -179,7 +179,7 @@ fn load_other_peer_descriptor_tables(
 #[cfg(test)]
 pub(super) mod tests {
     use opendut_types::peer::PeerId;
-    use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
+    use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag, Topology};
     use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
     use crate::persistence::database;
@@ -243,7 +243,10 @@ pub(super) mod tests {
                         name: DeviceName::try_from("device1")?,
                         description: Some(DeviceDescription::try_from("device1-description")?),
                         interface: network_interface_id1,
-                        tags: vec![], //TODO
+                        tags: vec![
+                            DeviceTag::try_from("tag1")?,
+                            DeviceTag::try_from("tag2")?,
+                        ],
                     }
                 ],
             },

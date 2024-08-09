@@ -1,2 +1,2 @@
-DROP TABLE IF EXISTS tagged_device;
+DROP TABLE IF EXISTS device_tag;
 DROP TABLE IF EXISTS device_descriptor;

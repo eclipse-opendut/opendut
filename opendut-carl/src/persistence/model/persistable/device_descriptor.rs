@@ -1,10 +1,11 @@
 use diesel::{ExpressionMethods, OptionalExtension, PgConnection, QueryDsl, RunQueryDsl, SelectableHelper};
 use uuid::Uuid;
 use opendut_types::peer::PeerId;
-use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName};
+use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag};
 use opendut_types::util::net::NetworkInterfaceId;
 use crate::persistence::database::schema;
 use crate::persistence::error::{PersistenceError, PersistenceResult};
+use crate::persistence::model::persistable::device_tag::{device_tag_from_persistable, PersistableDeviceTag};
 
 #[derive(Clone, Debug, PartialEq, diesel::Queryable, diesel::Selectable, diesel::Insertable, diesel::AsChangeset)]
 #[diesel(table_name = schema::device_descriptor)]
@@ -27,35 +28,56 @@ impl PersistableDeviceDescriptor {
             .map_err(|cause| PersistenceError::insert::<DeviceDescriptor>(device_id.0, cause))?;
         Ok(())
     }
-
-    pub fn get(device_id: DeviceId, connection: &mut PgConnection) -> PersistenceResult<Option<Self>> {
-        schema::device_descriptor::table
-            .filter(schema::device_descriptor::device_id.eq(device_id.0))
-            .select(Self::as_select())
-            .first(connection)
-            .optional()
-            .map_err(|cause| PersistenceError::get::<DeviceDescriptor>(device_id.0, cause))
-    }
-
-    pub fn list(connection: &mut PgConnection) -> PersistenceResult<Vec<Self>> {
-        schema::device_descriptor::table
-            .select(Self::as_select())
-            .get_results(connection)
-            .map_err(PersistenceError::list::<DeviceDescriptor>)
-    }
-
-    pub fn list_filtered_by_peer(peer_id: PeerId, connection: &mut PgConnection) -> PersistenceResult<Vec<Self>> {
-        schema::device_descriptor::table
-            .left_join(schema::network_interface_descriptor::table)
-            .filter(schema::network_interface_descriptor::peer_id.eq(peer_id.uuid))
-            .select(Self::as_select())
-            .get_results(connection)
-            .map_err(PersistenceError::list::<DeviceDescriptor>)
-    }
 }
 
-pub fn device_descriptor_from_persistable(persistable: PersistableDeviceDescriptor) -> PersistenceResult<DeviceDescriptor> {
-    let PersistableDeviceDescriptor { device_id, name, description, network_interface_id } = persistable;
+pub fn get(device_id: DeviceId, connection: &mut PgConnection) -> PersistenceResult<Option<DeviceDescriptor>> {
+    schema::device_descriptor::table
+        .filter(schema::device_descriptor::device_id.eq(device_id.0))
+        .select(PersistableDeviceDescriptor::as_select())
+        .first(connection)
+        .optional()
+        .map_err(|cause| PersistenceError::get::<DeviceDescriptor>(device_id.0, cause))?
+        .map(|device| device_descriptor_from_persistable(device, connection))
+        .transpose()
+}
+
+pub fn list(connection: &mut PgConnection) -> PersistenceResult<Vec<DeviceDescriptor>> {
+    schema::device_descriptor::table
+        .select(PersistableDeviceDescriptor::as_select())
+        .get_results(connection)
+        .map_err(PersistenceError::list::<DeviceDescriptor>)?
+        .into_iter()
+        .map(|device| device_descriptor_from_persistable(device, connection))
+        .collect::<Result<_, _>>()
+}
+
+pub fn list_filtered_by_peer(peer_id: PeerId, connection: &mut PgConnection) -> PersistenceResult<Vec<DeviceDescriptor>> {
+    schema::device_descriptor::table
+        .left_join(schema::network_interface_descriptor::table)
+        .filter(schema::network_interface_descriptor::peer_id.eq(peer_id.uuid))
+        .select(PersistableDeviceDescriptor::as_select())
+        .get_results(connection)
+        .map_err(PersistenceError::list::<DeviceDescriptor>)?
+        .into_iter()
+        .map(|device| device_descriptor_from_persistable(device, connection))
+        .collect::<Result<_, _>>()
+}
+
+
+fn device_descriptor_from_persistable(
+    persistable_device_descriptor: PersistableDeviceDescriptor,
+    connection: &mut PgConnection,
+) -> PersistenceResult<DeviceDescriptor> {
+    let PersistableDeviceDescriptor { device_id, name, description, network_interface_id } = persistable_device_descriptor;
+
+    let tags = schema::device_tag::table
+        .filter(schema::device_tag::device_id.eq(device_id))
+        .select(PersistableDeviceTag::as_select())
+        .get_results(connection)
+        .map_err(PersistenceError::list::<DeviceTag>)?
+        .into_iter()
+        .map(device_tag_from_persistable)
+        .collect::<Result<_, _>>()?;
 
     let result = DeviceDescriptor {
         id: DeviceId::from(device_id),
@@ -65,7 +87,7 @@ pub fn device_descriptor_from_persistable(persistable: PersistableDeviceDescript
             .map_err(|cause| PersistenceError::get::<DeviceDescriptor>(device_id, cause))?,
         interface: network_interface_id.map(NetworkInterfaceId::from)
             .expect("We should always have a NetworkInterfaceId persisted for now."), //TODO DeviceDescriptor should use an Option<NetworkInterfaceId>
-        tags: vec![], //TODO
+        tags,
     };
     Ok(result)
 }
