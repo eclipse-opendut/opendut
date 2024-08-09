@@ -15,7 +15,7 @@ use opendut_types::util::net::NetworkInterfaceDescriptor;
 use opendut_types::util::Port;
 
 use crate::actions;
-use crate::actions::{AssignClusterParams, ListPeerDescriptorsParams};
+use crate::actions::{AssignClusterParams, ListPeerDescriptorsParams, UnassignClusterParams};
 use crate::peer::broker::PeerMessagingBrokerRef;
 use crate::persistence::error::PersistenceResult;
 use crate::resources::manager::ResourcesManagerRef;
@@ -238,8 +238,31 @@ impl ClusterManager {
         if let Some(configuration) = configuration {
             if let Vpn::Enabled { vpn_client } = &self.vpn {
                 vpn_client.delete_cluster(cluster_id).await
-                    .map_err(|error| DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: Some(configuration.name), cause: error.to_string() })?;
+                    .map_err(|error| DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: Some(configuration.name.clone()), cause: error.to_string() })?;
             }
+
+            {
+                let all_peers = actions::list_peer_descriptors(ListPeerDescriptorsParams {
+                    resources_manager: Arc::clone(&self.resources_manager),
+                }).await.map_err(|cause| DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: Some(configuration.name.clone()), cause: cause.to_string() })?;
+
+                let member_ids = all_peers.into_iter()
+                    .filter(|peer| !peer.topology.devices.iter().filter(|device| configuration.devices.contains(&device.id)).collect::<Vec<_>>().is_empty() )
+                    .map(|peer| peer.id).collect::<Vec<PeerId>>();
+
+                for member_id in member_ids {
+                    actions::unassign_cluster(UnassignClusterParams {
+                        resources_manager: Arc::clone(&self.resources_manager),
+                        peer_id: member_id,
+                    }).await
+                        .map_err(|cause| {
+                            let message = format!("Failure while assigning cluster <{cluster_id}> to peer <{member_id}>.");
+                            error!("{}\n  {cause}", message);
+                            DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: Some(configuration.name.clone()), cause: message }
+                        })?;
+                }   
+            }
+            
         }
 
         Ok(deployment)

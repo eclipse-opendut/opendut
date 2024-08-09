@@ -22,7 +22,7 @@ impl DescribePeerCli {
                 format!("Failed to retrieve peer descriptor for peer <{}>", peer_id)
             })?;
 
-        render_peer_descriptor(peer_descriptor, output, );
+        render_peer_descriptor(peer_descriptor, output);
         Ok(())
     }
 }

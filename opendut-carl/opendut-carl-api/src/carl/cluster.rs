@@ -123,7 +123,7 @@ pub enum DeleteClusterDeploymentError {
         cluster_id: ClusterId,
         cluster_name: Option<ClusterName>,
         cause: String
-    }
+    },
 }
 impl Display for DeleteClusterDeploymentError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

@@ -61,5 +61,11 @@ pub use peers::{
     AssignClusterError,
 };
 
+pub use peers::{
+    unassign_cluster,
+    UnassignClusterParams,
+    UnassignClusterError,
+};
+
 mod peers;
 mod clusters;
