@@ -5,12 +5,14 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::sleep;
 use std::time::Duration;
+use anyhow::anyhow;
 
 use crate::core::OPENDUT_REPO_ROOT;
 use crate::core::project::ProjectRootDir;
 
 pub(crate) trait TheoCommandExtensions {
     fn vagrant() -> Self;
+    fn run_requiring_success(&mut self) -> crate::Result;
     fn run(&mut self);
 }
 
@@ -27,6 +29,21 @@ impl TheoCommandExtensions for Command {
             .env("VAGRANT_VAGRANTFILE", ".ci/docker/Vagrantfile")
             .env(OPENDUT_REPO_ROOT, project_root_override);
         command
+    }
+
+    fn run_requiring_success(&mut self) -> crate::Result {
+        let status = self.status()
+            .unwrap_or_else(|cause| panic!("Error while running command: '{self:?}'\n  {cause}"));
+
+        if status.success() {
+            Ok(())
+        } else {
+            let mut error = format!("Error while running command: '{self:?}'");
+            if let Some(status) = &status.code() {
+                error += format!("\n  Exited with status code {}.\n", status).as_ref();
+            }
+            Err(anyhow!(error))
+        }
     }
 
     fn run(&mut self) {

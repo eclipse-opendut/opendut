@@ -13,7 +13,7 @@
       # linux-generic is required for the 'vcan' kernel module
       # This meta package will install the linux-modules-extra-{{ ansible_kernel }} for the current kernel.
       # It will also install the proper modules on the next kernel update.
-      pkg: ['htop', 'tmux', 'jq', 'libssl-dev', 'build-essential', 'pkg-config', 'clang', 'linux-generic']
+      pkg: ['htop', 'tmux', 'jq', 'libssl-dev', 'build-essential', 'pkg-config', 'clang', 'linux-generic', 'linux-modules-extra-{{ ansible_kernel }}']
       state: 'present'
       update_cache: yes
       cache_valid_time: 3600
@@ -44,6 +44,13 @@
   - {role: "ansible-role-kde-desktop", tags: ["desktop"] }
 
   post_tasks:
+    - name: Create xauth file to silence a warning on first login
+      become: true
+      become_user: vagrant
+      ansible.builtin.file:
+        state: touch
+        path: /home/vagrant/.Xauthority
+
     - name: Clone OpenDuT repository
       become: true
       become_user: vagrant

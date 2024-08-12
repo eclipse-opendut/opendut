@@ -31,7 +31,7 @@ pub enum TaskCli {
     /// Stop virtual machine.
     #[command(alias = "stop")]
     Halt,
-    /// Destroy virtual machine.
+    /// Destroy virtual machine and update the box.
     Destroy,
     /// Reload virtual machine.
     #[command(alias = "restart")]
@@ -75,6 +75,15 @@ impl VagrantCli {
             }
             TaskCli::Destroy => {
                 Command::vagrant().arg("destroy").run();
+                // always update the vagrant box once it is destroyed
+                Command::vagrant().arg("box").arg("update").run_requiring_success()?;
+
+                println!("\nVagrant box cleanup notes");
+                Command::vagrant().arg("box").arg("outdated").run_requiring_success()?;
+                println!("\nListing all vagrant boxes:");
+                Command::vagrant().arg("box").arg("list").run_requiring_success()?;
+                println!("\nNOTE: You may want to delete old boxes with the following command: ");
+                println!("  vagrant box remove ubuntu/jammy64 --box-version <X.Y.Z>");
             }
             TaskCli::Reload => {
                 Command::vagrant().arg("reload").run();
