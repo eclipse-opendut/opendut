@@ -1,0 +1,20 @@
+[package]
+name = "opendut-edgar-plugin-api"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+wit-bindgen.workspace = true
+
+
+[package.metadata.component]
+package="edgar:setup"
+
+[package.metadata.component.target]
+path="wit"
