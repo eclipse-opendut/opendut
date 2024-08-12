@@ -9,3 +9,8 @@ CREATE TABLE cluster_device (
     device_id uuid REFERENCES device_descriptor(device_id) ON DELETE CASCADE,
     PRIMARY KEY(cluster_id, device_id)
 );
+
+CREATE TABLE cluster_deployment ( --separate table rather than column in cluster_configuration, because it matches better to our internal structure+usage
+    cluster_id uuid REFERENCES cluster_configuration(cluster_id) ON DELETE CASCADE,
+    PRIMARY KEY(cluster_id)
+);

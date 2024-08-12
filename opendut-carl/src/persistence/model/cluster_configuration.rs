@@ -28,7 +28,7 @@ impl Persistable for ClusterConfiguration {
     }
 }
 
-fn insert_into_database(cluster_configuration: ClusterConfiguration, connection: &mut PgConnection) -> PersistenceResult<()> {
+pub(super) fn insert_into_database(cluster_configuration: ClusterConfiguration, connection: &mut PgConnection) -> PersistenceResult<()> {
     let ClusterConfiguration { id, name, leader, devices } = cluster_configuration;
 
     query::cluster_configuration::insert(PersistableClusterConfiguration {
@@ -110,7 +110,7 @@ pub(super) mod tests {
         Ok(())
     }
 
-    fn cluster_configuration(leader_id: PeerId, devices: Vec<DeviceId>) -> anyhow::Result<ClusterConfiguration> {
+    pub fn cluster_configuration(leader_id: PeerId, devices: Vec<DeviceId>) -> anyhow::Result<ClusterConfiguration> {
         Ok(ClusterConfiguration {
             id: ClusterId::random(),
             name: ClusterName::try_from("cluster-name")?,
