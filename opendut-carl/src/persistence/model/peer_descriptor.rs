@@ -116,6 +116,7 @@ pub(super) mod tests {
 
     pub fn peer_descriptor() -> anyhow::Result<PeerDescriptor> {
         let network_interface_id1 = NetworkInterfaceId::random();
+        let network_interface_id2 = NetworkInterfaceId::random();
 
         Ok(PeerDescriptor {
             id: PeerId::random(),
@@ -129,7 +130,7 @@ pub(super) mod tests {
                         configuration: NetworkInterfaceConfiguration::Ethernet,
                     },
                     NetworkInterfaceDescriptor {
-                        id: NetworkInterfaceId::random(),
+                        id: network_interface_id2,
                         name: NetworkInterfaceName::try_from("can0")?,
                         configuration: NetworkInterfaceConfiguration::Can {
                             bitrate: 11111,
@@ -153,7 +154,17 @@ pub(super) mod tests {
                             DeviceTag::try_from("tag1")?,
                             DeviceTag::try_from("tag2")?,
                         ],
-                    }
+                    },
+                    DeviceDescriptor {
+                        id: DeviceId::random(),
+                        name: DeviceName::try_from("device2")?,
+                        description: Some(DeviceDescription::try_from("device2-description")?),
+                        interface: network_interface_id2,
+                        tags: vec![
+                            DeviceTag::try_from("tag2")?,
+                            DeviceTag::try_from("tag3")?,
+                        ],
+                    },
                 ],
             },
             executors: ExecutorDescriptors { executors: vec![] }, //TODO

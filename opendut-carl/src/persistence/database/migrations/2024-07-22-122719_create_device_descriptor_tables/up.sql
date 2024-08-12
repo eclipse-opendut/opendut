@@ -9,4 +9,4 @@ CREATE TABLE device_tag (
     device_id uuid REFERENCES device_descriptor(device_id) ON DELETE CASCADE,
     name text NOT NULL,
     PRIMARY KEY(device_id, name)
-)
+);

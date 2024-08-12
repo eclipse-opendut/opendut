@@ -7,6 +7,21 @@ pub mod sql_types {
 }
 
 diesel::table! {
+    cluster_configuration (cluster_id) {
+        cluster_id -> Uuid,
+        name -> Text,
+        leader_id -> Uuid,
+    }
+}
+
+diesel::table! {
+    cluster_device (cluster_id, device_id) {
+        cluster_id -> Uuid,
+        device_id -> Uuid,
+    }
+}
+
+diesel::table! {
     device_descriptor (device_id) {
         device_id -> Uuid,
         name -> Text,
@@ -54,12 +69,17 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(cluster_configuration -> peer_descriptor (leader_id));
+diesel::joinable!(cluster_device -> cluster_configuration (cluster_id));
+diesel::joinable!(cluster_device -> device_descriptor (device_id));
 diesel::joinable!(device_descriptor -> network_interface_descriptor (network_interface_id));
 diesel::joinable!(device_tag -> device_descriptor (device_id));
 diesel::joinable!(network_interface_descriptor -> peer_descriptor (peer_id));
 diesel::joinable!(network_interface_kind_can -> network_interface_descriptor (network_interface_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
+    cluster_configuration,
+    cluster_device,
     device_descriptor,
     device_tag,
     network_interface_descriptor,
