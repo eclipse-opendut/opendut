@@ -1,11 +1,9 @@
 use std::cell::RefCell;
 use anyhow::Error;
-use wasmtime::component::{Component, ResourceTable};
-use wasmtime::{ Store};
-use wasmtime_wasi::{DirPerms, FilePerms, WasiCtx, WasiCtxBuilder, WasiView};
-
+use wasmtime::component::Component;
+use wasmtime::Store;
+use crate::setup::plugin_runtime::PluginState;
 use super::plugin_bindgen::SetupPlugin;
-use super::plugin_bindgen::exports::edgar::setup::task::{Success, TaskFulfilled};
 use super::task::Task;
 
 pub struct SetupPluginStore {
@@ -53,50 +51,3 @@ impl Task for SetupPluginStore{
     }
 }
 
-pub struct PluginState {
-    ctx: WasiCtx,
-    table: ResourceTable,
-}
-
-impl PluginState{
-    pub fn new()-> Self{
-        let mut ctx_builder = WasiCtxBuilder::new();
-        ctx_builder.inherit_stdio();
-        ctx_builder.preopened_dir("/", "/", DirPerms::all(), FilePerms::all());
-        ctx_builder.inherit_network();
-
-        Self{
-            ctx: ctx_builder.build(),
-            table: ResourceTable::new()
-        }
-    }
-}
-
-impl WasiView for PluginState {
-    fn table(&mut self) -> &mut ResourceTable {
-        &mut self.table
-    }
-
-    fn ctx(&mut self) -> &mut WasiCtx {
-        &mut self.ctx
-    }
-}
-
-impl From<TaskFulfilled> for super::task::TaskFulfilled{
-    fn from(value: TaskFulfilled) -> Self {
-        match value {
-            TaskFulfilled::Yes => {super::task::TaskFulfilled::Yes}
-            TaskFulfilled::No => {super::task::TaskFulfilled::No}
-            TaskFulfilled::Unchecked => {super::task::TaskFulfilled::Unchecked}
-        }
-    }
-}
-
-impl From<Success> for super::task::Success{
-    fn from(value: Success) -> Self {
-        match value.message{
-            Some(msg) => super::task::Success::message(msg),
-            None => super::task::Success{message:None}
-        }
-    }
-}

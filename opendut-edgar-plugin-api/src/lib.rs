@@ -6,7 +6,4 @@ pub mod bindings {
 
 pub use crate::bindings::export;
 pub use crate::bindings::exports::edgar::setup::task;
-
-pub mod wit{
-    pub const WIT: &str = include_str!("../wit/world.wit");
-}
+pub use crate::bindings::edgar::setup::host;

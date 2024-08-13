@@ -1,10 +1,12 @@
 use std::path::Path;
-use wasmtime::component::{bindgen, Component, Linker, ResourceTable};
+use wasmtime::component::{Component, Linker, ResourceTable};
+use wasmtime::component::__internal;
 use wasmtime::{Config, Engine, Store};
 use wasmtime_wasi::{DirPerms, FilePerms, WasiCtx, WasiCtxBuilder, WasiView};
-
+use super::plugin_bindgen::{Success, TaskFulfilled};
+use super::plugin_bindgen::Host;
 use super::plugin_bindgen::SetupPlugin;
-use super::setup_plugin::{PluginState, SetupPluginStore};
+use super::setup_plugin::SetupPluginStore;
 
 pub struct PluginRuntime{
     config:Config,
@@ -25,7 +27,7 @@ impl PluginRuntime{
         wasmtime_wasi::add_to_linker_sync(&mut linker).expect("Could not add wasi to linker");
 
         // Necessary if Interface defines Imports
-        // SetupPlugin::add_to_linker(&mut linker, |state: &mut PluginState| state).expect("Could not add PluginState to linker");
+        SetupPlugin::add_to_linker(&mut linker, |state: &mut PluginState| state).expect("Could not add PluginState to linker");
 
         Self{
             config,
@@ -48,3 +50,57 @@ impl PluginRuntime{
     }
 }
 
+pub struct PluginState {
+    ctx: WasiCtx,
+    table: ResourceTable,
+}
+
+impl PluginState{
+    pub fn new()-> Self{
+        let mut ctx_builder = WasiCtxBuilder::new();
+        ctx_builder.inherit_stdio();
+        ctx_builder.preopened_dir("/", "/", DirPerms::all(), FilePerms::all());
+        ctx_builder.inherit_network();
+
+        Self{
+            ctx: ctx_builder.build(),
+            table: ResourceTable::new()
+        }
+    }
+}
+
+impl WasiView for PluginState {
+    fn table(&mut self) -> &mut ResourceTable {
+        &mut self.table
+    }
+
+    fn ctx(&mut self) -> &mut WasiCtx {
+        &mut self.ctx
+    }
+}
+
+impl Host for PluginState{
+    fn call_command(&mut self,command:__internal::String,args:__internal::Vec<__internal::String>,) -> Result<__internal::String,__internal::String> {
+        Result::Ok(String::from("All Good"))
+    }
+}
+
+
+impl From<TaskFulfilled> for super::task::TaskFulfilled{
+    fn from(value: TaskFulfilled) -> Self {
+        match value {
+            TaskFulfilled::Yes => {super::task::TaskFulfilled::Yes}
+            TaskFulfilled::No => {super::task::TaskFulfilled::No}
+            TaskFulfilled::Unchecked => {super::task::TaskFulfilled::Unchecked}
+        }
+    }
+}
+
+impl From<Success> for super::task::Success{
+    fn from(value: Success) -> Self {
+        match value.message{
+            Some(msg) => super::task::Success::message(msg),
+            None => super::task::Success{message:None}
+        }
+    }
+}

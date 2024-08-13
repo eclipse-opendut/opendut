@@ -2,6 +2,7 @@ package edgar: setup;
 
 world setup-plugin {
     export task;
+    import host;
 }
 
 interface task {
@@ -20,4 +21,8 @@ interface task {
     }
 
     execute:func () -> result<success>;
+}
+
+interface host {
+    call-command: func(command:string, args:list<string>) -> result<string, string>;
 }
