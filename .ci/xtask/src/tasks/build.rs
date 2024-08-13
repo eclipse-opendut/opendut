@@ -24,7 +24,6 @@ pub fn distribution_build(package: Package, target: Arch) -> crate::Result {
         .args([
             "build",
             "--release",
-            "--all-features",
             "--package",
             &package.ident(),
             "--target-dir",
