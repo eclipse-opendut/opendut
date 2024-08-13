@@ -6,7 +6,9 @@ mod constants;
 mod runner;
 pub mod start;
 mod task;
+#[cfg(not(target_arch = "arm"))]
 mod setup_plugin;
+#[cfg(not(target_arch = "arm"))]
 mod plugin_runtime;
 #[allow(non_camel_case_types)]
 mod tasks;

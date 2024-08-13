@@ -57,7 +57,7 @@ impl PluginState{
     pub fn new()-> Self{
         let mut ctx_builder = WasiCtxBuilder::new();
         ctx_builder.inherit_stdio();
-        ctx_builder.preopened_dir("/", "/", DirPerms::all(), FilePerms::all());
+        ctx_builder.preopened_dir("/", "/", DirPerms::all(), FilePerms::all()).expect("Could not preopen folder for plugin");
         ctx_builder.inherit_network();
 
         Self{

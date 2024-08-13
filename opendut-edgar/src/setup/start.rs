@@ -1,7 +1,6 @@
 use std::collections::HashSet;
 use std::{env, fs};
 use std::ffi::OsStr;
-use std::fs::FileType;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -17,10 +16,9 @@ use opendut_util::telemetry;
 use opendut_util::telemetry::opentelemetry_types::Opentelemetry;
 
 use crate::service::network_interface::manager::NetworkInterfaceManager;
-use crate::setup::plugin_runtime::PluginRuntime;
+
 use crate::setup::{Leader, runner, tasks, User};
 use crate::setup::runner::RunMode;
-use crate::setup::setup_plugin::SetupPluginStore;
 use crate::setup::task::Task;
 use crate::setup::tasks::write_configuration;
 use crate::setup::util::running_in_docker;
@@ -40,13 +38,24 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
     println!("Will connect to CARL at: {}", peer_setup.carl);
 
     let mut tasks: Vec<Box<dyn Task>> = vec![];
-    
-    let plugin_paths = discover_plugins().unwrap();
-    
-    let plugin_runtime = PluginRuntime::new();
-    let mut plugins: Vec<Box<dyn Task>> = plugin_paths.iter().map(|path|Box::new(plugin_runtime.create_plugin_from_wasm(path)) as Box<dyn Task>).collect();
 
-    tasks.append(&mut plugins);
+
+    #[cfg(not(target_arch = "arm"))]
+    let _ = {
+        use crate::setup::plugin_runtime::PluginRuntime;
+
+        let plugin_runtime = PluginRuntime::new();
+        let plugin_paths = discover_plugins().unwrap();
+
+        let mut plugins: Vec<Box<dyn Task>> = plugin_paths.iter()
+            .map(|path|Box::new(plugin_runtime.create_plugin_from_wasm(path)) as Box<dyn Task>)
+            .collect();
+
+        tasks.append(&mut plugins);
+
+        plugin_runtime
+    };
+
 
     tasks.append(&mut vec![
         Box::new(tasks::WriteCaCertificate::with_certificate(peer_setup.ca)),
@@ -100,7 +109,7 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
         Box::new(tasks::RestartService),
     ]);
 
-    runner::run(run_mode, no_confirm, &tasks, plugin_runtime).await
+    runner::run(run_mode, no_confirm, &tasks).await
 }
 
 #[allow(clippy::box_default, clippy::too_many_arguments)]
@@ -119,12 +128,21 @@ pub async fn unmanaged(
 
     let mut tasks: Vec<Box<dyn Task>> = vec![];
     
-    let plugin_paths = discover_plugins().unwrap();
-    
-    let plugin_runtime = PluginRuntime::new();
-    let mut plugins: Vec<Box<dyn Task>> = plugin_paths.iter().map(|path|Box::new(plugin_runtime.create_plugin_from_wasm(path)) as Box<dyn Task>).collect();
+    #[cfg(not(target_arch = "arm"))]
+    let _ = {
+        use crate::setup::plugin_runtime::PluginRuntime;
 
-    tasks.append(&mut plugins);
+        let plugin_runtime = PluginRuntime::new();
+        let plugin_paths = discover_plugins().unwrap();
+
+        let mut plugins: Vec<Box<dyn Task>> = plugin_paths.iter()
+            .map(|path|Box::new(plugin_runtime.create_plugin_from_wasm(path)) as Box<dyn Task>)
+            .collect();
+
+        tasks.append(&mut plugins);
+
+        plugin_runtime
+    };
 
     tasks.append(&mut vec![
         Box::new(tasks::CheckCommandLinePrograms),
@@ -140,7 +158,7 @@ pub async fn unmanaged(
         Box::new(tasks::copy_rperf::CopyRperf),
     ]);
 
-    runner::run(run_mode, no_confirm, &tasks, plugin_runtime).await
+    runner::run(run_mode, no_confirm, &tasks).await
 }
 
 
