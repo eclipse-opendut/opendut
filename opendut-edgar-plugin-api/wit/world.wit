@@ -1,4 +1,4 @@
-package edgar: setup;
+package edgar:setup;
 
 world setup-plugin {
     export task;
@@ -6,7 +6,7 @@ world setup-plugin {
 }
 
 interface task {
-    description : func()-> string;
+    description: func() -> string;
 
     enum task-fulfilled {
       yes,
@@ -14,10 +14,10 @@ interface task {
       unchecked
     }
 
-    check-fulfilled: func()-> result<task-fulfilled>;
+    check-fulfilled: func() -> result<task-fulfilled>;
 
     record success {
-      message:option<string>
+      message: option<string>
     }
 
     execute:func () -> result<success>;

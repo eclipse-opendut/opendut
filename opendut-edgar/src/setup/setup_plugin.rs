@@ -3,7 +3,7 @@ use anyhow::Error;
 use wasmtime::component::Component;
 use wasmtime::Store;
 use crate::setup::plugin_runtime::PluginState;
-use super::plugin_bindgen::SetupPlugin;
+use opendut_edgar_plugin_api::host::SetupPlugin;
 use super::task::Task;
 
 pub struct SetupPluginStore {

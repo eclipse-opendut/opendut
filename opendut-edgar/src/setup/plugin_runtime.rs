@@ -3,9 +3,7 @@ use wasmtime::component::{Component, Linker, ResourceTable};
 use wasmtime::component::__internal;
 use wasmtime::{Config, Engine, Store};
 use wasmtime_wasi::{DirPerms, FilePerms, WasiCtx, WasiCtxBuilder, WasiView};
-use super::plugin_bindgen::{Success, TaskFulfilled};
-use super::plugin_bindgen::Host;
-use super::plugin_bindgen::SetupPlugin;
+use opendut_edgar_plugin_api::host::{Host, SetupPlugin, Success, TaskFulfilled};
 use super::setup_plugin::SetupPluginStore;
 
 pub struct PluginRuntime{

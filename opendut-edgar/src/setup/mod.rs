@@ -6,7 +6,6 @@ mod constants;
 mod runner;
 pub mod start;
 mod task;
-mod plugin_bindgen;
 mod setup_plugin;
 mod plugin_runtime;
 #[allow(non_camel_case_types)]
