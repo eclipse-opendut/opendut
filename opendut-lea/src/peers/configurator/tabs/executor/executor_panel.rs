@@ -1,9 +1,9 @@
 use leptos::{component, create_read_slice, create_rw_signal, create_slice, event_target_value, IntoView, RwSignal,  SignalGet, SignalGetUntracked, SignalUpdate, SignalWith, SignalWithUntracked, view};
-use opendut_types::peer::executor::{container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine, IllegalContainerImage}, ResultsUrl};
+use opendut_types::peer::executor::{container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine, IllegalContainerImage}, ExecutorId, ResultsUrl};
 use strum::IntoEnumIterator;
 
 use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, IconButton, Toggled, UserInput, UserInputValue, VectorUserInput};
-use crate::peers::configurator::types::{EMPTY_CONTAINER_IMAGE_ERROR_MESSAGE, UserContainerEnv, UserPeerExecutor};
+use crate::peers::configurator::types::{EMPTY_CONTAINER_IMAGE_ERROR_MESSAGE, UserContainerEnv, UserPeerExecutor, UserPeerExecutorKind};
 use crate::util::NON_BREAKING_SPACE;
 
 #[component]
@@ -12,12 +12,10 @@ pub fn ExecutorPanel<OnDeleteFn>(
     on_delete: OnDeleteFn
 ) -> impl IntoView
 where
-    OnDeleteFn: Fn(String) + 'static
+    OnDeleteFn: Fn(ExecutorId) + 'static
 {
-    let is_collapsed = move || { 
-        match executor.get() {
-            UserPeerExecutor::Container { is_collapsed, .. } => { is_collapsed }
-        }
+    let is_collapsed = move || {
+        executor.get().is_collapsed
     };
     
     view! {
@@ -47,18 +45,14 @@ fn ExecutorPanelHeading<OnDeleteFn>(
     on_delete: OnDeleteFn
 ) -> impl IntoView
 where
-    OnDeleteFn: Fn(String) + 'static
+    OnDeleteFn: Fn(ExecutorId) + 'static
 {
     let (is_collapsed, set_is_collapsed) = create_slice(executor,
         move |executor| {
-            match executor {
-                UserPeerExecutor::Container { is_collapsed, .. } => { Clone::clone(is_collapsed) }
-            }
+            Clone::clone(&executor.is_collapsed)
         },
         move |executor, value| {
-            match executor {
-                UserPeerExecutor::Container { is_collapsed, .. } => { *is_collapsed = value; }
-            }
+            executor.is_collapsed = value;
         }
     );
 
@@ -67,8 +61,8 @@ where
 
     let executor_heading = create_read_slice(executor,
        |executor| {
-           match executor {
-               UserPeerExecutor::Container { image, name, .. } => {
+           match &executor.kind {
+               UserPeerExecutorKind::Container { image, name, .. } => {
                    let name = match name {
                        UserInputValue::Left(_) => String::from(""),
                        UserInputValue::Right(ref value) => value.to_owned(),
@@ -113,16 +107,7 @@ where
                         state=ButtonState::Enabled
                         label="Delete Executor?"
                         on_conform=move || {
-                            match executor.get_untracked() {
-                                UserPeerExecutor::Container{ image, .. } => {
-                                     let image = match image {
-                                        UserInputValue::Left(_) => String::new(),
-                                        UserInputValue::Right(value) => value.to_owned(),
-                                        UserInputValue::Both(_, value) => value.to_owned(),
-                                    };
-                                    on_delete(image)
-                                }
-                            }
+                            on_delete(executor.get_untracked().id)
                         }
                     />
                 </div>
@@ -138,13 +123,13 @@ fn ExecutorEngineInput<>(
 
     let (getter, setter) = create_slice(executor,
         move |executor| {
-            match executor {
-                UserPeerExecutor::Container { engine, .. } => { Clone::clone(engine) }
+            match &executor.kind {
+                UserPeerExecutorKind::Container { engine, .. } => { Clone::clone(engine) }
             }
         },
         move |executor, value| {
-            match executor {
-                UserPeerExecutor::Container { engine, .. } => { *engine = value; }
+            match &mut executor.kind {
+                UserPeerExecutorKind::Container { engine, .. } => { *engine = value; }
             }
         }
     );
@@ -200,13 +185,13 @@ fn ExecutorContainerNameInput(
 
     let (getter, setter) = create_slice(executor,
         move |executor| {
-            match executor {
-                UserPeerExecutor::Container { name, .. } => { Clone::clone(name) }
+            match &executor.kind {
+                UserPeerExecutorKind::Container { name, .. } => { Clone::clone(name) }
             }
         },
         move |executor, value| {
-            match executor {
-                UserPeerExecutor::Container { name, .. } => { *name = value; }
+            match &mut executor.kind {
+                UserPeerExecutorKind::Container { name, .. } => { *name = value; }
             }
         }
     );
@@ -240,13 +225,13 @@ fn ExecutorContainerImageInput(
 
     let (getter, setter) = create_slice(executor,
         move |executor| {
-            match executor {
-                UserPeerExecutor::Container { image, .. } => { Clone::clone(image) }
+            match &executor.kind {
+                UserPeerExecutorKind::Container { image, .. } => { Clone::clone(image) }
             }
         },
         move |executor, value| {
-            match executor {
-                UserPeerExecutor::Container { image, .. } => { *image = value; }
+            match &mut executor.kind {
+                UserPeerExecutorKind::Container { image, .. } => { *image = value; }
             }
         }
     );
@@ -284,13 +269,13 @@ fn ExecutorContainerVolumesInput(
 
     let (getter, setter) = create_slice(executor,
         move |executor| {
-            match executor {
-                UserPeerExecutor::Container { volumes, .. } => { Clone::clone(volumes) }
+            match &executor.kind {
+                UserPeerExecutorKind::Container { volumes, .. } => { Clone::clone(volumes) }
             }
         },
         move |executor, value| {
-            match executor {
-                UserPeerExecutor::Container { volumes, .. } => { *volumes = value; }
+            match &mut executor.kind {
+                UserPeerExecutorKind::Container { volumes, .. } => { *volumes = value; }
             }
         }
     );
@@ -311,8 +296,8 @@ fn ExecutorContainerVolumesInput(
             let volume = create_rw_signal(
                 UserInputValue::Left(String::from("Container volume must not be empty."))
             );
-            match executor {
-                UserPeerExecutor::Container{ volumes, .. } => {
+            match &mut executor.kind {
+                UserPeerExecutorKind::Container { volumes, .. } => {
                     volumes.push(volume);
                 }
             }
@@ -339,13 +324,13 @@ fn ExecutorContainerDevicesInput(
 
     let (getter, setter) = create_slice(executor,
         move |executor| {
-            match executor {
-                UserPeerExecutor::Container { devices, .. } => { Clone::clone(devices) }
+            match &executor.kind {
+                UserPeerExecutorKind::Container { devices, .. } => { Clone::clone(devices) }
             }
         },
         move |executor, value| {
-            match executor {
-                UserPeerExecutor::Container { devices, .. } => { *devices = value; }
+            match &mut executor.kind {
+                UserPeerExecutorKind::Container { devices, .. } => { *devices = value; }
             }
         }
     );
@@ -366,8 +351,8 @@ fn ExecutorContainerDevicesInput(
             let device = create_rw_signal(
                 UserInputValue::Left(String::from("Container device must not be empty."))
             );
-            match executor {
-                UserPeerExecutor::Container{ devices, .. } => {
+            match &mut executor.kind {
+                UserPeerExecutorKind::Container { devices, .. } => {
                     devices.push(device);
                 }
             }
@@ -394,13 +379,13 @@ fn ExecutorContainerPortsInput(
 
     let (getter, setter) = create_slice(executor,
         move |executor| {
-            match executor {
-                UserPeerExecutor::Container { ports, .. } => { Clone::clone(ports) }
+            match &executor.kind {
+                UserPeerExecutorKind::Container { ports, .. } => { Clone::clone(ports) }
             }
         },
         move |executor, value| {
-            match executor {
-                UserPeerExecutor::Container { ports, .. } => { *ports = value; }
+            match &mut executor.kind {
+                UserPeerExecutorKind::Container { ports, .. } => { *ports = value; }
             }
         }
     );
@@ -421,8 +406,8 @@ fn ExecutorContainerPortsInput(
             let port = create_rw_signal(
                 UserInputValue::Left(String::from("Container port specification must not be empty."))
             );
-            match executor {
-                UserPeerExecutor::Container{ ports, .. } => {
+            match &mut executor.kind {
+                UserPeerExecutorKind::Container { ports, .. } => {
                     ports.push(port);
                 }
             }
@@ -449,13 +434,13 @@ fn ExecutorContainerCommandInput(
 
     let (getter, setter) = create_slice(executor,
         move |executor| {
-            match executor {
-                UserPeerExecutor::Container { command, .. } => { Clone::clone(command) }
+            match &executor.kind {
+                UserPeerExecutorKind::Container { command, .. } => { Clone::clone(command) }
             }
         },
         move |executor, value| {
-            match executor {
-                UserPeerExecutor::Container { command, .. } => { *command = value; }
+            match &mut executor.kind {
+                UserPeerExecutorKind::Container { command, .. } => { *command = value; }
             }
         }
     );
@@ -489,13 +474,13 @@ fn ExecutorContainerArgsInput(
 
     let (getter, setter) = create_slice(executor,
         move |executor| {
-            match executor {
-                UserPeerExecutor::Container { args, .. } => { Clone::clone(args) }
+            match &executor.kind {
+                UserPeerExecutorKind::Container { args, .. } => { Clone::clone(args) }
             }
         },
         move |executor, value| {
-            match executor {
-                UserPeerExecutor::Container { args, .. } => { *args = value; }
+            match &mut executor.kind {
+                UserPeerExecutorKind::Container { args, .. } => { *args = value; }
             }
         }
     );
@@ -516,8 +501,8 @@ fn ExecutorContainerArgsInput(
             let arg = create_rw_signal(
                 UserInputValue::Left(String::from("Container command argument must not be empty."))
             );
-            match executor {
-                UserPeerExecutor::Container{ args, .. } => {
+            match &mut executor.kind {
+                UserPeerExecutorKind::Container { args, .. } => {
                     args.push(arg);
                 }
             }
@@ -544,13 +529,13 @@ fn ExecutorContainerEnvsInput(
 
     let (getter, setter) = create_slice(executor,
         move |executor| {
-            match executor {
-                UserPeerExecutor::Container { envs, .. } => { Clone::clone(envs) }
+            match &executor.kind {
+                UserPeerExecutorKind::Container { envs, .. } => { Clone::clone(envs) }
             }
         },
         move |executor, value| {
-            match executor {
-                UserPeerExecutor::Container { envs, .. } => { *envs = value; }
+            match &mut executor.kind {
+                UserPeerExecutorKind::Container { envs, .. } => { *envs = value; }
             }
         }
     );
@@ -563,8 +548,8 @@ fn ExecutorContainerEnvsInput(
                     value: UserInputValue::Right(String::from(""))
                 }
             );
-            match executor {
-                UserPeerExecutor::Container{ envs, .. } => {
+            match &mut executor.kind {
+                UserPeerExecutorKind::Container { envs, .. } => {
                     envs.push(env);
                 }
             }
@@ -737,14 +722,10 @@ fn ExecutorContainerResultsUrlInput(
 
     let (getter, setter) = create_slice(executor,
         move |executor| {
-            match executor {
-                UserPeerExecutor::Container { results_url, .. } => { Clone::clone(results_url) }
-            }
+            Clone::clone(&executor.results_url)
         },
         move |executor, value| {
-            match executor {
-                UserPeerExecutor::Container { results_url, .. } => { *results_url = value; }
-            }
+            executor.results_url = value;
         }
     );
 

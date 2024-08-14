@@ -3,7 +3,7 @@ use std::fmt;
 use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use url::Url;
-
+use uuid::Uuid;
 use crate::peer::executor::container::{Engine, ContainerName, ContainerImage, ContainerVolume, ContainerDevice, ContainerEnvironmentVariable, ContainerPortSpec, ContainerCommand, ContainerCommandArgument, deserialize_container_environment_variable_vec};
 
 pub mod container;
@@ -16,9 +16,24 @@ pub struct ExecutorDescriptors {
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct ExecutorDescriptor {
+    pub id: ExecutorId,
     #[serde(flatten)]
     pub kind: ExecutorKind,
     pub results_url: Option<ResultsUrl>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct ExecutorId { pub uuid: Uuid }
+impl ExecutorId {
+    pub fn random() -> Self {
+        Self { uuid: Uuid::new_v4() }
+    }
+}
+impl From<Uuid> for ExecutorId {
+    fn from(uuid: Uuid) -> Self {
+        Self { uuid }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]

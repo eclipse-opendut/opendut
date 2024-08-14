@@ -1,6 +1,6 @@
 use leptos::{RwSignal, SignalGetUntracked};
 use opendut_types::cluster::ClusterId;
-use opendut_types::peer::executor::ExecutorDescriptor;
+use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorId};
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
 use opendut_types::peer::executor::{container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine}, ExecutorKind, ExecutorDescriptors, ResultsUrl};
 use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
@@ -50,7 +50,15 @@ pub struct UserPeerConfiguration {
 }
 
 #[derive(Clone, Debug)]
-pub enum UserPeerExecutor {
+pub struct UserPeerExecutor {
+    pub id: ExecutorId,
+    pub kind: UserPeerExecutorKind,
+    pub results_url: UserInputValue,
+    pub is_collapsed: bool,
+}
+
+#[derive(Clone, Debug)]
+pub enum UserPeerExecutorKind {
     Container {
         engine: Engine,
         name: UserInputValue,
@@ -61,8 +69,6 @@ pub enum UserPeerExecutor {
         ports: Vec<RwSignal<UserInputValue>>,
         command: UserInputValue,
         args: Vec<RwSignal<UserInputValue>>,
-        results_url: UserInputValue,
-        is_collapsed: bool,
     }
 }
 
@@ -220,8 +226,10 @@ impl TryFrom<UserPeerExecutor> for ExecutorDescriptor {
     type Error = PeerMisconfigurationError;
 
     fn try_from(configuration: UserPeerExecutor) -> Result<Self, Self::Error> {
-        match configuration {
-            UserPeerExecutor::Container {
+        let UserPeerExecutor { id, kind, results_url, is_collapsed: _ } = configuration;
+
+        let kind = match kind {
+            UserPeerExecutorKind::Container {
                 engine,
                 name,
                 image,
@@ -231,8 +239,6 @@ impl TryFrom<UserPeerExecutor> for ExecutorDescriptor {
                 ports,
                 command,
                 args,
-                results_url,
-                ..
             } => {
                 let name = name
                     .right_ok_or(PeerMisconfigurationError::InvalidPeerExecutor)
@@ -294,34 +300,33 @@ impl TryFrom<UserPeerExecutor> for ExecutorDescriptor {
                                     .map_err(|_| PeerMisconfigurationError::InvalidPeerExecutor)))
                     })
                     .collect::<Result<Vec<_>, _>>()?;
-                let results_url = results_url
-                    .right_ok_or(PeerMisconfigurationError::InvalidPeerExecutor)
-                    .and_then(|results_url| {
-                        if results_url.is_empty() { 
-                            Ok(None) 
-                        } else { 
-                            Some(ResultsUrl::try_from(results_url)
-                                .map_err(|_| PeerMisconfigurationError::InvalidPeerExecutor)).transpose()
-                        }
-                        
-                    })?;
-                Ok(ExecutorDescriptor {
-                    kind: ExecutorKind::Container {
-                        engine,
-                        name,
-                        image,
-                        volumes,
-                        devices,
-                        envs,
-                        ports,
-                        command,
-                        args,
-                    },
-                    results_url,
+
+                Ok(ExecutorKind::Container {
+                    engine,
+                    name,
+                    image,
+                    volumes,
+                    devices,
+                    envs,
+                    ports,
+                    command,
+                    args,
                 })
             }
-        }
-        
+        }?;
+
+        let results_url = results_url
+            .right_ok_or(PeerMisconfigurationError::InvalidPeerExecutor)
+            .and_then(|results_url| {
+                if results_url.is_empty() {
+                    Ok(None)
+                } else {
+                    Some(ResultsUrl::try_from(results_url)
+                        .map_err(|_| PeerMisconfigurationError::InvalidPeerExecutor)).transpose()
+                }
+            })?;
+
+        Ok(ExecutorDescriptor { id, kind, results_url })
     }
 }
 

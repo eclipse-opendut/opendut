@@ -1,4 +1,4 @@
-use opendut_types::peer::executor::ExecutorDescriptor;
+use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorId};
 use uuid::Uuid;
 
 use opendut_carl_api::carl::CarlClient;
@@ -49,6 +49,8 @@ impl CreateContainerExecutorCli {
     #[allow(clippy::too_many_arguments)]
     pub async fn execute(self, carl: &mut CarlClient, output: CreateOutputFormat) -> crate::Result<()> {
 
+        let executor_id = ExecutorId::random();
+
         let engine = match self.engine {
             EngineVariants::Docker => { Engine::Docker }
             EngineVariants::Podman => { Engine::Podman }
@@ -70,6 +72,7 @@ impl CreateContainerExecutorCli {
         };
 
         let executor_descriptor = ExecutorDescriptor {
+            id: executor_id,
             kind: ExecutorKind::Container {
                 engine,
                 name: self.name.unwrap_or_default(),

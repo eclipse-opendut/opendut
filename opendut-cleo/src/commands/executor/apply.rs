@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use opendut_types::peer::executor::ExecutorDescriptor;
+use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorId, ExecutorKind, ResultsUrl};
 use serde::{Deserialize, Serialize};
 
 use opendut_carl_api::carl::CarlClient;
@@ -20,11 +20,11 @@ pub struct ApplyContainerExecutorCli {
 struct ExecutorConfiguration {
     peer_id: PeerId,
     #[serde(flatten)]
-    executor_descriptor: ExecutorDescriptor,
+    pub kind: ExecutorKind,
+    pub results_url: Option<ResultsUrl>,
 }
 
 impl ApplyContainerExecutorCli {
-    #[allow(clippy::too_many_arguments)]
     pub async fn execute(self, carl: &mut CarlClient, output: CreateOutputFormat) -> crate::Result<()> {
 
         let config_str = std::fs::read_to_string(&self.config_file)
@@ -33,8 +33,12 @@ impl ApplyContainerExecutorCli {
         let executor_configuration: ExecutorConfiguration = serde_json::from_str(&config_str)
             .map_err(|cause| format!("Failed to parse '{}' as executor configuration: {}", self.config_file.display(), cause))?;
 
-        let peer_id = executor_configuration.peer_id;
-        let executor_descriptor = executor_configuration.executor_descriptor;
+        let ExecutorConfiguration { peer_id, kind, results_url } = executor_configuration;
+        let executor_descriptor = ExecutorDescriptor {
+            id: ExecutorId::random(), //Currently, we create a new ExecutorDescriptor every time. It might be better to put the IDs into the configuration, to keep them stable.
+            kind,
+            results_url,
+        };
 
         let mut peer_descriptor = carl.peers.get_peer_descriptor(peer_id).await
             .map_err(|_| format!("Failed to get peer with ID <{}>.", peer_id))?;

@@ -3,17 +3,23 @@ syntax = "proto3";
 package opendut.types.peer.executor;
 
 import "opendut/types/peer/executor/container.proto";
+import "opendut/types/util/uuid.proto";
 
 message ExecutorDescriptors {
   repeated opendut.types.peer.executor.ExecutorDescriptor executors = 1;
 }
 
 message ExecutorDescriptor {
+  ExecutorId id = 1;
   oneof kind {
     Executable executable = 2;
     Container container = 3;
   }
-  optional ResultsUrl results_url = 4; 
+  optional ResultsUrl results_url = 4;
+}
+
+message ExecutorId {
+  opendut.types.util.Uuid uuid = 1;
 }
 
 message Executable {}

@@ -295,7 +295,7 @@ mod tests {
     use url::Url;
 
     use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkDescriptor};
-    use opendut_types::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorKind, ExecutorDescriptors, ExecutorDescriptor};
+    use opendut_types::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorKind, ExecutorDescriptors, ExecutorDescriptor, ExecutorId};
     use opendut_types::proto;
     use opendut_types::topology::Topology;
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
@@ -349,7 +349,8 @@ mod tests {
             topology: Topology::default(),
             executors: ExecutorDescriptors {
                 executors: vec![
-                    ExecutorDescriptor{
+                    ExecutorDescriptor {
+                        id: ExecutorId::random(),
                         kind: ExecutorKind::Container {
                             engine: Engine::Docker,
                             name: ContainerName::Empty,

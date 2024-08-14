@@ -29,6 +29,8 @@ impl TryFrom<ExecutorDescriptors> for crate::peer::executor::ExecutorDescriptors
 
 impl From<crate::peer::executor::ExecutorDescriptor> for ExecutorDescriptor {
     fn from(value: crate::peer::executor::ExecutorDescriptor) -> Self {
+        let id = Some(value.id.into());
+
         let executor_kind = match value.kind {
             crate::peer::executor::ExecutorKind::Executable => {
                 Some(executor_descriptor::Kind::Executable(
@@ -48,27 +50,26 @@ impl From<crate::peer::executor::ExecutorDescriptor> for ExecutorDescriptor {
                 args,
             } => {
                 Some(executor_descriptor::Kind::Container(
-                        Container {
-                            engine: Some(engine.into()),
-                            name: Some(name.into()),
-                            image: Some(image.into()),
-                            volumes: volumes.into_iter().map(|volume| volume.into()).collect(),
-                            devices: devices.into_iter().map(|device| device.into()).collect(),
-                            envs: envs.into_iter().map(|env| env.into()).collect(),
-                            ports: ports.into_iter().map(|port| port.into()).collect(),
-                            command: Some(command.into()),
-                            args: args.into_iter().map(|arg| arg.into()).collect(),
-                        }
-                    )
-                )
+                    Container {
+                        engine: Some(engine.into()),
+                        name: Some(name.into()),
+                        image: Some(image.into()),
+                        volumes: volumes.into_iter().map(|volume| volume.into()).collect(),
+                        devices: devices.into_iter().map(|device| device.into()).collect(),
+                        envs: envs.into_iter().map(|env| env.into()).collect(),
+                        ports: ports.into_iter().map(|port| port.into()).collect(),
+                        command: Some(command.into()),
+                        args: args.into_iter().map(|arg| arg.into()).collect(),
+                    }
+                ))
             }
         };
 
         ExecutorDescriptor {
+            id,
             kind: executor_kind,
             results_url: value.results_url.map(|results_url| results_url.into()),
         }
-        
     }
 }
 
@@ -78,9 +79,12 @@ impl TryFrom<ExecutorDescriptor> for crate::peer::executor::ExecutorDescriptor {
     fn try_from(value: ExecutorDescriptor) -> Result<Self, Self::Error> {
         type ErrorBuilder = ConversionErrorBuilder<ExecutorDescriptor, crate::peer::executor::ExecutorDescriptor>;
 
+        let id = value.id
+            .ok_or(ErrorBuilder::field_not_set("id"))?
+            .try_into()?;
+
         let kind = value.kind
             .ok_or(ErrorBuilder::field_not_set("kind"))?;
-        let results_url = value.results_url.map(TryFrom::try_from).transpose()?;
 
         let result_kind = match kind {
             executor_descriptor::Kind::Executable(_) => {
@@ -145,13 +149,35 @@ impl TryFrom<ExecutorDescriptor> for crate::peer::executor::ExecutorDescriptor {
             }
         };
 
+        let results_url = value.results_url.map(TryFrom::try_from).transpose()?;
+
         Ok(
             crate::peer::executor::ExecutorDescriptor {
+                id,
                 kind: result_kind,
                 results_url,
             }
         )
+    }
+}
 
+impl From<crate::peer::executor::ExecutorId> for ExecutorId {
+    fn from(value: crate::peer::executor::ExecutorId) -> Self {
+        Self {
+            uuid: Some(value.uuid.into())
+        }
+    }
+}
+
+impl TryFrom<ExecutorId> for crate::peer::executor::ExecutorId {
+    type Error = ConversionError;
+
+    fn try_from(value: ExecutorId) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<ExecutorId, crate::peer::executor::ExecutorId>;
+
+        value.uuid
+            .ok_or(ErrorBuilder::field_not_set("uuid"))
+            .map(|uuid| Self { uuid: uuid.into() })
     }
 }
 

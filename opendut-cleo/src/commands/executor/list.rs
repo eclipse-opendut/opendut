@@ -49,7 +49,7 @@ fn filter_connected_peers(
 ) -> Vec<ContainerExecutorTable> {
     let mut executor_table = vec![];
     for executor in &peer.executors.executors {
-        let ExecutorDescriptor {kind, results_url} = executor;
+        let ExecutorDescriptor { id: _, kind, results_url } = executor;
         
         if let ExecutorKind::Container {
             engine,

@@ -1,7 +1,7 @@
 use leptos::*;
 use leptos_router::use_params_map;
 
-use opendut_types::peer::executor::ExecutorDescriptor;
+use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorKind};
 use opendut_types::peer::PeerId;
 
 use crate::app::{ExpectGlobals, use_app_globals};
@@ -9,7 +9,7 @@ use crate::components::{BasePageContainer, Breadcrumb, Initialized, UserInputErr
 use crate::components::use_active_tab;
 use crate::peers::configurator::components::Controls;
 use crate::peers::configurator::tabs::{DevicesTab, ExecutorTab, GeneralTab, NetworkTab, SetupTab, TabIdentifier};
-use crate::peers::configurator::types::{UserDeviceConfiguration, UserPeerConfiguration, UserNetworkInterface, UserPeerExecutor, UserContainerEnv, UserPeerNetwork};
+use crate::peers::configurator::types::{UserDeviceConfiguration, UserPeerConfiguration, UserNetworkInterface, UserPeerExecutor, UserContainerEnv, UserPeerNetwork, UserPeerExecutorKind};
 use crate::routing::{navigate_to, WellKnownRoutes};
 
 mod components;
@@ -99,50 +99,51 @@ pub fn PeerConfigurator() -> impl IntoView {
                                 })
                                 .collect();
                             for executor in configuration.executors.executors {
-                                let ExecutorDescriptor {kind, results_url} = executor;
+                                let ExecutorDescriptor { id, kind, results_url } = executor;
 
-                                if let opendut_types::peer::executor::ExecutorKind::Container {
-                                    engine,
-                                    name,
-                                    image,
-                                    volumes,
-                                    devices,
-                                    envs,
-                                    ports,
-                                    command,
-                                    args,
-                                } = kind {
-                                    let volumes = volumes.into_iter()
-                                        .map(|volume| {
-                                            create_rw_signal(UserInputValue::Right(volume.to_string()))
-                                        })
-                                        .collect::<Vec<_>>();
-                                    let devices = devices.into_iter()
-                                        .map(|device| {
-                                            create_rw_signal(UserInputValue::Right(device.to_string()))
-                                        })
-                                        .collect::<Vec<_>>();
-                                    let envs = envs.into_iter()
-                                        .map(|env| {
-                                            let (name, value) = env.into();
-                                            create_rw_signal(UserContainerEnv {
-                                                name: UserInputValue::Right(name),
-                                                value: UserInputValue::Right(value)
+                                let kind = match kind {
+                                    ExecutorKind::Executable => todo!(),
+                                    ExecutorKind::Container {
+                                        engine,
+                                        name,
+                                        image,
+                                        volumes,
+                                        devices,
+                                        envs,
+                                        ports,
+                                        command,
+                                        args,
+                                    } => {
+                                        let volumes = volumes.into_iter()
+                                            .map(|volume| {
+                                                create_rw_signal(UserInputValue::Right(volume.to_string()))
                                             })
-                                        })
-                                        .collect::<Vec<_>>();
-                                    let ports = ports.into_iter()
-                                        .map(|port| {
-                                            create_rw_signal(UserInputValue::Right(port.to_string()))
-                                        })
-                                        .collect::<Vec<_>>();
-                                    let args = args.into_iter()
-                                        .map(|arg| {
-                                            create_rw_signal(UserInputValue::Right(arg.to_string()))
-                                        })
-                                        .collect::<Vec<_>>();
-                                    user_configuration.executors.push(
-                                        create_rw_signal(UserPeerExecutor::Container {
+                                            .collect::<Vec<_>>();
+                                        let devices = devices.into_iter()
+                                            .map(|device| {
+                                                create_rw_signal(UserInputValue::Right(device.to_string()))
+                                            })
+                                            .collect::<Vec<_>>();
+                                        let envs = envs.into_iter()
+                                            .map(|env| {
+                                                let (name, value) = env.into();
+                                                create_rw_signal(UserContainerEnv {
+                                                    name: UserInputValue::Right(name),
+                                                    value: UserInputValue::Right(value)
+                                                })
+                                            })
+                                            .collect::<Vec<_>>();
+                                        let ports = ports.into_iter()
+                                            .map(|port| {
+                                                create_rw_signal(UserInputValue::Right(port.to_string()))
+                                            })
+                                            .collect::<Vec<_>>();
+                                        let args = args.into_iter()
+                                            .map(|arg| {
+                                                create_rw_signal(UserInputValue::Right(arg.to_string()))
+                                            })
+                                            .collect::<Vec<_>>();
+                                        UserPeerExecutorKind::Container {
                                             engine,
                                             name: UserInputValue::Right(name.into()),
                                             image: UserInputValue::Right(image.to_string()),
@@ -152,10 +153,18 @@ pub fn PeerConfigurator() -> impl IntoView {
                                             ports,
                                             command: UserInputValue::Right(command.into()),
                                             args,
-                                            results_url: UserInputValue::Right(results_url.map(|s| s.to_string()).unwrap_or(String::new())),
-                                            is_collapsed: true
-                                        }));
-                                }
+                                        }
+                                    }
+                                };
+
+                                user_configuration.executors.push(
+                                    create_rw_signal(UserPeerExecutor {
+                                        id,
+                                        kind,
+                                        results_url: UserInputValue::Right(results_url.map(|s| s.to_string()).unwrap_or(String::new())),
+                                        is_collapsed: true
+                                    })
+                                );
                             }
                         });
                     }
@@ -174,20 +183,22 @@ pub fn PeerConfigurator() -> impl IntoView {
                     })
                     && peer_configuration.executors.iter().all(|executor| {
                         executor.with(|executor| {
-                            match executor {
-                                UserPeerExecutor::Container {
-                                    name, 
-                                    image, 
-                                    volumes, 
-                                    devices, 
-                                    envs, 
-                                    ports, 
-                                    command, 
-                                    args, 
-                                    ..
+                            let UserPeerExecutor { id: _, kind, results_url, is_collapsed: _ } = executor;
+
+                            let kind_is_valid = match kind {
+                                UserPeerExecutorKind::Container {
+                                    engine: _,
+                                    name,
+                                    image,
+                                    volumes,
+                                    devices,
+                                    envs,
+                                    ports,
+                                    command,
+                                    args,
                                 } => {
-                                    name.is_right() 
-                                        && image.is_right() 
+                                    name.is_right()
+                                        && image.is_right()
                                         && volumes.iter().all(|volume| volume.with(|volume| volume.is_right()))
                                         && devices.iter().all(|device| device.with(|device| device.is_right()))
                                         && envs.iter().all(|env| env.with(|env| env.name.is_right()))
@@ -195,7 +206,9 @@ pub fn PeerConfigurator() -> impl IntoView {
                                         && command.is_right()
                                         && args.iter().all(|arg| arg.with(|arg| arg.is_right()))
                                 }
-                            }
+                            };
+
+                            kind_is_valid && results_url.is_right()
                         })
                     })
                 })

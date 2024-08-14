@@ -99,13 +99,15 @@ impl ParameterValue for ExecutorDescriptor {
 
 #[cfg(test)]
 mod tests {
+    use crate::peer::executor::ExecutorId;
     use super::*;
 
     #[test]
     fn insert_value_in_peer_configuration2() {
         let mut peer_configuration = PeerConfiguration2::default();
 
-        let value = ExecutorDescriptor{
+        let value = ExecutorDescriptor {
+            id: ExecutorId::random(),
             kind: ExecutorKind::Executable,
             results_url: None
         };

@@ -34,7 +34,7 @@ impl ExecutorManager {
 
             let (tx, rx) = watch::channel(false);
 
-            let ExecutorDescriptor {kind, results_url} = executor;
+            let ExecutorDescriptor { id: _, kind, results_url } = executor;
 
             match kind {
                 ExecutorKind::Executable => warn!("Executing Executable not yet implemented."),
