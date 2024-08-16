@@ -1,11 +1,5 @@
 // @generated automatically by Diesel CLI.
 
-pub mod sql_types {
-    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
-    #[diesel(postgres_type(name = "network_interface_kind"))]
-    pub struct NetworkInterfaceKind;
-}
-
 diesel::table! {
     cluster_configuration (cluster_id) {
         cluster_id -> Uuid,
@@ -68,13 +62,10 @@ diesel::table! {
 }
 
 diesel::table! {
-    use diesel::sql_types::*;
-    use super::sql_types::NetworkInterfaceKind;
-
     network_interface_descriptor (network_interface_id) {
         network_interface_id -> Uuid,
         name -> Text,
-        kind -> NetworkInterfaceKind,
+        kind -> Text,
         peer_id -> Uuid,
     }
 }
