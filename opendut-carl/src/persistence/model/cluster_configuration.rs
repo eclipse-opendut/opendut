@@ -1,12 +1,12 @@
-use std::ops::DerefMut;
 use super::{query, Persistable};
 use crate::persistence::error::{PersistenceError, PersistenceResult};
 use crate::persistence::model::query::cluster_configuration::PersistableClusterConfiguration;
+use crate::persistence::model::query::cluster_device::PersistableClusterDevice;
 use crate::persistence::model::query::Filter;
 use crate::persistence::Storage;
 use diesel::{Connection, PgConnection};
 use opendut_types::cluster::{ClusterConfiguration, ClusterId};
-use crate::persistence::model::query::cluster_device::PersistableClusterDevice;
+use std::ops::DerefMut;
 
 impl Persistable for ClusterConfiguration {
     fn insert(self, _id: ClusterId, storage: &mut Storage) -> PersistenceResult<()> {

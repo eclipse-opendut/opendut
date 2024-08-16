@@ -286,6 +286,7 @@ impl fmt::Display for ContainerVolume {
     }
 }
 
+/// Network interface or similar to be forwarded into the container.
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ContainerDevice(String);
 

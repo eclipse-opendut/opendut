@@ -21,7 +21,7 @@ axum-server-dual-protocol = { workspace = true }
 base64 = { workspace = true }
 chrono = { workspace = true }
 config = { workspace = true }
-diesel = { workspace = true, features = ["postgres", "pq-src", "uuid"] }
+diesel = { workspace = true, features = ["postgres", "pq-src", "uuid", "serde_json"] }
 diesel_migrations = { workspace = true }
 flate2 = { workspace = true }
 futures = { workspace = true }

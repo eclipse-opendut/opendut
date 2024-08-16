@@ -44,6 +44,30 @@ diesel::table! {
 }
 
 diesel::table! {
+    executor_descriptor (executor_id) {
+        executor_id -> Uuid,
+        kind -> Text,
+        results_url -> Nullable<Text>,
+        peer_id -> Uuid,
+    }
+}
+
+diesel::table! {
+    executor_kind_container (executor_id) {
+        executor_id -> Uuid,
+        engine -> Text,
+        name -> Nullable<Text>,
+        image -> Text,
+        volumes -> Array<Nullable<Text>>,
+        devices -> Array<Nullable<Text>>,
+        envs -> Array<Nullable<Jsonb>>,
+        ports -> Array<Nullable<Text>>,
+        command -> Nullable<Text>,
+        args -> Array<Nullable<Text>>,
+    }
+}
+
+diesel::table! {
     use diesel::sql_types::*;
     use super::sql_types::NetworkInterfaceKind;
 
@@ -81,6 +105,8 @@ diesel::joinable!(cluster_device -> cluster_configuration (cluster_id));
 diesel::joinable!(cluster_device -> device_descriptor (device_id));
 diesel::joinable!(device_descriptor -> network_interface_descriptor (network_interface_id));
 diesel::joinable!(device_tag -> device_descriptor (device_id));
+diesel::joinable!(executor_descriptor -> peer_descriptor (peer_id));
+diesel::joinable!(executor_kind_container -> executor_descriptor (executor_id));
 diesel::joinable!(network_interface_descriptor -> peer_descriptor (peer_id));
 diesel::joinable!(network_interface_kind_can -> network_interface_descriptor (network_interface_id));
 
@@ -90,6 +116,8 @@ diesel::allow_tables_to_appear_in_same_query!(
     cluster_device,
     device_descriptor,
     device_tag,
+    executor_descriptor,
+    executor_kind_container,
     network_interface_descriptor,
     network_interface_kind_can,
     peer_descriptor,

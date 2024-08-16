@@ -70,9 +70,11 @@ pub fn list(filter_by_peer_id: Filter<PeerId>, connection: &mut PgConnection) ->
         let network_bridge_name = network_bridge_name.map(NetworkInterfaceName::try_from).transpose()
             .map_err(|cause| PersistenceError::get::<PeerDescriptor>(peer_id.uuid, cause))?;
 
-        let network_interfaces = query::network_interface_descriptor::list_filtered_by_peer_id(peer_id, connection)?;
+        let network_interfaces = query::network_interface_descriptor::list_filtered_by_peer(peer_id, connection)?;
 
         let devices = query::device_descriptor::list_filtered_by_peer(peer_id, connection)?;
+
+        let executors = query::executor_descriptor::list_filtered_by_peer(peer_id, connection)?;
 
         Ok(PeerDescriptor {
             id: peer_id,
@@ -85,7 +87,7 @@ pub fn list(filter_by_peer_id: Filter<PeerId>, connection: &mut PgConnection) ->
             topology: Topology {
                 devices,
             },
-            executors: ExecutorDescriptors { executors: Default::default() }, //TODO
+            executors: ExecutorDescriptors { executors },
         })
     })
     .collect::<PersistenceResult<Vec<_>>>()

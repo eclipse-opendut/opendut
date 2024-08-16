@@ -6,7 +6,7 @@ use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, Ne
 
 use crate::persistence::database::schema;
 use crate::persistence::error::{PersistenceError, PersistenceOperation, PersistenceResult};
-use crate::persistence::model::query::network_interface_kind::PersistableNetworkInterfaceKind;
+use crate::persistence::model::query::types::network_interface_kind::PersistableNetworkInterfaceKind;
 
 #[derive(diesel::Queryable, diesel::Selectable, diesel::Insertable, diesel::AsChangeset)]
 #[diesel(table_name = schema::network_interface_descriptor)]
@@ -33,7 +33,7 @@ pub struct PersistableNetworkInterfaceKindCan {
     pub data_sample_point_times_1000: i32,
 }
 
-pub fn insert_into_database(interface: &NetworkInterfaceDescriptor, peer_id: PeerId, connection: &mut PgConnection) -> PersistenceResult<()> {
+pub fn insert_into_database(interface: NetworkInterfaceDescriptor, peer_id: PeerId, connection: &mut PgConnection) -> PersistenceResult<()> {
     let network_interface_id = interface.id.uuid;
 
     let (kind, network_interface_kind_can) = match &interface.configuration {
@@ -105,7 +105,7 @@ fn insert_persistable(
     Ok(())
 }
 
-pub fn list_filtered_by_peer_id(
+pub fn list_filtered_by_peer(
     peer_id: PeerId,
     connection: &mut PgConnection
 ) -> PersistenceResult<Vec<NetworkInterfaceDescriptor>> {

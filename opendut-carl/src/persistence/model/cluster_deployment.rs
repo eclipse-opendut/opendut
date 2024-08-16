@@ -1,6 +1,6 @@
-use std::ops::DerefMut;
 use diesel::{Connection, PgConnection};
 use opendut_types::cluster::{ClusterDeployment, ClusterId};
+use std::ops::DerefMut;
 
 use crate::persistence::error::{PersistenceError, PersistenceResult};
 use crate::persistence::model::query::cluster_deployment::PersistableClusterDeployment;

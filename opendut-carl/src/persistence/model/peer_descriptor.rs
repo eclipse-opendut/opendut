@@ -31,7 +31,7 @@ impl Persistable for PeerDescriptor {
 }
 
 pub(super) fn insert_into_database(peer_descriptor: PeerDescriptor, connection: &mut PgConnection) -> PersistenceResult<()> {
-    let PeerDescriptor { id: peer_id, name, location, network, topology, executors: _ } = peer_descriptor; //TODO persist executors
+    let PeerDescriptor { id: peer_id, name, location, network, topology, executors } = peer_descriptor;
     let PeerNetworkDescriptor { interfaces, bridge_name } = network;
 
     query::peer_descriptor::insert(PersistablePeerDescriptor {
@@ -42,7 +42,7 @@ pub(super) fn insert_into_database(peer_descriptor: PeerDescriptor, connection: 
     }, connection)?;
 
     for interface in interfaces {
-        query::network_interface_descriptor::insert_into_database(&interface, peer_id, connection)?;
+        query::network_interface_descriptor::insert_into_database(interface, peer_id, connection)?;
     }
 
     let Topology { devices } = topology;
@@ -51,7 +51,9 @@ pub(super) fn insert_into_database(peer_descriptor: PeerDescriptor, connection: 
         crate::persistence::model::device_descriptor::insert_into_database(device, connection)?;
     }
 
-    // TODO persist executors
+    for executor in executors.executors {
+        query::executor_descriptor::insert_into_database(executor, peer_id, connection)?;
+    }
 
     Ok(())
 }
@@ -73,7 +75,8 @@ fn list_database(connection: &mut PgConnection) -> PersistenceResult<Vec<PeerDes
 
 #[cfg(test)]
 pub(super) mod tests {
-    use opendut_types::peer::executor::ExecutorDescriptors;
+    use opendut_types::peer::executor::container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine};
+    use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorDescriptors, ExecutorId, ExecutorKind, ResultsUrl};
     use opendut_types::peer::{PeerId, PeerLocation, PeerName};
     use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag, Topology};
     use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
@@ -167,7 +170,40 @@ pub(super) mod tests {
                     },
                 ],
             },
-            executors: ExecutorDescriptors { executors: vec![] }, //TODO
+            executors: ExecutorDescriptors {
+                executors: vec![
+                    ExecutorDescriptor {
+                        id: ExecutorId::random(),
+                        kind: ExecutorKind::Container {
+                            engine: Engine::Podman,
+                            name: ContainerName::try_from("container-name")?,
+                            image: ContainerImage::try_from("container-image")?,
+                            volumes: vec![
+                                ContainerVolume::try_from("container-volume")?,
+                            ],
+                            devices: vec![
+                                ContainerDevice::try_from("container-device")?,
+                            ],
+                            envs: vec![
+                                ContainerEnvironmentVariable::new("env-name", "env-value")?,
+                            ],
+                            ports: vec![
+                                ContainerPortSpec::try_from("8080:8080")?,
+                            ],
+                            command: ContainerCommand::try_from("ls")?,
+                            args: vec![
+                                ContainerCommandArgument::try_from("-la")?,
+                            ],
+                        },
+                        results_url: None,
+                    },
+                    ExecutorDescriptor {
+                        id: ExecutorId::random(),
+                        kind: ExecutorKind::Executable,
+                        results_url: Some(ResultsUrl::try_from("https://example.com/")?),
+                    },
+                ]
+            },
         })
     }
 }

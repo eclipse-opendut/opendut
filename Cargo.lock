@@ -1172,6 +1172,7 @@ dependencies = [
  "itoa",
  "pq-src",
  "pq-sys",
+ "serde_json",
  "uuid",
 ]
 
