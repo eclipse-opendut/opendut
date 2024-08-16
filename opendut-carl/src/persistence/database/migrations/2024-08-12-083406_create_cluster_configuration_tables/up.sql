@@ -4,6 +4,7 @@ CREATE TABLE cluster_configuration (
     leader_id uuid NOT NULL REFERENCES peer_descriptor(peer_id) ON DELETE CASCADE,
     deployment_requested bool NOT NULL DEFAULT FALSE
 );
+CREATE INDEX cluster_configuration_leader_id_index ON cluster_configuration(leader_id);
 
 CREATE TABLE cluster_device (
     cluster_id uuid REFERENCES cluster_configuration(cluster_id) ON DELETE CASCADE,
