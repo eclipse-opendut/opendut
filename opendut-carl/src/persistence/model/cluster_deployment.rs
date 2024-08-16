@@ -3,7 +3,6 @@ use opendut_types::cluster::{ClusterDeployment, ClusterId};
 use std::ops::DerefMut;
 
 use crate::persistence::error::{PersistenceError, PersistenceResult};
-use crate::persistence::model::query::cluster_deployment::PersistableClusterDeployment;
 use crate::persistence::model::query::Filter;
 use crate::persistence::Storage;
 
@@ -33,9 +32,7 @@ impl Persistable for ClusterDeployment {
 fn insert_into_database(cluster_deployment: ClusterDeployment, connection: &mut PgConnection) -> PersistenceResult<()> {
     let ClusterDeployment { id } = cluster_deployment;
 
-    query::cluster_deployment::insert(PersistableClusterDeployment {
-        cluster_id: id.0,
-    }, connection)?;
+    query::cluster_deployment::insert(id, connection)?;
 
     Ok(())
 }

@@ -5,12 +5,7 @@ diesel::table! {
         cluster_id -> Uuid,
         name -> Text,
         leader_id -> Uuid,
-    }
-}
-
-diesel::table! {
-    cluster_deployment (cluster_id) {
-        cluster_id -> Uuid,
+        deployment_requested -> Bool,
     }
 }
 
@@ -91,7 +86,6 @@ diesel::table! {
 }
 
 diesel::joinable!(cluster_configuration -> peer_descriptor (leader_id));
-diesel::joinable!(cluster_deployment -> cluster_configuration (cluster_id));
 diesel::joinable!(cluster_device -> cluster_configuration (cluster_id));
 diesel::joinable!(cluster_device -> device_descriptor (device_id));
 diesel::joinable!(device_descriptor -> network_interface_descriptor (network_interface_id));
@@ -103,7 +97,6 @@ diesel::joinable!(network_interface_kind_can -> network_interface_descriptor (ne
 
 diesel::allow_tables_to_appear_in_same_query!(
     cluster_configuration,
-    cluster_deployment,
     cluster_device,
     device_descriptor,
     device_tag,
