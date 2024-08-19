@@ -14,7 +14,7 @@ members = [
     "opendut-util/opendut-util-core",
     "opendut-vpn",
     "opendut-vpn/opendut-vpn-netbird",
-    ".ci/xtask",
+    ".ci/cargo-ci",
     ".ci/docker/theo",
     "tests",
 ]
@@ -32,7 +32,7 @@ opendut-auth = { path = "opendut-util/opendut-auth" }
 opendut-auth-tests = { path = "opendut-util/opendut-auth/opendut-auth-tests" }
 opendut-carl = { path = "opendut-carl" }
 opendut-carl-api = { path = "opendut-carl/opendut-carl-api" }
-opendut-ci = { path = ".ci/xtask" }
+opendut-ci = { path = ".ci/cargo-ci" }
 opendut-edgar = { path = "opendut-edgar" }
 opendut-netbird-client-api = { path = "opendut-edgar/netbird-client-api" }
 opendut-edgar-kernel-modules = { path = "opendut-edgar/opendut-edgar-kernel-modules" }
@@ -158,7 +158,7 @@ netbird-management.version="0.25.0"   # docker container version for netbirdio/m
 netbird-dashboard.version="v1.17.12"  # docker container version for wiretrustee/dashboard: NETBIRD_DASHBOARD_VERSION
 rperf.version = "0.1.8"
 
-[workspace.metadata.ci.xtask] #CLI tool crates used in CI (not libraries)
+[workspace.metadata.ci.cargo-ci] #CLI tool crates used in CI (not libraries)
 cargo-bundle-licenses.version = "1.3.0"
 cargo-deny.version = "0.16.1"
 cargo-sbom.version = "0.9.1"

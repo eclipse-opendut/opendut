@@ -13,7 +13,7 @@ use crate::core::types::Arch;
 pub fn install_crate(crate_to_install: Crate) -> crate::Result {
     let cargo_metadata = metadata::cargo();
 
-    let version = cargo_metadata.workspace_metadata["ci"]["xtask"][crate_to_install.ident()]["version"].as_str()
+    let version = cargo_metadata.workspace_metadata["ci"]["cargo-ci"][crate_to_install.ident()]["version"].as_str()
         .unwrap_or_else(|| panic!("No version information for crate '{}' in root Cargo.toml. Aborting installation.", crate_to_install.ident()));
 
     Command::new("cargo")
