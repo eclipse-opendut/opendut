@@ -3,6 +3,7 @@ syntax = "proto3";
 package opendut.carl.services.cluster_manager;
 
 import "opendut/types/cluster/cluster.proto";
+import "opendut/types/peer/peer.proto";
 
 service ClusterManager {
   rpc CreateClusterConfiguration(CreateClusterConfigurationRequest) returns (CreateClusterConfigurationResponse) {}
@@ -156,6 +157,7 @@ message StoreClusterDeploymentFailure {
   oneof error {
     StoreClusterDeploymentFailureIllegalClusterState illegal_cluster_state = 1;
     StoreClusterDeploymentFailureInternal internal = 2;
+    StoreClusterDeploymentFailureIllegalPeerState illegal_peer_state = 3;
   }
 }
 
@@ -170,6 +172,12 @@ message StoreClusterDeploymentFailureInternal {
   opendut.types.cluster.ClusterId cluster_id = 1;
   optional opendut.types.cluster.ClusterName cluster_name = 2;
   string cause = 3;
+}
+
+message StoreClusterDeploymentFailureIllegalPeerState {
+  opendut.types.cluster.ClusterId cluster_id = 1;
+  opendut.types.cluster.ClusterName cluster_name = 2;
+  repeated opendut.types.peer.PeerId invalid_peers = 3;
 }
 
 //

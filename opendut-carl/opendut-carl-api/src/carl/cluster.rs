@@ -4,6 +4,7 @@ use std::fmt::{Display, Formatter};
 pub use client::*;
 use opendut_types::cluster::{ClusterId, ClusterName};
 use opendut_types::cluster::state::ClusterState;
+use opendut_types::peer::PeerId;
 use opendut_types::ShortName;
 
 #[derive(thiserror::Error, Debug)]
@@ -83,6 +84,11 @@ pub enum StoreClusterDeploymentError {
         actual_state: ClusterState,
         required_states: Vec<ClusterState>,
     },
+    IllegalPeerState {
+        cluster_id: ClusterId,
+        cluster_name: Option<ClusterName>,
+        invalid_peers: Vec<PeerId>,
+    },
     Internal {
         cluster_id: ClusterId,
         cluster_name: Option<ClusterName>,
@@ -103,6 +109,13 @@ impl Display for StoreClusterDeploymentError {
                     None => String::from(""),
                 };
                 writeln!(f, "ClusterDeployment for cluster {cluster_name}<{cluster_id}> could not be changed, due to internal errors:\n  {cause}")
+            }
+            StoreClusterDeploymentError::IllegalPeerState { cluster_id, cluster_name, invalid_peers } => {
+                let cluster_name = match cluster_name {
+                    Some(cluster_name) => format!("'{cluster_name}' "),
+                    None => String::from(""),
+                };
+                writeln!(f, "ClusterDeployment for cluster {cluster_name}<{cluster_id}> failed, due to down or already in use peers: {:?}", invalid_peers)
             }
         }
     }

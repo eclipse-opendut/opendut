@@ -8,6 +8,7 @@ use url::Url;
 use uuid::Uuid;
 
 use opendut_auth::registration::client::RegistrationClientRef;
+use opendut_carl_api::carl::cluster::StoreClusterDeploymentError;
 pub use opendut_carl_api::carl::peer::{
     DeletePeerDescriptorError,
     IllegalDevicesError,
@@ -28,7 +29,7 @@ use opendut_types::topology::{DeviceDescriptor, DeviceId};
 use opendut_types::util::net::{AuthConfig, Certificate, ClientCredentials, NetworkInterfaceName};
 use opendut_types::vpn::VpnPeerConfiguration;
 use opendut_util::ErrorOr;
-
+use crate::actions;
 use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerRef};
 use crate::persistence::error::PersistenceError;
 use crate::resources::manager::ResourcesManagerRef;
@@ -57,7 +58,6 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
         let resources_manager = params.resources_manager;
 
         let is_new_peer = resources_manager.resources_mut(|resources| {
-
             let old_peer_descriptor = resources.get::<PeerDescriptor>(peer_id)?;
             let is_new_peer = old_peer_descriptor.is_none();
 
@@ -117,7 +117,10 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
             };
             resources.insert(peer_id, peer_configuration2)?; //FIXME don't just insert, but rather update existing values via ID with intelligent logic (in a separate action)
 
-            resources.insert(peer_id, PeerState::Down)?;
+
+            let peer_state = resources.get::<PeerState>(peer_id)?
+                .unwrap_or(PeerState::Down); // If peer is new or no peer was found in the database, we consider it as PeerState::Down.
+            resources.insert(peer_id, peer_state)?;
             resources.insert(peer_id, peer_descriptor)?;
             
             Ok(is_new_peer)
@@ -270,7 +273,7 @@ pub async fn get_peer_state(params: GetPeerStateParams) -> Result<PeerState, Get
         let peer_id = params.peer;
         let resources_manager = params.resources_manager;
 
-        debug!("Querying state of peer.");
+        debug!("Querying state of peer with peer_id <{:?}>.", peer_id);
         
         let peer_state = resources_manager.resources_mut(|resources| {
             resources.get::<PeerState>(peer_id)
@@ -279,7 +282,7 @@ pub async fn get_peer_state(params: GetPeerStateParams) -> Result<PeerState, Get
             .ok_or(GetPeerStateError::PeerNotFound { peer_id })?;
         
         
-        info!("Successfully queried state of peer.");
+        info!("Successfully queried state of peer with peer_id <{:?}>.", peer_id);
 
         Ok(peer_state)
     }

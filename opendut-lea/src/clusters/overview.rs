@@ -2,7 +2,9 @@ use leptos::*;
 use leptos::html::Div;
 use leptos_use::on_click_outside;
 use serde::{Deserialize, Serialize};
-
+use tracing::{debug, error};
+use opendut_carl_api::carl::ClientError;
+use opendut_carl_api::carl::cluster::StoreClusterDeploymentError;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
 
 use crate::app::{ExpectGlobals, use_app_globals};
@@ -40,17 +42,32 @@ pub fn ClustersOverview() -> impl IntoView {
             let id = Clone::clone(id);
             async move {
                 match carl.cluster.store_cluster_deployment(ClusterDeployment { id }).await {
-                    Ok(_) => {
-                        toaster.toast(Toast::builder()
-                            .simple("Successfully stored cluster deployment!")
-                            .success()
+                    Ok(cluster_id) => {
+                        debug!("Successfully stored cluster: {}", cluster_id);
+                        toaster.toast(
+                            Toast::builder()
+                                .simple("Successfully stored cluster deployment!")
+                                .success()
                         );
                     }
-                    Err(_) => {
-                        toaster.toast(Toast::builder()
-                            .simple("Failed to store cluster deployment!")
-                            .error()
-                        );
+                    Err(cause) => {
+                        error!("Failed to store cluster deployment <{}>, due to error: {:?}", "id", cause);
+                        match cause {
+                            ClientError::UsageError(StoreClusterDeploymentError::IllegalPeerState { invalid_peers, .. }) => {
+                                toaster.toast(
+                                    Toast::builder()
+                                        .simple(format!("Failed to store cluster deployment! Peers already in use: {}", invalid_peers.iter().map(|peer| peer.to_string()).collect::<Vec<_>>().join(", ")))
+                                        .error()
+                                );
+                            }
+                            _ => {
+                                toaster.toast(
+                                    Toast::builder()
+                                        .simple("Failed to store cluster deployment!")
+                                        .error()
+                                );
+                            }
+                        };
                     }
                 }
                 cluster_deployments.refetch();
