@@ -31,6 +31,7 @@ if [ ! -e "$OPENDUT_PASSWORD_FILE" ]; then
   echo OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_SECRET="$(create_password)"
   echo OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SECRET="$(create_password)"
   echo OPENDUT_USER_OPENDUT="$(create_password 16)"
+  echo CARL_POSTGRES_PASSWORD="$(create_password)"
 
 fi
 

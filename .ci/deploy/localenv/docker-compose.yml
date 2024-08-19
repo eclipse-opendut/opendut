@@ -12,7 +12,7 @@ services:
     restart: unless-stopped
     healthcheck:
       <<: *common-healthcheck-params
-      test: [ "CMD", "pg_isready", "-q", "-d", "postgres", "-U", "root" ]
+      test: [ "CMD", "pg_isready", "--quiet", "--dbname=postgres", "--username=postgres" ]
     volumes:
       - keycloak_postgres_data:/var/lib/postgresql/data
     environment:
@@ -264,11 +264,29 @@ services:
       <<: *common-healthcheck-params
       test: ["CMD-SHELL", "turnutils_uclient -T -p $$TURN_PORT -u $$TURN_USER -w $$TURN_PASSWORD localhost"]
 
+  carl_postgres:
+    image: "postgres:14.4"
+    restart: unless-stopped
+    healthcheck:
+      <<: *common-healthcheck-params
+      test: [ "CMD", "pg_isready", "--quiet", "--dbname=carl", "--username=postgres" ]
+    volumes:
+      - carl_postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=$CARL_POSTGRES_PASSWORD
+      - POSTGRES_DB=carl
+      - POSTGRES_HOST=postgres
+    networks:
+      - opendut_local
+
   carl:
     image: "ghcr.io/eclipse-opendut/opendut-carl:0.1.0"
     command: ["/opt/opendut-carl/opendut-carl"]
     restart: unless-stopped
     depends_on:
+      carl_postgres:
+        condition: service_healthy
       traefik:
         condition: service_started
       keycloak:
@@ -309,6 +327,9 @@ services:
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_REMOTE_URL=https://auth.opendut.local/realms/opendut/
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_ADMIN_URL=https://auth.opendut.local/admin/realms/opendut/
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_SCOPES=
+      # Persistence
+      - OPENDUT_CARL_PERSISTENCE_ENABLED=true
+      - OPENDUT_CARL_PERSISTENCE_DATABASE_URL=postgres://postgres:$CARL_POSTGRES_PASSWORD@carl_postgres/carl
 
       - KEYCLOAK_URL=https://auth.opendut.local/
       - NETBIRD_MANAGEMENT_URL=https://netbird-api.opendut.local
@@ -385,6 +406,7 @@ volumes:
   netbird-mgmt-data:
   netbird-mgmt-config:
   netbird-signal:
+  carl_postgres_data:
   carl-config:
   opendut_nginx-webdav:
 

@@ -26,7 +26,7 @@ pub async fn connect(url: &Url) -> Result<PgConnection, ConnectError> {
                 }
             })
     }).await?;
-    info!("Connection to database established!");
+    info!("Connection to database at {url} established!");
 
     run_pending_migrations(&mut connection)
         .map_err(|cause| ConnectError::Migration { source: cause })?;
