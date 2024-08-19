@@ -16,7 +16,7 @@ if [ ! -e "$OPENDUT_PASSWORD_FILE" ]; then
   "$PKI_ROOT_DIR"/recreate.sh noprompt
 
   # Keycloak
-  echo POSTGRES_PASSWORD="$(create_password)"
+  echo KEYCLOAK_POSTGRES_PASSWORD="$(create_password)"
   echo KEYCLOAK_ADMIN_PASSWORD="$(create_password)"
 
   # Netbird

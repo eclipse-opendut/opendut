@@ -7,8 +7,7 @@ x-common-healthcheck-params: &common-healthcheck-params
   start_interval: 5s
 
 services:
-  # database for keycloak
-  postgres:
+  keycloak_postgres:
     image: "postgres:14.4"
     restart: unless-stopped
     healthcheck:
@@ -18,7 +17,7 @@ services:
       - keycloak_postgres_data:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD
+      - POSTGRES_PASSWORD=$KEYCLOAK_POSTGRES_PASSWORD
       - POSTGRES_DB=keycloak
       - POSTGRES_HOST=postgres
     networks:
@@ -33,7 +32,7 @@ services:
     command: ['start', '--optimized']
     restart: unless-stopped
     depends_on:
-      - postgres
+      - keycloak_postgres
       - traefik
     # this healthcheck requires the init container for provisioning
     healthcheck:
@@ -41,8 +40,8 @@ services:
       test: [ "CMD", "curl", "-sf", "http://localhost:8080/realms/provisioning-done", "--output", "/dev/null" ]
     environment:
     - JAVA_OPTS_APPEND=-Dkeycloak.profile.feature.upload_scripts=enabled
-    - KC_DB_PASSWORD=$POSTGRES_PASSWORD
-    - KC_DB_URL=jdbc:postgresql://postgres/keycloak
+    - KC_DB_PASSWORD=$KEYCLOAK_POSTGRES_PASSWORD
+    - KC_DB_URL=jdbc:postgresql://keycloak_postgres/keycloak
     - KC_DB_USERNAME=postgres
     - KC_HEALTH_ENABLED=true
     - KC_HTTP_ENABLED=true

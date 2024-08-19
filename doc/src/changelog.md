@@ -6,10 +6,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-* tbd.
-
-## 0.2.0
-
 <details>
 <summary>Breaking Changes</summary>
 
@@ -20,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_ADMIN_URL=https://keycloak/admin/realms/opendut/
 ```
 The value has to be your Keycloak's Admin URL.
+
+* The environment variable for the Keycloak database's password was renamed from `POSTGRES_PASSWORD` to `KEYCLOAK_POSTGRES_PASSWORD`.
 </details>
 
 ### Added
