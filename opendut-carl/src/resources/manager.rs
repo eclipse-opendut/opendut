@@ -18,8 +18,8 @@ struct State {
 
 impl ResourcesManager {
 
-    pub fn create(storage_options: PersistenceOptions) -> Result<ResourcesManagerRef, storage::ConnectionError> {
-        let resources = Resources::connect(storage_options)?;
+    pub async fn create(storage_options: PersistenceOptions) -> Result<ResourcesManagerRef, storage::ConnectionError> {
+        let resources = Resources::connect(storage_options).await?;
 
         Ok(Arc::new(Self {
             state: RwLock::new(State { resources })
@@ -60,8 +60,10 @@ impl ResourcesManager {
 #[cfg(test)]
 impl ResourcesManager {
     pub fn new_in_memory() -> ResourcesManagerRef {
-        let resources = Resources::connect(PersistenceOptions::Disabled)
-            .expect("Creating in-memory storage for tests should not fail");
+        let resources = futures::executor::block_on(
+            Resources::connect(PersistenceOptions::Disabled)
+        )
+        .expect("Creating in-memory storage for tests should not fail");
 
         Arc::new(Self {
             state: RwLock::new(State { resources })

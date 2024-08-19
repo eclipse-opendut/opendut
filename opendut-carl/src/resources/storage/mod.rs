@@ -15,10 +15,10 @@ pub enum ResourcesStorage {
     Volatile(VolatileResourcesStorage),
 }
 impl ResourcesStorage {
-    pub fn connect(options: PersistenceOptions) -> Result<Self, ConnectionError> {
+    pub async fn connect(options: PersistenceOptions) -> Result<Self, ConnectionError> {
         let storage = match options {
             PersistenceOptions::Enabled { database_url: url } => {
-                let storage = PersistentResourcesStorage::connect(&url)
+                let storage = PersistentResourcesStorage::connect(&url).await
                     .map_err(|cause| ConnectionError::Database { url, source: cause })?;
                 ResourcesStorage::Persistent(storage)
             }

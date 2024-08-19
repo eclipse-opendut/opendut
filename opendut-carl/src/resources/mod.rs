@@ -14,8 +14,8 @@ pub struct Resources {
 }
 
 impl Resources {
-    pub fn connect(storage_options: PersistenceOptions) -> Result<Self, storage::ConnectionError> {
-        let storage = ResourcesStorage::connect(storage_options)?;
+    pub async fn connect(storage_options: PersistenceOptions) -> Result<Self, storage::ConnectionError> {
+        let storage = ResourcesStorage::connect(storage_options).await?;
         Ok(Self { storage })
     }
 

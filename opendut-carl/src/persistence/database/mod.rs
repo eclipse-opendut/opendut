@@ -1,33 +1,31 @@
 use diesel::{Connection as _, ConnectionError, PgConnection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
-use std::time::Duration;
+use backoff::ExponentialBackoff;
 use tracing::{debug, info, warn};
 use url::Url;
 
 pub mod schema;
 
-pub fn connect(url: &Url) -> Result<PgConnection, ConnectError> {
-    let connection_retry_interval = Duration::from_secs(5); //TODO move duration into configuration
+pub async fn connect(url: &Url) -> Result<PgConnection, ConnectError> {
 
-    let mut connection = loop {
-        match PgConnection::establish(url.as_str()) {
-            Ok(connection) => break connection,
-            Err(cause) => match &cause {
+    let mut connection = backoff::future::retry(ExponentialBackoff::default(), || async {
+        PgConnection::establish(url.as_str())
+            .map_err(|cause| match &cause {
                 ConnectionError::BadConnection(_) => {
-                    warn!("Connecting to database at {url} failed. Retrying in {interval} ms.", interval=connection_retry_interval.as_millis());
-                    std::thread::sleep(connection_retry_interval);
-                    continue;
+                    warn!("Connecting to database at {url} failed. Retrying.");
+                    backoff::Error::transient(ConnectError::Diesel(cause))
                 }
                 ConnectionError::CouldntSetupConfiguration(_)
                 | ConnectionError::InvalidConnectionUrl(_)
-                | ConnectionError::InvalidCString(_) => return Err(ConnectError::Diesel(cause)),
+                | ConnectionError::InvalidCString(_) => {
+                    backoff::Error::permanent(ConnectError::Diesel(cause))
+                }
                 other => {
                     warn!("Unhandled Diesel ConnectionError variant: {other:?}");
-                    return Err(ConnectError::Diesel(cause));
+                    backoff::Error::permanent(ConnectError::Diesel(cause))
                 }
-            }
-        }
-    };
+            })
+    }).await?;
     info!("Connection to database established!");
 
     run_pending_migrations(&mut connection)
@@ -90,7 +88,7 @@ pub mod testing {
         let port = container.get_host_port_ipv4(5432).await?;
         let url = Url::parse(&format!("postgres://postgres:postgres@{host}:{port}/postgres"))?;
 
-        let mut connection = database::connect(&url)?;
+        let mut connection = database::connect(&url).await?;
         connection.begin_test_transaction()?;
         Ok(Postgres { container, connection })
     }

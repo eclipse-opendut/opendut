@@ -12,9 +12,9 @@ pub struct PersistentResourcesStorage {
     storage: Storage,
 }
 impl PersistentResourcesStorage {
-    pub fn connect(url: &Url) -> Result<Self, ConnectError> {
+    pub async fn connect(url: &Url) -> Result<Self, ConnectError> {
         let db = Mutex::new(
-            crate::persistence::database::connect(url)?
+            crate::persistence::database::connect(url).await?
         );
         let memory = VolatileResourcesStorage::default();
         let storage = Storage { db, memory };

@@ -108,7 +108,7 @@ pub async fn create(settings: LoadedConfig) -> Result<()> {
         .context("Error while parsing VPN configuration.")?;
 
     let resources_storage_options = PersistenceOptions::load(&settings.config)?;
-    let resources_manager = ResourcesManager::create(resources_storage_options)
+    let resources_manager = ResourcesManager::create(resources_storage_options).await
         .context("Creating ResourcesManager failed")?;
     metrics::initialize_metrics_collection(Arc::clone(&resources_manager));
 
