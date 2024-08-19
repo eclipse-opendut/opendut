@@ -66,6 +66,7 @@ impl PeerMessagingBroker {
         Ok(())
     }
 
+    /// deprecated since version 0.2.0
     pub async fn list_peers(&self) -> Vec<PeerId> {
         let peers = self.peers.read().await;
 

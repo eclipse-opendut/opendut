@@ -17,7 +17,6 @@ database Persistence
 
 UI --> ClusterManager
 UI --> PeerManager
-UI ...> PeerMessagingBroker : list_peers()
 
 ClusterManager --> PeerMessagingBroker
 ClusterManager ---> ResourcesManager

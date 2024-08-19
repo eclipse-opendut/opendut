@@ -8,13 +8,18 @@ import "opendut/types/peer/configuration.proto";
 import "opendut/types/vpn/vpn.proto";
 
 service PeerMessagingBroker {
-  rpc ListPeers(ListPeersRequest) returns (ListPeersResponse);
+  rpc ListPeers(ListPeersRequest) returns (ListPeersResponse) {
+    option deprecated = true; //since 0.2.0
+  };
   rpc Open(stream Upstream) returns (stream Downstream);
 }
 
-message ListPeersRequest {}
+message ListPeersRequest {
+  option deprecated = true;
+}
 
 message ListPeersResponse {
+  option deprecated = true;
   repeated opendut.types.peer.PeerId peers = 1;
 }
 
