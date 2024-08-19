@@ -199,6 +199,13 @@ pub mod cluster_manager {
                         cause
                     })
                 }
+                StoreClusterDeploymentError::IllegalPeerState { cluster_id, cluster_name, invalid_peers } => {
+                    store_cluster_deployment_failure::Error::IllegalPeerState(StoreClusterDeploymentFailureIllegalPeerState {
+                        cluster_id: Some(cluster_id.into()),
+                        cluster_name: cluster_name.map(|name| name.into()),
+                        invalid_peers: invalid_peers.into_iter().map(Into::into).collect(),
+                    })
+                }
             };
             StoreClusterDeploymentFailure {
                 error: Some(proto_error)
@@ -217,6 +224,9 @@ pub mod cluster_manager {
                     error.try_into()?
                 }
                 store_cluster_deployment_failure::Error::Internal(error) => {
+                    error.try_into()?
+                }
+                store_cluster_deployment_failure::Error::IllegalPeerState(error) => {
                     error.try_into()?
                 }
             };
@@ -255,6 +265,23 @@ pub mod cluster_manager {
                 .map(TryInto::try_into)
                 .transpose()?;
             Ok(StoreClusterDeploymentError::Internal { cluster_id, cluster_name, cause: failure.cause })
+        }
+    }
+
+    impl TryFrom<StoreClusterDeploymentFailureIllegalPeerState> for StoreClusterDeploymentError {
+        type Error = ConversionError;
+        fn try_from(failure: StoreClusterDeploymentFailureIllegalPeerState) -> Result<Self, Self::Error> {
+            type ErrorBuilder = ConversionErrorBuilder<StoreClusterDeploymentFailureInternal, StoreClusterDeploymentError>;
+            let cluster_id: ClusterId = failure.cluster_id
+                .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
+                .try_into()?;
+            let cluster_name: Option<ClusterName> = failure.cluster_name
+                .map(TryInto::try_into)
+                .transpose()?;
+            let invalid_peers = failure.invalid_peers.into_iter()
+                .map(proto::peer::PeerId::try_into)
+                .collect::<Result<_, _>>()?;
+            Ok(StoreClusterDeploymentError::IllegalPeerState { cluster_id, cluster_name, invalid_peers })
         }
     }
 

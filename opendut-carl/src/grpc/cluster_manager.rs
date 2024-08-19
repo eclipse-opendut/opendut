@@ -181,7 +181,7 @@ impl ClusterManagerService for ClusterManagerFacade {
         let request = request.into_inner();
         let cluster_id: ClusterId = extract!(request.cluster_id)?;
 
-        let result = self.cluster_manager.lock().await.delete_cluster_deployment(cluster_id).await; // TODO: Replace with action
+        let result = self.cluster_manager.lock().await.delete_cluster_deployment(cluster_id).await;
 
         match result {
             Err(error) => {
