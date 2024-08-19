@@ -34,6 +34,7 @@ impl PeerMessagingBrokerFacade {
 
 #[tonic::async_trait]
 impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_broker_server::PeerMessagingBroker for PeerMessagingBrokerFacade {
+    /// deprecated since version 0.2.0
     #[tracing::instrument(skip(self, request), level="trace")]
     async fn list_peers(&self, request: Request<ListPeersRequest>) -> Result<Response<ListPeersResponse>, Status> {
 
