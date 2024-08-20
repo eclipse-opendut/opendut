@@ -50,7 +50,7 @@ tar xf artifacts/opendut-cleo-x86_64-unknown-linux-gnu-*
 Setting the `SSL_CERT_FILE` environment variable is necessary to connect to the local environment with curl.
 ```
 export OPENDUT_REPO_ROOT=$(git rev-parse --show-toplevel)
-export SSL_CERT_FILE=${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/data/pki/store/insecure-development-ca.pem
+export SSL_CERT_FILE=${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/data/secrets/pki/insecure-development-ca.pem
 curl https://carl.opendut.local
 
 ```

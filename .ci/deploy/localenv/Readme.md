@@ -32,7 +32,7 @@ vagrant destroy
 
 * Remove secrets
 ```shell
-rm .ci/deploy/localenv/secrets/.env
+rm -r .ci/deploy/localenv/data/secrets/
 ```
 
 ### Using docker compose
@@ -55,7 +55,6 @@ docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/docker-compose
 ### Modify /etc/hosts
 
 Add the following lines to the `/etc/hosts` file on the host system to access the services from the intranet.
-Substitute the IP address with the of the host system when the ports are exposed.
 ```shell
 192.168.56.9 opendut.local
 192.168.56.9 auth.opendut.local
@@ -64,5 +63,4 @@ Substitute the IP address with the of the host system when the ports are exposed
 192.168.56.9 signal.opendut.local
 192.168.56.9 carl.opendut.local
 192.168.56.9 nginx-webdav.opendut.local
-
 ```
