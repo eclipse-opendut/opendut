@@ -9,6 +9,7 @@ use crate::components::{BasePageContainer, IconButton, ButtonColor, ButtonState,
 use crate::components::health;
 use crate::components::health::Health;
 use crate::peers::components::CreatePeerButton;
+use crate::util;
 
 #[component(transparent)]
 pub fn PeersOverview() -> impl IntoView {
@@ -183,7 +184,7 @@ fn Row(
                 }.into_view()
             }).collect();
 
-        join_with_comma_spans(cluster_view_list)
+        util::view_helper::join_with_comma_spans(cluster_view_list)
     });
 
     view! {
@@ -231,22 +232,4 @@ fn Row(
             </td>
         </tr>
     }
-}
-
-fn join_with_comma_spans(elements: Vec<View>) -> Vec<View> {
-    let elements_length = elements.len();
-
-    let mut elements_with_separator = Vec::new();
-
-    for (index, element) in elements.into_iter().enumerate() {
-        elements_with_separator.push(element);
-
-        if index < (elements_length - 1) {
-            elements_with_separator.push(
-                view! { <span>", "</span> }
-                    .into_view()
-            );
-        }
-    }
-    elements_with_separator
 }

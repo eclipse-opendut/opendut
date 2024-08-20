@@ -1,9 +1,8 @@
+use std::collections::{HashMap};
 use leptos::*;
 use leptos_router::use_params_map;
-
 use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorKind};
 use opendut_types::peer::PeerId;
-
 use crate::app::{ExpectGlobals, use_app_globals};
 use crate::components::{BasePageContainer, Breadcrumb, Initialized, UserInputError, UserInputValue};
 use crate::components::use_active_tab;
@@ -11,6 +10,7 @@ use crate::peers::configurator::components::Controls;
 use crate::peers::configurator::tabs::{DevicesTab, ExecutorTab, GeneralTab, NetworkTab, SetupTab, TabIdentifier};
 use crate::peers::configurator::types::{UserDeviceConfiguration, UserPeerConfiguration, UserNetworkInterface, UserPeerExecutor, UserContainerEnv, UserPeerNetwork, UserPeerExecutorKind};
 use crate::routing::{navigate_to, WellKnownRoutes};
+use crate::util;
 
 mod components;
 mod tabs;
@@ -77,7 +77,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                                 for cluster in &clusters {
                                     for deviceId in &cluster.devices {
                                         if device.id == *deviceId {
-                                            configured_clusters.push(cluster.id);
+                                            configured_clusters.push(cluster.clone());
                                         }
                                     }
                                 }
@@ -220,6 +220,56 @@ pub fn PeerConfigurator() -> impl IntoView {
         let peer_id_string = create_read_slice(peer_configuration, |config| config.id.to_string());
         let setup_disabled = create_read_slice(peer_configuration, |config| config.is_new);
 
+        let cluster_columns = move || {
+            let devices_in_peer = peer_configuration.get().devices.into_iter().map(|device| device.get().id).collect::<Vec<_>>();
+            let cluster_configuration = peer_configuration
+                .get().devices
+                .into_iter()
+                .flat_map(|device| device.get().contained_in_clusters)
+                .collect::<Vec<_>>();
+            
+            let cluster_configuration_without_duplicates = cluster_configuration
+                .into_iter()
+                .map(|configuration| (configuration.id, configuration))
+                .collect::<HashMap<_,_>>();
+
+            let devices_in_cluster = {
+                let mut devices_in_cluster = cluster_configuration_without_duplicates
+                    .into_iter()
+                    .map(|(cluster_id,cluster_config)| (cluster_id, cluster_config.name, cluster_config.devices))
+                    .collect::<Vec<(_,_,_)>>();
+
+                devices_in_cluster.sort_by(|(_, name_a, _), (_, name_b, _)|
+                    name_a.to_string().cmp(&name_b.to_string())
+                );
+                devices_in_cluster
+            };
+
+            let cluster_view_list: Vec<View> = devices_in_cluster.into_iter()
+                .filter(|(_, _, devices)| devices_in_peer.iter().any(|device| devices.contains(device)))
+                .map(|(cluster_id, cluster_name, _)| {
+                    let cluster_name = move || { cluster_name.to_string() };
+                    let configurator_href = move || { format!("/clusters/{}/configure/general", cluster_id) };
+                    view! {
+                        <a href={ configurator_href }>{ cluster_name }</a>
+                    }.into_view()
+                }).collect();
+
+            let amount_clusters = cluster_view_list.len();
+
+            if amount_clusters > 0 {
+                let comma_separated_cluster_views = util::view_helper::join_with_comma_spans(cluster_view_list.clone());
+                view! {
+                    <div class="mb-3">"Configured in " {amount_clusters} " clusters: " {comma_separated_cluster_views}</div>
+                }
+            } else {
+                view! {
+                    <div class="mb-3">"Configured in " {amount_clusters} " clusters"</div>
+                }
+            }
+        };
+
+
         let setup_tab_classes = move || {
             let mut classes = Vec::<&'static str>::new();
             if TabIdentifier::Setup == active_tab.get() {
@@ -250,6 +300,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                 breadcrumbs=breadcrumbs
                 controls=view! { <Controls configuration=peer_configuration is_valid_peer_configuration=is_valid_peer_configuration.into() /> }
             >
+            <div> {cluster_columns} </div>
                 <Show
                     when=move || !peer_configuration_resource.loading().get() // TODO: Check for errors
                     fallback=move || view! { <p><i class="fa-solid fa-circle-notch fa-spin"></i></p> } // TODO: Display errors

@@ -70,7 +70,7 @@ fn DevicesTable(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl Int
                                     description: UserInputValue::Right(String::from("")),
                                     interface: None,
                                     is_collapsed: false,
-                                    contained_in_clusters: vec![]
+                                    contained_in_clusters: vec![],                     
                                 }
                             );
                             peer_configuration.devices.push(user_device_configuration);
