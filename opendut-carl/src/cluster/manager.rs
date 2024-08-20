@@ -8,8 +8,8 @@ use tracing::{debug, error, warn};
 
 use opendut_carl_api::carl::cluster::{DeleteClusterDeploymentError, GetClusterConfigurationError, GetClusterDeploymentError, ListClusterConfigurationsError, ListClusterDeploymentsError, StoreClusterDeploymentError};
 use opendut_types::cluster::{ClusterAssignment, ClusterConfiguration, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
-use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::peer::state::{PeerState, PeerUpState};
+use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
 use opendut_types::util::net::NetworkInterfaceDescriptor;
 use opendut_types::util::Port;
@@ -46,7 +46,6 @@ pub enum DeployClusterError {
     }
 }
 
-#[derive(Clone)]
 pub struct ClusterManager {
     resources_manager: ResourcesManagerRef,
     peer_messaging_broker: PeerMessagingBrokerRef,
@@ -206,32 +205,29 @@ impl ClusterManager {
 
     #[tracing::instrument(skip(self), level="trace")]
     pub async fn store_cluster_deployment(&mut self, deployment: ClusterDeployment) -> Result<ClusterId, StoreClusterDeploymentError> {
-        let resources_manager = &self.resources_manager().await;
-        
-        let cluster_config = resources_manager.get::<ClusterConfiguration>(deployment.id).await
-            .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id: deployment.id, cluster_name: None, cause: cause.to_string() })?;
-        
-        let used_devices = cluster_config.ok_or(
-            StoreClusterDeploymentError::Internal { cluster_id: deployment.id, cluster_name: None, cause: String::from("Cluster not found") }
-        )?.devices;
+        let cluster_id = deployment.id;
 
-        let peer_descriptors = actions::list_peer_descriptors( ListPeerDescriptorsParams { resources_manager: resources_manager.clone() }).await
-            .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id: deployment.id, cluster_name: None, cause: cause.to_string() })?;
+        let cluster_config = self.resources_manager.get::<ClusterConfiguration>(cluster_id).await
+            .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?
+            .ok_or(StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: String::from("Cluster not found") })?;
+
+        let peer_descriptors = actions::list_peer_descriptors(ListPeerDescriptorsParams { resources_manager: self.resources_manager.clone() }).await
+            .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?;
         
-        let used_peer_ids = peer_descriptors.into_iter()
-            .filter(|peer| peer.topology.devices.iter().any(|device| used_devices.contains(&device.id)))
+        let cluster_peer_ids = peer_descriptors.into_iter()
+            .filter(|peer| peer.topology.devices.iter().any(|device| cluster_config.devices.contains(&device.id)))
             .map(|peer| peer.id)
             .collect::<Vec<PeerId>>();
 
         let mut blocked_or_down_peers_by_id: Vec<PeerId> = Vec::new();
-        for peer_id in used_peer_ids {
+        for peer_id in cluster_peer_ids {
             let get_peer_state_params = GetPeerStateParams {
                 peer: peer_id,
-                resources_manager: resources_manager.clone(),
+                resources_manager: self.resources_manager.clone(),
             };
             let peer_state = actions::get_peer_state(get_peer_state_params)
                 .await
-                .map_err(|get_peer_state_error| StoreClusterDeploymentError::Internal { cluster_id: deployment.id, cluster_name: None, cause: get_peer_state_error.to_string() })?;
+                .map_err(|get_peer_state_error| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: get_peer_state_error.to_string() })?;
 
             match peer_state {
                 PeerState::Down => { blocked_or_down_peers_by_id.push(peer_id) }
@@ -249,16 +245,22 @@ impl ClusterManager {
         }
 
         let store_cluster_deployment_params = StoreClusterConfigurationParams {
-            cluster_manager: Arc::new(Mutex::new(self.clone())),
+            resources_manager: Arc::clone(&self.resources_manager),
             deployment: Clone::clone(&deployment),
         };
-        actions::store_cluster_deployment(store_cluster_deployment_params).await
+        actions::store_cluster_deployment(store_cluster_deployment_params).await?;
+
+        if let Err(error) = self.deploy(cluster_id).await {
+            error!("Failed to deploy cluster <{cluster_id}>, due to:\n  {error}");
+        }
+        Ok(cluster_id)
     }
 
     #[tracing::instrument(skip(self), level="trace")]
     pub async fn delete_cluster_deployment(&self, cluster_id: ClusterId) -> Result<ClusterDeployment, DeleteClusterDeploymentError> {
         let delete_cluster_deployment_params = DeleteClusterDeploymentParams {
-            cluster_manager: Arc::new(Mutex::new(self.clone())),
+            resources_manager: Arc::clone(&self.resources_manager),
+            vpn: Clone::clone(&self.vpn),
             cluster_id
         };
         actions::delete_cluster_deployment(delete_cluster_deployment_params).await
@@ -277,21 +279,6 @@ impl ClusterManager {
             resources.list::<ClusterDeployment>()
         }).await
         .map_err(|cause| ListClusterDeploymentsError { message: cause.to_string() })
-    }
-
-    #[tracing::instrument(skip(self), level="trace")]
-    pub async fn resources_manager(&self) -> ResourcesManagerRef {
-        self.resources_manager.clone()
-    }
-
-    #[tracing::instrument(skip(self), level="trace")]
-    pub async fn peer_messaging_broker(&self) -> PeerMessagingBrokerRef {
-        self.peer_messaging_broker.clone()
-    }
-
-    #[tracing::instrument(skip(self), level="trace")]
-    pub async fn vpn(&self) -> Vpn {
-        self.vpn.clone()
     }
 }
 
@@ -370,11 +357,11 @@ mod test {
     use rstest::{fixture, rstest};
     use tokio::sync::mpsc;
 
-    use opendut_carl_api::proto::services::peer_messaging_broker::Downstream;
     use opendut_carl_api::proto::services::peer_messaging_broker::downstream;
+    use opendut_carl_api::proto::services::peer_messaging_broker::Downstream;
     use opendut_types::cluster::ClusterName;
+    use opendut_types::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorDescriptor, ExecutorDescriptors, ExecutorId, ExecutorKind};
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
-    use opendut_types::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorKind, ExecutorDescriptors, ExecutorDescriptor, ExecutorId};
     use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceId, NetworkInterfaceName};
 
@@ -386,8 +373,8 @@ mod test {
     use super::*;
 
     mod deploy_cluster {
-        use opendut_carl_api::proto::services::peer_messaging_broker::ApplyPeerConfiguration;
         use crate::actions::StorePeerDescriptorOptions;
+        use opendut_carl_api::proto::services::peer_messaging_broker::ApplyPeerConfiguration;
         use opendut_types::peer::configuration::{PeerConfiguration, PeerConfiguration2};
 
         use super::*;

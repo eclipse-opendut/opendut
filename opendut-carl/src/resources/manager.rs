@@ -44,6 +44,12 @@ impl ResourcesManager {
         state.resources.get(id)
     }
 
+    pub async fn list<R>(&self) -> PersistenceResult<Vec<R>>
+    where R: Resource + Persistable + Clone {
+        let state = self.state.read().await;
+        state.resources.list()
+    }
+
     pub async fn resources<F, T>(&self, f: F) -> T
     where F: FnOnce(&Resources) -> T {
         let state = self.state.read().await;
