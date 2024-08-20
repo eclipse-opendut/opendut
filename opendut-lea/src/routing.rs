@@ -66,7 +66,7 @@ mod routes {
     use crate::routing::NotFound;
     use crate::user::UserOverview;
     use crate::about::AboutOverview;
-    use crate::cleo::CleoSetup;
+    use crate::downloads::Downloads;
 
     #[component]
     pub fn AppRoutes() -> impl IntoView {
@@ -79,7 +79,7 @@ mod routes {
                         <Route path="/clusters/:id/configure/:tab" view=|| view! { <ClusterConfigurator /> } />
                         <Route path="/peers" view=|| view! { <PeersOverview /> } />
                         <Route path="/peers/:id/configure/:tab" view=|| view! { <PeerConfigurator /> } />
-                        <Route path="/cleo" view=|| view! { <CleoSetup /> } />
+                        <Route path="/downloads" view=|| view! { <Downloads /> } />
                         <Route path="/user" view=|| view! { <UserOverview /> } />
                         <Route path="/licenses" view=|| view! { <LicensesOverview /> } />
                         <Route path="/about" view=|| view! { <AboutOverview /> } />

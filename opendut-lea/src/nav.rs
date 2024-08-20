@@ -70,9 +70,9 @@ pub fn Navbar() -> impl IntoView {
                                         <i class="fa-solid fa-microchip fa-lg pr-1" />
                                         <span class="ml-2 is-size-6">"Peers"</span>
                                     </a>
-                                    <a class="dut-nav-flyout-item" href="/cleo">
-                                        <i class="fa-solid fa-terminal fa-lg pr-1" />
-                                        <span class="ml-2 is-size-6">"CLEO"</span>
+                                    <a class="dut-nav-flyout-item" href="/downloads">
+                                        <i class="fa-solid fa-download fa-lg pr-1" />
+                                        <span class="ml-2 is-size-6">"Downloads"</span>
                                     </a>
                                 </div>
                                 <div>
