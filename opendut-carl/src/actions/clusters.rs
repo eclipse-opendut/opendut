@@ -1,18 +1,19 @@
-use std::sync::Arc;
-use tracing::{debug, error, info};
-pub use opendut_carl_api::carl::cluster::{
-    CreateClusterConfigurationError,
-    DeleteClusterConfigurationError,
-    StoreClusterDeploymentError,
-    DeleteClusterDeploymentError,
-};
-use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId, ClusterName};
-use opendut_types::peer::PeerId;
 use crate::actions;
 use crate::actions::{GetPeerStateParams, ListPeerDescriptorsParams, UnassignClusterParams};
 use crate::cluster::manager::{ClusterManager, ClusterManagerRef};
 use crate::resources::manager::{ResourcesManager, ResourcesManagerRef};
 use crate::vpn::Vpn;
+pub use opendut_carl_api::carl::cluster::{
+    CreateClusterConfigurationError,
+    DeleteClusterConfigurationError,
+    DeleteClusterDeploymentError,
+    StoreClusterDeploymentError,
+};
+use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId, ClusterName};
+use opendut_types::peer::{PeerDescriptor, PeerId};
+use std::ops::Not;
+use std::sync::Arc;
+use tracing::{debug, error, info};
 
 pub struct CreateClusterConfigurationParams {
     pub resources_manager: ResourcesManagerRef,
@@ -77,7 +78,7 @@ pub async fn delete_cluster_configuration(params: DeleteClusterConfigurationPara
 }
 
 pub struct StoreClusterConfigurationParams {
-    pub cluster_manager: ClusterManagerRef,
+    pub resources_manager: ResourcesManagerRef,
     pub deployment: ClusterDeployment,
 }
 
@@ -85,9 +86,7 @@ pub struct StoreClusterConfigurationParams {
 pub async fn store_cluster_deployment(params: StoreClusterConfigurationParams) -> Result<ClusterId, StoreClusterDeploymentError> {
 
     async fn inner(params: StoreClusterConfigurationParams) -> Result<ClusterId, StoreClusterDeploymentError> {
-        let deployment = params.deployment;
-        let mut cluster_manager = params.cluster_manager.lock().await;
-        let resources_manager = cluster_manager.resources_manager().await;
+        let StoreClusterConfigurationParams { resources_manager, deployment } = params;
         let cluster_id = deployment.id;
 
         resources_manager.resources_mut(|resources| {
@@ -98,9 +97,7 @@ pub async fn store_cluster_deployment(params: StoreClusterConfigurationParams) -
             resources.insert(cluster_id, deployment)
                 .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: Some(cluster_name.clone()), cause: cause.to_string() })
         }).await?;
-        if let Err(error) = cluster_manager.deploy(cluster_id).await {
-            error!("Failed to deploy cluster <{cluster_id}>, due to:\n  {error}");
-        }
+
         Ok(cluster_id)
     }
 
@@ -109,7 +106,8 @@ pub async fn store_cluster_deployment(params: StoreClusterConfigurationParams) -
 }
 
 pub struct DeleteClusterDeploymentParams {
-    pub cluster_manager: ClusterManagerRef,
+    pub resources_manager: ResourcesManagerRef,
+    pub vpn: Vpn,
     pub cluster_id: ClusterId,
 }
 
@@ -117,10 +115,9 @@ pub struct DeleteClusterDeploymentParams {
 pub async fn delete_cluster_deployment(params: DeleteClusterDeploymentParams) -> Result<ClusterDeployment, DeleteClusterDeploymentError> {
 
     async fn inner(params: DeleteClusterDeploymentParams) -> Result<ClusterDeployment, DeleteClusterDeploymentError> {
-        let cluster_manager = params.cluster_manager.lock().await;
-        let cluster_id = params.cluster_id;
+        let DeleteClusterDeploymentParams { resources_manager, vpn, cluster_id } = params;
 
-        let (deployment, configuration) = cluster_manager.resources_manager().await
+        let (deployment, cluster) = resources_manager
             .resources_mut(|resources| {
                 resources.remove::<ClusterDeployment>(cluster_id)
                     .map_err(|cause| DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?
@@ -132,34 +129,38 @@ pub async fn delete_cluster_deployment(params: DeleteClusterDeploymentParams) ->
             }).await?
             .ok_or(DeleteClusterDeploymentError::ClusterDeploymentNotFound { cluster_id })?;
 
-        if let Some(configuration) = configuration {
-            if let Vpn::Enabled { vpn_client } = cluster_manager.vpn().await {
+        if let Some(cluster) = cluster {
+            if let Vpn::Enabled { vpn_client } = vpn {
                 vpn_client.delete_cluster(cluster_id).await
-                    .map_err(|error| DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: Some(configuration.name.clone()), cause: error.to_string() })?;
+                    .map_err(|error| DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: Some(cluster.name.clone()), cause: error.to_string() })?;
             }
 
             {
-                let all_peers = actions::list_peer_descriptors(ListPeerDescriptorsParams {
-                    resources_manager: Arc::clone(&cluster_manager.resources_manager().await),
-                }).await.map_err(|cause| DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: Some(configuration.name.clone()), cause: cause.to_string() })?;
+                let all_peers = resources_manager.list::<PeerDescriptor>().await
+                    .map_err(|cause| DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: Some(cluster.name.clone()), cause: cause.to_string() })?;
 
                 let member_ids = all_peers.into_iter()
-                    .filter(|peer| !peer.topology.devices.iter().filter(|device| configuration.devices.contains(&device.id)).collect::<Vec<_>>().is_empty() )
-                    .map(|peer| peer.id).collect::<Vec<PeerId>>();
+                    .filter(|peer|
+                        peer.topology.devices.iter()
+                            .filter(|device| cluster.devices.contains(&device.id))
+                            .collect::<Vec<_>>()
+                            .is_empty().not()
+                    )
+                    .map(|peer| peer.id)
+                    .collect::<Vec<PeerId>>();
 
                 for member_id in member_ids {
                     actions::unassign_cluster(UnassignClusterParams {
-                        resources_manager: Arc::clone(&cluster_manager.resources_manager().await),
+                        resources_manager: Arc::clone(&resources_manager),
                         peer_id: member_id,
                     }).await
                         .map_err(|cause| {
                             let message = format!("Failure while assigning cluster <{cluster_id}> to peer <{member_id}>.");
                             error!("{}\n  {cause}", message);
-                            DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: Some(configuration.name.clone()), cause: message }
+                            DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: Some(cluster.name.clone()), cause: message }
                         })?;
                 }
             }
-
         }
 
         Ok(deployment)

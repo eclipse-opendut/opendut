@@ -3,37 +3,36 @@ use std::ops::Not;
 use std::sync::Arc;
 
 use pem::Pem;
-use tracing::{debug, error, info, Span, warn};
+use tracing::{debug, error, info, warn, Span};
 use url::Url;
 use uuid::Uuid;
 
-use opendut_auth::registration::client::RegistrationClientRef;
-use opendut_carl_api::carl::cluster::StoreClusterDeploymentError;
-pub use opendut_carl_api::carl::peer::{
-    DeletePeerDescriptorError,
-    IllegalDevicesError,
-    ListDevicesError,
-    ListPeerDescriptorsError,
-    StorePeerDescriptorError,
-    GetPeerStateError
-};
-use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, downstream};
-use opendut_types::{peer, proto};
-use opendut_types::cleo::{CleoId, CleoSetup};
-use opendut_types::cluster::ClusterAssignment;
-use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerSetup};
-use opendut_types::peer::configuration::{PeerConfiguration, PeerConfiguration2, PeerNetworkConfiguration};
-use opendut_types::peer::state::{PeerBlockedState, PeerState, PeerUpState};
-use opendut_types::proto::peer::configuration::{peer_configuration_parameter, PeerConfigurationParameterExecutor, PeerConfigurationParameterTargetPresent};
-use opendut_types::topology::{DeviceDescriptor, DeviceId};
-use opendut_types::util::net::{AuthConfig, Certificate, ClientCredentials, NetworkInterfaceName};
-use opendut_types::vpn::VpnPeerConfiguration;
-use opendut_util::ErrorOr;
-use crate::actions;
 use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerRef};
 use crate::persistence::error::PersistenceError;
 use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
+use opendut_auth::registration::client::RegistrationClientRef;
+use opendut_carl_api::carl::cluster::StoreClusterDeploymentError;
+pub use opendut_carl_api::carl::peer::{
+    DeletePeerDescriptorError,
+    GetPeerStateError,
+    IllegalDevicesError,
+    ListDevicesError,
+    ListPeerDescriptorsError,
+    StorePeerDescriptorError
+};
+use opendut_carl_api::proto::services::peer_messaging_broker::{downstream, ApplyPeerConfiguration};
+use opendut_types::cleo::{CleoId, CleoSetup};
+use opendut_types::cluster::ClusterAssignment;
+use opendut_types::peer::configuration::{PeerConfiguration, PeerConfiguration2, PeerNetworkConfiguration};
+use opendut_types::peer::state::{PeerBlockedState, PeerState, PeerUpState};
+use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerSetup};
+use opendut_types::proto::peer::configuration::{peer_configuration_parameter, PeerConfigurationParameterExecutor, PeerConfigurationParameterTargetPresent};
+use opendut_types::topology::{DeviceDescriptor, DeviceId};
+use opendut_types::util::net::{AuthConfig, Certificate, ClientCredentials, NetworkInterfaceName};
+use opendut_types::vpn::VpnPeerConfiguration;
+use opendut_types::{peer, proto};
+use opendut_util::ErrorOr;
 
 pub struct StorePeerDescriptorParams {
     pub resources_manager: ResourcesManagerRef,
@@ -273,7 +272,7 @@ pub async fn get_peer_state(params: GetPeerStateParams) -> Result<PeerState, Get
         let peer_id = params.peer;
         let resources_manager = params.resources_manager;
 
-        debug!("Querying state of peer with peer_id <{:?}>.", peer_id);
+        debug!("Querying state of peer with peer_id <{}>.", peer_id);
         
         let peer_state = resources_manager.resources_mut(|resources| {
             resources.get::<PeerState>(peer_id)
@@ -282,7 +281,7 @@ pub async fn get_peer_state(params: GetPeerStateParams) -> Result<PeerState, Get
             .ok_or(GetPeerStateError::PeerNotFound { peer_id })?;
         
         
-        info!("Successfully queried state of peer with peer_id <{:?}>.", peer_id);
+        info!("Successfully queried state of peer with peer_id <{}>.", peer_id);
 
         Ok(peer_state)
     }
@@ -568,8 +567,8 @@ mod test {
     use googletest::prelude::*;
     use rstest::*;
 
-    use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_types::peer::executor::ExecutorDescriptors;
+    use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_types::topology::{DeviceDescription, DeviceName, Topology};
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 

@@ -36,14 +36,14 @@ pub fn ClustersOverview() -> impl IntoView {
             }
         });
 
-        let deploy_cluster = create_action(move |id: &ClusterId| {
+        let deploy_cluster = create_action(move |cluster_id: &ClusterId| {
             let toaster = use_toaster();
             let mut carl = globals.expect_client();
-            let id = Clone::clone(id);
+            let cluster_id = Clone::clone(cluster_id);
             async move {
-                match carl.cluster.store_cluster_deployment(ClusterDeployment { id }).await {
+                match carl.cluster.store_cluster_deployment(ClusterDeployment { id: cluster_id }).await {
                     Ok(cluster_id) => {
-                        debug!("Successfully stored cluster: {}", cluster_id);
+                        debug!("Successfully stored cluster deployment: {}", cluster_id);
                         toaster.toast(
                             Toast::builder()
                                 .simple("Successfully stored cluster deployment!")
@@ -51,7 +51,7 @@ pub fn ClustersOverview() -> impl IntoView {
                         );
                     }
                     Err(cause) => {
-                        error!("Failed to store cluster deployment <{}>, due to error: {:?}", "id", cause);
+                        error!("Failed to store cluster deployment <{}>, due to error: {:?}", cluster_id, cause);
                         match cause {
                             ClientError::UsageError(StoreClusterDeploymentError::IllegalPeerState { invalid_peers, .. }) => {
                                 toaster.toast(

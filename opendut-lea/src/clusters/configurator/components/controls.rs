@@ -50,7 +50,7 @@ fn SaveClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>
                     let result = carl.cluster.store_cluster_configuration(configuration).await;
                     match result {
                         Ok(cluster_id) => {
-                            debug!("Successfully stored cluster: {}", cluster_id);
+                            debug!("Successfully stored cluster configuration: {}", cluster_id);
                             toaster.toast(Toast::builder()
                                 .simple("Successfully stored cluster configuration.")
                                 .success()
