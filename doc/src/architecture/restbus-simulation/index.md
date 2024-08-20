@@ -13,7 +13,7 @@ to simulate a base environment that improves testing.
 
 Current implementation state:
   - AXP -> Done
-  - RSIM -> Base implementation done and tested successfully. Have to extend it
+  - RSIM -> Base implementation done and can be used already. Have to extend it
     to handle all types of PDUs and do some more modifications.
   - RSIM API -> Todo
 
@@ -76,9 +76,7 @@ Right now no API exists, and the RSIM just plays Frames with initial values to t
     - Either the user logic is integrated via separate binaries/Python files/..., or we might be able to use (compiled) CAPL files, that already contain the logic for existing restbus simulations
 
 ### Configuration
-Currently, the implementation is somewhat independent of OpenDuT. In the future, everything will be integrated
-including the configuration. You can see in [main.rs](https://github.com/eclipse-opendut/opendut/blob/restbus-simulation/opendut-edgar/restbus-simulation/src/main.rs)
-how to establish a restbus-simulation without configuration.
+The restbus-simulation can be enabled and configured via the [edgar.toml](https://github.com/eclipse-opendut/opendut/blob/restbus-simulation/opendut-edgar/edgar.toml) file. It is disabled by default. When enabling it, then it runs as long as the main edgar is running. It automatically gets stopped when the main edgar is stopped. 
 
 ### References:
   - [autosar-data crate](https://crates.io/crates/autosar-data/0.9.0)
