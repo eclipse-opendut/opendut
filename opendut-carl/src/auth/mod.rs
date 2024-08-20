@@ -1,6 +1,5 @@
 mod validation;
 pub(crate) mod json_web_key;
-mod authorization;
 pub(crate) mod grpc_auth_layer;
 
 use openidconnect::core::CoreGenderClaim;
