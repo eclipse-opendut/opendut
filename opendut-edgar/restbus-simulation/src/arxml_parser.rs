@@ -476,8 +476,7 @@ impl ArxmlParser {
         // Iterate over Autosar elements and handle CanCluster elements
         for element in model
             .identifiable_elements()
-            .iter()
-            .filter_map(|path| model.get_element_by_path(&path))
+            .filter_map(|(_path, weak)| weak.upgrade())
         {
             match element.element_name() {
                 ElementName::CanCluster => {
