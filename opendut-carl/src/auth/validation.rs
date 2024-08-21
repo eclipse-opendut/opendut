@@ -144,8 +144,10 @@ pub struct Jwk;
 
 impl JwkRequester for Jwk {
     async fn fetch_jwk(&self, issuer_jwk_url: Url) -> Result<String, ValidationError> {
-        let response = reqwest::get(issuer_jwk_url.clone()).await.map_err(|cause| ValidationError::Configuration(format!("Failed to fetch IDP jwk URL from '{}': {}", issuer_jwk_url, cause)))?;
-        let result = response.text().await.map_err(|cause| ValidationError::Configuration(format!("Failed to read IDP configuration URL from '{}': {}", issuer_jwk_url, cause)))?;
+        let response = reqwest::get(issuer_jwk_url.clone()).await //TODO pass CA or preconfigured client into here; currently requires SSL_CERT_FILE env to be set
+            .map_err(|cause| ValidationError::Configuration(format!("Failed to fetch IDP jwk URL from '{}': {}", issuer_jwk_url, cause)))?;
+        let result = response.text().await
+            .map_err(|cause| ValidationError::Configuration(format!("Failed to read IDP configuration URL from '{}': {}", issuer_jwk_url, cause)))?;
         Ok(result)
     }
 }

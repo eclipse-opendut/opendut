@@ -291,6 +291,7 @@ services:
       - OPENDUT_CARL_NETWORK_TLS_CA=/etc/opendut/tls/ca.pem
       # CURL
       - CURL_CA_BUNDLE=/etc/opendut/tls/ca.pem
+      - SSL_CERT_FILE=/etc/opendut/tls/ca.pem
       # VPN
       - OPENDUT_CARL_VPN_ENABLED=true
       - OPENDUT_CARL_VPN_KIND=netbird
