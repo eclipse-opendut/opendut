@@ -10,9 +10,11 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::Error;
-
+use std::vec;
 
 use autosar_data::{CharacterData, Element, ElementName, EnumItem};
+
+use nix::libc::timeval;
 
 
 /*
@@ -95,7 +97,7 @@ pub fn get_sub_element_and_time_range(base: &Element, sub_elem_name: ElementName
 */
 pub fn get_required_item_name(element: &Element, element_name: &str) -> String {
     if let Some(item_name) = element.item_name() {
-        return item_name; 
+        item_name
     } else {
         panic!("Error getting required item name of {}", element_name);
     } 
@@ -109,7 +111,7 @@ pub fn get_required_sub_subelement(element: &Element, subelement_name: ElementNa
         .get_sub_element(subelement_name)
         .and_then(|elem| elem.get_sub_element(sub_subelement_name)) 
     {
-        return sub_subelement;
+        sub_subelement
     } else {
         panic!("Error getting sub_subelement. Tried to retrieve {} and then {}",
             subelement_name,
@@ -121,10 +123,10 @@ pub fn get_required_sub_subelement(element: &Element, subelement_name: ElementNa
     Tries to get a subelement and convert it's value to u64.
 */
 pub fn get_subelement_int_value(element: &Element, subelement_name: ElementName) -> Option<u64> {
-    return element 
+    element 
         .get_sub_element(subelement_name)
         .and_then(|elem| elem.character_data())
-        .and_then(|cdata| decode_integer(&cdata));
+        .and_then(|cdata| decode_integer(&cdata))
 } 
 
 /*
@@ -132,7 +134,7 @@ pub fn get_subelement_int_value(element: &Element, subelement_name: ElementName)
 */
 pub fn get_required_int_value(element: &Element, subelement_name: ElementName) -> u64 {
     if let Some(int_value) = get_subelement_int_value(element, subelement_name) {
-        return int_value;
+        int_value
     } else {
         panic!("Error getting required integer value of {}", subelement_name);
     }
@@ -142,11 +144,7 @@ pub fn get_required_int_value(element: &Element, subelement_name: ElementName) -
     Gets the u64 value for a element. This is optional. So, if the subelement does not exist, then 0 is returned.
 */
 pub fn get_optional_int_value(element: &Element, subelement_name: ElementName) -> u64 {
-    if let Some(int_value) = get_subelement_int_value(element, subelement_name) {
-        return int_value;
-    } else {
-        return 0;
-    }
+    get_subelement_int_value(element, subelement_name).unwrap_or_default()
 }
 
 /*
@@ -183,10 +181,10 @@ pub fn get_required_reference(element: &Element, subelement_name: ElementName) -
     Tries to get a subelement and return it's String value. 
 */
 pub fn get_subelement_string_value(element: &Element, subelement_name: ElementName) -> Option<String> {
-    return element 
+    element 
         .get_sub_element(subelement_name)
         .and_then(|elem| elem.character_data())
-        .map(|cdata| cdata.to_string());
+        .map(|cdata| cdata.to_string())
 }
 
 /*
@@ -194,7 +192,7 @@ pub fn get_subelement_string_value(element: &Element, subelement_name: ElementNa
 */
 pub fn get_required_string(element: &Element, subelement_name: ElementName) -> String {
     if let Some(value) = get_subelement_string_value(element, subelement_name) {
-        return value;
+        value
     } else {
         panic!("Error getting required String value of {}", subelement_name);
     }
@@ -204,26 +202,17 @@ pub fn get_required_string(element: &Element, subelement_name: ElementName) -> S
     Gets the String value for a element. This is optional. So, if the subelement does not exist, then "" is returned.
 */
 pub fn get_optional_string(element: &Element, subelement_name: ElementName) -> String {
-    if let Some(value) = get_subelement_string_value(element, subelement_name) {
-        return value;
-    } else {
-        return String::from("");
-    }
+    get_subelement_string_value(element, subelement_name).unwrap_or_default()
 }
 
 /*
     Gets the String value of a subsubelement. In case the subelement or subsubelement do not exist, then "" is returned.
 */
 pub fn get_subelement_optional_string(element: &Element, subelement_name: ElementName, sub_subelement_name: ElementName) -> String {
-    if let Some(value) = element.get_sub_element(subelement_name)
+    element.get_sub_element(subelement_name)
         .and_then(|elem| elem.get_sub_element(sub_subelement_name))
         .and_then(|elem| elem.character_data())
-        .map(|cdata| cdata.to_string()) 
-    {
-        return value;     
-    } else {
-        return String::from("");
-    }
+        .map(|cdata| cdata.to_string()).unwrap_or_default()
 }
 
 /*
@@ -245,10 +234,10 @@ pub fn get_byte_order(byte_order: &String) -> bool {
     if byte_order.eq("MOST-SIGNIFICANT-BYTE-LAST") {
         return false;
     }
-    return true;
+    true
 }
 
-fn process_isignal_init_value(isignal: &ISignal, bits: &mut Vec<bool>) {
+fn process_isignal_init_value(isignal: &ISignal, bits: &mut [bool]) {
     let mut tmp_bit_array: Vec<bool> = Vec::new();
     let init_values = &isignal.init_values;
     let isignal_byte_order = isignal.byte_order;
@@ -257,7 +246,7 @@ fn process_isignal_init_value(isignal: &ISignal, bits: &mut Vec<bool>) {
 
     match init_values {
         InitValues::Single(value) => {
-            let mut n = value.clone();
+            let mut n = *value;
 
             while n != 0 {
                 tmp_bit_array.push(n & 1 != 0);
@@ -279,7 +268,7 @@ fn process_isignal_init_value(isignal: &ISignal, bits: &mut Vec<bool>) {
 
             for isignal_value in values {
                 let byte_len: usize = 8;
-                let mut n = isignal_value.clone();
+                let mut n = *isignal_value;
                 let mut tmp_tmp_bit_array: Vec<bool> = Vec::new();
 
                 while n != 0 {
@@ -368,7 +357,7 @@ pub fn extract_init_values(unused_bit_pattern: bool, ungrouped_signals: &Vec<ISi
         init_values.reverse();
     }*/
 
-    return init_values;
+    init_values
 }
 
 /*
@@ -377,12 +366,12 @@ pub fn extract_init_values(unused_bit_pattern: bool, ungrouped_signals: &Vec<ISi
 pub fn get_unused_bit_pattern(pdu: &Element) -> bool {
     // even though it needs to exist at least for ISignalIPdus, we keep it as optional, since at least one encounter shows that it might be missing.
     // then use 0 as default value
-    let mut unused_bit_pattern_int = get_optional_int_value(&pdu, ElementName::UnusedBitPattern); 
+    let mut unused_bit_pattern_int = get_optional_int_value(pdu, ElementName::UnusedBitPattern); 
     
     let unused_bit_pattern: bool;
 
     // supports values > 1. Just look at least significant bit
-    unused_bit_pattern_int = unused_bit_pattern_int & 1;
+    unused_bit_pattern_int &= 1;
 
     if unused_bit_pattern_int == 0 {
         unused_bit_pattern = false;
@@ -392,7 +381,7 @@ pub fn get_unused_bit_pattern(pdu: &Element) -> bool {
         panic!("Error reading unused_bit_pattern. Value is {}", unused_bit_pattern_int);
     }
 
-    return unused_bit_pattern;
+    unused_bit_pattern
 }
 
 /*
@@ -466,7 +455,7 @@ pub fn process_init_value(init_value_elem: &mut Element, init_values: &mut InitV
 
     } else {
         let mut init_value_array: Vec<u64> = Vec::new();
-        let num_val_elements = get_required_sub_subelement(&init_value_elem, 
+        let num_val_elements = get_required_sub_subelement(init_value_elem, 
             ElementName::ArrayValueSpecification, 
             ElementName::Elements);
 
@@ -487,7 +476,7 @@ pub fn process_signal_group(signal_group: &Element,
     signals: &mut HashMap<String, (String, String, u64, u64, InitValues)>, 
     grouped_signals: &mut Vec<ISignalGroup>) -> Option<()> 
     {
-    let group_name = get_required_item_name(&signal_group, "ISignalGroupRef"); 
+    let group_name = get_required_item_name(signal_group, "ISignalGroupRef"); 
     
     let mut signal_group_signals: Vec<ISignal> = Vec::new();
 
@@ -560,9 +549,9 @@ pub fn process_signal_group(signal_group: &Element,
                 
                 
                 let props_struct: E2EDataTransformationProps = E2EDataTransformationProps {
-                    transformer_name: transformer_name,
-                    data_id: data_id,
-                    data_length: data_length 
+                    transformer_name,
+                    data_id,
+                    data_length 
                 };
 
                 props_vector.push(props_struct);
@@ -573,7 +562,7 @@ pub fn process_signal_group(signal_group: &Element,
     let isignal_group_struct: ISignalGroup = ISignalGroup {
         name: group_name,
         isignals: signal_group_signals,
-        data_transformations: data_transformations,
+        data_transformations,
         transformation_props: props_vector 
     };
 
@@ -600,7 +589,7 @@ pub fn get_timed_can_frame(can_frame_triggering: &CanFrameTriggering, timed_can_
         let mut ival2_tv_usec: u64 = 0;
         let init_values: Vec<u8>;
         match &pdu_mapping.pdu {
-            PDU::ISignalIPDU(pdu) => {
+            Pdu::ISignalIPdu(pdu) => {
                 count = pdu.number_of_repetitions as u32;
                 
                 if pdu.repetition_period_value != 0.0 {
@@ -621,7 +610,7 @@ pub fn get_timed_can_frame(can_frame_triggering: &CanFrameTriggering, timed_can_
                         pdu_mapping.length,
                         &pdu_mapping.byte_order);
             }
-            PDU::NMPDU(pdu) => {
+            Pdu::NmPdu(pdu) => {
                 ival2_tv_usec = 100000; // every 100 ms
                 init_values = extract_init_values(pdu.unused_bit_pattern,
                         &pdu.ungrouped_signals,
@@ -630,8 +619,13 @@ pub fn get_timed_can_frame(can_frame_triggering: &CanFrameTriggering, timed_can_
                         &pdu_mapping.byte_order);
             }
         }
-        timed_can_frames.push(create_time_can_frame_structure(count, ival1_tv_sec, ival1_tv_usec, ival2_tv_sec,
-            ival2_tv_usec, can_id, len, addressing_mode, frame_tx_behavior, &init_values));
+
+        let ival1 = timeval { tv_sec: ival1_tv_sec as TimevalNum, tv_usec: ival1_tv_usec as TimevalNum};
+        let ival2 = timeval { tv_sec: ival2_tv_sec as TimevalNum, tv_usec: ival2_tv_usec as TimevalNum};
+
+        let ivals: Vec<timeval> = vec![ival1, ival2];
+
+        timed_can_frames.push(create_time_can_frame_structure(count, &ivals, can_id, len, addressing_mode, frame_tx_behavior, &init_values));
     }
 }
 
@@ -648,7 +642,7 @@ pub fn get_timed_can_frame_from_id(can_clusters: &HashMap<String, CanCluster>, b
         }
     }
 
-    return timed_can_frames
+    timed_can_frames
 }
 
 /*
@@ -664,7 +658,7 @@ pub fn get_timed_can_frames_from_bus(can_clusters: &HashMap<String, CanCluster>,
         }
     }
 
-    return timed_can_frames
+    timed_can_frames
 }
 
 pub fn load_serialized_data(file_name: &String) -> Result<HashMap<String, CanCluster>, Error> {
@@ -674,7 +668,7 @@ pub fn load_serialized_data(file_name: &String) -> Result<HashMap<String, CanClu
    
     let deserialized: HashMap<String, CanCluster> = serde_json::from_str(&contents)?;
 
-    return Ok(deserialized);
+    Ok(deserialized)
 }
 
 pub fn store_serialized_data(file_name: &String, can_clusters: &HashMap<String, CanCluster>) -> Result<(), Error> {

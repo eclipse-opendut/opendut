@@ -36,14 +36,14 @@ impl ArxmlParser {
             .get_sub_element(ElementName::ISignalRef)
             .and_then(|elem| elem.get_reference_target().ok())
         {
-            let refpath = get_required_string(&mapping, 
+            let refpath = get_required_string(mapping, 
                 ElementName::ISignalRef);
 
             let name = get_required_item_name(&signal, "ISignalRef");
 
-            let byte_order = get_required_string(&mapping, ElementName::PackingByteOrder);
+            let byte_order = get_required_string(mapping, ElementName::PackingByteOrder);
 
-            let start_pos = get_required_int_value(&mapping, 
+            let start_pos = get_required_int_value(mapping, 
                 ElementName::StartPosition);
             
             let length = get_required_int_value(&signal, 
@@ -86,14 +86,14 @@ impl ArxmlParser {
         }
 
         let remaining_signals: Vec<(String, String, u64, u64, InitValues)> = signals.values().cloned().collect();
-        if remaining_signals.len() > 0 {
+        if !remaining_signals.is_empty() {
             for (name, byte_order, start_pos, length, init_values) in remaining_signals {
                 let isignal_struct: ISignal = ISignal {
-                    name: name,
+                    name,
                     byte_order: get_byte_order(&byte_order),
-                    start_pos: start_pos,
-                    length: length,
-                    init_values: init_values
+                    start_pos,
+                    length,
+                    init_values
                 };
                 ungrouped_signals.push(isignal_struct);
             }
@@ -108,7 +108,7 @@ impl ArxmlParser {
         1. Parses an Autosar ISignalIPdu element.
         2. Returns important data in a self-defined ISignalIPDU structure.
     */
-    fn handle_isignal_ipdu(&self, pdu: &Element) -> Option<ISignalIPDU> {
+    fn handle_isignal_ipdu(&self, pdu: &Element) -> Option<ISignalIPdu> {
         // Find out these values: ...
         let mut cyclic_timing_period_value: f64 = 0_f64;
         let mut cyclic_timing_period_tolerance: Option<TimeRangeTolerance> = None; 
@@ -143,7 +143,7 @@ impl ArxmlParser {
             }
         }
 
-        let unused_bit_pattern = get_unused_bit_pattern(&pdu);
+        let unused_bit_pattern = get_unused_bit_pattern(pdu);
 
         let mut grouped_signals: Vec<ISignalGroup> = Vec::new();
         
@@ -151,28 +151,28 @@ impl ArxmlParser {
 
         self.handle_isignals(pdu, &mut grouped_signals, &mut ungrouped_signals);
 
-        let isginal_ipdu: ISignalIPDU = ISignalIPDU {
-            cyclic_timing_period_value: cyclic_timing_period_value,
-            cyclic_timing_period_tolerance: cyclic_timing_period_tolerance,
-            cyclic_timing_offset_value: cyclic_timing_offset_value,
-            cyclic_timing_offset_tolerance: cyclic_timing_offset_tolerance,
-            number_of_repetitions: number_of_repetitions,
-            repetition_period_value: repetition_period_value,
-            repetition_period_tolerance: repetition_period_tolerance,
-            unused_bit_pattern: unused_bit_pattern,
-            ungrouped_signals: ungrouped_signals, 
-            grouped_signals: grouped_signals 
+        let isginal_ipdu: ISignalIPdu = ISignalIPdu {
+            cyclic_timing_period_value,
+            cyclic_timing_period_tolerance,
+            cyclic_timing_offset_value,
+            cyclic_timing_offset_tolerance,
+            number_of_repetitions,
+            repetition_period_value,
+            repetition_period_tolerance,
+            unused_bit_pattern,
+            ungrouped_signals, 
+            grouped_signals 
         };
 
-        return Some(isginal_ipdu);
+        Some(isginal_ipdu)
     }
     
     /*
         1. Parses an Autosar NmPdu element
         2. Returns important data in a self-defined NMPDU structure.
     */
-    fn handle_nm_pdu(&self, pdu: &Element) -> Option<NMPDU> {
-        let unused_bit_pattern = get_unused_bit_pattern(&pdu);
+    fn handle_nm_pdu(&self, pdu: &Element) -> Option<NmPdu> {
+        let unused_bit_pattern = get_unused_bit_pattern(pdu);
 
         let mut grouped_signals: Vec<ISignalGroup> = Vec::new();
         
@@ -180,13 +180,13 @@ impl ArxmlParser {
 
         self.handle_isignals(pdu, &mut grouped_signals, &mut ungrouped_signals);
         
-        let nm_pdu: NMPDU = NMPDU {
-            unused_bit_pattern: unused_bit_pattern,
-            ungrouped_signals: ungrouped_signals, 
-            grouped_signals: grouped_signals 
+        let nm_pdu: NmPdu = NmPdu {
+            unused_bit_pattern,
+            ungrouped_signals, 
+            grouped_signals 
         };
 
-        return Some(nm_pdu);
+        Some(nm_pdu)
     }
 
     /*
@@ -194,7 +194,7 @@ impl ArxmlParser {
         2. Parses the Autosar PDU element
         3. Returns important data in a self-defined PDU mapping structure.
     */
-    fn handle_pdu_mapping(&self, pdu_mapping: &Element) -> Result<PDUMapping, String> {
+    fn handle_pdu_mapping(&self, pdu_mapping: &Element) -> Result<PduMapping, String> {
         let pdu = get_required_reference(
             pdu_mapping,
             ElementName::PduRef);
@@ -222,19 +222,19 @@ impl ArxmlParser {
             ElementName::ContainedIPduProps, ElementName::HeaderIdLongHeader);
 
         //let mut pdu_specific: PDU = PDU::Temp(0);
-        let pdu_specific: PDU;
+        let pdu_specific: Pdu;
 
         match pdu.element_name() {
             ElementName::ISignalIPdu => {
                 if let Some(value) = self.handle_isignal_ipdu(&pdu) {
-                    pdu_specific = PDU::ISignalIPDU(value);
+                    pdu_specific = Pdu::ISignalIPdu(value);
                 } else {
                     panic!("Error in handle_isignal_ipdu");
                 }
             }
             ElementName::NmPdu => {
                 if let Some(value) = self.handle_nm_pdu(&pdu) {
-                    pdu_specific = PDU::NMPDU(value);
+                    pdu_specific = Pdu::NmPdu(value);
                 } else {
                     panic!("Error in handle_nm_pdu");
                 }
@@ -248,12 +248,12 @@ impl ArxmlParser {
             }*/
             // Handle more?
             _ => {
-                let error = format!("PDU type {} not supported. Will skip it.", pdu.element_name().to_string());
+                let error = format!("PDU type {} not supported. Will skip it.", pdu.element_name());
                 return Err(error)
             }
         }
 
-        let pdu_mapping: PDUMapping = PDUMapping {
+        let pdu_mapping: PduMapping = PduMapping {
             name: pdu_name,
             byte_order: get_byte_order(&byte_order),
         //    start_position: start_position,
@@ -265,7 +265,7 @@ impl ArxmlParser {
             pdu: pdu_specific 
         };
 
-        return Ok(pdu_mapping);     
+        Ok(pdu_mapping)
     }
     
     /*
@@ -277,7 +277,7 @@ impl ArxmlParser {
             can_frame_triggering, "CanFrameTriggering");
 
         let can_id = get_required_int_value(
-            &can_frame_triggering,
+            can_frame_triggering,
             ElementName::Identifier);
 
         let frame = get_required_reference(
@@ -297,7 +297,7 @@ impl ArxmlParser {
         };
 
         let mut addressing_mode: bool = false;
-        if addressing_mode_str.to_uppercase() == String::from("EXTENDED") {
+        if addressing_mode_str.to_uppercase() == *"EXTENDED" {
             addressing_mode = true;
         }
 
@@ -306,9 +306,8 @@ impl ArxmlParser {
         let frame_rx_behavior_str = get_optional_string(
             can_frame_triggering,
             ElementName::CanFrameRxBehavior);
-        if frame_rx_behavior_str.to_uppercase() == String::from("CAN-FD") {
-            frame_rx_behavior = true;
-        } else if frame_rx_behavior_str == "" && has_fd_baudrate {
+        if frame_rx_behavior_str.to_uppercase() == *"CAN-FD"
+            || frame_rx_behavior_str.is_empty() && has_fd_baudrate {
             frame_rx_behavior = true;
         }
         
@@ -317,9 +316,8 @@ impl ArxmlParser {
         let frame_tx_behavior_str = get_optional_string(
             can_frame_triggering,
             ElementName::CanFrameTxBehavior);
-        if frame_tx_behavior_str.to_uppercase() == String::from("CAN-FD") {
-            frame_tx_behavior = true;
-        } else if frame_tx_behavior_str == "" && has_fd_baudrate {
+        if frame_tx_behavior_str.to_uppercase() == *"CAN-FD"
+            || frame_tx_behavior_str.is_empty() && has_fd_baudrate {
             frame_tx_behavior = true;
         }
 
@@ -333,16 +331,13 @@ impl ArxmlParser {
         let mut rx_ecus: Vec<String> = Vec::new();
         let mut tx_ecus: Vec<String> = Vec::new();
 
-        match process_frame_ports(can_frame_triggering, &can_frame_triggering_name, &mut rx_ecus, &mut tx_ecus) {
-            Err(err) => return Err(err),
-            _ => {}
-        }
+        process_frame_ports(can_frame_triggering, &can_frame_triggering_name, &mut rx_ecus, &mut tx_ecus)?;
 
         let frame_length = get_optional_int_value(
             &frame,
             ElementName::FrameLength);
 
-        let mut pdu_mappings_vec: Vec<PDUMapping> = Vec::new();
+        let mut pdu_mappings_vec: Vec<PduMapping> = Vec::new();
 
         // assign here and other similar variable?
         if let Some(mappings) = frame.get_sub_element(ElementName::PduToFrameMappings) {
@@ -356,20 +351,20 @@ impl ArxmlParser {
 
         let can_frame_triggering_struct: CanFrameTriggering = CanFrameTriggering {
             frame_triggering_name: can_frame_triggering_name,
-            frame_name: frame_name,
-            can_id: can_id,
-            addressing_mode: addressing_mode,
-            frame_rx_behavior: frame_rx_behavior,
-            frame_tx_behavior: frame_tx_behavior,
-            rx_range_lower: rx_range_lower,
-            rx_range_upper: rx_range_upper,
+            frame_name,
+            can_id,
+            addressing_mode,
+            frame_rx_behavior,
+            frame_tx_behavior,
+            rx_range_lower,
+            rx_range_upper,
             receiver_ecus: rx_ecus,
             sender_ecus: tx_ecus,
-            frame_length: frame_length,
+            frame_length,
             pdu_mappings: pdu_mappings_vec 
         };
 
-        return Ok(can_frame_triggering_struct);
+        Ok(can_frame_triggering_struct)
     }
 
     /*
@@ -420,7 +415,7 @@ impl ArxmlParser {
                 for can_frame_triggering in frame_triggerings.sub_elements() {
                     match self.handle_can_frame_triggering(&can_frame_triggering, has_fd_baudrate) {
                         Ok(value) => {
-                            can_frame_triggerings.insert(value.can_id.clone(), value);
+                            can_frame_triggerings.insert(value.can_id, value);
                         }
                         Err(error) => error!("WARNING: {}", error),
                     }
@@ -432,10 +427,10 @@ impl ArxmlParser {
             name: can_cluster_name,
             baudrate: can_cluster_baudrate,
             canfd_baudrate: can_cluster_fd_baudrate,
-            can_frame_triggerings: can_frame_triggerings
+            can_frame_triggerings
         };
         
-        return Ok(can_cluster_struct);
+        Ok(can_cluster_struct)
     }
 
     /*
@@ -478,17 +473,14 @@ impl ArxmlParser {
             .identifiable_elements()
             .filter_map(|(_path, weak)| weak.upgrade())
         {
-            match element.element_name() {
-                ElementName::CanCluster => {
-                    let result: Result<CanCluster, String> = self.handle_can_cluster(&element);
-                    match result {
-                        Ok(value) => {
-                            can_clusters.insert(value.name.clone(), value);
-                        }
-                        Err(error) => warn!("WARNING: {}", error)
+            if element.element_name() == ElementName::CanCluster {
+                let result: Result<CanCluster, String> = self.handle_can_cluster(&element);
+                match result {
+                    Ok(value) => {
+                        can_clusters.insert(value.name.clone(), value);
                     }
+                    Err(error) => warn!("WARNING: {}", error)
                 }
-                _ => {}
             }
         }
 
@@ -502,6 +494,6 @@ impl ArxmlParser {
             }
         }
 
-        return Some(can_clusters);
+        Some(can_clusters)
     }
 }

@@ -7,6 +7,8 @@
 use crate::restbus_utils::*;
 use crate::restbus_structs::*;
 
+use nix::libc::timeval;
+
 
 pub struct RestbusSimulation {
 }
@@ -27,13 +29,13 @@ impl RestbusSimulation {
         for timed_can_frame in timed_can_frames { 
             let mut write_bytes: Vec<u8> = Vec::new();
 
-            let mut can_frames: Vec<CanFrame> = Vec::new();
-
-            can_frames.push(
-                create_can_frame_structure(timed_can_frame.can_id, timed_can_frame.len, timed_can_frame.addressing_mode, timed_can_frame.frame_tx_behavior, &timed_can_frame.data_vector));
+            let can_frames: Vec<CanFrame> = vec![
+                create_can_frame_structure(timed_can_frame.can_id, timed_can_frame.len, timed_can_frame.addressing_mode, timed_can_frame.frame_tx_behavior, &timed_can_frame.data_vector)];
+            
+            let ival1 = timeval { tv_sec: timed_can_frame.ival1.tv_sec as TimevalNum, tv_usec: timed_can_frame.ival1.tv_usec as TimevalNum };
+            let ival2 = timeval { tv_sec: timed_can_frame.ival2.tv_sec as TimevalNum, tv_usec: timed_can_frame.ival2.tv_usec as TimevalNum };
         
-            create_bcm_structure_bytes(timed_can_frame.count, timed_can_frame.ival1.tv_sec as u64, timed_can_frame.ival1.tv_usec as u64, 
-                timed_can_frame.ival2.tv_sec as u64, timed_can_frame.ival2.tv_usec as u64, timed_can_frame.can_id, timed_can_frame.frame_tx_behavior, &can_frames, &mut write_bytes);
+            create_bcm_structure_bytes(timed_can_frame.count, ival1, ival2, timed_can_frame.can_id, timed_can_frame.frame_tx_behavior, &can_frames, &mut write_bytes);
             
             write_bytes_global.push(write_bytes);
 
@@ -50,7 +52,7 @@ impl RestbusSimulation {
             //println!("successfully wrote to socket");
         } 
 
-        return Ok(true);
+        Ok(true)
     }
 
     /*pub fn play_single_bcm_frame(&self, ifname: &String, count: u32, ival1_tv_sec: i64, ival1_tv_usec: i64, 

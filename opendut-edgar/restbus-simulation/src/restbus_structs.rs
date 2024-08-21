@@ -72,7 +72,7 @@ pub struct TimedCanFrame {
 /*
     Opcodes defining the operation that the BCM should do. Same as in https://github.com/linux-can/can-utils/blob/master/include/linux/can/bcm.h. 
 */
-pub enum OPCODE {
+pub enum Opcode {
         TxSetup = 1,
 /*        TxDelete,
         TxRead,

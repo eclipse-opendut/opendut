@@ -29,7 +29,7 @@ fn get_pdu_hex(can_id: &u64, init_values: &Vec<u8>) -> String {
     }
     println!("Values: {}", hex_string);
 
-    return hex_string;
+    hex_string
 }
 
 
@@ -42,7 +42,7 @@ fn collect_pdus(can_clusters: &HashMap<String, CanCluster>, bus_name: String) ->
         for can_frame_triggering in can_cluster.can_frame_triggerings.values() {
             for pdu_mapping in &can_frame_triggering.pdu_mappings {
                 match &pdu_mapping.pdu {
-                    PDU::ISignalIPDU(pdu) => {
+                    Pdu::ISignalIPdu(pdu) => {
                         let init_values = extract_init_values(pdu.unused_bit_pattern,
                                 &pdu.ungrouped_signals,
                                 &pdu.grouped_signals,
@@ -50,7 +50,7 @@ fn collect_pdus(can_clusters: &HashMap<String, CanCluster>, bus_name: String) ->
                                 &pdu_mapping.byte_order);
                         init_values_strings.push(get_pdu_hex(&can_frame_triggering.can_id, &init_values))
                     }
-                    PDU::NMPDU(pdu) => {
+                    Pdu::NmPdu(pdu) => {
                         let init_values = extract_init_values(pdu.unused_bit_pattern,
                                 &pdu.ungrouped_signals,
                                 &pdu.grouped_signals,
@@ -62,7 +62,7 @@ fn collect_pdus(can_clusters: &HashMap<String, CanCluster>, bus_name: String) ->
             }
         }
     }
-    return init_values_strings;
+    init_values_strings
 }
 
 
@@ -123,12 +123,12 @@ fn main() -> std::io::Result<()> {
         let mut frames = String::new();
         for frame in collect_pdus(&can_clusters, String::from(bus_name)) {
             frames.push_str(frame.as_str());
-            frames.push_str("\n");
+            frames.push('\n');
         }
 
         // Debug. Found PDUs of target bus are written to file.
         let mut f = File::create(target_file)?;
-        f.write_all(&frames.as_bytes())?;
+        f.write_all(frames.as_bytes())?;
 
         println!("Trying to setup up restbus simulation");
 

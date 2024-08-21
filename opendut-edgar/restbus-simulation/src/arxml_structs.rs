@@ -36,7 +36,7 @@ pub struct CanFrameTriggering {
     pub sender_ecus: Vec<String>,
     pub receiver_ecus: Vec<String>,
     pub frame_length: u64,
-    pub pdu_mappings: Vec<PDUMapping>
+    pub pdu_mappings: Vec<PduMapping>
 }
 
 /*
@@ -44,7 +44,7 @@ pub struct CanFrameTriggering {
 */
 #[derive(Debug)]
 #[derive(Serialize, Deserialize)]
-pub struct PDUMapping {
+pub struct PduMapping {
     pub name: String,
     pub byte_order: bool,
 //    pub start_position: u64,
@@ -53,7 +53,7 @@ pub struct PDUMapping {
     pub category: String,
     pub contained_header_id_short: String,
     pub contained_header_id_long: String,
-    pub pdu: PDU
+    pub pdu: Pdu
 }
 
 /*
@@ -61,9 +61,9 @@ pub struct PDUMapping {
 */
 #[derive(Debug)]
 #[derive(Serialize, Deserialize)]
-pub enum PDU {
-    ISignalIPDU(ISignalIPDU),
-    NMPDU(NMPDU),
+pub enum Pdu {
+    ISignalIPdu(ISignalIPdu),
+    NmPdu(NmPdu),
 //     DCMIPDU(DCMIPDU),
 //    NMPDU(NMPDU),
 //     ContaineredPDU(XY),
@@ -76,7 +76,7 @@ pub enum PDU {
 */
 #[derive(Debug)]
 #[derive(Serialize, Deserialize)]
-pub struct ISignalIPDU {
+pub struct ISignalIPdu {
     pub cyclic_timing_period_value: f64,
     pub cyclic_timing_period_tolerance: Option<TimeRangeTolerance>,
     pub cyclic_timing_offset_value: f64,
@@ -94,7 +94,7 @@ pub struct ISignalIPDU {
 */
 #[derive(Debug)]
 #[derive(Serialize, Deserialize)]
-pub struct NMPDU {
+pub struct NmPdu {
     pub unused_bit_pattern: bool,
     pub ungrouped_signals: Vec<ISignal>,
     pub grouped_signals: Vec<ISignalGroup>,
