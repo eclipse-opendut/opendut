@@ -144,7 +144,9 @@ pub mod bundle {
         let out_file = fs::File::create(out_file)?;
 
         let mut tar_gz = tar::Builder::new(
-            GzEncoder::new(out_file, Compression::best())
+            //TODO Optimize the way the CARL distribution is built (don't remove all files every time), then switch this back to Compression::best().
+            // While benchmarking the EDGAR distribution, Compression::best() took 20+ seconds for 19MB. Compression::fast() took 7 seconds for 21MB.
+            GzEncoder::new(out_file, Compression::fast())
         );
         tar_gz.append_dir_all(package.ident(), &in_dir)?;
         tar_gz.into_inner()?.finish()?;
