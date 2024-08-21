@@ -5,6 +5,7 @@ remote.host = "localhost"
 remote.port = 8080
 
 [network.tls]
+enabled = true
 certificate = "/etc/opendut/tls/carl.pem"
 key = "/etc/opendut/tls/carl.key"
 ca = "/etc/opendut/tls/ca.pem"

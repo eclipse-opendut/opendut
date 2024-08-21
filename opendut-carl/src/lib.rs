@@ -88,7 +88,9 @@ pub async fn create(settings: LoadedConfig) -> Result<()> {
         SocketAddr::from_str(&format!("{host}:{port}"))?
     };
 
-    let tls_config = {
+    let tls_enabled: bool = settings.config.get_bool("network.tls.enabled")
+        .map_err(|cause| anyhow!("Expected configuration flag 'network.tls.enabled' to be parseable as boolean! {}", cause))?;
+    let tls_config = if tls_enabled {
         let cert_path = project::make_path_absolute(settings.config.get_string("network.tls.certificate")?)?;
         debug!("Using TLS certificate: {}", cert_path.display());
         assert!(cert_path.exists(), "TLS certificate file at '{}' not found.", cert_path.display());
@@ -97,7 +99,9 @@ pub async fn create(settings: LoadedConfig) -> Result<()> {
         debug!("Using TLS key: {}", key_path.display());
         assert!(key_path.exists(), "TLS key file at '{}' not found.", key_path.display());
 
-        RustlsConfig::from_pem_file(cert_path, key_path).await?
+        TlsConfig::Enabled(RustlsConfig::from_pem_file(cert_path, key_path).await?)
+    } else {
+        TlsConfig::Disabled
     };
     let carl_url = ResourceHomeUrl::try_from(&settings.config)?;
 
@@ -143,7 +147,7 @@ pub async fn create(settings: LoadedConfig) -> Result<()> {
     #[tracing::instrument(skip_all, level="TRACE")]
     fn spawn_server(
         address: SocketAddr,
-        tls_config: RustlsConfig,
+        tls_config: TlsConfig,
         resources_manager: ResourcesManagerRef,
         cluster_manager: ClusterManagerRef,
         peer_messaging_broker: PeerMessagingBrokerRef,
@@ -266,12 +270,18 @@ pub async fn create(settings: LoadedConfig) -> Result<()> {
                 }).unwrap_or(1)
         });
 
-        Box::pin(
-            axum_server_dual_protocol::bind_dual_protocol(address, tls_config)
-                .set_upgrade(true) //http -> https
-                .serve(Shared::new(http_grpc))
-                .map_err(|cause| anyhow!(cause))
-        )
+        match tls_config {
+            TlsConfig::Enabled(tls_config) => {
+                Box::pin(axum_server_dual_protocol::bind_dual_protocol(address, tls_config)
+                    .set_upgrade(true) //http -> https
+                    .serve(Shared::new(http_grpc))
+                    .map_err(|cause| anyhow!(cause)))
+            }
+            TlsConfig::Disabled => {
+                // Disable TLS in case a load balancer with TLS termination is present
+                Box::pin(axum_server::bind(address).serve(Shared::new(http_grpc)).map_err(From::from))
+            }
+        }
     }
 
     info!("Server listening at {address}...");
@@ -290,4 +300,10 @@ pub async fn create(settings: LoadedConfig) -> Result<()> {
     ).await.unwrap();
 
     Ok(())
+}
+
+
+enum TlsConfig {
+    Enabled(RustlsConfig),
+    Disabled
 }
