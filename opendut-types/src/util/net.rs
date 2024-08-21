@@ -85,6 +85,10 @@ impl CanSamplePoint {
     pub fn sample_point_times_1000(&self) -> u32 {
         self.sample_point_times_1000
     }
+
+    pub fn sample_point(&self) -> f32 {
+        (self.sample_point_times_1000 as f32)/1000f32
+    }
 }
 
 impl TryFrom<f32> for CanSamplePoint {
@@ -124,6 +128,8 @@ pub enum CanSamplePointError {
     OutOfRangeFloat { value: String },
     #[error("Integer to create sample point from must be in the range [0, 999] but is {value}")]
     OutOfRangeInt { value: String },
+    #[error("Could not process sample point input.")]
+    Internal,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, Hash)]

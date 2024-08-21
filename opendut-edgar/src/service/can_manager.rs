@@ -7,7 +7,7 @@ use opendut_types::util::Port;
 use regex::Regex;
 
 use tokio::process::Command;
-use tracing::{debug, info};
+use tracing::{debug, error, info};
 
 use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
 
@@ -120,6 +120,10 @@ impl CanManager {
         self.remove_all_can_routes().await?;
     
         for interface in local_can_interfaces {
+            if let Err(cause) = self.update_can_interface(&interface).await {
+                error!("Error while creating CAN interface: {cause}");
+            };
+            
             self.create_can_route(bridge_name, &interface.name, true, 2).await?;
             self.create_can_route(bridge_name, &interface.name, false, 2).await?;
             self.create_can_route(&interface.name, bridge_name, true, 2).await?;
@@ -139,6 +143,21 @@ impl CanManager {
             debug!("Not creating CAN bridge '{bridge_name}', because it already exists.");
         }
     
+        Ok(())
+    }
+
+    async fn update_can_interface(&self, interface: &NetworkInterfaceDescriptor) -> anyhow::Result<()> {
+        if let Some(network_interface) = self.network_interface_manager.find_interface(&interface.name).await? {
+            self.network_interface_manager.set_interface_down(&network_interface).await?;
+            if let Err(cause) = self.network_interface_manager.update_interface(interface.to_owned()).await {
+                error!("Error updating CAN interface - A possible reason might be, that a virtual CAN interface was used: {cause}");
+            };
+            self.network_interface_manager.set_interface_up(&network_interface).await?;
+            
+        } else {
+            error!("Cannot find CAN interface with name: '{}'.", interface.name);
+        }
+        
         Ok(())
     }
 

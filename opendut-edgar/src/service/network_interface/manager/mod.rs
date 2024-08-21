@@ -7,10 +7,10 @@ use anyhow::anyhow;
 use futures::TryStreamExt;
 use netlink_packet_route::link::{LinkAttribute, LinkMessage};
 use tokio::process::Command;
-use tracing::warn;
+use tracing::{debug, error, warn};
 
 use gretap::Gretap;
-use opendut_types::util::net::NetworkInterfaceName;
+use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
 
 mod gretap;
 
@@ -96,12 +96,68 @@ impl NetworkInterfaceManager {
     }
 
     pub async fn set_interface_up(&self, interface: &Interface) -> Result<(), Error> {
+        debug!("Set interface {} up", interface.name);
         self.handle
             .link()
             .set(interface.index)
             .up()
             .execute().await
             .map_err(|cause| Error::SetInterfaceUp { interface: interface.clone(), cause })?;
+        Ok(())
+    }
+
+    pub async fn set_interface_down(&self, interface: &Interface) -> Result<(), Error> {
+        debug!("Set interface {} down", interface.name);
+        self.handle
+            .link()
+            .set(interface.index)
+            .down()
+            .execute().await
+            .map_err(|cause| Error::SetInterfaceDown { interface: interface.clone(), cause })?;
+        Ok(())
+    }
+
+    pub async fn update_interface(&self, network_interface_descriptor: NetworkInterfaceDescriptor) -> Result<(), Error> {
+        if let NetworkInterfaceConfiguration::Can { bitrate, sample_point, fd, data_bitrate, data_sample_point } = network_interface_descriptor.configuration {
+            debug!("Update interface {} with bitrate: {}, sample-point: {}, fd: {}, data_bitrate: {}, data_sample_point: {}", 
+                network_interface_descriptor.name, bitrate, sample_point, fd, data_bitrate, data_sample_point);
+            
+            let mut ip_link_command = Command::new("ip");
+            ip_link_command.arg("link")
+                .arg("set")
+                .arg(network_interface_descriptor.name.name())
+                .arg("type")
+                .arg("can")
+                .arg("bitrate")
+                .arg(bitrate.to_string())
+                .arg("sample-point")
+                .arg(sample_point.sample_point().to_string());
+
+            if fd {
+                ip_link_command
+                    .arg("dbitrate")
+                    .arg(data_bitrate.to_string())
+                    .arg("dsample-point")
+                    .arg(data_sample_point.sample_point().to_string())
+                    .arg("fd")
+                    .arg("on");
+            } else {
+                ip_link_command
+                    .arg("fd")
+                    .arg("off");
+            }
+
+            let output = ip_link_command
+                .output()
+                .await
+                .map_err(|cause| Error::CommandLineProgramExecution { command: "can".to_string(), cause })?;
+
+            if !output.status.success() {
+                return Err(Error::CanInterfaceUpdate { name: network_interface_descriptor.name.clone(), cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim()) });
+            }
+
+        };
+
         Ok(())
     }
 
@@ -190,10 +246,14 @@ pub enum Error {
     ListInterfaces { cause: rtnetlink::Error },
     #[error("Failure while setting interface {interface} to state 'up': {cause}")]
     SetInterfaceUp { interface: Interface, cause: rtnetlink::Error },
+    #[error("Failure while setting interface {interface} to state 'down': {cause}")]
+    SetInterfaceDown { interface: Interface, cause: rtnetlink::Error },
     #[error("Failure while joining interface {interface} to bridge {bridge}: {cause}")]
     JoinInterfaceToBridge { interface: Interface, bridge: Interface, cause: rtnetlink::Error },
     #[error("Failure while creating virtual CAN interface '{name}': {cause}")]
     VCanInterfaceCreation { name: NetworkInterfaceName, cause: String},
+    #[error("Failure during updating CAN interface '{name}': {cause}")]
+    CanInterfaceUpdate { name: NetworkInterfaceName, cause: String},
     #[error("Failure while invoking command line program '{command}': {cause}")]
     CommandLineProgramExecution { command: String, cause: std::io::Error },
     #[error("{message}")]
