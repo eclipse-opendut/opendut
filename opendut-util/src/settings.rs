@@ -50,6 +50,7 @@ impl Debug for LoadedConfig {
 /// * A system configuration, read from `/etc/opendut/{name}.toml`
 /// * A user configuration, read from `[XDG_CONFIG_HOME|~/.config]/opendut/{name}/config.toml`
 /// * Environment variables prefixed with `OPENDUT_{NAME}_`
+/// * Additionally look at the path given in the optional environment variable OPENDUT_{name}_CUSTOM_CONFIG_PATH
 /// * The `overrides` passed as parameter.
 ///
 pub fn load_config(name: &str, defaults: &str, defaults_format: FileFormat, overrides: Config, secret_redacted_overrides: Config) -> Result<LoadedConfig, LoadError> {
@@ -62,6 +63,17 @@ pub fn load_config(name: &str, defaults: &str, defaults_format: FileFormat, over
         .add_source(config::File::from_str(defaults, defaults_format));
 
     let mut config_files = Vec::new();
+
+    /*
+     Additionally look at the path given in the optional environment variable 'OPENDUT_{name}_CUSTOM_CONFIG_PATH'.
+     Just point the environment variable to the configuration file path:
+     - e.g. OPENDUT_CARL_CUSTOM_CONFIG_PATH=/path/to/config.yaml
+    */
+    let name_upper_case = name.to_uppercase();
+    let custom_config_path_env_key = format!("OPENDUT_{name_upper_case}_CUSTOM_CONFIG_PATH");
+    if let Ok(config_path) = std::env::var(custom_config_path_env_key) {
+        config_files.push(Some(PathBuf::from(config_path)));
+    }
 
     if project::is_running_in_development() {
         config_files.push(project::make_path_absolute(development_config).ok())
