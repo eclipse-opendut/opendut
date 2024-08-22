@@ -128,3 +128,29 @@ export CUSTOM_ROOT_CA=resources/development/tls/custom-ca.pem
 export OPENDUT_DISABLE_PRIVATE_NETWORK=true  # optional
 vagrant provision
 ```
+
+## Give the virtual machine more CPU cores and more memory
+
+In case you want to build the project you may want to assign more CPU cores, more memory or more disk to your virtual machine.
+Just add the following environment variables to the `.env` file and reboot the virtual machine.
+* Configure more memory and/or CPUs:
+  ```shell
+  OPENDUT_VM_MEMORY=32768
+  OPENDUT_VM_CPUS=8
+  cargo theo vagrant halt
+  cargo theo vagrant up
+  ```
+* Configure more disk space:
+  * Most of the time you may want to clean up the cargo target directory inside the `opendut-vm` if you run out of disk space:
+  ```shell
+  cargo clean  # should clean out target directory in ~/rust-target
+  ```
+  * If this is still not enough you can install the vagrant disk size plugin
+  ```shell
+  vagrant plugin install vagrant-disksize
+  ```
+  * add the following environment variable:
+  ```shell
+  OPENDUT_VM_DISK_SIZE=80
+  ```
+  * and reboot the virtual machine to have more disk space unlocked.

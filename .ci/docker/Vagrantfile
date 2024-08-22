@@ -2,11 +2,14 @@
 # vi: set ft=ruby :
 
 vm_name = (ENV["OPENDUT_VM_NAME"] ||= "opendut-vm").to_s
+vm_memory = (ENV["OPENDUT_VM_MEMORY"] ||= "8192").to_i
+vm_cpus = (ENV["OPENDUT_VM_CPUS"] ||= "4").to_i
+vm_disk_size = (ENV["OPENDUT_VM_DISK_SIZE"] ||= "50").to_i
 
 machine = {
     :hostname => vm_name,
-    :memory => 8192,
-    :cpu => 4,
+    :memory => vm_memory,
+    :cpu => vm_cpus,
     :ip => "192.168.56.10",
     :box_name => "ubuntu/jammy64",
 }
@@ -18,6 +21,10 @@ Vagrant.configure("2") do |config|
 
     config.vm.box = machine[:box_name]
     config.vm.hostname = machine[:hostname]
+    unless Vagrant.has_plugin?("vagrant-disksize")
+        config.disksize.size = vm_disk_size + 'GB'
+    end
+
     if !disable_private_network then
         config.vm.network "private_network", ip: machine[:ip]
     end

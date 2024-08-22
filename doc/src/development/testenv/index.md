@@ -47,6 +47,7 @@ Set up the virtual machine
 Then you may start the test environment in the virtual machine.
 * And use it in [test mode](theo-use-test-mode.md)
 * Or use it in [development mode](theo-use-development-mode.md).
+* If you want to build the project in the virtual machine you may also want to give it more [resources](advanced.md#give-virtual-machine-more-cpus-and-more-memory) (cpu/memory).
 
 There are some known issues with the test environment (most of them on Windows): 
 * [known issues section](known-issues.md)
