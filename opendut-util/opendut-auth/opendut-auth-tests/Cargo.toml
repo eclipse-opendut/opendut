@@ -22,3 +22,6 @@ http = { workspace = true }
 tokio = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+
+[dev-dependencies]
+test-with = { workspace = true }

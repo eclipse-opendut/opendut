@@ -66,9 +66,9 @@ mod auth_tests {
 
     use crate::{registration_client};
 
+    #[test_with::env(RUN_KEYCLOAK_INTEGRATION_TESTS)]
     #[rstest]
     #[tokio::test]
-    #[ignore]
     async fn test_register_new_oidc_client(#[future] registration_client: RegistrationClientRef) {
         /*
          * This test is ignored because it requires a running keycloak server from the test environment.

@@ -176,9 +176,9 @@ mod auth_tests {
         ConfidentialClient::from_client_config(client_config, reqwest_client).await.unwrap()
     }
 
+    #[test_with::env(RUN_KEYCLOAK_INTEGRATION_TESTS)]
     #[rstest]
     #[tokio::test]
-    #[ignore]
     async fn test_confidential_client_get_token(#[future] confidential_edgar_client: ConfidentialClientRef) {
         /*
          * This test is ignored because it requires a running keycloak server from the test environment.

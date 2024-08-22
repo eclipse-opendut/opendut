@@ -71,6 +71,7 @@ pub(super) mod tests {
     use opendut_types::topology::DeviceId;
     use std::collections::HashSet;
 
+    #[test_with::no_env(SKIP_DATABASE_CONTAINER_TESTS)]
     #[tokio::test]
     async fn should_persist_cluster_configuration() -> anyhow::Result<()> {
         let mut db = database::testing::spawn_and_connect().await?;

@@ -3115,6 +3115,7 @@ dependencies = [
  "serde",
  "serde_json",
  "shadow-rs",
+ "test-with",
  "thiserror",
  "tokio",
  "tonic",
@@ -3139,6 +3140,7 @@ dependencies = [
  "rstest",
  "serde",
  "serde_json",
+ "test-with",
  "tokio",
  "url",
 ]
@@ -3186,6 +3188,7 @@ dependencies = [
  "shadow-rs",
  "tar",
  "tempfile",
+ "test-with",
  "testcontainers-modules",
  "thiserror",
  "tokio",
@@ -4075,6 +4078,7 @@ dependencies = [
  "proc-macro-error-attr",
  "proc-macro2",
  "quote",
+ "syn 1.0.109",
  "version_check",
 ]
 
@@ -5433,6 +5437,19 @@ name = "termtree"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3369f5ac52d5eb6ab48c6b4ffdc8efbcad6b89c765749064ba298f2c68a16a76"
+
+[[package]]
+name = "test-with"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ba1247cafc10bd1f42078931ffdc64dfac09c81304e069ce26225bec1953e230"
+dependencies = [
+ "proc-macro-error",
+ "proc-macro2",
+ "quote",
+ "regex",
+ "syn 2.0.75",
+]
 
 [[package]]
 name = "testcontainers"

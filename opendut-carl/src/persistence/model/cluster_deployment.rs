@@ -57,6 +57,7 @@ pub(super) mod tests {
     use super::*;
     use crate::persistence::database;
 
+    #[test_with::no_env(SKIP_DATABASE_CONTAINER_TESTS)]
     #[tokio::test]
     async fn should_persist_cluster_deployment() -> anyhow::Result<()> {
         let mut db = database::testing::spawn_and_connect().await?;

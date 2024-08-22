@@ -241,8 +241,8 @@ mod auth_tests {
     use crate::confidential::pem::read_pem_from_file_path;
     use crate::confidential::blocking;
 
+    #[test_with::env(RUN_KEYCLOAK_INTEGRATION_TESTS)]
     #[test]
-    #[ignore]
     fn test_get_token_example() {
         /*
          * This test is ignored because it requires a running keycloak server from the test environment.
