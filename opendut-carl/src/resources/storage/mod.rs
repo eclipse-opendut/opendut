@@ -17,9 +17,9 @@ pub enum ResourcesStorage {
 impl ResourcesStorage {
     pub async fn connect(options: PersistenceOptions) -> Result<Self, ConnectionError> {
         let storage = match options {
-            PersistenceOptions::Enabled { database_url: url } => {
-                let storage = PersistentResourcesStorage::connect(&url).await
-                    .map_err(|cause| ConnectionError::Database { url, source: cause })?;
+            PersistenceOptions::Enabled { database_connect_info } => {
+                let storage = PersistentResourcesStorage::connect(&database_connect_info).await
+                    .map_err(|cause| ConnectionError::Database { url: database_connect_info.url, source: cause })?;
                 ResourcesStorage::Persistent(storage)
             }
             PersistenceOptions::Disabled => {
@@ -36,30 +36,70 @@ pub enum ConnectionError {
     Database { url: Url, #[source] source: ConnectError },
 }
 
-#[derive(Clone)]
 pub enum PersistenceOptions {
-    Enabled {
-        database_url: Url,
-    },
+    Enabled { database_connect_info: DatabaseConnectInfo },
     Disabled,
 }
 impl PersistenceOptions {
     pub fn load(config: &config::Config) -> Result<Self, opendut_util::settings::LoadError> {
+        use opendut_util::settings::LoadError;
+
         let persistence_enabled = config.get_bool("persistence.enabled")?;
 
         if persistence_enabled {
-            let url_field = "persistence.database.url";
-            let url_value = config.get_string(url_field)?;
-            let database_url = Url::parse(&url_value)
-                .map_err(|cause| opendut_util::settings::LoadError::Parse {
-                    field: url_field.to_string(),
-                    value: url_value,
-                    source: Box::new(cause)
-                })?;
-            Ok(PersistenceOptions::Enabled { database_url })
+            let url = {
+                let field = "persistence.database.url";
+                let value = config.get_string(field)
+                    .map_err(|source| LoadError::FieldRetrieval { field, source: Box::new(source) })?;
+
+                Url::parse(&value)
+                    .map_err(|cause| LoadError::Parse {
+                        field: field.to_owned(),
+                        value,
+                        source: Box::new(cause)
+                    })?
+            };
+
+            let username = {
+                let field = "persistence.database.username";
+                config.get_string(field)
+                    .map_err(|source| LoadError::FieldRetrieval { field, source: Box::new(source) })?
+            };
+
+            let password = {
+                let field = "persistence.database.password";
+                let value = config.get_string(field)
+                    .map_err(|source| LoadError::FieldRetrieval { field, source: Box::new(source) })?;
+                Password { secret: value }
+            };
+
+            Ok(PersistenceOptions::Enabled {
+                database_connect_info: DatabaseConnectInfo {
+                    url,
+                    username,
+                    password,
+                }
+            })
         } else {
             Ok(PersistenceOptions::Disabled)
         }
+    }
+}
+pub struct DatabaseConnectInfo {
+    pub url: Url,
+    pub username: String,
+    pub password: Password,
+}
+///Wrapper for String without Debug and Display
+pub struct Password { secret: String }
+impl Password {
+    pub fn secret(&self) -> &str {
+        &self.secret
+    }
+
+    #[cfg(test)]
+    pub fn new_static(secret: &'static str) -> Self {
+        Self { secret: secret.to_owned() }
     }
 }
 

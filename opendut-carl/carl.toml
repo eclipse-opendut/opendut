@@ -29,7 +29,11 @@ scopes = "openid,profile,email"
 
 [persistence]
 enabled = false
-database.url = ""
+
+[persistence.database]
+url = ""  # e.g. postgresql://example.com/carl
+username = ""
+password = ""
 
 [peer]
 disconnect.timeout.ms = 30000

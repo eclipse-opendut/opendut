@@ -2,14 +2,24 @@ use diesel::{Connection as _, ConnectionError, PgConnection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use backoff::ExponentialBackoff;
 use tracing::{debug, info, warn};
-use url::Url;
+use crate::resources::storage::DatabaseConnectInfo;
 
 pub mod schema;
 
-pub async fn connect(url: &Url) -> Result<PgConnection, ConnectError> {
+pub async fn connect(database_connect_info: &DatabaseConnectInfo) -> Result<PgConnection, ConnectError> {
+    let DatabaseConnectInfo { url, username, password } = database_connect_info;
+
+    let confidential_url = {
+        let mut url = url.clone();
+        url.set_username(username)
+            .expect("failed to set username on URL while connecting to database");
+        url.set_password(Some(password.secret()))
+            .expect("failed to set password on URL while connecting to database");
+        url
+    };
 
     let mut connection = backoff::future::retry(ExponentialBackoff::default(), || async {
-        PgConnection::establish(url.as_str())
+        PgConnection::establish(confidential_url.as_str())
             .map_err(|cause| match &cause {
                 ConnectionError::BadConnection(_) => {
                     warn!("Connecting to database at {url} failed. Retrying.");
@@ -67,6 +77,7 @@ pub mod testing {
     use testcontainers_modules::testcontainers::ContainerAsync;
     use testcontainers_modules::{postgres, testcontainers::runners::AsyncRunner};
     use url::Url;
+    use crate::resources::storage::{DatabaseConnectInfo, Password};
 
     /// Spawns a Postgres Container and returns a connection for testing.
     /// ```no_run
@@ -86,9 +97,13 @@ pub mod testing {
         let container = postgres::Postgres::default().start().await?;
         let host = container.get_host().await?;
         let port = container.get_host_port_ipv4(5432).await?;
-        let url = Url::parse(&format!("postgres://postgres:postgres@{host}:{port}/postgres"))?;
 
-        let mut connection = database::connect(&url).await?;
+        let connect_info = DatabaseConnectInfo {
+            url: Url::parse(&format!("postgres://{host}:{port}/postgres"))?,
+            username: String::from("postgres"),
+            password: Password::new_static("postgres"),
+        };
+        let mut connection = database::connect(&connect_info).await?;
         connection.begin_test_transaction()?;
         Ok(Postgres { container, connection })
     }

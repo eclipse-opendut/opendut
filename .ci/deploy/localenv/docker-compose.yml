@@ -329,7 +329,9 @@ services:
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_SCOPES=
       # Persistence
       - OPENDUT_CARL_PERSISTENCE_ENABLED=true
-      - OPENDUT_CARL_PERSISTENCE_DATABASE_URL=postgres://postgres:$CARL_POSTGRES_PASSWORD@carl_postgres/carl
+      - OPENDUT_CARL_PERSISTENCE_DATABASE_URL=postgres://carl_postgres/carl
+      - OPENDUT_CARL_PERSISTENCE_DATABASE_USERNAME=postgres
+      - OPENDUT_CARL_PERSISTENCE_DATABASE_PASSWORD=$CARL_POSTGRES_PASSWORD
 
       - KEYCLOAK_URL=https://auth.opendut.local/
       - NETBIRD_MANAGEMENT_URL=https://netbird-api.opendut.local

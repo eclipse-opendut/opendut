@@ -4,6 +4,7 @@ pub fn load_with_overrides(overrides: config::Config) -> Result<LoadedConfig, Lo
     let carl_config_hide_secrets_override = config::Config::builder()
         .set_override("vpn.netbird.auth.secret", "redacted")?
         .set_override("network.oidc.client.secret", "redacted")?
+        .set_override("persistence.database.password", "redacted")?
         .build()?;
 
     opendut_util::settings::load_config("carl", include_str!("../carl.toml"), config::FileFormat::Toml, overrides, carl_config_hide_secrets_override)
