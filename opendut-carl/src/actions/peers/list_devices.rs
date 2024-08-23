@@ -36,6 +36,7 @@ mod tests {
     use crate::actions;
     use crate::actions::peers::testing::{fixture, store_peer_descriptor_options, Fixture};
     use crate::actions::{StorePeerDescriptorOptions, StorePeerDescriptorParams};
+    use crate::resources::manager::ResourcesManager;
     use googletest::prelude::*;
     use rstest::rstest;
     use std::sync::Arc;
@@ -43,7 +44,7 @@ mod tests {
     #[rstest]
     #[tokio::test]
     async fn should_list_all_devices(fixture: Fixture, store_peer_descriptor_options: StorePeerDescriptorOptions) -> anyhow::Result<()> {
-        let resources_manager = fixture.resources_manager;
+        let resources_manager = ResourcesManager::new_in_memory();
 
         let result = list_devices(ListDevicesParams {
             resources_manager: Arc::clone(&resources_manager),

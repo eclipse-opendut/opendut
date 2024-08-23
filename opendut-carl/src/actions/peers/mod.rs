@@ -18,11 +18,9 @@ mod testing {
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
     use crate::actions::StorePeerDescriptorOptions;
-    use crate::resources::manager::{ResourcesManager, ResourcesManagerRef};
     use crate::vpn::Vpn;
 
     pub struct Fixture {
-        pub resources_manager: ResourcesManagerRef,
         pub vpn: Vpn,
         pub peer_a_id: PeerId,
         pub peer_a_descriptor: PeerDescriptor,
@@ -72,7 +70,6 @@ mod testing {
             }
         };
         Fixture {
-            resources_manager: ResourcesManager::new_in_memory(),
             vpn: Vpn::Disabled,
             peer_a_id,
             peer_a_descriptor,

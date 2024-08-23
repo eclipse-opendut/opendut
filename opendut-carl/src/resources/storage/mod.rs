@@ -85,12 +85,14 @@ impl PersistenceOptions {
         }
     }
 }
+#[derive(Clone)]
 pub struct DatabaseConnectInfo {
     pub url: Url,
     pub username: String,
     pub password: Password,
 }
 ///Wrapper for String without Debug and Display
+#[derive(Clone)]
 pub struct Password { secret: String }
 impl Password {
     pub fn secret(&self) -> &str {

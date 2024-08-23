@@ -81,8 +81,10 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::actions::peers::testing::{fixture, Fixture};
     use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
+    use crate::resources::manager::ResourcesManager;
     use googletest::prelude::*;
     use opendut_types::cluster::{ClusterAssignment, ClusterId};
     use opendut_types::peer::configuration::PeerNetworkConfiguration;
@@ -92,8 +94,6 @@ mod tests {
     use std::str::FromStr;
     use std::sync::Arc;
 
-    use super::*;
-
     #[rstest]
     #[tokio::test]
     async fn should_update_peer_configuration(fixture: Fixture) -> anyhow::Result<()> {
@@ -101,7 +101,7 @@ mod tests {
         let settings = crate::settings::load_defaults()?;
         let peer_id = fixture.peer_a_id;
 
-        let resources_manager = fixture.resources_manager;
+        let resources_manager = ResourcesManager::new_in_memory();
         let peer_messaging_broker = PeerMessagingBroker::new(
             Arc::clone(&resources_manager),
             PeerMessagingBrokerOptions::load(&settings.config).unwrap(),

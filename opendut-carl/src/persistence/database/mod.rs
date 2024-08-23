@@ -77,7 +77,8 @@ pub mod testing {
     use testcontainers_modules::testcontainers::ContainerAsync;
     use testcontainers_modules::{postgres, testcontainers::runners::AsyncRunner};
     use url::Url;
-    use crate::resources::storage::{DatabaseConnectInfo, Password};
+    use crate::resources::manager::{ResourcesManager, ResourcesManagerRef};
+    use crate::resources::storage::{DatabaseConnectInfo, Password, PersistenceOptions};
 
     /// Spawns a Postgres Container and returns a connection for testing.
     /// ```no_run
@@ -93,7 +94,49 @@ pub mod testing {
     ///
     /// # fn do_something_with_database(connection: PgConnection) {}
     /// ```
-    pub async fn spawn_and_connect() -> anyhow::Result<Postgres> {
+    pub async fn spawn_and_connect() -> anyhow::Result<PostgresConnection> {
+        let (container, connect_info) = spawn().await?;
+
+        let mut connection = database::connect(&connect_info).await?;
+        connection.begin_test_transaction()?;
+        Ok(PostgresConnection { container, connection })
+    }
+    pub struct PostgresConnection {
+        #[allow(unused)] //primarily carried along to extend its lifetime until the end of the test (container is stopped when variable is dropped)
+        pub container: ContainerAsync<postgres::Postgres>,
+        pub connection: PgConnection,
+    }
+
+    /// Spawns a Postgres Container and returns a connection for testing.
+    /// ```no_run
+    /// # use std::any::Any;
+    /// # use opendut_carl::persistence::database;
+    ///
+    /// #[tokio::test]
+    /// async fn test() {
+    ///     let mut db = database::testing::spawn_and_connect_resources_manager().await?;
+    ///
+    ///     do_something_with_resources_manager(db.resources_manager);
+    /// }
+    ///
+    /// # fn do_something_with_resources_manager(connection: impl Any) {}
+    /// ```
+    pub async fn spawn_and_connect_resources_manager() -> anyhow::Result<PostgresResources> {
+        let (container, connect_info) = spawn().await?;
+
+        let resources_manager = ResourcesManager::create(PersistenceOptions::Enabled {
+            database_connect_info: connect_info.clone(),
+        }).await?;
+
+        Ok(PostgresResources { container, resources_manager })
+    }
+    pub struct PostgresResources {
+        #[allow(unused)] //primarily carried along to extend its lifetime until the end of the test (container is stopped when variable is dropped)
+        pub container: ContainerAsync<postgres::Postgres>,
+        pub resources_manager: ResourcesManagerRef,
+    }
+
+    async fn spawn() -> anyhow::Result<(ContainerAsync<postgres::Postgres>, DatabaseConnectInfo)> {
         let container = postgres::Postgres::default().start().await?;
         let host = container.get_host().await?;
         let port = container.get_host_port_ipv4(5432).await?;
@@ -103,14 +146,7 @@ pub mod testing {
             username: String::from("postgres"),
             password: Password::new_static("postgres"),
         };
-        let mut connection = database::connect(&connect_info).await?;
-        connection.begin_test_transaction()?;
-        Ok(Postgres { container, connection })
-    }
 
-    pub struct Postgres {
-        #[allow(unused)] //primarily carried along to extend its lifetime until the end of the test (container is stopped when variable is dropped)
-        pub container: ContainerAsync<postgres::Postgres>,
-        pub connection: PgConnection,
+        Ok((container, connect_info))
     }
 }

@@ -140,8 +140,8 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::actions::peers;
-    use crate::actions::peers::testing::{fixture, store_peer_descriptor_options};
+    use crate::actions::peers::testing::{fixture, store_peer_descriptor_options, Fixture};
+    use crate::resources::manager::ResourcesManager;
     use googletest::prelude::*;
     use opendut_types::topology::{DeviceDescription, DeviceId, DeviceName, Topology};
     use opendut_types::util::net::NetworkInterfaceId;
@@ -150,9 +150,21 @@ mod tests {
 
     #[rstest]
     #[tokio::test]
-    async fn should_update_expected_resources(fixture: peers::testing::Fixture, store_peer_descriptor_options: StorePeerDescriptorOptions) -> anyhow::Result<()> {
+    async fn should_update_expected_resources_in_memory(fixture: Fixture, store_peer_descriptor_options: StorePeerDescriptorOptions) -> anyhow::Result<()> {
+        let resources_manager = ResourcesManager::new_in_memory();
+        should_update_expected_resources_implementation(resources_manager, fixture, store_peer_descriptor_options).await
+    }
 
-        let resources_manager = fixture.resources_manager;
+    #[test_with::no_env(SKIP_DATABASE_CONTAINER_TESTS)]
+    #[rstest]
+    #[tokio::test]
+    #[ignore] //FIXME currently broken
+    async fn should_update_expected_resources_in_database(fixture: Fixture, store_peer_descriptor_options: StorePeerDescriptorOptions) -> anyhow::Result<()> {
+        let db = crate::persistence::database::testing::spawn_and_connect_resources_manager().await?;
+        should_update_expected_resources_implementation(db.resources_manager, fixture, store_peer_descriptor_options).await
+    }
+
+    async fn should_update_expected_resources_implementation(resources_manager: ResourcesManagerRef, fixture: Fixture, store_peer_descriptor_options: StorePeerDescriptorOptions) -> anyhow::Result<()> {
 
         store_peer_descriptor(StorePeerDescriptorParams {
             resources_manager: Arc::clone(&resources_manager),
