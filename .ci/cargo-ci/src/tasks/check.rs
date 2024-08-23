@@ -20,7 +20,7 @@ impl CheckCli {
     }
 }
 
-#[tracing::instrument]
+#[tracing::instrument(skip_all)]
 pub fn check(all_features: bool, features: Vec<String>) -> crate::Result {
 
     test(all_features, features)?;
@@ -32,7 +32,7 @@ pub fn check(all_features: bool, features: Vec<String>) -> crate::Result {
     Ok(())
 }
 
-#[tracing::instrument]
+#[tracing::instrument(skip_all)]
 fn test(all_features: bool, features: Vec<String>) -> crate::Result {
 
     let mut command = Command::new("cargo");
