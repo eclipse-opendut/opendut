@@ -24,60 +24,23 @@ pub use clusters::{
     DeleteClusterDeploymentError,
 };
 
-pub use peers::{
-    store_peer_descriptor,
-    StorePeerDescriptorParams,
-    StorePeerDescriptorOptions,
-    StorePeerDescriptorError,
-};
+pub use peers::store_peer_descriptor::*;
 
-pub use peers::{
-    generate_peer_setup,
-    GeneratePeerSetupParams,
-    GeneratePeerSetupError,
-};
+pub use peers::generate_peer_setup::*;
 
-pub use peers::{
-    generate_cleo_setup,
-    GenerateCleoSetupParams,
-    GenerateCleoSetupError,
-};
+pub use peers::generate_cleo_setup::*;
 
-pub use peers::{
-    delete_peer_descriptor,
-    DeletePeerDescriptorParams,
-    DeletePeerDescriptorError,
-};
+pub use peers::delete_peer_descriptor::*;
 
-pub use peers::{
-    list_peer_descriptors,
-    ListPeerDescriptorsParams,
-    ListPeerDescriptorsError,
-};
+pub use peers::list_peer_descriptors::*;
 
-pub use peers::{
-    get_peer_state,
-    GetPeerStateParams,
-    GetPeerStateError,
-};
+pub use peers::get_peer_state::*;
 
-pub use peers::{
-    list_devices,
-    ListDevicesParams,
-    ListDevicesError,
-};
+pub use peers::list_devices::*;
 
-pub use peers::{
-    assign_cluster,
-    AssignClusterParams,
-    AssignClusterError,
-};
+pub use peers::assign_cluster::*;
 
-pub use peers::{
-    unassign_cluster,
-    UnassignClusterParams,
-    UnassignClusterError,
-};
+pub use peers::unassign_cluster::*;
 
 mod peers;
 mod clusters;
