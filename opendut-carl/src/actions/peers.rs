@@ -763,6 +763,48 @@ mod test {
         const CERTIFICATE_AUTHORITY_STRING: &str = include_str!("../../../resources/development/tls/insecure-development-ca.pem");
     }
 
+    mod list_devices {
+        use super::*;
+        use googletest::prelude::*;
+
+        #[rstest]
+        #[tokio::test]
+        async fn should_list_all_devices(fixture: Fixture, store_peer_descriptor_options: StorePeerDescriptorOptions) -> anyhow::Result<()> {
+            let resources_manager = fixture.resources_manager;
+
+            let result = list_devices(ListDevicesParams {
+                resources_manager: Arc::clone(&resources_manager),
+            }).await?;
+            assert!(result.is_empty());
+
+
+            store_peer_descriptor(StorePeerDescriptorParams {
+                resources_manager: Arc::clone(&resources_manager),
+                vpn: fixture.vpn,
+                peer_descriptor: fixture.peer_a_descriptor,
+                options: store_peer_descriptor_options,
+            }).await?;
+
+
+            let result = list_devices(ListDevicesParams {
+                resources_manager: Arc::clone(&resources_manager),
+            }).await?;
+
+            let result_ids = result.into_iter()
+                .map(|device| device.id)
+                .collect::<Vec<_>>();
+
+            assert_that!(
+                result_ids,
+                unordered_elements_are![
+                    eq(fixture.peer_a_device_1),
+                    eq(fixture.peer_a_device_2),
+                ]
+            );
+            Ok(())
+        }
+    }
+
     struct Fixture {
         resources_manager: ResourcesManagerRef,
         vpn: Vpn,
