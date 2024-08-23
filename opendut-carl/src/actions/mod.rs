@@ -1,28 +1,10 @@
-#![allow(unused_imports)]
+pub use clusters::create_cluster_configuration::*;
 
-pub use clusters::{
-    create_cluster_configuration,
-    CreateClusterConfigurationParams,
-    CreateClusterConfigurationError,
-};
+pub use clusters::delete_cluster_configuration::*;
 
-pub use clusters::{
-    delete_cluster_configuration,
-    DeleteClusterConfigurationParams,
-    DeleteClusterConfigurationError,
-};
+pub use clusters::store_cluster_deployment::*;
 
-pub use clusters::{
-    store_cluster_deployment,
-    StoreClusterConfigurationParams,
-    StoreClusterDeploymentError,
-};
-
-pub use clusters::{
-    delete_cluster_deployment,
-    DeleteClusterDeploymentParams,
-    DeleteClusterDeploymentError,
-};
+pub use clusters::delete_cluster_deployment::*;
 
 pub use peers::store_peer_descriptor::*;
 
