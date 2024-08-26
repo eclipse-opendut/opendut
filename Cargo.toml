@@ -66,7 +66,7 @@ config = { git = "https://github.com/mehcode/config-rs", rev = "e3c1d0b452639478
 console = "0.15.8"
 console_error_panic_hook = "0.1.7"
 ctrlc = "3.4.2"
-diesel = "2.2.1"
+diesel = "2.2.3"
 diesel_migrations = "2.2.0"
 digest = "0.10.7"
 dotenvy = "0.15.7"
