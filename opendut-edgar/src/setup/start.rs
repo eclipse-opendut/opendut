@@ -1,11 +1,14 @@
 use std::collections::HashSet;
+use std::fs::{read_dir, read_to_string};
+use std::str::FromStr;
 use std::{env, fs};
 use std::ffi::OsStr;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use anyhow::Context;
-use tracing::info;
+use anyhow::{Context, Ok};
+use console::colors_enabled;
+use tracing::{debug, error, info, warn};
 use url::Url;
 
 use opendut_types::peer::PeerSetup;
@@ -24,6 +27,7 @@ use crate::setup::tasks::write_configuration;
 use crate::setup::util::running_in_docker;
 
 use super::constants::setup_plugins;
+use super::plugin_runtime::PluginRuntime;
 
 #[allow(clippy::box_default)]
 pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, mtu: u16) -> anyhow::Result<()> {
@@ -41,20 +45,7 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
 
 
     #[cfg(not(target_arch = "arm"))]
-    let _ = {
-        use crate::setup::plugin_runtime::PluginRuntime;
-
-        let plugin_runtime = PluginRuntime::new();
-        let plugin_paths = discover_plugins().unwrap();
-
-        let mut plugins: Vec<Box<dyn Task>> = plugin_paths.iter()
-            .map(|path|Box::new(plugin_runtime.create_plugin_from_wasm(path)) as Box<dyn Task>)
-            .collect();
-
-        tasks.append(&mut plugins);
-
-        plugin_runtime
-    };
+    let _ = create_plugin_runtime(&mut tasks);
 
 
     tasks.append(&mut vec![
@@ -129,20 +120,7 @@ pub async fn unmanaged(
     let mut tasks: Vec<Box<dyn Task>> = vec![];
     
     #[cfg(not(target_arch = "arm"))]
-    let _ = {
-        use crate::setup::plugin_runtime::PluginRuntime;
-
-        let plugin_runtime = PluginRuntime::new();
-        let plugin_paths = discover_plugins().unwrap();
-
-        let mut plugins: Vec<Box<dyn Task>> = plugin_paths.iter()
-            .map(|path|Box::new(plugin_runtime.create_plugin_from_wasm(path)) as Box<dyn Task>)
-            .collect();
-
-        tasks.append(&mut plugins);
-
-        plugin_runtime
-    };
+    let _ = create_plugin_runtime(&mut tasks);
 
     tasks.append(&mut vec![
         Box::new(tasks::CheckCommandLinePrograms),
@@ -188,21 +166,77 @@ fn determine_service_user_name() -> User {
     User { name }
 }
 
+fn create_plugin_runtime(tasks: &mut Vec<Box<dyn Task>>) -> PluginRuntime {
+    use crate::setup::plugin_runtime::PluginRuntime;
+
+    let plugin_runtime = PluginRuntime::new();
+    let plugin_paths = discover_plugins().unwrap();
+
+    let mut plugins: Vec<Box<dyn Task>> = plugin_paths.iter()
+        .map(|path|Box::new(plugin_runtime.create_plugin_from_wasm(path)) as Box<dyn Task>)
+        .collect();
+
+    tasks.append(&mut plugins);
+
+    plugin_runtime
+}
+
 fn discover_plugins() -> anyhow::Result<Vec<PathBuf>> {
 	let path = setup_plugins::path_in_edgar_distribution()?;
-	let paths = fs::read_dir(&path)?;
 
-	let result: Vec<PathBuf> = paths
-		.filter_map(|item| {
-			item.ok().and_then(|entry| {
-				if entry.path().extension().and_then(OsStr::to_str) == Some("wasm") {
-					Some(entry.path())
-				} else {
-					None
-				}
-			})
-		})
-		.collect();
+    discover_plugins_in_path(&path)
+}
 
-	Ok(result)
+fn discover_plugins_in_path(path: &Path) -> anyhow::Result<Vec<PathBuf>>{
+    if !path.exists() {
+        warn!("file or folder {} does not exist", path.to_str().unwrap());
+        return Ok(vec![]);
+    }
+
+
+    let plugin_order = read_plugin_order(&path).unwrap();
+
+    let mut plugin_paths: Vec<PathBuf> = vec![];
+
+    for entry in plugin_order{
+        if entry.is_dir(){
+            plugin_paths.append(&mut discover_plugins_in_path(&entry).unwrap());
+        }else{
+            if entry.extension().and_then(OsStr::to_str) == Some("wasm"){
+                plugin_paths.push(entry);
+            }
+        }
+    }
+
+
+
+    Ok(plugin_paths)
+}
+
+fn read_plugin_order(path: &Path) -> anyhow::Result<Vec<PathBuf>>{
+    let config_path = path.join("plugins.txt");
+
+    if !config_path.exists() {
+        warn!("No plugin configuration found at {}", path.to_str().unwrap());
+        return Ok(vec![]);
+    }
+
+    let mut paths:Vec<PathBuf> = vec![];
+
+    for line in read_to_string(config_path).unwrap().lines(){
+        let mut potential_path = PathBuf::from(line.trim());
+
+        if !potential_path.is_absolute(){
+            potential_path = path.join(&potential_path);
+        }
+        
+        debug!("{:?}", potential_path);
+        if potential_path.exists() {
+            paths.push(potential_path);
+        }else{
+            error!("Plugin {} specified in {}/plugins.txt does not exist", potential_path.to_str().unwrap(), path.to_str().unwrap());
+        }
+    };
+
+    Ok(paths)
 }
