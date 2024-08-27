@@ -18,15 +18,17 @@ impl Persistable for PeerDescriptor {
     }
 
     fn remove(peer_id: PeerId, storage: &mut Storage) -> PersistenceResult<Option<Self>> {
-        remove_from_database(peer_id, storage.db.lock().unwrap().deref_mut())
+        query::peer_descriptor::remove(peer_id, storage.db.lock().unwrap().deref_mut())
     }
 
     fn get(peer_id: PeerId, storage: &Storage) -> PersistenceResult<Option<Self>> {
-        get_from_database(peer_id, storage.db.lock().unwrap().deref_mut())
+        let result = query::peer_descriptor::list(Filter::By(peer_id), storage.db.lock().unwrap().deref_mut())?
+            .first().cloned();
+        Ok(result)
     }
 
     fn list(storage: &Storage) -> PersistenceResult<Vec<Self>> {
-        list_database(storage.db.lock().unwrap().deref_mut())
+        query::peer_descriptor::list(Filter::Not, storage.db.lock().unwrap().deref_mut())
     }
 }
 
@@ -56,155 +58,4 @@ pub(super) fn insert_into_database(peer_descriptor: PeerDescriptor, connection: 
     }
 
     Ok(())
-}
-
-fn remove_from_database(peer_id: PeerId, connection: &mut PgConnection) -> PersistenceResult<Option<PeerDescriptor>> {
-    query::peer_descriptor::remove(peer_id, connection)
-}
-
-fn get_from_database(peer_id: PeerId, connection: &mut PgConnection) -> PersistenceResult<Option<PeerDescriptor>> {
-    let result = query::peer_descriptor::list(Filter::By(peer_id), connection)?
-        .first().cloned();
-    Ok(result)
-}
-
-fn list_database(connection: &mut PgConnection) -> PersistenceResult<Vec<PeerDescriptor>> {
-    query::peer_descriptor::list(Filter::Not, connection)
-}
-
-
-#[cfg(test)]
-pub(super) mod tests {
-    use opendut_types::peer::executor::container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine};
-    use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorDescriptors, ExecutorId, ExecutorKind, ResultsUrl};
-    use opendut_types::peer::{PeerId, PeerLocation, PeerName};
-    use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag, Topology};
-    use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
-
-    use super::*;
-    use crate::persistence::database;
-
-    #[test_with::no_env(SKIP_DATABASE_CONTAINER_TESTS)]
-    #[tokio::test]
-    async fn should_persist_peer_descriptor() -> anyhow::Result<()> {
-        let mut db = database::testing::spawn_and_connect().await?;
-
-        let testee = peer_descriptor()?;
-
-        let result = get_from_database(testee.id, &mut db.connection)?;
-        assert!(result.is_none());
-        let result = list_database(&mut db.connection)?;
-        assert!(result.is_empty());
-
-        insert_into_database(testee.clone(), &mut db.connection)?;
-
-        let result = get_from_database(testee.id, &mut db.connection)?;
-        assert_eq!(result, Some(testee.clone()));
-        let result = list_database(&mut db.connection)?;
-        assert_eq!(result.len(), 1);
-        assert_eq!(result.first(), Some(&testee));
-
-        let result = remove_from_database(testee.id, &mut db.connection)?;
-        assert_eq!(result, Some(testee.clone()));
-
-        let result = get_from_database(testee.id, &mut db.connection)?;
-        assert!(result.is_none());
-        let result = list_database(&mut db.connection)?;
-        assert!(result.is_empty());
-
-        let result = remove_from_database(testee.id, &mut db.connection)?;
-        assert_eq!(result, None);
-
-        Ok(())
-    }
-
-    pub fn peer_descriptor() -> anyhow::Result<PeerDescriptor> {
-        let network_interface_id1 = NetworkInterfaceId::random();
-        let network_interface_id2 = NetworkInterfaceId::random();
-
-        Ok(PeerDescriptor {
-            id: PeerId::random(),
-            name: PeerName::try_from("testee_name")?,
-            location: Some(PeerLocation::try_from("testee_location")?),
-            network: PeerNetworkDescriptor {
-                interfaces: vec![
-                    NetworkInterfaceDescriptor {
-                        id: network_interface_id1,
-                        name: NetworkInterfaceName::try_from("eth0")?,
-                        configuration: NetworkInterfaceConfiguration::Ethernet,
-                    },
-                    NetworkInterfaceDescriptor {
-                        id: network_interface_id2,
-                        name: NetworkInterfaceName::try_from("can0")?,
-                        configuration: NetworkInterfaceConfiguration::Can {
-                            bitrate: 11111,
-                            sample_point: CanSamplePoint::try_from(0.222)?,
-                            fd: true,
-                            data_bitrate: 33333,
-                            data_sample_point: CanSamplePoint::try_from(0.444)?,
-                        },
-                    },
-                ],
-                bridge_name: Some(NetworkInterfaceName::try_from("br0")?),
-            },
-            topology: Topology {
-                devices: vec![
-                    DeviceDescriptor {
-                        id: DeviceId::random(),
-                        name: DeviceName::try_from("device1")?,
-                        description: Some(DeviceDescription::try_from("device1-description")?),
-                        interface: network_interface_id1,
-                        tags: vec![
-                            DeviceTag::try_from("tag1")?,
-                            DeviceTag::try_from("tag2")?,
-                        ],
-                    },
-                    DeviceDescriptor {
-                        id: DeviceId::random(),
-                        name: DeviceName::try_from("device2")?,
-                        description: Some(DeviceDescription::try_from("device2-description")?),
-                        interface: network_interface_id2,
-                        tags: vec![
-                            DeviceTag::try_from("tag2")?,
-                            DeviceTag::try_from("tag3")?,
-                        ],
-                    },
-                ],
-            },
-            executors: ExecutorDescriptors {
-                executors: vec![
-                    ExecutorDescriptor {
-                        id: ExecutorId::random(),
-                        kind: ExecutorKind::Container {
-                            engine: Engine::Podman,
-                            name: ContainerName::try_from("container-name")?,
-                            image: ContainerImage::try_from("container-image")?,
-                            volumes: vec![
-                                ContainerVolume::try_from("container-volume")?,
-                            ],
-                            devices: vec![
-                                ContainerDevice::try_from("container-device")?,
-                            ],
-                            envs: vec![
-                                ContainerEnvironmentVariable::new("env-name", "env-value")?,
-                            ],
-                            ports: vec![
-                                ContainerPortSpec::try_from("8080:8080")?,
-                            ],
-                            command: ContainerCommand::try_from("ls")?,
-                            args: vec![
-                                ContainerCommandArgument::try_from("-la")?,
-                            ],
-                        },
-                        results_url: None,
-                    },
-                    ExecutorDescriptor {
-                        id: ExecutorId::random(),
-                        kind: ExecutorKind::Executable,
-                        results_url: Some(ResultsUrl::try_from("https://example.com/")?),
-                    },
-                ]
-            },
-        })
-    }
 }

@@ -10,6 +10,9 @@ use crate::resources::Resource;
 pub mod volatile;
 pub mod persistent;
 
+#[cfg(test)]
+mod tests;
+
 pub enum ResourcesStorage {
     Persistent(PersistentResourcesStorage),
     Volatile(VolatileResourcesStorage),
