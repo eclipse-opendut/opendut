@@ -7,16 +7,16 @@ use uuid::Uuid;
 
 use crate::persistence::database::schema;
 use crate::persistence::error::{PersistenceError, PersistenceOperation, PersistenceResult};
-use crate::persistence::model::query::types::container_engine_kind::PersistableContainerEngineKind;
-use crate::persistence::model::query::types::environment_variable::PersistableEnvironmentVariable;
-use crate::persistence::model::query::types::executor_kind::PersistableExecutorKind;
-use crate::persistence::model::query::types::null_removing_text_array::NullRemovingTextArray;
+use crate::persistence::query::types::container_engine_kind::PersistableContainerEngineKind;
+use crate::persistence::query::types::environment_variable::PersistableEnvironmentVariable;
+use crate::persistence::query::types::executor_kind::PersistableExecutorKind;
+use crate::persistence::query::types::null_removing_text_array::NullRemovingTextArray;
 
 #[derive(diesel::Queryable, diesel::Selectable, diesel::Insertable, diesel::AsChangeset)]
 #[diesel(table_name = schema::executor_descriptor)]
 #[diesel(belongs_to(PeerDescriptor, foreign_key = peer_id))]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub(super) struct PersistableExecutorDescriptor {
+pub(in crate::persistence) struct PersistableExecutorDescriptor {
     pub executor_id: Uuid,
     pub kind: PersistableExecutorKind,
     pub results_url: Option<String>,
@@ -28,7 +28,7 @@ pub(super) struct PersistableExecutorDescriptor {
 #[diesel(primary_key(executor_id))]
 #[diesel(belongs_to(PersistableExecutorDescriptor, foreign_key = executor_id))]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub(super) struct PersistableExecutorKindContainer {
+pub(in crate::persistence) struct PersistableExecutorKindContainer {
     pub executor_id: Uuid,
     engine: PersistableContainerEngineKind,
     name: Option<String>,

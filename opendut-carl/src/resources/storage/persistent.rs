@@ -2,7 +2,7 @@ use std::sync::Mutex;
 
 use crate::persistence::database::ConnectError;
 use crate::persistence::error::PersistenceResult;
-use crate::persistence::model::Persistable;
+use crate::persistence::resources::Persistable;
 use crate::persistence::{Db, Storage};
 use crate::resources::storage::volatile::VolatileResourcesStorage;
 use crate::resources::storage::{DatabaseConnectInfo, Resource, ResourcesStorageApi};

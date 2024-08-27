@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::persistence::error::PersistenceResult;
-use crate::persistence::model::Persistable;
+use crate::persistence::resources::Persistable;
 use crate::resources::storage::PersistenceOptions;
 use crate::resources::{storage, Resource, Resources};
 use tokio::sync::RwLock;

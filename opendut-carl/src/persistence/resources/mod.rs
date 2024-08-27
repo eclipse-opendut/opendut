@@ -10,7 +10,6 @@ pub mod peer_configuration;
 pub mod peer_configuration2;
 pub mod peer_descriptor;
 pub mod peer_state;
-mod query;
 
 pub trait Persistable: Send + Sync + Sized + Debug + Resource {
     fn insert(self, id: Self::Id, storage: &mut Storage) -> PersistenceResult<()>;

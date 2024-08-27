@@ -3,8 +3,8 @@ use uuid::Uuid;
 
 use crate::persistence::database::schema;
 use crate::persistence::error::{PersistenceError, PersistenceResult};
-use crate::persistence::model::query;
-use crate::persistence::model::query::Filter;
+use crate::persistence::query;
+use crate::persistence::query::Filter;
 use opendut_types::peer::executor::ExecutorDescriptors;
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
 use opendut_types::topology::Topology;

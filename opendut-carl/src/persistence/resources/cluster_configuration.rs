@@ -1,7 +1,7 @@
-use super::{query, Persistable};
+use super::Persistable;
 use crate::persistence::error::{PersistenceError, PersistenceResult};
-use crate::persistence::model::query::Filter;
-use crate::persistence::Storage;
+use crate::persistence::query::Filter;
+use crate::persistence::{query, Storage};
 use diesel::Connection;
 use opendut_types::cluster::{ClusterConfiguration, ClusterId};
 

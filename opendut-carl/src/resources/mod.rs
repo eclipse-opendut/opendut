@@ -1,7 +1,7 @@
 use resource::Resource;
 
 use crate::persistence::error::PersistenceResult;
-use crate::persistence::model::Persistable;
+use crate::persistence::resources::Persistable;
 use crate::resources::storage::{PersistenceOptions, ResourcesStorage, ResourcesStorageApi};
 
 pub mod manager;

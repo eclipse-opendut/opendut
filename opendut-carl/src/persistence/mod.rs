@@ -4,7 +4,8 @@ use crate::resources::storage::volatile::VolatileResourcesStorage;
 use diesel::PgConnection;
 
 pub mod database;
-pub(crate) mod model;
+pub(crate) mod resources;
+mod query;
 
 pub struct Storage {
     pub db: Db,

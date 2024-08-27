@@ -2,9 +2,9 @@ use diesel::Connection;
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
 
 use crate::persistence::error::{PersistenceError, PersistenceResult};
-use crate::persistence::model::query::Filter;
-use crate::persistence::model::{query, Persistable};
-use crate::persistence::Storage;
+use crate::persistence::query::Filter;
+use crate::persistence::resources::Persistable;
+use crate::persistence::{query, Storage};
 
 impl Persistable for DeviceDescriptor {
     fn insert(self, _device_id: DeviceId, storage: &mut Storage) -> PersistenceResult<()> {

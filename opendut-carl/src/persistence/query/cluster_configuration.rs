@@ -1,8 +1,8 @@
 use crate::persistence::database::schema;
 use crate::persistence::error::{PersistenceError, PersistenceResult};
-use crate::persistence::model::query;
-use crate::persistence::model::query::cluster_device::PersistableClusterDevice;
-use crate::persistence::model::query::Filter;
+use crate::persistence::query;
+use crate::persistence::query::cluster_device::PersistableClusterDevice;
+use crate::persistence::query::Filter;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl, SelectableHelper};
 use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
 use opendut_types::peer::PeerId;
