@@ -16,7 +16,7 @@ use crate::persistence::model::query::types::null_removing_text_array::NullRemov
 #[diesel(table_name = schema::executor_descriptor)]
 #[diesel(belongs_to(PeerDescriptor, foreign_key = peer_id))]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct PersistableExecutorDescriptor {
+pub(super) struct PersistableExecutorDescriptor {
     pub executor_id: Uuid,
     pub kind: PersistableExecutorKind,
     pub results_url: Option<String>,
@@ -28,7 +28,7 @@ pub struct PersistableExecutorDescriptor {
 #[diesel(primary_key(executor_id))]
 #[diesel(belongs_to(PersistableExecutorDescriptor, foreign_key = executor_id))]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct PersistableExecutorKindContainer {
+pub(super) struct PersistableExecutorKindContainer {
     pub executor_id: Uuid,
     engine: PersistableContainerEngineKind,
     name: Option<String>,

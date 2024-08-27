@@ -3,7 +3,7 @@ use std::sync::Mutex;
 use crate::persistence::database::ConnectError;
 use crate::persistence::error::PersistenceResult;
 use crate::persistence::model::Persistable;
-use crate::persistence::Storage;
+use crate::persistence::{Db, Storage};
 use crate::resources::storage::volatile::VolatileResourcesStorage;
 use crate::resources::storage::{DatabaseConnectInfo, Resource, ResourcesStorageApi};
 
@@ -12,9 +12,11 @@ pub struct PersistentResourcesStorage {
 }
 impl PersistentResourcesStorage {
     pub async fn connect(database_connect_info: &DatabaseConnectInfo) -> Result<Self, ConnectError> {
-        let db = Mutex::new(
-            crate::persistence::database::connect(database_connect_info).await?
-        );
+        let db = Db {
+            inner: Mutex::new(
+                crate::persistence::database::connect(database_connect_info).await?
+            )
+        };
         let memory = VolatileResourcesStorage::default();
         let storage = Storage { db, memory };
         Ok(Self { storage })

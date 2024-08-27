@@ -2,10 +2,18 @@ use crate::persistence::database::schema;
 use crate::persistence::error::{PersistenceError, PersistenceResult};
 use crate::persistence::model::query::Filter;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, QueryResult, RunQueryDsl};
-use uuid::Uuid;
 use opendut_types::cluster::{ClusterDeployment, ClusterId};
+use uuid::Uuid;
 
-pub fn insert(cluster_id: ClusterId, connection: &mut PgConnection) -> PersistenceResult<()> {
+pub fn insert(cluster_deployment: ClusterDeployment, connection: &mut PgConnection) -> PersistenceResult<()> {
+    let ClusterDeployment { id } = cluster_deployment;
+
+    insert_persistable(id, connection)?;
+
+    Ok(())
+}
+
+fn insert_persistable(cluster_id: ClusterId, connection: &mut PgConnection) -> PersistenceResult<()> {
     set_deployment_requested(cluster_id, true, connection)
         .map_err(|cause| PersistenceError::insert::<ClusterDeployment>(cluster_id.0, cause))?;
     Ok(())

@@ -12,7 +12,7 @@ use crate::persistence::model::query::types::network_interface_kind::Persistable
 #[diesel(table_name = schema::network_interface_descriptor)]
 #[diesel(belongs_to(PeerDescriptor, foreign_key = peer_id))]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct PersistableNetworkInterfaceDescriptor {
+pub(super) struct PersistableNetworkInterfaceDescriptor {
     pub network_interface_id: Uuid,
     pub name: String,
     pub kind: PersistableNetworkInterfaceKind,
@@ -24,7 +24,7 @@ pub struct PersistableNetworkInterfaceDescriptor {
 #[diesel(primary_key(network_interface_id))]
 #[diesel(belongs_to(PersistableNetworkInterfaceDescriptor, foreign_key = network_interface_id))]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct PersistableNetworkInterfaceKindCan {
+pub(super) struct PersistableNetworkInterfaceKindCan {
     pub network_interface_id: Uuid,
     pub bitrate: i32,
     pub sample_point_times_1000: i32,
@@ -33,7 +33,7 @@ pub struct PersistableNetworkInterfaceKindCan {
     pub data_sample_point_times_1000: i32,
 }
 
-pub fn insert_into_database(interface: NetworkInterfaceDescriptor, peer_id: PeerId, connection: &mut PgConnection) -> PersistenceResult<()> {
+pub fn insert(interface: NetworkInterfaceDescriptor, peer_id: PeerId, connection: &mut PgConnection) -> PersistenceResult<()> {
     let network_interface_id = interface.id.uuid;
 
     let (kind, network_interface_kind_can) = match &interface.configuration {

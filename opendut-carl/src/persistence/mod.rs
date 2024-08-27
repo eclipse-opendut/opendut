@@ -1,4 +1,4 @@
-use std::sync::Mutex;
+use std::sync::{Mutex, MutexGuard};
 
 use crate::resources::storage::volatile::VolatileResourcesStorage;
 use diesel::PgConnection;
@@ -10,8 +10,15 @@ pub struct Storage {
     pub db: Db,
     pub memory: Memory,
 }
-pub(crate) type Db = Mutex<PgConnection>; //Mutex rather than RwLock, because we share this between threads (i.e. we need it to implement `Sync`)
-pub(crate) type Memory = VolatileResourcesStorage;
+pub struct Db {
+    pub inner: Mutex<PgConnection>, //Mutex rather than RwLock, because we share this between threads (i.e. we need it to implement `Sync`)
+}
+impl Db {
+    pub fn connection(&self) -> MutexGuard<PgConnection> {
+        self.inner.lock().expect("error while locking mutex for database connection")
+    }
+}
+pub type Memory = VolatileResourcesStorage;
 
 pub(crate) mod error {
     use std::fmt::{Display, Formatter};

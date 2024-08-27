@@ -10,16 +10,44 @@ use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNe
 use opendut_types::topology::Topology;
 use opendut_types::util::net::NetworkInterfaceName;
 
+pub fn insert(peer_descriptor: PeerDescriptor, connection: &mut PgConnection) -> PersistenceResult<()> {
+    let PeerDescriptor { id: peer_id, name, location, network, topology, executors } = peer_descriptor;
+    let PeerNetworkDescriptor { interfaces, bridge_name } = network;
+
+    insert_persistable(PersistablePeerDescriptor {
+        peer_id: peer_id.uuid,
+        name: name.value(),
+        location: location.map(|location| location.value()),
+        network_bridge_name: bridge_name.map(|name| name.name()),
+    }, connection)?;
+
+    for interface in interfaces {
+        query::network_interface_descriptor::insert(interface, peer_id, connection)?;
+    }
+
+    let Topology { devices } = topology;
+
+    for device in devices {
+        query::device_descriptor::insert(device, connection)?;
+    }
+
+    for executor in executors.executors {
+        query::executor_descriptor::insert_into_database(executor, peer_id, connection)?;
+    }
+
+    Ok(())
+}
+
 #[derive(Clone, Debug, PartialEq, diesel::Queryable, diesel::Selectable, diesel::Insertable, diesel::AsChangeset)]
 #[diesel(table_name = schema::peer_descriptor)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct PersistablePeerDescriptor {
+struct PersistablePeerDescriptor {
     pub peer_id: Uuid,
     pub name: String,
     pub location: Option<String>,
     pub network_bridge_name: Option<String>,
 }
-pub fn insert(persistable: PersistablePeerDescriptor, connection: &mut PgConnection) -> PersistenceResult<()> {
+fn insert_persistable(persistable: PersistablePeerDescriptor, connection: &mut PgConnection) -> PersistenceResult<()> {
     diesel::insert_into(schema::peer_descriptor::table)
         .values(&persistable)
         .on_conflict(schema::peer_descriptor::peer_id)

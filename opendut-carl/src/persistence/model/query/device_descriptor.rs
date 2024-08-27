@@ -1,5 +1,6 @@
 use crate::persistence::database::schema;
 use crate::persistence::error::{PersistenceError, PersistenceResult};
+use crate::persistence::model::query;
 use crate::persistence::model::query::device_tag::{device_tag_from_persistable, PersistableDeviceTag};
 use crate::persistence::model::query::Filter;
 use diesel::query_builder::AsQuery;
@@ -9,18 +10,43 @@ use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, Dev
 use opendut_types::util::net::NetworkInterfaceId;
 use uuid::Uuid;
 
+pub fn insert(device_descriptor: DeviceDescriptor, connection: &mut PgConnection) -> PersistenceResult<()> {
+    let DeviceDescriptor { id, name, description, interface, tags } = device_descriptor;
+
+    let name = name.value().to_owned();
+    let description = description.map(|description| description.value().to_owned());
+    let network_interface_id = Some(interface.uuid);
+
+    insert_persistable(PersistableDeviceDescriptor {
+        device_id: id.0,
+        name,
+        description,
+        network_interface_id,
+    }, connection)?;
+
+    for tag in tags {
+        query::device_tag::insert(PersistableDeviceTag {
+            device_id: id.0,
+            name: tag.value().to_owned(),
+        }, connection)?;
+    }
+
+    Ok(())
+}
+
+
 #[derive(Clone, Debug, PartialEq, diesel::Queryable, diesel::Selectable, diesel::Insertable, diesel::AsChangeset)]
 #[diesel(table_name = schema::device_descriptor)]
 #[diesel(belongs_to(NetworkInterfaceDescriptor, foreign_key = network_interface_id))]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct PersistableDeviceDescriptor {
+struct PersistableDeviceDescriptor {
     pub device_id: Uuid,
     pub name: String,
     pub description: Option<String>,
     pub network_interface_id: Option<Uuid>,
 }
 
-pub fn insert(persistable: PersistableDeviceDescriptor, connection: &mut PgConnection) -> PersistenceResult<()> {
+fn insert_persistable(persistable: PersistableDeviceDescriptor, connection: &mut PgConnection) -> PersistenceResult<()> {
     diesel::insert_into(schema::device_descriptor::table)
         .values(&persistable)
         .on_conflict(schema::device_descriptor::device_id)

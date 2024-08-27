@@ -1,6 +1,7 @@
 use crate::persistence::database::schema;
 use crate::persistence::error::{PersistenceError, PersistenceResult};
 use crate::persistence::model::query;
+use crate::persistence::model::query::cluster_device::PersistableClusterDevice;
 use crate::persistence::model::query::Filter;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl, SelectableHelper};
 use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
@@ -9,16 +10,35 @@ use opendut_types::topology::DeviceId;
 use std::collections::HashSet;
 use uuid::Uuid;
 
+pub fn insert(cluster_configuration: ClusterConfiguration, connection: &mut PgConnection) -> PersistenceResult<()> {
+    let ClusterConfiguration { id, name, leader, devices } = cluster_configuration;
+
+    insert_persistable(PersistableClusterConfiguration {
+        cluster_id: id.0,
+        name: name.value(),
+        leader_id: leader.uuid,
+    }, connection)?;
+
+    for device in devices {
+        query::cluster_device::insert(PersistableClusterDevice {
+            cluster_id: id.0,
+            device_id: device.0,
+        }, connection)?
+    }
+
+    Ok(())
+}
+
 #[derive(Clone, Debug, PartialEq, diesel::Queryable, diesel::Selectable, diesel::Insertable, diesel::AsChangeset)]
 #[diesel(table_name = schema::cluster_configuration)]
 #[diesel(belongs_to(PersistablePeerDescriptor, foreign_key = leader_id))]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct PersistableClusterConfiguration {
+struct PersistableClusterConfiguration {
     pub cluster_id: Uuid,
     pub name: String,
     pub leader_id: Uuid,
 }
-pub fn insert(persistable: PersistableClusterConfiguration, connection: &mut PgConnection) -> PersistenceResult<()> {
+fn insert_persistable(persistable: PersistableClusterConfiguration, connection: &mut PgConnection) -> PersistenceResult<()> {
     diesel::insert_into(schema::cluster_configuration::table)
         .values(&persistable)
         .on_conflict(schema::cluster_configuration::cluster_id)
