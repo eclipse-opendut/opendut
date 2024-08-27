@@ -88,7 +88,7 @@ pub enum ListPeerDescriptorsError {
     }
 }
 
-#[derive(thiserror::Error, Debug)]
+#[derive(thiserror::Error, Debug, PartialEq, Eq)]
 pub enum GetPeerStateError {
     #[error("A peer with id <{peer_id}> could not be found!")]
     PeerNotFound {

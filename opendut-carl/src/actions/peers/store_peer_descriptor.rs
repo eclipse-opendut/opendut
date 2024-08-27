@@ -4,7 +4,6 @@ use crate::vpn::Vpn;
 use opendut_carl_api::carl::peer::StorePeerDescriptorError;
 use opendut_types::peer;
 use opendut_types::peer::configuration::{PeerConfiguration, PeerConfiguration2, PeerNetworkConfiguration};
-use opendut_types::peer::state::PeerState;
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::util::net::NetworkInterfaceName;
 use tracing::{debug, error, info, warn};
@@ -58,11 +57,6 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
                 peer_configuration2
             };
             resources.insert(peer_id, peer_configuration2)?; //FIXME don't just insert, but rather update existing values via ID with intelligent logic (in a separate action)
-
-
-            let peer_state = resources.get::<PeerState>(peer_id)?
-                .unwrap_or(PeerState::Down); // If peer is new or no peer was found in the database, we consider it as PeerState::Down.
-            resources.insert(peer_id, peer_state)?;
             resources.insert(peer_id, peer_descriptor)?;
 
             Ok(is_new_peer)
@@ -115,6 +109,7 @@ mod tests {
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId};
     use rstest::rstest;
     use std::sync::Arc;
+    use opendut_types::peer::state::PeerState;
 
     #[rstest]
     #[tokio::test]
@@ -141,7 +136,7 @@ mod tests {
         }).await?;
 
         assert_that!(resources_manager.get::<PeerDescriptor>(fixture.peer_a_id).await?.as_ref(), some(eq(&fixture.peer_a_descriptor)));
-        assert_that!(resources_manager.get::<PeerState>(fixture.peer_a_id).await?.as_ref(), some(eq(&PeerState::Down)));
+        assert_that!(resources_manager.get::<PeerState>(fixture.peer_a_id).await?.as_ref(), none());
 
 
         let additional_network_interface = NetworkInterfaceDescriptor {
@@ -183,7 +178,7 @@ mod tests {
         }).await?;
 
         assert_that!(resources_manager.get::<PeerDescriptor>(fixture.peer_a_id).await?.as_ref(), some(eq(&changed_descriptor)));
-        assert_that!(resources_manager.get::<PeerState>(fixture.peer_a_id).await?.as_ref(), some(eq(&PeerState::Down)));
+        assert_that!(resources_manager.get::<PeerState>(fixture.peer_a_id).await?.as_ref(), none());
 
         Ok(())
     }
