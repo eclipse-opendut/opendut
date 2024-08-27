@@ -1,5 +1,8 @@
 use std::cell::RefCell;
-use anyhow::Error;
+use std::sync::{Arc, Mutex};
+use std::thread;
+
+use anyhow::{Error, Ok};
 use wasmtime::component::Component;
 use wasmtime::Store;
 use crate::setup::plugin_runtime::PluginState;
@@ -7,47 +10,72 @@ use opendut_edgar_plugin_api::host::SetupPlugin;
 use super::task::Task;
 
 pub struct SetupPluginStore {
-    store:RefCell<Option<Store<PluginState>>>,
+    store:Arc<Mutex<Store<PluginState>>>,
     component:Component,
-    instance: SetupPlugin
+    instance: Arc<Mutex<SetupPlugin>>
 }
 
 impl SetupPluginStore{
     pub fn new(store: Store<PluginState>, component:Component, instance: SetupPlugin)->Self{
         Self{
-            store: RefCell::new(Some(store)),
+            store: Arc::new(Mutex::new(store)),
             component,
-            instance
+            instance: Arc::new(Mutex::new(instance))
         }
     }
 }
 
 impl Task for SetupPluginStore{
     fn description(&self) -> String {
-        let mut store = self.store.borrow_mut().take().unwrap();
-        let result = self.instance.edgar_setup_task().call_description(&mut store).expect("Plugin could not call_description");
-        *self.store.borrow_mut() = Some(store);
+        
+        let store = self.store.clone();
+        let instance = self.instance.clone();
+        
+
+        let thread = thread::spawn(move ||{
+            let mut store = store.lock().unwrap();
+            let instance = instance.lock().expect("Unable to lock mutex");
+
+            instance.edgar_setup_task().call_description(&mut *store).expect("Plugin could not call_description")
+        });
+
+        let result = thread.join().expect("Failed to join thread for reading description");
+
         result
     }
 
     fn check_fulfilled(&self) -> anyhow::Result<super::task::TaskFulfilled> {
-        let mut store = self.store.borrow_mut().take().unwrap();
-        let result = match self.instance.edgar_setup_task().call_check_fulfilled(&mut store).expect("Plugin could not call_check_fulfilled") {
-            Ok(fulfilled) => {Ok(fulfilled.into())}
-            Err(e) => {Err(Error::msg("Plugin check_fulfilled returned err"))}
-        };
-        *self.store.borrow_mut() = Some(store);
-        result
+        let store = self.store.clone();
+        let instance = self.instance.clone();
+        
+
+        let thread = thread::spawn(move ||{
+            let mut store = store.lock().unwrap();
+            let instance = instance.lock().expect("Unable to lock mutex");
+
+            instance.edgar_setup_task().call_check_fulfilled(&mut *store).expect("Plugin could not call_description")
+        });
+
+        let result = thread.join().expect("Failed to join thread for reading description");
+
+        Ok(result.unwrap().into())
     }
 
     fn execute(&self) -> anyhow::Result<super::task::Success> {
-        let mut store = self.store.borrow_mut().take().unwrap();
-        let result = match self.instance.edgar_setup_task().call_execute(&mut store).expect("Plugin could not call_execute"){
-            Ok(success) => {Ok(success.into())}
-            Err(e) => {Err(Error::msg("Plugin execute returned err"))}
-        };
-        *self.store.borrow_mut() = Some(store);
-        result
+        let store = self.store.clone();
+        let instance = self.instance.clone();
+        
+
+        let thread = thread::spawn(move ||{
+            let mut store = store.lock().unwrap();
+            let instance = instance.lock().expect("Unable to lock mutex");
+
+            instance.edgar_setup_task().call_execute(&mut *store).expect("Plugin could not call_description")
+        });
+
+        let result = thread.join().expect("Failed to join thread for reading description");
+
+        Ok(result.unwrap().into())
     }
 }
 
