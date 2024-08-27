@@ -1,4 +1,4 @@
-use leptos::{component, create_local_resource, IntoView, ReadSignal, RwSignal, SignalGet, SignalSet, use_context, view, WriteSignal};
+use leptos::{component, create_local_resource, IntoView, ReadSignal, RwSignal, SignalGet, SignalSet, use_context, view, WriteSignal, window};
 use opendut_auth::public::OptionalAuthData;
 
 use opendut_types::peer::PeerId;
@@ -41,44 +41,66 @@ pub fn SetupTab(peer_configuration: ReadSignal<UserPeerConfiguration>) -> impl I
 
     view! {
         <div class="field">
-            <label class="label">Setup-String</label>
-                {
-                    move || match setup_string.get() {
-                        Some(Some(setup_string)) => {
-                            view! {
+            {
+                move || match setup_string.get() {
+                    Some(Some(setup_string)) => {
+                        let clipboard_text = setup_string.clone();
+                        view! {
+                            <div>
+                                <div class="columns mb-0 is-align-items-center">
+                                    <div class="column"><label class="label">Setup-String</label></div>
+                                    <div class="column is-narrow">
+                                        <button
+                                            class="button is-light"
+                                            title="Copy to clipboard"
+                                            on:click=move |_| {
+                                                let clipboard = window().navigator().clipboard();
+                                                let _ = clipboard.write_text(&clipboard_text);
+                                              }
+                                        >
+                                            <span class="icon">
+                                                <i class="fa-regular fa-copy"></i>
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
                                 <div class="control is-flex is-justify-content-center">
                                     <textarea class="textarea" placeholder="" prop:value=setup_string readonly></textarea>
                                 </div>
-                            }
+                            </div>
                         }
-                        _ => {
-                            view! {
-                                <div class="control is-flex is-flex-direction-column">
-                                    <div class="notification is-warning">
-                                        <div class="columns is-mobile is-vcentered">
-                                            <div class="column is-narrow">
-                                                <i class="fa-solid fa-triangle-exclamation fa-2xl"></i>
-                                            </div>
-                                            <div class="column">
-                                                <p>"After generating a new Setup-String, the peer will "<b>"not be usable in clusters"</b>" until you re-run the setup with the newly generated Setup-String!"</p>
-                                            </div>
+                    }
+                    _ => {
+                        view! {
+                            <div> 
+                            <label class="label">Setup-String</label>
+                            <div class="control is-flex is-flex-direction-column">
+                                <div class="notification is-warning">
+                                    <div class="columns is-mobile is-vcentered">
+                                        <div class="column is-narrow">
+                                            <i class="fa-solid fa-triangle-exclamation fa-2xl"></i>
+                                        </div>
+                                        <div class="column">
+                                            <p>"After generating a new Setup-String, the peer will "<b>"not be usable in clusters"</b>" until you re-run the setup with the newly generated Setup-String!"</p>
                                         </div>
                                     </div>
-                                    <div class="is-flex is-justify-content-center">
-                                        <SimpleButton
-                                            text="Generate"
-                                            color=ButtonColor::Info
-                                            state=button_state
-                                            on_action=move || trigger_generation.set(Some(peer_configuration.get().id))
-                                        />
-                                    </div>
                                 </div>
-                            }
+                                <div class="is-flex is-justify-content-center">
+                                    <SimpleButton
+                                        text="Generate"
+                                        color=ButtonColor::Info
+                                        state=button_state
+                                        on_action=move || trigger_generation.set(Some(peer_configuration.get().id))
+                                    />
+                                </div>
+                            </div>
+                        </div>
                         }
                     }
                 }
-                <br/>
-                <p>"Setup-Strings may only be used to set up one host. For setting up multiple hosts, you should create a peer for each host."</p>
+            }
+            <br/>
+            <p>"Setup-Strings may only be used to set up one host. For setting up multiple hosts, you should create a peer for each host."</p>
         </div>
     }
 }

@@ -82,26 +82,48 @@ pub fn CleoCard(
                 </div>
                 <div class="mt-5">
                     <div class="field">
-                    <label class="label">Setup-String</label>
                         {
                             move || match setup_string.get() {
                                 Some(Some(setup_string)) => {
+                                    let clipboard_text = setup_string.clone();
                                     view! {
-                                        <div class="control is-flex is-justify-content-center">
-                                            <textarea class="textarea" rows="20" placeholder="" prop:value=setup_string readonly></textarea>
+                                        <div>
+                                            <div class="columns mb-0 is-align-items-center">
+                                                <div class="column"><label class="label">Setup-String</label></div>
+                                                <div class="column is-narrow">
+                                                    <button
+                                                        class="button is-light"
+                                                        title="Copy to clipboard"
+                                                        on:click=move |_| {
+                                                            let clipboard = window().navigator().clipboard();
+                                                            let _ = clipboard.write_text(&clipboard_text);
+                                                          }
+                                                    >
+                                                        <span class="icon">
+                                                            <i class="fa-regular fa-copy"></i>
+                                                        </span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="control is-flex is-justify-content-center">
+                                                <textarea class="textarea" rows="20" placeholder="" prop:value=setup_string readonly></textarea>
+                                            </div>
                                         </div>
                                     }
                                 }
                                 _ => {
                                     view! {
-                                        <div class="control is-flex is-flex-direction-column">
-                                            <div class="is-flex is-justify-content-center">
-                                                <SimpleButton
-                                                    text="Generate"
-                                                    color=ButtonColor::Info
-                                                    state=button_state
-                                                    on_action=move || trigger_cleo_setup_generation.set(true)
-                                                />
+                                        <div>
+                                            <label class="label">Setup-String</label>
+                                            <div class="control is-flex is-flex-direction-column">
+                                                <div class="is-flex is-justify-content-center">
+                                                    <SimpleButton
+                                                        text="Generate"
+                                                        color=ButtonColor::Info
+                                                        state=button_state
+                                                        on_action=move || trigger_cleo_setup_generation.set(true)
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     }
