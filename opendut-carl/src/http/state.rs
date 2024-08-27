@@ -3,7 +3,6 @@ use std::path::PathBuf;
 use anyhow::{anyhow, Context};
 use axum::extract::{FromRef};
 use config::Config;
-use itertools::Itertools;
 use serde::Serialize;
 use shadow_rs::formatcp;
 use url::Url;
@@ -41,7 +40,9 @@ impl TryFrom<&Config> for LeaIdentityProviderConfig {
             .map_err(|error| anyhow!("Failed to find configuration for `{}`. {}", LeaIdentityProviderConfig::SCOPES, error))?;
 
         let scopes = ConfidentialClientConfigData::parse_scopes(&client_id, lea_raw_scopes).into_iter()
-            .map(|scope| scope.to_string()).join(" ");  // Required by leptos_oidc
+            .map(|scope| scope.to_string())
+            .collect::<Vec<_>>()
+            .join(" ");  // Required by leptos_oidc
 
         Ok(Self { client_id, issuer_url, scopes })
     }

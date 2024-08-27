@@ -29,7 +29,6 @@ futures = { workspace = true }
 googletest = { workspace = true }
 http = { workspace = true }
 indoc = { workspace = true }
-itertools = { workspace = true }
 jsonwebtoken = { workspace = true}
 openidconnect = { workspace = true }
 openssl-sys = { workspace = true }
