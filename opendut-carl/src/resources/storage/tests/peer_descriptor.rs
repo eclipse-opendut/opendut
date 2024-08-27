@@ -37,7 +37,17 @@ async fn should_persist_peer_descriptor_implementation(resources_manager: Resour
     assert_eq!(result.len(), 1);
     assert_eq!(result.first(), Some(&testee));
 
-    let result = resources_manager.remove(testee.id).await?;
+
+    let testee = {
+        let mut testee = testee.clone();
+        let removed_device = testee.topology.devices.remove(0);
+        testee.network.interfaces.retain(|interface| interface.id != removed_device.interface);
+        testee
+    };
+    resources_manager.insert(testee.id, testee.clone()).await?;
+
+
+    let result = resources_manager.remove::<PeerDescriptor>(testee.id).await?;
     assert_eq!(result, Some(testee.clone()));
 
     let result = resources_manager.get::<PeerDescriptor>(testee.id).await?;

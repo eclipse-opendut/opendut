@@ -23,9 +23,13 @@ async fn should_persist_cluster_configuration(resources_manager: ResourcesManage
     let peer = super::peer_descriptor::peer_descriptor()?;
     resources_manager.insert(peer.id, peer.clone()).await?;
 
+    let cluster_devices = peer.topology.devices.into_iter()
+        .map(|device| device.id)
+        .collect::<Vec<_>>();
+
     let testee = cluster_configuration(
         peer.id,
-        peer.topology.devices.into_iter().map(|device| device.id).collect()
+        cluster_devices.clone(),
     )?;
 
     let result = resources_manager.get::<ClusterConfiguration>(testee.id).await?;
@@ -40,6 +44,13 @@ async fn should_persist_cluster_configuration(resources_manager: ResourcesManage
     let result = resources_manager.list::<ClusterConfiguration>().await?;
     assert_eq!(result.len(), 1);
     assert_eq!(result.first(), Some(&testee));
+
+    let testee = {
+        let mut testee = testee.clone();
+        testee.devices.remove(&cluster_devices[0]);
+        testee
+    };
+    resources_manager.insert(testee.id, testee.clone()).await?;
 
     let result = resources_manager.remove::<ClusterConfiguration>(testee.id).await?;
     assert_eq!(result, Some(testee.clone()));

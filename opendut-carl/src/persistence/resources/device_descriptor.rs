@@ -9,6 +9,11 @@ use crate::persistence::{query, Storage};
 impl Persistable for DeviceDescriptor {
     fn insert(self, _device_id: DeviceId, storage: &mut Storage) -> PersistenceResult<()> {
         storage.db.connection().transaction::<_, PersistenceError, _>(|connection| {
+            //Delete before inserting to ensure that when an update removes
+            //list elements we don't leave those elements behind in the database.
+            //TODO more efficient solution
+            query::device_descriptor::remove(self.id, connection)?;
+
             query::device_descriptor::insert(self, connection)
         })
     }

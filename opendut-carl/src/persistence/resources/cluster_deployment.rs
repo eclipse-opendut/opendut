@@ -10,6 +10,11 @@ use super::Persistable;
 impl Persistable for ClusterDeployment {
     fn insert(self, _id: ClusterId, storage: &mut Storage) -> PersistenceResult<()> {
         storage.db.connection().transaction::<_, PersistenceError, _>(|connection| {
+            //Delete before inserting to ensure that when an update removes
+            //list elements we don't leave those elements behind in the database.
+            //TODO more efficient solution
+            query::cluster_deployment::remove(self.id, connection)?;
+
             query::cluster_deployment::insert(self, connection)
         })
     }

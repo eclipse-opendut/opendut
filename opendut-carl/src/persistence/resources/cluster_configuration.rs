@@ -8,6 +8,11 @@ use opendut_types::cluster::{ClusterConfiguration, ClusterId};
 impl Persistable for ClusterConfiguration {
     fn insert(self, _id: ClusterId, storage: &mut Storage) -> PersistenceResult<()> {
         storage.db.connection().transaction::<_, PersistenceError, _>(|connection| {
+            //Delete before inserting to ensure that when an update removes
+            //list elements we don't leave those elements behind in the database.
+            //TODO more efficient solution
+            query::cluster_configuration::remove(self.id, connection)?;
+
             query::cluster_configuration::insert(self, connection)
         })
     }
