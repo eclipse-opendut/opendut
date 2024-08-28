@@ -2,8 +2,6 @@ use crate::persistence::database::schema;
 use crate::persistence::error::{PersistenceError, PersistenceResult};
 use crate::persistence::query;
 use crate::persistence::query::device_tag::{device_tag_from_persistable, PersistableDeviceTag};
-use crate::persistence::query::Filter;
-use diesel::query_builder::AsQuery;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl, SelectableHelper};
 use opendut_types::peer::PeerId;
 use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag};
@@ -55,36 +53,6 @@ fn insert_persistable(persistable: PersistableDeviceDescriptor, connection: &mut
         .execute(connection)
         .map_err(|cause| PersistenceError::insert::<DeviceDescriptor>(persistable.device_id, cause))?;
     Ok(())
-}
-
-pub fn remove(device_id: DeviceId, connection: &mut PgConnection) -> PersistenceResult<Option<DeviceDescriptor>> {
-    let result = list(Filter::By(device_id), connection)?
-        .first().cloned();
-
-    diesel::delete(
-        schema::device_descriptor::table
-            .filter(schema::device_descriptor::device_id.eq(device_id.0))
-    )
-    .execute(connection)
-    .map_err(|cause| PersistenceError::remove::<DeviceDescriptor>(device_id.0, cause))?;
-
-    Ok(result)
-}
-
-pub fn list(filter_by_device_id: Filter<DeviceId>, connection: &mut PgConnection) -> PersistenceResult<Vec<DeviceDescriptor>> {
-    let mut query = schema::device_descriptor::table.into_boxed();
-
-    if let Filter::By(device_id) = filter_by_device_id {
-        query = query.filter(schema::device_descriptor::device_id.eq(device_id.0)).as_query()
-    }
-
-    query
-        .select(PersistableDeviceDescriptor::as_select())
-        .get_results(connection)
-        .map_err(PersistenceError::list::<DeviceDescriptor>)?
-        .into_iter()
-        .map(|device| device_descriptor_from_persistable(device, connection))
-        .collect::<Result<_, _>>()
 }
 
 pub fn list_filtered_by_peer(peer_id: PeerId, connection: &mut PgConnection) -> PersistenceResult<Vec<DeviceDescriptor>> {

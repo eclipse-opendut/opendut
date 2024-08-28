@@ -31,6 +31,8 @@ mod testing {
     #[fixture]
     pub fn fixture() -> Fixture {
         let peer_a_id = PeerId::random();
+        let peer_a_network_interface_1 = NetworkInterfaceId::random();
+        let peer_a_network_interface_2 = NetworkInterfaceId::random();
         let peer_a_device_1 = DeviceId::random();
         let peer_a_device_2 = DeviceId::random();
         let peer_a_descriptor = PeerDescriptor {
@@ -40,8 +42,13 @@ mod testing {
             network: PeerNetworkDescriptor {
                 interfaces: vec![
                     NetworkInterfaceDescriptor {
-                        id: NetworkInterfaceId::random(),
+                        id: peer_a_network_interface_1,
                         name: NetworkInterfaceName::try_from("eth0").unwrap(),
+                        configuration: NetworkInterfaceConfiguration::Ethernet,
+                    },
+                    NetworkInterfaceDescriptor {
+                        id: peer_a_network_interface_2,
+                        name: NetworkInterfaceName::try_from("eth1").unwrap(),
                         configuration: NetworkInterfaceConfiguration::Ethernet,
                     },
                 ],
@@ -53,14 +60,14 @@ mod testing {
                         id: peer_a_device_1,
                         name: DeviceName::try_from("PeerA_Device_1").unwrap(),
                         description: DeviceDescription::try_from("Huii").ok(),
-                        interface: NetworkInterfaceId::random(),
+                        interface: peer_a_network_interface_1,
                         tags: vec![],
                     },
                     DeviceDescriptor {
                         id: peer_a_device_2,
                         name: DeviceName::try_from("PeerA_Device_2").unwrap(),
                         description: DeviceDescription::try_from("Huii").ok(),
-                        interface: NetworkInterfaceId::random(),
+                        interface: peer_a_network_interface_2,
                         tags: vec![],
                     }
                 ]

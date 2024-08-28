@@ -3,7 +3,6 @@ use crate::vpn::Vpn;
 use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_carl_api::carl::peer::DeletePeerDescriptorError;
 use opendut_types::peer::{PeerDescriptor, PeerId};
-use opendut_types::topology::DeviceDescriptor;
 use tracing::{debug, error, info, warn};
 
 pub struct DeletePeerDescriptorParams {
@@ -28,17 +27,6 @@ pub async fn delete_peer_descriptor(params: DeletePeerDescriptorParams) -> Resul
             let peer_descriptor = resources.remove::<PeerDescriptor>(peer_id)
                 .map_err(|cause| DeletePeerDescriptorError::Internal { peer_id, peer_name: None, cause: cause.to_string() })?
                 .ok_or_else(|| DeletePeerDescriptorError::PeerNotFound { peer_id })?;
-
-            let peer_name = &peer_descriptor.name;
-
-            peer_descriptor.topology.devices.iter().try_for_each(|device| {
-                let device_id = device.id;
-                let device_name = &device.name;
-                resources.remove::<DeviceDescriptor>(device_id)
-                    .map_err(|cause| DeletePeerDescriptorError::Internal { peer_id, peer_name: Some(peer_name.clone()), cause: cause.to_string() })?;
-                debug!("Deleted device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}>.");
-                Ok(())
-            })?;
 
             Ok(peer_descriptor)
         }).await?;

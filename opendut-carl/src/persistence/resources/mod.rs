@@ -5,7 +5,6 @@ use std::fmt::Debug;
 
 pub mod cluster_configuration;
 pub mod cluster_deployment;
-pub mod device_descriptor;
 pub mod peer_configuration;
 pub mod peer_configuration2;
 pub mod peer_descriptor;

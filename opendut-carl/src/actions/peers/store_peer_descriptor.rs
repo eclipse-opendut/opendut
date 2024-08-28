@@ -6,9 +6,7 @@ use opendut_types::peer;
 use opendut_types::peer::configuration::{PeerConfiguration, PeerConfiguration2, PeerNetworkConfiguration};
 use opendut_types::peer::state::PeerState;
 use opendut_types::peer::{PeerDescriptor, PeerId};
-use opendut_types::topology::DeviceDescriptor;
 use opendut_types::util::net::NetworkInterfaceName;
-use std::ops::Not;
 use tracing::{debug, error, info, warn};
 
 pub struct StorePeerDescriptorParams {
@@ -36,38 +34,6 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
         let is_new_peer = resources_manager.resources_mut(|resources| {
             let old_peer_descriptor = resources.get::<PeerDescriptor>(peer_id)?;
             let is_new_peer = old_peer_descriptor.is_none();
-
-            let (devices_to_add, devices_to_remove): (Vec<DeviceDescriptor>, Vec<DeviceDescriptor>) = if let Some(old_peer_descriptor) = old_peer_descriptor {
-                debug!("Updating peer descriptor of '{peer_name}' <{peer_id}>.\n  Old: {old_peer_descriptor:?}\n  New: {peer_descriptor:?}");
-                let devices_to_add = peer_descriptor.topology.devices.iter()
-                    .filter(|device| old_peer_descriptor.topology.devices.contains(device).not())
-                    .cloned()
-                    .collect();
-                let devices_to_remove = old_peer_descriptor.topology.devices.into_iter()
-                    .filter(|device| peer_descriptor.topology.devices.contains(device).not())
-                    .collect();
-                (devices_to_add, devices_to_remove)
-            }
-            else {
-                debug!("Storing peer descriptor of '{peer_name}' <{peer_id}>.\n  {peer_descriptor:?}");
-                (peer_descriptor.topology.devices.to_vec(), Vec::<DeviceDescriptor>::new())
-            };
-
-            devices_to_remove.iter().try_for_each(|device| {
-                let device_id = device.id;
-                let device_name = &device.name;
-                resources.remove::<DeviceDescriptor>(device.id)?;
-                info!("Removed device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}>.");
-                Ok::<_, PersistenceError>(())
-            })?;
-
-            devices_to_add.iter().try_for_each(|device| {
-                let device_id = device.id;
-                let device_name = &device.name;
-                resources.insert(device.id, Clone::clone(device))?;
-                info!("Added device '{device_name}' <{device_id}> of peer '{peer_name}' <{peer_id}>.");
-                Ok::<_, PersistenceError>(())
-            })?;
 
             let peer_network_configuration = {
                 let bridge_name = peer_descriptor.clone().network.bridge_name
@@ -143,8 +109,10 @@ mod tests {
     use crate::actions::peers::testing::{fixture, store_peer_descriptor_options, Fixture};
     use crate::resources::manager::ResourcesManager;
     use googletest::prelude::*;
+    use opendut_types::peer::PeerNetworkDescriptor;
+    use opendut_types::topology::DeviceDescriptor;
     use opendut_types::topology::{DeviceDescription, DeviceId, DeviceName, Topology};
-    use opendut_types::util::net::NetworkInterfaceId;
+    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId};
     use rstest::rstest;
     use std::sync::Arc;
 
@@ -158,7 +126,6 @@ mod tests {
     #[test_with::no_env(SKIP_DATABASE_CONTAINER_TESTS)]
     #[rstest]
     #[tokio::test]
-    #[ignore] //FIXME currently broken
     async fn should_update_expected_resources_in_database(fixture: Fixture, store_peer_descriptor_options: StorePeerDescriptorOptions) -> anyhow::Result<()> {
         let db = crate::persistence::database::testing::spawn_and_connect_resources_manager().await?;
         should_update_expected_resources_implementation(db.resources_manager, fixture, store_peer_descriptor_options).await
@@ -174,20 +141,31 @@ mod tests {
         }).await?;
 
         assert_that!(resources_manager.get::<PeerDescriptor>(fixture.peer_a_id).await?.as_ref(), some(eq(&fixture.peer_a_descriptor)));
-        assert_that!(resources_manager.get::<DeviceDescriptor>(fixture.peer_a_device_1).await?.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[0])));
-        assert_that!(resources_manager.get::<DeviceDescriptor>(fixture.peer_a_device_2).await?.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[1])));
         assert_that!(resources_manager.get::<PeerState>(fixture.peer_a_id).await?.as_ref(), some(eq(&PeerState::Down)));
 
-        let additional_device_id = DeviceId::random();
+
+        let additional_network_interface = NetworkInterfaceDescriptor {
+            id: NetworkInterfaceId::random(),
+            name: NetworkInterfaceName::try_from("eth2")?,
+            configuration: NetworkInterfaceConfiguration::Ethernet,
+        };
+
         let additional_device = DeviceDescriptor {
-            id: additional_device_id,
+            id: DeviceId::random(),
             name: DeviceName::try_from("PeerA_Device_42")?,
             description: DeviceDescription::try_from("Additional device for peerA").ok(),
-            interface: NetworkInterfaceId::random(),
+            interface: additional_network_interface.id,
             tags: vec![],
         };
 
         let changed_descriptor = PeerDescriptor {
+            network: PeerNetworkDescriptor {
+                interfaces: vec![
+                    Clone::clone(&fixture.peer_a_descriptor.network.interfaces[0]),
+                    additional_network_interface,
+                ],
+                ..Clone::clone(&fixture.peer_a_descriptor.network)
+            },
             topology: Topology {
                 devices: vec![
                     Clone::clone(&fixture.peer_a_descriptor.topology.devices[0]),
@@ -205,9 +183,6 @@ mod tests {
         }).await?;
 
         assert_that!(resources_manager.get::<PeerDescriptor>(fixture.peer_a_id).await?.as_ref(), some(eq(&changed_descriptor)));
-        assert_that!(resources_manager.get::<DeviceDescriptor>(fixture.peer_a_device_1).await?.as_ref(), some(eq(&fixture.peer_a_descriptor.topology.devices[0])));
-        assert_that!(resources_manager.get::<DeviceDescriptor>(additional_device_id).await?.as_ref(), some(eq(&additional_device)));
-        assert_that!(resources_manager.get::<DeviceDescriptor>(fixture.peer_a_device_2).await?.as_ref(), none());
         assert_that!(resources_manager.get::<PeerState>(fixture.peer_a_id).await?.as_ref(), some(eq(&PeerState::Down)));
 
         Ok(())

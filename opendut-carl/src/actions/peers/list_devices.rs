@@ -1,6 +1,8 @@
 use crate::resources::manager::ResourcesManagerRef;
 use opendut_carl_api::carl::peer::ListDevicesError;
+use opendut_types::peer::PeerDescriptor;
 use opendut_types::topology::DeviceDescriptor;
+use std::collections::HashMap;
 use tracing::{debug, error, info};
 
 pub struct ListDevicesParams {
@@ -16,10 +18,15 @@ pub async fn list_devices(params: ListDevicesParams) -> Result<Vec<DeviceDescrip
 
         debug!("Querying all devices.");
 
-        let devices = resources_manager.resources(|resource| {
-            resource.list::<DeviceDescriptor>()
-        }).await
-        .map_err(|cause| ListDevicesError::Internal { cause: cause.to_string() })?;
+        let peers = resources_manager.list::<PeerDescriptor>().await
+            .map_err(|cause| ListDevicesError::Internal { cause: cause.to_string() })?;
+
+        let devices = peers.into_iter()
+            .flat_map(|peer| peer.topology.devices)
+            .map(|device| (device.id, device))
+            .collect::<HashMap<_, _>>();
+
+        let devices = devices.into_values().collect::<Vec<_>>();
 
         info!("Successfully queried all peers.");
 
