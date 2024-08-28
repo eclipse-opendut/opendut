@@ -317,11 +317,11 @@ pub fn PeerConfigurator() -> impl IntoView {
                             <li class=("is-active", move || TabIdentifier::Network == active_tab.get())>
                                 <a href={ TabIdentifier::Network.as_str() }>Network</a>
                             </li>
-                            <li class=("is-active", move || TabIdentifier::Executor == active_tab.get())>
-                                <a href={ TabIdentifier::Executor.as_str() }>Executor</a>
-                            </li>
                             <li class=("is-active", move || TabIdentifier::Devices == active_tab.get())>
                                 <a href={ TabIdentifier::Devices.as_str() }>Devices</a>
+                            </li>
+                            <li class=("is-active", move || TabIdentifier::Executor == active_tab.get())>
+                                <a href={ TabIdentifier::Executor.as_str() }>Executor</a>
                             </li>
                             <li class=setup_tab_classes>
                                 <a href={ TabIdentifier::Setup.as_str() }>Setup</a>
@@ -335,11 +335,11 @@ pub fn PeerConfigurator() -> impl IntoView {
                         <div class=("is-hidden", move || TabIdentifier::Network != active_tab.get())>
                             <NetworkTab peer_configuration=peer_configuration />
                         </div>
-                        <div class=("is-hidden", move || TabIdentifier::Executor != active_tab.get())>
-                            <ExecutorTab peer_configuration=peer_configuration />
-                        </div>
                         <div class=("is-hidden", move || TabIdentifier::Devices != active_tab.get())>
                             <DevicesTab peer_configuration=peer_configuration />
+                        </div>
+                        <div class=("is-hidden", move || TabIdentifier::Executor != active_tab.get())>
+                            <ExecutorTab peer_configuration=peer_configuration />
                         </div>
                         <div class=("is-hidden", move || TabIdentifier::Setup != active_tab.get())>
                             <SetupTab peer_configuration=peer_configuration.read_only() />
