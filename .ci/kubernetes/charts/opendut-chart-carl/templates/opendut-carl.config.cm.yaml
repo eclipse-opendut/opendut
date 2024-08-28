@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "opendut-carl.fullname" . }}-config
+type: Opaque
+stringData:
+  carl-config: |
+    # Useless line to prevent "did not find expected key"
+{{ .Values.config | toYaml | indent 4 }}

@@ -1,0 +1,216 @@
+# Default values for opendut-carl.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/eclipse-opendut/opendut-carl
+  pullPolicy: Always  # IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+tls:
+  key: "tls.key"
+  cert: "tls.crt"
+
+
+postgresql:
+  image:
+    registry: docker.io
+    repository: bitnami/postgresql
+    tag: 16.4.0-debian-12-r0
+
+  auth:
+    username: postgres
+    password: postgres
+    database: carl
+
+database:
+  vendor: postgres
+  hostname: opendut-carl-postgresql
+  port: 5432
+  username: postgres
+  password: postgres
+  database: carl
+
+dbchecker:
+  enabled: false
+  image:
+    # Docker image used to check Database readiness at startup
+    repository: docker.io/busybox
+    # Image tag for the dbchecker image
+    tag: 1.32
+    # Image pull policy for the dbchecker image
+    pullPolicy: IfNotPresent
+  # SecurityContext for the dbchecker container
+  securityContext:
+    allowPrivilegeEscalation: false
+    runAsUser: 1000
+    runAsGroup: 1000
+    runAsNonRoot: true
+  # Resource requests and limits for the dbchecker container
+  resources:
+    requests:
+      cpu: "20m"
+      memory: "32Mi"
+    limits:
+      cpu: "20m"
+      memory: "32Mi"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+skipInitContainers: false
+extraInitContainers: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext:
+  runAsUser: 1000
+  runAsNonRoot: true
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources:
+   requests:
+     cpu: "500m"
+     memory: "1024Mi"
+   limits:
+     cpu: "500m"
+     memory: "1024Mi"
+
+livenessProbe:
+  httpGet:
+    path: /
+    port: carl-https
+readinessProbe:
+  httpGet:
+    path: /
+    port: carl-https
+
+# Additional volumes on the output Deployment definition.
+volumes: []
+# - name: foo
+#   secret:
+#     secretName: mysecret
+#     optional: false
+
+# Additional volumeMounts on the output Deployment definition.
+volumeMounts: []
+# - name: foo
+#   mountPath: "/etc/foo"
+#   readOnly: true
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+
+config:
+  logging:
+    stdout: true
+  network:
+    bind:
+      host: 0.0.0.0
+      port: 8080
+    oidc:
+      enabled: true
+      client:
+        id: "opendut-carl-client"
+        scopes: ''
+        secret: tbd
+        issuer:
+          url: https://keycloak/realms/opendut/
+          admin:
+            url: https://keycloak/admin/realms/opendut/
+          remote:
+            url: https://keycloak/realms/opendut/
+      lea:
+        scopes: openid,profile,email
+        client:
+          id: opendut-lea-client
+        issuer:
+          url: https://keycloak/realms/opendut/
+    remote:
+      host: localhost
+      port: 8080
+    tls:
+      enabled: false
+  opentelemetry:
+    enabled: false
+    collector:
+      endpoint: ''
+    metrics:
+      cpu:
+        collection:
+          interval:
+            ms: 5000
+      interval:
+        ms: 60000
+    service:
+      name: opendut-carl
+  peer:
+    can:
+      server_port_range_end: 20000
+      server_port_range_start: 10000
+    disconnect:
+      timeout:
+        ms: 30000
+    ethernet:
+      bridge:
+        name:
+          default: br-opendut
+  persistence:
+    enabled: true
+    database:
+      url: 'postgres://postgres:postgres@opendut-carl-postgresql/carl'
+  vpn:
+    enabled: true
+    kind: 'netbird'
+    netbird:
+      ca: '/etc/opendut/tls/ca.pem'
+      retries: 5
+      url: ''
+      auth:
+        secret: 'tbd'  # TODO: this is a secret
+        type: 'personal-access-token'
+      timeout:
+        ms: 10000

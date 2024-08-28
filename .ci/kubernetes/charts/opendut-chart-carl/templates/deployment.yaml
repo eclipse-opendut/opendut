@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "opendut-carl.fullname" . }}
+  labels:
+    {{- include "opendut-carl.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "opendut-carl.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "opendut-carl.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- if not .Values.skipInitContainers }}
+      {{- if or .Values.dbchecker.enabled .Values.extraInitContainers }}
+      initContainers:
+        {{- if and .Values.dbchecker.enabled }}
+        - name: dbchecker
+          image: "{{ .Values.dbchecker.image.repository }}{{- if (.Values.dbchecker.image.digest) -}}@{{ .Values.dbchecker.image.digest }}{{- else -}}:{{ .Values.dbchecker.image.tag }} {{- end }}"
+          imagePullPolicy: {{ .Values.dbchecker.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.dbchecker.securityContext | nindent 12 }}
+          command:
+            - sh
+            - -c
+            - |
+              echo 'Waiting for Database to become ready...'
+
+              until printf "." && nc -z -w 2 {{ required ".Values.database.hostname is required if dbchecker is enabled!" .Values.database.hostname }} {{ required ".Values.database.port is required if dbchecker is enabled!" .Values.database.port }}; do
+                  sleep 2;
+              done;
+
+              echo 'Database OK ✓'
+          resources:
+            {{- toYaml .Values.dbchecker.resources | nindent 12 }}
+        {{- end }}
+        {{- with .Values.extraInitContainers }}
+        {{- tpl . $ | nindent 8 }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+
+      serviceAccountName: {{ include "opendut-carl.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: "RUST_BACKTRACE"
+              value: "1"
+            - name: "OPENDUT_CARL_NETWORK_BIND_PORT"
+              value: "{{ .Values.service.targetPort }}"
+            - name: "OPENDUT_CARL_CUSTOM_CONFIG_PATH"
+              value: "/etc/opendut/carl/config.yaml"
+            - name: "SSL_CERT_FILE"
+              value: "/etc/opendut/tls/ca.pem"  # TODO: make this optional
+
+            # environment variables
+            {{- range $name, $value := .Values.env }}
+            - name: {{ .name | quote }}
+              value: {{ .value | quote }}
+            {{- end }}
+          ports:
+            - name: carl-https
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: opendut-root-ca
+              mountPath: /etc/opendut/tls/ca.pem
+              subPath: opendut-root-ca
+            - name: {{ include "opendut-carl.fullname" . }}-config
+              mountPath: /etc/opendut/carl/config.yaml
+              subPath: carl-config
+              readOnly: true
+          {{- with .Values.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: opendut-root-ca
+          configMap:
+            name: {{ .Values.tls.ca }}
+        - name: {{ include "opendut-carl.fullname" . }}-config
+          secret:
+            secretName: {{ include "opendut-carl.fullname" . }}-config
+      {{- with .Values.volumes }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

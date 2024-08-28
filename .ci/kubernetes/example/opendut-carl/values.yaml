@@ -1,0 +1,68 @@
+opendut-carl:
+
+  image:
+    repository: ghcr.io/eclipse-opendut/opendut-carl
+    tag: 0.2.0
+
+  tls:
+    ca: "opendut-root-ca"
+    # service key and certificate
+    secret: "opendut-carl-domain-tls-secret"
+    key: "tls.key"
+    cert: "tls.crt"
+
+  config:
+    network:
+      oidc:
+        client:
+          secret: ""  # this should be a kubernetes secret
+          issuer:
+            url: https://auth.example.net/auth/realms/opendut/
+            admin:
+              url: https://auth.example.net/auth/admin/realms/opendut/
+            remote:
+              url: https://auth.example.net/auth/realms/opendut/
+        lea:
+          issuer:
+            url: https://auth.example.net/auth/realms/opendut/
+      remote:
+        host: "carl.example.net"
+        port: 443
+    vpn:
+      netbird:
+        url: 'https://netbird-management-url/api/'
+        auth:
+          secret: ""  # this should be a kubernetes secret
+
+  ingress:
+    enabled: true
+    annotations:
+      traefik.ingress.kubernetes.io/router.tls: "true"
+      cert-manager.io/cluster-issuer: your-acme
+
+    hosts:
+      - host: carl.example.net
+        servicePort: 80
+        paths:
+          - path: /
+            pathType: Prefix
+
+    tls:
+      - hosts:
+          - carl.example.net
+        secretName: opendut-carl-domain-tls-secret
+
+  dbchecker:
+    enabled: true
+    image:
+      # Docker image used to check Database readiness at startup
+      repository: your-registry.example.net/dockerhub/library/busybox
+      # Image tag for the dbchecker image
+      tag: 1.32
+
+  postgresql:
+    image:
+      registry: your-registry.example.net
+      repository: bitnamicache/bitnami/postgresql
+      tag: 16.4.0-debian-12-r0
+

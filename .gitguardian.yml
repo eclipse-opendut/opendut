@@ -38,13 +38,15 @@ secret:
     name: Keycloak Api Keys - commit://staged/.ci/docker/carl/docker-compose.yml
   - match: 41a81f8a9873701cdda23917cb74e18c4fbd2ab01d6ff1eae27eda47cc6273ad
     name: Keycloak Api Keys - commit://staged/.ci/docker/carl/docker-compose.yml
+  - match: 6e0d657eb1f0fbc40cf0b8f3c3873ef627cc9cb7c4108d1c07d979c04bc8a4bb
+    name: Generic Password - commit://staged/.ci/kubernetes/charts/opendut-carl/values.yaml
   ignored_paths:
+  - .ci/docker/keycloak/provision.sh
   - .ci/deploy/localenv/data/create_docker_compose_env.sh
   - .ci/deploy/localenv/data/pki/*.sh
   - .ci/deploy/localenv/data/provision/entrypoint.sh
   - .ci/deploy/localenv/data/secrets/
-  - .ci/docker/keycloak/provision.sh
+  - .ci/docker/netbird/management.json
   - .ci/docker/netbird/netbird-api-functions.sh
   - .ci/docker/netbird/turnserver.conf
-  - .ci/docker/netbird/management.json
   - resources/development/tls/*.key
