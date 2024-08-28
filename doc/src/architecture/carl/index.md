@@ -1,5 +1,7 @@
 # CARL
 
+## Overview
+
 ```plantuml
 @startuml
 node "LEA/CLEO" as UI
@@ -31,3 +33,7 @@ VpnManagementClient -> VpnManagementServer
 
 @enduml
 ```
+
+## ResourcesManager
+
+![](img/resources-manager.svg)
