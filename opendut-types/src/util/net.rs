@@ -128,8 +128,6 @@ pub enum CanSamplePointError {
     OutOfRangeFloat { value: String },
     #[error("Integer to create sample point from must be in the range [0, 999] but is {value}")]
     OutOfRangeInt { value: String },
-    #[error("Could not process sample point input.")]
-    Internal,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, Hash)]

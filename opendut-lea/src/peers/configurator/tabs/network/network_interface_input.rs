@@ -20,7 +20,7 @@ where A: Fn(NetworkInterfaceName, UserNetworkInterfaceConfiguration) + 'static {
     let (data_bitrate_getter, data_bitrate_setter) = create_signal(UserInputValue::Right(String::from("2000000")));
     let (data_sample_point_getter, data_sample_point_setter) = create_signal(UserInputValue::Right(String::from("0.7")));
 
-    let (getter_type, setter_type) = create_signal("Ethernet");
+    let (getter_type, setter_type) = create_signal(InterfaceKind::Ethernet);
     let (can_fd_getter_type, can_fd_setter_type) = create_signal(false);
 
     let name_filter = move |name: NetworkInterfaceName| {
@@ -62,14 +62,14 @@ where A: Fn(NetworkInterfaceName, UserNetworkInterfaceConfiguration) + 'static {
 
     let button_state = MaybeSignal::derive(move || {
         match getter_type.get() {
-            "Ethernet" => {
+            InterfaceKind::Ethernet => {
                 if interface_name_getter.get().is_left() || interface_name_getter.get().is_both() {
                     ButtonState::Disabled
                 } else {
                     ButtonState::Enabled
                 }
             }
-            "CAN" => {
+            InterfaceKind::Can => {
                 if can_fd_getter_type.get() {
                     if interface_name_getter.get().is_right()
                         && bitrate_getter.get().is_right()
@@ -88,15 +88,12 @@ where A: Fn(NetworkInterfaceName, UserNetworkInterfaceConfiguration) + 'static {
                     ButtonState::Disabled
                 }
             }
-            _ => {
-                ButtonState::Disabled
-            }
         }
     });
 
     
     let can_fd_view = {
-        move || if getter_type.get().eq("CAN") {
+        move || if getter_type.get() == InterfaceKind::Can {
             view!{
                 <div class="is-flex is-align-items-center mb-3">
                     <div class="mr-3">
@@ -183,10 +180,10 @@ where A: Fn(NetworkInterfaceName, UserNetworkInterfaceConfiguration) + 'static {
                                 type="radio"
                                 name="interfaceType"
                                 checked = move || {
-                                    matches!(getter_type.get(), "Ethernet")
+                                    matches!(getter_type.get(), InterfaceKind::Ethernet)
                                 }
                                 on:click = move |_| {
-                                    setter_type.set("Ethernet");
+                                    setter_type.set(InterfaceKind::Ethernet);
                                 }/>
                             " Ethernet "
                         </label>
@@ -195,10 +192,10 @@ where A: Fn(NetworkInterfaceName, UserNetworkInterfaceConfiguration) + 'static {
                                 type="radio" 
                                 name="interfaceType"
                                 checked = move || {
-                                    matches!(getter_type.get(), "CAN")
+                                    matches!(getter_type.get(), InterfaceKind::Can)
                                 }
                                 on:click = move |_| {
-                                    setter_type.set("CAN")
+                                    setter_type.set(InterfaceKind::Can)
                                 }
                             />
                             " CAN "
@@ -218,10 +215,10 @@ where A: Fn(NetworkInterfaceName, UserNetworkInterfaceConfiguration) + 'static {
                         if let UserInputValue::Right(value) = interface_name_getter.get_untracked() {
                             if let Ok(name) = NetworkInterfaceName::try_from(value) {
                                 let configuration = match getter_type.get() {
-                                    "Ethernet" => {
+                                    InterfaceKind::Ethernet => {
                                         NetworkInterfaceConfiguration::Ethernet
                                     }
-                                    _ => {
+                                    InterfaceKind::Can => {
                                         let sample_point = sample_point_getter.get().right().unwrap();
                                         let data_sample_point = data_sample_point_getter.get().right().unwrap();
                                         let bitrate = bitrate_getter.get().right().unwrap();
@@ -285,6 +282,12 @@ fn sample_points_validator(input: String) -> UserInputValue {
             UserInputValue::Both("Range must be between 0.000 and 0.999.".to_string(), input)
         }
     }
+}
+
+#[derive(Clone, PartialEq, Eq)]
+enum InterfaceKind {
+    Ethernet,
+    Can,
 }
 
 

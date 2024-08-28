@@ -121,7 +121,7 @@ impl CanManager {
     
         for interface in local_can_interfaces {
             if let Err(cause) = self.update_can_interface(&interface).await {
-                error!("Error while creating CAN interface: {cause}");
+                error!("Error while updating CAN interface: {cause}");
             };
             
             self.create_can_route(bridge_name, &interface.name, true, 2).await?;

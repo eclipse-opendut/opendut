@@ -96,7 +96,7 @@ impl NetworkInterfaceManager {
     }
 
     pub async fn set_interface_up(&self, interface: &Interface) -> Result<(), Error> {
-        debug!("Set interface {} up", interface.name);
+        debug!("Set interface {} up.", interface.name);
         self.handle
             .link()
             .set(interface.index)
@@ -107,7 +107,7 @@ impl NetworkInterfaceManager {
     }
 
     pub async fn set_interface_down(&self, interface: &Interface) -> Result<(), Error> {
-        debug!("Set interface {} down", interface.name);
+        debug!("Set interface {} down.", interface.name);
         self.handle
             .link()
             .set(interface.index)
@@ -119,8 +119,7 @@ impl NetworkInterfaceManager {
 
     pub async fn update_interface(&self, network_interface_descriptor: NetworkInterfaceDescriptor) -> Result<(), Error> {
         if let NetworkInterfaceConfiguration::Can { bitrate, sample_point, fd, data_bitrate, data_sample_point } = network_interface_descriptor.configuration {
-            debug!("Update interface {} with bitrate: {}, sample-point: {}, fd: {}, data_bitrate: {}, data_sample_point: {}", 
-                network_interface_descriptor.name, bitrate, sample_point, fd, data_bitrate, data_sample_point);
+            debug!("Update interface {interface} with bitrate: {bitrate}, sample-point: {sample_point}, fd: {fd}, data_bitrate: {data_bitrate}, data_sample_point: {data_sample_point}", interface=network_interface_descriptor.name);
             
             let mut ip_link_command = Command::new("ip");
             ip_link_command.arg("link")
@@ -150,7 +149,7 @@ impl NetworkInterfaceManager {
             let output = ip_link_command
                 .output()
                 .await
-                .map_err(|cause| Error::CommandLineProgramExecution { command: "can".to_string(), cause })?;
+                .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{:?}", ip_link_command), cause })?;
 
             if !output.status.success() {
                 return Err(Error::CanInterfaceUpdate { name: network_interface_descriptor.name.clone(), cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim()) });

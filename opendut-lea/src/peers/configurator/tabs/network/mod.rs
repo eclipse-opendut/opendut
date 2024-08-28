@@ -119,7 +119,7 @@ fn Row(
             UserInputValue::Both(_, value) => value.to_owned(),
         }
     };
-    
+
     let interfaces_used_by_a_device = move || {
         devices.with(|devices| {
             devices.iter()
@@ -162,9 +162,19 @@ fn Row(
     let network_configuration_id = user_network_interface.id;
     
     let network_interface_function = move || {
-        match user_network_interface.configuration.clone().inner {
-            NetworkInterfaceConfiguration::Ethernet => { (network_configuration_id, "Ethernet".to_string(), "-".to_string(), "-".to_string(), "-".to_string(), "-".to_string(), "-".to_string()) }
-            NetworkInterfaceConfiguration::Can {sample_point, data_sample_point, data_bitrate, bitrate, fd } => {
+        match &user_network_interface.configuration.inner {
+            NetworkInterfaceConfiguration::Ethernet => {
+                (
+                    network_configuration_id,
+                    user_network_interface.configuration.display_name(),
+                    "-".to_string(),
+                    "-".to_string(),
+                    "-".to_string(),
+                    "-".to_string(),
+                    "-".to_string()
+                )
+            }
+            NetworkInterfaceConfiguration::Can { sample_point, data_sample_point, data_bitrate, bitrate, fd } => {
                 (
                     network_configuration_id,
                     user_network_interface.configuration.display_name(),
