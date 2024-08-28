@@ -184,7 +184,7 @@ fn Row(
                 }.into_view()
             }).collect();
 
-        util::view_helper::join_with_comma_spans(cluster_view_list)
+        util::view::join_with_comma_spans(cluster_view_list)
     });
 
     view! {

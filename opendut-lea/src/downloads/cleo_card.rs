@@ -3,6 +3,7 @@ use crate::app::{use_app_globals, ExpectGlobals};
 use opendut_auth::public::OptionalAuthData;
 use opendut_types::proto::util::VersionInfo;
 use crate::components::{ButtonColor, ButtonStateSignalProvider, SimpleButton};
+use crate::util::clipboard::copy_with_feedback;
 
 #[component]
 pub fn CleoCard(
@@ -94,10 +95,7 @@ pub fn CleoCard(
                                                     <button
                                                         class="button is-light"
                                                         title="Copy to clipboard"
-                                                        on:click=move |_| {
-                                                            let clipboard = window().navigator().clipboard();
-                                                            let _ = clipboard.write_text(&clipboard_text);
-                                                          }
+                                                        on:click=move |_| { copy_with_feedback().dispatch(clipboard_text.clone()) }
                                                     >
                                                         <span class="icon">
                                                             <i class="fa-regular fa-copy"></i>

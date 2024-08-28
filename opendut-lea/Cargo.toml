@@ -32,12 +32,13 @@ tracing-subscriber = { workspace = true, features = ["ansi"] }
 tracing-web = { workspace = true }
 url = { workspace = true }
 uuid = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
 
 [build-dependencies]
 shadow-rs = { workspace = true }
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3.37"
+wasm-bindgen-test = { workspace = true }
 
 [lints]
 workspace = true

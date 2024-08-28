@@ -1,4 +1,4 @@
-use leptos::{component, create_local_resource, IntoView, ReadSignal, RwSignal, SignalGet, SignalSet, use_context, view, WriteSignal, window};
+use leptos::{component, create_local_resource, IntoView, ReadSignal, RwSignal, SignalGet, SignalSet, use_context, view, WriteSignal};
 use opendut_auth::public::OptionalAuthData;
 
 use opendut_types::peer::PeerId;
@@ -7,6 +7,7 @@ use crate::app::{ExpectGlobals, use_app_globals};
 use crate::components::{ButtonColor, SimpleButton};
 use crate::components::ButtonStateSignalProvider;
 use crate::peers::configurator::types::UserPeerConfiguration;
+use crate::util::clipboard::{copy_with_feedback};
 
 #[component]
 pub fn SetupTab(peer_configuration: ReadSignal<UserPeerConfiguration>) -> impl IntoView {
@@ -53,10 +54,7 @@ pub fn SetupTab(peer_configuration: ReadSignal<UserPeerConfiguration>) -> impl I
                                         <button
                                             class="button is-light"
                                             title="Copy to clipboard"
-                                            on:click=move |_| {
-                                                let clipboard = window().navigator().clipboard();
-                                                let _ = clipboard.write_text(&clipboard_text);
-                                              }
+                                            on:click=move |_| { copy_with_feedback().dispatch(clipboard_text.clone()) }
                                         >
                                             <span class="icon">
                                                 <i class="fa-regular fa-copy"></i>

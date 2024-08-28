@@ -258,7 +258,7 @@ pub fn PeerConfigurator() -> impl IntoView {
             let amount_clusters = cluster_view_list.len();
 
             if amount_clusters > 0 {
-                let comma_separated_cluster_views = util::view_helper::join_with_comma_spans(cluster_view_list.clone());
+                let comma_separated_cluster_views = util::view::join_with_comma_spans(cluster_view_list.clone());
                 view! {
                     <div class="mb-3">"Configured in " {amount_clusters} " clusters: " {comma_separated_cluster_views}</div>
                 }
