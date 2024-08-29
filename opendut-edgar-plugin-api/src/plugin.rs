@@ -25,6 +25,18 @@ pub mod bindings {
 
 }
 
+impl crate::plugin::bindings::exports::edgar::setup::task::Success{
+    pub fn new()->Self{
+        Self{
+            message:None
+        }
+    }
+
+    pub fn message(message: impl Into<String>) -> Self {
+        Self { message: Some(message.into()) }
+    }
+}
+
 pub use crate::plugin::bindings::{trace, debug, info, warn, error};
 pub use crate::plugin::bindings::edgar::setup::host;
 pub use crate::plugin::bindings::export;

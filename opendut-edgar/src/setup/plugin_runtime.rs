@@ -6,7 +6,7 @@ use wasmtime::component::__internal;
 use wasmtime::component::{Component, Linker, ResourceTable};
 use wasmtime::{Config, Engine, Store};
 use wasmtime_wasi::{DirPerms, FilePerms, WasiCtx, WasiCtxBuilder, WasiView};
-use tracing::{event, Level};
+use tracing::{event, trace, Level};
 
 pub struct PluginRuntime {
     config: Config,
@@ -88,10 +88,14 @@ impl Host for PluginState {
         command: __internal::String,
         args: __internal::Vec<__internal::String>,
     ) -> Result<__internal::String, __internal::String> {
+        trace!("Plugin executing command {} with args {:?}", command, args);
+
+
         let mut cmd = Command::new(command);
         cmd.args(args);
 
         let result = cmd.output();
+        trace!("Plugin command resulted in {:?}", result);
         match result {
             Ok(output) => Ok(String::from_utf8(output.stdout).expect("Command output could not be converted to String")),
             Err(e) => Err(e.to_string()),
