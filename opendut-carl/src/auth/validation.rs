@@ -13,7 +13,7 @@ pub const GIVEN_ISSUER_JWK_URL: &str = "protocol/openid-connect/certs";
 pub enum ValidationError {
     #[error("Configuration Error: {0}")]
     Configuration(String),
-    #[error("Algo Error: {0}")]
+    #[error("Invalid algorithm: {0}")]
     InvalidAlgorithm(String),
     #[error("Fatal validation Error: {0}")]
     Failed(String),

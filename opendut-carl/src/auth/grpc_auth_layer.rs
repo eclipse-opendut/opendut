@@ -38,8 +38,6 @@ impl GrpcAuthenticationLayer {
 
                 match authorize_current_user(auth_header, issuer_url, issuer_remote_url, cache).await {
                     Ok(user) => {
-                        debug!("User: {:?} - Claims: {:?}", user.name, user.claims);
-
                         request.extensions_mut().insert(user);
                         Ok(request)
                     }

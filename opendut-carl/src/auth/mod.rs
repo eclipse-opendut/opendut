@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 
 pub type Claims<AC> = IdTokenClaims<AC, CoreGenderClaim>;
 
+#[allow(unused)] //TODO implement authorization
 #[derive(Clone, Debug)]
 pub struct CurrentUser {
     pub name: String,
