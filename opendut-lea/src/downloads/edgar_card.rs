@@ -53,9 +53,11 @@ pub fn EdgarCard(
                 <div class="mt-5">
                     <div class="field">
                         <label class="label">Setup-String</label>
-                        <div class="mt-2">"Setup-Strings for each peer can be retrieved from the peers particular configuration overview."</div>
-                        <div class="mt-2">"The overall peer overview can be found "
-                            <a href="/peers">"here"</a>
+                        <div class="mt-2">"Setup-Strings for each peer can be retrieved from the peer's specific configuration page."</div>
+                        <div class="mt-2">
+                            "To do so, select the peer from the "
+                            <a href="/peers">"peer overview page"</a>
+                            "."
                         </div>
                     </div>
                 </div>
