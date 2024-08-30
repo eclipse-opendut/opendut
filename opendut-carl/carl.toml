@@ -56,6 +56,7 @@ auth.type = ""
 auth.secret = ""
 timeout.ms = 10000
 retries = 5
+setup.key.expiration.ms = 86400000
 
 [logging]
 stdout = true

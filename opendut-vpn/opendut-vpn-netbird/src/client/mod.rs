@@ -33,12 +33,11 @@ pub trait Client {
 
 pub struct DefaultClient {
     netbird_url: Url,
+    setup_key_expiration: Duration,
     requester: Box<dyn RequestHandler + Send + Sync>,
 }
 
 impl DefaultClient {
-
-    const SETUP_KEY_EXPIRY_DURATION: Duration = Duration::from_secs(24 * 60 * 60);
     const APPLICATION_JSON: &'static str = "application/json";
 
     pub fn create(
@@ -48,6 +47,7 @@ impl DefaultClient {
         requester: Option<Box<dyn RequestHandler + Send + Sync>>,
         timeout: Duration,
         retries: u32,
+        setup_key_expiration: Duration,
     ) -> Result<Self, CreateClientError>
     {
         let headers = {
@@ -86,6 +86,7 @@ impl DefaultClient {
 
         Ok(Self {
             netbird_url,
+            setup_key_expiration,
             requester,
         })
     }
@@ -273,7 +274,7 @@ impl Client for DefaultClient {
             CreateSetupKey {
                 name: netbird::setup_key_name_format(peer_id),
                 r#type: netbird::SetupKeyType::Reusable,
-                expires_in: DefaultClient::SETUP_KEY_EXPIRY_DURATION.as_secs(),
+                expires_in: self.setup_key_expiration.as_secs(),
                 revoked: false,
                 auto_groups: vec![
                     peer_group.id.0

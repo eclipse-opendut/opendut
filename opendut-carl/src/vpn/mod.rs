@@ -4,8 +4,6 @@ use std::time::Duration;
 
 use anyhow::{anyhow, bail};
 use config::Config;
-use serde::{Deserialize, Serialize};
-use serde::de::IntoDeserializer;
 use tracing::debug;
 use url::Url;
 
@@ -20,36 +18,59 @@ pub enum Vpn {
 
 pub fn create(settings: &Config) -> anyhow::Result<Vpn> {
 
-    let vpn = settings.get::<VpnConfig>("vpn")?;
+    let vpn = settings.get::<bool>("vpn.enabled")?;
 
-    if vpn.enabled {
-        match vpn.kind {
-            None => unknown_enum_variant(settings, "vpn.kind"),
-            Some(VpnKind::Netbird) => {
-                let netbird_config = settings.get::<VpnNetbirdConfig>("vpn.netbird")?;
-                let base_url = netbird_config.url
-                    .ok_or_else(|| anyhow!("No configuration found for: vpn.netbird.base.url"))?;
-                let ca = netbird_config.ca
+    if vpn {
+        let vpn_kind_key = "vpn.kind";
+        let vpn_kind = settings.get::<String>(vpn_kind_key)?;
+
+        match vpn_kind.as_ref() {
+            "netbird" => {
+                let base_url = settings.get::<Option<Url>>("vpn.netbird.url")?
+                    .ok_or_else(|| anyhow!("No configuration found for: vpn.netbird.url"))?;
+
+                let ca = settings.get::<Option<PathBuf>>("vpn.netbird.ca")?
                     .ok_or_else(|| anyhow!("No configuration found for: vpn.netbird.ca"))?;
-                let auth_secret = netbird_config.auth.secret
+
+                let auth_secret = settings.get::<Option<String>>("vpn.netbird.auth.secret")?
                     .ok_or_else(|| anyhow!("No configuration found for: vpn.netbird.auth.secret"))?;
-                let auth_token = match netbird_config.auth.r#type {
-                    Some(AuthenticationType::PersonalAccessToken) => NetbirdToken::new_personal_access(auth_secret),
-                    Some(AuthenticationType::BearerToken) => unimplemented!("Using a bearer token is not yet supported."),
-                    None => return unknown_enum_variant(settings, "vpn.netbird.auth.type"),
+
+                let vpn_netbird_auth_type = "vpn.netbird.auth.type";
+                let auth_type = settings.get::<Option<String>>(vpn_netbird_auth_type)?;
+
+                let auth_token = match auth_type {
+                    Some(auth_type) => match auth_type.as_ref() {
+                        "personal-access-token" => NetbirdToken::new_personal_access(auth_secret),
+                        "bearer-token" => unimplemented!("Using a bearer token is not yet supported."),
+                        _ => return Err(anyhow!("Invalid configuration parameter for '{vpn_netbird_auth_type}', allowed values are 'bearer-token' and 'personal-access-token'.")),
+                    }
+                    None => return unknown_enum_variant(settings, vpn_netbird_auth_type)
                 };
+
+                let timeout_ms = settings.get::<Option<u64>>("vpn.netbird.timeout.ms")?
+                    .ok_or_else(|| anyhow!("No configuration found for: vpn.netbird.timeout.ms"))?;
+
+                let retries = settings.get::<Option<u32>>("vpn.netbird.retries")?
+                    .ok_or_else(|| anyhow!("No configuration found for: vpn.netbird.retries"))?;
+
+                let setup_key_expiration_ms = settings.get::<Option<u64>>("vpn.netbird.setup.key.expiration.ms")?
+                    .ok_or_else(|| anyhow!("No configuration found for: vpn.netbird.setup.key.expiration.ms"))?;
+                
                 debug!("Try to parse VPN configuration.");
                 let vpn_client = NetbirdManagementClient::create(
                     NetbirdManagementClientConfiguration {
                         management_url: base_url,
                         authentication_token: Some(auth_token),
                         ca: Some(ca),
-                        timeout: Duration::from_millis(netbird_config.timeout.ms),
-                        retries: netbird_config.retries,
+                        timeout: Duration::from_millis(timeout_ms),
+                        retries,
+                        setup_key_expiration: Duration::from_millis(setup_key_expiration_ms),
                     }
                 )?;
                 Ok(Vpn::Enabled { vpn_client: Arc::new(vpn_client) })
             }
+            "" => unknown_enum_variant(settings, vpn_kind_key),
+            other => Err(anyhow!("Invalid configuration parameter '{other}' for key '{vpn_kind_key}', allowed value is 'netbird'.")),
         }
     } else {
         Ok(Vpn::Disabled)
@@ -62,66 +83,5 @@ fn unknown_enum_variant(settings: &Config, key: &str) -> anyhow::Result<Vpn> {
         bail!("No configuration found for: {key}")
     } else {
         bail!("Unknown {key}: {value}")
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all="kebab-case")]
-struct VpnConfig {
-    enabled: bool,
-    #[serde(deserialize_with = "empty_string_as_none")]
-    kind: Option<VpnKind>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all="kebab-case")]
-enum VpnKind {
-    Netbird,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all="kebab-case")]
-struct VpnNetbirdConfig {
-    #[serde(deserialize_with = "empty_string_as_none")]
-    url: Option<Url>,
-    #[serde(deserialize_with = "empty_string_as_none")]
-    ca: Option<PathBuf>,
-    auth: AuthConfig,
-    timeout: Timeout,
-    retries: u32,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all="kebab-case")]
-struct Timeout {
-    ms: u64,
-}
-
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all="kebab-case")]
-struct AuthConfig {
-    #[serde(deserialize_with = "empty_string_as_none")]
-    r#type: Option<AuthenticationType>,
-    #[serde(deserialize_with = "empty_string_as_none")]
-    secret: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all="kebab-case")]
-enum AuthenticationType {
-    PersonalAccessToken,
-    BearerToken,
-}
-
-fn empty_string_as_none<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-    T: serde::Deserialize<'de>,
-{
-    let maybe_string = Option::<String>::deserialize(deserializer)?;
-    match maybe_string.as_deref() {
-        None | Some("") => Ok(None),
-        Some(string) => T::deserialize(string.into_deserializer()).map(Some)
     }
 }
