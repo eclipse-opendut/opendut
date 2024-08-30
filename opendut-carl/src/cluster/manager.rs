@@ -19,6 +19,7 @@ use crate::actions::{AssignClusterParams, DeleteClusterDeploymentParams, GetPeer
 use crate::peer::broker::PeerMessagingBrokerRef;
 use crate::persistence::error::PersistenceResult;
 use crate::resources::manager::ResourcesManagerRef;
+use crate::resources::storage::ResourcesStorageApi;
 use crate::vpn::Vpn;
 
 pub type ClusterManagerRef = Arc<Mutex<ClusterManager>>;

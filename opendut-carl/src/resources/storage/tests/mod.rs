@@ -3,3 +3,4 @@
 mod peer_descriptor;
 mod cluster_configuration;
 mod cluster_deployment;
+mod transaction;

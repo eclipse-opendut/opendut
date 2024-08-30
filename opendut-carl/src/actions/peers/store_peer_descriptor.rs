@@ -1,4 +1,4 @@
-use crate::persistence::error::PersistenceError;
+use crate::persistence::error::{FlattenPersistenceResult, PersistenceError};
 use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
 use opendut_carl_api::carl::peer::StorePeerDescriptorError;
@@ -8,6 +8,7 @@ use opendut_types::peer::ethernet::EthernetBridge;
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::util::net::NetworkInterfaceName;
 use tracing::{debug, error, info, warn};
+use crate::resources::storage::ResourcesStorageApi;
 
 pub struct StorePeerDescriptorParams {
     pub resources_manager: ResourcesManagerRef,
@@ -63,6 +64,7 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
 
             Ok(is_new_peer)
         }).await
+        .flatten_persistence_result()
         .map_err(|cause: PersistenceError| StorePeerDescriptorError::Internal {
             peer_id,
             peer_name: Clone::clone(&peer_name),

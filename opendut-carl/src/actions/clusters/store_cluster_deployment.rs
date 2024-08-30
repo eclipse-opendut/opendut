@@ -2,6 +2,7 @@ use crate::resources::manager::ResourcesManagerRef;
 use opendut_carl_api::carl::cluster::StoreClusterDeploymentError;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId, ClusterName};
 use tracing::error;
+use crate::resources::storage::ResourcesStorageApi;
 
 pub struct StoreClusterConfigurationParams {
     pub resources_manager: ResourcesManagerRef,
@@ -22,7 +23,8 @@ pub async fn store_cluster_deployment(params: StoreClusterConfigurationParams) -
                 .unwrap_or_else(|| ClusterName::try_from("unknown_cluster").unwrap());
             resources.insert(cluster_id, deployment)
                 .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: Some(cluster_name.clone()), cause: cause.to_string() })
-        }).await?;
+        }).await
+        .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })??;
 
         Ok(cluster_id)
     }

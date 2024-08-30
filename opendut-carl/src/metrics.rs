@@ -5,7 +5,7 @@ use opendut_types::peer::PeerDescriptor;
 use opendut_types::peer::state::PeerState;
 use crate::persistence::error::PersistenceError;
 use crate::resources::manager::ResourcesManagerRef;
-
+use crate::resources::storage::ResourcesStorageApi;
 
 pub fn initialize_metrics_collection(
     resources_manager: ResourcesManagerRef,

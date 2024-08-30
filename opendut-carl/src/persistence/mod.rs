@@ -7,15 +7,18 @@ pub mod database;
 pub(crate) mod resources;
 mod query;
 
-pub struct Storage {
-    pub db: Db,
-    pub memory: Memory,
+pub struct Storage<'a> {
+    pub db: Db<'a>,
+    pub memory: &'a mut Memory,
 }
-pub struct Db {
-    pub inner: Mutex<PgConnection>, //Mutex rather than RwLock, because we share this between threads (i.e. we need it to implement `Sync`)
+pub struct Db<'a> {
+    pub inner: Mutex<&'a mut PgConnection>, //Mutex rather than RwLock, because we share this between threads (i.e. we need it to implement `Sync`)
 }
-impl Db {
-    pub fn connection(&self) -> MutexGuard<PgConnection> {
+impl<'a> Db<'a> {
+    pub fn from_connection(connection: &'a mut PgConnection) -> Db {
+        Self { inner: Mutex::new(connection) }
+    }
+    pub fn connection(&self) -> MutexGuard<&'a mut PgConnection> {
         self.inner.lock().expect("error while locking mutex for database connection")
     }
 }
@@ -36,7 +39,7 @@ pub(crate) mod error {
         },
         DieselInternal {
             #[from] source: diesel::result::Error,
-        }
+        },
     }
     impl PersistenceError {
         pub fn insert<R>(id: impl Into<Uuid>, cause: impl Into<Cause>) -> Self {
@@ -88,7 +91,7 @@ pub(crate) mod error {
                         writeln!(f, "  Source: {source}")
                     ).transpose()?;
                 }
-                PersistenceError::DieselInternal { source } => writeln!(f, "{source}")?,
+                PersistenceError::DieselInternal { source } => writeln!(f, "Error internal to Diesel, likely from transaction: {source}")?,
             }
             Ok(())
         }
@@ -115,4 +118,16 @@ pub(crate) mod error {
     }
 
     pub type PersistenceResult<T> = Result<T, PersistenceError>;
+    pub trait FlattenPersistenceResult<T>: Sized {
+        fn flatten_persistence_result(self) -> PersistenceResult<T>;
+    }
+    impl<T> FlattenPersistenceResult<T> for PersistenceResult<PersistenceResult<T>> {
+        fn flatten_persistence_result(self) -> PersistenceResult<T> {
+            match self {
+                Ok(Ok(ok)) => Ok(ok),
+                Ok(Err(err)) => Err(err),
+                Err(err) => Err(err)
+            }
+        }
+    }
 }

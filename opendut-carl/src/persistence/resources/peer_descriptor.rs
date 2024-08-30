@@ -1,22 +1,20 @@
-use diesel::Connection;
-
 use opendut_types::peer::{PeerDescriptor, PeerId};
 
 use super::Persistable;
-use crate::persistence::error::{PersistenceError, PersistenceResult};
+use crate::persistence::error::PersistenceResult;
 use crate::persistence::query::Filter;
 use crate::persistence::{query, Storage};
 
 impl Persistable for PeerDescriptor {
     fn insert(self, _peer_id: PeerId, storage: &mut Storage) -> PersistenceResult<()> {
-        storage.db.connection().transaction::<_, PersistenceError, _>(|connection| {
-            //Delete before inserting to ensure that when an update removes
-            //list elements we don't leave those elements behind in the database.
-            //TODO more efficient solution
-            query::peer_descriptor::remove(self.id, connection)?;
+        let mut connection = storage.db.connection();
 
-            query::peer_descriptor::insert(self, connection)
-        })
+        //Delete before inserting to ensure that when an update removes
+        //list elements we don't leave those elements behind in the database.
+        //TODO more efficient solution
+        query::peer_descriptor::remove(self.id, &mut connection)?;
+
+        query::peer_descriptor::insert(self, &mut connection)
     }
 
     fn remove(peer_id: PeerId, storage: &mut Storage) -> PersistenceResult<Option<Self>> {

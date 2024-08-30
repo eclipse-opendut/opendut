@@ -19,6 +19,7 @@ use opendut_types::peer::PeerId;
 
 use crate::persistence::error::PersistenceError;
 use crate::resources::manager::ResourcesManagerRef;
+use crate::resources::storage::ResourcesStorageApi;
 
 pub type PeerMessagingBrokerRef = Arc<PeerMessagingBroker>;
 
@@ -97,7 +98,7 @@ impl PeerMessagingBroker {
         self.resources_manager.resources_mut(|resources| {
             let maybe_peer_state = resources.get::<PeerState>(peer_id)
                 .map_err(|source| OpenError::Persistence { peer_id, source })?;
-                
+
             match maybe_peer_state {
                 None => {
                     info!("Peer <{}> opened stream which has not been seen before.", peer_id);
@@ -118,7 +119,8 @@ impl PeerMessagingBroker {
                 resources.insert(peer_id, new_peer_state)
                     .map_err(|source| OpenError::Persistence { peer_id, source })
             })
-        }).await?;
+        }).await
+        .map_err(|source| OpenError::Persistence { peer_id, source })??;
 
         let maybe_old_configuration = self.resources_manager.get::<OldPeerConfiguration>(peer_id).await
             .map_err(|source| OpenError::Persistence { peer_id, source })?;
@@ -273,7 +275,7 @@ mod tests {
     use opendut_carl_api::proto::services::peer_messaging_broker::Ping;
 
     use crate::resources::manager::ResourcesManager;
-
+    use crate::resources::storage::ResourcesStorageApi;
     use super::*;
 
     #[tokio::test]

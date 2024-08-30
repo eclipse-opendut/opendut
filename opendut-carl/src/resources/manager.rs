@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use crate::persistence::error::PersistenceResult;
+use crate::persistence::error::{FlattenPersistenceResult, PersistenceResult};
 use crate::persistence::resources::Persistable;
-use crate::resources::storage::PersistenceOptions;
-use crate::resources::{storage, Resource, Resources};
+use crate::resources::storage::{PersistenceOptions, ResourcesStorageApi};
+use crate::resources::{storage, Resource, Resources, ResourcesTransaction};
 use tokio::sync::RwLock;
 
 pub type ResourcesManagerRef = Arc<ResourcesManager>;
@@ -29,13 +29,17 @@ impl ResourcesManager {
     pub async fn insert<R>(&self, id: R::Id, resource: R) -> PersistenceResult<()>
     where R: Resource + Persistable {
         let mut state = self.state.write().await;
-        state.resources.insert(id, resource)
+        state.resources.transaction(move |mut transaction| {
+            transaction.insert(id, resource)
+        }).flatten_persistence_result()
     }
 
     pub async fn remove<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable {
         let mut state = self.state.write().await;
-        state.resources.remove(id)
+        state.resources.transaction(move |mut transaction| {
+            transaction.remove(id)
+        }).flatten_persistence_result()
     }
 
     pub async fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
@@ -50,16 +54,25 @@ impl ResourcesManager {
         state.resources.list()
     }
 
-    pub async fn resources<F, T>(&self, f: F) -> T
-    where F: FnOnce(&Resources) -> T {
+    pub async fn resources<F, T>(&self, f: F) -> PersistenceResult<T>
+    where F: FnOnce(&Resources) -> PersistenceResult<T> {
         let state = self.state.read().await;
         f(&state.resources)
     }
 
-    pub async fn resources_mut<F, T>(&self, f: F) -> T
-    where F: FnOnce(&mut Resources) -> T {
+    /// Allows grouping modifications to the database. This does multiple things:
+    /// - Opens a database transaction and then either commits it, or rolls it back when you return an `Err` out of the closure.
+    /// - Acquires the lock for the database mutex and keeps it until the end of the closure.
+    /// - Groups the async calls, so we only have to await at the end.
+    pub async fn resources_mut<F, T, E>(&self, f: F) -> PersistenceResult<Result<T, E>>
+    where
+        F: FnOnce(&mut ResourcesTransaction) -> Result<T, E>,
+        E: std::error::Error + Send + Sync + 'static,
+    {
         let mut state = self.state.write().await;
-        f(&mut state.resources)
+        state.resources.transaction(move |mut transaction| {
+            f(&mut transaction)
+        })
     }
 }
 
@@ -96,13 +109,12 @@ mod test {
 
     use googletest::prelude::*;
 
+    use super::*;
     use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
     use opendut_types::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorDescriptor, ExecutorDescriptors, ExecutorId, ExecutorKind};
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_types::topology::Topology;
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
-
-    use super::*;
 
     #[tokio::test]
     async fn test() -> Result<()> {
@@ -171,20 +183,18 @@ mod test {
 
         assert_that!(testee.remove::<PeerDescriptor>(peer_resource_id).await?, some(eq(Clone::clone(&peer))));
 
-        let id = testee.resources_mut(|resources| {
-            resources.insert(peer_resource_id, Clone::clone(&peer)).unwrap();
-            peer_resource_id
-        }).await;
+        testee.insert(peer_resource_id, Clone::clone(&peer)).await?;
 
-        assert_that!(testee.get::<PeerDescriptor>(id).await?, some(eq(Clone::clone(&peer))));
+        assert_that!(testee.get::<PeerDescriptor>(peer_resource_id).await?, some(eq(Clone::clone(&peer))));
 
         testee.resources(|resources| {
-            resources.list::<ClusterConfiguration>().unwrap()
+            resources.list::<ClusterConfiguration>()?
                 .into_iter()
                 .for_each(|cluster| {
                     assert_that!(cluster, eq(Clone::clone(&cluster_configuration)));
                 });
-        }).await;
+            Ok(())
+        }).await?;
 
         Ok(())
     }

@@ -3,6 +3,7 @@ use opendut_carl_api::carl::peer::GetPeerStateError;
 use opendut_types::peer::state::PeerState;
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use tracing::{debug, error, info};
+use crate::resources::storage::ResourcesStorageApi;
 
 pub struct GetPeerStateParams {
     pub peer: PeerId,
@@ -33,7 +34,8 @@ pub async fn get_peer_state(params: GetPeerStateParams) -> Result<PeerState, Get
                     }
                 }
             }
-        }).await?;
+        }).await
+        .map_err(|cause| GetPeerStateError::Internal { peer_id, cause: cause.to_string() })??;
 
         info!("Successfully queried state of peer with peer_id <{}>.", peer_id);
 

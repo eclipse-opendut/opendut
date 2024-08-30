@@ -1,4 +1,5 @@
 use crate::resources::manager::ResourcesManagerRef;
+use crate::resources::storage::ResourcesStorageApi;
 use crate::vpn::Vpn;
 use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_carl_api::carl::peer::DeletePeerDescriptorError;
@@ -29,7 +30,8 @@ pub async fn delete_peer_descriptor(params: DeletePeerDescriptorParams) -> Resul
                 .ok_or_else(|| DeletePeerDescriptorError::PeerNotFound { peer_id })?;
 
             Ok(peer_descriptor)
-        }).await?;
+        }).await
+        .map_err(|cause| DeletePeerDescriptorError::Internal { peer_id, peer_name: None, cause: cause.to_string() })??;
 
         let peer_name = &peer_descriptor.name;
 

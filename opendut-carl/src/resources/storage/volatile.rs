@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use opendut_types::resources::Id;
 
 use crate::persistence::error::PersistenceResult;
+use crate::persistence::resources::Persistable;
 use crate::resources::ids::IntoId;
 use crate::resources::storage::ResourcesStorageApi;
 use crate::resources::Resource;
@@ -12,6 +13,17 @@ use crate::resources::Resource;
 pub struct VolatileResourcesStorage {
     storage: HashMap<TypeId, HashMap<Id, Box<dyn Any + Send + Sync>>>,
 }
+impl VolatileResourcesStorage {
+    pub fn noop_transaction<T, E, F>(&mut self, code: F) -> PersistenceResult<Result<T, E>>
+    where
+        F: FnOnce(VolatileResourcesTransaction) -> Result<T, E>,
+        E: std::error::Error + Send + Sync + 'static,
+    {
+        let transaction = VolatileResourcesTransaction { inner: self };
+        Ok(code(transaction))
+    }
+}
+
 impl ResourcesStorageApi for VolatileResourcesStorage {
 
     fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
@@ -98,5 +110,30 @@ impl VolatileResourcesStorage {
 
     pub fn is_empty(&self) -> bool {
         self.storage.is_empty()
+    }
+}
+
+pub struct VolatileResourcesTransaction<'a> {
+    inner: &'a mut VolatileResourcesStorage,
+}
+impl ResourcesStorageApi for VolatileResourcesTransaction<'_> {
+    fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
+    where R: Resource + Persistable {
+        self.inner.insert(id, resource)
+    }
+
+    fn remove<R>(&mut self, id: R::Id) -> PersistenceResult<Option<R>>
+    where R: Resource + Persistable {
+        self.inner.remove(id)
+    }
+
+    fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
+    where R: Resource + Persistable + Clone {
+        self.inner.get(id)
+    }
+
+    fn list<R>(&self) -> PersistenceResult<Vec<R>>
+    where R: Resource + Persistable + Clone {
+        self.inner.list()
     }
 }

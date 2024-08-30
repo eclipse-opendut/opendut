@@ -8,6 +8,7 @@ use opendut_types::peer::{PeerDescriptor, PeerId};
 use std::ops::Not;
 use std::sync::Arc;
 use tracing::error;
+use crate::resources::storage::ResourcesStorageApi;
 
 pub struct DeleteClusterDeploymentParams {
     pub resources_manager: ResourcesManagerRef,
@@ -30,7 +31,8 @@ pub async fn delete_cluster_deployment(params: DeleteClusterDeploymentParams) ->
                             .map_err(|cause| DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?;
                         Ok((deployment, configuration))
                     }).transpose()
-            }).await?
+            }).await
+            .map_err(|cause| DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })??
             .ok_or(DeleteClusterDeploymentError::ClusterDeploymentNotFound { cluster_id })?;
 
         if let Some(cluster) = cluster {

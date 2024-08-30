@@ -18,11 +18,9 @@ pub async fn delete_cluster_configuration(params: DeleteClusterConfigurationPara
 
         debug!("Deleting cluster configuration <{cluster_id}>.");
 
-        let cluster_configuration = resources_manager.resources_mut(|resources| {
-            resources.remove::<ClusterConfiguration>(cluster_id)
-                .map_err(|cause| DeleteClusterConfigurationError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?
-                .ok_or_else(|| DeleteClusterConfigurationError::ClusterConfigurationNotFound { cluster_id })
-        }).await?;
+        let cluster_configuration = resources_manager.remove::<ClusterConfiguration>(cluster_id).await
+            .map_err(|cause| DeleteClusterConfigurationError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?
+            .ok_or_else(|| DeleteClusterConfigurationError::ClusterConfigurationNotFound { cluster_id })?;
 
         let cluster_name = Clone::clone(&cluster_configuration.name);
 

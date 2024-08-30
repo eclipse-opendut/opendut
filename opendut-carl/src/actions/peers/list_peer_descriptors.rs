@@ -2,6 +2,7 @@ use crate::resources::manager::ResourcesManagerRef;
 use opendut_carl_api::carl::peer::ListPeerDescriptorsError;
 use opendut_types::peer::PeerDescriptor;
 use tracing::{debug, error, info};
+use crate::resources::storage::ResourcesStorageApi;
 
 pub struct ListPeerDescriptorsParams {
     pub resources_manager: ResourcesManagerRef,

@@ -2,6 +2,7 @@ use crate::persistence::error::PersistenceError;
 use crate::resources::manager::ResourcesManagerRef;
 use opendut_types::peer::state::{PeerState, PeerUpState};
 use opendut_types::peer::PeerId;
+use crate::resources::storage::ResourcesStorageApi;
 
 pub struct UnassignClusterParams {
     pub resources_manager: ResourcesManagerRef,
@@ -38,7 +39,8 @@ pub async fn unassign_cluster(params: UnassignClusterParams) -> Result<(), Unass
         }
 
         Ok(())
-    }).await?;
+    }).await
+    .map_err(|source| UnassignClusterError::Persistence { peer_id, source })??;
 
     Ok(())
 }

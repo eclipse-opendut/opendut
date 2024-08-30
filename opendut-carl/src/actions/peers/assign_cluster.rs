@@ -1,6 +1,7 @@
 use crate::peer::broker::PeerMessagingBrokerRef;
 use crate::persistence::error::PersistenceError;
 use crate::resources::manager::ResourcesManagerRef;
+use crate::resources::storage::ResourcesStorageApi;
 use opendut_carl_api::proto::services::peer_messaging_broker::{downstream, ApplyPeerConfiguration};
 use opendut_types::cluster::ClusterAssignment;
 use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
@@ -33,7 +34,7 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
             cluster_assignment: Some(params.cluster_assignment),
         };
         resources.insert(peer_id, Clone::clone(&old_peer_configuration))
-                    .map_err(|source| AssignClusterError::Persistence { peer_id, source })?;
+            .map_err(|source| AssignClusterError::Persistence { peer_id, source })?;
 
         let peer_configuration = resources.get::<PeerConfiguration>(peer_id)
             .map_err(|source| AssignClusterError::Persistence { peer_id, source })?
@@ -55,7 +56,8 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
         }
 
         Ok((old_peer_configuration, peer_configuration))
-    }).await?;
+    }).await
+    .map_err(|source| AssignClusterError::Persistence { peer_id, source })??;
 
     params.peer_messaging_broker.send_to_peer(
         peer_id,
@@ -101,13 +103,11 @@ mod tests {
         let old_peer_configuration = OldPeerConfiguration {
             cluster_assignment: None,
         };
-        resources_manager.resources_mut(|resources| {
-            resources.insert(peer_id, Clone::clone(&old_peer_configuration))
-        }).await?;
         let peer_configuration = PeerConfiguration::default();
         resources_manager.resources_mut(|resources| {
+            resources.insert(peer_id, Clone::clone(&old_peer_configuration))?;
             resources.insert(peer_id, Clone::clone(&peer_configuration))
-        }).await?;
+        }).await??;
 
         let (_, mut receiver) = peer_messaging_broker.open(peer_id, IpAddr::from_str("1.2.3.4")?).await?;
         let received = receiver.recv().await.unwrap()

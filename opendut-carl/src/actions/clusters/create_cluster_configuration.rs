@@ -2,6 +2,7 @@ use crate::resources::manager::ResourcesManagerRef;
 use opendut_carl_api::carl::cluster::CreateClusterConfigurationError;
 use opendut_types::cluster::{ClusterConfiguration, ClusterId};
 use tracing::{debug, error, info};
+use crate::resources::storage::ResourcesStorageApi;
 
 pub struct CreateClusterConfigurationParams {
     pub resources_manager: ResourcesManagerRef,
@@ -22,7 +23,8 @@ pub async fn create_cluster_configuration(params: CreateClusterConfigurationPara
         resources_manager.resources_mut(|resources| {
             resources.insert(cluster_id, params.cluster_configuration)
                 .map_err(|cause| CreateClusterConfigurationError::Internal { cluster_id, cluster_name: cluster_name.clone(), cause: cause.to_string() })
-        }).await?;
+        }).await
+        .map_err(|cause| CreateClusterConfigurationError::Internal { cluster_id, cluster_name: cluster_name.clone(), cause: cause.to_string() })??;
 
         info!("Successfully created cluster configuration '{cluster_name}' <{cluster_id}>.");
 
