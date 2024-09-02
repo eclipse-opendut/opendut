@@ -52,7 +52,7 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
             let peer_configuration = {
                 let mut peer_configuration = PeerConfiguration::default();
                 for executor in Clone::clone(&peer_descriptor.executors).executors.into_iter() {
-                    peer_configuration.insert_executor(executor, peer::configuration::ParameterTarget::Present); //TODO not always Present
+                    peer_configuration.insert(executor, peer::configuration::ParameterTarget::Present); //TODO not always Present
                 }
                 peer_configuration
             };

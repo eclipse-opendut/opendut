@@ -5,9 +5,9 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::cluster::ClusterAssignment;
-use crate::OPENDUT_UUID_NAMESPACE;
 use crate::peer::executor::{ExecutorDescriptor, ExecutorKind};
 use crate::util::net::NetworkInterfaceName;
+use crate::OPENDUT_UUID_NAMESPACE;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OldPeerConfiguration {
@@ -27,7 +27,7 @@ pub struct PeerConfiguration {
     //TODO migrate more parameters
 }
 impl PeerConfiguration {
-    pub fn insert_executor(&mut self, value: ExecutorDescriptor, target: ParameterTarget) { //TODO more generic solution
+    pub fn insert<T: ParameterValue>(&mut self, value: T, target: ParameterTarget) {
         let parameter = Parameter {
             id: value.parameter_identifier(),
             dependencies: vec![], //TODO
@@ -35,7 +35,7 @@ impl PeerConfiguration {
             value,
         };
 
-        self.executors.push(parameter);
+        T::insert_into_peer_configuration(parameter, self)
     }
 }
 
@@ -56,13 +56,13 @@ pub enum ParameterTarget {
     Absent,
 }
 
-pub trait ParameterValue: Any + Hash {
+pub trait ParameterValue: Any + Hash + Sized {
     /// Unique identifier, which is ideally stable, too.
     /// A naive implementation for a `self` implementing `Hash` could look like this:
     /// ```
     /// # use std::hash::{DefaultHasher, Hash, Hasher};
     /// # use uuid::Uuid;
-    /// # use opendut_types::peer::configuration::{ParameterId, ParameterValue};
+    /// # use opendut_types::peer::configuration::{Parameter, ParameterId, ParameterValue, PeerConfiguration};
     /// # use opendut_types::OPENDUT_UUID_NAMESPACE;
     ///
     /// # #[derive(Hash)]
@@ -77,10 +77,14 @@ pub trait ParameterValue: Any + Hash {
     ///     let id = Uuid::new_v5(&OPENDUT_UUID_NAMESPACE, &id.to_le_bytes());
     ///     ParameterId(id)
     /// }
+    ///
+    /// # fn insert_into_peer_configuration(parameter: Parameter<Self>, peer_configuration: &mut PeerConfiguration) { todo!() }
     /// # }
     /// ```
     /// However, ideally you use a stable subset of your data, which is still unique.
     fn parameter_identifier(&self) -> ParameterId;
+
+    fn insert_into_peer_configuration(parameter: Parameter<Self>, peer_configuration: &mut PeerConfiguration);
 }
 impl ParameterValue for ExecutorDescriptor {
     fn parameter_identifier(&self) -> ParameterId {
@@ -95,12 +99,16 @@ impl ParameterValue for ExecutorDescriptor {
         let id = Uuid::new_v5(&OPENDUT_UUID_NAMESPACE, &id.to_le_bytes());
         ParameterId(id)
     }
+
+    fn insert_into_peer_configuration(parameter: Parameter<Self>, peer_configuration: &mut PeerConfiguration) {
+        peer_configuration.executors.push(parameter);
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::peer::executor::ExecutorId;
     use super::*;
+    use crate::peer::executor::ExecutorId;
 
     #[test]
     fn insert_value_in_peer_configuration() {
@@ -112,7 +120,7 @@ mod tests {
             results_url: None
         };
         let target = ParameterTarget::Present;
-        peer_configuration.insert_executor(value.clone(), target);
+        peer_configuration.insert(value.clone(), target);
 
         assert_eq!(peer_configuration.executors.len(), 1);
 
