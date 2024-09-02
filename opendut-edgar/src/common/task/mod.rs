@@ -1,6 +1,6 @@
 pub mod runner;
 
-pub trait Task {
+pub trait Task: Send + Sync {
     /// Short description of the task, which is shown to the user.
     fn description(&self) -> String;
 

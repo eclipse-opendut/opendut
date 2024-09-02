@@ -7,7 +7,7 @@ use cfg_if::cfg_if;
 
 use crate::setup::User;
 
-pub trait CommandRunner {
+pub trait CommandRunner: Send + Sync {
     fn run(&self, command: &mut Command) -> anyhow::Result<Output>;
 }
 pub struct DefaultCommandRunner;
@@ -71,11 +71,11 @@ pub fn chown(user: &User, path: impl AsRef<Path>) -> anyhow::Result<()> {
 }
 
 pub mod checksum {
+    use crate::fs::File;
+    use sha2::{Digest, Sha256};
     use std::io;
     use std::io::Read;
-    use sha2::{Digest, Sha256};
     use std::path::Path;
-    use crate::fs::File;
 
     pub fn file(path: impl AsRef<Path>) -> Result<Vec<u8>, io::Error> {
         let file = File::open(path.as_ref())?;

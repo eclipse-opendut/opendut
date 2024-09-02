@@ -11,29 +11,31 @@ use opentelemetry_sdk::propagation::TraceContextPropagator;
 use tokio::sync::mpsc::Sender;
 use tokio::time::sleep;
 use tonic::Code;
-use tracing::{debug, error, info, Span, trace, warn};
+use tracing::{debug, error, info, trace, warn, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 use opendut_carl_api::proto::services::peer_messaging_broker;
-use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, TracingContext};
 use opendut_carl_api::proto::services::peer_messaging_broker::downstream::Message;
+use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, TracingContext};
 use opendut_types::cluster::{ClusterAssignment, PeerClusterAssignment};
 use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
 use opendut_types::peer::PeerId;
 use opendut_types::util::net::NetworkInterfaceName;
+use opendut_util::project;
+use opendut_util::settings::LoadedConfig;
 use opendut_util::telemetry;
 use opendut_util::telemetry::logging::LoggingConfig;
 use opendut_util::telemetry::opentelemetry_types::Opentelemetry;
-use opendut_util::project;
-use opendut_util::settings::LoadedConfig;
 
+use crate::common::task::{runner, Task};
 use crate::common::{carl, settings};
-use crate::service::test_execution::executor_manager::{ExecutorManager, ExecutorManagerRef};
-use crate::service::{cluster_assignment, vpn};
 use crate::service::can_manager::{CanManager, CanManagerRef};
 use crate::service::cluster_assignment::Error;
-use crate::service::network_metrics;
 use crate::service::network_interface::manager::{NetworkInterfaceManager, NetworkInterfaceManagerRef};
+use crate::service::network_metrics;
+use crate::service::test_execution::executor_manager::{ExecutorManager, ExecutorManagerRef};
+use crate::service::{cluster_assignment, tasks, vpn};
+use crate::setup::RunMode;
 
 const BANNER: &str = r"
                          _____     _______
@@ -227,6 +229,22 @@ async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Opti
                     match PeerConfiguration::try_from(configuration) {
                         Err(error) => error!("Illegal PeerConfiguration: {error}"),
                         Ok(configuration) => {
+                            {
+                                let mut tasks: Vec<Box<dyn Task>> = vec![];
+
+                                if setup_cluster_info.network_interface_management_enabled {
+                                    for parameter in configuration.ethernet_bridges {
+                                        tasks.push(Box::new(tasks::create_ethernet_bridge::CreateEthernetBridge {
+                                            parameter,
+                                            network_interface_manager: Arc::clone(&setup_cluster_info.network_interface_manager),
+                                        }));
+                                    }
+                                }
+
+                                let no_confirm = true;
+                                runner::run(RunMode::Normal, no_confirm, &tasks).await?;
+                            }
+
                             let _ = setup_cluster(
                                 &old_configuration.cluster_assignment,
                                 setup_cluster_info,

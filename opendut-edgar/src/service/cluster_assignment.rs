@@ -7,7 +7,7 @@ use opendut_types::peer::PeerId;
 use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
 
 use crate::service::network_interface;
-use crate::service::network_interface::{bridge, gre};
+use crate::service::network_interface::gre;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use crate::service::can_manager::CanManagerRef;
 
@@ -19,9 +19,6 @@ pub async fn network_interfaces_setup(
     network_interface_manager: NetworkInterfaceManagerRef,
     can_manager: CanManagerRef,
 ) -> Result<(), Error> {
-
-    bridge::recreate(bridge_name, Arc::clone(&network_interface_manager)).await
-        .map_err(Error::BridgeRecreationFailed)?;
 
     let local_peer_assignment = cluster_assignment.assignments.iter().find(|assignment| {
         assignment.peer_id == self_id

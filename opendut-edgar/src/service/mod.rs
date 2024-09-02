@@ -7,3 +7,4 @@ mod can_manager;
 mod vpn;
 mod test_execution;
 mod network_metrics;
+mod tasks;

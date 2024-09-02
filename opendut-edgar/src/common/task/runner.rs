@@ -3,7 +3,7 @@ use std::io::Write;
 use std::time::Duration;
 
 use indicatif::{ProgressBar, ProgressStyle};
-use tracing::{error, info};
+use tracing::{debug, error, info};
 
 use opendut_util::project;
 
@@ -18,6 +18,9 @@ const DRY_RUN_BANNER: &str = r"
         ";
 
 pub async fn run(run_mode: RunMode, no_confirm: bool, tasks: &[Box<dyn Task>]) -> anyhow::Result<()> {
+    let task_names_string = tasks.iter().map(|task| task.description()).collect::<Vec<_>>().join(", ");
+    debug!("Running tasks: {task_names_string}");
+
     let run_mode = if project::is_running_in_development() {
         println!("{DRY_RUN_BANNER}");
         info!("{DRY_RUN_BANNER}");
@@ -34,6 +37,7 @@ pub async fn run(run_mode: RunMode, no_confirm: bool, tasks: &[Box<dyn Task>]) -
         run_tasks(tasks, run_mode);
     }
     println!();
+    debug!("Completed running tasks: {task_names_string}");
     Ok(())
 }
 
