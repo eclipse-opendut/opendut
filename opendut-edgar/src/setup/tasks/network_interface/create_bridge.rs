@@ -5,7 +5,7 @@ use futures::executor::block_on;
 use opendut_types::util::net::NetworkInterfaceName;
 
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
-use crate::setup::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskFulfilled};
 
 pub struct CreateBridge {
     pub network_interface_manager: NetworkInterfaceManagerRef,

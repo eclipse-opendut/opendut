@@ -1,6 +1,6 @@
 use anyhow::{bail, Result};
 
-use crate::setup::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskFulfilled};
 use crate::setup::User;
 use crate::setup::util::chown;
 

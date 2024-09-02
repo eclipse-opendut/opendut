@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use anyhow::{Context, Result};
 use opendut_edgar_kernel_modules::{required_kernel_modules, KernelModule};
 
-use crate::setup::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskFulfilled};
 use crate::setup::constants::KERNEL_MODULE_LOAD_RULE_PREFIX;
 
 // Returns the file path for the configuation file that causes the kernel module to be loaded during boot

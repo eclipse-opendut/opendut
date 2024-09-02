@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use anyhow::{Result, bail};
 
 use crate::setup::util::running_in_docker;
-use crate::setup::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskFulfilled};
 
 pub struct LoadKernelModules{
     loaded_module_file: PathBuf,
@@ -57,7 +57,7 @@ mod tests {
     use assert_fs::TempDir;
     use indoc::indoc;
     use rstest::{fixture, rstest};
-    use crate::setup::task::{Task, TaskFulfilled};
+    use crate::common::task::{Task, TaskFulfilled};
     use crate::setup::tasks::LoadKernelModules;
 
     #[rstest]

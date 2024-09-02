@@ -5,7 +5,7 @@ use std::process::Command;
 use anyhow::{Context, Result};
 
 use crate::setup::constants::{executable_install_path, PATH_dir, SYSTEMD_SERVICE_FILE_NAME};
-use crate::setup::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskFulfilled};
 use crate::setup::util;
 
 pub struct CopyExecutable;

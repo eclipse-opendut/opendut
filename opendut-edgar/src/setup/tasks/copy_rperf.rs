@@ -1,6 +1,6 @@
 use crate::fs;
 use anyhow::Result;
-use crate::setup::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskFulfilled};
 
 pub struct CopyRperf;
 impl Task for CopyRperf {

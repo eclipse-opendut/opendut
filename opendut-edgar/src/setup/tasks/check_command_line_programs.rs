@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use std::process::Command;
 
-use crate::setup::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskFulfilled};
 use crate::setup::constants::REQUIRED_COMMAND_LINE_PROGRAMS;
 use crate::setup::util::EvaluateRequiringSuccess;
 

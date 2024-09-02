@@ -4,7 +4,7 @@ use futures::executor::block_on;
 
 use crate::common;
 use crate::common::settings;
-use crate::setup::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskFulfilled};
 
 pub struct CheckCarlReachable;
 impl Task for CheckCarlReachable {

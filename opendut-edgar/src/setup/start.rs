@@ -14,9 +14,9 @@ use opendut_util::telemetry;
 use opendut_util::telemetry::opentelemetry_types::Opentelemetry;
 
 use crate::service::network_interface::manager::NetworkInterfaceManager;
-use crate::setup::{Leader, runner, tasks, User};
-use crate::setup::runner::RunMode;
-use crate::setup::task::Task;
+use crate::setup::{tasks, Leader, User};
+use crate::common::task::runner::RunMode;
+use crate::common::task::{runner, Task};
 use crate::setup::tasks::write_configuration;
 use crate::setup::util::running_in_docker;
 

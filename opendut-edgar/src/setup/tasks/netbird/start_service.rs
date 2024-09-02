@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use anyhow::{anyhow, Result};
 
-use crate::setup::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskFulfilled};
 use crate::setup::util::EvaluateRequiringSuccess;
 
 const UP_CHECK_RETRIES: usize = 50;

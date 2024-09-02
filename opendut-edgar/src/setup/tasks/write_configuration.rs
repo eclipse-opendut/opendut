@@ -12,7 +12,7 @@ use opendut_types::util::net::AuthConfig;
 
 use crate::common::settings;
 use crate::setup::constants;
-use crate::setup::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskFulfilled};
 
 pub struct ConfigOverride {
     pub peer_id: PeerId,
@@ -178,7 +178,7 @@ mod tests {
     use rstest::{fixture, rstest};
     use opendut_types::util::net::{ClientId, ClientSecret, OAuthScope};
 
-    use crate::setup::runner;
+    use crate::common::task::runner;
 
     use super::*;
 

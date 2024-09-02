@@ -7,7 +7,7 @@ use tracing::{error, info};
 
 use opendut_util::project;
 
-use crate::setup::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskFulfilled};
 
 const DRY_RUN_BANNER: &str = r"
                 Running in
@@ -196,7 +196,7 @@ fn print_outcome(task_name: String, outcome: Outcome) {
 
 #[cfg(test)]
 pub mod test {
-    use crate::setup::task::{Task, TaskFulfilled};
+    use crate::common::task::{Task, TaskFulfilled};
 
     pub fn unchecked(task: impl Task) -> anyhow::Result<()> {
         assert_eq!(task.check_fulfilled()?, TaskFulfilled::Unchecked);

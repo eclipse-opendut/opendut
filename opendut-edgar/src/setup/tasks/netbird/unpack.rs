@@ -6,7 +6,7 @@ use anyhow::{Context, Result};
 use flate2::read::GzDecoder;
 
 use crate::setup::{constants, util};
-use crate::setup::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskFulfilled};
 
 pub struct Unpack {
     from: PathBuf,
@@ -64,7 +64,7 @@ mod tests {
     use assert_fs::prelude::*;
     use assert_fs::TempDir;
     
-    use crate::setup::task::{Task, TaskFulfilled};
+    use crate::common::task::{Task, TaskFulfilled};
     use crate::setup::tasks::netbird::Unpack;
     use crate::setup::util;
 

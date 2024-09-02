@@ -5,7 +5,7 @@ use std::process::Command;
 use anyhow::{Context, Result};
 use crate::setup::User;
 
-use crate::setup::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskFulfilled};
 use crate::setup::util::EvaluateRequiringSuccess;
 
 fn passwd_file() -> PathBuf { PathBuf::from("/etc/passwd") }

@@ -8,7 +8,7 @@ use tracing::debug;
 use opendut_types::util::net::Certificate;
 
 use crate::setup::{constants, util};
-use crate::setup::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskFulfilled};
 use crate::setup::util::{CommandRunner, DefaultCommandRunner};
 
 pub struct WriteCaCertificate {
@@ -153,7 +153,7 @@ mod tests {
 
     use opendut_types::util::net::Certificate;
 
-    use crate::setup::task::{Task, TaskFulfilled};
+    use crate::common::task::{Task, TaskFulfilled};
     use crate::setup::tasks::WriteCaCertificate;
     use crate::setup::util;
     use crate::setup::util::NoopCommandRunner;

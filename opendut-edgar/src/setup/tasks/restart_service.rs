@@ -3,7 +3,7 @@ use std::process::Command;
 use anyhow::Result;
 
 use crate::setup::constants::SYSTEMD_SERVICE_FILE_NAME;
-use crate::setup::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskFulfilled};
 use crate::setup::util::EvaluateRequiringSuccess;
 
 pub struct RestartService;

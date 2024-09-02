@@ -1,3 +1,5 @@
+pub mod runner;
+
 pub trait Task {
     /// Short description of the task, which is shown to the user.
     fn description(&self) -> String;

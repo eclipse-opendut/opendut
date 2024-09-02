@@ -4,7 +4,7 @@ use std::process::Command;
 
 use anyhow::{Context, Result};
 
-use crate::setup::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskFulfilled};
 use crate::setup::constants::executable_install_path;
 use crate::setup::constants::SYSTEMD_SERVICE_FILE_NAME;
 use crate::setup::{User, util};
@@ -111,7 +111,7 @@ mod tests {
     use assert_fs::TempDir;
 
     use crate::setup::constants::SYSTEMD_SERVICE_FILE_NAME;
-    use crate::setup::task::{Task, TaskFulfilled};
+    use crate::common::task::{Task, TaskFulfilled};
     use crate::setup::tasks::CreateServiceFile;
     use crate::setup::User;
     use crate::setup::util::NoopCommandRunner;

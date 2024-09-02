@@ -3,7 +3,7 @@ use std::process::Command;
 use anyhow::{Context, Result};
 
 use crate::setup::constants;
-use crate::setup::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskFulfilled};
 use crate::setup::util::EvaluateRequiringSuccess;
 
 /// The EDGAR Service needs to modify network interfaces.
