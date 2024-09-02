@@ -224,7 +224,7 @@ pub enum Error {
 #[derive(Debug, thiserror::Error)]
 pub enum OpenError {
     #[error(
-        "Peer <{peer_id}> opened stream, but we already have a connected stream with this PeerId. \
+        "Peer <{peer_id}> opened stream, but CARL already has a connected stream with this PeerId. \
         This likely means that someone set up a second host using the same PeerId. \
         Rejecting connection."
     )]
