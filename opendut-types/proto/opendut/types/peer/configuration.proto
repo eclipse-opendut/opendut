@@ -7,7 +7,7 @@ import "opendut/types/peer/executor/executor.proto";
 import "opendut/types/util/net.proto";
 import "opendut/types/util/uuid.proto";
 
-message PeerConfiguration {
+message OldPeerConfiguration {
   optional opendut.types.cluster.ClusterAssignment cluster_assignment = 2;
   opendut.types.peer.configuration.PeerNetworkConfiguration network = 3;
 }

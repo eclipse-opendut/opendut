@@ -2,19 +2,19 @@ use crate::proto::{ConversionError, ConversionErrorBuilder};
 
 include!(concat!(env!("OUT_DIR"), "/opendut.types.peer.configuration.rs"));
 
-impl From<crate::peer::configuration::PeerConfiguration> for PeerConfiguration {
-    fn from(value: crate::peer::configuration::PeerConfiguration) -> Self {
+impl From<crate::peer::configuration::OldPeerConfiguration> for OldPeerConfiguration {
+    fn from(value: crate::peer::configuration::OldPeerConfiguration) -> Self {
         Self {
             cluster_assignment: value.cluster_assignment.map(|assignment| assignment.into()),
             network: Some(value.network.into())
         }
     }
 }
-impl TryFrom<PeerConfiguration> for crate::peer::configuration::PeerConfiguration {
+impl TryFrom<OldPeerConfiguration> for crate::peer::configuration::OldPeerConfiguration {
     type Error = ConversionError;
 
-    fn try_from(value: PeerConfiguration) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<PeerConfiguration, crate::peer::configuration::PeerConfiguration>;
+    fn try_from(value: OldPeerConfiguration) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<OldPeerConfiguration, crate::peer::configuration::OldPeerConfiguration>;
 
         let cluster_assignment = value.cluster_assignment
             .map(TryInto::try_into)
@@ -24,7 +24,7 @@ impl TryFrom<PeerConfiguration> for crate::peer::configuration::PeerConfiguratio
             .ok_or(ErrorBuilder::field_not_set("network"))?
             .try_into()?;
 
-        Ok(crate::peer::configuration::PeerConfiguration {
+        Ok(crate::peer::configuration::OldPeerConfiguration {
             cluster_assignment,
             network
         })

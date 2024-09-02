@@ -3,7 +3,7 @@ use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
 use opendut_carl_api::carl::peer::StorePeerDescriptorError;
 use opendut_types::peer;
-use opendut_types::peer::configuration::{PeerConfiguration, PeerConfiguration2, PeerNetworkConfiguration};
+use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration2, PeerNetworkConfiguration};
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::util::net::NetworkInterfaceName;
 use tracing::{debug, error, info, warn};
@@ -42,11 +42,11 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
                 }
             };
 
-            let peer_configuration = PeerConfiguration {
+            let old_peer_configuration = OldPeerConfiguration {
                 cluster_assignment: None,
                 network: peer_network_configuration
             };
-            resources.insert(peer_id, peer_configuration)?;
+            resources.insert(peer_id, old_peer_configuration)?;
 
 
             let peer_configuration2 = {

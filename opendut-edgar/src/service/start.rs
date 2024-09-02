@@ -18,7 +18,7 @@ use opendut_carl_api::proto::services::peer_messaging_broker;
 use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, TracingContext};
 use opendut_carl_api::proto::services::peer_messaging_broker::downstream::Message;
 use opendut_types::cluster::{ClusterAssignment, PeerClusterAssignment};
-use opendut_types::peer::configuration::{PeerConfiguration, PeerConfiguration2};
+use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration2};
 use opendut_types::peer::PeerId;
 use opendut_types::util::net::NetworkInterfaceName;
 use opendut_util::telemetry;
@@ -211,7 +211,7 @@ async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Opti
 
     match message.clone() {
         ApplyPeerConfiguration {
-            configuration: Some(configuration),
+            old_configuration: Some(old_configuration),
             configuration2: Some(configuration2),
         } => {
 
@@ -219,17 +219,18 @@ async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Opti
             set_parent_context(&span, context);
             let _span = span.enter();
 
-            info!("Received configuration: {configuration:?}");
-            match PeerConfiguration::try_from(configuration) {
-                Err(error) => error!("Illegal PeerConfiguration: {error}"),
-                Ok(configuration) => {
+            info!("Received OldPeerConfiguration: {old_configuration:?}");
+            info!("Received PeerConfiguration2: {configuration2:?}");
+            match OldPeerConfiguration::try_from(old_configuration) {
+                Err(error) => error!("Illegal OldPeerConfiguration: {error}"),
+                Ok(old_configuration) => {
                     match PeerConfiguration2::try_from(configuration2) {
                         Err(error) => error!("Illegal PeerConfiguration2: {error}"),
                         Ok(configuration2) => {
                             let _ = setup_cluster(
-                                &configuration.cluster_assignment,
+                                &old_configuration.cluster_assignment,
                                 setup_cluster_info,
-                                configuration.network.bridge_name,
+                                old_configuration.network.bridge_name,
                             ).await;
 
                             let mut executor_manager = setup_cluster_info.executor_manager.lock().unwrap();
@@ -237,7 +238,7 @@ async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Opti
                             executor_manager.create_new_executors(configuration2.executors);
 
                             setup_cluster_metrics(
-                                &configuration.cluster_assignment,
+                                &old_configuration.cluster_assignment,
                                 setup_cluster_info,
                             )?;
                         }

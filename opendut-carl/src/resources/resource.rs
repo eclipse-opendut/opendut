@@ -2,7 +2,7 @@ use std::any::Any;
 use std::fmt::Debug;
 
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
-use opendut_types::peer::configuration::{PeerConfiguration, PeerConfiguration2};
+use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration2};
 use opendut_types::peer::state::PeerState;
 use opendut_types::peer::{PeerDescriptor, PeerId};
 
@@ -18,7 +18,7 @@ impl Resource for ClusterConfiguration {
 impl Resource for ClusterDeployment {
     type Id = ClusterId;
 }
-impl Resource for PeerConfiguration {
+impl Resource for OldPeerConfiguration {
     type Id = PeerId;
 }
 impl Resource for PeerConfiguration2 {

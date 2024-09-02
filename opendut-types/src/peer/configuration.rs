@@ -10,7 +10,7 @@ use crate::peer::executor::{ExecutorDescriptor, ExecutorKind};
 use crate::util::net::NetworkInterfaceName;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct PeerConfiguration {
+pub struct OldPeerConfiguration {
     pub cluster_assignment: Option<ClusterAssignment>,
     pub network: PeerNetworkConfiguration,
     // Please add new fields into PeerConfiguration2 instead.

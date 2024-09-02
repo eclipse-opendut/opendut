@@ -375,7 +375,7 @@ mod test {
     mod deploy_cluster {
         use crate::actions::StorePeerDescriptorOptions;
         use opendut_carl_api::proto::services::peer_messaging_broker::ApplyPeerConfiguration;
-        use opendut_types::peer::configuration::{PeerConfiguration, PeerConfiguration2};
+        use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration2};
 
         use super::*;
 
@@ -478,16 +478,16 @@ mod test {
             Ok(peer_rx)
         }
 
-        async fn receive_peer_configuration_message(peer_rx: &mut mpsc::Receiver<Downstream>) -> (PeerConfiguration, PeerConfiguration2) {
+        async fn receive_peer_configuration_message(peer_rx: &mut mpsc::Receiver<Downstream>) -> (OldPeerConfiguration, PeerConfiguration2) {
             let message = tokio::time::timeout(Duration::from_millis(500), peer_rx.recv()).await
                 .unwrap().unwrap().message.unwrap();
 
             if let downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
-                configuration: Some(peer_configuration),
+                old_configuration: Some(old_peer_configuration),
                 configuration2: Some(peer_configuration2),
             }) = message {
                 (
-                    peer_configuration.try_into().unwrap(),
+                    old_peer_configuration.try_into().unwrap(),
                     peer_configuration2.try_into().unwrap()
                 )
             } else {
