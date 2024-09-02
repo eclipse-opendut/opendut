@@ -3200,6 +3200,7 @@ version = "0.2.0"
 dependencies = [
  "cfg-if",
  "config 0.14.0 (git+https://github.com/mehcode/config-rs?rev=e3c1d0b452639478662a44f15ef6d5b6d969bf9b)",
+ "glob",
  "googletest",
  "http 0.2.12",
  "jsonwebtoken",
@@ -3425,6 +3426,7 @@ version = "0.2.0"
 dependencies = [
  "base64 0.22.1",
  "brotli",
+ "glob",
  "googletest",
  "pem",
  "prost",

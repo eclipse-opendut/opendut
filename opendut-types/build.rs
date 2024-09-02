@@ -1,26 +1,14 @@
-use std::io::Result;
 
-fn main() -> Result<()> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     std::env::set_var("PROTOC", protobuf_src::protoc());
 
-    let protos = [
-        "proto/opendut/types/cluster/cluster.proto",
-        "proto/opendut/types/peer/peer.proto",
-        "proto/opendut/types/peer/configuration.proto",
-        "proto/opendut/types/peer/executor/executor.proto",
-        "proto/opendut/types/peer/executor/container.proto",
-        "proto/opendut/types/topology/device.proto",
-        "proto/opendut/types/topology/topology.proto",
-        "proto/opendut/types/util/metadata.proto",
-        "proto/opendut/types/util/net.proto",
-        "proto/opendut/types/util/uuid.proto",
-        "proto/opendut/types/vpn/vpn.proto",
-        "proto/opendut/types/cleo/cleo.proto"
-    ];
+    let protos = glob::glob("proto/**/*.proto")?.collect::<Result<Vec<_>, _>>()?;
 
     let includes = [
         "proto/"
     ];
 
-    prost_build::compile_protos(&protos, &includes)
+    prost_build::compile_protos(&protos, &includes)?;
+
+    Ok(())
 }

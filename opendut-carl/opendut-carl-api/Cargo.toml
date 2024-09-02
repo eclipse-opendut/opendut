@@ -49,6 +49,7 @@ tracing = { workspace = true, optional = true }
 url = { workspace = true }
 
 [build-dependencies]
+glob = { workspace = true }
 protobuf-src = { workspace = true }
 tonic-build = { workspace = true }
 shadow-rs = { workspace = true, default-features = true }

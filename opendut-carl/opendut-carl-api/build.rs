@@ -1,14 +1,8 @@
 
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     std::env::set_var("PROTOC", protobuf_src::protoc());
 
-    let protos = [
-        "proto/opendut/carl/services/cluster-manager.proto",
-        "proto/opendut/carl/services/metadata-provider.proto",
-        "proto/opendut/carl/services/peer-manager.proto",
-        "proto/opendut/carl/services/peer-messaging-broker.proto",
-    ];
+    let protos = glob::glob("proto/**/*.proto")?.collect::<Result<Vec<_>, _>>()?;
 
     let includes = [
         "proto/",

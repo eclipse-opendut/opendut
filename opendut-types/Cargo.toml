@@ -21,6 +21,7 @@ prost = { workspace = true }
 googletest = { workspace = true }
 
 [build-dependencies]
+glob = { workspace = true }
 prost-build = { workspace = true }
 protobuf-src = { workspace = true }
 
