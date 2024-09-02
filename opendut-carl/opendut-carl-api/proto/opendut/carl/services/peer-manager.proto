@@ -204,7 +204,7 @@ message GetPeerStateFailureInternal {
 //
 message GeneratePeerSetupRequest {
   opendut.types.peer.PeerId peer = 1;
-  string userId = 2;
+  string user_id = 2;
 }
 
 message GeneratePeerSetupResponse {
@@ -226,7 +226,7 @@ message GeneratePeerSetupFailure {
 // GenerateCleoSetupRequest
 //
 message GenerateCleoSetupRequest {
-  string userId = 2;
+  string user_id = 2;
 }
 
 message GenerateCleoSetupResponse {
