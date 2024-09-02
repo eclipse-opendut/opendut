@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package opendut.types.peer.ethernet;
+
+import "opendut/types/util/net.proto";
+
+message EthernetBridge {
+  opendut.types.util.NetworkInterfaceName name = 1;
+}

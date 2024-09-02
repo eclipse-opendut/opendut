@@ -1,60 +1,11 @@
+use crate::peer::configuration::parameter::{Parameter, ParameterId};
+use crate::peer::configuration::PeerConfiguration;
+use crate::peer::ethernet::EthernetBridge;
+use crate::peer::executor::{ExecutorDescriptor, ExecutorKind};
+use crate::OPENDUT_UUID_NAMESPACE;
 use std::any::Any;
 use std::hash::{DefaultHasher, Hash, Hasher};
-
-use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-
-use crate::cluster::ClusterAssignment;
-use crate::peer::executor::{ExecutorDescriptor, ExecutorKind};
-use crate::util::net::NetworkInterfaceName;
-use crate::OPENDUT_UUID_NAMESPACE;
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct OldPeerConfiguration {
-    pub cluster_assignment: Option<ClusterAssignment>,
-    pub network: PeerNetworkConfiguration,
-    // Please add new fields into PeerConfiguration instead.
-}
-
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub struct PeerNetworkConfiguration {
-    pub bridge_name: NetworkInterfaceName,
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct PeerConfiguration {
-    pub executors: Vec<Parameter<ExecutorDescriptor>>,
-    //TODO migrate more parameters
-}
-impl PeerConfiguration {
-    pub fn insert<T: ParameterValue>(&mut self, value: T, target: ParameterTarget) {
-        let parameter = Parameter {
-            id: value.parameter_identifier(),
-            dependencies: vec![], //TODO
-            target,
-            value,
-        };
-
-        T::insert_into_peer_configuration(parameter, self)
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Parameter<V: ParameterValue> {
-    pub id: ParameterId,
-    pub dependencies: Vec<ParameterId>,
-    pub target: ParameterTarget,
-    pub value: V,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct ParameterId(pub Uuid);
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ParameterTarget {
-    Present,
-    Absent,
-}
 
 pub trait ParameterValue: Any + Hash + Sized {
     /// Unique identifier, which is ideally stable, too.
@@ -78,14 +29,15 @@ pub trait ParameterValue: Any + Hash + Sized {
     ///     ParameterId(id)
     /// }
     ///
-    /// # fn insert_into_peer_configuration(parameter: Parameter<Self>, peer_configuration: &mut PeerConfiguration) { todo!() }
+    /// # fn peer_configuration_field(peer_configuration: &mut PeerConfiguration) -> &mut Vec<Parameter<Self>> { todo!() }
     /// # }
     /// ```
     /// However, ideally you use a stable subset of your data, which is still unique.
     fn parameter_identifier(&self) -> ParameterId;
 
-    fn insert_into_peer_configuration(parameter: Parameter<Self>, peer_configuration: &mut PeerConfiguration);
+    fn peer_configuration_field(peer_configuration: &mut PeerConfiguration) -> &mut Vec<Parameter<Self>>;
 }
+
 impl ParameterValue for ExecutorDescriptor {
     fn parameter_identifier(&self) -> ParameterId {
         let mut hasher = DefaultHasher::new(); //ID not stable across Rust releases
@@ -99,15 +51,25 @@ impl ParameterValue for ExecutorDescriptor {
         let id = Uuid::new_v5(&OPENDUT_UUID_NAMESPACE, &id.to_le_bytes());
         ParameterId(id)
     }
-
-    fn insert_into_peer_configuration(parameter: Parameter<Self>, peer_configuration: &mut PeerConfiguration) {
-        peer_configuration.executors.push(parameter);
+    fn peer_configuration_field(peer_configuration: &mut PeerConfiguration) -> &mut Vec<Parameter<Self>>  {
+        &mut peer_configuration.executors
     }
 }
+
+impl ParameterValue for EthernetBridge {
+    fn parameter_identifier(&self) -> ParameterId {
+        todo!()
+    }
+    fn peer_configuration_field(peer_configuration: &mut PeerConfiguration) -> &mut Vec<Parameter<Self>> {
+        &mut peer_configuration.ethernet_bridges
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::peer::configuration::ParameterTarget;
     use crate::peer::executor::ExecutorId;
 
     #[test]

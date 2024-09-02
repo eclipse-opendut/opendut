@@ -59,7 +59,8 @@ impl TryFrom<PeerNetworkConfiguration> for crate::peer::configuration::PeerNetwo
 impl From<crate::peer::configuration::PeerConfiguration> for PeerConfiguration {
     fn from(value: crate::peer::configuration::PeerConfiguration) -> Self {
         Self {
-            executors: value.executors.into_iter().map(PeerConfigurationParameterExecutor::from).collect(),
+            executors: value.executors.into_iter().map(From::from).collect(),
+            ethernet_bridges: value.ethernet_bridges.into_iter().map(From::from).collect(),
         }
     }
 }
@@ -69,41 +70,87 @@ impl TryFrom<PeerConfiguration> for crate::peer::configuration::PeerConfiguratio
     fn try_from(value: PeerConfiguration) -> Result<Self, Self::Error> {
         Ok(crate::peer::configuration::PeerConfiguration {
             executors: value.executors.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
+            ethernet_bridges: value.ethernet_bridges.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
         })
     }
 }
 
-impl From<crate::peer::configuration::Parameter<crate::peer::executor::ExecutorDescriptor>> for PeerConfigurationParameterExecutor {
-    fn from(value: crate::peer::configuration::Parameter<crate::peer::executor::ExecutorDescriptor>) -> Self {
+mod executor {
+    use super::*;
+    type Model = crate::peer::configuration::Parameter<crate::peer::executor::ExecutorDescriptor>;
+    type Proto = PeerConfigurationParameterExecutor;
 
-        let executor: crate::proto::peer::executor::ExecutorDescriptor = value.value.clone().into();
-        let parameter = PeerConfigurationParameter::from(value);
+    impl From<Model> for Proto {
+        fn from(value: Model) -> Self {
 
-        Self {
-            parameter: Some(parameter),
-            value: Some(executor),
+            let executor: crate::proto::peer::executor::ExecutorDescriptor = value.value.clone().into();
+            let parameter = PeerConfigurationParameter::from(value);
+
+            Self {
+                parameter: Some(parameter),
+                value: Some(executor),
+            }
+        }
+    }
+    impl TryFrom<Proto> for Model {
+        type Error = ConversionError;
+
+        fn try_from(value: Proto) -> Result<Self, Self::Error> {
+            type ErrorBuilder = ConversionErrorBuilder<Proto, Model>;
+
+            let parameter = value.parameter
+                .ok_or(ErrorBuilder::field_not_set("parameter"))?;
+
+            let executor: crate::peer::executor::ExecutorDescriptor = value.value
+                .ok_or(ErrorBuilder::field_not_set("executor"))?
+                .try_into()?;
+
+            Ok(Self {
+                id: parameter.id.ok_or(ErrorBuilder::field_not_set("id"))?.try_into()?,
+                dependencies: parameter.dependencies.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
+                target: parameter.target.ok_or(ErrorBuilder::field_not_set("target"))?.into(),
+                value: executor,
+            })
         }
     }
 }
-impl TryFrom<PeerConfigurationParameterExecutor> for crate::peer::configuration::Parameter<crate::peer::executor::ExecutorDescriptor> {
-    type Error = ConversionError;
+mod ethernet_bridge {
+    use super::*;
+    type Model = crate::peer::configuration::Parameter<crate::peer::ethernet::EthernetBridge>;
+    type Proto = PeerConfigurationParameterEthernetBridge;
 
-    fn try_from(value: PeerConfigurationParameterExecutor) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<PeerConfigurationParameterExecutor, crate::peer::configuration::Parameter<crate::peer::executor::ExecutorDescriptor>>;
+    impl From<Model> for Proto {
+        fn from(value: Model) -> Self {
 
-        let parameter = value.parameter
-            .ok_or(ErrorBuilder::field_not_set("parameter"))?;
+            let executor: crate::proto::peer::ethernet::EthernetBridge = value.value.clone().into();
+            let parameter = PeerConfigurationParameter::from(value);
 
-        let executor: crate::peer::executor::ExecutorDescriptor = value.value
-            .ok_or(ErrorBuilder::field_not_set("executor"))?
-            .try_into()?;
+            Self {
+                parameter: Some(parameter),
+                value: Some(executor),
+            }
+        }
+    }
+    impl TryFrom<Proto> for Model {
+        type Error = ConversionError;
 
-        Ok(Self {
-            id: parameter.id.ok_or(ErrorBuilder::field_not_set("id"))?.try_into()?,
-            dependencies: parameter.dependencies.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
-            target: parameter.target.ok_or(ErrorBuilder::field_not_set("target"))?.into(),
-            value: executor,
-        })
+        fn try_from(value: Proto) -> Result<Self, Self::Error> {
+            type ErrorBuilder = ConversionErrorBuilder<Proto, Model>;
+
+            let parameter = value.parameter
+                .ok_or(ErrorBuilder::field_not_set("parameter"))?;
+
+            let executor: crate::peer::ethernet::EthernetBridge = value.value
+                .ok_or(ErrorBuilder::field_not_set("executor"))?
+                .try_into()?;
+
+            Ok(Self {
+                id: parameter.id.ok_or(ErrorBuilder::field_not_set("id"))?.try_into()?,
+                dependencies: parameter.dependencies.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
+                target: parameter.target.ok_or(ErrorBuilder::field_not_set("target"))?.into(),
+                value: executor,
+            })
+        }
     }
 }
 

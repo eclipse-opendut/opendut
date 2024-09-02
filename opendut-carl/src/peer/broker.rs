@@ -401,9 +401,7 @@ mod tests {
                 bridge_name: NetworkInterfaceName::try_from("br0")?,
             },
         }).await?;
-        resources_manager.insert(peer_id, PeerConfiguration {
-            executors: vec![],
-        }).await?;
+        resources_manager.insert(peer_id, PeerConfiguration::default()).await?;
 
         Ok(Fixture {
             resources_manager,

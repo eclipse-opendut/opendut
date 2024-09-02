@@ -116,9 +116,7 @@ mod tests {
         resources_manager.resources_mut(|resources| {
             resources.insert(peer_id, Clone::clone(&old_peer_configuration))
         }).await?;
-        let peer_configuration = PeerConfiguration {
-            executors: vec![],
-        };
+        let peer_configuration = PeerConfiguration::default();
         resources_manager.resources_mut(|resources| {
             resources.insert(peer_id, Clone::clone(&peer_configuration))
         }).await?;

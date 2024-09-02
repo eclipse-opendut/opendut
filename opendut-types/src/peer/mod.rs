@@ -9,12 +9,13 @@ use uuid::Uuid;
 
 use crate::peer::executor::ExecutorDescriptors;
 use crate::topology::{DeviceDescriptor, Topology};
-use crate::util::net::{Certificate, NetworkInterfaceDescriptor, AuthConfig, NetworkInterfaceName};
+use crate::util::net::{AuthConfig, Certificate, NetworkInterfaceDescriptor, NetworkInterfaceName};
 use crate::vpn::VpnPeerConfiguration;
 
 pub mod state;
 pub mod executor;
 pub mod configuration;
+pub mod ethernet;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
