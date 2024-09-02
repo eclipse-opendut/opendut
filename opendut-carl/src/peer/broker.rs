@@ -13,7 +13,7 @@ use tracing_opentelemetry::OpenTelemetrySpanExt;
 use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, downstream, Downstream, TracingContext};
 use opendut_carl_api::proto::services::peer_messaging_broker::Pong;
 use opendut_carl_api::proto::services::peer_messaging_broker::upstream;
-use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration2};
+use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
 use opendut_types::peer::PeerId;
 use opendut_types::peer::state::{PeerState, PeerUpState};
 
@@ -122,22 +122,22 @@ impl PeerMessagingBroker {
 
         let maybe_old_configuration = self.resources_manager.get::<OldPeerConfiguration>(peer_id).await
             .map_err(|source| OpenError::Persistence { peer_id, source })?;
-        let maybe_configuration2 = self.resources_manager.get::<PeerConfiguration2>(peer_id).await
+        let maybe_configuration = self.resources_manager.get::<PeerConfiguration>(peer_id).await
             .map_err(|source| OpenError::Persistence { peer_id, source })?;
 
         if let Some(old_configuration) = maybe_old_configuration {
-            if let Some(configuration2) = maybe_configuration2 {
+            if let Some(configuration) = maybe_configuration {
 
                 self.send_to_peer(peer_id, downstream::Message::ApplyPeerConfiguration(
                     ApplyPeerConfiguration {
                         old_configuration: Some(old_configuration.into()),
-                        configuration2: Some(configuration2.into()),
+                        configuration: Some(configuration.into()),
                     }
                 )).await
                 .map_err(|cause| OpenError::SendApplyPeerConfiguration { peer_id, cause: cause.to_string() })?;
             }
             else {
-                return Err(OpenError::SendApplyPeerConfiguration { peer_id, cause: String::from("No PeerConfiguration2 found for peer") });
+                return Err(OpenError::SendApplyPeerConfiguration { peer_id, cause: String::from("No PeerConfiguration found for peer") });
             }
         } else {
             return Err(OpenError::SendApplyPeerConfiguration { peer_id, cause: String::from("No OldPeerConfiguration found for peer") });
@@ -401,7 +401,7 @@ mod tests {
                 bridge_name: NetworkInterfaceName::try_from("br0")?,
             },
         }).await?;
-        resources_manager.insert(peer_id, PeerConfiguration2 {
+        resources_manager.insert(peer_id, PeerConfiguration {
             executors: vec![],
         }).await?;
 

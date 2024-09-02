@@ -3,7 +3,7 @@ use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
 use opendut_carl_api::carl::peer::StorePeerDescriptorError;
 use opendut_types::peer;
-use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration2, PeerNetworkConfiguration};
+use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration, PeerNetworkConfiguration};
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::util::net::NetworkInterfaceName;
 use tracing::{debug, error, info, warn};
@@ -49,14 +49,14 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
             resources.insert(peer_id, old_peer_configuration)?;
 
 
-            let peer_configuration2 = {
-                let mut peer_configuration2 = PeerConfiguration2::default();
+            let peer_configuration = {
+                let mut peer_configuration = PeerConfiguration::default();
                 for executor in Clone::clone(&peer_descriptor.executors).executors.into_iter() {
-                    peer_configuration2.insert_executor(executor, peer::configuration::ParameterTarget::Present); //TODO not always Present
+                    peer_configuration.insert_executor(executor, peer::configuration::ParameterTarget::Present); //TODO not always Present
                 }
-                peer_configuration2
+                peer_configuration
             };
-            resources.insert(peer_id, peer_configuration2)?; //FIXME don't just insert, but rather update existing values via ID with intelligent logic (in a separate action)
+            resources.insert(peer_id, peer_configuration)?; //FIXME don't just insert, but rather update existing values via ID with intelligent logic (in a separate action)
             resources.insert(peer_id, peer_descriptor)?;
 
             Ok(is_new_peer)

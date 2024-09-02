@@ -56,18 +56,18 @@ impl TryFrom<PeerNetworkConfiguration> for crate::peer::configuration::PeerNetwo
 }
 
 
-impl From<crate::peer::configuration::PeerConfiguration2> for PeerConfiguration2 {
-    fn from(value: crate::peer::configuration::PeerConfiguration2) -> Self {
+impl From<crate::peer::configuration::PeerConfiguration> for PeerConfiguration {
+    fn from(value: crate::peer::configuration::PeerConfiguration) -> Self {
         Self {
             executors: value.executors.into_iter().map(PeerConfigurationParameterExecutor::from).collect(),
         }
     }
 }
-impl TryFrom<PeerConfiguration2> for crate::peer::configuration::PeerConfiguration2 {
+impl TryFrom<PeerConfiguration> for crate::peer::configuration::PeerConfiguration {
     type Error = ConversionError;
 
-    fn try_from(value: PeerConfiguration2) -> Result<Self, Self::Error> {
-        Ok(crate::peer::configuration::PeerConfiguration2 {
+    fn try_from(value: PeerConfiguration) -> Result<Self, Self::Error> {
+        Ok(crate::peer::configuration::PeerConfiguration {
             executors: value.executors.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
         })
     }

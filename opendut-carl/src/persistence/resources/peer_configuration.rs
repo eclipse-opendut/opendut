@@ -1,4 +1,4 @@
-use opendut_types::peer::configuration::PeerConfiguration2;
+use opendut_types::peer::configuration::PeerConfiguration;
 use opendut_types::peer::PeerId;
 
 use crate::persistence::error::PersistenceResult;
@@ -6,7 +6,7 @@ use crate::persistence::resources::Persistable;
 use crate::persistence::Storage;
 use crate::resources::storage::ResourcesStorageApi;
 
-impl Persistable for PeerConfiguration2 {
+impl Persistable for PeerConfiguration {
     fn insert(self, id: PeerId, storage: &mut Storage) -> PersistenceResult<()> {
         storage.memory.insert(id, self)
     }

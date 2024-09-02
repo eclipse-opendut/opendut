@@ -3,7 +3,7 @@ use crate::persistence::error::PersistenceError;
 use crate::resources::manager::ResourcesManagerRef;
 use opendut_carl_api::proto::services::peer_messaging_broker::{downstream, ApplyPeerConfiguration};
 use opendut_types::cluster::ClusterAssignment;
-use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration2};
+use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
 use opendut_types::peer::state::{PeerBlockedState, PeerState, PeerUpState};
 use opendut_types::peer::PeerId;
 
@@ -28,7 +28,7 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
 
     let peer_id = params.peer_id;
 
-    let (old_peer_configuration, peer_configuration2) = params.resources_manager.resources_mut(|resources| {
+    let (old_peer_configuration, peer_configuration) = params.resources_manager.resources_mut(|resources| {
         let old_peer_configuration = resources.get::<OldPeerConfiguration>(peer_id)
             .map_err(|source| AssignClusterError::Persistence { peer_id, source })?
             .ok_or(AssignClusterError::PeerNotFound(peer_id))
@@ -42,7 +42,7 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
                 Ok(old_peer_configuration)
             })?;
 
-        let peer_configuration2 = resources.get::<PeerConfiguration2>(peer_id)
+        let peer_configuration = resources.get::<PeerConfiguration>(peer_id)
             .map_err(|source| AssignClusterError::Persistence { peer_id, source })?
             .ok_or(AssignClusterError::PeerNotFound(peer_id))?;
 
@@ -61,14 +61,14 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
             }
         }
 
-        Ok((old_peer_configuration, peer_configuration2))
+        Ok((old_peer_configuration, peer_configuration))
     }).await?;
 
     params.peer_messaging_broker.send_to_peer(
         peer_id,
         downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
             old_configuration: Some(old_peer_configuration.into()),
-            configuration2: Some(peer_configuration2.into()),
+            configuration: Some(peer_configuration.into()),
         }),
     ).await
     .map_err(|cause| AssignClusterError::SendingToPeerFailed {
@@ -116,11 +116,11 @@ mod tests {
         resources_manager.resources_mut(|resources| {
             resources.insert(peer_id, Clone::clone(&old_peer_configuration))
         }).await?;
-        let peer_configuration2 = PeerConfiguration2 {
+        let peer_configuration = PeerConfiguration {
             executors: vec![],
         };
         resources_manager.resources_mut(|resources| {
-            resources.insert(peer_id, Clone::clone(&peer_configuration2))
+            resources.insert(peer_id, Clone::clone(&peer_configuration))
         }).await?;
 
         let (_, mut receiver) = peer_messaging_broker.open(peer_id, IpAddr::from_str("1.2.3.4")?).await?;
@@ -130,7 +130,7 @@ mod tests {
             received,
             eq(downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
                 old_configuration: Some(Clone::clone(&old_peer_configuration).into()),
-                configuration2: Some(Clone::clone(&peer_configuration2).into()),
+                configuration: Some(Clone::clone(&peer_configuration).into()),
             }))
         );
 
@@ -168,7 +168,7 @@ mod tests {
             received,
             eq(downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
                 old_configuration: Some(Clone::clone(&old_peer_configuration).into()),
-                configuration2: Some(peer_configuration2.into()),
+                configuration: Some(peer_configuration.into()),
             }))
         );
 

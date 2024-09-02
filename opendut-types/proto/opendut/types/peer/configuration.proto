@@ -19,7 +19,7 @@ message PeerNetworkConfiguration {
 
 
 // Configuration sent from CARL to Peer
-message PeerConfiguration2 {
+message PeerConfiguration {
   repeated PeerConfigurationParameterExecutor executors = 1;
   //TODO migrate more parameters
 }

@@ -13,7 +13,7 @@ use crate::util::net::NetworkInterfaceName;
 pub struct OldPeerConfiguration {
     pub cluster_assignment: Option<ClusterAssignment>,
     pub network: PeerNetworkConfiguration,
-    // Please add new fields into PeerConfiguration2 instead.
+    // Please add new fields into PeerConfiguration instead.
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -22,11 +22,11 @@ pub struct PeerNetworkConfiguration {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct PeerConfiguration2 {
+pub struct PeerConfiguration {
     pub executors: Vec<Parameter<ExecutorDescriptor>>,
     //TODO migrate more parameters
 }
-impl PeerConfiguration2 {
+impl PeerConfiguration {
     pub fn insert_executor(&mut self, value: ExecutorDescriptor, target: ParameterTarget) { //TODO more generic solution
         let parameter = Parameter {
             id: value.parameter_identifier(),
@@ -103,8 +103,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn insert_value_in_peer_configuration2() {
-        let mut peer_configuration = PeerConfiguration2::default();
+    fn insert_value_in_peer_configuration() {
+        let mut peer_configuration = PeerConfiguration::default();
 
         let value = ExecutorDescriptor {
             id: ExecutorId::random(),
