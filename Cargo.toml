@@ -157,10 +157,13 @@ zip = "2.1.3"
 
 
 [workspace.metadata.ci]
-netbird.version = "0.23.9-8de14ad"
-netbird-signal.version="0.25.0"       # docker container version for netbirdio/signal: NETBIRD_SIGNAL_VERSION
-netbird-management.version="0.25.0"   # docker container version for netbirdio/management:  NETBIRD_MANAGEMENT_VERSION
-netbird-dashboard.version="v1.17.12"  # docker container version for wiretrustee/dashboard: NETBIRD_DASHBOARD_VERSION
+netbird.version = "0.28.9-5619306f5c4f40e7f19f64c5bcbf81cd87cff7c2"
+netbird.repository = "https://github.com/eclipse-opendut/netbird-build"
+netbird.protobuf = "https://raw.githubusercontent.com/eclipse-opendut/netbird-fork/5619306f5c4f40e7f19f64c5bcbf81cd87cff7c2/client/proto/daemon.proto"
+
+netbird-signal.version="0.28.9"       # docker container version for netbirdio/signal:     NETBIRD_SIGNAL_VERSION
+netbird-management.version="0.28.9"   # docker container version for netbirdio/management: NETBIRD_MANAGEMENT_VERSION
+netbird-dashboard.version="v2.5.0"    # docker container version for netbirdio/dashboard:  NETBIRD_DASHBOARD_VERSION
 rperf.version = "0.1.8"
 
 [workspace.metadata.ci.cargo-ci] #CLI tool crates used in CI (not libraries)

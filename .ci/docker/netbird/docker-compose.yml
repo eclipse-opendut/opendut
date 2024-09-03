@@ -138,7 +138,8 @@ services:
           - netbird-coturn
 
   dashboard:
-    image: wiretrustee/dashboard:v1.17.12
+    # https://hub.docker.com/r/netbirdio/dashboard/tags
+    image: netbirdio/dashboard:${NETBIRD_DASHBOARD_VERSION}
     environment:
       # Endpoints
       - NETBIRD_MGMT_API_ENDPOINT=https://netbird-management

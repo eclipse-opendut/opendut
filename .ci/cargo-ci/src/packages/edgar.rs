@@ -138,6 +138,8 @@ pub mod distribution {
             let metadata = crate::metadata::cargo();
             let version = metadata.workspace_metadata["ci"]["netbird"]["version"].as_str()
                 .ok_or(anyhow!("NetBird version not defined."))?;
+            let repository = metadata.workspace_metadata["ci"]["netbird"]["repository"].as_str()
+                .ok_or(anyhow!("NetBird repository not defined."))?;
 
             let os = "linux";
 
@@ -150,7 +152,7 @@ pub mod distribution {
             fs::create_dir_all(netbird_artifact.parent().unwrap())?;
 
             if !netbird_artifact.exists() { //download
-                let url = format!("https://github.com/reimarstier/netbird/releases/download/{folder_name}/{file_name}");
+                let url = format!("{repository}/releases/download/{folder_name}/{file_name}");
 
                 debug!("Downloading netbird_{version}_{os}_{arch}.tar.gz...");
                 let bytes = reqwest::blocking::get(url)?

@@ -15,6 +15,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .exec()?;
     let version = metadata.workspace_metadata["ci"]["netbird"]["version"].as_str()
         .ok_or("NetBird version not defined.").unwrap();
+    let netbird_proto_url = metadata.workspace_metadata["ci"]["netbird"]["protobuf"].as_str()
+        .ok_or("NetBird protobuf url not defined.").unwrap().to_string();
 
     let proto_dir = PathBuf::from("proto/").join(format!("netbird-v{version}"));
     let file_names = ["daemon.proto"];
@@ -24,9 +26,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         fs::create_dir_all(&proto_dir)?;
 
         for file_name in file_names {
-            let netbird_proto_url = String::from("https://raw.githubusercontent.com/reimarstier/netbird/configure-mtu/client/proto/daemon.proto");
-
-            let bytes = reqwest::blocking::get(netbird_proto_url)?
+            let bytes = reqwest::blocking::get(netbird_proto_url.clone())?
                 .error_for_status()?
                 .bytes()?;
 

@@ -127,7 +127,7 @@ services:
 
 # vaguely derived from: https://github.com/netbirdio/netbird/blob/main/infrastructure_files/docker-compose.yml.tmpl.traefik
   netbird-dashboard:
-    image: wiretrustee/dashboard:v1.17.12
+    image: netbirdio/dashboard:v2.5.0
     restart: unless-stopped
     depends_on:
       traefik:
@@ -161,7 +161,7 @@ services:
 
   # Signal
   netbird-signal:
-    image: netbirdio/signal:0.25.0
+    image: netbirdio/signal:0.28.9
     restart: unless-stopped
     volumes:
       - netbird-signal:/var/lib/netbird
@@ -179,7 +179,7 @@ services:
       context: ../../..
       dockerfile: ./.ci/deploy/localenv/data/netbird/Dockerfile_management
       args:
-        NETBIRD_MANAGEMENT_VERSION: "0.25.0"
+        NETBIRD_MANAGEMENT_VERSION: "0.28.9"
     restart: unless-stopped
     depends_on:
       traefik:
