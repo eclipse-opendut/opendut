@@ -21,8 +21,8 @@ Vagrant.configure("2") do |config|
 
     config.vm.box = machine[:box_name]
     config.vm.hostname = machine[:hostname]
-    unless Vagrant.has_plugin?("vagrant-disksize")
-        config.disksize.size = vm_disk_size + 'GB'
+    if Vagrant.has_plugin?("vagrant-disksize")
+        config.disksize.size = vm_disk_size.to_s + 'GB'
     end
 
     if !disable_private_network then
