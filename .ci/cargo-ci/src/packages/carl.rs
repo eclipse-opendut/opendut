@@ -92,7 +92,7 @@ pub mod distribution {
 
     use super::*;
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip_all)]
     pub fn carl_distribution(target: Arch) -> crate::Result {
         use crate::tasks::distribution;
 

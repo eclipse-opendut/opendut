@@ -46,7 +46,7 @@ pub enum TaskCli {
 }
 
 impl EdgarCli {
-    #[tracing::instrument(name="edgar", skip(self))]
+    #[tracing::instrument(name="edgar", skip_all)]
     pub fn default_handling(self) -> crate::Result {
         match self.task {
             TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target }) => {
@@ -101,7 +101,7 @@ pub mod distribution {
 
     use super::*;
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip_all)]
     pub fn edgar_distribution(target: Arch) -> crate::Result {
         use crate::tasks::distribution;
 

@@ -66,7 +66,7 @@ pub mod distribution {
 
     use super::*;
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip_all)]
     pub fn theo_distribution(target: Arch) -> crate::Result {
         use crate::tasks::distribution;
 
