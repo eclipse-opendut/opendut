@@ -17,12 +17,12 @@ enabled = true
 id = "opendut-carl-client"
 secret = "6754d533-9442-4ee6-952a-97e332eca38e"
 issuer.url = "http://localhost:8081/realms/opendut/"
-issuer.remote.url = "https://keycloak/realms/opendut/"
+issuer.remote.url = "https://keycloak.local/realms/opendut/"
 scopes = ""
 
 [network.oidc.lea]
 client.id = "opendut-lea-client"
-issuer.url = "https://keycloak/realms/opendut/"
+issuer.url = "https://keycloak.local/realms/opendut/"
 scopes = "openid,profile,email"
 
 [serve]

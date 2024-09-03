@@ -31,9 +31,10 @@ services:
     environment:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin123456
-      - KEYCLOAK_URL=https://keycloak
+      - KEYCLOAK_URL=https://keycloak.local
       - NETBIRD_MANAGEMENT_URL=https://netbird-management
-      - KEYCLOAK_REALM_URL=https://keycloak/realms/netbird/.well-known/openid-configuration
+      # https://github.com/netbirdio/dashboard/blob/58cec8fcd16dbb8467761f5ed55d18bccbc18e5b/src/utils/helpers.ts#L71 requires domain with tld identifier; it does not work without a suffix
+      - KEYCLOAK_REALM_URL=https://keycloak.local/realms/netbird/.well-known/openid-configuration
       - NETBIRD_PASSWORD=netbird
     healthcheck:
       test: ["CMD", "/netbird-management-health.sh"]
@@ -108,7 +109,7 @@ services:
       - KEYCLOAK_ADMIN_PASSWORD=admin123456
       - KEYCLOAK_URL=https://keycloak
       - NETBIRD_MANAGEMENT_URL=https://netbird-management
-      - KEYCLOAK_REALM_URL=https://keycloak/realms/netbird/.well-known/openid-configuration
+      - KEYCLOAK_REALM_URL=https://keycloak.local/realms/netbird/.well-known/openid-configuration
       - NETBIRD_PASSWORD=netbird
       # TODO: CLEANUP!
       - PUID
@@ -147,8 +148,7 @@ services:
       # OIDC
       - AUTH_AUDIENCE=netbird-client
       - AUTH_CLIENT_ID=netbird-client
-      - AUTH_CLIENT_SECRET=
-      - AUTH_AUTHORITY=https://keycloak/realms/netbird
+      - AUTH_AUTHORITY=https://keycloak.local/realms/netbird
       - USE_AUTH0=false
       - AUTH_SUPPORTED_SCOPES=openid profile email offline_access api
       - AUTH_REDIRECT_URI=

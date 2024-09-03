@@ -5,6 +5,7 @@
     block: |
       192.168.32.200        carl
       192.168.32.204        keycloak
+      192.168.32.204        keycloak.local
       192.168.32.211        netbird-management
       192.168.32.213        netbird-dashboard netbird-ui
     marker: "# {mark} ANSIBLE MANAGED BLOCK of services"

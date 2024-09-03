@@ -56,7 +56,7 @@ extensions:
   zpages:
     endpoint: :55679
   oidc:
-    issuer_url: https://keycloak/realms/opendut
+    issuer_url: https://keycloak.local/realms/opendut
     audience: account
 
 service:

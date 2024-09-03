@@ -13,7 +13,7 @@ Following features are included:
 * Open url in remote session:
   * https://carl
   * https://netbird-dashboard
-  * https://keycloak
+  * https://keycloak.local
 
 
 ## GitHub container registry

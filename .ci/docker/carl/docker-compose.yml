@@ -38,13 +38,13 @@ services:
       - OPENDUT_CARL_NETWORK_OIDC_ENABLED=true
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ID=opendut-carl-client
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_SECRET=6754d533-9442-4ee6-952a-97e332eca38e
-      - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_URL=https://keycloak/realms/opendut/
-      - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_REMOTE_URL=https://keycloak/realms/opendut/
-      - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_ADMIN_URL=https://keycloak/admin/realms/opendut/
+      - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_URL=https://keycloak.local/realms/opendut/
+      - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_REMOTE_URL=https://keycloak.local/realms/opendut/
+      - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_ADMIN_URL=https://keycloak.local/admin/realms/opendut/
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_SCOPES=
 
       - OPENDUT_CARL_NETWORK_OIDC_LEA_CLIENT_ID=opendut-lea-client
-      - OPENDUT_CARL_NETWORK_OIDC_LEA_ISSUER_URL=https://keycloak/realms/opendut/
+      - OPENDUT_CARL_NETWORK_OIDC_LEA_ISSUER_URL=https://keycloak.local/realms/opendut/
       - OPENDUT_CARL_NETWORK_OIDC_LEA_SCOPES=openid,profile,email
 
       # Persistence

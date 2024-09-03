@@ -26,7 +26,7 @@ services:
       - "../../../resources/development/tls/keycloak.pem:/opt/keycloak/data/keycloak.pem:ro"
       - "../../../resources/development/tls/keycloak.key:/opt/keycloak/data/keycloak.key:ro"
     healthcheck:
-      test: ["CMD", "curl", "-f", "https://keycloak"]
+      test: ["CMD", "curl", "-f", "https://keycloak.local"]
       interval: 1m
       timeout: 10s
       retries: 10
@@ -36,7 +36,7 @@ services:
       opendutnet:
         ipv4_address: 192.168.32.204
         aliases:
-          - keycloak
+          - keycloak.local
 
   init_keycloak:
     build:
@@ -57,7 +57,7 @@ services:
       - opendut_keycloak_data:/opt/keycloak/data
     environment:
       - KCADM_PATH=/opt/keycloak/bin/kcadm.sh
-      - KEYCLOAK_URL=https://keycloak
+      - KEYCLOAK_URL=https://keycloak.local
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin123456
       - REALM=netbird

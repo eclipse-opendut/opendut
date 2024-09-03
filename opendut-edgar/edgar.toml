@@ -19,7 +19,7 @@ enabled = false
 
 [network.oidc.client]
 id = "opendut-edgar-client"
-issuer.url = "https://keycloak/realms/opendut/"
+issuer.url = "https://keycloak.local/realms/opendut/"
 scopes = "openid,profile,email"
 secret = "<tbd>"
 
