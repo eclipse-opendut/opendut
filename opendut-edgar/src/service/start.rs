@@ -30,7 +30,6 @@ use opendut_util::telemetry::opentelemetry_types::Opentelemetry;
 use crate::common::task::{runner, Task};
 use crate::common::{carl, settings};
 use crate::service::can_manager::{CanManager, CanManagerRef};
-use crate::service::cluster_assignment::Error;
 use crate::service::network_interface::manager::{NetworkInterfaceManager, NetworkInterfaceManagerRef};
 use crate::service::network_metrics;
 use crate::service::test_execution::executor_manager::{ExecutorManager, ExecutorManagerRef};
@@ -292,11 +291,11 @@ struct SetupClusterInfo {
     rperf_backoff_max_elapsed_time: Duration,
 }
 #[tracing::instrument(skip_all)]
-async fn setup_cluster(
+async fn setup_cluster( //TODO make idempotent
     cluster_assignment: &Option<ClusterAssignment>,
     info: &SetupClusterInfo,
     bridge_name: &NetworkInterfaceName,
-) -> anyhow::Result<()> { //TODO make idempotent
+) -> anyhow::Result<()> {
 
     match cluster_assignment {
         Some(cluster_assignment) => {
@@ -304,16 +303,28 @@ async fn setup_cluster(
             info!("Was assigned to cluster <{}>", cluster_assignment.id);
 
             if info.network_interface_management_enabled {
-                cluster_assignment::network_interfaces_setup(
+                cluster_assignment::setup_ethernet_gre_interfaces(
                     cluster_assignment,
                     info.self_id,
                     bridge_name,
                     Arc::clone(&info.network_interface_manager),
-                    Arc::clone(&info.can_manager)
                 ).await
-                    .inspect_err(|error| {
-                        error!("Failed to configure network interfaces: {error}")
-                    })?;
+                .inspect_err(|error| error!("Failed to configure Ethernet GRE interfaces: {error}"))?;
+
+                cluster_assignment::join_ethernet_interfaces_to_bridge(
+                    cluster_assignment,
+                    info.self_id,
+                    bridge_name,
+                    Arc::clone(&info.network_interface_manager),
+                ).await
+                .inspect_err(|error| error!("Failed to join Ethernet interfaces to bridge: {error}"))?;
+
+                cluster_assignment::setup_can_interfaces(
+                    cluster_assignment,
+                    info.self_id,
+                    Arc::clone(&info.can_manager),
+                ).await
+                .inspect_err(|error| error!("Failed to configure CAN interfaces: {error}"))?;
             } else {
                 debug!("Skipping changes to network interfaces after receiving ClusterAssignment, as this is disabled via configuration.");
             }
@@ -326,17 +337,20 @@ async fn setup_cluster(
     Ok(())
 }
 
-fn setup_cluster_metrics(
+#[tracing::instrument(skip_all)]
+fn setup_cluster_metrics( //TODO make idempotent
     cluster_assignment: &Option<ClusterAssignment>,
     setup_cluster_info: &SetupClusterInfo,
-) -> anyhow::Result<()> { //TODO make idempotent
+) -> anyhow::Result<()> {
     match cluster_assignment {
         None => {}
         Some(cluster_assignment) => {
             let local_peer_assignment = cluster_assignment.assignments.iter().find(|assignment| {
                 assignment.peer_id == setup_cluster_info.self_id
-            }).ok_or(Error::LocalPeerAssignmentNotFound { self_id: setup_cluster_info.self_id })?;
+            }).ok_or(cluster_assignment::Error::LocalPeerAssignmentNotFound { self_id: setup_cluster_info.self_id })?;
+
             let local_ip = local_peer_assignment.vpn_address;
+
             let peers: Vec<PeerClusterAssignment> = cluster_assignment.assignments.iter()
                 .filter(|peer_cluster_assignment | peer_cluster_assignment.vpn_address != local_ip)
                 .cloned().collect();

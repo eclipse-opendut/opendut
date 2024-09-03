@@ -11,13 +11,12 @@ use crate::service::network_interface::gre;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use crate::service::can_manager::CanManagerRef;
 
-#[tracing::instrument(skip(cluster_assignment, can_manager, network_interface_manager), level="trace")]
-pub async fn network_interfaces_setup(
+#[tracing::instrument(skip_all, level="trace")]
+pub async fn setup_ethernet_gre_interfaces(
     cluster_assignment: &ClusterAssignment,
     self_id: PeerId,
     bridge_name: &NetworkInterfaceName,
     network_interface_manager: NetworkInterfaceManagerRef,
-    can_manager: CanManagerRef,
 ) -> Result<(), Error> {
 
     let local_peer_assignment = cluster_assignment.assignments.iter().find(|assignment| {
@@ -25,10 +24,9 @@ pub async fn network_interfaces_setup(
     }).ok_or(Error::LocalPeerAssignmentNotFound { self_id })?;
 
     let local_ip = local_peer_assignment.vpn_address;
+    let local_ip = require_ipv4_for_gre(local_ip)?;
 
     let remote_ips = determine_remote_ips(cluster_assignment, self_id)?;
-
-    let local_ip = require_ipv4_for_gre(local_ip)?;
     let remote_ips = remote_ips.into_iter()
         .map(require_ipv4_for_gre)
         .collect::<Result<Vec<_>, _>>()?;
@@ -41,16 +39,26 @@ pub async fn network_interfaces_setup(
     ).await
     .map_err(Error::GreInterfaceSetupFailed)?;
 
+    Ok(())
+}
+
+#[tracing::instrument(skip_all, level="trace")]
+pub async fn join_ethernet_interfaces_to_bridge(
+    cluster_assignment: &ClusterAssignment,
+    self_id: PeerId,
+    bridge_name: &NetworkInterfaceName,
+    network_interface_manager: NetworkInterfaceManagerRef,
+) -> Result<(), Error> {
     let own_ethernet_interfaces = get_own_ethernet_interfaces(cluster_assignment, self_id)?;
+
     join_device_interfaces_to_bridge(&own_ethernet_interfaces, bridge_name, Arc::clone(&network_interface_manager)).await
         .map_err(Error::JoinDeviceInterfaceToBridgeFailed)?;
-
-    setup_can(cluster_assignment, self_id, can_manager).await?;
 
     Ok(())
 }
 
-pub async fn setup_can(
+#[tracing::instrument(skip_all, level="trace")]
+pub async fn setup_can_interfaces(
     cluster_assignment: &ClusterAssignment,
     self_id: PeerId,
     can_manager: CanManagerRef
