@@ -5,17 +5,17 @@ use std::time::Duration;
 
 use opentelemetry::propagation::TextMapPropagator;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
-use tokio::sync::{mpsc, RwLock};
 use tokio::sync::mpsc::error::SendError;
-use tracing::{debug, error, info, Span, warn};
+use tokio::sync::{mpsc, RwLock};
+use tracing::{debug, error, info, warn, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
-use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, downstream, Downstream, TracingContext};
-use opendut_carl_api::proto::services::peer_messaging_broker::Pong;
 use opendut_carl_api::proto::services::peer_messaging_broker::upstream;
+use opendut_carl_api::proto::services::peer_messaging_broker::Pong;
+use opendut_carl_api::proto::services::peer_messaging_broker::{downstream, ApplyPeerConfiguration, Downstream, TracingContext};
 use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
-use opendut_types::peer::PeerId;
 use opendut_types::peer::state::{PeerState, PeerUpState};
+use opendut_types::peer::PeerId;
 
 use crate::persistence::error::PersistenceError;
 use crate::resources::manager::ResourcesManagerRef;
@@ -271,8 +271,6 @@ mod tests {
     use tokio::sync::mpsc::Receiver;
 
     use opendut_carl_api::proto::services::peer_messaging_broker::Ping;
-    use opendut_types::peer::configuration::PeerNetworkConfiguration;
-    use opendut_types::util::net::NetworkInterfaceName;
 
     use crate::resources::manager::ResourcesManager;
 
@@ -397,9 +395,6 @@ mod tests {
         let peer_id = PeerId::random();
         resources_manager.insert(peer_id, OldPeerConfiguration {
             cluster_assignment: None,
-            network: PeerNetworkConfiguration {
-                bridge_name: NetworkInterfaceName::try_from("br0")?,
-            },
         }).await?;
         resources_manager.insert(peer_id, PeerConfiguration::default()).await?;
 

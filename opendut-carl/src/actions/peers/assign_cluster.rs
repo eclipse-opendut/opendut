@@ -29,18 +29,11 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
     let peer_id = params.peer_id;
 
     let (old_peer_configuration, peer_configuration) = params.resources_manager.resources_mut(|resources| {
-        let old_peer_configuration = resources.get::<OldPeerConfiguration>(peer_id)
-            .map_err(|source| AssignClusterError::Persistence { peer_id, source })?
-            .ok_or(AssignClusterError::PeerNotFound(peer_id))
-            .and_then(|old_peer_configuration| {
-                let old_peer_configuration = OldPeerConfiguration {
-                    cluster_assignment: Some(params.cluster_assignment),
-                    ..old_peer_configuration
-                };
-                resources.insert(peer_id, Clone::clone(&old_peer_configuration))
+        let old_peer_configuration = OldPeerConfiguration {
+            cluster_assignment: Some(params.cluster_assignment),
+        };
+        resources.insert(peer_id, Clone::clone(&old_peer_configuration))
                     .map_err(|source| AssignClusterError::Persistence { peer_id, source })?;
-                Ok(old_peer_configuration)
-            })?;
 
         let peer_configuration = resources.get::<PeerConfiguration>(peer_id)
             .map_err(|source| AssignClusterError::Persistence { peer_id, source })?
@@ -87,8 +80,6 @@ mod tests {
     use crate::resources::manager::ResourcesManager;
     use googletest::prelude::*;
     use opendut_types::cluster::{ClusterAssignment, ClusterId};
-    use opendut_types::peer::configuration::PeerNetworkConfiguration;
-    use opendut_types::util::net::NetworkInterfaceName;
     use rstest::rstest;
     use std::net::IpAddr;
     use std::str::FromStr;
@@ -109,9 +100,6 @@ mod tests {
 
         let old_peer_configuration = OldPeerConfiguration {
             cluster_assignment: None,
-            network: PeerNetworkConfiguration {
-                bridge_name: NetworkInterfaceName::try_from("br-opendut-1").unwrap()
-            }
         };
         resources_manager.resources_mut(|resources| {
             resources.insert(peer_id, Clone::clone(&old_peer_configuration))

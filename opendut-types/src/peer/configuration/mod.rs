@@ -1,23 +1,14 @@
-use serde::{Deserialize, Serialize};
-
 use crate::cluster::ClusterAssignment;
+use crate::peer::ethernet::EthernetBridge;
 use crate::peer::executor::ExecutorDescriptor;
-use crate::util::net::NetworkInterfaceName;
 
 mod parameter;
 pub use parameter::*;
-use crate::peer::ethernet::EthernetBridge;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OldPeerConfiguration {
     pub cluster_assignment: Option<ClusterAssignment>,
-    pub network: PeerNetworkConfiguration,
     // Please add new fields into PeerConfiguration instead.
-}
-
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub struct PeerNetworkConfiguration {
-    pub bridge_name: NetworkInterfaceName,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]

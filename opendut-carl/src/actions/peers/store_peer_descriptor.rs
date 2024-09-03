@@ -3,7 +3,8 @@ use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
 use opendut_carl_api::carl::peer::StorePeerDescriptorError;
 use opendut_types::peer;
-use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration, PeerNetworkConfiguration};
+use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
+use opendut_types::peer::ethernet::EthernetBridge;
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::util::net::NetworkInterfaceName;
 use tracing::{debug, error, info, warn};
@@ -34,26 +35,27 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
             let old_peer_descriptor = resources.get::<PeerDescriptor>(peer_id)?;
             let is_new_peer = old_peer_descriptor.is_none();
 
-            let peer_network_configuration = {
-                let bridge_name = peer_descriptor.clone().network.bridge_name
-                    .unwrap_or_else(|| params.options.bridge_name_default);
-                PeerNetworkConfiguration {
-                    bridge_name,
-                }
-            };
-
             let old_peer_configuration = OldPeerConfiguration {
                 cluster_assignment: None,
-                network: peer_network_configuration
             };
             resources.insert(peer_id, old_peer_configuration)?;
 
 
             let peer_configuration = {
                 let mut peer_configuration = PeerConfiguration::default();
+
                 for executor in Clone::clone(&peer_descriptor.executors).executors.into_iter() {
                     peer_configuration.insert(executor, peer::configuration::ParameterTarget::Present); //TODO not always Present
                 }
+
+                {
+                    let bridge = peer_descriptor.clone().network.bridge_name
+                        .unwrap_or_else(|| params.options.bridge_name_default);
+                    let bridge = EthernetBridge { name: bridge };
+
+                    peer_configuration.insert(bridge, peer::configuration::ParameterTarget::Present); //TODO not always Present
+                }
+
                 peer_configuration
             };
             resources.insert(peer_id, peer_configuration)?; //FIXME don't just insert, but rather update existing values via ID with intelligent logic (in a separate action)
@@ -103,13 +105,13 @@ mod tests {
     use crate::actions::peers::testing::{fixture, store_peer_descriptor_options, Fixture};
     use crate::resources::manager::ResourcesManager;
     use googletest::prelude::*;
+    use opendut_types::peer::state::PeerState;
     use opendut_types::peer::PeerNetworkDescriptor;
     use opendut_types::topology::DeviceDescriptor;
     use opendut_types::topology::{DeviceDescription, DeviceId, DeviceName, Topology};
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId};
     use rstest::rstest;
     use std::sync::Arc;
-    use opendut_types::peer::state::PeerState;
 
     #[rstest]
     #[tokio::test]

@@ -18,7 +18,7 @@ use opendut_carl_api::proto::services::peer_messaging_broker;
 use opendut_carl_api::proto::services::peer_messaging_broker::downstream::Message;
 use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, TracingContext};
 use opendut_types::cluster::{ClusterAssignment, PeerClusterAssignment};
-use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
+use opendut_types::peer::configuration::{OldPeerConfiguration, ParameterTarget, PeerConfiguration};
 use opendut_types::peer::PeerId;
 use opendut_types::util::net::NetworkInterfaceName;
 use opendut_util::project;
@@ -233,7 +233,7 @@ async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Opti
                                 let mut tasks: Vec<Box<dyn Task>> = vec![];
 
                                 if setup_cluster_info.network_interface_management_enabled {
-                                    for parameter in configuration.ethernet_bridges {
+                                    for parameter in configuration.ethernet_bridges.iter().cloned() {
                                         tasks.push(Box::new(tasks::create_ethernet_bridge::CreateEthernetBridge {
                                             parameter,
                                             network_interface_manager: Arc::clone(&setup_cluster_info.network_interface_manager),
@@ -245,11 +245,23 @@ async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Opti
                                 runner::run(RunMode::Normal, no_confirm, &tasks).await?;
                             }
 
-                            let _ = setup_cluster(
-                                &old_configuration.cluster_assignment,
-                                setup_cluster_info,
-                                old_configuration.network.bridge_name,
-                            ).await;
+                            {
+                                let maybe_bridge = configuration.ethernet_bridges.iter()
+                                    .find(|bridge| bridge.target == ParameterTarget::Present); //we currently expect only one bridge to be Present (for one cluster)
+
+                                match maybe_bridge {
+                                    Some(bridge) => {
+                                        let _ = setup_cluster(
+                                            &old_configuration.cluster_assignment,
+                                            setup_cluster_info,
+                                            &bridge.value.name,
+                                        ).await;
+                                    }
+                                    None => {
+                                        debug!("PeerConfiguration contained no info for bridge. Not setting up cluster.");
+                                    }
+                                }
+                            }
 
                             let mut executor_manager = setup_cluster_info.executor_manager.lock().unwrap();
                             executor_manager.terminate_executors();
@@ -283,7 +295,7 @@ struct SetupClusterInfo {
 async fn setup_cluster(
     cluster_assignment: &Option<ClusterAssignment>,
     info: &SetupClusterInfo,
-    bridge_name: NetworkInterfaceName,
+    bridge_name: &NetworkInterfaceName,
 ) -> anyhow::Result<()> { //TODO make idempotent
 
     match cluster_assignment {
@@ -295,7 +307,7 @@ async fn setup_cluster(
                 cluster_assignment::network_interfaces_setup(
                     cluster_assignment,
                     info.self_id,
-                    &bridge_name,
+                    bridge_name,
                     Arc::clone(&info.network_interface_manager),
                     Arc::clone(&info.can_manager)
                 ).await

@@ -10,13 +10,7 @@ import "opendut/types/util/uuid.proto";
 
 message OldPeerConfiguration {
   optional opendut.types.cluster.ClusterAssignment cluster_assignment = 2;
-  opendut.types.peer.configuration.PeerNetworkConfiguration network = 3;
 }
-
-message PeerNetworkConfiguration { //TODO remove
-  opendut.types.util.NetworkInterfaceName bridge_name = 1;
-}
-
 
 
 // Configuration sent from CARL to Peer
