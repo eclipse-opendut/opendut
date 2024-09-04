@@ -1,5 +1,6 @@
 use crate::persistence::error::{FlattenPersistenceResult, PersistenceError};
 use crate::resources::manager::ResourcesManagerRef;
+use crate::resources::storage::ResourcesStorageApi;
 use crate::vpn::Vpn;
 use opendut_carl_api::carl::peer::StorePeerDescriptorError;
 use opendut_types::peer;
@@ -8,7 +9,6 @@ use opendut_types::peer::ethernet::EthernetBridge;
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::util::net::NetworkInterfaceName;
 use tracing::{debug, error, info, warn};
-use crate::resources::storage::ResourcesStorageApi;
 
 pub struct StorePeerDescriptorParams {
     pub resources_manager: ResourcesManagerRef,
@@ -32,15 +32,27 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
         let peer_descriptor = params.peer_descriptor;
         let resources_manager = params.resources_manager;
 
-        let is_new_peer = resources_manager.resources_mut(|resources| {
-            let old_peer_descriptor = resources.get::<PeerDescriptor>(peer_id)?;
-            let is_new_peer = old_peer_descriptor.is_none();
+        let is_new_peer = resources_manager.get::<PeerDescriptor>(peer_id).await
+            .map_err(|cause| StorePeerDescriptorError::Internal { peer_id, peer_name: peer_name.clone(), cause: cause.to_string() })?
+            .is_none();
+
+        if is_new_peer {
+            if let Vpn::Enabled { vpn_client } = &params.vpn {
+                debug!("Creating VPN peer <{peer_id}>.");
+                vpn_client.create_peer(peer_id).await
+                    .map_err(|cause| StorePeerDescriptorError::Internal { peer_id, peer_name: Clone::clone(&peer_name), cause: cause.to_string() })?;
+                info!("Successfully created VPN peer <{peer_id}>.");
+            } else {
+                warn!("VPN disabled. Skipping VPN peer creation!");
+            }
+        }
+
+        let persistence_result = resources_manager.resources_mut(|resources| {
 
             let old_peer_configuration = OldPeerConfiguration {
                 cluster_assignment: None,
             };
             resources.insert(peer_id, old_peer_configuration)?;
-
 
             let peer_configuration = {
                 let mut peer_configuration = PeerConfiguration::default();
@@ -60,41 +72,32 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
                 peer_configuration
             };
             resources.insert(peer_id, peer_configuration)?; //FIXME don't just insert, but rather update existing values via ID with intelligent logic (in a separate action)
+
             resources.insert(peer_id, peer_descriptor)?;
 
-            Ok(is_new_peer)
+            Ok(peer_id)
         }).await
         .flatten_persistence_result()
-        .map_err(|cause: PersistenceError| StorePeerDescriptorError::Internal {
-            peer_id,
-            peer_name: Clone::clone(&peer_name),
-            cause: cause.to_string(),
-        })?;
+        .map_err(|cause: PersistenceError| StorePeerDescriptorError::Internal { peer_id, peer_name: peer_name.clone(), cause: cause.to_string() });
 
-        if is_new_peer {
+        if persistence_result.is_err() && is_new_peer { //undo creating peer in VPN Management server when storing in database fails
             if let Vpn::Enabled { vpn_client } = params.vpn {
-                debug!("Creating VPN peer <{peer_id}>.");
-                vpn_client.create_peer(peer_id)
-                    .await
-                    .map_err(|cause| StorePeerDescriptorError::Internal {
-                        peer_id,
-                        peer_name: Clone::clone(&peer_name),
-                        cause: cause.to_string()
-                    })?; // TODO: When a failure happens, we should rollback changes previously made to resources.
-                info!("Successfully created VPN peer <{peer_id}>.");
-            } else {
-                warn!("VPN disabled. Skipping VPN peer creation!");
+                debug!("Deleting previously created VPN peer <{peer_id}> due to persistence error.");
+                let result = vpn_client.delete_peer(peer_id).await;
+                match result {
+                    Ok(()) => info!("Successfully deleted previously created VPN peer <{peer_id}>."),
+                    Err(cause) => error!("Failed to delete previously created VPN peer <{peer_id}>: {cause}\n  Cannot recover automatically. Please remove the peer from the VPN management server manually."),
+                }
             }
         }
 
         if is_new_peer {
             info!("Successfully stored peer descriptor of '{peer_name}' <{peer_id}>.");
-        }
-        else {
+        } else {
             info!("Successfully updated peer descriptor of '{peer_name}' <{peer_id}>.");
         }
 
-        Ok(peer_id)
+        persistence_result
     }
 
     inner(params).await
