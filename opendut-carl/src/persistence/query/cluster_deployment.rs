@@ -1,7 +1,7 @@
 use crate::persistence::database::schema;
-use crate::persistence::error::{PersistenceError, PersistenceResult};
+use crate::persistence::error::{PersistenceError, PersistenceOperation, PersistenceResult};
 use crate::persistence::query::Filter;
-use diesel::{ExpressionMethods, PgConnection, QueryDsl, QueryResult, RunQueryDsl};
+use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 use opendut_types::cluster::{ClusterDeployment, ClusterId};
 use uuid::Uuid;
 
@@ -14,26 +14,31 @@ pub fn insert(cluster_deployment: ClusterDeployment, connection: &mut PgConnecti
 }
 
 fn insert_persistable(cluster_id: ClusterId, connection: &mut PgConnection) -> PersistenceResult<()> {
-    set_deployment_requested(cluster_id, true, connection)
-        .map_err(|cause| PersistenceError::insert::<ClusterDeployment>(cluster_id.0, cause))?;
-    Ok(())
+    let requested = true;
+    set_deployment_requested(cluster_id, requested, connection, PersistenceOperation::Insert)
 }
 
 pub fn remove(cluster_id: ClusterId, connection: &mut PgConnection) -> PersistenceResult<Option<ClusterDeployment>> {
     let result = list(Filter::By(cluster_id), connection)?
         .first().cloned();
 
-    set_deployment_requested(cluster_id, false, connection)
-        .map_err(|cause| PersistenceError::remove::<ClusterDeployment>(cluster_id.0, cause))?;
+    let requested = false;
+    set_deployment_requested(cluster_id, requested, connection, PersistenceOperation::Remove)?;
 
     Ok(result)
 }
 
-fn set_deployment_requested(cluster_id: ClusterId, value: bool, connection: &mut PgConnection) -> QueryResult<usize> {
-    diesel::update(schema::cluster_configuration::table)
+fn set_deployment_requested(cluster_id: ClusterId, value: bool, connection: &mut PgConnection, operation: PersistenceOperation) -> PersistenceResult<()> {
+    let result = diesel::update(schema::cluster_configuration::table) //TODO error when non-existent?
         .filter(schema::cluster_configuration::cluster_id.eq(cluster_id.0))
         .set(schema::cluster_configuration::deployment_requested.eq(value))
-        .execute(connection)
+        .execute(connection);
+
+    match result {
+        Ok(changed_rows) if changed_rows > 0 => Ok(()),
+        Ok(_) => Err(PersistenceError::new::<ClusterDeployment>(Some(cluster_id.0), operation, Some(format!("No database entries found for cluster {cluster_id}.")))),
+        Err(source) => Err(PersistenceError::new::<ClusterDeployment>(Some(cluster_id.0), operation, Some(source))),
+    }
 }
 
 pub fn list(filter_by_cluster_id: Filter<ClusterId>, connection: &mut PgConnection) -> PersistenceResult<Vec<ClusterDeployment>> {
