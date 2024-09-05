@@ -1,31 +1,26 @@
-use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 use std::thread;
-
-use anyhow::{Error, Ok};
-use wasmtime::component::Component;
+use anyhow::Error;
 use wasmtime::Store;
 use crate::setup::plugin_runtime::PluginState;
 use opendut_edgar_plugin_api::host::SetupPlugin;
 use super::task::Task;
 
 pub struct SetupPluginStore {
-    store:Arc<Mutex<Store<PluginState>>>,
-    component:Component,
-    instance: Arc<Mutex<SetupPlugin>>
+    store: Arc<Mutex<Store<PluginState>>>,
+    instance: Arc<Mutex<SetupPlugin>>,
 }
 
 impl SetupPluginStore{
-    pub fn new(store: Store<PluginState>, component:Component, instance: SetupPlugin)->Self{
+    pub fn new(store: Store<PluginState>, instance: SetupPlugin)->Self{
         Self{
             store: Arc::new(Mutex::new(store)),
-            component,
             instance: Arc::new(Mutex::new(instance))
         }
     }
 }
 
-impl Task for SetupPluginStore{
+impl Task for SetupPluginStore {
     fn description(&self) -> String {
         
         let store = self.store.clone();
@@ -58,7 +53,10 @@ impl Task for SetupPluginStore{
 
         let result = thread.join().expect("Failed to join thread for reading description");
 
-        Ok(result.unwrap().into())
+        match result {
+            Ok(task_fulfilled) => Ok(task_fulfilled.into()),
+            Err(_) => Err(Error::msg("Plugin check_fulfilled() returned with Err")),
+        }
     }
 
     fn execute(&self) -> anyhow::Result<super::task::Success> {
@@ -75,7 +73,9 @@ impl Task for SetupPluginStore{
 
         let result = thread.join().expect("Failed to join thread for reading description");
 
-        Ok(result.unwrap().into())
+        match result {
+            Ok(task_fulfilled) => Ok(task_fulfilled.into()),
+            Err(_) => Err(Error::msg("Plugin execute() returned with Err")),
+        }
     }
 }
-

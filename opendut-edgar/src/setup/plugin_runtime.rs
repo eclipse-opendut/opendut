@@ -9,7 +9,6 @@ use wasmtime_wasi::{DirPerms, FilePerms, WasiCtx, WasiCtxBuilder, WasiView};
 use tracing::{event, trace, Level};
 
 pub struct PluginRuntime {
-    config: Config,
     engine: Engine,
     linker: Linker<PluginState>,
 }
@@ -31,7 +30,6 @@ impl PluginRuntime {
             .expect("Could not add PluginState to linker");
 
         Self {
-            config,
             engine,
             linker,
         }
@@ -45,7 +43,7 @@ impl PluginRuntime {
         let instance = SetupPlugin::instantiate(&mut store, &component, &self.linker)
             .expect("Could not instantiate plugin");
 
-        SetupPluginStore::new(store, component, instance)
+        SetupPluginStore::new(store, instance)
     }
 }
 
@@ -96,9 +94,18 @@ impl Host for PluginState {
 
         let result = cmd.output();
         trace!("Plugin command resulted in {:?}", result);
-        match result {
-            Ok(output) => Ok(String::from_utf8(output.stdout).expect("Command output could not be converted to String")),
-            Err(e) => Err(e.to_string()),
+
+        match result{
+                Ok(output)=>{
+                    if output.status.success(){
+                        Ok(String::from_utf8(output.stdout).expect("Command output could not be converted to String"))
+                    }else{
+                        Err(String::from_utf8(output.stderr).expect("Command output could not be converted to String"))
+                    }
+                },
+                Err(e)=>{
+                    Err(e.to_string())
+                }
         }
     }
     

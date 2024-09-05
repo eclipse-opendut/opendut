@@ -1,13 +1,11 @@
 use std::collections::HashSet;
-use std::fs::{read_dir, read_to_string};
-use std::str::FromStr;
-use std::{env, fs};
+use std::fs::read_to_string;
+use std::env;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use anyhow::{Context, Ok};
-use console::colors_enabled;
 use tracing::{debug, error, info, warn};
 use url::Url;
 
@@ -43,7 +41,11 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
 
     let mut tasks: Vec<Box<dyn Task>> = vec![];
 
-
+    #[cfg(target_arch = "arm")]
+    {
+        println!("Running on ARMv7 / ARM32. Plugins cannot be used on this architecture. https://github.com/bytecodealliance/wasmtime/issues/1173");
+        info("Running on ARMv7 / ARM32. Plugins cannot be used on this architecture. https://github.com/bytecodealliance/wasmtime/issues/1173")
+    }
     #[cfg(not(target_arch = "arm"))]
     let _ = create_plugin_runtime(&mut tasks);
 
@@ -119,6 +121,11 @@ pub async fn unmanaged(
 
     let mut tasks: Vec<Box<dyn Task>> = vec![];
     
+    #[cfg(target_arch = "arm")]
+    {
+        println!("Running on ARMv7 / ARM32. Plugins cannot be used on this architecture. https://github.com/bytecodealliance/wasmtime/issues/1173");
+        info("Running on ARMv7 / ARM32. Plugins cannot be used on this architecture. https://github.com/bytecodealliance/wasmtime/issues/1173")
+    }
     #[cfg(not(target_arch = "arm"))]
     let _ = create_plugin_runtime(&mut tasks);
 
@@ -200,9 +207,11 @@ fn discover_plugins_in_path(path: &Path) -> anyhow::Result<Vec<PathBuf>>{
 
     for entry in plugin_order{
         if entry.is_dir(){
+            
             plugin_paths.append(&mut discover_plugins_in_path(&entry).unwrap());
         }else{
             if entry.extension().and_then(OsStr::to_str) == Some("wasm"){
+                debug!("Found plugin at {}", entry.clone().into_os_string().into_string().unwrap());
                 plugin_paths.push(entry);
             }
         }
@@ -224,13 +233,23 @@ fn read_plugin_order(path: &Path) -> anyhow::Result<Vec<PathBuf>>{
     let mut paths:Vec<PathBuf> = vec![];
 
     for line in read_to_string(config_path).unwrap().lines(){
-        let mut potential_path = PathBuf::from(line.trim());
+        let line = line.trim();
+
+        if line == ""{
+            continue;
+        }
+
+        let mut potential_path = PathBuf::from(line);
 
         if !potential_path.is_absolute(){
             potential_path = path.join(&potential_path);
         }
+
+        if potential_path == path{
+            warn!("plugins.txt at {} refers to itself. Ignoring this reference.", config_path.to_str().unwrap());
+            continue;
+        }
         
-        debug!("{:?}", potential_path);
         if potential_path.exists() {
             paths.push(potential_path);
         }else{
