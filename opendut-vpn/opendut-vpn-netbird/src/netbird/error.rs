@@ -6,7 +6,7 @@ use reqwest::header::InvalidHeaderValue;
 use opendut_types::peer::PeerId;
 
 use crate::netbird::group::GroupName;
-use crate::netbird::rules::RuleName;
+use crate::netbird::policies::PolicyName;
 
 #[derive(thiserror::Error, Debug)]
 pub enum GetGroupError {
@@ -24,12 +24,12 @@ pub enum GetGroupError {
 #[derive(thiserror::Error, Debug)]
 pub enum GetRulesError {
     #[error("A rule with name '{rule_name}' does not exist!")]
-    RuleNotFound { rule_name: RuleName },
-    #[error("Multiple rules with name '{rule_name}' exist!")]
-    MultipleRulesFound { rule_name: RuleName },
+    RuleNotFound { rule_name: PolicyName },
+    #[error("Multiple policies with name '{rule_name}' exist!")]
+    MultipleRulesFound { rule_name: PolicyName },
     #[error("Could not request rule '{rule_name}:\n  {cause}")]
     RequestFailure {
-        rule_name: RuleName,
+        rule_name: PolicyName,
         cause: RequestError
     }
 }

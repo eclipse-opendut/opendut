@@ -16,6 +16,7 @@ use crate::netbird::error::{CreateClientError, CreateSetupKeyError, GetGroupErro
 mod request_handler;
 
 mod tests;
+mod integration_tests;
 
 #[async_trait]
 pub trait Client {
@@ -25,9 +26,9 @@ pub trait Client {
     #[allow(unused)] //Currently unused, but expected to be needed again
     async fn get_netbird_peer(&self, peer_id: &netbird::PeerId) -> Result<netbird::Peer, RequestError>;
     async fn delete_netbird_peer(&self, peer_id: &netbird::PeerId) -> Result<(), RequestError>;
-    async fn create_netbird_self_access_control_rule(&self, group: netbird::Group, rule_name: netbird::RuleName) -> Result<(), RequestError>;
-    async fn get_netbird_rule(&self, rule_name: &netbird::RuleName) -> Result<netbird::Rule, GetRulesError>;
-    async fn delete_netbird_rule(&self, rule_id: &netbird::RuleId) -> Result<(), RequestError>;
+    async fn create_netbird_self_access_control_policy(&self, group: netbird::Group, rule_name: netbird::PolicyName) -> Result<(), RequestError>;
+    async fn get_netbird_policy(&self, rule_name: &netbird::PolicyName) -> Result<netbird::Policy, GetRulesError>;
+    async fn delete_netbird_policy(&self, rule_id: &netbird::PolicyId) -> Result<(), RequestError>;
     async fn generate_netbird_setup_key(&self, peer_id: PeerId) -> Result<netbird::SetupKey, CreateSetupKeyError>;
 }
 
@@ -187,34 +188,54 @@ impl Client for DefaultClient {
     }
 
     #[tracing::instrument(skip(self), level="trace")]
-    async fn create_netbird_self_access_control_rule(&self, group: netbird::Group, rule_name: netbird::RuleName) -> Result<(), RequestError> {
-        let url = routes::rules(self.netbird_url.clone());
+    async fn create_netbird_self_access_control_policy(&self, group: netbird::Group, rule_name: netbird::PolicyName) -> Result<(), RequestError> {
+        let url = routes::policies(self.netbird_url.clone());
 
         let body = {
-            #[derive(Serialize)]
+            #[derive(Serialize, Debug)]
             struct CreateAccessControlRule {
-                name: netbird::RuleName,
+                name: netbird::PolicyName,
                 description: String,
-                disabled: bool,
-                flow: netbird::RuleFlow,
+                enabled: bool,
+                action: netbird::RuleAction,
+                bidirectional: bool,
+                protocol: netbird::RuleProtocol,
                 sources: Vec<netbird::GroupId>,
                 destinations: Vec<netbird::GroupId>,
             }
 
             let description = rule_name.description();
-            CreateAccessControlRule {
-                name: rule_name,
-                description,
-                disabled: false,
-                flow: netbird::RuleFlow::Bidirect,
+            let rule = CreateAccessControlRule {
+                name: rule_name.clone(),
+                description: description.clone(),
+                enabled: true,
+                action: netbird::RuleAction::Accept,
+                bidirectional: true,
+                protocol: netbird::RuleProtocol::All,
                 sources: vec![group.id.clone()],
                 destinations: vec![group.id],
+            };
+            #[derive(Serialize, Debug)]
+            struct CreatePolicy {
+                name: netbird::PolicyName,
+                description: String,
+                enabled: bool,
+                rules: Vec<CreateAccessControlRule>
+            }
+            CreatePolicy {
+                name: rule_name,
+                description,
+                enabled: true,
+                rules: vec![rule]
             }
         };
+        let result = serde_json::to_string(&body).unwrap();
+        println!("{:?}", result);
 
         let request = post_json_request(url, body)?;
 
         let response = self.requester.handle(request).await?;
+        println!("Response: {:?}", response);
         response.error_for_status()
             .map_err(RequestError::IllegalStatus)?;
 
@@ -222,12 +243,12 @@ impl Client for DefaultClient {
     }
 
     #[tracing::instrument(skip(self), level="trace")]
-    async fn get_netbird_rule(&self, rule_name: &netbird::RuleName) -> Result<netbird::Rule, GetRulesError> {
-        let url = routes::rules(self.netbird_url.clone());
+    async fn get_netbird_policy(&self, rule_name: &netbird::PolicyName) -> Result<netbird::Policy, GetRulesError> {
+        let url = routes::policies(self.netbird_url.clone());
         let request = Request::new(Method::GET, url);
         let response = self.requester.handle(request).await
             .map_err(|cause| GetRulesError::RequestFailure { rule_name: rule_name.to_owned(), cause })?;
-        let result = response.json::<Vec<netbird::Rule>>().await
+        let result = response.json::<Vec<netbird::Policy>>().await
             .map_err(|cause| GetRulesError::RequestFailure { rule_name: rule_name.to_owned(), cause: RequestError::JsonDeserialization(cause) })?;
 
         let rules = result.into_iter()
@@ -242,7 +263,7 @@ impl Client for DefaultClient {
     }
 
     #[tracing::instrument(skip(self), level="trace")]
-    async fn delete_netbird_rule(&self, rule_id: &netbird::RuleId) -> Result<(), RequestError> {
+    async fn delete_netbird_policy(&self, rule_id: &netbird::PolicyId) -> Result<(), RequestError> {
         let url = routes::rule(Clone::clone(&self.netbird_url), rule_id);
 
         let request = Request::new(Method::DELETE, url);

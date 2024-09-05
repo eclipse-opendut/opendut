@@ -22,12 +22,12 @@ pub fn peer(base_url: Url, peer_id: &netbird::PeerId) -> Url {
     join(peers(base_url), &peer_id.0)
 }
 
-pub fn rules(base_url: Url) -> Url {
-    join(base_url, "rules")
+pub fn policies(base_url: Url) -> Url {
+    join(base_url, "policies")
 }
 
-pub fn rule(base_url: Url, rule_id: &netbird::RuleId) -> Url {
-    join(rules(base_url), &rule_id.0)
+pub fn rule(base_url: Url, rule_id: &netbird::PolicyId) -> Url {
+    join(policies(base_url), &rule_id.0)
 }
 
 fn join(mut base_url: Url, path: &str) -> Url {

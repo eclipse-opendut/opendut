@@ -278,10 +278,17 @@ async fn create_access_control_rule(fixture: Fixture) -> anyhow::Result<()> {
         let expectation = json!({
             "name": String::from(fixture.netbird_cluster_rule_name()),
             "description": fixture.netbird_cluster_rule_name().description(),
-            "disabled": false,
-            "flow": "bidirect",
-            "sources": [fixture.netbird_group_id()],
-            "destinations": [fixture.netbird_group_id()],
+            "enabled": true,
+            "rules": [{
+                "name": String::from(fixture.netbird_cluster_rule_name()),
+                "description": fixture.netbird_cluster_rule_name().description(),
+                "enabled": true,
+                "action": "accept",
+                "bidirectional": true,
+                "protocol": "all",
+                "sources": [fixture.netbird_group_id()],
+                "destinations": [fixture.netbird_group_id()],
+            }],
         });
 
         assert_that!(request, eq(&expectation));
@@ -299,8 +306,8 @@ async fn create_access_control_rule(fixture: Fixture) -> anyhow::Result<()> {
                     "id": "ch8i4ug6lnn4g9hqv7mg",
                     "name": String::from(fixture.netbird_cluster_rule_name()),
                     "description": fixture.netbird_cluster_rule_name().description(),
-                    "disabled": false,
-                    "flow": "bidirect",
+                    "enabled": true,
+                    "action": "bidirect",
                     "sources": [group],
                     "destinations": [group]
                 }).to_string()
@@ -318,7 +325,7 @@ async fn create_access_control_rule(fixture: Fixture) -> anyhow::Result<()> {
         peers: vec![],
     };
 
-    client.create_netbird_self_access_control_rule(
+    client.create_netbird_self_access_control_policy(
         group,
         fixture.cluster_id().into(),
     ).await?;
@@ -336,7 +343,7 @@ fn fixture() -> Fixture {
     let peer_netbird_group_name = netbird::GroupName::Peer(peer_id);
     let netbird_peer_id = netbird::PeerId(String::from("chacbco6lnnbn6cg5s90"));
     let netbird_peer_setup_key_name = netbird::setup_key_name_format(peer_id);
-    let netbird_cluster_rule_name = netbird::RuleName::Cluster(cluster_id).into();
+    let netbird_cluster_rule_name = netbird::PolicyName::Cluster(cluster_id).into();
     Fixture {
         base_url,
         peer_id,
@@ -360,7 +367,7 @@ struct Fixture {
     peer_netbird_group_name: netbird::GroupName,
     netbird_peer_id: netbird::PeerId,
     netbird_peer_setup_key_name: String,
-    netbird_cluster_rule_name: netbird::RuleName,
+    netbird_cluster_rule_name: netbird::PolicyName,
 }
 
 impl Fixture {
@@ -396,7 +403,7 @@ impl Fixture {
         Clone::clone(&self.netbird_peer_setup_key_name)
     }
 
-    pub fn netbird_cluster_rule_name(&self) -> netbird::RuleName {
+    pub fn netbird_cluster_rule_name(&self) -> netbird::PolicyName {
         Clone::clone(&self.netbird_cluster_rule_name)
     }
 

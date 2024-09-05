@@ -99,7 +99,7 @@ impl VpnManagementClient for NetbirdManagementClient {
         let group = self.inner.create_netbird_group(cluster_id.into(), netbird_peers).await
             .map_err(|error| CreateClusterError::CreationFailure { cluster_id, error: error.into() })?;
 
-        self.inner.create_netbird_self_access_control_rule(group, cluster_id.into()).await
+        self.inner.create_netbird_self_access_control_policy(group, cluster_id.into()).await
             .map_err(|error| CreateClusterError::AccessControlRuleCreationFailure { cluster_id, error: error.into() })?;
 
         Ok(())
@@ -107,10 +107,10 @@ impl VpnManagementClient for NetbirdManagementClient {
 
     #[tracing::instrument(skip(self), level="trace")]
     async fn delete_cluster(&self, cluster_id: ClusterId) -> Result<(), DeleteClusterError> {
-        let rule_name = netbird::RuleName::Cluster(cluster_id);
-        match self.inner.get_netbird_rule(&rule_name).await {
+        let rule_name = netbird::PolicyName::Cluster(cluster_id);
+        match self.inner.get_netbird_policy(&rule_name).await {
             Ok(rule) => {
-                match self.inner.delete_netbird_rule(&rule.id).await {
+                match self.inner.delete_netbird_policy(&rule.id).await {
                     Ok(_) => debug!("Deleted NetBird rule with name '{}' and NetBird Rule ID '{}'.", rule.name, rule.id.0),
                     Err(cause) => return match cause {
                         RequestError::IllegalStatus(error) => {
@@ -307,7 +307,7 @@ mod test {
         };
 
         let fixture = Fixture::setup(|mock_client| {
-            mock_client.expect_get_netbird_rule()
+            mock_client.expect_get_netbird_policy()
                 .returning(|rule_name| Err(GetRulesError::RuleNotFound { rule_name: rule_name.to_owned() }));
             mock_client.expect_get_netbird_group()
                 .returning({
@@ -341,7 +341,7 @@ mod test {
                     let cluster_group = Clone::clone(&cluster_group);
                     move |_, _| Ok(Clone::clone(&cluster_group))
                 });
-            mock_client.expect_create_netbird_self_access_control_rule()
+            mock_client.expect_create_netbird_self_access_control_policy()
                 .times(1)
                 .withf(move |actual_group, _rule_name| actual_group == &cluster_group)
                 .returning(|_, _| Ok(()));
@@ -455,9 +455,9 @@ mod test {
             async fn delete_netbird_group(&self, group_id: &netbird::GroupId) -> std::result::Result<(), RequestError>;
             async fn get_netbird_peer(&self, peer_id: &netbird::PeerId) -> std::result::Result<netbird::Peer, RequestError>;
             async fn delete_netbird_peer(&self, peer_id: &netbird::PeerId) -> std::result::Result<(), RequestError>;
-            async fn create_netbird_self_access_control_rule(&self, group: netbird::Group, rule_name: netbird::RuleName) -> std::result::Result<(), RequestError>;
-            async fn get_netbird_rule(&self, rule_name: &netbird::RuleName) -> std::result::Result<netbird::Rule, GetRulesError>;
-            async fn delete_netbird_rule(&self, rule_id: &netbird::RuleId) -> std::result::Result<(), RequestError>;
+            async fn create_netbird_self_access_control_policy(&self, group: netbird::Group, rule_name: netbird::PolicyName) -> std::result::Result<(), RequestError>;
+            async fn get_netbird_policy(&self, rule_name: &netbird::PolicyName) -> std::result::Result<netbird::Policy, GetRulesError>;
+            async fn delete_netbird_policy(&self, rule_id: &netbird::PolicyId) -> std::result::Result<(), RequestError>;
             async fn generate_netbird_setup_key(&self, peer_id: PeerId) -> std::result::Result<netbird::SetupKey, CreateSetupKeyError>;
         }
     }

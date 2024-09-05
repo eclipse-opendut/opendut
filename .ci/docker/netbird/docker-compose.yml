@@ -107,7 +107,7 @@ services:
     environment:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin123456
-      - KEYCLOAK_URL=https://keycloak
+      - KEYCLOAK_URL=https://keycloak.local
       - NETBIRD_MANAGEMENT_URL=https://netbird-management
       - KEYCLOAK_REALM_URL=https://keycloak.local/realms/netbird/.well-known/openid-configuration
       - NETBIRD_PASSWORD=netbird

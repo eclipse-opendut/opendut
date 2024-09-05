@@ -3486,6 +3486,7 @@ dependencies = [
  "serde",
  "serde_json",
  "task-local-extensions",
+ "test-with",
  "thiserror",
  "time",
  "tokio",
