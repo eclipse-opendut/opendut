@@ -79,15 +79,15 @@ gloo-net = { version = "0.5.0" }
 gloo-timers = { version = "0.3.0" }
 googletest = { version = "0.11.0" }
 home = "0.5.5"
-http = "0.2.11"
+http = "0.2.12"
 indicatif = "0.17.7"
 indoc = "2.0.4"
 jsonwebtoken = "9.2.0"
 lazy_static = "1.4.0"
-leptos = { version = "0.6.9" }
+leptos = { version = "0.6.15" }
 leptos_oidc = { version = "0.4.1" }
-leptos_router = { version = "0.6.9" }
-leptos-use = { version = "0.12.0" }
+leptos_router = { version = "0.6.15" }
+leptos-use = { version = "0.13.4" }
 mockall = "0.13.0"
 netlink-packet-route = "0.19.0"
 netlink-packet-utils = "0.5.2"
