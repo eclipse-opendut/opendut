@@ -22,14 +22,14 @@ pub enum GetGroupError {
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum GetRulesError {
-    #[error("A rule with name '{rule_name}' does not exist!")]
-    RuleNotFound { rule_name: PolicyName },
-    #[error("Multiple policies with name '{rule_name}' exist!")]
-    MultipleRulesFound { rule_name: PolicyName },
-    #[error("Could not request rule '{rule_name}:\n  {cause}")]
+pub enum GetPoliciesError {
+    #[error("A policy with name '{policy_name}' does not exist!")]
+    PolicyNotFound { policy_name: PolicyName },
+    #[error("Multiple policies with name '{policy_name}' exist!")]
+    MultiplePoliciesFound { policy_name: PolicyName },
+    #[error("Could not request policy '{policy_name}:\n  {cause}")]
     RequestFailure {
-        rule_name: PolicyName,
+        policy_name: PolicyName,
         cause: RequestError
     }
 }

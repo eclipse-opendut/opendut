@@ -269,19 +269,19 @@ async fn create_a_setup_key(fixture: Fixture) -> anyhow::Result<()> {
 
 #[rstest]
 #[tokio::test]
-async fn create_access_control_rule(fixture: Fixture) -> anyhow::Result<()> {
+async fn create_access_policy(fixture: Fixture) -> anyhow::Result<()> {
 
     let requester = fixture.requester(|fixture, request| {
         let request = request.body().unwrap().as_bytes().unwrap();
         let request: serde_json::Value = serde_json::from_slice(request).unwrap();
 
         let expectation = json!({
-            "name": String::from(fixture.netbird_cluster_rule_name()),
-            "description": fixture.netbird_cluster_rule_name().description(),
+            "name": String::from(fixture.netbird_cluster_policy_name()),
+            "description": fixture.netbird_cluster_policy_name().description(),
             "enabled": true,
             "rules": [{
-                "name": String::from(fixture.netbird_cluster_rule_name()),
-                "description": fixture.netbird_cluster_rule_name().description(),
+                "name": String::from(fixture.netbird_cluster_policy_name()),
+                "description": fixture.netbird_cluster_policy_name().description(),
                 "enabled": true,
                 "action": "accept",
                 "bidirectional": true,
@@ -295,7 +295,7 @@ async fn create_access_control_rule(fixture: Fixture) -> anyhow::Result<()> {
 
         let group = json!({
             "id": fixture.netbird_group_id(),
-            "name": String::from(fixture.netbird_cluster_rule_name()),
+            "name": String::from(fixture.netbird_cluster_policy_name()),
             "peers_count": 0,
             "issued": "api"
         });
@@ -304,8 +304,8 @@ async fn create_access_control_rule(fixture: Fixture) -> anyhow::Result<()> {
             .body(
                 json!({
                     "id": "ch8i4ug6lnn4g9hqv7mg",
-                    "name": String::from(fixture.netbird_cluster_rule_name()),
-                    "description": fixture.netbird_cluster_rule_name().description(),
+                    "name": String::from(fixture.netbird_cluster_policy_name()),
+                    "description": fixture.netbird_cluster_policy_name().description(),
                     "enabled": true,
                     "action": "bidirect",
                     "sources": [group],
@@ -325,7 +325,7 @@ async fn create_access_control_rule(fixture: Fixture) -> anyhow::Result<()> {
         peers: vec![],
     };
 
-    client.create_netbird_self_access_control_policy(
+    client.create_netbird_self_policy(
         group,
         fixture.cluster_id().into(),
     ).await?;
@@ -343,7 +343,7 @@ fn fixture() -> Fixture {
     let peer_netbird_group_name = netbird::GroupName::Peer(peer_id);
     let netbird_peer_id = netbird::PeerId(String::from("chacbco6lnnbn6cg5s90"));
     let netbird_peer_setup_key_name = netbird::setup_key_name_format(peer_id);
-    let netbird_cluster_rule_name = netbird::PolicyName::Cluster(cluster_id).into();
+    let netbird_cluster_policy_name = netbird::PolicyName::Cluster(cluster_id).into();
     Fixture {
         base_url,
         peer_id,
@@ -353,7 +353,7 @@ fn fixture() -> Fixture {
         peer_netbird_group_name,
         netbird_peer_id,
         netbird_peer_setup_key_name,
-        netbird_cluster_rule_name
+        netbird_cluster_policy_name,
     }
 }
 
@@ -367,7 +367,7 @@ struct Fixture {
     peer_netbird_group_name: netbird::GroupName,
     netbird_peer_id: netbird::PeerId,
     netbird_peer_setup_key_name: String,
-    netbird_cluster_rule_name: netbird::PolicyName,
+    netbird_cluster_policy_name: netbird::PolicyName,
 }
 
 impl Fixture {
@@ -403,8 +403,8 @@ impl Fixture {
         Clone::clone(&self.netbird_peer_setup_key_name)
     }
 
-    pub fn netbird_cluster_rule_name(&self) -> netbird::PolicyName {
-        Clone::clone(&self.netbird_cluster_rule_name)
+    pub fn netbird_cluster_policy_name(&self) -> netbird::PolicyName {
+        Clone::clone(&self.netbird_cluster_policy_name)
     }
 
     pub fn requester<F>(&self, handler: F) -> MockRequester<F>

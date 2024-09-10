@@ -15,7 +15,7 @@ use opendut_types::vpn::VpnPeerConfiguration;
 use opendut_vpn::{CreateClusterError, CreatePeerError, CreateVpnPeerConfigurationError, DeleteClusterError, DeletePeerError, VpnManagementClient};
 
 use crate::client::{Client, DefaultClient};
-use crate::netbird::error::{CreateClientError, CreateSetupKeyError, GetGroupError, GetRulesError, RequestError};
+use crate::netbird::error::{CreateClientError, CreateSetupKeyError, GetGroupError, GetPoliciesError, RequestError};
 use crate::netbird::GroupName;
 
 mod client;
@@ -99,23 +99,23 @@ impl VpnManagementClient for NetbirdManagementClient {
         let group = self.inner.create_netbird_group(cluster_id.into(), netbird_peers).await
             .map_err(|error| CreateClusterError::CreationFailure { cluster_id, error: error.into() })?;
 
-        self.inner.create_netbird_self_access_control_policy(group, cluster_id.into()).await
-            .map_err(|error| CreateClusterError::AccessControlRuleCreationFailure { cluster_id, error: error.into() })?;
+        self.inner.create_netbird_self_policy(group, cluster_id.into()).await
+            .map_err(|error| CreateClusterError::AccessPolicyCreationFailure { cluster_id, error: error.into() })?;
 
         Ok(())
     }
 
     #[tracing::instrument(skip(self), level="trace")]
     async fn delete_cluster(&self, cluster_id: ClusterId) -> Result<(), DeleteClusterError> {
-        let rule_name = netbird::PolicyName::Cluster(cluster_id);
-        match self.inner.get_netbird_policy(&rule_name).await {
-            Ok(rule) => {
-                match self.inner.delete_netbird_policy(&rule.id).await {
-                    Ok(_) => debug!("Deleted NetBird rule with name '{}' and NetBird Rule ID '{}'.", rule.name, rule.id.0),
+        let policy_name = netbird::PolicyName::Cluster(cluster_id);
+        match self.inner.get_netbird_policy(&policy_name).await {
+            Ok(policy) => {
+                match self.inner.delete_netbird_policy(&policy.id).await {
+                    Ok(_) => debug!("Deleted NetBird policy with name '{}' and NetBird Policy ID '{}'.", policy.name, policy.id.0),
                     Err(cause) => return match cause {
                         RequestError::IllegalStatus(error) => {
                             if let Some(http::StatusCode::NOT_FOUND) = error.status() {
-                                Err(DeleteClusterError::NotFound { cluster_id, message: format!("Received '404 Not Found' when deleting rule for cluster <{cluster_id}> with NetBird rule ID <{netbird_rule}>.", netbird_rule = rule.id.0) })
+                                Err(DeleteClusterError::NotFound { cluster_id, message: format!("Received '404 Not Found' when deleting policy for cluster <{cluster_id}> with NetBird policy ID <{netbird_policy}>.", netbird_policy = policy.id.0) })
                             } else {
                                 Err(DeleteClusterError::DeletionFailure { cluster_id, error: error.into() })
                             }
@@ -123,18 +123,18 @@ impl VpnManagementClient for NetbirdManagementClient {
                         RequestError::IllegalRequest(error, code) => {
                             Err(DeleteClusterError::DeletionFailure {
                                 cluster_id,
-                                error: anyhow!("Received status code '{code}' when deleting cluster <{cluster_id}> with NetBird rule ID <{netbird_rule}>:\n  {error}", code=code, cluster_id=cluster_id, netbird_rule=rule.id.0, error=error).into(),
+                                error: anyhow!("Received status code '{code}' when deleting cluster <{cluster_id}> with NetBird policy ID <{netbird_policy}>:\n  {error}", code=code, cluster_id=cluster_id, netbird_policy=policy.id.0, error=error).into(),
                             })
                         }
                         other => Err(DeleteClusterError::DeletionFailure { cluster_id, error: other.into() }),
                     }
                 }
             }
-            Err(GetRulesError::RuleNotFound { .. }) => {
-                // No rule found, so no need to delete it.
+            Err(GetPoliciesError::PolicyNotFound { .. }) => {
+                // No policy found, so no need to delete it.
             }
             Err(cause) => {
-                return Err(DeleteClusterError::DeletionFailure { cluster_id, error: anyhow!("Failed to get cluster rule '{rule_name}' to be deleted.\n {cause}").into() });
+                return Err(DeleteClusterError::DeletionFailure { cluster_id, error: anyhow!("Failed to get cluster policy '{policy_name}' to be deleted.\n {cause}").into() });
             }
         };
 
@@ -274,7 +274,7 @@ mod test {
 
     use crate::{netbird, NetbirdManagementClient};
     use crate::client::Client;
-    use crate::netbird::error::{CreateSetupKeyError, GetGroupError, GetRulesError, RequestError};
+    use crate::netbird::error::{CreateSetupKeyError, GetGroupError, GetPoliciesError, RequestError};
     use crate::netbird::GroupPeerInfo;
 
     #[tokio::test]
@@ -308,7 +308,7 @@ mod test {
 
         let fixture = Fixture::setup(|mock_client| {
             mock_client.expect_get_netbird_policy()
-                .returning(|rule_name| Err(GetRulesError::RuleNotFound { rule_name: rule_name.to_owned() }));
+                .returning(|policy_name| Err(GetPoliciesError::PolicyNotFound { policy_name: policy_name.to_owned() }));
             mock_client.expect_get_netbird_group()
                 .returning({
                     let cluster_group_name = Clone::clone(&cluster_group_name);
@@ -341,13 +341,13 @@ mod test {
                     let cluster_group = Clone::clone(&cluster_group);
                     move |_, _| Ok(Clone::clone(&cluster_group))
                 });
-            mock_client.expect_create_netbird_self_access_control_policy()
+            mock_client.expect_create_netbird_self_policy()
                 .times(1)
-                .withf(move |actual_group, _rule_name| actual_group == &cluster_group)
+                .withf(move |actual_group, _policy_name| actual_group == &cluster_group)
                 .returning(|_, _| Ok(()));
         });
 
-        assert_that!(fixture.testee.create_cluster(cluster_id, &vec![peer_a_id, peer_b_id]).await, ok(anything()));
+        assert_that!(fixture.testee.create_cluster(cluster_id, &[peer_a_id, peer_b_id]).await, ok(anything()));
 
         Ok(())
     }
@@ -455,9 +455,9 @@ mod test {
             async fn delete_netbird_group(&self, group_id: &netbird::GroupId) -> std::result::Result<(), RequestError>;
             async fn get_netbird_peer(&self, peer_id: &netbird::PeerId) -> std::result::Result<netbird::Peer, RequestError>;
             async fn delete_netbird_peer(&self, peer_id: &netbird::PeerId) -> std::result::Result<(), RequestError>;
-            async fn create_netbird_self_access_control_policy(&self, group: netbird::Group, rule_name: netbird::PolicyName) -> std::result::Result<(), RequestError>;
-            async fn get_netbird_policy(&self, rule_name: &netbird::PolicyName) -> std::result::Result<netbird::Policy, GetRulesError>;
-            async fn delete_netbird_policy(&self, rule_id: &netbird::PolicyId) -> std::result::Result<(), RequestError>;
+            async fn create_netbird_self_policy(&self, group: netbird::Group, policy_name: netbird::PolicyName) -> std::result::Result<(), RequestError>;
+            async fn get_netbird_policy(&self, policy_name: &netbird::PolicyName) -> std::result::Result<netbird::Policy, GetPoliciesError>;
+            async fn delete_netbird_policy(&self, policy_id: &netbird::PolicyId) -> std::result::Result<(), RequestError>;
             async fn generate_netbird_setup_key(&self, peer_id: PeerId) -> std::result::Result<netbird::SetupKey, CreateSetupKeyError>;
         }
     }

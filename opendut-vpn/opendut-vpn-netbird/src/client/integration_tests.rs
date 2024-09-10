@@ -74,7 +74,7 @@ async fn test_netbird_vpn_client() {
     let _setup_key = client.generate_netbird_setup_key(peer_id).await
         .expect("Could not generate setup key!");
 
-    client.create_netbird_self_access_policy(netbird_group.clone(), cluster_id.into()).await
+    client.create_netbird_self_policy(netbird_group.clone(), cluster_id.into()).await
         .expect("Could not create self access control policy");
     println!("Netbird group {:?} contains peers: {:?}", netbird_group.id, netbird_group.peers);
 

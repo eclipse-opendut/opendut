@@ -11,7 +11,7 @@ use opendut_types::peer::PeerId;
 use crate::{netbird, routes};
 use crate::client::request_handler::{DefaultRequestHandler, RequestHandler, RequestHandlerConfig};
 use crate::netbird::error;
-use crate::netbird::error::{CreateClientError, CreateSetupKeyError, GetGroupError, GetRulesError, RequestError};
+use crate::netbird::error::{CreateClientError, CreateSetupKeyError, GetGroupError, GetPoliciesError, RequestError};
 
 mod request_handler;
 
@@ -26,9 +26,9 @@ pub trait Client {
     #[allow(unused)] //Currently unused, but expected to be needed again
     async fn get_netbird_peer(&self, peer_id: &netbird::PeerId) -> Result<netbird::Peer, RequestError>;
     async fn delete_netbird_peer(&self, peer_id: &netbird::PeerId) -> Result<(), RequestError>;
-    async fn create_netbird_self_access_control_policy(&self, group: netbird::Group, rule_name: netbird::PolicyName) -> Result<(), RequestError>;
-    async fn get_netbird_policy(&self, rule_name: &netbird::PolicyName) -> Result<netbird::Policy, GetRulesError>;
-    async fn delete_netbird_policy(&self, rule_id: &netbird::PolicyId) -> Result<(), RequestError>;
+    async fn create_netbird_self_policy(&self, group: netbird::Group, policy_name: netbird::PolicyName) -> Result<(), RequestError>;
+    async fn get_netbird_policy(&self, policy_name: &netbird::PolicyName) -> Result<netbird::Policy, GetPoliciesError>;
+    async fn delete_netbird_policy(&self, policy_id: &netbird::PolicyId) -> Result<(), RequestError>;
     async fn generate_netbird_setup_key(&self, peer_id: PeerId) -> Result<netbird::SetupKey, CreateSetupKeyError>;
 }
 
@@ -188,7 +188,7 @@ impl Client for DefaultClient {
     }
 
     #[tracing::instrument(skip(self), level="trace")]
-    async fn create_netbird_self_access_control_policy(&self, group: netbird::Group, rule_name: netbird::PolicyName) -> Result<(), RequestError> {
+    async fn create_netbird_self_policy(&self, group: netbird::Group, policy_name: netbird::PolicyName) -> Result<(), RequestError> {
         let url = routes::policies(self.netbird_url.clone());
 
         let body = {
@@ -204,9 +204,9 @@ impl Client for DefaultClient {
                 destinations: Vec<netbird::GroupId>,
             }
 
-            let description = rule_name.description();
+            let description = policy_name.description();
             let rule = CreateAccessControlRule {
-                name: rule_name.clone(),
+                name: policy_name.clone(),
                 description: description.clone(),
                 enabled: true,
                 action: netbird::RuleAction::Accept,
@@ -223,19 +223,15 @@ impl Client for DefaultClient {
                 rules: Vec<CreateAccessControlRule>
             }
             CreatePolicy {
-                name: rule_name,
+                name: policy_name,
                 description,
                 enabled: true,
                 rules: vec![rule]
             }
         };
-        let result = serde_json::to_string(&body).unwrap();
-        println!("{:?}", result);
-
         let request = post_json_request(url, body)?;
 
         let response = self.requester.handle(request).await?;
-        println!("Response: {:?}", response);
         response.error_for_status()
             .map_err(RequestError::IllegalStatus)?;
 
@@ -243,34 +239,34 @@ impl Client for DefaultClient {
     }
 
     #[tracing::instrument(skip(self), level="trace")]
-    async fn get_netbird_policy(&self, rule_name: &netbird::PolicyName) -> Result<netbird::Policy, GetRulesError> {
+    async fn get_netbird_policy(&self, policy_name: &netbird::PolicyName) -> Result<netbird::Policy, GetPoliciesError> {
         let url = routes::policies(self.netbird_url.clone());
         let request = Request::new(Method::GET, url);
         let response = self.requester.handle(request).await
-            .map_err(|cause| GetRulesError::RequestFailure { rule_name: rule_name.to_owned(), cause })?;
+            .map_err(|cause| GetPoliciesError::RequestFailure { policy_name: policy_name.to_owned(), cause })?;
         let result = response.json::<Vec<netbird::Policy>>().await
-            .map_err(|cause| GetRulesError::RequestFailure { rule_name: rule_name.to_owned(), cause: RequestError::JsonDeserialization(cause) })?;
+            .map_err(|cause| GetPoliciesError::RequestFailure { policy_name: policy_name.to_owned(), cause: RequestError::JsonDeserialization(cause) })?;
 
-        let rules = result.into_iter()
-            .filter(|rule| rule.name == *rule_name)
+        let policies = result.into_iter()
+            .filter(|policy| policy.name == *policy_name)
             .collect::<Vec<_>>();
 
-        if rules.len() > 1 {
-            Err(GetRulesError::MultipleRulesFound { rule_name: rule_name.to_owned() })
+        if policies.len() > 1 {
+            Err(GetPoliciesError::MultiplePoliciesFound { policy_name: policy_name.to_owned() })
         } else {
-            rules.into_iter().next().ok_or(GetRulesError::RuleNotFound { rule_name: rule_name.to_owned() })
+            policies.into_iter().next().ok_or(GetPoliciesError::PolicyNotFound { policy_name: policy_name.to_owned() })
         }
     }
 
     #[tracing::instrument(skip(self), level="trace")]
-    async fn delete_netbird_policy(&self, rule_id: &netbird::PolicyId) -> Result<(), RequestError> {
-        let url = routes::rule(Clone::clone(&self.netbird_url), rule_id);
+    async fn delete_netbird_policy(&self, policy_id: &netbird::PolicyId) -> Result<(), RequestError> {
+        let url = routes::policy(Clone::clone(&self.netbird_url), policy_id);
 
         let request = Request::new(Method::DELETE, url);
 
         let response = self.requester.handle(request).await?;
 
-        parse_response_status(response, format!("NetBird rule with ID <{:?}>", rule_id)).await
+        parse_response_status(response, format!("NetBird policy with ID <{:?}>", policy_id)).await
     }
 
     #[tracing::instrument(skip(self), level="trace")]

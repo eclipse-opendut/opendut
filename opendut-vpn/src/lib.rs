@@ -32,7 +32,7 @@ pub enum CreateClusterError {
         error: Box<dyn std::error::Error>
     },
     #[error("An error occurred while creating access control rule for cluster <{cluster_id}>:\n  {error}")]
-    AccessControlRuleCreationFailure {
+    AccessPolicyCreationFailure {
         cluster_id: ClusterId,
         error: Box<dyn std::error::Error>
     }

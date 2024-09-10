@@ -26,8 +26,8 @@ pub fn policies(base_url: Url) -> Url {
     join(base_url, "policies")
 }
 
-pub fn rule(base_url: Url, rule_id: &netbird::PolicyId) -> Url {
-    join(policies(base_url), &rule_id.0)
+pub fn policy(base_url: Url, policy_id: &netbird::PolicyId) -> Url {
+    join(policies(base_url), &policy_id.0)
 }
 
 fn join(mut base_url: Url, path: &str) -> Url {
