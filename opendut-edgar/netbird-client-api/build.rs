@@ -14,9 +14,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .manifest_path(workspace_dir.join("Cargo.toml"))
         .exec()?;
     let version = metadata.workspace_metadata["ci"]["netbird"]["version"].as_str()
-        .ok_or("NetBird version not defined.").unwrap();
+        .ok_or("NetBird version not defined.")?;
     let netbird_proto_url = metadata.workspace_metadata["ci"]["netbird"]["protobuf"].as_str()
-        .ok_or("NetBird protobuf url not defined.").unwrap().to_string();
+        .ok_or("NetBird protobuf url not defined.")?;
 
     let proto_dir = PathBuf::from("proto/").join(format!("netbird-v{version}"));
     let file_names = ["daemon.proto"];
@@ -26,7 +26,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         fs::create_dir_all(&proto_dir)?;
 
         for file_name in file_names {
-            let bytes = reqwest::blocking::get(netbird_proto_url.clone())?
+            let bytes = reqwest::blocking::get(netbird_proto_url)?
                 .error_for_status()?
                 .bytes()?;
 
