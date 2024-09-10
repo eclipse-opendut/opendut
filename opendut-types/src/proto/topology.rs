@@ -244,10 +244,10 @@ mod tests {
 
         verify_that!(
             native,
-            eq(crate::topology::Topology::try_from(Clone::clone(&proto))?)
+            eq(&crate::topology::Topology::try_from(Clone::clone(&proto))?)
         )?;
 
-        verify_that!(proto, eq(Topology::try_from(native)?))?;
+        verify_that!(proto, eq(&Topology::try_from(native)?))?;
 
         Ok(())
     }
@@ -283,7 +283,7 @@ mod tests {
 
         verify_that!(
             result,
-            err(eq(ConversionError::new::<
+            err(eq(&ConversionError::new::<
                 DeviceDescriptor,
                 crate::topology::DeviceDescriptor,
             >("Field 'id' not set")))

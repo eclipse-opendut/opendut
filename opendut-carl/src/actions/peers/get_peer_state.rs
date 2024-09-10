@@ -89,7 +89,7 @@ mod tests {
             resources_manager: Clone::clone(&resources_manager),
         }).await?;
 
-        assert_that!(peer_state, eq(PeerState::Down));
+        assert_that!(peer_state, eq(&PeerState::Down));
         assert_that!(resources_manager.get::<PeerState>(fixture.peer_a_id).await?.as_ref(), none());
         Ok(())
     }
@@ -125,7 +125,7 @@ mod tests {
             resources_manager: Clone::clone(&resources_manager),
         }).await;
 
-        assert_that!(peer_state_result, err(eq(GetPeerStateError::PeerNotFound { peer_id: not_existing_peer_id })));
+        assert_that!(peer_state_result, err(eq(&GetPeerStateError::PeerNotFound { peer_id: not_existing_peer_id })));
         Ok(())
     }
 }

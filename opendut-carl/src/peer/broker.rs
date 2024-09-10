@@ -372,7 +372,7 @@ mod tests {
         let result = testee.open(peer_id, remote_host).await;
         assert_that!(
             result.unwrap_err(),
-            matches_pattern!(OpenError::PeerAlreadyConnected { peer_id: eq(peer_id) })
+            matches_pattern!(OpenError::PeerAlreadyConnected { peer_id: eq(&peer_id) })
         );
 
         Ok(())

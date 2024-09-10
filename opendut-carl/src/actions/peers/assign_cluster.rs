@@ -114,7 +114,7 @@ mod tests {
             .message.unwrap();
         assert_that!(
             received,
-            eq(downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
+            eq(&downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
                 old_configuration: Some(Clone::clone(&old_peer_configuration).into()),
                 configuration: Some(Clone::clone(&peer_configuration).into()),
             }))
@@ -152,7 +152,7 @@ mod tests {
 
         assert_that!(
             received,
-            eq(downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
+            eq(&downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
                 old_configuration: Some(Clone::clone(&old_peer_configuration).into()),
                 configuration: Some(peer_configuration.into()),
             }))

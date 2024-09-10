@@ -424,51 +424,55 @@ mod test {
                 cluster_configuration,
             }).await?;
 
-            assert_that!(fixture.testee.lock().await.deploy(cluster_id).await, ok(eq(())));
+            assert_that!(fixture.testee.lock().await.deploy(cluster_id).await, ok(eq(&())));
 
 
-            let expectation = || {
-                matches_pattern!(ClusterAssignment {
-                    id: eq(cluster_id),
-                    leader: eq(leader_id),
-                    assignments: any![
-                        unordered_elements_are![
-                            eq(PeerClusterAssignment {
-                                peer_id: peer_a.id,
-                                vpn_address: peer_a.remote_host,
-                                can_server_port: Port(fixture.cluster_manager_options.can_server_port_range_start + 1),
-                                device_interfaces: peer_a.interfaces.clone(),
-                            }),
-                            eq(PeerClusterAssignment {
-                                peer_id: peer_b.id,
-                                vpn_address: peer_b.remote_host,
-                                can_server_port: Port(fixture.cluster_manager_options.can_server_port_range_start),
-                                device_interfaces: peer_b.interfaces.clone(),
-                            }),
-                        ],
-                        unordered_elements_are![
-                            eq(PeerClusterAssignment {
-                                peer_id: peer_a.id,
-                                vpn_address: peer_a.remote_host,
-                                can_server_port: Port(fixture.cluster_manager_options.can_server_port_range_start),
-                                device_interfaces: peer_a.interfaces,
-                            }),
-                            eq(PeerClusterAssignment {
-                                peer_id: peer_b.id,
-                                vpn_address: peer_b.remote_host,
-                                can_server_port: Port(fixture.cluster_manager_options.can_server_port_range_start + 1),
-                                device_interfaces: peer_b.interfaces,
-                            }),
-                        ],
-                    ]
-                })
+            let assert_cluster_assignment_valid = |cluster_assignment: &ClusterAssignment| {
+                assert_that!(
+                    cluster_assignment,
+                    matches_pattern!(ClusterAssignment {
+                        id: &cluster_id,
+                        leader: &leader_id,
+                        assignments: any![
+                            unordered_elements_are![
+                                &PeerClusterAssignment {
+                                    peer_id: peer_a.id,
+                                    vpn_address: peer_a.remote_host,
+                                    can_server_port: Port(fixture.cluster_manager_options.can_server_port_range_start + 1),
+                                    device_interfaces: peer_a.interfaces.clone(),
+                                },
+                                &PeerClusterAssignment {
+                                    peer_id: peer_b.id,
+                                    vpn_address: peer_b.remote_host,
+                                    can_server_port: Port(fixture.cluster_manager_options.can_server_port_range_start),
+                                    device_interfaces: peer_b.interfaces.clone(),
+                                },
+                            ],
+                            unordered_elements_are![
+                                &PeerClusterAssignment {
+                                    peer_id: peer_a.id,
+                                    vpn_address: peer_a.remote_host,
+                                    can_server_port: Port(fixture.cluster_manager_options.can_server_port_range_start),
+                                    device_interfaces: peer_a.interfaces.clone(),
+                                },
+                                &PeerClusterAssignment {
+                                    peer_id: peer_b.id,
+                                    vpn_address: peer_b.remote_host,
+                                    can_server_port: Port(fixture.cluster_manager_options.can_server_port_range_start + 1),
+                                    device_interfaces: peer_b.interfaces.clone(),
+                                },
+                            ],
+                        ]
+                    })
+                );
             };
 
+
             let (result, _result2) = receive_peer_configuration_message(&mut peer_a_rx).await;
-            assert_that!(result.cluster_assignment.unwrap(), Clone::clone(&expectation)());
+            assert_cluster_assignment_valid(&result.cluster_assignment.unwrap());
 
             let (result, _result2) = receive_peer_configuration_message(&mut peer_b_rx).await;
-            assert_that!(result.cluster_assignment.unwrap(), expectation());
+            assert_cluster_assignment_valid(&result.cluster_assignment.unwrap());
 
             Ok(())
         }
@@ -504,7 +508,7 @@ mod test {
 
         assert_that!(
             fixture.testee.lock().await.deploy(unknown_cluster).await,
-            err(eq(DeployClusterError::ClusterConfigurationNotFound(unknown_cluster)))
+            err(eq(&DeployClusterError::ClusterConfigurationNotFound(unknown_cluster)))
         );
 
         Ok(())
@@ -564,9 +568,9 @@ mod test {
         assert_that!(
             result,
             unordered_elements_are![
-                (eq(peer_1.id), unordered_elements_are![eq(interface_a)]),
-                (eq(peer_2.id), unordered_elements_are![eq(interface_b), eq(interface_c)]),
-                (eq(peer_leader.id), empty()),
+                (eq(&peer_1.id), unordered_elements_are![eq(&interface_a)]),
+                (eq(&peer_2.id), unordered_elements_are![eq(&interface_b), eq(&interface_c)]),
+                (eq(&peer_leader.id), empty()),
             ]
         );
         Ok(())

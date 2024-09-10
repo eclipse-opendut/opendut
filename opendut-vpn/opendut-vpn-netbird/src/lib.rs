@@ -414,9 +414,9 @@ mod test {
 
         assert_that!(fixture.testee.generate_vpn_peer_configuration(peer_id).await,
             ok(matches_pattern!(VpnPeerConfiguration::Netbird {
-                management_url: eq(Url::parse("https://localhost/api/").unwrap()),
+                management_url: eq(&Url::parse("https://localhost/api/").unwrap()),
                 setup_key: matches_pattern!(vpn::netbird::SetupKey {
-                    uuid: eq(setup_key.key)
+                    uuid: eq(&setup_key.key)
                 }),
             })
         ));

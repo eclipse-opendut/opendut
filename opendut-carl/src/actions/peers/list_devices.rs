@@ -78,8 +78,8 @@ mod tests {
         assert_that!(
             result_ids,
             unordered_elements_are![
-                eq(fixture.peer_a_device_1),
-                eq(fixture.peer_a_device_2),
+                eq(&fixture.peer_a_device_1),
+                eq(&fixture.peer_a_device_2),
             ]
         );
         Ok(())

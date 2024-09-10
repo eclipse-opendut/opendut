@@ -74,8 +74,8 @@ mod tests {
 
         let cleo_setup = generate_cleo_setup(generate_cleo_setup_params, String::from("testUser")).await?;
         assert_that!(cleo_setup.id, eq(CleoId::try_from("787d0b11-51f3-4cfe-8131-c7d89d53f0e9")?));
-        assert_that!(cleo_setup.auth_config, eq(AuthConfig::Disabled));
-        assert_that!(cleo_setup.carl, eq(Url::parse("https://example.com:1234").unwrap()));
+        assert_that!(cleo_setup.auth_config, eq(&AuthConfig::Disabled));
+        assert_that!(cleo_setup.carl, eq(&Url::parse("https://example.com:1234").unwrap()));
 
         Ok(())
     }

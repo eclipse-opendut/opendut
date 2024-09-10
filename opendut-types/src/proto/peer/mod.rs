@@ -369,10 +369,10 @@ mod tests {
 
         assert_that!(
             crate::peer::PeerId::try_from(Clone::clone(&proto)),
-            ok(eq(native))
+            ok(eq(&native))
         );
 
-        assert_that!(PeerId::from(native), eq(proto));
+        assert_that!(PeerId::from(native), eq(&proto));
 
         Ok(())
     }
@@ -387,10 +387,10 @@ mod tests {
 
         assert_that!(
             crate::peer::PeerLocation::try_from(Clone::clone(&proto)),
-            ok(eq(native.clone()))
+            ok(eq(&native))
         );
 
-        assert_that!(PeerLocation::from(native), eq(proto));
+        assert_that!(PeerLocation::from(native), eq(&proto));
 
         Ok(())
     }
@@ -420,7 +420,7 @@ mod tests {
 
             assert_that!(
                 crate::peer::state::PeerState::try_from(Clone::clone(&proto)),
-                ok(eq(native))
+                ok(eq(&native))
             );
         }
 
@@ -433,7 +433,7 @@ mod tests {
 
             assert_that!(
                 crate::peer::state::PeerState::try_from(Clone::clone(&proto)),
-                ok(eq(native))
+                ok(eq(&native))
             );
         }
 
@@ -448,7 +448,7 @@ mod tests {
 
             assert_that!(
                 crate::peer::state::PeerState::try_from(Clone::clone(&proto)),
-                ok(eq(native))
+                ok(eq(&native))
             );
         }
 
@@ -463,7 +463,7 @@ mod tests {
 
             assert_that!(
                 crate::peer::state::PeerState::try_from(Clone::clone(&proto)),
-                ok(eq(native))
+                ok(eq(&native))
             );
         }
 
@@ -478,7 +478,7 @@ mod tests {
 
             assert_that!(
                 crate::peer::state::PeerState::try_from(Clone::clone(&proto)),
-                ok(eq(native))
+                ok(eq(&native))
             );
         }
 

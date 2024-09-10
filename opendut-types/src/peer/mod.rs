@@ -350,7 +350,7 @@ mod tests {
         assert_that!(encoded, eq("F8sBABwHzrk8VikIvG691CJ7W1Stsq0oZqoIe8UvyoH_PRFpnb4ullM3wV7g8UFoTRxt-svCaEwMLLSAA7DMXeWhPNSyiLPbPh7iH2lyQsi01GXIkGU-g5HSILFKIJFpVniZZ0XMabK49sS7TWmybMacHztb1vGBJFsITgY9fIGLFdBn_YygcXHdu6CJx17_kdGTXHZEVbbx5_p3wJh2xZP1U-w47d2wcUQUC-fE_u3xqINxDkbE8MD44QUiPdzFwtIZcYdvd7jxsT3zrsw9ho2cozsAmNJrznkEXI_FHmRUPZj8BvjFuCsrVnFuCovbd3TFQ-Q-yZRQJVKBGx9MkngEYwo4H0rlnXCFzKgC"));
 
         let decoded = PeerSetup::decode(&encoded)?;
-        assert_that!(decoded, eq(setup));
+        assert_that!(decoded, eq(&setup));
 
         Ok(())
     }

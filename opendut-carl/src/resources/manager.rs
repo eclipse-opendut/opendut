@@ -124,17 +124,17 @@ mod test {
         let peer_resource_id = PeerId::random();
         let peer = PeerDescriptor {
             id: peer_resource_id,
-            name: PeerName::try_from("TestPeer").unwrap(),
+            name: PeerName::try_from("TestPeer")?,
             location: PeerLocation::try_from("Ulm").ok(),
             network: PeerNetworkDescriptor {
                 interfaces: vec![
                     NetworkInterfaceDescriptor {
                         id: NetworkInterfaceId::random(),
-                        name: NetworkInterfaceName::try_from("eth0").unwrap(),
+                        name: NetworkInterfaceName::try_from("eth0")?,
                         configuration: NetworkInterfaceConfiguration::Ethernet,
                     },
                 ],
-                bridge_name: Some(NetworkInterfaceName::try_from("br-opendut-1").unwrap()),
+                bridge_name: Some(NetworkInterfaceName::try_from("br-opendut-1")?),
             },
             topology: Topology::default(),
             executors: ExecutorDescriptors {
@@ -144,7 +144,7 @@ mod test {
                         kind: ExecutorKind::Container {
                             engine: Engine::Docker,
                             name: ContainerName::Empty,
-                            image: ContainerImage::try_from("testUrl").unwrap(),
+                            image: ContainerImage::try_from("testUrl")?,
                             volumes: vec![],
                             devices: vec![],
                             envs: vec![],
@@ -161,7 +161,7 @@ mod test {
         let cluster_resource_id = ClusterId::random();
         let cluster_configuration = ClusterConfiguration {
             id: cluster_resource_id,
-            name: ClusterName::try_from("ClusterX032").unwrap(),
+            name: ClusterName::try_from("ClusterX032")?,
             leader: peer.id,
             devices: HashSet::new(),
         };
@@ -174,24 +174,24 @@ mod test {
 
         testee.insert(cluster_resource_id, Clone::clone(&cluster_configuration)).await?;
 
-        assert_that!(testee.get::<PeerDescriptor>(peer_resource_id).await?, some(eq(Clone::clone(&peer))));
-        assert_that!(testee.get::<ClusterConfiguration>(cluster_resource_id).await?, some(eq(Clone::clone(&cluster_configuration))));
+        assert_that!(testee.get::<PeerDescriptor>(peer_resource_id).await?, some(eq(&peer)));
+        assert_that!(testee.get::<ClusterConfiguration>(cluster_resource_id).await?, some(eq(&cluster_configuration)));
 
         assert!(testee.contains::<PeerDescriptor>(peer_resource_id).await);
 
         assert_that!(testee.get::<PeerDescriptor>(PeerId::random()).await?, none());
 
-        assert_that!(testee.remove::<PeerDescriptor>(peer_resource_id).await?, some(eq(Clone::clone(&peer))));
+        assert_that!(testee.remove::<PeerDescriptor>(peer_resource_id).await?, some(eq(&peer)));
 
         testee.insert(peer_resource_id, Clone::clone(&peer)).await?;
 
-        assert_that!(testee.get::<PeerDescriptor>(peer_resource_id).await?, some(eq(Clone::clone(&peer))));
+        assert_that!(testee.get::<PeerDescriptor>(peer_resource_id).await?, some(eq(&peer)));
 
         testee.resources(|resources| {
             resources.list::<ClusterConfiguration>()?
                 .into_iter()
                 .for_each(|cluster| {
-                    assert_that!(cluster, eq(Clone::clone(&cluster_configuration)));
+                    assert_that!(cluster, eq(&cluster_configuration));
                 });
             Ok(())
         }).await?;

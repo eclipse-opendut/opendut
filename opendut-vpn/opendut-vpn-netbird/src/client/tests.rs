@@ -54,7 +54,7 @@ async fn create_group(fixture: Fixture) -> anyhow::Result<()> {
             ]
         });
 
-        assert_that!(request, eq(expectation));
+        assert_that!(request, eq(&expectation));
 
         let response = http::Response::builder()
             .body(
@@ -87,12 +87,12 @@ async fn create_group(fixture: Fixture) -> anyhow::Result<()> {
             matches_pattern!(
                 netbird::Group {
                     id: anything(),
-                    name: eq(fixture.cluster_netbird_group_name()),
+                    name: eq(&fixture.cluster_netbird_group_name()),
                     peers_count: anything(),
                     peers: elements_are!(
                         matches_pattern!(
                             netbird::GroupPeerInfo {
-                                id: eq(fixture.netbird_peer_id()),
+                                id: eq(&fixture.netbird_peer_id()),
                                 name: anything()
                             }
                         )
@@ -136,9 +136,9 @@ async fn find_group(fixture: Fixture) -> anyhow::Result<()> {
             ok(
                 matches_pattern!(
                     netbird::Group {
-                        id: eq(netbird::GroupId::from("ch8i4ug6lnn4g9hqv7m0")),
-                        name: eq(fixture.peer_netbird_group_name),
-                        peers_count: eq(0),
+                        id: eq(&netbird::GroupId::from("ch8i4ug6lnn4g9hqv7m0")),
+                        name: eq(&fixture.peer_netbird_group_name),
+                        peers_count: eq(&0),
                         peers: empty(),
                     }
                 )
@@ -209,7 +209,7 @@ async fn create_a_setup_key(fixture: Fixture) -> anyhow::Result<()> {
                         "usage_limit": 0,
                     });
 
-                assert_that!(request, eq(expectation));
+                assert_that!(request, eq(&expectation));
 
                 let response = http::Response::builder()
                     .body(
@@ -250,17 +250,17 @@ async fn create_a_setup_key(fixture: Fixture) -> anyhow::Result<()> {
                 netbird::SetupKey {
                     id: anything(),
                     key: anything(),
-                    name: eq(fixture.peer_setup_key_name()),
+                    name: eq(&fixture.peer_setup_key_name()),
                     expires: anything(),
-                    r#type: eq(netbird::SetupKeyType::Reusable),
-                    valid: eq(true),
-                    revoked: eq(false),
+                    r#type: eq(&netbird::SetupKeyType::Reusable),
+                    valid: eq(&true),
+                    revoked: eq(&false),
                     used_times: anything(),
                     last_used: anything(),
-                    state: eq(netbird::SetupKeyState::Valid),
-                    auto_groups: eq(vec![fixture.netbird_group_id.0]),
+                    state: eq(&netbird::SetupKeyState::Valid),
+                    auto_groups: eq(&vec![fixture.netbird_group_id.0]),
                     updated_at: anything(),
-                    usage_limit: eq(0),
+                    usage_limit: eq(&0),
                 }
             )
         );
@@ -284,7 +284,7 @@ async fn create_access_control_rule(fixture: Fixture) -> anyhow::Result<()> {
             "destinations": [fixture.netbird_group_id()],
         });
 
-        assert_that!(request, eq(expectation));
+        assert_that!(request, eq(&expectation));
 
         let group = json!({
             "id": fixture.netbird_group_id(),

@@ -278,7 +278,7 @@ mod test {
 
             assert_that!(
                 crate::cluster::state::ClusterState::try_from(Clone::clone(&proto)),
-                ok(eq(native))
+                ok(eq(&native))
             );
         }
 
@@ -288,7 +288,7 @@ mod test {
 
             assert_that!(
                 crate::cluster::state::ClusterState::try_from(Clone::clone(&proto)),
-                ok(eq(native))
+                ok(eq(&native))
             );
         }
 
@@ -300,7 +300,7 @@ mod test {
 
             assert_that!(
                 crate::cluster::state::ClusterState::try_from(Clone::clone(&proto)),
-                ok(eq(native))
+                ok(eq(&native))
             );
         }
 
@@ -312,7 +312,7 @@ mod test {
 
             assert_that!(
                 crate::cluster::state::ClusterState::try_from(Clone::clone(&proto)),
-                ok(eq(native))
+                ok(eq(&native))
             );
         }
 

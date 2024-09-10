@@ -183,8 +183,8 @@ mod test {
         ];
         assert_that!(check_devices(&all_devices, &device_names, &[]),
             unordered_elements_are!(
-                ok(eq(Clone::clone(&all_devices[0]))),
-                ok(eq(Clone::clone(&all_devices[2])))
+                ok(eq(&all_devices[0])),
+                ok(eq(&all_devices[2]))
             )
         );
         Ok(())
@@ -199,8 +199,8 @@ mod test {
         ];
         assert_that!(check_devices(&all_devices, &[], &device_ids),
             unordered_elements_are!(
-                ok(eq(Clone::clone(&all_devices[0]))),
-                ok(eq(Clone::clone(&all_devices[2])))
+                ok(eq(&all_devices[0])),
+                ok(eq(&all_devices[2]))
             )
         );
     }
@@ -248,8 +248,8 @@ mod test {
         ];
         assert_that!(check_devices(&all_devices, &device_names, &device_ids),
             unordered_elements_are!(
-                ok(eq(Clone::clone(&all_devices[0]))),
-                ok(eq(Clone::clone(&all_devices[2])))
+                ok(eq(&all_devices[0])),
+                ok(eq(&all_devices[2]))
             )
         );
         Ok(())

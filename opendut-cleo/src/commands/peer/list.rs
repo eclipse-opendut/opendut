@@ -125,9 +125,9 @@ mod test {
         assert_that!(
             add_peer_status(peer.clone(), PeerState::Down),
             matches_pattern!(PeerTable {
-                name: eq(Clone::clone(&peer.name)),
-                id: eq(peer.id),
-                status: eq(PeerStatus::Disconnected),
+                name: eq(&peer.name),
+                id: eq(&peer.id),
+                status: eq(&PeerStatus::Disconnected),
             })
         );
     }

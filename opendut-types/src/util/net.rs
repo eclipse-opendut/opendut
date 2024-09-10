@@ -457,12 +457,11 @@ mod tests {
         let issuer_url = Url::parse("https://some-address-idk.com").unwrap();
         let auth_config = AuthConfig::from_credentials(issuer_url.clone(), client_credentials);
 
-        assert_that!(auth_config, eq(AuthConfig::Enabled {
+        assert_that!(auth_config, eq(&AuthConfig::Enabled {
             issuer_url,
             client_id,
             client_secret,
             scopes: expected_scopes,
-            
         }));
     }
 }
