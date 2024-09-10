@@ -281,7 +281,7 @@ services:
       - opendut_local
 
   carl:
-    image: "ghcr.io/eclipse-opendut/opendut-carl:canary-0.2.0"
+    image: "ghcr.io/eclipse-opendut/opendut-carl:0.2.0"
     command: ["/opt/opendut-carl/opendut-carl"]
     restart: unless-stopped
     depends_on:

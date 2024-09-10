@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.2.0
+
 <details>
 <summary>Breaking Changes</summary>
 
@@ -18,14 +20,22 @@ OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_ADMIN_URL=https://keycloak/admin/realms/
 The value has to be your Keycloak's Admin URL.
 
 * The environment variable for the Keycloak database's password was renamed from `POSTGRES_PASSWORD` to `KEYCLOAK_POSTGRES_PASSWORD`.
+* An additional password environment variable needs to be provided called `CARL_POSTGRES_PASSWORD`.
 </details>
 
 ### Added
 * CARL can now require clients to be authenticated.
+* A download button for CLEO and EDGAR has been added in the LEA web-UI.
+* LEA and CLEO show when a peer or device is already used in a cluster.
+* You can now configure frequently used CAN parameters in LEA and CLEO.
+* Setup-Strings can now be copied to the clipboard in LEA.
 
 ### Changed
 * The health of Clusters marked as deployed is now displayed as yellow in LEA.  
   This is to reflect that determining the actual cluster state is not yet implemented.
+* It's not anymore possible to configure deployment of a peer into two clusters.  
+  This was never supported to begin with, but the UIs didn't prevent it.
+* Various bug fixes and quality-of-life improvements.
 
 ## 0.1.0
 
