@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+tbd.
+
 ## 0.2.0
 
 <details>
@@ -35,7 +37,11 @@ The value has to be your Keycloak's Admin URL.
   This is to reflect that determining the actual cluster state is not yet implemented.
 * It's not anymore possible to configure deployment of a peer into two clusters.  
   This was never supported to begin with, but the UIs didn't prevent it.
-* Various bug fixes and quality-of-life improvements.
+* Various quality-of-life improvements.
+
+### Fixed
+* Generating a Setup-String now works for peers which had previously been set up.
+
 
 ## 0.1.0
 
