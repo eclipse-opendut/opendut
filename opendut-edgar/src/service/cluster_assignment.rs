@@ -18,6 +18,7 @@ pub async fn setup_ethernet_gre_interfaces(
     bridge_name: &NetworkInterfaceName,
     network_interface_manager: NetworkInterfaceManagerRef,
 ) -> Result<(), Error> {
+    debug!("Setting up Ethernet GRE interfaces.");
 
     let local_peer_assignment = cluster_assignment.assignments.iter().find(|assignment| {
         assignment.peer_id == self_id
@@ -49,6 +50,8 @@ pub async fn join_ethernet_interfaces_to_bridge(
     bridge_name: &NetworkInterfaceName,
     network_interface_manager: NetworkInterfaceManagerRef,
 ) -> Result<(), Error> {
+    debug!("Joining Ethernet interfaces to bridge '{bridge_name}'.");
+
     let own_ethernet_interfaces = get_own_ethernet_interfaces(cluster_assignment, self_id)?;
 
     join_device_interfaces_to_bridge(&own_ethernet_interfaces, bridge_name, Arc::clone(&network_interface_manager)).await
@@ -63,6 +66,7 @@ pub async fn setup_can_interfaces(
     self_id: PeerId,
     can_manager: CanManagerRef
 ) -> Result<(), Error> {
+    debug!("Setting up CAN interfaces.");
 
     let can_bridge_name = crate::common::default_can_bridge_name();
     let own_can_interfaces = get_own_can_interfaces(cluster_assignment, self_id)?;

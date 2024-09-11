@@ -342,6 +342,8 @@ fn setup_cluster_metrics( //TODO make idempotent
     cluster_assignment: &Option<ClusterAssignment>,
     setup_cluster_info: &SetupClusterInfo,
 ) -> anyhow::Result<()> {
+    debug!("Setting up cluster metrics.");
+
     match cluster_assignment {
         None => {}
         Some(cluster_assignment) => {

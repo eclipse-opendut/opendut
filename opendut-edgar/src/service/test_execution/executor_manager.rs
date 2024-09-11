@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use opendut_types::peer::{self, executor::{ExecutorDescriptor, ExecutorKind}};
 use tokio::sync::watch::{self, Sender};
-use tracing::warn;
+use tracing::{debug, warn};
 
 use crate::service::test_execution::container_manager::{ContainerManager, ContainerConfiguration};
 
@@ -20,6 +20,7 @@ impl ExecutorManager {
     }
 
     pub fn create_new_executors(&mut self, executors: Vec<peer::configuration::Parameter<ExecutorDescriptor>>) {
+        debug!("Creating executors.");
 
         let executors = executors.into_iter()
             .filter_map(|executor| { //TODO properly handle Present vs. Absent
@@ -71,14 +72,12 @@ impl ExecutorManager {
     }
 
     pub fn terminate_executors(&mut self) {
+        debug!("Terminating executors.");
         for tx_termination_channel in &self.tx_termination_channels {
             if let Err(cause) = tx_termination_channel.send(true) {
                 warn!("Failed to send termination signal to executor, perhaps it already terminated? Cause: {cause}");
             }
         }
         self.tx_termination_channels.clear();
-
     }
-
-
 }
