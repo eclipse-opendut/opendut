@@ -66,10 +66,24 @@ pub async fn setup_can_interfaces(
     self_id: PeerId,
     can_manager: CanManagerRef
 ) -> Result<(), Error> {
+    let own_can_interfaces = get_own_can_interfaces(cluster_assignment, self_id)?;
+
+    if let sudo::RunningAs::User = sudo::check() {
+        if own_can_interfaces.is_empty() {
+            //Since we don't have the correct permissions to run the CAN setup code,
+            //no previous CAN interfaces exist which we might need to clean up,
+            //so we can safely skip this code, which allows us to run without root,
+            //when CAN is not used.
+            debug!("No CAN interfaces to set up. Skipping.");
+            return Ok(());
+        } else {
+            panic!("CARL requested to setup CAN interfaces, but EDGAR is not running with root permissions, which is currently required."); //TODO report problem to CARL
+        }
+    }
+
     debug!("Setting up CAN interfaces.");
 
     let can_bridge_name = crate::common::default_can_bridge_name();
-    let own_can_interfaces = get_own_can_interfaces(cluster_assignment, self_id)?;
     can_manager.setup_local_routing(
         &can_bridge_name, 
         own_can_interfaces,
