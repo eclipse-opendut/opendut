@@ -241,7 +241,7 @@ async fn apply_peer_configuration(message: ApplyPeerConfiguration, context: Opti
                                 }
 
                                 let no_confirm = true;
-                                runner::run(RunMode::Normal, no_confirm, &tasks).await?;
+                                runner::run(RunMode::Service, no_confirm, &tasks).await?;
                             }
 
                             {

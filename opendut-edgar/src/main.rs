@@ -100,7 +100,7 @@ async fn main() -> anyhow::Result<()> {
             info!("EDGAR Setup started!");
             info!("Setup command being executed: {:?}", command);
 
-            let run_mode = if dry_run { setup::RunMode::DryRun } else { setup::RunMode::Normal };
+            let run_mode = if dry_run { setup::RunMode::SetupDryRun } else { setup::RunMode::Setup };
 
             match mode {
                 SetupMode::Managed { setup_string } => {

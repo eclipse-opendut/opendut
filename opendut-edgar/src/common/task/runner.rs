@@ -24,14 +24,17 @@ pub async fn run(run_mode: RunMode, no_confirm: bool, tasks: &[Box<dyn Task>]) -
     let run_mode = if project::is_running_in_development() {
         println!("{DRY_RUN_BANNER}");
         info!("{DRY_RUN_BANNER}");
-        RunMode::DryRun
+        RunMode::SetupDryRun
     } else {
         run_mode
     };
 
-    if run_mode != RunMode::DryRun {
-        sudo::with_env(&["OPENDUT_EDGAR_"]) //Request before doing anything else, as it restarts the process when sudo is not present.
-            .expect("Failed to request sudo privileges.");
+    match run_mode {
+        RunMode::Setup => {
+            sudo::with_env(&["OPENDUT_EDGAR_"]) //Request before doing anything else, as it restarts the process when sudo is not present.
+                .expect("Failed to request sudo privileges.");
+        },
+        RunMode::SetupDryRun | RunMode::Service => {} //do nothing
     }
     if no_confirm || user_confirmation(run_mode)? {
         run_tasks(tasks, run_mode);
@@ -43,11 +46,7 @@ pub async fn run(run_mode: RunMode, no_confirm: bool, tasks: &[Box<dyn Task>]) -
 
 fn user_confirmation(run_mode: RunMode) -> anyhow::Result<bool> {
     match run_mode {
-        RunMode::DryRun => {
-            println!("Pretending to setup EDGAR on your system.");
-            Ok(true)
-        }
-        RunMode::Normal => {
+        RunMode::Setup => {
             println!("This will setup EDGAR on your system.");
             print!("Do you want to continue? [Y/n] ");
             io::stdout().flush()?;
@@ -63,6 +62,11 @@ fn user_confirmation(run_mode: RunMode) -> anyhow::Result<bool> {
                 }
             }
         }
+        RunMode::SetupDryRun => {
+            println!("Pretending to setup EDGAR on your system.");
+            Ok(true)
+        }
+        RunMode::Service => Ok(true),
     }
 }
 
@@ -92,7 +96,7 @@ fn run_tasks(
         let outcome = match is_fulfilled {
             TaskFulfilled::Yes => Outcome::Unchanged,
             TaskFulfilled::No | TaskFulfilled::Unchecked => {
-                if run_mode == RunMode::DryRun {
+                if run_mode == RunMode::SetupDryRun {
                     Outcome::DryRun
                 } else {
                     let result = task.execute();
@@ -154,7 +158,7 @@ fn print_error(context: impl AsRef<str>, error: Option<anyhow::Error>) {
 }
 
 #[derive(Clone, Copy, PartialEq)]
-pub enum RunMode { Normal, DryRun }
+pub enum RunMode { Setup, SetupDryRun, Service }
 
 enum Outcome {
     Changed(Success),
