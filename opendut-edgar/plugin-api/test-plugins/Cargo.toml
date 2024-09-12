@@ -1,0 +1,6 @@
+[workspace]
+members=["test_plugin1", "test_plugin2", "test_plugin3", "test_plugin4", "test_plugin5"]
+resolver = "2"
+
+[workspace.dependencies]
+opendut-edgar-plugin-api = { path="..", features=["plugin"] }

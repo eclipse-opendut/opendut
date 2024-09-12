@@ -1,0 +1,13 @@
+[package]
+name = "test_plugin5"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+opendut-edgar-plugin-api.workspace=true
+
+[package.metadata.component]
+package="edgar:setup"
