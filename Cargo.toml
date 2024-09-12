@@ -6,6 +6,7 @@ members = [
     "opendut-edgar",
     "opendut-edgar/netbird-client-api",
     "opendut-edgar/opendut-edgar-kernel-modules",
+    "opendut-edgar/plugin-api",
     "opendut-lea",
     "opendut-types",
     "opendut-util",
@@ -17,7 +18,6 @@ members = [
     ".ci/cargo-ci",
     ".ci/docker/theo",
     "tests",
-    "opendut-edgar-plugin-api",
 ]
 resolver = "2"
 
@@ -35,7 +35,7 @@ opendut-carl = { path = "opendut-carl" }
 opendut-carl-api = { path = "opendut-carl/opendut-carl-api" }
 opendut-ci = { path = ".ci/cargo-ci" }
 opendut-edgar = { path = "opendut-edgar" }
-opendut-edgar-plugin-api = {path = "opendut-edgar-plugin-api"}
+opendut-edgar-plugin-api = { path = "opendut-edgar/plugin-api" }
 opendut-netbird-client-api = { path = "opendut-edgar/netbird-client-api" }
 opendut-edgar-kernel-modules = { path = "opendut-edgar/opendut-edgar-kernel-modules" }
 opendut-vpn-netbird = { path = "opendut-vpn/opendut-vpn-netbird" }
