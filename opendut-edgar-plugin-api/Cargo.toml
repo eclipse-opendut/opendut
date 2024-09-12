@@ -14,11 +14,11 @@ host = ["dep:wasmtime"]
 plugin = ["dep:wit-bindgen"]
 
 [dependencies]
-wasmtime = {workspace = true, optional = true}
-wit-bindgen = {workspace = true, optional = true}
+wasmtime = { workspace = true, optional = true }
+wit-bindgen = { workspace = true, optional = true }
 
 [package.metadata.component]
-package="edgar:setup"
+package = "edgar:setup"
 
 [package.metadata.component.target]
-path="wit"
+path = "wit"

@@ -29,14 +29,11 @@ impl PluginRuntime {
         SetupPlugin::add_to_linker(&mut linker, |state: &mut PluginState| state)
             .expect("Could not add PluginState to linker");
 
-        Self {
-            engine,
-            linker,
-        }
+        Self { engine, linker }
     }
 
-    pub fn create_plugin_from_wasm(&self, plugin_path: impl AsRef<Path>) -> SetupPluginStore {
-        let mut store = Store::new(&self.engine, PluginState::new(&plugin_path));
+    pub fn create_plugin_from_wasm(&self, plugin_path: &Path) -> SetupPluginStore {
+        let mut store = Store::new(&self.engine, PluginState::new(plugin_path));
 
         let component = Component::from_file(&self.engine, plugin_path).unwrap();
 
@@ -54,7 +51,7 @@ pub struct PluginState {
 }
 
 impl PluginState {
-    pub fn new(path: &impl AsRef<Path>) -> Self {
+    pub fn new(path: &Path) -> Self {
         let mut ctx_builder = WasiCtxBuilder::new();
         ctx_builder.inherit_stdio();
         ctx_builder
@@ -65,7 +62,7 @@ impl PluginState {
         Self {
             ctx: ctx_builder.build(),
             table: ResourceTable::new(),
-            path: path.as_ref().to_path_buf()
+            path: path.to_path_buf(),
         }
     }
 }
@@ -86,31 +83,28 @@ impl Host for PluginState {
         command: __internal::String,
         args: __internal::Vec<__internal::String>,
     ) -> Result<__internal::String, __internal::String> {
-        trace!("Plugin executing command {} with args {:?}", command, args);
+        trace!("Plugin executing command {command} with args {args:?}");
 
+        let mut command = Command::new(command);
+        command.args(args);
 
-        let mut cmd = Command::new(command);
-        cmd.args(args);
+        let result = command.output();
+        trace!("Plugin command resulted in {result:?}");
 
-        let result = cmd.output();
-        trace!("Plugin command resulted in {:?}", result);
-
-        match result{
-                Ok(output)=>{
-                    if output.status.success(){
-                        Ok(String::from_utf8(output.stdout).expect("Command output could not be converted to String"))
-                    }else{
-                        Err(String::from_utf8(output.stderr).expect("Command output could not be converted to String"))
-                    }
-                },
-                Err(e)=>{
-                    Err(e.to_string())
+        match result {
+            Ok(output) => {
+                if output.status.success() {
+                    Ok(String::from_utf8(output.stdout).expect("Command output could not be converted to String"))
+                } else {
+                    Err(String::from_utf8(output.stderr).expect("Command output could not be converted to String"))
                 }
+            },
+            Err(e) => Err(e.to_string()),
         }
     }
     
-    fn log(&mut self,level:LogLevel, message:__internal::String,) -> () {
-        let path = self.path.to_str().expect("Path invalid unicode");
+    fn log(&mut self, level:LogLevel, message:__internal::String) {
+        let path = self.path.display().to_string();
         match level {
             LogLevel::Trace => event!(Level::TRACE, plugin = path, message),
             LogLevel::Debug => event!(Level::DEBUG, plugin = path, message),
@@ -119,8 +113,6 @@ impl Host for PluginState {
             LogLevel::Error => event!(Level::ERROR, plugin = path, message),
         }
     }
-
-    
 }
 
 impl From<TaskFulfilled> for crate::common::task::TaskFulfilled {
@@ -136,7 +128,7 @@ impl From<TaskFulfilled> for crate::common::task::TaskFulfilled {
 impl From<Success> for crate::common::task::Success {
     fn from(value: Success) -> Self {
         match value.message {
-            Some(msg) => crate::common::task::Success::message(msg),
+            Some(message) => crate::common::task::Success::message(message),
             None => crate::common::task::Success { message: None },
         }
     }

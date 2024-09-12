@@ -11,9 +11,9 @@ pub struct SetupPluginStore {
     instance: Arc<Mutex<SetupPlugin>>,
 }
 
-impl SetupPluginStore{
-    pub fn new(store: Store<PluginState>, instance: SetupPlugin)->Self{
-        Self{
+impl SetupPluginStore {
+    pub fn new(store: Store<PluginState>, instance: SetupPlugin) -> Self {
+        Self {
             store: Arc::new(Mutex::new(store)),
             instance: Arc::new(Mutex::new(instance))
         }
@@ -22,33 +22,28 @@ impl SetupPluginStore{
 
 impl Task for SetupPluginStore {
     fn description(&self) -> String {
-        
         let store = self.store.clone();
         let instance = self.instance.clone();
-        
 
-        let thread = thread::spawn(move ||{
+        let thread = thread::spawn(move || {
             let mut store = store.lock().unwrap();
             let instance = instance.lock().expect("Unable to lock mutex");
 
             instance.edgar_setup_task().call_description(&mut *store).expect("Plugin could not call_description")
         });
 
-        let result = thread.join().expect("Failed to join thread for reading description");
-
-        result
+        thread.join().expect("Failed to join thread for reading description")
     }
 
     fn check_fulfilled(&self) -> anyhow::Result<crate::common::task::TaskFulfilled> {
         let store = self.store.clone();
         let instance = self.instance.clone();
-        
 
-        let thread = thread::spawn(move ||{
+        let thread = thread::spawn(move || {
             let mut store = store.lock().unwrap();
             let instance = instance.lock().expect("Unable to lock mutex");
 
-            instance.edgar_setup_task().call_check_fulfilled(&mut *store).expect("Plugin could not call_description")
+            instance.edgar_setup_task().call_check_fulfilled(&mut *store).expect("Plugin could not call_check_fulfilled")
         });
 
         let result = thread.join().expect("Failed to join thread for reading description");
@@ -63,12 +58,11 @@ impl Task for SetupPluginStore {
         let store = self.store.clone();
         let instance = self.instance.clone();
         
-
-        let thread = thread::spawn(move ||{
+        let thread = thread::spawn(move || {
             let mut store = store.lock().unwrap();
             let instance = instance.lock().expect("Unable to lock mutex");
 
-            instance.edgar_setup_task().call_execute(&mut *store).expect("Plugin could not call_description")
+            instance.edgar_setup_task().call_execute(&mut *store).expect("Plugin could not call_execute")
         });
 
         let result = thread.join().expect("Failed to join thread for reading description");

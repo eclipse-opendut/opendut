@@ -3,32 +3,31 @@ pub mod bindings {
 
     generate!({path: "wit/world.wit", pub_export_macro: true, export_macro_name: "export"});
 
-    pub fn trace(message:&str){
+    pub fn trace(message: &str){
         edgar::setup::host::log(edgar::setup::host::LogLevel::Trace, message);
     }
 
-    pub fn debug(message:&str){
+    pub fn debug(message: &str){
         edgar::setup::host::log(edgar::setup::host::LogLevel::Debug, message);
     }
 
-    pub fn info(message:&str){
+    pub fn info(message: &str){
         edgar::setup::host::log(edgar::setup::host::LogLevel::Info, message);
     }
 
-    pub fn warn(message:&str){
+    pub fn warn(message: &str){
         edgar::setup::host::log(edgar::setup::host::LogLevel::Warn, message);
     }
 
-    pub fn error(message:&str){
+    pub fn error(message: &str){
         edgar::setup::host::log(edgar::setup::host::LogLevel::Error, message);
     }
-
 }
 
-impl crate::plugin::bindings::exports::edgar::setup::task::Success{
-    pub fn new()->Self{
-        Self{
-            message:None
+impl crate::plugin::bindings::exports::edgar::setup::task::Success {
+    pub fn new() -> Self {
+        Self {
+            message: None
         }
     }
 
