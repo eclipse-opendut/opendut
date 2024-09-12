@@ -1,4 +1,4 @@
-use super::setup_plugin::SetupPluginStore;
+use crate::setup::plugin::setup_plugin::SetupPluginStore;
 use opendut_edgar_plugin_api::host::{Host, LogLevel, SetupPlugin, Success, TaskFulfilled};
 use std::path::{Path, PathBuf};
 use std::process::Command;

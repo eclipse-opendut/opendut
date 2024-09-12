@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use anyhow::Error;
 use wasmtime::Store;
-use crate::setup::plugin_runtime::PluginState;
+use crate::setup::plugin::plugin_runtime::PluginState;
 use opendut_edgar_plugin_api::host::SetupPlugin;
 use crate::common::task::Task;
 

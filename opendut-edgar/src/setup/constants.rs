@@ -79,16 +79,4 @@ pub mod rperf {
     }
 }
 
-pub mod setup_plugins {
-    use std::path::PathBuf;
-    use anyhow::anyhow;
-    use opendut_util::project;
-
-    pub fn path_in_edgar_distribution()-> anyhow::Result<PathBuf> {
-        let path = PathBuf::from("plugins");
-        project::make_path_absolute(&path)
-        .map_err(|cause| anyhow!("Failed to determine absolute path of the plugin folder in the unpacked EDGAR distribution, which is supposed to be at '{path:?}': {cause}"))
-    }
-}
-
 pub const REQUIRED_COMMAND_LINE_PROGRAMS: [(&str, &str); 3] = [("systemctl", "--version"), ("cannelloni", "-h"), ("cangw", "-s")];
