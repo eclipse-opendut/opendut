@@ -1,8 +1,8 @@
 pub mod connect;
 pub use connect::Connect;
 
-pub mod start_service;
-pub use start_service::StartService;
+pub mod restart_service;
+pub use restart_service::RestartService;
 
 pub mod install_service;
 pub use install_service::InstallService;

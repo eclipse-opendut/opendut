@@ -10,26 +10,17 @@ use crate::setup::util::EvaluateRequiringSuccess;
 const UP_CHECK_RETRIES: usize = 50;
 const UP_CHECK_INTERVAL: Duration = Duration::from_millis(200);
 
-pub struct StartService;
-impl Task for StartService {
+pub struct RestartService;
+impl Task for RestartService {
     fn description(&self) -> String {
-        String::from("NetBird - Start Service")
+        String::from("NetBird - (Re-)Start Service")
     }
     fn check_fulfilled(&self) -> Result<TaskFulfilled> {
-        let output = Command::new("systemctl")
-            .arg("is-active")
-            .arg("netbird")
-            .output()?;
-
-        if output.status.success() {
-            Ok(TaskFulfilled::Yes)
-        } else {
-            Ok(TaskFulfilled::No)
-        }
+        Ok(TaskFulfilled::Unchecked)
     }
     fn execute(&self) -> Result<Success> {
         let _ = Command::new("systemctl")
-            .arg("start")
+            .arg("restart")
             .arg("netbird")
             .evaluate_requiring_success()?;
 
