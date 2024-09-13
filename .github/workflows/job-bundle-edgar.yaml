@@ -37,6 +37,8 @@ jobs:
         run: cargo ci opendut-edgar distribution-netbird-client --target=${{ matrix.package.target }}
       - name: Download rperf
         run: cargo ci opendut-edgar distribution-rperf --target=${{ matrix.package.target }}
+      - name: Create plugins dir
+        run: cargo ci edgar distribution-plugins-dir --target=${{ matrix.package.target }}
       - name: Download licenses
         uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
         with:

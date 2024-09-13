@@ -36,7 +36,12 @@ pub enum TaskCli {
         target: TargetSelection,
     },
     #[command(hide=true)]
-    DistributionRperf{
+    DistributionRperf {
+        #[arg(long, default_value_t)]
+        target: TargetSelection,
+    },
+    #[command(hide=true)]
+    DistributionPluginsDir {
         #[arg(long, default_value_t)]
         target: TargetSelection,
     },
@@ -70,6 +75,11 @@ impl EdgarCli {
             TaskCli::DistributionRperf { target } => {
                 for target in target.iter() {
                     distribution::rperf::rperf_distribution(target)?;
+                }
+            }
+            TaskCli::DistributionPluginsDir { target } => {
+                for target in target.iter() {
+                    distribution::plugins::empty_plugins_dir(target)?
                 }
             }
             TaskCli::DistributionCopyLicenseJson(cli) => cli.default_handling(SELF_PACKAGE)?,
@@ -117,6 +127,8 @@ pub mod distribution {
         
         rperf::rperf_distribution(target)?;
         
+        plugins::empty_plugins_dir(target)?;
+
         distribution::copy_license_json::copy_license_json(SELF_PACKAGE, target, SkipGenerate::No)?;
 
         distribution::bundle::bundle_files(SELF_PACKAGE, target)?;
@@ -290,6 +302,22 @@ pub mod distribution {
         }
     }
 
+    pub mod plugins {
+        use fs_err::File;
+        use crate::tasks::distribution::out_package_dir;
+        use super::*;
+
+        pub fn empty_plugins_dir(target: Arch) -> crate::Result {
+            let plugins_dir = out_package_dir(SELF_PACKAGE, target).join("plugins");
+            fs::create_dir_all(&plugins_dir)?;
+
+            let plugins_file = plugins_dir.join("plugins.txt");
+            File::create(plugins_file)?;
+
+            Ok(())
+        }
+    }
+
     pub mod validate {
         use crate::fs::File;
 
@@ -320,16 +348,19 @@ pub mod distribution {
             let opendut_edgar_executable = edgar_dir.child(SELF_PACKAGE.ident());
             let install_dir = edgar_dir.child("install");
             let licenses_dir = edgar_dir.child("licenses");
+            let plugins_dir = edgar_dir.child("plugins");
 
             edgar_dir.dir_contains_exactly_in_order(vec![
                 &install_dir,
                 &licenses_dir,
                 &opendut_edgar_executable,
+                &plugins_dir,
             ]);
 
             opendut_edgar_executable.assert_non_empty_file();
             install_dir.assert(path::is_dir());
             licenses_dir.assert(path::is_dir());
+            plugins_dir.assert(path::is_dir());
 
             {   //validate install dir contents
                 let netbird_archive = install_dir.child("netbird.tar.gz");
@@ -352,6 +383,16 @@ pub mod distribution {
                 ]);
 
                 licenses_edgar_file.assert_non_empty_file();
+            }
+
+            {   //validate plugins dir contents
+                let plugins_file = plugins_dir.child("plugins.txt");
+
+                plugins_dir.dir_contains_exactly_in_order(vec![
+                    &plugins_file,
+                ]);
+
+                plugins_file.assert(path::is_file());
             }
 
             Ok(())
