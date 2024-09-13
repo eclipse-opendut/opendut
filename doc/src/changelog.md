@@ -6,7 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-tbd.
+### Added
+* EDGAR Setup now has support for plugins, which can perform hardware- or use-case specific setup tasks.
+
+### Changed
+* The NetBird server and client was updated to 0.28.9.
+
+### Fixed
+* EDGAR Service does not require root permissions anymore, if CAN is not used.
+
 
 ## 0.2.0
 
