@@ -2,6 +2,7 @@ use leptos::*;
 use crate::app::{ExpectGlobals, use_app_globals};
 
 use crate::clusters::components::CreateClusterButton;
+use crate::routing;
 
 #[derive(Clone)]
 struct Clusters {
@@ -33,7 +34,7 @@ pub fn ClustersCard() -> impl IntoView {
     view! {
         <div class="card">
             <div class="card-header">
-                <a class="card-header-title has-text-link" href="/clusters">"Clusters"</a>
+                <a class="card-header-title has-text-link" href=routing::path::clusters_overview>"Clusters"</a>
             </div>
             <div class="card-content">
                 <div class="level">

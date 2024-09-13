@@ -10,6 +10,20 @@ pub use routes::AppRoutes as Routes;
 use crate::components::BasePageContainer;
 use crate::util::url::UrlEncodable;
 
+pub mod path {
+    #![allow(non_upper_case_globals)]
+
+    pub const dashboard: &str = "/";
+
+    pub const about: &str = "/about";
+    pub const downloads: &str = "/downloads";
+    pub const clusters_overview: &str = "/clusters";
+    pub const error: &str = "/error";
+    pub const licenses: &str = "/licenses";
+    pub const peers_overview: &str = "/peers";
+    pub const user: &str = "/user";
+}
+
 pub enum WellKnownRoutes {
     ClustersOverview,
     ClusterConfigurator { id: ClusterId },
@@ -23,7 +37,7 @@ impl WellKnownRoutes {
     fn route(&self, base: &Url) -> Url {
         match self {
             WellKnownRoutes::ClustersOverview => {
-                base.join("/clusters")
+                base.join(path::clusters_overview)
                     .expect("ClustersOverview route should be valid.")
             },
             WellKnownRoutes::ClusterConfigurator { id } => {
@@ -31,7 +45,7 @@ impl WellKnownRoutes {
                     .expect("ClusterConfigurator route should be valid.")
             },
             WellKnownRoutes::PeersOverview => {
-                base.join("/peers")
+                base.join(path::peers_overview)
                     .expect("PeerOverview route should be valid.")
             },
             WellKnownRoutes::PeerConfigurator { id } => {
@@ -39,7 +53,7 @@ impl WellKnownRoutes {
                     .expect("PeerConfigurator route should be valid.")
             },
             WellKnownRoutes::ErrorPage { title, text, details } => {
-                let mut url = base.join("/error").unwrap();
+                let mut url = base.join(path::error).unwrap();
                 {
                     let mut query = url.query_pairs_mut();
                     query.append_pair("title", title);
@@ -63,7 +77,7 @@ mod routes {
     use crate::error::ErrorPage;
     use crate::licenses::LicensesOverview;
     use crate::peers::{PeerConfigurator, PeersOverview};
-    use crate::routing::NotFound;
+    use crate::routing::{self, NotFound};
     use crate::user::UserOverview;
     use crate::about::AboutOverview;
     use crate::downloads::Downloads;
@@ -74,16 +88,16 @@ mod routes {
             <Router>
                 <main>
                     <Routes>
-                        <Route path="/" view=|| view! { <Dashboard /> } />
-                        <Route path="/clusters" view=|| view! { <ClustersOverview /> } />
+                        <Route path=routing::path::dashboard view=|| view! { <Dashboard /> } />
+                        <Route path=routing::path::clusters_overview view=|| view! { <ClustersOverview /> } />
                         <Route path="/clusters/:id/configure/:tab" view=|| view! { <ClusterConfigurator /> } />
-                        <Route path="/peers" view=|| view! { <PeersOverview /> } />
+                        <Route path=routing::path::peers_overview view=|| view! { <PeersOverview /> } />
                         <Route path="/peers/:id/configure/:tab" view=|| view! { <PeerConfigurator /> } />
-                        <Route path="/downloads" view=|| view! { <Downloads /> } />
-                        <Route path="/user" view=|| view! { <UserOverview /> } />
-                        <Route path="/licenses" view=|| view! { <LicensesOverview /> } />
-                        <Route path="/about" view=|| view! { <AboutOverview /> } />
-                        <Route path="/error" view=|| view! { <ErrorPage /> } />
+                        <Route path=routing::path::downloads view=|| view! { <Downloads /> } />
+                        <Route path=routing::path::user view=|| view! { <UserOverview /> } />
+                        <Route path=routing::path::licenses view=|| view! { <LicensesOverview /> } />
+                        <Route path=routing::path::about view=|| view! { <AboutOverview /> } />
+                        <Route path=routing::path::error view=|| view! { <ErrorPage /> } />
                         <Route path="/*any" view=|| view! { <NotFound /> } />
                     </Routes>
                 </main>

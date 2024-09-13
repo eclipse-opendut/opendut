@@ -1,5 +1,6 @@
 use leptos::*;
 use leptos_router::use_location;
+use crate::routing;
 
 #[component]
 pub fn ErrorPage() -> impl IntoView {
@@ -41,7 +42,7 @@ pub fn ErrorPage() -> impl IntoView {
                     <p class="subtitle is-5">{ text }</p>
                 </div>
                 <div class="is-flex is-justify-content-center">
-                    <a class="button" href="/">"Return to Dashboard"</a>
+                    <a class="button" href=routing::path::dashboard>"Return to Dashboard"</a>
                 </div>
             </div>
         </div>

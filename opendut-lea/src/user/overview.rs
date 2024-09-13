@@ -31,15 +31,15 @@ pub fn UserOverview() -> impl IntoView {
                 }
             }
             Some(auth_data) => {
-                let user_name  = auth_data.preferred_username;
-                let name  = auth_data.name;
-                let email  = auth_data.email;
-                let roles  = auth_data.roles.into_iter().filter(| role | {
-                        DEFAULT_KEYCLOAK_ROLES.contains(&role.as_str()).not()
-                    }).collect::<Vec<_>>().join(", ");
+                let user_name = auth_data.preferred_username;
+                let name = auth_data.name;
+                let email = auth_data.email;
+                let roles = auth_data.roles.into_iter().filter(| role | {
+                    DEFAULT_KEYCLOAK_ROLES.contains(&role.as_str()).not()
+                }).collect::<Vec<_>>().join(", ");
                 let groups  = auth_data.groups.into_iter().map(| group | {
-                        group.replace('/', "")
-                    }).collect::<Vec<_>>().join(", ");
+                    group.replace('/', "")
+                }).collect::<Vec<_>>().join(", ");
 
                 view! {
                     <CreateTableView

@@ -2,6 +2,7 @@ use leptos::*;
 use opendut_types::peer::state::PeerState;
 use crate::app::{ExpectGlobals, use_app_globals};
 use crate::peers::components::CreatePeerButton;
+use crate::routing;
 
 #[derive(Clone)]
 struct Peers {
@@ -41,7 +42,7 @@ pub fn PeersCard() -> impl IntoView {
     view! {
         <div class="card">
             <div class="card-header">
-                <a class="card-header-title has-text-link" href="/peers">"Peers"</a>
+                <a class="card-header-title has-text-link" href=routing::path::peers_overview>"Peers"</a>
             </div>
             <div class="card-content">
                 <div class="level">

@@ -1,15 +1,15 @@
-use leptos::*;
-use leptos::html::Div;
-use leptos_use::on_click_outside;
-use opendut_types::peer::{PeerDescriptor};
-use opendut_types::cluster::ClusterConfiguration;
-use opendut_types::peer::state::PeerState;
-use crate::app::{ExpectGlobals, use_app_globals};
-use crate::components::{BasePageContainer, IconButton, ButtonColor, ButtonState, FontAwesomeIcon, Breadcrumb, ButtonSize, Initialized};
+use crate::app::{use_app_globals, ExpectGlobals};
 use crate::components::health;
 use crate::components::health::Health;
+use crate::components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Initialized};
 use crate::peers::components::CreatePeerButton;
 use crate::util;
+use leptos::html::Div;
+use leptos::*;
+use leptos_use::on_click_outside;
+use opendut_types::cluster::ClusterConfiguration;
+use opendut_types::peer::state::PeerState;
+use opendut_types::peer::PeerDescriptor;
 
 #[component(transparent)]
 pub fn PeersOverview() -> impl IntoView {

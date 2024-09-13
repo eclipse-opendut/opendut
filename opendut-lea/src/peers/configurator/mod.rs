@@ -1,16 +1,16 @@
-use std::collections::{HashMap};
+use crate::app::{use_app_globals, ExpectGlobals};
+use crate::components::use_active_tab;
+use crate::components::{BasePageContainer, Breadcrumb, Initialized, UserInputError, UserInputValue};
+use crate::peers::configurator::components::Controls;
+use crate::peers::configurator::tabs::{DevicesTab, ExecutorTab, GeneralTab, NetworkTab, SetupTab, TabIdentifier};
+use crate::peers::configurator::types::{UserContainerEnv, UserDeviceConfiguration, UserNetworkInterface, UserPeerConfiguration, UserPeerExecutor, UserPeerExecutorKind, UserPeerNetwork};
+use crate::routing::{navigate_to, WellKnownRoutes};
+use crate::util;
 use leptos::*;
 use leptos_router::use_params_map;
 use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorKind};
 use opendut_types::peer::PeerId;
-use crate::app::{ExpectGlobals, use_app_globals};
-use crate::components::{BasePageContainer, Breadcrumb, Initialized, UserInputError, UserInputValue};
-use crate::components::use_active_tab;
-use crate::peers::configurator::components::Controls;
-use crate::peers::configurator::tabs::{DevicesTab, ExecutorTab, GeneralTab, NetworkTab, SetupTab, TabIdentifier};
-use crate::peers::configurator::types::{UserDeviceConfiguration, UserPeerConfiguration, UserNetworkInterface, UserPeerExecutor, UserContainerEnv, UserPeerNetwork, UserPeerExecutorKind};
-use crate::routing::{navigate_to, WellKnownRoutes};
-use crate::util;
+use std::collections::HashMap;
 
 mod components;
 mod tabs;

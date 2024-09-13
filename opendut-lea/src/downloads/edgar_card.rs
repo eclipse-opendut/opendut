@@ -1,5 +1,6 @@
 use leptos::*;
 use opendut_types::proto::util::VersionInfo;
+use crate::routing;
 
 #[component]
 pub fn EdgarCard(
@@ -56,7 +57,7 @@ pub fn EdgarCard(
                         <div class="mt-2">"Setup-Strings for each peer can be retrieved from the peer's specific configuration page."</div>
                         <div class="mt-2">
                             "To do so, select the peer from the "
-                            <a href="/peers">"peer overview page"</a>
+                            <a href=routing::path::peers_overview>"peer overview page"</a>
                             "."
                         </div>
                     </div>

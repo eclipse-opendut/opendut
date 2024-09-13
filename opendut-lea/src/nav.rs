@@ -5,7 +5,7 @@ use leptos_use::on_click_outside;
 use opendut_auth::public::OptionalAuthData;
 
 use crate::components::{LeaAuthenticated, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Initialized};
-use crate::use_context;
+use crate::{routing, use_context};
 use crate::{WriteSignal, ReadSignal};
 
 #[component(transparent)]
@@ -58,19 +58,19 @@ pub fn Navbar() -> impl IntoView {
                         <div class="dut-nav-flyout-container mt-2 has-background-light left--3">
                             <div class="dut-nav-flyout-content">
                                 <div>
-                                    <a class="dut-nav-flyout-item" href="/">
+                                    <a class="dut-nav-flyout-item" href=routing::path::dashboard>
                                         <i class="fa-solid fa-gauge-high fa-lg pr-1" />
                                         <span class="ml-2 is-size-6">"Dashboard"</span>
                                     </a>
-                                    <a class="dut-nav-flyout-item" href="/clusters">
+                                    <a class="dut-nav-flyout-item" href=routing::path::clusters_overview>
                                         <i class="fa-solid fa-circle-nodes fa-lg pr-1" />
                                         <span class="ml-2 is-size-6">"Clusters"</span>
                                     </a>
-                                    <a class="dut-nav-flyout-item" href="/peers">
+                                    <a class="dut-nav-flyout-item" href=routing::path::peers_overview>
                                         <i class="fa-solid fa-microchip fa-lg pr-1" />
                                         <span class="ml-2 is-size-6">"Peers"</span>
                                     </a>
-                                    <a class="dut-nav-flyout-item" href="/downloads">
+                                    <a class="dut-nav-flyout-item" href=routing::path::downloads>
                                         <i class="fa-solid fa-download fa-lg pr-1" />
                                         <span class="ml-2 is-size-6">"Downloads"</span>
                                     </a>
@@ -78,10 +78,10 @@ pub fn Navbar() -> impl IntoView {
                                 <div>
                                     <hr class="dut-nav-flyout-divider" />
                                     <div class="px-2">
-                                        <a class="is-size-7" href="/about">"About"</a>
+                                        <a class="is-size-7" href=routing::path::about>"About"</a>
                                     </div>
                                     <div class="px-2">
-                                        <a class="is-size-7" href="/licenses">"Licenses"</a>
+                                        <a class="is-size-7" href=routing::path::licenses>"Licenses"</a>
                                     </div>
                                 </div>
                             </div>
@@ -89,7 +89,7 @@ pub fn Navbar() -> impl IntoView {
                     </div>
                 </div>
                 <div class="column">
-                    <a class="" href="/"><span class="dut-title is-3">"openDuT"</span></a>
+                    <a class="" href=routing::path::dashboard><span class="dut-title is-3">"openDuT"</span></a>
                 </div>
                 <div class="column is-narrow">
                     <div class="dut-nav-flyout is-right" class=("is-active", move || profile_visible.get())>
@@ -106,17 +106,18 @@ pub fn Navbar() -> impl IntoView {
                         <div class="dut-nav-flyout-container mt-2 has-background-light right--3">
                             <div class="dut-nav-flyout-content">
                                 <div>
-                                    <LeaAuthenticated unauthenticated=move || {
-                                        view! {
-                                            <LoginLink class="dut-nav-flyout-item">
-                                                <span class="ml-2 is-size-6">"Sign in"</span>
-                                            </LoginLink>
+                                    <LeaAuthenticated
+                                        unauthenticated=move || {
+                                            view! {
+                                                <LoginLink class="dut-nav-flyout-item">
+                                                    <span class="ml-2 is-size-6">"Sign in"</span>
+                                                </LoginLink>
 
-                                        }
+                                            }
                                         }
                                         disabled_auth=move || {
                                             view! {
-                                                <a href="/" class="dut-nav-flyout-item">
+                                                <a href=routing::path::dashboard class="dut-nav-flyout-item">
                                                     <span class="ml-2 is-size-6">"Sign in"</span>
                                                 </a>
                                             }
@@ -157,7 +158,7 @@ pub fn LoggedInUser() -> impl IntoView {
 
     view! {
         <span class="ml-1 is-size-6">"Logged in as: " { user_name }</span>
-        <a href="/user" class="dut-nav-flyout-item">
+        <a href=routing::path::user class="dut-nav-flyout-item">
             <span class="ml-1 is-size-6">"Profile"</span>
         </a>
     }

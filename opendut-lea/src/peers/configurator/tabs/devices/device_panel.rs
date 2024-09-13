@@ -4,6 +4,7 @@ use opendut_types::util::net::NetworkInterfaceId;
 use uuid::Uuid;
 use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, DoorhangerButton, FontAwesomeIcon, IconButton, ReadOnlyInput, Toggled, UserInput, UserInputValue, UserTextarea};
 use crate::peers::configurator::types::{EMPTY_DEVICE_NAME_ERROR_MESSAGE, UserDeviceConfiguration, UserPeerConfiguration};
+use crate::routing;
 
 #[component]
 pub fn DevicePanel<OnDeleteFn>(
@@ -69,11 +70,11 @@ where
 
         if used_clusters > 0 {
             let text = view! {
-                        <div style="white-space: nowrap">
-                            "Device can not be removed while it is configured in "{used_clusters}
-                            <a class="has-text-link" href="/clusters">" cluster(s)"</a>
-                        </div>
-                    };
+                <div style="white-space: nowrap">
+                    "Device can not be removed while it is configured in "{used_clusters}
+                    <a class="has-text-link" href=routing::path::clusters_overview>" cluster(s)"</a>
+                </div>
+            };
             view! {
                 <DoorhangerButton
                     icon=FontAwesomeIcon::TrashCan

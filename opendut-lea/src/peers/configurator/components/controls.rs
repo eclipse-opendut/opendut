@@ -9,6 +9,7 @@ use opendut_types::peer::{PeerDescriptor, PeerId};
 use crate::app::{use_app_globals, ExpectGlobals};
 use crate::components::{use_toaster, ButtonColor, ButtonSize, ButtonState, ButtonStateSignalProvider, ConfirmationButton, FontAwesomeIcon, IconButton, Toast, DoorhangerButton};
 use crate::peers::configurator::types::UserPeerConfiguration;
+use crate::routing;
 use crate::routing::{navigate_to, WellKnownRoutes};
 
 #[component]
@@ -133,7 +134,7 @@ fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl In
             let text = view! {
                         <div style="white-space: nowrap">
                             "Peer can not be removed while it is configured in "{used_clusters_length}
-                            <a class="has-text-link" href="/clusters">" cluster(s)"</a>
+                            <a class="has-text-link" href=routing::path::clusters_overview>" cluster(s)"</a>
                         </div>
                     };
             view! {
