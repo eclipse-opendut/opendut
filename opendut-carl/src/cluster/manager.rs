@@ -74,11 +74,9 @@ impl ClusterManager {
     #[tracing::instrument(skip(self), level="trace")]
     pub async fn deploy(&mut self, cluster_id: ClusterId) -> Result<(), DeployClusterError> {
 
-        let cluster_config = self.resources_manager.resources(|resources| {
-            resources.get::<ClusterConfiguration>(cluster_id)
-        }).await
-        .map_err(|cause| DeployClusterError::Internal { cluster_id, cause: cause.to_string() })?
-        .ok_or(DeployClusterError::ClusterConfigurationNotFound(cluster_id))?;
+        let cluster_config = self.resources_manager.get::<ClusterConfiguration>(cluster_id).await
+            .map_err(|cause| DeployClusterError::Internal { cluster_id, cause: cause.to_string() })?
+            .ok_or(DeployClusterError::ClusterConfigurationNotFound(cluster_id))?;
 
         let cluster_name = cluster_config.name;
 

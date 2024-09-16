@@ -122,28 +122,22 @@ impl PeerMessagingBroker {
         }).await
         .map_err(|source| OpenError::Persistence { peer_id, source })??;
 
-        let maybe_old_configuration = self.resources_manager.get::<OldPeerConfiguration>(peer_id).await
-            .map_err(|source| OpenError::Persistence { peer_id, source })?;
-        let maybe_configuration = self.resources_manager.get::<PeerConfiguration>(peer_id).await
-            .map_err(|source| OpenError::Persistence { peer_id, source })?;
+        let old_peer_configuration = self.resources_manager.get::<OldPeerConfiguration>(peer_id).await
+            .map_err(|source| OpenError::Persistence { peer_id, source })?
+            .ok_or(OpenError::SendApplyPeerConfiguration { peer_id, cause: String::from("No OldPeerConfiguration found for peer") })?;
 
-        if let Some(old_configuration) = maybe_old_configuration {
-            if let Some(configuration) = maybe_configuration {
+        let peer_configuration = self.resources_manager.get::<PeerConfiguration>(peer_id).await
+            .map_err(|source| OpenError::Persistence { peer_id, source })?
+            .ok_or(OpenError::SendApplyPeerConfiguration { peer_id, cause: String::from("No PeerConfiguration found for peer") })?;
 
-                self.send_to_peer(peer_id, downstream::Message::ApplyPeerConfiguration(
-                    ApplyPeerConfiguration {
-                        old_configuration: Some(old_configuration.into()),
-                        configuration: Some(configuration.into()),
-                    }
-                )).await
-                .map_err(|cause| OpenError::SendApplyPeerConfiguration { peer_id, cause: cause.to_string() })?;
+        self.send_to_peer(peer_id, downstream::Message::ApplyPeerConfiguration(
+            ApplyPeerConfiguration {
+                old_configuration: Some(old_peer_configuration.into()),
+                configuration: Some(peer_configuration.into()),
             }
-            else {
-                return Err(OpenError::SendApplyPeerConfiguration { peer_id, cause: String::from("No PeerConfiguration found for peer") });
-            }
-        } else {
-            return Err(OpenError::SendApplyPeerConfiguration { peer_id, cause: String::from("No OldPeerConfiguration found for peer") });
-        }
+        )).await
+        .map_err(|cause| OpenError::SendApplyPeerConfiguration { peer_id, cause: cause.to_string() })?;
+
 
         let timeout_duration = self.options.peer_disconnect_timeout;
 
