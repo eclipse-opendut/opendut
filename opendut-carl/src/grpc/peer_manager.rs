@@ -13,11 +13,10 @@ use opendut_carl_api::proto::services::peer_manager::*;
 use opendut_carl_api::proto::services::peer_manager::peer_manager_server::{PeerManager as PeerManagerService, PeerManagerServer};
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::cleo::{CleoId};
-use opendut_types::util::net::NetworkInterfaceName;
 use opendut_util::telemetry::logging::NonDisclosingRequestExtension;
 
 use crate::actions;
-use crate::actions::{DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, GetPeerStateParams, ListDevicesParams, ListPeerDescriptorsParams, StorePeerDescriptorOptions, StorePeerDescriptorParams};
+use crate::actions::{DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, GetPeerStateParams, ListDevicesParams, ListPeerDescriptorsParams, StorePeerDescriptorParams};
 use crate::grpc::extract;
 use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
@@ -28,7 +27,6 @@ pub struct PeerManagerFacade {
     carl_url: Url,
     ca: Pem,
     oidc_registration_client: Option<RegistrationClientRef>,
-    options: PeerManagerFacadeOptions,
 }
 
 impl PeerManagerFacade {
@@ -39,7 +37,6 @@ impl PeerManagerFacade {
         carl_url: Url,
         ca: Pem,
         oidc_registration_client: Option<RegistrationClientRef>,
-        options: PeerManagerFacadeOptions
     ) -> Self {
         PeerManagerFacade {
             resources_manager,
@@ -47,7 +44,6 @@ impl PeerManagerFacade {
             carl_url,
             ca,
             oidc_registration_client,
-            options
         }
     }
 
@@ -71,9 +67,6 @@ impl PeerManagerService for PeerManagerFacade {
             resources_manager: Arc::clone(&self.resources_manager),
             vpn: Clone::clone(&self.vpn),
             peer_descriptor: Clone::clone(&peer_descriptor),
-            options: StorePeerDescriptorOptions {
-                bridge_name_default: Clone::clone(&self.options.bridge_name_default),
-            }
         }).await;
 
         match result {
@@ -294,24 +287,6 @@ impl PeerManagerService for PeerManagerFacade {
     }
 }
 
-#[derive(Clone)]
-pub struct PeerManagerFacadeOptions {
-    pub bridge_name_default: NetworkInterfaceName,
-}
-impl PeerManagerFacadeOptions {
-    pub fn load(config: &config::Config) -> Result<Self, PeerManagerFacadeOptionsLoadError> {
-        let bridge_name_default = config.get_string("peer.ethernet.bridge.name.default")
-            .map_err(|cause| PeerManagerFacadeOptionsLoadError { message: cause.to_string() })?;
-        
-        let bridge_name_default = NetworkInterfaceName::try_from(bridge_name_default)
-            .map_err(|cause| PeerManagerFacadeOptionsLoadError { message: cause.to_string() })?;
-
-        Ok(PeerManagerFacadeOptions {
-            bridge_name_default,
-        })
-    }
-}
-
 #[derive(thiserror::Error, Debug)]
 #[error("Error while loading PeerManagerFacadeOptions: {message}")]
 pub struct PeerManagerFacadeOptionsLoadError {
@@ -352,8 +327,6 @@ mod tests {
     #[tokio::test]
     async fn test_successful_create_delete(#[future] registration_client: RegistrationClientRef) -> Result<()> {
 
-        let settings = crate::settings::load_defaults()?;
-
         let resources_manager = ResourcesManager::new_in_memory();
         let testee = PeerManagerFacade::new(
             Arc::clone(&resources_manager),
@@ -361,7 +334,6 @@ mod tests {
             Url::parse("https://example.com:1234").unwrap(),
             get_cert(),
             Some(registration_client.await),
-            PeerManagerFacadeOptions::load(&settings.config)?
         );
 
         let peer_id = PeerId::random();
@@ -456,8 +428,6 @@ mod tests {
     #[tokio::test]
     async fn register_fails_when_no_id_specified(#[future] registration_client: RegistrationClientRef) -> Result<()> {
 
-        let settings = crate::settings::load_defaults()?;
-        
         let resources_manager = ResourcesManager::new_in_memory();
         let testee = PeerManagerFacade::new(
             Arc::clone(&resources_manager),
@@ -465,7 +435,6 @@ mod tests {
             Url::parse("https://example.com:1234").unwrap(),
             get_cert(),
             Some(registration_client.await),
-            PeerManagerFacadeOptions::load(&settings.config)?
         );
 
         let create_peer_reply = testee.store_peer_descriptor(Request::new(
@@ -499,8 +468,6 @@ mod tests {
     #[tokio::test]
     async fn unregister_fails_when_no_id_specified(#[future] registration_client: RegistrationClientRef) -> Result<()> {
 
-        let settings = crate::settings::load_defaults()?;
-        
         let resources_manager = ResourcesManager::new_in_memory();
         let testee = PeerManagerFacade::new(
             Arc::clone(&resources_manager),
@@ -508,7 +475,6 @@ mod tests {
             Url::parse("https://example.com:1234").unwrap(),
             get_cert(),
             Some(registration_client.await),
-            PeerManagerFacadeOptions::load(&settings.config)?
         );
 
         let delete_peer_reply = testee.delete_peer_descriptor(Request::new(

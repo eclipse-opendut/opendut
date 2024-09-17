@@ -4,15 +4,23 @@ use crate::resources::manager::ResourcesManagerRef;
 use crate::resources::storage::ResourcesStorageApi;
 use opendut_carl_api::proto::services::peer_messaging_broker::{downstream, ApplyPeerConfiguration};
 use opendut_types::cluster::ClusterAssignment;
-use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
+use opendut_types::peer::configuration::{OldPeerConfiguration, ParameterTarget, PeerConfiguration};
 use opendut_types::peer::state::{PeerBlockedState, PeerState, PeerUpState};
-use opendut_types::peer::PeerId;
+use opendut_types::peer::{PeerDescriptor, PeerId};
+use opendut_types::peer::ethernet::EthernetBridge;
+use opendut_types::util::net::NetworkInterfaceName;
 
 pub struct AssignClusterParams {
     pub resources_manager: ResourcesManagerRef,
     pub peer_messaging_broker: PeerMessagingBrokerRef,
     pub peer_id: PeerId,
     pub cluster_assignment: ClusterAssignment,
+    pub options: AssignClusterOptions,
+}
+
+#[derive(Clone)]
+pub struct AssignClusterOptions {
+    pub bridge_name_default: NetworkInterfaceName
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -36,9 +44,30 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
         resources.insert(peer_id, Clone::clone(&old_peer_configuration))
             .map_err(|source| AssignClusterError::Persistence { peer_id, source })?;
 
-        let peer_configuration = resources.get::<PeerConfiguration>(peer_id)
-            .map_err(|source| AssignClusterError::Persistence { peer_id, source })?
-            .ok_or(AssignClusterError::PeerNotFound(peer_id))?;
+        let peer_configuration = {
+            let peer_descriptor = resources.get::<PeerDescriptor>(peer_id)
+                .map_err(|source| AssignClusterError::Persistence { peer_id, source })?
+                .ok_or(AssignClusterError::PeerNotFound(peer_id))?;
+
+            let mut peer_configuration = resources.get::<PeerConfiguration>(peer_id)
+                .map_err(|source| AssignClusterError::Persistence { peer_id, source })?
+                .unwrap_or_default();
+
+            for executor in Clone::clone(&peer_descriptor.executors).executors.into_iter() {
+                peer_configuration.insert(executor, ParameterTarget::Present); //TODO not always Present
+            }
+
+            {
+                let bridge = peer_descriptor.clone().network.bridge_name
+                    .unwrap_or(params.options.bridge_name_default);
+                let bridge = EthernetBridge { name: bridge };
+
+                peer_configuration.insert(bridge, ParameterTarget::Present); //TODO not always Present
+            }
+
+            peer_configuration
+        };
+
 
         let peer_state = resources.get::<PeerState>(peer_id)
             .map_err(|source| AssignClusterError::Persistence { peer_id, source })?
@@ -86,6 +115,9 @@ mod tests {
     use std::net::IpAddr;
     use std::str::FromStr;
     use std::sync::Arc;
+    use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkDescriptor};
+    use opendut_types::peer::executor::ExecutorDescriptors;
+    use opendut_types::topology::Topology;
 
     #[rstest]
     #[tokio::test]
@@ -105,6 +137,7 @@ mod tests {
         };
         let peer_configuration = PeerConfiguration::default();
         resources_manager.resources_mut(|resources| {
+            resources.insert(peer_id, peer_descriptor())?;
             resources.insert(peer_id, Clone::clone(&old_peer_configuration))?;
             resources.insert(peer_id, Clone::clone(&peer_configuration))
         }).await??;
@@ -133,31 +166,54 @@ mod tests {
             peer_messaging_broker: Arc::clone(&peer_messaging_broker),
             peer_id,
             cluster_assignment: Clone::clone(&cluster_assignment),
+            options: AssignClusterOptions {
+                bridge_name_default: NetworkInterfaceName::try_from("br-opendut").unwrap(),
+            }
         }).await?;
 
 
         let old_peer_configuration = OldPeerConfiguration {
             cluster_assignment: Some(cluster_assignment),
-            ..old_peer_configuration
         };
-
         assert_that!(
             resources_manager.get::<OldPeerConfiguration>(peer_id).await?.as_ref(),
             some(eq(&old_peer_configuration))
         );
 
+        let mut peer_configuration = PeerConfiguration {
+            executors: vec![],
+            ethernet_bridges: vec![],
+        };
+        peer_configuration.insert(EthernetBridge { name: NetworkInterfaceName::try_from("br-opendut-1")? }, ParameterTarget::Present);
 
         let received = receiver.recv().await.unwrap()
             .message.unwrap();
 
-        assert_that!(
-            received,
-            eq(&downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
-                old_configuration: Some(Clone::clone(&old_peer_configuration).into()),
-                configuration: Some(peer_configuration.into()),
-            }))
-        );
+        let downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
+            old_configuration, configuration
+        }) = received else { panic!() };
+
+        assert_that!(OldPeerConfiguration::try_from(old_configuration.unwrap())?, eq(&old_peer_configuration));
+        assert_that!(PeerConfiguration::try_from(configuration.unwrap())?, eq(&peer_configuration));
 
         Ok(())
+    }
+
+    fn peer_descriptor() -> PeerDescriptor {
+        PeerDescriptor {
+            id: PeerId::random(),
+            name: PeerName::try_from("PeerA").unwrap(),
+            location: PeerLocation::try_from("Ulm").ok(),
+            network: PeerNetworkDescriptor {
+                interfaces: vec![],
+                bridge_name: Some(NetworkInterfaceName::try_from("br-opendut-1").unwrap()),
+            },
+            topology: Topology {
+                devices: vec![],
+            },
+            executors: ExecutorDescriptors {
+                executors: vec![],
+            }
+        }
     }
 }

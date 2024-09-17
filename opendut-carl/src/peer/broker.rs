@@ -124,11 +124,11 @@ impl PeerMessagingBroker {
 
         let old_peer_configuration = self.resources_manager.get::<OldPeerConfiguration>(peer_id).await
             .map_err(|source| OpenError::Persistence { peer_id, source })?
-            .ok_or(OpenError::SendApplyPeerConfiguration { peer_id, cause: String::from("No OldPeerConfiguration found for peer") })?;
+            .unwrap_or_default(); //PeerConfiguration is not persisted across restarts
 
         let peer_configuration = self.resources_manager.get::<PeerConfiguration>(peer_id).await
             .map_err(|source| OpenError::Persistence { peer_id, source })?
-            .ok_or(OpenError::SendApplyPeerConfiguration { peer_id, cause: String::from("No PeerConfiguration found for peer") })?;
+            .unwrap_or_default(); //PeerConfiguration is not persisted across restarts
 
         self.send_to_peer(peer_id, downstream::Message::ApplyPeerConfiguration(
             ApplyPeerConfiguration {
@@ -389,10 +389,6 @@ mod tests {
         let resources_manager = ResourcesManager::new_in_memory();
 
         let peer_id = PeerId::random();
-        resources_manager.insert(peer_id, OldPeerConfiguration {
-            cluster_assignment: None,
-        }).await?;
-        resources_manager.insert(peer_id, PeerConfiguration::default()).await?;
 
         Ok(Fixture {
             resources_manager,

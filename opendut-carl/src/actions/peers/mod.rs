@@ -17,7 +17,6 @@ mod testing {
     use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
-    use crate::actions::StorePeerDescriptorOptions;
     use crate::vpn::Vpn;
 
     pub struct Fixture {
@@ -82,13 +81,6 @@ mod testing {
             peer_a_descriptor,
             peer_a_device_1,
             peer_a_device_2,
-        }
-    }
-
-    #[fixture]
-    pub fn store_peer_descriptor_options() -> StorePeerDescriptorOptions {
-        StorePeerDescriptorOptions {
-            bridge_name_default: NetworkInterfaceName::try_from("br-opendut").unwrap(),
         }
     }
 }

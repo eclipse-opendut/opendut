@@ -31,7 +31,7 @@ use util::in_memory_cache::CustomInMemoryCache;
 use crate::auth::grpc_auth_layer::GrpcAuthenticationLayer;
 use crate::auth::json_web_key::JwkCacheValue;
 use crate::cluster::manager::{ClusterManager, ClusterManagerOptions, ClusterManagerRef};
-use crate::grpc::{ClusterManagerFacade, MetadataProviderFacade, PeerManagerFacade, PeerManagerFacadeOptions, PeerMessagingBrokerFacade};
+use crate::grpc::{ClusterManagerFacade, MetadataProviderFacade, PeerManagerFacade, PeerMessagingBrokerFacade};
 use crate::http::router;
 use crate::http::state::{CarlInstallDirectory, HttpState, LeaConfig, LeaIdentityProviderConfig};
 use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerOptions, PeerMessagingBrokerRef};
@@ -163,14 +163,12 @@ pub async fn create(settings: LoadedConfig) -> Result<()> {
         let cluster_manager_facade = ClusterManagerFacade::new(Arc::clone(&cluster_manager), Arc::clone(&resources_manager));
         let metadata_provider_facade = MetadataProviderFacade::new();
 
-        let peer_manager_facade_options = PeerManagerFacadeOptions::load(&settings).expect("Error while loading PeerManagerFacadeOptions.");
         let peer_manager_facade = PeerManagerFacade::new(
             Arc::clone(&resources_manager),
             vpn,
             Clone::clone(&carl_url.value()),
             ca.clone(),
             oidc_registration_client,
-            peer_manager_facade_options
         );
         let peer_messaging_broker_facade = PeerMessagingBrokerFacade::new(Arc::clone(&peer_messaging_broker));
 

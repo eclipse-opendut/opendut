@@ -5,7 +5,7 @@ use crate::peer::executor::ExecutorDescriptor;
 mod parameter;
 pub use parameter::*;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct OldPeerConfiguration {
     pub cluster_assignment: Option<ClusterAssignment>,
     // Please add new fields into PeerConfiguration instead.
@@ -27,6 +27,6 @@ impl PeerConfiguration {
         };
 
         T::peer_configuration_field(self)
-            .push(parameter);
+            .push(parameter); //TODO don't insert, if already contained? Or maybe set the previous element absent?
     }
 }

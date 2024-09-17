@@ -49,8 +49,8 @@ pub async fn get_peer_state(params: GetPeerStateParams) -> Result<PeerState, Get
 #[cfg(test)]
 mod tests {
     use crate::actions;
-    use crate::actions::peers::testing::{fixture, store_peer_descriptor_options, Fixture};
-    use crate::actions::{get_peer_state, GetPeerStateParams, StorePeerDescriptorOptions, StorePeerDescriptorParams};
+    use crate::actions::peers::testing::{fixture, Fixture};
+    use crate::actions::{get_peer_state, GetPeerStateParams, StorePeerDescriptorParams};
     use crate::resources::manager::{ResourcesManager, ResourcesManagerRef};
     use googletest::prelude::*;
     use opendut_carl_api::carl::peer::GetPeerStateError;
@@ -61,25 +61,24 @@ mod tests {
 
     #[rstest]
     #[tokio::test]
-    async fn should_get_peer_state_down_in_memory(fixture: Fixture, store_peer_descriptor_options: StorePeerDescriptorOptions) -> anyhow::Result<()> {
+    async fn should_get_peer_state_down_in_memory(fixture: Fixture) -> anyhow::Result<()> {
         let resources_manager = ResourcesManager::new_in_memory();
-        should_get_peer_state(resources_manager, fixture, store_peer_descriptor_options).await
+        should_get_peer_state(resources_manager, fixture).await
     }
 
     #[test_with::no_env(SKIP_DATABASE_CONTAINER_TESTS)]
     #[rstest]
     #[tokio::test]
-    async fn should_get_peer_state_down_in_database(fixture: Fixture, store_peer_descriptor_options: StorePeerDescriptorOptions) -> anyhow::Result<()> {
+    async fn should_get_peer_state_down_in_database(fixture: Fixture) -> anyhow::Result<()> {
         let db = crate::persistence::database::testing::spawn_and_connect_resources_manager().await?;
-        should_get_peer_state(db.resources_manager, fixture, store_peer_descriptor_options).await
+        should_get_peer_state(db.resources_manager, fixture).await
     }
 
-    async fn should_get_peer_state(resources_manager: ResourcesManagerRef, fixture: Fixture, store_peer_descriptor_options: StorePeerDescriptorOptions) -> anyhow::Result<()> {
+    async fn should_get_peer_state(resources_manager: ResourcesManagerRef, fixture: Fixture) -> anyhow::Result<()> {
         actions::store_peer_descriptor(StorePeerDescriptorParams {
             resources_manager: Arc::clone(&resources_manager),
             vpn: fixture.vpn,
             peer_descriptor: fixture.peer_a_descriptor,
-            options: store_peer_descriptor_options,
         }).await?;
 
         assert_that!(resources_manager.get::<PeerState>(fixture.peer_a_id).await?.as_ref(), none());
@@ -96,25 +95,24 @@ mod tests {
 
     #[rstest]
     #[tokio::test]
-    async fn should_throw_error_if_peer_not_found_in_memory(fixture: Fixture, store_peer_descriptor_options: StorePeerDescriptorOptions) -> anyhow::Result<()> {
+    async fn should_throw_error_if_peer_not_found_in_memory(fixture: Fixture) -> anyhow::Result<()> {
         let resources_manager = ResourcesManager::new_in_memory();
-        should_throw_error_if_peer_not_found(resources_manager, fixture, store_peer_descriptor_options).await
+        should_throw_error_if_peer_not_found(resources_manager, fixture).await
     }
 
     #[test_with::no_env(SKIP_DATABASE_CONTAINER_TESTS)]
     #[rstest]
     #[tokio::test]
-    async fn should_throw_error_if_peer_not_found_in_database(fixture: Fixture, store_peer_descriptor_options: StorePeerDescriptorOptions) -> anyhow::Result<()> {
+    async fn should_throw_error_if_peer_not_found_in_database(fixture: Fixture) -> anyhow::Result<()> {
         let db = crate::persistence::database::testing::spawn_and_connect_resources_manager().await?;
-        should_throw_error_if_peer_not_found(db.resources_manager, fixture, store_peer_descriptor_options).await
+        should_throw_error_if_peer_not_found(db.resources_manager, fixture).await
     }
 
-    async fn should_throw_error_if_peer_not_found(resources_manager: ResourcesManagerRef, fixture: Fixture, store_peer_descriptor_options: StorePeerDescriptorOptions) -> anyhow::Result<()> {
+    async fn should_throw_error_if_peer_not_found(resources_manager: ResourcesManagerRef, fixture: Fixture) -> anyhow::Result<()> {
         actions::store_peer_descriptor(StorePeerDescriptorParams {
             resources_manager: Arc::clone(&resources_manager),
             vpn: fixture.vpn,
             peer_descriptor: fixture.peer_a_descriptor,
-            options: store_peer_descriptor_options,
         }).await?;
 
         let not_existing_peer_id = PeerId::random();

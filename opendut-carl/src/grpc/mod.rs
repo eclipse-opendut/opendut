@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 pub use cluster_manager::ClusterManagerFacade;
 pub use metadata_provider::MetadataProviderFacade;
-pub use peer_manager::{PeerManagerFacade, PeerManagerFacadeOptions};
+pub use peer_manager::PeerManagerFacade;
 pub use peer_messaging_broker::PeerMessagingBrokerFacade;
 
 mod cluster_manager;

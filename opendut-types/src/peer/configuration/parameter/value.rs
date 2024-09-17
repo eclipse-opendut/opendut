@@ -79,7 +79,10 @@ mod tests {
 
     #[test]
     fn insert_value_in_peer_configuration() {
-        let mut peer_configuration = PeerConfiguration::default();
+        let mut peer_configuration = PeerConfiguration {
+            executors: vec![],
+            ethernet_bridges: vec![],
+        };
 
         let value = ExecutorDescriptor {
             id: ExecutorId::random(),

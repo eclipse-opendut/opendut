@@ -11,11 +11,11 @@ use opendut_types::cluster::{ClusterAssignment, ClusterConfiguration, ClusterDep
 use opendut_types::peer::state::{PeerState, PeerUpState};
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
-use opendut_types::util::net::NetworkInterfaceDescriptor;
+use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
 use opendut_types::util::Port;
 
 use crate::actions;
-use crate::actions::{AssignClusterParams, DeleteClusterDeploymentParams, GetPeerStateParams, ListPeerDescriptorsParams, StoreClusterConfigurationParams};
+use crate::actions::{AssignClusterOptions, AssignClusterParams, DeleteClusterDeploymentParams, GetPeerStateParams, ListPeerDescriptorsParams, StoreClusterConfigurationParams};
 use crate::peer::broker::PeerMessagingBrokerRef;
 use crate::persistence::error::PersistenceResult;
 use crate::resources::manager::ResourcesManagerRef;
@@ -165,6 +165,11 @@ impl ClusterManager {
         };
         let member_assignments: Vec<PeerClusterAssignment> = member_assignments.into_iter().collect::<Result<_, _>>()?;
 
+
+        let assign_cluster_options = AssignClusterOptions {
+            bridge_name_default: self.options.bridge_name_default.clone(),
+        };
+
         for member_id in member_ids {
             actions::assign_cluster(AssignClusterParams {
                 resources_manager: Arc::clone(&self.resources_manager),
@@ -175,6 +180,7 @@ impl ClusterManager {
                     leader: cluster_config.leader,
                     assignments: member_assignments.clone(),
                 },
+                options: assign_cluster_options.clone(),
             }).await
             .map_err(|cause| {
                 let message = format!("Failure while assigning cluster <{cluster_id}> to peer <{member_id}>.");
@@ -326,15 +332,24 @@ fn determine_member_interface_mapping(
 pub struct ClusterManagerOptions {
     pub can_server_port_range_start: u16,
     pub can_server_port_range_end: u16,
+    pub bridge_name_default: NetworkInterfaceName,
 }
 impl ClusterManagerOptions {
     pub fn load(config: &config::Config) -> Result<Self, opendut_util::settings::LoadError> {
         let can_server_port_range_start = config.get::<u16>("peer.can.server_port_range_start")?;
         let can_server_port_range_end = config.get::<u16>("peer.can.server_port_range_end")?;
 
+        let field = "peer.ethernet.bridge.name.default";
+        let bridge_name_default = config.get_string(field)
+            .map_err(|cause| opendut_util::settings::LoadError::ReadField { field, source: cause.into() })?;
+
+        let bridge_name_default = NetworkInterfaceName::try_from(bridge_name_default.clone())
+            .map_err(|cause| opendut_util::settings::LoadError::ParseValue { field, value: bridge_name_default, source: cause.into() })?;
+
         Ok(ClusterManagerOptions {
             can_server_port_range_start,
             can_server_port_range_end,
+            bridge_name_default,
         })
     }
 }
@@ -372,7 +387,6 @@ mod test {
     use super::*;
 
     mod deploy_cluster {
-        use crate::actions::StorePeerDescriptorOptions;
         use opendut_carl_api::proto::services::peer_messaging_broker::ApplyPeerConfiguration;
         use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
 
@@ -395,21 +409,16 @@ mod test {
                 devices: HashSet::from([peer_a.device, peer_b.device]),
             };
 
-            let store_peer_descriptor_options = StorePeerDescriptorOptions {
-                bridge_name_default: NetworkInterfaceName::try_from("br-opendut").unwrap(),
-            };
             actions::store_peer_descriptor(StorePeerDescriptorParams {
                 resources_manager: Arc::clone(&fixture.resources_manager),
                 vpn: Vpn::Disabled,
                 peer_descriptor: Clone::clone(&peer_a.descriptor),
-                options: store_peer_descriptor_options.clone(),
             }).await?;
 
             actions::store_peer_descriptor(StorePeerDescriptorParams {
                 resources_manager: Arc::clone(&fixture.resources_manager),
                 vpn: Vpn::Disabled,
                 peer_descriptor: Clone::clone(&peer_b.descriptor),
-                options: store_peer_descriptor_options,
             }).await?;
 
 

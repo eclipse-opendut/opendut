@@ -13,9 +13,9 @@ pub enum LoadError {
     #[error("Failed to load config: {0}")]
     Config(#[from] ConfigError),
     #[error("Error while retrieving configured value for '{field}'")]
-    FieldRetrieval { field: &'static str, #[source] source: Box<ConfigError> },
+    ReadField { field: &'static str, #[source] source: Box<ConfigError> },
     #[error("Failed to parse field '{field}' with value '{value}'")]
-    Parse { field: String, value: String, #[source] source: Box<dyn std::error::Error + Send + Sync> },
+    ParseValue { field: &'static str, value: String, #[source] source: Box<dyn std::error::Error + Send + Sync> },
 }
 
 #[derive(thiserror::Error, Debug)]

@@ -41,8 +41,8 @@ pub async fn list_devices(params: ListDevicesParams) -> Result<Vec<DeviceDescrip
 mod tests {
     use super::*;
     use crate::actions;
-    use crate::actions::peers::testing::{fixture, store_peer_descriptor_options, Fixture};
-    use crate::actions::{StorePeerDescriptorOptions, StorePeerDescriptorParams};
+    use crate::actions::peers::testing::{fixture, Fixture};
+    use crate::actions::StorePeerDescriptorParams;
     use crate::resources::manager::ResourcesManager;
     use googletest::prelude::*;
     use rstest::rstest;
@@ -50,7 +50,7 @@ mod tests {
 
     #[rstest]
     #[tokio::test]
-    async fn should_list_all_devices(fixture: Fixture, store_peer_descriptor_options: StorePeerDescriptorOptions) -> anyhow::Result<()> {
+    async fn should_list_all_devices(fixture: Fixture) -> anyhow::Result<()> {
         let resources_manager = ResourcesManager::new_in_memory();
 
         let result = list_devices(ListDevicesParams {
@@ -63,7 +63,6 @@ mod tests {
             resources_manager: Arc::clone(&resources_manager),
             vpn: fixture.vpn,
             peer_descriptor: fixture.peer_a_descriptor,
-            options: store_peer_descriptor_options,
         }).await?;
 
 

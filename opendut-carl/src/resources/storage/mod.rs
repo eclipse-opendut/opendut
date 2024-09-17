@@ -53,26 +53,22 @@ impl PersistenceOptions {
             let url = {
                 let field = "persistence.database.url";
                 let value = config.get_string(field)
-                    .map_err(|source| LoadError::FieldRetrieval { field, source: Box::new(source) })?;
+                    .map_err(|cause| LoadError::ReadField { field, source: Box::new(cause) })?;
 
                 Url::parse(&value)
-                    .map_err(|cause| LoadError::Parse {
-                        field: field.to_owned(),
-                        value,
-                        source: Box::new(cause)
-                    })?
+                    .map_err(|cause| LoadError::ParseValue { field, value, source: Box::new(cause) })?
             };
 
             let username = {
                 let field = "persistence.database.username";
                 config.get_string(field)
-                    .map_err(|source| LoadError::FieldRetrieval { field, source: Box::new(source) })?
+                    .map_err(|source| LoadError::ReadField { field, source: Box::new(source) })?
             };
 
             let password = {
                 let field = "persistence.database.password";
                 let value = config.get_string(field)
-                    .map_err(|source| LoadError::FieldRetrieval { field, source: Box::new(source) })?;
+                    .map_err(|source| LoadError::ReadField { field, source: Box::new(source) })?;
                 Password { secret: value }
             };
 
