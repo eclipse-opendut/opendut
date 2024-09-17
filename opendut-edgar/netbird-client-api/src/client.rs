@@ -41,7 +41,7 @@ impl Client {
         let request = tonic::Request::new(LoginRequest {
             setup_key: setup_key.uuid.to_string(),
             management_url: management_url.to_string(),
-            wg_iface_mtu: i32::from(mtu),
+            wg_iface_mtu: Some(i32::from(mtu)),
             ..Default::default()
         });
         let _ = self.inner.login(request).await?; //ignore response, only relevant for login without Setup Key

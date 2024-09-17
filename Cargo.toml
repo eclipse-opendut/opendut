@@ -162,9 +162,12 @@ zip = "2.1.3"
 
 
 [workspace.metadata.ci]
-netbird.version = "v0.28.9-b3d044d5559a735030e12dd1ec4891a65d5006e3 "
+# download netbird client release from here
 netbird.repository = "https://github.com/eclipse-opendut/netbird-build"
-netbird.protobuf = "https://raw.githubusercontent.com/eclipse-opendut/netbird-fork/b3d044d5559a735030e12dd1ec4891a65d5006e3/client/proto/daemon.proto"
+# with the following version
+netbird.version = "0.28.9-a2f1d0dd1405c1c219454b0c74bd6fdf19297205"
+# and use the protobuf definition for the netbird client service daemon from here (possible separate location to be configured)
+netbird.protobuf = "https://github.com/eclipse-opendut/netbird-build/releases/download/v0.28.9-a2f1d0dd1405c1c219454b0c74bd6fdf19297205/daemon.proto"
 
 netbird-signal.version="0.28.9"       # docker container version for netbirdio/signal:     NETBIRD_SIGNAL_VERSION
 netbird-management.version="0.28.9"   # docker container version for netbirdio/management: NETBIRD_MANAGEMENT_VERSION
