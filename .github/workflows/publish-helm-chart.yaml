@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - '.ci/kubernetes/**'
+      #- '.github/workflows/publish-helm-chart.yaml'
 
 env:
   REGISTRY: ghcr.io
@@ -38,6 +39,8 @@ jobs:
         run: helm package .ci/kubernetes/charts/opendut-chart-carl/ --dependency-update
 
       - name: "Publish helm chart"
+        # https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/using-conditions-to-control-job-execution
+        if: github.repository_owner == 'eclipse-opendut'
         run: |
           export CHART_VERSION=$(grep -E '^version:' .ci/kubernetes/charts/opendut-chart-carl/Chart.yaml | tail -n1 | awk '{ print $2 }')
           helm push opendut-chart-carl-${CHART_VERSION}.tgz oci://ghcr.io/eclipse-opendut

@@ -2,7 +2,7 @@ apiVersion: v2
 name: opendut-chart-carl
 description: A Helm chart to deploy opendut-carl to Kubernetes
 type: application
-version: 0.1.1
+version: 0.1.2
 
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application. Versions are not expected to
