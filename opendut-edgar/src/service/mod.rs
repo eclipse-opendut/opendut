@@ -7,4 +7,5 @@ mod can_manager;
 mod vpn;
 mod test_execution;
 mod network_metrics;
+mod peer_configuration;
 mod tasks;

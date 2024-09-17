@@ -145,9 +145,6 @@ pub async fn initialize_with_config(
     Ok(ShutdownHandle { _logger: logger, meter_providers })
 }
 
-pub async fn initialize_with_defaults() -> Result<ShutdownHandle, Error> {
-    initialize_with_config(LoggingConfig::default(), Opentelemetry::Disabled).await
-}
 
 #[must_use]
 pub struct ShutdownHandle {
@@ -168,4 +165,9 @@ impl Drop for ShutdownHandle {
     fn drop(&mut self) {
         self.shutdown();
     }
+}
+
+pub async fn initialize_test_logging() -> Result<ShutdownHandle, Error> {
+    let config = LoggingConfig { logging_stdout: true, file_logging: None };
+    initialize_with_config(config, Opentelemetry::Disabled).await
 }

@@ -13,7 +13,7 @@ use opendut_types::cluster::PeerClusterAssignment;
 use crate::service::network_metrics::rperf::{RperfError, RperfRunError};
 use crate::service::network_metrics::rperf::RperfRunError::RperfClientError;
 
-pub async fn launch_rperf_clients(peers: Vec<PeerClusterAssignment>, target_bandwidth_kbit_per_second: u64, rperf_backoff_max_elapsed_time_ms: Duration) {
+pub async fn launch_rperf_clients(peers: Vec<PeerClusterAssignment>, target_bandwidth_kbit_per_second: u64, rperf_backoff_max_elapsed_time: Duration) {
 
     let meter = global::meter(opendut_util::telemetry::DEFAULT_METER_NAME);
 
@@ -30,7 +30,7 @@ pub async fn launch_rperf_clients(peers: Vec<PeerClusterAssignment>, target_band
             exponential_backoff_launch_rperf_client(
                 &peer,
                 target_bandwidth_kbit_per_second,
-                rperf_backoff_max_elapsed_time_ms,
+                rperf_backoff_max_elapsed_time,
                 megabits_second_send_mutex,
                 megabits_second_receive_mutex
             ).await
