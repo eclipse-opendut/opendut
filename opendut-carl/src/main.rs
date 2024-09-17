@@ -19,5 +19,4 @@ async fn main() -> anyhow::Result<()> {
     println!("{}", opendut_carl::app_info::formatted_with_banner(BANNER));
 
     opendut_carl::create_with_telemetry(opendut_util::settings::Config::default()).await
-
 }
