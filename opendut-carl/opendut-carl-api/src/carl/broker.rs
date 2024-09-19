@@ -17,7 +17,6 @@ mod client {
     use tonic::codegen::{Body, Bytes, http, InterceptedService, StdError};
 
     use opendut_types::peer::PeerId;
-    use opendut_types::proto::ConversionError;
 
     use crate::carl::broker::error;
     use crate::proto::services::peer_messaging_broker;
@@ -60,24 +59,6 @@ mod client {
             let inner_client = PeerMessagingBrokerClient::new(InterceptedService::new(inner, interceptor));
             PeerMessagingBroker {
                 inner: inner_client
-            }
-        }
-
-        pub async fn list_peers(&mut self) -> Result<Vec<PeerId>, error::ListPeers> {
-            let request = tonic::Request::new(peer_messaging_broker::ListPeersRequest {});
-
-            match self.inner.list_peers(request).await {
-                Ok(response) => {
-                    let ids = response.into_inner().peers
-                        .into_iter()
-                        .map(TryFrom::try_from)
-                        .collect::<Result<Vec<PeerId>, ConversionError>>()
-                        .map_err(|cause| error::ListPeers { message: cause.to_string() })?;
-                    Ok(ids)
-                },
-                Err(status) => {
-                    Err(error::ListPeers { message: format!("gRPC failure: {status}") })
-                },
             }
         }
     }

@@ -12,11 +12,10 @@ use tonic_web::CorsGrpcWeb;
 use tracing::{error, info, trace, warn};
 use uuid::Uuid;
 
-use opendut_carl_api::proto::services::peer_messaging_broker::{Downstream, ListPeersRequest, ListPeersResponse, Upstream};
+use opendut_carl_api::proto::services::peer_messaging_broker::{Downstream, Upstream};
 use opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_broker_server::PeerMessagingBrokerServer;
 use opendut_carl_api::proto::services::peer_messaging_broker::upstream;
 use opendut_types::peer::PeerId;
-use opendut_util::telemetry::logging::NonDisclosingRequestExtension;
 use crate::peer::broker::{OpenError, PeerMessagingBrokerRef};
 
 pub struct PeerMessagingBrokerFacade {
@@ -34,24 +33,6 @@ impl PeerMessagingBrokerFacade {
 
 #[tonic::async_trait]
 impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_broker_server::PeerMessagingBroker for PeerMessagingBrokerFacade {
-    /// deprecated since version 0.2.0
-    #[tracing::instrument(skip(self, request), level="trace")]
-    async fn list_peers(&self, request: Request<ListPeersRequest>) -> Result<Response<ListPeersResponse>, Status> {
-
-        trace!("Received request: {}", request.debug_output());
-
-        let peers = self.peer_messaging_broker.list_peers().await;
-
-        let peers = peers.into_iter()
-            .map(From::from)
-            .collect::<Vec<_>>();
-
-        let reply = ListPeersResponse {
-            peers,
-        };
-
-        Ok(Response::new(reply))
-    }
 
     type OpenStream = Pin<Box<dyn Stream<Item = Result<Downstream, Status>> + Send>>;
 

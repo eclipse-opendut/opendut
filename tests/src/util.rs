@@ -33,7 +33,7 @@ pub fn spawn_carl() -> anyhow::Result<Port> {
     Ok(carl_port)
 }
 
-pub fn spawn_edgar(carl_port: Port) -> anyhow::Result<()> {
+pub fn spawn_edgar(carl_port: Port) -> anyhow::Result<PeerId> {
     let peer_id = PeerId::random();
 
     let edgar_config = load_edgar_config(carl_port, peer_id)?;
@@ -42,7 +42,7 @@ pub fn spawn_edgar(carl_port: Port) -> anyhow::Result<()> {
         opendut_edgar::service::start::create::<DefaultPeerConfigurationApplier>(peer_id, edgar_config).await
             .expect("EDGAR crashed")
     });
-    Ok(())
+    Ok(peer_id)
 }
 
 pub async fn spawn_carl_client(carl_port: Port) -> anyhow::Result<Mutex<CarlClient>> {

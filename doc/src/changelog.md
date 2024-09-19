@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+<details>
+<summary>Breaking Changes</summary>
+* The API for listing peers on the PeerMessagingBroker has been removed.
+</details>
+
 ### Added
 * EDGAR Setup now has support for plugins, which can perform hardware- or use-case specific setup tasks.
 
@@ -20,6 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <details>
 <summary>Breaking Changes</summary>
+
+### CARL API
+* The API for listing peers on the PeerMessagingBroker is now marked as deprecated.
 
 ### Operations
 
