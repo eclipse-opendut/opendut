@@ -13,6 +13,7 @@ opendut-types = { workspace = true }
 opendut-util = { workspace = true }
 
 anyhow = { workspace = true }
+backoff = { workspace = true, features = ["tokio"] }
 config = { workspace = true }
 tokio = { workspace = true, features = ["full", "test-util"] }
 tracing = { workspace = true }
