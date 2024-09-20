@@ -1,10 +1,51 @@
 # Setup
 
-- Download the opendut-edgar binary for your target from the openDuT GitHub project: https://github.com/eclipse-opendut/opendut/releases
-- Unpack the archive on your target system.
-- If you want to use CAN, follow the steps in [CAN Setup](#can-setup) before continuing.
-- If you want to use a self-hosted backend server without DNS name or with a self-signed certificate, follow the steps in [Self-Hosted Backend Server](#self-hosted-backend-server) before continuing.
+### 1. Preparation
 
+Make sure, you can reach CARL from your target system.  
+For example, if CARL is hosted at `carl.opendut.local`, these two commands should work:
+```sh
+ping carl.opendut.local
+curl https://carl.opendut.local
+```
+
+If you're self-hosting CARL, follow the instructions in [Self-Hosted Backend Server](#self-hosted-backend-server).
+
+### 2. Download EDGAR
+
+In the LEA web-UI, you can find a Downloads-menu in the sidebar.
+You will then need to transfer EDGAR to your target system, e.g. via `scp`.
+
+---
+
+Alternatively, you can download directly to your target host with:
+```sh
+curl https://$CARL_HOST/api/edgar/$ARCH/download --output opendut-edgar.tar.gz
+```
+Replace `$CARL_HOST` with the domain where your CARL is hosted,  
+and replace `$ARCH` with the appropriate CPU architecture.
+
+Available CPU architectures are:
+- x86_64-unknown-linux-gnu (most desktop PCs and server systems)
+- armv7-unknown-linux-gnueabihf (Raspberry Pi)
+- aarch64-unknown-linux-gnu (ARM64 systems)
+
+### 3. Unpack the archive
+Run this command to unpack EDGAR:
+```sh
+tar xf opendut-edgar.tar.gz
+```
+
+EDGAR should print version information, if you run:
+```sh
+opendut-edgar/opendut-edgar --version
+```
+If this throws an error, it is likely that you downloaded the wrong CPU architecture.
+
+### 4. CAN Setup
+If you want to use CAN, follow the steps in [CAN Setup](#can-setup) before continuing.
+
+### 5. Scripted Setup
 
 - EDGAR comes with a scripted setup, which you can initiate by running:  
   ```shell
@@ -13,19 +54,6 @@
 You can get the `<SETUP-STRING>` from LEA or CLEO after creating a Peer.
 
 This will configure your operating system and start the *EDGAR Service*, which will receive its configuration from *CARL*.
-
-## Download EDGAR from CARL
-You can download the EDGAR binary as tarball from one of CARLs endpoints.
-
-The archive can be requested at `https://{CARL-HOST}/api/edgar/{architecture}/download`.
-
-Available architectures are:
-- x86_64-unknown-linux-gnu
-- armv7-unknown-linux-gnueabihf
-- aarch64-unknown-linux-gnu
-
-Once downloaded, extract the files with the command `tar xvf opendut-edgar-{architecture}.tar.gz`. It will then be extracted into
-the folder which is the current work directory. You might want to use another directory of your choice.
 
 
 ## CAN Setup
@@ -86,6 +114,7 @@ If your backend server does not have a public DNS entry, you will need to adjust
 123.456.789.101 netbird.opendut.local
 123.456.789.101 netbird-api.opendut.local
 123.456.789.101 signal.opendut.local
+123.456.789.101 nginx-webdav.opendut.local
 ```
 
 Now the following command should complete without errors:
@@ -113,43 +142,32 @@ If you plan to use the unmanaged setup and your NetBird server uses a self-signe
    ```
 
 ## Troubleshooting
-- In case of issues during the managed setup see:
+- In case of issues during the managed setup, see:
   ```shell
-  journalctl -u opendut-edgar.service
+  less opendut-edgar/setup.log
   ```
-- Sometimes it might be necessary to stop and re-start the EDGAR service:
+  If the setup completed, but EDGAR does not show up as Healthy in LEA/CLEO, see:
   ```shell
-  # Stop service
-  sudo systemctl stop opendut-edgar.service
-  # Start service
-  sudo systemctl start opendut-edgar.service
-  # Restart service
-  sudo systemctl restart opendut-edgar.service
-  # Check status
-  systemctl status opendut-edgar.service
+  journalctl -u opendut-edgar
   ```
-
-- Netbird service on host machine. It might happen that Netbird is not able to connect, in that case stop it and re-run EDGAR managed setup:
-  ```shell
-  # Stop service
-  sudo systemctl stop netbird.service
-  # Start service
-  sudo systemctl start netbird.service
-  ```
-
-- More log files / statements can be found in the corresponding Docker containers:
-  ```shell
-  docker logs localenv-keycloak-1
-  docker logs localenv-carl-1
-  # To display all running containers use:
-  docker ps
-  ```
-
-- Netbird logs are available on host machine 
+  For troubleshooting the VPN connection, you may also want to check the NetBird logs:
   ```shell
   cat /var/lib/netbird/client.log
   cat /var/lib/netbird/netbird.err
   cat /var/lib/netbird/netbird.out
+  ```
+
+- Sometimes it might be necessary to restart the EDGAR service:
+  ```shell
+  # Restart service
+  sudo systemctl restart opendut-edgar
+  # Check status
+  systemctl status opendut-edgar
+  ```
+
+- It might happen that the NetBird Client started by EDGAR is not able to connect, in that case stop it and re-run EDGAR managed setup:
+  ```shell
+  sudo systemctl stop netbird
   ```
 
 - EDGAR might start with an old IP, different from command `sudo wg` would print. In that particular case
@@ -160,28 +178,5 @@ devices and clusters from scratch.
   sudo wg
   ```
 
-- If this ERROR appears: ERROR opendut_edgar::service::cannelloni_manager: Failure while invoking command line program 'cannelloni': 'No such file or directory (os error 2)'.
-(OPTIONAL) Copy cannelloni to custom location. This is the way to go, if the step before is
-    not possible to be done. This can happen for whatever reason, i.e. missing root rights.
-  ```shell
-  export LD_LIBRARY_PATH=/your-path-to-cannelloni/cannelloni (just folder, not the binary)
-  export PATH={all_other_PATH_variables}:/your-path-to-cannelloni/cannelloni
-  vim /etc/systemd/system/opendut-edgar.service 
-  systemctl daemon-reload
-  systemctl restart opendut-edgar.service
-  ```
-
-  Copy the two Environment variables into your opendut-edgar.service file.
-  ```text
-  [Unit]
-  ...
-  
-  [Service]
-  ...
-  Environment="LD_LIBRARY_PATH=/opt/opendut/edgar/cannelloni"
-  Environment="PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin:/opt/opendut/edgar/cannelloni"
-  
-  
-  [Install]
-  ...
-  ```
+- If this error appears: `ERROR opendut_edgar::service::cannelloni_manager: Failure while invoking command line program 'cannelloni': 'No such file or directory (os error 2)'.`  
+  Make sure, you've completed the [CAN Setup](#can-setup).
