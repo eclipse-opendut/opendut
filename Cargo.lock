@@ -3778,6 +3778,7 @@ dependencies = [
  "anyhow",
  "backoff",
  "config 0.14.0 (git+https://github.com/mehcode/config-rs?rev=e3c1d0b452639478662a44f15ef6d5b6d969bf9b)",
+ "googletest",
  "opendut-carl",
  "opendut-carl-api",
  "opendut-edgar",

@@ -1,5 +1,3 @@
-pub use super::peer_configuration::{DefaultPeerConfigurationApplier, PeerConfigurationApplier};
-
 use std::any::Any;
 use std::fmt::Debug;
 use std::ops::Not;
@@ -18,7 +16,7 @@ use opendut_util::telemetry::logging::LoggingConfig;
 use opendut_util::telemetry::opentelemetry_types::Opentelemetry;
 use opentelemetry::propagation::TextMapPropagator;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
-use tokio::sync::mpsc::Sender;
+use tokio::sync::mpsc;
 use tokio::time::sleep;
 use tonic::Code;
 use tracing::{debug, error, info, trace, warn, Span};
@@ -27,7 +25,7 @@ use tracing_opentelemetry::OpenTelemetrySpanExt;
 use crate::common::{carl, settings};
 use crate::service::can_manager::{CanManager, CanManagerRef};
 use crate::service::network_interface::manager::{NetworkInterfaceManager, NetworkInterfaceManagerRef};
-use crate::service::peer_configuration::{ApplyConfigurationParams, ClusterMetricsOptions, NetworkInterfaceManagement};
+use crate::service::peer_configuration::{ApplyPeerConfigurationParams, ClusterMetricsOptions, NetworkInterfaceManagement};
 use crate::service::test_execution::executor_manager::{ExecutorManager, ExecutorManagerRef};
 use crate::service::vpn;
 
@@ -73,16 +71,20 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
         telemetry::metrics::initialize_metrics_collection(cpu_collection_interval_ms, meter_providers);
     }
 
-    create::<DefaultPeerConfigurationApplier>(self_id, settings).await?;
+    let (tx_peer_configuration, rx_peer_configuration) = mpsc::channel(100);
+    crate::service::peer_configuration::spawn_peer_configurations_handler(rx_peer_configuration).await?;
+
+    run_stream_receiver(self_id, settings, tx_peer_configuration).await?;
 
     shutdown.shutdown();
 
     Ok(())
 }
 
-pub async fn create<ConfigurationApplier: PeerConfigurationApplier>(
+pub async fn run_stream_receiver(
     self_id: PeerId,
     settings: LoadedConfig,
+    tx_peer_configuration: mpsc::Sender<ApplyPeerConfigurationParams>,
 ) -> anyhow::Result<()> {
 
     info!("Started with ID <{self_id}> and configuration: {settings:?}");
@@ -126,17 +128,17 @@ pub async fn create<ConfigurationApplier: PeerConfigurationApplier>(
 
     let (mut rx_inbound, tx_outbound) = carl::open_stream(self_id, &remote_address, &mut carl).await?;
 
-
     loop {
         let received = tokio::time::timeout(timeout_duration, rx_inbound.message()).await;
 
         match received {
             Ok(received) => match received {
                 Ok(Some(message)) => {
-                    handle_stream_message::<ConfigurationApplier>(
+                    handle_stream_message(
                         message,
                         &handle_stream_info,
                         &tx_outbound,
+                        &tx_peer_configuration,
                     ).await?
                 }
                 Err(status) => {
@@ -189,10 +191,11 @@ struct HandleStreamInfo {
     pub cluster_metrics_options: ClusterMetricsOptions,
 }
 
-async fn handle_stream_message<ConfigurationApplier: PeerConfigurationApplier>(
+async fn handle_stream_message(
     message: peer_messaging_broker::Downstream,
     handle_stream_info: &HandleStreamInfo,
-    tx_outbound: &Sender<peer_messaging_broker::Upstream>,
+    tx_outbound: &mpsc::Sender<peer_messaging_broker::Upstream>,
+    peer_configuration_sender: &mpsc::Sender<ApplyPeerConfigurationParams>,
 ) -> anyhow::Result<()> {
 
     if let peer_messaging_broker::Downstream { message: Some(message), context } = message {
@@ -211,7 +214,7 @@ async fn handle_stream_message<ConfigurationApplier: PeerConfigurationApplier>(
                     tx_outbound.send(message).await
                         .inspect_err(|cause| debug!("Failed to send ping to CARL: {cause}"));
             }
-            Message::ApplyPeerConfiguration(message) => apply_peer_configuration_raw::<ConfigurationApplier>(message, context, handle_stream_info).await?,
+            Message::ApplyPeerConfiguration(message) => apply_peer_configuration_raw(message, context, handle_stream_info, peer_configuration_sender).await?,
         }
     } else {
         ignore(message)
@@ -220,11 +223,11 @@ async fn handle_stream_message<ConfigurationApplier: PeerConfigurationApplier>(
     Ok(())
 }
 
-#[tracing::instrument(skip_all, level="trace")]
-async fn apply_peer_configuration_raw<ConfigurationApplier: PeerConfigurationApplier>(
+async fn apply_peer_configuration_raw(
     message: ApplyPeerConfiguration,
     context: Option<TracingContext>,
     handle_stream_info: &HandleStreamInfo,
+    peer_configuration_sender: &mpsc::Sender<ApplyPeerConfigurationParams>,
 ) -> anyhow::Result<()> {
 
     match message.clone() {
@@ -244,13 +247,15 @@ async fn apply_peer_configuration_raw<ConfigurationApplier: PeerConfigurationApp
                             info!("Received OldPeerConfiguration: {old_peer_configuration:?}");
                             info!("Received PeerConfiguration: {peer_configuration:?}");
                             
-                            let apply_config_params = ApplyConfigurationParams {
+                            let apply_config_params = ApplyPeerConfigurationParams {
                                 self_id: handle_stream_info.self_id,
+                                peer_configuration,
+                                old_peer_configuration,
                                 network_interface_management: handle_stream_info.network_interface_management.clone(),
                                 executor_manager: Arc::clone(&handle_stream_info.executor_manager),
                                 cluster_metrics_options: handle_stream_info.cluster_metrics_options.clone(),
                             };
-                            ConfigurationApplier::apply_peer_configuration(peer_configuration, old_peer_configuration, &apply_config_params).await?;
+                            peer_configuration_sender.send(apply_config_params).await?
                         }
                         Err(error) => error!("Illegal PeerConfiguration: {error}"),
                     }

@@ -160,23 +160,6 @@ impl NetworkInterfaceManager {
         Ok(())
     }
 
-    pub async fn get_attributes(&self, interface: &Interface) -> Result<Vec<LinkAttribute>, Error> {
-        let interface_list = self.handle
-            .link()
-            .get()
-            .match_index(interface.index)
-            .execute()
-            .try_collect::<Vec<_>>().await
-            .map_err(|cause| Error::ListInterfaces { cause })?;
-
-        let attributes = interface_list
-            .first() //only one should match index
-            .ok_or(Error::InterfaceNotFound { name: interface.name.clone() })?
-            .attributes.clone();
-
-        Ok(attributes)
-    }
-
     pub async fn join_interface_to_bridge(&self, interface: &Interface, bridge: &Interface) -> Result<(), Error> {
         self.handle
             .link()
@@ -255,6 +238,4 @@ pub enum Error {
     CanInterfaceUpdate { name: NetworkInterfaceName, cause: String},
     #[error("Failure while invoking command line program '{command}': {cause}")]
     CommandLineProgramExecution { command: String, cause: std::io::Error },
-    #[error("{message}")]
-    Other { message: String },
 }

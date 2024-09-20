@@ -1,5 +1,5 @@
-#[cfg(test)]
-mod register;
+#![cfg(test)]
 
-#[cfg(test)]
-mod util;
+mod register;
+mod testing;
+mod peer_configuration;

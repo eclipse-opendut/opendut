@@ -11,8 +11,6 @@ pub mod key {
         pub const table: &str = "vpn";
 
         pub mod disabled {
-            pub const table: &str = "vpn.disabled";
-
             pub mod remote {
                 pub const host: &str = "vpn.disabled.remote.host";
             }

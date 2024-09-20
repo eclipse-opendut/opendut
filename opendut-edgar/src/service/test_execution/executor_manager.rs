@@ -8,6 +8,7 @@ use crate::service::test_execution::container_manager::{ContainerManager, Contai
 
 pub type ExecutorManagerRef = Arc<Mutex<ExecutorManager>>;
 
+#[derive(Debug)]
 pub struct ExecutorManager {
     tx_termination_channels: Vec<Sender<bool>>,
 }

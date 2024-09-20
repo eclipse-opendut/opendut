@@ -67,5 +67,8 @@ rstest = { workspace = true }
 [build-dependencies]
 shadow-rs = { workspace = true, default-features = true }
 
+[features]
+integration_testing = []
+
 [lints]
 workspace = true
