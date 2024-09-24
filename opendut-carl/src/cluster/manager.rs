@@ -224,7 +224,7 @@ impl ClusterManager {
             .map(|peer| peer.id)
             .collect::<Vec<PeerId>>();
 
-        let mut blocked_or_down_peers_by_id: Vec<PeerId> = Vec::new();
+        let mut blocked_peers_by_id: Vec<PeerId> = Vec::new();
         for peer_id in cluster_peer_ids {
             let get_peer_state_params = GetPeerStateParams {
                 peer: peer_id,
@@ -234,19 +234,13 @@ impl ClusterManager {
                 .await
                 .map_err(|get_peer_state_error| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: get_peer_state_error.to_string() })?;
 
-            match peer_state {
-                PeerState::Down => { blocked_or_down_peers_by_id.push(peer_id) }
-                PeerState::Up { inner, .. } => {
-                    match inner {
-                        PeerUpState::Available => {}
-                        PeerUpState::Blocked(_) => { blocked_or_down_peers_by_id.push(peer_id) }
-                    }
-                }
+            if let PeerState::Up { inner: PeerUpState::Blocked(_), .. } = peer_state {
+                blocked_peers_by_id.push(peer_id);
             }
         }
 
-        if !blocked_or_down_peers_by_id.is_empty() {
-            return Err(StoreClusterDeploymentError::IllegalPeerState { cluster_id: deployment.id, cluster_name: None, invalid_peers: blocked_or_down_peers_by_id });
+        if !blocked_peers_by_id.is_empty() {
+            return Err(StoreClusterDeploymentError::IllegalPeerState { cluster_id: deployment.id, cluster_name: None, invalid_peers: blocked_peers_by_id });
         }
 
         let store_cluster_deployment_params = StoreClusterConfigurationParams {
