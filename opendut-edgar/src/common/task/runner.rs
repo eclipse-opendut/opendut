@@ -18,6 +18,11 @@ const DRY_RUN_BANNER: &str = r"
         ";
 
 pub async fn run(run_mode: RunMode, no_confirm: bool, tasks: &[Box<dyn Task>]) -> anyhow::Result<()> {
+    if tasks.is_empty() {
+        debug!("No tasks to run. Skipping.");
+        return Ok(())
+    }
+
     let task_names_string = tasks.iter().map(|task| task.description()).collect::<Vec<_>>().join(", ");
     debug!("Running tasks: {task_names_string}");
 
