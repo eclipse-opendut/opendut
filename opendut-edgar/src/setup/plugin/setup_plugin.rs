@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 use std::thread;
 use anyhow::Error;
+use async_trait::async_trait;
 use wasmtime::Store;
 use crate::setup::plugin::plugin_runtime::PluginState;
 use opendut_edgar_plugin_api::host::SetupPlugin;
@@ -20,6 +21,7 @@ impl SetupPluginStore {
     }
 }
 
+#[async_trait]
 impl Task for SetupPluginStore {
     fn description(&self) -> String {
         let store = self.store.clone();
@@ -35,7 +37,7 @@ impl Task for SetupPluginStore {
         thread.join().expect("Failed to join thread for reading description")
     }
 
-    fn check_fulfilled(&self) -> anyhow::Result<crate::common::task::TaskFulfilled> {
+    async fn check_fulfilled(&self) -> anyhow::Result<crate::common::task::TaskFulfilled> {
         let store = self.store.clone();
         let instance = self.instance.clone();
 
@@ -54,7 +56,7 @@ impl Task for SetupPluginStore {
         }
     }
 
-    fn execute(&self) -> anyhow::Result<crate::common::task::Success> {
+    async fn execute(&self) -> anyhow::Result<crate::common::task::Success> {
         let store = self.store.clone();
         let instance = self.instance.clone();
         

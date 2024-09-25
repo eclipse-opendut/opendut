@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use anyhow::{Context, Result};
+use async_trait::async_trait;
 use crate::setup::User;
 
 use crate::common::task::{Success, Task, TaskFulfilled};
@@ -13,12 +14,14 @@ fn passwd_file() -> PathBuf { PathBuf::from("/etc/passwd") }
 pub struct CreateUser {
     pub service_user: User,
 }
+
+#[async_trait]
 impl Task for CreateUser {
     fn description(&self) -> String {
         format!("Create User \"{}\"", self.service_user.name)
     }
 
-    fn check_fulfilled(&self) -> Result<TaskFulfilled> {
+    async fn check_fulfilled(&self) -> Result<TaskFulfilled> {
         let passwd = fs::read_to_string(passwd_file())?;
 
         let user_exists = passwd.lines()
@@ -34,7 +37,7 @@ impl Task for CreateUser {
         }
     }
 
-    fn execute(&self) -> Result<Success> {
+    async fn execute(&self) -> Result<Success> {
         Command::new("useradd")
             .arg("--no-create-home")
             .arg(&self.service_user.name)

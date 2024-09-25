@@ -1,15 +1,18 @@
+use async_trait::async_trait;
+
 pub mod runner;
 
+#[async_trait]
 pub trait Task: Send + Sync {
     /// Short description of the task, which is shown to the user.
     fn description(&self) -> String;
 
     /// Called before task execution, to check whether the task needs to be executed.
     /// And called after task execution, to check whether the task execution succeeded.
-    fn check_fulfilled(&self) -> anyhow::Result<TaskFulfilled>;
+    async fn check_fulfilled(&self) -> anyhow::Result<TaskFulfilled>;
 
     /// Make changes to the host system.
-    fn execute(&self) -> anyhow::Result<Success>;
+    async fn execute(&self) -> anyhow::Result<Success>;
 }
 
 #[derive(Debug, PartialEq, Eq)]

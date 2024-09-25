@@ -4,7 +4,7 @@ use opendut_edgar_plugin_api::plugin::task::{Guest, Success, TaskFulfilled};
 struct TestPlugin4;
 
 impl Guest for TestPlugin4 {
-    fn description() -> String {
+    async fn description() -> String {
         String::from("Test Plugin 4 - Taskfulfilled Err")
     }
 

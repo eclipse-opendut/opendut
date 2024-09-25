@@ -1,7 +1,7 @@
 use std::process::Command;
 
 use anyhow::{Context, Result};
-
+use async_trait::async_trait;
 use crate::setup::constants;
 use crate::common::task::{Success, Task, TaskFulfilled};
 use crate::setup::util::EvaluateRequiringSuccess;
@@ -9,11 +9,13 @@ use crate::setup::util::EvaluateRequiringSuccess;
 /// The EDGAR Service needs to modify network interfaces.
 /// This tasks requests the Linux Capability "CAP_NET_ADMIN", which allows doing so without root permissions.
 pub struct RequestLinuxNetworkCapability;
+
+#[async_trait]
 impl Task for RequestLinuxNetworkCapability {
     fn description(&self) -> String {
         String::from("Linux Network Capability")
     }
-    fn check_fulfilled(&self) -> Result<TaskFulfilled> {
+    async fn check_fulfilled(&self) -> Result<TaskFulfilled> {
         let getcap = which::which("getcap")
             .context(String::from("No command `getcap` found. Ensure your system provides this command."))?;
 
@@ -28,7 +30,7 @@ impl Task for RequestLinuxNetworkCapability {
             Ok(TaskFulfilled::Yes)
         }
     }
-    fn execute(&self) -> Result<Success> {
+    async fn execute(&self) -> Result<Success> {
         let setcap = which::which("setcap")
             .context(String::from("No command `setcap` found. Ensure your system provides this command."))?;
 

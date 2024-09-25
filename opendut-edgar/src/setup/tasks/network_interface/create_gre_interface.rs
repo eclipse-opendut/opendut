@@ -3,7 +3,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use anyhow::{Context, Result};
-use futures::executor::block_on;
+use async_trait::async_trait;
 use tracing::{debug, warn};
 
 use opendut_netbird_client_api::extension::LocalPeerStateExtension;
@@ -19,17 +19,19 @@ pub struct CreateGreInterfaces {
     pub leader: Leader,
     pub bridge_name: NetworkInterfaceName,
 }
+
+#[async_trait]
 impl Task for CreateGreInterfaces {
     fn description(&self) -> String {
         String::from("Create GRE interfaces for Peers")
     }
-    fn check_fulfilled(&self) -> Result<TaskFulfilled> {
+    async fn check_fulfilled(&self) -> Result<TaskFulfilled> {
         Ok(TaskFulfilled::Unchecked)
     }
-    fn execute(&self) -> Result<Success> {
-        let mut netbird_client = block_on(opendut_netbird_client_api::client::Client::connect())?;
+    async fn execute(&self) -> Result<Success> {
+        let mut netbird_client = opendut_netbird_client_api::client::Client::connect().await?;
 
-        let full_status = block_on(netbird_client.full_status())
+        let full_status = netbird_client.full_status().await
             .context("Error during NetBird-Status")?;
 
         let local_ip = full_status.local_peer_state.unwrap().local_ip()?;
@@ -47,7 +49,7 @@ impl Task for CreateGreInterfaces {
 
         if let Leader::Remote(remote_ip) = leader {
             //Create GRE interface to leader.
-            block_on(gre::setup_interfaces(&local_ip, &[remote_ip], &self.bridge_name, Arc::clone(&self.network_interface_manager)))?;
+            gre::setup_interfaces(&local_ip, &[remote_ip], &self.bridge_name, Arc::clone(&self.network_interface_manager)).await?;
 
             Ok(Success::message(String::from("Interface to leader created")))
         }
@@ -70,7 +72,7 @@ impl Task for CreateGreInterfaces {
 
             let number_of_remote_ips = remote_ips.len();
 
-            block_on(gre::setup_interfaces(&local_ip, &remote_ips, &self.bridge_name, Arc::clone(&self.network_interface_manager)))?;
+            gre::setup_interfaces(&local_ip, &remote_ips, &self.bridge_name, Arc::clone(&self.network_interface_manager)).await?;
 
             Ok(Success::message(format!("{number_of_remote_ips} interface(s) created; acting as leader with IP address '{local_ip}'")))
         }

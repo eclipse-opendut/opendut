@@ -42,7 +42,7 @@ pub async fn run(run_mode: RunMode, no_confirm: bool, tasks: &[Box<dyn Task>]) -
         RunMode::SetupDryRun | RunMode::Service => {} //do nothing
     }
     if no_confirm || user_confirmation(run_mode)? {
-        run_tasks(tasks, run_mode);
+        run_tasks(tasks, run_mode).await;
     }
     println!();
     debug!("Completed running tasks: {task_names_string}");
@@ -75,7 +75,7 @@ fn user_confirmation(run_mode: RunMode) -> anyhow::Result<bool> {
     }
 }
 
-fn run_tasks(
+async fn run_tasks(
     tasks: &[Box<dyn Task>],
     run_mode: RunMode,
 ) {
@@ -89,7 +89,7 @@ fn run_tasks(
         spinner.set_style(progress_style.clone());
         spinner.set_message(task.description());
 
-        let is_fulfilled = match task.check_fulfilled() {
+        let is_fulfilled = match task.check_fulfilled().await {
             Ok(is_fulfilled) => is_fulfilled,
             Err(cause) => {
                 print_outcome(task.description(), Outcome::Failed);
@@ -104,7 +104,7 @@ fn run_tasks(
                 if run_mode == RunMode::SetupDryRun {
                     Outcome::DryRun
                 } else {
-                    let result = task.execute();
+                    let result = task.execute().await;
                     spinner.finish_and_clear();
                     match result {
                         Ok(success) => Outcome::Changed(success),
@@ -120,7 +120,7 @@ fn run_tasks(
         spinner.finish_and_clear();
 
         if let Outcome::Changed(_) = outcome {
-            match task.check_fulfilled() {
+            match task.check_fulfilled().await {
                 Ok(fulfillment) => match fulfillment {
                     TaskFulfilled::Yes | TaskFulfilled::Unchecked => {}, //do nothing
                     TaskFulfilled::No => {
@@ -211,10 +211,10 @@ fn print_outcome(task_name: String, outcome: Outcome) {
 pub mod test {
     use crate::common::task::{Task, TaskFulfilled};
 
-    pub fn unchecked(task: impl Task) -> anyhow::Result<()> {
-        assert_eq!(task.check_fulfilled()?, TaskFulfilled::Unchecked);
-        task.execute()?;
-        assert_eq!(task.check_fulfilled()?, TaskFulfilled::Unchecked);
+    pub async fn unchecked(task: impl Task) -> anyhow::Result<()> {
+        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::Unchecked);
+        task.execute().await?;
+        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::Unchecked);
         Ok(())
     }
 }

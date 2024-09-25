@@ -2,6 +2,7 @@ use crate::fs;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
+use async_trait::async_trait;
 use opendut_edgar_kernel_modules::{required_kernel_modules, KernelModule};
 
 use crate::common::task::{Success, Task, TaskFulfilled};
@@ -35,13 +36,15 @@ fn options_rule_file_content(kernel_module: &KernelModule) -> String {
 }
 
 pub struct CreateKernelModuleLoadRule;
+
+#[async_trait]
 impl Task for CreateKernelModuleLoadRule {
     fn description(&self) -> String {
         let kernel_modules_str = required_kernel_modules().into_iter().map(|m| m.name).collect::<Vec<String>>().join(", ");
 
         format!("Create rules to load kernel modules {kernel_modules_str} at boot time")
     }
-    fn check_fulfilled(&self) -> Result<TaskFulfilled> {
+    async fn check_fulfilled(&self) -> Result<TaskFulfilled> {
         for kernel_module in required_kernel_modules() {
             if !load_rule_file_path(&kernel_module).exists() {
                 return Ok(TaskFulfilled::No);
@@ -52,7 +55,7 @@ impl Task for CreateKernelModuleLoadRule {
         }
         Ok(TaskFulfilled::Yes)
     }
-    fn execute(&self) -> Result<Success> {
+    async fn execute(&self) -> Result<Success> {
         for kernel_module in required_kernel_modules() {
             let load_path = load_rule_file_path(&kernel_module);
             fs::create_dir_all(load_path.parent().unwrap())?;

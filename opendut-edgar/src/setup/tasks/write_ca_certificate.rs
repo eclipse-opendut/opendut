@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use anyhow::Context;
+use async_trait::async_trait;
 use tracing::debug;
 
 use opendut_types::util::net::Certificate;
@@ -20,13 +21,14 @@ pub struct WriteCaCertificate {
     pub command_runner: Box<dyn CommandRunner>,
 }
 
+#[async_trait]
 impl Task for WriteCaCertificate {
 
     fn description(&self) -> String {
         String::from("Write CA Certificates")
     }
 
-    fn check_fulfilled(&self) -> anyhow::Result<TaskFulfilled> {
+    async fn check_fulfilled(&self) -> anyhow::Result<TaskFulfilled> {
         let installed_carl_checksum_file = &self.checksum_carl_ca_certificate_file;
         let installed_os_cert_store_checksum_file = &self.checksum_os_cert_store_ca_certificate_file;
 
@@ -64,7 +66,7 @@ impl Task for WriteCaCertificate {
         }
     }
 
-    fn execute(&self) -> anyhow::Result<Success> {
+    async fn execute(&self) -> anyhow::Result<Success> {
         let carl_ca_certificate_path = &self.carl_ca_certificate_path;
 
         write_carl_certificate(&self.certificate, carl_ca_certificate_path, &self.checksum_carl_ca_certificate_file)?;
@@ -158,8 +160,8 @@ mod tests {
     use crate::setup::util;
     use crate::setup::util::NoopCommandRunner;
 
-    #[test]
-    fn should_report_task_as_fulfilled_after_execution() -> anyhow::Result<()> {
+    #[tokio::test]
+    async fn should_report_task_as_fulfilled_after_execution() -> anyhow::Result<()> {
         let temp = TempDir::new()?;
 
         let carl_ca_certificate_path = temp.child("ca.pem");
@@ -179,15 +181,15 @@ mod tests {
             command_runner: Box::new(NoopCommandRunner),
         };
 
-        assert_eq!(task.check_fulfilled()?, TaskFulfilled::No);
-        task.execute()?;
-        assert_eq!(task.check_fulfilled()?, TaskFulfilled::Yes);
+        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::No);
+        task.execute().await?;
+        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::Yes);
 
         Ok(())
     }
 
-    #[test]
-    fn should_report_task_as_unfulfilled_when_checksums_dosssnt_match() -> anyhow::Result<()> {
+    #[tokio::test]
+    async fn should_report_task_as_unfulfilled_when_checksums_dosssnt_match() -> anyhow::Result<()> {
         let temp = TempDir::new()?;
 
         let carl_ca_certificate_path = temp.child("ca.pem");
@@ -216,13 +218,13 @@ mod tests {
             command_runner: Box::new(NoopCommandRunner),
         };
 
-        assert_eq!(task.check_fulfilled()?, TaskFulfilled::No);
+        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::No);
 
         Ok(())
     }
 
-    #[test]
-    fn should_report_task_as_fulfilled_when_checksums_match() -> anyhow::Result<()> {
+    #[tokio::test]
+    async fn should_report_task_as_fulfilled_when_checksums_match() -> anyhow::Result<()> {
         let temp = TempDir::new()?;
 
         let carl_ca_certificate_path = temp.child("ca.pem");
@@ -252,13 +254,13 @@ mod tests {
         };
 
 
-        assert_eq!(task.check_fulfilled()?, TaskFulfilled::Yes);
+        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::Yes);
 
         Ok(())
     }
 
-    #[test]
-    fn should_report_task_as_fulfilled_when_checksums_dont_exist_but_the_certificate_files_on_disk_match() -> anyhow::Result<()> { //useful for placing the certificate files onto disk for an externally automated setup of EDGAR
+    #[tokio::test]
+    async fn should_report_task_as_fulfilled_when_checksums_dont_exist_but_the_certificate_files_on_disk_match() -> anyhow::Result<()> { //useful for placing the certificate files onto disk for an externally automated setup of EDGAR
         let temp = TempDir::new()?;
 
         let carl_ca_certificate_path = temp.child("ca.pem");
@@ -281,7 +283,7 @@ mod tests {
             command_runner: Box::new(NoopCommandRunner),
         };
 
-        assert_eq!(task.check_fulfilled()?, TaskFulfilled::Yes);
+        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::Yes);
 
         Ok(())
     }

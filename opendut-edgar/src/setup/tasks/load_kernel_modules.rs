@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 use anyhow::{Result, bail};
-
+use async_trait::async_trait;
 use crate::setup::util::running_in_docker;
 use crate::common::task::{Success, Task, TaskFulfilled};
 
@@ -9,6 +9,7 @@ pub struct LoadKernelModules{
     builtin_module_dir: PathBuf,
 }
 
+#[async_trait]
 impl Task for LoadKernelModules {
     fn description(&self) -> String {
         let kernel_modules_str = opendut_edgar_kernel_modules::required_kernel_modules()
@@ -19,7 +20,7 @@ impl Task for LoadKernelModules {
 
         format!("Load Kernel Modules {kernel_modules_str}")
     }
-    fn check_fulfilled(&self) -> Result<TaskFulfilled> {
+    async fn check_fulfilled(&self) -> Result<TaskFulfilled> {
         for kernel_module in opendut_edgar_kernel_modules::required_kernel_modules() {
             if ! kernel_module.is_loaded(&self.loaded_module_file, &self.builtin_module_dir)? {
                 return Ok(TaskFulfilled::No)
@@ -27,7 +28,7 @@ impl Task for LoadKernelModules {
         }
         Ok(TaskFulfilled::Yes)
     }
-    fn execute(&self) -> Result<Success> {
+    async fn execute(&self) -> Result<Success> {
         if running_in_docker() {
             bail!("Cannot load kernel modules from within Docker. Modules must be loaded from the host.");
         }
@@ -61,7 +62,8 @@ mod tests {
     use crate::setup::tasks::LoadKernelModules;
 
     #[rstest]
-    fn should_check_task_is_fulfilled_for_loaded_kernel_modules(fixture: Fixture) -> anyhow::Result<()> {
+    #[tokio::test]
+    async fn should_check_task_is_fulfilled_for_loaded_kernel_modules(fixture: Fixture) -> anyhow::Result<()> {
         fixture.loaded_module_file.write_str(indoc!(r"
             bridge 413696 1 br_netfilter, Live 0x0000000000000000
         "))?;
@@ -71,7 +73,7 @@ mod tests {
             builtin_module_dir: fixture.builtin_module_dir.to_path_buf(),
         };
 
-        assert_eq!(task.check_fulfilled()?, TaskFulfilled::No);
+        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::No);
 
         fixture.loaded_module_file.write_str(indoc!(r"
             vcan 12288 0 - Live 0x0000000000000000
@@ -79,12 +81,13 @@ mod tests {
             can_gw 32768 0 - Live 0x0000000000000000
         "))?;
 
-        assert_eq!(task.check_fulfilled()?, TaskFulfilled::Yes);
+        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::Yes);
         Ok(())
     }
 
     #[rstest]
-    fn should_check_task_is_fulfilled_for_builtin_kernel_modules(fixture: Fixture) -> anyhow::Result<()> {
+    #[tokio::test]
+    async fn should_check_task_is_fulfilled_for_builtin_kernel_modules(fixture: Fixture) -> anyhow::Result<()> {
         let bridge_dir = fixture.builtin_module_dir.child("bridge");
         fs::create_dir_all(bridge_dir)?;
         
@@ -93,14 +96,14 @@ mod tests {
             builtin_module_dir: fixture.builtin_module_dir.to_path_buf(),
         };
 
-        assert_eq!(task.check_fulfilled()?, TaskFulfilled::No);
+        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::No);
         
         for module in ["vcan", "can_gw"] {
             let module_dir = fixture.builtin_module_dir.child(module);
             fs::create_dir_all(&module_dir)?;
         }
         
-        assert_eq!(task.check_fulfilled()?, TaskFulfilled::Yes);
+        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::Yes);
         Ok(())
     }
     

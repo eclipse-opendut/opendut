@@ -1,23 +1,25 @@
 use anyhow::{Context, Result};
+use async_trait::async_trait;
 use config::Config;
-use futures::executor::block_on;
 
 use crate::common;
 use crate::common::settings;
 use crate::common::task::{Success, Task, TaskFulfilled};
 
 pub struct CheckCarlReachable;
+
+#[async_trait]
 impl Task for CheckCarlReachable {
     fn description(&self) -> String {
         String::from("Check CARL Reachable")
     }
-    fn check_fulfilled(&self) -> Result<TaskFulfilled> {
+    async fn check_fulfilled(&self) -> Result<TaskFulfilled> {
         Ok(TaskFulfilled::Unchecked)
     }
-    fn execute(&self) -> Result<Success> {
+    async fn execute(&self) -> Result<Success> {
         let settings = settings::load_with_overrides(Config::default())?;
 
-        let _ = block_on(common::carl::connect(&settings.config))
+        let _ = common::carl::connect(&settings.config).await
             .context("Failed to connect to CARL")?;
         Ok(Success::default())
     }

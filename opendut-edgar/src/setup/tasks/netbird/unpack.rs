@@ -3,6 +3,7 @@ use crate::fs::File;
 use std::path::{PathBuf};
 
 use anyhow::{Context, Result};
+use async_trait::async_trait;
 use flate2::read::GzDecoder;
 
 use crate::setup::{constants, util};
@@ -13,11 +14,13 @@ pub struct Unpack {
     to_dir: PathBuf,
     checksum_unpack_file: PathBuf,
 }
+
+#[async_trait]
 impl Task for Unpack {
     fn description(&self) -> String {
         String::from("NetBird - Unpack")
     }
-    fn check_fulfilled(&self) -> Result<TaskFulfilled> {
+    async fn check_fulfilled(&self) -> Result<TaskFulfilled> {
 
         let unpacked_checksum_file = &self.checksum_unpack_file;
         if unpacked_checksum_file.exists() {
@@ -30,7 +33,7 @@ impl Task for Unpack {
         }
         Ok(TaskFulfilled::No)
     }
-    fn execute(&self) -> Result<Success> {
+    async fn execute(&self) -> Result<Success> {
         let archive = File::open(&self.from)
             .context(format!("Failed to open NetBird distribution file at '{}'.", self.from.display()))?;
         let archive = GzDecoder::new(archive);
@@ -68,8 +71,8 @@ mod tests {
     use crate::setup::tasks::netbird::Unpack;
     use crate::setup::util;
 
-    #[test]
-    fn should_check_task_is_fulfilled() -> anyhow::Result<()> {
+    #[tokio::test]
+    async fn should_check_task_is_fulfilled() -> anyhow::Result<()> {
         let temp = TempDir::new()?;
 
         let from = temp.child("netbird.tar.gz");
@@ -85,7 +88,7 @@ mod tests {
             checksum_unpack_file: checksum_file_path.to_path_buf(),
         };
 
-        assert_eq!(task.check_fulfilled()?, TaskFulfilled::No);
+        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::No);
         
         checksum_file_path.write_binary(&util::checksum::file(from.path())?)?;
 
@@ -95,7 +98,7 @@ mod tests {
             checksum_unpack_file: checksum_file_path.to_path_buf(),
         };
 
-        assert_eq!(task.check_fulfilled()?, TaskFulfilled::Yes);
+        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::Yes);
 
         Ok(())
     }

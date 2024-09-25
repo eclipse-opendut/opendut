@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use anyhow::{anyhow, Context};
+use async_trait::async_trait;
 use tracing::{debug, error, info};
 use url::Url;
 
@@ -26,14 +27,15 @@ pub struct WriteConfiguration {
     config_override: ConfigOverride,
 }
 
+#[async_trait]
 impl Task for WriteConfiguration {
     fn description(&self) -> String {
         String::from("Write Configuration")
     }
-    fn check_fulfilled(&self) -> anyhow::Result<TaskFulfilled> {
+    async fn check_fulfilled(&self) -> anyhow::Result<TaskFulfilled> {
         Ok(TaskFulfilled::Unchecked)
     }
-    fn execute(&self) -> anyhow::Result<Success> {
+    async fn execute(&self) -> anyhow::Result<Success> {
         let original_settings = self.load_current_settings()
             .unwrap_or_else(|| {
                 debug!("Could not load settings from configuration file at '{}'. Continuing as if no previous configuration exists.", self.config_file_to_write_to.display());
@@ -191,7 +193,8 @@ mod tests {
     const SCOPES: &str = "test";
 
     #[rstest]
-    fn should_write_a_fresh_configuration_with_auth_config_enabled(
+    #[tokio::test]
+    async fn should_write_a_fresh_configuration_with_auth_config_enabled(
         write_configuration_auth_enabled: WriteConfiguration,
     ) -> anyhow::Result<()> {
 
@@ -199,7 +202,7 @@ mod tests {
 
         let path = write_configuration_auth_enabled.config_file_to_write_to.clone();
 
-        runner::test::unchecked(write_configuration_auth_enabled)?;
+        runner::test::unchecked(write_configuration_auth_enabled).await?;
 
         assert!(predicate::path::exists().eval(&path));
         let file_content = fs::read_to_string(&path)?;
@@ -226,7 +229,8 @@ mod tests {
     }
 
     #[rstest]
-    fn should_write_a_fresh_configuration_with_auth_config_disabled(
+    #[tokio::test]
+    async fn should_write_a_fresh_configuration_with_auth_config_disabled(
         write_configuration_auth_disabled: WriteConfiguration,
     ) -> anyhow::Result<()> {
 
@@ -234,7 +238,7 @@ mod tests {
 
         assert!(predicate::path::missing().eval(&path));
 
-        runner::test::unchecked(write_configuration_auth_disabled)?;
+        runner::test::unchecked(write_configuration_auth_disabled).await?;
 
         assert!(predicate::path::exists().eval(&path));
         let file_content = fs::read_to_string(&path)?;
@@ -255,7 +259,8 @@ mod tests {
     }
 
     #[rstest]
-    fn should_provide_an_merge_suggestion_for_an_already_existing_configuration_but_should_not_delete_existing_unknown_keys(
+    #[tokio::test]
+    async fn should_provide_an_merge_suggestion_for_an_already_existing_configuration_but_should_not_delete_existing_unknown_keys(
         write_configuration_auth_enabled: WriteConfiguration,
         fixture: Fixture,
     ) -> anyhow::Result<()> {
@@ -276,7 +281,7 @@ mod tests {
         assert!(predicate::str::is_empty().not().eval(&file_content));
         assert!(predicate::path::missing().eval(&config_merge_suggestion_file));
 
-        let result = runner::test::unchecked(write_configuration_auth_enabled);
+        let result = runner::test::unchecked(write_configuration_auth_enabled).await;
         assert!(result.is_err());
 
         assert!(predicate::path::exists().eval(&config_merge_suggestion_file));
@@ -289,7 +294,8 @@ mod tests {
     }
 
     #[rstest]
-    fn should_provide_an_merge_suggestion_for_an_already_existing_configuration_with_auth_config_disabled(
+    #[tokio::test]
+    async fn should_provide_an_merge_suggestion_for_an_already_existing_configuration_with_auth_config_disabled(
         write_configuration_auth_disabled: WriteConfiguration,
         fixture: Fixture,
     ) -> anyhow::Result<()> {
@@ -313,7 +319,7 @@ mod tests {
         assert!(predicate::str::is_empty().not().eval(&file_content));
         assert!(predicate::path::missing().eval(&config_merge_suggestion_file));
 
-        let result = runner::test::unchecked(write_configuration_auth_disabled);
+        let result = runner::test::unchecked(write_configuration_auth_disabled).await;
         assert!(result.is_err());
 
         assert!(predicate::path::exists().eval(&config_merge_suggestion_file));
@@ -326,7 +332,8 @@ mod tests {
     }
 
     #[rstest]
-    fn should_not_provide_a_merge_suggestion_if_the_existing_config_matches(
+    #[tokio::test]
+    async fn should_not_provide_a_merge_suggestion_if_the_existing_config_matches(
         write_configuration_auth_enabled: WriteConfiguration,
         fixture: Fixture,
     ) -> anyhow::Result<()> {
@@ -356,7 +363,7 @@ mod tests {
         assert!(predicate::str::is_empty().not().eval(&file_content));
         assert!(predicate::path::missing().eval(&config_merge_suggestion_file));
 
-        let result = runner::test::unchecked(write_configuration_auth_enabled);
+        let result = runner::test::unchecked(write_configuration_auth_enabled).await;
         assert!(result.is_ok());
         assert!(predicate::path::missing().eval(&config_merge_suggestion_file));
 

@@ -3,7 +3,7 @@ use std::thread;
 use std::time::Duration;
 
 use anyhow::{anyhow, Result};
-
+use async_trait::async_trait;
 use crate::common::task::{Success, Task, TaskFulfilled};
 use crate::setup::util::EvaluateRequiringSuccess;
 
@@ -11,14 +11,16 @@ const UP_CHECK_RETRIES: usize = 50;
 const UP_CHECK_INTERVAL: Duration = Duration::from_millis(200);
 
 pub struct RestartService;
+
+#[async_trait]
 impl Task for RestartService {
     fn description(&self) -> String {
         String::from("NetBird - (Re-)Start Service")
     }
-    fn check_fulfilled(&self) -> Result<TaskFulfilled> {
+    async fn check_fulfilled(&self) -> Result<TaskFulfilled> {
         Ok(TaskFulfilled::Unchecked)
     }
-    fn execute(&self) -> Result<Success> {
+    async fn execute(&self) -> Result<Success> {
         let _ = Command::new("systemctl")
             .arg("restart")
             .arg("netbird")

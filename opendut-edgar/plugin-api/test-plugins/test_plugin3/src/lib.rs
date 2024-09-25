@@ -6,7 +6,7 @@ struct TestPlugin3;
 static mut FIRST_EXECUTION: bool = true;
 
 impl Guest for TestPlugin3 {
-    fn description() -> String {
+    async fn description() -> String {
         String::from("Test Plugin 3 - Tasfulfilled Yes and No")
     }
 

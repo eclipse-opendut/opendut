@@ -1,8 +1,7 @@
-use std::thread;
 use std::time::Duration;
 
 use anyhow::{anyhow, Context, Result};
-use futures::executor::block_on;
+use async_trait::async_trait;
 use tracing::debug;
 use url::Url;
 
@@ -18,35 +17,37 @@ pub struct Connect {
     pub setup_key: SetupKey,
     pub mtu: u16,
 }
+
+#[async_trait]
 impl Task for Connect {
     fn description(&self) -> String {
         String::from("NetBird - Connect")
     }
-    fn check_fulfilled(&self) -> Result<TaskFulfilled> {
-        let mut client = block_on(opendut_netbird_client_api::client::Client::connect())?;
-        let is_up = block_on(client.check_is_up())?;
+    async fn check_fulfilled(&self) -> Result<TaskFulfilled> {
+        let mut client = opendut_netbird_client_api::client::Client::connect().await?;
+        let is_up = client.check_is_up().await?;
         if is_up {
             Ok(TaskFulfilled::Yes)
         } else {
             Ok(TaskFulfilled::No)
         }
     }
-    fn execute(&self) -> Result<Success> {
-        let mut client = block_on(opendut_netbird_client_api::client::Client::connect())?;
+    async fn execute(&self) -> Result<Success> {
+        let mut client = opendut_netbird_client_api::client::Client::connect().await?;
 
-        block_on(client.login(&self.setup_key, &self.management_url, self.mtu))
+        client.login(&self.setup_key, &self.management_url, self.mtu).await
             .context("Error during NetBird-Login")?;
 
-        block_on(client.up())
+        client.up().await
             .context("Error during NetBird-Up")?;
 
         for _ in 1..=UP_CHECK_RETRIES {
-            let is_up = block_on(client.check_is_up())?;
+            let is_up = client.check_is_up().await?;
             if is_up {
                 debug!("NetBird Client reports that it is logged in and up.");
                 return Ok(Success::default())
             }
-            thread::sleep(UP_CHECK_INTERVAL)
+            tokio::time::sleep(UP_CHECK_INTERVAL).await
         }
         Err(anyhow!("Connection to NetBird Management Service at '{}' was not up after {}*{} ms.", self.management_url, UP_CHECK_RETRIES, UP_CHECK_INTERVAL.as_millis()))
     }

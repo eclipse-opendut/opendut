@@ -1,20 +1,22 @@
 use anyhow::{Context, Result};
 use std::process::Command;
-
+use async_trait::async_trait;
 use crate::common::task::{Success, Task, TaskFulfilled};
 use crate::setup::constants::REQUIRED_COMMAND_LINE_PROGRAMS;
 use crate::setup::util::EvaluateRequiringSuccess;
 
 
 pub struct CheckCommandLinePrograms;
+
+#[async_trait]
 impl Task for CheckCommandLinePrograms {
     fn description(&self) -> String {
         String::from("Check availabilty of needed command line programs")
     }
-    fn check_fulfilled(&self) -> Result<TaskFulfilled> {
+    async fn check_fulfilled(&self) -> Result<TaskFulfilled> {
         Ok(TaskFulfilled::Unchecked)
     }
-    fn execute(&self) -> Result<Success> {
+    async fn execute(&self) -> Result<Success> {
 
         for (command_line_program, arg) in REQUIRED_COMMAND_LINE_PROGRAMS.iter() {
             let executable = which::which(command_line_program)
