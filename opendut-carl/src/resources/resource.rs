@@ -9,7 +9,7 @@ use opendut_types::peer::{PeerDescriptor, PeerId};
 use crate::resources::ids::IntoId;
 
 pub trait Resource: Any + Send + Sync + Debug + Clone {
-    type Id: IntoId<Self>;
+    type Id: IntoId<Self> + Clone + Debug;
 }
 
 impl Resource for ClusterConfiguration {

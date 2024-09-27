@@ -1,8 +1,11 @@
+pub use crate::resources::subscription::SubscriptionEvent;
+
 use std::sync::Arc;
 
 use crate::persistence::error::{FlattenPersistenceResult, PersistenceResult};
 use crate::persistence::resources::Persistable;
 use crate::resources::storage::{PersistenceOptions, ResourcesStorageApi};
+use crate::resources::subscription::{ResourceSubscribers, Subscribable, Subscription, };
 use crate::resources::{storage, Resource, Resources, ResourcesTransaction};
 use tokio::sync::RwLock;
 
@@ -13,25 +16,34 @@ pub struct ResourcesManager {
 }
 
 struct State {
-    resources: Resources
+    resources: Resources,
+    subscribers: ResourceSubscribers,
 }
 
 impl ResourcesManager {
 
     pub async fn create(storage_options: PersistenceOptions) -> Result<ResourcesManagerRef, storage::ConnectionError> {
         let resources = Resources::connect(storage_options).await?;
+        let subscribers = ResourceSubscribers::default();
 
         Ok(Arc::new(Self {
-            state: RwLock::new(State { resources })
+            state: RwLock::new(State { resources, subscribers }),
         }))
     }
 
     pub async fn insert<R>(&self, id: R::Id, resource: R) -> PersistenceResult<()>
-    where R: Resource + Persistable {
+    where R: Resource + Persistable + Subscribable {
         let mut state = self.state.write().await;
-        state.resources.transaction(move |mut transaction| {
-            transaction.insert(id, resource)
-        }).flatten_persistence_result()
+        
+        let result = state.resources.transaction(|mut transaction| {
+            transaction.insert(id.clone(), resource.clone())
+        }).flatten_persistence_result();
+        
+        if result.is_ok() {
+            state.subscribers.notify(SubscriptionEvent::Inserted { id, value: resource })
+                .expect("should successfully send notification about resource insertion")
+        }
+        result
     }
 
     pub async fn remove<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
@@ -74,6 +86,12 @@ impl ResourcesManager {
             f(&mut transaction)
         })
     }
+
+    pub async fn subscribe<R>(&self) -> Subscription<R>
+    where R: Resource + Subscribable {
+        let mut state = self.state.write().await;
+        state.subscribers.subscribe()
+    }
 }
 
 #[cfg(test)]
@@ -84,8 +102,10 @@ impl ResourcesManager {
         )
         .expect("Creating in-memory storage for tests should not fail");
 
+        let subscribers = ResourceSubscribers::default();
+
         Arc::new(Self {
-            state: RwLock::new(State { resources })
+            state: RwLock::new(State { resources, subscribers }),
         })
     }
 

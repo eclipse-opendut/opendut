@@ -10,6 +10,7 @@ pub mod manager;
 pub mod ids;
 pub(crate) mod storage;
 pub mod resource;
+mod subscription;
 
 pub struct Resources {
     storage: ResourcesStorage,
