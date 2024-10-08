@@ -18,7 +18,7 @@ use crate::actions;
 use crate::actions::{AssignClusterOptions, AssignClusterParams, DeleteClusterDeploymentParams, GetPeerStateParams, ListPeerDescriptorsParams, StoreClusterConfigurationParams};
 use crate::peer::broker::PeerMessagingBrokerRef;
 use crate::persistence::error::PersistenceResult;
-use crate::resources::manager::{ResourcesManagerRef, SubscriptionEvent};
+use crate::resources::manager::ResourcesManagerRef;
 use crate::resources::storage::ResourcesStorageApi;
 use crate::vpn::Vpn;
 
