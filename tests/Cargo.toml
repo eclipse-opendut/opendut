@@ -16,5 +16,6 @@ anyhow = { workspace = true }
 backoff = { workspace = true, features = ["tokio"] }
 config = { workspace = true }
 googletest = { workspace = true }
+test-log = { workspace = true }
 tokio = { workspace = true, features = ["full", "test-util"] }
 tracing = { workspace = true }

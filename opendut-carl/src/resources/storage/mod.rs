@@ -6,6 +6,7 @@ use crate::persistence::resources::Persistable;
 use crate::resources::storage::persistent::PersistentResourcesStorage;
 use crate::resources::storage::volatile::VolatileResourcesStorage;
 use crate::resources::Resource;
+use crate::resources::subscription::Subscribable;
 
 pub mod volatile;
 pub mod persistent;
@@ -106,7 +107,7 @@ impl Password {
 
 pub trait ResourcesStorageApi {
     fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
-    where R: Resource + Persistable;
+    where R: Resource + Persistable + Subscribable;
 
     fn remove<R>(&mut self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable;

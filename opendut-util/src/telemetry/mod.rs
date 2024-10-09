@@ -166,8 +166,3 @@ impl Drop for ShutdownHandle {
         self.shutdown();
     }
 }
-
-pub async fn initialize_test_logging() -> Result<ShutdownHandle, Error> {
-    let config = LoggingConfig { logging_stdout: true, file_logging: None };
-    initialize_with_config(config, Opentelemetry::Disabled).await
-}

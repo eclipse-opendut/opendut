@@ -128,12 +128,12 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
         Arc::clone(&resources_manager),
         PeerMessagingBrokerOptions::load(&settings.config)?,
     );
-    let cluster_manager = ClusterManager::new(
+    let cluster_manager = ClusterManager::create(
         Arc::clone(&resources_manager),
         Arc::clone(&peer_messaging_broker),
         Clone::clone(&vpn),
         ClusterManagerOptions::load(&settings.config)?,
-    );
+    ).await;
 
     let grpc_auth_layer = match oidc_registration_client.clone() {
         None => GrpcAuthenticationLayer::AuthDisabled,

@@ -1,13 +1,13 @@
 pub use crate::resources::subscription::SubscriptionEvent;
 
-use std::sync::Arc;
-
-use crate::persistence::error::{FlattenPersistenceResult, PersistenceResult};
+use crate::persistence::error::PersistenceResult;
 use crate::persistence::resources::Persistable;
 use crate::resources::storage::{PersistenceOptions, ResourcesStorageApi};
-use crate::resources::subscription::{ResourceSubscribers, Subscribable, Subscription, };
+use crate::resources::subscription::{ResourceSubscriptionChannel, ResourceSubscriptionChannels, Subscribable, Subscription};
+use crate::resources::transaction::RelayedSubscriptionEvents;
 use crate::resources::{storage, Resource, Resources, ResourcesTransaction};
-use tokio::sync::RwLock;
+use std::sync::Arc;
+use tokio::sync::{RwLock, RwLockWriteGuard};
 
 pub type ResourcesManagerRef = Arc<ResourcesManager>;
 
@@ -17,14 +17,14 @@ pub struct ResourcesManager {
 
 struct State {
     resources: Resources,
-    subscribers: ResourceSubscribers,
+    subscribers: ResourceSubscriptionChannels,
 }
 
 impl ResourcesManager {
 
     pub async fn create(storage_options: PersistenceOptions) -> Result<ResourcesManagerRef, storage::ConnectionError> {
         let resources = Resources::connect(storage_options).await?;
-        let subscribers = ResourceSubscribers::default();
+        let subscribers = ResourceSubscriptionChannels::default();
 
         Ok(Arc::new(Self {
             state: RwLock::new(State { resources, subscribers }),
@@ -35,23 +35,21 @@ impl ResourcesManager {
     where R: Resource + Persistable + Subscribable {
         let mut state = self.state.write().await;
         
-        let result = state.resources.transaction(|mut transaction| {
+        let (result, relayed_subscription_events) = state.resources.transaction(|transaction| {
             transaction.insert(id.clone(), resource.clone())
-        }).flatten_persistence_result();
-        
-        if result.is_ok() {
-            state.subscribers.notify(SubscriptionEvent::Inserted { id, value: resource })
-                .expect("should successfully send notification about resource insertion")
-        }
+        })?;
+        Self::send_relayed_subscription_events(relayed_subscription_events, &mut state).await;
         result
     }
 
     pub async fn remove<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable {
         let mut state = self.state.write().await;
-        state.resources.transaction(move |mut transaction| {
+        let (result, relayed_subscription_events) = state.resources.transaction(move |transaction| {
             transaction.remove(id)
-        }).flatten_persistence_result()
+        })?;
+        Self::send_relayed_subscription_events(relayed_subscription_events, &mut state).await;
+        result
     }
 
     pub async fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
@@ -82,9 +80,11 @@ impl ResourcesManager {
         E: std::error::Error + Send + Sync + 'static,
     {
         let mut state = self.state.write().await;
-        state.resources.transaction(move |mut transaction| {
-            f(&mut transaction)
-        })
+        let (result, relayed_subscription_events) = state.resources.transaction(move |transaction| {
+            f(transaction)
+        })?;
+        Self::send_relayed_subscription_events(relayed_subscription_events, &mut state).await;
+        Ok(result)
     }
 
     pub async fn subscribe<R>(&self) -> Subscription<R>
@@ -92,7 +92,41 @@ impl ResourcesManager {
         let mut state = self.state.write().await;
         state.subscribers.subscribe()
     }
+
+    async fn send_relayed_subscription_events(
+        relayed_subscription_events: RelayedSubscriptionEvents,
+        state: &mut RwLockWriteGuard<'_, State>,
+    ) {
+        let ResourceSubscriptionChannels {
+            cluster_configuration,
+            cluster_deployment,
+            old_peer_configuration,
+            peer_configuration,
+            peer_descriptor,
+            peer_state
+        } = relayed_subscription_events;
+
+        async fn notify_for_relayed_subscription_events_on_channel<R: Resource + Subscribable + Clone>(
+            channel: ResourceSubscriptionChannel<R>,
+            state: &mut RwLockWriteGuard<'_, State>,
+        ) {
+            let (_, mut receiver) = channel;
+            while let Ok(event) = receiver.try_recv() {
+                state.subscribers
+                    .notify(event)
+                    .expect("should successfully send notification about event during resource transaction");
+            }
+        }
+
+        notify_for_relayed_subscription_events_on_channel(cluster_configuration, state).await;
+        notify_for_relayed_subscription_events_on_channel(cluster_deployment, state).await;
+        notify_for_relayed_subscription_events_on_channel(old_peer_configuration, state).await;
+        notify_for_relayed_subscription_events_on_channel(peer_configuration, state).await;
+        notify_for_relayed_subscription_events_on_channel(peer_descriptor, state).await;
+        notify_for_relayed_subscription_events_on_channel(peer_state, state).await;
+    }
 }
+
 
 #[cfg(test)]
 impl ResourcesManager {
@@ -102,7 +136,7 @@ impl ResourcesManager {
         )
         .expect("Creating in-memory storage for tests should not fail");
 
-        let subscribers = ResourceSubscribers::default();
+        let subscribers = ResourceSubscriptionChannels::default();
 
         Arc::new(Self {
             state: RwLock::new(State { resources, subscribers }),

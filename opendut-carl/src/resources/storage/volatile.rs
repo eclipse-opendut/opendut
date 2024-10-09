@@ -8,19 +8,26 @@ use crate::persistence::resources::Persistable;
 use crate::resources::ids::IntoId;
 use crate::resources::storage::ResourcesStorageApi;
 use crate::resources::Resource;
+use crate::resources::subscription::Subscribable;
+use crate::resources::transaction::RelayedSubscriptionEvents;
 
 #[derive(Default)]
 pub struct VolatileResourcesStorage {
     storage: HashMap<TypeId, HashMap<Id, Box<dyn Any + Send + Sync>>>,
 }
 impl VolatileResourcesStorage {
-    pub fn noop_transaction<T, E, F>(&mut self, code: F) -> PersistenceResult<Result<T, E>>
+    pub fn noop_transaction<T, E, F>(&mut self, code: F) -> PersistenceResult<(Result<T, E>, RelayedSubscriptionEvents)>
     where
         F: FnOnce(VolatileResourcesTransaction) -> Result<T, E>,
         E: std::error::Error + Send + Sync + 'static,
     {
-        let transaction = VolatileResourcesTransaction { inner: self };
-        Ok(code(transaction))
+        let mut relayed_subscription_events = RelayedSubscriptionEvents::default();
+        let transaction = VolatileResourcesTransaction {
+            inner: self,
+            relayed_subscription_events: &mut relayed_subscription_events,
+        };
+        let result = code(transaction);
+        Ok((result, relayed_subscription_events))
     }
 }
 
@@ -113,12 +120,13 @@ impl VolatileResourcesStorage {
     }
 }
 
-pub struct VolatileResourcesTransaction<'a> {
-    inner: &'a mut VolatileResourcesStorage,
+pub struct VolatileResourcesTransaction<'transaction> {
+    inner: &'transaction mut VolatileResourcesStorage,
+    pub relayed_subscription_events: &'transaction mut RelayedSubscriptionEvents,
 }
 impl ResourcesStorageApi for VolatileResourcesTransaction<'_> {
     fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
-    where R: Resource + Persistable {
+    where R: Resource + Persistable + Subscribable {
         self.inner.insert(id, resource)
     }
 

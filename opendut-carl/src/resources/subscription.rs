@@ -27,13 +27,13 @@ pub enum ReceiveError {
 }
 
 pub trait Subscribable: Resource {
-    fn resource_subscribers_field(resource_subscribers: &mut ResourceSubscribers) -> &broadcast::Sender<SubscriptionEvent<Self>>
+    fn resource_subscribers_field(resource_subscribers: &mut ResourceSubscriptionChannels) -> &broadcast::Sender<SubscriptionEvent<Self>>
     where Self: Sized;
 }
 macro_rules! impl_subscribable {
     ($resource:ty, $field:ident) => {
         impl Subscribable for $resource {
-            fn resource_subscribers_field(resource_subscribers: &mut ResourceSubscribers) -> &broadcast::Sender<SubscriptionEvent<Self>>
+            fn resource_subscribers_field(resource_subscribers: &mut ResourceSubscriptionChannels) -> &broadcast::Sender<SubscriptionEvent<Self>>
             where Self: Sized {
                 let (sender, _) = &resource_subscribers.$field;
                 sender
@@ -49,17 +49,17 @@ impl_subscribable!(PeerDescriptor, peer_descriptor);
 impl_subscribable!(PeerState, peer_state);
 
 
-type ResourceChannel<R> = (broadcast::Sender<SubscriptionEvent<R>>, broadcast::Receiver<SubscriptionEvent<R>>); //store both the sender and initial receiver, to prevent channel from closing
+pub type ResourceSubscriptionChannel<R> = (broadcast::Sender<SubscriptionEvent<R>>, broadcast::Receiver<SubscriptionEvent<R>>); //store both the sender and initial receiver, to prevent channel from closing
 
-pub struct ResourceSubscribers {
-    cluster_configuration: ResourceChannel<ClusterConfiguration>,
-    cluster_deployment: ResourceChannel<ClusterDeployment>,
-    old_peer_configuration: ResourceChannel<OldPeerConfiguration>,
-    peer_configuration: ResourceChannel<PeerConfiguration>,
-    peer_descriptor: ResourceChannel<PeerDescriptor>,
-    peer_state: ResourceChannel<PeerState>,
+pub struct ResourceSubscriptionChannels {
+    pub cluster_configuration: ResourceSubscriptionChannel<ClusterConfiguration>,
+    pub cluster_deployment: ResourceSubscriptionChannel<ClusterDeployment>,
+    pub old_peer_configuration: ResourceSubscriptionChannel<OldPeerConfiguration>,
+    pub peer_configuration: ResourceSubscriptionChannel<PeerConfiguration>,
+    pub peer_descriptor: ResourceSubscriptionChannel<PeerDescriptor>,
+    pub peer_state: ResourceSubscriptionChannel<PeerState>,
 }
-impl ResourceSubscribers {
+impl ResourceSubscriptionChannels {
     pub fn subscribe<R: Resource + Subscribable>(&mut self) -> Subscription<R> {
         let receiver = R::resource_subscribers_field(self)
             .subscribe();
@@ -72,7 +72,7 @@ impl ResourceSubscribers {
         Ok(())
     }
 }
-impl Default for ResourceSubscribers {
+impl Default for ResourceSubscriptionChannels {
     fn default() -> Self {
         let capacity = 100;
 
@@ -113,15 +113,15 @@ mod tests {
         let mut subscription = resources_manager.subscribe().await;
 
         let id = PeerId::random();
-        let timeout2 = Duration::from_secs(10);
+        let timeout_duration = Duration::from_secs(10);
 
         let value = PeerState::Down;
         resources_manager.insert(id, value.clone()).await?;
-        assert_eq!(timeout(timeout2, subscription.receive()).await??, SubscriptionEvent::Inserted { id, value });
+        assert_eq!(timeout(timeout_duration, subscription.receive()).await??, SubscriptionEvent::Inserted { id, value });
 
         let value = PeerState::Up { inner: PeerUpState::Available, remote_host: IpAddr::from_str("127.0.0.1")? };
         resources_manager.insert(id, value.clone()).await?;
-        assert_eq!(timeout(timeout2, subscription.receive()).await??, SubscriptionEvent::Inserted { id, value });
+        assert_eq!(timeout(timeout_duration, subscription.receive()).await??, SubscriptionEvent::Inserted { id, value });
 
         Ok(())
     }

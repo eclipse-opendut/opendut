@@ -1,10 +1,11 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
+use anyhow::Context;
 use tokio::sync::Mutex;
 
 use futures::future::join_all;
 use futures::FutureExt;
-use tracing::{debug, error, warn};
+use tracing::{debug, error, trace, warn};
 
 use opendut_carl_api::carl::cluster::{DeleteClusterDeploymentError, GetClusterConfigurationError, GetClusterDeploymentError, ListClusterConfigurationsError, ListClusterDeploymentsError, StoreClusterDeploymentError};
 use opendut_types::cluster::{ClusterAssignment, ClusterConfiguration, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
@@ -15,10 +16,10 @@ use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName}
 use opendut_types::util::Port;
 
 use crate::actions;
-use crate::actions::{AssignClusterOptions, AssignClusterParams, DeleteClusterDeploymentParams, GetPeerStateParams, ListPeerDescriptorsParams, StoreClusterConfigurationParams};
+use crate::actions::{AssignClusterOptions, AssignClusterParams, DeleteClusterDeploymentParams, DetermineClusterPeerStatesParams, GetPeerStateParams, ListPeerDescriptorsParams, StoreClusterConfigurationParams};
 use crate::peer::broker::PeerMessagingBrokerRef;
 use crate::persistence::error::PersistenceResult;
-use crate::resources::manager::ResourcesManagerRef;
+use crate::resources::manager::{ResourcesManagerRef, SubscriptionEvent};
 use crate::resources::storage::ResourcesStorageApi;
 use crate::vpn::Vpn;
 
@@ -56,23 +57,178 @@ pub struct ClusterManager {
 }
 
 impl ClusterManager {
-    pub fn new(
+    pub async fn create(
         resources_manager: ResourcesManagerRef,
         peer_messaging_broker: PeerMessagingBrokerRef,
         vpn: Vpn,
         options: ClusterManagerOptions,
     ) -> ClusterManagerRef {
         let can_server_port_counter = options.can_server_port_range_start;
-        Arc::new(Mutex::new(Self {
-            resources_manager,
+
+        let self_ref = Arc::new(Mutex::new(Self {
+            resources_manager: Arc::clone(&resources_manager),
             peer_messaging_broker,
             vpn,
             options,
             can_server_port_counter
-        }))
+        }));
+
+        Self::schedule_redeploying_clusters_when_all_peers_become_available(resources_manager, Arc::clone(&self_ref)).await;
+
+        self_ref
     }
+
     #[tracing::instrument(skip(self), level="trace")]
-    pub async fn deploy(&mut self, cluster_id: ClusterId) -> Result<(), DeployClusterError> {
+    pub async fn get_configuration(&self, cluster_id: ClusterId) -> Result<Option<ClusterConfiguration>, GetClusterConfigurationError> {
+        self.resources_manager.resources(|resources| {
+            resources.get::<ClusterConfiguration>(cluster_id)
+        }).await
+        .map_err(|cause| GetClusterConfigurationError { cluster_id, message: cause.to_string() })
+    }
+
+    #[tracing::instrument(skip(self), level="trace")]
+    pub async fn list_configuration(&self) -> Result<Vec<ClusterConfiguration>, ListClusterConfigurationsError> {
+        self.resources_manager.resources(|resources| {
+            resources.list::<ClusterConfiguration>()
+        }).await
+        .map_err(|cause| ListClusterConfigurationsError { message: cause.to_string() })
+    }
+
+    #[tracing::instrument(skip(self), level="trace")]
+    pub async fn store_cluster_deployment(&mut self, deployment: ClusterDeployment) -> Result<ClusterId, StoreClusterDeploymentError> {
+        let cluster_id = deployment.id;
+
+        let cluster_config = self.resources_manager.get::<ClusterConfiguration>(cluster_id).await
+            .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?
+            .ok_or(StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: String::from("Cluster not found") })?;
+
+        let peer_descriptors = actions::list_peer_descriptors(ListPeerDescriptorsParams { resources_manager: self.resources_manager.clone() }).await
+            .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?;
+
+        let cluster_peer_ids = peer_descriptors.into_iter()
+            .filter(|peer| peer.topology.devices.iter().any(|device| cluster_config.devices.contains(&device.id)))
+            .map(|peer| peer.id)
+            .collect::<Vec<PeerId>>();
+
+        let mut blocked_peers_by_id: Vec<PeerId> = Vec::new();
+        for peer_id in cluster_peer_ids {
+            let get_peer_state_params = GetPeerStateParams {
+                peer: peer_id,
+                resources_manager: self.resources_manager.clone(),
+            };
+            let peer_state = actions::get_peer_state(get_peer_state_params)
+                .await
+                .map_err(|get_peer_state_error| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: get_peer_state_error.to_string() })?;
+
+            if let PeerState::Up { inner: PeerUpState::Blocked(_), .. } = peer_state {
+                blocked_peers_by_id.push(peer_id);
+            }
+        }
+
+        if !blocked_peers_by_id.is_empty() {
+            return Err(StoreClusterDeploymentError::IllegalPeerState { cluster_id: deployment.id, cluster_name: None, invalid_peers: blocked_peers_by_id });
+        }
+
+        let store_cluster_deployment_params = StoreClusterConfigurationParams {
+            resources_manager: Arc::clone(&self.resources_manager),
+            deployment: Clone::clone(&deployment),
+        };
+        actions::store_cluster_deployment(store_cluster_deployment_params).await?;
+
+        if let Err(error) = self.deploy_cluster_if_all_peers_available(cluster_id).await {
+            error!("Failed to deploy cluster <{cluster_id}> after storing cluster deployment, despite all peers being available, due to:\n  {error}");
+        }
+        Ok(cluster_id)
+    }
+
+    #[tracing::instrument(skip(self), level="trace")]
+    pub async fn delete_cluster_deployment(&self, cluster_id: ClusterId) -> Result<ClusterDeployment, DeleteClusterDeploymentError> {
+        let delete_cluster_deployment_params = DeleteClusterDeploymentParams {
+            resources_manager: Arc::clone(&self.resources_manager),
+            vpn: Clone::clone(&self.vpn),
+            cluster_id
+        };
+        actions::delete_cluster_deployment(delete_cluster_deployment_params).await
+    }
+
+    pub async fn get_deployment(&self, cluster_id: ClusterId) -> Result<Option<ClusterDeployment>, GetClusterDeploymentError> {
+        self.resources_manager.resources(|resources| {
+            resources.get::<ClusterDeployment>(cluster_id)
+        }).await
+        .map_err(|cause| GetClusterDeploymentError::Internal { cluster_id, cause: cause.to_string() })
+    }
+
+    #[tracing::instrument(skip(self), level="trace")]
+    pub async fn list_deployment(&self) -> Result<Vec<ClusterDeployment>, ListClusterDeploymentsError> {
+        self.resources_manager.resources(|resources| {
+            resources.list::<ClusterDeployment>()
+        }).await
+        .map_err(|cause| ListClusterDeploymentsError { message: cause.to_string() })
+    }
+
+
+    async fn schedule_redeploying_clusters_when_all_peers_become_available(resources_manager: ResourcesManagerRef, self_ref: ClusterManagerRef) {
+        let mut peer_state_subscription = resources_manager.subscribe::<PeerState>().await;
+
+        tokio::spawn(async move {
+            loop {
+                let peer_state = peer_state_subscription.receive().await;
+
+                if let Ok(SubscriptionEvent::Inserted { id: peer_id, value: PeerState::Up { inner: PeerUpState::Available, .. } }) = peer_state {
+                    trace!("Peer <{peer_id}> is now available. Checking if any clusters can now be deployed...");
+
+                    let mut self_ref = self_ref.lock().await;
+                    let result = self_ref.deploy_clusters_with_new_available_peer(peer_id).await;
+                    if let Err(error) = result {
+                        error!("Error while attempting deployment of clusters in which newly available peer <{peer_id}> is contained:  \n{error}");
+                    }
+                }
+            }
+        });
+    }
+
+    async fn deploy_clusters_with_new_available_peer(&mut self, peer_id: PeerId) -> anyhow::Result<()> {
+        let peer_descriptor = self.resources_manager.get::<PeerDescriptor>(peer_id).await?
+            .context(format!("No peer descriptor found for newly available peer <{peer_id}>."))?;
+
+        let peer_devices = peer_descriptor.topology.devices
+            .into_iter()
+            .map(|device| device.id)
+            .collect::<Vec<_>>();
+
+        let cluster_configurations = self.resources_manager.list::<ClusterConfiguration>().await?;
+
+        let clusters_containing_devices_of_upped_peer = cluster_configurations.into_iter()
+            .filter(|cluster_configuration|
+                cluster_configuration.devices.iter()
+                    .any(|device| peer_devices.contains(device))
+            ).collect::<Vec<_>>();
+
+        for cluster in clusters_containing_devices_of_upped_peer {
+            self.deploy_cluster_if_all_peers_available(cluster.id).await?;
+        }
+        Ok(())
+    }
+
+    #[tracing::instrument(skip(self), level="trace")]
+    pub async fn deploy_cluster_if_all_peers_available(&mut self, cluster_id: ClusterId) -> Result<(), DeployClusterError> {
+        let cluster_peer_states = actions::determine_cluster_peer_states(DetermineClusterPeerStatesParams {
+            resources_manager: Arc::clone(&self.resources_manager),
+            cluster_id,
+        }).await
+        .map_err(|error| DeployClusterError::Internal { cluster_id, cause: format!("Failed to determine states of peers: {error}") })?;
+
+        if cluster_peer_states.all_peers_available() {
+            self.deploy_cluster(cluster_id).await?;
+        } else {
+            trace!("Not all peers are available of cluster <{cluster_id}>, so not deploying.");
+        }
+        Ok(())
+    }
+
+
+    #[tracing::instrument(skip(self), level="debug")]
+    async fn deploy_cluster(&mut self, cluster_id: ClusterId) -> Result<(), DeployClusterError> {
 
         let cluster_config = self.resources_manager.get::<ClusterConfiguration>(cluster_id).await
             .map_err(|cause| DeployClusterError::Internal { cluster_id, cause: cause.to_string() })?
@@ -109,15 +265,15 @@ impl ClusterManager {
         let n_peers = u16::try_from(member_interface_mapping.len())
             .map_err(|cause| DeployClusterError::Internal { cluster_id, cause: cause.to_string() })?;
         if self.options.can_server_port_range_start + n_peers >= self.options.can_server_port_range_end {
-            return Err(DeployClusterError::Internal { 
-                cluster_id, 
-                cause: format!("Failure while creating cluster <{}>. Port range [{}, {}) specified by 'can_server_port_range_start' 
-                and 'can_server_port_range_start' is too narrow for the configured number of peers ({})", 
-                cluster_id, self.options.can_server_port_range_start, self.options.can_server_port_range_end, n_peers) 
+            return Err(DeployClusterError::Internal {
+                cluster_id,
+                cause: format!("Failure while creating cluster <{}>. Port range [{}, {}) specified by 'can_server_port_range_start'
+                and 'can_server_port_range_start' is too narrow for the configured number of peers ({})",
+                cluster_id, self.options.can_server_port_range_start, self.options.can_server_port_range_end, n_peers)
             })
         } else if self.options.can_server_port_range_start + n_peers * 2 >= self.options.can_server_port_range_end {
-            warn!("Port range [{}, {}) specified by 'can_server_port_range_start' 
-                and 'can_server_port_range_start' is very narrow for the configured number of peers ({}). This may cause errors on EDGAR.", 
+            warn!("Port range [{}, {}) specified by 'can_server_port_range_start'
+                and 'can_server_port_range_start' is very narrow for the configured number of peers ({}). This may cause errors on EDGAR.",
                 self.options.can_server_port_range_start, self.options.can_server_port_range_end, n_peers);
         }
 
@@ -125,7 +281,7 @@ impl ClusterManager {
         if self.can_server_port_counter + n_peers >= self.options.can_server_port_range_end {
             self.can_server_port_counter = self.options.can_server_port_range_start;
         }
-        
+
         let can_server_ports = (self.can_server_port_counter..self.can_server_port_counter + n_peers)
             .map(Port)
             .collect::<Vec<_>>();
@@ -190,94 +346,6 @@ impl ClusterManager {
         }
 
         Ok(())
-    }
-
-    #[tracing::instrument(skip(self), level="trace")]
-    pub async fn get_configuration(&self, cluster_id: ClusterId) -> Result<Option<ClusterConfiguration>, GetClusterConfigurationError> {
-        self.resources_manager.resources(|resources| {
-            resources.get::<ClusterConfiguration>(cluster_id)
-        }).await
-        .map_err(|cause| GetClusterConfigurationError { cluster_id, message: cause.to_string() })
-    }
-
-    #[tracing::instrument(skip(self), level="trace")]
-    pub async fn list_configuration(&self) -> Result<Vec<ClusterConfiguration>, ListClusterConfigurationsError> {
-        self.resources_manager.resources(|resources| {
-            resources.list::<ClusterConfiguration>()
-        }).await
-        .map_err(|cause| ListClusterConfigurationsError { message: cause.to_string() })
-    }
-
-    #[tracing::instrument(skip(self), level="trace")]
-    pub async fn store_cluster_deployment(&mut self, deployment: ClusterDeployment) -> Result<ClusterId, StoreClusterDeploymentError> {
-        let cluster_id = deployment.id;
-
-        let cluster_config = self.resources_manager.get::<ClusterConfiguration>(cluster_id).await
-            .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?
-            .ok_or(StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: String::from("Cluster not found") })?;
-
-        let peer_descriptors = actions::list_peer_descriptors(ListPeerDescriptorsParams { resources_manager: self.resources_manager.clone() }).await
-            .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?;
-        
-        let cluster_peer_ids = peer_descriptors.into_iter()
-            .filter(|peer| peer.topology.devices.iter().any(|device| cluster_config.devices.contains(&device.id)))
-            .map(|peer| peer.id)
-            .collect::<Vec<PeerId>>();
-
-        let mut blocked_peers_by_id: Vec<PeerId> = Vec::new();
-        for peer_id in cluster_peer_ids {
-            let get_peer_state_params = GetPeerStateParams {
-                peer: peer_id,
-                resources_manager: self.resources_manager.clone(),
-            };
-            let peer_state = actions::get_peer_state(get_peer_state_params)
-                .await
-                .map_err(|get_peer_state_error| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: get_peer_state_error.to_string() })?;
-
-            if let PeerState::Up { inner: PeerUpState::Blocked(_), .. } = peer_state {
-                blocked_peers_by_id.push(peer_id);
-            }
-        }
-
-        if !blocked_peers_by_id.is_empty() {
-            return Err(StoreClusterDeploymentError::IllegalPeerState { cluster_id: deployment.id, cluster_name: None, invalid_peers: blocked_peers_by_id });
-        }
-
-        let store_cluster_deployment_params = StoreClusterConfigurationParams {
-            resources_manager: Arc::clone(&self.resources_manager),
-            deployment: Clone::clone(&deployment),
-        };
-        actions::store_cluster_deployment(store_cluster_deployment_params).await?;
-
-        if let Err(error) = self.deploy(cluster_id).await {
-            error!("Failed to deploy cluster <{cluster_id}>, due to:\n  {error}");
-        }
-        Ok(cluster_id)
-    }
-
-    #[tracing::instrument(skip(self), level="trace")]
-    pub async fn delete_cluster_deployment(&self, cluster_id: ClusterId) -> Result<ClusterDeployment, DeleteClusterDeploymentError> {
-        let delete_cluster_deployment_params = DeleteClusterDeploymentParams {
-            resources_manager: Arc::clone(&self.resources_manager),
-            vpn: Clone::clone(&self.vpn),
-            cluster_id
-        };
-        actions::delete_cluster_deployment(delete_cluster_deployment_params).await
-    }
-
-    pub async fn get_deployment(&self, cluster_id: ClusterId) -> Result<Option<ClusterDeployment>, GetClusterDeploymentError> {
-        self.resources_manager.resources(|resources| {
-            resources.get::<ClusterDeployment>(cluster_id)
-        }).await
-        .map_err(|cause| GetClusterDeploymentError::Internal { cluster_id, cause: cause.to_string() })
-    }
-
-    #[tracing::instrument(skip(self), level="trace")]
-    pub async fn list_deployment(&self) -> Result<Vec<ClusterDeployment>, ListClusterDeploymentsError> {
-        self.resources_manager.resources(|resources| {
-            resources.list::<ClusterDeployment>()
-        }).await
-        .map_err(|cause| ListClusterDeploymentsError { message: cause.to_string() })
     }
 }
 
@@ -389,10 +457,10 @@ mod test {
         #[rstest]
         #[tokio::test]
         async fn deploy_cluster(
-            fixture: Fixture,
             peer_a: PeerFixture,
             peer_b: PeerFixture,
         ) -> anyhow::Result<()> {
+            let fixture = Fixture::create().await;
 
             let leader_id = peer_a.id;
             let cluster_id = ClusterId::random();
@@ -425,7 +493,7 @@ mod test {
                 cluster_configuration,
             }).await?;
 
-            assert_that!(fixture.testee.lock().await.deploy(cluster_id).await, ok(eq(&())));
+            assert_that!(fixture.testee.lock().await.deploy_cluster(cluster_id).await, ok(eq(&())));
 
 
             let assert_cluster_assignment_valid = |cluster_assignment: &ClusterAssignment| {
@@ -504,11 +572,12 @@ mod test {
 
     #[rstest]
     #[tokio::test]
-    async fn deploy_should_fail_for_unknown_cluster(fixture: Fixture) -> anyhow::Result<()> {
+    async fn deploy_should_fail_for_unknown_cluster() -> anyhow::Result<()> {
+        let fixture = Fixture::create().await;
         let unknown_cluster = ClusterId::random();
 
         assert_that!(
-            fixture.testee.lock().await.deploy(unknown_cluster).await,
+            fixture.testee.lock().await.deploy_cluster(unknown_cluster).await,
             err(eq(&DeployClusterError::ClusterConfigurationNotFound(unknown_cluster)))
         );
 
@@ -583,29 +652,30 @@ mod test {
         peer_messaging_broker: PeerMessagingBrokerRef,
         cluster_manager_options: ClusterManagerOptions,
     }
-    #[fixture]
-    fn fixture() -> Fixture {
-        let settings = settings::load_defaults().unwrap();
+    impl Fixture {
+        async fn create() -> Fixture {
+            let settings = settings::load_defaults().unwrap();
 
-        let resources_manager = ResourcesManager::new_in_memory();
-        let peer_messaging_broker = PeerMessagingBroker::new(
-            Arc::clone(&resources_manager),
-            PeerMessagingBrokerOptions::load(&settings.config).unwrap(),
-        );
+            let resources_manager = ResourcesManager::new_in_memory();
+            let peer_messaging_broker = PeerMessagingBroker::new(
+                Arc::clone(&resources_manager),
+                PeerMessagingBrokerOptions::load(&settings.config).unwrap(),
+            );
 
-        let cluster_manager_options = ClusterManagerOptions::load(&settings.config).unwrap();
+            let cluster_manager_options = ClusterManagerOptions::load(&settings.config).unwrap();
 
-        let testee = ClusterManager::new(
-            Arc::clone(&resources_manager),
-            Arc::clone(&peer_messaging_broker),
-            Vpn::Disabled,
-            cluster_manager_options.clone(),
-        );
-        Fixture {
-            testee,
-            resources_manager,
-            peer_messaging_broker,
-            cluster_manager_options,
+            let testee = ClusterManager::create(
+                Arc::clone(&resources_manager),
+                Arc::clone(&peer_messaging_broker),
+                Vpn::Disabled,
+                cluster_manager_options.clone(),
+            ).await;
+            Fixture {
+                testee,
+                resources_manager,
+                peer_messaging_broker,
+                cluster_manager_options,
+            }
         }
     }
 

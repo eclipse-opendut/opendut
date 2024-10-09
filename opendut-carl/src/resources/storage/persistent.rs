@@ -7,6 +7,7 @@ use crate::resources::storage::{DatabaseConnectInfo, Resource, ResourcesStorageA
 use diesel::{Connection, PgConnection};
 use std::any::Any;
 use std::sync::Mutex;
+use crate::resources::transaction::RelayedSubscriptionEvents;
 
 pub struct PersistentResourcesStorage {
     db_connection: Mutex<PgConnection>,
@@ -21,31 +22,34 @@ impl PersistentResourcesStorage {
         Ok(Self { db_connection, memory })
     }
 
-    pub fn transaction<T, E, F>(&mut self, code: F) -> PersistenceResult<Result<T, E>>
+    pub fn transaction<T, E, F>(&mut self, code: F) -> PersistenceResult<(Result<T, E>, RelayedSubscriptionEvents)>
     where
         F: FnOnce(PersistentResourcesTransaction) -> Result<T, E>,
         E: std::error::Error + Send + Sync + 'static,
     {
         let transaction_result = self.db_connection.lock().unwrap().transaction::<_, TransactionPassthroughError, _>(|connection| {
             let mut memory = self.memory.lock().unwrap();
+            let mut relayed_subscription_events = RelayedSubscriptionEvents::default();
+
             let transaction = PersistentResourcesTransaction {
                 db_connection: Mutex::new(connection),
                 memory: Mutex::new(&mut memory),
+                relayed_subscription_events: &mut relayed_subscription_events,
             };
 
             let result = code(transaction);
             match result {
-                Ok(ok) => Ok(ok),
+                Ok(ok) => Ok((ok, relayed_subscription_events)),
                 Err(error) => Err(TransactionPassthroughError::Passthrough(Box::new(error))), //passthrough via an Err-value to trigger transaction rollback
             }
         });
 
         match transaction_result {
-            Ok(ok) => Ok(Ok(ok)),
+            Ok((result, relayed_subscription_events)) => Ok((Ok(result), relayed_subscription_events)),
             Err(TransactionPassthroughError::Passthrough(error)) => {
                 let error = error.downcast::<E>()
                     .expect("should be error of type E, like we handed it out from the transaction");
-                Ok(Err(*error))
+                Ok((Err(*error), RelayedSubscriptionEvents::default())) //FIXME can we omit RelayedSubscriptionEvents at compile-time?
             }
             Err(TransactionPassthroughError::Diesel(source)) => Err(PersistenceError::DieselInternal { source }),
         }
@@ -86,9 +90,10 @@ impl ResourcesStorageApi for PersistentResourcesStorage {
 }
 
 
-pub struct PersistentResourcesTransaction<'a> {
-    db_connection: Mutex<&'a mut PgConnection>,
-    memory: Mutex<&'a mut VolatileResourcesStorage>,
+pub struct PersistentResourcesTransaction<'transaction> {
+    db_connection: Mutex<&'transaction mut PgConnection>,
+    memory: Mutex<&'transaction mut VolatileResourcesStorage>,
+    pub relayed_subscription_events: &'transaction mut RelayedSubscriptionEvents,
 }
 impl ResourcesStorageApi for PersistentResourcesTransaction<'_> {
     fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
