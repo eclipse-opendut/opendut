@@ -28,6 +28,7 @@ enum TaskCli {
     Distribution(tasks::distribution::DistributionCli),
     Doc(tasks::doc::DocCli),
     Licenses(tasks::licenses::LicensesCli),
+    Test(tasks::test::TestCli),
 
     Carl(packages::carl::CarlCli),
     Cleo(packages::cleo::CleoCli),
@@ -52,8 +53,9 @@ fn main() -> crate::Result {
                 packages::cleo::distribution::cleo_distribution(target)?;
             }
         }
-        TaskCli::Licenses(implementation) => implementation.default_handling(PackageSelection::All)?,
         TaskCli::Doc(implementation) => implementation.default_handling()?,
+        TaskCli::Licenses(implementation) => implementation.default_handling(PackageSelection::All)?,
+        TaskCli::Test(implementation) => implementation.default_handling()?,
 
         TaskCli::Carl(implementation) => implementation.default_handling()?,
         TaskCli::Cleo(implementation) => implementation.default_handling()?,

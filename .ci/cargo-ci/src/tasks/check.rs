@@ -1,6 +1,7 @@
 use std::process::Command;
 
 use crate::tasks::licenses::check::check_licenses;
+use crate::tasks::test;
 use crate::util::RunRequiringSuccess;
 
 /// Performs verification tasks.
@@ -23,35 +24,19 @@ impl CheckCli {
 #[tracing::instrument(skip_all)]
 pub fn check(all_features: bool, features: Vec<String>) -> crate::Result {
 
-    test(all_features, features)?;
+    test::test(test::TestCli {
+        all_features,
+        features,
+        disable_logging: true,
+        test_name: None,
+        pass_through: vec![],
+    })?;
 
     clippy()?;
 
     check_licenses()?;
 
     Ok(())
-}
-
-#[tracing::instrument(skip_all)]
-fn test(all_features: bool, features: Vec<String>) -> crate::Result {
-
-    let mut command = Command::new("cargo");
-
-    command.arg("test");
-
-    if features.is_empty() {
-        if all_features {
-            command.arg("--all-features");
-        }
-    }
-    else {
-        command.arg("--features");
-        for feature in features {
-            command.arg(feature);
-        }
-    }
-
-    command.run_requiring_success()
 }
 
 #[tracing::instrument]

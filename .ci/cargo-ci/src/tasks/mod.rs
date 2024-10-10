@@ -6,3 +6,4 @@ pub mod doc;
 pub mod docker;
 pub mod licenses;
 pub mod run;
+pub mod test;
