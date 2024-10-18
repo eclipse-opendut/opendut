@@ -1,12 +1,11 @@
 use std::fs;
 use std::path::PathBuf;
-
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
 use opendut_types::peer::executor::ExecutorDescriptors;
 use opendut_types::specs::{PeerDescriptorSpecification, PeerDescriptorSpecificationV1, Specification, SpecificationDocument, SpecificationMetadata};
 use opendut_types::specs::yaml::{YamlSpecificationFile};
-
+use crate::commands::peer::create::create_peer;
 use crate::CreateOutputFormat;
 
 #[derive(clap::Parser)]
@@ -20,7 +19,7 @@ pub struct ApplyCli {
 }
 
 impl ApplyCli {
-    pub async fn execute(self, _carl: &mut CarlClient) -> crate::Result<()> {
+    pub async fn execute(self, carl: &mut CarlClient) -> crate::Result<()> {
         match self.from {
             Source::File(path) => {
                 let content = fs::read_to_string(path).unwrap();
@@ -35,8 +34,12 @@ impl ApplyCli {
 
                         let models = convert_documents_to_models(specification_documents)?;
                         
+                        for model in models {
+                            create_peer(model, carl, &self.output).await?;
+                        }
                         
-                        todo!("store_peer_descriptor and store_cluster_configuration")
+                        Ok(())
+                        // TODO store_cluster_configuration
                     }
                     Err(cause) => {
                         Err(format!("Failed to parse specification: {cause}"))

@@ -53,28 +53,35 @@ impl CreatePeerCli {
                 executors: vec![],
             }
         };
-        carl.peers
-            .store_peer_descriptor(descriptor.clone())
-            .await
-            .map_err(|error| format!("Failed to create new peer.\n  {error}"))?;
-        let bold = Style::new().bold();
-        match output {
-            CreateOutputFormat::Text => {
-                println!(
-                    "Created the peer '{}' with the ID: <{}>",
-                    name,
-                    bold.apply_to(id)
-                );
-            }
-            CreateOutputFormat::Json => {
-                let json = serde_json::to_string(&descriptor).unwrap();
-                println!("{}", json);
-            }
-            CreateOutputFormat::PrettyJson => {
-                let json = serde_json::to_string_pretty(&descriptor).unwrap();
-                println!("{}", json);
-            }
-        }
+
+        create_peer(descriptor, carl, &output).await?;
+
         Ok(())
     }
+}
+
+pub async fn create_peer(descriptor: PeerDescriptor, carl: &mut CarlClient, output: &CreateOutputFormat) -> crate::Result<()> {
+    carl.peers
+        .store_peer_descriptor(descriptor.clone())
+        .await
+        .map_err(|error| format!("Failed to create new peer.\n  {error}"))?;
+    let bold = Style::new().bold();
+    match output {
+        CreateOutputFormat::Text => {
+            println!(
+                "Created the peer '{}' with the ID: <{}>",
+                descriptor.name,
+                bold.apply_to(descriptor.id)
+            );
+        }
+        CreateOutputFormat::Json => {
+            let json = serde_json::to_string(&descriptor).unwrap();
+            println!("{}", json);
+        }
+        CreateOutputFormat::PrettyJson => {
+            let json = serde_json::to_string_pretty(&descriptor).unwrap();
+            println!("{}", json);
+        }
+    }
+    Ok(())
 }
