@@ -10,7 +10,6 @@ use uuid::Uuid;
 
 #[derive(Debug)]
 pub struct SpecificationDocument {
-    pub kind: ResourceKind,
     pub version: String,
     pub metadata: SpecificationMetadata,
     pub spec: Specification,
@@ -74,11 +73,11 @@ impl Specification {
 
 #[derive(Debug, thiserror::Error)]
 pub enum ParseSpecificationError {
-    #[error("Kind '{kind}' is not valid!")]
+    #[error("Failed to parse specification. Kind '{kind}' is not valid!")]
     IllegalResourceKind { kind: String },
-    #[error("Version '{version}' is not valid!")]
+    #[error("Failed to parse specification. Version '{version}' is not valid!")]
     IllegalSpecificationVersion { version: String },
-    #[error("Unknown version '{version}' for resource specification '{kind}'")]
+    #[error("Failed to parse specification. Unknown version '{version}' for resource specification '{kind}'")]
     UnknownVersion { kind: ResourceKind, version: SpecificationVersion },
     #[cfg(feature = "yaml-specs")]
     #[error("Failed to parse yaml specification, due to: {cause}")]
@@ -107,7 +106,7 @@ pub enum ClusterConfigurationSpecification {
 #[derive(Debug, Deserialize)]
 pub struct PeerDescriptorSpecificationV1 {
     #[serde(default)]
-    pub location: String,
+    pub location: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

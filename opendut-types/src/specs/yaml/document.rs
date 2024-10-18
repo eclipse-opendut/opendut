@@ -53,7 +53,6 @@ impl TryFrom<YamlSpecificationDocument> for SpecificationDocument {
         let version = parse_version(doc.version.as_str())?;
         let spec = parse_spec(kind, version, doc.spec)?;
         Ok(SpecificationDocument {
-            kind,
             version: doc.version,
             metadata: doc.metadata,
             spec

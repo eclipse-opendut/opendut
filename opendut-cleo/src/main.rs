@@ -1,17 +1,12 @@
-use std::fs;
-use std::io::Read;
 use std::ops::Not;
 use std::path::PathBuf;
 use std::process::ExitCode;
-use std::str::FromStr;
 
 use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::Shell;
 use console::Style;
 
-use opendut_types::peer::PeerSetup;
 use opendut_carl_api::carl::{CaCertInfo, CarlClient};
-use opendut_types::specs::Specification;
 use opendut_types::topology::DeviceName;
 use opendut_util::settings::{FileFormat, load_config, LoadedConfig};
 
@@ -266,9 +261,11 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
             }
         }
         Commands::Apply2(implementation) => {
+            let mut carl = create_carl_client(&settings.config).await;
             implementation.execute(&mut carl).await?;
         }
         Commands::Create { resource, output } => {
+            let mut carl = create_carl_client(&settings.config).await;
             match resource {
                 CreateResource::ClusterConfiguration(implementation) => {
                     implementation.execute(&mut carl, output).await?;
@@ -383,17 +380,5 @@ pub async fn get_cleo_oidc_client_id(config: &config::Config) -> String {
     match config.get_string("network.oidc.client.id") {
         Ok(id) => { id }
         Err(_) => { String::from("cleoCli") }
-    }
-}
-
-
-#[derive(Clone, Debug)]
-struct ParseableSetupString(Box<PeerSetup>);
-impl FromStr for ParseableSetupString {
-    type Err = String;
-    fn from_str(string: &str) -> std::result::Result<Self, Self::Err> {
-        PeerSetup::decode(string)
-            .map(|setup| ParseableSetupString(Box::new(setup)))
-            .map_err(|error| error.to_string())
     }
 }

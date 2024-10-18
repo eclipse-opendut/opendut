@@ -2,8 +2,10 @@ use std::fs;
 use std::path::PathBuf;
 
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::specs::{Specification, SpecificationDocument};
-use opendut_types::specs::yaml::YamlSpecificationFile;
+use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
+use opendut_types::peer::executor::ExecutorDescriptors;
+use opendut_types::specs::{PeerDescriptorSpecification, PeerDescriptorSpecificationV1, Specification, SpecificationDocument, SpecificationMetadata};
+use opendut_types::specs::yaml::{YamlSpecificationFile};
 
 use crate::CreateOutputFormat;
 
@@ -24,19 +26,17 @@ impl ApplyCli {
                 let content = fs::read_to_string(path).unwrap();
                 match YamlSpecificationFile::try_from_yaml_str(&content) {
                     Ok(file) => {
-                        file.documents.into_iter().for_each(|yaml_specification| {
-                            let spec = SpecificationDocument::try_from(yaml_specification).unwrap();
-                            // match spec {
-                            //     Specification::PeerDescriptorSpecification(PeerDescriptorSpecification::V1(peer)) => {
-                            // 
-                            // 
-                            // 
-                            //     }
-                            //     Specification::ClusterConfigurationSpecification(_) => {}
-                            // }
-                            println!("{spec:?}");
-                        });
-                        Ok(())
+                        let specification_documents = file.documents
+                            .into_iter()
+                            .map(|yaml_specification| {
+                                SpecificationDocument::try_from(yaml_specification)
+                                    .map_err(|error| error.to_string())
+                            }).collect::<Result<_, _>>()?;
+
+                        let models = convert_documents_to_models(specification_documents)?;
+                        
+                        
+                        todo!("store_peer_descriptor and store_cluster_configuration")
                     }
                     Err(cause) => {
                         Err(format!("Failed to parse specification: {cause}"))
@@ -93,5 +93,143 @@ fn parse_source(arg: &str) -> Result<Source, SourceParsingError> {
         else {
             Err(SourceParsingError { arg: String::from(arg), details: String::from("Path designates neither a file nor a directory.") })
         }
+    }
+}
+
+fn convert_documents_to_models(documents: Vec<SpecificationDocument>) -> crate::Result<Vec<PeerDescriptor>> { //TODO return both PeerDescriptor and ClusterConfiguration
+    documents.into_iter().map(|specification_document| {
+        let result = match specification_document.spec {
+            Specification::PeerDescriptorSpecification(PeerDescriptorSpecification::V1(peer)) => {
+                let peer_id = specification_document.metadata.id;
+                convert_document_to_peer_descriptor(specification_document.metadata, peer)
+                    .map_err(|error| format!("Could not parse the provided specification for peer <{}>.\n  {}", peer_id, error))?
+            }
+            Specification::ClusterConfigurationSpecification(_) => todo!()
+        };
+        Ok(result)
+    }).collect()
+}
+
+fn convert_document_to_peer_descriptor(specification_metadata: SpecificationMetadata, peer: PeerDescriptorSpecificationV1) -> crate::Result<PeerDescriptor> {
+    let SpecificationMetadata { id, name } = specification_metadata;
+
+    let id = PeerId::from(id);
+
+    let name = PeerName::try_from(name)
+        .map_err(|error| error.to_string())?;
+
+    let location = peer.location
+        .map(PeerLocation::try_from)
+        .transpose()
+        .map_err(|error| error.to_string())?;
+
+    let descriptor: PeerDescriptor = PeerDescriptor {
+        id,
+        name,
+        location,
+        network: Default::default(), // TODO
+        topology: Default::default(), // TODO
+        executors: ExecutorDescriptors {
+            executors: vec![], // TODO
+        },
+    };
+    Ok(descriptor)
+}
+
+#[cfg(test)]
+mod tests {
+    use googletest::prelude::*;
+    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
+    use opendut_types::peer::executor::ExecutorDescriptors;
+    use opendut_types::specs::{PeerDescriptorSpecification, PeerDescriptorSpecificationV1, Specification, SpecificationDocument, SpecificationMetadata};
+    use crate::commands::apply::{convert_documents_to_models, convert_document_to_peer_descriptor};
+
+    #[test]
+    fn should_convert_document_to_peer_descriptor() -> anyhow::Result<()> {
+        let peer = generate_peer_descriptor()?;
+
+        let specification_metadata = SpecificationMetadata {
+            id: peer.id.uuid,
+            name: peer.name.clone().value(),
+        };
+
+        let specification_peer = PeerDescriptorSpecificationV1 {
+            location: peer.location.clone().map(|location| location.value()),
+        };
+
+        let result = convert_document_to_peer_descriptor(specification_metadata, specification_peer).unwrap();
+
+        assert_that!(result, eq(&peer));
+
+        Ok(())
+    }
+
+    fn generate_peer_descriptor() -> anyhow::Result<PeerDescriptor> {
+        Ok(PeerDescriptor {
+            id: PeerId::random(),
+            name: PeerName::try_from("peer1")?,
+            location: Some(PeerLocation::try_from("Ulm")?),
+            network: Default::default(), //TODO
+            topology: Default::default(), //TODO
+            executors: ExecutorDescriptors { executors: vec![] }, //TODO
+        })
+    }
+
+    #[test]
+    fn should_convert_document_to_model() -> anyhow::Result<()> {
+        let peer_list = generate_peer_list()?;
+        
+        let documents = vec![
+            SpecificationDocument {
+                version: String::from("v1"),
+                metadata: SpecificationMetadata {
+                    id: peer_list[0].id.uuid,
+                    name: peer_list[0].name.clone().value(),
+                },
+                spec: Specification::PeerDescriptorSpecification(PeerDescriptorSpecification::V1(PeerDescriptorSpecificationV1 {
+                    location: Some(String::from("Ulm"))
+                }))
+            },
+            SpecificationDocument {
+                version: String::from("v1"),
+                metadata: SpecificationMetadata {
+                    id: peer_list[1].id.uuid,
+                    name: peer_list[1].name.clone().value(),
+                },
+                spec: Specification::PeerDescriptorSpecification(PeerDescriptorSpecification::V1(PeerDescriptorSpecificationV1 {
+                    location: Some(String::from("Stuttgart"))
+                }))
+            }
+        ];
+
+        let result = convert_documents_to_models(documents).unwrap();
+
+        assert_that!(result, eq(&peer_list));
+
+        Ok(())
+
+    }
+
+    fn generate_peer_list() -> anyhow::Result<Vec<PeerDescriptor>> {
+        Ok(
+            vec![
+                PeerDescriptor {
+                    id: PeerId::random(),
+                    name: PeerName::try_from("peer1")?,
+                    location: Some(PeerLocation::try_from("Ulm")?),
+                    network: Default::default(), //TODO
+                    topology: Default::default(), //TODO
+                    executors: ExecutorDescriptors { executors: vec![] }, //TODO
+                },
+                PeerDescriptor {
+                    id: PeerId::random(),
+                    name: PeerName::try_from("peer2")?,
+                    location: Some(PeerLocation::try_from("Stuttgart")?),
+                    network: Default::default(), //TODO
+                    topology: Default::default(), //TODO
+                    executors: ExecutorDescriptors { executors: vec![] }, //TODO
+                }
+            ]
+        )
     }
 }
