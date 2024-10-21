@@ -77,7 +77,7 @@ impl NetworkInterfaceManager {
             .add()
             .bridge(name.name())
             .execute().await
-            .map_err(|cause| Error::BridgeCreation { name: name.clone(), cause })?;
+            .map_err(|cause| Error::BridgeCreation { name: name.clone(), cause: cause.into() })?;
         let interface = self.try_find_interface(name).await?;
         Ok(interface)
     }
@@ -90,7 +90,7 @@ impl NetworkInterfaceManager {
             .add()
             .gretap_v4(name.name(), local_ip, remote_ip)
             .execute().await
-            .map_err(|cause| Error::GretapCreation { name: name.clone(), cause })?;
+            .map_err(|cause| Error::GretapCreation { name: name.clone(), cause: cause.into() })?;
         let interface = self.try_find_interface(name).await?;
         Ok(interface)
     }
@@ -102,7 +102,7 @@ impl NetworkInterfaceManager {
             .set(interface.index)
             .up()
             .execute().await
-            .map_err(|cause| Error::SetInterfaceUp { interface: interface.clone(), cause })?;
+            .map_err(|cause| Error::SetInterfaceUp { interface: interface.clone(), cause: cause.into() })?;
         Ok(())
     }
 
@@ -113,7 +113,7 @@ impl NetworkInterfaceManager {
             .set(interface.index)
             .down()
             .execute().await
-            .map_err(|cause| Error::SetInterfaceDown { interface: interface.clone(), cause })?;
+            .map_err(|cause| Error::SetInterfaceDown { interface: interface.clone(), cause: cause.into() })?;
         Ok(())
     }
 
@@ -166,7 +166,7 @@ impl NetworkInterfaceManager {
             .set(interface.index)
             .controller(bridge.index)
             .execute().await
-            .map_err(|cause| Error::JoinInterfaceToBridge { interface: interface.clone(), bridge: bridge.clone(), cause })?;
+            .map_err(|cause| Error::JoinInterfaceToBridge { interface: interface.clone(), bridge: bridge.clone(), cause: cause.into() })?;
         Ok(())
     }
 
@@ -175,7 +175,7 @@ impl NetworkInterfaceManager {
             .link()
             .del(interface.index)
             .execute().await
-            .map_err(|cause| Error::DeleteInterface { interface: interface.clone(), cause })?;
+            .map_err(|cause| Error::DeleteInterface { interface: interface.clone(), cause: cause.into() })?;
         Ok(())
     }
 
@@ -215,23 +215,23 @@ impl std::fmt::Display for Interface {
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Failure while creating bridge '{name}': {cause}")]
-    BridgeCreation { name: NetworkInterfaceName, cause: rtnetlink::Error },
+    BridgeCreation { name: NetworkInterfaceName, cause: Box<rtnetlink::Error> },
     #[error("Failed to establish connection to netlink: {cause}")]
     Connecting { cause: io::Error },
     #[error("Failure while deleting interface {interface}: {cause}")]
-    DeleteInterface { interface: Interface, cause: rtnetlink::Error },
+    DeleteInterface { interface: Interface, cause: Box<rtnetlink::Error> },
     #[error("Failure while creating gretap interface '{name}': {cause}")]
-    GretapCreation { name: NetworkInterfaceName, cause: rtnetlink::Error },
+    GretapCreation { name: NetworkInterfaceName, cause: Box<rtnetlink::Error> },
     #[error("Interface with name '{name}' not found.")]
     InterfaceNotFound { name: NetworkInterfaceName },
     #[error("Failure while listing interfaces: {cause}")]
     ListInterfaces { cause: rtnetlink::Error },
     #[error("Failure while setting interface {interface} to state 'up': {cause}")]
-    SetInterfaceUp { interface: Interface, cause: rtnetlink::Error },
+    SetInterfaceUp { interface: Interface, cause: Box<rtnetlink::Error> },
     #[error("Failure while setting interface {interface} to state 'down': {cause}")]
-    SetInterfaceDown { interface: Interface, cause: rtnetlink::Error },
+    SetInterfaceDown { interface: Interface, cause: Box<rtnetlink::Error> },
     #[error("Failure while joining interface {interface} to bridge {bridge}: {cause}")]
-    JoinInterfaceToBridge { interface: Interface, bridge: Interface, cause: rtnetlink::Error },
+    JoinInterfaceToBridge { interface: Interface, bridge: Interface, cause: Box<rtnetlink::Error> },
     #[error("Failure while creating virtual CAN interface '{name}': {cause}")]
     VCanInterfaceCreation { name: NetworkInterfaceName, cause: String},
     #[error("Failure during updating CAN interface '{name}': {cause}")]
