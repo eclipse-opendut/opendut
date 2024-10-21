@@ -1,6 +1,6 @@
 use crate::testing::carl_client::TestCarlClient;
 use crate::testing::util;
-use opendut_types::peer::PeerId;
+use crate::testing;
 
 #[test_log::test(
     tokio::test(flavor = "multi_thread")
@@ -8,12 +8,12 @@ use opendut_types::peer::PeerId;
 async fn register_edgar_carl() -> anyhow::Result<()> {
     let carl_port = util::spawn_carl()?;
 
-    let edgar_id = PeerId::random();
-    util::spawn_edgar_with_default_behavior(edgar_id, carl_port).await?;
-
     let carl_client = TestCarlClient::connect(carl_port).await?;
+    let edgar = testing::peer_descriptor::store_peer_descriptor(&carl_client).await?;
 
-    carl_client.await_peer_up(edgar_id).await?;
+    util::spawn_edgar_with_default_behavior(edgar.id, carl_port).await?;
+
+    carl_client.await_peer_up(edgar.id).await?;
 
     Ok(())
 }

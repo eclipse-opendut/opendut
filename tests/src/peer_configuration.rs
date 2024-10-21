@@ -1,13 +1,13 @@
+use crate::testing;
 use crate::testing::carl_client::TestCarlClient;
 use crate::testing::util;
 use googletest::prelude::*;
 use opendut_types::cluster::{ClusterAssignment, ClusterConfiguration, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
 use opendut_types::peer::configuration::{OldPeerConfiguration, Parameter, ParameterTarget, PeerConfiguration};
 use opendut_types::peer::ethernet::EthernetBridge;
-use opendut_types::peer::executor::ExecutorDescriptors;
-use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerNetworkDescriptor};
-use opendut_types::topology::{DeviceDescriptor, DeviceId, DeviceName, Topology};
-use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
+use opendut_types::peer::PeerId;
+use opendut_types::topology::DeviceDescriptor;
+use opendut_types::util::net::NetworkInterfaceName;
 use opendut_types::util::Port;
 use std::collections::HashSet;
 use std::net::IpAddr;
@@ -23,7 +23,7 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
 
     let carl_client = TestCarlClient::connect(carl_port).await?;
 
-    let peer_a = store_peer_descriptor(&carl_client).await?;
+    let peer_a = testing::peer_descriptor::store_peer_descriptor(&carl_client).await?;
 
     let mut receiver_a = util::spawn_edgar_with_peer_configuration_receiver(peer_a.id, carl_port).await?;
     carl_client.await_peer_up(peer_a.id).await?;
@@ -34,7 +34,7 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
         receiver_a.expect_no_peer_configuration().await;
     }
 
-    let peer_b = store_peer_descriptor(&carl_client).await?;
+    let peer_b = testing::peer_descriptor::store_peer_descriptor(&carl_client).await?;
 
     let mut receiver_b = util::spawn_edgar_with_peer_configuration_receiver(peer_b.id, carl_port).await?;
     carl_client.await_peer_up(peer_b.id).await?;
@@ -116,7 +116,7 @@ async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_onl
 
     let carl_client = TestCarlClient::connect(carl_port).await?;
 
-    let peer_a = store_peer_descriptor(&carl_client).await?;
+    let peer_a = testing::peer_descriptor::store_peer_descriptor(&carl_client).await?;
 
     let mut receiver_a = util::spawn_edgar_with_peer_configuration_receiver(peer_a.id, carl_port).await?;
     carl_client.await_peer_up(peer_a.id).await?;
@@ -127,7 +127,7 @@ async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_onl
         receiver_a.expect_no_peer_configuration().await;
     }
 
-    let peer_b = store_peer_descriptor(&carl_client).await?;
+    let peer_b = testing::peer_descriptor::store_peer_descriptor(&carl_client).await?;
 
     let cluster_leader = peer_a.id;
     let cluster_devices = peer_a.topology.devices.iter().chain(peer_b.topology.devices.iter());
@@ -214,47 +214,6 @@ impl Fixture {
 
         Fixture { empty_peer_configuration, empty_old_peer_configuration }
     }
-}
-
-async fn store_peer_descriptor(carl_client: &TestCarlClient) -> anyhow::Result<PeerDescriptor> {
-    let peer_id = PeerId::random();
-    let device_id = DeviceId::random();
-    let network_interface_id = NetworkInterfaceId::random();
-
-    let peer_descriptor = PeerDescriptor {
-        id: peer_id,
-        name: PeerName::try_from(format!("peer-{peer_id}"))?,
-        location: None,
-        network: PeerNetworkDescriptor {
-            interfaces: vec![
-                NetworkInterfaceDescriptor {
-                    id: network_interface_id,
-                    name: NetworkInterfaceName::try_from(format!("eth-{short_id}", short_id=network_interface_id.to_string().split("-").next().unwrap()))?,
-                    configuration: NetworkInterfaceConfiguration::Ethernet,
-                },
-            ],
-            bridge_name: None,
-        },
-        topology: Topology {
-            devices: vec![
-                DeviceDescriptor {
-                    id: device_id,
-                    name: DeviceName::try_from(format!("device-{device_id}"))?,
-                    description: None,
-                    interface: network_interface_id,
-                    tags: vec![],
-                }
-            ],
-        },
-        executors: ExecutorDescriptors {
-            executors: vec![],
-        },
-    };
-
-    carl_client.inner().await.peers
-        .store_peer_descriptor(peer_descriptor.clone()).await?;
-
-    Ok(peer_descriptor)
 }
 
 async fn store_cluster_configuration(leader: PeerId, devices: impl Iterator<Item=&DeviceDescriptor>, carl_client: &TestCarlClient) -> anyhow::Result<ClusterConfiguration> {
