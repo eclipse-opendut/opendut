@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * EDGAR Setup now has support for plugins, which can perform hardware- or use-case specific setup tasks.
 
 ### Changed
+* EDGAR Setup now prompts whether to overwrite a mismatched configuration, when used interactively.
 * The NetBird server and client was updated to 0.28.9.
 
 ### Fixed

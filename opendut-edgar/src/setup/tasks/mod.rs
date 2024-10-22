@@ -26,10 +26,6 @@ pub use request_linux_network_capability::RequestLinuxNetworkCapability;
 mod restart_service;
 pub use restart_service::RestartService;
 
-pub mod write_configuration;
-
-pub use write_configuration::WriteConfiguration;
-
 pub mod load_kernel_modules;
 pub use load_kernel_modules::LoadKernelModules;
 

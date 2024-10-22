@@ -72,8 +72,7 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
             }
         }
 
-        let no_confirm = true;
-        runner::run(RunMode::Service, no_confirm, &tasks).await?;
+        runner::run(RunMode::Service, &tasks).await?;
     }
 
     {

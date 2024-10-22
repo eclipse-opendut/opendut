@@ -11,6 +11,7 @@ use crate::setup;
 use opendut_types::peer::PeerId;
 use opendut_types::util::net::NetworkInterfaceName;
 use opendut_types::vpn::netbird::SetupKey;
+use opendut_util::project;
 
 #[derive(Debug, Parser)]
 #[command(name = "opendut-edgar")]
@@ -31,8 +32,8 @@ enum Commands {
     },
     /// Prepare your system
     Setup {
-        #[command(subcommand)]
-        mode: SetupMode,
+        #[command(subcommand, name="mode")]
+        setup_mode: SetupMode,
 
         /// Run through all steps without changing the system
         #[arg(long, global=true)]
@@ -91,7 +92,7 @@ pub async fn cli() -> anyhow::Result<()> {
                 id_override,
             ).await
         },
-        Commands::Setup { mode, dry_run, no_confirm, mtu } => {
+        Commands::Setup { setup_mode, dry_run, no_confirm, mtu } => {
             setup::start::init_logging().await?;
 
             let command = std::env::args_os()
@@ -99,23 +100,29 @@ pub async fn cli() -> anyhow::Result<()> {
             info!("EDGAR Setup started!");
             info!("Setup command being executed: {:?}", command);
 
-            let run_mode = if dry_run { setup::RunMode::SetupDryRun } else { setup::RunMode::Setup };
+            let dry_run = if dry_run { DryRun::Yes } else { DryRun::No };
+            let dry_run = force_dry_run_in_development(dry_run);
 
-            match mode {
+            if dry_run.not() {
+                sudo::with_env(&["OPENDUT_EDGAR_"]) //Request before doing anything else, as it restarts the process when sudo is not present.
+                    .expect("Failed to request sudo privileges.");
+            }
+
+            match setup_mode {
                 SetupMode::Managed { setup_string } => {
-                    setup::start::managed(run_mode, no_confirm, setup_string, mtu).await?;
+                    setup::start::managed(dry_run, no_confirm, setup_string, mtu).await?;
                 },
                 SetupMode::Unmanaged { management_url, setup_key, leader, bridge, device_interfaces } => {
                     let setup_key = SetupKey { uuid: setup_key };
                     let ParseableLeader(leader) = leader;
                     let bridge = bridge.unwrap_or_else(crate::common::default_bridge_name);
                     let device_interfaces = HashSet::from_iter(device_interfaces);
-                    setup::start::unmanaged(run_mode, no_confirm, management_url, setup_key, bridge, device_interfaces, leader, mtu).await?;
+                    setup::start::unmanaged(dry_run, no_confirm, management_url, setup_key, bridge, device_interfaces, leader, mtu).await?;
                 }
             };
             info!("EDGAR Setup finished!\n");
             Ok(())
-        },
+        }
     }
 }
 
@@ -135,3 +142,28 @@ impl FromStr for ParseableLeader {
         }
     }
 }
+
+#[derive(PartialEq, Eq)]
+pub enum DryRun { Yes, No }
+impl DryRun {
+    pub fn not(&self) -> bool {
+        self == &DryRun::No
+    }
+}
+
+fn force_dry_run_in_development(dry_run: DryRun) -> DryRun {
+    if project::is_running_in_development() {
+        println!("{DEVELOPMENT_DRY_RUN_BANNER}");
+        info!("{DEVELOPMENT_DRY_RUN_BANNER}");
+        DryRun::Yes
+    } else {
+        dry_run
+    }
+}
+const DEVELOPMENT_DRY_RUN_BANNER: &str = r"
+                Running in
+             Development mode
+                   ----
+          Activating --dry-run to
+        prevent changes to the system.
+        ";

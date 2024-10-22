@@ -1,23 +1,11 @@
-use std::io;
-use std::io::Write;
 use std::time::Duration;
 
 use indicatif::{ProgressBar, ProgressStyle};
 use tracing::{debug, error, info};
 
-use opendut_util::project;
-
 use crate::common::task::{Success, Task, TaskFulfilled};
 
-const DRY_RUN_BANNER: &str = r"
-                Running in
-             Development mode
-                    --
-          Activating --dry-run to
-        prevent changes to the system.
-        ";
-
-pub async fn run(run_mode: RunMode, no_confirm: bool, tasks: &[Box<dyn Task>]) -> anyhow::Result<()> {
+pub async fn run(run_mode: RunMode, tasks: &[Box<dyn Task>]) -> anyhow::Result<()> {
     if tasks.is_empty() {
         debug!("No tasks to run. Skipping.");
         return Ok(())
@@ -26,54 +14,11 @@ pub async fn run(run_mode: RunMode, no_confirm: bool, tasks: &[Box<dyn Task>]) -
     let task_names_string = tasks.iter().map(|task| task.description()).collect::<Vec<_>>().join(", ");
     debug!("Running tasks: {task_names_string}");
 
-    let run_mode = if project::is_running_in_development() {
-        println!("{DRY_RUN_BANNER}");
-        info!("{DRY_RUN_BANNER}");
-        RunMode::SetupDryRun
-    } else {
-        run_mode
-    };
+    run_tasks(tasks, run_mode).await;
 
-    match run_mode {
-        RunMode::Setup => {
-            sudo::with_env(&["OPENDUT_EDGAR_"]) //Request before doing anything else, as it restarts the process when sudo is not present.
-                .expect("Failed to request sudo privileges.");
-        },
-        RunMode::SetupDryRun | RunMode::Service => {} //do nothing
-    }
-    if no_confirm || user_confirmation(run_mode)? {
-        run_tasks(tasks, run_mode).await;
-    }
     println!();
     debug!("Completed running tasks: {task_names_string}");
     Ok(())
-}
-
-fn user_confirmation(run_mode: RunMode) -> anyhow::Result<bool> {
-    let crate_version = crate::app_info::CRATE_VERSION;
-    match run_mode {
-        RunMode::Setup => {
-            println!("This will setup EDGAR {crate_version} on your system.");
-            print!("Do you want to continue? [Y/n] ");
-            io::stdout().flush()?;
-            let mut input = String::new();
-            io::stdin().read_line(&mut input)?;
-
-            match input.trim().to_lowercase().as_ref() {
-                "" | "y" | "yes" => Ok(true),
-                _ => {
-                    println!("Aborting.");
-                    info!("Aborting, because user did not confirm execution.");
-                    Ok(false)
-                }
-            }
-        }
-        RunMode::SetupDryRun => {
-            println!("Pretending to setup EDGAR {crate_version} on your system.");
-            Ok(true)
-        }
-        RunMode::Service => Ok(true),
-    }
 }
 
 async fn run_tasks(
@@ -205,17 +150,4 @@ fn print_outcome(task_name: String, outcome: Outcome) {
 
     println!("{}", message(&task_name, &outcome, console::user_attended()));
     info!("{}", message(&task_name, &outcome, false));
-}
-
-
-#[cfg(test)]
-pub mod test {
-    use crate::common::task::{Task, TaskFulfilled};
-
-    pub async fn unchecked(task: impl Task) -> anyhow::Result<()> {
-        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::Unchecked);
-        task.execute().await?;
-        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::Unchecked);
-        Ok(())
-    }
 }

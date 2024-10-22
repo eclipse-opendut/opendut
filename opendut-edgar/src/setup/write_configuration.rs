@@ -4,7 +4,6 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use anyhow::{anyhow, Context};
-use async_trait::async_trait;
 use tracing::{debug, error, info};
 use url::Url;
 
@@ -13,29 +12,21 @@ use opendut_types::util::net::AuthConfig;
 
 use crate::common::settings;
 use crate::setup::constants;
-use crate::common::task::{Success, Task, TaskFulfilled};
 
+pub struct WriteConfiguration {
+    config_file_to_write_to: PathBuf,
+    config_merge_suggestion_file: PathBuf,
+    config_override: ConfigOverride,
+    require_confirmation: bool,
+}
 pub struct ConfigOverride {
     pub peer_id: PeerId,
     pub carl_url: Url,
     pub auth_config: AuthConfig,
 }
 
-pub struct WriteConfiguration {
-    config_file_to_write_to: PathBuf,
-    config_merge_suggestion_file: PathBuf,
-    config_override: ConfigOverride,
-}
-
-#[async_trait]
-impl Task for WriteConfiguration {
-    fn description(&self) -> String {
-        String::from("Write Configuration")
-    }
-    async fn check_fulfilled(&self) -> anyhow::Result<TaskFulfilled> {
-        Ok(TaskFulfilled::Unchecked)
-    }
-    async fn execute(&self) -> anyhow::Result<Success> {
+impl WriteConfiguration {
+    pub async fn execute(&self) -> anyhow::Result<()> {
         let original_settings = self.load_current_settings()
             .unwrap_or_else(|| {
                 debug!("Could not load settings from configuration file at '{}'. Continuing as if no previous configuration exists.", self.config_file_to_write_to.display());
@@ -101,33 +92,46 @@ impl Task for WriteConfiguration {
 
         if original_settings.to_string() == new_settings_string {
             debug!("The configuration on disk already matches the overrides we wanted to apply.");
-            return Ok(Success::message("Configuration on disk matches."))
+            return Ok(())
         }
 
-        if self.config_file_to_write_to.exists()
-            && self.config_file_to_write_to.metadata()?.len() > 0 {
-            write_settings(&self.config_merge_suggestion_file, &new_settings_string)
-                .context("Error while writing configuration merge suggestion file.")?;
-            let message =
-                String::from("Settings file already exists, but does not contain necessary configurations!\n")
-                    + &format!("A suggestion for a merged configuration has been generated at '{}'.\n", self.config_merge_suggestion_file.display())
-                    + &format!("Please check, if the configuration matches your expectation and if so, replace the configuration file at '{}'.", self.config_file_to_write_to.display());
-            Err(anyhow!(message))
+        let target_file_empty =
+            self.config_file_to_write_to.exists().not()
+            || self.config_file_to_write_to.metadata()?.len() == 0;
+
+        let should_overwrite = if target_file_empty {
+            true
+        } else if self.require_confirmation {
+            crate::setup::user_confirmation_prompt("Settings file already exists, but contains mismatched configurations! Do you want to overwrite it?")?
         } else {
+            false
+        };
+
+        if should_overwrite {
             write_settings(&self.config_file_to_write_to, &new_settings_string)
                 .context("Error while writing new configuration file.")?;
 
             info!("Successfully wrote peer configuration to: {}", self.config_file_to_write_to.display());
-            Ok(Success::default())
+            Ok(())
+        } else {
+            write_settings(&self.config_merge_suggestion_file, &new_settings_string)
+                .context("Error while writing configuration merge suggestion file.")?;
+
+            let message =
+                String::from("Settings file already exists, but contains mismatched configurations!\n")
+                    + &format!("A suggestion for a merged configuration has been generated at '{}'.\n", self.config_merge_suggestion_file.display())
+                    + &format!("Please check, if the configuration matches your expectation and if so, replace the configuration file at '{}'.", self.config_file_to_write_to.display());
+            Err(anyhow!(message))
         }
     }
 }
 impl WriteConfiguration {
-    pub fn with_override(config_override: ConfigOverride) -> Self {
+    pub fn with_override(config_override: ConfigOverride, no_confirm: bool) -> Self {
         Self {
             config_file_to_write_to: settings::default_config_file_path(),
             config_merge_suggestion_file: constants::default_config_merge_suggestion_file_path(),
             config_override,
+            require_confirmation: if no_confirm { false } else { console::user_attended() },
         }
     }
 
@@ -177,10 +181,7 @@ mod tests {
     use predicates::prelude::predicate;
     use uuid::uuid;
     use googletest::prelude::*;
-    use rstest::{fixture, rstest};
     use opendut_types::util::net::{ClientId, ClientSecret, OAuthScope};
-
-    use crate::common::task::runner;
 
     use super::*;
 
@@ -192,17 +193,16 @@ mod tests {
     const ISSUER_URL: &str = "https://test.com:1234/";
     const SCOPES: &str = "test";
 
-    #[rstest]
     #[tokio::test]
-    async fn should_write_a_fresh_configuration_with_auth_config_enabled(
-        write_configuration_auth_enabled: WriteConfiguration,
-    ) -> anyhow::Result<()> {
+    async fn should_write_a_fresh_configuration_with_auth_config_enabled() -> anyhow::Result<()> {
+        let fixture = Fixture::new();
+        let write_configuration = create_write_configuration(&fixture, AuthEnabled::Yes);
 
-        assert!(predicate::path::missing().eval(&write_configuration_auth_enabled.config_file_to_write_to));
+        assert!(predicate::path::missing().eval(&write_configuration.config_file_to_write_to));
 
-        let path = write_configuration_auth_enabled.config_file_to_write_to.clone();
+        let path = write_configuration.config_file_to_write_to.clone();
 
-        runner::test::unchecked(write_configuration_auth_enabled).await?;
+        write_configuration.execute().await?;
 
         assert!(predicate::path::exists().eval(&path));
         let file_content = fs::read_to_string(&path)?;
@@ -228,17 +228,16 @@ mod tests {
         Ok(())
     }
 
-    #[rstest]
     #[tokio::test]
-    async fn should_write_a_fresh_configuration_with_auth_config_disabled(
-        write_configuration_auth_disabled: WriteConfiguration,
-    ) -> anyhow::Result<()> {
+    async fn should_write_a_fresh_configuration_with_auth_config_disabled() -> anyhow::Result<()> {
+        let fixture = Fixture::new();
+        let write_configuration = create_write_configuration(&fixture, AuthEnabled::No);
 
-        let path = write_configuration_auth_disabled.config_file_to_write_to.clone();
+        let path = write_configuration.config_file_to_write_to.clone();
 
         assert!(predicate::path::missing().eval(&path));
 
-        runner::test::unchecked(write_configuration_auth_disabled).await?;
+        write_configuration.execute().await?;
 
         assert!(predicate::path::exists().eval(&path));
         let file_content = fs::read_to_string(&path)?;
@@ -258,15 +257,13 @@ mod tests {
         Ok(())
     }
 
-    #[rstest]
     #[tokio::test]
-    async fn should_provide_an_merge_suggestion_for_an_already_existing_configuration_but_should_not_delete_existing_unknown_keys(
-        write_configuration_auth_enabled: WriteConfiguration,
-        fixture: Fixture,
-    ) -> anyhow::Result<()> {
+    async fn should_provide_an_merge_suggestion_for_an_already_existing_configuration_but_should_not_delete_existing_unknown_keys() -> anyhow::Result<()> {
+        let fixture = Fixture::new();
+        let write_configuration = create_write_configuration(&fixture, AuthEnabled::Yes);
 
-        let config_file = ChildPath::new(write_configuration_auth_enabled.config_file_to_write_to.clone());
-        let config_merge_suggestion_file = ChildPath::new(write_configuration_auth_enabled.config_merge_suggestion_file.clone());
+        let config_file = ChildPath::new(write_configuration.config_file_to_write_to.clone());
+        let config_merge_suggestion_file = ChildPath::new(write_configuration.config_merge_suggestion_file.clone());
 
         config_file.write_str(indoc!(r#"
             [peer]
@@ -281,7 +278,7 @@ mod tests {
         assert!(predicate::str::is_empty().not().eval(&file_content));
         assert!(predicate::path::missing().eval(&config_merge_suggestion_file));
 
-        let result = runner::test::unchecked(write_configuration_auth_enabled).await;
+        let result = write_configuration.execute().await;
         assert!(result.is_err());
 
         assert!(predicate::path::exists().eval(&config_merge_suggestion_file));
@@ -293,15 +290,13 @@ mod tests {
         Ok(())
     }
 
-    #[rstest]
     #[tokio::test]
-    async fn should_provide_an_merge_suggestion_for_an_already_existing_configuration_with_auth_config_disabled(
-        write_configuration_auth_disabled: WriteConfiguration,
-        fixture: Fixture,
-    ) -> anyhow::Result<()> {
+    async fn should_provide_an_merge_suggestion_for_an_already_existing_configuration_with_auth_config_disabled() -> anyhow::Result<()> {
+        let fixture = Fixture::new();
+        let write_configuration = create_write_configuration(&fixture, AuthEnabled::No);
 
-        let config_file = ChildPath::new(write_configuration_auth_disabled.config_file_to_write_to.clone());
-        let config_merge_suggestion_file = ChildPath::new(write_configuration_auth_disabled.config_merge_suggestion_file.clone());
+        let config_file = ChildPath::new(write_configuration.config_file_to_write_to.clone());
+        let config_merge_suggestion_file = ChildPath::new(write_configuration.config_merge_suggestion_file.clone());
 
         config_file.write_str(&format!(indoc!(r#"
             [peer]
@@ -319,7 +314,7 @@ mod tests {
         assert!(predicate::str::is_empty().not().eval(&file_content));
         assert!(predicate::path::missing().eval(&config_merge_suggestion_file));
 
-        let result = runner::test::unchecked(write_configuration_auth_disabled).await;
+        let result = write_configuration.execute().await;
         assert!(result.is_err());
 
         assert!(predicate::path::exists().eval(&config_merge_suggestion_file));
@@ -331,15 +326,13 @@ mod tests {
         Ok(())
     }
 
-    #[rstest]
     #[tokio::test]
-    async fn should_not_provide_a_merge_suggestion_if_the_existing_config_matches(
-        write_configuration_auth_enabled: WriteConfiguration,
-        fixture: Fixture,
-    ) -> anyhow::Result<()> {
+    async fn should_not_provide_a_merge_suggestion_if_the_existing_config_matches() -> anyhow::Result<()> {
+        let fixture = Fixture::new();
+        let write_configuration = create_write_configuration(&fixture, AuthEnabled::Yes);
 
-        let config_file = ChildPath::new(write_configuration_auth_enabled.config_file_to_write_to.clone());
-        let config_merge_suggestion_file = ChildPath::new(write_configuration_auth_enabled.config_merge_suggestion_file.clone());
+        let config_file = ChildPath::new(write_configuration.config_file_to_write_to.clone());
+        let config_merge_suggestion_file = ChildPath::new(write_configuration.config_merge_suggestion_file.clone());
 
         config_file.write_str(&format!(indoc!(r#"
             [peer]
@@ -363,22 +356,20 @@ mod tests {
         assert!(predicate::str::is_empty().not().eval(&file_content));
         assert!(predicate::path::missing().eval(&config_merge_suggestion_file));
 
-        let result = runner::test::unchecked(write_configuration_auth_enabled).await;
+        let result = write_configuration.execute().await;
         assert!(result.is_ok());
         assert!(predicate::path::missing().eval(&config_merge_suggestion_file));
 
         Ok(())
     }
 
-    #[fixture]
-    fn write_configuration_auth_enabled(
-        fixture: Fixture,
+    fn create_write_configuration(
+        fixture: &Fixture,
+        auth_enabled: AuthEnabled,
     ) -> WriteConfiguration {
 
-        WriteConfiguration {
-            config_file_to_write_to: fixture.config_file_to_write_to.to_path_buf(),
-            config_merge_suggestion_file: fixture.config_merge_suggestion_file.to_path_buf(),
-            config_override: ConfigOverride {
+        let config_override = match auth_enabled {
+            AuthEnabled::Yes => ConfigOverride {
                 peer_id: fixture.peer_id,
                 carl_url: Url::parse("https://example.com:1234").unwrap(),
                 auth_config: AuthConfig::Enabled {
@@ -388,23 +379,21 @@ mod tests {
                     scopes: vec![OAuthScope("test".to_string())],
                 },
             },
-        }
-    }
-    #[fixture]
-    fn write_configuration_auth_disabled(
-        fixture: Fixture,
-    ) -> WriteConfiguration {
-
-        WriteConfiguration {
-            config_file_to_write_to: fixture.config_file_to_write_to.to_path_buf(),
-            config_merge_suggestion_file: fixture.config_merge_suggestion_file.to_path_buf(),
-            config_override: ConfigOverride {
+            AuthEnabled::No => ConfigOverride {
                 peer_id: fixture.peer_id,
                 carl_url: Url::parse("https://example.com:1234").unwrap(),
                 auth_config: AuthConfig::Disabled,
             },
+        };
+
+        WriteConfiguration {
+            config_file_to_write_to: fixture.config_file_to_write_to.to_path_buf(),
+            config_merge_suggestion_file: fixture.config_merge_suggestion_file.to_path_buf(),
+            config_override,
+            require_confirmation: false, //always disabled in unit tests
         }
     }
+    enum AuthEnabled { Yes, No }
 
     struct Fixture {
         _temp_dir: TempDir,
@@ -412,21 +401,22 @@ mod tests {
         config_merge_suggestion_file: ChildPath,
         peer_id: PeerId,
     }
-    #[fixture]
-    fn fixture() -> Fixture {
-        let temp_dir = TempDir::new().unwrap();
+    impl Fixture {
+        fn new() -> Self {
+            let temp_dir = TempDir::new().unwrap();
 
-        let config_file_to_write_to = temp_dir.child("edgar.toml");
+            let config_file_to_write_to = temp_dir.child("edgar.toml");
 
-        let config_merge_suggestion_file = temp_dir.child("edgar-merge-suggestion.toml");
+            let config_merge_suggestion_file = temp_dir.child("edgar-merge-suggestion.toml");
 
-        let peer_id = PeerId::from(uuid!("dc72f6d9-d700-455f-8c31-9f15438e7503"));
+            let peer_id = PeerId::from(uuid!("dc72f6d9-d700-455f-8c31-9f15438e7503"));
 
-        Fixture {
-            _temp_dir: temp_dir,
-            config_file_to_write_to,
-            config_merge_suggestion_file,
-            peer_id,
+            Self {
+                _temp_dir: temp_dir,
+                config_file_to_write_to,
+                config_merge_suggestion_file,
+                peer_id,
+            }
         }
     }
 }

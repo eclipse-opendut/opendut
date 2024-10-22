@@ -189,7 +189,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_report_task_as_unfulfilled_when_checksums_dosssnt_match() -> anyhow::Result<()> {
+    async fn should_report_task_as_unfulfilled_when_checksums_dont_match() -> anyhow::Result<()> {
         let temp = TempDir::new()?;
 
         let carl_ca_certificate_path = temp.child("ca.pem");

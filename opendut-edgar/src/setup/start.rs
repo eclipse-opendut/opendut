@@ -1,14 +1,14 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use anyhow::{Context, Ok};
+use anyhow::Context;
 use tracing::info;
 use url::Url;
 
 use crate::common::task::runner::RunMode;
 use crate::common::task::{runner, Task};
 use crate::service::network_interface::manager::NetworkInterfaceManager;
-use crate::setup::tasks::write_configuration;
+use crate::setup::write_configuration;
 use crate::setup::util::running_in_docker;
 use crate::setup::{tasks, Leader, User};
 use opendut_types::peer::PeerSetup;
@@ -18,9 +18,11 @@ use opendut_types::vpn::VpnPeerConfiguration;
 use opendut_util::telemetry;
 use opendut_util::telemetry::opentelemetry_types::Opentelemetry;
 use std::env;
+use std::ops::Not;
+use crate::cli::DryRun;
 
 #[allow(clippy::box_default)]
-pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, mtu: u16) -> anyhow::Result<()> {
+pub async fn managed(dry_run: DryRun, no_confirm: bool, setup_string: String, mtu: u16) -> anyhow::Result<()> {
 
     let peer_setup = PeerSetup::decode(&setup_string)
         .context("Failed to decode Setup-String.")?;
@@ -30,6 +32,22 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
 
     println!("Using PeerId: {}", peer_setup.id);
     println!("Will connect to CARL at: {}", peer_setup.carl);
+
+    let should_run = no_confirm || user_confirmation(&dry_run)?;
+    if should_run.not() {
+        return Ok(());
+    }
+
+    if dry_run.not() {
+        write_configuration::WriteConfiguration::with_override(
+            write_configuration::ConfigOverride {
+                peer_id: peer_setup.id,
+                carl_url: peer_setup.carl,
+                auth_config: peer_setup.auth_config,
+            },
+            no_confirm,
+        ).execute().await?;
+    }
 
     let mut tasks: Vec<Box<dyn Task>> = vec![];
 
@@ -45,13 +63,6 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
     tasks.append(&mut vec![
         Box::new(tasks::WriteCaCertificate::with_certificate(peer_setup.ca)),
         Box::new(tasks::CheckCommandLinePrograms),
-        Box::new(tasks::WriteConfiguration::with_override(
-            write_configuration::ConfigOverride {
-                peer_id: peer_setup.id,
-                carl_url: peer_setup.carl,
-                auth_config: peer_setup.auth_config,
-            }),
-        ),
         Box::new(tasks::CheckCarlReachable),
         Box::new(tasks::CopyExecutable),
         Box::new(tasks::copy_rperf::CopyRperf),
@@ -94,12 +105,16 @@ pub async fn managed(run_mode: RunMode, no_confirm: bool, setup_string: String, 
         Box::new(tasks::RestartService),
     ]);
 
-    runner::run(run_mode, no_confirm, &tasks).await
+    let run_mode = match dry_run {
+        DryRun::Yes => RunMode::SetupDryRun,
+        DryRun::No => RunMode::Setup,
+    };
+    runner::run(run_mode, &tasks).await
 }
 
 #[allow(clippy::box_default, clippy::too_many_arguments)]
 pub async fn unmanaged(
-    run_mode: RunMode,
+    dry_run: DryRun,
     no_confirm: bool,
     management_url: Url,
     setup_key: SetupKey,
@@ -108,6 +123,10 @@ pub async fn unmanaged(
     leader: Leader,
     mtu: u16,
 ) -> anyhow::Result<()> {
+    let should_run = no_confirm || user_confirmation(&dry_run)?;
+    if should_run.not() {
+        return Ok(());
+    }
 
     let network_interface_manager = NetworkInterfaceManager::create()?;
 
@@ -135,7 +154,11 @@ pub async fn unmanaged(
         Box::new(tasks::copy_rperf::CopyRperf),
     ]);
 
-    runner::run(run_mode, no_confirm, &tasks).await
+    let run_mode = match dry_run {
+        DryRun::Yes => RunMode::SetupDryRun,
+        DryRun::No => RunMode::Setup,
+    };
+    runner::run(run_mode, &tasks).await
 }
 
 
@@ -163,4 +186,25 @@ fn determine_service_user_name() -> User {
         .unwrap_or(DEFAULT_SERVICE_USER_NAME.to_string());
 
     User { name }
+}
+
+fn user_confirmation(dry_run: &DryRun) -> anyhow::Result<bool> {
+    let crate_version = crate::app_info::CRATE_VERSION;
+    match dry_run {
+        DryRun::No => {
+            println!("This will setup EDGAR {crate_version} on your system.");
+
+            let user_confirmed = crate::setup::user_confirmation_prompt("Do you want to continue?")?;
+
+            if user_confirmed.not() {
+                println!("Aborting.");
+                info!("Aborting, because user did not confirm execution.");
+            }
+            Ok(user_confirmed)
+        }
+        DryRun::Yes => {
+            println!("Pretending to setup EDGAR {crate_version} on your system.");
+            Ok(true)
+        }
+    }
 }

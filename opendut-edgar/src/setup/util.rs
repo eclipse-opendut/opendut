@@ -1,3 +1,5 @@
+use std::io;
+use std::io::Write;
 use std::ops::Not;
 use std::path::Path;
 use std::process::{Command, Output};
@@ -97,4 +99,17 @@ pub mod checksum {
 
 pub fn running_in_docker() -> bool {
     return Path::new("/.dockerenv").exists();
+}
+
+
+pub fn user_confirmation_prompt(question: &str) -> anyhow::Result<bool> {
+    print!("{question} [Y/n] ");
+    io::stdout().flush()?;
+    let mut input = String::new();
+    io::stdin().read_line(&mut input)?;
+
+    match input.trim().to_lowercase().as_ref() {
+        "" | "y" | "yes" => Ok(true),
+        _ => Ok(false),
+    }
 }
