@@ -7,6 +7,7 @@ use opendut_types::cluster::ClusterId;
 use opendut_types::peer::state::{PeerState, PeerUpState};
 use opendut_types::peer::PeerId;
 use std::collections::HashMap;
+use std::ops::Not;
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -40,12 +41,19 @@ pub struct ClusterPeerStates {
     pub peer_states: HashMap<PeerId, PeerState>,
 }
 impl ClusterPeerStates {
-    pub fn all_peers_available(&self) -> bool {
-        self.peer_states.values()
-            .all(|peer_state| matches!(
-                peer_state,
-                PeerState::Up { inner: PeerUpState::Available, .. }
-            ))
+    pub fn filter_unavailable_peers(&self) -> Vec<PeerId> {
+        self.peer_states
+            .iter()
+            .filter_map(|(peer_id, peer_state)| {
+                let is_available = matches!(
+                    peer_state,
+                    PeerState::Up { inner: PeerUpState::Available, .. }
+                );
+
+                is_available.not().then_some(peer_id)
+            })
+            .cloned()
+            .collect()
     }
 }
 
@@ -106,7 +114,7 @@ mod tests {
             (peer_a.id, PeerState::Down),
             (peer_b.id, PeerState::Down),
         ]));
-        assert!(result.all_peers_available().not());
+        assert!(result.filter_unavailable_peers().is_empty().not());
 
 
         let peer_a_state = PeerState::Up { inner: PeerUpState::Available, remote_host: IpAddr::from_str("127.0.0.1")? };
@@ -117,7 +125,7 @@ mod tests {
             (peer_a.id, peer_a_state.clone()),
             (peer_b.id, PeerState::Down),
         ]));
-        assert!(result.all_peers_available().not());
+        assert!(result.filter_unavailable_peers().is_empty().not());
 
 
         let peer_b_state = PeerState::Up { inner: PeerUpState::Available, remote_host: IpAddr::from_str("127.0.0.2")? };
@@ -128,7 +136,7 @@ mod tests {
             (peer_a.id, peer_a_state),
             (peer_b.id, peer_b_state),
         ]));
-        assert!(result.all_peers_available());
+        assert!(result.filter_unavailable_peers().is_empty());
 
         Ok(())
     }

@@ -218,10 +218,18 @@ impl ClusterManager {
         }).await
         .map_err(|error| DeployClusterError::Internal { cluster_id, cause: format!("Failed to determine states of peers: {error}") })?;
 
-        if cluster_peer_states.all_peers_available() {
+        let unavailable_peers = cluster_peer_states.filter_unavailable_peers();
+        if unavailable_peers.is_empty() {
+            debug!("All peers of cluster <{cluster_id}> are now available. Deploying...");
             self.deploy_cluster(cluster_id).await?;
         } else {
-            trace!("Not all peers are available of cluster <{cluster_id}>, so not deploying.");
+            trace!(
+                "Not all peers of cluster <{cluster_id}> are available, so not deploying. Unavailable peers: {}",
+                unavailable_peers.iter()
+                    .map(|peer_id| peer_id.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
         }
         Ok(())
     }
