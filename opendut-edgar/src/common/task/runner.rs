@@ -50,9 +50,10 @@ pub async fn run(run_mode: RunMode, no_confirm: bool, tasks: &[Box<dyn Task>]) -
 }
 
 fn user_confirmation(run_mode: RunMode) -> anyhow::Result<bool> {
+    let crate_version = crate::app_info::CRATE_VERSION;
     match run_mode {
         RunMode::Setup => {
-            println!("This will setup EDGAR on your system.");
+            println!("This will setup EDGAR {crate_version} on your system.");
             print!("Do you want to continue? [Y/n] ");
             io::stdout().flush()?;
             let mut input = String::new();
@@ -68,7 +69,7 @@ fn user_confirmation(run_mode: RunMode) -> anyhow::Result<bool> {
             }
         }
         RunMode::SetupDryRun => {
-            println!("Pretending to setup EDGAR on your system.");
+            println!("Pretending to setup EDGAR {crate_version} on your system.");
             Ok(true)
         }
         RunMode::Service => Ok(true),
