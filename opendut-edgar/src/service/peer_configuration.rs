@@ -103,6 +103,8 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
         self_id,
         cluster_metrics_options.clone(),
     )?;
+
+    debug!("Peer configuration has been successfully applied.");
     Ok(())
 }
 
