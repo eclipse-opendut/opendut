@@ -1,10 +1,10 @@
 use std::net::IpAddr;
 
 use anyhow::anyhow;
-use serde::Deserialize;
-
 use opendut_netbird_client_api::extension::LocalPeerStateExtension;
 use opendut_util::settings::LoadedConfig;
+use serde::Deserialize;
+use tracing::debug;
 
 use crate::common::settings;
 
@@ -19,6 +19,7 @@ pub async fn retrieve_remote_host(settings: &LoadedConfig) -> anyhow::Result<IpA
     let vpn_config = settings.config.get::<VpnConfig>(settings::key::vpn::table)?;
 
     let address = if vpn_config.enabled {
+        debug!("Determining remote IP address of host in VPN network.");
         let mut client = opendut_netbird_client_api::client::Client::connect().await?;
 
         let status = client.full_status().await?;

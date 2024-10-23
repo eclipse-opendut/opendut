@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::net::Ipv4Addr;
 use std::str::FromStr;
-
+use tracing::trace;
 use crate::proto::daemon::LocalPeerState;
 
 pub trait LocalPeerStateExtension {
@@ -11,6 +11,7 @@ pub trait LocalPeerStateExtension {
 impl LocalPeerStateExtension for LocalPeerState {
     fn local_ip(&self) -> Result<Ipv4Addr, LocalIpParseError> {
         let local_ip = &self.ip;
+        trace!("NetBird Client returned '{local_ip}' as raw value for the remote IP address of this host in the VPN network.");
 
         let local_ip = local_ip.split('/').next() //strip CIDR mask
             .ok_or(LocalIpParseError { message: format!("Iterator.split() should always return a first element. Did not do so when stripping CIDR mask off of local IP '{local_ip}'.") })?;
