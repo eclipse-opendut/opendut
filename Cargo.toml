@@ -184,7 +184,7 @@ cross.version = "0.2.5"
 diesel_cli.version = "2.2.1"
 mdbook.version = "0.4.40"
 mdbook-plantuml.version = "0.8.0"
-trunk.version = "0.20.3"
+trunk.version = "0.21.1"
 
 [workspace.lints.clippy]
 unnecessary_lazy_evaluations = "allow"
