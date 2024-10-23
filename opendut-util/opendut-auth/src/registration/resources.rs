@@ -2,7 +2,7 @@ use config::Config;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-use opendut_types::resources::Id;
+use opendut_types::resources;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ResourceHomeUrl(Url);
@@ -33,12 +33,18 @@ impl TryFrom<&Config> for ResourceHomeUrl {
 
 impl ResourceHomeUrl {
     pub fn new(url: Url) -> Self { Self(url) }
+    
     pub fn value(&self) -> Url {
         self.0.clone()
     }
-    pub fn resource_url(&self, resource_id: Id, user_id: String) -> Result<Url, ResourceHomeUrlError> {
-        let path = format!("/resources/{}/{}", user_id, resource_id.value());
+    
+    pub fn resource_url(&self, resource_id: resources::Id, user_id: UserId) -> Result<Url, ResourceHomeUrlError> {
+        let path = format!("/resources/{}/{}", user_id.value, resource_id.value());
         self.0.join(&path)
             .map_err(|error| ResourceHomeUrlError(format!("Failed to create resource URL for resource_id='{}': {}", resource_id.value(), error)))
     }
+}
+
+pub struct UserId {
+    pub value: String,
 }

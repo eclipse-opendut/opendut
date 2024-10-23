@@ -2,6 +2,7 @@ use crate::persistence::error::PersistenceError;
 use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
 use opendut_auth::registration::client::RegistrationClientRef;
+use opendut_auth::registration::resources::UserId;
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerSetup};
 use opendut_types::util::net::{AuthConfig, Certificate};
 use opendut_types::vpn::VpnPeerConfiguration;
@@ -16,6 +17,7 @@ pub struct GeneratePeerSetupParams {
     pub ca: Pem,
     pub vpn: Vpn,
     pub oidc_registration_client: Option<RegistrationClientRef>,
+    pub user_id: UserId,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -33,9 +35,9 @@ pub enum GeneratePeerSetupError {
 }
 
 #[tracing::instrument(skip(params), level="trace")]
-pub async fn generate_peer_setup(params: GeneratePeerSetupParams, user_id: String) -> Result<PeerSetup, GeneratePeerSetupError> {
+pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<PeerSetup, GeneratePeerSetupError> {
 
-    async fn inner(params: GeneratePeerSetupParams, user_id: String) -> Result<PeerSetup, GeneratePeerSetupError> {
+    async fn inner(params: GeneratePeerSetupParams) -> Result<PeerSetup, GeneratePeerSetupError> {
 
         let peer_id = params.peer;
 
@@ -67,7 +69,7 @@ pub async fn generate_peer_setup(params: GeneratePeerSetupParams, user_id: Strin
                 let resource_id = peer_id.into();
                 debug!("Generating OIDC client for peer '{peer_name}' <{peer_id}>.");
                 let issuer_url = registration_client.config.issuer_remote_url.clone();
-                let client_credentials = registration_client.register_new_client_for_user(resource_id, user_id)
+                let client_credentials = registration_client.register_new_client_for_user(resource_id, params.user_id)
                     .await
                     .map_err(|cause| GeneratePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), cause: cause.to_string() })?;
                 debug!("Successfully generated peer setup for peer '{peer_name}' <{peer_id}>. OIDC client_id='{}'.", client_credentials.client_id.clone().value());
@@ -84,6 +86,6 @@ pub async fn generate_peer_setup(params: GeneratePeerSetupParams, user_id: Strin
         })
     }
 
-    inner(params, user_id).await
+    inner(params).await
         .inspect_err(|err| error!("{err}"))
 }

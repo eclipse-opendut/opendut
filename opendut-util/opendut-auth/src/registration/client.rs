@@ -16,7 +16,7 @@ use opendut_types::util::net::{ClientCredentials, ClientId, ClientSecret};
 use crate::confidential::client::{ConfidentialClient, ConfidentialClientRef};
 use crate::registration::config::RegistrationClientConfig;
 use crate::registration::error::WrappedClientRegistrationError;
-use crate::registration::resources::ResourceHomeUrl;
+use crate::registration::resources::{ResourceHomeUrl, UserId};
 
 pub type RegistrationClientRef = Arc<RegistrationClient>;
 
@@ -81,7 +81,7 @@ impl RegistrationClient {
         })
     }
 
-    pub async fn register_new_client_for_user(&self, resource_id: Id, user_id: String) -> Result<ClientCredentials, RegistrationClientError> {
+    pub async fn register_new_client_for_user(&self, resource_id: Id, user_id: UserId) -> Result<ClientCredentials, RegistrationClientError> {
         match self.config.peer_credentials.clone() {
             Some(peer_credentials) => {
                 Ok(peer_credentials)

@@ -6,14 +6,13 @@ use tonic_web::CorsGrpcWeb;
 use tracing::trace;
 use url::Url;
 use opendut_auth::registration::client::RegistrationClientRef;
-
+use opendut_auth::registration::resources::UserId;
 use opendut_carl_api::carl::peer::{GetPeerDescriptorError, GetPeerStateError};
 use opendut_carl_api::proto::services::peer_manager;
 use opendut_carl_api::proto::services::peer_manager::*;
 use opendut_carl_api::proto::services::peer_manager::peer_manager_server::{PeerManager as PeerManagerService, PeerManagerServer};
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::cleo::{CleoId};
-use opendut_util::telemetry::logging::NonDisclosingRequestExtension;
 
 use crate::actions;
 use crate::actions::{DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, GetPeerStateParams, ListDevicesParams, ListPeerDescriptorsParams, StorePeerDescriptorParams};
@@ -55,13 +54,13 @@ impl PeerManagerFacade {
 #[tonic::async_trait]
 impl PeerManagerService for PeerManagerFacade {
 
-    #[tracing::instrument(skip(self, request), level="trace")]
+    #[tracing::instrument(skip_all, level="trace")]
     async fn store_peer_descriptor(&self, request: Request<StorePeerDescriptorRequest>) -> Result<Response<StorePeerDescriptorResponse>, Status> {
-
-        trace!("Received request: {}", request.debug_output());
 
         let request = request.into_inner();
         let peer_descriptor: PeerDescriptor = extract!(request.peer)?;
+
+        trace!("Received request to store peer descriptor: {peer_descriptor:?}");
 
         let result = actions::store_peer_descriptor(StorePeerDescriptorParams {
             resources_manager: Arc::clone(&self.resources_manager),
@@ -87,13 +86,13 @@ impl PeerManagerService for PeerManagerFacade {
         }
     }
 
-    #[tracing::instrument(skip(self, request), level="trace")]
+    #[tracing::instrument(skip_all, level="trace")]
     async fn delete_peer_descriptor(&self, request: Request<DeletePeerDescriptorRequest>) -> Result<Response<DeletePeerDescriptorResponse>, Status> {
-
-        trace!("Received request: {}", request.debug_output());
 
         let request = request.into_inner();
         let peer_id: PeerId = extract!(request.peer_id)?;
+
+        trace!("Received request to delete peer descriptor for peer <{peer_id}>.");
 
         let result =
             actions::delete_peer_descriptor(DeletePeerDescriptorParams {
@@ -121,13 +120,13 @@ impl PeerManagerService for PeerManagerFacade {
         }
     }
 
-    #[tracing::instrument(skip(self, request), level="trace")]
+    #[tracing::instrument(skip_all, level="trace")]
     async fn get_peer_descriptor(&self, request: Request<GetPeerDescriptorRequest>) -> Result<Response<GetPeerDescriptorResponse>, Status> {
-
-        trace!("Received request: {}", request.debug_output());
 
         let request = request.into_inner();
         let peer_id: PeerId = extract!(request.peer_id)?;
+
+        trace!("Received request to get peer descriptor for peer <{peer_id}>.");
 
         let result =
             actions::list_peer_descriptors(ListPeerDescriptorsParams {
@@ -158,10 +157,10 @@ impl PeerManagerService for PeerManagerFacade {
         }
     }
 
-    #[tracing::instrument(skip(self, request), level="trace")]
-    async fn list_peer_descriptors(&self, request: Request<ListPeerDescriptorsRequest>) -> Result<Response<ListPeerDescriptorsResponse>, Status> {
+    #[tracing::instrument(skip_all, level="trace")]
+    async fn list_peer_descriptors(&self, _: Request<ListPeerDescriptorsRequest>) -> Result<Response<ListPeerDescriptorsResponse>, Status> {
 
-        trace!("Received request: {}", request.debug_output());
+        trace!("Received request to list peer descriptors.");
 
         let result =
             actions::list_peer_descriptors(ListPeerDescriptorsParams {
@@ -190,13 +189,13 @@ impl PeerManagerService for PeerManagerFacade {
         }
     }
 
-    #[tracing::instrument(skip(self, request), level="trace")]
+    #[tracing::instrument(skip_all, level="trace")]
     async fn get_peer_state(&self, request: Request<GetPeerStateRequest>) -> Result<Response<GetPeerStateResponse>, Status> {
-
-        trace!("Received request: {}", request.debug_output());
 
         let request = request.into_inner();
         let peer_id: PeerId = extract!(request.peer_id)?;
+
+        trace!("Received request to get peer state for peer <{peer_id}>.");
 
         let result =
             actions::get_peer_state(GetPeerStateParams {
@@ -223,10 +222,10 @@ impl PeerManagerService for PeerManagerFacade {
         }
     }
 
-    #[tracing::instrument(skip(self, request), level="trace")]
-    async fn list_devices(&self, request: Request<ListDevicesRequest>) -> Result<Response<ListDevicesResponse>, Status> {
+    #[tracing::instrument(skip_all, level="trace")]
+    async fn list_devices(&self, _: Request<ListDevicesRequest>) -> Result<Response<ListDevicesResponse>, Status> {
 
-        trace!("Received request: {}", request.debug_output());
+        trace!("Received request to list devices.");
 
         let devices = actions::list_devices(ListDevicesParams {
             resources_manager: Arc::clone(&self.resources_manager),
@@ -239,36 +238,36 @@ impl PeerManagerService for PeerManagerFacade {
         Ok(Response::new(ListDevicesResponse { devices }))
     }
 
-    #[tracing::instrument(skip(self, request), level="trace")]
+    #[tracing::instrument(skip_all, level="trace")]
     async fn generate_peer_setup(&self, request: Request<GeneratePeerSetupRequest>) -> Result<Response<GeneratePeerSetupResponse>, Status> { // TODO: Refactor error types.
-        trace!("Received request: {}", request.debug_output());
+        trace!("Received request to generate peer setup.");
 
-        let message = request.into_inner();
-        let response = match message.peer {
-            Some(peer_id) => {
-                let peer_id = PeerId::try_from(peer_id)
-                    .map_err(|cause| Status::invalid_argument(format!("PeerId could not be converted: {}", cause)))?;
-                let setup = actions::generate_peer_setup(GeneratePeerSetupParams {
-                    resources_manager: Arc::clone(&self.resources_manager),
-                    peer: peer_id,
-                    carl_url: Clone::clone(&self.carl_url),
-                    ca: Clone::clone(&self.ca),
-                    vpn: Clone::clone(&self.vpn),
-                    oidc_registration_client: self.oidc_registration_client.clone(),
-                }, message.user_id).await.map_err(|cause| Status::internal(format!("Peer setup could not be created: {}", cause)))?;
+        let request = request.into_inner();
+        let peer_id: PeerId = extract!(request.peer)?;
+        let user_id = UserId { value: request.user_id };
 
-                peer_manager::generate_peer_setup_response::Reply::Success(peer_manager::GeneratePeerSetupSuccess { peer: Some(peer_id.into()), setup: Some(setup.into()) })
-            }
-            None => {
-                peer_manager::generate_peer_setup_response::Reply::Failure(peer_manager::GeneratePeerSetupFailure {})
-            }
-        };
+        let setup = actions::generate_peer_setup(GeneratePeerSetupParams {
+            resources_manager: Arc::clone(&self.resources_manager),
+            peer: peer_id,
+            carl_url: Clone::clone(&self.carl_url),
+            ca: Clone::clone(&self.ca),
+            vpn: Clone::clone(&self.vpn),
+            oidc_registration_client: self.oidc_registration_client.clone(),
+            user_id,
+        }).await.map_err(|cause| Status::internal(format!("Peer setup could not be created: {}", cause)))?;
+
+        let response = peer_manager::generate_peer_setup_response::Reply::Success(peer_manager::GeneratePeerSetupSuccess {
+            peer: Some(peer_id.into()),
+            setup: Some(setup.into()),
+        });
 
         Ok(Response::new(GeneratePeerSetupResponse { reply: Some(response) }))
     }
 
     async fn generate_cleo_setup(&self, request: Request<GenerateCleoSetupRequest>) -> Result<Response<GenerateCleoSetupResponse>, Status> {
-       trace!("Received request: {}", request.debug_output());
+        trace!("Received request to generate CLEO Setup information.");
+
+        let request = request.into_inner();
         
         let cleo_id = CleoId::random();
         let setup = actions::generate_cleo_setup(GenerateCleoSetupParams {
@@ -276,7 +275,8 @@ impl PeerManagerService for PeerManagerFacade {
             carl_url: Clone::clone(&self.carl_url),
             ca: Clone::clone(&self.ca),
             oidc_registration_client: self.oidc_registration_client.clone(),
-        }, request.into_inner().user_id).await.map_err(|cause| Status::internal(format!("Cleo setup could not be created: {}", cause)))?;
+            user_id: UserId { value: request.user_id },
+        }).await.map_err(|cause| Status::internal(format!("Cleo setup could not be created: {}", cause)))?;
         
         let response = generate_cleo_setup_response::Reply::Success(GenerateCleoSetupSuccess { 
             cleo: Some(cleo_id.into()), 

@@ -1,4 +1,5 @@
 use opendut_auth::registration::client::RegistrationClientRef;
+use opendut_auth::registration::resources::UserId;
 use opendut_types::cleo::{CleoId, CleoSetup};
 use opendut_types::util::net::{AuthConfig, Certificate};
 use pem::Pem;
@@ -10,6 +11,7 @@ pub struct GenerateCleoSetupParams {
     pub carl_url: Url,
     pub ca: Pem,
     pub oidc_registration_client: Option<RegistrationClientRef>,
+    pub user_id: UserId,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -21,9 +23,9 @@ pub enum GenerateCleoSetupError {
 }
 
 #[tracing::instrument(skip(params), level="trace")]
-pub async fn generate_cleo_setup(params: GenerateCleoSetupParams, user_id: String) -> Result<CleoSetup, GenerateCleoSetupError> {
+pub async fn generate_cleo_setup(params: GenerateCleoSetupParams) -> Result<CleoSetup, GenerateCleoSetupError> {
 
-    async fn inner(params: GenerateCleoSetupParams, user_id: String) -> Result<CleoSetup, GenerateCleoSetupError> {
+    async fn inner(params: GenerateCleoSetupParams) -> Result<CleoSetup, GenerateCleoSetupError> {
 
         let cleo_id = params.cleo;
         debug!("Generating CleoSetup");
@@ -36,7 +38,7 @@ pub async fn generate_cleo_setup(params: GenerateCleoSetupParams, user_id: Strin
                 let resource_id = cleo_id.into();
                 debug!("Generating OIDC client for CLEO: <{cleo_id}>.");
                 let issuer_url = registration_client.config.issuer_remote_url.clone();
-                let client_credentials = registration_client.register_new_client_for_user(resource_id, user_id)
+                let client_credentials = registration_client.register_new_client_for_user(resource_id, params.user_id)
                     .await
                     .map_err(|cause| GenerateCleoSetupError::Internal { cause: cause.to_string() })?;
                 debug!("Successfully generated cleo setup with id <{cleo_id}>. OIDC client_id='{}'.", client_credentials.client_id.clone().value());
@@ -52,7 +54,7 @@ pub async fn generate_cleo_setup(params: GenerateCleoSetupParams, user_id: Strin
         })
     }
 
-    inner(params, user_id).await
+    inner(params).await
         .inspect_err(|err| error!("{err}"))
 }
 
@@ -70,12 +72,13 @@ mod tests {
             carl_url: Url::parse("https://example.com:1234").unwrap(),
             ca: get_cert(),
             oidc_registration_client: None,
+            user_id: UserId { value: String::from("testUser") },
         };
 
-        let cleo_setup = generate_cleo_setup(generate_cleo_setup_params, String::from("testUser")).await?;
+        let cleo_setup = generate_cleo_setup(generate_cleo_setup_params).await?;
         assert_that!(cleo_setup.id, eq(CleoId::try_from("787d0b11-51f3-4cfe-8131-c7d89d53f0e9")?));
         assert_that!(cleo_setup.auth_config, eq(&AuthConfig::Disabled));
-        assert_that!(cleo_setup.carl, eq(&Url::parse("https://example.com:1234").unwrap()));
+        assert_that!(cleo_setup.carl, eq(&Url::parse("https://example.com:1234")?));
 
         Ok(())
     }

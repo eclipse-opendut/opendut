@@ -62,6 +62,7 @@ mod auth_tests {
     use rstest::rstest;
     
     use opendut_auth::registration::client::{Clients, RegistrationClientRef};
+    use opendut_auth::registration::resources::UserId;
     use opendut_types::resources::Id;
 
     use crate::{registration_client};
@@ -77,8 +78,8 @@ mod auth_tests {
         let client: RegistrationClientRef = registration_client.await;
         println!("{:?}", client);
         let resource_id = Id::random();
-        let user_id = String::from("deleteTest");
-        let credentials = client.register_new_client_for_user(resource_id, user_id.clone()).await.unwrap();
+        let user_id = UserId { value: String::from("deleteTest") };
+        let credentials = client.register_new_client_for_user(resource_id, user_id).await.unwrap();
         let (client_id, client_secret) = (credentials.client_id.value(), credentials.client_secret.value());
         assert_that!(client_id.len().gt(&10), eq(true));
         println!("New client id: {}, secret: {}", client_id, client_secret);

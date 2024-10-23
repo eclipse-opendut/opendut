@@ -5,7 +5,6 @@ use tracing::trace;
 use opendut_carl_api::proto::services::metadata_provider::{VersionRequest, VersionResponse};
 use opendut_carl_api::proto::services::metadata_provider::metadata_provider_server::{MetadataProvider, MetadataProviderServer};
 use opendut_types::proto::util::VersionInfo;
-use opendut_util::telemetry::logging::NonDisclosingRequestExtension;
 
 #[derive(Debug, Default)]
 pub struct MetadataProviderFacade {}
@@ -23,13 +22,11 @@ impl MetadataProviderFacade {
 
 #[tonic::async_trait]
 impl MetadataProvider for MetadataProviderFacade {
-    #[tracing::instrument(skip(self, request), level="trace")]
-    async fn version(
-        &self,
-        request: Request<VersionRequest>,
-    ) -> Result<Response<VersionResponse>, Status> {
 
-        trace!("Received request: {}", request.debug_output());
+    #[tracing::instrument(skip_all, level="trace")]
+    async fn version(&self, _: Request<VersionRequest>) -> Result<Response<VersionResponse>, Status> {
+
+        trace!("Received request to get version information.");
 
         let reply = VersionResponse {
             version_info: Some(VersionInfo {

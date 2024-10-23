@@ -6,7 +6,6 @@ use tracing::trace;
 use opendut_carl_api::proto::services::cluster_manager::*;
 use opendut_carl_api::proto::services::cluster_manager::cluster_manager_server::{ClusterManager as ClusterManagerService, ClusterManagerServer};
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
-use opendut_util::telemetry::logging::NonDisclosingRequestExtension;
 
 use crate::actions;
 use crate::actions::{CreateClusterConfigurationParams, DeleteClusterConfigurationParams};
@@ -35,13 +34,13 @@ impl ClusterManagerFacade {
 
 #[tonic::async_trait]
 impl ClusterManagerService for ClusterManagerFacade {
-    #[tracing::instrument(skip(self, request), level="trace")]
+    #[tracing::instrument(skip_all, level="trace")]
     async fn create_cluster_configuration(&self, request: Request<CreateClusterConfigurationRequest>) -> Result<Response<CreateClusterConfigurationResponse>, Status> {
 
-        trace!("Received request: {}", request.debug_output());
-        
         let request = request.into_inner();
         let cluster_configuration: ClusterConfiguration = extract!(request.cluster_configuration)?;
+
+        trace!("Received request to create cluster configuration: {cluster_configuration:?}");
 
         let result = actions::create_cluster_configuration(CreateClusterConfigurationParams {
             resources_manager: Arc::clone(&self.resources_manager),
@@ -65,13 +64,13 @@ impl ClusterManagerService for ClusterManagerFacade {
             }
         }
     }
-    #[tracing::instrument(skip(self, request), level="trace")]
+    #[tracing::instrument(skip_all, level="trace")]
     async fn delete_cluster_configuration(&self, request: Request<DeleteClusterConfigurationRequest>) -> Result<Response<DeleteClusterConfigurationResponse>, Status> {
-
-        trace!("Received request: {}", request.debug_output());
 
         let request = request.into_inner();
         let cluster_id: ClusterId = extract!(request.cluster_id)?;
+
+        trace!("Received request to delete cluster configuration for cluster <{cluster_id}>.");
 
         let result =
             actions::delete_cluster_configuration(DeleteClusterConfigurationParams {
@@ -96,45 +95,39 @@ impl ClusterManagerService for ClusterManagerFacade {
             }
         }
     }
-    #[tracing::instrument(skip(self, request), level="trace")]
+    #[tracing::instrument(skip_all, level="trace")]
     async fn get_cluster_configuration(&self, request: Request<GetClusterConfigurationRequest>) -> Result<Response<GetClusterConfigurationResponse>, Status> {
-        trace!("Received request: {}", request.debug_output());
 
-        match request.into_inner().id {
-            None => {
-                Err(Status::invalid_argument("ClusterId is required."))
+        let request = request.into_inner();
+        let cluster_id: ClusterId = extract!(request.id)?;
+
+        trace!("Received request to get cluster configuration for cluster <{cluster_id}>.");
+
+        let configuration = self.cluster_manager.lock().await.get_configuration(cluster_id).await
+            .map_err(|cause| Status::internal(cause.to_string()))?;
+
+        match configuration {
+            Some(configuration) => {
+                Ok(Response::new(GetClusterConfigurationResponse {
+                    result: Some(get_cluster_configuration_response::Result::Success(
+                        GetClusterConfigurationSuccess {
+                            configuration: Some(configuration.into())
+                        }
+                    ))
+                }))
             }
-            Some(id) => {
-                let id = ClusterId::try_from(id)
-                    .map_err(|_| Status::invalid_argument("Invalid ClusterId."))?;
-
-                let configuration = self.cluster_manager.lock().await.get_configuration(id).await
-                    .map_err(|cause| Status::internal(cause.to_string()))?;
-
-                match configuration {
-                    Some(configuration) => {
-                        Ok(Response::new(GetClusterConfigurationResponse {
-                            result: Some(get_cluster_configuration_response::Result::Success(
-                                GetClusterConfigurationSuccess {
-                                    configuration: Some(configuration.into())
-                                }
-                            ))
-                        }))
-                    }
-                    None => {
-                        Ok(Response::new(GetClusterConfigurationResponse {
-                            result: Some(get_cluster_configuration_response::Result::Failure(
-                                GetClusterConfigurationFailure {}
-                            ))
-                        }))
-                    }
-                }
+            None => {
+                Ok(Response::new(GetClusterConfigurationResponse {
+                    result: Some(get_cluster_configuration_response::Result::Failure(
+                        GetClusterConfigurationFailure {}
+                    ))
+                }))
             }
         }
     }
-    #[tracing::instrument(skip(self, request), level="trace")]
-    async fn list_cluster_configurations(&self, request: Request<ListClusterConfigurationsRequest>) -> Result<Response<ListClusterConfigurationsResponse>, Status> {
-        trace!("Received request: {}", request.debug_output());
+    #[tracing::instrument(skip_all, level="trace")]
+    async fn list_cluster_configurations(&self, _: Request<ListClusterConfigurationsRequest>) -> Result<Response<ListClusterConfigurationsResponse>, Status> {
+        trace!("Received request to list cluster configurations.");
 
         let configurations = self.cluster_manager.lock().await.list_configuration().await
             .map_err(|cause| Status::internal(cause.to_string()))?;
@@ -148,12 +141,13 @@ impl ClusterManagerService for ClusterManagerFacade {
         }))
     }
 
-    #[tracing::instrument(skip(self, request), level="trace")]
+    #[tracing::instrument(skip_all, level="trace")]
     async fn store_cluster_deployment(&self, request: Request<StoreClusterDeploymentRequest>) -> Result<Response<StoreClusterDeploymentResponse>, Status> {
-        trace!("Received request: {}", request.debug_output());
-        
+
         let request = request.into_inner();
         let cluster_deployment: ClusterDeployment = extract!(request.cluster_deployment)?;
+
+        trace!("Received request to store cluster deployment: {cluster_deployment:?}");
 
         let result = self.cluster_manager.lock().await.store_cluster_deployment(cluster_deployment).await;
 
@@ -174,12 +168,12 @@ impl ClusterManagerService for ClusterManagerFacade {
             }
         }
     }
-    #[tracing::instrument(skip(self, request), level="trace")]
+    #[tracing::instrument(skip_all, level="trace")]
     async fn delete_cluster_deployment(&self, request: Request<DeleteClusterDeploymentRequest>) -> Result<Response<DeleteClusterDeploymentResponse>, Status> {
-        trace!("Received request: {}", request.debug_output());
-
         let request = request.into_inner();
         let cluster_id: ClusterId = extract!(request.cluster_id)?;
+
+        trace!("Received request to delete cluster deployment for cluster <{cluster_id}>.");
 
         let result = self.cluster_manager.lock().await.delete_cluster_deployment(cluster_id).await;
 
@@ -201,9 +195,9 @@ impl ClusterManagerService for ClusterManagerFacade {
         }
     }
 
-    #[tracing::instrument(skip(self, request), level="trace")]
-    async fn list_cluster_deployments(&self, request: Request<ListClusterDeploymentsRequest>) -> Result<Response<ListClusterDeploymentsResponse>, Status> {
-        trace!("Received request: {}", request.debug_output());
+    #[tracing::instrument(skip_all, level="trace")]
+    async fn list_cluster_deployments(&self, _: Request<ListClusterDeploymentsRequest>) -> Result<Response<ListClusterDeploymentsResponse>, Status> {
+        trace!("Received request to list cluster deployments.");
 
         let deployments = self.cluster_manager.lock().await.list_deployment().await
             .map_err(|cause| Status::internal(cause.to_string()))?;
