@@ -1,4 +1,4 @@
-#[cfg(any(feature = "client", feature = "wasm-client"))]
+#[cfg(feature = "client")]
 pub use client::*;
 
 pub mod error {
@@ -11,16 +11,22 @@ pub mod error {
     pub struct OpenStream { pub message: String }
 }
 
-#[cfg(any(feature = "client", feature = "wasm-client"))]
+#[cfg(feature = "client")]
 mod client {
-    use cfg_if::cfg_if;
-    use tonic::codegen::{Body, Bytes, http, InterceptedService, StdError};
+    use tonic::codegen::{http, Body, Bytes, InterceptedService, StdError};
 
-    use opendut_types::peer::PeerId;
+    use crate::proto::services::peer_messaging_broker::peer_messaging_broker_client::PeerMessagingBrokerClient;
+
+    use std::net::IpAddr;
+
+    use std::str::FromStr;
+    use tokio::sync::mpsc;
+    use tonic::codegen::tokio_stream::wrappers::ReceiverStream;
+    use tonic::metadata::MetadataValue;
 
     use crate::carl::broker::error;
     use crate::proto::services::peer_messaging_broker;
-    use crate::proto::services::peer_messaging_broker::peer_messaging_broker_client::PeerMessagingBrokerClient;
+    use opendut_types::peer::PeerId;
 
     #[derive(Clone, Debug)]
     pub struct PeerMessagingBroker<T> {
@@ -63,44 +69,33 @@ mod client {
         }
     }
 
-    cfg_if! {
-        if #[cfg(feature = "client")] {
-            use std::net::IpAddr;
+    pub type Downstream = tonic::Streaming<peer_messaging_broker::Downstream>;
+    pub type Upstream = mpsc::Sender<peer_messaging_broker::Upstream>;
 
-            use tokio::sync::mpsc;
-            use std::str::FromStr;
-            use tonic::codegen::tokio_stream::wrappers::ReceiverStream;
-            use tonic::metadata::MetadataValue;
+    impl<T> PeerMessagingBroker<T>
+    where T: tonic::client::GrpcService<tonic::body::BoxBody>,
+          T::Error: Into<StdError>,
+          T::ResponseBody: Body<Data=Bytes> + Send + 'static,
+          <T::ResponseBody as Body>::Error: Into<StdError> + Send,
+    {
 
-            pub type Downstream = tonic::Streaming<peer_messaging_broker::Downstream>;
-            pub type Upstream = mpsc::Sender<peer_messaging_broker::Upstream>;
+        pub async fn open_stream(&mut self, id: PeerId, remote_address: &IpAddr) -> Result<(Downstream, Upstream), error::OpenStream> {
+            let (tx, rx) = mpsc::channel(1024);
 
-            impl<T> PeerMessagingBroker<T>
-            where T: tonic::client::GrpcService<tonic::body::BoxBody>,
-                  T::Error: Into<StdError>,
-                  T::ResponseBody: Body<Data=Bytes> + Send + 'static,
-                  <T::ResponseBody as Body>::Error: Into<StdError> + Send,
-            {
+            let response = {
+                let mut request = tonic::Request::new(ReceiverStream::new(rx));
+                request.metadata_mut().insert("id", MetadataValue::from_str(&id.to_string()).unwrap());
+                request.metadata_mut().insert("remote-host", MetadataValue::from_str(&remote_address.to_string()).unwrap());
 
-                pub async fn open_stream(&mut self, id: PeerId, remote_address: &IpAddr) -> Result<(Downstream, Upstream), error::OpenStream> {
-                    let (tx, rx) = mpsc::channel(1024);
+                self.inner
+                    .open(request)
+                    .await
+                    .map_err(|cause| error::OpenStream { message: format!("Error while opening stream: {cause}") })?
+            };
 
-                    let response = {
-                        let mut request = tonic::Request::new(ReceiverStream::new(rx));
-                        request.metadata_mut().insert("id", MetadataValue::from_str(&id.to_string()).unwrap());
-                        request.metadata_mut().insert("remote-host", MetadataValue::from_str(&remote_address.to_string()).unwrap());
+            let inbound = response.into_inner();
 
-                        self.inner
-                            .open(request)
-                            .await
-                            .map_err(|cause| error::OpenStream { message: format!("Error while opening stream: {cause}") })?
-                    };
-
-                    let inbound = response.into_inner();
-
-                    Ok((inbound, tx))
-                }
-            }
+            Ok((inbound, tx))
         }
     }
 }

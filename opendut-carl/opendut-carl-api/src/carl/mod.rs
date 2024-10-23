@@ -214,7 +214,6 @@ pub mod wasm {
 
     use opendut_auth::public::{Auth, AuthInterceptor, OptionalAuthData};
 
-    use crate::carl::broker::PeerMessagingBroker;
     use crate::carl::cluster::ClusterManager;
     use crate::carl::InitializationError;
     use crate::carl::metadata::MetadataProvider;
@@ -222,7 +221,6 @@ pub mod wasm {
 
     #[derive(Debug, Clone)]
     pub struct CarlClient {
-        pub broker: PeerMessagingBroker<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
         pub cluster: ClusterManager<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
         pub metadata: MetadataProvider<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
         pub peers: PeersRegistrar<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
@@ -247,7 +245,6 @@ pub mod wasm {
             let auth_interceptor = AuthInterceptor::new(auth);
 
             Ok(CarlClient {
-                broker: PeerMessagingBroker::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
                 cluster: ClusterManager::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
                 metadata: MetadataProvider::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
                 peers: PeersRegistrar::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
