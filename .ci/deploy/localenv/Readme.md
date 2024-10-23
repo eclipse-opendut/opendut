@@ -47,8 +47,14 @@ docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/data/provision
 docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/docker-compose.yml --env-file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/data/secrets/.env up --detach --build
 ```
 
+* Stop the local test environment using docker compose.
+```shell
+docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/docker-compose.yml down
+```
+
 * Destroy the local test environment using docker compose.
 ```shell
+docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/data/provision/docker-compose.yml down --volumes
 docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/docker-compose.yml down --volumes
 ```
 
