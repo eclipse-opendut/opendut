@@ -147,13 +147,13 @@ impl PeerMessagingBroker {
                             break;
                         }
                         Err(cause) => {
-                            error!("No message from peer <{peer_id}> within {} ms: {cause}", timeout_duration.as_millis());
+                            error!("No message from peer <{peer_id}> within {} ms:\n  {cause}", timeout_duration.as_millis());
                             break;
                         }
                     }
                 }
                 Self::remove_peer_impl(peer_id, resources_manager, peers).await
-                    .unwrap_or_else(|cause| error!("Error while removing peer after its stream ended: {cause}"));
+                    .unwrap_or_else(|cause| error!("Error while removing peer after its stream ended:\n  {cause}"));
             });
         }
 
@@ -193,7 +193,7 @@ async fn handle_stream_message(
             let context = None;
             let _ignore_result =
                 tx_outbound.send(Downstream{message:Some(message), context}).await
-                    .inspect_err(|cause| warn!("Failed to send ping to peer <{peer_id}>: {cause}"));
+                    .inspect_err(|cause| warn!("Failed to send ping to peer <{peer_id}>:\n  {cause}"));
         },
     }
 }

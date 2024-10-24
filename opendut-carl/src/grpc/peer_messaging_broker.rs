@@ -9,7 +9,7 @@ use tokio_stream::wrappers::ReceiverStream;
 use tonic::{Request, Response, Status, Streaming};
 use tonic::metadata::MetadataMap;
 use tonic_web::CorsGrpcWeb;
-use tracing::{error, info, trace, warn};
+use tracing::{error, trace, warn};
 use uuid::Uuid;
 
 use opendut_carl_api::proto::services::peer_messaging_broker::{Downstream, Upstream};
@@ -59,8 +59,6 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
                 OpenError::Persistence { .. } => Status::internal(cause.to_string()),
             })?;
 
-        let peer_messaging_broker = Clone::clone(&self.peer_messaging_broker);
-
         let mut inbound = request.into_inner();
         tokio::spawn(async move {
             while let Some(result) = inbound.next().await {
@@ -80,13 +78,6 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
                     }
                 }
             }
-
-            if let Err(cause) = peer_messaging_broker.remove_peer(peer_id).await {
-                error!("Failed to removed peer <{peer_id}>:\n  {cause}");
-            }
-            else {
-                info!("Removed peer <{peer_id}>.");
-            };
         });
 
         let outbound = ReceiverStream::new(rx_outbound)
