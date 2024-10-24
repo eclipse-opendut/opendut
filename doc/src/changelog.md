@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 </details>
 
 ### Added
+* CARL can now persist its state into a database.
 * EDGAR Setup now has support for plugins, which can perform hardware- or use-case specific setup tasks.
 
 ### Changed
@@ -20,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 * EDGAR Service does not require root permissions anymore, if CAN is not used.
+
+### Known Issues
+* Stopping an EDGAR that has a cluster deployed, does not undeploy the cluster, therefore blocking other EDGARs in the cluster.
 
 
 ## 0.2.0

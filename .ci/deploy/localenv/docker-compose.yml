@@ -281,7 +281,7 @@ services:
       - opendut_local
 
   carl:
-    image: "ghcr.io/eclipse-opendut/opendut-carl:0.2.0"
+    image: "ghcr.io/eclipse-opendut/opendut-carl:canary-0.3.0"
     command: ["/opt/opendut-carl/opendut-carl"]
     restart: unless-stopped
     depends_on:
@@ -328,7 +328,7 @@ services:
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_ADMIN_URL=https://auth.opendut.local/admin/realms/opendut/
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_SCOPES=
       # Persistence
-      - OPENDUT_CARL_PERSISTENCE_ENABLED=false
+      - OPENDUT_CARL_PERSISTENCE_ENABLED=true
       - OPENDUT_CARL_PERSISTENCE_DATABASE_URL=postgres://carl_postgres/carl
       - OPENDUT_CARL_PERSISTENCE_DATABASE_USERNAME=postgres
       - OPENDUT_CARL_PERSISTENCE_DATABASE_PASSWORD=$CARL_POSTGRES_PASSWORD
