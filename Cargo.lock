@@ -289,7 +289,7 @@ checksum = "966f7a3f9eed49783f5ace2fd90aa81dc8328af2a7f6b14e1b93bbcddc16f48f"
 dependencies = [
  "autosar-data-specification",
  "fxhash",
- "indexmap 2.3.0",
+ "indexmap 2.6.0",
  "num-traits",
  "parking_lot 0.12.3",
  "smallvec",
@@ -3484,7 +3484,7 @@ checksum = "ed3955f1a9c7c0c15e092f9c887db08b1fc683305fdf6eb6684f22555355e202"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.72",
+ "syn 2.0.85",
 ]
 
 [[package]]
