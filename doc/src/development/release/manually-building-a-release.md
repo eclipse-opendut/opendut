@@ -1,4 +1,4 @@
-# Building a Release
+# Manually Building a Release
 
 To build release artifacts for distribution, run:
 ```sh
