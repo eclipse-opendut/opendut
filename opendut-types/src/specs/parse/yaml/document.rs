@@ -3,6 +3,9 @@ use serde_yaml::Value;
 
 use crate::specs::*;
 
+use parse::ResourceKind;
+use crate::specs::parse::ParseSpecificationError;
+
 #[derive(Debug, Deserialize)]
 pub struct YamlSpecificationDocument {
     pub kind: String,
@@ -21,8 +24,8 @@ impl YamlSpecificationDocument {
     /// # Example
     ///
     /// ```
-    /// # use opendut_types::specs::yaml::YamlSpecificationDocument;
-    /// # fn main() -> Result<(), opendut_types::specs::ParseSpecificationError> {
+    /// # use opendut_types::specs::parse::yaml::YamlSpecificationDocument;
+    /// # fn main() -> Result<(), opendut_types::specs::parse::ParseSpecificationError> {
     /// let yaml = r#"
     /// kind: PeerDescriptor
     /// version: v1
@@ -73,17 +76,17 @@ fn parse_version(s: &str) -> Result<SpecificationVersion, ParseSpecificationErro
 fn parse_spec(kind: ResourceKind, version: SpecificationVersion, spec: Value) -> Result<Specification, ParseSpecificationError> {
     match (kind, version) {
         (ResourceKind::ClusterConfiguration, SpecificationVersion::V1) => {
-            let spec = serde_yaml::from_value::<ClusterConfigurationSpecificationV1>(spec)
+            let spec = serde_yaml::from_value::<cluster::ClusterConfigurationSpecificationV1>(spec)
                 .map_err(|cause| ParseSpecificationError::IllegalYamlSpecification { cause } )?;
-            Ok(Specification::ClusterConfigurationSpecification(ClusterConfigurationSpecification::V1(spec)))
+            Ok(Specification::ClusterConfigurationSpecification(cluster::ClusterConfigurationSpecification::V1(spec)))
         }
         (ResourceKind::ClusterConfiguration, _) => {
             Err(ParseSpecificationError::UnknownVersion { kind, version })
         }
         (ResourceKind::PeerDescriptor, SpecificationVersion::V1) => {
-            let spec = serde_yaml::from_value::<PeerDescriptorSpecificationV1>(spec)
+            let spec = serde_yaml::from_value::<peer::PeerDescriptorSpecificationV1>(spec)
                 .map_err(|cause| ParseSpecificationError::IllegalYamlSpecification { cause } )?;
-            Ok(Specification::PeerDescriptorSpecification(PeerDescriptorSpecification::V1(spec)))
+            Ok(Specification::PeerDescriptorSpecification(peer::PeerDescriptorSpecification::V1(spec)))
         }
         (ResourceKind::PeerDescriptor, _) => {
             Err(ParseSpecificationError::UnknownVersion { kind, version })

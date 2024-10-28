@@ -1,7 +1,7 @@
 use serde::Deserialize;
 
-use crate::specs::ParseSpecificationError;
-use crate::specs::yaml::YamlSpecificationDocument;
+use crate::specs::parse::ParseSpecificationError;
+use crate::specs::parse::yaml::YamlSpecificationDocument;
 
 #[derive(Debug, Deserialize)]
 pub struct YamlSpecificationFile {
@@ -18,8 +18,8 @@ impl YamlSpecificationFile {
     /// # Example
     ///
     /// ```
-    /// # use opendut_types::specs::yaml::YamlSpecificationFile;
-    /// # fn main() -> Result<(), opendut_types::specs::ParseSpecificationError> {
+    /// # use opendut_types::specs::parse::yaml::YamlSpecificationFile;
+    /// # fn main() -> Result<(), opendut_types::specs::parse::ParseSpecificationError> {
     /// let yaml = r#"
     /// ---
     /// kind: PeerDescriptor
@@ -67,7 +67,7 @@ mod tests {
     use uuid::uuid;
     use crate::specs::SpecificationMetadata;
 
-    use crate::specs::yaml::*;
+    use super::*;
 
     #[rstest]
     pub fn test_that_a_string_containing_a_single_document_can_be_deserialized() -> Result<()> {

@@ -3,8 +3,10 @@ use std::path::PathBuf;
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
 use opendut_types::peer::executor::ExecutorDescriptors;
-use opendut_types::specs::{PeerDescriptorSpecification, PeerDescriptorSpecificationV1, Specification, SpecificationDocument, SpecificationMetadata};
-use opendut_types::specs::yaml::{YamlSpecificationFile};
+use opendut_types::specs::{Specification, SpecificationDocument, SpecificationMetadata};
+use opendut_types::specs::parse::json::JsonSpecificationDocument;
+use opendut_types::specs::parse::yaml::YamlSpecificationFile;
+use opendut_types::specs::peer::{PeerDescriptorSpecification, PeerDescriptorSpecificationV1};
 use crate::commands::peer::create::create_peer;
 use crate::CreateOutputFormat;
 
@@ -47,7 +49,7 @@ impl ApplyCli {
                 }
             }
             Source::Inline(InlineSource::Json(json)) => {
-                match Specification::from_json_str(json.as_str()) {
+                match JsonSpecificationDocument::try_from_json_str(json.as_str()) {
                     Ok(_) => {}
                     Err(_) => {}
                 }
@@ -144,7 +146,8 @@ mod tests {
     use googletest::prelude::*;
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
     use opendut_types::peer::executor::ExecutorDescriptors;
-    use opendut_types::specs::{PeerDescriptorSpecification, PeerDescriptorSpecificationV1, Specification, SpecificationDocument, SpecificationMetadata};
+    use opendut_types::specs::{Specification, SpecificationDocument, SpecificationMetadata};
+    use opendut_types::specs::peer::{PeerDescriptorSpecification, PeerDescriptorSpecificationV1};
     use crate::commands::apply::{convert_documents_to_models, convert_document_to_peer_descriptor};
 
     #[test]
