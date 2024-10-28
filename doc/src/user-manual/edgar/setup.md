@@ -45,12 +45,17 @@ If this throws an error, it is likely that you downloaded the wrong CPU architec
 ### 4. CAN Setup
 If you want to use CAN, follow the steps in [CAN Setup](#can-setup) before continuing.
 
-### 5. Scripted Setup
+### 5. Prepare plugins
+Depending on the hardware you want to set up, you might want to use plugins to perform additional steps.  
+Place these in the `plugins/` folder of the unpacked EDGAR distribution and write their paths into the `plugins.txt`.  
+These paths should be relative to the `plugins.txt`.
+The order of the paths determines the order of execution for the plugins.
 
-- EDGAR comes with a scripted setup, which you can initiate by running:  
-  ```shell
-  opendut-edgar setup managed <SETUP-STRING>
-  ```  
+### 6. Scripted Setup
+EDGAR comes with a scripted setup, which you can initiate by running:  
+```shell
+opendut-edgar setup managed <SETUP-STRING>
+```  
 You can get the `<SETUP-STRING>` from LEA or CLEO after creating a Peer.
 
 This will configure your operating system and start the *EDGAR Service*, which will receive its configuration from *CARL*.
@@ -165,10 +170,7 @@ If you plan to use the unmanaged setup and your NetBird server uses a self-signe
   systemctl status opendut-edgar
   ```
 
-- It might happen that the NetBird Client started by EDGAR is not able to connect, in that case stop it and re-run EDGAR managed setup:
-  ```shell
-  sudo systemctl stop netbird
-  ```
+- It might happen that the NetBird Client started by EDGAR is not able to connect, in that case re-run the EDGAR setup.
 
 - EDGAR might start with an old IP, different from command `sudo wg` would print. In that particular case
 stop netbird service and opendut-edgar service and re-run the setup. This might happen to all
