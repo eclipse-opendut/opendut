@@ -9,14 +9,7 @@ use std::io::Error;
 use std::os::raw::c_void;
 use std::ffi::CString;
 
-use nix::libc::{__c_anonymous_sockaddr_can_can_addr, __c_anonymous_sockaddr_can_tp, connect, if_nametoindex, sockaddr, sockaddr_can, socket, timeval, write, AF_CAN, CAN_BCM, CAN_EFF_FLAG, SOCK_DGRAM};
-
-/* 
-    Convert Rust vector to C like pointer that is required when using C derived method
-*/
-fn vec_to_c_void(vec: &[u8]) -> *const c_void {
-    vec.as_ptr() as *const c_void
-}
+use nix::libc::{__c_anonymous_sockaddr_can_can_addr, __c_anonymous_sockaddr_can_tp, c_int, connect, if_nametoindex, sockaddr, sockaddr_can, socket, socklen_t, timeval, write, AF_CAN, CAN_BCM, CAN_EFF_FLAG, SOCK_DGRAM};
 
 /* 
     Create a socket using libc's socket function. This is required since not Rust equivalent library or method exists for establishing a BCM CAN socket
@@ -47,27 +40,21 @@ pub fn connect_socket(sock: i32, ifname: &String) -> Result<i32, String>  {
         }
     };
 
-    let sock_addr_can_tp = __c_anonymous_sockaddr_can_tp {
-        rx_id: 0,
-        tx_id: 0
-    };
-
-    let can_addr = __c_anonymous_sockaddr_can_can_addr {
-        tp: sock_addr_can_tp
-    };
-
-    let my_sockaddr: sockaddr_can = sockaddr_can {
+    let sockaddr: sockaddr_can = sockaddr_can {
         can_family: AF_CAN as u16,
         can_ifindex: ifindex as i32,
-        can_addr
+        can_addr: __c_anonymous_sockaddr_can_can_addr {
+            tp: __c_anonymous_sockaddr_can_tp {
+                rx_id: 0,
+                tx_id: 0
+            }
+        }
     };
 
-    let sockaddr_can_ptr: *const sockaddr_can = &my_sockaddr as *const sockaddr_can;
-    let sockaddr_ptr = sockaddr_can_ptr as *const sockaddr;
+    let sockaddr_ptr = &sockaddr as *const sockaddr_can as *const sockaddr;
    
-    //let conv_addr = SockaddrLike::from_raw(my_sockaddr, Some(mem::size_of::<&sockaddr_can>() as u32));
     let connect_res = unsafe {
-        connect(sock, sockaddr_ptr, mem::size_of::<&sockaddr_can>() as u32)
+        connect(sock, sockaddr_ptr, mem::size_of::<&sockaddr_can>() as socklen_t)
     };
 
     if connect_res < 0 {
@@ -80,9 +67,13 @@ pub fn connect_socket(sock: i32, ifname: &String) -> Result<i32, String>  {
 /*
     Writes to existing socket 
 */
-pub fn write_socket(sock: i32, write_bytes: &[u8], count: usize) -> Result<isize, String>  {
+pub fn write_socket(sock: i32, buf: &[u8]) -> Result<isize, String>  {
     let wres = unsafe {
-        write(sock, vec_to_c_void(write_bytes), count)
+        write(
+            sock as c_int, 
+            buf.as_ptr() as *const c_void, 
+            buf.len()
+        )
     };
     if wres < 0 {
         return Err(format!("Could not write to socket due to {}", Error::last_os_error()));
@@ -106,11 +97,7 @@ fn fill_data_array(data: &mut [u8], data_vector: &[u8]) {
     Creates a self-defined CanFrame structure that is either a CanFdFrame or a Can20Frame
  */
 pub fn create_can_frame_structure(can_id: u32, len: u8, addressing_mode: bool, frame_tx_behavior: bool, data_vector: &[u8]) -> CanFrame {
-    let mut eflag: u32 = 0x0;
-    
-    if addressing_mode {
-        eflag = CAN_EFF_FLAG;
-    }
+    let eflag: u32 = if addressing_mode { CAN_EFF_FLAG } else { 0 };
 
     if frame_tx_behavior { 
         let mut data: [u8; 64] = [0; 64];

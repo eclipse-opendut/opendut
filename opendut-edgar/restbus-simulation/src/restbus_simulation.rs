@@ -24,8 +24,6 @@ impl RestbusSimulation {
         
         connect_socket(sock, ifname)?;
 
-        let mut write_bytes_global: Vec<Vec<u8>> = Vec::new();
-
         for timed_can_frame in timed_can_frames { 
             let mut write_bytes: Vec<u8> = Vec::new();
 
@@ -37,20 +35,8 @@ impl RestbusSimulation {
         
             create_bcm_structure_bytes(timed_can_frame.count, ival1, ival2, timed_can_frame.can_id, timed_can_frame.frame_tx_behavior, &can_frames, &mut write_bytes);
             
-            write_bytes_global.push(write_bytes);
-
+            write_socket(sock, &write_bytes)?;
         }
-
-        for write_bytes in write_bytes_global {
-            /*println!("write byte is {}", write_bytes.len());
-            for byte in &write_bytes {
-                print!("{:02x} ", byte);
-            }
-            println!("");*/
-
-            write_socket(sock, &write_bytes, write_bytes.len())?;
-            //println!("successfully wrote to socket");
-        } 
 
         Ok(true)
     }
