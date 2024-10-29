@@ -31,30 +31,29 @@ Available CPU architectures are:
 - aarch64-unknown-linux-gnu (ARM64 systems)
 
 ### 3. Unpack the archive
-Run this command to unpack EDGAR:
+Run these commands to unpack EDGAR and change into the directory:
 ```sh
 tar xf opendut-edgar.tar.gz
+cd opendut-edgar/
 ```
 
 EDGAR should print version information, if you run:
 ```sh
-opendut-edgar/opendut-edgar --version
+./opendut-edgar --version
 ```
 If this throws an error, it is likely that you downloaded the wrong CPU architecture.
 
 ### 4. CAN Setup
 If you want to use CAN, follow the steps in [CAN Setup](#can-setup) before continuing.
 
-### 5. Prepare plugins
-Depending on the hardware you want to set up, you might want to use plugins to perform additional steps.  
-Place these in the `plugins/` folder of the unpacked EDGAR distribution and write their paths into the `plugins.txt`.  
-These paths should be relative to the `plugins.txt`.
-The order of the paths determines the order of execution for the plugins.
+### 5. Plugins
+Depending on your target hardware, you might want to use plugins to perform additional setup steps.
+If so, follow the steps in [Plugins](#plugins) before continuing.
 
 ### 6. Scripted Setup
 EDGAR comes with a scripted setup, which you can initiate by running:  
 ```shell
-opendut-edgar setup managed <SETUP-STRING>
+./opendut-edgar setup managed <SETUP-STRING>
 ```  
 You can get the `<SETUP-STRING>` from LEA or CLEO after creating a Peer.
 
@@ -145,6 +144,17 @@ If you plan to use the unmanaged setup and your NetBird server uses a self-signe
    ```
    curl https://netbird-api.opendut.local
    ```
+
+## Plugins
+You can use plugins to perform additional setup steps. This guide assumes you already have a set of plugins you want to use.
+
+If so, follow these steps:
+1. Transfer your plugins archive to the target device.
+2. Unpack your archive in the `plugins/` folder of the unpacked EDGAR distribution.
+   This should result in a directory with one or more `.wasm` files and a `plugins.txt` file inside.
+3. Write the path to the unpacked directory into the top-level `plugins.txt` file.  
+   This path can be relative to the `plugins.txt` file.
+   The order of the paths in the `plugins.txt` file determines the order of execution for the plugins.
 
 ## Troubleshooting
 - In case of issues during the managed setup, see:
