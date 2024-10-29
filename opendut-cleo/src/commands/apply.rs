@@ -1,12 +1,13 @@
 use std::fs;
 use std::path::PathBuf;
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
+use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
 use opendut_types::peer::executor::ExecutorDescriptors;
 use opendut_types::specs::{Specification, SpecificationDocument, SpecificationMetadata};
 use opendut_types::specs::parse::json::JsonSpecificationDocument;
 use opendut_types::specs::parse::yaml::YamlSpecificationFile;
-use opendut_types::specs::peer::{PeerDescriptorSpecification, PeerDescriptorSpecificationV1};
+use opendut_types::specs::peer::{NetworkInterfaceDescriptorSpecificationV1, PeerDescriptorSpecification, PeerDescriptorSpecificationV1};
+use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 use crate::commands::peer::create::create_peer;
 use crate::CreateOutputFormat;
 
@@ -128,11 +129,17 @@ fn convert_document_to_peer_descriptor(specification_metadata: SpecificationMeta
         .transpose()
         .map_err(|error| error.to_string())?;
 
+    let network_interfaces = convert_network_specification_to_descriptor(peer.network.interfaces)
+        .map_err(|error| error.to_string())?;
+
     let descriptor: PeerDescriptor = PeerDescriptor {
         id,
         name,
         location,
-        network: Default::default(), // TODO
+        network: PeerNetworkDescriptor {
+            interfaces: network_interfaces,
+            bridge_name: Default::default(), // TODO
+        },
         topology: Default::default(), // TODO
         executors: ExecutorDescriptors {
             executors: vec![], // TODO
@@ -141,19 +148,42 @@ fn convert_document_to_peer_descriptor(specification_metadata: SpecificationMeta
     Ok(descriptor)
 }
 
+fn convert_network_specification_to_descriptor(network_interface_descriptor_specification_v1: Vec<NetworkInterfaceDescriptorSpecificationV1>) -> crate::Result<Vec<NetworkInterfaceDescriptor>> {
+
+    let network_descriptors = network_interface_descriptor_specification_v1
+        .into_iter()
+        .map(|spec| {
+            let name = NetworkInterfaceName::try_from(spec.name).map_err(|error| error.to_string()).unwrap();
+            let configuration = match spec.configuration.to_lowercase().as_str() {
+                "ethernet" => NetworkInterfaceConfiguration::Ethernet,
+                "can" => NetworkInterfaceConfiguration::Ethernet, //TODO
+                _ => NetworkInterfaceConfiguration::Ethernet,
+            };
+
+            NetworkInterfaceDescriptor {
+                id: NetworkInterfaceId::from(spec.id),
+                name,
+                configuration,
+            }
+        }).collect();
+
+    Ok(network_descriptors)
+}
+
 #[cfg(test)]
 mod tests {
     use googletest::prelude::*;
-    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
+    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_types::peer::executor::ExecutorDescriptors;
     use opendut_types::specs::{Specification, SpecificationDocument, SpecificationMetadata};
-    use opendut_types::specs::peer::{PeerDescriptorSpecification, PeerDescriptorSpecificationV1};
+    use opendut_types::specs::peer::{NetworkInterfaceDescriptorSpecificationV1, PeerDescriptorSpecification, PeerDescriptorSpecificationV1, PeerNetworkDescriptorSpecificationV1};
+    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
     use crate::commands::apply::{convert_documents_to_models, convert_document_to_peer_descriptor};
 
     #[test]
     fn should_convert_document_to_peer_descriptor() -> anyhow::Result<()> {
         let peer = generate_peer_descriptor()?;
-
+        
         let specification_metadata = SpecificationMetadata {
             id: peer.id.uuid,
             name: peer.name.clone().value(),
@@ -161,6 +191,16 @@ mod tests {
 
         let specification_peer = PeerDescriptorSpecificationV1 {
             location: peer.location.clone().map(|location| location.value()),
+            network: PeerNetworkDescriptorSpecificationV1 { 
+                interfaces: vec![
+                    NetworkInterfaceDescriptorSpecificationV1 {
+                        id: peer.network.interfaces[0].id.uuid,
+                        name: peer.network.interfaces[0].name.to_string(),
+                        configuration: peer.network.interfaces[0].configuration.to_string(),
+                    }
+                ],
+                bridge_name: None 
+            },
         };
 
         let result = convert_document_to_peer_descriptor(specification_metadata, specification_peer).unwrap();
@@ -175,9 +215,18 @@ mod tests {
             id: PeerId::random(),
             name: PeerName::try_from("peer1")?,
             location: Some(PeerLocation::try_from("Ulm")?),
-            network: Default::default(), //TODO
-            topology: Default::default(), //TODO
-            executors: ExecutorDescriptors { executors: vec![] }, //TODO
+            network: PeerNetworkDescriptor {
+                interfaces: vec![
+                    NetworkInterfaceDescriptor {
+                        id: NetworkInterfaceId::random(),
+                        name: NetworkInterfaceName::try_from("eth0")?,
+                        configuration: NetworkInterfaceConfiguration::Ethernet,
+                    }
+                ],
+                bridge_name: Default::default(), // TODO
+            },
+            topology: Default::default(), // TODO
+            executors: ExecutorDescriptors { executors: vec![] }, // TODO
         })
     }
 
@@ -193,7 +242,17 @@ mod tests {
                     name: peer_list[0].name.clone().value(),
                 },
                 spec: Specification::PeerDescriptorSpecification(PeerDescriptorSpecification::V1(PeerDescriptorSpecificationV1 {
-                    location: Some(String::from("Ulm"))
+                    location: Some(String::from("Ulm")),
+                    network: PeerNetworkDescriptorSpecificationV1 {
+                        interfaces: vec![
+                            NetworkInterfaceDescriptorSpecificationV1 {
+                                id: peer_list[0].network.interfaces[0].id.uuid,
+                                name: peer_list[0].network.interfaces[0].name.to_string(),
+                                configuration: peer_list[0].network.interfaces[0].configuration.to_string(),
+                            }
+                        ],
+                        bridge_name: Default::default(), // TODO
+                    },
                 }))
             },
             SpecificationDocument {
@@ -203,7 +262,17 @@ mod tests {
                     name: peer_list[1].name.clone().value(),
                 },
                 spec: Specification::PeerDescriptorSpecification(PeerDescriptorSpecification::V1(PeerDescriptorSpecificationV1 {
-                    location: Some(String::from("Stuttgart"))
+                    location: Some(String::from("Stuttgart")),
+                     network: PeerNetworkDescriptorSpecificationV1 {
+                        interfaces: vec![
+                            NetworkInterfaceDescriptorSpecificationV1 {
+                                id: peer_list[1].network.interfaces[0].id.uuid,
+                                name: peer_list[1].network.interfaces[0].name.to_string(),
+                                configuration: peer_list[1].network.interfaces[0].configuration.to_string(),
+                            }
+                        ],
+                        bridge_name: Default::default(), // TODO
+                    },
                 }))
             }
         ];
@@ -223,7 +292,16 @@ mod tests {
                     id: PeerId::random(),
                     name: PeerName::try_from("peer1")?,
                     location: Some(PeerLocation::try_from("Ulm")?),
-                    network: Default::default(), //TODO
+                    network: PeerNetworkDescriptor {
+                        interfaces: vec![
+                            NetworkInterfaceDescriptor {
+                                id: NetworkInterfaceId::random(),
+                                name: NetworkInterfaceName::try_from("eth0")?,
+                                configuration: NetworkInterfaceConfiguration::Ethernet,
+                            }
+                        ],
+                        bridge_name: Default::default(), // TODO
+                    },
                     topology: Default::default(), //TODO
                     executors: ExecutorDescriptors { executors: vec![] }, //TODO
                 },
@@ -231,7 +309,16 @@ mod tests {
                     id: PeerId::random(),
                     name: PeerName::try_from("peer2")?,
                     location: Some(PeerLocation::try_from("Stuttgart")?),
-                    network: Default::default(), //TODO
+                    network: PeerNetworkDescriptor {
+                        interfaces: vec![
+                            NetworkInterfaceDescriptor {
+                                id: NetworkInterfaceId::random(),
+                                name: NetworkInterfaceName::try_from("eth1")?,
+                                configuration: NetworkInterfaceConfiguration::Ethernet,
+                            }
+                        ],
+                        bridge_name: Default::default(), // TODO
+                    },
                     topology: Default::default(), //TODO
                     executors: ExecutorDescriptors { executors: vec![] }, //TODO
                 }
