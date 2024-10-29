@@ -6,10 +6,11 @@ use crate::common::task::Task;
 use crate::fs;
 use crate::setup::plugin::plugin_runtime::PluginRuntime;
 
-pub fn create_plugin_runtime(tasks: &mut Vec<Box<dyn Task>>) -> PluginRuntime {
+pub fn create_plugin_runtime(tasks: &mut Vec<Box<dyn Task>>) -> anyhow::Result<PluginRuntime> {
 
     let plugin_runtime = PluginRuntime::new();
-    let plugin_paths = discover_plugins().unwrap();
+    let plugins_dir = super::constants::path_in_edgar_distribution()?;
+    let plugin_paths = discover_plugins_in_path(&plugins_dir)?;
 
     let mut plugins: Vec<Box<dyn Task>> = plugin_paths.iter()
         .map(|path| Box::new(plugin_runtime.create_plugin_from_wasm(path)) as Box<dyn Task>)
@@ -21,22 +22,16 @@ pub fn create_plugin_runtime(tasks: &mut Vec<Box<dyn Task>>) -> PluginRuntime {
         debug!("No plugins loaded.");
     }
 
-    plugin_runtime
+    Ok(plugin_runtime)
 }
 
-fn discover_plugins() -> anyhow::Result<Vec<PathBuf>> {
-	let path = super::constants::path_in_edgar_distribution()?;
-
-    discover_plugins_in_path(&path)
-}
-
-fn discover_plugins_in_path(plugin_dir: &Path) -> anyhow::Result<Vec<PathBuf>> {
-    if !plugin_dir.exists() {
-        warn!("File or folder '{}' does not exist.", plugin_dir.display());
+fn discover_plugins_in_path(plugins_dir: &Path) -> anyhow::Result<Vec<PathBuf>> {
+    if plugins_dir.exists().not() {
+        warn!("No plugins folder found at: {}", plugins_dir.display());
         return anyhow::Ok(vec![]);
     }
 
-    let plugin_order = read_plugin_order(plugin_dir)?;
+    let plugin_order = read_plugin_order(plugins_dir)?;
 
     let mut plugin_paths: Vec<PathBuf> = vec![];
 
@@ -49,31 +44,32 @@ fn discover_plugins_in_path(plugin_dir: &Path) -> anyhow::Result<Vec<PathBuf>> {
         }
     }
 
-    anyhow::Ok(plugin_paths)
+    Ok(plugin_paths)
 }
 
-fn read_plugin_order(plugin_dir: &Path) -> anyhow::Result<Vec<PathBuf>> {
-    let config_path = plugin_dir.join("plugins.txt");
+fn read_plugin_order(plugins_dir: &Path) -> anyhow::Result<Vec<PathBuf>> {
+    let config_path = plugins_dir.join("plugins.txt");
 
-    if !config_path.exists() {
-        warn!("No plugin configuration found at: {}", plugin_dir.display());
+    if config_path.exists().not() {
+        warn!("No plugin configuration file found at: {}", config_path.display());
         return anyhow::Ok(vec![]);
     }
 
     let config = fs::read_to_string(&config_path)?;
     let potential_plugin_paths = config.lines()
         .map(|line| line.trim())
-        .filter(|line| line.is_empty())
+        .filter(|line| line.is_empty().not()) //FIXME
         .map(PathBuf::from);
 
     let mut paths: Vec<PathBuf> = vec![];
 
     for mut potential_path in potential_plugin_paths {
-        if !potential_path.is_absolute() {
-            potential_path = plugin_dir.join(&potential_path);
+
+        if potential_path.is_absolute().not() {
+            potential_path = plugins_dir.join(&potential_path);
         }
 
-        if potential_path == plugin_dir {
+        if potential_path == plugins_dir {
             warn!("The plugins.txt file at '{}' refers to itself. Ignoring this reference.", config_path.display());
             continue;
         }
@@ -81,9 +77,9 @@ fn read_plugin_order(plugin_dir: &Path) -> anyhow::Result<Vec<PathBuf>> {
         if potential_path.exists() {
             paths.push(potential_path);
         } else {
-            error!("Plugin {} specified in {}/plugins.txt does not exist", potential_path.display(), plugin_dir.display());
+            error!("Plugin {} specified in {} does not exist", potential_path.display(), config_path.display());
         }
     };
 
-    anyhow::Ok(paths)
+    Ok(paths)
 }

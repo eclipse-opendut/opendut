@@ -52,7 +52,7 @@ pub async fn managed(dry_run: DryRun, no_confirm: bool, setup_string: String, mt
     let mut tasks: Vec<Box<dyn Task>> = vec![];
 
     #[cfg(not(target_arch = "arm"))]
-    let _ = crate::setup::plugin::init::create_plugin_runtime(&mut tasks);
+    let _ = crate::setup::plugin::init::create_plugin_runtime(&mut tasks)?;
 
 
     tasks.append(&mut vec![
@@ -128,7 +128,7 @@ pub async fn unmanaged(
     let mut tasks: Vec<Box<dyn Task>> = vec![];
     
     #[cfg(not(target_arch = "arm"))]
-    let _ = crate::setup::plugin::init::create_plugin_runtime(&mut tasks);
+    let _ = crate::setup::plugin::init::create_plugin_runtime(&mut tasks)?;
 
     tasks.append(&mut vec![
         Box::new(tasks::CheckCommandLinePrograms),
