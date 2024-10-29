@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 use tracing::{debug, error, warn};
 use std::ffi::OsStr;
+use std::ops::Not;
 use crate::common::task::Task;
 use crate::fs;
 use crate::setup::plugin::plugin_runtime::PluginRuntime;
@@ -14,7 +15,11 @@ pub fn create_plugin_runtime(tasks: &mut Vec<Box<dyn Task>>) -> PluginRuntime {
         .map(|path| Box::new(plugin_runtime.create_plugin_from_wasm(path)) as Box<dyn Task>)
         .collect();
 
-    tasks.append(&mut plugins);
+    if plugins.is_empty().not() {
+        tasks.append(&mut plugins);
+    } else {
+        debug!("No plugins loaded.");
+    }
 
     plugin_runtime
 }

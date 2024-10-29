@@ -108,6 +108,12 @@ pub async fn cli() -> anyhow::Result<()> {
                     .expect("Failed to request sudo privileges.");
             }
 
+            #[cfg(target_arch = "arm")]
+            {
+                println!("Running on ARMv7 / ARM32. Plugins cannot be used on this architecture.");
+                info!("Running on ARMv7 / ARM32. Plugins cannot be used on this architecture. For more information, see: https://github.com/bytecodealliance/wasmtime/issues/1173")
+            }
+
             match setup_mode {
                 SetupMode::Managed { setup_string } => {
                     setup::start::managed(dry_run, no_confirm, setup_string, mtu).await?;

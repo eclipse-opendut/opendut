@@ -51,11 +51,6 @@ pub async fn managed(dry_run: DryRun, no_confirm: bool, setup_string: String, mt
 
     let mut tasks: Vec<Box<dyn Task>> = vec![];
 
-    #[cfg(target_arch = "arm")]
-    {
-        println!("Running on ARMv7 / ARM32. Plugins cannot be used on this architecture.");
-        info!("Running on ARMv7 / ARM32. Plugins cannot be used on this architecture. For more information, see: https://github.com/bytecodealliance/wasmtime/issues/1173")
-    }
     #[cfg(not(target_arch = "arm"))]
     let _ = crate::setup::plugin::init::create_plugin_runtime(&mut tasks);
 
@@ -132,11 +127,6 @@ pub async fn unmanaged(
 
     let mut tasks: Vec<Box<dyn Task>> = vec![];
     
-    #[cfg(target_arch = "arm")]
-    {
-        println!("Running on ARMv7 / ARM32. Plugins cannot be used on this architecture.");
-        info!("Running on ARMv7 / ARM32. Plugins cannot be used on this architecture. For more information, see: https://github.com/bytecodealliance/wasmtime/issues/1173")
-    }
     #[cfg(not(target_arch = "arm"))]
     let _ = crate::setup::plugin::init::create_plugin_runtime(&mut tasks);
 
