@@ -42,6 +42,35 @@ ping_all_dut_bridges() {
 }
 
 
+wait_for_server_ready() {
+  HOST="$1"
+  PORT="$2"
+
+  retries=10
+  retry_seconds=10
+
+  while [ $retries -gt 0 ]
+  do
+    nc -z "$HOST" "$PORT"  # probe port without keeping connection
+
+    if [ $? -eq 0 ]; then
+      echo "Connection to server $HOST on port $PORT was successful. Server is considered ready."
+	    return 0
+    fi
+
+    echo "Server $HOST did not respond on port $PORT. Retrying in $retry_seconds seconds..."
+    sleep $retry_seconds
+    ((retries--))
+  done
+
+  return 1
+}
+
+wait_for_server_ready netbird-coturn 3478
+wait_for_server_ready netbird-signal 80
+wait_for_server_ready netbird-management 443  # NetBird-API is also in this service
+
+
 wait_for_netbird_peers_to_connect "$OPENDUT_EDGAR_REPLICAS"
 wait_for_wireguard_peers_to_connect "$OPENDUT_EDGAR_REPLICAS"
 wait_for_edgar_to_create_gre_interfaces "$OPENDUT_EDGAR_REPLICAS"
