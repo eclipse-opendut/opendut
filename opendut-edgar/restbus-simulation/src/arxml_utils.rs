@@ -9,13 +9,15 @@ use crate::restbus_utils::*;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
-use std::io::Error;
 use std::vec;
+
+use anyhow::{anyhow, bail, Result};
 
 use autosar_data::{CharacterData, Element, ElementName, EnumItem};
 
 use nix::libc::timeval;
 
+use tracing::warn;
 
 /*
     Converts a CharacterData type from the autosar_data library
@@ -25,21 +27,12 @@ pub fn decode_integer(cdata: &CharacterData) -> Option<u64> {
     if let CharacterData::String(text) = cdata {
         if text == "0" {
             Some(0)
-        } else if text.starts_with("0x") {
-            let hexstr = text.strip_prefix("0x").unwrap();
-            Some(u64::from_str_radix(hexstr, 16).ok()?)
-        } else if text.starts_with("0X") {
-            let hexstr = text.strip_prefix("0X").unwrap();
-            Some(u64::from_str_radix(hexstr, 16).ok()?)
-        } else if text.starts_with("0b") {
-            let binstr = text.strip_prefix("0b").unwrap();
-            Some(u64::from_str_radix(binstr, 2).ok()?)
-        } else if text.starts_with("0B") {
-            let binstr = text.strip_prefix("0B").unwrap();
-            Some(u64::from_str_radix(binstr, 2).ok()?)
-        } else if text.starts_with('0') {
-            let octstr = text.strip_prefix('0').unwrap();
-            Some(u64::from_str_radix(octstr, 8).ok()?)
+        } else if text.starts_with("0x") || text.starts_with("0X") {
+            Some(u64::from_str_radix(&text[2..], 16).ok()?)
+        } else if text.starts_with("0b") || text.starts_with("0B") {
+            Some(u64::from_str_radix(&text[2..], 2).ok()?)
+        } else if let Some(stripped_octal) = text.strip_prefix('0') {
+            Some(u64::from_str_radix(stripped_octal, 8).ok()?)
         } else if text.to_ascii_lowercase() == "false" {
             Some(0)
         } else if text.to_ascii_lowercase() == "true" {
@@ -93,30 +86,12 @@ pub fn get_sub_element_and_time_range(base: &Element, sub_elem_name: ElementName
 }
 
 /*
-    Gets a required item name from the element. This has to be possible.
-*/
-pub fn get_required_item_name(element: &Element, element_name: &str) -> String {
-    if let Some(item_name) = element.item_name() {
-        item_name
-    } else {
-        panic!("Error getting required item name of {}", element_name);
-    } 
-}
-
-/*
     Gets a required subsubelement from the element. This needs to succeed. 
 */
-pub fn get_required_sub_subelement(element: &Element, subelement_name: ElementName, sub_subelement_name: ElementName) -> Element {
-    if let Some(sub_subelement) = element 
-        .get_sub_element(subelement_name)
-        .and_then(|elem| elem.get_sub_element(sub_subelement_name)) 
-    {
-        sub_subelement
-    } else {
-        panic!("Error getting sub_subelement. Tried to retrieve {} and then {}",
-            subelement_name,
-            sub_subelement_name);
-    } 
+pub fn get_required_sub_subelement(element: &Element, subelement_name: ElementName, sub_subelement_name: ElementName) -> Result<Element> {
+    element.get_sub_element(subelement_name)
+        .and_then(|elem| elem.get_sub_element(sub_subelement_name))
+        .ok_or_else(|| anyhow!("Sub-sub-element of {subelement_name}->{sub_subelement_name} does not exist"))
 }
 
 /*
@@ -132,12 +107,9 @@ pub fn get_subelement_int_value(element: &Element, subelement_name: ElementName)
 /*
     Gets the u64 value for a element. This has to succeed.
 */
-pub fn get_required_int_value(element: &Element, subelement_name: ElementName) -> u64 {
-    if let Some(int_value) = get_subelement_int_value(element, subelement_name) {
-        int_value
-    } else {
-        panic!("Error getting required integer value of {}", subelement_name);
-    }
+pub fn get_required_int_value(element: &Element, subelement_name: ElementName) -> Result<u64> {
+    get_subelement_int_value(element, subelement_name)
+        .ok_or_else(|| anyhow!("Error getting required integer value of {subelement_name}"))
 }
 
 /*
@@ -150,31 +122,31 @@ pub fn get_optional_int_value(element: &Element, subelement_name: ElementName) -
 /*
     Resolves a reference and returns the target Element. This has to succeed.
 */
-pub fn get_required_reference(element: &Element, subelement_name: ElementName) -> Element {
-    if let Some(subelement) = element.get_sub_element(subelement_name) {
+pub fn get_required_reference(element: &Element, subelement_name: ElementName) -> Result<Element> {
+    if let Some(subelement) = element.get_sub_element(subelement_name){
         match subelement.get_reference_target() {
-            Ok(reference) => return reference,
+            Ok(reference) => return Ok(reference),
             Err(err) => {
-                println!("[-] Warning: Constant ref error: {}. Will try modification of target name and reference again.", err);
+                warn!("[-] Warning: Constant ref error: {}. Will try modification of target name and reference again.", err);
                 match subelement.character_data() {
                     Some(val) => {
                         let new_dest = "/Constants/".to_string() + val.to_string().as_str();
                         match subelement.set_character_data(CharacterData::String(new_dest)) {
                             Ok(()) => {}
-                            Err(err) => println!("[-] Warning: Error setting new dest: {}", err)
+                            Err(err) => warn!("[-] Warning: Error setting new dest: {}", err)
                         }
                         match subelement.get_reference_target() {
-                            Ok(reference) => return reference,
-                            Err(err) => println!("[-] Warning: Constant ref retry error: {}.", err),
+                            Ok(reference) => return Ok(reference),
+                            Err(err) => warn!("[-] Warning: Constant ref retry error: {}.", err),
                         }
                     }
-                    _ => println!("[-] Warning: No success in retry because Element CharacterData is not set."),
+                    _ => warn!("[-] Warning: No success in retry because Element CharacterData is not set."),
                 }
             }
         }
     }
     
-    panic!("Error getting required reference for {}", subelement_name);
+    bail!("Error getting required reference for {}", subelement_name)
 }
 
 /*
@@ -185,17 +157,6 @@ pub fn get_subelement_string_value(element: &Element, subelement_name: ElementNa
         .get_sub_element(subelement_name)
         .and_then(|elem| elem.character_data())
         .map(|cdata| cdata.to_string())
-}
-
-/*
-    Gets the String value for a element. This has to succeed.
-*/
-pub fn get_required_string(element: &Element, subelement_name: ElementName) -> String {
-    if let Some(value) = get_subelement_string_value(element, subelement_name) {
-        value
-    } else {
-        panic!("Error getting required String value of {}", subelement_name);
-    }
 }
 
 /*
@@ -237,12 +198,12 @@ pub fn get_byte_order(byte_order: &String) -> bool {
     true
 }
 
-fn process_isignal_init_value(isignal: &ISignal, bits: &mut [bool]) {
+fn process_isignal_init_value(isignal: &ISignal, bits: &mut [bool]) -> Result<()>{
     let mut tmp_bit_array: Vec<bool> = Vec::new();
     let init_values = &isignal.init_values;
     let isignal_byte_order = isignal.byte_order;
-    let isignal_length: usize = isignal.length.try_into().unwrap();
-    let isignal_start: usize = isignal.start_pos.try_into().unwrap();
+    let isignal_length: usize = isignal.length.try_into()?;
+    let isignal_start: usize = isignal.start_pos.try_into()?;
 
     match init_values {
         InitValues::Single(value) => {
@@ -263,7 +224,7 @@ fn process_isignal_init_value(isignal: &ISignal, bits: &mut [bool]) {
         }
         InitValues::Array(values) => {
             if isignal_length % 8 != 0 {
-                panic!("ISignal length for array is not divisable through 8. Length is {}", isignal_length);
+                bail!("ISignal length for array is not divisible by 8. Length is {}", isignal_length)
             }
 
             for isignal_value in values {
@@ -285,11 +246,11 @@ fn process_isignal_init_value(isignal: &ISignal, bits: &mut [bool]) {
                 tmp_bit_array.extend(tmp_tmp_bit_array);
             }
         }
-        _ => return 
+        _ => return Ok(())
     }
 
-    if tmp_bit_array.len() != <u64 as TryInto<usize>>::try_into(isignal.length).unwrap() {
-        panic!("Miscalculation for tmp_bit_array");
+    if tmp_bit_array.len() != <u64 as TryInto<usize>>::try_into(isignal.length)? {
+        bail!("Miscalculation for tmp_bit_array")
     }
 
     let mut index: usize = 0;
@@ -297,7 +258,9 @@ fn process_isignal_init_value(isignal: &ISignal, bits: &mut [bool]) {
     while index < isignal_length {
         bits[isignal_start + index] = tmp_bit_array[index];
         index += 1;
-    } 
+    }
+
+    Ok(())
 } 
 
 /* 
@@ -306,18 +269,18 @@ fn process_isignal_init_value(isignal: &ISignal, bits: &mut [bool]) {
     Currenlty assumes Little Endian byte ordering and has support for signals that are Little Endian or Big Endian.
     Bit positions in undefined ranges are set to unused_bit_pattern.
 */
-pub fn extract_init_values(unused_bit_pattern: bool, ungrouped_signals: &Vec<ISignal>, grouped_signals: &Vec<ISignalGroup>, length: u64, byte_order: &bool) -> Vec<u8> {
-    let dlc: usize = length.try_into().unwrap();
+pub fn extract_init_values(unused_bit_pattern: bool, ungrouped_signals: &Vec<ISignal>, grouped_signals: &Vec<ISignalGroup>, length: u64, byte_order: &bool) -> Result<Vec<u8>> {
+    let dlc: usize = length.try_into()?;
 
     let mut bits = vec![unused_bit_pattern; dlc * 8]; // Using unusued_bit_pattern for undefined bits 
 
     for isignal in ungrouped_signals {
-        process_isignal_init_value(isignal, &mut bits);
+        process_isignal_init_value(isignal, &mut bits)?;
     }
     
     for isignal_group in grouped_signals {
         for isignal in &isignal_group.isignals {
-            process_isignal_init_value(isignal, &mut bits);
+            process_isignal_init_value(isignal, &mut bits)?;
         }
     }
 
@@ -350,14 +313,10 @@ pub fn extract_init_values(unused_bit_pattern: bool, ungrouped_signals: &Vec<ISi
     }
 
     if init_values.len() != dlc {
-        panic!("Error creating byte array");
+        bail!("Error creating byte array")
     }
 
-    /*if !byte_order { 
-        init_values.reverse();
-    }*/
-
-    init_values
+    Ok(init_values)
 }
 
 /*
@@ -366,28 +325,16 @@ pub fn extract_init_values(unused_bit_pattern: bool, ungrouped_signals: &Vec<ISi
 pub fn get_unused_bit_pattern(pdu: &Element) -> bool {
     // even though it needs to exist at least for ISignalIPdus, we keep it as optional, since at least one encounter shows that it might be missing.
     // then use 0 as default value
-    let mut unused_bit_pattern_int = get_optional_int_value(pdu, ElementName::UnusedBitPattern); 
+    let unused_bit_pattern_int = get_optional_int_value(pdu, ElementName::UnusedBitPattern); 
     
-    let unused_bit_pattern: bool;
-
     // supports values > 1. Just look at least significant bit
-    unused_bit_pattern_int &= 1;
-
-    if unused_bit_pattern_int == 0 {
-        unused_bit_pattern = false;
-    } else if unused_bit_pattern_int == 1 {
-        unused_bit_pattern = true;
-    } else {
-        panic!("Error reading unused_bit_pattern. Value is {}", unused_bit_pattern_int);
-    }
-
-    unused_bit_pattern
+    (unused_bit_pattern_int & 1) != 0
 }
 
 /*
     Processes the Autosar FramePortRefs elements inside a CanFrameTriggering to find out the ECUs (names) that send and receive this underlying CAN frame.
 */
-pub fn process_frame_ports(can_frame_triggering: &Element, can_frame_triggering_name: &String, rx_ecus: &mut Vec<String>, tx_ecus: &mut Vec<String>) -> Result<(), String> {
+pub fn process_frame_ports(can_frame_triggering: &Element, can_frame_triggering_name: &String, rx_ecus: &mut Vec<String>, tx_ecus: &mut Vec<String>) -> Result<()> {
     if let Some(frame_ports) = can_frame_triggering.get_sub_element(ElementName::FramePortRefs) {
         let frame_ports: Vec<Element> = frame_ports.sub_elements()
             .filter(|se| se.element_name() == ElementName::FramePortRef)
@@ -403,13 +350,13 @@ pub fn process_frame_ports(can_frame_triggering: &Element, can_frame_triggering_
                     match direction {
                         EnumItem::In => rx_ecus.push(ecu_name), 
                         EnumItem::Out => tx_ecus.push(ecu_name), 
-                        _ => return Err(format!("Invalid direction ID encountered in FramePort. Skipping CanFrameTriggering {}", can_frame_triggering_name))
+                        _ => bail!("Invalid direction ID encountered in FramePort. Skipping CanFrameTriggering {}", can_frame_triggering_name)
                     }
                 } else {
-                    return Err(format!("No CommunicationDirection encountered in FramePort. Skipping CanFrameTriggering {}", can_frame_triggering_name)) 
+                    bail!("No CommunicationDirection encountered in FramePort. Skipping CanFrameTriggering {}", can_frame_triggering_name)
                 }
             } else {
-                return Err(format!("Could not extract ECUName in FramePort. Skipping CanFrameTriggering {}", can_frame_triggering_name)) ;
+                bail!("Could not extract ECUName in FramePort. Skipping CanFrameTriggering {}", can_frame_triggering_name) ;
             }
         }
     }/* else {
@@ -422,36 +369,34 @@ pub fn process_frame_ports(can_frame_triggering: &Element, can_frame_triggering_
 /*
     Processes the Autosar InitValue element of an ISignal. Extracts one or more of them an put them into passed init_values argument.
 */
-pub fn process_init_value(init_value_elem: &mut Element, init_values: &mut InitValues, signal_name: &String) {
-    let init_value_type: u8;
-
-    let mut subelement = init_value_elem.get_sub_element_at(0).unwrap();
+pub fn process_init_value(init_value_elem: &mut Element, init_values: &mut InitValues, signal_name: &String) -> Result<()> {
+    let mut subelement = init_value_elem.get_sub_element_at(0)
+        .ok_or_else(|| anyhow!("Failed to obtain subelement of init_value_elem"))?;
     
     if subelement.element_name().eq(&ElementName::ConstantReference) {
         let constant = get_required_reference(
             &subelement,
-            ElementName::ConstantRef);
+            ElementName::ConstantRef)?;
 
-        *init_value_elem = constant.get_sub_element(ElementName::ValueSpec).unwrap();
+        *init_value_elem = constant.get_sub_element(ElementName::ValueSpec)
+            .ok_or_else(|| anyhow!("Failed to obtain subelement of constant"))?;
     
-        subelement = init_value_elem.get_sub_element_at(0).unwrap();
+        subelement = init_value_elem.get_sub_element_at(0)
+            .ok_or_else(|| anyhow!("Failed to obtain subelement of init_value_elem"))?;
     }
-    
-    if subelement.element_name().eq(&ElementName::NumericalValueSpecification) {
-        init_value_type = 0; 
-    } else if subelement.element_name().eq(&ElementName::ArrayValueSpecification) {
-        init_value_type = 1; 
-    } else {
-        panic!("Unrecognized sublement {} for init-value", subelement.element_name());
-    }
+
+    let init_value_type = match subelement.element_name() {
+        ElementName::NumericalValueSpecification => 0,
+        ElementName::ArrayValueSpecification => 1,
+        _ => bail!("Unrecognized subelement {} for init-value", subelement.element_name())
+    };
 
     if init_value_type == 0 {
-        if let Some(num_val) = init_value_elem.get_sub_element(ElementName::NumericalValueSpecification) {
-            let init_value = get_required_int_value(&num_val, ElementName::Value);
-            *init_values = InitValues::Single(init_value);
-        } else {
-            panic!("InitValue element does not have NumercialValueSpecification for signal {}", signal_name);
-        }
+        let num_val = init_value_elem.get_sub_element(ElementName::NumericalValueSpecification)
+            .ok_or_else(|| anyhow!("InitValue element does not have NumercialValueSpecification for signal {}", signal_name))?;
+        let init_value = get_required_int_value(&num_val, ElementName::Value)?;
+        *init_values = InitValues::Single(init_value);
+
 
     } else {
         let mut init_value_array: Vec<u64> = Vec::new();
@@ -459,12 +404,14 @@ pub fn process_init_value(init_value_elem: &mut Element, init_values: &mut InitV
             ElementName::ArrayValueSpecification, 
             ElementName::Elements);
 
-        for num_val_elem in num_val_elements.sub_elements() {
-            init_value_array.push(get_required_int_value(&num_val_elem, ElementName::Value));
+        for num_val_elem in num_val_elements?.sub_elements() {
+            init_value_array.push(get_required_int_value(&num_val_elem, ElementName::Value)?);
         }
         
         *init_values = InitValues::Array(init_value_array);
     }
+
+    Ok(())
 }
 
 /*
@@ -474,13 +421,15 @@ pub fn process_init_value(init_value_elem: &mut Element, init_values: &mut InitV
 */
 pub fn process_signal_group(signal_group: &Element, 
     signals: &mut HashMap<String, (String, String, u64, u64, InitValues)>, 
-    grouped_signals: &mut Vec<ISignalGroup>) -> Option<()> 
+    grouped_signals: &mut Vec<ISignalGroup>) -> Result<()> 
     {
-    let group_name = get_required_item_name(signal_group, "ISignalGroupRef"); 
+    let group_name = signal_group.item_name()
+            .ok_or_else(|| Error::GetItemName{item: "ISignalGroupRef"})?;
     
     let mut signal_group_signals: Vec<ISignal> = Vec::new();
 
-    let isignal_refs = signal_group.get_sub_element(ElementName::ISignalRefs)?;
+    let isignal_refs = signal_group.get_sub_element(ElementName::ISignalRefs)
+        .ok_or_else(|| anyhow!("Element has no sub-element"))?;
 
     // Removing ok and needed?
     for isignal_ref in isignal_refs.sub_elements()
@@ -511,11 +460,11 @@ pub fn process_signal_group(signal_group: &Element,
     {
         for elem in com_transformations.sub_elements() {
             let data_transformation = get_required_reference(&elem,
-                ElementName::DataTransformationRef);
+                ElementName::DataTransformationRef)?;
             
-            data_transformations.push(get_required_item_name(
-                    &data_transformation,
-                    "DataTransformation"));
+            let data_transformation_name = data_transformation.item_name()
+                .ok_or_else(|| Error::GetItemName{item: "DataTransformation"})?;
+            data_transformations.push(data_transformation_name);
         }
     }
 
@@ -531,16 +480,16 @@ pub fn process_signal_group(signal_group: &Element,
                 .and_then(|elem| elem.get_sub_element(ElementName::EndToEndTransformationISignalPropsConditional))
             {
                 let transformer_reference = get_required_reference(&e2exf_props_cond, 
-                    ElementName::TransformerRef);
+                    ElementName::TransformerRef)?;
                 
-                let transformer_name = get_required_item_name(&transformer_reference, 
-                    "TransformerName");
+                let transformer_name = transformer_reference.item_name()
+                    .ok_or_else(|| Error::GetItemName{item: "TransformerName"})?;
 
                 let data_ids = e2exf_props_cond
-                    .get_sub_element(ElementName::DataIds)?;
+                    .get_sub_element(ElementName::DataIds).ok_or_else(|| anyhow!("Element has no sub-element"))?;
 
                 let data_id = get_required_int_value(&data_ids,
-                    ElementName::DataId);
+                    ElementName::DataId)?;
 
                 // allow optional for now
                 //let data_length = get_required_int_value(&e2exf_props_cond,
@@ -568,7 +517,7 @@ pub fn process_signal_group(signal_group: &Element,
 
     grouped_signals.push(isignal_group_struct);
 
-    Some(())
+    Ok(())
 }
 
 /*
@@ -576,10 +525,10 @@ pub fn process_signal_group(signal_group: &Element,
     2. Create TimedCanFrame sructure out of data and put the structure into timed_can_frames vector. 
     Note: Should normally only add one TimedCanFrame but multiple may be added in case multiple PDU Mappings exist for a Can frame.
 */
-pub fn get_timed_can_frame(can_frame_triggering: &CanFrameTriggering, timed_can_frames: &mut Vec<TimedCanFrame>) {
+pub fn get_timed_can_frame(can_frame_triggering: &CanFrameTriggering, timed_can_frames: &mut Vec<TimedCanFrame>) -> Result<()> {
     let can_id: u32 = can_frame_triggering.can_id as u32;
     let len: u8 = can_frame_triggering.frame_length as u8;
-    let addressing_mode: bool = can_frame_triggering.addressing_mode;
+    let addressing_mode: bool = can_frame_triggering.can_29_bit_addressing;
     let frame_tx_behavior: bool = can_frame_triggering.frame_tx_behavior;
     for pdu_mapping in &can_frame_triggering.pdu_mappings {
         let mut count: u32 = 0;
@@ -608,7 +557,7 @@ pub fn get_timed_can_frame(can_frame_triggering: &CanFrameTriggering, timed_can_
                         &pdu.ungrouped_signals,
                         &pdu.grouped_signals,
                         pdu_mapping.length,
-                        &pdu_mapping.byte_order);
+                        &pdu_mapping.byte_order)?;
             }
             Pdu::NmPdu(pdu) => {
                 ival2_tv_usec = 100000; // every 100 ms
@@ -616,7 +565,7 @@ pub fn get_timed_can_frame(can_frame_triggering: &CanFrameTriggering, timed_can_
                         &pdu.ungrouped_signals,
                         &pdu.grouped_signals,
                         pdu_mapping.length,
-                        &pdu_mapping.byte_order);
+                        &pdu_mapping.byte_order)?;
             }
         }
 
@@ -627,41 +576,42 @@ pub fn get_timed_can_frame(can_frame_triggering: &CanFrameTriggering, timed_can_
 
         timed_can_frames.push(create_time_can_frame_structure(count, &ivals, can_id, len, addressing_mode, frame_tx_behavior, &init_values));
     }
+    Ok(())
 }
 
 /*
     1. Find CanFrameTriggering structure based on CAN id.
     2. Put its important data as TimedCanFrame structure into timed_can_frames vector. 
 */
-pub fn get_timed_can_frame_from_id(can_clusters: &HashMap<String, CanCluster>, bus_name: String, can_id: u64) -> Vec<TimedCanFrame> {
+pub fn get_timed_can_frame_from_id(can_clusters: &HashMap<String, CanCluster>, bus_name: String, can_id: u64) -> Result<Vec<TimedCanFrame>> {
     let mut timed_can_frames: Vec<TimedCanFrame> = Vec::new();
 
     if let Some(can_cluster) = can_clusters.get(&bus_name) {
         if let Some(can_frame_triggering) = can_cluster.can_frame_triggerings.get(&can_id) {
-            get_timed_can_frame(can_frame_triggering, &mut timed_can_frames);
+            get_timed_can_frame(can_frame_triggering, &mut timed_can_frames)?;
         }
     }
 
-    timed_can_frames
+    Ok(timed_can_frames)
 }
 
 /*
     1. Iterate over all CanFrameTriggerings belonging to a CanCluster structure. 
     2. Put all CanFrameTriggering important data as TimedCanFrame structures into timed_can_frames vector. 
 */
-pub fn get_timed_can_frames_from_bus(can_clusters: &HashMap<String, CanCluster>, bus_name: String) -> Vec<TimedCanFrame> {
+pub fn get_timed_can_frames_from_bus(can_clusters: &HashMap<String, CanCluster>, bus_name: String) -> Result<Vec<TimedCanFrame>> {
     let mut timed_can_frames: Vec<TimedCanFrame> = Vec::new();
 
     if let Some(can_cluster) = can_clusters.get(&bus_name) {
         for can_frame_triggering in can_cluster.can_frame_triggerings.values() {
-            get_timed_can_frame(can_frame_triggering, &mut timed_can_frames)
+            get_timed_can_frame(can_frame_triggering, &mut timed_can_frames)?
         }
     }
 
-    timed_can_frames
+    Ok(timed_can_frames)
 }
 
-pub fn load_serialized_data(file_name: &String) -> Result<HashMap<String, CanCluster>, Error> {
+pub fn load_serialized_data(file_name: &String) -> Result<HashMap<String, CanCluster>> {
     let mut file = File::open(file_name.to_owned() + ".ser")?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
@@ -671,11 +621,17 @@ pub fn load_serialized_data(file_name: &String) -> Result<HashMap<String, CanClu
     Ok(deserialized)
 }
 
-pub fn store_serialized_data(file_name: &String, can_clusters: &HashMap<String, CanCluster>) -> Result<(), Error> {
+pub fn store_serialized_data(file_name: &String, can_clusters: &HashMap<String, CanCluster>) -> Result<()> {
     let serialized = serde_json::to_string(can_clusters)?;
 
     let mut file = File::create(file_name.to_owned() + ".ser")?;
     file.write_all(serialized.as_bytes())?;
 
     Ok(())
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error<'a> {
+    #[error("Failed to get required item name of '{item}'")]
+    GetItemName { item: &'a str },
 }

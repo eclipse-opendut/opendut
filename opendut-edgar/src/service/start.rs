@@ -11,7 +11,6 @@ use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfigur
 use opendut_restbus_simulation::arxml_parser::ArxmlParser;
 use opendut_restbus_simulation::arxml_utils::get_timed_can_frames_from_bus;
 use opendut_restbus_simulation::restbus_simulation::RestbusSimulation;
-use opendut_restbus_simulation::restbus_structs::TimedCanFrame;
 use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
 use opendut_types::peer::PeerId;
 use opendut_util::settings::LoadedConfig;
@@ -136,14 +135,18 @@ pub async fn run_stream_receiver(
         
         let arxml_parser: ArxmlParser = ArxmlParser {};
 
-        if let Some(can_clusters) = arxml_parser.parse_file(&arxml_file_path, arxml_serialization) {
+        if let Ok(can_clusters) = arxml_parser.parse_file(&arxml_file_path, arxml_serialization) {
             // Play all CAN frames from the target bus periodcically (only periodic frames are sent periodically) to the bus to which ifname is connected to.
-            let timed_can_frames: Vec<TimedCanFrame> = get_timed_can_frames_from_bus(&can_clusters, target_cluster);
-
-            match restbus_simulation.play_all(&timed_can_frames, &ifname) {
-                Ok(_val) => info!("Successfully established restbus simulation"),
-                Err(error) => info!("Could not establish restbus simulation because: {}", error)
+            match get_timed_can_frames_from_bus(&can_clusters, target_cluster) {
+                Ok(timed_can_frames) => {
+                    if let Err(err) = restbus_simulation.play_all(&timed_can_frames, &ifname) {
+                        error!("Failed to start restbus simulation: {err}")
+                    }
+                },
+                Err(err) => error!("Failed to start restbus simulation - error while extracting timed CAN frames from ARXML: {err}"),
             }
+
+            info!("Successfully established restbus simulation");   
         }
     }
 

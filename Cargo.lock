@@ -3918,10 +3918,12 @@ dependencies = [
 name = "opendut-restbus-simulation"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "autosar-data",
  "nix 0.29.0",
  "serde",
  "serde_json",
+ "thiserror",
  "tokio",
  "tracing",
 ]

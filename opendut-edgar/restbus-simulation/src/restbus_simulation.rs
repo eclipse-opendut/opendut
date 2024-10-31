@@ -19,7 +19,7 @@ impl RestbusSimulation {
         2. Converts all TimedCanFrames into regular CAN frames and puts each CAN frame into a BCM struct.
         3. All created BCM structs are written to the BCM socket (sent to the Broadcast Manager).
     */
-    pub fn play_all(&self, timed_can_frames: &Vec<TimedCanFrame>, ifname: &String) -> Result<bool, String> {
+    pub fn play_all(&self, timed_can_frames: &Vec<TimedCanFrame>, ifname: &String) -> Result<(), String> {
         let sock = create_socket()?;
         
         connect_socket(sock, ifname)?;
@@ -38,7 +38,7 @@ impl RestbusSimulation {
             write_socket(sock, &write_bytes)?;
         }
 
-        Ok(true)
+        Ok(())
     }
 
     /*pub fn play_single_bcm_frame(&self, ifname: &String, count: u32, ival1_tv_sec: i64, ival1_tv_usec: i64, 

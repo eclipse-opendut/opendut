@@ -28,7 +28,7 @@ pub struct CanFrameTriggering {
     pub frame_triggering_name: String,
     pub frame_name: String,
     pub can_id: u64,
-    pub addressing_mode: bool,
+    pub can_29_bit_addressing: bool,
     pub frame_rx_behavior: bool,
     pub frame_tx_behavior: bool,
     pub rx_range_lower: u64,

@@ -47,7 +47,7 @@ fn collect_pdus(can_clusters: &HashMap<String, CanCluster>, bus_name: String) ->
                                 &pdu.ungrouped_signals,
                                 &pdu.grouped_signals,
                                 pdu_mapping.length,
-                                &pdu_mapping.byte_order);
+                                &pdu_mapping.byte_order).unwrap();
                         init_values_strings.push(get_pdu_hex(&can_frame_triggering.can_id, &init_values))
                     }
                     Pdu::NmPdu(pdu) => {
@@ -55,7 +55,7 @@ fn collect_pdus(can_clusters: &HashMap<String, CanCluster>, bus_name: String) ->
                                 &pdu.ungrouped_signals,
                                 &pdu.grouped_signals,
                                 pdu_mapping.length,
-                                &pdu_mapping.byte_order);
+                                &pdu_mapping.byte_order).unwrap();
                         init_values_strings.push(get_pdu_hex(&can_frame_triggering.can_id, &init_values))
                     }
                 }
@@ -70,7 +70,7 @@ fn collect_pdus(can_clusters: &HashMap<String, CanCluster>, bus_name: String) ->
     Play a single CAN frame from the target bus periodcically (if it is periodic) to the bus to which ifname is connected to.
 */
 fn test_find_frame_and_play(restbus_simulation: &RestbusSimulation, ifname: &String, can_clusters: &HashMap<String, CanCluster>, bus_name: String, can_id: u64) {
-    let timed_can_frames: Vec<TimedCanFrame> = get_timed_can_frame_from_id(can_clusters, bus_name, can_id);
+    let timed_can_frames: Vec<TimedCanFrame> = get_timed_can_frame_from_id(can_clusters, bus_name, can_id).unwrap();
 
     match restbus_simulation.play_all(&timed_can_frames, ifname) {
         Ok(_val) => println!("Successfully sent message with can id {}", can_id),
@@ -84,7 +84,7 @@ fn test_find_frame_and_play(restbus_simulation: &RestbusSimulation, ifname: &Str
     Play all CAN frames from the target bus periodcically (only periodic frames are sent periodically) to the bus to which ifname is connected to.
 */
 fn test_bus_play_all(restbus_simulation: &RestbusSimulation, ifname: &String, can_clusters: &HashMap<String, CanCluster>, bus_name: String) {
-    let timed_can_frames: Vec<TimedCanFrame> = get_timed_can_frames_from_bus(can_clusters, bus_name);
+    let timed_can_frames: Vec<TimedCanFrame> = get_timed_can_frames_from_bus(can_clusters, bus_name).unwrap();
 
     match restbus_simulation.play_all(&timed_can_frames, ifname) {
         Ok(_val) => println!("Successfully established restbus simulation"),
@@ -106,7 +106,7 @@ fn main() -> std::io::Result<()> {
     let arxml_parser: ArxmlParser = ArxmlParser {};
 
     // Parse the ARXML file. Use serialized file if it exists. Parsed data is stored in can cluster ARXML element representations.
-    if let Some(can_clusters) = arxml_parser
+    if let Ok(can_clusters) = arxml_parser
         .parse_file(&file_name.to_string(), true) 
     {
         let bus_name = "Cluster0";
