@@ -204,8 +204,12 @@ impl ClusterManager {
                     .any(|device| peer_devices.contains(device))
             ).collect::<Vec<_>>();
 
-        for cluster in clusters_containing_devices_of_upped_peer {
-            self.deploy_cluster_if_all_peers_available(cluster.id).await?;
+        if clusters_containing_devices_of_upped_peer.is_empty() {
+            trace!("Devices of newly available peer <{peer_id}> are not used in any clusters. Not deploying any clusters.");
+        } else {
+            for cluster in clusters_containing_devices_of_upped_peer {
+                self.deploy_cluster_if_all_peers_available(cluster.id).await?;
+            }
         }
         Ok(())
     }
