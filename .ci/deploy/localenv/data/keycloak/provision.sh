@@ -9,6 +9,13 @@ main() {
   wait_for_keycloak || { echo "Keycloak not ready, exiting"; exit 1;}
   kcauth
 
+  # Generate UUIDs for client secrets
+  NETBIRD_MANAGEMENT_CLIENT_SECRET=$(uuidgen)
+  OPENDUT_CARL_NETWORK_OIDC_CLIENT_SECRET=$(uuidgen)
+  OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SECRET=$(uuidgen)
+  OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_SECRET=$(uuidgen)
+  OPENDUT_USER_OPENDUT=$(uuidgen)
+
   # https://docs.netbird.io/selfhosted/identity-providers#keycloak
   create_realm netbird
   create_user netbird "$NETBIRD_PASSWORD" "" "" "netbird"

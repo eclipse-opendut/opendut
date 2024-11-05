@@ -10,8 +10,11 @@ if [ -z "$SERVERNAME" ]; then
   exit 1
 fi
 
+# Generate UUID for the certificate
+UUID=$(uuidgen)
+
 # certificate signing request
-openssl req -new -noenc -out "$SERVERNAME".csr -newkey rsa:4096 -keyout "$SERVERNAME".key -subj "/CN=$SERVERNAME/C=XX/ST=Some-State/O=ExampleOrg"
+openssl req -new -noenc -out "$SERVERNAME".csr -newkey rsa:4096 -keyout "$SERVERNAME".key -subj "/CN=$SERVERNAME-$UUID/C=XX/ST=Some-State/O=ExampleOrg"
 
 
 # create a v3 ext file for SAN properties
@@ -48,5 +51,4 @@ openssl x509 -req -in "$SERVERNAME".csr -CA $CA_NAME.pem -CAkey $CA_NAME.key -CA
 
 rm "$SERVERNAME".csr
 rm "$SERVERNAME".v3.ext
-
 

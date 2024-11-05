@@ -19,7 +19,10 @@ if [ -e "$CA_PATH.key" ]; then
   exit 1
 fi
 
+# Generate UUID for the CA
+UUID=$(uuidgen)
+
 openssl genrsa -aes256 -out "$CA_PATH".key -passout file:"$OPENDUT_PASSWORD_FILE" 4096
 
 # CA public key
-openssl req -x509 -new -key "$CA_PATH".key -passin file:"$OPENDUT_PASSWORD_FILE" -sha256 -days 9999 -outform PEM -out "$CA_PATH".pem -subj '/CN=Development CA/C=XX/ST=Some-State/O=ExampleOrg'
+openssl req -x509 -new -key "$CA_PATH".key -passin file:"$OPENDUT_PASSWORD_FILE" -sha256 -days 9999 -outform PEM -out "$CA_PATH".pem -subj "/CN=Development CA-$UUID/C=XX/ST=Some-State/O=ExampleOrg"

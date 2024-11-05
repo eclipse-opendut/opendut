@@ -21,8 +21,11 @@ if [ -z "$SERVERNAME" ]; then
   exit 1
 fi
 
+# Generate UUID for the certificate
+UUID=$(uuidgen)
+
 # certificate signing request
-openssl req -new -sha512 -passout file:"$OPENDUT_PASSWORD_FILE" -out "$CERT_PATH".csr -newkey rsa:4096 -keyout "$CERT_PATH".key -subj "/CN=$SERVERNAME/C=XX/ST=Some-State/O=ExampleOrg"
+openssl req -new -sha512 -passout file:"$OPENDUT_PASSWORD_FILE" -out "$CERT_PATH".csr -newkey rsa:4096 -keyout "$CERT_PATH".key -subj "/CN=$SERVERNAME-$UUID/C=XX/ST=Some-State/O=ExampleOrg"
 
 
 # create a v3 ext file for SAN properties
@@ -45,4 +48,3 @@ openssl rsa -in "$CERT_PATH".key -passin file:"$OPENDUT_PASSWORD_FILE" -out "$CE
 
 rm "$CERT_PATH".csr
 rm "$CERT_PATH".v3.ext
-
