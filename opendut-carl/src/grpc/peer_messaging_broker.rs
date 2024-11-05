@@ -53,10 +53,13 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
 
 
         let (tx_inbound, rx_outbound) = self.peer_messaging_broker.open(peer_id, remote_host).await
-            .map_err(|cause| match cause {
-                OpenError::PeerAlreadyConnected { .. } => Status::aborted(cause.to_string()),
-                OpenError::SendApplyPeerConfiguration { .. } => Status::unavailable(cause.to_string()),
-                OpenError::Persistence { .. } => Status::internal(cause.to_string()),
+            .map_err(|cause| {
+                error!("Error while opening stream from newly connected peer <{peer_id}>:\n  {cause}");
+                match cause {
+                    OpenError::PeerAlreadyConnected { .. } => Status::aborted(cause.to_string()),
+                    OpenError::SendApplyPeerConfiguration { .. } => Status::unavailable(cause.to_string()),
+                    OpenError::Persistence { .. } => Status::internal(cause.to_string()),
+                }
             })?;
 
         let mut inbound = request.into_inner();

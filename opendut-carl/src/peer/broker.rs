@@ -114,12 +114,32 @@ impl PeerMessagingBroker {
         .map_err(|source| OpenError::Persistence { peer_id, source })??;
 
         let old_peer_configuration = self.resources_manager.get::<OldPeerConfiguration>(peer_id).await
-            .map_err(|source| OpenError::Persistence { peer_id, source })?
-            .unwrap_or_default(); //PeerConfiguration is not persisted across restarts
+            .map_err(|source| OpenError::Persistence { peer_id, source })?;
+        let old_peer_configuration = match old_peer_configuration {
+            Some(old_peer_configuration) => {
+                debug!("Found an OldPeerConfiguration for newly connected peer <{peer_id}>. Re-sending this configuration:\n{old_peer_configuration:#?}");
+                old_peer_configuration
+            }
+            None => {
+                //PeerConfiguration is not persisted across restarts
+                debug!("No OldPeerConfiguration found for newly connected peer <{peer_id}>. Sending empty configuration.");
+                OldPeerConfiguration::default()
+            }
+        };
 
         let peer_configuration = self.resources_manager.get::<PeerConfiguration>(peer_id).await
-            .map_err(|source| OpenError::Persistence { peer_id, source })?
-            .unwrap_or_default(); //PeerConfiguration is not persisted across restarts
+            .map_err(|source| OpenError::Persistence { peer_id, source })?;
+        let peer_configuration = match peer_configuration {
+            Some(peer_configuration) => {
+                debug!("Found an OldPeerConfiguration for newly connected peer <{peer_id}>. Re-sending this configuration.\n{peer_configuration:#?}");
+                peer_configuration
+            }
+            None => {
+                //PeerConfiguration is not persisted across restarts
+                debug!("No PeerConfiguration found for newly connected peer <{peer_id}>. Sending empty configuration.");
+                PeerConfiguration::default()
+            }
+        };
 
         self.send_to_peer(peer_id, downstream::Message::ApplyPeerConfiguration(
             ApplyPeerConfiguration {
