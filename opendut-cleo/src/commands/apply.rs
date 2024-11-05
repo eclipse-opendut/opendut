@@ -6,8 +6,8 @@ use opendut_types::peer::executor::ExecutorDescriptors;
 use opendut_types::specs::{Specification, SpecificationDocument, SpecificationMetadata};
 use opendut_types::specs::parse::json::JsonSpecificationDocument;
 use opendut_types::specs::parse::yaml::YamlSpecificationFile;
-use opendut_types::specs::peer::{NetworkInterfaceDescriptorSpecificationV1, PeerDescriptorSpecification, PeerDescriptorSpecificationV1};
-use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
+use opendut_types::specs::peer::{NetworkInterfaceConfigurationSpecification, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDescriptorSpecification, PeerDescriptorSpecificationV1};
+use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 use crate::commands::peer::create::create_peer;
 use crate::CreateOutputFormat;
 
@@ -151,12 +151,27 @@ fn convert_document_to_peer_descriptor(specification_metadata: SpecificationMeta
 
 fn convert_network_specification_to_descriptor(specification: NetworkInterfaceDescriptorSpecificationV1) -> crate::Result<NetworkInterfaceDescriptor> {
     
-    let name = NetworkInterfaceName::try_from(specification.name)
+    let name = NetworkInterfaceName::try_from(specification.name.clone())
         .map_err(|error| error.to_string())?;
-    let configuration = match specification.configuration.to_lowercase().as_str() {
-        "ethernet" => NetworkInterfaceConfiguration::Ethernet,
-        "can" => NetworkInterfaceConfiguration::Ethernet, //TODO
-        _ => NetworkInterfaceConfiguration::Ethernet, // FIXME
+    
+    let configuration = match specification.kind {
+        NetworkInterfaceKind::Ethernet => NetworkInterfaceConfiguration::Ethernet,
+        NetworkInterfaceKind::Can => {
+            match specification.parameters {
+                Some(parameters) => {
+                    NetworkInterfaceConfiguration::Can {
+                        bitrate: parameters.bitrate,
+                        sample_point: CanSamplePoint::try_from(parameters.sample_point)
+                            .map_err(|error| format!("Could not use the provided sample point parameter for network interface <{}>:  {}", specification.id, error))?,
+                        fd: parameters.fd,
+                        data_bitrate: parameters.data_bitrate,
+                        data_sample_point: CanSamplePoint::try_from(parameters.data_sample_point)
+                            .map_err(|error| format!("Could not use the provided data sample point parameter for network interface <{}>:  {}", specification.id, error))?,
+                    }
+                }
+                None => Err(String::from("Parameters for the can interface were not provided."))?,
+            }
+        }
     };
 
     let network_descriptor = NetworkInterfaceDescriptor {
@@ -170,13 +185,13 @@ fn convert_network_specification_to_descriptor(specification: NetworkInterfaceDe
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use googletest::prelude::*;
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_types::peer::executor::ExecutorDescriptors;
     use opendut_types::specs::{Specification, SpecificationDocument, SpecificationMetadata};
-    use opendut_types::specs::peer::{NetworkInterfaceDescriptorSpecificationV1, PeerDescriptorSpecification, PeerDescriptorSpecificationV1, PeerNetworkDescriptorSpecificationV1};
-    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
-    use crate::commands::apply::{convert_document_to_model, convert_document_to_peer_descriptor, convert_network_specification_to_descriptor};
+    use opendut_types::specs::peer::{NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDescriptorSpecification, PeerDescriptorSpecificationV1, PeerNetworkDescriptorSpecificationV1};
+    use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
     #[test]
     fn should_convert_document_to_peer_descriptor() -> anyhow::Result<()> {
@@ -186,6 +201,15 @@ mod tests {
             id: peer.id.uuid,
             name: peer.name.clone().value(),
         };
+        
+        let interface_kind = match peer.network.interfaces[0].configuration {
+            NetworkInterfaceConfiguration::Ethernet => {
+                NetworkInterfaceKind::Ethernet
+            }
+            NetworkInterfaceConfiguration::Can { .. } => {
+                NetworkInterfaceKind::Can
+            }
+        };
 
         let specification_peer = PeerDescriptorSpecificationV1 {
             location: peer.location.clone().map(|location| location.value()),
@@ -194,7 +218,8 @@ mod tests {
                     NetworkInterfaceDescriptorSpecificationV1 {
                         id: peer.network.interfaces[0].id.uuid,
                         name: peer.network.interfaces[0].name.to_string(),
-                        configuration: peer.network.interfaces[0].configuration.to_string(),
+                        kind: interface_kind,
+                        parameters: None,
                     }
                 ],
                 bridge_name: None 
@@ -212,6 +237,15 @@ mod tests {
     fn should_convert_document_to_model() -> anyhow::Result<()> {
         let peer = generate_peer_descriptor()?;
         
+        let interface_kind = match peer.network.interfaces[0].configuration {
+            NetworkInterfaceConfiguration::Ethernet => {
+                NetworkInterfaceKind::Ethernet
+            }
+            NetworkInterfaceConfiguration::Can { .. } => {
+                NetworkInterfaceKind::Can
+            }
+        };
+        
         let document = SpecificationDocument {
             version: String::from("v1"),
             metadata: SpecificationMetadata {
@@ -225,7 +259,8 @@ mod tests {
                         NetworkInterfaceDescriptorSpecificationV1 {
                             id: peer.network.interfaces[0].id.uuid,
                             name: peer.network.interfaces[0].name.to_string(),
-                            configuration: peer.network.interfaces[0].configuration.to_string(),
+                            kind: interface_kind,
+                            parameters: None,
                         }
                     ],
                     bridge_name: Default::default(), // TODO
@@ -245,13 +280,25 @@ mod tests {
         let specification =  NetworkInterfaceDescriptorSpecificationV1 {
             id: NetworkInterfaceId::random().uuid,
             name: "eth0".to_string(),
-            configuration: "Ethernet".to_string(),
+            kind: NetworkInterfaceKind::Ethernet,
+            parameters: None,
+        };
+        
+        let configuration = match specification.kind {
+            NetworkInterfaceKind::Ethernet => NetworkInterfaceConfiguration::Ethernet,
+            NetworkInterfaceKind::Can => NetworkInterfaceConfiguration::Can {
+                bitrate: 0,
+                sample_point: CanSamplePoint::try_from(0.7)?,
+                fd: false,
+                data_bitrate: 0,
+                data_sample_point: CanSamplePoint::try_from(0.7)?,
+            }
         };
         
         let descriptor = NetworkInterfaceDescriptor {
             id: NetworkInterfaceId::from(specification.id),
             name: NetworkInterfaceName::try_from(specification.name.clone())?,
-            configuration: NetworkInterfaceConfiguration::Ethernet,
+            configuration,
         };
         
         let result = convert_network_specification_to_descriptor(specification).unwrap();
@@ -259,7 +306,42 @@ mod tests {
         assert_that!(result, eq(&descriptor));
         Ok(())
     } 
-    
+
+    #[test]
+    fn should_convert_can_network_specification_to_descriptor() -> anyhow::Result<()> {
+        let specification = NetworkInterfaceDescriptorSpecificationV1 {
+            id: NetworkInterfaceId::random().uuid,
+            name: "can0".to_string(),
+            kind: NetworkInterfaceKind::Can,
+            parameters: Some(
+                NetworkInterfaceConfigurationSpecification {
+                    bitrate: 500000,
+                    sample_point: 0.7,
+                    fd: true,
+                    data_bitrate: 200000,
+                    data_sample_point: 0.7,
+                }
+            ),
+        };
+        
+        let descriptor =   NetworkInterfaceDescriptor {
+            id: NetworkInterfaceId::from(specification.id),
+            name: NetworkInterfaceName::try_from(specification.name.clone())?,
+            configuration: NetworkInterfaceConfiguration::Can {
+                bitrate: 500000,
+                sample_point: CanSamplePoint::try_from(0.7)?,
+                fd: true,
+                data_bitrate: 200000,
+                data_sample_point: CanSamplePoint::try_from(0.7)?,
+            },
+        };
+
+        let result = convert_network_specification_to_descriptor(specification).unwrap();
+        
+        assert_that!(result, eq(&descriptor));
+        Ok(())
+    }
+
     fn generate_peer_descriptor() -> anyhow::Result<PeerDescriptor> {
         Ok(PeerDescriptor {
             id: PeerId::random(),

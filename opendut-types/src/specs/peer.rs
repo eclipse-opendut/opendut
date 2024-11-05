@@ -23,5 +23,21 @@ pub struct PeerNetworkDescriptorSpecificationV1 {
 pub struct NetworkInterfaceDescriptorSpecificationV1 {
     pub id: Uuid,
     pub name: String,
-    pub configuration: String,
+    pub kind: NetworkInterfaceKind,
+    pub parameters: Option<NetworkInterfaceConfigurationSpecification>,
+}
+
+#[derive(Debug, Deserialize, PartialEq)]
+pub enum NetworkInterfaceKind {
+    Ethernet,
+    Can,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct NetworkInterfaceConfigurationSpecification {
+    pub bitrate: u32,
+    pub sample_point: f32,
+    pub fd: bool,
+    pub data_bitrate: u32,
+    pub data_sample_point: f32,
 }
