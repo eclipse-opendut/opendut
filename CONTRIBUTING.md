@@ -14,6 +14,8 @@ See more info at <https://www.eclipse.org/projects/handbook/#contributing-contri
 
 Code contributions can be submitted via pull requests.
 To do so, fork this repository, apply the suggested changes and create a pull request to integrate them.
+The pull request should be created against the `development` branch.
+
 Before creating the request, please ensure the following:
 
 - **No breakages**: All builds and tests pass (CI/CD).
