@@ -6,7 +6,7 @@ use opendut_types::peer::executor::ExecutorDescriptors;
 use opendut_types::specs::{Specification, SpecificationDocument, SpecificationMetadata};
 use opendut_types::specs::parse::json::JsonSpecificationDocument;
 use opendut_types::specs::parse::yaml::YamlSpecificationFile;
-use opendut_types::specs::peer::{NetworkInterfaceConfigurationSpecification, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDescriptorSpecification, PeerDescriptorSpecificationV1};
+use opendut_types::specs::peer::{NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDescriptorSpecification, PeerDescriptorSpecificationV1};
 use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 use crate::commands::peer::create::create_peer;
 use crate::CreateOutputFormat;
@@ -160,11 +160,11 @@ fn convert_network_specification_to_descriptor(specification: NetworkInterfaceDe
             match specification.parameters {
                 Some(parameters) => {
                     NetworkInterfaceConfiguration::Can {
-                        bitrate: parameters.bitrate,
+                        bitrate: parameters.bitrate_hz,
                         sample_point: CanSamplePoint::try_from(parameters.sample_point)
                             .map_err(|error| format!("Could not use the provided sample point parameter for network interface <{}>:  {}", specification.id, error))?,
                         fd: parameters.fd,
-                        data_bitrate: parameters.data_bitrate,
+                        data_bitrate: parameters.data_bitrate_hz,
                         data_sample_point: CanSamplePoint::try_from(parameters.data_sample_point)
                             .map_err(|error| format!("Could not use the provided data sample point parameter for network interface <{}>:  {}", specification.id, error))?,
                     }
@@ -315,10 +315,10 @@ mod tests {
             kind: NetworkInterfaceKind::Can,
             parameters: Some(
                 NetworkInterfaceConfigurationSpecification {
-                    bitrate: 500000,
+                    bitrate_hz: 500000,
                     sample_point: 0.7,
                     fd: true,
-                    data_bitrate: 200000,
+                    data_bitrate_hz: 200000,
                     data_sample_point: 0.7,
                 }
             ),
