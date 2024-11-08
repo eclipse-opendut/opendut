@@ -63,13 +63,12 @@ impl YamlSpecificationFile {
 mod tests {
     use googletest::prelude::*;
     use indoc::indoc;
-    use rstest::rstest;
     use uuid::uuid;
     use crate::specs::SpecificationMetadata;
 
     use super::*;
 
-    #[rstest]
+    #[test]
     pub fn test_that_a_string_containing_a_single_document_can_be_deserialized() -> Result<()> {
 
         let result = YamlSpecificationFile::try_from_yaml_str(indoc!("
@@ -100,7 +99,7 @@ mod tests {
         Ok(())
     }
 
-    #[rstest]
+    #[test]
     pub fn test_that_a_string_containing_multiple_documents_can_be_deserialized() -> Result<()> {
         let result = YamlSpecificationFile::try_from_yaml_str(indoc!("
             ---

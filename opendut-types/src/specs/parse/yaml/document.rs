@@ -69,8 +69,17 @@ fn parse_kind(s: &str) -> Result<ResourceKind, ParseSpecificationError> {
 }
 
 fn parse_version(s: &str) -> Result<SpecificationVersion, ParseSpecificationError> {
-    serde_yaml::from_str::<SpecificationVersion>(s)
-        .map_err(|_| ParseSpecificationError::IllegalSpecificationVersion { version: String::from(s) })
+    match serde_yaml::from_str::<SpecificationVersion>(s) {
+        Ok(version) => {
+            match version {
+                SpecificationVersion::V1 => { Ok(SpecificationVersion::V1) }
+                SpecificationVersion::V2 => { Ok(SpecificationVersion::V2) }
+            }
+        }
+        Err(_) => {
+            Err(ParseSpecificationError::IllegalSpecificationVersion { version: String::from(s) })
+        }
+    }
 }
 
 fn parse_spec(kind: ResourceKind, version: SpecificationVersion, spec: Value) -> Result<Specification, ParseSpecificationError> {
@@ -98,11 +107,10 @@ fn parse_spec(kind: ResourceKind, version: SpecificationVersion, spec: Value) ->
 #[cfg(test)]
 mod tests {
     use googletest::prelude::*;
-    use rstest::rstest;
 
     use super::*;
 
-    #[rstest]
+    #[test]
     pub fn test_try_from_yaml_str() -> Result<()> {
         let result = YamlSpecificationDocument::try_from_yaml_str(r#"
             kind: SomeKind
@@ -116,6 +124,75 @@ mod tests {
 
         verify_that!(result, ok(anything()))?;
 
+        Ok(())
+    }
+    
+    #[test]
+    pub fn test_try_from() -> Result<()> {
+         let document_string = YamlSpecificationDocument::try_from_yaml_str(r#"
+            kind: PeerDescriptor
+            version: v1
+            metadata:
+              id: 140f29fd-336b-48f7-9936-6b1892574543
+              name: TheForgottenName
+            spec:
+              location: Ulm 
+              network: 
+                interfaces:
+                - id: a4a3c74c-71e5-49ea-9c2e-afb387951970
+                  name: eth0
+                  kind: ethernet
+        "#)?;
+        
+        let result = SpecificationDocument::try_from(document_string);
+        verify_that!(result, ok(anything()))?;
+        
+        Ok(())
+    }
+    
+    #[test]
+    pub fn test_failing_try_from_with_illegal_resource_kind() -> Result<()> {
+         let document_string = YamlSpecificationDocument::try_from_yaml_str(r#"
+            kind: SomeKind
+            version: v1
+            metadata:
+              id: 140f29fd-336b-48f7-9936-6b1892574543
+              name: TheForgottenName
+            spec:
+              location: Ulm 
+              network: 
+                interfaces:
+                - id: a4a3c74c-71e5-49ea-9c2e-afb387951970
+                  name: eth0
+                  kind: ethernet
+        "#)?;
+        
+        let result = SpecificationDocument::try_from(document_string);
+        verify_that!(result, err(anything()))?;
+        
+        Ok(())
+    }    
+    
+    #[test]
+    pub fn test_failing_try_from_with_unknown_version() -> Result<()> {
+         let document_string = YamlSpecificationDocument::try_from_yaml_str(r#"
+            kind: PeerDescriptor
+            version: SomeKind
+            metadata:
+              id: 140f29fd-336b-48f7-9936-6b1892574543
+              name: TheForgottenName
+            spec:
+              location: Ulm 
+              network: 
+                interfaces:
+                - id: a4a3c74c-71e5-49ea-9c2e-afb387951970
+                  name: eth0
+                  kind: ethernet
+        "#)?;
+        
+        let result = SpecificationDocument::try_from(document_string);
+        verify_that!(result, err(anything()))?;
+        
         Ok(())
     }
 }
