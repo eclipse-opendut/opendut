@@ -2,21 +2,9 @@ use crate::testing::peer_configuration_listener::PeerConfigurationReceiver;
 use opendut_types::peer::PeerId;
 use opendut_types::util::Port;
 use opendut_util::settings::LoadedConfig;
-use std::future::Future;
-use std::time::Duration;
 use tokio::sync::mpsc;
 use tracing::info;
 
-pub async fn retry<T, Fut>(assertion: impl FnMut() -> Fut) -> anyhow::Result<T>
-where
-    Fut: Future<Output=Result<T, backoff::Error<anyhow::Error>>> + Sized
-{
-    let backoff_policy = backoff::ExponentialBackoffBuilder::new()
-        .with_max_elapsed_time(Some(Duration::from_secs(15)))
-        .build();
-
-    backoff::future::retry(backoff_policy, assertion).await
-}
 
 pub fn spawn_carl() -> anyhow::Result<Port> {
     let carl_port = select_free_port();

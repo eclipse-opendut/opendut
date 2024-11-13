@@ -1,5 +1,7 @@
+use std::time::Duration;
 use crate::testing::util;
 use anyhow::anyhow;
+use backon::Retryable;
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::peer::state::PeerState;
 use opendut_types::peer::PeerId;
@@ -24,15 +26,22 @@ impl TestCarlClient {
     }
 
     pub async fn await_peer_up(&self, peer_id: PeerId) -> anyhow::Result<()> {
-        util::retry(|| async {
-            let edgar_state = self.inner().await.peers.get_peer_state(peer_id).await
-                .map_err(|cause| backoff::Error::transient(cause.into()))?;
+
+        (|| async {
+            let edgar_state = self.inner().await
+                .peers.get_peer_state(peer_id).await?;
 
             match edgar_state {
                 PeerState::Up { .. } => Ok(()),
-                PeerState::Down => Err(backoff::Error::transient(anyhow!("No peers registered in time!")))
+                PeerState::Down => Err(anyhow!("No peers registered in time!"))
             }
-        }).await?;
+        })
+            .retry(
+                backon::ExponentialBuilder::default()
+                    .with_max_delay(Duration::from_secs(15))
+            )
+            .await?;
+
         Ok(())
     }
 

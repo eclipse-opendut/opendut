@@ -1,7 +1,7 @@
 use std::process::Stdio;
 use std::sync::Arc;
 use std::time::Duration;
-use backoff::ExponentialBackoffBuilder;
+use backon::Retryable;
 use opentelemetry::{global, KeyValue};
 use opentelemetry::metrics::Gauge;
 use regex::Regex;
@@ -46,17 +46,15 @@ pub async fn exponential_backoff_launch_rperf_client(
     megabits_second_send_mutex: Arc<Mutex<Gauge<f64>>>,
     megabits_second_receive_mutex: Arc<Mutex<Gauge<f64>>>
 ) -> Result<(), RperfRunError> {
-    let exponential_backoff = ExponentialBackoffBuilder::default()
-        .with_max_elapsed_time(Some(rperf_backoff_max_elapsed_time_ms))
-        .build();
+    let exponential_backoff = backon::ExponentialBuilder::default()
+        .with_max_delay(rperf_backoff_max_elapsed_time_ms);
 
-    let backoff_result = backoff::future::retry(
-        exponential_backoff,
-        || async {
+    let backoff_result = (|| async {
             launch_rperf_client(peer, target_bandwidth_kbit_per_second, &megabits_second_send_mutex, &megabits_second_receive_mutex).await?;
             Ok(())
-        }
-    ).await;
+        })
+        .retry(exponential_backoff)
+        .await;
 
     backoff_result
         .map_err(|cause| RperfClientError { message: "Could not run rperf client".to_string(), cause })

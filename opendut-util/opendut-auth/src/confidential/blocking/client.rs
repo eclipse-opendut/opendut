@@ -1,23 +1,23 @@
-use std::fmt::Formatter;
-use std::ops::{Sub};
-use std::str::FromStr;
-use std::sync::Arc;
-use std::time::Duration;
-use chrono::{NaiveDateTime, Utc};
-use config::Config;
-use oauth2::{AccessToken, TokenResponse};
-use oauth2::basic::{BasicClient, BasicTokenResponse};
-use backoff::ExponentialBackoffBuilder;
-use std::sync::{RwLock, RwLockWriteGuard};
-use tokio::sync::{Mutex, TryLockError};
-use tonic::{Request, Status};
-use tonic::metadata::MetadataValue;
-use tonic::service::Interceptor;
-use tracing::debug;
-use crate::confidential::config::{ConfidentialClientConfig, ConfidentialClientConfigData};
 use crate::confidential::blocking::reqwest_client::OidcBlockingReqwestClient;
+use crate::confidential::config::{ConfidentialClientConfig, ConfidentialClientConfigData};
 use crate::confidential::error::{ConfidentialClientError, WrappedRequestTokenError};
 use crate::TOKEN_GRACE_PERIOD;
+use backon::BlockingRetryable;
+use chrono::{NaiveDateTime, Utc};
+use config::Config;
+use oauth2::basic::{BasicClient, BasicTokenResponse};
+use oauth2::{AccessToken, TokenResponse};
+use std::fmt::Formatter;
+use std::ops::Sub;
+use std::str::FromStr;
+use std::sync::Arc;
+use std::sync::{RwLock, RwLockWriteGuard};
+use std::time::Duration;
+use tokio::sync::{Mutex, TryLockError};
+use tonic::metadata::MetadataValue;
+use tonic::service::Interceptor;
+use tonic::{Request, Status};
+use tracing::debug;
 
 #[derive(Debug)]
 pub struct ConfidentialClient {
@@ -41,8 +41,7 @@ pub enum AuthError {
     #[error("ExpirationFieldMissing: {message}.")]
     ExpirationFieldMissing { message: String },
     #[error("FailedToUpdateToken: {message} cause: {cause}.")]
-    FailedToLockConfidentialClient { message: String, cause: backoff::Error<TryLockError> },
-    
+    FailedToLockConfidentialClient { message: String, cause: TryLockError },
 }
 
 #[derive(Clone)]
@@ -115,16 +114,17 @@ impl ConfidentialClient {
         let token_endpoint = idp_config.issuer_url.join("protocol/openid-connect/token")
             .map_err(|error| ConfidentialClientError::UrlParse { message: String::from("Failed to derive token url from issuer url: "), cause: error })?;
         
-        let exponential_backoff = ExponentialBackoffBuilder::default()
-            .with_max_elapsed_time(Some(Duration::from_secs(120)))
-            .build();
-
         let operation = || {
             self.reqwest_client.client.get(token_endpoint.clone()).send()?;
             Ok(())
         };
         
-        let backoff_result = backoff::retry(exponential_backoff, operation);
+        let backoff_result = operation
+            .retry(
+                backon::ExponentialBuilder::default()
+                    .with_max_delay(Duration::from_secs(120))
+            )
+            .call();
 
         match backoff_result {
             Ok(_) => { Ok(()) }
@@ -173,7 +173,7 @@ impl ConfidentialClient {
                 self.fetch_token()?
             }
             Some(token) => {
-                if Utc::now().naive_utc().lt(&token.expires_in.sub(TOKEN_GRACE_PERIOD)) {
+                if Utc::now().naive_utc() < token.expires_in.sub(TOKEN_GRACE_PERIOD) {
                     Token { value: token.access_token.secret().to_string() }
                 } else {
                     self.fetch_token()?
@@ -189,16 +189,17 @@ impl Interceptor for ConfClientArcMutex<Option<ConfidentialClientRef>> {
 
         let cloned_arc_mutex = Arc::clone(&self.0);
         
-        let exponential_backoff = ExponentialBackoffBuilder::default()
-            .with_max_elapsed_time(Some(Duration::from_secs(120)))
-            .build();
-
         let operation = || {
             let mutex_guard = cloned_arc_mutex.try_lock()?;
             Ok(mutex_guard)
         };
 
-        let backoff_result = backoff::retry(exponential_backoff, operation);
+        let backoff_result = operation
+            .retry(
+                backon::ExponentialBuilder::default()
+                    .with_max_delay(Duration::from_secs(120))
+            )
+            .call();
         
         let token = match backoff_result {
             Ok(mutex_guard) => { 
@@ -208,7 +209,7 @@ impl Interceptor for ConfClientArcMutex<Option<ConfidentialClientRef>> {
             Err(error) => {
                 eprintln!("Failed to acquire lock on the Confidential Client definitively. The following telemetry data will not be transmitted.");
                 eprintln!("Failed request: {:?}", request);
-                Some(Err(AuthError::FailedToLockConfidentialClient {message: "Unable to acquire lock on the Confidential Client".to_owned(), cause: error}))
+                Some(Err(AuthError::FailedToLockConfidentialClient { message: "Unable to acquire lock on the Confidential Client".to_owned(), cause: error }))
             }
         };
         
@@ -231,15 +232,15 @@ impl Interceptor for ConfClientArcMutex<Option<ConfidentialClientRef>> {
 
 #[cfg(test)]
 mod auth_tests {
+    use crate::confidential::blocking;
+    use crate::confidential::config::ConfidentialClientConfigData;
+    use crate::confidential::pem::read_pem_from_file_path;
     use chrono::Utc;
     use googletest::assert_that;
     use googletest::matchers::gt;
     use oauth2::{ClientId, ClientSecret, TokenResponse};
-    use url::Url;
     use opendut_util_core::project;
-    use crate::confidential::config::ConfidentialClientConfigData;
-    use crate::confidential::pem::read_pem_from_file_path;
-    use crate::confidential::blocking;
+    use url::Url;
 
     #[test_with::env(RUN_KEYCLOAK_INTEGRATION_TESTS)]
     #[test]

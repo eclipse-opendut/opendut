@@ -1,6 +1,6 @@
+use backon::Retryable;
 use diesel::{Connection as _, ConnectionError, PgConnection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
-use backoff::ExponentialBackoff;
 use tracing::{debug, info, warn};
 use crate::resources::storage::DatabaseConnectInfo;
 
@@ -18,24 +18,30 @@ pub async fn connect(database_connect_info: &DatabaseConnectInfo) -> Result<PgCo
         url
     };
 
-    let mut connection = backoff::future::retry(ExponentialBackoff::default(), || async {
+    let mut connection = (|| async {
         PgConnection::establish(confidential_url.as_str())
-            .map_err(|cause| match &cause {
-                ConnectionError::BadConnection(_) => {
-                    warn!("Connecting to database at {url} failed. Retrying.");
-                    backoff::Error::transient(ConnectError::Diesel(cause))
-                }
-                ConnectionError::CouldntSetupConfiguration(_)
-                | ConnectionError::InvalidConnectionUrl(_)
-                | ConnectionError::InvalidCString(_) => {
-                    backoff::Error::permanent(ConnectError::Diesel(cause))
-                }
-                other => {
-                    warn!("Unhandled Diesel ConnectionError variant: {other:?}");
-                    backoff::Error::permanent(ConnectError::Diesel(cause))
-                }
-            })
-    }).await?;
+    })
+        .retry(backon::ExponentialBuilder::default())
+        .when(|cause| match &cause {
+            ConnectionError::BadConnection(_) => {
+                true
+            }
+            ConnectionError::CouldntSetupConfiguration(_)
+            | ConnectionError::InvalidConnectionUrl(_)
+            | ConnectionError::InvalidCString(_) => {
+                false
+            }
+            other => {
+                warn!("Unhandled Diesel ConnectionError variant: {other:?}");
+                false
+            }
+        })
+        .notify(|cause, after| {
+            warn!("Connecting to database at {url} failed. Retrying in {after:?}.\n  {cause}");
+        })
+        .await
+        .map_err(ConnectError::Diesel)?;
+
     info!("Connection to database at {url} established!");
 
     run_pending_migrations(&mut connection)

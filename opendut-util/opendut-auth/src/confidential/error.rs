@@ -24,7 +24,7 @@ pub enum ConfidentialClientError {
     #[error("Failed to load OIDC configuration: '{message}'. Cause: '{cause}'")]
     Configuration { message: String, cause: Box<dyn std::error::Error + Send + Sync> },
     #[error("{message}\n  {cause}")]
-    KeycloakConnection { message: String, cause: backoff::Error<reqwest::Error> },
+    KeycloakConnection { message: String, cause: reqwest::Error },
     #[error("{message}\n  {cause}")]
     UrlParse { message: String, cause: url::ParseError },
     #[error("OIDC configuration error: '{message}'.")]

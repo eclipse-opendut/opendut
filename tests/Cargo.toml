@@ -13,7 +13,7 @@ opendut-types = { workspace = true }
 opendut-util = { workspace = true }
 
 anyhow = { workspace = true }
-backoff = { workspace = true, features = ["tokio"] }
+backon = { workspace = true, features = ["tokio-sleep"] }
 config = { workspace = true }
 googletest = { workspace = true }
 test-log = { workspace = true }

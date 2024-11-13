@@ -15,7 +15,7 @@ opendut-util = { workspace = true }
 
 anyhow = { workspace = true }
 async-trait = { workspace = true }
-backoff = { workspace = true, features = ["tokio"] }
+backon = { workspace = true, features = ["tokio-sleep"] }
 cfg-if = { workspace = true }
 chrono = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
