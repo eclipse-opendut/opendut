@@ -175,6 +175,7 @@ mod sbom {
 
                                 "BSD-3-Clause OR MIT" => "BSD-3-Clause",
                                 "GPL-2.0 OR BSD-3-Clause" => "BSD-3-Clause",
+                                "MIT AND (MIT OR Apache-2.0)" => "MIT",
                                 "Unlicense OR MIT" => "MIT",
                                 "(Apache-2.0 OR MIT) AND BSD-3-Clause" => "Apache-2.0 AND BSD-3-Clause",
                                 "(MIT OR Apache-2.0) AND Unicode-DFS-2016" => "Apache-2.0 AND Unicode-DFS-2016",
@@ -183,6 +184,7 @@ mod sbom {
                                 | "Apache-2.0 WITH LLVM-exception"
                                 | "BSD-2-Clause"
                                 | "BSD-3-Clause"
+                                | "BSD-3-Clause AND MIT"
                                 | "BSL-1.0"
                                 | "CC0-1.0"
                                 | "ISC"
