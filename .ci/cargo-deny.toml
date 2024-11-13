@@ -53,12 +53,11 @@ yanked = "warn"
 # A list of advisory IDs to ignore. Note that ignored advisories will still
 # output a note when they are encountered.
 ignore = [
-    # TODO: ignore until https://github.com/RustCrypto/RSA/issues/19 is resolved, tracked by issue #144
-    "RUSTSEC-2023-0071",
+    { id = "RUSTSEC-2023-0071", reason = "ignore until https://github.com/RustCrypto/RSA/issues/19 is resolved, tracked by issue #144" },
 
-    # `proc-macro-error` crate is unmaintained. No actual vulnerability known.
-    # Will resolve itself when our dependencies update to not depend on `proc-macro-error` anymore.
-    "RUSTSEC-2024-0370",
+    { id = "RUSTSEC-2024-0370", reason = "`proc-macro-error` crate is unmaintained. No actual vulnerability known. Will resolve itself when our dependencies update to not depend on `proc-macro-error` anymore." },
+
+    { id = "RUSTSEC-2024-0384", reason = "`instant` library is unmaintained. No actual vulnerability known. Is depended on by the `reqwest-retry` crate, which does need to be updated. Tracked by issue #29." },
 ]
 
 # This section is considered when running `cargo deny check licenses`
