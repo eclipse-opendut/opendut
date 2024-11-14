@@ -288,30 +288,7 @@ impl ClusterManager {
             debug!("VPN disabled. Not creating VPN group.")
         }
 
-        let n_peers = u16::try_from(member_interface_mapping.len())
-            .map_err(|cause| DeployClusterError::Internal { cluster_id, cause: cause.to_string() })?;
-        if self.options.can_server_port_range_start + n_peers >= self.options.can_server_port_range_end {
-            return Err(DeployClusterError::Internal {
-                cluster_id,
-                cause: format!("Failure while creating cluster <{}>. Port range [{}, {}) specified by 'can_server_port_range_start'
-                and 'can_server_port_range_start' is too narrow for the configured number of peers ({})",
-                cluster_id, self.options.can_server_port_range_start, self.options.can_server_port_range_end, n_peers)
-            })
-        } else if self.options.can_server_port_range_start + n_peers * 2 >= self.options.can_server_port_range_end {
-            warn!("Port range [{}, {}) specified by 'can_server_port_range_start'
-                and 'can_server_port_range_start' is very narrow for the configured number of peers ({}). This may cause errors on EDGAR.",
-                self.options.can_server_port_range_start, self.options.can_server_port_range_end, n_peers);
-        }
-
-        // Wrap-around the counter when we reached the end of the range of usable ports
-        if self.can_server_port_counter + n_peers >= self.options.can_server_port_range_end {
-            self.can_server_port_counter = self.options.can_server_port_range_start;
-        }
-
-        let can_server_ports = (self.can_server_port_counter..self.can_server_port_counter + n_peers)
-            .map(Port)
-            .collect::<Vec<_>>();
-        self.can_server_port_counter += n_peers;
+        let can_server_ports = self.determine_can_server_ports(&member_interface_mapping, cluster_id)?;
 
         let member_assignments: Vec<Result<PeerClusterAssignment, DeployClusterError>> = {
             let assignment_futures = std::iter::zip(member_interface_mapping, can_server_ports)
@@ -372,6 +349,46 @@ impl ClusterManager {
         }
 
         Ok(())
+    }
+
+    fn determine_can_server_ports(&mut self, member_interface_mapping: &HashMap<PeerId, Vec<NetworkInterfaceDescriptor>>, cluster_id: ClusterId) -> Result<Vec<Port>, DeployClusterError> {
+        let n_peers = u16::try_from(member_interface_mapping.len())
+            .map_err(|cause| DeployClusterError::Internal { cluster_id, cause: cause.to_string() })?;
+
+        if self.options.can_server_port_range_start + n_peers >= self.options.can_server_port_range_end {
+            return Err(DeployClusterError::Internal {
+                cluster_id,
+                cause: format!(
+                    "Failure while creating cluster <{}>. Port range [{}, {}) specified by 'can_server_port_range_start' \
+                    and 'can_server_port_range_start' is too narrow for the configured number of peers ({})",
+                    cluster_id,
+                    self.options.can_server_port_range_start,
+                    self.options.can_server_port_range_end,
+                    n_peers,
+                )
+            })
+        } else if self.options.can_server_port_range_start + n_peers * 2 >= self.options.can_server_port_range_end {
+            warn!(
+                "Port range [{}, {}) specified by 'can_server_port_range_start' \
+                and 'can_server_port_range_start' is very narrow for the configured number of peers ({}). This may cause errors on EDGAR.",
+                self.options.can_server_port_range_start,
+                self.options.can_server_port_range_end,
+                n_peers
+            );
+        }
+
+        // Wrap-around the counter when we reached the end of the range of usable ports
+        if self.can_server_port_counter + n_peers >= self.options.can_server_port_range_end {
+            self.can_server_port_counter = self.options.can_server_port_range_start;
+        }
+
+        let can_server_ports = (self.can_server_port_counter..self.can_server_port_counter + n_peers)
+            .map(Port)
+            .collect::<Vec<_>>();
+
+        self.can_server_port_counter += n_peers;
+
+        Ok(can_server_ports)
     }
 }
 
