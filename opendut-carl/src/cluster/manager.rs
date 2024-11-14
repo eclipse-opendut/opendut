@@ -17,7 +17,7 @@ use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName}
 use opendut_types::util::Port;
 
 use crate::actions;
-use crate::actions::{AssignClusterOptions, AssignClusterParams, DeleteClusterDeploymentParams, DetermineClusterPeerStatesParams, GetPeerStateParams, ListPeerDescriptorsParams, StoreClusterConfigurationParams};
+use crate::actions::{AssignClusterOptions, AssignClusterParams, ClusterDeployable, DeleteClusterDeploymentParams, DetermineClusterPeerStatesParams, GetPeerStateParams, ListPeerDescriptorsParams, StoreClusterConfigurationParams};
 use crate::peer::broker::PeerMessagingBrokerRef;
 use crate::persistence::error::PersistenceResult;
 use crate::resources::manager::{ResourcesManagerRef, SubscriptionEvent};
@@ -236,18 +236,25 @@ impl ClusterManager {
         }).await
         .map_err(|error| DeployClusterError::Internal { cluster_id, cause: format!("Failed to determine states of peers: {error}") })?;
 
-        let unavailable_peers = cluster_peer_states.filter_unavailable_peers();
-        if unavailable_peers.is_empty() {
-            debug!("All peers of cluster <{cluster_id}> are now available. Deploying...");
-            self.deploy_cluster(cluster_id).await?;
-        } else {
-            trace!(
-                "Not all peers of cluster <{cluster_id}> are available, so not deploying. Unavailable peers: {}",
-                unavailable_peers.iter()
-                    .map(|peer_id| peer_id.to_string())
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            );
+        let cluster_deployable = cluster_peer_states.check_cluster_deployable();
+
+        match cluster_deployable {
+            ClusterDeployable::AllPeersAvailable => {
+                debug!("All peers of cluster <{cluster_id}> are now available. Deploying...");
+                self.deploy_cluster(cluster_id).await?;
+            }
+            ClusterDeployable::AlreadyDeployed => {
+                debug!("Cluster <{cluster_id}> is already deployed. Not triggering new deployment.");
+            }
+            ClusterDeployable::NotAllPeersAvailable { unavailable_peers } => {
+                debug!(
+                    "Not all peers of cluster <{cluster_id}> are available, so not deploying. Unavailable peers: {}",
+                    unavailable_peers.iter()
+                        .map(|peer_id| peer_id.to_string())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                );
+            }
         }
         Ok(())
     }
