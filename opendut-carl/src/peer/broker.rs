@@ -121,7 +121,7 @@ impl PeerMessagingBroker {
                 old_peer_configuration
             }
             None => {
-                //PeerConfiguration is not persisted across restarts
+                //OldPeerConfiguration is not persisted across CARL restarts
                 debug!("No OldPeerConfiguration found for newly connected peer <{peer_id}>. Sending empty configuration.");
                 OldPeerConfiguration::default()
             }
@@ -131,11 +131,11 @@ impl PeerMessagingBroker {
             .map_err(|source| OpenError::Persistence { peer_id, source })?;
         let peer_configuration = match peer_configuration {
             Some(peer_configuration) => {
-                debug!("Found an OldPeerConfiguration for newly connected peer <{peer_id}>. Re-sending this configuration.\n{peer_configuration:#?}");
+                debug!("Found a PeerConfiguration for newly connected peer <{peer_id}>. Re-sending this configuration.\n{peer_configuration:#?}");
                 peer_configuration
             }
             None => {
-                //PeerConfiguration is not persisted across restarts
+                //PeerConfiguration is not persisted across CARL restarts
                 debug!("No PeerConfiguration found for newly connected peer <{peer_id}>. Sending empty configuration.");
                 PeerConfiguration::default()
             }
@@ -212,7 +212,7 @@ async fn handle_stream_message(
             let message = downstream::Message::Pong(Pong {});
             let context = None;
             let _ignore_result =
-                tx_outbound.send(Downstream{message:Some(message), context}).await
+                tx_outbound.send(Downstream { message: Some(message), context }).await
                     .inspect_err(|cause| warn!("Failed to send ping to peer <{peer_id}>:\n  {cause}"));
         },
     }

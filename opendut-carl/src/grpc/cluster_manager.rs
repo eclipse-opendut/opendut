@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use tonic::{Request, Response, Status};
 use tonic_web::CorsGrpcWeb;
-use tracing::trace;
+use tracing::{trace, warn};
 use opendut_carl_api::proto::services::cluster_manager::*;
 use opendut_carl_api::proto::services::cluster_manager::cluster_manager_server::{ClusterManager as ClusterManagerService, ClusterManagerServer};
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
@@ -153,6 +153,7 @@ impl ClusterManagerService for ClusterManagerFacade {
 
         match result {
             Err(error) => {
+                warn!("Error while storing cluster deployment: {error:?}");
                 Ok(Response::new(StoreClusterDeploymentResponse {
                     reply: Some(store_cluster_deployment_response::Reply::Failure(error.into()))
                 }))

@@ -178,7 +178,7 @@ impl ClusterManager {
                     trace!("Peer <{peer_id}> is now available. Checking if any clusters can now be deployed...");
 
                     let mut self_ref = self_ref.lock().await;
-                    let result = self_ref.deploy_clusters_with_new_available_peer(peer_id).await;
+                    let result = self_ref.deploy_all_clusters_containing_newly_available_peer(peer_id).await;
                     if let Err(error) = result {
                         error!("Error while attempting deployment of clusters in which newly available peer <{peer_id}> is contained:  \n{error}");
                     }
@@ -187,7 +187,7 @@ impl ClusterManager {
         });
     }
 
-    async fn deploy_clusters_with_new_available_peer(&mut self, peer_id: PeerId) -> anyhow::Result<()> {
+    async fn deploy_all_clusters_containing_newly_available_peer(&mut self, peer_id: PeerId) -> anyhow::Result<()> {
         let peer_descriptor = self.resources_manager.get::<PeerDescriptor>(peer_id).await?
             .context(format!("No peer descriptor found for newly available peer <{peer_id}>."))?;
 

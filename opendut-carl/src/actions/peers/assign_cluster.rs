@@ -67,6 +67,8 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
 
             peer_configuration
         };
+        resources.insert(peer_id, Clone::clone(&peer_configuration))
+            .map_err(|source| AssignClusterError::Persistence { peer_id, source })?;
 
 
         let peer_state = resources.get::<PeerState>(peer_id)
