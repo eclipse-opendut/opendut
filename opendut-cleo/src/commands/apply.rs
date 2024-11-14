@@ -6,7 +6,8 @@ use opendut_types::peer::executor::ExecutorDescriptors;
 use opendut_types::specs::{Specification, SpecificationDocument, SpecificationMetadata};
 use opendut_types::specs::parse::json::JsonSpecificationDocument;
 use opendut_types::specs::parse::yaml::YamlSpecificationFile;
-use opendut_types::specs::peer::{NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDescriptorSpecification, PeerDescriptorSpecificationV1};
+use opendut_types::specs::peer::{DeviceSpecificationV1, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDescriptorSpecification, PeerDescriptorSpecificationV1};
+use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag, Topology};
 use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 use crate::commands::peer::create::create_peer;
 use crate::CreateOutputFormat;
@@ -132,7 +133,14 @@ fn convert_document_to_peer_descriptor(specification_metadata: SpecificationMeta
     let network_interfaces = peer.network.interfaces.into_iter()
         .map(convert_network_specification_to_descriptor)
         .collect::<Result<Vec<_>, _>>()?;
-
+    
+    let topology = peer.topology
+        .map(|topology| topology.devices.into_iter()
+            .map(convert_device_specification_to_descriptor)
+            .collect::<Result<Vec<_>, _>>())
+        .transpose()?
+        .unwrap_or_default();
+    
     let descriptor: PeerDescriptor = PeerDescriptor {
         id,
         name,
@@ -141,7 +149,9 @@ fn convert_document_to_peer_descriptor(specification_metadata: SpecificationMeta
             interfaces: network_interfaces,
             bridge_name: Default::default(), // TODO
         },
-        topology: Default::default(), // TODO
+        topology: Topology {
+            devices: topology
+        }, // TODO
         executors: ExecutorDescriptors {
             executors: vec![], // TODO
         },
@@ -183,6 +193,29 @@ fn convert_network_specification_to_descriptor(specification: NetworkInterfaceDe
     Ok(network_descriptor)
 }
 
+pub fn convert_device_specification_to_descriptor(specification: DeviceSpecificationV1) -> crate::Result<DeviceDescriptor> {
+    let tags = specification.tags.iter().map(|tag| 
+            DeviceTag::try_from(String::from(tag))
+            .map_err(|error| format!("Could not apply the provided device tags for device: <{}>:  {}", specification.id, error))
+        ).collect::<Result<Vec<_>, _>>()?;
+    
+    let description = specification.description
+        .map(DeviceDescription::try_from)
+        .transpose()
+        .map_err(|error| error.to_string())?;
+    
+    let device_descriptor = DeviceDescriptor {
+        id: DeviceId::from(specification.id),
+        name: DeviceName::try_from(specification.name)
+            .map_err(|error| format!("Could not apply the provided device name for device: <{}>:  {}", specification.id, error))?,
+        description,
+        interface: NetworkInterfaceId::from(specification.interface_id),
+        tags,
+    };
+    
+    Ok(device_descriptor)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -190,7 +223,7 @@ mod tests {
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_types::peer::executor::ExecutorDescriptors;
     use opendut_types::specs::{Specification, SpecificationDocument, SpecificationMetadata};
-    use opendut_types::specs::peer::{NetworkInterfaceConfigurationSpecification, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDescriptorSpecification, PeerDescriptorSpecificationV1, PeerNetworkDescriptorSpecificationV1};
+    use opendut_types::specs::peer::{DeviceSpecificationV1, NetworkInterfaceConfigurationSpecification, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDescriptorSpecification, PeerDescriptorSpecificationV1, PeerDeviceSpecificationV1, PeerNetworkDescriptorSpecificationV1};
     use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
     #[test]
@@ -210,20 +243,14 @@ mod tests {
                 NetworkInterfaceKind::Can
             }
         };
-
+        
+        let topology = get_topology(peer.clone())?;
+        let network = get_interface(peer.clone(), interface_kind)?;
+        
         let specification_peer = PeerDescriptorSpecificationV1 {
             location: peer.location.clone().map(|location| location.value()),
-            network: PeerNetworkDescriptorSpecificationV1 { 
-                interfaces: vec![
-                    NetworkInterfaceDescriptorSpecificationV1 {
-                        id: peer.network.interfaces[0].id.uuid,
-                        name: peer.network.interfaces[0].name.to_string(),
-                        kind: interface_kind,
-                        parameters: None,
-                    }
-                ],
-                bridge_name: None 
-            },
+            network,
+            topology: Some(topology),
         };
 
         let result = convert_document_to_peer_descriptor(specification_metadata, specification_peer).unwrap();
@@ -246,6 +273,9 @@ mod tests {
             }
         };
         
+        let topology = get_topology(peer.clone())?;
+        let network = get_interface(peer.clone(), interface_kind)?;
+        
         let document = SpecificationDocument {
             version: String::from("v1"),
             metadata: SpecificationMetadata {
@@ -254,17 +284,8 @@ mod tests {
             },
             spec: Specification::PeerDescriptorSpecification(PeerDescriptorSpecification::V1(PeerDescriptorSpecificationV1 {
                 location: Some(String::from("Ulm")),
-                network: PeerNetworkDescriptorSpecificationV1 {
-                    interfaces: vec![
-                        NetworkInterfaceDescriptorSpecificationV1 {
-                            id: peer.network.interfaces[0].id.uuid,
-                            name: peer.network.interfaces[0].name.to_string(),
-                            kind: interface_kind,
-                            parameters: None,
-                        }
-                    ],
-                    bridge_name: Default::default(), // TODO
-                },
+                network,
+                topology: Some(topology),
             }))
         };
         
@@ -324,7 +345,7 @@ mod tests {
             ),
         };
         
-        let descriptor =   NetworkInterfaceDescriptor {
+        let descriptor = NetworkInterfaceDescriptor {
             id: NetworkInterfaceId::from(specification.id),
             name: NetworkInterfaceName::try_from(specification.name.clone())?,
             configuration: NetworkInterfaceConfiguration::Can {
@@ -337,6 +358,36 @@ mod tests {
         };
 
         let result = convert_network_specification_to_descriptor(specification).unwrap();
+        
+        assert_that!(result, eq(&descriptor));
+        Ok(())
+    }
+    
+    #[test]
+    fn should_convert_device_specification_to_descriptor() -> anyhow::Result<()> {
+        let specification = DeviceSpecificationV1 {
+            id: DeviceId::random().0,
+            name: "device".to_string(),
+            description: None,
+            interface_id: NetworkInterfaceId::random().uuid,
+            tags: vec![
+                String::from("new")
+            ],
+        };
+
+        let tags = specification.tags.iter()
+            .map(|tag_str| DeviceTag::try_from(tag_str.as_str()).expect("Failed to convert tag"))
+            .collect();
+        
+        let descriptor = DeviceDescriptor {
+            id: DeviceId::from(specification.id),
+            name: DeviceName::try_from(specification.name.clone())?,
+            description: specification.description.clone().map(|d| DeviceDescription::try_from(d).unwrap()),
+            interface: NetworkInterfaceId::from(specification.interface_id),
+            tags,
+        };
+        
+        let result = convert_device_specification_to_descriptor(specification).unwrap();
         
         assert_that!(result, eq(&descriptor));
         Ok(())
@@ -357,8 +408,53 @@ mod tests {
                 ],
                 bridge_name: Default::default(), // TODO
             },
-            topology: Default::default(), // TODO
+            topology: Topology {
+                devices: vec![
+                    DeviceDescriptor {
+                        id: DeviceId::random(),
+                        name: DeviceName::try_from("device1")?,
+                        description: Some(DeviceDescription::try_from("This a short device description.")?),
+                        interface: NetworkInterfaceId::random(),
+                        tags: vec![
+                            DeviceTag::try_from("first-device")?
+                        ],
+                    }
+                ],
+            },
             executors: ExecutorDescriptors { executors: vec![] }, // TODO
         })
     }
+    
+    fn get_topology(peer: PeerDescriptor) -> anyhow::Result<PeerDeviceSpecificationV1> {
+        let description = peer.topology.devices[0].clone().description.map(|d| d.to_string());
+        let tags = peer.topology.devices[0].clone().tags.into_iter().map(|t| t.to_string()).collect::<Vec<String>>();
+        
+        Ok(PeerDeviceSpecificationV1 {
+            devices: vec![
+                DeviceSpecificationV1 {
+                    id: peer.topology.devices[0].id.0,
+                    name: peer.topology.devices[0].name.to_string(),
+                    description,
+                    interface_id: peer.topology.devices[0].interface.uuid,
+                    tags,
+                }
+            ]
+        })
+    }    
+    
+    fn get_interface(peer: PeerDescriptor, interface_kind: NetworkInterfaceKind) -> anyhow::Result<PeerNetworkDescriptorSpecificationV1> {
+        Ok(PeerNetworkDescriptorSpecificationV1 {
+            interfaces: vec![
+                NetworkInterfaceDescriptorSpecificationV1 {
+                    id: peer.network.interfaces[0].id.uuid,
+                    name: peer.network.interfaces[0].name.to_string(),
+                    kind: interface_kind,
+                    parameters: None,
+                }
+            ],
+            bridge_name: Default::default(), // TODO
+        })
+    }
+    
+    
 }

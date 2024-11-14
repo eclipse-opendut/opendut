@@ -11,6 +11,7 @@ pub struct PeerDescriptorSpecificationV1 {
     #[serde(default)]
     pub location: Option<String>,
     pub network: PeerNetworkDescriptorSpecificationV1,
+    pub topology: Option<PeerDeviceSpecificationV1>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -42,4 +43,19 @@ pub struct NetworkInterfaceConfigurationSpecification {
     pub fd: bool,
     pub data_bitrate_hz: u32,
     pub data_sample_point: f32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PeerDeviceSpecificationV1 {
+    pub devices: Vec<DeviceSpecificationV1>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all="kebab-case")]
+pub struct DeviceSpecificationV1 {
+    pub id: Uuid,
+    pub name: String,
+    pub description: Option<String>,
+    pub interface_id: Uuid,
+    pub tags: Vec<String>,
 }

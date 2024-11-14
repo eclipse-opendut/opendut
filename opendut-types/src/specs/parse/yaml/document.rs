@@ -142,6 +142,14 @@ mod tests {
                 - id: a4a3c74c-71e5-49ea-9c2e-afb387951970
                   name: eth0
                   kind: ethernet
+              topology:
+                devices:
+                - id: 61e79c59-ca35-4c6c-bb40-9175730a1de8
+                  name: MyDevice
+                  description: This is a brand new device.
+                  interface-id: a4a3c74c-71e5-49ea-9c2e-afb387951970
+                  tags: 
+                  - new
         "#)?;
         
         let result = SpecificationDocument::try_from(document_string);
@@ -165,6 +173,13 @@ mod tests {
                 - id: a4a3c74c-71e5-49ea-9c2e-afb387951970
                   name: eth0
                   kind: ethernet
+              topology:
+                devices:
+                - id: 61e79c59-ca35-4c6c-bb40-9175730a1de8
+                  name: MyDevice
+                  description: This is a brand new device.
+                  interface-id: a4a3c74c-71e5-49ea-9c2e-afb387951970
+                  tags: new
         "#)?;
         
         let result = SpecificationDocument::try_from(document_string);
@@ -188,6 +203,13 @@ mod tests {
                 - id: a4a3c74c-71e5-49ea-9c2e-afb387951970
                   name: eth0
                   kind: ethernet
+              topology:
+                devices:
+                - id: 61e79c59-ca35-4c6c-bb40-9175730a1de8
+                  name: MyDevice
+                  description: This is a brand new device.
+                  interface-id: a4a3c74c-71e5-49ea-9c2e-afb387951970
+                  tags: new
         "#)?;
         
         let result = SpecificationDocument::try_from(document_string);
