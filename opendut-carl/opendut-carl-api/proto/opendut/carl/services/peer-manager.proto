@@ -4,6 +4,7 @@ package opendut.carl.services.peer_manager;
 
 import "opendut/types/topology/device.proto";
 import "opendut/types/peer/peer.proto";
+import "opendut/types/peer/state.proto";
 import "opendut/types/cleo/cleo.proto";
 
 service PeerManager {

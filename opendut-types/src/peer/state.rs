@@ -1,5 +1,6 @@
 use std::net::IpAddr;
 use serde::{Deserialize, Serialize};
+use crate::cluster::ClusterId;
 use crate::ShortName;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -14,7 +15,10 @@ pub enum PeerState {
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum PeerUpState {
     Available,
-    Blocked(PeerBlockedState),
+    Blocked {
+        inner: PeerBlockedState,
+        by_cluster: ClusterId,
+    },
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -35,9 +39,9 @@ impl ShortName for PeerState {
         match self {
             PeerState::Up { inner, .. } => match inner {
                 PeerUpState::Available => "Available",
-                PeerUpState::Blocked(PeerBlockedState::Deploying) => "Deploying",
-                PeerUpState::Blocked(PeerBlockedState::Member) => "Member",
-                PeerUpState::Blocked(PeerBlockedState::Undeploying) => "Undeploying",
+                PeerUpState::Blocked { inner: PeerBlockedState::Deploying, .. } => "Deploying",
+                PeerUpState::Blocked { inner: PeerBlockedState::Member, .. } => "Member",
+                PeerUpState::Blocked { inner: PeerBlockedState::Undeploying, .. } => "Undeploying",
             }
             PeerState::Down => "Down",
         }

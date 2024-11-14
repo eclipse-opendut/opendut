@@ -239,13 +239,14 @@ impl From<crate::peer::state::PeerState> for PeerState {
                             }))
                         }
                     },
-                    crate::peer::state::PeerUpState::Blocked(inner) => {
+                    crate::peer::state::PeerUpState::Blocked { inner, by_cluster } => {
                         match inner {
                             crate::peer::state::PeerBlockedState::Deploying => {
                                 PeerState {
                                     inner: Some(peer_state::Inner::Up(PeerStateUp {
                                         inner: Some(peer_state_up::Inner::Blocked(PeerStateUpBlocked {
-                                            inner: Some(peer_state_up_blocked::Inner::Deploying(PeerStateUpBlockedDeploying {}))
+                                            inner: Some(peer_state_up_blocked::Inner::Deploying(PeerStateUpBlockedDeploying {})),
+                                            by_cluster: Some(by_cluster.into()),
                                         })),
                                         remote_host,
                                     }))
@@ -255,7 +256,8 @@ impl From<crate::peer::state::PeerState> for PeerState {
                                 PeerState {
                                     inner: Some(peer_state::Inner::Up(PeerStateUp {
                                         inner: Some(peer_state_up::Inner::Blocked(PeerStateUpBlocked {
-                                            inner: Some(peer_state_up_blocked::Inner::Member(PeerStateUpBlockedMember {}))
+                                            inner: Some(peer_state_up_blocked::Inner::Member(PeerStateUpBlockedMember {})),
+                                            by_cluster: Some(by_cluster.into()),
                                         })),
                                         remote_host,
                                     }))
@@ -265,7 +267,8 @@ impl From<crate::peer::state::PeerState> for PeerState {
                                 PeerState {
                                     inner: Some(peer_state::Inner::Up(PeerStateUp {
                                         inner: Some(peer_state_up::Inner::Blocked(PeerStateUpBlocked {
-                                            inner: Some(peer_state_up_blocked::Inner::Undeploying(PeerStateUpBlockedUndeploying {}))
+                                            inner: Some(peer_state_up_blocked::Inner::Undeploying(PeerStateUpBlockedUndeploying {})),
+                                            by_cluster: Some(by_cluster.into()),
                                         })),
                                         remote_host,
                                     }))
@@ -310,7 +313,7 @@ impl TryFrom<PeerState> for crate::peer::state::PeerState {
                             remote_host,
                         })
                     }
-                    peer_state_up::Inner::Blocked(PeerStateUpBlocked { inner }) => {
+                    peer_state_up::Inner::Blocked(PeerStateUpBlocked { inner, by_cluster }) => {
 
                         let inner = inner
                             .ok_or(ErrorBuilder::message("Inner 'Blocked' state not set"))?;
@@ -318,25 +321,34 @@ impl TryFrom<PeerState> for crate::peer::state::PeerState {
                         match inner {
                             peer_state_up_blocked::Inner::Deploying(_) => {
                                 Ok(crate::peer::state::PeerState::Up {
-                                    inner: crate::peer::state::PeerUpState::Blocked(
-                                        crate::peer::state::PeerBlockedState::Deploying
-                                    ),
+                                    inner: crate::peer::state::PeerUpState::Blocked {
+                                        inner: crate::peer::state::PeerBlockedState::Deploying,
+                                        by_cluster: by_cluster
+                                            .ok_or(ErrorBuilder::field_not_set("by_cluster"))?
+                                            .try_into()?,
+                                    },
                                     remote_host,
                                 })
                             }
                             peer_state_up_blocked::Inner::Member(_) => {
                                 Ok(crate::peer::state::PeerState::Up {
-                                    inner: crate::peer::state::PeerUpState::Blocked(
-                                        crate::peer::state::PeerBlockedState::Member
-                                    ),
+                                    inner: crate::peer::state::PeerUpState::Blocked {
+                                        inner: crate::peer::state::PeerBlockedState::Member,
+                                        by_cluster: by_cluster
+                                            .ok_or(ErrorBuilder::field_not_set("by_cluster"))?
+                                            .try_into()?,
+                                    },
                                     remote_host,
                                 })
                             }
                             peer_state_up_blocked::Inner::Undeploying(_) => {
                                 Ok(crate::peer::state::PeerState::Up {
-                                    inner: crate::peer::state::PeerUpState::Blocked(
-                                        crate::peer::state::PeerBlockedState::Undeploying
-                                    ),
+                                    inner: crate::peer::state::PeerUpState::Blocked {
+                                        inner: crate::peer::state::PeerBlockedState::Undeploying,
+                                        by_cluster: by_cluster
+                                            .ok_or(ErrorBuilder::field_not_set("by_cluster"))?
+                                            .try_into()?,
+                                    },
                                     remote_host,
                                 })
                             }
@@ -356,7 +368,7 @@ mod tests {
 
     use googletest::prelude::*;
     use uuid::Uuid;
-
+    use crate::cluster::ClusterId;
     use super::*;
 
     #[test]
@@ -439,9 +451,10 @@ mod tests {
 
         { // Up/Blocked/Deploying
             let native = crate::peer::state::PeerState::Up {
-                inner: crate::peer::state::PeerUpState::Blocked(
-                    crate::peer::state::PeerBlockedState::Deploying
-                ),
+                inner: crate::peer::state::PeerUpState::Blocked {
+                    inner: crate::peer::state::PeerBlockedState::Deploying,
+                    by_cluster: ClusterId::random(),
+                },
                 remote_host: native_remote_host,
             };
             let proto: PeerState = Clone::clone(&native).into();
@@ -454,9 +467,10 @@ mod tests {
 
         { // Up/Blocked/Member
             let native = crate::peer::state::PeerState::Up {
-                inner: crate::peer::state::PeerUpState::Blocked(
-                    crate::peer::state::PeerBlockedState::Member
-                ),
+                inner: crate::peer::state::PeerUpState::Blocked {
+                    inner: crate::peer::state::PeerBlockedState::Member,
+                    by_cluster: ClusterId::random(),
+                },
                 remote_host: native_remote_host,
             };
             let proto: PeerState = Clone::clone(&native).into();
@@ -469,9 +483,10 @@ mod tests {
 
         { // Up/Blocked/Undeploying
             let native = crate::peer::state::PeerState::Up {
-                inner: crate::peer::state::PeerUpState::Blocked(
-                    crate::peer::state::PeerBlockedState::Undeploying
-                ),
+                inner: crate::peer::state::PeerUpState::Blocked {
+                    inner: crate::peer::state::PeerBlockedState::Undeploying,
+                    by_cluster: ClusterId::random(),
+                },
                 remote_host: native_remote_host,
             };
             let proto: PeerState = Clone::clone(&native).into();

@@ -35,13 +35,14 @@ pub enum AssignClusterError {
 }
 
 pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClusterError> {
-    let peer_id = params.peer_id;
+    let AssignClusterParams { resources_manager, peer_messaging_broker, peer_id, cluster_assignment, options } = params;
+    let cluster_id = cluster_assignment.id;
 
     debug!("Assigning cluster to peer <{peer_id}>.");
 
-    let (old_peer_configuration, peer_configuration) = params.resources_manager.resources_mut(|resources| {
+    let (old_peer_configuration, peer_configuration) = resources_manager.resources_mut(|resources| {
         let old_peer_configuration = OldPeerConfiguration {
-            cluster_assignment: Some(params.cluster_assignment),
+            cluster_assignment: Some(cluster_assignment),
         };
         resources.insert(peer_id, Clone::clone(&old_peer_configuration))
             .map_err(|source| AssignClusterError::Persistence { peer_id, source })?;
@@ -61,7 +62,7 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
 
             {
                 let bridge = peer_descriptor.clone().network.bridge_name
-                    .unwrap_or(params.options.bridge_name_default);
+                    .unwrap_or(options.bridge_name_default);
                 let bridge = EthernetBridge { name: bridge };
 
                 peer_configuration.insert(bridge, ParameterTarget::Present); //TODO not always Present
@@ -81,7 +82,7 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
             PeerState::Down => {}
             PeerState::Up { remote_host, .. } => {
                 resources.insert(peer_id, PeerState::Up {
-                    inner: PeerUpState::Blocked(PeerBlockedState::Member),
+                    inner: PeerUpState::Blocked { inner: PeerBlockedState::Member, by_cluster: cluster_id },
                     remote_host,
                 })
                     .map_err(|source| AssignClusterError::Persistence { peer_id, source })?;
@@ -92,7 +93,7 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
     }).await
     .map_err(|source| AssignClusterError::Persistence { peer_id, source })??;
 
-    params.peer_messaging_broker.send_to_peer(
+    peer_messaging_broker.send_to_peer(
         peer_id,
         downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
             old_configuration: Some(old_peer_configuration.into()),

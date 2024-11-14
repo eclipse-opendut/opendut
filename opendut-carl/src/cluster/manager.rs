@@ -121,7 +121,7 @@ impl ClusterManager {
                 .await
                 .map_err(|get_peer_state_error| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: get_peer_state_error.to_string() })?;
 
-            if let PeerState::Up { inner: PeerUpState::Blocked(_), .. } = peer_state {
+            if let PeerState::Up { inner: PeerUpState::Blocked { .. }, .. } = peer_state {
                 blocked_peers_by_id.push(peer_id);
             }
         }
