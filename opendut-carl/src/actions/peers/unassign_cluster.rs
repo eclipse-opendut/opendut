@@ -1,3 +1,4 @@
+use tracing::debug;
 use crate::persistence::error::PersistenceError;
 use crate::resources::manager::ResourcesManagerRef;
 use opendut_types::peer::state::{PeerState, PeerUpState};
@@ -19,8 +20,9 @@ pub enum UnassignClusterError {
 }
 
 pub async fn unassign_cluster(params: UnassignClusterParams) -> Result<(), UnassignClusterError> {
-
     let peer_id = params.peer_id;
+
+    debug!("Unassigning cluster from peer <{peer_id}>.");
 
     params.resources_manager.resources_mut(|resources| {
         let peer_state = resources.get::<PeerState>(peer_id)

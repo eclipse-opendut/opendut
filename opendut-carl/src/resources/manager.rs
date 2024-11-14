@@ -77,7 +77,7 @@ impl ResourcesManager {
     pub async fn resources_mut<F, T, E>(&self, f: F) -> PersistenceResult<Result<T, E>>
     where
         F: FnOnce(&mut ResourcesTransaction) -> Result<T, E>,
-        E: std::error::Error + Send + Sync + 'static,
+        E: Send + Sync + 'static,
     {
         let mut state = self.state.write().await;
         let (result, relayed_subscription_events) = state.resources.transaction(move |transaction| {

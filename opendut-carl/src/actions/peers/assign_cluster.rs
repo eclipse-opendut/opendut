@@ -1,3 +1,4 @@
+use tracing::debug;
 use crate::peer::broker::PeerMessagingBrokerRef;
 use crate::persistence::error::PersistenceError;
 use crate::resources::manager::ResourcesManagerRef;
@@ -34,8 +35,9 @@ pub enum AssignClusterError {
 }
 
 pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClusterError> {
-
     let peer_id = params.peer_id;
+
+    debug!("Assigning cluster to peer <{peer_id}>.");
 
     let (old_peer_configuration, peer_configuration) = params.resources_manager.resources_mut(|resources| {
         let old_peer_configuration = OldPeerConfiguration {

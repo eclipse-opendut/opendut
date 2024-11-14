@@ -19,7 +19,7 @@ impl VolatileResourcesStorage {
     pub fn noop_transaction<T, E, F>(&mut self, code: F) -> PersistenceResult<(Result<T, E>, RelayedSubscriptionEvents)>
     where
         F: FnOnce(VolatileResourcesTransaction) -> Result<T, E>,
-        E: std::error::Error + Send + Sync + 'static,
+        E: Send + Sync + 'static,
     {
         let mut relayed_subscription_events = RelayedSubscriptionEvents::default();
         let transaction = VolatileResourcesTransaction {

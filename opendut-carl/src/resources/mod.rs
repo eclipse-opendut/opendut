@@ -25,7 +25,7 @@ impl Resources {
     pub(super) fn transaction<T, E, F>(&mut self, code: F) -> PersistenceResult<(Result<T, E>, RelayedSubscriptionEvents)>
     where
         F: FnOnce(&mut ResourcesTransaction) -> Result<T, E>,
-        E: std::error::Error + Send + Sync + 'static,
+        E: Send + Sync + 'static,
     {
         match &mut self.storage {
             ResourcesStorage::Persistent(storage) => storage.transaction(|transaction| {

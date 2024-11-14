@@ -61,7 +61,7 @@ pub async fn delete_cluster_deployment(params: DeleteClusterDeploymentParams) ->
                         peer_id: member_id,
                     }).await
                         .map_err(|cause| {
-                            let message = format!("Failure while assigning cluster <{cluster_id}> to peer <{member_id}>.");
+                            let message = format!("Failure while unassigning cluster <{cluster_id}> from peer <{member_id}>.");
                             error!("{}\n  {cause}", message);
                             DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: Some(cluster.name.clone()), cause: message }
                         })?;

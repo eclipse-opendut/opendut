@@ -1,6 +1,7 @@
-use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
 use anyhow::Context;
+use std::collections::{HashMap, HashSet};
+use std::ops::Not;
+use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use futures::future::join_all;
@@ -125,7 +126,8 @@ impl ClusterManager {
             }
         }
 
-        if !blocked_peers_by_id.is_empty() {
+        if blocked_peers_by_id.is_empty().not() {
+            warn!("Cannot store cluster deployment, because the following peers are blocked already: {blocked_peers_by_id:?}");
             return Err(StoreClusterDeploymentError::IllegalPeerState { cluster_id: deployment.id, cluster_name: None, invalid_peers: blocked_peers_by_id });
         }
 
@@ -188,21 +190,33 @@ impl ClusterManager {
     }
 
     async fn deploy_all_clusters_containing_newly_available_peer(&mut self, peer_id: PeerId) -> anyhow::Result<()> {
-        let peer_descriptor = self.resources_manager.get::<PeerDescriptor>(peer_id).await?
-            .context(format!("No peer descriptor found for newly available peer <{peer_id}>."))?;
 
-        let peer_devices = peer_descriptor.topology.devices
-            .into_iter()
-            .map(|device| device.id)
-            .collect::<Vec<_>>();
+        let clusters_containing_devices_of_upped_peer = self.resources_manager.resources_mut(|resources| {
 
-        let cluster_configurations = self.resources_manager.list::<ClusterConfiguration>().await?;
+            let peer_descriptor = resources.get::<PeerDescriptor>(peer_id)?
+                .context(format!("No peer descriptor found for newly available peer <{peer_id}>."))?;
 
-        let clusters_containing_devices_of_upped_peer = cluster_configurations.into_iter()
-            .filter(|cluster_configuration|
-                cluster_configuration.devices.iter()
-                    .any(|device| peer_devices.contains(device))
-            ).collect::<Vec<_>>();
+            let peer_devices = peer_descriptor.topology.devices
+                .into_iter()
+                .map(|device| device.id)
+                .collect::<Vec<_>>();
+
+            let cluster_configurations = resources.list::<ClusterConfiguration>()?;
+
+            let clusters_containing_devices_of_upped_peer = cluster_configurations.into_iter()
+                .filter(|cluster_configuration|
+                    cluster_configuration.devices.iter()
+                        .any(|device| peer_devices.contains(device))
+                )
+                .filter_map(|cluster| { //filter out clusters without stored deployment
+                    resources.get::<ClusterDeployment>(cluster.id)
+                        .transpose()
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+
+            anyhow::Ok(clusters_containing_devices_of_upped_peer)
+        }).await??;
+
 
         if clusters_containing_devices_of_upped_peer.is_empty() {
             trace!("Devices of newly available peer <{peer_id}> are not used in any clusters. Not deploying any clusters.");

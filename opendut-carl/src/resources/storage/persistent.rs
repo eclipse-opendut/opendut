@@ -25,7 +25,7 @@ impl PersistentResourcesStorage {
     pub fn transaction<T, E, F>(&mut self, code: F) -> PersistenceResult<(Result<T, E>, RelayedSubscriptionEvents)>
     where
         F: FnOnce(PersistentResourcesTransaction) -> Result<T, E>,
-        E: std::error::Error + Send + Sync + 'static,
+        E: Send + Sync + 'static,
     {
         let transaction_result = self.db_connection.lock().unwrap().transaction::<_, TransactionPassthroughError, _>(|connection| {
             let mut memory = self.memory.lock().unwrap();
