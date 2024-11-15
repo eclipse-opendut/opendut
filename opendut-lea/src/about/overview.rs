@@ -33,12 +33,12 @@ pub fn AboutOverview() -> impl IntoView {
                     <table class="table is-bordered">
                         <tbody>
                              <tr>
-                                <td>Lea</td>
+                                <td>LEA</td>
                                 <td>Version</td>
                                 <td>{ build::PKG_VERSION }</td>
                             </tr>
                             <tr>
-                                <td rowspan="4">Carl</td>
+                                <td rowspan="4">CARL</td>
                                 <td>Version</td>
                                 <td>
                                     <Transition fallback=move || view! { <p>"-"</p> }>
@@ -72,7 +72,7 @@ pub fn AboutOverview() -> impl IntoView {
                             </tr>
                         </tbody>
                     </table>
-                    <a href="https://opendut.eclipse.dev/"><i class="fa-solid fa-arrow-up-right-from-square"></i>{ NON_BREAKING_SPACE } OpenDut Project Overview</a>
+                    <a href="https://opendut.eclipse.dev/"><i class="fa-solid fa-arrow-up-right-from-square"></i>{ NON_BREAKING_SPACE } openDut Project Overview</a>
                 </div>
             </BasePageContainer>
         }
