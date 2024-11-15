@@ -6,7 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-tbd.
+### Fixed
+* Restarting EDGAR while a cluster is deployed doesn't lead to an invalid state anymore.
+* CARL doesn't forget about Ethernet bridges and executors anymore, when sending the configuration to a reconnecting EDGAR.
+* EDGAR Setup now loads plugins correctly.
 
 
 ## 0.3.0
