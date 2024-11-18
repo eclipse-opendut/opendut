@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use uuid::Uuid;
 
 #[derive(Debug)]
 pub enum ClusterConfigurationSpecification {
@@ -6,7 +7,8 @@ pub enum ClusterConfigurationSpecification {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all="kebab-case")]
 pub struct ClusterConfigurationSpecificationV1 {
     #[serde(default)]
-    pub description: String,
+    pub leader_id: Uuid,
 }

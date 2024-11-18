@@ -216,5 +216,54 @@ mod tests {
         verify_that!(result, err(anything()))?;
         
         Ok(())
+    }  
+    
+    #[test]
+    pub fn test_failing_try_from_with_wrong_keys() -> Result<()> {
+         let document_string = YamlSpecificationDocument::try_from_yaml_str(r#"
+            kind: PeerDescriptor
+            version: v1
+            metadata:
+              id: 140f29fd-336b-48f7-9936-6b1892574543
+              name: TheForgottenName
+            spec:
+              ort: Ulm 
+              netzwerk: 
+                interfaces:
+                - id: a4a3c74c-71e5-49ea-9c2e-afb387951970
+                  name: eth0
+                  kind: ethernet
+              topologie:
+                devices:
+                - id: 61e79c59-ca35-4c6c-bb40-9175730a1de8
+                  name: MyDevice
+                  description: This is a brand new device.
+                  interface-id: a4a3c74c-71e5-49ea-9c2e-afb387951970
+                  tags: new
+        "#)?;
+        
+        let result = SpecificationDocument::try_from(document_string);
+        verify_that!(result, err(anything()))?;
+        
+        Ok(())
+    }    
+    
+    #[test]
+    pub fn test_try_from_cluster() -> Result<()> {
+         let document_string = YamlSpecificationDocument::try_from_yaml_str(r#"
+            kind: ClusterConfiguration
+            version: v1
+            metadata:
+              id: eb89f630-d585-43b9-8934-4db469ce66c5
+              name: TheForgottenName
+            spec:
+              description: This describes a cluster config.
+              leader-id: 140f29fd-336b-48f7-9936-6b1892574543
+        "#)?;
+        
+        let result = SpecificationDocument::try_from(document_string);
+        verify_that!(result, ok(anything()))?;
+        
+        Ok(())
     }
 }
