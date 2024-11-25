@@ -55,7 +55,7 @@ pub(super) fn load_edgar_config(carl_port: Port, peer_id: PeerId) -> anyhow::Res
         .set_override(opendut_edgar::testing::settings::key::peer::id, peer_id.to_string())?
         .set_override("network.carl.host", "localhost")?
         .set_override("network.carl.port", carl_port.0)?
-        .set_override("network.connect.retries", 100)?
+        .set_override("network.connect.retries", 20)?
         .set_override("network.oidc.enabled", false)?
         .build()?;
 
