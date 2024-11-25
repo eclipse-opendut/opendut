@@ -273,6 +273,31 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
+name = "autosar-data"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "966f7a3f9eed49783f5ace2fd90aa81dc8328af2a7f6b14e1b93bbcddc16f48f"
+dependencies = [
+ "autosar-data-specification",
+ "fxhash",
+ "indexmap 2.6.0",
+ "num-traits",
+ "parking_lot 0.12.3",
+ "smallvec",
+ "thiserror",
+]
+
+[[package]]
+name = "autosar-data-specification"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "29aab7eb036d0fdaa696ea39ba87c68c913567e90ef86b58f7acc94fb1966d60"
+dependencies = [
+ "num-derive",
+ "num-traits",
+]
+
+[[package]]
 name = "autotools"
 version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3527,6 +3552,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "51d515d32fb182ee37cda2ccdcb92950d6a3c2893aa280e540671c2cd0f3b1d9"
 
 [[package]]
+name = "num-derive"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ed3955f1a9c7c0c15e092f9c887db08b1fc683305fdf6eb6684f22555355e202"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.85",
+]
+
+[[package]]
 name = "num-integer"
 version = "0.1.46"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3834,6 +3870,7 @@ dependencies = [
  "opendut-edgar-kernel-modules",
  "opendut-edgar-plugin-api",
  "opendut-netbird-client-api",
+ "opendut-restbus-simulation",
  "opendut-types",
  "opendut-util",
  "opentelemetry",
@@ -3950,6 +3987,20 @@ dependencies = [
  "tower",
  "tracing",
  "url",
+]
+
+[[package]]
+name = "opendut-restbus-simulation"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "autosar-data",
+ "nix 0.29.0",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]

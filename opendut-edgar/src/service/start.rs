@@ -8,6 +8,9 @@ use anyhow::Context;
 use opendut_carl_api::proto::services::peer_messaging_broker;
 use opendut_carl_api::proto::services::peer_messaging_broker::downstream::Message;
 use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, TracingContext};
+use opendut_restbus_simulation::arxml_parser::ArxmlParser;
+use opendut_restbus_simulation::arxml_utils::get_timed_can_frames_from_bus;
+use opendut_restbus_simulation::restbus_simulation::RestbusSimulation;
 use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
 use opendut_types::peer::PeerId;
 use opendut_util::settings::LoadedConfig;
@@ -119,6 +122,33 @@ pub async fn run_stream_receiver(
             },
         }
     };
+    
+    let restbus_simulation: RestbusSimulation = RestbusSimulation {};
+    
+    let restbus_simulation_enabled = settings.config.get::<bool>("restbus-simulation.enabled")?;
+
+    if restbus_simulation_enabled {
+        let arxml_file_path = settings.config.get::<String>("restbus-simulation.arxml.path")?;
+        let arxml_serialization = settings.config.get::<bool>("restbus-simulation.arxml.serialization")?;
+        let target_cluster = settings.config.get::<String>("restbus-simulation.simulation.target.cluster")?;
+        let ifname = settings.config.get::<String>("restbus-simulation.simulation.interface")?;
+        
+        let arxml_parser: ArxmlParser = ArxmlParser {};
+
+        if let Ok(can_clusters) = arxml_parser.parse_file(&arxml_file_path, arxml_serialization) {
+            // Play all CAN frames from the target bus periodcically (only periodic frames are sent periodically) to the bus to which ifname is connected to.
+            match get_timed_can_frames_from_bus(&can_clusters, target_cluster) {
+                Ok(timed_can_frames) => {
+                    if let Err(err) = restbus_simulation.play_all(&timed_can_frames, &ifname) {
+                        error!("Failed to start restbus simulation: {err}")
+                    }
+                },
+                Err(err) => error!("Failed to start restbus simulation - error while extracting timed CAN frames from ARXML: {err}"),
+            }
+
+            info!("Successfully established restbus simulation");   
+        }
+    }
 
     let remote_address = vpn::retrieve_remote_host(&settings).await?;
     
