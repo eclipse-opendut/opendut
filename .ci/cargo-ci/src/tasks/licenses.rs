@@ -178,7 +178,7 @@ mod sbom {
                                 "MIT AND (MIT OR Apache-2.0)" => "MIT",
                                 "Unlicense OR MIT" => "MIT",
                                 "(Apache-2.0 OR MIT) AND BSD-3-Clause" => "Apache-2.0 AND BSD-3-Clause",
-                                "(MIT OR Apache-2.0) AND Unicode-DFS-2016" => "Apache-2.0 AND Unicode-DFS-2016",
+                                "(MIT OR Apache-2.0) AND Unicode-3.0" => "Apache-2.0 AND Unicode-3.0",
 
                                 "Apache-2.0"
                                 | "Apache-2.0 WITH LLVM-exception"
