@@ -7,27 +7,30 @@ use std::task::{Context, Poll};
 use futures::ready;
 use http::{header::CONTENT_TYPE, Request, Response};
 use http_body::Body;
-use pin_project::pin_project;
+use pin_project_lite::pin_project;
 use tower::{Layer, Service};
 
 type BoxError = Box<dyn std::error::Error + Send + Sync>;
 
-#[pin_project(project = GrpcMultiplexFutureEnumProjection)]
-enum GrpcMultiplexFutureEnum<FS, FO> {
-    Grpc {
-        #[pin]
-        future: FS,
-    },
-    Other {
-        #[pin]
-        future: FO,
-    },
+pin_project! {
+    #[project = GrpcMultiplexFutureEnumProjection]
+    enum GrpcMultiplexFutureEnum<FS, FO> {
+        Grpc {
+            #[pin]
+            future: FS,
+        },
+        Other {
+            #[pin]
+            future: FO,
+        },
+    }
 }
 
-#[pin_project]
-pub struct GrpcMultiplexFuture<FS, FO> {
-    #[pin]
-    future: GrpcMultiplexFutureEnum<FS, FO>,
+pin_project! {
+    pub struct GrpcMultiplexFuture<FS, FO> {
+        #[pin]
+        future: GrpcMultiplexFutureEnum<FS, FO>,
+    }
 }
 
 impl<ResBody, FS, FO, ES, EO> Future for GrpcMultiplexFuture<FS, FO>

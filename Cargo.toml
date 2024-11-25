@@ -107,7 +107,7 @@ opentelemetry_sdk = "0.27.0"
 opentelemetry-semantic-conventions = "0.27.0"
 pem = { version = "3.0.3", features = ["serde"] }
 phf = { version = "0.11", features = ["macros"] }
-pin-project = "1.1.7"
+pin-project-lite = "0.2.15"
 ping-rs = { version = "0.1.2" }
 pq-sys = { version = "0.6.1", features = ["bundled"] }
 predicates = "3.0.4"

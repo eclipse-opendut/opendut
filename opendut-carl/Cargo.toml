@@ -34,7 +34,7 @@ openssl-sys = { workspace = true }
 opentelemetry = { workspace = true }
 opentelemetry_sdk = { workspace = true }
 pem = { workspace = true, features = ["serde"]}
-pin-project = { workspace = true }
+pin-project-lite = { workspace = true }
 pq-sys = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
 serde = { workspace = true, features = ["derive"] }

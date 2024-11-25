@@ -3759,7 +3759,7 @@ dependencies = [
  "opentelemetry",
  "opentelemetry_sdk",
  "pem",
- "pin-project",
+ "pin-project-lite",
  "pq-sys",
  "predicates",
  "reqwest 0.12.9",
