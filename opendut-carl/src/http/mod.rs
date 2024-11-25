@@ -1,3 +1,3 @@
 pub mod state;
-pub mod router;
+pub(crate) mod router;
 mod tests;

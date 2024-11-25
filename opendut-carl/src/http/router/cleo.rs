@@ -4,8 +4,8 @@ use axum::response::IntoResponse;
 use http::{header, HeaderValue, Request};
 use tower_http::services::ServeFile;
 
+use crate::util::{CleoArch, CLEO_IDENTIFIER};
 use crate::CarlInstallDirectory;
-use crate::util::{CLEO_IDENTIFIER, CleoArch};
 
 pub async fn download_cleo(
     Path(architecture): Path<CleoArch>,
@@ -29,20 +29,20 @@ pub async fn download_cleo(
 
 #[cfg(test)]
 mod test {
+    use super::*;
+
     use std::fs;
     use std::fs::File;
 
     use assert_fs::fixture::PathChild;
     use assert_fs::TempDir;
     use axum::extract::{Path, State};
-    use axum::response::IntoResponse;
     use googletest::assert_that;
     use googletest::matchers::eq;
     use http::header;
 
+    use crate::util::{CleoArch, CLEO_IDENTIFIER};
     use crate::CarlInstallDirectory;
-    use crate::router::cleo::download_cleo;
-    use crate::util::{CLEO_IDENTIFIER, CleoArch};
 
     #[tokio::test()]
     async fn download_cleo_succeeds() -> anyhow::Result<()> {
