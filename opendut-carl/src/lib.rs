@@ -30,7 +30,7 @@ use crate::cluster::manager::{ClusterManager, ClusterManagerOptions};
 use crate::grpc::{ClusterManagerFacade, MetadataProviderFacade, PeerManagerFacade, PeerMessagingBrokerFacade};
 use crate::http::router;
 use crate::http::state::{CarlInstallDirectory, HttpState, LeaConfig, LeaIdentityProviderConfig};
-use crate::multiplex_service::GrpcMultiplexLayer;
+use crate::multiplex_service::GrpcHttpMultiplexLayer;
 use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
 use crate::provisioning::cleo_script::CleoScript;
 use crate::resources::manager::ResourcesManager;
@@ -244,7 +244,7 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
                 Clone::clone(&grpc_auth_layer).auth_interceptor(request)
             }))
             .accept_http1(true) //gRPC-web uses HTTP1
-            .layer(GrpcMultiplexLayer::new(http));
+            .layer(GrpcHttpMultiplexLayer::new_with_http(http));
 
         let mut grpc = if let TlsConfig::Enabled(tls_config) = tls_config {
             grpc.tls_config(tls_config)?

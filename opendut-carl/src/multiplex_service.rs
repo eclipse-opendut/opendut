@@ -13,43 +13,43 @@ use tower::{Layer, Service};
 type BoxError = Box<dyn std::error::Error + Send + Sync>;
 
 pin_project! {
-    #[project = GrpcMultiplexFutureEnumProjection]
-    enum GrpcMultiplexFutureEnum<FS, FO> {
+    #[project = GrpcHttpMultiplexFutureEnumProjection]
+    enum GrpcHttpMultiplexFutureEnum<FutureGrpc, FutureHttp> {
         Grpc {
             #[pin]
-            future: FS,
+            future: FutureGrpc,
         },
-        Other {
+        Http {
             #[pin]
-            future: FO,
+            future: FutureHttp,
         },
     }
 }
 
 pin_project! {
-    pub struct GrpcMultiplexFuture<FS, FO> {
+    pub struct GrpcHttpMultiplexFuture<FutureGrpc, FutureHttp> {
         #[pin]
-        future: GrpcMultiplexFutureEnum<FS, FO>,
+        future: GrpcHttpMultiplexFutureEnum<FutureGrpc, FutureHttp>,
     }
 }
 
-impl<ResBody, FS, FO, ES, EO> Future for GrpcMultiplexFuture<FS, FO>
+impl<ResponseBody, FutureGrpc, FutureHttp, ErrorGrpc, ErrorHttp> Future for GrpcHttpMultiplexFuture<FutureGrpc, FutureHttp>
 where
-    ResBody: Body,
-    FS: Future<Output = Result<Response<ResBody>, ES>>,
-    FO: Future<Output = Result<Response<ResBody>, EO>>,
-    ES: Into<BoxError> + Send,
-    EO: Into<BoxError> + Send,
+    ResponseBody: Body,
+    FutureGrpc: Future<Output = Result<Response<ResponseBody>, ErrorGrpc>>,
+    FutureHttp: Future<Output = Result<Response<ResponseBody>, ErrorHttp>>,
+    ErrorGrpc: Into<BoxError> + Send,
+    ErrorHttp: Into<BoxError> + Send,
 {
-    type Output = Result<Response<ResBody>, Box<dyn std::error::Error + Send + Sync + 'static>>;
+    type Output = Result<Response<ResponseBody>, Box<dyn std::error::Error + Send + Sync + 'static>>;
 
     fn poll(self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Self::Output> {
         let this = self.project();
         match this.future.project() {
-            GrpcMultiplexFutureEnumProjection::Grpc { future } => {
+            GrpcHttpMultiplexFutureEnumProjection::Grpc { future } => {
                 future.poll(context).map_err(Into::into)
             }
-            GrpcMultiplexFutureEnumProjection::Other { future } => {
+            GrpcHttpMultiplexFutureEnumProjection::Http { future } => {
                 future.poll(context).map_err(Into::into)
             }
         }
@@ -57,28 +57,28 @@ where
 }
 
 #[derive(Debug, Clone)]
-pub struct GrpcMultiplexService<S, O> {
-    grpc: S,
-    other: O,
+pub struct GrpcHttpMultiplexService<Grpc, Http> {
+    grpc: Grpc,
+    http: Http,
     grpc_ready: bool,
-    other_ready: bool,
+    http_ready: bool,
 }
 
-impl<ReqBody, ResBody, S, O> Service<Request<ReqBody>> for GrpcMultiplexService<S, O>
+impl<ReqBody, ResBody, Grpc, Http> Service<Request<ReqBody>> for GrpcHttpMultiplexService<Grpc, Http>
 where
     ResBody: Body,
-    S: Service<Request<ReqBody>, Response = Response<ResBody>>,
-    O: Service<Request<ReqBody>, Response = Response<ResBody>>,
-    S::Error: Into<BoxError> + Send,
-    O::Error: Into<BoxError> + Send,
+    Grpc: Service<Request<ReqBody>, Response = Response<ResBody>>,
+    Http: Service<Request<ReqBody>, Response = Response<ResBody>>,
+    Grpc::Error: Into<BoxError> + Send,
+    Http::Error: Into<BoxError> + Send,
 {
-    type Response = S::Response;
+    type Response = Grpc::Response;
     type Error = Box<dyn std::error::Error + Send + Sync + 'static>;
-    type Future = GrpcMultiplexFuture<S::Future, O::Future>;
+    type Future = GrpcHttpMultiplexFuture<Grpc::Future, Http::Future>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         loop {
-            match (self.grpc_ready, self.other_ready) {
+            match (self.grpc_ready, self.http_ready) {
                 (true, true) => {
                     return Ok(()).into();
                 }
@@ -87,8 +87,8 @@ where
                     self.grpc_ready = true;
                 }
                 (_, false) => {
-                    ready!(self.other.poll_ready(cx)).map_err(Into::into)?;
-                    self.other_ready = true;
+                    ready!(self.http.poll_ready(cx)).map_err(Into::into)?;
+                    self.http_ready = true;
                 }
             }
         }
@@ -96,18 +96,18 @@ where
 
     fn call(&mut self, request: Request<ReqBody>) -> Self::Future {
         assert!(self.grpc_ready);
-        assert!(self.other_ready);
+        assert!(self.http_ready);
 
         if is_grpc_request(&request) {
-            GrpcMultiplexFuture {
-                future: GrpcMultiplexFutureEnum::Grpc {
+            GrpcHttpMultiplexFuture {
+                future: GrpcHttpMultiplexFutureEnum::Grpc {
                     future: self.grpc.call(request),
                 },
             }
         } else {
-            GrpcMultiplexFuture {
-                future: GrpcMultiplexFutureEnum::Other {
-                    future: self.other.call(request),
+            GrpcHttpMultiplexFuture {
+                future: GrpcHttpMultiplexFutureEnum::Http {
+                    future: self.http.call(request),
                 },
             }
         }
@@ -115,28 +115,26 @@ where
 }
 
 #[derive(Debug, Clone)]
-pub struct GrpcMultiplexLayer<O> {
-    other: O,
+pub struct GrpcHttpMultiplexLayer<Http> {
+    http: Http,
 }
 
-impl<O> GrpcMultiplexLayer<O> {
-    pub fn new(other: O) -> Self {
-        Self { other }
+impl<Http> GrpcHttpMultiplexLayer<Http> {
+    pub fn new_with_http(http: Http) -> Self {
+        Self { http }
     }
 }
 
-impl<S, O> Layer<S> for GrpcMultiplexLayer<O>
-where
-    O: Clone,
-{
-    type Service = GrpcMultiplexService<S, O>;
+impl<Grpc, Http> Layer<Grpc> for GrpcHttpMultiplexLayer<Http>
+where Http: Clone {
+    type Service = GrpcHttpMultiplexService<Grpc, Http>;
 
-    fn layer(&self, grpc: S) -> Self::Service {
-        GrpcMultiplexService {
+    fn layer(&self, grpc: Grpc) -> Self::Service {
+        GrpcHttpMultiplexService {
             grpc,
-            other: self.other.clone(),
+            http: self.http.clone(),
             grpc_ready: false,
-            other_ready: false,
+            http_ready: false,
         }
     }
 }
