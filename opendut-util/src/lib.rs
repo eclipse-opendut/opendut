@@ -1,5 +1,8 @@
 pub mod app_info;
 
+#[cfg(feature = "crypto")]
+pub mod crypto;
+
 pub use opendut_util_core::future;
 
 #[cfg(not(target_arch = "wasm32"))]

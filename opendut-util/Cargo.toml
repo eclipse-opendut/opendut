@@ -7,6 +7,7 @@ license.workspace = true
 
 [features]
 default = ["settings"]
+crypto = ["dep:rustls"]
 serde = ["dep:serde"]
 settings = ["dep:config", "dep:home"]
 
@@ -27,6 +28,7 @@ opentelemetry_sdk = { workspace = true, features = ["rt-tokio", "logs", "spec_un
 opentelemetry-appender-tracing = { workspace = true }
 opentelemetry-semantic-conventions = { workspace = true, features = ["semconv_experimental"] }
 opendut-auth = { workspace = true, features = ["confidential_client"] }
+rustls = { workspace = true, optional = true }
 serde = { workspace = true }
 simple_moving_average = { workspace = true }
 sysinfo = { workspace = true }

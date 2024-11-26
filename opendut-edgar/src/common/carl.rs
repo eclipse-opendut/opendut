@@ -12,6 +12,8 @@ use opendut_types::peer::PeerId;
 use opendut_util::project;
 
 pub async fn connect(settings: &Config) -> anyhow::Result<CarlClient> {
+    opendut_util::crypto::install_default_provider();
+
     debug!("Connecting to CARL...");
 
     let host = settings.get_string("network.carl.host")?;

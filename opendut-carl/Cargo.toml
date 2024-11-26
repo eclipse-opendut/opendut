@@ -11,7 +11,7 @@ opendut-auth = { workspace = true, features = ["registration_client"] }
 opendut-carl-api = { workspace = true }
 opendut-vpn-netbird = { workspace = true }
 opendut-types = { workspace = true }
-opendut-util = { workspace = true }
+opendut-util = { workspace = true, features = ["crypto"] }
 opendut-vpn = { workspace = true }
 
 anyhow = { workspace = true }

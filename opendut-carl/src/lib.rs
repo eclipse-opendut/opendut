@@ -124,6 +124,7 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
 
         let mut grpc =
             if let TlsConfig::Enabled(tls_config) = TlsConfig::load(&settings)? {
+                opendut_util::crypto::install_default_provider();
                 grpc.tls_config(tls_config)?
             } else {
                 info!("TLS is disabled in the configuration.");

@@ -6,8 +6,6 @@ use crate::testing;
     tokio::test(flavor = "multi_thread")
 )]
 async fn register_edgar_carl() -> anyhow::Result<()> {
-    crate::install_crypto_provider();
-
     let carl_port = util::spawn_carl()?;
 
     let carl_client = TestCarlClient::connect(carl_port).await?;
