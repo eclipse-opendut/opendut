@@ -53,7 +53,7 @@ enum Commands {
     ///Create openDuT resource
     Create {
         #[command(subcommand)]
-        resource: CreateResource,
+        resource: Box<CreateResource>,
         ///Text, JSON or prettified JSON as output format
         #[arg(value_enum, short, long, default_value_t=CreateOutputFormat::Text)]
         output: CreateOutputFormat,
@@ -266,7 +266,7 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
         }
         Commands::Create { resource, output } => {
             let mut carl = create_carl_client(&settings.config).await;
-            match resource {
+            match *resource {
                 CreateResource::ClusterConfiguration(implementation) => {
                     implementation.execute(&mut carl, output).await?;
                 }

@@ -1,19 +1,19 @@
-use std::fs;
-use std::path::PathBuf;
-use serde::{Deserialize, Serialize};
-use opendut_carl_api::carl::CarlClient;
-use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
-use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
-use opendut_types::peer::executor::ExecutorDescriptors;
-use opendut_types::specs::{Specification, SpecificationDocument, SpecificationMetadata};
-use opendut_types::specs::cluster::{ClusterConfigurationSpecification, ClusterConfigurationSpecificationV1};
-use opendut_types::specs::parse::json::JsonSpecificationDocument;
-use opendut_types::specs::parse::yaml::YamlSpecificationFile;
-use opendut_types::specs::peer::{DeviceSpecificationV1, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDescriptorSpecification, PeerDescriptorSpecificationV1};
-use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag, Topology};
-use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
+use crate::commands::cluster_configuration::apply::convert_document_to_cluster_configuration;
+use crate::commands::peer::apply::convert_document_to_peer_descriptor;
 use crate::commands::peer::create::create_peer;
 use crate::CreateOutputFormat;
+use opendut_carl_api::carl::CarlClient;
+use opendut_types::cluster::ClusterConfiguration;
+use opendut_types::peer::{PeerDescriptor};
+use opendut_types::specs::cluster::ClusterConfigurationSpecification;
+use opendut_types::specs::parse::json::JsonSpecificationDocument;
+use opendut_types::specs::parse::yaml::YamlSpecificationFile;
+use opendut_types::specs::peer::{PeerDescriptorSpecification};
+use opendut_types::specs::{Specification, SpecificationDocument};
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::PathBuf;
+use crate::commands::cluster_configuration::create::create_cluster_configuration;
 
 #[derive(clap::Parser)]
 ///Create openDuT resource form file
@@ -49,14 +49,12 @@ impl ApplyCli {
                                     create_peer(model, carl, &self.output).await?
                                 }
                                 ResourceModel::ClusterConfiguration(model) => {
-                                    carl.cluster.store_cluster_configuration(model).await
-                                        .map_err(|err| format!("Could not store cluster configuration. Make sure the application is running. Error: {}", err))?;
-                                }
+                                    create_cluster_configuration(model, carl, &self.output).await?;
+                               }
                             };
                         }
                         
                         Ok(())
-                        // TODO store_cluster_configuration
                     }
                     Err(cause) => {
                         Err(format!("Failed to parse specification: {cause}"))
@@ -140,137 +138,16 @@ fn convert_document_to_model(specification_document: SpecificationDocument) -> c
     Ok(result)
 }
 
-fn convert_document_to_peer_descriptor(specification_metadata: SpecificationMetadata, peer: PeerDescriptorSpecificationV1) -> crate::Result<PeerDescriptor> {
-    let SpecificationMetadata { id, name } = specification_metadata;
-
-    let id = PeerId::from(id);
-
-    let name = PeerName::try_from(name)
-        .map_err(|error| error.to_string())?;
-
-    let location = peer.location
-        .map(PeerLocation::try_from)
-        .transpose()
-        .map_err(|error| error.to_string())?;
-    
-    let network_interfaces = peer.network.interfaces.into_iter()
-        .map(convert_network_specification_to_descriptor)
-        .collect::<Result<Vec<_>, _>>()?;
-    
-    let topology = peer.topology
-        .map(|topology| topology.devices.into_iter()
-            .map(convert_device_specification_to_descriptor)
-            .collect::<Result<Vec<_>, _>>())
-        .transpose()?
-        .unwrap_or_default();
-    
-    let descriptor: PeerDescriptor = PeerDescriptor {
-        id,
-        name,
-        location,
-        network: PeerNetworkDescriptor {
-            interfaces: network_interfaces,
-            bridge_name: Default::default(), // TODO
-        },
-        topology: Topology {
-            devices: topology
-        },
-        executors: ExecutorDescriptors {
-            executors: vec![], // TODO
-        },
-    };
-    Ok(descriptor)
-}
-
-fn convert_network_specification_to_descriptor(specification: NetworkInterfaceDescriptorSpecificationV1) -> crate::Result<NetworkInterfaceDescriptor> {
-    
-    let name = NetworkInterfaceName::try_from(specification.name.clone())
-        .map_err(|error| error.to_string())?;
-    
-    let configuration = match specification.kind {
-        NetworkInterfaceKind::Ethernet => NetworkInterfaceConfiguration::Ethernet,
-        NetworkInterfaceKind::Can => {
-            match specification.parameters {
-                Some(parameters) => {
-                    NetworkInterfaceConfiguration::Can {
-                        bitrate: parameters.bitrate_hz,
-                        sample_point: CanSamplePoint::try_from(parameters.sample_point)
-                            .map_err(|error| format!("Could not use the provided sample point parameter for network interface <{}>:  {}", specification.id, error))?,
-                        fd: parameters.fd,
-                        data_bitrate: parameters.data_bitrate_hz,
-                        data_sample_point: CanSamplePoint::try_from(parameters.data_sample_point)
-                            .map_err(|error| format!("Could not use the provided data sample point parameter for network interface <{}>:  {}", specification.id, error))?,
-                    }
-                }
-                None => Err(String::from("Parameters for the can interface were not provided."))?,
-            }
-        }
-    };
-
-    let network_descriptor = NetworkInterfaceDescriptor {
-        id: NetworkInterfaceId::from(specification.id),
-        name,
-        configuration,
-    };
-
-    Ok(network_descriptor)
-}
-
-fn convert_device_specification_to_descriptor(specification: DeviceSpecificationV1) -> crate::Result<DeviceDescriptor> {
-    let tags = specification.tags.into_iter().map(|tag| 
-        DeviceTag::try_from(tag)
-            .map_err(|error| format!("Could not apply the provided device tags for device: <{}>:  {}", specification.id, error))
-    ).collect::<Result<Vec<_>, _>>()?;
-    
-    let description = specification.description
-        .map(DeviceDescription::try_from)
-        .transpose()
-        .map_err(|error| error.to_string())?;
-    
-    let device_descriptor = DeviceDescriptor {
-        id: DeviceId::from(specification.id),
-        name: DeviceName::try_from(specification.name)
-            .map_err(|error| format!("Could not apply the provided device name for device: <{}>:  {}", specification.id, error))?,
-        description,
-        interface: NetworkInterfaceId::from(specification.interface_id),
-        tags,
-    };
-    
-    Ok(device_descriptor)
-}
-
-fn convert_document_to_cluster_configuration(specification_metadata: SpecificationMetadata, cluster: ClusterConfigurationSpecificationV1) -> crate::Result<ClusterConfiguration>  {
-    let SpecificationMetadata { id, name } = specification_metadata;
-    
-    let id = ClusterId::from(id);
-
-    let name = ClusterName::try_from(name)
-        .map_err(|error| error.to_string())?;
-    
-    let leader = cluster.leader_id; 
-    
-    let configuration = ClusterConfiguration {
-        id,
-        name,
-        leader: PeerId::from(leader),
-        devices: Default::default(),
-    };
-    
-    Ok(configuration)
-}
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use googletest::prelude::*;
-    use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
-    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_types::peer::executor::ExecutorDescriptors;
+    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
+    use opendut_types::specs::peer::{DeviceSpecificationV1, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDescriptorSpecification, PeerDescriptorSpecificationV1, PeerDeviceSpecificationV1, PeerNetworkDescriptorSpecificationV1};
     use opendut_types::specs::{Specification, SpecificationDocument, SpecificationMetadata};
-    use opendut_types::specs::cluster::ClusterConfigurationSpecificationV1;
-    use opendut_types::specs::peer::{DeviceSpecificationV1, NetworkInterfaceConfigurationSpecification, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDescriptorSpecification, PeerDescriptorSpecificationV1, PeerDeviceSpecificationV1, PeerNetworkDescriptorSpecificationV1};
-    use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
+    use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag, Topology};
+    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
     #[test]
     fn should_convert_document_to_model() -> anyhow::Result<()> {
@@ -314,164 +191,7 @@ mod tests {
 
         Ok(())
     }
-
-    #[test]
-    fn should_convert_document_to_peer_descriptor() -> anyhow::Result<()> {
-        let peer = generate_peer_descriptor()?;
-        
-        let specification_metadata = SpecificationMetadata {
-            id: peer.id.uuid,
-            name: peer.name.clone().value(),
-        };
-        
-        let interface_kind = match peer.network.interfaces[0].configuration {
-            NetworkInterfaceConfiguration::Ethernet => {
-                NetworkInterfaceKind::Ethernet
-            }
-            NetworkInterfaceConfiguration::Can { .. } => {
-                NetworkInterfaceKind::Can
-            }
-        };
-        
-        let topology = get_topology_specification(peer.topology.devices[0].clone())?;
-        let network = get_interface_specification(peer.clone(), interface_kind)?;
-        
-        let specification_peer = PeerDescriptorSpecificationV1 {
-            location: peer.location.clone().map(|location| location.value()),
-            network,
-            topology: Some(topology),
-        };
-
-        let result = convert_document_to_peer_descriptor(specification_metadata, specification_peer).unwrap();
-
-        assert_that!(result, eq(&peer));
-
-        Ok(())
-    }
     
-    #[test]
-    fn should_convert_document_to_cluster_configuration() -> anyhow::Result<()> {
-        let cluster_configuration = ClusterConfiguration {
-            id: ClusterId::random(),
-            name: ClusterName::try_from("FirstCluster")?,
-            leader: PeerId::random(),
-            devices: Default::default(),
-        };
-        
-        let specification_meta_data = SpecificationMetadata {
-            id: cluster_configuration.id.clone().0,
-            name: cluster_configuration.name.clone().value(),
-        };
-        
-        let document = ClusterConfigurationSpecificationV1 {
-            leader_id: cluster_configuration.leader.uuid,
-        };
-        
-        let result = convert_document_to_cluster_configuration(specification_meta_data, document).unwrap();
-
-        assert_that!(result, eq(&cluster_configuration));
-
-
-        Ok(())      
-    }
-    
-    #[test]
-    fn should_convert_ethernet_network_specification_to_descriptor() -> anyhow::Result<()> {
-        let specification =  NetworkInterfaceDescriptorSpecificationV1 {
-            id: NetworkInterfaceId::random().uuid,
-            name: "eth0".to_string(),
-            kind: NetworkInterfaceKind::Ethernet,
-            parameters: None,
-        };
-        
-        let configuration = match specification.kind {
-            NetworkInterfaceKind::Ethernet => NetworkInterfaceConfiguration::Ethernet,
-            NetworkInterfaceKind::Can => NetworkInterfaceConfiguration::Can {
-                bitrate: 0,
-                sample_point: CanSamplePoint::try_from(0.7)?,
-                fd: false,
-                data_bitrate: 0,
-                data_sample_point: CanSamplePoint::try_from(0.7)?,
-            }
-        };
-        
-        let descriptor = NetworkInterfaceDescriptor {
-            id: NetworkInterfaceId::from(specification.id),
-            name: NetworkInterfaceName::try_from(specification.name.clone())?,
-            configuration,
-        };
-        
-        let result = convert_network_specification_to_descriptor(specification).unwrap();
-        
-        assert_that!(result, eq(&descriptor));
-        Ok(())
-    } 
-
-    #[test]
-    fn should_convert_can_network_specification_to_descriptor() -> anyhow::Result<()> {
-        let specification = NetworkInterfaceDescriptorSpecificationV1 {
-            id: NetworkInterfaceId::random().uuid,
-            name: "can0".to_string(),
-            kind: NetworkInterfaceKind::Can,
-            parameters: Some(
-                NetworkInterfaceConfigurationSpecification {
-                    bitrate_hz: 500000,
-                    sample_point: 0.7,
-                    fd: true,
-                    data_bitrate_hz: 200000,
-                    data_sample_point: 0.7,
-                }
-            ),
-        };
-        
-        let descriptor = NetworkInterfaceDescriptor {
-            id: NetworkInterfaceId::from(specification.id),
-            name: NetworkInterfaceName::try_from(specification.name.clone())?,
-            configuration: NetworkInterfaceConfiguration::Can {
-                bitrate: 500000,
-                sample_point: CanSamplePoint::try_from(0.7)?,
-                fd: true,
-                data_bitrate: 200000,
-                data_sample_point: CanSamplePoint::try_from(0.7)?,
-            },
-        };
-
-        let result = convert_network_specification_to_descriptor(specification).unwrap();
-        
-        assert_that!(result, eq(&descriptor));
-        Ok(())
-    }
-    
-    #[test]
-    fn should_convert_device_specification_to_descriptor() -> anyhow::Result<()> {
-        let specification = DeviceSpecificationV1 {
-            id: DeviceId::random().0,
-            name: "device".to_string(),
-            description: None,
-            interface_id: NetworkInterfaceId::random().uuid,
-            tags: vec![
-                String::from("new")
-            ],
-        };
-
-        let tags = specification.tags.iter()
-            .map(|tag_str| DeviceTag::try_from(tag_str.as_str()).expect("Failed to convert tag"))
-            .collect();
-        
-        let descriptor = DeviceDescriptor {
-            id: DeviceId::from(specification.id),
-            name: DeviceName::try_from(specification.name.clone())?,
-            description: specification.description.clone().map(|d| DeviceDescription::try_from(d).unwrap()),
-            interface: NetworkInterfaceId::from(specification.interface_id),
-            tags,
-        };
-        
-        let result = convert_device_specification_to_descriptor(specification).unwrap();
-        
-        assert_that!(result, eq(&descriptor));
-        Ok(())
-    }
-
     fn generate_peer_descriptor() -> anyhow::Result<PeerDescriptor> {
         Ok(PeerDescriptor {
             id: PeerId::random(),
@@ -503,7 +223,7 @@ mod tests {
             executors: ExecutorDescriptors { executors: vec![] }, // TODO
         })
     }
-    
+
     fn get_topology_specification(device: DeviceDescriptor) -> anyhow::Result<PeerDeviceSpecificationV1> {
         let description = device.clone().description
             .map(|description| description.to_string());
