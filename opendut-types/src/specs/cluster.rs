@@ -11,4 +11,5 @@ pub enum ClusterConfigurationSpecification {
 pub struct ClusterConfigurationSpecificationV1 {
     #[serde(default)]
     pub leader_id: Uuid,
+    pub devices: Vec<Uuid>
 }
