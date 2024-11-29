@@ -98,7 +98,7 @@ pub mod checksum {
 }
 
 pub fn running_in_docker() -> bool {
-    return Path::new("/.dockerenv").exists();
+    Path::new("/.dockerenv").exists()
 }
 
 

@@ -49,7 +49,7 @@ impl Service<Request<BoxBody>> for TonicAuthenticationService {
             let token_result = confidential_client.as_ref()
                 .map(|manager| manager.get_token());
 
-            return match token_result {
+            match token_result {
                 None => {
                     // Authentication disabled
                     Ok(inner.call(request).await?)
@@ -75,7 +75,7 @@ impl Service<Request<BoxBody>> for TonicAuthenticationService {
                         }
                     }
                 }
-            };
+            }
         })
     }
 }

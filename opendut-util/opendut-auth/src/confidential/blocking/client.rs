@@ -213,7 +213,7 @@ impl Interceptor for ConfClientArcMutex<Option<ConfidentialClientRef>> {
             }
         };
         
-        return match token {
+        match token {
             None => { Ok(request) }
             Some(token_result) => {
                 match token_result {
@@ -226,7 +226,7 @@ impl Interceptor for ConfClientArcMutex<Option<ConfidentialClientRef>> {
                     Err(error) => { Err(Status::unauthenticated(format!("{}", error))) }
                 }
             }
-        };
+        }
     }
 }
 

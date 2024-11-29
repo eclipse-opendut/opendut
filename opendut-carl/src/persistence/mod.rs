@@ -15,7 +15,7 @@ pub struct Db<'a> {
     pub inner: Mutex<&'a mut PgConnection>, //Mutex rather than RwLock, because we share this between threads (i.e. we need it to implement `Sync`)
 }
 impl<'a> Db<'a> {
-    pub fn from_connection(connection: &'a mut PgConnection) -> Db {
+    pub fn from_connection(connection: &'a mut PgConnection) -> Db<'a> {
         Self { inner: Mutex::new(connection) }
     }
     pub fn connection(&self) -> MutexGuard<&'a mut PgConnection> {

@@ -27,7 +27,7 @@ impl<'transaction> ResourcesTransaction<'transaction> {
         }
     }
 }
-impl<'transaction> ResourcesStorageApi for ResourcesTransaction<'transaction> {
+impl ResourcesStorageApi for ResourcesTransaction<'_> {
     fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
     where R: Resource + Persistable + Subscribable {
         match self {
