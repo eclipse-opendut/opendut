@@ -1,10 +1,10 @@
+use pem::Pem;
 use std::net::SocketAddr;
 use std::str::FromStr;
-
-use pem::Pem;
 use tonic_async_interceptor::async_interceptor;
-use tower::ServiceExt;
-use tracing::info;
+use tower::make::Shared;
+use tower::ServiceExt as _;
+use tracing::{debug, info};
 use uuid::Uuid;
 
 use opendut_auth::confidential::pem::PemFromConfig;
@@ -21,7 +21,6 @@ use crate::auth::json_web_key::JwkCacheValue;
 use crate::http::state::CarlInstallDirectory;
 use crate::provisioning::cleo_script::CleoScript;
 use crate::startup::tls::TlsConfig;
-use startup::multiplex_service::GrpcHttpMultiplexLayer;
 
 pub mod grpc;
 pub mod util;
@@ -63,6 +62,8 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
 }
 
 pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
+    opendut_util::crypto::install_default_provider();
+
     info!("Started with configuration: {settings:?}");
     let settings = settings.config;
 
@@ -96,8 +97,6 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
 
         startup::http::create_http_service(&settings)?
             .with_state(http_state)
-            .into_service()
-            .map_response(|response| -> ::http::Response<tonic::body::BoxBody> { response.map(tonic::body::boxed) })
     };
 
     let grpc = {
@@ -119,24 +118,33 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
                 Clone::clone(&grpc_auth_layer).auth_interceptor(request)
             }))
             .accept_http1(true) //gRPC-web uses HTTP1
-            .layer(GrpcHttpMultiplexLayer::new_with_http(http));
-
-
-        let mut grpc =
-            if let TlsConfig::Enabled(tls_config) = TlsConfig::load(&settings)? {
-                opendut_util::crypto::install_default_provider();
-                grpc.tls_config(tls_config)?
-            } else {
-                info!("TLS is disabled in the configuration.");
-                grpc
-            };
-
-        grpc
             .add_service(grpc_facades.cluster_manager_facade.into_grpc_service())
             .add_service(grpc_facades.metadata_provider_facade.into_grpc_service())
             .add_service(grpc_facades.peer_manager_facade.into_grpc_service())
-            .add_service(grpc_facades.peer_messaging_broker_facade.into_grpc_service())
+            .add_service(grpc_facades.peer_messaging_broker_facade.into_grpc_service());
+
+        #[allow(deprecated)]
+        // Deprecation message: "use of deprecated method `tonic::transport::server::Router::<L>::into_router`: Use `Routes::into_axum_router` instead."
+        // However, there does not seem to be a way of converting `tonic::transport::server::Router` to `Routes`.
+        grpc.into_router()
     };
+
+    let http_grpc = tower::steer::Steer::new(vec![http, grpc], |request: &axum::extract::Request, _services: &[_]| {
+        let is_grpc = request
+            .headers()
+            .get(axum::http::header::CONTENT_TYPE)
+            .map(|content_type|
+                content_type
+                    .as_bytes()
+                    .starts_with(b"application/grpc")
+            )
+            .unwrap_or(false);
+
+        if is_grpc { 1 } else { 0 }
+    })
+    .map_request(|request: ::http::Request<hyper::body::Incoming>| -> ::http::Request<axum::body::Body> {
+        request.map(axum::body::Body::new)
+    });
 
 
     let address: SocketAddr = {
@@ -145,8 +153,21 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
         SocketAddr::from_str(&format!("{host}:{port}"))?
     };
 
-    info!("Server listening at {address}...");
-    grpc.serve(address).await?;
+    match TlsConfig::load(&settings).await? {
+        TlsConfig::Enabled(tls_config) => {
+            axum_server::bind_rustls(address, tls_config)
+                .serve(Shared::new(http_grpc))
+                .await?;
+        }
+        TlsConfig::Disabled => {
+            // Disable TLS in case a load balancer with TLS termination is present
+            debug!("TLS is disabled in the configuration.");
+
+            axum_server::bind(address)
+                .serve(Shared::new(http_grpc))
+                .await?;
+        }
+    }
 
     Ok(())
 }

@@ -49,6 +49,8 @@ anyhow = "1.0.79"
 assert_fs = "1.1.1"
 async-trait = "0.1.77"
 axum = "0.7.5"
+axum-server = "0.7.1"
+axum-server-dual-protocol = "0.7.0"
 backon = { version = "1.2.0", default-features = false }
 base64 = "0.22.1"
 brotli = "7.0.0"

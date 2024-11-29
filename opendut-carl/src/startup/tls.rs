@@ -1,17 +1,17 @@
-use std::fs;
 use anyhow::{anyhow, Context};
+use axum_server::tls_rustls::RustlsConfig;
 use config::Config;
-use tonic::transport::{Identity, ServerTlsConfig};
-use tracing::debug;
 use opendut_util::project;
+use std::fs;
+use tracing::debug;
 
 pub enum TlsConfig {
-    Enabled(ServerTlsConfig),
+    Enabled(RustlsConfig),
     Disabled
 }
 
 impl TlsConfig {
-    pub fn load(settings: &Config) -> anyhow::Result<Self> {
+    pub async fn load(settings: &Config) -> anyhow::Result<Self> {
         let tls_enabled: bool = settings.get_bool("network.tls.enabled")
             .map_err(|cause| anyhow!("Expected configuration flag 'network.tls.enabled' to be parseable as boolean! {}", cause))?;
 
@@ -32,8 +32,7 @@ impl TlsConfig {
                     .context(format!("Error while reading TLS key at {}", key_path.display()))?
             };
 
-            let tls_config = ServerTlsConfig::new()
-                .identity(Identity::from_pem(cert, key));
+            let tls_config = RustlsConfig::from_pem(cert, key).await?;
 
             TlsConfig::Enabled(tls_config)
         } else {

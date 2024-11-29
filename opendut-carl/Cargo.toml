@@ -16,6 +16,8 @@ opendut-vpn = { workspace = true }
 
 anyhow = { workspace = true }
 axum = { workspace = true }
+axum-server = { workspace = true }
+axum-server-dual-protocol = { workspace = true }
 backon = { workspace = true, features = ["tokio-sleep"] }
 chrono = { workspace = true }
 config = { workspace = true }
@@ -26,6 +28,7 @@ futures = { workspace = true }
 googletest = { workspace = true }
 http = { workspace = true }
 http-body = { workspace = true }
+hyper = { workspace = true }
 indoc = { workspace = true }
 jsonwebtoken = { workspace = true}
 mime = { workspace = true }
