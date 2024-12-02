@@ -111,7 +111,7 @@ pub mod distribution {
 
     use super::*;
 
-    #[tracing::instrument(skip_all)]
+    #[tracing::instrument]
     pub fn edgar_distribution(target: Arch) -> crate::Result {
         use crate::tasks::distribution;
 
@@ -143,7 +143,7 @@ pub mod distribution {
         use anyhow::bail;
         use super::*;
 
-        #[tracing::instrument]
+        #[tracing::instrument(skip_all)]
         pub fn netbird_client_distribution(target: Arch) -> crate::Result {
             //Modelled after documentation here: https://docs.netbird.io/how-to/getting-started#binary-install
 
@@ -222,7 +222,7 @@ pub mod distribution {
         use crate::core::util::RunRequiringSuccess;
         use super::*;
 
-        #[tracing::instrument]
+        #[tracing::instrument(skip_all)]
         pub fn rperf_distribution(target: Arch) -> crate::Result {
             let metadata = crate::metadata::cargo();
             let version = metadata.workspace_metadata["ci"]["rperf"]["version"].as_str()
@@ -330,7 +330,7 @@ pub mod distribution {
 
         use super::*;
 
-        #[tracing::instrument]
+        #[tracing::instrument(skip_all)]
         pub fn validate_contents(target: Arch) -> crate::Result {
 
             let unpack_dir = {

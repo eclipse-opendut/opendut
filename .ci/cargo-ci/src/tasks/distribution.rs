@@ -13,7 +13,7 @@ pub struct DistributionCli {
     pub target: TargetSelection,
 }
 
-#[tracing::instrument]
+#[tracing::instrument(skip_all)]
 pub fn clean(package: Package, target: Arch) -> crate::Result {
     let package_dir = out_package_dir(package, target);
     if package_dir.exists() {
@@ -23,7 +23,7 @@ pub fn clean(package: Package, target: Arch) -> crate::Result {
     Ok(())
 }
 
-#[tracing::instrument]
+#[tracing::instrument(skip_all)]
 pub fn collect_executables(package: Package, target: Arch) -> crate::Result {
 
     let out_dir = out_package_dir(package, target);
@@ -70,7 +70,7 @@ pub mod copy_license_json {
         }
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip_all)]
     pub fn copy_license_json(package: Package, target: Arch, skip_generate: SkipGenerate) -> crate::Result {
 
         match skip_generate {
@@ -113,7 +113,7 @@ pub mod bundle {
         }
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip_all)]
     pub fn bundle_files(package: Package, target: Arch) -> crate::Result {
         use flate2::Compression;
         use flate2::write::GzEncoder;

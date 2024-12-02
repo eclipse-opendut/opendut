@@ -103,7 +103,7 @@ pub mod distribution {
 
         use super::*;
 
-        #[tracing::instrument]
+        #[tracing::instrument(skip_all)]
         pub fn validate_contents(target: Arch) -> crate::Result {
 
             let unpack_dir = {

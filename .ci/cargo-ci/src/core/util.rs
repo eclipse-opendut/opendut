@@ -10,17 +10,17 @@ use crate::core::metadata;
 use crate::core::types::Arch;
 
 #[tracing::instrument(level = tracing::Level::TRACE)]
-pub fn install_crate(crate_to_install: Crate) -> crate::Result {
+pub fn install_crate(install: Crate) -> crate::Result {
     let cargo_metadata = metadata::cargo();
 
-    let version = cargo_metadata.workspace_metadata["ci"]["cargo-ci"][crate_to_install.ident()]["version"].as_str()
-        .unwrap_or_else(|| panic!("No version information for crate '{}' in root Cargo.toml. Aborting installation.", crate_to_install.ident()));
+    let version = cargo_metadata.workspace_metadata["ci"]["cargo-ci"][install.ident()]["version"].as_str()
+        .unwrap_or_else(|| panic!("No version information for crate '{}' in root Cargo.toml. Aborting installation.", install.ident()));
 
     Command::new("cargo")
         .arg("install")
         .arg("--version").arg(version)
-        .args(crate_to_install.install_command_args())
-        .arg(crate_to_install.ident())
+        .args(install.install_command_args())
+        .arg(install.ident())
         .run_requiring_success()
 }
 
@@ -67,7 +67,6 @@ pub fn init_tracing() -> crate::Result {
         .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
         .with_env_filter(tracing_filter)
         .with_writer(std::io::stderr)
-        .compact()
         .init();
     Ok(())
 }

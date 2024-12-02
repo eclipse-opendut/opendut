@@ -16,7 +16,7 @@ pub struct DistributionBuildCli {
     pub target: TargetSelection,
 }
 
-#[tracing::instrument]
+#[tracing::instrument(skip_all)]
 pub fn distribution_build(package: Package, target: Arch) -> crate::Result {
     util::install_crate(Crate::Cross)?;
 

@@ -1,5 +1,5 @@
 use crate::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::{Arch, Package};
 use crate::core::types::parsing::package::PackageSelection;
@@ -92,7 +92,7 @@ pub mod distribution {
 
     use super::*;
 
-    #[tracing::instrument(skip_all)]
+    #[tracing::instrument]
     pub fn carl_distribution(target: Arch) -> crate::Result {
         use crate::tasks::distribution;
 
@@ -123,8 +123,8 @@ pub mod distribution {
 
         use super::*;
 
-        #[tracing::instrument]
-        pub fn get_cleo(out_dir: &PathBuf) -> crate::Result {
+        #[tracing::instrument(skip_all)]
+        pub fn get_cleo(out_dir: &Path) -> crate::Result {
 
             let cleo_out_dir = out_dir.join(Package::Cleo.ident());
             fs::create_dir_all(cleo_out_dir)?;
@@ -159,8 +159,8 @@ pub mod distribution {
 
         use super::*;
 
-        #[tracing::instrument]
-        pub fn get_edgar(out_dir: &PathBuf) -> crate::Result {
+        #[tracing::instrument(skip_all)]
+        pub fn get_edgar(out_dir: &Path) -> crate::Result {
 
             let edgar_out_dir = out_dir.join(Package::Edgar.ident());
             fs::create_dir_all(edgar_out_dir)?;
@@ -191,8 +191,8 @@ pub mod distribution {
     mod lea {
         use super::*;
 
-        #[tracing::instrument]
-        pub fn get_lea(out_dir: &PathBuf) -> crate::Result {
+        #[tracing::instrument(skip_all)]
+        pub fn get_lea(out_dir: &Path) -> crate::Result {
 
             crate::packages::lea::build::build()?;
             let lea_build_dir = crate::packages::lea::build::out_dir();
@@ -221,7 +221,7 @@ pub mod distribution {
 
         use super::*;
 
-        #[tracing::instrument]
+        #[tracing::instrument(skip_all)]
         pub fn copy_license_json(target: Arch, skip_generate: SkipGenerate) -> crate::Result {
 
             match skip_generate {
@@ -276,7 +276,7 @@ pub mod distribution {
 
         use super::*;
 
-        #[tracing::instrument]
+        #[tracing::instrument(skip_all)]
         pub fn validate_contents(target: Arch) -> crate::Result {
 
             let unpack_dir = {
