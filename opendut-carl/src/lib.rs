@@ -1,6 +1,7 @@
 use pem::Pem;
 use std::net::SocketAddr;
 use std::str::FromStr;
+use tonic::service::Routes;
 use tonic_async_interceptor::async_interceptor;
 use tower::make::Shared;
 use tower::ServiceExt as _;
@@ -113,20 +114,20 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
             }
         };
 
-        let grpc = tonic::transport::Server::builder()
-            .layer(async_interceptor(move |request| {
-                Clone::clone(&grpc_auth_layer).auth_interceptor(request)
-            }))
-            .accept_http1(true) //gRPC-web uses HTTP1
+        let mut routes_builder = Routes::builder();
+
+        routes_builder
             .add_service(grpc_facades.cluster_manager_facade.into_grpc_service())
             .add_service(grpc_facades.metadata_provider_facade.into_grpc_service())
             .add_service(grpc_facades.peer_manager_facade.into_grpc_service())
             .add_service(grpc_facades.peer_messaging_broker_facade.into_grpc_service());
 
-        #[allow(deprecated)]
-        // Deprecation message: "use of deprecated method `tonic::transport::server::Router::<L>::into_router`: Use `Routes::into_axum_router` instead."
-        // However, there does not seem to be a way of converting `tonic::transport::server::Router` to `Routes`.
-        grpc.into_router()
+        routes_builder
+            .routes()
+            .into_axum_router()
+            .layer(async_interceptor(move |request| {
+                Clone::clone(&grpc_auth_layer).auth_interceptor(request)
+            }))
     };
 
     let http_grpc = tower::steer::Steer::new(vec![http, grpc], |request: &axum::extract::Request, _services: &[_]| {
