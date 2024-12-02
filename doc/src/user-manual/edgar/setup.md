@@ -26,9 +26,9 @@ Replace `$CARL_HOST` with the domain where your CARL is hosted,
 and replace `$ARCH` with the appropriate CPU architecture.
 
 Available CPU architectures are:
-- x86_64-unknown-linux-gnu (most desktop PCs and server systems)
-- armv7-unknown-linux-gnueabihf (Raspberry Pi)
-- aarch64-unknown-linux-gnu (ARM64 systems)
+- `x86_64-unknown-linux-gnu` (most desktop PCs and server systems)
+- `armv7-unknown-linux-gnueabihf` (Raspberry Pi)
+- `aarch64-unknown-linux-gnu` (ARM64 systems)
 
 ### 3. Unpack the archive
 Run these commands to unpack EDGAR and change into the directory:
@@ -41,7 +41,7 @@ EDGAR should print version information, if you run:
 ```sh
 ./opendut-edgar --version
 ```
-If this throws an error, it is likely that you downloaded the wrong CPU architecture.
+If this prints an error, it is likely that you downloaded the wrong CPU architecture.
 
 ### 4. CAN Setup
 If you want to use CAN, follow the steps in [CAN Setup](#can-setup) before continuing.
@@ -59,6 +59,7 @@ You can get the `<SETUP-STRING>` from LEA or CLEO after creating a Peer.
 
 This will configure your operating system and start the *EDGAR Service*, which will receive its configuration from *CARL*.
 
+---
 
 ## CAN Setup
 If you want to use CAN, it is mandatory to set the environment variable `OPENDUT_EDGAR_SERVICE_USER` as follows:
@@ -83,7 +84,7 @@ Therefore, we have some dependencies.
   ```shell
   sudo apt install -y can-utils
   ```
-2. Download Cannelloni from here: https://github.com/eclipse-opendut/cannelloni/releases/
+2. Download Cannelloni from here: [https://github.com/eclipse-opendut/cannelloni/releases/](https://github.com/eclipse-opendut/cannelloni/releases/)
 3. Unpack the Cannelloni tarball and copy the files into your filesystem like so:
   ```shell
   sudo cp libcannelloni-common.so.0 /lib/
