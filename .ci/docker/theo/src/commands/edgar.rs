@@ -1,9 +1,8 @@
-use std::collections::HashSet;
+use std::fmt::Formatter;
 use std::thread::sleep;
 use std::time::Duration;
 
 use anyhow::{anyhow, Error};
-use strum::Display;
 
 use EdgarDeploymentStatus::{Provisioned, Ready};
 use opendut_edgar_kernel_modules::{default_builtin_module_dir, default_module_file, required_kernel_modules};
@@ -11,7 +10,7 @@ use opendut_edgar_kernel_modules::{default_builtin_module_dir, default_module_fi
 use crate::core::{SLEEP_TIME_SECONDS, TheoError, TIMEOUT_SECONDS};
 use crate::core::docker::command::DockerCommand;
 use crate::core::docker::compose::{docker_compose_build, docker_compose_down};
-use crate::core::docker::edgar::{edgar_container_names, EDGAR_LEADER_NAME, EDGAR_PEER_1_NAME, EDGAR_PEER_2_NAME};
+use crate::core::docker::edgar::{edgar_container_names, format_remaining_edgars_string, EDGAR_LEADER_NAME, EDGAR_PEER_1_NAME, EDGAR_PEER_2_NAME};
 use crate::core::docker::services::DockerCoreServices;
 use crate::core::project::TheoDynamicEnvVars;
 
@@ -39,8 +38,8 @@ impl TestEdgarCli {
                 docker_compose_down(DockerCoreServices::Edgar.as_str(), false)?;
                 docker_compose_build(DockerCoreServices::Edgar.as_str())?;
                 start_edgar_in_docker()?;
-                wait_for_all_edgar_peers_are(Provisioned)?;
-                wait_for_all_edgar_peers_are(Ready)?;
+                wait_until_all_edgar_peers_are(Provisioned)?;
+                wait_until_all_edgar_peers_are(Ready)?;
                 check_edgar_leader_ping_all()?;
                 check_edgar_can_ping()?;
             }
@@ -56,38 +55,46 @@ impl TestEdgarCli {
 }
 
 fn start_edgar_in_docker() -> Result<i32, Error> {
-    println!("Starting edgar cluster '{}' in docker.", std::env::var(TheoDynamicEnvVars::OpendutEdgarClusterName.to_string()).unwrap_or_else(|_| "edgar".to_string()));
+    println!("Starting EDGAR cluster '{}' in Docker.", std::env::var(TheoDynamicEnvVars::OpendutEdgarClusterName.to_string()).unwrap_or_else(|_| "edgar".to_string()));
     DockerCommand::new()
         .add_common_args(DockerCoreServices::Edgar.as_str())
         .add_netbird_api_key_to_env()?
         .arg("up")
         .arg("-d")
-        .expect_status("Failed to start edgar cluster in docker.")
+        .expect_status("Failed to start EDGAR cluster in Docker.")
 }
 
-#[derive(Debug, Display, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum EdgarDeploymentStatus {
     Provisioned,
     Ready,
 }
+impl std::fmt::Display for EdgarDeploymentStatus {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let lower_case_debug = format!("{self:?}").to_lowercase();
+        writeln!(f, "{lower_case_debug}")
+    }
+}
 
-fn wait_for_all_edgar_peers_are(check_task: EdgarDeploymentStatus) -> crate::Result {
-    println!("STAGE: EDGAR {}", check_task);
+fn wait_until_all_edgar_peers_are(target_status: EdgarDeploymentStatus) -> crate::Result {
+    println!("STAGE: EDGAR {}", target_status);
+
     let timeout = Duration::from_secs(TIMEOUT_SECONDS);
     let start = std::time::Instant::now();
-    let container_names = edgar_container_names()?;
-    let mut remaining_edgar_names: HashSet<String> = HashSet::from_iter(container_names);
+    let mut remaining_edgar_names = edgar_container_names()?;
 
     while !remaining_edgar_names.is_empty() {
+        let remaining_edgars_string = format_remaining_edgars_string(&remaining_edgar_names);
+
         let duration = start.elapsed();
         if duration > timeout {
             return Err(anyhow!(
-                TheoError::Timeout(String::from("An error occurred while waiting for the Edgar leader to deploy."))
+                TheoError::Timeout(format!("EDGAR cluster did not become {target_status} within {timeout:?}. Incomplete peers: {remaining_edgars_string}"))
             ));
         }
 
         for edgar_name in remaining_edgar_names.clone() {
-            match check_task {
+            match target_status {
                 Provisioned => {
                     if check_edgar_container_provisioning_done(&edgar_name)? {
                         println!("EDGAR peer '{}' is provisioned.", edgar_name);
@@ -96,7 +103,7 @@ fn wait_for_all_edgar_peers_are(check_task: EdgarDeploymentStatus) -> crate::Res
                 }
                 Ready => {
                     println!("Checking if EDGAR peer '{}' is ready...", edgar_name);
-                    let leader_arg = if edgar_name.eq(EDGAR_LEADER_NAME) { "leader" } else { "peer" };
+                    let leader_arg = if edgar_name == EDGAR_LEADER_NAME { "leader" } else { "peer" };
                     DockerCommand::new_exec(&edgar_name)
                         .arg("/opt/wait_until_ready.sh")
                         .arg(leader_arg)
@@ -106,19 +113,18 @@ fn wait_for_all_edgar_peers_are(check_task: EdgarDeploymentStatus) -> crate::Res
                 }
             }
         }
-        // Print message with duration in seconds, formatted to 6 characters
-        println!("{:^width$} seconds - Waiting for edgar cluster to be deployed...", duration.as_secs(), width=6);
+        // Print message with duration in seconds, formatted to 4 characters
+        println!("{:>width$} seconds - Waiting for peers to be {target_status}: {remaining_edgars_string}", duration.as_secs(), width=4);
         sleep(Duration::from_secs(SLEEP_TIME_SECONDS));
     }
 
     Ok(())
 }
 
-
 fn check_edgar_container_provisioning_done(container_name: &str) -> Result<bool, Error> {
     let exists = DockerCommand::container_exists(container_name);
     if !exists {
-        Err(TheoError::DockerCommandFailed(format!("Edgar container '{}' has terminated or does not exists!", container_name)).into())
+        Err(TheoError::DockerCommandFailed(format!("EDGAR container '{}' has terminated or does not exists!", container_name)).into())
     } else {
         check_edgar_provisioning_finished(container_name)
     }
@@ -128,7 +134,7 @@ fn check_edgar_provisioning_finished(container_name: &str) -> Result<bool, Error
     let command_output = DockerCommand::new_exec(container_name)
         .arg("cat")
         .arg("/opt/signal/result.txt")
-        .expect_output(format!("Failed to check if edgar {} was provisioned.", container_name).as_str());
+        .expect_output(format!("Failed to check if EDGAR {} was provisioned.", container_name).as_str());
     match command_output {
         Ok(output) => {
             let status_code = output.status.code().unwrap_or(1) == 0;
@@ -137,7 +143,7 @@ fn check_edgar_provisioning_finished(container_name: &str) -> Result<bool, Error
                 if message.eq("Success") {
                     Ok(true)
                 } else {
-                    Err(anyhow!("Edgar provisioning failed for peer: {}. Check 'docker logs {}'.", message, container_name))
+                    Err(anyhow!("EDGAR provisioning failed for peer: {}. Check 'docker logs {}'.", message, container_name))
                 }
             } else {
                 Ok(false)
