@@ -1,6 +1,7 @@
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
-use opendut_types::peer::executor::ExecutorDescriptors;
-use opendut_types::specs::peer::{DeviceSpecificationV1, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDescriptorSpecificationV1};
+use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorDescriptors, ExecutorId, ExecutorKind};
+use opendut_types::peer::executor::container::{ContainerImage, Engine};
+use opendut_types::specs::peer::{DeviceSpecificationV1, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDescriptorSpecificationV1, ExecutorSpecificationV1, SpecificationEngineKind, SpecificationExecutorKind};
 use opendut_types::specs::SpecificationMetadata;
 use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag, Topology};
 use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
@@ -22,13 +23,14 @@ pub fn convert_document_to_peer_descriptor(specification_metadata: Specification
         .map(convert_network_specification_to_descriptor)
         .collect::<Result<Vec<_>, _>>()?;
     
-    let topology = peer.topology
-        .map(|topology| topology.devices.into_iter()
-            .map(convert_device_specification_to_descriptor)
-            .collect::<Result<Vec<_>, _>>())
-        .transpose()?
-        .unwrap_or_default();
-    
+    let topology = peer.topology.devices.into_iter()
+        .map(convert_device_specification_to_descriptor)
+        .collect::<Result<Vec<_>, _>>()?;
+
+    let executors = peer.executors.into_iter()
+        .map(convert_executor_specification_to_descriptor)
+        .collect::<Result<Vec<_>, _>>()?;
+
     let descriptor: PeerDescriptor = PeerDescriptor {
         id,
         name,
@@ -41,7 +43,7 @@ pub fn convert_document_to_peer_descriptor(specification_metadata: Specification
             devices: topology
         },
         executors: ExecutorDescriptors {
-            executors: vec![], // TODO
+            executors,
         },
     };
     Ok(descriptor)
@@ -104,11 +106,51 @@ fn convert_device_specification_to_descriptor(specification: DeviceSpecification
     Ok(device_descriptor)
 }
 
+fn convert_executor_specification_to_descriptor(specification: ExecutorSpecificationV1) -> crate::Result<ExecutorDescriptor> {
+    let kind = match specification.kind {
+        SpecificationExecutorKind::Executable => ExecutorKind::Executable,
+        SpecificationExecutorKind::Container => {
+            match specification.parameters {
+                Some(parameters) => {
+                    let engine = match parameters.engine {
+                        SpecificationEngineKind::Docker => Engine::Docker,
+                        SpecificationEngineKind::Podman => Engine::Podman,
+                    };
+
+                    ExecutorKind::Container {
+                        engine,
+                        name: Default::default(),
+                        image: ContainerImage::try_from("TestImage")
+                            .map_err(|error| format!("Could not use the provided container image parameter for container executor <{}>:  {}", specification.id, error))?,
+                        volumes: vec![],
+                        devices: vec![],
+                        envs: vec![],
+                        ports: vec![],
+                        command: Default::default(),
+                        args: vec![],
+                    }
+                }
+                None => Err(String::from("Parameters for the container executor were not provided."))?,
+            }
+        }
+    };
+
+    let executor_descriptor = ExecutorDescriptor {
+        id: ExecutorId::from(specification.id),
+        kind,
+        results_url: None,
+    };
+
+    Ok(executor_descriptor)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use googletest::prelude::*;
-    use opendut_types::specs::peer::{DeviceSpecificationV1, NetworkInterfaceConfigurationSpecification, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDeviceSpecificationV1, PeerNetworkDescriptorSpecificationV1};
+    use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorId, ExecutorKind};
+    use opendut_types::peer::executor::container::{ContainerImage, Engine};
+    use opendut_types::specs::peer::{DeviceSpecificationV1, ExecutorConfigurationSpecification, NetworkInterfaceConfigurationSpecification, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, TopologySpecificationV1, ExecutorSpecificationV1, NetworkDescriptorSpecificationV1, SpecificationEngineKind, SpecificationExecutorKind};
     use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag};
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
@@ -129,6 +171,10 @@ mod tests {
                 NetworkInterfaceKind::Can
             }
         };
+
+        let executors = peer.executors.executors.clone().into_iter()
+            .map(convert_executor_descriptor_to_specification)
+            .collect::<anyhow::Result<Vec<_>>>()?;
         
         let topology = get_topology_specification(peer.topology.devices[0].clone())?;
         let network = get_interface_specification(peer.clone(), interface_kind)?;
@@ -136,7 +182,8 @@ mod tests {
         let specification_peer = PeerDescriptorSpecificationV1 {
             location: peer.location.clone().map(|location| location.value()),
             network,
-            topology: Some(topology),
+            topology,
+            executors,
         };
 
         let result = convert_document_to_peer_descriptor(specification_metadata, specification_peer).unwrap();
@@ -271,11 +318,27 @@ mod tests {
                     }
                 ],
             },
-            executors: ExecutorDescriptors { executors: vec![] }, // TODO
+            executors: ExecutorDescriptors { executors: vec![ // TODO
+                ExecutorDescriptor {
+                    id: ExecutorId::random(),
+                    kind: ExecutorKind::Container {
+                        engine: Engine::Docker,
+                        name: Default::default(), //ContainerName::Value(String::from("TestContainer")),
+                        image: ContainerImage::try_from("TestImage")?,
+                        volumes: vec![],
+                        devices: vec![],
+                        envs: vec![],
+                        ports: vec![],
+                        command: Default::default(),
+                        args: vec![],
+                    },
+                    results_url: None,
+                }
+            ] }, // TODO
         })
     }
     
-    fn get_topology_specification(device: DeviceDescriptor) -> anyhow::Result<PeerDeviceSpecificationV1> {
+    fn get_topology_specification(device: DeviceDescriptor) -> anyhow::Result<TopologySpecificationV1> {
         let description = device.clone().description
             .map(|description| description.to_string());
 
@@ -283,7 +346,7 @@ mod tests {
             .map(|tag| tag.to_string())
             .collect::<Vec<String>>();
         
-        Ok(PeerDeviceSpecificationV1 {
+        Ok(TopologySpecificationV1 {
             devices: vec![
                 DeviceSpecificationV1 {
                     id: device.id.0,
@@ -296,8 +359,8 @@ mod tests {
         })
     }    
     
-    fn get_interface_specification(peer: PeerDescriptor, interface_kind: NetworkInterfaceKind) -> anyhow::Result<PeerNetworkDescriptorSpecificationV1> {
-        Ok(PeerNetworkDescriptorSpecificationV1 {
+    fn get_interface_specification(peer: PeerDescriptor, interface_kind: NetworkInterfaceKind) -> anyhow::Result<NetworkDescriptorSpecificationV1> {
+        Ok(NetworkDescriptorSpecificationV1 {
             interfaces: vec![
                 NetworkInterfaceDescriptorSpecificationV1 {
                     id: peer.network.interfaces[0].id.uuid,
@@ -307,6 +370,37 @@ mod tests {
                 }
             ],
             bridge_name: Default::default(), // TODO
+        })
+    }
+
+    fn convert_executor_descriptor_to_specification(executor: ExecutorDescriptor) -> anyhow::Result<ExecutorSpecificationV1> {
+
+        let executor_kind = match executor.kind {
+            ExecutorKind::Executable => {
+                SpecificationExecutorKind::Executable
+            }
+            ExecutorKind::Container { .. } => {
+                SpecificationExecutorKind::Container
+            }
+        };
+
+        let engine_kind = match executor.kind {
+            ExecutorKind::Executable => unimplemented!("executable not implemented"),
+            ExecutorKind::Container { engine, .. } => {
+                match engine {
+                    Engine::Docker => SpecificationEngineKind::Docker,
+                    Engine::Podman => SpecificationEngineKind::Podman,
+                }
+            }
+        };
+
+        Ok(ExecutorSpecificationV1 {
+            id: executor.id.uuid,
+            kind: executor_kind,
+            parameters: Some(ExecutorConfigurationSpecification {
+                engine: engine_kind,
+                // TODO
+            })
         })
     }
 }

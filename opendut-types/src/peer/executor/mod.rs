@@ -8,7 +8,7 @@ use crate::peer::executor::container::{Engine, ContainerName, ContainerImage, Co
 
 pub mod container;
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq,  Eq, Serialize, Deserialize)]
 pub struct ExecutorDescriptors {
     pub executors: Vec<ExecutorDescriptor>,
 }

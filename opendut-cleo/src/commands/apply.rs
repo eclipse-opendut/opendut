@@ -1,19 +1,19 @@
 use crate::commands::cluster_configuration::apply::convert_document_to_cluster_configuration;
+use crate::commands::cluster_configuration::create::create_cluster_configuration;
 use crate::commands::peer::apply::convert_document_to_peer_descriptor;
 use crate::commands::peer::create::create_peer;
 use crate::CreateOutputFormat;
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::cluster::ClusterConfiguration;
-use opendut_types::peer::{PeerDescriptor};
+use opendut_types::peer::PeerDescriptor;
 use opendut_types::specs::cluster::ClusterConfigurationSpecification;
 use opendut_types::specs::parse::json::JsonSpecificationDocument;
 use opendut_types::specs::parse::yaml::YamlSpecificationFile;
-use opendut_types::specs::peer::{PeerDescriptorSpecification};
+use opendut_types::specs::peer::PeerDescriptorSpecification;
 use opendut_types::specs::{Specification, SpecificationDocument};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
-use crate::commands::cluster_configuration::create::create_cluster_configuration;
 
 #[derive(clap::Parser)]
 ///Create openDuT resource form file
@@ -143,10 +143,10 @@ mod tests {
     use super::*;
     use googletest::prelude::*;
     use opendut_types::peer::executor::ExecutorDescriptors;
-    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
-    use opendut_types::specs::peer::{DeviceSpecificationV1, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDescriptorSpecification, PeerDescriptorSpecificationV1, PeerDeviceSpecificationV1, PeerNetworkDescriptorSpecificationV1};
+    use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerNetworkDescriptor};
+    use opendut_types::specs::peer::{NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDescriptorSpecification, PeerDescriptorSpecificationV1, TopologySpecificationV1, NetworkDescriptorSpecificationV1};
     use opendut_types::specs::{Specification, SpecificationDocument, SpecificationMetadata};
-    use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag, Topology};
+    use opendut_types::topology::Topology;
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
     #[test]
@@ -162,7 +162,6 @@ mod tests {
             }
         };
         
-        let topology = get_topology_specification(peer.topology.devices[0].clone())?;
         let network = get_interface_specification(peer.clone(), interface_kind)?;
         
         let document = SpecificationDocument {
@@ -172,9 +171,10 @@ mod tests {
                 name: peer.name.clone().value(),
             },
             spec: Specification::PeerDescriptorSpecification(PeerDescriptorSpecification::V1(PeerDescriptorSpecificationV1 {
-                location: Some(String::from("Ulm")),
+                location: None,
                 network,
-                topology: Some(topology),
+                topology: TopologySpecificationV1 { devices: vec![] },
+                executors: vec![],
             }))
         };
         
@@ -196,7 +196,7 @@ mod tests {
         Ok(PeerDescriptor {
             id: PeerId::random(),
             name: PeerName::try_from("peer1")?,
-            location: Some(PeerLocation::try_from("Ulm")?),
+            location: None,
             network: PeerNetworkDescriptor {
                 interfaces: vec![
                     NetworkInterfaceDescriptor {
@@ -207,46 +207,13 @@ mod tests {
                 ],
                 bridge_name: Default::default(), // TODO
             },
-            topology: Topology {
-                devices: vec![
-                    DeviceDescriptor {
-                        id: DeviceId::random(),
-                        name: DeviceName::try_from("device1")?,
-                        description: Some(DeviceDescription::try_from("This a short device description.")?),
-                        interface: NetworkInterfaceId::random(),
-                        tags: vec![
-                            DeviceTag::try_from("first-device")?
-                        ],
-                    }
-                ],
-            },
-            executors: ExecutorDescriptors { executors: vec![] }, // TODO
+            topology: Topology { devices: vec![] },
+            executors: ExecutorDescriptors { executors: vec![] },
         })
     }
-
-    fn get_topology_specification(device: DeviceDescriptor) -> anyhow::Result<PeerDeviceSpecificationV1> {
-        let description = device.clone().description
-            .map(|description| description.to_string());
-
-        let tags = device.clone().tags.into_iter()
-            .map(|tag| tag.to_string())
-            .collect::<Vec<String>>();
-        
-        Ok(PeerDeviceSpecificationV1 {
-            devices: vec![
-                DeviceSpecificationV1 {
-                    id: device.id.0,
-                    name: device.name.to_string(),
-                    description,
-                    interface_id: device.interface.uuid,
-                    tags,
-                }
-            ]
-        })
-    }    
     
-    fn get_interface_specification(peer: PeerDescriptor, interface_kind: NetworkInterfaceKind) -> anyhow::Result<PeerNetworkDescriptorSpecificationV1> {
-        Ok(PeerNetworkDescriptorSpecificationV1 {
+    fn get_interface_specification(peer: PeerDescriptor, interface_kind: NetworkInterfaceKind) -> anyhow::Result<NetworkDescriptorSpecificationV1> {
+        Ok(NetworkDescriptorSpecificationV1 {
             interfaces: vec![
                 NetworkInterfaceDescriptorSpecificationV1 {
                     id: peer.network.interfaces[0].id.uuid,

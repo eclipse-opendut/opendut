@@ -10,12 +10,13 @@ pub enum PeerDescriptorSpecification {
 pub struct PeerDescriptorSpecificationV1 {
     #[serde(default)]
     pub location: Option<String>,
-    pub network: PeerNetworkDescriptorSpecificationV1,
-    pub topology: Option<PeerDeviceSpecificationV1>,
+    pub network: NetworkDescriptorSpecificationV1,
+    pub topology: TopologySpecificationV1,
+    pub executors: Vec<ExecutorSpecificationV1>,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct PeerNetworkDescriptorSpecificationV1 {
+pub struct NetworkDescriptorSpecificationV1 {
     pub interfaces: Vec<NetworkInterfaceDescriptorSpecificationV1>,
     pub bridge_name: Option<String>,
 }
@@ -46,7 +47,7 @@ pub struct NetworkInterfaceConfigurationSpecification {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct PeerDeviceSpecificationV1 {
+pub struct TopologySpecificationV1 {
     pub devices: Vec<DeviceSpecificationV1>,
 }
 
@@ -58,4 +59,30 @@ pub struct DeviceSpecificationV1 {
     pub description: Option<String>,
     pub interface_id: Uuid,
     pub tags: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ExecutorSpecificationV1 {
+    pub id: Uuid,
+    pub kind: SpecificationExecutorKind,
+    pub parameters: Option<ExecutorConfigurationSpecification>
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all="kebab-case")]
+pub enum SpecificationExecutorKind {
+    Executable,
+    Container,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ExecutorConfigurationSpecification {
+    pub engine: SpecificationEngineKind,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all="kebab-case")]
+pub enum SpecificationEngineKind {
+    Docker,
+    Podman
 }
