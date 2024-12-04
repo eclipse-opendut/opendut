@@ -76,8 +76,12 @@ pub enum SpecificationExecutorKind {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct ExecutorConfigurationSpecification {
+pub struct 
+ExecutorConfigurationSpecification {
     pub engine: SpecificationEngineKind,
+    pub name: Option<String>,
+    pub image: String,
+    pub volumes: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]

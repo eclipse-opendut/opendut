@@ -1,6 +1,6 @@
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
 use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorDescriptors, ExecutorId, ExecutorKind};
-use opendut_types::peer::executor::container::{ContainerImage, Engine};
+use opendut_types::peer::executor::container::{ContainerImage, ContainerName, ContainerVolume, Engine};
 use opendut_types::specs::peer::{DeviceSpecificationV1, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDescriptorSpecificationV1, ExecutorSpecificationV1, SpecificationEngineKind, SpecificationExecutorKind};
 use opendut_types::specs::SpecificationMetadata;
 use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag, Topology};
@@ -116,13 +116,23 @@ fn convert_executor_specification_to_descriptor(specification: ExecutorSpecifica
                         SpecificationEngineKind::Docker => Engine::Docker,
                         SpecificationEngineKind::Podman => Engine::Podman,
                     };
-
+                    let name = parameters.name
+                        .map(ContainerName::try_from)
+                        .transpose()
+                        .map_err(| error | format!("Could not apply the provided container name for the executor <{}>: {}", specification.id, error))?
+                        .unwrap_or(ContainerName::Empty);
+                    let image = ContainerImage::try_from(parameters.image)
+                            .map_err(|error| format!("Could not use the provided container image parameter for container executor <{}>:  {}", specification.id, error))?;
+                    let volumes = parameters.volumes.into_iter().map(|volume| 
+                        ContainerVolume::try_from(volume)
+                            .map_err(|error| format!("Could not apply the provided container volumes for container executor: <{}>:  {}", specification.id, error))
+                    ).collect::<Result<Vec<_>, _>>()?;
+                    
                     ExecutorKind::Container {
                         engine,
-                        name: Default::default(),
-                        image: ContainerImage::try_from("TestImage")
-                            .map_err(|error| format!("Could not use the provided container image parameter for container executor <{}>:  {}", specification.id, error))?,
-                        volumes: vec![],
+                        name,
+                        image,
+                        volumes,
                         devices: vec![],
                         envs: vec![],
                         ports: vec![],
@@ -149,7 +159,8 @@ mod tests {
     use super::*;
     use googletest::prelude::*;
     use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorId, ExecutorKind};
-    use opendut_types::peer::executor::container::{ContainerImage, Engine};
+    use opendut_types::peer::executor::container::{ContainerImage, ContainerName, ContainerVolume, Engine};
+    use opendut_types::peer::executor::container::ContainerName::Empty;
     use opendut_types::specs::peer::{DeviceSpecificationV1, ExecutorConfigurationSpecification, NetworkInterfaceConfigurationSpecification, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, TopologySpecificationV1, ExecutorSpecificationV1, NetworkDescriptorSpecificationV1, SpecificationEngineKind, SpecificationExecutorKind};
     use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag};
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
@@ -323,9 +334,12 @@ mod tests {
                     id: ExecutorId::random(),
                     kind: ExecutorKind::Container {
                         engine: Engine::Docker,
-                        name: Default::default(), //ContainerName::Value(String::from("TestContainer")),
+                        name: ContainerName::Value(String::from("TestContainer")),
                         image: ContainerImage::try_from("TestImage")?,
-                        volumes: vec![],
+                        volumes: vec![
+                            ContainerVolume::try_from("3.3")?,
+                            ContainerVolume::try_from("1.3")?,
+                        ],
                         devices: vec![],
                         envs: vec![],
                         ports: vec![],
@@ -384,12 +398,31 @@ mod tests {
             }
         };
 
-        let engine_kind = match executor.kind {
+        let executor_parameters = match executor.kind {
             ExecutorKind::Executable => unimplemented!("executable not implemented"),
-            ExecutorKind::Container { engine, .. } => {
-                match engine {
+            ExecutorKind::Container { engine, name, image, volumes, .. } => {
+                let spec_engine_kind = match engine {
                     Engine::Docker => SpecificationEngineKind::Docker,
                     Engine::Podman => SpecificationEngineKind::Podman,
+                };
+                
+                let spec_executor_name = match name {
+                    Empty => None,
+                    ContainerName::Value(value) => {
+                        Some(value) 
+                    }
+                };
+                let spec_executor_image = String::from(image);
+                let spec_executor_volumes = volumes.into_iter()
+                    .map(String::from)
+                    .collect::<Vec<_>>(); 
+                
+                
+                ExecutorConfigurationSpecification {
+                    engine: spec_engine_kind,
+                    name: spec_executor_name,
+                    image: spec_executor_image,
+                    volumes: spec_executor_volumes,
                 }
             }
         };
@@ -397,10 +430,7 @@ mod tests {
         Ok(ExecutorSpecificationV1 {
             id: executor.id.uuid,
             kind: executor_kind,
-            parameters: Some(ExecutorConfigurationSpecification {
-                engine: engine_kind,
-                // TODO
-            })
+            parameters: Some(executor_parameters)
         })
     }
 }
