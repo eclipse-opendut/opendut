@@ -6,10 +6,10 @@ use uuid::Uuid;
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::cluster::{ClusterConfiguration, ClusterId};
 use opendut_types::peer::PeerId;
-use opendut_types::topology::{DeviceDescriptor, DeviceName};
+use opendut_types::topology::{DeviceDescriptor, DeviceId, DeviceName};
 
-use crate::{ClusterConfigurationDevices, CreateOutputFormat};
 use crate::parse::cluster::{ParseableClusterId, ParseableClusterName};
+use crate::{ClusterConfigurationDevices, CreateOutputFormat};
 
 /// Create a cluster configuration
 #[derive(clap::Parser)]
@@ -50,21 +50,52 @@ impl CreateClusterConfigurationCli {
 
         let all_devices = carl.peers.list_devices().await
             .map_err(|error| format!("Error while listing devices.\n  {}", error))?;
-        let checked_devices = check_devices(&all_devices, &self.devices.device_names, &self.devices.device_ids);
-        let (devices, errors): (Vec<_>, Vec<_>) = checked_devices.into_iter().partition(Result::is_ok);
+
+        let user_specified_devices = {
+            let mut devices = select_devices_by_ids(&self.devices.device_ids, &all_devices);
+
+            devices.append(
+                &mut select_devices_by_names(&self.devices.device_names, &all_devices)
+            );
+            devices
+        };
+
+        let (devices, errors): (Vec<_>, Vec<_>) = user_specified_devices.into_iter().partition(Result::is_ok);
+
+        {
+            let device_errors = errors.into_iter()
+                .map(Result::unwrap_err)
+                .collect::<Vec<_>>();
+
+            if device_errors.is_empty().not() {
+                return Err(format!("Could not create cluster configuration:\n  {}", device_errors.join("\n  ")));
+            }
+        }
+
         let devices = devices.into_iter()
             .map(Result::unwrap)
             .collect::<Vec<_>>();
+
+        {
+            let duplicates = select_duplicate_devices(&devices);
+
+            if duplicates.is_empty().not() {
+                let duplicates = duplicates.iter()
+                    .map(|device| format!("{name} <{id}>", name=device.name, id=device.id))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+
+                return Err(format!("The following devices were specified multiple times: {duplicates}"));
+            }
+        }
+
+        if devices.len() < 2 {
+            return Err("Specify at least 2 devices per cluster configuration.".to_string());
+        }
+
         let device_ids = devices.clone().into_iter()
             .map(|device| device.id)
             .collect::<HashSet<_>>();
-        let errors = errors.into_iter().map(Result::unwrap_err).collect::<Vec<_>>();
-        if !errors.is_empty() {
-            Err(format!("Could not create cluster configuration:\n  {}", errors.join("\n  ")))?
-        }
-        if devices.len() < 2 {
-            Err("Specify at least 2 devices per cluster configuration.".to_string())?
-        }
 
         let configuration = ClusterConfiguration { 
             id: cluster_id, 
@@ -111,56 +142,149 @@ pub async fn create_cluster_configuration(configuration: ClusterConfiguration, c
     Ok(())
 }
 
-fn check_devices(all_devices: &[DeviceDescriptor], device_names: &[DeviceName], device_ids: &[String]) -> Vec<Result<DeviceDescriptor, crate::Error>> {
-    let mut checked_devices_ids = device_ids.iter().map(|device_id| {
-        let maybe_device = all_devices.iter().find(|device| device.id.to_string().starts_with(device_id));
-        if let Some(device) = maybe_device {
-            Ok(Clone::clone(device))
-        }
-        else {
-            Err(format!("Device '{}' not found", device_id))
-        }
-    }).collect::<Vec<_>>();
 
-    let already_checked_device_names = checked_devices_ids.clone().iter_mut()
-        .filter_map(|device| match device {
-            Ok(device) => Some(Clone::clone(&device.name)),
-            Err(_) => None,
-        })
-        .collect::<Vec<_>>();
+fn select_duplicate_devices(devices: &[DeviceDescriptor]) -> Vec<DeviceDescriptor> {
+    let mut devices = devices.to_vec();
 
-    let remaining_device_names = device_names.iter()
-        .filter(|device_name| already_checked_device_names.contains(device_name).not())
-        .collect::<Vec<_>>();
+    devices.sort_by_key(|device| device.id.0);
 
-    let mut checked_devices_names = remaining_device_names.iter().map(|&device_name| {
-        let devices = all_devices.iter()
-            .filter(|device| &device.name == device_name)
-            .cloned()
-            .collect::<Vec<_>>();
+    dbg!(&devices);
 
-        match devices.as_slice() {
-            [] => Err(format!("Device '{}' not found", device_name)),
-            [device] => Ok(Clone::clone(device)),
-            _ => Err(format!("Multiple devices found for the name '{}'", device_name)),
-        }
-    }).collect::<Vec<_>>();
-
-    checked_devices_names.append(&mut checked_devices_ids);
-    checked_devices_names
+    devices.chunk_by(|a, b| a == b)
+        .filter(|chunk| chunk.len() > 1)
+        .map(|chunk| chunk.first().unwrap())
+        .cloned()
+        .collect::<Vec<_>>()
 }
+
+fn select_devices_by_ids(device_ids: &[DeviceId], devices_list: &[DeviceDescriptor]) -> Vec<Result<DeviceDescriptor, crate::Error>> {
+    device_ids.iter()
+        .map(|device_id| {
+            devices_list.iter()
+                .find(|device| &device.id == device_id)
+                .cloned()
+                .ok_or(format!("Device '{}' not found", device_id))
+        })
+        .collect()
+}
+
+fn select_devices_by_names(device_names: &[DeviceName], devices_list: &[DeviceDescriptor]) -> Vec<Result<DeviceDescriptor, crate::Error>> {
+    device_names.iter()
+        .map(|device_name| {
+            let devices = devices_list.iter()
+                .filter(|device| &device.name == device_name)
+                .cloned()
+                .collect::<Vec<_>>();
+
+            match devices.as_slice() {
+                [] => Err(format!("Device '{}' not found", device_name)),
+                [device] => Ok(Clone::clone(device)),
+                _ => Err(format!("Multiple devices found for the name '{}'", device_name)),
+            }
+        })
+        .collect()
+}
+
 
 #[cfg(test)]
 mod test {
     use googletest::prelude::*;
-    use rstest::{fixture, rstest};
 
     use opendut_types::topology::{DeviceDescription, DeviceId, DeviceName};
     use opendut_types::util::net::NetworkInterfaceId;
 
     use super::*;
 
-    #[fixture]
+    #[test]
+    fn should_select_devices_from_ids() -> anyhow::Result<()> {
+        let all_devices = all_devices();
+
+        let device_ids = vec![
+            all_devices[2].id,
+            all_devices[0].id
+        ];
+        assert_that!(
+            select_devices_by_ids(&device_ids, &all_devices),
+            unordered_elements_are!(
+                ok(eq(&all_devices[0])),
+                ok(eq(&all_devices[2]))
+            )
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_select_devices_from_names() -> anyhow::Result<()> {
+        let all_devices = all_devices();
+
+        let device_names = vec![
+            DeviceName::try_from("MyDevice")?,
+            DeviceName::try_from("HisDevice")?,
+        ];
+        assert_that!(
+            select_devices_by_names(&device_names, &all_devices),
+            unordered_elements_are!(
+                ok(eq(&all_devices[0])),
+                ok(eq(&all_devices[2]))
+            )
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_return_an_error_for_missing_device_when_selecting_by_names() -> anyhow::Result<()> {
+        let all_devices = all_devices();
+
+        let device_names = vec![
+            DeviceName::try_from("NoDevice")?,
+        ];
+        assert_that!(
+            select_devices_by_names(&device_names, &all_devices),
+            unordered_elements_are!(
+                err(anything()),
+            )
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn should_return_an_error_for_missing_device_when_selecting_by_ids() -> anyhow::Result<()> {
+        let all_devices = all_devices();
+
+        let device_ids = vec![
+            DeviceId::random(),
+        ];
+        assert_that!(
+            select_devices_by_ids(&device_ids, &all_devices),
+            unordered_elements_are!(
+                err(anything()),
+            )
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn should_select_duplicates() -> anyhow::Result<()> {
+        let all_devices = all_devices();
+
+        let devices_with_duplicates = vec![
+            all_devices[0].clone(),
+            all_devices[1].clone(),
+            all_devices[0].clone(),
+        ];
+
+        assert_that!(
+            select_duplicate_devices(&devices_with_duplicates),
+            unordered_elements_are!(
+                eq(&all_devices[0])
+            )
+        );
+
+        Ok(())
+    }
+
     fn all_devices() -> Vec<DeviceDescriptor> {
         vec![
             DeviceDescriptor {
@@ -185,86 +309,5 @@ mod test {
                 tags: vec![],
             }
         ]
-    }
-
-    #[rstest]
-    fn test_check_devices_with_names(all_devices: Vec<DeviceDescriptor>) -> anyhow::Result<()> {
-
-        let device_names = vec![
-            DeviceName::try_from("MyDevice")?,
-            DeviceName::try_from("HisDevice")?,
-        ];
-        assert_that!(check_devices(&all_devices, &device_names, &[]),
-            unordered_elements_are!(
-                ok(eq(&all_devices[0])),
-                ok(eq(&all_devices[2]))
-            )
-        );
-        Ok(())
-    }
-
-    #[rstest]
-    fn test_check_devices_with_ids(all_devices: Vec<DeviceDescriptor>) {
-
-        let device_ids = vec![
-            all_devices[2].id.to_string(),
-            all_devices[0].id.to_string()
-        ];
-        assert_that!(check_devices(&all_devices, &[], &device_ids),
-            unordered_elements_are!(
-                ok(eq(&all_devices[0])),
-                ok(eq(&all_devices[2]))
-            )
-        );
-    }
-
-    #[rstest]
-    fn test_that_checked_devices_returns_an_error_for_missing_device(all_devices: Vec<DeviceDescriptor>) -> anyhow::Result<()> {
-        let device_names = vec![
-            DeviceName::try_from("NoDevice")?,
-        ];
-        assert_that!(check_devices(&all_devices, &device_names, &[]),
-            unordered_elements_are!(
-                err(anything()),
-            )
-        );
-        Ok(())
-    }
-
-    #[rstest]
-    fn test_that_checked_devices_returns_errors_for_missing_devices(all_devices: Vec<DeviceDescriptor>) -> anyhow::Result<()> {
-        let device_names = vec![
-            DeviceName::try_from("NoDevice")?,
-            DeviceName::try_from("UnknownDevice")?,
-        ];
-        let device_ids = vec![
-            DeviceId::random().to_string(),
-        ];
-        assert_that!(check_devices(&all_devices, &device_names, &device_ids),
-            unordered_elements_are!(
-                err(anything()),
-                err(anything()),
-                err(anything()),
-            )
-        );
-        Ok(())
-    }
-
-    #[rstest]
-    fn test_that_checked_devices_adds_devices_defined_multiple_times_only_once(all_devices: Vec<DeviceDescriptor>) -> anyhow::Result<()> {
-        let device_names = vec![
-            DeviceName::try_from("MyDevice")?,
-            DeviceName::try_from("HisDevice")?,
-        ];
-        let device_ids = vec![
-            all_devices[0].id.to_string()
-        ];
-        assert_that!(check_devices(&all_devices, &device_names, &device_ids),
-            unordered_elements_are!(
-                ok(eq(&all_devices[0])),
-                ok(eq(&all_devices[2]))
-            )
-        );
-        Ok(())
     }
 }

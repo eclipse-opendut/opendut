@@ -45,6 +45,14 @@ impl From<uuid::Uuid> for DeviceId {
         Self(value)
     }
 }
+impl FromStr for DeviceId {
+    type Err = uuid::Error;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        uuid::Uuid::from_str(value)
+            .map(|uuid| DeviceId(uuid))
+    }
+}
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct DeviceName(pub(crate) String);

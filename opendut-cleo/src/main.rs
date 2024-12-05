@@ -7,7 +7,7 @@ use clap_complete::Shell;
 use console::Style;
 
 use opendut_carl_api::carl::{CaCertInfo, CarlClient};
-use opendut_types::topology::DeviceName;
+use opendut_types::topology::{DeviceId, DeviceName};
 use opendut_util::settings::{FileFormat, load_config, LoadedConfig};
 
 mod commands;
@@ -108,7 +108,7 @@ struct ClusterConfigurationDevices {
     #[arg(long, num_args = 0..)]
     device_names: Vec<DeviceName>,
     #[arg(long, num_args = 0..)]
-    device_ids: Vec<String>,
+    device_ids: Vec<DeviceId>,
 }
 
 #[derive(ValueEnum, Clone)]
