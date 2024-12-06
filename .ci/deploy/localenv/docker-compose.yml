@@ -427,6 +427,21 @@ services:
     networks:
       - opendut_local
 
+  loki:
+    container_name: loki
+    image: grafana/loki:2.9.6
+    volumes:
+      - ./data/telemetry/loki.yml:/etc/loki/loki.yml
+      - loki-data:/loki
+    command: [ "-config.file=/etc/loki/loki.yml", "-config.expand-env=true" ]
+    healthcheck:
+      test: wget --proxy off --no-verbose --tries=1 --spider http://loki:3100/ready || exit 1
+      interval: 10s
+      timeout: 7s
+      retries: 5
+    networks:
+      - opendut_local
+
 
 volumes:
   keycloak_postgres_data:
@@ -437,6 +452,7 @@ volumes:
   carl-config:
   opendut_nginx-webdav:
   tempo-data:
+  loki-data:
 
 networks:
   opendut_local:
