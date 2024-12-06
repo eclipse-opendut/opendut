@@ -111,7 +111,8 @@ services:
       - "443:443"
     healthcheck:
       <<: *common-healthcheck-params
-      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      #test: ["CMD", "traefik", "healthcheck", "--ping"]
+      test: ["CMD", "wget", "-q", "--proxy", "off", "--spider", "http://localhost:8080/ping"]
     volumes:
       - ./data/traefik/config:/etc/traefik/dynamic:ro
       - ./data/secrets/pki/:/pki
@@ -124,6 +125,7 @@ services:
           - netbird-api.opendut.local
           - auth.opendut.local
           - signal.opendut.local
+          - opentelemetry.opendut.local
 
 # vaguely derived from: https://github.com/netbirdio/netbird/blob/main/infrastructure_files/docker-compose.yml.tmpl.traefik
   netbird-dashboard:
@@ -258,6 +260,8 @@ services:
       - TURN_PASSWORD
       - TURN_PORT=3478
     network_mode: host  # only container using network host mode
+    labels:
+      - traefik.enable=false
     entrypoint: ["/coturn/entrypoint.sh"]
     # turnutils_uclient -T -p $TURN_PORT -u $TURN_USER -w $TURN_PASSWORD localhost
     healthcheck:
@@ -410,6 +414,8 @@ services:
     restart: always
     volumes:
       - ./data/telemetry/prometheus.yml:/etc/prometheus/prometheus.yml
+    labels:
+      - traefik.enable=false
     networks:
       - opendut_local
 
@@ -424,6 +430,8 @@ services:
       interval: 5s
       retries: 10
       test: wget --proxy off --no-verbose --tries=1 --spider http://tempo:3200/status || exit 1
+    labels:
+      - traefik.enable=false
     networks:
       - opendut_local
 
@@ -439,6 +447,8 @@ services:
       interval: 10s
       timeout: 7s
       retries: 5
+    labels:
+      - traefik.enable=false
     networks:
       - opendut_local
 
@@ -452,6 +462,36 @@ services:
     command: -config.file=/etc/promtail/docker-config.yaml
     depends_on:
       - loki
+    labels:
+      - traefik.enable=false
+    networks:
+      - opendut_local
+
+  otel-collector:
+    container_name: otel-collector
+    image: otel/opentelemetry-collector-contrib:0.97.0
+    volumes:
+      - ./data/telemetry/otel-collector.yml:/etc/collector-gateway.yaml
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./data/secrets/pki/insecure-development-ca.pem:/pki/insecure-development-ca.pem:ro
+    environment:
+      - "SSL_CERT_FILE=/pki/insecure-development-ca.pem"
+    command: [ "--config=/etc/collector-gateway.yaml" ]
+    user: "0"
+    depends_on:
+      tempo:
+        condition: service_started
+      loki:
+        condition: service_started
+      keycloak:
+        condition: service_healthy
+    restart: on-failure
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.otel-collector.rule=Host(`opentelemetry.opendut.local`)
+      - traefik.http.routers.otel-collector.tls=true
+      - traefik.http.services.otel-collector.loadbalancer.server.port=80
     networks:
       - opendut_local
 

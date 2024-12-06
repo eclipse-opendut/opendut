@@ -7,5 +7,5 @@ scrape_configs:
     scheme: http
     scrape_interval: 60s
     static_configs:
-      - targets: ['netbird-management-container:8081']
+      - targets: ['netbird-management:8081']
     metrics_path: /metrics

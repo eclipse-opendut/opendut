@@ -8,7 +8,7 @@ wait_for_keycloak() {
   END_TIME=$((START_TIME + timeout))
 
   # wait until keycloak is ready and returns a status code < 400
-  while ! curl --silent --fail --connect-timeout 2 --max-time 2 "$KEYCLOAK_URL" --output /dev/null; do
+  while ! curl --noproxy "*" --silent --fail --connect-timeout 2 --max-time 2 "$KEYCLOAK_URL" --output /dev/null; do
     local now
     now=$(date +%s)
     if [ "$now" -gt "$END_TIME" ]; then
@@ -26,7 +26,7 @@ kcauth() { kcadm config credentials config --server "$KEYCLOAK_URL" --realm mast
 
 get_admin_oauth_token() {
   # for debugging: may be used to get an admin token
-  RESPONSE=$(curl -s -d "client_id=admin-cli" -d "username=admin" -d "password=admin123456" -d "grant_type=password" "$KEYCLOAK_URL"/realms/master/protocol/openid-connect/token)
+  RESPONSE=$(curl --noproxy "*" --silent --data "client_id=admin-cli" --data "username=admin" --data "password=admin123456" --data "grant_type=password" "$KEYCLOAK_URL"/realms/master/protocol/openid-connect/token)
   ADMIN_TOKEN=$(echo "$RESPONSE" | jq -r '.access_token')
   echo "$ADMIN_TOKEN"
 }
@@ -36,7 +36,7 @@ curl_keycloak_get() {
   ADMIN_TOKEN="$(get_admin_oauth_token)"
   ARGS="$1"
 
-  curl -H "Authorization: Bearer $ADMIN_TOKEN" -X GET "$KEYCLOAK_URL/$ARGS"
+  curl --noproxy "*" --header "Authorization: Bearer $ADMIN_TOKEN" "$KEYCLOAK_URL/$ARGS"
 }
 
 list_realms() {

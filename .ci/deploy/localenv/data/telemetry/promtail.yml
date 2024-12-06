@@ -28,7 +28,8 @@ scrape_configs:
       # process listed containers and extract the "level" information
       - match:
           docker: { }
-          selector: '{job=~"netbird-traefik|netbird-coturn|netbird-dashboard|netbird-management|netbird-management-init|netbird-signal|keycloak|keycloak-init"}'
+          # TODO: update container names as they appear in the logs
+          selector: '{job=~"coturn|netbird-dashboard|netbird-management|netbird-management-init|netbird-signal|keycloak|keycloak-init"}'
           stages:
             - static_labels:
                 level: DEFAULT

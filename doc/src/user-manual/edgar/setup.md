@@ -120,6 +120,7 @@ If your backend server does not have a public DNS entry, you will need to adjust
 123.456.789.101 netbird-api.opendut.local
 123.456.789.101 signal.opendut.local
 123.456.789.101 nginx-webdav.opendut.local
+123.456.789.101 opentelemetry.opendut.local
 ```
 
 Now the following command should complete without errors:

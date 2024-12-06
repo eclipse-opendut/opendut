@@ -30,6 +30,7 @@ apt-get install nano && nano /etc/hosts
 192.168.56.9 signal.opendut.local
 192.168.56.9 carl.opendut.local
 192.168.56.9 nginx-webdav.opendut.local
+192.168.56.9 opentelemetry.opendut.local
 # ping should work
 ping carl.opendut.local
 
@@ -151,4 +152,11 @@ docker exec -ti edgar-leader python3 /opt/pingall_can.py
 docker compose -f .ci/docker/edgar/docker-compose-edgar-test.yml \
   --env-file .ci/deploy/localenv/data/secrets/.env \
   --env-file .ci/deploy/localenv/data/.env down
+```
+
+## Proxy notes for testing in virtual machine
+
+Testing localenv in a virtual machine behind corporate proxy
+```shell
+source .ci/deploy/localenv/data/provision/proxy.sh http://192.168.42.1:3128
 ```

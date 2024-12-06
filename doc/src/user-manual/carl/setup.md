@@ -25,6 +25,7 @@ Add the following lines to the `/etc/hosts` file on the host system to access th
     192.168.56.9 signal.opendut.local
     192.168.56.9 carl.opendut.local
     192.168.56.9 nginx-webdav.opendut.local
+    192.168.56.9 opentelemetry.opendut.local
     ```
 5. Start the local test environment using docker compose.
     ```shell
