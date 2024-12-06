@@ -413,6 +413,20 @@ services:
     networks:
       - opendut_local
 
+  tempo:
+    container_name: tempo
+    image: grafana/tempo:2.4.1
+    command: [ "-config.file=/etc/tempo.yml" ]
+    volumes:
+      - ./data/telemetry/tempo.yml:/etc/tempo.yml
+      - tempo-data:/tmp/tempo
+    healthcheck:
+      interval: 5s
+      retries: 10
+      test: wget --proxy off --no-verbose --tries=1 --spider http://tempo:3200/status || exit 1
+    networks:
+      - opendut_local
+
 
 volumes:
   keycloak_postgres_data:
@@ -422,6 +436,7 @@ volumes:
   carl_postgres_data:
   carl-config:
   opendut_nginx-webdav:
+  tempo-data:
 
 networks:
   opendut_local:
