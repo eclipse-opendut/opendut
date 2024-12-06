@@ -1,0 +1,77 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker_logs_scrape
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: label
+            values: ["logging=promtail"]
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container'
+      - source_labels: ['__meta_docker_container_log_stream']
+        target_label: 'logstream'
+      - source_labels: ['__meta_docker_container_label_logging_job']
+        target_label: 'job'
+    pipeline_stages:
+      # process listed containers and extract the "level" information
+      - match:
+          docker: { }
+          selector: '{job=~"netbird-traefik|netbird-coturn|netbird-dashboard|netbird-management|netbird-management-init|netbird-signal|keycloak|keycloak-init"}'
+          stages:
+            - static_labels:
+                level: DEFAULT
+            - json: #netbird-traefik
+                expressions:
+                  level: level
+                  msg: message
+                  time: time
+                  entryPointName: entryPointName
+            - regex: #netbird-traefik
+                expression: '.*level=(?P<level>[a-zA-Z]+).*'
+            - regex: #netbird-coturn
+                expression: '.*\([0-9]+\): (?P<level>[A-Z]+):.*'
+            - regex: #netbird-dashboard, keycloak
+                expression: '.*[0-9]{2}:[0-9]{2}:[0-9]{2},[0-9]+ (?P<level>[A-Z]+) .*'
+            - regex: #netbird-management, netbird-management-init, netbird-signal
+                expression: '.*[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z (?P<level>[A-Z]+) .*'
+            - regex: #keycloak-init
+                expression: '^(?P<level>(WARNING)?(INFO)?(DEBUG)?(ERROR)?(WARN)?):? .*'
+            - template: # cast the level value to upper case
+                source: level
+                template: '{{ ToUpper .Value }}'
+            # make labels available for filtering in loki
+            - labels:
+                level:
+                message:
+                time:
+                entryPointName:
+      # change level WARNING to WARN for all containers
+      - match:
+          docker: { }
+          selector: '{level="WARNING"}'
+          stages:
+            - static_labels:
+                level: WARN
+      # search for non-empty lines
+      - match:
+          docker: { }
+          selector: '{job="keycloak-init"} |~ "^\\s*$"'
+          stages:
+            - static_labels:
+                emptyline: EMPTYLINE
+      # drop lines not matched by previous condition
+      - match:
+          selector: '{job="keycloak-init", emptyline="EMPTYLINE"}'
+          action: drop
