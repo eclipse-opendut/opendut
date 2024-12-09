@@ -16,7 +16,7 @@ use opendut_util::project;
 #[derive(Debug, Parser)]
 #[command(name = "opendut-edgar")]
 #[command(about = "Connect your ECU to openDuT.")]
-#[command(long_version = crate::app_info::formatted())]
+#[command(long_version = crate::FORMATTED_VERSION)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,

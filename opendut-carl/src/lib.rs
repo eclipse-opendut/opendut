@@ -25,7 +25,7 @@ use crate::startup::tls::TlsConfig;
 
 pub mod grpc;
 pub mod util;
-opendut_util::app_info!();
+shadow_rs::shadow!(app_info);
 
 mod actions;
 mod cluster;

@@ -1,4 +1,5 @@
-opendut_util::app_info!();
+shadow_rs::shadow!(app_info);
+shadow_formatted_version::from_shadow!(app_info);
 
 mod cli;
 pub use cli::cli;

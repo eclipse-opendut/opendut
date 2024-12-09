@@ -11,7 +11,7 @@ pub async fn download_edgar(
     State(carl_install_directory): State<CarlInstallDirectory>,
 ) -> impl IntoResponse {
 
-    let file_name = format!("{}-{}.tar.gz", &architecture.distribution_name(), crate::app_info::CRATE_VERSION);
+    let file_name = format!("{}-{}.tar.gz", &architecture.distribution_name(), crate::app_info::PKG_VERSION);
     let edgar_path = carl_install_directory.path.join(EDGAR_IDENTIFIER).join(&file_name);
 
     let mut response = ServeFile::new_with_mime(edgar_path, &mime::APPLICATION_OCTET_STREAM)
@@ -50,7 +50,7 @@ mod test {
         let dir = temp.child(EDGAR_IDENTIFIER);
         fs::create_dir_all(&dir).expect("Unable to create dir.");
 
-        let file_name = format!("{}-{}.tar.gz", &EdgarArch::X86_64.distribution_name(), crate::app_info::CRATE_VERSION);
+        let file_name = format!("{}-{}.tar.gz", &EdgarArch::X86_64.distribution_name(), crate::app_info::PKG_VERSION);
 
         let tar_file = dir.child(&file_name);
         File::create(&tar_file)?;

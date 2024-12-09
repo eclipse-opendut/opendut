@@ -179,7 +179,7 @@ fn determine_service_user_name() -> User {
 }
 
 fn user_confirmation(dry_run: &DryRun) -> anyhow::Result<bool> {
-    let crate_version = crate::app_info::CRATE_VERSION;
+    let crate_version = crate::app_info::PKG_VERSION;
     match dry_run {
         DryRun::No => {
             println!("This will setup EDGAR {crate_version} on your system.");

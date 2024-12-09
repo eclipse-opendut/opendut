@@ -1,3 +1,7 @@
+use opendut_carl::app_info;
+
+shadow_formatted_version::from_shadow!(app_info);
+
 const BANNER: &str = r"
                          _____     _______
                         |  __ \   |__   __|
@@ -16,7 +20,7 @@ const BANNER: &str = r"
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    println!("{}", opendut_carl::app_info::formatted_with_banner(BANNER));
+    println!("{BANNER}\n{version_info}", version_info=FORMATTED_VERSION);
 
     opendut_carl::create_with_telemetry(opendut_util::settings::Config::default()).await
 }

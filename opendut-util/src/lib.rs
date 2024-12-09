@@ -1,5 +1,3 @@
-pub mod app_info;
-
 #[cfg(feature = "crypto")]
 pub mod crypto;
 

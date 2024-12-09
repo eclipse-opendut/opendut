@@ -44,7 +44,7 @@ const BANNER: &str = r"
            |______|_____/ \_____/_/    \_\_|  \_\";
 
 pub async fn launch(id_override: Option<PeerId>) -> anyhow::Result<()> {
-    println!("{}", crate::app_info::formatted_with_banner(BANNER));
+    println!("{BANNER}\n{version_info}", version_info=crate::FORMATTED_VERSION);
 
     let settings_override = config::Config::builder()
         .set_override_option(settings::key::peer::id, id_override.map(|id| id.to_string()))?

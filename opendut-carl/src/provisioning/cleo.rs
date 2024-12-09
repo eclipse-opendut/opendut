@@ -23,7 +23,7 @@ pub fn create_cleo_install_script(
 ) -> anyhow::Result<()> {
 
     for arch in CleoArch::arch_iterator() {
-        let cleo_tar_file = carl_install_directory.join(CLEO_IDENTIFIER).join(format!("{}-{}.tar.gz", arch.distribution_name(), crate::app_info::CRATE_VERSION));
+        let cleo_tar_file = carl_install_directory.join(CLEO_IDENTIFIER).join(format!("{}-{}.tar.gz", arch.distribution_name(), crate::app_info::PKG_VERSION));
         add_file_to_archive(
             &ca,
             &cleo_tar_file,

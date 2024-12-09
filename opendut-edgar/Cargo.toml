@@ -35,6 +35,7 @@ regex = { workspace = true }
 reqwest = { workspace = true }
 rtnetlink = { workspace = true }
 serde = { workspace = true, features = ["std", "derive"] }
+shadow-formatted-version = { workspace = true }
 shadow-rs = { workspace = true, default-features = true }
 sha2 = { workspace = true }
 sudo = { workspace = true }

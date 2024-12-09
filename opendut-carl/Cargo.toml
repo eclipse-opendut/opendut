@@ -41,7 +41,8 @@ pin-project-lite = { workspace = true }
 pq-sys = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
 serde = { workspace = true, features = ["derive"] }
-serde_json = { workspace = true}
+serde_json = { workspace = true }
+shadow-formatted-version = { workspace = true }
 shadow-rs = { workspace = true, default-features = true }
 tar = { workspace = true }
 tempfile = { workspace = true }

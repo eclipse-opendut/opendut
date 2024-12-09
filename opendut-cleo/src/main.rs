@@ -16,12 +16,13 @@ pub mod parse;
 type Error = String;
 type Result<T> = std::result::Result<T, Error>;
 
-opendut_util::app_info!();
+shadow_rs::shadow!(app_info);
+shadow_formatted_version::from_shadow!(app_info);
 
 /// CLEO is a command line tool to manage openDuT resources.
 #[derive(Parser)]
 #[command(author, about, long_about = None)]
-#[command(long_version = crate::app_info::formatted())]
+#[command(long_version = crate::FORMATTED_VERSION)]
 struct Args {
     #[command(subcommand)]
     command: Commands,

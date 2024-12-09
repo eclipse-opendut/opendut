@@ -3818,6 +3818,7 @@ dependencies = [
  "rstest",
  "serde",
  "serde_json",
+ "shadow-formatted-version",
  "shadow-rs",
  "tar",
  "tempfile",
@@ -3908,6 +3909,7 @@ dependencies = [
  "rstest",
  "serde",
  "serde_json",
+ "shadow-formatted-version",
  "shadow-rs",
  "thiserror 2.0.3",
  "tokio",
@@ -3954,6 +3956,7 @@ dependencies = [
  "rtnetlink",
  "serde",
  "sha2",
+ "shadow-formatted-version",
  "shadow-rs",
  "sudo",
  "tar",
@@ -5859,6 +5862,15 @@ dependencies = [
  "cfg-if",
  "cpufeatures",
  "digest",
+]
+
+[[package]]
+name = "shadow-formatted-version"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4fab4a00c9813faea4485804a520fbb41ca55cd8026281fe8f13700dbd1888f7"
+dependencies = [
+ "shadow-rs",
 ]
 
 [[package]]
