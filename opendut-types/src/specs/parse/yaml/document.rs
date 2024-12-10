@@ -150,6 +150,9 @@ mod tests {
                   interface-id: a4a3c74c-71e5-49ea-9c2e-afb387951970
                   tags: 
                   - new
+              executors:
+                - id: da6ad5f7-ea45-4a11-aadf-4408bdb69e8e
+                  kind: executable
         "#)?;
         
         let result = SpecificationDocument::try_from(document_string);
@@ -257,8 +260,10 @@ mod tests {
               id: eb89f630-d585-43b9-8934-4db469ce66c5
               name: TheForgottenName
             spec:
-              description: This describes a cluster config.
               leader-id: 140f29fd-336b-48f7-9936-6b1892574543
+              devices:
+                - d6cd3021-0d9f-423c-862e-f30b29438cbb
+                - fc699f09-1d32-48f4-8836-37e0a23cf794
         "#)?;
         
         let result = SpecificationDocument::try_from(document_string);

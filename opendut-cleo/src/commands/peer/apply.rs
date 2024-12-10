@@ -1,6 +1,6 @@
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
 use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorDescriptors, ExecutorId, ExecutorKind};
-use opendut_types::peer::executor::container::{ContainerImage, ContainerName, ContainerVolume, Engine};
+use opendut_types::peer::executor::container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine};
 use opendut_types::specs::peer::{DeviceSpecificationV1, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDescriptorSpecificationV1, ExecutorSpecificationV1, SpecificationEngineKind, SpecificationExecutorKind};
 use opendut_types::specs::SpecificationMetadata;
 use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag, Topology};
@@ -125,7 +125,28 @@ fn convert_executor_specification_to_descriptor(specification: ExecutorSpecifica
                             .map_err(|error| format!("Could not use the provided container image parameter for container executor <{}>:  {}", specification.id, error))?;
                     let volumes = parameters.volumes.into_iter().map(|volume| 
                         ContainerVolume::try_from(volume)
-                            .map_err(|error| format!("Could not apply the provided container volumes for container executor: <{}>:  {}", specification.id, error))
+                            .map_err(|error| format!("Could not apply the provided container volumes for container executor <{}>:  {}", specification.id, error))
+                    ).collect::<Result<Vec<_>, _>>()?;
+                    let devices = parameters.devices.into_iter().map(|device|
+                        ContainerDevice::try_from(device)
+                            .map_err(|error| format!("Could not apply the provided container devices for container executor <{}>: {}", specification.id, error))
+                    ).collect::<Result<Vec<_>, _>>()?;
+                    let envs = parameters.envs.into_iter().map(|envs|
+                        ContainerEnvironmentVariable::new(envs.name, envs.value)
+                            .map_err(|error| format!("Could not apply the provided container environment variables for container executor <{}>: {}", specification.id, error))
+                    ).collect::<Result<Vec<_>, _>>()?;
+                    let ports = parameters.ports.into_iter().map(|port|
+                        ContainerPortSpec::try_from(port)  
+                            .map_err(|error| format!("Could not use the provided container port parameter for container executor <{}>:  {}", specification.id, error))
+                    ).collect::<Result<Vec<_>, _>>()?;
+                    let command =  parameters.command
+                        .map(ContainerCommand::try_from)
+                        .transpose()
+                        .map_err(| error | format!("Could not apply the provided container command for the executor <{}>: {}", specification.id, error))?
+                        .unwrap_or(ContainerCommand::Default);
+                    let args = parameters.command_args.into_iter().map(|arg|
+                    ContainerCommandArgument::try_from(arg)
+                        .map_err(|error| format!("Could not use the provided container command arguments parameter for container executor <{}>: {}", specification.id, error))
                     ).collect::<Result<Vec<_>, _>>()?;
                     
                     ExecutorKind::Container {
@@ -133,11 +154,11 @@ fn convert_executor_specification_to_descriptor(specification: ExecutorSpecifica
                         name,
                         image,
                         volumes,
-                        devices: vec![],
-                        envs: vec![],
-                        ports: vec![],
-                        command: Default::default(),
-                        args: vec![],
+                        devices,
+                        envs,
+                        ports,
+                        command,
+                        args,
                     }
                 }
                 None => Err(String::from("Parameters for the container executor were not provided."))?,
@@ -159,9 +180,9 @@ mod tests {
     use super::*;
     use googletest::prelude::*;
     use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorId, ExecutorKind};
-    use opendut_types::peer::executor::container::{ContainerImage, ContainerName, ContainerVolume, Engine};
+    use opendut_types::peer::executor::container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine};
     use opendut_types::peer::executor::container::ContainerName::Empty;
-    use opendut_types::specs::peer::{DeviceSpecificationV1, ExecutorConfigurationSpecification, NetworkInterfaceConfigurationSpecification, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, TopologySpecificationV1, ExecutorSpecificationV1, NetworkDescriptorSpecificationV1, SpecificationEngineKind, SpecificationExecutorKind};
+    use opendut_types::specs::peer::{DeviceSpecificationV1, ExecutorConfigurationSpecification, NetworkInterfaceConfigurationSpecification, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, TopologySpecificationV1, ExecutorSpecificationV1, NetworkDescriptorSpecificationV1, SpecificationEngineKind, SpecificationExecutorKind, SpecificationEnvVariable};
     use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag};
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
@@ -340,11 +361,20 @@ mod tests {
                             ContainerVolume::try_from("3.3")?,
                             ContainerVolume::try_from("1.3")?,
                         ],
-                        devices: vec![],
-                        envs: vec![],
-                        ports: vec![],
+                        devices: vec![
+                            ContainerDevice::try_from("OneDevice")?,
+                            ContainerDevice::try_from("TwoDevice")?,
+                        ],
+                        envs: vec![
+                             ContainerEnvironmentVariable::new(String::from("EnvName"), String::from("EnvValue"))?
+                        ],
+                        ports: vec![
+                            ContainerPortSpec::try_from("ContainerPort")?,
+                        ],
                         command: Default::default(),
-                        args: vec![],
+                        args: vec![
+                            ContainerCommandArgument::try_from("CommandArgument")?,
+                        ],
                     },
                     results_url: None,
                 }
@@ -400,7 +430,7 @@ mod tests {
 
         let executor_parameters = match executor.kind {
             ExecutorKind::Executable => unimplemented!("executable not implemented"),
-            ExecutorKind::Container { engine, name, image, volumes, .. } => {
+            ExecutorKind::Container { engine, name, image, volumes, devices, envs, ports, command, args } => {
                 let spec_engine_kind = match engine {
                     Engine::Docker => SpecificationEngineKind::Docker,
                     Engine::Podman => SpecificationEngineKind::Podman,
@@ -416,13 +446,38 @@ mod tests {
                 let spec_executor_volumes = volumes.into_iter()
                     .map(String::from)
                     .collect::<Vec<_>>(); 
-                
+                let spec_devices = devices.into_iter()
+                    .map(String::from)
+                    .collect::<Vec<_>>();
+                let spec_env_variables = envs.into_iter()
+                    .map(|env_variable|
+                        SpecificationEnvVariable {
+                            name: String::from(env_variable.name()),
+                            value: String::from(env_variable.value()),
+                        }
+                    )
+                    .collect::<Vec<_>>();
+                let spec_ports = ports.into_iter()
+                    .map(String::from)
+                    .collect::<Vec<_>>();
+                let spec_command = match command {
+                    ContainerCommand::Default => Some(String::new()),
+                    ContainerCommand::Value(value) => Some(value),
+                };
+                let spec_args = args.into_iter()
+                    .map(String::from)
+                    .collect::<Vec<_>>();
                 
                 ExecutorConfigurationSpecification {
                     engine: spec_engine_kind,
                     name: spec_executor_name,
                     image: spec_executor_image,
                     volumes: spec_executor_volumes,
+                    devices: spec_devices,
+                    envs: spec_env_variables,
+                    ports: spec_ports,
+                    command: spec_command,
+                    command_args: spec_args,
                 }
             }
         };

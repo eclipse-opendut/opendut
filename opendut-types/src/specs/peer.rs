@@ -76,12 +76,17 @@ pub enum SpecificationExecutorKind {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct 
-ExecutorConfigurationSpecification {
+#[serde(rename_all="kebab-case")]
+pub struct ExecutorConfigurationSpecification {
     pub engine: SpecificationEngineKind,
     pub name: Option<String>,
     pub image: String,
     pub volumes: Vec<String>,
+    pub devices: Vec<String>,
+    pub envs: Vec<SpecificationEnvVariable>,
+    pub ports: Vec<String>,
+    pub command: Option<String>,
+    pub command_args: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -89,4 +94,11 @@ ExecutorConfigurationSpecification {
 pub enum SpecificationEngineKind {
     Docker,
     Podman
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all="kebab-case")]
+pub struct SpecificationEnvVariable {
+    pub name: String,
+    pub value: String,
 }
