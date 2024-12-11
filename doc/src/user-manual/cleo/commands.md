@@ -13,6 +13,86 @@ To create resources it depends on the type of resource whether an ID or connecte
 
     opendut-cleo create <resource>
 
+## Applying Configuration Files
+
+To use configuration files, the whole resource topology.
+
+    opendut-cleo apply --from <FILE_PATH>
+
+A configuration file can look like this:
+
+```yaml
+---
+version: v1
+kind: PeerDescriptor
+metadata:
+  id: fc4f8da1-1d99-47e1-bbbb-34d0c5bf922a
+  name: mbti-step-olu1
+spec:
+  location: Ulm
+  network:
+    interfaces:
+    - id: 9a182365-47e8-49e3-9b8b-df4455a3a0f8
+      name: eth0
+      kind: ethernet
+    - id: de7d7533-011a-4823-bc51-387a3518166c
+      name: can0
+      kind: can
+      parameters:
+        bitrate-hz: 250000
+        sample-point: 0.8
+        fd: true
+        data-bitrate-hz: 500000
+        data-sample-point: 0.8
+  topology:
+    devices:
+    - id: d6cd3021-0d9f-423c-862e-f30b29438cbb
+      name: SecondThirdDevice
+      description: This is a brand new device.
+      interface-id: a4a3c74c-71e5-49ea-9c2e-afb387951970
+      tags:
+        - new-device
+    - id: fc699f09-1d32-48f4-8836-37e0a23cf794
+      name: MyDevice
+      description: This is a old device.
+      interface-id: 9a182365-47e8-49e3-9b8b-df4455a3a0f8
+      tags:
+        - old-device
+  executors:
+    - id: da6ad5f7-ea45-4a11-aadf-4408bdb69e8e
+      kind: container
+      parameters:
+        engine: podman
+        name: image-name
+        image: image
+        volumes:
+        - 1.2
+        - 1.4
+        devices:
+        - OneDevice
+        - TwoDevices
+        envs:
+        - name: varName
+          value: turn
+        ports:
+        - ContainerPort
+        command: color
+        command-args:
+        - green
+---
+kind: ClusterConfiguration
+version: v1
+metadata:
+  id: f90ffd64-ae3f-4ed4-8867-a48587733352
+  name: TheForgottenName
+spec:
+  leader-id: fc4f8da1-1d99-47e1-bbbb-34d0c5bf922a
+  devices:
+    - d6cd3021-0d9f-423c-862e-f30b29438cbb
+    - fc699f09-1d32-48f4-8836-37e0a23cf794
+
+```
+
 ## Generating PeerSetup Strings
 
 To create a PeerSetup, it is necessary to provide the PeerID of the peer:
