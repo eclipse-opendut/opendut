@@ -4,6 +4,7 @@
 
 To list resources you can decide whether to display the resources in a table or in JSON-format.
 The default output format is a table which is displayed by not using the `--output` flag.
+The `--output` flag is a global argument, so it can be used at any place in the command.
 
     opendut-cleo list --output=<format> <openDuT-resource>
 
@@ -15,11 +16,11 @@ To create resources it depends on the type of resource whether an ID or connecte
 
 ## Applying Configuration Files
 
-To use configuration files, the whole resource topology.
+To use configuration files, the resource topology can be written in a yaml format which can be applied with the following command:
 
     opendut-cleo apply --from <FILE_PATH>
 
-A configuration file can look like this:
+The yaml file can look like this:
 
 ```yaml
 ---
@@ -27,7 +28,7 @@ version: v1
 kind: PeerDescriptor
 metadata:
   id: fc4f8da1-1d99-47e1-bbbb-34d0c5bf922a
-  name: mbti-step-olu1
+  name: MyPeer
 spec:
   location: Ulm
   network:
@@ -47,14 +48,14 @@ spec:
   topology:
     devices:
     - id: d6cd3021-0d9f-423c-862e-f30b29438cbb
-      name: SecondThirdDevice
+      name: MyDevice
       description: This is a brand new device.
       interface-id: a4a3c74c-71e5-49ea-9c2e-afb387951970
       tags:
         - new-device
     - id: fc699f09-1d32-48f4-8836-37e0a23cf794
-      name: MyDevice
-      description: This is a old device.
+      name: YourDevice
+      description: This is an old device.
       interface-id: 9a182365-47e8-49e3-9b8b-df4455a3a0f8
       tags:
         - old-device
@@ -73,7 +74,7 @@ spec:
         - TwoDevices
         envs:
         - name: varName
-          value: turn
+          value: varValue
         ports:
         - ContainerPort
         command: color
@@ -84,7 +85,7 @@ kind: ClusterConfiguration
 version: v1
 metadata:
   id: f90ffd64-ae3f-4ed4-8867-a48587733352
-  name: TheForgottenName
+  name: MyCluster
 spec:
   leader-id: fc4f8da1-1d99-47e1-bbbb-34d0c5bf922a
   devices:
@@ -107,7 +108,7 @@ If you have a peer setup string, and you want to analyze its content, you can us
 
 ## Describing resources
 
-To describe a resource, the ID of the resource has to be provided. The output can be displayed as text or JSON-format.
+To describe a resource, the ID of the resource has to be provided. The output can be displayed as text or JSON-format (`pretty-json` with line breaks or `json` without).
 
     opendut-cleo describe --output=<output format> <resource> --id
 

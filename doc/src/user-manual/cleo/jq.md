@@ -12,11 +12,12 @@ e.g. `jq  '[ { "name:" .[].name, "id:" .[].id } ]'` or: `jq '[ .[] | { title, na
 
 **input**
 ```shell
-opendut-cleo list --output=json peers
+opendut-cleo list --output=pretty-json peers
 ```
 
 **output**
 
+This output will be exemplary for the following jq commands.
 ```json
 [
   {
