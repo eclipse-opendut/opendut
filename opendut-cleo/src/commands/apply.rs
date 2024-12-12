@@ -18,7 +18,7 @@ use std::path::PathBuf;
 #[derive(clap::Parser)]
 ///Create openDuT resource form file
 pub struct ApplyCli {
-    #[arg(short, long, value_parser=parse_source)]
+    #[arg(value_parser=parse_source)]
     from: Source,
     ///Text, JSON or prettified JSON as output format
     #[arg(global=true, value_enum, short, long, default_value_t=CreateOutputFormat::Text)]
@@ -61,12 +61,9 @@ impl ApplyCli {
                     }
                 }
             }
-            Source::Inline(InlineSource::Json(json)) => {
-                match JsonSpecificationDocument::try_from_json_str(json.as_str()) {
-                    Ok(_) => {}
-                    Err(_) => {}
-                }
-                todo!("unsupported source")
+            Source::Inline(InlineSource::Json(json)) => match JsonSpecificationDocument::try_from_json_str(json.as_str()) {
+                Ok(_) => todo!("unsupported source"),
+                Err(_) => todo!("unsupported source"),
             }
             Source::Url(_) => {
                 todo!("unsupported source")
@@ -222,7 +219,7 @@ mod tests {
                     parameters: None,
                 }
             ],
-            bridge_name: Default::default(), // TODO
+            bridge_name: peer.network.bridge_name.map(|name| name.name()),
         })
     }
 }

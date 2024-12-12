@@ -148,8 +148,6 @@ fn select_duplicate_devices(devices: &[DeviceDescriptor]) -> Vec<DeviceDescripto
 
     devices.sort_by_key(|device| device.id.0);
 
-    dbg!(&devices);
-
     devices.chunk_by(|a, b| a == b)
         .filter(|chunk| chunk.len() > 1)
         .map(|chunk| chunk.first().unwrap())

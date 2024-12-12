@@ -1,5 +1,5 @@
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
-use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorDescriptors, ExecutorId, ExecutorKind};
+use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorDescriptors, ExecutorId, ExecutorKind, ResultsUrl};
 use opendut_types::peer::executor::container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine};
 use opendut_types::specs::peer::{DeviceSpecificationV1, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDescriptorSpecificationV1, ExecutorSpecificationV1, SpecificationEngineKind, SpecificationExecutorKind};
 use opendut_types::specs::SpecificationMetadata;
@@ -22,6 +22,10 @@ pub fn convert_document_to_peer_descriptor(specification_metadata: Specification
     let network_interfaces = peer.network.interfaces.into_iter()
         .map(convert_network_specification_to_descriptor)
         .collect::<Result<Vec<_>, _>>()?;
+    let bridge_name = peer.network.bridge_name
+        .map(NetworkInterfaceName::try_from)
+        .transpose()
+        .map_err(|error| error.to_string())?;
     
     let topology = peer.topology.devices.into_iter()
         .map(convert_device_specification_to_descriptor)
@@ -37,7 +41,7 @@ pub fn convert_document_to_peer_descriptor(specification_metadata: Specification
         location,
         network: PeerNetworkDescriptor {
             interfaces: network_interfaces,
-            bridge_name: Default::default(), // TODO
+            bridge_name,
         },
         topology: Topology {
             devices: topology
@@ -107,6 +111,11 @@ fn convert_device_specification_to_descriptor(specification: DeviceSpecification
 }
 
 fn convert_executor_specification_to_descriptor(specification: ExecutorSpecificationV1) -> crate::Result<ExecutorDescriptor> {
+    let results_url = specification.results_url
+        .map(ResultsUrl::try_from)
+        .transpose()
+        .map_err(| error | format!("Could not apply the provided results url for the executor <{}>: {}", specification.id, error))?;
+
     let kind = match specification.kind {
         SpecificationExecutorKind::Executable => ExecutorKind::Executable,
         SpecificationExecutorKind::Container => {
@@ -169,7 +178,7 @@ fn convert_executor_specification_to_descriptor(specification: ExecutorSpecifica
     let executor_descriptor = ExecutorDescriptor {
         id: ExecutorId::from(specification.id),
         kind,
-        results_url: None,
+        results_url,
     };
 
     Ok(executor_descriptor)
@@ -179,7 +188,7 @@ fn convert_executor_specification_to_descriptor(specification: ExecutorSpecifica
 mod tests {
     use super::*;
     use googletest::prelude::*;
-    use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorId, ExecutorKind};
+    use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorId, ExecutorKind, ResultsUrl};
     use opendut_types::peer::executor::container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine};
     use opendut_types::peer::executor::container::ContainerName::Empty;
     use opendut_types::specs::peer::{DeviceSpecificationV1, ExecutorConfigurationSpecification, NetworkInterfaceConfigurationSpecification, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, TopologySpecificationV1, ExecutorSpecificationV1, NetworkDescriptorSpecificationV1, SpecificationEngineKind, SpecificationExecutorKind, SpecificationEnvVariable};
@@ -335,7 +344,7 @@ mod tests {
                         configuration: NetworkInterfaceConfiguration::Ethernet,
                     }
                 ],
-                bridge_name: Default::default(), // TODO
+                bridge_name: Some(NetworkInterfaceName::try_from("br-opendut")?),
             },
             topology: Topology {
                 devices: vec![
@@ -350,7 +359,7 @@ mod tests {
                     }
                 ],
             },
-            executors: ExecutorDescriptors { executors: vec![ // TODO
+            executors: ExecutorDescriptors { executors: vec![
                 ExecutorDescriptor {
                     id: ExecutorId::random(),
                     kind: ExecutorKind::Container {
@@ -358,27 +367,29 @@ mod tests {
                         name: ContainerName::Value(String::from("TestContainer")),
                         image: ContainerImage::try_from("TestImage")?,
                         volumes: vec![
-                            ContainerVolume::try_from("3.3")?,
-                            ContainerVolume::try_from("1.3")?,
+                            ContainerVolume::try_from("/etc/")?,
+                            ContainerVolume::try_from("/opt/")?,
                         ],
                         devices: vec![
                             ContainerDevice::try_from("OneDevice")?,
                             ContainerDevice::try_from("TwoDevice")?,
                         ],
                         envs: vec![
-                             ContainerEnvironmentVariable::new(String::from("EnvName"), String::from("EnvValue"))?
+                             ContainerEnvironmentVariable::new(String::from("ENV_NAME"), String::from("EnvValue"))?
                         ],
                         ports: vec![
-                            ContainerPortSpec::try_from("ContainerPort")?,
+                            ContainerPortSpec::try_from("8080:8080")?,
                         ],
-                        command: Default::default(),
+                        command: ContainerCommand::try_from("nmap")?,
                         args: vec![
-                            ContainerCommandArgument::try_from("CommandArgument")?,
+                            ContainerCommandArgument::try_from("-A")?,
+                            ContainerCommandArgument::try_from("-T4")?,
+                            ContainerCommandArgument::try_from("scanme.nmap.org")?,
                         ],
                     },
-                    results_url: None,
+                    results_url: Some(ResultsUrl::try_from("https://example.com/webdav/results/")?),
                 }
-            ] }, // TODO
+            ] },
         })
     }
     
@@ -413,7 +424,7 @@ mod tests {
                     parameters: None,
                 }
             ],
-            bridge_name: Default::default(), // TODO
+            bridge_name: peer.network.bridge_name.map(|name| name.name()),
         })
     }
 
@@ -427,6 +438,10 @@ mod tests {
                 SpecificationExecutorKind::Container
             }
         };
+
+        let executor_result_url = executor.results_url.map(|url|
+            String::from(url)
+        );
 
         let executor_parameters = match executor.kind {
             ExecutorKind::Executable => unimplemented!("executable not implemented"),
@@ -484,6 +499,7 @@ mod tests {
 
         Ok(ExecutorSpecificationV1 {
             id: executor.id.uuid,
+            results_url: executor_result_url,
             kind: executor_kind,
             parameters: Some(executor_parameters)
         })

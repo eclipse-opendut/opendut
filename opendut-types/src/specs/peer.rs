@@ -7,6 +7,7 @@ pub enum PeerDescriptorSpecification {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all="kebab-case")]
 pub struct PeerDescriptorSpecificationV1 {
     #[serde(default)]
     pub location: Option<String>,
@@ -16,12 +17,14 @@ pub struct PeerDescriptorSpecificationV1 {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all="kebab-case")]
 pub struct NetworkDescriptorSpecificationV1 {
     pub interfaces: Vec<NetworkInterfaceDescriptorSpecificationV1>,
     pub bridge_name: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all="kebab-case")]
 pub struct NetworkInterfaceDescriptorSpecificationV1 {
     pub id: Uuid,
     pub name: String,
@@ -47,6 +50,7 @@ pub struct NetworkInterfaceConfigurationSpecification {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all="kebab-case")]
 pub struct TopologySpecificationV1 {
     pub devices: Vec<DeviceSpecificationV1>,
 }
@@ -62,8 +66,10 @@ pub struct DeviceSpecificationV1 {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all="kebab-case")]
 pub struct ExecutorSpecificationV1 {
     pub id: Uuid,
+    pub results_url: Option<String>,
     pub kind: SpecificationExecutorKind,
     pub parameters: Option<ExecutorConfigurationSpecification>
 }

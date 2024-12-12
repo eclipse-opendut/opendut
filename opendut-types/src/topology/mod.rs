@@ -49,8 +49,7 @@ impl FromStr for DeviceId {
     type Err = uuid::Error;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        uuid::Uuid::from_str(value)
-            .map(|uuid| DeviceId(uuid))
+        uuid::Uuid::from_str(value).map(DeviceId)
     }
 }
 

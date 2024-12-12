@@ -138,6 +138,7 @@ mod tests {
             spec:
               location: Ulm 
               network: 
+                bridge-name: NewBridge
                 interfaces:
                 - id: a4a3c74c-71e5-49ea-9c2e-afb387951970
                   name: eth0
@@ -152,6 +153,7 @@ mod tests {
                   - new
               executors:
                 - id: da6ad5f7-ea45-4a11-aadf-4408bdb69e8e
+                  results-url: https://example.com/webdav/results/
                   kind: executable
         "#)?;
         

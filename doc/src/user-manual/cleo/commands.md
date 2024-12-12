@@ -16,11 +16,11 @@ To create resources it depends on the type of resource whether an ID or connecte
 
 ## Applying Configuration Files
 
-To use configuration files, the resource topology can be written in a yaml format which can be applied with the following command:
+To use configuration files, the resource topology can be written in a YAML format which can be applied with the following command:
 
     opendut-cleo apply --from <FILE_PATH>
 
-The yaml file can look like this:
+The YAML file can look like this:
 
 ```yaml
 ---
@@ -48,38 +48,41 @@ spec:
   topology:
     devices:
     - id: d6cd3021-0d9f-423c-862e-f30b29438cbb
-      name: MyDevice
-      description: This is a brand new device.
+      name: ecu1
+      description: ECU for controlling things.
       interface-id: a4a3c74c-71e5-49ea-9c2e-afb387951970
       tags:
-        - new-device
+        - ecu
+        - automotive
     - id: fc699f09-1d32-48f4-8836-37e0a23cf794
-      name: YourDevice
-      description: This is an old device.
+      name: restbus-sim1
+      description: Rest-Bus-Simulation for simulating other ECUs.
       interface-id: 9a182365-47e8-49e3-9b8b-df4455a3a0f8
       tags:
-        - old-device
+        - simulation
   executors:
     - id: da6ad5f7-ea45-4a11-aadf-4408bdb69e8e
       kind: container
       parameters:
         engine: podman
-        name: image-name
-        image: image
+        name: nmap-scan
+        image: debian
         volumes:
-        - 1.2
-        - 1.4
+        - /etc/
+        - /opt/
         devices:
-        - OneDevice
-        - TwoDevices
+        - ecu1
+        - restbus-sim1
         envs:
-        - name: varName
+        - name: VAR_NAME
           value: varValue
         ports:
-        - ContainerPort
-        command: color
+        - 8080:8080
+        command: nmap
         command-args:
-        - green
+        - -A
+        - -T4
+        - scanme.nmap.org
 ---
 kind: ClusterConfiguration
 version: v1
