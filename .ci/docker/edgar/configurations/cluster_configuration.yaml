@@ -1,0 +1,28 @@
+kind: ClusterConfiguration
+version: v1
+metadata:
+  id: 206e5d0d-029d-4b03-8789-e0ec46e5a6ba
+  name: test-environment-cluster
+spec:
+  leader-id: 8b5835af-0e3c-4a28-a7d7-623a929a0f1b
+  devices:
+    # leader
+    - 8aad0cd5-283d-4234-99ea-b56b74828a60
+    - 4816f401-76e1-4661-b60c-c61c388ae07a
+    - a60da111-3589-4070-890c-add36ede97b4
+    # peer-1
+    - 4c8c706d-dfb1-4e2f-8206-c505ef4394c6
+    - bc4d3f5f-9e62-4c64-9558-c370d02ba0c0
+    - 618dd78c-c705-42a0-8e80-cecbdd8c9699
+    # peer-2
+    - 2738ee0d-ba5d-4570-a5e1-360a6a114f89
+    - 3c168d87-ee31-4eb1-9429-81a4ab45a5e9
+    - 4a179018-3e2d-40c1-ae3e-997426a5ed5b
+    # peer-3
+    - db7fd7dc-ad30-437b-a184-1122df8a3ab6
+    - c3ffb0fd-625b-4cdb-9717-e48c3ffe9f8c
+    - 0a314722-7ae0-4f60-b148-c134a9d79d8a
+    # peer-4
+    - cb6dba65-6240-4412-b711-9c7a53647be9
+    - 435d21d5-6356-46e9-af0f-41d76caa8795
+    - 4b747825-506f-405b-bcb5-e577393e796a

@@ -8,10 +8,24 @@ trap error_stop_and_keep_running TERM
 trap error_stop_and_keep_running EXIT
 
 cleo_get_peer_id() {
-  edgar_hostname="$1"
-  RESULT=$(opendut-cleo list --output json peers  | jq --arg NAME "$edgar_hostname" '.[] | select(.name==$NAME)')
+  PEER_NAME="$1"
+  RESULT=$(opendut-cleo list --output json peers  | jq -r --arg PEER_NAME "$PEER_NAME" '.[] | select(.name==$PEER_NAME).id')
   if [ -n "$RESULT" ]; then
       echo "$RESULT"
+  else
+      return 1
+  fi
+}
+
+cleo_check_peer_online() {
+  PEER_NAME="$1"
+  RESULT=$(opendut-cleo list --output json peers  | jq -r --arg PEER_NAME "$PEER_NAME" '.[] | select(.name==$PEER_NAME).status')
+  if [ -n "$RESULT" ]; then
+      if [[ "$RESULT" == "Connected" ]]; then
+         return 0
+      else
+        return 1
+      fi
   else
       return 1
   fi
@@ -64,7 +78,11 @@ pre_flight_tasks() {
     ln -s /logs/netbird /var/log/netbird
   fi
 
+  # create dummy ethernet device
+  ip link add dut0 type dummy
+  ip link set dev dut0 up
 
+  # create dummy can devices
   ip link add dev vcan0 type vcan
   ip link add dev vcan1 type vcan
   ip link set dev vcan0 up
@@ -77,39 +95,39 @@ pre_flight_tasks() {
   fi
 }
 
-## MAIN TASKS
-pre_flight_tasks $1
+pre_flight_tasks "$1"
 
-PEER_ID=$(uuidgen)
-NAME="${OPENDUT_EDGAR_CLUSTER_NAME}_$(hostname)"
-echo "Creating peer with name $NAME and id $PEER_ID"
-opendut-cleo create peer --name "$NAME" --id "$PEER_ID" --location "$NAME"
+# Determine docker service name and respective role for EDGAR
+CONTAINER_IP="$(ip -4 addr show eth0 | grep -oP "(?<=inet ).*(?=/)")"
+CONTAINER_SERVICE_NAME="$(dig -x "${CONTAINER_IP}" +short | grep -Eo "edgar-[a-z0-9\-]+" | cut -d'-' -f'2-')"
 
-DEVICE_INTERFACE="dut0"
-ip link add $DEVICE_INTERFACE type dummy
-ip link set dev $DEVICE_INTERFACE up
-opendut-cleo create network-interface --peer-id "$PEER_ID" --type ethernet --name "$DEVICE_INTERFACE"
-opendut-cleo create network-interface --peer-id "$PEER_ID" --type can --name vcan0
-opendut-cleo create network-interface --peer-id "$PEER_ID" --type can --name vcan1
-opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME" --interface "$DEVICE_INTERFACE" --tag "$OPENDUT_EDGAR_CLUSTER_NAME"
-opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME"-vcan0 --interface vcan0 --tag "$OPENDUT_EDGAR_CLUSTER_NAME"
-opendut-cleo create device --peer-id "$PEER_ID" --name device-"$NAME"-vcan1 --interface vcan1 --tag "$OPENDUT_EDGAR_CLUSTER_NAME"
+# Apply peer configuration
+opendut-cleo apply "/opt/configurations/peer_descriptor_${CONTAINER_SERVICE_NAME}.yaml"
+PEER_NAME="test-environment-cluster-${CONTAINER_SERVICE_NAME}"
+PEER_ID=$(cleo_get_peer_id "$PEER_NAME")
 
+# Setup EDGAR
 PEER_SETUP_STRING=$(opendut-cleo generate-setup-string "$PEER_ID")
 echo "Setting up peer with Setup-String: $PEER_SETUP_STRING"
-
 opendut-edgar setup --no-confirm managed "$PEER_SETUP_STRING"
 
+
+############################################################
+# Wait for edgar to be declared online/connected
+############################################################
 START_TIME="$(date +%s)"
-while ! cleo_get_peer_id "$NAME"; do
+while ! cleo_check_peer_online "$PEER_NAME"; do
     check_timeout "$START_TIME" 600 || { echo "Timeout while waiting for EDGAR to register."; exit 1; }
     echo "Waiting for EDGAR to register ..."
     sleep 3
 done
 
+############################################################
+# Wait for other peers to become online
+############################################################
 expected_peer_count=$((OPENDUT_EDGAR_REPLICAS + 1))
 START_TIME="$(date +%s)"
-while ! check_expected_number_of_connected_peers_in_cluster "$expected_peer_count" "$OPENDUT_EDGAR_CLUSTER_NAME"; do
+while ! check_expected_number_of_connected_peers_in_cluster "$expected_peer_count" "test-environment-cluster"; do
   check_timeout "$START_TIME" 600 || { echo "Timeout while waiting for other EDGAR peers in my cluster."; exit 1; }
 
   echo "Waiting for all EDGAR peers in my cluster ..."
@@ -117,25 +135,12 @@ while ! check_expected_number_of_connected_peers_in_cluster "$expected_peer_coun
 done
 
 
-if [ "$1" == "leader" ]; then
-  DEVICES="$(opendut-cleo list --output=json devices | jq --arg NAME "$OPENDUT_EDGAR_CLUSTER_NAME" -r '.[] | select(.tags==$NAME).name' | xargs echo)"
-  echo "Enumerating devices to join cluster: $DEVICES"
-
-  sed -i -e "s/<PEER_ID>/$PEER_ID/g" /opt/test_execution_container/sample_executor_config.json
-  RESPONSE=$(opendut-cleo apply container-executor test_execution_container/sample_executor_config.json)
-  echo "Container executor create result: $RESPONSE"
-
-  echo "Creating cluster configuration."
-  # currently CLEO does not split the string of the device names therefore passing it without quotes
-  # shellcheck disable=SC2086
-  RESPONSE=$(opendut-cleo create --output=json cluster-configuration --name "$OPENDUT_EDGAR_CLUSTER_NAME" \
-      --leader-id "$PEER_ID" \
-      --device-names $DEVICES)
-  echo "Cluster create result: $RESPONSE"
-
-  CLUSTER_ID=$(echo "$RESPONSE" | jq -r '.id')
-  echo "Creating cluster deployment for id=$CLUSTER_ID"
-  opendut-cleo create cluster-deployment --id "$CLUSTER_ID"
+############################################################
+# Deploy cluster
+############################################################
+if [ "$CONTAINER_SERVICE_NAME" == "leader" ]; then
+  opendut-cleo apply "/opt/configurations/cluster_configuration.yaml"
+  opendut-cleo create cluster-deployment --id "206e5d0d-029d-4b03-8789-e0ec46e5a6ba"
 fi
 
 
@@ -160,7 +165,7 @@ done
 # TODO: make these hardcoded network ranges configurable/transparent
 BRIDGE_ADDRESS=$(ip -json address show dev eth0 | jq --raw-output '.[0].addr_info[0].local' | sed --expression 's#32#33#')  # derive from existing address, by replacing '32' with '33'
 ip address add "$BRIDGE_ADDRESS/24" dev "$BRIDGE"
-
+ip address show dev "$BRIDGE"
 
 # create file to signal success to THEO (omitting newline with argument '-n')
 echo -n "Success" | tee > /opt/signal/success.txt

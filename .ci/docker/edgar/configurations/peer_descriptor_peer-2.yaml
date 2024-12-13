@@ -1,0 +1,53 @@
+version: v1
+kind: PeerDescriptor
+metadata:
+  # peer ids were generated with "uuidgen"
+  id: a1db14f5-1d08-4876-adf2-ba32d99f25ff
+  name: test-environment-cluster-peer-2
+spec:
+  location: Ulm
+  network:
+    interfaces:
+      - id: 9c60c101-910c-4a86-88fa-922648abf1e4
+        name: dut0
+        kind: ethernet
+      - id: 25c2d873-35c6-4f32-b4c1-dba0e9dc1c52
+        name: vcan0
+        kind: can
+        parameters:
+          bitrate-hz: 500000
+          sample-point: 0.7
+          fd: false
+          data-bitrate-hz: 2000000
+          data-sample-point: 0.7
+      - id: 1aad3ce5-0e84-41c3-98b2-3e4055b4727d
+        name: vcan1
+        kind: can
+        parameters:
+          bitrate-hz: 500000
+          sample-point: 0.7
+          fd: false
+          data-bitrate-hz: 2000000
+          data-sample-point: 0.7
+
+  topology:
+    devices:
+      - id: 2738ee0d-ba5d-4570-a5e1-360a6a114f89
+        name: test-environment-peer-2-ecu1
+        description: ECU connected to dut0
+        interface-id: 9c60c101-910c-4a86-88fa-922648abf1e4
+        tags:
+          - test-environment-cluster
+      - id: 3c168d87-ee31-4eb1-9429-81a4ab45a5e9
+        name: test-environment-peer-2-can-device0
+        description: ECU connected to vcan0
+        interface-id: 25c2d873-35c6-4f32-b4c1-dba0e9dc1c52
+        tags:
+          - test-environment-cluster
+      - id: 4a179018-3e2d-40c1-ae3e-997426a5ed5b
+        name: test-environment-peer-2-can-device1
+        description: ECU connected to vcan1
+        interface-id: 1aad3ce5-0e84-41c3-98b2-3e4055b4727d
+        tags:
+          - test-environment-cluster
+  executors: []

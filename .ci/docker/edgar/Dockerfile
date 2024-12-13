@@ -32,6 +32,7 @@ COPY ./.ci/docker/edgar/test_execution_container /opt/test_execution_container
 WORKDIR /opt
 RUN mkdir /opt/signal/ /logs/
 COPY ./.ci/docker/edgar/scripts/* /opt
+COPY ./.ci/docker/edgar/configurations/ /opt/configurations/
 RUN /opt/dind_proxy.sh
 
 RUN mkdir -p /usr/local/opendut/bin/distribution /usr/local/opendut/bin/debug /opt/opendut/edgar/netbird/

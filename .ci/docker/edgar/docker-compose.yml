@@ -43,7 +43,6 @@ services:
       - NETBIRD_GROUP=testenv  # only used by unmanaged mode
       - OPENDUT_EDGAR_REPLICAS
       - OPENDUT_EDGAR_SERVICE_USER=root
-      - OPENDUT_EDGAR_CLUSTER_NAME
       # dynamically provided
       - NETBIRD_API_TOKEN  # only used by unmanaged mode
       - NETBIRD_MANAGEMENT_API=https://netbird-management
@@ -97,7 +96,6 @@ services:
       - NETBIRD_GROUP=testenv  # only used by unmanaged mode
       - OPENDUT_EDGAR_REPLICAS
       - OPENDUT_EDGAR_SERVICE_USER=root
-      - OPENDUT_EDGAR_CLUSTER_NAME
       # dynamically provided
       - NETBIRD_SETUP_KEY
       - NETBIRD_API_TOKEN  # only used by unmanaged mode

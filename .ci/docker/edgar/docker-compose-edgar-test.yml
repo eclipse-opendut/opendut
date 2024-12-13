@@ -44,7 +44,6 @@ services:
       - NETBIRD_GROUP=testenv  # only used by unmanaged mode
       - OPENDUT_EDGAR_REPLICAS
       - OPENDUT_EDGAR_SERVICE_USER=root
-      - OPENDUT_EDGAR_CLUSTER_NAME
 
       # Rust backtrace
       - RUST_BACKTRACE=1
@@ -95,7 +94,6 @@ services:
       - NETBIRD_GROUP=testenv  # only used by unmanaged mode
       - OPENDUT_EDGAR_REPLICAS
       - OPENDUT_EDGAR_SERVICE_USER=root
-      - OPENDUT_EDGAR_CLUSTER_NAME
 
       # Rust backtrace
       - RUST_BACKTRACE=1

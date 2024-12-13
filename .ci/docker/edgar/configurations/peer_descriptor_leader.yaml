@@ -1,0 +1,69 @@
+version: v1
+kind: PeerDescriptor
+metadata:
+  # peer ids were generated with "uuidgen"
+  id: 8b5835af-0e3c-4a28-a7d7-623a929a0f1b
+  name: test-environment-cluster-leader
+spec:
+  location: Ulm
+  network:
+    interfaces:
+      - id: 491b2e83-bb23-4364-ac18-dcbec3b6f93e
+        name: dut0
+        kind: ethernet
+      - id: ed1adaa0-57c2-4c04-b332-afdfa407013a
+        name: vcan0
+        kind: can
+        parameters:
+          bitrate-hz: 500000
+          sample-point: 0.7
+          fd: false
+          data-bitrate-hz: 2000000
+          data-sample-point: 0.7
+      - id: 850d6dff-8a98-430c-bfcb-fcba19d543be
+        name: vcan1
+        kind: can
+        parameters:
+          bitrate-hz: 500000
+          sample-point: 0.7
+          fd: false
+          data-bitrate-hz: 2000000
+          data-sample-point: 0.7
+
+  topology:
+    devices:
+      - id: 8aad0cd5-283d-4234-99ea-b56b74828a60
+        name: test-environment-leader-ecu1
+        description: ECU connected to dut0
+        interface-id: 491b2e83-bb23-4364-ac18-dcbec3b6f93e
+        tags:
+          - test-environment-cluster
+      - id: 4816f401-76e1-4661-b60c-c61c388ae07a
+        name: test-environment-leader-can-device0
+        description: ECU connected to vcan0
+        interface-id: ed1adaa0-57c2-4c04-b332-afdfa407013a
+        tags:
+          - test-environment-cluster
+      - id: a60da111-3589-4070-890c-add36ede97b4
+        name: test-environment-leader-can-device1
+        description: ECU connected to vcan1
+        interface-id: 850d6dff-8a98-430c-bfcb-fcba19d543be
+        tags:
+          - test-environment-cluster
+
+  executors:
+    - id: a0023ebc-7d10-4a65-977f-e41c97f9a7ab
+      kind: container
+      parameters:
+        engine: docker
+        name: nmap-test
+        image: nmap-test
+        volumes: []
+        devices: []
+        envs: []
+        ports: []
+        command: ""
+        command-args:
+          - -A
+          - -T4
+          - 127.0.0.1

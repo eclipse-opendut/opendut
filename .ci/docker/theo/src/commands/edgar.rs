@@ -12,7 +12,6 @@ use crate::core::docker::command::DockerCommand;
 use crate::core::docker::compose::{docker_compose_build, docker_compose_down};
 use crate::core::docker::edgar::{edgar_container_names, format_remaining_edgars_string, EDGAR_LEADER_NAME, EDGAR_PEER_1_NAME, EDGAR_PEER_2_NAME};
 use crate::core::docker::services::DockerCoreServices;
-use crate::core::project::TheoDynamicEnvVars;
 
 #[derive(clap::Parser)]
 pub struct TestEdgarCli {
@@ -55,7 +54,7 @@ impl TestEdgarCli {
 }
 
 fn start_edgar_in_docker() -> Result<i32, Error> {
-    println!("Starting EDGAR cluster '{}' in Docker.", std::env::var(TheoDynamicEnvVars::OpendutEdgarClusterName.to_string()).unwrap_or_else(|_| "edgar".to_string()));
+    println!("Starting EDGAR cluster in docker.");
     DockerCommand::new()
         .add_common_args(DockerCoreServices::Edgar.as_str())
         .add_netbird_api_key_to_env()?

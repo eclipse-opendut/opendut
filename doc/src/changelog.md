@@ -6,7 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-tbd.
+### Added
+* CLEO now comes with a new subcommand `opendut-cleo apply`. 
+  You may load cluster and peer configurations from a YAML file, similar to how resources are loaded with `kubectl apply` in Kubernetes. 
+  For more information, see: https://opendut.eclipse.dev/book/user-manual/cleo/commands.html#applying-configuration-files
+
 
 ## 0.3.1
 

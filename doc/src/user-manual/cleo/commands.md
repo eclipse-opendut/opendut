@@ -18,7 +18,7 @@ To create resources it depends on the type of resource whether an ID or connecte
 
 To use configuration files, the resource topology can be written in a YAML format which can be applied with the following command:
 
-    opendut-cleo apply --from <FILE_PATH>
+    opendut-cleo apply <FILE_PATH>
 
 The YAML file can look like this:
 
@@ -50,14 +50,14 @@ spec:
     - id: d6cd3021-0d9f-423c-862e-f30b29438cbb
       name: ecu1
       description: ECU for controlling things.
-      interface-id: a4a3c74c-71e5-49ea-9c2e-afb387951970
+      interface-id: 9a182365-47e8-49e3-9b8b-df4455a3a0f8
       tags:
         - ecu
         - automotive
     - id: fc699f09-1d32-48f4-8836-37e0a23cf794
       name: restbus-sim1
       description: Rest-Bus-Simulation for simulating other ECUs.
-      interface-id: 9a182365-47e8-49e3-9b8b-df4455a3a0f8
+      interface-id: de7d7533-011a-4823-bc51-387a3518166c
       tags:
         - simulation
   executors:
