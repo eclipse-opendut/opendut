@@ -36,6 +36,10 @@ if [ ! -e "$OPENDUT_PASSWORD_FILE" ]; then
   echo OPENDUT_USER_OPENDUT="$(create_password 16)" >> $OPENDUT_ENV_FILE
   echo CARL_POSTGRES_PASSWORD="$(create_password)" >> $OPENDUT_ENV_FILE
 
+  # Telemetry / Grafana
+  echo GF_SECURITY_ADMIN_PASSWORD="$(create_password)" >> $OPENDUT_ENV_FILE
+  echo GF_SECURITY_SECRET_KEY="$(create_password)" >> $OPENDUT_ENV_FILE
+
 fi
 
 chown -R carl:carl /provision

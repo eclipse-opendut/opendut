@@ -57,7 +57,7 @@ extensions:
   zpages:
     endpoint: :55679
   oidc:
-    issuer_url: https://auth.opendut.local/realms/opendut  #FIXME hostname wrong?
+    issuer_url: https://auth.opendut.local/realms/opendut
     audience: account
 
 service:

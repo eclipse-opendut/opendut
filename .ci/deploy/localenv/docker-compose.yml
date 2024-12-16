@@ -6,24 +6,33 @@ x-common-healthcheck-params: &common-healthcheck-params
   start_period: 2m  # Probe failure during start will not be counted towards the maximum number of retries
   start_interval: 5s
 
+name: opendut
+
 services:
-  keycloak_postgres:
-    image: "postgres:14.4"
+  keycloak-postgres:
+    container_name: opendut-keycloak-postgres
+    image: "postgres:15.10"
     restart: unless-stopped
     healthcheck:
       <<: *common-healthcheck-params
       test: [ "CMD", "pg_isready", "--quiet", "--dbname=postgres", "--username=postgres" ]
     volumes:
       - keycloak_postgres_data:/var/lib/postgresql/data
+      - keycloak_postgres_backup:/var/lib/postgresql/backup
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=$KEYCLOAK_POSTGRES_PASSWORD
       - POSTGRES_DB=keycloak
       - POSTGRES_HOST=postgres
+    labels:
+      - traefik.enable=false
+      - logging=promtail
+      - logging_job=keycloak-postgres
     networks:
       - opendut_local
 
   keycloak:
+    container_name: opendut-keycloak
     build:
       context: ../../..
       dockerfile: ./.ci/deploy/localenv/data/keycloak/Dockerfile-keycloak-server
@@ -32,7 +41,7 @@ services:
     command: ['start', '--optimized']
     restart: unless-stopped
     depends_on:
-      - keycloak_postgres
+      - keycloak-postgres
       - traefik
     # this healthcheck requires the init container for provisioning
     healthcheck:
@@ -41,7 +50,7 @@ services:
     environment:
     - JAVA_OPTS_APPEND=-Dkeycloak.profile.feature.upload_scripts=enabled
     - KC_DB_PASSWORD=$KEYCLOAK_POSTGRES_PASSWORD
-    - KC_DB_URL=jdbc:postgresql://keycloak_postgres/keycloak
+    - KC_DB_URL=jdbc:postgresql://keycloak-postgres/keycloak
     - KC_DB_USERNAME=postgres
     - KC_HEALTH_ENABLED=true
     - KC_HTTP_ENABLED=true
@@ -53,12 +62,16 @@ services:
     - KEYCLOAK_ADMIN=admin
     - KEYCLOAK_ADMIN_PASSWORD
     labels:
+      - traefik.enable=true
       - "traefik.http.routers.keycloak.rule=Host(`auth.opendut.local`)"
       - "traefik.http.routers.keycloak.tls=true"
+      - logging=promtail
+      - logging_job=keycloak
     networks:
       - opendut_local
 
   init_keycloak:
+    container_name: opendut-keycloak-init
     build:
       context: ../../..
       dockerfile: .ci/deploy/localenv/data/keycloak/Dockerfile-keycloak-provision
@@ -84,11 +97,16 @@ services:
       - OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_SECRET
       - OPENDUT_USER_OPENDUT
       - NETBIRD_PASSWORD
+    labels:
+      - traefik.enable=false
+      - logging=promtail
+      - logging_job=keycloak-init
     networks:
       opendut_local:
 
-  # frontend
+  # Public web entrypoint exposed to end users
   traefik:
+    container_name: opendut-traefik
     image: docker.io/traefik:v2.10.4
     restart: unless-stopped
     command:
@@ -101,8 +119,10 @@ services:
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--providers.file.directory=/etc/traefik/dynamic"
       - "--providers.file.watch=true"
-      - "--log.level=DEBUG"
-      - "--accesslog"
+      - "--log.level=DEBUG"  # TODO: reduce level
+      - "--log.format=json"
+      - "--accesslog"  # TODO: remove access log?
+      - "--accesslog.format=json"
     environment:
       - "LEGO_CA_CERTIFICATES=/pki/insecure-development-ca.pem"
     ports:
@@ -117,6 +137,9 @@ services:
       - ./data/traefik/config:/etc/traefik/dynamic:ro
       - ./data/secrets/pki/:/pki
       - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      - logging=promtail
+      - logging_job=traefik
     networks:
       opendut_local:
         aliases:
@@ -129,6 +152,7 @@ services:
 
 # vaguely derived from: https://github.com/netbirdio/netbird/blob/main/infrastructure_files/docker-compose.yml.tmpl.traefik
   netbird-dashboard:
+    container_name: opendut-netbird-dashboard
     image: netbirdio/dashboard:v2.5.0
     restart: unless-stopped
     depends_on:
@@ -157,12 +181,15 @@ services:
       - traefik.http.routers.netbird-dashboard.rule=Host(`netbird.opendut.local`)
       - traefik.http.routers.netbird-dashboard.tls=true
       - traefik.http.services.netbird-dashboard.loadbalancer.server.port=80
+      - logging=promtail
+      - logging_job=netbird-dashboard
 
     networks:
       - opendut_local
 
   # Signal
   netbird-signal:
+    container_name: opendut-netbird-signal
     image: netbirdio/signal:0.28.9
     restart: unless-stopped
     volumes:
@@ -172,11 +199,14 @@ services:
       - traefik.http.routers.netbird-signal.rule=Host(`signal.opendut.local`)
       - traefik.http.services.netbird-signal.loadbalancer.server.port=80
       - traefik.http.services.netbird-signal.loadbalancer.server.scheme=h2c
+      - logging=promtail
+      - logging_job=netbird-signal
     networks:
       - opendut_local
 
   # Management
   netbird-management:
+    container_name: opendut-netbird-management
     build:
       context: ../../..
       dockerfile: ./.ci/deploy/localenv/data/netbird/Dockerfile_management
@@ -231,21 +261,26 @@ services:
       test: ["CMD-SHELL", "/netbird-management-health.sh"]
     labels:
       - traefik.enable=true
+      # Netbird API REST endpoint
       - traefik.http.routers.netbird-api.rule=Host(`netbird-api.opendut.local`) && PathPrefix(`/api`)
       - traefik.http.routers.netbird-api.service=netbird-api
       - traefik.http.routers.netbird-api.tls=true
       - traefik.http.services.netbird-api.loadbalancer.server.port=80
-
+      # Netbird API GRPC endpoint
       - traefik.http.routers.netbird-management.rule=Host(`netbird-api.opendut.local`) && PathPrefix(`/management.ManagementService/`)
       - traefik.http.routers.netbird-management.service=netbird-management
       - traefik.http.routers.netbird-management.tls=true
       - traefik.http.services.netbird-management.loadbalancer.server.port=80
       - traefik.http.services.netbird-management.loadbalancer.server.scheme=h2c
+      # Logging
+      - logging=promtail
+      - logging_job=netbird-management
     networks:
       - opendut_local
 
   # Coturn
-  coturn:
+  netbird-coturn:
+    container_name: opendut-netbird-coturn
     # https://hub.docker.com/r/coturn/coturn/tags
     # https://github.com/coturn/coturn/tree/master/docker/coturn#why-so-many-ports-opened
     image: coturn/coturn:4.6.2
@@ -262,20 +297,27 @@ services:
     network_mode: host  # only container using network host mode
     labels:
       - traefik.enable=false
+      - logging=promtail
+      - logging_job=netbird-coturn
     entrypoint: ["/coturn/entrypoint.sh"]
     # turnutils_uclient -T -p $TURN_PORT -u $TURN_USER -w $TURN_PASSWORD localhost
     healthcheck:
       <<: *common-healthcheck-params
       test: ["CMD-SHELL", "turnutils_uclient -T -p $$TURN_PORT -u $$TURN_USER -w $$TURN_PASSWORD localhost"]
 
-  carl_postgres:
-    image: "postgres:14.4"
+  carl-postgres:
+    container_name: opendut-carl-postgres
+    image: "postgres:15.10"
     restart: unless-stopped
     healthcheck:
       <<: *common-healthcheck-params
-      test: [ "CMD", "pg_isready", "--quiet", "--dbname=carl", "--username=postgres" ]
+      test: [ "CMD", "pg_isready", "--quiet", "--dbname=postgres", "--username=postgres" ]
     volumes:
       - carl_postgres_data:/var/lib/postgresql/data
+    labels:
+      - traefik.enable=false
+      - logging=promtail
+      - logging_job=carl-postgres
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=$CARL_POSTGRES_PASSWORD
@@ -285,11 +327,12 @@ services:
       - opendut_local
 
   carl:
+    container_name: opendut-carl
     image: "ghcr.io/eclipse-opendut/opendut-carl:0.3.1"
     command: ["/opt/opendut-carl/opendut-carl"]
     restart: unless-stopped
     depends_on:
-      carl_postgres:
+      carl-postgres:
         condition: service_healthy
       traefik:
         condition: service_started
@@ -320,7 +363,7 @@ services:
       - OPENDUT_CARL_VPN_NETBIRD_URL=https://netbird-api.opendut.local/api
       - OPENDUT_CARL_VPN_NETBIRD_AUTH_TYPE=personal-access-token
       # OpenTelemetry
-      - OPENDUT_CARL_OPENTELEMETRY_ENABLED=false
+      - OPENDUT_CARL_OPENTELEMETRY_ENABLED=true
       - OPENDUT_CARL_OPENTELEMETRY_COLLECTOR_ENDPOINT=http://otel-collector:4317
       # OIDC
       - OPENDUT_CARL_NETWORK_OIDC_ENABLED=true
@@ -333,7 +376,7 @@ services:
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_SCOPES=
       # Persistence
       - OPENDUT_CARL_PERSISTENCE_ENABLED=true
-      - OPENDUT_CARL_PERSISTENCE_DATABASE_URL=postgres://carl_postgres/carl
+      - OPENDUT_CARL_PERSISTENCE_DATABASE_URL=postgres://opendut-carl-postgres/carl
       - OPENDUT_CARL_PERSISTENCE_DATABASE_USERNAME=postgres
       - OPENDUT_CARL_PERSISTENCE_DATABASE_PASSWORD=$CARL_POSTGRES_PASSWORD
 
@@ -357,6 +400,7 @@ services:
           - carl.opendut.local
 
   cleo:
+    container_name: opendut-cleo
     build:
       context: ../../..
       dockerfile: ./.ci/deploy/localenv/data/cleo/Dockerfile
@@ -376,12 +420,15 @@ services:
       - OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SCOPES=
       - OPENDUT_CLEO_NETWORK_TLS_CA=/etc/opendut/tls/ca.pem
       - SSL_CERT_FILE=/etc/opendut/tls/ca.pem
+    labels:
+      - traefik.enable=false
     volumes:
       - "./data/secrets/pki/insecure-development-ca.pem:/etc/opendut/tls/ca.pem"
     networks:
       - opendut_local
 
   nginx-webdav:
+    container_name: opendut-nginx-webdav
     build:
       context: ../../..
       dockerfile: ./.ci/deploy/localenv/data/nginx-webdav/Dockerfile
@@ -400,6 +447,8 @@ services:
       - traefik.http.routers.nginx-webdav.rule=Host(`nginx-webdav.opendut.local`)
       - traefik.http.routers.nginx-webdav.tls=true
       - traefik.http.services.nginx-webdav.loadbalancer.server.port=80
+      - logging=promtail
+      - logging_job=nginx-webdav
 
     networks:
       opendut_local:
@@ -408,7 +457,7 @@ services:
 
 
   prometheus:
-    container_name: prometheus
+    container_name: opendut-prometheus
     image: prom/prometheus:v2.51.1
     command: [ "--config.file=/etc/prometheus/prometheus.yml", "--web.enable-remote-write-receiver", "--enable-feature=exemplar-storage" ]
     restart: always
@@ -420,7 +469,7 @@ services:
       - opendut_local
 
   tempo:
-    container_name: tempo
+    container_name: opendut-tempo
     image: grafana/tempo:2.4.1
     command: [ "-config.file=/etc/tempo.yml" ]
     volumes:
@@ -436,7 +485,7 @@ services:
       - opendut_local
 
   loki:
-    container_name: loki
+    container_name: opendut-loki
     image: grafana/loki:2.9.6
     volumes:
       - ./data/telemetry/loki.yml:/etc/loki/loki.yml
@@ -453,8 +502,8 @@ services:
       - opendut_local
 
   promtail:
+    container_name: opendut-promtail
     image: grafana/promtail:2.9.6
-    container_name: promtail
     volumes:
       - ./data/telemetry/promtail.yml:/etc/promtail/docker-config.yaml
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
@@ -468,17 +517,17 @@ services:
       - opendut_local
 
   otel-collector:
-    container_name: otel-collector
+    container_name: opendut-otel-collector
     image: otel/opentelemetry-collector-contrib:0.97.0
     volumes:
-      - ./data/telemetry/otel-collector.yml:/etc/collector-gateway.yaml
+      - ./data/telemetry/otel-collector.yml:/etc/collector-gateway.yaml:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./data/secrets/pki/insecure-development-ca.pem:/pki/insecure-development-ca.pem:ro
     environment:
       - "SSL_CERT_FILE=/pki/insecure-development-ca.pem"
     command: [ "--config=/etc/collector-gateway.yaml" ]
-    user: "0"
+    user: "0"  # root required to access docker socket
     depends_on:
       tempo:
         condition: service_started
@@ -495,9 +544,59 @@ services:
     networks:
       - opendut_local
 
+  grafana:
+    container_name: opendut-grafana
+    image: grafana/grafana:10.4.1
+    restart: unless-stopped
+    depends_on:
+      tempo:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+      prometheus:
+        condition: service_started
+    environment:
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
+      # https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#override-configuration-with-environment-variables
+      - GF_SECURITY_ADMIN_PASSWORD
+      - GF_SECURITY_SECRET_KEY
+    volumes:
+      - ./data/telemetry/grafana/grafana.ini:/etc/grafana/grafana.ini
+      - ./data/telemetry/grafana/dashboards:/var/lib/grafana/dashboards
+      - ./data/telemetry/grafana/dashboard.yml:/etc/grafana/provisioning/dashboards/main.yaml
+      - ./data/telemetry/grafana/grafana-datasources.yml:/etc/grafana/provisioning/datasources/ds.yaml
+      - grafana-storage:/var/lib/grafana
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.grafana.rule=Host(`monitoring.opendut.local`)
+      - traefik.http.routers.grafana.tls=true
+      - traefik.http.services.grafana.loadbalancer.server.port=80
+    networks:
+      - opendut_local
+
+# TODO: provision custom opendut user or configure oauth in grafana
+#  grafana_users:
+#    container_name: grafana_users
+#    image: alpine:latest
+#    depends_on:
+#      grafana:
+#        condition: service_started
+#    environment:
+#      - OPENDUT_USER_OPENDUT
+#      - GF_SECURITY_ADMIN_PASSWORD
+#    command: >
+#      sh -c "apk --no-cache add curl && sleep 5 && curl -X POST -u admin:$GF_SECURITY_ADMIN_PASSWORD \
+#      -H \"Accept: application/json\" \
+#      -H \"Content-Type: application/json\" \
+#      -d '{\"name\": \"openDuT\", \"login\": \"opendut\", \"password\": \"$OPENDUT_USER_OPENDUT\", \"OrgId\": 1}' \
+#      http://grafana:80/api/admin/users"
+#    networks:
+#      - opendut_local
 
 volumes:
   keycloak_postgres_data:
+  keycloak_postgres_backup:
   netbird-mgmt-data:
   netbird-mgmt-config:
   netbird-signal:
@@ -506,6 +605,7 @@ volumes:
   opendut_nginx-webdav:
   tempo-data:
   loki-data:
+  grafana-storage:
 
 networks:
   opendut_local:

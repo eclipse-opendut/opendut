@@ -13,3 +13,4 @@ PKI_ROOT_DIR="/provision/"
 "$PKI_ROOT_DIR"./generate-certificate.sh carl.opendut.local
 "$PKI_ROOT_DIR"./generate-certificate.sh nginx-webdav.opendut.local
 "$PKI_ROOT_DIR"./generate-certificate.sh opentelemetry.opendut.local
+"$PKI_ROOT_DIR"./generate-certificate.sh monitoring.opendut.local
