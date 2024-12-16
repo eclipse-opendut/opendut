@@ -21,8 +21,8 @@ pub(crate) fn init_tracer(
 
     let provider = TracerProvider::builder()
         .with_batch_exporter(exporter, runtime::Tokio)
-        .with_config(
-            opentelemetry_sdk::trace::Config::default().with_resource(Resource::new(vec![
+        .with_resource(
+            Resource::new(vec![
                 KeyValue::new(
                     opentelemetry_semantic_conventions::resource::SERVICE_NAME,
                     service_name.into()),
@@ -30,7 +30,7 @@ pub(crate) fn init_tracer(
                     opentelemetry_semantic_conventions::resource::SERVICE_INSTANCE_ID,
                     service_instance_id.into()
                 )
-            ])),
+            ])
         )
         .build();
 
