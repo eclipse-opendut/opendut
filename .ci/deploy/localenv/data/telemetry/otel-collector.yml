@@ -51,11 +51,16 @@ exporters:
       job: true
 
 extensions:
+  # healthcheck endpoint: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/extension/healthcheckextension/README.md
+  # http://otel-collector:13133/health/status
   health_check:
+  # Performance Profiler: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/extension/pprofextension/README.md
   pprof:
     endpoint: :1888
+  # Enables an extension that serves zPages, an HTTP endpoint that provides live data for debugging different components
   zpages:
     endpoint: :55679
+  #
   oidc:
     issuer_url: https://auth.opendut.local/realms/opendut
     audience: account

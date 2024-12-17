@@ -11,7 +11,7 @@ name: opendut
 services:
   keycloak-postgres:
     container_name: opendut-keycloak-postgres
-    image: "postgres:15.10"
+    image: "postgres:14.15"
     restart: unless-stopped
     healthcheck:
       <<: *common-healthcheck-params
@@ -46,7 +46,7 @@ services:
     # this healthcheck requires the init container for provisioning
     healthcheck:
       <<: *common-healthcheck-params
-      test: [ "CMD", "curl", "-sf", "http://localhost:8080/realms/provisioning-done", "--output", "/dev/null" ]
+      test: [ "CMD-SHELL", "curl --fail --silent --output /dev/null --noproxy '*' http://localhost:8080/realms/provisioning-done || exit 1" ]
     environment:
     - JAVA_OPTS_APPEND=-Dkeycloak.profile.feature.upload_scripts=enabled
     - KC_DB_PASSWORD=$KEYCLOAK_POSTGRES_PASSWORD
@@ -175,7 +175,7 @@ services:
       - AUTH_SILENT_REDIRECT_URI=
     healthcheck:
       <<: *common-healthcheck-params
-      test: ["CMD-SHELL", "curl --silent --output /dev/null -w '%{http_code}' http://localhost || exit 1"]
+      test: [ "CMD-SHELL", "curl --fail --silent --output /dev/null --noproxy '*' http://localhost || exit 1" ]
     labels:
       - traefik.enable=true
       - traefik.http.routers.netbird-dashboard.rule=Host(`netbird.opendut.local`)
@@ -307,7 +307,7 @@ services:
 
   carl-postgres:
     container_name: opendut-carl-postgres
-    image: "postgres:15.10"
+    image: "postgres:14.15"
     restart: unless-stopped
     healthcheck:
       <<: *common-healthcheck-params
@@ -386,9 +386,7 @@ services:
     # https://docs.docker.com/reference/dockerfile/#healthcheck
     healthcheck:
       <<: *common-healthcheck-params
-      # curl --resolve carl.opendut.local:443:127.0.0.1 --fail --verbose https://carl.opendut.local
-      test: ["CMD", "curl", "--resolve", "carl.opendut.local:443:127.0.0.1", "--fail", "--silent", "https://carl.opendut.local"]
-
+      test: [ "CMD-SHELL", "curl --fail --silent --resolve carl.opendut.local:443:127.0.0.1 --output /dev/null --noproxy '*' --insecure https://carl.opendut.local || exit 1" ]
     labels:
       - traefik.enable=true
       - traefik.tcp.routers.carl.rule=HostSNI(`carl.opendut.local`)
@@ -440,8 +438,7 @@ services:
       - opendut_nginx-webdav:/media/data
     healthcheck:
       <<: *common-healthcheck-params
-      test: ["CMD", "curl", "--resolve", "nginx-webdav.opendut.local:80:127.0.0.1", "http://nginx-webdav.opendut.local", "--output", "/dev/null"]
-
+      test: [ "CMD-SHELL", "curl --fail --silent --output /dev/null --noproxy '*' http://localhost || exit 1" ]
     labels:
       - traefik.enable=true
       - traefik.http.routers.nginx-webdav.rule=Host(`nginx-webdav.opendut.local`)
@@ -518,12 +515,16 @@ services:
 
   otel-collector:
     container_name: opendut-otel-collector
-    image: otel/opentelemetry-collector-contrib:0.97.0
     volumes:
       - ./data/telemetry/otel-collector.yml:/etc/collector-gateway.yaml:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./data/secrets/pki/insecure-development-ca.pem:/pki/insecure-development-ca.pem:ro
+    build:
+      context: ../../..
+      dockerfile: ./.ci/deploy/localenv/data/telemetry/Dockerfile_otel-collector
+      args:
+        OTEL_COLLECTOR_VERSION: 0.97.0
     environment:
       - "SSL_CERT_FILE=/pki/insecure-development-ca.pem"
     command: [ "--config=/etc/collector-gateway.yaml" ]
@@ -538,9 +539,17 @@ services:
     restart: on-failure
     labels:
       - traefik.enable=true
-      - traefik.http.routers.otel-collector.rule=Host(`opentelemetry.opendut.local`)
-      - traefik.http.routers.otel-collector.tls=true
-      - traefik.http.services.otel-collector.loadbalancer.server.port=80
+      # OpenTelemetry GRPC endpoint
+      - traefik.http.routers.otel-collector-grpc.rule=Host(`opentelemetry.opendut.local`)
+      - traefik.http.routers.otel-collector-grpc.tls=true
+      - traefik.http.routers.otel-collector-grpc.service=otel-collector-grpc
+      - traefik.http.services.otel-collector-grpc.loadbalancer.server.port=4317
+      - traefik.http.services.otel-collector-grpc.loadbalancer.server.scheme=h2c
+      # Health check endpoint
+      - traefik.http.routers.otel-collector-health.rule=Host(`opentelemetry.opendut.local`) && PathPrefix(`/health`)
+      - traefik.http.routers.otel-collector-health.tls=true
+      - traefik.http.routers.otel-collector-health.service=otel-collector-health
+      - traefik.http.services.otel-collector-health.loadbalancer.server.port=13133
     networks:
       - opendut_local
 
@@ -561,6 +570,9 @@ services:
       # https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#override-configuration-with-environment-variables
       - GF_SECURITY_ADMIN_PASSWORD
       - GF_SECURITY_SECRET_KEY
+    healthcheck:
+      <<: *common-healthcheck-params
+      test: [ "CMD-SHELL", "curl --silent --output /dev/null --fail http://localhost || exit 1" ]
     volumes:
       - ./data/telemetry/grafana/grafana.ini:/etc/grafana/grafana.ini
       - ./data/telemetry/grafana/dashboards:/var/lib/grafana/dashboards
@@ -575,24 +587,23 @@ services:
     networks:
       - opendut_local
 
-# TODO: provision custom opendut user or configure oauth in grafana
-#  grafana_users:
-#    container_name: grafana_users
-#    image: alpine:latest
-#    depends_on:
-#      grafana:
-#        condition: service_started
-#    environment:
-#      - OPENDUT_USER_OPENDUT
-#      - GF_SECURITY_ADMIN_PASSWORD
-#    command: >
-#      sh -c "apk --no-cache add curl && sleep 5 && curl -X POST -u admin:$GF_SECURITY_ADMIN_PASSWORD \
-#      -H \"Accept: application/json\" \
-#      -H \"Content-Type: application/json\" \
-#      -d '{\"name\": \"openDuT\", \"login\": \"opendut\", \"password\": \"$OPENDUT_USER_OPENDUT\", \"OrgId\": 1}' \
-#      http://grafana:80/api/admin/users"
-#    networks:
-#      - opendut_local
+  grafana_users:
+    container_name: opendut-grafana-users
+    image: alpine:latest
+    depends_on:
+      grafana:
+        condition: service_healthy
+    environment:
+      - OPENDUT_USER_OPENDUT
+      - GF_SECURITY_ADMIN_PASSWORD
+    command: >
+      sh -c "apk --no-cache add curl && sleep 5 && curl -v --noproxy '*' -X POST -u admin:$GF_SECURITY_ADMIN_PASSWORD \
+      -H \"Accept: application/json\" \
+      -H \"Content-Type: application/json\" \
+      -d '{\"name\": \"openDuT\", \"login\": \"opendut\", \"password\": \"$OPENDUT_USER_OPENDUT\", \"OrgId\": 1}' \
+      http://grafana:80/api/admin/users"
+    networks:
+      - opendut_local
 
 volumes:
   keycloak_postgres_data:
