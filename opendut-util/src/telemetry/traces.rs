@@ -16,6 +16,7 @@ pub(crate) fn init_tracer(
     let exporter = SpanExporter::builder()
         .with_tonic()
         .with_interceptor(telemetry_interceptor)
+        .with_tls_config(tonic::transport::ClientTlsConfig::new().with_enabled_roots())
         .with_endpoint(Clone::clone(&endpoint.url))
         .build()?;
 

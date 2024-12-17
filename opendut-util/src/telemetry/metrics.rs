@@ -25,6 +25,7 @@ pub fn init_metrics(
     let exporter = MetricExporter::builder()
         .with_tonic()
         .with_interceptor(telemetry_interceptor)
+        .with_tls_config(tonic::transport::ClientTlsConfig::new().with_enabled_roots())
         .with_endpoint(Clone::clone(&endpoint.url))
         .build()?;
 
