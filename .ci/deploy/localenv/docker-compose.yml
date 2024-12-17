@@ -25,7 +25,6 @@ services:
       - POSTGRES_DB=keycloak
       - POSTGRES_HOST=postgres
     labels:
-      - traefik.enable=false
       - logging=promtail
       - logging_job=keycloak-postgres
     networks:
@@ -98,7 +97,6 @@ services:
       - OPENDUT_USER_OPENDUT
       - NETBIRD_PASSWORD
     labels:
-      - traefik.enable=false
       - logging=promtail
       - logging_job=keycloak-init
     networks:
@@ -115,6 +113,7 @@ services:
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
       - --ping=true
+      - --providers.docker.exposedByDefault=false
       # Redirect to HTTPS
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--providers.file.directory=/etc/traefik/dynamic"
@@ -296,7 +295,6 @@ services:
       - TURN_PORT=3478
     network_mode: host  # only container using network host mode
     labels:
-      - traefik.enable=false
       - logging=promtail
       - logging_job=netbird-coturn
     entrypoint: ["/coturn/entrypoint.sh"]
@@ -315,7 +313,6 @@ services:
     volumes:
       - carl_postgres_data:/var/lib/postgresql/data
     labels:
-      - traefik.enable=false
       - logging=promtail
       - logging_job=carl-postgres
     environment:
@@ -418,8 +415,6 @@ services:
       - OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SCOPES=
       - OPENDUT_CLEO_NETWORK_TLS_CA=/etc/opendut/tls/ca.pem
       - SSL_CERT_FILE=/etc/opendut/tls/ca.pem
-    labels:
-      - traefik.enable=false
     volumes:
       - "./data/secrets/pki/insecure-development-ca.pem:/etc/opendut/tls/ca.pem"
     networks:
@@ -460,8 +455,6 @@ services:
     restart: always
     volumes:
       - ./data/telemetry/prometheus.yml:/etc/prometheus/prometheus.yml
-    labels:
-      - traefik.enable=false
     networks:
       - opendut_local
 
@@ -476,8 +469,6 @@ services:
       interval: 5s
       retries: 10
       test: wget --proxy off --no-verbose --tries=1 --spider http://tempo:3200/status || exit 1
-    labels:
-      - traefik.enable=false
     networks:
       - opendut_local
 
@@ -493,8 +484,6 @@ services:
       interval: 10s
       timeout: 7s
       retries: 5
-    labels:
-      - traefik.enable=false
     networks:
       - opendut_local
 
@@ -508,8 +497,6 @@ services:
     command: -config.file=/etc/promtail/docker-config.yaml
     depends_on:
       - loki
-    labels:
-      - traefik.enable=false
     networks:
       - opendut_local
 
