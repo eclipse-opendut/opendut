@@ -71,7 +71,7 @@ pub enum EdgarDeploymentStatus {
 impl std::fmt::Display for EdgarDeploymentStatus {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let lower_case_debug = format!("{self:?}").to_lowercase();
-        writeln!(f, "{lower_case_debug}")
+        write!(f, "{lower_case_debug}")
     }
 }
 
