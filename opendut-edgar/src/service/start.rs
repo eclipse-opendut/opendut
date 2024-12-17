@@ -61,22 +61,19 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
 
     let service_instance_id = self_id.to_string();
 
-    let logging_config = LoggingConfig::load(&settings.config)?;
-    let opentelemetry = Opentelemetry::load(&settings.config, service_instance_id).await?;
-    
-    let mut shutdown = telemetry::initialize_with_config(logging_config, opentelemetry.clone()).await?;
+    let mut metrics_shutdown_handle = {
+        let logging_config = LoggingConfig::load(&settings.config)?;
+        let opentelemetry = Opentelemetry::load(&settings.config, service_instance_id).await?;
 
-    if let (Opentelemetry::Enabled { cpu_collection_interval_ms, .. },
-        Some(meter_providers, ..)) = (opentelemetry, &shutdown.meter_providers) {
-        telemetry::metrics::initialize_metrics_collection(cpu_collection_interval_ms, meter_providers);
-    }
+        telemetry::initialize_with_config(logging_config, opentelemetry).await?
+    };
 
     let (tx_peer_configuration, rx_peer_configuration) = mpsc::channel(100);
     crate::service::peer_configuration::spawn_peer_configurations_handler(rx_peer_configuration).await?;
 
     run_stream_receiver(self_id, settings, tx_peer_configuration).await?;
 
-    shutdown.shutdown();
+    metrics_shutdown_handle.shutdown();
 
     Ok(())
 }

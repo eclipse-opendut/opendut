@@ -7,7 +7,7 @@ use opentelemetry_sdk::{Resource, runtime};
 use opendut_auth::confidential::blocking::client::{ConfClientArcMutex, ConfidentialClientRef};
 use crate::telemetry::opentelemetry_types::Endpoint;
 
-#[derive(Default, Clone)]
+#[derive(Default)]
 pub struct LoggingConfig {
     pub logging_stdout: bool,
     pub file_logging: Option<PathBuf>,
@@ -32,7 +32,7 @@ pub fn init_logger_provider(
     telemetry_interceptor: ConfClientArcMutex<Option<ConfidentialClientRef>>,
     endpoint: &Endpoint,
     service_name: impl Into<String>,
-    service_instance_id: impl Into<String>
+    service_instance_id: impl Into<String>,
 ) -> Result<LoggerProvider, LogError> {
 
     let exporter = LogExporter::builder()
@@ -46,7 +46,8 @@ pub fn init_logger_provider(
         .with_resource(Resource::new(vec![
             KeyValue::new(
                 opentelemetry_semantic_conventions::resource::SERVICE_NAME,
-                service_name.into()),
+                service_name.into()
+            ),
             KeyValue::new(
                 opentelemetry_semantic_conventions::resource::SERVICE_INSTANCE_ID,
                 service_instance_id.into()

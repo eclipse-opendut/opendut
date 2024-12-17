@@ -3,7 +3,7 @@ use url::Url;
 use opendut_auth::confidential::blocking::client::{ConfidentialClient, ConfidentialClientRef};
 use opendut_auth::confidential::error::ConfidentialClientError;
 
-#[derive(Default, Clone)]
+#[derive(Default)]
 pub enum Opentelemetry {
     Enabled {
         confidential_client: Option<ConfidentialClientRef>,

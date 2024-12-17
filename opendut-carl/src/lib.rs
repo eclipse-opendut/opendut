@@ -48,12 +48,7 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
     let logging_config = LoggingConfig::load(&settings.config)?;
     let opentelemetry = Opentelemetry::load(&settings.config, service_instance_id).await?;
 
-    let mut shutdown = telemetry::initialize_with_config(logging_config, opentelemetry.clone()).await?;
-    
-    if let (Opentelemetry::Enabled { cpu_collection_interval_ms, .. },
-        Some(meter_providers, ..)) = (opentelemetry, &shutdown.meter_providers) {
-        telemetry::metrics::initialize_metrics_collection(cpu_collection_interval_ms, meter_providers);
-    }
+    let mut shutdown = telemetry::initialize_with_config(logging_config, opentelemetry).await?;
 
     create(settings).await?;
 

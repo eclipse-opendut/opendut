@@ -13,7 +13,7 @@ use opentelemetry::trace::{TraceError, TracerProvider};
 use opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 use tokio::sync::Mutex;
-use tracing::error;
+use tracing::{debug, error, trace};
 use tracing_subscriber::filter::Directive;
 use tracing_subscriber::filter::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
@@ -55,50 +55,58 @@ pub async fn initialize_with_config(
 ) -> Result<ShutdownHandle, Error> {
 
     global::set_text_map_propagator(TraceContextPropagator::new());
-    
-    let tracing_filter = EnvFilter::builder()
-        .with_default_directive(Directive::from_str("opendut=trace")?)
-        .with_env_var("OPENDUT_LOG")
-        .from_env()?;
 
-    let stdout_logging_layer =
-        if logging_config.logging_stdout {
-            let stdout_logging_layer = tracing_subscriber::fmt::layer()
-                .compact();
-            Some(stdout_logging_layer)
-        } else {
-            None
-        };
+    let tracing_subscriber = tracing_subscriber::registry()
+        .with(
+            EnvFilter::builder()
+                .with_default_directive(Directive::from_str("opendut=trace")?)
+                .with_env_var("OPENDUT_LOG")
+                .from_env()?
+        ).with(
+            logging_config.logging_stdout
+                .then_some(tracing_subscriber::fmt::layer())
+        ).with(
+            logging_config.file_logging
+                .map(|log_file| {
+                    let log_file = File::options()
+                        .append(true)
+                        .create(true)
+                        .open(&log_file)
+                        .unwrap_or_else(|cause| panic!("Failed to open log file at '{}': {cause}", log_file.display()));
 
-    let file_logging_layer =
-        if let Some(log_file) = logging_config.file_logging {
+                    tracing_subscriber::fmt::layer()
+                        .with_writer(log_file)
+                })
+        );
 
-            let log_file = File::options()
-                .append(true)
-                .create(true)
-                .open(&log_file)
-                .unwrap_or_else(|cause| panic!("Failed to open log file at '{}': {cause}", log_file.display()));
-
-            Some(tracing_subscriber::fmt::layer()
-                .with_writer(log_file))
-        } else {
-            None
-        };
-
-    let (tracer_provider, logger_layer, meter_providers) =
+    let meter_providers =
         if let Opentelemetry::Enabled {
             collector_endpoint,
-            service_name, 
-            service_instance_id, 
-            metrics_interval_ms, 
-            cpu_collection_interval_ms, 
-            confidential_client, ..} = opentelemetry_config {
-
+            service_name,
+            metrics_interval_ms,
+            service_instance_id,
+            cpu_collection_interval_ms,
+            confidential_client,
+        } = opentelemetry_config {
             let confidential_client = ConfClientArcMutex(Arc::new(Mutex::new(confidential_client)));
 
-            let tracer = traces::init_tracer(confidential_client.clone(), &collector_endpoint, service_name.clone(), service_instance_id.clone()).expect("Failed to initialize tracer.");
-            
-            let logger_provider = logging::init_logger_provider(confidential_client.clone(), &collector_endpoint, service_name.clone(), service_instance_id.clone()).expect("Failed to initialize logs.");
+            let tracer_provider = traces::init_tracer(
+                confidential_client.clone(),
+                &collector_endpoint,
+                service_name.clone(),
+                service_instance_id.clone()
+            ).expect("Failed to initialize tracer.");
+
+            let tracing_layer = tracing_opentelemetry::layer()
+                .with_tracer(tracer_provider.tracer(DEFAULT_TRACER_NAME));
+
+            let logger_provider = logging::init_logger_provider(
+                confidential_client.clone(),
+                &collector_endpoint,
+                service_name.clone(),
+                service_instance_id.clone()
+            ).expect("Failed to initialize logs.");
+
             let logger_layer = OpenTelemetryTracingBridge::new(&logger_provider);
 
             let default_meter_provider = NamedMeterProvider {
@@ -126,21 +134,24 @@ pub async fn initialize_with_config(
             global::set_meter_provider(default_meter_provider.meter_provider.clone());
             let meter_providers: NamedMeterProviders = (default_meter_provider, cpu_meter_provider);
 
-            (Some(tracer), Some(logger_layer), Some(meter_providers))
-    } else {
-        (None, None, None)
-    };
+            tracing_subscriber
+                .with(tracing_layer)
+                .with(logger_layer)
+                .try_init()?;
 
-    tracing_subscriber::registry()
-        .with(stdout_logging_layer)
-        .with(tracing_filter)
-        .with(file_logging_layer)
-        .with(tracer_provider.map(|tracer_provider|
-            tracing_opentelemetry::layer()
-                .with_tracer(tracer_provider.tracer(DEFAULT_TRACER_NAME))
-        ))
-        .with(logger_layer)
-        .try_init()?;
+            trace!("Telemetry stack initialized with OpenTelemetry.");
+
+            metrics::initialize_os_metrics_collection(cpu_collection_interval_ms, &meter_providers);
+
+            Some(meter_providers)
+        } else {
+            tracing_subscriber
+                .try_init()?;
+
+            trace!("Telemetry stack initialized without OpenTelemetry.");
+
+            None
+        };
 
     Ok(ShutdownHandle { meter_providers })
 }
@@ -155,6 +166,7 @@ pub struct ShutdownHandle {
 }
 impl ShutdownHandle {
     pub fn shutdown(&mut self) {
+        debug!("Shutting down telemetry stack.");
         global::shutdown_tracer_provider();
     }
 }

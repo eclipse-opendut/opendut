@@ -13,8 +13,9 @@ use opendut_auth::confidential::blocking::client::{ConfClientArcMutex, Confident
 use crate::telemetry::DEFAULT_METER_NAME;
 use crate::telemetry::opentelemetry_types::Endpoint;
 use opentelemetry_sdk::metrics::PeriodicReader;
+use tracing::trace;
 
-pub fn init_metrics(
+pub(super) fn init_metrics(
     telemetry_interceptor: ConfClientArcMutex<Option<ConfidentialClientRef>>,
     endpoint: &Endpoint,
     service_name: impl Into<String>,
@@ -50,7 +51,7 @@ pub fn init_metrics(
     Ok(provider)
 }
 
-pub fn initialize_metrics_collection(
+pub(super) fn initialize_os_metrics_collection(
     cpu_collection_interval_ms: Duration,
     meter_providers: &NamedMeterProviders,
 ) {
@@ -104,6 +105,8 @@ pub fn initialize_metrics_collection(
             observer.observe(average_cpu_usage, &[]);
         })
         .build();
+
+    trace!("Initialized telemetry collection of OS metrics.");
 }
 
 pub struct NamedMeterProvider<Kind: NamedMeterProviderKind> {
