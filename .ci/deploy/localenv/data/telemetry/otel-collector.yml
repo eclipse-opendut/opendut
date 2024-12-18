@@ -1,9 +1,6 @@
 receivers:
   otlp:
     protocols:
-      http:
-        endpoint: 0.0.0.0:4318
-        # TODO: define authentication on http endpoint as well, check documentation, see below
       grpc:
         endpoint: 0.0.0.0:4317
         auth:
