@@ -41,6 +41,8 @@ mod auth;
 
 #[tracing::instrument]
 pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow::Result<()> {
+    opendut_util::crypto::install_default_provider();
+
     let settings = settings::load_with_overrides(settings_override)?;
 
     let service_instance_id = format!("carl-{}", Uuid::new_v4());
