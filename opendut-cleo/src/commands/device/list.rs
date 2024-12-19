@@ -1,5 +1,5 @@
 use opendut_carl_api::carl::CarlClient;
-use crate::commands::device::{DeviceTable, render_devices};
+use crate::commands::device::{render_devices, SerializableDevice};
 use crate::ListOutputFormat;
 
 /// List all devices
@@ -11,7 +11,7 @@ impl ListDevicesCli {
         let devices = carl.peers.list_devices().await
             .map_err(|_| String::from("Devices could not be listed"))?
             .into_iter()
-            .map(DeviceTable::from)
+            .map(SerializableDevice::from)
             .collect::<Vec<_>>();
 
         let text = render_devices(devices, output);

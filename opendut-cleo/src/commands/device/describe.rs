@@ -26,23 +26,24 @@ impl DescribeDeviceCli {
         let text = match output {
             DescribeOutputFormat::Text => {
                 format!(indoc!("
-                Device: {}
-                  Id: {}
-                  Description: {}
-                  Interface: {}
-                  Tags: [{}]\
-            "),
-                        device.name,
-                        device.id,
-                        device.description
-                            .map(DeviceDescription::from)
-                            .unwrap_or_default(),
-                        device.interface,
-                        device.tags
-                            .iter()
-                            .map(|tag| tag.value())
-                            .collect::<Vec<_>>()
-                            .join(", "))
+                    Device: {}
+                      Id: {}
+                      Description: {}
+                      Interface: {}
+                      Tags: [{}]\
+                    "),
+                    device.name,
+                    device.id,
+                    device.description
+                        .map(DeviceDescription::from)
+                        .unwrap_or_default(),
+                    device.interface,
+                    device.tags
+                        .iter()
+                        .map(|tag| tag.value())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )
             }
             DescribeOutputFormat::Json => {
                 serde_json::to_string(&device).unwrap()

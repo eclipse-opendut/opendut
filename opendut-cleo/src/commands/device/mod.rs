@@ -11,21 +11,13 @@ use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, Dev
 
 use crate::ListOutputFormat;
 
-#[derive(Table, Serialize)]
-struct DeviceTable {
-    #[table(title = "Name")]
-    name: DeviceName,
-    #[table(title = "DeviceID")]
-    id: DeviceId,
-    #[table(title = "Description")]
-    description: DeviceDescription,
-    #[table(title = "Tags")]
-    tags: String,
-}
-
-fn render_devices(devices: Vec<DeviceTable>, output: ListOutputFormat) -> String {
+fn render_devices(devices: Vec<SerializableDevice>, output: ListOutputFormat) -> String {
     match output {
         ListOutputFormat::Table => {
+            let devices = devices.into_iter()
+                .map(DeviceTable::from)
+                .collect::<Vec<_>>();
+
             let table = devices
                 .with_title()
                 .table()
@@ -42,13 +34,46 @@ fn render_devices(devices: Vec<DeviceTable>, output: ListOutputFormat) -> String
     }
 }
 
-impl From<DeviceDescriptor> for DeviceTable {
+#[derive(Serialize)]
+struct SerializableDevice {
+    name: DeviceName,
+    id: DeviceId,
+    description: DeviceDescription,
+    tags: Vec<String>,
+}
+
+impl From<DeviceDescriptor> for SerializableDevice {
     fn from(device: DeviceDescriptor) -> Self {
-        DeviceTable {
+        SerializableDevice {
             name: device.name,
             id: device.id,
             description: device.description.unwrap_or_default(),
-            tags: device.tags.iter().map(|tag| tag.value()).collect::<Vec<_>>().join(", "),
+            tags: device.tags.into_iter()
+                .map(|tag| tag.value().to_owned())
+                .collect::<Vec<_>>(),
+        }
+    }
+}
+
+#[derive(Table, Serialize)]
+struct DeviceTable {
+    #[table(title = "Name")]
+    name: DeviceName,
+    #[table(title = "DeviceID")]
+    id: DeviceId,
+    #[table(title = "Description")]
+    description: DeviceDescription,
+    #[table(title = "Tags")]
+    tags: String,
+}
+
+impl From<SerializableDevice> for DeviceTable {
+    fn from(device: SerializableDevice) -> Self {
+        DeviceTable {
+            name: device.name,
+            id: device.id,
+            description: device.description,
+            tags: device.tags.join(", "),
         }
     }
 }
