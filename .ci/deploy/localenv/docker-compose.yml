@@ -37,7 +37,7 @@ services:
       dockerfile: ./.ci/deploy/localenv/data/keycloak/Dockerfile-keycloak-server
       args:
         KEYCLOAK_VERSION: 22.0.2
-    command: ['start', '--optimized']
+    #command: ['start', '--optimized']
     restart: unless-stopped
     depends_on:
       - keycloak-postgres
@@ -118,9 +118,11 @@ services:
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--providers.file.directory=/etc/traefik/dynamic"
       - "--providers.file.watch=true"
-      - "--log.level=DEBUG"  # TODO: reduce level
+      # https://doc.traefik.io/traefik/observability/logs/#level default level=ERROR
+      - "--log.level=INFO"
       - "--log.format=json"
-      - "--accesslog"  # TODO: remove access log?
+      # https://doc.traefik.io/traefik/observability/access-logs/#format default is no access log
+      - "--accesslog"
       - "--accesslog.format=json"
     environment:
       - "LEGO_CA_CERTIFICATES=/pki/insecure-development-ca.pem"

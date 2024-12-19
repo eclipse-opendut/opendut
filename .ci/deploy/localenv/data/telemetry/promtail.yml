@@ -10,6 +10,16 @@ clients:
 
 # promtail watches docker for containers with the following labels: logging="promtail" and logging_job="job_name"
 
+# general observations:
+# - loki does not keep order of logs in case of same timestamp!
+# - Because of how YAML treats backslashes in double-quoted strings,
+#   note that all backslashes in a regex expression must be escaped when using double quotes.
+#   https://grafana.com/docs/loki/latest/send-data/promtail/stages/regex/#schema
+# promtail stages:
+# docker: https://grafana.com/docs/loki/latest/send-data/promtail/stages/docker/
+# timestamp: https://grafana.com/docs/loki/latest/send-data/promtail/stages/timestamp/#reference-time
+# labels: adds fields that may be filtered in grafana
+
 scrape_configs:
   - job_name: docker_logs_scrape
     docker_sd_configs:
@@ -27,41 +37,141 @@ scrape_configs:
       - source_labels: ['__meta_docker_container_label_logging_job']
         target_label: 'job'
     pipeline_stages:
-      # process listed containers and extract the "level" information
       - match:
           docker: { }
-          selector: '{job=~"traefik|netbird-coturn|netbird-dashboard|netbird-management|netbird-management-init|netbird-signal|keycloak|keycloak-init"}'
+          selector: '{job=~"traefik"}'
           stages:
             - static_labels:
                 level: DEFAULT
-            - json: #traefik
+            - json:
                 expressions:
                   level: level
-                  msg: message  # rename field 'msg' to 'message'
-                  time: timestamp
+                  message: msg  # rename 'msg' from json to message
+                  time: time
                   entryPointName: entryPointName
-            - regex: #traefik
-                expression: '.*level=(?P<level>[a-zA-Z]+).*'
-            - regex: #netbird-coturn
-                expression: '.*\([0-9]+\): (?P<level>[A-Z]+):.*'
-            - regex: #netbird-dashboard, keycloak
-                expression: '.*[0-9]{2}:[0-9]{2}:[0-9]{2},[0-9]+ (?P<level>[A-Z]+) .*'
-            - regex: #netbird-dashboard, keycloak
-                expression: '.*[0-9]{2}:[0-9]{2}:[0-9]{2},[0-9]+ (?P<level>[A-Z]+) .*'
-            - regex: #netbird-management, netbird-management-init, netbird-signal
-                expression: '.*(?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z) (?P<level>[A-Z]+) .*'
-            - regex: #keycloak-init
-                expression: '^(?P<level>(WARNING)?(INFO)?(DEBUG)?(ERROR)?(WARN)?):? .*'
+                  ClientAddr: ClientAddr
+                  RequestHost: RequestHost
+                  RequestPath: RequestPath
+                  ServiceName: ServiceName
             - template: # cast the level value to upper case
                 source: level
                 template: '{{ ToUpper .Value }}'
-            # make labels available for filtering in loki
+            - timestamp:
+                source: time
+                format: RFC3339
+            # omitting output stage here because extracting 'msg' field will drop access logs of traefik which don't have this field
             - labels:
                 level:
-                message:
-                timestamp:
                 entryPointName:
+                message:
+                ClientAddr:
+                RequestHost:
+                RequestPath:
+                ServiceName:
+
       - match:
+          docker: { }
+          selector: '{job=~"netbird-coturn"}'
+          stages:
+            - static_labels:
+                level: DEFAULT
+            - regex:
+                expression: '(?P<time>.+): \((?P<thread>[0-9]+)\): (?P<level>[A-Z]+):( session (?P<session>[0-9]+):)? (?P<message>.*)'
+            - timestamp:
+                source: time
+                format: RFC3339
+            - output:
+                source: message
+            - labels:
+                level:
+                session:
+
+      - match:
+          docker: { }
+          selector: '{job=~"netbird-management"}'
+          stages:
+            - static_labels:
+                level: DEFAULT
+            - regex:
+                expression: '(?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z) (?P<level>[A-Z]+) (?P<message>.*)'
+            - timestamp:
+                source: timestamp
+                format: RFC3339
+            - template:
+                source: level
+                # netbird management log level has only four characters
+                template: '{{ regexReplaceAllLiteral "ERRO" .level "ERROR" }}'
+            - output:
+                source: message
+            - labels:
+                level:
+
+      - match:
+          docker: { }
+          selector: '{job=~"keycloak"}'
+          stages:
+            - static_labels:
+                level: DEFAULT
+            - regex:
+                # this assumes following keycloak format: --log-console-format='%d{yyyy-MM-dd HH:mm:ss.SSSz} %-5p [%c] (%t) %s%e%n'
+                expression: '(?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]+[A-Z]+)\s+(?P<level>[A-Z]+)\s+\[(?P<category>[^\]]+)\] \((?P<thread>[^\)]+)\) (?P<message>.*)'
+            - timestamp:
+                source: timestamp
+                format: RFC3339
+            - output:
+                source: message
+            - labels:
+                level:
+                category:
+                thread:
+
+      - match:
+          docker: { }
+          # netbird-dashboard contains shell script output and nginx access log, regex TBD
+          selector: '{job=~"netbird-dashboard"}'
+          stages:
+            - static_labels:
+                level: DEBUG
+            - labels:
+                level:
+
+      - match:
+          docker: { }
+          selector: '{job=~"keycloak-init"}'
+          stages:
+            - static_labels:
+                level: DEBUG  # there is no log level for most messages here
+            - regex:
+                expression: '^(?P<level>WARNING|INFO|DEBUG|ERROR|WARN)?(:\s)*(?P<message>.+)'
+            - drop:
+                expression: "^\\s*$"
+            - template:
+                source: level
+                template: '{{ regexReplaceAllLiteral "WARNING" .level "WARN" }}'
+            - output:
+                source: message
+            - labels:
+                level:
+
+      - match:
+          docker: { }
+          selector: '{job=~"netbird-signal"}'
+          stages:
+            - static_labels:
+                level: DEFAULT
+            - regex:
+                expression: '(?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z) (?P<level>[A-Z]+) (?P<location>[^:]+:\d+): (?P<message>.*)'
+            - timestamp:
+                source: timestamp
+                format: RFC3339
+            - output:
+                source: message
+            - labels:
+                level:
+                location:
+
+      - match:
+          docker: { }
           selector: '{job=~"keycloak-postgres|carl-postgres"}'
           stages:
             - multiline:
@@ -69,6 +179,7 @@ scrape_configs:
                 max_wait_time: 3s
             - regex:
                 expression: '^(?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]+ [A-Z]+) \[[0-9]+\] (?P<level>[A-Z]+):  (?P<message>.*)$'
+            # rename additional debug levels of postgres to one debug level
             # https://www.postgresql.org/docs/current/runtime-config-logging.html#RUNTIME-CONFIG-SEVERITY-LEVELS
             - template:
                 source: level
@@ -79,26 +190,10 @@ scrape_configs:
             - template:
                 source: level
                 template: '{{ regexReplaceAllLiteral "ERROR|FATAL|PANIC" .level "ERROR" }}'
+            - timestamp:
+                source: timestamp
+                format: RFC3339
+            - output:
+                source: message
             - labels:
                 level:
-                message:
-                timestamp:
-
-      # change level WARNING to WARN for all containers
-      - match:
-          docker: { }
-          selector: '{level="WARNING"}'
-          stages:
-            - static_labels:
-                level: WARN
-      # search for non-empty lines
-      - match:
-          docker: { }
-          selector: '{job="keycloak-init"} |~ "^\\s*$"'
-          stages:
-            - static_labels:
-                emptyline: EMPTYLINE
-      # drop lines not matched by previous condition
-      - match:
-          selector: '{job="keycloak-init", emptyline="EMPTYLINE"}'
-          action: drop

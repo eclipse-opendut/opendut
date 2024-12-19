@@ -54,3 +54,7 @@ RUN /opt/keycloak/bin/kc.sh show-config
 
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
 
+# https://www.keycloak.org/server/logging#_console_log_handler
+# The default keycloak date format is '%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n'
+# which is incompatible with date format RFC3339.
+CMD ["start", "--optimized", "--log-console-format='%d{yyyy-MM-dd HH:mm:ss.SSSz} %-5p [%c] (%t) %s%e%n'"]

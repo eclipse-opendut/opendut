@@ -22,6 +22,10 @@ TURN_TLS_PORT=${TURN_TLS_PORT:-5349}
 TURN_PORT_START=${TURN_PORT_START:-49152}
 TURN_PORT_END=${TURN_PORT_END:-65535}
 
+# timestamp format justification
+# %FT%T%z  -> 2024-12-19T13:06:00+0000  milliseconds lost
+# %FT%T%Z  -> 2024-12-19T13:08:13UTC    milliseconds lost
+# %s       -> 1734614558                milliseconds lost
 
 exec turnserver -a -v -L 0.0.0.0 \
   --server-name "${TURN_DOMAIN}" \
@@ -29,6 +33,7 @@ exec turnserver -a -v -L 0.0.0.0 \
   --user="${TURN_USER}:${TURN_PASSWORD}" \
   --no-cli --no-software-attribute \
   --fingerprint --lt-cred-mech \
+  --new-log-timestamp --new-log-timestamp-format="%FT%T%z: " \
   --min-port "${TURN_PORT_START}" --max-port "${TURN_PORT_END}" \
   --log-file="${TURN_LOG_FILE}" --simple-log "${TURN_EXTRA_ARGS}"
 
