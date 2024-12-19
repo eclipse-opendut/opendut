@@ -1,19 +1,19 @@
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::peer::PeerId;
-use uuid::Uuid;
 
-/// Generate a setup string to setup a peer
+/// Generate a Setup-String to setup a peer
 #[derive(clap::Parser)]
 pub struct GenerateSetupStringCli {
-    ///PeerID
+    /// ID of the peer to generate a Setup-String for
     #[arg()]
-    id: Uuid,
+    id: PeerId,
 }
 
 impl GenerateSetupStringCli {
-    //TODO: what happens if peer with the ID is already set up?
+
     pub async fn execute(self, carl: &mut CarlClient, cleo_oidc_client_id: String,) -> crate::Result<()> {
-        let peer_id = PeerId::from(self.id);
+        let peer_id = self.id;
+
         let created_setup = carl
             .peers
             .create_peer_setup(peer_id, cleo_oidc_client_id)
@@ -26,7 +26,7 @@ impl GenerateSetupStringCli {
                 eprintln!("Setup-Strings may only be used to set up one host. For setting up multiple hosts, you should create a peer for each host.");
             }
             Err(_) => {
-                println!("Could not configure setup string...")
+                println!("Could not encode setup string...")
             }
         }
         Ok(())

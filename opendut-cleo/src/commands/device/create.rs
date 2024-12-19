@@ -1,38 +1,37 @@
-use uuid::Uuid;
+use crate::{CreateOutputFormat, DescribeOutputFormat};
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::peer::PeerId;
 use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag};
 use opendut_types::util::net::NetworkInterfaceName;
-use crate::{CreateOutputFormat, DescribeOutputFormat};
 
 /// Create a device
 #[derive(clap::Parser)]
 pub struct CreateDeviceCli {
     ///ID of the peer to add the device to
     #[arg(long)]
-    peer_id: Uuid,
+    peer_id: PeerId,
     ///ID of the device to be added or updated
     #[arg(long)]
-    device_id: Option<Uuid>,
+    device_id: Option<DeviceId>,
     ///Name of the device
     #[arg(long)]
-    name: Option<String>,
+    name: Option<DeviceName>,
     ///Description of device
     #[arg(long)]
-    description: Option<String>,
+    description: Option<DeviceDescription>,
     ///Interface of device
     #[arg(long)]
     interface: Option<NetworkInterfaceName>,
     /// Tags of device
     #[arg(long("tag"))]
-    tags: Option<Vec<String>>,
+    tags: Option<Vec<DeviceTag>>,
 }
 
 impl CreateDeviceCli {
     #[allow(clippy::too_many_arguments)]
     pub async fn execute(self, carl: &mut CarlClient, output: CreateOutputFormat) -> crate::Result<()> {
-        let peer_id = PeerId::from(self.peer_id);
-        let device_id = self.device_id.map(DeviceId::from).unwrap_or(DeviceId::random());
+        let peer_id = self.peer_id;
+        let device_id = self.device_id.unwrap_or(DeviceId::random());
 
         let mut peer_descriptor = carl.peers.get_peer_descriptor(peer_id).await
             .map_err(|_| format!("Failed to get peer with ID <{}>.", peer_id))?;
@@ -42,9 +41,8 @@ impl CreateDeviceCli {
         let maybe_existing_device = peer_descriptor.topology.devices.iter_mut().find(|device| device.id == device_id);
         match maybe_existing_device {
             None => {
-                //TODO provide separate `update device` command to not need this custom input handling
-                let name = self.name.ok_or(String::from("Cannot create new device because of missing device name."))?;
-                let interface_name = self.interface.ok_or(String::from("Cannot create new device because of missing interface name."))?;
+                let name = self.name.ok_or(crate::Error::from("Cannot create new device because of missing device name."))?;
+                let interface_name = self.interface.ok_or(crate::Error::from("Cannot create new device because of missing interface name."))?;
 
                 let interface = match peer_descriptor.network.interfaces.iter().find(|descriptor| descriptor.name == interface_name) {
                     Some(network_interface_descriptor) => network_interface_descriptor.clone(),
@@ -56,32 +54,20 @@ impl CreateDeviceCli {
 
                 let new_device = DeviceDescriptor {
                     id: device_id,
-                    name: DeviceName::try_from(name)
-                        .map_err(|error| error.to_string())?,
-                    description: self.description
-                        .map(DeviceDescription::try_from)
-                        .transpose()
-                        .map_err(|error| error.to_string())?,
+                    name,
+                    description: self.description,
                     interface: interface.id,
-                    tags: self.tags
-                        .unwrap_or_default()
-                        .into_iter()
-                        .map(DeviceTag::try_from)
-                        .collect::<Result<_, _>>()
-                        .map_err(|error| error.to_string())?,
+                    tags: self.tags.unwrap_or_default(),
                 };
                 peer_descriptor.topology.devices.push(new_device);
             }
             Some(device) => {
                 if let Some(name) = self.name {
-                    device.name = DeviceName::try_from(name)
-                        .map_err(|error| error.to_string())?;
+                    device.name = name;
                 }
-                if let Some(description) = self.description {
-                    device.description = DeviceDescription::try_from(description)
-                        .map_err(|error| error.to_string())
-                        .ok();
-                }
+
+                device.description = self.description;
+
                 if let Some(interface_name) = self.interface {
                     device.interface = match peer_descriptor.network.interfaces.iter().find(|descriptor| descriptor.name == interface_name) {
                         Some(network_interface_descriptor) => network_interface_descriptor.id,
@@ -92,11 +78,7 @@ impl CreateDeviceCli {
                     };
                 }
                 if let Some(tags) = self.tags {
-                    device.tags = tags
-                        .into_iter()
-                        .map(DeviceTag::try_from)
-                        .collect::<Result<_, _>>()
-                        .map_err(|error| error.to_string())?;
+                    device.tags = tags;
                 }
             }
         }

@@ -1,5 +1,4 @@
 use std::ops::Not;
-use uuid::Uuid;
 
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::peer::PeerId;
@@ -7,14 +6,14 @@ use opendut_types::peer::PeerId;
 /// Delete a peer
 #[derive(clap::Parser)]
 pub struct DeletePeerCli {
-    ///PeerID
+    /// ID of the peer
     #[arg()]
-    id: Uuid,
+    id: PeerId,
 }
 
 impl DeletePeerCli {
     pub async fn execute(self, carl: &mut CarlClient) -> crate::Result<()> {
-        let id = PeerId::from(self.id);
+        let id = self.id;
 
         { //block deleting, if device is used in cluster
             let peer_descriptor = carl.peers.get_peer_descriptor(id).await

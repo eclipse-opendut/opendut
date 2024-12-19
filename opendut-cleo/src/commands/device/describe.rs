@@ -1,5 +1,4 @@
 use indoc::indoc;
-use uuid::Uuid;
 
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::topology::{DeviceDescription, DeviceId};
@@ -9,14 +8,14 @@ use crate::DescribeOutputFormat;
 /// Describe a device
 #[derive(clap::Parser)]
 pub struct DescribeDeviceCli {
-    ///DeviceID
+    /// ID of the device
     #[arg()]
-    id: Uuid,
+    id: DeviceId,
 }
 
 impl DescribeDeviceCli {
     pub async fn execute(self, carl: &mut CarlClient, output: DescribeOutputFormat) -> crate::Result<()> {
-        let device_id = DeviceId::from(self.id);
+        let device_id = self.id;
 
         let devices = carl.peers.list_devices().await
             .map_err(|_| String::from("Failed to fetch list of devices."))?;

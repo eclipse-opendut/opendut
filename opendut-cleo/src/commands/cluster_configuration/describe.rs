@@ -1,11 +1,10 @@
 use indoc::indoc;
-use uuid::Uuid;
 
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::cluster::{ClusterId, ClusterName};
 use opendut_types::peer::{PeerId, PeerName};
-use serde::Serialize;
 use opendut_types::topology::DeviceName;
+use serde::Serialize;
 
 use crate::DescribeOutputFormat;
 
@@ -13,9 +12,9 @@ use crate::DescribeOutputFormat;
 /// Describe a cluster configuration
 #[derive(clap::Parser)]
 pub struct DescribeClusterConfigurationCli {
-    ///ClusterID
+    /// ID of the cluster
     #[arg()]
-    id: Uuid,
+    id: ClusterId,
 }
 
 #[derive(Debug, Serialize)]
@@ -29,7 +28,7 @@ struct ClusterTable {
 
 impl DescribeClusterConfigurationCli {
     pub async fn execute(self, carl: &mut CarlClient, output: DescribeOutputFormat) -> crate::Result<()> {
-        let cluster_id = ClusterId::from(self.id);
+        let cluster_id = self.id;
 
         let clusters_configuration = carl.cluster.list_cluster_configurations().await
             .map_err(|_| String::from("Failed to get list of cluster configurations!"))?;

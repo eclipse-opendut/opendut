@@ -1,5 +1,3 @@
-use uuid::Uuid;
-
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::peer::executor::{container::ContainerImage, ExecutorKind};
 use opendut_types::peer::PeerId;
@@ -9,7 +7,7 @@ use opendut_types::peer::PeerId;
 pub struct DeleteContainerExecutorCli {
     ///ID of the peer to delete the container executor from
     #[arg()]
-    peer_id: Uuid,
+    peer_id: PeerId,
     ///Container images to delete
     #[arg(short, long, num_args = 1.., required = true)]
     images: Vec<ContainerImage>,
@@ -17,12 +15,11 @@ pub struct DeleteContainerExecutorCli {
 
 impl DeleteContainerExecutorCli {
     pub async fn execute(self, carl: &mut CarlClient) -> crate::Result<()> {
-        let id = PeerId::from(self.peer_id);
 
         let mut peer = carl.peers
-            .get_peer_descriptor(id)
+            .get_peer_descriptor(self.peer_id)
             .await
-            .map_err(|error| format!("Failed to get peer with the id '{}'.\n  {}", id, error))?;
+            .map_err(|error| format!("Failed to get peer with the id '{}'.\n  {}", self.peer_id, error))?;
 
         let container_images = self.images.into_iter()
             .map(ContainerImage::try_from)

@@ -1,19 +1,18 @@
-use uuid::Uuid;
+use crate::CreateOutputFormat;
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::cluster::{ClusterDeployment, ClusterId};
-use crate::CreateOutputFormat;
 
 /// Create a cluster deployment
 #[derive(clap::Parser)]
 pub struct CreateClusterDeploymentCli {
-    ///ClusterID
+    /// ID of the cluster
     #[arg(short, long)]
-    id: Uuid,
+    id: ClusterId,
 }
 
 impl CreateClusterDeploymentCli {
     pub async fn execute(self, carl: &mut CarlClient, output: CreateOutputFormat) -> crate::Result<()> {
-        let id = ClusterId::from(self.id);
+        let id = self.id;
 
         let deployment = ClusterDeployment { id };
         carl.cluster.store_cluster_deployment(deployment).await

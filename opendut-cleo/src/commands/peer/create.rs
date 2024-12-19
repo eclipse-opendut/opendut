@@ -1,5 +1,4 @@
 use console::Style;
-use uuid::Uuid;
 
 use crate::{CreateOutputFormat};
 use opendut_carl_api::carl::CarlClient;
@@ -12,13 +11,13 @@ use opendut_types::util::net::NetworkInterfaceName;
 pub struct CreatePeerCli {
     ///Name of peer
     #[arg(short, long)]
-    name: String,
-    ///PeerID
+    name: PeerName,
+    /// ID of the peer
     #[arg(short, long)]
-    id: Option<Uuid>,
+    id: Option<PeerId>,
     ///Location of peer
     #[arg(long)]
-    location: Option<String>,
+    location: Option<PeerLocation>,
     ///Custom bridge name;
     /// Please note bridges with custom names are not automatically removed and need to be removed manually. 
     /// Not removing the bridge could lead to network traffic being misdirected!
@@ -28,22 +27,16 @@ pub struct CreatePeerCli {
 
 impl CreatePeerCli {
     pub async fn execute(self, carl: &mut CarlClient, output: CreateOutputFormat) -> crate::Result<()> {
-        let id = PeerId::from(self.id.unwrap_or_else(Uuid::new_v4));
+        let id = self.id.unwrap_or_else(PeerId::random);
 
-        let name = PeerName::try_from(self.name)
-            .map_err(|error| format!("Could not create peer.\n  {}", error))?;
-
-        let location = self.location
-            .map(PeerLocation::try_from)
-            .transpose()
-            .map_err(|error| format!("Could not create peer.\n  {}", error))?;
+        let name = self.name;
 
         let bridge_name = self.bridge_name;
         
         let descriptor: PeerDescriptor = PeerDescriptor {
             id,
             name: Clone::clone(&name),
-            location,
+            location: self.location,
             network: PeerNetworkDescriptor {
                 interfaces: vec![],
                 bridge_name,

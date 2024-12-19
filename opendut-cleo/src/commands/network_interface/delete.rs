@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use uuid::Uuid;
 
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::peer::PeerId;
@@ -10,7 +9,7 @@ use opendut_types::util::net::{NetworkInterfaceId, NetworkInterfaceName};
 pub struct DeleteNetworkInterfaceCli {
     ///ID of the peer to delete the network configuration from
     #[arg()]
-    peer_id: Uuid,
+    peer_id: PeerId,
     ///NetworkConfiguration Interface (at least one)
     #[arg(long("interface"), num_args = 1.., required = true)]
     interfaces: Vec<String>,
@@ -18,7 +17,7 @@ pub struct DeleteNetworkInterfaceCli {
 
 impl DeleteNetworkInterfaceCli {
     pub async fn execute(self, carl: &mut CarlClient) -> crate::Result<()> {
-        let peer_id = PeerId::from(self.peer_id);
+        let peer_id = self.peer_id;
 
         let mut peer = carl.peers
             .get_peer_descriptor(peer_id)

@@ -1,5 +1,4 @@
 use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorId};
-use uuid::Uuid;
 
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::peer::PeerId;
@@ -12,7 +11,7 @@ use crate::{CreateOutputFormat, DescribeOutputFormat, EngineVariants};
 pub struct CreateContainerExecutorCli {
     ///ID of the peer to add the container executor to
     #[arg(long)]
-    peer_id: Uuid,
+    peer_id: PeerId,
     ///Engine
     #[arg(short, long)]
     engine: EngineVariants,
@@ -87,7 +86,7 @@ impl CreateContainerExecutorCli {
             results_url: self.results_url,
         };
 
-        let peer_id = PeerId::from(self.peer_id);
+        let peer_id = self.peer_id;
         
 
         let mut peer_descriptor = carl.peers.get_peer_descriptor(peer_id).await

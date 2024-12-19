@@ -27,9 +27,10 @@ pub struct ApplyCli {
 
 impl ApplyCli {
     pub async fn execute(self, carl: &mut CarlClient) -> crate::Result<()> {
-        match self.from {
+        match &self.from {
             Source::File(path) => {
                 let content = fs::read_to_string(path).unwrap();
+
                 match YamlSpecificationFile::try_from_yaml_str(&content) {
                     Ok(file) => {
                         let specification_documents = file.documents
@@ -44,14 +45,7 @@ impl ApplyCli {
                             .collect::<Result<Vec<_>, _>>()?;
                         
                         for model in models {
-                            match model {
-                                ResourceModel::PeerDescriptor(model) => {
-                                    create_peer(model, carl, &self.output).await?
-                                }
-                                ResourceModel::ClusterConfiguration(model) => {
-                                    create_cluster_configuration(model, carl, &self.output).await?;
-                               }
-                            };
+                            self.create_resource_in_carl_from_model(model, carl).await?;
                         }
                         
                         Ok(())
@@ -61,14 +55,32 @@ impl ApplyCli {
                     }
                 }
             }
-            Source::Inline(InlineSource::Json(json)) => match JsonSpecificationDocument::try_from_json_str(json.as_str()) {
-                Ok(_) => todo!("unsupported source"),
-                Err(_) => todo!("unsupported source"),
-            }
-            Source::Url(_) => {
-                todo!("unsupported source")
+            Source::Inline(InlineSource::Json(json)) => {
+                let json_document = JsonSpecificationDocument::try_from_json_str(json.as_str())
+                    .map_err(|cause| format!("Error while parsing JSON:\n  {cause}"))?;
+
+                let document = SpecificationDocument::try_from(json_document)
+                    .map_err(|cause| format!("Error while converting JSON document to specification model:\n  {cause}"))?;
+
+                let model = convert_document_to_model(document)?;
+
+                self.create_resource_in_carl_from_model(model, carl).await?;
+
+                Ok(())
             }
         }
+    }
+
+    async fn create_resource_in_carl_from_model(&self, model: ResourceModel, carl: &mut CarlClient) -> crate::Result<()> {
+        match model {
+            ResourceModel::PeerDescriptor(model) => {
+                create_peer(model, carl, &self.output).await?;
+            }
+            ResourceModel::ClusterConfiguration(model) => {
+                create_cluster_configuration(model, carl, &self.output).await?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -76,7 +88,6 @@ impl ApplyCli {
 #[derive(Clone, Debug)]
 pub enum Source {
     File(PathBuf),
-    Url(String),
     Inline(InlineSource)
 }
 
@@ -141,7 +152,7 @@ mod tests {
     use googletest::prelude::*;
     use opendut_types::peer::executor::ExecutorDescriptors;
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerNetworkDescriptor};
-    use opendut_types::specs::peer::{NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDescriptorSpecification, PeerDescriptorSpecificationV1, TopologySpecificationV1, NetworkDescriptorSpecificationV1};
+    use opendut_types::specs::peer::{NetworkDescriptorSpecificationV1, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDescriptorSpecification, PeerDescriptorSpecificationV1, TopologySpecificationV1};
     use opendut_types::specs::{Specification, SpecificationDocument, SpecificationMetadata};
     use opendut_types::topology::Topology;
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
@@ -202,7 +213,7 @@ mod tests {
                         configuration: NetworkInterfaceConfiguration::Ethernet,
                     }
                 ],
-                bridge_name: Default::default(), // TODO
+                bridge_name: Some(NetworkInterfaceName::try_from("br-opendut")?),
             },
             topology: Topology { devices: vec![] },
             executors: ExecutorDescriptors { executors: vec![] },

@@ -1,19 +1,18 @@
 use std::ops::Not;
-use uuid::Uuid;
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::topology::DeviceId;
 
 /// Delete a device
 #[derive(clap::Parser)]
 pub struct DeleteDeviceCli {
-    ///DeviceID
+    /// ID of the device
     #[arg()]
-    id: Uuid,
+    id: DeviceId,
 }
 
 impl DeleteDeviceCli {
     pub async fn execute(self, carl: &mut CarlClient) -> crate::Result<()> {
-        let device_to_delete = DeviceId::from(self.id);
+        let device_to_delete = self.id;
 
         let mut peers = carl.peers.list_peer_descriptors().await
             .map_err(|error| format!("Could not list peers.\n  {}", error))?;

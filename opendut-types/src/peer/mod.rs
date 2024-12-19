@@ -1,6 +1,6 @@
 use std::fmt;
 use std::ops::Not;
-
+use std::str::FromStr;
 use base64::Engine;
 use base64::prelude::BASE64_URL_SAFE;
 use serde::{Deserialize, Serialize};
@@ -60,6 +60,14 @@ impl TryFrom<String> for PeerId {
 impl fmt::Display for PeerId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.uuid)
+    }
+}
+
+impl FromStr for PeerId {
+    type Err = IllegalPeerId;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        Self::try_from(value)
     }
 }
 
@@ -149,6 +157,14 @@ impl fmt::Display for PeerName {
     }
 }
 
+impl FromStr for PeerName {
+    type Err = IllegalPeerName;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        Self::try_from(value)
+    }
+}
+
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct PeerLocation(pub(crate) String);
 
@@ -215,6 +231,14 @@ impl TryFrom<&str> for PeerLocation {
 impl fmt::Display for PeerLocation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+impl FromStr for PeerLocation {
+    type Err = IllegalLocation;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        Self::try_from(value)
     }
 }
 

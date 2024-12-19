@@ -1,5 +1,3 @@
-use uuid::Uuid;
-
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::peer::PeerId;
 use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
@@ -11,17 +9,17 @@ use crate::{CreateOutputFormat, DescribeOutputFormat, NetworkInterfaceType};
 pub struct CreateNetworkInterfaceCli {
     ///ID of the peer to add the network interface to
     #[arg(long)]
-    peer_id: Uuid,
+    peer_id: PeerId,
     ///Type of the network interface
     #[arg(long("type"))]
     interface_type: NetworkInterfaceType,
     ///Name of the network interface
     #[arg(long("name"))]
-    interface_name: String,
+    interface_name: NetworkInterfaceName,
 }
 impl CreateNetworkInterfaceCli {
     pub async fn execute(self, carl: &mut CarlClient, output: CreateOutputFormat) -> crate::Result<()> {
-        let peer_id = PeerId::from(self.peer_id);
+        let peer_id = self.peer_id;
 
         let mut peer_descriptor = carl.peers.get_peer_descriptor(peer_id).await
             .map_err(|_| format!("Failed to get peer with ID <{}>.", peer_id))?;
@@ -31,7 +29,7 @@ impl CreateNetworkInterfaceCli {
 
         let interface_id = NetworkInterfaceId::random();
 
-        let interface_name = NetworkInterfaceName::try_from(self.interface_name).map_err(|error| error.to_string())?;
+        let interface_name = self.interface_name;
 
         // TODO: Properly implement CAN parameter configuration
         let interface_configuration = match self.interface_type {

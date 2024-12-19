@@ -1,5 +1,4 @@
 use indoc::indoc;
-use uuid::Uuid;
 
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::peer::{PeerDescriptor, PeerId};
@@ -8,14 +7,14 @@ use crate::DescribeOutputFormat;
 /// Describe a peer
 #[derive(clap::Parser)]
 pub struct DescribePeerCli {
-    ///PeerID
+    /// ID of the peer
     #[arg()]
-    id: Uuid,
+    id: PeerId,
 }
 
 impl DescribePeerCli {
     pub async fn execute(self, carl: &mut CarlClient, output: DescribeOutputFormat) -> crate::Result<()> {
-        let peer_id = PeerId::from(self.id);
+        let peer_id = self.id;
         
         let peer_descriptor =
             carl.peers.get_peer_descriptor(peer_id).await.map_err(|_| {

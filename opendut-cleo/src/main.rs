@@ -8,7 +8,7 @@ use console::Style;
 
 use opendut_carl_api::carl::{CaCertInfo, CarlClient};
 use opendut_types::topology::{DeviceId, DeviceName};
-use opendut_util::settings::{FileFormat, load_config, LoadedConfig};
+use opendut_util::settings::{load_config, FileFormat, LoadedConfig};
 
 mod commands;
 pub mod parse;
@@ -76,6 +76,7 @@ enum Commands {
         #[command(subcommand)]
         resource: DeleteResource,
     },
+    ///Show the configuration that CLEO currently uses
     Config,
     /// Generates shell completion
     Completions {
@@ -198,7 +199,6 @@ async fn main() -> ExitCode {
 }
 
 async fn execute() -> Result<()> {
-    // TODO: make it actually hide secrets in the logging output
     let cleo_config_hide_secrets_override = config::Config::builder()
         .set_override("network.oidc.client.secret", "redacted")
         .map_err(|_error| "Failed to hide cleo secrets.")?

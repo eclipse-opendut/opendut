@@ -205,6 +205,14 @@ impl fmt::Display for DeviceDescription {
     }
 }
 
+impl FromStr for DeviceDescription {
+    type Err = IllegalDeviceDescription;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        Self::try_from(value)
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct DeviceTag(pub(crate) String);
 
@@ -262,6 +270,14 @@ impl TryFrom<&str> for DeviceTag {
 impl fmt::Display for DeviceTag {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+impl FromStr for DeviceTag {
+    type Err = IllegalDeviceTag;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        Self::try_from(value)
     }
 }
 

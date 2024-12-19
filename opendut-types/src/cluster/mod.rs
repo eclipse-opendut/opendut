@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::fmt;
 use std::ops::Not;
-
+use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -60,6 +60,14 @@ impl TryFrom<&str> for ClusterId {
 impl fmt::Display for ClusterId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+impl FromStr for ClusterId {
+    type Err = IllegalClusterId;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        Self::try_from(value)
     }
 }
 
