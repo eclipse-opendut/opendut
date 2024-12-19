@@ -1,3 +1,4 @@
+use std::ops::Not;
 use crate::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -29,6 +30,13 @@ impl Task for WriteCaCertificate {
     }
 
     async fn check_fulfilled(&self) -> anyhow::Result<TaskFulfilled> {
+
+        if self.carl_ca_certificate_path.exists().not()
+        || self.os_cert_store_ca_certificate_path.exists().not() {
+            debug!("Previous certificate files don't exist. Task needs execution.");
+            return Ok(TaskFulfilled::No);
+        }
+
         let installed_carl_checksum_file = &self.checksum_carl_ca_certificate_file;
         let installed_os_cert_store_checksum_file = &self.checksum_os_cert_store_ca_certificate_file;
 
@@ -40,16 +48,12 @@ impl Task for WriteCaCertificate {
                     fs::read(installed_os_cert_store_checksum_file)?,
                 )
             }
-            else if self.carl_ca_certificate_path.exists()
-            && self.os_cert_store_ca_certificate_path.exists() {
-                debug!("No previous certificate checksum files exist, but certificate files found. Calculating checksum by reading them.");
+            else {
+                debug!("Previous certificate checksum files don't exist, but certificate files found. Calculating checksum by reading them.");
                 (
                     util::checksum::file(&self.carl_ca_certificate_path)?,
                     util::checksum::file(&self.os_cert_store_ca_certificate_path)?,
                 )
-            } else {
-                debug!("No previous certificate checksum files nor certificate files exist. Task needs execution.");
-                return Ok(TaskFulfilled::No);
             }
         };
 
