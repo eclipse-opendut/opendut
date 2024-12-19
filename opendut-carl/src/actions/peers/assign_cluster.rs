@@ -57,7 +57,7 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
                 .unwrap_or_default();
 
             for executor in Clone::clone(&peer_descriptor.executors).executors.into_iter() {
-                peer_configuration.insert(executor, ParameterTarget::Present); //TODO not always Present
+                peer_configuration.set(executor, ParameterTarget::Present); //TODO not always Present
             }
 
             {
@@ -65,7 +65,7 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
                     .unwrap_or(options.bridge_name_default);
                 let bridge = EthernetBridge { name: bridge };
 
-                peer_configuration.insert(bridge, ParameterTarget::Present); //TODO not always Present
+                peer_configuration.set(bridge, ParameterTarget::Present); //TODO not always Present
             }
 
             peer_configuration
@@ -189,7 +189,7 @@ mod tests {
             executors: vec![],
             ethernet_bridges: vec![],
         };
-        peer_configuration.insert(EthernetBridge { name: NetworkInterfaceName::try_from("br-opendut-1")? }, ParameterTarget::Present);
+        peer_configuration.set(EthernetBridge { name: NetworkInterfaceName::try_from("br-opendut-1")? }, ParameterTarget::Present);
 
         let received = receiver.recv().await.unwrap()
             .message.unwrap();

@@ -1,7 +1,7 @@
 use crate::peer::configuration::parameter::{Parameter, ParameterId};
 use crate::peer::configuration::PeerConfiguration;
 use crate::peer::ethernet::EthernetBridge;
-use crate::peer::executor::{ExecutorDescriptor, ExecutorKind};
+use crate::peer::executor::ExecutorDescriptor;
 use crate::OPENDUT_UUID_NAMESPACE;
 use std::any::Any;
 use std::hash::{DefaultHasher, Hash, Hasher};
@@ -40,16 +40,7 @@ pub trait ParameterValue: Any + Hash + Sized {
 
 impl ParameterValue for ExecutorDescriptor {
     fn parameter_identifier(&self) -> ParameterId {
-        let mut hasher = DefaultHasher::new(); //ID not stable across Rust releases
-        match &self.kind {
-            ExecutorKind::Executable => self.kind.hash(&mut hasher),
-            ExecutorKind::Container { name, .. } => name.hash(&mut hasher),
-        }
-        self.results_url.hash(&mut hasher);
-        let id = hasher.finish();
-
-        let id = Uuid::new_v5(&OPENDUT_UUID_NAMESPACE, &id.to_le_bytes());
-        ParameterId(id)
+        ParameterId(self.id.uuid)
     }
     fn peer_configuration_field(peer_configuration: &mut PeerConfiguration) -> &mut Vec<Parameter<Self>>  {
         &mut peer_configuration.executors
@@ -75,7 +66,7 @@ impl ParameterValue for EthernetBridge {
 mod tests {
     use super::*;
     use crate::peer::configuration::ParameterTarget;
-    use crate::peer::executor::ExecutorId;
+    use crate::peer::executor::{ExecutorId, ExecutorKind};
 
     #[test]
     fn insert_value_in_peer_configuration() {
@@ -90,7 +81,7 @@ mod tests {
             results_url: None
         };
         let target = ParameterTarget::Present;
-        peer_configuration.insert(value.clone(), target);
+        peer_configuration.set(value.clone(), target);
 
         assert_eq!(peer_configuration.executors.len(), 1);
 

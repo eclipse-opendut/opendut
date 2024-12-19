@@ -29,6 +29,7 @@ prost = { workspace = true }
 strum_macros = "0.25.3"
 
 [dev-dependencies]
+anyhow = { workspace = true }
 googletest = { workspace = true }
 indoc = { workspace = true }
 serde_yaml = { workspace = true }
