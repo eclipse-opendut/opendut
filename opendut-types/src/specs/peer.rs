@@ -13,6 +13,7 @@ pub struct PeerDescriptorSpecificationV1 {
     pub location: Option<String>,
     pub network: NetworkDescriptorSpecificationV1,
     pub topology: TopologySpecificationV1,
+    #[serde(default)]
     pub executors: Vec<ExecutorSpecificationV1>,
 }
 
