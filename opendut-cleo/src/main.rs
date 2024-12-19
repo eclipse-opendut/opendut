@@ -5,7 +5,7 @@ use std::process::ExitCode;
 use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::Shell;
 use console::Style;
-
+use uuid::Uuid;
 use opendut_carl_api::carl::{CaCertInfo, CarlClient};
 use opendut_types::topology::{DeviceId, DeviceName};
 use opendut_util::settings::{load_config, FileFormat, LoadedConfig};
@@ -123,7 +123,9 @@ enum CreateResource {
     Peer(commands::peer::create::CreatePeerCli),
     ContainerExecutor(commands::executor::create::CreateContainerExecutorCli),
     NetworkInterface(commands::network_interface::create::CreateNetworkInterfaceCli),
-    Device(commands::device::create::CreateDeviceCli)
+    Device(commands::device::create::CreateDeviceCli),
+    /// Generate a random UUID, which can be used for assigning a new ID to a resource
+    Uuid,
 }
 
 #[derive(Subcommand)]
@@ -244,25 +246,33 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
             implementation.execute(&mut carl).await?;
         }
         Commands::Create { resource, output } => {
-            let mut carl = create_carl_client(&settings.config).await;
             match *resource {
                 CreateResource::ClusterConfiguration(implementation) => {
+                    let mut carl = create_carl_client(&settings.config).await;
                     implementation.execute(&mut carl, output).await?;
                 }
                 CreateResource::ClusterDeployment(implementation) => {
+                    let mut carl = create_carl_client(&settings.config).await;
                     implementation.execute(&mut carl, output).await?;
                 }
                 CreateResource::Peer(implementation) => {
+                    let mut carl = create_carl_client(&settings.config).await;
                     implementation.execute(&mut carl, output).await?;
                 }
                 CreateResource::ContainerExecutor(implementation) => {
+                    let mut carl = create_carl_client(&settings.config).await;
                     implementation.execute(&mut carl, output).await?;
                 }
                 CreateResource::NetworkInterface(implementation) => {
+                    let mut carl = create_carl_client(&settings.config).await;
                     implementation.execute(&mut carl, output).await?;
                 }
                 CreateResource::Device(implementation) => {
+                    let mut carl = create_carl_client(&settings.config).await;
                     implementation.execute(&mut carl, output).await?;
+                }
+                CreateResource::Uuid => {
+                    println!("{}", Uuid::new_v4());
                 }
             }
         }

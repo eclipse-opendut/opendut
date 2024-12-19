@@ -97,6 +97,9 @@ spec:
 
 ```
 
+The `id` fields contain UUIDs. You can generate a random UUID when newly creating a resource with the `opendut-cleo create uuid` command.
+
+
 ## Generating PeerSetup Strings
 
 To create a PeerSetup, it is necessary to provide the PeerID of the peer:
