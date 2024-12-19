@@ -108,12 +108,17 @@ impl CreateClusterConfigurationCli {
     }
 }
 
-pub async fn create_cluster_configuration(configuration: ClusterConfiguration, carl: &mut CarlClient, output: &CreateOutputFormat) -> crate::Result<()> {
-    carl.cluster.store_cluster_configuration(configuration.clone()).await
+pub async fn create_cluster_configuration(cluster: ClusterConfiguration, carl: &mut CarlClient, output: &CreateOutputFormat) -> crate::Result<()> {
+    carl.cluster.store_cluster_configuration(cluster.clone()).await
         .map_err(|err| format!("Could not store cluster configuration. Make sure the application is running. Error: {}", err))?;
     
-    let devices = carl.peers.list_devices().await.map_err(|error| format!("Error while trying to match devices.\n  {}", error))?;
-    let device_names = devices.clone().into_iter()
+    let devices = carl.peers.list_devices().await
+        .map_err(|error| format!("Error while trying to list devices.\n  {}", error))?;
+
+    let device_names = devices.into_iter()
+        .filter(|device| {
+            cluster.devices.contains(&device.id)
+        })
         .map(|device| device.name)
         .collect::<Vec<_>>();
 
@@ -121,19 +126,19 @@ pub async fn create_cluster_configuration(configuration: ClusterConfiguration, c
         CreateOutputFormat::Text => {
             println!("Successfully stored new cluster configuration.");
         
-            println!("ClusterID: {}", configuration.id);
-            println!("Name of the Cluster: {}", configuration.name);
+            println!("ClusterID: {}", cluster.id);
+            println!("Name of the Cluster: {}", cluster.name);
             println!("The following devices are part of the cluster configuration:");
             for device_name in device_names.iter() {
                 println!("\x09{}", device_name);
             };
         }
         CreateOutputFormat::Json => {
-            let json = serde_json::to_string(&configuration).unwrap();
+            let json = serde_json::to_string(&cluster).unwrap();
             println!("{}", json);
         }
         CreateOutputFormat::PrettyJson => {
-            let json = serde_json::to_string_pretty(&configuration).unwrap();
+            let json = serde_json::to_string_pretty(&cluster).unwrap();
             println!("{}", json);
         }
     }
