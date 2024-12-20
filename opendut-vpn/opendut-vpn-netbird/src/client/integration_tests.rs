@@ -15,7 +15,7 @@ use crate::{netbird, NetbirdManagementClient, NetbirdManagementClientConfigurati
 use crate::client::{Client, DefaultClient};
 
 #[test_with::env(NETBIRD_INTEGRATION_API_TOKEN)]
-#[tokio::test]
+#[test_log::test(tokio::test)]
 async fn test_netbird_management_client() {
     /*
      * Designated to be run in the opendut-vm, requires netbird management service to be running.
@@ -26,7 +26,7 @@ async fn test_netbird_management_client() {
      */
     let Fixture { management_url, authentication_token, ca, timeout, retries, setup_key_expiration } = Fixture::default();
 
-    let netbird_management_client = NetbirdManagementClient::create(
+    let netbird_management_client = NetbirdManagementClient::create_client_and_delete_default_policy(
         NetbirdManagementClientConfiguration {
             management_url: management_url,
             authentication_token: Some(authentication_token),
@@ -35,7 +35,7 @@ async fn test_netbird_management_client() {
             retries,
             setup_key_expiration,
         }
-    ).expect("Netbird management client could not be created!");
+    ).await.expect("Netbird management client could not be created!");
 
     let peer_id = PeerId::random();
     netbird_management_client.create_peer(peer_id).await.expect("Could not create NetBird peer");

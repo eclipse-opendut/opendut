@@ -67,4 +67,6 @@ pub enum CreateClientError {
     InstantiationFailure {
         cause: String
     },
+    #[error("Failed to delete default policy.")]
+    DeleteDefaultPolicy(#[source] RequestError),
 }

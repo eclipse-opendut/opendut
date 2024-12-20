@@ -16,7 +16,7 @@ use opendut_vpn::{CreateClusterError, CreatePeerError, CreateVpnPeerConfiguratio
 
 use crate::client::{Client, DefaultClient};
 use crate::netbird::error::{CreateClientError, CreateSetupKeyError, GetGroupError, GetPoliciesError, RequestError};
-use crate::netbird::GroupName;
+use crate::netbird::{GroupName, PolicyName};
 
 mod client;
 mod routes;
@@ -40,7 +40,15 @@ pub struct NetbirdManagementClient {
 
 impl NetbirdManagementClient {
 
-    pub fn create(configuration: NetbirdManagementClientConfiguration) -> Result<Self, CreateClientError> {
+
+    pub async fn create_client_and_delete_default_policy(configuration: NetbirdManagementClientConfiguration) -> Result<Self, CreateClientError> {
+        let client = NetbirdManagementClient::create(configuration)?;
+        client.delete_default_policy_if_exists().await
+            .map_err(CreateClientError::DeleteDefaultPolicy)?;
+        Ok(client)
+    }
+
+    fn create(configuration: NetbirdManagementClientConfiguration) -> Result<Self, CreateClientError> {
         let management_url = configuration.management_url;
         let management_ca_path = configuration.ca
             .ok_or_else(|| CreateClientError::InstantiationFailure { cause: String::from("No ca certificate provided.") })?;
@@ -65,6 +73,22 @@ impl NetbirdManagementClient {
             management_url,
             inner,
         })
+    }
+
+    /// NetBird has a default policy in place that allows connections between all peers.
+    /// We want to control when this happens therefore this policy is not desirable for us.
+    async fn delete_default_policy_if_exists(&self) -> Result<(), RequestError> {
+        let default_policy_name = PolicyName::Other(String::from("Default"));
+        let policy_result = self.inner.get_netbird_policy(&default_policy_name).await;
+        match policy_result {
+            Ok(policy) => {
+                self.inner.delete_netbird_policy(&policy.id).await?;
+            }
+            Err(_) => {
+                trace!("NetBird default policy not found. Skipping deletion of NetBird default policy.")
+            }
+        }
+        Ok(())
     }
 }
 

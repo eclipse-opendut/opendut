@@ -27,7 +27,7 @@ impl GrpcFacades {
         settings: &Config,
     ) -> anyhow::Result<Self> {
 
-        let vpn = vpn::create(settings)
+        let vpn = vpn::create(settings).await
             .context("Error while parsing VPN configuration.")?;
 
         let resources_manager = {

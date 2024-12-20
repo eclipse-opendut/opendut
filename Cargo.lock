@@ -4168,6 +4168,7 @@ dependencies = [
  "rstest",
  "serde",
  "serde_json",
+ "test-log",
  "test-with",
  "thiserror 2.0.6",
  "time",

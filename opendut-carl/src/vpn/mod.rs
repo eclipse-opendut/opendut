@@ -16,7 +16,7 @@ pub enum Vpn {
     Disabled,
 }
 
-pub fn create(settings: &Config) -> anyhow::Result<Vpn> {
+pub async fn create(settings: &Config) -> anyhow::Result<Vpn> {
 
     let vpn = settings.get::<bool>("vpn.enabled")?;
 
@@ -57,7 +57,7 @@ pub fn create(settings: &Config) -> anyhow::Result<Vpn> {
                     .ok_or_else(|| anyhow!("No configuration found for: vpn.netbird.setup.key.expiration.ms"))?;
                 
                 debug!("Try to parse VPN configuration.");
-                let vpn_client = NetbirdManagementClient::create(
+                let vpn_client = NetbirdManagementClient::create_client_and_delete_default_policy(
                     NetbirdManagementClientConfiguration {
                         management_url: base_url,
                         authentication_token: Some(auth_token),
@@ -66,7 +66,7 @@ pub fn create(settings: &Config) -> anyhow::Result<Vpn> {
                         retries,
                         setup_key_expiration: Duration::from_millis(setup_key_expiration_ms),
                     }
-                )?;
+                ).await?;
                 Ok(Vpn::Enabled { vpn_client: Arc::new(vpn_client) })
             }
             "" => unknown_enum_variant(settings, vpn_kind_key),

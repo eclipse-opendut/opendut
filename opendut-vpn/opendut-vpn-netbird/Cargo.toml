@@ -28,6 +28,7 @@ uuid = { workspace = true, features = ["serde"] }
 googletest = { workspace = true }
 mockall = { workspace = true }
 rstest = { workspace = true }
+test-log = { workspace = true }
 test-with = { workspace = true }
 
 [lints]
