@@ -4,12 +4,21 @@ Notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 0.4.0
 
 ### Added
 * CLEO now comes with a new subcommand `opendut-cleo apply`. 
   You may load cluster and peer configurations from a YAML file, similar to how resources are loaded with `kubectl apply` in Kubernetes. 
   For more information, see [Applying Configuration Files](https://opendut.eclipse.dev/book/user-manual/cleo/commands.html#applying-configuration-files).
+
+* A monitoring dashboard is now available in the deployment environment at `https://monitoring.opendut.local`.
+
+### Fixed
+* A major upgrade of the networking libraries has been completed.  
+  This affects HTTP and gRPC, server- and client-side usage, as well as the OpenTelemetry monitoring.
+
+* CARL does not anymore send duplicate Executor and Ethernet bridge name configurations to EDGAR when re-deploying a cluster.  
+  This may have caused EDGAR to repeatedly delete and recreate these.
 
 
 ## 0.3.1
