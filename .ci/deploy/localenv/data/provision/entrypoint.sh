@@ -42,6 +42,8 @@ if [ ! -e "$OPENDUT_PASSWORD_FILE" ]; then
 
 fi
 
+# '/provision' - contains the created secrets in the docker volume
+# '/secrets'   - makes a copy of the created secrets available on the host system
 chown -R carl:carl /provision
 cp $OPENDUT_ENV_FILE /secrets/.env
 rsync --archive --delete /provision/store/ /secrets/pki/

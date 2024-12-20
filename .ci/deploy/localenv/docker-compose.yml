@@ -9,6 +9,15 @@ x-common-healthcheck-params: &common-healthcheck-params
 name: opendut
 
 services:
+  provision-secrets:
+    container_name: opendut-provision-secrets
+    build:
+      context: ../../..
+      dockerfile: ./.ci/deploy/localenv/data/provision/Dockerfile
+    volumes:
+      - provision-secrets-data:/provision
+      - ./data/secrets:/secrets
+
   keycloak-postgres:
     container_name: opendut-keycloak-postgres
     image: "postgres:14.15"
@@ -130,6 +139,9 @@ services:
       - "127.0.0.1:8080:8080"
       - "80:80"
       - "443:443"
+    depends_on:
+      provision-secrets:
+        condition: service_completed_successfully
     healthcheck:
       <<: *common-healthcheck-params
       #test: ["CMD", "traefik", "healthcheck", "--ping"]
@@ -221,6 +233,8 @@ services:
         condition: service_started
       keycloak:
         condition: service_healthy
+      provision-secrets:
+        condition: service_completed_successfully
     volumes:
       - ./data/secrets/pki/:/pki/:ro
       - ./data/secrets/pki/insecure-development-ca.pem:/usr/local/share/ca-certificates/insecure-development-ca.crt:ro
@@ -337,6 +351,8 @@ services:
         condition: service_started
       keycloak:
         condition: service_healthy
+      provision-secrets:
+        condition: service_completed_successfully
     volumes:
       # CUSTOM ENTRYPOINT
       - "./data/carl/entrypoint.sh:/opt/entrypoint.sh"
@@ -405,6 +421,8 @@ services:
     depends_on:
       carl:
         condition: service_healthy
+      provision-secrets:
+        condition: service_completed_successfully
     environment:
       # CLEO
       - OPENDUT_CLEO_NETWORK_CARL_HOST=carl.opendut.local
@@ -525,6 +543,8 @@ services:
         condition: service_started
       keycloak:
         condition: service_healthy
+      provision-secrets:
+        condition: service_completed_successfully
     restart: on-failure
     labels:
       - traefik.enable=true
@@ -606,6 +626,7 @@ volumes:
   tempo-data:
   loki-data:
   grafana-storage:
+  provision-secrets-data:
 
 networks:
   opendut_local:

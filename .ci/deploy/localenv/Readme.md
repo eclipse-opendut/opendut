@@ -12,17 +12,17 @@ The local test environment exposes its services to the intranet in contrast to t
 
 ## Getting started
 
+See the official setup documentation [here](https://opendut.eclipse.dev/book/user-manual/carl/setup.html) for details.
 
 ### Using vagrant
+
+These steps are for developers to test the docker-compose setup in a virtual machine. 
 
 * Start the local test environment using vagrant.
 ```shell
 export OPENDUT_REPO_ROOT=$(git rev-parse --show-toplevel)
 export VAGRANT_DOTFILE_PATH=$OPENDUT_REPO_ROOT/.vagrant
 export VAGRANT_VAGRANTFILE=$OPENDUT_REPO_ROOT/.ci/deploy/localenv/Vagrantfile
-
-# exposing ports 80 and 443 requires root privileges
-export OPENDUT_EXPOSE_PRIVILEGED_PORTS=true
 vagrant up
 ```
 * Destroy the local test environment using vagrant (requires same environment variables as above).
@@ -35,39 +35,9 @@ vagrant destroy
 rm -r .ci/deploy/localenv/data/secrets/
 ```
 
-### Using docker compose
+* Proxy notes for testing in virtual machine
 
-* Start the local test environment using docker compose.
+Testing localenv in a virtual machine behind corporate proxy
 ```shell
-# configure project path
-export OPENDUT_REPO_ROOT=$(git rev-parse --show-toplevel)
-# start provisioning and create .env file
-docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/data/provision/docker-compose.yml up --build
-# start the environment
-docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/docker-compose.yml --env-file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/data/secrets/.env up --detach --build
-```
-
-* Stop the local test environment using docker compose.
-```shell
-docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/docker-compose.yml down
-```
-
-* Destroy the local test environment using docker compose.
-```shell
-docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/data/provision/docker-compose.yml down --volumes
-docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/docker-compose.yml down --volumes
-```
-
-### Modify /etc/hosts
-
-Add the following lines to the `/etc/hosts` file on the host system to access the services from the intranet.
-```shell
-192.168.56.9 opendut.local
-192.168.56.9 auth.opendut.local
-192.168.56.9 netbird.opendut.local
-192.168.56.9 netbird-api.opendut.local
-192.168.56.9 signal.opendut.local
-192.168.56.9 carl.opendut.local
-192.168.56.9 nginx-webdav.opendut.local
-192.168.56.9 opentelemetry.opendut.local
+source .ci/deploy/localenv/data/provision/proxy.sh http://192.168.42.1:3128
 ```
