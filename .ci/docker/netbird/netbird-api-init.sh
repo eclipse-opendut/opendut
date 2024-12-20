@@ -25,26 +25,7 @@ else
   API_KEY=$(cat /management/api_key)
 fi
 
-# disable communication between peers by default
-# --> requires to be in a group explicitly
-policy_disable_default_rule
-
-if [ ! -e "/management/testenv_setup_key" ]; then
-  GROUP_NAME="testenv"
-  NETBIRD_SETUP_KEY_TESTENV_GROUP=$(create_setup_key_for_group $GROUP_NAME)
-  if [ -n "$NETBIRD_SETUP_KEY_TESTENV_GROUP" ]; then
-    echo "$NETBIRD_SETUP_KEY_TESTENV_GROUP" > /management/testenv_setup_key
-    policy_create_rule "${GROUP_NAME}_policy" "$GROUP_NAME"
-  else
-    echo "Failed to retrieve NETBIRD_SETUP_KEY_TESTENV_GROUP."
-    #exit 1
-  fi
-else
-  NETBIRD_SETUP_KEY_TESTENV_GROUP=$(cat /management/testenv_setup_key)
-fi
-
 echo API_KEY="$API_KEY"
-echo NETBIRD_SETUP_KEY_TESTENV_GROUP="$NETBIRD_SETUP_KEY_TESTENV_GROUP"
 
 # check if api token works
 if netbird_api_token_test "$API_KEY"; then

@@ -2,7 +2,6 @@
 
 # Check the logs of the container or the following files for the API key and testenv setup key:
 # docker exec -ti netbird-management_init-1 cat /management/api_key
-# docker exec -ti netbird-management_init-1 cat /management/testenv_setup_key
 
 FROM ubuntu:22.04
 ARG PUID=1000
