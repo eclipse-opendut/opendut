@@ -11,6 +11,13 @@ tbd.
 
 ## 0.4.0
 
+<details>
+<summary>Breaking Changes</summary>
+
+* The LocalEnv deployment now uses different volume names.
+  Make sure to back up your database and restore the backup after the upgrade.
+</details>
+
 ### Added
 * CLEO now comes with a new subcommand `opendut-cleo apply`. 
   You may load cluster and peer configurations from a YAML file, similar to how resources are loaded with `kubectl apply` in Kubernetes. 
