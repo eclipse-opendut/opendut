@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use opendut_types::peer::{self, executor::{ExecutorDescriptor, ExecutorKind}};
 use tokio::sync::watch::{self, Sender};
 use tracing::{debug, warn};
-
+use opendut_types::peer::configuration::parameter;
 use crate::service::test_execution::container_manager::{ContainerManager, ContainerConfiguration};
 
 pub type ExecutorManagerRef = Arc<Mutex<ExecutorManager>>;
@@ -20,7 +20,7 @@ impl ExecutorManager {
         }))
     }
 
-    pub fn create_new_executors(&mut self, executors: Vec<peer::configuration::Parameter<ExecutorDescriptor>>) {
+    pub fn create_new_executors(&mut self, executors: Vec<peer::configuration::Parameter<parameter::Executor>>) {
         debug!("Creating executors.");
 
         let executors = executors.into_iter()
@@ -36,7 +36,8 @@ impl ExecutorManager {
 
             let (tx, rx) = watch::channel(false);
 
-            let ExecutorDescriptor { id: _, kind, results_url } = executor;
+            let parameter::Executor { descriptor } = executor;
+            let ExecutorDescriptor { id: _, kind, results_url } = descriptor;
 
             match kind {
                 ExecutorKind::Executable => warn!("Executing Executable not yet implemented."),

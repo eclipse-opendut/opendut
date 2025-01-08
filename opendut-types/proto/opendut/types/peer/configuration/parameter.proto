@@ -3,6 +3,7 @@ syntax = "proto3";
 package opendut.types.peer.configuration.parameter;
 
 import "opendut/types/util/net.proto";
+import "opendut/types/peer/executor/executor.proto";
 
 message DeviceInterface {
   opendut.types.util.NetworkInterfaceDescriptor descriptor = 1;
@@ -10,4 +11,8 @@ message DeviceInterface {
 
 message EthernetBridge {
   opendut.types.util.NetworkInterfaceName name = 1;
+}
+
+message Executor {
+  opendut.types.peer.executor.ExecutorDescriptor descriptor = 1;
 }

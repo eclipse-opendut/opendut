@@ -61,3 +61,33 @@ mod ethernet_bridge {
         }
     }
 }
+
+mod executor {
+    use super::*;
+    type Model = crate::peer::configuration::parameter::Executor;
+    type Proto = Executor;
+
+    impl From<Model> for Proto {
+        fn from(value: Model) -> Self {
+            Self {
+                descriptor: Some(value.descriptor.into())
+            }
+        }
+    }
+
+    impl TryFrom<Proto> for Model {
+        type Error = ConversionError;
+
+        fn try_from(value: Proto) -> Result<Self, Self::Error> {
+            type ErrorBuilder = ConversionErrorBuilder<Proto, Model>;
+
+            let descriptor = value.descriptor
+                .ok_or(ErrorBuilder::field_not_set("descriptor"))?
+                .try_into()?;
+
+            Ok(crate::peer::configuration::parameter::Executor {
+                descriptor,
+            })
+        }
+    }
+}

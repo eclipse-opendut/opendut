@@ -56,7 +56,8 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
                 .map_err(|source| AssignClusterError::Persistence { peer_id, source })?
                 .unwrap_or_default();
 
-            for executor in Clone::clone(&peer_descriptor.executors).executors.into_iter() {
+            for executor_descriptor in Clone::clone(&peer_descriptor.executors).executors.into_iter() {
+                let executor = parameter::Executor { descriptor: executor_descriptor };
                 peer_configuration.set(executor, ParameterTarget::Present); //TODO not always Present
             }
 

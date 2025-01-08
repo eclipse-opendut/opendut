@@ -86,13 +86,13 @@ mod device_interface {
 }
 mod executor {
     use super::*;
-    type Model = crate::peer::configuration::Parameter<crate::peer::executor::ExecutorDescriptor>;
+    type Model = crate::peer::configuration::Parameter<crate::peer::configuration::parameter::Executor>;
     type Proto = PeerConfigurationParameterExecutor;
 
     impl From<Model> for Proto {
         fn from(model: Model) -> Self {
 
-            let value: crate::proto::peer::executor::ExecutorDescriptor = model.value.clone().into();
+            let value: crate::proto::peer::configuration::parameter::Executor = model.value.clone().into();
             let parameter = PeerConfigurationParameter::from(model);
 
             Self {
@@ -110,7 +110,7 @@ mod executor {
             let parameter = proto.parameter
                 .ok_or(ErrorBuilder::field_not_set("parameter"))?;
 
-            let value: crate::peer::executor::ExecutorDescriptor = proto.value
+            let value: crate::peer::configuration::parameter::Executor = proto.value
                 .ok_or(ErrorBuilder::field_not_set("value"))?
                 .try_into()?;
 
