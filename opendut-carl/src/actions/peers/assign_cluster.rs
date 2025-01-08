@@ -8,7 +8,7 @@ use opendut_types::cluster::ClusterAssignment;
 use opendut_types::peer::configuration::{OldPeerConfiguration, ParameterTarget, PeerConfiguration};
 use opendut_types::peer::state::{PeerBlockedState, PeerState, PeerUpState};
 use opendut_types::peer::{PeerDescriptor, PeerId};
-use opendut_types::peer::ethernet::EthernetBridge;
+use opendut_types::peer::configuration::parameter;
 use opendut_types::util::net::NetworkInterfaceName;
 
 pub struct AssignClusterParams {
@@ -63,7 +63,7 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
             {
                 let bridge = peer_descriptor.clone().network.bridge_name
                     .unwrap_or(options.bridge_name_default);
-                let bridge = EthernetBridge { name: bridge };
+                let bridge = parameter::EthernetBridge { name: bridge };
 
                 peer_configuration.set(bridge, ParameterTarget::Present); //TODO not always Present
             }
@@ -185,11 +185,11 @@ mod tests {
             some(eq(&old_peer_configuration))
         );
 
-        let mut peer_configuration = PeerConfiguration {
-            executors: vec![],
-            ethernet_bridges: vec![],
-        };
-        peer_configuration.set(EthernetBridge { name: NetworkInterfaceName::try_from("br-opendut-1")? }, ParameterTarget::Present);
+        let mut peer_configuration = PeerConfiguration::default();
+        peer_configuration.set(
+            parameter::EthernetBridge { name: NetworkInterfaceName::try_from("br-opendut-1")? },
+            ParameterTarget::Present
+        );
 
         let received = receiver.recv().await.unwrap()
             .message.unwrap();

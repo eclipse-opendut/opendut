@@ -1,6 +1,6 @@
-use crate::peer::configuration::parameter::{Parameter, ParameterId};
+use crate::peer::configuration::{Parameter, ParameterId};
 use crate::peer::configuration::PeerConfiguration;
-use crate::peer::ethernet::EthernetBridge;
+use crate::peer::configuration::parameter::{DeviceInterface, EthernetBridge};
 use crate::peer::executor::ExecutorDescriptor;
 use crate::OPENDUT_UUID_NAMESPACE;
 use std::any::Any;
@@ -38,6 +38,15 @@ pub trait ParameterValue: Any + Hash + Sized {
     fn peer_configuration_field(peer_configuration: &mut PeerConfiguration) -> &mut Vec<Parameter<Self>>;
 }
 
+impl ParameterValue for DeviceInterface {
+    fn parameter_identifier(&self) -> ParameterId {
+        ParameterId(self.descriptor.id.uuid)
+    }
+    fn peer_configuration_field(peer_configuration: &mut PeerConfiguration) -> &mut Vec<Parameter<Self>>  {
+        &mut peer_configuration.device_interfaces
+    }
+}
+
 impl ParameterValue for ExecutorDescriptor {
     fn parameter_identifier(&self) -> ParameterId {
         ParameterId(self.id.uuid)
@@ -70,10 +79,7 @@ mod tests {
 
     #[test]
     fn insert_value_in_peer_configuration() {
-        let mut peer_configuration = PeerConfiguration {
-            executors: vec![],
-            ethernet_bridges: vec![],
-        };
+        let mut peer_configuration = PeerConfiguration::default();
 
         let value = ExecutorDescriptor {
             id: ExecutorId::random(),

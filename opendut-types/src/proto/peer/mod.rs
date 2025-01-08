@@ -6,7 +6,6 @@ use super::util::{NetworkInterfaceDescriptor, NetworkInterfaceName};
 
 pub mod configuration;
 pub mod executor;
-mod ethernet;
 
 include!(concat!(env!("OUT_DIR"), "/opendut.types.peer.rs"));
 

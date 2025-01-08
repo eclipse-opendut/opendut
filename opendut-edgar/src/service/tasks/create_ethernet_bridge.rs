@@ -3,12 +3,12 @@ use crate::service::cluster_assignment::Error;
 use crate::service::network_interface::bridge;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use opendut_types::peer::configuration::{Parameter, ParameterTarget};
-use opendut_types::peer::ethernet::EthernetBridge;
+use opendut_types::peer::configuration::parameter;
 use std::sync::Arc;
 use async_trait::async_trait;
 
 pub struct CreateEthernetBridge {
-    pub parameter: Parameter<EthernetBridge>,
+    pub parameter: Parameter<parameter::EthernetBridge>,
     pub network_interface_manager: NetworkInterfaceManagerRef,
 }
 #[async_trait]

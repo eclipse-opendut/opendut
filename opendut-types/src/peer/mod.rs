@@ -15,7 +15,6 @@ use crate::vpn::VpnPeerConfiguration;
 pub mod state;
 pub mod executor;
 pub mod configuration;
-pub mod ethernet;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]

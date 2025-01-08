@@ -4,7 +4,7 @@ use crate::testing::util;
 use googletest::prelude::*;
 use opendut_types::cluster::{ClusterAssignment, ClusterConfiguration, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
 use opendut_types::peer::configuration::{OldPeerConfiguration, Parameter, ParameterTarget, PeerConfiguration};
-use opendut_types::peer::ethernet::EthernetBridge;
+use opendut_types::peer::configuration::parameter;
 use opendut_types::peer::PeerId;
 use opendut_types::topology::DeviceDescriptor;
 use opendut_types::util::net::NetworkInterfaceName;
@@ -60,7 +60,7 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
                         id: anything(),
                         dependencies: empty(),
                         target: eq(&ParameterTarget::Present),
-                        value: eq(&EthernetBridge {
+                        value: eq(&parameter::EthernetBridge {
                             name: NetworkInterfaceName::try_from("br-opendut")?,
                         }),
                     })
@@ -154,7 +154,7 @@ async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_onl
                         id: anything(),
                         dependencies: empty(),
                         target: eq(&ParameterTarget::Present),
-                        value: eq(&EthernetBridge {
+                        value: eq(&parameter::EthernetBridge {
                             name: NetworkInterfaceName::try_from("br-opendut")?,
                         }),
                     })
@@ -206,11 +206,8 @@ struct Fixture {
 }
 impl Fixture {
     fn new() -> Self {
-        let empty_peer_configuration = PeerConfiguration {
-            executors: vec![],
-            ethernet_bridges: vec![],
-        };
-        let empty_old_peer_configuration = OldPeerConfiguration { cluster_assignment: None };
+        let empty_peer_configuration = PeerConfiguration::default();
+        let empty_old_peer_configuration = OldPeerConfiguration::default();
 
         Fixture { empty_peer_configuration, empty_old_peer_configuration }
     }

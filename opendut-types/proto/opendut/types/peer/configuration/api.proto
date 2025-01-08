@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package opendut.types.peer.configuration;
+package opendut.types.peer.configuration.api;
 
 import "opendut/types/cluster/cluster.proto";
 import "opendut/types/peer/executor/executor.proto";
-import "opendut/types/peer/ethernet.proto";
+import "opendut/types/peer/configuration/parameter.proto";
 import "opendut/types/util/net.proto";
 import "opendut/types/util/uuid.proto";
 
@@ -17,6 +17,7 @@ message OldPeerConfiguration {
 message PeerConfiguration {
   repeated PeerConfigurationParameterExecutor executors = 1;
   repeated PeerConfigurationParameterEthernetBridge ethernet_bridges = 2;
+  repeated PeerConfigurationParameterDeviceInterface device_interfaces = 3;
   //TODO migrate more parameters
 }
 
@@ -27,7 +28,12 @@ message PeerConfigurationParameterExecutor {
 
 message PeerConfigurationParameterEthernetBridge {
   PeerConfigurationParameter parameter = 1;
-  opendut.types.peer.ethernet.EthernetBridge value = 2;
+  opendut.types.peer.configuration.parameter.EthernetBridge value = 2;
+}
+
+message PeerConfigurationParameterDeviceInterface {
+  PeerConfigurationParameter parameter = 1;
+  opendut.types.peer.configuration.parameter.DeviceInterface value = 2;
 }
 
 

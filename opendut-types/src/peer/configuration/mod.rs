@@ -1,9 +1,11 @@
 use crate::cluster::ClusterAssignment;
-use crate::peer::ethernet::EthernetBridge;
 use crate::peer::executor::ExecutorDescriptor;
 
-mod parameter;
-pub use parameter::*;
+pub mod api;
+pub use crate::peer::configuration::api::*;
+
+pub mod parameter;
+use parameter::{DeviceInterface, EthernetBridge};
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct OldPeerConfiguration {
@@ -13,8 +15,9 @@ pub struct OldPeerConfiguration {
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct PeerConfiguration {
-    pub executors: Vec<Parameter<ExecutorDescriptor>>,
+    pub device_interfaces: Vec<Parameter<DeviceInterface>>,
     pub ethernet_bridges: Vec<Parameter<EthernetBridge>>,
+    pub executors: Vec<Parameter<ExecutorDescriptor>>,
     //TODO migrate more parameters
 }
 impl PeerConfiguration {
@@ -48,10 +51,7 @@ mod tests {
 
         let parameter_value = EthernetBridge { name: NetworkInterfaceName::try_from("br-opendut")? };
 
-        let mut testee = PeerConfiguration {
-            executors: vec![],
-            ethernet_bridges: vec![],
-        };
+        let mut testee = PeerConfiguration::default();
         testee.set(parameter_value.clone(), ParameterTarget::Present);
 
 
@@ -75,10 +75,7 @@ mod tests {
             results_url: Some(ResultsUrl::try_from("https://example.com")?),
         };
 
-        let mut testee = PeerConfiguration {
-            executors: vec![],
-            ethernet_bridges: vec![],
-        };
+        let mut testee = PeerConfiguration::default();
         testee.set(parameter_value.clone(), ParameterTarget::Present);
 
 

@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package opendut.types.peer.configuration.parameter;
+
+import "opendut/types/util/net.proto";
+
+message DeviceInterface {
+  opendut.types.util.NetworkInterfaceDescriptor descriptor = 1;
+}
+
+message EthernetBridge {
+  opendut.types.util.NetworkInterfaceName name = 1;
+}
