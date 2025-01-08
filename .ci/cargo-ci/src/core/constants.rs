@@ -1,20 +1,19 @@
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
 
-use lazy_static::lazy_static;
+static WORKSPACE_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
+    let output = std::process::Command::new(env!("CARGO"))
+        .arg("locate-project")
+        .arg("--workspace")
+        .arg("--message-format=plain")
+        .output()
+        .unwrap()
+        .stdout;
 
-lazy_static! {
-    static ref WORKSPACE_DIR: PathBuf = {
-        let output = std::process::Command::new(env!("CARGO"))
-            .arg("locate-project")
-            .arg("--workspace")
-            .arg("--message-format=plain")
-            .output()
-            .unwrap()
-            .stdout;
-        let cargo_path = Path::new(std::str::from_utf8(&output).unwrap().trim());
-        cargo_path.parent().unwrap().to_path_buf()
-    };
-}
+    let cargo_path = Path::new(std::str::from_utf8(&output).unwrap().trim());
+
+    cargo_path.parent().unwrap().to_path_buf()
+});
 
 /// The root of the Cargo Workspace. Should be the repository root.
 pub fn workspace_dir() -> PathBuf {

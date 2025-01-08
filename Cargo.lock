@@ -3878,7 +3878,6 @@ dependencies = [
  "flate2",
  "fs-err",
  "fs_extra",
- "lazy_static",
  "predicates",
  "reqwest 0.12.9",
  "serde-spdx",

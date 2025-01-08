@@ -24,7 +24,7 @@ resolver = "2"
 [workspace.package]
 version = "0.5.0-alpha"
 edition = "2021"
-rust-version = "1.78"
+rust-version = "1.80"
 license = "Apache-2.0"
 repository = "https://github.com/eclipse-opendut/opendut"
 
@@ -89,7 +89,6 @@ hyper-util = "0.1.6"
 indicatif = "0.17.7"
 indoc = "2.0.4"
 jsonwebtoken = "9.2.0"
-lazy_static = "1.4.0"
 leptos = { version = "0.6.15" }
 leptos_oidc = { version = "0.4.0" }
 leptos_router = { version = "0.6.15" }
