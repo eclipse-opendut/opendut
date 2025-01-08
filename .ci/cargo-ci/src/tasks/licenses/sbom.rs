@@ -39,13 +39,21 @@ pub fn generate_sbom(package: Package) -> crate::Result {
         sbom.files = None;
     }
 
-    { //override license information for crates with unclear license
-        sbom.packages = sbom.packages.map(|packages|
-            packages.into_iter().map(|package| {
-                clarify_license_information(package)
-            }).collect::<Vec<_>>()
-        );
-    }
+    sbom.packages = sbom.packages.map(|spdx_packages| {
+        let mut spdx_packages = spdx_packages.into_iter().map(|spdx_package| {
+            clarify_license_information(spdx_package)
+        }).collect::<Vec<_>>();
+
+        let cargo_metadata = crate::metadata::cargo();
+        spdx_packages.push(netbird_spdx_package(&cargo_metadata));
+
+        if package == Package::Edgar {
+            spdx_packages.push(cannelloni_spdx_package(&cargo_metadata));
+            spdx_packages.push(rperf_spdx_package(&cargo_metadata));
+        }
+
+        spdx_packages
+    });
 
     let sbom = serde_json::to_string_pretty(&sbom)?;
 
@@ -57,6 +65,7 @@ pub fn generate_sbom(package: Package) -> crate::Result {
     Ok(())
 }
 
+/// Override license information for crates with unclear license.
 fn clarify_license_information(package: SpdxItemPackages) -> SpdxItemPackages {
     if package.name == "ring" {
         SpdxItemPackages {
@@ -166,6 +175,120 @@ fn clarify_license_information(package: SpdxItemPackages) -> SpdxItemPackages {
             license_declared,
             ..package
         }
+    }
+}
+
+fn netbird_spdx_package(cargo_metadata: &cargo_metadata::Metadata) -> SpdxItemPackages {
+
+    let version = cargo_metadata.workspace_metadata["ci"]["netbird"]["version"].as_str()
+        .expect("NetBird version not defined.");
+
+    SpdxItemPackages {
+        spdxid: format!("SPDXRef-Package-netbird-{version}"),
+        comment: Some(String::from("Used as external software for coordinating VPN management.")),
+        download_location: String::from("https://netbird.io/"),
+        homepage: Some(String::from("https://netbird.io/")),
+        license_concluded: Some(String::from("BSD-3-Clause")),
+        license_declared: Some(String::from("BSD-3-Clause")),
+        name: String::from("NetBird"),
+        version_info: Some(String::from(version)),
+
+        annotations: None,
+        attribution_texts: None,
+        built_date: None,
+        checksums: None,
+        copyright_text: None,
+        description: None,
+        external_refs: None,
+        files_analyzed: None,
+        has_files: None,
+        license_comments: None,
+        license_info_from_files: None,
+        originator: None,
+        package_file_name: None,
+        package_verification_code: None,
+        primary_package_purpose: None,
+        release_date: None,
+        source_info: None,
+        summary: None,
+        supplier: None,
+        valid_until_date: None,
+    }
+}
+
+fn cannelloni_spdx_package(cargo_metadata: &cargo_metadata::Metadata) -> SpdxItemPackages {
+
+    let version = cargo_metadata.workspace_metadata["ci"]["cannelloni"]["version"].as_str()
+        .expect("Cannelloni version not defined.");
+
+    SpdxItemPackages {
+        spdxid: format!("SPDXRef-Package-cannelloni-{version}"),
+        comment: Some(String::from("Used as external software for forwarding CAN communication over HTTP. No direct linking takes place.")),
+        download_location: String::from("https://github.com/mguentner/cannelloni"),
+        homepage: Some(String::from("https://github.com/mguentner/cannelloni")),
+        license_concluded: Some(String::from("GPL-2.0")),
+        license_declared: Some(String::from("GPL-2.0")),
+        name: String::from("Cannelloni"),
+        version_info: Some(String::from(version)),
+
+        annotations: None,
+        attribution_texts: None,
+        built_date: None,
+        checksums: None,
+        copyright_text: None,
+        description: None,
+        external_refs: None,
+        files_analyzed: None,
+        has_files: None,
+        license_comments: None,
+        license_info_from_files: None,
+        originator: None,
+        package_file_name: None,
+        package_verification_code: None,
+        primary_package_purpose: None,
+        release_date: None,
+        source_info: None,
+        summary: None,
+        supplier: None,
+        valid_until_date: None,
+    }
+}
+
+fn rperf_spdx_package(cargo_metadata: &cargo_metadata::Metadata) -> SpdxItemPackages {
+
+    let version = cargo_metadata.workspace_metadata["ci"]["rperf"]["version"].as_str()
+        .expect("Rperf version not defined.");
+
+    SpdxItemPackages {
+        spdxid: format!("SPDXRef-Package-rperf-{version}"),
+        comment: Some(String::from("Used as external software for monitoring network performance. No direct linking takes place.")),
+        download_location: String::from("https://github.com/opensource-3d-p/rperf"),
+        homepage: Some(String::from("https://github.com/opensource-3d-p/rperf")),
+        license_concluded: Some(String::from("GPL-3.0")),
+        license_declared: Some(String::from("GPL-3.0")),
+        name: String::from("Rperf"),
+        version_info: Some(String::from(version)),
+
+        annotations: None,
+        attribution_texts: None,
+        built_date: None,
+        checksums: None,
+        copyright_text: None,
+        description: None,
+        external_refs: None,
+        files_analyzed: None,
+        has_files: None,
+        license_comments: None,
+        license_info_from_files: None,
+        originator: None,
+        package_file_name: None,
+        package_verification_code: None,
+        primary_package_purpose: None,
+        release_date: None,
+        source_info: None,
+        summary: None,
+        supplier: None,
+        valid_until_date: None,
     }
 }
 
