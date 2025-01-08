@@ -29,6 +29,7 @@ registration_client = [
 ]
 public_client = [
     "chrono",
+    "http",
     "leptos_oidc",
     "tracing",
 ]

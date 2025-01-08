@@ -4,7 +4,6 @@ use gloo_net::http;
 use leptos::*;
 use leptos_oidc::{Auth, AuthParameters};
 use serde::{Deserialize, Deserializer};
-use serde::de::Error;
 use tracing::info;
 use url::Url;
 
@@ -52,12 +51,6 @@ impl<'de> Deserialize<'de> for AppConfig {
 
         match raw_app_config.idp_config {
             Some(idp_config) => {
-                let auth_endpoint = idp_config.issuer_url.join("protocol/openid-connect/auth")
-                    .map_err(Error::custom)?.to_string();
-                let token_endpoint = idp_config.issuer_url.join("protocol/openid-connect/token")
-                    .map_err(Error::custom)?.to_string();
-                let logout_endpoint = idp_config.issuer_url.join("protocol/openid-connect/logout")
-                    .map_err(Error::custom)?.to_string();
                 let redirect_uri = raw_app_config.carl_url.to_string();
                 let post_logout_redirect_uri = raw_app_config.carl_url.to_string();
 
@@ -65,13 +58,14 @@ impl<'de> Deserialize<'de> for AppConfig {
                     carl_url: raw_app_config.carl_url,
                     idp_config: Some(idp_config.clone()),
                     auth_parameters: Some(AuthParameters {
-                        auth_endpoint,
-                        token_endpoint,
-                        logout_endpoint,
+                        // Issuer URL is expected to have no trailing slash
+                        issuer: idp_config.issuer_url.to_string().trim_end_matches('/').to_string(),
                         client_id: idp_config.client_id,
                         redirect_uri,
                         post_logout_redirect_uri,
+                        challenge: Default::default(),
                         scope: Some(idp_config.scopes),
+                        audience: None,
                     }),
                 })
             },

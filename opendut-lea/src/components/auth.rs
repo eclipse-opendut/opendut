@@ -1,5 +1,6 @@
+use jsonwebtoken::DecodingKey;
 use leptos::{ChildrenFn, component, create_effect, IntoView, ReadSignal, Show, SignalSet, Transition, use_context, view, ViewFn, WriteSignal};
-use leptos_oidc::{Algorithm, DecodingKey, TokenData, Validation};
+use leptos_oidc::{Algorithm, TokenData, Validation};
 use serde::{Deserialize, Serialize};
 use opendut_auth::public::{AuthData, OptionalAuthData};
 
@@ -23,12 +24,10 @@ pub fn LeaAuthenticated(
             create_effect(move |_| {
                 let (_auth_data, auth_data_write) = use_context::<(ReadSignal<OptionalAuthData>, WriteSignal<OptionalAuthData>)>().expect("AuthData should be provided in the context.");
                 if let Some(token) = auth_token() {
-                    tracing::debug!("AUTH Token: {}", token);
                     let data = decode_token(&token, lea_idp_config.issuer_url.as_ref());
                     auth_data_write.set(OptionalAuthData {
                         auth_data: Some(
                             AuthData {
-                                access_token: token.clone(),
                                 preferred_username: data.claims.preferred_username.clone(),
                                 name: data.claims.name.clone(),
                                 email: data.claims.email.clone(),
@@ -38,10 +37,9 @@ pub fn LeaAuthenticated(
                             }
                         )
                     });
-                    token
                 } else {
-                    tracing::debug!("NO TOKEN");
-                    "no token".to_string()
+                    auth_data_write.set(OptionalAuthData { auth_data: None });
+                    tracing::debug!("No access token present.");
                 }
             });
             let unauthenticated = move || unauthenticated.run();
@@ -66,7 +64,7 @@ pub fn LeaAuthenticated(
             tracing::warn!("Warning: Authentication disabled - No authentication config provided.");
             disabled_auth.run()
         }
-        _ => {
+        (None, None) => {
             tracing::warn!("Warning: Authentication disabled - Neither an authentication config provided, nor is the user authenticated.");
             disabled_auth.run()
         }
@@ -113,6 +111,7 @@ pub(crate) fn decode_token(token: &str, issuer_url: &str) -> TokenData<Claims> {
     let mut validation = Validation::new(Algorithm::RS256);
     validation.set_issuer(&[issuer_url.trim_end_matches('/')]);
     validation.set_audience(&["account".to_string()]);
+    // TODO: use leptos_oidc to decode token with auth.decoded_access_token (once it uses response.access_token instead of response.id_token)
     validation.insecure_disable_signature_validation();
 
     let decoding_key = DecodingKey::from_secret(&[]);

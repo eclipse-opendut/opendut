@@ -1,8 +1,6 @@
-use std::ops::Sub;
 pub use leptos_oidc::Auth;
 use tonic::service::Interceptor;
 use tonic::Status;
-use crate::TOKEN_GRACE_PERIOD;
 
 #[derive(Clone)]
 pub struct AuthInterceptor {
@@ -13,30 +11,26 @@ impl AuthInterceptor {
     pub fn new(auth: Option<Auth>) -> Self {
         Self { auth }
     }
+
+    fn access_token(&self) -> Option<String> {
+        self.auth.as_ref().and_then(|auth|auth.access_token())
+    }
 }
 
 impl Interceptor for AuthInterceptor {
     fn call(&mut self, mut request: tonic::Request<()>) -> Result<tonic::Request<()>, Status> {
-        if let Some(auth) = &self.auth {
-            if let Some(Some(token_storage)) = auth.ok() {
-                let now = chrono::Utc::now().naive_utc();
-                if now.gt(&token_storage.expires_in.sub(TOKEN_GRACE_PERIOD)) {
-                    tracing::debug!("Token expired. Refreshing.");
-                    auth.refresh_token();
-                }
-            };
-
-            let token = match auth.access_token() {
-                None => { "no-auth-token".to_string() }
-                Some(token) => { token }
-            };
-            tracing::debug!("Token: {}", token);
-            let token: tonic::metadata::MetadataValue<_> = format!("Bearer {}", token).parse()
-                .map_err(|_err| Status::unauthenticated("could not parse token"))?;
-            request.metadata_mut().insert("authorization", token.clone());
+        match self.access_token() {
+            None => {
+                tracing::debug!("AuthInterceptor: No access token present.");
+                Err(Status::unauthenticated("No access token present."))
+            }
+            Some(token) => {
+                let bearer_token: tonic::metadata::MetadataValue<_> = format!("Bearer {}", token).parse()
+                    .map_err(|_err| Status::unauthenticated("could not parse token"))?;
+                request.metadata_mut().insert(http::header::AUTHORIZATION.as_str(), bearer_token);
+                Ok(request)
+            }
         }
-
-        Ok(request)
     }
 }
 
@@ -47,7 +41,6 @@ pub struct OptionalAuthData {
 
 #[derive(Clone, Debug)]
 pub struct AuthData {
-    pub access_token: String,
     pub preferred_username: String,
     pub name: String,
     pub email: String,
