@@ -1,4 +1,4 @@
-use leptos::{component, IntoView, MaybeSignal, view, create_local_resource};
+use leptos::prelude::*;
 use crate::app::{use_app_globals, ExpectGlobals};
 use crate::components::{BasePageContainer, Breadcrumb, Initialized};
 use crate::downloads::{CleoCard, EdgarCard};
@@ -19,7 +19,7 @@ pub fn Downloads() -> impl IntoView {
             })
         };
 
-        let version_info = create_local_resource(|| {}, move |_| {
+        let version_info = LocalResource::new(move || {
             let mut carl = globals.expect_client();
             async move {
                 carl.metadata.version().await

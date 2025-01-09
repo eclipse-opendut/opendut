@@ -1,5 +1,5 @@
 use chrono::Local;
-use leptos::create_rw_signal;
+use leptos::prelude::*;
 use crate::components::{Toast, ToastContent, Toaster, ToastKind};
 use crate::components::toast::duration_as_ticks;
 
@@ -62,8 +62,8 @@ impl From<ToastBuilder> for Toast {
             content: value.content.unwrap_or_else(|| ToastContent::Simple { text: String::new() }),
             timestamp: Local::now(),
             max_ticks: ticks,
-            remaining_ticks: create_rw_signal(ticks),
-            keep: create_rw_signal(false),
+            remaining_ticks: RwSignal::new(ticks),
+            keep: RwSignal::new(false),
         }
     }
 }

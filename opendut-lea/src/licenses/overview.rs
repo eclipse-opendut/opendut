@@ -1,4 +1,4 @@
-use leptos::*;
+use leptos::prelude::*;
 
 use crate::api::ApiError;
 use crate::api::ComponentLicenses;
@@ -7,7 +7,7 @@ use crate::components::BasePageContainer;
 #[component]
 pub fn LicensesOverview() -> impl IntoView {
 
-    let licenses: Resource<(), Result<Vec<ComponentLicenses>, ApiError>> = create_local_resource(|| {}, move |_| {
+    let licenses: LocalResource<Result<Vec<ComponentLicenses>, ApiError>> = LocalResource::new(move || {
         async move {
             crate::api::get_licenses().await
         }

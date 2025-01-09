@@ -1,33 +1,38 @@
-use leptos::{MaybeSignal, ReadSignal, RwSignal, Signal, SignalGet, SignalUpdate, SignalWith};
-use leptos_router::use_params_map;
-
+use leptos::prelude::*;
+use leptos_router::hooks::use_params_map;
 use crate::components::ButtonState;
 use crate::routing::{navigate_to, WellKnownRoutes};
 
 pub trait ButtonStateSignalProvider {
-    fn derive_loading(&self) -> MaybeSignal<ButtonState>;
+    fn derive_loading(self) -> MaybeSignal<ButtonState>;
 }
 
 impl ButtonStateSignalProvider for ReadSignal<bool> {
-    fn derive_loading(&self) -> MaybeSignal<ButtonState> {
-        derive_loading(self)
+    fn derive_loading(self) -> MaybeSignal<ButtonState> {
+        let signal = Signal::from(self);
+        derive_loading(signal)
     }
 }
 
 impl ButtonStateSignalProvider for Signal<bool> {
-    fn derive_loading(&self) -> MaybeSignal<ButtonState> {
+    fn derive_loading(self) -> MaybeSignal<ButtonState> {
         derive_loading(self)
     }
 }
 
-fn derive_loading(signal: &(impl SignalGet<Value=bool> + Clone + 'static)) -> MaybeSignal<ButtonState> {
-    let signal = Clone::clone(signal);
+impl<T> ButtonStateSignalProvider for LocalResource<T> {
+    fn derive_loading(self) -> MaybeSignal<ButtonState> {
+        derive_loading(self)
+    }
+}
+
+fn derive_loading(signal: Signal<bool>) -> MaybeSignal<ButtonState> {
     MaybeSignal::derive(move || {
         if signal.get() {
             ButtonState::Loading
         }
         else {
-            ButtonState::Default
+            ButtonState::Enabled
         }
     })
 }
@@ -97,7 +102,7 @@ impl Toggled for RwSignal<bool> {
     }
 }
 
-fn derive_toggled<T>(signal: &(impl SignalGet<Value=bool> + Clone + 'static), on: T, off: T) -> MaybeSignal<T>
+fn derive_toggled<T>(signal: Signal<bool>, on: T, off: T) -> MaybeSignal<T>
 where
     T: Clone
 {

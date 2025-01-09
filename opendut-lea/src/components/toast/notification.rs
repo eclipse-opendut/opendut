@@ -1,7 +1,6 @@
 use std::ops::Not;
 
-use leptos::{component, create_read_slice, IntoView, RwSignal, SignalGet, SignalGetUntracked, SignalSet, SignalWith, SignalWithUntracked, view};
-
+use leptos::prelude::*;
 use crate::components::toast::{Toast, ToastContent, ToastKind};
 
 #[component]

@@ -1,5 +1,5 @@
-use leptos::*;
-use leptos_router::use_navigate;
+use leptos::prelude::*;
+use leptos_router::hooks::use_navigate;
 use tracing::info;
 use url::Url;
 
@@ -69,15 +69,16 @@ impl WellKnownRoutes {
 }
 
 mod routes {
-    use leptos::*;
-    use leptos_router::{Route, Router, Routes};
+    use leptos::prelude::*;
+    use leptos_router::components::{Route, Router, Routes};
+    use leptos_router::path;
 
     use crate::clusters::{ClusterConfigurator, ClustersOverview};
     use crate::dashboard::Dashboard;
     use crate::error::ErrorPage;
     use crate::licenses::LicensesOverview;
     use crate::peers::{PeerConfigurator, PeersOverview};
-    use crate::routing::{self, NotFound};
+    use crate::routing::NotFound;
     use crate::user::UserOverview;
     use crate::about::AboutOverview;
     use crate::downloads::Downloads;
@@ -87,18 +88,18 @@ mod routes {
         view! {
             <Router>
                 <main>
-                    <Routes>
-                        <Route path=routing::path::dashboard view=|| view! { <Dashboard /> } />
-                        <Route path=routing::path::clusters_overview view=|| view! { <ClustersOverview /> } />
-                        <Route path="/clusters/:id/configure/:tab" view=|| view! { <ClusterConfigurator /> } />
-                        <Route path=routing::path::peers_overview view=|| view! { <PeersOverview /> } />
-                        <Route path="/peers/:id/configure/:tab" view=|| view! { <PeerConfigurator /> } />
-                        <Route path=routing::path::downloads view=|| view! { <Downloads /> } />
-                        <Route path=routing::path::user view=|| view! { <UserOverview /> } />
-                        <Route path=routing::path::licenses view=|| view! { <LicensesOverview /> } />
-                        <Route path=routing::path::about view=|| view! { <AboutOverview /> } />
-                        <Route path=routing::path::error view=|| view! { <ErrorPage /> } />
-                        <Route path="/*any" view=|| view! { <NotFound /> } />
+                    <Routes fallback=NotFound>
+                        <Route path=path!("/") view=Dashboard />
+                        <Route path=path!("/clusters") view=ClustersOverview />
+                        <Route path=path!("/clusters/:id/configure/:tab") view=ClusterConfigurator />
+                        <Route path=path!("/peers") view=PeersOverview />
+                        <Route path=path!("/peers/:id/configure/:tab") view=PeerConfigurator />
+                        <Route path=path!("/downloads") view=Downloads />
+                        <Route path=path!("/user") view=UserOverview />
+                        <Route path=path!("/licenses") view=LicensesOverview />
+                        <Route path=path!("/about") view=AboutOverview />
+                        <Route path=path!("/error") view=ErrorPage />
+                        <Route path=path!("/*any") view=NotFound />
                     </Routes>
                 </main>
             </Router>
@@ -109,7 +110,7 @@ mod routes {
 pub fn navigate_to(route: WellKnownRoutes) {
 
     let base = {
-        let location = leptos_dom::helpers::location();
+        let location = location();
         Url::parse(location.origin()
             .expect("Origin of the current location should be valid.").as_str())
             .expect("Base url should be valid.")

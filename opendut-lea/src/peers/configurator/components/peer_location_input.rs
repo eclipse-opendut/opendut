@@ -1,6 +1,6 @@
 use crate::components::{UserInput, UserInputValue};
 use crate::peers::configurator::types::UserPeerConfiguration;
-use leptos::{component, create_slice, view, IntoView, RwSignal};
+use leptos::prelude::*;
 use opendut_types::peer::{IllegalLocation, PeerLocation};
 
 #[component]

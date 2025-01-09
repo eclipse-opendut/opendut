@@ -1,10 +1,10 @@
-use leptos::*;
+use leptos::prelude::*;
 use opendut_types::proto::util::VersionInfo;
 use crate::routing;
 
 #[component]
 pub fn EdgarCard(
-    version_info: Resource<(), VersionInfo>
+    version_info: LocalResource<VersionInfo>
 ) -> impl IntoView {
     
     let version_name = move || {

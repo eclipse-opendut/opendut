@@ -209,7 +209,7 @@ cfg_if! {
 
 #[cfg(feature = "wasm-client")]
 pub mod wasm {
-    use leptos::{create_signal, provide_context};
+    use leptos::prelude::{signal, provide_context};
     use tonic::codegen::InterceptedService;
 
     use opendut_auth::public::{Auth, AuthInterceptor, OptionalAuthData};
@@ -228,7 +228,7 @@ pub mod wasm {
 
     impl CarlClient {
         pub async fn create(url: url::Url, auth: Option<Auth>) -> Result<CarlClient, InitializationError> {
-            let auth_data_signal = create_signal(
+            let auth_data_signal = signal(
                 OptionalAuthData { auth_data: None }
             );
             provide_context(auth_data_signal);

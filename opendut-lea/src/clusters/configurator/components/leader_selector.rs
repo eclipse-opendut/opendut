@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use leptos::{component, create_read_slice, create_slice, view, IntoView, RwSignal, SignalGet, SignalWith};
+use leptos::prelude::*;
 
 use opendut_types::peer::PeerId;
 use opendut_types::topology::DeviceId;

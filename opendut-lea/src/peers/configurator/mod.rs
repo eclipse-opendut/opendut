@@ -6,11 +6,11 @@ use crate::peers::configurator::tabs::{DevicesTab, ExecutorTab, GeneralTab, Netw
 use crate::peers::configurator::types::{UserContainerEnv, UserDeviceConfiguration, UserNetworkInterface, UserPeerConfiguration, UserPeerExecutor, UserPeerExecutorKind, UserPeerNetwork};
 use crate::routing::{navigate_to, WellKnownRoutes};
 use crate::util;
-use leptos::*;
-use leptos_router::use_params_map;
+use leptos::prelude::*;
 use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorKind};
 use opendut_types::peer::PeerId;
 use std::collections::HashMap;
+use leptos_router::hooks::use_params_map;
 
 mod components;
 mod tabs;
@@ -47,7 +47,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                 }
             };
 
-            let peer_configuration = create_rw_signal(UserPeerConfiguration {
+            let peer_configuration = RwSignal::new(UserPeerConfiguration {
                 id: peer_id,
                 name: UserInputValue::Left(UserInputError::from("Enter a valid peer name.")),
                 location: UserInputValue::Right(String::from("")),
@@ -60,7 +60,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                 executors: Vec::new(),
             });
 
-            let peer_configuration_resource = create_local_resource(|| {}, move |_| {
+            let peer_configuration_resource = LocalResource::new(move || {
                 let mut carl = globals.expect_client();
                 async move {
                     if let Ok(configuration) = carl.peers.get_peer_descriptor(peer_id).await {
@@ -81,7 +81,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                                         }
                                     }
                                 }
-                                create_rw_signal(UserDeviceConfiguration {
+                                RwSignal::new(UserDeviceConfiguration {
                                     id: device.id,
                                     name: UserInputValue::Right(device.name.to_string()),
                                     interface: Some(device.interface),
@@ -95,7 +95,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                             }
                             user_configuration.network.network_interfaces = configuration.network.interfaces.into_iter()
                                 .map(|interface| {
-                                    create_rw_signal(UserNetworkInterface::from(interface))
+                                    RwSignal::new(UserNetworkInterface::from(interface))
                                 })
                                 .collect();
                             for executor in configuration.executors.executors {
@@ -116,18 +116,18 @@ pub fn PeerConfigurator() -> impl IntoView {
                                     } => {
                                         let volumes = volumes.into_iter()
                                             .map(|volume| {
-                                                create_rw_signal(UserInputValue::Right(volume.to_string()))
+                                                RwSignal::new(UserInputValue::Right(volume.to_string()))
                                             })
                                             .collect::<Vec<_>>();
                                         let devices = devices.into_iter()
                                             .map(|device| {
-                                                create_rw_signal(UserInputValue::Right(device.to_string()))
+                                                RwSignal::new(UserInputValue::Right(device.to_string()))
                                             })
                                             .collect::<Vec<_>>();
                                         let envs = envs.into_iter()
                                             .map(|env| {
                                                 let (name, value) = env.into();
-                                                create_rw_signal(UserContainerEnv {
+                                                RwSignal::new(UserContainerEnv {
                                                     name: UserInputValue::Right(name),
                                                     value: UserInputValue::Right(value)
                                                 })
@@ -135,12 +135,12 @@ pub fn PeerConfigurator() -> impl IntoView {
                                             .collect::<Vec<_>>();
                                         let ports = ports.into_iter()
                                             .map(|port| {
-                                                create_rw_signal(UserInputValue::Right(port.to_string()))
+                                                RwSignal::new(UserInputValue::Right(port.to_string()))
                                             })
                                             .collect::<Vec<_>>();
                                         let args = args.into_iter()
                                             .map(|arg| {
-                                                create_rw_signal(UserInputValue::Right(arg.to_string()))
+                                                RwSignal::new(UserInputValue::Right(arg.to_string()))
                                             })
                                             .collect::<Vec<_>>();
                                         UserPeerExecutorKind::Container {
@@ -158,7 +158,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                                 };
 
                                 user_configuration.executors.push(
-                                    create_rw_signal(UserPeerExecutor {
+                                    RwSignal::new(UserPeerExecutor {
                                         id,
                                         kind,
                                         results_url: UserInputValue::Right(results_url.map(|s| s.to_string()).unwrap_or(String::new())),
@@ -171,7 +171,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                 }
             });
 
-            let is_valid_peer_configuration = create_memo(move |_| {
+            let is_valid_peer_configuration = Memo::new(move |_| {
                 peer_configuration.with(|peer_configuration| {
                     peer_configuration.name.is_right()
                         && peer_configuration.location.is_right()

@@ -1,4 +1,5 @@
-use leptos::*;
+use leptos::prelude::*;
+use leptos::reactive::wrappers::write::SignalSetter;
 use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, UserInputError};
 use crate::components::inputs::{UserInputValidator, UserInputValue};
 use crate::util::{Ior, NON_BREAKING_SPACE};
@@ -35,7 +36,8 @@ where
 
     let aria_label = Clone::clone(&label);
 
-    let panels = create_memo(move |_| {
+    // TODO: refactor, do not collect views in signals, use new leptos store type, see also create_slice in executor_panel.rs
+    let panels = move || { 
         getter.with(|inputs| {
             inputs.iter()
                 .cloned()
@@ -61,9 +63,9 @@ where
                         />
                     }
                 })
-                .collect::<Vec<_>>()
+                .collect_view()
         })
-    });
+    };
 
     view! {
         <div>

@@ -1,9 +1,9 @@
 use std::ops::Not;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::time::Duration;
 
 use chrono::{DateTime, Local};
-use leptos::{create_effect, create_rw_signal, mount_to_body, RwSignal, SignalGet, SignalGetUntracked, SignalSet, SignalUpdate, SignalWith, use_context, view};
+use leptos::prelude::*;
 use leptos_use::use_interval_fn;
 use leptos_use::utils::Pausable;
 use slotmap::{DefaultKey, SlotMap};
@@ -54,8 +54,8 @@ pub enum ToastContent {
     }
 }
 
-pub fn use_toaster() -> Rc<Toaster> {
-    use_context::<Rc<Toaster>>()
+pub fn use_toaster() -> Arc<Toaster> {
+    use_context::<Arc<Toaster>>()
         .expect("The Toaster should be provided in the context.")
 }
 
@@ -70,7 +70,7 @@ impl Toaster {
 
         debug!("Creating toaster.");
 
-        let toasts: RwSignal<ToastMap> = create_rw_signal(Default::default());
+        let toasts: RwSignal<ToastMap> = RwSignal::new(Default::default());
 
         let Pausable { pause: pause_toast_janitor, resume: resume_toast_janitor, is_active: is_toast_janitor_active } = use_interval_fn(move || {
             toasts.update(|toasts: &mut ToastMap| {
@@ -94,7 +94,7 @@ impl Toaster {
             });
         }, Self::UPDATE_INTERVAL_IN_MILLIS);
 
-        create_effect(move |_| {
+        Effect::new(move |_| {
             toasts.with(|toasts| {
                 let is_active = is_toast_janitor_active.get();
                 if toasts.is_empty() {
@@ -121,7 +121,7 @@ impl Toaster {
         let toast = toast.into();
         debug!("{toast:?}");
         self.toasts.update(|toasts| {
-            toasts.insert(create_rw_signal(toast));
+            toasts.insert(RwSignal::new(toast));
         });
     }
 }
@@ -138,8 +138,8 @@ impl From<String> for Toast {
             content: ToastContent::Simple { text: value },
             timestamp: Local::now(),
             max_ticks: ticks,
-            remaining_ticks: create_rw_signal(ticks),
-            keep: create_rw_signal(false),
+            remaining_ticks: RwSignal::new(ticks),
+            keep: RwSignal::new(false),
         }
     }
 }

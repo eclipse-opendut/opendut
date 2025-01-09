@@ -1,6 +1,6 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
-use leptos::*;
+use leptos::prelude::*;
 use tracing::{debug, error};
 
 use opendut_types::cluster::{ClusterConfiguration, ClusterId};
@@ -15,7 +15,7 @@ use crate::routing::{navigate_to, WellKnownRoutes};
 pub fn Controls(cluster_configuration: ReadSignal<UserClusterConfiguration>, deployed_signal: RwSignal<IsDeployed>) -> impl IntoView {
 
     let (info_text, _) =
-        create_signal({
+        signal({
             if deployed_signal.get().0 {
                 String::from("Cluster can not be updated or deleted while it is deployed.")
             } else {
@@ -41,7 +41,7 @@ fn SaveClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>
     let toaster = use_toaster();
 
     let store_action = create_action(move |_: &()| {
-        let toaster = Rc::clone(&toaster);
+        let toaster = Arc::clone(&toaster);
         let configuration = ClusterConfiguration::try_from(cluster_configuration.get_untracked());
         async move {
             match configuration {
@@ -124,7 +124,7 @@ fn DeleteClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguratio
         } else if delete_action.pending().get() {
             ButtonState::Loading
         } else {
-            ButtonState::Default
+            ButtonState::Enabled
         }
     });
     

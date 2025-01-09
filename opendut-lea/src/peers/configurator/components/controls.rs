@@ -1,8 +1,8 @@
 use std::collections::{HashSet};
 use std::ops::Not;
-use std::rc::Rc;
+use std::sync::Arc;
 
-use leptos::*;
+use leptos::prelude::*;
 use tracing::{debug, error, info};
 use opendut_types::cluster::ClusterId;
 use opendut_types::peer::{PeerDescriptor, PeerId};
@@ -41,7 +41,7 @@ fn SavePeerButton(
     );
 
     let store_action = create_action(move |_: &()| {
-        let toaster = Rc::clone(&toaster);
+        let toaster = Arc::clone(&toaster);
         async move {
             let mut carl = globals.expect_client();
             let peer_descriptor = PeerDescriptor::try_from(configuration.get_untracked());

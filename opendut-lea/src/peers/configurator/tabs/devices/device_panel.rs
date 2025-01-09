@@ -1,4 +1,4 @@
-use leptos::{component, create_read_slice, create_slice, event_target_value, IntoView, MaybeSignal, RwSignal, SignalGet, SignalGetUntracked, SignalWith, view};
+use leptos::prelude::*;
 use opendut_types::topology::{DeviceDescription, DeviceId, DeviceName, IllegalDeviceName};
 use opendut_types::util::net::NetworkInterfaceId;
 use uuid::Uuid;
@@ -76,6 +76,7 @@ where
                 </div>
             };
             view! {
+                <div>
                 <DoorhangerButton
                     icon=FontAwesomeIcon::TrashCan
                     color=ButtonColor::Light
@@ -84,9 +85,11 @@ where
                     label="Delete Device?"
                     text
                 />
+                </div>
             }
         } else {
             view! {
+                <div>
                 <ConfirmationButton
                     icon=FontAwesomeIcon::TrashCan
                     color=ButtonColor::Light
@@ -97,6 +100,7 @@ where
                         move || on_delete(device_configuration.get_untracked().id)
                     }
                 />
+                </div>
             }
         }
     });

@@ -1,4 +1,4 @@
-use leptos::{component, create_read_slice, create_rw_signal, create_slice, event_target_value, IntoView, RwSignal,  SignalGet, SignalGetUntracked, SignalUpdate, SignalWith, SignalWithUntracked, view};
+use leptos::prelude::*;
 use opendut_types::peer::executor::{container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine, IllegalContainerImage}, ExecutorId, ResultsUrl};
 use strum::IntoEnumIterator;
 
@@ -293,7 +293,7 @@ fn ExecutorContainerVolumesInput(
     
     let on_add_volume = move || {
         executor.update(|executor| {
-            let volume = create_rw_signal(
+            let volume = RwSignal::new(
                 UserInputValue::Left(String::from("Container volume must not be empty."))
             );
             match &mut executor.kind {
@@ -348,7 +348,7 @@ fn ExecutorContainerDevicesInput(
 
     let on_add_device = move || {
         executor.update(|executor| {
-            let device = create_rw_signal(
+            let device = RwSignal::new(
                 UserInputValue::Left(String::from("Container device must not be empty."))
             );
             match &mut executor.kind {
@@ -403,7 +403,7 @@ fn ExecutorContainerPortsInput(
 
     let on_add_port = move || {
         executor.update(|executor| {
-            let port = create_rw_signal(
+            let port = RwSignal::new(
                 UserInputValue::Left(String::from("Container port specification must not be empty."))
             );
             match &mut executor.kind {
@@ -498,7 +498,7 @@ fn ExecutorContainerArgsInput(
 
     let on_add_arg = move || {
         executor.update(|executor| {
-            let arg = create_rw_signal(
+            let arg = RwSignal::new(
                 UserInputValue::Left(String::from("Container command argument must not be empty."))
             );
             match &mut executor.kind {
@@ -542,7 +542,7 @@ fn ExecutorContainerEnvsInput(
 
     let on_add_env = move || {
         executor.update(|executor| {
-            let env = create_rw_signal(
+            let env = RwSignal::new(
                 UserContainerEnv {
                     name: UserInputValue::Left(String::from("Container environment variable name must not be empty.")),
                     value: UserInputValue::Right(String::from(""))

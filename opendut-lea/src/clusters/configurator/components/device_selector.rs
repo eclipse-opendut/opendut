@@ -1,9 +1,10 @@
 use std::collections::HashSet;
 use std::ops::Not;
 
-use leptos::*;
+use leptos::prelude::*;
+use leptos::reactive::wrappers::write::SignalSetter;
 
-use opendut_types::peer::PeerId;
+use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
 use opendut_types::util::net::NetworkInterfaceDescriptor;
 use crate::clusters::configurator::components::{get_all_peers, get_all_selected_devices};
@@ -37,75 +38,73 @@ pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
         })
     };
 
-    let rows = move || {
-        let mut all_devices_by_peer: Vec<_> = Vec::new();
+    fn render_peer_descriptors(peer_descriptors: Vec<PeerDescriptor>, selected_devices: HashSet<DeviceId>, getter: Signal<DeviceSelection>, setter: SignalSetter<DeviceSelection>) -> impl IntoView {
+            let mut all_devices_by_peer: Vec<_> = Vec::new();
 
-        for peer in peer_descriptors.get().unwrap_or_default() {
-            let mut devices = peer.topology.devices;
-            let selected_devices = selected_devices();
+            for peer in peer_descriptors {
+                let mut devices = peer.topology.devices;
 
-            devices.sort_by(|a, b|
+                devices.sort_by(|a, b|
                 a.name.value().to_lowercase().cmp(&b.name.value().to_lowercase()));
 
-            let interfaces_and_devices = peer.network.interfaces_zipped_with_devices(&devices);
+                let interfaces_and_devices = peer.network.interfaces_zipped_with_devices(&devices);
 
-            let devices_per_peer = interfaces_and_devices.into_iter()
-                .map(|(network_interface, device)| {
-                    let collapsed_signal = create_rw_signal(true);
-                    let collapse_button_icon = MaybeSignal::derive(move || if collapsed_signal.get() { FontAwesomeIcon::ChevronDown } else {FontAwesomeIcon::ChevronUp} );
-                    let selected_signal = create_rw_signal(selected_devices.contains(&device.id));
-                    view! {
-                        <tr>
-                            <td class="is-narrow">
-                                <IconButton
-                                    icon=collapse_button_icon
-                                    color=ButtonColor::White
-                                    size=ButtonSize::Small
-                                    state=ButtonState::Enabled
-                                    label="Show or hide device details"
-                                    on_action=move || collapsed_signal.update(|collapsed| *collapsed = collapsed.not())
+                let devices_per_peer = interfaces_and_devices.into_iter()
+                    .map(|(network_interface, device)| {
+                        let collapsed_signal = RwSignal::new(true);
+                        let collapse_button_icon = MaybeSignal::derive(move || if collapsed_signal.get() { FontAwesomeIcon::ChevronDown } else {FontAwesomeIcon::ChevronUp} );
+                        let selected_signal = RwSignal::new(selected_devices.contains(&device.id));
+                        view! {
+                            <tr>
+                                <td class="is-narrow">
+                                    <IconButton
+                                        icon=collapse_button_icon
+                                        color=ButtonColor::White
+                                        size=ButtonSize::Small
+                                        state=ButtonState::Enabled
+                                        label="Show or hide device details"
+                                        on_action=move || collapsed_signal.update(|collapsed| *collapsed = collapsed.not())
+                                    />
+                                </td>
+                                <td>
+                                    {device.name.to_string()}
+                                </td>
+                                <td>{peer.location.clone().unwrap_or_default().to_string()}</td>
+                                <td class="is-narrow">
+                                    <IconButton
+                                        icon=FontAwesomeIcon::Check
+                                        color=MaybeSignal::derive(move || match selected_signal.get() {
+                                            false => ButtonColor::Light,
+                                            true => ButtonColor::Success,
+                                        })
+                                        size=ButtonSize::Small
+                                        state=ButtonState::Enabled
+                                        label="More infos"
+                                        on_action=move || icon_button_on_action(
+                                            selected_signal,
+                                            getter,
+                                            setter,
+                                            device.id,
+                                        )
+                                    />
+                                </td>
+                            </tr>
+                            <tr hidden={collapsed_signal}>
+                                <DeviceInfo
+                                    device = device
+                                    network_interface = network_interface
+                                    peer_id = peer.id
                                 />
-                            </td>
-                            <td>
-                                {&device.name.to_string()}
-                            </td>
-                            <td>{peer.location.clone().unwrap_or_default().to_string()}</td>
-                            <td class="is-narrow">
-                                <IconButton
-                                    icon=FontAwesomeIcon::Check
-                                    color=MaybeSignal::derive(move || match selected_signal.get() {
-                                        false => ButtonColor::Light,
-                                        true => ButtonColor::Success,
-                                    })
-                                    size=ButtonSize::Small
-                                    state=ButtonState::Enabled
-                                    label="More infos"
-                                    on_action=move || icon_button_on_action(
-                                        selected_signal,
-                                        getter,
-                                        setter,
-                                        device.id,
-                                    )
-                                />
-                            </td>
-                        </tr>
-                        <tr hidden={collapsed_signal}>
-                            <DeviceInfo
-                                device = device
-                                network_interface = network_interface
-                                peer_id = peer.id
-                            />
-                        </tr>
-                    }
-                })
-                .collect::<Vec<_>>();
+                            </tr>
+                        }
+                    }).collect_view();
 
-            for device in devices_per_peer {
-                all_devices_by_peer.push(device);
+                for device in devices_per_peer {
+                    all_devices_by_peer.push(device);
+                }
             }
-        }
-        all_devices_by_peer
-    };
+            all_devices_by_peer
+    }
 
     view! {
         <p class="help has-text-danger">{ help_text }</p>
@@ -120,7 +119,17 @@ pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
                     </tr>
                 </thead>
                     <tbody>
-                        { rows }
+                        <Suspense
+                            fallback=move || view! { <p>"Loading..."</p> }
+                        >
+                            {move || Suspend::new(async move {
+                                let peer_descriptors = peer_descriptors.await;
+                                let selected_devices = selected_devices();
+                                view! {
+                                    { render_peer_descriptors(peer_descriptors, selected_devices, getter, setter) }
+                                }
+                            })}
+                        </Suspense>        
                     </tbody>
             </table>
         </div>

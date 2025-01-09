@@ -89,11 +89,11 @@ hyper-util = "0.1.6"
 indicatif = "0.17.7"
 indoc = "2.0.4"
 jsonwebtoken = "9.2.0"
-leptos = { version = "0.6.15" }
+leptos = { version = "0.7.3" }
 # https://gitlab.com/GoodLucky777/leptos_oidc, version 0.7.0
 leptos_oidc = { git = "https://gitlab.com/GoodLucky777/leptos_oidc", rev = "ed55987efec1004de93455591ef702bf1ffd2e43" }
-leptos_router = { version = "0.6.15" }
-leptos-use = { version = "0.13.10" }
+leptos_router = { version = "0.7.3" }
+leptos-use = { version = "0.15.3" }
 mime = "0.3.17"
 mockall = "0.13.0"
 netlink-packet-route = "0.19.0"

@@ -4,7 +4,7 @@ mod cluster_name_input;
 mod leader_selector;
 
 use std::collections::HashSet;
-use leptos::{create_local_resource, Resource, Signal, SignalWith};
+use leptos::prelude::*;
 pub use controls::Controls;
 pub use device_selector::{DeviceSelector, DeviceSelection};
 pub use cluster_name_input::ClusterNameInput;
@@ -14,10 +14,10 @@ use opendut_types::topology::DeviceId;
 use crate::app::{ExpectGlobals, use_app_globals};
 
 
-fn get_all_peers() -> Resource<(), Vec<PeerDescriptor>> {
+fn get_all_peers() -> LocalResource<Vec<PeerDescriptor>> {
     let globals = use_app_globals();
 
-    create_local_resource(|| {}, move |_| {
+    LocalResource::new(move || {
         async move {
             let mut carl = globals.expect_client();
             carl.peers.list_peer_descriptors().await

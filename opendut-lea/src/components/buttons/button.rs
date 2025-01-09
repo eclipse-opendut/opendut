@@ -1,5 +1,4 @@
-use leptos::*;
-
+use leptos::prelude::*;
 use crate::components::{ButtonColor, ButtonState, FontAwesomeIcon};
 
 #[component]

@@ -1,4 +1,4 @@
-use leptos::{component, create_memo, create_rw_signal, create_slice, IntoView, RwSignal, SignalUpdate, SignalWith, SignalWithUntracked, view};
+use leptos::prelude::*;
 use opendut_types::peer::executor::container::Engine;
 use opendut_types::peer::executor::ExecutorId;
 use crate::components::UserInputValue;
@@ -41,7 +41,7 @@ fn ExecutorTable(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl In
     };
 
 
-    let panels = create_memo(move |_| {
+    let panels = Memo::new(move |_| {
         executors.with(|executors| {
             executors.iter()
                 .cloned()
@@ -64,7 +64,7 @@ fn ExecutorTable(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl In
                     class="dut-panel-ghost has-text-success px-4 py-3 is-clickable is-flex is-justify-content-center"
                     on:click=move |_| {
                         peer_configuration.update(|peer_configuration| {
-                            let user_peer_executor = create_rw_signal(
+                            let user_peer_executor = RwSignal::new(
                                 UserPeerExecutor {
                                     id: ExecutorId::random(),
                                     kind: UserPeerExecutorKind::Container {

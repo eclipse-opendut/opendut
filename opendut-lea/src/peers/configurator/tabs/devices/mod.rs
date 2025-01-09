@@ -1,5 +1,4 @@
-use leptos::{component, create_memo, create_rw_signal, create_slice, IntoView, RwSignal, SignalUpdate, SignalWith, SignalWithUntracked, view};
-
+use leptos::prelude::*;
 use opendut_types::topology::DeviceId;
 
 use crate::components::UserInputValue;
@@ -39,7 +38,7 @@ fn DevicesTable(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl Int
         devices_setter.set(remaining_devices)
     };
 
-    let panels = create_memo(move |_| {
+    let panels = Memo::new(move |_| {
         devices.with(|devices| {
             devices.iter()
                 .cloned()
@@ -63,7 +62,7 @@ fn DevicesTable(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl Int
                     on:click=move |_| {
                         peer_configuration.update(|peer_configuration| {
                             let device_id = DeviceId::random();
-                            let user_device_configuration = create_rw_signal(
+                            let user_device_configuration = RwSignal::new(
                                 UserDeviceConfiguration {
                                     id: device_id,
                                     name: UserInputValue::Left(String::from(EMPTY_DEVICE_NAME_ERROR_MESSAGE)),

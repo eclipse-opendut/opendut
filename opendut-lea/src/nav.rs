@@ -1,4 +1,4 @@
-use leptos::{component, create_node_ref, create_rw_signal, IntoView, MaybeSignal, SignalGet, SignalSet, SignalUpdate, view};
+use leptos::prelude::*;
 use leptos::html::Div;
 use leptos_oidc::components::{LoginLink, LogoutLink};
 use leptos_use::on_click_outside;
@@ -7,13 +7,14 @@ use opendut_auth::public::OptionalAuthData;
 use crate::components::{LeaAuthenticated, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Initialized};
 use crate::{routing, use_context};
 use crate::{WriteSignal, ReadSignal};
+use crate::user::UNAUTHENTICATED_USER;
 
 #[component(transparent)]
 pub fn Navbar() -> impl IntoView {
     #[component]
     fn inner() -> impl IntoView {
-        let menu_visible = create_rw_signal(false);
-        let profile_visible = create_rw_signal(false);
+        let menu_visible = RwSignal::new(false);
+        let profile_visible = RwSignal::new(false);
 
         let menu_button_icon = MaybeSignal::derive(move || {
             if menu_visible.get() {
@@ -31,12 +32,12 @@ pub fn Navbar() -> impl IntoView {
             }
         });
 
-        let menu_button_area = create_node_ref::<Div>();
+        let menu_button_area = NodeRef::<Div>::new();
         let _ = on_click_outside(menu_button_area, move |_| {
             menu_visible.set(false)
         });
 
-        let profile_button_area = create_node_ref::<Div>();
+        let profile_button_area = NodeRef::<Div>::new();
         let _ = on_click_outside(profile_button_area, move |_| {
             profile_visible.set(false)
         });
@@ -151,7 +152,7 @@ pub fn LoggedInUser() -> impl IntoView {
     let (auth_data, _) = use_context::<(ReadSignal<OptionalAuthData>, WriteSignal<OptionalAuthData>)>().expect("AuthData should be provided in the context.");
     let user_name  = move || {
         match auth_data.get().auth_data {
-            None => { "Unknown User".to_string() }
+            None => { UNAUTHENTICATED_USER.to_string() }
             Some(auth_data) => { auth_data.preferred_username }
         }
     };

@@ -1,4 +1,4 @@
-use leptos::*;
+use leptos::prelude::*;
 use crate::app::{ExpectGlobals, use_app_globals};
 use crate::components::{BasePageContainer, Initialized};
 
@@ -15,7 +15,7 @@ pub fn AboutOverview() -> impl IntoView {
         
         let globals = use_app_globals();
         
-        let metadata: Resource<(), VersionInfo> = create_local_resource(|| {}, move |_| {
+        let metadata: LocalResource<VersionInfo> = LocalResource::new(move || {
             let mut carl = globals.expect_client();
             async move {
                 carl.metadata.version().await

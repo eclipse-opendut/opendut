@@ -1,7 +1,7 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use gloo_net::http;
-use leptos::*;
+use leptos::prelude::*;
 use leptos_oidc::{Auth, AuthParameters};
 use serde::{Deserialize, Deserializer};
 use tracing::info;
@@ -20,8 +20,8 @@ pub struct AppGlobals {
     pub auth: Option<Auth>,
 }
 
-pub fn use_app_globals() -> Resource<(), Result<AppGlobals, AppGlobalsError>> {
-    use_context::<Resource<(), Result<AppGlobals, AppGlobalsError>>>()
+pub fn use_app_globals() -> LocalResource<Result<AppGlobals, AppGlobalsError>> {
+    use_context::<LocalResource<Result<AppGlobals, AppGlobalsError>>>()
         .expect("The AppGlobals should be provided in the context.")
 }
 
@@ -87,7 +87,7 @@ pub struct AppGlobalsError {
 #[component]
 pub fn App() -> impl IntoView {
 
-    let globals: Resource<(), Result<AppGlobals, AppGlobalsError>> = create_local_resource(|| {}, |_| async move {
+    let globals: LocalResource<Result<AppGlobals, AppGlobalsError>> = LocalResource::new(move || async {
         let config = http::Request::get("/api/lea/config")
             .send()
             .await
@@ -123,7 +123,7 @@ pub fn App() -> impl IntoView {
     });
 
     provide_context(globals);
-    provide_context(Rc::new(Toaster::new()));
+    provide_context(Arc::new(Toaster::new()));
 
     view! {
         <Navbar />
@@ -134,14 +134,14 @@ pub fn App() -> impl IntoView {
 }
 
 pub trait ExpectGlobals {
-    fn expect_config(&self) -> AppConfig;
-    fn expect_client(&self) -> CarlClient;
-    fn expect_auth(&self) -> Option<Auth>;
+    async fn expect_config(&self) -> AppConfig;
+    async fn expect_client(&self) -> CarlClient;
+    async fn expect_auth(&self) -> Option<Auth>;
 }
 
-impl ExpectGlobals for Resource<(), Result<AppGlobals, AppGlobalsError>> {
+impl ExpectGlobals for LocalResource<Result<AppGlobals, AppGlobalsError>> {
 
-    fn expect_config(&self) -> AppConfig {
+    async fn expect_config(&self) -> AppConfig {
         self.get()
             .expect("AppGlobals should be loaded to get the config")
             .expect("AppGlobals should be loaded successfully to get the config")

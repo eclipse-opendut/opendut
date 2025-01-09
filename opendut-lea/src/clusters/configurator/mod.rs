@@ -1,5 +1,5 @@
-use leptos::*;
-use leptos_router::use_params_map;
+use leptos::prelude::*;
+use leptos_router::hooks::use_params_map;
 use opendut_types::cluster::{ClusterId};
 
 use crate::app::{ExpectGlobals, use_app_globals};
@@ -48,14 +48,14 @@ pub fn ClusterConfigurator() -> impl IntoView {
                 }
             };
 
-            let user_configuration = create_rw_signal(UserClusterConfiguration {
+            let user_configuration = RwSignal::new(UserClusterConfiguration {
                 id: cluster_id,
                 name: UserInputValue::Left(UserInputError::from("Enter a valid cluster name.")),
                 devices: DeviceSelection::Left(String::from("Select at least two devices.")),
                 leader: LeaderSelection::Left(String::from("Select a leader.")),
             });
 
-            create_local_resource(|| {}, move |_| { // TODO: maybe a action suits better here
+            LocalResource::new(move || { // TODO: maybe a action suits better here
                 let mut carl = globals.expect_client();
                 async move {
                     if let Ok(configuration) = carl.cluster.get_cluster_configuration(cluster_id).await {
@@ -82,7 +82,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
             ]
         });
 
-        let cluster_deployments = create_local_resource(|| {}, move |_| {
+        let cluster_deployments = LocalResource::new(move || {
             let mut carl = globals.expect_client();
             async move {
                 carl.cluster.list_cluster_deployments().await
@@ -101,7 +101,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
         };
         
         let deployed_rw_signal = move || {
-            create_rw_signal(IsDeployed(deployed_clusters().contains(&cluster_id.get())))
+            RwSignal::new(IsDeployed(deployed_clusters().contains(&cluster_id.get())))
         };
 
         let is_deployed = move || {

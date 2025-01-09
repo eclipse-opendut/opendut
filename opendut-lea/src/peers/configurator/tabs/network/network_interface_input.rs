@@ -1,5 +1,5 @@
 use std::ops::Not;
-use leptos::*;
+use leptos::prelude::*;
 use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceName, NetworkInterfaceNameError};
 
 use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, UserInput, UserInputValue};
@@ -14,14 +14,14 @@ pub fn NetworkInterfaceInput<A>(
 ) -> impl IntoView
 where A: Fn(NetworkInterfaceName, UserNetworkInterfaceConfiguration) + 'static {
 
-    let (interface_name_getter, interface_name_setter) = create_signal(UserInputValue::Left(String::from(NON_BREAKING_SPACE)));
-    let (bitrate_getter, bitrate_setter) = create_signal(UserInputValue::Right(String::from("500000")));
-    let (sample_point_getter, sample_point_setter) = create_signal(UserInputValue::Right(String::from("0.7")));
-    let (data_bitrate_getter, data_bitrate_setter) = create_signal(UserInputValue::Right(String::from("2000000")));
-    let (data_sample_point_getter, data_sample_point_setter) = create_signal(UserInputValue::Right(String::from("0.7")));
+    let (interface_name_getter, interface_name_setter) = signal(UserInputValue::Left(String::from(NON_BREAKING_SPACE)));
+    let (bitrate_getter, bitrate_setter) = signal(UserInputValue::Right(String::from("500000")));
+    let (sample_point_getter, sample_point_setter) = signal(UserInputValue::Right(String::from("0.7")));
+    let (data_bitrate_getter, data_bitrate_setter) = signal(UserInputValue::Right(String::from("2000000")));
+    let (data_sample_point_getter, data_sample_point_setter) = signal(UserInputValue::Right(String::from("0.7")));
 
-    let (getter_type, setter_type) = create_signal(InterfaceKind::Ethernet);
-    let (can_fd_getter_type, can_fd_setter_type) = create_signal(false);
+    let (getter_type, setter_type) = signal(InterfaceKind::Ethernet);
+    let (can_fd_getter_type, can_fd_setter_type) = signal(false);
 
     let name_filter = move |name: NetworkInterfaceName| {
         interfaces.with(|interfaces| {

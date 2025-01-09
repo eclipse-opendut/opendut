@@ -1,4 +1,4 @@
-use leptos::{view, IntoView, View};
+use leptos::prelude::*;
 
 pub fn join_with_comma_spans(elements: Vec<View>) -> Vec<View> {
     let elements_length = elements.len();

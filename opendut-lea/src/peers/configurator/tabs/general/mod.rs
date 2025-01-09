@@ -1,5 +1,4 @@
-use leptos::{component, IntoView, MaybeSignal, RwSignal, SignalGet, view};
-
+use leptos::prelude::*;
 use crate::components::ReadOnlyInput;
 use crate::peers::configurator::components::{PeerLocationInput, PeerNameInput};
 use crate::peers::configurator::types::UserPeerConfiguration;

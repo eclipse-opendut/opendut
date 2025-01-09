@@ -1,7 +1,8 @@
 use std::ops::Not;
-use leptos::*;
+use leptos::prelude::*;
 use opendut_auth::public::OptionalAuthData;
 use crate::components::{BasePageContainer, Breadcrumb, Initialized};
+use crate::user::UNAUTHENTICATED_USER;
 
 #[component]
 pub fn UserOverview() -> impl IntoView {
@@ -21,7 +22,7 @@ pub fn UserOverview() -> impl IntoView {
             None => {
                 view! {
                     <CreateTableView
-                        preferred_username="UNKNOWN USER"
+                        preferred_username=UNAUTHENTICATED_USER
                         name=""
                         email=""
                         groups=""

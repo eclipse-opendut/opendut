@@ -5,7 +5,7 @@ use crate::components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, 
 use crate::peers::components::CreatePeerButton;
 use crate::util;
 use leptos::html::Div;
-use leptos::*;
+use leptos::prelude::*;
 use leptos_use::on_click_outside;
 use opendut_types::cluster::ClusterConfiguration;
 use opendut_types::peer::state::PeerState;
@@ -19,7 +19,7 @@ pub fn PeersOverview() -> impl IntoView {
 
         let globals = use_app_globals();
 
-        let registered_peers: Resource<(), Vec<(PeerDescriptor, PeerState)>> = create_local_resource(|| {}, move |_| {
+        let registered_peers: LocalResource<Vec<(PeerDescriptor, PeerState)>> = LocalResource::new(move || {
             let mut carl = globals.expect_client();
             async move {
                 let peers = carl.peers.list_peer_descriptors().await
@@ -35,7 +35,7 @@ pub fn PeersOverview() -> impl IntoView {
             }
         });
 
-        let configured_clusters: Resource<(), Vec<ClusterConfiguration>> = create_local_resource(|| {}, move |_| {
+        let configured_clusters: LocalResource<Vec<ClusterConfiguration>> = LocalResource::new(move || {
             let mut carl = globals.expect_client();
             async move {
                 carl.cluster.list_cluster_configurations().await
@@ -48,9 +48,9 @@ pub fn PeersOverview() -> impl IntoView {
                 registered_peers.into_iter().map(|(peer_descriptor, peer_state)| {
                     view! {
                         <Row
-                            peer_descriptor=create_rw_signal(peer_descriptor)
-                            peer_state=create_rw_signal(peer_state)
-                            cluster_configuration=create_rw_signal(configured_clusters.clone())
+                            peer_descriptor=RwSignal::new(peer_descriptor)
+                            peer_state=RwSignal::new(peer_state)
+                            cluster_configuration=RwSignal::new(configured_clusters.clone())
                         />
                     }
                 }).collect::<Vec<_>>()
@@ -152,11 +152,11 @@ fn Row(
                 }
             }
         };
-        create_signal(state)
+        signal(state)
     };
 
-    let dropdown_active = create_rw_signal(false);
-    let dropdown = create_node_ref::<Div>();
+    let dropdown_active = RwSignal::new(false);
+    let dropdown = NodeRef::<Div>::new();
 
     let _ = on_click_outside(dropdown, move |_| dropdown_active.set(false) );
 

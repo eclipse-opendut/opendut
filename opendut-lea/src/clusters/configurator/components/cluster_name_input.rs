@@ -1,4 +1,4 @@
-use leptos::*;
+use leptos::prelude::*;
 
 use opendut_types::cluster::{IllegalClusterName, ClusterName};
 

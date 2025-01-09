@@ -1,5 +1,5 @@
-use leptos::*;
-use leptos_router::use_location;
+use leptos::prelude::*;
+use leptos_router::hooks::use_location;
 use crate::routing;
 
 #[component]

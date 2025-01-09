@@ -1,4 +1,4 @@
-use leptos::{component, create_local_resource, IntoView, ReadSignal, RwSignal, SignalGet, SignalSet, use_context, view, WriteSignal};
+use leptos::prelude::*;
 use opendut_auth::public::OptionalAuthData;
 
 use opendut_types::peer::PeerId;
@@ -7,6 +7,7 @@ use crate::app::{ExpectGlobals, use_app_globals};
 use crate::components::{ButtonColor, SimpleButton};
 use crate::components::ButtonStateSignalProvider;
 use crate::peers::configurator::types::UserPeerConfiguration;
+use crate::user::UNAUTHENTICATED_USER;
 use crate::util::clipboard::{copy_with_feedback};
 
 #[component]
@@ -18,10 +19,10 @@ pub fn SetupTab(peer_configuration: ReadSignal<UserPeerConfiguration>) -> impl I
 
     let (auth_data_signal, _) = use_context::<(ReadSignal<OptionalAuthData>, WriteSignal<OptionalAuthData>)>().expect("AuthData should be provided in the context.");
 
-    let setup_string = create_local_resource(move || trigger_generation.get(), move |peer_id| {
+    let setup_string = LocalResource::new(move || trigger_generation.get(), move |peer_id| {
         async move {
             let user_id = match auth_data_signal.get().auth_data {
-                None => { String::from("UNKNOWN USER") }
+                None => { String::from(UNAUTHENTICATED_USER) }
                 Some(auth_data) => { auth_data.subject }
             };
             if let Some(peer_id) = peer_id {

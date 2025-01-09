@@ -1,6 +1,6 @@
 use std::ops::Not;
-use leptos::{ChildrenFn, component, HtmlElement, IntoView, Show, SignalGet, view};
-use leptos::html::P;
+use leptos::prelude::*;
+use leptos::html::{HtmlElement, P};
 use crate::app::{ExpectGlobals, use_app_globals};
 use crate::routing::{navigate_to, WellKnownRoutes};
 

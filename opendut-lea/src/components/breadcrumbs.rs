@@ -1,6 +1,6 @@
 use std::ops::Not;
 
-use leptos::*;
+use leptos::prelude::*;
 
 #[derive(Debug, Clone)]
 pub struct Breadcrumb {

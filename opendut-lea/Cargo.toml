@@ -16,7 +16,7 @@ gloo-net = { workspace = true, features = ["json"]}
 jsonwebtoken = { workspace = true }
 leptos = { workspace = true, features = ["csr"] }
 leptos_oidc =  { workspace = true }
-leptos_router = { workspace = true, features = ["csr"] }
+leptos_router = { workspace = true }
 leptos-use = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 shadow-rs = { workspace = true, default-features = false, features = ["tzdb"] }

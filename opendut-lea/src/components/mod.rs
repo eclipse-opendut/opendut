@@ -1,3 +1,6 @@
+use leptos::prelude::*;
+
+pub use auth::LeaAuthenticated;
 pub use authenticated::Initialized;
 pub use breadcrumbs::{Breadcrumb, Breadcrumbs};
 pub use buttons::button::SimpleButton;
@@ -7,14 +10,13 @@ pub use buttons::icon_button::IconButton;
 pub use inputs::{UserInputError, UserInputValue};
 pub use inputs::readonly_input::ReadOnlyInput;
 pub use inputs::user_input::UserInput;
-pub use inputs::vector_user_input::VectorUserInput;
 pub use inputs::user_textarea::UserTextarea;
+pub use inputs::vector_user_input::VectorUserInput;
 pub use page::BasePageContainer;
-pub use toast::{use_toaster, Toaster, Toast, ToastKind, ToastContent};
+pub use toast::{Toast, ToastContent, Toaster, ToastKind, use_toaster};
 pub use util::ButtonStateSignalProvider;
 pub use util::Toggled;
 pub use util::use_active_tab;
-pub use auth::LeaAuthenticated;
 
 pub mod health;
 pub mod tooltip;
@@ -66,24 +68,14 @@ impl FontAwesomeIcon {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
 #[allow(dead_code)]
 pub enum ButtonState {
+    #[default]
     Enabled,
     Loading,
     Disabled,
     Hidden,
-}
-
-impl ButtonState {
-    #[allow(non_upper_case_globals)]
-    pub const Default: ButtonState = ButtonState::Enabled;
-}
-
-impl Default for ButtonState {
-    fn default() -> Self {
-        Self::Default
-    }
 }
 
 #[derive(Clone, Copy, Debug)]

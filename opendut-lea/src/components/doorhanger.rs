@@ -1,8 +1,8 @@
-use leptos::*;
+use leptos::prelude::*;
 use leptos::html::Div;
 use leptos_use::{use_element_size, UseElementSizeReturn};
 
-pub type Trigger = Box<dyn FnOnce() -> View>;
+pub type Trigger = Box<dyn FnOnce() -> AnyView + Send>;
 
 #[allow(dead_code)]
 pub enum DoorhangerAlignment {
@@ -33,7 +33,7 @@ pub fn Doorhanger(
         })
     };
 
-    let trigger_div = create_node_ref::<Div>();
+    let trigger_div = NodeRef::<Div>::new();
     let UseElementSizeReturn { height, .. } = use_element_size(trigger_div);
     let dog_ear_style = move || {
         let top = (height.get() as i32) + 4;

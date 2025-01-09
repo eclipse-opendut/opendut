@@ -1,4 +1,4 @@
-use leptos::*;
+use leptos::prelude::*;
 use leptos::ev::MouseEvent;
 
 use crate::components::tooltip::Tooltip;
@@ -19,7 +19,7 @@ pub enum StateKind {
 #[component]
 pub fn Health(state: ReadSignal<State>) -> impl IntoView {
 
-    let (tooltip_visible, set_tooltip_visible) = create_signal(false);
+    let (tooltip_visible, set_tooltip_visible) = signal(false);
 
     let classes = move || state.with(|state| {
         match state.kind {

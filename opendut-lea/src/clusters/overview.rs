@@ -1,4 +1,4 @@
-use leptos::*;
+use leptos::prelude::*;
 use leptos::html::Div;
 use leptos_use::on_click_outside;
 use serde::{Deserialize, Serialize};
@@ -20,7 +20,7 @@ pub fn ClustersOverview() -> impl IntoView {
 
         let globals = use_app_globals();
 
-        let clusters = create_local_resource(|| {}, move |_| {
+        let clusters = LocalResource::new(move || {
             let mut carl = globals.expect_client();
             async move {
                 carl.cluster.list_cluster_configurations().await
@@ -28,7 +28,7 @@ pub fn ClustersOverview() -> impl IntoView {
             }
         });
 
-        let cluster_deployments = create_local_resource(|| {}, move |_| {
+        let cluster_deployments = LocalResource::new(move || {
             let mut carl = globals.expect_client();
             async move {
                 carl.cluster.list_cluster_deployments().await
@@ -112,10 +112,10 @@ pub fn ClustersOverview() -> impl IntoView {
                         let cluster_id = cluster_configuration.id;
                         view! {
                             <Row
-                                cluster_configuration=create_rw_signal(cluster_configuration)
+                                cluster_configuration=RwSignal::new(cluster_configuration)
                                 on_deploy=move || deploy_cluster.dispatch(cluster_id)
                                 on_undeploy=move || undeploy_cluster.dispatch(cluster_id)
-                                is_deployed = create_rw_signal(IsDeployed(deployed_clusters().contains(&cluster_id)))
+                                is_deployed = RwSignal::new(IsDeployed(deployed_clusters().contains(&cluster_id)))
                             />
                         }
                     }).collect::<Vec<_>>()
@@ -190,12 +190,12 @@ where
 
     let configurator_href = move || format!("/clusters/{}/configure/general", cluster_id.get());
 
-    let dropdown_active = create_rw_signal(false);
-    let dropdown = create_node_ref::<Div>();
+    let dropdown_active = RwSignal::new(false);
+    let dropdown = NodeRef::<Div>::new();
 
     let _ = on_click_outside(dropdown, move |_| dropdown_active.set(false) );
 
-    let (health_state, _) = create_signal({
+    let (health_state, _) = signal({
         if is_deployed.get().0 {
             health::State {
                 kind: health::StateKind::Yellow,

@@ -1,4 +1,4 @@
-use leptos::{component, create_memo, For, IntoView, RwSignal, SignalGet, SignalUpdate, SignalWith, SignalWithUntracked, view};
+use leptos::prelude::*;
 use tracing::debug;
 
 use crate::components::toast::notification::Notification;
@@ -17,7 +17,7 @@ pub fn Container(
         });
     };
 
-    let toasts_list = create_memo(move |_| {
+    let toasts_list = Memo::new(move |_| {
         let mut result = toasts.with(|toasts| {
             toasts.iter()
                 .map(|(key, toast)| (key, Clone::clone(toast)))

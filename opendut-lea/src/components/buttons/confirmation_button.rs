@@ -1,4 +1,4 @@
-use leptos::*;
+use leptos::prelude::*;
 use leptos::html::Div;
 use leptos_use::on_click_outside;
 use crate::components::{ButtonSize, IconButton};
@@ -19,9 +19,9 @@ where A: Fn() + 'static {
     let text = Clone::clone(&label);
     let aria_label = Clone::clone(&label);
 
-    let doorhanger_visible = create_rw_signal(false);
+    let doorhanger_visible = RwSignal::new(false);
 
-    let delete_button_area = create_node_ref::<Div>();
+    let delete_button_area = NodeRef::<Div>::new();
 
     let _ = on_click_outside(delete_button_area, move |_| {
         doorhanger_visible.set(false)

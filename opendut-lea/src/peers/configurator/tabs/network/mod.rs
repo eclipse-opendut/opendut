@@ -1,11 +1,13 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
-use leptos::{component, create_action, create_read_slice, create_rw_signal, create_slice, IntoView, RwSignal, SignalGetUntracked, SignalWith, SignalWithUntracked, view, SignalGet, MaybeSignal};
+use leptos::prelude::*;
+
 use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceId};
+
 use crate::components::{Toast, use_toaster, UserInputValue};
-use crate::peers::configurator::tabs::network::network_interface_input::NetworkInterfaceInput;
 use crate::peers::configurator::tabs::network::bridge_name_input::BridgeNameInput;
-use crate::peers::configurator::types::{UserPeerConfiguration, UserNetworkInterface};
+use crate::peers::configurator::tabs::network::network_interface_input::NetworkInterfaceInput;
+use crate::peers::configurator::types::{UserNetworkInterface, UserPeerConfiguration};
 
 mod network_interface_input;
 mod bridge_name_input;
@@ -48,7 +50,7 @@ pub fn NetworkTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl I
                 interfaces = interfaces_getter
                 on_action = move |name, configuration| {
                     let mut interfaces = interfaces_getter.get_untracked();
-                    let user_peer_network = create_rw_signal(
+                    let user_peer_network = RwSignal::new(
                         UserNetworkInterface {
                             id: NetworkInterfaceId::random(),
                             name,
@@ -95,7 +97,7 @@ fn Row(
 ) -> impl IntoView {
 
     let toaster = use_toaster();
-    let toaster = Rc::clone(&toaster);
+    let toaster = Arc::clone(&toaster);
 
     let (interfaces_getter, interfaces_setter) = create_slice(peer_configuration,
       |peer_configuration| {
@@ -130,7 +132,7 @@ fn Row(
     };
 
     let deletion_failed_action = create_action(move |interface_to_delete: &NetworkInterfaceId| {
-        let toaster = Rc::clone(&toaster);
+        let toaster = Arc::clone(&toaster);
         let devices_with_interface = devices.get_untracked().into_iter()
             .filter(|device| {
                 device.get_untracked().interface == Some(*interface_to_delete)
