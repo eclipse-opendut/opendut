@@ -2,14 +2,15 @@ use std::net::{IpAddr, Ipv4Addr};
 use std::sync::Arc;
 use tracing::debug;
 
-use opendut_types::cluster::{ClusterAssignment, PeerClusterAssignment};
-use opendut_types::peer::PeerId;
-use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
-
+use crate::service::can_manager::CanManagerRef;
 use crate::service::network_interface;
 use crate::service::network_interface::gre;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
-use crate::service::can_manager::CanManagerRef;
+use opendut_types::cluster::{ClusterAssignment, PeerClusterAssignment};
+use opendut_types::peer::configuration::{parameter, Parameter, ParameterTarget};
+use opendut_types::peer::PeerId;
+use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceName};
+use parameter::DeviceInterface;
 
 #[tracing::instrument(skip_all, level="trace")]
 pub async fn setup_ethernet_gre_interfaces(
@@ -45,16 +46,20 @@ pub async fn setup_ethernet_gre_interfaces(
 
 #[tracing::instrument(skip_all, level="trace")]
 pub async fn join_ethernet_interfaces_to_bridge(
-    cluster_assignment: &ClusterAssignment,
-    self_id: PeerId,
+    device_interfaces: &[Parameter<DeviceInterface>],
     bridge_name: &NetworkInterfaceName,
     network_interface_manager: NetworkInterfaceManagerRef,
 ) -> Result<(), Error> {
     debug!("Joining Ethernet interfaces to bridge '{bridge_name}'.");
 
-    let own_ethernet_interfaces = get_own_ethernet_interfaces(cluster_assignment, self_id)?;
+    let ethernet_interfaces = filter_ethernet_interfaces(device_interfaces.to_owned())?;
 
-    join_device_interfaces_to_bridge(&own_ethernet_interfaces, bridge_name, Arc::clone(&network_interface_manager)).await
+    let ethernet_interfaces: Vec<DeviceInterface> = ethernet_interfaces.into_iter()
+        .filter(|parameter| parameter.target == ParameterTarget::Present)
+        .map(|parameter| parameter.value)
+        .collect();
+
+    join_device_interfaces_to_bridge(&ethernet_interfaces, bridge_name, Arc::clone(&network_interface_manager)).await
         .map_err(Error::JoinDeviceInterfaceToBridgeFailed)?;
 
     Ok(())
@@ -64,12 +69,18 @@ pub async fn join_ethernet_interfaces_to_bridge(
 pub async fn setup_can_interfaces(
     cluster_assignment: &ClusterAssignment,
     self_id: PeerId,
+    device_interfaces: &[Parameter<DeviceInterface>],
     can_manager: CanManagerRef
 ) -> Result<(), Error> {
-    let own_can_interfaces = get_own_can_interfaces(cluster_assignment, self_id)?;
+    let can_interfaces = filter_can_interfaces(device_interfaces.to_owned())?;
+
+    let can_interfaces = can_interfaces.into_iter()
+        .filter(|parameter| parameter.target == ParameterTarget::Present)
+        .map(|parameter| parameter.value.descriptor)
+        .collect::<Vec<_>>();
 
     if let sudo::RunningAs::User = sudo::check() {
-        if own_can_interfaces.is_empty() {
+        if can_interfaces.is_empty() {
             //Since we don't have the correct permissions to run the CAN setup code,
             //no previous CAN interfaces exist which we might need to clean up,
             //so we can safely skip this code, which allows us to run without root,
@@ -85,8 +96,8 @@ pub async fn setup_can_interfaces(
 
     let can_bridge_name = crate::common::default_can_bridge_name();
     can_manager.setup_local_routing(
-        &can_bridge_name, 
-        own_can_interfaces,
+        &can_bridge_name,
+        can_interfaces,
     ).await
     .map_err(Error::LocalCanRoutingSetupFailed)?;
 
@@ -161,45 +172,39 @@ fn require_ipv4_for_gre(ip_address: IpAddr) -> Result<Ipv4Addr, Error> {
     }
 }
 
-fn get_own_ethernet_interfaces(
-    cluster_assignment: &ClusterAssignment,
-    self_id: PeerId,
-) -> Result<Vec<NetworkInterfaceDescriptor>, Error> {
+fn filter_ethernet_interfaces(
+    device_interfaces: Vec<Parameter<DeviceInterface>>
+) -> Result<Vec<Parameter<DeviceInterface>>, Error> {
 
-    let own_cluster_assignment = cluster_assignment.assignments.iter().find(|assignment| assignment.peer_id == self_id).unwrap();
-
-    let own_ethernet_interfaces: Vec<NetworkInterfaceDescriptor> = own_cluster_assignment.device_interfaces.iter()
-        .filter(|interface| interface.configuration == NetworkInterfaceConfiguration::Ethernet)
+    let own_ethernet_interfaces = device_interfaces.iter()
+        .filter(|interface| interface.value.descriptor.configuration == NetworkInterfaceConfiguration::Ethernet)
         .cloned()
-        .collect();
+        .collect::<Vec<_>>();
 
     Ok(own_ethernet_interfaces)
 }
 
-fn get_own_can_interfaces(
-    cluster_assignment: &ClusterAssignment,
-    self_id: PeerId,
-) -> Result<Vec<NetworkInterfaceDescriptor>, Error> {
+fn filter_can_interfaces(
+    device_interfaces: Vec<Parameter<DeviceInterface>>
+) -> Result<Vec<Parameter<DeviceInterface>>, Error> {
 
-    let own_cluster_assignment = cluster_assignment.assignments.iter().find(|assignment| assignment.peer_id == self_id).unwrap();
-
-    let own_can_interfaces: Vec<NetworkInterfaceDescriptor> = own_cluster_assignment.device_interfaces.iter()
-        .filter(|interface| matches!(interface.configuration, NetworkInterfaceConfiguration::Can { .. }))
+    let own_can_interfaces: Vec<_> = device_interfaces.iter()
+        .filter(|interface| matches!(interface.value.descriptor.configuration, NetworkInterfaceConfiguration::Can { .. }))
         .cloned()
-        .collect();
+        .collect::<Vec<_>>();
 
     Ok(own_can_interfaces)
 }
 
 async fn join_device_interfaces_to_bridge(
-    device_interfaces: &Vec<NetworkInterfaceDescriptor>,
+    device_interfaces: &Vec<DeviceInterface>,
     bridge_name: &NetworkInterfaceName,
     network_interface_manager: NetworkInterfaceManagerRef
 ) -> Result<(), network_interface::manager::Error> {
     let bridge = network_interface_manager.try_find_interface(bridge_name).await?;
 
     for interface in device_interfaces {
-        let interface = network_interface_manager.try_find_interface(&interface.name).await?;
+        let interface = network_interface_manager.try_find_interface(&interface.descriptor.name).await?;
         network_interface_manager.join_interface_to_bridge(&interface, &bridge).await?;
         debug!("Joined device interface {interface} to bridge {bridge}.");
     }

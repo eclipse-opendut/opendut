@@ -3,7 +3,7 @@ use opendut_types::cluster::{ClusterAssignment, PeerClusterAssignment};
 use opendut_types::util::net::NetworkInterfaceName;
 use tracing::{debug, error, info, trace, warn};
 use std::sync::Arc;
-use opendut_types::peer::configuration::{OldPeerConfiguration, ParameterTarget, PeerConfiguration};
+use opendut_types::peer::configuration::{parameter, OldPeerConfiguration, Parameter, ParameterTarget, PeerConfiguration};
 use opendut_util::project;
 use opendut_types::peer::PeerId;
 use std::time::Duration;
@@ -83,6 +83,7 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
             Some(bridge) => {
                 let _ = setup_cluster(
                     &old_peer_configuration.cluster_assignment,
+                    peer_configuration.device_interfaces,
                     self_id,
                     network_interface_management,
                     &bridge.value.name,
@@ -111,6 +112,7 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
 #[tracing::instrument(skip_all)]
 async fn setup_cluster( //TODO make idempotent
     cluster_assignment: &Option<ClusterAssignment>,
+    device_interfaces: Vec<Parameter<parameter::DeviceInterface>>,
     self_id: PeerId,
     network_interface_management: NetworkInterfaceManagement,
     bridge_name: &NetworkInterfaceName,
@@ -131,8 +133,7 @@ async fn setup_cluster( //TODO make idempotent
                 .inspect_err(|error| error!("Failed to configure Ethernet GRE interfaces: {error}"))?;
 
                 cluster_assignment::join_ethernet_interfaces_to_bridge(
-                    cluster_assignment,
-                    self_id,
+                    &device_interfaces,
                     bridge_name,
                     Arc::clone(network_interface_manager),
                 ).await
@@ -141,6 +142,7 @@ async fn setup_cluster( //TODO make idempotent
                 cluster_assignment::setup_can_interfaces(
                     cluster_assignment,
                     self_id,
+                    &device_interfaces,
                     Arc::clone(can_manager),
                 ).await
                 .inspect_err(|error| error!("Failed to configure CAN interfaces: {error}"))?;
