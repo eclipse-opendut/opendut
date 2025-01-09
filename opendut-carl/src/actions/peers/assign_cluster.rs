@@ -1,20 +1,21 @@
-use tracing::debug;
 use crate::peer::broker::PeerMessagingBrokerRef;
 use crate::persistence::error::PersistenceError;
 use crate::resources::manager::ResourcesManagerRef;
 use crate::resources::storage::ResourcesStorageApi;
 use opendut_carl_api::proto::services::peer_messaging_broker::{downstream, ApplyPeerConfiguration};
 use opendut_types::cluster::ClusterAssignment;
+use opendut_types::peer::configuration::parameter;
 use opendut_types::peer::configuration::{OldPeerConfiguration, ParameterTarget, PeerConfiguration};
 use opendut_types::peer::state::{PeerBlockedState, PeerState, PeerUpState};
 use opendut_types::peer::{PeerDescriptor, PeerId};
-use opendut_types::peer::configuration::parameter;
-use opendut_types::util::net::NetworkInterfaceName;
+use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
+use tracing::debug;
 
 pub struct AssignClusterParams {
     pub resources_manager: ResourcesManagerRef,
     pub peer_messaging_broker: PeerMessagingBrokerRef,
     pub peer_id: PeerId,
+    pub device_interfaces: Vec<NetworkInterfaceDescriptor>,
     pub cluster_assignment: ClusterAssignment,
     pub options: AssignClusterOptions,
 }
@@ -35,7 +36,7 @@ pub enum AssignClusterError {
 }
 
 pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClusterError> {
-    let AssignClusterParams { resources_manager, peer_messaging_broker, peer_id, cluster_assignment, options } = params;
+    let AssignClusterParams { resources_manager, peer_messaging_broker, peer_id, cluster_assignment, device_interfaces, options } = params;
     let cluster_id = cluster_assignment.id;
 
     debug!("Assigning cluster to peer <{peer_id}>.");
@@ -56,17 +57,22 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
                 .map_err(|source| AssignClusterError::Persistence { peer_id, source })?
                 .unwrap_or_default();
 
-            for executor_descriptor in Clone::clone(&peer_descriptor.executors).executors.into_iter() {
-                let executor = parameter::Executor { descriptor: executor_descriptor };
-                peer_configuration.set(executor, ParameterTarget::Present); //TODO not always Present
+            for device_interface in device_interfaces.into_iter() {
+                let device_interface = parameter::DeviceInterface { descriptor: device_interface };
+                peer_configuration.set(device_interface, ParameterTarget::Present); //TODO not always Present
             }
 
             {
-                let bridge = peer_descriptor.clone().network.bridge_name
+                let ethernet_bridge = peer_descriptor.clone().network.bridge_name
                     .unwrap_or(options.bridge_name_default);
-                let bridge = parameter::EthernetBridge { name: bridge };
+                let bridge = parameter::EthernetBridge { name: ethernet_bridge };
 
                 peer_configuration.set(bridge, ParameterTarget::Present); //TODO not always Present
+            }
+
+            for executor_descriptor in Clone::clone(&peer_descriptor.executors).executors.into_iter() {
+                let executor = parameter::Executor { descriptor: executor_descriptor };
+                peer_configuration.set(executor, ParameterTarget::Present); //TODO not always Present
             }
 
             peer_configuration
@@ -117,13 +123,13 @@ mod tests {
     use crate::resources::manager::ResourcesManager;
     use googletest::prelude::*;
     use opendut_types::cluster::{ClusterAssignment, ClusterId};
+    use opendut_types::peer::executor::ExecutorDescriptors;
+    use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkDescriptor};
+    use opendut_types::topology::Topology;
     use rstest::rstest;
     use std::net::IpAddr;
     use std::str::FromStr;
     use std::sync::Arc;
-    use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkDescriptor};
-    use opendut_types::peer::executor::ExecutorDescriptors;
-    use opendut_types::topology::Topology;
 
     #[rstest]
     #[tokio::test]
@@ -172,6 +178,7 @@ mod tests {
             peer_messaging_broker: Arc::clone(&peer_messaging_broker),
             peer_id,
             cluster_assignment: Clone::clone(&cluster_assignment),
+            device_interfaces: vec![],
             options: AssignClusterOptions {
                 bridge_name_default: NetworkInterfaceName::try_from("br-opendut").unwrap(),
             }

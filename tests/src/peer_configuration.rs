@@ -54,7 +54,7 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
     {
         let validate_peer_configuration = |peer_configuration: PeerConfiguration| {
             assert_that!(peer_configuration, matches_pattern!(PeerConfiguration {
-                executors: empty(),
+                device_interfaces: eq(&peer_configuration.device_interfaces),
                 ethernet_bridges: contains(
                     matches_pattern!(Parameter {
                         id: anything(),
@@ -65,6 +65,7 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
                         }),
                     })
                 ),
+                executors: empty(),
             }));
             Ok::<_, anyhow::Error>(())
         };
@@ -148,7 +149,7 @@ async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_onl
     {
         let validate_peer_configuration = |peer_configuration: PeerConfiguration| {
             assert_that!(peer_configuration, matches_pattern!(PeerConfiguration {
-                executors: empty(),
+                device_interfaces: eq(&peer_configuration.device_interfaces),
                 ethernet_bridges: contains(
                     matches_pattern!(Parameter {
                         id: anything(),
@@ -159,6 +160,7 @@ async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_onl
                         }),
                     })
                 ),
+                executors: empty(),
             }));
             Ok::<_, anyhow::Error>(())
         };

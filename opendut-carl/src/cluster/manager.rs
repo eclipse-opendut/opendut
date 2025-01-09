@@ -298,7 +298,7 @@ impl ClusterManager {
         let can_server_ports = self.determine_can_server_ports(&member_interface_mapping, cluster_id)?;
 
         let member_assignments: Vec<Result<PeerClusterAssignment, DeployClusterError>> = {
-            let assignment_futures = std::iter::zip(member_interface_mapping, can_server_ports)
+            let assignment_futures = std::iter::zip(member_interface_mapping.clone(), can_server_ports)
                 .map(|((peer_id, device_interfaces), can_server_port)| {
                     self.resources_manager.get::<PeerState>(peer_id)
                         .map(move |peer_state: PersistenceResult<Option<PeerState>>| {
@@ -336,7 +336,8 @@ impl ClusterManager {
             bridge_name_default: self.options.bridge_name_default.clone(),
         };
 
-        for member_id in member_ids {
+        for (member_id, device_interfaces) in member_interface_mapping {
+
             actions::assign_cluster(AssignClusterParams {
                 resources_manager: Arc::clone(&self.resources_manager),
                 peer_messaging_broker: Arc::clone(&self.peer_messaging_broker),
@@ -346,6 +347,7 @@ impl ClusterManager {
                     leader: cluster_config.leader,
                     assignments: member_assignments.clone(),
                 },
+                device_interfaces,
                 options: assign_cluster_options.clone(),
             }).await
             .map_err(|cause| {
