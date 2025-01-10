@@ -1,6 +1,6 @@
 use leptos::either::Either;
 use leptos::prelude::*;
-use crate::app::{use_app_globals, ExpectGlobals};
+use crate::app::use_app_globals;
 use opendut_auth::public::OptionalAuthData;
 use opendut_types::proto::util::VersionInfo;
 use crate::components::{ButtonColor, ButtonState, SimpleButton};
@@ -48,7 +48,7 @@ pub fn CleoCard(
                 Some(auth_data) => { auth_data.subject }
             };
             if trigger {
-                let mut carl = globals.expect_client();
+                let mut carl = globals.client;
                 let setup = carl.peers.create_cleo_setup(user_id.clone()).await
                     .expect("Failed to request the setup string.");
                 let setup_string = setup.encode()

@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use crate::app::{ExpectGlobals, use_app_globals};
+use crate::app::use_app_globals;
 
 use crate::clusters::components::CreateClusterButton;
 use crate::routing;
@@ -16,7 +16,7 @@ pub fn ClustersCard() -> impl IntoView {
     let globals = use_app_globals();
 
     let clusters: LocalResource<Clusters> = LocalResource::new(move || {
-        let mut carl = globals.expect_client();
+        let mut carl = globals.client;
         async move {
             let configured = carl.cluster.list_cluster_configurations().await
                 .expect("Failed to request the list of cluster configurations.")

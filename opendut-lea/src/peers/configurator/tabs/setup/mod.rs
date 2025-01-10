@@ -3,7 +3,7 @@ use opendut_auth::public::OptionalAuthData;
 
 use opendut_types::peer::PeerId;
 
-use crate::app::{ExpectGlobals, use_app_globals};
+use crate::app::use_app_globals;
 use crate::components::{ButtonColor, SimpleButton};
 use crate::components::ButtonStateSignalProvider;
 use crate::peers::configurator::types::UserPeerConfiguration;
@@ -26,7 +26,7 @@ pub fn SetupTab(peer_configuration: ReadSignal<UserPeerConfiguration>) -> impl I
                 Some(auth_data) => { auth_data.subject }
             };
             if let Some(peer_id) = peer_id {
-                let mut carl = globals.expect_client();
+                let mut carl = globals.client;
                 let setup = carl.peers.create_peer_setup(peer_id, user_id).await
                     .expect("Failed to request the setup string.");
                 let setup_string = setup.encode()

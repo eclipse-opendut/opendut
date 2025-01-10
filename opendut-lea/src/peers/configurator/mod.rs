@@ -1,4 +1,4 @@
-use crate::app::{use_app_globals, ExpectGlobals};
+use crate::app::use_app_globals;
 use crate::components::use_active_tab;
 use crate::components::{BasePageContainer, Breadcrumb, Initialized, UserInputError, UserInputValue};
 use crate::peers::configurator::components::Controls;
@@ -61,7 +61,7 @@ pub fn PeerConfigurator() -> impl IntoView {
             });
 
             let peer_configuration_resource = LocalResource::new(move || {
-                let mut carl = globals.expect_client();
+                let mut carl = globals.client;
                 async move {
                     if let Ok(configuration) = carl.peers.get_peer_descriptor(peer_id).await {
                         let clusters = carl.cluster.list_cluster_configurations().await

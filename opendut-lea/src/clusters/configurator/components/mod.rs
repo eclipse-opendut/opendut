@@ -11,7 +11,7 @@ pub use cluster_name_input::ClusterNameInput;
 pub use leader_selector::{LeaderSelector, LeaderSelection};
 use opendut_types::peer::PeerDescriptor;
 use opendut_types::topology::DeviceId;
-use crate::app::{ExpectGlobals, use_app_globals};
+use crate::app::use_app_globals;
 
 
 fn get_all_peers() -> LocalResource<Vec<PeerDescriptor>> {
@@ -19,7 +19,7 @@ fn get_all_peers() -> LocalResource<Vec<PeerDescriptor>> {
 
     LocalResource::new(move || {
         async move {
-            let mut carl = globals.expect_client();
+            let mut carl = globals.client;
             carl.peers.list_peer_descriptors().await
                 .expect("Failed to request the list of all peers.")
         }

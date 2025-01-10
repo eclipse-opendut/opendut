@@ -5,7 +5,7 @@ use tracing::{debug, error};
 
 use opendut_types::cluster::{ClusterConfiguration, ClusterId};
 
-use crate::app::{ExpectGlobals, use_app_globals};
+use crate::app::use_app_globals;
 use crate::clusters::configurator::types::UserClusterConfiguration;
 use crate::clusters::overview::IsDeployed;
 use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, IconButton, Toast, use_toaster};
@@ -46,7 +46,7 @@ fn SaveClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>
         async move {
             match configuration {
                 Ok(configuration) => {
-                    let mut carl = globals.expect_client();
+                    let mut carl = globals.client;
                     let result = carl.cluster.store_cluster_configuration(configuration).await;
                     match result {
                         Ok(cluster_id) => {
@@ -112,7 +112,7 @@ fn DeleteClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguratio
     let delete_action = create_action(move |id: &ClusterId| {
         let id = id.to_owned();
         async move {
-            let mut carl = globals.expect_client();
+            let mut carl = globals.client;
             let _ = carl.cluster.delete_cluster_configuration(id).await; // TODO: Check the result and display a toast on failure.
             navigate_to(WellKnownRoutes::ClustersOverview);
         }

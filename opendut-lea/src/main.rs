@@ -6,7 +6,7 @@ use tracing_subscriber::fmt::format::Pretty;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-use crate::app::App;
+use crate::app::LoadingApp;
 
 mod app;
 mod peers;
@@ -42,5 +42,5 @@ fn main() {
 
     info!("LEA started.");
 
-    mount_to_body(|| view! { <App /> })
+    mount_to_body(|| view! { <LoadingApp /> })
 }

@@ -91,7 +91,9 @@ indoc = "2.0.4"
 jsonwebtoken = "9.2.0"
 leptos = { version = "0.7.3" }
 # https://gitlab.com/GoodLucky777/leptos_oidc, version 0.7.0
-leptos_oidc = { git = "https://gitlab.com/GoodLucky777/leptos_oidc", rev = "ed55987efec1004de93455591ef702bf1ffd2e43" }
+# leptos_oidc = { git = "https://gitlab.com/GoodLucky777/leptos_oidc", rev = "ed55987efec1004de93455591ef702bf1ffd2e43" }
+# TODO: change to appropriate location
+leptos_oidc = { path = "leptos_oidc" }
 leptos_router = { version = "0.7.3" }
 leptos-use = { version = "0.15.3" }
 mime = "0.3.17"
@@ -117,6 +119,8 @@ prost = "0.13.1"
 prost-build = "0.13.1"
 prost-types = "0.13.1"
 protobuf-src = "1.1.0"
+reactive_stores = "0.1.3"
+reactive_stores_macro = "0.1.0"
 regex = "1.10.2"
 repo_path = "1.0.0"
 reqwest = { version = "0.12.9", default-features = false, features = ["rustls-tls-native-roots"] }

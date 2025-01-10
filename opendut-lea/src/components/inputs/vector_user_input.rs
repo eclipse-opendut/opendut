@@ -36,7 +36,7 @@ where
 
     let aria_label = Clone::clone(&label);
 
-    // TODO: refactor, do not collect views in signals, use new leptos store type, see also create_slice in executor_panel.rs
+    // TODO: refactor, use new leptos store type, see also create_slice in executor_panel.rs
     let panels = move || { 
         getter.with(|inputs| {
             inputs.iter()

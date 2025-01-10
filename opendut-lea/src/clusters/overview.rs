@@ -7,7 +7,7 @@ use opendut_carl_api::carl::ClientError;
 use opendut_carl_api::carl::cluster::StoreClusterDeploymentError;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
 
-use crate::app::{ExpectGlobals, use_app_globals};
+use crate::app::use_app_globals;
 use crate::clusters::components::CreateClusterButton;
 use crate::components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, health, IconButton, Initialized, Toast, use_toaster};
 use crate::components::health::Health;
@@ -21,7 +21,7 @@ pub fn ClustersOverview() -> impl IntoView {
         let globals = use_app_globals();
 
         let clusters = LocalResource::new(move || {
-            let mut carl = globals.expect_client();
+            let mut carl = globals.client;
             async move {
                 carl.cluster.list_cluster_configurations().await
                     .expect("Failed to request the list of clusters")
@@ -29,7 +29,7 @@ pub fn ClustersOverview() -> impl IntoView {
         });
 
         let cluster_deployments = LocalResource::new(move || {
-            let mut carl = globals.expect_client();
+            let mut carl = globals.client;
             async move {
                 carl.cluster.list_cluster_deployments().await
                     .expect("Failed to request the list of cluster deployments")
@@ -38,7 +38,7 @@ pub fn ClustersOverview() -> impl IntoView {
 
         let deploy_cluster = create_action(move |cluster_id: &ClusterId| {
             let toaster = use_toaster();
-            let mut carl = globals.expect_client();
+            let mut carl = globals.client;
             let cluster_id = Clone::clone(cluster_id);
             async move {
                 match carl.cluster.store_cluster_deployment(ClusterDeployment { id: cluster_id }).await {
@@ -76,7 +76,7 @@ pub fn ClustersOverview() -> impl IntoView {
 
         let undeploy_cluster = create_action(move |id: &ClusterId| {
             let toaster = use_toaster();
-            let mut carl = globals.expect_client();
+            let mut carl = globals.client;
             let id = Clone::clone(id);
             async move {
                 match carl.cluster.delete_cluster_deployment(id).await {

@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 use opendut_types::peer::state::PeerState;
-use crate::app::{ExpectGlobals, use_app_globals};
+use crate::app::use_app_globals;
 use crate::peers::components::CreatePeerButton;
 use crate::routing;
 
@@ -16,7 +16,7 @@ pub fn PeersCard() -> impl IntoView {
     let globals = use_app_globals();
 
     let peers: LocalResource<Peers> = LocalResource::new(move || {
-        let mut carl = globals.expect_client();
+        let mut carl = globals.client;
         async move {
             let registered = carl.peers.list_peer_descriptors().await
                 .expect("Failed to request the list of peers.");

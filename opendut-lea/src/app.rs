@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use gloo_net::http;
+use leptos::either::Either;
 use leptos::prelude::*;
 use leptos_oidc::{Auth, AuthParameters};
 use serde::{Deserialize, Deserializer};
@@ -10,8 +11,9 @@ use url::Url;
 use opendut_carl_api::carl::wasm::CarlClient;
 
 use crate::components::Toaster;
+use crate::error::LeaError;
 use crate::nav::Navbar;
-use crate::routing::Routes;
+use crate::routing::AppRoutes;
 
 #[derive(Clone, Debug)]
 pub struct AppGlobals {
@@ -20,8 +22,8 @@ pub struct AppGlobals {
     pub auth: Option<Auth>,
 }
 
-pub fn use_app_globals() -> LocalResource<Result<AppGlobals, AppGlobalsError>> {
-    use_context::<LocalResource<Result<AppGlobals, AppGlobalsError>>>()
+pub fn use_app_globals() -> AppGlobals {
+    use_context::<AppGlobals>()
         .expect("The AppGlobals should be provided in the context.")
 }
 
@@ -32,6 +34,8 @@ pub struct LeaIdpConfig {
     pub scopes: String,
 }
 
+
+// TODO: RawAppConfig==LeaConfig(opendut-carl/src/http/state.rs), move to opendut-types
 #[derive(Clone, Debug, Deserialize)]
 pub struct RawAppConfig {
     pub carl_url: Url,
@@ -85,80 +89,14 @@ pub struct AppGlobalsError {
 }
 
 #[component]
-pub fn App() -> impl IntoView {
-
-    let globals: LocalResource<Result<AppGlobals, AppGlobalsError>> = LocalResource::new(move || async {
-        let config = http::Request::get("/api/lea/config")
-            .send()
-            .await
-            .map_err(|_| AppGlobalsError { message: String::from("Could not fetch configuration!")})?
-            .json::<AppConfig>()
-            .await.map_err(|_| AppGlobalsError { message: String::from("Could not parse configuration!")})?;
-
-        info!("Configuration: {config:?}");
-
-        match config.auth_parameters {
-            Some(ref auth_parameters) => {
-                info!("Auth parameters: {auth_parameters:?}");
-                let auth = Auth::init(auth_parameters.clone());
-                let client = CarlClient::create(Clone::clone(&config.carl_url), Some(auth.clone())).await
-                    .expect("Failed to create CARL client");
-
-                Ok(AppGlobals {
-                    config,
-                    client,
-                    auth: Some(auth),
-                })
-            },
-            None => {
-                let client = CarlClient::create(Clone::clone(&config.carl_url), None).await
-                    .expect("Failed to create CARL client");
-                Ok(AppGlobals {
-                    config,
-                    client,
-                    auth: None,
-                })
-            }
-        }
-    });
-
-    provide_context(globals);
+pub fn LoadingApp() -> impl IntoView {
+    
     provide_context(Arc::new(Toaster::new()));
-
+    
     view! {
         <Navbar />
         <div class="container">
-            <Routes />
+            <AppRoutes />
         </div>
-    }
-}
-
-pub trait ExpectGlobals {
-    async fn expect_config(&self) -> AppConfig;
-    async fn expect_client(&self) -> CarlClient;
-    async fn expect_auth(&self) -> Option<Auth>;
-}
-
-impl ExpectGlobals for LocalResource<Result<AppGlobals, AppGlobalsError>> {
-
-    async fn expect_config(&self) -> AppConfig {
-        self.get()
-            .expect("AppGlobals should be loaded to get the config")
-            .expect("AppGlobals should be loaded successfully to get the config")
-            .config
-    }
-
-    fn expect_client(&self) -> CarlClient {
-        self.get()
-            .expect("AppGlobals should be loaded to get the client")
-            .expect("AppGlobals should be loaded successfully to get the client")
-            .client
-    }
-
-    fn expect_auth(&self) -> Option<Auth> {
-        self.get()
-            .expect("AppGlobals should be loaded to get the authentication")
-            .expect("AppGlobals should be loaded successfully to get the authentication")
-            .auth
     }
 }

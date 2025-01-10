@@ -13,7 +13,7 @@ pub fn DoorhangerButton(
     #[prop(into)] size: MaybeSignal<ButtonSize>,
     #[prop(into)] state: MaybeSignal<ButtonState>,
     #[prop(into)] label: MaybeSignal<String>,
-    #[prop(into)] text: MaybeSignal<HtmlElement<Div>>,
+    #[prop(into)] text: MaybeSignal<View<Div>>,
 ) -> impl IntoView {
 
     let text = Clone::clone(&text);

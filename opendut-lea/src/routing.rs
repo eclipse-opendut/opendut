@@ -5,10 +5,10 @@ use url::Url;
 
 use opendut_types::cluster::ClusterId;
 use opendut_types::peer::PeerId;
-pub use routes::AppRoutes as Routes;
 
 use crate::components::BasePageContainer;
 use crate::util::url::UrlEncodable;
+pub use routes::AppRoutes;
 
 pub mod path {
     #![allow(non_upper_case_globals)]
@@ -73,15 +73,15 @@ mod routes {
     use leptos_router::components::{Route, Router, Routes};
     use leptos_router::path;
 
-    use crate::clusters::{ClusterConfigurator, ClustersOverview};
-    use crate::dashboard::Dashboard;
+    // use crate::clusters::{ClusterConfigurator, ClustersOverview};
+    // use crate::dashboard::Dashboard;
     use crate::error::ErrorPage;
     use crate::licenses::LicensesOverview;
-    use crate::peers::{PeerConfigurator, PeersOverview};
+    // use crate::peers::{PeerConfigurator, PeersOverview};
     use crate::routing::NotFound;
-    use crate::user::UserOverview;
-    use crate::about::AboutOverview;
-    use crate::downloads::Downloads;
+    // use crate::user::UserOverview;
+    // use crate::about::AboutOverview;
+    // use crate::downloads::Downloads;
 
     #[component]
     pub fn AppRoutes() -> impl IntoView {
@@ -89,15 +89,15 @@ mod routes {
             <Router>
                 <main>
                     <Routes fallback=NotFound>
-                        <Route path=path!("/") view=Dashboard />
-                        <Route path=path!("/clusters") view=ClustersOverview />
-                        <Route path=path!("/clusters/:id/configure/:tab") view=ClusterConfigurator />
-                        <Route path=path!("/peers") view=PeersOverview />
-                        <Route path=path!("/peers/:id/configure/:tab") view=PeerConfigurator />
-                        <Route path=path!("/downloads") view=Downloads />
-                        <Route path=path!("/user") view=UserOverview />
+                        // <Route path=path!("/") view=Dashboard />
+                        // <Route path=path!("/clusters") view=ClustersOverview />
+                        // <Route path=path!("/clusters/:id/configure/:tab") view=ClusterConfigurator />
+                        // <Route path=path!("/peers") view=PeersOverview />
+                        // <Route path=path!("/peers/:id/configure/:tab") view=PeerConfigurator />
+                        // <Route path=path!("/downloads") view=Downloads />
+                        //<Route path=path!("/user") view=UserOverview />
                         <Route path=path!("/licenses") view=LicensesOverview />
-                        <Route path=path!("/about") view=AboutOverview />
+                        //<Route path=path!("/about") view=AboutOverview />
                         <Route path=path!("/error") view=ErrorPage />
                         <Route path=path!("/*any") view=NotFound />
                     </Routes>

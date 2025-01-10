@@ -2,7 +2,7 @@ use leptos::prelude::*;
 use leptos_router::hooks::use_params_map;
 use opendut_types::cluster::{ClusterId};
 
-use crate::app::{ExpectGlobals, use_app_globals};
+use crate::app::use_app_globals;
 use crate::clusters::configurator::components::{DeviceSelection, DeviceSelector, LeaderSelection};
 use crate::clusters::configurator::components::Controls;
 use crate::clusters::configurator::tabs::{DevicesTab, GeneralTab, LeaderTab, TabIdentifier};
@@ -56,7 +56,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
             });
 
             LocalResource::new(move || { // TODO: maybe a action suits better here
-                let mut carl = globals.expect_client();
+                let mut carl = globals.client;
                 async move {
                     if let Ok(configuration) = carl.cluster.get_cluster_configuration(cluster_id).await {
                         user_configuration.update(|user_configuration| {
@@ -83,7 +83,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
         });
 
         let cluster_deployments = LocalResource::new(move || {
-            let mut carl = globals.expect_client();
+            let mut carl = globals.client;
             async move {
                 carl.cluster.list_cluster_deployments().await
                     .expect("Failed to request the list of cluster deployments")

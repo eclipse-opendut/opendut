@@ -20,12 +20,6 @@ impl ButtonStateSignalProvider for Signal<bool> {
     }
 }
 
-impl<T> ButtonStateSignalProvider for LocalResource<T> {
-    fn derive_loading(self) -> MaybeSignal<ButtonState> {
-        derive_loading(self)
-    }
-}
-
 fn derive_loading(signal: Signal<bool>) -> MaybeSignal<ButtonState> {
     MaybeSignal::derive(move || {
         if signal.get() {
@@ -37,7 +31,10 @@ fn derive_loading(signal: Signal<bool>) -> MaybeSignal<ButtonState> {
     })
 }
 
-pub fn use_active_tab<T: for<'a> TryFrom<&'a str, Error=impl ToString> + Default>() -> MaybeSignal<T> {
+pub fn use_active_tab<T: for<'a> TryFrom<&'a str, Error=impl ToString> + Default>() -> MaybeSignal<T> 
+where 
+    T: Send + Sync 
+{
     let params = use_params_map();
     MaybeSignal::derive(move || params.with(|params| {
         let tab = params.get("tab")
@@ -71,42 +68,42 @@ impl ToggleSignal for RwSignal<bool> {
 }
 
 pub trait Toggled {
-    fn derive_toggled<T>(&self, on: T, off: T) -> MaybeSignal<T>
-    where T: Clone;
+    fn derive_toggled<T>(self, on: T, off: T) -> MaybeSignal<T>
+    where T: Clone + Send + Sync;
 }
 
 impl Toggled for ReadSignal<bool> {
-    fn derive_toggled<T>(&self, on: T, off: T) -> MaybeSignal<T>
+    fn derive_toggled<T>(self, on: T, off: T) -> MaybeSignal<T>
     where
-        T: Clone
+        T: Clone + Send + Sync
     {
-        derive_toggled(self, on, off)
+        derive_toggled(self.into(), on, off)
     }
 }
 
 impl Toggled for Signal<bool> {
-    fn derive_toggled<T>(&self, on: T, off: T) -> MaybeSignal<T>
+    fn derive_toggled<T>(self, on: T, off: T) -> MaybeSignal<T>
     where
-        T: Clone
+        T: Clone + Send + Sync
     {
         derive_toggled(self, on, off)
     }
 }
 
 impl Toggled for RwSignal<bool> {
-    fn derive_toggled<T>(&self, on: T, off: T) -> MaybeSignal<T>
+    fn derive_toggled<T>(self, on: T, off: T) -> MaybeSignal<T>
         where
-            T: Clone
+            T: Clone + Send + Sync
     {
-        derive_toggled(self, on, off)
+        let signal = Signal::from(self);
+        derive_toggled(signal, on, off)
     }
 }
 
 fn derive_toggled<T>(signal: Signal<bool>, on: T, off: T) -> MaybeSignal<T>
 where
-    T: Clone
+    T: Clone + Send + Sync
 {
-    let signal = Clone::clone(signal);
     MaybeSignal::derive(move || {
         if signal.get() {
             Clone::clone(&on)

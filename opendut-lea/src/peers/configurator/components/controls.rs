@@ -6,7 +6,7 @@ use leptos::prelude::*;
 use tracing::{debug, error, info};
 use opendut_types::cluster::ClusterId;
 use opendut_types::peer::{PeerDescriptor, PeerId};
-use crate::app::{use_app_globals, ExpectGlobals};
+use crate::app::use_app_globals;
 use crate::components::{use_toaster, ButtonColor, ButtonSize, ButtonState, ButtonStateSignalProvider, ConfirmationButton, FontAwesomeIcon, IconButton, Toast, DoorhangerButton};
 use crate::peers::configurator::types::UserPeerConfiguration;
 use crate::routing;
@@ -43,7 +43,7 @@ fn SavePeerButton(
     let store_action = create_action(move |_: &()| {
         let toaster = Arc::clone(&toaster);
         async move {
-            let mut carl = globals.expect_client();
+            let mut carl = globals.client;
             let peer_descriptor = PeerDescriptor::try_from(configuration.get_untracked());
             match peer_descriptor {
                 Ok(peer_descriptor) => {
@@ -101,7 +101,7 @@ fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl In
     let globals = use_app_globals();
 
     let delete_action = create_action(move |_: &PeerId| async move {
-        let mut carl = globals.expect_client();
+        let mut carl = globals.client;
         let peer_id = configuration.get_untracked().id;
         let result = carl.peers.delete_peer_descriptor(peer_id).await;
         match result {

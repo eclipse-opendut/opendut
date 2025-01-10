@@ -1,7 +1,11 @@
 use std::ops::Not;
+use gloo_net::http;
+use leptos::either::Either;
 use leptos::prelude::*;
-use leptos::html::{HtmlElement, P};
-use crate::app::{ExpectGlobals, use_app_globals};
+use leptos_oidc::Auth;
+use tracing::info;
+use opendut_carl_api::carl::wasm::CarlClient;
+use crate::app::{use_app_globals, AppConfig, AppGlobals, AppGlobalsError};
 use crate::routing::{navigate_to, WellKnownRoutes};
 
 #[must_use]
@@ -13,28 +17,74 @@ pub fn Initialized(
     #[prop(optional, default = true)] authentication_required: bool,
 ) -> impl IntoView {
 
-    let globals = use_app_globals();
-    let successfully_initialized = move || {
-        let is_initialized = !globals.loading().get();
-        let is_successful = globals.get()
-            .map(|result| result.is_ok())
-            .unwrap_or(false);
-        is_initialized && is_successful
-    };
+    let globals: LocalResource<Result<AppGlobals, AppGlobalsError>> = LocalResource::new(move || async {
+        let config = http::Request::get("/api/lea/config")
+            .send()
+            .await
+            .map_err(|_| AppGlobalsError { message: String::from("Could not fetch configuration!")})?
+            .json::<AppConfig>()
+            .await.map_err(|_| AppGlobalsError { message: String::from("Could not parse configuration!")})?;
 
-    let fallback = move || { fallback("Configuration Error", "Page is loading.") };
+        info!("Configuration: {config:?}");
+
+        match config.auth_parameters {
+            Some(ref auth_parameters) => {
+                info!("Auth parameters: {auth_parameters:?}");
+                let auth = Auth::init(auth_parameters.clone());
+                let client = CarlClient::create(Clone::clone(&config.carl_url), Some(auth.clone())).await
+                    .expect("Failed to create CARL client");
+
+                Ok(AppGlobals {
+                    config,
+                    client,
+                    auth: Some(auth),
+                })
+            },
+            None => {
+                let client = CarlClient::create(Clone::clone(&config.carl_url), None).await
+                    .expect("Failed to create CARL client");
+                Ok(AppGlobals {
+                    config,
+                    client,
+                    auth: None,
+                })
+            }
+        }
+    });
+
+    let children = StoredValue::new(children);
 
     view! {
-        <Show
-            fallback=fallback
-            when=successfully_initialized
+        <Suspense
+            fallback=|| view! { <FallbackMessage message="Page is loading."/> }
         >
-            <InitializedAndAuthenticated
-                authentication_required=authentication_required
-                children=children.clone()
-            >
-            </InitializedAndAuthenticated>
-        </Show>
+            {move || Suspend::new(async move {
+                let app_globals_result = globals.await;
+
+                match app_globals_result {
+                    Ok(app_globals) => {
+
+                        provide_context(app_globals);
+
+                        Either::Right(view! {
+                            <InitializedAndAuthenticated
+                                authentication_required=authentication_required
+                            >
+                                { children.read_value()() }
+                            </InitializedAndAuthenticated>
+                        })
+                    }
+                    Err(error) => {
+                        tracing::error!("{}", error);
+                        // LeaError::ConfigurationError.navigate_to();
+                        Either::Left(
+                            view! { <FallbackMessage message=""/> }
+                        )
+                    }
+                }
+            })}
+        </Suspense>
+
     }
 }
 
@@ -46,9 +96,11 @@ pub fn InitializedAndAuthenticated(
     #[prop(optional, default = true)] authentication_required: bool,
 ) -> impl IntoView {
 
-    match use_app_globals().expect_auth() {
+    //let children = StoredValue::new(children);
+
+    match use_app_globals().auth {
         None => {
-            children.into_view()
+            children().into_view().into_any()
         }
         Some(auth) => {
 
@@ -59,41 +111,28 @@ pub fn InitializedAndAuthenticated(
                 is_authenticated() || authentication_required.not()
             };
 
-            let fallback = move || { fallback("Authentication Error", "You are currently not logged in.") };
-
             view! {
                 <Show
                     when=show_component
-                    fallback=fallback
-                    children=children
+                    fallback=|| view! { <FallbackMessage message="You are currently not logged in."/> }
                 >
+                    {children()}
                 </Show>
-            }
+            }.into_any()
 
         }
     }
 }
 
-fn fallback(error_message: &'static str, fallback_loading_message: &'static str) -> HtmlElement<P> {
-    match use_app_globals().get() {
-        Some(Err(error)) => {
-            navigate_to(WellKnownRoutes::ErrorPage {
-                title: String::from(error_message),
-                text: error.message,
-                details: None,
-            });
-            view! { <p></p> }
-        }
-        _ => {
-            view! {
-                <p>
-                    <div class="columns is-full">
-                        <div class="column">
-                            <h1 class="title is-5 has-text-centered">{ fallback_loading_message }</h1>
-                        </div>
-                    </div>
-                </p>
-            }
-        }
+#[component]
+fn FallbackMessage(message: &'static str) -> impl IntoView {
+    view! {
+        <p>
+            <div class="columns is-full">
+                <div class="column">
+                    <h1 class="title is-5 has-text-centered">{ message }</h1>
+                </div>
+            </div>
+        </p>
     }
 }

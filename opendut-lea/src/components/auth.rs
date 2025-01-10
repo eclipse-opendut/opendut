@@ -4,7 +4,7 @@ use leptos_oidc::{Algorithm, TokenData, Validation};
 use serde::{Deserialize, Serialize};
 use opendut_auth::public::{AuthData, OptionalAuthData};
 
-use crate::app::{ExpectGlobals, use_app_globals};
+use crate::app::use_app_globals;
 
 #[must_use]
 #[component(transparent)]
@@ -14,8 +14,10 @@ pub fn LeaAuthenticated(
     #[prop(optional, into)] unauthenticated: ViewFn,
     #[prop(optional, into)] disabled_auth: ViewFn,
 ) -> impl IntoView {
-    let auth = use_app_globals().expect_auth();
-    let app_config = use_app_globals().expect_config();
+    let auth = use_app_globals().auth;
+    let app_config = use_app_globals().config;
+
+    let children = StoredValue::new(children);
 
     match (app_config.idp_config, auth) {
         (Some(lea_idp_config), Some(auth)) => {
@@ -50,8 +52,9 @@ pub fn LeaAuthenticated(
                     <Show
                         when=authenticated.clone()
                         fallback=unauthenticated.clone()
-                        children=children.clone()
-                    />
+                    >
+                        { children.read_value()() }
+                    </Show>
                 </Transition>
             }
 
