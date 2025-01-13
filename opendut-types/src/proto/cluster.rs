@@ -226,6 +226,7 @@ impl From<crate::cluster::PeerClusterAssignment> for PeerClusterAssignment {
             peer_id: Some(value.peer_id.into()),
             vpn_address: Some(value.vpn_address.into()),
             can_server_port: Some(value.can_server_port.into()),
+            #[expect(deprecated)]
             device_interfaces: value.device_interfaces.into_iter().map(Into::into).collect(),
         }
     }
@@ -253,6 +254,7 @@ impl TryFrom<PeerClusterAssignment> for crate::cluster::PeerClusterAssignment {
             .map(TryInto::try_into)
             .collect::<Result<_, _>>()?;
 
+        #[expect(deprecated)]
         Ok(Self {
             peer_id,
             vpn_address,

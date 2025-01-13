@@ -320,6 +320,8 @@ impl ClusterManager {
                                     Err(DeployClusterError::Internal { cluster_id, cause: message })
                                 }
                             };
+
+                            #[expect(deprecated)]
                             vpn_address.map(|vpn_address|
                                 PeerClusterAssignment { peer_id, vpn_address, can_server_port, device_interfaces }
                             )
@@ -548,6 +550,7 @@ mod test {
             assert_that!(fixture.testee.lock().await.deploy_cluster(cluster_id).await, ok(eq(&())));
 
 
+            #[expect(deprecated)]
             let assert_cluster_assignment_valid = |cluster_assignment: &ClusterAssignment| {
                 assert_that!(
                     cluster_assignment,

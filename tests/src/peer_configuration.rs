@@ -69,6 +69,8 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
             }));
             Ok::<_, anyhow::Error>(())
         };
+
+        #[expect(deprecated)]
         let validate_old_peer_configuration = |old_peer_configuration: OldPeerConfiguration| {
             assert_that!(old_peer_configuration, matches_pattern!(OldPeerConfiguration {
                 cluster_assignment: some(matches_pattern!(ClusterAssignment {
@@ -164,6 +166,8 @@ async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_onl
             }));
             Ok::<_, anyhow::Error>(())
         };
+
+        #[expect(deprecated)]
         let validate_old_peer_configuration = |old_peer_configuration: OldPeerConfiguration| {
             assert_that!(old_peer_configuration, matches_pattern!(OldPeerConfiguration {
                 cluster_assignment: some(matches_pattern!(ClusterAssignment {
