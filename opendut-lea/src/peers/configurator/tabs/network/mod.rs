@@ -131,7 +131,7 @@ fn Row(
         })
     };
 
-    let deletion_failed_action = create_action(move |interface_to_delete: &NetworkInterfaceId| {
+    let deletion_failed_action = Action::new(move |interface_to_delete: &NetworkInterfaceId| {
         let toaster = Arc::clone(&toaster);
         let devices_with_interface = devices.get_untracked().into_iter()
             .filter(|device| {

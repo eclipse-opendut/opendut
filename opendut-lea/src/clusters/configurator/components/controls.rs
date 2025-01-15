@@ -109,7 +109,7 @@ fn DeleteClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguratio
 
     let globals = use_app_globals();
 
-    let delete_action = create_action(move |id: &ClusterId| {
+    let delete_action = Action::new(move |id: &ClusterId| {
         let id = id.to_owned();
         async move {
             let mut carl = globals.client;

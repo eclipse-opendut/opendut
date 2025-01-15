@@ -40,7 +40,7 @@ fn SavePeerButton(
         },
     );
 
-    let store_action = create_action(move |_: &()| {
+    let store_action = Action::new(move |_: &()| {
         let toaster = Arc::clone(&toaster);
         async move {
             let mut carl = globals.client;
@@ -100,7 +100,7 @@ fn SavePeerButton(
 fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl IntoView {
     let globals = use_app_globals();
 
-    let delete_action = create_action(move |_: &PeerId| async move {
+    let delete_action = Action::new(move |_: &PeerId| async move {
         let mut carl = globals.client;
         let peer_id = configuration.get_untracked().id;
         let result = carl.peers.delete_peer_descriptor(peer_id).await;

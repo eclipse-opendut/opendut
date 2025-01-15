@@ -36,7 +36,7 @@ pub fn ClustersOverview() -> impl IntoView {
             }
         });
 
-        let deploy_cluster = create_action(move |cluster_id: &ClusterId| {
+        let deploy_cluster = Action::new(move |cluster_id: &ClusterId| {
             let toaster = use_toaster();
             let mut carl = globals.client;
             let cluster_id = Clone::clone(cluster_id);
@@ -74,7 +74,7 @@ pub fn ClustersOverview() -> impl IntoView {
             }
         });
 
-        let undeploy_cluster = create_action(move |id: &ClusterId| {
+        let undeploy_cluster = Action::new(move |id: &ClusterId| {
             let toaster = use_toaster();
             let mut carl = globals.client;
             let id = Clone::clone(id);
