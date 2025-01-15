@@ -157,7 +157,7 @@ fn Row(
     });
     
     let user_network_interface = network_interface.get();
-    let network_interface_name = MaybeSignal::derive(
+    let network_interface_name = Signal::derive(
         move || user_network_interface.name.name()
     );
     

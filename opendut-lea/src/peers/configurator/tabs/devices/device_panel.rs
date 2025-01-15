@@ -15,7 +15,7 @@ pub fn DevicePanel<OnDeleteFn>(
 where
     OnDeleteFn: Fn(DeviceId) + 'static + Copy
 {
-    let device_id_string = MaybeSignal::derive(move || device_configuration.get().id.to_string());
+    let device_id_string = Signal::derive(move || device_configuration.get().id.to_string());
     let is_collapsed = move || device_configuration.get().is_collapsed;
 
     view! {
@@ -65,7 +65,7 @@ where
         }
     );
 
-    let delete_button = MaybeSignal::derive(move || {
+    let delete_button = Signal::derive(move || {
         let used_clusters = device_configuration.get().contained_in_clusters.len();
 
         if used_clusters > 0 {

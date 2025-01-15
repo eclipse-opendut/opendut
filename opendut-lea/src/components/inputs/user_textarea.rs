@@ -9,8 +9,8 @@ pub fn UserTextarea<A>(
     getter: Signal<UserInputValue>,
     setter: SignalSetter<UserInputValue>,
     #[prop(optional)] validator: Option<A>,
-    #[prop(into)] label: MaybeSignal<String>,
-    #[prop(into)] placeholder: MaybeSignal<String>,
+    #[prop(into)] label: Signal<String>,
+    #[prop(into)] placeholder: Signal<String>,
 ) -> impl IntoView
 where A: UserInputValidator + 'static {
 

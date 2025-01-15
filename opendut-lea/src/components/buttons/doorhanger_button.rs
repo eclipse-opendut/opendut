@@ -8,12 +8,12 @@ use crate::components::doorhanger::{Doorhanger, DoorhangerAlignment};
 
 #[component]
 pub fn DoorhangerButton(
-    #[prop(into)] icon: MaybeSignal<FontAwesomeIcon>,
-    #[prop(into)] color: MaybeSignal<ButtonColor>,
-    #[prop(into)] size: MaybeSignal<ButtonSize>,
-    #[prop(into)] state: MaybeSignal<ButtonState>,
-    #[prop(into)] label: MaybeSignal<String>,
-    #[prop(into)] text: MaybeSignal<View<Div>>,
+    #[prop(into)] icon: Signal<FontAwesomeIcon>,
+    #[prop(into)] color: Signal<ButtonColor>,
+    #[prop(into)] size: Signal<ButtonSize>,
+    #[prop(into)] state: Signal<ButtonState>,
+    #[prop(into)] label: Signal<String>,
+    #[prop(into)] text: Signal<View<Div>>,
 ) -> impl IntoView {
 
     let text = Clone::clone(&text);

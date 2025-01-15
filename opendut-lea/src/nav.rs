@@ -16,7 +16,7 @@ pub fn Navbar() -> impl IntoView {
         let menu_visible = RwSignal::new(false);
         let profile_visible = RwSignal::new(false);
 
-        let menu_button_icon = MaybeSignal::derive(move || {
+        let menu_button_icon = Signal::derive(move || {
             if menu_visible.get() {
                 FontAwesomeIcon::XMark
             } else {
@@ -24,7 +24,7 @@ pub fn Navbar() -> impl IntoView {
             }
         });
 
-        let profile_button_icon = MaybeSignal::derive(move || {
+        let profile_button_icon = Signal::derive(move || {
             if profile_visible.get() {
                 FontAwesomeIcon::XMark
             } else {

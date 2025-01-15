@@ -4,8 +4,8 @@ use crate::components::{Breadcrumbs, Breadcrumb};
 
 #[component]
 pub fn BasePageContainer<C>(
-    #[prop(into)] title: MaybeSignal<String>,
-    #[prop(into)] breadcrumbs: MaybeSignal<Vec<Breadcrumb>>,
+    #[prop(into)] title: Signal<String>,
+    #[prop(into)] breadcrumbs: Signal<Vec<Breadcrumb>>,
     controls: C,
     children: Children
 ) -> impl IntoView

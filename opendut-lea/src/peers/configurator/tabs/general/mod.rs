@@ -6,7 +6,7 @@ use crate::peers::configurator::types::UserPeerConfiguration;
 #[component]
 pub fn GeneralTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl IntoView {
 
-    let peer_id = MaybeSignal::derive(move || peer_configuration.get().id.to_string());
+    let peer_id = Signal::derive(move || peer_configuration.get().id.to_string());
 
     view! {
         <div>

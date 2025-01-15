@@ -7,7 +7,7 @@ use crate::components::ReadOnlyInput;
 #[component]
 pub fn GeneralTab(cluster_configuration: RwSignal<UserClusterConfiguration>) -> impl IntoView {
 
-    let cluster_id = MaybeSignal::derive(move || cluster_configuration.get().id.to_string());
+    let cluster_id = Signal::derive(move || cluster_configuration.get().id.to_string());
 
     view! {
         <div>

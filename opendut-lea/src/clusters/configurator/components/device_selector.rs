@@ -52,7 +52,7 @@ pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
                 let devices_per_peer = interfaces_and_devices.into_iter()
                     .map(|(network_interface, device)| {
                         let collapsed_signal = RwSignal::new(true);
-                        let collapse_button_icon = MaybeSignal::derive(move || if collapsed_signal.get() { FontAwesomeIcon::ChevronDown } else {FontAwesomeIcon::ChevronUp} );
+                        let collapse_button_icon = Signal::derive(move || if collapsed_signal.get() { FontAwesomeIcon::ChevronDown } else {FontAwesomeIcon::ChevronUp} );
                         let selected_signal = RwSignal::new(selected_devices.contains(&device.id));
                         view! {
                             <tr>
@@ -73,7 +73,7 @@ pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
                                 <td class="is-narrow">
                                     <IconButton
                                         icon=FontAwesomeIcon::Check
-                                        color=MaybeSignal::derive(move || match selected_signal.get() {
+                                        color=Signal::derive(move || match selected_signal.get() {
                                             false => ButtonColor::Light,
                                             true => ButtonColor::Success,
                                         })

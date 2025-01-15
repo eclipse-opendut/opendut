@@ -2,8 +2,8 @@ use leptos::prelude::*;
 
 #[component]
 pub fn ReadOnlyInput(
-    #[prop(into)] label: MaybeSignal<String>,
-    #[prop(into)] value: MaybeSignal<String>,
+    #[prop(into)] label: Signal<String>,
+    #[prop(into)] value: Signal<String>,
 ) -> impl IntoView {
 
     let aria_label = Clone::clone(&label);

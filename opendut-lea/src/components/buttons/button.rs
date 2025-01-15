@@ -3,9 +3,9 @@ use crate::components::{ButtonColor, ButtonState, FontAwesomeIcon};
 
 #[component]
 pub fn SimpleButton<A>(
-    #[prop(into)] text: MaybeSignal<String>,
-    #[prop(into)] color: MaybeSignal<ButtonColor>,
-    #[prop(into)] state: MaybeSignal<ButtonState>,
+    #[prop(into)] text: Signal<String>,
+    #[prop(into)] color: Signal<ButtonColor>,
+    #[prop(into)] state: Signal<ButtonState>,
     on_action: A,
 ) -> impl IntoView
 where A: Fn() + 'static {

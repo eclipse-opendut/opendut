@@ -4,24 +4,24 @@ use crate::components::ButtonState;
 use crate::routing::{navigate_to, WellKnownRoutes};
 
 pub trait ButtonStateSignalProvider {
-    fn derive_loading(self) -> MaybeSignal<ButtonState>;
+    fn derive_loading(self) -> Signal<ButtonState>;
 }
 
 impl ButtonStateSignalProvider for ReadSignal<bool> {
-    fn derive_loading(self) -> MaybeSignal<ButtonState> {
+    fn derive_loading(self) -> Signal<ButtonState> {
         let signal = Signal::from(self);
         derive_loading(signal)
     }
 }
 
 impl ButtonStateSignalProvider for Signal<bool> {
-    fn derive_loading(self) -> MaybeSignal<ButtonState> {
+    fn derive_loading(self) -> Signal<ButtonState> {
         derive_loading(self)
     }
 }
 
-fn derive_loading(signal: Signal<bool>) -> MaybeSignal<ButtonState> {
-    MaybeSignal::derive(move || {
+fn derive_loading(signal: Signal<bool>) -> Signal<ButtonState> {
+    Signal::derive(move || {
         if signal.get() {
             ButtonState::Loading
         }
@@ -31,12 +31,12 @@ fn derive_loading(signal: Signal<bool>) -> MaybeSignal<ButtonState> {
     })
 }
 
-pub fn use_active_tab<T: for<'a> TryFrom<&'a str, Error=impl ToString> + Default>() -> MaybeSignal<T> 
+pub fn use_active_tab<T: for<'a> TryFrom<&'a str, Error=impl ToString> + Default>() -> Signal<T>
 where 
     T: Send + Sync 
 {
     let params = use_params_map();
-    MaybeSignal::derive(move || params.with(|params| {
+    Signal::derive(move || params.with(|params| {
         let tab = params.get("tab")
             .ok_or(String::from("No tab identifier given in URL!"))
             .and_then(|value| T::try_from(value.as_str()).map_err(|cause| cause.to_string()));
@@ -68,12 +68,12 @@ impl ToggleSignal for RwSignal<bool> {
 }
 
 pub trait Toggled {
-    fn derive_toggled<T>(self, on: T, off: T) -> MaybeSignal<T>
+    fn derive_toggled<T>(self, on: T, off: T) -> Signal<T>
     where T: Clone + Send + Sync;
 }
 
 impl Toggled for ReadSignal<bool> {
-    fn derive_toggled<T>(self, on: T, off: T) -> MaybeSignal<T>
+    fn derive_toggled<T>(self, on: T, off: T) -> Signal<T>
     where
         T: Clone + Send + Sync
     {
@@ -82,7 +82,7 @@ impl Toggled for ReadSignal<bool> {
 }
 
 impl Toggled for Signal<bool> {
-    fn derive_toggled<T>(self, on: T, off: T) -> MaybeSignal<T>
+    fn derive_toggled<T>(self, on: T, off: T) -> Signal<T>
     where
         T: Clone + Send + Sync
     {
@@ -91,7 +91,7 @@ impl Toggled for Signal<bool> {
 }
 
 impl Toggled for RwSignal<bool> {
-    fn derive_toggled<T>(self, on: T, off: T) -> MaybeSignal<T>
+    fn derive_toggled<T>(self, on: T, off: T) -> Signal<T>
         where
             T: Clone + Send + Sync
     {
@@ -100,11 +100,11 @@ impl Toggled for RwSignal<bool> {
     }
 }
 
-fn derive_toggled<T>(signal: Signal<bool>, on: T, off: T) -> MaybeSignal<T>
+fn derive_toggled<T>(signal: Signal<bool>, on: T, off: T) -> Signal<T>
 where
     T: Clone + Send + Sync
 {
-    MaybeSignal::derive(move || {
+    Signal::derive(move || {
         if signal.get() {
             Clone::clone(&on)
         }

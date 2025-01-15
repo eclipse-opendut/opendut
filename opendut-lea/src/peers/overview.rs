@@ -160,7 +160,7 @@ fn Row(
 
     let _ = on_click_outside(dropdown, move |_| dropdown_active.set(false) );
 
-    let cluster_columns = MaybeSignal::derive(move || {
+    let cluster_columns = Signal::derive(move || {
         let devices_in_peer = peer_descriptor.get().topology.devices.into_iter().map(|device| device.id).collect::<Vec<_>>();
 
         let devices_in_cluster = {

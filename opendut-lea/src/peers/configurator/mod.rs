@@ -283,7 +283,7 @@ pub fn PeerConfigurator() -> impl IntoView {
 
         let breadcrumbs = {
             let active_tab = Clone::clone(&active_tab);
-            MaybeSignal::derive(move || {
+            Signal::derive(move || {
                 let peer_id = peer_id_string.get();
                 let active_tab = active_tab.get();
                 vec![

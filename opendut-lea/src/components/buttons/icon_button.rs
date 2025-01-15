@@ -4,12 +4,12 @@ use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon};
 
 #[component]
 pub fn IconButton<A>(
-    #[prop(into)] icon: MaybeSignal<FontAwesomeIcon>,
-    #[prop(into)] color: MaybeSignal<ButtonColor>,
-    #[prop(into)] size: MaybeSignal<ButtonSize>,
-    #[prop(into)] state: MaybeSignal<ButtonState>,
-    #[prop(into)] label: MaybeSignal<String>,
-    #[prop(into, default = MaybeSignal::from(false))] show_label: MaybeSignal<bool>,
+    #[prop(into)] icon: Signal<FontAwesomeIcon>,
+    #[prop(into)] color: Signal<ButtonColor>,
+    #[prop(into)] size: Signal<ButtonSize>,
+    #[prop(into)] state: Signal<ButtonState>,
+    #[prop(into)] label: Signal<String>,
+    #[prop(into, default = Signal::from(false))] show_label: Signal<bool>,
     on_action: A,
 ) -> impl IntoView
 where A: Fn() + 'static {

@@ -73,7 +73,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
         
         let cluster_id = create_read_slice(cluster_configuration, |config| config.id);
 
-        let breadcrumbs = MaybeSignal::derive(move || {
+        let breadcrumbs = Signal::derive(move || {
             let cluster_id = cluster_id.get().0.to_string();
             vec![
                 Breadcrumb::new("Dashboard", "/"),
@@ -105,7 +105,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
         };
 
         let is_deployed = move || {
-            MaybeSignal::derive(move || {
+            Signal::derive(move || {
                 IsDeployed(deployed_clusters().contains(&cluster_id.get())).0
             })
         };

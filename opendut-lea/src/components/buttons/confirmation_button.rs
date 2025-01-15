@@ -7,11 +7,11 @@ use crate::components::doorhanger::{Doorhanger, DoorhangerAlignment};
 
 #[component]
 pub fn ConfirmationButton<A>(
-    #[prop(into)] icon: MaybeSignal<FontAwesomeIcon>,
-    #[prop(into)] color: MaybeSignal<ButtonColor>,
-    #[prop(into)] size: MaybeSignal<ButtonSize>,
-    #[prop(into)] state: MaybeSignal<ButtonState>,
-    #[prop(into)] label: MaybeSignal<String>,
+    #[prop(into)] icon: Signal<FontAwesomeIcon>,
+    #[prop(into)] color: Signal<ButtonColor>,
+    #[prop(into)] size: Signal<ButtonSize>,
+    #[prop(into)] state: Signal<ButtonState>,
+    #[prop(into)] label: Signal<String>,
     on_conform: A,
 ) -> impl IntoView
 where A: Fn() + 'static {

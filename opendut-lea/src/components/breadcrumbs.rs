@@ -19,7 +19,7 @@ impl Breadcrumb {
 
 #[component]
 pub fn Breadcrumbs(
-    #[prop(into)] breadcrumbs: MaybeSignal<Vec<Breadcrumb>>,
+    #[prop(into)] breadcrumbs: Signal<Vec<Breadcrumb>>,
 ) -> impl IntoView {
 
     let breadcrumb_items = move || {

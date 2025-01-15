@@ -20,8 +20,8 @@ pub enum DoorhangerTriggerSize {
 
 #[component]
 pub fn Doorhanger(
-    #[prop(into)] visible: MaybeSignal<bool>,
-    #[prop(into)] alignment: MaybeSignal<DoorhangerAlignment>,
+    #[prop(into)] visible: Signal<bool>,
+    #[prop(into)] alignment: Signal<DoorhangerAlignment>,
     trigger: Trigger,
     children: Children
 ) -> impl IntoView {

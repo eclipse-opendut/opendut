@@ -72,7 +72,7 @@ fn SavePeerButton(
         }
     });
 
-    let button_state = MaybeSignal::derive(move || {
+    let button_state = Signal::derive(move || {
         if store_action.pending().get() {
             ButtonState::Loading
         } else if is_valid_peer_configuration.get() {
@@ -118,7 +118,7 @@ fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl In
     let button_state = delete_action.pending().derive_loading();
 
 
-    let delete_button = MaybeSignal::derive(move || {
+    let delete_button = Signal::derive(move || {
         let mut used_clusters: HashSet<ClusterId> = HashSet::new();
         let _ = configuration.get().devices
             .into_iter()

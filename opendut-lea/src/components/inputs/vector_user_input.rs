@@ -9,9 +9,9 @@ pub fn VectorUserInput<OnAddFn>(
     getter: Signal<Vec<RwSignal<UserInputValue>>>,
     setter: SignalSetter<Vec<RwSignal<UserInputValue>>>,
     validator: fn(String) -> Ior<UserInputError, String>,
-    #[prop(into)] label: MaybeSignal<String>,
-    #[prop(into)] placeholder: MaybeSignal<String>,
-    #[prop(into)] delete_label: MaybeSignal<String>,
+    #[prop(into)] label: Signal<String>,
+    #[prop(into)] placeholder: Signal<String>,
+    #[prop(into)] delete_label: Signal<String>,
     on_add: OnAddFn
 ) -> impl IntoView
 where 
@@ -93,9 +93,9 @@ fn VectorUserInputValue<A,OnDeleteFn>(
     getter: Signal<UserInputValue>,
     setter: SignalSetter<UserInputValue>,
     #[prop(optional)] validator: Option<A>,
-    #[prop(into)] label: MaybeSignal<String>,
-    #[prop(into)] placeholder: MaybeSignal<String>,
-    #[prop(into)] delete_label: MaybeSignal<String>,
+    #[prop(into)] label: Signal<String>,
+    #[prop(into)] placeholder: Signal<String>,
+    #[prop(into)] delete_label: Signal<String>,
     on_delete: OnDeleteFn
 ) -> impl IntoView
     where A: UserInputValidator + 'static,

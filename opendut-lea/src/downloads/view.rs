@@ -11,7 +11,7 @@ pub fn Downloads() -> impl IntoView {
         let globals = use_app_globals();
         
         let breadcrumbs = {
-            MaybeSignal::derive(move || {
+            Signal::derive(move || {
                 vec![
                     Breadcrumb::new("Dashboard", "/"),
                     Breadcrumb::new("Downloads", "/downloads"),

@@ -60,7 +60,7 @@ where A: Fn(NetworkInterfaceName, UserNetworkInterfaceConfiguration) + 'static {
 
     let bitrate_validator = move |input| { bitrate_validator(input) };
 
-    let button_state = MaybeSignal::derive(move || {
+    let button_state = Signal::derive(move || {
         match getter_type.get() {
             InterfaceKind::Ethernet => {
                 if interface_name_getter.get().is_left() || interface_name_getter.get().is_both() {

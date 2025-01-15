@@ -72,7 +72,7 @@ fn SaveClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>
         }
     });
 
-    let button_state = MaybeSignal::derive(move || {
+    let button_state = Signal::derive(move || {
         if deployed_signal.get().0 {
             ButtonState::Disabled
         } else if store_action.pending().get() {
@@ -118,7 +118,7 @@ fn DeleteClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguratio
         }
     });
 
-    let button_state = MaybeSignal::derive(move || {
+    let button_state = Signal::derive(move || {
         if deployed_signal.get().0 {
             ButtonState::Disabled
         } else if delete_action.pending().get() {
