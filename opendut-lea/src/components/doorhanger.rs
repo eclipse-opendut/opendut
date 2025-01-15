@@ -42,7 +42,7 @@ pub fn Doorhanger(
 
     view! {
         <div class={ doorhanger_classes } class=("is-active", move || visible.get())>
-            <div _ref=trigger_div class="doorhanger-trigger">
+            <div node_ref=trigger_div class="doorhanger-trigger">
                 <div>{ trigger() }</div>
                 <div class="doorhanger-dog-ear" style=dog_ear_style></div>
             </div>

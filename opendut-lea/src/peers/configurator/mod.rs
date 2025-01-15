@@ -61,7 +61,7 @@ pub fn PeerConfigurator() -> impl IntoView {
             });
 
             let peer_configuration_resource = LocalResource::new(move || {
-                let mut carl = globals.client;
+                let mut carl = globals.client.clone();
                 async move {
                     if let Ok(configuration) = carl.peers.get_peer_descriptor(peer_id).await {
                         let clusters = carl.cluster.list_cluster_configurations().await

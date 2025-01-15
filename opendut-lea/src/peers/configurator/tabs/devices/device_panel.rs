@@ -1,3 +1,4 @@
+use leptos::either::Either;
 use leptos::prelude::*;
 use opendut_types::topology::{DeviceDescription, DeviceId, DeviceName, IllegalDeviceName};
 use opendut_types::util::net::NetworkInterfaceId;
@@ -13,7 +14,7 @@ pub fn DevicePanel<OnDeleteFn>(
     on_delete: OnDeleteFn
 ) -> impl IntoView
 where
-    OnDeleteFn: Fn(DeviceId) + 'static + Copy
+    OnDeleteFn: Fn(DeviceId) + 'static + Copy + Send + Sync
 {
     let device_id_string = Signal::derive(move || device_configuration.get().id.to_string());
     let is_collapsed = move || device_configuration.get().is_collapsed;
@@ -42,7 +43,7 @@ fn DevicePanelHeading<OnDeleteFn>(
     on_delete: OnDeleteFn
 ) -> impl IntoView
 where
-    OnDeleteFn: Fn(DeviceId) + 'static + Copy
+    OnDeleteFn: Fn(DeviceId) + 'static + Copy + Send + Sync
 {
     let (is_collapsed, set_is_collapsed) = create_slice(device_configuration,
         move |device_configuration| {
@@ -65,31 +66,26 @@ where
         }
     );
 
-    let delete_button = Signal::derive(move || {
+    let delete_button = move || {
         let used_clusters = device_configuration.get().contained_in_clusters.len();
 
         if used_clusters > 0 {
-            let text = view! {
-                <div style="white-space: nowrap">
-                    "Device can not be removed while it is configured in "{used_clusters}
-                    <a class="has-text-link" href=routing::path::clusters_overview>" cluster(s)"</a>
-                </div>
-            };
-            view! {
-                <div>
+            Either::Left(view! {
                 <DoorhangerButton
                     icon=FontAwesomeIcon::TrashCan
                     color=ButtonColor::Light
                     size=ButtonSize::Small
                     state=ButtonState::Enabled
                     label="Delete Device?"
-                    text
-                />
-                </div>
-            }
+                >
+                    <div style="white-space: nowrap">
+                        "Device can not be removed while it is configured in "{used_clusters}
+                        <a class="has-text-link" href=routing::path::clusters_overview>" cluster(s)"</a>
+                    </div>
+                </DoorhangerButton>
+            })
         } else {
-            view! {
-                <div>
+            Either::Right(view! {
                 <ConfirmationButton
                     icon=FontAwesomeIcon::TrashCan
                     color=ButtonColor::Light
@@ -100,10 +96,9 @@ where
                         move || on_delete(device_configuration.get_untracked().id)
                     }
                 />
-                </div>
-            }
+            })
         }
-    });
+    };
 
     view! {
         <div class="panel-heading px-2 py-3">
@@ -216,13 +211,13 @@ fn DeviceInterfaceInput(
                     let interface_type = interface.get_untracked().configuration.display_name();
 
                     if device_interface_id.get_untracked() == Some(interface.get_untracked().id) {
-                        view! {
+                        Either::Left(view! {
                             <option value={id.to_string()} selected>{name} " ("{interface_type}")"</option>
-                        }
+                        })
                     } else {
-                        view! {
+                        Either::Right(view! {
                             <option value={id.to_string()}>{name} " ("{interface_type}")"</option>
-                        }
+                        })
                     }
                 })
                 .collect::<Vec<_>>()

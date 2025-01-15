@@ -20,7 +20,7 @@ pub fn PeersOverview() -> impl IntoView {
         let globals = use_app_globals();
 
         let registered_peers: LocalResource<Vec<(PeerDescriptor, PeerState)>> = LocalResource::new(move || {
-            let mut carl = globals.client;
+            let mut carl = globals.client.clone();
             async move {
                 let peers = carl.peers.list_peer_descriptors().await
                     .expect("Failed to request the list of peers.");
@@ -36,7 +36,7 @@ pub fn PeersOverview() -> impl IntoView {
         });
 
         let configured_clusters: LocalResource<Vec<ClusterConfiguration>> = LocalResource::new(move || {
-            let mut carl = globals.client;
+            let mut carl = globals.client.clone();
             async move {
                 carl.cluster.list_cluster_configurations().await
                     .expect("Failed to request the list of peers.")

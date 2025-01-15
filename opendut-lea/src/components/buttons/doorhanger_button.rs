@@ -1,6 +1,5 @@
 use leptos::prelude::*;
-use leptos::prelude::IntoAny;
-use leptos::html::{Div, HtmlElement};
+use leptos::html::Div;
 use leptos_use::on_click_outside;
 use crate::components::{ButtonSize, IconButton};
 use crate::components::{ButtonColor, ButtonState, FontAwesomeIcon};
@@ -13,10 +12,9 @@ pub fn DoorhangerButton(
     #[prop(into)] size: Signal<ButtonSize>,
     #[prop(into)] state: Signal<ButtonState>,
     #[prop(into)] label: Signal<String>,
-    #[prop(into)] text: Signal<View<Div>>,
+    children: ChildrenFn,
 ) -> impl IntoView {
 
-    let text = Clone::clone(&text);
     let aria_label = Clone::clone(&label);
 
     let doorhanger_visible = RwSignal::new(false);
@@ -26,6 +24,8 @@ pub fn DoorhangerButton(
     let _ = on_click_outside(delete_button_area, move |_| {
         doorhanger_visible.set(false)
     });
+
+    let children = StoredValue::new(children);
 
     view! {
         <div node_ref=delete_button_area>
@@ -45,7 +45,7 @@ pub fn DoorhangerButton(
                     }.into_any()
                 })
             >
-                <p class="is-size-6 has-text-weight-semibold">{ text }</p>
+                <p class="is-size-6 has-text-weight-semibold">{ children.read_value()() }</p>
             </Doorhanger>
         </div>
     }

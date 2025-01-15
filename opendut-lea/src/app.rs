@@ -1,17 +1,13 @@
 use std::sync::Arc;
 
-use gloo_net::http;
-use leptos::either::Either;
 use leptos::prelude::*;
 use leptos_oidc::{Auth, AuthParameters};
 use serde::{Deserialize, Deserializer};
-use tracing::info;
 use url::Url;
 
 use opendut_carl_api::carl::wasm::CarlClient;
 
 use crate::components::Toaster;
-use crate::error::LeaError;
 use crate::nav::Navbar;
 use crate::routing::AppRoutes;
 

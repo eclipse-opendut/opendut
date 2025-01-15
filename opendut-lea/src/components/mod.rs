@@ -7,6 +7,7 @@ pub use buttons::button::SimpleButton;
 pub use buttons::confirmation_button::ConfirmationButton;
 pub use buttons::doorhanger_button::DoorhangerButton;
 pub use buttons::icon_button::IconButton;
+pub use generate_setup_string::{GenerateSetupStringForm, GenerateSetupStringKind};
 pub use inputs::{UserInputError, UserInputValue};
 pub use inputs::readonly_input::ReadOnlyInput;
 pub use inputs::user_input::UserInput;
@@ -21,15 +22,16 @@ pub use util::use_active_tab;
 pub mod health;
 pub mod tooltip;
 
-mod doorhanger;
-mod page;
-mod util;
-mod inputs;
-mod buttons;
-mod breadcrumbs;
-mod toast;
 mod auth;
 mod authenticated;
+mod buttons;
+mod breadcrumbs;
+mod doorhanger;
+mod generate_setup_string;
+mod inputs;
+mod page;
+mod toast;
+mod util;
 
 #[derive(Clone, Copy, Debug)]
 #[allow(dead_code)]

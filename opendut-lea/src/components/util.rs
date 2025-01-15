@@ -33,7 +33,7 @@ fn derive_loading(signal: Signal<bool>) -> Signal<ButtonState> {
 
 pub fn use_active_tab<T: for<'a> TryFrom<&'a str, Error=impl ToString> + Default>() -> Signal<T>
 where 
-    T: Send + Sync 
+    T: Send + Sync + 'static
 {
     let params = use_params_map();
     Signal::derive(move || params.with(|params| {
@@ -69,13 +69,13 @@ impl ToggleSignal for RwSignal<bool> {
 
 pub trait Toggled {
     fn derive_toggled<T>(self, on: T, off: T) -> Signal<T>
-    where T: Clone + Send + Sync;
+    where T: Clone + Send + Sync + 'static;
 }
 
 impl Toggled for ReadSignal<bool> {
     fn derive_toggled<T>(self, on: T, off: T) -> Signal<T>
     where
-        T: Clone + Send + Sync
+        T: Clone + Send + Sync + 'static
     {
         derive_toggled(self.into(), on, off)
     }
@@ -84,7 +84,7 @@ impl Toggled for ReadSignal<bool> {
 impl Toggled for Signal<bool> {
     fn derive_toggled<T>(self, on: T, off: T) -> Signal<T>
     where
-        T: Clone + Send + Sync
+        T: Clone + Send + Sync + 'static
     {
         derive_toggled(self, on, off)
     }
@@ -93,7 +93,7 @@ impl Toggled for Signal<bool> {
 impl Toggled for RwSignal<bool> {
     fn derive_toggled<T>(self, on: T, off: T) -> Signal<T>
         where
-            T: Clone + Send + Sync
+            T: Clone + Send + Sync + 'static
     {
         let signal = Signal::from(self);
         derive_toggled(signal, on, off)
@@ -102,7 +102,7 @@ impl Toggled for RwSignal<bool> {
 
 fn derive_toggled<T>(signal: Signal<bool>, on: T, off: T) -> Signal<T>
 where
-    T: Clone + Send + Sync
+    T: Clone + Send + Sync + 'static
 {
     Signal::derive(move || {
         if signal.get() {

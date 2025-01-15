@@ -56,7 +56,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
             });
 
             LocalResource::new(move || { // TODO: maybe a action suits better here
-                let mut carl = globals.client;
+                let mut carl = globals.client.clone();
                 async move {
                     if let Ok(configuration) = carl.cluster.get_cluster_configuration(cluster_id).await {
                         user_configuration.update(|user_configuration| {
@@ -83,7 +83,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
         });
 
         let cluster_deployments = LocalResource::new(move || {
-            let mut carl = globals.client;
+            let mut carl = globals.client.clone();
             async move {
                 carl.cluster.list_cluster_deployments().await
                     .expect("Failed to request the list of cluster deployments")

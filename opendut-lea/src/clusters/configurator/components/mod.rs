@@ -18,8 +18,8 @@ fn get_all_peers() -> LocalResource<Vec<PeerDescriptor>> {
     let globals = use_app_globals();
 
     LocalResource::new(move || {
+        let mut carl = globals.client.clone();
         async move {
-            let mut carl = globals.client;
             carl.peers.list_peer_descriptors().await
                 .expect("Failed to request the list of all peers.")
         }
@@ -27,9 +27,9 @@ fn get_all_peers() -> LocalResource<Vec<PeerDescriptor>> {
 }
 
 fn get_all_selected_devices(getter: Signal<DeviceSelection>) -> HashSet<DeviceId> {
-        getter.with(|selection| match selection {
-            DeviceSelection::Left(_) => HashSet::new(),
-            DeviceSelection::Right(value) => value.to_owned(),
-            DeviceSelection::Both(_, value) => value.to_owned(),
-        })
+    getter.with(|selection| match selection {
+        DeviceSelection::Left(_) => HashSet::new(),
+        DeviceSelection::Right(value) => value.to_owned(),
+        DeviceSelection::Both(_, value) => value.to_owned(),
+    })
 }

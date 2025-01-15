@@ -43,10 +43,10 @@ fn SaveClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>
     let store_action = Action::new(move |_| {
         let toaster = Arc::clone(&toaster);
         let configuration = ClusterConfiguration::try_from(cluster_configuration.get_untracked());
+        let mut carl = globals.client.clone();
         async move {
             match configuration {
                 Ok(configuration) => {
-                    let mut carl = globals.client;
                     let result = carl.cluster.store_cluster_configuration(configuration).await;
                     match result {
                         Ok(cluster_id) => {
@@ -109,10 +109,10 @@ fn DeleteClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguratio
 
     let globals = use_app_globals();
 
-    let delete_action = Action::new(move |id: &ClusterId| {
+    let delete_action = Action::new(move |id: &ClusterId| { //TODO Action doesn't work anymore, due to it not accept something that's not Send+Sync, which the gRPC stuff isn't; a Suspend seems to compile, but is it correct? Maybe use spawn_local instead?
         let id = id.to_owned();
+        let mut carl = globals.client.clone();
         async move {
-            let mut carl = globals.client;
             let _ = carl.cluster.delete_cluster_configuration(id).await; // TODO: Check the result and display a toast on failure.
             navigate_to(WellKnownRoutes::ClustersOverview);
         }

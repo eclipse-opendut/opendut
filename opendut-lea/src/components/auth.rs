@@ -1,4 +1,5 @@
 use jsonwebtoken::DecodingKey;
+use leptos::either::EitherOf4;
 use leptos::prelude::*;
 use leptos_oidc::{Algorithm, TokenData, Validation};
 use serde::{Deserialize, Serialize};
@@ -23,7 +24,8 @@ pub fn LeaAuthenticated(
         (Some(lea_idp_config), Some(auth)) => {
             let auth_cloned = auth.clone();
             let auth_token = move || auth_cloned.access_token();
-            create_effect(move |_| {
+
+            Effect::new(move |_| {
                 let (_auth_data, auth_data_write) = use_context::<(ReadSignal<OptionalAuthData>, WriteSignal<OptionalAuthData>)>().expect("AuthData should be provided in the context.");
                 if let Some(token) = auth_token() {
                     let data = decode_token(&token, lea_idp_config.issuer_url.as_ref());
@@ -47,7 +49,7 @@ pub fn LeaAuthenticated(
             let unauthenticated = move || unauthenticated.run();
             let authenticated = move || auth.authenticated();
 
-            view! {
+            EitherOf4::A(view! {
                 <Transition fallback=loading>
                     <Show
                         when=authenticated.clone()
@@ -56,20 +58,19 @@ pub fn LeaAuthenticated(
                         { children.read_value()() }
                     </Show>
                 </Transition>
-            }
-
+            }.into_any())
         }
         (Some(_lea_idp_config), None) => {
             tracing::warn!("Warning: Authentication enabled - User not authenticated.");
-            disabled_auth.run()
+            EitherOf4::B(disabled_auth.run())
         }
         (None, Some(_auth)) => {
             tracing::warn!("Warning: Authentication disabled - No authentication config provided.");
-            disabled_auth.run()
+            EitherOf4::C(disabled_auth.run())
         }
         (None, None) => {
             tracing::warn!("Warning: Authentication disabled - Neither an authentication config provided, nor is the user authenticated.");
-            disabled_auth.run()
+            EitherOf4::D(disabled_auth.run())
         }
     }
 }

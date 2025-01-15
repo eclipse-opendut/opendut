@@ -7,7 +7,7 @@ use tracing::{debug, error, info};
 use opendut_types::cluster::ClusterId;
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use crate::app::use_app_globals;
-use crate::components::{use_toaster, ButtonColor, ButtonSize, ButtonState, ButtonStateSignalProvider, ConfirmationButton, FontAwesomeIcon, IconButton, Toast, DoorhangerButton};
+use crate::components::{use_toaster, ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, IconButton, Toast, DoorhangerButton};
 use crate::peers::configurator::types::UserPeerConfiguration;
 use crate::routing;
 use crate::routing::{navigate_to, WellKnownRoutes};
@@ -40,10 +40,10 @@ fn SavePeerButton(
         },
     );
 
-    let store_action = Action::new(move |_: &()| {
+    let store_action = Action::new(move |_| {
         let toaster = Arc::clone(&toaster);
+        let mut carl = globals.client.clone();
         async move {
-            let mut carl = globals.client;
             let peer_descriptor = PeerDescriptor::try_from(configuration.get_untracked());
             match peer_descriptor {
                 Ok(peer_descriptor) => {
@@ -101,7 +101,7 @@ fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl In
     let globals = use_app_globals();
 
     let delete_action = Action::new(move |_: &PeerId| async move {
-        let mut carl = globals.client;
+        let mut carl = globals.client.clone();
         let peer_id = configuration.get_untracked().id;
         let result = carl.peers.delete_peer_descriptor(peer_id).await;
         match result {
@@ -131,12 +131,6 @@ fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl In
         let used_clusters_length = used_clusters.len();
         
         if used_clusters_length > 0 {
-            let text = view! {
-                        <div style="white-space: nowrap">
-                            "Peer can not be removed while it is configured in "{used_clusters_length}
-                            <a class="has-text-link" href=routing::path::clusters_overview>" cluster(s)"</a>
-                        </div>
-                    };
             view! {
                 <DoorhangerButton
                     icon=FontAwesomeIcon::TrashCan
@@ -144,8 +138,12 @@ fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl In
                     size=ButtonSize::Normal
                     state=button_state
                     label="Remove Peer?"
-                    text
-                />
+                >
+                    <div style="white-space: nowrap">
+                        "Peer can not be removed while it is configured in "{used_clusters_length}
+                        <a class="has-text-link" href=routing::path::clusters_overview>" cluster(s)"</a>
+                    </div>
+                </DoorhangerButton>
             }
         } else {
             view! {

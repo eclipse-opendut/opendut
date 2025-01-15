@@ -42,7 +42,7 @@ where A: Fn() + 'static {
                             label=aria_label
                             on_action=move || doorhanger_visible.set(true)
                         />
-                    }
+                    }.into_any()
                 })
             >
                 <div class="columns">

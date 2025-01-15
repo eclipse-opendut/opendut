@@ -38,10 +38,10 @@ pub fn LeaderSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
         })
     };
 
-    let rows = move || {
+    let rows = LocalResource::new(move || async move {
         let selected_devices = selected_devices();
 
-        let mut peers = peer_descriptors.get().unwrap_or_default();
+        let mut peers = peer_descriptors.await;
 
         peers.sort_by(|a, b| {
             a.name
@@ -78,13 +78,13 @@ pub fn LeaderSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
                 view! {
                     <tr>
                         <td>
-                            {&peer.name.to_string()}
+                            {move || &peer.name.to_string()}
                         </td>
                         <td>
-                            {&peer.id.to_string()}
+                            {move || &peer.id.to_string()}
                         </td>
                         <td>
-                            {&peer.location.unwrap_or_default().to_string()}
+                            {move || &peer.location.unwrap_or_default().to_string()}
                         </td>
                         <td class="is-narrow" style="text-align: center">
                             <div class="control">
@@ -109,7 +109,7 @@ pub fn LeaderSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
                 }
             })
             .collect::<Vec<_>>()
-    };
+    });
 
     view! {
         <p class="help has-text-danger"> { help_text } </p>
@@ -124,7 +124,13 @@ pub fn LeaderSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
                     </tr>
                 </thead>
                     <tbody>
-                        { rows }
+                        <Suspense
+                            fallback=move || view! { <p>"Loading..."</p> }
+                        >
+                            {move || Suspend::new(async move {
+                                rows.await
+                            })}
+                        </Suspense>
                     </tbody>
             </table>
         </div>

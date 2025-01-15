@@ -20,7 +20,7 @@ pub fn Downloads() -> impl IntoView {
         };
 
         let version_info = LocalResource::new(move || {
-            let mut carl = globals.client;
+            let mut carl = globals.client.clone();
             async move {
                 carl.metadata.version().await
                     .expect("Failed to request the version from carl.")
