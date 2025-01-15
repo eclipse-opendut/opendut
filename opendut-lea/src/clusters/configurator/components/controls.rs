@@ -3,7 +3,7 @@ use std::sync::Arc;
 use leptos::prelude::*;
 use tracing::{debug, error};
 
-use opendut_types::cluster::{ClusterConfiguration, ClusterId};
+use opendut_types::cluster::ClusterConfiguration;
 
 use crate::app::use_app_globals;
 use crate::clusters::configurator::types::UserClusterConfiguration;
@@ -40,11 +40,34 @@ fn SaveClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>
     let globals = use_app_globals();
     let toaster = use_toaster();
 
-    let store_action = Action::new(move |_| {
+    let pending = RwSignal::new(false);
+
+    let button_state = Signal::derive(move || {
+        if deployed_signal.get().0 {
+            ButtonState::Disabled
+        } else if pending.get() {
+            ButtonState::Loading
+        }
+        else {
+            cluster_configuration.with(|configuration| {
+                if configuration.is_valid() {
+                    ButtonState::Enabled
+                }
+                else {
+                    ButtonState::Disabled
+                }
+            })
+        }
+    });
+
+    let on_action = move || {
         let toaster = Arc::clone(&toaster);
         let configuration = ClusterConfiguration::try_from(cluster_configuration.get_untracked());
         let mut carl = globals.client.clone();
-        async move {
+
+        leptos::task::spawn_local(async move {
+            pending.set(true);
+
             match configuration {
                 Ok(configuration) => {
                     let result = carl.cluster.store_cluster_configuration(configuration).await;
@@ -69,26 +92,10 @@ fn SaveClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>
                     error!("Failed to dispatch store cluster action, due to misconfiguration!");
                 }
             }
-        }
-    });
 
-    let button_state = Signal::derive(move || {
-        if deployed_signal.get().0 {
-            ButtonState::Disabled
-        } else if store_action.pending().get() {
-            ButtonState::Loading
-        }
-        else {
-            cluster_configuration.with(|configuration| {
-                if configuration.is_valid() {
-                    ButtonState::Enabled
-                }
-                else {
-                    ButtonState::Disabled
-                }
-            })
-        }
-    });
+            pending.set(false);
+        })
+    };
 
     view! {
         <IconButton
@@ -97,9 +104,7 @@ fn SaveClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>
             size=ButtonSize::Normal
             state=button_state
             label="Save Cluster"
-            on_action=move || {
-                store_action.dispatch(());
-            }
+            on_action
         />
     }
 }
@@ -109,25 +114,34 @@ fn DeleteClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguratio
 
     let globals = use_app_globals();
 
-    let delete_action = Action::new(move |id: &ClusterId| { //TODO Action doesn't work anymore, due to it not accept something that's not Send+Sync, which the gRPC stuff isn't; a Suspend seems to compile, but is it correct? Maybe use spawn_local instead?
-        let id = id.to_owned();
-        let mut carl = globals.client.clone();
-        async move {
-            let _ = carl.cluster.delete_cluster_configuration(id).await; // TODO: Check the result and display a toast on failure.
-            navigate_to(WellKnownRoutes::ClustersOverview);
-        }
-    });
+    let pending = RwSignal::new(false);
 
     let button_state = Signal::derive(move || {
         if deployed_signal.get().0 {
             ButtonState::Disabled
-        } else if delete_action.pending().get() {
+        } else if pending.get() {
             ButtonState::Loading
         } else {
             ButtonState::Enabled
         }
     });
-    
+
+    let on_conform = move || {
+        cluster_configuration.with_untracked(|config| {
+            let id = config.id.to_owned();
+            let mut carl = globals.client.clone();
+
+            leptos::task::spawn_local(async move {
+                pending.set(true);
+
+                let _ = carl.cluster.delete_cluster_configuration(id).await; // TODO: Check the result and display a toast on failure.
+                navigate_to(WellKnownRoutes::ClustersOverview);
+
+                pending.set(false);
+            });
+        });
+    };
+
     view! {
         <ConfirmationButton
             icon=FontAwesomeIcon::TrashCan
@@ -135,11 +149,7 @@ fn DeleteClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguratio
             size=ButtonSize::Normal
             state=button_state
             label="Remove Cluster?"
-            on_conform=move || {
-                cluster_configuration.with_untracked(|config| {
-                    delete_action.dispatch(config.id);
-                });
-            }
+            on_conform
         />
     }
 }

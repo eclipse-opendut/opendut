@@ -1,4 +1,4 @@
-use std::collections::{HashSet};
+use std::collections::HashSet;
 use std::ops::Not;
 use std::sync::Arc;
 
@@ -7,7 +7,7 @@ use tracing::{debug, error, info};
 use opendut_types::cluster::ClusterId;
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use crate::app::use_app_globals;
-use crate::components::{use_toaster, ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, IconButton, Toast, DoorhangerButton};
+use crate::components::{use_toaster, ButtonColor, ButtonSize, ButtonState, ButtonStateSignalProvider, ConfirmationButton, DoorhangerButton, FontAwesomeIcon, IconButton, Toast};
 use crate::peers::configurator::types::UserPeerConfiguration;
 use crate::routing;
 use crate::routing::{navigate_to, WellKnownRoutes};
@@ -40,10 +40,15 @@ fn SavePeerButton(
         },
     );
 
-    let store_action = Action::new(move |_| {
+    let pending = RwSignal::new(false);
+
+    let on_action = move || {
         let toaster = Arc::clone(&toaster);
         let mut carl = globals.client.clone();
-        async move {
+
+        leptos::task::spawn_local(async move {
+            pending.set(true);
+
             let peer_descriptor = PeerDescriptor::try_from(configuration.get_untracked());
             match peer_descriptor {
                 Ok(peer_descriptor) => {
@@ -69,11 +74,11 @@ fn SavePeerButton(
                     error!("Failed to dispatch create peer action, due to misconfiguration!\n  {error}");
                 }
             }
-        }
-    });
+        })
+    };
 
     let button_state = Signal::derive(move || {
-        if store_action.pending().get() {
+        if pending.get() {
             ButtonState::Loading
         } else if is_valid_peer_configuration.get() {
             ButtonState::Enabled
@@ -89,9 +94,7 @@ fn SavePeerButton(
             size=ButtonSize::Normal
             state=button_state
             label="Save Peer"
-            on_action=move || {
-                store_action.dispatch(());
-            }
+            on_action
         />
     }
 }
@@ -100,22 +103,31 @@ fn SavePeerButton(
 fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl IntoView {
     let globals = use_app_globals();
 
-    let delete_action = Action::new(move |_: &PeerId| async move {
+    let pending = RwSignal::new(false);
+
+    let on_conform = move || {
         let mut carl = globals.client.clone();
         let peer_id = configuration.get_untracked().id;
-        let result = carl.peers.delete_peer_descriptor(peer_id).await;
-        match result {
-            Ok(_) => {
-                info!("Successfully deleted peer: {}", peer_id);
-                navigate_to(WellKnownRoutes::PeersOverview);
-            }
-            Err(cause) => {
-                error!("Failed to delete peer <{peer_id}>, due to error: {cause:?}");
-            }
-        }
-    });
 
-    let button_state = delete_action.pending().derive_loading();
+        leptos::task::spawn_local(async move {
+            pending.set(true);
+
+            let result = carl.peers.delete_peer_descriptor(peer_id).await;
+            match result {
+                Ok(_) => {
+                    info!("Successfully deleted peer: {}", peer_id);
+                    navigate_to(WellKnownRoutes::PeersOverview);
+                }
+                Err(cause) => {
+                    error!("Failed to delete peer <{peer_id}>, due to error: {cause:?}");
+                }
+            }
+
+            pending.set(false);
+        });
+    };
+
+    let button_state = Signal::from(pending).derive_loading();
 
 
     let delete_button = Signal::derive(move || {
@@ -144,7 +156,7 @@ fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl In
                         <a class="has-text-link" href=routing::path::clusters_overview>" cluster(s)"</a>
                     </div>
                 </DoorhangerButton>
-            }
+            }.into_any()
         } else {
             view! {
                 <ConfirmationButton
@@ -153,13 +165,9 @@ fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl In
                     size=ButtonSize::Normal
                     state=button_state
                     label="Remove Peer?"
-                    on_conform=move || {
-                        configuration.with_untracked(|config| {
-                            delete_action.dispatch(config.id);
-                        });
-                    }
+                    on_conform
                 />
-            }
+            }.into_any()
         }
     });
     
