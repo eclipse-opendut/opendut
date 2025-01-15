@@ -347,7 +347,7 @@ pub mod distribution {
 
 pub mod diesel {
     use std::process::Command;
-
+    use repo_path::repo_path;
     use crate::core::dependency::Crate;
     use crate::core::util::RunRequiringSuccess;
     use crate::util;
@@ -381,10 +381,6 @@ pub mod diesel {
     }
 
     fn carl_database_dir() -> PathBuf {
-        crate::constants::workspace_dir()
-            .join(SELF_PACKAGE.ident())
-            .join("src")
-            .join("persistence")
-            .join("database")
+        repo_path!("opendut-carl/src/persistence/database/")
     }
 }

@@ -2,8 +2,7 @@ use std::process::Command;
 use std::str::FromStr;
 
 use clap::ArgAction;
-
-use crate::core::constants::workspace_dir;
+use repo_path::repo_path;
 use crate::core::types::Package;
 use crate::core::util::RunRequiringSuccess;
 
@@ -57,12 +56,12 @@ pub fn build_carl_docker_image(tag: Option<DockerTag>) -> crate::Result {
     let revision = format!("org.opencontainers.image.revision={}", crate::build::COMMIT_HASH);
 
     Command::new("docker")
-        .current_dir(workspace_dir())
+        .current_dir(repo_path!())
         .args([
             "build",
             "--no-cache",
             "--file",
-            ".ci/docker/carl/Dockerfile",
+            &repo_path!(".ci/docker/carl/Dockerfile").display().to_string(),
             "--build-arg",
             &image_version_build_arg,
             "--label", &source,
@@ -80,7 +79,7 @@ pub fn build_carl_docker_image(tag: Option<DockerTag>) -> crate::Result {
 
 pub fn publish_carl_docker_image(tag: Option<DockerTag>) -> crate::Result {
     Command::new("docker")
-        .current_dir(workspace_dir())
+        .current_dir(repo_path!())
         .args(["push", &carl_container_uri(&tag)])
         .run_requiring_success()?;
     Ok(())

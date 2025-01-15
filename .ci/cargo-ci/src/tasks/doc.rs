@@ -63,6 +63,7 @@ impl DocCli {
 }
 
 pub mod book {
+    use repo_path::repo_path;
     use super::*;
 
     #[tracing::instrument]
@@ -97,7 +98,7 @@ pub mod book {
     }
 
     fn doc_dir() -> PathBuf {
-        crate::constants::workspace_dir().join("doc")
+        repo_path!("doc/")
     }
 
     pub fn out_dir() -> PathBuf {
@@ -106,6 +107,7 @@ pub mod book {
 }
 
 pub mod homepage {
+    use repo_path::repo_path;
     use super::*;
 
     #[tracing::instrument]
@@ -122,7 +124,7 @@ pub mod homepage {
         )?;
 
         fs_extra::dir::copy(
-            homepage_source_dir(),
+            repo_path!("opendut-homepage/"),
             out_dir(),
             &fs_extra::dir::CopyOptions::default()
                 .overwrite(true)
@@ -136,7 +138,7 @@ pub mod homepage {
 
         for logo in RESOURCES_TO_INCLUDE {
             fs_extra::file::copy(
-                logos_source_dir().join(logo),
+                repo_path!("resources/logos/").join(logo),
                 logos_out_dir().join(logo),
                 &fs_extra::file::CopyOptions::default()
                     .overwrite(true)
@@ -145,10 +147,6 @@ pub mod homepage {
 
         Ok(())
     }
-
-    fn homepage_source_dir() -> PathBuf { crate::constants::workspace_dir().join("opendut-homepage") }
-
-    fn logos_source_dir() -> PathBuf { crate::constants::workspace_dir().join("resources").join("logos") }
 
     pub fn out_dir() -> PathBuf { crate::constants::target_dir().join("homepage") }
 

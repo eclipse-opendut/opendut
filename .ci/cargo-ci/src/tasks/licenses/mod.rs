@@ -1,7 +1,7 @@
 use crate::fs;
 use std::path::PathBuf;
 use std::process::Command;
-
+use repo_path::repo_path;
 use crate::{constants, util};
 use crate::core::types::parsing::package::PackageSelection;
 use crate::Package;
@@ -144,5 +144,5 @@ mod texts {
 
 
 fn cargo_deny_toml() -> PathBuf {
-    constants::ci_code_dir().join("cargo-deny.toml")
+    repo_path!(".ci/cargo-deny.toml")
 }

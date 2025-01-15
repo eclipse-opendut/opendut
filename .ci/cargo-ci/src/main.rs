@@ -1,7 +1,7 @@
 use clap::Parser;
 
 pub use fs_err as fs;
-
+use repo_path::repo_path;
 pub(crate) use core::constants;
 pub(crate) use core::metadata;
 pub(crate) use core::types::{self, Arch, Package, Result};
@@ -40,7 +40,7 @@ enum TaskCli {
 fn main() -> crate::Result {
     util::init_tracing()?;
 
-    std::env::set_current_dir(constants::workspace_dir())?;
+    std::env::set_current_dir(repo_path!())?;
 
     let cli = RootCli::parse();
     match cli.task {

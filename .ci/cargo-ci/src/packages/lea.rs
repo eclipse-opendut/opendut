@@ -1,6 +1,7 @@
 use crate::fs;
 use std::path::PathBuf;
 use std::process::Command;
+use repo_path::repo_path;
 use tracing::info;
 use crate::Arch;
 use crate::core::dependency::Crate;
@@ -99,8 +100,7 @@ fn install_requirements() -> crate::Result {
 }
 
 pub fn self_dir() -> PathBuf {
-    crate::constants::workspace_dir()
-        .join(PACKAGE.ident())
+    repo_path!("opendut-lea/")
 }
 
 fn build_impl(out_dir: PathBuf) -> crate::Result {

@@ -1,9 +1,10 @@
 use std::sync::LazyLock;
 use cargo_metadata::Package;
+use repo_path::repo_path;
 
 static CARGO_METADATA: LazyLock<cargo_metadata::Metadata> = LazyLock::new(||
     cargo_metadata::MetadataCommand::new()
-        .manifest_path(crate::constants::workspace_dir().join("Cargo.toml"))
+        .manifest_path(repo_path!("Cargo.toml"))
         .exec()
         .expect("Failed to gather Cargo metadata.")
 );

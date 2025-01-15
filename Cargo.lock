@@ -3832,6 +3832,7 @@ dependencies = [
  "fs-err",
  "fs_extra",
  "predicates",
+ "repo_path",
  "reqwest",
  "serde-spdx",
  "serde_json",
@@ -5075,6 +5076,16 @@ name = "relative-path"
 version = "1.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ba39f3699c378cd8970968dcbff9c43159ea4cfbd88d43c00b22f2ef10a435d2"
+
+[[package]]
+name = "repo_path"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "42e7b8a5d661a69169519c4ca60c4aaa0063535352233871ab5162391c2125fb"
+dependencies = [
+ "quote",
+ "syn 2.0.90",
+]
 
 [[package]]
 name = "reqwest"
