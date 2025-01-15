@@ -16,13 +16,14 @@ pub fn AboutOverview() -> impl IntoView {
         let globals = use_app_globals();
         
         let metadata: LocalResource<VersionInfo> = LocalResource::new(move || {
-            let mut carl = globals.client;
+            let carl = globals.client.clone();
             async move {
+                let mut carl = carl.clone();
                 carl.metadata.version().await
                     .expect("Failed to request the version from carl.")
             }
         });
-        
+
         view! {
             <BasePageContainer
                 title="About"
@@ -42,7 +43,7 @@ pub fn AboutOverview() -> impl IntoView {
                                 <td>Version</td>
                                 <td>
                                     <Transition fallback=move || view! { <p>"-"</p> }>
-                                        { move || { metadata.get().map(|version| version.name)} }
+                                        { move || Suspend::new(async move { metadata.await.name })}
                                     </Transition>
                                 </td>
                             </tr>

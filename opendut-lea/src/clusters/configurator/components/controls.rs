@@ -40,7 +40,7 @@ fn SaveClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>
     let globals = use_app_globals();
     let toaster = use_toaster();
 
-    let store_action = create_action(move |_: &()| {
+    let store_action = Action::new(move |_| {
         let toaster = Arc::clone(&toaster);
         let configuration = ClusterConfiguration::try_from(cluster_configuration.get_untracked());
         async move {

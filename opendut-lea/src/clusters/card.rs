@@ -16,8 +16,9 @@ pub fn ClustersCard() -> impl IntoView {
     let globals = use_app_globals();
 
     let clusters: LocalResource<Clusters> = LocalResource::new(move || {
-        let mut carl = globals.client;
+        let carl = globals.client.clone();
         async move {
+            let mut carl = carl.clone();
             let configured = carl.cluster.list_cluster_configurations().await
                 .expect("Failed to request the list of cluster configurations.")
                 .len();

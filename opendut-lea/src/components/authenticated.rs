@@ -30,7 +30,7 @@ pub fn Initialized(
         match config.auth_parameters {
             Some(ref auth_parameters) => {
                 info!("Auth parameters: {auth_parameters:?}");
-                let auth = Auth::init(auth_parameters.clone());
+                let auth = Auth::init(auth_parameters.clone()).await;
                 let client = CarlClient::create(Clone::clone(&config.carl_url), Some(auth.clone())).await
                     .expect("Failed to create CARL client");
 
