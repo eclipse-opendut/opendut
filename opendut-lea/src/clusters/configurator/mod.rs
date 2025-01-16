@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use leptos_router::hooks::use_params_map;
+use leptos_router::hooks::{use_navigate, use_params_map};
 use opendut_types::cluster::{ClusterId};
 
 use crate::app::use_app_globals;
@@ -34,11 +34,13 @@ pub fn ClusterConfigurator() -> impl IntoView {
                 });
                 match cluster_id {
                     None => {
+                        let use_navigate = use_navigate();
+
                         navigate_to(WellKnownRoutes::ErrorPage {
                             title: String::from("Invalid ClusterId"),
                             text: String::from("Could not parse the provided value as ClusterId!"),
                             details: None,
-                        });
+                        }, use_navigate);
 
                         ClusterId::default()
                     }

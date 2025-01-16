@@ -3,6 +3,7 @@ use std::ops::Not;
 use std::sync::Arc;
 
 use leptos::prelude::*;
+use leptos_router::hooks::use_navigate;
 use tracing::{debug, error, info};
 use opendut_types::cluster::ClusterId;
 use opendut_types::peer::PeerDescriptor;
@@ -116,7 +117,8 @@ fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl In
             match result {
                 Ok(_) => {
                     info!("Successfully deleted peer: {}", peer_id);
-                    navigate_to(WellKnownRoutes::PeersOverview);
+                    let use_navigate = use_navigate();
+                    navigate_to(WellKnownRoutes::PeersOverview, use_navigate);
                 }
                 Err(cause) => {
                     error!("Failed to delete peer <{peer_id}>, due to error: {cause:?}");

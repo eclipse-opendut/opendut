@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use leptos_router::hooks::use_navigate;
+use leptos_router::NavigateOptions;
 use tracing::info;
 use url::Url;
 
@@ -70,7 +70,7 @@ impl WellKnownRoutes {
 
 mod routes {
     use leptos::prelude::*;
-    use leptos_router::components::{Route, Router, Routes};
+    use leptos_router::components::{Route, FlatRoutes};
     use leptos_router::path;
 
     use crate::clusters::{ClusterConfigurator, ClustersOverview};
@@ -86,28 +86,37 @@ mod routes {
     #[component]
     pub fn AppRoutes() -> impl IntoView {
         view! {
-            <Router>
-                <main>
-                    <Routes fallback=NotFound>
-                        <Route path=path!("/") view=Dashboard />
-                        <Route path=path!("/clusters") view=ClustersOverview />
-                        <Route path=path!("/clusters/:id/configure/:tab") view=ClusterConfigurator />
-                        <Route path=path!("/peers") view=PeersOverview />
-                        <Route path=path!("/peers/:id/configure/:tab") view=PeerConfigurator />
-                        <Route path=path!("/downloads") view=Downloads />
-                        <Route path=path!("/user") view=UserOverview />
-                        <Route path=path!("/licenses") view=LicensesOverview />
-                        <Route path=path!("/about") view=AboutOverview />
-                        <Route path=path!("/error") view=ErrorPage />
-                        <Route path=path!("/*any") view=NotFound />
-                    </Routes>
-                </main>
-            </Router>
+            <FlatRoutes fallback=NotFound>
+                <Route path=path!("/") view=Dashboard />
+                <Route path=path!("/clusters") view=ClustersOverview />
+                <Route path=path!("/clusters/:id/configure/:tab") view=ClusterConfigurator />
+                <Route path=path!("/peers") view=PeersOverview />
+                <Route path=path!("/peers/:id/configure/:tab") view=PeerConfigurator />
+                <Route path=path!("/downloads") view=Downloads />
+                <Route path=path!("/user") view=UserOverview />
+                <Route path=path!("/licenses") view=LicensesOverview />
+                <Route path=path!("/about") view=AboutOverview />
+                <Route path=path!("/error") view=ErrorPage />
+                <Route path=path!("/*any") view=NotFound />
+            </FlatRoutes>
         }
     }
 }
 
-pub fn navigate_to(route: WellKnownRoutes) {
+/// When using inside a closure in a view!-macro, you will need to call this function like this:
+/// ```
+/// use leptos_router::hooks::use_navigate();
+/// use crate::routing::WellKnownRoutes;
+///
+/// let use_navigate = use_navigate(); //has to be outside the view
+///
+/// view! {
+///     <button on:click=move |_| {
+///         navigate_to(WellKnownRoutes::Dashboard, use_navigate.clone()); //has to be cloned due to being moved into the closure
+///     }>"Dashboard"</button>
+/// }
+/// ```
+pub fn navigate_to(route: WellKnownRoutes, use_navigate: impl Fn(&str, NavigateOptions) + Clone + 'static) {
 
     let base = {
         let location = location();
@@ -128,10 +137,8 @@ pub fn navigate_to(route: WellKnownRoutes) {
 
     info!("Navigating to {}", route);
 
-    let navigate = use_navigate();
-
     request_animation_frame(move || {
-        navigate(&route, Default::default());
+        use_navigate(&route, Default::default());
     });
 }
 
@@ -139,7 +146,6 @@ pub fn navigate_to(route: WellKnownRoutes) {
 fn NotFound() -> impl IntoView {
 
     view! {
-
         <BasePageContainer
             title="Not Found"
             breadcrumbs=Vec::new()

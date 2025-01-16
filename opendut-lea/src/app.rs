@@ -86,13 +86,16 @@ pub struct AppGlobalsError {
 
 #[component]
 pub fn LoadingApp() -> impl IntoView {
-    
+    use leptos_router::components::Router;
+
     provide_context(Arc::new(Toaster::new()));
-    
+
     view! {
-        <Navbar />
-        <div class="container">
-            <AppRoutes />
-        </div>
+        <Router>
+            <Navbar />
+            <main class="container">
+                <AppRoutes />
+            </main>
+        </Router>
     }
 }

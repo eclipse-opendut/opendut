@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use leptos::prelude::*;
+use leptos_router::hooks::use_navigate;
 use tracing::{debug, error};
 
 use opendut_types::cluster::ClusterConfiguration;
@@ -130,12 +131,13 @@ fn DeleteClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguratio
         cluster_configuration.with_untracked(|config| {
             let id = config.id.to_owned();
             let mut carl = globals.client.clone();
+            let use_navigate = use_navigate();
 
             leptos::task::spawn_local(async move {
                 pending.set(true);
 
                 let _ = carl.cluster.delete_cluster_configuration(id).await; // TODO: Check the result and display a toast on failure.
-                navigate_to(WellKnownRoutes::ClustersOverview);
+                navigate_to(WellKnownRoutes::ClustersOverview, use_navigate.clone());
 
                 pending.set(false);
             });

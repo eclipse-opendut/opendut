@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use leptos_router::hooks::use_params_map;
+use leptos_router::hooks::{use_navigate, use_params_map};
 use crate::components::ButtonState;
 use crate::routing::{navigate_to, WellKnownRoutes};
 
@@ -43,11 +43,13 @@ pub fn use_active_tab<
             .and_then(|value| T::try_from(value.as_str()).map_err(|cause| cause.to_string()));
         match tab {
             Err(details) => {
+                let use_navigate = use_navigate();
+
                 navigate_to(WellKnownRoutes::ErrorPage {
                     title: String::from("Oops"),
                     text: String::from("You entered an invalid URL!"),
                     details: Some(details),
-                });
+                }, use_navigate);
                 T::default()
             }
             Ok(tab) => {

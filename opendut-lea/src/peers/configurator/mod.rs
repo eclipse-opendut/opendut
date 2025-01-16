@@ -11,7 +11,7 @@ use leptos::prelude::*;
 use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorKind};
 use opendut_types::peer::PeerId;
 use std::collections::HashMap;
-use leptos_router::hooks::use_params_map;
+use leptos_router::hooks::{use_navigate, use_params_map};
 
 mod components;
 mod tabs;
@@ -35,11 +35,12 @@ pub fn PeerConfigurator() -> impl IntoView {
                 });
                 match peer_id {
                     None => {
+                        let use_navigate = use_navigate();
                         navigate_to(WellKnownRoutes::ErrorPage {
                             title: String::from("Invalid PeerId"),
                             text: String::from("Could not parse the provided value as PeerId!"),
                             details: None,
-                        });
+                        }, use_navigate);
                         PeerId::random()
                     }
                     Some(peer_id) => {
