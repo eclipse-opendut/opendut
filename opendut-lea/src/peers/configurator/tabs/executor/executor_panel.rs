@@ -1,4 +1,4 @@
-use leptos::prelude::*;
+use leptos::{either::Either, prelude::*};
 use opendut_types::peer::executor::{container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine, IllegalContainerImage}, ExecutorId, ResultsUrl};
 use strum::IntoEnumIterator;
 
@@ -12,7 +12,7 @@ pub fn ExecutorPanel<OnDeleteFn>(
     on_delete: OnDeleteFn
 ) -> impl IntoView
 where
-    OnDeleteFn: Fn(ExecutorId) + 'static
+    OnDeleteFn: Fn(ExecutorId) + Send + 'static
 {
     let is_collapsed = move || {
         executor.get().is_collapsed
@@ -45,7 +45,7 @@ fn ExecutorPanelHeading<OnDeleteFn>(
     on_delete: OnDeleteFn
 ) -> impl IntoView
 where
-    OnDeleteFn: Fn(ExecutorId) + 'static
+    OnDeleteFn: Fn(ExecutorId) + Send + 'static
 {
     let (is_collapsed, set_is_collapsed) = create_slice(executor,
         move |executor| {
@@ -140,20 +140,20 @@ fn ExecutorEngineInput<>(
     });
 
     let dropdown_options = move || {
-            Engine::iter()
-                .map(|engine| {
-                    let engine_value = engine.to_string();
-                    if engine_value == value {
-                        view! {
-                            <option selected>{engine_value}</option>
-                        }
-                    } else {
-                        view! {
-                            <option>{engine_value}</option>
-                        }
-                    }
-                })
-                .collect::<Vec<_>>()
+        Engine::iter()
+            .map(|engine| {
+                let engine_value = engine.to_string();
+                if engine_value == value {
+                    Either::Left(view! {
+                        <option selected>{engine_value}</option>
+                    })
+                } else {
+                    Either::Right(view! {
+                        <option>{engine_value}</option>
+                    })
+                }
+            })
+            .collect::<Vec<_>>()
     };
 
     view! {

@@ -28,51 +28,42 @@ pub fn AboutOverview() -> impl IntoView {
             <BasePageContainer
                 title="About"
                 breadcrumbs=Vec::new()
-                controls=view! { }
+                controls=view! { <> }
             >
                 <div class="mt-4">
-                    <table class="table is-bordered">
-                        <tbody>
-                             <tr>
-                                <td>LEA</td>
-                                <td>Version</td>
-                                <td>{ build::PKG_VERSION }</td>
-                            </tr>
-                            <tr>
-                                <td rowspan="4">CARL</td>
-                                <td>Version</td>
-                                <td>
-                                    <Transition fallback=move || view! { <p>"-"</p> }>
-                                        { move || Suspend::new(async move { metadata.await.name })}
-                                    </Transition>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Revision</td>
-                                <td>
-                                    <Transition fallback=move || view! { <p>"-"</p> }>
-                                        { move || { metadata.get().map(|version| version.revision)} }
-                                    </Transition>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Revision Date</td>
-                                <td>
-                                    <Transition fallback=move || view! { <p>"-"</p> }>
-                                        { move || { metadata.get().map(|version| version.revision_date)} }
-                                    </Transition>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Build Date</td>
-                                <td>
-                                    <Transition fallback=move || view! { <p>"-"</p> }>
-                                        { move || { metadata.get().map(|version| version.build_date)} }
-                                    </Transition>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <Transition fallback=move || view! { <p>"Loading..."</p> }>
+                        { move || Suspend::new(async move {
+                            let metadata = metadata.await;
+                            view! {
+                                <table class="table is-bordered">
+                                    <tbody>
+                                        <tr>
+                                            <td>LEA</td>
+                                            <td>Version</td>
+                                            <td>{ build::PKG_VERSION }</td>
+                                        </tr>
+                                        <tr>
+                                            <td rowspan="4">CARL</td>
+                                            <td>Version</td>
+                                            <td>{ metadata.name }</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Revision</td>
+                                            <td>{ metadata.revision }</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Revision Date</td>
+                                            <td>{ metadata.revision_date }</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Build Date</td>
+                                            <td>{ metadata.build_date }</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            }
+                        })}
+                    </Transition>
                     <a href="https://opendut.eclipse.dev/"><i class="fa-solid fa-arrow-up-right-from-square"></i>{ NON_BREAKING_SPACE } openDut Project Overview</a>
                 </div>
             </BasePageContainer>

@@ -38,7 +38,7 @@ fn DevicesTable(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl Int
         devices_setter.set(remaining_devices)
     };
 
-    let panels = Memo::new(move |_| {
+    let panels = move || {
         devices.with(|devices| {
             devices.iter()
                 .cloned()
@@ -49,7 +49,7 @@ fn DevicesTable(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl Int
                 })
                 .collect::<Vec<_>>()
         })
-    });
+    };
 
     view! {
         <div>

@@ -19,45 +19,57 @@ pub fn PeersOverview() -> impl IntoView {
 
         let globals = use_app_globals();
 
-        let registered_peers: LocalResource<Vec<(PeerDescriptor, PeerState)>> = LocalResource::new(move || {
-            let mut carl = globals.client.clone();
-            async move {
-                let peers = carl.peers.list_peer_descriptors().await
-                    .expect("Failed to request the list of peers.");
-                
-                let mut peers_with_state: Vec<(PeerDescriptor, PeerState)> = vec![];
-                for peer in peers {
-                    let peer_state = carl.peers.get_peer_state(peer.id).await.expect("Failed to request state of peer.");
-                    peers_with_state.push((peer, peer_state));
-                };
+        let refetch_registered_peers = RwSignal::new(());
 
-                peers_with_state
-            }
-        });
+        let registered_peers: LocalResource<Vec<(PeerDescriptor, PeerState)>> = {
+            let carl = globals.client.clone();
 
-        let configured_clusters: LocalResource<Vec<ClusterConfiguration>> = LocalResource::new(move || {
-            let mut carl = globals.client.clone();
-            async move {
-                carl.cluster.list_cluster_configurations().await
-                    .expect("Failed to request the list of peers.")
-            }
-        });
-        
-        let peers_table_rows = move || {
-            if let (Some(registered_peers), Some(configured_clusters)) = (registered_peers.get(), configured_clusters.get()) {
-                registered_peers.into_iter().map(|(peer_descriptor, peer_state)| {
-                    view! {
-                        <Row
-                            peer_descriptor=RwSignal::new(peer_descriptor)
-                            peer_state=RwSignal::new(peer_state)
-                            cluster_configuration=RwSignal::new(configured_clusters.clone())
-                        />
-                    }
-                }).collect::<Vec<_>>()
-            }
-            else {
-                Vec::new()
-            }
+            LocalResource::new(move || {
+                refetch_registered_peers.track();
+
+                let mut carl = carl.clone();
+                async move {
+                    let peers = carl.peers.list_peer_descriptors().await
+                        .expect("Failed to request the list of peers.");
+
+                    let mut peers_with_state: Vec<(PeerDescriptor, PeerState)> = vec![];
+                    for peer in peers {
+                        let peer_state = carl.peers.get_peer_state(peer.id).await.expect("Failed to request state of peer.");
+                        peers_with_state.push((peer, peer_state));
+                    };
+
+                    peers_with_state
+                }
+            })
+        };
+
+        let configured_clusters: LocalResource<Vec<ClusterConfiguration>> = {
+            let carl = globals.client.clone();
+
+            LocalResource::new(move || {
+                let mut carl = carl.clone();
+                async move {
+                    carl.cluster.list_cluster_configurations().await
+                        .expect("Failed to request the list of peers.")
+                }
+            })
+        };
+
+        let peers_table_rows = move || async move {
+            let registered_peers = registered_peers.await;
+            let configured_clusters = configured_clusters.await;
+
+            registered_peers.into_iter().map(|(peer_descriptor, peer_state)| {
+                let configured_clusters = configured_clusters.clone();
+
+                view! {
+                    <Row
+                        peer_descriptor=RwSignal::new(peer_descriptor)
+                        peer_state=RwSignal::new(peer_state)
+                        cluster_configuration=RwSignal::new(configured_clusters)
+                    />
+                }
+            }).collect_view()
         };
 
         let breadcrumbs = vec![
@@ -79,7 +91,7 @@ pub fn PeersOverview() -> impl IntoView {
                             state=ButtonState::Enabled
                             label="Refresh table of peers"
                             on_action=move || {
-                                registered_peers.refetch();
+                                refetch_registered_peers.notify();
                             }
                         />
                     </div>
@@ -89,19 +101,27 @@ pub fn PeersOverview() -> impl IntoView {
                     <Transition
                         fallback=move || view! { <p>"Loading..."</p> }
                     >
-                        <table class="table is-hoverable is-fullwidth">
-                            <thead>
-                                <tr>
-                                    <th class="is-narrow">"Health"</th>
-                                    <th>"Name"</th>
-                                    <th>"Configured in Clusters"</th>
-                                    <th class="is-narrow">"Action"</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                { peers_table_rows() }
-                            </tbody>
-                        </table>
+                        {move || {
+                            Suspend::new(async move {
+                                let peers_table_rows = peers_table_rows().await;
+
+                                view! {
+                                    <table class="table is-hoverable is-fullwidth">
+                                        <thead>
+                                            <tr>
+                                                <th class="is-narrow">"Health"</th>
+                                                <th>"Name"</th>
+                                                <th>"Configured in Clusters"</th>
+                                                <th class="is-narrow">"Action"</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            { peers_table_rows }
+                                        </tbody>
+                                    </table>
+                                }
+                            })
+                        }}
                     </Transition>
                 </div>
             </BasePageContainer>
@@ -160,7 +180,7 @@ fn Row(
 
     let _ = on_click_outside(dropdown, move |_| dropdown_active.set(false) );
 
-    let cluster_columns = Signal::derive(move || {
+    let cluster_columns = move || {
         let devices_in_peer = peer_descriptor.get().topology.devices.into_iter().map(|device| device.id).collect::<Vec<_>>();
 
         let devices_in_cluster = {
@@ -174,7 +194,7 @@ fn Row(
             devices_in_cluster
         };
 
-        let cluster_view_list: Vec<View> = devices_in_cluster.into_iter()
+        let cluster_view_list: Vec<View<_>> = devices_in_cluster.into_iter()
             .filter(|(_, _, devices)| devices_in_peer.clone().into_iter().any(|device| devices.contains(&device)))
             .map(|(clusterId, clusterName, _)| {
                 let cluster_name = move || { clusterName.to_string() };
@@ -185,7 +205,7 @@ fn Row(
             }).collect();
 
         util::view::join_with_comma_spans(cluster_view_list)
-    });
+    };
 
     view! {
         <tr>

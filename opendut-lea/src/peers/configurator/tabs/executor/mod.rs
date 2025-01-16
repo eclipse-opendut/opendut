@@ -41,7 +41,7 @@ fn ExecutorTable(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl In
     };
 
 
-    let panels = Memo::new(move |_| {
+    let panels = move || {
         executors.with(|executors| {
             executors.iter()
                 .cloned()
@@ -52,14 +52,14 @@ fn ExecutorTable(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl In
                 })
                 .collect::<Vec<_>>()
         })
-    });
+    };
 
     view! {
         <div>
             <div>
                 { panels }
             </div>
-             <div class="mt-5">
+            <div class="mt-5">
                 <div
                     class="dut-panel-ghost has-text-success px-4 py-3 is-clickable is-flex is-justify-content-center"
                     on:click=move |_| {

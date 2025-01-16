@@ -6,7 +6,6 @@ use leptos_oidc::Auth;
 use tracing::info;
 use opendut_carl_api::carl::wasm::CarlClient;
 use crate::app::{use_app_globals, AppConfig, AppGlobals, AppGlobalsError};
-use crate::routing::{navigate_to, WellKnownRoutes};
 
 #[must_use]
 #[component(transparent)]
@@ -19,11 +18,10 @@ pub fn Initialized(
 
     let globals: LocalResource<Result<AppGlobals, AppGlobalsError>> = LocalResource::new(move || async {
         let config = http::Request::get("/api/lea/config")
-            .send()
-            .await
-            .map_err(|_| AppGlobalsError { message: String::from("Could not fetch configuration!")})?
-            .json::<AppConfig>()
-            .await.map_err(|_| AppGlobalsError { message: String::from("Could not parse configuration!")})?;
+            .send().await
+            .map_err(|cause| AppGlobalsError { message: format!("Could not fetch configuration:\n  {cause}")})?
+            .json::<AppConfig>().await
+            .map_err(|cause| AppGlobalsError { message: format!("Could not parse configuration:\n  {cause}")})?;
 
         info!("Configuration: {config:?}");
 
@@ -56,7 +54,7 @@ pub fn Initialized(
 
     view! {
         <Suspense
-            fallback=|| view! { <FallbackMessage message="Page is loading."/> }
+            fallback=|| view! { <FallbackMessage message="Page is loading..."/> }
         >
             {move || Suspend::new(async move {
                 let app_globals_result = globals.await;
@@ -75,8 +73,8 @@ pub fn Initialized(
                         })
                     }
                     Err(error) => {
-                        tracing::error!("{}", error);
-                        // LeaError::ConfigurationError.navigate_to();
+                        tracing::error!("Error while constructing app globals: {}", error);
+                        // LeaError::ConfigurationError.navigate_to(); //TODO
                         Either::Left(
                             view! { <FallbackMessage message=""/> }
                         )
@@ -96,11 +94,11 @@ pub fn InitializedAndAuthenticated(
     #[prop(optional, default = true)] authentication_required: bool,
 ) -> impl IntoView {
 
-    //let children = StoredValue::new(children);
+    let children = StoredValue::new(children);
 
     match use_app_globals().auth {
         None => {
-            children().into_view().into_any()
+            children.read_value()().into_view().into_any()
         }
         Some(auth) => {
 
@@ -116,7 +114,7 @@ pub fn InitializedAndAuthenticated(
                     when=show_component
                     fallback=|| view! { <FallbackMessage message="You are currently not logged in."/> }
                 >
-                    {children()}
+                    {children.read_value()()}
                 </Show>
             }.into_any()
 

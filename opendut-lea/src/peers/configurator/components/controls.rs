@@ -5,7 +5,7 @@ use std::sync::Arc;
 use leptos::prelude::*;
 use tracing::{debug, error, info};
 use opendut_types::cluster::ClusterId;
-use opendut_types::peer::{PeerDescriptor, PeerId};
+use opendut_types::peer::PeerDescriptor;
 use crate::app::use_app_globals;
 use crate::components::{use_toaster, ButtonColor, ButtonSize, ButtonState, ButtonStateSignalProvider, ConfirmationButton, DoorhangerButton, FontAwesomeIcon, IconButton, Toast};
 use crate::peers::configurator::types::UserPeerConfiguration;
@@ -130,7 +130,9 @@ fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl In
     let button_state = Signal::from(pending).derive_loading();
 
 
-    let delete_button = Signal::derive(move || {
+    let delete_button = move || {
+        let on_conform = on_conform.clone();
+
         let mut used_clusters: HashSet<ClusterId> = HashSet::new();
         let _ = configuration.get().devices
             .into_iter()
@@ -139,9 +141,9 @@ fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl In
                 used_clusters.insert(cluster_configuration.id);
             })
             .collect::<Vec<_>>();
-        
+
         let used_clusters_length = used_clusters.len();
-        
+
         if used_clusters_length > 0 {
             view! {
                 <DoorhangerButton
@@ -169,8 +171,8 @@ fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl In
                 />
             }.into_any()
         }
-    });
-    
+    };
+
     view! {
         <div>
             { delete_button }

@@ -70,7 +70,7 @@ impl Toaster {
 
         debug!("Creating toaster.");
 
-        let toasts: RwSignal<ToastMap> = RwSignal::new(Default::default());
+        let toasts: RwSignal<ToastMap> = RwSignal::new(ToastMap::new());
 
         let Pausable { pause: pause_toast_janitor, resume: resume_toast_janitor, is_active: is_toast_janitor_active } = use_interval_fn(move || {
             toasts.update(|toasts: &mut ToastMap| {
@@ -96,12 +96,11 @@ impl Toaster {
 
         Effect::new(move |_| {
             toasts.with(|toasts| {
-                let is_active = is_toast_janitor_active.get();
                 if toasts.is_empty() {
                     pause_toast_janitor();
                     debug!("Toast-Janitor paused.");
                 }
-                else if is_active.not() {
+                else if is_toast_janitor_active.get().not() {
                     resume_toast_janitor();
                     debug!("Toast-Janitor resumed.");
                 }

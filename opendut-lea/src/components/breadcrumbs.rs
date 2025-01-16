@@ -49,7 +49,7 @@ pub fn Breadcrumbs(
     view! {
          <nav class="breadcrumb mb-0 is-hidden-tablet" aria-label="backButton">
             <ul>
-                { breadcrumb_items().iter().nth_back(1) }
+                { breadcrumb_items().into_iter().nth_back(1) }
                 <span class="icon ml-0">
                     <i class="fa-solid fa-arrow-left"></i>
                 </span>

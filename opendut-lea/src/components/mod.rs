@@ -1,5 +1,3 @@
-use leptos::prelude::*;
-
 pub use auth::LeaAuthenticated;
 pub use authenticated::Initialized;
 pub use breadcrumbs::{Breadcrumb, Breadcrumbs};

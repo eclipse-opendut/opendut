@@ -78,13 +78,13 @@ pub fn LeaderSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
                 view! {
                     <tr>
                         <td>
-                            {move || &peer.name.to_string()}
+                            { peer.name.to_string().into_view() }
                         </td>
                         <td>
-                            {move || &peer.id.to_string()}
+                            { peer.id.to_string().into_view() }
                         </td>
                         <td>
-                            {move || &peer.location.unwrap_or_default().to_string()}
+                            { peer.location.unwrap_or_default().to_string().into_view() }
                         </td>
                         <td class="is-narrow" style="text-align: center">
                             <div class="control">

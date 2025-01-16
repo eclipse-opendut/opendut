@@ -11,7 +11,7 @@ use crate::app::use_app_globals;
 #[component(transparent)]
 pub fn LeaAuthenticated(
     children: ChildrenFn,
-    #[prop(optional, into)] loading: ViewFn,
+    #[prop(optional, into)] loading: ViewFnOnce,
     #[prop(optional, into)] unauthenticated: ViewFn,
     #[prop(optional, into)] disabled_auth: ViewFn,
 ) -> impl IntoView {

@@ -98,8 +98,9 @@ fn VectorUserInputValue<A,OnDeleteFn>(
     #[prop(into)] delete_label: Signal<String>,
     on_delete: OnDeleteFn
 ) -> impl IntoView
-    where A: UserInputValidator + 'static,
-          OnDeleteFn: Fn(String) + 'static
+where
+    A: UserInputValidator + 'static,
+    OnDeleteFn: Fn(String) + Send + 'static
 {
     let value_text = move || {
         getter.with(|input| match input {

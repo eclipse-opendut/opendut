@@ -6,6 +6,7 @@ use crate::peers::configurator::tabs::{DevicesTab, ExecutorTab, GeneralTab, Netw
 use crate::peers::configurator::types::{UserContainerEnv, UserDeviceConfiguration, UserNetworkInterface, UserPeerConfiguration, UserPeerExecutor, UserPeerExecutorKind, UserPeerNetwork};
 use crate::routing::{navigate_to, WellKnownRoutes};
 use crate::util;
+use leptos::either::Either;
 use leptos::prelude::*;
 use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorKind};
 use opendut_types::peer::PeerId;
@@ -245,7 +246,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                 devices_in_cluster
             };
 
-            let cluster_view_list: Vec<View> = devices_in_cluster.into_iter()
+            let cluster_view_list: Vec<View<_>> = devices_in_cluster.into_iter()
                 .filter(|(_, _, devices)| devices_in_peer.iter().any(|device| devices.contains(device)))
                 .map(|(cluster_id, cluster_name, _)| {
                     let cluster_name = move || { cluster_name.to_string() };
@@ -259,13 +260,13 @@ pub fn PeerConfigurator() -> impl IntoView {
 
             if amount_clusters > 0 {
                 let comma_separated_cluster_views = util::view::join_with_comma_spans(cluster_view_list.clone());
-                view! {
+                Either::Left(view! {
                     <div class="mb-3">"Configured in " {amount_clusters} " clusters: " {comma_separated_cluster_views}</div>
-                }
+                })
             } else {
-                view! {
+                Either::Right(view! {
                     <div class="mb-3">"Configured in " {amount_clusters} " clusters"</div>
-                }
+                })
             }
         };
 
@@ -301,51 +302,56 @@ pub fn PeerConfigurator() -> impl IntoView {
                 controls=view! { <Controls configuration=peer_configuration is_valid_peer_configuration=is_valid_peer_configuration.into() /> }
             >
             <div> {cluster_columns} </div>
-                <Show
-                    when=move || !peer_configuration_resource.loading().get() // TODO: Check for errors
+                <Suspense
                     fallback=move || view! { <p><i class="fa-solid fa-circle-notch fa-spin"></i></p> } // TODO: Display errors
                 >
-                    <div class="tabs">
-                        <ul>
-                            <li class=("is-active", move || TabIdentifier::General == active_tab.get())>
-                                <a href={ TabIdentifier::General.as_str() }>
-                                    <span>General</span>
-                                    // An icon could indicate a misconfiguration on a tab
-                                    // <span class="icon is-small has-text-danger"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i></span>
-                                </a>
-                            </li>
-                            <li class=("is-active", move || TabIdentifier::Network == active_tab.get())>
-                                <a href={ TabIdentifier::Network.as_str() }>Network</a>
-                            </li>
-                            <li class=("is-active", move || TabIdentifier::Devices == active_tab.get())>
-                                <a href={ TabIdentifier::Devices.as_str() }>Devices</a>
-                            </li>
-                            <li class=("is-active", move || TabIdentifier::Executor == active_tab.get())>
-                                <a href={ TabIdentifier::Executor.as_str() }>Executor</a>
-                            </li>
-                            <li class=setup_tab_classes>
-                                <a href={ TabIdentifier::Setup.as_str() }>Setup</a>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="container">
-                        <div class=("is-hidden", move || TabIdentifier::General != active_tab.get())>
-                            <GeneralTab peer_configuration=peer_configuration />
+                {move || Suspend::new(async move {
+                    peer_configuration_resource.await;
+
+                    view! {
+                        <div class="tabs">
+                            <ul>
+                                <li class=("is-active", move || TabIdentifier::General == active_tab.get())>
+                                    <a href={ TabIdentifier::General.as_str() }>
+                                        <span>General</span>
+                                        // An icon could indicate a misconfiguration on a tab
+                                        // <span class="icon is-small has-text-danger"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i></span>
+                                    </a>
+                                </li>
+                                <li class=("is-active", move || TabIdentifier::Network == active_tab.get())>
+                                    <a href={ TabIdentifier::Network.as_str() }>Network</a>
+                                </li>
+                                <li class=("is-active", move || TabIdentifier::Devices == active_tab.get())>
+                                    <a href={ TabIdentifier::Devices.as_str() }>Devices</a>
+                                </li>
+                                <li class=("is-active", move || TabIdentifier::Executor == active_tab.get())>
+                                    <a href={ TabIdentifier::Executor.as_str() }>Executor</a>
+                                </li>
+                                <li class=setup_tab_classes>
+                                    <a href={ TabIdentifier::Setup.as_str() }>Setup</a>
+                                </li>
+                            </ul>
                         </div>
-                        <div class=("is-hidden", move || TabIdentifier::Network != active_tab.get())>
-                            <NetworkTab peer_configuration=peer_configuration />
+                        <div class="container">
+                            <div class=("is-hidden", move || TabIdentifier::General != active_tab.get())>
+                                <GeneralTab peer_configuration=peer_configuration />
+                            </div>
+                            <div class=("is-hidden", move || TabIdentifier::Network != active_tab.get())>
+                                <NetworkTab peer_configuration=peer_configuration />
+                            </div>
+                            <div class=("is-hidden", move || TabIdentifier::Devices != active_tab.get())>
+                                <DevicesTab peer_configuration=peer_configuration />
+                            </div>
+                            <div class=("is-hidden", move || TabIdentifier::Executor != active_tab.get())>
+                                <ExecutorTab peer_configuration=peer_configuration />
+                            </div>
+                            <div class=("is-hidden", move || TabIdentifier::Setup != active_tab.get())>
+                                <SetupTab peer_configuration=peer_configuration.read_only() />
+                            </div>
                         </div>
-                        <div class=("is-hidden", move || TabIdentifier::Devices != active_tab.get())>
-                            <DevicesTab peer_configuration=peer_configuration />
-                        </div>
-                        <div class=("is-hidden", move || TabIdentifier::Executor != active_tab.get())>
-                            <ExecutorTab peer_configuration=peer_configuration />
-                        </div>
-                        <div class=("is-hidden", move || TabIdentifier::Setup != active_tab.get())>
-                            <SetupTab peer_configuration=peer_configuration.read_only() />
-                        </div>
-                    </div>
-                </Show>
+                    }
+                })}
+                </Suspense>
             </BasePageContainer>
         }
     }

@@ -55,8 +55,10 @@ pub fn ClusterConfigurator() -> impl IntoView {
                 leader: LeaderSelection::Left(String::from("Select a leader.")),
             });
 
-            LocalResource::new(move || { // TODO: maybe a action suits better here
-                let mut carl = globals.client.clone();
+            let carl = globals.client.clone();
+
+            LocalResource::new(move || {
+                let mut carl = carl.clone();
                 async move {
                     if let Ok(configuration) = carl.cluster.get_cluster_configuration(cluster_id).await {
                         user_configuration.update(|user_configuration| {
@@ -82,13 +84,16 @@ pub fn ClusterConfigurator() -> impl IntoView {
             ]
         });
 
-        let cluster_deployments = LocalResource::new(move || {
-            let mut carl = globals.client.clone();
-            async move {
-                carl.cluster.list_cluster_deployments().await
-                    .expect("Failed to request the list of cluster deployments")
-            }
-        });
+        let cluster_deployments = {
+            let carl = globals.client.clone();
+            LocalResource::new(move || {
+                let mut carl = carl.clone();
+                async move {
+                    carl.cluster.list_cluster_deployments().await
+                        .expect("Failed to request the list of cluster deployments")
+                }
+            })
+        };
 
 
         let deployed_clusters = move || {
@@ -123,7 +128,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
                     }
                 }
             >
-                <fieldset disabled=is_deployed()>
+                <fieldset prop:disabled=is_deployed()>
 
                     <div class="tabs">
                         <ul>

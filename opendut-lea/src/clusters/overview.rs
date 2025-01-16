@@ -19,110 +19,138 @@ pub fn ClustersOverview() -> impl IntoView {
     fn inner() -> impl IntoView {
 
         let globals = use_app_globals();
+        let carl = globals.client;
 
-        let clusters = LocalResource::new(move || {
-            let mut carl = globals.client.clone();
-            async move {
-                carl.cluster.list_cluster_configurations().await
-                    .expect("Failed to request the list of clusters")
-            }
-        });
+        let clusters = {
+            let carl = carl.clone();
 
-        let cluster_deployments = LocalResource::new(move || {
-            let mut carl = globals.client.clone();
-            async move {
-                carl.cluster.list_cluster_deployments().await
-                    .expect("Failed to request the list of cluster deployments")
-            }
-        });
+            LocalResource::new(move || {
+                let mut carl = carl.clone();
+                async move {
+                    carl.cluster.list_cluster_configurations().await
+                        .expect("Failed to request the list of clusters")
+                }
+            })
+        };
 
-        let deploy_cluster = Action::new(move |cluster_id: &ClusterId| {
-            let toaster = use_toaster();
-            let mut carl = globals.client.clone();
-            let cluster_id = Clone::clone(cluster_id);
-            async move {
-                match carl.cluster.store_cluster_deployment(ClusterDeployment { id: cluster_id }).await {
-                    Ok(cluster_id) => {
-                        debug!("Successfully stored cluster deployment: {}", cluster_id);
-                        toaster.toast(
-                            Toast::builder()
-                                .simple("Successfully stored cluster deployment!")
-                                .success()
-                        );
-                    }
-                    Err(cause) => {
-                        error!("Failed to store cluster deployment <{}>, due to error: {:?}", cluster_id, cause);
-                        match cause {
-                            ClientError::UsageError(StoreClusterDeploymentError::IllegalPeerState { invalid_peers, .. }) => {
+        let refetch_cluster_deployments = RwSignal::new(());
+
+        let cluster_deployments = {
+            let carl = carl.clone();
+
+            LocalResource::new(move || {
+                refetch_cluster_deployments.track();
+
+                let mut carl = carl.clone();
+                async move {
+                    carl.cluster.list_cluster_deployments().await
+                        .expect("Failed to request the list of cluster deployments")
+                }
+            })
+        };
+
+
+        let on_deploy = {
+            let carl = carl.clone();
+
+            move |cluster_id: ClusterId| {
+                let carl = carl.clone();
+
+                move || {
+                    let mut carl = carl.clone();
+                    let toaster = use_toaster();
+
+                    leptos::task::spawn_local(async move {
+                        match carl.cluster.store_cluster_deployment(ClusterDeployment { id: cluster_id }).await {
+                            Ok(cluster_id) => {
+                                debug!("Successfully stored cluster deployment: {}", cluster_id);
                                 toaster.toast(
                                     Toast::builder()
-                                        .simple(format!("Failed to store cluster deployment! Peers already in use: {}", invalid_peers.iter().map(|peer| peer.to_string()).collect::<Vec<_>>().join(", ")))
-                                        .error()
+                                        .simple("Successfully stored cluster deployment!")
+                                        .success()
                                 );
                             }
-                            _ => {
-                                toaster.toast(
-                                    Toast::builder()
-                                        .simple("Failed to store cluster deployment!")
-                                        .error()
-                                );
+                            Err(cause) => {
+                                error!("Failed to store cluster deployment <{}>, due to error: {:?}", cluster_id, cause);
+                                match cause {
+                                    ClientError::UsageError(StoreClusterDeploymentError::IllegalPeerState { invalid_peers, .. }) => {
+                                        toaster.toast(
+                                            Toast::builder()
+                                                .simple(format!("Failed to store cluster deployment! Peers already in use: {}", invalid_peers.iter().map(|peer| peer.to_string()).collect::<Vec<_>>().join(", ")))
+                                                .error()
+                                        );
+                                    }
+                                    _ => {
+                                        toaster.toast(
+                                            Toast::builder()
+                                                .simple("Failed to store cluster deployment!")
+                                                .error()
+                                        );
+                                    }
+                                };
                             }
-                        };
-                    }
+                        }
+                        refetch_cluster_deployments.notify();
+                    })
                 }
-                cluster_deployments.refetch();
-            }
-        });
-
-        let undeploy_cluster = Action::new(move |id: &ClusterId| {
-            let toaster = use_toaster();
-            let mut carl = globals.client.clone();
-            let id = Clone::clone(id);
-            async move {
-                match carl.cluster.delete_cluster_deployment(id).await {
-                    Ok(_) => {
-                        toaster.toast(Toast::builder()
-                            .simple("Successfully deleted cluster deployment!")
-                            .success()
-                        );
-                    }
-                    Err(_) => {
-                        toaster.toast(Toast::builder()
-                            .simple("Failed to delete cluster deployment!")
-                            .error()
-                        );
-                    }
-                }
-                cluster_deployments.refetch();
-            }
-        });
-
-        let deployed_clusters = move || {
-            match cluster_deployments.get() {
-                Some(deployed_clusters) => {
-                    deployed_clusters.iter().map(|cluster_deployment| cluster_deployment.id).collect::<Vec<_>>()
-                }
-                None => Vec::new()
             }
         };
-        let rows = move || {
-            match clusters.get() {
-                Some(configurations) => {
-                    configurations.iter().cloned().map(|cluster_configuration| {
-                        let cluster_id = cluster_configuration.id;
-                        view! {
-                            <Row
-                                cluster_configuration=RwSignal::new(cluster_configuration)
-                                on_deploy=move || deploy_cluster.dispatch(cluster_id)
-                                on_undeploy=move || undeploy_cluster.dispatch(cluster_id)
-                                is_deployed = RwSignal::new(IsDeployed(deployed_clusters().contains(&cluster_id)))
-                            />
+
+        let on_undeploy = {
+            let carl = carl.clone();
+
+            move |id: ClusterId| {
+                let carl = carl.clone();
+
+                move || {
+                    let mut carl = carl.clone();
+                    let toaster = use_toaster();
+
+                    leptos::task::spawn_local(async move {
+                        match carl.cluster.delete_cluster_deployment(id).await {
+                            Ok(_) => {
+                                toaster.toast(Toast::builder()
+                                    .simple("Successfully deleted cluster deployment!")
+                                    .success()
+                                );
+                            }
+                            Err(_) => {
+                                toaster.toast(Toast::builder()
+                                    .simple("Failed to delete cluster deployment!")
+                                    .error()
+                                );
+                            }
                         }
-                    }).collect::<Vec<_>>()
+                        refetch_cluster_deployments.notify();
+                    })
                 }
-                None => {
-                    Vec::new()
-                }
+            }
+        };
+
+        let deployed_clusters = LocalResource::new(move || async move {
+            cluster_deployments.await.iter()
+                .map(|cluster_deployment| cluster_deployment.id)
+                .collect::<Vec<_>>()
+        });
+        let rows = move || {
+            let on_deploy = on_deploy.clone();
+            let on_undeploy = on_undeploy.clone();
+
+            async move {
+                let clusters = clusters.await;
+                let deployed_clusters = deployed_clusters.await;
+
+                clusters.iter().cloned().map(|cluster_configuration| {
+                    let cluster_id = cluster_configuration.id;
+                    view! {
+                        <Row
+                            cluster_configuration=RwSignal::new(cluster_configuration)
+                            on_deploy=on_deploy(cluster_id)
+                            on_undeploy=on_undeploy(cluster_id)
+                            is_deployed = RwSignal::new(IsDeployed(deployed_clusters.contains(&cluster_id)))
+                        />
+                    }
+                }).collect::<Vec<_>>()
             }
         };
 
@@ -139,18 +167,31 @@ pub fn ClustersOverview() -> impl IntoView {
                     <CreateClusterButton />
                 }
             >
-                <table class="table is-hoverable is-fullwidth">
-                    <thead>
-                        <tr>
-                            <th class="is-narrow">"Health"</th>
-                            <th>"Name"</th>
-                            <th class="is-narrow">"Action"</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        { rows }
-                    </tbody>
-                </table>
+                <Suspense
+                    fallback = move || view! { <p>"Loading..."</p> }
+                >
+                {move || {
+                    let rows = rows.clone();
+
+                    Suspend::new(async move {
+                        let rows = rows().await;
+                        view! {
+                            <table class="table is-hoverable is-fullwidth">
+                                <thead>
+                                    <tr>
+                                        <th class="is-narrow">"Health"</th>
+                                        <th>"Name"</th>
+                                        <th class="is-narrow">"Action"</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    { rows }
+                                </tbody>
+                            </table>
+                        }
+                    })
+                }}
+                </Suspense>
             </BasePageContainer>
         }
     }

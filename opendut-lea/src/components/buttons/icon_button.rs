@@ -14,8 +14,6 @@ pub fn IconButton<A>(
 ) -> impl IntoView
 where A: Fn() + 'static {
 
-    let cloned_label = label.clone();
-
     view! {
         <button
             class=move || format!("button {} {}", color.with(ButtonColor::as_class), size.with(ButtonSize::as_class))
@@ -40,7 +38,7 @@ where A: Fn() + 'static {
             {
                 show_label.get().then(|| {
                     view! {
-                        <span>{ cloned_label.get() }</span>
+                        <span>{ label.get() }</span>
                     }
                 })
             }

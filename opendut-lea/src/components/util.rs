@@ -31,11 +31,12 @@ fn derive_loading(signal: Signal<bool>) -> Signal<ButtonState> {
     })
 }
 
-pub fn use_active_tab<T: for<'a> TryFrom<&'a str, Error=impl ToString> + Default>() -> Signal<T>
-where 
-    T: Send + Sync + 'static
-{
+pub fn use_active_tab<
+    T: for<'a> TryFrom<&'a str, Error=impl ToString>
+       + Default + Send + Sync + 'static
+>() -> Signal<T> {
     let params = use_params_map();
+
     Signal::derive(move || params.with(|params| {
         let tab = params.get("tab")
             .ok_or(String::from("No tab identifier given in URL!"))

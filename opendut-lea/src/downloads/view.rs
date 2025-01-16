@@ -31,7 +31,7 @@ pub fn Downloads() -> impl IntoView {
             <BasePageContainer
                 title="Downloads"
                 breadcrumbs=breadcrumbs
-                controls=view! { }
+                controls=view! { <> }
             >
                 <div class="field">
                     <div class="columns is-centered">

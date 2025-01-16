@@ -1,3 +1,4 @@
+use leptos::either::Either;
 use leptos::prelude::*;
 
 use crate::api::ApiError;
@@ -13,18 +14,9 @@ pub fn LicensesOverview() -> impl IntoView {
         }
     });
 
-    let license_information = move || {
-        match licenses.get() {
-            None => {
-                view! {
-                    <div>
-                        <span class="icon">
-                            <i class="fa-spin fa-solid fa-circle-notch" />
-                        </span>
-                    </div>
-                }
-            }
-            Some(Ok(components)) => {
+    let license_information = Suspend::new(async move {
+        match licenses.await {
+            Ok(components) => {
                 let components = components.iter()
                     .map(|component| {
                         let component_name = Clone::clone(&component.name);
@@ -40,6 +32,7 @@ pub fn LicensesOverview() -> impl IntoView {
                                 </tr>
                             }
                         }).collect::<Vec<_>>();
+
                         view! {
                             <div class="message">
                                 <div class="message-header">
@@ -63,33 +56,45 @@ pub fn LicensesOverview() -> impl IntoView {
                         }
                     })
                     .collect::<Vec<_>>();
-                view! {
+
+                Either::Right(view! {
                     <div>{ components }</div>
-                }
+                })
             }
-            Some(Err(_)) => {
-                view! {
+            Err(_) => {
+                Either::Left(view! {
                     <div class="notification is-warning is-light">
                         <p>"No license information available."</p>
                     </div>
-                }
+                })
             }
         }
-    };
+    });
 
     view! {
         <BasePageContainer
             title="Licenses"
             breadcrumbs=Vec::new()
-            controls=view! { }
+            controls=view! { <> }
         >
             <div class="mt-4">
                 <Transition
-                    fallback=move || view! { <p>"Loading..."</p> }
+                    fallback=LoadingSpinner
                 >
                     { license_information }
                 </Transition>
             </div>
         </BasePageContainer>
+    }
+}
+
+#[component]
+fn LoadingSpinner() -> impl IntoView {
+    view! {
+        <div>
+            <span class="icon">
+                <i class="fa-spin fa-solid fa-circle-notch" />
+            </span>
+        </div>
     }
 }

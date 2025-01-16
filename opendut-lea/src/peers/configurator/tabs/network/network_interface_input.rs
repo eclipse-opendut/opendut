@@ -1,9 +1,10 @@
 use std::ops::Not;
+use leptos::either::Either;
 use leptos::prelude::*;
 use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceName, NetworkInterfaceNameError};
 
 use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, UserInput, UserInputValue};
-use crate::peers::configurator::types::{UserNetworkInterface};
+use crate::peers::configurator::types::UserNetworkInterface;
 use crate::util::net::UserNetworkInterfaceConfiguration;
 use crate::util::NON_BREAKING_SPACE;
 
@@ -94,7 +95,7 @@ where A: Fn(NetworkInterfaceName, UserNetworkInterfaceConfiguration) + 'static {
     
     let can_fd_view = {
         move || if getter_type.get() == InterfaceKind::Can {
-            view!{
+            Either::Right(view! {
                 <div class="is-flex is-align-items-center mb-3">
                     <div class="mr-3">
                         <UserInput
@@ -129,7 +130,7 @@ where A: Fn(NetworkInterfaceName, UserNetworkInterfaceConfiguration) + 'static {
                     </label>
                     {
                         move || if can_fd_getter_type.get() {
-                            view!{
+                            Either::Right(view!{
                                 <div class="is-flex">
                                     <div class="mr-3">
                                         <UserInput
@@ -150,15 +151,15 @@ where A: Fn(NetworkInterfaceName, UserNetworkInterfaceConfiguration) + 'static {
                                         />
                                     </div>
                                 </div>
-                            }
+                            })
                         } else {
-                            view!{ <div></div> }
+                            Either::Left(view!{ <div></div> })
                         }
                     }
                 </div>
-                }
+            })
         } else {
-            view!{ <div></div> }
+            Either::Left(view! { <div></div> })
         }
     };
     
@@ -223,7 +224,7 @@ where A: Fn(NetworkInterfaceName, UserNetworkInterfaceConfiguration) + 'static {
                                         let data_sample_point = data_sample_point_getter.get().right().unwrap();
                                         let bitrate = bitrate_getter.get().right().unwrap();
                                         let data_bitrate = data_bitrate_getter.get().right().unwrap();
-                            
+
                                         NetworkInterfaceConfiguration::Can {
                                             bitrate: bitrate.parse::<u32>().unwrap(),
                                             sample_point: CanSamplePoint::try_from(sample_point.parse::<f32>().unwrap()).unwrap(),
@@ -323,7 +324,7 @@ mod test {
         let validator_function = sample_points_validator(input);
         assert!(validator_function.is_right());
     }
-    
+
     #[test]
     fn test_sample_points_validator_fails() {
         let input = "1.0".to_string();
@@ -337,7 +338,7 @@ mod test {
         let input = "".to_string();
         let validator_function = sample_points_validator(input);
         assert!(validator_function.is_both());
-        
+
         let input = " ".to_string();
         let validator_function = sample_points_validator(input);
         assert!(validator_function.is_both());

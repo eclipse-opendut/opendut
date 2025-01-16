@@ -77,6 +77,7 @@ pub fn GenerateSetupStringForm(kind: GenerateSetupStringKind) -> impl IntoView {
     }
 }
 
+#[derive(Clone, Copy)]
 pub enum GenerateSetupStringKind {
     Edgar(PeerId),
     Cleo,

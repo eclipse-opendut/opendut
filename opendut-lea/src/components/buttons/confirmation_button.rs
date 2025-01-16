@@ -6,15 +6,15 @@ use crate::components::{ButtonColor, ButtonState, FontAwesomeIcon};
 use crate::components::doorhanger::{Doorhanger, DoorhangerAlignment};
 
 #[component]
-pub fn ConfirmationButton<A>(
+pub fn ConfirmationButton<OnConfirm>(
     #[prop(into)] icon: Signal<FontAwesomeIcon>,
     #[prop(into)] color: Signal<ButtonColor>,
     #[prop(into)] size: Signal<ButtonSize>,
     #[prop(into)] state: Signal<ButtonState>,
     #[prop(into)] label: Signal<String>,
-    on_conform: A,
+    on_conform: OnConfirm,
 ) -> impl IntoView
-where A: Fn() + 'static {
+where OnConfirm: Fn() + Send + 'static {
 
     let text = Clone::clone(&label);
     let aria_label = Clone::clone(&label);
