@@ -7,59 +7,50 @@ use crate::user::UNAUTHENTICATED_USER;
 #[component]
 pub fn UserOverview() -> impl IntoView {
 
-    fn Inner() -> impl IntoView {
+    const DEFAULT_KEYCLOAK_ROLES: [&str; 4] = [
+        "offline_access",
+        "uma_authorization",
+        "managerrole",
+        "testrole",
+    ];
 
-        const DEFAULT_KEYCLOAK_ROLES: [&str; 4] = [
-            "offline_access",
-            "uma_authorization",
-            "managerrole",
-            "testrole",
-        ];
+    let (auth_data_signal, _) = use_context::<(ReadSignal<OptionalAuthData>, WriteSignal<OptionalAuthData>)>().expect("AuthData should be provided in the context.");
 
-        let (auth_data_signal, _) = use_context::<(ReadSignal<OptionalAuthData>, WriteSignal<OptionalAuthData>)>().expect("AuthData should be provided in the context.");
-
-        match auth_data_signal.get().auth_data {
-            None => {
-                view! {
-                    <CreateTableView
-                        preferred_username=UNAUTHENTICATED_USER
-                        name=""
-                        email=""
-                        groups=""
-                        roles=""
-                    >
-                    </CreateTableView>
-                }
-            }
-            Some(auth_data) => {
-                let user_name = auth_data.preferred_username;
-                let name = auth_data.name;
-                let email = auth_data.email;
-                let roles = auth_data.roles.into_iter().filter(| role | {
-                    DEFAULT_KEYCLOAK_ROLES.contains(&role.as_str()).not()
-                }).collect::<Vec<_>>().join(", ");
-                let groups  = auth_data.groups.into_iter().map(| group | {
-                    group.replace('/', "")
-                }).collect::<Vec<_>>().join(", ");
-
-                view! {
-                    <CreateTableView
-                        preferred_username=user_name
-                        name=name
-                        email=email
-                        groups=groups
-                        roles=roles
-                    >
-                    </CreateTableView>
-                }
+    match auth_data_signal.get().auth_data {
+        None => {
+            view! {
+                <CreateTableView
+                    preferred_username=UNAUTHENTICATED_USER
+                    name=""
+                    email=""
+                    groups=""
+                    roles=""
+                >
+                </CreateTableView>
             }
         }
-    }
+        Some(auth_data) => {
+            let user_name = auth_data.preferred_username;
+            let name = auth_data.name;
+            let email = auth_data.email;
+            let roles = auth_data.roles.into_iter().filter(| role | {
+                DEFAULT_KEYCLOAK_ROLES.contains(&role.as_str()).not()
+            }).collect::<Vec<_>>().join(", ");
+            let groups  = auth_data.groups.into_iter().map(| group | {
+                group.replace('/', "")
+            }).collect::<Vec<_>>().join(", ");
 
-    view! {
-        <Initialized>
-            <Inner />
-        </Initialized>
+            view! {
+                <CreateTableView
+                    preferred_username=user_name
+                    name=name
+                    email=email
+                    groups=groups
+                    roles=roles
+                >
+                </CreateTableView>
+            }
+        }
     }
 }
 

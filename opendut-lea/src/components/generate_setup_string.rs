@@ -12,7 +12,8 @@ pub fn GenerateSetupStringForm(kind: GenerateSetupStringKind) -> impl IntoView {
 
     let trigger_setup_generation: RwSignal<bool> = RwSignal::new(false);
 
-    let (auth_data_signal, _) = use_context::<(ReadSignal<OptionalAuthData>, WriteSignal<OptionalAuthData>)>().expect("AuthData should be provided in the context.");
+    let (auth_data_signal, _) = use_context::<(ReadSignal<OptionalAuthData>, WriteSignal<OptionalAuthData>)>()
+        .expect("AuthData should be provided in the context.");
 
     let setup_string = LocalResource::new(move || {
         let mut carl = globals.client.clone();

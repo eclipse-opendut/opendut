@@ -82,7 +82,6 @@ pub fn Initialized(
                 }
             })}
         </Suspense>
-
     }
 }
 

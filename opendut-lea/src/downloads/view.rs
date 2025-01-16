@@ -6,50 +6,41 @@ use crate::downloads::{CleoCard, EdgarCard};
 #[component(transparent)]
 pub fn Downloads() -> impl IntoView {
 
-    #[component]
-    fn inner() -> impl IntoView {
-        let globals = use_app_globals();
-        
-        let breadcrumbs = {
-            Signal::derive(move || {
-                vec![
-                    Breadcrumb::new("Dashboard", "/"),
-                    Breadcrumb::new("Downloads", "/downloads"),
-                ]
-            })
-        };
+    let globals = use_app_globals();
 
-        let version_info = LocalResource::new(move || {
-            let mut carl = globals.client.clone();
-            async move {
-                carl.metadata.version().await
-                    .expect("Failed to request the version from carl.")
-            }
-        });
+    let breadcrumbs = {
+        Signal::derive(move || {
+            vec![
+                Breadcrumb::new("Dashboard", "/"),
+                Breadcrumb::new("Downloads", "/downloads"),
+            ]
+        })
+    };
 
-        view! {
-            <BasePageContainer
-                title="Downloads"
-                breadcrumbs=breadcrumbs
-                controls=view! { <> }
-            >
-                <div class="field">
-                    <div class="columns is-centered">
-                        <div class="column">
-                            <CleoCard version_info/>
-                        </div>
-                        <div class="column">
-                            <EdgarCard version_info/>
-                        </div>
-                    </div>
-                </div>
-            </BasePageContainer>
+    let version_info = LocalResource::new(move || {
+        let mut carl = globals.client.clone();
+        async move {
+            carl.metadata.version().await
+                .expect("Failed to request the version from carl.")
         }
-    }
+    });
 
     view! {
-        <Initialized>
-            <Inner />
-        </Initialized>
+        <BasePageContainer
+            title="Downloads"
+            breadcrumbs=breadcrumbs
+            controls=view! { <> }
+        >
+            <div class="field">
+                <div class="columns is-centered">
+                    <div class="column">
+                        <CleoCard version_info/>
+                    </div>
+                    <div class="column">
+                        <EdgarCard version_info/>
+                    </div>
+                </div>
+            </div>
+        </BasePageContainer>
     }
 }

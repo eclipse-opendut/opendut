@@ -82,22 +82,56 @@ mod routes {
     use crate::user::UserOverview;
     use crate::about::AboutOverview;
     use crate::downloads::Downloads;
+    use crate::components::Initialized;
 
     #[component]
     pub fn AppRoutes() -> impl IntoView {
         view! {
             <FlatRoutes fallback=NotFound>
-                <Route path=path!("/") view=Dashboard />
-                <Route path=path!("/clusters") view=ClustersOverview />
-                <Route path=path!("/clusters/:id/configure/:tab") view=ClusterConfigurator />
-                <Route path=path!("/peers") view=PeersOverview />
-                <Route path=path!("/peers/:id/configure/:tab") view=PeerConfigurator />
-                <Route path=path!("/downloads") view=Downloads />
-                <Route path=path!("/user") view=UserOverview />
-                <Route path=path!("/licenses") view=LicensesOverview />
-                <Route path=path!("/about") view=AboutOverview />
-                <Route path=path!("/error") view=ErrorPage />
-                <Route path=path!("/*any") view=NotFound />
+                <Route
+                    path=path!("/")
+                    view=move || view! { <Initialized><Dashboard/></Initialized> }
+                />
+                <Route
+                    path=path!("/clusters")
+                    view=move || view! { <Initialized><ClustersOverview/></Initialized> }
+                />
+                <Route
+                    path=path!("/clusters/:id/configure/:tab")
+                    view=move || view! { <Initialized><ClusterConfigurator/></Initialized> }
+                />
+                <Route
+                    path=path!("/peers")
+                    view=move || view! { <Initialized><PeersOverview/></Initialized> }
+                />
+                <Route
+                    path=path!("/peers/:id/configure/:tab")
+                    view=move || view! { <Initialized><PeerConfigurator/></Initialized> }
+                />
+                <Route
+                    path=path!("/downloads")
+                    view=move || view! { <Initialized><Downloads/></Initialized> }
+                />
+                <Route
+                    path=path!("/user")
+                    view=move || view! { <Initialized><UserOverview/></Initialized> }
+                />
+                <Route
+                    path=path!("/about")
+                    view=move || view! { <Initialized><AboutOverview/></Initialized> }
+                />
+                <Route
+                    path=path!("/licenses")
+                    view=LicensesOverview
+                />
+                <Route
+                    path=path!("/error")
+                    view=ErrorPage
+                />
+                <Route
+                    path=path!("/*any")
+                    view=NotFound
+                />
             </FlatRoutes>
         }
     }
