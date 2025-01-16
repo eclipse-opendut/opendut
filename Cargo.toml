@@ -94,7 +94,7 @@ leptos = { version = "0.7.3" }
 # TODO: change location
 leptos_oidc = { git = "https://gitlab.com/opendut/leptos_oidc", branch = "upgrade-leptos-0.7" }
 leptos_router = { version = "0.7.3" }
-leptos-use = { version = "0.15.3" }
+leptos-use = { version = "0.15.5" }
 mime = "0.3.17"
 mockall = "0.13.0"
 netlink-packet-route = "0.19.0"
