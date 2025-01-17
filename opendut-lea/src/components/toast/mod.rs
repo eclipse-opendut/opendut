@@ -118,7 +118,7 @@ impl Toaster {
 
     pub fn toast(&self, toast: impl Into<Toast>) {
         let toast = toast.into();
-        debug!("{toast:?}");
+        debug!("Sending toast: {toast:?}");
         self.toasts.update(|toasts| {
             toasts.insert(RwSignal::new(toast));
         });

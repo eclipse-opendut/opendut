@@ -97,7 +97,6 @@ fn Row(
 ) -> impl IntoView {
 
     let toaster = use_toaster();
-    let toaster = Arc::clone(&toaster);
 
     let (interfaces_getter, interfaces_setter) = create_slice(peer_configuration,
       |peer_configuration| {

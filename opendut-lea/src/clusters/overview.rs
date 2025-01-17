@@ -49,13 +49,15 @@ pub fn ClustersOverview() -> impl IntoView {
 
     let on_deploy = {
         let carl = carl.clone();
+        let toaster = use_toaster();
 
         move |cluster_id: ClusterId| {
             let carl = carl.clone();
+            let toaster = toaster.clone();
 
             move || {
                 let mut carl = carl.clone();
-                let toaster = use_toaster();
+                let toaster = toaster.clone();
 
                 leptos::task::spawn_local(async move {
                     match carl.cluster.store_cluster_deployment(ClusterDeployment { id: cluster_id }).await {
@@ -95,13 +97,15 @@ pub fn ClustersOverview() -> impl IntoView {
 
     let on_undeploy = {
         let carl = carl.clone();
+        let toaster = use_toaster();
 
         move |id: ClusterId| {
             let carl = carl.clone();
+            let toaster = toaster.clone();
 
             move || {
                 let mut carl = carl.clone();
-                let toaster = use_toaster();
+                let toaster = toaster.clone();
 
                 leptos::task::spawn_local(async move {
                     match carl.cluster.delete_cluster_deployment(id).await {

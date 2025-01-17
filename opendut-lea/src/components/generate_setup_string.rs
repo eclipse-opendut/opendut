@@ -2,7 +2,7 @@ use leptos::{either::Either, prelude::*};
 use opendut_auth::public::OptionalAuthData;
 use opendut_types::peer::PeerId;
 
-use crate::{app::use_app_globals, components::{ButtonColor, ButtonState, SimpleButton}, user::UNAUTHENTICATED_USER, util::clipboard};
+use crate::{app::use_app_globals, components::{use_toaster, ButtonColor, ButtonState, SimpleButton, Toast}, user::UNAUTHENTICATED_USER};
 
 
 #[component]
@@ -96,23 +96,61 @@ fn GenerateSetupStringTextForm(
             <div class="columns mb-0 is-align-items-center">
                 <div class="column"><label class="label">Setup-String</label></div>
                 <div class="column is-narrow">
-                    <button
-                        class="button is-light"
-                        title="Copy to clipboard"
-                        on:click=move |_| {
-                            clipboard::copy_with_feedback().dispatch(setup_string_for_clipboard_fn.clone());
-                        }
-                    >
-                        <span class="icon">
-                            <i class="fa-regular fa-copy"></i>
-                        </span>
-                    </button>
+                    <CopyToClipboardButton setup_string=setup_string_for_clipboard_fn />
                 </div>
             </div>
             <div class="control is-flex is-justify-content-center">
                 <textarea class="textarea" rows="20" placeholder="" prop:value=setup_string readonly></textarea>
             </div>
         </div>
+    }
+}
+
+#[component]
+fn CopyToClipboardButton(
+    setup_string: String
+) -> impl IntoView {
+    let toaster = use_toaster();
+
+    let copy_action = Action::new_local(move |clipboard_text: &String| {
+        let text = clipboard_text.clone();
+        let toaster = toaster.clone();
+
+        async move {
+            let clipboard = window().navigator().clipboard();
+            let clipboard_promise = clipboard.write_text(&text);
+
+            match wasm_bindgen_futures::JsFuture::from(clipboard_promise).await {
+                Ok(_) => {
+                    toaster.toast(
+                        Toast::builder()
+                            .simple("Successfully copied Setup-String.")
+                            .success(),
+                    );
+                }
+                Err(_) => {
+                    toaster.toast(
+                        Toast::builder()
+                            .simple("Error while copying Setup-String.")
+                            .error(),
+                    );
+                }
+            };
+        }
+    });
+
+    view! {
+        <button
+            class="button is-light"
+            title="Copy to clipboard"
+            on:click=move |_| {
+                copy_action.dispatch(setup_string.clone());
+            }
+        >
+            <span class="icon">
+                <i class="fa-regular fa-copy"></i>
+            </span>
+        </button>
     }
 }
 
