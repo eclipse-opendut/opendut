@@ -2,7 +2,7 @@ use leptos::{either::Either, prelude::*};
 use opendut_auth::public::OptionalAuthData;
 use opendut_types::peer::PeerId;
 
-use crate::{app::use_app_globals, components::{use_toaster, ButtonColor, ButtonState, SimpleButton, Toast}, user::UNAUTHENTICATED_USER};
+use crate::{app::use_app_globals, components::{use_toaster, ButtonColor, ButtonState, SimpleButton, Toast, WarningMessage}, user::UNAUTHENTICATED_USER};
 
 
 #[component]
@@ -66,16 +66,7 @@ pub fn GenerateSetupStringForm(kind: GenerateSetupStringKind) -> impl IntoView {
             })}
         </Suspense>
         <br/>
-        <div class="notification is-warning">
-            <div class="columns is-mobile is-vcentered">
-                <div class="column is-narrow">
-                    <i class="fa-solid fa-triangle-exclamation fa-2xl"></i>
-                </div>
-                <div class="column">
-                    <p>"Please keep Setup-Strings secret and handle them with care like your passwords."</p>
-                </div>
-            </div>
-        </div>
+        <WarningMessage>"Please keep Setup-Strings secret and handle them with care like your passwords."</WarningMessage>
     }
 }
 

@@ -17,6 +17,7 @@ pub use toast::{Toast, ToastContent, Toaster, ToastKind, use_toaster};
 pub use util::ButtonStateSignalProvider;
 pub use util::Toggled;
 pub use util::use_active_tab;
+pub use warning_message::WarningMessage;
 
 pub mod health;
 pub mod tooltip;
@@ -32,6 +33,7 @@ mod loading_spinner;
 mod page;
 mod toast;
 mod util;
+mod warning_message;
 
 #[derive(Clone, Copy, Debug)]
 #[allow(dead_code)]
