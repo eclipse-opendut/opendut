@@ -122,7 +122,7 @@ pub fn Navbar() -> impl IntoView {
                                                 </a>
                                             }
                                         }>
-                                        <LoggedInUser></LoggedInUser>
+                                        <LoggedInUser />
                                         <LogoutLink class="dut-nav-flyout-item">
                                             <span class="ml-1 is-size-6">"Sign out"</span>
                                         </LogoutLink>

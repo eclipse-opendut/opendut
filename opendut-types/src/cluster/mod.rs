@@ -19,22 +19,12 @@ pub mod state;
 pub struct ClusterId(pub Uuid);
 
 impl ClusterId {
-
-    pub const NIL: Self = Self(Uuid::from_bytes([0; 16]));
-
     pub fn random() -> Self {
         Self(Uuid::new_v4())
     }
 }
 
-impl Default for ClusterId {
-    fn default() -> Self {
-        Self::NIL
-    }
-}
-
 impl From<Uuid> for ClusterId {
-
     fn from(value: Uuid) -> Self {
         Self(value)
     }

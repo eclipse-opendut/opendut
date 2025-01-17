@@ -6,7 +6,7 @@ use leptos_oidc::Auth;
 use opendut_auth::public::OptionalAuthData;
 use tracing::info;
 use opendut_carl_api::carl::wasm::CarlClient;
-use crate::app::{use_app_globals, AppConfig, AppGlobals, AppGlobalsError};
+use crate::{app::{use_app_globals, AppConfig, AppGlobals, AppGlobalsError}, components::LoadingSpinner};
 
 #[must_use]
 #[component(transparent)]
@@ -29,6 +29,7 @@ pub fn Initialized(
         let maybe_auth = match config.auth_parameters {
             Some(ref auth_parameters) => {
                 info!("Auth parameters: {auth_parameters:?}");
+
                 let auth = Auth::init(auth_parameters.clone()).await;
                 Some(auth)
             },
@@ -49,7 +50,7 @@ pub fn Initialized(
 
     view! {
         <Suspense
-            fallback=|| view! { <FallbackMessage message="Page is loading..."/> }
+            fallback=LoadingSpinner
         >
             {move || Suspend::new(async move {
                 let app_globals_result = globals.await;
@@ -83,7 +84,7 @@ pub fn Initialized(
 }
 
 #[component]
-pub fn InitializedAndAuthenticated(
+fn InitializedAndAuthenticated(
     children: ChildrenFn,
     #[prop(optional)] _groups: Vec<String>,
     #[prop(optional)] _roles: Vec<String>,
@@ -113,7 +114,6 @@ pub fn InitializedAndAuthenticated(
                     {children.read_value()()}
                 </Show>
             }.into_any()
-
         }
     }
 }

@@ -9,7 +9,7 @@ use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId}
 
 use crate::app::use_app_globals;
 use crate::clusters::components::CreateClusterButton;
-use crate::components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, health, IconButton, Toast, use_toaster};
+use crate::components::{health, use_toaster, BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, LoadingSpinner, Toast};
 use crate::components::health::Health;
 
 #[component]
@@ -169,7 +169,7 @@ pub fn ClustersOverview() -> impl IntoView {
             }
         >
             <Suspense
-                fallback = move || view! { <p>"Loading..."</p> }
+                fallback=LoadingSpinner
             >
             {move || {
                 let rows = rows.clone();

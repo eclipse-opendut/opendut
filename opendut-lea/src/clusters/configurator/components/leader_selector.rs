@@ -2,10 +2,10 @@ use std::collections::HashSet;
 
 use leptos::prelude::*;
 
-use opendut_types::peer::PeerId;
+use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::topology::DeviceId;
 
-use crate::clusters::configurator::components::{get_all_peers, get_all_selected_devices};
+use crate::clusters::configurator::components::get_all_selected_devices;
 use crate::clusters::configurator::types::UserClusterConfiguration;
 use crate::util::{Ior, NON_BREAKING_SPACE};
 
@@ -13,8 +13,10 @@ pub type LeaderSelectionError = String;
 pub type LeaderSelection = Ior<LeaderSelectionError, PeerId>;
 
 #[component]
-pub fn LeaderSelector(cluster_configuration: RwSignal<UserClusterConfiguration>) -> impl IntoView {
-    let peer_descriptors = get_all_peers();
+pub fn LeaderSelector(
+    cluster_configuration: RwSignal<UserClusterConfiguration>,
+    peers: ReadSignal<Vec<PeerDescriptor>>,
+) -> impl IntoView {
 
     let getter_selected_devices = create_read_slice(cluster_configuration, |config| {
         Clone::clone(&config.devices)
@@ -38,10 +40,9 @@ pub fn LeaderSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
         })
     };
 
-    let rows = LocalResource::new(move || async move {
+    let peers = Signal::derive(move || {
         let selected_devices = selected_devices();
-
-        let mut peers = peer_descriptors.await;
+        let mut peers = peers.get();
 
         peers.sort_by(|a, b| {
             a.name
@@ -53,9 +54,11 @@ pub fn LeaderSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
         peers.clone().into_iter()
             .filter(|peer_descriptor| {
                 let mut peer_devices: HashSet<DeviceId> = HashSet::new();
+
                 for device in &peer_descriptor.topology.devices {
                     peer_devices.insert(device.id);
                 }
+
                 if selected_devices.len() < 2 {
                     setter_leader.set(LeaderSelection::Left(String::from("Please select at least two devices first.")));
                 }
@@ -72,44 +75,18 @@ pub fn LeaderSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
                         setter_leader.set(LeaderSelection::Left(String::from("Select a leader.")));
                     }
                 }
+
                 !peer_devices.is_disjoint(&selected_devices)
-            })
-            .map(|peer| {
-                view! {
-                    <tr>
-                        <td>
-                            { peer.name.to_string().into_view() }
-                        </td>
-                        <td>
-                            { peer.id.to_string().into_view() }
-                        </td>
-                        <td>
-                            { peer.location.unwrap_or_default().to_string().into_view() }
-                        </td>
-                        <td class="is-narrow" style="text-align: center">
-                            <div class="control">
-                                <label class="radio">
-                                    <input
-                                        type = "radio"
-                                        name = "answer"
-                                        checked = move || {
-                                            match getter_leader.get() {
-                                                LeaderSelection::Right(leader) => peer.id == leader,
-                                                LeaderSelection::Left(_) | LeaderSelection::Both(_, _) => false,
-                                            }
-                                        }
-                                        on:click = move |_| {
-                                            setter_leader.set(LeaderSelection::Right(peer.id));
-                                        }
-                                    />
-                                </label>
-                            </div>
-                        </td>
-                    </tr>
-                }
             })
             .collect::<Vec<_>>()
     });
+
+    let is_leader = move |peer: PeerId| {
+        match getter_leader.get() {
+            LeaderSelection::Right(leader) => peer == leader,
+            LeaderSelection::Left(_) | LeaderSelection::Both(_, _) => false,
+        }
+    };
 
     view! {
         <p class="help has-text-danger"> { help_text } </p>
@@ -123,15 +100,41 @@ pub fn LeaderSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
                         <th>Leader</th>
                     </tr>
                 </thead>
-                    <tbody>
-                        <Suspense
-                            fallback=move || view! { <p>"Loading..."</p> }
-                        >
-                            {move || Suspend::new(async move {
-                                rows.await
-                            })}
-                        </Suspense>
-                    </tbody>
+                <tbody>
+                    <For
+                        each=move || peers.get()
+                        key=|peer| peer.id
+                        children=move |peer| {
+                            view! {
+                                <tr>
+                                    <td>
+                                        { peer.name.to_string() }
+                                    </td>
+                                    <td>
+                                        { peer.id.to_string() }
+                                    </td>
+                                    <td>
+                                        { peer.location.clone().unwrap_or_default().to_string() }
+                                    </td>
+                                    <td class="is-narrow" style="text-align: center">
+                                        <div class="control">
+                                            <label class="radio">
+                                                <input
+                                                    type = "radio"
+                                                    name = "answer"
+                                                    checked = is_leader(peer.id)
+                                                    on:click = move |_| {
+                                                        setter_leader.set(LeaderSelection::Right(peer.id));
+                                                    }
+                                                />
+                                            </label>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    />
+                </tbody>
             </table>
         </div>
     }

@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 use crate::app::use_app_globals;
-use crate::components::BasePageContainer;
+use crate::components::{BasePageContainer, LoadingSpinner};
 
 use shadow_rs::shadow;
 use opendut_types::proto::util::VersionInfo;
@@ -28,7 +28,7 @@ pub fn AboutOverview() -> impl IntoView {
             controls=view! { <> }
         >
             <div class="mt-4">
-                <Transition fallback=move || view! { <p>"Loading..."</p> }>
+                <Transition fallback=LoadingSpinner>
                     { move || Suspend::new(async move {
                         let metadata = metadata.await;
                         view! {

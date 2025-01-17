@@ -1,5 +1,5 @@
 use crate::app::use_app_globals;
-use crate::components::health;
+use crate::components::{health, LoadingSpinner};
 use crate::components::health::Health;
 use crate::components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
 use crate::peers::components::CreatePeerButton;
@@ -96,7 +96,7 @@ pub fn PeersOverview() -> impl IntoView {
         >
             <div class="mt-4">
                 <Transition
-                    fallback=move || view! { <p>"Loading..."</p> }
+                    fallback=LoadingSpinner
                 >
                     {move || {
                         Suspend::new(async move {

@@ -1,6 +1,7 @@
 use leptos::prelude::*;
-use leptos_router::hooks::{use_navigate, use_params_map};
+use leptos_router::hooks::use_params_map;
 use opendut_types::cluster::ClusterId;
+use opendut_types::peer::PeerDescriptor;
 
 use crate::app::use_app_globals;
 use crate::clusters::configurator::components::{DeviceSelection, DeviceSelector, LeaderSelection};
@@ -8,9 +9,8 @@ use crate::clusters::configurator::components::Controls;
 use crate::clusters::configurator::tabs::{DevicesTab, GeneralTab, LeaderTab, TabIdentifier};
 use crate::clusters::configurator::types::UserClusterConfiguration;
 use crate::clusters::overview::IsDeployed;
-use crate::components::{BasePageContainer, Breadcrumb, use_active_tab};
-use crate::components::{UserInputError, UserInputValue};
-use crate::routing::{navigate_to, WellKnownRoutes};
+use crate::components::{use_active_tab, BasePageContainer, Breadcrumb, LoadingSpinner};
+use crate::components::UserInputValue;
 
 mod types;
 mod tabs;
@@ -22,55 +22,65 @@ pub fn ClusterConfigurator() -> impl IntoView {
     let globals = use_app_globals();
     let params = use_params_map();
 
-    let active_tab = use_active_tab::<TabIdentifier>();
+    let cluster_id = params.with(|params| {
+        params.get("id").and_then(|id| ClusterId::try_from(id.as_str()).ok())
+    }).unwrap_or_else(ClusterId::random);
 
-    let cluster_configuration = {
-        let cluster_id = {
-            let cluster_id = params.with_untracked(|params| {
-                params.get("id").and_then(|id| ClusterId::try_from(id.as_str()).ok())
-            });
-            match cluster_id {
-                None => {
-                    let use_navigate = use_navigate();
-
-                    navigate_to(WellKnownRoutes::ErrorPage {
-                        title: String::from("Invalid ClusterId"),
-                        text: String::from("Could not parse the provided value as ClusterId!"),
-                        details: None,
-                    }, use_navigate);
-
-                    ClusterId::default()
-                }
-                Some(cluster_id) => {
-                    cluster_id
-                }
-            }
-        };
-
-        let user_configuration = RwSignal::new(UserClusterConfiguration {
+    let cluster_configuration = RwSignal::new(
+        UserClusterConfiguration {
             id: cluster_id,
-            name: UserInputValue::Left(UserInputError::from("Enter a valid cluster name.")),
+            name: UserInputValue::Left(String::from("Enter a valid cluster name.")),
             devices: DeviceSelection::Left(String::from("Select at least two devices.")),
             leader: LeaderSelection::Left(String::from("Select a leader.")),
-        });
+        }
+    );
 
+    {
         let carl = globals.client.clone();
 
         LocalResource::new(move || {
             let mut carl = carl.clone();
+
             async move {
                 if let Ok(configuration) = carl.cluster.get_cluster_configuration(cluster_id).await {
-                    user_configuration.update(|user_configuration| {
-                        user_configuration.name = UserInputValue::Right(configuration.name.value());
-                        user_configuration.devices = DeviceSelection::Right(configuration.devices);
-                        user_configuration.leader = LeaderSelection::Right(configuration.leader);
-                    });
+                    cluster_configuration.set(
+                        UserClusterConfiguration {
+                            id: cluster_id,
+                            name: UserInputValue::Right(configuration.name.value()),
+                            devices: DeviceSelection::Right(configuration.devices),
+                            leader: LeaderSelection::Right(configuration.leader),
+                        }
+                    )
+                } else {
+                    tracing::debug!("Could not find cluster with ID <{cluster_id}> in backend. Showing empty configurator to create new cluster.");
                 }
             }
         });
+    }
 
-        user_configuration
-    };
+    let peer_descriptors = get_all_peers();
+
+    view! {
+        <Transition
+            fallback=LoadingSpinner
+        >
+        {move || Suspend::new(async move {
+            let peers = RwSignal::new(peer_descriptors.await).read_only();
+
+            view! {
+                <LoadedClusterConfigurator cluster_configuration peers />
+            }
+        })}
+        </Transition>
+    }
+}
+
+#[component]
+fn LoadedClusterConfigurator(
+    cluster_configuration: RwSignal<UserClusterConfiguration>,
+    peers: ReadSignal<Vec<PeerDescriptor>>,
+) -> impl IntoView {
+    let globals = use_app_globals();
 
     let cluster_id = create_read_slice(cluster_configuration, |config| config.id);
 
@@ -82,6 +92,8 @@ pub fn ClusterConfigurator() -> impl IntoView {
             Breadcrumb::new(Clone::clone(&cluster_id), cluster_id),
         ]
     });
+
+    let active_tab = use_active_tab::<TabIdentifier>();
 
     let cluster_deployments = {
         let carl = globals.client.clone();
@@ -144,16 +156,29 @@ pub fn ClusterConfigurator() -> impl IntoView {
                 </div>
                 <div class="container">
                     <div class=("is-hidden", move || TabIdentifier::General != active_tab.get())>
-                        <GeneralTab cluster_configuration=cluster_configuration />
+                        <GeneralTab cluster_configuration />
                     </div>
                     <div class=("is-hidden", move || TabIdentifier::Devices != active_tab.get())>
-                        <DevicesTab cluster_configuration=cluster_configuration />
+                        <DevicesTab cluster_configuration peers />
                     </div>
                     <div class=("is-hidden", move || TabIdentifier::Leader != active_tab.get())>
-                        <LeaderTab cluster_configuration=cluster_configuration />
+                        <LeaderTab cluster_configuration peers />
                     </div>
                 </div>
             </fieldset>
         </BasePageContainer>
     }
+}
+
+
+pub(super) fn get_all_peers() -> LocalResource<Vec<PeerDescriptor>> {
+    let globals = use_app_globals();
+
+    LocalResource::new(move || {
+        let mut carl = globals.client.clone();
+        async move {
+            carl.peers.list_peer_descriptors().await
+                .expect("Failed to request the list of all peers.")
+        }
+    })
 }

@@ -4,6 +4,7 @@ use leptos::prelude::*;
 use crate::api::ApiError;
 use crate::api::ComponentLicenses;
 use crate::components::BasePageContainer;
+use crate::components::LoadingSpinner;
 
 #[component]
 pub fn LicensesOverview() -> impl IntoView {
@@ -85,16 +86,5 @@ pub fn LicensesOverview() -> impl IntoView {
                 </Transition>
             </div>
         </BasePageContainer>
-    }
-}
-
-#[component]
-fn LoadingSpinner() -> impl IntoView {
-    view! {
-        <div>
-            <span class="icon">
-                <i class="fa-spin fa-solid fa-circle-notch" />
-            </span>
-        </div>
     }
 }

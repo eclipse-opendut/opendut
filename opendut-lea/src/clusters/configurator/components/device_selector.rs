@@ -7,7 +7,7 @@ use leptos::reactive::wrappers::write::SignalSetter;
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
 use opendut_types::util::net::NetworkInterfaceDescriptor;
-use crate::clusters::configurator::components::{get_all_peers, get_all_selected_devices};
+use crate::clusters::configurator::components::get_all_selected_devices;
 use crate::clusters::configurator::types::UserClusterConfiguration;
 use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
 use crate::util::{Ior, NON_BREAKING_SPACE};
@@ -17,8 +17,10 @@ pub type DeviceSelectionError = String;
 pub type DeviceSelection = Ior<DeviceSelectionError, HashSet<DeviceId>>;
 
 #[component]
-pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>) -> impl IntoView {
-    let peer_descriptors = get_all_peers();
+pub fn DeviceSelector(
+    cluster_configuration: RwSignal<UserClusterConfiguration>,
+    peers: ReadSignal<Vec<PeerDescriptor>>,
+) -> impl IntoView {
 
     let (getter, setter) = create_slice(
         cluster_configuration,
@@ -119,17 +121,7 @@ pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
                     </tr>
                 </thead>
                     <tbody>
-                        <Suspense
-                            fallback=move || view! { <p>"Loading..."</p> }
-                        >
-                            {move || Suspend::new(async move {
-                                let peer_descriptors = peer_descriptors.await;
-                                let selected_devices = selected_devices();
-                                view! {
-                                    { render_peer_descriptors(peer_descriptors, selected_devices, getter, setter) }
-                                }
-                            })}
-                        </Suspense>        
+                        { move || render_peer_descriptors(peers.get(), selected_devices(), getter, setter) }
                     </tbody>
             </table>
         </div>
