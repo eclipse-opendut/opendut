@@ -1,7 +1,7 @@
 use crate::app::use_app_globals;
 use crate::components::health;
 use crate::components::health::Health;
-use crate::components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Initialized};
+use crate::components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
 use crate::peers::components::CreatePeerButton;
 use crate::util;
 use leptos::html::Div;

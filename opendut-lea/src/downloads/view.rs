@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 use crate::app::use_app_globals;
-use crate::components::{BasePageContainer, Breadcrumb, Initialized};
+use crate::components::{BasePageContainer, Breadcrumb};
 use crate::downloads::{CleoCard, EdgarCard};
 
 #[component(transparent)]

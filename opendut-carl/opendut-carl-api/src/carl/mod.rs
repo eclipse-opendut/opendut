@@ -209,10 +209,10 @@ cfg_if! {
 
 #[cfg(feature = "wasm-client")]
 pub mod wasm {
-    use leptos::prelude::{signal, provide_context};
+    use leptos::prelude::*;
     use tonic::codegen::InterceptedService;
 
-    use opendut_auth::public::{Auth, AuthInterceptor, OptionalAuthData};
+    use opendut_auth::public::{Auth, AuthInterceptor};
 
     use crate::carl::cluster::ClusterManager;
     use crate::carl::InitializationError;
@@ -228,11 +228,6 @@ pub mod wasm {
 
     impl CarlClient {
         pub async fn create(url: url::Url, auth: Option<Auth>) -> Result<CarlClient, InitializationError> {
-            let auth_data_signal = signal(
-                OptionalAuthData { auth_data: None }
-            );
-            provide_context(auth_data_signal);
-
             let scheme = url.scheme();
             if scheme != "https" {
                 return Err(InitializationError::ExpectedHttpsScheme { given_scheme: scheme.to_owned() });

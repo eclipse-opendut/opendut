@@ -26,10 +26,12 @@ pub fn LeaAuthenticated(
             let auth_token = move || auth_cloned.access_token();
 
             Effect::new(move |_| {
-                let (_auth_data, auth_data_write) = use_context::<(ReadSignal<OptionalAuthData>, WriteSignal<OptionalAuthData>)>().expect("AuthData should be provided in the context.");
+                let auth_data = use_context::<RwSignal<OptionalAuthData>>()
+                    .expect("AuthData should be provided in the context.");
+
                 if let Some(token) = auth_token() {
                     let data = decode_token(&token, lea_idp_config.issuer_url.as_ref());
-                    auth_data_write.set(OptionalAuthData {
+                    auth_data.set(OptionalAuthData {
                         auth_data: Some(
                             AuthData {
                                 preferred_username: data.claims.preferred_username.clone(),
@@ -42,7 +44,7 @@ pub fn LeaAuthenticated(
                         )
                     });
                 } else {
-                    auth_data_write.set(OptionalAuthData { auth_data: None });
+                    auth_data.set(OptionalAuthData { auth_data: None });
                     tracing::debug!("No access token present.");
                 }
             });

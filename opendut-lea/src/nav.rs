@@ -6,7 +6,6 @@ use opendut_auth::public::OptionalAuthData;
 
 use crate::components::{LeaAuthenticated, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Initialized};
 use crate::{routing, use_context};
-use crate::{WriteSignal, ReadSignal};
 use crate::user::UNAUTHENTICATED_USER;
 
 #[component(transparent)]
@@ -149,7 +148,7 @@ pub fn Navbar() -> impl IntoView {
 #[component]
 pub fn LoggedInUser() -> impl IntoView {
 
-    let (auth_data, _) = use_context::<(ReadSignal<OptionalAuthData>, WriteSignal<OptionalAuthData>)>().expect("AuthData should be provided in the context.");
+    let auth_data = use_context::<RwSignal<OptionalAuthData>>().expect("AuthData should be provided in the context.");
     let user_name  = move || {
         match auth_data.get().auth_data {
             None => { UNAUTHENTICATED_USER.to_string() }

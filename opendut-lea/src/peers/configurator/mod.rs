@@ -1,6 +1,6 @@
 use crate::app::use_app_globals;
 use crate::components::use_active_tab;
-use crate::components::{BasePageContainer, Breadcrumb, Initialized, UserInputError, UserInputValue};
+use crate::components::{BasePageContainer, Breadcrumb, UserInputError, UserInputValue};
 use crate::peers::configurator::components::Controls;
 use crate::peers::configurator::tabs::{DevicesTab, ExecutorTab, GeneralTab, NetworkTab, SetupTab, TabIdentifier};
 use crate::peers::configurator::types::{UserContainerEnv, UserDeviceConfiguration, UserNetworkInterface, UserPeerConfiguration, UserPeerExecutor, UserPeerExecutorKind, UserPeerNetwork};

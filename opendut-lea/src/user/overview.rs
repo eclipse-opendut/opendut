@@ -1,7 +1,7 @@
 use std::ops::Not;
 use leptos::prelude::*;
 use opendut_auth::public::OptionalAuthData;
-use crate::components::{BasePageContainer, Breadcrumb, Initialized};
+use crate::components::{BasePageContainer, Breadcrumb};
 use crate::user::UNAUTHENTICATED_USER;
 
 #[component]
@@ -14,9 +14,9 @@ pub fn UserOverview() -> impl IntoView {
         "testrole",
     ];
 
-    let (auth_data_signal, _) = use_context::<(ReadSignal<OptionalAuthData>, WriteSignal<OptionalAuthData>)>().expect("AuthData should be provided in the context.");
+    let auth_data = use_context::<RwSignal<OptionalAuthData>>().expect("AuthData should be provided in the context.");
 
-    match auth_data_signal.get().auth_data {
+    match auth_data.get().auth_data {
         None => {
             view! {
                 <CreateTableView

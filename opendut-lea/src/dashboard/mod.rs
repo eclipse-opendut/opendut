@@ -1,7 +1,6 @@
 use leptos::prelude::*;
 
 use crate::clusters::ClustersCard;
-use crate::components::Initialized;
 use crate::peers::PeersCard;
 
 #[component]

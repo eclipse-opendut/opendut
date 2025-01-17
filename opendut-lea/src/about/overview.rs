@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 use crate::app::use_app_globals;
-use crate::components::{BasePageContainer, Initialized};
+use crate::components::BasePageContainer;
 
 use shadow_rs::shadow;
 use opendut_types::proto::util::VersionInfo;
