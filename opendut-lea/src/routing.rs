@@ -118,7 +118,7 @@ mod routes {
                 />
                 <Route
                     path=path!("/about")
-                    view=move || view! { <Initialized app_globals><AboutOverview/></Initialized> }
+                    view=move || view! { <Initialized app_globals><AboutOverview/></Initialized> } //require Initialized to protect with authentication
                 />
                 <Route
                     path=path!("/licenses")
