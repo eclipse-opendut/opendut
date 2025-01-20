@@ -77,7 +77,7 @@ pub trait AppendCustomData {
 impl AppendCustomData for tar::Builder<GzEncoder<File>> {
     fn append_custom_data(&mut self, data: &str, file_name: PathBuf, mode: u32) -> std::io::Result<()> {
         let mut header = tar::Header::new_gnu();
-        header.set_size(data.as_bytes().len() as u64);
+        header.set_size(data.len() as u64);
         header.set_mode(mode);
         header.set_cksum();
         self.append_data(&mut header, file_name, data.as_bytes())
@@ -86,7 +86,7 @@ impl AppendCustomData for tar::Builder<GzEncoder<File>> {
 
 #[cfg(test)]
 mod test {
-    use std::{fs};
+    use std::fs;
     use std::fs::File;
     use std::str::FromStr;
     use assert_fs::assert::PathAssert;
