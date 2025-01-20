@@ -1,72 +1,18 @@
 use std::ops::Not;
-use gloo_net::http;
 use leptos::either::Either;
 use leptos::prelude::*;
-use leptos_oidc::Auth;
-use leptos_router::hooks::use_navigate;
 use opendut_auth::public::OptionalAuthData;
-use tracing::{error, info};
-use opendut_carl_api::carl::wasm::CarlClient;
-use crate::{app::{use_app_globals, AppConfig, AppGlobals, AppGlobalsError}, components::LoadingSpinner, routing::{navigate_to, WellKnownRoutes}};
+use crate::{app::{use_app_globals, AppGlobals, AppGlobalsError}, components::LoadingSpinner};
 
 #[must_use]
 #[component(transparent)]
 pub fn Initialized(
+    app_globals: AppGlobalsResource,
     children: ChildrenFn,
     #[prop(optional)] _groups: Vec<String>,
     #[prop(optional)] _roles: Vec<String>,
     #[prop(optional, default = true)] authentication_required: bool,
 ) -> impl IntoView {
-
-    let use_navigate = use_navigate();
-
-    let globals: LocalResource<Result<AppGlobals, AppGlobalsError>> = LocalResource::new(move || {
-        let use_navigate = use_navigate.clone();
-
-        async {
-            let config = http::Request::get("/api/lea/config")
-                .send().await
-                .map_err(|cause| AppGlobalsError { message: format!("Could not fetch configuration:\n  {cause}")})?
-                .json::<AppConfig>().await
-                .map_err(|cause| AppGlobalsError { message: format!("Could not parse configuration:\n  {cause}")})?;
-
-            info!("Configuration: {config:?}");
-
-            let maybe_auth = match config.auth_parameters {
-                Some(ref auth_parameters) => {
-                    info!("Auth parameters: {auth_parameters:?}");
-
-                    match Auth::init(auth_parameters.clone()).await {
-                        Ok(auth) => Some(auth),
-                        Err(error) => {
-                            let error_message = format!("Error while initializing the authentication stack: {error}");
-                            error!(error_message);
-
-                            navigate_to(
-                                WellKnownRoutes::ErrorPage {
-                                    title: String::from("Initialization error"),
-                                    text: error_message,
-                                    details: None,
-                                },
-                                use_navigate
-                            );
-                            None
-                        }
-                    }
-                },
-                None => None
-            };
-
-            let client = CarlClient::create(Clone::clone(&config.carl_url), maybe_auth.clone()).await
-                .expect("Failed to create CARL client");
-
-            Ok(AppGlobals {
-                config,
-                client,
-                auth: maybe_auth,
-            })
-        }
-    });
 
     let children = StoredValue::new(children);
 
@@ -75,7 +21,7 @@ pub fn Initialized(
             fallback=LoadingSpinner
         >
             {move || Suspend::new(async move {
-                let app_globals_result = globals.await;
+                let app_globals_result = app_globals.await;
 
                 match app_globals_result {
                     Ok(app_globals) => {
@@ -152,3 +98,5 @@ fn FallbackMessage(message: &'static str) -> impl IntoView {
         </p>
     }
 }
+
+pub type AppGlobalsResource = LocalResource<Result<AppGlobals, AppGlobalsError>>;

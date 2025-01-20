@@ -1,16 +1,19 @@
 
 use std::sync::Arc;
 
+use gloo_net::http;
 use leptos::prelude::*;
 use leptos_oidc::{Auth, AuthParameters};
+use leptos_router::hooks::use_navigate;
 use serde::{Deserialize, Deserializer};
+use tracing::{error, info};
 use url::Url;
 
 use opendut_carl_api::carl::wasm::CarlClient;
 
-use crate::components::Toaster;
+use crate::components::{AppGlobalsResource, Toaster};
 use crate::nav::Navbar;
-use crate::routing::AppRoutes;
+use crate::routing::{navigate_to, AppRoutes, WellKnownRoutes};
 
 #[derive(Clone, Debug)]
 pub struct AppGlobals {
@@ -89,13 +92,59 @@ pub struct AppGlobalsError {
 pub fn LoadingApp() -> impl IntoView {
     use leptos_router::components::Router;
 
+    let app_globals: AppGlobalsResource = LocalResource::new(move || {
+        async {
+            let config = http::Request::get("/api/lea/config")
+                .send().await
+                .map_err(|cause| AppGlobalsError { message: format!("Could not fetch configuration:\n  {cause}")})?
+                .json::<AppConfig>().await
+                .map_err(|cause| AppGlobalsError { message: format!("Could not parse configuration:\n  {cause}")})?;
+
+            info!("Configuration: {config:?}");
+
+            let maybe_auth = match config.auth_parameters {
+                Some(ref auth_parameters) => {
+                    info!("Auth parameters: {auth_parameters:?}");
+
+                    match Auth::init(auth_parameters.clone()).await {
+                        Ok(auth) => Some(auth),
+                        Err(error) => {
+                            let error_message = format!("Error while initializing the authentication stack: {error}");
+                            error!(error_message);
+
+                            navigate_to(
+                                WellKnownRoutes::ErrorPage {
+                                    title: String::from("Initialization error"),
+                                    text: error_message,
+                                    details: None,
+                                },
+                                use_navigate()
+                            );
+                            None
+                        }
+                    }
+                },
+                None => None
+            };
+
+            let client = CarlClient::create(Clone::clone(&config.carl_url), maybe_auth.clone()).await
+                .expect("Failed to create CARL client");
+
+            Ok(AppGlobals {
+                config,
+                client,
+                auth: maybe_auth,
+            })
+        }
+    });
+
     provide_context(Arc::new(Toaster::new()));
 
     view! {
         <Router>
-            <Navbar />
+            <Navbar app_globals />
             <main class="container">
-                <AppRoutes />
+                <AppRoutes app_globals />
             </main>
         </Router>
     }

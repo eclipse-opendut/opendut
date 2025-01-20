@@ -61,7 +61,7 @@ pub fn AboutOverview() -> impl IntoView {
                         }
                     })}
                 </Transition>
-                <a href="https://opendut.eclipse.dev/"><i class="fa-solid fa-arrow-up-right-from-square"></i>{ NON_BREAKING_SPACE } openDut Project Overview</a>
+                <a href="https://opendut.eclipse.dev/"><i class="fa-solid fa-arrow-up-right-from-square"></i>{ NON_BREAKING_SPACE } openDuT Project Overview</a>
             </div>
         </BasePageContainer>
     }

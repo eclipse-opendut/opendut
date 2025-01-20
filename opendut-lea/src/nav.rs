@@ -4,12 +4,12 @@ use leptos_oidc::components::{LoginLink, LogoutLink};
 use leptos_use::on_click_outside;
 use opendut_auth::public::OptionalAuthData;
 
-use crate::components::{LeaAuthenticated, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Initialized};
+use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Initialized, LeaAuthenticated, AppGlobalsResource};
 use crate::{routing, use_context};
 use crate::user::UNAUTHENTICATED_USER;
 
 #[component(transparent)]
-pub fn Navbar() -> impl IntoView {
+pub fn Navbar(app_globals: AppGlobalsResource) -> impl IntoView {
     #[component]
     fn inner() -> impl IntoView {
         let menu_visible = RwSignal::new(false);
@@ -138,6 +138,7 @@ pub fn Navbar() -> impl IntoView {
 
     view! {
         <Initialized
+            app_globals
             authentication_required=false
         >
             <Inner />

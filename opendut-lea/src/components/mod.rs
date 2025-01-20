@@ -1,5 +1,5 @@
 pub use auth::LeaAuthenticated;
-pub use authenticated::Initialized;
+pub use authenticated::{Initialized, AppGlobalsResource};
 pub use breadcrumbs::{Breadcrumb, Breadcrumbs};
 pub use buttons::button::SimpleButton;
 pub use buttons::confirmation_button::ConfirmationButton;

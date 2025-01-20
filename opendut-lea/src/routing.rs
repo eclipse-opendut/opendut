@@ -82,43 +82,43 @@ mod routes {
     use crate::user::UserOverview;
     use crate::about::AboutOverview;
     use crate::downloads::Downloads;
-    use crate::components::Initialized;
+    use crate::components::{Initialized, AppGlobalsResource};
 
     #[component]
-    pub fn AppRoutes() -> impl IntoView {
+    pub fn AppRoutes(app_globals: AppGlobalsResource) -> impl IntoView {
         view! {
             <FlatRoutes fallback=NotFound>
                 <Route
                     path=path!("/")
-                    view=|| view! { <Initialized><Dashboard/></Initialized> }
+                    view=move || view! { <Initialized app_globals><Dashboard/></Initialized> }
                 />
                 <Route
                     path=path!("/clusters")
-                    view=|| view! { <Initialized><ClustersOverview/></Initialized> }
+                    view=move || view! { <Initialized app_globals><ClustersOverview/></Initialized> }
                 />
                 <Route
                     path=path!("/clusters/:id/configure/:tab")
-                    view=|| view! { <Initialized><ClusterConfigurator/></Initialized> }
+                    view=move || view! { <Initialized app_globals><ClusterConfigurator/></Initialized> }
                 />
                 <Route
                     path=path!("/peers")
-                    view=|| view! { <Initialized><PeersOverview/></Initialized> }
+                    view=move || view! { <Initialized app_globals><PeersOverview/></Initialized> }
                 />
                 <Route
                     path=path!("/peers/:id/configure/:tab")
-                    view=|| view! { <Initialized><PeerConfigurator/></Initialized> }
+                    view=move || view! { <Initialized app_globals><PeerConfigurator/></Initialized> }
                 />
                 <Route
                     path=path!("/downloads")
-                    view=|| view! { <Initialized><Downloads/></Initialized> }
+                    view=move || view! { <Initialized app_globals><Downloads/></Initialized> }
                 />
                 <Route
                     path=path!("/user")
-                    view=|| view! { <Initialized><UserOverview/></Initialized> }
+                    view=move || view! { <Initialized app_globals><UserOverview/></Initialized> }
                 />
                 <Route
                     path=path!("/about")
-                    view=|| view! { <Initialized><AboutOverview/></Initialized> }
+                    view=move || view! { <Initialized app_globals><AboutOverview/></Initialized> }
                 />
                 <Route
                     path=path!("/licenses")
