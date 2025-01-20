@@ -90,8 +90,6 @@ indicatif = "0.17.7"
 indoc = "2.0.4"
 jsonwebtoken = "9.2.0"
 leptos = { version = "0.7.3" }
-# https://gitlab.com/GoodLucky777/leptos_oidc, version 0.7.0
-# TODO: change location
 leptos_oidc = { git = "https://gitlab.com/opendut/leptos_oidc", branch = "upgrade-leptos-0.7" }
 leptos_router = { version = "0.7.3" }
 leptos-use = { version = "0.15.5" }
