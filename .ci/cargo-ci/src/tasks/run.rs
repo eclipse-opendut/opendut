@@ -5,7 +5,7 @@ use std::process::Command;
 pub struct RunCli {
     /// Additional parameters to pass through to the started program
     #[arg(raw=true)]
-    pub pass_through: Vec<String>,
+    pub passthrough: Vec<String>,
 }
 
 impl RunCli {
@@ -13,7 +13,7 @@ impl RunCli {
     pub fn default_handling(&self, package: crate::Package) -> crate::Result {
         Command::new("cargo")
             .args(["run", "--package", &package.ident(), "--"])
-            .args(&self.pass_through)
+            .args(&self.passthrough)
             .status()?;
 
         Ok(())

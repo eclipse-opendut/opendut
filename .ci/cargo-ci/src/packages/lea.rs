@@ -37,7 +37,7 @@ impl LeaCli {
     pub fn default_handling(self) -> crate::Result {
         match self.task {
             TaskCli::Build => build::build()?,
-            TaskCli::Run(cli) => run::run(cli.pass_through)?,
+            TaskCli::Run(cli) => run::run(cli.passthrough)?,
             TaskCli::Licenses(cli) => cli.default_handling(PackageSelection::Single(PACKAGE))?,
             TaskCli::DistributionBuild => distribution_build::distribution_build()?,
         };
@@ -74,8 +74,8 @@ pub mod distribution_build {
 pub mod run {
     use super::*;
 
-    #[tracing::instrument]
-    pub fn run(pass_through: Vec<String>) -> crate::Result {
+    #[tracing::instrument(skip_all)]
+    pub fn run(passthrough: Vec<String>) -> crate::Result {
         install_requirements()?;
 
         Command::new("trunk")
@@ -83,7 +83,7 @@ pub mod run {
                 "watch",
                 "--release",
             ])
-            .args(pass_through)
+            .args(passthrough)
             .current_dir(self_dir())
             .run_requiring_success()?;
         Ok(())
