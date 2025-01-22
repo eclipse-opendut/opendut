@@ -1,0 +1,23 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Roll out openDuT Backend
+  # Setup steps as documented here: https://opendut.eclipse.dev/book/user-manual/carl/setup.html
+  hosts: backend
+  tasks:
+    - name: Checkout openDuT repo
+      ansible.builtin.git:
+        repo: "https://github.com/eclipse-opendut/opendut/"
+        dest: "{{ repo_dir }}"
+        version: "development"
+        force: true  # Avoid "would clobber existing tag" error for canary-tag
+
+    - name: Provision secrets
+      ansible.builtin.command:
+        cmd: "docker compose --file .ci/deploy/localenv/docker-compose.yml up --build provision-secrets"
+        chdir: "{{ repo_dir }}"
+        creates: "{{ repo_dir }}/.ci/deploy/localenv/data/secrets/.env"
+
+    - name: Start containers
+      ansible.builtin.command:
+        cmd: "docker compose --file .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/data/secrets/.env up --detach --build"
+        chdir: "{{ repo_dir }}"
