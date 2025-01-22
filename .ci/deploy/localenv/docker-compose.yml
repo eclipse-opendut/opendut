@@ -1,10 +1,10 @@
 # https://github.com/compose-spec/compose-spec/blob/master/spec.md#extension
 x-common-healthcheck-params: &common-healthcheck-params
-  interval: 1m
+  interval: 30s
   timeout: 10s
-  retries: 3
+  retries: 5
   start_period: 2m  # Probe failure during start will not be counted towards the maximum number of retries
-  start_interval: 5s
+  # start_interval: 5s  # This isn't yet supported on many hosts, as of 2025-01.
 
 name: opendut
 
