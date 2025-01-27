@@ -1,0 +1,139 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Create Peer configuration in CARL
+  hosts: edge
+  gather_facts: false
+  tasks:
+    - name: Set peer_name fact
+      ansible.builtin.set_fact:
+        peer_name: "{{ ansible_host }}"  # Persist, because the creation task is delegated to the backend, so has different value in ansible_host
+
+    - name: Create Peer in CARL
+      delegate_to: "{{ backend }}"
+      ansible.builtin.command:
+        cmd: "docker exec opendut-cleo opendut-cleo create peer --id={{ peer_id }} --name={{ peer_name }}"
+
+
+- name: Create /etc/hosts entry for backend
+  hosts: edge
+  gather_facts: false
+  tasks:
+    - name: Determine Backend IP
+      ansible.builtin.set_fact:
+        backend_ip: "{{ hostvars[backend]['ip_for_edge_hosts_file'] }}"
+
+    - name: Write /etc/hosts entry
+      ansible.builtin.blockinfile:
+        path: /etc/hosts
+        block: |
+          # {{ backend }}
+          {{ backend_ip }} opendut.local
+          {{ backend_ip }} auth.opendut.local
+          {{ backend_ip }} netbird.opendut.local
+          {{ backend_ip }} netbird-api.opendut.local
+          {{ backend_ip }} signal.opendut.local
+          {{ backend_ip }} carl.opendut.local
+          {{ backend_ip }} nginx-webdav.opendut.local
+          {{ backend_ip }} opentelemetry.opendut.local
+          {{ backend_ip }} monitoring.opendut.local
+
+
+- name: Fetch CARL certificate for EDGAR download
+  hosts: edge
+  gather_facts: false
+  vars:
+    ca_cert_dir: "/tmp/opendut/"
+    ca_cert_download: "/tmp/opendut/{{ backend }}.pem"
+  tasks:
+    - name: Fetch certificate from CARL
+      delegate_to: "{{ backend }}"
+      ansible.builtin.fetch:
+        src: "{{ hostvars[backend]['repo_dir'] }}/.ci/deploy/localenv/data/secrets/pki/insecure-development-ca.pem"
+        dest: "{{ ca_cert_download }}"
+        flat: true
+
+    - name: Set ca_cert fact
+      ansible.builtin.set_fact:
+        ca_cert: "/tmp/opendut/opendut-ca.crt"
+
+    - name: Create ca_cert_dir
+      ansible.builtin.file:
+        path: "{{ ca_cert_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Push certificate to edge host
+      ansible.builtin.copy:
+        src: "{{ ca_cert_download }}"
+        dest: "{{ ca_cert }}"
+        mode: "0644"
+
+
+- name: Download EDGAR from CARL
+  hosts: edge
+  gather_facts: false
+  vars:
+    arch_map:
+      x86_64: "x86_64-unknown-linux-gnu"
+      armv7l: "armv7-unknown-linux-gnueabihf"
+      aarch64: "aarch64-unknown-linux-gnu"
+    edgar_download: "/tmp/opendut/edgar.tar.gz"
+  tasks:
+    - name: Determine CPU architecture
+      ansible.builtin.command: "uname --machine"
+      register: uname_output
+
+    - name: Download EDGAR archive
+      ansible.builtin.get_url:
+        url: "https://carl.opendut.local/api/edgar/{{ arch_map[uname_output.stdout] }}/download"
+        dest: "{{ edgar_download }}"
+        mode: "0644"
+      environment:
+        SSL_CERT_FILE: "{{ ca_cert }}"
+
+    - name: Set edgar_unpack_dir fact
+      ansible.builtin.set_fact:
+        edgar_unpack_dir: "/tmp/opendut/edgar/"
+
+    - name: Create EDGAR unpack dir
+      ansible.builtin.file:
+        path: "{{ edgar_unpack_dir }}"
+        state: "directory"
+        mode: "0755"
+
+    - name: Unpack EDGAR archive
+      ansible.builtin.unarchive:
+        src: "{{ edgar_download }}"
+        remote_src: true
+        dest: "{{ edgar_unpack_dir }}"
+
+
+- name: Retrieve Setup-String from CARL
+  hosts: edge
+  gather_facts: false
+  tasks:
+    - name: Retrieve Setup-String from CARL
+      delegate_to: "{{ backend }}"
+      ansible.builtin.command:
+        cmd: "docker exec opendut-cleo opendut-cleo generate-setup-string {{ peer_id }}"
+      register: setup_string_output
+
+    - name: Store Setup-String
+      ansible.builtin.set_fact:
+        setup_string: "{{ setup_string_output.stdout }}"
+
+
+- name: Setup EDGARs
+  hosts: edge
+  gather_facts: false
+  tasks:
+    - name: Remove EDGAR config to avoid conflicts
+      # The OIDC ID and secret changes every time a Setup-String is generated, which leads to a config conflict during setup.
+      ansible.builtin.file:
+        path: "/etc/opendut/edgar.toml"
+        state: absent
+
+    - name: Run EDGAR Setup
+      ansible.builtin.command:
+        cmd: "opendut-edgar setup --no-confirm managed {{ setup_string }}"
+        chdir: "{{ edgar_unpack_dir }}"
