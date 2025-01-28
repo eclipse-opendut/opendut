@@ -2,7 +2,7 @@ use leptos::context::provide_context;
 use leptos::prelude::{Effect, Get, RwSignal, Set};
 use leptos_oidc::{Algorithm, Auth, AuthSignal, TokenData};
 use leptos_router::hooks::use_navigate;
-use serde::{Deserialize, Serialize};
+use opendut_auth::types::Claims;
 pub use overview::UserOverview;
 use crate::routing::{navigate_to, WellKnownRoutes};
 
@@ -19,6 +19,8 @@ pub enum AuthenticationConfigSwitch {
     Enabled,
 }
 
+pub type UserAuthenticationSignal = RwSignal<UserAuthentication>;
+
 #[derive(Debug, Clone, Default)]
 pub enum UserAuthentication {
     #[default]
@@ -26,6 +28,32 @@ pub enum UserAuthentication {
     Disabled,
     Unauthenticated,
     Authenticated(Option<Box<TokenData<Claims>>>),
+}
+
+impl UserAuthentication {
+    #[allow(unused)]  // TODO: use this shorthand for authorization
+    pub fn user(&self) -> Option<Box<TokenData<Claims>>> {
+        match self {
+            UserAuthentication::Authenticated(token) => {
+                token.clone()
+            }
+            _ => { None }
+        }
+    }
+    pub fn username(&self) -> String {
+        let name = match self {
+            UserAuthentication::Loading => { "loading" }
+            UserAuthentication::Disabled=> { "disabled" }
+            UserAuthentication::Unauthenticated=> { "unauthenticated" }
+            UserAuthentication::Authenticated(user) => {
+                match user {
+                    None => { UNAUTHENTICATED_USER }
+                    Some(user) => { &user.claims.preferred_username }
+                }
+            }
+        };
+        name.to_string()
+    }
 }
 
 
@@ -89,40 +117,4 @@ pub(crate) fn provide_authentication_signals_in_context() -> AuthSignal {
     });
     
     auth
-}
-
-// TODO: move to opendut-types
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub(crate) struct Claims {
-    /// Audience
-    #[serde(rename = "aud")]
-    audience: String,
-    /// Issued at (as UTC timestamp)
-    #[serde(rename = "iat")]
-    issued_at: usize,
-    /// Issuer
-    #[serde(rename = "iss")]
-    issuer: String,
-    /// Expiration time (as UTC timestamp)
-    #[serde(rename = "exp")]
-    expiration_utc: usize,
-    /// Subject (whom token refers to)
-    #[serde(rename = "sub")]
-    subject: String,
-    // Roles the user belongs to (custom claim if present)
-    #[serde(default = "Claims::empty_vector")]
-    roles: Vec<String>,
-    // Groups of the user (custom claim if present)
-    #[serde(default = "Claims::empty_vector")]
-    groups: Vec<String>,
-    // Name of the user
-    name: String,
-    // Email address of the user
-    email: String,
-    // Username of the user
-    pub preferred_username: String,
-}
-
-impl Claims {
-    pub(crate) fn empty_vector() -> Vec<String> { Vec::new() }
 }

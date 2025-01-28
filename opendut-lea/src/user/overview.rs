@@ -1,8 +1,9 @@
 use std::ops::Not;
 use leptos::either::EitherOf3;
 use leptos::prelude::*;
+use opendut_auth::types::Claims;
 use crate::components::{BasePageContainer, Breadcrumb};
-use crate::user::{Claims, UserAuthentication, UNAUTHENTICATED_USER};
+use crate::user::{UserAuthentication, UserAuthenticationSignal, UNAUTHENTICATED_USER};
 
 const DEFAULT_KEYCLOAK_ROLES: [&str; 4] = [
     "offline_access",
@@ -13,7 +14,7 @@ const DEFAULT_KEYCLOAK_ROLES: [&str; 4] = [
 
 #[component]
 pub fn UserOverview() -> impl IntoView {
-    let user = use_context::<RwSignal<UserAuthentication>>().expect("RwSignal<UserAuthentication> should be provided in the context.");
+    let user = use_context::<UserAuthenticationSignal>().expect("UserAuthenticationSignal should be provided in the context.");
 
     { move || { 
         match user.get() {
@@ -58,10 +59,10 @@ fn PresentUserTableView(
     let user_name = claims.preferred_username;
     let name = claims.name;
     let email = claims.email;
-    let roles = claims.roles.into_iter().filter(| role | {
+    let roles = claims.additional_claims.roles.into_iter().filter(| role | {
         DEFAULT_KEYCLOAK_ROLES.contains(&role.as_str()).not()
     }).collect::<Vec<_>>().join(", ");
-    let groups  = claims.groups.into_iter().map(| group | {
+    let groups  = claims.additional_claims.groups.into_iter().map(| group | {
         group.replace('/', "")
     }).collect::<Vec<_>>().join(", ");
 

@@ -1,9 +1,8 @@
 use leptos::{either::Either, prelude::*};
-use leptos_oidc::{Algorithm, AuthSignal};
 use opendut_types::peer::PeerId;
 
-use crate::{app::use_app_globals, components::{use_toaster, ButtonColor, ButtonState, SimpleButton, Toast, WarningMessage}, user::UNAUTHENTICATED_USER};
-use crate::user::Claims;
+use crate::{app::use_app_globals, components::{use_toaster, ButtonColor, ButtonState, SimpleButton, Toast, WarningMessage}};
+use crate::user::UserAuthenticationSignal;
 
 #[component]
 pub fn GenerateSetupStringForm(kind: GenerateSetupStringKind) -> impl IntoView {
@@ -16,12 +15,8 @@ pub fn GenerateSetupStringForm(kind: GenerateSetupStringKind) -> impl IntoView {
         let mut carl = globals.client.clone();
 
         async move {
-            let auth = use_context::<AuthSignal>().expect("AuthSignal should be provided in the context for LoggedInUser.");
-            let auth_data = auth.get();
-            // TODO: avoid redundant decoding of claims
-            let user_id = auth_data.authenticated()
-                    .and_then(|user| user.decoded_access_token::<Claims>(Algorithm::RS256, &["account"]).map(|token| token.claims.preferred_username))
-                    .unwrap_or_else(|| UNAUTHENTICATED_USER.to_string());
+            let user = use_context::<UserAuthenticationSignal>().expect("UserAuthenticationSignal should be provided in the context.");
+            let user_id = user.get().username();
             
             let trigger = trigger_setup_generation.get();
             if trigger {

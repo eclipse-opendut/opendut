@@ -43,19 +43,3 @@ impl Interceptor for AuthInterceptor {
         }
     }
 }
-
-#[derive(Clone, Debug)]
-pub struct OptionalAuthData {
-    pub auth_data: Option<AuthData>,
-}
-
-// TODO: remove
-#[derive(Clone, Debug)]
-pub struct AuthData {
-    pub preferred_username: String,
-    pub name: String,
-    pub email: String,
-    pub groups: Vec<String>,
-    pub roles: Vec<String>,
-    pub subject: String, // User identity in keycloak
-}

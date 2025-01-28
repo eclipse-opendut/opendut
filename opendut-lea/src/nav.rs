@@ -1,11 +1,11 @@
-use leptos::prelude::*;
 use leptos::html::Div;
+use leptos::prelude::*;
 use leptos_oidc::components::{LoginLink, LogoutLink};
 use leptos_use::on_click_outside;
 
-use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Initialized, LeaAuthenticated, AppGlobalsResource};
+use crate::components::{AppGlobalsResource, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Initialized, LeaAuthenticated};
+use crate::user::UserAuthenticationSignal;
 use crate::{routing, use_context};
-use crate::user::{UserAuthentication, UNAUTHENTICATED_USER};
 
 #[component(transparent)]
 pub fn Navbar(app_globals: AppGlobalsResource) -> impl IntoView {
@@ -148,21 +148,8 @@ pub fn Navbar(app_globals: AppGlobalsResource) -> impl IntoView {
 #[component]
 pub fn LoggedInUser() -> impl IntoView {
 
-    let user = use_context::<RwSignal<UserAuthentication>>().expect("RwSignal<UserAuthentication> should be provided in the context.");
-    // TODO: consolidate methods for this signal
-    let user_name  = move || {
-        match user.get() {
-            UserAuthentication::Loading => { "loading".to_string() }
-            UserAuthentication::Disabled=> { "disabled".to_string() }
-            UserAuthentication::Unauthenticated=> { "unauthenticated".to_string() }
-            UserAuthentication::Authenticated(user) => {
-                match user {
-                    None => { UNAUTHENTICATED_USER.to_string() }
-                    Some(user) => { user.claims.preferred_username }
-                }
-            }
-        }
-    };
+    let user = use_context::<UserAuthenticationSignal>().expect("UserAuthenticationSignal should be provided in the context.");
+    let user_name  = move || { user.get().username() };
 
     view! {
         <span class="ml-1 is-size-6">"Logged in as: " { user_name }</span>

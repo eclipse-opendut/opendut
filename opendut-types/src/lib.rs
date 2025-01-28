@@ -1,17 +1,17 @@
 use uuid::{Uuid, uuid};
 
+pub mod cleo;
 pub mod cluster;
+pub mod lea;
 pub mod peer;
 pub mod proto;
-pub mod topology;
-pub mod vpn;
-pub mod util;
 pub mod resources;
-pub mod cleo;
-
 #[cfg(feature = "specs")]
 pub mod specs;
-pub mod lea;
+pub mod topology;
+pub mod util;
+pub mod vpn;
+
 
 pub trait ShortName {
     fn short_name(&self) -> &'static str;

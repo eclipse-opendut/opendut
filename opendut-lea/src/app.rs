@@ -17,7 +17,7 @@ use crate::user::{provide_authentication_signals_in_context, AuthenticationConfi
 
 #[derive(Clone, Debug)]
 pub struct AppGlobals {
-    #[allow(dead_code)]
+    #[allow(unused)]  // TODO: use carl url as base in use_navigate/navigate_to
     pub config: AppConfig,
     pub client: CarlClient,
     pub auth: Authentication,
