@@ -142,5 +142,7 @@
 
     - name: Run EDGAR Setup
       ansible.builtin.command:
-        cmd: "opendut-edgar setup --no-confirm managed {{ setup_string }}"
+        cmd: "opendut-edgar/opendut-edgar setup --no-confirm managed {{ setup_string }}"
         chdir: "{{ edgar_unpack_dir }}"
+      environment:
+        OPENDUT_EDGAR_SERVICE_USER: root
