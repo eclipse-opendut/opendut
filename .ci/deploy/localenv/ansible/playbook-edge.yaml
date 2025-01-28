@@ -79,9 +79,19 @@
       aarch64: "aarch64-unknown-linux-gnu"
     edgar_download: "/tmp/opendut/edgar.tar.gz"
   tasks:
+    - name: Determine current date
+      delegate_to: "localhost"  # Assume localhost has a more accurate time than the edge hosts
+      ansible.builtin.command: "date --rfc-3339=seconds"
+      register: date_output
+      changed_when: false
+
+    - name: Set current date
+      ansible.builtin.command: "date --set='{{ date_output.stdout }}'"
+
     - name: Determine CPU architecture
       ansible.builtin.command: "uname --machine"
       register: uname_output
+      changed_when: false
 
     - name: Download EDGAR archive
       ansible.builtin.get_url:
