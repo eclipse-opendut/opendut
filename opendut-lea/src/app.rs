@@ -3,23 +3,23 @@ use std::sync::Arc;
 
 use gloo_net::http;
 use leptos::prelude::*;
-use leptos_oidc::{Auth, AuthParameters};
-use leptos_router::hooks::use_navigate;
+use leptos_oidc::{Auth, AuthParameters, AuthSignal};
 use serde::{Deserialize, Deserializer};
 use tracing::{error, info};
 use url::Url;
-
+use opendut_auth::public::Authentication;
 use opendut_carl_api::carl::wasm::CarlClient;
 
 use crate::components::{AppGlobalsResource, Toaster};
 use crate::nav::Navbar;
-use crate::routing::{navigate_to, AppRoutes, WellKnownRoutes};
+use crate::routing::AppRoutes;
+use crate::user::{provide_authentication_signals_in_context, AuthenticationConfigSwitch};
 
 #[derive(Clone, Debug)]
 pub struct AppGlobals {
     pub config: AppConfig,
     pub client: CarlClient,
-    pub auth: Option<Auth>,
+    pub auth: Authentication,
 }
 
 pub fn use_app_globals() -> AppGlobals {
@@ -90,7 +90,7 @@ pub struct AppGlobalsError {
 
 #[component]
 pub fn LoadingApp() -> impl IntoView {
-    use leptos_router::components::Router;
+    let _ = provide_authentication_signals_in_context();
 
     let app_globals: AppGlobalsResource = LocalResource::new(move || {
         async {
@@ -105,27 +105,41 @@ pub fn LoadingApp() -> impl IntoView {
             let maybe_auth = match config.auth_parameters {
                 Some(ref auth_parameters) => {
                     info!("Auth parameters: {auth_parameters:?}");
-
-                    match Auth::init(auth_parameters.clone()).await {
-                        Ok(auth) => Some(auth),
-                        Err(error) => {
-                            let error_message = format!("Error while initializing the authentication stack: {error}");
-                            error!(error_message);
-
-                            navigate_to(
-                                WellKnownRoutes::ErrorPage {
-                                    title: String::from("Initialization error"),
-                                    text: error_message,
-                                    details: None,
-                                },
-                                use_navigate()
-                            );
-                            None
-                        }
-                    }
+                    let _ = Auth::init(auth_parameters.clone());
+                    //let result = await_auth.loaded().await;
+                    // match result {
+                    //     Ok(auth) => Authentication::Enabled(auth),
+                    //     Err(error) => {
+                    //         let error_message = format!("Error while initializing the authentication stack: {error}");
+                    //         error!(error_message);
+                    // 
+                    //         navigate_to(
+                    //             WellKnownRoutes::ErrorPage {
+                    //                 title: String::from("Initialization error"),
+                    //                 text: error_message,
+                    //                 details: None,
+                    //             },
+                    //             use_navigate()
+                    //         );
+                    //         let auth = use_context::<AuthSignal>().expect("AuthSignal should be provided in app_globals.");
+                    //         Authentication::Enabled(auth)
+                    //     }
+                    // }
+                    let auth = use_context::<AuthSignal>().expect("AuthSignal should be provided in app_globals.");
+                    Authentication::Enabled(auth)
                 },
-                None => None
+                None => Authentication::Disabled
             };
+            
+            let auth_config_switch = use_context::<RwSignal<AuthenticationConfigSwitch>>().expect("RwSignal<AuthenticationConfigSwitch> should be provided in the context.");
+            match maybe_auth {
+                Authentication::Disabled => {
+                    auth_config_switch.set(AuthenticationConfigSwitch::Disabled);
+                }
+                Authentication::Enabled(_) => {
+                    auth_config_switch.set(AuthenticationConfigSwitch::Enabled);
+                }
+            }
 
             let client = CarlClient::create(Clone::clone(&config.carl_url), maybe_auth.clone()).await
                 .expect("Failed to create CARL client");
@@ -141,11 +155,9 @@ pub fn LoadingApp() -> impl IntoView {
     provide_context(Arc::new(Toaster::new()));
 
     view! {
-        <Router>
-            <Navbar app_globals />
-            <main class="container">
-                <AppRoutes app_globals />
-            </main>
-        </Router>
+        <Navbar app_globals />
+        <main class="container">
+            <AppRoutes app_globals />
+        </main>
     }
 }

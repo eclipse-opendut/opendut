@@ -1,61 +1,86 @@
 use std::ops::Not;
+use leptos::either::EitherOf3;
 use leptos::prelude::*;
-use opendut_auth::public::OptionalAuthData;
 use crate::components::{BasePageContainer, Breadcrumb};
-use crate::user::UNAUTHENTICATED_USER;
+use crate::user::{Claims, UserAuthentication, UNAUTHENTICATED_USER};
+
+const DEFAULT_KEYCLOAK_ROLES: [&str; 4] = [
+    "offline_access",
+    "uma_authorization",
+    "managerrole",
+    "testrole",
+];
 
 #[component]
 pub fn UserOverview() -> impl IntoView {
+    let user = use_context::<RwSignal<UserAuthentication>>().expect("RwSignal<UserAuthentication> should be provided in the context.");
 
-    const DEFAULT_KEYCLOAK_ROLES: [&str; 4] = [
-        "offline_access",
-        "uma_authorization",
-        "managerrole",
-        "testrole",
-    ];
-
-    let auth_data = use_context::<RwSignal<OptionalAuthData>>().expect("AuthData should be provided in the context.");
-
-    match auth_data.get().auth_data {
-        None => {
-            view! {
-                <CreateTableView
-                    preferred_username=UNAUTHENTICATED_USER
-                    name=""
-                    email=""
-                    groups=""
-                    roles=""
-                >
-                </CreateTableView>
+    { move || { 
+        match user.get() {
+            UserAuthentication::Loading | UserAuthentication::Disabled | UserAuthentication::Unauthenticated => {
+                EitherOf3::A(view!{ <AbsentUserTableView/> })
+            }
+            UserAuthentication::Authenticated(token) => {
+                match token {
+                    None => {
+                        EitherOf3::B(view! { <AbsentUserTableView/> })
+                    }
+                    Some(auth_data) => {
+                        let claims = auth_data.claims;
+                        EitherOf3::C(view! { <PresentUserTableView claims/> })
+                    }
+                }
             }
         }
-        Some(auth_data) => {
-            let user_name = auth_data.preferred_username;
-            let name = auth_data.name;
-            let email = auth_data.email;
-            let roles = auth_data.roles.into_iter().filter(| role | {
-                DEFAULT_KEYCLOAK_ROLES.contains(&role.as_str()).not()
-            }).collect::<Vec<_>>().join(", ");
-            let groups  = auth_data.groups.into_iter().map(| group | {
-                group.replace('/', "")
-            }).collect::<Vec<_>>().join(", ");
+    }}
+}
 
-            view! {
-                <CreateTableView
-                    preferred_username=user_name
-                    name=name
-                    email=email
-                    groups=groups
-                    roles=roles
-                >
-                </CreateTableView>
-            }
-        }
+#[component]
+fn AbsentUserTableView() -> impl IntoView {
+    
+    view! { 
+        <UserTableView
+            preferred_username=UNAUTHENTICATED_USER
+            name=""
+            email=""
+            groups=""
+            roles=""
+        >
+        </UserTableView>
     }
 }
 
 #[component]
-fn CreateTableView(
+fn PresentUserTableView(
+    claims: Claims
+) -> impl IntoView {
+
+    let user_name = claims.preferred_username;
+    let name = claims.name;
+    let email = claims.email;
+    let roles = claims.roles.into_iter().filter(| role | {
+        DEFAULT_KEYCLOAK_ROLES.contains(&role.as_str()).not()
+    }).collect::<Vec<_>>().join(", ");
+    let groups  = claims.groups.into_iter().map(| group | {
+        group.replace('/', "")
+    }).collect::<Vec<_>>().join(", ");
+
+    view! {
+        <UserTableView
+            preferred_username=user_name
+            name=name
+            email=email
+            groups=groups
+            roles=roles
+        >
+        </UserTableView>
+    }
+
+}
+
+
+#[component]
+fn UserTableView(
     #[prop(into)] preferred_username: String,
     #[prop(into)] name: String,
     #[prop(into)] email: String,

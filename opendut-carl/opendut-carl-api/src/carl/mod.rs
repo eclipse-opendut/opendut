@@ -212,7 +212,7 @@ pub mod wasm {
     use leptos::prelude::*;
     use tonic::codegen::InterceptedService;
 
-    use opendut_auth::public::{Auth, AuthInterceptor};
+    use opendut_auth::public::{AuthInterceptor, Authentication};
 
     use crate::carl::cluster::ClusterManager;
     use crate::carl::InitializationError;
@@ -227,7 +227,7 @@ pub mod wasm {
     }
 
     impl CarlClient {
-        pub async fn create(url: url::Url, auth: Option<Auth>) -> Result<CarlClient, InitializationError> {
+        pub async fn create(url: url::Url, auth: Authentication) -> Result<CarlClient, InitializationError> {
             let scheme = url.scheme();
             if scheme != "https" {
                 return Err(InitializationError::ExpectedHttpsScheme { given_scheme: scheme.to_owned() });

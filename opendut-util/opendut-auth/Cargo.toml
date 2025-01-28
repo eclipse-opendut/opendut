@@ -30,6 +30,7 @@ registration_client = [
 public_client = [
     "chrono",
     "http",
+    "leptos",
     "leptos_oidc",
     "tracing",
 ]
@@ -44,6 +45,7 @@ cfg-if = { workspace = true }
 chrono = { workspace = true, optional = true, default-features = false, features = ["clock", "serde", "wasmbind"] }
 config = { workspace = true, optional = true }
 http = { workspace = true, optional = true }
+leptos =  { workspace = true, optional = true }
 leptos_oidc =  { workspace = true, optional = true }
 openidconnect = { workspace = true, optional = true, default-features = false, features = ["reqwest-blocking"] }
 oauth2 = { workspace = true, default-features = false, optional = true, features = ["reqwest-blocking"] }

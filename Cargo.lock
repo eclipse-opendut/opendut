@@ -3074,7 +3074,7 @@ dependencies = [
 [[package]]
 name = "leptos_oidc"
 version = "0.8.0"
-source = "git+https://gitlab.com/opendut/leptos_oidc?branch=upgrade-leptos-0.7#52afdb98b3393b00966fa952e6647aaff5f126d3"
+source = "git+https://gitlab.com/opendut/leptos_oidc?branch=upgrade-leptos-0.7#f2fe5d5d5daff1752e8093e61b13b633da59646c"
 dependencies = [
  "chrono",
  "codee",
@@ -3722,6 +3722,7 @@ dependencies = [
  "config 0.14.0",
  "googletest",
  "http 1.2.0",
+ "leptos",
  "leptos_oidc",
  "oauth2 5.0.0-rc.1",
  "opendut-types",
