@@ -48,7 +48,7 @@
     - name: Fetch certificate from CARL
       delegate_to: "{{ backend }}"
       ansible.builtin.fetch:
-        src: "{{ hostvars[backend]['repo_dir'] }}/.ci/deploy/localenv/data/secrets/pki/insecure-development-ca.pem"
+        src: "{{ hostvars[backend]['repo_dir'] }}/.ci/deploy/localenv/data/secrets/pki/opendut-ca.pem"
         dest: "{{ ca_cert_download }}"
         flat: true
 

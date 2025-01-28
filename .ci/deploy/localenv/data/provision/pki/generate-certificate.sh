@@ -4,7 +4,7 @@ set -x
 
 PKI_ROOT_DIR="/provision/store"
 OPENDUT_PASSWORD_FILE="/provision/.env-pki"
-CA_PATH="$PKI_ROOT_DIR/insecure-development-ca"
+CA_PATH="$PKI_ROOT_DIR/opendut-ca"
 SERVERNAME="$1"
 CERT_PATH="$PKI_ROOT_DIR/$SERVERNAME"
 mkdir -p "$PKI_ROOT_DIR/deploy"
