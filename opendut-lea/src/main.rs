@@ -3,6 +3,7 @@
 use leptos::prelude::*;
 use tracing::info;
 use tracing_subscriber::fmt::format::Pretty;
+use tracing_subscriber::{filter, Layer};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
@@ -31,7 +32,13 @@ fn main() {
         .with_ansi(false)
         .without_time()
         .with_writer(tracing_web::MakeConsoleWriter)
-        .pretty();
+        .pretty()
+        .with_filter(
+            filter::Targets::default()
+                .with_default(tracing::Level::DEBUG)
+                .with_target("opendut", tracing::Level::TRACE)
+        );
+
     let perf_layer = tracing_web::performance_layer()
         .with_details_from_fields(Pretty::default());
 
