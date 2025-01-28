@@ -11,6 +11,7 @@ pub mod cleo;
 
 #[cfg(feature = "specs")]
 pub mod specs;
+pub mod lea;
 
 pub trait ShortName {
     fn short_name(&self) -> &'static str;

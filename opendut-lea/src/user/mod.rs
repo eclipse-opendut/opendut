@@ -40,11 +40,10 @@ pub(crate) fn provide_authentication_signals_in_context() -> AuthSignal {
     Effect::new(move || {
         let auth = auth.get();
         let auth_config_switch = auth_config_switch.get();
-        tracing::debug!("Running auth effect: {auth:?}");
+        tracing::debug!("Running auth effect switch: {auth_config_switch:?} auth: {auth:?}");
 
         match auth_config_switch {
             AuthenticationConfigSwitch::Loading => {
-                tracing::debug!("user loading");
                 user_auth.set(UserAuthentication::default());
             }
             AuthenticationConfigSwitch::Disabled => {
@@ -54,17 +53,17 @@ pub(crate) fn provide_authentication_signals_in_context() -> AuthSignal {
             AuthenticationConfigSwitch::Enabled => {
                 match auth {
                     Auth::Loading => {
-                        tracing::debug!("user still loading");
+                        tracing::trace!("user still loading");
                         user_auth.set(UserAuthentication::Loading);
                     }
                     Auth::Unauthenticated(_) => {
-                        tracing::debug!("user loaded, unauthenticated");
+                        tracing::trace!("user loaded, unauthenticated");
                         user_auth.set(UserAuthentication::Unauthenticated);
                     }
                     Auth::Authenticated(auth) => {
                         tracing::debug!("user authenticated");
                         let token = auth.decoded_access_token::<Claims>(Algorithm::RS256, &[DEFAULT_TOKEN_AUDIENCE])
-                            .map(|token| Box::new(token));
+                            .map(Box::new);
                         user_auth.set(UserAuthentication::Authenticated(token));
                     }
                     Auth::Error(error) => {

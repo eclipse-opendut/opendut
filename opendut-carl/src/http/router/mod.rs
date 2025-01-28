@@ -1,6 +1,6 @@
 use axum::extract::State;
 use axum::Json;
-use crate::http::state::LeaConfig;
+use opendut_types::lea::LeaConfig;
 
 pub mod cleo;
 pub mod edgar;

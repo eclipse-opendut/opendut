@@ -7,7 +7,7 @@ use leptos::prelude::*;
 use leptos_use::use_interval_fn;
 use leptos_use::utils::Pausable;
 use slotmap::{DefaultKey, SlotMap};
-use tracing::{debug, info};
+use tracing::{debug, info, trace};
 
 use crate::components::toast::builder::ToastBuilder;
 use crate::components::toast::container::Container;
@@ -68,7 +68,7 @@ impl Toaster {
 
     pub fn new() -> Self {
 
-        debug!("Creating toaster.");
+        trace!("Creating toaster.");
 
         let toasts: RwSignal<ToastMap> = RwSignal::new(ToastMap::new());
 

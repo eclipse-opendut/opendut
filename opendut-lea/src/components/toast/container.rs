@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use tracing::debug;
+use tracing::trace;
 
 use crate::components::toast::notification::Notification;
 use crate::components::toast::ToastMap;
@@ -9,7 +9,7 @@ pub fn Container(
     toasts: RwSignal<ToastMap>
 ) -> impl IntoView {
 
-    debug!("Creating toast container.");
+    trace!("Creating toast container.");
 
     let remove_toast = move |key| {
         toasts.update(|toasts| {
