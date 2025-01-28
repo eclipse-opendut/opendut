@@ -1,17 +1,14 @@
 #!/usr/bin/env ansible-playbook
 ---
 - name: Create Peer configuration in CARL
-  hosts: edge
+  hosts: backend
   gather_facts: false
+  vars:
+    apply_file: "{{ inventory_dir }}/{{ ansible_host }}.yaml"
   tasks:
-    - name: Set peer_name fact
-      ansible.builtin.set_fact:
-        peer_name: "{{ ansible_host }}"  # Persist, because the creation task is delegated to the backend, so has different value in ansible_host
-
-    - name: Create Peer in CARL
-      delegate_to: "{{ backend }}"
-      ansible.builtin.command:
-        cmd: "docker exec opendut-cleo opendut-cleo create peer --id={{ peer_id }} --name={{ peer_name }}"
+    - name: Include cleo-apply playbook
+      ansible.builtin.include_tasks: "include/cleo-apply.yaml"
+      when: apply_file is exists
 
 
 - name: Create /etc/hosts entry for backend

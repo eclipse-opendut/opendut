@@ -1,0 +1,18 @@
+- name: Set apply_dir fact
+  ansible.builtin.set_fact:
+    apply_file: "{{ ansible_host }}.yaml"
+    apply_dir: "/tmp/opendut/cleo/apply"
+
+- name: Upload to backend
+  ansible.builtin.copy:
+    src: "{{ inventory_dir }}/{{ apply_file }}"
+    dest: "{{ apply_dir }}"
+    mode: "0644"
+
+- name: Upload into CLEO container
+  ansible.builtin.command:
+    cmd: "docker cp {{ apply_dir }}/{{ apply_file }} opendut-cleo:/tmp/{{ apply_file }}"
+
+- name: Create Peer in CARL
+  ansible.builtin.command:
+    cmd: "docker exec opendut-cleo opendut-cleo apply /tmp/{{ apply_file }}"
