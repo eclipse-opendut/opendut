@@ -96,6 +96,9 @@ impl RegistrationClient {
                     openidconnect::registration::ClientRegistrationRequest::new(redirect_uris, additional_metadata)
                         .set_grant_types(Some(grant_types));
                 let registration_url = self.config.registration_url.clone();
+                
+                // delete client for given resource id if it exists
+                self.delete_client_by_resource_id(resource_id).await?;
 
                 let client_name: ClientName = ClientName::new(resource_id.to_string());
                 let resource_uri = self.config.client_home_base_url.resource_url(resource_id, user_id)
@@ -241,7 +244,7 @@ impl Clients {
     }
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Client {
     pub client_id: String,

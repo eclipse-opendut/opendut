@@ -16,7 +16,7 @@ use opendut_util_core::project;
 
 #[fixture]
 pub async fn confidential_carl_client() -> ConfidentialClientRef {
-    let issuer_url = "https://keycloak/realms/opendut/".to_string();  // This is the URL for the keycloak server in the test environment
+    let issuer_url = "https://keycloak.internal/realms/opendut/".to_string();  // This is the URL for the keycloak server in the test environment
     //let issuer_url = "http://192.168.56.10:8081/realms/opendut/".to_string();  // This is the URL for the keycloak server in the test environment (valid in host system and opendut-vm)
 
     let client_config = ConfidentialClientConfigData::new(
@@ -41,7 +41,7 @@ pub async fn registration_client(#[future] confidential_carl_client: Confidentia
      * Issuer URL for keycloak needs to align with FRONTEND_URL in Keycloak realm setting.
      * Localhost address is always fine, though.
      */
-    let issuer_remote_url_string = "https://keycloak/realms/opendut/".to_string();  // works inside OpenDuT-VM
+    let issuer_remote_url_string = "https://keycloak.internal/realms/opendut/".to_string();  // works inside OpenDuT-VM
     let issuer_remote_url = Url::parse(&issuer_remote_url_string).unwrap();
     let carl_idp_config = RegistrationClientConfig {
         issuer_remote_url: issuer_remote_url.clone(),
@@ -49,7 +49,7 @@ pub async fn registration_client(#[future] confidential_carl_client: Confidentia
         device_redirect_url: RedirectUrl::new(DEVICE_REDIRECT_URL.to_string()).unwrap(),
         client_home_base_url: ResourceHomeUrl::new(Url::parse("https://carl/resources/uuid-123").unwrap()),
         registration_url: RegistrationUrl::from_url(issuer_remote_url.join("clients-registrations/openid-connect").unwrap()),
-        issuer_admin_url: issuer_remote_url.join("https://keycloak/admin/realms/opendut/").unwrap(),
+        issuer_admin_url: issuer_remote_url.join("https://keycloak.internal/admin/realms/opendut/").unwrap(),
     };
     let client = confidential_carl_client.await;
     RegistrationClient::new(carl_idp_config, client)
@@ -73,7 +73,9 @@ mod auth_tests {
     async fn test_register_new_oidc_client(#[future] registration_client: RegistrationClientRef) {
         /*
          * This test is ignored because it requires a running keycloak server from the test environment.
-         * To run this test, execute the following command: cargo test -- --include-ignored
+         * To run this test, execute the following command in opendut-vm:
+         * export RUN_KEYCLOAK_INTEGRATION_TESTS=true
+         * cargo test -- --include-ignored
          */
         let client: RegistrationClientRef = registration_client.await;
         println!("{:?}", client);
@@ -90,6 +92,29 @@ mod auth_tests {
         
         client.delete_client_by_resource_id(resource_id).await.unwrap();
 
+        let client_list: Clients = client.list_clients().await.unwrap();
+        let filtered_client_list = client_list.filter_clients_by_resource_id(resource_id);
+        assert!(filtered_client_list.is_empty());
+    }
+
+    #[test_with::env(RUN_KEYCLOAK_INTEGRATION_TESTS)]
+    #[rstest]
+    #[tokio::test]
+    async fn test_register_oidc_client_twice(#[future] registration_client: RegistrationClientRef) {
+        const EXPECTED_CLIENT_COUNT: usize = 1;
+
+        let client: RegistrationClientRef = registration_client.await;
+        let resource_id = Id::random();
+        let user_id = UserId { value: String::from("deleteTest") };
+        let _credentials1 = client.register_new_client_for_user(resource_id, user_id.clone()).await.unwrap();
+        let _credentials2 = client.register_new_client_for_user(resource_id, user_id).await.unwrap();
+        let client_list: Clients = client.list_clients().await.unwrap();
+        let filtered_client_list = client_list.filter_clients_by_resource_id(resource_id);
+        println!("Clients: {filtered_client_list:?}");
+        let client_count = filtered_client_list.len();
+        assert_eq!(client_count, EXPECTED_CLIENT_COUNT);
+
+        client.delete_client_by_resource_id(resource_id).await.unwrap();
         let client_list: Clients = client.list_clients().await.unwrap();
         let filtered_client_list = client_list.filter_clients_by_resource_id(resource_id);
         assert!(filtered_client_list.is_empty());

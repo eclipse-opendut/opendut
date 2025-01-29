@@ -45,6 +45,7 @@ impl ResourceHomeUrl {
     }
 }
 
+#[derive(Clone)]
 pub struct UserId {
     pub value: String,
 }
