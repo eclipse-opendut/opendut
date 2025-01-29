@@ -153,6 +153,7 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
 
     match TlsConfig::load(&settings).await? {
         TlsConfig::Enabled(tls_config) => {
+            info!("Server listening at {address}...");
             axum_server::bind_rustls(address, tls_config)
                 .serve(Shared::new(http_grpc))
                 .await?;
@@ -161,6 +162,7 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
             // Disable TLS in case a load balancer with TLS termination is present
             debug!("TLS is disabled in the configuration.");
 
+            info!("Server listening at {address}...");
             axum_server::bind(address)
                 .serve(Shared::new(http_grpc))
                 .await?;
