@@ -341,7 +341,7 @@ services:
 
   carl:
     container_name: opendut-carl
-    image: "ghcr.io/eclipse-opendut/opendut-carl:0.4.0"
+    image: "ghcr.io/eclipse-opendut/opendut-carl:canary-0.5.0"
     command: ["/opt/opendut-carl/opendut-carl"]
     restart: unless-stopped
     depends_on:
