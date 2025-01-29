@@ -5,7 +5,7 @@ use leptos_router::hooks::use_navigate;
 use opendut_auth::types::Claims;
 pub use overview::UserOverview;
 use crate::routing::{navigate_to, WellKnownRoutes};
-
+use leptos_oidc::AuthenticatedData as LeptosOidcAuthenticatedData;
 /// In case authentication is disabled the user identity is not known
 pub const UNAUTHENTICATED_USER: &str = "unknown-user";
 mod overview;
@@ -27,26 +27,59 @@ pub enum UserAuthentication {
     Loading,
     Disabled,
     Unauthenticated,
-    Authenticated(Option<Box<TokenData<Claims>>>),
+    Authenticated(Box<AuthenticatedData>),
+}
+
+#[derive(Debug, Clone)]
+pub struct AuthenticatedData {
+    auth: LeptosOidcAuthenticatedData,
+    token: Option<TokenData<Claims>>,
 }
 
 impl UserAuthentication {
-    #[allow(unused)]  // TODO: use this shorthand for authorization
-    pub fn user(&self) -> Option<Box<TokenData<Claims>>> {
+    pub fn _user(&self) -> Option<TokenData<Claims>> {
         match self {
-            UserAuthentication::Authenticated(token) => {
-                token.clone()
+            UserAuthentication::Authenticated(data) => {
+                data.token.clone()
             }
             _ => { None }
         }
     }
+    pub fn _has_group(&self, group: &str) -> Option<bool> {
+        
+        match self {
+            UserAuthentication::Loading => { None }
+            UserAuthentication::Disabled=> { Some(true) }
+            UserAuthentication::Unauthenticated=> { Some(false) }
+            UserAuthentication::Authenticated(data) => {
+                match data.token.as_ref() {
+                    None => { Some(false) }
+                    Some(user) => { 
+                        Some(user.claims.additional_claims.has_group(group)) 
+                    }
+                }
+            }
+        }
+    }
+    
+    pub fn is_authenticated(&self) -> Option<bool> {
+        match self {
+            UserAuthentication::Loading => { None }
+            UserAuthentication::Disabled=> { Some(true) }
+            UserAuthentication::Unauthenticated=> { Some(false) }
+            UserAuthentication::Authenticated(data) => {
+                Some(data.auth.is_authenticated())
+            }
+        }
+    }
+
     pub fn username(&self) -> String {
         let name = match self {
             UserAuthentication::Loading => { "loading" }
             UserAuthentication::Disabled=> { "disabled" }
             UserAuthentication::Unauthenticated=> { "unauthenticated" }
-            UserAuthentication::Authenticated(user) => {
-                match user {
+            UserAuthentication::Authenticated(data) => {
+                match data.token.as_ref() {
                     None => { UNAUTHENTICATED_USER }
                     Some(user) => { &user.claims.preferred_username }
                 }
@@ -90,9 +123,8 @@ pub(crate) fn provide_authentication_signals_in_context() -> AuthSignal {
                     }
                     Auth::Authenticated(auth) => {
                         tracing::debug!("user authenticated");
-                        let token = auth.decoded_access_token::<Claims>(Algorithm::RS256, &[DEFAULT_TOKEN_AUDIENCE])
-                            .map(Box::new);
-                        user_auth.set(UserAuthentication::Authenticated(token));
+                        let token = auth.decoded_access_token::<Claims>(Algorithm::RS256, &[DEFAULT_TOKEN_AUDIENCE]);
+                        user_auth.set(UserAuthentication::Authenticated(Box::new(AuthenticatedData { auth, token })));
                     }
                     Auth::Error(error) => {
                         user_auth.set(UserAuthentication::Unauthenticated);

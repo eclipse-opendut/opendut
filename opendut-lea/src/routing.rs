@@ -70,8 +70,8 @@ impl WellKnownRoutes {
 
 mod routes {
     use leptos::prelude::*;
-    use leptos_router::components::{Route, FlatRoutes};
-    use leptos_router::path;
+    use leptos_router::components::{Route, ProtectedRoute, Routes};
+    use leptos_router::{path};
 
     use crate::clusters::{ClusterConfigurator, ClustersOverview};
     use crate::dashboard::Dashboard;
@@ -79,46 +79,74 @@ mod routes {
     use crate::licenses::LicensesOverview;
     use crate::peers::{PeerConfigurator, PeersOverview};
     use crate::routing::NotFound;
-    use crate::user::UserOverview;
+    use crate::user::{UserAuthenticationSignal, UserOverview};
     use crate::about::AboutOverview;
     use crate::downloads::Downloads;
-    use crate::components::{Initialized, AppGlobalsResource};
+    use crate::components::{Initialized, AppGlobalsResource, LoadingSpinner};
+    use crate::components::auth::LoginPage;
 
     #[component]
     pub fn AppRoutes(app_globals: AppGlobalsResource) -> impl IntoView {
+        let user = use_context::<UserAuthenticationSignal>().expect("UserAuthenticationSignal should be provided in the context.");
+        let opendut_user = move || user.get().is_authenticated();
+
         view! {
-            <FlatRoutes fallback=NotFound>
-                <Route
+            <Routes fallback=NotFound>
+                <ProtectedRoute
                     path=path!("/")
                     view=move || view! { <Initialized app_globals><Dashboard/></Initialized> }
+                    condition=opendut_user
+                    fallback=LoadingSpinner
+                    redirect_path=|| "/login"
                 />
-                <Route
+                <ProtectedRoute
                     path=path!("/clusters")
                     view=move || view! { <Initialized app_globals><ClustersOverview/></Initialized> }
+                    condition=opendut_user
+                    fallback=LoadingSpinner
+                    redirect_path=|| "/login"
                 />
-                <Route
+                <ProtectedRoute
                     path=path!("/clusters/:id/configure/:tab")
                     view=move || view! { <Initialized app_globals><ClusterConfigurator/></Initialized> }
+                    condition=opendut_user
+                    fallback=LoadingSpinner
+                    redirect_path=|| "/login"
                 />
-                <Route
+                <ProtectedRoute
                     path=path!("/peers")
                     view=move || view! { <Initialized app_globals><PeersOverview/></Initialized> }
+                    condition=opendut_user
+                    fallback=LoadingSpinner
+                    redirect_path=|| "/login"
                 />
-                <Route
+                <ProtectedRoute
                     path=path!("/peers/:id/configure/:tab")
                     view=move || view! { <Initialized app_globals><PeerConfigurator/></Initialized> }
+                    condition=opendut_user
+                    fallback=LoadingSpinner
+                    redirect_path=|| "/login"
                 />
-                <Route
+                <ProtectedRoute
                     path=path!("/downloads")
                     view=move || view! { <Initialized app_globals><Downloads/></Initialized> }
+                    condition=opendut_user
+                    fallback=LoadingSpinner
+                    redirect_path=|| "/login"
                 />
-                <Route
+                <ProtectedRoute
                     path=path!("/user")
                     view=move || view! { <Initialized app_globals><UserOverview/></Initialized> }
+                    condition=opendut_user
+                    fallback=LoadingSpinner
+                    redirect_path=|| "/login"
                 />
-                <Route
+                <ProtectedRoute
                     path=path!("/about")
                     view=move || view! { <Initialized app_globals><AboutOverview/></Initialized> } //require Initialized to protect with authentication
+                    condition=opendut_user
+                    fallback=LoadingSpinner
+                    redirect_path=|| "/login"
                 />
                 <Route
                     path=path!("/licenses")
@@ -129,10 +157,14 @@ mod routes {
                     view=ErrorPage
                 />
                 <Route
+                    path=path!("/login")
+                    view=move || view!{ <LoginPage app_globals/> }
+                />
+                <Route
                     path=path!("/*any")
                     view=NotFound
                 />
-            </FlatRoutes>
+            </Routes>
         }
     }
 }

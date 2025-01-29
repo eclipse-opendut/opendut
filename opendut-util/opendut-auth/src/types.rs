@@ -48,6 +48,12 @@ pub struct MyAdditionalClaims {
 
 impl MyAdditionalClaims {
     fn empty_vector() -> Vec<String> { Vec::new() }
+    pub fn has_group(&self, group: &str) -> bool {
+        self.groups.contains(&format!("/{group}"))
+    }
+    pub fn has_role(&self, role: &str) -> bool {
+        self.roles.contains(&role.to_string())
+    }
 }
 
 cfg_if! {

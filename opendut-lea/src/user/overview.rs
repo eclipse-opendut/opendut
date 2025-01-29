@@ -21,8 +21,8 @@ pub fn UserOverview() -> impl IntoView {
             UserAuthentication::Loading | UserAuthentication::Disabled | UserAuthentication::Unauthenticated => {
                 EitherOf3::A(view!{ <AbsentUserTableView/> })
             }
-            UserAuthentication::Authenticated(token) => {
-                match token {
+            UserAuthentication::Authenticated(data) => {
+                match data.token {
                     None => {
                         EitherOf3::B(view! { <AbsentUserTableView/> })
                     }

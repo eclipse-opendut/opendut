@@ -22,7 +22,7 @@ pub use warning_message::WarningMessage;
 pub mod health;
 pub mod tooltip;
 
-mod auth;
+pub mod auth;
 mod authenticated;
 mod buttons;
 mod breadcrumbs;

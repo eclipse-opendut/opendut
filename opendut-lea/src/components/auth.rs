@@ -1,9 +1,11 @@
 use leptos::either::Either;
 use leptos::prelude::*;
+use leptos_oidc::{LoginLink, LogoutLink};
 use opendut_auth::public::Authentication;
 
 use crate::app::use_app_globals;
-
+use crate::components::{AppGlobalsResource, BasePageContainer, Initialized, LoadingSpinner};
+use crate::routing;
 
 #[must_use]
 #[component(transparent)]
@@ -39,3 +41,46 @@ pub fn LeaAuthenticated(
     }
 }
 
+
+#[component]
+pub fn LoginPage(app_globals: AppGlobalsResource) -> impl IntoView {
+
+    view! {
+        <BasePageContainer
+            title="Login page"
+            breadcrumbs=Vec::new()
+            controls=|| ()
+        >
+            <Initialized
+                app_globals
+                authentication_required=false
+            >
+                <LeaAuthenticated
+                    unauthenticated=move || {
+                        view! {
+                            <p class="subtitle">"Please sign in."</p>
+                            <LoginLink class="button">
+                                <span class="ml-2 is-size-6">"Sign in"</span>
+                            </LoginLink>
+                            }
+                    }
+                    disabled_auth=move || {
+                        view! {
+                            <p class="subtitle">"Authentication disabled."</p>
+                            <a href=routing::path::dashboard class="button">
+                                <span class="ml-2 is-size-6">"Go to Dashboard"</span>
+                            </a>
+                        }
+                    }
+                    loading=LoadingSpinner
+                >
+                    <p class="subtitle">"Authenticated"</p>
+                    <LogoutLink class="button">
+                        <span class="ml-1 is-size-6">"Sign out"</span>
+                    </LogoutLink>
+                </LeaAuthenticated>
+            </Initialized>
+            
+        </BasePageContainer>
+    }
+}
