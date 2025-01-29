@@ -191,7 +191,7 @@ fn Row(
                 let configurator_href = move || { format!("/clusters/{}/configure/general", clusterId) };
                 view! {
                     <a href={ configurator_href }>{ cluster_name }</a>
-                }.into_view()
+                }
             }).collect();
 
         util::view::join_with_comma_spans(cluster_view_list)

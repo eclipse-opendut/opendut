@@ -59,7 +59,7 @@ fn InitializedAndAuthenticated(
 
     match use_app_globals().auth {
         Authentication::Disabled => {
-            children.read_value()().into_view().into_any()
+            Either::Left(children.read_value()().into_any())
         }
         Authentication::Enabled(auth) => {
 
@@ -70,14 +70,14 @@ fn InitializedAndAuthenticated(
                 is_authenticated() || authentication_required.not()
             };
 
-            (view! {
+            Either::Right(view! {
                 <Show
                     when=show_component
                     fallback=|| view! { <FallbackMessage message="You are currently not logged in."/> }
                 >
                     {children.read_value()()}
                 </Show>
-            }).into_any()
+            })
         }
     }
 }

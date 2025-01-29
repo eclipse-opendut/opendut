@@ -251,7 +251,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                 let configurator_href = move || { format!("/clusters/{}/configure/general", cluster_id) };
                 view! {
                     <a href={ configurator_href }>{ cluster_name }</a>
-                }.into_view()
+                }
             }).collect();
 
         let amount_clusters = cluster_view_list.len();
