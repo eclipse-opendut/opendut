@@ -11,14 +11,17 @@
         dest: "{{ repo_dir }}"
         version: "development"
         force: true  # Avoid "would clobber existing tag" error for canary-tag
+      register: repo_checkout
 
     - name: Provision secrets
       ansible.builtin.command:
         cmd: "docker compose --file .ci/deploy/localenv/docker-compose.yml up --build provision-secrets"
         chdir: "{{ repo_dir }}"
         creates: "{{ repo_dir }}/.ci/deploy/localenv/data/secrets/.env"
+      when: repo_checkout.changed
 
     - name: Start containers
       ansible.builtin.command:
         cmd: "docker compose --file .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/data/secrets/.env up --detach --build"
         chdir: "{{ repo_dir }}"
+      when: repo_checkout.changed
