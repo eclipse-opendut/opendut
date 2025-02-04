@@ -27,7 +27,7 @@ services:
       test: [ "CMD", "pg_isready", "--quiet", "--dbname=postgres", "--username=postgres" ]
     volumes:
       - keycloak_postgres_data:/var/lib/postgresql/data
-      - keycloak_postgres_backup:/var/lib/postgresql/backup
+      - /data/backup/opendut/:/var/lib/postgresql/backup
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=$KEYCLOAK_POSTGRES_PASSWORD
@@ -319,6 +319,7 @@ services:
       <<: *common-healthcheck-params
       test: ["CMD-SHELL", "turnutils_uclient -T -p $$TURN_PORT -u $$TURN_USER -w $$TURN_PASSWORD localhost"]
 
+
   carl-postgres:
     container_name: opendut-carl-postgres
     image: "postgres:14.15"
@@ -328,6 +329,7 @@ services:
       test: [ "CMD", "pg_isready", "--quiet", "--dbname=postgres", "--username=postgres" ]
     volumes:
       - carl_postgres_data:/var/lib/postgresql/data
+      - /data/backup/opendut/:/var/lib/postgresql/backup
     labels:
       - logging=promtail
       - logging_job=carl-postgres
@@ -618,7 +620,6 @@ services:
 
 volumes:
   keycloak_postgres_data:
-  keycloak_postgres_backup:
   netbird-mgmt-data:
   netbird-mgmt-config:
   netbird-signal:

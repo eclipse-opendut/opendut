@@ -1,0 +1,19 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Restore latest backup
+  hosts: backend
+  gather_facts: false
+  tasks:
+    - name: Restore database backups
+      ansible.builtin.shell:
+        cmd: |
+          docker exec {{ item }} sh -c "
+            backup_dir=/var/lib/postgresql/backup
+
+            newest_dir=\$(ls -t \$backup_dir | head -n1)
+
+            psql -U \$POSTGRES_USER \$POSTGRES_DB < \$backup_dir/\$newest_dir/{{ item }}.sql
+          "
+      loop:
+        - "opendut-keycloak-postgres"
+        - "opendut-carl-postgres"

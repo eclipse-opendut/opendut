@@ -1,0 +1,27 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Create backup
+  hosts: backend
+  gather_facts: false
+  tasks:
+    - name: Determine current date
+      ansible.builtin.command: "date --utc +'%Y%m%dT%H%M%SZ'"
+      register: date_output
+
+    - name: Set backup_id fact
+      ansible.builtin.set_fact:
+        backup_id: "{{ date_output.stdout }}"
+
+    - name: Backup databases
+      ansible.builtin.shell:
+        cmd: |
+          docker exec {{ item }} sh -c "
+            base_dir=/var/lib/postgresql/backup
+            backup_dir=\$base_dir/{{ backup_id }}
+            mkdir -p \$backup_dir
+
+            echo \$POSTGRES_PASSWORD | pg_dump --username=\$POSTGRES_USER \$POSTGRES_DB > \$backup_dir/{{ item }}.sql
+          "
+      loop:
+        - "opendut-keycloak-postgres"
+        - "opendut-carl-postgres"
