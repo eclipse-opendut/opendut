@@ -9,7 +9,7 @@
       ansible.builtin.git:
         repo: "https://github.com/eclipse-opendut/opendut/"
         dest: "{{ repo_dir }}"
-        version: "development"
+        version: "{{ opendut_version_ref }}"
         force: true  # Avoid "would clobber existing tag" error for canary-tag
       register: repo_checkout
 
