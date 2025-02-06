@@ -109,7 +109,7 @@ pub fn Navbar(app_globals: AppGlobalsResource) -> impl IntoView {
                                         unauthenticated=move || {
                                             view! {
                                                 <LoginLink class="dut-nav-flyout-item">
-                                                    <span class="ml-2 is-size-6">"Sign in"</span>
+                                                    <span class="is-size-6">"Sign in"</span>
                                                 </LoginLink>
 
                                             }
@@ -117,7 +117,7 @@ pub fn Navbar(app_globals: AppGlobalsResource) -> impl IntoView {
                                         disabled_auth=move || {
                                             view! {
                                                 <a href=routing::path::dashboard class="dut-nav-flyout-item">
-                                                    <span class="ml-2 is-size-6">"Sign in"</span>
+                                                    <span class="is-size-6">"Sign in"</span>
                                                 </a>
                                             }
                                         }>
