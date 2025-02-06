@@ -13,6 +13,7 @@ use opentelemetry::trace::{TraceError, TracerProvider};
 use opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 use tokio::sync::Mutex;
+use tracing::level_filters::LevelFilter;
 use tracing::{debug, error, trace};
 use tracing_subscriber::filter::Directive;
 use tracing_subscriber::filter::EnvFilter;
@@ -59,9 +60,10 @@ pub async fn initialize_with_config(
     let tracing_subscriber = tracing_subscriber::registry()
         .with(
             EnvFilter::builder()
-                .with_default_directive(Directive::from_str("opendut=trace")?)
+                .with_default_directive(LevelFilter::INFO.into())
                 .with_env_var("OPENDUT_LOG")
                 .from_env()?
+                .add_directive(Directive::from_str("opendut=trace")?)
         ).with(
             logging_config.logging_stdout
                 .then_some(tracing_subscriber::fmt::layer())
