@@ -16,9 +16,9 @@ pub fn NetworkInterfaceInput<A>(
 where A: Fn(NetworkInterfaceName, UserNetworkInterfaceConfiguration) + 'static {
 
     let (interface_name_getter, interface_name_setter) = signal(UserInputValue::Left(String::from(NON_BREAKING_SPACE)));
-    let (bitrate_getter, bitrate_setter) = signal(UserInputValue::Right(String::from("500000")));
+    let (bitrate_getter, bitrate_setter) = signal(UserInputValue::Right(String::from("500")));
     let (sample_point_getter, sample_point_setter) = signal(UserInputValue::Right(String::from("0.7")));
-    let (data_bitrate_getter, data_bitrate_setter) = signal(UserInputValue::Right(String::from("2000000")));
+    let (data_bitrate_getter, data_bitrate_setter) = signal(UserInputValue::Right(String::from("2000")));
     let (data_sample_point_getter, data_sample_point_setter) = signal(UserInputValue::Right(String::from("0.7")));
 
     let (getter_type, setter_type) = signal(InterfaceKind::Ethernet);
@@ -102,8 +102,8 @@ where A: Fn(NetworkInterfaceName, UserNetworkInterfaceConfiguration) + 'static {
                             getter = bitrate_getter.into()
                             setter = bitrate_setter.into()
                             validator = bitrate_validator
-                            label = "Bitrate in kbaud"
-                            placeholder = "1000"
+                            label = "Bitrate (kb/s)"
+                            placeholder = "500"
                         />
                     </div>
                     <div>
@@ -137,7 +137,7 @@ where A: Fn(NetworkInterfaceName, UserNetworkInterfaceConfiguration) + 'static {
                                             getter = data_bitrate_getter.into()
                                             setter = data_bitrate_setter.into()
                                             validator = bitrate_validator
-                                            label = "Data Bitrate in kbaud"
+                                            label = "Data Bitrate (kb/s)"
                                             placeholder = "1000"
                                         />
                                     </div>
@@ -226,10 +226,10 @@ where A: Fn(NetworkInterfaceName, UserNetworkInterfaceConfiguration) + 'static {
                                         let data_bitrate = data_bitrate_getter.get().right().unwrap();
 
                                         NetworkInterfaceConfiguration::Can {
-                                            bitrate: bitrate.parse::<u32>().unwrap(),
+                                            bitrate: bitrate.parse::<u32>().unwrap() * 1000,
                                             sample_point: CanSamplePoint::try_from(sample_point.parse::<f32>().unwrap()).unwrap(),
                                             fd: can_fd_getter_type.get(),
-                                            data_bitrate: data_bitrate.parse::<u32>().unwrap(),
+                                            data_bitrate: data_bitrate.parse::<u32>().unwrap() * 1000,
                                             data_sample_point: CanSamplePoint::try_from(data_sample_point.parse::<f32>().unwrap()).unwrap(),
                                         }
                                     }
@@ -298,7 +298,7 @@ mod test {
 
     #[test]
     fn test_bitrate_validator_succeeds() {
-        let input = "500000".to_string();
+        let input = "500".to_string();
         let validator_function = bitrate_validator(input);
         assert!(validator_function.is_right());
     }
