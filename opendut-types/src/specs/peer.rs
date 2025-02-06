@@ -43,10 +43,10 @@ pub enum NetworkInterfaceKind {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all="kebab-case")]
 pub struct NetworkInterfaceConfigurationSpecification {
-    pub bitrate_hz: u32,
+    pub bitrate_kbps: u32,
     pub sample_point: f32,
     pub fd: bool,
-    pub data_bitrate_hz: u32,
+    pub data_bitrate_kbps: u32,
     pub data_sample_point: f32,
 }
 

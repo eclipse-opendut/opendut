@@ -15,19 +15,19 @@ spec:
         name: vcan0
         kind: can
         parameters:
-          bitrate-hz: 500000
+          bitrate-kbps: 500
           sample-point: 0.7
           fd: false
-          data-bitrate-hz: 2000000
+          data-bitrate-kbps: 2000
           data-sample-point: 0.7
       - id: 1aad3ce5-0e84-41c3-98b2-3e4055b4727d
         name: vcan1
         kind: can
         parameters:
-          bitrate-hz: 500000
+          bitrate-kbps: 500
           sample-point: 0.7
           fd: false
-          data-bitrate-hz: 2000000
+          data-bitrate-kbps: 2000
           data-sample-point: 0.7
 
   topology:

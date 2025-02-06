@@ -40,10 +40,10 @@ spec:
       name: can0
       kind: can
       parameters:
-        bitrate-hz: 250000
+        bitrate-kbps: 250
         sample-point: 0.8
         fd: true
-        data-bitrate-hz: 500000
+        data-bitrate-kbps: 500
         data-sample-point: 0.8
   topology:
     devices:

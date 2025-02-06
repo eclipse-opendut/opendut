@@ -134,10 +134,15 @@ pub enum CanSamplePointError {
 pub enum NetworkInterfaceConfiguration {
     Ethernet,
     Can {
+        /// CAN 2.0 Bitrate in Baud
         bitrate: u32,
+        /// CAN 2.0 Sample Point between 0.0 and 1.0
         sample_point: CanSamplePoint,
+        /// Whether CAN FD should be used
         fd: bool,
+        /// CAN FD bitrate in Baud
         data_bitrate: u32,
+        /// CAN FD Sample Point between 0.0 and 1.0
         data_sample_point: CanSamplePoint,
     },
 }

@@ -64,11 +64,11 @@ fn convert_network_specification_to_descriptor(specification: NetworkInterfaceDe
             match specification.parameters {
                 Some(parameters) => {
                     NetworkInterfaceConfiguration::Can {
-                        bitrate: parameters.bitrate_hz,
+                        bitrate: parameters.bitrate_kbps * 1000,
                         sample_point: CanSamplePoint::try_from(parameters.sample_point)
                             .map_err(|error| format!("Could not use the provided sample point parameter for network interface <{}>:  {}", specification.id, error))?,
                         fd: parameters.fd,
-                        data_bitrate: parameters.data_bitrate_hz,
+                        data_bitrate: parameters.data_bitrate_kbps * 1000,
                         data_sample_point: CanSamplePoint::try_from(parameters.data_sample_point)
                             .map_err(|error| format!("Could not use the provided data sample point parameter for network interface <{}>:  {}", specification.id, error))?,
                     }
@@ -274,15 +274,15 @@ mod tests {
             kind: NetworkInterfaceKind::Can,
             parameters: Some(
                 NetworkInterfaceConfigurationSpecification {
-                    bitrate_hz: 500000,
+                    bitrate_kbps: 500,
                     sample_point: 0.7,
                     fd: true,
-                    data_bitrate_hz: 200000,
+                    data_bitrate_kbps: 2000,
                     data_sample_point: 0.7,
                 }
             ),
         };
-        
+
         let descriptor = NetworkInterfaceDescriptor {
             id: NetworkInterfaceId::from(specification.id),
             name: NetworkInterfaceName::try_from(specification.name.clone())?,
@@ -290,7 +290,7 @@ mod tests {
                 bitrate: 500000,
                 sample_point: CanSamplePoint::try_from(0.7)?,
                 fd: true,
-                data_bitrate: 200000,
+                data_bitrate: 2000000,
                 data_sample_point: CanSamplePoint::try_from(0.7)?,
             },
         };
