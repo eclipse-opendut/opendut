@@ -112,8 +112,10 @@ impl ConfidentialClient {
             .map_err(|error| ConfidentialClientError::UrlParse { message: String::from("Failed to derive token url from issuer url: "), cause: error })?;
         
         let operation = || {
-            self.reqwest_client.client.get(token_endpoint.clone()).send()?;
-            Ok(())
+            tokio::task::block_in_place(|| {
+                self.reqwest_client.client.get(token_endpoint.clone()).send()?;
+                Ok(())
+            })
         };
         
         let backoff_result = operation

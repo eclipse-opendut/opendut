@@ -61,6 +61,8 @@ services:
       - OPENDUT_CUSTOM_CA1
       - OPENDUT_CUSTOM_CA2
       - OPENDUT_HOSTS
+      # Logging
+      - OPENDUT_LOG=opentelemetry=debug  # show opentelemetry exporter logs
     # Rust backtrace
       - RUST_BACKTRACE=1
     healthcheck:

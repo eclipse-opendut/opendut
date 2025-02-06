@@ -38,14 +38,16 @@ impl OidcBlockingReqwestClient {
     }
 
     fn build_client(ca_certificate: Pem) -> anyhow::Result<Client> {
-        let reqwest_certificate = Certificate::from_pem(ca_certificate.to_string().as_bytes().iter().as_slice())
-            .map_err(|cause| OidcClientError::LoadCustomCA(cause.to_string()))?;
-        let client = Client::builder()
-            .redirect(reqwest::redirect::Policy::none())
-            .add_root_certificate(reqwest_certificate)
-            .build()
-            .map_err(|cause| OidcClientError::LoadCustomCA(cause.to_string()))?;
-        Ok(client)
+        tokio::task::block_in_place(|| {
+            let reqwest_certificate = Certificate::from_pem(ca_certificate.to_string().as_bytes().iter().as_slice())
+                .map_err(|cause| OidcClientError::LoadCustomCA(cause.to_string()))?;
+            let client = Client::builder()
+                .redirect(reqwest::redirect::Policy::none())
+                .add_root_certificate(reqwest_certificate)
+                .build()
+                .map_err(|cause| OidcClientError::LoadCustomCA(cause.to_string()))?;
+            Ok(client)
+        })
     }
 
     pub fn from_pem(ca_certificate: Pem) -> anyhow::Result<Self> {
@@ -72,30 +74,31 @@ impl OidcBlockingReqwestClient {
             .map_err(|cause| {
                 OidcClientError::AuthReqwest { message: cause.to_string(), status: cause.status().unwrap_or_default().to_string(), inner: cause }
             })?;
-        let response = client.execute(request)
-            .map_err(|cause: reqwest::Error| {
-                OidcClientError::AuthReqwest { message: cause.to_string(), status: cause.status().unwrap_or_default().to_string(), inner: cause }
-            })?;
-        let status_code = response.status();
-        let headers = response.headers().to_owned();
-        let data = response.bytes()
-            .map_err(|cause| {
-                OidcClientError::AuthReqwest { message: cause.to_string(), status: cause.status().unwrap_or_default().to_string(), inner: cause }
-            })?;
-
-        let returned_response = {
-            let mut returned_response = http::Response::builder()
-                .status(status_code);
-            for (name, value) in headers.iter() {
-                returned_response = returned_response.header(name, value);
-            }
-            returned_response
-                .body(data.to_vec())
+        tokio::task::block_in_place(move || {
+            let response = client.execute(request)
+                .map_err(|cause: reqwest::Error| {
+                    OidcClientError::AuthReqwest { message: cause.to_string(), status: cause.status().unwrap_or_default().to_string(), inner: cause }
+                })?;
+            let status_code = response.status();
+            let headers = response.headers().to_owned();
+            let data = response.bytes()
                 .map_err(|cause| {
-                    OidcClientError::Other(format!("Failed to build response body: {cause}"))
-                })?
-        };
+                    OidcClientError::AuthReqwest { message: cause.to_string(), status: cause.status().unwrap_or_default().to_string(), inner: cause }
+                })?;
 
-        Ok(returned_response)
+            let returned_response = {
+                let mut returned_response = http::Response::builder()
+                    .status(status_code);
+                for (name, value) in headers.iter() {
+                    returned_response = returned_response.header(name, value);
+                }
+                returned_response
+                    .body(data.to_vec())
+                    .map_err(|cause| {
+                        OidcClientError::Other(format!("Failed to build response body: {cause}"))
+                    })?
+            };
+            Ok(returned_response)
+        })
     }
 }
