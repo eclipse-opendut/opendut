@@ -55,8 +55,6 @@ yanked = "warn"
 ignore = [
     { id = "RUSTSEC-2023-0071", reason = "ignore until https://github.com/RustCrypto/RSA/issues/19 is resolved, tracked by issue #144" },
 
-    { id = "RUSTSEC-2024-0370", reason = "`proc-macro-error` crate is unmaintained. No actual vulnerability known. Will resolve itself when our dependencies update to not depend on `proc-macro-error` anymore." },
-
     { id = "RUSTSEC-2024-0384", reason = "`instant` library is unmaintained. No actual vulnerability known. Is depended on by the `reqwest-retry` crate, which does need to be updated. Tracked by issue #29." },
 ]
 

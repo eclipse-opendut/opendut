@@ -6,7 +6,7 @@ use opentelemetry_otlp::{MetricExporter, WithExportConfig, WithTonicConfig};
 use opentelemetry_sdk::metrics::{MetricError, SdkMeterProvider};
 use opentelemetry_sdk::{Resource, runtime};
 use simple_moving_average::{SMA, SumTreeSMA};
-use sysinfo::{Pid, System};
+use sysinfo::{Pid, ProcessesToUpdate, System};
 use tokio::sync::Mutex;
 use tokio::time::sleep;
 use opendut_auth::confidential::blocking::client::{ConfClientArcMutex, ConfidentialClientRef};
@@ -58,13 +58,13 @@ pub(super) fn initialize_os_metrics_collection(
     let (default_meter_provider, cpu_meter_provider) = meter_providers;
     let default_meter = default_meter_provider.meter_provider.meter(DEFAULT_METER_NAME);
 
-    let current_pid = std::process::id() as usize;
+    let current_pid = Pid::from_u32(std::process::id());
     default_meter.u64_observable_gauge("process_ram_used")
         .with_callback(move |observer| {
             let mut system = System::new_all();
-            system.refresh_processes();
+            system.refresh_processes(ProcessesToUpdate::Some(&[current_pid]), false);
 
-            if let Some(process) = system.process(Pid::from(current_pid)) {
+            if let Some(process) = system.process(current_pid) {
                 observer.observe(process.memory(), &[]);
             }
         })
@@ -84,16 +84,14 @@ pub(super) fn initialize_os_metrics_collection(
     let mutex_cloned = Arc::clone(&mutex);
 
     tokio::spawn(async move {
-        let current_pid = std::process::id() as usize;
-        let mut sys = System::new_all();
-        sys.refresh_processes();
+        let mut system = System::new_all();
         loop {
-            sleep(cpu_collection_interval_ms).await;
-            sys.refresh_processes();
-            if let Some(process) = sys.process(Pid::from(current_pid)) {
+            system.refresh_processes(ProcessesToUpdate::Some(&[current_pid]), false);
+            if let Some(process) = system.process(current_pid) {
                 let result = process.cpu_usage();
                 mutex_cloned.lock().await.add_sample(result as f64);
             }
+            sleep(cpu_collection_interval_ms).await;
         }
     });
 

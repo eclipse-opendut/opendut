@@ -1,3 +1,5 @@
-fn main() -> shadow_rs::SdResult<()> {
-    shadow_rs::new() //collect build information for use at runtime
+fn main() {
+    //collect build information for use at runtime
+    shadow_rs::ShadowBuilder::builder()
+        .build().unwrap();
 }
