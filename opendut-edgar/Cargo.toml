@@ -8,6 +8,7 @@ license.workspace = true
 [dependencies]
 opendut-carl-api = { workspace = true, features = ["client"] }
 opendut-edgar-kernel-modules = { workspace = true }
+opendut-edgar-plugin-api = { workspace = true, features = ["host"] }
 opendut-netbird-client-api = { workspace = true }
 opendut-model = { workspace = true }
 opendut-util = { workspace = true, features = ["crypto"] }
@@ -49,15 +50,11 @@ tracing-opentelemetry = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
 url = { workspace = true }
 walkdir = { workspace = true }
+wasmtime = { workspace = true }
+wasmtime-wasi = { workspace = true }
 which = { workspace = true }
 zip = { workspace = true }
 
-# Wasmtime is not available for armv7 so plugin support needs to be disabled
-# https://docs.wasmtime.dev/stability-tiers.html#unsupported-features-and-platforms
-[target.'cfg(not(target_arch = "arm"))'.dependencies]
-opendut-edgar-plugin-api = { workspace = true, features = ["host"] }
-wasmtime = { workspace = true }
-wasmtime-wasi = { workspace = true }
 
 [dev-dependencies]
 assert_fs = { workspace = true }

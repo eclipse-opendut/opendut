@@ -144,7 +144,7 @@ pub async fn cli() -> anyhow::Result<()> {
                     if logs.is_empty().not() {
                         print!("{logs}");
                     } else {
-                        println!("No logs found."); //TODO test
+                        println!("No logs found.");
                     }
                 }
             };
@@ -161,12 +161,6 @@ async fn setup_run_common_prelude() -> anyhow::Result<()> {
         .collect::<Vec<_>>();
     info!("EDGAR Setup started!");
     info!("Setup command being executed: {:?}", user_command);
-
-    #[cfg(target_arch = "arm")]
-    {
-        println!("Running on ARMv7 / ARM32. Plugins cannot be used on this architecture.");
-        info!("Running on ARMv7 / ARM32. Plugins cannot be used on this architecture. For more information, see: https://github.com/bytecodealliance/wasmtime/issues/1173")
-    }
 
     Ok(())
 }

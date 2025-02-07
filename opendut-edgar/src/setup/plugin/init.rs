@@ -58,7 +58,7 @@ fn read_plugin_order(plugins_dir: &Path) -> anyhow::Result<Vec<PathBuf>> {
     let config = fs::read_to_string(&config_path)?;
     let potential_plugin_paths = config.lines()
         .map(|line| line.trim())
-        .filter(|line| line.is_empty().not()) //FIXME
+        .filter(|line| line.is_empty().not())
         .map(PathBuf::from);
 
     let mut paths: Vec<PathBuf> = vec![];
