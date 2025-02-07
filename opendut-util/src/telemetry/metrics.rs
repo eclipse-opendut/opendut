@@ -9,7 +9,7 @@ use simple_moving_average::{SMA, SumTreeSMA};
 use sysinfo::{Pid, ProcessesToUpdate, System};
 use tokio::sync::Mutex;
 use tokio::time::sleep;
-use opendut_auth::confidential::blocking::client::{ConfClientArcMutex, ConfidentialClientRef};
+use opendut_auth::confidential::client::{ConfClientArcMutex, ConfidentialClientRef};
 use crate::telemetry::DEFAULT_METER_NAME;
 use crate::telemetry::opentelemetry_types::Endpoint;
 use opentelemetry_sdk::metrics::PeriodicReader;

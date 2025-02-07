@@ -19,7 +19,7 @@ use tracing_subscriber::filter::Directive;
 use tracing_subscriber::filter::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-use opendut_auth::confidential::blocking::client::{AuthError, ConfClientArcMutex};
+use opendut_auth::confidential::client::{AuthError, ConfClientArcMutex};
 use opendut_auth::confidential::error::ConfidentialClientError;
 use crate::telemetry::logging::{LoggingConfig, LoggingConfigError};
 use crate::telemetry::metrics::{NamedMeterProvider, NamedMeterProviderKindCpu, NamedMeterProviderKindDefault, NamedMeterProviders};

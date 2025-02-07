@@ -1,13 +1,19 @@
 use std::fmt::Formatter;
 use std::ops::Sub;
+use std::str::FromStr;
 use std::sync::Arc;
-
+use std::time::Duration;
+use backon::BlockingRetryable;
 use chrono::{NaiveDateTime, Utc};
 use config::Config;
 use oauth2::basic::BasicTokenResponse;
 use oauth2::{AccessToken, TokenResponse};
-use tokio::sync::{RwLock, RwLockWriteGuard};
+use tokio::sync::{Mutex, RwLock, RwLockWriteGuard, TryLockError};
+use tonic::{Request, Status};
+use tonic::metadata::MetadataValue;
+use tonic::service::Interceptor;
 use tracing::debug;
+use backon::Retryable;
 
 use crate::confidential::config::{ConfidentialClientConfig, ConfidentialClientConfigData, ConfiguredClient};
 use crate::confidential::error::{ConfidentialClientError, WrappedRequestTokenError};
@@ -36,6 +42,8 @@ pub enum AuthError {
     FailedToGetToken { message: String, cause: WrappedRequestTokenError },
     #[error("ExpirationFieldMissing: {message}.")]
     ExpirationFieldMissing { message: String },
+    #[error("FailedToUpdateToken: {message} cause: {cause}.")]
+    FailedToLockConfidentialClient { message: String, cause: TryLockError },
 }
 
 #[derive(Clone)]
@@ -70,8 +78,12 @@ impl ConfidentialClient {
                 debug!("OIDC configuration loaded: client_id='{}', issuer_url='{}'", client_config.client_id.as_str(), client_config.issuer_url.as_str());
                 let reqwest_client = OidcReqwestClient::from_config(settings).await
                     .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to create reqwest client."), cause: cause.into() })?;
-                let client = ConfidentialClient::from_client_config(client_config, reqwest_client).await?;
-                Ok(Some(client))
+                let client = ConfidentialClient::from_client_config(client_config.clone(), reqwest_client).await?;
+
+                match client.check_connection(client_config).await {
+                    Ok(_) => { Ok(Some(client)) }
+                    Err(error) => { Err(error) }
+                }
             }
             ConfidentialClientConfig::AuthenticationDisabled => {
                 debug!("OIDC is disabled.");
@@ -91,6 +103,38 @@ impl ConfidentialClient {
         };
         Ok(Arc::new(client))
     }
+    async fn check_connection(&self, idp_config: ConfidentialClientConfigData) -> Result<(), ConfidentialClientError> {
+
+        let token_endpoint = idp_config.issuer_url.join("protocol/openid-connect/token")
+            .map_err(|error| ConfidentialClientError::UrlParse { message: String::from("Failed to derive token url from issuer url: "), cause: error })?;
+
+        let operation = move || {
+            let client = self.reqwest_client.client.clone();
+            let token_endpoint = token_endpoint.clone();
+            async move {
+                client.get(token_endpoint.clone()).send().await
+            }
+        };
+
+        let backoff_result = operation
+            .retry(
+                backon::ExponentialBuilder::default()
+                    .with_max_delay(Duration::from_secs(120))
+            )
+            .sleep(tokio::time::sleep)
+            .notify(|err: &reqwest::Error, dur: Duration| {
+                println!("Retrying connection to issuer. {:?} after {:?}", err, dur);
+            })
+            .await;
+
+        match backoff_result {
+            Ok(_) => { Ok(()) }
+            Err(error) => {
+                Err(ConfidentialClientError::KeycloakConnection { message: String::from("Could not connect to keycloak"), cause: error })
+            }
+        }
+    }
+
     fn update_storage_token(response: &BasicTokenResponse, state: &mut RwLockWriteGuard<Option<TokenStorage>>) -> Result<Token, AuthError> {
         let access_token = response.access_token().clone();
         let expires_in = match response.expires_in() {
@@ -146,6 +190,67 @@ impl ConfidentialClient {
     pub async fn check_login(&self) -> Result<bool, AuthError> {
         let token = self.get_token().await?;
         Ok(!token.value.is_empty())
+    }
+}
+
+#[derive(Clone)]
+pub struct ConfClientArcMutex<T: Clone + Send + Sync + 'static>(pub Arc<Mutex<T>>);
+
+impl Interceptor for ConfClientArcMutex<Option<ConfidentialClientRef>> {
+    fn call(&mut self, mut request: Request<()>) -> Result<Request<()>, Status> {
+
+        let cloned_arc_mutex = Arc::clone(&self.0);
+
+        let operation = || {
+            let mutex_guard = cloned_arc_mutex.try_lock()?;
+            Ok(mutex_guard)
+        };
+
+        let backoff_result = operation
+            .retry(
+                backon::ExponentialBuilder::default()
+                    .with_max_delay(Duration::from_secs(120))
+            )
+            .call();
+
+        let token = match backoff_result {
+            Ok(mutex_guard) => {
+                let confidential_client= mutex_guard.clone();
+                /*
+                  This tokio task delegation is used to bridge sync with async code. Otherwise, the following error occurs:
+                  `Cannot start a runtime from within a runtime. This happens because a function (like `block_on`) attempted to block the current thread while the thread is being used to drive asynchronous tasks.`
+                  
+                  Code running inside `tokio::task::block_in_place` may use block_on to reenter the async context.
+                 */
+                tokio::task::block_in_place(move || {
+                    confidential_client.map(|client| {
+                        tokio::runtime::Handle::current().block_on(async move {
+                            client.get_token().await
+                        })
+                    })
+                })
+            }
+            Err(error) => {
+                eprintln!("Failed to acquire lock on the Confidential Client definitively. The following telemetry data will not be transmitted.");
+                eprintln!("Failed request: {:?}", request);
+                Some(Err(AuthError::FailedToLockConfidentialClient { message: "Unable to acquire lock on the Confidential Client".to_owned(), cause: error }))
+            }
+        };
+
+        match token {
+            None => { Ok(request) }
+            Some(token_result) => {
+                match token_result {
+                    Ok(token) => {
+                        let token_string = token.value.as_str();
+                        let bearer_header = format!("Bearer {token_string}");
+                        request.metadata_mut().insert(http::header::AUTHORIZATION.as_str(), MetadataValue::from_str(&bearer_header).expect("Cannot create metadata value from bearer header"));
+                        Ok(request)
+                    }
+                    Err(error) => { Err(Status::unauthenticated(format!("{}", error))) }
+                }
+            }
+        }
     }
 }
 

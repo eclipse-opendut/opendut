@@ -4,7 +4,7 @@ use opentelemetry::KeyValue;
 use opentelemetry_sdk::logs::{LogError, LoggerProvider};
 use opentelemetry_otlp::{LogExporter, WithExportConfig, WithTonicConfig};
 use opentelemetry_sdk::{Resource, runtime};
-use opendut_auth::confidential::blocking::client::{ConfClientArcMutex, ConfidentialClientRef};
+use opendut_auth::confidential::client::{ConfClientArcMutex, ConfidentialClientRef};
 use crate::telemetry::opentelemetry_types::Endpoint;
 
 #[derive(Default)]

@@ -3,7 +3,7 @@ use opentelemetry::trace::TraceError;
 use opentelemetry_otlp::{SpanExporter, WithExportConfig, WithTonicConfig};
 use opentelemetry_sdk::{Resource, runtime};
 use opentelemetry_sdk::trace::TracerProvider;
-use opendut_auth::confidential::blocking::client::{ConfClientArcMutex, ConfidentialClientRef};
+use opendut_auth::confidential::client::{ConfClientArcMutex, ConfidentialClientRef};
 use crate::telemetry::opentelemetry_types::Endpoint;
 
 pub(crate) fn init_tracer(

@@ -1,6 +1,6 @@
 use std::time::Duration;
 use url::Url;
-use opendut_auth::confidential::blocking::client::{ConfidentialClient, ConfidentialClientRef};
+use opendut_auth::confidential::client::{ConfidentialClient, ConfidentialClientRef};
 use opendut_auth::confidential::error::ConfidentialClientError;
 
 #[derive(Default)]
