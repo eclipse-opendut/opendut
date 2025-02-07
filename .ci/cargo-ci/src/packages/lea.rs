@@ -50,7 +50,8 @@ pub mod build {
 
     #[tracing::instrument]
     pub fn build() -> crate::Result {
-        build_impl(out_dir())
+        let release = false;
+        build_impl(release, out_dir())
     }
 
     pub fn out_dir() -> PathBuf {
@@ -63,7 +64,8 @@ pub mod distribution_build {
 
     #[tracing::instrument]
     pub fn distribution_build() -> crate::Result {
-        build_impl(out_dir())
+        let release = true;
+        build_impl(release, out_dir())
     }
 
     pub fn out_dir() -> PathBuf {
@@ -79,10 +81,7 @@ pub mod run {
         install_requirements()?;
 
         Command::new("trunk")
-            .args([
-                "watch",
-                "--release",
-            ])
+            .arg("watch")
             .args(passthrough)
             .current_dir(self_dir())
             .run_requiring_success()?;
@@ -103,19 +102,23 @@ pub fn self_dir() -> PathBuf {
     repo_path!("opendut-lea/")
 }
 
-fn build_impl(out_dir: PathBuf) -> crate::Result {
+fn build_impl(release: bool, out_dir: PathBuf) -> crate::Result {
     install_requirements()?;
 
     let working_dir = self_dir();
 
     fs::create_dir_all(&out_dir)?;
 
-    Command::new("trunk")
-        .args([
-            "build",
-            "--release",
-            "--dist", &out_dir.display().to_string(),
-        ])
+    let mut command = Command::new("trunk");
+    command.arg("build");
+
+    if release {
+        command.arg("--release");
+    }
+
+    command.arg("--dist").arg(&out_dir);
+
+    command
         .current_dir(working_dir)
         .run_requiring_success()?;
 
