@@ -5,7 +5,7 @@ use crate::{app::use_app_globals, components::{use_toaster, ButtonColor, ButtonS
 use crate::user::UserAuthenticationSignal;
 
 #[component]
-pub fn GenerateSetupStringForm(kind: GenerateSetupStringKind) -> impl IntoView {
+pub fn GenerateSetupStringForm(kind: Signal<GenerateSetupStringKind>) -> impl IntoView {
 
     let globals = use_app_globals();
 
@@ -17,10 +17,10 @@ pub fn GenerateSetupStringForm(kind: GenerateSetupStringKind) -> impl IntoView {
         async move {
             let user = use_context::<UserAuthenticationSignal>().expect("UserAuthenticationSignal should be provided in the context.");
             let user_id = user.get().username();
-            
+
             let trigger = trigger_setup_generation.get();
             if trigger {
-                let setup_string = match kind {
+                let setup_string = match kind.get() {
                     GenerateSetupStringKind::Edgar(peer_id) => {
                         let setup = carl.peers.create_peer_setup(peer_id, user_id.clone()).await
                             .expect("Failed to request the setup string.");

@@ -29,7 +29,7 @@ where A: Fn(NetworkInterfaceName, UserNetworkInterfaceConfiguration) + 'static {
             interfaces.iter()
                 .cloned()
                 .filter(|interface| {
-                    interface.get().name == name
+                    interface.get_untracked().name == name
                 })
                 .collect::<Vec<_>>()
         })

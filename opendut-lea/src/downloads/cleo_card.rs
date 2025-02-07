@@ -53,7 +53,7 @@ pub fn CleoCard(
                 </div>
                 <div class="mt-5">
                     <div class="field">
-                        <GenerateSetupStringForm kind=GenerateSetupStringKind::Cleo />
+                        <GenerateSetupStringForm kind={Signal::derive(move || GenerateSetupStringKind::Cleo)} />
                     </div>
                 </div>
             </div>

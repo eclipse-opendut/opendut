@@ -17,7 +17,7 @@ pub enum StateKind {
 }
 
 #[component]
-pub fn Health(state: ReadSignal<State>) -> impl IntoView {
+pub fn Health(state: Signal<State>) -> impl IntoView {
 
     let (tooltip_visible, set_tooltip_visible) = signal(false);
 

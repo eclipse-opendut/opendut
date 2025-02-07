@@ -134,7 +134,7 @@ fn ExecutorEngineInput<>(
         }
     );
     
-    let value = getter.with(|engine| match engine {
+    let value = move || getter.with(|engine| match engine {
         Engine::Docker => { "Docker" }
         Engine::Podman => { "Podman" }
     });
@@ -143,7 +143,7 @@ fn ExecutorEngineInput<>(
         Engine::iter()
             .map(|engine| {
                 let engine_value = engine.to_string();
-                if engine_value == value {
+                if engine_value == value() {
                     Either::Left(view! {
                         <option selected>{engine_value}</option>
                     })

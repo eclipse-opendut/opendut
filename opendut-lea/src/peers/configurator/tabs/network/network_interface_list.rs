@@ -119,14 +119,17 @@ fn Row(
         }
     });
 
-    let user_network_interface = network_interface.get();
-    let network_interface_name = Signal::derive(
-        move || user_network_interface.name.name()
+    let user_network_interface = Signal::derive(
+        move || network_interface.get()
     );
+    let network_interface_name = move || user_network_interface.get().name.name();
 
-    let network_configuration_id = user_network_interface.id;
 
     let network_interface_function = move || {
+        let user_network_interface = user_network_interface.get_untracked();
+
+        let network_configuration_id = user_network_interface.id;
+
         match &user_network_interface.configuration.inner {
             NetworkInterfaceConfiguration::Ethernet => {
                 (

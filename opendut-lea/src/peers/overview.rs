@@ -147,8 +147,8 @@ fn Row(
     let configurator_href = move || { format!("/peers/{}/configure/general", peer_id.get()) };
     let setup_href = move || { format!("/peers/{}/configure/setup", peer_id.get()) };
 
-    let (health_state, _) = {
-        let state = match peer_state.get() {
+    let health_state = Signal::derive(move || {
+        match peer_state.get() {
             PeerState::Down => {
                 health::State {
                     kind: health::StateKind::Unknown,
@@ -161,9 +161,8 @@ fn Row(
                     text: String::from("Connected. No errors."),
                 }
             }
-        };
-        signal(state)
-    };
+        }
+    });
 
     let dropdown_active = RwSignal::new(false);
     let dropdown = NodeRef::<Div>::new();

@@ -40,7 +40,6 @@ pub fn ClusterConfigurator() -> impl IntoView {
         let carl = globals.client.clone();
 
         LocalResource::new(move || {
-            let cluster_configuration = cluster_configuration.clone();
             let cluster_id = cluster_id.get();
             let mut carl = carl.clone();
 

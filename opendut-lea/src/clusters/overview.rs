@@ -230,7 +230,7 @@ where
 
     let _ = on_click_outside(dropdown, move |_| dropdown_active.set(false) );
 
-    let (health_state, _) = signal({
+    let health_state = Signal::derive(move || {
         if is_deployed.get().0 {
             health::State {
                 kind: health::StateKind::Yellow,

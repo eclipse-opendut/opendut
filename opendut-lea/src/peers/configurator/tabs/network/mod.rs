@@ -21,7 +21,8 @@ pub fn NetworkTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl I
          },
          |peer_configuration, mut value: Vec<RwSignal<UserNetworkInterface>>| {
              value.sort_by(|user_network_interface_left, user_network_interface_right| {
-                 user_network_interface_left.get().configuration.display_name().cmp(&user_network_interface_right.get().configuration.display_name())
+                 user_network_interface_left.get().configuration.display_name()
+                    .cmp(&user_network_interface_right.get().configuration.display_name())
              });
              peer_configuration.network.network_interfaces = value;
          }
@@ -34,14 +35,14 @@ pub fn NetworkTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl I
                 interfaces
                 on_action = move |name, configuration| {
                     let mut interfaces = interfaces.get_untracked();
-                    let user_peer_network = RwSignal::new(
+                    let interface = RwSignal::new(
                         UserNetworkInterface {
                             id: NetworkInterfaceId::random(),
                             name,
                             configuration
                         }
                     );
-                    interfaces.push(user_peer_network);
+                    interfaces.push(interface);
                     set_interfaces.set(interfaces);
                 }
             />
@@ -49,9 +50,7 @@ pub fn NetworkTab(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl I
             <NetworkInterfaceList interfaces peer_configuration />
         </div>
         <div class="box">
-            <BridgeNameInput
-                peer_configuration
-            />
+            <BridgeNameInput peer_configuration />
         </div>
     }
 }
