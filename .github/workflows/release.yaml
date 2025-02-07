@@ -34,25 +34,21 @@ jobs:
 
   build-carl:
     uses: ./.github/workflows/job-build-carl.yaml
-    needs: [ test ]
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
   build-cleo:
     uses: ./.github/workflows/job-build-cleo.yaml
-    needs: [ test ]
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
   build-edgar:
     uses: ./.github/workflows/job-build-edgar.yaml
-    needs: [ test ]
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
   build-lea:
     uses: ./.github/workflows/job-build-lea.yaml
-    needs: [ test ]
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
@@ -75,7 +71,7 @@ jobs:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
   publish-release:
-    needs: [ bundle-carl, bundle-cleo, bundle-edgar, generate-sbom ]
+    needs: [ test, bundle-carl, bundle-cleo, bundle-edgar, generate-sbom ]
     uses: ./.github/workflows/job-publish-release.yaml
     permissions:
       contents: write
@@ -83,7 +79,7 @@ jobs:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_SMALL || '[\"ubuntu-latest\"]' }}"
 
   publish-docker:
-    needs: [ bundle-carl ]
+    needs: [ test, bundle-carl ]
     uses: ./.github/workflows/job-publish-docker.yml
     permissions:
       packages: write  # required to publish Docker images

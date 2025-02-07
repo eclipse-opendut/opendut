@@ -44,31 +44,26 @@ jobs:
 
   build-carl:
     uses: ./.github/workflows/job-build-carl.yaml
-    needs: [ test ]
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
   build-cleo:
     uses: ./.github/workflows/job-build-cleo.yaml
-    needs: [ test ]
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
   build-theo:
     uses: ./.github/workflows/job-build-theo.yaml
-    needs: [ test ]
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
   build-edgar:
     uses: ./.github/workflows/job-build-edgar.yaml
-    needs: [ test ]
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
   build-lea:
     uses: ./.github/workflows/job-build-lea.yaml
-    needs: [ test ]
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
@@ -98,7 +93,7 @@ jobs:
 
   run-testenv:
     uses: ./.github/workflows/job-run-testenv.yaml
-    needs: [ legal, bundle-carl, bundle-edgar, bundle-cleo ]
+    needs: [ build-theo, bundle-carl, bundle-edgar, bundle-cleo ]
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
       # run-testenv: "${{ github.event.inputs.run-testenv }}"
