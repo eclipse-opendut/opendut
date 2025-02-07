@@ -17,7 +17,8 @@ pub struct WriteConfiguration {
     config_file_to_write_to: PathBuf,
     config_merge_suggestion_file: PathBuf,
     config_override: ConfigOverride,
-    require_confirmation: bool,
+    no_confirm: bool,
+    user_attended: bool,
 }
 pub struct ConfigOverride {
     pub peer_id: PeerId,
@@ -99,9 +100,9 @@ impl WriteConfiguration {
             self.config_file_to_write_to.exists().not()
             || self.config_file_to_write_to.metadata()?.len() == 0;
 
-        let should_overwrite = if target_file_empty {
+        let should_overwrite = if target_file_empty || self.no_confirm {
             true
-        } else if self.require_confirmation {
+        } else if self.user_attended {
             crate::setup::user_confirmation_prompt("Settings file already exists, but contains mismatched configurations! Do you want to overwrite it?")?
         } else {
             false
@@ -131,7 +132,8 @@ impl WriteConfiguration {
             config_file_to_write_to: settings::default_config_file_path(),
             config_merge_suggestion_file: constants::default_config_merge_suggestion_file_path(),
             config_override,
-            require_confirmation: if no_confirm { false } else { console::user_attended() },
+            no_confirm,
+            user_attended: console::user_attended(),
         }
     }
 
@@ -390,7 +392,8 @@ mod tests {
             config_file_to_write_to: fixture.config_file_to_write_to.to_path_buf(),
             config_merge_suggestion_file: fixture.config_merge_suggestion_file.to_path_buf(),
             config_override,
-            require_confirmation: false, //always disabled in unit tests
+            no_confirm: false,
+            user_attended: false, // prevent hanging in unit tests
         }
     }
     enum AuthEnabled { Yes, No }
