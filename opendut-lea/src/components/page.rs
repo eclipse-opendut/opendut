@@ -14,7 +14,7 @@ where C: IntoView + 'static {
     view! {
 
         <div class="container is-fluid">
-            <Breadcrumbs breadcrumbs=breadcrumbs />
+            <Breadcrumbs breadcrumbs />
             <div class="dut-base-page">
                 <div class="dut-base-page-header columns is-vcentered">
                     <div class="column">

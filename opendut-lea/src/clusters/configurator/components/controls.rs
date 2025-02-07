@@ -13,17 +13,17 @@ use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton
 use crate::routing::{navigate_to, WellKnownRoutes};
 
 #[component]
-pub fn Controls(cluster_configuration: ReadSignal<UserClusterConfiguration>, deployed_signal: RwSignal<IsDeployed>) -> impl IntoView {
+pub fn Controls(cluster_configuration: ReadSignal<UserClusterConfiguration>, deployed_signal: Signal<IsDeployed>) -> impl IntoView {
 
-    let (info_text, _) =
-        signal({
+    let info_text =
+        Signal::derive(move || {
             if deployed_signal.get().0 {
                 String::from("Cluster can not be updated or deleted while it is deployed.")
             } else {
                 String::new()
             }
         });
-    
+
     view! {
         <div class="is-flex is-align-items-center">
             <p style="color: #C11B17; margin-right: 8px" >{info_text}</p>
@@ -36,7 +36,7 @@ pub fn Controls(cluster_configuration: ReadSignal<UserClusterConfiguration>, dep
 }
 
 #[component]
-fn SaveClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>, deployed_signal: RwSignal<IsDeployed>) -> impl IntoView {
+fn SaveClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>, deployed_signal: Signal<IsDeployed>) -> impl IntoView {
 
     let globals = use_app_globals();
     let toaster = use_toaster();
@@ -111,7 +111,7 @@ fn SaveClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>
 }
 
 #[component]
-fn DeleteClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>, deployed_signal: RwSignal<IsDeployed>) -> impl IntoView {
+fn DeleteClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>, deployed_signal: Signal<IsDeployed>) -> impl IntoView {
 
     let globals = use_app_globals();
 

@@ -22,13 +22,14 @@ pub fn ClusterConfigurator() -> impl IntoView {
     let globals = use_app_globals();
     let params = use_params_map();
 
-    let cluster_id = params.with(|params| {
-        params.get("id").and_then(|id| ClusterId::try_from(id.as_str()).ok())
-    }).unwrap_or_else(ClusterId::random);
+    let cluster_id = Signal::derive(move || params.with(|params| {
+        params.get("id")
+            .and_then(|id| ClusterId::try_from(id.as_str()).ok())
+    }).unwrap_or_else(ClusterId::random));
 
     let cluster_configuration = RwSignal::new(
         UserClusterConfiguration {
-            id: cluster_id,
+            id: cluster_id.get_untracked(),
             name: UserInputValue::Left(String::from("Enter a valid cluster name.")),
             devices: DeviceSelection::Left(String::from("Select at least two devices.")),
             leader: LeaderSelection::Left(String::from("Select a leader.")),
@@ -39,6 +40,8 @@ pub fn ClusterConfigurator() -> impl IntoView {
         let carl = globals.client.clone();
 
         LocalResource::new(move || {
+            let cluster_configuration = cluster_configuration.clone();
+            let cluster_id = cluster_id.get();
             let mut carl = carl.clone();
 
             async move {
@@ -82,7 +85,7 @@ fn LoadedClusterConfigurator(
 ) -> impl IntoView {
     let globals = use_app_globals();
 
-    let cluster_id = create_read_slice(cluster_configuration, |config| config.id);
+    let cluster_id = Signal::derive(move || cluster_configuration.get().id);
 
     let breadcrumbs = Signal::derive(move || {
         let cluster_id = cluster_id.get().0.to_string();
@@ -107,39 +110,33 @@ fn LoadedClusterConfigurator(
     };
 
 
-    let deployed_clusters = move || {
+    let deployed_clusters = Signal::derive(move || {
         match cluster_deployments.get() {
             Some(deployed_clusters) => {
                 deployed_clusters.iter().map(|cluster_deployment| cluster_deployment.id).collect::<Vec<_>>()
             }
             None => Vec::new()
         }
-    };
+    });
 
-    let deployed_rw_signal = move || {
-        RwSignal::new(IsDeployed(deployed_clusters().contains(&cluster_id.get())))
-    };
-
-    let is_deployed = move || {
-        Signal::derive(move || {
-            IsDeployed(deployed_clusters().contains(&cluster_id.get())).0
-        })
-    };
+    let deployed_signal = Signal::derive(move || IsDeployed(
+        deployed_clusters.get().contains(&cluster_id.get())
+    ));
 
     view! {
         <BasePageContainer
             title="Configure Cluster"
-            breadcrumbs=breadcrumbs
+            breadcrumbs
             controls=move || {
                 view! {
                     <Controls
                         cluster_configuration=cluster_configuration.read_only()
-                        deployed_signal=deployed_rw_signal()
+                        deployed_signal
                     />
                 }
             }
         >
-            <fieldset prop:disabled=is_deployed()>
+            <fieldset prop:disabled=move || { deployed_signal.get().0 }>
 
                 <div class="tabs">
                     <ul>
