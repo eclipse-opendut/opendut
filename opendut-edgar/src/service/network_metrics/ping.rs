@@ -6,13 +6,14 @@ use tokio::time::sleep;
 use tracing::{error, trace};
 use opendut_types::cluster::PeerClusterAssignment;
 
-pub async fn cluster_ping(peers: Vec<PeerClusterAssignment>, ping_interval_ms: Duration) {
+pub fn spawn_cluster_ping(peers: Vec<PeerClusterAssignment>, ping_interval_ms: Duration) {
+
     let meter = global::meter(opendut_util::telemetry::DEFAULT_METER_NAME);
     let rtt = meter.f64_gauge("round_trip_time").build();
 
     let rtt_mutex = Arc::new(Mutex::new(rtt));
 
-    tokio::spawn(async move {
+    tokio::spawn(async move { //TODO terminate this thread when the remote IP changes
         let data = [1, 2, 3, 4];
         let options = ping_rs::PingOptions { ttl: 128, dont_fragment: true };
         loop {

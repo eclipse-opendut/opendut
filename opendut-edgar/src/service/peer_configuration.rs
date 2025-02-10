@@ -1,7 +1,7 @@
 use std::fmt::Formatter;
 use opendut_types::cluster::{ClusterAssignment, PeerClusterAssignment};
 use opendut_types::util::net::NetworkInterfaceName;
-use tracing::{debug, error, info, trace, warn};
+use tracing::{debug, error, info, trace};
 use std::sync::Arc;
 use opendut_types::peer::configuration::{parameter, OldPeerConfiguration, Parameter, ParameterTarget, PeerConfiguration};
 use opendut_util::project;
@@ -99,11 +99,14 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
     executor_manager.terminate_executors();
     executor_manager.create_new_executors(peer_configuration.executors);
 
-    setup_cluster_metrics(
-        &old_peer_configuration.cluster_assignment,
-        self_id,
-        cluster_metrics_options.clone(),
-    )?;
+
+    if let Some(cluster_assignment) = old_peer_configuration.cluster_assignment {
+        setup_cluster_metrics(
+            &cluster_assignment,
+            self_id,
+            cluster_metrics_options.clone(),
+        )?;
+    }
 
     debug!("Peer configuration has been successfully applied.");
     Ok(())
@@ -160,37 +163,34 @@ async fn setup_cluster( //TODO make idempotent
 
 #[tracing::instrument(skip_all)]
 fn setup_cluster_metrics( //TODO make idempotent
-    cluster_assignment: &Option<ClusterAssignment>,
+    cluster_assignment: &ClusterAssignment,
     self_id: PeerId,
     cluster_metrics_options: ClusterMetricsOptions,
 ) -> anyhow::Result<()> {
+
     debug!("Setting up cluster metrics.");
 
-    match cluster_assignment {
-        None => {}
-        Some(cluster_assignment) => {
-            let local_peer_assignment = cluster_assignment.assignments.iter().find(|assignment| {
-                assignment.peer_id == self_id
-            }).ok_or(cluster_assignment::Error::LocalPeerAssignmentNotFound { self_id })?;
+    let local_peer_assignment = cluster_assignment.assignments.iter()
+        .find(|assignment| assignment.peer_id == self_id)
+        .ok_or(cluster_assignment::Error::LocalPeerAssignmentNotFound { self_id })?;
 
-            let local_ip = local_peer_assignment.vpn_address;
+    let local_ip = local_peer_assignment.vpn_address;
 
-            let peers: Vec<PeerClusterAssignment> = cluster_assignment.assignments.iter()
-                .filter(|peer_cluster_assignment | peer_cluster_assignment.vpn_address != local_ip)
-                .cloned().collect();
+    let peers: Vec<PeerClusterAssignment> = cluster_assignment.assignments.iter()
+        .filter(|peer_cluster_assignment| peer_cluster_assignment.vpn_address != local_ip)
+        .cloned().collect();
 
-            let ClusterMetricsOptions { ping_interval, target_bandwidth_kbit_per_second, rperf_backoff_max_elapsed_time } = cluster_metrics_options;
+    let ClusterMetricsOptions { ping_interval, target_bandwidth_kbit_per_second, rperf_backoff_max_elapsed_time } = cluster_metrics_options;
 
-            tokio::spawn(async move {
-                network_metrics::ping::cluster_ping(peers.clone(), ping_interval).await;
+    tokio::spawn(async move {
+        network_metrics::ping::spawn_cluster_ping(peers.clone(), ping_interval);
 
-                if project::is_running_in_development().not() {
-                    let _ = network_metrics::rperf::server::exponential_backoff_launch_rperf_server(rperf_backoff_max_elapsed_time).await //ignore errors during startup of rperf server, as we do not want to crash EDGAR for this
-                        .inspect_err(|cause| error!("Failed to start rperf server:\n  {cause}"));
-                    network_metrics::rperf::client::launch_rperf_clients(peers, target_bandwidth_kbit_per_second, rperf_backoff_max_elapsed_time).await;
-                }
-            });
+        if project::is_running_in_development().not() {
+            let _ = network_metrics::rperf::server::exponential_backoff_launch_rperf_server(rperf_backoff_max_elapsed_time).await //ignore errors during startup of rperf server, as we do not want to crash EDGAR for this
+                .inspect_err(|cause| error!("Failed to start rperf server:\n  {cause}"));
+            network_metrics::rperf::client::launch_rperf_clients(peers, target_bandwidth_kbit_per_second, rperf_backoff_max_elapsed_time).await;
         }
-    }
+    });
+
     Ok(())
 }
