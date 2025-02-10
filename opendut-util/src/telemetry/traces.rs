@@ -9,8 +9,8 @@ use crate::telemetry::opentelemetry_types::Endpoint;
 pub(crate) fn init_tracer(
     telemetry_interceptor: ConfClientArcMutex<Option<ConfidentialClientRef>>,
     endpoint: &Endpoint,
-    service_name: impl Into<String>,
-    service_instance_id: impl Into<String>
+    service_name: &str,
+    service_instance_id: &str
 ) -> Result<TracerProvider, TraceError> {
 
     let exporter = SpanExporter::builder()
@@ -26,10 +26,11 @@ pub(crate) fn init_tracer(
             Resource::new(vec![
                 KeyValue::new(
                     opentelemetry_semantic_conventions::resource::SERVICE_NAME,
-                    service_name.into()),
+                    service_name.to_owned()
+                ),
                 KeyValue::new(
                     opentelemetry_semantic_conventions::resource::SERVICE_INSTANCE_ID,
-                    service_instance_id.into()
+                    service_instance_id.to_owned()
                 )
             ])
         )

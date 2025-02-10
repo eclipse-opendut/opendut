@@ -31,8 +31,8 @@ impl LoggingConfig {
 pub fn init_logger_provider(
     telemetry_interceptor: ConfClientArcMutex<Option<ConfidentialClientRef>>,
     endpoint: &Endpoint,
-    service_name: impl Into<String>,
-    service_instance_id: impl Into<String>,
+    service_name: &str,
+    service_instance_id: &str,
 ) -> Result<LoggerProvider, LogError> {
 
     let exporter = LogExporter::builder()
@@ -46,11 +46,11 @@ pub fn init_logger_provider(
         .with_resource(Resource::new(vec![
             KeyValue::new(
                 opentelemetry_semantic_conventions::resource::SERVICE_NAME,
-                service_name.into()
+                service_name.to_owned()
             ),
             KeyValue::new(
                 opentelemetry_semantic_conventions::resource::SERVICE_INSTANCE_ID,
-                service_instance_id.into()
+                service_instance_id.to_owned()
             ),
         ]))
         .with_batch_exporter(exporter, runtime::Tokio)

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 use opentelemetry::KeyValue;
-use opentelemetry::metrics::{MeterProvider};
+use opentelemetry::metrics::MeterProvider;
 use opentelemetry_otlp::{MetricExporter, WithExportConfig, WithTonicConfig};
 use opentelemetry_sdk::metrics::{MetricError, SdkMeterProvider};
 use opentelemetry_sdk::{Resource, runtime};
@@ -15,11 +15,12 @@ use crate::telemetry::opentelemetry_types::Endpoint;
 use opentelemetry_sdk::metrics::PeriodicReader;
 use tracing::trace;
 
+
 pub(super) fn init_metrics(
     telemetry_interceptor: ConfClientArcMutex<Option<ConfidentialClientRef>>,
     endpoint: &Endpoint,
-    service_name: impl Into<String>,
-    service_instance_id: impl Into<String>,
+    service_name: &str,
+    service_instance_id: &str,
     metrics_interval: Duration
 ) -> Result<SdkMeterProvider, MetricError> {
 
@@ -39,11 +40,11 @@ pub(super) fn init_metrics(
         .with_resource(Resource::new(vec![
             KeyValue::new(
                 opentelemetry_semantic_conventions::resource::SERVICE_NAME,
-                service_name.into()
+                service_name.to_owned()
             ),
             KeyValue::new(
                 opentelemetry_semantic_conventions::resource::SERVICE_INSTANCE_ID,
-                service_instance_id.into()
+                service_instance_id.to_owned()
             ),
         ]))
         .build();
@@ -114,7 +115,9 @@ pub struct NamedMeterProvider<Kind: NamedMeterProviderKind> {
 pub type NamedMeterProviders = (NamedMeterProvider<NamedMeterProviderKindDefault>, NamedMeterProvider<NamedMeterProviderKindCpu>);
 
 pub trait NamedMeterProviderKind {}
+
 pub struct NamedMeterProviderKindDefault;
 impl NamedMeterProviderKind for NamedMeterProviderKindDefault {}
+
 pub struct NamedMeterProviderKindCpu;
 impl NamedMeterProviderKind for NamedMeterProviderKindCpu {}

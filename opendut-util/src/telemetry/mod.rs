@@ -95,8 +95,8 @@ pub async fn initialize_with_config(
             let tracer_provider = traces::init_tracer(
                 confidential_client.clone(),
                 &collector_endpoint,
-                service_name.clone(),
-                service_instance_id.clone()
+                &service_name,
+                &service_instance_id
             ).expect("Failed to initialize tracer.");
 
             let tracing_layer = tracing_opentelemetry::layer()
@@ -105,8 +105,8 @@ pub async fn initialize_with_config(
             let logger_provider = logging::init_logger_provider(
                 confidential_client.clone(),
                 &collector_endpoint,
-                service_name.clone(),
-                service_instance_id.clone()
+                &service_name,
+                &service_instance_id
             ).expect("Failed to initialize logs.");
 
             let logger_layer = OpenTelemetryTracingBridge::new(&logger_provider);
@@ -116,8 +116,8 @@ pub async fn initialize_with_config(
                 meter_provider: metrics::init_metrics(
                     confidential_client.clone(),
                     &collector_endpoint,
-                    service_name.clone(),
-                    service_instance_id.clone(),
+                    &service_name,
+                    &service_instance_id,
                     metrics_interval_ms
                 ).expect("Failed to initialize default metrics.")
             };
@@ -127,8 +127,8 @@ pub async fn initialize_with_config(
                 meter_provider: metrics::init_metrics(
                     confidential_client,
                     &collector_endpoint,
-                    service_name,
-                    service_instance_id,
+                    &service_name,
+                    &service_instance_id,
                     cpu_collection_interval_ms
                 ).expect("Failed to initialize CPU metrics.")
             };
@@ -141,7 +141,12 @@ pub async fn initialize_with_config(
                 .with(logger_layer)
                 .try_init()?;
 
-            trace!("Telemetry stack initialized with OpenTelemetry.");
+            trace!("Telemetry stack initialized with OpenTelemetry, using configuration:
+endpoint:            {endpoint}
+service_name:        {service_name}
+service_instance_id: {service_instance_id}",
+                endpoint=collector_endpoint.url
+            );
 
             metrics::initialize_os_metrics_collection(cpu_collection_interval_ms, &meter_providers);
 
