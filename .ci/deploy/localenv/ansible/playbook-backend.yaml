@@ -13,6 +13,11 @@
         force: true  # Avoid "would clobber existing tag" error for canary-tag
       register: repo_checkout
 
+    - name: Force update CARL image  # With canary releases, we may re-use the same tag, which normally results in the new image not being pulled.
+      ansible.builtin.command:
+        cmd: docker compose pull --policy=always carl
+        chdir: "{{ repo_dir }}/.ci/deploy/localenv/"
+
     - name: Provision secrets
       ansible.builtin.command:
         cmd: "docker compose --file .ci/deploy/localenv/docker-compose.yml up --build provision-secrets"
