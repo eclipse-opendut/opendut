@@ -6,7 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-tbd.
+### Added
+* Automation of the backend and edge rollout.
+* Automation of database backups.
+
+### Changed
+* Major upgrade of frontend framework and clean-up of authentication flow.
+
+### Fixed
+* The monitoring dashboard now shows data from all services.
+* Logs from third-party libraries don't get filtered out anymore.
 
 
 ## 0.4.0
