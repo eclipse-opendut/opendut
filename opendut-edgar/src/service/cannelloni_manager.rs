@@ -9,6 +9,9 @@ use tracing::{error, info};
 use opendut_types::util::net::NetworkInterfaceName;
 use opendut_types::util::Port;
 
+
+const MONITOR_INTERVAL_MS: u64 = 100;
+
 pub struct CannelloniManager{
     is_server: bool, 
     can_if_name: NetworkInterfaceName, 
@@ -19,22 +22,15 @@ pub struct CannelloniManager{
     cannelloni_proc: Option<Child>,
 }
 
-enum MonitorResult {
-    RestartCannelloni,
-    TerminateManager,
-}
-
-const MONITOR_INTERVAL_MS: u64 = 100;
-
 impl CannelloniManager {
 
     pub fn new(is_server: bool, can_if_name: NetworkInterfaceName, server_port: Port, remote_ip: IpAddr, buffer_timeout: Duration, termination_request_token: Arc<AtomicBool>) -> Self {
-        Self { 
-            is_server, 
-            can_if_name, 
-            server_port, 
+        Self {
+            is_server,
+            can_if_name,
+            server_port,
             remote_ip,
-            buffer_timeout, 
+            buffer_timeout,
             termination_request_token,
             cannelloni_proc: None
         }
@@ -55,17 +51,18 @@ impl CannelloniManager {
             let child = cmd.spawn()
                 .map_err(|cause| Error::CommandLineProgramExecution { command: "cannelloni".to_string(), cause } )?;
 
-            info!("Spawned cannelloni thread for remote IP {}.", self.remote_ip.to_string());
+            info!("Spawned Cannelloni process for remote IP {}.", self.remote_ip.to_string());
             self.cannelloni_proc = Some(child);
 
             match self.monitor_process().await {
-                MonitorResult::RestartCannelloni => (),
+                MonitorResult::RestartCannelloni => {
+                    tokio::time::sleep(Duration::from_secs(1)).await; //prevent log spam from rapid restarts
+                },
                 MonitorResult::TerminateManager => {
                     self.kill_cannelloni_process().await?;
                     return Ok(())
                 },
             }
-
         }
     }
 
@@ -75,7 +72,7 @@ impl CannelloniManager {
             .ok_or(Error::Other { message: format!("Failed to get mutable reference of cannelloni process handle for remote IP {}.", self.remote_ip) })?
             .kill()
             .await
-            .map_err(|cause| Error::Other { message: format!("Failed to kill cannelloni process for remote IP {}: '{}'", self.remote_ip, cause) })?;
+            .map_err(|cause| Error::Other { message: format!("Failed to kill cannelloni process for remote IP {}:\n  {cause}", self.remote_ip) })?;
 
         Ok(())
     }
@@ -85,11 +82,11 @@ impl CannelloniManager {
             match self.cannelloni_proc.as_mut().unwrap().try_wait() {
                 Ok(op) => {
                     if op.is_some() {
-                        self.handle_premature_termination().await;
+                        self.log_premature_termination().await;
                         return MonitorResult::RestartCannelloni
                     }
                 },
-                Err(err) => error!("Failed to get status of cannelloni instance for remote IP {}: '{}'.", self.remote_ip.to_string(), err)
+                Err(cause) => error!("Failed to get status of cannelloni instance for remote IP {}:\n  {cause}", self.remote_ip.to_string())
             }
 
             if self.termination_request_token.load(Ordering::Relaxed) {
@@ -101,7 +98,7 @@ impl CannelloniManager {
     }
 
 
-    async fn handle_premature_termination(&mut self) {
+    async fn log_premature_termination(&mut self) {
 
         let stdout = match self.cannelloni_proc.as_mut().unwrap().stdout.take() {
             Some(stdout) => stdout,
@@ -127,12 +124,7 @@ impl CannelloniManager {
         let _ = stderr_reader.read_to_end(&mut stderr_u8).await;
         let stderr_str = String::from_utf8_lossy(&stderr_u8);
 
-        error!(
-            "Cannelloni for remote IP {} terminated prematurely with stderr:\n{}\nstdout:\n{}", 
-            self.remote_ip.to_string(), 
-            stdout_str,
-            stderr_str
-        )
+        error!("Cannelloni for remote IP {remote_ip} terminated prematurely with stderr:\n{stderr_str}\nstdout:\n{stdout_str}", remote_ip=self.remote_ip.to_string())
     }
 
 
@@ -154,8 +146,13 @@ impl CannelloniManager {
             .stdout(Stdio::piped());
 
     }
-    
 }
+
+enum MonitorResult {
+    RestartCannelloni,
+    TerminateManager,
+}
+
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
