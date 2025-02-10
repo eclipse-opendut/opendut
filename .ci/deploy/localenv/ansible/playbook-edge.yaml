@@ -133,12 +133,18 @@
 - name: Setup EDGARs
   hosts: edge
   gather_facts: false
+  vars:
+    config_file: "/etc/opendut/edgar.toml"
   tasks:
-    - name: Remove EDGAR config to avoid conflicts
-      # The OIDC ID and secret changes every time a Setup-String is generated, which leads to a config conflict during setup.
-      ansible.builtin.file:
-        path: "/etc/opendut/edgar.toml"
-        state: absent
+    - name: Write telemetry configuration
+      ansible.builtin.copy:
+        dest: "{{ config_file }}"
+        content: |
+          [opentelemetry]
+          enabled = true
+          collector.endpoint = "https://opentelemetry.opendut.local"
+          service.name = "opendut-edgar-{{ ansible_host }}"
+      when: config_file is not exists
 
     - name: Run EDGAR Setup
       ansible.builtin.command:
