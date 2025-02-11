@@ -6,7 +6,7 @@ use opendut_types::cluster::{ClusterDeployment, ClusterId};
 #[derive(clap::Parser)]
 pub struct CreateClusterDeploymentCli {
     /// ID of the cluster
-    #[arg(short, long)]
+    #[arg()]
     id: ClusterId,
 }
 
