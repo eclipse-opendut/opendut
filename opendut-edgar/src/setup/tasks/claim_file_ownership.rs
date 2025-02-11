@@ -1,8 +1,9 @@
 use anyhow::{bail, Result};
 use async_trait::async_trait;
+use crate::common::settings::default_config_file_path;
 use crate::common::task::{Success, Task, TaskFulfilled};
 use crate::setup::User;
-use crate::setup::util::chown;
+use crate::setup::util::{chown, create_file_and_ensure_it_can_only_be_read_or_modified_by_owner};
 
 const DIRS: &[&str] = &[
     "/opt/opendut/",
@@ -30,6 +31,8 @@ impl Task for ClaimFileOwnership {
                 }
             }
         }
+        let edgar_toml = default_config_file_path();
+        create_file_and_ensure_it_can_only_be_read_or_modified_by_owner(&edgar_toml)?;
         Ok(Success::default())
     }
 }

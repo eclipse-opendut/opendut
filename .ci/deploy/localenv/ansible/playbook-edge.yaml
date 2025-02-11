@@ -139,6 +139,7 @@
     - name: Write telemetry configuration
       ansible.builtin.copy:
         dest: "{{ config_file }}"
+        mode: "0640"
         content: |
           [opentelemetry]
           enabled = true

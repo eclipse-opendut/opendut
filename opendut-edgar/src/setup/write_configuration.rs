@@ -12,6 +12,7 @@ use opendut_types::util::net::AuthConfig;
 
 use crate::common::settings;
 use crate::setup::constants;
+use crate::setup::util::create_file_and_ensure_it_can_only_be_read_or_modified_by_owner;
 
 pub struct WriteConfiguration {
     config_file_to_write_to: PathBuf,
@@ -166,6 +167,7 @@ fn write_settings(target: &Path, settings_string: &str) -> anyhow::Result<()> {
         .parent()
         .ok_or(anyhow!("Expected configuration file '{}' to have a parent directory.", target.display()))?;
     fs::create_dir_all(parent_dir)?;
+    create_file_and_ensure_it_can_only_be_read_or_modified_by_owner(target)?;
 
     fs::write(target, settings_string)
         .context(format!("Error while writing to configuration file at '{}'.", target.display()))?;

@@ -1,12 +1,14 @@
+use std::fs::File;
 use std::io;
 use std::io::Write;
 use std::ops::Not;
+use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::process::{Command, Output};
 
 use anyhow::{anyhow, bail, Context};
 use cfg_if::cfg_if;
-
+use crate::fs;
 use crate::setup::User;
 
 pub trait CommandRunner: Send + Sync {
@@ -72,6 +74,16 @@ pub fn chown(user: &User, path: impl AsRef<Path>) -> anyhow::Result<()> {
     Ok(())
 }
 
+pub fn create_file_and_ensure_it_can_only_be_read_or_modified_by_owner(target: &Path) -> anyhow::Result<()> {
+    if target.exists().not() {
+        File::create(target)?;
+    }
+    let read_only_permissions = std::fs::Permissions::from_mode(0o600);
+    fs::set_permissions(target, read_only_permissions)?;
+    Ok(())
+}
+
+
 pub mod checksum {
     use crate::fs::File;
     use sha2::{Digest, Sha256};
@@ -111,5 +123,29 @@ pub fn user_confirmation_prompt(question: &str) -> anyhow::Result<bool> {
     match input.trim().to_lowercase().as_ref() {
         "" | "y" | "yes" => Ok(true),
         _ => Ok(false),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_create_restricted_file() {
+        // Arrange: assumes to be run in unix
+        // 100 means it's a regular file
+        // 600 means the owner may read and write that file and nobody else
+        let expected_permissions = std::fs::Permissions::from_mode(0o100600 );
+        let temp_dir = tempfile::TempDir::new().expect("failed to create temp dir");
+        let path = temp_dir.path().join("edgar.toml");
+        assert!(path.exists().not());
+
+        // Act: create file
+        create_file_and_ensure_it_can_only_be_read_or_modified_by_owner(&path).unwrap();
+
+        // Assert:
+        let file = File::open(path).unwrap();
+        let permissions = file.metadata().unwrap().permissions();
+        assert_eq!(permissions, expected_permissions);
     }
 }
