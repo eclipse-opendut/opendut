@@ -1,4 +1,6 @@
+use std::collections::HashMap;
 use std::fmt::Formatter;
+use std::net::IpAddr;
 use opendut_types::cluster::{ClusterAssignment, PeerClusterAssignment};
 use opendut_types::util::net::NetworkInterfaceName;
 use tracing::{debug, error, info, trace};
@@ -102,7 +104,7 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
 
     if let Some(cluster_assignment) = old_peer_configuration.cluster_assignment {
         setup_cluster_metrics(
-            &cluster_assignment,
+            &cluster_assignment.assignments,
             self_id,
             cluster_metrics_options.clone(),
         )?;
@@ -163,32 +165,35 @@ async fn setup_cluster( //TODO make idempotent
 
 #[tracing::instrument(skip_all)]
 fn setup_cluster_metrics( //TODO make idempotent
-    cluster_assignment: &ClusterAssignment,
+    peer_cluster_assignments: &[PeerClusterAssignment],
     self_id: PeerId,
     cluster_metrics_options: ClusterMetricsOptions,
 ) -> anyhow::Result<()> {
 
     debug!("Setting up cluster metrics.");
 
-    let local_peer_assignment = cluster_assignment.assignments.iter()
-        .find(|assignment| assignment.peer_id == self_id)
-        .ok_or(cluster_assignment::Error::LocalPeerAssignmentNotFound { self_id })?;
+    let remote_peers: HashMap<PeerId, IpAddr> = {
+        let local_peer_assignment = peer_cluster_assignments.iter()
+            .find(|assignment| assignment.peer_id == self_id)
+            .ok_or(cluster_assignment::Error::LocalPeerAssignmentNotFound { self_id })?;
 
-    let local_ip = local_peer_assignment.vpn_address;
+        let local_ip = local_peer_assignment.vpn_address;
 
-    let peers: Vec<PeerClusterAssignment> = cluster_assignment.assignments.iter()
-        .filter(|peer_cluster_assignment| peer_cluster_assignment.vpn_address != local_ip)
-        .cloned().collect();
+        peer_cluster_assignments.iter()
+            .filter(|assignment| assignment.vpn_address != local_ip)
+            .map(|assignment| (assignment.peer_id, assignment.vpn_address))
+            .collect()
+    };
 
     let ClusterMetricsOptions { ping_interval, target_bandwidth_kbit_per_second, rperf_backoff_max_elapsed_time } = cluster_metrics_options;
 
     tokio::spawn(async move {
-        network_metrics::ping::spawn_cluster_ping(peers.clone(), ping_interval);
+        network_metrics::ping::spawn_cluster_ping(remote_peers.clone(), ping_interval);
 
         if project::is_running_in_development().not() {
             let _ = network_metrics::rperf::server::exponential_backoff_launch_rperf_server(rperf_backoff_max_elapsed_time).await //ignore errors during startup of rperf server, as we do not want to crash EDGAR for this
                 .inspect_err(|cause| error!("Failed to start rperf server:\n  {cause}"));
-            network_metrics::rperf::client::launch_rperf_clients(peers, target_bandwidth_kbit_per_second, rperf_backoff_max_elapsed_time).await;
+            network_metrics::rperf::client::launch_rperf_clients(remote_peers, target_bandwidth_kbit_per_second, rperf_backoff_max_elapsed_time).await;
         }
     });
 

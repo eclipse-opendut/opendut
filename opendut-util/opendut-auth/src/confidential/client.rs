@@ -231,7 +231,7 @@ impl Interceptor for ConfClientArcMutex<Option<ConfidentialClientRef>> {
                 })
             }
             Err(error) => {
-                eprintln!("Failed to acquire lock on the Confidential Client definitively. The following telemetry data will not be transmitted.");
+                eprintln!("Failed to acquire lock on the Confidential Client definitively. The following telemetry request will not be transmitted.");
                 eprintln!("Failed request: {:?}", request);
                 Some(Err(AuthError::FailedToLockConfidentialClient { message: "Unable to acquire lock on the Confidential Client".to_owned(), cause: error }))
             }

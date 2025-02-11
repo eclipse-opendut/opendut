@@ -1,7 +1,10 @@
+use std::collections::HashMap;
+use std::net::IpAddr;
 use std::process::Stdio;
 use std::sync::Arc;
 use std::time::Duration;
 use backon::Retryable;
+use opendut_types::peer::PeerId;
 use opentelemetry::{global, KeyValue};
 use opentelemetry::metrics::Gauge;
 use regex::Regex;
@@ -9,11 +12,10 @@ use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 use tokio::sync::Mutex;
 use tracing::{debug, error, trace};
-use opendut_types::cluster::PeerClusterAssignment;
 use crate::service::network_metrics::rperf::{RperfError, RperfRunError};
 use crate::service::network_metrics::rperf::RperfRunError::RperfClientError;
 
-pub async fn launch_rperf_clients(peers: Vec<PeerClusterAssignment>, target_bandwidth_kbit_per_second: u64, rperf_backoff_max_elapsed_time: Duration) {
+pub async fn launch_rperf_clients(peers: HashMap<PeerId, IpAddr>, target_bandwidth_kbit_per_second: u64, rperf_backoff_max_elapsed_time: Duration) {
 
     let meter = global::meter(opendut_util::telemetry::DEFAULT_METER_NAME);
 
@@ -23,24 +25,25 @@ pub async fn launch_rperf_clients(peers: Vec<PeerClusterAssignment>, target_band
     let megabits_second_send_mutex = Arc::new(Mutex::new(megabits_second_send));
     let megabits_second_receive_mutex = Arc::new(Mutex::new(megabits_second_receive));
 
-    for peer in peers.clone() {
+    for (peer_id, vpn_address) in peers {
         let megabits_second_send_mutex = megabits_second_send_mutex.clone();
         let megabits_second_receive_mutex = megabits_second_receive_mutex.clone();
+
         tokio::spawn(async move {
             exponential_backoff_launch_rperf_client(
-                &peer,
+                &vpn_address,
                 target_bandwidth_kbit_per_second,
                 rperf_backoff_max_elapsed_time,
                 megabits_second_send_mutex,
                 megabits_second_receive_mutex
             ).await
-                .inspect_err(|cause| error!("Failed to start rperf client for peer {peer_id}: {cause}", peer_id=peer.peer_id))
+                .inspect_err(|cause| error!("Failed to start rperf client for peer {peer_id}: {cause}"))
         });
     }
 }
 
-pub async fn exponential_backoff_launch_rperf_client(
-    peer: &PeerClusterAssignment,
+async fn exponential_backoff_launch_rperf_client(
+    vpn_address: &IpAddr,
     target_bandwidth_kbit_per_second: u64,
     rperf_backoff_max_elapsed_time_ms: Duration,
     megabits_second_send_mutex: Arc<Mutex<Gauge<f64>>>,
@@ -50,7 +53,7 @@ pub async fn exponential_backoff_launch_rperf_client(
         .with_max_delay(rperf_backoff_max_elapsed_time_ms);
 
     let backoff_result = (|| async {
-            launch_rperf_client(peer, target_bandwidth_kbit_per_second, &megabits_second_send_mutex, &megabits_second_receive_mutex).await?;
+            launch_rperf_client(vpn_address, target_bandwidth_kbit_per_second, &megabits_second_send_mutex, &megabits_second_receive_mutex).await?;
             Ok(())
         })
         .retry(exponential_backoff)
@@ -60,15 +63,15 @@ pub async fn exponential_backoff_launch_rperf_client(
         .map_err(|cause| RperfClientError { message: "Could not run rperf client".to_string(), cause })
 }
 
-pub async fn launch_rperf_client(
-    peer: &PeerClusterAssignment,
+async fn launch_rperf_client(
+    vpn_address: &IpAddr,
     target_bandwidth_kbit_per_second: u64,
     megabits_second_send_mutex: &Arc<Mutex<Gauge<f64>>>,
     megabits_second_receive_mutex: &Arc<Mutex<Gauge<f64>>>
 ) -> Result<(), RperfError> {
     let rperf_client = Command::new(crate::common::constants::rperf::executable_install_file())
         .arg("--client")
-        .arg(peer.vpn_address.to_string())
+        .arg(vpn_address.to_string())
         .arg("--bandwidth")
         .arg(format!("{target_bandwidth_kbit_per_second}k")) //the k suffix signifies the entered bandwidth is to be read in kilobits
         .stdout(Stdio::piped())
@@ -94,8 +97,8 @@ pub async fn launch_rperf_client(
                                         RperfOperation::Send => match number_str.parse::<f64>() {
                                             Ok(value) => {
                                                 megabits_second_send_mutex.lock().await
-                                                    .record(value, &[KeyValue::new("peer_ip_address", peer.vpn_address.to_string())]);
-                                                debug!("Sending to {} in megabits/second: {}", peer.vpn_address.to_string(), value);
+                                                    .record(value, &[KeyValue::new("peer_ip_address", vpn_address.to_string())]);
+                                                debug!("Sending to {} in megabits/second: {}", vpn_address.to_string(), value);
                                             },
                                             Err(cause) => {
                                                 error!("Failed to parse rperf bandwidth: {}", cause);
@@ -105,8 +108,8 @@ pub async fn launch_rperf_client(
                                         RperfOperation::Receive => match number_str.parse::<f64>() {
                                             Ok(value) => {
                                                 megabits_second_receive_mutex.lock().await
-                                                    .record(value, &[KeyValue::new("peer_ip_address", peer.vpn_address.to_string())]);
-                                                debug!("Receiving from {} in megabits/second: {}", peer.vpn_address.to_string(), value);
+                                                    .record(value, &[KeyValue::new("peer_ip_address", vpn_address.to_string())]);
+                                                debug!("Receiving from {} in megabits/second: {}", vpn_address.to_string(), value);
                                             },
                                             Err(cause) => {
                                                 error!("Failed to parse rperf bandwidth: {}", cause);
