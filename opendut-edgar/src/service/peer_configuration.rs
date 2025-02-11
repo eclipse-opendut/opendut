@@ -6,17 +6,16 @@ use opendut_types::util::net::NetworkInterfaceName;
 use tracing::{debug, error, info, trace};
 use std::sync::Arc;
 use opendut_types::peer::configuration::{parameter, OldPeerConfiguration, Parameter, ParameterTarget, PeerConfiguration};
-use opendut_util::project;
 use opendut_types::peer::PeerId;
-use std::time::Duration;
-use std::ops::Not;
 use tokio::sync::mpsc;
 use crate::common::task::{runner, Task};
-use crate::service::{cluster_assignment, network_metrics, tasks};
+use crate::service::{cluster_assignment, tasks};
 use crate::service::can_manager::CanManagerRef;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use crate::service::test_execution::executor_manager::ExecutorManagerRef;
 use crate::setup::RunMode;
+
+use super::network_metrics::manager::NetworkMetricsManagerRef;
 
 #[derive(Debug)]
 pub struct ApplyPeerConfigurationParams {
@@ -25,7 +24,7 @@ pub struct ApplyPeerConfigurationParams {
     pub old_peer_configuration: OldPeerConfiguration,
     pub network_interface_management: NetworkInterfaceManagement,
     pub executor_manager: ExecutorManagerRef,
-    pub cluster_metrics_options: ClusterMetricsOptions,
+    pub metrics_manager: NetworkMetricsManagerRef,
 }
 #[derive(Clone)]
 pub enum NetworkInterfaceManagement {
@@ -41,13 +40,6 @@ impl std::fmt::Debug for NetworkInterfaceManagement {
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct ClusterMetricsOptions {
-    pub ping_interval: Duration,
-    pub target_bandwidth_kbit_per_second: u64,
-    pub rperf_backoff_max_elapsed_time: Duration,
-}
-
 pub async fn spawn_peer_configurations_handler(mut rx_peer_configuration: mpsc::Receiver<ApplyPeerConfigurationParams>) -> anyhow::Result<()> {
     tokio::spawn(async move {
         while let Some(apply_peer_configuration_params) = rx_peer_configuration.recv().await {
@@ -60,7 +52,7 @@ pub async fn spawn_peer_configurations_handler(mut rx_peer_configuration: mpsc::
 
 #[tracing::instrument(skip_all)]
 async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyhow::Result<()> {
-    let ApplyPeerConfigurationParams { self_id, peer_configuration, old_peer_configuration, network_interface_management, executor_manager, cluster_metrics_options } = params;
+    let ApplyPeerConfigurationParams { self_id, peer_configuration, old_peer_configuration, network_interface_management, executor_manager, metrics_manager } = params;
 
     {
         let mut tasks: Vec<Box<dyn Task>> = vec![];
@@ -106,7 +98,7 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
         setup_cluster_metrics(
             &cluster_assignment.assignments,
             self_id,
-            cluster_metrics_options.clone(),
+            metrics_manager,
         )?;
     }
 
@@ -167,7 +159,7 @@ async fn setup_cluster( //TODO make idempotent
 fn setup_cluster_metrics( //TODO make idempotent
     peer_cluster_assignments: &[PeerClusterAssignment],
     self_id: PeerId,
-    cluster_metrics_options: ClusterMetricsOptions,
+    metrics_manager: NetworkMetricsManagerRef,
 ) -> anyhow::Result<()> {
 
     debug!("Setting up cluster metrics.");
@@ -185,17 +177,8 @@ fn setup_cluster_metrics( //TODO make idempotent
             .collect()
     };
 
-    let ClusterMetricsOptions { ping_interval, target_bandwidth_kbit_per_second, rperf_backoff_max_elapsed_time } = cluster_metrics_options;
-
-    tokio::spawn(async move {
-        network_metrics::ping::spawn_cluster_ping(remote_peers.clone(), ping_interval);
-
-        if project::is_running_in_development().not() {
-            let _ = network_metrics::rperf::server::exponential_backoff_launch_rperf_server(rperf_backoff_max_elapsed_time).await //ignore errors during startup of rperf server, as we do not want to crash EDGAR for this
-                .inspect_err(|cause| error!("Failed to start rperf server:\n  {cause}"));
-            network_metrics::rperf::client::launch_rperf_clients(remote_peers, target_bandwidth_kbit_per_second, rperf_backoff_max_elapsed_time).await;
-        }
-    });
+    metrics_manager.lock().unwrap()
+        .set_remote_peers(remote_peers);
 
     Ok(())
 }

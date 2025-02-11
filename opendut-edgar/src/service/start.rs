@@ -25,9 +25,12 @@ use tracing_opentelemetry::OpenTelemetrySpanExt;
 use crate::common::{carl, settings};
 use crate::service::can_manager::{CanManager, CanManagerRef};
 use crate::service::network_interface::manager::{NetworkInterfaceManager, NetworkInterfaceManagerRef};
-use crate::service::peer_configuration::{ApplyPeerConfigurationParams, ClusterMetricsOptions, NetworkInterfaceManagement};
+use crate::service::network_metrics::manager::NetworkMetricsManager;
+use crate::service::peer_configuration::{ApplyPeerConfigurationParams, NetworkInterfaceManagement};
 use crate::service::test_execution::executor_manager::{ExecutorManager, ExecutorManagerRef};
 use crate::service::vpn;
+
+use super::network_metrics::manager::NetworkMetricsManagerRef;
 
 const BANNER: &str = r"
                          _____     _______
@@ -101,19 +104,14 @@ pub async fn run_stream_receiver(
             }
         };
 
-        let ping_interval = Duration::from_millis(settings.config.get::<u64>("opentelemetry.metrics.cluster.ping.interval.ms")?);
-        let target_bandwidth_kbit_per_second = settings.config.get::<u64>("opentelemetry.metrics.cluster.target.bandwidth.kilobit.per.second")?;
-        let rperf_backoff_max_elapsed_time = Duration::from_millis(settings.config.get::<u64>("opentelemetry.metrics.cluster.rperf.backoff.max.elapsed.time.ms")?);
+        let metrics_manager: NetworkMetricsManagerRef = NetworkMetricsManager::load(&settings)?;
+
 
         HandleStreamInfo {
             self_id,
             network_interface_management,
             executor_manager,
-            cluster_metrics_options: ClusterMetricsOptions {
-                ping_interval,
-                target_bandwidth_kbit_per_second,
-                rperf_backoff_max_elapsed_time,
-            },
+            metrics_manager,
         }
     };
 
@@ -185,7 +183,7 @@ struct HandleStreamInfo {
     pub self_id: PeerId,
     pub network_interface_management: NetworkInterfaceManagement,
     pub executor_manager: ExecutorManagerRef,
-    pub cluster_metrics_options: ClusterMetricsOptions,
+    pub metrics_manager: NetworkMetricsManagerRef,
 }
 
 async fn handle_stream_message(
@@ -243,14 +241,14 @@ async fn apply_peer_configuration_raw(
                         Ok(peer_configuration) => {
                             info!("Received OldPeerConfiguration: {old_peer_configuration:?}");
                             info!("Received PeerConfiguration: {peer_configuration:?}");
-                            
+
                             let apply_config_params = ApplyPeerConfigurationParams {
                                 self_id: handle_stream_info.self_id,
                                 peer_configuration,
                                 old_peer_configuration,
                                 network_interface_management: handle_stream_info.network_interface_management.clone(),
                                 executor_manager: Arc::clone(&handle_stream_info.executor_manager),
-                                cluster_metrics_options: handle_stream_info.cluster_metrics_options.clone(),
+                                metrics_manager: Arc::clone(&handle_stream_info.metrics_manager),
                             };
                             peer_configuration_sender.send(apply_config_params).await?
                         }
