@@ -21,3 +21,5 @@ tls:
       keyFile: /pki/deploy/nginx-webdav.opendut.local.key
     - certFile: /pki/deploy/opentelemetry.opendut.local.pem
       keyFile: /pki/deploy/opentelemetry.opendut.local.key
+    - certFile: /pki/deploy/monitoring.opendut.local.pem
+      keyFile: /pki/deploy/monitoring.opendut.local.key
