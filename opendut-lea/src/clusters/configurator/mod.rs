@@ -135,8 +135,6 @@ fn LoadedClusterConfigurator(
                 }
             }
         >
-            <fieldset prop:disabled=move || { deployed_signal.get().0 }>
-
                 <div class="tabs">
                     <ul>
                         <li class=("is-active", move || TabIdentifier::General == active_tab.get())>
@@ -150,6 +148,8 @@ fn LoadedClusterConfigurator(
                         </li>
                     </ul>
                 </div>
+
+            <fieldset prop:disabled=move || { deployed_signal.get().0 }>
                 <div class="container">
                     <div class=("is-hidden", move || TabIdentifier::General != active_tab.get())>
                         <GeneralTab cluster_configuration />
