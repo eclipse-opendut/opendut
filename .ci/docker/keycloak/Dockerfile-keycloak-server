@@ -1,6 +1,6 @@
 ARG KEYCLOAK_VERSION=22.0.2
 
-FROM maven:3.9-eclipse-temurin-21 as extension
+FROM maven:3.9-eclipse-temurin-21 AS extension
 WORKDIR /src
 RUN git clone https://github.com/thomasdarimont/keycloak-extension-playground
 WORKDIR /src/keycloak-extension-playground/github-enterprise-identity-provider

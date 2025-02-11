@@ -1,4 +1,4 @@
-FROM ubuntu:22.04 as cannelloni-builder
+FROM ubuntu:22.04 AS cannelloni-builder
 ARG cannelloni_version=1.1.0
 
 RUN apt update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
