@@ -17,7 +17,7 @@ else
   TESTENV_EDGAR_HOSTS="edgar-leader,edgar-*"
   TESTENV_HOSTS="$TESTENV_NETBIRD_HOSTS,keycloak,keycloak.internal,$TESTENV_EDGAR_HOSTS,carl,loki,tempo,prometheus,promtail,otel-collector,grafana,nginx-webdav"
   # 192.168.56.0/24,192.168.32.0/24,192.168.33.0/24
-  TESTENV_NETWORKS="192.168.0.0/16"
+  TESTENV_NETWORKS="192.168.56.10,192.168.0.0/16"
 
   export VAGRANT_NO_PROXY=localhost,127.0.0.1,$TESTENV_HOSTS,$TESTENV_NETWORKS
   export no_proxy=localhost,127.0.0.1,$TESTENV_HOSTS,$TESTENV_NETWORKS
