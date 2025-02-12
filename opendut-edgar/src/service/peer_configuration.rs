@@ -89,7 +89,7 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
         }
     }
 
-    let mut executor_manager = executor_manager.lock().unwrap();
+    let mut executor_manager = executor_manager.lock().await;
     executor_manager.terminate_executors();
     executor_manager.create_new_executors(peer_configuration.executors);
 
@@ -99,7 +99,7 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
             &cluster_assignment.assignments,
             self_id,
             metrics_manager,
-        )?;
+        ).await?;
     }
 
     debug!("Peer configuration has been successfully applied.");
@@ -156,7 +156,7 @@ async fn setup_cluster( //TODO make idempotent
 }
 
 #[tracing::instrument(skip_all)]
-fn setup_cluster_metrics( //TODO make idempotent
+async fn setup_cluster_metrics( //TODO make idempotent
     peer_cluster_assignments: &[PeerClusterAssignment],
     self_id: PeerId,
     metrics_manager: NetworkMetricsManagerRef,
@@ -177,8 +177,8 @@ fn setup_cluster_metrics( //TODO make idempotent
             .collect()
     };
 
-    metrics_manager.lock().unwrap()
-        .set_remote_peers(remote_peers);
+    metrics_manager.lock().await
+        .set_remote_peers(remote_peers).await;
 
     Ok(())
 }

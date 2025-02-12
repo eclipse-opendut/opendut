@@ -12,11 +12,16 @@ use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 use tokio::sync::Mutex;
 use tracing::{debug, error, trace};
+use crate::service::network_metrics::manager::Spawner;
 use crate::service::network_metrics::rperf::{RperfError, RperfRunError};
 use crate::service::network_metrics::rperf::RperfRunError::RperfClientError;
 
-pub async fn launch_rperf_clients(peers: HashMap<PeerId, IpAddr>, target_bandwidth_kbit_per_second: u64, rperf_backoff_max_elapsed_time: Duration) {
-
+pub async fn launch_rperf_clients(
+    peers: HashMap<PeerId, IpAddr>,
+    spawner: Spawner,
+    target_bandwidth_kbit_per_second: u64,
+    rperf_backoff_max_elapsed_time: Duration,
+) {
     let meter = global::meter(opendut_util::telemetry::DEFAULT_METER_NAME);
 
     let megabits_second_send = meter.f64_gauge("megabits_second_send").build();
@@ -29,16 +34,17 @@ pub async fn launch_rperf_clients(peers: HashMap<PeerId, IpAddr>, target_bandwid
         let megabits_second_send_mutex = megabits_second_send_mutex.clone();
         let megabits_second_receive_mutex = megabits_second_receive_mutex.clone();
 
-        tokio::spawn(async move {
-            exponential_backoff_launch_rperf_client(
-                &vpn_address,
-                target_bandwidth_kbit_per_second,
-                rperf_backoff_max_elapsed_time,
-                megabits_second_send_mutex,
-                megabits_second_receive_mutex
-            ).await
-                .inspect_err(|cause| error!("Failed to start rperf client for peer {peer_id}: {cause}"))
-        });
+        spawner.lock().await
+            .spawn(async move {
+                let _ = exponential_backoff_launch_rperf_client(
+                    &vpn_address,
+                    target_bandwidth_kbit_per_second,
+                    rperf_backoff_max_elapsed_time,
+                    megabits_second_send_mutex,
+                    megabits_second_receive_mutex
+                ).await
+                    .inspect_err(|cause| error!("Failed to start rperf client for peer {peer_id}: {cause}"));
+            });
     }
 }
 
@@ -76,6 +82,7 @@ async fn launch_rperf_client(
         .arg(format!("{target_bandwidth_kbit_per_second}k")) //the k suffix signifies the entered bandwidth is to be read in kilobits
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
+        .kill_on_drop(true)
         .spawn();
 
     match rperf_client {

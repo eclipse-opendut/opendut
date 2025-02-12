@@ -1,7 +1,8 @@
-use std::{collections::HashMap, net::IpAddr, ops::Not, sync::{Arc, Mutex}, time::Duration};
+use std::{collections::HashMap, net::IpAddr, ops::Not, sync::Arc, time::Duration};
 
 use opendut_types::peer::PeerId;
 use opendut_util::{project, settings::LoadedConfig};
+use tokio::sync::Mutex;
 use tracing::{debug, error, trace};
 
 
@@ -32,48 +33,60 @@ impl NetworkMetricsManager {
         })))
     }
 
-    pub fn set_remote_peers(&mut self, remote_peers: HashMap<PeerId, IpAddr>) {
+    pub async fn set_remote_peers(&mut self, remote_peers: HashMap<PeerId, IpAddr>) {
 
         if let Some(previous_spawn) = &mut self.previous_spawn {
 
             if previous_spawn.remote_peers == remote_peers {
-                trace!("Received the same remote peers as with the previous PeerConfiguration. Ignoring.");
+                trace!("Received the same remote peers as with the previous PeerConfiguration. Not restarting the network metrics thread.");
                 return;
             }
 
             debug!("Terminating previous network metrics thread.");
-            previous_spawn.abort_handle.abort();
+            previous_spawn.spawner.lock().await
+                .shutdown().await;
         }
 
         if remote_peers.is_empty().not() {
             let NetworkMetricsOptions { ping_interval, target_bandwidth_kbit_per_second, rperf_backoff_max_elapsed_time } = self.options;
 
-            let thread_handle = {
+            let spawner = {
                 let remote_peers = remote_peers.clone();
 
-                tokio::spawn(async move {
-                    debug!("Starting new network metrics thread for remote peers: {:?}", remote_peers);
+                debug!(
+                    "Starting new network metrics thread for remote peers: {:?}",
+                    remote_peers.iter()
+                        .map(|(key, value)| (key.uuid, value))
+                        .collect::<HashMap<_, _>>()
+                );
 
-                    super::ping::spawn_cluster_ping(remote_peers.clone(), ping_interval);
+                let spawner: Spawner = Arc::new(Mutex::new(tokio::task::JoinSet::new()));
 
-                    if project::is_running_in_development().not() {
-                        let _ = super::rperf::server::exponential_backoff_launch_rperf_server(rperf_backoff_max_elapsed_time).await //ignore errors during startup of rperf server, as we do not want to crash EDGAR for this
-                            .inspect_err(|cause| error!("Failed to start rperf server:\n  {cause}"));
+                spawner.lock().await
+                    .spawn(super::ping::spawn_cluster_ping(remote_peers.clone(), ping_interval));
 
-                        super::rperf::client::launch_rperf_clients(remote_peers, target_bandwidth_kbit_per_second, rperf_backoff_max_elapsed_time).await;
-                    }
-                })
+                if project::is_running_in_development().not() {
+                    let _ = super::rperf::server::exponential_backoff_launch_rperf_server(spawner.clone(), rperf_backoff_max_elapsed_time).await //ignore errors during startup of rperf server, as we do not want to crash EDGAR for this
+                        .inspect_err(|cause| error!("Failed to start rperf server:\n  {cause}"));
+
+                    super::rperf::client::launch_rperf_clients(remote_peers, spawner.clone(), target_bandwidth_kbit_per_second, rperf_backoff_max_elapsed_time).await;
+                }
+
+                spawner
             };
 
             self.previous_spawn = Some(PreviousSpawn {
                 remote_peers,
-                abort_handle: thread_handle.abort_handle()
+                spawner,
             });
         } else {
             self.previous_spawn = None;
         }
     }
 }
+
+
+pub type Spawner = Arc<Mutex<tokio::task::JoinSet<()>>>;
 
 
 #[derive(Clone, Debug)]
@@ -86,5 +99,5 @@ struct NetworkMetricsOptions {
 #[derive(Debug)]
 struct PreviousSpawn {
     remote_peers: HashMap<PeerId, IpAddr>,
-    abort_handle: tokio::task::AbortHandle,
+    spawner: Spawner,
 }

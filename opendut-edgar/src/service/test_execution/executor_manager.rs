@@ -1,7 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use opendut_types::peer::{self, executor::{ExecutorDescriptor, ExecutorKind}};
-use tokio::sync::watch::{self, Sender};
+use tokio::sync::{watch::{self, Sender}, Mutex};
 use tracing::{debug, warn};
 use opendut_types::peer::configuration::parameter;
 use crate::service::test_execution::container_manager::{ContainerManager, ContainerConfiguration};
