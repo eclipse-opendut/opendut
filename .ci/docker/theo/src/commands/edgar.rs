@@ -39,6 +39,9 @@ impl TestEdgarCli {
                 start_edgar_in_docker()?;
                 wait_until_all_edgar_peers_are(Provisioned)?;
                 wait_until_all_edgar_peers_are(Ready)?;
+                
+                // this is a workaround to ensure the bridge ip is set
+                set_dut_bridge_ip_address_for_pinging()?;
                 check_edgar_leader_ping_all()?;
                 check_edgar_can_ping()?;
             }
@@ -154,6 +157,17 @@ fn check_edgar_provisioning_finished(container_name: &str) -> Result<bool, Error
     }
 }
 
+fn set_dut_bridge_ip_address_for_pinging() -> Result<(), Error> {
+    let edgar_names = edgar_container_names()?;
+    
+    for edgar_name in edgar_names.clone() {
+        DockerCommand::new_exec(&edgar_name)
+            .arg("/opt/set-br-opendut-ip-address.sh")
+            .expect_status("Failed to set dut bridge ip for EDGAR.")
+            .map_err(|err| anyhow!("Failed to set dut bridge ip for EDGAR {}. Error: {}", edgar_name, err))?;
+    }
+    Ok(())
+}
 
 fn check_edgar_leader_ping_all() -> Result<i32, Error> {
     println!("STAGE: EDGAR ping all");
