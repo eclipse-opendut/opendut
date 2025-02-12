@@ -100,8 +100,15 @@ pub(super) fn initialize_os_metrics_collection(
         .meter(DEFAULT_METER_NAME)
         .f64_observable_gauge("process_cpu_used")
         .with_callback(move |observer| {
-            let average_cpu_usage = mutex.try_lock().unwrap().get_average();
-            observer.observe(average_cpu_usage, &[]);
+            match mutex.try_lock() {
+                Ok(moving_average) => {
+                    let average_cpu_usage = moving_average.get_average();
+                    observer.observe(average_cpu_usage, &[]);
+                }
+                Err(_) => {
+                    eprintln!("Could not lock mutex that collects average cpu usage.");
+                }
+            }
         })
         .build();
 
