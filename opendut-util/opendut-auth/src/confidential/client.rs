@@ -121,7 +121,6 @@ impl ConfidentialClient {
                 backon::ExponentialBuilder::default()
                     .with_max_delay(Duration::from_secs(120))
             )
-            .sleep(tokio::time::sleep)
             .notify(|err: &reqwest::Error, dur: Duration| {
                 println!("Retrying connection to issuer. {:?} after {:?}", err, dur);
             })
@@ -211,6 +210,9 @@ impl Interceptor for ConfClientArcMutex<Option<ConfidentialClientRef>> {
                 backon::ExponentialBuilder::default()
                     .with_max_delay(Duration::from_secs(120))
             )
+            .notify(|_, dur: Duration| {
+                eprintln!("Failed to acquire lock on confidential client in telemetry request interceptor. Retrying to get access token after {:?}.", dur);
+            })
             .call();
 
         let token = match backoff_result {

@@ -14,7 +14,7 @@ opendut-util = { workspace = true, features = ["crypto"] }
 
 anyhow = { workspace = true }
 async-trait = { workspace = true }
-backon = { workspace = true, features = ["tokio-sleep"] }
+backon = { workspace = true }
 cfg-if = { workspace = true }
 chrono = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
