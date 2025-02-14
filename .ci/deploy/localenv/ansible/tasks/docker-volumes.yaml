@@ -1,0 +1,23 @@
+- name: Determine docker volumes
+  ansible.builtin.shell:
+    cmd: |
+      docker volume ls --format json
+  register: _docker_volumes
+  changed_when: false
+
+- name: Parse list of docker volumes (each line is a json object) and keep those that contain opendut in their name
+  set_fact:
+    _docker_volumes_list: "{{ _docker_volumes.stdout_lines | map('from_json') | selectattr('Name', 'contains', 'opendut') }}"
+
+- name: Show docker volumes
+  debug: msg="{{ _docker_volumes_list }}"
+
+- name: Populate dict for docker volumes
+  set_fact:
+    docker_volumes: "{{ docker_volumes | default({}) | combine( { volume['Name']: volume['Mountpoint']} ) }}"
+  loop: "{{ _docker_volumes_list }}"
+  loop_control:
+    loop_var: volume
+
+- name: Show docker volumes
+  debug: msg="{{ docker_volumes }}"

@@ -27,7 +27,7 @@ services:
       test: [ "CMD", "pg_isready", "--quiet", "--dbname=postgres", "--username=postgres" ]
     volumes:
       - keycloak_postgres_data:/var/lib/postgresql/data
-      - /data/backup/opendut/:/var/lib/postgresql/backup
+      - backup:/var/lib/postgresql/backup
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=$KEYCLOAK_POSTGRES_PASSWORD
@@ -239,6 +239,7 @@ services:
       - ./data/secrets/pki/:/pki/:ro
       - ./data/secrets/pki/opendut-ca.pem:/usr/local/share/ca-certificates/opendut-ca.crt:ro
       - ./data/netbird/config/:/config/:ro
+      - backup:/var/lib/backup
       - netbird-mgmt-data:/var/lib/netbird
       - netbird-mgmt-config:/etc/netbird/
     environment:
@@ -329,7 +330,7 @@ services:
       test: [ "CMD", "pg_isready", "--quiet", "--dbname=postgres", "--username=postgres" ]
     volumes:
       - carl_postgres_data:/var/lib/postgresql/data
-      - /data/backup/opendut/:/var/lib/postgresql/backup
+      - backup:/var/lib/postgresql/backup
     labels:
       - logging=promtail
       - logging_job=carl-postgres
@@ -630,6 +631,7 @@ volumes:
   loki-data:
   grafana-storage:
   provision-secrets-data:
+  backup:
 
 networks:
   opendut_local:

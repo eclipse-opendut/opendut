@@ -4,15 +4,34 @@
   hosts: backend
   gather_facts: false
   tasks:
-    - name: Determine current date
-      ansible.builtin.command: "date --utc +'%Y%m%dT%H%M%SZ'"
-      register: date_output
+    - name: Define container names
+      set_fact:
+        opendut_carl: "opendut-carl"
+        opendut_carl_postgres: "opendut-carl-postgres"
+        opendut_keycloak: "opendut-keycloak"
+        opendut_keycloak_postgres: "opendut-keycloak-postgres"
+        opendut_netbird_management: "opendut-netbird-management"
+        opendut_netbird_management_volume: "opendut_netbird-mgmt-data"
+        opendut_backup_volume: "opendut_backup"
+        opendut_secrets_volume: "opendut_provision-secrets-data"
 
-    - name: Set backup_id fact
-      ansible.builtin.set_fact:
-        backup_id: "{{ date_output.stdout }}"
 
-    - name: Backup databases
+# TODO: delete backup in case of error?
+
+    - name: Determine docker volumes
+      include_tasks: tasks/docker-volumes.yaml
+
+    - name: Create backup directory
+      include_tasks: tasks/backup_directory.yaml
+
+    - name: Stop containers that could write into the DB, to avoid inconsistent state
+      ansible.builtin.shell: docker stop {{ item }}
+      loop:
+        - "{{ opendut_carl }}"
+        - "{{ opendut_keycloak }}"
+        - "{{ opendut_netbird_management }}"
+
+    - name: Backup postgres databases to backup volume
       ansible.builtin.shell:
         cmd: |
           docker exec {{ item }} sh -c "
@@ -23,5 +42,30 @@
             echo \$POSTGRES_PASSWORD | pg_dump --username=\$POSTGRES_USER \$POSTGRES_DB > \$backup_dir/{{ item }}.sql
           "
       loop:
-        - "opendut-keycloak-postgres"
-        - "opendut-carl-postgres"
+        - "{{ opendut_keycloak_postgres }}"
+        - "{{ opendut_carl_postgres }}"
+
+    - name: Backup Netbird database
+      ansible.builtin.copy:
+        src: "{{ docker_volumes[opendut_netbird_management_volume] }}/"
+        dest: "{{ backup_dir }}/{{ backup_id }}/netbird/"
+        remote_src: true
+
+    - name: Copy data from backup volume to host system
+      ansible.builtin.copy:
+        src: "{{ docker_volumes[opendut_backup_volume] }}/{{ backup_id }}/"
+        dest: "{{ backup_dir }}/{{ backup_id }}/"
+        remote_src: true
+
+    - name: Copy data from secrets volume to host system
+      ansible.builtin.copy:
+        src: "{{ docker_volumes[opendut_secrets_volume] }}/"
+        dest: "{{ backup_dir }}/{{ backup_id }}/secrets/"
+        remote_src: true
+
+    - name: Restart containers
+      ansible.builtin.shell: docker start {{ item }}
+      loop:
+        - "{{ opendut_carl }}"
+        - "{{ opendut_keycloak }}"
+        - "{{ opendut_netbird_management }}"

@@ -4,16 +4,82 @@
   hosts: backend
   gather_facts: false
   tasks:
-    - name: Restore database backups
+    - name: Stop database containers
+      ansible.builtin.shell: docker stop {{ item }} || true
+      loop:
+        - "opendut-keycloak"
+        - "opendut-keycloak-postgres"
+        - "opendut-carl"
+        - "opendut-carl-postgres"
+        - "opendut-netbird-management"
+
+# TODO: place backed up .env secrets file in provision-secrets container
+
+    - name: Delete volumes
+      ansible.builtin.shell:
+        cmd: |
+          docker stop {{ item.service }} || true
+          docker rm {{ item.service }} || true
+          docker volume rm -f {{ item.volume }} || true
+      loop:
+        - { "service": "opendut-keycloak-postgres", "volume": "opendut_keycloak_postgres_data" }
+        - { "service": "opendut-carl-postgres", "volume": "opendut_carl_postgres_data" }
+        - { "service": "opendut-netbird-management", "volume": "netbird-mgmt-config" }  # contains netbird client credentials
+
+    - name: Start database containers
+      ansible.builtin.shell:
+        cmd: |
+          docker compose --file .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/data/secrets/.env up --detach {{ item }}
+        chdir: "{{ repo_dir }}"
+      loop:
+        - "keycloak-postgres"  # internal name
+        - "carl-postgres"      # internal name
+
+    - name: Restore Postgres database backups
       ansible.builtin.shell:
         cmd: |
           docker exec {{ item }} sh -c "
             backup_dir=/var/lib/postgresql/backup
 
-            newest_dir=\$(ls -t \$backup_dir | head -n1)
+            newest_dir=\$(ls \$backup_dir | tail -n1)
 
-            psql -U \$POSTGRES_USER \$POSTGRES_DB < \$backup_dir/\$newest_dir/{{ item }}.sql
+            psql --username=\$POSTGRES_USER \$POSTGRES_DB < \$backup_dir/\$newest_dir/{{ item }}.sql
           "
       loop:
         - "opendut-keycloak-postgres"
         - "opendut-carl-postgres"
+
+    - name: Start dummy netbird management container without service executable
+      ansible.builtin.shell:
+        cmd: |
+          docker compose --file .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/data/secrets/.env run --rm --entrypoint="" --detach --no-deps netbird-management sleep infinity
+        chdir: "{{ repo_dir }}"
+      register: _netbird_management_id
+
+    - debug: msg="{{ _netbird_management_id }}"
+    - name: Extract container id
+      set_fact:
+        netbird_management_id: "{{ _netbird_management_id.stdout }}"
+
+    - name: Restore Netbird management service
+      ansible.builtin.shell:
+        cmd: |
+          docker exec {{ netbird_management_id }} sh -c "
+            rm -f /var/lib/netbird/*
+
+            backup_dir=/var/lib/backup
+            newest_dir=\$(ls \$backup_dir | tail -n1)
+
+            cp \$backup_dir/\$newest_dir/netbird/* /var/lib/netbird/
+          "
+    - name: Stop dummy netbird management container without service executable
+      ansible.builtin.shell:
+        cmd: |
+          docker kill {{ netbird_management_id }}
+      register: _netbird_management_id
+
+    - name: Start opendut containers
+      ansible.builtin.shell:
+        cmd: |
+          docker compose --file .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/data/secrets/.env up --detach
+        chdir: "{{ repo_dir }}"

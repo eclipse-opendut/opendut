@@ -1,0 +1,12 @@
+- name: Determine current date
+  ansible.builtin.command: "date --utc +'%Y%m%dT%H%M%SZ'"
+  register: date_output
+
+- name: Set backup_id fact
+  ansible.builtin.set_fact:
+    backup_id: "{{ date_output.stdout }}"
+
+- name: Create backup directory
+  ansible.builtin.file:
+    path: "{{ backup_dir }}/{{ backup_id }}"
+    state: directory

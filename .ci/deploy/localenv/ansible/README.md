@@ -17,6 +17,7 @@
           ip_for_edge_hosts_file: "123.456.789.102"
       vars:
         repo_dir: "/data/opendut"
+        backup_dir: "/data/backup/opendut/"
 
     edge:
       hosts:
