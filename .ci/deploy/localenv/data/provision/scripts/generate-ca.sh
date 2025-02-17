@@ -2,11 +2,14 @@
 
 set -e
 
-PKI_ROOT_DIR="/provision/store"
-OPENDUT_PASSWORD_FILE="/provision/.env-pki"
-mkdir -p "$PKI_ROOT_DIR"
+PROVISION_ROOT_DIR="/provision/"
+PROVISION_PKI_DIR="$PROVISION_ROOT_DIR/pki/"
+OPENDUT_PASSWORD_FILE="$PROVISION_ROOT_DIR/.env-pki"
+OPENDUT_ENV_FILE="$PROVISION_ROOT_DIR/.env"
+CA_PATH="$PROVISION_PKI_DIR/opendut-ca"
 
-CA_PATH="$PKI_ROOT_DIR/opendut-ca"
+mkdir -p "$PROVISION_PKI_DIR"
+
 if [ ! -e "$OPENDUT_PASSWORD_FILE" ]; then
   echo "Password file $OPENDUT_PASSWORD_FILE missing. You may override the environment variable OPENDUT_PASSWORD_FILE."
   echo "Generate a password file with 'pwgen -s 50 1 > $OPENDUT_PASSWORD_FILE' or 'openssl rand -base64 50 > $OPENDUT_PASSWORD_FILE"

@@ -7,9 +7,9 @@ RUN useradd --create-home --uid 1000 --gid carl --shell /bin/bash carl
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends pwgen openssl rsync && rm -rf /var/lib/apt/lists/*
 COPY .ci/deploy/localenv/data/provision/entrypoint.sh /entrypoint.sh
 
-RUN mkdir /provision
-COPY .ci/deploy/localenv/data/provision/pki/*.sh /provision
+RUN mkdir /scripts
+COPY .ci/deploy/localenv/data/provision/scripts/*.sh /scripts
 
-RUN chmod +x /entrypoint.sh /provision/*.sh
+RUN chmod +x /entrypoint.sh /scripts/*.sh
 
 ENTRYPOINT ["/entrypoint.sh"]

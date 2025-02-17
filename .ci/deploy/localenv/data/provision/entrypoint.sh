@@ -8,14 +8,17 @@ create_password() {
   echo "$password"
 }
 
-PKI_ROOT_DIR="/provision/"
-OPENDUT_PASSWORD_FILE="$PKI_ROOT_DIR/.env-pki"
-OPENDUT_ENV_FILE="$PKI_ROOT_DIR/.env"
+PROVISION_ROOT_DIR="/provision/"
+PROVISION_PKI_DIR="$PROVISION_ROOT_DIR/pki/"
+OPENDUT_PASSWORD_FILE="$PROVISION_ROOT_DIR/.env-pki"
+OPENDUT_ENV_FILE="$PROVISION_ROOT_DIR/.env"
+CA_PATH="$PROVISION_PKI_DIR/opendut-ca"
+
 if [ ! -e "$OPENDUT_PASSWORD_FILE" ]; then
-  mkdir "/provision/store"
+  mkdir "$PROVISION_PKI_DIR"
   # PKI
   pwgen --secure 32 1 > "$OPENDUT_PASSWORD_FILE"
-  "$PKI_ROOT_DIR"/recreate.sh noprompt
+  /scripts/recreate.sh noprompt
 
   # Keycloak
   echo KEYCLOAK_POSTGRES_PASSWORD="$(create_password)" >> $OPENDUT_ENV_FILE
@@ -43,7 +46,6 @@ if [ ! -e "$OPENDUT_PASSWORD_FILE" ]; then
 fi
 
 # '/provision' - contains the created secrets in the docker volume
-# '/secrets'   - makes a copy of the created secrets available on the host system
+# '/secrets'   - contains a synchronized copy of the created secrets available on the host system
 chown -R carl:carl /provision
-cp $OPENDUT_ENV_FILE /secrets/.env
-rsync --archive --delete /provision/store/ /secrets/pki/
+rsync --archive --delete $PROVISION_ROOT_DIR/ /secrets/

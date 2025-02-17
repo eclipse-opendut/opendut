@@ -42,7 +42,6 @@ secret:
     name: Generic Password - commit://staged/.ci/kubernetes/charts/opendut-carl/values.yaml
   ignored_paths:
   - .ci/docker/keycloak/provision.sh
-  - .ci/deploy/localenv/data/create_docker_compose_env.sh
   - .ci/deploy/localenv/data/pki/*.sh
   - .ci/deploy/localenv/data/provision/entrypoint.sh
   - .ci/deploy/localenv/data/secrets/
