@@ -17,6 +17,7 @@ services:
     volumes:
       - provision-secrets-data:/provision
       - ./data/secrets:/secrets
+      - backup:/backup
 
   keycloak-postgres:
     container_name: opendut-keycloak-postgres

@@ -13,7 +13,13 @@
         - "opendut-carl-postgres"
         - "opendut-netbird-management"
 
-# TODO: place backed up .env secrets file in provision-secrets container
+# TODO: there are two backup locations (docker volume and host system) -> justify (docker volume location is deterministic for scripts) or remove one, add backup rotation?
+
+    - name: Determine backup_id
+      include_tasks: tasks/restore/determine_backup_id.yaml
+
+    - name: Restore provision secrets
+      include_tasks: tasks/restore/restore_provision_secrets.yaml
 
     - name: Delete volumes
       ansible.builtin.shell:
@@ -39,11 +45,7 @@
       ansible.builtin.shell:
         cmd: |
           docker exec {{ item }} sh -c "
-            backup_dir=/var/lib/postgresql/backup
-
-            newest_dir=\$(ls \$backup_dir | tail -n1)
-
-            psql --username=\$POSTGRES_USER \$POSTGRES_DB < \$backup_dir/\$newest_dir/{{ item }}.sql
+            psql --username=\$POSTGRES_USER \$POSTGRES_DB < /var/lib/postgresql/backup/{{ backup_id }}/{{ item }}.sql
           "
       loop:
         - "opendut-keycloak-postgres"
@@ -65,18 +67,21 @@
       ansible.builtin.shell:
         cmd: |
           docker exec {{ netbird_management_id }} sh -c "
+            # delete old files if present
             rm -f /var/lib/netbird/*
 
-            backup_dir=/var/lib/backup
-            newest_dir=\$(ls \$backup_dir | tail -n1)
-
-            cp \$backup_dir/\$newest_dir/netbird/* /var/lib/netbird/
+            cp /var/lib/backup/{{ backup_id }}/netbird/* /var/lib/netbird/
           "
     - name: Stop dummy netbird management container without service executable
       ansible.builtin.shell:
         cmd: |
           docker kill {{ netbird_management_id }}
-      register: _netbird_management_id
+
+    - name: Start provisioning container to synchronize provision volume back to host
+      ansible.builtin.shell:
+        cmd: |
+          docker compose --file .ci/deploy/localenv/docker-compose.yml up --build provision-secrets
+        chdir: "{{ repo_dir }}"
 
     - name: Start opendut containers
       ansible.builtin.shell:
