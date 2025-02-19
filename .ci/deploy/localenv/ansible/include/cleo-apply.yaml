@@ -3,6 +3,12 @@
     apply_file: "{{ ansible_host }}.yaml"
     apply_dir: "/tmp/opendut/cleo/apply"
 
+- name: Create temp dir for CLEO apply config
+  ansible.builtin.file:
+    path: "{{ apply_dir }}"
+    state: directory
+    mode: "0644"
+
 - name: Upload to backend
   ansible.builtin.copy:
     src: "{{ inventory_dir }}/{{ apply_file }}"

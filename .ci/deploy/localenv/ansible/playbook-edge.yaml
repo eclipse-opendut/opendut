@@ -87,12 +87,16 @@
 
     - name: Determine CPU architecture
       ansible.builtin.command: "uname --machine"
-      register: uname_output
+      register: _uname_output
       changed_when: false
+
+    - name: Set cpu_arch fact
+      ansible.builtin.set_fact:
+        cpu_arch: "{{ _uname_output.stdout }}"
 
     - name: Download EDGAR archive
       ansible.builtin.get_url:
-        url: "https://carl.opendut.local/api/edgar/{{ arch_map[uname_output.stdout] }}/download"
+        url: "https://carl.opendut.local/api/edgar/{{ arch_map[cpu_arch] }}/download"
         dest: "{{ edgar_download }}"
         mode: "0644"
       environment:
@@ -115,6 +119,36 @@
         dest: "{{ edgar_unpack_dir }}"
 
 
+- name: Install Cannelloni
+  hosts: edge
+  gather_facts: false
+  vars:
+    arch_map:
+      x86_64: "manylinux_2_28-x64"
+      armv7l: "linux-armv7-lts"
+      aarch64: "linux-arm64-lts"
+    cannelloni_dir: "/tmp/opendut/"
+  tasks:
+    - name: Install can-utils
+      ansible.builtin.apt:
+        name: "can-utils"
+        state: present
+
+    - name: Download and unpack Cannelloni
+      ansible.builtin.unarchive:
+        src: "https://github.com/eclipse-opendut/cannelloni-build/releases/download/v1.1.0/cannelloni_{{ arch_map[cpu_arch] }}_1.1.0.tar.gz"
+        remote_src: true
+        dest: "{{ cannelloni_dir }}"
+
+    - name: Copy Cannelloni into OS PATH
+      ansible.builtin.shell:
+        cmd: |
+          cp libcannelloni-common.so.0 /lib/
+          cp libsctp.so* /lib/
+          cp cannelloni /usr/local/bin/
+        chdir: "{{ cannelloni_dir }}/cannelloni/"
+
+
 - name: Retrieve Setup-String from CARL
   hosts: edge
   gather_facts: false
@@ -134,8 +168,15 @@
   hosts: edge
   gather_facts: false
   vars:
-    config_file: "/etc/opendut/edgar.toml"
+    config_dir: "/etc/opendut/"
+    config_file: "{{ config_dir }}/edgar.toml"
   tasks:
+    - name: Create EDGAR config directory
+      ansible.builtin.file:
+        path: "{{ config_dir }}"
+        state: directory
+        mode: "0755"
+
     - name: Write telemetry configuration
       ansible.builtin.copy:
         dest: "{{ config_file }}"
