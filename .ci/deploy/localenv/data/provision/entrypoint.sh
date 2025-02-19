@@ -47,5 +47,5 @@ fi
 
 # '/provision' - contains the created secrets in the docker volume
 # '/secrets'   - contains a synchronized copy of the created secrets available on the host system
-chown -R carl:carl /provision
+chown -R carl:carl $PROVISION_ROOT_DIR
 rsync --archive --delete $PROVISION_ROOT_DIR/ /secrets/

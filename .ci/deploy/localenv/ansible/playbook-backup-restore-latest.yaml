@@ -14,6 +14,7 @@
         - "opendut-netbird-management"
 
 # TODO: there are two backup locations (docker volume and host system) -> justify (docker volume location is deterministic for scripts) or remove one, add backup rotation?
+# TODO: restore does not work on the first switch, yet?
 
     - name: Determine backup_id
       include_tasks: tasks/restore/determine_backup_id.yaml
@@ -30,6 +31,7 @@
       loop:
         - { "service": "opendut-keycloak-postgres", "volume": "opendut_keycloak_postgres_data" }
         - { "service": "opendut-carl-postgres", "volume": "opendut_carl_postgres_data" }
+        # TODO: evaluate if this volume is required at all or if it is more confusing
         - { "service": "opendut-netbird-management", "volume": "netbird-mgmt-config" }  # contains netbird client credentials
 
     - name: Start database containers
@@ -69,6 +71,9 @@
           docker exec {{ netbird_management_id }} sh -c "
             # delete old files if present
             rm -f /var/lib/netbird/*
+          
+            # delete management config that contains stored secrets
+            rm /etc/netbird/management.json
 
             cp /var/lib/backup/{{ backup_id }}/netbird/* /var/lib/netbird/
           "

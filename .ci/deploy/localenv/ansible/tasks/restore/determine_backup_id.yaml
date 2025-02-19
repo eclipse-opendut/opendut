@@ -12,5 +12,20 @@
   when: backup_id is not defined  # will be overwritten by extra variables anyway but check for extra caution
 # see also https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.html#variable-precedence-where-should-i-put-a-variable
 
-- name: Show backup id which will be used
-  debug: msg="Using the following backup '{{ backup_id }}'"
+- name: Define backup path
+  set_fact:
+    backup_id_path: "{{ backup_dir }}/{{ backup_id }}"
+
+- name: Show backup id full path which will be used
+  debug: msg="Using the following backup '{{ backup_id_path }}'"
+
+
+- name: Ensure backup exists before proceeding
+  ansible.builtin.stat:
+    path: "{{ backup_id_path }}"
+  register: _backup_directory
+  failed_when: not _backup_directory.stat.exists
+
+- name: Backup directory found
+  ansible.builtin.debug:
+    msg: "Directory {{ backup_id_path }} present"
