@@ -6,7 +6,14 @@
   ansible.builtin.set_fact:
     backup_id: "{{ date_output.stdout }}"
 
+- name: Set backup_id_path fact (full path to backup directory)
+  ansible.builtin.set_fact:
+    backup_id_path: "{{ backup_dir }}/{{ backup_id }}"
+
 - name: Create backup directory
   ansible.builtin.file:
-    path: "{{ backup_dir }}/{{ backup_id }}"
+    path: "{{ backup_id_path }}"
     state: directory
+
+- name: Created backup directory
+  debug: msg="Created backup directory {{ backup_id_path }}"

@@ -1,0 +1,22 @@
+- name: Check if opendut repository exists
+  stat:
+    path: "{{ repo_dir }}"
+  register: _repo_dir_stat
+
+- name: Stop opendut containers
+  ansible.builtin.shell:
+    cmd: docker compose --file .ci/deploy/localenv/docker-compose.yml down
+    chdir: "{{ repo_dir }}"
+  when: _repo_dir_stat.stat.exists
+
+- name: Check if opendut containers are running
+  ansible.builtin.shell:
+    cmd: |
+      {% raw %} docker ps --all --format='{{.Names}}' --filter "name=opendut-.*" {% endraw %}
+  register: _opendut_containers
+
+- name: Alert if there are opendut containers present
+  debug:
+    msg: "There are opendut containers running, please check manually: {{ _opendut_containers }}"
+  when: _opendut_containers.stdout != ""
+  failed_when: _opendut_containers.stdout != ""

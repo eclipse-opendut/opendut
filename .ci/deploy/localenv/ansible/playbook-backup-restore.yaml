@@ -1,0 +1,68 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Restore latest backup
+  hosts: backend
+  gather_facts: false
+  tasks:
+    - name: Checkout openDuT repo
+      ansible.builtin.git:
+        repo: "https://github.com/eclipse-opendut/opendut/"
+        dest: "{{ repo_dir }}"
+        version: "{{ opendut_version_ref }}"
+        force: true  # Avoid "would clobber existing tag" error for canary-tag
+      register: repo_checkout
+
+    - name: Stop opendut
+      include_tasks: tasks/stop-opendut-containers.yaml
+
+# Notes: there are two backup locations (docker volume and host system)
+# The docker volume location is deterministic for scripts
+# TODO: add backup rotation
+
+    - name: Determine backup_id
+      include_tasks: tasks/restore/determine_backup_id.yaml
+
+    - name: Restore provision secrets
+      include_tasks: tasks/restore/provision_secrets.yaml
+
+    - name: Delete volumes
+      ansible.builtin.shell:
+        cmd: |
+          docker stop {{ item.service }} || true
+          docker rm {{ item.service }} || true
+          docker volume rm -f {{ item.volume }} || true
+      loop:
+        - { "service": "opendut-keycloak-postgres", "volume": "opendut_keycloak_postgres_data" }
+        - { "service": "opendut-carl-postgres", "volume": "opendut_carl_postgres_data" }
+        # Netbird management config contains management.json with client credentials for keycloak
+        - { "service": "opendut-netbird-management", "volume": "netbird-mgmt-config" }
+        # OpenDuT CARL config volume contains netbird api key (cache to avoid creating a key on every container restart)
+        - { "service": "opendut-carl", "volume": "carl-config" }
+
+    - name: Start database containers
+      ansible.builtin.shell:
+        cmd: |
+          docker compose --file .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/data/secrets/.env up --detach {{ item }}
+        chdir: "{{ repo_dir }}"
+      loop:
+        - "keycloak-postgres"  # internal name
+        - "carl-postgres"      # internal name
+
+    - name: Restore Postgres database backups
+      ansible.builtin.shell:
+        cmd: |
+          docker exec {{ item }} sh -c "
+            psql --username=\$POSTGRES_USER \$POSTGRES_DB < /var/lib/postgresql/backup/{{ backup_id }}/{{ item }}.sql
+          "
+      loop:
+        - "opendut-keycloak-postgres"
+        - "opendut-carl-postgres"
+
+    - name: Restore netbird management
+      include_tasks: tasks/restore/netbird-management.yml
+
+    - name: Start opendut containers
+      ansible.builtin.shell:
+        cmd: |
+          docker compose --file .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/data/secrets/.env up --detach
+        chdir: "{{ repo_dir }}"
