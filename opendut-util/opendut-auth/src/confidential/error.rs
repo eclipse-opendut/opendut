@@ -42,16 +42,16 @@ impl Display for WrappedRequestTokenError {
 
 fn parse_oauth_request_error(error: &RequestTokenError<OidcClientError, BasicErrorResponse>) -> String {
     match error {
-        RequestTokenError::ServerResponse(ref server_error) => {
+        RequestTokenError::ServerResponse(server_error) => {
             server_error.error().to_string()
         }
-        RequestTokenError::Request(ref request_error) => {
+        RequestTokenError::Request(request_error) => {
             request_error.to_string()
         }
-        RequestTokenError::Parse(ref error_token, ref _error_response) => {
+        RequestTokenError::Parse(error_token, _error_response) => {
             error_token.to_string()
         }
-        RequestTokenError::Other(ref other) => {
+        RequestTokenError::Other(other) => {
             other.to_string()
         }
     }

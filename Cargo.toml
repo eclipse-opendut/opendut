@@ -19,12 +19,12 @@ members = [
     ".ci/docker/theo",
     "tests",
 ]
-resolver = "2"
+resolver = "3"
 
 [workspace.package]
 version = "0.6.0-alpha"
-edition = "2021"
-rust-version = "1.80"
+edition = "2024"
+rust-version = "1.85"
 license = "Apache-2.0"
 repository = "https://github.com/eclipse-opendut/opendut"
 
@@ -191,7 +191,7 @@ rperf.version = "0.1.8"
 
 [workspace.metadata.ci.cargo-ci] #CLI tool crates used in CI (not libraries)
 cargo-bundle-licenses.version = "2.0.0"
-cargo-deny.version = "0.16.1"
+cargo-deny.version = "0.17.0"
 cargo-sbom.version = "0.9.1"
 cargo-tarpaulin.version = "0.31.2"
 cross.version = "0.2.5"

@@ -65,14 +65,14 @@ where
                UserPeerExecutorKind::Container { image, name, .. } => {
                    let name = match name {
                        UserInputValue::Left(_) => String::from(""),
-                       UserInputValue::Right(ref value) => value.to_owned(),
-                       UserInputValue::Both(_, ref value) => value.to_owned()
+                       UserInputValue::Right(value) => value.to_owned(),
+                       UserInputValue::Both(_, value) => value.to_owned()
                    };
                    if name.is_empty() {
                        match image {
                            UserInputValue::Left(_) => String::from(""),
-                           UserInputValue::Right(ref value) => value.to_owned(),
-                           UserInputValue::Both(_, ref value) => value.to_owned()
+                           UserInputValue::Right(value) => value.to_owned(),
+                           UserInputValue::Both(_, value) => value.to_owned()
                        }
                    } else {
                       name

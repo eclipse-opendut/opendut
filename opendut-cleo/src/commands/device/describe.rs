@@ -1,7 +1,7 @@
 use indoc::indoc;
 
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::topology::{DeviceDescription, DeviceId};
+use opendut_types::topology::DeviceId;
 
 use crate::DescribeOutputFormat;
 
@@ -34,9 +34,7 @@ impl DescribeDeviceCli {
                     "),
                     device.name,
                     device.id,
-                    device.description
-                        .map(DeviceDescription::from)
-                        .unwrap_or_default(),
+                    device.description.unwrap_or_default(),
                     device.interface,
                     device.tags
                         .iter()

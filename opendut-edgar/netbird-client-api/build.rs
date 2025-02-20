@@ -6,7 +6,9 @@ use cargo_metadata::MetadataCommand;
 use opendut_util::project;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    std::env::set_var("PROTOC", protobuf_src::protoc());
+    unsafe {
+        std::env::set_var("PROTOC", protobuf_src::protoc());
+    }
 
     let workspace_dir = project::workspace_dir(env!("CARGO"))?;
 
