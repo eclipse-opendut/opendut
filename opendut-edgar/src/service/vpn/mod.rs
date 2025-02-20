@@ -23,6 +23,10 @@ pub async fn retrieve_remote_host(settings: &LoadedConfig) -> anyhow::Result<IpA
         let mut client = opendut_netbird_client_api::client::Client::connect().await?;
 
         let status = client.full_status().await?;
+        
+        debug!("Netbird local peer state {:?}", status.local_peer_state);
+        debug!("Netbird management state {:?}", status.management_state);
+        debug!("Netbird signal state {:?}", status.signal_state);
 
         let host = status.local_peer_state
             .ok_or(anyhow!("NetBird Client did not return a local peer state. May not be logged in. Re-run `edgar setup` to fix this."))?
