@@ -4,7 +4,7 @@
   hosts: backend
   gather_facts: false
   tasks:
-    - name: Define container names
+    - name: Define container and volume names
       set_fact:
         opendut_carl: "opendut-carl"
         opendut_carl_postgres: "opendut-carl-postgres"
@@ -22,7 +22,7 @@
     - name: Create backup
       block:
       - name: Create backup directory
-        include_tasks: tasks/backup/backup_directory.yaml
+        include_tasks: tasks/backup/create-backup-directory.yaml
 
       - name: Stop containers that could write into the DB, to avoid inconsistent state
         ansible.builtin.shell: docker stop {{ item }}

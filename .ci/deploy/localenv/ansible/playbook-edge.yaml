@@ -7,7 +7,7 @@
     apply_file: "{{ inventory_dir }}/{{ ansible_host }}.yaml"
   tasks:
     - name: Include cleo-apply playbook
-      ansible.builtin.include_tasks: "include/cleo-apply.yaml"
+      ansible.builtin.include_tasks: "tasks/edge/cleo-apply.yaml"
       when: apply_file is exists
 
 
@@ -79,11 +79,11 @@
     - name: Determine current date
       delegate_to: "localhost"  # Assume localhost has a more accurate time than the edge hosts
       ansible.builtin.command: "date --rfc-3339=seconds"
-      register: date_output
+      register: _date_output
       changed_when: false
 
     - name: Set current date
-      ansible.builtin.command: "date --set='{{ date_output.stdout }}'"
+      ansible.builtin.command: "date --set='{{ _date_output.stdout }}'"
 
     - name: Determine CPU architecture
       ansible.builtin.command: "uname --machine"
@@ -157,11 +157,11 @@
       delegate_to: "{{ backend }}"
       ansible.builtin.command:
         cmd: "docker exec opendut-cleo opendut-cleo generate-setup-string {{ peer_id }}"
-      register: setup_string_output
+      register: _setup_string_output
 
     - name: Store Setup-String
       ansible.builtin.set_fact:
-        setup_string: "{{ setup_string_output.stdout }}"
+        setup_string: "{{ _setup_string_output.stdout }}"
 
 
 - name: Setup EDGARs

@@ -1,14 +1,14 @@
 - name: Determine available backups
   ansible.builtin.shell:
     cmd: ls {{ backup_dir }}
-  register: _present_backups
+  register: _available_backups
 
 - name: Show backups
-  debug: msg="{{ _present_backups.stdout_lines }}"
+  debug: msg="{{ _available_backups.stdout_lines }}"
 
 - name: Define latest backup if no backup_id provided
   set_fact:
-    backup_id: "{{ _present_backups.stdout_lines | last }}"
+    backup_id: "{{ _available_backups.stdout_lines | last }}"
   when: backup_id is not defined  # will be overwritten by extra variables anyway but check for extra caution
 # see also https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.html#variable-precedence-where-should-i-put-a-variable
 

@@ -10,7 +10,6 @@
         dest: "{{ repo_dir }}"
         version: "{{ opendut_version_ref }}"
         force: true  # Avoid "would clobber existing tag" error for canary-tag
-      register: repo_checkout
 
     - name: Stop opendut
       include_tasks: tasks/stop-opendut-containers.yaml
@@ -20,12 +19,12 @@
 # TODO: add backup rotation
 
     - name: Determine backup_id
-      include_tasks: tasks/restore/determine_backup_id.yaml
+      include_tasks: tasks/restore/determine-backup-id.yaml
 
     - name: Restore provision secrets
-      include_tasks: tasks/restore/provision_secrets.yaml
+      include_tasks: tasks/restore/provision-secrets.yaml
 
-    - name: Delete volumes
+    - name: Delete volumes to avoid conflicts when restoring
       ansible.builtin.shell:
         cmd: |
           docker stop {{ item.service }} || true
@@ -36,7 +35,7 @@
         - { "service": "opendut-carl-postgres", "volume": "opendut_carl_postgres_data" }
         # Netbird management config contains management.json with client credentials for keycloak
         - { "service": "opendut-netbird-management", "volume": "netbird-mgmt-config" }
-        # OpenDuT CARL config volume contains netbird api key (cache to avoid creating a key on every container restart)
+        # OpenDuT CARL config volume contains netbird api key (is cached to avoid creating a key on every container restart)
         - { "service": "opendut-carl", "volume": "carl-config" }
 
     - name: Start database containers
@@ -59,7 +58,7 @@
         - "opendut-carl-postgres"
 
     - name: Restore netbird management
-      include_tasks: tasks/restore/netbird-management.yml
+      include_tasks: tasks/restore/netbird-management.yaml
 
     - name: Start opendut containers
       ansible.builtin.shell:
