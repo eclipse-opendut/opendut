@@ -28,7 +28,7 @@ runs:
   using: "composite"
   steps:
     - name: Install Rust Toolchain
-      uses: dtolnay/rust-toolchain@8504a5cb1826786b18ef7a8819e6fddaf9f3eb8d
+      uses: dtolnay/rust-toolchain@c5a29ddb4d9d194e7c84ec8c3fba61b1c31fee8c
       with:
         toolchain: stable
         targets: x86_64-unknown-linux-gnu
@@ -41,7 +41,7 @@ runs:
           ~/.rustup/settings.toml
         key: rust-toolchain-${{ github.job }}
     - name: Prepare Rust Dependency Cache
-      uses: Swatinem/rust-cache@23bce251a8cd2ffc3c1075eaa2367cf899916d84 #2.7.3
+      uses: Swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3 #2.7.7
 
     - name: Install cargo-deny
       uses: taiki-e/cache-cargo-install-action@f6e15f71e967ea23e30091f4d38ca6300f5c7760
@@ -58,7 +58,7 @@ runs:
     - name: Install cargo-tarpaulin
       uses: taiki-e/cache-cargo-install-action@f6e15f71e967ea23e30091f4d38ca6300f5c7760
       with:
-          tool: cargo-tarpaulin
+        tool: cargo-tarpaulin
       if: ${{ inputs.cargo-tarpaulin == 'true' || inputs.cargo-tarpaulin == 'yes' }}
 
     - name: Install Cross
