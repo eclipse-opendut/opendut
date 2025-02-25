@@ -7,6 +7,7 @@ pub mod list_devices;
 pub mod list_peer_descriptors;
 pub mod store_peer_descriptor;
 pub mod unassign_cluster;
+pub mod list_peer_states;
 
 #[cfg(test)]
 mod testing {

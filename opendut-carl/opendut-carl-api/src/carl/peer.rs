@@ -101,6 +101,14 @@ pub enum GetPeerStateError {
     }
 }
 
+#[derive(thiserror::Error, Debug, PartialEq, Eq)]
+pub enum ListPeerStatesError {
+    #[error("An internal error occurred while listing peer states:\n  {cause}")]
+    Internal {
+        cause: String
+    }
+}
+
 #[derive(thiserror::Error, Debug)]
 pub enum ListDevicesError {
     #[error("An internal error occurred computing the list of devices:\n  {cause}")]
@@ -119,6 +127,7 @@ pub enum IllegalDevicesError {
 
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 mod client {
+    use std::collections::HashMap;
     use tonic::codegen::{Body, Bytes, http, InterceptedService, StdError};
     use tracing::error;
     use opendut_types::cleo::CleoSetup;
@@ -128,7 +137,7 @@ mod client {
     use opendut_types::topology::DeviceDescriptor;
 
     use crate::carl::{ClientError, extract};
-    use crate::carl::peer::{DeletePeerDescriptorError, GetPeerDescriptorError, GetPeerStateError, ListDevicesError, ListPeerDescriptorsError, StorePeerDescriptorError};
+    use crate::carl::peer::{DeletePeerDescriptorError, GetPeerDescriptorError, GetPeerStateError, ListDevicesError, ListPeerDescriptorsError, ListPeerStatesError, StorePeerDescriptorError};
     use crate::proto::services::peer_manager;
     use crate::proto::services::peer_manager::peer_manager_client::PeerManagerClient;
 
@@ -273,6 +282,38 @@ mod client {
                 peer_manager::get_peer_state_response::Reply::Success(success) => {
                     let peer_descriptor = extract!(success.state)?;
                     Ok(peer_descriptor)
+                }
+            }
+        }
+
+        pub async fn list_peer_states(&mut self) -> Result<HashMap<PeerId, PeerState>, ClientError<ListPeerStatesError>> {
+
+            let request = tonic::Request::new(peer_manager::ListPeerStatesRequest {});
+
+            let response = self.inner.list_peer_states(request).await?
+                .into_inner();
+
+            match extract!(response.reply)? {
+                peer_manager::list_peer_states_response::Reply::Failure(failure) => {
+                    let error = ListPeerStatesError::try_from(failure)?;
+                    Err(ClientError::UsageError(error))
+                }
+                peer_manager::list_peer_states_response::Reply::Success(success) => {
+                    let peer_states = success.peer_state_entries.into_iter()
+                        .map(|entry| {
+                            let peer_id = entry.peer_id
+                                .ok_or(ClientError::<ListPeerStatesError>::InvalidResponse(String::from("peer_id field not set")))?;
+                            let peer_id = PeerId::try_from(peer_id)?;
+
+                            let peer_state = entry.peer_state
+                                .ok_or(ClientError::<ListPeerStatesError>::InvalidResponse(String::from("peer_state field not set")))?;
+                            let peer_state = PeerState::try_from(peer_state)?;
+
+                            Ok::<_, ClientError<_>>((peer_id, peer_state))
+                        })
+                        .collect::<Result<HashMap<_, _>, _>>()?;
+
+                    Ok(peer_states)
                 }
             }
         }

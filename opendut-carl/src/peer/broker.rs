@@ -279,9 +279,9 @@ mod tests {
 
     use opendut_carl_api::proto::services::peer_messaging_broker::Ping;
 
+    use super::*;
     use crate::resources::manager::ResourcesManager;
     use crate::resources::storage::ResourcesStorageApi;
-    use super::*;
 
     #[tokio::test]
     async fn peer_stream() -> anyhow::Result<()> {

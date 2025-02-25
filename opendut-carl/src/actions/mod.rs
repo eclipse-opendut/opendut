@@ -13,6 +13,7 @@ pub use peers::generate_cleo_setup::*;
 pub use peers::delete_peer_descriptor::*;
 pub use peers::list_peer_descriptors::*;
 pub use peers::get_peer_state::*;
+pub use peers::list_peer_states::*;
 pub use peers::list_devices::*;
 pub use peers::assign_cluster::*;
 pub use peers::unassign_cluster::*;

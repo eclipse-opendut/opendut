@@ -7,7 +7,7 @@ use tracing::trace;
 use url::Url;
 use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_auth::registration::resources::UserId;
-use opendut_carl_api::carl::peer::{GetPeerDescriptorError, GetPeerStateError};
+use opendut_carl_api::carl::peer::{GetPeerDescriptorError, GetPeerStateError, ListPeerStatesError};
 use opendut_carl_api::proto::services::peer_manager;
 use opendut_carl_api::proto::services::peer_manager::*;
 use opendut_carl_api::proto::services::peer_manager::peer_manager_server::{PeerManager as PeerManagerService, PeerManagerServer};
@@ -15,7 +15,7 @@ use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::cleo::{CleoId};
 
 use crate::actions;
-use crate::actions::{DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, GetPeerStateParams, ListDevicesParams, ListPeerDescriptorsParams, StorePeerDescriptorParams};
+use crate::actions::{DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, GetPeerStateParams, ListDevicesParams, ListPeerDescriptorsParams, ListPeerStatesParams, StorePeerDescriptorParams};
 use crate::grpc::extract;
 use crate::resources::manager::ResourcesManagerRef;
 use crate::vpn::Vpn;
@@ -215,6 +215,40 @@ impl PeerManagerService for PeerManagerFacade {
                     reply: Some(get_peer_state_response::Reply::Success(
                         GetPeerStateSuccess {
                             state: Some(state.into())
+                        }
+                    ))
+                }))
+            }
+        }
+    }
+
+    #[tracing::instrument(skip_all, level="trace")]
+    async fn list_peer_states(&self, _: Request<ListPeerStatesRequest>) -> Result<Response<ListPeerStatesResponse>, Status> {
+
+        trace!("Received request to list peer states.");
+
+        let result =
+            actions::list_peer_states(ListPeerStatesParams {
+                resources_manager: Arc::clone(&self.resources_manager),
+            }).await
+                .map_err(|error| ListPeerStatesError::Internal { cause: error.to_string() });
+
+        match result {
+            Err(error) => {
+                Ok(Response::new(ListPeerStatesResponse {
+                    reply: Some(list_peer_states_response::Reply::Failure(error.into()))
+                }))
+            }
+            Ok(peer_states) => {
+                Ok(Response::new(ListPeerStatesResponse {
+                    reply: Some(list_peer_states_response::Reply::Success(
+                        ListPeerStatesSuccess {
+                            peer_state_entries: peer_states.into_iter()
+                                .map(|(peer_id, peer_state)| ListPeerStatesEntry {
+                                    peer_id: Some(peer_id.into()),
+                                    peer_state: Some(peer_state.into()),
+                                })
+                                .collect(),
                         }
                     ))
                 }))
