@@ -18,23 +18,18 @@ pub fn PeersCard() -> impl IntoView {
     let peers: LocalResource<Peers> = LocalResource::new(move || {
         let mut carl = globals.client.clone();
         async move {
-            let registered = carl.peers.list_peer_descriptors().await
-                .expect("Failed to request the list of peers.");
+            let peer_states = carl.peers.list_peer_states().await
+                .expect("Failed to request the list of peer states.");
 
-            let mut online_counter = 0;
-            let mut offline_counter = 0;
-            
-            for peer in registered {
-                let peer_state = carl.peers.get_peer_state(peer.id).await.expect("Failed to request state of peer.");
-                match peer_state {
-                    PeerState::Down => { offline_counter += 1 }
-                    PeerState::Up { .. } => { online_counter += 1}
-                }
-            };
-            
+            let (online, offline): (Vec<_>, Vec<_>) = peer_states.values()
+                .partition(|peer_state| match peer_state {
+                    PeerState::Up { .. } => true,
+                    PeerState::Down => false,
+                });
+
             Peers {
-                offline: offline_counter,
-                online: online_counter
+                offline: offline.len(),
+                online: online.len(),
             }
         }
     });

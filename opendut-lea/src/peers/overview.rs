@@ -7,6 +7,7 @@ use crate::util;
 use leptos::html::Div;
 use leptos::prelude::*;
 use leptos_use::on_click_outside;
+use tracing::trace;
 use opendut_types::cluster::ClusterConfiguration;
 use opendut_types::peer::state::PeerState;
 use opendut_types::peer::PeerDescriptor;
@@ -29,9 +30,16 @@ pub fn PeersOverview() -> impl IntoView {
                 let peers = carl.peers.list_peer_descriptors().await
                     .expect("Failed to request the list of peers.");
 
+                let mut peer_states = carl.peers.list_peer_states().await
+                    .expect("Failed to request the list of peer states.");
+
                 let mut peers_with_state: Vec<(PeerDescriptor, PeerState)> = vec![];
                 for peer in peers {
-                    let peer_state = carl.peers.get_peer_state(peer.id).await.expect("Failed to request state of peer.");
+                    let peer_state = peer_states.remove(&peer.id)
+                        .unwrap_or_else(|| {
+                            trace!("Did not receive PeerState for peer <{peer_id}>. Treating it as down.", peer_id=peer.id);
+                            PeerState::Down
+                        });
                     peers_with_state.push((peer, peer_state));
                 };
 
