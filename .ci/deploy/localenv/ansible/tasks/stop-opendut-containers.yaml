@@ -4,13 +4,13 @@
   register: _repo_dir_stat
 
 - name: Stop opendut containers
-  ansible.builtin.shell:
+  command:
     cmd: docker compose --file .ci/deploy/localenv/docker-compose.yml down
     chdir: "{{ repo_dir }}"
   when: _repo_dir_stat.stat.exists
 
 - name: Check if opendut containers are running
-  ansible.builtin.shell:
+  shell:
     cmd: |
       {% raw %} docker ps --all --format='{{.Names}}' --filter "name=opendut-.*" {% endraw %}
   register: _opendut_containers

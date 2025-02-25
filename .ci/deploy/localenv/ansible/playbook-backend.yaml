@@ -6,24 +6,24 @@
   gather_facts: false
   tasks:
     - name: Checkout openDuT repo
-      ansible.builtin.git:
+      git:
         repo: "https://github.com/eclipse-opendut/opendut/"
         dest: "{{ repo_dir }}"
         version: "{{ opendut_version_ref }}"
         force: true  # Avoid "would clobber existing tag" error for canary-tag
 
     - name: Force update CARL image  # With canary releases, we may re-use the same tag, which normally results in the new image not being pulled.
-      ansible.builtin.command:
+      command:
         cmd: docker compose pull --policy=always carl
         chdir: "{{ repo_dir }}/.ci/deploy/localenv/"
 
     - name: Provision secrets
-      ansible.builtin.command:
+      command:
         cmd: "docker compose --file .ci/deploy/localenv/docker-compose.yml up --build provision-secrets"
         chdir: "{{ repo_dir }}"
         creates: "{{ repo_dir }}/.ci/deploy/localenv/data/secrets/.env"
 
     - name: Start containers
-      ansible.builtin.command:
+      command:
         cmd: "docker compose --file .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/data/secrets/.env up --detach --build"
         chdir: "{{ repo_dir }}"

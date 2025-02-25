@@ -21,66 +21,66 @@
 
     - name: Create backup
       block:
-      - name: Create backup directory
-        include_tasks: tasks/backup/create-backup-directory.yaml
+        - name: Create backup directory
+          include_tasks: tasks/backup/create-backup-directory.yaml
 
-      - name: Stop containers that could write into the DB, to avoid inconsistent state
-        ansible.builtin.shell: docker stop {{ item }}
-        loop:
-          - "{{ opendut_carl }}"
-          - "{{ opendut_keycloak }}"
-          - "{{ opendut_netbird_management }}"
+        - name: Stop containers that could write into the DB, to avoid inconsistent state
+          command: docker stop {{ item }}
+          loop:
+            - "{{ opendut_carl }}"
+            - "{{ opendut_keycloak }}"
+            - "{{ opendut_netbird_management }}"
 
-      - name: Backup postgres databases to backup volume
-        ansible.builtin.shell:
-          cmd: |
-            docker exec {{ item }} sh -c "
-              base_dir=/var/lib/postgresql/backup
-              backup_dir=\$base_dir/{{ backup_id }}
-              mkdir -p \$backup_dir
-  
-              echo \$POSTGRES_PASSWORD | pg_dump --username=\$POSTGRES_USER \$POSTGRES_DB > \$backup_dir/{{ item }}.sql
-            "
-        loop:
-          - "{{ opendut_keycloak_postgres }}"
-          - "{{ opendut_carl_postgres }}"
+        - name: Backup postgres databases to backup volume
+          shell:
+            cmd: |
+              docker exec {{ item }} sh -c "
+                base_dir=/var/lib/postgresql/backup
+                backup_dir=\$base_dir/{{ backup_id }}
+                mkdir -p \$backup_dir
 
-      - name: Backup Netbird database
-        ansible.builtin.copy:
-          src: "{{ docker_volumes[opendut_netbird_management_volume] }}/"
-          dest: "{{ backup_id_path }}/netbird/"
-          remote_src: true
+                echo \$POSTGRES_PASSWORD | pg_dump --username=\$POSTGRES_USER \$POSTGRES_DB > \$backup_dir/{{ item }}.sql
+              "
+          loop:
+            - "{{ opendut_keycloak_postgres }}"
+            - "{{ opendut_carl_postgres }}"
 
-      - name: Copy data from backup volume to host system (actual BACKUP location)
-        ansible.builtin.copy:
-          src: "{{ docker_volumes[opendut_backup_volume] }}/{{ backup_id }}/"
-          dest: "{{ backup_id_path }}/"
-          remote_src: true
+        - name: Backup Netbird database
+          copy:
+            src: "{{ docker_volumes[opendut_netbird_management_volume] }}/"
+            dest: "{{ backup_id_path }}/netbird/"
+            remote_src: true
 
-      - name: Copy data from secrets volume to host system (actual BACKUP location)
-        ansible.builtin.copy:
-          src: "{{ docker_volumes[opendut_secrets_volume] }}/"
-          dest: "{{ backup_id_path }}/secrets/"
-          remote_src: true
+        - name: Copy data from backup volume to host system (actual BACKUP location)
+          copy:
+            src: "{{ docker_volumes[opendut_backup_volume] }}/{{ backup_id }}/"
+            dest: "{{ backup_id_path }}/"
+            remote_src: true
 
-      - name: Cleanup backup volume (backups are persisted on host)
-        ansible.builtin.shell:
-          cmd: |
-            docker exec {{ opendut_carl_postgres }} sh -c "
-              rm -rf /var/lib/postgresql/backup/*
-            "
+        - name: Copy data from secrets volume to host system (actual BACKUP location)
+          copy:
+            src: "{{ docker_volumes[opendut_secrets_volume] }}/"
+            dest: "{{ backup_id_path }}/secrets/"
+            remote_src: true
 
-      - name: Backup successfully created
-        debug: msg="New backup available at {{ backup_id_path }}"
+        - name: Cleanup backup volume (backups are persisted on host)
+          shell:
+            cmd: |
+              docker exec {{ opendut_carl_postgres }} sh -c "
+                rm -rf /var/lib/postgresql/backup/*
+              "
+
+        - name: Backup successfully created
+          debug: msg="New backup available at {{ backup_id_path }}"
 
       rescue:
-      - name: Delete incomplete backup in case of error
-        ansible.builtin.file:
-          state: absent
-          path: "{{ backup_id_path }}"
+        - name: Delete incomplete backup in case of error
+          file:
+            state: absent
+            path: "{{ backup_id_path }}"
 
     - name: Restart containers
-      ansible.builtin.shell: docker start {{ item }}
+      command: docker start {{ item }}
       loop:
         - "{{ opendut_carl }}"
         - "{{ opendut_keycloak }}"

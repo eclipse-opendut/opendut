@@ -1,11 +1,11 @@
 #!/usr/bin/env ansible-playbook
 ---
-- name: Restore latest backup
+- name: Restore backup
   hosts: backend
   gather_facts: false
   tasks:
     - name: Checkout openDuT repo
-      ansible.builtin.git:
+      git:
         repo: "https://github.com/eclipse-opendut/opendut/"
         dest: "{{ repo_dir }}"
         version: "{{ opendut_version_ref }}"
@@ -25,7 +25,7 @@
       include_tasks: tasks/restore/provision-secrets.yaml
 
     - name: Delete volumes to avoid conflicts when restoring
-      ansible.builtin.shell:
+      shell:
         cmd: |
           docker stop {{ item.service }} || true
           docker rm {{ item.service }} || true
@@ -39,16 +39,15 @@
         - { "service": "opendut-carl", "volume": "carl-config" }
 
     - name: Start database containers
-      ansible.builtin.shell:
-        cmd: |
-          docker compose --file .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/data/secrets/.env up --detach {{ item }}
+      command:
+        cmd: docker compose --file .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/data/secrets/.env up --detach {{ item }}
         chdir: "{{ repo_dir }}"
       loop:
         - "keycloak-postgres"  # internal name
         - "carl-postgres"      # internal name
 
     - name: Restore Postgres database backups
-      ansible.builtin.shell:
+      shell:
         cmd: |
           docker exec {{ item }} sh -c "
             psql --username=\$POSTGRES_USER \$POSTGRES_DB < /var/lib/postgresql/backup/{{ backup_id }}/{{ item }}.sql
@@ -61,7 +60,6 @@
       include_tasks: tasks/restore/netbird-management.yaml
 
     - name: Start opendut containers
-      ansible.builtin.shell:
-        cmd: |
-          docker compose --file .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/data/secrets/.env up --detach
+      command:
+        cmd: docker compose --file .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/data/secrets/.env up --detach
         chdir: "{{ repo_dir }}"

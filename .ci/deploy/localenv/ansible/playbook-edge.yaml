@@ -7,7 +7,7 @@
     apply_file: "{{ inventory_dir }}/{{ ansible_host }}.yaml"
   tasks:
     - name: Include cleo-apply playbook
-      ansible.builtin.include_tasks: "tasks/edge/cleo-apply.yaml"
+      include_tasks: "tasks/edge/cleo-apply.yaml"
       when: apply_file is exists
 
 
@@ -16,11 +16,11 @@
   gather_facts: false
   tasks:
     - name: Determine Backend IP
-      ansible.builtin.set_fact:
+      set_fact:
         backend_ip: "{{ hostvars[backend]['ip_for_edge_hosts_file'] }}"
 
     - name: Write /etc/hosts entry
-      ansible.builtin.blockinfile:
+      blockinfile:
         path: /etc/hosts
         block: |
           # {{ backend }}
@@ -44,23 +44,23 @@
   tasks:
     - name: Fetch certificate from CARL
       delegate_to: "{{ backend }}"
-      ansible.builtin.fetch:
+      fetch:
         src: "{{ hostvars[backend]['repo_dir'] }}/.ci/deploy/localenv/data/secrets/pki/opendut-ca.pem"
         dest: "{{ ca_cert_download }}"
         flat: true
 
     - name: Set ca_cert fact
-      ansible.builtin.set_fact:
+      set_fact:
         ca_cert: "/tmp/opendut/opendut-ca.crt"
 
     - name: Create ca_cert_dir
-      ansible.builtin.file:
+      file:
         path: "{{ ca_cert_dir }}"
         state: directory
         mode: "0755"
 
     - name: Push certificate to edge host
-      ansible.builtin.copy:
+      copy:
         src: "{{ ca_cert_download }}"
         dest: "{{ ca_cert }}"
         mode: "0644"
@@ -78,24 +78,24 @@
   tasks:
     - name: Determine current date
       delegate_to: "localhost"  # Assume localhost has a more accurate time than the edge hosts
-      ansible.builtin.command: "date --rfc-3339=seconds"
+      command: "date --rfc-3339=seconds"
       register: _date_output
       changed_when: false
 
     - name: Set current date
-      ansible.builtin.command: "date --set='{{ _date_output.stdout }}'"
+      command: "date --set='{{ _date_output.stdout }}'"
 
     - name: Determine CPU architecture
-      ansible.builtin.command: "uname --machine"
+      command: "uname --machine"
       register: _uname_output
       changed_when: false
 
     - name: Set cpu_arch fact
-      ansible.builtin.set_fact:
+      set_fact:
         cpu_arch: "{{ _uname_output.stdout }}"
 
     - name: Download EDGAR archive
-      ansible.builtin.get_url:
+      get_url:
         url: "https://carl.opendut.local/api/edgar/{{ arch_map[cpu_arch] }}/download"
         dest: "{{ edgar_download }}"
         mode: "0644"
@@ -103,17 +103,17 @@
         SSL_CERT_FILE: "{{ ca_cert }}"
 
     - name: Set edgar_unpack_dir fact
-      ansible.builtin.set_fact:
+      set_fact:
         edgar_unpack_dir: "/tmp/opendut/edgar/"
 
     - name: Create EDGAR unpack dir
-      ansible.builtin.file:
+      file:
         path: "{{ edgar_unpack_dir }}"
         state: "directory"
         mode: "0755"
 
     - name: Unpack EDGAR archive
-      ansible.builtin.unarchive:
+      unarchive:
         src: "{{ edgar_download }}"
         remote_src: true
         dest: "{{ edgar_unpack_dir }}"
@@ -130,18 +130,18 @@
     cannelloni_dir: "/tmp/opendut/"
   tasks:
     - name: Install can-utils
-      ansible.builtin.apt:
+      apt:
         name: "can-utils"
         state: present
 
     - name: Download and unpack Cannelloni
-      ansible.builtin.unarchive:
+      unarchive:
         src: "https://github.com/eclipse-opendut/cannelloni-build/releases/download/v1.1.0/cannelloni_{{ arch_map[cpu_arch] }}_1.1.0.tar.gz"
         remote_src: true
         dest: "{{ cannelloni_dir }}"
 
     - name: Copy Cannelloni into OS PATH
-      ansible.builtin.shell:
+      shell:
         cmd: |
           cp libcannelloni-common.so.0 /lib/
           cp libsctp.so* /lib/
@@ -155,12 +155,12 @@
   tasks:
     - name: Retrieve Setup-String from CARL
       delegate_to: "{{ backend }}"
-      ansible.builtin.command:
+      command:
         cmd: "docker exec opendut-cleo opendut-cleo generate-setup-string {{ peer_id }}"
       register: _setup_string_output
 
     - name: Store Setup-String
-      ansible.builtin.set_fact:
+      set_fact:
         setup_string: "{{ _setup_string_output.stdout }}"
 
 
@@ -172,13 +172,13 @@
     config_file: "{{ config_dir }}/edgar.toml"
   tasks:
     - name: Create EDGAR config directory
-      ansible.builtin.file:
+      file:
         path: "{{ config_dir }}"
         state: directory
         mode: "0755"
 
     - name: Write telemetry configuration
-      ansible.builtin.copy:
+      copy:
         dest: "{{ config_file }}"
         mode: "0640"
         content: |
@@ -189,7 +189,7 @@
       when: config_file is not exists
 
     - name: Run EDGAR Setup
-      ansible.builtin.command:
+      command:
         cmd: "opendut-edgar/opendut-edgar setup --no-confirm managed {{ setup_string }}"
         chdir: "{{ edgar_unpack_dir }}"
       environment:

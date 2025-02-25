@@ -1,0 +1,9 @@
+---
+# check this website for detailed configuration options:
+#    https://ansible-lint.readthedocs.io/configuring/#ansible-lint-configuration
+
+profile: moderate  # https://ansible.readthedocs.io/projects/lint/profiles/
+
+skip_list:
+  - jinja[spacing]
+  - no-free-form

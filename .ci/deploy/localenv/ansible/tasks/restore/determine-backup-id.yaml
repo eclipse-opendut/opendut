@@ -1,6 +1,5 @@
 - name: Determine available backups
-  ansible.builtin.shell:
-    cmd: ls {{ backup_dir }}
+  command: ls {{ backup_dir }}
   register: _available_backups
 
 - name: Show backups
@@ -21,11 +20,11 @@
 
 
 - name: Ensure backup exists before proceeding
-  ansible.builtin.stat:
+  stat:
     path: "{{ backup_id_path }}"
   register: _backup_directory
   failed_when: not _backup_directory.stat.exists
 
 - name: Backup directory found
-  ansible.builtin.debug:
+  debug:
     msg: "Directory {{ backup_id_path }} present"

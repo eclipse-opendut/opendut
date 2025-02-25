@@ -1,7 +1,11 @@
 - name: Start dummy netbird management container without service executable
-  ansible.builtin.shell:
+  shell:
     cmd: |
-      docker compose --file .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/data/secrets/.env run --rm --entrypoint="" --detach --no-deps netbird-management sleep infinity
+      docker compose \
+        --file .ci/deploy/localenv/docker-compose.yml \
+        --env-file .ci/deploy/localenv/data/secrets/.env \
+        run --rm --entrypoint="" --detach --no-deps netbird-management \
+        sleep infinity
     chdir: "{{ repo_dir }}"
   register: _netbird_management_id
 
@@ -10,21 +14,19 @@
     netbird_management_id: "{{ _netbird_management_id.stdout }}"
 
 - name: Restore Netbird management service
-  ansible.builtin.shell:
+  shell:
     cmd: |
       docker exec {{ netbird_management_id }} sh -c "
         # delete old files if present
         rm -f /var/lib/netbird/*
-      
+
         # delete management config that contains stored secrets
         rm /etc/netbird/management.json
-      
+
         cp /var/lib/backup/{{ backup_id }}/netbird/* /var/lib/netbird/
       "
 
 - name: Stop dummy netbird management container without service executable
-  ansible.builtin.shell:
-    cmd: |
-      docker kill {{ netbird_management_id }}
+  command: docker kill {{ netbird_management_id }}
   tags: always
   when: _netbird_management_id.changed
