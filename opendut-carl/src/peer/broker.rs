@@ -3,19 +3,19 @@ use std::net::IpAddr;
 use std::sync::Arc;
 use std::time::Duration;
 
-use opentelemetry::propagation::TextMapPropagator;
-use opentelemetry_sdk::propagation::TraceContextPropagator;
-use tokio::sync::mpsc::error::SendError;
-use tokio::sync::{mpsc, RwLock};
-use tracing::{debug, error, info, warn, Span};
-use tracing_opentelemetry::OpenTelemetrySpanExt;
-
+use opendut_carl_api::carl::broker::stream_header;
 use opendut_carl_api::proto::services::peer_messaging_broker::upstream;
 use opendut_carl_api::proto::services::peer_messaging_broker::Pong;
 use opendut_carl_api::proto::services::peer_messaging_broker::{downstream, ApplyPeerConfiguration, Downstream, TracingContext};
 use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
 use opendut_types::peer::state::{PeerState, PeerUpState};
 use opendut_types::peer::PeerId;
+use opentelemetry::propagation::TextMapPropagator;
+use opentelemetry_sdk::propagation::TraceContextPropagator;
+use tokio::sync::mpsc::error::SendError;
+use tokio::sync::{mpsc, RwLock};
+use tracing::{debug, error, info, warn, Span};
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 use crate::persistence::error::PersistenceError;
 use crate::resources::manager::ResourcesManagerRef;
@@ -71,7 +71,10 @@ impl PeerMessagingBroker {
         &self,
         peer_id: PeerId,
         remote_host: IpAddr,
+        extra_headers: stream_header::ExtraHeaders,
     ) -> Result<(mpsc::Sender<upstream::Message>, mpsc::Receiver<Downstream>), OpenError> {
+
+        debug!("Peer <{peer_id}> opened stream from remote address {remote_host} with extra headers: {extra_headers:?}");
 
         let (tx_inbound, mut rx_inbound) = mpsc::channel::<upstream::Message>(1024);
         let (tx_outbound, rx_outbound) = mpsc::channel::<Downstream>(1024);
@@ -92,16 +95,16 @@ impl PeerMessagingBroker {
 
             match maybe_peer_state {
                 None => {
-                    info!("Peer <{}> opened stream which has not been seen before.", peer_id);
+                    info!("Peer <{peer_id}> had not been seen before.");
                     Ok(new_peer_up_state(remote_host))
                 }
                 Some(peer_state) => match peer_state {
                     PeerState::Down => {
-                        debug!("Peer <{peer_id}> opened stream which was previously down.");
+                        debug!("Peer <{peer_id}> had been seen before and was down.");
                         Ok(new_peer_up_state(remote_host))
                     }
                     PeerState::Up { .. } => {
-                        error!("Peer <{peer_id}> opened stream which was already connected.");
+                        error!("Peer <{peer_id}> opened stream which was already connected. Rejecting.");
                         Err(OpenError::PeerAlreadyConnected { peer_id })
                     }
                 }
@@ -294,7 +297,7 @@ mod tests {
 
         let remote_host = IpAddr::from_str("1.2.3.4")?;
 
-        let (sender, mut receiver) = testee.open(peer_id, remote_host).await?;
+        let (sender, mut receiver) = testee.open(peer_id, remote_host, stream_header::ExtraHeaders::default()).await?;
 
         { //assert state contains peer connected and up
             let peers = testee.peers.read().await;
@@ -371,10 +374,10 @@ mod tests {
 
         let remote_host = IpAddr::from_str("1.2.3.4")?;
 
-        let result = testee.open(peer_id, remote_host).await;
+        let result = testee.open(peer_id, remote_host, stream_header::ExtraHeaders::default()).await;
         assert!(result.is_ok());
 
-        let result = testee.open(peer_id, remote_host).await;
+        let result = testee.open(peer_id, remote_host, stream_header::ExtraHeaders::default()).await;
         assert_that!(
             result.unwrap_err(),
             matches_pattern!(OpenError::PeerAlreadyConnected { peer_id: eq(&peer_id) })

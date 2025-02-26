@@ -3,20 +3,21 @@ use std::ops::Not;
 use std::pin::Pin;
 use std::str::FromStr;
 
+use crate::peer::broker::{OpenError, PeerMessagingBrokerRef};
 use futures::StreamExt;
-use tokio_stream::Stream;
+use opendut_carl_api::carl::broker::stream_header;
+use opendut_carl_api::carl::broker::stream_header::PeerVersion;
+use opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_broker_server::PeerMessagingBrokerServer;
+use opendut_carl_api::proto::services::peer_messaging_broker::upstream;
+use opendut_carl_api::proto::services::peer_messaging_broker::{Downstream, Upstream};
+use opendut_types::peer::PeerId;
 use tokio_stream::wrappers::ReceiverStream;
-use tonic::{Request, Response, Status, Streaming};
+use tokio_stream::Stream;
 use tonic::metadata::MetadataMap;
+use tonic::{Request, Response, Status, Streaming};
 use tonic_web::CorsGrpcWeb;
 use tracing::{error, trace, warn};
 use uuid::Uuid;
-
-use opendut_carl_api::proto::services::peer_messaging_broker::{Downstream, Upstream};
-use opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_broker_server::PeerMessagingBrokerServer;
-use opendut_carl_api::proto::services::peer_messaging_broker::upstream;
-use opendut_types::peer::PeerId;
-use crate::peer::broker::{OpenError, PeerMessagingBrokerRef};
 
 pub struct PeerMessagingBrokerFacade {
     peer_messaging_broker: PeerMessagingBrokerRef,
@@ -51,8 +52,14 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
                 Status::invalid_argument(message)
             })?;
 
+        let extra_headers = extract_extra_headers(request.metadata())
+            .map_err(|message| {
+                warn!("Error while parsing extra headers from client request: {message}");
+                Status::invalid_argument(message)
+            })?;
 
-        let (tx_inbound, rx_outbound) = self.peer_messaging_broker.open(peer_id, remote_host).await
+
+        let (tx_inbound, rx_outbound) = self.peer_messaging_broker.open(peer_id, remote_host, extra_headers).await
             .map_err(|cause| {
                 error!("Error while opening stream from newly connected peer <{peer_id}>:\n  {cause}");
                 match cause {
@@ -97,7 +104,7 @@ fn extract_peer_id(metadata: &MetadataMap) -> Result<PeerId, UserError> {
     let peer_id = PeerId::from(
         Uuid::parse_str(
             metadata
-                .get("id")
+                .get(stream_header::ID)
                 .ok_or("Client should have sent an ID")?
                 .to_str()
                 .map_err(|_| "Client ID should be a valid string")?
@@ -109,13 +116,32 @@ fn extract_peer_id(metadata: &MetadataMap) -> Result<PeerId, UserError> {
 fn extract_remote_host(metadata: &MetadataMap) -> Result<IpAddr, UserError> {
     let remote_host = IpAddr::from_str(
         metadata
-            .get("remote-host")
+            .get(stream_header::REMOTE_HOST)
             .ok_or("Client should have sent a remote host address")?
             .to_str()
             .map_err(|_| "Remote host address should be a valid string")?
     ).map_err(|_| "Remote host address should be a valid IP address")?;
 
     Ok(remote_host)
+}
+
+fn extract_extra_headers(metadata: &MetadataMap) -> Result<stream_header::ExtraHeaders, UserError> {
+    let client_version = metadata
+        .get(stream_header::CLIENT_VERSION)
+        .map(|version| {
+            let version = version.to_str()
+                .map_err(|_| "Remote host address should be a valid string")?
+                .to_owned();
+
+            Ok::<_, UserError>(PeerVersion { value: version })
+        })
+        .transpose()?;
+
+    let extra_headers = stream_header::ExtraHeaders {
+        client_version,
+    };
+
+    Ok(extra_headers)
 }
 
 

@@ -130,6 +130,7 @@ mod tests {
     use std::net::IpAddr;
     use std::str::FromStr;
     use std::sync::Arc;
+    use opendut_carl_api::carl::broker::stream_header;
 
     #[rstest]
     #[tokio::test]
@@ -154,7 +155,7 @@ mod tests {
             resources.insert(peer_id, Clone::clone(&peer_configuration))
         }).await??;
 
-        let (_, mut receiver) = peer_messaging_broker.open(peer_id, IpAddr::from_str("1.2.3.4")?).await?;
+        let (_, mut receiver) = peer_messaging_broker.open(peer_id, IpAddr::from_str("1.2.3.4")?, stream_header::ExtraHeaders::default()).await?;
         let received = receiver.recv().await.unwrap()
             .message.unwrap();
         assert_that!(

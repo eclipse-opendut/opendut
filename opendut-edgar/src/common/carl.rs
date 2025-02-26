@@ -6,6 +6,7 @@ use anyhow::bail;
 use config::Config;
 use tracing::{debug, info, warn};
 
+use opendut_carl_api::carl::broker::stream_header;
 use opendut_carl_api::carl::{broker, CaCertInfo, CarlClient};
 use opendut_carl_api::proto::services::peer_messaging_broker;
 use opendut_types::peer::PeerId;
@@ -50,7 +51,13 @@ pub async fn open_stream(
     carl: &mut CarlClient,
 ) -> anyhow::Result<(broker::Downstream, broker::Upstream), broker::error::OpenStream> {
     debug!("Opening peer messaging stream...");
-    let (rx_inbound, tx_outbound) = carl.broker.open_stream(self_id, remote_address).await?;
+
+    let extra_headers = stream_header::ExtraHeaders {
+        client_version: Some(stream_header::PeerVersion {
+            value: crate::app_info::PKG_VERSION.to_owned()
+        }),
+    };
+    let (rx_inbound, tx_outbound) = carl.broker.open_stream(self_id, remote_address, extra_headers).await?;
 
     tx_outbound.send(peer_messaging_broker::Upstream {
         message: Some(peer_messaging_broker::upstream::Message::Ping(peer_messaging_broker::Ping {})),

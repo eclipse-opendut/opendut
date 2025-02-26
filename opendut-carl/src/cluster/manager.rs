@@ -503,6 +503,7 @@ mod test {
     use super::*;
 
     mod deploy_cluster {
+        use opendut_carl_api::carl::broker::stream_header;
         use opendut_carl_api::proto::services::peer_messaging_broker::ApplyPeerConfiguration;
         use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
 
@@ -602,7 +603,7 @@ mod test {
         }
 
         async fn peer_open(peer_id: PeerId, peer_remote_host: IpAddr, peer_messaging_broker: PeerMessagingBrokerRef) -> anyhow::Result<mpsc::Receiver<Downstream>> {
-            let (_peer_tx, mut peer_rx) = peer_messaging_broker.open(peer_id, peer_remote_host).await?;
+            let (_peer_tx, mut peer_rx) = peer_messaging_broker.open(peer_id, peer_remote_host, stream_header::ExtraHeaders::default()).await?;
             receive_peer_configuration_message(&mut peer_rx).await; //initial peer configuration after connect
             Ok(peer_rx)
         }

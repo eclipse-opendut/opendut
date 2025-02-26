@@ -24,7 +24,7 @@ mod client {
     use tonic::codegen::tokio_stream::wrappers::ReceiverStream;
     use tonic::metadata::MetadataValue;
 
-    use crate::carl::broker::error;
+    use crate::carl::broker::{error, stream_header};
     use crate::proto::services::peer_messaging_broker;
     use opendut_types::peer::PeerId;
     use opendut_util_core::future::ExplicitSendFutureWrapper;
@@ -80,13 +80,20 @@ mod client {
           <T::ResponseBody as Body>::Error: Into<StdError> + Send,
     {
 
-        pub async fn open_stream(&mut self, id: PeerId, remote_address: &IpAddr) -> Result<(Downstream, Upstream), error::OpenStream> {
+        pub async fn open_stream(&mut self, id: PeerId, remote_address: &IpAddr, extra_headers: stream_header::ExtraHeaders) -> Result<(Downstream, Upstream), error::OpenStream> {
             let (tx, rx) = mpsc::channel(1024);
 
             let response = {
                 let mut request = tonic::Request::new(ReceiverStream::new(rx));
-                request.metadata_mut().insert("id", MetadataValue::from_str(&id.to_string()).unwrap());
-                request.metadata_mut().insert("remote-host", MetadataValue::from_str(&remote_address.to_string()).unwrap());
+                request.metadata_mut().insert(stream_header::ID, MetadataValue::from_str(&id.to_string()).unwrap());
+                request.metadata_mut().insert(stream_header::REMOTE_HOST, MetadataValue::from_str(&remote_address.to_string()).unwrap());
+
+                {
+                    let stream_header::ExtraHeaders { client_version: version } = extra_headers;
+                    if let Some(version) = version {
+                        request.metadata_mut().insert(stream_header::CLIENT_VERSION, MetadataValue::from_str(&version.value).unwrap());
+                    }
+                }
 
                 ExplicitSendFutureWrapper::from(
                     self.inner
@@ -100,5 +107,21 @@ mod client {
 
             Ok((inbound, tx))
         }
+
     }
+}
+
+pub mod stream_header {
+    pub const ID: &str = "id";
+    pub const REMOTE_HOST: &str = "remote-host";
+    pub const CLIENT_VERSION: &str = "client_version";
+
+    #[derive(Debug, Default)]
+    pub struct ExtraHeaders {
+        /// Version string of the client connecting.
+        pub client_version: Option<PeerVersion>,
+    }
+
+    #[derive(Debug)]
+    pub struct PeerVersion { pub value: String }
 }
