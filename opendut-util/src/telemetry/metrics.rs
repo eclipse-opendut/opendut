@@ -1,26 +1,24 @@
-use std::sync::Arc;
-use std::time::Duration;
-use opentelemetry::KeyValue;
+use crate::telemetry::opentelemetry_types::Endpoint;
+use crate::telemetry::DEFAULT_METER_NAME;
+use opendut_auth::confidential::client::{ConfClientArcMutex, ConfidentialClientRef};
 use opentelemetry::metrics::MeterProvider;
 use opentelemetry_otlp::{MetricExporter, WithExportConfig, WithTonicConfig};
+use opentelemetry_sdk::metrics::PeriodicReader;
 use opentelemetry_sdk::metrics::{MetricError, SdkMeterProvider};
-use opentelemetry_sdk::{Resource, runtime};
-use simple_moving_average::{SMA, SumTreeSMA};
+use opentelemetry_sdk::{runtime, Resource};
+use simple_moving_average::{SumTreeSMA, SMA};
+use std::sync::Arc;
+use std::time::Duration;
 use sysinfo::{Pid, ProcessesToUpdate, System};
 use tokio::sync::Mutex;
 use tokio::time::sleep;
-use opendut_auth::confidential::client::{ConfClientArcMutex, ConfidentialClientRef};
-use crate::telemetry::DEFAULT_METER_NAME;
-use crate::telemetry::opentelemetry_types::Endpoint;
-use opentelemetry_sdk::metrics::PeriodicReader;
 use tracing::trace;
 
 
 pub(super) fn init_metrics(
     telemetry_interceptor: ConfClientArcMutex<Option<ConfidentialClientRef>>,
     endpoint: &Endpoint,
-    service_name: &str,
-    service_instance_id: &str,
+    service_metadata_resource: Resource,
     metrics_interval: Duration
 ) -> Result<SdkMeterProvider, MetricError> {
 
@@ -37,16 +35,7 @@ pub(super) fn init_metrics(
 
     let provider = SdkMeterProvider::builder()
         .with_reader(reader)
-        .with_resource(Resource::new(vec![
-            KeyValue::new(
-                opentelemetry_semantic_conventions::resource::SERVICE_NAME,
-                service_name.to_owned()
-            ),
-            KeyValue::new(
-                opentelemetry_semantic_conventions::resource::SERVICE_INSTANCE_ID,
-                service_instance_id.to_owned()
-            ),
-        ]))
+        .with_resource(service_metadata_resource)
         .build();
 
     Ok(provider)

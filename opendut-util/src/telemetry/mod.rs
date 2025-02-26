@@ -8,10 +8,11 @@ use std::fs::File;
 use std::str::FromStr;
 use std::sync::Arc;
 
-use opentelemetry::global;
+use opentelemetry::{global, KeyValue};
 use opentelemetry::trace::{TraceError, TracerProvider};
 use opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
+use opentelemetry_sdk::Resource;
 use tokio::sync::Mutex;
 use tracing::level_filters::LevelFilter;
 use tracing::{debug, error, trace};
@@ -85,18 +86,32 @@ pub async fn initialize_with_config(
         if let Opentelemetry::Enabled {
             collector_endpoint,
             service_name,
+            service_metadata,
             metrics_interval_ms,
-            service_instance_id,
             cpu_collection_interval_ms,
             confidential_client,
         } = opentelemetry_config {
             let confidential_client = ConfClientArcMutex(Arc::new(Mutex::new(confidential_client)));
 
+            let service_metadata_resource = Resource::new(vec![
+                KeyValue::new(
+                    opentelemetry_semantic_conventions::resource::SERVICE_NAME,
+                    service_name.to_owned()
+                ),
+                KeyValue::new(
+                    opentelemetry_semantic_conventions::resource::SERVICE_INSTANCE_ID,
+                    service_metadata.instance_id.to_owned()
+                ),
+                KeyValue::new(
+                    opentelemetry_semantic_conventions::resource::SERVICE_VERSION,
+                    service_metadata.version.to_owned()
+                ),
+            ]);
+
             let tracer_provider = traces::init_tracer(
                 confidential_client.clone(),
                 &collector_endpoint,
-                &service_name,
-                &service_instance_id
+                service_metadata_resource.clone(),
             ).expect("Failed to initialize tracer.");
 
             let tracing_layer = tracing_opentelemetry::layer()
@@ -105,8 +120,7 @@ pub async fn initialize_with_config(
             let logger_provider = logging::init_logger_provider(
                 confidential_client.clone(),
                 &collector_endpoint,
-                &service_name,
-                &service_instance_id
+                service_metadata_resource.clone()
             ).expect("Failed to initialize logs.");
 
             let logger_layer = OpenTelemetryTracingBridge::new(&logger_provider);
@@ -116,8 +130,7 @@ pub async fn initialize_with_config(
                 meter_provider: metrics::init_metrics(
                     confidential_client.clone(),
                     &collector_endpoint,
-                    &service_name,
-                    &service_instance_id,
+                    service_metadata_resource.clone(),
                     metrics_interval_ms
                 ).expect("Failed to initialize default metrics.")
             };
@@ -127,8 +140,7 @@ pub async fn initialize_with_config(
                 meter_provider: metrics::init_metrics(
                     confidential_client,
                     &collector_endpoint,
-                    &service_name,
-                    &service_instance_id,
+                    service_metadata_resource.clone(),
                     cpu_collection_interval_ms
                 ).expect("Failed to initialize CPU metrics.")
             };
@@ -144,7 +156,7 @@ pub async fn initialize_with_config(
             trace!("Telemetry stack initialized with OpenTelemetry, using configuration:
 endpoint:            {endpoint}
 service_name:        {service_name}
-service_instance_id: {service_instance_id}",
+service_metadata: {service_metadata:?}",
                 endpoint=collector_endpoint.url
             );
 

@@ -9,7 +9,7 @@ pub enum Opentelemetry {
         confidential_client: Option<ConfidentialClientRef>,
         collector_endpoint: Endpoint,
         service_name: String,
-        service_instance_id: String,
+        service_metadata: ServiceMetadata,
         metrics_interval_ms: Duration,
         cpu_collection_interval_ms: Duration,
     },
@@ -18,7 +18,7 @@ pub enum Opentelemetry {
 }
 
 impl Opentelemetry {
-    pub async fn load(config: &config::Config, service_instance_id: String) -> Result<Self, OpentelemetryConfigError> {
+    pub async fn load(config: &config::Config, service_metadata: ServiceMetadata) -> Result<Self, OpentelemetryConfigError> {
         let field = String::from("opentelemetry.enabled");
         let opentelemetry_enabled = config.get_bool("opentelemetry.enabled")
             .map_err(|cause| OpentelemetryConfigError::ValueParseError{
@@ -105,7 +105,7 @@ impl Opentelemetry {
                 confidential_client,
                 collector_endpoint,
                 service_name,
-                service_instance_id,
+                service_metadata,
                 metrics_interval_ms,
                 cpu_collection_interval_ms,
             })
@@ -132,6 +132,12 @@ pub enum OpentelemetryConfigError {
         message: String,
         cause: ConfidentialClientError,
     }
+}
+
+#[derive(Debug)]
+pub struct ServiceMetadata {
+    pub instance_id: String,
+    pub version: String,
 }
 
 #[derive(Clone)]

@@ -1,11 +1,10 @@
+use crate::telemetry::opentelemetry_types::Endpoint;
+use opendut_auth::confidential::client::{ConfClientArcMutex, ConfidentialClientRef};
+use opentelemetry_otlp::{LogExporter, WithExportConfig, WithTonicConfig};
+use opentelemetry_sdk::logs::{LogError, LoggerProvider};
+use opentelemetry_sdk::{runtime, Resource};
 use std::fmt::Debug;
 use std::path::PathBuf;
-use opentelemetry::KeyValue;
-use opentelemetry_sdk::logs::{LogError, LoggerProvider};
-use opentelemetry_otlp::{LogExporter, WithExportConfig, WithTonicConfig};
-use opentelemetry_sdk::{Resource, runtime};
-use opendut_auth::confidential::client::{ConfClientArcMutex, ConfidentialClientRef};
-use crate::telemetry::opentelemetry_types::Endpoint;
 
 #[derive(Default)]
 pub struct LoggingConfig {
@@ -31,8 +30,7 @@ impl LoggingConfig {
 pub fn init_logger_provider(
     telemetry_interceptor: ConfClientArcMutex<Option<ConfidentialClientRef>>,
     endpoint: &Endpoint,
-    service_name: &str,
-    service_instance_id: &str,
+    service_metadata_resource: Resource,
 ) -> Result<LoggerProvider, LogError> {
 
     let exporter = LogExporter::builder()
@@ -43,16 +41,7 @@ pub fn init_logger_provider(
         .build()?;
 
     let provider = LoggerProvider::builder()
-        .with_resource(Resource::new(vec![
-            KeyValue::new(
-                opentelemetry_semantic_conventions::resource::SERVICE_NAME,
-                service_name.to_owned()
-            ),
-            KeyValue::new(
-                opentelemetry_semantic_conventions::resource::SERVICE_INSTANCE_ID,
-                service_instance_id.to_owned()
-            ),
-        ]))
+        .with_resource(service_metadata_resource)
         .with_batch_exporter(exporter, runtime::Tokio)
         .build();
 

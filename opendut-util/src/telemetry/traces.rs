@@ -1,16 +1,14 @@
-use opentelemetry::KeyValue;
+use crate::telemetry::opentelemetry_types::Endpoint;
+use opendut_auth::confidential::client::{ConfClientArcMutex, ConfidentialClientRef};
 use opentelemetry::trace::TraceError;
 use opentelemetry_otlp::{SpanExporter, WithExportConfig, WithTonicConfig};
-use opentelemetry_sdk::{Resource, runtime};
 use opentelemetry_sdk::trace::TracerProvider;
-use opendut_auth::confidential::client::{ConfClientArcMutex, ConfidentialClientRef};
-use crate::telemetry::opentelemetry_types::Endpoint;
+use opentelemetry_sdk::{runtime, Resource};
 
 pub(crate) fn init_tracer(
     telemetry_interceptor: ConfClientArcMutex<Option<ConfidentialClientRef>>,
     endpoint: &Endpoint,
-    service_name: &str,
-    service_instance_id: &str
+    service_metadata_resource: Resource,
 ) -> Result<TracerProvider, TraceError> {
 
     let exporter = SpanExporter::builder()
@@ -22,18 +20,7 @@ pub(crate) fn init_tracer(
 
     let provider = TracerProvider::builder()
         .with_batch_exporter(exporter, runtime::Tokio)
-        .with_resource(
-            Resource::new(vec![
-                KeyValue::new(
-                    opentelemetry_semantic_conventions::resource::SERVICE_NAME,
-                    service_name.to_owned()
-                ),
-                KeyValue::new(
-                    opentelemetry_semantic_conventions::resource::SERVICE_INSTANCE_ID,
-                    service_instance_id.to_owned()
-                )
-            ])
-        )
+        .with_resource(service_metadata_resource)
         .build();
 
     Ok(provider)

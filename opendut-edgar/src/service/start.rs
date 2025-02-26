@@ -21,7 +21,8 @@ use tokio::time::sleep;
 use tonic::Code;
 use tracing::{debug, error, info, trace, warn, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
-
+use opendut_util::telemetry::opentelemetry_types;
+use crate::app_info;
 use crate::common::{carl, settings};
 use crate::service::can_manager::{CanManager, CanManagerRef};
 use crate::service::network_interface::manager::{NetworkInterfaceManager, NetworkInterfaceManagerRef};
@@ -62,11 +63,13 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
     let self_id = settings.config.get::<PeerId>(settings::key::peer::id)
         .context("Failed to read ID from configuration.\n\nRun `edgar setup` before launching the service.")?;
 
-    let service_instance_id = self_id.to_string();
-
     let mut metrics_shutdown_handle = {
         let logging_config = LoggingConfig::load(&settings.config)?;
-        let opentelemetry = Opentelemetry::load(&settings.config, service_instance_id).await?;
+        let service_metadata = opentelemetry_types::ServiceMetadata {
+            instance_id: format!("edgar-{self_id}"),
+            version: app_info::PKG_VERSION.to_owned(),
+        };
+        let opentelemetry = Opentelemetry::load(&settings.config, service_metadata).await?;
 
         telemetry::initialize_with_config(logging_config, opentelemetry).await?
     };

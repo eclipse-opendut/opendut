@@ -15,6 +15,7 @@ use opendut_util::settings::LoadedConfig;
 use opendut_util::telemetry::logging::LoggingConfig;
 use opendut_util::telemetry::opentelemetry_types::Opentelemetry;
 use opendut_util::{project, telemetry};
+use opendut_util::telemetry::opentelemetry_types;
 use util::in_memory_cache::CustomInMemoryCache;
 
 use crate::auth::grpc_auth_layer::GrpcAuthenticationLayer;
@@ -45,10 +46,12 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
 
     let settings = settings::load_with_overrides(settings_override)?;
 
-    let service_instance_id = format!("carl-{}", Uuid::new_v4());
-
     let logging_config = LoggingConfig::load(&settings.config)?;
-    let opentelemetry = Opentelemetry::load(&settings.config, service_instance_id).await?;
+    let service_metadata = opentelemetry_types::ServiceMetadata {
+        instance_id: format!("carl-{}", Uuid::new_v4()),
+        version: app_info::PKG_VERSION.to_owned(),
+    };
+    let opentelemetry = Opentelemetry::load(&settings.config, service_metadata).await?;
 
     let mut shutdown = telemetry::initialize_with_config(logging_config, opentelemetry).await?;
 
