@@ -1,4 +1,3 @@
-use std::ops::Not;
 use std::process::Command;
 use crate::core::util::RunRequiringSuccess;
 
@@ -34,8 +33,10 @@ pub fn test(params: TestCli) -> crate::Result {
     let mut command = Command::new("cargo");
     command.arg("test");
 
-    if disable_logging.not() {
-        command.env("RUST_LOG", "opendut=trace");
+    if disable_logging {
+        command.env("RUST_LOG", "error");
+    } else {
+        command.env("RUST_LOG", "info,opendut=trace");
     }
 
     if features.is_empty() {

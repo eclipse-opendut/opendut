@@ -39,7 +39,7 @@ pub async fn list_peer_states(params: ListPeerStatesParams) -> Result<HashMap<Pe
 
             let peer_states = maybe_peer_states
                 .into_iter()
-                .filter_map(|maybe_peer_state| maybe_peer_state) //filter out all that are `None`
+                .flatten() //filter out all that are `None`
                 .collect::<HashMap<_, _>>();
 
             Ok(peer_states)
