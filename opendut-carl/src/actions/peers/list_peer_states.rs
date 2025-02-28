@@ -26,20 +26,20 @@ pub async fn list_peer_states(params: ListPeerStatesParams) -> Result<HashMap<Pe
 
             let maybe_peer_states = peers.into_iter()
                 .map(|peer| {
-                    let maybe_peer_state = resources.get::<PeerState>(peer.id)? //TODO this is quite inefficient (PeerId+PeerState could be returned from SQL, but that requires changing the ResourcesManager API)
-                        .map(|peer_state| (peer.id, peer_state));
+                    let peer_state = resources.get::<PeerState>(peer.id)? //TODO this is quite inefficient (PeerId+PeerState could be returned from SQL, but that requires changing the ResourcesManager API)
+                        .unwrap_or_else(|| {
+                            trace!("Peer <{peer_id}> has no associated PeerState. Listing it as if it was Down.", peer_id=peer.id);
+                            PeerState::Down
+                        });
 
-                    if maybe_peer_state.is_none() {
-                        trace!("Peer <{peer_id}> has no associated PeerState. Skipping in list_peer_states().", peer_id=peer.id);
-                    }
+                    let peer_state = (peer.id, peer_state);
 
-                    Ok::<_, PersistenceError>(maybe_peer_state)
+                    Ok::<_, PersistenceError>(peer_state)
                 })
-                .collect::<Result<Vec<Option<_>>, _>>()?;
+                .collect::<Result<Vec<_>, _>>()?;
 
             let peer_states = maybe_peer_states
                 .into_iter()
-                .flatten() //filter out all that are `None`
                 .collect::<HashMap<_, _>>();
 
             Ok(peer_states)

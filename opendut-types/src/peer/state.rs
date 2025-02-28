@@ -3,8 +3,16 @@ use serde::{Deserialize, Serialize};
 use crate::cluster::ClusterId;
 use crate::ShortName;
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub enum PeerState {
+    /// Down can mean:
+    /// - the peer was Up, then disconnected
+    /// - the peer has no PeerState associated
+    ///
+    /// No PeerState happens when:
+    /// - The peer has not been set up yet.
+    /// - The peer has not been seen, since the last CARL restart.
+    #[default]
     Down,
     Up {
         inner: PeerUpState,
@@ -26,12 +34,6 @@ pub enum PeerBlockedState {
     Deploying,
     Member,
     Undeploying,
-}
-
-impl Default for PeerState {
-    fn default() -> Self {
-        Self::Down
-    }
 }
 
 impl ShortName for PeerState {
