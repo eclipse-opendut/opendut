@@ -69,11 +69,13 @@ struct DeviceTable {
 
 impl From<SerializableDevice> for DeviceTable {
     fn from(device: SerializableDevice) -> Self {
+        let SerializableDevice { name, id, description, tags } = device;
+
         DeviceTable {
-            name: device.name,
-            id: device.id,
-            description: device.description,
-            tags: device.tags.join(", "),
+            name,
+            id,
+            description,
+            tags: tags.join(", "),
         }
     }
 }

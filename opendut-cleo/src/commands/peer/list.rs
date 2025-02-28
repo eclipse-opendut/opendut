@@ -12,7 +12,16 @@ use crate::ListOutputFormat;
 #[derive(clap::Parser)]
 pub struct ListPeersCli;
 
-#[derive(Table, Debug, Serialize)]
+#[derive(Serialize, Debug)]
+struct SerializablePeer {
+    name: PeerName,
+    id: PeerId,
+    status: PeerStatus,
+    location: PeerLocation,
+    network_interfaces: Vec<String>,
+}
+
+#[derive(Table)]
 struct PeerTable {
     #[table(title = "Name")]
     name: PeerName,
@@ -25,6 +34,20 @@ struct PeerTable {
     #[table(title = "NetworkInterfaces")]
     network_interfaces: String,
 }
+impl From<SerializablePeer> for PeerTable {
+    fn from(peer: SerializablePeer) -> Self {
+        let SerializablePeer { name, id, status, location, network_interfaces } = peer;
+
+        PeerTable {
+            name,
+            id,
+            status,
+            location,
+            network_interfaces: network_interfaces.join(", "),
+        }
+    }
+}
+
 
 #[derive(Debug, PartialEq, Serialize)]
 enum PeerStatus {
@@ -49,24 +72,28 @@ impl ListPeersCli {
             .await
             .map_err(|error| format!("Could not list peers.\n  {}", error))?;
         
-        let mut peers_table = vec![];
+        let mut serializable_peers = vec![];
         for peer in all_peers {
             let peer_state = carl.peers.get_peer_state(peer.id).await.map_err(|_| {
                 format!("Failed to retrieve state for peer <{}>", peer.id)
             })?;
-            peers_table.push(add_peer_status(peer, peer_state));
+            serializable_peers.push(add_peer_status(peer, peer_state));
         };
         match output {
             ListOutputFormat::Table => {
-                print_stdout(peers_table.with_title())
+                let peer_table = serializable_peers.into_iter()
+                    .map(PeerTable::from)
+                    .collect::<Vec<_>>();
+
+                print_stdout(peer_table.with_title())
                     .expect("List of clusters should be printable as table.");
             }
             ListOutputFormat::Json => {
-                let json = serde_json::to_string(&peers_table).unwrap();
+                let json = serde_json::to_string(&serializable_peers).unwrap();
                 println!("{}", json);
             }
             ListOutputFormat::PrettyJson => {
-                let json = serde_json::to_string_pretty(&peers_table).unwrap();
+                let json = serde_json::to_string_pretty(&serializable_peers).unwrap();
                 println!("{}", json);
             }
         }
@@ -77,18 +104,20 @@ impl ListPeersCli {
 fn add_peer_status(
     peer: PeerDescriptor,
     peer_state: PeerState
-) -> PeerTable {
+) -> SerializablePeer {
     let status = match peer_state {
         PeerState::Down => { PeerStatus::Disconnected }
         PeerState::Up { .. } => { PeerStatus::Connected }
     };
-    let network_interfaces = Clone::clone(&peer.network.interfaces);
-    let interfaces = network_interfaces.into_iter().map(|interface| interface.name.to_string()).collect::<Vec<_>>();
-    PeerTable {
+    let network_interfaces = peer.network.interfaces.iter()
+        .map(|interface| interface.name.to_string())
+        .collect::<Vec<_>>();
+
+    SerializablePeer {
         name: Clone::clone(&peer.name),
         id: peer.id,
         location: Clone::clone(&peer.location.clone().unwrap_or_default()),
-        network_interfaces: interfaces.join(", "),
+        network_interfaces,
         status
     }
 }
@@ -124,7 +153,7 @@ mod test {
         };
         assert_that!(
             add_peer_status(peer.clone(), PeerState::Down),
-            matches_pattern!(PeerTable {
+            matches_pattern!(SerializablePeer {
                 name: eq(&peer.name),
                 id: eq(&peer.id),
                 status: eq(&PeerStatus::Disconnected),
