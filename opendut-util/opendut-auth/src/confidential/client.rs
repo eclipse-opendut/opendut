@@ -122,7 +122,7 @@ impl ConfidentialClient {
                     .with_max_delay(Duration::from_secs(120))
             )
             .notify(|err: &reqwest::Error, dur: Duration| {
-                println!("Retrying connection to issuer. {:?} after {:?}", err, dur);
+                eprintln!("Retrying connection to issuer. {:?} after {:?}", err, dur);
             })
             .await;
 
