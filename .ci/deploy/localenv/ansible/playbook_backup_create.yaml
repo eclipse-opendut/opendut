@@ -17,12 +17,12 @@
 
 
     - name: Determine docker volumes
-      include_tasks: tasks/docker-volumes.yaml
+      include_tasks: tasks/docker_volumes.yaml
 
     - name: Create backup
       block:
         - name: Create backup directory
-          include_tasks: tasks/backup/create-backup-directory.yaml
+          include_tasks: tasks/backup/create_backup_directory.yaml
 
         - name: Stop containers that could write into the DB, to avoid inconsistent state
           command: docker stop {{ item }}

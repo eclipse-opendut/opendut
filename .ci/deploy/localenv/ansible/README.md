@@ -1,6 +1,6 @@
 ## How to use
 
-1. Install Ansible on your machine, e.g on Debian-based systems:
+1. Install Ansible on your machine, e.g. on Debian-based systems:
    ```sh
    sudo apt install ansible
    ```
@@ -37,6 +37,6 @@
 
 4. Run the scripts like so:
    ```sh
-   ./playbook-backend.yaml -i inventory.yaml
-   ./playbook-edge.yaml -i inventory.yaml
+   ./playbook_backend.yaml -i inventory.yaml
+   ./playbook_edge.yaml -i inventory.yaml
    ```

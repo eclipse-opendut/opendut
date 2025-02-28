@@ -7,7 +7,7 @@
     apply_file: "{{ inventory_dir }}/{{ ansible_host }}.yaml"
   tasks:
     - name: Include cleo-apply playbook
-      include_tasks: "tasks/edge/cleo-apply.yaml"
+      include_tasks: "tasks/edge/cleo_apply.yaml"
       when: apply_file is exists
 
 

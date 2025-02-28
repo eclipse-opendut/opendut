@@ -12,17 +12,17 @@
         force: true  # Avoid "would clobber existing tag" error for canary-tag
 
     - name: Stop opendut
-      include_tasks: tasks/stop-opendut-containers.yaml
+      include_tasks: tasks/stop_opendut_containers.yaml
 
 # Notes: there are two backup locations (docker volume and host system)
 # The docker volume location is deterministic for scripts
 # TODO: add backup rotation
 
     - name: Determine backup_id
-      include_tasks: tasks/restore/determine-backup-id.yaml
+      include_tasks: tasks/restore/determine_backup_id.yaml
 
     - name: Restore provision secrets
-      include_tasks: tasks/restore/provision-secrets.yaml
+      include_tasks: tasks/restore/provision_secrets.yaml
 
     - name: Delete volumes to avoid conflicts when restoring
       shell:
@@ -57,7 +57,7 @@
         - "opendut-carl-postgres"
 
     - name: Restore netbird management
-      include_tasks: tasks/restore/netbird-management.yaml
+      include_tasks: tasks/restore/netbird_management.yaml
 
     - name: Start opendut containers
       command:
