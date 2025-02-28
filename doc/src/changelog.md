@@ -6,15 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-### Fixed
-* The web-UI now loads much faster when there are many peers.
+tbd.
+
+
+## 0.5.1
 
 ### Added
 * Backups include PKI and other credentials now
-* Backups include netbird management database now
+* Backups include NetBird Management database now
 
 ### Fixed
-* Localenv deployment provisioning scripts persist pki secret on host now. 
+* The web-UI now loads much faster when there are many peers.
+* CLEO now outputs network interfaces as a list when running `opendut-cleo list peers --output=json`.
+* Localenv deployment provisioning scripts persist PKI secrets on host now.
+
 
 ## 0.5.0
 
