@@ -54,28 +54,28 @@ jobs:
           find ./target/ci/distribution/x86_64-unknown-linux-gnu/
           find . -name opendut-theo -type f -exec ls -la {} +
           chmod +x ./opendut-theo/opendut-theo
-          mkdir -p ./docker-logs/theo/
+          mkdir -p ./testenv-logs/theo/
 
       - name: Start test environment
         run: |
-          ./opendut-theo/opendut-theo testenv start --skip-firefox --skip-telemetry | tee ./docker-logs/theo/testenv-start.log
+          ./opendut-theo/opendut-theo testenv start --skip-firefox --skip-telemetry | tee ./testenv-logs/theo/testenv-start.log
 
       - name: Start edgar cluster
         run: |
-          ./opendut-theo/opendut-theo testenv edgar start | tee ./docker-logs/theo/testenv-edgar-start.log
+          ./opendut-theo/opendut-theo testenv edgar start | tee ./testenv-logs/theo/testenv-edgar-start.log
 
       - name: Collect container logs
         if: always()
         run: |
           chmod +x .ci/docker/edgar/persist-edgar-logs.sh
-          .ci/docker/edgar/persist-edgar-logs.sh | tee ./docker-logs/theo/persist-edgar-logs.log
+          .ci/docker/edgar/persist-edgar-logs.sh ./testenv-logs/docker/ | tee ./testenv-logs/theo/persist-edgar-logs.log
 
-      - name: "Upload docker logs"
+      - name: "Upload testenv logs"
         if: always()
         uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8
         with:
-          name: "docker-logs-${{ github.sha }}"
-          path: "./docker-logs/"
+          name: "testenv-logs-${{ github.sha }}"
+          path: "./testenv-logs/"
           if-no-files-found: error
           retention-days: 7
 
