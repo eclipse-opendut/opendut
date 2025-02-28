@@ -11,7 +11,7 @@
 
 - name: Extract container id
   set_fact:
-    netbird_management_id: "{{ _netbird_management_id.stdout }}"
+    netbird_management_id: "{{ _netbird_management_id.stdout_lines | last }}"
 
 - name: Restore Netbird management service
   shell:
