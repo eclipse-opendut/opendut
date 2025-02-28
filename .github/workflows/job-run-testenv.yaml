@@ -54,20 +54,21 @@ jobs:
           find ./target/ci/distribution/x86_64-unknown-linux-gnu/
           find . -name opendut-theo -type f -exec ls -la {} +
           chmod +x ./opendut-theo/opendut-theo
+          mkdir -p ./docker-logs/theo/
 
       - name: Start test environment
         run: |
-          ./opendut-theo/opendut-theo testenv start --skip-firefox --skip-telemetry
+          ./opendut-theo/opendut-theo testenv start --skip-firefox --skip-telemetry | tee ./docker-logs/theo/testenv-start.log
 
       - name: Start edgar cluster
         run: |
-          ./opendut-theo/opendut-theo testenv edgar start
+          ./opendut-theo/opendut-theo testenv edgar start | tee ./docker-logs/theo/testenv-edgar-start.log
 
       - name: Collect container logs
         if: always()
         run: |
           chmod +x .ci/docker/edgar/persist-edgar-logs.sh
-          .ci/docker/edgar/persist-edgar-logs.sh
+          .ci/docker/edgar/persist-edgar-logs.sh | tee ./docker-logs/theo/persist-edgar-logs.log
 
       - name: "Upload docker logs"
         if: always()

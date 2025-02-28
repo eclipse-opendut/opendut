@@ -31,7 +31,7 @@ cleo_check_peer_online() {
   fi
 }
 
-check_expected_number_of_connected_peers_in_cluster() {
+cleo_check_expected_number_of_connected_peers_in_cluster() {
   expected="$1"
   cluster="$2"
   RESULT=$(opendut-cleo list --output json peers | jq --arg CLUSTER "$cluster" -r '. | map(select(.name | contains($CLUSTER))) | .[].status' | grep -c Connected)
@@ -127,7 +127,7 @@ done
 ############################################################
 expected_peer_count=$((OPENDUT_EDGAR_REPLICAS + 1))
 START_TIME="$(date +%s)"
-while ! check_expected_number_of_connected_peers_in_cluster "$expected_peer_count" "test-environment-cluster"; do
+while ! cleo_check_expected_number_of_connected_peers_in_cluster "$expected_peer_count" "test-environment-cluster"; do
   check_timeout "$START_TIME" 600 || { echo "Timeout while waiting for other EDGAR peers in my cluster."; exit 1; }
 
   echo "Waiting for all EDGAR peers in my cluster ..."
