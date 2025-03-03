@@ -14,6 +14,7 @@
   file:
     path: "{{ backup_id_path }}"
     state: directory
+    mode: u=rwx,g=,o=
 
 - name: Created backup directory
   debug: msg="Created backup directory {{ backup_id_path }}"
