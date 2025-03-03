@@ -1,11 +1,9 @@
 use crate::fs;
 use std::path::PathBuf;
-use std::process::Command;
 
 use tracing::{debug, info, warn};
-
+use crate::core::commands::CARGO_TARPAULIN;
 use crate::core::constants;
-use crate::core::dependency::Crate;
 use crate::core::util::RunRequiringSuccess;
 
 /// Generate a unit test coverage report
@@ -21,14 +19,12 @@ impl CoverageCli {
 
 #[tracing::instrument]
 pub fn coverage() -> crate::Result {
-    crate::util::install_crate(Crate::CargoTarpaulin)?;
-
     clean()?;
 
     let out_dir = out_dir();
     fs::create_dir_all(&out_dir)?;
 
-    Command::new("cargo-tarpaulin")
+    CARGO_TARPAULIN.command()
         .args([
             "--verbose",
             "--all-features",

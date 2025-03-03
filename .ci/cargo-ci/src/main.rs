@@ -1,7 +1,7 @@
 use clap::Parser;
 
 pub use fs_err as fs;
-use repo_path::repo_path;
+use cicero::path::repo_path;
 pub(crate) use core::constants;
 pub(crate) use core::metadata;
 pub(crate) use core::types::{self, Arch, Package, Result};
@@ -29,6 +29,7 @@ enum TaskCli {
     Doc(tasks::doc::DocCli),
     Licenses(tasks::licenses::LicensesCli),
     Test(tasks::test::TestCli),
+    Venv(cicero::commands::venv::VenvCli),
 
     Carl(packages::carl::CarlCli),
     Cleo(packages::cleo::CleoCli),
@@ -38,7 +39,7 @@ enum TaskCli {
 }
 
 fn main() -> crate::Result {
-    util::init_tracing()?;
+    cicero::init::tracing();
 
     std::env::set_current_dir(repo_path!())?;
 
@@ -56,6 +57,7 @@ fn main() -> crate::Result {
         TaskCli::Doc(implementation) => implementation.default_handling()?,
         TaskCli::Licenses(implementation) => implementation.default_handling(PackageSelection::All)?,
         TaskCli::Test(implementation) => implementation.default_handling()?,
+        TaskCli::Venv(implementation) => implementation.run()?,
 
         TaskCli::Carl(implementation) => implementation.default_handling()?,
         TaskCli::Cleo(implementation) => implementation.default_handling()?,

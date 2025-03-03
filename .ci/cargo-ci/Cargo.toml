@@ -10,12 +10,12 @@ anyhow = { workspace = true }
 assert_fs = { workspace = true }
 cargo_metadata = { workspace = true }
 chrono = { workspace = true, default-features = true }
+cicero = { workspace = true, features = ["commands", "task_venv"] }
 clap = { workspace = true, features = ["derive", "string"] }
 flate2 = { workspace = true }
 fs-err = { workspace = true }
 fs_extra = { workspace = true }
 predicates = { workspace = true }
-repo_path = { workspace = true }
 reqwest = { workspace = true, features = ["blocking"] }
 shadow-rs = { workspace = true }
 serde_json = { workspace = true }

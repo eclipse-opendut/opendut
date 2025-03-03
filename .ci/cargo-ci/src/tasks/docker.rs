@@ -2,7 +2,7 @@ use std::process::Command;
 use std::str::FromStr;
 
 use clap::ArgAction;
-use repo_path::repo_path;
+use cicero::path::repo_path;
 use crate::core::types::Package;
 use crate::core::util::RunRequiringSuccess;
 

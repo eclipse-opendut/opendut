@@ -1,7 +1,7 @@
 use std::path::PathBuf;
-use std::process::Command;
 use tracing::info;
-use crate::core::dependency::Crate;
+
+use crate::core::commands;
 
 use super::*;
 
@@ -13,8 +13,6 @@ pub struct SbomCli;
 
 #[tracing::instrument(skip_all)]
 pub fn generate_sboms(packages: PackageSelection) -> crate::Result {
-    util::install_crate(Crate::CargoSbom)?;
-
     for package in packages.iter() {
         generate_sbom(package)?
     }
@@ -27,7 +25,7 @@ pub fn generate_sbom(package: Package) -> crate::Result {
     let sbom_dir = out_dir();
     fs::create_dir_all(&sbom_dir)?;
 
-    let sbom = Command::new("cargo-sbom")
+    let sbom = commands::CARGO_SBOM.command()
         .args(["--cargo-package", &package.ident(), "--output-format", "spdx_json_2_3"])
         .output()?
         .stdout;

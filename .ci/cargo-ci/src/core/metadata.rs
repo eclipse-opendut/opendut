@@ -1,6 +1,6 @@
 use std::sync::LazyLock;
 use cargo_metadata::Package;
-use repo_path::repo_path;
+use cicero::path::repo_path;
 
 static CARGO_METADATA: LazyLock<cargo_metadata::Metadata> = LazyLock::new(||
     cargo_metadata::MetadataCommand::new()

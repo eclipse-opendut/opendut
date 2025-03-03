@@ -214,11 +214,9 @@ pub mod distribution {
     pub mod rperf {
         use crate::fs::File;
         use std::path::Path;
-        use std::process::Command;
         use flate2::read::GzDecoder;
         use tar::Archive;
-        use crate::core::dependency::Crate;
-        use crate::core::util;
+        use crate::core::commands::CROSS;
         use crate::core::util::RunRequiringSuccess;
         use super::*;
 
@@ -276,11 +274,7 @@ pub mod distribution {
             Ok(temp_dir_subpath)
         }
         fn build_rperf(target_directory: &Path, current_directory: &Path, target: Arch) -> Result<PathBuf, anyhow::Error>  {
-            util::install_crate(Crate::Cross)?;
-            
-            Command::new("cross")
-                .arg("build")
-                .arg("--release")
+            CROSS.command()
                 .arg("--all-features")
                 .arg("--target-dir").arg(target_directory)
                 .arg("--target").arg(target.triple())

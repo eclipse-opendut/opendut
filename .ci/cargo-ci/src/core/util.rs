@@ -3,26 +3,8 @@ use std::process::Command;
 use anyhow::anyhow;
 
 use assert_fs::assert::PathAssert;
-use tracing_subscriber::fmt::format::FmtSpan;
 
-use crate::core::dependency::Crate;
-use crate::core::metadata;
 use crate::core::types::Arch;
-
-#[tracing::instrument(level = tracing::Level::TRACE)]
-pub fn install_crate(install: Crate) -> crate::Result {
-    let cargo_metadata = metadata::cargo();
-
-    let version = cargo_metadata.workspace_metadata["ci"]["cargo-ci"][install.ident()]["version"].as_str()
-        .unwrap_or_else(|| panic!("No version information for crate '{}' in root Cargo.toml. Aborting installation.", install.ident()));
-
-    Command::new("cargo")
-        .arg("install")
-        .arg("--version").arg(version)
-        .args(install.install_command_args())
-        .arg(install.ident())
-        .run_requiring_success()
-}
 
 #[tracing::instrument]
 pub fn install_toolchain(arch: Arch) -> crate::Result {
@@ -50,25 +32,6 @@ impl RunRequiringSuccess for Command {
             Err(anyhow!(error))
         }
     }
-}
-
-
-pub fn init_tracing() -> crate::Result {
-    use tracing_subscriber::filter::{EnvFilter, LevelFilter};
-
-    let tracing_filter = EnvFilter::builder()
-        .with_default_directive(LevelFilter::DEBUG.into())
-        .from_env()?
-        .add_directive("h2=info".parse()?)
-        .add_directive("opendut=trace".parse()?);
-
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::TRACE)
-        .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
-        .with_env_filter(tracing_filter)
-        .with_writer(std::io::stderr)
-        .init();
-    Ok(())
 }
 
 

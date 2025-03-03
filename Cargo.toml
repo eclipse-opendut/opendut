@@ -58,6 +58,7 @@ cargo_metadata = "0.19.1"
 cargo_toml = "0.21.0"
 cfg-if = "1.0.0"
 chrono = { version = "0.4.39", default-features = false }
+cicero = "0.3.0"
 clap = "4.5.28"
 clap_complete = "4.5.44"
 cli-table = "0.4"
@@ -119,7 +120,6 @@ protobuf-src = "1.1.0"
 reactive_stores = "0.1.5"
 reactive_stores_macro = "0.1.5"
 regex = "1.11.1"
-repo_path = "1.1.0"
 reqwest = { version = "0.12.12", default-features = false, features = ["rustls-tls-native-roots"] }
 reqwest-middleware = "0.4.0"
 reqwest-retry = "0.7.0"
@@ -189,16 +189,16 @@ netbird-dashboard.version="v2.5.0"    # docker container version for netbirdio/d
 
 rperf.version = "0.1.8"
 
-[workspace.metadata.ci.cargo-ci] #CLI tool crates used in CI (not libraries)
-cargo-bundle-licenses.version = "2.0.0"
-cargo-deny.version = "0.17.0"
-cargo-sbom.version = "0.9.1"
-cargo-tarpaulin.version = "0.31.2"
-cross.version = "0.2.5"
-diesel_cli.version = "2.2.4"
-mdbook.version = "0.4.42"
-mdbook-plantuml.version = "0.8.0"
-trunk.version = "0.21.7"
+[workspace.metadata.cicero.commands.dependencies] #CLI tool crates used in CI (not libraries)
+cargo-bundle-licenses = "2.0.0"
+cargo-deny = "0.17.0"
+cargo-sbom = "0.9.1"
+cargo-tarpaulin = "0.31.2"
+cross = "0.2.5"
+diesel_cli = "2.2.4"
+mdbook = "0.4.42"
+mdbook-plantuml = "0.8.0"
+trunk = "0.21.7"
 
 [workspace.lints.clippy]
 unnecessary_lazy_evaluations = "allow"

@@ -346,11 +346,10 @@ pub mod distribution {
 }
 
 pub mod diesel {
-    use std::process::Command;
-    use repo_path::repo_path;
-    use crate::core::dependency::Crate;
+    use cicero::path::repo_path;
+
+    use crate::core::commands::DIESEL;
     use crate::core::util::RunRequiringSuccess;
-    use crate::util;
 
     use super::*;
 
@@ -363,8 +362,6 @@ pub mod diesel {
     }
     impl DieselCli {
         pub fn handle(self) -> crate::Result {
-            util::install_crate(Crate::DieselCli)?;
-
             let carl_database_dir = carl_database_dir();
 
             assert!(
@@ -372,7 +369,7 @@ pub mod diesel {
                 "Could not find database directory in CARL, expected at {carl_database_dir:?}."
             );
 
-            Command::new("diesel")
+            DIESEL.command()
                 .args(self.pass_through)
                 .current_dir(carl_database_dir)
                 .env("DATABASE_URL", "postgres://postgres:postgres@localhost/carl")

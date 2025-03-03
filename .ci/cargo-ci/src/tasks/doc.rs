@@ -1,11 +1,8 @@
 use crate::fs;
 use std::path::PathBuf;
-use std::process::Command;
 
 use tracing::info;
 
-use crate::core::dependency::Crate;
-use crate::util;
 use crate::util::RunRequiringSuccess;
 
 /// Access or build the documentation
@@ -63,15 +60,13 @@ impl DocCli {
 }
 
 pub mod book {
-    use repo_path::repo_path;
+    use cicero::path::repo_path;
+    use crate::core::commands::MDBOOK;
     use super::*;
 
     #[tracing::instrument]
     pub fn open() -> crate::Result {
-        util::install_crate(Crate::Mdbook)?;
-        util::install_crate(Crate::MdbookPlantuml)?;
-
-        Command::new("mdbook")
+        MDBOOK.command()
             .arg("serve")
             .arg("--open")
             .arg("--port=4000")
@@ -83,12 +78,9 @@ pub mod book {
 
     #[tracing::instrument]
     pub fn build() -> crate::Result {
-        util::install_crate(Crate::Mdbook)?;
-        util::install_crate(Crate::MdbookPlantuml)?;
-
         let out_dir = out_dir();
 
-        Command::new("mdbook")
+        MDBOOK.command()
             .arg("build")
             .arg("--dest-dir").arg(&out_dir)
             .current_dir(doc_dir())
@@ -107,7 +99,7 @@ pub mod book {
 }
 
 pub mod homepage {
-    use repo_path::repo_path;
+    use cicero::path::repo_path;
     use super::*;
 
     #[tracing::instrument]

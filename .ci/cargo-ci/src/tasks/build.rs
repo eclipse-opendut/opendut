@@ -1,8 +1,7 @@
-use std::process::Command;
 use std::path::PathBuf;
 
-use crate::{constants, util, Package};
-use crate::core::dependency::Crate;
+use crate::{constants, Package};
+use crate::core::commands::CROSS;
 use crate::types::Arch;
 use crate::core::types::parsing::target::TargetSelection;
 use crate::util::RunRequiringSuccess;
@@ -18,12 +17,8 @@ pub struct DistributionBuildCli {
 
 #[tracing::instrument(skip_all)]
 pub fn distribution_build(package: Package, target: Arch) -> crate::Result {
-    util::install_crate(Crate::Cross)?;
-
-    Command::new("cross")
+    CROSS.command()
         .args([
-            "build",
-            "--release",
             "--package",
             &package.ident(),
             "--target-dir",

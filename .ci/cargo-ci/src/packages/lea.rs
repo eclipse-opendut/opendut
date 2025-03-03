@@ -1,14 +1,15 @@
-use crate::fs;
-use std::path::PathBuf;
-use std::process::Command;
-use repo_path::repo_path;
+use cicero::path::repo_path;
 use tracing::info;
+
+use std::path::PathBuf;
+
+use crate::core::commands::TRUNK;
+use crate::fs;
 use crate::Arch;
-use crate::core::dependency::Crate;
 
 use crate::core::types::parsing::package::PackageSelection;
-use crate::Package;
 use crate::util::RunRequiringSuccess;
+use crate::Package;
 
 const PACKAGE: Package = Package::Lea;
 
@@ -80,7 +81,7 @@ pub mod run {
     pub fn run(passthrough: Vec<String>) -> crate::Result {
         install_requirements()?;
 
-        Command::new("trunk")
+        TRUNK.command()
             .arg("watch")
             .args(passthrough)
             .current_dir(self_dir())
@@ -92,8 +93,6 @@ pub mod run {
 #[tracing::instrument]
 fn install_requirements() -> crate::Result {
     crate::util::install_toolchain(Arch::Wasm)?;
-
-    crate::util::install_crate(Crate::Trunk)?;
 
     Ok(())
 }
@@ -109,7 +108,7 @@ fn build_impl(release: bool, out_dir: PathBuf) -> crate::Result {
 
     fs::create_dir_all(&out_dir)?;
 
-    let mut command = Command::new("trunk");
+    let mut command = TRUNK.command();
     command.arg("build");
 
     if release {

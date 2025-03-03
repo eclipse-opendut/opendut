@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use repo_path::repo_path;
+use cicero::path::repo_path;
 
 /// Sub-directory of the Cargo target directory, which we use for any of our own build artifacts.
 pub fn target_dir() -> PathBuf {
