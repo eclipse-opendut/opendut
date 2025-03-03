@@ -23,14 +23,6 @@ impl TryFrom<ClusterId> for crate::cluster::ClusterId {
     }
 }
 
-impl From<uuid::Uuid> for ClusterId {
-    fn from(value: uuid::Uuid) -> Self {
-        Self {
-            uuid: Some(value.into())
-        }
-    }
-}
-
 impl From<crate::cluster::ClusterName> for ClusterName {
     fn from(value: crate::cluster::ClusterName) -> Self {
         Self {

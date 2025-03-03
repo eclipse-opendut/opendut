@@ -21,8 +21,6 @@ impl Topology {
 pub struct DeviceId(pub uuid::Uuid);
 
 impl DeviceId {
-    pub const NIL: Self = Self(uuid::Uuid::from_bytes([0; 16]));
-
     pub fn random() -> Self {
         Self(uuid::Uuid::new_v4())
     }
@@ -31,12 +29,6 @@ impl DeviceId {
 impl fmt::Display for DeviceId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
-    }
-}
-
-impl Default for DeviceId {
-    fn default() -> Self {
-        Self::NIL
     }
 }
 
