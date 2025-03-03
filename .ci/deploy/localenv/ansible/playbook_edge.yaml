@@ -57,13 +57,11 @@
       file:
         path: "{{ ca_cert_dir }}"
         state: directory
-        mode: "0755"
 
     - name: Push certificate to edge host
       copy:
         src: "{{ ca_cert_download }}"
         dest: "{{ ca_cert }}"
-        mode: "0644"
 
 
 - name: Download EDGAR from CARL
@@ -98,7 +96,6 @@
       get_url:
         url: "https://carl.opendut.local/api/edgar/{{ arch_map[cpu_arch] }}/download"
         dest: "{{ edgar_download }}"
-        mode: "0644"
       environment:
         SSL_CERT_FILE: "{{ ca_cert }}"
 
@@ -110,7 +107,6 @@
       file:
         path: "{{ edgar_unpack_dir }}"
         state: "directory"
-        mode: "0755"
 
     - name: Unpack EDGAR archive
       unarchive:
@@ -175,9 +171,8 @@
       file:
         path: "{{ config_dir }}"
         state: directory
-        mode: "0755"
 
-    - name: Write telemetry configuration
+    - name: Write telemetry presets into EDGAR configuration file
       copy:
         dest: "{{ config_file }}"
         mode: "0640"
