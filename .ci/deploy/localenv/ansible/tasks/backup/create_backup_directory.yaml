@@ -1,5 +1,5 @@
 - name: Determine current date
-  command: "date --utc +'%Y%m%dT%H%M%SZ'"
+  command: "date --utc +'%Y-%m-%dT%H-%MZ'"
   register: _date_output
 
 - name: Set backup_id fact
@@ -9,6 +9,11 @@
 - name: Set backup_id_path fact (full path to backup directory)
   set_fact:
     backup_id_path: "{{ backup_dir }}/{{ backup_id }}"
+
+- name: Fail if backup directory with same ID already exists
+  fail:
+    msg: "Backup directory {{ backup_id_path }} already exists. Aborting."
+  when: backup_id_path is exists
 
 - name: Create backup directory
   file:
