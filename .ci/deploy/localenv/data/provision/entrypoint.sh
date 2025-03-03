@@ -45,7 +45,10 @@ if [ ! -e "$OPENDUT_PASSWORD_FILE" ]; then
 
 fi
 
+chown -R carl:carl $PROVISION_ROOT_DIR
+chmod a=,u=rw $OPENDUT_PASSWORD_FILE
+chmod a=,u=rw $OPENDUT_ENV_FILE
+
 # '/provision' - contains the created secrets in the docker volume
 # '/secrets'   - contains a synchronized copy of the created secrets available on the host system
-chown -R carl:carl $PROVISION_ROOT_DIR
 rsync --archive --delete $PROVISION_ROOT_DIR/ /secrets/
