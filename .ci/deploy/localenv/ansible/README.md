@@ -12,9 +12,11 @@
         opendut-backend1:
           opendut_version_ref: "development"  # Branch, tag or commit ID
           ip_for_edge_hosts_file: "123.456.789.101"
+          opendut_carl_image_version: "0.5.1"
         opendut-backend2:
           opendut_version_ref: "v0.1.2"
           ip_for_edge_hosts_file: "123.456.789.102"
+          opendut_carl_image_version: "canary-0.5.1"
       vars:
         repo_dir: "/data/opendut"
         backup_dir: "/data/backup/opendut/"

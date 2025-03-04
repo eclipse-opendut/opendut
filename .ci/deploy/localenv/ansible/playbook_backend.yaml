@@ -5,6 +5,11 @@
   hosts: backend
   gather_facts: false
   tasks:
+    - name: Define common facts
+      include_tasks: tasks/common_facts.yaml
+    - name: Set carl image version
+      include_tasks: tasks/carl_image_version.yaml
+
     - name: Checkout openDuT repo
       git:
         repo: "https://github.com/eclipse-opendut/opendut/"

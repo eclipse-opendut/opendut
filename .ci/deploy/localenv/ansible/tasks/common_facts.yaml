@@ -1,0 +1,20 @@
+- name: Define container and volume names
+  set_fact:
+    opendut_carl: "opendut-carl"
+    opendut_carl_postgres: "opendut-carl-postgres"
+    opendut_keycloak: "opendut-keycloak"
+    opendut_keycloak_postgres: "opendut-keycloak-postgres"
+    opendut_netbird_management: "opendut-netbird-management"
+    opendut_netbird_management_volume: "opendut_netbird-mgmt-data"
+    opendut_backup_volume: "opendut_backup"
+    opendut_secrets_volume: "opendut_provision-secrets-data"
+
+- name: Determine docker volumes
+  include_tasks: tasks/docker_volumes.yaml
+
+- name: Define environment files for docker compose
+  set_fact:
+    opendut_env_files:
+      - "{{ docker_volumes[opendut_secrets_volume] }}/.env"
+      - "{{ repo_dir }}/.ci/deploy/localenv/data/secrets/.env"
+
