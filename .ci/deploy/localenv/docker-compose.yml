@@ -345,7 +345,7 @@ services:
 
   carl:
     container_name: opendut-carl
-    image: "ghcr.io/eclipse-opendut/opendut-carl:0.5.1"
+    image: "ghcr.io/eclipse-opendut/opendut-carl:${OPENDUT_CARL_IMAGE_VERSION:-0.5.1}"
     command: ["/opt/opendut-carl/opendut-carl"]
     restart: unless-stopped
     depends_on:
@@ -476,7 +476,7 @@ services:
     container_name: opendut-prometheus
     image: prom/prometheus:v2.51.1
     command: [ "--config.file=/etc/prometheus/prometheus.yml", "--web.enable-remote-write-receiver", "--enable-feature=exemplar-storage" ]
-    restart: always
+    restart: unless-stopped
     volumes:
       - ./data/telemetry/prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
@@ -485,6 +485,7 @@ services:
   tempo:
     container_name: opendut-tempo
     image: grafana/tempo:2.4.1
+    restart: unless-stopped
     command: [ "-config.file=/etc/tempo.yml" ]
     volumes:
       - ./data/telemetry/tempo.yml:/etc/tempo.yml
@@ -499,6 +500,7 @@ services:
   loki:
     container_name: opendut-loki
     image: grafana/loki:2.9.6
+    restart: unless-stopped
     volumes:
       - ./data/telemetry/loki.yml:/etc/loki/loki.yml
       - loki-data:/loki
@@ -514,6 +516,7 @@ services:
   promtail:
     container_name: opendut-promtail
     image: grafana/promtail:2.9.6
+    restart: unless-stopped
     volumes:
       - ./data/telemetry/promtail.yml:/etc/promtail/docker-config.yaml
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
@@ -536,6 +539,7 @@ services:
       dockerfile: ./.ci/deploy/localenv/data/telemetry/Dockerfile_otel-collector
       args:
         OTEL_COLLECTOR_VERSION: 0.97.0
+    restart: unless-stopped
     environment:
       - "SSL_CERT_FILE=/pki/opendut-ca.pem"
     command: [ "--config=/etc/collector-gateway.yaml" ]
@@ -549,7 +553,6 @@ services:
         condition: service_healthy
       provision-secrets:
         condition: service_completed_successfully
-    restart: on-failure
     labels:
       - traefik.enable=true
       # OpenTelemetry GRPC endpoint
