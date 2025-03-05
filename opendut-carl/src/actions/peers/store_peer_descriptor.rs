@@ -69,7 +69,6 @@ mod tests {
     use super::*;
     use crate::resources::manager::ResourcesManager;
     use googletest::prelude::*;
-    use opendut_types::peer::state::PeerState;
     use opendut_types::peer::PeerNetworkDescriptor;
     use opendut_types::topology::DeviceDescriptor;
     use opendut_types::topology::{DeviceDescription, DeviceId, DeviceName, Topology};
@@ -100,8 +99,7 @@ mod tests {
         }).await?;
 
         assert_that!(resources_manager.get::<PeerDescriptor>(peer.id).await?.as_ref(), some(eq(&peer.descriptor)));
-        assert_that!(resources_manager.get::<PeerState>(peer.id).await?.as_ref(), none());
-
+        // TODO: what about PeerState?
 
         let additional_network_interface = NetworkInterfaceDescriptor {
             id: NetworkInterfaceId::random(),
@@ -141,7 +139,7 @@ mod tests {
         }).await?;
 
         assert_that!(resources_manager.get::<PeerDescriptor>(peer.id).await?.as_ref(), some(eq(&changed_descriptor)));
-        assert_that!(resources_manager.get::<PeerState>(peer.id).await?.as_ref(), none());
+        // TODO: what about PeerState?
 
         Ok(())
     }

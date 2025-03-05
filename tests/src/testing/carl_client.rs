@@ -3,7 +3,7 @@ use crate::testing::util;
 use anyhow::anyhow;
 use backon::Retryable;
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::peer::state::PeerState;
+use opendut_types::peer::state::PeerConnectionState;
 use opendut_types::peer::PeerId;
 use opendut_types::util::Port;
 use tokio::sync::{Mutex, MutexGuard};
@@ -31,9 +31,9 @@ impl TestCarlClient {
             let edgar_state = self.inner().await
                 .peers.get_peer_state(peer_id).await?;
 
-            match edgar_state {
-                PeerState::Up { .. } => Ok(()),
-                PeerState::Down => Err(anyhow!("No peers registered in time!"))
+            match edgar_state.connection {
+                PeerConnectionState::Online { .. } => Ok(()),
+                PeerConnectionState::Offline => Err(anyhow!("No peers registered in time!"))
             }
         })
             .retry(

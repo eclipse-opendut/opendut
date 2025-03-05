@@ -9,7 +9,7 @@ use leptos::prelude::*;
 use leptos_use::on_click_outside;
 use tracing::trace;
 use opendut_types::cluster::ClusterConfiguration;
-use opendut_types::peer::state::PeerState;
+use opendut_types::peer::state::{PeerConnectionState, PeerState};
 use opendut_types::peer::PeerDescriptor;
 
 #[component(transparent)]
@@ -38,7 +38,7 @@ pub fn PeersOverview() -> impl IntoView {
                     let peer_state = peer_states.remove(&peer.id)
                         .unwrap_or_else(|| {
                             trace!("Did not receive PeerState for peer <{peer_id}>. Treating it as down.", peer_id=peer.id);
-                            PeerState::Down
+                            PeerState::default()
                         });
                     peers_with_state.push((peer, peer_state));
                 };
@@ -156,14 +156,14 @@ fn Row(
     let setup_href = move || { format!("/peers/{}/configure/setup", peer_id.get()) };
 
     let health_state = Signal::derive(move || {
-        match peer_state.get() {
-            PeerState::Down => {
+        match peer_state.get().connection {
+            PeerConnectionState::Offline => {
                 health::State {
                     kind: health::StateKind::Unknown,
                     text: String::from("Disconnected"),
                 }
             }
-            PeerState::Up { .. } => {
+            PeerConnectionState::Online { .. } => {
                 health::State {
                     kind: health::StateKind::Green,
                     text: String::from("Connected. No errors."),

@@ -6,11 +6,11 @@ use tokio::sync::Mutex;
 
 use futures::future::join_all;
 use futures::FutureExt;
-use tracing::{debug, error, trace, warn};
+use tracing::{debug, error, info, trace, warn};
 
 use opendut_carl_api::carl::cluster::{DeleteClusterDeploymentError, GetClusterConfigurationError, GetClusterDeploymentError, ListClusterConfigurationsError, ListClusterDeploymentsError, StoreClusterDeploymentError};
 use opendut_types::cluster::{ClusterAssignment, ClusterConfiguration, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
-use opendut_types::peer::state::{PeerState, PeerUpState};
+use opendut_types::peer::state::{PeerConnectionState, PeerMemberState, PeerState};
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
 use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
@@ -121,7 +121,7 @@ impl ClusterManager {
                 .await
                 .map_err(|get_peer_state_error| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: get_peer_state_error.to_string() })?;
 
-            if let PeerState::Up { inner: PeerUpState::Blocked { .. }, .. } = peer_state {
+            if let PeerState { member: PeerMemberState::Blocked { .. }, .. } = peer_state {
                 blocked_peers_by_id.push(peer_id);
             }
         }
@@ -170,14 +170,14 @@ impl ClusterManager {
 
 
     async fn schedule_redeploying_clusters_when_all_peers_become_available(resources_manager: ResourcesManagerRef, self_ref: ClusterManagerRef) {
-        let mut peer_state_subscription = resources_manager.subscribe::<PeerState>().await;
+        let mut peer_state_subscription = resources_manager.subscribe::<PeerConnectionState>().await;
 
         tokio::spawn(async move {
             loop {
-                let peer_state = peer_state_subscription.receive().await;
+                let peer_connection_state = peer_state_subscription.receive().await;
 
-                if let Ok(SubscriptionEvent::Inserted { id: peer_id, value: PeerState::Up { inner: PeerUpState::Available, .. } }) = peer_state {
-                    trace!("Peer <{peer_id}> is now available. Checking if any clusters can now be deployed...");
+                if let Ok(SubscriptionEvent::Inserted { id: peer_id, value: PeerConnectionState::Online { remote_host } }) = peer_connection_state {
+                    info!("Peer <{peer_id}> is now online with remote address <{remote_host}>. Checking if any clusters can now be deployed...");
 
                     let mut self_ref = self_ref.lock().await;
                     let result = self_ref.deploy_all_clusters_containing_newly_available_peer(peer_id).await;
@@ -244,7 +244,8 @@ impl ClusterManager {
                 self.deploy_cluster(cluster_id).await?;
             }
             ClusterDeployable::AlreadyDeployed => {
-                debug!("Cluster <{cluster_id}> is already deployed. Not triggering new deployment.");
+                debug!("Cluster <{cluster_id}> is already deployed. Triggering new deployment anyway.");  // TODO: re-evaluate if we can do this differently
+                self.deploy_cluster(cluster_id).await?;
             }
             ClusterDeployable::NotAllPeersAvailable { unavailable_peers } => {
                 debug!(
@@ -300,22 +301,22 @@ impl ClusterManager {
         let member_assignments: Vec<Result<PeerClusterAssignment, DeployClusterError>> = {
             let assignment_futures = std::iter::zip(member_interface_mapping.clone(), can_server_ports)
                 .map(|((peer_id, device_interfaces), can_server_port)| {
-                    self.resources_manager.get::<PeerState>(peer_id)
-                        .map(move |peer_state: PersistenceResult<Option<PeerState>>| {
-                            let vpn_address = match peer_state {
-                                Ok(peer_state) => match peer_state {
-                                    Some(PeerState::Up { remote_host, .. }) => {
+                    self.resources_manager.get::<PeerConnectionState>(peer_id)
+                        .map(move |peer_connection_state: PersistenceResult<Option<PeerConnectionState>>| {
+                            let vpn_address = match peer_connection_state {
+                                Ok(peer_connection_state) => match peer_connection_state {
+                                    Some(PeerConnectionState::Online { remote_host }) => {
                                         Ok(remote_host)
                                     }
-                                    Some(_) => {
-                                        Err(DeployClusterError::Internal { cluster_id, cause: format!("Peer <{peer_id}> which is used in a cluster, should have a PeerState of 'Up'.") })
+                                    Some(PeerConnectionState::Offline) => {
+                                        Err(DeployClusterError::Internal { cluster_id, cause: format!("Peer <{peer_id}> which is used in a cluster, should have a PeerConnectionState of 'Online'.") })
                                     }
                                     None => {
-                                        Err(DeployClusterError::Internal { cluster_id, cause: format!("Peer <{peer_id}> which is used in a cluster, should have a PeerState associated.") })
+                                        Err(DeployClusterError::Internal { cluster_id, cause: format!("Peer <{peer_id}> which is used in a cluster, should have a PeerConnectionState associated.") })
                                     }
                                 }
                                 Err(cause) => {
-                                    let message = format!("Error while accessing persistence to read PeerState of peer <{peer_id}>");
+                                    let message = format!("Error while accessing persistence to read PeerConnectionState of peer <{peer_id}>");
                                     error!("{message}:\n  {cause}");
                                     Err(DeployClusterError::Internal { cluster_id, cause: message })
                                 }
@@ -353,7 +354,7 @@ impl ClusterManager {
                 options: assign_cluster_options.clone(),
             }).await
             .map_err(|cause| {
-                let message = format!("Failure while assigning cluster <{cluster_id}> to peer <{member_id}>.");
+                let message = format!("Failure while assigning cluster <{cluster_id}> to peer <{member_id}>. Cause: {cause}"); // TODO
                 error!("{}\n  {cause}", message);
                 DeployClusterError::Internal { cluster_id, cause: message }
             })?;

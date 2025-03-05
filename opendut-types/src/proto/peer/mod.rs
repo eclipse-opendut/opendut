@@ -1,4 +1,3 @@
-use crate::proto;
 use crate::proto::{conversion, ConversionError, ConversionErrorBuilder, ConversionResult};
 use crate::proto::vpn::VpnPeerConfig;
 
@@ -191,135 +190,73 @@ conversion! {
     type Proto = PeerState;
 
     fn from(state: Model) -> Proto {
-        match state {
-            crate::peer::state::PeerState::Down => {
-                PeerState {
-                    inner: Some(peer_state::Inner::Down(PeerStateDown {}))
-                }
-            },
-            crate::peer::state::PeerState::Up { inner, remote_host } => {
-                let remote_host: proto::util::IpAddress = remote_host.into();
-                let remote_host = Some(remote_host);
-
-                match inner {
-                    crate::peer::state::PeerUpState::Available => {
-                        PeerState {
-                            inner: Some(peer_state::Inner::Up(PeerStateUp {
-                                inner: Some(peer_state_up::Inner::Available(PeerStateUpAvailable {})),
-                                remote_host,
-                            }))
-                        }
-                    },
-                    crate::peer::state::PeerUpState::Blocked { inner, by_cluster } => {
-                        match inner {
-                            crate::peer::state::PeerBlockedState::Deploying => {
-                                PeerState {
-                                    inner: Some(peer_state::Inner::Up(PeerStateUp {
-                                        inner: Some(peer_state_up::Inner::Blocked(PeerStateUpBlocked {
-                                            inner: Some(peer_state_up_blocked::Inner::Deploying(PeerStateUpBlockedDeploying {})),
-                                            by_cluster: Some(by_cluster.into()),
-                                        })),
-                                        remote_host,
-                                    }))
-                                }
-                            },
-                            crate::peer::state::PeerBlockedState::Member => {
-                                PeerState {
-                                    inner: Some(peer_state::Inner::Up(PeerStateUp {
-                                        inner: Some(peer_state_up::Inner::Blocked(PeerStateUpBlocked {
-                                            inner: Some(peer_state_up_blocked::Inner::Member(PeerStateUpBlockedMember {})),
-                                            by_cluster: Some(by_cluster.into()),
-                                        })),
-                                        remote_host,
-                                    }))
-                                }
-                            },
-                            crate::peer::state::PeerBlockedState::Undeploying => {
-                                PeerState {
-                                    inner: Some(peer_state::Inner::Up(PeerStateUp {
-                                        inner: Some(peer_state_up::Inner::Blocked(PeerStateUpBlocked {
-                                            inner: Some(peer_state_up_blocked::Inner::Undeploying(PeerStateUpBlockedUndeploying {})),
-                                            by_cluster: Some(by_cluster.into()),
-                                        })),
-                                        remote_host,
-                                    }))
-                                }
-                            },
-                        }
-                    },
+        let connection = match state.connection {
+            crate::peer::state::PeerConnectionState::Offline => {
+                PeerConnectionState {
+                    state: Some(peer_connection_state::State::Offline(PeerOffline {})),
                 }
             }
+            crate::peer::state::PeerConnectionState::Online { remote_host } => {
+                PeerConnectionState {
+                    state: Some(peer_connection_state::State::Online(PeerOnline {
+                        remote_host: Some(remote_host.into()),
+                    }))
+                }
+            }
+        };
+        let member = match state.member {
+            crate::peer::state::PeerMemberState::Available => {
+                PeerMemberState {
+                    state: Some(peer_member_state::State::Available(PeerMemberAvailable {})),
+                }
+            }
+            crate::peer::state::PeerMemberState::Blocked { by_cluster } => {
+                PeerMemberState {
+                    state: Some(peer_member_state::State::Blocked(PeerMemberBlocked {
+                        by_cluster: Some(by_cluster.into()),
+                    })),
+                }
+            }
+        };
+        PeerState {
+            connection: Some(connection),
+            member: Some(member),
         }
     }
 
     fn try_from(state: Proto) -> ConversionResult<Model> {
+        let proto_member = extract!(state.member.state)?;
+        let proto_connection = extract!(state.connection.state)?;
 
-        let inner = extract!(state.inner)?;
-
-        match inner {
-            peer_state::Inner::Down(_) => {
-                Ok(crate::peer::state::PeerState::Down)
+        let connection = match proto_connection {
+            peer_connection_state::State::Online(online) => {
+                let remote_host: std::net::IpAddr = extract!(online.remote_host)?
+                    .try_into()?;
+                crate::peer::state::PeerConnectionState::Online { remote_host }
             }
-            peer_state::Inner::Up(PeerStateUp { inner, remote_host }) => {
+            peer_connection_state::State::Offline(_offline) => {
+                crate::peer::state::PeerConnectionState::Offline {}
+            }
+        };
 
-                let remote_host: std::net::IpAddr = extract!(remote_host)?.try_into()?;
-
-                let inner = inner
-                    .ok_or(ErrorBuilder::message("Inner 'Up' state not set"))?;
-
-                match inner {
-                    peer_state_up::Inner::Available(_) => {
-                        Ok(crate::peer::state::PeerState::Up {
-                            inner: crate::peer::state::PeerUpState::Available,
-                            remote_host,
-                        })
-                    }
-                    peer_state_up::Inner::Blocked(PeerStateUpBlocked { inner, by_cluster }) => {
-
-                        let inner = inner
-                            .ok_or(ErrorBuilder::message("Inner 'Blocked' state not set"))?;
-
-                        match inner {
-                            peer_state_up_blocked::Inner::Deploying(_) => {
-                                Ok(crate::peer::state::PeerState::Up {
-                                    inner: crate::peer::state::PeerUpState::Blocked {
-                                        inner: crate::peer::state::PeerBlockedState::Deploying,
-                                        by_cluster: by_cluster
-                                            .ok_or(ErrorBuilder::field_not_set("by_cluster"))?
-                                            .try_into()?,
-                                    },
-                                    remote_host,
-                                })
-                            }
-                            peer_state_up_blocked::Inner::Member(_) => {
-                                Ok(crate::peer::state::PeerState::Up {
-                                    inner: crate::peer::state::PeerUpState::Blocked {
-                                        inner: crate::peer::state::PeerBlockedState::Member,
-                                        by_cluster: by_cluster
-                                            .ok_or(ErrorBuilder::field_not_set("by_cluster"))?
-                                            .try_into()?,
-                                    },
-                                    remote_host,
-                                })
-                            }
-                            peer_state_up_blocked::Inner::Undeploying(_) => {
-                                Ok(crate::peer::state::PeerState::Up {
-                                    inner: crate::peer::state::PeerUpState::Blocked {
-                                        inner: crate::peer::state::PeerBlockedState::Undeploying,
-                                        by_cluster: by_cluster
-                                            .ok_or(ErrorBuilder::field_not_set("by_cluster"))?
-                                            .try_into()?,
-                                    },
-                                    remote_host,
-                                })
-                            }
-                        }
-                    }
+        let member = match proto_member {
+            peer_member_state::State::Available(_) => {
+                crate::peer::state::PeerMemberState::Available {}
+            }
+            peer_member_state::State::Blocked(blocked) => {
+                crate::peer::state::PeerMemberState::Blocked {
+                    by_cluster: extract!(blocked.by_cluster)?
+                        .try_into()?
                 }
             }
-        }
+        };
+        Ok(crate::peer::state::PeerState {
+            connection,
+            member,
+        })
     }
 }
+
 
 #[cfg(test)]
 #[allow(non_snake_case)]
@@ -329,7 +266,6 @@ mod tests {
 
     use googletest::prelude::*;
     use uuid::Uuid;
-    use crate::cluster::ClusterId;
     use super::*;
 
     #[test]
@@ -388,7 +324,7 @@ mod tests {
         let native_remote_host = IpAddr::from_str("1.2.3.4")?;
 
         { // Down
-            let native = crate::peer::state::PeerState::Down;
+            let native = crate::peer::state::PeerState::default();
             let proto: PeerState = Clone::clone(&native).into();
 
             assert_that!(
@@ -398,9 +334,11 @@ mod tests {
         }
 
         { // Up/Available
-            let native = crate::peer::state::PeerState::Up {
-                inner: crate::peer::state::PeerUpState::Available,
-                remote_host: native_remote_host,
+            let native = crate::peer::state::PeerState {
+                connection: crate::peer::state::PeerConnectionState::Online {
+                    remote_host: native_remote_host
+                },
+                member: crate::peer::state::PeerMemberState::Available,
             };
             let proto: PeerState = Clone::clone(&native).into();
 
@@ -411,44 +349,13 @@ mod tests {
         }
 
         { // Up/Blocked/Deploying
-            let native = crate::peer::state::PeerState::Up {
-                inner: crate::peer::state::PeerUpState::Blocked {
-                    inner: crate::peer::state::PeerBlockedState::Deploying,
-                    by_cluster: ClusterId::random(),
+            let native = crate::peer::state::PeerState {
+                connection: crate::peer::state::PeerConnectionState::Online {
+                    remote_host: native_remote_host
                 },
-                remote_host: native_remote_host,
-            };
-            let proto: PeerState = Clone::clone(&native).into();
-
-            assert_that!(
-                crate::peer::state::PeerState::try_from(Clone::clone(&proto)),
-                ok(eq(&native))
-            );
-        }
-
-        { // Up/Blocked/Member
-            let native = crate::peer::state::PeerState::Up {
-                inner: crate::peer::state::PeerUpState::Blocked {
-                    inner: crate::peer::state::PeerBlockedState::Member,
-                    by_cluster: ClusterId::random(),
+                member: crate::peer::state::PeerMemberState::Blocked {
+                    by_cluster: crate::cluster::ClusterId::random()
                 },
-                remote_host: native_remote_host,
-            };
-            let proto: PeerState = Clone::clone(&native).into();
-
-            assert_that!(
-                crate::peer::state::PeerState::try_from(Clone::clone(&proto)),
-                ok(eq(&native))
-            );
-        }
-
-        { // Up/Blocked/Undeploying
-            let native = crate::peer::state::PeerState::Up {
-                inner: crate::peer::state::PeerUpState::Blocked {
-                    inner: crate::peer::state::PeerBlockedState::Undeploying,
-                    by_cluster: ClusterId::random(),
-                },
-                remote_host: native_remote_host,
             };
             let proto: PeerState = Clone::clone(&native).into();
 

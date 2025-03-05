@@ -44,7 +44,7 @@ pub fn insert(cluster_configuration: ClusterConfiguration, connection: &mut PgCo
 #[diesel(table_name = schema::cluster_configuration)]
 #[diesel(belongs_to(PersistablePeerDescriptor, foreign_key = leader_id))]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-struct PersistableClusterConfiguration {
+pub(in crate::persistence) struct PersistableClusterConfiguration {
     pub cluster_id: Uuid,
     pub name: String,
     pub leader_id: Uuid,

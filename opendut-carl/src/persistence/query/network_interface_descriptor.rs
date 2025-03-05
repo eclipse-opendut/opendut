@@ -6,6 +6,7 @@ use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, Ne
 
 use crate::persistence::database::schema;
 use crate::persistence::error::{PersistenceError, PersistenceOperation, PersistenceResult};
+use crate::persistence::query::Filter;
 use crate::persistence::query::types::network_interface_kind::PersistableNetworkInterfaceKind;
 
 #[derive(diesel::Queryable, diesel::Selectable, diesel::Insertable, diesel::AsChangeset)]
@@ -106,10 +107,10 @@ fn insert_persistable(
 }
 
 pub fn list_filtered_by_peer(
-    peer_id: PeerId,
+    filter_by_peer_id: Filter<PeerId>,
     connection: &mut PgConnection
 ) -> PersistenceResult<Vec<NetworkInterfaceDescriptor>> {
-    let persistables = list_filtered_by_peer_id_persistable(peer_id, connection)?;
+    let persistables = list_filtered_by_peer_id_persistable(filter_by_peer_id, connection)?;
 
     let result = persistables.into_iter().map(|(persistable_network_interface_descriptor, persistable_network_interface_kind_can)| {
         let PersistableNetworkInterfaceDescriptor { network_interface_id, name, kind, peer_id: _ } = persistable_network_interface_descriptor;
@@ -127,15 +128,20 @@ pub fn list_filtered_by_peer(
 }
 
 fn list_filtered_by_peer_id_persistable(
-    peer_id: PeerId,
+    filter_by_peer_id: Filter<PeerId>,
     connection: &mut PgConnection
 ) -> PersistenceResult<Vec<(
     PersistableNetworkInterfaceDescriptor,
     Option<PersistableNetworkInterfaceKindCan>
 )>> {
-    schema::network_interface_descriptor::table
-        .left_join(schema::network_interface_kind_can::table)
-        .filter(schema::network_interface_descriptor::peer_id.eq(peer_id.uuid))
+    let mut query = schema::network_interface_descriptor::table
+        .left_join(schema::network_interface_kind_can::table).into_boxed();
+
+    if let Filter::By(peer_id) = filter_by_peer_id {
+        query = query.filter(schema::network_interface_descriptor::peer_id.eq(peer_id.uuid));
+    }
+
+    query
         .select((PersistableNetworkInterfaceDescriptor::as_select(), Option::<PersistableNetworkInterfaceKindCan>::as_select()))
         .get_results(connection)
         .map_err(PersistenceError::list::<NetworkInterfaceDescriptor>)

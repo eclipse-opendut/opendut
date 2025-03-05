@@ -1,12 +1,7 @@
-use crate::actions;
-use crate::actions::UnassignClusterParams;
 use crate::resources::manager::ResourcesManagerRef;
 use crate::settings::vpn::Vpn;
 use opendut_carl_api::carl::cluster::DeleteClusterDeploymentError;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
-use opendut_types::peer::{PeerDescriptor, PeerId};
-use std::ops::Not;
-use std::sync::Arc;
 use tracing::error;
 use crate::resources::storage::ResourcesStorageApi;
 
@@ -41,32 +36,7 @@ pub async fn delete_cluster_deployment(params: DeleteClusterDeploymentParams) ->
                     .map_err(|error| DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: Some(cluster.name.clone()), cause: error.to_string() })?;
             }
 
-            {
-                let all_peers = resources_manager.list::<PeerDescriptor>().await
-                    .map_err(|cause| DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: Some(cluster.name.clone()), cause: cause.to_string() })?;
-
-                let member_ids = all_peers.into_iter()
-                    .filter(|peer|
-                        peer.topology.devices.iter()
-                            .filter(|device| cluster.devices.contains(&device.id))
-                            .collect::<Vec<_>>()
-                            .is_empty().not()
-                    )
-                    .map(|peer| peer.id)
-                    .collect::<Vec<PeerId>>();
-
-                for member_id in member_ids {
-                    actions::unassign_cluster(UnassignClusterParams {
-                        resources_manager: Arc::clone(&resources_manager),
-                        peer_id: member_id,
-                    }).await
-                        .map_err(|cause| {
-                            let message = format!("Failure while unassigning cluster <{cluster_id}> from peer <{member_id}>.");
-                            error!("{}\n  {cause}", message);
-                            DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: Some(cluster.name.clone()), cause: message }
-                        })?;
-                }
-            }
+            // TODO: unassign cluster for each peer
         }
 
         Ok(deployment)

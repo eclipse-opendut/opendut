@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use opendut_types::peer::state::PeerState;
+use opendut_types::peer::state::PeerConnectionState;
 use crate::app::use_app_globals;
 use crate::peers::components::CreatePeerButton;
 use crate::routing;
@@ -22,9 +22,9 @@ pub fn PeersCard() -> impl IntoView {
                 .expect("Failed to request the list of peer states.");
 
             let (online, offline): (Vec<_>, Vec<_>) = peer_states.values()
-                .partition(|peer_state| match peer_state {
-                    PeerState::Up { .. } => true,
-                    PeerState::Down => false,
+                .partition(|peer_state| match peer_state.connection {
+                    PeerConnectionState::Online { .. } => true,
+                    PeerConnectionState::Offline => false,
                 });
 
             Peers {

@@ -37,7 +37,7 @@ pub fn insert(device_descriptor: DeviceDescriptor, connection: &mut PgConnection
 #[diesel(table_name = schema::device_descriptor)]
 #[diesel(belongs_to(NetworkInterfaceDescriptor, foreign_key = network_interface_id))]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-struct PersistableDeviceDescriptor {
+pub struct PersistableDeviceDescriptor {
     pub device_id: Uuid,
     pub name: String,
     pub description: Option<String>,

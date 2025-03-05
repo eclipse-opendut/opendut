@@ -129,6 +129,7 @@ async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_onl
         assert_eq!(old_peer_configuration_a, fixture.empty_old_peer_configuration);
         receiver_a.expect_no_peer_configuration().await;
     }
+    tracing::info!("First invocation of receive_peer_configuration is done.");
 
     let peer_b = testing::peer_descriptor::store_peer_descriptor(&carl_client).await?;
 
@@ -147,6 +148,7 @@ async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_onl
         assert_eq!(peer_configuration_b, fixture.empty_peer_configuration);
         assert_eq!(old_peer_configuration_b, fixture.empty_old_peer_configuration);
     }
+    tracing::info!("Second invocation of receive_peer_configuration is done.");
 
     {
         let validate_peer_configuration = |peer_configuration: PeerConfiguration| {
@@ -192,13 +194,16 @@ async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_onl
             Ok::<_, anyhow::Error>(())
         };
 
+        tracing::info!("Final peer configuration... ");
         let (peer_configuration_a, old_peer_configuration_a) = receiver_a.receive_peer_configuration().await?;
         validate_peer_configuration(peer_configuration_a)?;
         validate_old_peer_configuration(old_peer_configuration_a)?;
+        tracing::info!("receiver_a");
 
         let (peer_configuration_b, old_peer_configuration_b) = receiver_b.receive_peer_configuration().await?;
         validate_peer_configuration(peer_configuration_b)?;
         validate_old_peer_configuration(old_peer_configuration_b)?;
+        tracing::info!("receiver_b");
 
         receiver_a.expect_no_peer_configuration().await;
         receiver_b.expect_no_peer_configuration().await;

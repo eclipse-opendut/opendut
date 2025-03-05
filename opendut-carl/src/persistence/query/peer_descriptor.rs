@@ -24,7 +24,7 @@ pub fn insert(peer_descriptor: PeerDescriptor, connection: &mut PgConnection) ->
 
 
     {
-        let previous_network_interfaces = query::network_interface_descriptor::list_filtered_by_peer(peer_id, connection)?;
+        let previous_network_interfaces = query::network_interface_descriptor::list_filtered_by_peer(Filter::By(peer_id), connection)?;
         let interface_ids = interfaces.iter().map(|interface| interface.id).collect::<Vec<_>>();
 
         for previous_network_interface in previous_network_interfaces {
@@ -76,7 +76,7 @@ pub fn insert(peer_descriptor: PeerDescriptor, connection: &mut PgConnection) ->
 #[derive(Clone, Debug, PartialEq, diesel::Queryable, diesel::Selectable, diesel::Insertable, diesel::AsChangeset)]
 #[diesel(table_name = schema::peer_descriptor)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-struct PersistablePeerDescriptor {
+pub struct PersistablePeerDescriptor {
     pub peer_id: Uuid,
     pub name: String,
     pub location: Option<String>,
@@ -133,7 +133,7 @@ pub fn list(filter_by_peer_id: Filter<PeerId>, connection: &mut PgConnection) ->
         let network_bridge_name = network_bridge_name.map(NetworkInterfaceName::try_from).transpose()
             .map_err(|cause| PersistenceError::get::<PeerDescriptor>(peer_id.uuid, cause))?;
 
-        let network_interfaces = query::network_interface_descriptor::list_filtered_by_peer(peer_id, connection)?;
+        let network_interfaces = query::network_interface_descriptor::list_filtered_by_peer(Filter::By(peer_id), connection)?;
 
         let devices = query::device_descriptor::list_filtered_by_peer(peer_id, connection)?;
 

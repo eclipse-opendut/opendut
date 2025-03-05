@@ -5,7 +5,7 @@ use serde::Serialize;
 
 use opendut_carl_api::carl::CarlClient;
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
-use opendut_types::peer::state::PeerState;
+use opendut_types::peer::state::{PeerConnectionState, PeerState};
 use crate::ListOutputFormat;
 
 /// List all peers
@@ -53,6 +53,15 @@ impl From<SerializablePeer> for PeerTable {
 enum PeerStatus {
     Connected,
     Disconnected,
+}
+
+impl From<PeerState> for PeerStatus {
+    fn from(peer_state: PeerState) -> Self {
+        match peer_state.connection {
+            PeerConnectionState::Offline => { PeerStatus::Disconnected }
+            PeerConnectionState::Online { .. } => { PeerStatus::Connected }
+        }
+    }
 }
 
 impl Display for PeerStatus {
@@ -105,10 +114,7 @@ fn add_peer_status(
     peer: PeerDescriptor,
     peer_state: PeerState
 ) -> SerializablePeer {
-    let status = match peer_state {
-        PeerState::Down => { PeerStatus::Disconnected }
-        PeerState::Up { .. } => { PeerStatus::Connected }
-    };
+    let status = peer_state.into();
     let network_interfaces = peer.network.interfaces.iter()
         .map(|interface| interface.name.to_string())
         .collect::<Vec<_>>();
@@ -152,7 +158,7 @@ mod test {
             }
         };
         assert_that!(
-            add_peer_status(peer.clone(), PeerState::Down),
+            add_peer_status(peer.clone(), PeerState::default()),
             matches_pattern!(SerializablePeer {
                 name: eq(&peer.name),
                 id: eq(&peer.id),

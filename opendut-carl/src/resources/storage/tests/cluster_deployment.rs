@@ -17,9 +17,11 @@ async fn should_persist_cluster_deployment_in_database() -> anyhow::Result<()> {
 }
 
 async fn should_persist_cluster_deployment(resources_manager: ResourcesManagerRef) -> anyhow::Result<()> {
-
+    // Arrange
     let peer_descriptor = super::peer_descriptor::peer_descriptor()?;
     resources_manager.insert::<PeerDescriptor>(peer_descriptor.id, peer_descriptor.clone()).await?;
+    let peer_descriptor_unused = super::peer_descriptor::peer_descriptor()?;
+    resources_manager.insert::<PeerDescriptor>(peer_descriptor_unused.id, peer_descriptor_unused.clone()).await?;
 
     let cluster_configuration = super::cluster_configuration::cluster_configuration(
         peer_descriptor.id,
@@ -36,8 +38,10 @@ async fn should_persist_cluster_deployment(resources_manager: ResourcesManagerRe
     let result = resources_manager.list::<ClusterDeployment>().await?;
     assert!(result.is_empty());
 
+    // Act
     resources_manager.insert::<ClusterDeployment>(testee.id, testee.clone()).await?;
 
+    // Assert
     let result = resources_manager.get::<ClusterDeployment>(testee.id).await?;
     assert_eq!(result, Some(testee.clone()));
     let result = resources_manager.list::<ClusterDeployment>().await?;

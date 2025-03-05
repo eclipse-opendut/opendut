@@ -6,14 +6,36 @@ import "opendut/types/cluster/cluster.proto";
 import "opendut/types/util/net.proto";
 
 message PeerState {
-  oneof inner {
-    PeerStateDown down = 1;
-    PeerStateUp up = 2;
+  PeerConnectionState connection = 1;
+  PeerMemberState member = 2;
+}
+
+message PeerConnectionState {
+  oneof state {
+    PeerOnline online = 1;
+    PeerOffline offline = 2;
   }
 }
 
-message PeerStateDown {}
+message PeerOffline { }
+message PeerOnline {
+  opendut.types.util.IpAddress remote_host = 1;
+}
 
+message PeerMemberState {
+  oneof state {
+    PeerMemberAvailable available = 1;
+    PeerMemberBlocked blocked = 2;
+  }
+}
+
+message PeerMemberAvailable { }
+message PeerMemberBlocked {
+  opendut.types.cluster.ClusterId by_cluster = 1;
+}
+
+
+/* TODO: to be deleted
 message PeerStateUp {
   oneof inner {
     PeerStateUpAvailable available = 1;
@@ -23,7 +45,7 @@ message PeerStateUp {
 }
 
 message PeerStateUpAvailable {}
-
+    
 message PeerStateUpBlocked {
   oneof inner {
     PeerStateUpBlockedDeploying deploying = 1;
@@ -38,3 +60,4 @@ message PeerStateUpBlockedDeploying {}
 message PeerStateUpBlockedMember {}
 
 message PeerStateUpBlockedUndeploying {}
+*/

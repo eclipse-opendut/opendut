@@ -6,7 +6,6 @@ use opendut_carl_api::proto::services::peer_messaging_broker::{downstream, Apply
 use opendut_types::cluster::ClusterAssignment;
 use opendut_types::peer::configuration::parameter;
 use opendut_types::peer::configuration::{OldPeerConfiguration, ParameterTarget, PeerConfiguration};
-use opendut_types::peer::state::{PeerBlockedState, PeerState, PeerUpState};
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
 use tracing::debug;
@@ -37,7 +36,6 @@ pub enum AssignClusterError {
 
 pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClusterError> {
     let AssignClusterParams { resources_manager, peer_messaging_broker, peer_id, cluster_assignment, device_interfaces, options } = params;
-    let cluster_id = cluster_assignment.id;
 
     debug!("Assigning cluster to peer <{peer_id}>.");
 
@@ -80,23 +78,8 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
         resources.insert(peer_id, Clone::clone(&peer_configuration))
             .map_err(|source| AssignClusterError::Persistence { peer_id, source })?;
 
-
-        let peer_state = resources.get::<PeerState>(peer_id)
-            .map_err(|source| AssignClusterError::Persistence { peer_id, source })?
-            .ok_or(AssignClusterError::PeerNotFound(peer_id))?;
-
-        match peer_state {
-            PeerState::Down => {}
-            PeerState::Up { remote_host, .. } => {
-                resources.insert(peer_id, PeerState::Up {
-                    inner: PeerUpState::Blocked { inner: PeerBlockedState::Member, by_cluster: cluster_id },
-                    remote_host,
-                })
-                    .map_err(|source| AssignClusterError::Persistence { peer_id, source })?;
-            }
-        }
-
         Ok((old_peer_configuration, peer_configuration))
+
     }).await
     .map_err(|source| AssignClusterError::Persistence { peer_id, source })??;
 

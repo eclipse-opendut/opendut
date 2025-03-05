@@ -83,6 +83,12 @@ macro_rules! conversion {
                         $value.$field
                             .ok_or(ErrorBuilder::field_not_set(stringify!($field)))
                     };
+                    ($value:ident.$field1:ident.$field2:ident) => {
+                        $value.$field1
+                            .ok_or(ErrorBuilder::field_not_set(stringify!($field1)))?
+                            .$field2
+                            .ok_or(ErrorBuilder::field_not_set(stringify!($field2)))
+                    };
                 }
 
                 $try_from_function_definition

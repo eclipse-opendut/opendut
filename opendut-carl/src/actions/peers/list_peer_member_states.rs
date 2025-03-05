@@ -1,0 +1,116 @@
+use std::collections::HashMap;
+use opendut_types::cluster::ClusterId;
+use opendut_types::peer::{PeerDescriptor, PeerId};
+use opendut_types::peer::state::PeerMemberState;
+use opendut_types::topology::DeviceId;
+use crate::actions;
+use crate::actions::clusters::list_deployed_clusters::ListDeployedClustersError;
+use crate::actions::ListDeployedClustersParams;
+use crate::persistence::error::{PersistenceError, PersistenceResult};
+use crate::resources::manager::ResourcesManagerRef;
+use crate::resources::storage::ResourcesStorageApi;
+
+pub struct ListPeerMemberStatesParams {
+    pub resources_manager: ResourcesManagerRef,
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum DetermineBlockedPeersError {
+    #[error("Failed to list deployed clusters.")]
+    ListDeployedClusters { #[source] source: ListDeployedClustersError },
+    #[error("Error fetching deployed clusters from persistence.")]
+    Persistence { #[from] source: PersistenceError },
+}
+
+pub async fn list_peer_member_states(params: ListPeerMemberStatesParams) -> Result<HashMap<PeerId, PeerMemberState>, DetermineBlockedPeersError> {
+    let ListPeerMemberStatesParams { resources_manager } = params;
+    let deployed_clusters = actions::list_deployed_clusters(ListDeployedClustersParams { resources_manager: resources_manager.clone() })
+        .await.map_err(|source| DetermineBlockedPeersError::ListDeployedClusters { source })?;
+
+    let deployed_devices = deployed_clusters.into_iter()
+        .flat_map(|deployed_cluster| {
+            let cluster_id = deployed_cluster.id;
+            deployed_cluster.devices.into_iter().map(move |device_id| (device_id, cluster_id))
+        })
+        .collect::<HashMap<_, _>>();
+
+    let peer_member_states = resources_manager.resources(|resources| {
+        let all_peers = resources.list::<PeerDescriptor>()?;
+
+        let peer_member_states = all_peers.into_iter()
+            .map(|peer| {
+                let blocked_devices = peer.topology.devices.into_iter()
+                    .filter_map(|device| {
+                        deployed_devices.get(&device.id).map(|cluster_id|
+                            ClusterDevice { cluster_id: *cluster_id, device_id: device.id }
+                        )
+                    })
+                    .collect::<Vec<_>>();
+
+                match blocked_devices.as_slice() {
+                    [] => (peer.id, PeerMemberState::Available),
+                    [cluster_device, ..] => {
+                        assert!(
+                            blocked_devices.iter().all(|current_cluster_device| {
+                                cluster_device.cluster_id == current_cluster_device.cluster_id
+                            }),
+                            "Expected all devices of the peer belonging to the same cluster! {blocked_devices:?}"
+                        );
+                        (peer.id, PeerMemberState::Blocked {by_cluster: cluster_device.cluster_id })
+                    }
+                }
+            }).collect::<HashMap<_, _>>();
+
+        PersistenceResult::Ok(peer_member_states)
+    }).await?;
+
+    Ok(peer_member_states)
+}
+
+#[derive(Debug)]
+struct ClusterDevice {
+    cluster_id: ClusterId,
+    #[expect(unused)]
+    device_id: DeviceId,  // only used for debug output in assertion
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashSet;
+    use std::ops::Not;
+    use opendut_types::cluster::ClusterDeployment;
+    use crate::actions::clusters::testing::ClusterFixture;
+    use crate::resources::manager::ResourcesManager;
+    use super::*;
+
+    #[tokio::test]
+    async fn test_list_blocked_peers() -> anyhow::Result<()> {
+        // Arrange
+        let resources_manager = ResourcesManager::new_in_memory();
+        let cluster_a = ClusterFixture::create(resources_manager.clone()).await?;
+        let cluster_b = ClusterFixture::create(resources_manager.clone()).await?;
+        resources_manager.insert(cluster_a.id, ClusterDeployment { id: cluster_a.id }).await?;
+
+        // Act
+        let peer_member_states = list_peer_member_states(ListPeerMemberStatesParams { resources_manager: resources_manager.clone() }).await?;
+
+        // Assert
+        let blocked_peers = peer_member_states.into_iter()
+            .filter_map(|(peer_id, peer_member_state)| {
+                if let PeerMemberState::Blocked { by_cluster } = peer_member_state {
+                    Some((peer_id, by_cluster))
+                } else {
+                    None
+                }
+            })
+            .collect::<HashMap<_, _>>();
+        let blocked_peer_ids = blocked_peers.keys().collect::<HashSet<_>>();
+        let deployed_cluster_ids = blocked_peers.values().collect::<HashSet<_>>();
+        assert_eq!(blocked_peers.len(), 2);
+        assert!(blocked_peer_ids.contains(&cluster_a.peer_a.id));
+        assert!(blocked_peer_ids.contains(&cluster_a.peer_b.id));
+        assert!(deployed_cluster_ids.contains(&cluster_b.id).not());
+
+        Ok(())
+    }
+}

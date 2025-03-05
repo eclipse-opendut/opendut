@@ -115,6 +115,7 @@ pub trait ResourcesStorageApi {
     fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable + Clone;
 
+    // TODO: change return value to HashMap<R::Id, R>
     fn list<R>(&self) -> PersistenceResult<Vec<R>>
     where R: Resource + Persistable + Clone;
 }

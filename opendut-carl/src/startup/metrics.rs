@@ -2,7 +2,7 @@ use opentelemetry::global;
 use tracing::trace;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment};
 use opendut_types::peer::PeerDescriptor;
-use opendut_types::peer::state::PeerState;
+use opendut_types::peer::state::{PeerConnectionState, PeerState};
 use crate::resources::manager::ResourcesManagerRef;
 
 pub fn initialize_metrics_collection(
@@ -69,7 +69,7 @@ pub fn initialize_metrics_collection(
                 match result {
                     Ok(peer_states) => {
                         let online_peers = peer_states.into_iter()
-                            .filter(|state| matches!(state, PeerState::Up { .. }))
+                            .filter(|state| matches!(state.connection, PeerConnectionState::Online { .. }))
                             .collect::<Vec<_>>();
 
                         observer.observe(online_peers.len() as u64, &[])

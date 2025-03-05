@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 use crate::resources::manager::ResourcesManagerRef;
-use opendut_types::peer::{PeerDescriptor, PeerId};
+use opendut_types::peer::{PeerId};
 use tracing::{debug, error, info};
-use tracing::log::trace;
-use opendut_carl_api::carl::peer::ListPeerStatesError;
-use opendut_types::peer::state::PeerState;
+use opendut_carl_api::carl::peer::{ListPeerStatesError};
+use opendut_types::peer::state::{PeerConnectionState, PeerState};
+use crate::actions;
+use crate::actions::ListPeerMemberStatesParams;
 use crate::persistence::error::{PersistenceError, PersistenceResult};
 use crate::resources::storage::ResourcesStorageApi;
 
@@ -20,27 +21,23 @@ pub async fn list_peer_states(params: ListPeerStatesParams) -> Result<HashMap<Pe
         let resources_manager = params.resources_manager;
 
         debug!("Querying all peer states.");
-
+        let peer_member_states = actions::list_peer_member_states(ListPeerMemberStatesParams { resources_manager: resources_manager.clone() }).await
+            .map_err(|cause| ListPeerStatesError::Internal { cause: cause.to_string() })?;  // only persistence error possible
+        
         let peer_states = resources_manager.resources(|resources| {
-            let peers = resources.list::<PeerDescriptor>()?;
-
-            let maybe_peer_states = peers.into_iter()
-                .map(|peer| {
-                    let peer_state = resources.get::<PeerState>(peer.id)? //TODO this is quite inefficient (PeerId+PeerState could be returned from SQL, but that requires changing the ResourcesManager API)
-                        .unwrap_or_else(|| {
-                            trace!("Peer <{peer_id}> has no associated PeerState. Listing it as if it was Down.", peer_id=peer.id);
-                            PeerState::Down
-                        });
-
-                    let peer_state = (peer.id, peer_state);
-
-                    Ok::<_, PersistenceError>(peer_state)
+            let peer_states = peer_member_states.into_iter()
+                .map(|(peer_id, peer_member_state)| {
+                    // TODO: peer state is partially hold in memory (connection state) and partially hold in database (membership due to cluster assignment) 
+                    // TODO: PeerState and PeerConnectionState do not have a field `id` and the list() of ResourcesStorageApi returns only a vector of the stored resources => no id field in listing all elements!
+                    let peer_connection_state = resources.get::<PeerConnectionState>(peer_id)?.unwrap_or_default();
+                    let peer_state = PeerState {
+                        connection: peer_connection_state,
+                        member: peer_member_state,
+                    };
+                    Ok::<_, PersistenceError>((peer_id, peer_state))
+                    
                 })
-                .collect::<Result<Vec<_>, _>>()?;
-
-            let peer_states = maybe_peer_states
-                .into_iter()
-                .collect::<HashMap<_, _>>();
+                .collect::<Result<HashMap<_, _>, _>>()?;
 
             PersistenceResult::Ok(peer_states)
         }).await
