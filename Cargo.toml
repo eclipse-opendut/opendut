@@ -123,6 +123,7 @@ regex = "1.11.1"
 reqwest = { version = "0.12.12", default-features = false, features = ["rustls-tls-native-roots"] }
 reqwest-middleware = "0.4.0"
 reqwest-retry = "0.7.0"
+ring = "=0.17.12"  # Currently pinned to avoid build errors with 0.17.13.
 rstest = "0.24.0"
 rtnetlink = "0.14.1"
 rustls = { version = "*", default-features = false, features = ["ring"] }
@@ -194,7 +195,7 @@ cargo-bundle-licenses = "2.0.0"
 cargo-deny = "0.17.0"
 cargo-sbom = "0.9.1"
 cargo-tarpaulin = "0.31.2"
-cross = "0.2.5"
+cross = "0.2.5"  # TODO When upgrading, check if the `ring` version pinning can be removed. See: https://github.com/briansmith/ring/issues/2461#issuecomment-2708389611
 diesel_cli = "2.2.4"
 mdbook = "0.4.42"
 mdbook-plantuml = "0.8.0"
