@@ -25,6 +25,9 @@ impl ConversionError {
     }
 }
 
+pub type ConversionResult<T> = Result<T, ConversionError>;
+
+
 pub struct ConversionErrorBuilder<From, To> {
     _from: PhantomData<From>,
     _to: PhantomData<To>,
@@ -40,3 +43,53 @@ impl<From, To> ConversionErrorBuilder<From, To> {
         ConversionError::new::<From, To>(details)
     }
 }
+
+
+macro_rules! conversion {
+    (
+        type Model = $Model:ty;
+        type Proto = $Proto:ty;
+
+        $from_function_definition:item
+        $try_from_function_definition:item
+    ) => {
+        impl From<$Model> for $Proto {
+            fn from(value: $Model) -> Self {
+                type Model = $Model;
+                type Proto = $Proto;
+
+                $from_function_definition
+
+                from(value) //calls templated function definition
+            }
+        }
+
+        impl TryFrom<$Proto> for $Model {
+            type Error = ConversionError;
+
+            fn try_from(value: $Proto) -> crate::proto::ConversionResult<Self> {
+                #[allow(unused)]
+                type ErrorBuilder = ConversionErrorBuilder<$Proto, $Model>;
+                type Model = $Model;
+                type Proto = $Proto;
+
+                #[allow(unused)]
+                macro_rules! extract {
+                    ($field:ident) => {
+                        $field
+                            .ok_or(ErrorBuilder::field_not_set(stringify!($field)))
+                    };
+                    ($value:ident.$field:ident) => {
+                        $value.$field
+                            .ok_or(ErrorBuilder::field_not_set(stringify!($field)))
+                    };
+                }
+
+                $try_from_function_definition
+
+                try_from(value) //calls templated function definition
+            }
+        }
+    }
+}
+pub(crate) use conversion; //makes macro available in module tree like a normal element

@@ -1,6 +1,5 @@
 use pem::Pem;
-use crate::proto::{ConversionError, ConversionErrorBuilder};
-use crate::proto::util::auth_config::Config;
+use crate::proto::{conversion, ConversionError, ConversionErrorBuilder, ConversionResult};
 use crate::proto::util::ip_address::Address;
 use crate::util;
 use crate::util::net::NetworkInterfaceConfiguration;
@@ -44,36 +43,16 @@ impl From<Hostname> for util::Hostname {
     }
 }
 
-impl From<u16> for Port {
-    fn from(value: u16) -> Self {
-        Self { value: value as u32 }
+
+conversion! {
+    type Model = util::Port;
+    type Proto = Port;
+
+    fn from(value: Model) -> Proto {
+        Proto { value: value.0 as u32 }
     }
-}
 
-impl TryFrom<Port> for u16 {
-    type Error = ConversionError;
-
-    fn try_from(value: Port) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<Port, u16>;
-
-        value.value
-            .try_into()
-            .map_err(|_| ErrorBuilder::message("Port value is out of range"))
-    }
-}
-
-impl From<util::Port> for Port {
-    fn from(value: util::Port) -> Self {
-        Self { value: value.0 as u32 }
-    }
-}
-
-impl TryFrom<Port> for util::Port {
-    type Error = ConversionError;
-
-    fn try_from(value: Port) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<Port, u16>;
-
+    fn try_from(value: Proto) -> ConversionResult<Model> {
         let port: u16 = value.value
             .try_into()
             .map_err(|_| ErrorBuilder::message("Port value is out of range"))?;
@@ -82,43 +61,37 @@ impl TryFrom<Port> for util::Port {
     }
 }
 
-impl From<url::Url> for Url {
-    fn from(value: url::Url) -> Self {
-        Self { value: value.to_string() }
+conversion! {
+    type Model = url::Url;
+    type Proto = Url;
+
+    fn from(value: Model) -> Proto {
+        Proto { value: value.to_string() }
     }
-}
 
-impl TryFrom<Url> for url::Url {
-    type Error = ConversionError;
-
-    fn try_from(value: Url) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<Url, url::Url>;
-
+    fn try_from(value: Proto) -> ConversionResult<Model> {
         url::Url::parse(&value.value)
             .map_err(|cause| ErrorBuilder::message(format!("Url could not be parsed: {}", cause)))
     }
 }
 
-impl From<std::net::IpAddr> for IpAddress {
-    fn from(value: std::net::IpAddr) -> Self {
+conversion! {
+    type Model = std::net::IpAddr;
+    type Proto = IpAddress;
+
+    fn from(value: Model) -> Proto {
         match value {
-            std::net::IpAddr::V4(address) => Self {
+            std::net::IpAddr::V4(address) => Proto {
                 address: Some(ip_address::Address::IpV4(IpV4Address::from(address))),
             },
-            std::net::IpAddr::V6(address) => Self {
+            std::net::IpAddr::V6(address) => Proto {
                 address: Some(ip_address::Address::IpV6(IpV6Address::from(address))),
             },
         }
     }
-}
-impl TryFrom<IpAddress> for std::net::IpAddr {
-    type Error = ConversionError;
 
-    fn try_from(value: IpAddress) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<IpAddress, std::net::IpAddr>;
-
-        let address = value.address
-            .ok_or(ErrorBuilder::field_not_set("address"))?;
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let address = extract!(value.address)?;
 
         let address = match address {
             Address::IpV4(address) => std::net::IpAddr::V4(
@@ -134,19 +107,17 @@ impl TryFrom<IpAddress> for std::net::IpAddr {
     }
 }
 
-impl From<std::net::Ipv4Addr> for IpV4Address {
-    fn from(value: std::net::Ipv4Addr) -> Self {
-        Self {
+conversion! {
+    type Model = std::net::Ipv4Addr;
+    type Proto = IpV4Address;
+
+    fn from(value: Model) -> Proto {
+        Proto {
             value: Vec::from(value.octets()),
         }
     }
-}
-impl TryFrom<IpV4Address> for std::net::Ipv4Addr {
-    type Error = ConversionError;
 
-    fn try_from(value: IpV4Address) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<IpV4Address, std::net::Ipv4Addr>;
-
+    fn try_from(value: Proto) -> ConversionResult<Model> {
         const IPV4_LENGTH: usize = 4; //bytes
 
         let octets: [u8; IPV4_LENGTH] = value.value[0..IPV4_LENGTH].try_into()
@@ -156,19 +127,17 @@ impl TryFrom<IpV4Address> for std::net::Ipv4Addr {
     }
 }
 
-impl From<std::net::Ipv6Addr> for IpV6Address {
-    fn from(value: std::net::Ipv6Addr) -> Self {
-        Self {
+conversion! {
+    type Model = std::net::Ipv6Addr;
+    type Proto = IpV6Address;
+
+    fn from(value: Model) -> Proto {
+        Proto {
             value: Vec::from(value.octets()),
         }
     }
-}
-impl TryFrom<IpV6Address> for std::net::Ipv6Addr {
-    type Error = ConversionError;
 
-    fn try_from(value: IpV6Address) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<IpV6Address, std::net::Ipv6Addr>;
-
+    fn try_from(value: Proto) -> ConversionResult<Model> {
         const IPV6_LENGTH: usize = 16; //bytes
 
         let octets: [u8; IPV6_LENGTH] = value.value[0..IPV6_LENGTH].try_into()
@@ -178,43 +147,43 @@ impl TryFrom<IpV6Address> for std::net::Ipv6Addr {
     }
 }
 
-impl From<crate::util::net::NetworkInterfaceName> for NetworkInterfaceName {
-    fn from(value: crate::util::net::NetworkInterfaceName) -> Self {
-        Self {
+conversion! {
+    type Model = crate::util::net::NetworkInterfaceName;
+    type Proto = NetworkInterfaceName;
+
+    fn from(value: Model) -> Proto {
+        Proto {
             name: value.name(),
         }
     }
-}
-impl TryFrom<NetworkInterfaceName> for crate::util::net::NetworkInterfaceName {
-    type Error = ConversionError;
 
-    fn try_from(value: NetworkInterfaceName) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<NetworkInterfaceName, crate::util::net::NetworkInterfaceName>;
-
-        crate::util::net::NetworkInterfaceName::try_from(value.name)
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        Model::try_from(value.name)
             .map_err(|cause| ErrorBuilder::message(format!("Failed to parse InterfaceName from proto: {cause}")))
     }
 }
 
-impl From<crate::util::net::Certificate> for Certificate {
-    fn from(value: crate::util::net::Certificate) -> Self {
-        Certificate {
+conversion! {
+    type Model = crate::util::net::Certificate;
+    type Proto = Certificate;
+
+    fn from(value: Model) -> Proto {
+        Proto {
             tag: value.0.tag().to_owned(),
             content: Vec::from(value.0.contents()),
         }
     }
-}
 
-impl TryFrom<Certificate> for crate::util::net::Certificate {
-    type Error = ConversionError;
-
-    fn try_from(value: Certificate) -> Result<Self, Self::Error> {
+    fn try_from(value: Proto) -> ConversionResult<Model> {
         Ok(util::net::Certificate(Pem::new(value.tag, value.content)))
     }
 }
 
-impl From<crate::util::net::NetworkInterfaceDescriptor> for NetworkInterfaceDescriptor {
-    fn from(value: crate::util::net::NetworkInterfaceDescriptor) -> Self {
+conversion! {
+    type Model = crate::util::net::NetworkInterfaceDescriptor;
+    type Proto = NetworkInterfaceDescriptor;
+
+    fn from(value: Model) -> Proto {
         let config = match value.configuration {
             NetworkInterfaceConfiguration::Ethernet => network_interface_descriptor::Configuration::Ethernet(EthernetInterfaceConfiguration {}),
             NetworkInterfaceConfiguration::Can { 
@@ -222,41 +191,31 @@ impl From<crate::util::net::NetworkInterfaceDescriptor> for NetworkInterfaceDesc
                 sample_point, 
                 fd: flexible_data_rate, 
                 data_bitrate, 
-                data_sample_point } => network_interface_descriptor::Configuration::Can({
-                    CanInterfaceConfiguration { 
-                        bitrate,
-                        sample_point: sample_point.sample_point_times_1000(),
-                        flexible_data_rate,
-                        data_bitrate,
-                        data_sample_point: data_sample_point.sample_point_times_1000()
-                    }
-                }),
+                data_sample_point
+            } => network_interface_descriptor::Configuration::Can(
+                CanInterfaceConfiguration {
+                    bitrate,
+                    sample_point: sample_point.sample_point_times_1000(),
+                    flexible_data_rate,
+                    data_bitrate,
+                    data_sample_point: data_sample_point.sample_point_times_1000()
+                }
+            ),
         };
 
-        Self {
+        Proto {
             id: Some(value.id.into()),
             name: Some(value.name.into()),
             configuration: Some(config),
         }
     }
-}
 
-impl TryFrom<NetworkInterfaceDescriptor> for crate::util::net::NetworkInterfaceDescriptor {
-    type Error = ConversionError;
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let id = extract!(value.id)?.try_into()?;
 
-    fn try_from(value: NetworkInterfaceDescriptor) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<NetworkInterfaceDescriptor, crate::util::net::NetworkInterfaceDescriptor>;
+        let name = extract!(value.name)?.try_into()?;
 
-        let id = value.id
-            .ok_or(ErrorBuilder::field_not_set("id"))?
-            .try_into()?;
-
-        let name = value.name
-            .ok_or(ErrorBuilder::field_not_set("name"))?
-            .try_into()?;
-
-        let configuration = match value.configuration
-            .ok_or(ErrorBuilder::field_not_set("configuration"))? {
+        let configuration = match extract!(value.configuration)? {
                 network_interface_descriptor::Configuration::Ethernet(_) => NetworkInterfaceConfiguration::Ethernet,
                 network_interface_descriptor::Configuration::Can(can_config) => NetworkInterfaceConfiguration::Can { 
                     bitrate: can_config.bitrate, 
@@ -269,7 +228,7 @@ impl TryFrom<NetworkInterfaceDescriptor> for crate::util::net::NetworkInterfaceD
                 },
             };
 
-        Ok(Self {
+        Ok(Model {
             id,
             name,
             configuration,
@@ -277,138 +236,114 @@ impl TryFrom<NetworkInterfaceDescriptor> for crate::util::net::NetworkInterfaceD
     }
 }
 
-impl From<crate::util::net::NetworkInterfaceId> for NetworkInterfaceId {
-    fn from(value: crate::util::net::NetworkInterfaceId) -> Self {
-        Self {
+conversion! {
+    type Model = crate::util::net::NetworkInterfaceId;
+    type Proto = NetworkInterfaceId;
+
+    fn from(value: Model) -> Proto {
+        Proto {
             uuid: Some(value.uuid.into()),
         }
     }
-}
 
-impl TryFrom<NetworkInterfaceId> for crate::util::net::NetworkInterfaceId {
-    type Error = ConversionError;
-
-    fn try_from(value: NetworkInterfaceId) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<NetworkInterfaceId, crate::util::net::NetworkInterfaceId>;
-
-        value.uuid
-            .ok_or(ErrorBuilder::field_not_set("uuid"))
-            .map(|uuid| Self { uuid: uuid.into() })
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        extract!(value.uuid)
+            .map(|uuid| Model { uuid: uuid.into() })
     }
 }
 
-impl From<crate::util::net::ClientSecret> for ClientSecret {
-    fn from(value: crate::util::net::ClientSecret) -> Self {
-        Self {
+conversion! {
+    type Model = crate::util::net::ClientSecret;
+    type Proto = ClientSecret;
+
+    fn from(value: Model) -> Proto {
+        Proto {
             value: value.0
         }
     }
-}
 
-impl TryFrom<ClientSecret> for crate::util::net::ClientSecret {
-    type Error = ConversionError;
-
-    fn try_from(value: ClientSecret) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<ClientSecret, crate::util::net::ClientSecret>;
-
-        crate::util::net::ClientSecret::try_from(value.value)
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        Model::try_from(value.value)
             .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
-impl From<crate::util::net::ClientId> for ClientId {
-    fn from(value: crate::util::net::ClientId) -> Self {
-        Self {
+conversion! {
+    type Model = crate::util::net::ClientId;
+    type Proto = ClientId;
+
+    fn from(value: Model) -> Proto {
+        Proto {
             value: value.0
         }
     }
-}
 
-impl TryFrom<ClientId> for crate::util::net::ClientId {
-    type Error = ConversionError;
-
-    fn try_from(value: ClientId) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<ClientId, crate::util::net::ClientId>;
-
-        crate::util::net::ClientId::try_from(value.value)
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        Model::try_from(value.value)
             .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
+conversion! {
+    type Model = crate::util::net::OAuthScope;
+    type Proto = OAuthScope;
 
-impl From<crate::util::net::OAuthScope> for OAuthScope {
-    fn from(value: crate::util::net::OAuthScope) -> Self {
-        Self {
+    fn from(value: Model) -> Proto {
+        Proto {
             value: value.0
         }
     }
-}
 
-impl TryFrom<OAuthScope> for crate::util::net::OAuthScope {
-    type Error = ConversionError;
-
-    fn try_from(value: OAuthScope) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<OAuthScope, crate::util::net::OAuthScope>;
-
-        crate::util::net::OAuthScope::try_from(value.value)
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        Model::try_from(value.value)
             .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
-impl From<crate::util::net::AuthConfig> for AuthConfig {
-    fn from(value: crate::util::net::AuthConfig) -> Self {
+conversion! {
+    type Model = crate::util::net::AuthConfig;
+    type Proto = AuthConfig;
+
+    fn from(value: Model) -> Proto {
         let config = match value {
-            crate::util::net::AuthConfig::Disabled => { auth_config::Config::Disabled( AuthConfigDisabled {}) }
-            crate::util::net::AuthConfig::Enabled {
+            Model::Disabled => { auth_config::Config::Disabled( AuthConfigDisabled {}) }
+            Model::Enabled {
                 issuer_url,
                 client_id,
                 client_secret,
                 scopes
-            }
-             => { auth_config::Config::Enabled ( AuthConfigEnabled {
+            } => auth_config::Config::Enabled ( AuthConfigEnabled {
                 issuer_url: Some(issuer_url.into()),
                 client_id: Some(client_id.into()),
                 client_secret: Some(client_secret.into()),
                 scopes: scopes.into_iter().map(|scope| scope.into()).collect()
-            }) }
-
+            })
         };
-        Self {
+
+        Proto {
             config: Some(config),
         }
     }
-}
 
-impl TryFrom<AuthConfig> for crate::util::net::AuthConfig {
-    type Error = ConversionError;
-
-    fn try_from(value: AuthConfig) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<AuthConfig, crate::util::net::AuthConfig>;
-        
-        let config = match value.config
-            .ok_or(ErrorBuilder::field_not_set("configuration"))? {
-            Config::Disabled(_) => crate::util::net::AuthConfig::Disabled,
-            Config::Enabled(auth_config) => {
-                let issuer_url = auth_config.issuer_url
-                    .ok_or(ErrorBuilder::message("Authorization Provider Issuer URL not set"))
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let config = match extract!(value.config)? {
+            auth_config::Config::Disabled(_) => Model::Disabled,
+            auth_config::Config::Enabled(auth_config) => {
+                let issuer_url = extract!(auth_config.issuer_url)
                     .and_then(|url| url::Url::parse(&url.value)
                         .map_err(|cause| ErrorBuilder::message(format!("Authorization Provider Issuer URL could not be parsed: {}", cause)))
                     )?;
 
-                let client_id: crate::util::net::ClientId = auth_config.client_id
-                    .ok_or(ErrorBuilder::field_not_set("client_id"))?
-                    .try_into()?;
+                let client_id: crate::util::net::ClientId = extract!(auth_config.client_id)?.try_into()?;
 
-                let client_secret: crate::util::net::ClientSecret = auth_config.client_secret
-                    .ok_or(ErrorBuilder::field_not_set("client_secret"))?
-                    .try_into()?;
+                let client_secret: crate::util::net::ClientSecret = extract!(auth_config.client_secret)?.try_into()?;
 
-                let scopes: Vec<crate::util::net::OAuthScope> = auth_config
-                    .scopes
+                let scopes: Vec<crate::util::net::OAuthScope> = auth_config.scopes
                     .into_iter()
                     .map(TryFrom::try_from)
                     .collect::<Result<_, _>>()?;
-                crate::util::net::AuthConfig::Enabled {
+
+                Model::Enabled {
                     issuer_url,
                     client_id,
                     client_secret,

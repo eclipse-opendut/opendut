@@ -1,5 +1,5 @@
 use crate::proto;
-use crate::proto::{ConversionError, ConversionErrorBuilder};
+use crate::proto::{conversion, ConversionError, ConversionErrorBuilder, ConversionResult};
 use crate::proto::vpn::VpnPeerConfig;
 
 use super::util::{NetworkInterfaceDescriptor, NetworkInterfaceName};
@@ -9,23 +9,19 @@ pub mod executor;
 
 include!(concat!(env!("OUT_DIR"), "/opendut.types.peer.rs"));
 
-impl From<crate::peer::PeerId> for PeerId {
-    fn from(value: crate::peer::PeerId) -> Self {
-        Self {
+conversion! {
+    type Model = crate::peer::PeerId;
+    type Proto = PeerId;
+
+    fn from(value: Model) -> Proto {
+        Proto {
             uuid: Some(value.uuid.into())
         }
     }
-}
 
-impl TryFrom<PeerId> for crate::peer::PeerId {
-    type Error = ConversionError;
-
-    fn try_from(value: PeerId) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<PeerId, crate::peer::PeerId>;
-
-        value.uuid
-            .ok_or(ErrorBuilder::field_not_set("uuid"))
-            .map(|uuid| Self { uuid: uuid.into() })
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        extract!(value.uuid)
+            .map(|uuid| Model { uuid: uuid.into() })
     }
 }
 
@@ -38,33 +34,37 @@ impl From<uuid::Uuid> for PeerId {
     }
 }
 
-impl From<crate::peer::PeerName> for PeerName {
-    fn from(value: crate::peer::PeerName) -> Self {
-        Self {
+conversion! {
+    type Model = crate::peer::PeerName;
+    type Proto = PeerName;
+
+    fn from(value: Model) -> Proto {
+        Proto {
             value: value.0
         }
     }
-}
 
-impl TryFrom<PeerName> for crate::peer::PeerName {
-    type Error = ConversionError;
-
-    fn try_from(value: PeerName) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<PeerName, crate::peer::PeerName>;
-
-        crate::peer::PeerName::try_from(value.value)
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        Model::try_from(value.value)
             .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
-impl From<crate::peer::PeerLocation> for PeerLocation {
-    fn from(value: crate::peer::PeerLocation) -> Self {
-        Self {
+conversion! {
+    type Model = crate::peer::PeerLocation;
+    type Proto = PeerLocation;
+
+    fn from(value: Model) -> Proto {
+        Proto {
             value: value.0
         }
     }
-}
 
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        Model::try_from(value.value)
+            .map_err(|cause| ErrorBuilder::message(cause.to_string()))
+    }
+}
 impl From<&str> for PeerLocation {
     fn from(value: &str) -> Self {
         Self {
@@ -73,20 +73,12 @@ impl From<&str> for PeerLocation {
     }
 }
 
-impl TryFrom<PeerLocation> for crate::peer::PeerLocation {
-    type Error = ConversionError;
+conversion! {
+    type Model = crate::peer::PeerNetworkDescriptor;
+    type Proto = PeerNetworkDescriptor;
 
-    fn try_from(value: PeerLocation) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<PeerLocation, crate::peer::PeerLocation>;
-
-        crate::peer::PeerLocation::try_from(value.value)
-            .map_err(|cause| ErrorBuilder::message(cause.to_string()))
-    }
-}
-
-impl From<crate::peer::PeerNetworkDescriptor> for PeerNetworkDescriptor {
-    fn from(value: crate::peer::PeerNetworkDescriptor) -> Self {
-        Self {
+    fn from(value: Model) -> Proto {
+        Proto {
             interfaces: value
                 .interfaces
                 .into_iter()
@@ -95,12 +87,8 @@ impl From<crate::peer::PeerNetworkDescriptor> for PeerNetworkDescriptor {
             bridge_name: value.bridge_name.map(NetworkInterfaceName::from),
         }
     }
-}
 
-impl TryFrom<PeerNetworkDescriptor> for crate::peer::PeerNetworkDescriptor {
-    type Error = ConversionError;
-
-    fn try_from(value: PeerNetworkDescriptor) -> Result<Self, Self::Error> {
+    fn try_from(value: Proto) -> ConversionResult<Model> {
          let bridge_name =  value.bridge_name
              .map(crate::util::net::NetworkInterfaceName::try_from)
              .transpose()?;
@@ -109,13 +97,16 @@ impl TryFrom<PeerNetworkDescriptor> for crate::peer::PeerNetworkDescriptor {
             .into_iter()
             .map(NetworkInterfaceDescriptor::try_into)
             .collect::<Result<_, _>>()
-            .map(|interfaces| Self { interfaces, bridge_name})
+            .map(|interfaces| Model { interfaces, bridge_name})
     }
 }
 
-impl From<crate::peer::PeerDescriptor> for PeerDescriptor {
-    fn from(value: crate::peer::PeerDescriptor) -> Self {
-        Self {
+conversion! {
+    type Model = crate::peer::PeerDescriptor;
+    type Proto = PeerDescriptor;
+
+    fn from(value: Model) -> Proto {
+        Proto {
             id: Some(value.id.into()),
             name: Some(value.name.into()),
             location: Some(value.location.unwrap_or_default().into()),
@@ -124,39 +115,28 @@ impl From<crate::peer::PeerDescriptor> for PeerDescriptor {
             executors: Some(value.executors.into()),
         }
     }
-}
 
-impl TryFrom<PeerDescriptor> for crate::peer::PeerDescriptor {
-    type Error = ConversionError;
-
-    fn try_from(value: PeerDescriptor) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<PeerDescriptor, crate::peer::PeerDescriptor>;
-
-        let id = value.id
-            .ok_or(ErrorBuilder::field_not_set("id"))?
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let id = extract!(value.id)?
             .try_into()?;
 
-        let name = value.name
-            .ok_or(ErrorBuilder::field_not_set("name"))?
+        let name = extract!(value.name)?
             .try_into()?;
 
         let location = value.location
             .map(crate::peer::PeerLocation::try_from)
             .transpose()?;
 
-        let network = value.network
-            .ok_or(ErrorBuilder::field_not_set("network"))?
+        let network = extract!(value.network)?
             .try_into()?;
 
-        let topology = value.topology
-            .ok_or(ErrorBuilder::field_not_set("topology"))?
+        let topology = extract!(value.topology)?
             .try_into()?;
 
-        let executors = value.executors
-            .ok_or(ErrorBuilder::field_not_set("executors"))?
+        let executors = extract!(value.executors)?
             .try_into()?;
         
-        Ok(crate::peer::PeerDescriptor {
+        Ok(Model {
             id,
             name,
             location,
@@ -167,9 +147,12 @@ impl TryFrom<PeerDescriptor> for crate::peer::PeerDescriptor {
     }
 }
 
-impl From<crate::peer::PeerSetup> for PeerSetup {
-    fn from(value: crate::peer::PeerSetup) -> Self {
-        Self {
+conversion! {
+    type Model = crate::peer::PeerSetup;
+    type Proto = PeerSetup;
+
+    fn from(value: Model) -> Proto {
+        Proto {
             id: Some(value.id.into()),
             carl: Some(value.carl.into()),
             ca: Some(value.ca.into()),
@@ -177,47 +160,37 @@ impl From<crate::peer::PeerSetup> for PeerSetup {
             auth_config: Some(value.auth_config.into()),
         }
     }
-}
 
-impl TryFrom<PeerSetup> for crate::peer::PeerSetup {
-    type Error = ConversionError;
-
-    fn try_from(value: PeerSetup) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<PeerSetup, crate::peer::PeerSetup>;
-
-        let id: crate::peer::PeerId = value.id
-            .ok_or(ErrorBuilder::field_not_set("id"))?
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let id: crate::peer::PeerId = extract!(value.id)?
             .try_into()?;
 
-        let carl: url::Url = value.carl
-            .ok_or(ErrorBuilder::field_not_set("carl"))
-            .and_then(|url| url::Url::parse(&url.value)
-                .map_err(|cause| ErrorBuilder::message(format!("Carl URL could not be parsed: {}", cause))))?;
+        let carl: url::Url = extract!(value.carl)
+            .and_then(|url|
+                url::Url::parse(&url.value)
+                    .map_err(|cause| ErrorBuilder::message(format!("Carl URL could not be parsed: {}", cause)))
+            )?;
 
-        let ca: crate::util::net::Certificate = value.ca
-            .ok_or(ErrorBuilder::field_not_set("ca"))
+        let ca: crate::util::net::Certificate = extract!(value.ca)
             .and_then(crate::util::net::Certificate::try_from)?;
 
-        let vpn: crate::vpn::VpnPeerConfiguration = value.vpn
-            .ok_or(ErrorBuilder::field_not_set("vpn"))
+        let vpn: crate::vpn::VpnPeerConfiguration = extract!(value.vpn)
             .and_then(VpnPeerConfig::try_into)?;
 
-        let auth_config = value.auth_config
-            .ok_or(ErrorBuilder::field_not_set("auth_config"))?
+        let auth_config = extract!(value.auth_config)?
             .try_into()?;
 
-        Ok(Self {
-            id,
-            carl,
-            ca,
-            auth_config,
-            vpn,
+        Ok(Model {
+            id, carl, ca, auth_config, vpn
         })
     }
 }
 
-impl From<crate::peer::state::PeerState> for PeerState {
-    fn from(state: crate::peer::state::PeerState) -> Self {
+conversion! {
+    type Model = crate::peer::state::PeerState;
+    type Proto = PeerState;
+
+    fn from(state: Model) -> Proto {
         match state {
             crate::peer::state::PeerState::Down => {
                 PeerState {
@@ -227,7 +200,6 @@ impl From<crate::peer::state::PeerState> for PeerState {
             crate::peer::state::PeerState::Up { inner, remote_host } => {
                 let remote_host: proto::util::IpAddress = remote_host.into();
                 let remote_host = Some(remote_host);
-
 
                 match inner {
                     crate::peer::state::PeerUpState::Available => {
@@ -279,17 +251,10 @@ impl From<crate::peer::state::PeerState> for PeerState {
             }
         }
     }
-}
 
+    fn try_from(state: Proto) -> ConversionResult<Model> {
 
-impl TryFrom<PeerState> for crate::peer::state::PeerState {
-    type Error = ConversionError;
-
-    fn try_from(state: PeerState) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<PeerState, crate::peer::state::PeerState>;
-
-        let inner = state.inner
-            .ok_or(ErrorBuilder::field_not_set("inner"))?;
+        let inner = extract!(state.inner)?;
 
         match inner {
             peer_state::Inner::Down(_) => {
@@ -297,10 +262,7 @@ impl TryFrom<PeerState> for crate::peer::state::PeerState {
             }
             peer_state::Inner::Up(PeerStateUp { inner, remote_host }) => {
 
-                let remote_host: std::net::IpAddr = remote_host
-                    .ok_or(ErrorBuilder::field_not_set("remote_host"))?
-                    .try_into()?;
-
+                let remote_host: std::net::IpAddr = extract!(remote_host)?.try_into()?;
 
                 let inner = inner
                     .ok_or(ErrorBuilder::message("Inner 'Up' state not set"))?;

@@ -1,127 +1,110 @@
-use crate::proto::{ConversionError, ConversionErrorBuilder};
+use crate::proto::{conversion, ConversionError, ConversionErrorBuilder, ConversionResult};
 use crate::proto::topology::DeviceId;
 
 include!(concat!(env!("OUT_DIR"), "/opendut.types.cluster.rs"));
 
-impl From<crate::cluster::ClusterId> for ClusterId {
-    fn from(value: crate::cluster::ClusterId) -> Self {
-        Self {
+
+conversion! {
+    type Model = crate::cluster::ClusterId;
+    type Proto = ClusterId;
+
+    fn from(value: Model) -> Proto {
+        Proto {
             uuid: Some(value.0.into())
         }
     }
-}
 
-impl TryFrom<ClusterId> for crate::cluster::ClusterId {
-    type Error = ConversionError;
-
-    fn try_from(value: ClusterId) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<ClusterId, crate::cluster::ClusterId>;
-
-        value.uuid
-            .ok_or(ErrorBuilder::field_not_set("uuid"))
-            .map(|uuid| Self(uuid.into()))
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        extract!(value.uuid)
+            .map(|uuid| crate::cluster::ClusterId(uuid.into()))
     }
 }
 
-impl From<crate::cluster::ClusterName> for ClusterName {
-    fn from(value: crate::cluster::ClusterName) -> Self {
-        Self {
+conversion! {
+    type Model = crate::cluster::ClusterName;
+    type Proto = ClusterName;
+
+    fn from(value: Model) -> Proto {
+        Proto {
             value: value.0
         }
     }
-}
 
-impl TryFrom<ClusterName> for crate::cluster::ClusterName {
-    type Error = ConversionError;
-
-    fn try_from(value: ClusterName) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<ClusterName, crate::cluster::ClusterName>;
-
-        crate::cluster::ClusterName::try_from(value.value)
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        Model::try_from(value.value)
             .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
-impl From<crate::cluster::ClusterConfiguration> for ClusterConfiguration {
-    fn from(configuration: crate::cluster::ClusterConfiguration) -> Self {
-        Self {
+conversion! {
+    type Model = crate::cluster::ClusterConfiguration;
+    type Proto = ClusterConfiguration;
+
+    fn from(configuration: Model) -> Proto {
+        Proto {
             id: Some(configuration.id.into()),
             name: Some(configuration.name.into()),
             leader: Some(configuration.leader.into()),
             devices: configuration.devices.into_iter()
-                        .map(DeviceId::from)
-                        .collect(),
+                .map(DeviceId::from)
+                .collect(),
         }
     }
-}
 
-impl TryFrom<ClusterConfiguration> for crate::cluster::ClusterConfiguration {
-    type Error = ConversionError;
+    fn try_from(configuration: Proto) -> ConversionResult<Model> {
+        let cluster_id: crate::cluster::ClusterId = extract!(configuration.id)?.try_into()?;
 
-    fn try_from(configuration: ClusterConfiguration) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<ClusterConfiguration, crate::cluster::ClusterConfiguration>;
+        let cluster_name: crate::cluster::ClusterName = extract!(configuration.name)?.try_into()?;
 
-        let cluster_id: crate::cluster::ClusterId = configuration.id
-            .ok_or(ErrorBuilder::field_not_set("id"))?
-            .try_into()?;
+        let leader: crate::peer::PeerId = extract!(configuration.leader)?.try_into()?;
 
-        let cluster_name: crate::cluster::ClusterName = configuration.name
-            .ok_or(ErrorBuilder::field_not_set("name"))?
-            .try_into()?;
-
-        let leader: crate::peer::PeerId = configuration.leader
-            .ok_or(ErrorBuilder::field_not_set("leader"))?
-            .try_into()?;
-
-        Ok(Self {
+        Ok(Model {
             id: cluster_id,
             name: cluster_name,
             leader,
             devices: configuration.devices.into_iter()
-                        .map(DeviceId::try_into)
-                        .collect::<Result<_, _>>()?,
+                .map(DeviceId::try_into)
+                .collect::<Result<_, _>>()?,
         })
     }
 }
 
-impl From<crate::cluster::ClusterDeployment> for ClusterDeployment {
-    fn from(deployment: crate::cluster::ClusterDeployment) -> Self {
-        Self {
+conversion! {
+    type Model = crate::cluster::ClusterDeployment;
+    type Proto = ClusterDeployment;
+
+    fn from(deployment: Model) -> Proto {
+        Proto {
             id: Some(deployment.id.into()),
         }
     }
-}
 
-impl TryFrom<ClusterDeployment> for crate::cluster::ClusterDeployment {
-    type Error = ConversionError;
+    fn try_from(deployment: Proto) -> ConversionResult<Model> {
+        let cluster_id: crate::cluster::ClusterId = extract!(deployment.id)?.try_into()?;
 
-    fn try_from(deployment: ClusterDeployment) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<ClusterDeployment, crate::cluster::ClusterDeployment>;
-
-        let cluster_id: crate::cluster::ClusterId = deployment.id
-            .ok_or(ErrorBuilder::field_not_set("id"))?
-            .try_into()?;
-
-        Ok(Self {
+        Ok(Model {
             id: cluster_id,
         })
     }
 }
 
-impl From<crate::cluster::state::ClusterState> for ClusterState {
-    fn from(state: crate::cluster::state::ClusterState) -> Self {
+conversion! {
+    type Model = crate::cluster::state::ClusterState;
+    type Proto = ClusterState;
+
+    fn from(state: Model) -> Proto {
         match state {
-            crate::cluster::state::ClusterState::Undeployed => {
+            Model::Undeployed => {
                 ClusterState {
                     inner: Some(cluster_state::Inner::Undeployed(ClusterStateUndeployed {}))
                 }
             },
-            crate::cluster::state::ClusterState::Deploying => {
+            Model::Deploying => {
                 ClusterState {
                     inner: Some(cluster_state::Inner::Deploying(ClusterStateDeploying {}))
                 }
             },
-            crate::cluster::state::ClusterState::Deployed(inner) => {
+            Model::Deployed(inner) => {
                 match inner {
                     crate::cluster::state::DeployedClusterState::Unhealthy => {
                         ClusterState {
@@ -141,23 +124,16 @@ impl From<crate::cluster::state::ClusterState> for ClusterState {
             }
         }
     }
-}
 
-impl TryFrom<ClusterState> for crate::cluster::state::ClusterState {
-    type Error = ConversionError;
-
-    fn try_from(state: ClusterState) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<ClusterState, crate::cluster::state::ClusterState>;
-
-        let inner = state.inner
-            .ok_or(ErrorBuilder::field_not_set("inner"))?;
+    fn try_from(state: Proto) -> ConversionResult<Model> {
+        let inner = extract!(state.inner)?;
 
         match inner {
             cluster_state::Inner::Undeployed(_) => {
-                Ok(crate::cluster::state::ClusterState::Undeployed)
+                Ok(Model::Undeployed)
             }
             cluster_state::Inner::Deploying(_) => {
-                Ok(crate::cluster::state::ClusterState::Deploying)
+                Ok(Model::Deploying)
             }
             cluster_state::Inner::Deployed(state) => {
                 let inner = state.inner
@@ -170,41 +146,35 @@ impl TryFrom<ClusterState> for crate::cluster::state::ClusterState {
                         crate::cluster::state::DeployedClusterState::Healthy
                     }
                 };
-                Ok(crate::cluster::state::ClusterState::Deployed(inner))
+                Ok(Model::Deployed(inner))
             }
         }
     }
 }
 
-impl From<crate::cluster::ClusterAssignment> for ClusterAssignment {
-    fn from(value: crate::cluster::ClusterAssignment) -> Self {
-        Self {
+conversion! {
+    type Model = crate::cluster::ClusterAssignment;
+    type Proto = ClusterAssignment;
+
+    fn from(value: Model) -> Proto {
+        Proto {
             id: Some(value.id.into()),
             leader: Some(value.leader.into()),
             assignments: value.assignments.into_iter().map(Into::into).collect(),
         }
     }
-}
-impl TryFrom<ClusterAssignment> for crate::cluster::ClusterAssignment {
-    type Error = ConversionError;
 
-    fn try_from(value: ClusterAssignment) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<ClusterAssignment, crate::cluster::ClusterAssignment>;
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let cluster_id: crate::cluster::ClusterId = extract!(value.id)?.try_into()?;
 
-        let cluster_id: crate::cluster::ClusterId = value.id
-            .ok_or(ErrorBuilder::field_not_set("id"))?
-            .try_into()?;
-
-        let leader: crate::peer::PeerId = value.leader
-            .ok_or(ErrorBuilder::field_not_set("leader"))?
-            .try_into()?;
+        let leader: crate::peer::PeerId = extract!(value.leader)?.try_into()?;
 
         let assignments: Vec<crate::cluster::PeerClusterAssignment> = value.assignments
             .into_iter()
             .map(TryInto::try_into)
             .collect::<Result<_, _>>()?;
 
-        Ok(Self {
+        Ok(Model {
             id: cluster_id,
             leader,
             assignments,
@@ -212,9 +182,12 @@ impl TryFrom<ClusterAssignment> for crate::cluster::ClusterAssignment {
     }
 }
 
-impl From<crate::cluster::PeerClusterAssignment> for PeerClusterAssignment {
-    fn from(value: crate::cluster::PeerClusterAssignment) -> Self {
-        Self {
+conversion! {
+    type Model = crate::cluster::PeerClusterAssignment;
+    type Proto = PeerClusterAssignment;
+
+    fn from(value: Model) -> Proto {
+        Proto {
             peer_id: Some(value.peer_id.into()),
             vpn_address: Some(value.vpn_address.into()),
             can_server_port: Some(value.can_server_port.into()),
@@ -222,24 +195,13 @@ impl From<crate::cluster::PeerClusterAssignment> for PeerClusterAssignment {
             device_interfaces: value.device_interfaces.into_iter().map(Into::into).collect(),
         }
     }
-}
-impl TryFrom<PeerClusterAssignment> for crate::cluster::PeerClusterAssignment {
-    type Error = ConversionError;
 
-    fn try_from(value: PeerClusterAssignment) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<PeerClusterAssignment, crate::cluster::PeerClusterAssignment>;
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let peer_id: crate::peer::PeerId = extract!(value.peer_id)?.try_into()?;
 
-        let peer_id: crate::peer::PeerId = value.peer_id
-            .ok_or(ErrorBuilder::field_not_set("peer_id"))?
-            .try_into()?;
+        let vpn_address: std::net::IpAddr = extract!(value.vpn_address)?.try_into()?;
 
-        let vpn_address: std::net::IpAddr = value.vpn_address
-            .ok_or(ErrorBuilder::field_not_set("vpn_address"))?
-            .try_into()?;
-
-        let can_server_port: crate::util::Port = value.can_server_port
-            .ok_or(ErrorBuilder::field_not_set("can_server_port"))?
-            .try_into()?;
+        let can_server_port: crate::util::Port = extract!(value.can_server_port)?.try_into()?;
 
         let device_interfaces: Vec<crate::util::net::NetworkInterfaceDescriptor> = value.device_interfaces
             .into_iter()
@@ -247,7 +209,7 @@ impl TryFrom<PeerClusterAssignment> for crate::cluster::PeerClusterAssignment {
             .collect::<Result<_, _>>()?;
 
         #[expect(deprecated)]
-        Ok(Self {
+        Ok(Model {
             peer_id,
             vpn_address,
             can_server_port,

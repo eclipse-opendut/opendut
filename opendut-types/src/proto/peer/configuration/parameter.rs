@@ -1,93 +1,62 @@
-use crate::proto::{ConversionError, ConversionErrorBuilder};
+use crate::proto::{conversion, ConversionError, ConversionErrorBuilder, ConversionResult};
 
 include!(concat!(env!("OUT_DIR"), "/opendut.types.peer.configuration.parameter.rs"));
 
-mod device_interface {
-    use super::*;
+
+conversion! {
     type Model = crate::peer::configuration::parameter::DeviceInterface;
     type Proto = DeviceInterface;
 
-    impl From<Model> for Proto {
-        fn from(value: Model) -> Self {
-            Self {
-                descriptor: Some(value.descriptor.into())
-            }
+    fn from(value: Model) -> Proto {
+        Proto {
+            descriptor: Some(value.descriptor.into())
         }
     }
 
-    impl TryFrom<Proto> for Model {
-        type Error = ConversionError;
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let descriptor = extract!(value.descriptor)?.try_into()?;
 
-        fn try_from(value: Proto) -> Result<Self, Self::Error> {
-            type ErrorBuilder = ConversionErrorBuilder<Proto, Model>;
-
-            let descriptor = value.descriptor
-                .ok_or(ErrorBuilder::field_not_set("descriptor"))?
-                .try_into()?;
-
-            Ok(crate::peer::configuration::parameter::DeviceInterface {
-                descriptor,
-            })
-        }
+        Ok(crate::peer::configuration::parameter::DeviceInterface {
+            descriptor,
+        })
     }
 }
 
-mod ethernet_bridge {
-    use super::*;
+conversion! {
     type Model = crate::peer::configuration::parameter::EthernetBridge;
     type Proto = EthernetBridge;
 
-    impl From<Model> for Proto {
-        fn from(value: Model) -> Self {
-            Self {
-                name: Some(value.name.into())
-            }
+    fn from(value: Model) -> Proto {
+        Proto {
+            name: Some(value.name.into())
         }
     }
 
-    impl TryFrom<Proto> for Model {
-        type Error = ConversionError;
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let name = extract!(value.name)?.try_into()?;
 
-        fn try_from(value: Proto) -> Result<Self, Self::Error> {
-            type ErrorBuilder = ConversionErrorBuilder<Proto, Model>;
-
-            let name = value.name
-                .ok_or(ErrorBuilder::field_not_set("name"))?
-                .try_into()?;
-
-            Ok(crate::peer::configuration::parameter::EthernetBridge {
-                name,
-            })
-        }
+        Ok(crate::peer::configuration::parameter::EthernetBridge {
+            name,
+        })
     }
 }
 
-mod executor {
-    use super::*;
+conversion! {
     type Model = crate::peer::configuration::parameter::Executor;
     type Proto = Executor;
 
-    impl From<Model> for Proto {
-        fn from(value: Model) -> Self {
-            Self {
-                descriptor: Some(value.descriptor.into())
-            }
+    fn from(value: Model) -> Proto {
+        Proto {
+            descriptor: Some(value.descriptor.into())
         }
     }
 
-    impl TryFrom<Proto> for Model {
-        type Error = ConversionError;
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let descriptor = extract!(value.descriptor)?
+            .try_into()?;
 
-        fn try_from(value: Proto) -> Result<Self, Self::Error> {
-            type ErrorBuilder = ConversionErrorBuilder<Proto, Model>;
-
-            let descriptor = value.descriptor
-                .ok_or(ErrorBuilder::field_not_set("descriptor"))?
-                .try_into()?;
-
-            Ok(crate::peer::configuration::parameter::Executor {
-                descriptor,
-            })
-        }
+        Ok(crate::peer::configuration::parameter::Executor {
+            descriptor,
+        })
     }
 }

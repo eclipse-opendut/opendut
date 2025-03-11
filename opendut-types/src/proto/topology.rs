@@ -1,28 +1,23 @@
-use crate::proto::{ConversionError, ConversionErrorBuilder};
+use crate::proto::{conversion, ConversionError, ConversionErrorBuilder, ConversionResult};
 
 include!(concat!(env!("OUT_DIR"), "/opendut.types.topology.rs"));
 
-impl From<crate::topology::DeviceId> for DeviceId {
-    fn from(value: crate::topology::DeviceId) -> Self {
-        Self {
+
+conversion! {
+    type Model = crate::topology::DeviceId;
+    type Proto = DeviceId;
+
+    fn from(value: Model) -> Proto {
+        Proto {
             uuid: Some(value.0.into()),
         }
     }
-}
 
-impl TryFrom<DeviceId> for crate::topology::DeviceId {
-    type Error = ConversionError;
-
-    fn try_from(value: DeviceId) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<DeviceId, crate::topology::DeviceId>;
-
-        value
-            .uuid
-            .ok_or(ErrorBuilder::field_not_set("uuid"))
-            .map(|uuid| Self(uuid.into()))
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        extract!(value.uuid)
+            .map(|uuid| crate::topology::DeviceId(uuid.into()))
     }
 }
-
 impl From<uuid::Uuid> for DeviceId {
     fn from(value: uuid::Uuid) -> Self {
         Self {
@@ -31,9 +26,12 @@ impl From<uuid::Uuid> for DeviceId {
     }
 }
 
-impl From<crate::topology::Topology> for Topology {
-    fn from(value: crate::topology::Topology) -> Self {
-        Self {
+conversion! {
+    type Model = crate::topology::Topology;
+    type Proto = Topology;
+
+    fn from(value: Model) -> Proto {
+        Proto {
             device_descriptors: value
                 .devices
                 .into_iter()
@@ -41,40 +39,40 @@ impl From<crate::topology::Topology> for Topology {
                 .collect(),
         }
     }
-}
 
-impl TryFrom<Topology> for crate::topology::Topology {
-    type Error = ConversionError;
-
-    fn try_from(value: Topology) -> Result<Self, Self::Error> {
+    fn try_from(value: Proto) -> ConversionResult<Model> {
         value
             .device_descriptors
             .into_iter()
             .map(DeviceDescriptor::try_into)
             .collect::<Result<_, _>>()
-            .map(|devices| Self { devices })
+            .map(|devices| Model { devices })
     }
 }
 
-impl From<crate::topology::DeviceName> for DeviceName {
-    fn from(value: crate::topology::DeviceName) -> Self {
-        Self {
+conversion! {
+    type Model = crate::topology::DeviceName;
+    type Proto = DeviceName;
+
+    fn from(value: Model) -> Proto {
+        Proto {
             value: String::from(value.value()),
         }
     }
-}
 
-impl TryFrom<DeviceName> for crate::topology::DeviceName {
-    type Error = ConversionError;
-
-    fn try_from(value: DeviceName) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<DeviceName, crate::topology::DeviceName>;
-
-        crate::topology::DeviceName::try_from(value.value)
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        Model::try_from(value.value)
             .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
+impl From<Option<crate::topology::DeviceDescription>> for DeviceDescription {
+    fn from(value: Option<crate::topology::DeviceDescription>) -> Self {
+        Self {
+            value: String::from(value.unwrap_or_default().value()),
+        }
+    }
+}
 impl TryFrom<DeviceDescription> for crate::topology::DeviceDescription {
     type Error = ConversionError;
 
@@ -87,36 +85,28 @@ impl TryFrom<DeviceDescription> for crate::topology::DeviceDescription {
     }
 }
 
-impl TryFrom<DeviceTag> for crate::topology::DeviceTag {
-    type Error = ConversionError;
+conversion! {
+    type Model = crate::topology::DeviceTag;
+    type Proto = DeviceTag;
 
-    fn try_from(value: DeviceTag) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<DeviceTag, crate::topology::DeviceTag>;
+    fn from(value: Model) -> Proto {
+        Proto {
+            value: String::from(value.value()),
+        }
+    }
 
-        crate::topology::DeviceTag::try_from(value.value)
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        Model::try_from(value.value)
             .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
-impl From<Option<crate::topology::DeviceDescription>> for DeviceDescription {
-    fn from(value: Option<crate::topology::DeviceDescription>) -> Self {
-        Self {
-            value: String::from(value.unwrap_or_default().value()),
-        }
-    }
-}
+conversion! {
+    type Model = crate::topology::DeviceDescriptor;
+    type Proto = DeviceDescriptor;
 
-impl From<crate::topology::DeviceTag> for DeviceTag {
-    fn from(value: crate::topology::DeviceTag) -> Self {
-        Self {
-            value: String::from(value.value()),
-        }
-    }
-}
-
-impl From<crate::topology::DeviceDescriptor> for DeviceDescriptor {
-    fn from(value: crate::topology::DeviceDescriptor) -> Self {
-        Self {
+    fn from(value: Model) -> Proto {
+        Proto {
             id: Some(value.id.into()),
             name: Some(value.name.into()),
             description: Some(value.description.into()),
@@ -124,36 +114,23 @@ impl From<crate::topology::DeviceDescriptor> for DeviceDescriptor {
             tags: value.tags.into_iter().map(|value| value.into()).collect(),
         }
     }
-}
 
-impl TryFrom<DeviceDescriptor> for crate::topology::DeviceDescriptor {
-    type Error = ConversionError;
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let device_id: crate::topology::DeviceId = extract!(value.id)?.try_into()?;
 
-    fn try_from(value: DeviceDescriptor) -> Result<Self, Self::Error> {
-        type ErrorBuilder =
-            ConversionErrorBuilder<DeviceDescriptor, crate::topology::DeviceDescriptor>;
+        let device_name: crate::topology::DeviceName = extract!(value.name)?.try_into()?;
 
-        let device_id: crate::topology::DeviceId = value
-            .id
-            .ok_or(ErrorBuilder::field_not_set("id"))?
-            .try_into()?;
-        let device_name: crate::topology::DeviceName = value
-            .name
-            .ok_or(ErrorBuilder::field_not_set("name"))?
-            .try_into()?;
         let device_description: Option<crate::topology::DeviceDescription> =
             value.description.map(TryFrom::try_from).transpose()?;
-        let interface: crate::util::net::NetworkInterfaceId = value
-            .interface
-            .ok_or(ErrorBuilder::field_not_set("interface"))?
-            .try_into()?;
-        let device_tags: Vec<crate::topology::DeviceTag> = value
-            .tags
+
+        let interface: crate::util::net::NetworkInterfaceId = extract!(value.interface)?.try_into()?;
+
+        let device_tags: Vec<crate::topology::DeviceTag> = value.tags
             .into_iter()
             .map(TryFrom::try_from)
             .collect::<Result<_, _>>()?;
 
-        Ok(Self {
+        Ok(Model {
             id: device_id,
             name: device_name,
             description: device_description,

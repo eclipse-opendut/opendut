@@ -1,9 +1,13 @@
-use crate::proto::{ConversionError, ConversionErrorBuilder};
+use crate::proto::{conversion, ConversionError, ConversionErrorBuilder, ConversionResult};
 
 include!(concat!(env!("OUT_DIR"), "/opendut.types.vpn.rs"));
 
-impl From<crate::vpn::VpnPeerConfiguration> for VpnPeerConfig {
-    fn from(value: crate::vpn::VpnPeerConfiguration) -> Self {
+
+conversion! {
+    type Model = crate::vpn::VpnPeerConfiguration;
+    type Proto = VpnPeerConfig;
+
+    fn from(value: Model) -> Proto {
         match value {
             crate::vpn::VpnPeerConfiguration::Disabled => {
                 VpnPeerConfig {
@@ -24,16 +28,9 @@ impl From<crate::vpn::VpnPeerConfiguration> for VpnPeerConfig {
             }
         }
     }
-}
 
-impl TryFrom<VpnPeerConfig> for crate::vpn::VpnPeerConfiguration {
-    type Error = ConversionError;
-
-    fn try_from(value: VpnPeerConfig) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<VpnPeerConfig, crate::vpn::VpnPeerConfiguration>;
-
-        let config = value.config
-            .ok_or(ErrorBuilder::field_not_set("config"))?;
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let config = extract!(value.config)?;
 
         let result = match config {
             vpn_peer_config::Config::Disabled(_) => {
@@ -41,12 +38,10 @@ impl TryFrom<VpnPeerConfig> for crate::vpn::VpnPeerConfiguration {
             }
             vpn_peer_config::Config::Netbird(config) => {
                 let VpnPeerConfigNetbird { management_url, setup_key } = config;
-                let management_url = management_url
-                    .ok_or(ErrorBuilder::field_not_set("management_url"))?
-                    .try_into()?;
-                let setup_key = setup_key
-                    .ok_or(ErrorBuilder::field_not_set("setup_key"))?
-                    .try_into()?;
+                let management_url = extract!(management_url)?.try_into()?;
+
+                let setup_key = extract!(setup_key)?.try_into()?;
+
                 crate::vpn::VpnPeerConfiguration::Netbird {
                     management_url,
                     setup_key,
@@ -58,22 +53,19 @@ impl TryFrom<VpnPeerConfig> for crate::vpn::VpnPeerConfiguration {
     }
 }
 
-impl From<crate::vpn::netbird::SetupKey> for SetupKey {
-    fn from(value: crate::vpn::netbird::SetupKey) -> Self {
-        Self { uuid: Some(value.uuid.into()) }
+conversion! {
+    type Model = crate::vpn::netbird::SetupKey;
+    type Proto = SetupKey;
+
+    fn from(value: Model) -> Proto {
+        Proto { uuid: Some(value.uuid.into()) }
     }
-}
 
-impl TryFrom<SetupKey> for crate::vpn::netbird::SetupKey {
-    type Error = ConversionError;
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let uuid: uuid::Uuid = extract!(value.uuid)?.into();
 
-    fn try_from(value: SetupKey) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<SetupKey, crate::vpn::netbird::SetupKey>;
-
-        let uuid: uuid::Uuid = value.uuid
-            .ok_or(ErrorBuilder::field_not_set("uuid"))?
-            .into();
         let result = crate::vpn::netbird::SetupKey::from(uuid);
+
         Ok(result)
     }
 }
