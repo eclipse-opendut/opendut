@@ -51,7 +51,6 @@ openidconnect = { workspace = true, optional = true, default-features = false }
 oauth2 = { workspace = true, default-features = false, optional = true }
 pem = { workspace = true, optional = true, features = ["serde"]}
 reqwest = { workspace = true, default-features = false, features = ["blocking", "rustls-tls-native-roots"] }
-ring = { workspace = true }
 serde = { workspace = true, features = ["std", "derive"] }
 shadow-rs = { workspace = true, default-features = false, optional = true, features = ["tzdb"] }
 thiserror = { workspace = true }
