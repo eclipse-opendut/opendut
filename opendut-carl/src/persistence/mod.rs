@@ -25,7 +25,7 @@ impl<'a> Db<'a> {
 pub type Memory = VolatileResourcesStorage;
 
 pub(crate) mod error {
-    use std::fmt::{Display, Formatter};
+    use std::fmt::{Debug, Display, Formatter};
     use uuid::Uuid;
 
     #[derive(Debug, thiserror::Error)]
@@ -34,7 +34,7 @@ pub(crate) mod error {
             resource_name: &'static str,
             operation: PersistenceOperation,
             context_messages: Vec<String>,
-            id: Option<Uuid>,
+            identifier: Option<String>,
             #[source] source: Option<Cause>,
         },
         DieselInternal {
@@ -42,25 +42,25 @@ pub(crate) mod error {
         },
     }
     impl PersistenceError {
-        pub fn insert<R>(id: impl Into<Uuid>, cause: impl Into<Cause>) -> Self {
-            Self::new::<R>(Some(id.into()), PersistenceOperation::Insert, Some(cause))
+        pub fn insert<R>(identifier: impl Debug, cause: impl Into<Cause>) -> Self {
+            Self::new::<R>(Some(identifier), PersistenceOperation::Insert, Some(cause))
         }
-        pub fn remove<R>(id: impl Into<Uuid>, cause: impl Into<Cause>) -> Self {
-            Self::new::<R>(Some(id.into()), PersistenceOperation::Remove, Some(cause))
+        pub fn remove<R>(identifier: impl Debug, cause: impl Into<Cause>) -> Self {
+            Self::new::<R>(Some(identifier), PersistenceOperation::Remove, Some(cause))
         }
-        pub fn get<R>(id: impl Into<Uuid>, cause: impl Into<Cause>) -> Self {
-            Self::new::<R>(Some(id.into()), PersistenceOperation::Get, Some(cause))
+        pub fn get<R>(identifier: impl Debug, cause: impl Into<Cause>) -> Self {
+            Self::new::<R>(Some(identifier), PersistenceOperation::Get, Some(cause))
         }
         pub fn list<R>(cause: impl Into<Cause>) -> Self {
             Self::new::<R>(Option::<Uuid>::None, PersistenceOperation::List, Some(cause))
         }
-        pub fn new<R>(id: Option<impl Into<Uuid>>, operation: PersistenceOperation, cause: Option<impl Into<Cause>>) -> Self {
-            let id = id.map(Into::into);
+        pub fn new<R>(identifier: Option<impl Debug>, operation: PersistenceOperation, cause: Option<impl Into<Cause>>) -> Self {
+            let identifier = identifier.map(|identifier| format!("{identifier:?}"));
             Self::Custom {
                 resource_name: std::any::type_name::<R>(),
                 operation,
                 context_messages: Vec::new(),
-                id,
+                identifier,
                 source: cause.map(Into::into),
             }
         }
@@ -76,13 +76,13 @@ pub(crate) mod error {
     impl Display for PersistenceError {
         fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
             match self {
-                Self::Custom { resource_name, operation, context_messages, id, source } => {
-                    let id = match &id {
-                        Some(id) => format!(" <{id}>"),
-                        None => String::from(""),
+                Self::Custom { resource_name, operation, context_messages, identifier, source } => {
+                    let identifier = match &identifier {
+                        Some(identifier) => format!(" <{identifier}>"),
+                        None => String::new(),
                     };
                     let operation = operation.verb();
-                    writeln!(f, "Error while {operation} resource '{resource_name}'{id}")?;
+                    writeln!(f, "Error while {operation} resource '{resource_name}'{identifier}")?;
 
                     for message in context_messages {
                         writeln!(f, "  Context: {message}")?;
