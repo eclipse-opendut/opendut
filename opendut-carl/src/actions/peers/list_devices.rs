@@ -41,16 +41,17 @@ pub async fn list_devices(params: ListDevicesParams) -> Result<Vec<DeviceDescrip
 mod tests {
     use super::*;
     use crate::actions;
-    use crate::actions::peers::testing::{fixture, Fixture};
     use crate::actions::StorePeerDescriptorParams;
     use crate::resources::manager::ResourcesManager;
     use googletest::prelude::*;
-    use rstest::rstest;
     use std::sync::Arc;
+    use crate::actions::testing::PeerFixture;
+    use crate::vpn::Vpn;
 
-    #[rstest]
     #[tokio::test]
-    async fn should_list_all_devices(fixture: Fixture) -> anyhow::Result<()> {
+    async fn should_list_all_devices() -> anyhow::Result<()> {
+        let peer = PeerFixture::new();
+
         let resources_manager = ResourcesManager::new_in_memory();
 
         let result = list_devices(ListDevicesParams {
@@ -61,8 +62,8 @@ mod tests {
 
         actions::store_peer_descriptor(StorePeerDescriptorParams {
             resources_manager: Arc::clone(&resources_manager),
-            vpn: fixture.vpn,
-            peer_descriptor: fixture.peer_a_descriptor,
+            vpn: Vpn::Disabled,
+            peer_descriptor: peer.descriptor,
         }).await?;
 
 
@@ -77,8 +78,8 @@ mod tests {
         assert_that!(
             result_ids,
             unordered_elements_are![
-                eq(&fixture.peer_a_device_1),
-                eq(&fixture.peer_a_device_2),
+                eq(&peer.device_1),
+                eq(&peer.device_2),
             ]
         );
         Ok(())

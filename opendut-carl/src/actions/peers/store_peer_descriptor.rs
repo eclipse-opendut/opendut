@@ -67,7 +67,6 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::actions::peers::testing::{fixture, Fixture};
     use crate::resources::manager::ResourcesManager;
     use googletest::prelude::*;
     use opendut_types::peer::state::PeerState;
@@ -75,34 +74,33 @@ mod tests {
     use opendut_types::topology::DeviceDescriptor;
     use opendut_types::topology::{DeviceDescription, DeviceId, DeviceName, Topology};
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
-    use rstest::rstest;
     use std::sync::Arc;
+    use crate::actions::testing::PeerFixture;
 
-    #[rstest]
     #[tokio::test]
-    async fn should_update_expected_resources_in_memory(fixture: Fixture) -> anyhow::Result<()> {
+    async fn should_update_expected_resources_in_memory() -> anyhow::Result<()> {
         let resources_manager = ResourcesManager::new_in_memory();
-        should_update_expected_resources_implementation(resources_manager, fixture).await
+        should_update_expected_resources_implementation(resources_manager).await
     }
 
     #[test_with::no_env(SKIP_DATABASE_CONTAINER_TESTS)]
-    #[rstest]
     #[tokio::test]
-    async fn should_update_expected_resources_in_database(fixture: Fixture) -> anyhow::Result<()> {
+    async fn should_update_expected_resources_in_database() -> anyhow::Result<()> {
         let db = crate::persistence::database::testing::spawn_and_connect_resources_manager().await?;
-        should_update_expected_resources_implementation(db.resources_manager, fixture).await
+        should_update_expected_resources_implementation(db.resources_manager).await
     }
 
-    async fn should_update_expected_resources_implementation(resources_manager: ResourcesManagerRef, fixture: Fixture) -> anyhow::Result<()> {
+    async fn should_update_expected_resources_implementation(resources_manager: ResourcesManagerRef) -> anyhow::Result<()> {
+        let peer = PeerFixture::new();
 
         store_peer_descriptor(StorePeerDescriptorParams {
             resources_manager: Arc::clone(&resources_manager),
-            vpn: Clone::clone(&fixture.vpn),
-            peer_descriptor: Clone::clone(&fixture.peer_a_descriptor),
+            vpn: Vpn::Disabled,
+            peer_descriptor: Clone::clone(&peer.descriptor),
         }).await?;
 
-        assert_that!(resources_manager.get::<PeerDescriptor>(fixture.peer_a_id).await?.as_ref(), some(eq(&fixture.peer_a_descriptor)));
-        assert_that!(resources_manager.get::<PeerState>(fixture.peer_a_id).await?.as_ref(), none());
+        assert_that!(resources_manager.get::<PeerDescriptor>(peer.id).await?.as_ref(), some(eq(&peer.descriptor)));
+        assert_that!(resources_manager.get::<PeerState>(peer.id).await?.as_ref(), none());
 
 
         let additional_network_interface = NetworkInterfaceDescriptor {
@@ -122,28 +120,28 @@ mod tests {
         let changed_descriptor = PeerDescriptor {
             network: PeerNetworkDescriptor {
                 interfaces: vec![
-                    Clone::clone(&fixture.peer_a_descriptor.network.interfaces[0]),
+                    Clone::clone(&peer.descriptor.network.interfaces[0]),
                     additional_network_interface,
                 ],
-                ..Clone::clone(&fixture.peer_a_descriptor.network)
+                ..Clone::clone(&peer.descriptor.network)
             },
             topology: Topology {
                 devices: vec![
-                    Clone::clone(&fixture.peer_a_descriptor.topology.devices[0]),
+                    Clone::clone(&peer.descriptor.topology.devices[0]),
                     Clone::clone(&additional_device),
                 ]
             },
-            ..Clone::clone(&fixture.peer_a_descriptor)
+            ..Clone::clone(&peer.descriptor)
         };
 
         store_peer_descriptor(StorePeerDescriptorParams {
             resources_manager: Arc::clone(&resources_manager),
-            vpn: Clone::clone(&fixture.vpn),
+            vpn: Vpn::Disabled,
             peer_descriptor: Clone::clone(&changed_descriptor),
         }).await?;
 
-        assert_that!(resources_manager.get::<PeerDescriptor>(fixture.peer_a_id).await?.as_ref(), some(eq(&changed_descriptor)));
-        assert_that!(resources_manager.get::<PeerState>(fixture.peer_a_id).await?.as_ref(), none());
+        assert_that!(resources_manager.get::<PeerDescriptor>(peer.id).await?.as_ref(), some(eq(&changed_descriptor)));
+        assert_that!(resources_manager.get::<PeerState>(peer.id).await?.as_ref(), none());
 
         Ok(())
     }

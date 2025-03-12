@@ -8,6 +8,7 @@ use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
 use opendut_types::peer::PeerId;
 use opendut_types::topology::DeviceId;
 use std::collections::HashSet;
+use std::ops::Not;
 use uuid::Uuid;
 
 pub fn insert(cluster_configuration: ClusterConfiguration, connection: &mut PgConnection) -> PersistenceResult<()> {
@@ -19,11 +20,21 @@ pub fn insert(cluster_configuration: ClusterConfiguration, connection: &mut PgCo
         leader_id: leader.uuid,
     }, connection)?;
 
-    for device in devices {
-        query::cluster_device::insert(PersistableClusterDevice {
-            cluster_id: id.0,
-            device_id: device.0,
-        }, connection)?
+    {
+        let previous_cluster_devices = query::cluster_device::list_filtered_by_cluster_id(id, connection)?;
+
+        for previous_device in previous_cluster_devices {
+            if devices.contains(&DeviceId::from(previous_device.device_id)).not() {
+                query::cluster_device::remove(previous_device, connection)?;
+            }
+        }
+
+        for device in devices {
+            query::cluster_device::insert(PersistableClusterDevice {
+                cluster_id: id.0,
+                device_id: device.0,
+            }, connection)?
+        }
     }
 
     Ok(())

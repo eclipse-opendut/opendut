@@ -34,3 +34,54 @@ pub async fn create_cluster_configuration(params: CreateClusterConfigurationPara
     inner(params).await
         .inspect_err(|err| error!("{err}"))
 }
+
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashSet;
+    use opendut_types::cluster::ClusterName;
+    use crate::actions::testing::PeerFixture;
+    use super::*;
+
+    /// Our data model does not match well with RDBMS, since we send full models to the backend, whereas RDBMSs work with diffs.
+    /// As such, this verifies that we correctly diff the full models to delete removed child elements.
+    #[test_with::no_env(SKIP_DATABASE_CONTAINER_TESTS)]
+    #[tokio::test]
+    async fn updating_should_correctly_remove_devices_from_the_database() -> anyhow::Result<()> {
+        let peer_a = PeerFixture::new();
+        let peer_b = PeerFixture::new();
+
+        let db = crate::persistence::database::testing::spawn_and_connect_resources_manager().await?;
+        let resources_manager = db.resources_manager;
+
+        resources_manager.insert(peer_a.id, peer_a.descriptor).await?;
+        resources_manager.insert(peer_b.id, peer_b.descriptor).await?;
+
+        let cluster_id = ClusterId::random();
+        let cluster_configuration_a = ClusterConfiguration {
+            id: cluster_id,
+            name: ClusterName::try_from("Cluster1")?,
+            leader: peer_a.id,
+            devices: HashSet::from([peer_a.device_1, peer_a.device_2, peer_b.device_1]),
+        };
+        resources_manager.insert(cluster_id, cluster_configuration_a.clone()).await?;
+
+        assert_eq!(
+            resources_manager.get::<ClusterConfiguration>(cluster_id).await?.unwrap(),
+            cluster_configuration_a
+        );
+
+        let cluster_configuration_b = ClusterConfiguration {
+            devices: HashSet::from([peer_a.device_1]),
+            ..cluster_configuration_a
+        };
+        resources_manager.insert(cluster_id, cluster_configuration_b.clone()).await?;
+
+        assert_eq!(
+            resources_manager.get::<ClusterConfiguration>(cluster_id).await?.unwrap(),
+            cluster_configuration_b
+        );
+
+        Ok(())
+    }
+}

@@ -31,3 +31,15 @@ pub fn list_filtered_by_cluster_id(cluster_id: ClusterId, connection: &mut PgCon
         .get_results(connection)
         .map_err(PersistenceError::list::<PersistableClusterDevice>)
 }
+
+pub fn remove(cluster_device: PersistableClusterDevice, connection: &mut PgConnection) -> PersistenceResult<()> {
+    diesel::delete(
+        schema::cluster_device::table
+            .filter(schema::cluster_device::device_id.eq(cluster_device.device_id))
+            .filter(schema::cluster_device::cluster_id.eq(cluster_device.cluster_id))
+    )
+    .execute(connection)
+    .map_err(|cause| PersistenceError::remove::<PersistableClusterDevice>(cluster_device, cause))?;
+
+    Ok(())
+}

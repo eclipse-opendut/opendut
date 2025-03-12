@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * Localenv: Add environment variable `OPENDUT_CARL_IMAGE_VERSION` to override the CARL image in use.
 
+### Fixed
+* Updating a cluster configuration does not anymore remove its deployment status.
+
 
 ## 0.5.1
 

@@ -118,7 +118,7 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::actions::peers::testing::{fixture, Fixture};
+    use crate::actions::testing::PeerFixture;
     use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
     use crate::resources::manager::ResourcesManager;
     use googletest::prelude::*;
@@ -126,18 +126,17 @@ mod tests {
     use opendut_types::peer::executor::ExecutorDescriptors;
     use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_types::topology::Topology;
-    use rstest::rstest;
     use std::net::IpAddr;
     use std::str::FromStr;
     use std::sync::Arc;
     use opendut_carl_api::carl::broker::stream_header;
 
-    #[rstest]
     #[tokio::test]
-    async fn should_update_peer_configuration(fixture: Fixture) -> anyhow::Result<()> {
+    async fn should_update_peer_configuration() -> anyhow::Result<()> {
+        let peer = PeerFixture::new();
 
         let settings = crate::settings::load_defaults()?;
-        let peer_id = fixture.peer_a_id;
+        let peer_id = peer.id;
 
         let resources_manager = ResourcesManager::new_in_memory();
         let peer_messaging_broker = PeerMessagingBroker::new(

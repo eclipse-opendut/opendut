@@ -113,7 +113,7 @@ pub mod testing {
         pub connection: PgConnection,
     }
 
-    /// Spawns a Postgres Container and returns a connection for testing.
+    /// Spawns a Postgres Container and returns a ResourcesManager for testing.
     /// ```no_run
     /// # use std::any::Any;
     /// # use opendut_carl::persistence::database;
@@ -125,7 +125,7 @@ pub mod testing {
     ///     do_something_with_resources_manager(db.resources_manager);
     /// }
     ///
-    /// # fn do_something_with_resources_manager(connection: impl Any) {}
+    /// # fn do_something_with_resources_manager(resources_manager: impl Any) {}
     /// ```
     pub async fn spawn_and_connect_resources_manager() -> anyhow::Result<PostgresResources> {
         let (container, connect_info) = spawn().await?;
