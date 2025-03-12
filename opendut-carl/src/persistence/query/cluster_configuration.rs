@@ -24,7 +24,7 @@ pub fn insert(cluster_configuration: ClusterConfiguration, connection: &mut PgCo
         let previous_cluster_devices = query::cluster_device::list_filtered_by_cluster_id(id, connection)?;
 
         for previous_device in previous_cluster_devices {
-            if devices.contains(&DeviceId::from(previous_device.device_id)).not() {
+            if devices.contains(&previous_device.device_id.into()).not() {
                 query::cluster_device::remove(previous_device, connection)?;
             }
         }

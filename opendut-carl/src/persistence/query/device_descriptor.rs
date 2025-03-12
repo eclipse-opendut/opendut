@@ -95,3 +95,14 @@ fn device_descriptor_from_persistable(
     };
     Ok(result)
 }
+
+pub fn remove(device_id: DeviceId, connection: &mut PgConnection) -> PersistenceResult<()> {
+    diesel::delete(
+        schema::device_descriptor::table
+            .filter(schema::device_descriptor::device_id.eq(device_id.0))
+    )
+    .execute(connection)
+    .map_err(|cause| PersistenceError::remove::<PersistableDeviceDescriptor>(device_id, cause))?;
+
+    Ok(())
+}

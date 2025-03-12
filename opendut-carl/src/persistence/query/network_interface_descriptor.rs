@@ -181,3 +181,14 @@ fn network_interface_configuration_from_persistable(
     };
     Ok(result)
 }
+
+pub fn remove(network_interface_id: NetworkInterfaceId, connection: &mut PgConnection) -> PersistenceResult<()> {
+    diesel::delete(
+        schema::network_interface_descriptor::table
+            .filter(schema::network_interface_descriptor::network_interface_id.eq(network_interface_id.uuid))
+    )
+    .execute(connection)
+    .map_err(|cause| PersistenceError::remove::<PersistableNetworkInterfaceDescriptor>(network_interface_id, cause))?;
+
+    Ok(())
+}

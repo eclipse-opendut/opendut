@@ -6,7 +6,7 @@ use diesel::serialize::{IsNull, Output, ToSql};
 use diesel::{AsExpression, FromSqlRow};
 use diesel::sql_types::Text;
 
-#[derive(Debug, PartialEq, Eq, FromSqlRow, AsExpression)]
+#[derive(Clone, Debug, PartialEq, Eq, FromSqlRow, AsExpression)]
 #[diesel(sql_type = Text)]
 pub enum PersistableNetworkInterfaceKind {
     Ethernet,

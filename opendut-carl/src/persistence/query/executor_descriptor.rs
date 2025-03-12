@@ -41,7 +41,7 @@ pub(in crate::persistence) struct PersistableExecutorKindContainer {
     args: NullRemovingTextArray,
 }
 
-pub fn insert_into_database(executor: ExecutorDescriptor, peer_id: PeerId, connection: &mut PgConnection) -> PersistenceResult<()> {
+pub fn insert(executor: ExecutorDescriptor, peer_id: PeerId, connection: &mut PgConnection) -> PersistenceResult<()> {
     let ExecutorDescriptor { id, kind, results_url } = executor;
 
     let executor_id = id.uuid;
@@ -249,3 +249,13 @@ fn executor_kind_from_persistable(
     Ok(result)
 }
 
+pub fn remove(executor_id: ExecutorId, connection: &mut PgConnection) -> PersistenceResult<()> {
+    diesel::delete(
+        schema::executor_descriptor::table
+            .filter(schema::executor_descriptor::executor_id.eq(executor_id.uuid))
+    )
+    .execute(connection)
+    .map_err(|cause| PersistenceError::remove::<PersistableExecutorDescriptor>(executor_id, cause))?;
+
+    Ok(())
+}

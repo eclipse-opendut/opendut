@@ -9,11 +9,6 @@ impl Persistable for PeerDescriptor {
     fn insert(self, _peer_id: PeerId, storage: &mut Storage) -> PersistenceResult<()> {
         let mut connection = storage.db.connection();
 
-        //Delete before inserting to ensure that when an update removes
-        //list elements we don't leave those elements behind in the database.
-        //TODO more efficient solution
-        query::peer_descriptor::remove(self.id, &mut connection)?;
-
         query::peer_descriptor::insert(self, &mut connection)
     }
 

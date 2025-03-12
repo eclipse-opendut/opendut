@@ -1,4 +1,5 @@
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl, SelectableHelper};
+use std::ops::Not;
 use uuid::Uuid;
 
 use crate::persistence::database::schema;
@@ -21,18 +22,52 @@ pub fn insert(peer_descriptor: PeerDescriptor, connection: &mut PgConnection) ->
         network_bridge_name: bridge_name.map(|name| name.name()),
     }, connection)?;
 
-    for interface in interfaces {
-        query::network_interface_descriptor::insert(interface, peer_id, connection)?;
+
+    {
+        let previous_network_interfaces = query::network_interface_descriptor::list_filtered_by_peer(peer_id, connection)?;
+        let interface_ids = interfaces.iter().map(|interface| interface.id).collect::<Vec<_>>();
+
+        for previous_network_interface in previous_network_interfaces {
+            if interface_ids.contains(&previous_network_interface.id).not() {
+                query::network_interface_descriptor::remove(previous_network_interface.id, connection)?;
+            }
+        }
+
+        for interface in interfaces {
+            query::network_interface_descriptor::insert(interface, peer_id, connection)?;
+        }
     }
 
-    let Topology { devices } = topology;
+    {
+        let Topology { devices } = topology;
 
-    for device in devices {
-        query::device_descriptor::insert(device, connection)?;
+        let previous_devices = query::device_descriptor::list_filtered_by_peer(peer_id, connection)?;
+        let device_ids = devices.iter().map(|device| device.id).collect::<Vec<_>>();
+
+        for previous_device in previous_devices {
+            if device_ids.contains(&previous_device.id).not() {
+                query::device_descriptor::remove(previous_device.id, connection)?;
+            }
+        }
+
+        for device in devices {
+            query::device_descriptor::insert(device, connection)?;
+        }
     }
 
-    for executor in executors.executors {
-        query::executor_descriptor::insert_into_database(executor, peer_id, connection)?;
+    {
+        let previous_executors = query::executor_descriptor::list_filtered_by_peer(peer_id, connection)?;
+        let executor_ids = executors.executors.iter().map(|executor| executor.id).collect::<Vec<_>>();
+
+        for previous_executor in previous_executors {
+            if executor_ids.contains(&previous_executor.id).not() {
+                query::executor_descriptor::remove(previous_executor.id, connection)?;
+            }
+        }
+
+        for executor in executors.executors {
+            query::executor_descriptor::insert(executor, peer_id, connection)?;
+        }
     }
 
     Ok(())

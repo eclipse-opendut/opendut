@@ -120,14 +120,14 @@ mod tests {
         let changed_descriptor = PeerDescriptor {
             network: PeerNetworkDescriptor {
                 interfaces: vec![
-                    Clone::clone(&peer.descriptor.network.interfaces[0]),
+                    // 1 interface removed
                     additional_network_interface,
                 ],
                 ..Clone::clone(&peer.descriptor.network)
             },
             topology: Topology {
                 devices: vec![
-                    Clone::clone(&peer.descriptor.topology.devices[0]),
+                    // 1 device removed
                     Clone::clone(&additional_device),
                 ]
             },
