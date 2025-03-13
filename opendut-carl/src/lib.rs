@@ -34,7 +34,6 @@ mod peer;
 mod resources;
 pub mod settings;
 mod startup;
-mod vpn;
 mod http;
 mod auth;
 

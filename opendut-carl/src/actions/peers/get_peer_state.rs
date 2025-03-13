@@ -57,7 +57,7 @@ mod tests {
     use opendut_types::peer::{PeerDescriptor, PeerId};
     use std::sync::Arc;
     use crate::actions::testing::PeerFixture;
-    use crate::vpn::Vpn;
+    use crate::settings::vpn::Vpn;
 
     #[tokio::test]
     async fn should_get_peer_state_down_in_memory() -> anyhow::Result<()> {

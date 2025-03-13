@@ -7,10 +7,10 @@ use opendut_auth::registration::resources::ResourceHomeUrl;
 use crate::grpc::{ClusterManagerFacade, MetadataProviderFacade, PeerManagerFacade, PeerMessagingBrokerFacade};
 use crate::resources::manager::ResourcesManager;
 use crate::resources::storage::PersistenceOptions;
-use crate::{startup, vpn};
+use crate::startup;
 use crate::cluster::manager::{ClusterManager, ClusterManagerOptions};
 use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
-
+use crate::settings::vpn;
 
 pub struct GrpcFacades {
     pub cluster_manager_facade: ClusterManagerFacade,

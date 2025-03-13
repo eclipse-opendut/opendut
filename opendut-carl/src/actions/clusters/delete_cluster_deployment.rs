@@ -1,7 +1,7 @@
 use crate::actions;
 use crate::actions::UnassignClusterParams;
 use crate::resources::manager::ResourcesManagerRef;
-use crate::vpn::Vpn;
+use crate::settings::vpn::Vpn;
 use opendut_carl_api::carl::cluster::DeleteClusterDeploymentError;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
 use opendut_types::peer::{PeerDescriptor, PeerId};

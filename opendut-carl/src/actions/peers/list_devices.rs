@@ -46,7 +46,7 @@ mod tests {
     use googletest::prelude::*;
     use std::sync::Arc;
     use crate::actions::testing::PeerFixture;
-    use crate::vpn::Vpn;
+    use crate::settings::vpn::Vpn;
 
     #[tokio::test]
     async fn should_list_all_devices() -> anyhow::Result<()> {

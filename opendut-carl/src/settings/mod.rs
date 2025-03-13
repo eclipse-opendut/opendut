@@ -1,4 +1,6 @@
-use opendut_util::settings::{LoadedConfig, LoadError};
+use opendut_util::settings::{LoadError, LoadedConfig};
+
+pub mod vpn;
 
 pub fn load_with_overrides(overrides: config::Config) -> Result<LoadedConfig, LoadError> {
     let carl_config_hide_secrets_override = config::Config::builder()
@@ -7,7 +9,7 @@ pub fn load_with_overrides(overrides: config::Config) -> Result<LoadedConfig, Lo
         .set_override("persistence.database.password", "redacted")?
         .build()?;
 
-    opendut_util::settings::load_config("carl", include_str!("../carl.toml"), config::FileFormat::Toml, overrides, carl_config_hide_secrets_override)
+    opendut_util::settings::load_config("carl", include_str!("../../carl.toml"), config::FileFormat::Toml, overrides, carl_config_hide_secrets_override)
 }
 
 #[cfg(test)]

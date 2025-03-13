@@ -22,7 +22,7 @@ use crate::peer::broker::PeerMessagingBrokerRef;
 use crate::persistence::error::PersistenceResult;
 use crate::resources::manager::{ResourcesManagerRef, SubscriptionEvent};
 use crate::resources::storage::ResourcesStorageApi;
-use crate::vpn::Vpn;
+use crate::settings::vpn::Vpn;
 
 pub type ClusterManagerRef = Arc<Mutex<ClusterManager>>;
 

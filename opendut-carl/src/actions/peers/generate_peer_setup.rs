@@ -1,6 +1,6 @@
 use crate::persistence::error::PersistenceError;
 use crate::resources::manager::ResourcesManagerRef;
-use crate::vpn::Vpn;
+use crate::settings::vpn::Vpn;
 use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_auth::registration::resources::UserId;
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerSetup};

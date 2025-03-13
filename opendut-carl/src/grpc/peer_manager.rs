@@ -18,7 +18,7 @@ use crate::actions;
 use crate::actions::{DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, GetPeerStateParams, ListDevicesParams, ListPeerDescriptorsParams, ListPeerStatesParams, StorePeerDescriptorParams};
 use crate::grpc::extract;
 use crate::resources::manager::ResourcesManagerRef;
-use crate::vpn::Vpn;
+use crate::settings::vpn::Vpn;
 
 pub struct PeerManagerFacade {
     resources_manager: ResourcesManagerRef,
@@ -345,7 +345,7 @@ mod tests {
     use opendut_auth_tests::registration_client;
 
     use crate::resources::manager::ResourcesManager;
-    use crate::vpn::Vpn;
+    use crate::settings::vpn::Vpn;
 
     use super::*;
 
