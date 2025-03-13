@@ -8,10 +8,12 @@ use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use pem::Pem;
 
-use crate::provisioning::cleo_script::CleoScript;
+pub mod script;
+
+use script::CleoScript;
 use crate::util::{CLEO_IDENTIFIER, CleoArch};
 
-pub const CA_CERTIFICATE_FILE_NAME: &str = "ca.pem";
+const CA_CERTIFICATE_FILE_NAME: &str = "ca.pem";
 const SET_ENVIRONMENT_VARIABLES_SCRIPT_NAME: &str = "cleo-cli.sh";
 const PERMISSION_CODE_SCRIPT: u32 = 0o775;
 const PERMISSION_CODE_CA: u32 = 0o644;
@@ -86,6 +88,8 @@ impl AppendCustomData for tar::Builder<GzEncoder<File>> {
 
 #[cfg(test)]
 mod test {
+    use super::*;
+
     use std::fs;
     use std::fs::File;
     use std::str::FromStr;
@@ -100,7 +104,6 @@ mod test {
     use pem::Pem;
     use predicates::path;
 
-    use crate::provisioning::cleo::{add_file_to_archive, CleoScript};
     use crate::util::CLEO_IDENTIFIER;
 
     #[tokio::test()]
@@ -124,7 +127,7 @@ mod test {
         tar_gz.append_dir_all(CLEO_IDENTIFIER, &cleo_dir.to_path_buf())?;
         tar_gz.into_inner()?.finish()?;
 
-        let cert = match Pem::from_str(include_str!("../../../resources/development/tls/insecure-development-ca.pem")) {
+        let cert = match Pem::from_str(include_str!("../../../../resources/development/tls/insecure-development-ca.pem")) {
             Ok(cert) => { cert }
             Err(_) => { panic!("Not a valid certificate!") }
         };

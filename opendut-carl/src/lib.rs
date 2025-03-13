@@ -13,15 +13,14 @@ use opendut_auth::registration::client::RegistrationClient;
 use opendut_auth::registration::resources::ResourceHomeUrl;
 use opendut_util::settings::LoadedConfig;
 use opendut_util::telemetry::logging::LoggingConfig;
+use opendut_util::telemetry::opentelemetry_types;
 use opendut_util::telemetry::opentelemetry_types::Opentelemetry;
 use opendut_util::{project, telemetry};
-use opendut_util::telemetry::opentelemetry_types;
 use util::in_memory_cache::CustomInMemoryCache;
 
 use crate::auth::grpc_auth_layer::GrpcAuthenticationLayer;
 use crate::auth::json_web_key::JwkCacheValue;
 use crate::http::state::CarlInstallDirectory;
-use crate::provisioning::cleo_script::CleoScript;
 use crate::startup::tls::TlsConfig;
 
 pub mod grpc;
@@ -37,7 +36,6 @@ pub mod settings;
 mod startup;
 mod vpn;
 mod http;
-mod provisioning;
 mod auth;
 
 #[tracing::instrument]
@@ -87,10 +85,11 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
             .expect("Could not determine installation directory.");
 
         if !project::is_running_in_development() {
-            provisioning::cleo::create_cleo_install_script(
+            startup::cleo::create_cleo_install_script(
                 ca_certificate,
                 &carl_installation_directory.path,
-                CleoScript::from_setting(&settings).expect("Could not read settings.")
+                startup::cleo::script::CleoScript::from_setting(&settings)
+                    .expect("Could not read settings to extract CLEO script information.")
             ).expect("Could not create CLEO install script.");
         }
 

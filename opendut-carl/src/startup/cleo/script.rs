@@ -1,6 +1,6 @@
+use crate::util::CLEO_IDENTIFIER;
 use config::Config;
 use indoc::formatdoc;
-use crate::util::CLEO_IDENTIFIER;
 
 pub struct CleoScript {
     pub carl_host: String,
@@ -21,7 +21,7 @@ impl CleoScript {
 
     pub fn build_script(&self) -> String {
 
-        let ca_certificate_file_name = crate::provisioning::cleo::CA_CERTIFICATE_FILE_NAME;
+        let ca_certificate_file_name = super::CA_CERTIFICATE_FILE_NAME;
         let carl_host = &self.carl_host;
         let carl_port = self.carl_port;
         let oidc_enabled = self.oidc_enabled;
