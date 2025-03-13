@@ -16,7 +16,7 @@ use opendut_util::telemetry::logging::LoggingConfig;
 use opendut_util::telemetry::opentelemetry_types;
 use opendut_util::telemetry::opentelemetry_types::Opentelemetry;
 use opendut_util::{project, telemetry};
-use util::in_memory_cache::CustomInMemoryCache;
+use auth::in_memory_cache::CustomInMemoryCache;
 
 use crate::auth::grpc_auth_layer::GrpcAuthenticationLayer;
 use crate::auth::json_web_key::JwkCacheValue;
@@ -24,7 +24,6 @@ use crate::http::state::CarlInstallDirectory;
 use crate::startup::tls::TlsConfig;
 
 pub mod grpc;
-pub mod util;
 shadow_rs::shadow!(app_info);
 
 mod actions;

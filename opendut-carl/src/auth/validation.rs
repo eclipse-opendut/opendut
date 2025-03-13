@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::auth::{Claims, CurrentUser, MyAdditionalClaims};
 use crate::auth::json_web_key::{JsonWebKey, JwkCacheValue, OidcJsonWebKeySet};
 use url::Url;
-use crate::util::in_memory_cache::CustomInMemoryCache;
+use crate::auth::in_memory_cache::CustomInMemoryCache;
 
 pub const GIVEN_ISSUER_JWK_URL: &str = "protocol/openid-connect/certs";
 
@@ -163,7 +163,7 @@ mod tests {
     use rstest::{fixture, rstest};
     use url::Url;
     use crate::auth::json_web_key::{JsonWebKey, JwkCacheValue, OidcJsonWebKeySet};
-    use crate::util::in_memory_cache::CustomInMemoryCache;
+    use crate::auth::in_memory_cache::CustomInMemoryCache;
     use crate::auth::validation::{authorize_user, JwkRequester, validate_token, ValidationError};
 
     const KEY_ID: &str = "9RcB1okOXQ6QibEeXzAxFVym9PmBynkFe8mbh6X-DB0";

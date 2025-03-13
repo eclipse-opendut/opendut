@@ -4,7 +4,7 @@ use axum::response::IntoResponse;
 use http::{header, HeaderValue, Request};
 use tower_http::services::ServeFile;
 
-use crate::util::{CleoArch, CLEO_IDENTIFIER};
+use crate::http::router::arch::{CleoArch, CLEO_IDENTIFIER};
 use crate::CarlInstallDirectory;
 
 pub async fn download_cleo(
@@ -41,7 +41,7 @@ mod test {
     use googletest::matchers::eq;
     use http::header;
 
-    use crate::util::{CleoArch, CLEO_IDENTIFIER};
+    use crate::http::router::arch::{CleoArch, CLEO_IDENTIFIER};
     use crate::CarlInstallDirectory;
 
     #[tokio::test()]

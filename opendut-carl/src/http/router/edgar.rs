@@ -4,7 +4,7 @@ use axum::response::IntoResponse;
 use http::{header, HeaderValue, Request};
 use tower_http::services::ServeFile;
 use crate::http::state::CarlInstallDirectory;
-use crate::util::{EDGAR_IDENTIFIER, EdgarArch};
+use crate::http::router::arch::{EDGAR_IDENTIFIER, EdgarArch};
 
 pub async fn download_edgar(
     Path(architecture): Path<EdgarArch>,
@@ -41,7 +41,7 @@ mod test {
     use crate::CarlInstallDirectory;
     use crate::http::router::edgar::download_edgar;
 
-    use crate::util::{EDGAR_IDENTIFIER, EdgarArch};
+    use crate::http::router::arch::{EDGAR_IDENTIFIER, EdgarArch};
 
     #[tokio::test()]
     async fn download_edgar_succeeds() -> anyhow::Result<()> {

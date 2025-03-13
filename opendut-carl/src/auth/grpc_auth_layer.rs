@@ -2,7 +2,7 @@ use crate::auth::grpc_auth_layer::GrpcAuthenticationLayer::GrpcAuthLayerEnabled;
 use crate::auth::json_web_key::JwkCacheValue;
 use crate::auth::validation::{authorize_user, Jwk, ValidationError};
 use crate::auth::CurrentUser;
-use crate::util::in_memory_cache::CustomInMemoryCache;
+use crate::auth::in_memory_cache::CustomInMemoryCache;
 use tonic::Status;
 use tracing::debug;
 use url::Url;

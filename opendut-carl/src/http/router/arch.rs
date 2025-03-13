@@ -1,8 +1,6 @@
 use std::slice::Iter;
 use serde::{Deserialize, Serialize};
 
-pub mod in_memory_cache;
-
 pub const CLEO_IDENTIFIER: &str = "opendut-cleo";
 pub const EDGAR_IDENTIFIER: &str = "opendut-edgar";
 
@@ -46,10 +44,5 @@ impl EdgarArch {
             EdgarArch::Armhf => "opendut-edgar-armv7-unknown-linux-gnueabihf",
             EdgarArch::Arm64 => "opendut-edgar-aarch64-unknown-linux-gnu",
         }.to_string()
-    }
-
-    pub fn arch_iterator() -> Iter<'static, EdgarArch> {
-        static EDGAR_ARCH: [EdgarArch; 3] = [EdgarArch::X86_64, EdgarArch::Armhf, EdgarArch::Arm64];
-        EDGAR_ARCH.iter()
     }
 }

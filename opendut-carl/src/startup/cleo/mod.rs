@@ -11,7 +11,7 @@ use pem::Pem;
 pub mod script;
 
 use script::CleoScript;
-use crate::util::{CLEO_IDENTIFIER, CleoArch};
+use crate::http::router::arch::{CLEO_IDENTIFIER, CleoArch};
 
 const CA_CERTIFICATE_FILE_NAME: &str = "ca.pem";
 const SET_ENVIRONMENT_VARIABLES_SCRIPT_NAME: &str = "cleo-cli.sh";
@@ -104,7 +104,7 @@ mod test {
     use pem::Pem;
     use predicates::path;
 
-    use crate::util::CLEO_IDENTIFIER;
+    use crate::http::router::arch::CLEO_IDENTIFIER;
 
     #[tokio::test()]
     async fn creating_cleo_install_script_succeeds() -> anyhow::Result<()> {

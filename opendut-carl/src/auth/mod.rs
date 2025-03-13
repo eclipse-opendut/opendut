@@ -1,6 +1,7 @@
 mod validation;
 pub(crate) mod json_web_key;
 pub(crate) mod grpc_auth_layer;
+pub mod in_memory_cache;
 
 use openidconnect::core::CoreGenderClaim;
 use openidconnect::IdTokenClaims;
