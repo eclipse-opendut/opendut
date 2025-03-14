@@ -5,7 +5,7 @@ use tracing::{debug, error, info};
 use tracing::log::trace;
 use opendut_carl_api::carl::peer::ListPeerStatesError;
 use opendut_types::peer::state::PeerState;
-use crate::persistence::error::PersistenceError;
+use crate::persistence::error::{PersistenceError, PersistenceResult};
 use crate::resources::storage::ResourcesStorageApi;
 
 pub struct ListPeerStatesParams {
@@ -42,7 +42,7 @@ pub async fn list_peer_states(params: ListPeerStatesParams) -> Result<HashMap<Pe
                 .into_iter()
                 .collect::<HashMap<_, _>>();
 
-            Ok(peer_states)
+            PersistenceResult::Ok(peer_states)
         }).await
         .map_err(|cause| ListPeerStatesError::Internal { cause: cause.to_string() })?;
 

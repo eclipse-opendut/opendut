@@ -17,6 +17,7 @@ impl<R: Resource> Subscription<R> {
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SubscriptionEvent<R: Resource> {
+    ///Resource was created or updated.
     Inserted { id: R::Id, value: R },
 }
 

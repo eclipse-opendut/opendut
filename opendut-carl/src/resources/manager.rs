@@ -64,8 +64,8 @@ impl ResourcesManager {
         state.resources.list()
     }
 
-    pub async fn resources<F, T>(&self, f: F) -> PersistenceResult<T>
-    where F: FnOnce(&Resources) -> PersistenceResult<T> {
+    pub async fn resources<F, T, E>(&self, f: F) -> Result<T, E>
+    where F: FnOnce(&Resources) -> Result<T, E> {
         let state = self.state.read().await;
         f(&state.resources)
     }
@@ -265,7 +265,7 @@ mod test {
                 .for_each(|cluster| {
                     assert_that!(cluster, eq(&cluster_configuration));
                 });
-            Ok(())
+            PersistenceResult::Ok(())
         }).await?;
 
         Ok(())
