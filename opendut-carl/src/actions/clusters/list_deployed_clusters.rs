@@ -1,4 +1,4 @@
-use crate::persistence::error::{PersistenceError};
+use crate::resource::persistence::error::{PersistenceError};
 use crate::resource::manager::ResourceManagerRef;
 use crate::resource::storage::ResourcesStorageApi;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment};

@@ -6,7 +6,7 @@ use opendut_types::topology::DeviceId;
 use crate::actions;
 use crate::actions::clusters::list_deployed_clusters::ListDeployedClustersError;
 use crate::actions::ListDeployedClustersParams;
-use crate::persistence::error::{PersistenceError, PersistenceResult};
+use crate::resource::persistence::error::{PersistenceError, PersistenceResult};
 use crate::resource::manager::ResourceManagerRef;
 use crate::resource::storage::ResourcesStorageApi;
 

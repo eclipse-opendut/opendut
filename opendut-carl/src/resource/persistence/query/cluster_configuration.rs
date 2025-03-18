@@ -1,8 +1,8 @@
-use crate::persistence::database::schema;
-use crate::persistence::error::{PersistenceError, PersistenceResult};
-use crate::persistence::query;
-use crate::persistence::query::cluster_device::PersistableClusterDevice;
-use crate::persistence::query::Filter;
+use crate::resource::persistence::database::schema;
+use crate::resource::persistence::error::{PersistenceError, PersistenceResult};
+use crate::resource::persistence::query;
+use crate::resource::persistence::query::cluster_device::PersistableClusterDevice;
+use crate::resource::persistence::query::Filter;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl, SelectableHelper};
 use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
 use opendut_types::peer::PeerId;
@@ -44,7 +44,7 @@ pub fn insert(cluster_configuration: ClusterConfiguration, connection: &mut PgCo
 #[diesel(table_name = schema::cluster_configuration)]
 #[diesel(belongs_to(PersistablePeerDescriptor, foreign_key = leader_id))]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub(in crate::persistence) struct PersistableClusterConfiguration {
+pub(crate) struct PersistableClusterConfiguration {
     pub cluster_id: Uuid,
     pub name: String,
     pub leader_id: Uuid,

@@ -1,5 +1,5 @@
-use crate::persistence::error::PersistenceResult;
-use crate::persistence::resources::Persistable;
+use crate::resource::persistence::error::PersistenceResult;
+use crate::resource::persistence::resources::Persistable;
 use crate::resource::resource::Resource;
 use crate::resource::storage::persistent::PersistentResourcesTransaction;
 use crate::resource::storage::ResourcesStorageApi;

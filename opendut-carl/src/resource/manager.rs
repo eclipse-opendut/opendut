@@ -1,7 +1,7 @@
 pub use crate::resource::subscription::SubscriptionEvent;
 
-use crate::persistence::error::PersistenceResult;
-use crate::persistence::resources::Persistable;
+use crate::resource::persistence::error::PersistenceResult;
+use crate::resource::persistence::resources::Persistable;
 use crate::resource::storage::{PersistenceOptions, ResourcesStorageApi};
 use crate::resource::subscription::{ResourceSubscriptionChannels, Subscribable, Subscription};
 use crate::resource::transaction::RelayedSubscriptionEvents;

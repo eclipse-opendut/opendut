@@ -1,12 +1,11 @@
-use opendut_types::peer::configuration::OldPeerConfiguration;
 use opendut_types::peer::PeerId;
-
-use crate::persistence::error::PersistenceResult;
-use crate::persistence::resources::Persistable;
-use crate::persistence::Storage;
+use opendut_types::peer::state::PeerConnectionState;
+use crate::resource::persistence::error::PersistenceResult;
+use crate::resource::persistence::resources::Persistable;
+use crate::resource::persistence::Storage;
 use crate::resource::storage::ResourcesStorageApi;
 
-impl Persistable for OldPeerConfiguration {
+impl Persistable for PeerConnectionState {
     fn insert(self, id: PeerId, storage: &mut Storage) -> PersistenceResult<()> {
         storage.memory.insert(id, self)
     }
@@ -18,7 +17,7 @@ impl Persistable for OldPeerConfiguration {
     fn get(id: PeerId, storage: &Storage) -> PersistenceResult<Option<Self>> {
         storage.memory.get(id)
     }
-    
+
     fn list(storage: &Storage) -> PersistenceResult<Vec<Self>> {
         storage.memory.list()
     }

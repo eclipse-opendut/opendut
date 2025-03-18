@@ -1,9 +1,9 @@
 use crate::fs;
 use std::path::{Path, PathBuf};
 
-use crate::{Arch, Package};
 use crate::core::types::parsing::package::PackageSelection;
 use crate::packages::carl::distribution::copy_license_json::copy_license_json;
+use crate::{Arch, Package};
 
 const SELF_PACKAGE: Package = Package::Carl;
 
@@ -378,6 +378,6 @@ pub mod diesel {
     }
 
     fn carl_database_dir() -> PathBuf {
-        repo_path!("opendut-carl/src/persistence/database/")
+        repo_path!("opendut-carl/src/resource/persistence/database/")
     }
 }

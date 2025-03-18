@@ -1,5 +1,5 @@
-use crate::persistence::database::schema;
-use crate::persistence::error::{PersistenceError, PersistenceResult};
+use crate::resource::persistence::database::schema;
+use crate::resource::persistence::error::{PersistenceError, PersistenceResult};
 use diesel::{PgConnection, RunQueryDsl};
 use opendut_types::topology::DeviceTag;
 use uuid::Uuid;

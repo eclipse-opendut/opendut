@@ -3,8 +3,8 @@ use std::collections::HashMap;
 
 use opendut_types::resources::Id;
 
-use crate::persistence::error::PersistenceResult;
-use crate::persistence::resources::Persistable;
+use crate::resource::persistence::error::PersistenceResult;
+use crate::resource::persistence::resources::Persistable;
 use crate::resource::ids::IntoId;
 use crate::resource::storage::ResourcesStorageApi;
 use crate::resource::Resource;

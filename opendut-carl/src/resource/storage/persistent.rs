@@ -1,7 +1,7 @@
-use crate::persistence::database::ConnectError;
-use crate::persistence::error::{PersistenceError, PersistenceResult};
-use crate::persistence::resources::Persistable;
-use crate::persistence::{Db, Storage};
+use crate::resource::persistence::database::ConnectError;
+use crate::resource::persistence::error::{PersistenceError, PersistenceResult};
+use crate::resource::persistence::resources::Persistable;
+use crate::resource::persistence::{Db, Storage};
 use crate::resource::storage::volatile::VolatileResourcesStorage;
 use crate::resource::storage::{DatabaseConnectInfo, Resource, ResourcesStorageApi};
 use diesel::{Connection, PgConnection};
@@ -15,7 +15,7 @@ pub struct PersistentResourcesStorage {
 }
 impl PersistentResourcesStorage {
     pub async fn connect(database_connect_info: &DatabaseConnectInfo) -> Result<Self, ConnectError> {
-        let db_connection = crate::persistence::database::connect(database_connect_info).await?;
+        let db_connection = crate::resource::persistence::database::connect(database_connect_info).await?;
         let db_connection = Mutex::new(db_connection);
         let memory = VolatileResourcesStorage::default();
         let memory = Mutex::new(memory);

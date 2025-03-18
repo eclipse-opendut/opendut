@@ -4,16 +4,16 @@ use uuid::Uuid;
 use opendut_types::peer::PeerId;
 use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
-use crate::persistence::database::schema;
-use crate::persistence::error::{PersistenceError, PersistenceOperation, PersistenceResult};
-use crate::persistence::query::Filter;
-use crate::persistence::query::types::network_interface_kind::PersistableNetworkInterfaceKind;
+use crate::resource::persistence::database::schema;
+use crate::resource::persistence::error::{PersistenceError, PersistenceOperation, PersistenceResult};
+use crate::resource::persistence::query::Filter;
+use crate::resource::persistence::query::types::network_interface_kind::PersistableNetworkInterfaceKind;
 
 #[derive(diesel::Queryable, diesel::Selectable, diesel::Insertable, diesel::AsChangeset)]
 #[diesel(table_name = schema::network_interface_descriptor)]
 #[diesel(belongs_to(PeerDescriptor, foreign_key = peer_id))]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub(in crate::persistence) struct PersistableNetworkInterfaceDescriptor {
+pub(crate) struct PersistableNetworkInterfaceDescriptor {
     pub network_interface_id: Uuid,
     pub name: String,
     pub kind: PersistableNetworkInterfaceKind,
@@ -25,7 +25,7 @@ pub(in crate::persistence) struct PersistableNetworkInterfaceDescriptor {
 #[diesel(primary_key(network_interface_id))]
 #[diesel(belongs_to(PersistableNetworkInterfaceDescriptor, foreign_key = network_interface_id))]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub(in crate::persistence) struct PersistableNetworkInterfaceKindCan {
+pub(crate) struct PersistableNetworkInterfaceKindCan {
     pub network_interface_id: Uuid,
     pub bitrate: i32,
     pub sample_point_times_1000: i32,

@@ -2,10 +2,10 @@ use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl, SelectableH
 use std::ops::Not;
 use uuid::Uuid;
 
-use crate::persistence::database::schema;
-use crate::persistence::error::{PersistenceError, PersistenceResult};
-use crate::persistence::query;
-use crate::persistence::query::Filter;
+use crate::resource::persistence::database::schema;
+use crate::resource::persistence::error::{PersistenceError, PersistenceResult};
+use crate::resource::persistence::query;
+use crate::resource::persistence::query::Filter;
 use opendut_types::peer::executor::ExecutorDescriptors;
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
 use opendut_types::topology::Topology;

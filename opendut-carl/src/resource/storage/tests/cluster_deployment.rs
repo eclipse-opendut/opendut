@@ -1,6 +1,6 @@
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment};
 use opendut_types::peer::PeerDescriptor;
-use crate::persistence::database;
+use crate::resource::persistence::database;
 use crate::resource::manager::{ResourceManager, ResourceManagerRef};
 
 #[tokio::test]

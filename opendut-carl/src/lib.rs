@@ -28,9 +28,8 @@ shadow_rs::shadow!(app_info);
 
 mod actions;
 mod cluster;
-pub mod persistence;
 mod peer;
-mod resource;
+pub mod resource;
 pub mod settings;
 mod startup;
 mod http;

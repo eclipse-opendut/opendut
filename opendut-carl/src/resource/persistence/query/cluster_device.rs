@@ -1,5 +1,5 @@
-use crate::persistence::database::schema;
-use crate::persistence::error::{PersistenceError, PersistenceResult};
+use crate::resource::persistence::database::schema;
+use crate::resource::persistence::error::{PersistenceError, PersistenceResult};
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl, SelectableHelper};
 use opendut_types::cluster::ClusterId;
 use uuid::Uuid;

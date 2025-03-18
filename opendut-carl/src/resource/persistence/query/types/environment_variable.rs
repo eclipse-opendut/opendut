@@ -8,7 +8,7 @@ use serde_json::json;
 type SelfSql = diesel::sql_types::Jsonb;
 
 #[derive(Debug, PartialEq)]
-pub(in crate::persistence) struct PersistableEnvironmentVariable {
+pub(crate) struct PersistableEnvironmentVariable {
     json: serde_json::Value,
 }
 

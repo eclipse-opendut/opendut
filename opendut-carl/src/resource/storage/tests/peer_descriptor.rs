@@ -4,7 +4,7 @@ use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNe
 use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag, Topology};
 use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
-use crate::persistence::database;
+use crate::resource::persistence::database;
 use crate::resource::manager::{ResourceManager, ResourceManagerRef};
 
 #[tokio::test]

@@ -6,7 +6,7 @@ use opendut_carl_api::carl::peer::{ListPeerStatesError};
 use opendut_types::peer::state::{PeerConnectionState, PeerState};
 use crate::actions;
 use crate::actions::ListPeerMemberStatesParams;
-use crate::persistence::error::{PersistenceError, PersistenceResult};
+use crate::resource::persistence::error::{PersistenceError, PersistenceResult};
 use crate::resource::storage::ResourcesStorageApi;
 
 pub struct ListPeerStatesParams {

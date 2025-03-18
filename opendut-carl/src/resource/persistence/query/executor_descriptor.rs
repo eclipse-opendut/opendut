@@ -5,18 +5,18 @@ use opendut_types::peer::PeerId;
 use tracing::warn;
 use uuid::Uuid;
 
-use crate::persistence::database::schema;
-use crate::persistence::error::{PersistenceError, PersistenceOperation, PersistenceResult};
-use crate::persistence::query::types::container_engine_kind::PersistableContainerEngineKind;
-use crate::persistence::query::types::environment_variable::PersistableEnvironmentVariable;
-use crate::persistence::query::types::executor_kind::PersistableExecutorKind;
-use crate::persistence::query::types::null_removing_text_array::NullRemovingTextArray;
+use crate::resource::persistence::database::schema;
+use crate::resource::persistence::error::{PersistenceError, PersistenceOperation, PersistenceResult};
+use crate::resource::persistence::query::types::container_engine_kind::PersistableContainerEngineKind;
+use crate::resource::persistence::query::types::environment_variable::PersistableEnvironmentVariable;
+use crate::resource::persistence::query::types::executor_kind::PersistableExecutorKind;
+use crate::resource::persistence::query::types::null_removing_text_array::NullRemovingTextArray;
 
 #[derive(diesel::Queryable, diesel::Selectable, diesel::Insertable, diesel::AsChangeset)]
 #[diesel(table_name = schema::executor_descriptor)]
 #[diesel(belongs_to(PeerDescriptor, foreign_key = peer_id))]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub(in crate::persistence) struct PersistableExecutorDescriptor {
+pub(crate) struct PersistableExecutorDescriptor {
     pub executor_id: Uuid,
     pub kind: PersistableExecutorKind,
     pub results_url: Option<String>,
@@ -28,7 +28,7 @@ pub(in crate::persistence) struct PersistableExecutorDescriptor {
 #[diesel(primary_key(executor_id))]
 #[diesel(belongs_to(PersistableExecutorDescriptor, foreign_key = executor_id))]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub(in crate::persistence) struct PersistableExecutorKindContainer {
+pub(crate) struct PersistableExecutorKindContainer {
     pub executor_id: Uuid,
     engine: PersistableContainerEngineKind,
     name: Option<String>,

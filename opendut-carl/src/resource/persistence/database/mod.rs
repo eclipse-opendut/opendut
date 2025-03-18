@@ -50,7 +50,7 @@ pub async fn connect(database_connect_info: &DatabaseConnectInfo) -> Result<PgCo
     Ok(connection)
 }
 
-const MIGRATIONS: EmbeddedMigrations = embed_migrations!("src/persistence/database/migrations/");
+const MIGRATIONS: EmbeddedMigrations = embed_migrations!("src/resource/persistence/database/migrations/");
 
 fn run_pending_migrations(connection: &mut PgConnection) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let migrated_versions = connection.run_pending_migrations(MIGRATIONS)?;
@@ -78,7 +78,7 @@ pub enum ConnectError {
 
 #[cfg(any(test, doc))] //needed for doctests to compile
 pub mod testing {
-    use crate::persistence::database;
+    use crate::resource::persistence::database;
     use diesel::{Connection, PgConnection};
     use testcontainers_modules::testcontainers::ContainerAsync;
     use testcontainers_modules::{postgres, testcontainers::runners::AsyncRunner};
@@ -89,7 +89,7 @@ pub mod testing {
     /// Spawns a Postgres Container and returns a connection for testing.
     /// ```no_run
     /// # use diesel::PgConnection;
-    /// # use opendut_carl::persistence::database;
+    /// # use opendut_carl::resource::persistence::database;
     ///
     /// #[tokio::test]
     /// async fn test() {
@@ -116,7 +116,7 @@ pub mod testing {
     /// Spawns a Postgres Container and returns a ResourceManager for testing.
     /// ```no_run
     /// # use std::any::Any;
-    /// # use opendut_carl::persistence::database;
+    /// # use opendut_carl::resource::persistence::database;
     ///
     /// #[tokio::test]
     /// async fn test() {

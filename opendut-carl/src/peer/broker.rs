@@ -17,7 +17,7 @@ use tokio::sync::{mpsc, RwLock};
 use tracing::{debug, error, info, warn, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
-use crate::persistence::error::PersistenceError;
+use crate::resource::persistence::error::PersistenceError;
 use crate::resource::manager::ResourceManagerRef;
 use crate::resource::storage::ResourcesStorageApi;
 

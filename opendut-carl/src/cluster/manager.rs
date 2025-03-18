@@ -19,7 +19,7 @@ use opendut_types::util::Port;
 use crate::actions;
 use crate::actions::{AssignClusterOptions, AssignClusterParams, ClusterDeployable, DeleteClusterDeploymentParams, DetermineClusterPeerStatesParams, GetPeerStateParams, ListPeerDescriptorsParams, StoreClusterConfigurationParams};
 use crate::peer::broker::PeerMessagingBrokerRef;
-use crate::persistence::error::PersistenceResult;
+use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::manager::{ResourceManagerRef, SubscriptionEvent};
 use crate::resource::storage::ResourcesStorageApi;
 use crate::settings::vpn::Vpn;

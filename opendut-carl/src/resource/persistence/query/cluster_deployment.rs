@@ -1,6 +1,6 @@
-use crate::persistence::database::schema;
-use crate::persistence::error::{PersistenceError, PersistenceOperation, PersistenceResult};
-use crate::persistence::query::Filter;
+use crate::resource::persistence::database::schema;
+use crate::resource::persistence::error::{PersistenceError, PersistenceOperation, PersistenceResult};
+use crate::resource::persistence::query::Filter;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 use opendut_types::cluster::{ClusterDeployment, ClusterId};
 use uuid::Uuid;

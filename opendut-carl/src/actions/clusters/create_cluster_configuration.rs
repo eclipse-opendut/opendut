@@ -47,7 +47,7 @@ mod tests {
     #[test_with::no_env(SKIP_DATABASE_CONTAINER_TESTS)]
     #[tokio::test]
     async fn updating_should_correctly_remove_devices_from_the_database() -> anyhow::Result<()> {
-        let db = crate::persistence::database::testing::spawn_and_connect_resource_manager().await?;
+        let db = crate::resource::persistence::database::testing::spawn_and_connect_resource_manager().await?;
         let resource_manager = db.resource_manager;
         let cluster = ClusterFixture::create(resource_manager.clone()).await?;
         resource_manager.insert(cluster.id, cluster.configuration.clone()).await?;

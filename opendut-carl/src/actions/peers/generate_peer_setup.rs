@@ -1,4 +1,4 @@
-use crate::persistence::error::PersistenceError;
+use crate::resource::persistence::error::PersistenceError;
 use crate::resource::manager::ResourceManagerRef;
 use crate::settings::vpn::Vpn;
 use opendut_auth::registration::client::RegistrationClientRef;

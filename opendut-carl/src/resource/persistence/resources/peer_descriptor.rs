@@ -1,9 +1,9 @@
 use opendut_types::peer::{PeerDescriptor, PeerId};
 
 use super::Persistable;
-use crate::persistence::error::PersistenceResult;
-use crate::persistence::query::Filter;
-use crate::persistence::{query, Storage};
+use crate::resource::persistence::error::PersistenceResult;
+use crate::resource::persistence::query::Filter;
+use crate::resource::persistence::{query, Storage};
 
 impl Persistable for PeerDescriptor {
     fn insert(self, _peer_id: PeerId, storage: &mut Storage) -> PersistenceResult<()> {

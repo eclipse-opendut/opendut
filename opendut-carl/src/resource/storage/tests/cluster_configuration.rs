@@ -1,4 +1,4 @@
-use crate::persistence::database;
+use crate::resource::persistence::database;
 use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
 use opendut_types::peer::PeerId;
 use opendut_types::topology::DeviceId;

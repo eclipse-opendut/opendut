@@ -1,5 +1,5 @@
-use crate::persistence::error::PersistenceResult;
-use crate::persistence::Storage;
+use crate::resource::persistence::error::PersistenceResult;
+use crate::resource::persistence::Storage;
 use crate::resource::resource::Resource;
 use std::fmt::Debug;
 

@@ -1,5 +1,5 @@
-use crate::persistence::error::PersistenceResult;
-use crate::persistence::resources::Persistable;
+use persistence::error::PersistenceResult;
+use persistence::resources::Persistable;
 use crate::resource::storage::{PersistenceOptions, ResourcesStorage, ResourcesStorageApi};
 use crate::resource::subscription::Subscribable;
 use crate::resource::transaction::{RelayedSubscriptionEvents, ResourcesTransaction};
@@ -11,6 +11,7 @@ pub mod resource;
 pub(crate) mod storage;
 pub(crate) mod subscription;
 mod transaction;
+pub mod persistence;
 
 pub struct Resources {
     storage: ResourcesStorage,

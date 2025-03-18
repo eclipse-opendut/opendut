@@ -1,4 +1,4 @@
-use crate::persistence::error::PersistenceError;
+use crate::resource::persistence::error::PersistenceError;
 use crate::resource::manager::ResourceManagerRef;
 use crate::settings::vpn::Vpn;
 use opendut_carl_api::carl::peer::StorePeerDescriptorError;
@@ -85,7 +85,7 @@ mod tests {
     #[test_with::no_env(SKIP_DATABASE_CONTAINER_TESTS)]
     #[tokio::test]
     async fn should_update_expected_resources_in_database() -> anyhow::Result<()> {
-        let db = crate::persistence::database::testing::spawn_and_connect_resource_manager().await?;
+        let db = crate::resource::persistence::database::testing::spawn_and_connect_resource_manager().await?;
         should_update_expected_resources_implementation(db.resource_manager).await
     }
 

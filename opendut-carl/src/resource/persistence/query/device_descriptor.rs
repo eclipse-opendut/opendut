@@ -1,7 +1,7 @@
-use crate::persistence::database::schema;
-use crate::persistence::error::{PersistenceError, PersistenceResult};
-use crate::persistence::query;
-use crate::persistence::query::device_tag::{device_tag_from_persistable, PersistableDeviceTag};
+use crate::resource::persistence::database::schema;
+use crate::resource::persistence::error::{PersistenceError, PersistenceResult};
+use crate::resource::persistence::query;
+use crate::resource::persistence::query::device_tag::{device_tag_from_persistable, PersistableDeviceTag};
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl, SelectableHelper};
 use opendut_types::peer::PeerId;
 use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag};

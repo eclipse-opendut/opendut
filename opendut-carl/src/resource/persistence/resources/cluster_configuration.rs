@@ -1,7 +1,7 @@
 use super::Persistable;
-use crate::persistence::error::PersistenceResult;
-use crate::persistence::query::Filter;
-use crate::persistence::{query, Storage};
+use crate::resource::persistence::error::PersistenceResult;
+use crate::resource::persistence::query::Filter;
+use crate::resource::persistence::{query, Storage};
 use opendut_types::cluster::{ClusterConfiguration, ClusterId};
 
 impl Persistable for ClusterConfiguration {
