@@ -197,6 +197,33 @@ impl ClusterManagerService for ClusterManagerFacade {
     }
 
     #[tracing::instrument(skip_all, level="trace")]
+    async fn get_cluster_deployment(&self, request: Request<GetClusterDeploymentRequest>) -> Result<Response<GetClusterDeploymentResponse>, Status> {
+
+        let request = request.into_inner();
+        let cluster_id: ClusterId = extract!(request.id)?;
+
+        trace!("Received request to get cluster deployment for cluster <{cluster_id}>.");
+
+        let deployment = self.cluster_manager.lock().await.get_deployment(cluster_id).await
+            .map_err(|cause| Status::internal(cause.to_string()))?;
+
+        match deployment {
+            Some(configuration) => Ok(Response::new(GetClusterDeploymentResponse {
+                result: Some(get_cluster_deployment_response::Result::Success(
+                    GetClusterDeploymentSuccess {
+                        deployment: Some(configuration.into())
+                    }
+                ))
+            })),
+            None => Ok(Response::new(GetClusterDeploymentResponse {
+                result: Some(get_cluster_deployment_response::Result::Failure(
+                    GetClusterDeploymentFailure {}
+                ))
+            }))
+        }
+    }
+
+    #[tracing::instrument(skip_all, level="trace")]
     async fn list_cluster_deployments(&self, _: Request<ListClusterDeploymentsRequest>) -> Result<Response<ListClusterDeploymentsResponse>, Status> {
         trace!("Received request to list cluster deployments.");
 

@@ -10,9 +10,10 @@ service ClusterManager {
   rpc DeleteClusterConfiguration(DeleteClusterConfigurationRequest) returns (DeleteClusterConfigurationResponse) {}
   rpc GetClusterConfiguration(GetClusterConfigurationRequest) returns (GetClusterConfigurationResponse) {}
   rpc ListClusterConfigurations(ListClusterConfigurationsRequest) returns (ListClusterConfigurationsResponse) {}
-  
+
   rpc StoreClusterDeployment(StoreClusterDeploymentRequest) returns (StoreClusterDeploymentResponse) {}
   rpc DeleteClusterDeployment(DeleteClusterDeploymentRequest) returns (DeleteClusterDeploymentResponse) {}
+  rpc GetClusterDeployment(GetClusterDeploymentRequest) returns (GetClusterDeploymentResponse) {}
   rpc ListClusterDeployments(ListClusterDeploymentsRequest) returns (ListClusterDeploymentsResponse) {}
 }
 
@@ -227,6 +228,27 @@ message DeleteClusterDeploymentFailureInternal {
   opendut.types.cluster.ClusterName cluster_name = 2;
   string cause = 3;
 }
+
+//
+// GetClusterDeployment
+//
+message GetClusterDeploymentRequest {
+  opendut.types.cluster.ClusterId id = 1;
+}
+
+message GetClusterDeploymentResponse {
+  oneof result {
+    GetClusterDeploymentFailure failure = 1;
+    GetClusterDeploymentSuccess success = 15;
+  }
+}
+
+message GetClusterDeploymentSuccess {
+  optional opendut.types.cluster.ClusterDeployment deployment = 1;
+}
+
+message GetClusterDeploymentFailure {}
+
 
 //
 // ListClusterDeployments

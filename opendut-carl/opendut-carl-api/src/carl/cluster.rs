@@ -365,6 +365,33 @@ mod client {
             }
         }
 
+        pub async fn get_cluster_deployment(&mut self, cluster_id: ClusterId) -> Result<ClusterDeployment, GetClusterDeploymentError> {
+            let request = tonic::Request::new(cluster_manager::GetClusterDeploymentRequest {
+                id: Some(cluster_id.into()),
+            });
+
+            match self.inner.get_cluster_deployment(request).await {
+                Ok(response) => {
+                    let result = response.into_inner().result
+                        .ok_or(GetClusterDeploymentError::Internal { cluster_id, cause: String::from("Response contains no result!") })?;
+                    match result {
+                        cluster_manager::get_cluster_deployment_response::Result::Failure(_) => {
+                            Err(GetClusterDeploymentError::Internal { cluster_id, cause: String::from("Failed to get cluster deployment!") })
+                        }
+                        cluster_manager::get_cluster_deployment_response::Result::Success(cluster_manager::GetClusterDeploymentSuccess { deployment }) => {
+                            let deployment = deployment
+                                .ok_or(GetClusterDeploymentError::Internal { cluster_id, cause: String::from("Response contains no cluster deployment!") })?;
+                            ClusterDeployment::try_from(deployment)
+                                .map_err(|_| GetClusterDeploymentError::Internal { cluster_id, cause: String::from("Conversion failed for cluster deployment!") })
+                        }
+                    }
+                },
+                Err(status) => {
+                    Err(GetClusterDeploymentError::Internal { cluster_id, cause: format!("gRPC failure: {status}") })
+                }
+            }
+        }
+
         pub async fn list_cluster_deployments(&mut self) -> Result<Vec<ClusterDeployment>, ListClusterDeploymentsError> {
             let request = tonic::Request::new(cluster_manager::ListClusterDeploymentsRequest {});
 
