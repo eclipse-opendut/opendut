@@ -11,19 +11,19 @@ use crate::actions;
 use crate::actions::{CreateClusterConfigurationParams, DeleteClusterConfigurationParams};
 use crate::cluster::manager::ClusterManagerRef;
 use crate::grpc::extract;
-use crate::resources::manager::ResourcesManagerRef;
+use crate::resource::manager::ResourceManagerRef;
 
 pub struct ClusterManagerFacade {
     cluster_manager: ClusterManagerRef,
-    resources_manager: ResourcesManagerRef,
+    resource_manager: ResourceManagerRef,
 }
 
 impl ClusterManagerFacade {
 
-    pub fn new(cluster_manager: ClusterManagerRef, resources_manager: ResourcesManagerRef) -> Self {
+    pub fn new(cluster_manager: ClusterManagerRef, resource_manager: ResourceManagerRef) -> Self {
         Self {
             cluster_manager,
-            resources_manager
+            resource_manager
         }
     }
 
@@ -43,7 +43,7 @@ impl ClusterManagerService for ClusterManagerFacade {
         trace!("Received request to create cluster configuration: {cluster_configuration:?}");
 
         let result = actions::create_cluster_configuration(CreateClusterConfigurationParams {
-            resources_manager: Arc::clone(&self.resources_manager),
+            resource_manager: Arc::clone(&self.resource_manager),
             cluster_configuration,
         }).await;
 
@@ -74,7 +74,7 @@ impl ClusterManagerService for ClusterManagerFacade {
 
         let result =
             actions::delete_cluster_configuration(DeleteClusterConfigurationParams {
-                resources_manager: Arc::clone(&self.resources_manager),
+                resource_manager: Arc::clone(&self.resource_manager),
                 cluster_id,
             }).await;
 

@@ -5,8 +5,8 @@ use pem::Pem;
 use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_auth::registration::resources::ResourceHomeUrl;
 use crate::grpc::{ClusterManagerFacade, MetadataProviderFacade, PeerManagerFacade, PeerMessagingBrokerFacade};
-use crate::resources::manager::ResourcesManager;
-use crate::resources::storage::PersistenceOptions;
+use crate::resource::manager::ResourceManager;
+use crate::resource::storage::PersistenceOptions;
 use crate::startup;
 use crate::cluster::manager::{ClusterManager, ClusterManagerOptions};
 use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
@@ -30,33 +30,33 @@ impl GrpcFacades {
         let vpn = vpn::create(settings).await
             .context("Error while parsing VPN configuration.")?;
 
-        let resources_manager = {
+        let resource_manager = {
             let resources_storage_options = PersistenceOptions::load(settings)?;
 
-            ResourcesManager::create(resources_storage_options).await
-                .context("Creating ResourcesManager failed")?
+            ResourceManager::create(resources_storage_options).await
+                .context("Creating ResourceManager failed")?
         };
 
-        startup::metrics::initialize_metrics_collection(Arc::clone(&resources_manager));
+        startup::metrics::initialize_metrics_collection(Arc::clone(&resource_manager));
 
         let peer_messaging_broker = PeerMessagingBroker::new(
-            Arc::clone(&resources_manager),
+            Arc::clone(&resource_manager),
             PeerMessagingBrokerOptions::load(settings)?,
         );
         let cluster_manager = ClusterManager::create(
-            Arc::clone(&resources_manager),
+            Arc::clone(&resource_manager),
             Arc::clone(&peer_messaging_broker),
             Clone::clone(&vpn),
             ClusterManagerOptions::load(settings)?,
         ).await;
 
 
-        let cluster_manager_facade = ClusterManagerFacade::new(Arc::clone(&cluster_manager), Arc::clone(&resources_manager));
+        let cluster_manager_facade = ClusterManagerFacade::new(Arc::clone(&cluster_manager), Arc::clone(&resource_manager));
 
         let metadata_provider_facade = MetadataProviderFacade::new();
 
         let peer_manager_facade = PeerManagerFacade::new(
-            Arc::clone(&resources_manager),
+            Arc::clone(&resource_manager),
             vpn,
             Clone::clone(&carl_url.value()),
             ca_certificate,

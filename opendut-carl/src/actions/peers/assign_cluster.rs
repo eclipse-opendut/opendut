@@ -1,7 +1,7 @@
 use crate::peer::broker::PeerMessagingBrokerRef;
 use crate::persistence::error::PersistenceError;
-use crate::resources::manager::ResourcesManagerRef;
-use crate::resources::storage::ResourcesStorageApi;
+use crate::resource::manager::ResourceManagerRef;
+use crate::resource::storage::ResourcesStorageApi;
 use opendut_carl_api::proto::services::peer_messaging_broker::{downstream, ApplyPeerConfiguration};
 use opendut_types::cluster::ClusterAssignment;
 use opendut_types::peer::configuration::parameter;
@@ -11,7 +11,7 @@ use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName}
 use tracing::debug;
 
 pub struct AssignClusterParams {
-    pub resources_manager: ResourcesManagerRef,
+    pub resource_manager: ResourceManagerRef,
     pub peer_messaging_broker: PeerMessagingBrokerRef,
     pub peer_id: PeerId,
     pub device_interfaces: Vec<NetworkInterfaceDescriptor>,
@@ -35,11 +35,11 @@ pub enum AssignClusterError {
 }
 
 pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClusterError> {
-    let AssignClusterParams { resources_manager, peer_messaging_broker, peer_id, cluster_assignment, device_interfaces, options } = params;
+    let AssignClusterParams { resource_manager, peer_messaging_broker, peer_id, cluster_assignment, device_interfaces, options } = params;
 
     debug!("Assigning cluster to peer <{peer_id}>.");
 
-    let (old_peer_configuration, peer_configuration) = resources_manager.resources_mut(|resources| {
+    let (old_peer_configuration, peer_configuration) = resource_manager.resources_mut(|resources| {
         let old_peer_configuration = OldPeerConfiguration {
             cluster_assignment: Some(cluster_assignment),
         };
@@ -103,7 +103,7 @@ mod tests {
     use super::*;
     use crate::actions::testing::PeerFixture;
     use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
-    use crate::resources::manager::ResourcesManager;
+    use crate::resource::manager::ResourceManager;
     use googletest::prelude::*;
     use opendut_types::cluster::{ClusterAssignment, ClusterId};
     use opendut_types::peer::executor::ExecutorDescriptors;
@@ -121,9 +121,9 @@ mod tests {
         let settings = crate::settings::load_defaults()?;
         let peer_id = peer.id;
 
-        let resources_manager = ResourcesManager::new_in_memory();
+        let resource_manager = ResourceManager::new_in_memory();
         let peer_messaging_broker = PeerMessagingBroker::new(
-            Arc::clone(&resources_manager),
+            Arc::clone(&resource_manager),
             PeerMessagingBrokerOptions::load(&settings.config).unwrap(),
         );
 
@@ -131,7 +131,7 @@ mod tests {
             cluster_assignment: None,
         };
         let peer_configuration = PeerConfiguration::default();
-        resources_manager.resources_mut(|resources| {
+        resource_manager.resources_mut(|resources| {
             resources.insert(peer_id, peer_descriptor())?;
             resources.insert(peer_id, Clone::clone(&old_peer_configuration))?;
             resources.insert(peer_id, Clone::clone(&peer_configuration))
@@ -157,7 +157,7 @@ mod tests {
 
 
         assign_cluster(AssignClusterParams {
-            resources_manager: Arc::clone(&resources_manager),
+            resource_manager: Arc::clone(&resource_manager),
             peer_messaging_broker: Arc::clone(&peer_messaging_broker),
             peer_id,
             cluster_assignment: Clone::clone(&cluster_assignment),
@@ -172,7 +172,7 @@ mod tests {
             cluster_assignment: Some(cluster_assignment),
         };
         assert_that!(
-            resources_manager.get::<OldPeerConfiguration>(peer_id).await?.as_ref(),
+            resource_manager.get::<OldPeerConfiguration>(peer_id).await?.as_ref(),
             some(eq(&old_peer_configuration))
         );
 

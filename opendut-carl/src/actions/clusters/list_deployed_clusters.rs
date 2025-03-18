@@ -1,11 +1,11 @@
 use crate::persistence::error::{PersistenceError};
-use crate::resources::manager::ResourcesManagerRef;
-use crate::resources::storage::ResourcesStorageApi;
+use crate::resource::manager::ResourceManagerRef;
+use crate::resource::storage::ResourcesStorageApi;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment};
 use std::collections::{HashSet};
 
 pub struct ListDeployedClustersParams {
-    pub resources_manager: ResourcesManagerRef,
+    pub resource_manager: ResourceManagerRef,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -18,7 +18,7 @@ pub enum ListDeployedClustersError {
 pub async fn list_deployed_clusters(params: ListDeployedClustersParams) -> Result<Vec<ClusterConfiguration>, ListDeployedClustersError> {
     
     
-    let deployed_cluster_configurations = params.resources_manager.resources(|resources| {
+    let deployed_cluster_configurations = params.resource_manager.resources(|resources| {
         let cluster_deployments = resources.list::<ClusterDeployment>()?
             .into_iter()
             .map(|cluster_deployment| cluster_deployment.id)

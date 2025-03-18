@@ -18,14 +18,14 @@ use tracing::{debug, error, info, warn, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 use crate::persistence::error::PersistenceError;
-use crate::resources::manager::ResourcesManagerRef;
-use crate::resources::storage::ResourcesStorageApi;
+use crate::resource::manager::ResourceManagerRef;
+use crate::resource::storage::ResourcesStorageApi;
 
 pub type PeerMessagingBrokerRef = Arc<PeerMessagingBroker>;
 
 
 pub struct PeerMessagingBroker {
-    resources_manager: ResourcesManagerRef,
+    resource_manager: ResourceManagerRef,
     peers: Arc<RwLock<HashMap<PeerId, PeerMessagingRef>>>,
     options: PeerMessagingBrokerOptions,
 }
@@ -34,9 +34,9 @@ struct PeerMessagingRef {
 }
 
 impl PeerMessagingBroker {
-    pub fn new(resources_manager: ResourcesManagerRef, options: PeerMessagingBrokerOptions) -> PeerMessagingBrokerRef {
+    pub fn new(resource_manager: ResourceManagerRef, options: PeerMessagingBrokerOptions) -> PeerMessagingBrokerRef {
         Arc::new(Self {
-            resources_manager,
+            resource_manager,
             peers: Default::default(),
             options,
         })
@@ -91,7 +91,7 @@ impl PeerMessagingBroker {
 
         {
             let peers = Arc::clone(&self.peers);
-            let resources_manager = Arc::clone(&self.resources_manager);
+            let resource_manager = Arc::clone(&self.resource_manager);
 
             tokio::spawn(async move {
                 loop {
@@ -109,7 +109,7 @@ impl PeerMessagingBroker {
                         }
                     }
                 }
-                Self::remove_peer_impl(peer_id, resources_manager, peers).await
+                Self::remove_peer_impl(peer_id, resource_manager, peers).await
                     .unwrap_or_else(|cause| error!("Error while removing peer after its stream ended:\n  {cause}"));
             });
         }
@@ -118,7 +118,7 @@ impl PeerMessagingBroker {
     }
     
     async fn send_initial_peer_configuration(&self, peer_id: PeerId) -> Result<(), OpenError> {
-        let old_peer_configuration = self.resources_manager.get::<OldPeerConfiguration>(peer_id).await
+        let old_peer_configuration = self.resource_manager.get::<OldPeerConfiguration>(peer_id).await
             .map_err(|source| OpenError::Persistence { peer_id, source })?;
         let old_peer_configuration = match old_peer_configuration {
             Some(old_peer_configuration) => {
@@ -132,7 +132,7 @@ impl PeerMessagingBroker {
             }
         };
 
-        let peer_configuration = self.resources_manager.get::<PeerConfiguration>(peer_id).await
+        let peer_configuration = self.resource_manager.get::<PeerConfiguration>(peer_id).await
             .map_err(|source| OpenError::Persistence { peer_id, source })?;
         let peer_configuration = match peer_configuration {
             Some(peer_configuration) => {
@@ -157,7 +157,7 @@ impl PeerMessagingBroker {
     }
 
     async fn update_peer_connection_state(&self, peer_id: PeerId, remote_host: IpAddr) -> Result<(), OpenError> {
-        self.resources_manager.resources_mut(|resources| {
+        self.resource_manager.resources_mut(|resources| {
             let maybe_peer_state = resources.get::<PeerConnectionState>(peer_id)
                 .map_err(|source| OpenError::Persistence { peer_id, source })?;
 
@@ -189,15 +189,15 @@ impl PeerMessagingBroker {
 
     async fn remove_peer_impl(
         peer_id: PeerId,
-        resources_manager: ResourcesManagerRef,
+        resource_manager: ResourceManagerRef,
         peers: Arc<RwLock<HashMap<PeerId, PeerMessagingRef>>>
     ) -> Result<(), RemovePeerError> {
-        let peer_connection_state = resources_manager.get::<PeerConnectionState>(peer_id).await
+        let peer_connection_state = resource_manager.get::<PeerConnectionState>(peer_id).await
             .map_err(|source| RemovePeerError::Persistence { peer_id, source })?
             .ok_or(RemovePeerError::PeerNotFound(peer_id))?;
 
         debug!("Setting connection state of peer <{peer_id}> to Down.");
-        resources_manager.insert(peer_id, PeerConnectionState::Offline).await
+        resource_manager.insert(peer_id, PeerConnectionState::Offline).await
             .map_err(|source| RemovePeerError::Persistence { peer_id, source })?;
 
         if let PeerConnectionState::Online { remote_host } = peer_connection_state {
@@ -290,17 +290,17 @@ mod tests {
 
     use opendut_carl_api::proto::services::peer_messaging_broker::Ping;
     use super::*;
-    use crate::resources::manager::ResourcesManager;
-    use crate::resources::storage::ResourcesStorageApi;
+    use crate::resource::manager::ResourceManager;
+    use crate::resource::storage::ResourcesStorageApi;
 
     #[tokio::test]
     async fn peer_stream() -> anyhow::Result<()> {
-        let Fixture { resources_manager, peer_id } = fixture().await?;
+        let Fixture { resource_manager, peer_id } = fixture().await?;
 
         let options = PeerMessagingBrokerOptions {
             peer_disconnect_timeout: Duration::from_millis(200),
         };
-        let testee = PeerMessagingBroker::new(Arc::clone(&resources_manager), options.clone());
+        let testee = PeerMessagingBroker::new(Arc::clone(&resource_manager), options.clone());
 
         let remote_host = IpAddr::from_str("1.2.3.4")?;
 
@@ -311,7 +311,7 @@ mod tests {
 
             assert!(peers.get(&peer_id).is_some());
 
-            let peer_connection_state = resources_manager.resources(|resources| {
+            let peer_connection_state = resource_manager.resources(|resources| {
                 resources.get::<PeerConnectionState>(peer_id)
             }).await?;
             let peer_connection_state = peer_connection_state.unwrap_or_else(|| panic!("PeerConnectionState for peer <{peer_id}> should exist."));
@@ -355,7 +355,7 @@ mod tests {
 
             assert!(peers.get(&peer_id).is_none());
 
-            let peer_connection_state = resources_manager.resources(|resources| {
+            let peer_connection_state = resource_manager.resources(|resources| {
                 resources.get::<PeerConnectionState>(peer_id)
             }).await?;
             let peer_connection_state = peer_connection_state.unwrap_or_else(|| panic!("PeerConnectionState for peer <{peer_id}> should exist."));
@@ -372,12 +372,12 @@ mod tests {
 
     #[tokio::test]
     async fn should_reject_second_connection_for_peer() -> anyhow::Result<()> {
-        let Fixture { resources_manager, peer_id } = fixture().await?;
+        let Fixture { resource_manager, peer_id } = fixture().await?;
 
         let options = PeerMessagingBrokerOptions {
             peer_disconnect_timeout: Duration::from_millis(200),
         };
-        let testee = PeerMessagingBroker::new(Arc::clone(&resources_manager), options.clone());
+        let testee = PeerMessagingBroker::new(Arc::clone(&resource_manager), options.clone());
 
         let remote_host = IpAddr::from_str("1.2.3.4")?;
 
@@ -403,16 +403,16 @@ mod tests {
     }
 
     struct Fixture {
-        resources_manager: ResourcesManagerRef,
+        resource_manager: ResourceManagerRef,
         peer_id: PeerId,
     }
     async fn fixture() -> anyhow::Result<Fixture> {
-        let resources_manager = ResourcesManager::new_in_memory();
+        let resource_manager = ResourceManager::new_in_memory();
 
         let peer_id = PeerId::random();
 
         Ok(Fixture {
-            resources_manager,
+            resource_manager,
             peer_id,
         })
     }

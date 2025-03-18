@@ -1,5 +1,5 @@
 use crate::persistence::error::PersistenceError;
-use crate::resources::manager::ResourcesManagerRef;
+use crate::resource::manager::ResourceManagerRef;
 use crate::settings::vpn::Vpn;
 use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_auth::registration::resources::UserId;
@@ -11,7 +11,7 @@ use tracing::{debug, error, info, warn};
 use url::Url;
 
 pub struct GeneratePeerSetupParams {
-    pub resources_manager: ResourcesManagerRef,
+    pub resource_manager: ResourceManagerRef,
     pub peer: PeerId,
     pub carl_url: Url,
     pub ca: Pem,
@@ -43,7 +43,7 @@ pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<Peer
 
         debug!("Generating PeerSetup for peer <{peer_id}>");
 
-        let peer_descriptor = params.resources_manager.get::<PeerDescriptor>(peer_id).await
+        let peer_descriptor = params.resource_manager.get::<PeerDescriptor>(peer_id).await
             .map_err(|source| GeneratePeerSetupError::Persistance { peer_id, source })?
             .ok_or(GeneratePeerSetupError::PeerNotFound(peer_id))?;
 

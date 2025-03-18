@@ -5,35 +5,35 @@ use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, Dev
 use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
 use crate::persistence::database;
-use crate::resources::manager::{ResourcesManager, ResourcesManagerRef};
+use crate::resource::manager::{ResourceManager, ResourceManagerRef};
 
 #[tokio::test]
 async fn should_persist_peer_descriptor_in_memory() -> anyhow::Result<()> {
-    let resources_manager = ResourcesManager::new_in_memory();
-    should_persist_peer_descriptor_implementation(resources_manager).await
+    let resource_manager = ResourceManager::new_in_memory();
+    should_persist_peer_descriptor_implementation(resource_manager).await
 }
 
 #[test_with::no_env(SKIP_DATABASE_CONTAINER_TESTS)]
 #[tokio::test]
 async fn should_persist_peer_descriptor_in_database() -> anyhow::Result<()> {
-    let db = database::testing::spawn_and_connect_resources_manager().await?;
-    should_persist_peer_descriptor_implementation(db.resources_manager).await
+    let db = database::testing::spawn_and_connect_resource_manager().await?;
+    should_persist_peer_descriptor_implementation(db.resource_manager).await
 }
 
-async fn should_persist_peer_descriptor_implementation(resources_manager: ResourcesManagerRef) -> anyhow::Result<()> {
+async fn should_persist_peer_descriptor_implementation(resource_manager: ResourceManagerRef) -> anyhow::Result<()> {
 
     let testee = peer_descriptor()?;
 
-    let result = resources_manager.get::<PeerDescriptor>(testee.id).await?;
+    let result = resource_manager.get::<PeerDescriptor>(testee.id).await?;
     assert!(result.is_none());
-    let result = resources_manager.list::<PeerDescriptor>().await?;
+    let result = resource_manager.list::<PeerDescriptor>().await?;
     assert!(result.is_empty());
 
-    resources_manager.insert(testee.id, testee.clone()).await?;
+    resource_manager.insert(testee.id, testee.clone()).await?;
 
-    let result = resources_manager.get::<PeerDescriptor>(testee.id).await?;
+    let result = resource_manager.get::<PeerDescriptor>(testee.id).await?;
     assert_eq!(result, Some(testee.clone()));
-    let result = resources_manager.list::<PeerDescriptor>().await?;
+    let result = resource_manager.list::<PeerDescriptor>().await?;
     assert_eq!(result.len(), 1);
     assert_eq!(result.first(), Some(&testee));
 
@@ -44,18 +44,18 @@ async fn should_persist_peer_descriptor_implementation(resources_manager: Resour
         testee.network.interfaces.retain(|interface| interface.id != removed_device.interface);
         testee
     };
-    resources_manager.insert(testee.id, testee.clone()).await?;
+    resource_manager.insert(testee.id, testee.clone()).await?;
 
 
-    let result = resources_manager.remove::<PeerDescriptor>(testee.id).await?;
+    let result = resource_manager.remove::<PeerDescriptor>(testee.id).await?;
     assert_eq!(result, Some(testee.clone()));
 
-    let result = resources_manager.get::<PeerDescriptor>(testee.id).await?;
+    let result = resource_manager.get::<PeerDescriptor>(testee.id).await?;
     assert!(result.is_none());
-    let result = resources_manager.list::<PeerDescriptor>().await?;
+    let result = resource_manager.list::<PeerDescriptor>().await?;
     assert!(result.is_empty());
 
-    let result = resources_manager.remove::<PeerDescriptor>(testee.id).await?;
+    let result = resource_manager.remove::<PeerDescriptor>(testee.id).await?;
     assert_eq!(result, None);
 
     Ok(())

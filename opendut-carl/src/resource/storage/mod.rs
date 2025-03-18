@@ -3,10 +3,10 @@ use url::Url;
 use crate::persistence::database::ConnectError;
 use crate::persistence::error::PersistenceResult;
 use crate::persistence::resources::Persistable;
-use crate::resources::storage::persistent::PersistentResourcesStorage;
-use crate::resources::storage::volatile::VolatileResourcesStorage;
-use crate::resources::Resource;
-use crate::resources::subscription::Subscribable;
+use crate::resource::storage::persistent::PersistentResourcesStorage;
+use crate::resource::storage::volatile::VolatileResourcesStorage;
+use crate::resource::Resource;
+use crate::resource::subscription::Subscribable;
 
 pub mod volatile;
 pub mod persistent;

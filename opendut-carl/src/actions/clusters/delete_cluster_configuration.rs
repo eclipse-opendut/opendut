@@ -1,10 +1,10 @@
-use crate::resources::manager::ResourcesManagerRef;
+use crate::resource::manager::ResourceManagerRef;
 use opendut_carl_api::carl::cluster::DeleteClusterConfigurationError;
 use opendut_types::cluster::{ClusterConfiguration, ClusterId};
 use tracing::{debug, error, info};
 
 pub struct DeleteClusterConfigurationParams {
-    pub resources_manager: ResourcesManagerRef,
+    pub resource_manager: ResourceManagerRef,
     pub cluster_id: ClusterId,
 }
 
@@ -14,11 +14,11 @@ pub async fn delete_cluster_configuration(params: DeleteClusterConfigurationPara
     async fn inner(params: DeleteClusterConfigurationParams) -> Result<ClusterConfiguration, DeleteClusterConfigurationError> {
 
         let cluster_id = params.cluster_id;
-        let resources_manager = params.resources_manager;
+        let resource_manager = params.resource_manager;
 
         debug!("Deleting cluster configuration <{cluster_id}>.");
 
-        let cluster_configuration = resources_manager.remove::<ClusterConfiguration>(cluster_id).await
+        let cluster_configuration = resource_manager.remove::<ClusterConfiguration>(cluster_id).await
             .map_err(|cause| DeleteClusterConfigurationError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?
             .ok_or_else(|| DeleteClusterConfigurationError::ClusterConfigurationNotFound { cluster_id })?;
 

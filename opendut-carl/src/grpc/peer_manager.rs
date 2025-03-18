@@ -17,11 +17,11 @@ use opendut_types::cleo::{CleoId};
 use crate::actions;
 use crate::actions::{DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, GetPeerStateParams, ListDevicesParams, ListPeerDescriptorsParams, ListPeerStatesParams, StorePeerDescriptorParams};
 use crate::grpc::extract;
-use crate::resources::manager::ResourcesManagerRef;
+use crate::resource::manager::ResourceManagerRef;
 use crate::settings::vpn::Vpn;
 
 pub struct PeerManagerFacade {
-    resources_manager: ResourcesManagerRef,
+    resource_manager: ResourceManagerRef,
     vpn: Vpn,
     carl_url: Url,
     ca: Pem,
@@ -31,14 +31,14 @@ pub struct PeerManagerFacade {
 impl PeerManagerFacade {
 
     pub fn new(
-        resources_manager: ResourcesManagerRef,
+        resource_manager: ResourceManagerRef,
         vpn: Vpn,
         carl_url: Url,
         ca: Pem,
         oidc_registration_client: Option<RegistrationClientRef>,
     ) -> Self {
         PeerManagerFacade {
-            resources_manager,
+            resource_manager,
             vpn,
             carl_url,
             ca,
@@ -63,7 +63,7 @@ impl PeerManagerService for PeerManagerFacade {
         trace!("Received request to store peer descriptor: {peer_descriptor:?}");
 
         let result = actions::store_peer_descriptor(StorePeerDescriptorParams {
-            resources_manager: Arc::clone(&self.resources_manager),
+            resource_manager: Arc::clone(&self.resource_manager),
             vpn: Clone::clone(&self.vpn),
             peer_descriptor: Clone::clone(&peer_descriptor),
         }).await;
@@ -96,7 +96,7 @@ impl PeerManagerService for PeerManagerFacade {
 
         let result =
             actions::delete_peer_descriptor(DeletePeerDescriptorParams {
-                resources_manager: Arc::clone(&self.resources_manager),
+                resource_manager: Arc::clone(&self.resource_manager),
                 vpn: Clone::clone(&self.vpn),
                 peer: peer_id,
                 oidc_registration_client: self.oidc_registration_client.clone(),
@@ -130,7 +130,7 @@ impl PeerManagerService for PeerManagerFacade {
 
         let result =
             actions::list_peer_descriptors(ListPeerDescriptorsParams {
-                resources_manager: Arc::clone(&self.resources_manager),
+                resource_manager: Arc::clone(&self.resource_manager),
             }).await
             .map_err(|error| GetPeerDescriptorError::Internal { peer_id, cause: error.to_string() })
             .and_then(|peers| peers.iter()
@@ -164,7 +164,7 @@ impl PeerManagerService for PeerManagerFacade {
 
         let result =
             actions::list_peer_descriptors(ListPeerDescriptorsParams {
-                resources_manager: Arc::clone(&self.resources_manager),
+                resource_manager: Arc::clone(&self.resource_manager),
             }).await
             .map(|peers| peers.into_iter()
                 .map(From::from)
@@ -200,7 +200,7 @@ impl PeerManagerService for PeerManagerFacade {
         let result =
             actions::get_peer_state(GetPeerStateParams {
                 peer: peer_id,
-                resources_manager: Arc::clone(&self.resources_manager),
+                resource_manager: Arc::clone(&self.resource_manager),
             }).await
                 .map_err(|error| GetPeerStateError::Internal { peer_id, cause: error.to_string() });
 
@@ -229,7 +229,7 @@ impl PeerManagerService for PeerManagerFacade {
 
         let result =
             actions::list_peer_states(ListPeerStatesParams {
-                resources_manager: Arc::clone(&self.resources_manager),
+                resource_manager: Arc::clone(&self.resource_manager),
             }).await
                 .map_err(|error| ListPeerStatesError::Internal { cause: error.to_string() });
 
@@ -262,7 +262,7 @@ impl PeerManagerService for PeerManagerFacade {
         trace!("Received request to list devices.");
 
         let devices = actions::list_devices(ListDevicesParams {
-            resources_manager: Arc::clone(&self.resources_manager),
+            resource_manager: Arc::clone(&self.resource_manager),
         }).await.expect("Devices should be listable");
 
         let devices = devices.into_iter()
@@ -281,7 +281,7 @@ impl PeerManagerService for PeerManagerFacade {
         let user_id = UserId { value: request.user_id };
 
         let setup = actions::generate_peer_setup(GeneratePeerSetupParams {
-            resources_manager: Arc::clone(&self.resources_manager),
+            resource_manager: Arc::clone(&self.resource_manager),
             peer: peer_id,
             carl_url: Clone::clone(&self.carl_url),
             ca: Clone::clone(&self.ca),
@@ -344,7 +344,7 @@ mod tests {
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
     use opendut_auth_tests::registration_client;
 
-    use crate::resources::manager::ResourcesManager;
+    use crate::resource::manager::ResourceManager;
     use crate::settings::vpn::Vpn;
 
     use super::*;
@@ -362,9 +362,9 @@ mod tests {
     #[tokio::test]
     async fn test_successful_create_delete(#[future] registration_client: RegistrationClientRef) -> Result<()> {
 
-        let resources_manager = ResourcesManager::new_in_memory();
+        let resource_manager = ResourceManager::new_in_memory();
         let testee = PeerManagerFacade::new(
-            Arc::clone(&resources_manager),
+            Arc::clone(&resource_manager),
             Vpn::Disabled,
             Url::parse("https://example.com:1234").unwrap(),
             get_cert(),
@@ -463,9 +463,9 @@ mod tests {
     #[tokio::test]
     async fn register_fails_when_no_id_specified(#[future] registration_client: RegistrationClientRef) -> Result<()> {
 
-        let resources_manager = ResourcesManager::new_in_memory();
+        let resource_manager = ResourceManager::new_in_memory();
         let testee = PeerManagerFacade::new(
-            Arc::clone(&resources_manager),
+            Arc::clone(&resource_manager),
             Vpn::Disabled,
             Url::parse("https://example.com:1234").unwrap(),
             get_cert(),
@@ -503,9 +503,9 @@ mod tests {
     #[tokio::test]
     async fn unregister_fails_when_no_id_specified(#[future] registration_client: RegistrationClientRef) -> Result<()> {
 
-        let resources_manager = ResourcesManager::new_in_memory();
+        let resource_manager = ResourceManager::new_in_memory();
         let testee = PeerManagerFacade::new(
-            Arc::clone(&resources_manager),
+            Arc::clone(&resource_manager),
             Vpn::Disabled,
             Url::parse("https://example.com:1234").unwrap(),
             get_cert(),

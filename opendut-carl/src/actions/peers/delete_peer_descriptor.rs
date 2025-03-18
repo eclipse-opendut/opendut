@@ -1,5 +1,5 @@
-use crate::resources::manager::ResourcesManagerRef;
-use crate::resources::storage::ResourcesStorageApi;
+use crate::resource::manager::ResourceManagerRef;
+use crate::resource::storage::ResourcesStorageApi;
 use crate::settings::vpn::Vpn;
 use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_carl_api::carl::peer::DeletePeerDescriptorError;
@@ -7,7 +7,7 @@ use opendut_types::peer::{PeerDescriptor, PeerId};
 use tracing::{debug, error, info, warn};
 
 pub struct DeletePeerDescriptorParams {
-    pub resources_manager: ResourcesManagerRef,
+    pub resource_manager: ResourceManagerRef,
     pub vpn: Vpn,
     pub peer: PeerId,
     pub oidc_registration_client: Option<RegistrationClientRef>,
@@ -19,11 +19,11 @@ pub async fn delete_peer_descriptor(params: DeletePeerDescriptorParams) -> Resul
     async fn inner(params: DeletePeerDescriptorParams) -> Result<PeerDescriptor, DeletePeerDescriptorError> {
 
         let peer_id = params.peer;
-        let resources_manager = params.resources_manager;
+        let resource_manager = params.resource_manager;
 
         debug!("Deleting peer descriptor of peer <{peer_id}>.");
 
-        let peer_descriptor = resources_manager.resources_mut(|resources| {
+        let peer_descriptor = resource_manager.resources_mut(|resources| {
 
             let peer_descriptor = resources.remove::<PeerDescriptor>(peer_id)
                 .map_err(|cause| DeletePeerDescriptorError::Internal { peer_id, peer_name: None, cause: cause.to_string() })?

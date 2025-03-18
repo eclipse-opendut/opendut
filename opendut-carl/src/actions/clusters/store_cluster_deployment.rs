@@ -1,11 +1,11 @@
-use crate::resources::manager::ResourcesManagerRef;
+use crate::resource::manager::ResourceManagerRef;
 use opendut_carl_api::carl::cluster::StoreClusterDeploymentError;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId, ClusterName};
 use tracing::{error, trace};
-use crate::resources::storage::ResourcesStorageApi;
+use crate::resource::storage::ResourcesStorageApi;
 
 pub struct StoreClusterConfigurationParams {
-    pub resources_manager: ResourcesManagerRef,
+    pub resource_manager: ResourceManagerRef,
     pub deployment: ClusterDeployment,
 }
 
@@ -13,16 +13,16 @@ pub struct StoreClusterConfigurationParams {
 pub async fn store_cluster_deployment(params: StoreClusterConfigurationParams) -> Result<ClusterId, StoreClusterDeploymentError> {
 
     async fn inner(params: StoreClusterConfigurationParams) -> Result<ClusterId, StoreClusterDeploymentError> {
-        let StoreClusterConfigurationParams { resources_manager, deployment } = params;
+        let StoreClusterConfigurationParams { resource_manager, deployment } = params;
         let cluster_id = deployment.id;
 
-        let maybe_existing_deployment = resources_manager.get::<ClusterDeployment>(cluster_id).await
+        let maybe_existing_deployment = resource_manager.get::<ClusterDeployment>(cluster_id).await
             .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?;
 
         if maybe_existing_deployment.is_some() {
             trace!("Received instruction to store deployment for cluster <{cluster_id}>, which already exists. Ignoring.");
         } else {
-            resources_manager.resources_mut(|resources| {
+            resource_manager.resources_mut(|resources| {
                 let cluster_name = resources.get::<ClusterConfiguration>(cluster_id)
                     .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?
                     .map(|cluster| cluster.name)

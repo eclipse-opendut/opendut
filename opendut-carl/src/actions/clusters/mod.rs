@@ -11,7 +11,7 @@ pub mod testing {
     use std::collections::HashSet;
     use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
     use crate::actions::testing::PeerFixture;
-    use crate::resources::manager::ResourcesManagerRef;
+    use crate::resource::manager::ResourceManagerRef;
 
     pub struct ClusterFixture {
         pub id: ClusterId,
@@ -21,12 +21,12 @@ pub mod testing {
     }
 
     impl ClusterFixture {
-        pub async fn create(resources_manager: ResourcesManagerRef) -> anyhow::Result<ClusterFixture> {
+        pub async fn create(resource_manager: ResourceManagerRef) -> anyhow::Result<ClusterFixture> {
             let peer_a = PeerFixture::new();
             let peer_b = PeerFixture::new();
 
-            resources_manager.insert(peer_a.id, peer_a.descriptor.clone()).await?;
-            resources_manager.insert(peer_b.id, peer_b.descriptor.clone()).await?;
+            resource_manager.insert(peer_a.id, peer_a.descriptor.clone()).await?;
+            resource_manager.insert(peer_b.id, peer_b.descriptor.clone()).await?;
 
             let cluster_id = ClusterId::random();
             let cluster_configuration = ClusterConfiguration {
@@ -35,7 +35,7 @@ pub mod testing {
                 leader: peer_a.id,
                 devices: HashSet::from([peer_a.device_1, peer_a.device_2, peer_b.device_1]),
             };
-            resources_manager.insert(cluster_id, cluster_configuration.clone()).await?;
+            resource_manager.insert(cluster_id, cluster_configuration.clone()).await?;
             
             Ok(ClusterFixture {
                 id: cluster_id,

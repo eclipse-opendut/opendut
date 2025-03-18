@@ -1,18 +1,18 @@
 use opendut_types::cluster::{ClusterConfiguration, ClusterId};
 use opendut_types::peer::PeerDescriptor;
 use crate::persistence::error::PersistenceError;
-use crate::resources::manager::ResourcesManagerRef;
-use crate::resources::storage::ResourcesStorageApi;
+use crate::resource::manager::ResourceManagerRef;
+use crate::resource::storage::ResourcesStorageApi;
 
 pub struct DetermineClusterPeersParams {
-    pub resources_manager: ResourcesManagerRef,
+    pub resource_manager: ResourceManagerRef,
     pub cluster_id: ClusterId,
 }
 
 pub async fn determine_cluster_peers(params: DetermineClusterPeersParams) -> Result<Vec<PeerDescriptor>, DetermineClusterPeersError> {
-    let DetermineClusterPeersParams { resources_manager, cluster_id } = params;
+    let DetermineClusterPeersParams { resource_manager, cluster_id } = params;
 
-    let cluster_peers = resources_manager.resources(|resources| {
+    let cluster_peers = resource_manager.resources(|resources| {
         let cluster_configuration = resources.get::<ClusterConfiguration>(cluster_id)
             .map_err(|source| DetermineClusterPeersError::Persistence { cluster_id, source })?
             .ok_or_else(|| DetermineClusterPeersError::ClusterNotFound(cluster_id))?;

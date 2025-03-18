@@ -7,11 +7,11 @@ use crate::actions;
 use crate::actions::clusters::list_deployed_clusters::ListDeployedClustersError;
 use crate::actions::ListDeployedClustersParams;
 use crate::persistence::error::{PersistenceError, PersistenceResult};
-use crate::resources::manager::ResourcesManagerRef;
-use crate::resources::storage::ResourcesStorageApi;
+use crate::resource::manager::ResourceManagerRef;
+use crate::resource::storage::ResourcesStorageApi;
 
 pub struct ListPeerMemberStatesParams {
-    pub resources_manager: ResourcesManagerRef,
+    pub resource_manager: ResourceManagerRef,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -23,8 +23,8 @@ pub enum DetermineBlockedPeersError {
 }
 
 pub async fn list_peer_member_states(params: ListPeerMemberStatesParams) -> Result<HashMap<PeerId, PeerMemberState>, DetermineBlockedPeersError> {
-    let ListPeerMemberStatesParams { resources_manager } = params;
-    let deployed_clusters = actions::list_deployed_clusters(ListDeployedClustersParams { resources_manager: resources_manager.clone() })
+    let ListPeerMemberStatesParams { resource_manager } = params;
+    let deployed_clusters = actions::list_deployed_clusters(ListDeployedClustersParams { resource_manager: resource_manager.clone() })
         .await.map_err(|source| DetermineBlockedPeersError::ListDeployedClusters { source })?;
 
     let deployed_devices = deployed_clusters.into_iter()
@@ -34,7 +34,7 @@ pub async fn list_peer_member_states(params: ListPeerMemberStatesParams) -> Resu
         })
         .collect::<HashMap<_, _>>();
 
-    let peer_member_states = resources_manager.resources(|resources| {
+    let peer_member_states = resource_manager.resources(|resources| {
         let all_peers = resources.list::<PeerDescriptor>()?;
 
         let peer_member_states = all_peers.into_iter()
@@ -80,19 +80,19 @@ mod tests {
     use std::ops::Not;
     use opendut_types::cluster::ClusterDeployment;
     use crate::actions::clusters::testing::ClusterFixture;
-    use crate::resources::manager::ResourcesManager;
+    use crate::resource::manager::ResourceManager;
     use super::*;
 
     #[tokio::test]
     async fn test_list_blocked_peers() -> anyhow::Result<()> {
         // Arrange
-        let resources_manager = ResourcesManager::new_in_memory();
-        let cluster_a = ClusterFixture::create(resources_manager.clone()).await?;
-        let cluster_b = ClusterFixture::create(resources_manager.clone()).await?;
-        resources_manager.insert(cluster_a.id, ClusterDeployment { id: cluster_a.id }).await?;
+        let resource_manager = ResourceManager::new_in_memory();
+        let cluster_a = ClusterFixture::create(resource_manager.clone()).await?;
+        let cluster_b = ClusterFixture::create(resource_manager.clone()).await?;
+        resource_manager.insert(cluster_a.id, ClusterDeployment { id: cluster_a.id }).await?;
 
         // Act
-        let peer_member_states = list_peer_member_states(ListPeerMemberStatesParams { resources_manager: resources_manager.clone() }).await?;
+        let peer_member_states = list_peer_member_states(ListPeerMemberStatesParams { resource_manager: resource_manager.clone() }).await?;
 
         // Assert
         let blocked_peers = peer_member_states.into_iter()

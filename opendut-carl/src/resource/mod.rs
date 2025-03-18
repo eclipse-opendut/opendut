@@ -1,8 +1,8 @@
 use crate::persistence::error::PersistenceResult;
 use crate::persistence::resources::Persistable;
-use crate::resources::storage::{PersistenceOptions, ResourcesStorage, ResourcesStorageApi};
-use crate::resources::subscription::Subscribable;
-use crate::resources::transaction::{RelayedSubscriptionEvents, ResourcesTransaction};
+use crate::resource::storage::{PersistenceOptions, ResourcesStorage, ResourcesStorageApi};
+use crate::resource::subscription::Subscribable;
+use crate::resource::transaction::{RelayedSubscriptionEvents, ResourcesTransaction};
 use resource::Resource;
 
 pub mod manager;

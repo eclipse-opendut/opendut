@@ -1,4 +1,4 @@
-use crate::resources::resource::Resource;
+use crate::resource::resource::Resource;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment};
 use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
 use opendut_types::peer::state::PeerConnectionState;
@@ -99,7 +99,7 @@ impl Default for ResourceSubscriptionChannels {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::resources::manager::ResourcesManager;
+    use crate::resource::manager::ResourceManager;
     use opendut_types::peer::state::PeerConnectionState;
     use opendut_types::peer::PeerId;
     use std::net::IpAddr;
@@ -109,19 +109,19 @@ mod tests {
 
     #[tokio::test]
     async fn should_notify_about_resource_insertions() -> anyhow::Result<()> {
-        let resources_manager = ResourcesManager::new_in_memory();
+        let resource_manager = ResourceManager::new_in_memory();
 
-        let mut subscription = resources_manager.subscribe().await;
+        let mut subscription = resource_manager.subscribe().await;
 
         let id = PeerId::random();
         let timeout_duration = Duration::from_secs(10);
 
         let value = PeerConnectionState::Offline;
-        resources_manager.insert(id, value.clone()).await?;
+        resource_manager.insert(id, value.clone()).await?;
         assert_eq!(timeout(timeout_duration, subscription.receive()).await??, SubscriptionEvent::Inserted { id, value });
 
         let value = PeerConnectionState::Online { remote_host: IpAddr::from_str("127.0.0.1")? };
-        resources_manager.insert(id, value.clone()).await?;
+        resource_manager.insert(id, value.clone()).await?;
         assert_eq!(timeout(timeout_duration, subscription.receive()).await??, SubscriptionEvent::Inserted { id, value });
 
         Ok(())

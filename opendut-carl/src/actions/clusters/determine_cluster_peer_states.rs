@@ -1,6 +1,6 @@
 use crate::actions;
 use crate::actions::{DetermineClusterPeersError, DetermineClusterPeersParams, ListPeerStatesParams};
-use crate::resources::manager::ResourcesManagerRef;
+use crate::resource::manager::ResourceManagerRef;
 use opendut_carl_api::carl::peer::ListPeerStatesError;
 use opendut_types::cluster::ClusterId;
 use opendut_types::peer::state::{PeerConnectionState, PeerMemberState, PeerState};
@@ -10,21 +10,21 @@ use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct DetermineClusterPeerStatesParams {
-    pub resources_manager: ResourcesManagerRef,
+    pub resource_manager: ResourceManagerRef,
     pub cluster_id: ClusterId,
 }
 
 pub async fn determine_cluster_peer_states(params: DetermineClusterPeerStatesParams) -> Result<ClusterPeerStates, DetermineClusterPeerStatesError> {
-    let DetermineClusterPeerStatesParams { resources_manager, cluster_id } = params;
+    let DetermineClusterPeerStatesParams { resource_manager, cluster_id } = params;
 
-    let cluster_peers = actions::determine_cluster_peers(DetermineClusterPeersParams { cluster_id, resources_manager: Arc::clone(&resources_manager) }).await
+    let cluster_peers = actions::determine_cluster_peers(DetermineClusterPeersParams { cluster_id, resource_manager: Arc::clone(&resource_manager) }).await
         .map_err(|source| DetermineClusterPeerStatesError::DetermineClusterPeers { cluster_id, source })?
         .into_iter()
         .map(|peer| peer.id)
         .collect::<HashSet<_>>();
     let peer_states =
         actions::list_peer_states(ListPeerStatesParams {
-            resources_manager: Arc::clone(&resources_manager),
+            resource_manager: Arc::clone(&resource_manager),
         }).await
             .map_err(|error| DetermineClusterPeerStatesError::ListPeerStates { cluster_id, source: error })?;
 
@@ -107,7 +107,7 @@ pub enum DetermineClusterPeerStatesError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::resources::manager::ResourcesManager;
+    use crate::resource::manager::ResourceManager;
     use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterName};
     use opendut_types::peer::executor::ExecutorDescriptors;
     use opendut_types::peer::state::PeerConnectionState;
@@ -121,9 +121,9 @@ mod tests {
 
     #[tokio::test]
     async fn should_filter_down_peers() -> anyhow::Result<()> {
-        let Fixture { resources_manager, peer_a, peer_b, cluster, remote_host } = Fixture::create().await?;
+        let Fixture { resource_manager, peer_a, peer_b, cluster, remote_host } = Fixture::create().await?;
 
-        let params = DetermineClusterPeerStatesParams { resources_manager: resources_manager.clone(), cluster_id: cluster.id };
+        let params = DetermineClusterPeerStatesParams { resource_manager: resource_manager.clone(), cluster_id: cluster.id };
 
         let cluster_peer_states = actions::determine_cluster_peer_states(params.clone()).await?;
         assert_eq!(cluster_peer_states.peer_states, HashMap::from_iter([
@@ -138,7 +138,7 @@ mod tests {
         let online_state = PeerConnectionState::Online { remote_host };
         let available_state = PeerState { connection: online_state.clone(), member: PeerMemberState::Available };
 
-        resources_manager.insert(peer_a.id, online_state.clone()).await?;
+        resource_manager.insert(peer_a.id, online_state.clone()).await?;
 
         let cluster_peer_states = actions::determine_cluster_peer_states(params.clone()).await?;
         assert_eq!(cluster_peer_states.peer_states, HashMap::from_iter([
@@ -150,7 +150,7 @@ mod tests {
             ClusterDeployable::NotAllPeersAvailable { unavailable_peers: HashSet::from_iter(vec![peer_b.id]) }
         );
 
-        resources_manager.insert(peer_b.id, online_state.clone()).await?;
+        resource_manager.insert(peer_b.id, online_state.clone()).await?;
 
         let cluster_peer_states = actions::determine_cluster_peer_states(params.clone()).await?;
         assert_eq!(cluster_peer_states.peer_states, HashMap::from_iter([
@@ -168,9 +168,9 @@ mod tests {
     #[tokio::test]
     async fn should_filter_blocked_peers() -> anyhow::Result<()> {
         // Given
-        let Fixture { resources_manager, peer_a, peer_b, cluster, remote_host } = Fixture::create().await?;
+        let Fixture { resource_manager, peer_a, peer_b, cluster, remote_host } = Fixture::create().await?;
 
-        let params = DetermineClusterPeerStatesParams { resources_manager: resources_manager.clone(), cluster_id: cluster.id };
+        let params = DetermineClusterPeerStatesParams { resource_manager: resource_manager.clone(), cluster_id: cluster.id };
         let online_state = PeerConnectionState::Online { remote_host };
         let offline_state = PeerConnectionState::Offline;
 
@@ -182,11 +182,11 @@ mod tests {
         };
         // When another cluster is deployed
         {
-            resources_manager.insert(other_cluster.id, other_cluster.clone()).await?;
+            resource_manager.insert(other_cluster.id, other_cluster.clone()).await?;
             let other_cluster_deployment = ClusterDeployment { id: other_cluster.id };
-            resources_manager.insert(peer_a.id, online_state.clone()).await?;
-            resources_manager.insert(peer_b.id, online_state.clone()).await?;
-            resources_manager.insert(other_cluster.id, other_cluster_deployment.clone()).await?;
+            resource_manager.insert(peer_a.id, online_state.clone()).await?;
+            resource_manager.insert(peer_b.id, online_state.clone()).await?;
+            resource_manager.insert(other_cluster.id, other_cluster_deployment.clone()).await?;
         }
 
         let blocked_by_other_cluster_state = PeerState { connection: online_state.clone(), member: PeerMemberState::Blocked { by_cluster: other_cluster.id } };
@@ -206,8 +206,8 @@ mod tests {
         );
 
         // When deployment is removed
-        resources_manager.remove::<ClusterDeployment>(other_cluster.id).await?;
-        resources_manager.insert(peer_b.id, offline_state.clone()).await?;
+        resource_manager.remove::<ClusterDeployment>(other_cluster.id).await?;
+        resource_manager.insert(peer_b.id, offline_state.clone()).await?;
 
         let cluster_peer_states = actions::determine_cluster_peer_states(params.clone()).await?;
         assert_eq!(cluster_peer_states.peer_states, HashMap::from_iter([
@@ -219,7 +219,7 @@ mod tests {
             ClusterDeployable::NotAllPeersAvailable { unavailable_peers: HashSet::from_iter(vec![peer_b.id]) }
         );
 
-        resources_manager.insert(peer_b.id, online_state.clone()).await?;
+        resource_manager.insert(peer_b.id, online_state.clone()).await?;
 
         let cluster_peer_states = actions::determine_cluster_peer_states(params.clone()).await?;
         assert_eq!(cluster_peer_states.peer_states, HashMap::from_iter([
@@ -232,7 +232,7 @@ mod tests {
         );
 
         let cluster_deployment = ClusterDeployment { id: cluster.id };
-        resources_manager.insert(cluster.id, cluster_deployment.clone()).await?;
+        resource_manager.insert(cluster.id, cluster_deployment.clone()).await?;
 
         let cluster_peer_states = actions::determine_cluster_peer_states(params.clone()).await?;
         assert_eq!(cluster_peer_states.peer_states, HashMap::from_iter([
@@ -248,7 +248,7 @@ mod tests {
     }
 
     struct Fixture {
-        resources_manager: ResourcesManagerRef,
+        resource_manager: ResourceManagerRef,
         peer_a: PeerDescriptor,
         peer_b: PeerDescriptor,
         cluster: ClusterConfiguration,
@@ -256,16 +256,16 @@ mod tests {
     }
     impl Fixture {
         async fn create() -> anyhow::Result<Self> {
-            let resources_manager = ResourcesManager::new_in_memory();
+            let resource_manager = ResourceManager::new_in_memory();
 
             let peer_a = generate_peer_descriptor()?;
-            resources_manager.insert(peer_a.id, peer_a.clone()).await?;
+            resource_manager.insert(peer_a.id, peer_a.clone()).await?;
 
             let peer_b = generate_peer_descriptor()?;
-            resources_manager.insert(peer_b.id, peer_b.clone()).await?;
+            resource_manager.insert(peer_b.id, peer_b.clone()).await?;
 
             let peer_not_in_cluster = generate_peer_descriptor()?;
-            resources_manager.insert(peer_not_in_cluster.id, peer_not_in_cluster.clone()).await?;
+            resource_manager.insert(peer_not_in_cluster.id, peer_not_in_cluster.clone()).await?;
 
             let cluster = ClusterConfiguration {
                 id: ClusterId::random(),
@@ -277,10 +277,10 @@ mod tests {
                         .map(|device| device.id)
                 ),
             };
-            resources_manager.insert(cluster.id, cluster.clone()).await?;
+            resource_manager.insert(cluster.id, cluster.clone()).await?;
 
             Ok(Self {
-                resources_manager,
+                resource_manager,
                 peer_a,
                 peer_b,
                 cluster,

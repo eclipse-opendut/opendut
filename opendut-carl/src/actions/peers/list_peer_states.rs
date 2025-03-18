@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::resources::manager::ResourcesManagerRef;
+use crate::resource::manager::ResourceManagerRef;
 use opendut_types::peer::{PeerId};
 use tracing::{debug, error, info};
 use opendut_carl_api::carl::peer::{ListPeerStatesError};
@@ -7,10 +7,10 @@ use opendut_types::peer::state::{PeerConnectionState, PeerState};
 use crate::actions;
 use crate::actions::ListPeerMemberStatesParams;
 use crate::persistence::error::{PersistenceError, PersistenceResult};
-use crate::resources::storage::ResourcesStorageApi;
+use crate::resource::storage::ResourcesStorageApi;
 
 pub struct ListPeerStatesParams {
-    pub resources_manager: ResourcesManagerRef,
+    pub resource_manager: ResourceManagerRef,
 }
 
 #[tracing::instrument(skip_all, level="trace")]
@@ -18,13 +18,13 @@ pub async fn list_peer_states(params: ListPeerStatesParams) -> Result<HashMap<Pe
 
     async fn inner(params: ListPeerStatesParams) -> Result<HashMap<PeerId, PeerState>, ListPeerStatesError> {
 
-        let resources_manager = params.resources_manager;
+        let resource_manager = params.resource_manager;
 
         debug!("Querying all peer states.");
-        let peer_member_states = actions::list_peer_member_states(ListPeerMemberStatesParams { resources_manager: resources_manager.clone() }).await
+        let peer_member_states = actions::list_peer_member_states(ListPeerMemberStatesParams { resource_manager: resource_manager.clone() }).await
             .map_err(|cause| ListPeerStatesError::Internal { cause: cause.to_string() })?;  // only persistence error possible
         
-        let peer_states = resources_manager.resources(|resources| {
+        let peer_states = resource_manager.resources(|resources| {
             let peer_states = peer_member_states.into_iter()
                 .map(|(peer_id, peer_member_state)| {
                     // TODO: peer state is partially hold in memory (connection state) and partially hold in database (membership due to cluster assignment) 

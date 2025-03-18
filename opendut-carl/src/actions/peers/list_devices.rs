@@ -1,4 +1,4 @@
-use crate::resources::manager::ResourcesManagerRef;
+use crate::resource::manager::ResourceManagerRef;
 use opendut_carl_api::carl::peer::ListDevicesError;
 use opendut_types::peer::PeerDescriptor;
 use opendut_types::topology::DeviceDescriptor;
@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use tracing::{debug, error, info};
 
 pub struct ListDevicesParams {
-    pub resources_manager: ResourcesManagerRef,
+    pub resource_manager: ResourceManagerRef,
 }
 
 #[tracing::instrument(skip(params), level="trace")]
@@ -14,11 +14,11 @@ pub async fn list_devices(params: ListDevicesParams) -> Result<Vec<DeviceDescrip
 
     async fn inner(params: ListDevicesParams) -> Result<Vec<DeviceDescriptor>, ListDevicesError> {
 
-        let resources_manager = params.resources_manager;
+        let resource_manager = params.resource_manager;
 
         debug!("Querying all devices.");
 
-        let peers = resources_manager.list::<PeerDescriptor>().await
+        let peers = resource_manager.list::<PeerDescriptor>().await
             .map_err(|cause| ListDevicesError::Internal { cause: cause.to_string() })?;
 
         let devices = peers.into_iter()
@@ -42,7 +42,7 @@ mod tests {
     use super::*;
     use crate::actions;
     use crate::actions::StorePeerDescriptorParams;
-    use crate::resources::manager::ResourcesManager;
+    use crate::resource::manager::ResourceManager;
     use googletest::prelude::*;
     use std::sync::Arc;
     use crate::actions::testing::PeerFixture;
@@ -52,23 +52,23 @@ mod tests {
     async fn should_list_all_devices() -> anyhow::Result<()> {
         let peer = PeerFixture::new();
 
-        let resources_manager = ResourcesManager::new_in_memory();
+        let resource_manager = ResourceManager::new_in_memory();
 
         let result = list_devices(ListDevicesParams {
-            resources_manager: Arc::clone(&resources_manager),
+            resource_manager: Arc::clone(&resource_manager),
         }).await?;
         assert!(result.is_empty());
 
 
         actions::store_peer_descriptor(StorePeerDescriptorParams {
-            resources_manager: Arc::clone(&resources_manager),
+            resource_manager: Arc::clone(&resource_manager),
             vpn: Vpn::Disabled,
             peer_descriptor: peer.descriptor,
         }).await?;
 
 
         let result = list_devices(ListDevicesParams {
-            resources_manager: Arc::clone(&resources_manager),
+            resource_manager: Arc::clone(&resource_manager),
         }).await?;
 
         let result_ids = result.into_iter()

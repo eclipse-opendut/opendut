@@ -11,7 +11,7 @@ frame CARL {
   agent PeerManager
   portout VpnManagementClient
   agent PeerMessagingBroker
-  agent ResourcesManager
+  agent ResourceManager
 }
 node "VPN\nManagement\nServer" as VpnManagementServer
 node EDGAR
@@ -21,11 +21,11 @@ UI --> ClusterManager
 UI --> PeerManager
 
 ClusterManager --> PeerMessagingBroker
-ClusterManager ---> ResourcesManager
+ClusterManager ---> ResourceManager
 PeerManager -- VpnManagementClient
-PeerManager ---> ResourcesManager
-ResourcesManager <- PeerMessagingBroker
-ResourcesManager --> Persistence
+PeerManager ---> ResourceManager
+ResourceManager <- PeerMessagingBroker
+ResourceManager --> Persistence
 
 PeerMessagingBroker <==> EDGAR : Stream (PeerConfiguration)
 
@@ -34,6 +34,6 @@ VpnManagementClient -> VpnManagementServer
 @enduml
 ```
 
-## ResourcesManager
+## ResourceManager
 
 ![](img/resources-manager.svg)

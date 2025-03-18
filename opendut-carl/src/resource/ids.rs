@@ -4,7 +4,7 @@ use opendut_types::peer::state::PeerConnectionState;
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::resources::Id;
 
-use crate::resources::resource::Resource;
+use crate::resource::resource::Resource;
 
 pub trait IntoId<R: Resource> {
     fn into_id(self) -> Id;

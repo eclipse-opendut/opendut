@@ -4,7 +4,7 @@ use opendut_types::peer::PeerId;
 use crate::persistence::error::PersistenceResult;
 use crate::persistence::resources::Persistable;
 use crate::persistence::Storage;
-use crate::resources::storage::ResourcesStorageApi;
+use crate::resource::storage::ResourcesStorageApi;
 
 impl Persistable for PeerConfiguration {
     fn insert(self, id: PeerId, storage: &mut Storage) -> PersistenceResult<()> {

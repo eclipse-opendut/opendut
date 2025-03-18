@@ -1,17 +1,17 @@
-pub use crate::resources::subscription::SubscriptionEvent;
+pub use crate::resource::subscription::SubscriptionEvent;
 
 use crate::persistence::error::PersistenceResult;
 use crate::persistence::resources::Persistable;
-use crate::resources::storage::{PersistenceOptions, ResourcesStorageApi};
-use crate::resources::subscription::{ResourceSubscriptionChannels, Subscribable, Subscription};
-use crate::resources::transaction::RelayedSubscriptionEvents;
-use crate::resources::{storage, Resource, Resources, ResourcesTransaction};
+use crate::resource::storage::{PersistenceOptions, ResourcesStorageApi};
+use crate::resource::subscription::{ResourceSubscriptionChannels, Subscribable, Subscription};
+use crate::resource::transaction::RelayedSubscriptionEvents;
+use crate::resource::{storage, Resource, Resources, ResourcesTransaction};
 use std::sync::Arc;
 use tokio::sync::{RwLock, RwLockWriteGuard};
 
-pub type ResourcesManagerRef = Arc<ResourcesManager>;
+pub type ResourceManagerRef = Arc<ResourceManager>;
 
-pub struct ResourcesManager {
+pub struct ResourceManager {
     state: RwLock<State>,
 }
 
@@ -20,9 +20,9 @@ struct State {
     subscribers: ResourceSubscriptionChannels,
 }
 
-impl ResourcesManager {
+impl ResourceManager {
 
-    pub async fn create(storage_options: PersistenceOptions) -> Result<ResourcesManagerRef, storage::ConnectionError> {
+    pub async fn create(storage_options: PersistenceOptions) -> Result<ResourceManagerRef, storage::ConnectionError> {
         let resources = Resources::connect(storage_options).await?;
         let subscribers = ResourceSubscriptionChannels::default();
 
@@ -147,8 +147,8 @@ impl ResourcesManager {
 
 
 #[cfg(test)]
-impl ResourcesManager {
-    pub fn new_in_memory() -> ResourcesManagerRef {
+impl ResourceManager {
+    pub fn new_in_memory() -> ResourceManagerRef {
         let resources = futures::executor::block_on(
             Resources::connect(PersistenceOptions::Disabled)
         )
@@ -191,7 +191,7 @@ mod test {
     #[tokio::test]
     async fn test() -> Result<()> {
 
-        let testee = ResourcesManager::new_in_memory();
+        let testee = ResourceManager::new_in_memory();
 
         let peer_resource_id = PeerId::random();
         let peer = PeerDescriptor {

@@ -1,11 +1,11 @@
-use crate::resources::manager::ResourcesManagerRef;
+use crate::resource::manager::ResourceManagerRef;
 use opendut_carl_api::carl::cluster::CreateClusterConfigurationError;
 use opendut_types::cluster::{ClusterConfiguration, ClusterId};
 use tracing::{debug, error, info};
-use crate::resources::storage::ResourcesStorageApi;
+use crate::resource::storage::ResourcesStorageApi;
 
 pub struct CreateClusterConfigurationParams {
-    pub resources_manager: ResourcesManagerRef,
+    pub resource_manager: ResourceManagerRef,
     pub cluster_configuration: ClusterConfiguration,
 }
 
@@ -16,11 +16,11 @@ pub async fn create_cluster_configuration(params: CreateClusterConfigurationPara
 
         let cluster_id = params.cluster_configuration.id;
         let cluster_name = Clone::clone(&params.cluster_configuration.name);
-        let resources_manager = params.resources_manager;
+        let resource_manager = params.resource_manager;
 
         debug!("Creating cluster configuration '{cluster_name}' <{cluster_id}>.");
 
-        resources_manager.resources_mut(|resources| {
+        resource_manager.resources_mut(|resources| {
             resources.insert(cluster_id, params.cluster_configuration)
                 .map_err(|cause| CreateClusterConfigurationError::Internal { cluster_id, cluster_name: cluster_name.clone(), cause: cause.to_string() })
         }).await
@@ -47,13 +47,13 @@ mod tests {
     #[test_with::no_env(SKIP_DATABASE_CONTAINER_TESTS)]
     #[tokio::test]
     async fn updating_should_correctly_remove_devices_from_the_database() -> anyhow::Result<()> {
-        let db = crate::persistence::database::testing::spawn_and_connect_resources_manager().await?;
-        let resources_manager = db.resources_manager;
-        let cluster = ClusterFixture::create(resources_manager.clone()).await?;
-        resources_manager.insert(cluster.id, cluster.configuration.clone()).await?;
+        let db = crate::persistence::database::testing::spawn_and_connect_resource_manager().await?;
+        let resource_manager = db.resource_manager;
+        let cluster = ClusterFixture::create(resource_manager.clone()).await?;
+        resource_manager.insert(cluster.id, cluster.configuration.clone()).await?;
 
         assert_eq!(
-            resources_manager.get::<ClusterConfiguration>(cluster.id).await?.unwrap(),
+            resource_manager.get::<ClusterConfiguration>(cluster.id).await?.unwrap(),
             cluster.configuration
         );
 
@@ -61,10 +61,10 @@ mod tests {
             devices: HashSet::from([cluster.peer_a.device_1]),
             ..cluster.configuration
         };
-        resources_manager.insert(cluster.id, updated_cluster_configuration.clone()).await?;
+        resource_manager.insert(cluster.id, updated_cluster_configuration.clone()).await?;
 
         assert_eq!(
-            resources_manager.get::<ClusterConfiguration>(cluster.id).await?.unwrap(),
+            resource_manager.get::<ClusterConfiguration>(cluster.id).await?.unwrap(),
             updated_cluster_configuration
         );
 

@@ -2,7 +2,7 @@ use backon::Retryable;
 use diesel::{Connection as _, ConnectionError, PgConnection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use tracing::{debug, info, warn};
-use crate::resources::storage::DatabaseConnectInfo;
+use crate::resource::storage::DatabaseConnectInfo;
 
 pub mod schema;
 
@@ -83,8 +83,8 @@ pub mod testing {
     use testcontainers_modules::testcontainers::ContainerAsync;
     use testcontainers_modules::{postgres, testcontainers::runners::AsyncRunner};
     use url::Url;
-    use crate::resources::manager::{ResourcesManager, ResourcesManagerRef};
-    use crate::resources::storage::{DatabaseConnectInfo, Password, PersistenceOptions};
+    use crate::resource::manager::{ResourceManager, ResourceManagerRef};
+    use crate::resource::storage::{DatabaseConnectInfo, Password, PersistenceOptions};
 
     /// Spawns a Postgres Container and returns a connection for testing.
     /// ```no_run
@@ -113,33 +113,33 @@ pub mod testing {
         pub connection: PgConnection,
     }
 
-    /// Spawns a Postgres Container and returns a ResourcesManager for testing.
+    /// Spawns a Postgres Container and returns a ResourceManager for testing.
     /// ```no_run
     /// # use std::any::Any;
     /// # use opendut_carl::persistence::database;
     ///
     /// #[tokio::test]
     /// async fn test() {
-    ///     let mut db = database::testing::spawn_and_connect_resources_manager().await?;
+    ///     let mut db = database::testing::spawn_and_connect_resource_manager().await?;
     ///
-    ///     do_something_with_resources_manager(db.resources_manager);
+    ///     do_something_with_resource_manager(db.resource_manager);
     /// }
     ///
-    /// # fn do_something_with_resources_manager(resources_manager: impl Any) {}
+    /// # fn do_something_with_resource_manager(resource_manager: impl Any) {}
     /// ```
-    pub async fn spawn_and_connect_resources_manager() -> anyhow::Result<PostgresResources> {
+    pub async fn spawn_and_connect_resource_manager() -> anyhow::Result<PostgresResources> {
         let (container, connect_info) = spawn().await?;
 
-        let resources_manager = ResourcesManager::create(PersistenceOptions::Enabled {
+        let resource_manager = ResourceManager::create(PersistenceOptions::Enabled {
             database_connect_info: connect_info.clone(),
         }).await?;
 
-        Ok(PostgresResources { container, resources_manager })
+        Ok(PostgresResources { container, resource_manager })
     }
     pub struct PostgresResources {
         #[allow(unused)] //primarily carried along to extend its lifetime until the end of the test (container is stopped when variable is dropped)
         pub container: ContainerAsync<postgres::Postgres>,
-        pub resources_manager: ResourcesManagerRef,
+        pub resource_manager: ResourceManagerRef,
     }
 
     async fn spawn() -> anyhow::Result<(ContainerAsync<postgres::Postgres>, DatabaseConnectInfo)> {

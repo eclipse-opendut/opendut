@@ -5,11 +5,11 @@ use opendut_types::resources::Id;
 
 use crate::persistence::error::PersistenceResult;
 use crate::persistence::resources::Persistable;
-use crate::resources::ids::IntoId;
-use crate::resources::storage::ResourcesStorageApi;
-use crate::resources::Resource;
-use crate::resources::subscription::Subscribable;
-use crate::resources::transaction::RelayedSubscriptionEvents;
+use crate::resource::ids::IntoId;
+use crate::resource::storage::ResourcesStorageApi;
+use crate::resource::Resource;
+use crate::resource::subscription::Subscribable;
+use crate::resource::transaction::RelayedSubscriptionEvents;
 
 #[derive(Default)]
 pub struct VolatileResourcesStorage {

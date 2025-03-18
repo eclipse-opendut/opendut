@@ -1,6 +1,6 @@
 use std::sync::{Mutex, MutexGuard};
 
-use crate::resources::storage::volatile::VolatileResourcesStorage;
+use crate::resource::storage::volatile::VolatileResourcesStorage;
 use diesel::PgConnection;
 
 pub mod database;

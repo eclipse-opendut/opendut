@@ -1,10 +1,10 @@
 use crate::persistence::error::PersistenceResult;
 use crate::persistence::resources::Persistable;
-use crate::resources::resource::Resource;
-use crate::resources::storage::persistent::PersistentResourcesTransaction;
-use crate::resources::storage::ResourcesStorageApi;
-use crate::resources::storage::volatile::VolatileResourcesTransaction;
-use crate::resources::subscription::{ResourceSubscriptionChannels, Subscribable, SubscriptionEvent};
+use crate::resource::resource::Resource;
+use crate::resource::storage::persistent::PersistentResourcesTransaction;
+use crate::resource::storage::ResourcesStorageApi;
+use crate::resource::storage::volatile::VolatileResourcesTransaction;
+use crate::resource::subscription::{ResourceSubscriptionChannels, Subscribable, SubscriptionEvent};
 
 pub type RelayedSubscriptionEvents = ResourceSubscriptionChannels;
 

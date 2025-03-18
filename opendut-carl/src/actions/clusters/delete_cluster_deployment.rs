@@ -1,12 +1,12 @@
-use crate::resources::manager::ResourcesManagerRef;
+use crate::resource::manager::ResourceManagerRef;
 use crate::settings::vpn::Vpn;
 use opendut_carl_api::carl::cluster::DeleteClusterDeploymentError;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
 use tracing::error;
-use crate::resources::storage::ResourcesStorageApi;
+use crate::resource::storage::ResourcesStorageApi;
 
 pub struct DeleteClusterDeploymentParams {
-    pub resources_manager: ResourcesManagerRef,
+    pub resource_manager: ResourceManagerRef,
     pub vpn: Vpn,
     pub cluster_id: ClusterId,
 }
@@ -15,9 +15,9 @@ pub struct DeleteClusterDeploymentParams {
 pub async fn delete_cluster_deployment(params: DeleteClusterDeploymentParams) -> Result<ClusterDeployment, DeleteClusterDeploymentError> {
 
     async fn inner(params: DeleteClusterDeploymentParams) -> Result<ClusterDeployment, DeleteClusterDeploymentError> {
-        let DeleteClusterDeploymentParams { resources_manager, vpn, cluster_id } = params;
+        let DeleteClusterDeploymentParams { resource_manager, vpn, cluster_id } = params;
 
-        let (deployment, cluster) = resources_manager
+        let (deployment, cluster) = resource_manager
             .resources_mut(|resources| {
                 resources.remove::<ClusterDeployment>(cluster_id)
                     .map_err(|cause| DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?
