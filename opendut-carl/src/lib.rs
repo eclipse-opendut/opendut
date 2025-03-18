@@ -27,13 +27,12 @@ pub mod grpc;
 shadow_rs::shadow!(app_info);
 
 mod actions;
-mod cluster;
-mod peer;
+mod auth;
+mod http;
+mod manager;
 pub mod resource;
 pub mod settings;
 mod startup;
-mod http;
-mod auth;
 
 #[tracing::instrument]
 pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow::Result<()> {

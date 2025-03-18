@@ -1,4 +1,4 @@
-use crate::peer::broker::PeerMessagingBrokerRef;
+use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
 use crate::resource::persistence::error::PersistenceError;
 use crate::resource::manager::ResourceManagerRef;
 use crate::resource::storage::ResourcesStorageApi;
@@ -102,7 +102,7 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
 mod tests {
     use super::*;
     use crate::actions::testing::PeerFixture;
-    use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
+    use crate::manager::peer_messaging_broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
     use crate::resource::manager::ResourceManager;
     use googletest::prelude::*;
     use opendut_types::cluster::{ClusterAssignment, ClusterId};

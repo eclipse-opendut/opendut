@@ -3,7 +3,7 @@ use std::ops::Not;
 use std::pin::Pin;
 use std::str::FromStr;
 
-use crate::peer::broker::{OpenError, PeerMessagingBrokerRef};
+use crate::manager::peer_messaging_broker::{OpenError, PeerMessagingBrokerRef};
 use futures::StreamExt;
 use opendut_carl_api::carl::broker::stream_header;
 use opendut_carl_api::carl::broker::stream_header::PeerVersion;

@@ -8,8 +8,8 @@ use crate::grpc::{ClusterManagerFacade, MetadataProviderFacade, PeerManagerFacad
 use crate::resource::manager::ResourceManager;
 use crate::resource::storage::PersistenceOptions;
 use crate::startup;
-use crate::cluster::manager::{ClusterManager, ClusterManagerOptions};
-use crate::peer::broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
+use crate::manager::cluster_manager::{ClusterManager, ClusterManagerOptions};
+use crate::manager::peer_messaging_broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
 use crate::settings::vpn;
 
 pub struct GrpcFacades {
