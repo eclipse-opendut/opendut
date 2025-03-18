@@ -191,8 +191,6 @@ conversion! {
             peer_id: Some(value.peer_id.into()),
             vpn_address: Some(value.vpn_address.into()),
             can_server_port: Some(value.can_server_port.into()),
-            #[expect(deprecated)]
-            device_interfaces: value.device_interfaces.into_iter().map(Into::into).collect(),
         }
     }
 
@@ -203,17 +201,10 @@ conversion! {
 
         let can_server_port: crate::util::Port = extract!(value.can_server_port)?.try_into()?;
 
-        let device_interfaces: Vec<crate::util::net::NetworkInterfaceDescriptor> = value.device_interfaces
-            .into_iter()
-            .map(TryInto::try_into)
-            .collect::<Result<_, _>>()?;
-
-        #[expect(deprecated)]
         Ok(Model {
             peer_id,
             vpn_address,
             can_server_port,
-            device_interfaces,
         })
     }
 }

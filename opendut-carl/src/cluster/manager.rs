@@ -296,11 +296,11 @@ impl ClusterManager {
             debug!("VPN disabled. Not creating VPN group.")
         }
 
-        let can_server_ports = self.determine_can_server_ports(&member_interface_mapping, cluster_id)?;
+        let can_server_ports = self.determine_can_server_ports(&member_ids, cluster_id)?;
 
         let member_assignments: Vec<Result<PeerClusterAssignment, DeployClusterError>> = {
-            let assignment_futures = std::iter::zip(member_interface_mapping.clone(), can_server_ports)
-                .map(|((peer_id, device_interfaces), can_server_port)| {
+            let assignment_futures = std::iter::zip(member_ids, can_server_ports)
+                .map(|(peer_id, can_server_port)| {
                     self.resources_manager.get::<PeerConnectionState>(peer_id)
                         .map(move |peer_connection_state: PersistenceResult<Option<PeerConnectionState>>| {
                             let vpn_address = match peer_connection_state {
@@ -322,9 +322,8 @@ impl ClusterManager {
                                 }
                             };
 
-                            #[expect(deprecated)]
                             vpn_address.map(|vpn_address|
-                                PeerClusterAssignment { peer_id, vpn_address, can_server_port, device_interfaces }
+                                PeerClusterAssignment { peer_id, vpn_address, can_server_port }
                             )
                         })
                 })
@@ -363,7 +362,7 @@ impl ClusterManager {
         Ok(())
     }
 
-    fn determine_can_server_ports(&mut self, member_interface_mapping: &HashMap<PeerId, Vec<NetworkInterfaceDescriptor>>, cluster_id: ClusterId) -> Result<Vec<Port>, DeployClusterError> {
+    fn determine_can_server_ports(&mut self, member_interface_mapping: &[PeerId], cluster_id: ClusterId) -> Result<Vec<Port>, DeployClusterError> {
         let n_peers = u16::try_from(member_interface_mapping.len())
             .map_err(|cause| DeployClusterError::Internal { cluster_id, cause: cause.to_string() })?;
 
@@ -552,7 +551,6 @@ mod test {
             assert_that!(fixture.testee.lock().await.deploy_cluster(cluster_id).await, ok(eq(&())));
 
 
-            #[expect(deprecated)]
             let assert_cluster_assignment_valid = |cluster_assignment: &ClusterAssignment| {
                 assert_that!(
                     cluster_assignment,
@@ -565,13 +563,11 @@ mod test {
                                     peer_id: peer_a.id,
                                     vpn_address: peer_a.remote_host,
                                     can_server_port: Port(fixture.cluster_manager_options.can_server_port_range_start + 1),
-                                    device_interfaces: peer_a.interfaces.clone(),
                                 },
                                 &PeerClusterAssignment {
                                     peer_id: peer_b.id,
                                     vpn_address: peer_b.remote_host,
                                     can_server_port: Port(fixture.cluster_manager_options.can_server_port_range_start),
-                                    device_interfaces: peer_b.interfaces.clone(),
                                 },
                             ],
                             unordered_elements_are![
@@ -579,13 +575,11 @@ mod test {
                                     peer_id: peer_a.id,
                                     vpn_address: peer_a.remote_host,
                                     can_server_port: Port(fixture.cluster_manager_options.can_server_port_range_start),
-                                    device_interfaces: peer_a.interfaces.clone(),
                                 },
                                 &PeerClusterAssignment {
                                     peer_id: peer_b.id,
                                     vpn_address: peer_b.remote_host,
                                     can_server_port: Port(fixture.cluster_manager_options.can_server_port_range_start + 1),
-                                    device_interfaces: peer_b.interfaces.clone(),
                                 },
                             ],
                         ]
@@ -748,7 +742,6 @@ mod test {
     struct PeerFixture {
         id: PeerId,
         device: DeviceId,
-        interfaces: Vec<NetworkInterfaceDescriptor>,
         remote_host: IpAddr,
         descriptor: PeerDescriptor,
     }
@@ -771,7 +764,7 @@ mod test {
             name: PeerName::try_from(peer_name).unwrap(),
             location: PeerLocation::try_from("Ulm").ok(),
             network: PeerNetworkDescriptor {
-                interfaces: interfaces.clone(),
+                interfaces,
                 bridge_name: Some(NetworkInterfaceName::try_from("br-opendut-1").unwrap()),
             },
             topology: Topology {
@@ -808,7 +801,6 @@ mod test {
         PeerFixture {
             id,
             device,
-            interfaces,
             remote_host,
             descriptor
         }
