@@ -1,7 +1,7 @@
 use crate::resources::resource::Resource;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment};
 use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
-use opendut_types::peer::state::{PeerConnectionState, PeerState};
+use opendut_types::peer::state::PeerConnectionState;
 use opendut_types::peer::PeerDescriptor;
 use tokio::sync::broadcast;
 
@@ -47,7 +47,6 @@ impl_subscribable!(ClusterDeployment, cluster_deployment);
 impl_subscribable!(OldPeerConfiguration, old_peer_configuration);
 impl_subscribable!(PeerConfiguration, peer_configuration);
 impl_subscribable!(PeerDescriptor, peer_descriptor);
-impl_subscribable!(PeerState, peer_state);
 impl_subscribable!(PeerConnectionState, peer_connection_state);
 
 
@@ -59,7 +58,6 @@ pub struct ResourceSubscriptionChannels {
     pub old_peer_configuration: ResourceSubscriptionChannel<OldPeerConfiguration>,
     pub peer_configuration: ResourceSubscriptionChannel<PeerConfiguration>,
     pub peer_descriptor: ResourceSubscriptionChannel<PeerDescriptor>,
-    pub peer_state: ResourceSubscriptionChannel<PeerState>,
     pub peer_connection_state: ResourceSubscriptionChannel<PeerConnectionState>,
 }
 impl ResourceSubscriptionChannels {
@@ -84,7 +82,6 @@ impl Default for ResourceSubscriptionChannels {
         let old_peer_configuration = broadcast::channel(capacity);
         let peer_configuration = broadcast::channel(capacity);
         let peer_descriptor = broadcast::channel(capacity);
-        let peer_state = broadcast::channel(capacity);
         let peer_connection_state = broadcast::channel(capacity);
 
         Self {
@@ -93,7 +90,6 @@ impl Default for ResourceSubscriptionChannels {
             old_peer_configuration,
             peer_configuration,
             peer_descriptor,
-            peer_state,
             peer_connection_state,
         }
     }
@@ -104,7 +100,7 @@ impl Default for ResourceSubscriptionChannels {
 mod tests {
     use super::*;
     use crate::resources::manager::ResourcesManager;
-    use opendut_types::peer::state::{PeerMemberState, PeerConnectionState};
+    use opendut_types::peer::state::PeerConnectionState;
     use opendut_types::peer::PeerId;
     use std::net::IpAddr;
     use std::str::FromStr;
@@ -120,11 +116,11 @@ mod tests {
         let id = PeerId::random();
         let timeout_duration = Duration::from_secs(10);
 
-        let value = PeerState { connection: PeerConnectionState::Offline, member: PeerMemberState::Available };
+        let value = PeerConnectionState::Offline;
         resources_manager.insert(id, value.clone()).await?;
         assert_eq!(timeout(timeout_duration, subscription.receive()).await??, SubscriptionEvent::Inserted { id, value });
 
-        let value = PeerState { connection: PeerConnectionState::Online { remote_host: IpAddr::from_str("127.0.0.1")? } , member: PeerMemberState::Available };
+        let value = PeerConnectionState::Online { remote_host: IpAddr::from_str("127.0.0.1")? };
         resources_manager.insert(id, value.clone()).await?;
         assert_eq!(timeout(timeout_duration, subscription.receive()).await??, SubscriptionEvent::Inserted { id, value });
 

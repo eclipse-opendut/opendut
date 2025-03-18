@@ -1,6 +1,6 @@
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
 use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
-use opendut_types::peer::state::{PeerConnectionState, PeerState};
+use opendut_types::peer::state::PeerConnectionState;
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::resources::Id;
 
@@ -22,11 +22,6 @@ impl IntoId<ClusterDeployment> for ClusterId {
     }
 }
 impl IntoId<PeerDescriptor> for PeerId {
-    fn into_id(self) -> Id {
-        Id::from(self.uuid)
-    }
-}
-impl IntoId<PeerState> for PeerId {
     fn into_id(self) -> Id {
         Id::from(self.uuid)
     }

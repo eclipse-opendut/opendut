@@ -8,7 +8,6 @@ pub mod cluster_deployment;
 pub mod old_peer_configuration;
 pub mod peer_configuration;
 pub mod peer_descriptor;
-pub mod peer_state;
 mod peer_connection_state;
 
 pub trait Persistable: Send + Sync + Sized + Debug + Resource {
