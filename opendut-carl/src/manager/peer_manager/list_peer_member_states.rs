@@ -1,14 +1,13 @@
-use std::collections::HashMap;
-use opendut_types::cluster::ClusterId;
-use opendut_types::peer::{PeerDescriptor, PeerId};
-use opendut_types::peer::state::PeerMemberState;
-use opendut_types::topology::DeviceId;
-use crate::actions;
-use crate::actions::clusters::list_deployed_clusters::ListDeployedClustersError;
-use crate::actions::ListDeployedClustersParams;
-use crate::resource::persistence::error::{PersistenceError, PersistenceResult};
 use crate::resource::manager::ResourceManagerRef;
+use crate::resource::persistence::error::{PersistenceError, PersistenceResult};
 use crate::resource::storage::ResourcesStorageApi;
+use opendut_types::cluster::ClusterId;
+use opendut_types::peer::state::PeerMemberState;
+use opendut_types::peer::{PeerDescriptor, PeerId};
+use opendut_types::topology::DeviceId;
+use std::collections::HashMap;
+use crate::manager::cluster_manager;
+use crate::manager::cluster_manager::{ListDeployedClustersError, ListDeployedClustersParams};
 
 pub struct ListPeerMemberStatesParams {
     pub resource_manager: ResourceManagerRef,
@@ -24,7 +23,7 @@ pub enum DetermineBlockedPeersError {
 
 pub async fn list_peer_member_states(params: ListPeerMemberStatesParams) -> Result<HashMap<PeerId, PeerMemberState>, DetermineBlockedPeersError> {
     let ListPeerMemberStatesParams { resource_manager } = params;
-    let deployed_clusters = actions::list_deployed_clusters(ListDeployedClustersParams { resource_manager: resource_manager.clone() })
+    let deployed_clusters = cluster_manager::list_deployed_clusters(ListDeployedClustersParams { resource_manager: resource_manager.clone() })
         .await.map_err(|source| DetermineBlockedPeersError::ListDeployedClusters { source })?;
 
     let deployed_devices = deployed_clusters.into_iter()
@@ -76,12 +75,12 @@ struct ClusterDevice {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use crate::manager::testing::ClusterFixture;
+    use crate::resource::manager::ResourceManager;
+    use opendut_types::cluster::ClusterDeployment;
     use std::collections::HashSet;
     use std::ops::Not;
-    use opendut_types::cluster::ClusterDeployment;
-    use crate::actions::clusters::testing::ClusterFixture;
-    use crate::resource::manager::ResourceManager;
-    use super::*;
 
     #[tokio::test]
     async fn test_list_blocked_peers() -> anyhow::Result<()> {

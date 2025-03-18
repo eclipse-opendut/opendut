@@ -101,7 +101,6 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::actions::testing::PeerFixture;
     use crate::manager::peer_messaging_broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
     use crate::resource::manager::ResourceManager;
     use googletest::prelude::*;
@@ -113,6 +112,7 @@ mod tests {
     use std::str::FromStr;
     use std::sync::Arc;
     use opendut_carl_api::carl::broker::stream_header;
+    use crate::manager::testing::PeerFixture;
 
     #[tokio::test]
     async fn should_update_peer_configuration() -> anyhow::Result<()> {

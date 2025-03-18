@@ -40,13 +40,13 @@ pub async fn list_devices(params: ListDevicesParams) -> Result<Vec<DeviceDescrip
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::actions;
-    use crate::actions::StorePeerDescriptorParams;
+    use crate::manager::testing::PeerFixture;
     use crate::resource::manager::ResourceManager;
+    use crate::settings::vpn::Vpn;
     use googletest::prelude::*;
     use std::sync::Arc;
-    use crate::actions::testing::PeerFixture;
-    use crate::settings::vpn::Vpn;
+    use crate::manager::peer_manager;
+    use crate::manager::peer_manager::StorePeerDescriptorParams;
 
     #[tokio::test]
     async fn should_list_all_devices() -> anyhow::Result<()> {
@@ -60,7 +60,7 @@ mod tests {
         assert!(result.is_empty());
 
 
-        actions::store_peer_descriptor(StorePeerDescriptorParams {
+        peer_manager::store_peer_descriptor(StorePeerDescriptorParams {
             resource_manager: Arc::clone(&resource_manager),
             vpn: Vpn::Disabled,
             peer_descriptor: peer.descriptor,

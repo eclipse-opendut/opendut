@@ -39,7 +39,7 @@ pub async fn create_cluster_configuration(params: CreateClusterConfigurationPara
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;
-    use crate::actions::clusters::testing::ClusterFixture;
+    use crate::manager::testing::ClusterFixture;
     use super::*;
 
     /// Our data model does not match well with RDBMS, since we send full models to the backend, whereas RDBMSs work with diffs.

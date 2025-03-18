@@ -1,10 +1,10 @@
+use crate::manager::peer_manager;
+use crate::manager::peer_manager::ListPeerMemberStatesParams;
 use crate::resource::manager::ResourceManagerRef;
 use opendut_carl_api::carl::peer::GetPeerStateError;
 use opendut_types::peer::state::{PeerConnectionState, PeerState};
-use opendut_types::peer::{PeerId};
+use opendut_types::peer::PeerId;
 use tracing::{debug, error, info};
-use crate::actions;
-use crate::actions::ListPeerMemberStatesParams;
 
 pub struct GetPeerStateParams {
     pub peer: PeerId,
@@ -20,7 +20,7 @@ pub async fn get_peer_state(params: GetPeerStateParams) -> Result<PeerState, Get
         let resource_manager = params.resource_manager;
 
         debug!("Querying state of peer with peer_id <{}>.", peer_id);
-        let peer_member_states = actions::list_peer_member_states(ListPeerMemberStatesParams { resource_manager: resource_manager.clone() }).await
+        let peer_member_states = peer_manager::list_peer_member_states(ListPeerMemberStatesParams { resource_manager: resource_manager.clone() }).await
             .map_err(|cause| GetPeerStateError::Internal { peer_id, cause: cause.to_string() })?;  // only persistence error possible
         let peer_member_state = peer_member_states.get(&peer_id);
 
@@ -48,16 +48,16 @@ pub async fn get_peer_state(params: GetPeerStateParams) -> Result<PeerState, Get
 
 #[cfg(test)]
 mod tests {
-    use crate::actions;
-    use crate::actions::{get_peer_state, GetPeerStateParams, StorePeerDescriptorParams};
+    use super::*;
+    use crate::manager::peer_manager::{GetPeerStateParams, StorePeerDescriptorParams};
+    use crate::manager::testing::PeerFixture;
     use crate::resource::manager::{ResourceManager, ResourceManagerRef};
+    use crate::settings::vpn::Vpn;
     use googletest::prelude::*;
     use opendut_carl_api::carl::peer::GetPeerStateError;
     use opendut_types::peer::state::{PeerConnectionState, PeerMemberState, PeerState};
     use opendut_types::peer::{PeerDescriptor, PeerId};
     use std::sync::Arc;
-    use crate::actions::testing::PeerFixture;
-    use crate::settings::vpn::Vpn;
 
     #[tokio::test]
     async fn should_get_peer_state_down_in_memory() -> anyhow::Result<()> {
@@ -74,13 +74,13 @@ mod tests {
 
     async fn should_get_peer_state(resource_manager: ResourceManagerRef) -> anyhow::Result<()> {
         let peer = PeerFixture::new();
-        actions::store_peer_descriptor(StorePeerDescriptorParams {
+        peer_manager::store_peer_descriptor(StorePeerDescriptorParams {
             resource_manager: Arc::clone(&resource_manager),
             vpn: Vpn::Disabled,
             peer_descriptor: peer.descriptor,
         }).await?;
 
-        let peer_state = get_peer_state(GetPeerStateParams {
+        let peer_state = peer_manager::get_peer_state(GetPeerStateParams {
             peer: peer.id,
             resource_manager: Clone::clone(&resource_manager),
         }).await?;
@@ -105,7 +105,7 @@ mod tests {
     async fn should_throw_error_if_peer_not_found(resource_manager: ResourceManagerRef) -> anyhow::Result<()> {
         let peer = PeerFixture::new();
 
-        actions::store_peer_descriptor(StorePeerDescriptorParams {
+        peer_manager::store_peer_descriptor(StorePeerDescriptorParams {
             resource_manager: Arc::clone(&resource_manager),
             vpn: Vpn::Disabled,
             peer_descriptor: peer.descriptor,
@@ -114,7 +114,7 @@ mod tests {
         let not_existing_peer_id = PeerId::random();
         assert_that!(resource_manager.get::<PeerDescriptor>(not_existing_peer_id).await?.as_ref(), none());
 
-        let peer_state_result = get_peer_state(GetPeerStateParams {
+        let peer_state_result = peer_manager::get_peer_state(GetPeerStateParams {
             peer: not_existing_peer_id,
             resource_manager: Clone::clone(&resource_manager),
         }).await;

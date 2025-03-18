@@ -1,5 +1,5 @@
-use crate::resource::persistence::error::PersistenceError;
 use crate::resource::manager::ResourceManagerRef;
+use crate::resource::persistence::error::PersistenceError;
 use crate::settings::vpn::Vpn;
 use opendut_carl_api::carl::peer::StorePeerDescriptorError;
 use opendut_types::peer::{PeerDescriptor, PeerId};
@@ -67,6 +67,7 @@ pub async fn store_peer_descriptor(params: StorePeerDescriptorParams) -> Result<
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::manager::testing::PeerFixture;
     use crate::resource::manager::ResourceManager;
     use googletest::prelude::*;
     use opendut_types::peer::PeerNetworkDescriptor;
@@ -74,7 +75,6 @@ mod tests {
     use opendut_types::topology::{DeviceDescription, DeviceId, DeviceName, Topology};
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
     use std::sync::Arc;
-    use crate::actions::testing::PeerFixture;
 
     #[tokio::test]
     async fn should_update_expected_resources_in_memory() -> anyhow::Result<()> {

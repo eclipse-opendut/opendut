@@ -7,9 +7,8 @@ use opendut_carl_api::proto::services::cluster_manager::*;
 use opendut_carl_api::proto::services::cluster_manager::cluster_manager_server::{ClusterManager as ClusterManagerService, ClusterManagerServer};
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
 
-use crate::actions;
-use crate::actions::{CreateClusterConfigurationParams, DeleteClusterConfigurationParams};
-use crate::manager::cluster_manager::ClusterManagerRef;
+use crate::manager::cluster_manager;
+use crate::manager::cluster_manager::{ClusterManagerRef, CreateClusterConfigurationParams, DeleteClusterConfigurationParams};
 use crate::manager::grpc::extract;
 use crate::resource::manager::ResourceManagerRef;
 
@@ -42,7 +41,7 @@ impl ClusterManagerService for ClusterManagerFacade {
 
         trace!("Received request to create cluster configuration: {cluster_configuration:?}");
 
-        let result = actions::create_cluster_configuration(CreateClusterConfigurationParams {
+        let result = cluster_manager::create_cluster_configuration(CreateClusterConfigurationParams {
             resource_manager: Arc::clone(&self.resource_manager),
             cluster_configuration,
         }).await;
@@ -73,7 +72,7 @@ impl ClusterManagerService for ClusterManagerFacade {
         trace!("Received request to delete cluster configuration for cluster <{cluster_id}>.");
 
         let result =
-            actions::delete_cluster_configuration(DeleteClusterConfigurationParams {
+            cluster_manager::delete_cluster_configuration(DeleteClusterConfigurationParams {
                 resource_manager: Arc::clone(&self.resource_manager),
                 cluster_id,
             }).await;
@@ -103,7 +102,7 @@ impl ClusterManagerService for ClusterManagerFacade {
 
         trace!("Received request to get cluster configuration for cluster <{cluster_id}>.");
 
-        let configuration = self.cluster_manager.lock().await.get_configuration(cluster_id).await
+        let configuration = self.cluster_manager.lock().await.get_cluster_configuration(cluster_id).await
             .map_err(|cause| Status::internal(cause.to_string()))?;
 
         match configuration {
@@ -129,7 +128,7 @@ impl ClusterManagerService for ClusterManagerFacade {
     async fn list_cluster_configurations(&self, _: Request<ListClusterConfigurationsRequest>) -> Result<Response<ListClusterConfigurationsResponse>, Status> {
         trace!("Received request to list cluster configurations.");
 
-        let configurations = self.cluster_manager.lock().await.list_configuration().await
+        let configurations = self.cluster_manager.lock().await.list_cluster_configuration().await
             .map_err(|cause| Status::internal(cause.to_string()))?;
 
         Ok(Response::new(ListClusterConfigurationsResponse {
@@ -204,7 +203,7 @@ impl ClusterManagerService for ClusterManagerFacade {
 
         trace!("Received request to get cluster deployment for cluster <{cluster_id}>.");
 
-        let deployment = self.cluster_manager.lock().await.get_deployment(cluster_id).await
+        let deployment = self.cluster_manager.lock().await.get_cluster_deployment(cluster_id).await
             .map_err(|cause| Status::internal(cause.to_string()))?;
 
         match deployment {
@@ -227,7 +226,7 @@ impl ClusterManagerService for ClusterManagerFacade {
     async fn list_cluster_deployments(&self, _: Request<ListClusterDeploymentsRequest>) -> Result<Response<ListClusterDeploymentsResponse>, Status> {
         trace!("Received request to list cluster deployments.");
 
-        let deployments = self.cluster_manager.lock().await.list_deployment().await
+        let deployments = self.cluster_manager.lock().await.list_cluster_deployment().await
             .map_err(|cause| Status::internal(cause.to_string()))?;
 
         Ok(Response::new(ListClusterDeploymentsResponse {

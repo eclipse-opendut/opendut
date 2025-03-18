@@ -47,7 +47,7 @@ pub async fn delete_cluster_configuration(params: DeleteClusterConfigurationPara
 
 #[cfg(test)]
 mod tests {
-    use crate::actions::clusters::testing::ClusterFixture;
+    use crate::manager::testing::ClusterFixture;
     use crate::resource::manager::ResourceManager;
     use super::*;
 

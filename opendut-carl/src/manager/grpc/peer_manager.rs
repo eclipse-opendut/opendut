@@ -8,15 +8,16 @@ use url::Url;
 use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_auth::registration::resources::UserId;
 use opendut_carl_api::carl::peer::{GetPeerDescriptorError, GetPeerStateError, ListPeerStatesError};
-use opendut_carl_api::proto::services::peer_manager;
+use opendut_carl_api::proto;
+use opendut_carl_api::proto::services;
 use opendut_carl_api::proto::services::peer_manager::*;
 use opendut_carl_api::proto::services::peer_manager::peer_manager_server::{PeerManager as PeerManagerService, PeerManagerServer};
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::cleo::{CleoId};
 
-use crate::actions;
-use crate::actions::{DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, GetPeerStateParams, ListDevicesParams, ListPeerDescriptorsParams, ListPeerStatesParams, StorePeerDescriptorParams};
 use crate::manager::grpc::extract;
+use crate::manager::peer_manager;
+use crate::manager::peer_manager::{DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, GetPeerStateParams, ListDevicesParams, ListPeerDescriptorsParams, ListPeerStatesParams, StorePeerDescriptorParams};
 use crate::resource::manager::ResourceManagerRef;
 use crate::settings::vpn::Vpn;
 
@@ -62,7 +63,7 @@ impl PeerManagerService for PeerManagerFacade {
 
         trace!("Received request to store peer descriptor: {peer_descriptor:?}");
 
-        let result = actions::store_peer_descriptor(StorePeerDescriptorParams {
+        let result = peer_manager::store_peer_descriptor(StorePeerDescriptorParams {
             resource_manager: Arc::clone(&self.resource_manager),
             vpn: Clone::clone(&self.vpn),
             peer_descriptor: Clone::clone(&peer_descriptor),
@@ -95,7 +96,7 @@ impl PeerManagerService for PeerManagerFacade {
         trace!("Received request to delete peer descriptor for peer <{peer_id}>.");
 
         let result =
-            actions::delete_peer_descriptor(DeletePeerDescriptorParams {
+            peer_manager::delete_peer_descriptor(DeletePeerDescriptorParams {
                 resource_manager: Arc::clone(&self.resource_manager),
                 vpn: Clone::clone(&self.vpn),
                 peer: peer_id,
@@ -110,7 +111,7 @@ impl PeerManagerService for PeerManagerFacade {
             }
             Ok(peer) => {
                 Ok(Response::new(DeletePeerDescriptorResponse {
-                    reply: Some(peer_manager::delete_peer_descriptor_response::Reply::Success(
+                    reply: Some(proto::services::peer_manager::delete_peer_descriptor_response::Reply::Success(
                         DeletePeerDescriptorSuccess {
                             peer_id: Some(peer.id.into())
                         }
@@ -129,7 +130,7 @@ impl PeerManagerService for PeerManagerFacade {
         trace!("Received request to get peer descriptor for peer <{peer_id}>.");
 
         let result =
-            actions::list_peer_descriptors(ListPeerDescriptorsParams {
+            peer_manager::list_peer_descriptors(ListPeerDescriptorsParams { //TODO use get::<PeerDescriptor>
                 resource_manager: Arc::clone(&self.resource_manager),
             }).await
             .map_err(|error| GetPeerDescriptorError::Internal { peer_id, cause: error.to_string() })
@@ -163,7 +164,7 @@ impl PeerManagerService for PeerManagerFacade {
         trace!("Received request to list peer descriptors.");
 
         let result =
-            actions::list_peer_descriptors(ListPeerDescriptorsParams {
+            peer_manager::list_peer_descriptors(ListPeerDescriptorsParams {
                 resource_manager: Arc::clone(&self.resource_manager),
             }).await
             .map(|peers| peers.into_iter()
@@ -198,7 +199,7 @@ impl PeerManagerService for PeerManagerFacade {
         trace!("Received request to get peer state for peer <{peer_id}>.");
 
         let result =
-            actions::get_peer_state(GetPeerStateParams {
+            peer_manager::get_peer_state(GetPeerStateParams {
                 peer: peer_id,
                 resource_manager: Arc::clone(&self.resource_manager),
             }).await
@@ -228,7 +229,7 @@ impl PeerManagerService for PeerManagerFacade {
         trace!("Received request to list peer states.");
 
         let result =
-            actions::list_peer_states(ListPeerStatesParams {
+            peer_manager::list_peer_states(ListPeerStatesParams {
                 resource_manager: Arc::clone(&self.resource_manager),
             }).await
                 .map_err(|error| ListPeerStatesError::Internal { cause: error.to_string() });
@@ -261,7 +262,7 @@ impl PeerManagerService for PeerManagerFacade {
 
         trace!("Received request to list devices.");
 
-        let devices = actions::list_devices(ListDevicesParams {
+        let devices = peer_manager::list_devices(ListDevicesParams {
             resource_manager: Arc::clone(&self.resource_manager),
         }).await.expect("Devices should be listable");
 
@@ -280,7 +281,7 @@ impl PeerManagerService for PeerManagerFacade {
         let peer_id: PeerId = extract!(request.peer)?;
         let user_id = UserId { value: request.user_id };
 
-        let setup = actions::generate_peer_setup(GeneratePeerSetupParams {
+        let setup = peer_manager::generate_peer_setup(GeneratePeerSetupParams {
             resource_manager: Arc::clone(&self.resource_manager),
             peer: peer_id,
             carl_url: Clone::clone(&self.carl_url),
@@ -290,7 +291,7 @@ impl PeerManagerService for PeerManagerFacade {
             user_id,
         }).await.map_err(|cause| Status::internal(format!("Peer setup could not be created: {}", cause)))?;
 
-        let response = peer_manager::generate_peer_setup_response::Reply::Success(peer_manager::GeneratePeerSetupSuccess {
+        let response = services::peer_manager::generate_peer_setup_response::Reply::Success(services::peer_manager::GeneratePeerSetupSuccess {
             peer: Some(peer_id.into()),
             setup: Some(setup.into()),
         });
@@ -305,7 +306,7 @@ impl PeerManagerService for PeerManagerFacade {
         let request = request.into_inner();
         
         let cleo_id = CleoId::random();
-        let setup = actions::generate_cleo_setup(GenerateCleoSetupParams {
+        let setup = peer_manager::generate_cleo_setup(GenerateCleoSetupParams {
             cleo: cleo_id,
             carl_url: Clone::clone(&self.carl_url),
             ca: Clone::clone(&self.ca),
@@ -343,7 +344,7 @@ mod tests {
     use opendut_types::topology::Topology;
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
     use opendut_auth_tests::registration_client;
-
+    use opendut_carl_api::proto::services;
     use crate::resource::manager::ResourceManager;
     use crate::settings::vpn::Vpn;
 
@@ -418,7 +419,7 @@ mod tests {
             create_peer_reply.get_ref().reply,
             some(matches_pattern!(
                 store_peer_descriptor_response::Reply::Success(
-                    matches_pattern!(peer_manager::StorePeerDescriptorSuccess {
+                    matches_pattern!(services::peer_manager::StorePeerDescriptorSuccess {
                         peer_id: some(eq(&proto::peer::PeerId::from(Clone::clone(&peer_id))))
                     })
                 )
@@ -439,13 +440,13 @@ mod tests {
         )?;
 
         let _ = testee.delete_peer_descriptor(Request::new(
-            peer_manager::DeletePeerDescriptorRequest {
+            services::peer_manager::DeletePeerDescriptorRequest {
                 peer_id: Some(peer_id.into()),
             }
         )).await?;
 
         let list_reply = testee.list_peer_descriptors(Request::new(
-            peer_manager::ListPeerDescriptorsRequest {}
+            services::peer_manager::ListPeerDescriptorsRequest {}
         )).await?;
 
         verify_that!(list_reply.get_ref().reply,
@@ -484,7 +485,7 @@ mod tests {
         )?;
 
         let list_reply = testee.list_peer_descriptors(Request::new(
-            peer_manager::ListPeerDescriptorsRequest {}
+            services::peer_manager::ListPeerDescriptorsRequest {}
         )).await?;
 
         verify_that!(
@@ -513,7 +514,7 @@ mod tests {
         );
 
         let delete_peer_reply = testee.delete_peer_descriptor(Request::new(
-            peer_manager::DeletePeerDescriptorRequest {
+            services::peer_manager::DeletePeerDescriptorRequest {
                 peer_id: None,
             }
         )).await;
@@ -524,7 +525,7 @@ mod tests {
         )?;
 
         let list_reply = testee.list_peer_descriptors(Request::new(
-            peer_manager::ListPeerDescriptorsRequest {}
+            services::peer_manager::ListPeerDescriptorsRequest {}
         )).await?;
 
         verify_that!(

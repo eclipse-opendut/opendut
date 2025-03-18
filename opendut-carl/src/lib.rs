@@ -25,7 +25,6 @@ use crate::startup::tls::TlsConfig;
 
 shadow_rs::shadow!(app_info);
 
-mod actions;
 mod auth;
 mod http;
 mod manager;
