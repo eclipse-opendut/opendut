@@ -1,7 +1,7 @@
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::Storage;
-use crate::resource::resource::Resource;
 use std::fmt::Debug;
+use crate::resource::api::Resource;
 
 pub mod cluster_configuration;
 pub mod cluster_deployment;

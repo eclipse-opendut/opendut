@@ -1,9 +1,9 @@
+use crate::resource::manager::{ResourceManager, ResourceManagerRef};
 use crate::resource::persistence::database;
 use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
 use opendut_types::peer::PeerId;
 use opendut_types::topology::DeviceId;
 use std::collections::HashSet;
-use crate::resource::manager::{ResourceManager, ResourceManagerRef};
 
 #[tokio::test]
 async fn should_persist_cluster_configuration_in_memory() -> anyhow::Result<()> {

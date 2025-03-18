@@ -1,11 +1,11 @@
-use std::any::Any;
-use std::fmt::Debug;
-
+use crate::resource::api::id::IntoId;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
 use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
 use opendut_types::peer::state::PeerConnectionState;
 use opendut_types::peer::{PeerDescriptor, PeerId};
-use crate::resource::ids::IntoId;
+use std::any::Any;
+use std::fmt::Debug;
+
 
 pub trait Resource: Any + Send + Sync + Debug + Clone {
     type Id: IntoId<Self> + Clone + Debug;

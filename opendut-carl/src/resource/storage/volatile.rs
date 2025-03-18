@@ -3,13 +3,13 @@ use std::collections::HashMap;
 
 use opendut_types::resources::Id;
 
+use crate::resource::api::id::IntoId;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::resources::Persistable;
-use crate::resource::ids::IntoId;
 use crate::resource::storage::ResourcesStorageApi;
-use crate::resource::Resource;
 use crate::resource::subscription::Subscribable;
-use crate::resource::transaction::RelayedSubscriptionEvents;
+use crate::resource::api::transaction::RelayedSubscriptionEvents;
+use crate::resource::api::Resource;
 
 #[derive(Default)]
 pub struct VolatileResourcesStorage {

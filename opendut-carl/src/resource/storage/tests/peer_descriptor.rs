@@ -4,8 +4,8 @@ use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNe
 use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag, Topology};
 use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
-use crate::resource::persistence::database;
 use crate::resource::manager::{ResourceManager, ResourceManagerRef};
+use crate::resource::persistence::database;
 
 #[tokio::test]
 async fn should_persist_peer_descriptor_in_memory() -> anyhow::Result<()> {

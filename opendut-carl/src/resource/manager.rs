@@ -2,12 +2,12 @@ pub use crate::resource::subscription::SubscriptionEvent;
 
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::resources::Persistable;
-use crate::resource::storage::{PersistenceOptions, ResourcesStorageApi};
+use crate::resource::storage::{self, PersistenceOptions, ResourcesStorageApi};
 use crate::resource::subscription::{ResourceSubscriptionChannels, Subscribable, Subscription};
-use crate::resource::transaction::RelayedSubscriptionEvents;
-use crate::resource::{storage, Resource, Resources, ResourcesTransaction};
+use crate::resource::api::transaction::{RelayedSubscriptionEvents, ResourcesTransaction};
 use std::sync::Arc;
 use tokio::sync::{RwLock, RwLockWriteGuard};
+use crate::resource::api::{Resource, Resources};
 
 pub type ResourceManagerRef = Arc<ResourceManager>;
 

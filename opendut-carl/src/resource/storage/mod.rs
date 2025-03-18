@@ -5,8 +5,8 @@ use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::resources::Persistable;
 use crate::resource::storage::persistent::PersistentResourcesStorage;
 use crate::resource::storage::volatile::VolatileResourcesStorage;
-use crate::resource::Resource;
 use crate::resource::subscription::Subscribable;
+use crate::resource::api::Resource;
 
 pub mod volatile;
 pub mod persistent;

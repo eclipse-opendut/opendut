@@ -1,9 +1,9 @@
-use opendut_types::peer::PeerId;
-use opendut_types::peer::state::PeerConnectionState;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::resources::Persistable;
 use crate::resource::persistence::Storage;
 use crate::resource::storage::ResourcesStorageApi;
+use opendut_types::peer::state::PeerConnectionState;
+use opendut_types::peer::PeerId;
 
 impl Persistable for PeerConnectionState {
     fn insert(self, id: PeerId, storage: &mut Storage) -> PersistenceResult<()> {

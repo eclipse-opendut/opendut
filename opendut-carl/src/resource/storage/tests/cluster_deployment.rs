@@ -1,7 +1,7 @@
+use crate::resource::manager::{ResourceManager, ResourceManagerRef};
+use crate::resource::persistence::database;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment};
 use opendut_types::peer::PeerDescriptor;
-use crate::resource::persistence::database;
-use crate::resource::manager::{ResourceManager, ResourceManagerRef};
 
 #[tokio::test]
 async fn should_persist_cluster_deployment_in_memory() -> anyhow::Result<()> {

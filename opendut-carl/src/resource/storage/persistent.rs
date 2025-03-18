@@ -1,3 +1,4 @@
+use crate::resource::api::transaction::RelayedSubscriptionEvents;
 use crate::resource::persistence::database::ConnectError;
 use crate::resource::persistence::error::{PersistenceError, PersistenceResult};
 use crate::resource::persistence::resources::Persistable;
@@ -7,7 +8,6 @@ use crate::resource::storage::{DatabaseConnectInfo, Resource, ResourcesStorageAp
 use diesel::{Connection, PgConnection};
 use std::any::Any;
 use std::sync::Mutex;
-use crate::resource::transaction::RelayedSubscriptionEvents;
 
 pub struct PersistentResourcesStorage {
     db_connection: Mutex<PgConnection>,

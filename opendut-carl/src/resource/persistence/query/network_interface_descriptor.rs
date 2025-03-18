@@ -6,8 +6,8 @@ use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, Ne
 
 use crate::resource::persistence::database::schema;
 use crate::resource::persistence::error::{PersistenceError, PersistenceOperation, PersistenceResult};
-use crate::resource::persistence::query::Filter;
 use crate::resource::persistence::query::types::network_interface_kind::PersistableNetworkInterfaceKind;
+use crate::resource::persistence::query::Filter;
 
 #[derive(diesel::Queryable, diesel::Selectable, diesel::Insertable, diesel::AsChangeset)]
 #[diesel(table_name = schema::network_interface_descriptor)]

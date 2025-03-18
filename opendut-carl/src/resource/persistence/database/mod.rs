@@ -1,8 +1,8 @@
+use crate::resource::storage::DatabaseConnectInfo;
 use backon::Retryable;
 use diesel::{Connection as _, ConnectionError, PgConnection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use tracing::{debug, info, warn};
-use crate::resource::storage::DatabaseConnectInfo;
 
 pub mod schema;
 
@@ -78,13 +78,13 @@ pub enum ConnectError {
 
 #[cfg(any(test, doc))] //needed for doctests to compile
 pub mod testing {
+    use crate::resource::manager::{ResourceManager, ResourceManagerRef};
     use crate::resource::persistence::database;
+    use crate::resource::storage::{DatabaseConnectInfo, Password, PersistenceOptions};
     use diesel::{Connection, PgConnection};
     use testcontainers_modules::testcontainers::ContainerAsync;
     use testcontainers_modules::{postgres, testcontainers::runners::AsyncRunner};
     use url::Url;
-    use crate::resource::manager::{ResourceManager, ResourceManagerRef};
-    use crate::resource::storage::{DatabaseConnectInfo, Password, PersistenceOptions};
 
     /// Spawns a Postgres Container and returns a connection for testing.
     /// ```no_run
