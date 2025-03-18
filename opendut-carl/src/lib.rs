@@ -23,7 +23,6 @@ use crate::auth::json_web_key::JwkCacheValue;
 use crate::http::state::CarlInstallDirectory;
 use crate::startup::tls::TlsConfig;
 
-pub mod grpc;
 shadow_rs::shadow!(app_info);
 
 mod actions;

@@ -36,7 +36,7 @@ where
 
 macro_rules! extract {
     ($spec:expr) => {
-        crate::grpc::ExtractOrInvalidArgument::extract_or_invalid_argument($spec, stringify!($spec))
+        crate::manager::grpc::ExtractOrInvalidArgument::extract_or_invalid_argument($spec, stringify!($spec))
     };
 }
 

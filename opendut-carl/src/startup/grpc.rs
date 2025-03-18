@@ -4,7 +4,7 @@ use config::Config;
 use pem::Pem;
 use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_auth::registration::resources::ResourceHomeUrl;
-use crate::grpc::{ClusterManagerFacade, MetadataProviderFacade, PeerManagerFacade, PeerMessagingBrokerFacade};
+use crate::manager::grpc::{ClusterManagerFacade, MetadataProviderFacade, PeerManagerFacade, PeerMessagingBrokerFacade};
 use crate::resource::manager::ResourceManager;
 use crate::resource::storage::PersistenceOptions;
 use crate::startup;

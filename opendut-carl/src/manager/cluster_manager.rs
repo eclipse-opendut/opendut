@@ -36,12 +36,6 @@ pub enum DeployClusterError {
         cluster_id: ClusterId,
         cluster_name: ClusterName,
     },
-    #[error("Peer designated as leader <{leader_id}> of cluster '{cluster_name}' <{cluster_id}> not found.")]
-    LeaderNotFound {
-        leader_id: PeerId,
-        cluster_id: ClusterId,
-        cluster_name: ClusterName,
-    },
     #[error("An error occurred while deploying cluster <{cluster_id}>:\n  {cause}")]
     Internal {
         cluster_id: ClusterId,
@@ -153,6 +147,7 @@ impl ClusterManager {
         actions::delete_cluster_deployment(delete_cluster_deployment_params).await
     }
 
+    #[tracing::instrument(skip(self), level="trace")]
     pub async fn get_deployment(&self, cluster_id: ClusterId) -> Result<Option<ClusterDeployment>, GetClusterDeploymentError> {
         self.resource_manager.resources(|resources| {
             resources.get::<ClusterDeployment>(cluster_id)

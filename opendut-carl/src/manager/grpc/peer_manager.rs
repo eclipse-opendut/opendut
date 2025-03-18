@@ -16,7 +16,7 @@ use opendut_types::cleo::{CleoId};
 
 use crate::actions;
 use crate::actions::{DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, GetPeerStateParams, ListDevicesParams, ListPeerDescriptorsParams, ListPeerStatesParams, StorePeerDescriptorParams};
-use crate::grpc::extract;
+use crate::manager::grpc::extract;
 use crate::resource::manager::ResourceManagerRef;
 use crate::settings::vpn::Vpn;
 
@@ -356,7 +356,7 @@ mod tests {
         }
     }
 
-    const CERTIFICATE_AUTHORITY_STRING: &str = include_str!("../../../resources/development/tls/insecure-development-ca.pem");
+    const CERTIFICATE_AUTHORITY_STRING: &str = include_str!("../../../../resources/development/tls/insecure-development-ca.pem");
 
     #[rstest]
     #[tokio::test]

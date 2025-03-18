@@ -10,7 +10,7 @@ use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId}
 use crate::actions;
 use crate::actions::{CreateClusterConfigurationParams, DeleteClusterConfigurationParams};
 use crate::manager::cluster_manager::ClusterManagerRef;
-use crate::grpc::extract;
+use crate::manager::grpc::extract;
 use crate::resource::manager::ResourceManagerRef;
 
 pub struct ClusterManagerFacade {

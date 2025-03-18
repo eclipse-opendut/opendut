@@ -235,8 +235,6 @@ pub enum Error {
     DownstreamSend(SendError<Downstream>),
     #[error("PeerNotFound Error: {0}")]
     PeerNotFound(PeerId),
-    #[error("Other Error: {message}")]
-    Other { message: String },
 }
 
 #[derive(Debug, thiserror::Error)]
