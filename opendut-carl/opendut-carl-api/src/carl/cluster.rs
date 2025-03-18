@@ -24,8 +24,11 @@ pub enum CreateClusterConfigurationError {
     }
 }
 
-#[derive(thiserror::Error, Debug)]
+#[derive(thiserror::Error, Debug, PartialEq)]
 pub enum DeleteClusterConfigurationError {
+    ClusterDeploymentFound {
+        cluster_id: ClusterId
+    },
     ClusterConfigurationNotFound {
         cluster_id: ClusterId
     },
@@ -58,6 +61,9 @@ impl Display for DeleteClusterConfigurationError {
                     None => String::new(),
                 };
                 writeln!(f, "ClusterConfiguration '{cluster_name}' <{cluster_id}> deleted with internal errors:\n  {cause}")
+            }
+            DeleteClusterConfigurationError::ClusterDeploymentFound { cluster_id } => {
+                writeln!(f, "ClusterConfiguration <{cluster_id}> could not be deleted, because a ClusterDeployment with that id still exists!")
             }
         }
     }

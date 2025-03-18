@@ -77,6 +77,7 @@ message DeleteClusterConfigurationFailure {
     DeleteClusterConfigurationFailureClusterConfigurationNotFound cluster_configuration_not_found = 1;
     DeleteClusterConfigurationFailureIllegalClusterState illegal_cluster_state = 2;
     DeleteClusterConfigurationFailureInternal internal = 3;
+    DeleteClusterConfigurationFailureClusterDeploymentExists cluster_deployment_exists = 4;
   }
 }
 
@@ -95,6 +96,10 @@ message DeleteClusterConfigurationFailureInternal {
   opendut.types.cluster.ClusterId cluster_id = 1;
   optional opendut.types.cluster.ClusterName cluster_name = 2;
   string cause = 3;
+}
+
+message DeleteClusterConfigurationFailureClusterDeploymentExists {
+  opendut.types.cluster.ClusterId cluster_id = 1;
 }
 
 //

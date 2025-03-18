@@ -107,6 +107,11 @@ impl From<DeleteClusterConfigurationError> for DeleteClusterConfigurationFailure
                     cause
                 })
             }
+            DeleteClusterConfigurationError::ClusterDeploymentFound { cluster_id } => {
+                delete_cluster_configuration_failure::Error::ClusterDeploymentExists(DeleteClusterConfigurationFailureClusterDeploymentExists {
+                    cluster_id: Some(cluster_id.into()),
+                })
+            }
         };
         DeleteClusterConfigurationFailure {
             error: Some(proto_error)
@@ -130,6 +135,9 @@ impl TryFrom<DeleteClusterConfigurationFailure> for DeleteClusterConfigurationEr
             delete_cluster_configuration_failure::Error::Internal(error) => {
                 error.try_into()?
             }
+            delete_cluster_configuration_failure::Error::ClusterDeploymentExists(error) => {
+                error.try_into()?
+            }
         };
         Ok(error)
     }
@@ -143,6 +151,18 @@ impl TryFrom<DeleteClusterConfigurationFailureClusterConfigurationNotFound> for 
             .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
             .try_into()?;
         Ok(DeleteClusterConfigurationError::ClusterConfigurationNotFound { cluster_id })
+    }
+}
+
+impl TryFrom<DeleteClusterConfigurationFailureClusterDeploymentExists> for DeleteClusterConfigurationError {
+    type Error = ConversionError;
+
+    fn try_from(failure: DeleteClusterConfigurationFailureClusterDeploymentExists) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<DeleteClusterConfigurationFailureClusterDeploymentExists, DeleteClusterConfigurationError>;
+        let cluster_id: ClusterId = failure.cluster_id
+            .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
+            .try_into()?;
+        Ok(DeleteClusterConfigurationError::ClusterDeploymentFound { cluster_id })
     }
 }
 
