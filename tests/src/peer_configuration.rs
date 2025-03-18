@@ -17,16 +17,13 @@ use std::str::FromStr;
     tokio::test(flavor = "multi_thread")
 )]
 async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<()> {
-    let fixture = Fixture::new();
+    let fixture = Fixture::create().await?;
+    let carl = fixture.carl;
 
-    let carl_port = util::spawn_carl()?;
+    let peer_a = testing::peer_descriptor::store_peer_descriptor(&carl.client).await?;
 
-    let carl_client = TestCarlClient::connect(carl_port).await?;
-
-    let peer_a = testing::peer_descriptor::store_peer_descriptor(&carl_client).await?;
-
-    let mut receiver_a = util::spawn_edgar_with_peer_configuration_receiver(peer_a.id, carl_port).await?;
-    carl_client.await_peer_up(peer_a.id).await?;
+    let mut receiver_a = util::spawn_edgar_with_peer_configuration_receiver(peer_a.id, carl.port).await?;
+    carl.client.await_peer_up(peer_a.id).await?;
     {
         let (peer_configuration_a, old_peer_configuration_a) = receiver_a.receive_peer_configuration().await?;
         assert_eq!(peer_configuration_a, fixture.empty_peer_configuration);
@@ -34,10 +31,10 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
         receiver_a.expect_no_peer_configuration().await;
     }
 
-    let peer_b = testing::peer_descriptor::store_peer_descriptor(&carl_client).await?;
+    let peer_b = testing::peer_descriptor::store_peer_descriptor(&carl.client).await?;
 
-    let mut receiver_b = util::spawn_edgar_with_peer_configuration_receiver(peer_b.id, carl_port).await?;
-    carl_client.await_peer_up(peer_b.id).await?;
+    let mut receiver_b = util::spawn_edgar_with_peer_configuration_receiver(peer_b.id, carl.port).await?;
+    carl.client.await_peer_up(peer_b.id).await?;
     {
         let (peer_configuration_b, old_peer_configuration_b) = receiver_b.receive_peer_configuration().await?;
         assert_eq!(peer_configuration_b, fixture.empty_peer_configuration);
@@ -47,9 +44,9 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
 
     let cluster_leader = peer_a.id;
     let cluster_devices = peer_a.topology.devices.iter().chain(peer_b.topology.devices.iter());
-    let cluster = store_cluster_configuration(cluster_leader, cluster_devices, &carl_client).await?;
+    let cluster = store_cluster_configuration(cluster_leader, cluster_devices, &carl.client).await?;
 
-    store_cluster_deployment(cluster.id, &carl_client).await?;
+    store_cluster_deployment(cluster.id, &carl.client).await?;
 
     {
         let validate_peer_configuration = |peer_configuration: PeerConfiguration| {
@@ -113,16 +110,13 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
     tokio::test(flavor = "multi_thread")
 )]
 async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_online_later() -> anyhow::Result<()> {
-    let fixture = Fixture::new();
+    let fixture = Fixture::create().await?;
+    let carl = fixture.carl;
 
-    let carl_port = util::spawn_carl()?;
+    let peer_a = testing::peer_descriptor::store_peer_descriptor(&carl.client).await?;
 
-    let carl_client = TestCarlClient::connect(carl_port).await?;
-
-    let peer_a = testing::peer_descriptor::store_peer_descriptor(&carl_client).await?;
-
-    let mut receiver_a = util::spawn_edgar_with_peer_configuration_receiver(peer_a.id, carl_port).await?;
-    carl_client.await_peer_up(peer_a.id).await?;
+    let mut receiver_a = util::spawn_edgar_with_peer_configuration_receiver(peer_a.id, carl.port).await?;
+    carl.client.await_peer_up(peer_a.id).await?;
     {
         let (peer_configuration_a, old_peer_configuration_a) = receiver_a.receive_peer_configuration().await?;
         assert_eq!(peer_configuration_a, fixture.empty_peer_configuration);
@@ -131,18 +125,18 @@ async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_onl
     }
     tracing::info!("First invocation of receive_peer_configuration is done.");
 
-    let peer_b = testing::peer_descriptor::store_peer_descriptor(&carl_client).await?;
+    let peer_b = testing::peer_descriptor::store_peer_descriptor(&carl.client).await?;
 
     let cluster_leader = peer_a.id;
     let cluster_devices = peer_a.topology.devices.iter().chain(peer_b.topology.devices.iter());
-    let cluster = store_cluster_configuration(cluster_leader, cluster_devices, &carl_client).await?;
+    let cluster = store_cluster_configuration(cluster_leader, cluster_devices, &carl.client).await?;
 
-    store_cluster_deployment(cluster.id, &carl_client).await?;
+    store_cluster_deployment(cluster.id, &carl.client).await?;
     receiver_a.expect_no_peer_configuration().await;
 
 
-    let mut receiver_b = util::spawn_edgar_with_peer_configuration_receiver(peer_b.id, carl_port).await?;
-    carl_client.await_peer_up(peer_b.id).await?;
+    let mut receiver_b = util::spawn_edgar_with_peer_configuration_receiver(peer_b.id, carl.port).await?;
+    carl.client.await_peer_up(peer_b.id).await?;
     {
         let (peer_configuration_b, old_peer_configuration_b) = receiver_b.receive_peer_configuration().await?;
         assert_eq!(peer_configuration_b, fixture.empty_peer_configuration);
@@ -212,16 +206,31 @@ async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_onl
 }
 
 struct Fixture {
+    carl: CarlFixture,
     empty_peer_configuration: PeerConfiguration,
     empty_old_peer_configuration: OldPeerConfiguration,
 }
 impl Fixture {
-    fn new() -> Self {
+    async fn create() -> anyhow::Result<Self> {
         let empty_peer_configuration = PeerConfiguration::default();
         let empty_old_peer_configuration = OldPeerConfiguration::default();
 
-        Fixture { empty_peer_configuration, empty_old_peer_configuration }
+        let carl = {
+            let port = util::spawn_carl()?;
+            let client = TestCarlClient::connect(port).await?;
+            CarlFixture { client, port }
+        };
+
+        Ok(Fixture {
+            carl,
+            empty_peer_configuration,
+            empty_old_peer_configuration,
+        })
     }
+}
+struct CarlFixture {
+    client: TestCarlClient,
+    port: Port,
 }
 
 async fn store_cluster_configuration(leader: PeerId, devices: impl Iterator<Item=&DeviceDescriptor>, carl_client: &TestCarlClient) -> anyhow::Result<ClusterConfiguration> {

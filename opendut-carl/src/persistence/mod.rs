@@ -118,16 +118,4 @@ pub(crate) mod error {
     }
 
     pub type PersistenceResult<T> = Result<T, PersistenceError>;
-    pub trait FlattenPersistenceResult<T>: Sized {
-        fn flatten_persistence_result(self) -> PersistenceResult<T>;
-    }
-    impl<T> FlattenPersistenceResult<T> for PersistenceResult<PersistenceResult<T>> {
-        fn flatten_persistence_result(self) -> PersistenceResult<T> {
-            match self {
-                Ok(Ok(ok)) => Ok(ok),
-                Ok(Err(err)) => Err(err),
-                Err(err) => Err(err)
-            }
-        }
-    }
 }
