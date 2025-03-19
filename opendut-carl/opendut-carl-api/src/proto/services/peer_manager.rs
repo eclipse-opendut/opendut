@@ -2,8 +2,8 @@
 
 use opendut_types::peer::{PeerId, PeerName};
 use opendut_types::peer::state::PeerState;
-use opendut_types::proto;
-use opendut_types::proto::{ConversionError, ConversionErrorBuilder};
+use opendut_types::{conversion, proto};
+use opendut_types::proto::{ConversionError, ConversionErrorBuilder, ConversionResult};
 use opendut_types::topology::DeviceId;
 
 use crate::carl::peer::{StorePeerDescriptorError, DeletePeerDescriptorError, GetPeerDescriptorError, ListPeerDescriptorsError, GetPeerStateError, ListPeerStatesError};
@@ -114,9 +114,13 @@ impl TryFrom<StorePeerDescriptorFailureInternal> for StorePeerDescriptorError {
     }
 }
 
-impl From<DeletePeerDescriptorError> for DeletePeerDescriptorFailure {
-    fn from(error: DeletePeerDescriptorError) -> Self {
-        let proto_error = match error {
+
+conversion!{
+    type Model = crate::carl::peer::DeletePeerDescriptorError;
+    type Proto = DeletePeerDescriptorFailure;
+    
+    fn from(value: Model) -> Proto {
+        let proto_error = match value {
             DeletePeerDescriptorError::PeerNotFound { peer_id } => {
                 delete_peer_descriptor_failure::Error::PeerNotFound(DeletePeerDescriptorFailurePeerNotFound {
                     peer_id: Some(peer_id.into())
@@ -137,78 +141,65 @@ impl From<DeletePeerDescriptorError> for DeletePeerDescriptorFailure {
                     cause
                 })
             }
+            DeletePeerDescriptorError::ClusterDeploymentExists { peer_id, cluster_id } => {
+                delete_peer_descriptor_failure::Error::DeploymentExists(DeletePeerDescriptorFailureDeploymentExists {
+                    peer_id: Some(peer_id.into()),
+                    cluster_id: Some(cluster_id.into()),
+                })
+            }
         };
         DeletePeerDescriptorFailure {
             error: Some(proto_error)
         }
     }
-}
 
-impl TryFrom<DeletePeerDescriptorFailure> for DeletePeerDescriptorError {
-    type Error = ConversionError;
-    fn try_from(failure: DeletePeerDescriptorFailure) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<DeletePeerDescriptorFailure, DeletePeerDescriptorError>;
-        let error = failure.error
-            .ok_or_else(|| ErrorBuilder::field_not_set("error"))?;
-        let error = match error {
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let error = extract!(value.error)?;
+
+        match error {
             delete_peer_descriptor_failure::Error::PeerNotFound(error) => {
-                error.try_into()?
+                let peer_id = extract!(error.peer_id)?.try_into()?;
+                Ok(Model::PeerNotFound { peer_id })
             }
             delete_peer_descriptor_failure::Error::IllegalPeerState(error) => {
-                error.try_into()?
+                let peer_id = extract!(error.peer_id)?.try_into()?;
+                let peer_name = extract!(error.peer_name)?.try_into()?;
+                let actual_state = extract!(error.actual_state)?.try_into()?;
+                let required_states = error.required_states.into_iter()
+                    .map(proto::peer::PeerState::try_into)
+                    .collect::<Result<_, _>>()?;
+                Ok(Model::IllegalPeerState {
+                    peer_id,
+                    peer_name,
+                    actual_state,
+                    required_states,
+                })
             }
             delete_peer_descriptor_failure::Error::Internal(error) => {
-                error.try_into()?
+                let peer_id = extract!(error.peer_id)?.try_into()?;
+                let peer_name: Option<PeerName> = error.peer_name
+                    .map(TryInto::try_into)
+                    .transpose()?;
+                let cause = error.cause;
+                Ok(Model::Internal {
+                    peer_id,
+                    peer_name,
+                    cause,
+                })
             }
-        };
-        Ok(error)
+            delete_peer_descriptor_failure::Error::DeploymentExists(error) => {
+                let peer_id = extract!(error.peer_id)?.try_into()?;
+                let cluster_id = extract!(error.cluster_id)?.try_into()?;
+
+                Ok(Model::ClusterDeploymentExists {
+                    peer_id,
+                    cluster_id,
+                })
+            }
+        }
     }
 }
 
-impl TryFrom<DeletePeerDescriptorFailurePeerNotFound> for DeletePeerDescriptorError {
-    type Error = ConversionError;
-    fn try_from(failure: DeletePeerDescriptorFailurePeerNotFound) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<DeletePeerDescriptorFailurePeerNotFound, DeletePeerDescriptorError>;
-        let peer_id: PeerId = failure.peer_id
-            .ok_or_else(|| ErrorBuilder::field_not_set("peer_id"))?
-            .try_into()?;
-        Ok(DeletePeerDescriptorError::PeerNotFound { peer_id })
-    }
-}
-
-impl TryFrom<DeletePeerDescriptorFailureIllegalPeerState> for DeletePeerDescriptorError {
-    type Error = ConversionError;
-    fn try_from(failure: DeletePeerDescriptorFailureIllegalPeerState) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<DeletePeerDescriptorFailureIllegalPeerState, DeletePeerDescriptorError>;
-        let peer_id: PeerId = failure.peer_id
-            .ok_or_else(|| ErrorBuilder::field_not_set("peer_id"))?
-            .try_into()?;
-        let peer_name: PeerName = failure.peer_name
-            .ok_or_else(|| ErrorBuilder::field_not_set("peer_name"))?
-            .try_into()?;
-        let actual_state: PeerState = failure.actual_state
-            .ok_or_else(|| ErrorBuilder::field_not_set("actual_state"))?
-            .try_into()?;
-        let required_states = failure.required_states.into_iter()
-            .map(proto::peer::PeerState::try_into)
-            .collect::<Result<_, _>>()?;
-        Ok(DeletePeerDescriptorError::IllegalPeerState { peer_id, peer_name, actual_state, required_states })
-    }
-}
-
-impl TryFrom<DeletePeerDescriptorFailureInternal> for DeletePeerDescriptorError {
-    type Error = ConversionError;
-    fn try_from(failure: DeletePeerDescriptorFailureInternal) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<DeletePeerDescriptorFailureInternal, DeletePeerDescriptorError>;
-        let peer_id: PeerId = failure.peer_id
-            .ok_or_else(|| ErrorBuilder::field_not_set("peer_id"))?
-            .try_into()?;
-        let peer_name: Option<PeerName> = failure.peer_name
-            .map(TryInto::try_into)
-            .transpose()?;
-        Ok(DeletePeerDescriptorError::Internal { peer_id, peer_name, cause: failure.cause })
-    }
-}
 
 impl From<crate::carl::peer::IllegalDevicesError> for IllegalDevicesError {
     fn from(error: crate::carl::peer::IllegalDevicesError) -> Self {

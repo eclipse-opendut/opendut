@@ -2,6 +2,7 @@ use std::fmt;
 use std::fmt::Formatter;
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 pub use client::*;
+use opendut_types::cluster::ClusterId;
 use opendut_types::peer::{PeerId, PeerName};
 use opendut_types::peer::state::PeerState;
 use opendut_types::ShortName;
@@ -30,10 +31,14 @@ pub enum StorePeerDescriptorError {
     }
 }
 
-#[derive(thiserror::Error, Debug)]
+#[derive(thiserror::Error, PartialEq, Debug)]
 pub enum DeletePeerDescriptorError {
     PeerNotFound {
-        peer_id: PeerId
+        peer_id: PeerId,
+    },
+    ClusterDeploymentExists {
+        peer_id: PeerId,
+        cluster_id: ClusterId,
     },
     IllegalPeerState {
         peer_id: PeerId,
@@ -44,7 +49,7 @@ pub enum DeletePeerDescriptorError {
     Internal {
         peer_id: PeerId,
         peer_name: Option<PeerName>,
-        cause: String
+        cause: String,
     }
 }
 impl fmt::Display for DeletePeerDescriptorError {
@@ -62,6 +67,9 @@ impl fmt::Display for DeletePeerDescriptorError {
                     None => String::new(),
                 };
                 writeln!(f, "Peer {peer_name}<{peer_id}> deleted with internal errors:\n  {cause}")
+            }
+            DeletePeerDescriptorError::ClusterDeploymentExists { peer_id, cluster_id } => {
+                writeln!(f, "Peer <{peer_id}> could not be deleted, because a cluster deployment <{cluster_id}> using this peer still exists!")
             }
         }
     }

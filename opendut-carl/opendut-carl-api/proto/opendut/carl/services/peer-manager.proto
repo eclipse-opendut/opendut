@@ -6,6 +6,7 @@ import "opendut/types/topology/device.proto";
 import "opendut/types/peer/peer.proto";
 import "opendut/types/peer/state.proto";
 import "opendut/types/cleo/cleo.proto";
+import "opendut/types/cluster/cluster.proto";
 
 service PeerManager {
   rpc StorePeerDescriptor(StorePeerDescriptorRequest) returns (StorePeerDescriptorResponse) {}
@@ -87,6 +88,7 @@ message DeletePeerDescriptorFailure {
     DeletePeerDescriptorFailurePeerNotFound peer_not_found = 1;
     DeletePeerDescriptorFailureIllegalPeerState illegal_peer_state = 2;
     DeletePeerDescriptorFailureInternal internal = 4;
+    DeletePeerDescriptorFailureDeploymentExists deployment_exists = 5;
   }
 }
 
@@ -105,6 +107,11 @@ message DeletePeerDescriptorFailureInternal {
   opendut.types.peer.PeerId peer_id = 1;
   optional opendut.types.peer.PeerName peer_name = 2;
   string cause = 3;
+}
+
+message DeletePeerDescriptorFailureDeploymentExists {
+  opendut.types.peer.PeerId peer_id = 1;
+  opendut.types.cluster.ClusterId cluster_id = 2;
 }
 
 //

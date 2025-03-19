@@ -45,6 +45,7 @@ impl<From, To> ConversionErrorBuilder<From, To> {
 }
 
 
+#[macro_export]
 macro_rules! conversion {
     (
         type Model = $Model:ty;
@@ -67,7 +68,7 @@ macro_rules! conversion {
         impl TryFrom<$Proto> for $Model {
             type Error = ConversionError;
 
-            fn try_from(value: $Proto) -> crate::proto::ConversionResult<Self> {
+            fn try_from(value: $Proto) -> $crate::proto::ConversionResult<Self> {
                 #[allow(unused)]
                 type ErrorBuilder = ConversionErrorBuilder<$Proto, $Model>;
                 type Model = $Model;
