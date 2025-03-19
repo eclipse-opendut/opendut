@@ -1,4 +1,4 @@
-mod api;
+pub(crate) mod api;
 pub mod manager;
 pub(crate) mod storage;
 pub(crate) mod subscription;
