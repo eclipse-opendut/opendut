@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl, SelectableHelper};
+use std::collections::HashMap;
 use std::ops::Not;
 use uuid::Uuid;
 

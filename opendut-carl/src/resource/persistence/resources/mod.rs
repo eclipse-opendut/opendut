@@ -1,8 +1,8 @@
-use std::collections::HashMap;
+use crate::resource::api::Resource;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::Storage;
+use std::collections::HashMap;
 use std::fmt::Debug;
-use crate::resource::api::Resource;
 
 pub mod cluster_configuration;
 pub mod cluster_deployment;

@@ -1,14 +1,14 @@
-use std::collections::HashMap;
 pub use crate::resource::subscription::SubscriptionEvent;
+use std::collections::HashMap;
 
+use crate::resource::api::resources::{RelayedSubscriptionEvents, Resources};
+use crate::resource::api::Resource;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::resources::Persistable;
-use crate::resource::storage::{self, PersistenceOptions, ResourcesStorageApi};
+use crate::resource::storage::{self, PersistenceOptions, ResourceStorage, ResourcesStorageApi};
 use crate::resource::subscription::{ResourceSubscriptionChannels, Subscribable, Subscription};
-use crate::resource::api::transaction::{RelayedSubscriptionEvents, ResourcesTransaction};
 use std::sync::Arc;
 use tokio::sync::{RwLock, RwLockWriteGuard};
-use crate::resource::api::{Resource, Resources};
 
 pub type ResourceManagerRef = Arc<ResourceManager>;
 
@@ -17,18 +17,18 @@ pub struct ResourceManager {
 }
 
 struct State {
-    resources: Resources,
+    storage: ResourceStorage,
     subscribers: ResourceSubscriptionChannels,
 }
 
 impl ResourceManager {
 
     pub async fn create(storage_options: PersistenceOptions) -> Result<ResourceManagerRef, storage::ConnectionError> {
-        let resources = Resources::connect(storage_options).await?;
+        let resources = ResourceStorage::connect(storage_options).await?;
         let subscribers = ResourceSubscriptionChannels::default();
 
         Ok(Arc::new(Self {
-            state: RwLock::new(State { resources, subscribers }),
+            state: RwLock::new(State { storage: resources, subscribers }),
         }))
     }
 
@@ -36,7 +36,7 @@ impl ResourceManager {
     where R: Resource + Persistable + Subscribable {
         let mut state = self.state.write().await;
 
-        let (result, relayed_subscription_events) = state.resources.transaction(|transaction| {
+        let (result, relayed_subscription_events) = state.storage.resources_mut(|transaction| {
             transaction.insert(id.clone(), resource.clone())
         })?;
         Self::send_relayed_subscription_events(relayed_subscription_events, &mut state).await;
@@ -46,7 +46,7 @@ impl ResourceManager {
     pub async fn remove<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable {
         let mut state = self.state.write().await;
-        let (result, relayed_subscription_events) = state.resources.transaction(move |transaction| {
+        let (result, relayed_subscription_events) = state.storage.resources_mut(move |transaction| {
             transaction.remove(id)
         })?;
         Self::send_relayed_subscription_events(relayed_subscription_events, &mut state).await;
@@ -56,19 +56,23 @@ impl ResourceManager {
     pub async fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable + Clone {
         let state = self.state.read().await;
-        state.resources.get(id)
+        state.storage.resources(|resources| resources.get(id))
     }
 
     pub async fn list<R>(&self) -> PersistenceResult<HashMap<R::Id, R>>
     where R: Resource + Persistable + Clone {
         let state = self.state.read().await;
-        state.resources.list()
+        state.storage.resources(|resources| resources.list())
     }
 
-    pub async fn resources<F, T, E>(&self, f: F) -> Result<T, E>
-    where F: FnOnce(&Resources) -> Result<T, E> {
+    pub async fn resources<F, T>(&self, f: F) -> T
+    where
+        F: FnOnce(&Resources) -> T,
+    {
         let state = self.state.read().await;
-        f(&state.resources)
+        state.storage.resources(move |transaction| {
+            f(transaction)
+        })
     }
 
     /// Allows grouping modifications to the database. This does multiple things:
@@ -77,11 +81,11 @@ impl ResourceManager {
     /// - Groups the async calls, so we only have to await at the end.
     pub async fn resources_mut<F, T, E>(&self, f: F) -> PersistenceResult<Result<T, E>>
     where
-        F: FnOnce(&mut ResourcesTransaction) -> Result<T, E>,
+        F: FnOnce(&mut Resources) -> Result<T, E>,
         E: Send + Sync + 'static,
     {
         let mut state = self.state.write().await;
-        let (result, relayed_subscription_events) = state.resources.transaction(move |transaction| {
+        let (result, relayed_subscription_events) = state.storage.resources_mut(move |transaction| {
             f(transaction)
         })?;
         Self::send_relayed_subscription_events(relayed_subscription_events, &mut state).await;
@@ -151,26 +155,26 @@ impl ResourceManager {
 impl ResourceManager {
     pub fn new_in_memory() -> ResourceManagerRef {
         let resources = futures::executor::block_on(
-            Resources::connect(PersistenceOptions::Disabled)
+            ResourceStorage::connect(PersistenceOptions::Disabled)
         )
         .expect("Creating in-memory storage for tests should not fail");
 
         let subscribers = ResourceSubscriptionChannels::default();
 
         Arc::new(Self {
-            state: RwLock::new(State { resources, subscribers }),
+            state: RwLock::new(State { storage: resources, subscribers }),
         })
     }
 
     async fn contains<R>(&self, id: R::Id) -> bool
     where R: Resource + Clone {
         let state = self.state.read().await;
-        state.resources.contains::<R>(id).await
+        state.storage.contains::<R>(id).await
     }
 
     async fn is_empty(&self) -> bool {
         let state = self.state.read().await;
-        state.resources.is_empty().await
+        state.storage.is_empty().await
     }
 }
 

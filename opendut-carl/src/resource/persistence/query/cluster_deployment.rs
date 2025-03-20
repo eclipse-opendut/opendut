@@ -1,9 +1,9 @@
-use std::collections::HashMap;
 use crate::resource::persistence::database::schema;
 use crate::resource::persistence::error::{PersistenceError, PersistenceOperation, PersistenceResult};
 use crate::resource::persistence::query::Filter;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
 use opendut_types::cluster::{ClusterDeployment, ClusterId};
+use std::collections::HashMap;
 use uuid::Uuid;
 
 pub fn insert(cluster_deployment: ClusterDeployment, connection: &mut PgConnection) -> PersistenceResult<()> {

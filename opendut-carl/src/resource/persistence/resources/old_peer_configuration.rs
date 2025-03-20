@@ -1,6 +1,6 @@
-use std::collections::HashMap;
 use opendut_types::peer::configuration::OldPeerConfiguration;
 use opendut_types::peer::PeerId;
+use std::collections::HashMap;
 
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::resources::Persistable;

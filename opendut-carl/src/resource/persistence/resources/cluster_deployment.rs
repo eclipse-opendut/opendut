@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use opendut_types::cluster::{ClusterDeployment, ClusterId};
+use std::collections::HashMap;
 
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::query::Filter;

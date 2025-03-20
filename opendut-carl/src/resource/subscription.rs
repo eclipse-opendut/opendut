@@ -72,6 +72,17 @@ impl ResourceSubscriptionChannels {
             .send(event)?;
         Ok(())
     }
+
+    pub fn is_empty(&self) -> bool {
+        let ResourceSubscriptionChannels { cluster_configuration, cluster_deployment, old_peer_configuration, peer_configuration, peer_descriptor, peer_connection_state } = self;
+
+        cluster_configuration.0.is_empty()
+        && cluster_deployment.0.is_empty()
+        && old_peer_configuration.0.is_empty()
+        && peer_configuration.0.is_empty()
+        && peer_descriptor.0.is_empty()
+        && peer_connection_state.0.is_empty()
+    }
 }
 impl Default for ResourceSubscriptionChannels {
     fn default() -> Self {

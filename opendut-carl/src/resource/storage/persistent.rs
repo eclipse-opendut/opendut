@@ -1,4 +1,4 @@
-use crate::resource::api::transaction::RelayedSubscriptionEvents;
+use crate::resource::api::resources::RelayedSubscriptionEvents;
 use crate::resource::persistence::database::ConnectError;
 use crate::resource::persistence::error::{PersistenceError, PersistenceResult};
 use crate::resource::persistence::resources::Persistable;
@@ -8,6 +8,7 @@ use crate::resource::storage::{DatabaseConnectInfo, Resource, ResourcesStorageAp
 use diesel::{Connection, PgConnection};
 use std::any::Any;
 use std::collections::HashMap;
+use std::ops::DerefMut;
 use std::sync::Mutex;
 
 pub struct PersistentResourcesStorage {
@@ -23,7 +24,29 @@ impl PersistentResourcesStorage {
         Ok(Self { db_connection, memory })
     }
 
-    pub fn transaction<T, E, F>(&mut self, code: F) -> PersistenceResult<(Result<T, E>, RelayedSubscriptionEvents)>
+    pub fn resources<T, F>(&self, code: F) -> T
+    where
+        F: FnOnce(PersistentResourcesTransaction) -> T,
+    {
+        let mut connection = self.db_connection.lock().unwrap();
+
+        let mut memory = self.memory.lock().unwrap();
+        let mut relayed_subscription_events = RelayedSubscriptionEvents::default();
+
+        let transaction = PersistentResourcesTransaction {
+            db_connection: Mutex::new(connection.deref_mut()),
+            memory: Mutex::new(&mut memory),
+            relayed_subscription_events: &mut relayed_subscription_events,
+        };
+
+        let result = code(transaction);
+
+        debug_assert!(relayed_subscription_events.is_empty(), "Read-only storage operations should not trigger any subscription events.");
+
+        result
+    }
+
+    pub fn resources_mut<T, E, F>(&mut self, code: F) -> PersistenceResult<(Result<T, E>, RelayedSubscriptionEvents)>
     where
         F: FnOnce(PersistentResourcesTransaction) -> Result<T, E>,
         E: Send + Sync + 'static,

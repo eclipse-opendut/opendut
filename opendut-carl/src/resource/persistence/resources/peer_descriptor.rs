@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use opendut_types::peer::{PeerDescriptor, PeerId};
+use std::collections::HashMap;
 
 use super::Persistable;
 use crate::resource::persistence::error::PersistenceResult;

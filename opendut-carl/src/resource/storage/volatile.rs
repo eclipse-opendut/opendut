@@ -1,34 +1,60 @@
+use opendut_types::resources::Id;
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
-
-use opendut_types::resources::Id;
+use std::ops::DerefMut;
+use std::sync::Mutex;
 
 use crate::resource::api::id::ResourceId;
+use crate::resource::api::resources::RelayedSubscriptionEvents;
+use crate::resource::api::Resource;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::resources::Persistable;
 use crate::resource::storage::ResourcesStorageApi;
 use crate::resource::subscription::Subscribable;
-use crate::resource::api::transaction::RelayedSubscriptionEvents;
-use crate::resource::api::Resource;
 
 #[derive(Default)]
-pub struct VolatileResourcesStorage {
-    storage: HashMap<TypeId, HashMap<Id, Box<dyn Any + Send + Sync>>>,
+pub struct VolatileResourcesStorageHandle {
+    inner: Mutex<VolatileResourcesStorage>,
 }
-impl VolatileResourcesStorage {
-    pub fn noop_transaction<T, E, F>(&mut self, code: F) -> PersistenceResult<(Result<T, E>, RelayedSubscriptionEvents)>
+impl VolatileResourcesStorageHandle {
+    pub fn resources<T, F>(&self, code: F) -> T
+    where
+        F: FnOnce(VolatileResourcesTransaction) -> T,
+    {
+        let mut memory = self.inner.lock().unwrap();
+        let mut relayed_subscription_events = RelayedSubscriptionEvents::default();
+
+        let transaction = VolatileResourcesTransaction {
+            memory: memory.deref_mut(),
+            relayed_subscription_events: &mut relayed_subscription_events,
+        };
+        let result = code(transaction);
+
+        debug_assert!(relayed_subscription_events.is_empty(), "Read-only storage operations should not trigger any subscription events.");
+
+        result
+    }
+
+    pub fn resources_mut<T, E, F>(&mut self, code: F) -> PersistenceResult<(Result<T, E>, RelayedSubscriptionEvents)>
     where
         F: FnOnce(VolatileResourcesTransaction) -> Result<T, E>,
         E: Send + Sync + 'static,
     {
+        let mut memory = self.inner.lock().unwrap();
         let mut relayed_subscription_events = RelayedSubscriptionEvents::default();
+
         let transaction = VolatileResourcesTransaction {
-            inner: self,
+            memory: memory.deref_mut(),
             relayed_subscription_events: &mut relayed_subscription_events,
         };
         let result = code(transaction);
         Ok((result, relayed_subscription_events))
     }
+}
+
+#[derive(Default)]
+pub struct VolatileResourcesStorage {
+    storage: HashMap<TypeId, HashMap<Id, Box<dyn Any + Send + Sync>>>,
 }
 
 impl ResourcesStorageApi for VolatileResourcesStorage {
@@ -105,11 +131,11 @@ impl VolatileResourcesStorage {
 }
 
 #[cfg(test)]
-impl VolatileResourcesStorage {
+impl VolatileResourcesStorageHandle {
     pub fn contains<R>(&self, id: R::Id) -> bool
     where R: Resource {
         let id = id.into_id();
-        if let Some(column) = self.column_of::<R>() {
+        if let Some(column) = self.inner.lock().unwrap().column_of::<R>() {
             column.contains_key(&id)
         }
         else {
@@ -118,32 +144,32 @@ impl VolatileResourcesStorage {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.storage.is_empty()
+        self.inner.lock().unwrap().storage.is_empty()
     }
 }
 
 pub struct VolatileResourcesTransaction<'transaction> {
-    inner: &'transaction mut VolatileResourcesStorage,
+    memory: &'transaction mut VolatileResourcesStorage,
     pub relayed_subscription_events: &'transaction mut RelayedSubscriptionEvents,
 }
 impl ResourcesStorageApi for VolatileResourcesTransaction<'_> {
     fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
     where R: Resource + Persistable + Subscribable {
-        self.inner.insert(id, resource)
+        self.memory.insert(id, resource)
     }
 
     fn remove<R>(&mut self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable {
-        self.inner.remove(id)
+        self.memory.remove(id)
     }
 
     fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable + Clone {
-        self.inner.get(id)
+        self.memory.get(id)
     }
 
     fn list<R>(&self) -> PersistenceResult<HashMap<R::Id, R>>
     where R: Resource + Persistable + Clone {
-        self.inner.list()
+        self.memory.list()
     }
 }

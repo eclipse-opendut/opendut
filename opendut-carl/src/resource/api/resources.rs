@@ -1,19 +1,19 @@
-use std::collections::HashMap;
+use crate::resource::api::Resource;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::resources::Persistable;
 use crate::resource::storage::persistent::PersistentResourcesTransaction;
 use crate::resource::storage::volatile::VolatileResourcesTransaction;
 use crate::resource::storage::ResourcesStorageApi;
 use crate::resource::subscription::{ResourceSubscriptionChannels, Subscribable, SubscriptionEvent};
-use crate::resource::api::Resource;
+use std::collections::HashMap;
 
 pub type RelayedSubscriptionEvents = ResourceSubscriptionChannels;
 
-pub enum ResourcesTransaction<'transaction> {
+pub enum Resources<'transaction> {
     Persistent(PersistentResourcesTransaction<'transaction>),
     Volatile(VolatileResourcesTransaction<'transaction>),
 }
-impl<'transaction> ResourcesTransaction<'transaction> {
+impl<'transaction> Resources<'transaction> {
     pub fn persistent(transaction: PersistentResourcesTransaction<'transaction>) -> Self {
         Self::Persistent(transaction)
     }
@@ -23,16 +23,16 @@ impl<'transaction> ResourcesTransaction<'transaction> {
 
     pub fn into_relayed_subscription_events(self) -> &'transaction mut RelayedSubscriptionEvents {
         match self {
-            ResourcesTransaction::Persistent(transaction) => transaction.relayed_subscription_events,
-            ResourcesTransaction::Volatile(transaction) => transaction.relayed_subscription_events,
+            Resources::Persistent(transaction) => transaction.relayed_subscription_events,
+            Resources::Volatile(transaction) => transaction.relayed_subscription_events,
         }
     }
 }
-impl ResourcesStorageApi for ResourcesTransaction<'_> {
+impl ResourcesStorageApi for Resources<'_> {
     fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
     where R: Resource + Persistable + Subscribable {
         match self {
-            ResourcesTransaction::Persistent(transaction) => {
+            Resources::Persistent(transaction) => {
                 let result = transaction.insert(id.clone(), resource.clone());
                 if result.is_ok() {
                     transaction.relayed_subscription_events
@@ -41,7 +41,7 @@ impl ResourcesStorageApi for ResourcesTransaction<'_> {
                 }
                 result
             }
-            ResourcesTransaction::Volatile(transaction) => {
+            Resources::Volatile(transaction) => {
                 let result = transaction.insert(id.clone(), resource.clone());
                 if result.is_ok() {
                     transaction.relayed_subscription_events
@@ -56,24 +56,24 @@ impl ResourcesStorageApi for ResourcesTransaction<'_> {
     fn remove<R>(&mut self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable {
         match self {
-            ResourcesTransaction::Persistent(transaction) => transaction.remove(id),
-            ResourcesTransaction::Volatile(transaction) => transaction.remove(id),
+            Resources::Persistent(transaction) => transaction.remove(id),
+            Resources::Volatile(transaction) => transaction.remove(id),
         }
     }
 
     fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable + Clone {
         match &self {
-            ResourcesTransaction::Persistent(transaction) => transaction.get(id),
-            ResourcesTransaction::Volatile(transaction) => transaction.get(id),
+            Resources::Persistent(transaction) => transaction.get(id),
+            Resources::Volatile(transaction) => transaction.get(id),
         }
     }
 
     fn list<R>(&self) -> PersistenceResult<HashMap<R::Id, R>>
     where R: Resource + Persistable + Clone {
         match &self {
-            ResourcesTransaction::Persistent(transaction) => transaction.list(),
-            ResourcesTransaction::Volatile(transaction) => transaction.list(),
+            Resources::Persistent(transaction) => transaction.list(),
+            Resources::Volatile(transaction) => transaction.list(),
         }
     }
 }

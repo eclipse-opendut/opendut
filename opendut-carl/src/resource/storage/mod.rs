@@ -1,13 +1,14 @@
 use std::collections::HashMap;
 use url::Url;
 
+use crate::resource::api::resources::{RelayedSubscriptionEvents, Resources};
+use crate::resource::api::Resource;
 use crate::resource::persistence::database::ConnectError;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::resources::Persistable;
 use crate::resource::storage::persistent::PersistentResourcesStorage;
-use crate::resource::storage::volatile::VolatileResourcesStorage;
+use crate::resource::storage::volatile::VolatileResourcesStorageHandle;
 use crate::resource::subscription::Subscribable;
-use crate::resource::api::Resource;
 
 pub mod volatile;
 pub mod persistent;
@@ -15,25 +16,77 @@ pub mod persistent;
 #[cfg(test)]
 mod tests;
 
-pub enum ResourcesStorage {
+pub enum ResourceStorage {
     Persistent(PersistentResourcesStorage),
-    Volatile(VolatileResourcesStorage),
+    Volatile(VolatileResourcesStorageHandle),
 }
-impl ResourcesStorage {
+impl ResourceStorage {
     pub async fn connect(options: PersistenceOptions) -> Result<Self, ConnectionError> {
         let storage = match options {
             PersistenceOptions::Enabled { database_connect_info } => {
                 let storage = PersistentResourcesStorage::connect(&database_connect_info).await
                     .map_err(|cause| ConnectionError::Database { url: database_connect_info.url, source: cause })?;
-                ResourcesStorage::Persistent(storage)
+                ResourceStorage::Persistent(storage)
             }
             PersistenceOptions::Disabled => {
-                ResourcesStorage::Volatile(VolatileResourcesStorage::default())
+                ResourceStorage::Volatile(VolatileResourcesStorageHandle::default())
             }
         };
         Ok(storage)
     }
+
+    pub(super) fn resources<T, F>(&self, code: F) -> T
+    where
+        F: FnOnce(&mut Resources) -> T,
+    {
+        match self {
+            ResourceStorage::Persistent(storage) => storage.resources(|transaction| {
+                let mut transaction = Resources::persistent(transaction);
+                code(&mut transaction)
+            }),
+            ResourceStorage::Volatile(storage) => storage.resources(|transaction| {
+                let mut transaction = Resources::volatile(transaction);
+                code(&mut transaction)
+            }),
+        }
+    }
+
+    pub(super) fn resources_mut<T, E, F>(&mut self, code: F) -> PersistenceResult<(Result<T, E>, RelayedSubscriptionEvents)>
+    where
+        F: FnOnce(&mut Resources) -> Result<T, E>,
+        E: Send + Sync + 'static,
+    {
+        match self {
+            ResourceStorage::Persistent(storage) => storage.resources_mut(|transaction| {
+                let mut transaction = Resources::persistent(transaction);
+                code(&mut transaction)
+            }),
+            ResourceStorage::Volatile(storage) => storage.resources_mut(|transaction| {
+                let mut transaction = Resources::volatile(transaction);
+                code(&mut transaction)
+            }),
+        }
+    }
 }
+
+#[cfg(test)]
+impl ResourceStorage {
+    pub async fn contains<R>(&self, id: R::Id) -> bool
+    where R: Resource {
+        match self {
+            ResourceStorage::Persistent(_) => unimplemented!(),
+            ResourceStorage::Volatile(storage) => storage.contains::<R>(id),
+        }
+    }
+
+    pub async fn is_empty(&self) -> bool {
+        match self {
+            ResourceStorage::Persistent(_) => unimplemented!(),
+            ResourceStorage::Volatile(storage) => storage.is_empty(),
+        }
+    }
+}
+
 
 #[derive(Debug, thiserror::Error)]
 pub enum ConnectionError {

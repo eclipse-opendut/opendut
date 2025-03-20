@@ -1,9 +1,9 @@
-use std::collections::HashMap;
 use super::Persistable;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::query::Filter;
 use crate::resource::persistence::{query, Storage};
 use opendut_types::cluster::{ClusterConfiguration, ClusterId};
+use std::collections::HashMap;
 
 impl Persistable for ClusterConfiguration {
     fn insert(self, _id: ClusterId, storage: &mut Storage) -> PersistenceResult<()> {
