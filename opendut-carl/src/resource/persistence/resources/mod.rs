@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::Storage;
 use std::fmt::Debug;
@@ -17,5 +18,5 @@ pub trait Persistable: Send + Sync + Sized + Debug + Resource {
 
     fn get(id: Self::Id, storage: &Storage) -> PersistenceResult<Option<Self>>;
 
-    fn list(storage: &Storage) -> PersistenceResult<Vec<Self>>;
+    fn list(storage: &Storage) -> PersistenceResult<HashMap<Self::Id, Self>>;
 }

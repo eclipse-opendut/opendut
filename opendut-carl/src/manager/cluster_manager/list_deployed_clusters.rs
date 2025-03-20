@@ -8,12 +8,12 @@ pub mod internal {
 
     pub(crate) fn list_deployed_clusters(resources: &impl ResourcesStorageApi) -> Result<Vec<ClusterConfiguration>, PersistenceError> {
         let cluster_deployments = resources.list::<ClusterDeployment>()?
-            .into_iter()
+            .into_values()
             .map(|cluster_deployment| cluster_deployment.id)
             .collect::<HashSet<_>>();
 
         let cluster_configurations = resources.list::<ClusterConfiguration>()?;
-        let deployed_cluster_configurations = cluster_configurations.into_iter()
+        let deployed_cluster_configurations = cluster_configurations.into_values()
             .filter(|cluster_configuration| {
                 cluster_deployments.contains(&cluster_configuration.id)
             }).collect::<Vec<_>>();

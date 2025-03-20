@@ -43,7 +43,7 @@ async fn should_persist_cluster_configuration(resource_manager: ResourceManagerR
     assert_eq!(result, Some(testee.clone()));
     let result = resource_manager.list::<ClusterConfiguration>().await?;
     assert_eq!(result.len(), 1);
-    assert_eq!(result.first(), Some(&testee));
+    assert_eq!(result.values().next(), Some(&testee));
 
     let testee = {
         let mut testee = testee.clone();

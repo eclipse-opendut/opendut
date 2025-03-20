@@ -23,6 +23,7 @@ pub async fn list_peer_descriptors(params: ListPeerDescriptorsParams) -> Result<
         .map_err(|cause| ListPeerDescriptorsError::Internal { cause: cause.to_string() })?;
 
         info!("Successfully queried all peer descriptors.");
+        let peers = peers.into_values().collect::<Vec<_>>();
 
         Ok(peers)
     }

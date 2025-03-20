@@ -101,7 +101,8 @@ impl ClusterManager {
     #[tracing::instrument(skip(self), level="trace")]
     pub async fn list_cluster_configuration(&self) -> Result<Vec<ClusterConfiguration>, ListClusterConfigurationsError> {
         self.resource_manager.list::<ClusterConfiguration>().await
-            .map_err(|cause| ListClusterConfigurationsError { message: cause.to_string() })
+            .map(|clusters| clusters.into_values().collect::<Vec<_>>())
+            .map_err(|cause| ListClusterConfigurationsError { message: cause.to_string() })            
     }
 
 
@@ -186,6 +187,7 @@ impl ClusterManager {
     #[tracing::instrument(skip(self), level="trace")]
     pub async fn list_cluster_deployment(&self) -> Result<Vec<ClusterDeployment>, ListClusterDeploymentsError> {
         self.resource_manager.list::<ClusterDeployment>().await
+            .map(|clusters| clusters.into_values().collect::<Vec<_>>())
             .map_err(|cause| ListClusterDeploymentsError { message: cause.to_string() })
     }
 
@@ -225,12 +227,12 @@ impl ClusterManager {
             let cluster_configurations = resources.list::<ClusterConfiguration>()?;
 
             let clusters_containing_devices_of_upped_peer = cluster_configurations.into_iter()
-                .filter(|cluster_configuration|
+                .filter(|(_, cluster_configuration)|
                     cluster_configuration.devices.iter()
                         .any(|device| peer_devices.contains(device))
                 )
-                .filter_map(|cluster| { //filter out clusters without stored deployment
-                    resources.get::<ClusterDeployment>(cluster.id)
+                .filter_map(|(cluster_id, _)| { //filter out clusters without stored deployment
+                    resources.get::<ClusterDeployment>(cluster_id)
                         .transpose()
                 })
                 .collect::<Result<Vec<_>, _>>()?;

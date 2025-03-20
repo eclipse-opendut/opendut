@@ -7,7 +7,7 @@ use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl, SelectableH
 use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
 use opendut_types::peer::PeerId;
 use opendut_types::topology::DeviceId;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::ops::Not;
 use uuid::Uuid;
 
@@ -61,8 +61,7 @@ fn insert_persistable(persistable: PersistableClusterConfiguration, connection: 
 }
 
 pub fn remove(cluster_id: ClusterId, connection: &mut PgConnection) -> PersistenceResult<Option<ClusterConfiguration>> {
-    let result = list(Filter::By(cluster_id), connection)?
-        .first().cloned();
+    let result = list(Filter::By(cluster_id), connection)?.values().next().cloned();
 
     diesel::delete(
         schema::cluster_configuration::table
@@ -74,8 +73,8 @@ pub fn remove(cluster_id: ClusterId, connection: &mut PgConnection) -> Persisten
     Ok(result)
 }
 
-pub fn list(filter_by_cluster_id: Filter<ClusterId>, connection: &mut PgConnection) -> PersistenceResult<Vec<ClusterConfiguration>> {
-    let persistable_cluster_configurations = {
+pub fn list(filter_by_cluster_id: Filter<ClusterId>, connection: &mut PgConnection) -> PersistenceResult<HashMap<ClusterId, ClusterConfiguration>> {
+    let persistable_cluster_configurations: Vec<PersistableClusterConfiguration> = {
         let mut query = schema::cluster_configuration::table.into_boxed();
 
         if let Filter::By(cluster_id) = filter_by_cluster_id {
@@ -104,14 +103,17 @@ pub fn list(filter_by_cluster_id: Filter<ClusterId>, connection: &mut PgConnecti
             .map(|cluster_device| DeviceId::from(cluster_device.device_id))
             .collect::<HashSet<_>>();
 
-        Ok(ClusterConfiguration {
-            id: cluster_id,
-            name,
-            leader: leader_id,
-            devices,
-        })
+        Ok((
+               cluster_id,
+               ClusterConfiguration {
+                id: cluster_id,
+                name,
+                leader: leader_id,
+                devices,
+            }
+       ))
     })
-    .collect::<PersistenceResult<Vec<_>>>()
+    .collect::<PersistenceResult<HashMap<_, _>>>()
     .map_err(|cause|
         PersistenceError::list::<ClusterConfiguration>(cause)
             .context("Failed to convert from database values to ClusterConfiguration.")

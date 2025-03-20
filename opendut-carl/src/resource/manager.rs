@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 pub use crate::resource::subscription::SubscriptionEvent;
 
 use crate::resource::persistence::error::PersistenceResult;
@@ -58,7 +59,7 @@ impl ResourceManager {
         state.resources.get(id)
     }
 
-    pub async fn list<R>(&self) -> PersistenceResult<Vec<R>>
+    pub async fn list<R>(&self) -> PersistenceResult<HashMap<R::Id, R>>
     where R: Resource + Persistable + Clone {
         let state = self.state.read().await;
         state.resources.list()
@@ -262,7 +263,7 @@ mod test {
         testee.resources(|resources| {
             resources.list::<ClusterConfiguration>()?
                 .into_iter()
-                .for_each(|cluster| {
+                .for_each(|(_cluster_id, cluster)| {
                     assert_that!(cluster, eq(&cluster_configuration));
                 });
             PersistenceResult::Ok(())

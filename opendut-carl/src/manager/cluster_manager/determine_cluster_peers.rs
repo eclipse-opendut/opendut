@@ -20,7 +20,7 @@ pub async fn determine_cluster_peers(params: DetermineClusterPeersParams) -> Res
         let peers = resources.list::<PeerDescriptor>()
             .map_err(|source| DetermineClusterPeersError::Persistence { cluster_id, source })?;
 
-        let cluster_peers = peers.into_iter()
+        let cluster_peers = peers.into_values()
             .filter(|peer| peer.topology.devices.iter().any(|device| cluster_configuration.devices.contains(&device.id)))
             .collect();
 

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::resource::persistence::database::schema;
 use crate::resource::persistence::error::{PersistenceError, PersistenceOperation, PersistenceResult};
 use crate::resource::persistence::query::Filter;
@@ -19,8 +20,7 @@ fn insert_persistable(cluster_id: ClusterId, connection: &mut PgConnection) -> P
 }
 
 pub fn remove(cluster_id: ClusterId, connection: &mut PgConnection) -> PersistenceResult<Option<ClusterDeployment>> {
-    let result = list(Filter::By(cluster_id), connection)?
-        .first().cloned();
+    let result = list(Filter::By(cluster_id), connection)?.values().next().cloned();
 
     let requested = false;
     set_deployment_requested(cluster_id, requested, connection, PersistenceOperation::Remove)?;
@@ -41,7 +41,7 @@ fn set_deployment_requested(cluster_id: ClusterId, value: bool, connection: &mut
     }
 }
 
-pub fn list(filter_by_cluster_id: Filter<ClusterId>, connection: &mut PgConnection) -> PersistenceResult<Vec<ClusterDeployment>> {
+pub fn list(filter_by_cluster_id: Filter<ClusterId>, connection: &mut PgConnection) -> PersistenceResult<HashMap<ClusterId, ClusterDeployment>> {
     let cluster_deployment_ids: Vec<Uuid> = {
         let mut query = schema::cluster_configuration::table.into_boxed();
 
@@ -60,11 +60,13 @@ pub fn list(filter_by_cluster_id: Filter<ClusterId>, connection: &mut PgConnecti
     cluster_deployment_ids.into_iter().map(|cluster_id| {
         let cluster_id = ClusterId::from(cluster_id);
 
-        Ok(ClusterDeployment {
-            id: cluster_id,
-        })
+        Ok((cluster_id,
+            ClusterDeployment {
+                id: cluster_id,
+            }
+        ))
     })
-    .collect::<PersistenceResult<Vec<_>>>()
+    .collect::<PersistenceResult<HashMap<_, _>>>()
     .map_err(|cause|
         PersistenceError::list::<ClusterDeployment>(cause)
             .context("Failed to convert from database values to ClusterDeployment.")

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use url::Url;
 
 use crate::resource::persistence::database::ConnectError;
@@ -115,7 +116,6 @@ pub trait ResourcesStorageApi {
     fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable + Clone;
 
-    // TODO: change return value to HashMap<R::Id, R>
-    fn list<R>(&self) -> PersistenceResult<Vec<R>>
+    fn list<R>(&self) -> PersistenceResult<HashMap<R::Id, R>>
     where R: Resource + Persistable + Clone;
 }

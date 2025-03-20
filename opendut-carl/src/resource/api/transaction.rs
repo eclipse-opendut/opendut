@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::resources::Persistable;
 use crate::resource::storage::persistent::PersistentResourcesTransaction;
@@ -68,7 +69,7 @@ impl ResourcesStorageApi for ResourcesTransaction<'_> {
         }
     }
 
-    fn list<R>(&self) -> PersistenceResult<Vec<R>>
+    fn list<R>(&self) -> PersistenceResult<HashMap<R::Id, R>>
     where R: Resource + Persistable + Clone {
         match &self {
             ResourcesTransaction::Persistent(transaction) => transaction.list(),

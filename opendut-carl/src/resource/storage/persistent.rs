@@ -7,6 +7,7 @@ use crate::resource::storage::volatile::VolatileResourcesStorage;
 use crate::resource::storage::{DatabaseConnectInfo, Resource, ResourcesStorageApi};
 use diesel::{Connection, PgConnection};
 use std::any::Any;
+use std::collections::HashMap;
 use std::sync::Mutex;
 
 pub struct PersistentResourcesStorage {
@@ -80,7 +81,7 @@ impl ResourcesStorageApi for PersistentResourcesStorage {
         R::get(id, &storage)
     }
 
-    fn list<R>(&self) -> PersistenceResult<Vec<R>>
+    fn list<R>(&self) -> PersistenceResult<HashMap<R::Id, R>>
     where R: Resource + Persistable + Clone {
         let mut db = self.db_connection.lock().unwrap();
         let db = Db::from_connection(&mut db);
@@ -122,7 +123,7 @@ impl ResourcesStorageApi for PersistentResourcesTransaction<'_> {
         R::get(id, &storage)
     }
 
-    fn list<R>(&self) -> PersistenceResult<Vec<R>>
+    fn list<R>(&self) -> PersistenceResult<HashMap<R::Id, R>>
     where
         R: Resource + Persistable + Clone
     {

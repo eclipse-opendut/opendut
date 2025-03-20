@@ -6,35 +6,55 @@ use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::resources::Id;
 
 
-pub trait IntoId<R: Resource> {
+pub trait ResourceId<R: Resource> {
     fn into_id(self) -> Id;
+    fn from_id(id: Id) -> Self;
 }
 
-impl IntoId<ClusterConfiguration> for ClusterId {
+impl ResourceId<ClusterConfiguration> for ClusterId {
     fn into_id(self) -> Id {
         Id::from(self.0)
     }
+
+    fn from_id(id: Id) -> Self {
+        ClusterId::from(id.value())
+    }
 }
-impl IntoId<ClusterDeployment> for ClusterId {
+impl ResourceId<ClusterDeployment> for ClusterId {
     fn into_id(self) -> Id {
         Id::from(self.0)
     }
+    fn from_id(id: Id) -> Self {
+        ClusterId::from(id.value())
+    }
 }
-impl IntoId<PeerDescriptor> for PeerId {
+impl ResourceId<PeerDescriptor> for PeerId {
     fn into_id(self) -> Id {
         Id::from(self.uuid)
     }
+    fn from_id(id: Id) -> Self {
+        PeerId::from(id.value())
+    }
 }
-impl IntoId<OldPeerConfiguration> for PeerId {
+impl ResourceId<OldPeerConfiguration> for PeerId {
     fn into_id(self) -> Id {
         Id::from(self.uuid)
     }
+    fn from_id(id: Id) -> Self {
+        PeerId::from(id.value())
+    }
 }
-impl IntoId<PeerConfiguration> for PeerId {
+impl ResourceId<PeerConfiguration> for PeerId {
     fn into_id(self) -> Id {
         Id::from(self.uuid)
     }
+    fn from_id(id: Id) -> Self {
+        PeerId::from(id.value())
+    }
 }
-impl IntoId<PeerConnectionState> for PeerId {
+impl ResourceId<PeerConnectionState> for PeerId {
     fn into_id(self) -> Id { Id::from(self.uuid) }
+    fn from_id(id: Id) -> Self {
+        PeerId::from(id.value())
+    }
 }

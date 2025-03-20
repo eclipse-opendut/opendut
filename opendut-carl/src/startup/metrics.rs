@@ -69,7 +69,7 @@ pub fn initialize_metrics_collection(
                 match result {
                     Ok(peer_connection_states) => {
                         let online_peers = peer_connection_states.into_iter()
-                            .filter(|connection| matches!(connection, PeerConnectionState::Online { .. }))
+                            .filter(|(_, connection)| matches!(connection, PeerConnectionState::Online { .. }))
                             .collect::<Vec<_>>();
 
                         observer.observe(online_peers.len() as u64, &[])

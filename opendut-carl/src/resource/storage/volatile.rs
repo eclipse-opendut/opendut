@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use opendut_types::resources::Id;
 
-use crate::resource::api::id::IntoId;
+use crate::resource::api::id::ResourceId;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::resources::Persistable;
 use crate::resource::storage::ResourcesStorageApi;
@@ -73,19 +73,21 @@ impl ResourcesStorageApi for VolatileResourcesStorage {
         Ok(result)
     }
 
-    fn list<R>(&self) -> PersistenceResult<Vec<R>>
+    fn list<R>(&self) -> PersistenceResult<HashMap<R::Id, R>>
     where R: Resource {
-        let result = match self.column_of::<R>() {
+        let result: HashMap<R::Id, R> = match self.column_of::<R>() {
             Some(column) => {
-                column.values()
-                    .map(|value| value
+                column.iter().map(|(value_id, value)| {
+                    let resource = value
                         .downcast_ref::<R>()
                         .cloned()
-                        .expect("It should always be possible to cast the stored data back to its own type while building an iterator.")
-                    )
-                    .collect()
+                        .expect("It should always be possible to cast the stored data back to its own type while building an iterator.");
+                    let resource_id = R::Id::from_id(*value_id);
+                    (resource_id, resource)
+                })
+                .collect::<HashMap<_, _>>()
             }
-            None => Vec::new()
+            None => HashMap::new()
         };
         Ok(result)
     }
@@ -140,7 +142,7 @@ impl ResourcesStorageApi for VolatileResourcesTransaction<'_> {
         self.inner.get(id)
     }
 
-    fn list<R>(&self) -> PersistenceResult<Vec<R>>
+    fn list<R>(&self) -> PersistenceResult<HashMap<R::Id, R>>
     where R: Resource + Persistable + Clone {
         self.inner.list()
     }

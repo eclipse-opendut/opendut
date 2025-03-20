@@ -46,7 +46,7 @@ async fn should_persist_cluster_deployment(resource_manager: ResourceManagerRef)
     assert_eq!(result, Some(testee.clone()));
     let result = resource_manager.list::<ClusterDeployment>().await?;
     assert_eq!(result.len(), 1);
-    assert_eq!(result.first(), Some(&testee));
+    assert_eq!(result.values().next(), Some(&testee));
 
     let result = resource_manager.remove::<ClusterDeployment>(testee.id).await?;
     assert_eq!(result, Some(testee.clone()));

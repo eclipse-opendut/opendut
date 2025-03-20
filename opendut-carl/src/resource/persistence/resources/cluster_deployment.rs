@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use opendut_types::cluster::{ClusterDeployment, ClusterId};
 
 use crate::resource::persistence::error::PersistenceResult;
@@ -18,12 +19,11 @@ impl Persistable for ClusterDeployment {
     }
 
     fn get(cluster_id: ClusterId, storage: &Storage) -> PersistenceResult<Option<Self>> {
-        let result = query::cluster_deployment::list(Filter::By(cluster_id), &mut storage.db.connection())?
-            .first().cloned();
+        let result = query::cluster_deployment::list(Filter::By(cluster_id), &mut storage.db.connection())?.values().next().cloned();
         Ok(result)
     }
 
-    fn list(storage: &Storage) -> PersistenceResult<Vec<Self>> {
+    fn list(storage: &Storage) -> PersistenceResult<HashMap<Self::Id, Self>> {
         query::cluster_deployment::list(Filter::Not, &mut storage.db.connection())
     }
 }

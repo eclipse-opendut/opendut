@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::resources::Persistable;
 use crate::resource::persistence::Storage;
@@ -18,7 +19,7 @@ impl Persistable for PeerConnectionState {
         storage.memory.get(id)
     }
 
-    fn list(storage: &Storage) -> PersistenceResult<Vec<Self>> {
+    fn list(storage: &Storage) -> PersistenceResult<HashMap<Self::Id, Self>> {
         storage.memory.list()
     }
 }

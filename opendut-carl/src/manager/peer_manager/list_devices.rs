@@ -22,7 +22,7 @@ pub async fn list_devices(params: ListDevicesParams) -> Result<Vec<DeviceDescrip
             .map_err(|cause| ListDevicesError::Internal { cause: cause.to_string() })?;
 
         let devices = peers.into_iter()
-            .flat_map(|peer| peer.topology.devices)
+            .flat_map(|(_, peer_descriptor) | peer_descriptor.topology.devices)
             .map(|device| (device.id, device))
             .collect::<HashMap<_, _>>();
 

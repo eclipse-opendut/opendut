@@ -35,7 +35,7 @@ async fn should_persist_peer_descriptor_implementation(resource_manager: Resourc
     assert_eq!(result, Some(testee.clone()));
     let result = resource_manager.list::<PeerDescriptor>().await?;
     assert_eq!(result.len(), 1);
-    assert_eq!(result.first(), Some(&testee));
+    assert_eq!(result.values().next(), Some(&testee));
 
 
     let testee = {

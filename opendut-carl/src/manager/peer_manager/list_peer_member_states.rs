@@ -44,8 +44,8 @@ pub mod internal {
 
         let all_peers = resources.list::<PeerDescriptor>()?;
 
-        let peer_member_states = all_peers.into_iter()
-            .map(|peer| {
+        let peer_member_states = all_peers.into_values()
+            .map(|peer | {
                 let blocked_devices = peer.topology.devices.into_iter()
                     .filter_map(|device| {
                         deployed_devices.get(&device.id).map(|cluster_id|

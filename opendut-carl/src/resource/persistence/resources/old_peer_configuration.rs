@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use opendut_types::peer::configuration::OldPeerConfiguration;
 use opendut_types::peer::PeerId;
 
@@ -19,7 +20,7 @@ impl Persistable for OldPeerConfiguration {
         storage.memory.get(id)
     }
     
-    fn list(storage: &Storage) -> PersistenceResult<Vec<Self>> {
+    fn list(storage: &Storage) -> PersistenceResult<HashMap<Self::Id, Self>> {
         storage.memory.list()
     }
 }

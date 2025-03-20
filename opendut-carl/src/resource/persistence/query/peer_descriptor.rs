@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl, SelectableHelper};
 use std::ops::Not;
 use uuid::Uuid;
@@ -94,8 +95,7 @@ fn insert_persistable(persistable: PersistablePeerDescriptor, connection: &mut P
 }
 
 pub fn remove(peer_id: PeerId, connection: &mut PgConnection) -> PersistenceResult<Option<PeerDescriptor>> {
-    let result = list(Filter::By(peer_id), connection)?
-        .first().cloned();
+    let result = list(Filter::By(peer_id), connection)?.values().next().cloned();
 
     diesel::delete(
         schema::peer_descriptor::table
@@ -107,7 +107,7 @@ pub fn remove(peer_id: PeerId, connection: &mut PgConnection) -> PersistenceResu
     Ok(result)
 }
 
-pub fn list(filter_by_peer_id: Filter<PeerId>, connection: &mut PgConnection) -> PersistenceResult<Vec<PeerDescriptor>> {
+pub fn list(filter_by_peer_id: Filter<PeerId>, connection: &mut PgConnection) -> PersistenceResult<HashMap<PeerId, PeerDescriptor>> {
     let mut query = schema::peer_descriptor::table.into_boxed();
 
     if let Filter::By(peer_id) = filter_by_peer_id {
@@ -139,21 +139,24 @@ pub fn list(filter_by_peer_id: Filter<PeerId>, connection: &mut PgConnection) ->
 
         let executors = query::executor_descriptor::list_filtered_by_peer(peer_id, connection)?;
 
-        Ok(PeerDescriptor {
-            id: peer_id,
-            name,
-            location,
-            network: PeerNetworkDescriptor {
-                interfaces: network_interfaces,
-                bridge_name: network_bridge_name,
-            },
-            topology: Topology {
-                devices,
-            },
-            executors: ExecutorDescriptors { executors },
-        })
+        Ok((
+               peer_id, 
+               PeerDescriptor {
+                id: peer_id,
+                name,
+                location,
+                network: PeerNetworkDescriptor {
+                    interfaces: network_interfaces,
+                    bridge_name: network_bridge_name,
+                },
+                topology: Topology {
+                    devices,
+                },
+                executors: ExecutorDescriptors { executors },
+            }
+        ))
     })
-    .collect::<PersistenceResult<Vec<_>>>()
+    .collect::<PersistenceResult<HashMap<_, _>>>()
     .map_err(|cause|
         PersistenceError::list::<PeerDescriptor>(cause)
             .context("Failed to convert from database values to PeerDescriptor.")

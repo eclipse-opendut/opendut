@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::resource::api::transaction::{RelayedSubscriptionEvents, ResourcesTransaction};
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::resources::Persistable;
@@ -66,7 +67,7 @@ impl ResourcesStorageApi for Resources {
         }
     }
 
-    fn list<R>(&self) -> PersistenceResult<Vec<R>>
+    fn list<R>(&self) -> PersistenceResult<HashMap<R::Id, R>>
     where R: Resource + Persistable {
         match &self.storage {
             ResourcesStorage::Persistent(storage) => storage.list(),
