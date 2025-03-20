@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use tonic::{Request, Response, Status};
 use tonic_web::CorsGrpcWeb;
 use tracing::{error, trace, warn};
@@ -7,7 +5,6 @@ use opendut_carl_api::proto::services::cluster_manager::*;
 use opendut_carl_api::proto::services::cluster_manager::cluster_manager_server::{ClusterManager as ClusterManagerService, ClusterManagerServer};
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
 
-use crate::manager::cluster_manager;
 use crate::manager::cluster_manager::{ClusterManagerRef, CreateClusterConfigurationParams, DeleteClusterConfigurationParams};
 use crate::manager::grpc::extract;
 use crate::resource::manager::ResourceManagerRef;
@@ -80,28 +77,36 @@ impl ClusterManagerService for ClusterManagerFacade {
 
         trace!("Received request to delete cluster configuration for cluster <{cluster_id}>.");
 
-        let result =
-            cluster_manager::delete_cluster_configuration(DeleteClusterConfigurationParams {
-                resource_manager: Arc::clone(&self.resource_manager),
+        let result = self.resource_manager.resources_mut(async |resources|
+            resources.delete_cluster_configuration(DeleteClusterConfigurationParams {
                 cluster_id,
-            }).await;
+            })
+        ).await;
 
-        match result {
+        let response = match result {
+            Ok(Ok(cluster_configuration)) => delete_cluster_configuration_response::Reply::Success(
+                DeleteClusterConfigurationSuccess {
+                    cluster_configuration: Some(cluster_configuration.into())
+                }
+            ),
+            Ok(Err(error)) => delete_cluster_configuration_response::Reply::Failure(error.into()),
             Err(error) => {
-                Ok(Response::new(DeleteClusterConfigurationResponse {
-                    reply: Some(delete_cluster_configuration_response::Reply::Failure(error.into()))
-                }))
+                let cause = String::from("Error when handling transaction in database");
+                error!("{cause}: {error}");
+
+                delete_cluster_configuration_response::Reply::Failure(
+                    opendut_carl_api::carl::cluster::DeleteClusterConfigurationError::Internal {
+                        cluster_id,
+                        cluster_name: None,
+                        cause,
+                    }.into()
+                )
             }
-            Ok(cluster_configuration) => {
-                Ok(Response::new(DeleteClusterConfigurationResponse {
-                    reply: Some(delete_cluster_configuration_response::Reply::Success(
-                        DeleteClusterConfigurationSuccess {
-                            cluster_configuration: Some(cluster_configuration.into())
-                        }
-                    ))
-                }))
-            }
-        }
+        };
+
+        Ok(Response::new(DeleteClusterConfigurationResponse {
+            reply: Some(response)
+        }))
     }
     #[tracing::instrument(skip_all, level="trace")]
     async fn get_cluster_configuration(&self, request: Request<GetClusterConfigurationRequest>) -> Result<Response<GetClusterConfigurationResponse>, Status> {
