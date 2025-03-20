@@ -1,6 +1,5 @@
 use anyhow::Context;
 use std::collections::{HashMap, HashSet};
-use std::ops::Not;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -10,17 +9,17 @@ use tracing::{debug, error, info, trace, warn};
 
 use opendut_carl_api::carl::cluster::{DeleteClusterDeploymentError, GetClusterConfigurationError, GetClusterDeploymentError, ListClusterConfigurationsError, ListClusterDeploymentsError, StoreClusterDeploymentError};
 use opendut_types::cluster::{ClusterAssignment, ClusterConfiguration, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
-use opendut_types::peer::state::{PeerConnectionState, PeerMemberState, PeerState};
+use opendut_types::peer::state::PeerConnectionState;
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
 use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
 use opendut_types::util::Port;
 
-use crate::manager::{cluster_manager, peer_manager};
 use crate::manager::cluster_manager::delete_cluster_deployment::DeleteClusterDeploymentParams;
 use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
-use crate::resource::persistence::error::PersistenceResult;
+use crate::manager::{cluster_manager, peer_manager};
 use crate::resource::manager::{ResourceManagerRef, SubscriptionEvent};
+use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::storage::ResourcesStorageApi;
 use crate::settings::vpn::Vpn;
 
@@ -33,15 +32,15 @@ pub use delete_cluster_configuration::*;
 pub mod delete_cluster_deployment;
 pub use delete_cluster_deployment::*;
 
-pub mod determine_cluster_peer_states;
-pub use determine_cluster_peer_states::*;
+pub mod list_cluster_peer_states;
+pub use list_cluster_peer_states::*;
 
-pub mod determine_cluster_peers;
-pub use determine_cluster_peers::*;
+pub mod list_cluster_peers;
+pub use list_cluster_peers::*;
 
 pub mod list_deployed_clusters;
+use crate::manager::peer_manager::{AssignClusterOptions, AssignClusterParams, ListPeerDescriptorsParams};
 pub use list_deployed_clusters::*;
-use crate::manager::peer_manager::{AssignClusterOptions, AssignClusterParams, GetPeerStateParams, ListPeerDescriptorsParams};
 
 pub type ClusterManagerRef = Arc<Mutex<ClusterManager>>;
 
@@ -110,55 +109,32 @@ impl ClusterManager {
     pub async fn store_cluster_deployment(&mut self, deployment: ClusterDeployment) -> Result<ClusterId, StoreClusterDeploymentError> {
         let cluster_id = deployment.id;
 
-        let cluster_config = self.resource_manager.get::<ClusterConfiguration>(cluster_id).await
-            .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?
-            .ok_or(StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: String::from("Cluster not found") })?;
+        let cluster_peers = cluster_manager::list_cluster_peer_states(ListClusterPeerStatesParams {
+            resource_manager: Arc::clone(&self.resource_manager),
+            cluster_id
+        }).await.map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?;
 
-        let peer_descriptors = peer_manager::list_peer_descriptors(ListPeerDescriptorsParams { resource_manager: self.resource_manager.clone() }).await
-            .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?;
-
-        let cluster_peer_ids = peer_descriptors.into_iter()
-            .filter(|peer| peer.topology.devices.iter().any(|device| cluster_config.devices.contains(&device.id)))
-            .map(|peer| peer.id)
-            .collect::<Vec<PeerId>>();
-
-        let mut blocked_peers_by_id: Vec<PeerId> = Vec::new();
-        for peer_id in cluster_peer_ids {
-            let get_peer_state_params = GetPeerStateParams {
-                peer: peer_id,
-                resource_manager: self.resource_manager.clone(),
-            };
-            let peer_state = peer_manager::get_peer_state(get_peer_state_params)
-                .await
-                .map_err(|get_peer_state_error| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: get_peer_state_error.to_string() })?;
-
-            if let PeerState { member: PeerMemberState::Blocked { .. }, .. } = peer_state {
-                blocked_peers_by_id.push(peer_id);
-            }
-        }
-
-        if blocked_peers_by_id.is_empty().not() {
-            warn!("Cannot store cluster deployment, because the following peers are blocked already: {blocked_peers_by_id:?}");
-            return Err(StoreClusterDeploymentError::IllegalPeerState { cluster_id: deployment.id, cluster_name: None, invalid_peers: blocked_peers_by_id });
-        }
-
-        {
-            let maybe_existing_deployment = self.resource_manager.get::<ClusterDeployment>(cluster_id).await
-                .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?;
-
-            if maybe_existing_deployment.is_some() {
-                trace!("Received instruction to store deployment for cluster <{cluster_id}>, which already exists. Ignoring.");
-            } else {
+        let cluster_deployable = cluster_peers.check_all_peers_are_available_not_necessarily_online();
+        match cluster_deployable {
+            ClusterDeployable::AllPeersAvailable => {
                 self.resource_manager.resources_mut(async |resources| {
                     let cluster_name = resources.get::<ClusterConfiguration>(cluster_id)
                         .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?
                         .map(|cluster| cluster.name)
                         .unwrap_or_else(|| ClusterName::try_from("unknown_cluster").unwrap());
 
-                    resources.insert(cluster_id, deployment) //TODO don't insert when cluster does not exist
+                    resources.insert(cluster_id, deployment)
                         .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: Some(cluster_name.clone()), cause: cause.to_string() })
                 }).await
-                .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })??;
+                    .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })??;
+            }
+            ClusterDeployable::NotAllPeersAvailable { unavailable_peers } => {
+                let blocked_peers_by_id = unavailable_peers.into_iter().collect::<Vec<_>>();
+                warn!("Cannot store cluster deployment, because the following peers are blocked already: {blocked_peers_by_id:?}");
+                return Err(StoreClusterDeploymentError::IllegalPeerState { cluster_id: cluster_peers.cluster_id, cluster_name: None, invalid_peers: blocked_peers_by_id });
+            }
+            ClusterDeployable::AlreadyDeployed => {
+                trace!("Received instruction to store deployment for cluster <{cluster_id}>, which already exists. Ignoring.");
             }
         }
 
@@ -253,7 +229,7 @@ impl ClusterManager {
 
     #[tracing::instrument(skip(self), level="trace")]
     pub async fn deploy_cluster_if_all_peers_available(&mut self, cluster_id: ClusterId) -> Result<(), DeployClusterError> {
-        let cluster_peer_states = cluster_manager::determine_cluster_peer_states(DetermineClusterPeerStatesParams {
+        let cluster_peer_states = cluster_manager::list_cluster_peer_states(ListClusterPeerStatesParams {
             resource_manager: Arc::clone(&self.resource_manager),
             cluster_id,
         }).await
@@ -525,11 +501,11 @@ mod test {
     use super::*;
 
     mod deploy_cluster {
+        use super::*;
+        use crate::manager::peer_manager::StorePeerDescriptorParams;
         use opendut_carl_api::carl::broker::stream_header;
         use opendut_carl_api::proto::services::peer_messaging_broker::ApplyPeerConfiguration;
         use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
-        use crate::manager::peer_manager::StorePeerDescriptorParams;
-        use super::*;
 
         #[rstest]
         #[tokio::test]

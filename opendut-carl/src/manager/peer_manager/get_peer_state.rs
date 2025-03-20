@@ -1,10 +1,10 @@
 use crate::manager::peer_manager;
-use crate::manager::peer_manager::ListPeerMemberStatesParams;
 use crate::resource::manager::ResourceManagerRef;
 use opendut_carl_api::carl::peer::GetPeerStateError;
 use opendut_types::peer::state::{PeerConnectionState, PeerState};
 use opendut_types::peer::PeerId;
 use tracing::{debug, error, info};
+use crate::resource::storage::ResourcesStorageApi;
 
 pub struct GetPeerStateParams {
     pub peer: PeerId,
@@ -18,28 +18,25 @@ pub async fn get_peer_state(params: GetPeerStateParams) -> Result<PeerState, Get
 
         let peer_id = params.peer;
         let resource_manager = params.resource_manager;
-
         debug!("Querying state of peer with peer_id <{}>.", peer_id);
-        let peer_member_states = peer_manager::list_peer_member_states(ListPeerMemberStatesParams { resource_manager: resource_manager.clone() }).await
-            .map_err(|cause| GetPeerStateError::Internal { peer_id, cause: cause.to_string() })?;  // only persistence error possible
-        let peer_member_state = peer_member_states.get(&peer_id);
 
-        match peer_member_state {
-            Some(peer_member_state) => {
-                let connection = resource_manager.get::<PeerConnectionState>(peer_id).await
-                    .map_err(|cause| GetPeerStateError::Internal { peer_id, cause: cause.to_string() })?  // only persistence error possible
-                    .unwrap_or_default();
-                info!("Successfully queried state of peer with peer_id <{}>.", peer_id);
-                Ok(PeerState {
-                    connection,
-                    member: peer_member_state.clone(),
-                })
-            } 
-            None => {
-                info!("Could not determine state of unknown peer with peer_id <{}>.", peer_id);
-                Err(GetPeerStateError::PeerNotFound { peer_id })
-            }
-        }
+        let peer_state: Result<PeerState, GetPeerStateError> = resource_manager.resources(async |resources| {
+            let peer_member_state = peer_manager::internal::get_peer_member_state(resources, &peer_id)
+                .map_err(|cause| GetPeerStateError::Internal { peer_id, cause: cause.to_string() })?
+                .ok_or_else(|| GetPeerStateError::PeerNotFound { peer_id })?;
+            let connection = resources.get::<PeerConnectionState>(peer_id)
+                .map_err(|cause| GetPeerStateError::Internal { peer_id, cause: cause.to_string() })?  // only persistence error possible
+                .unwrap_or_default();
+
+            info!("Successfully queried state of peer with peer_id <{}>.", peer_id);
+
+            Ok(PeerState {
+                connection,
+                member: peer_member_state.clone(),
+            })
+        }).await;
+
+        peer_state
     }
 
     inner(params).await

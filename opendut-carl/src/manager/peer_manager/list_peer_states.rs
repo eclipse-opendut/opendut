@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use crate::resource::manager::ResourceManagerRef;
 use opendut_types::peer::{PeerId};
-use tracing::{debug, error, info};
+use tracing::{debug, error};
 use opendut_carl_api::carl::peer::{ListPeerStatesError};
 use opendut_types::peer::state::{PeerConnectionState, PeerState};
 use crate::manager::peer_manager;
@@ -22,15 +22,14 @@ pub async fn list_peer_states(params: ListPeerStatesParams) -> Result<HashMap<Pe
         debug!("Querying all peer states.");
         let peer_states = resource_manager.resources(async |resources| {
             let peer_member_states = peer_manager::internal::list_peer_member_states(resources)?;
-            
+            let peer_connection_states = resources.list::<PeerConnectionState>()?;
+
             let peer_states = peer_member_states.into_iter()
-                .map(|(peer_id, peer_member_state)| {
-                    // TODO: peer state is partially hold in memory (connection state) and partially hold in database (membership due to cluster assignment) 
-                    // TODO: PeerState and PeerConnectionState do not have a field `id` and the list() of ResourcesStorageApi returns only a vector of the stored resources => no id field in listing all elements!
-                    let peer_connection_state = resources.get::<PeerConnectionState>(peer_id)?.unwrap_or_default();
+                .map(|(peer_id, member)| {
+                    let connection = peer_connection_states.get(&peer_id).cloned().unwrap_or_default();
                     let peer_state = PeerState {
-                        connection: peer_connection_state,
-                        member: peer_member_state,
+                        connection,
+                        member,
                     };
                     Ok::<_, PersistenceError>((peer_id, peer_state))
                     
@@ -42,7 +41,7 @@ pub async fn list_peer_states(params: ListPeerStatesParams) -> Result<HashMap<Pe
         .map_err(|cause| ListPeerStatesError::Internal { cause: cause.to_string() })?;
 
 
-        info!("Successfully queried all peer states.");
+        debug!("Successfully queried all peer states.");
 
         Ok(peer_states)
     }

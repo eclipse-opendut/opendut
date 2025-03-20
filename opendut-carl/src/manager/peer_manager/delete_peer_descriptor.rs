@@ -7,7 +7,7 @@ use opendut_types::peer::{PeerDescriptor, PeerId};
 use tracing::{debug, error, info, warn};
 use opendut_types::peer::state::PeerMemberState;
 use crate::manager::peer_manager;
-use crate::manager::peer_manager::ListPeerMemberStatesParams;
+use crate::manager::peer_manager::list_peer_member_states::ListPeerMemberStatesParams;
 
 pub struct DeletePeerDescriptorParams {
     pub resource_manager: ResourceManagerRef,
