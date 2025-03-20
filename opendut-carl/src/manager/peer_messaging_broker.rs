@@ -157,7 +157,7 @@ impl PeerMessagingBroker {
     }
 
     async fn update_peer_connection_state(&self, peer_id: PeerId, remote_host: IpAddr) -> Result<(), OpenError> {
-        self.resource_manager.resources_mut(|resources| {
+        self.resource_manager.resources_mut(async |resources| {
             let maybe_peer_state = resources.get::<PeerConnectionState>(peer_id)
                 .map_err(|source| OpenError::Persistence { peer_id, source })?;
 
@@ -309,7 +309,7 @@ mod tests {
 
             assert!(peers.get(&peer_id).is_some());
 
-            let peer_connection_state = resource_manager.resources(|resources| {
+            let peer_connection_state = resource_manager.resources(async |resources| {
                 resources.get::<PeerConnectionState>(peer_id)
             }).await?;
             let peer_connection_state = peer_connection_state.unwrap_or_else(|| panic!("PeerConnectionState for peer <{peer_id}> should exist."));
@@ -353,7 +353,7 @@ mod tests {
 
             assert!(peers.get(&peer_id).is_none());
 
-            let peer_connection_state = resource_manager.resources(|resources| {
+            let peer_connection_state = resource_manager.resources(async |resources| {
                 resources.get::<PeerConnectionState>(peer_id)
             }).await?;
             let peer_connection_state = peer_connection_state.unwrap_or_else(|| panic!("PeerConnectionState for peer <{peer_id}> should exist."));

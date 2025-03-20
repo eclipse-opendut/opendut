@@ -36,9 +36,9 @@ impl ResourceManager {
     where R: Resource + Persistable + Subscribable {
         let mut state = self.state.write().await;
 
-        let (result, relayed_subscription_events) = state.storage.resources_mut(|transaction| {
+        let (result, relayed_subscription_events) = state.storage.resources_mut(async |transaction| {
             transaction.insert(id.clone(), resource.clone())
-        })?;
+        }).await?;
         Self::send_relayed_subscription_events(relayed_subscription_events, &mut state).await;
         result
     }
@@ -46,9 +46,9 @@ impl ResourceManager {
     pub async fn remove<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable {
         let mut state = self.state.write().await;
-        let (result, relayed_subscription_events) = state.storage.resources_mut(move |transaction| {
+        let (result, relayed_subscription_events) = state.storage.resources_mut(async move |transaction| {
             transaction.remove(id)
-        })?;
+        }).await?;
         Self::send_relayed_subscription_events(relayed_subscription_events, &mut state).await;
         result
     }
@@ -56,38 +56,38 @@ impl ResourceManager {
     pub async fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable + Clone {
         let state = self.state.read().await;
-        state.storage.resources(|resources| resources.get(id))
+        state.storage.resources(async |resources| resources.get(id)).await
     }
 
     pub async fn list<R>(&self) -> PersistenceResult<HashMap<R::Id, R>>
     where R: Resource + Persistable + Clone {
         let state = self.state.read().await;
-        state.storage.resources(|resources| resources.list())
+        state.storage.resources(async |resources| resources.list()).await
     }
 
     pub async fn resources<F, T>(&self, f: F) -> T
     where
-        F: FnOnce(&Resources) -> T,
+        F: AsyncFnOnce(&Resources) -> T,
     {
         let state = self.state.read().await;
-        state.storage.resources(move |transaction| {
-            f(transaction)
-        })
+        state.storage.resources(async move |transaction| {
+            f(transaction).await
+        }).await
     }
 
     /// Allows grouping modifications to the database. This does multiple things:
     /// - Opens a database transaction and then either commits it, or rolls it back when you return an `Err` out of the closure.
     /// - Acquires the lock for the database mutex and keeps it until the end of the closure.
     /// - Groups the async calls, so we only have to await at the end.
-    pub async fn resources_mut<F, T, E>(&self, f: F) -> PersistenceResult<Result<T, E>>
+    pub async fn resources_mut<F, T, E>(&self, function: F) -> PersistenceResult<Result<T, E>>
     where
-        F: FnOnce(&mut Resources) -> Result<T, E>,
+        F: AsyncFnOnce(&mut Resources) -> Result<T, E>,
         E: Send + Sync + 'static,
     {
         let mut state = self.state.write().await;
-        let (result, relayed_subscription_events) = state.storage.resources_mut(move |transaction| {
-            f(transaction)
-        })?;
+        let (result, relayed_subscription_events) = state.storage.resources_mut(async move |transaction| {
+            function(transaction).await
+        }).await?;
         Self::send_relayed_subscription_events(relayed_subscription_events, &mut state).await;
         Ok(result)
     }
@@ -264,7 +264,7 @@ mod test {
 
         assert_that!(testee.get::<PeerDescriptor>(peer_resource_id).await?, some(eq(&peer)));
 
-        testee.resources(|resources| {
+        testee.resources(async |resources| {
             resources.list::<ClusterConfiguration>()?
                 .into_iter()
                 .for_each(|(_cluster_id, cluster)| {

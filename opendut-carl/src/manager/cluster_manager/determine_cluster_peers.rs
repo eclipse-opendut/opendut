@@ -12,7 +12,7 @@ pub struct DetermineClusterPeersParams {
 pub async fn determine_cluster_peers(params: DetermineClusterPeersParams) -> Result<Vec<PeerDescriptor>, DetermineClusterPeersError> {
     let DetermineClusterPeersParams { resource_manager, cluster_id } = params;
 
-    let cluster_peers = resource_manager.resources(|resources| {
+    let cluster_peers = resource_manager.resources(async |resources| {
         let cluster_configuration = resources.get::<ClusterConfiguration>(cluster_id)
             .map_err(|source| DetermineClusterPeersError::Persistence { cluster_id, source })?
             .ok_or_else(|| DetermineClusterPeersError::ClusterNotFound(cluster_id))?;

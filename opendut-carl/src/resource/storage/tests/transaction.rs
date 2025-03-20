@@ -18,7 +18,7 @@ async fn should_rollback_from_an_error_during_a_transaction() -> anyhow::Result<
     let result = resource_manager.get::<PeerDescriptor>(peer_id).await?;
     assert!(result.is_none());
 
-    let error = resource_manager.resources_mut(|resources| {
+    let error = resource_manager.resources_mut(async |resources| {
         resources.insert(peer_id, peer)?; //will be rolled back
         let result = resources.get::<PeerDescriptor>(peer_id)?;
         assert!(result.is_some());

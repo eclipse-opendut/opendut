@@ -18,7 +18,7 @@ pub async fn delete_cluster_deployment(params: DeleteClusterDeploymentParams) ->
         let DeleteClusterDeploymentParams { resource_manager, vpn, cluster_id } = params;
 
         let (deployment, cluster) = resource_manager
-            .resources_mut(|resources| {
+            .resources_mut(async |resources| {
                 resources.remove::<ClusterDeployment>(cluster_id)
                     .map_err(|cause| DeleteClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?
                     .map(|deployment| {

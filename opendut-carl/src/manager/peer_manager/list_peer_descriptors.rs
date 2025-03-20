@@ -17,7 +17,7 @@ pub async fn list_peer_descriptors(params: ListPeerDescriptorsParams) -> Result<
 
         debug!("Querying all peer descriptors.");
 
-        let peers = resource_manager.resources(|resources| {
+        let peers = resource_manager.resources(async |resources| {
             resources.list::<PeerDescriptor>()
         }).await
         .map_err(|cause| ListPeerDescriptorsError::Internal { cause: cause.to_string() })?;

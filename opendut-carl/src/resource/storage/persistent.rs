@@ -24,9 +24,9 @@ impl PersistentResourcesStorage {
         Ok(Self { db_connection, memory })
     }
 
-    pub fn resources<T, F>(&self, code: F) -> T
+    pub async fn resources<T, F>(&self, code: F) -> T
     where
-        F: FnOnce(PersistentResourcesTransaction) -> T,
+        F: AsyncFnOnce(PersistentResourcesTransaction) -> T,
     {
         let mut connection = self.db_connection.lock().unwrap();
 
@@ -39,16 +39,16 @@ impl PersistentResourcesStorage {
             relayed_subscription_events: &mut relayed_subscription_events,
         };
 
-        let result = code(transaction);
+        let result = futures::executor::block_on(code(transaction));
 
         debug_assert!(relayed_subscription_events.is_empty(), "Read-only storage operations should not trigger any subscription events.");
 
         result
     }
 
-    pub fn resources_mut<T, E, F>(&mut self, code: F) -> PersistenceResult<(Result<T, E>, RelayedSubscriptionEvents)>
+    pub async fn resources_mut<T, E, F>(&mut self, code: F) -> PersistenceResult<(Result<T, E>, RelayedSubscriptionEvents)>
     where
-        F: FnOnce(PersistentResourcesTransaction) -> Result<T, E>,
+        F: AsyncFnOnce(PersistentResourcesTransaction) -> Result<T, E>,
         E: Send + Sync + 'static,
     {
         let transaction_result = self.db_connection.lock().unwrap().transaction::<_, TransactionPassthroughError, _>(|connection| {
@@ -61,7 +61,7 @@ impl PersistentResourcesStorage {
                 relayed_subscription_events: &mut relayed_subscription_events,
             };
 
-            let result = code(transaction);
+            let result = futures::executor::block_on(code(transaction));
             match result {
                 Ok(ok) => Ok((ok, relayed_subscription_events)),
                 Err(error) => Err(TransactionPassthroughError::Passthrough(Box::new(error))), //passthrough via an Err-value to trigger transaction rollback

@@ -149,7 +149,7 @@ impl ClusterManager {
             if maybe_existing_deployment.is_some() {
                 trace!("Received instruction to store deployment for cluster <{cluster_id}>, which already exists. Ignoring.");
             } else {
-                self.resource_manager.resources_mut(|resources| {
+                self.resource_manager.resources_mut(async |resources| {
                     let cluster_name = resources.get::<ClusterConfiguration>(cluster_id)
                         .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?
                         .map(|cluster| cluster.name)
@@ -214,7 +214,7 @@ impl ClusterManager {
 
     async fn deploy_all_clusters_containing_newly_available_peer(&mut self, peer_id: PeerId) -> anyhow::Result<()> {
 
-        let clusters_containing_devices_of_upped_peer = self.resource_manager.resources_mut(|resources| {
+        let clusters_containing_devices_of_upped_peer = self.resource_manager.resources_mut(async |resources| {
 
             let peer_descriptor = resources.get::<PeerDescriptor>(peer_id)?
                 .context(format!("No peer descriptor found for newly available peer <{peer_id}>."))?;

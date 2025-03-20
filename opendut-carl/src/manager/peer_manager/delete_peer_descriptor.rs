@@ -33,7 +33,7 @@ pub async fn delete_peer_descriptor(params: DeletePeerDescriptorParams) -> Resul
         } else {
             debug!("Deleting peer descriptor of peer <{peer_id}>.");
 
-            let peer_descriptor = resource_manager.resources_mut(|resources| {
+            let peer_descriptor = resource_manager.resources_mut(async |resources| {
 
                 let peer_descriptor = resources.remove::<PeerDescriptor>(peer_id)
                     .map_err(|cause| DeletePeerDescriptorError::Internal { peer_id, peer_name: None, cause: cause.to_string() })?

@@ -21,7 +21,7 @@ pub enum ListPeerMemberStatesError {
 pub async fn list_peer_member_states(params: ListPeerMemberStatesParams) -> Result<HashMap<PeerId, PeerMemberState>, ListPeerMemberStatesError> {
     let ListPeerMemberStatesParams { resource_manager } = params;
 
-    let peer_member_states = resource_manager.resources(|resources| {
+    let peer_member_states = resource_manager.resources(async |resources| {
         let peer_member_states = internal::list_peer_member_states(resources)?;
         PersistenceResult::Ok(peer_member_states)
     }).await?;

@@ -39,7 +39,7 @@ pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClu
 
     debug!("Assigning cluster to peer <{peer_id}>.");
 
-    let (old_peer_configuration, peer_configuration) = resource_manager.resources_mut(|resources| {
+    let (old_peer_configuration, peer_configuration) = resource_manager.resources_mut(async |resources| {
         let old_peer_configuration = OldPeerConfiguration {
             cluster_assignment: Some(cluster_assignment),
         };
@@ -131,7 +131,7 @@ mod tests {
             cluster_assignment: None,
         };
         let peer_configuration = PeerConfiguration::default();
-        resource_manager.resources_mut(|resources| {
+        resource_manager.resources_mut(async |resources| {
             resources.insert(peer_id, peer_descriptor())?;
             resources.insert(peer_id, Clone::clone(&old_peer_configuration))?;
             resources.insert(peer_id, Clone::clone(&peer_configuration))

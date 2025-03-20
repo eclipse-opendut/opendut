@@ -20,7 +20,7 @@ pub async fn list_peer_states(params: ListPeerStatesParams) -> Result<HashMap<Pe
         let resource_manager = params.resource_manager;
 
         debug!("Querying all peer states.");
-        let peer_states = resource_manager.resources(|resources| {
+        let peer_states = resource_manager.resources(async |resources| {
             let peer_member_states = peer_manager::internal::list_peer_member_states(resources)?;
             
             let peer_states = peer_member_states.into_iter()

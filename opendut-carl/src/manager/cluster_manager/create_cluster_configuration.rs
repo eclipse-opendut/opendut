@@ -20,7 +20,7 @@ pub async fn create_cluster_configuration(params: CreateClusterConfigurationPara
 
         debug!("Creating cluster configuration '{cluster_name}' <{cluster_id}>.");
 
-        resource_manager.resources_mut(|resources| {
+        resource_manager.resources_mut(async |resources| {
             resources.insert(cluster_id, params.cluster_configuration)
                 .map_err(|cause| CreateClusterConfigurationError::Internal { cluster_id, cluster_name: cluster_name.clone(), cause: cause.to_string() })
         }).await
