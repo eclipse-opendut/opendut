@@ -85,6 +85,7 @@ pub mod testing {
     use testcontainers_modules::testcontainers::ContainerAsync;
     use testcontainers_modules::{postgres, testcontainers::runners::AsyncRunner};
     use url::Url;
+    use crate::resource::api::global::GlobalResources;
 
     /// Spawns a Postgres Container and returns a connection for testing.
     /// ```no_run
@@ -130,9 +131,11 @@ pub mod testing {
     pub async fn spawn_and_connect_resource_manager() -> anyhow::Result<PostgresResources> {
         let (container, connect_info) = spawn().await?;
 
-        let resource_manager = ResourceManager::create(PersistenceOptions::Enabled {
+        let global = GlobalResources::default().complete();
+        let persistence_options = PersistenceOptions::Enabled {
             database_connect_info: connect_info.clone(),
-        }).await?;
+        };
+        let resource_manager = ResourceManager::create(global, persistence_options).await?;
 
         Ok(PostgresResources { container, resource_manager })
     }

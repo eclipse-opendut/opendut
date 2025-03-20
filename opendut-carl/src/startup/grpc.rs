@@ -10,6 +10,7 @@ use crate::resource::storage::PersistenceOptions;
 use crate::startup;
 use crate::manager::cluster_manager::{ClusterManager, ClusterManagerOptions};
 use crate::manager::peer_messaging_broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
+use crate::resource::api::global::GlobalResources;
 use crate::settings::vpn;
 
 pub struct GrpcFacades {
@@ -31,9 +32,13 @@ impl GrpcFacades {
             .context("Error while parsing VPN configuration.")?;
 
         let resource_manager = {
+            let mut global = GlobalResources::default();
+            global.insert(vpn.clone());
+            let global = global.complete();
+
             let resources_storage_options = PersistenceOptions::load(settings)?;
 
-            ResourceManager::create(resources_storage_options).await
+            ResourceManager::create(global, resources_storage_options).await
                 .context("Creating ResourceManager failed")?
         };
 

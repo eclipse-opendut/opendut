@@ -9,11 +9,13 @@ use crate::resource::storage::{self, PersistenceOptions, ResourceStorage, Resour
 use crate::resource::subscription::{ResourceSubscriptionChannels, Subscribable, Subscription};
 use std::sync::Arc;
 use tokio::sync::{RwLock, RwLockWriteGuard};
+use crate::resource::api::global::GlobalResourcesRef;
 
 pub type ResourceManagerRef = Arc<ResourceManager>;
 
 pub struct ResourceManager {
     state: RwLock<State>,
+    pub global: GlobalResourcesRef,
 }
 
 struct State {
@@ -23,12 +25,13 @@ struct State {
 
 impl ResourceManager {
 
-    pub async fn create(storage_options: PersistenceOptions) -> Result<ResourceManagerRef, storage::ConnectionError> {
+    pub async fn create(global: GlobalResourcesRef, storage_options: PersistenceOptions) -> Result<ResourceManagerRef, storage::ConnectionError> {
         let resources = ResourceStorage::connect(storage_options).await?;
         let subscribers = ResourceSubscriptionChannels::default();
 
         Ok(Arc::new(Self {
             state: RwLock::new(State { storage: resources, subscribers }),
+            global,
         }))
     }
 
@@ -36,7 +39,7 @@ impl ResourceManager {
     where R: Resource + Persistable + Subscribable {
         let mut state = self.state.write().await;
 
-        let (result, relayed_subscription_events) = state.storage.resources_mut(async |transaction| {
+        let (result, relayed_subscription_events) = state.storage.resources_mut(self.global.clone(), async |transaction| {
             transaction.insert(id.clone(), resource.clone())
         }).await?;
         Self::send_relayed_subscription_events(relayed_subscription_events, &mut state).await;
@@ -46,7 +49,7 @@ impl ResourceManager {
     pub async fn remove<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable {
         let mut state = self.state.write().await;
-        let (result, relayed_subscription_events) = state.storage.resources_mut(async move |transaction| {
+        let (result, relayed_subscription_events) = state.storage.resources_mut(self.global.clone(), async move |transaction| {
             transaction.remove(id)
         }).await?;
         Self::send_relayed_subscription_events(relayed_subscription_events, &mut state).await;
@@ -56,13 +59,13 @@ impl ResourceManager {
     pub async fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable + Clone {
         let state = self.state.read().await;
-        state.storage.resources(async |resources| resources.get(id)).await
+        state.storage.resources(self.global.clone(), async |resources| resources.get(id)).await
     }
 
     pub async fn list<R>(&self) -> PersistenceResult<HashMap<R::Id, R>>
     where R: Resource + Persistable + Clone {
         let state = self.state.read().await;
-        state.storage.resources(async |resources| resources.list()).await
+        state.storage.resources(self.global.clone(), async |resources| resources.list()).await
     }
 
     pub async fn resources<F, T>(&self, f: F) -> T
@@ -70,7 +73,7 @@ impl ResourceManager {
         F: AsyncFnOnce(&Resources) -> T,
     {
         let state = self.state.read().await;
-        state.storage.resources(async move |transaction| {
+        state.storage.resources(self.global.clone(), async move |transaction| {
             f(transaction).await
         }).await
     }
@@ -85,7 +88,7 @@ impl ResourceManager {
         E: Send + Sync + 'static,
     {
         let mut state = self.state.write().await;
-        let (result, relayed_subscription_events) = state.storage.resources_mut(async move |transaction| {
+        let (result, relayed_subscription_events) = state.storage.resources_mut(self.global.clone(), async move |transaction| {
             function(transaction).await
         }).await?;
         Self::send_relayed_subscription_events(relayed_subscription_events, &mut state).await;
@@ -161,8 +164,13 @@ impl ResourceManager {
 
         let subscribers = ResourceSubscriptionChannels::default();
 
+        let mut global = crate::resource::api::global::GlobalResources::default();
+        global.insert(crate::settings::vpn::Vpn::Disabled);
+        let global = global.complete();
+
         Arc::new(Self {
             state: RwLock::new(State { storage: resources, subscribers }),
+            global,
         })
     }
 

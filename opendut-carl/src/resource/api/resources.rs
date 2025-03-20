@@ -6,33 +6,44 @@ use crate::resource::storage::volatile::VolatileResourcesTransaction;
 use crate::resource::storage::ResourcesStorageApi;
 use crate::resource::subscription::{ResourceSubscriptionChannels, Subscribable, SubscriptionEvent};
 use std::collections::HashMap;
+use crate::resource::api::global::GlobalResourcesRef;
 
 pub type RelayedSubscriptionEvents = ResourceSubscriptionChannels;
 
-pub enum Resources<'transaction> {
+pub struct Resources<'transaction> {
+    kind: ResourcesKind<'transaction>,
+    pub global: GlobalResourcesRef,
+}
+pub enum ResourcesKind<'transaction> {
     Persistent(PersistentResourcesTransaction<'transaction>),
     Volatile(VolatileResourcesTransaction<'transaction>),
 }
 impl<'transaction> Resources<'transaction> {
-    pub fn persistent(transaction: PersistentResourcesTransaction<'transaction>) -> Self {
-        Self::Persistent(transaction)
+    pub fn persistent(transaction: PersistentResourcesTransaction<'transaction>, global: GlobalResourcesRef) -> Self {
+        Resources {
+            kind: ResourcesKind::Persistent(transaction),
+            global,
+        }
     }
-    pub fn volatile(transaction: VolatileResourcesTransaction<'transaction>) -> Self {
-        Self::Volatile(transaction)
+    pub fn volatile(transaction: VolatileResourcesTransaction<'transaction>, global: GlobalResourcesRef) -> Self {
+        Resources {
+            kind: ResourcesKind::Volatile(transaction),
+            global,
+        }
     }
 
     pub fn into_relayed_subscription_events(self) -> &'transaction mut RelayedSubscriptionEvents {
-        match self {
-            Resources::Persistent(transaction) => transaction.relayed_subscription_events,
-            Resources::Volatile(transaction) => transaction.relayed_subscription_events,
+        match self.kind {
+            ResourcesKind::Persistent(transaction) => transaction.relayed_subscription_events,
+            ResourcesKind::Volatile(transaction) => transaction.relayed_subscription_events,
         }
     }
 }
 impl ResourcesStorageApi for Resources<'_> {
     fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
     where R: Resource + Persistable + Subscribable {
-        match self {
-            Resources::Persistent(transaction) => {
+        match &mut self.kind {
+            ResourcesKind::Persistent(transaction) => {
                 let result = transaction.insert(id.clone(), resource.clone());
                 if result.is_ok() {
                     transaction.relayed_subscription_events
@@ -41,7 +52,7 @@ impl ResourcesStorageApi for Resources<'_> {
                 }
                 result
             }
-            Resources::Volatile(transaction) => {
+            ResourcesKind::Volatile(transaction) => {
                 let result = transaction.insert(id.clone(), resource.clone());
                 if result.is_ok() {
                     transaction.relayed_subscription_events
@@ -55,25 +66,25 @@ impl ResourcesStorageApi for Resources<'_> {
 
     fn remove<R>(&mut self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable {
-        match self {
-            Resources::Persistent(transaction) => transaction.remove(id),
-            Resources::Volatile(transaction) => transaction.remove(id),
+        match &mut self.kind {
+            ResourcesKind::Persistent(transaction) => transaction.remove(id),
+            ResourcesKind::Volatile(transaction) => transaction.remove(id),
         }
     }
 
     fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable + Clone {
-        match &self {
-            Resources::Persistent(transaction) => transaction.get(id),
-            Resources::Volatile(transaction) => transaction.get(id),
+        match &self.kind {
+            ResourcesKind::Persistent(transaction) => transaction.get(id),
+            ResourcesKind::Volatile(transaction) => transaction.get(id),
         }
     }
 
     fn list<R>(&self) -> PersistenceResult<HashMap<R::Id, R>>
     where R: Resource + Persistable + Clone {
-        match &self {
-            Resources::Persistent(transaction) => transaction.list(),
-            Resources::Volatile(transaction) => transaction.list(),
+        match &self.kind {
+            ResourcesKind::Persistent(transaction) => transaction.list(),
+            ResourcesKind::Volatile(transaction) => transaction.list(),
         }
     }
 }

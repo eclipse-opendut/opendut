@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use url::Url;
-
+use crate::resource::api::global::GlobalResourcesRef;
 use crate::resource::api::resources::{RelayedSubscriptionEvents, Resources};
 use crate::resource::api::Resource;
 use crate::resource::persistence::database::ConnectError;
@@ -35,34 +35,34 @@ impl ResourceStorage {
         Ok(storage)
     }
 
-    pub(super) async fn resources<T, F>(&self, code: F) -> T
+    pub(super) async fn resources<T, F>(&self, global: GlobalResourcesRef, code: F) -> T
     where
         F: AsyncFnOnce(&mut Resources) -> T,
     {
         match self {
             ResourceStorage::Persistent(storage) => storage.resources(async |transaction| {
-                let mut transaction = Resources::persistent(transaction);
+                let mut transaction = Resources::persistent(transaction, global);
                 code(&mut transaction).await
             }).await,
             ResourceStorage::Volatile(storage) => storage.resources(async |transaction| {
-                let mut transaction = Resources::volatile(transaction);
+                let mut transaction = Resources::volatile(transaction, global);
                 code(&mut transaction).await
             }).await,
         }
     }
 
-    pub(super) async fn resources_mut<T, E, F>(&mut self, code: F) -> PersistenceResult<(Result<T, E>, RelayedSubscriptionEvents)>
+    pub(super) async fn resources_mut<T, E, F>(&mut self, global: GlobalResourcesRef, code: F) -> PersistenceResult<(Result<T, E>, RelayedSubscriptionEvents)>
     where
         F: AsyncFnOnce(&mut Resources) -> Result<T, E>,
         E: Send + Sync + 'static,
     {
         match self {
             ResourceStorage::Persistent(storage) => storage.resources_mut(async |transaction| {
-                let mut transaction = Resources::persistent(transaction);
+                let mut transaction = Resources::persistent(transaction, global);
                 code(&mut transaction).await
             }).await,
             ResourceStorage::Volatile(storage) => storage.resources_mut(async |transaction| {
-                let mut transaction = Resources::volatile(transaction);
+                let mut transaction = Resources::volatile(transaction, global);
                 code(&mut transaction).await
             }).await,
         }
