@@ -541,10 +541,11 @@ mod test {
             let mut peer_b_rx = peer_open(peer_b.id, peer_b.remote_host, Arc::clone(&fixture.peer_messaging_broker)).await?;
 
 
-            cluster_manager::create_cluster_configuration(CreateClusterConfigurationParams {
-                resource_manager: Arc::clone(&fixture.resource_manager),
-                cluster_configuration,
-            }).await?;
+            fixture.resource_manager.resources_mut(async |resources| {
+                resources.create_cluster_configuration(CreateClusterConfigurationParams {
+                    cluster_configuration,
+                })
+            }).await??;
 
             assert_that!(fixture.testee.lock().await.deploy_cluster(cluster_id).await, ok(eq(&())));
 

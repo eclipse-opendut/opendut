@@ -9,13 +9,6 @@ use opendut_types::ShortName;
 
 #[derive(thiserror::Error, Debug)]
 pub enum CreateClusterConfigurationError {
-    #[error("ClusterConfigration '{actual_name}' <{actual_id}> could not be created, because ClusterConfigration '{other_name}' <{other_id}> is already registered with the same ClusterId!")]
-    ClusterConfigurationAlreadyExists {
-        actual_id: ClusterId,
-        actual_name: ClusterName,
-        other_id: ClusterId,
-        other_name: ClusterName
-    },
     #[error("ClusterConfigration '{cluster_name}' <{cluster_id}> could not be created, due to internal errors:\n  {cause}")]
     Internal {
         cluster_id: ClusterId,

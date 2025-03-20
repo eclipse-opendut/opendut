@@ -37,16 +37,8 @@ message CreateClusterConfigurationSuccess {
 
 message CreateClusterConfigurationFailure {
   oneof error {
-    CreateClusterConfigurationFailureClusterConfigurationAlreadyExists cluster_configuration_already_exists = 1;
     CreateClusterConfigurationFailureInternal internal = 2;
   }
-}
-
-message CreateClusterConfigurationFailureClusterConfigurationAlreadyExists {
-  opendut.types.cluster.ClusterId actual_id = 1;
-  opendut.types.cluster.ClusterName actual_name = 2;
-  opendut.types.cluster.ClusterId other_id = 3;
-  opendut.types.cluster.ClusterName other_name = 4;
 }
 
 message CreateClusterConfigurationFailureInternal {

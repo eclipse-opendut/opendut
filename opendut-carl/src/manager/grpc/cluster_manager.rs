@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use tonic::{Request, Response, Status};
 use tonic_web::CorsGrpcWeb;
-use tracing::{trace, warn};
+use tracing::{error, trace, warn};
 use opendut_carl_api::proto::services::cluster_manager::*;
 use opendut_carl_api::proto::services::cluster_manager::cluster_manager_server::{ClusterManager as ClusterManagerService, ClusterManagerServer};
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
@@ -41,27 +41,36 @@ impl ClusterManagerService for ClusterManagerFacade {
 
         trace!("Received request to create cluster configuration: {cluster_configuration:?}");
 
-        let result = cluster_manager::create_cluster_configuration(CreateClusterConfigurationParams {
-            resource_manager: Arc::clone(&self.resource_manager),
-            cluster_configuration,
-        }).await;
+        let result = self.resource_manager.resources_mut(async |resources|
+            resources.create_cluster_configuration(CreateClusterConfigurationParams {
+                cluster_configuration: cluster_configuration.clone(),
+            })
+        ).await;
 
-        match result {
+        let response = match result {
+            Ok(Ok(cluster_id)) => create_cluster_configuration_response::Reply::Success(
+                CreateClusterConfigurationSuccess {
+                    cluster_id: Some(cluster_id.into())
+                }
+            ),
+            Ok(Err(error)) => create_cluster_configuration_response::Reply::Failure(error.into()),
             Err(error) => {
-                Ok(Response::new(CreateClusterConfigurationResponse {
-                    reply: Some(create_cluster_configuration_response::Reply::Failure(error.into()))
-                }))
+                let cause = String::from("Error when handling transaction in database");
+                error!("{cause}: {error}");
+
+                create_cluster_configuration_response::Reply::Failure(
+                    opendut_carl_api::carl::cluster::CreateClusterConfigurationError::Internal {
+                        cluster_id: cluster_configuration.id,
+                        cluster_name: cluster_configuration.name,
+                        cause,
+                    }.into()
+                )
             }
-            Ok(cluster_id) => {
-                Ok(Response::new(CreateClusterConfigurationResponse {
-                    reply: Some(create_cluster_configuration_response::Reply::Success(
-                        CreateClusterConfigurationSuccess {
-                            cluster_id: Some(cluster_id.into())
-                        }
-                    ))
-                }))
-            }
-        }
+        };
+
+        Ok(Response::new(CreateClusterConfigurationResponse {
+            reply: Some(response)
+        }))
     }
     #[tracing::instrument(skip_all, level="trace")]
     async fn delete_cluster_configuration(&self, request: Request<DeleteClusterConfigurationRequest>) -> Result<Response<DeleteClusterConfigurationResponse>, Status> {

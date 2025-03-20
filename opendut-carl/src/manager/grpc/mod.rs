@@ -6,9 +6,9 @@ pub use peer_manager::PeerManagerFacade;
 pub use peer_messaging_broker::PeerMessagingBrokerFacade;
 
 mod cluster_manager;
+mod metadata_provider;
 mod peer_manager;
 mod peer_messaging_broker;
-mod metadata_provider;
 
 pub trait ExtractOrInvalidArgument<A, B>
 where

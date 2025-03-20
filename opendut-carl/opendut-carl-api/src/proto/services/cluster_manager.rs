@@ -10,14 +10,6 @@ tonic::include_proto!("opendut.carl.services.cluster_manager");
 impl From<CreateClusterConfigurationError> for CreateClusterConfigurationFailure {
     fn from(error: CreateClusterConfigurationError) -> Self {
         let proto_error = match error {
-            CreateClusterConfigurationError::ClusterConfigurationAlreadyExists { actual_id, actual_name, other_id, other_name } => {
-                create_cluster_configuration_failure::Error::ClusterConfigurationAlreadyExists(CreateClusterConfigurationFailureClusterConfigurationAlreadyExists {
-                    actual_id: Some(actual_id.into()),
-                    actual_name: Some(actual_name.into()),
-                    other_id: Some(other_id.into()),
-                    other_name: Some(other_name.into()),
-                })
-            }
             CreateClusterConfigurationError::Internal { cluster_id, cluster_name, cause } => {
                 create_cluster_configuration_failure::Error::Internal(CreateClusterConfigurationFailureInternal {
                     cluster_id: Some(cluster_id.into()),
@@ -39,34 +31,11 @@ impl TryFrom<CreateClusterConfigurationFailure> for CreateClusterConfigurationEr
         let error = failure.error
             .ok_or_else(|| ErrorBuilder::field_not_set("error"))?;
         let error = match error {
-            create_cluster_configuration_failure::Error::ClusterConfigurationAlreadyExists(error) => {
-                error.try_into()?
-            }
             create_cluster_configuration_failure::Error::Internal(error) => {
                 error.try_into()?
             }
         };
         Ok(error)
-    }
-}
-
-impl TryFrom<CreateClusterConfigurationFailureClusterConfigurationAlreadyExists> for CreateClusterConfigurationError {
-    type Error = ConversionError;
-    fn try_from(failure: CreateClusterConfigurationFailureClusterConfigurationAlreadyExists) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<CreateClusterConfigurationFailureClusterConfigurationAlreadyExists, CreateClusterConfigurationError>;
-        let actual_id: ClusterId = failure.actual_id
-            .ok_or_else(|| ErrorBuilder::field_not_set("actual_id"))?
-            .try_into()?;
-        let actual_name: ClusterName = failure.actual_name
-            .ok_or_else(|| ErrorBuilder::field_not_set("actual_name"))?
-            .try_into()?;
-        let other_id: ClusterId = failure.other_id
-            .ok_or_else(|| ErrorBuilder::field_not_set("other_id"))?
-            .try_into()?;
-        let other_name: ClusterName = failure.other_name
-            .ok_or_else(|| ErrorBuilder::field_not_set("other_name"))?
-            .try_into()?;
-        Ok(CreateClusterConfigurationError::ClusterConfigurationAlreadyExists { actual_id, actual_name, other_id, other_name })
     }
 }
 

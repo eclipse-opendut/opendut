@@ -1,38 +1,29 @@
-use crate::resource::manager::ResourceManagerRef;
-use opendut_carl_api::carl::cluster::CreateClusterConfigurationError;
 use opendut_types::cluster::{ClusterConfiguration, ClusterId};
-use tracing::{debug, error, info};
+use tracing::{debug, info};
+use opendut_carl_api::carl::cluster::CreateClusterConfigurationError;
+use crate::resource::api::resources::Resources;
 use crate::resource::storage::ResourcesStorageApi;
 
 pub struct CreateClusterConfigurationParams {
-    pub resource_manager: ResourceManagerRef,
     pub cluster_configuration: ClusterConfiguration,
 }
 
-#[tracing::instrument(skip(params), level="trace")]
-pub async fn create_cluster_configuration(params: CreateClusterConfigurationParams) -> Result<ClusterId, CreateClusterConfigurationError> {
-
-    async fn inner(params: CreateClusterConfigurationParams) -> Result<ClusterId, CreateClusterConfigurationError> {
+impl Resources<'_> {
+    #[tracing::instrument(skip_all, level="trace")]
+    pub fn create_cluster_configuration(&mut self, params: CreateClusterConfigurationParams) -> Result<ClusterId, CreateClusterConfigurationError> {
 
         let cluster_id = params.cluster_configuration.id;
         let cluster_name = Clone::clone(&params.cluster_configuration.name);
-        let resource_manager = params.resource_manager;
 
         debug!("Creating cluster configuration '{cluster_name}' <{cluster_id}>.");
 
-        resource_manager.resources_mut(async |resources| {
-            resources.insert(cluster_id, params.cluster_configuration)
-                .map_err(|cause| CreateClusterConfigurationError::Internal { cluster_id, cluster_name: cluster_name.clone(), cause: cause.to_string() })
-        }).await
-        .map_err(|cause| CreateClusterConfigurationError::Internal { cluster_id, cluster_name: cluster_name.clone(), cause: cause.to_string() })??;
+        self.insert(cluster_id, params.cluster_configuration)
+            .map_err(|cause| CreateClusterConfigurationError::Internal { cluster_id, cluster_name: cluster_name.clone(), cause: cause.to_string() })?;
 
         info!("Successfully created cluster configuration '{cluster_name}' <{cluster_id}>.");
 
         Ok(cluster_id)
     }
-
-    inner(params).await
-        .inspect_err(|err| error!("{err}"))
 }
 
 
