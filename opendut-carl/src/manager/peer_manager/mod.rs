@@ -1,9 +1,6 @@
 pub mod store_peer_descriptor;
 pub use store_peer_descriptor::*;
 
-pub mod list_peer_descriptors;
-pub use list_peer_descriptors::*;
-
 pub mod delete_peer_descriptor;
 pub use delete_peer_descriptor::*;
 

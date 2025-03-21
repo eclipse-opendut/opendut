@@ -16,7 +16,7 @@ use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName}
 use opendut_types::util::Port;
 
 use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
-use crate::manager::{cluster_manager, peer_manager};
+use crate::manager::cluster_manager;
 use crate::resource::manager::{ResourceManagerRef, SubscriptionEvent};
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::storage::ResourcesStorageApi;
@@ -39,7 +39,7 @@ pub mod list_cluster_peers;
 pub use list_cluster_peers::*;
 
 pub mod list_deployed_clusters;
-use crate::manager::peer_manager::{AssignClusterOptions, AssignClusterParams, ListPeerDescriptorsParams};
+use crate::manager::peer_manager::{AssignClusterOptions, AssignClusterParams};
 pub use list_deployed_clusters::*;
 
 pub type ClusterManagerRef = Arc<Mutex<ClusterManager>>;
@@ -259,9 +259,10 @@ impl ClusterManager {
 
         let cluster_name = cluster_config.name;
 
-        let all_peers = peer_manager::list_peer_descriptors(ListPeerDescriptorsParams {
-            resource_manager: Arc::clone(&self.resource_manager),
-        }).await.map_err(|cause| DeployClusterError::Internal { cluster_id, cause: cause.to_string() })?;
+        let all_peers = self.resource_manager.list::<PeerDescriptor>().await
+            .map_err(|cause| DeployClusterError::Internal { cluster_id, cause: cause.to_string() })?
+            .into_values()
+            .collect::<Vec<_>>();
 
 
         let member_interface_mapping = determine_member_interface_mapping(cluster_config.devices, all_peers, cluster_config.leader)
@@ -499,6 +500,7 @@ mod test {
         use opendut_carl_api::carl::broker::stream_header;
         use opendut_carl_api::proto::services::peer_messaging_broker::ApplyPeerConfiguration;
         use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
+        use crate::manager::peer_manager;
 
         #[rstest]
         #[tokio::test]

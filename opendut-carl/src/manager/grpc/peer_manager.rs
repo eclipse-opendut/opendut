@@ -17,7 +17,7 @@ use opendut_types::cleo::{CleoId};
 
 use crate::manager::grpc::extract;
 use crate::manager::peer_manager;
-use crate::manager::peer_manager::{DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, GetPeerStateParams, ListPeerDescriptorsParams, StorePeerDescriptorParams};
+use crate::manager::peer_manager::{DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, GetPeerStateParams, StorePeerDescriptorParams};
 use crate::resource::manager::ResourceManagerRef;
 use crate::settings::vpn::Vpn;
 
@@ -139,32 +139,26 @@ impl PeerManagerService for PeerManagerFacade {
         trace!("Received request to get peer descriptor for peer <{peer_id}>.");
 
         let result =
-            peer_manager::list_peer_descriptors(ListPeerDescriptorsParams { //TODO use get::<PeerDescriptor>
-                resource_manager: Arc::clone(&self.resource_manager),
-            }).await
-            .map_err(|error| GetPeerDescriptorError::Internal { peer_id, cause: error.to_string() })
-            .and_then(|peers| peers.iter()
-                .find(|peer| peer.id == peer_id)
-                .ok_or_else(|| GetPeerDescriptorError::PeerNotFound { peer_id })
-                .cloned()
-            );
+            self.resource_manager.get::<PeerDescriptor>(peer_id).await
+                .map_err(|error| GetPeerDescriptorError::Internal { peer_id, cause: error.to_string() });
 
-        match result {
-            Err(error) => {
-                Ok(Response::new(GetPeerDescriptorResponse {
-                    reply: Some(get_peer_descriptor_response::Reply::Failure(error.into()))
-                }))
+        let response = match result {
+            Ok(descriptor) => match descriptor {
+                Some(descriptor) => get_peer_descriptor_response::Reply::Success(
+                    GetPeerDescriptorSuccess {
+                        descriptor: Some(descriptor.into())
+                    }
+                ),
+                None => get_peer_descriptor_response::Reply::Failure(
+                    GetPeerDescriptorError::PeerNotFound { peer_id }.into()
+                ),
             }
-            Ok(descriptor) => {
-                Ok(Response::new(GetPeerDescriptorResponse {
-                    reply: Some(get_peer_descriptor_response::Reply::Success(
-                        GetPeerDescriptorSuccess {
-                            descriptor: Some(descriptor.into())
-                        }
-                    ))
-                }))
-            }
-        }
+            Err(error) => get_peer_descriptor_response::Reply::Failure(error.into()),
+        };
+
+        Ok(Response::new(GetPeerDescriptorResponse {
+            reply: Some(response)
+        }))
     }
 
     #[tracing::instrument(skip_all, level="trace")]
@@ -172,31 +166,35 @@ impl PeerManagerService for PeerManagerFacade {
 
         trace!("Received request to list peer descriptors.");
 
-        let result =
-            peer_manager::list_peer_descriptors(ListPeerDescriptorsParams {
-                resource_manager: Arc::clone(&self.resource_manager),
-            }).await
-            .map(|peers| peers.into_iter()
-                .map(From::from)
-                .collect::<Vec<_>>()
-            );
+        let result = self.resource_manager.list::<PeerDescriptor>().await;
 
-        match result {
-            Err(error) => {
-                Ok(Response::new(ListPeerDescriptorsResponse {
-                    reply: Some(list_peer_descriptors_response::Reply::Failure(error.into()))
-                }))
-            }
+        let response = match result {
             Ok(peers) => {
-                Ok(Response::new(ListPeerDescriptorsResponse {
-                    reply: Some(list_peer_descriptors_response::Reply::Success(
-                        ListPeerDescriptorsSuccess {
-                            peers
-                        }
-                    ))
-                }))
+                let peers = peers.into_values()
+                    .map(From::from)
+                    .collect::<Vec<_>>();
+
+                list_peer_descriptors_response::Reply::Success(
+                    ListPeerDescriptorsSuccess {
+                        peers
+                    }
+                )
             }
-        }
+            Err(error) => {
+                let cause = String::from("Error when handling transaction in database");
+                error!("{cause}: {error}");
+
+                list_peer_descriptors_response::Reply::Failure(
+                    opendut_carl_api::carl::peer::ListPeerDescriptorsError::Internal {
+                        cause,
+                    }.into()
+                )
+            }
+        };
+
+        Ok(Response::new(ListPeerDescriptorsResponse {
+            reply: Some(response)
+        }))
     }
 
     #[tracing::instrument(skip_all, level="trace")]
