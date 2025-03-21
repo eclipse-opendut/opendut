@@ -4,7 +4,6 @@ use opendut_types::peer::{PeerId};
 use tracing::{debug, error};
 use opendut_carl_api::carl::peer::{ListPeerStatesError};
 use opendut_types::peer::state::{PeerConnectionState, PeerState};
-use crate::manager::peer_manager;
 use crate::resource::persistence::error::{PersistenceError, PersistenceResult};
 use crate::resource::storage::ResourcesStorageApi;
 
@@ -21,7 +20,7 @@ pub async fn list_peer_states(params: ListPeerStatesParams) -> Result<HashMap<Pe
 
         debug!("Querying all peer states.");
         let peer_states = resource_manager.resources(async |resources| {
-            let peer_member_states = peer_manager::internal::list_peer_member_states(resources)?;
+            let peer_member_states = resources.list_peer_member_states()?;
             let peer_connection_states = resources.list::<PeerConnectionState>()?;
 
             let peer_states = peer_member_states.into_iter()
@@ -32,7 +31,7 @@ pub async fn list_peer_states(params: ListPeerStatesParams) -> Result<HashMap<Pe
                         member,
                     };
                     Ok::<_, PersistenceError>((peer_id, peer_state))
-                    
+
                 })
                 .collect::<Result<HashMap<_, _>, _>>()?;
 

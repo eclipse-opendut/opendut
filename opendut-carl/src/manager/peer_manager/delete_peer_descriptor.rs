@@ -6,8 +6,6 @@ use opendut_carl_api::carl::peer::DeletePeerDescriptorError;
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use tracing::{debug, error, info, warn};
 use opendut_types::peer::state::PeerMemberState;
-use crate::manager::peer_manager;
-use crate::manager::peer_manager::list_peer_member_states::ListPeerMemberStatesParams;
 
 pub struct DeletePeerDescriptorParams {
     pub resource_manager: ResourceManagerRef,
@@ -24,7 +22,7 @@ pub async fn delete_peer_descriptor(params: DeletePeerDescriptorParams) -> Resul
         let peer_id = params.peer;
         let resource_manager = params.resource_manager;
 
-        let peer_member_states = peer_manager::list_peer_member_states(ListPeerMemberStatesParams { resource_manager: resource_manager.clone() }).await
+        let peer_member_states = resource_manager.resources(async |resources| resources.list_peer_member_states()).await
             .map_err(|cause| DeletePeerDescriptorError::Internal { peer_id, peer_name: None, cause: cause.to_string() })?;  // only persistence error possible
         let peer_member_state = peer_member_states.get(&peer_id);
         

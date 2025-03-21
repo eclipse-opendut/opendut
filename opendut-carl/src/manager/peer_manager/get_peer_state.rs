@@ -1,10 +1,9 @@
-use crate::manager::peer_manager;
 use crate::resource::manager::ResourceManagerRef;
+use crate::resource::storage::ResourcesStorageApi;
 use opendut_carl_api::carl::peer::GetPeerStateError;
 use opendut_types::peer::state::{PeerConnectionState, PeerState};
 use opendut_types::peer::PeerId;
 use tracing::{debug, error, info};
-use crate::resource::storage::ResourcesStorageApi;
 
 pub struct GetPeerStateParams {
     pub peer: PeerId,
@@ -21,7 +20,7 @@ pub async fn get_peer_state(params: GetPeerStateParams) -> Result<PeerState, Get
         debug!("Querying state of peer with peer_id <{}>.", peer_id);
 
         let peer_state: Result<PeerState, GetPeerStateError> = resource_manager.resources(async |resources| {
-            let peer_member_state = peer_manager::internal::get_peer_member_state(resources, &peer_id)
+            let peer_member_state = resources.get_peer_member_state(peer_id)
                 .map_err(|cause| GetPeerStateError::Internal { peer_id, cause: cause.to_string() })?
                 .ok_or_else(|| GetPeerStateError::PeerNotFound { peer_id })?;
             let connection = resources.get::<PeerConnectionState>(peer_id)
@@ -45,7 +44,7 @@ pub async fn get_peer_state(params: GetPeerStateParams) -> Result<PeerState, Get
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::manager::peer_manager;
     use crate::manager::peer_manager::{GetPeerStateParams, StorePeerDescriptorParams};
     use crate::manager::testing::PeerFixture;
     use crate::resource::manager::{ResourceManager, ResourceManagerRef};

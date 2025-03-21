@@ -1,6 +1,6 @@
 use crate::manager::cluster_manager;
-use crate::resource::manager::ResourceManagerRef;
-use crate::resource::persistence::error::{PersistenceError, PersistenceResult};
+use crate::resource::api::resources::Resources;
+use crate::resource::persistence::error::PersistenceError;
 use crate::resource::storage::ResourcesStorageApi;
 use opendut_types::cluster::ClusterId;
 use opendut_types::peer::state::PeerMemberState;
@@ -8,32 +8,15 @@ use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::topology::DeviceId;
 use std::collections::HashMap;
 
-pub struct ListPeerMemberStatesParams {
-    pub resource_manager: ResourceManagerRef,
-}
-
 #[derive(thiserror::Error, Debug)]
 pub enum ListPeerMemberStatesError {
     #[error("Failed to list peer member states.")]
     Persistence { #[from] source: PersistenceError },
 }
 
-pub async fn list_peer_member_states(params: ListPeerMemberStatesParams) -> Result<HashMap<PeerId, PeerMemberState>, ListPeerMemberStatesError> {
-    let ListPeerMemberStatesParams { resource_manager } = params;
-
-    let peer_member_states = resource_manager.resources(async |resources| {
-        let peer_member_states = internal::list_peer_member_states(resources)?;
-        PersistenceResult::Ok(peer_member_states)
-    }).await?;
-
-    Ok(peer_member_states)
-}
-
-pub mod internal {
-    use super::*;
-
-    pub fn list_peer_member_states(resources: &impl ResourcesStorageApi) -> Result<HashMap<PeerId, PeerMemberState>, PersistenceError> {
-        let deployed_clusters = cluster_manager::internal::list_deployed_clusters(resources)?;
+impl Resources<'_> {
+    pub fn list_peer_member_states(&self) -> Result<HashMap<PeerId, PeerMemberState>, PersistenceError> {
+        let deployed_clusters = cluster_manager::internal::list_deployed_clusters(self)?;
         let deployed_devices = deployed_clusters.into_iter()
             .flat_map(|deployed_cluster| {
                 let cluster_id = deployed_cluster.id;
@@ -42,7 +25,7 @@ pub mod internal {
             .collect::<HashMap<_, _>>();
 
 
-        let all_peers = resources.list::<PeerDescriptor>()?;
+        let all_peers = self.list::<PeerDescriptor>()?;
 
         let peer_member_states = all_peers.into_values()
             .map(|peer | {
@@ -96,7 +79,9 @@ mod tests {
         resource_manager.insert(cluster_a.id, ClusterDeployment { id: cluster_a.id }).await?;
 
         // Act
-        let peer_member_states = list_peer_member_states(ListPeerMemberStatesParams { resource_manager: resource_manager.clone() }).await?;
+        let peer_member_states = resource_manager.resources(async |resources|
+            resources.list_peer_member_states()
+        ).await?;
 
         // Assert
         let blocked_peers = peer_member_states.into_iter()
