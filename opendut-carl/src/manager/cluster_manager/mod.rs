@@ -7,7 +7,7 @@ use futures::future::join_all;
 use futures::FutureExt;
 use tracing::{debug, error, info, trace, warn};
 
-use opendut_carl_api::carl::cluster::{DeleteClusterDeploymentError, GetClusterConfigurationError, GetClusterDeploymentError, ListClusterConfigurationsError, ListClusterDeploymentsError, StoreClusterDeploymentError};
+use opendut_carl_api::carl::cluster::{GetClusterConfigurationError, GetClusterDeploymentError, ListClusterConfigurationsError, ListClusterDeploymentsError, StoreClusterDeploymentError};
 use opendut_types::cluster::{ClusterAssignment, ClusterConfiguration, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
 use opendut_types::peer::state::PeerConnectionState;
 use opendut_types::peer::{PeerDescriptor, PeerId};
@@ -15,7 +15,6 @@ use opendut_types::topology::{DeviceDescriptor, DeviceId};
 use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
 use opendut_types::util::Port;
 
-use crate::manager::cluster_manager::delete_cluster_deployment::DeleteClusterDeploymentParams;
 use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
 use crate::manager::{cluster_manager, peer_manager};
 use crate::resource::manager::{ResourceManagerRef, SubscriptionEvent};
@@ -30,6 +29,7 @@ pub mod delete_cluster_configuration;
 pub use delete_cluster_configuration::*;
 
 pub mod delete_cluster_deployment;
+#[allow(unused)]
 pub use delete_cluster_deployment::*;
 
 pub mod list_cluster_peer_states;
@@ -142,16 +142,6 @@ impl ClusterManager {
             error!("Failed to deploy cluster <{cluster_id}> after storing cluster deployment, despite all peers being available, due to:\n  {error}");
         }
         Ok(cluster_id)
-    }
-
-    #[tracing::instrument(skip(self), level="trace")]
-    pub async fn delete_cluster_deployment(&self, cluster_id: ClusterId) -> Result<ClusterDeployment, DeleteClusterDeploymentError> {
-        let delete_cluster_deployment_params = DeleteClusterDeploymentParams {
-            resource_manager: Arc::clone(&self.resource_manager),
-            vpn: Clone::clone(&self.vpn),
-            cluster_id
-        };
-        cluster_manager::delete_cluster_deployment(delete_cluster_deployment_params).await
     }
 
     #[tracing::instrument(skip(self), level="trace")]

@@ -6,6 +6,7 @@ use opendut_carl_api::proto::services::cluster_manager::cluster_manager_server::
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
 
 use crate::manager::cluster_manager::{ClusterManagerRef, CreateClusterConfigurationParams, DeleteClusterConfigurationParams};
+use crate::manager::cluster_manager::delete_cluster_deployment::DeleteClusterDeploymentParams;
 use crate::manager::grpc::extract;
 use crate::resource::manager::ResourceManagerRef;
 
@@ -189,24 +190,34 @@ impl ClusterManagerService for ClusterManagerFacade {
 
         trace!("Received request to delete cluster deployment for cluster <{cluster_id}>.");
 
-        let result = self.cluster_manager.lock().await.delete_cluster_deployment(cluster_id).await;
+        let result = self.resource_manager.resources_mut(async |resources|
+            resources.delete_cluster_deployment(DeleteClusterDeploymentParams { cluster_id }).await
+        ).await;
 
-        match result {
+        let response = match result {
+            Ok(Ok(cluster_configuration)) => delete_cluster_deployment_response::Reply::Success(
+                DeleteClusterDeploymentSuccess {
+                    cluster_deployment: Some(cluster_configuration.into())
+                }
+            ),
+            Ok(Err(error)) => delete_cluster_deployment_response::Reply::Failure(error.into()),
             Err(error) => {
-                Ok(Response::new(DeleteClusterDeploymentResponse {
-                    reply: Some(delete_cluster_deployment_response::Reply::Failure(error.into()))
-                }))
+                let cause = String::from("Error when handling transaction in database");
+                error!("{cause}: {error}");
+
+                delete_cluster_deployment_response::Reply::Failure(
+                    opendut_carl_api::carl::cluster::DeleteClusterDeploymentError::Internal {
+                        cluster_id,
+                        cluster_name: None,
+                        cause,
+                    }.into()
+                )
             }
-            Ok(cluster_configuration) => {
-                Ok(Response::new(DeleteClusterDeploymentResponse {
-                    reply: Some(delete_cluster_deployment_response::Reply::Success(
-                        DeleteClusterDeploymentSuccess {
-                            cluster_deployment: Some(cluster_configuration.into())
-                        }
-                    ))
-                }))
-            }
-        }
+        };
+
+        Ok(Response::new(DeleteClusterDeploymentResponse {
+            reply: Some(response)
+        }))
     }
 
     #[tracing::instrument(skip_all, level="trace")]
