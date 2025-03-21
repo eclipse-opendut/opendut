@@ -17,7 +17,7 @@ use opendut_types::cleo::{CleoId};
 
 use crate::manager::grpc::extract;
 use crate::manager::peer_manager;
-use crate::manager::peer_manager::{DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, GetPeerStateParams, ListDevicesParams, ListPeerDescriptorsParams, ListPeerStatesParams, StorePeerDescriptorParams};
+use crate::manager::peer_manager::{DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, GetPeerStateParams, ListDevicesParams, ListPeerDescriptorsParams, StorePeerDescriptorParams};
 use crate::resource::manager::ResourceManagerRef;
 use crate::settings::vpn::Vpn;
 
@@ -229,9 +229,9 @@ impl PeerManagerService for PeerManagerFacade {
         trace!("Received request to list peer states.");
 
         let result =
-            peer_manager::list_peer_states(ListPeerStatesParams {
-                resource_manager: Arc::clone(&self.resource_manager),
-            }).await
+            self.resource_manager.resources(async |resources|
+                resources.list_peer_states()
+            ).await
                 .map_err(|error| ListPeerStatesError::Internal { cause: error.to_string() });
 
         match result {

@@ -1,3 +1,5 @@
+use crate::manager::cluster_manager::{ListClusterPeersError, ListClusterPeersParams};
+use crate::manager::cluster_manager;
 use crate::resource::manager::ResourceManagerRef;
 use opendut_carl_api::carl::peer::ListPeerStatesError;
 use opendut_types::cluster::ClusterId;
@@ -5,9 +7,6 @@ use opendut_types::peer::state::{PeerConnectionState, PeerMemberState, PeerState
 use opendut_types::peer::PeerId;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
-use crate::manager::{cluster_manager, peer_manager};
-use crate::manager::cluster_manager::{ListClusterPeersError, ListClusterPeersParams};
-use crate::manager::peer_manager::ListPeerStatesParams;
 
 #[derive(Clone)]
 pub struct ListClusterPeerStatesParams {
@@ -24,9 +23,9 @@ pub async fn list_cluster_peer_states(params: ListClusterPeerStatesParams) -> Re
         .map(|peer| peer.id)
         .collect::<HashSet<_>>();
     let all_peer_states =
-        peer_manager::list_peer_states(ListPeerStatesParams {
-            resource_manager: Arc::clone(&resource_manager),
-        }).await
+        resource_manager.resources(async |resources|
+            resources.list_peer_states()
+        ).await
             .map_err(|error| ListClusterPeerStatesError::ListPeerStates { cluster_id, source: error })?;
 
     let cluster_peer_states = all_peer_states

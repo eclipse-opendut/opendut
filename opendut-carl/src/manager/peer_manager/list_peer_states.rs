@@ -1,27 +1,21 @@
-use std::collections::HashMap;
-use crate::resource::manager::ResourceManagerRef;
-use opendut_types::peer::{PeerId};
-use tracing::{debug, error};
-use opendut_carl_api::carl::peer::{ListPeerStatesError};
-use opendut_types::peer::state::{PeerConnectionState, PeerState};
+use crate::resource::api::resources::Resources;
 use crate::resource::persistence::error::{PersistenceError, PersistenceResult};
 use crate::resource::storage::ResourcesStorageApi;
+use opendut_carl_api::carl::peer::ListPeerStatesError;
+use opendut_types::peer::state::{PeerConnectionState, PeerState};
+use opendut_types::peer::PeerId;
+use std::collections::HashMap;
+use tracing::debug;
 
-pub struct ListPeerStatesParams {
-    pub resource_manager: ResourceManagerRef,
-}
 
-#[tracing::instrument(skip_all, level="trace")]
-pub async fn list_peer_states(params: ListPeerStatesParams) -> Result<HashMap<PeerId, PeerState>, ListPeerStatesError> {
-
-    async fn inner(params: ListPeerStatesParams) -> Result<HashMap<PeerId, PeerState>, ListPeerStatesError> {
-
-        let resource_manager = params.resource_manager;
+impl Resources<'_> {
+    #[tracing::instrument(skip_all, level="trace")]
+    pub fn list_peer_states(&self) -> Result<HashMap<PeerId, PeerState>, ListPeerStatesError> {
 
         debug!("Querying all peer states.");
-        let peer_states = resource_manager.resources(async |resources| {
-            let peer_member_states = resources.list_peer_member_states()?;
-            let peer_connection_states = resources.list::<PeerConnectionState>()?;
+        let peer_states = (|| {
+            let peer_member_states = self.list_peer_member_states()?;
+            let peer_connection_states = self.list::<PeerConnectionState>()?;
 
             let peer_states = peer_member_states.into_iter()
                 .map(|(peer_id, member)| {
@@ -36,15 +30,11 @@ pub async fn list_peer_states(params: ListPeerStatesParams) -> Result<HashMap<Pe
                 .collect::<Result<HashMap<_, _>, _>>()?;
 
             PersistenceResult::Ok(peer_states)
-        }).await
+        })()
         .map_err(|cause| ListPeerStatesError::Internal { cause: cause.to_string() })?;
-
 
         debug!("Successfully queried all peer states.");
 
         Ok(peer_states)
     }
-
-    inner(params).await
-        .inspect_err(|err| error!("{err}"))
 }
