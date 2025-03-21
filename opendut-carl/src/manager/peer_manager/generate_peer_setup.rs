@@ -1,5 +1,4 @@
 use crate::resource::persistence::error::PersistenceError;
-use crate::resource::manager::ResourceManagerRef;
 use crate::settings::vpn::Vpn;
 use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_auth::registration::resources::UserId;
@@ -9,9 +8,10 @@ use opendut_types::vpn::VpnPeerConfiguration;
 use pem::Pem;
 use tracing::{debug, error, info, warn};
 use url::Url;
+use crate::resource::api::resources::Resources;
+use crate::resource::storage::ResourcesStorageApi;
 
 pub struct GeneratePeerSetupParams {
-    pub resource_manager: ResourceManagerRef,
     pub peer: PeerId,
     pub carl_url: Url,
     pub ca: Pem,
@@ -34,16 +34,15 @@ pub enum GeneratePeerSetupError {
     }
 }
 
-#[tracing::instrument(skip(params), level="trace")]
-pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<PeerSetup, GeneratePeerSetupError> {
-
-    async fn inner(params: GeneratePeerSetupParams) -> Result<PeerSetup, GeneratePeerSetupError> {
+impl Resources<'_> {
+    #[tracing::instrument(skip_all, level="trace")]
+    pub async fn generate_peer_setup(&self, params: GeneratePeerSetupParams) -> Result<PeerSetup, GeneratePeerSetupError> {
 
         let peer_id = params.peer;
 
         debug!("Generating PeerSetup for peer <{peer_id}>");
 
-        let peer_descriptor = params.resource_manager.get::<PeerDescriptor>(peer_id).await
+        let peer_descriptor = self.get::<PeerDescriptor>(peer_id)
             .map_err(|source| GeneratePeerSetupError::Persistance { peer_id, source })?
             .ok_or(GeneratePeerSetupError::PeerNotFound(peer_id))?;
 
@@ -85,7 +84,4 @@ pub async fn generate_peer_setup(params: GeneratePeerSetupParams) -> Result<Peer
             vpn: vpn_config,
         })
     }
-
-    inner(params).await
-        .inspect_err(|err| error!("{err}"))
 }
