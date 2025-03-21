@@ -1,45 +1,36 @@
-use crate::resource::manager::ResourceManagerRef;
 use crate::resource::storage::ResourcesStorageApi;
 use crate::settings::vpn::Vpn;
 use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_carl_api::carl::peer::DeletePeerDescriptorError;
 use opendut_types::peer::{PeerDescriptor, PeerId};
-use tracing::{debug, error, info, warn};
+use tracing::{debug, info, warn};
 use opendut_types::peer::state::PeerMemberState;
+use crate::resource::api::resources::Resources;
 
 pub struct DeletePeerDescriptorParams {
-    pub resource_manager: ResourceManagerRef,
     pub vpn: Vpn,
     pub peer: PeerId,
     pub oidc_registration_client: Option<RegistrationClientRef>,
 }
 
-#[tracing::instrument(skip(params), level="trace")]
-pub async fn delete_peer_descriptor(params: DeletePeerDescriptorParams) -> Result<PeerDescriptor, DeletePeerDescriptorError> {
-
-    async fn inner(params: DeletePeerDescriptorParams) -> Result<PeerDescriptor, DeletePeerDescriptorError> {
+impl Resources<'_> {
+    #[tracing::instrument(skip_all, level="trace")]
+    pub async fn delete_peer_descriptor(&mut self, params: DeletePeerDescriptorParams) -> Result<PeerDescriptor, DeletePeerDescriptorError> {
 
         let peer_id = params.peer;
-        let resource_manager = params.resource_manager;
 
-        let peer_member_states = resource_manager.resources(async |resources| resources.list_peer_member_states()).await
+        let peer_member_states = self.list_peer_member_states()
             .map_err(|cause| DeletePeerDescriptorError::Internal { peer_id, peer_name: None, cause: cause.to_string() })?;  // only persistence error possible
         let peer_member_state = peer_member_states.get(&peer_id);
-        
+
         if let Some(PeerMemberState::Blocked { by_cluster }) = peer_member_state {
             Err(DeletePeerDescriptorError::ClusterDeploymentExists { peer_id, cluster_id: *by_cluster })
         } else {
             debug!("Deleting peer descriptor of peer <{peer_id}>.");
 
-            let peer_descriptor = resource_manager.resources_mut(async |resources| {
-
-                let peer_descriptor = resources.remove::<PeerDescriptor>(peer_id)
-                    .map_err(|cause| DeletePeerDescriptorError::Internal { peer_id, peer_name: None, cause: cause.to_string() })?
-                    .ok_or_else(|| DeletePeerDescriptorError::PeerNotFound { peer_id })?;
-
-                Ok(peer_descriptor)
-            }).await
-                .map_err(|cause| DeletePeerDescriptorError::Internal { peer_id, peer_name: None, cause: cause.to_string() })??;
+            let peer_descriptor = self.remove::<PeerDescriptor>(peer_id)
+                .map_err(|cause| DeletePeerDescriptorError::Internal { peer_id, peer_name: None, cause: cause.to_string() })?
+                .ok_or_else(|| DeletePeerDescriptorError::PeerNotFound { peer_id })?;
 
             let peer_name = &peer_descriptor.name;
 
@@ -71,11 +62,7 @@ pub async fn delete_peer_descriptor(params: DeletePeerDescriptorParams) -> Resul
 
             Ok(peer_descriptor)
         }
-
     }
-
-    inner(params).await
-        .inspect_err(|err| error!("{err}"))
 }
 
 #[cfg(test)]
@@ -93,8 +80,10 @@ mod tests {
         resource_manager.insert(cluster.id, ClusterDeployment { id: cluster.id }).await?;
 
         // Act
-        let delete_peer_descriptor_params = DeletePeerDescriptorParams { resource_manager, vpn: Vpn::Disabled, peer: cluster.peer_a.id, oidc_registration_client: None };
-        let result = delete_peer_descriptor(delete_peer_descriptor_params).await;
+        let delete_peer_descriptor_params = DeletePeerDescriptorParams { vpn: Vpn::Disabled, peer: cluster.peer_a.id, oidc_registration_client: None };
+        let result = resource_manager.resources_mut(async |resources|
+            resources.delete_peer_descriptor(delete_peer_descriptor_params).await
+        ).await?;
 
         // Assert
         let expected_error = Err(DeletePeerDescriptorError::ClusterDeploymentExists { peer_id: cluster.peer_a.id, cluster_id: cluster.id });
@@ -109,8 +98,10 @@ mod tests {
         let cluster = ClusterFixture::create(resource_manager.clone()).await?;
 
         // Act
-        let delete_peer_descriptor_params = DeletePeerDescriptorParams { resource_manager, vpn: Vpn::Disabled, peer: cluster.peer_a.id, oidc_registration_client: None };
-        let result = delete_peer_descriptor(delete_peer_descriptor_params).await;
+        let delete_peer_descriptor_params = DeletePeerDescriptorParams { vpn: Vpn::Disabled, peer: cluster.peer_a.id, oidc_registration_client: None };
+        let result = resource_manager.resources_mut(async |resources|
+            resources.delete_peer_descriptor(delete_peer_descriptor_params).await
+        ).await?;
 
         // Assert
         let expected_result = Ok(cluster.peer_a.descriptor);

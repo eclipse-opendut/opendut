@@ -3,7 +3,7 @@ use pem::Pem;
 
 use tonic::{Request, Response, Status};
 use tonic_web::CorsGrpcWeb;
-use tracing::trace;
+use tracing::{error, trace};
 use url::Url;
 use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_auth::registration::resources::UserId;
@@ -96,29 +96,38 @@ impl PeerManagerService for PeerManagerFacade {
         trace!("Received request to delete peer descriptor for peer <{peer_id}>.");
 
         let result =
-            peer_manager::delete_peer_descriptor(DeletePeerDescriptorParams {
-                resource_manager: Arc::clone(&self.resource_manager),
-                vpn: Clone::clone(&self.vpn),
-                peer: peer_id,
-                oidc_registration_client: self.oidc_registration_client.clone(),
-            }).await;
+            self.resource_manager.resources_mut(async |resources|
+                resources.delete_peer_descriptor(DeletePeerDescriptorParams {
+                    vpn: Clone::clone(&self.vpn),
+                    peer: peer_id,
+                    oidc_registration_client: self.oidc_registration_client.clone(),
+                }).await
+            ).await;
 
-        match result {
+        let response = match result {
+            Ok(Ok(peer)) => proto::services::peer_manager::delete_peer_descriptor_response::Reply::Success(
+                DeletePeerDescriptorSuccess {
+                    peer_id: Some(peer.id.into())
+                }
+            ),
+            Ok(Err(error)) => delete_peer_descriptor_response::Reply::Failure(error.into()),
             Err(error) => {
-                Ok(Response::new(DeletePeerDescriptorResponse {
-                    reply: Some(delete_peer_descriptor_response::Reply::Failure(error.into()))
-                }))
+                let cause = String::from("Error when handling transaction in database");
+                error!("{cause}: {error}");
+
+                delete_peer_descriptor_response::Reply::Failure(
+                    opendut_carl_api::carl::peer::DeletePeerDescriptorError::Internal {
+                        peer_id,
+                        peer_name: None,
+                        cause,
+                    }.into()
+                )
             }
-            Ok(peer) => {
-                Ok(Response::new(DeletePeerDescriptorResponse {
-                    reply: Some(proto::services::peer_manager::delete_peer_descriptor_response::Reply::Success(
-                        DeletePeerDescriptorSuccess {
-                            peer_id: Some(peer.id.into())
-                        }
-                    ))
-                }))
-            }
-        }
+        };
+
+        Ok(Response::new(DeletePeerDescriptorResponse {
+            reply: Some(response),
+        }))
     }
 
     #[tracing::instrument(skip_all, level="trace")]
