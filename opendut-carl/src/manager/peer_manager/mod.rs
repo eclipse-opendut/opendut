@@ -15,6 +15,7 @@ pub mod list_peer_states;
 pub use list_peer_states::*;
 
 pub mod list_devices;
+#[allow(unused)]
 pub use list_devices::*;
 
 pub mod generate_peer_setup;
