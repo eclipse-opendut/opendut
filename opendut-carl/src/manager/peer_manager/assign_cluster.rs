@@ -1,6 +1,5 @@
 use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
 use crate::resource::persistence::error::PersistenceError;
-use crate::resource::manager::ResourceManagerRef;
 use crate::resource::storage::ResourcesStorageApi;
 use opendut_carl_api::proto::services::peer_messaging_broker::{downstream, ApplyPeerConfiguration};
 use opendut_types::cluster::ClusterAssignment;
@@ -9,9 +8,9 @@ use opendut_types::peer::configuration::{OldPeerConfiguration, ParameterTarget, 
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
 use tracing::debug;
+use crate::resource::api::resources::Resources;
 
 pub struct AssignClusterParams {
-    pub resource_manager: ResourceManagerRef,
     pub peer_messaging_broker: PeerMessagingBrokerRef,
     pub peer_id: PeerId,
     pub device_interfaces: Vec<NetworkInterfaceDescriptor>,
@@ -34,68 +33,68 @@ pub enum AssignClusterError {
     Persistence { peer_id: PeerId, #[source] source: PersistenceError },
 }
 
-pub async fn assign_cluster(params: AssignClusterParams) -> Result<(), AssignClusterError> {
-    let AssignClusterParams { resource_manager, peer_messaging_broker, peer_id, cluster_assignment, device_interfaces, options } = params;
+impl Resources<'_> {
+    pub async fn assign_cluster(&mut self, params: AssignClusterParams) -> Result<(), AssignClusterError> {
+        let AssignClusterParams { peer_messaging_broker, peer_id, cluster_assignment, device_interfaces, options } = params;
 
-    debug!("Assigning cluster to peer <{peer_id}>.");
+        debug!("Assigning cluster to peer <{peer_id}>.");
 
-    let (old_peer_configuration, peer_configuration) = resource_manager.resources_mut(async |resources| {
-        let old_peer_configuration = OldPeerConfiguration {
-            cluster_assignment: Some(cluster_assignment),
+        let (old_peer_configuration, peer_configuration) = {
+            let old_peer_configuration = OldPeerConfiguration {
+                cluster_assignment: Some(cluster_assignment),
+            };
+            self.insert(peer_id, Clone::clone(&old_peer_configuration))
+                .map_err(|source| AssignClusterError::Persistence { peer_id, source })?;
+
+            let peer_configuration = {
+                let peer_descriptor = self.get::<PeerDescriptor>(peer_id)
+                    .map_err(|source| AssignClusterError::Persistence { peer_id, source })?
+                    .ok_or(AssignClusterError::PeerNotFound(peer_id))?;
+
+                let mut peer_configuration = self.get::<PeerConfiguration>(peer_id)
+                    .map_err(|source| AssignClusterError::Persistence { peer_id, source })?
+                    .unwrap_or_default();
+
+                for device_interface in device_interfaces.into_iter() {
+                    let device_interface = parameter::DeviceInterface { descriptor: device_interface };
+                    peer_configuration.set(device_interface, ParameterTarget::Present); //TODO not always Present
+                }
+
+                {
+                    let ethernet_bridge = peer_descriptor.clone().network.bridge_name
+                        .unwrap_or(options.bridge_name_default);
+                    let bridge = parameter::EthernetBridge { name: ethernet_bridge };
+
+                    peer_configuration.set(bridge, ParameterTarget::Present); //TODO not always Present
+                }
+
+                for executor_descriptor in Clone::clone(&peer_descriptor.executors).executors.into_iter() {
+                    let executor = parameter::Executor { descriptor: executor_descriptor };
+                    peer_configuration.set(executor, ParameterTarget::Present); //TODO not always Present
+                }
+
+                peer_configuration
+            };
+            self.insert(peer_id, Clone::clone(&peer_configuration))
+                .map_err(|source| AssignClusterError::Persistence { peer_id, source })?;
+
+            (old_peer_configuration, peer_configuration)
         };
-        resources.insert(peer_id, Clone::clone(&old_peer_configuration))
-            .map_err(|source| AssignClusterError::Persistence { peer_id, source })?;
 
-        let peer_configuration = {
-            let peer_descriptor = resources.get::<PeerDescriptor>(peer_id)
-                .map_err(|source| AssignClusterError::Persistence { peer_id, source })?
-                .ok_or(AssignClusterError::PeerNotFound(peer_id))?;
+        peer_messaging_broker.send_to_peer(
+            peer_id,
+            downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
+                old_configuration: Some(old_peer_configuration.into()),
+                configuration: Some(peer_configuration.into()),
+            }),
+        ).await
+        .map_err(|cause| AssignClusterError::SendingToPeerFailed {
+            peer_id,
+            cause: cause.to_string()
+        })?;
 
-            let mut peer_configuration = resources.get::<PeerConfiguration>(peer_id)
-                .map_err(|source| AssignClusterError::Persistence { peer_id, source })?
-                .unwrap_or_default();
-
-            for device_interface in device_interfaces.into_iter() {
-                let device_interface = parameter::DeviceInterface { descriptor: device_interface };
-                peer_configuration.set(device_interface, ParameterTarget::Present); //TODO not always Present
-            }
-
-            {
-                let ethernet_bridge = peer_descriptor.clone().network.bridge_name
-                    .unwrap_or(options.bridge_name_default);
-                let bridge = parameter::EthernetBridge { name: ethernet_bridge };
-
-                peer_configuration.set(bridge, ParameterTarget::Present); //TODO not always Present
-            }
-
-            for executor_descriptor in Clone::clone(&peer_descriptor.executors).executors.into_iter() {
-                let executor = parameter::Executor { descriptor: executor_descriptor };
-                peer_configuration.set(executor, ParameterTarget::Present); //TODO not always Present
-            }
-
-            peer_configuration
-        };
-        resources.insert(peer_id, Clone::clone(&peer_configuration))
-            .map_err(|source| AssignClusterError::Persistence { peer_id, source })?;
-
-        Ok((old_peer_configuration, peer_configuration))
-
-    }).await
-    .map_err(|source| AssignClusterError::Persistence { peer_id, source })??;
-
-    peer_messaging_broker.send_to_peer(
-        peer_id,
-        downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
-            old_configuration: Some(old_peer_configuration.into()),
-            configuration: Some(peer_configuration.into()),
-        }),
-    ).await
-    .map_err(|cause| AssignClusterError::SendingToPeerFailed {
-        peer_id,
-        cause: cause.to_string()
-    })?;
-
-    Ok(())
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -156,16 +155,17 @@ mod tests {
         };
 
 
-        assign_cluster(AssignClusterParams {
-            resource_manager: Arc::clone(&resource_manager),
-            peer_messaging_broker: Arc::clone(&peer_messaging_broker),
-            peer_id,
-            cluster_assignment: Clone::clone(&cluster_assignment),
-            device_interfaces: vec![],
-            options: AssignClusterOptions {
-                bridge_name_default: NetworkInterfaceName::try_from("br-opendut").unwrap(),
-            }
-        }).await?;
+        resource_manager.resources_mut(async |resources|
+            resources.assign_cluster(AssignClusterParams {
+                peer_messaging_broker: Arc::clone(&peer_messaging_broker),
+                peer_id,
+                cluster_assignment: Clone::clone(&cluster_assignment),
+                device_interfaces: vec![],
+                options: AssignClusterOptions {
+                    bridge_name_default: NetworkInterfaceName::try_from("br-opendut").unwrap(),
+                }
+            }).await
+        ).await??;
 
 
         let old_peer_configuration = OldPeerConfiguration {

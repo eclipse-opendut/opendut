@@ -327,26 +327,29 @@ impl ClusterManager {
             bridge_name_default: self.options.bridge_name_default.clone(),
         };
 
-        for (member_id, device_interfaces) in member_interface_mapping {
+        self.resource_manager.resources_mut(async |resources| {
+            for (member_id, device_interfaces) in member_interface_mapping {
 
-            peer_manager::assign_cluster(AssignClusterParams {
-                resource_manager: Arc::clone(&self.resource_manager),
-                peer_messaging_broker: Arc::clone(&self.peer_messaging_broker),
-                peer_id: member_id,
-                cluster_assignment: ClusterAssignment {
-                    id: cluster_id,
-                    leader: cluster_config.leader,
-                    assignments: member_assignments.clone(),
-                },
-                device_interfaces,
-                options: assign_cluster_options.clone(),
-            }).await
-            .map_err(|cause| {
-                let message = format!("Failure while assigning cluster <{cluster_id}> to peer <{member_id}>. Cause: {cause}"); // TODO
-                error!("{}\n  {cause}", message);
-                DeployClusterError::Internal { cluster_id, cause: message }
-            })?;
-        }
+                resources.assign_cluster(AssignClusterParams {
+                    peer_messaging_broker: Arc::clone(&self.peer_messaging_broker),
+                    peer_id: member_id,
+                    cluster_assignment: ClusterAssignment {
+                        id: cluster_id,
+                        leader: cluster_config.leader,
+                        assignments: member_assignments.clone(),
+                    },
+                    device_interfaces,
+                    options: assign_cluster_options.clone(),
+                }).await
+                .map_err(|cause| {
+                    let message = format!("Failure while assigning cluster <{cluster_id}> to peer <{member_id}>. Cause: {cause}"); // TODO
+                    error!("{}\n  {cause}", message);
+                    DeployClusterError::Internal { cluster_id, cause: message }
+                })?;
+            }
+            Ok(())
+        }).await
+            .map_err(|cause| DeployClusterError::Internal { cluster_id, cause: format!("Error when closing transaction while assigning peers to clusters:\n  {cause}") })??;
 
         Ok(())
     }
