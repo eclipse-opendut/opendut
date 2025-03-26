@@ -4,23 +4,23 @@ use std::collections::HashMap;
 
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::resources::Persistable;
-use crate::resource::persistence::Storage;
+use crate::resource::persistence::{Storage};
 use crate::resource::storage::ResourcesStorageApi;
 
 impl Persistable for PeerConfiguration {
     fn insert(self, id: PeerId, storage: &mut Storage) -> PersistenceResult<()> {
-        storage.memory.insert(id, self)
+        storage.memory.lock().unwrap().insert(id, self)
     }
 
     fn remove(id: PeerId, storage: &mut Storage) -> PersistenceResult<Option<Self>> {
-        storage.memory.remove(id)
+        storage.memory.lock().unwrap().remove(id)
     }
 
     fn get(id: PeerId, storage: &Storage) -> PersistenceResult<Option<Self>> {
-        storage.memory.get(id)
+        storage.memory.lock().unwrap().get(id)
     }
     
     fn list(storage: &Storage) -> PersistenceResult<HashMap<Self::Id, Self>> {
-        storage.memory.list()
+        storage.memory.lock().unwrap().list()
     }
 }

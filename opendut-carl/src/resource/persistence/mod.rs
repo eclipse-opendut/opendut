@@ -1,4 +1,4 @@
-use std::sync::{Mutex, MutexGuard};
+use std::sync::{Arc, Mutex, MutexGuard};
 
 use crate::resource::storage::volatile::VolatileResourcesStorage;
 use diesel::PgConnection;
@@ -8,8 +8,8 @@ pub(crate) mod resources;
 mod query;
 
 pub struct Storage<'a> {
-    pub db: Db<'a>,
-    pub memory: &'a mut Memory,
+    pub db: &'a mut redb::WriteTransaction,
+    pub memory: Arc<Mutex<Memory>>,
 }
 pub struct Db<'a> {
     pub inner: Mutex<&'a mut PgConnection>, //Mutex rather than RwLock, because we share this between threads (i.e. we need it to implement `Sync`)

@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-use url::Url;
 use crate::resource::api::global::GlobalResourcesRef;
 use crate::resource::api::resources::{RelayedSubscriptionEvents, Resources};
 use crate::resource::api::Resource;
@@ -9,6 +7,11 @@ use crate::resource::persistence::resources::Persistable;
 use crate::resource::storage::persistent::PersistentResourcesStorage;
 use crate::resource::storage::volatile::VolatileResourcesStorageHandle;
 use crate::resource::subscription::Subscribable;
+use anyhow::anyhow;
+use std::collections::HashMap;
+use std::fmt::Display;
+use std::path::PathBuf;
+use url::Url;
 
 pub mod volatile;
 pub mod persistent;
@@ -54,7 +57,7 @@ impl ResourceStorage {
     pub(super) async fn resources_mut<T, E, F>(&mut self, global: GlobalResourcesRef, code: F) -> PersistenceResult<(Result<T, E>, RelayedSubscriptionEvents)>
     where
         F: AsyncFnOnce(&mut Resources) -> Result<T, E>,
-        E: Send + Sync + 'static,
+        E: Display + Send + Sync + 'static,
     {
         match self {
             ResourceStorage::Persistent(storage) => storage.resources_mut(async |transaction| {
@@ -105,6 +108,18 @@ impl PersistenceOptions {
         let persistence_enabled = config.get_bool("persistence.enabled")?;
 
         if persistence_enabled {
+            let file = {
+                let field = "persistence.database.file";
+                let value = config.get_string(field)
+                    .map_err(|cause| LoadError::ReadField { field, source: Box::new(cause) })?;
+
+                let path = PathBuf::from(&value);
+                if path.is_relative() {
+                    return Err(LoadError::ParseValue { field, value, source: anyhow!("Path to the database file should be absolute!").into() });
+                }
+                path
+            };
+
             let url = {
                 let field = "persistence.database.url";
                 let value = config.get_string(field)
@@ -129,6 +144,7 @@ impl PersistenceOptions {
 
             Ok(PersistenceOptions::Enabled {
                 database_connect_info: DatabaseConnectInfo {
+                    file,
                     url,
                     username,
                     password,
@@ -141,8 +157,13 @@ impl PersistenceOptions {
 }
 #[derive(Clone)]
 pub struct DatabaseConnectInfo {
+    pub file: PathBuf,
+
+    /// Deprecated
     pub url: Url,
+    /// Deprecated
     pub username: String,
+    /// Deprecated
     pub password: Password,
 }
 ///Wrapper for String without Debug and Display

@@ -1,15 +1,15 @@
-pub use crate::resource::subscription::SubscriptionEvent;
-use std::collections::HashMap;
-
+use crate::resource::api::global::GlobalResourcesRef;
 use crate::resource::api::resources::{RelayedSubscriptionEvents, Resources};
 use crate::resource::api::Resource;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::resources::Persistable;
 use crate::resource::storage::{self, PersistenceOptions, ResourceStorage, ResourcesStorageApi};
+pub use crate::resource::subscription::SubscriptionEvent;
 use crate::resource::subscription::{ResourceSubscriptionChannels, Subscribable, Subscription};
+use std::collections::HashMap;
+use std::fmt::Display;
 use std::sync::Arc;
 use tokio::sync::{RwLock, RwLockWriteGuard};
-use crate::resource::api::global::GlobalResourcesRef;
 
 pub type ResourceManagerRef = Arc<ResourceManager>;
 
@@ -85,7 +85,7 @@ impl ResourceManager {
     pub async fn resources_mut<F, T, E>(&self, function: F) -> PersistenceResult<Result<T, E>>
     where
         F: AsyncFnOnce(&mut Resources) -> Result<T, E>,
-        E: Send + Sync + 'static,
+        E: Display + Send + Sync + 'static,
     {
         let mut state = self.state.write().await;
         let (result, relayed_subscription_events) = state.storage.resources_mut(self.global.clone(), async move |transaction| {

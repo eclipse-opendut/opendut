@@ -1,8 +1,8 @@
 use opendut_types::resources::Id;
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
-use std::ops::DerefMut;
-use std::sync::Mutex;
+use std::fmt::Display;
+use std::sync::{Arc, Mutex};
 
 use crate::resource::api::id::ResourceId;
 use crate::resource::api::resources::RelayedSubscriptionEvents;
@@ -14,21 +14,20 @@ use crate::resource::subscription::Subscribable;
 
 #[derive(Default)]
 pub struct VolatileResourcesStorageHandle {
-    inner: Mutex<VolatileResourcesStorage>,
+    memory: Arc<Mutex<VolatileResourcesStorage>>,
 }
 impl VolatileResourcesStorageHandle {
     pub async fn resources<T, F>(&self, code: F) -> T
     where
         F: AsyncFnOnce(VolatileResourcesTransaction) -> T,
     {
-        let mut memory = self.inner.lock().unwrap();
         let mut relayed_subscription_events = RelayedSubscriptionEvents::default();
 
         let transaction = VolatileResourcesTransaction {
-            memory: memory.deref_mut(),
+            memory: self.memory.clone(),
             relayed_subscription_events: &mut relayed_subscription_events,
         };
-        let result = futures::executor::block_on(code(transaction));
+        let result = code(transaction).await;
 
         debug_assert!(relayed_subscription_events.is_empty(), "Read-only storage operations should not trigger any subscription events.");
 
@@ -38,16 +37,15 @@ impl VolatileResourcesStorageHandle {
     pub async fn resources_mut<T, E, F>(&mut self, code: F) -> PersistenceResult<(Result<T, E>, RelayedSubscriptionEvents)>
     where
         F: AsyncFnOnce(VolatileResourcesTransaction) -> Result<T, E>,
-        E: Send + Sync + 'static,
+        E: Display + Send + Sync + 'static,
     {
-        let mut memory = self.inner.lock().unwrap();
         let mut relayed_subscription_events = RelayedSubscriptionEvents::default();
 
         let transaction = VolatileResourcesTransaction {
-            memory: memory.deref_mut(),
+            memory: self.memory.clone(),
             relayed_subscription_events: &mut relayed_subscription_events,
         };
-        let result = futures::executor::block_on(code(transaction));
+        let result = code(transaction).await;
         Ok((result, relayed_subscription_events))
     }
 }
@@ -135,7 +133,7 @@ impl VolatileResourcesStorageHandle {
     pub fn contains<R>(&self, id: R::Id) -> bool
     where R: Resource {
         let id = id.into_id();
-        if let Some(column) = self.inner.lock().unwrap().column_of::<R>() {
+        if let Some(column) = self.memory.lock().unwrap().column_of::<R>() {
             column.contains_key(&id)
         }
         else {
@@ -144,32 +142,32 @@ impl VolatileResourcesStorageHandle {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.inner.lock().unwrap().storage.is_empty()
+        self.memory.lock().unwrap().storage.is_empty()
     }
 }
 
 pub struct VolatileResourcesTransaction<'transaction> {
-    memory: &'transaction mut VolatileResourcesStorage,
+    memory: Arc<Mutex<VolatileResourcesStorage>>,
     pub relayed_subscription_events: &'transaction mut RelayedSubscriptionEvents,
 }
 impl ResourcesStorageApi for VolatileResourcesTransaction<'_> {
     fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
     where R: Resource + Persistable + Subscribable {
-        self.memory.insert(id, resource)
+        self.memory.lock().unwrap().insert(id, resource)
     }
 
     fn remove<R>(&mut self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable {
-        self.memory.remove(id)
+        self.memory.lock().unwrap().remove(id)
     }
 
     fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable + Clone {
-        self.memory.get(id)
+        self.memory.lock().unwrap().get(id)
     }
 
     fn list<R>(&self) -> PersistenceResult<HashMap<R::Id, R>>
     where R: Resource + Persistable + Clone {
-        self.memory.list()
+        self.memory.lock().unwrap().list()
     }
 }

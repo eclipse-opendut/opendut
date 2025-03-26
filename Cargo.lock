@@ -3913,6 +3913,7 @@ dependencies = [
  "pin-project-lite",
  "pq-sys",
  "predicates",
+ "redb",
  "reqwest",
  "rstest",
  "serde",
@@ -5146,6 +5147,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.98",
+]
+
+[[package]]
+name = "redb"
+version = "2.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ea0a72cd7140de9fc3e318823b883abf819c20d478ec89ce880466dc2ef263c6"
+dependencies = [
+ "libc",
 ]
 
 [[package]]

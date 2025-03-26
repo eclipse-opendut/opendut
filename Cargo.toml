@@ -119,6 +119,7 @@ prost-types = "0.13.4"
 protobuf-src = "1.1.0"
 reactive_stores = "0.1.5"
 reactive_stores_macro = "0.1.5"
+redb = "2.4.0"
 regex = "1.11.1"
 reqwest = { version = "0.12.12", default-features = false, features = ["rustls-tls-native-roots"] }
 reqwest-middleware = "0.4.0"

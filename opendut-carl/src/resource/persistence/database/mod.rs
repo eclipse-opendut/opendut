@@ -7,7 +7,7 @@ use tracing::{debug, info, warn};
 pub mod schema;
 
 pub async fn connect(database_connect_info: &DatabaseConnectInfo) -> Result<PgConnection, ConnectError> {
-    let DatabaseConnectInfo { url, username, password } = database_connect_info;
+    let DatabaseConnectInfo { url, username, password, .. } = database_connect_info;
 
     let confidential_url = {
         let mut url = url.clone();
@@ -78,41 +78,13 @@ pub enum ConnectError {
 
 #[cfg(any(test, doc))] //needed for doctests to compile
 pub mod testing {
+    use assert_fs::fixture::PathChild;
     use crate::resource::manager::{ResourceManager, ResourceManagerRef};
-    use crate::resource::persistence::database;
     use crate::resource::storage::{DatabaseConnectInfo, Password, PersistenceOptions};
-    use diesel::{Connection, PgConnection};
     use testcontainers_modules::testcontainers::ContainerAsync;
     use testcontainers_modules::{postgres, testcontainers::runners::AsyncRunner};
     use url::Url;
     use crate::resource::api::global::GlobalResources;
-
-    /// Spawns a Postgres Container and returns a connection for testing.
-    /// ```no_run
-    /// # use diesel::PgConnection;
-    /// # use opendut_carl::resource::persistence::database;
-    ///
-    /// #[tokio::test]
-    /// async fn test() {
-    ///     let mut db = database::testing::spawn_and_connect().await?;
-    ///
-    ///     do_something_with_database(db.connection);
-    /// }
-    ///
-    /// # fn do_something_with_database(connection: PgConnection) {}
-    /// ```
-    pub async fn spawn_and_connect() -> anyhow::Result<PostgresConnection> {
-        let (container, connect_info) = spawn().await?;
-
-        let mut connection = database::connect(&connect_info).await?;
-        connection.begin_test_transaction()?;
-        Ok(PostgresConnection { container, connection })
-    }
-    pub struct PostgresConnection {
-        #[allow(unused)] //primarily carried along to extend its lifetime until the end of the test (container is stopped when variable is dropped)
-        pub container: ContainerAsync<postgres::Postgres>,
-        pub connection: PgConnection,
-    }
 
     /// Spawns a Postgres Container and returns a ResourceManager for testing.
     /// ```no_run
@@ -129,7 +101,7 @@ pub mod testing {
     /// # fn do_something_with_resource_manager(resource_manager: impl Any) {}
     /// ```
     pub async fn spawn_and_connect_resource_manager() -> anyhow::Result<PostgresResources> {
-        let (container, connect_info) = spawn().await?;
+        let (container, connect_info, temp_dir) = spawn().await?;
 
         let global = GlobalResources::default().complete();
         let persistence_options = PersistenceOptions::Enabled {
@@ -137,25 +109,31 @@ pub mod testing {
         };
         let resource_manager = ResourceManager::create(global, persistence_options).await?;
 
-        Ok(PostgresResources { container, resource_manager })
+        Ok(PostgresResources { resource_manager, container, temp_dir })
     }
     pub struct PostgresResources {
+        pub resource_manager: ResourceManagerRef,
         #[allow(unused)] //primarily carried along to extend its lifetime until the end of the test (container is stopped when variable is dropped)
         pub container: ContainerAsync<postgres::Postgres>,
-        pub resource_manager: ResourceManagerRef,
+        #[allow(unused)] //carried along to extend its lifetime until the end of the test (database file is deleted when variable is dropped)
+        temp_dir: assert_fs::TempDir,
     }
 
-    async fn spawn() -> anyhow::Result<(ContainerAsync<postgres::Postgres>, DatabaseConnectInfo)> {
+    async fn spawn() -> anyhow::Result<(ContainerAsync<postgres::Postgres>, DatabaseConnectInfo, assert_fs::TempDir)> {
+        let temp_dir = assert_fs::TempDir::new()?;
+        let file = temp_dir.child("opendut.db");
+
         let container = postgres::Postgres::default().start().await?;
         let host = container.get_host().await?;
         let port = container.get_host_port_ipv4(5432).await?;
 
         let connect_info = DatabaseConnectInfo {
+            file: file.to_path_buf(),
             url: Url::parse(&format!("postgres://{host}:{port}/postgres"))?,
             username: String::from("postgres"),
             password: Password::new_static("postgres"),
         };
 
-        Ok((container, connect_info))
+        Ok((container, connect_info, temp_dir))
     }
 }

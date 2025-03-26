@@ -1,3 +1,5 @@
+#![allow(unused)] //TODO remove module
+
 pub mod cluster_configuration;
 pub mod cluster_deployment;
 pub mod cluster_device;

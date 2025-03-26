@@ -4,6 +4,7 @@ use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use std::ops::Not;
 use serde::{Deserialize, Serialize};
+use serde::ser::SerializeMap;
 use strum::EnumIter;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, EnumIter)]
@@ -150,6 +151,17 @@ impl From<ContainerEnvironmentVariable> for (String, String) {
     fn from(value: ContainerEnvironmentVariable) -> Self {
         (value.name, value.value)
     }
+}
+
+pub fn serialize_container_environment_variable_vec<S>(values: &Vec<ContainerEnvironmentVariable>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    let mut map = serializer.serialize_map(Some(values.len()))?;
+    for value in values {
+        map.serialize_entry(&value.name, &value.value)?;
+    }
+    map.end()
 }
 
 pub fn deserialize_container_environment_variable_vec<'de, D>(deserializer: D) -> Result<Vec<ContainerEnvironmentVariable>, D::Error>

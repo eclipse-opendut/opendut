@@ -4,7 +4,7 @@ use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use url::Url;
 use uuid::Uuid;
-use crate::peer::executor::container::{Engine, ContainerName, ContainerImage, ContainerVolume, ContainerDevice, ContainerEnvironmentVariable, ContainerPortSpec, ContainerCommand, ContainerCommandArgument, deserialize_container_environment_variable_vec};
+use crate::peer::executor::container::{Engine, ContainerName, ContainerImage, ContainerVolume, ContainerDevice, ContainerEnvironmentVariable, ContainerPortSpec, ContainerCommand, ContainerCommandArgument, serialize_container_environment_variable_vec, deserialize_container_environment_variable_vec};
 
 pub mod container;
 
@@ -49,7 +49,7 @@ pub enum ExecutorKind {
         volumes: Vec<ContainerVolume>,
         #[serde(default)]
         devices: Vec<ContainerDevice>,
-        #[serde(default, deserialize_with = "deserialize_container_environment_variable_vec")]
+        #[serde(default, serialize_with = "serialize_container_environment_variable_vec", deserialize_with = "deserialize_container_environment_variable_vec")]
         envs: Vec<ContainerEnvironmentVariable>,
         #[serde(default)]
         ports: Vec<ContainerPortSpec>,
