@@ -32,8 +32,13 @@ scopes = "openid,profile,email"
 enabled = false
 
 [persistence.database]
+file = ""
+
+# deprecated
 url = ""  # e.g. postgresql://example.com/carl
+# deprecated
 username = ""
+# deprecated
 password = ""
 
 [peer]

@@ -3,13 +3,14 @@ use crate::resource::api::resources::{RelayedSubscriptionEvents, Resources};
 use crate::resource::api::Resource;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::resources::Persistable;
-use crate::resource::storage::{self, PersistenceOptions, ResourceStorage, ResourcesStorageApi};
+use crate::resource::storage::{PersistenceOptions, ResourceStorage, ResourcesStorageApi};
 pub use crate::resource::subscription::SubscriptionEvent;
 use crate::resource::subscription::{ResourceSubscriptionChannels, Subscribable, Subscription};
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::sync::Arc;
 use tokio::sync::{RwLock, RwLockWriteGuard};
+use crate::resource::ConnectError;
 
 pub type ResourceManagerRef = Arc<ResourceManager>;
 
@@ -25,7 +26,7 @@ struct State {
 
 impl ResourceManager {
 
-    pub async fn create(global: GlobalResourcesRef, storage_options: PersistenceOptions) -> Result<ResourceManagerRef, storage::ConnectionError> {
+    pub async fn create(global: GlobalResourcesRef, storage_options: PersistenceOptions) -> Result<ResourceManagerRef, ConnectError> {
         let resources = ResourceStorage::connect(storage_options).await?;
         let subscribers = ResourceSubscriptionChannels::default();
 

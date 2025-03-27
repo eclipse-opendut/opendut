@@ -49,6 +49,7 @@ services:
 
       # Persistence
       - OPENDUT_CARL_PERSISTENCE_ENABLED=true
+      - OPENDUT_CARL_PERSISTENCE_DATABASE_FILE=/var/lib/opendut/carl/data/opendut.db
       - OPENDUT_CARL_PERSISTENCE_DATABASE_URL=postgres://carl-postgres-1/carl
       - OPENDUT_CARL_PERSISTENCE_DATABASE_USERNAME=postgres
       - OPENDUT_CARL_PERSISTENCE_DATABASE_PASSWORD=postgres

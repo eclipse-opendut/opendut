@@ -1,4 +1,5 @@
 use crate::resource::storage::DatabaseConnectInfo;
+use crate::resource::ConnectError;
 use backon::Retryable;
 use diesel::{Connection as _, ConnectionError, PgConnection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
@@ -40,7 +41,7 @@ pub async fn connect(database_connect_info: &DatabaseConnectInfo) -> Result<PgCo
             warn!("Connecting to database at {url} failed. Retrying in {after:?}.\n  {cause}");
         })
         .await
-        .map_err(ConnectError::Diesel)?;
+        .map_err(|source| ConnectError::Diesel { url: url.to_owned(), source })?;
 
     info!("Connection to database at {url} established!");
 
@@ -67,24 +68,16 @@ fn run_pending_migrations(connection: &mut PgConnection) -> Result<(), Box<dyn s
     Ok(())
 }
 
-#[derive(Debug, thiserror::Error)]
-pub enum ConnectError {
-    #[error("Connection error from Diesel")]
-    Diesel(#[source] diesel::ConnectionError),
-    #[error("Error while applying migrations")]
-    Migration { #[source] source: Box<dyn std::error::Error + Send + Sync> },
-}
-
 
 #[cfg(any(test, doc))] //needed for doctests to compile
 pub mod testing {
-    use assert_fs::fixture::PathChild;
+    use crate::resource::api::global::GlobalResources;
     use crate::resource::manager::{ResourceManager, ResourceManagerRef};
     use crate::resource::storage::{DatabaseConnectInfo, Password, PersistenceOptions};
+    use assert_fs::fixture::PathChild;
     use testcontainers_modules::testcontainers::ContainerAsync;
     use testcontainers_modules::{postgres, testcontainers::runners::AsyncRunner};
     use url::Url;
-    use crate::resource::api::global::GlobalResources;
 
     /// Spawns a Postgres Container and returns a ResourceManager for testing.
     /// ```no_run
@@ -105,7 +98,7 @@ pub mod testing {
 
         let global = GlobalResources::default().complete();
         let persistence_options = PersistenceOptions::Enabled {
-            database_connect_info: connect_info.clone(),
+            database_connect_info: connect_info,
         };
         let resource_manager = ResourceManager::create(global, persistence_options).await?;
 

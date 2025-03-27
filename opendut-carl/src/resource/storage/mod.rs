@@ -1,7 +1,7 @@
 use crate::resource::api::global::GlobalResourcesRef;
 use crate::resource::api::resources::{RelayedSubscriptionEvents, Resources};
 use crate::resource::api::Resource;
-use crate::resource::persistence::database::ConnectError;
+use crate::resource::ConnectError;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::resources::Persistable;
 use crate::resource::storage::persistent::PersistentResourcesStorage;
@@ -24,11 +24,11 @@ pub enum ResourceStorage {
     Volatile(VolatileResourcesStorageHandle),
 }
 impl ResourceStorage {
-    pub async fn connect(options: PersistenceOptions) -> Result<Self, ConnectionError> {
+    pub async fn connect(options: PersistenceOptions) -> Result<Self, ConnectError> {
         let storage = match options {
             PersistenceOptions::Enabled { database_connect_info } => {
-                let storage = PersistentResourcesStorage::connect(&database_connect_info).await
-                    .map_err(|cause| ConnectionError::Database { url: database_connect_info.url, source: cause })?;
+                let storage = PersistentResourcesStorage::connect(&database_connect_info).await?;
+
                 ResourceStorage::Persistent(storage)
             }
             PersistenceOptions::Disabled => {
@@ -91,12 +91,6 @@ impl ResourceStorage {
 }
 
 
-#[derive(Debug, thiserror::Error)]
-pub enum ConnectionError {
-    #[error("Failed to connect to database at '{url}'")]
-    Database { url: Url, #[source] source: ConnectError },
-}
-
 pub enum PersistenceOptions {
     Enabled { database_connect_info: DatabaseConnectInfo },
     Disabled,
@@ -112,6 +106,10 @@ impl PersistenceOptions {
                 let field = "persistence.database.file";
                 let value = config.get_string(field)
                     .map_err(|cause| LoadError::ReadField { field, source: Box::new(cause) })?;
+
+                if value.is_empty() {
+                    return Err(LoadError::ParseValue { field, value, source: anyhow!("Path to the database file has to be specified!").into() });
+                }
 
                 let path = PathBuf::from(&value);
                 if path.is_relative() {

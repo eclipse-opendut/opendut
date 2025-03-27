@@ -366,6 +366,7 @@ services:
       - "./data/secrets/pki/deploy/carl.opendut.local.pem:/etc/opendut/tls/carl.pem"
       - "./data/secrets/pki/deploy/carl.opendut.local.key:/etc/opendut/tls/carl.key"
       - carl-config:/opt/opendut-carl/config/
+      - "carl_data:/var/lib/opendut/carl/data"
     environment:
       # Network
       - OPENDUT_CARL_NETWORK_REMOTE_HOST=carl.opendut.local
@@ -395,6 +396,7 @@ services:
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_SCOPES=
       # Persistence
       - OPENDUT_CARL_PERSISTENCE_ENABLED=true
+      - OPENDUT_CARL_PERSISTENCE_DATABASE_FILE=/var/lib/opendut/carl/data/opendut.db
       - OPENDUT_CARL_PERSISTENCE_DATABASE_URL=postgres://opendut-carl-postgres/carl
       - OPENDUT_CARL_PERSISTENCE_DATABASE_USERNAME=postgres
       - OPENDUT_CARL_PERSISTENCE_DATABASE_PASSWORD=$CARL_POSTGRES_PASSWORD

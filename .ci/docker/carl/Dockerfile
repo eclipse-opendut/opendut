@@ -15,9 +15,11 @@ RUN groupadd --gid 1000 carl
 RUN useradd --create-home --uid 1000 --gid carl --shell /bin/bash carl
 RUN mkdir -p /etc/opendut/tls && chown -R carl:carl /etc/opendut
 RUN mkdir -p /opt/opendut-carl/config/ && chown -R carl:carl /opt/opendut-carl/
+RUN mkdir -p /var/lib/opendut/carl/ && chown -R carl:carl /var/lib/opendut/carl/
 USER carl
 
 VOLUME /opt/opendut-carl/config
+VOLUME /var/lib/opendut/carl/
 
 ENTRYPOINT ["/opt/entrypoint.sh"]
 CMD ["/opt/opendut-carl/opendut-carl"]

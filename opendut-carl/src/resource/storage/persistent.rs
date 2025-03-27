@@ -1,12 +1,13 @@
 use crate::resource::api::resources::RelayedSubscriptionEvents;
-use crate::resource::persistence::database::ConnectError;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::resources::Persistable;
 use crate::resource::persistence::Storage;
 use crate::resource::storage::volatile::VolatileResourcesStorage;
 use crate::resource::storage::{DatabaseConnectInfo, Resource, ResourcesStorageApi};
+use crate::resource::ConnectError;
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
+use std::fs;
 use std::sync::{Arc, Mutex};
 use tracing::debug;
 
@@ -20,7 +21,13 @@ impl PersistentResourcesStorage {
 
         let file = &database_connect_info.file;
 
-        let db = redb::Database::create(file).unwrap(); //TODO don't unwrap
+        if let Some(parent_dir) = file.parent() {
+            fs::create_dir_all(parent_dir)
+                .map_err(|source| ConnectError::DatabaseDirCreate { dir: parent_dir.to_owned(), source })?;
+        }
+
+        let db = redb::Database::create(file)
+            .map_err(|source| ConnectError::DatabaseCreate { file: file.to_owned(), source })?;
         debug!("Database file opened from: {file:?}");
 
         let memory = VolatileResourcesStorage::default();
