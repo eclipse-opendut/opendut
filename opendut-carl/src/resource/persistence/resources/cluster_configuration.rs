@@ -1,29 +1,29 @@
 use super::Persistable;
 use crate::resource::persistence::error::PersistenceResult;
-use crate::resource::persistence::Storage;
+use crate::resource::persistence::{Memory, Db};
 use opendut_types::cluster::{ClusterConfiguration, ClusterId};
 use std::collections::HashMap;
-use redb::{ReadableTable, TableDefinition};
-use uuid::Uuid;
+use redb::TableDefinition;
+use crate::resource::api::id::ResourceId;
+use crate::resource::persistence;
 
 impl Persistable for ClusterConfiguration {
-    fn insert(self, cluster_id: ClusterId, storage: &mut Storage) -> PersistenceResult<()> {
-
-        let key = cluster_id.0.as_bytes().as_slice();
+    fn insert(self, cluster_id: ClusterId, _: &mut Memory, db: &Db) -> PersistenceResult<()> {
+        let key = persistence::Key::from(ResourceId::<Self>::into_id(cluster_id));
 
         let value = self;
         let value = serde_json::to_string(&value).unwrap(); //TODO don't unwrap
 
-        let mut table = storage.db.open_table(CLUSTER_CONFIGURATION_TABLE).unwrap(); //TODO don't unwrap
+        let mut table = db.read_write_table(CLUSTER_CONFIGURATION_TABLE)?;
         table.insert(key, value).unwrap(); //TODO don't unwrap
 
         Ok(())
     }
 
-    fn remove(cluster_id: ClusterId, storage: &mut Storage) -> PersistenceResult<Option<Self>> {
-        let mut table = storage.db.open_table(CLUSTER_CONFIGURATION_TABLE).unwrap(); //TODO don't unwrap
+    fn remove(cluster_id: ClusterId, _: &mut Memory, db: &Db) -> PersistenceResult<Option<Self>> {
+        let key = persistence::Key::from(ResourceId::<Self>::into_id(cluster_id));
 
-        let key = cluster_id.0.as_bytes().as_slice();
+        let mut table = db.read_write_table(CLUSTER_CONFIGURATION_TABLE)?;
 
         let value = table.remove(key).unwrap() //TODO don't unwrap
             .map(|value| {
@@ -33,37 +33,40 @@ impl Persistable for ClusterConfiguration {
         Ok(value)
     }
 
-    fn get(cluster_id: ClusterId, storage: &Storage) -> PersistenceResult<Option<Self>> {
-        let table = storage.db.open_table(CLUSTER_CONFIGURATION_TABLE).unwrap(); //TODO don't unwrap
+    fn get(cluster_id: ClusterId, _: &Memory, db: &Db) -> PersistenceResult<Option<Self>> {
+        let key = persistence::Key::from(ResourceId::<Self>::into_id(cluster_id));
 
-        let key = cluster_id.0.as_bytes().as_slice();
-
-        let value = table.get(key).unwrap() //TODO don't unwrap
-            .map(|value| {
-                serde_json::from_str::<ClusterConfiguration>(&value.value()).unwrap() //TODO don't unwrap
+        let value = db.read_table(CLUSTER_CONFIGURATION_TABLE)?
+            .and_then(|table| {
+                table.get(&key).unwrap() //TODO don't unwrap
+                    .map(|value| {
+                        serde_json::from_str::<ClusterConfiguration>(&value.value()).unwrap() //TODO don't unwrap
+                    })
             });
 
         Ok(value)
     }
 
-    fn list(storage: &Storage) -> PersistenceResult<HashMap<Self::Id, Self>> {
-        let table = storage.db.open_table(CLUSTER_CONFIGURATION_TABLE).unwrap(); //TODO don't unwrap
+    fn list(_: &Memory, db: &Db) -> PersistenceResult<HashMap<Self::Id, Self>> {
+        let value = db.read_table(CLUSTER_CONFIGURATION_TABLE)?
+            .map(|table| {
+                table.iter().unwrap() //TODO don't unwrap
+                    .map(|value| {
+                        let (key, value) = value.unwrap(); //TODO don't unwrap
+                        let id = ResourceId::<Self>::from_id(key.value().id);
 
-        let value = table.iter().unwrap() //TODO don't unwrap
-            .map(|value| {
-                let (key, value) = value.unwrap(); //TODO don't unwrap
-                let id = ClusterId::from(Uuid::from_slice(key.value()).unwrap()); //TODO don't unwrap
+                        let value = serde_json::from_str::<ClusterConfiguration>(&value.value()).unwrap(); //TODO don't unwrap
 
-                let value = serde_json::from_str::<ClusterConfiguration>(&value.value()).unwrap(); //TODO don't unwrap
-
-                (id, value)
+                        (id, value)
+                    })
+                    .collect::<HashMap<_, _>>()
             })
-            .collect();
+            .unwrap_or_default();
 
         Ok(value)
     }
 }
 
-const CLUSTER_CONFIGURATION_TABLE: TableDefinition<&[u8], String> = TableDefinition::new("cluster_configuration");
+const CLUSTER_CONFIGURATION_TABLE: persistence::TableDefinition = TableDefinition::new("cluster_configuration");
 
 //TODO SerializableClusterConfiguration + Version-field

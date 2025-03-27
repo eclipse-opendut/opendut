@@ -1,25 +1,25 @@
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::resources::Persistable;
-use crate::resource::persistence::Storage;
+use crate::resource::persistence::{Db, Memory};
 use crate::resource::storage::ResourcesStorageApi;
 use opendut_types::peer::state::PeerConnectionState;
 use opendut_types::peer::PeerId;
 use std::collections::HashMap;
 
 impl Persistable for PeerConnectionState {
-    fn insert(self, id: PeerId, storage: &mut Storage) -> PersistenceResult<()> {
-        storage.memory.lock().unwrap().insert(id, self)
+    fn insert(self, id: PeerId, memory: &mut Memory, _: &Db) -> PersistenceResult<()> {
+        memory.lock().unwrap().insert(id, self)
     }
 
-    fn remove(id: PeerId, storage: &mut Storage) -> PersistenceResult<Option<Self>> {
-        storage.memory.lock().unwrap().remove(id)
+    fn remove(id: PeerId, memory: &mut Memory, _: &Db) -> PersistenceResult<Option<Self>> {
+        memory.lock().unwrap().remove(id)
     }
 
-    fn get(id: PeerId, storage: &Storage) -> PersistenceResult<Option<Self>> {
-        storage.memory.lock().unwrap().get(id)
+    fn get(id: PeerId, memory: &Memory, _: &Db) -> PersistenceResult<Option<Self>> {
+        memory.lock().unwrap().get(id)
     }
 
-    fn list(storage: &Storage) -> PersistenceResult<HashMap<Self::Id, Self>> {
-        storage.memory.lock().unwrap().list()
+    fn list(memory: &Memory, _: &Db) -> PersistenceResult<HashMap<Self::Id, Self>> {
+        memory.lock().unwrap().list()
     }
 }

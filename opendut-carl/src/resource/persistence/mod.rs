@@ -1,28 +1,122 @@
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::cmp::Ordering;
+use std::sync::{Arc, Mutex};
 
 use crate::resource::storage::volatile::VolatileResourcesStorage;
-use diesel::PgConnection;
+use redb::{AccessGuard, ReadableTable, TableError, TypeName};
+use uuid::Uuid;
+use opendut_types::resources::Id;
+use crate::resource::persistence::error::PersistenceResult;
 
 pub mod database;
 pub(crate) mod resources;
 mod query;
 
-pub struct Storage<'a> {
-    pub db: &'a mut redb::WriteTransaction,
-    pub memory: Arc<Mutex<Memory>>,
+pub type Memory = Arc<Mutex<VolatileResourcesStorage>>;
+
+pub enum Db<'transaction> {
+    Read(&'transaction redb::ReadTransaction),
+    ReadWrite(&'transaction mut redb::WriteTransaction),
 }
-pub struct Db<'a> {
-    pub inner: Mutex<&'a mut PgConnection>, //Mutex rather than RwLock, because we share this between threads (i.e. we need it to implement `Sync`)
-}
-impl<'a> Db<'a> {
-    pub fn from_connection(connection: &'a mut PgConnection) -> Db<'a> {
-        Self { inner: Mutex::new(connection) }
+impl Db<'_> {
+    fn read_table(&self, table: TableDefinition) -> PersistenceResult<Option<ReadTable>> {
+        let open_result = match self {
+            Db::Read(transaction) => transaction.open_table(table).map(ReadTable::Read),
+            Db::ReadWrite(transaction) => transaction.open_table(table).map(ReadTable::ReadWrite),
+        };
+
+        match open_result { //The ReadTransaction does not automatically create the table and rather returns a TableDoesNotExist error
+            Ok(table) => Ok(Some(table)),
+            Err(cause) => match cause {
+                TableError::TableDoesNotExist(_) => Ok(None),
+                _ => Err(cause)?,
+            }
+        }
     }
-    pub fn connection(&self) -> MutexGuard<&'a mut PgConnection> {
-        self.inner.lock().expect("error while locking mutex for database connection")
+
+    fn read_write_table(&self, table: TableDefinition) -> PersistenceResult<ReadWriteTable> {
+        match self {
+            Db::Read(_) => unimplemented!("Called `.read_write_table()` on a Db::Read() variant."),
+            Db::ReadWrite(transaction) => transaction.open_table(table).map_err(Into::into),
+        }
     }
 }
-pub type Memory = VolatileResourcesStorage;
+
+pub(super) enum ReadTable<'transaction> {
+    Read(redb::ReadOnlyTable<Key, Value>),
+    ReadWrite(redb::Table<'transaction, Key, Value>),
+}
+impl ReadTable<'_> {
+    fn get(&self, key: &Key) -> redb::Result<Option<AccessGuard<Value>>> {
+        match self {
+            ReadTable::Read(table) => table.get(key),
+            ReadTable::ReadWrite(table) => table.get(key),
+        }
+    }
+    fn iter(&self) -> redb::Result<redb::Range<Key, Value>> {
+        match self {
+            ReadTable::Read(table) => table.iter(),
+            ReadTable::ReadWrite(table) => table.iter(),
+        }
+    }
+}
+pub(super) type ReadWriteTable<'a> = redb::Table<'a, Key, Value>;
+
+#[derive(Debug)]
+pub(super) struct Key { pub id: Id }
+
+impl redb::Key for Key {
+    fn compare(data1: &[u8], data2: &[u8]) -> Ordering {
+        let data1 = Uuid::from_slice(data1)
+            .expect("A UUID which was previously saved to bytes should be loadable from bytes.");
+        let data2 = Uuid::from_slice(data2)
+            .expect("A UUID which was previously saved to bytes should be loadable from bytes.");
+
+        data1.cmp(&data2)
+    }
+}
+impl redb::Value for Key {
+    type SelfType<'a> = Self
+    where
+        Self: 'a;
+
+    type AsBytes<'a> = [u8; 16]
+    where
+        Self: 'a;
+
+    fn fixed_width() -> Option<usize> {
+        Some(16)
+    }
+
+    fn from_bytes<'a>(data: &'a [u8]) -> Self::SelfType<'a>
+    where
+        Self: 'a
+    {
+        let uuid = Uuid::from_slice(data)
+            .expect("A PersistenceId which was previously saved to bytes should be loadable from bytes.");
+        Key { id: Id::from(uuid) }
+    }
+
+    fn as_bytes<'a, 'b: 'a>(value: &'a Self::SelfType<'b>) -> Self::AsBytes<'a>
+    where
+        Self: 'b
+    {
+        let Key { id } = value;
+        *id.value().as_bytes()
+    }
+
+    fn type_name() -> TypeName {
+        TypeName::new("opendut_persistence_id")
+    }
+}
+impl From<Id> for Key {
+    fn from(value: Id) -> Self {
+        Key { id: value }
+    }
+}
+
+pub(super) type Value = String;
+pub(super) type TableDefinition<'a> = redb::TableDefinition<'a, Key, Value>;
+
 
 pub(crate) mod error {
     use std::fmt::{Debug, Display, Formatter};
@@ -40,6 +134,7 @@ pub(crate) mod error {
         DieselInternal {
             #[from] source: diesel::result::Error,
         },
+        Table(#[from] redb::TableError),
     }
     impl PersistenceError {
         pub fn insert<R>(identifier: impl Debug, cause: impl Into<Cause>) -> Self {
@@ -67,8 +162,9 @@ pub(crate) mod error {
 
         pub fn context(mut self, message: impl Into<String>) -> Self {
             match &mut self {
-                PersistenceError::Custom { context_messages, .. } => context_messages.push(message.into()),
-                PersistenceError::DieselInternal { .. } => unimplemented!(),
+                Self::Custom { context_messages, .. } => context_messages.push(message.into()),
+                Self::DieselInternal { .. } => unimplemented!(),
+                Self::Table(_) => unimplemented!(),
             }
             self
         }
@@ -91,7 +187,8 @@ pub(crate) mod error {
                         writeln!(f, "  Source: {source}")
                     ).transpose()?;
                 }
-                PersistenceError::DieselInternal { source } => writeln!(f, "Error internal to Diesel, likely from transaction: {source}")?,
+                Self::DieselInternal { source } => writeln!(f, "Error internal to Diesel, likely from transaction: {source}")?,
+                Self::Table(source) => writeln!(f, "Error while interacting with key-value table: {source}")?,
             }
             Ok(())
         }

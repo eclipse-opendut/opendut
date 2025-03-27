@@ -1,7 +1,7 @@
 use crate::resource::api::resources::RelayedSubscriptionEvents;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::resources::Persistable;
-use crate::resource::persistence::Storage;
+use crate::resource::persistence::{Db, Memory};
 use crate::resource::storage::volatile::VolatileResourcesStorage;
 use crate::resource::storage::{DatabaseConnectInfo, Resource, ResourcesStorageApi};
 use crate::resource::ConnectError;
@@ -13,7 +13,7 @@ use tracing::debug;
 
 pub struct PersistentResourcesStorage {
     db: redb::Database,
-    memory: Arc<Mutex<VolatileResourcesStorage>>,
+    memory: Memory,
 }
 impl PersistentResourcesStorage {
     pub async fn connect(database_connect_info: &DatabaseConnectInfo) -> Result<Self, ConnectError> {
@@ -30,8 +30,9 @@ impl PersistentResourcesStorage {
             .map_err(|source| ConnectError::DatabaseCreate { file: file.to_owned(), source })?;
         debug!("Database file opened from: {file:?}");
 
-        let memory = VolatileResourcesStorage::default();
-        let memory = Arc::new(Mutex::new(memory));
+        let memory = Arc::new(Mutex::new(
+            VolatileResourcesStorage::default()
+        ));
 
         Ok(Self { db, memory })
     }
@@ -42,17 +43,16 @@ impl PersistentResourcesStorage {
     {
         let mut relayed_subscription_events = RelayedSubscriptionEvents::default();
 
-        let mut transaction = self.db.begin_write().unwrap(); //TODO don't unwrap //TODO don't begin_write(), but rather begin_read() ?
+        let transaction = self.db.begin_read().unwrap(); //TODO don't unwrap
         let result = {
             let transaction = PersistentResourcesTransaction {
-                db: Mutex::new(&mut transaction), //TODO don't unwrap
+                db: Db::Read(&transaction),
                 memory: self.memory.clone(),
                 relayed_subscription_events: &mut relayed_subscription_events,
             };
 
             code(transaction).await
         };
-        transaction.commit().unwrap(); //TODO don't unwrap
 
         debug_assert!(relayed_subscription_events.is_empty(), "Read-only storage operations should not trigger any subscription events.");
 
@@ -68,7 +68,7 @@ impl PersistentResourcesStorage {
         let mut transaction = self.db.begin_write().unwrap(); //TODO don't unwrap
         let result = {
             let persistent_transaction = PersistentResourcesTransaction {
-                db: Mutex::new(&mut transaction),
+                db: Db::ReadWrite(&mut transaction),
                 memory: self.memory.clone(),
                 relayed_subscription_events: &mut relayed_subscription_events,
             };
@@ -93,11 +93,7 @@ impl ResourcesStorageApi for PersistentResourcesStorage {
     fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
     where R: Resource + Persistable {
         let mut transaction = self.db.begin_write().unwrap(); //TODO don't unwrap
-        let mut storage = Storage {
-            db: &mut transaction,
-            memory: self.memory.clone(),
-        };
-        let result = resource.insert(id, &mut storage);
+        let result = resource.insert(id, &mut self.memory.clone(), &Db::ReadWrite(&mut transaction));
         transaction.commit().unwrap(); //TODO don't unwrap
         result
     }
@@ -105,78 +101,52 @@ impl ResourcesStorageApi for PersistentResourcesStorage {
     fn remove<R>(&mut self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable {
         let mut transaction = self.db.begin_write().unwrap(); //TODO don't unwrap
-        let mut storage = Storage {
-            db: &mut transaction,
-            memory: self.memory.clone(),
-        };
-        let result = R::remove(id, &mut storage);
+        let result = R::remove(id, &mut self.memory.clone(), &Db::ReadWrite(&mut transaction));
         transaction.commit().unwrap(); //TODO don't unwrap
         result
     }
 
     fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable + Clone {
-        let storage = Storage {
-            db: &mut self.db.begin_write().unwrap(), //TODO don't unwrap //TODO begin_read()
-            memory: self.memory.clone(),
-        };
-        R::get(id, &storage)
+        let transaction = self.db.begin_read().unwrap(); //TODO don't unwrap
+        R::get(id, &self.memory.clone(), &Db::Read(&transaction))
     }
 
     fn list<R>(&self) -> PersistenceResult<HashMap<R::Id, R>>
     where R: Resource + Persistable + Clone {
-        let storage = Storage {
-            db: &mut self.db.begin_write().unwrap(), //TODO don't unwrap //TODO begin_read()
-            memory: self.memory.clone(),
-        };
-        R::list(&storage)
+        let transaction = self.db.begin_read().unwrap(); //TODO don't unwrap
+        R::list(&self.memory.clone(), &Db::Read(&transaction))
     }
 }
 
 pub struct PersistentResourcesTransaction<'transaction> {
-    db: Mutex<&'transaction mut redb::WriteTransaction>,
-    memory: Arc<Mutex<VolatileResourcesStorage>>,
+    db: Db<'transaction>,
+    memory: Memory,
     pub relayed_subscription_events: &'transaction mut RelayedSubscriptionEvents,
 }
-impl PersistentResourcesTransaction<'_> {
-    pub(crate) fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
+impl ResourcesStorageApi for PersistentResourcesTransaction<'_> {
+    fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
     where R: Resource + Persistable {
-        let mut storage = Storage {
-            db: &mut self.db.lock().unwrap(),
-            memory: self.memory.clone(),
-        };
-        resource.insert(id, &mut storage)
+        resource.insert(id, &mut self.memory.clone(), &self.db)
     }
 
-    pub(crate) fn remove<R>(&mut self, id: R::Id) -> PersistenceResult<Option<R>>
+    fn remove<R>(&mut self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable {
-        let mut storage = Storage {
-            db: &mut self.db.lock().unwrap(),
-            memory: self.memory.clone(),
-        };
-        R::remove(id, &mut storage)
+        R::remove(id, &mut self.memory.clone(), &self.db)
     }
 
-    pub(crate) fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
+    fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
     where
         R: Resource + Persistable + Clone
     {
-        let storage = Storage {
-            db: &mut self.db.lock().unwrap(),
-            memory: self.memory.clone(),
-        };
-        R::get(id, &storage)
+        R::get(id, &self.memory.clone(), &self.db)
     }
 
-    pub(crate) fn list<R>(&self) -> PersistenceResult<HashMap<R::Id, R>>
+    fn list<R>(&self) -> PersistenceResult<HashMap<R::Id, R>>
     where
         R: Resource + Persistable + Clone
     {
-        let storage = Storage {
-            db: &mut self.db.lock().unwrap(),
-            memory: self.memory.clone(),
-        };
-        R::list(&storage)
+        R::list(&self.memory.clone(), &self.db)
     }
 }
 

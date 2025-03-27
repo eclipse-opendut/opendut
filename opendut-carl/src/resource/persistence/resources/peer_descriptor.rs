@@ -1,20 +1,21 @@
 use super::Persistable;
+use crate::resource::api::id::ResourceId;
+use crate::resource::persistence;
 use crate::resource::persistence::error::PersistenceResult;
-use crate::resource::persistence::Storage;
+use crate::resource::persistence::{Db, Memory};
 use opendut_types::peer::executor::ExecutorDescriptors;
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
 use opendut_types::topology::Topology;
-use redb::{ReadableTable, TableDefinition};
+use redb::TableDefinition;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use uuid::Uuid;
 
 impl Persistable for PeerDescriptor {
 
-    fn insert(self, peer_id: PeerId, storage: &mut Storage) -> PersistenceResult<()> {
-        let mut table = storage.db.open_table(PEER_DESCRIPTOR_TABLE).unwrap(); //TODO don't unwrap
+    fn insert(self, peer_id: PeerId, _: &mut Memory, db: &Db) -> PersistenceResult<()> {
+        let key = persistence::Key::from(ResourceId::<Self>::into_id(peer_id));
 
-        let key = peer_id.uuid.as_bytes().as_slice();
+        let mut table = db.read_write_table(PEER_DESCRIPTOR_TABLE)?;
 
         let value = {
             let PeerDescriptor { id, name, location, network, topology, executors } = self;
@@ -24,17 +25,17 @@ impl Persistable for PeerDescriptor {
         };
         let value = serde_json::to_string(&value).unwrap(); //TODO don't unwrap
 
-        table.insert(key, value).unwrap(); //TODO don't unwrap
+        table.insert(&key, value).unwrap(); //TODO don't unwrap
 
         Ok(())
     }
 
-    fn remove(peer_id: PeerId, storage: &mut Storage) -> PersistenceResult<Option<Self>> {
-        let mut table = storage.db.open_table(PEER_DESCRIPTOR_TABLE).unwrap(); //TODO don't unwrap
+    fn remove(peer_id: PeerId, _: &mut Memory, db: &Db) -> PersistenceResult<Option<Self>> {
+        let key = persistence::Key::from(ResourceId::<Self>::into_id(peer_id));
 
-        let key = peer_id.uuid.as_bytes().as_slice();
+        let mut table = db.read_write_table(PEER_DESCRIPTOR_TABLE)?;
 
-        let value = table.remove(key).unwrap() //TODO don't unwrap
+        let value = table.remove(&key).unwrap() //TODO don't unwrap
             .map(|value| {
                 let peer_descriptor = serde_json::from_str::<SerializablePeerDescriptor>(&value.value()).unwrap(); //TODO don't unwrap
 
@@ -45,45 +46,48 @@ impl Persistable for PeerDescriptor {
         Ok(value)
     }
 
-    fn get(peer_id: PeerId, storage: &Storage) -> PersistenceResult<Option<Self>> {
-        let table = storage.db.open_table(PEER_DESCRIPTOR_TABLE).unwrap(); //TODO don't unwrap
+    fn get(peer_id: PeerId, _: &Memory, db: &Db) -> PersistenceResult<Option<Self>> {
+        let key = persistence::Key::from(ResourceId::<Self>::into_id(peer_id));
 
-        let key = peer_id.uuid.as_bytes().as_slice();
+        let value = db.read_table(PEER_DESCRIPTOR_TABLE)?
+            .and_then(|table| {
+                table.get(&key).unwrap() //TODO don't unwrap
+                    .map(|value| {
+                        let peer_descriptor = serde_json::from_str::<SerializablePeerDescriptor>(&value.value()).unwrap(); //TODO don't unwrap
 
-        let value = table.get(key).unwrap() //TODO don't unwrap
-            .map(|value| {
-                let peer_descriptor = serde_json::from_str::<SerializablePeerDescriptor>(&value.value()).unwrap(); //TODO don't unwrap
-
-                let SerializablePeerDescriptor { id, name, location, network, topology, executors } = peer_descriptor;
-                PeerDescriptor { id, name, location, network, topology, executors }
+                        let SerializablePeerDescriptor { id, name, location, network, topology, executors } = peer_descriptor;
+                        PeerDescriptor { id, name, location, network, topology, executors }
+                    })
             });
-
         Ok(value)
     }
 
-    fn list(storage: &Storage) -> PersistenceResult<HashMap<Self::Id, Self>> {
-        let table = storage.db.open_table(PEER_DESCRIPTOR_TABLE).unwrap(); //TODO don't unwrap
+    fn list(_: &Memory, db: &Db) -> PersistenceResult<HashMap<Self::Id, Self>> {
 
-        let value = table.iter().unwrap() //TODO don't unwrap
-            .map(|value| {
-                let (key, value) = value.unwrap(); //TODO don't unwrap
-                let peer_id = PeerId::from(Uuid::from_slice(key.value()).unwrap()); //TODO don't unwrap
+        let values = db.read_table(PEER_DESCRIPTOR_TABLE)?
+            .map(|table| {
+                table.iter().unwrap() //TODO don't unwrap
+                    .map(|value| {
+                        let (key, value) = value.unwrap(); //TODO don't unwrap
+                        let id = ResourceId::<Self>::from_id(key.value().id);
 
-                let peer_descriptor = serde_json::from_str::<SerializablePeerDescriptor>(&value.value()).unwrap(); //TODO don't unwrap
-                let peer_descriptor = {
-                    let SerializablePeerDescriptor { id, name, location, network, topology, executors } = peer_descriptor;
-                    PeerDescriptor { id, name, location, network, topology, executors }
-                };
+                        let peer_descriptor = serde_json::from_str::<SerializablePeerDescriptor>(&value.value()).unwrap(); //TODO don't unwrap
+                        let peer_descriptor = {
+                            let SerializablePeerDescriptor { id, name, location, network, topology, executors } = peer_descriptor;
+                            PeerDescriptor { id, name, location, network, topology, executors }
+                        };
 
-                (peer_id, peer_descriptor)
+                        (id, peer_descriptor)
+                    })
+                    .collect::<HashMap<_, _>>()
             })
-            .collect();
+            .unwrap_or_default();
 
-        Ok(value)
+        Ok(values)
     }
 }
 
-const PEER_DESCRIPTOR_TABLE: TableDefinition<&[u8], String> = TableDefinition::new("peer_descriptor");
+const PEER_DESCRIPTOR_TABLE: persistence::TableDefinition = TableDefinition::new("peer_descriptor");
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 struct SerializablePeerDescriptor { //TODO From-implementation //TODO version-field, if nothing exists natively in redb
