@@ -113,7 +113,8 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
             .add_service(grpc_facades.cluster_manager_facade.into_grpc_service())
             .add_service(grpc_facades.metadata_provider_facade.into_grpc_service())
             .add_service(grpc_facades.peer_manager_facade.into_grpc_service())
-            .add_service(grpc_facades.peer_messaging_broker_facade.into_grpc_service());
+            .add_service(grpc_facades.peer_messaging_broker_facade.into_grpc_service())
+            .add_service(grpc_facades.observer_messaging_broker_facade.into_grpc_service());
 
         routes_builder
             .routes()

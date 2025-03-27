@@ -1,7 +1,6 @@
 use std::ops::Not;
 use std::path::PathBuf;
 use std::process::ExitCode;
-
 use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::Shell;
 use console::Style;
@@ -76,6 +75,11 @@ enum Commands {
         #[command(subcommand)]
         resource: DeleteResource,
     },
+    /// Wait for a resource
+    Await {
+        #[command(subcommand)]
+        resource: AwaitResource,
+    },
     ///Show the configuration that CLEO currently uses
     Config,
     /// Generates shell completion
@@ -149,6 +153,13 @@ enum DeleteResource {
     NetworkInterface(commands::network_interface::delete::DeleteNetworkInterfaceCli),
     Device(commands::device::delete::DeleteDeviceCli),
 }
+
+#[derive(Subcommand)]
+enum AwaitResource {
+    PeerOnline(commands::wait::peer_online::WaitPeerOnlineCli),
+    ClusterPeersOnline(commands::wait::cluster_peers_online::WaitPeersInClusterOnline),
+}
+
 
 #[derive(ValueEnum, Clone)]
 pub(crate) enum CreateOutputFormat {
@@ -335,6 +346,17 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
         Commands::Completions { shell } => {
             let mut cmd = Args::command();
             commands::completions::print_completions(shell, &mut cmd);
+        }
+        Commands::Await { resource } => {
+            let mut carl = create_carl_client(&settings.config).await;
+            match resource {
+                AwaitResource::PeerOnline(cli) => {
+                    cli.execute(&mut carl).await?;
+                }
+                AwaitResource::ClusterPeersOnline(cli) => {
+                    cli.execute(&mut carl).await?;
+                }
+            };
         }
     }
     Ok(())

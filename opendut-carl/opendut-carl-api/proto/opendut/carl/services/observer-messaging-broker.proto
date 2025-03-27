@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package opendut.carl.services.observer_messaging_broker;
+
+import "opendut/types/peer/peer.proto";
+
+service ObserverMessagingBroker {
+  rpc WaitForPeersOnline(WaitForPeersOnlineRequest) returns (stream WaitForPeersOnlineResponse);
+}
+
+
+// WaitForPeer
+
+message WaitForPeersOnlineRequest {
+  repeated opendut.types.peer.PeerId peer_ids = 1;
+}
+
+message WaitForPeersOnlineResponse {
+  oneof result {
+    WaitForPeersOnlineSuccess success = 1;  // request peer online
+    WaitForPeersOnlineFailure failure = 2;  // gave up
+    WaitForPeersOnlinePending pending = 3;  // keep connection alive, tell client that the request is still pending and no deadline exceeded
+  }
+}
+message WaitForPeersOnlineSuccess {}
+message WaitForPeersOnlineFailure {}
+message WaitForPeersOnlinePending {}

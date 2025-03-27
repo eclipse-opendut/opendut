@@ -2,8 +2,7 @@ pub mod peer_messaging_broker;
 pub mod cluster_manager;
 pub mod grpc;
 pub mod peer_manager;
-
-
+pub mod observer_messaging_broker;
 
 #[cfg(test)]
 mod testing {

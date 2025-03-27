@@ -4,6 +4,7 @@ pub mod broker;
 pub mod cluster;
 pub mod metadata;
 pub mod peer;
+pub mod observer;
 
 cfg_if! {
     if #[cfg(any(feature = "client", feature = "wasm-client"))] {
@@ -113,11 +114,13 @@ cfg_if! {
         use crate::carl::metadata::MetadataProvider;
         use crate::carl::peer::PeersRegistrar;
         use crate::carl::broker::PeerMessagingBroker;
+        use crate::carl::observer::ObserverMessagingBroker;
 
         use crate::proto::services::cluster_manager::cluster_manager_client::ClusterManagerClient;
         use crate::proto::services::metadata_provider::metadata_provider_client::MetadataProviderClient;
         use crate::proto::services::peer_manager::peer_manager_client::PeerManagerClient;
         use crate::proto::services::peer_messaging_broker::peer_messaging_broker_client::PeerMessagingBrokerClient;
+        use crate::proto::services::observer_messaging_broker::observer_messaging_broker_client::ObserverMessagingBrokerClient;
 
         use tower::ServiceBuilder;
 
@@ -127,6 +130,7 @@ cfg_if! {
             pub cluster: ClusterManager<TonicAuthenticationService>,
             pub metadata: MetadataProvider<TonicAuthenticationService>,
             pub peers: PeersRegistrar<TonicAuthenticationService>,
+            pub observer: ObserverMessagingBroker<TonicAuthenticationService>,
         }
 
         pub enum CaCertInfo {
@@ -201,6 +205,7 @@ cfg_if! {
                     cluster: ClusterManager::new(ClusterManagerClient::new(Clone::clone(&auth_svc))),
                     metadata: MetadataProvider::new(MetadataProviderClient::new(Clone::clone(&auth_svc))),
                     peers: PeersRegistrar::new(PeerManagerClient::new(Clone::clone(&auth_svc))),
+                    observer: ObserverMessagingBroker::new(ObserverMessagingBrokerClient::new(Clone::clone(&auth_svc))),
                 })
             }
         }

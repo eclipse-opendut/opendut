@@ -17,6 +17,7 @@ pub fn spawn_carl() -> anyhow::Result<Port> {
         .set_override("vpn.enabled", false)?
         .set_override("serve.ui.presence_check", false)?
         .set_override("network.oidc.enabled", false)?
+        .set_override("persistence.enabled", false)?
         // ensure the development certificates are used
         // even if ~/.config/opendut/carl/config.toml is present with different values for the test environment in opendut-vm
         .set_override("network.tls.certificate", "resources/development/tls/insecure-development-carl.pem")?

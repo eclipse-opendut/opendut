@@ -4,11 +4,12 @@ use config::Config;
 use pem::Pem;
 use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_auth::registration::resources::ResourceHomeUrl;
-use crate::manager::grpc::{ClusterManagerFacade, MetadataProviderFacade, PeerManagerFacade, PeerMessagingBrokerFacade};
+use crate::manager::grpc::{ClusterManagerFacade, MetadataProviderFacade, ObserverMessagingBrokerFacade, PeerManagerFacade, PeerMessagingBrokerFacade};
 use crate::resource::manager::ResourceManager;
 use crate::resource::storage::PersistenceOptions;
 use crate::startup;
 use crate::manager::cluster_manager::{ClusterManager, ClusterManagerOptions};
+use crate::manager::observer_messaging_broker::ObserverMessagingBroker;
 use crate::manager::peer_messaging_broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
 use crate::resource::api::global::GlobalResources;
 use crate::settings::vpn;
@@ -18,6 +19,7 @@ pub struct GrpcFacades {
     pub metadata_provider_facade: MetadataProviderFacade,
     pub peer_manager_facade: PeerManagerFacade,
     pub peer_messaging_broker_facade: PeerMessagingBrokerFacade,
+    pub observer_messaging_broker_facade: ObserverMessagingBrokerFacade,
 }
 
 impl GrpcFacades {
@@ -68,12 +70,16 @@ impl GrpcFacades {
             oidc_registration_client,
         );
         let peer_messaging_broker_facade = PeerMessagingBrokerFacade::new(Arc::clone(&peer_messaging_broker));
+        
+        let observer_messaging_broker = ObserverMessagingBroker::new(Arc::clone(&resource_manager), Arc::clone(&cluster_manager));
+        let observer_messaging_broker_facade = ObserverMessagingBrokerFacade::new(Arc::clone(&resource_manager), Arc::clone(&observer_messaging_broker));
 
         Ok(GrpcFacades {
             cluster_manager_facade,
             metadata_provider_facade,
             peer_manager_facade,
             peer_messaging_broker_facade,
+            observer_messaging_broker_facade,
         })
     }
 }
