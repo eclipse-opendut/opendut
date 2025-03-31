@@ -156,7 +156,10 @@ impl RegistrationClient {
         match response {
             Ok(response) => {
                  let clients: Clients = serde_json::from_slice(response.body())
-                     .map_err(|cause| RegistrationClientError::InvalidConfiguration { error: format!("Could not deserialize response body. {}", cause) })?;
+                     .map_err(|cause| {
+                         error!("Could not deserialize client list from keycloak: {:?}\nBody:\n{}", cause, String::from_utf8_lossy(response.body()));
+                         RegistrationClientError::InvalidConfiguration { error: format!("Could not deserialize response body. {}", cause) }
+                     })?;
                  Ok(clients)
             }
             Err(error) => {
