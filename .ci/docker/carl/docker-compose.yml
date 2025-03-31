@@ -17,6 +17,7 @@ services:
       - "../../../resources/development/tls/insecure-development-ca.pem:/etc/opendut/tls/ca.pem"
       - "../../../resources/development/tls/carl.pem:/etc/opendut/tls/carl.pem"
       - "../../../resources/development/tls/carl.key:/etc/opendut/tls/carl.key"
+      - "carl_data:/var/lib/opendut/carl/"
       # to test toml config file: - "./config.toml:/etc/opendut/carl.toml"
     environment:
       - SSL_CERT_FILE=/etc/opendut/tls/ca.pem
@@ -102,3 +103,4 @@ networks:
 
 volumes:
   postgres_data:
+  carl_data:

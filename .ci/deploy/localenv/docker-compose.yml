@@ -638,6 +638,7 @@ volumes:
   grafana-storage:
   provision-secrets-data:
   backup:
+  carl_data:
 
 networks:
   opendut_local:
