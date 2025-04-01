@@ -65,7 +65,7 @@ impl PersistentResourcesStorage {
         E: Display + Send + Sync + 'static,
     {
         let mut relayed_subscription_events = RelayedSubscriptionEvents::default();
-        let mut transaction = self.db.begin_write().unwrap(); //TODO don't unwrap
+        let mut transaction = self.db.begin_write()?;
         let result = {
             let persistent_transaction = PersistentResourcesTransaction {
                 db: Db::ReadWrite(&mut transaction),
@@ -78,7 +78,7 @@ impl PersistentResourcesStorage {
 
         match &result {
             Ok(_) => {
-                transaction.commit().unwrap(); //TODO don't unwrap
+                transaction.commit()?;
             }
             Err(cause) => {
                 debug!("Not committing changes to the database due to error:\n  {cause}");
@@ -92,29 +92,29 @@ impl PersistentResourcesStorage {
 impl ResourcesStorageApi for PersistentResourcesStorage {
     fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
     where R: Resource + Persistable {
-        let mut transaction = self.db.begin_write().unwrap(); //TODO don't unwrap
+        let mut transaction = self.db.begin_write()?;
         let result = resource.insert(id, &mut self.memory.clone(), &Db::ReadWrite(&mut transaction));
-        transaction.commit().unwrap(); //TODO don't unwrap
+        transaction.commit()?;
         result
     }
 
     fn remove<R>(&mut self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable {
-        let mut transaction = self.db.begin_write().unwrap(); //TODO don't unwrap
+        let mut transaction = self.db.begin_write()?;
         let result = R::remove(id, &mut self.memory.clone(), &Db::ReadWrite(&mut transaction));
-        transaction.commit().unwrap(); //TODO don't unwrap
+        transaction.commit()?;
         result
     }
 
     fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable + Clone {
-        let transaction = self.db.begin_read().unwrap(); //TODO don't unwrap
+        let transaction = self.db.begin_read()?;
         R::get(id, &self.memory.clone(), &Db::Read(&transaction))
     }
 
     fn list<R>(&self) -> PersistenceResult<HashMap<R::Id, R>>
     where R: Resource + Persistable + Clone {
-        let transaction = self.db.begin_read().unwrap(); //TODO don't unwrap
+        let transaction = self.db.begin_read()?;
         R::list(&self.memory.clone(), &Db::Read(&transaction))
     }
 }
