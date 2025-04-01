@@ -9,6 +9,7 @@ mod cluster_manager;
 mod metadata_provider;
 mod peer_manager;
 mod peer_messaging_broker;
+mod error;
 
 pub trait ExtractOrInvalidArgument<A, B>
 where

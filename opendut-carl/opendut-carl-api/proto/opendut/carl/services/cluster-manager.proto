@@ -153,17 +153,9 @@ message StoreClusterDeploymentSuccess {
 
 message StoreClusterDeploymentFailure {
   oneof error {
-    StoreClusterDeploymentFailureIllegalClusterState illegal_cluster_state = 1;
     StoreClusterDeploymentFailureInternal internal = 2;
     StoreClusterDeploymentFailureIllegalPeerState illegal_peer_state = 3;
   }
-}
-
-message StoreClusterDeploymentFailureIllegalClusterState {
-  opendut.types.cluster.ClusterId cluster_id = 1;
-  opendut.types.cluster.ClusterName cluster_name = 2;
-  opendut.types.cluster.ClusterState actual_state = 3;
-  repeated opendut.types.cluster.ClusterState required_states = 4;
 }
 
 message StoreClusterDeploymentFailureInternal {

@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 pub use client::*;
-use opendut_types::cluster::{ClusterId, ClusterName};
+use opendut_types::cluster::{ClusterDisplay, ClusterId, ClusterName};
 use opendut_types::cluster::state::ClusterState;
 use opendut_types::peer::PeerId;
 use opendut_types::ShortName;
@@ -77,46 +77,17 @@ pub struct ListClusterConfigurationsError {
 
 #[derive(thiserror::Error, Debug)]
 pub enum StoreClusterDeploymentError {
-    IllegalClusterState {
-        cluster_id: ClusterId,
-        cluster_name: ClusterName,
-        actual_state: ClusterState,
-        required_states: Vec<ClusterState>,
-    },
+    #[error("ClusterDeployment for cluster {cluster} failed, due to down or already in use peers: {invalid_peers:?}", cluster=ClusterDisplay::new(cluster_name, cluster_id))]
     IllegalPeerState {
         cluster_id: ClusterId,
         cluster_name: Option<ClusterName>,
         invalid_peers: Vec<PeerId>,
     },
+    #[error("ClusterDeployment for cluster {cluster} could not be changed, due to internal errors:\n  {cause}", cluster=ClusterDisplay::new(cluster_name, cluster_id))]
     Internal {
         cluster_id: ClusterId,
         cluster_name: Option<ClusterName>,
         cause: String
-    }
-}
-impl Display for StoreClusterDeploymentError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            StoreClusterDeploymentError::IllegalClusterState { cluster_id, cluster_name, actual_state, required_states } => {
-                let actual_state = actual_state.short_name();
-                let required_states = ClusterState::short_names_joined(required_states);
-                writeln!(f, "ClusterDeployment for cluster '{cluster_name}' <{cluster_id}> cannot be changed when cluster is in state '{actual_state}'! A cluster can be updated when: {required_states}")
-            }
-            StoreClusterDeploymentError::Internal { cluster_id, cluster_name, cause } => {
-                let cluster_name = match cluster_name {
-                    Some(cluster_name) => format!("'{cluster_name}' "),
-                    None => String::from(""),
-                };
-                writeln!(f, "ClusterDeployment for cluster {cluster_name}<{cluster_id}> could not be changed, due to internal errors:\n  {cause}")
-            }
-            StoreClusterDeploymentError::IllegalPeerState { cluster_id, cluster_name, invalid_peers } => {
-                let cluster_name = match cluster_name {
-                    Some(cluster_name) => format!("'{cluster_name}' "),
-                    None => String::from(""),
-                };
-                writeln!(f, "ClusterDeployment for cluster {cluster_name}<{cluster_id}> failed, due to down or already in use peers: {:?}", invalid_peers)
-            }
-        }
     }
 }
 

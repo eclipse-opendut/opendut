@@ -1,8 +1,9 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fmt;
+use std::fmt::Formatter;
 use std::ops::Not;
 use std::str::FromStr;
-use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 pub use assignment::*;
@@ -160,6 +161,31 @@ pub enum IllegalClusterConfiguration {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ClusterDeployment {
     pub id: ClusterId,
+}
+
+
+pub struct ClusterDisplay {
+    cluster_name: Option<ClusterName>,
+    cluster_id: ClusterId,
+}
+impl ClusterDisplay {
+    pub fn new(cluster_name: &Option<ClusterName>, cluster_id: &ClusterId) -> Self {
+        Self {
+            cluster_name: cluster_name.to_owned(),
+            cluster_id: cluster_id.to_owned(),
+        }
+    }
+}
+impl fmt::Display for ClusterDisplay {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let ClusterDisplay { cluster_name, cluster_id } = self;
+
+        let cluster_name = cluster_name.as_ref()
+            .map(|cluster_name| format!("'{cluster_name}' "))
+            .unwrap_or_default();
+
+        write!(f, "{cluster_name}<{cluster_id}>")
+    }
 }
 
 

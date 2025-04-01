@@ -1,12 +1,13 @@
+use opendut_carl_api::carl::cluster::StoreClusterDeploymentError;
+use opendut_carl_api::proto::services::cluster_manager::cluster_manager_server::{ClusterManager as ClusterManagerService, ClusterManagerServer};
+use opendut_carl_api::proto::services::cluster_manager::*;
+use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
 use tonic::{Request, Response, Status};
 use tonic_web::CorsGrpcWeb;
 use tracing::{error, trace, warn};
-use opendut_carl_api::proto::services::cluster_manager::*;
-use opendut_carl_api::proto::services::cluster_manager::cluster_manager_server::{ClusterManager as ClusterManagerService, ClusterManagerServer};
-use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
 
-use crate::manager::cluster_manager::{ClusterManagerRef, CreateClusterConfigurationParams, DeleteClusterConfigurationParams};
 use crate::manager::cluster_manager::delete_cluster_deployment::DeleteClusterDeploymentParams;
+use crate::manager::cluster_manager::{ClusterManagerRef, CreateClusterConfigurationParams, DeleteClusterConfigurationParams};
 use crate::manager::grpc::extract;
 use crate::resource::manager::ResourceManagerRef;
 
@@ -163,7 +164,9 @@ impl ClusterManagerService for ClusterManagerFacade {
 
         trace!("Received request to store cluster deployment: {cluster_deployment:?}");
 
-        let result = self.cluster_manager.lock().await.store_cluster_deployment(cluster_deployment).await;
+        let result = self.cluster_manager.lock().await.store_cluster_deployment(cluster_deployment).await
+            .inspect_err(|cause| error!("{cause}"))
+            .map_err(StoreClusterDeploymentError::from);
 
         match result {
             Err(error) => {

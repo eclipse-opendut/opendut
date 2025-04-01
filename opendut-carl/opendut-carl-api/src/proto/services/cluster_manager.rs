@@ -172,14 +172,6 @@ impl TryFrom<DeleteClusterConfigurationFailureInternal> for DeleteClusterConfigu
 impl From<StoreClusterDeploymentError> for StoreClusterDeploymentFailure {
     fn from(error: StoreClusterDeploymentError) -> Self {
         let proto_error = match error {
-            StoreClusterDeploymentError::IllegalClusterState { cluster_id, cluster_name, actual_state, required_states } => {
-                store_cluster_deployment_failure::Error::IllegalClusterState(StoreClusterDeploymentFailureIllegalClusterState {
-                    cluster_id: Some(cluster_id.into()),
-                    cluster_name: Some(cluster_name.into()),
-                    actual_state: Some(actual_state.into()),
-                    required_states: required_states.into_iter().map(Into::into).collect(),
-                })
-            }
             StoreClusterDeploymentError::Internal { cluster_id, cluster_name, cause } => {
                 store_cluster_deployment_failure::Error::Internal(StoreClusterDeploymentFailureInternal {
                     cluster_id: Some(cluster_id.into()),
@@ -208,9 +200,6 @@ impl TryFrom<StoreClusterDeploymentFailure> for StoreClusterDeploymentError {
         let error = failure.error
             .ok_or_else(|| ErrorBuilder::field_not_set("error"))?;
         let error = match error {
-            store_cluster_deployment_failure::Error::IllegalClusterState(error) => {
-                error.try_into()?
-            }
             store_cluster_deployment_failure::Error::Internal(error) => {
                 error.try_into()?
             }
@@ -219,26 +208,6 @@ impl TryFrom<StoreClusterDeploymentFailure> for StoreClusterDeploymentError {
             }
         };
         Ok(error)
-    }
-}
-
-impl TryFrom<StoreClusterDeploymentFailureIllegalClusterState> for StoreClusterDeploymentError {
-    type Error = ConversionError;
-    fn try_from(failure: StoreClusterDeploymentFailureIllegalClusterState) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<StoreClusterDeploymentFailureIllegalClusterState, StoreClusterDeploymentError>;
-        let cluster_id: ClusterId = failure.cluster_id
-            .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
-            .try_into()?;
-        let cluster_name: ClusterName = failure.cluster_name
-            .ok_or_else(|| ErrorBuilder::field_not_set("cluster_name"))?
-            .try_into()?;
-        let actual_state: ClusterState = failure.actual_state
-            .ok_or_else(|| ErrorBuilder::field_not_set("actual_state"))?
-            .try_into()?;
-        let required_states = failure.required_states.into_iter()
-            .map(proto::cluster::ClusterState::try_into)
-            .collect::<Result<_, _>>()?;
-        Ok(StoreClusterDeploymentError::IllegalClusterState { cluster_id, cluster_name, actual_state, required_states })
     }
 }
 

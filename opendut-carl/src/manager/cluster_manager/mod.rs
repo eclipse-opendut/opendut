@@ -7,7 +7,7 @@ use futures::future::join_all;
 use futures::FutureExt;
 use tracing::{debug, error, info, trace, warn};
 
-use opendut_carl_api::carl::cluster::{GetClusterConfigurationError, GetClusterDeploymentError, ListClusterConfigurationsError, ListClusterDeploymentsError, StoreClusterDeploymentError};
+use opendut_carl_api::carl::cluster::{GetClusterConfigurationError, GetClusterDeploymentError, ListClusterConfigurationsError, ListClusterDeploymentsError};
 use opendut_types::cluster::{ClusterAssignment, ClusterConfiguration, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
 use opendut_types::peer::state::PeerConnectionState;
 use opendut_types::peer::{PeerDescriptor, PeerId};
@@ -15,10 +15,10 @@ use opendut_types::topology::{DeviceDescriptor, DeviceId};
 use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
 use opendut_types::util::Port;
 
-use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
 use crate::manager::cluster_manager;
+use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
 use crate::resource::manager::{ResourceManagerRef, SubscriptionEvent};
-use crate::resource::persistence::error::PersistenceResult;
+use crate::resource::persistence::error::{PersistenceError, PersistenceResult};
 use crate::resource::storage::ResourcesStorageApi;
 use crate::settings::vpn::Vpn;
 
@@ -112,21 +112,22 @@ impl ClusterManager {
         let cluster_peers = cluster_manager::list_cluster_peer_states(ListClusterPeerStatesParams {
             resource_manager: Arc::clone(&self.resource_manager),
             cluster_id
-        }).await.map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?;
+        }).await
+            .map_err(|source| StoreClusterDeploymentError::ListClusterPeerStates { cluster_id, source })?;
 
         let cluster_deployable = cluster_peers.check_all_peers_are_available_not_necessarily_online();
         match cluster_deployable {
             ClusterDeployable::AllPeersAvailable => {
                 self.resource_manager.resources_mut(async |resources| {
                     let cluster_name = resources.get::<ClusterConfiguration>(cluster_id)
-                        .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })?
+                        .map_err(|source| StoreClusterDeploymentError::Persistence { cluster_id, cluster_name: None, source })?
                         .map(|cluster| cluster.name)
                         .unwrap_or_else(|| ClusterName::try_from("unknown_cluster").unwrap());
 
                     resources.insert(cluster_id, deployment)
-                        .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: Some(cluster_name.clone()), cause: cause.to_string() })
+                        .map_err(|source| StoreClusterDeploymentError::Persistence { cluster_id, cluster_name: Some(cluster_name.clone()), source })
                 }).await
-                    .map_err(|cause| StoreClusterDeploymentError::Internal { cluster_id, cluster_name: None, cause: cause.to_string() })??;
+                    .map_err(|source| StoreClusterDeploymentError::Persistence { cluster_id, cluster_name: None, source })??;
             }
             ClusterDeployable::NotAllPeersAvailable { unavailable_peers } => {
                 let blocked_peers_by_id = unavailable_peers.into_iter().collect::<Vec<_>>();
@@ -468,6 +469,26 @@ enum DetermineMemberInterfaceMappingError {
     PeerForDeviceNotFound { device_id: DeviceId },
 }
 
+#[derive(thiserror::Error, Debug)]
+#[error("Error while storing cluster deployment for cluster {cluster_id}")]
+pub enum StoreClusterDeploymentError {
+    #[error("ClusterDeployment for cluster {cluster_name}<{cluster_id}> failed, due to down or already in use peers: {invalid_peers:?}", cluster_name=Self::format_cluster_name_option(cluster_name))]
+    IllegalPeerState {
+        cluster_id: ClusterId,
+        cluster_name: Option<ClusterName>,
+        invalid_peers: Vec<PeerId>,
+    },
+    ListClusterPeerStates { cluster_id: ClusterId, #[source] source: ListClusterPeerStatesError },
+    Persistence { cluster_id: ClusterId, cluster_name: Option<ClusterName>, #[source] source: PersistenceError },
+}
+impl StoreClusterDeploymentError {
+    fn format_cluster_name_option(cluster_name: &Option<ClusterName>) -> String {
+        cluster_name.as_ref()
+            .map(|cluster_name| format!("'{cluster_name}' "))
+            .unwrap_or_default()
+    }
+}
+
 
 #[cfg(test)]
 mod test {
@@ -496,11 +517,11 @@ mod test {
 
     mod deploy_cluster {
         use super::*;
+        use crate::manager::peer_manager;
         use crate::manager::peer_manager::StorePeerDescriptorParams;
         use opendut_carl_api::carl::broker::stream_header;
         use opendut_carl_api::proto::services::peer_messaging_broker::ApplyPeerConfiguration;
         use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
-        use crate::manager::peer_manager;
 
         #[rstest]
         #[tokio::test]
