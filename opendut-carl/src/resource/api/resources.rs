@@ -66,6 +66,7 @@ impl ResourcesStorageApi for Resources<'_> {
 
     fn remove<R>(&mut self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable {
+        //TODO notify subscription events
         match &mut self.kind {
             ResourcesKind::Persistent(transaction) => transaction.remove(id),
             ResourcesKind::Volatile(transaction) => transaction.remove(id),

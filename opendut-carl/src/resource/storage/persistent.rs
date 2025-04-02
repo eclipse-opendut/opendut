@@ -17,7 +17,7 @@ pub struct PersistentResourcesStorage {
 }
 impl PersistentResourcesStorage {
     pub async fn connect(database_connect_info: &DatabaseConnectInfo) -> Result<Self, ConnectError> {
-        let _ = crate::resource::persistence::database::connect(database_connect_info).await?; //TODO remove or use for migration
+        // let _ = crate::resource::persistence::database::connect(database_connect_info).await?; //TODO remove or use for migration
 
         let file = &database_connect_info.file;
 
@@ -95,6 +95,7 @@ impl ResourcesStorageApi for PersistentResourcesStorage {
         let mut transaction = self.db.begin_write()?;
         let result = resource.insert(id, &mut self.memory.clone(), &Db::ReadWrite(&mut transaction));
         transaction.commit()?;
+        //TODO emit subscription events
         result
     }
 
@@ -103,6 +104,7 @@ impl ResourcesStorageApi for PersistentResourcesStorage {
         let mut transaction = self.db.begin_write()?;
         let result = R::remove(id, &mut self.memory.clone(), &Db::ReadWrite(&mut transaction));
         transaction.commit()?;
+        //TODO emit subscription events
         result
     }
 
@@ -128,11 +130,13 @@ impl ResourcesStorageApi for PersistentResourcesTransaction<'_> {
     fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
     where R: Resource + Persistable {
         resource.insert(id, &mut self.memory.clone(), &self.db)
+        //TODO emit subscription events
     }
 
     fn remove<R>(&mut self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable {
         R::remove(id, &mut self.memory.clone(), &self.db)
+        //TODO emit subscription events
     }
 
     fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
