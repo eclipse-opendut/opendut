@@ -1,4 +1,4 @@
-use opendut_carl_api::carl::cluster::StoreClusterDeploymentError;
+use opendut_carl_api::carl::cluster::{StoreClusterDeploymentError};
 use opendut_carl_api::proto::services::cluster_manager::cluster_manager_server::{ClusterManager as ClusterManagerService, ClusterManagerServer};
 use opendut_carl_api::proto::services::cluster_manager::*;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
@@ -7,9 +7,10 @@ use tonic_web::CorsGrpcWeb;
 use tracing::{error, trace, warn};
 
 use crate::manager::cluster_manager::delete_cluster_deployment::DeleteClusterDeploymentParams;
-use crate::manager::cluster_manager::{ClusterManagerRef, CreateClusterConfigurationParams, DeleteClusterConfigurationParams};
+use crate::manager::cluster_manager::{ClusterManagerRef, CreateClusterConfigurationError, CreateClusterConfigurationParams, DeleteClusterConfigurationParams};
 use crate::manager::grpc::extract;
 use crate::resource::manager::ResourceManagerRef;
+use crate::resource::persistence::error::MapToInner;
 
 pub struct ClusterManagerFacade {
     cluster_manager: ClusterManagerRef,
@@ -36,34 +37,32 @@ impl ClusterManagerService for ClusterManagerFacade {
     async fn create_cluster_configuration(&self, request: Request<CreateClusterConfigurationRequest>) -> Result<Response<CreateClusterConfigurationResponse>, Status> {
 
         let request = request.into_inner();
-        let cluster_configuration: ClusterConfiguration = extract!(request.cluster_configuration)?;
+        let cluster: ClusterConfiguration = extract!(request.cluster_configuration)?;
 
-        trace!("Received request to create cluster configuration: {cluster_configuration:?}");
+        trace!("Received request to create cluster configuration: {cluster:?}");
 
-        let result = self.resource_manager.resources_mut(async |resources|
-            resources.create_cluster_configuration(CreateClusterConfigurationParams {
-                cluster_configuration: cluster_configuration.clone(),
+        let result =
+            self.resource_manager.resources_mut(async |resources|
+                resources.create_cluster_configuration(CreateClusterConfigurationParams {
+                    cluster_configuration: cluster.clone(),
+                })
+            ).await
+            .map_to_inner(|source| CreateClusterConfigurationError::Persistence {
+                cluster_id: cluster.id,
+                cluster_name: cluster.name,
+                source: source.context("Persistence error in transaction for creating cluster configuration"),
             })
-        ).await;
+            .inspect_err(|error| error!("{error}"));
 
         let response = match result {
-            Ok(Ok(cluster_id)) => create_cluster_configuration_response::Reply::Success(
+            Ok(cluster_id) => create_cluster_configuration_response::Reply::Success(
                 CreateClusterConfigurationSuccess {
                     cluster_id: Some(cluster_id.into())
                 }
             ),
-            Ok(Err(error)) => create_cluster_configuration_response::Reply::Failure(error.into()),
             Err(error) => {
-                let cause = String::from("Error when handling transaction in database");
-                error!("{cause}: {error}");
-
-                create_cluster_configuration_response::Reply::Failure(
-                    opendut_carl_api::carl::cluster::CreateClusterConfigurationError::Internal {
-                        cluster_id: cluster_configuration.id,
-                        cluster_name: cluster_configuration.name,
-                        cause,
-                    }.into()
-                )
+                let error = opendut_carl_api::carl::cluster::CreateClusterConfigurationError::from(error);
+                create_cluster_configuration_response::Reply::Failure(error.into())
             }
         };
 

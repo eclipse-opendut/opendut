@@ -107,6 +107,19 @@ impl PersistenceOperation {
 }
 
 pub type PersistenceResult<T> = Result<T, PersistenceError>;
+pub trait MapToInner<T, E> {
+    /// Collapse a PersistenceResult into the value inside of it.
+    /// The type of the inner value has to implement `From<PersistenceError>`,
+    /// which means it will typically be a `Result` type itself.
+    fn map_to_inner(self, function: impl FnOnce(PersistenceError) -> E) -> Result<T, E>;
+}
+impl<T, E> MapToInner<T, E> for PersistenceResult<Result<T, E>> {
+    fn map_to_inner(self, function: impl FnOnce(PersistenceError) -> E) -> Result<T, E> {
+        self.unwrap_or_else(|cause|
+            Err(function(cause))
+        )
+    }
+}
 
 impl From<serde_json::Error> for PersistenceError {
     fn from(error: serde_json::Error) -> Self {

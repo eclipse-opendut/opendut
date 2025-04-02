@@ -1,5 +1,5 @@
 use crate::manager::cluster_manager;
-use opendut_carl_api::carl::cluster::StoreClusterDeploymentError;
+use opendut_carl_api::carl::cluster::{CreateClusterConfigurationError, StoreClusterDeploymentError};
 
 impl From<cluster_manager::StoreClusterDeploymentError> for StoreClusterDeploymentError {
     fn from(value: cluster_manager::StoreClusterDeploymentError) -> Self {
@@ -14,6 +14,20 @@ impl From<cluster_manager::StoreClusterDeploymentError> for StoreClusterDeployme
                 }
             }
             cluster_manager::StoreClusterDeploymentError::Persistence { cluster_id, cluster_name, source: _ } => {
+                Self::Internal {
+                    cluster_id,
+                    cluster_name,
+                    cause: String::from("Error when accessing persistence"),
+                }
+            }
+        }
+    }
+}
+
+impl From<cluster_manager::CreateClusterConfigurationError> for CreateClusterConfigurationError {
+    fn from(value: cluster_manager::CreateClusterConfigurationError) -> Self {
+        match value {
+            cluster_manager::CreateClusterConfigurationError::Persistence { cluster_id, cluster_name, source: _ } => {
                 Self::Internal {
                     cluster_id,
                     cluster_name,

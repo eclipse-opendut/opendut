@@ -1,7 +1,7 @@
-use opendut_types::cluster::{ClusterConfiguration, ClusterId};
+use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
 use tracing::{debug, info};
-use opendut_carl_api::carl::cluster::CreateClusterConfigurationError;
 use crate::resource::api::resources::Resources;
+use crate::resource::persistence::error::PersistenceError;
 use crate::resource::storage::ResourcesStorageApi;
 
 pub struct CreateClusterConfigurationParams {
@@ -18,11 +18,21 @@ impl Resources<'_> {
         debug!("Creating cluster configuration '{cluster_name}' <{cluster_id}>.");
 
         self.insert(cluster_id, params.cluster_configuration)
-            .map_err(|cause| CreateClusterConfigurationError::Internal { cluster_id, cluster_name: cluster_name.clone(), cause: cause.to_string() })?;
+            .map_err(|source| CreateClusterConfigurationError::Persistence { cluster_id, cluster_name: cluster_name.clone(), source })?;
 
         info!("Successfully created cluster configuration '{cluster_name}' <{cluster_id}>.");
 
         Ok(cluster_id)
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+#[error("ClusterConfigration '{cluster_name}' <{cluster_id}> could not be created")]
+pub enum CreateClusterConfigurationError {
+    Persistence {
+        cluster_id: ClusterId,
+        cluster_name: ClusterName,
+        #[source] source: PersistenceError
     }
 }
 
