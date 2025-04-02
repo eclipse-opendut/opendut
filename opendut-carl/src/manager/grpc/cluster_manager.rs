@@ -114,32 +114,30 @@ impl ClusterManagerService for ClusterManagerFacade {
         trace!("Received request to get cluster configuration for cluster <{cluster_id}>.");
 
         let configuration = self.cluster_manager.lock().await.get_cluster_configuration(cluster_id).await
+            .inspect_err(|error| error!("{error}"))
             .map_err(|cause| Status::internal(cause.to_string()))?;
 
-        match configuration {
-            Some(configuration) => {
-                Ok(Response::new(GetClusterConfigurationResponse {
-                    result: Some(get_cluster_configuration_response::Result::Success(
-                        GetClusterConfigurationSuccess {
-                            configuration: Some(configuration.into())
-                        }
-                    ))
-                }))
-            }
-            None => {
-                Ok(Response::new(GetClusterConfigurationResponse {
-                    result: Some(get_cluster_configuration_response::Result::Failure(
-                        GetClusterConfigurationFailure {}
-                    ))
-                }))
-            }
-        }
+        let response = match configuration {
+            Some(configuration) => get_cluster_configuration_response::Result::Success(
+                GetClusterConfigurationSuccess {
+                    configuration: Some(configuration.into())
+                }
+            ),
+            None => get_cluster_configuration_response::Result::Failure(
+                GetClusterConfigurationFailure {}
+            )
+        };
+
+        Ok(Response::new(GetClusterConfigurationResponse {
+            result: Some(response)
+        }))
     }
     #[tracing::instrument(skip_all, level="trace")]
     async fn list_cluster_configurations(&self, _: Request<ListClusterConfigurationsRequest>) -> Result<Response<ListClusterConfigurationsResponse>, Status> {
         trace!("Received request to list cluster configurations.");
 
         let configurations = self.cluster_manager.lock().await.list_cluster_configuration().await
+            .inspect_err(|error| error!("{error}"))
             .map_err(|cause| Status::internal(cause.to_string()))?;
 
         Ok(Response::new(ListClusterConfigurationsResponse {

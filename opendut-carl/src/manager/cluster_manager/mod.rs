@@ -7,7 +7,7 @@ use futures::future::join_all;
 use futures::FutureExt;
 use tracing::{debug, error, info, trace, warn};
 
-use opendut_carl_api::carl::cluster::{GetClusterConfigurationError, GetClusterDeploymentError, ListClusterConfigurationsError, ListClusterDeploymentsError};
+use opendut_carl_api::carl::cluster::{GetClusterDeploymentError, ListClusterDeploymentsError};
 use opendut_types::cluster::{ClusterAssignment, ClusterConfiguration, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
 use opendut_types::peer::state::PeerConnectionState;
 use opendut_types::peer::{PeerDescriptor, PeerId};
@@ -43,6 +43,9 @@ use crate::manager::peer_manager::{AssignClusterOptions, AssignClusterParams};
 pub use list_deployed_clusters::*;
 
 pub type ClusterManagerRef = Arc<Mutex<ClusterManager>>;
+
+use error::*;
+
 
 #[derive(thiserror::Error, Debug, PartialEq)]
 pub enum DeployClusterError {
@@ -94,14 +97,14 @@ impl ClusterManager {
     #[tracing::instrument(skip(self), level="trace")]
     pub async fn get_cluster_configuration(&self, cluster_id: ClusterId) -> Result<Option<ClusterConfiguration>, GetClusterConfigurationError> {
         self.resource_manager.get::<ClusterConfiguration>(cluster_id).await
-            .map_err(|cause| GetClusterConfigurationError { cluster_id, message: cause.to_string() })
+            .map_err(|source| GetClusterConfigurationError { cluster_id, source })
     }
 
     #[tracing::instrument(skip(self), level="trace")]
     pub async fn list_cluster_configuration(&self) -> Result<Vec<ClusterConfiguration>, ListClusterConfigurationsError> {
         self.resource_manager.list::<ClusterConfiguration>().await
             .map(|clusters| clusters.into_values().collect::<Vec<_>>())
-            .map_err(|cause| ListClusterConfigurationsError { message: cause.to_string() })            
+            .map_err(|source| ListClusterConfigurationsError { source })
     }
 
 
@@ -469,23 +472,39 @@ enum DetermineMemberInterfaceMappingError {
     PeerForDeviceNotFound { device_id: DeviceId },
 }
 
-#[derive(thiserror::Error, Debug)]
-#[error("Error while storing cluster deployment for cluster {cluster_id}")]
-pub enum StoreClusterDeploymentError {
-    #[error("ClusterDeployment for cluster {cluster_name}<{cluster_id}> failed, due to down or already in use peers: {invalid_peers:?}", cluster_name=Self::format_cluster_name_option(cluster_name))]
-    IllegalPeerState {
-        cluster_id: ClusterId,
-        cluster_name: Option<ClusterName>,
-        invalid_peers: Vec<PeerId>,
-    },
-    ListClusterPeerStates { cluster_id: ClusterId, #[source] source: ListClusterPeerStatesError },
-    Persistence { cluster_id: ClusterId, cluster_name: Option<ClusterName>, #[source] source: PersistenceError },
-}
-impl StoreClusterDeploymentError {
-    fn format_cluster_name_option(cluster_name: &Option<ClusterName>) -> String {
-        cluster_name.as_ref()
-            .map(|cluster_name| format!("'{cluster_name}' "))
-            .unwrap_or_default()
+pub mod error {
+    use super::*;
+
+    #[derive(thiserror::Error, Debug)]
+    #[error("Error while storing cluster deployment for cluster {cluster_id}")]
+    pub enum StoreClusterDeploymentError {
+        #[error("ClusterDeployment for cluster {cluster_name}<{cluster_id}> failed, due to down or already in use peers: {invalid_peers:?}", cluster_name=Self::format_cluster_name_option(cluster_name))]
+        IllegalPeerState {
+            cluster_id: ClusterId,
+            cluster_name: Option<ClusterName>,
+            invalid_peers: Vec<PeerId>,
+        },
+        ListClusterPeerStates { cluster_id: ClusterId, #[source] source: ListClusterPeerStatesError },
+        Persistence { cluster_id: ClusterId, cluster_name: Option<ClusterName>, #[source] source: PersistenceError },
+    }
+    impl StoreClusterDeploymentError {
+        fn format_cluster_name_option(cluster_name: &Option<ClusterName>) -> String {
+            cluster_name.as_ref()
+                .map(|cluster_name| format!("'{cluster_name}' "))
+                .unwrap_or_default()
+        }
+    }
+    #[derive(thiserror::Error, Debug)]
+    #[error("ClusterConfiguration <{cluster_id}> could not be retrieved")]
+    pub struct GetClusterConfigurationError {
+        pub cluster_id: ClusterId,
+        #[source] pub source: PersistenceError,
+    }
+
+    #[derive(thiserror::Error, Debug)]
+    #[error("Error while listing cluster configurations")]
+    pub struct ListClusterConfigurationsError {
+        pub source: PersistenceError,
     }
 }
 
