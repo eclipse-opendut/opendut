@@ -6,7 +6,7 @@ use crate::resource::storage::volatile::VolatileResourcesStorage;
 use crate::resource::storage::{DatabaseConnectInfo, Resource, ResourcesStorageApi};
 use crate::resource::ConnectError;
 use std::collections::HashMap;
-use std::fmt::{Debug, Display};
+use std::fmt::Display;
 use std::fs;
 use std::sync::{Arc, Mutex};
 use tracing::debug;
@@ -89,38 +89,6 @@ impl PersistentResourcesStorage {
     }
 }
 
-impl ResourcesStorageApi for PersistentResourcesStorage {
-    fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
-    where R: Resource + Persistable {
-        let mut transaction = self.db.begin_write()?;
-        let result = resource.insert(id, &mut self.memory.clone(), &Db::ReadWrite(&mut transaction));
-        transaction.commit()?;
-        //TODO emit subscription events
-        result
-    }
-
-    fn remove<R>(&mut self, id: R::Id) -> PersistenceResult<Option<R>>
-    where R: Resource + Persistable {
-        let mut transaction = self.db.begin_write()?;
-        let result = R::remove(id, &mut self.memory.clone(), &Db::ReadWrite(&mut transaction));
-        transaction.commit()?;
-        //TODO emit subscription events
-        result
-    }
-
-    fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
-    where R: Resource + Persistable + Clone {
-        let transaction = self.db.begin_read()?;
-        R::get(id, &self.memory.clone(), &Db::Read(&transaction))
-    }
-
-    fn list<R>(&self) -> PersistenceResult<HashMap<R::Id, R>>
-    where R: Resource + Persistable + Clone {
-        let transaction = self.db.begin_read()?;
-        R::list(&self.memory.clone(), &Db::Read(&transaction))
-    }
-}
-
 pub struct PersistentResourcesTransaction<'transaction> {
     db: Db<'transaction>,
     memory: Memory,
@@ -130,13 +98,11 @@ impl ResourcesStorageApi for PersistentResourcesTransaction<'_> {
     fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
     where R: Resource + Persistable {
         resource.insert(id, &mut self.memory.clone(), &self.db)
-        //TODO emit subscription events
     }
 
     fn remove<R>(&mut self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable {
         R::remove(id, &mut self.memory.clone(), &self.db)
-        //TODO emit subscription events
     }
 
     fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
@@ -152,10 +118,4 @@ impl ResourcesStorageApi for PersistentResourcesTransaction<'_> {
     {
         R::list(&self.memory.clone(), &self.db)
     }
-}
-
-#[derive(Debug, thiserror::Error)]
-enum TransactionPassthroughError {
-    #[error("Error returned by Diesel while performing transaction.")]
-    Diesel(#[from] diesel::result::Error),
 }

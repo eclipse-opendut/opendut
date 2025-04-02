@@ -69,13 +69,13 @@ impl ResourceManager {
         state.storage.resources(self.global.clone(), async |resources| resources.list()).await
     }
 
-    pub async fn resources<F, T>(&self, f: F) -> T
+    pub async fn resources<F, T>(&self, closure: F) -> T
     where
         F: AsyncFnOnce(&Resources) -> T,
     {
         let state = self.state.read().await;
         state.storage.resources(self.global.clone(), async move |transaction| {
-            f(transaction).await
+            closure(transaction).await
         }).await
     }
 
@@ -83,14 +83,14 @@ impl ResourceManager {
     /// - Opens a database transaction and then either commits it, or rolls it back when you return an `Err` out of the closure.
     /// - Acquires the lock for the database mutex and keeps it until the end of the closure.
     /// - Groups the async calls, so we only have to await at the end.
-    pub async fn resources_mut<F, T, E>(&self, function: F) -> PersistenceResult<Result<T, E>>
+    pub async fn resources_mut<F, T, E>(&self, closure: F) -> PersistenceResult<Result<T, E>>
     where
         F: AsyncFnOnce(&mut Resources) -> Result<T, E>,
         E: Display,
     {
         let mut state = self.state.write().await;
         let (result, relayed_subscription_events) = state.storage.resources_mut(self.global.clone(), async move |transaction| {
-            function(transaction).await
+            closure(transaction).await
         }).await?;
         Self::send_relayed_subscription_events(relayed_subscription_events, &mut state).await;
         Ok(result)

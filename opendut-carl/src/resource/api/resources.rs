@@ -31,13 +31,6 @@ impl<'transaction> Resources<'transaction> {
             global,
         }
     }
-
-    pub fn into_relayed_subscription_events(self) -> &'transaction mut RelayedSubscriptionEvents {
-        match self.kind {
-            ResourcesKind::Persistent(transaction) => transaction.relayed_subscription_events,
-            ResourcesKind::Volatile(transaction) => transaction.relayed_subscription_events,
-        }
-    }
 }
 impl ResourcesStorageApi for Resources<'_> {
     fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
