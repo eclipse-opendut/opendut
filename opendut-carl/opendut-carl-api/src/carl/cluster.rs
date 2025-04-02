@@ -19,46 +19,30 @@ pub enum CreateClusterConfigurationError {
 
 #[derive(thiserror::Error, Debug, PartialEq)]
 pub enum DeleteClusterConfigurationError {
+    #[error("ClusterConfiguration <{cluster_id}> could not be deleted, because a ClusterDeployment with that ID still exists!")]
     ClusterDeploymentFound {
         cluster_id: ClusterId
     },
+    #[error("ClusterConfiguration <{cluster_id}> could not be deleted, because a ClusterConfiguration with that ID does not exist!")]
     ClusterConfigurationNotFound {
         cluster_id: ClusterId
     },
+    #[error(
+        "ClusterConfiguration '{cluster_name}' <{cluster_id}> cannot be deleted when cluster is in state '{actual_state}'! A ClusterConfiguration can be deleted when cluster is in state: {required_states}",
+        actual_state = actual_state.short_name(),
+        required_states = ClusterState::short_names_joined(required_states),
+    )]
     IllegalClusterState {
         cluster_id: ClusterId,
         cluster_name: ClusterName,
         actual_state: ClusterState,
         required_states: Vec<ClusterState>,
     },
+    #[error("ClusterConfiguration {cluster} deleted with internal errors:\n  {cause}", cluster=ClusterDisplay::new(cluster_name, cluster_id))]
     Internal {
         cluster_id: ClusterId,
         cluster_name: Option<ClusterName>,
         cause: String
-    }
-}
-impl Display for DeleteClusterConfigurationError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            DeleteClusterConfigurationError::ClusterConfigurationNotFound { cluster_id } => {
-                writeln!(f, "ClusterConfiguration <{cluster_id}> could not be deleted, because a ClusterConfiguration with that id does not exist!")
-            }
-            DeleteClusterConfigurationError::IllegalClusterState { cluster_id, cluster_name, actual_state, required_states } => {
-                let actual_state = actual_state.short_name();
-                let required_states = ClusterState::short_names_joined(required_states);
-                writeln!(f, "ClusterConfiguration '{cluster_name}' <{cluster_id}> cannot be deleted when cluster is in state '{actual_state}'! A ClusterConfiguration can be deleted when cluster is in state: {required_states}")
-            }
-            DeleteClusterConfigurationError::Internal { cluster_id, cluster_name, cause } => {
-                let cluster_name = match cluster_name {
-                    Some(cluster_name) => format!("'{cluster_name}' "),
-                    None => String::new(),
-                };
-                writeln!(f, "ClusterConfiguration '{cluster_name}' <{cluster_id}> deleted with internal errors:\n  {cause}")
-            }
-            DeleteClusterConfigurationError::ClusterDeploymentFound { cluster_id } => {
-                writeln!(f, "ClusterConfiguration <{cluster_id}> could not be deleted, because a ClusterDeployment with that id still exists!")
-            }
-        }
     }
 }
 

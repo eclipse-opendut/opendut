@@ -7,7 +7,7 @@ use tonic_web::CorsGrpcWeb;
 use tracing::{error, trace, warn};
 
 use crate::manager::cluster_manager::delete_cluster_deployment::DeleteClusterDeploymentParams;
-use crate::manager::cluster_manager::{ClusterManagerRef, CreateClusterConfigurationError, CreateClusterConfigurationParams, DeleteClusterConfigurationParams};
+use crate::manager::cluster_manager::{ClusterManagerRef, CreateClusterConfigurationError, CreateClusterConfigurationParams, DeleteClusterConfigurationError, DeleteClusterConfigurationParams};
 use crate::manager::grpc::extract;
 use crate::resource::manager::ResourceManagerRef;
 use crate::resource::persistence::error::MapToInner;
@@ -60,10 +60,9 @@ impl ClusterManagerService for ClusterManagerFacade {
                     cluster_id: Some(cluster_id.into())
                 }
             ),
-            Err(error) => {
-                let error = opendut_carl_api::carl::cluster::CreateClusterConfigurationError::from(error);
-                create_cluster_configuration_response::Reply::Failure(error.into())
-            }
+            Err(error) => create_cluster_configuration_response::Reply::Failure(
+                opendut_carl_api::carl::cluster::CreateClusterConfigurationError::from(error).into()
+            )
         };
 
         Ok(Response::new(CreateClusterConfigurationResponse {
@@ -78,31 +77,28 @@ impl ClusterManagerService for ClusterManagerFacade {
 
         trace!("Received request to delete cluster configuration for cluster <{cluster_id}>.");
 
-        let result = self.resource_manager.resources_mut(async |resources|
-            resources.delete_cluster_configuration(DeleteClusterConfigurationParams {
+        let result =
+            self.resource_manager.resources_mut(async |resources|
+                resources.delete_cluster_configuration(DeleteClusterConfigurationParams {
+                    cluster_id,
+                })
+            ).await
+            .map_to_inner(|source| DeleteClusterConfigurationError::Persistence {
                 cluster_id,
+                cluster_name: None,
+                source: source.context("Persistence error in transaction for deleting cluster configuration"),
             })
-        ).await;
+            .inspect_err(|error| error!("{error}"));
 
         let response = match result {
-            Ok(Ok(cluster_configuration)) => delete_cluster_configuration_response::Reply::Success(
+            Ok(cluster_configuration) => delete_cluster_configuration_response::Reply::Success(
                 DeleteClusterConfigurationSuccess {
                     cluster_configuration: Some(cluster_configuration.into())
                 }
             ),
-            Ok(Err(error)) => delete_cluster_configuration_response::Reply::Failure(error.into()),
-            Err(error) => {
-                let cause = String::from("Error when handling transaction in database");
-                error!("{cause}: {error}");
-
-                delete_cluster_configuration_response::Reply::Failure(
-                    opendut_carl_api::carl::cluster::DeleteClusterConfigurationError::Internal {
-                        cluster_id,
-                        cluster_name: None,
-                        cause,
-                    }.into()
-                )
-            }
+            Err(error) => delete_cluster_configuration_response::Reply::Failure(
+                opendut_carl_api::carl::cluster::DeleteClusterConfigurationError::from(error).into()
+            ),
         };
 
         Ok(Response::new(DeleteClusterConfigurationResponse {
