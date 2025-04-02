@@ -1,22 +1,22 @@
 use std::fmt::{Debug, Display, Formatter};
 use uuid::Uuid;
 
-pub type PersistenceResult<T> = Result<T, PersistenceError>;
-
 #[derive(Debug, thiserror::Error)]
-pub enum PersistenceError {
+pub struct PersistenceError {
+    source: PersistenceErrorKind,
+    context_messages: Vec<String>,
+}
+#[derive(Debug, thiserror::Error)]
+pub enum PersistenceErrorKind {
     Custom {
         resource_name: &'static str,
         operation: PersistenceOperation,
-        context_messages: Vec<String>,
         identifier: Option<String>,
         #[source] source: Option<Cause>,
     },
-    DieselInternal {
-        #[from] source: diesel::result::Error,
-    },
-    JsonSerialization(#[from] serde_json::Error),
-    KeyValueStore(#[from] redb::Error),
+    DieselInternal(#[source] diesel::result::Error),
+    JsonSerialization(#[source] serde_json::Error),
+    KeyValueStore(#[source] redb::Error),
 }
 impl PersistenceError {
     pub fn insert<R>(identifier: impl Debug, cause: impl Into<Cause>) -> Self {
@@ -33,27 +33,40 @@ impl PersistenceError {
     }
     pub fn new<R>(identifier: Option<impl Debug>, operation: PersistenceOperation, cause: Option<impl Into<Cause>>) -> Self {
         let identifier = identifier.map(|identifier| format!("{identifier:?}"));
-        Self::Custom {
-            resource_name: std::any::type_name::<R>(),
-            operation,
+        Self {
             context_messages: Vec::new(),
-            identifier,
-            source: cause.map(Into::into),
+            source: PersistenceErrorKind::Custom {
+                resource_name: std::any::type_name::<R>(),
+                operation,
+                identifier,
+                source: cause.map(Into::into),
+            }
         }
     }
 
     pub fn context(mut self, message: impl Into<String>) -> Self {
-        match &mut self {
-            Self::Custom { context_messages, .. } => context_messages.push(message.into()),
-            _ => unimplemented!(),
-        }
+        self.context_messages.push(message.into());
         self
     }
 }
 impl Display for PersistenceError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let Self { source, context_messages } = self;
+
+        writeln!(f, "Error while accessing persistence.")?;
+        writeln!(f, "  Cause: {source}")?;
+
+        for message in context_messages {
+            writeln!(f, "  Context: {message}")?;
+        }
+
+        Ok(())
+    }
+}
+impl Display for PersistenceErrorKind {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Custom { resource_name, operation, context_messages, identifier, source } => {
+            Self::Custom { resource_name, operation, identifier, source } => {
                 let identifier = match &identifier {
                     Some(identifier) => format!(" <{identifier}>"),
                     None => String::new(),
@@ -61,14 +74,11 @@ impl Display for PersistenceError {
                 let operation = operation.verb();
                 writeln!(f, "Error while {operation} resource '{resource_name}'{identifier}")?;
 
-                for message in context_messages {
-                    writeln!(f, "  Context: {message}")?;
-                }
                 source.as_ref().map(|source|
                     writeln!(f, "  Source: {source}")
                 ).transpose()?;
             }
-            Self::DieselInternal { source } => writeln!(f, "Error internal to Diesel, likely from transaction: {source}")?,
+            Self::DieselInternal(source) => writeln!(f, "Error internal to Diesel, likely from transaction: {source}")?,
             Self::JsonSerialization(source) => writeln!(f, "Error while serializing to JSON while storing in or loading from persistence: {source}")?,
             Self::KeyValueStore(source) => writeln!(f, "Error occurred in the key-value store: {source}")?,
         }
@@ -92,6 +102,33 @@ impl PersistenceOperation {
             PersistenceOperation::Remove => "removing",
             PersistenceOperation::Get => "getting",
             PersistenceOperation::List => "listing",
+        }
+    }
+}
+
+pub type PersistenceResult<T> = Result<T, PersistenceError>;
+
+impl From<serde_json::Error> for PersistenceError {
+    fn from(error: serde_json::Error) -> Self {
+        PersistenceError {
+            source: PersistenceErrorKind::JsonSerialization(error),
+            context_messages: vec![],
+        }
+    }
+}
+impl From<diesel::result::Error> for PersistenceError {
+    fn from(error: diesel::result::Error) -> Self {
+        PersistenceError {
+            source: PersistenceErrorKind::DieselInternal(error),
+            context_messages: vec![],
+        }
+    }
+}
+impl From<redb::Error> for PersistenceError {
+    fn from(error: redb::Error) -> Self {
+        PersistenceError {
+            source: PersistenceErrorKind::KeyValueStore(error),
+            context_messages: vec![],
         }
     }
 }
