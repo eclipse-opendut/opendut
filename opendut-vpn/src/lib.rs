@@ -20,21 +20,21 @@ pub trait VpnManagementClient {
 
 #[derive(thiserror::Error, Debug)]
 pub enum CreateClusterError {
-    #[error("Peer <{peer_id}> of cluster <{cluster_id}> could not be resolved:\n  {error}")]
+    #[error("Peer <{peer_id}> of cluster <{cluster_id}> could not be resolved")]
     PeerResolutionFailure {
         peer_id: PeerId,
         cluster_id: ClusterId,
-        error: Box<dyn std::error::Error>,
+        #[source] error: Box<dyn std::error::Error + Send + Sync>,
     },
-    #[error("An error occurred while creating cluster <{cluster_id}>:\n  {error}")]
+    #[error("An error occurred while creating cluster <{cluster_id}>")]
     CreationFailure {
         cluster_id: ClusterId,
-        error: Box<dyn std::error::Error>
+        #[source] error: Box<dyn std::error::Error + Send + Sync>
     },
-    #[error("An error occurred while creating access control rule for cluster <{cluster_id}>:\n  {error}")]
+    #[error("An error occurred while creating access control rule for cluster <{cluster_id}>")]
     AccessPolicyCreationFailure {
         cluster_id: ClusterId,
-        error: Box<dyn std::error::Error>
+        #[source] error: Box<dyn std::error::Error + Send + Sync>
     }
 }
 
@@ -45,41 +45,41 @@ pub enum DeleteClusterError {
         cluster_id: ClusterId,
         message: String,
     },
-    #[error("An error occurred while deleting cluster <{cluster_id}>:\n  {error}")]
+    #[error("An error occurred while deleting cluster <{cluster_id}>")]
     DeletionFailure {
         cluster_id: ClusterId,
-        error: Box<dyn std::error::Error>
+        #[source] error: Box<dyn std::error::Error + Send + Sync>
     },
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum CreatePeerError {
-    #[error("An error occurred while creating peer <{peer_id}>:\n  {error}")]
+    #[error("An error occurred while creating peer <{peer_id}>")]
     CreationFailure {
         peer_id: PeerId,
-        error: Box<dyn std::error::Error>
+        #[source] error: Box<dyn std::error::Error + Send + Sync>
     }
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum DeletePeerError {
-    #[error("Peer <{peer_id}> could not be resolved:\n  {error}")]
+    #[error("Peer <{peer_id}> could not be resolved")]
     ResolutionFailure {
         peer_id: PeerId,
-        error: Box<dyn std::error::Error>
+        #[source] error: Box<dyn std::error::Error + Send + Sync>
     },
-    #[error("An error occurred while deleting peer <{peer_id}>:\n  {error}")]
+    #[error("An error occurred while deleting peer <{peer_id}>")]
     DeletionFailure {
         peer_id: PeerId,
-        error: Box<dyn std::error::Error>
+        #[source] error: Box<dyn std::error::Error + Send + Sync>
     },
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum CreateVpnPeerConfigurationError {
-    #[error("An error occurred while creating a vpn configuration for peer <{peer_id}>:\n  {error}")]
+    #[error("An error occurred while creating a vpn configuration for peer <{peer_id}>")]
     CreationFailure {
         peer_id: PeerId,
-        error: Box<dyn std::error::Error>
+        #[source] error: Box<dyn std::error::Error + Send + Sync>
     },
 }

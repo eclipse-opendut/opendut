@@ -37,7 +37,7 @@ impl VolatileResourcesStorageHandle {
     pub async fn resources_mut<T, E, F>(&mut self, code: F) -> PersistenceResult<(Result<T, E>, RelayedSubscriptionEvents)>
     where
         F: AsyncFnOnce(VolatileResourcesTransaction) -> Result<T, E>,
-        E: Display + Send + Sync + 'static,
+        E: Display,
     {
         let mut relayed_subscription_events = RelayedSubscriptionEvents::default();
 

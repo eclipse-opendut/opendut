@@ -62,7 +62,7 @@ impl PersistentResourcesStorage {
     pub async fn resources_mut<T, E, F>(&mut self, code: F) -> PersistenceResult<(Result<T, E>, RelayedSubscriptionEvents)>
     where
         F: AsyncFnOnce(PersistentResourcesTransaction) -> Result<T, E>,
-        E: Display + Send + Sync + 'static,
+        E: Display,
     {
         let mut relayed_subscription_events = RelayedSubscriptionEvents::default();
         let mut transaction = self.db.begin_write()?;

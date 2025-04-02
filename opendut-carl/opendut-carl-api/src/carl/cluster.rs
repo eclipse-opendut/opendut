@@ -1,5 +1,3 @@
-use std::fmt::{Display, Formatter};
-
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 pub use client::*;
 use opendut_types::cluster::{ClusterDisplay, ClusterId, ClusterName};
@@ -77,39 +75,27 @@ pub enum StoreClusterDeploymentError {
 
 #[derive(thiserror::Error, Debug)]
 pub enum DeleteClusterDeploymentError {
+    #[error("ClusterDeployment for cluster <{cluster_id}> could not be deleted, because a ClusterDeployment with that id does not exist!")]
     ClusterDeploymentNotFound {
         cluster_id: ClusterId
     },
+    #[error(
+        "ClusterDeployment for cluster '{cluster_name}' <{cluster_id}> cannot be deleted when cluster is in state '{actual_state}'! A peer can be deleted when: {required_states}",
+        actual_state = actual_state.short_name(),
+        required_states = ClusterState::short_names_joined(required_states)
+    )]
     IllegalClusterState {
         cluster_id: ClusterId,
         cluster_name: ClusterName,
         actual_state: ClusterState,
         required_states: Vec<ClusterState>,
     },
+    #[error("ClusterDeployment for cluster {cluster} deleted with internal errors:\n  {cause}", cluster=ClusterDisplay::new(cluster_name, cluster_id))]
     Internal {
         cluster_id: ClusterId,
         cluster_name: Option<ClusterName>,
         cause: String
     },
-}
-impl Display for DeleteClusterDeploymentError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            DeleteClusterDeploymentError::ClusterDeploymentNotFound { cluster_id } => {
-                writeln!(f, "ClusterDeployment for cluster <{cluster_id}> could not be deleted, because a ClusterDeployment with that id does not exist!")
-            }
-            DeleteClusterDeploymentError::IllegalClusterState { cluster_id, cluster_name, actual_state, required_states } => {
-                writeln!(f, "ClusterDeployment for cluster '{cluster_name}' <{cluster_id}> cannot be deleted when cluster is in state '{}'! A peer can be deleted when: {}", actual_state.short_name(), ClusterState::short_names_joined(required_states))
-            }
-            DeleteClusterDeploymentError::Internal { cluster_id, cluster_name, cause } => {
-                let cluster_name = match cluster_name {
-                    Some(cluster_name) => format!("'{cluster_name}' "),
-                    None => String::from(""),
-                };
-                writeln!(f, "ClusterDeployment for cluster {cluster_name}<{cluster_id}> deleted with internal errors:\n  {cause}")
-            }
-        }
-    }
 }
 
 #[derive(thiserror::Error, Debug)]

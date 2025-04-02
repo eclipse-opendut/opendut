@@ -1,28 +1,5 @@
 use crate::manager::cluster_manager;
-use opendut_carl_api::carl::cluster::{CreateClusterConfigurationError, DeleteClusterConfigurationError, StoreClusterDeploymentError};
-
-impl From<cluster_manager::error::StoreClusterDeploymentError> for StoreClusterDeploymentError {
-    fn from(value: cluster_manager::error::StoreClusterDeploymentError) -> Self {
-        match value {
-            cluster_manager::error::StoreClusterDeploymentError::IllegalPeerState { cluster_id, cluster_name, invalid_peers } =>
-                Self::IllegalPeerState { cluster_id, cluster_name, invalid_peers },
-            cluster_manager::error::StoreClusterDeploymentError::ListClusterPeerStates { cluster_id, source: _ } => {
-                Self::Internal {
-                    cluster_id,
-                    cluster_name: None,
-                    cause: String::from("Error when listing cluster peer states"),
-                }
-            }
-            cluster_manager::error::StoreClusterDeploymentError::Persistence { cluster_id, cluster_name, source: _ } => {
-                Self::Internal {
-                    cluster_id,
-                    cluster_name,
-                    cause: String::from("Error when accessing persistence"),
-                }
-            }
-        }
-    }
-}
+use opendut_carl_api::carl::cluster::{CreateClusterConfigurationError, DeleteClusterConfigurationError, DeleteClusterDeploymentError, StoreClusterDeploymentError};
 
 impl From<cluster_manager::CreateClusterConfigurationError> for CreateClusterConfigurationError {
     fn from(value: cluster_manager::CreateClusterConfigurationError) -> Self {
@@ -54,6 +31,53 @@ impl From<cluster_manager::DeleteClusterConfigurationError> for DeleteClusterCon
                     cause: String::from("Error when accessing persistence"),
                 }
             }
+        }
+    }
+}
+
+impl From<cluster_manager::error::StoreClusterDeploymentError> for StoreClusterDeploymentError {
+    fn from(value: cluster_manager::error::StoreClusterDeploymentError) -> Self {
+        match value {
+            cluster_manager::error::StoreClusterDeploymentError::IllegalPeerState { cluster_id, cluster_name, invalid_peers } =>
+                Self::IllegalPeerState { cluster_id, cluster_name, invalid_peers },
+            cluster_manager::error::StoreClusterDeploymentError::ListClusterPeerStates { cluster_id, source: _ } => {
+                Self::Internal {
+                    cluster_id,
+                    cluster_name: None,
+                    cause: String::from("Error when listing cluster peer states"),
+                }
+            }
+            cluster_manager::error::StoreClusterDeploymentError::Persistence { cluster_id, cluster_name, source: _ } => {
+                Self::Internal {
+                    cluster_id,
+                    cluster_name,
+                    cause: String::from("Error when accessing persistence"),
+                }
+            }
+        }
+    }
+}
+
+impl From<cluster_manager::DeleteClusterDeploymentError> for DeleteClusterDeploymentError {
+    fn from(value: cluster_manager::DeleteClusterDeploymentError) -> Self {
+        match value {
+            cluster_manager::DeleteClusterDeploymentError::ClusterDeploymentNotFound { cluster_id } =>
+                Self::ClusterDeploymentNotFound { cluster_id },
+            cluster_manager::DeleteClusterDeploymentError::IllegalClusterState { cluster_id, cluster_name, actual_state, required_states } =>
+                Self::IllegalClusterState { cluster_id, cluster_name, actual_state, required_states },
+            cluster_manager::DeleteClusterDeploymentError::Persistence { cluster_id, cluster_name, source: _ } => {
+                Self::Internal {
+                    cluster_id,
+                    cluster_name,
+                    cause: String::from("Error when accessing persistence while deleting cluster deployment"),
+                }
+            }
+            cluster_manager::DeleteClusterDeploymentError::VpnClient { cluster_id, cluster_name, source: _ } =>
+                Self::Internal {
+                    cluster_id,
+                    cluster_name: Some(cluster_name),
+                    cause: String::from("Error when tearing down VPN while deleting cluster deployment"),
+                }
         }
     }
 }

@@ -57,7 +57,7 @@ impl ResourceStorage {
     pub(super) async fn resources_mut<T, E, F>(&mut self, global: GlobalResourcesRef, code: F) -> PersistenceResult<(Result<T, E>, RelayedSubscriptionEvents)>
     where
         F: AsyncFnOnce(&mut Resources) -> Result<T, E>,
-        E: Display + Send + Sync + 'static,
+        E: Display,
     {
         match self {
             ResourceStorage::Persistent(storage) => storage.resources_mut(async |transaction| {

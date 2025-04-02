@@ -86,7 +86,7 @@ impl ResourceManager {
     pub async fn resources_mut<F, T, E>(&self, function: F) -> PersistenceResult<Result<T, E>>
     where
         F: AsyncFnOnce(&mut Resources) -> Result<T, E>,
-        E: Display + Send + Sync + 'static,
+        E: Display,
     {
         let mut state = self.state.write().await;
         let (result, relayed_subscription_events) = state.storage.resources_mut(self.global.clone(), async move |transaction| {

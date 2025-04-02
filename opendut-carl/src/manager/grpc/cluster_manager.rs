@@ -1,13 +1,12 @@
-use opendut_carl_api::carl::cluster::{StoreClusterDeploymentError};
 use opendut_carl_api::proto::services::cluster_manager::cluster_manager_server::{ClusterManager as ClusterManagerService, ClusterManagerServer};
 use opendut_carl_api::proto::services::cluster_manager::*;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
 use tonic::{Request, Response, Status};
 use tonic_web::CorsGrpcWeb;
-use tracing::{error, trace, warn};
+use tracing::{error, trace};
 
 use crate::manager::cluster_manager::delete_cluster_deployment::DeleteClusterDeploymentParams;
-use crate::manager::cluster_manager::{ClusterManagerRef, CreateClusterConfigurationError, CreateClusterConfigurationParams, DeleteClusterConfigurationError, DeleteClusterConfigurationParams};
+use crate::manager::cluster_manager::{ClusterManagerRef, CreateClusterConfigurationError, CreateClusterConfigurationParams, DeleteClusterConfigurationError, DeleteClusterConfigurationParams, DeleteClusterDeploymentError};
 use crate::manager::grpc::extract;
 use crate::resource::manager::ResourceManagerRef;
 use crate::resource::persistence::error::MapToInner;
@@ -52,21 +51,20 @@ impl ClusterManagerService for ClusterManagerFacade {
                 cluster_name: cluster.name,
                 source: source.context("Persistence error in transaction for creating cluster configuration"),
             })
-            .inspect_err(|error| error!("{error}"));
+            .inspect_err(|error| error!("{error}"))
+                .map_err(opendut_carl_api::carl::cluster::CreateClusterConfigurationError::from);
 
-        let response = match result {
+        let reply = match result {
             Ok(cluster_id) => create_cluster_configuration_response::Reply::Success(
                 CreateClusterConfigurationSuccess {
                     cluster_id: Some(cluster_id.into())
                 }
             ),
-            Err(error) => create_cluster_configuration_response::Reply::Failure(
-                opendut_carl_api::carl::cluster::CreateClusterConfigurationError::from(error).into()
-            )
+            Err(error) => create_cluster_configuration_response::Reply::Failure(error.into())
         };
 
         Ok(Response::new(CreateClusterConfigurationResponse {
-            reply: Some(response)
+            reply: Some(reply)
         }))
     }
     #[tracing::instrument(skip_all, level="trace")]
@@ -88,21 +86,20 @@ impl ClusterManagerService for ClusterManagerFacade {
                 cluster_name: None,
                 source: source.context("Persistence error in transaction for deleting cluster configuration"),
             })
-            .inspect_err(|error| error!("{error}"));
+            .inspect_err(|error| error!("{error}"))
+            .map_err(opendut_carl_api::carl::cluster::DeleteClusterConfigurationError::from);
 
-        let response = match result {
+        let reply = match result {
             Ok(cluster_configuration) => delete_cluster_configuration_response::Reply::Success(
                 DeleteClusterConfigurationSuccess {
                     cluster_configuration: Some(cluster_configuration.into())
                 }
             ),
-            Err(error) => delete_cluster_configuration_response::Reply::Failure(
-                opendut_carl_api::carl::cluster::DeleteClusterConfigurationError::from(error).into()
-            ),
+            Err(error) => delete_cluster_configuration_response::Reply::Failure(error.into()),
         };
 
         Ok(Response::new(DeleteClusterConfigurationResponse {
-            reply: Some(response)
+            reply: Some(reply)
         }))
     }
     #[tracing::instrument(skip_all, level="trace")]
@@ -117,7 +114,7 @@ impl ClusterManagerService for ClusterManagerFacade {
             .inspect_err(|error| error!("{error}"))
             .map_err(|cause| Status::internal(cause.to_string()))?;
 
-        let response = match configuration {
+        let result = match configuration {
             Some(configuration) => get_cluster_configuration_response::Result::Success(
                 GetClusterConfigurationSuccess {
                     configuration: Some(configuration.into())
@@ -129,7 +126,7 @@ impl ClusterManagerService for ClusterManagerFacade {
         };
 
         Ok(Response::new(GetClusterConfigurationResponse {
-            result: Some(response)
+            result: Some(result)
         }))
     }
     #[tracing::instrument(skip_all, level="trace")]
@@ -159,25 +156,22 @@ impl ClusterManagerService for ClusterManagerFacade {
 
         let result = self.cluster_manager.lock().await.store_cluster_deployment(cluster_deployment).await
             .inspect_err(|cause| error!("{cause}"))
-            .map_err(StoreClusterDeploymentError::from);
+            .map_err(opendut_carl_api::carl::cluster::StoreClusterDeploymentError::from);
 
-        match result {
-            Err(error) => {
-                warn!("Error while storing cluster deployment: {error:?}");
-                Ok(Response::new(StoreClusterDeploymentResponse {
-                    reply: Some(store_cluster_deployment_response::Reply::Failure(error.into()))
-                }))
-            }
+        let reply = match result {
             Ok(cluster_id) => {
-                Ok(Response::new(StoreClusterDeploymentResponse {
-                    reply: Some(store_cluster_deployment_response::Reply::Success(
-                        StoreClusterDeploymentSuccess {
-                            cluster_id: Some(cluster_id.into())
-                        }
-                    ))
-                }))
+                store_cluster_deployment_response::Reply::Success(
+                    StoreClusterDeploymentSuccess {
+                        cluster_id: Some(cluster_id.into())
+                    }
+                )
             }
-        }
+            Err(error) => store_cluster_deployment_response::Reply::Failure(error.into()),
+        };
+
+        Ok(Response::new(StoreClusterDeploymentResponse {
+            reply: Some(reply),
+        }))
     }
     #[tracing::instrument(skip_all, level="trace")]
     async fn delete_cluster_deployment(&self, request: Request<DeleteClusterDeploymentRequest>) -> Result<Response<DeleteClusterDeploymentResponse>, Status> {
@@ -188,31 +182,26 @@ impl ClusterManagerService for ClusterManagerFacade {
 
         let result = self.resource_manager.resources_mut(async |resources|
             resources.delete_cluster_deployment(DeleteClusterDeploymentParams { cluster_id }).await
-        ).await;
+        ).await
+            .map_to_inner(|source| DeleteClusterDeploymentError::Persistence {
+                cluster_id,
+                cluster_name: None,
+                source: source.context("Persistence error in transaction for deleting cluster deployment"),
+            })
+            .inspect_err(|error| error!("{error}"))
+            .map_err(opendut_carl_api::carl::cluster::DeleteClusterDeploymentError::from);
 
-        let response = match result {
-            Ok(Ok(cluster_configuration)) => delete_cluster_deployment_response::Reply::Success(
+        let reply = match result {
+            Ok(cluster_configuration) => delete_cluster_deployment_response::Reply::Success(
                 DeleteClusterDeploymentSuccess {
                     cluster_deployment: Some(cluster_configuration.into())
                 }
             ),
-            Ok(Err(error)) => delete_cluster_deployment_response::Reply::Failure(error.into()),
-            Err(error) => {
-                let cause = String::from("Error when handling transaction in database");
-                error!("{cause}: {error}");
-
-                delete_cluster_deployment_response::Reply::Failure(
-                    opendut_carl_api::carl::cluster::DeleteClusterDeploymentError::Internal {
-                        cluster_id,
-                        cluster_name: None,
-                        cause,
-                    }.into()
-                )
-            }
+            Err(error) => delete_cluster_deployment_response::Reply::Failure(error.into()),
         };
 
         Ok(Response::new(DeleteClusterDeploymentResponse {
-            reply: Some(response)
+            reply: Some(reply)
         }))
     }
 
