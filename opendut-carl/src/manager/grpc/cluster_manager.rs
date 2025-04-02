@@ -214,6 +214,7 @@ impl ClusterManagerService for ClusterManagerFacade {
         trace!("Received request to get cluster deployment for cluster <{cluster_id}>.");
 
         let deployment = self.cluster_manager.lock().await.get_cluster_deployment(cluster_id).await
+            .inspect_err(|error| error!("{error}"))
             .map_err(|cause| Status::internal(cause.to_string()))?;
 
         match deployment {
@@ -237,6 +238,7 @@ impl ClusterManagerService for ClusterManagerFacade {
         trace!("Received request to list cluster deployments.");
 
         let deployments = self.cluster_manager.lock().await.list_cluster_deployment().await
+            .inspect_err(|error| error!("{error}"))
             .map_err(|cause| Status::internal(cause.to_string()))?;
 
         Ok(Response::new(ListClusterDeploymentsResponse {

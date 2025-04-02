@@ -7,7 +7,6 @@ use futures::future::join_all;
 use futures::FutureExt;
 use tracing::{debug, error, info, trace, warn};
 
-use opendut_carl_api::carl::cluster::{GetClusterDeploymentError, ListClusterDeploymentsError};
 use opendut_types::cluster::{ClusterAssignment, ClusterConfiguration, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
 use opendut_types::peer::state::PeerConnectionState;
 use opendut_types::peer::{PeerDescriptor, PeerId};
@@ -151,14 +150,14 @@ impl ClusterManager {
     #[tracing::instrument(skip(self), level="trace")]
     pub async fn get_cluster_deployment(&self, cluster_id: ClusterId) -> Result<Option<ClusterDeployment>, GetClusterDeploymentError> {
         self.resource_manager.get::<ClusterDeployment>(cluster_id).await
-            .map_err(|cause| GetClusterDeploymentError::Internal { cluster_id, cause: cause.to_string() })
+            .map_err(|source| GetClusterDeploymentError::Persistence { cluster_id, source })
     }
 
     #[tracing::instrument(skip(self), level="trace")]
     pub async fn list_cluster_deployment(&self) -> Result<Vec<ClusterDeployment>, ListClusterDeploymentsError> {
         self.resource_manager.list::<ClusterDeployment>().await
             .map(|clusters| clusters.into_values().collect::<Vec<_>>())
-            .map_err(|cause| ListClusterDeploymentsError { message: cause.to_string() })
+            .map_err(|source| ListClusterDeploymentsError { source })
     }
 
 
@@ -473,27 +472,9 @@ enum DetermineMemberInterfaceMappingError {
 }
 
 pub mod error {
-    use super::*;
+    use opendut_types::cluster::ClusterDisplay;
+use super::*;
 
-    #[derive(thiserror::Error, Debug)]
-    #[error("Error while storing cluster deployment for cluster {cluster_id}")]
-    pub enum StoreClusterDeploymentError {
-        #[error("ClusterDeployment for cluster {cluster_name}<{cluster_id}> failed, due to down or already in use peers: {invalid_peers:?}", cluster_name=Self::format_cluster_name_option(cluster_name))]
-        IllegalPeerState {
-            cluster_id: ClusterId,
-            cluster_name: Option<ClusterName>,
-            invalid_peers: Vec<PeerId>,
-        },
-        ListClusterPeerStates { cluster_id: ClusterId, #[source] source: ListClusterPeerStatesError },
-        Persistence { cluster_id: ClusterId, cluster_name: Option<ClusterName>, #[source] source: PersistenceError },
-    }
-    impl StoreClusterDeploymentError {
-        fn format_cluster_name_option(cluster_name: &Option<ClusterName>) -> String {
-            cluster_name.as_ref()
-                .map(|cluster_name| format!("'{cluster_name}' "))
-                .unwrap_or_default()
-        }
-    }
     #[derive(thiserror::Error, Debug)]
     #[error("ClusterConfiguration <{cluster_id}> could not be retrieved")]
     pub struct GetClusterConfigurationError {
@@ -505,6 +486,34 @@ pub mod error {
     #[error("Error while listing cluster configurations")]
     pub struct ListClusterConfigurationsError {
         pub source: PersistenceError,
+    }
+
+    #[derive(thiserror::Error, Debug)]
+    #[error("Error while storing cluster deployment for cluster {cluster_id}")]
+    pub enum StoreClusterDeploymentError {
+        #[error("ClusterDeployment for cluster {cluster} failed, due to down or already in use peers: {invalid_peers:?}", cluster=ClusterDisplay::new(cluster_name, cluster_id))]
+        IllegalPeerState {
+            cluster_id: ClusterId,
+            cluster_name: Option<ClusterName>,
+            invalid_peers: Vec<PeerId>,
+        },
+        ListClusterPeerStates { cluster_id: ClusterId, #[source] source: ListClusterPeerStatesError },
+        Persistence { cluster_id: ClusterId, cluster_name: Option<ClusterName>, #[source] source: PersistenceError },
+    }
+
+    #[derive(thiserror::Error, Debug)]
+    pub enum GetClusterDeploymentError {
+        #[error("Error when accessing persistence while retrieving cluster deployment for cluster <{cluster_id}>")]
+        Persistence {
+            cluster_id: ClusterId,
+            #[source] source: PersistenceError,
+        },
+    }
+
+    #[derive(thiserror::Error, Debug)]
+    #[error("Error while listing cluster deployments")]
+    pub struct ListClusterDeploymentsError {
+        #[source] pub source: PersistenceError,
     }
 }
 
