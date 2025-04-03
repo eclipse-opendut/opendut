@@ -7,7 +7,7 @@ use tracing::{error, trace};
 use url::Url;
 use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_auth::registration::resources::UserId;
-use opendut_carl_api::carl::peer::{GetPeerDescriptorError, GetPeerStateError, ListPeerStatesError};
+use opendut_carl_api::carl::peer::{GetPeerDescriptorError, GetPeerStateError, ListPeerDescriptorsError, ListPeerStatesError};
 use opendut_carl_api::proto;
 use opendut_carl_api::proto::services;
 use opendut_carl_api::proto::services::peer_manager::*;
@@ -141,7 +141,8 @@ impl PeerManagerService for PeerManagerFacade {
 
         let result =
             self.resource_manager.get::<PeerDescriptor>(peer_id).await
-                .map_err(|error| GetPeerDescriptorError::Internal { peer_id, cause: error.to_string() });
+                .inspect_err(|error| error!("Error while getting peer descriptor from gRPC API: {error}"))
+                .map_err(|_| GetPeerDescriptorError::Internal { peer_id, cause: String::from("Error when accessing persistence while getting peer descriptor") });
 
         let response = match result {
             Ok(descriptor) => match descriptor {
@@ -167,7 +168,9 @@ impl PeerManagerService for PeerManagerFacade {
 
         trace!("Received request to list peer descriptors.");
 
-        let result = self.resource_manager.list::<PeerDescriptor>().await;
+        let result = self.resource_manager.list::<PeerDescriptor>().await
+            .inspect_err(|error| error!("Error while listing peer descriptors from gRPC API: {error}"))
+            .map_err(|_| ListPeerDescriptorsError::Internal { cause: String::from("Error when accessing persistence while listing peer descriptors") });
 
         let response = match result {
             Ok(peers) => {
@@ -176,21 +179,10 @@ impl PeerManagerService for PeerManagerFacade {
                     .collect::<Vec<_>>();
 
                 list_peer_descriptors_response::Reply::Success(
-                    ListPeerDescriptorsSuccess {
-                        peers
-                    }
+                    ListPeerDescriptorsSuccess { peers }
                 )
             }
-            Err(error) => {
-                let cause = String::from("Error when handling transaction in database");
-                error!("{cause}: {error}");
-
-                list_peer_descriptors_response::Reply::Failure(
-                    opendut_carl_api::carl::peer::ListPeerDescriptorsError::Internal {
-                        cause,
-                    }.into()
-                )
-            }
+            Err(error) => list_peer_descriptors_response::Reply::Failure(error.into())
         };
 
         Ok(Response::new(ListPeerDescriptorsResponse {
