@@ -17,7 +17,7 @@ use opendut_types::cleo::{CleoId};
 
 use crate::manager::grpc::extract;
 use crate::manager::peer_manager;
-use crate::manager::peer_manager::{DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, GetPeerStateParams, StorePeerDescriptorError, StorePeerDescriptorParams};
+use crate::manager::peer_manager::{DeletePeerDescriptorError, DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, GetPeerStateParams, StorePeerDescriptorError, StorePeerDescriptorParams};
 use crate::resource::manager::ResourceManagerRef;
 use crate::resource::persistence::error::MapToInner;
 use crate::settings::vpn::Vpn;
@@ -108,27 +108,22 @@ impl PeerManagerService for PeerManagerFacade {
                     peer: peer_id,
                     oidc_registration_client: self.oidc_registration_client.clone(),
                 }).await
-            ).await;
+            ).await
+            .map_to_inner(|source| DeletePeerDescriptorError::Persistence {
+                peer_id,
+                peer_name: None,
+                source: source.context("Persistence error in transaction for deleting peer descriptor"),
+            })
+            .inspect_err(|error| error!("{error}"))
+            .map_err(opendut_carl_api::carl::peer::DeletePeerDescriptorError::from);
 
         let response = match result {
-            Ok(Ok(peer)) => proto::services::peer_manager::delete_peer_descriptor_response::Reply::Success(
+            Ok(peer) => proto::services::peer_manager::delete_peer_descriptor_response::Reply::Success(
                 DeletePeerDescriptorSuccess {
                     peer_id: Some(peer.id.into())
                 }
             ),
-            Ok(Err(error)) => delete_peer_descriptor_response::Reply::Failure(error.into()),
-            Err(error) => {
-                let cause = String::from("Error when handling transaction in database");
-                error!("{cause}: {error}");
-
-                delete_peer_descriptor_response::Reply::Failure(
-                    opendut_carl_api::carl::peer::DeletePeerDescriptorError::Internal {
-                        peer_id,
-                        peer_name: None,
-                        cause,
-                    }.into()
-                )
-            }
+            Err(error) => delete_peer_descriptor_response::Reply::Failure(error.into()),
         };
 
         Ok(Response::new(DeletePeerDescriptorResponse {

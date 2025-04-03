@@ -164,6 +164,30 @@ impl FromStr for PeerName {
     }
 }
 
+pub struct PeerDisplay {
+    peer_name: Option<PeerName>,
+    peer_id: PeerId,
+}
+impl PeerDisplay {
+    pub fn new(peer_name: &Option<PeerName>, peer_id: &PeerId) -> Self {
+        Self {
+            peer_name: peer_name.to_owned(),
+            peer_id: peer_id.to_owned(),
+        }
+    }
+}
+impl fmt::Display for PeerDisplay {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let PeerDisplay { peer_name, peer_id } = self;
+
+        let peer_name = peer_name.as_ref()
+            .map(|peer_name| format!("'{peer_name}' "))
+            .unwrap_or_default();
+
+        write!(f, "{peer_name}<{peer_id}>")
+    }
+}
+
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct PeerLocation(pub(crate) String);
 

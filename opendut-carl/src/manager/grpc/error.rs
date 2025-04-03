@@ -85,7 +85,7 @@ mod cluster_manager {
 }
 
 mod peer_manager {
-    use opendut_carl_api::carl::peer::StorePeerDescriptorError;
+    use opendut_carl_api::carl::peer::{DeletePeerDescriptorError, StorePeerDescriptorError};
     use crate::manager::peer_manager;
 
     impl From<peer_manager::store_peer_descriptor::StorePeerDescriptorError> for StorePeerDescriptorError {
@@ -105,6 +105,37 @@ mod peer_manager {
                         peer_name,
                         cause: String::from("Error when creating peer in VPN management while storing peer descriptor"),
                     }
+            }
+        }
+    }
+
+    impl From<peer_manager::delete_peer_descriptor::DeletePeerDescriptorError> for DeletePeerDescriptorError {
+        fn from(value: peer_manager::delete_peer_descriptor::DeletePeerDescriptorError) -> Self {
+            match value {
+                peer_manager::delete_peer_descriptor::DeletePeerDescriptorError::PeerNotFound { peer_id } =>
+                    Self::PeerNotFound { peer_id },
+                peer_manager::delete_peer_descriptor::DeletePeerDescriptorError::ClusterDeploymentExists { peer_id, cluster_id } =>
+                    Self::ClusterDeploymentExists { peer_id, cluster_id },
+                peer_manager::delete_peer_descriptor::DeletePeerDescriptorError::IllegalPeerState { peer_id, peer_name, actual_state, required_states } =>
+                    Self::IllegalPeerState { peer_id, peer_name, actual_state, required_states },
+                peer_manager::delete_peer_descriptor::DeletePeerDescriptorError::Persistence { peer_id, peer_name, source: _ } =>
+                    Self::Internal {
+                        peer_id,
+                        peer_name,
+                        cause: String::from("Error when accessing persistence while deleting peer descriptor"),
+                    },
+                peer_manager::delete_peer_descriptor::DeletePeerDescriptorError::AuthRegistration { peer_id, peer_name, source: _ } =>
+                    Self::Internal {
+                        peer_id,
+                        peer_name: Some(peer_name),
+                        cause: String::from("Error when removing registration while storing peer descriptor"),
+                    },
+                peer_manager::delete_peer_descriptor::DeletePeerDescriptorError::VpnClient { peer_id, peer_name, source: _ } =>
+                    Self::Internal {
+                        peer_id,
+                        peer_name: Some(peer_name),
+                        cause: String::from("Error when removing peer in VPN management while deleting peer descriptor"),
+                    },
             }
         }
     }
