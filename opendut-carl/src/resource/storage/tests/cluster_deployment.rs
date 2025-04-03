@@ -1,5 +1,5 @@
 use crate::resource::manager::{ResourceManager, ResourceManagerRef};
-use crate::resource::persistence::database;
+use crate::resource::persistence;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment};
 use opendut_types::peer::PeerDescriptor;
 
@@ -12,7 +12,7 @@ async fn should_persist_cluster_deployment_in_memory() -> anyhow::Result<()> {
 #[test_with::no_env(SKIP_DATABASE_CONTAINER_TESTS)]
 #[tokio::test]
 async fn should_persist_cluster_deployment_in_database() -> anyhow::Result<()> {
-    let db = database::testing::spawn_and_connect_resource_manager().await?;
+    let db = persistence::testing::spawn_and_connect_resource_manager().await?;
     should_persist_cluster_deployment(db.resource_manager).await
 }
 

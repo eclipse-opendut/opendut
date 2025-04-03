@@ -14,9 +14,11 @@ pub enum PersistenceErrorKind {
         identifier: Option<String>,
         #[source] source: Option<Cause>,
     },
-    DieselInternal(#[source] diesel::result::Error),
     JsonSerialization(#[source] serde_json::Error),
     KeyValueStore(#[source] redb::Error),
+
+    #[cfg(feature="postgres")]
+    DieselInternal(#[source] diesel::result::Error),
 }
 impl PersistenceError {
     pub fn insert<R>(identifier: impl Debug, cause: impl Into<Cause>) -> Self {
@@ -78,9 +80,11 @@ impl Display for PersistenceErrorKind {
                     writeln!(f, "  Source: {source}")
                 ).transpose()?;
             }
-            Self::DieselInternal(source) => writeln!(f, "Error internal to Diesel, likely from transaction: {source}")?,
             Self::JsonSerialization(source) => writeln!(f, "Error while serializing to JSON while storing in or loading from persistence: {source}")?,
             Self::KeyValueStore(source) => writeln!(f, "Error occurred in the key-value store: {source}")?,
+
+            #[cfg(feature="postgres")]
+            Self::DieselInternal(source) => writeln!(f, "Error internal to Diesel, likely from transaction: {source}")?,
         }
         Ok(())
     }
@@ -129,6 +133,7 @@ impl From<serde_json::Error> for PersistenceError {
         }
     }
 }
+#[cfg(feature="postgres")]
 impl From<diesel::result::Error> for PersistenceError {
     fn from(error: diesel::result::Error) -> Self {
         PersistenceError {

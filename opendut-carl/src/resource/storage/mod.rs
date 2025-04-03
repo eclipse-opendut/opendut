@@ -11,7 +11,6 @@ use anyhow::anyhow;
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::path::PathBuf;
-use url::Url;
 
 pub mod volatile;
 pub mod persistent;
@@ -120,21 +119,24 @@ impl PersistenceOptions {
                 path
             };
 
+            #[cfg(feature="postgres")]
             let url = {
                 let field = "persistence.database.url";
                 let value = config.get_string(field)
                     .map_err(|cause| LoadError::ReadField { field, source: Box::new(cause) })?;
 
-                Url::parse(&value)
+                url::Url::parse(&value)
                     .map_err(|cause| LoadError::ParseValue { field, value, source: Box::new(cause) })?
             };
 
+            #[cfg(feature="postgres")]
             let username = {
                 let field = "persistence.database.username";
                 config.get_string(field)
                     .map_err(|source| LoadError::ReadField { field, source: Box::new(source) })?
             };
 
+            #[cfg(feature="postgres")]
             let password = {
                 let field = "persistence.database.password";
                 let value = config.get_string(field)
@@ -145,8 +147,12 @@ impl PersistenceOptions {
             Ok(PersistenceOptions::Enabled {
                 database_connect_info: DatabaseConnectInfo {
                     file,
+
+                    #[cfg(feature="postgres")]
                     url,
+                    #[cfg(feature="postgres")]
                     username,
+                    #[cfg(feature="postgres")]
                     password,
                 }
             })
@@ -159,16 +165,26 @@ impl PersistenceOptions {
 pub struct DatabaseConnectInfo {
     pub file: PathBuf,
 
+
+    #[cfg(feature="postgres")]
     /// Deprecated
-    pub url: Url,
+    pub url: url::Url,
+
+    #[cfg(feature="postgres")]
     /// Deprecated
     pub username: String,
+
+    #[cfg(feature="postgres")]
     /// Deprecated
     pub password: Password,
 }
+
+#[cfg(feature="postgres")]
 ///Wrapper for String without Debug and Display
 #[derive(Clone)]
 pub struct Password { secret: String }
+
+#[cfg(feature="postgres")]
 impl Password {
     pub fn secret(&self) -> &str {
         &self.secret

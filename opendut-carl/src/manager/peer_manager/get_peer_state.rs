@@ -62,7 +62,7 @@ mod tests {
     #[test_with::no_env(SKIP_DATABASE_CONTAINER_TESTS)]
     #[tokio::test]
     async fn should_get_peer_state_down_in_database() -> anyhow::Result<()> {
-        let db = crate::resource::persistence::database::testing::spawn_and_connect_resource_manager().await?;
+        let db = crate::resource::persistence::testing::spawn_and_connect_resource_manager().await?;
         should_get_peer_state(db.resource_manager).await
     }
 
@@ -93,7 +93,7 @@ mod tests {
     #[test_with::no_env(SKIP_DATABASE_CONTAINER_TESTS)]
     #[tokio::test]
     async fn should_throw_error_if_peer_not_found_in_database() -> anyhow::Result<()> {
-        let db = crate::resource::persistence::database::testing::spawn_and_connect_resource_manager().await?;
+        let db = crate::resource::persistence::testing::spawn_and_connect_resource_manager().await?;
         should_throw_error_if_peer_not_found(db.resource_manager).await
     }
 

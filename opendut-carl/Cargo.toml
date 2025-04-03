@@ -21,8 +21,8 @@ axum-server-dual-protocol = { workspace = true }
 backon = { workspace = true }
 chrono = { workspace = true }
 config = { workspace = true }
-diesel = { workspace = true, features = ["postgres", "pq-src", "uuid", "serde_json"] }
-diesel_migrations = { workspace = true }
+diesel = { workspace = true, features = ["postgres", "pq-src", "uuid", "serde_json"], optional = true }
+diesel_migrations = { workspace = true, optional = true }
 flate2 = { workspace = true }
 futures = { workspace = true }
 googletest = { workspace = true }
@@ -38,7 +38,7 @@ opentelemetry = { workspace = true }
 opentelemetry_sdk = { workspace = true }
 pem = { workspace = true, features = ["serde"]}
 pin-project-lite = { workspace = true }
-pq-sys = { workspace = true }
+pq-sys = { workspace = true, optional = true }
 redb = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
 serde = { workspace = true, features = ["derive"] }
@@ -74,3 +74,9 @@ shadow-rs = { workspace = true, default-features = true }
 
 [lints]
 workspace = true
+
+[features]
+default = [
+#    "postgres",
+]
+postgres = ["dep:diesel", "dep:diesel_migrations", "dep:pq-sys"]

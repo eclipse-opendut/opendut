@@ -5,7 +5,7 @@ use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, Dev
 use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
 use crate::resource::manager::{ResourceManager, ResourceManagerRef};
-use crate::resource::persistence::database;
+use crate::resource::persistence;
 
 #[tokio::test]
 async fn should_persist_peer_descriptor_in_memory() -> anyhow::Result<()> {
@@ -16,7 +16,7 @@ async fn should_persist_peer_descriptor_in_memory() -> anyhow::Result<()> {
 #[test_with::no_env(SKIP_DATABASE_CONTAINER_TESTS)]
 #[tokio::test]
 async fn should_persist_peer_descriptor_in_database() -> anyhow::Result<()> {
-    let db = database::testing::spawn_and_connect_resource_manager().await?;
+    let db = persistence::testing::spawn_and_connect_resource_manager().await?;
     should_persist_peer_descriptor_implementation(db.resource_manager).await
 }
 

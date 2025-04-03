@@ -1,6 +1,5 @@
 use std::io;
 use std::path::PathBuf;
-use url::Url;
 
 pub(crate) mod api;
 pub mod manager;
@@ -15,8 +14,12 @@ pub enum ConnectError {
     #[error("Failed to create parent directory {dir:?} of database file")]
     DatabaseDirCreate { dir: PathBuf, #[source] source: io::Error },
 
+
+    #[cfg(feature="postgres")]
     #[error("Connection error from Diesel")]
-    Diesel { url: Url, #[source] source: diesel::ConnectionError },
+    Diesel { url: url::Url, #[source] source: diesel::ConnectionError },
+
+    #[cfg(feature="postgres")]
     #[error("Error while applying migrations")]
     Migration { #[source] source: Box<dyn std::error::Error + Send + Sync> },
 }

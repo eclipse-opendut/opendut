@@ -8,7 +8,7 @@ use opendut_types::peer::PeerDescriptor;
 #[test_with::no_env(SKIP_DATABASE_CONTAINER_TESTS)]
 #[tokio::test]
 async fn should_rollback_from_an_error_during_a_transaction() -> anyhow::Result<()> {
-    let db = persistence::database::testing::spawn_and_connect_resource_manager().await?;
+    let db = persistence::testing::spawn_and_connect_resource_manager().await?;
     let resource_manager = db.resource_manager;
 
     let peer = peer_descriptor()?;
