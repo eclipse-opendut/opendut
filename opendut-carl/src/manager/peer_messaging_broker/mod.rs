@@ -4,7 +4,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use opendut_carl_api::carl::broker::stream_header;
-use opendut_carl_api::proto::services::peer_messaging_broker::upstream;
+use opendut_carl_api::proto::services::peer_messaging_broker::{upstream, DisconnectNotice};
 use opendut_carl_api::proto::services::peer_messaging_broker::Pong;
 use opendut_carl_api::proto::services::peer_messaging_broker::{downstream, ApplyPeerConfiguration, Downstream, TracingContext};
 use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
@@ -33,6 +33,7 @@ pub struct PeerMessagingBroker {
 }
 struct PeerMessagingRef {
     downstream: mpsc::Sender<Downstream>,
+    disconnected: bool,
 }
 
 impl PeerMessagingBroker {
@@ -71,6 +72,31 @@ impl PeerMessagingBroker {
         }).await.map_err(Error::DownstreamSend)?;
         Ok(())
     }
+
+    pub async fn disconnect(&self, peer_id: PeerId) -> Result<(), Error> {
+        let downstream = {
+            let peers = self.peers.read().await;
+            peers.get(&peer_id)
+                .map(|peer| &peer.downstream)
+                .cloned()
+        };
+        let downstream = downstream.ok_or(Error::PeerNotFound(peer_id))?;
+        let disconnect_message = downstream::Message::DisconnectNotice(DisconnectNotice { });
+
+        downstream.send(Downstream {
+            context: None,
+            message: Some(disconnect_message)
+        }).await.map_err(Error::DownstreamSend)?;
+
+        let peer_messaging_ref = PeerMessagingRef {
+            downstream,
+            disconnected: true,
+        };
+
+        self.peers.write().await.insert(peer_id, peer_messaging_ref);
+
+        Ok(())
+    }
     
     pub async fn open(
         &self,
@@ -86,6 +112,7 @@ impl PeerMessagingBroker {
 
         let peer_messaging_ref = PeerMessagingRef {
             downstream: Clone::clone(&tx_outbound),
+            disconnected: false,
         };
 
         self.update_peer_connection_state(peer_id, remote_host).await?;
@@ -101,7 +128,6 @@ impl PeerMessagingBroker {
             tokio::spawn(async move {
                 loop {
                     let received = tokio::time::timeout(timeout_duration, rx_inbound.recv()).await;
-
                     match received {
                         Ok(Some(message)) => handle_stream_message(message, peer_id, &tx_outbound).await,
                         Ok(None) => {
@@ -113,7 +139,18 @@ impl PeerMessagingBroker {
                             break;
                         }
                     }
+
+                    let downstream_disconnected = peers.read().await.get(&peer_id)
+                        .map(|peer| &peer.disconnected).cloned()
+                        .unwrap_or_default();
+                    if downstream_disconnected {
+                        info!("Peer <{peer_id}> shall be disconnected!");
+                        break
+                    }
                 }
+                // TODO: cleanup of channel
+                //rx_inbound.close();
+                //tx_outbound.closed().await;
                 Self::remove_peer_impl(peer_id, resource_manager, peers).await
                     .unwrap_or_else(|cause| error!("Error while removing peer after its stream ended:\n  {cause}"));
             });

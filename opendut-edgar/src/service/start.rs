@@ -4,7 +4,7 @@ use std::ops::Not;
 use std::sync::Arc;
 use std::time::Duration;
 
-use anyhow::Context;
+use anyhow::{anyhow, Context};
 use opendut_carl_api::proto::services::peer_messaging_broker;
 use opendut_carl_api::proto::services::peer_messaging_broker::downstream::Message;
 use opendut_carl_api::proto::services::peer_messaging_broker::{ApplyPeerConfiguration, TracingContext};
@@ -213,6 +213,9 @@ async fn handle_stream_message(
                         .inspect_err(|cause| debug!("Failed to send ping to CARL: {cause}"));
             }
             Message::ApplyPeerConfiguration(message) => apply_peer_configuration_raw(message, context, handle_stream_info, peer_configuration_sender).await?,
+            Message::DisconnectNotice(_) => {
+                return Err(anyhow!("CARL sent a disconnect notice. Shutting down now."))
+            }
         }
     } else {
         ignore(message)

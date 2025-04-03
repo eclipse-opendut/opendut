@@ -23,11 +23,13 @@ message Downstream {
   oneof message {
     Pong pong = 2;
     ApplyPeerConfiguration apply_peer_configuration = 3;
+    DisconnectNotice disconnect_notice = 4;
   }
 }
 
 message Ping {}
 message Pong {}
+message DisconnectNotice {}
 
 
 message ApplyPeerConfiguration {

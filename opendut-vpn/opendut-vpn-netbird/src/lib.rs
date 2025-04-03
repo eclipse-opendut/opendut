@@ -202,6 +202,7 @@ impl VpnManagementClient for NetbirdManagementClient {
 
     #[tracing::instrument(skip(self), level="trace")]
     async fn delete_peer(&self, peer_id: PeerId) -> Result<(), DeletePeerError> {
+        // TODO: delete setup key that was linked to peers group
         let self_group = self.inner.get_netbird_group(&netbird::GroupName::from(peer_id)).await
             .map_err(|error| DeletePeerError::ResolutionFailure { peer_id, error: error.into() })?;
 
