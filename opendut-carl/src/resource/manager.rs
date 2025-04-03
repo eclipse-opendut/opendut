@@ -60,16 +60,16 @@ impl ResourceManager {
     pub async fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable + Clone {
         let state = self.state.read().await;
-        state.storage.resources(self.global.clone(), async |resources| resources.get(id)).await
+        state.storage.resources(self.global.clone(), async |resources| resources.get(id)).await?
     }
 
     pub async fn list<R>(&self) -> PersistenceResult<HashMap<R::Id, R>>
     where R: Resource + Persistable + Clone {
         let state = self.state.read().await;
-        state.storage.resources(self.global.clone(), async |resources| resources.list()).await
+        state.storage.resources(self.global.clone(), async |resources| resources.list()).await?
     }
 
-    pub async fn resources<F, T>(&self, closure: F) -> T
+    pub async fn resources<F, T>(&self, closure: F) -> PersistenceResult<T>
     where
         F: AsyncFnOnce(&Resources) -> T,
     {
@@ -280,7 +280,7 @@ mod test {
                     assert_that!(cluster, eq(&cluster_configuration));
                 });
             PersistenceResult::Ok(())
-        }).await?;
+        }).await??;
 
         Ok(())
     }

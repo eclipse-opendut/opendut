@@ -9,7 +9,7 @@ use crate::manager::cluster_manager::delete_cluster_deployment::DeleteClusterDep
 use crate::manager::cluster_manager::{ClusterManagerRef, CreateClusterConfigurationError, CreateClusterConfigurationParams, DeleteClusterConfigurationError, DeleteClusterConfigurationParams, DeleteClusterDeploymentError};
 use crate::manager::grpc::extract;
 use crate::resource::manager::ResourceManagerRef;
-use crate::resource::persistence::error::MapToInner;
+use crate::resource::persistence::error::MapErrToInner;
 
 pub struct ClusterManagerFacade {
     cluster_manager: ClusterManagerRef,
@@ -46,7 +46,7 @@ impl ClusterManagerService for ClusterManagerFacade {
                     cluster_configuration: cluster.clone(),
                 })
             ).await
-            .map_to_inner(|source| CreateClusterConfigurationError::Persistence {
+            .map_err_to_inner(|source| CreateClusterConfigurationError::Persistence {
                 cluster_id: cluster.id,
                 cluster_name: cluster.name,
                 source: source.context("Persistence error in transaction for creating cluster configuration"),
@@ -81,7 +81,7 @@ impl ClusterManagerService for ClusterManagerFacade {
                     cluster_id,
                 })
             ).await
-            .map_to_inner(|source| DeleteClusterConfigurationError::Persistence {
+            .map_err_to_inner(|source| DeleteClusterConfigurationError::Persistence {
                 cluster_id,
                 cluster_name: None,
                 source: source.context("Persistence error in transaction for deleting cluster configuration"),
@@ -183,7 +183,7 @@ impl ClusterManagerService for ClusterManagerFacade {
         let result = self.resource_manager.resources_mut(async |resources|
             resources.delete_cluster_deployment(DeleteClusterDeploymentParams { cluster_id }).await
         ).await
-            .map_to_inner(|source| DeleteClusterDeploymentError::Persistence {
+            .map_err_to_inner(|source| DeleteClusterDeploymentError::Persistence {
                 cluster_id,
                 cluster_name: None,
                 source: source.context("Persistence error in transaction for deleting cluster deployment"),

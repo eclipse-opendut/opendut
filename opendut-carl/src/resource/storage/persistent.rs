@@ -37,13 +37,13 @@ impl PersistentResourcesStorage {
         Ok(Self { db, memory })
     }
 
-    pub async fn resources<T, F>(&self, code: F) -> T
+    pub async fn resources<T, F>(&self, code: F) -> PersistenceResult<T>
     where
         F: AsyncFnOnce(PersistentResourcesTransaction) -> T,
     {
         let mut relayed_subscription_events = RelayedSubscriptionEvents::default();
 
-        let transaction = self.db.begin_read().unwrap(); //TODO don't unwrap
+        let transaction = self.db.begin_read()?;
         let result = {
             let transaction = PersistentResourcesTransaction {
                 db: Db::Read(&transaction),
@@ -56,7 +56,7 @@ impl PersistentResourcesStorage {
 
         debug_assert!(relayed_subscription_events.is_empty(), "Read-only storage operations should not trigger any subscription events.");
 
-        result
+        Ok(result)
     }
 
     pub async fn resources_mut<T, E, F>(&mut self, code: F) -> PersistenceResult<(Result<T, E>, RelayedSubscriptionEvents)>

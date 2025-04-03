@@ -81,7 +81,7 @@ mod tests {
         // Act
         let peer_member_states = resource_manager.resources(async |resources|
             resources.list_peer_member_states()
-        ).await?;
+        ).await??;
 
         // Assert
         let blocked_peers = peer_member_states.into_iter()

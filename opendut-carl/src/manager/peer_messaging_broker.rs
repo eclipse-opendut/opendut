@@ -311,7 +311,7 @@ mod tests {
 
             let peer_connection_state = resource_manager.resources(async |resources| {
                 resources.get::<PeerConnectionState>(peer_id)
-            }).await?;
+            }).await??;
             let peer_connection_state = peer_connection_state.unwrap_or_else(|| panic!("PeerConnectionState for peer <{peer_id}> should exist."));
             match peer_connection_state {
                 PeerConnectionState::Online { .. } => {} //Success
@@ -355,7 +355,7 @@ mod tests {
 
             let peer_connection_state = resource_manager.resources(async |resources| {
                 resources.get::<PeerConnectionState>(peer_id)
-            }).await?;
+            }).await??;
             let peer_connection_state = peer_connection_state.unwrap_or_else(|| panic!("PeerConnectionState for peer <{peer_id}> should exist."));
             match peer_connection_state {
                 PeerConnectionState::Offline => {} //Success

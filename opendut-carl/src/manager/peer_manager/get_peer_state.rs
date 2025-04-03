@@ -78,9 +78,9 @@ mod tests {
 
         let peer_state = resource_manager.resources(async |resources| {
             resources.get_peer_state(peer.id)
-        }).await?;
+        }).await??;
 
-        assert_that!(peer_state, eq(&PeerState { connection: PeerConnectionState::Offline, member: PeerMemberState::Available}));
+        assert_that!(peer_state, eq(&PeerState { connection: PeerConnectionState::Offline, member: PeerMemberState::Available }));
         Ok(())
     }
 
@@ -112,7 +112,7 @@ mod tests {
 
         let peer_state_result = resource_manager.resources(async |resources| {
             resources.get_peer_state(not_existing_peer_id)
-        }).await;
+        }).await?;
 
         let Err(GetPeerStateError::PeerNotFound { peer_id }) = peer_state_result
         else { panic!("Result was not a PeerNotFound error.") };

@@ -2,7 +2,6 @@ use pem::Pem;
 
 use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_auth::registration::resources::UserId;
-use opendut_carl_api::carl::peer::{GetPeerDescriptorError, ListPeerDescriptorsError, ListPeerStatesError};
 use opendut_carl_api::proto;
 use opendut_carl_api::proto::services;
 use opendut_carl_api::proto::services::peer_manager::peer_manager_server::{PeerManager as PeerManagerService, PeerManagerServer};
@@ -16,9 +15,12 @@ use url::Url;
 
 use crate::manager::grpc::extract;
 use crate::manager::peer_manager;
-use crate::manager::peer_manager::{DeletePeerDescriptorError, DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, StorePeerDescriptorError, StorePeerDescriptorParams};
+use crate::manager::peer_manager::{DeletePeerDescriptorError, DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupError, GeneratePeerSetupParams, StorePeerDescriptorError, StorePeerDescriptorParams};
+use crate::manager::peer_manager::get_peer_state::GetPeerStateError;
+use crate::manager::peer_manager::list_devices::ListDevicesError;
+use crate::manager::peer_manager::list_peer_states::ListPeerStatesError;
 use crate::resource::manager::ResourceManagerRef;
-use crate::resource::persistence::error::{MapToInner, PersistenceError};
+use crate::resource::persistence::error::{MapErrToInner, PersistenceError};
 use crate::settings::vpn::Vpn;
 
 pub struct PeerManagerFacade {
@@ -70,7 +72,7 @@ impl PeerManagerService for PeerManagerFacade {
                     peer_descriptor: Clone::clone(&peer),
                 }).await
             }).await
-            .map_to_inner(|source| StorePeerDescriptorError::Persistence {
+            .map_err_to_inner(|source| StorePeerDescriptorError::Persistence {
                 peer_id: peer.id,
                 peer_name: peer.name,
                 source: source.context("Persistence error in transaction for storing peer descriptor"),
@@ -108,7 +110,7 @@ impl PeerManagerService for PeerManagerFacade {
                     oidc_registration_client: self.oidc_registration_client.clone(),
                 }).await
             ).await
-            .map_to_inner(|source| DeletePeerDescriptorError::Persistence {
+            .map_err_to_inner(|source| DeletePeerDescriptorError::Persistence {
                 peer_id,
                 peer_name: None,
                 source: source.context("Persistence error in transaction for deleting peer descriptor"),
@@ -141,7 +143,10 @@ impl PeerManagerService for PeerManagerFacade {
         let result =
             self.resource_manager.get::<PeerDescriptor>(peer_id).await
                 .inspect_err(|error| error!("Error while getting peer descriptor from gRPC API: {error}"))
-                .map_err(|_: PersistenceError| GetPeerDescriptorError::Internal { peer_id, cause: String::from("Error when accessing persistence while getting peer descriptor") });
+                .map_err(|_: PersistenceError| opendut_carl_api::carl::peer::GetPeerDescriptorError::Internal {
+                    peer_id,
+                    cause: String::from("Error when accessing persistence while getting peer descriptor"),
+                });
 
         let response = match result {
             Ok(descriptor) => match descriptor {
@@ -151,7 +156,7 @@ impl PeerManagerService for PeerManagerFacade {
                     }
                 ),
                 None => get_peer_descriptor_response::Reply::Failure(
-                    GetPeerDescriptorError::PeerNotFound { peer_id }.into()
+                    opendut_carl_api::carl::peer::GetPeerDescriptorError::PeerNotFound { peer_id }.into()
                 ),
             }
             Err(error) => get_peer_descriptor_response::Reply::Failure(error.into()),
@@ -169,7 +174,9 @@ impl PeerManagerService for PeerManagerFacade {
 
         let result = self.resource_manager.list::<PeerDescriptor>().await
             .inspect_err(|error| error!("Error while listing peer descriptors from gRPC API: {error}"))
-            .map_err(|_: PersistenceError| ListPeerDescriptorsError::Internal { cause: String::from("Error when accessing persistence while listing peer descriptors") });
+            .map_err(|_: PersistenceError| opendut_carl_api::carl::peer::ListPeerDescriptorsError::Internal {
+                cause: String::from("Error when accessing persistence while listing peer descriptors"),
+            });
 
         let response = match result {
             Ok(peers) => {
@@ -201,6 +208,10 @@ impl PeerManagerService for PeerManagerFacade {
             self.resource_manager.resources(async |resources| {
                 resources.get_peer_state(peer_id)
             }).await
+            .map_err_to_inner(|source| GetPeerStateError::Persistence {
+                peer_id,
+                source: source.context("Persistence error in transaction for getting peer state"),
+            })
             .inspect_err(|error| error!("{error}"))
             .map_err(opendut_carl_api::carl::peer::GetPeerStateError::from);
 
@@ -227,8 +238,11 @@ impl PeerManagerService for PeerManagerFacade {
             self.resource_manager.resources(async |resources|
                 resources.list_peer_states()
             ).await
+            .map_err_to_inner(|source| ListPeerStatesError::Persistence {
+                source: source.context("Persistence error in transaction for listing peer states"),
+            })
             .inspect_err(|error| error!("{error}"))
-            .map_err(ListPeerStatesError::from);
+            .map_err(opendut_carl_api::carl::peer::ListPeerStatesError::from);
 
         let reply = match result {
             Ok(peer_states) => list_peer_states_response::Reply::Success(
@@ -257,6 +271,9 @@ impl PeerManagerService for PeerManagerFacade {
         let devices = self.resource_manager.resources(async |resources|
             resources.list_devices()
         ).await
+            .map_err_to_inner(|source| ListDevicesError::Persistence {
+                source: source.context("Persistence error in transaction for listing peer states"),
+            })
             .inspect_err(|error| error!("Error while listing devices: {error}"))
             .map_err(|_| Status::internal("Internal error when listing devices"))?;
 
@@ -286,6 +303,10 @@ impl PeerManagerService for PeerManagerFacade {
                     user_id,
                 }).await
             ).await
+            .map_err_to_inner(|source| GeneratePeerSetupError::Persistence {
+                peer_id,
+                source: source.context("Persistence error in transaction for getting peer state"),
+            })
             .inspect_err(|error| error!("{error}"))
             .map_err(|_| Status::internal("Peer setup could not be created"))?;
 

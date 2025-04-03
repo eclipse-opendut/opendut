@@ -38,7 +38,7 @@ impl ResourceStorage {
         Ok(storage)
     }
 
-    pub(super) async fn resources<T, F>(&self, global: GlobalResourcesRef, code: F) -> T
+    pub(super) async fn resources<T, F>(&self, global: GlobalResourcesRef, code: F) -> PersistenceResult<T>
     where
         F: AsyncFnOnce(&mut Resources) -> T,
     {
@@ -47,10 +47,12 @@ impl ResourceStorage {
                 let mut transaction = Resources::persistent(transaction, global);
                 code(&mut transaction).await
             }).await,
-            ResourceStorage::Volatile(storage) => storage.resources(async |transaction| {
-                let mut transaction = Resources::volatile(transaction, global);
-                code(&mut transaction).await
-            }).await,
+            ResourceStorage::Volatile(storage) => Ok(
+                storage.resources(async |transaction| {
+                    let mut transaction = Resources::volatile(transaction, global);
+                    code(&mut transaction).await
+                }).await
+            ),
         }
     }
 

@@ -29,7 +29,7 @@ impl Resources<'_> {
         debug!("Generating PeerSetup for peer <{peer_id}>");
 
         let peer_descriptor = self.get::<PeerDescriptor>(peer_id)
-            .map_err(|source| GeneratePeerSetupError::Persistance { peer_id, source })?
+            .map_err(|source| GeneratePeerSetupError::Persistence { peer_id, source })?
             .ok_or(GeneratePeerSetupError::PeerNotFound(peer_id))?;
 
         let peer_name = peer_descriptor.name;
@@ -77,7 +77,7 @@ pub enum GeneratePeerSetupError {
     #[error("A PeerSetup for peer <{0}> could not be created, because a peer with that ID does not exist!")]
     PeerNotFound(PeerId),
     #[error("An error occurred while accessing persistence for creating a PeerSetup for peer <{peer_id}>")]
-    Persistance { peer_id: PeerId, #[source] source: PersistenceError },
+    Persistence { peer_id: PeerId, #[source] source: PersistenceError },
     #[error("An internal error occurred while creating a PeerSetup for peer '{peer_name}' <{peer_id}>:\n  {cause}")]
     Internal {
         peer_id: PeerId,

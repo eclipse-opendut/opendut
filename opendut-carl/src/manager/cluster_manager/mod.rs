@@ -14,10 +14,9 @@ use opendut_types::topology::{DeviceDescriptor, DeviceId};
 use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
 use opendut_types::util::Port;
 
-use crate::manager::cluster_manager;
 use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
 use crate::resource::manager::{ResourceManagerRef, SubscriptionEvent};
-use crate::resource::persistence::error::{PersistenceError, PersistenceResult};
+use crate::resource::persistence::error::{MapErrToInner, PersistenceError, PersistenceResult};
 use crate::resource::storage::ResourcesStorageApi;
 use crate::settings::vpn::Vpn;
 
@@ -45,23 +44,6 @@ pub type ClusterManagerRef = Arc<Mutex<ClusterManager>>;
 
 use error::*;
 
-
-#[derive(thiserror::Error, Debug, PartialEq)]
-pub enum DeployClusterError {
-    #[error("Cluster <{0}> not found!")]
-    ClusterConfigurationNotFound(ClusterId),
-    #[error("A peer for device <{device_id}> of cluster '{cluster_name}' <{cluster_id}> not found.")]
-    PeerForDeviceNotFound {
-        device_id: DeviceId,
-        cluster_id: ClusterId,
-        cluster_name: ClusterName,
-    },
-    #[error("An error occurred while deploying cluster <{cluster_id}>:\n  {cause}")]
-    Internal {
-        cluster_id: ClusterId,
-        cause: String
-    }
-}
 
 pub struct ClusterManager {
     resource_manager: ResourceManagerRef,
@@ -111,10 +93,11 @@ impl ClusterManager {
     pub async fn store_cluster_deployment(&mut self, deployment: ClusterDeployment) -> Result<ClusterId, StoreClusterDeploymentError> {
         let cluster_id = deployment.id;
 
-        let cluster_peers = cluster_manager::list_cluster_peer_states(ListClusterPeerStatesParams {
-            resource_manager: Arc::clone(&self.resource_manager),
-            cluster_id
-        }).await
+        let cluster_peers =
+            self.resource_manager.resources(async |resources| {
+                resources.list_cluster_peer_states(cluster_id).await
+            }).await
+            .map_err_to_inner(|source| ListClusterPeerStatesError::Persistence { cluster_id, source })
             .map_err(|source| StoreClusterDeploymentError::ListClusterPeerStates { cluster_id, source })?;
 
         let cluster_deployable = cluster_peers.check_all_peers_are_available_not_necessarily_online();
@@ -222,11 +205,11 @@ impl ClusterManager {
 
     #[tracing::instrument(skip(self), level="trace")]
     pub async fn deploy_cluster_if_all_peers_available(&mut self, cluster_id: ClusterId) -> Result<(), DeployClusterError> {
-        let cluster_peer_states = cluster_manager::list_cluster_peer_states(ListClusterPeerStatesParams {
-            resource_manager: Arc::clone(&self.resource_manager),
-            cluster_id,
+        let cluster_peer_states = self.resource_manager.resources(async |resources| {
+            resources.list_cluster_peer_states(cluster_id).await
         }).await
-        .map_err(|error| DeployClusterError::Internal { cluster_id, cause: format!("Failed to determine states of peers: {error}") })?;
+        .map_err_to_inner(|source| ListClusterPeerStatesError::Persistence { cluster_id, source })
+        .map_err(|source| DeployClusterError::ListClusterPeerStates { cluster_id, source })?;
 
         let cluster_deployable = cluster_peer_states.check_cluster_deployable();
 
@@ -257,13 +240,13 @@ impl ClusterManager {
     async fn deploy_cluster(&mut self, cluster_id: ClusterId) -> Result<(), DeployClusterError> {
 
         let cluster_config = self.resource_manager.get::<ClusterConfiguration>(cluster_id).await
-            .map_err(|cause| DeployClusterError::Internal { cluster_id, cause: cause.to_string() })?
+            .map_err(|source| DeployClusterError::Persistence { cluster_id, source })?
             .ok_or(DeployClusterError::ClusterConfigurationNotFound(cluster_id))?;
 
         let cluster_name = cluster_config.name;
 
         let all_peers = self.resource_manager.list::<PeerDescriptor>().await
-            .map_err(|cause| DeployClusterError::Internal { cluster_id, cause: cause.to_string() })?
+            .map_err(|source| DeployClusterError::Persistence { cluster_id, source })?
             .into_values()
             .collect::<Vec<_>>();
 
@@ -353,17 +336,17 @@ impl ClusterManager {
             }
             Ok(())
         }).await
-            .map_err(|cause| DeployClusterError::Internal { cluster_id, cause: format!("Error when closing transaction while assigning peers to clusters:\n  {cause}") })??;
+        .map_err(|source| DeployClusterError::Persistence { cluster_id, source: source.context("Error when closing transaction while assigning peers to clusters") })??;
 
         Ok(())
     }
 
     fn determine_can_server_ports(&mut self, member_interface_mapping: &[PeerId], cluster_id: ClusterId) -> Result<Vec<Port>, DeployClusterError> {
         let n_peers = u16::try_from(member_interface_mapping.len())
-            .map_err(|cause| DeployClusterError::Internal { cluster_id, cause: cause.to_string() })?;
+            .map_err(|cause| DeployClusterError::DetermineCanServerPort { cluster_id, cause: cause.to_string() })?;
 
         if self.options.can_server_port_range_start + n_peers >= self.options.can_server_port_range_end {
-            return Err(DeployClusterError::Internal {
+            return Err(DeployClusterError::DetermineCanServerPort {
                 cluster_id,
                 cause: format!(
                     "Failure while creating cluster <{}>. Port range [{}, {}) specified by 'can_server_port_range_start' \
@@ -472,8 +455,8 @@ enum DetermineMemberInterfaceMappingError {
 }
 
 pub mod error {
+    use super::*;
     use opendut_types::cluster::ClusterDisplay;
-use super::*;
 
     #[derive(thiserror::Error, Debug)]
     #[error("ClusterConfiguration <{cluster_id}> could not be retrieved")]
@@ -514,6 +497,38 @@ use super::*;
     #[error("Error while listing cluster deployments")]
     pub struct ListClusterDeploymentsError {
         #[source] pub source: PersistenceError,
+    }
+
+    #[derive(thiserror::Error, Debug)]
+    pub enum DeployClusterError {
+        #[error("Cluster <{0}> not found!")]
+        ClusterConfigurationNotFound(ClusterId),
+        #[error("A peer for device <{device_id}> of cluster '{cluster_name}' <{cluster_id}> not found.")]
+        PeerForDeviceNotFound {
+            device_id: DeviceId,
+            cluster_id: ClusterId,
+            cluster_name: ClusterName,
+        },
+        #[error("Error when listing cluster peer states while rolling out cluster <{cluster_id}>")]
+        ListClusterPeerStates {
+            cluster_id: ClusterId,
+            #[source] source: ListClusterPeerStatesError,
+        },
+        #[error("Error when accessing persistence while rolling out cluster <{cluster_id}>")]
+        Persistence {
+            cluster_id: ClusterId,
+            #[source] source: PersistenceError,
+        },
+        #[error("Error when determining CAN server port while rolling out cluster <{cluster_id}>")]
+        DetermineCanServerPort {
+            cluster_id: ClusterId,
+            cause: String,
+        },
+        #[error("Internal error while rolling out cluster <{cluster_id}>:\n  {cause}")]
+        Internal {
+            cluster_id: ClusterId,
+            cause: String,
+        },
     }
 }
 
@@ -671,10 +686,12 @@ mod test {
         let fixture = Fixture::create().await;
         let unknown_cluster = ClusterId::random();
 
-        assert_that!(
-            fixture.testee.lock().await.deploy_cluster(unknown_cluster).await,
-            err(eq(&DeployClusterError::ClusterConfigurationNotFound(unknown_cluster)))
-        );
+        let result = fixture.testee.lock().await.deploy_cluster(unknown_cluster).await;
+
+        let Err(DeployClusterError::ClusterConfigurationNotFound(cluster)) = result
+        else { panic!("Result is not a ClusterConfigurationNotFoundError.") };
+
+        assert_eq!(cluster, unknown_cluster);
 
         Ok(())
     }
