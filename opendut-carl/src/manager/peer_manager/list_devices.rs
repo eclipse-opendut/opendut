@@ -1,10 +1,10 @@
 use crate::resource::api::resources::Resources;
 use crate::resource::storage::ResourcesStorageApi;
-use opendut_carl_api::carl::peer::ListDevicesError;
 use opendut_types::peer::PeerDescriptor;
 use opendut_types::topology::DeviceDescriptor;
 use std::collections::HashMap;
 use tracing::{debug, info};
+use crate::resource::persistence::error::PersistenceError;
 
 impl Resources<'_> {
     #[tracing::instrument(skip_all, level="trace")]
@@ -13,7 +13,7 @@ impl Resources<'_> {
         debug!("Querying all devices.");
 
         let peers = self.list::<PeerDescriptor>()
-            .map_err(|cause| ListDevicesError::Internal { cause: cause.to_string() })?;
+            .map_err(|source| ListDevicesError::Persistence { source })?;
 
         let devices = peers.into_iter()
             .flat_map(|(_, peer_descriptor) | peer_descriptor.topology.devices)
@@ -25,6 +25,14 @@ impl Resources<'_> {
         info!("Successfully queried all peers.");
 
         Ok(devices)
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ListDevicesError {
+    #[error("Error when accessing persistence while listing devices")]
+    Persistence {
+        #[source] source: PersistenceError,
     }
 }
 

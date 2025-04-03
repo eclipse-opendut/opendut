@@ -257,7 +257,8 @@ impl PeerManagerService for PeerManagerFacade {
         let devices = self.resource_manager.resources(async |resources|
             resources.list_devices()
         ).await
-            .expect("Devices should be listable");
+            .inspect_err(|error| error!("Error while listing devices: {error}"))
+            .map_err(|_| Status::internal("Internal error when listing devices"))?;
 
         let devices = devices.into_iter()
             .map(From::from)
