@@ -1,7 +1,6 @@
 use crate::resource::api::resources::Resources;
 use crate::resource::persistence::error::{PersistenceError, PersistenceResult};
 use crate::resource::storage::ResourcesStorageApi;
-use opendut_carl_api::carl::peer::ListPeerStatesError;
 use opendut_types::peer::state::{PeerConnectionState, PeerState};
 use opendut_types::peer::PeerId;
 use std::collections::HashMap;
@@ -31,10 +30,18 @@ impl Resources<'_> {
 
             PersistenceResult::Ok(peer_states)
         })()
-        .map_err(|cause| ListPeerStatesError::Internal { cause: cause.to_string() })?;
+        .map_err(|source| ListPeerStatesError::Persistence { source })?;
 
         debug!("Successfully queried all peer states.");
 
         Ok(peer_states)
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ListPeerStatesError {
+    #[error("Error when accessing persistence while listing peer states")]
+    Persistence {
+        #[source] source: PersistenceError,
     }
 }

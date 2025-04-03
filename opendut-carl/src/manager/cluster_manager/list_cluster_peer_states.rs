@@ -1,12 +1,12 @@
 use crate::manager::cluster_manager::{ListClusterPeersError, ListClusterPeersParams};
 use crate::manager::cluster_manager;
 use crate::resource::manager::ResourceManagerRef;
-use opendut_carl_api::carl::peer::ListPeerStatesError;
 use opendut_types::cluster::ClusterId;
 use opendut_types::peer::state::{PeerConnectionState, PeerMemberState, PeerState};
 use opendut_types::peer::PeerId;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
+use crate::manager::peer_manager::list_peer_states::ListPeerStatesError;
 
 #[derive(Clone)]
 pub struct ListClusterPeerStatesParams {
@@ -26,7 +26,7 @@ pub async fn list_cluster_peer_states(params: ListClusterPeerStatesParams) -> Re
         resource_manager.resources(async |resources|
             resources.list_peer_states()
         ).await
-            .map_err(|error| ListClusterPeerStatesError::ListPeerStates { cluster_id, source: error })?;
+            .map_err(|source| ListClusterPeerStatesError::ListPeerStates { cluster_id, source })?;
 
     let cluster_peer_states = all_peer_states
         .into_iter()

@@ -85,7 +85,7 @@ mod cluster_manager {
 }
 
 mod peer_manager {
-    use opendut_carl_api::carl::peer::{DeletePeerDescriptorError, GetPeerStateError, StorePeerDescriptorError};
+    use opendut_carl_api::carl::peer::{DeletePeerDescriptorError, GetPeerStateError, ListPeerStatesError, StorePeerDescriptorError};
     use crate::manager::peer_manager;
 
     impl From<peer_manager::store_peer_descriptor::StorePeerDescriptorError> for StorePeerDescriptorError {
@@ -149,6 +149,17 @@ mod peer_manager {
                     Self::Internal {
                         peer_id,
                         cause: String::from("Error when accessing persistence while getting peer state"),
+                    }
+            }
+        }
+    }
+
+    impl From<peer_manager::list_peer_states::ListPeerStatesError> for ListPeerStatesError {
+        fn from(value: peer_manager::list_peer_states::ListPeerStatesError) -> Self {
+            match value {
+                peer_manager::list_peer_states::ListPeerStatesError::Persistence { source: _ } =>
+                    Self::Internal {
+                        cause: String::from("Error when accessing persistence while listing peer state"),
                     }
             }
         }

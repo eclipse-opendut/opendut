@@ -18,7 +18,7 @@ use crate::manager::grpc::extract;
 use crate::manager::peer_manager;
 use crate::manager::peer_manager::{DeletePeerDescriptorError, DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, StorePeerDescriptorError, StorePeerDescriptorParams};
 use crate::resource::manager::ResourceManagerRef;
-use crate::resource::persistence::error::MapToInner;
+use crate::resource::persistence::error::{MapToInner, PersistenceError};
 use crate::settings::vpn::Vpn;
 
 pub struct PeerManagerFacade {
@@ -141,7 +141,7 @@ impl PeerManagerService for PeerManagerFacade {
         let result =
             self.resource_manager.get::<PeerDescriptor>(peer_id).await
                 .inspect_err(|error| error!("Error while getting peer descriptor from gRPC API: {error}"))
-                .map_err(|_| GetPeerDescriptorError::Internal { peer_id, cause: String::from("Error when accessing persistence while getting peer descriptor") });
+                .map_err(|_: PersistenceError| GetPeerDescriptorError::Internal { peer_id, cause: String::from("Error when accessing persistence while getting peer descriptor") });
 
         let response = match result {
             Ok(descriptor) => match descriptor {
@@ -169,7 +169,7 @@ impl PeerManagerService for PeerManagerFacade {
 
         let result = self.resource_manager.list::<PeerDescriptor>().await
             .inspect_err(|error| error!("Error while listing peer descriptors from gRPC API: {error}"))
-            .map_err(|_| ListPeerDescriptorsError::Internal { cause: String::from("Error when accessing persistence while listing peer descriptors") });
+            .map_err(|_: PersistenceError| ListPeerDescriptorsError::Internal { cause: String::from("Error when accessing persistence while listing peer descriptors") });
 
         let response = match result {
             Ok(peers) => {
@@ -227,29 +227,26 @@ impl PeerManagerService for PeerManagerFacade {
             self.resource_manager.resources(async |resources|
                 resources.list_peer_states()
             ).await
-                .map_err(|error| ListPeerStatesError::Internal { cause: error.to_string() });
+            .inspect_err(|error| error!("{error}"))
+            .map_err(ListPeerStatesError::from);
 
-        match result {
-            Err(error) => {
-                Ok(Response::new(ListPeerStatesResponse {
-                    reply: Some(list_peer_states_response::Reply::Failure(error.into()))
-                }))
-            }
-            Ok(peer_states) => {
-                Ok(Response::new(ListPeerStatesResponse {
-                    reply: Some(list_peer_states_response::Reply::Success(
-                        ListPeerStatesSuccess {
-                            peer_state_entries: peer_states.into_iter()
-                                .map(|(peer_id, peer_state)| ListPeerStatesEntry {
-                                    peer_id: Some(peer_id.into()),
-                                    peer_state: Some(peer_state.into()),
-                                })
-                                .collect(),
-                        }
-                    ))
-                }))
-            }
-        }
+        let reply = match result {
+            Ok(peer_states) => list_peer_states_response::Reply::Success(
+                ListPeerStatesSuccess {
+                    peer_state_entries: peer_states.into_iter()
+                        .map(|(peer_id, peer_state)| ListPeerStatesEntry {
+                            peer_id: Some(peer_id.into()),
+                            peer_state: Some(peer_state.into()),
+                        })
+                        .collect(),
+                }
+            ),
+            Err(error) => list_peer_states_response::Reply::Failure(error.into()),
+        };
+
+        Ok(Response::new(ListPeerStatesResponse {
+            reply: Some(reply),
+        }))
     }
 
     #[tracing::instrument(skip_all, level="trace")]
