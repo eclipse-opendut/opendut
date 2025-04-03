@@ -545,7 +545,6 @@ mod test {
 
     mod deploy_cluster {
         use super::*;
-        use crate::manager::peer_manager;
         use crate::manager::peer_manager::StorePeerDescriptorParams;
         use opendut_carl_api::carl::broker::stream_header;
         use opendut_carl_api::proto::services::peer_messaging_broker::ApplyPeerConfiguration;
@@ -568,17 +567,19 @@ mod test {
                 devices: HashSet::from([peer_a.device, peer_b.device]),
             };
 
-            peer_manager::store_peer_descriptor(StorePeerDescriptorParams {
-                resource_manager: Arc::clone(&fixture.resource_manager),
-                vpn: Vpn::Disabled,
-                peer_descriptor: Clone::clone(&peer_a.descriptor),
-            }).await?;
+            fixture.resource_manager.resources_mut::<_, (), anyhow::Error>(async |resources| {
+                resources.store_peer_descriptor(StorePeerDescriptorParams {
+                    vpn: Vpn::Disabled,
+                    peer_descriptor: Clone::clone(&peer_a.descriptor),
+                }).await?;
 
-            peer_manager::store_peer_descriptor(StorePeerDescriptorParams {
-                resource_manager: Arc::clone(&fixture.resource_manager),
-                vpn: Vpn::Disabled,
-                peer_descriptor: Clone::clone(&peer_b.descriptor),
-            }).await?;
+                resources.store_peer_descriptor(StorePeerDescriptorParams {
+                    vpn: Vpn::Disabled,
+                    peer_descriptor: Clone::clone(&peer_b.descriptor),
+                }).await?;
+
+                Ok(())
+            }).await??;
 
 
             let mut peer_a_rx = peer_open(peer_a.id, peer_a.remote_host, Arc::clone(&fixture.peer_messaging_broker)).await?;

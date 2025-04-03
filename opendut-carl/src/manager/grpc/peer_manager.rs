@@ -17,8 +17,9 @@ use opendut_types::cleo::{CleoId};
 
 use crate::manager::grpc::extract;
 use crate::manager::peer_manager;
-use crate::manager::peer_manager::{DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, GetPeerStateParams, StorePeerDescriptorParams};
+use crate::manager::peer_manager::{DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, GetPeerStateParams, StorePeerDescriptorError, StorePeerDescriptorParams};
 use crate::resource::manager::ResourceManagerRef;
+use crate::resource::persistence::error::MapToInner;
 use crate::settings::vpn::Vpn;
 
 pub struct PeerManagerFacade {
@@ -59,32 +60,37 @@ impl PeerManagerService for PeerManagerFacade {
     async fn store_peer_descriptor(&self, request: Request<StorePeerDescriptorRequest>) -> Result<Response<StorePeerDescriptorResponse>, Status> {
 
         let request = request.into_inner();
-        let peer_descriptor: PeerDescriptor = extract!(request.peer)?;
+        let peer: PeerDescriptor = extract!(request.peer)?;
 
-        trace!("Received request to store peer descriptor: {peer_descriptor:?}");
+        trace!("Received request to store peer descriptor: {peer:?}");
 
-        let result = peer_manager::store_peer_descriptor(StorePeerDescriptorParams {
-            resource_manager: Arc::clone(&self.resource_manager),
-            vpn: Clone::clone(&self.vpn),
-            peer_descriptor: Clone::clone(&peer_descriptor),
-        }).await;
+        let result =
+            self.resource_manager.resources_mut(async |resources| {
+                resources.store_peer_descriptor(StorePeerDescriptorParams {
+                    vpn: Clone::clone(&self.vpn),
+                    peer_descriptor: Clone::clone(&peer),
+                }).await
+            }).await
+            .map_to_inner(|source| StorePeerDescriptorError::Persistence {
+                peer_id: peer.id,
+                peer_name: peer.name,
+                source: source.context("Persistence error in transaction for storing peer descriptor"),
+            })
+            .inspect_err(|error| error!("{error}"))
+            .map_err(opendut_carl_api::carl::peer::StorePeerDescriptorError::from);
 
-        match result {
-            Err(error) => {
-                Ok(Response::new(StorePeerDescriptorResponse {
-                    reply: Some(store_peer_descriptor_response::Reply::Failure(error.into()))
-                }))
-            }
-            Ok(peer_id) => {
-                Ok(Response::new(StorePeerDescriptorResponse {
-                    reply: Some(store_peer_descriptor_response::Reply::Success(
-                        StorePeerDescriptorSuccess {
-                            peer_id: Some(peer_id.into())
-                        }
-                    ))
-                }))
-            }
-        }
+        let reply = match result {
+            Ok(peer_id) => store_peer_descriptor_response::Reply::Success(
+                StorePeerDescriptorSuccess {
+                    peer_id: Some(peer_id.into())
+                }
+            ),
+            Err(error) => store_peer_descriptor_response::Reply::Failure(error.into()),
+        };
+
+        Ok(Response::new(StorePeerDescriptorResponse {
+            reply: Some(reply),
+        }))
     }
 
     #[tracing::instrument(skip_all, level="trace")]

@@ -1,10 +1,10 @@
+use crate::resource::api::resources::Resources;
+use crate::resource::storage::ResourcesStorageApi;
 use opendut_carl_api::carl::peer::ListDevicesError;
 use opendut_types::peer::PeerDescriptor;
 use opendut_types::topology::DeviceDescriptor;
 use std::collections::HashMap;
 use tracing::{debug, info};
-use crate::resource::api::resources::Resources;
-use crate::resource::storage::ResourcesStorageApi;
 
 impl Resources<'_> {
     #[tracing::instrument(skip_all, level="trace")]
@@ -30,13 +30,11 @@ impl Resources<'_> {
 
 #[cfg(test)]
 mod tests {
+    use crate::manager::peer_manager::StorePeerDescriptorParams;
     use crate::manager::testing::PeerFixture;
     use crate::resource::manager::ResourceManager;
     use crate::settings::vpn::Vpn;
     use googletest::prelude::*;
-    use std::sync::Arc;
-    use crate::manager::peer_manager;
-    use crate::manager::peer_manager::StorePeerDescriptorParams;
 
     #[tokio::test]
     async fn should_list_all_devices() -> anyhow::Result<()> {
@@ -50,11 +48,12 @@ mod tests {
         assert!(result.is_empty());
 
 
-        peer_manager::store_peer_descriptor(StorePeerDescriptorParams {
-            resource_manager: Arc::clone(&resource_manager),
-            vpn: Vpn::Disabled,
-            peer_descriptor: peer.descriptor,
-        }).await?;
+        resource_manager.resources_mut(async |resources| {
+            resources.store_peer_descriptor(StorePeerDescriptorParams {
+                vpn: Vpn::Disabled,
+                peer_descriptor: peer.descriptor,
+            }).await
+        }).await??;
 
 
         let result = resource_manager.resources(async |resources|
