@@ -69,7 +69,10 @@ fn run_pending_migrations(connection: &mut PgConnection) -> Result<(), Box<dyn s
 }
 
 
-#[cfg(any(test, doc))] //needed for doctests to compile
+#[cfg(any(
+    test, //normal unit tests
+    all(test, doc) //doc tests, but excluded `cargo doc` (because some dependencies are only dev-dependencies)
+))]
 pub mod testing {
     use crate::resource::api::global::GlobalResources;
     use crate::resource::manager::{ResourceManager, ResourceManagerRef};

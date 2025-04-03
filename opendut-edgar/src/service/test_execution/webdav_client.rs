@@ -29,7 +29,7 @@ impl WebdavClient {
 
     /// Upload a file/zip on Webdav server
     ///
-    /// It can be any type of file as long as it is transformed to a vector of bytes (Vec<u8>).
+    /// It can be any type of file as long as it is transformed to a vector of bytes (`Vec<u8>`).
     /// This can be achieved with **std::fs::File** or **zip-rs** for sending zip files.
     ///
     /// Use absolute path to the webdav server folder location

@@ -2,7 +2,7 @@ use tracing::trace;
 
 /// Selects which crypto provider to use.
 /// Only needed while we have both `aws_lc_rs` and `ring` as transitive dependencies in the project.
-/// https://github.com/rustls/rustls/issues/1938
+/// <https://github.com/rustls/rustls/issues/1938>
 pub fn install_default_provider() {
     let result = rustls::crypto::ring::default_provider().install_default();
 

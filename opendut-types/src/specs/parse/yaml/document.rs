@@ -18,7 +18,7 @@ impl YamlSpecificationDocument {
 
     /// Tries to deserialize the given string of YAML text into a [YamlSpecificationDocument].
     ///
-    /// In contrast to [`YamlSpecificationFile::try_from_yaml_str`] this function
+    /// In contrast to [parse::yaml::YamlSpecificationFile::try_from_yaml_str] this function
     /// accepts a string containing only a single YAML document.
     ///
     /// # Example
