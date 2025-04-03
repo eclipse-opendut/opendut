@@ -1,56 +1,55 @@
-use crate::resource::manager::ResourceManagerRef;
 use crate::resource::storage::ResourcesStorageApi;
-use opendut_carl_api::carl::peer::GetPeerStateError;
 use opendut_types::peer::state::{PeerConnectionState, PeerState};
 use opendut_types::peer::PeerId;
 use tracing::{debug, error, info};
+use crate::resource::api::resources::Resources;
+use crate::resource::persistence::error::PersistenceError;
 
-pub struct GetPeerStateParams {
-    pub peer: PeerId,
-    pub resource_manager: ResourceManagerRef,
-}
 
-#[tracing::instrument(skip(params), level="trace")]
-pub async fn get_peer_state(params: GetPeerStateParams) -> Result<PeerState, GetPeerStateError> {
+impl Resources<'_> {
+    #[tracing::instrument(skip_all, level="trace")]
+    pub fn get_peer_state(&self, peer_id: PeerId) -> Result<PeerState, GetPeerStateError> {
 
-    async fn inner(params: GetPeerStateParams) -> Result<PeerState, GetPeerStateError> {
-
-        let peer_id = params.peer;
-        let resource_manager = params.resource_manager;
         debug!("Querying state of peer with peer_id <{}>.", peer_id);
 
-        let peer_state: Result<PeerState, GetPeerStateError> = resource_manager.resources(async |resources| {
-            let peer_member_state = resources.get_peer_member_state(peer_id)
-                .map_err(|cause| GetPeerStateError::Internal { peer_id, cause: cause.to_string() })?
-                .ok_or_else(|| GetPeerStateError::PeerNotFound { peer_id })?;
-            let connection = resources.get::<PeerConnectionState>(peer_id)
-                .map_err(|cause| GetPeerStateError::Internal { peer_id, cause: cause.to_string() })?  // only persistence error possible
-                .unwrap_or_default();
+        let peer_member_state = self.get_peer_member_state(peer_id)
+            .map_err(|source| GetPeerStateError::Persistence { peer_id, source })?
+            .ok_or_else(|| GetPeerStateError::PeerNotFound { peer_id })?;
+        let connection = self.get::<PeerConnectionState>(peer_id)
+            .map_err(|source| GetPeerStateError::Persistence { peer_id, source })?
+            .unwrap_or_default();
 
-            info!("Successfully queried state of peer with peer_id <{}>.", peer_id);
+        info!("Successfully queried state of peer with peer_id <{}>.", peer_id);
 
-            Ok(PeerState {
-                connection,
-                member: peer_member_state.clone(),
-            })
-        }).await;
-
-        peer_state
+        Ok(PeerState {
+            connection,
+            member: peer_member_state.clone(),
+        })
     }
+}
 
-    inner(params).await
-        .inspect_err(|err| error!("{err}"))
+#[derive(thiserror::Error, Debug)]
+pub enum GetPeerStateError {
+    #[error("A peer with id <{peer_id}> could not be found!")]
+    PeerNotFound {
+        peer_id: PeerId
+    },
+    #[error("Error when accessing persistence while getting peer state for peer <{peer_id}>")]
+    Persistence {
+        peer_id: PeerId,
+        #[source] source: PersistenceError,
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::manager::peer_manager;
-    use crate::manager::peer_manager::{GetPeerStateParams, StorePeerDescriptorParams};
+    use super::*;
+
+    use crate::manager::peer_manager::StorePeerDescriptorParams;
     use crate::manager::testing::PeerFixture;
     use crate::resource::manager::{ResourceManager, ResourceManagerRef};
     use crate::settings::vpn::Vpn;
     use googletest::prelude::*;
-    use opendut_carl_api::carl::peer::GetPeerStateError;
     use opendut_types::peer::state::{PeerConnectionState, PeerMemberState, PeerState};
     use opendut_types::peer::{PeerDescriptor, PeerId};
 
@@ -77,9 +76,8 @@ mod tests {
             }).await
         }).await??;
 
-        let peer_state = peer_manager::get_peer_state(GetPeerStateParams {
-            peer: peer.id,
-            resource_manager: Clone::clone(&resource_manager),
+        let peer_state = resource_manager.resources(async |resources| {
+            resources.get_peer_state(peer.id)
         }).await?;
 
         assert_that!(peer_state, eq(&PeerState { connection: PeerConnectionState::Offline, member: PeerMemberState::Available}));
@@ -112,12 +110,15 @@ mod tests {
         let not_existing_peer_id = PeerId::random();
         assert_that!(resource_manager.get::<PeerDescriptor>(not_existing_peer_id).await?.as_ref(), none());
 
-        let peer_state_result = peer_manager::get_peer_state(GetPeerStateParams {
-            peer: not_existing_peer_id,
-            resource_manager: Clone::clone(&resource_manager),
+        let peer_state_result = resource_manager.resources(async |resources| {
+            resources.get_peer_state(not_existing_peer_id)
         }).await;
 
-        assert_that!(peer_state_result, err(eq(&GetPeerStateError::PeerNotFound { peer_id: not_existing_peer_id })));
+        let Err(GetPeerStateError::PeerNotFound { peer_id }) = peer_state_result
+        else { panic!("Result was not a PeerNotFound error.") };
+
+        assert_eq!(peer_id, not_existing_peer_id);
+
         Ok(())
     }
 }

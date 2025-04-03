@@ -85,7 +85,7 @@ mod cluster_manager {
 }
 
 mod peer_manager {
-    use opendut_carl_api::carl::peer::{DeletePeerDescriptorError, StorePeerDescriptorError};
+    use opendut_carl_api::carl::peer::{DeletePeerDescriptorError, GetPeerStateError, StorePeerDescriptorError};
     use crate::manager::peer_manager;
 
     impl From<peer_manager::store_peer_descriptor::StorePeerDescriptorError> for StorePeerDescriptorError {
@@ -136,6 +136,20 @@ mod peer_manager {
                         peer_name: Some(peer_name),
                         cause: String::from("Error when removing peer in VPN management while deleting peer descriptor"),
                     },
+            }
+        }
+    }
+
+    impl From<peer_manager::get_peer_state::GetPeerStateError> for GetPeerStateError {
+        fn from(value: peer_manager::get_peer_state::GetPeerStateError) -> Self {
+            match value {
+                peer_manager::get_peer_state::GetPeerStateError::PeerNotFound { peer_id } =>
+                    Self::PeerNotFound { peer_id },
+                peer_manager::get_peer_state::GetPeerStateError::Persistence { peer_id, source: _ } =>
+                    Self::Internal {
+                        peer_id,
+                        cause: String::from("Error when accessing persistence while getting peer state"),
+                    }
             }
         }
     }

@@ -1,23 +1,22 @@
-use std::sync::Arc;
 use pem::Pem;
 
+use opendut_auth::registration::client::RegistrationClientRef;
+use opendut_auth::registration::resources::UserId;
+use opendut_carl_api::carl::peer::{GetPeerDescriptorError, ListPeerDescriptorsError, ListPeerStatesError};
+use opendut_carl_api::proto;
+use opendut_carl_api::proto::services;
+use opendut_carl_api::proto::services::peer_manager::peer_manager_server::{PeerManager as PeerManagerService, PeerManagerServer};
+use opendut_carl_api::proto::services::peer_manager::*;
+use opendut_types::cleo::CleoId;
+use opendut_types::peer::{PeerDescriptor, PeerId};
 use tonic::{Request, Response, Status};
 use tonic_web::CorsGrpcWeb;
 use tracing::{error, trace};
 use url::Url;
-use opendut_auth::registration::client::RegistrationClientRef;
-use opendut_auth::registration::resources::UserId;
-use opendut_carl_api::carl::peer::{GetPeerDescriptorError, GetPeerStateError, ListPeerDescriptorsError, ListPeerStatesError};
-use opendut_carl_api::proto;
-use opendut_carl_api::proto::services;
-use opendut_carl_api::proto::services::peer_manager::*;
-use opendut_carl_api::proto::services::peer_manager::peer_manager_server::{PeerManager as PeerManagerService, PeerManagerServer};
-use opendut_types::peer::{PeerDescriptor, PeerId};
-use opendut_types::cleo::{CleoId};
 
 use crate::manager::grpc::extract;
 use crate::manager::peer_manager;
-use crate::manager::peer_manager::{DeletePeerDescriptorError, DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, GetPeerStateParams, StorePeerDescriptorError, StorePeerDescriptorParams};
+use crate::manager::peer_manager::{DeletePeerDescriptorError, DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupParams, StorePeerDescriptorError, StorePeerDescriptorParams};
 use crate::resource::manager::ResourceManagerRef;
 use crate::resource::persistence::error::MapToInner;
 use crate::settings::vpn::Vpn;
@@ -199,28 +198,24 @@ impl PeerManagerService for PeerManagerFacade {
         trace!("Received request to get peer state for peer <{peer_id}>.");
 
         let result =
-            peer_manager::get_peer_state(GetPeerStateParams {
-                peer: peer_id,
-                resource_manager: Arc::clone(&self.resource_manager),
+            self.resource_manager.resources(async |resources| {
+                resources.get_peer_state(peer_id)
             }).await
-                .map_err(|error| GetPeerStateError::Internal { peer_id, cause: error.to_string() });
+            .inspect_err(|error| error!("{error}"))
+            .map_err(opendut_carl_api::carl::peer::GetPeerStateError::from);
 
-        match result {
-            Err(error) => {
-                Ok(Response::new(GetPeerStateResponse {
-                    reply: Some(get_peer_state_response::Reply::Failure(error.into()))
-                }))
-            }
-            Ok(state) => {
-                Ok(Response::new(GetPeerStateResponse {
-                    reply: Some(get_peer_state_response::Reply::Success(
-                        GetPeerStateSuccess {
-                            state: Some(state.into())
-                        }
-                    ))
-                }))
-            }
-        }
+        let reply = match result {
+            Ok(state) => get_peer_state_response::Reply::Success(
+                GetPeerStateSuccess {
+                    state: Some(state.into())
+                }
+            ),
+            Err(error) => get_peer_state_response::Reply::Failure(error.into()),
+        };
+
+        Ok(Response::new(GetPeerStateResponse {
+            reply: Some(reply),
+        }))
     }
 
     #[tracing::instrument(skip_all, level="trace")]
@@ -341,15 +336,15 @@ mod tests {
     use rstest::rstest;
     use url::Url;
 
+    use crate::resource::manager::ResourceManager;
+    use crate::settings::vpn::Vpn;
+    use opendut_auth_tests::registration_client;
+    use opendut_carl_api::proto::services;
+    use opendut_types::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorDescriptor, ExecutorDescriptors, ExecutorId, ExecutorKind};
     use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkDescriptor};
-    use opendut_types::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorKind, ExecutorDescriptors, ExecutorDescriptor, ExecutorId};
     use opendut_types::proto;
     use opendut_types::topology::Topology;
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
-    use opendut_auth_tests::registration_client;
-    use opendut_carl_api::proto::services;
-    use crate::resource::manager::ResourceManager;
-    use crate::settings::vpn::Vpn;
 
     use super::*;
 
