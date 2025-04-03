@@ -20,20 +20,6 @@ pub struct GeneratePeerSetupParams {
     pub user_id: UserId,
 }
 
-#[derive(thiserror::Error, Debug)]
-pub enum GeneratePeerSetupError {
-    #[error("A PeerSetup for peer <{0}> could not be created, because a peer with that ID does not exist!")]
-    PeerNotFound(PeerId),
-    #[error("An error occurred while accessing persistence for creating a PeerSetup for peer <{peer_id}>")]
-    Persistance { peer_id: PeerId, #[source] source: PersistenceError },
-    #[error("An internal error occurred while creating a PeerSetup for peer '{peer_name}' <{peer_id}>:\n  {cause}")]
-    Internal {
-        peer_id: PeerId,
-        peer_name: PeerName,
-        cause: String
-    }
-}
-
 impl Resources<'_> {
     #[tracing::instrument(skip_all, level="trace")]
     pub async fn generate_peer_setup(&self, params: GeneratePeerSetupParams) -> Result<PeerSetup, GeneratePeerSetupError> {
@@ -83,5 +69,19 @@ impl Resources<'_> {
             auth_config,
             vpn: vpn_config,
         })
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum GeneratePeerSetupError {
+    #[error("A PeerSetup for peer <{0}> could not be created, because a peer with that ID does not exist!")]
+    PeerNotFound(PeerId),
+    #[error("An error occurred while accessing persistence for creating a PeerSetup for peer <{peer_id}>")]
+    Persistance { peer_id: PeerId, #[source] source: PersistenceError },
+    #[error("An internal error occurred while creating a PeerSetup for peer '{peer_name}' <{peer_id}>:\n  {cause}")]
+    Internal {
+        peer_id: PeerId,
+        peer_name: PeerName,
+        cause: String
     }
 }

@@ -275,17 +275,19 @@ impl PeerManagerService for PeerManagerFacade {
         let peer_id: PeerId = extract!(request.peer)?;
         let user_id = UserId { value: request.user_id };
 
-        let setup = self.resource_manager.resources(async |resources|
-            resources.generate_peer_setup(GeneratePeerSetupParams {
-                peer: peer_id,
-                carl_url: Clone::clone(&self.carl_url),
-                ca: Clone::clone(&self.ca),
-                vpn: Clone::clone(&self.vpn),
-                oidc_registration_client: self.oidc_registration_client.clone(),
-                user_id,
-            }).await
-        ).await
-            .map_err(|cause| Status::internal(format!("Peer setup could not be created: {}", cause)))?;
+        let setup =
+            self.resource_manager.resources(async |resources|
+                resources.generate_peer_setup(GeneratePeerSetupParams {
+                    peer: peer_id,
+                    carl_url: Clone::clone(&self.carl_url),
+                    ca: Clone::clone(&self.ca),
+                    vpn: Clone::clone(&self.vpn),
+                    oidc_registration_client: self.oidc_registration_client.clone(),
+                    user_id,
+                }).await
+            ).await
+            .inspect_err(|error| error!("{error}"))
+            .map_err(|_| Status::internal("Peer setup could not be created"))?;
 
         let response = services::peer_manager::generate_peer_setup_response::Reply::Success(services::peer_manager::GeneratePeerSetupSuccess {
             peer: Some(peer_id.into()),
@@ -302,13 +304,16 @@ impl PeerManagerService for PeerManagerFacade {
         let request = request.into_inner();
         
         let cleo_id = CleoId::random();
-        let setup = peer_manager::generate_cleo_setup(GenerateCleoSetupParams {
-            cleo: cleo_id,
-            carl_url: Clone::clone(&self.carl_url),
-            ca: Clone::clone(&self.ca),
-            oidc_registration_client: self.oidc_registration_client.clone(),
-            user_id: UserId { value: request.user_id },
-        }).await.map_err(|cause| Status::internal(format!("Cleo setup could not be created: {}", cause)))?;
+        let setup =
+            peer_manager::generate_cleo_setup(GenerateCleoSetupParams {
+                cleo: cleo_id,
+                carl_url: Clone::clone(&self.carl_url),
+                ca: Clone::clone(&self.ca),
+                oidc_registration_client: self.oidc_registration_client.clone(),
+                user_id: UserId { value: request.user_id },
+            }).await
+            .inspect_err(|error| error!("{error}"))
+            .map_err(|_| Status::internal("CLEO Setup could not be created"))?;
         
         let response = generate_cleo_setup_response::Reply::Success(GenerateCleoSetupSuccess { 
             cleo: Some(cleo_id.into()), 

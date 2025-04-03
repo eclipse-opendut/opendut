@@ -14,48 +14,42 @@ pub struct GenerateCleoSetupParams {
     pub user_id: UserId,
 }
 
+#[tracing::instrument(skip_all, level="trace")]
+pub async fn generate_cleo_setup(params: GenerateCleoSetupParams) -> Result<CleoSetup, GenerateCleoSetupError> {
+
+    let cleo_id = params.cleo;
+    debug!("Generating CLEO Setup.");
+
+    let auth_config = match params.oidc_registration_client {
+        None => {
+            AuthConfig::Disabled
+        }
+        Some(registration_client) => {
+            let resource_id = cleo_id.into();
+            debug!("Generating OIDC client for CLEO: <{cleo_id}>.");
+            let issuer_url = registration_client.config.issuer_remote_url.clone();
+            let client_credentials = registration_client.register_new_client_for_user(resource_id, params.user_id)
+                .await
+                .map_err(|cause| GenerateCleoSetupError::Internal { cause: cause.to_string() })?;
+            debug!("Successfully generated CLEO setup with id <{cleo_id}>. OIDC client_id='{}'.", client_credentials.client_id.clone().value());
+            AuthConfig::from_credentials(issuer_url, client_credentials)
+        }
+    };
+
+    Ok(CleoSetup {
+        id: cleo_id,
+        carl: params.carl_url,
+        ca: Certificate(params.ca),
+        auth_config,
+    })
+}
+
 #[derive(thiserror::Error, Debug)]
 pub enum GenerateCleoSetupError {
     #[error("An internal error occurred while creating a CleoSetup:\n  {cause}")]
     Internal {
         cause: String,
     }
-}
-
-#[tracing::instrument(skip(params), level="trace")]
-pub async fn generate_cleo_setup(params: GenerateCleoSetupParams) -> Result<CleoSetup, GenerateCleoSetupError> {
-
-    async fn inner(params: GenerateCleoSetupParams) -> Result<CleoSetup, GenerateCleoSetupError> {
-
-        let cleo_id = params.cleo;
-        debug!("Generating CleoSetup");
-
-        let auth_config = match params.oidc_registration_client {
-            None => {
-                AuthConfig::Disabled
-            }
-            Some(registration_client) => {
-                let resource_id = cleo_id.into();
-                debug!("Generating OIDC client for CLEO: <{cleo_id}>.");
-                let issuer_url = registration_client.config.issuer_remote_url.clone();
-                let client_credentials = registration_client.register_new_client_for_user(resource_id, params.user_id)
-                    .await
-                    .map_err(|cause| GenerateCleoSetupError::Internal { cause: cause.to_string() })?;
-                debug!("Successfully generated cleo setup with id <{cleo_id}>. OIDC client_id='{}'.", client_credentials.client_id.clone().value());
-                AuthConfig::from_credentials(issuer_url, client_credentials)
-            }
-        };
-
-        Ok(CleoSetup {
-            id: cleo_id,
-            carl: params.carl_url,
-            ca: Certificate(params.ca),
-            auth_config,
-        })
-    }
-
-    inner(params).await
-        .inspect_err(|err| error!("{err}"))
 }
 
 #[cfg(test)]
