@@ -157,7 +157,7 @@ impl ResourcesStorageApi for VolatileResourcesTransaction<'_> {
     }
 
     fn remove<R>(&mut self, id: R::Id) -> PersistenceResult<Option<R>>
-    where R: Resource + Persistable {
+    where R: Resource + Persistable + Subscribable {
         self.memory.lock().unwrap().remove(id)
     }
 

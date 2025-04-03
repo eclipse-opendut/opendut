@@ -183,7 +183,7 @@ pub trait ResourcesStorageApi {
     where R: Resource + Persistable + Subscribable;
 
     fn remove<R>(&mut self, id: R::Id) -> PersistenceResult<Option<R>>
-    where R: Resource + Persistable;
+    where R: Resource + Persistable + Subscribable;
 
     fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable + Clone;

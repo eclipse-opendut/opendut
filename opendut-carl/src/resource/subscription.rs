@@ -19,6 +19,15 @@ impl<R: Resource> Subscription<R> {
 pub enum SubscriptionEvent<R: Resource> {
     ///Resource was created or updated.
     Inserted { id: R::Id, value: R },
+    Removed { id: R::Id, value: R },
+}
+impl<R: Resource> SubscriptionEvent<R> {
+    pub fn display_name(&self) -> &str {
+        match self {
+            SubscriptionEvent::Inserted { .. } => { "inserted" }
+            SubscriptionEvent::Removed { .. } => { "removed" }
+        }
+    }
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -110,13 +119,14 @@ impl Default for ResourceSubscriptionChannels {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::resource::manager::ResourceManager;
+    use crate::resource::manager::{ResourceManager, ResourceManagerRef};
     use opendut_types::peer::state::PeerConnectionState;
     use opendut_types::peer::PeerId;
     use std::net::IpAddr;
     use std::str::FromStr;
     use std::time::Duration;
     use tokio::time::timeout;
+    use crate::resource::persistence::resources::Persistable;
 
     #[tokio::test]
     async fn should_notify_about_resource_insertions() -> anyhow::Result<()> {
@@ -136,5 +146,67 @@ mod tests {
         assert_eq!(timeout(timeout_duration, subscription.receive()).await??, SubscriptionEvent::Inserted { id, value });
 
         Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_notify_about_resource_removal() -> anyhow::Result<()> {
+        let fixture = SubscriptionFixture::new();
+        let mut subscription = fixture.resource_manager.subscribe().await;
+
+        let value = PeerConnectionState::Offline;
+        fixture.resource_manager.insert(fixture.id, value.clone()).await?;
+        assert_eq!(fixture.receive_notification(&mut subscription).await?, SubscriptionEvent::Inserted { id: fixture.id, value: value.clone() });
+
+        fixture.resource_manager.remove::<PeerConnectionState>(fixture.id).await?;
+        assert_eq!(fixture.receive_notification(&mut subscription).await?, SubscriptionEvent::Removed { id: fixture.id, value });
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_not_notify_if_nothing_was_removed() -> anyhow::Result<()> {
+        let fixture = SubscriptionFixture::new();
+        let mut subscription = fixture.resource_manager.subscribe::<PeerConnectionState>().await;
+        
+        fixture.resource_manager.remove::<PeerConnectionState>(fixture.id).await?;
+        
+        fixture.expect_no_notification(&mut subscription).await?;
+        Ok(())
+    }
+
+
+    struct SubscriptionFixture {
+        id: PeerId,
+        resource_manager: ResourceManagerRef,
+        timeout_duration: Duration,
+    }
+
+    impl SubscriptionFixture {
+        pub fn new() -> Self {
+            let resource_manager = ResourceManager::new_in_memory();
+            let id = PeerId::random();
+            let timeout_duration = Duration::from_secs(10);
+            Self {
+                id,
+                resource_manager,
+                timeout_duration,
+            }
+        }
+        
+        pub async fn receive_notification<R>(&self, subscription: &mut Subscription<R>) -> anyhow::Result<SubscriptionEvent<R>>
+        where R: Resource + Persistable + Subscribable {
+            Ok(timeout(self.timeout_duration, subscription.receive()).await??)
+        }
+        
+        pub async fn expect_no_notification<R>(&self, subscription: &mut Subscription<R>) -> anyhow::Result<()> 
+        where R: Resource + Persistable + Subscribable {
+            let result = timeout(Duration::from_secs(3), subscription.receive()).await;
+            match result {
+                Ok(result) => {
+                    panic!("Received unexpected notification despite no notification was expected: {result:?}")
+                }
+                Err(_) => { Ok(()) }
+            }
+        }
     }
 }

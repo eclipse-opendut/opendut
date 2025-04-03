@@ -48,7 +48,7 @@ impl ResourceManager {
     }
 
     pub async fn remove<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
-    where R: Resource + Persistable {
+    where R: Resource + Persistable + Subscribable {
         let mut state = self.state.write().await;
         let (result, relayed_subscription_events) = state.storage.resources_mut(self.global.clone(), async move |transaction| {
             transaction.remove(id)

@@ -32,37 +32,60 @@ impl<'transaction> Resources<'transaction> {
         }
     }
 }
+
+fn notify_insertion_on_success<R>(event: SubscriptionEvent<R>, result: &PersistenceResult<()>, relayed_subscription_events: &mut RelayedSubscriptionEvents)
+where R: Resource + Persistable + Subscribable {
+    if result.is_ok() {
+        let event_name = event.display_name().to_owned();
+        relayed_subscription_events
+            .notify(event)
+            .unwrap_or_else(|_| panic!("should successfully queue notification about {event_name} resource during transaction"));
+    }
+}
+
+fn notify_removal_on_success<R>(id: R::Id, result: &PersistenceResult<Option<R>>, relayed_subscription_events: &mut RelayedSubscriptionEvents)
+where R: Resource + Persistable + Subscribable {
+    if let Ok(Some(resource)) = result {
+        let event = SubscriptionEvent::Removed { id, value: resource.clone() };
+        let event_name = event.display_name().to_owned();
+        relayed_subscription_events
+            .notify(event)
+            .unwrap_or_else(|_| panic!("should successfully queue notification about {event_name} resource during transaction"));
+
+    }
+}
+
 impl ResourcesStorageApi for Resources<'_> {
     fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
     where R: Resource + Persistable + Subscribable {
         match &mut self.kind {
             ResourcesKind::Persistent(transaction) => {
                 let result = transaction.insert(id.clone(), resource.clone());
-                if result.is_ok() {
-                    transaction.relayed_subscription_events
-                        .notify(SubscriptionEvent::Inserted { id, value: resource })
-                        .expect("should successfully queue notification about resource insertion during transaction");
-                }
+                notify_insertion_on_success(SubscriptionEvent::Inserted { id, value: resource }, &result, transaction.relayed_subscription_events);
                 result
             }
             ResourcesKind::Volatile(transaction) => {
                 let result = transaction.insert(id.clone(), resource.clone());
-                if result.is_ok() {
-                    transaction.relayed_subscription_events
-                        .notify(SubscriptionEvent::Inserted { id, value: resource })
-                        .expect("should successfully queue notification about resource insertion during transaction");
-                }
+                notify_insertion_on_success(SubscriptionEvent::Inserted { id, value: resource }, &result, transaction.relayed_subscription_events);
                 result
             }
         }
+        
     }
 
     fn remove<R>(&mut self, id: R::Id) -> PersistenceResult<Option<R>>
-    where R: Resource + Persistable {
-        //TODO notify subscription events
+    where R: Resource + Persistable + Subscribable {
         match &mut self.kind {
-            ResourcesKind::Persistent(transaction) => transaction.remove(id),
-            ResourcesKind::Volatile(transaction) => transaction.remove(id),
+            ResourcesKind::Persistent(transaction) => { 
+                let result = transaction.remove(id.clone());
+                notify_removal_on_success(id, &result, transaction.relayed_subscription_events);
+                result
+            },
+            ResourcesKind::Volatile(transaction) => {
+                let result = transaction.remove(id.clone());
+                notify_removal_on_success(id, &result, transaction.relayed_subscription_events);
+                result
+            },
         }
     }
 
