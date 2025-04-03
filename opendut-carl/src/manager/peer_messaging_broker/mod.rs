@@ -21,6 +21,8 @@ use crate::resource::persistence::error::PersistenceError;
 use crate::resource::manager::ResourceManagerRef;
 use crate::resource::storage::ResourcesStorageApi;
 
+mod effects;
+
 pub type PeerMessagingBrokerRef = Arc<PeerMessagingBroker>;
 
 
@@ -34,12 +36,15 @@ struct PeerMessagingRef {
 }
 
 impl PeerMessagingBroker {
-    pub fn new(resource_manager: ResourceManagerRef, options: PeerMessagingBrokerOptions) -> PeerMessagingBrokerRef {
-        Arc::new(Self {
-            resource_manager,
+    pub async fn new(resource_manager: ResourceManagerRef, options: PeerMessagingBrokerOptions) -> PeerMessagingBrokerRef {
+        let self_ref = Arc::new(Self {
+            resource_manager: resource_manager.clone(),
             peers: Default::default(),
             options,
-        })
+        });
+        effects::register(resource_manager, self_ref.clone()).await;
+
+        self_ref
     }
 
     #[tracing::instrument(skip(self), level="trace")]
@@ -298,7 +303,7 @@ mod tests {
         let options = PeerMessagingBrokerOptions {
             peer_disconnect_timeout: Duration::from_millis(200),
         };
-        let testee = PeerMessagingBroker::new(Arc::clone(&resource_manager), options.clone());
+        let testee = PeerMessagingBroker::new(Arc::clone(&resource_manager), options.clone()).await;
 
         let remote_host = IpAddr::from_str("1.2.3.4")?;
 
@@ -375,7 +380,7 @@ mod tests {
         let options = PeerMessagingBrokerOptions {
             peer_disconnect_timeout: Duration::from_millis(200),
         };
-        let testee = PeerMessagingBroker::new(Arc::clone(&resource_manager), options.clone());
+        let testee = PeerMessagingBroker::new(Arc::clone(&resource_manager), options.clone()).await;
 
         let remote_host = IpAddr::from_str("1.2.3.4")?;
 

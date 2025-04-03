@@ -49,7 +49,7 @@ impl GrpcFacades {
         let peer_messaging_broker = PeerMessagingBroker::new(
             Arc::clone(&resource_manager),
             PeerMessagingBrokerOptions::load(settings)?,
-        );
+        ).await;
         let cluster_manager = ClusterManager::create(
             Arc::clone(&resource_manager),
             Arc::clone(&peer_messaging_broker),

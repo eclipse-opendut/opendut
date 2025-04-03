@@ -772,7 +772,7 @@ mod test {
             let peer_messaging_broker = PeerMessagingBroker::new(
                 Arc::clone(&resource_manager),
                 PeerMessagingBrokerOptions::load(&settings.config).unwrap(),
-            );
+            ).await;
 
             let cluster_manager_options = ClusterManagerOptions::load(&settings.config).unwrap();
 

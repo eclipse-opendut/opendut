@@ -167,9 +167,9 @@ mod tests {
     async fn should_not_notify_if_nothing_was_removed() -> anyhow::Result<()> {
         let fixture = SubscriptionFixture::new();
         let mut subscription = fixture.resource_manager.subscribe::<PeerConnectionState>().await;
-        
+
         fixture.resource_manager.remove::<PeerConnectionState>(fixture.id).await?;
-        
+
         fixture.expect_no_notification(&mut subscription).await?;
         Ok(())
     }
@@ -192,13 +192,13 @@ mod tests {
                 timeout_duration,
             }
         }
-        
+
         pub async fn receive_notification<R>(&self, subscription: &mut Subscription<R>) -> anyhow::Result<SubscriptionEvent<R>>
         where R: Resource + Persistable + Subscribable {
             Ok(timeout(self.timeout_duration, subscription.receive()).await??)
         }
-        
-        pub async fn expect_no_notification<R>(&self, subscription: &mut Subscription<R>) -> anyhow::Result<()> 
+
+        pub async fn expect_no_notification<R>(&self, subscription: &mut Subscription<R>) -> anyhow::Result<()>
         where R: Resource + Persistable + Subscribable {
             let result = timeout(Duration::from_secs(3), subscription.receive()).await;
             match result {

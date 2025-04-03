@@ -104,13 +104,11 @@ mod tests {
     use crate::resource::manager::ResourceManager;
     use googletest::prelude::*;
     use opendut_types::cluster::{ClusterAssignment, ClusterId};
-    use opendut_types::peer::executor::ExecutorDescriptors;
-    use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkDescriptor};
-    use opendut_types::topology::Topology;
     use std::net::IpAddr;
     use std::str::FromStr;
     use std::sync::Arc;
     use opendut_carl_api::carl::broker::stream_header;
+    use crate::manager::peer_manager::tests::create_peer_descriptor;
     use crate::manager::testing::PeerFixture;
 
     #[tokio::test]
@@ -124,14 +122,14 @@ mod tests {
         let peer_messaging_broker = PeerMessagingBroker::new(
             Arc::clone(&resource_manager),
             PeerMessagingBrokerOptions::load(&settings.config).unwrap(),
-        );
+        ).await;
 
         let old_peer_configuration = OldPeerConfiguration {
             cluster_assignment: None,
         };
         let peer_configuration = PeerConfiguration::default();
         resource_manager.resources_mut(async |resources| {
-            resources.insert(peer_id, peer_descriptor())?;
+            resources.insert(peer_id, create_peer_descriptor())?;
             resources.insert(peer_id, Clone::clone(&old_peer_configuration))?;
             resources.insert(peer_id, Clone::clone(&peer_configuration))
         }).await??;
@@ -195,21 +193,4 @@ mod tests {
         Ok(())
     }
 
-    fn peer_descriptor() -> PeerDescriptor {
-        PeerDescriptor {
-            id: PeerId::random(),
-            name: PeerName::try_from("PeerA").unwrap(),
-            location: PeerLocation::try_from("Ulm").ok(),
-            network: PeerNetworkDescriptor {
-                interfaces: vec![],
-                bridge_name: Some(NetworkInterfaceName::try_from("br-opendut-1").unwrap()),
-            },
-            topology: Topology {
-                devices: vec![],
-            },
-            executors: ExecutorDescriptors {
-                executors: vec![],
-            }
-        }
-    }
 }
