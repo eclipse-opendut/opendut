@@ -28,7 +28,8 @@ runs:
   using: "composite"
   steps:
     - name: Install Rust Toolchain
-      uses: dtolnay/rust-toolchain@c5a29ddb4d9d194e7c84ec8c3fba61b1c31fee8c
+      uses: dtolnay/rust-toolchain@56f84321dbccf38fb67ce29ab63e4754056677e0
+      id: toolchain
       with:
         toolchain: stable
         targets: x86_64-unknown-linux-gnu
@@ -39,7 +40,8 @@ runs:
           ~/.rustup/toolchains
           ~/.rustup/update-hashes
           ~/.rustup/settings.toml
-        key: rust-toolchain-${{ github.job }}
+        key: rust-toolchain-${{ github.job }}-${{steps.toolchain.outputs.cachekey}}
+
     - name: Prepare Rust Dependency Cache
       uses: Swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3 #2.7.7
 
