@@ -66,6 +66,7 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
                     OpenError::PeerAlreadyConnected { .. } => Status::aborted(cause.to_string()),
                     OpenError::SendApplyPeerConfiguration { .. } => Status::unavailable(cause.to_string()),
                     OpenError::Persistence { .. } => Status::internal(cause.to_string()),
+                    OpenError::PeerNotFound(_) => Status::internal(cause.to_string()),
                 }
             })?;
 

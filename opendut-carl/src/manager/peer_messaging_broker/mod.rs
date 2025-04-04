@@ -9,14 +9,13 @@ use opendut_carl_api::proto::services::peer_messaging_broker::Pong;
 use opendut_carl_api::proto::services::peer_messaging_broker::{downstream, ApplyPeerConfiguration, Downstream, TracingContext};
 use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
 use opendut_types::peer::state::{PeerConnectionState};
-use opendut_types::peer::PeerId;
+use opendut_types::peer::{PeerDescriptor, PeerId};
 use opentelemetry::propagation::TextMapPropagator;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 use tokio::sync::mpsc::error::SendError;
 use tokio::sync::{mpsc, RwLock};
 use tracing::{debug, error, info, warn, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
-
 use crate::resource::persistence::error::PersistenceError;
 use crate::resource::manager::ResourceManagerRef;
 use crate::resource::storage::ResourcesStorageApi;
@@ -115,6 +114,7 @@ impl PeerMessagingBroker {
             disconnected: false,
         };
 
+        self.expect_known_peer_descriptor(peer_id).await?.ok_or(OpenError::PeerNotFound(peer_id))?;
         self.update_peer_connection_state(peer_id, remote_host).await?;
         self.peers.write().await.insert(peer_id, peer_messaging_ref);
         self.send_initial_peer_configuration(peer_id).await?;
@@ -196,6 +196,14 @@ impl PeerMessagingBroker {
         )).await
             .map_err(|cause| OpenError::SendApplyPeerConfiguration { peer_id, cause: cause.to_string() })?;
         Ok(())
+    }
+
+    async fn expect_known_peer_descriptor(&self, peer_id: PeerId) -> Result<Option<PeerDescriptor>, OpenError> {
+        self.resource_manager.resources_mut(async |resources| {
+            resources.get::<PeerDescriptor>(peer_id)
+                .map_err(|source| OpenError::Persistence { peer_id, source })
+        }).await
+            .map_err(|source| OpenError::Persistence { peer_id, source })?
     }
 
     async fn update_peer_connection_state(&self, peer_id: PeerId, remote_host: IpAddr) -> Result<(), OpenError> {
@@ -287,6 +295,8 @@ pub enum OpenError {
         Rejecting connection."
     )]
     PeerAlreadyConnected { peer_id: PeerId },
+    #[error("Peer not found. Unknown peer id: <{0}>")]
+    PeerNotFound(PeerId),
 
     #[error("Error while sending peer configuration to peer:\n  {cause}")]
     SendApplyPeerConfiguration { peer_id: PeerId, cause: String },
@@ -329,6 +339,7 @@ mod tests {
     use tokio::sync::mpsc::Receiver;
 
     use opendut_carl_api::proto::services::peer_messaging_broker::Ping;
+    use crate::manager::peer_manager::tests::create_peer_descriptor;
     use super::*;
     use crate::resource::manager::ResourceManager;
     use crate::resource::storage::ResourcesStorageApi;
@@ -450,6 +461,8 @@ mod tests {
         let resource_manager = ResourceManager::new_in_memory();
 
         let peer_id = PeerId::random();
+        let peer_descriptor = create_peer_descriptor();
+        resource_manager.insert(peer_id, peer_descriptor).await?;
 
         Ok(Fixture {
             resource_manager,
