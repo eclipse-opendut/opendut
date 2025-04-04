@@ -75,19 +75,21 @@ impl Display for PeerStatus {
 
 impl ListPeersCli {
     pub async fn execute(self, carl: &mut CarlClient, output: ListOutputFormat) -> crate::Result<()> {
-        let all_peers = carl
+        let all_peer_descriptors = carl
             .peers
             .list_peer_descriptors()
             .await
             .map_err(|error| format!("Could not list peers.\n  {}", error))?;
+        let all_peer_states = carl.peers.list_peer_states().await
+            .map_err(|_| "Failed to list peer states!")?;
         
-        let mut serializable_peers = vec![];
-        for peer in all_peers {
-            let peer_state = carl.peers.get_peer_state(peer.id).await.map_err(|_| {
-                format!("Failed to retrieve state for peer <{}>", peer.id)
-            })?;
-            serializable_peers.push(add_peer_status(peer, peer_state));
-        };
+        let serializable_peers = all_peer_descriptors
+            .into_iter()
+            .map(|peer| {
+                let peer_state = all_peer_states.get(&peer.id).cloned().unwrap_or_default();
+                add_peer_status(peer, peer_state)
+            })
+            .collect::<Vec<_>>();
         match output {
             ListOutputFormat::Table => {
                 let peer_table = serializable_peers.into_iter()

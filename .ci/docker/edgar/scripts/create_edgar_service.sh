@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # simple script to create a peer and immediately start edgar as a service (connecting to CARL)
 
