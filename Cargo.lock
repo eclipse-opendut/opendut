@@ -3922,6 +3922,7 @@ dependencies = [
  "shadow-rs",
  "tar",
  "tempfile",
+ "test-log",
  "test-with",
  "testcontainers-modules",
  "thiserror 2.0.11",

@@ -1,7 +1,7 @@
 use crate::resource::api::global::GlobalResourcesRef;
 use crate::resource::api::resources::{RelayedSubscriptionEvents, Resources};
 use crate::resource::api::Resource;
-use crate::resource::persistence::error::PersistenceResult;
+use crate::resource::persistence::error::{MapErrToInner, PersistenceResult};
 use crate::resource::persistence::resources::Persistable;
 use crate::resource::storage::{PersistenceOptions, ResourceStorage, ResourcesStorageApi};
 pub use crate::resource::subscription::SubscriptionEvent;
@@ -38,23 +38,18 @@ impl ResourceManager {
 
     pub async fn insert<R>(&self, id: R::Id, resource: R) -> PersistenceResult<()>
     where R: Resource + Persistable + Subscribable {
-        let mut state = self.state.write().await;
-
-        let (result, relayed_subscription_events) = state.storage.resources_mut(self.global.clone(), async |transaction| {
-            transaction.insert(id.clone(), resource.clone())
-        }).await?;
-        Self::send_relayed_subscription_events(relayed_subscription_events, &mut state).await;
-        result
+        self.resources_mut(async |resources| {
+            resources.insert(id, resource)
+        }).await
+        .map_err_to_inner(std::convert::identity)
     }
 
     pub async fn remove<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable + Subscribable {
-        let mut state = self.state.write().await;
-        let (result, relayed_subscription_events) = state.storage.resources_mut(self.global.clone(), async move |transaction| {
-            transaction.remove(id)
-        }).await?;
-        Self::send_relayed_subscription_events(relayed_subscription_events, &mut state).await;
-        result
+        self.resources_mut(async |resources| {
+            resources.remove(id)
+        }).await
+        .map_err_to_inner(std::convert::identity)
     }
 
     pub async fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
@@ -92,7 +87,9 @@ impl ResourceManager {
         let (result, relayed_subscription_events) = state.storage.resources_mut(self.global.clone(), async move |transaction| {
             closure(transaction).await
         }).await?;
-        Self::send_relayed_subscription_events(relayed_subscription_events, &mut state).await;
+        if result.is_ok() {
+            Self::send_relayed_subscription_events(relayed_subscription_events, &mut state).await;
+        }
         Ok(result)
     }
 

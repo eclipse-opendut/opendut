@@ -126,6 +126,9 @@ mod tests {
     use std::str::FromStr;
     use std::time::Duration;
     use tokio::time::timeout;
+    use crate::manager::peer_manager::tests::create_peer_descriptor;
+    use crate::resource::persistence;
+    use crate::resource::storage::ResourcesStorageApi;
     use crate::resource::persistence::resources::Persistable;
 
     #[tokio::test]
@@ -149,6 +152,20 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn should_notify_changes_in_transaction() -> anyhow::Result<()> {
+        let fixture = SubscriptionFixture::new();
+        let mut subscription = fixture.resource_manager.subscribe::<PeerConnectionState>().await;
+
+        let value = PeerConnectionState::Offline;
+        let _ = fixture.resource_manager.resources_mut(async |resources| {
+            resources.insert(fixture.id, value.clone())
+        }).await;
+
+        assert_eq!(fixture.receive_notification(&mut subscription).await?, SubscriptionEvent::Inserted { id: fixture.id, value: value.clone() });
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn should_notify_about_resource_removal() -> anyhow::Result<()> {
         let fixture = SubscriptionFixture::new();
         let mut subscription = fixture.resource_manager.subscribe().await;
@@ -168,9 +185,31 @@ mod tests {
         let fixture = SubscriptionFixture::new();
         let mut subscription = fixture.resource_manager.subscribe::<PeerConnectionState>().await;
 
-        fixture.resource_manager.remove::<PeerConnectionState>(fixture.id).await?;
+        let result = fixture.resource_manager.remove::<PeerConnectionState>(fixture.id).await?;
+        assert!(result.is_none(), "Expected no peer connection state present!");
 
-        fixture.expect_no_notification(&mut subscription).await?;
+        SubscriptionFixture::expect_no_notification(&mut subscription).await?;
+        Ok(())
+    }
+
+    #[test_log::test(tokio::test)]
+    async fn should_not_notify_if_transaction_was_aborted() -> anyhow::Result<()> {
+        let db = persistence::testing::spawn_and_connect_resource_manager().await?;
+        let resource_manager = db.resource_manager;
+        let id = PeerId::random();
+        let peer_descriptor = create_peer_descriptor();
+        let mut subscription = resource_manager.subscribe::<PeerDescriptor>().await;
+        assert!(resource_manager.get::<PeerDescriptor>(id).await?.is_none(), "Expected no connection state present!");
+
+        let transaction_result = resource_manager.resources_mut::<_, PeerDescriptor, anyhow::Error>(async |resources| {
+            let value = peer_descriptor.clone();
+            let _ = resources.insert(id, value.clone());
+            Err(anyhow::anyhow!("Abort transaction"))
+        }).await;
+        
+        assert!(matches!(transaction_result, Ok(Err(_))), "Expected inner transaction result to be erroneous.");
+        assert!(resource_manager.get::<PeerDescriptor>(id).await?.is_none(), "Expected no connection state present!");
+        SubscriptionFixture::expect_no_notification(&mut subscription).await?;
         Ok(())
     }
 
@@ -198,7 +237,7 @@ mod tests {
             Ok(timeout(self.timeout_duration, subscription.receive()).await??)
         }
 
-        pub async fn expect_no_notification<R>(&self, subscription: &mut Subscription<R>) -> anyhow::Result<()>
+        pub async fn expect_no_notification<R>(subscription: &mut Subscription<R>) -> anyhow::Result<()>
         where R: Resource + Persistable + Subscribable {
             let result = timeout(Duration::from_secs(3), subscription.receive()).await;
             match result {

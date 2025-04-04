@@ -62,12 +62,13 @@ uuid = { workspace = true }
 
 [dev-dependencies]
 assert_fs = { workspace = true }
-predicates = { workspace = true }
-testcontainers-modules = { workspace = true, features = ["postgres"] }
-test-with = { workspace = true }
-rstest = { workspace = true }
-uuid = { workspace = true, features = ["v4"] }
 opendut-auth-tests = { workspace = true }
+predicates = { workspace = true }
+rstest = { workspace = true }
+test-log = { workspace = true }
+test-with = { workspace = true }
+testcontainers-modules = { workspace = true, features = ["postgres"] }
+uuid = { workspace = true, features = ["v4"] }
 
 [build-dependencies]
 shadow-rs = { workspace = true, default-features = true }

@@ -64,7 +64,7 @@ impl ObserverMessagingBroker {
 
             let mut offline_peers = peer_connection_states.into_iter()
                 .filter(|(_, peer_connection_state)| {
-                    peer_connection_state.is_none() || matches!(peer_connection_state, Some(PeerConnectionState::Offline { }))
+                    peer_connection_state.is_none() || matches!(peer_connection_state, Some(PeerConnectionState::Offline))
                 })
                 .collect::<HashMap<_, _>>();
 
