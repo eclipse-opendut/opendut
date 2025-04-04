@@ -1,6 +1,9 @@
 #![cfg(test)]
 
+use std::io::Read;
+use std::fs::File;
 use std::path::PathBuf;
+use std::str::FromStr;
 use std::time::Duration;
 
 use reqwest::Url;
@@ -13,22 +16,30 @@ use opendut_vpn::VpnManagementClient;
 
 use crate::{netbird, NetbirdManagementClient, NetbirdManagementClientConfiguration, NetbirdToken};
 use crate::client::{Client, DefaultClient};
+use crate::netbird::error::CreateClientError;
+
+/*
+ * Designated to be run in the opendut-vm, requires netbird management service to be running.
+ * API_KEY is fetched from the init container.
+ docker exec -ti netbird-management_init-1 cat /management/api_key
+ export NETBIRD_INTEGRATION_API_TOKEN=<tbd>
+ cargo test --package opendut-vpn-netbird test_foo --all-features -- --nocapture
+ 
+ * from HOST with netbird-management running in opendut-vm
+ 
+ export NETBIRD_INTEGRATION_API_TOKEN=<tbd>
+ export NETBIRD_INTEGRATION_API_URL=https://192.168.56.10/api
+ cargo test --package opendut-vpn-netbird test_foo --all-features -- --nocapture
+ */
 
 #[test_with::env(NETBIRD_INTEGRATION_API_TOKEN)]
 #[test_log::test(tokio::test)]
 async fn test_netbird_management_client() {
-    /*
-     * Designated to be run in the opendut-vm, requires netbird management service to be running.
-     * API_KEY is fetched from the init container.
-     docker exec -ti netbird-management_init-1 cat /management/api_key
-     export NETBIRD_INTEGRATION_API_TOKEN=<tbd>
-     cargo test --package opendut-vpn-netbird test_foo --all-features -- --nocapture
-     */
     let Fixture { management_url, authentication_token, ca, timeout, retries, setup_key_expiration } = Fixture::default();
 
     let netbird_management_client = NetbirdManagementClient::create_client_and_delete_default_policy(
         NetbirdManagementClientConfiguration {
-            management_url: management_url,
+            management_url,
             authentication_token: Some(authentication_token),
             ca: Some(ca),
             timeout,
@@ -44,19 +55,20 @@ async fn test_netbird_management_client() {
 
 #[test_with::env(NETBIRD_INTEGRATION_API_TOKEN)]
 #[tokio::test]
-async fn test_netbird_vpn_client() {
-    /*
-     * Designated to be run in the opendut-vm, requires netbird management service to be running.
-     * API_KEY is fetched from the init container.
-     docker exec -ti netbird-management_init-1 cat /management/api_key
-     export NETBIRD_INTEGRATION_API_TOKEN=<tbd>
-     cargo test --package opendut-vpn-netbird test_foo --all-features -- --nocapture
-     */
-    let Fixture { management_url, authentication_token, ca: _, timeout, retries, setup_key_expiration } = Fixture::default();
+async fn test_netbird_vpn_client() -> anyhow::Result<()> {
+    let Fixture { management_url, authentication_token, ca, timeout, retries, setup_key_expiration } = Fixture::default();
+    let management_ca = {
+        let mut file = File::open(ca)
+            .map_err(|cause| CreateClientError::InstantiationFailure { cause: format!("Failed to open ca certificate:\n  {cause}") })?;
+        let mut buffer = Vec::new();
+        file.read_to_end(&mut buffer)
+            .map_err(|cause| CreateClientError::InstantiationFailure { cause: format!("Failed to read ca certificate:\n  {cause}") })?;
+        buffer
+    };
 
     let client = DefaultClient::create(
         Clone::clone(&management_url),
-        None,
+        Some(management_ca.as_slice()),
         Some(authentication_token.clone()),
         None,
         timeout,
@@ -85,7 +97,53 @@ async fn test_netbird_vpn_client() {
             .await
             .expect(&error_message);
     }
+    
+    Ok(())
 }
+
+#[test_with::env(NETBIRD_INTEGRATION_API_TOKEN)]
+#[tokio::test]
+async fn test_netbird_vpn_client_list_keys() -> anyhow::Result<()> {
+    let Fixture { management_url, authentication_token, ca, timeout, retries, setup_key_expiration } = Fixture::default();
+    let management_ca = {
+        let mut file = File::open(ca.clone())
+            .map_err(|cause| CreateClientError::InstantiationFailure { cause: format!("Failed to open ca certificate:\n  {cause}") })?;
+        let mut buffer = Vec::new();
+        file.read_to_end(&mut buffer)
+            .map_err(|cause| CreateClientError::InstantiationFailure { cause: format!("Failed to read ca certificate:\n  {cause}") })?;
+        buffer
+    };
+    let netbird_management_client = NetbirdManagementClient::create_client_and_delete_default_policy(
+        NetbirdManagementClientConfiguration {
+            management_url: management_url.clone(),
+            authentication_token: Some(authentication_token.clone()),
+            ca: Some(ca),
+            timeout,
+            retries,
+            setup_key_expiration,
+        }
+    ).await.expect("Netbird management client could not be created!");
+
+    let peer_id = PeerId::random();
+    netbird_management_client.create_peer(peer_id).await.expect("Could not create NetBird peer");
+
+
+    let client = DefaultClient::create(
+        Clone::clone(&management_url),
+        Some(management_ca.as_slice()),
+        Some(authentication_token.clone()),
+        None,
+        timeout,
+        retries,
+        setup_key_expiration,
+    ).expect("Should be able to create netbird client!");
+
+    let keys_result = client.list_setup_keys().await;
+    assert!(keys_result.is_ok());
+    
+    Ok(())
+}
+
 
 struct Fixture {
     pub management_url: Url,
@@ -97,8 +155,9 @@ struct Fixture {
 }
 impl Default for Fixture {
     fn default() -> Self {
-        let management_url = Url::parse("https://netbird-management/api/").unwrap();
+        let management_url = std::env::var("NETBIRD_INTEGRATION_API_URL").unwrap_or("https://netbird-management/api/".to_string());
         let netbird_api_token = std::env::var("NETBIRD_INTEGRATION_API_TOKEN").expect("Could not get netbird api token!");
+        let management_url = Url::parse(&management_url).unwrap();
         let authentication_token = NetbirdToken::new_personal_access(netbird_api_token);
         let timeout = Duration::from_millis(10000);
         let ca = project::make_path_absolute("resources/development/tls/insecure-development-ca.pem").expect("Could not determine ca path.");

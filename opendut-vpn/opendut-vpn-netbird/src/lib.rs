@@ -202,7 +202,6 @@ impl VpnManagementClient for NetbirdManagementClient {
 
     #[tracing::instrument(skip(self), level="trace")]
     async fn delete_peer(&self, peer_id: PeerId) -> Result<(), DeletePeerError> {
-        // TODO: delete setup key that was linked to peers group
         let self_group = self.inner.get_netbird_group(&netbird::GroupName::from(peer_id)).await
             .map_err(|error| DeletePeerError::ResolutionFailure { peer_id, error: error.into() })?;
 
@@ -211,6 +210,9 @@ impl VpnManagementClient for NetbirdManagementClient {
                 .await
                 .map_err(|error| DeletePeerError::DeletionFailure { peer_id, error: error.into() })?;
         }
+        // TODO: delete setup key that was linked to peers group
+        self.inner.delete_setup_key(peer_id).await
+            .map_err(|error| DeletePeerError::DeletionFailure { peer_id, error: error.into() })?;
 
         self.inner.delete_netbird_group(&self_group.id)
             .await
@@ -300,7 +302,7 @@ mod test {
     use crate::{netbird, NetbirdManagementClient};
     use crate::client::Client;
     use crate::netbird::error::{CreateSetupKeyError, GetGroupError, GetPoliciesError, RequestError};
-    use crate::netbird::GroupPeerInfo;
+    use crate::netbird::{GroupPeerInfo, SetupKey};
 
     #[tokio::test]
     async fn A_NetbirdManagementClient_should_create_a_cluster_by_creating_a_netbird_group_containing_all_peers_of_the_cluster() -> Result<()> {
@@ -393,7 +395,7 @@ mod test {
             ],
         };
         let setup_key = netbird::SetupKey {
-            id: String::from("some-id"),
+            id: netbird::SetupKeyId(String::from("some-id")),
             key: uuid!("4626c02a-bee7-4468-91c3-73c47fd0116c"),
             name: netbird::setup_key_name_format(peer_id),
             expires: netbird::SetupKeyTimeStamp { inner: OffsetDateTime::now_utc() },
@@ -484,6 +486,9 @@ mod test {
             async fn get_netbird_policy(&self, policy_name: &netbird::PolicyName) -> std::result::Result<netbird::Policy, GetPoliciesError>;
             async fn delete_netbird_policy(&self, policy_id: &netbird::PolicyId) -> std::result::Result<(), RequestError>;
             async fn generate_netbird_setup_key(&self, peer_id: PeerId) -> std::result::Result<netbird::SetupKey, CreateSetupKeyError>;
+            async fn list_setup_keys(&self) -> std::result::Result<Vec<netbird::SetupKey>, RequestError>;
+            async fn get_setup_key(&self, peer_id: PeerId) -> std::result::Result<Option<SetupKey>, RequestError>;
+            async fn delete_setup_key(&self, peer_id: PeerId) -> std::result::Result<Option<SetupKey>, RequestError>;
         }
     }
 }

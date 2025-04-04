@@ -1,6 +1,11 @@
 use reqwest::Url;
 
 use crate::netbird;
+use crate::netbird::SetupKeyId;
+
+pub fn setup_key(base_url: Url, setup_key_id: &SetupKeyId) -> Url {
+    join(setup_keys(base_url), setup_key_id.0.as_str())
+}
 
 pub fn setup_keys(base_url: Url) -> Url {
     join(base_url, "setup-keys")

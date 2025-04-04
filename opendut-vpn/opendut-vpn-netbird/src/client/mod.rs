@@ -23,6 +23,9 @@ pub trait Client {
     async fn create_netbird_group(&self, name: netbird::GroupName, peers: Vec<netbird::PeerId>) -> Result<netbird::Group, RequestError>;
     async fn get_netbird_group(&self, group_name: &netbird::GroupName) -> Result<netbird::Group, GetGroupError>;
     async fn delete_netbird_group(&self, group_id: &netbird::GroupId) -> Result<(), RequestError>;
+    async fn list_setup_keys(&self) -> Result<Vec<netbird::SetupKey>, RequestError>;
+    async fn get_setup_key(&self, peer_id: PeerId) -> Result<Option<netbird::SetupKey>, RequestError>;
+    async fn delete_setup_key(&self, peer_id: PeerId) -> Result<Option<netbird::SetupKey>, RequestError>;
     #[allow(unused)] //Currently unused, but expected to be needed again
     async fn get_netbird_peer(&self, peer_id: &netbird::PeerId) -> Result<netbird::Peer, RequestError>;
     async fn delete_netbird_peer(&self, peer_id: &netbird::PeerId) -> Result<(), RequestError>;
@@ -36,6 +39,29 @@ pub struct DefaultClient {
     netbird_url: Url,
     setup_key_expiration: Duration,
     requester: Box<dyn RequestHandler + Send + Sync>,
+}
+
+#[derive(Serialize)]
+struct CreateSetupKey {
+    name: String,
+    r#type: netbird::SetupKeyType,
+    expires_in: u64, //seconds
+    revoked: bool,
+    auto_groups: Vec<String>,
+    usage_limit: u64,
+}
+
+impl CreateSetupKey {
+    pub fn deleted(name: String) -> Self {
+        CreateSetupKey {
+            name,
+            r#type: netbird::SetupKeyType::Reusable,
+            expires_in: 0,
+            revoked: true,
+            auto_groups: vec![],
+            usage_limit: 0,
+        }
+    }
 }
 
 impl DefaultClient {
@@ -74,6 +100,7 @@ impl DefaultClient {
             }
 
             client
+                .tls_built_in_root_certs(true)
                 .build()
                 .expect("Failed to construct client.")
         };
@@ -156,6 +183,40 @@ impl Client for DefaultClient {
         let response = self.requester.handle(request).await?;
 
         parse_response_status(response, format!("NetBird group with ID <{:?}>", group_id)).await
+    }
+
+    async fn list_setup_keys(&self) -> Result<Vec<netbird::SetupKey>, RequestError> {
+        let url = routes::setup_keys(Clone::clone(&self.netbird_url));
+
+        let request = Request::new(Method::GET, url);
+
+        let response = self.requester.handle(request).await?;
+
+        let setup_keys = response.json::<Vec<netbird::SetupKey>>().await
+            .map_err(RequestError::JsonDeserialization)?;
+
+        Ok(setup_keys)
+    }
+
+    async fn get_setup_key(&self, peer_id: PeerId) -> Result<Option<netbird::SetupKey>, RequestError> {
+        let name = netbird::setup_key_name_format(peer_id);
+        let all_keys = self.list_setup_keys().await?;
+        let maybe_setup_key = all_keys.into_iter().find(|setup_key| setup_key.name.eq(&name));
+        Ok(maybe_setup_key)
+    }
+
+    async fn delete_setup_key(&self, peer_id: PeerId) -> Result<Option<netbird::SetupKey>, RequestError> {
+        let maybe_setup_key = self.get_setup_key(peer_id).await?;
+        if let Some(setup_key) = maybe_setup_key.clone() {
+            let url = routes::setup_key(Clone::clone(&self.netbird_url), &setup_key.id);
+            let body = CreateSetupKey::deleted(setup_key.name);
+            let request = put_json_request(url, body)?;
+            let response = self.requester.handle(request).await?;
+            response.error_for_status()
+                .map_err(RequestError::IllegalStatus)?;
+
+        }
+        Ok(maybe_setup_key)
     }
 
     #[tracing::instrument(skip(self), level="trace")]
@@ -278,15 +339,7 @@ impl Client for DefaultClient {
         let url = routes::setup_keys(self.netbird_url.clone());
 
         let body = {
-            #[derive(Serialize)]
-            struct CreateSetupKey {
-                name: String,
-                r#type: netbird::SetupKeyType,
-                expires_in: u64, //seconds
-                revoked: bool,
-                auto_groups: Vec<String>,
-                usage_limit: u64,
-            }
+            
 
             CreateSetupKey {
                 name: netbird::setup_key_name_format(peer_id),
@@ -316,6 +369,20 @@ impl Client for DefaultClient {
 
 fn post_json_request(url: Url, body: impl Serialize) -> Result<Request, RequestError> {
     let mut request = Request::new(Method::POST, url);
+
+    request.headers_mut()
+        .insert(header::CONTENT_TYPE, DefaultClient::APPLICATION_JSON.parse().unwrap());
+
+    let body = serde_json::to_vec(&body)
+        .map_err(RequestError::JsonSerialization)?;
+
+    *request.body_mut() = Some(Body::from(body));
+
+    Ok(request)
+}
+
+fn put_json_request(url: Url, body: impl Serialize) -> Result<Request, RequestError> {
+    let mut request = Request::new(Method::PUT, url);
 
     request.headers_mut()
         .insert(header::CONTENT_TYPE, DefaultClient::APPLICATION_JSON.parse().unwrap());

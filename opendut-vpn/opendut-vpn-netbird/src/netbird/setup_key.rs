@@ -13,7 +13,7 @@ pub fn name_format(peer_id: PeerId) -> String {
 #[allow(unused)]
 #[derive(Clone, Debug, Deserialize)]
 pub struct SetupKey {
-    pub id: String,
+    pub id: SetupKeyId,
     pub key: Uuid,
     pub name: String,
     pub expires: Timestamp,
@@ -27,6 +27,9 @@ pub struct SetupKey {
     pub updated_at: Timestamp,
     pub usage_limit: u64,
 }
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct SetupKeyId(pub String);
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "kebab-case")]
