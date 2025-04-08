@@ -1,8 +1,10 @@
+use std::collections::HashMap;
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 pub use client::*;
 use opendut_types::cluster::{ClusterDisplay, ClusterId, ClusterName};
 use opendut_types::cluster::state::ClusterState;
 use opendut_types::peer::PeerId;
+use opendut_types::peer::state::PeerState;
 use opendut_types::ShortName;
 
 #[derive(thiserror::Error, Debug)]
@@ -110,17 +112,28 @@ pub struct ListClusterDeploymentsError {
     pub message: String,
 }
 
+#[derive(thiserror::Error, Debug)]
+#[error("{message}")]
+pub struct ListClusterPeersError {
+    pub message: String,
+}
+
+pub enum ListClusterPeerStatesResponse {
+    Success {
+        peer_states: HashMap<PeerId, PeerState>,
+    },
+    Failure {
+        message: String,
+    }
+}
 
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 mod client {
     use tonic::codegen::{Body, Bytes, http, InterceptedService, StdError};
-
     use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
-
     use crate::carl::{ClientError, extract};
     use crate::proto::services::cluster_manager;
     use crate::proto::services::cluster_manager::cluster_manager_client::ClusterManagerClient;
-
     use super::*;
 
     #[derive(Clone, Debug)]
@@ -350,5 +363,22 @@ mod client {
                 }
             }
         }
+        
+        pub async fn list_cluster_peer_states(&mut self, cluster_id: ClusterId) -> Result<ListClusterPeerStatesResponse, ListClusterPeersError> {
+            
+            let request = tonic::Request::new(cluster_manager::ListClusterPeerStatesRequest { cluster_id: Some(cluster_id.into()) });
+            match self.inner.list_cluster_peer_states(request).await {
+                Ok(response) => {
+                    let response = response.into_inner();
+                    let response: ListClusterPeerStatesResponse = response.try_into()
+                        .map_err(|error| ListClusterPeersError { message: format!("Failed to convert response: {error}") } )?;
+                    Ok(response)
+                }
+                Err(status) => {
+                    Err(ListClusterPeersError { message: format!("gRPC failure: {status}") })
+                }
+            }
+        }
     }
+
 }

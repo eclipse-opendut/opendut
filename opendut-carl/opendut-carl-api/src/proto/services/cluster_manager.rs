@@ -1,11 +1,61 @@
+use std::collections::HashMap;
 use opendut_types::cluster::{ClusterId, ClusterName};
 use opendut_types::cluster::state::ClusterState;
 use opendut_types::proto;
 use opendut_types::proto::{ConversionError, ConversionErrorBuilder};
-
+use opendut_types::conversion;
+use opendut_types::proto::ConversionResult;
+use crate::carl;
 use crate::carl::cluster::{CreateClusterConfigurationError, DeleteClusterConfigurationError, DeleteClusterDeploymentError, StoreClusterDeploymentError};
 
 tonic::include_proto!("opendut.carl.services.cluster_manager");
+
+conversion! {
+    type Model = carl::cluster::ListClusterPeerStatesResponse;
+    type Proto = ListClusterPeerStatesResponse;
+
+    fn from(value: Model) -> Proto {
+        let result = match value {
+            Model::Success { peer_states  } => {
+                list_cluster_peer_states_response::Result::Success(ListClusterPeerStatesSuccess {
+                    peer_states: peer_states.into_iter().map(|(peer_id, peer_state)| (peer_id.uuid.to_string(), peer_state.into())).collect(),
+                })
+            }
+            Model::Failure { message  } => {
+                list_cluster_peer_states_response::Result::Failure(ListClusterPeerStatesFailure {
+                    cause: message
+                })
+            }
+        };
+        Proto {
+            result: Some(result),
+        }
+    }
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let result = extract!(value.result)?;
+        let result = match result {
+            list_cluster_peer_states_response::Result::Success(ListClusterPeerStatesSuccess { peer_states}) => {
+                let peer_states = peer_states.into_iter().map(|(peer_id, peer_state)| {
+                    let peer_id = opendut_types::peer::PeerId::try_from(peer_id.as_str());
+                    let peer_state = opendut_types::peer::state::PeerState::try_from(peer_state);
+                    match (peer_id, peer_state) {
+                        (Ok(peer_id), Ok(peer_state)) => {
+                            Ok((peer_id, peer_state))
+                        }
+                        (_, _) => {
+                            Err(ErrorBuilder::message("Invalid peer state"))
+                        }
+                    }
+                }).collect::<Result<HashMap<_, _>, ConversionError>>()?;
+                Model::Success { peer_states }
+            }
+            list_cluster_peer_states_response::Result::Failure(ListClusterPeerStatesFailure { cause}) => {
+                Model::Failure { message: cause }
+            }
+        };
+        Ok(result)
+    }
+}
 
 impl From<CreateClusterConfigurationError> for CreateClusterConfigurationFailure {
     fn from(error: CreateClusterConfigurationError) -> Self {

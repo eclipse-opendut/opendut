@@ -47,7 +47,7 @@ wait_for_netbird_peers_to_connect() {
     local now
     now=$(date +%s)
     if [ "$now" -gt "$END_TIME" ]; then
-      echo "Timeout while waiting for binary to be extracted by edgar: $file"
+      echo "Timeout while waiting for netbird peers to connect: $file"
       return 1
     fi
 

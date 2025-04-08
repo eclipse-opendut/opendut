@@ -4,6 +4,7 @@ package opendut.carl.services.cluster_manager;
 
 import "opendut/types/cluster/cluster.proto";
 import "opendut/types/peer/peer.proto";
+import "opendut/types/peer/state.proto";
 
 service ClusterManager {
   rpc CreateClusterConfiguration(CreateClusterConfigurationRequest) returns (CreateClusterConfigurationResponse) {}
@@ -15,6 +16,8 @@ service ClusterManager {
   rpc DeleteClusterDeployment(DeleteClusterDeploymentRequest) returns (DeleteClusterDeploymentResponse) {}
   rpc GetClusterDeployment(GetClusterDeploymentRequest) returns (GetClusterDeploymentResponse) {}
   rpc ListClusterDeployments(ListClusterDeploymentsRequest) returns (ListClusterDeploymentsResponse) {}
+
+  rpc ListClusterPeerStates(ListClusterPeerStatesRequest) returns (ListClusterPeerStatesResponse) {}
 }
 
 //
@@ -251,3 +254,26 @@ message ListClusterDeploymentsSuccess {
 }
 
 message ListClusterDeploymentsFailure {}
+
+
+//
+// ListClusterPeerStates
+//
+message ListClusterPeerStatesRequest {
+  opendut.types.cluster.ClusterId cluster_id = 1;
+}
+
+message ListClusterPeerStatesResponse {
+  oneof result {
+    ListClusterPeerStatesFailure failure = 1;
+    ListClusterPeerStatesSuccess success = 2;
+  }
+}
+
+message ListClusterPeerStatesSuccess {
+  map<string, opendut.types.peer.PeerState> peer_states = 1;
+}
+
+message ListClusterPeerStatesFailure {
+  string cause = 1;
+}

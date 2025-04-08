@@ -30,7 +30,7 @@ impl Resources<'_> {
 pub struct ClusterPeerStates {
     pub cluster_id: ClusterId,
     #[allow(unused)]
-    peer_states: HashMap<PeerId, PeerState>,
+    pub peer_states: HashMap<PeerId, PeerState>,
     blocked_peers: HashMap<PeerId, ClusterId>,
     offline_peers: HashSet<PeerId>,
     blocked_peers_by_another_cluster: HashMap<PeerId, ClusterId>,

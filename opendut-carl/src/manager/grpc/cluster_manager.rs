@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use opendut_carl_api::proto::services::cluster_manager::cluster_manager_server::{ClusterManager as ClusterManagerService, ClusterManagerServer};
 use opendut_carl_api::proto::services::cluster_manager::*;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
@@ -6,7 +7,7 @@ use tonic_web::CorsGrpcWeb;
 use tracing::{error, trace};
 
 use crate::manager::cluster_manager::delete_cluster_deployment::DeleteClusterDeploymentParams;
-use crate::manager::cluster_manager::{ClusterManagerRef, CreateClusterConfigurationError, CreateClusterConfigurationParams, DeleteClusterConfigurationError, DeleteClusterConfigurationParams, DeleteClusterDeploymentError};
+use crate::manager::cluster_manager::{ClusterManagerRef, ClusterPeerStates, CreateClusterConfigurationError, CreateClusterConfigurationParams, DeleteClusterConfigurationError, DeleteClusterConfigurationParams, DeleteClusterDeploymentError};
 use crate::manager::grpc::extract;
 use crate::resource::manager::ResourceManagerRef;
 use crate::resource::persistence::error::MapErrToInner;
@@ -249,5 +250,27 @@ impl ClusterManagerService for ClusterManagerFacade {
                 }
             ))
         }))
+    }
+
+    async fn list_cluster_peer_states(&self, request: Request<ListClusterPeerStatesRequest>) -> Result<Response<ListClusterPeerStatesResponse>, Status> {
+        let request = request.into_inner();
+        let cluster_id: ClusterId = extract!(request.cluster_id)?;
+        trace!("Received request to list cluster peers for cluster <{cluster_id}>.");
+        let result: ClusterPeerStates = self.resource_manager.resources_mut(async |resources| {
+            resources.list_cluster_peer_states(cluster_id).await
+        }).await
+            .map_err(|cause| Status::internal(cause.to_string()))?
+            .map_err(|cause| Status::internal(cause.to_string()))?;
+        
+        let peer_states = result.peer_states.iter().map(|(peer_id, peer_state)| (peer_id.uuid.to_string(), peer_state.clone())).collect::<HashMap<_, _>>();
+        
+        let response = Response::new(ListClusterPeerStatesResponse {
+            result: Some(list_cluster_peer_states_response::Result::Success(
+                ListClusterPeerStatesSuccess {
+                    peer_states: peer_states.into_iter().map(|(peer_id, peer_state)| (peer_id, peer_state.into())).collect::<HashMap<_, _>>(),
+                }
+            )),
+        });
+        Ok(response)
     }
 }
