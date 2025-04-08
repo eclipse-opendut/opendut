@@ -192,6 +192,24 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test]
+    async fn aborting_transaction_with_volatile_storage_does_not_prevent_insertion() -> anyhow::Result<()> {
+        // TODO: Volatile resource storage does not implement a transaction scheme
+        let fixture = SubscriptionFixture::new();
+        let mut subscription = fixture.resource_manager.subscribe::<PeerConnectionState>().await;
+        assert!(fixture.resource_manager.get::<PeerConnectionState>(fixture.id).await?.is_none(), "Expected no connection state present!");
+
+        let value = PeerConnectionState::Offline;
+        let _ = fixture.resource_manager.resources_mut::<_, PeerConnectionState, anyhow::Error>(async |resources| {
+            let _ = resources.insert(fixture.id, value.clone());
+            Err(anyhow::anyhow!("Abort transaction"))
+        }).await;
+
+        assert!(fixture.resource_manager.get::<PeerConnectionState>(fixture.id).await?.is_some(), "Expected connection state to be present!");
+        SubscriptionFixture::expect_no_notification(&mut subscription).await?;
+        Ok(())
+    }
+
     #[test_log::test(tokio::test)]
     async fn should_not_notify_if_transaction_was_aborted() -> anyhow::Result<()> {
         let db = persistence::testing::spawn_and_connect_resource_manager().await?;
