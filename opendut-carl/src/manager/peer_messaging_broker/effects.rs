@@ -23,6 +23,7 @@ pub async fn disconnect_peer_when_removed(resource_manager: ResourceManagerRef, 
                     match peer_connection_state {
                         PeerConnectionState::Offline => {
                             let _ = resource_manager.remove::<PeerConnectionState>(peer_id).await;
+                            trace!("Obsolete connection state for peer <{peer_id}> was removed.");
                         }
                         PeerConnectionState::Online { .. } => {
                             let result = peer_messaging_broker.disconnect(peer_id).await;
@@ -36,7 +37,6 @@ pub async fn disconnect_peer_when_removed(resource_manager: ResourceManagerRef, 
                             }
                         }
                     }
-                    trace!("Obsolete connection state for peer <{peer_id}> was removed.");
                 }
 
             }

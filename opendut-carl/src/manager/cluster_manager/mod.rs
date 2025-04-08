@@ -5,7 +5,7 @@ use tokio::sync::Mutex;
 
 use futures::future::join_all;
 use futures::FutureExt;
-use tracing::{debug, error, info, trace, warn};
+use tracing::{debug, error, trace, warn};
 
 use opendut_types::cluster::{ClusterAssignment, ClusterConfiguration, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
 use opendut_types::peer::state::PeerConnectionState;
@@ -15,7 +15,7 @@ use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName}
 use opendut_types::util::Port;
 
 use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
-use crate::resource::manager::{ResourceManagerRef, SubscriptionEvent};
+use crate::resource::manager::ResourceManagerRef;
 use crate::resource::persistence::error::{MapErrToInner, PersistenceError, PersistenceResult};
 use crate::resource::storage::ResourcesStorageApi;
 use crate::settings::vpn::Vpn;
@@ -37,6 +37,8 @@ pub mod list_cluster_peers;
 pub use list_cluster_peers::*;
 
 pub mod list_deployed_clusters;
+mod effects;
+
 use crate::manager::peer_manager::{AssignClusterOptions, AssignClusterParams};
 pub use list_deployed_clusters::*;
 
@@ -70,7 +72,7 @@ impl ClusterManager {
             can_server_port_counter
         }));
 
-        Self::schedule_redeploying_clusters_when_all_peers_become_available(resource_manager, Arc::clone(&self_ref)).await;
+        effects::register(resource_manager.clone(), self_ref.clone()).await;
 
         self_ref
     }
@@ -141,27 +143,6 @@ impl ClusterManager {
         self.resource_manager.list::<ClusterDeployment>().await
             .map(|clusters| clusters.into_values().collect::<Vec<_>>())
             .map_err(|source| ListClusterDeploymentsError { source })
-    }
-
-
-    async fn schedule_redeploying_clusters_when_all_peers_become_available(resource_manager: ResourceManagerRef, self_ref: ClusterManagerRef) {
-        let mut peer_state_subscription = resource_manager.subscribe::<PeerConnectionState>().await;
-
-        tokio::spawn(async move {
-            loop {
-                let peer_connection_state = peer_state_subscription.receive().await;
-
-                if let Ok(SubscriptionEvent::Inserted { id: peer_id, value: PeerConnectionState::Online { remote_host } }) = peer_connection_state {
-                    info!("Peer <{peer_id}> is now online with remote address <{remote_host}>. Checking if any clusters can now be deployed...");
-
-                    let mut self_ref = self_ref.lock().await;
-                    let result = self_ref.deploy_all_clusters_containing_newly_available_peer(peer_id).await;
-                    if let Err(error) = result {
-                        error!("Error while attempting deployment of clusters in which newly available peer <{peer_id}> is contained:  \n{error}");
-                    }
-                }
-            }
-        });
     }
 
     async fn deploy_all_clusters_containing_newly_available_peer(&mut self, peer_id: PeerId) -> anyhow::Result<()> {

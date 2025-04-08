@@ -3,7 +3,6 @@
 use std::io::Read;
 use std::fs::File;
 use std::path::PathBuf;
-use std::str::FromStr;
 use std::time::Duration;
 
 use reqwest::Url;
