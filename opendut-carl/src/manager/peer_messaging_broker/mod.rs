@@ -14,7 +14,7 @@ use opentelemetry::propagation::TextMapPropagator;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 use tokio::sync::mpsc::error::SendError;
 use tokio::sync::{mpsc, RwLock};
-use tracing::{debug, error, info, warn, Span};
+use tracing::{debug, error, info, trace, warn, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 use crate::resource::persistence::error::PersistenceError;
 use crate::resource::manager::ResourceManagerRef;
@@ -131,12 +131,12 @@ impl PeerMessagingBroker {
                     match received {
                         Ok(Some(message)) => handle_stream_message(message, peer_id, &tx_outbound).await,
                         Ok(None) => {
-                            info!("Peer <{peer_id}> disconnected!");
+                            info!("Peer <{peer_id}> disconnected! Closing inbound channel.");
                             break;
                         }
                         Err(cause) => {
-                            error!("No message from peer <{peer_id}> within {} ms:\n  {cause}", timeout_duration.as_millis());
-                            break;
+                            error!("No message from peer <{peer_id}> within {} ms:\n  {cause}. Closing connection.", timeout_duration.as_millis());
+                            rx_inbound.close();
                         }
                     }
 
@@ -145,12 +145,19 @@ impl PeerMessagingBroker {
                         .unwrap_or_default();
                     if downstream_disconnected {
                         info!("Peer <{peer_id}> shall be disconnected!");
-                        break
+                        rx_inbound.close();
                     }
                 }
-                // TODO: cleanup of channel
-                //rx_inbound.close();
-                //tx_outbound.closed().await;
+                let channel_close_grace_time = tokio::time::timeout(timeout_duration, tx_outbound.closed()).await;
+                match channel_close_grace_time {
+                    Ok(_) => {
+                        trace!("Peer channel flushed successfully.");
+                    }
+                    Err(_) => {
+                        trace!("Peer channel did not close voluntarily in time. Closing anyway.");
+                    }
+                }
+
                 Self::remove_peer_impl(peer_id, resource_manager, peers).await
                     .unwrap_or_else(|cause| error!("Error while removing peer after its stream ended:\n  {cause}"));
             });
@@ -344,7 +351,7 @@ mod tests {
     use crate::resource::manager::ResourceManager;
     use crate::resource::storage::ResourcesStorageApi;
 
-    #[tokio::test]
+    #[test_log::test(tokio::test)]
     async fn peer_stream() -> anyhow::Result<()> {
         let Fixture { resource_manager, peer_id } = fixture().await?;
 
@@ -399,7 +406,7 @@ mod tests {
 
         { //assert state contains peer disconnected and down after missing pings
             tokio::time::sleep(
-                options.peer_disconnect_timeout * 2 //more than timeout
+                options.peer_disconnect_timeout * 6  // more than receive timeout + channel close timeout
             ).await;
 
             let peers = testee.peers.read().await;

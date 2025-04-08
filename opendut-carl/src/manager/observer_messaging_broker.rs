@@ -119,7 +119,6 @@ impl ObserverMessagingBroker {
                     }
                 }
             }
-            // rx_outbound.close()
 
             trace!("Wait for observer to close connection.");
             let result = tokio::time::timeout(Duration::from_secs(10), tx_outbound.closed()).await;

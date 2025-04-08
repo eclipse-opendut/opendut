@@ -17,7 +17,7 @@ pub async fn disconnect_peer_when_removed(resource_manager: ResourceManagerRef, 
             let peer_subscription = peer_subscription.receive().await;
 
             if let Ok(SubscriptionEvent::Removed { id: peer_id, ..  }) = peer_subscription {
-                trace!("Peer <{peer_id}> was removed. Check if there is an open peer connection.");
+                trace!("Peer <{peer_id}> was removed. Checking if there is an open peer connection.");
                 let peer_connection_state = resource_manager.get::<PeerConnectionState>(peer_id).await;
                 if let Ok(Some(peer_connection_state)) = peer_connection_state {
                     match peer_connection_state {

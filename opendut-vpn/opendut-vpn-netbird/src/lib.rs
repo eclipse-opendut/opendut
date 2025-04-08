@@ -210,7 +210,7 @@ impl VpnManagementClient for NetbirdManagementClient {
                 .await
                 .map_err(|error| DeletePeerError::DeletionFailure { peer_id, error: error.into() })?;
         }
-        // TODO: delete setup key that was linked to peers group
+        // delete setup key that was linked to peer self group
         self.inner.delete_setup_key(peer_id).await
             .map_err(|error| DeletePeerError::DeletionFailure { peer_id, error: error.into() })?;
 
