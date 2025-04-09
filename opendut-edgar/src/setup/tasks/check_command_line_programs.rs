@@ -22,7 +22,7 @@ impl Task for CheckCommandLinePrograms {
             let executable = which::which(command_line_program)
                 .context(format!(
                     "Command-line program `{command_line_program}` is required.\n\
-                    It could not be found in the operating system PATH. Make sure, it is installed correctly."
+                    It could not be found in the operating system PATH. Make sure, it is installed correctly"
                 ))?;
 
             let mut command = Command::new(executable);
@@ -31,7 +31,7 @@ impl Task for CheckCommandLinePrograms {
                 .evaluate_requiring_success()
                 .context(format!(
                     "Command-line program `{command_line_program}` was found in the operating system PATH,\n\
-                    but running a basic command ({command:?}) with it, did not succeed."
+                    but running a basic command ({command:?}) with it, did not succeed"
                 ))?;
         }
         
