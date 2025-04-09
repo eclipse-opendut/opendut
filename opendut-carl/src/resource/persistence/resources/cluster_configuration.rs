@@ -4,14 +4,18 @@ use crate::resource::persistence;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::{Db, Memory, TableDefinition};
 use opendut_types::cluster::{ClusterConfiguration, ClusterId};
+use prost::Message;
 use std::collections::HashMap;
+
+const CLUSTER_CONFIGURATION_TABLE: TableDefinition = TableDefinition::new("cluster_configuration");
+
 
 impl Persistable for ClusterConfiguration {
     fn insert(self, cluster_id: ClusterId, _: &mut Memory, db: &Db) -> PersistenceResult<()> {
         let key = persistence::Key::from(ResourceId::<Self>::into_id(cluster_id));
 
-        let value = self;
-        let value = serde_json::to_string(&value)?;
+        let value = opendut_types::proto::cluster::ClusterConfiguration::from(self)
+            .encode_to_vec();
 
         let mut table = db.read_write_table(CLUSTER_CONFIGURATION_TABLE)?;
         table.insert(key, value)?;
@@ -25,9 +29,7 @@ impl Persistable for ClusterConfiguration {
         let mut table = db.read_write_table(CLUSTER_CONFIGURATION_TABLE)?;
 
         let value = table.remove(key)?
-            .map(|value| {
-                serde_json::from_str::<ClusterConfiguration>(&value.value())
-            })
+            .map(|value| try_from_bytes(value.value()))
             .transpose()?;
 
         Ok(value)
@@ -38,9 +40,7 @@ impl Persistable for ClusterConfiguration {
 
         if let Some(table) = db.read_table(CLUSTER_CONFIGURATION_TABLE)? {
             let value = table.get(&key)?
-                .map(|value| {
-                    serde_json::from_str::<ClusterConfiguration>(&value.value())
-                })
+                .map(|value| try_from_bytes(value.value()))
                 .transpose()?;
             Ok(value)
         } else {
@@ -54,8 +54,7 @@ impl Persistable for ClusterConfiguration {
                 .map(|value| {
                     let (key, value) = value?;
                     let id = ResourceId::<Self>::from_id(key.value().id);
-
-                    let value = serde_json::from_str::<ClusterConfiguration>(&value.value())?;
+                    let value = try_from_bytes(value.value())?;
 
                     Ok((id, value))
                 })
@@ -66,6 +65,8 @@ impl Persistable for ClusterConfiguration {
     }
 }
 
-const CLUSTER_CONFIGURATION_TABLE: TableDefinition = TableDefinition::new("cluster_configuration");
-
-//TODO SerializableClusterConfiguration + Version-field
+fn try_from_bytes(bytes: Vec<u8>) -> PersistenceResult<ClusterConfiguration> {
+    let value = opendut_types::proto::cluster::ClusterConfiguration::decode(bytes.as_slice())?;
+    let value = ClusterConfiguration::try_from(value)?;
+    Ok(value)
+}

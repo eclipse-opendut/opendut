@@ -14,7 +14,8 @@ pub enum PersistenceErrorKind {
         identifier: Option<String>,
         #[source] source: Option<Cause>,
     },
-    JsonSerialization(#[source] serde_json::Error),
+    ProtobufDecode(#[source] prost::DecodeError),
+    ProtobufConversion(#[source] opendut_types::proto::ConversionError),
     KeyValueStore(#[source] redb::Error),
 
     #[cfg(feature="postgres")]
@@ -80,7 +81,8 @@ impl Display for PersistenceErrorKind {
                     writeln!(f, "  Source: {source}")
                 ).transpose()?;
             }
-            Self::JsonSerialization(source) => writeln!(f, "Error while serializing to JSON while storing in or loading from persistence: {source}")?,
+            Self::ProtobufDecode(source) => writeln!(f, "Error while converting stored bytes to ProtoBuf model while loading from persistence: {source}")?,
+            Self::ProtobufConversion(source) => writeln!(f, "Error while converting from ProtoBuf model to internal model while loading from persistence: {source}")?,
             Self::KeyValueStore(source) => writeln!(f, "Error occurred in the key-value store: {source}")?,
 
             #[cfg(feature="postgres")]
@@ -125,10 +127,18 @@ impl<T, E> MapErrToInner<T, E> for PersistenceResult<Result<T, E>> {
     }
 }
 
-impl From<serde_json::Error> for PersistenceError {
-    fn from(error: serde_json::Error) -> Self {
+impl From<prost::DecodeError> for PersistenceError {
+    fn from(error: prost::DecodeError) -> Self {
         PersistenceError {
-            source: PersistenceErrorKind::JsonSerialization(error),
+            source: PersistenceErrorKind::ProtobufDecode(error),
+            context_messages: vec![],
+        }
+    }
+}
+impl From<opendut_types::proto::ConversionError> for PersistenceError {
+    fn from(error: opendut_types::proto::ConversionError) -> Self {
+        PersistenceError {
+            source: PersistenceErrorKind::ProtobufConversion(error),
             context_messages: vec![],
         }
     }

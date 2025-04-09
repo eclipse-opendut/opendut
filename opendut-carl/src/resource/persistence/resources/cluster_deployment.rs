@@ -1,19 +1,22 @@
+use super::Persistable;
 use crate::resource::api::id::ResourceId;
 use crate::resource::persistence;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::{Db, Memory};
 use opendut_types::cluster::{ClusterDeployment, ClusterId};
 use persistence::TableDefinition;
+use prost::Message;
 use std::collections::HashMap;
 
-use super::Persistable;
+const CLUSTER_DEPLOYMENT_TABLE: TableDefinition = TableDefinition::new("cluster_deployment");
+
 
 impl Persistable for ClusterDeployment {
     fn insert(self, cluster_id: ClusterId, _: &mut Memory, db: &Db) -> PersistenceResult<()> {
         let key = persistence::Key::from(ResourceId::<Self>::into_id(cluster_id));
 
-        let value = self;
-        let value = serde_json::to_string(&value)?;
+        let value = opendut_types::proto::cluster::ClusterDeployment::from(self)
+            .encode_to_vec();
 
         let mut table = db.read_write_table(CLUSTER_DEPLOYMENT_TABLE)?;
         table.insert(key, value)?;
@@ -27,9 +30,7 @@ impl Persistable for ClusterDeployment {
         let mut table = db.read_write_table(CLUSTER_DEPLOYMENT_TABLE)?;
 
         let value = table.remove(key)?
-            .map(|value| {
-                serde_json::from_str::<ClusterDeployment>(&value.value())
-            })
+            .map(|value| try_from_bytes(value.value()))
             .transpose()?;
 
         Ok(value)
@@ -40,9 +41,7 @@ impl Persistable for ClusterDeployment {
 
         if let Some(table) = db.read_table(CLUSTER_DEPLOYMENT_TABLE)? {
             let value = table.get(&key)?
-                .map(|value| {
-                    serde_json::from_str::<ClusterDeployment>(&value.value())
-                })
+                .map(|value| try_from_bytes(value.value()))
                 .transpose()?;
             Ok(value)
         } else {
@@ -56,8 +55,7 @@ impl Persistable for ClusterDeployment {
                 .map(|value| {
                     let (key, value) = value?;
                     let id: ClusterId = ResourceId::<ClusterDeployment>::from_id(key.value().id);
-
-                    let value = serde_json::from_str::<ClusterDeployment>(&value.value())?;
+                    let value = try_from_bytes(value.value())?;
 
                     Ok((id, value))
                 })
@@ -68,6 +66,8 @@ impl Persistable for ClusterDeployment {
     }
 }
 
-const CLUSTER_DEPLOYMENT_TABLE: TableDefinition = TableDefinition::new("cluster_deployment");
-
-//TODO SerializableClusterDeployment
+fn try_from_bytes(bytes: Vec<u8>) -> PersistenceResult<ClusterDeployment> {
+    let value = opendut_types::proto::cluster::ClusterDeployment::decode(bytes.as_slice())?;
+    let value = ClusterDeployment::try_from(value)?;
+    Ok(value)
+}

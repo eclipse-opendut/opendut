@@ -2,28 +2,22 @@ use super::Persistable;
 use crate::resource::api::id::ResourceId;
 use crate::resource::persistence;
 use crate::resource::persistence::error::PersistenceResult;
-use crate::resource::persistence::{Db, Memory, TableDefinition};
-use opendut_types::peer::executor::ExecutorDescriptors;
-use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
-use opendut_types::topology::Topology;
-use serde::{Deserialize, Serialize};
+use crate::resource::persistence::{Db, Key, Memory, TableDefinition, Value};
+use opendut_types::peer::{PeerDescriptor, PeerId};
+use prost::Message;
 use std::collections::HashMap;
 
-impl Persistable for PeerDescriptor {
+const PEER_DESCRIPTOR_TABLE: redb::TableDefinition<Key, Value> = TableDefinition::new("peer_descriptor");
 
+
+impl Persistable for PeerDescriptor {
     fn insert(self, peer_id: PeerId, _: &mut Memory, db: &Db) -> PersistenceResult<()> {
         let key = persistence::Key::from(ResourceId::<Self>::into_id(peer_id));
 
+        let value = opendut_types::proto::peer::PeerDescriptor::from(self)
+            .encode_to_vec();
+
         let mut table = db.read_write_table(PEER_DESCRIPTOR_TABLE)?;
-
-        let value = {
-            let PeerDescriptor { id, name, location, network, topology, executors } = self;
-            SerializablePeerDescriptor {
-                id, name, location, network, topology, executors,
-            }
-        };
-        let value = serde_json::to_string(&value)?;
-
         table.insert(&key, value)?;
 
         Ok(())
@@ -35,12 +29,7 @@ impl Persistable for PeerDescriptor {
         let mut table = db.read_write_table(PEER_DESCRIPTOR_TABLE)?;
 
         let value = table.remove(&key)?
-            .map(|value| {
-                let peer_descriptor = serde_json::from_str::<SerializablePeerDescriptor>(&value.value())?;
-
-                let SerializablePeerDescriptor { id, name, location, network, topology, executors } = peer_descriptor;
-                PersistenceResult::Ok(PeerDescriptor { id, name, location, network, topology, executors })
-            })
+            .map(|value| try_from_bytes(value.value()))
             .transpose()?;
 
         Ok(value)
@@ -51,12 +40,7 @@ impl Persistable for PeerDescriptor {
 
         if let Some(table) = db.read_table(PEER_DESCRIPTOR_TABLE)? {
             table.get(&key)?
-                .map(|value| {
-                    let peer_descriptor = serde_json::from_str::<SerializablePeerDescriptor>(&value.value())?;
-
-                    let SerializablePeerDescriptor { id, name, location, network, topology, executors } = peer_descriptor;
-                    PersistenceResult::Ok(PeerDescriptor { id, name, location, network, topology, executors })
-                })
+                .map(|value| try_from_bytes(value.value()))
                 .transpose()
         } else {
             Ok(None)
@@ -69,14 +53,9 @@ impl Persistable for PeerDescriptor {
                 .map(|value| {
                     let (key, value) = value?;
                     let id = ResourceId::<Self>::from_id(key.value().id);
+                    let value = try_from_bytes(value.value())?;
 
-                    let peer_descriptor = serde_json::from_str::<SerializablePeerDescriptor>(&value.value())?;
-                    let peer_descriptor = {
-                        let SerializablePeerDescriptor { id, name, location, network, topology, executors } = peer_descriptor;
-                        PeerDescriptor { id, name, location, network, topology, executors }
-                    };
-
-                    Ok((id, peer_descriptor))
+                    Ok((id, value))
                 })
                 .collect::<PersistenceResult<HashMap<_, _>>>()
         } else {
@@ -85,14 +64,8 @@ impl Persistable for PeerDescriptor {
     }
 }
 
-const PEER_DESCRIPTOR_TABLE: TableDefinition = TableDefinition::new("peer_descriptor");
-
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
-struct SerializablePeerDescriptor { //TODO From-implementation //TODO version-field, if nothing exists natively in redb
-    pub id: PeerId,
-    pub name: PeerName,
-    pub location: Option<PeerLocation>,
-    pub network: PeerNetworkDescriptor,
-    pub topology: Topology,
-    pub executors: ExecutorDescriptors,
+fn try_from_bytes(bytes: Vec<u8>) -> PersistenceResult<PeerDescriptor> {
+    let value = opendut_types::proto::peer::PeerDescriptor::decode(bytes.as_slice())?;
+    let value = PeerDescriptor::try_from(value)?;
+    Ok(value)
 }

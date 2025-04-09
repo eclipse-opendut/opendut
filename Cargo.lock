@@ -3913,6 +3913,7 @@ dependencies = [
  "pin-project-lite",
  "pq-sys",
  "predicates",
+ "prost",
  "redb",
  "reqwest",
  "rstest",

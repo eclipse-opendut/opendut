@@ -115,7 +115,7 @@ impl From<Id> for Key {
     }
 }
 
-pub(super) type Value = String;
+pub(super) type Value = Vec<u8>;
 pub(super) type TableDefinition<'a> = redb::TableDefinition<'a, Key, Value>;
 
 

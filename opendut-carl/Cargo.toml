@@ -39,6 +39,7 @@ opentelemetry_sdk = { workspace = true }
 pem = { workspace = true, features = ["serde"]}
 pin-project-lite = { workspace = true }
 pq-sys = { workspace = true, optional = true }
+prost = { workspace = true }
 redb = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
 serde = { workspace = true, features = ["derive"] }
