@@ -10,7 +10,8 @@ use uuid::Uuid;
 #[cfg(feature="postgres")] pub mod database;
 pub(crate) mod error;
 pub(crate) mod resources;
-#[cfg(feature="postgres")] mod query;
+#[cfg(feature="postgres")]
+pub(crate) mod query;
 
 pub type Memory = Arc<Mutex<VolatileResourcesStorage>>;
 
@@ -150,7 +151,7 @@ pub mod testing {
         let persistence_options = PersistenceOptions::Enabled {
             database_connect_info: connect_info,
         };
-        let resource_manager = ResourceManager::create(global, persistence_options).await?;
+        let resource_manager = ResourceManager::create(global, &persistence_options).await?;
 
         Ok(PostgresResources { resource_manager, temp_dir })
     }

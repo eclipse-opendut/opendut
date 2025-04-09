@@ -23,11 +23,10 @@ pub enum ResourceStorage {
     Volatile(VolatileResourcesStorageHandle),
 }
 impl ResourceStorage {
-    pub async fn connect(options: PersistenceOptions) -> Result<Self, ConnectError> {
+    pub async fn connect(options: &PersistenceOptions) -> Result<Self, ConnectError> {
         let storage = match options {
             PersistenceOptions::Enabled { database_connect_info } => {
-                let storage = PersistentResourcesStorage::connect(&database_connect_info).await?;
-
+                let storage = PersistentResourcesStorage::connect(database_connect_info).await?;
                 ResourceStorage::Persistent(storage)
             }
             PersistenceOptions::Disabled => {

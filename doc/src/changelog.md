@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Breaking Changes
+* The database backend was swapped out for a Key-Value Store.  
+  Before upgrading, create a backup and then run the following on the target host:
+  ```sh
+  docker run -e OPENDUT_CARL_POSTGRES_MIGRATION=true ghcr.io/eclipse-opendut/opendut-carl:0.6.0
+  ```
+
 ### Added
 * Localenv: Add environment variable `OPENDUT_CARL_IMAGE_VERSION` to override the CARL image in use.
 

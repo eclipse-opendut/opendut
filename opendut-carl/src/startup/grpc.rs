@@ -38,10 +38,24 @@ impl GrpcFacades {
             global.insert(vpn.clone());
             let global = global.complete();
 
-            let resources_storage_options = PersistenceOptions::load(settings)?;
+            let persistence_options = PersistenceOptions::load(settings)?;
 
-            ResourceManager::create(global, resources_storage_options).await
-                .context("Creating ResourceManager failed")?
+            let resource_manager = ResourceManager::create(global, &persistence_options).await
+                .context("Creating ResourceManager failed")?;
+
+            #[cfg(feature="postgres")]
+            if let Some(value) = std::env::var_os("OPENDUT_CARL_POSTGRES_MIGRATION") {
+                tracing::info!("Found environment variable `OPENDUT_CARL_POSTGRES_MIGRATION`. Starting migration.");
+                assert!(!value.is_empty());
+
+                startup::postgres_migration::load_data_from_postgres_into_key_value_store(resource_manager.clone(), &persistence_options).await
+                    .expect("Migration from Postgres to Key-Value Store should complete without errors");
+
+                tracing::info!("Migration complete. Exiting.");
+                std::process::exit(0);
+            }
+
+            resource_manager
         };
 
         startup::metrics::initialize_metrics_collection(Arc::clone(&resource_manager));

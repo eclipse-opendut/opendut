@@ -17,8 +17,6 @@ pub struct PersistentResourcesStorage {
 }
 impl PersistentResourcesStorage {
     pub async fn connect(database_connect_info: &DatabaseConnectInfo) -> Result<Self, ConnectError> {
-        // let _ = crate::resource::persistence::database::connect(database_connect_info).await?; //TODO remove or use for migration
-
         let file = &database_connect_info.file;
 
         if let Some(parent_dir) = file.parent() {

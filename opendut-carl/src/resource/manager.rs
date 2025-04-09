@@ -26,8 +26,8 @@ struct State {
 
 impl ResourceManager {
 
-    pub async fn create(global: GlobalResourcesRef, storage_options: PersistenceOptions) -> Result<ResourceManagerRef, ConnectError> {
-        let resources = ResourceStorage::connect(storage_options).await?;
+    pub async fn create(global: GlobalResourcesRef, persistence_options: &PersistenceOptions) -> Result<ResourceManagerRef, ConnectError> {
+        let resources = ResourceStorage::connect(persistence_options).await?;
         let subscribers = ResourceSubscriptionChannels::default();
 
         Ok(Arc::new(Self {
@@ -156,7 +156,7 @@ impl ResourceManager {
 impl ResourceManager {
     pub fn new_in_memory() -> ResourceManagerRef {
         let resources = futures::executor::block_on(
-            ResourceStorage::connect(PersistenceOptions::Disabled)
+            ResourceStorage::connect(&PersistenceOptions::Disabled)
         )
         .expect("Creating in-memory storage for tests should not fail");
 
