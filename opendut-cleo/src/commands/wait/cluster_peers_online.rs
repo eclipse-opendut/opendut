@@ -1,5 +1,5 @@
 use opendut_carl_api::carl::CarlClient;
-use opendut_carl_api::carl::cluster::{ListClusterPeerStatesResponse, ListClusterPeersError};
+use opendut_carl_api::carl::cluster::{ListClusterPeerStatesResponse};
 use opendut_types::cluster::ClusterId;
 use crate::commands::wait::await_peers_online;
 

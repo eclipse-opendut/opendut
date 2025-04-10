@@ -487,8 +487,8 @@ mod test {
             async fn delete_netbird_policy(&self, policy_id: &netbird::PolicyId) -> std::result::Result<(), RequestError>;
             async fn generate_netbird_setup_key(&self, peer_id: PeerId) -> std::result::Result<netbird::SetupKey, CreateSetupKeyError>;
             async fn list_setup_keys(&self) -> std::result::Result<Vec<netbird::SetupKey>, RequestError>;
-            async fn get_setup_key(&self, peer_id: PeerId) -> std::result::Result<Option<SetupKey>, RequestError>;
-            async fn delete_setup_key(&self, peer_id: PeerId) -> std::result::Result<Option<SetupKey>, RequestError>;
+            async fn get_setup_key(&self, peer_id: PeerId) -> std::result::Result<Vec<SetupKey>, RequestError>;
+            async fn delete_setup_key(&self, peer_id: PeerId) -> std::result::Result<Vec<SetupKey>, RequestError>;
         }
     }
 }

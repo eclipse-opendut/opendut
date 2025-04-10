@@ -24,8 +24,8 @@ pub trait Client {
     async fn get_netbird_group(&self, group_name: &netbird::GroupName) -> Result<netbird::Group, GetGroupError>;
     async fn delete_netbird_group(&self, group_id: &netbird::GroupId) -> Result<(), RequestError>;
     async fn list_setup_keys(&self) -> Result<Vec<netbird::SetupKey>, RequestError>;
-    async fn get_setup_key(&self, peer_id: PeerId) -> Result<Option<netbird::SetupKey>, RequestError>;
-    async fn delete_setup_key(&self, peer_id: PeerId) -> Result<Option<netbird::SetupKey>, RequestError>;
+    async fn get_setup_key(&self, peer_id: PeerId) -> Result<Vec<netbird::SetupKey>, RequestError>;
+    async fn delete_setup_key(&self, peer_id: PeerId) -> Result<Vec<netbird::SetupKey>, RequestError>;
     #[allow(unused)] //Currently unused, but expected to be needed again
     async fn get_netbird_peer(&self, peer_id: &netbird::PeerId) -> Result<netbird::Peer, RequestError>;
     async fn delete_netbird_peer(&self, peer_id: &netbird::PeerId) -> Result<(), RequestError>;
@@ -198,25 +198,24 @@ impl Client for DefaultClient {
         Ok(setup_keys)
     }
 
-    async fn get_setup_key(&self, peer_id: PeerId) -> Result<Option<netbird::SetupKey>, RequestError> {
+    async fn get_setup_key(&self, peer_id: PeerId) -> Result<Vec<netbird::SetupKey>, RequestError> {
         let name = netbird::setup_key_name_format(peer_id);
         let all_keys = self.list_setup_keys().await?;
-        let maybe_setup_key = all_keys.into_iter().find(|setup_key| setup_key.name.eq(&name));
-        Ok(maybe_setup_key)
+        let found_setup_keys = all_keys.into_iter().filter(|setup_key| setup_key.name.eq(&name)).collect::<Vec<_>>();
+        Ok(found_setup_keys)
     }
 
-    async fn delete_setup_key(&self, peer_id: PeerId) -> Result<Option<netbird::SetupKey>, RequestError> {
-        let maybe_setup_key = self.get_setup_key(peer_id).await?;
-        if let Some(setup_key) = maybe_setup_key.clone() {
+    async fn delete_setup_key(&self, peer_id: PeerId) -> Result<Vec<netbird::SetupKey>, RequestError> {
+        let found_setup_keys = self.get_setup_key(peer_id).await?;
+        for setup_key in found_setup_keys.iter() {
             let url = routes::setup_key(Clone::clone(&self.netbird_url), &setup_key.id);
-            let body = CreateSetupKey::deleted(setup_key.name);
+            let body = CreateSetupKey::deleted(setup_key.name.to_string());
             let request = put_json_request(url, body)?;
             let response = self.requester.handle(request).await?;
             response.error_for_status()
                 .map_err(RequestError::IllegalStatus)?;
-
         }
-        Ok(maybe_setup_key)
+        Ok(found_setup_keys)
     }
 
     #[tracing::instrument(skip(self), level="trace")]
