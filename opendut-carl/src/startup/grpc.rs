@@ -11,7 +11,6 @@ use crate::startup;
 use crate::manager::cluster_manager::{ClusterManager, ClusterManagerOptions};
 use crate::manager::observer_messaging_broker::ObserverMessagingBroker;
 use crate::manager::peer_messaging_broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
-use crate::resource::api::global::GlobalResources;
 use crate::settings::vpn;
 
 pub struct GrpcFacades {
@@ -30,17 +29,10 @@ impl GrpcFacades {
         settings: &Config,
     ) -> anyhow::Result<Self> {
 
-        let vpn = vpn::create(settings).await
-            .context("Error while parsing VPN configuration.")?;
-
         let resource_manager = {
-            let mut global = GlobalResources::default();
-            global.insert(vpn.clone());
-            let global = global.complete();
-
             let persistence_options = PersistenceOptions::load(settings)?;
 
-            let resource_manager = ResourceManager::create(global, &persistence_options).await
+            let resource_manager = ResourceManager::create(&persistence_options).await
                 .context("Creating ResourceManager failed")?;
 
             #[cfg(feature="postgres")]
@@ -57,6 +49,9 @@ impl GrpcFacades {
 
             resource_manager
         };
+
+        let vpn = vpn::create(settings).await
+            .context("Error while parsing VPN configuration.")?;
 
         startup::metrics::initialize_metrics_collection(Arc::clone(&resource_manager));
 

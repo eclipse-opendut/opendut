@@ -1,4 +1,3 @@
-use crate::resource::api::global::GlobalResourcesRef;
 use crate::resource::api::resources::{RelayedSubscriptionEvents, Resources};
 use crate::resource::api::Resource;
 use crate::resource::ConnectError;
@@ -36,36 +35,36 @@ impl ResourceStorage {
         Ok(storage)
     }
 
-    pub(super) async fn resources<T, F>(&self, global: GlobalResourcesRef, code: F) -> PersistenceResult<T>
+    pub(super) async fn resources<T, F>(&self, code: F) -> PersistenceResult<T>
     where
         F: AsyncFnOnce(&mut Resources) -> T,
     {
         match self {
             ResourceStorage::Persistent(storage) => storage.resources(async |transaction| {
-                let mut transaction = Resources::persistent(transaction, global);
+                let mut transaction = Resources::persistent(transaction);
                 code(&mut transaction).await
             }).await,
             ResourceStorage::Volatile(storage) => Ok(
                 storage.resources(async |transaction| {
-                    let mut transaction = Resources::volatile(transaction, global);
+                    let mut transaction = Resources::volatile(transaction);
                     code(&mut transaction).await
                 }).await
             ),
         }
     }
 
-    pub(super) async fn resources_mut<T, E, F>(&mut self, global: GlobalResourcesRef, code: F) -> PersistenceResult<(Result<T, E>, RelayedSubscriptionEvents)>
+    pub(super) async fn resources_mut<T, E, F>(&mut self, code: F) -> PersistenceResult<(Result<T, E>, RelayedSubscriptionEvents)>
     where
         F: AsyncFnOnce(&mut Resources) -> Result<T, E>,
         E: Display,
     {
         match self {
             ResourceStorage::Persistent(storage) => storage.resources_mut(async |transaction| {
-                let mut transaction = Resources::persistent(transaction, global);
+                let mut transaction = Resources::persistent(transaction);
                 code(&mut transaction).await
             }).await,
             ResourceStorage::Volatile(storage) => storage.resources_mut(async |transaction| {
-                let mut transaction = Resources::volatile(transaction, global);
+                let mut transaction = Resources::volatile(transaction);
                 code(&mut transaction).await
             }).await,
         }

@@ -125,7 +125,6 @@ pub(super) type TableDefinition<'a> = redb::TableDefinition<'a, Key, Value>;
     all(test, doc) //doc tests, but excluded `cargo doc` (because some dependencies are only dev-dependencies)
 ))]
 pub mod testing {
-    use crate::resource::api::global::GlobalResources;
     use crate::resource::manager::{ResourceManager, ResourceManagerRef};
     use crate::resource::storage::{DatabaseConnectInfo, PersistenceOptions};
     use assert_fs::fixture::PathChild;
@@ -147,11 +146,10 @@ pub mod testing {
     pub async fn spawn_and_connect_resource_manager() -> anyhow::Result<PostgresResources> {
         let (connect_info, temp_dir) = spawn().await?;
 
-        let global = GlobalResources::default().complete();
         let persistence_options = PersistenceOptions::Enabled {
             database_connect_info: connect_info,
         };
-        let resource_manager = ResourceManager::create(global, &persistence_options).await?;
+        let resource_manager = ResourceManager::create(&persistence_options).await?;
 
         Ok(PostgresResources { resource_manager, temp_dir })
     }

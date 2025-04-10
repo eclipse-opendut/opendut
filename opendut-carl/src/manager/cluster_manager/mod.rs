@@ -50,7 +50,7 @@ use error::*;
 pub struct ClusterManager {
     resource_manager: ResourceManagerRef,
     peer_messaging_broker: PeerMessagingBrokerRef,
-    vpn: Vpn,
+    pub vpn: Vpn,
     options: ClusterManagerOptions,
     can_server_port_counter: u16,
 }

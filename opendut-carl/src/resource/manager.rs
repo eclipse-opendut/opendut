@@ -1,4 +1,3 @@
-use crate::resource::api::global::GlobalResourcesRef;
 use crate::resource::api::resources::{RelayedSubscriptionEvents, Resources};
 use crate::resource::api::Resource;
 use crate::resource::persistence::error::{MapErrToInner, PersistenceResult};
@@ -16,7 +15,6 @@ pub type ResourceManagerRef = Arc<ResourceManager>;
 
 pub struct ResourceManager {
     state: RwLock<State>,
-    pub global: GlobalResourcesRef,
 }
 
 struct State {
@@ -26,13 +24,12 @@ struct State {
 
 impl ResourceManager {
 
-    pub async fn create(global: GlobalResourcesRef, persistence_options: &PersistenceOptions) -> Result<ResourceManagerRef, ConnectError> {
+    pub async fn create(persistence_options: &PersistenceOptions) -> Result<ResourceManagerRef, ConnectError> {
         let resources = ResourceStorage::connect(persistence_options).await?;
         let subscribers = ResourceSubscriptionChannels::default();
 
         Ok(Arc::new(Self {
             state: RwLock::new(State { storage: resources, subscribers }),
-            global,
         }))
     }
 
@@ -55,13 +52,13 @@ impl ResourceManager {
     pub async fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
     where R: Resource + Persistable + Clone {
         let state = self.state.read().await;
-        state.storage.resources(self.global.clone(), async |resources| resources.get(id)).await?
+        state.storage.resources(async |resources| resources.get(id)).await?
     }
 
     pub async fn list<R>(&self) -> PersistenceResult<HashMap<R::Id, R>>
     where R: Resource + Persistable + Clone {
         let state = self.state.read().await;
-        state.storage.resources(self.global.clone(), async |resources| resources.list()).await?
+        state.storage.resources(async |resources| resources.list()).await?
     }
 
     pub async fn resources<F, T>(&self, closure: F) -> PersistenceResult<T>
@@ -69,7 +66,7 @@ impl ResourceManager {
         F: AsyncFnOnce(&Resources) -> T,
     {
         let state = self.state.read().await;
-        state.storage.resources(self.global.clone(), async move |transaction| {
+        state.storage.resources(async move |transaction| {
             closure(transaction).await
         }).await
     }
@@ -84,7 +81,7 @@ impl ResourceManager {
         E: Display,
     {
         let mut state = self.state.write().await;
-        let (result, relayed_subscription_events) = state.storage.resources_mut(self.global.clone(), async move |transaction| {
+        let (result, relayed_subscription_events) = state.storage.resources_mut(async move |transaction| {
             closure(transaction).await
         }).await?;
         if result.is_ok() {
@@ -162,13 +159,8 @@ impl ResourceManager {
 
         let subscribers = ResourceSubscriptionChannels::default();
 
-        let mut global = crate::resource::api::global::GlobalResources::default();
-        global.insert(crate::settings::vpn::Vpn::Disabled);
-        let global = global.complete();
-
         Arc::new(Self {
             state: RwLock::new(State { storage: resources, subscribers }),
-            global,
         })
     }
 

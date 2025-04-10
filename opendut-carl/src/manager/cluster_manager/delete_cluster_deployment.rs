@@ -9,13 +9,14 @@ use crate::resource::storage::ResourcesStorageApi;
 
 pub struct DeleteClusterDeploymentParams {
     pub cluster_id: ClusterId,
+    pub vpn: Vpn,
 }
 
 impl Resources<'_> {
     #[tracing::instrument(skip_all, level="trace")]
     pub async fn delete_cluster_deployment(&mut self, params: DeleteClusterDeploymentParams) -> Result<ClusterDeployment, DeleteClusterDeploymentError> {
 
-        let DeleteClusterDeploymentParams { cluster_id } = params;
+        let DeleteClusterDeploymentParams { cluster_id, vpn } = params;
 
         let (deployment, cluster) =
             self.remove::<ClusterDeployment>(cluster_id)
@@ -28,7 +29,7 @@ impl Resources<'_> {
                 .ok_or(DeleteClusterDeploymentError::ClusterDeploymentNotFound { cluster_id })??;
 
         if let Some(cluster) = cluster {
-            if let Vpn::Enabled { vpn_client } = self.global.get::<Vpn>() {
+            if let Vpn::Enabled { vpn_client } = vpn {
                 vpn_client.delete_cluster(cluster_id).await
                     .map_err(|source| DeleteClusterDeploymentError::VpnClient { cluster_id, cluster_name: cluster.name.clone(), source })?;
             }

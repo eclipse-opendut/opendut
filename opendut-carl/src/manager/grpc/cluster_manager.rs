@@ -177,11 +177,12 @@ impl ClusterManagerService for ClusterManagerFacade {
     async fn delete_cluster_deployment(&self, request: Request<DeleteClusterDeploymentRequest>) -> Result<Response<DeleteClusterDeploymentResponse>, Status> {
         let request = request.into_inner();
         let cluster_id: ClusterId = extract!(request.cluster_id)?;
+        let vpn = self.cluster_manager.lock().await.vpn.clone();
 
         trace!("Received request to delete cluster deployment for cluster <{cluster_id}>.");
 
         let result = self.resource_manager.resources_mut(async |resources|
-            resources.delete_cluster_deployment(DeleteClusterDeploymentParams { cluster_id }).await
+            resources.delete_cluster_deployment(DeleteClusterDeploymentParams { cluster_id, vpn }).await
         ).await
             .map_err_to_inner(|source| DeleteClusterDeploymentError::Persistence {
                 cluster_id,

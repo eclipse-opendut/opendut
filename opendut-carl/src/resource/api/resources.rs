@@ -6,29 +6,25 @@ use crate::resource::storage::volatile::VolatileResourcesTransaction;
 use crate::resource::storage::ResourcesStorageApi;
 use crate::resource::subscription::{ResourceSubscriptionChannels, Subscribable, SubscriptionEvent};
 use std::collections::HashMap;
-use crate::resource::api::global::GlobalResourcesRef;
 
 pub type RelayedSubscriptionEvents = ResourceSubscriptionChannels;
 
 pub struct Resources<'transaction> {
     kind: ResourcesKind<'transaction>,
-    pub global: GlobalResourcesRef,
 }
 pub enum ResourcesKind<'transaction> {
     Persistent(PersistentResourcesTransaction<'transaction>),
     Volatile(VolatileResourcesTransaction<'transaction>),
 }
 impl<'transaction> Resources<'transaction> {
-    pub fn persistent(transaction: PersistentResourcesTransaction<'transaction>, global: GlobalResourcesRef) -> Self {
+    pub fn persistent(transaction: PersistentResourcesTransaction<'transaction>) -> Self {
         Resources {
             kind: ResourcesKind::Persistent(transaction),
-            global,
         }
     }
-    pub fn volatile(transaction: VolatileResourcesTransaction<'transaction>, global: GlobalResourcesRef) -> Self {
+    pub fn volatile(transaction: VolatileResourcesTransaction<'transaction>) -> Self {
         Resources {
             kind: ResourcesKind::Volatile(transaction),
-            global,
         }
     }
 }
