@@ -72,7 +72,7 @@ impl PeerMessagingBroker {
         Ok(())
     }
 
-    pub async fn disconnect(&self, peer_id: PeerId) -> Result<(), Error> {
+    async fn disconnect(&self, peer_id: PeerId) -> Result<(), Error> {
         let downstream = {
             let peers = self.peers.read().await;
             peers.get(&peer_id)
@@ -96,7 +96,32 @@ impl PeerMessagingBroker {
 
         Ok(())
     }
-    
+
+    pub async fn remove_peer(&self, peer_id: PeerId) -> Result<(), RemovePeerError> {
+        let peer_connection_state = self.resource_manager.get::<PeerConnectionState>(peer_id).await;
+        if let Ok(Some(peer_connection_state)) = peer_connection_state {
+            match peer_connection_state {
+                PeerConnectionState::Offline => {
+                    debug!("Removing connection state of peer <{peer_id}> since the peer descriptor itself was deleted.");
+                    let _ = self.resource_manager.remove::<PeerConnectionState>(peer_id).await;
+                }
+                PeerConnectionState::Online { .. } => {
+                    let result = self.disconnect(peer_id).await;
+                    match result {
+                        Ok(_) => {
+                            tracing::log::trace!("Sent disconnect notice to online peer <{peer_id}>.");
+                        }
+                        Err(_) => {
+                            error!("Failed to send disconnect notice to online peer <{peer_id}>.");
+                        }
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+
     pub async fn open(
         &self,
         peer_id: PeerId,
@@ -253,10 +278,16 @@ impl PeerMessagingBroker {
             .map_err(|source| RemovePeerError::Persistence { peer_id, source })?
             .ok_or(RemovePeerError::PeerNotFound(peer_id))?;
 
-        debug!("Setting connection state of peer <{peer_id}> to Down.");
-        resource_manager.insert(peer_id, PeerConnectionState::Offline).await
-            .map_err(|source| RemovePeerError::Persistence { peer_id, source })?;
-
+        let peer_descriptor_deleted = resource_manager.get::<PeerDescriptor>(peer_id).await
+            .map_err(|source| RemovePeerError::Persistence { peer_id, source })?.is_none();
+        if peer_descriptor_deleted {
+            let _ = resource_manager.remove::<PeerConnectionState>(peer_id).await
+                .map_err(|source| RemovePeerError::Persistence { peer_id, source })?;
+        } else {
+            debug!("Setting connection state of peer <{peer_id}> to offline.");
+            resource_manager.insert(peer_id, PeerConnectionState::Offline).await
+                .map_err(|source| RemovePeerError::Persistence { peer_id, source })?;
+        }
         if let PeerConnectionState::Online { remote_host } = peer_connection_state {
             debug!("Removing peer <{peer_id}> from list of peers connected to message broker. Last known address <{remote_host}>.");
         } else {
@@ -425,6 +456,58 @@ mod tests {
             }
         }
 
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_disconnect_peer_when_peer_descriptor_was_removed() -> anyhow::Result<()> {
+        let Fixture { resource_manager, peer_id } = fixture().await?;
+        let options = PeerMessagingBrokerOptions {
+            peer_disconnect_timeout: Duration::from_millis(200),
+        };
+        let testee = PeerMessagingBroker::new(Arc::clone(&resource_manager), options.clone()).await;
+        let remote_host = IpAddr::from_str("1.2.3.4")?;
+
+        let result = testee.open(peer_id, remote_host, stream_header::ExtraHeaders::default()).await;
+        assert!(result.is_ok());
+        assert!(resource_manager.get::<PeerConnectionState>(peer_id).await?.is_some());
+        assert!(resource_manager.get::<PeerDescriptor>(peer_id).await?.is_some());
+
+        // ACT
+        let _ = resource_manager.remove::<PeerDescriptor>(peer_id).await?;
+        tokio::time::sleep(
+            options.peer_disconnect_timeout * 6  // more than receive timeout + channel close timeout
+        ).await;
+
+        // ASSERT
+        assert!(resource_manager.get::<PeerConnectionState>(peer_id).await?.is_none(), "Expected connection state to be remove since peer was removed!");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_memorize_peer_connection_state_is_offline_when_peer_disconnects() -> anyhow::Result<()> {
+        let Fixture { resource_manager, peer_id } = fixture().await?;
+        let options = PeerMessagingBrokerOptions {
+            peer_disconnect_timeout: Duration::from_millis(200),
+        };
+        let testee = PeerMessagingBroker::new(Arc::clone(&resource_manager), options.clone()).await;
+        let remote_host = IpAddr::from_str("1.2.3.4")?;
+
+        let result = testee.open(peer_id, remote_host, stream_header::ExtraHeaders::default()).await;
+        assert!(result.is_ok());
+        assert!(resource_manager.get::<PeerConnectionState>(peer_id).await?.is_some());
+
+        // ACT
+        testee.disconnect(peer_id).await?;
+        tokio::time::sleep(
+            options.peer_disconnect_timeout * 6  // more than receive timeout + channel close timeout
+        ).await;
+
+        // ASSERT
+        let connection_state = resource_manager.get::<PeerConnectionState>(peer_id).await?;
+        assert!(connection_state.is_some(), "Expected connection state to be present since peer was only disconnected and not removed!");
+        assert_eq!(Some(PeerConnectionState::Offline), connection_state);
+        
         Ok(())
     }
 

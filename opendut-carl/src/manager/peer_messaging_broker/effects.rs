@@ -1,7 +1,5 @@
-use tracing::error;
-use tracing::log::trace;
+use tracing::log::{error, trace};
 use opendut_types::peer::PeerDescriptor;
-use opendut_types::peer::state::PeerConnectionState;
 use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
 use crate::resource::manager::{ResourceManagerRef, SubscriptionEvent};
 
@@ -18,27 +16,8 @@ pub async fn disconnect_peer_when_removed(resource_manager: ResourceManagerRef, 
 
             if let Ok(SubscriptionEvent::Removed { id: peer_id, ..  }) = peer_subscription {
                 trace!("Peer <{peer_id}> was removed. Checking if there is an open peer connection.");
-                let peer_connection_state = resource_manager.get::<PeerConnectionState>(peer_id).await;
-                if let Ok(Some(peer_connection_state)) = peer_connection_state {
-                    match peer_connection_state {
-                        PeerConnectionState::Offline => {
-                            let _ = resource_manager.remove::<PeerConnectionState>(peer_id).await;
-                            trace!("Obsolete connection state for peer <{peer_id}> was removed.");
-                        }
-                        PeerConnectionState::Online { .. } => {
-                            let result = peer_messaging_broker.disconnect(peer_id).await;
-                            match result {
-                                Ok(_) => {
-                                    trace!("Sent disconnect notice to online peer <{peer_id}>.");
-                                }
-                                Err(_) => {
-                                    error!("Failed to send disconnect notice to online peer <{peer_id}>.");
-                                }
-                            }
-                        }
-                    }
-                }
-
+                let _ = peer_messaging_broker.remove_peer(peer_id).await
+                    .inspect_err(|error| error!("Failed to remove peer <{peer_id}>: {error}"));
             }
         }
     });
