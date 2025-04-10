@@ -1,6 +1,7 @@
 use pem::Pem;
 use std::net::SocketAddr;
 use std::str::FromStr;
+use anyhow::Context;
 use tonic::service::Routes;
 use tonic_async_interceptor::async_interceptor;
 use tower::make::Shared;
@@ -21,6 +22,8 @@ use auth::in_memory_cache::CustomInMemoryCache;
 use crate::auth::grpc_auth_layer::GrpcAuthenticationLayer;
 use crate::auth::json_web_key::JwkCacheValue;
 use crate::http::state::CarlInstallDirectory;
+use crate::resource::manager::ResourceManager;
+use crate::resource::storage::PersistenceOptions;
 use crate::startup::tls::TlsConfig;
 
 shadow_rs::shadow!(app_info);
@@ -62,12 +65,34 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
 
     let carl_url = ResourceHomeUrl::try_from(&settings)?;
 
+    let resource_manager = {
+        let persistence_options = PersistenceOptions::load(&settings)?;
+
+        let resource_manager = ResourceManager::create(&persistence_options).await
+            .context("Creating ResourceManager failed")?;
+
+        #[cfg(feature="postgres")]
+        if let Some(value) = std::env::var_os("OPENDUT_CARL_POSTGRES_MIGRATION") {
+            tracing::info!("Found environment variable `OPENDUT_CARL_POSTGRES_MIGRATION`. Starting migration.");
+            assert!(!value.is_empty());
+
+            startup::postgres_migration::load_data_from_postgres_into_key_value_store(resource_manager.clone(), &persistence_options).await
+                .expect("Migration from Postgres to Key-Value Store should complete without errors");
+
+            tracing::info!("Migration complete. Exiting.");
+            std::process::exit(0);
+        }
+
+        resource_manager
+    };
+
     let ca_certificate = Pem::from_config_path("network.tls.ca", &settings).await?;
 
     let oidc_registration_client = RegistrationClient::from_settings(&settings).await
         .expect("Failed to load oidc registration client!");
 
     let grpc_facades = startup::grpc::GrpcFacades::create(
+        resource_manager,
         &carl_url,
         ca_certificate.clone(),
         oidc_registration_client.clone(),

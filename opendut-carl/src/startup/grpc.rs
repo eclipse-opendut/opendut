@@ -5,8 +5,7 @@ use pem::Pem;
 use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_auth::registration::resources::ResourceHomeUrl;
 use crate::manager::grpc::{ClusterManagerFacade, MetadataProviderFacade, ObserverMessagingBrokerFacade, PeerManagerFacade, PeerMessagingBrokerFacade};
-use crate::resource::manager::ResourceManager;
-use crate::resource::storage::PersistenceOptions;
+use crate::resource::manager::ResourceManagerRef;
 use crate::startup;
 use crate::manager::cluster_manager::{ClusterManager, ClusterManagerOptions};
 use crate::manager::observer_messaging_broker::ObserverMessagingBroker;
@@ -23,32 +22,12 @@ pub struct GrpcFacades {
 
 impl GrpcFacades {
     pub async fn create(
+        resource_manager: ResourceManagerRef,
         carl_url: &ResourceHomeUrl,
         ca_certificate: Pem,
         oidc_registration_client: Option<RegistrationClientRef>,
         settings: &Config,
     ) -> anyhow::Result<Self> {
-
-        let resource_manager = {
-            let persistence_options = PersistenceOptions::load(settings)?;
-
-            let resource_manager = ResourceManager::create(&persistence_options).await
-                .context("Creating ResourceManager failed")?;
-
-            #[cfg(feature="postgres")]
-            if let Some(value) = std::env::var_os("OPENDUT_CARL_POSTGRES_MIGRATION") {
-                tracing::info!("Found environment variable `OPENDUT_CARL_POSTGRES_MIGRATION`. Starting migration.");
-                assert!(!value.is_empty());
-
-                startup::postgres_migration::load_data_from_postgres_into_key_value_store(resource_manager.clone(), &persistence_options).await
-                    .expect("Migration from Postgres to Key-Value Store should complete without errors");
-
-                tracing::info!("Migration complete. Exiting.");
-                std::process::exit(0);
-            }
-
-            resource_manager
-        };
 
         let vpn = vpn::create(settings).await
             .context("Error while parsing VPN configuration.")?;

@@ -5,4 +5,4 @@ pub mod http;
 pub mod cleo;
 
 #[cfg(feature="postgres")]
-mod postgres_migration;
+pub(super) mod postgres_migration;
