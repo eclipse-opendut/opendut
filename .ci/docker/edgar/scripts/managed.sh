@@ -17,20 +17,6 @@ cleo_get_peer_id() {
   fi
 }
 
-cleo_check_peer_online() {
-  PEER_NAME="$1"
-  RESULT=$(opendut-cleo list --output json peers  | jq -r --arg PEER_NAME "$PEER_NAME" '.[] | select(.name==$PEER_NAME).status')
-  if [ -n "$RESULT" ]; then
-      if [[ "$RESULT" == "Connected" ]]; then
-         return 0
-      else
-        return 1
-      fi
-  else
-      return 1
-  fi
-}
-
 cleo_check_expected_number_of_connected_peers_in_cluster() {
   expected="$1"
   cluster="$2"
@@ -115,15 +101,10 @@ opendut-edgar setup --no-confirm managed "$PEER_SETUP_STRING"
 ############################################################
 # Wait for edgar to be declared online/connected
 ############################################################
-START_TIME="$(date +%s)"
-while ! cleo_check_peer_online "$PEER_NAME"; do
-    check_timeout "$START_TIME" 600 || { echo "Timeout while waiting for EDGAR to register."; exit 1; }
-    echo "Waiting for EDGAR to register ..."
-    sleep 3
-done
+opendut-cleo await peer-online "$PEER_ID"
 
 ############################################################
-# Wait for other peers to become online
+# Wait for other peers to be online
 ############################################################
 expected_peer_count=$((OPENDUT_EDGAR_REPLICAS + 1))
 START_TIME="$(date +%s)"
@@ -142,6 +123,9 @@ if [ "$CONTAINER_SERVICE_NAME" == "leader" ]; then
   opendut-cleo apply "/opt/configurations/cluster_configuration.yaml"
   opendut-cleo delete cluster-deployment "206e5d0d-029d-4b03-8789-e0ec46e5a6ba" || echo "i dont mind if it ain't there"
   opendut-cleo create cluster-deployment "206e5d0d-029d-4b03-8789-e0ec46e5a6ba"
+
+  # Wait for cluster peers to be online
+  opendut-cleo await cluster-peers-online "206e5d0d-029d-4b03-8789-e0ec46e5a6ba"
 fi
 
 

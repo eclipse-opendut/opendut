@@ -44,6 +44,7 @@ impl TestEdgarCli {
                 set_dut_bridge_ip_address_for_pinging()?;
                 check_edgar_leader_ping_all()?;
                 check_edgar_can_ping()?;
+                delete_deployment_and_peers()?;
             }
             TaskCli::Stop => {
                 docker_compose_down(DockerCoreServices::Edgar.as_str(), false)?;
@@ -175,6 +176,13 @@ fn check_edgar_leader_ping_all() -> Result<i32, Error> {
     DockerCommand::new_exec(EDGAR_LEADER_NAME)
         .arg("/opt/pingall.sh")
         .expect_status("Failed to check if all EDGAR peers respond to ping.")
+}
+
+fn delete_deployment_and_peers() -> Result<i32, Error> {
+    println!("STAGE: Delete deployment and cleanup");
+    DockerCommand::new_exec(EDGAR_LEADER_NAME)
+        .arg("/opt/delete_deployment.sh")
+        .expect_status("Failed to delete deployment.")
 }
 
 fn check_edgar_can_ping() -> Result<i32, Error> {
