@@ -79,6 +79,6 @@ workspace = true
 
 [features]
 default = [
-#    "postgres",
+    "postgres",
 ]
 postgres = ["dep:diesel", "dep:diesel_migrations", "dep:pq-sys"]

@@ -63,8 +63,6 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
     info!("Started with configuration: {settings:?}");
     let settings = settings.config;
 
-    let carl_url = ResourceHomeUrl::try_from(&settings)?;
-
     let resource_manager = {
         let persistence_options = PersistenceOptions::load(&settings)?;
 
@@ -85,6 +83,8 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
 
         resource_manager
     };
+
+    let carl_url = ResourceHomeUrl::try_from(&settings)?;
 
     let ca_certificate = Pem::from_config_path("network.tls.ca", &settings).await?;
 
