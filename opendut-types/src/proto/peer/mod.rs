@@ -225,20 +225,71 @@ conversion! {
     }
 
     fn try_from(state: Proto) -> ConversionResult<Model> {
-        let proto_member = extract!(state.member.state)?;
-        let proto_connection = extract!(state.connection.state)?;
+        let proto_member = extract!(state.member)?;
+        let proto_connection = extract!(state.connection)?;
 
-        let connection = match proto_connection {
+        let connection = crate::peer::state::PeerConnectionState::try_from(proto_connection)?;
+        let member = crate::peer::state::PeerMemberState::try_from(proto_member)?;
+
+        Ok(crate::peer::state::PeerState {
+            connection,
+            member,
+        })
+    }
+}
+
+conversion! {
+    type Model = crate::peer::state::PeerConnectionState;
+    type Proto = PeerConnectionState;
+
+    fn from(state: Model) -> Proto {
+        let state = match state {
+            Model::Offline => {
+                peer_connection_state::State::Offline(PeerOffline {})
+            }
+            Model::Online { remote_host  } => {
+                peer_connection_state::State::Online(PeerOnline { remote_host: Some(remote_host.into()) })
+            }
+        };
+        PeerConnectionState {
+            state: Some(state)
+        }
+    }
+    fn try_from(proto: Proto) -> ConversionResult<Model> {
+        let proto_state = extract!(proto.state)?;
+        let state = match proto_state {
             peer_connection_state::State::Online(online) => {
                 let remote_host: std::net::IpAddr = extract!(online.remote_host)?
                     .try_into()?;
-                crate::peer::state::PeerConnectionState::Online { remote_host }
+                Model::Online { remote_host }
             }
-            peer_connection_state::State::Offline(_offline) => {
-                crate::peer::state::PeerConnectionState::Offline {}
+            peer_connection_state::State::Offline(_) => {
+                Model::Offline {}
             }
         };
+        Ok(state)
+    }
+}
 
+conversion! {
+    type Model = crate::peer::state::PeerMemberState;
+    type Proto = PeerMemberState;
+
+    fn from(state: Model) -> Proto {
+        let state = match state {
+            Model::Available => {
+                peer_member_state::State::Available(PeerMemberAvailable {})
+            }
+            Model::Blocked { by_cluster  } => {
+                peer_member_state::State::Blocked(PeerMemberBlocked { by_cluster: Some(by_cluster.into()) })
+            }
+        };
+        PeerMemberState {
+            state: Some(state),
+        }
+    }
+    fn try_from(proto: Proto) -> ConversionResult<Model> {
+        let proto_member = extract!(proto.state)?;
         let member = match proto_member {
             peer_member_state::State::Available(_) => {
                 crate::peer::state::PeerMemberState::Available {}
@@ -250,13 +301,9 @@ conversion! {
                 }
             }
         };
-        Ok(crate::peer::state::PeerState {
-            connection,
-            member,
-        })
+        Ok(member)
     }
 }
-
 
 #[cfg(test)]
 #[allow(non_snake_case)]
@@ -291,7 +338,7 @@ mod tests {
 
         let peer_location = "Ulm";
 
-        let native = crate::peer::PeerLocation::try_from(peer_location).unwrap();
+        let native = crate::peer::PeerLocation::try_from(peer_location)?;
         let proto = PeerLocation::from(peer_location);
 
         assert_that!(

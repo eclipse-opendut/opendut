@@ -1,5 +1,9 @@
+use std::collections::{HashMap, HashSet};
+use std::time::Duration;
 #[cfg(feature = "client")]
 pub use client::*;
+use opendut_types::peer::PeerId;
+use opendut_types::peer::state::PeerConnectionState;
 
 pub mod error {
     #[derive(thiserror::Error, Debug)]
@@ -11,15 +15,36 @@ pub mod error {
     pub struct OpenStream { pub message: String }
 }
 
-#[derive(Debug)]
-pub enum WaitForPeersOnlineResponse {
+#[derive(Debug, Clone)]
+pub struct WaitForPeersOnlineRequest {
+    pub peer_ids: HashSet<PeerId>,
+    pub max_observation_duration: Duration,
+}
+impl WaitForPeersOnlineRequest {
+    pub const MIN_OBSERVATION_TIME_SECONDS: u64 = 30;
+    pub const MAX_OBSERVATION_TIME_SECONDS: u64 = 60 * 60;
+}
+
+
+#[derive(Debug, Clone)]
+pub enum WaitForPeersOnlineResponseStatus {
     WaitForPeersOnlineSuccess,
-    WaitForPeersOnlineFailure,
+    WaitForPeersOnlineFailure {
+        reason: String,
+    },
     WaitForPeersOnlinePending,
+}
+
+#[derive(Debug, Clone)]
+pub struct WaitForPeersOnlineResponse {
+    pub peers: HashMap<PeerId, PeerConnectionState>,
+    pub status: WaitForPeersOnlineResponseStatus,
 }
 
 #[cfg(feature = "client")]
 mod client {
+    use std::collections::HashSet;
+    use std::time::Duration;
     use crate::carl::observer::error;
     use crate::proto::services::observer_messaging_broker::observer_messaging_broker_client::ObserverMessagingBrokerClient;
     use opendut_types::peer::PeerId;
@@ -74,10 +99,14 @@ mod client {
           T::ResponseBody: Body<Data=Bytes> + Send + 'static,
           <T::ResponseBody as Body>::Error: Into<StdError> + Send,
     {
-        pub async fn wait_peers_online(&mut self, peer_ids: Vec<PeerId>) -> Result<WaitForPeerOnlineResponseStream, error::OpenStream> {
-            let peer_ids: Vec<opendut_types::proto::peer::PeerId> = peer_ids.into_iter().map(|peer_id| peer_id.into()).collect();
+        pub async fn wait_peers_online(&mut self, peer_ids: HashSet<PeerId>, max_observation_duration: Duration) -> Result<WaitForPeerOnlineResponseStream, error::OpenStream> {
+            let request = crate::carl::observer::WaitForPeersOnlineRequest {
+                peer_ids,
+                max_observation_duration,
+            };
+            let proto_request: crate::proto::services::observer_messaging_broker::WaitForPeersOnlineRequest = request.into();
             let response = self.inner
-                .wait_for_peers_online(crate::proto::services::observer_messaging_broker::WaitForPeersOnlineRequest { peer_ids })
+                .wait_for_peers_online(proto_request)
                 .await
                 .map_err(|cause| error::OpenStream { message: format!("Error while opening stream: {cause}") })?;
 

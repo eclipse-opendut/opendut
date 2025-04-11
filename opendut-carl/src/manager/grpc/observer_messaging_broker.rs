@@ -11,7 +11,6 @@ use opendut_carl_api::proto::services::observer_messaging_broker::observer_messa
 use opendut_carl_api::proto::services::observer_messaging_broker::observer_messaging_broker_server::{ObserverMessagingBroker as ObserverMessagingBrokerService};
 use opendut_carl_api::proto::services::observer_messaging_broker::{WaitForPeersOnlineRequest, WaitForPeersOnlineResponse};
 use opendut_types::peer::{PeerDescriptor, PeerId};
-use opendut_types::proto::ConversionError;
 use crate::manager::observer_messaging_broker::ObserverMessagingBrokerRef;
 use crate::resource::manager::ResourceManagerRef;
 
@@ -58,14 +57,12 @@ impl ObserverMessagingBrokerService for ObserverMessagingBrokerFacade {
 
     async fn wait_for_peers_online(&self, request: Request<WaitForPeersOnlineRequest>) -> Result<Response<Self::WaitForPeersOnlineStream>, Status> {
         let request = request.into_inner();
-        let peer_ids = request.peer_ids.into_iter()
-            .map(PeerId::try_from)
-            .collect::<Result<HashSet<PeerId>, ConversionError>>()
+        let request: opendut_carl_api::carl::observer::WaitForPeersOnlineRequest = opendut_carl_api::carl::observer::WaitForPeersOnlineRequest::try_from(request)
             .map_err(|error| Status::internal(error.to_string()))?;
-        self.check_peer_ids_exist_and_nonempty(&peer_ids).await?;
+        self.check_peer_ids_exist_and_nonempty(&request.peer_ids).await?;
 
-        trace!("Received request to wait for following peers to be online <{:?}>.", peer_ids);
-        let rx_outbound = self.observer_messaging_broker.wait_for_peers_online(peer_ids).await
+        trace!("Received request to wait for following peers to be online <{:?}>.", request.peer_ids);
+        let rx_outbound = self.observer_messaging_broker.wait_for_peers_online(request.peer_ids, request.max_observation_duration).await
             .map_err(|cause| Status::internal(cause.to_string()))?;
         let outbound_stream = ReceiverStream::new(rx_outbound)
             .map(Ok);

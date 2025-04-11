@@ -1,14 +1,15 @@
+use std::collections::HashSet;
 use std::time::Duration;
 use opendut_carl_api::carl::CarlClient;
-use opendut_carl_api::carl::observer::WaitForPeersOnlineResponse;
+use opendut_carl_api::carl::observer::{WaitForPeersOnlineResponse, WaitForPeersOnlineResponseStatus};
 use opendut_types::peer::PeerId;
 use opendut_types::proto::ConversionError;
 
 pub mod peer_online;
 pub mod cluster_peers_online;
 
-async fn await_peers_online(carl: &mut CarlClient, peer_ids: Vec<PeerId>) -> crate::Result<()> {
-    let mut response_stream = carl.observer.wait_peers_online(peer_ids.clone()).await
+async fn await_peers_online(carl: &mut CarlClient, peer_ids: HashSet<PeerId>, max_observation_duration: Duration) -> crate::Result<()> {
+    let mut response_stream = carl.observer.wait_peers_online(peer_ids.clone(), max_observation_duration).await
         .map_err(|cause| format!("Failed to get stream: {}", cause.message))?;
 
     let timeout_duration = Duration::from_secs(5);
@@ -24,11 +25,11 @@ async fn await_peers_online(carl: &mut CarlClient, peer_ids: Vec<PeerId>) -> cra
                         match conversion_result {
                             Ok(response) => {
                                 println!("Response: {:?}", response);
-                                match response {
-                                    WaitForPeersOnlineResponse::WaitForPeersOnlineSuccess | WaitForPeersOnlineResponse::WaitForPeersOnlineFailure => {
+                                match response.status {
+                                    WaitForPeersOnlineResponseStatus::WaitForPeersOnlineSuccess | WaitForPeersOnlineResponseStatus::WaitForPeersOnlineFailure { .. } => {
                                         break;
                                     }
-                                    WaitForPeersOnlineResponse::WaitForPeersOnlinePending => {}
+                                    WaitForPeersOnlineResponseStatus::WaitForPeersOnlinePending => {}
                                 }
                             }
                             Err(error) => {
