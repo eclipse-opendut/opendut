@@ -121,7 +121,7 @@
   vars:
     arch_map:
       x86_64: "manylinux_2_28-x64"
-      armv7l: "linux-armv7-lts"
+      armv7l: "linux-armv6-lts" # "armv7" build of Cannelloni does not work on all Raspberry Pis reporting "armv7l"
       aarch64: "linux-arm64-lts"
     cannelloni_dir: "/tmp/opendut/"
   tasks:
