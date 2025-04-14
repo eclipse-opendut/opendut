@@ -59,7 +59,9 @@ impl ObserverMessagingBrokerService for ObserverMessagingBrokerFacade {
         let request = request.into_inner();
         let request: opendut_carl_api::carl::observer::WaitForPeersOnlineRequest = opendut_carl_api::carl::observer::WaitForPeersOnlineRequest::try_from(request)
             .map_err(|error| Status::internal(error.to_string()))?;
-        self.check_peer_ids_exist_and_nonempty(&request.peer_ids).await?;
+        if !request.peers_may_not_exist {
+            self.check_peer_ids_exist_and_nonempty(&request.peer_ids).await?;
+        }
 
         trace!("Received request to wait for following peers to be online <{:?}>.", request.peer_ids);
         let rx_outbound = self.observer_messaging_broker.wait_for_peers_online(request.peer_ids, request.max_observation_duration).await

@@ -13,6 +13,9 @@ pub struct WaitPeerOnlineCli {
     /// Maximum requested observation duration
     #[arg(long, default_value_t = 600)]
     pub max_observation_duration: u64,
+    /// Allow to specify peer IDs that may not exist yet
+    #[arg(long, default_value_t = false)]
+    pub peers_may_not_exist: bool,
 }
 
 impl WaitPeerOnlineCli {
@@ -22,7 +25,7 @@ impl WaitPeerOnlineCli {
         if self.ids.is_empty() {
             Err("No peer IDs provided.".to_string())
         } else {
-            await_peers_online(carl, self.ids.into_iter().collect::<HashSet<_>>(), max_observation_duration).await
+            await_peers_online(carl, self.ids.into_iter().collect::<HashSet<_>>(), max_observation_duration, self.peers_may_not_exist).await
         }
     }
 

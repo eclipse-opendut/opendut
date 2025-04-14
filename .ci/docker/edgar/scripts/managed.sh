@@ -106,14 +106,12 @@ opendut-cleo await peer-online "$PEER_ID"
 ############################################################
 # Wait for other peers to be online
 ############################################################
-expected_peer_count=$((OPENDUT_EDGAR_REPLICAS + 1))
-START_TIME="$(date +%s)"
-while ! cleo_check_expected_number_of_connected_peers_in_cluster "$expected_peer_count" "test-environment-cluster"; do
-  check_timeout "$START_TIME" 600 || { echo "Timeout while waiting for other EDGAR peers in my cluster."; exit 1; }
-
-  echo "Waiting for all EDGAR peers in my cluster ..."
-  sleep 3
-done
+opendut-cleo await peer-online --peers-may-not-exist \
+  "bcf75b6c-d6e1-42bd-b74e-30690bca88ab" \
+  "d629fede-27c8-4270-8e73-f91ae7d31a33" \
+  "525b369f-8abb-4b49-8046-25948936ad6c" \
+  "8b5835af-0e3c-4a28-a7d7-623a929a0f1b" \
+  "a1db14f5-1d08-4876-adf2-ba32d99f25ff"
 
 
 ############################################################

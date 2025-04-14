@@ -8,8 +8,8 @@ use opendut_types::proto::ConversionError;
 pub mod peer_online;
 pub mod cluster_peers_online;
 
-async fn await_peers_online(carl: &mut CarlClient, peer_ids: HashSet<PeerId>, max_observation_duration: Duration) -> crate::Result<()> {
-    let mut response_stream = carl.observer.wait_peers_online(peer_ids.clone(), max_observation_duration).await
+async fn await_peers_online(carl: &mut CarlClient, peer_ids: HashSet<PeerId>, max_observation_duration: Duration, peers_may_not_exist: bool) -> crate::Result<()> {
+    let mut response_stream = carl.observer.wait_peers_online(peer_ids.clone(), max_observation_duration, peers_may_not_exist).await
         .map_err(|cause| format!("Failed to get stream: {}", cause.message))?;
 
     let timeout_duration = Duration::from_secs(5);

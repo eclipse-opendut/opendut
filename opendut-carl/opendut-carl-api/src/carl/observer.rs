@@ -19,6 +19,7 @@ pub mod error {
 pub struct WaitForPeersOnlineRequest {
     pub peer_ids: HashSet<PeerId>,
     pub max_observation_duration: Duration,
+    pub peers_may_not_exist: bool,
 }
 impl WaitForPeersOnlineRequest {
     pub const MIN_OBSERVATION_TIME_SECONDS: u64 = 30;
@@ -99,10 +100,11 @@ mod client {
           T::ResponseBody: Body<Data=Bytes> + Send + 'static,
           <T::ResponseBody as Body>::Error: Into<StdError> + Send,
     {
-        pub async fn wait_peers_online(&mut self, peer_ids: HashSet<PeerId>, max_observation_duration: Duration) -> Result<WaitForPeerOnlineResponseStream, error::OpenStream> {
+        pub async fn wait_peers_online(&mut self, peer_ids: HashSet<PeerId>, max_observation_duration: Duration, peers_may_not_exist: bool) -> Result<WaitForPeerOnlineResponseStream, error::OpenStream> {
             let request = crate::carl::observer::WaitForPeersOnlineRequest {
                 peer_ids,
                 max_observation_duration,
+                peers_may_not_exist,
             };
             let proto_request: crate::proto::services::observer_messaging_broker::WaitForPeersOnlineRequest = request.into();
             let response = self.inner
