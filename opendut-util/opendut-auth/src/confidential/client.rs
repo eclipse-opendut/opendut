@@ -2,7 +2,7 @@ use std::fmt::Formatter;
 use std::ops::Sub;
 use std::str::FromStr;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use backon::BlockingRetryable;
 use chrono::{NaiveDateTime, Utc};
 use config::Config;
@@ -204,13 +204,15 @@ impl Interceptor for ConfClientArcMutex<Option<ConfidentialClientRef>> {
             let mutex_guard = cloned_arc_mutex.try_lock()?;
             Ok(mutex_guard)
         };
-
+        let mut retries = 0;
+        let start = Instant::now();
         let backoff_result = operation
             .retry(
                 backon::ExponentialBuilder::default()
                     .with_max_delay(Duration::from_secs(120))
             )
             .notify(|_, dur: Duration| {
+                retries += 1;
                 eprintln!("Failed to acquire lock on confidential client in telemetry request interceptor. Retrying to get access token after {:?}.", dur);
             })
             .call();
@@ -224,6 +226,10 @@ impl Interceptor for ConfClientArcMutex<Option<ConfidentialClientRef>> {
                   
                   Code running inside `tokio::task::block_in_place` may use block_on to reenter the async context.
                  */
+                if retries > 0 {
+                    let duration = Instant::now().saturating_duration_since(start);
+                    eprintln!("Acquired lock on confidential client after <{}> retries and <{}> seconds.", retries, duration.as_secs());
+                }
                 tokio::task::block_in_place(move || {
                     confidential_client.map(|client| {
                         tokio::runtime::Handle::current().block_on(async move {
