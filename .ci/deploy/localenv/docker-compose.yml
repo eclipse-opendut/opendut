@@ -366,7 +366,7 @@ services:
       - "./data/secrets/pki/deploy/carl.opendut.local.pem:/etc/opendut/tls/carl.pem"
       - "./data/secrets/pki/deploy/carl.opendut.local.key:/etc/opendut/tls/carl.key"
       - carl-config:/opt/opendut-carl/config/
-      - "carl_data:/var/lib/opendut/carl/data"
+      - "carl_data:/var/lib/opendut/carl/"
     environment:
       # Network
       - OPENDUT_CARL_NETWORK_REMOTE_HOST=carl.opendut.local
@@ -648,4 +648,3 @@ networks:
       config:
         - subnet: 192.168.32.0/24
           ip_range: 192.168.32.0/24
-

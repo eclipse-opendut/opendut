@@ -8,8 +8,9 @@ use crate::resource::ConnectError;
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::fs;
+use std::ops::Not;
 use std::sync::{Arc, Mutex};
-use tracing::debug;
+use tracing::{debug, info};
 
 pub struct PersistentResourcesStorage {
     db: redb::Database,
@@ -22,6 +23,10 @@ impl PersistentResourcesStorage {
         if let Some(parent_dir) = file.parent() {
             fs::create_dir_all(parent_dir)
                 .map_err(|source| ConnectError::DatabaseDirCreate { dir: parent_dir.to_owned(), source })?;
+        }
+
+        if file.exists().not() {
+            info!("Database file at {file:?} does not exist. Creating an empty database.");
         }
 
         let db = redb::Database::create(file)

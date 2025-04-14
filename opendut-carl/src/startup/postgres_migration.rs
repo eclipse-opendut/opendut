@@ -19,6 +19,12 @@ pub(crate) async fn load_data_from_postgres_into_key_value_store(resource_manage
                     let postgres_cluster_configurations = crate::resource::persistence::query::cluster_configuration::list(Filter::Not, &mut database)?;
                     let postgres_cluster_deployments = crate::resource::persistence::query::cluster_deployment::list(Filter::Not, &mut database)?;
 
+                    if postgres_peer_descriptors.is_empty()
+                    && postgres_cluster_configurations.is_empty()
+                    && postgres_cluster_deployments.is_empty() {
+                        bail!("No data read from PostgreSQL database. Aborting migration.");
+                    }
+
                     let (redb_peer_descriptors, redb_cluster_configurations, redb_cluster_deployments) =
                         resource_manager.resources(async |resources| {
                             let peer_descriptors = resources.list::<PeerDescriptor>()?;

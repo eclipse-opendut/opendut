@@ -8,10 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 * The database backend was swapped out for a Key-Value Store.  
-  Before upgrading, create a backup and stop CARL, then run the following on the target host:
+  Before upgrading, create a backup, then run the following on the target host within the openDuT repository:
   ```sh
-  docker run -e OPENDUT_CARL_POSTGRES_MIGRATION=true ghcr.io/eclipse-opendut/opendut-carl:0.6.0
+  docker stop opendut-carl
+  
+  export OPENDUT_REPO_ROOT=$(git rev-parse --show-toplevel)
+  OPENDUT_CARL_IMAGE_VERSION=v0.6.0 docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/docker-compose.yml --env-file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/data/secrets/.env run --env OPENDUT_CARL_POSTGRES_MIGRATION=true carl
   ```
+  Then increment the CARL image version in your deployment and trigger a rollout as normal.
 
 ### Added
 * Localenv: Add environment variable `OPENDUT_CARL_IMAGE_VERSION` to override the CARL image in use.
