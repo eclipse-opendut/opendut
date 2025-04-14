@@ -22,7 +22,6 @@ backon = { workspace = true }
 chrono = { workspace = true }
 config = { workspace = true }
 diesel = { workspace = true, features = ["postgres", "pq-src", "uuid", "serde_json"], optional = true }
-diesel_migrations = { workspace = true, optional = true }
 flate2 = { workspace = true }
 futures = { workspace = true }
 googletest = { workspace = true }
@@ -81,4 +80,4 @@ workspace = true
 default = [
     "postgres",
 ]
-postgres = ["dep:diesel", "dep:diesel_migrations", "dep:pq-sys"]
+postgres = ["dep:diesel", "dep:pq-sys"]
