@@ -7,16 +7,16 @@
         run --rm --entrypoint="" --detach --no-deps netbird-management \
         sleep infinity
     chdir: "{{ repo_dir }}"
-  register: _netbird_management_id
+  register: _netbird_management_container_id
 
 - name: Extract container id
   set_fact:
-    netbird_management_id: "{{ _netbird_management_id.stdout_lines | last }}"
+    netbird_management_container_id: "{{ _netbird_management_container_id.stdout_lines | last }}"
 
 - name: Restore Netbird management service
   shell:
     cmd: |
-      docker exec {{ netbird_management_id }} sh -c "
+      docker exec {{ netbird_management_container_id }} sh -c "
         # delete old files if present
         rm -f /var/lib/netbird/*
 
@@ -27,6 +27,6 @@
       "
 
 - name: Stop dummy netbird management container without service executable
-  command: docker kill {{ netbird_management_id }}
+  command: docker kill {{ netbird_management_container_id }}
   tags: always
-  when: _netbird_management_id.changed
+  when: _netbird_management_container_id.changed

@@ -1,0 +1,30 @@
+- name: Start dummy CARL container without service executable
+  shell:
+    cmd: |
+      docker compose \
+        --file .ci/deploy/localenv/docker-compose.yml \
+        --env-file .ci/deploy/localenv/data/secrets/.env \
+        run --rm --entrypoint="" --detach --no-deps --user=root carl \
+        sleep infinity
+    chdir: "{{ repo_dir }}"
+  register: _carl_container_id
+
+- name: Extract container id
+  set_fact:
+    carl_container_id: "{{ _carl_container_id.stdout_lines | last }}"
+
+- name: Restore CARL database file
+  shell:
+    cmd: |
+      docker exec {{ carl_container_id }} sh -c "
+        # delete old files if present
+        rm -f /var/lib/opendut/carl/*
+
+        cp -r /var/lib/backup/{{ backup_id }}/carl/* /var/lib/opendut/carl/
+        chown -R carl /var/lib/opendut/carl/
+      "
+
+- name: Stop dummy CARL container without service executable
+  command: docker kill {{ carl_container_id }}
+  tags: always
+  when: _carl_container_id.changed

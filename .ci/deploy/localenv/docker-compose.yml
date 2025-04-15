@@ -240,7 +240,7 @@ services:
       - ./data/secrets/pki/:/pki/:ro
       - ./data/secrets/pki/opendut-ca.pem:/usr/local/share/ca-certificates/opendut-ca.crt:ro
       - ./data/netbird/config/:/config/:ro
-      - backup:/var/lib/backup
+      - backup:/var/lib/backup/
       - netbird-mgmt-data:/var/lib/netbird
       - netbird-mgmt-config:/etc/netbird/
     environment:
@@ -359,14 +359,15 @@ services:
         condition: service_completed_successfully
     volumes:
       # CUSTOM ENTRYPOINT
-      - "./data/carl/entrypoint.sh:/opt/entrypoint.sh"
-      - "./data/carl/carl_functions.sh:/opt/carl_functions.sh"
+      - ./data/carl/entrypoint.sh:/opt/entrypoint.sh
+      - ./data/carl/carl_functions.sh:/opt/carl_functions.sh
       # CERTIFICATES
-      - "./data/secrets/pki/opendut-ca.pem:/etc/opendut/tls/ca.pem"
-      - "./data/secrets/pki/deploy/carl.opendut.local.pem:/etc/opendut/tls/carl.pem"
-      - "./data/secrets/pki/deploy/carl.opendut.local.key:/etc/opendut/tls/carl.key"
+      - ./data/secrets/pki/opendut-ca.pem:/etc/opendut/tls/ca.pem
+      - ./data/secrets/pki/deploy/carl.opendut.local.pem:/etc/opendut/tls/carl.pem
+      - ./data/secrets/pki/deploy/carl.opendut.local.key:/etc/opendut/tls/carl.key
       - carl-config:/opt/opendut-carl/config/
-      - "carl_data:/var/lib/opendut/carl/"
+      - carl_data:/var/lib/opendut/carl/
+      - backup:/var/lib/backup/
     environment:
       # Network
       - OPENDUT_CARL_NETWORK_REMOTE_HOST=carl.opendut.local

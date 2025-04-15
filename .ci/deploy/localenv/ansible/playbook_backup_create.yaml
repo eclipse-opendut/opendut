@@ -33,6 +33,12 @@
             - "{{ opendut_keycloak_postgres }}"
             - "{{ opendut_carl_postgres }}"
 
+        - name: Backup CARL database
+          copy:
+            src: "{{ docker_volumes[opendut_carl_data_volume] }}/"
+            dest: "{{ backup_id_path }}/carl/"
+            remote_src: true
+
         - name: Backup Netbird database
           copy:
             src: "{{ docker_volumes[opendut_netbird_management_volume] }}/"

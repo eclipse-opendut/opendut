@@ -33,6 +33,7 @@
       loop:
         - { "service": "opendut-keycloak-postgres", "volume": "opendut_keycloak_postgres_data" }
         - { "service": "opendut-carl-postgres", "volume": "opendut_carl_postgres_data" }
+        - { "service": "opendut-carl", "volume": "opendut_carl_data" }
         # Netbird management config contains management.json with client credentials for keycloak
         - { "service": "opendut-netbird-management", "volume": "opendut_netbird-mgmt-config" }
         # OpenDuT CARL config volume contains netbird api key (is cached to avoid creating a key on every container restart)
@@ -56,10 +57,13 @@
         - "opendut-keycloak-postgres"
         - "opendut-carl-postgres"
 
-    - name: Restore netbird management
+    - name: Restore NetBird management
       include_tasks: tasks/restore/netbird_management.yaml
 
-    - name: Start opendut containers
+    - name: Restore CARL
+      include_tasks: tasks/restore/carl.yaml
+
+    - name: Start openDuT containers
       command:
         cmd: docker compose --file .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/data/secrets/.env up --detach
         chdir: "{{ repo_dir }}"

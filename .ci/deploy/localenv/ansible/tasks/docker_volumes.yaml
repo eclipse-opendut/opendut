@@ -1,21 +1,28 @@
-- name: Determine docker volumes
+- name: Define volume names
+  set_fact:
+    opendut_backup_volume: "opendut_backup"
+    opendut_carl_data_volume: "opendut_carl_data"
+    opendut_netbird_management_volume: "opendut_netbird-mgmt-data"
+    opendut_secrets_volume: "opendut_provision-secrets-data"
+
+- name: Read Docker volume infos
   command: docker volume ls --format json
   register: _docker_volumes
   changed_when: false
 
-- name: Parse list of docker volumes (each line is a json object) and keep those that contain opendut in their name
+- name: Parse list of docker volume infos (each line is a JSON object) and keep those that contain opendut in their name
   set_fact:
     _docker_volumes_list: "{{ _docker_volumes.stdout_lines | map('from_json') | selectattr('Name', 'contains', 'opendut') }}"
 
-- name: Show docker volumes
+- name: Show docker volume infos
   debug: msg="{{ _docker_volumes_list }}"
 
-- name: Populate dict for docker volumes
+- name: Populate dict for docker volume infos
   set_fact:
     docker_volumes: "{{ docker_volumes | default({}) | combine( { volume['Name']: volume['Mountpoint'] } ) }}"
   loop: "{{ _docker_volumes_list }}"
   loop_control:
     loop_var: volume
 
-- name: Show docker volumes
+- name: Show docker volume infos
   debug: msg="{{ docker_volumes }}"
