@@ -34,19 +34,19 @@ pub enum RegistrationClientError {
     InvalidConfiguration {
         error: String,
     },
-    #[error("Failed request: {error}.\nCause: {cause}")]
+    #[error("Failed request: {error}")]
     RequestError {
         error: String,
-        cause: Box<dyn std::error::Error + Send + Sync>,  // RequestTokenError<OidcClientError<reqwest::Error>, BasicErrorResponse>
+        #[source] cause: Box<dyn std::error::Error + Send + Sync>,
     },
-    #[error("Failed to register new client: {message}\nCause: {cause}")]
+    #[error("Failed to register new client: {message}")]
     ClientParameter {
         message: String,
-        cause: Box<dyn std::error::Error + Send + Sync>,
+        #[source] cause: Box<dyn std::error::Error + Send + Sync>,
     },
-    #[error("Failed to register new client. Cause: {cause}")]
+    #[error("Failed to register new client")]
     Registration {
-        cause: WrappedClientRegistrationError,
+        #[source] cause: WrappedClientRegistrationError,
     },
     #[error("Client could not be found")]
     ClientNotFound,

@@ -22,6 +22,7 @@ use crate::manager::peer_manager::list_peer_states::ListPeerStatesError;
 use crate::resource::manager::ResourceManagerRef;
 use crate::resource::persistence::error::{MapErrToInner, PersistenceError};
 use crate::settings::vpn::Vpn;
+use super::error::LogApiErr;
 
 pub struct PeerManagerFacade {
     resource_manager: ResourceManagerRef,
@@ -77,7 +78,7 @@ impl PeerManagerService for PeerManagerFacade {
                 peer_name: peer.name,
                 source: source.context("Persistence error in transaction for storing peer descriptor"),
             })
-            .inspect_err(|error| error!("{error}"))
+            .log_api_err()
             .map_err(opendut_carl_api::carl::peer::StorePeerDescriptorError::from);
 
         let reply = match result {
@@ -115,7 +116,7 @@ impl PeerManagerService for PeerManagerFacade {
                 peer_name: None,
                 source: source.context("Persistence error in transaction for deleting peer descriptor"),
             })
-            .inspect_err(|error| error!("{error}"))
+            .log_api_err()
             .map_err(opendut_carl_api::carl::peer::DeletePeerDescriptorError::from);
 
         let response = match result {
@@ -212,7 +213,7 @@ impl PeerManagerService for PeerManagerFacade {
                 peer_id,
                 source: source.context("Persistence error in transaction for getting peer state"),
             })
-            .inspect_err(|error| error!("{error}"))
+            .log_api_err()
             .map_err(opendut_carl_api::carl::peer::GetPeerStateError::from);
 
         let reply = match result {
@@ -241,7 +242,7 @@ impl PeerManagerService for PeerManagerFacade {
             .map_err_to_inner(|source| ListPeerStatesError::Persistence {
                 source: source.context("Persistence error in transaction for listing peer states"),
             })
-            .inspect_err(|error| error!("{error}"))
+            .log_api_err()
             .map_err(opendut_carl_api::carl::peer::ListPeerStatesError::from);
 
         let reply = match result {
@@ -307,7 +308,7 @@ impl PeerManagerService for PeerManagerFacade {
                 peer_id,
                 source: source.context("Persistence error in transaction for getting peer state"),
             })
-            .inspect_err(|error| error!("{error}"))
+            .log_api_err()
             .map_err(|_| Status::internal("Peer setup could not be created"))?;
 
         let response = services::peer_manager::generate_peer_setup_response::Reply::Success(services::peer_manager::GeneratePeerSetupSuccess {
@@ -333,7 +334,7 @@ impl PeerManagerService for PeerManagerFacade {
                 oidc_registration_client: self.oidc_registration_client.clone(),
                 user_id: UserId { value: request.user_id },
             }).await
-            .inspect_err(|error| error!("{error}"))
+            .log_api_err()
             .map_err(|_| Status::internal("CLEO Setup could not be created"))?;
         
         let response = generate_cleo_setup_response::Reply::Success(GenerateCleoSetupSuccess { 

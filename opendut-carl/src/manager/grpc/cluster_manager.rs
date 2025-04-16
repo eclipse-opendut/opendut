@@ -8,6 +8,7 @@ use tracing::{error, trace};
 
 use crate::manager::cluster_manager::delete_cluster_deployment::DeleteClusterDeploymentParams;
 use crate::manager::cluster_manager::{ClusterManagerRef, ClusterPeerStates, CreateClusterConfigurationError, CreateClusterConfigurationParams, DeleteClusterConfigurationError, DeleteClusterConfigurationParams, DeleteClusterDeploymentError};
+use crate::manager::grpc::error::LogApiErr;
 use crate::manager::grpc::extract;
 use crate::resource::manager::ResourceManagerRef;
 use crate::resource::persistence::error::MapErrToInner;
@@ -52,7 +53,7 @@ impl ClusterManagerService for ClusterManagerFacade {
                 cluster_name: cluster.name,
                 source: source.context("Persistence error in transaction for creating cluster configuration"),
             })
-            .inspect_err(|error| error!("{error}"))
+            .log_api_err()
                 .map_err(opendut_carl_api::carl::cluster::CreateClusterConfigurationError::from);
 
         let reply = match result {
@@ -87,7 +88,7 @@ impl ClusterManagerService for ClusterManagerFacade {
                 cluster_name: None,
                 source: source.context("Persistence error in transaction for deleting cluster configuration"),
             })
-            .inspect_err(|error| error!("{error}"))
+            .log_api_err()
             .map_err(opendut_carl_api::carl::cluster::DeleteClusterConfigurationError::from);
 
         let reply = match result {
@@ -112,7 +113,7 @@ impl ClusterManagerService for ClusterManagerFacade {
         trace!("Received request to get cluster configuration for cluster <{cluster_id}>.");
 
         let configuration = self.cluster_manager.lock().await.get_cluster_configuration(cluster_id).await
-            .inspect_err(|error| error!("{error}"))
+            .log_api_err()
             .map_err(|cause| Status::internal(cause.to_string()))?;
 
         let result = match configuration {
@@ -135,7 +136,7 @@ impl ClusterManagerService for ClusterManagerFacade {
         trace!("Received request to list cluster configurations.");
 
         let configurations = self.cluster_manager.lock().await.list_cluster_configuration().await
-            .inspect_err(|error| error!("{error}"))
+            .log_api_err()
             .map_err(|cause| Status::internal(cause.to_string()))?;
 
         Ok(Response::new(ListClusterConfigurationsResponse {
@@ -190,7 +191,7 @@ impl ClusterManagerService for ClusterManagerFacade {
                 cluster_name: None,
                 source: source.context("Persistence error in transaction for deleting cluster deployment"),
             })
-            .inspect_err(|error| error!("{error}"))
+            .log_api_err()
             .map_err(opendut_carl_api::carl::cluster::DeleteClusterDeploymentError::from);
 
         let reply = match result {
@@ -216,7 +217,7 @@ impl ClusterManagerService for ClusterManagerFacade {
         trace!("Received request to get cluster deployment for cluster <{cluster_id}>.");
 
         let deployment = self.cluster_manager.lock().await.get_cluster_deployment(cluster_id).await
-            .inspect_err(|error| error!("{error}"))
+            .log_api_err()
             .map_err(|cause| Status::internal(cause.to_string()))?;
 
         match deployment {
@@ -240,7 +241,7 @@ impl ClusterManagerService for ClusterManagerFacade {
         trace!("Received request to list cluster deployments.");
 
         let deployments = self.cluster_manager.lock().await.list_cluster_deployment().await
-            .inspect_err(|error| error!("{error}"))
+            .log_api_err()
             .map_err(|cause| Status::internal(cause.to_string()))?;
 
         Ok(Response::new(ListClusterDeploymentsResponse {

@@ -1,3 +1,22 @@
+use std::error::Error;
+use tracing::error;
+
+pub(super) trait LogApiErr {
+    fn log_api_err(self) -> Self;
+}
+
+impl<T, E: Error> LogApiErr for Result<T, E> {
+    fn log_api_err(self) -> Self {
+        self.inspect_err(|error|
+            if let Some(source) = error.source() {
+                error!("Error during API call: {error}:\n  {source}");
+            } else {
+                error!("Error during API call: {error}");
+            }
+        )
+    }
+}
+
 mod cluster_manager {
     use crate::manager::cluster_manager;
     use opendut_carl_api::carl::cluster::{CreateClusterConfigurationError, DeleteClusterConfigurationError, DeleteClusterDeploymentError, StoreClusterDeploymentError};
@@ -128,7 +147,7 @@ mod peer_manager {
                     Self::Internal {
                         peer_id,
                         peer_name: Some(peer_name),
-                        cause: String::from("Error when removing registration while storing peer descriptor"),
+                        cause: String::from("Error when removing registration while deleting peer descriptor"),
                     },
                 peer_manager::delete_peer_descriptor::DeletePeerDescriptorError::VpnClient { peer_id, peer_name, source: _ } =>
                     Self::Internal {
