@@ -19,9 +19,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 * Localenv: Add environment variable `OPENDUT_CARL_IMAGE_VERSION` to override the CARL image in use.
+* When a user deletes a peer that is still connected, the peer will be disconnected.
+* CLEO now offers to await the online status of a set of peers with the `await` command.
 
 ### Fixed
 * Updating a cluster configuration does not anymore remove its deployment status.
+* Fixed deleting peer group and setup key in the API for NetBird.
+* THEO: The test environment is now destroyed at the end, allowing subsequent runs.
 
 
 ## 0.5.1
