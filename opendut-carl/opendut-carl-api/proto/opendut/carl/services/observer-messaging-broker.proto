@@ -15,7 +15,7 @@ service ObserverMessagingBroker {
 message WaitForPeersOnlineRequest {
   repeated opendut.types.peer.PeerId peer_ids = 1;
   uint64 max_observation_duration = 2;
-  bool peers_may_not_exist = 3;
+  bool peers_may_not_yet_exist = 3;
 }
 
 message WaitForPeersOnlineResponse {

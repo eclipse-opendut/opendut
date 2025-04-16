@@ -18,7 +18,7 @@ conversion! {
         WaitForPeersOnlineRequest {
             peer_ids,
             max_observation_duration,
-            peers_may_not_exist: value.peers_may_not_exist,
+            peers_may_not_yet_exist: value.peers_may_not_yet_exist,
         }
     }
     fn try_from(value: Proto) -> ConversionResult<Model> {
@@ -34,7 +34,7 @@ conversion! {
         Ok(Model {
             peer_ids,
             max_observation_duration: requested_duration,
-            peers_may_not_exist: value.peers_may_not_exist,
+            peers_may_not_yet_exist: value.peers_may_not_yet_exist,
         })
     }
 }

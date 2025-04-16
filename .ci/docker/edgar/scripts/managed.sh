@@ -106,7 +106,7 @@ opendut-cleo await peer-online "$PEER_ID"
 ############################################################
 # Wait for other peers to be online
 ############################################################
-opendut-cleo await peer-online --peers-may-not-exist \
+opendut-cleo await peer-online --peers-may-not-yet-exist \
   "bcf75b6c-d6e1-42bd-b74e-30690bca88ab" \
   "d629fede-27c8-4270-8e73-f91ae7d31a33" \
   "525b369f-8abb-4b49-8046-25948936ad6c" \

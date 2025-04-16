@@ -11,12 +11,12 @@ pub struct WaitPeersInClusterOnline {
     /// ID of the cluster
     #[arg()]
     pub id: ClusterId,
-    /// Maximum requested observation duration
+    /// Maximum observation duration in seconds
     #[arg(long, default_value_t = 600)]
-    pub max_observation_duration: u64,
-    /// Allow to specify peer IDs that may not exist yet
+    pub timeout: u64,
+    /// Allow to specify peer IDs that haven't been created yet
     #[arg(long, default_value_t = false)]
-    pub peers_may_not_exist: bool,
+    pub peers_may_not_yet_exist: bool,
 }
 
 impl WaitPeersInClusterOnline {
@@ -24,11 +24,11 @@ impl WaitPeersInClusterOnline {
         let response = carl.cluster.list_cluster_peer_states(self.id).await
             .map_err(|cause| cause.to_string())?;
 
-        let max_observation_duration = Duration::from_secs(self.max_observation_duration);
+        let max_observation_duration = Duration::from_secs(self.timeout);
         match response {
             ListClusterPeerStatesResponse::Success { peer_states } => {
                 let peer_ids = peer_states.keys().cloned().collect::<HashSet<_>>();
-                await_peers_online(carl, peer_ids, max_observation_duration, self.peers_may_not_exist).await
+                await_peers_online(carl, peer_ids, max_observation_duration, self.peers_may_not_yet_exist).await
             }
             ListClusterPeerStatesResponse::Failure { message } => {
                 Err(format!("Failed to list peer states: {message}"))

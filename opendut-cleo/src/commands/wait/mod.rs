@@ -8,14 +8,14 @@ use opendut_types::proto::ConversionError;
 pub mod peer_online;
 pub mod cluster_peers_online;
 
-async fn await_peers_online(carl: &mut CarlClient, peer_ids: HashSet<PeerId>, max_observation_duration: Duration, peers_may_not_exist: bool) -> crate::Result<()> {
-    let mut response_stream = carl.observer.wait_peers_online(peer_ids.clone(), max_observation_duration, peers_may_not_exist).await
+async fn await_peers_online(carl: &mut CarlClient, peer_ids: HashSet<PeerId>, max_observation_duration: Duration, peers_may_not_yet_exist: bool) -> crate::Result<()> {
+    let mut response_stream = carl.observer.wait_peers_online(peer_ids.clone(), max_observation_duration, peers_may_not_yet_exist).await
         .map_err(|cause| format!("Failed to get stream: {}", cause.message))?;
 
-    let timeout_duration = Duration::from_secs(5);
+    let request_timeout_duration = Duration::from_secs(5);
 
     loop {
-        let received = tokio::time::timeout(timeout_duration, response_stream.message()).await;
+        let received = tokio::time::timeout(request_timeout_duration, response_stream.message()).await;
 
         match received {
             Ok(response_result) => {
@@ -48,7 +48,7 @@ async fn await_peers_online(carl: &mut CarlClient, peer_ids: HashSet<PeerId>, ma
                 }
             }
             Err(_elapsed_timeout_error) => {
-                println!("No message for {} ms", timeout_duration.as_millis());
+                println!("No message for {} ms.", request_timeout_duration.as_millis());
                 tokio::time::sleep(Duration::from_secs(1)).await;
             }
         }
