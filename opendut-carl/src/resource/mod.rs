@@ -13,6 +13,8 @@ pub enum ConnectError {
     DatabaseCreate { file: PathBuf, #[source] source: redb::DatabaseError },
     #[error("Failed to create parent directory {dir:?} of database file")]
     DatabaseDirCreate { dir: PathBuf, #[source] source: io::Error },
+    #[error("Failed to create database in-memory")]
+    DatabaseInMemoryCreate(#[source] redb::DatabaseError),
 
 
     #[cfg(feature="postgres")]

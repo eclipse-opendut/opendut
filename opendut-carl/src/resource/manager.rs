@@ -1,7 +1,7 @@
 use crate::resource::api::resources::{RelayedSubscriptionEvents, Resources};
 use crate::resource::api::Resource;
 use crate::resource::persistence::error::{MapErrToInner, PersistenceResult};
-use crate::resource::persistence::resources::Persistable;
+use crate::resource::persistence::persistable::Persistable;
 use crate::resource::storage::{PersistenceOptions, ResourceStorage, ResourcesStorageApi};
 pub use crate::resource::subscription::SubscriptionEvent;
 use crate::resource::subscription::{ResourceSubscriptionChannels, Subscribable, Subscription};
@@ -67,7 +67,8 @@ impl ResourceManager {
     {
         let state = self.state.read().await;
         state.storage.resources(async move |transaction| {
-            closure(transaction).await
+            let transaction = Resources::new(transaction);
+            closure(&transaction).await
         }).await
     }
 
@@ -82,7 +83,8 @@ impl ResourceManager {
     {
         let mut state = self.state.write().await;
         let (result, relayed_subscription_events) = state.storage.resources_mut(async move |transaction| {
-            closure(transaction).await
+            let mut transaction = Resources::new(transaction);
+            closure(&mut transaction).await
         }).await?;
         if result.is_ok() {
             Self::send_relayed_subscription_events(relayed_subscription_events, &mut state).await;
@@ -163,23 +165,11 @@ impl ResourceManager {
             state: RwLock::new(State { storage: resources, subscribers }),
         })
     }
-
-    async fn contains<R>(&self, id: R::Id) -> bool
-    where R: Resource + Clone {
-        let state = self.state.read().await;
-        state.storage.contains::<R>(id).await
-    }
-
-    async fn is_empty(&self) -> bool {
-        let state = self.state.read().await;
-        state.storage.is_empty().await
-    }
 }
 
 #[cfg(test)]
 mod test {
     use std::collections::HashSet;
-    use std::ops::Not;
     use std::vec;
 
     use googletest::prelude::*;
@@ -241,18 +231,14 @@ mod test {
             devices: HashSet::new(),
         };
 
-        assert!(testee.is_empty().await);
 
         testee.insert(peer_resource_id, Clone::clone(&peer)).await?;
-
-        assert!(testee.is_empty().await.not());
+        assert_that!(testee.get::<PeerDescriptor>(peer_resource_id).await?, some(eq(&peer)));
 
         testee.insert(cluster_resource_id, Clone::clone(&cluster_configuration)).await?;
-
-        assert_that!(testee.get::<PeerDescriptor>(peer_resource_id).await?, some(eq(&peer)));
         assert_that!(testee.get::<ClusterConfiguration>(cluster_resource_id).await?, some(eq(&cluster_configuration)));
 
-        assert!(testee.contains::<PeerDescriptor>(peer_resource_id).await);
+        assert!(testee.list::<PeerDescriptor>().await?.get(&peer_resource_id).is_some());
 
         assert_that!(testee.get::<PeerDescriptor>(PeerId::random()).await?, none());
 

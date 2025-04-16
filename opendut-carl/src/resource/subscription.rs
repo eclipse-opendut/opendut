@@ -129,7 +129,7 @@ mod tests {
     use crate::manager::peer_manager::tests::create_peer_descriptor;
     use crate::resource::persistence;
     use crate::resource::storage::ResourcesStorageApi;
-    use crate::resource::persistence::resources::Persistable;
+    use crate::resource::persistence::persistable::Persistable;
 
     #[tokio::test]
     async fn should_notify_about_resource_insertions() -> anyhow::Result<()> {
@@ -188,24 +188,6 @@ mod tests {
         let result = fixture.resource_manager.remove::<PeerConnectionState>(fixture.id).await?;
         assert!(result.is_none(), "Expected no peer connection state present!");
 
-        SubscriptionFixture::expect_no_notification(&mut subscription).await?;
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn aborting_transaction_with_volatile_storage_does_not_prevent_insertion() -> anyhow::Result<()> {
-        // TODO: Volatile resource storage does not implement a transaction scheme
-        let fixture = SubscriptionFixture::new();
-        let mut subscription = fixture.resource_manager.subscribe::<PeerConnectionState>().await;
-        assert!(fixture.resource_manager.get::<PeerConnectionState>(fixture.id).await?.is_none(), "Expected no connection state present!");
-
-        let value = PeerConnectionState::Offline;
-        let _ = fixture.resource_manager.resources_mut::<_, PeerConnectionState, anyhow::Error>(async |resources| {
-            let _ = resources.insert(fixture.id, value.clone());
-            Err(anyhow::anyhow!("Abort transaction"))
-        }).await;
-
-        assert!(fixture.resource_manager.get::<PeerConnectionState>(fixture.id).await?.is_some(), "Expected connection state to be present!");
         SubscriptionFixture::expect_no_notification(&mut subscription).await?;
         Ok(())
     }

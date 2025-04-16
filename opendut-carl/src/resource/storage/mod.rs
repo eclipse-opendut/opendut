@@ -1,90 +1,199 @@
-use crate::resource::api::resources::{RelayedSubscriptionEvents, Resources};
+use crate::resource::api::id::ResourceId;
+use crate::resource::api::resources::RelayedSubscriptionEvents;
 use crate::resource::api::Resource;
-use crate::resource::ConnectError;
 use crate::resource::persistence::error::PersistenceResult;
-use crate::resource::persistence::resources::Persistable;
-use crate::resource::storage::persistent::PersistentResourcesStorage;
-use crate::resource::storage::volatile::VolatileResourcesStorageHandle;
+use crate::resource::persistence::persistable::{Persistable, StorageKind};
+use crate::resource::persistence::{Db, Memory};
 use crate::resource::subscription::Subscribable;
+use crate::resource::{persistence, ConnectError};
 use anyhow::anyhow;
+use prost::Message;
+use redb::backends::InMemoryBackend;
 use std::collections::HashMap;
 use std::fmt::Display;
+use std::fs;
+use std::ops::Not;
 use std::path::PathBuf;
-
-pub mod volatile;
-pub mod persistent;
+use tracing::{debug, info};
 
 #[cfg(test)]
 mod tests;
 
-pub enum ResourceStorage {
-    Persistent(PersistentResourcesStorage),
-    Volatile(VolatileResourcesStorageHandle),
+pub struct ResourceStorage {
+    db: redb::Database,
+    memory: redb::Database,
 }
 impl ResourceStorage {
     pub async fn connect(options: &PersistenceOptions) -> Result<Self, ConnectError> {
-        let storage = match options {
+
+        let db = match options {
             PersistenceOptions::Enabled { database_connect_info } => {
-                let storage = PersistentResourcesStorage::connect(database_connect_info).await?;
-                ResourceStorage::Persistent(storage)
+                let file = &database_connect_info.file;
+
+                if let Some(parent_dir) = file.parent() {
+                    fs::create_dir_all(parent_dir)
+                        .map_err(|source| ConnectError::DatabaseDirCreate { dir: parent_dir.to_owned(), source })?;
+                }
+
+                if file.exists().not() {
+                    info!("Database file at {file:?} does not exist. Creating an empty database.");
+                }
+
+                let db = redb::Database::create(file)
+                    .map_err(|source| ConnectError::DatabaseCreate { file: file.to_owned(), source })?;
+                debug!("Database file opened from: {file:?}");
+                db
             }
             PersistenceOptions::Disabled => {
-                ResourceStorage::Volatile(VolatileResourcesStorageHandle::default())
+                let db = redb::Database::builder()
+                    .create_with_backend(InMemoryBackend::new())
+                    .map_err(ConnectError::DatabaseInMemoryCreate)?;
+                debug!("Database opened in-memory.");
+                db
             }
         };
-        Ok(storage)
+
+        let memory = redb::Database::builder()
+            .create_with_backend(InMemoryBackend::new())
+            .map_err(ConnectError::DatabaseInMemoryCreate)?;
+
+        Ok(Self { db, memory })
     }
 
-    pub(super) async fn resources<T, F>(&self, code: F) -> PersistenceResult<T>
+    pub async fn resources<T, F>(&self, code: F) -> PersistenceResult<T>
     where
-        F: AsyncFnOnce(&mut Resources) -> T,
+        F: AsyncFnOnce(ResourceTransaction) -> T,
     {
-        match self {
-            ResourceStorage::Persistent(storage) => storage.resources(async |transaction| {
-                let mut transaction = Resources::persistent(transaction);
-                code(&mut transaction).await
-            }).await,
-            ResourceStorage::Volatile(storage) => Ok(
-                storage.resources(async |transaction| {
-                    let mut transaction = Resources::volatile(transaction);
-                    code(&mut transaction).await
-                }).await
-            ),
-        }
+        let mut relayed_subscription_events = RelayedSubscriptionEvents::default();
+
+        let db_transaction = self.db.begin_read()?;
+        let memory_transaction = self.memory.begin_read()?;
+        let result = {
+            let transaction = ResourceTransaction {
+                db: Db::Read(&db_transaction),
+                memory: Memory::Read(&memory_transaction),
+                relayed_subscription_events: &mut relayed_subscription_events,
+            };
+
+            code(transaction).await
+        };
+
+        debug_assert!(relayed_subscription_events.is_empty(), "Read-only storage operations should not trigger any subscription events.");
+
+        Ok(result)
     }
 
-    pub(super) async fn resources_mut<T, E, F>(&mut self, code: F) -> PersistenceResult<(Result<T, E>, RelayedSubscriptionEvents)>
+    pub async fn resources_mut<T, E, F>(&mut self, code: F) -> PersistenceResult<(Result<T, E>, RelayedSubscriptionEvents)>
     where
-        F: AsyncFnOnce(&mut Resources) -> Result<T, E>,
+        F: AsyncFnOnce(ResourceTransaction) -> Result<T, E>,
         E: Display,
     {
-        match self {
-            ResourceStorage::Persistent(storage) => storage.resources_mut(async |transaction| {
-                let mut transaction = Resources::persistent(transaction);
-                code(&mut transaction).await
-            }).await,
-            ResourceStorage::Volatile(storage) => storage.resources_mut(async |transaction| {
-                let mut transaction = Resources::volatile(transaction);
-                code(&mut transaction).await
-            }).await,
+        let mut relayed_subscription_events = RelayedSubscriptionEvents::default();
+        let mut db_transaction = self.db.begin_write()?;
+        let mut memory_transaction = self.memory.begin_write()?;
+        let result = {
+            let persistent_transaction = ResourceTransaction {
+                db: Db::ReadWrite(&mut db_transaction),
+                memory: Memory::ReadWrite(&mut memory_transaction),
+                relayed_subscription_events: &mut relayed_subscription_events,
+            };
+
+            code(persistent_transaction).await
+        };
+
+        match &result {
+            Ok(_) => {
+                db_transaction.commit()?;
+                memory_transaction.commit()?;
+            }
+            Err(cause) => {
+                debug!("Not committing changes to the database due to error:\n  {cause}");
+            }
         }
+
+        Ok((result, relayed_subscription_events))
     }
 }
 
-#[cfg(test)]
-impl ResourceStorage {
-    pub async fn contains<R>(&self, id: R::Id) -> bool
-    where R: Resource {
-        match self {
-            ResourceStorage::Persistent(_) => unimplemented!(),
-            ResourceStorage::Volatile(storage) => storage.contains::<R>(id),
+pub struct ResourceTransaction<'transaction> {
+    db: Db<'transaction>,
+    memory: Memory<'transaction>,
+    pub relayed_subscription_events: &'transaction mut RelayedSubscriptionEvents,
+}
+impl ResourcesStorageApi for ResourceTransaction<'_> {
+    fn insert<R>(&mut self, id: R::Id, resource: R) -> PersistenceResult<()>
+    where R: Resource + Persistable {
+        let db = self.get_db_for_resource::<R>();
+
+        let key = persistence::Key::from(ResourceId::<R>::into_id(id));
+
+        let value = R::Proto::from(resource).encode_to_vec();
+
+        let mut table = db.read_write_table(R::TABLE_DEFINITION)?;
+        table.insert(key, value)?;
+
+        Ok(())
+    }
+
+    fn remove<R>(&mut self, id: R::Id) -> PersistenceResult<Option<R>>
+    where R: Resource + Persistable {
+        let db = self.get_db_for_resource::<R>();
+
+        let key = persistence::Key::from(ResourceId::<R>::into_id(id));
+
+        let mut table = db.read_write_table(R::TABLE_DEFINITION)?;
+
+        let value = table.remove(key)?
+            .map(|value| R::try_from_bytes(value.value()))
+            .transpose()?;
+
+        Ok(value)
+    }
+
+    fn get<R>(&self, id: R::Id) -> PersistenceResult<Option<R>>
+    where
+        R: Resource + Persistable + Clone
+    {
+        let db = self.get_db_for_resource::<R>();
+
+        let key = persistence::Key::from(ResourceId::<R>::into_id(id));
+
+        if let Some(table) = db.read_table(R::TABLE_DEFINITION)? {
+            let value = table.get(&key)?
+                .map(|value| R::try_from_bytes(value.value()))
+                .transpose()?;
+            Ok(value)
+        } else {
+            Ok(None)
         }
     }
 
-    pub async fn is_empty(&self) -> bool {
-        match self {
-            ResourceStorage::Persistent(_) => unimplemented!(),
-            ResourceStorage::Volatile(storage) => storage.is_empty(),
+    fn list<R>(&self) -> PersistenceResult<HashMap<R::Id, R>>
+    where
+        R: Resource + Persistable + Clone
+    {
+        let db = self.get_db_for_resource::<R>();
+
+        if let Some(table) = db.read_table(R::TABLE_DEFINITION)? {
+            table.iter()?
+                .map(|value| {
+                    let (key, value) = value?;
+                    let id = ResourceId::<R>::from_id(key.value().id);
+                    let value = R::try_from_bytes(value.value())?;
+
+                    Ok((id, value))
+                })
+                .collect::<PersistenceResult<HashMap<_, _>>>()
+        } else {
+            Ok(HashMap::default())
+        }
+    }
+}
+impl ResourceTransaction<'_> {
+    fn get_db_for_resource<R: Persistable>(&self) -> &Db<'_> {
+        match R::STORAGE {
+            StorageKind::Persistent => &self.db,
+            StorageKind::Volatile => &self.memory,
         }
     }
 }

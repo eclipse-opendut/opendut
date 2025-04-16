@@ -358,12 +358,10 @@ mod tests {
     use std::sync::Arc;
 
     use googletest::prelude::*;
-    use rstest::rstest;
     use url::Url;
 
     use crate::resource::manager::ResourceManager;
     use crate::settings::vpn::Vpn;
-    use opendut_auth_tests::registration_client;
     use opendut_carl_api::proto::services;
     use opendut_types::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorDescriptor, ExecutorDescriptors, ExecutorId, ExecutorKind};
     use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkDescriptor};
@@ -382,17 +380,16 @@ mod tests {
 
     const CERTIFICATE_AUTHORITY_STRING: &str = include_str!("../../../../resources/development/tls/insecure-development-ca.pem");
 
-    #[rstest]
     #[tokio::test]
-    async fn test_successful_create_delete(#[future] registration_client: RegistrationClientRef) -> Result<()> {
+    async fn test_successful_create_delete() -> Result<()> {
 
         let resource_manager = ResourceManager::new_in_memory();
         let testee = PeerManagerFacade::new(
             Arc::clone(&resource_manager),
             Vpn::Disabled,
-            Url::parse("https://example.com:1234").unwrap(),
+            Url::parse("https://example.com:1234")?,
             get_cert(),
-            Some(registration_client.await),
+            None,
         );
 
         let peer_id = PeerId::random();
@@ -437,7 +434,6 @@ mod tests {
                 peer: Some(Clone::clone(&peer_descriptor).into()),
             }
         )).await?;
-
         verify_that!(
             create_peer_reply.get_ref().reply,
             some(matches_pattern!(
@@ -452,7 +448,6 @@ mod tests {
         let list_reply = testee.list_peer_descriptors(Request::new(
             ListPeerDescriptorsRequest {}
         )).await?;
-
         verify_that!(
             list_reply.get_ref().reply,
             some(matches_pattern!(list_peer_descriptors_response::Reply::Success(
@@ -462,16 +457,18 @@ mod tests {
             )))
         )?;
 
-        let _ = testee.delete_peer_descriptor(Request::new(
+        let delete_reply = testee.delete_peer_descriptor(Request::new(
             services::peer_manager::DeletePeerDescriptorRequest {
                 peer_id: Some(peer_id.into()),
             }
         )).await?;
+        verify_that!(delete_reply.get_ref().reply,
+            some(matches_pattern!(delete_peer_descriptor_response::Reply::Success(anything())))
+        )?;
 
         let list_reply = testee.list_peer_descriptors(Request::new(
             services::peer_manager::ListPeerDescriptorsRequest {}
         )).await?;
-
         verify_that!(list_reply.get_ref().reply,
             some(matches_pattern!(list_peer_descriptors_response::Reply::Success(
                 matches_pattern!(ListPeerDescriptorsSuccess {
@@ -483,9 +480,8 @@ mod tests {
         Ok(())
     }
 
-    #[rstest]
     #[tokio::test]
-    async fn register_fails_when_no_id_specified(#[future] registration_client: RegistrationClientRef) -> Result<()> {
+    async fn register_fails_when_no_id_specified() -> Result<()> {
 
         let resource_manager = ResourceManager::new_in_memory();
         let testee = PeerManagerFacade::new(
@@ -493,7 +489,7 @@ mod tests {
             Vpn::Disabled,
             Url::parse("https://example.com:1234").unwrap(),
             get_cert(),
-            Some(registration_client.await),
+            None,
         );
 
         let create_peer_reply = testee.store_peer_descriptor(Request::new(
@@ -523,9 +519,8 @@ mod tests {
         Ok(())
     }
 
-    #[rstest]
     #[tokio::test]
-    async fn unregister_fails_when_no_id_specified(#[future] registration_client: RegistrationClientRef) -> Result<()> {
+    async fn unregister_fails_when_no_id_specified() -> Result<()> {
 
         let resource_manager = ResourceManager::new_in_memory();
         let testee = PeerManagerFacade::new(
@@ -533,7 +528,7 @@ mod tests {
             Vpn::Disabled,
             Url::parse("https://example.com:1234").unwrap(),
             get_cert(),
-            Some(registration_client.await),
+            None,
         );
 
         let delete_peer_reply = testee.delete_peer_descriptor(Request::new(

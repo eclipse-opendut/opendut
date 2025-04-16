@@ -1,26 +1,24 @@
 use std::cmp::Ordering;
-use std::sync::{Arc, Mutex};
 
 use crate::resource::persistence::error::PersistenceResult;
-use crate::resource::storage::volatile::VolatileResourcesStorage;
 use opendut_types::resources::Id;
 use redb::{AccessGuard, ReadableTable, TableError, TypeName};
 use uuid::Uuid;
 
 #[cfg(feature="postgres")] pub mod database;
 pub(crate) mod error;
-pub(crate) mod resources;
+pub(crate) mod persistable;
 #[cfg(feature="postgres")]
 pub(crate) mod query;
 
-pub type Memory = Arc<Mutex<VolatileResourcesStorage>>;
+pub type Memory<'transaction> = Db<'transaction>;
 
 pub enum Db<'transaction> {
     Read(&'transaction redb::ReadTransaction),
     ReadWrite(&'transaction mut redb::WriteTransaction),
 }
 impl Db<'_> {
-    fn read_table(&self, table: TableDefinition) -> PersistenceResult<Option<ReadTable>> {
+    pub(super) fn read_table(&self, table: TableDefinition) -> PersistenceResult<Option<ReadTable>> {
         let open_result = match self {
             Db::Read(transaction) => transaction.open_table(table).map(ReadTable::Read),
             Db::ReadWrite(transaction) => transaction.open_table(table).map(ReadTable::ReadWrite),
@@ -35,7 +33,7 @@ impl Db<'_> {
         }
     }
 
-    fn read_write_table(&self, table: TableDefinition) -> PersistenceResult<ReadWriteTable> {
+    pub(crate) fn read_write_table(&self, table: TableDefinition) -> PersistenceResult<ReadWriteTable> {
         match self {
             Db::Read(_) => unimplemented!("Called `.read_write_table()` on a Db::Read() variant."),
             Db::ReadWrite(transaction) => Ok(transaction.open_table(table)?),
@@ -48,13 +46,13 @@ pub(super) enum ReadTable<'transaction> {
     ReadWrite(redb::Table<'transaction, Key, Value>),
 }
 impl ReadTable<'_> {
-    fn get(&self, key: &Key) -> redb::Result<Option<AccessGuard<Value>>> {
+    pub(crate) fn get(&self, key: &Key) -> redb::Result<Option<AccessGuard<Value>>> {
         match self {
             ReadTable::Read(table) => table.get(key),
             ReadTable::ReadWrite(table) => table.get(key),
         }
     }
-    fn iter(&self) -> redb::Result<redb::Range<Key, Value>> {
+    pub(crate) fn iter(&self) -> redb::Result<redb::Range<Key, Value>> {
         match self {
             ReadTable::Read(table) => table.iter(),
             ReadTable::ReadWrite(table) => table.iter(),
@@ -64,7 +62,7 @@ impl ReadTable<'_> {
 pub(super) type ReadWriteTable<'a> = redb::Table<'a, Key, Value>;
 
 #[derive(Debug)]
-pub(super) struct Key { pub id: Id }
+pub struct Key { pub id: Id }
 
 impl redb::Key for Key {
     fn compare(data1: &[u8], data2: &[u8]) -> Ordering {
