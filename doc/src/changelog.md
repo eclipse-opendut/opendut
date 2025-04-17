@@ -4,18 +4,23 @@ Notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## Unreleased (v0.6.0)
 
 ### Breaking Changes
 * The database backend was swapped out for a Key-Value Store.  
-  Before upgrading, create a backup, then run the following on the target host within the openDuT repository:
+  Before upgrading, create a backup. Then run the following on the target host within the openDuT repository:
   ```sh
+  git fetch
+  git checkout v0.6.0
+
   docker stop opendut-carl
-  
+
   export OPENDUT_REPO_ROOT=$(git rev-parse --show-toplevel)
-  OPENDUT_CARL_IMAGE_VERSION=v0.6.0 docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/docker-compose.yml --env-file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/data/secrets/.env run --env OPENDUT_CARL_POSTGRES_MIGRATION=true carl
+  docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/docker-compose.yml --env-file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/data/secrets/.env run --env OPENDUT_CARL_POSTGRES_MIGRATION=true carl
   ```
-  Then increment the CARL image version in your deployment and trigger a rollout as normal.
+  Then trigger a rollout as normal. If you're using the Ansible deployment, make sure to increment the version there before doing so.
+
+  If you plan to upgrade to a future/newer version, you cannot skip upgrading to v0.6.0 as the migration code is only contained herein.
 
 ### Added
 * Localenv: Add environment variable `OPENDUT_CARL_IMAGE_VERSION` to override the CARL image in use.
