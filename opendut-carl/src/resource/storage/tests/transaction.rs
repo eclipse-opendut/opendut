@@ -1,15 +1,13 @@
 use anyhow::anyhow;
-use crate::resource::persistence;
 use crate::resource::storage::tests::peer_descriptor::peer_descriptor;
 use crate::resource::storage::ResourcesStorageApi;
 use googletest::prelude::*;
 use opendut_types::peer::PeerDescriptor;
+use crate::resource::manager::ResourceManager;
 
-#[test_with::no_env(SKIP_DATABASE_CONTAINER_TESTS)]
 #[tokio::test]
 async fn should_rollback_from_an_error_during_a_transaction() -> anyhow::Result<()> {
-    let db = persistence::testing::spawn_and_connect_resource_manager().await?;
-    let resource_manager = db.resource_manager;
+    let resource_manager = ResourceManager::new_in_memory();
 
     let peer = peer_descriptor()?;
     let peer_id = peer.id;

@@ -17,7 +17,6 @@ pub struct CarlCli {
 
 #[derive(clap::Subcommand)]
 pub enum TaskCli {
-    Diesel(diesel::DieselCli),
     Distribution(crate::tasks::distribution::DistributionCli),
     Docker(crate::tasks::docker::DockerCli),
     Licenses(crate::tasks::licenses::LicensesCli),
@@ -33,7 +32,6 @@ impl CarlCli {
     #[tracing::instrument(name="carl", skip(self))]
     pub fn default_handling(self) -> crate::Result {
         match self.task {
-            TaskCli::Diesel(implementation) => implementation.handle()?,
             TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target }) => {
                 for target in target.iter() {
                     build::build_release(target)?;
@@ -342,42 +340,5 @@ pub mod distribution {
 
             Ok(())
         }
-    }
-}
-
-pub mod diesel {
-    use cicero::path::repo_path;
-
-    use crate::core::commands::DIESEL;
-    use crate::core::util::RunRequiringSuccess;
-
-    use super::*;
-
-    /// Manage the database using `diesel`
-    #[derive(clap::Parser)]
-    pub struct DieselCli {
-        /// Additional parameters to pass through to the `diesel` CLI
-        #[arg(raw=true)]
-        pub pass_through: Vec<String>,
-    }
-    impl DieselCli {
-        pub fn handle(self) -> crate::Result {
-            let carl_database_dir = carl_database_dir();
-
-            assert!(
-                carl_database_dir.is_dir(),
-                "Could not find database directory in CARL, expected at {carl_database_dir:?}."
-            );
-
-            DIESEL.command()
-                .args(self.pass_through)
-                .current_dir(carl_database_dir)
-                .env("DATABASE_URL", "postgres://postgres:postgres@localhost/carl")
-                .run_requiring_success()
-        }
-    }
-
-    fn carl_database_dir() -> PathBuf {
-        repo_path!("opendut-carl/src/resource/persistence/database/")
     }
 }

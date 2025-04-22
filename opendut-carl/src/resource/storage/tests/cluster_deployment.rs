@@ -1,22 +1,11 @@
-use crate::resource::manager::{ResourceManager, ResourceManagerRef};
-use crate::resource::persistence;
+use crate::resource::manager::ResourceManager;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment};
 use opendut_types::peer::PeerDescriptor;
 
 #[tokio::test]
-async fn should_persist_cluster_deployment_in_memory() -> anyhow::Result<()> {
+async fn should_persist_cluster_deployment() -> anyhow::Result<()> {
     let resource_manager = ResourceManager::new_in_memory();
-    should_persist_cluster_deployment(resource_manager).await
-}
 
-#[test_with::no_env(SKIP_DATABASE_CONTAINER_TESTS)]
-#[tokio::test]
-async fn should_persist_cluster_deployment_in_database() -> anyhow::Result<()> {
-    let db = persistence::testing::spawn_and_connect_resource_manager().await?;
-    should_persist_cluster_deployment(db.resource_manager).await
-}
-
-async fn should_persist_cluster_deployment(resource_manager: ResourceManagerRef) -> anyhow::Result<()> {
     // Arrange
     let peer_descriptor = super::peer_descriptor::peer_descriptor()?;
     resource_manager.insert::<PeerDescriptor>(peer_descriptor.id, peer_descriptor.clone()).await?;

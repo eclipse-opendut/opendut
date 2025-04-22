@@ -15,13 +15,4 @@ pub enum ConnectError {
     DatabaseDirCreate { dir: PathBuf, #[source] source: io::Error },
     #[error("Failed to create database in-memory")]
     DatabaseInMemoryCreate(#[source] redb::DatabaseError),
-
-
-    #[cfg(feature="postgres")]
-    #[error("Connection error from Diesel")]
-    Diesel { url: url::Url, #[source] source: diesel::ConnectionError },
-
-    #[cfg(feature="postgres")]
-    #[error("Error while applying migrations")]
-    Migration { #[source] source: Box<dyn std::error::Error + Send + Sync> },
 }

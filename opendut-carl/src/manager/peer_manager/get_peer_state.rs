@@ -1,9 +1,9 @@
+use crate::resource::api::resources::Resources;
+use crate::resource::persistence::error::PersistenceError;
 use crate::resource::storage::ResourcesStorageApi;
 use opendut_types::peer::state::{PeerConnectionState, PeerState};
 use opendut_types::peer::PeerId;
 use tracing::{debug, error, info};
-use crate::resource::api::resources::Resources;
-use crate::resource::persistence::error::PersistenceError;
 
 
 impl Resources<'_> {
@@ -47,26 +47,15 @@ mod tests {
 
     use crate::manager::peer_manager::StorePeerDescriptorParams;
     use crate::manager::testing::PeerFixture;
-    use crate::resource::manager::{ResourceManager, ResourceManagerRef};
+    use crate::resource::manager::ResourceManager;
     use crate::settings::vpn::Vpn;
     use googletest::prelude::*;
     use opendut_types::peer::state::{PeerConnectionState, PeerMemberState, PeerState};
     use opendut_types::peer::{PeerDescriptor, PeerId};
 
     #[tokio::test]
-    async fn should_get_peer_state_down_in_memory() -> anyhow::Result<()> {
+    async fn should_get_peer_state_down() -> anyhow::Result<()> {
         let resource_manager = ResourceManager::new_in_memory();
-        should_get_peer_state(resource_manager).await
-    }
-
-    #[test_with::no_env(SKIP_DATABASE_CONTAINER_TESTS)]
-    #[tokio::test]
-    async fn should_get_peer_state_down_in_database() -> anyhow::Result<()> {
-        let db = crate::resource::persistence::testing::spawn_and_connect_resource_manager().await?;
-        should_get_peer_state(db.resource_manager).await
-    }
-
-    async fn should_get_peer_state(resource_manager: ResourceManagerRef) -> anyhow::Result<()> {
         let peer = PeerFixture::new();
 
         resource_manager.resources_mut(async |resources| {
@@ -85,19 +74,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_throw_error_if_peer_not_found_in_memory() -> anyhow::Result<()> {
+    async fn should_throw_error_if_peer_not_found() -> anyhow::Result<()> {
         let resource_manager = ResourceManager::new_in_memory();
-        should_throw_error_if_peer_not_found(resource_manager).await
-    }
-
-    #[test_with::no_env(SKIP_DATABASE_CONTAINER_TESTS)]
-    #[tokio::test]
-    async fn should_throw_error_if_peer_not_found_in_database() -> anyhow::Result<()> {
-        let db = crate::resource::persistence::testing::spawn_and_connect_resource_manager().await?;
-        should_throw_error_if_peer_not_found(db.resource_manager).await
-    }
-
-    async fn should_throw_error_if_peer_not_found(resource_manager: ResourceManagerRef) -> anyhow::Result<()> {
         let peer = PeerFixture::new();
 
         resource_manager.resources_mut(async |resources| {

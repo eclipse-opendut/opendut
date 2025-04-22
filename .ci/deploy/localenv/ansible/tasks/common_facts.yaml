@@ -1,7 +1,6 @@
 - name: Define container names
   set_fact:
     opendut_carl: "opendut-carl"
-    opendut_carl_postgres: "opendut-carl-postgres"
     opendut_keycloak: "opendut-keycloak"
     opendut_keycloak_postgres: "opendut-keycloak-postgres"
     opendut_netbird_management: "opendut-netbird-management"

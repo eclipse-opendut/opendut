@@ -30,7 +30,6 @@
     - [Manually Building a Release](development/release/manually-building-a-release.md)
 - [Architecture](architecture/index.md)
   - [CARL](architecture/carl/index.md)
-    - [Database Schema](architecture/carl/database-schema.md)
     - [Peer](architecture/carl/peer/index.md)
     - [Cluster](architecture/carl/cluster/index.md)
       - [Deployment](architecture/carl/cluster/deployment.md)

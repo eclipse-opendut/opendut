@@ -17,9 +17,6 @@ pub enum PersistenceErrorKind {
     ProtobufDecode(#[source] prost::DecodeError),
     ProtobufConversion(#[source] opendut_types::proto::ConversionError),
     KeyValueStore(#[source] redb::Error),
-
-    #[cfg(feature="postgres")]
-    DieselInternal(#[source] diesel::result::Error),
 }
 impl PersistenceError {
     pub fn insert<R>(identifier: impl Debug, cause: impl Into<Cause>) -> Self {
@@ -84,9 +81,6 @@ impl Display for PersistenceErrorKind {
             Self::ProtobufDecode(source) => writeln!(f, "Error while converting stored bytes to ProtoBuf model while loading from persistence: {source}")?,
             Self::ProtobufConversion(source) => writeln!(f, "Error while converting from ProtoBuf model to internal model while loading from persistence: {source}")?,
             Self::KeyValueStore(source) => writeln!(f, "Error occurred in the key-value store: {source}")?,
-
-            #[cfg(feature="postgres")]
-            Self::DieselInternal(source) => writeln!(f, "Error internal to Diesel, likely from transaction: {source}")?,
         }
         Ok(())
     }
@@ -139,15 +133,6 @@ impl From<opendut_types::proto::ConversionError> for PersistenceError {
     fn from(error: opendut_types::proto::ConversionError) -> Self {
         PersistenceError {
             source: PersistenceErrorKind::ProtobufConversion(error),
-            context_messages: vec![],
-        }
-    }
-}
-#[cfg(feature="postgres")]
-impl From<diesel::result::Error> for PersistenceError {
-    fn from(error: diesel::result::Error) -> Self {
-        PersistenceError {
-            source: PersistenceErrorKind::DieselInternal(error),
             context_messages: vec![],
         }
     }

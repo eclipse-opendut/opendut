@@ -172,7 +172,7 @@ scrape_configs:
 
       - match:
           docker: { }
-          selector: '{job=~"keycloak-postgres|carl-postgres"}'
+          selector: '{job=~"keycloak-postgres"}'
           stages:
             - multiline:
                 firstline: '^\d{4}-\d{2}-\d{2}'

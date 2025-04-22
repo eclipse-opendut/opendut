@@ -119,17 +119,16 @@ impl Default for ResourceSubscriptionChannels {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::manager::peer_manager::tests::create_peer_descriptor;
     use crate::resource::manager::{ResourceManager, ResourceManagerRef};
+    use crate::resource::persistence::persistable::Persistable;
+    use crate::resource::storage::ResourcesStorageApi;
     use opendut_types::peer::state::PeerConnectionState;
     use opendut_types::peer::PeerId;
     use std::net::IpAddr;
     use std::str::FromStr;
     use std::time::Duration;
     use tokio::time::timeout;
-    use crate::manager::peer_manager::tests::create_peer_descriptor;
-    use crate::resource::persistence;
-    use crate::resource::storage::ResourcesStorageApi;
-    use crate::resource::persistence::persistable::Persistable;
 
     #[tokio::test]
     async fn should_notify_about_resource_insertions() -> anyhow::Result<()> {
@@ -194,8 +193,7 @@ mod tests {
 
     #[test_log::test(tokio::test)]
     async fn should_not_notify_if_transaction_was_aborted() -> anyhow::Result<()> {
-        let db = persistence::testing::spawn_and_connect_resource_manager().await?;
-        let resource_manager = db.resource_manager;
+        let resource_manager = ResourceManager::new_in_memory();
         let id = PeerId::random();
         let peer_descriptor = create_peer_descriptor();
         let mut subscription = resource_manager.subscribe::<PeerDescriptor>().await;

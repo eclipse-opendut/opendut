@@ -32,7 +32,6 @@
           docker volume rm -f {{ item.volume }} || true
       loop:
         - { "service": "opendut-keycloak-postgres", "volume": "opendut_keycloak_postgres_data" }
-        - { "service": "opendut-carl-postgres", "volume": "opendut_carl_postgres_data" }
         - { "service": "opendut-carl", "volume": "opendut_carl_data" }
         # Netbird management config contains management.json with client credentials for keycloak
         - { "service": "opendut-netbird-management", "volume": "opendut_netbird-mgmt-config" }
@@ -45,7 +44,6 @@
         chdir: "{{ repo_dir }}"
       loop:
         - "keycloak-postgres"  # internal name
-        - "carl-postgres"      # internal name
 
     - name: Restore Postgres database backups
       shell:
@@ -55,7 +53,6 @@
           "
       loop:
         - "opendut-keycloak-postgres"
-        - "opendut-carl-postgres"
 
     - name: Restore NetBird management
       include_tasks: tasks/restore/netbird_management.yaml

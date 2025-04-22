@@ -1,24 +1,12 @@
-use crate::resource::manager::{ResourceManager, ResourceManagerRef};
-use crate::resource::persistence;
+use crate::resource::manager::ResourceManager;
 use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
 use opendut_types::peer::PeerId;
 use opendut_types::topology::DeviceId;
 use std::collections::HashSet;
 
 #[tokio::test]
-async fn should_persist_cluster_configuration_in_memory() -> anyhow::Result<()> {
+async fn should_persist_cluster_configuration() -> anyhow::Result<()> {
     let resource_manager = ResourceManager::new_in_memory();
-    should_persist_cluster_configuration(resource_manager).await
-}
-
-#[test_with::no_env(SKIP_DATABASE_CONTAINER_TESTS)]
-#[tokio::test]
-async fn should_persist_cluster_configuration_in_database() -> anyhow::Result<()> {
-    let db = persistence::testing::spawn_and_connect_resource_manager().await?;
-    should_persist_cluster_configuration(db.resource_manager).await
-}
-
-async fn should_persist_cluster_configuration(resource_manager: ResourceManagerRef) -> anyhow::Result<()> {
 
     let peer = super::peer_descriptor::peer_descriptor()?;
     resource_manager.insert(peer.id, peer.clone()).await?;

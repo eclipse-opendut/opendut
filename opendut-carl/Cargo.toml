@@ -21,7 +21,6 @@ axum-server-dual-protocol = { workspace = true }
 backon = { workspace = true }
 chrono = { workspace = true }
 config = { workspace = true }
-diesel = { workspace = true, features = ["postgres", "pq-src", "uuid", "serde_json"], optional = true }
 flate2 = { workspace = true }
 futures = { workspace = true }
 googletest = { workspace = true }
@@ -35,9 +34,7 @@ openidconnect = { workspace = true }
 openssl-sys = { workspace = true }
 opentelemetry = { workspace = true }
 opentelemetry_sdk = { workspace = true }
-pem = { workspace = true, features = ["serde"]}
-pin-project-lite = { workspace = true }
-pq-sys = { workspace = true, optional = true }
+pem = { workspace = true, features = ["serde"] }
 prost = { workspace = true }
 redb = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
@@ -67,7 +64,6 @@ predicates = { workspace = true }
 rstest = { workspace = true }
 test-log = { workspace = true }
 test-with = { workspace = true }
-testcontainers-modules = { workspace = true, features = ["postgres"] }
 uuid = { workspace = true, features = ["v4"] }
 
 [build-dependencies]
@@ -75,9 +71,3 @@ shadow-rs = { workspace = true, default-features = true }
 
 [lints]
 workspace = true
-
-[features]
-default = [
-    "postgres",
-]
-postgres = ["dep:diesel", "dep:pq-sys"]

@@ -17,8 +17,6 @@ pub static CROSS: Cli = Crate::new("cross")
         command
     });
 
-pub static DIESEL: Cli = Crate::new("diesel_cli").with_install_args(&["--no-default-features", "--features=postgres-bundled"]).into_cli();
-
 pub static MDBOOK: Cli = Crate::new("mdbook").into_cli()
     .with_crate_dependencies(&[
         Crate::new("mdbook-plantuml"),

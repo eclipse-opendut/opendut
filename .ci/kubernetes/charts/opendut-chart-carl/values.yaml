@@ -15,49 +15,6 @@ tls:
   cert: "tls.crt"
 
 
-postgresql:
-  image:
-    registry: docker.io
-    repository: bitnami/postgresql
-    tag: 16.4.0-debian-12-r0
-
-  auth:
-    username: postgres
-    password: postgres
-    database: carl
-
-database:
-  vendor: postgres
-  hostname: opendut-carl-postgresql
-  port: 5432
-  username: postgres
-  password: postgres
-  database: carl
-
-dbchecker:
-  enabled: false
-  image:
-    # Docker image used to check Database readiness at startup
-    repository: docker.io/busybox
-    # Image tag for the dbchecker image
-    tag: 1.32
-    # Image pull policy for the dbchecker image
-    pullPolicy: IfNotPresent
-  # SecurityContext for the dbchecker container
-  securityContext:
-    allowPrivilegeEscalation: false
-    runAsUser: 1000
-    runAsGroup: 1000
-    runAsNonRoot: true
-  # Resource requests and limits for the dbchecker container
-  resources:
-    requests:
-      cpu: "20m"
-      memory: "32Mi"
-    limits:
-      cpu: "20m"
-      memory: "32Mi"
-
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
@@ -201,7 +158,6 @@ config:
   persistence:
     enabled: true
     database:
-      url: 'postgres://postgres:postgres@opendut-carl-postgresql/carl'
   vpn:
     enabled: true
     kind: 'netbird'

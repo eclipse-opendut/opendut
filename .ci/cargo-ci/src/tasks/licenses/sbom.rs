@@ -114,7 +114,6 @@ fn clarify_license_information(package: SpdxItemPackages) -> SpdxItemPackages {
                 | "MIT AND BSD-3-Clause"
                 | "MIT-0"
                 | "MPL-2.0"
-                | "PostgreSQL"
                 | "Unicode-3.0"
                 | "Zlib"
                 => license, //leave unchanged

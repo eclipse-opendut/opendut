@@ -34,13 +34,6 @@ enabled = false
 [persistence.database]
 file = ""
 
-# deprecated
-url = ""  # e.g. postgresql://example.com/carl
-# deprecated
-username = ""
-# deprecated
-password = ""
-
 [peer]
 disconnect.timeout.ms = 30000
 can.server_port_range_start = 10000

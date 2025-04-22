@@ -4,23 +4,11 @@ use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNe
 use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag, Topology};
 use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
-use crate::resource::manager::{ResourceManager, ResourceManagerRef};
-use crate::resource::persistence;
+use crate::resource::manager::ResourceManager;
 
 #[tokio::test]
-async fn should_persist_peer_descriptor_in_memory() -> anyhow::Result<()> {
+async fn should_persist_peer_descriptor() -> anyhow::Result<()> {
     let resource_manager = ResourceManager::new_in_memory();
-    should_persist_peer_descriptor_implementation(resource_manager).await
-}
-
-#[test_with::no_env(SKIP_DATABASE_CONTAINER_TESTS)]
-#[tokio::test]
-async fn should_persist_peer_descriptor_in_database() -> anyhow::Result<()> {
-    let db = persistence::testing::spawn_and_connect_resource_manager().await?;
-    should_persist_peer_descriptor_implementation(db.resource_manager).await
-}
-
-async fn should_persist_peer_descriptor_implementation(resource_manager: ResourceManagerRef) -> anyhow::Result<()> {
 
     let testee = peer_descriptor()?;
 

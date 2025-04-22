@@ -322,35 +322,12 @@ services:
       test: ["CMD-SHELL", "turnutils_uclient -T -p $$TURN_PORT -u $$TURN_USER -w $$TURN_PASSWORD localhost"]
 
 
-  carl-postgres:
-    container_name: opendut-carl-postgres
-    image: "postgres:14.15"
-    restart: unless-stopped
-    healthcheck:
-      <<: *common-healthcheck-params
-      test: [ "CMD", "pg_isready", "--quiet", "--dbname=postgres", "--username=postgres" ]
-    volumes:
-      - carl_postgres_data:/var/lib/postgresql/data
-      - backup:/var/lib/postgresql/backup
-    labels:
-      - logging=promtail
-      - logging_job=carl-postgres
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=$CARL_POSTGRES_PASSWORD
-      - POSTGRES_DB=carl
-      - POSTGRES_HOST=postgres
-    networks:
-      - opendut_local
-
   carl:
     container_name: opendut-carl
     image: "ghcr.io/eclipse-opendut/opendut-carl:${OPENDUT_CARL_IMAGE_VERSION:-0.6.0}"
     command: ["/opt/opendut-carl/opendut-carl"]
     restart: unless-stopped
     depends_on:
-      carl-postgres:
-        condition: service_healthy
       traefik:
         condition: service_started
       keycloak:
@@ -398,9 +375,6 @@ services:
       # Persistence
       - OPENDUT_CARL_PERSISTENCE_ENABLED=true
       - OPENDUT_CARL_PERSISTENCE_DATABASE_FILE=/var/lib/opendut/carl/data/opendut.db
-      - OPENDUT_CARL_PERSISTENCE_DATABASE_URL=postgres://opendut-carl-postgres/carl
-      - OPENDUT_CARL_PERSISTENCE_DATABASE_USERNAME=postgres
-      - OPENDUT_CARL_PERSISTENCE_DATABASE_PASSWORD=$CARL_POSTGRES_PASSWORD
 
       - KEYCLOAK_URL=https://auth.opendut.local/
       - NETBIRD_MANAGEMENT_URL=https://netbird-api.opendut.local
@@ -631,7 +605,6 @@ volumes:
   netbird-mgmt-data:
   netbird-mgmt-config:
   netbird-signal:
-  carl_postgres_data:
   carl-config:
   opendut_nginx-webdav:
   tempo-data:

@@ -11,8 +11,6 @@ services:
         - VERSION=$OPENDUT_CARL_VERSION
     image: "${OPENDUT_DOCKER_IMAGE_HOST}/${OPENDUT_DOCKER_IMAGE_NAMESPACE}/opendut-carl:${OPENDUT_CARL_VERSION}"
     command: ["/opt/opendut-carl/opendut-carl"]
-    depends_on:
-      - postgres
     volumes:
       - "../../../resources/development/tls/insecure-development-ca.pem:/etc/opendut/tls/ca.pem"
       - "../../../resources/development/tls/carl.pem:/etc/opendut/tls/carl.pem"
@@ -51,9 +49,6 @@ services:
       # Persistence
       - OPENDUT_CARL_PERSISTENCE_ENABLED=true
       - OPENDUT_CARL_PERSISTENCE_DATABASE_FILE=/var/lib/opendut/carl/data/opendut.db
-      - OPENDUT_CARL_PERSISTENCE_DATABASE_URL=postgres://carl-postgres-1/carl
-      - OPENDUT_CARL_PERSISTENCE_DATABASE_USERNAME=postgres
-      - OPENDUT_CARL_PERSISTENCE_DATABASE_PASSWORD=postgres
 
       # dynamically provided
       - OPENDUT_DOCKER_IMAGE_NAMESPACE
@@ -79,28 +74,10 @@ services:
         ipv4_address: 192.168.32.200
 
 
-  postgres:
-    image: "postgres:14.4"
-    restart: unless-stopped
-    healthcheck:
-      test: [ "CMD", "pg_isready", "--quiet", "--dbname=carl", "--username=postgres" ]
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_HOST=postgres
-      - POSTGRES_DB=carl
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    networks:
-      opendutnet:
-    ports:
-      - "127.0.0.1:5432:5432"
-
 networks:
   opendutnet:
     name: opendut_network
     external: true  # Use a pre-existing network
 
 volumes:
-  postgres_data:
   carl_data:

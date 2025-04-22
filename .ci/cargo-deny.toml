@@ -78,7 +78,6 @@ allow = [
     "MIT-0",
     "ISC",
     "OpenSSL",
-    "PostgreSQL",
     "Unicode-3.0",
     "Zlib",
 ]

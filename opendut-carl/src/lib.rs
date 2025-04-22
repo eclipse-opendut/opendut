@@ -66,22 +66,8 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
     let resource_manager = {
         let persistence_options = PersistenceOptions::load(&settings)?;
 
-        let resource_manager = ResourceManager::create(&persistence_options).await
-            .context("Creating ResourceManager failed")?;
-
-        #[cfg(feature="postgres")]
-        if let Some(value) = std::env::var_os("OPENDUT_CARL_POSTGRES_MIGRATION") {
-            tracing::info!("Found environment variable `OPENDUT_CARL_POSTGRES_MIGRATION`. Starting migration.");
-            assert!(!value.is_empty());
-
-            startup::postgres_migration::load_data_from_postgres_into_key_value_store(resource_manager.clone(), &persistence_options).await
-                .expect("Migration from Postgres to Key-Value Store should complete without errors");
-
-            tracing::info!("Migration complete. Exiting.");
-            std::process::exit(0);
-        }
-
-        resource_manager
+        ResourceManager::create(&persistence_options).await
+            .context("Creating ResourceManager failed")?
     };
 
     let carl_url = ResourceHomeUrl::try_from(&settings)?;
