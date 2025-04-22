@@ -4,7 +4,12 @@ Notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased (v0.6.0)
+## Unreleased
+
+tbd.
+
+
+## 0.6.0
 
 ### Breaking Changes
 * The database backend was swapped out for a Key-Value Store.  
