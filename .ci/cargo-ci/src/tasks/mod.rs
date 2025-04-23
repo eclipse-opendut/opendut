@@ -4,6 +4,7 @@ pub mod coverage;
 pub mod distribution;
 pub mod doc;
 pub mod docker;
+pub mod flash;
 pub mod licenses;
 pub mod run;
 pub mod test;

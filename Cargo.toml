@@ -86,7 +86,7 @@ http-body-util = "0.1.2"
 hyper = "1.6.0"
 hyper-util = "0.1.10"
 indicatif = "0.17.11"
-indoc = "2.0.5"
+indoc = "2.0.6"
 jsonwebtoken = "9.3.0"
 leptos = { version = "0.7.5" }
 leptos_oidc = { git = "https://gitlab.com/opendut/leptos_oidc", branch = "upgrade-leptos-0.7" }
