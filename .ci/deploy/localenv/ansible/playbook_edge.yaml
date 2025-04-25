@@ -125,10 +125,15 @@
       aarch64: "linux-arm64-lts"
     cannelloni_dir: "/tmp/opendut/"
   tasks:
+    - name: Check if EDGAR service exists
+      stat: path=/etc/systemd/system/opendut-edgar.service
+      register: edgar_service_status
+
     - name: Stop EDGAR to allow replacing Cannelloni executable
       systemd_service:
         name: opendut-edgar
         state: stopped
+      when: edgar_service_status.stat.exists
 
     - name: Install can-utils
       apt:

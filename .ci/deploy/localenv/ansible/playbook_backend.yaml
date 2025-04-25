@@ -5,11 +5,6 @@
   hosts: backend
   gather_facts: false
   tasks:
-    - name: Define common facts
-      include_tasks: tasks/common_facts.yaml
-    - name: Set carl image version
-      include_tasks: tasks/carl_image_version.yaml
-
     - name: Checkout openDuT repo
       git:
         repo: "https://github.com/eclipse-opendut/opendut/"
@@ -17,16 +12,22 @@
         version: "{{ opendut_version_ref }}"
         force: true  # Avoid "would clobber existing tag" error for canary-tag
 
-    - name: Force update CARL image  # With canary releases, we may re-use the same tag, which normally results in the new image not being pulled.
-      command:
-        cmd: docker compose pull --policy=always carl
-        chdir: "{{ repo_dir }}/.ci/deploy/localenv/"
-
-    - name: Provision secrets
+    - name: Provision secrets and initially create volumes
       command:
         cmd: "docker compose --file .ci/deploy/localenv/docker-compose.yml up --build provision-secrets"
         chdir: "{{ repo_dir }}"
         creates: "{{ repo_dir }}/.ci/deploy/localenv/data/secrets/.env"
+
+    - name: Define common facts
+      include_tasks: tasks/common_facts.yaml
+    - name: Set carl image version
+      include_tasks: tasks/carl_image_version.yaml
+
+    - name: Force update CARL image  # With canary releases, we may re-use the same tag, which normally results in the new image not being pulled.
+      # environment file might contain custom image version for CARL
+      command:
+        cmd: "docker compose pull --policy=always carl --env-file .ci/deploy/localenv/data/secrets/.env"
+        chdir: "{{ repo_dir }}"
 
     - name: Start containers
       command:
