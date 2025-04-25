@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 tbd.
-
+* Localenv: opendut-carl-postgres container removed, might need manual removal when updating.
 
 ## 0.6.0
 
@@ -21,7 +21,7 @@ tbd.
   docker stop opendut-carl
 
   export OPENDUT_REPO_ROOT=$(git rev-parse --show-toplevel)
-  docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/docker-compose.yml --env-file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/data/secrets/.env run --env OPENDUT_CARL_POSTGRES_MIGRATION=true carl
+  docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/docker-compose.yml --env-file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/data/secrets/.env run --env OPENDUT_CARL_POSTGRES_MIGRATION=true --env OPENDUT_CARL_IMAGE_VERSION=0.6.0 carl
   ```
   Then trigger a rollout as normal. If you're using the Ansible deployment, make sure to increment the version there before doing so.
 
