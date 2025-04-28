@@ -44,7 +44,7 @@ mod tests {
         
         let specification_meta_data = SpecificationMetadata {
             id: cluster_configuration.id.0,
-            name: cluster_configuration.name.clone().value(),
+            name: cluster_configuration.name.value().to_owned(),
         };
         
         let document = ClusterConfigurationSpecificationV1 {

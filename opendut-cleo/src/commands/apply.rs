@@ -176,7 +176,7 @@ mod tests {
             version: String::from("v1"),
             metadata: SpecificationMetadata {
                 id: peer.id.uuid,
-                name: peer.name.clone().value(),
+                name: peer.name.value().to_owned(),
             },
             spec: Specification::PeerDescriptorSpecification(PeerDescriptorSpecification::V1(PeerDescriptorSpecificationV1 {
                 location: None,

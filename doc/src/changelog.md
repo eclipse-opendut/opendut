@@ -6,8 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-tbd.
+### Changed
 * Localenv: opendut-carl-postgres container removed, might need manual removal when updating.
+
+### Fixed
+* The web-UI now shows peers and clusters sorted by name.
+
 
 ## 0.6.0
 

@@ -48,7 +48,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
                     cluster_configuration.set(
                         UserClusterConfiguration {
                             id: cluster_id,
-                            name: UserInputValue::Right(configuration.name.value()),
+                            name: UserInputValue::Right(configuration.name.value().to_owned()),
                             devices: DeviceSelection::Right(configuration.devices),
                             leader: LeaderSelection::Right(configuration.leader),
                         }

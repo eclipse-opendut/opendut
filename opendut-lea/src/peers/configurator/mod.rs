@@ -67,7 +67,7 @@ pub fn PeerConfigurator() -> impl IntoView {
                         .unwrap_or(vec![]);
 
                     peer_configuration.update(|user_configuration| {
-                        user_configuration.name = UserInputValue::Right(configuration.name.value());
+                        user_configuration.name = UserInputValue::Right(configuration.name.value().to_owned());
                         user_configuration.is_new = false;
                         user_configuration.location = UserInputValue::Right(configuration.location.unwrap_or_default().value());
                         user_configuration.devices = configuration.topology.devices.into_iter().map(|device| {

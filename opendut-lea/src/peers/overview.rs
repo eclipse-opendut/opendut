@@ -41,7 +41,7 @@ pub fn PeersOverview() -> impl IntoView {
                             PeerState::default()
                         });
                     peers_with_state.push((peer, peer_state));
-                };
+                }
 
                 peers_with_state
             }
@@ -61,7 +61,11 @@ pub fn PeersOverview() -> impl IntoView {
     };
 
     let peers_table_rows = move || async move {
-        let registered_peers = registered_peers.await;
+        let mut registered_peers = registered_peers.await;
+        registered_peers.sort_by(|(peer_a, _), (peer_b, _)|
+            peer_a.name.value().cmp(peer_b.name.value())
+        );
+
         let configured_clusters = configured_clusters.await;
 
         registered_peers.into_iter().map(|(peer_descriptor, peer_state)| {

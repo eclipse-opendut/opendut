@@ -201,7 +201,7 @@ mod tests {
         
         let specification_metadata = SpecificationMetadata {
             id: peer.id.uuid,
-            name: peer.name.clone().value(),
+            name: peer.name.value().to_owned(),
         };
         
         let interface_kind = match peer.network.interfaces[0].configuration {

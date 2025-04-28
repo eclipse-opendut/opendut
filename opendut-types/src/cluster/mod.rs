@@ -70,8 +70,8 @@ impl ClusterName {
     pub const MIN_LENGTH: usize = 4;
     pub const MAX_LENGTH: usize = 64;
 
-    pub fn value(self) -> String {
-        self.0
+    pub fn value(&self) -> &str {
+        &self.0
     }
 }
 

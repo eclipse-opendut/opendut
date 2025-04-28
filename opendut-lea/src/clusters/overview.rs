@@ -138,7 +138,11 @@ pub fn ClustersOverview() -> impl IntoView {
         let on_undeploy = on_undeploy.clone();
 
         async move {
-            let clusters = clusters.await;
+            let mut clusters = clusters.await;
+            clusters.sort_by(|cluster_a, cluster_b|
+                cluster_a.name.value().cmp(cluster_b.name.value())
+            );
+
             let deployed_clusters = deployed_clusters.await;
 
             clusters.iter().cloned().map(|cluster_configuration| {
