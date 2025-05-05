@@ -127,17 +127,19 @@ fn DeleteClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguratio
         }
     });
 
+    let use_navigate = use_navigate();
     let on_conform = move || {
+        let use_navigate = use_navigate.clone();
+
         cluster_configuration.with_untracked(|config| {
             let id = config.id.to_owned();
             let mut carl = globals.client.clone();
-            let use_navigate = use_navigate();
 
             leptos::task::spawn_local(async move {
                 pending.set(true);
 
                 let _ = carl.cluster.delete_cluster_configuration(id).await; // TODO: Check the result and display a toast on failure.
-                navigate_to(WellKnownRoutes::ClustersOverview, use_navigate.clone());
+                navigate_to(WellKnownRoutes::ClustersOverview, use_navigate);
 
                 pending.set(false);
             });
