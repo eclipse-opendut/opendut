@@ -92,11 +92,16 @@ enum Commands {
 
 #[derive(Subcommand)]
 enum ListResource {
+    #[command(alias="cluster-configuration")]
     ClusterConfigurations(commands::cluster_configuration::list::ListClusterConfigurationsCli),
+    #[command(alias="cluster-deployment")]
     ClusterDeployments(commands::cluster_deployment::list::ListClusterDeploymentsCli),
+    #[command(alias="peer")]
     Peers(commands::peer::list::ListPeersCli),
+    #[command(alias="device")]
     Devices(commands::device::list::ListDevicesCli),
-    ContainerExecutor(commands::executor::list::ListContainerExecutorCli),
+    #[command(alias="container-executor")]
+    ContainerExecutors(commands::executor::list::ListContainerExecutorCli),
 }
 
 #[derive(clap::Args)]
@@ -244,7 +249,7 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
                 ListResource::Peers(implementation) => {
                     implementation.execute(&mut carl, output).await?;
                 }
-                ListResource::ContainerExecutor(implementation) => {
+                ListResource::ContainerExecutors(implementation) => {
                     implementation.execute(&mut carl, output).await?;
                 }
                 ListResource::Devices(implementation) => {
