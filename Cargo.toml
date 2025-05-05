@@ -186,7 +186,7 @@ netbird-dashboard.version="v2.5.0"    # docker container version for netbirdio/d
 rperf.version = "0.1.8"
 
 [workspace.metadata.cicero.commands.dependencies] #CLI tool crates used in CI (not libraries)
-cargo-bundle-licenses = "3.1.0"
+cargo-bundle-licenses = "4.0.0"
 cargo-deny = "0.18.2"
 cargo-sbom = "0.9.1"
 cargo-tarpaulin = "0.32.2"
@@ -194,7 +194,7 @@ cross = "0.2.5"
 diesel_cli = "2.2.4"
 mdbook = "0.4.42"
 mdbook-plantuml = "0.8.0"
-trunk = "0.21.7"
+trunk = "0.21.13"
 
 [workspace.lints.clippy]
 unnecessary_lazy_evaluations = "allow"
