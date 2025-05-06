@@ -131,6 +131,7 @@ pub enum CanSamplePointError {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, Hash)]
+#[serde(rename_all="kebab-case")]
 pub enum NetworkInterfaceConfiguration {
     Ethernet,
     Can {

@@ -8,6 +8,7 @@ use crate::resource::subscription::{ResourceSubscriptionChannels, Subscribable, 
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::sync::Arc;
+use config::Config;
 use tokio::sync::{RwLock, RwLockWriteGuard};
 use crate::resource::ConnectError;
 
@@ -24,8 +25,10 @@ struct State {
 
 impl ResourceManager {
 
-    pub async fn create(persistence_options: &PersistenceOptions) -> Result<ResourceManagerRef, ConnectError> {
-        let resources = ResourceStorage::connect(persistence_options).await?;
+    pub async fn load_from_config(settings: &Config) -> Result<ResourceManagerRef, ConnectError> {
+        let persistence_options = PersistenceOptions::load(settings)?;
+
+        let resources = ResourceStorage::connect(&persistence_options).await?;
         let subscribers = ResourceSubscriptionChannels::default();
 
         Ok(Arc::new(Self {

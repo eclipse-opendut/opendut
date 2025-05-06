@@ -13,7 +13,7 @@ use opendut_types::util::net::NetworkInterfaceName;
 use opendut_types::vpn::netbird::SetupKey;
 use opendut_util::project;
 
-#[derive(Debug, Parser)]
+#[derive(Parser)]
 #[command(name = "opendut-edgar")]
 #[command(about = "Connect your ECU to openDuT.")]
 #[command(long_version = crate::FORMATTED_VERSION)]
@@ -22,7 +22,7 @@ struct Cli {
     command: Commands,
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Subcommand)]
 enum Commands {
     /// Launches the EDGAR Service
     Service {
@@ -49,7 +49,7 @@ enum Commands {
     },
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Subcommand)]
 enum SetupMode {
     /// Prepare your system for running EDGAR Service
     Managed {

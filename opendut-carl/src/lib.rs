@@ -22,53 +22,79 @@ use auth::in_memory_cache::CustomInMemoryCache;
 use crate::auth::grpc_auth_layer::GrpcAuthenticationLayer;
 use crate::auth::json_web_key::JwkCacheValue;
 use crate::http::state::CarlInstallDirectory;
-use crate::resource::manager::ResourceManager;
-use crate::resource::storage::PersistenceOptions;
+use crate::resource::manager::{ResourceManager, ResourceManagerRef};
 use crate::startup::tls::TlsConfig;
 
 shadow_rs::shadow!(app_info);
+shadow_formatted_version::from_shadow!(app_info);
 
 mod auth;
+mod cli;
+pub use cli::cli;
+
 mod http;
 mod manager;
 pub mod resource;
 pub mod settings;
 mod startup;
 
-#[tracing::instrument]
-pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow::Result<()> {
+pub struct StartupOptions {
+    pub telemetry_enabled: bool,
+    pub return_resource_manager_ref: bool,
+}
+impl Default for StartupOptions {
+    fn default() -> Self {
+        Self {
+            telemetry_enabled: true,
+            return_resource_manager_ref: false,
+        }
+    }
+}
+
+pub enum CreateResult {
+    ResourceManagerRef(ResourceManagerRef),
+    ServiceCompleted,
+}
+
+#[tracing::instrument(skip_all)]
+pub async fn create(settings_override: config::Config, startup_options: StartupOptions) -> anyhow::Result<CreateResult> {
     opendut_util::crypto::install_default_provider();
 
     let settings = settings::load_with_overrides(settings_override)?;
 
-    let logging_config = LoggingConfig::load(&settings.config)?;
-    let service_metadata = opentelemetry_types::ServiceMetadata {
-        instance_id: format!("carl-{}", Uuid::new_v4()),
-        version: app_info::PKG_VERSION.to_owned(),
+    let telemetry_handle = if startup_options.telemetry_enabled {
+        let logging_config = LoggingConfig::load(&settings.config)?;
+        let service_metadata = opentelemetry_types::ServiceMetadata {
+            instance_id: format!("carl-{}", Uuid::new_v4()),
+            version: app_info::PKG_VERSION.to_owned(),
+        };
+        let opentelemetry = Opentelemetry::load(&settings.config, service_metadata).await?;
+
+        Some(telemetry::initialize_with_config(logging_config, opentelemetry).await?)
+    } else {
+        None
     };
-    let opentelemetry = Opentelemetry::load(&settings.config, service_metadata).await?;
 
-    let mut shutdown = telemetry::initialize_with_config(logging_config, opentelemetry).await?;
+    let result = run(settings, startup_options.return_resource_manager_ref).await?;
 
-    create(settings).await?;
+    if let Some(mut telemetry_handle) = telemetry_handle {
+        telemetry_handle.shutdown();
+    }
 
-    shutdown.shutdown();
-
-    Ok(())
+    Ok(result)
 }
 
-pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
-    opendut_util::crypto::install_default_provider();
+async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::Result<CreateResult> {
 
     info!("Started with configuration: {settings:?}");
     let settings = settings.config;
 
-    let resource_manager = {
-        let persistence_options = PersistenceOptions::load(&settings)?;
+    let resource_manager = ResourceManager::load_from_config(&settings).await
+        .context("Creating ResourceManager failed")?;
 
-        ResourceManager::create(&persistence_options).await
-            .context("Creating ResourceManager failed")?
-    };
+    if get_resource_manager_ref {
+        return Ok(CreateResult::ResourceManagerRef(resource_manager));
+    }
 
     let carl_url = ResourceHomeUrl::try_from(&settings)?;
 
@@ -177,5 +203,5 @@ pub async fn create(settings: LoadedConfig) -> anyhow::Result<()> {
         }
     }
 
-    Ok(())
+    Ok(CreateResult::ServiceCompleted)
 }

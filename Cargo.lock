@@ -3700,6 +3700,7 @@ dependencies = [
  "axum-server-dual-protocol",
  "backon",
  "chrono",
+ "clap",
  "config 0.14.0",
  "flate2",
  "futures",

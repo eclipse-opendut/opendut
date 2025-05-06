@@ -23,9 +23,14 @@ pub fn spawn_carl() -> anyhow::Result<Port> {
         .set_override("network.tls.certificate", "resources/development/tls/insecure-development-carl.pem")?
         .set_override("network.tls.key", "resources/development/tls/insecure-development-carl.key")?
         .build()?;
-    let carl_settings = opendut_carl::settings::load_with_overrides(carl_config_override)?;
     tokio::spawn(async {
-        opendut_carl::create(carl_settings).await
+        opendut_carl::create(
+            carl_config_override,
+            opendut_carl::StartupOptions {
+                telemetry_enabled: false,
+                ..Default::default()
+            }
+        ).await
             .expect("CARL crashed")
     });
 
