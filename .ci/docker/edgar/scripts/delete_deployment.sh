@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set +e  # TODO change to `set -e` and handle in CLEO that the commands should not anymore crash for non-existing resources
+
 opendut-cleo delete cluster-deployment "206e5d0d-029d-4b03-8789-e0ec46e5a6ba"
 opendut-cleo delete cluster-configuration "206e5d0d-029d-4b03-8789-e0ec46e5a6ba"
 

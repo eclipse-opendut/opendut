@@ -1,17 +1,18 @@
-use std::fmt::Formatter;
 use std::thread::sleep;
 use std::time::Duration;
 
 use anyhow::{anyhow, Error};
 
-use EdgarDeploymentStatus::{Provisioned, Ready};
 use opendut_edgar_kernel_modules::{default_builtin_module_dir, default_module_file, required_kernel_modules};
-
-use crate::core::{SLEEP_TIME_SECONDS, TheoError, TIMEOUT_SECONDS};
+use status::EdgarDeploymentStatus;
+use crate::core::TheoError;
 use crate::core::docker::command::DockerCommand;
 use crate::core::docker::compose::{docker_compose_build, docker_compose_down};
-use crate::core::docker::edgar::{edgar_container_names, format_remaining_edgars_string, EDGAR_LEADER_NAME, EDGAR_PEER_1_NAME, EDGAR_PEER_2_NAME};
+use crate::core::docker::edgar::{edgar_container_names, EDGAR_LEADER_NAME, EDGAR_PEER_1_NAME, EDGAR_PEER_2_NAME};
 use crate::core::docker::services::DockerCoreServices;
+
+mod status;
+
 
 #[derive(clap::Parser)]
 pub struct TestEdgarCli {
@@ -33,28 +34,35 @@ impl TestEdgarCli {
     pub(crate) fn default_handling(&self) -> crate::Result {
         match self.task {
             TaskCli::Start => {
+                stop_if_running()?;
+
                 load_edgar_kernel_modules()?;
-                docker_compose_down(DockerCoreServices::Edgar.as_str(), false)?;
                 docker_compose_build(DockerCoreServices::Edgar.as_str())?;
                 start_edgar_in_docker()?;
-                wait_until_all_edgar_peers_are(Provisioned)?;
-                wait_until_all_edgar_peers_are(Ready)?;
-                
+                status::wait_until_all_edgar_peers_are(EdgarDeploymentStatus::Provisioned)?;
+                status::wait_until_all_edgar_peers_are(EdgarDeploymentStatus::Ready)?;
+
                 // this is a workaround to ensure the bridge ip is set
                 set_dut_bridge_ip_address_for_pinging()?;
                 check_edgar_leader_ping_all()?;
-                check_edgar_can_ping()?;
-                delete_deployment_and_peers()?;
+                check_edgar_ping_can()?;
             }
-            TaskCli::Stop => {
-                docker_compose_down(DockerCoreServices::Edgar.as_str(), false)?;
-            }
+            TaskCli::Stop => stop_if_running()?, //TODO call in CI at end of run to ensure this code gets continuously tested
             TaskCli::Build => {
                 docker_compose_build(DockerCoreServices::Edgar.as_str())?;
             }
         }
         Ok(())
     }
+}
+
+fn load_edgar_kernel_modules() -> Result<(), Error> {
+    for kernel_module in required_kernel_modules() {
+        if !kernel_module.is_loaded(&default_module_file(), &default_builtin_module_dir())? {
+            kernel_module.load()?;
+        }
+    }
+    Ok(())
 }
 
 fn start_edgar_in_docker() -> Result<i32, Error> {
@@ -65,63 +73,6 @@ fn start_edgar_in_docker() -> Result<i32, Error> {
         .arg("up")
         .arg("-d")
         .expect_status("Failed to start EDGAR cluster in Docker.")
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum EdgarDeploymentStatus {
-    Provisioned,
-    Ready,
-}
-impl std::fmt::Display for EdgarDeploymentStatus {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let lower_case_debug = format!("{self:?}").to_lowercase();
-        write!(f, "{lower_case_debug}")
-    }
-}
-
-fn wait_until_all_edgar_peers_are(target_status: EdgarDeploymentStatus) -> crate::Result {
-    println!("STAGE: EDGAR {}", target_status);
-
-    let timeout = Duration::from_secs(TIMEOUT_SECONDS);
-    let start = std::time::Instant::now();
-    let mut remaining_edgar_names = edgar_container_names()?;
-
-    while !remaining_edgar_names.is_empty() {
-        let remaining_edgars_string = format_remaining_edgars_string(&remaining_edgar_names);
-
-        let duration = start.elapsed();
-        if duration > timeout {
-            return Err(anyhow!(
-                TheoError::Timeout(format!("EDGAR cluster did not become {target_status} within {timeout:?}. Incomplete peers: {remaining_edgars_string}"))
-            ));
-        }
-
-        for edgar_name in remaining_edgar_names.clone() {
-            match target_status {
-                Provisioned => {
-                    if check_edgar_container_provisioning_done(&edgar_name)? {
-                        println!("EDGAR peer '{}' is provisioned.", edgar_name);
-                        remaining_edgar_names.remove(&edgar_name);
-                    }
-                }
-                Ready => {
-                    println!("Checking if EDGAR peer '{}' is ready...", edgar_name);
-                    let leader_arg = if edgar_name == EDGAR_LEADER_NAME { "leader" } else { "peer" };
-                    DockerCommand::new_exec(&edgar_name)
-                        .arg("/opt/wait_until_ready.sh")
-                        .arg(leader_arg)
-                        .expect_status(&format!("Failed to check if EDGAR peer '{}' is ready.", edgar_name))?;
-                    println!("EDGAR peer '{}' is ready.", edgar_name);
-                    remaining_edgar_names.remove(&edgar_name);
-                }
-            }
-        }
-        // Print message with duration in seconds, formatted to 4 characters
-        println!("{:>width$} seconds - Waiting for peers to be {target_status}: {remaining_edgars_string}", duration.as_secs(), width=4);
-        sleep(Duration::from_secs(SLEEP_TIME_SECONDS));
-    }
-
-    Ok(())
 }
 
 fn check_edgar_container_provisioning_done(container_name: &str) -> Result<bool, Error> {
@@ -178,14 +129,7 @@ fn check_edgar_leader_ping_all() -> Result<i32, Error> {
         .expect_status("Failed to check if all EDGAR peers respond to ping.")
 }
 
-fn delete_deployment_and_peers() -> Result<i32, Error> {
-    println!("STAGE: Delete deployment and cleanup");
-    DockerCommand::new_exec(EDGAR_LEADER_NAME)
-        .arg("/opt/delete_deployment.sh")
-        .expect_status("Failed to delete deployment.")
-}
-
-fn check_edgar_can_ping() -> Result<i32, Error> {
+fn check_edgar_ping_can() -> Result<i32, Error> {
     println!("STAGE: EDGAR CAN ping all");
     println!("       Checking if all EDGAR peers respond to CAN ping...");
 
@@ -207,11 +151,20 @@ fn check_edgar_can_ping() -> Result<i32, Error> {
         .expect_status("Failed to start CAN ping sender on edgar-peer-2.")
 }
 
-fn load_edgar_kernel_modules() -> Result<(), Error> {
-    for kernel_module in required_kernel_modules() {
-        if !kernel_module.is_loaded(&default_module_file(), &default_builtin_module_dir())? {
-            kernel_module.load()?;
-        }        
-    }
+fn stop_if_running() -> crate::Result {
+    docker_compose_down(DockerCoreServices::Edgar.as_str(), false)?;
+    delete_deployment_and_peers()?;
     Ok(())
+}
+
+fn delete_deployment_and_peers() -> Result<i32, Error> {
+    println!("STAGE: Delete deployment and cleanup");
+    DockerCommand::new()
+        .add_common_args(DockerCoreServices::Edgar.as_str())
+        .arg("run")
+        .arg("--name=edgar-cleanup")
+        .arg("--rm")
+        .arg("leader")
+        .arg("/opt/delete_deployment.sh")
+        .expect_status("Failed to start EDGAR Cleanup container in Docker.")
 }
