@@ -69,13 +69,13 @@ pub enum StorePeerDescriptorError {
         actual_state: PeerState,
         required_states: Vec<PeerState>,
     },
-    #[error("Error when accessing persistence while creating peer '{peer_name}' <{peer_id}>")]
+    #[error("Error when accessing persistence while storing peer '{peer_name}' <{peer_id}>")]
     Persistence {
         peer_id: PeerId,
         peer_name: PeerName,
         #[source] source: PersistenceError,
     },
-    #[error("Error when creating peer in VPN management while store peer descriptor for peer '{peer_name}' <{peer_id}>")]
+    #[error("Error when creating peer in VPN management while storing peer descriptor for peer '{peer_name}' <{peer_id}>")]
     VpnClient {
         peer_id: PeerId,
         peer_name: PeerName,
