@@ -8,7 +8,10 @@ services:
     volumes:
       - opendut_nginx-webdav:/media/data
     shm_size: "1gb"
-    #restart: unless-stopped
+    restart: unless-stopped
+    labels:
+      - logging=promtail
+      - logging_job=nginx-webdav
     networks:
       - opendutnet
 

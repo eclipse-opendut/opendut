@@ -70,7 +70,7 @@ You may use this **OpenDuT Browser** to access the services.
   * LEA: opendut:opendut
   * Keycloak: admin:admin123456
   * Netbird: netbird:netbird
-  * Grafana: admin:admin
+  * Grafana: opendut:opendut (or for the Admin account: admin:admin)
 * Services with user interface:
   * https://carl
   * https://netbird-dashboard
