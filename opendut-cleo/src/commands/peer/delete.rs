@@ -1,7 +1,8 @@
 use std::collections::HashSet;
 use std::ops::Not;
 
-use opendut_carl_api::carl::CarlClient;
+use opendut_carl_api::carl::peer::GetPeerDescriptorError;
+use opendut_carl_api::carl::{CarlClient, ClientError};
 use opendut_types::cluster::ClusterId;
 use opendut_types::peer::PeerId;
 
@@ -11,17 +12,35 @@ pub struct DeletePeerCli {
     /// ID of the peer
     #[arg()]
     id: PeerId,
+    /// Report an error status code when the resource to delete does not exist
+    #[arg(long)]
+    error_when_missing: bool,
 }
 
 impl DeletePeerCli {
     pub async fn execute(self, carl: &mut CarlClient) -> crate::Result<()> {
         let id = self.id;
 
-        { //block deleting, if device is used in cluster
-            let peer_descriptor = carl.peers.get_peer_descriptor(id).await
-                .map_err(|error| format!("Failed to get peer descriptor for peer: {}.\n {}", id, error))?;
+        let peer_descriptor = match carl.peers.get_peer_descriptor(id).await {
+            Ok(peer_descriptor) => Ok(peer_descriptor),
+            Err(error) => match error {
+                ClientError::UsageError(GetPeerDescriptorError::PeerNotFound { .. }) => {
+                    eprintln!("No peer descriptor found with ID <{id}>.");
+                    if self.error_when_missing {
+                        Err(error)
+                    } else {
+                        return Ok(()); //abort deletion
+                    }
+                }
+                other => Err(other)
+            }
+            .map_err(|error| format!("Failed to get peer with ID <{}>.\n  {}", id, error))
+        }?;
 
-            let peer_device_ids = peer_descriptor.topology.devices.into_iter().map(|descriptor| descriptor.id).collect::<Vec<_>>();
+        { //block deleting, if device is used in cluster
+            let peer_device_ids = peer_descriptor.topology.devices.into_iter()
+                .map(|descriptor| descriptor.id)
+                .collect::<Vec<_>>();
 
             let clusters = carl.cluster
                 .list_cluster_configurations()
@@ -42,10 +61,9 @@ impl DeletePeerCli {
             }
         }
         
-        carl.peers
-            .delete_peer_descriptor(id)
-            .await
+        carl.peers.delete_peer_descriptor(id).await
             .map_err(|error| format!("Failed to delete peer with the id '{}'.\n  {}", id, error))?;
+
         println!("Deleted peer with the PeerID: {}", id);
 
         Ok(())

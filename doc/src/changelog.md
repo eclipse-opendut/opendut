@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 * Localenv: opendut-carl-postgres container removed, might need manual removal when updating.
+* CLEO: Deleting a resource which doesn't exist does not anymore produce an error code. 
+  If you need the previous behaviour, use the `--error-when-missing` flag.
 
 ### Fixed
 * The web-UI now shows peers and clusters sorted by name.
