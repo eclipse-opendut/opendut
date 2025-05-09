@@ -26,6 +26,9 @@ impl Resources<'_> {
 
         if is_new_peer {
             if let Vpn::Enabled { vpn_client } = &params.vpn {
+                if let Ok(()) = vpn_client.delete_peer(peer_id).await {
+                    warn!("Peer with id <{}> already existed in NetBird. Deleted to avoid collision.", peer_id);
+                }
                 debug!("Creating VPN peer <{peer_id}>.");
                 vpn_client.create_peer(peer_id).await
                     .map_err(|source| StorePeerDescriptorError::VpnClient { peer_id, peer_name: Clone::clone(&peer_name), source })?;

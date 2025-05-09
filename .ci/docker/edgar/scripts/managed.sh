@@ -68,6 +68,10 @@ pre_flight_tasks() {
   ip link add dut0 type dummy
   ip link set dev dut0 up
 
+  # add second dummy interface for testing
+  ip link add dut1 type dummy
+  ip link set dev dut1 up
+
   # create dummy can devices
   ip link add dev vcan0 type vcan
   ip link add dev vcan1 type vcan

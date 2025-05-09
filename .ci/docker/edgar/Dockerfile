@@ -16,7 +16,7 @@ FROM cruizba/ubuntu-dind:jammy-26.0.1
 RUN apt update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     tzdata ca-certificates \
     iproute2 bind9-dnsutils iputils-ping fping iptables wireguard-tools tcpdump netcat \
-    curl jq uuid-runtime \
+    curl jq uuid-runtime less bridge-utils \
     python3 python3-requests python3-flask \
     python3-can can-utils libsctp1
 

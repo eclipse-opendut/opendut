@@ -6,6 +6,7 @@ use opendut_types::peer::configuration::{Parameter, ParameterTarget};
 use opendut_types::peer::configuration::parameter;
 use std::sync::Arc;
 use async_trait::async_trait;
+use tracing::warn;
 
 pub struct CreateEthernetBridge {
     pub parameter: Parameter<parameter::EthernetBridge>,
@@ -20,7 +21,7 @@ impl Task for CreateEthernetBridge {
     async fn check_fulfilled(&self) -> anyhow::Result<TaskFulfilled> {
         match self.parameter.target {
             ParameterTarget::Present => Ok(TaskFulfilled::Unchecked), //TODO we currently run it always, because we re-create the bridge
-            ParameterTarget::Absent => todo!("Setting Ethernet bridges absent is not yet implemented.")
+            ParameterTarget::Absent => Ok(TaskFulfilled::Unchecked), // TODO: implement it, ensure bridges that are not managed by openDuT are not deleted (joined devices shall be released though)
         }
     }
 
@@ -35,7 +36,8 @@ impl Task for CreateEthernetBridge {
                 Ok(Success::default())
             }
             ParameterTarget::Absent => {
-                todo!("Setting Ethernet bridges absent is not yet implemented.")
+                warn!("Found ethernet bridge <{}> that should be removed and is ignored at the moment.", self.parameter.value.name);
+                Ok(Success::default())
             }
         }
     }

@@ -1,9 +1,10 @@
+use std::collections::HashSet;
 use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
 use crate::resource::persistence::error::PersistenceError;
 use crate::resource::storage::ResourcesStorageApi;
 use opendut_carl_api::proto::services::peer_messaging_broker::{downstream, ApplyPeerConfiguration};
 use opendut_types::cluster::ClusterAssignment;
-use opendut_types::peer::configuration::parameter;
+use opendut_types::peer::configuration::{parameter, ParameterId, ParameterValue};
 use opendut_types::peer::configuration::{OldPeerConfiguration, ParameterTarget, PeerConfiguration};
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
@@ -55,22 +56,61 @@ impl Resources<'_> {
                     .map_err(|source| AssignClusterError::Persistence { peer_id, source })?
                     .unwrap_or_default();
 
-                for device_interface in device_interfaces.into_iter() {
-                    let device_interface = parameter::DeviceInterface { descriptor: device_interface };
-                    peer_configuration.set(device_interface, ParameterTarget::Present); //TODO not always Present
+                // Network device interfaces
+                {
+                    let expected_network_device_ids = device_interfaces.iter().map(|device| { ParameterId(device.id.uuid) }).collect::<HashSet<ParameterId>>();
+                    let absent_network_device_parameters = peer_configuration
+                        .device_interfaces
+                        .iter()
+                        .filter(|device| !expected_network_device_ids.contains(&device.id))
+                        .cloned()
+                        .collect::<Vec<_>>();
+                    for absent_device_interface in absent_network_device_parameters.into_iter() {
+                        peer_configuration.set(absent_device_interface.value, ParameterTarget::Absent);
+                    }
+                    for device_interface in device_interfaces.into_iter() {
+                        let device_interface = parameter::DeviceInterface { descriptor: device_interface };
+                        peer_configuration.set(device_interface, ParameterTarget::Present);
+                    }
+                    debug!("Configured network device interfaces: {:?}", peer_configuration.device_interfaces);
                 }
 
+                // Ethernet bridge
                 {
                     let ethernet_bridge = peer_descriptor.clone().network.bridge_name
                         .unwrap_or(options.bridge_name_default);
                     let bridge = parameter::EthernetBridge { name: ethernet_bridge };
-
-                    peer_configuration.set(bridge, ParameterTarget::Present); //TODO not always Present
+                    let expected_bridge_id = bridge.parameter_identifier();
+                    let absent_bridge_parameters = peer_configuration
+                        .ethernet_bridges
+                        .iter()
+                        .filter(|bridge| expected_bridge_id != bridge.id)
+                        .cloned()
+                        .collect::<Vec<_>>();
+                    // set old bridge to absent (e.g. after renaming)
+                    for absent_bridge in absent_bridge_parameters.into_iter() {
+                        peer_configuration.set(absent_bridge.value, ParameterTarget::Absent);
+                    }
+                    // there is only one bridge definition at the moment                    
+                    peer_configuration.set(bridge, ParameterTarget::Present);
                 }
 
-                for executor_descriptor in Clone::clone(&peer_descriptor.executors).executors.into_iter() {
-                    let executor = parameter::Executor { descriptor: executor_descriptor };
-                    peer_configuration.set(executor, ParameterTarget::Present); //TODO not always Present
+                // Executors
+                {
+                    let expected_executor_descriptor_ids = Clone::clone(&peer_descriptor.executors).executors.iter().map(|executor| ParameterId(executor.id.uuid)).collect::<HashSet<_>>();
+                    let absent_executor_descriptor_parameters = peer_configuration
+                        .executors
+                        .iter()
+                        .filter(|executor| !expected_executor_descriptor_ids.contains(&executor.id))
+                        .cloned()
+                        .collect::<Vec<_>>();
+                    for absent_executors in absent_executor_descriptor_parameters.into_iter() {
+                        peer_configuration.set(absent_executors.value, ParameterTarget::Absent);
+                    }
+                    for executor_descriptor in Clone::clone(&peer_descriptor.executors).executors.into_iter() {
+                        let executor = parameter::Executor { descriptor: executor_descriptor };
+                        peer_configuration.set(executor, ParameterTarget::Present);
+                    }
                 }
 
                 peer_configuration

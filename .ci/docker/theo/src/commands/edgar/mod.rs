@@ -47,7 +47,7 @@ impl TestEdgarCli {
                 check_edgar_leader_ping_all()?;
                 check_edgar_ping_can()?;
             }
-            TaskCli::Stop => stop_if_running()?, //TODO call in CI at end of run to ensure this code gets continuously tested
+            TaskCli::Stop => stop_if_running()?,
             TaskCli::Build => {
                 docker_compose_build(DockerCoreServices::Edgar.as_str())?;
             }
