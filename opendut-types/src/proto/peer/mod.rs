@@ -1,3 +1,4 @@
+use std::ops::Not;
 use crate::proto::{conversion, ConversionError, ConversionErrorBuilder, ConversionResult};
 use crate::proto::vpn::VpnPeerConfig;
 
@@ -126,23 +127,28 @@ conversion! {
             .map(crate::peer::PeerLocation::try_from)
             .transpose()?;
 
-        let network = extract!(value.network)?
+        let network: crate::peer::PeerNetworkDescriptor = extract!(value.network)?
             .try_into()?;
 
-        let topology = extract!(value.topology)?
+        let topology: crate::topology::Topology = extract!(value.topology)?
             .try_into()?;
 
         let executors = extract!(value.executors)?
             .try_into()?;
-        
-        Ok(Model {
-            id,
-            name,
-            location,
-            network,
-            topology,
-            executors,
-        })
+
+        //validate integrity
+        for device in &topology.devices {
+            if network.interfaces.iter().any(|interface| interface.id == device.interface).not() {
+                return Err(ErrorBuilder::message(format!(
+                    "Device {device_name} <{device_id}> is configured to be connected to NetworkInterface <{interface}>, but this NetworkInterface is not defined in the PeerDescriptor.",
+                    device_name=device.name,
+                    device_id=device.id,
+                    interface=device.interface,
+                )));
+            }
+        }
+
+        Ok(Model { id, name, location, network, topology, executors })
     }
 }
 
