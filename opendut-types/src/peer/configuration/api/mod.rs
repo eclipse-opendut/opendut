@@ -1,10 +1,11 @@
+use serde::Serialize;
 use uuid::Uuid;
 
 mod value;
 pub use value::ParameterValue;
 
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct Parameter<V: ParameterValue> {
     pub id: ParameterId,
     pub dependencies: Vec<ParameterId>,
@@ -12,10 +13,10 @@ pub struct Parameter<V: ParameterValue> {
     pub value: V,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize)]
 pub struct ParameterId(pub Uuid);
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum ParameterTarget {
     Present,
     Absent,

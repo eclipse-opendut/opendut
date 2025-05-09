@@ -29,6 +29,7 @@
     - [Publishing a Release](development/release/publishing-a-release.md)
     - [Manually Building a Release](development/release/manually-building-a-release.md)
   - [CARL gRPC API](development/carl-grpc-api.md)
+  - [CARL DB CLI](development/carl-db-cli.md)
 - [Architecture](architecture/index.md)
   - [CARL](architecture/carl/index.md)
     - [Peer](architecture/carl/peer/index.md)

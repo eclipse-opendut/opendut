@@ -1,3 +1,4 @@
+use serde::Serialize;
 use crate::cluster::ClusterAssignment;
 
 pub mod api;
@@ -5,13 +6,13 @@ pub use crate::peer::configuration::api::*;
 
 pub mod parameter;
 
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
 pub struct OldPeerConfiguration {
     pub cluster_assignment: Option<ClusterAssignment>,
     // Please add new fields into PeerConfiguration instead.
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
 pub struct PeerConfiguration {
     pub device_interfaces: Vec<Parameter<parameter::DeviceInterface>>,
     pub ethernet_bridges: Vec<Parameter<parameter::EthernetBridge>>,

@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+* CARL: A CLI has been added for viewing the contents of the database.
+
 ### Changed
 * Localenv: opendut-carl-postgres container removed, might need manual removal when updating.
 * CLEO: Deleting a resource which doesn't exist does not anymore produce an error code. 

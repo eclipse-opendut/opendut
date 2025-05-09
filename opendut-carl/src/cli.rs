@@ -4,6 +4,7 @@ use serde::Serialize;
 use uuid::Uuid;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
 use opendut_types::peer::{PeerDescriptor, PeerId};
+use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
 use crate::CreateResult;
 use crate::resource::api::Resource;
 
@@ -52,6 +53,7 @@ enum DbCommand {
         #[arg()]
         resource_kind: ResourceKind,
     },
+    /// Remove a resource with the given ID
     Delete {
         #[arg()]
         resource_kind: ResourceKind,
@@ -62,9 +64,11 @@ enum DbCommand {
 }
 #[derive(Clone, ValueEnum)]
 enum ResourceKind {
-    PeerDescriptor,
     ClusterConfiguration,
     ClusterDeployment,
+    OldPeerConfiguration,
+    PeerConfiguration,
+    PeerDescriptor,
 }
 
 pub async fn cli() -> anyhow::Result<()> {
@@ -101,21 +105,29 @@ pub async fn cli() -> anyhow::Result<()> {
                     }
 
                     match resource_kind {
-                        ResourceKind::PeerDescriptor => print(resource_manager.list::<PeerDescriptor>().await?),
                         ResourceKind::ClusterConfiguration => print(resource_manager.list::<ClusterConfiguration>().await?),
                         ResourceKind::ClusterDeployment => print(resource_manager.list::<ClusterDeployment>().await?),
+                        ResourceKind::OldPeerConfiguration => print(resource_manager.list::<OldPeerConfiguration>().await?),
+                        ResourceKind::PeerConfiguration => print(resource_manager.list::<PeerConfiguration>().await?),
+                        ResourceKind::PeerDescriptor => print(resource_manager.list::<PeerDescriptor>().await?),
                     }?;
                 }
                 DbCommand::Delete { resource_kind, id } => {
                     match resource_kind {
-                        ResourceKind::PeerDescriptor => {
-                            resource_manager.remove::<PeerDescriptor>(PeerId::from(id)).await?;
-                        }
                         ResourceKind::ClusterConfiguration => {
                             resource_manager.remove::<ClusterConfiguration>(ClusterId::from(id)).await?;
                         }
                         ResourceKind::ClusterDeployment => {
                             resource_manager.remove::<ClusterDeployment>(ClusterId::from(id)).await?;
+                        }
+                        ResourceKind::OldPeerConfiguration => {
+                            resource_manager.remove::<OldPeerConfiguration>(PeerId::from(id)).await?;
+                        }
+                        ResourceKind::PeerConfiguration => {
+                            resource_manager.remove::<PeerConfiguration>(PeerId::from(id)).await?;
+                        }
+                        ResourceKind::PeerDescriptor => {
+                            resource_manager.remove::<PeerDescriptor>(PeerId::from(id)).await?;
                         }
                     }
                 }
