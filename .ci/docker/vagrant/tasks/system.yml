@@ -52,3 +52,5 @@
     path: /home/vagrant/.bashrc
     regexp: '^export PATH='
     line: "export PATH=/home/vagrant/rust-target/debug/:$PATH"
+
+- import_tasks: custom_ntp.yml

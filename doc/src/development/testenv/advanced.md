@@ -154,3 +154,13 @@ Just add the following environment variables to the `.env` file and reboot the v
   OPENDUT_VM_DISK_SIZE=80
   ```
   * and reboot the virtual machine to have more disk space unlocked.
+
+## Custom NTP server for the opendut virtual machine
+
+The current time in the virtual machine is wrong and timesync won't happen with the default ntp server `ntp.ubuntu.com`.
+
+* Just add the following environment variables to the `.env` file:
+```shell
+OPENDUT_VM_NTP_SERVER=time.yourcorp.com
+```
+* And provision the virtual machine: `cargo theo vagrant provision`

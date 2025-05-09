@@ -1,0 +1,35 @@
+
+- name: Configure custom NTP server
+  when: opendut_vm_ntp_server is defined and opendut_vm_ntp_server != ""
+  block:
+    - name: Install nmap
+      apt:
+        pkg: ['nmap']
+        state: 'present'
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Check NTP server may be reached
+      command: "nmap -sU -p 123 {{ opendut_vm_ntp_server }}"
+      changed_when: false
+
+    - name: Check NTP server responds with NTP information
+      command: "nmap -sU -p 123 --script ntp-info {{ opendut_vm_ntp_server }}"
+      changed_when: false
+
+    - name: Set NTP server in /etc/systemd/timesyncd.conf
+      lineinfile:
+        dest:    /etc/systemd/timesyncd.conf
+        regexp:  '^\s*#?\s*(NTP=).*$'
+        line:    'NTP={{ opendut_vm_ntp_server }}'
+        insertafter: '\[Time\]'
+        backrefs: Yes
+        create:   True
+        state:    present
+      register: _set_ntp_task
+
+    - name: Restart systemd timesync
+      service:
+        name: systemd-timesyncd
+        state: "restarted"
+      when: _set_ntp_task.changed

@@ -5,6 +5,7 @@ vm_name = (ENV["OPENDUT_VM_NAME"] ||= "opendut-vm").to_s
 vm_memory = (ENV["OPENDUT_VM_MEMORY"] ||= "8192").to_i
 vm_cpus = (ENV["OPENDUT_VM_CPUS"] ||= "4").to_i
 vm_disk_size = (ENV["OPENDUT_VM_DISK_SIZE"] ||= "50").to_i
+vm_ntp_server = (ENV["OPENDUT_VM_NTP_SERVER"] ||= "").to_s
 
 machine = {
     :hostname => vm_name,
@@ -108,6 +109,7 @@ Vagrant.configure("2") do |config|
     # ansible.verbose = ENV["ANSIBLE_VERBOSE"] ||= "v"  # enables verbose mode by default
     ansible.extra_vars = {
         "opendut_repo_root" => "/vagrant",
+        "opendut_vm_ntp_server" => vm_ntp_server,
     }
     # ANSIBLE_ARGS="-v -e arg='value' --tags firefox" vagrant provision
     ansible.raw_arguments = Shellwords.shellsplit(ENV['ANSIBLE_ARGS']) if ENV['ANSIBLE_ARGS']
