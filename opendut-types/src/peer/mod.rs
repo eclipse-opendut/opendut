@@ -273,15 +273,18 @@ pub struct PeerNetworkDescriptor {
 
 impl PeerNetworkDescriptor {
     pub fn new(interfaces: Vec<NetworkInterfaceDescriptor>, bridge_name: Option<NetworkInterfaceName>) -> Self {
-        Self { interfaces, bridge_name}
+        Self { interfaces, bridge_name }
     }
     pub fn interfaces_zipped_with_devices(&self, devices: &[DeviceDescriptor]) -> Vec<(NetworkInterfaceDescriptor, DeviceDescriptor)> {
         devices.iter()
             .cloned()
             .map(|device| {
                 let interface = self.interfaces.iter()
-                    .find(|interface_descriptor| interface_descriptor.id == device.interface)
-                    .expect("Should always have a NetworkInterfaceDescriptor for device's network interface on a PeerDescriptor.")
+                    .find(|interface| interface.id == device.interface)
+                    .unwrap_or_else(|| panic!(
+                        "Network interface <{}> associated with device {} <{}> should have a NetworkInterfaceDescriptor on any PeerDescriptor, but none could be found.",
+                        device.interface, device.name, device.id
+                    ))
                     .clone();
                 (interface, device)
             }).collect()
