@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   If you need the previous behaviour, use the `--error-when-missing` flag.
 
 ### Fixed
-* The web-UI now shows peers and clusters sorted by name.
+* The web-UI now shows peers, clusters and devices sorted by name.
 
 
 ## 0.6.0

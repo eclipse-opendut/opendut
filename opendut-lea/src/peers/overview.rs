@@ -63,7 +63,8 @@ pub fn PeersOverview() -> impl IntoView {
     let peers_table_rows = move || async move {
         let mut registered_peers = registered_peers.await;
         registered_peers.sort_by(|(peer_a, _), (peer_b, _)|
-            peer_a.name.value().cmp(peer_b.name.value())
+            peer_a.name.value().to_lowercase()
+                .cmp(&peer_b.name.value().to_lowercase())
         );
 
         let configured_clusters = configured_clusters.await;

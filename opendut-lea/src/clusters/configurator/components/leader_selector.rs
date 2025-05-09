@@ -45,10 +45,8 @@ pub fn LeaderSelector(
         let mut peers = peers.get();
 
         peers.sort_by(|a, b| {
-            a.name
-                .to_string()
-                .to_lowercase()
-                .cmp(&b.name.to_string().to_lowercase())
+            a.name.value().to_lowercase()
+                .cmp(&b.name.value().to_lowercase())
         });
 
         peers.clone().into_iter()

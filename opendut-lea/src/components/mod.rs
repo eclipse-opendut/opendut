@@ -5,6 +5,7 @@ pub use buttons::button::SimpleButton;
 pub use buttons::confirmation_button::ConfirmationButton;
 pub use buttons::doorhanger_button::DoorhangerButton;
 pub use buttons::icon_button::IconButton;
+pub use buttons::collapse_button::CollapseButton;
 pub use generate_setup_string::{GenerateSetupStringForm, GenerateSetupStringKind};
 pub use inputs::{UserInputError, UserInputValue};
 pub use inputs::readonly_input::ReadOnlyInput;

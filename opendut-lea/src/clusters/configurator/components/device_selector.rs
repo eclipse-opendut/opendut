@@ -1,15 +1,15 @@
 use std::collections::HashSet;
 use std::ops::Not;
-
+use leptos::either::Either;
 use leptos::prelude::*;
 use leptos::reactive::wrappers::write::SignalSetter;
-
+use tracing::warn;
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
 use opendut_types::util::net::NetworkInterfaceDescriptor;
 use crate::clusters::configurator::components::get_all_selected_devices;
 use crate::clusters::configurator::types::UserClusterConfiguration;
-use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
+use crate::components::{ButtonColor, ButtonSize, ButtonState, CollapseButton, FontAwesomeIcon, IconButton};
 use crate::util::{Ior, NON_BREAKING_SPACE};
 use crate::util::net::UserNetworkInterfaceConfiguration;
 
@@ -40,38 +40,37 @@ pub fn DeviceSelector(
         })
     };
 
-    fn render_peer_descriptors(peer_descriptors: Vec<PeerDescriptor>, selected_devices: HashSet<DeviceId>, getter: Signal<DeviceSelection>, setter: SignalSetter<DeviceSelection>) -> impl IntoView {
-            let mut all_devices_by_peer: Vec<_> = Vec::new();
+    fn render_peer_descriptors(
+        peer_descriptors: Vec<PeerDescriptor>,
+        selected_devices: HashSet<DeviceId>,
+        getter: Signal<DeviceSelection>,
+        setter: SignalSetter<DeviceSelection>
+    ) -> impl IntoView {
+        let mut view_per_device = peer_descriptors.into_iter()
+            .flat_map(|peer| {
+                let PeerDescriptor { id: peer_id, location, network, topology, .. } = peer;
 
-            for peer in peer_descriptors {
-                let mut devices = peer.topology.devices;
+                topology.devices.into_iter().map({
+                    let selected_devices = selected_devices.clone();
 
-                devices.sort_by(|a, b|
-                a.name.value().to_lowercase().cmp(&b.name.value().to_lowercase()));
-
-                let interfaces_and_devices = peer.network.interfaces_zipped_with_devices(&devices);
-
-                let devices_per_peer = interfaces_and_devices.into_iter()
-                    .map(|(network_interface, device)| {
-                        let collapsed_signal = RwSignal::new(true);
-                        let collapse_button_icon = Signal::derive(move || if collapsed_signal.get() { FontAwesomeIcon::ChevronDown } else {FontAwesomeIcon::ChevronUp} );
+                    move |device| {
+                        let collapsed = RwSignal::new(true);
                         let selected_signal = RwSignal::new(selected_devices.contains(&device.id));
-                        view! {
+
+                        let network_interface = network.interfaces.iter()
+                            .find(|interface| interface.id == device.interface)
+                            .cloned();
+                        let device_name = device.name.to_string();
+
+                        let view = view! {
                             <tr>
                                 <td class="is-narrow">
-                                    <IconButton
-                                        icon=collapse_button_icon
-                                        color=ButtonColor::White
-                                        size=ButtonSize::Small
-                                        state=ButtonState::Enabled
-                                        label="Show or hide device details"
-                                        on_action=move || collapsed_signal.update(|collapsed| *collapsed = collapsed.not())
-                                    />
+                                    <CollapseButton collapsed label="Show or hide device details" />
                                 </td>
                                 <td>
-                                    {device.name.to_string()}
+                                    {device_name.clone()}
                                 </td>
-                                <td>{peer.location.clone().unwrap_or_default().to_string()}</td>
+                                <td>{location.clone().unwrap_or_default().to_string()}</td>
                                 <td class="is-narrow">
                                     <IconButton
                                         icon=FontAwesomeIcon::Check
@@ -81,31 +80,25 @@ pub fn DeviceSelector(
                                         })
                                         size=ButtonSize::Small
                                         state=ButtonState::Enabled
-                                        label="More infos"
-                                        on_action=move || icon_button_on_action(
-                                            selected_signal,
-                                            getter,
-                                            setter,
-                                            device.id,
-                                        )
+                                        label="Add device to cluster"
+                                        on_action=move || icon_button_on_action(selected_signal, getter, setter, device.id)
                                     />
                                 </td>
                             </tr>
-                            <tr hidden={collapsed_signal}>
-                                <DeviceInfo
-                                    device = device
-                                    network_interface = network_interface
-                                    peer_id = peer.id
-                                />
+                            <tr hidden={collapsed}>
+                                <DeviceInfo device network_interface peer_id />
                             </tr>
-                        }
-                    }).collect_view();
+                        };
+                        (device_name, view)
+                    }
+                })
+            }).collect::<Vec<_>>();
 
-                for device in devices_per_peer {
-                    all_devices_by_peer.push(device);
-                }
-            }
-            all_devices_by_peer
+        view_per_device.sort_unstable_by_key(|(device_name, _)| device_name.to_owned());
+
+        view_per_device.into_iter()
+            .map(|(_, view)| view)
+            .collect_view()
     }
 
     view! {
@@ -129,7 +122,19 @@ pub fn DeviceSelector(
 }
 
 #[component]
-pub fn DeviceInfo(device: DeviceDescriptor, network_interface: NetworkInterfaceDescriptor, peer_id: PeerId) -> impl IntoView {
+pub fn DeviceInfo(device: DeviceDescriptor, network_interface: Option<NetworkInterfaceDescriptor>, peer_id: PeerId) -> impl IntoView {
+    let network_interface_text = match network_interface {
+        Some(network_interface) => Either::Right(view! {
+            <p>{network_interface.name.name()} " (" {UserNetworkInterfaceConfiguration::from(network_interface.configuration).display_name()} ")"</p>
+        }),
+        None => {
+            warn!("The network interface <{}> associated with device {} <{}> does not have a NetworkInterfaceDescriptor on peer <{}>.", device.interface, device.name, device.id, peer_id);
+            Either::Left(view! { //should never happen
+                <p>"Unknown interface (" device.interface ")"</p>
+            })
+        }
+    };
+
     view! {
         <td></td>
         <td colspan="3">
@@ -147,9 +152,7 @@ pub fn DeviceInfo(device: DeviceDescriptor, network_interface: NetworkInterfaceD
             </div>
             <div class="field">
                 <label class="label">Interface</label>
-                <div class="control">
-                    <p>{network_interface.name.name()} " (" {UserNetworkInterfaceConfiguration::from(network_interface.configuration).display_name()} ")"</p>
-                </div>
+                <div class="control">{network_interface_text}</div>
             </div>
             <div class="field">
                 <label class="label">Tags</label>

@@ -140,7 +140,8 @@ pub fn ClustersOverview() -> impl IntoView {
         async move {
             let mut clusters = clusters.await;
             clusters.sort_by(|cluster_a, cluster_b|
-                cluster_a.name.value().cmp(cluster_b.name.value())
+                cluster_a.name.value().to_lowercase()
+                    .cmp(&cluster_b.name.value().to_lowercase())
             );
 
             let deployed_clusters = deployed_clusters.await;
