@@ -18,7 +18,7 @@ RUN apt update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install
     iproute2 bind9-dnsutils iputils-ping fping iptables wireguard-tools tcpdump netcat \
     curl jq uuid-runtime less bridge-utils \
     python3 python3-requests python3-flask \
-    python3-can can-utils libsctp1
+    python3-can can-utils libsctp1 vim
 
 COPY --from=cannelloni-builder /tmp/cannelloni/cannelloni /usr/local/bin/cannelloni
 COPY --from=cannelloni-builder /tmp/cannelloni/libcannelloni-common.so.0.0.1 /usr/local/lib/libcannelloni-common.so.0
