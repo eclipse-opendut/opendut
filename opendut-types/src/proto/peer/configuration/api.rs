@@ -33,7 +33,8 @@ conversion! {
             executors: value.executors.into_iter().map(From::from).collect(),
             ethernet_bridges: value.ethernet_bridges.into_iter().map(From::from).collect(),
             device_interfaces: value.device_interfaces.into_iter().map(From::from).collect(),
-            gre_interfaces: vec![], // TODO: add gre interfaces here
+            gre_interfaces: value.gre_interfaces.into_iter().map(From::from).collect(),
+            joined_interfaces: value.joined_interfaces.into_iter().map(From::from).collect(),
         }
     }
 
@@ -42,7 +43,8 @@ conversion! {
             executors: value.executors.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
             ethernet_bridges: value.ethernet_bridges.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
             device_interfaces: value.device_interfaces.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
-            gre_interfaces: vec![], // TODO: add gre interfaces here
+            gre_interfaces: value.gre_interfaces.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
+            joined_interfaces: value.joined_interfaces.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
         })
     }
 }
@@ -130,6 +132,60 @@ conversion! {
         })
     }
 }
+
+conversion! {
+    type Model = crate::peer::configuration::Parameter<crate::peer::configuration::parameter::GreInterfaceConfig>;
+    type Proto = PeerConfigurationParameterGreInterfaceConfig;
+    
+    fn from(model: Model) -> Proto {
+        let descriptor: crate::proto::peer::configuration::parameter::GreInterfaceConfig = model.value.clone().into();
+        let parameter = PeerConfigurationParameter::from(model);
+        
+        Proto {
+            parameter: Some(parameter),
+            value: Some(descriptor),
+        }
+    }
+    
+    fn try_from(proto: Proto) -> ConversionResult<Model> {
+        let parameter = extract!(proto.parameter)?;
+        let value: crate::peer::configuration::parameter::GreInterfaceConfig = extract!(proto.value)?.try_into()?;
+
+        Ok(Model {
+            id: extract!(parameter.id)?.try_into()?,
+            dependencies: parameter.dependencies.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
+            target: extract!(parameter.target)?.into(),
+            value,
+        })
+    }
+}
+
+conversion! {
+    type Model = crate::peer::configuration::Parameter<crate::peer::configuration::parameter::InterfaceJoinConfig>;
+    type Proto = PeerConfigurationParameterInterfaceJoinConfig;
+
+    fn from(model: Model) -> Proto {
+        let descriptor: crate::proto::peer::configuration::parameter::InterfaceJoinConfig = model.value.clone().into();
+        let parameter = PeerConfigurationParameter::from(model);
+        Proto {
+            parameter: Some(parameter),
+            value: Some(descriptor),
+        }
+    }
+    fn try_from(proto: Proto) -> ConversionResult<Model> {
+        let parameter = extract!(proto.parameter)?;
+        let value: crate::peer::configuration::parameter::InterfaceJoinConfig = extract!(proto.value)?.try_into()?;
+        
+        Ok(Model {
+            id: extract!(parameter.id)?.try_into()?,
+            dependencies: parameter.dependencies.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
+            target: extract!(parameter.target)?.into(),
+            value,
+        })
+    }
+
+}
+
 
 impl<V: crate::peer::configuration::ParameterValue> From<crate::peer::configuration::Parameter<V>> for PeerConfigurationParameter {
     fn from(value: crate::peer::configuration::Parameter<V>) -> Self {

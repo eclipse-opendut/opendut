@@ -18,7 +18,8 @@ message PeerConfiguration {
   repeated PeerConfigurationParameterExecutor executors = 1;
   repeated PeerConfigurationParameterEthernetBridge ethernet_bridges = 2;
   repeated PeerConfigurationParameterDeviceInterface device_interfaces = 3;
-  repeated PeerConfigurationParameterGreInterface gre_interfaces = 4;
+  repeated PeerConfigurationParameterGreInterfaceConfig gre_interfaces = 4;
+  repeated PeerConfigurationParameterInterfaceJoinConfig joined_interfaces = 5;
   //TODO migrate more parameters
 }
 
@@ -37,11 +38,15 @@ message PeerConfigurationParameterDeviceInterface {
   opendut.types.peer.configuration.parameter.DeviceInterface value = 2;
 }
 
-message PeerConfigurationParameterGreInterface {
+message PeerConfigurationParameterGreInterfaceConfig {
   PeerConfigurationParameter parameter = 1;
-  opendut.types.peer.configuration.parameter.GreInterfaces value = 2;
+  opendut.types.peer.configuration.parameter.GreInterfaceConfig value = 2;
 }
 
+message PeerConfigurationParameterInterfaceJoinConfig {
+  PeerConfigurationParameter parameter = 1;
+  opendut.types.peer.configuration.parameter.InterfaceJoinConfig value = 2;
+}
 
 message PeerConfigurationParameter {
    PeerConfigurationParameterId id = 1;

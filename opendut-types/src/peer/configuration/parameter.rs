@@ -17,19 +17,18 @@ pub struct EthernetBridge {
     pub name: NetworkInterfaceName,
 }
 
-// TODO: move this
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
-pub struct GreAddresses {
+pub struct GreInterfaceConfig {
     pub local_ip: Ipv4Addr,
     pub remote_ip: Ipv4Addr,
 }
-impl std::fmt::Display for GreAddresses {
+impl std::fmt::Display for GreInterfaceConfig {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}-{}", self.local_ip, self.remote_ip)
     }
 }
 
-impl GreAddresses {
+impl GreInterfaceConfig {
     pub fn interface_name(&self) -> Result<NetworkInterfaceName, NetworkInterfaceNameError> {
         let mut addr_bytes = self.local_ip.octets().to_vec();
         addr_bytes.extend(self.remote_ip.octets());
@@ -43,14 +42,14 @@ impl GreAddresses {
 
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
-pub struct GreInterfaces {
-    pub address_list: Vec<GreAddresses>,
+pub struct InterfaceJoinConfig {
+    pub name: NetworkInterfaceName,
+    pub bridge: NetworkInterfaceName,
 }
 
-impl std::fmt::Display for GreInterfaces {
+impl std::fmt::Display for InterfaceJoinConfig {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let addresses = self.address_list.iter().map(|addr| addr.to_string()).collect::<Vec<_>>().join(", ");
-        write!(f, "{}", addresses)
+        write!(f, "{}-{}", self.name.name(), self.bridge.name())
     }
 }
 
@@ -64,11 +63,11 @@ pub struct Executor {
 mod tests {
     use std::net::Ipv4Addr;
     use std::str::FromStr;
-    use crate::peer::configuration::parameter::GreAddresses;
+    use crate::peer::configuration::parameter::GreInterfaceConfig;
 
     #[test_log::test]
     fn test_gre_interface_name() -> anyhow::Result<()> {
-        let gre_addresses = GreAddresses {
+        let gre_addresses = GreInterfaceConfig {
             local_ip: Ipv4Addr::from_str("192.168.123.123")?,
             remote_ip: Ipv4Addr::from_str("192.168.123.124")?,
         };

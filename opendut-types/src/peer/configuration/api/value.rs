@@ -2,6 +2,7 @@ use crate::peer::configuration::{parameter, Parameter, ParameterId};
 use crate::peer::configuration::PeerConfiguration;
 use crate::OPENDUT_UUID_NAMESPACE;
 use std::any::Any;
+use std::fmt::Display;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use uuid::Uuid;
 
@@ -66,18 +67,31 @@ impl ParameterValue for parameter::Executor {
     }
 }
 
-impl ParameterValue for parameter::GreInterfaces {
-    fn parameter_identifier(&self) -> ParameterId {
-        let repr = format!("{}", self);
-        let mut hasher = DefaultHasher::new(); //ID not stable across Rust releases
-        repr.hash(&mut hasher);
-        let id = hasher.finish();
-        let id = Uuid::new_v5(&OPENDUT_UUID_NAMESPACE, &id.to_le_bytes());
+fn parameter_value_hash<T: ParameterValue + Display>(value: &T) -> ParameterId {
+    let repr = value.to_string();
+    let mut hasher = DefaultHasher::new(); //ID not stable across Rust releases
+    repr.hash(&mut hasher);
+    let id = hasher.finish();
+    let id = Uuid::new_v5(&OPENDUT_UUID_NAMESPACE, &id.to_le_bytes());
+    ParameterId(id)
+}
 
-        ParameterId(id)
+impl ParameterValue for parameter::GreInterfaceConfig {
+    fn parameter_identifier(&self) -> ParameterId {
+        parameter_value_hash(self)
     }
     fn peer_configuration_field(peer_configuration: &mut PeerConfiguration) -> &mut Vec<Parameter<Self>>  {
         &mut peer_configuration.gre_interfaces
+    }
+}
+
+impl ParameterValue for parameter::InterfaceJoinConfig {
+    fn parameter_identifier(&self) -> ParameterId {
+        parameter_value_hash(self)
+    }
+
+    fn peer_configuration_field(peer_configuration: &mut PeerConfiguration) -> &mut Vec<Parameter<Self>> {
+        &mut peer_configuration.joined_interfaces
     }
 }
 

@@ -60,3 +60,47 @@ conversion! {
         })
     }
 }
+
+conversion! {
+    type Model = crate::peer::configuration::parameter::GreInterfaceConfig;
+    type Proto = GreInterfaceConfig;
+    
+    fn from(value: Model) -> Proto {
+        Proto {
+            local_ip: Some(value.local_ip.into()),
+            remote_ip: Some(value.remote_ip.into()),
+        }
+    }
+    
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let local_ip = std::net::Ipv4Addr::try_from(extract!(value.local_ip)?)
+                    .map_err(|cause| ErrorBuilder::message(cause.to_string()))?;
+        let remote_ip = std::net::Ipv4Addr::try_from(extract!(value.remote_ip)?)
+                    .map_err(|cause| ErrorBuilder::message(cause.to_string()))?;
+        Ok(Model {
+            local_ip,
+            remote_ip,
+        })
+    }
+}
+
+conversion! {
+    type Model = crate::peer::configuration::parameter::InterfaceJoinConfig;
+    type Proto = InterfaceJoinConfig;
+    
+    fn from(value: Model) -> Proto {
+        Proto {
+            name: Some(value.name.into()),
+            bridge: Some(value.bridge.into()),
+        }
+    }
+    
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let name = extract!(value.name)?.try_into()?;
+        let bridge = extract!(value.bridge)?.try_into()?;
+        Ok(Model {
+            name,
+            bridge,
+        })
+    }
+}

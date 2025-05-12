@@ -17,6 +17,12 @@ message Executor {
   opendut.types.peer.executor.ExecutorDescriptor descriptor = 1;
 }
 
-message GreInterfaces {
+message GreInterfaceConfig {
+  opendut.types.util.IpV4Address local_ip = 1;
+  opendut.types.util.IpV4Address remote_ip = 2;
+}
+
+message InterfaceJoinConfig {
   opendut.types.util.NetworkInterfaceName name = 1;
+  opendut.types.util.NetworkInterfaceName bridge = 2;
 }
