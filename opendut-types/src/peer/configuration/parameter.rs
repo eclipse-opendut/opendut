@@ -1,8 +1,10 @@
 use std::fmt::Formatter;
 use std::net::Ipv4Addr;
+use std::str::FromStr;
+use base64::Engine;
 use serde::Serialize;
 use crate::peer::executor::ExecutorDescriptor;
-use crate::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
+use crate::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName, NetworkInterfaceNameError};
 
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
@@ -27,6 +29,18 @@ impl std::fmt::Display for GreAddresses {
     }
 }
 
+impl GreAddresses {
+    pub fn interface_name(&self) -> Result<NetworkInterfaceName, NetworkInterfaceNameError> {
+        let mut addr_bytes = self.local_ip.octets().to_vec();
+        addr_bytes.extend(self.remote_ip.octets());
+        
+        let encoded_addresses = base64::engine::general_purpose::STANDARD.encode(addr_bytes);
+        let name = format!("gre-{}", encoded_addresses.replace("=", ""));
+
+        NetworkInterfaceName::from_str(&name)
+    }
+}
+
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
 pub struct GreInterfaces {
@@ -43,4 +57,24 @@ impl std::fmt::Display for GreInterfaces {
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
 pub struct Executor {
     pub descriptor: ExecutorDescriptor,
+}
+
+
+#[cfg(test)]
+mod tests {
+    use std::net::Ipv4Addr;
+    use std::str::FromStr;
+    use crate::peer::configuration::parameter::GreAddresses;
+
+    #[test_log::test]
+    fn test_gre_interface_name() -> anyhow::Result<()> {
+        let gre_addresses = GreAddresses {
+            local_ip: Ipv4Addr::from_str("192.168.123.123")?,
+            remote_ip: Ipv4Addr::from_str("192.168.123.124")?,
+        };
+        let name = gre_addresses.interface_name()?;
+        assert!(name.name().starts_with("gre-"));
+        
+        Ok(())
+    }
 }

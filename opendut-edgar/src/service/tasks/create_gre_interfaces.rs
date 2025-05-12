@@ -1,12 +1,12 @@
 use std::collections::{HashMap, HashSet};
 use std::net::Ipv4Addr;
 use async_trait::async_trait;
-use tracing::debug;
+use tracing::{trace, warn};
 use opendut_types::peer::configuration::{parameter, Parameter};
 use opendut_types::peer::configuration::parameter::GreAddresses;
 use opendut_types::util::net::NetworkInterfaceName;
 use crate::common::task::{Success, Task, TaskFulfilled};
-use crate::service::network_interface::manager::interface::NetlinkInterfaceKind;
+use crate::service::network_interface::manager::interface::{NetlinkInterfaceKind};
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 
 pub struct CreateGreInterfaces {
@@ -24,16 +24,28 @@ pub struct GreInterfaceAddressesWithIndex {
     pub name: NetworkInterfaceName,
 }
 
-#[async_trait]
-impl Task for CreateGreInterfaces {
-    fn description(&self) -> String {
-        format!("Create GRE interfaces '{}'", self.parameter.value)
+#[derive(Clone, Debug)]
+pub struct GreInterfaceConfigurationChanges {
+    gre_expected_interfaces: HashSet<GreAddresses>,
+    to_be_removed: HashMap<GreAddresses, GreInterfaceAddressesWithIndex>,
+    to_be_created: HashSet<GreAddresses>,
+}
+impl std::fmt::Display for GreInterfaceConfigurationChanges {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        
+        f.write_fmt(format_args!(
+                "The following devices need to be removed: {:?}. \
+                 The following devices need to be created: {:?}", self.to_be_removed, self.to_be_created))
     }
+}
 
-    async fn check_fulfilled(&self) -> anyhow::Result<TaskFulfilled> {
-        let interfaces = self.network_interface_manager.list_interfaces().await?;
+impl GreInterfaceConfigurationChanges {
+    async fn determine(parameter: &Parameter<parameter::GreInterfaces>, network_interface_manager: NetworkInterfaceManagerRef) -> anyhow::Result<Self> {
+        let interfaces = network_interface_manager.list_interfaces().await?;
         let gre_interfaces = interfaces.iter().filter_map(|interface| {
-            if let NetlinkInterfaceKind::GreTap { local, remote } = interface.kind {
+            if interface.name.name() == "gretap0" {
+                None
+            } else if let NetlinkInterfaceKind::GreTap { local, remote } = interface.kind {
                 let gre_with_index = GreInterfaceAddressesWithIndex {
                     local_ip: local,
                     remote_ip: remote,
@@ -44,27 +56,75 @@ impl Task for CreateGreInterfaces {
                     local_ip: local,
                     remote_ip: remote,
                 };
-                
+
                 Some((addresses, gre_with_index))
             } else {
                 None
             }
         }).collect::<HashMap<_, _>>();
-        let gre_present_addresses = gre_interfaces.keys().cloned().collect::<HashSet<_>>();
-        let gre_expected_addresses = self.parameter.value.address_list.iter().cloned().collect::<HashSet<_>>();
+        let gre_present_interfaces = gre_interfaces.keys().cloned().collect::<HashSet<_>>();
+        let gre_expected_interfaces = parameter.value.address_list.iter().cloned().collect::<HashSet<_>>();
+
+        let to_be_removed = gre_interfaces.iter()
+            .flat_map(|(gre_address, gre_address_with_index)| { 
+                if !gre_expected_interfaces.contains(gre_address) {
+                    Some((gre_address.clone(), gre_address_with_index.clone()))
+                } else {
+                    None
+                }
+            })
+            .collect::<HashMap<GreAddresses, GreInterfaceAddressesWithIndex>>();
+        let to_be_created = gre_expected_interfaces.difference(&gre_present_interfaces).cloned().collect::<HashSet<_>>();
         
-        let to_be_removed = gre_present_addresses.difference(&gre_expected_addresses).collect::<HashSet<_>>();
-        let to_be_created = gre_expected_addresses.difference(&gre_present_addresses).collect::<HashSet<_>>();
-        debug!("The following devices shall be removed: {:?}", to_be_removed);
-        debug!("The following devices shall be created: {:?}", to_be_created);
+        Ok(Self {
+            gre_expected_interfaces,
+            to_be_removed,
+            to_be_created,
+        })
+    }
+    
+    fn done(&self) -> bool {
+        self.to_be_removed.is_empty() && self.to_be_created.is_empty()
+    }
+}
 
 
-        Ok(TaskFulfilled::Unchecked)
+#[async_trait]
+impl Task for CreateGreInterfaces {
+    fn description(&self) -> String {
+        format!("Create GRE interfaces '{}'", self.parameter.value)
+    }
+
+    async fn check_fulfilled(&self) -> anyhow::Result<TaskFulfilled> {
+        let changes = GreInterfaceConfigurationChanges::determine(&self.parameter, self.network_interface_manager.clone()).await?;
+        trace!("Following changes necessary: {}", changes);
+        if changes.done() {
+            Ok(TaskFulfilled::Yes)
+        } else {
+            Ok(TaskFulfilled::No)
+        }
     }
 
     async fn execute(&self) -> anyhow::Result<Success> {
-        // TODO: implement GRE creation / deletion
-        
+        let changes = GreInterfaceConfigurationChanges::determine(&self.parameter, self.network_interface_manager.clone()).await?;
+        for add_gre_interface in changes.to_be_created {
+            let name = add_gre_interface.interface_name()?;
+            let interface = self.network_interface_manager.create_gretap_v4_interface(&name, &add_gre_interface.local_ip, &add_gre_interface.remote_ip).await?;
+            self.network_interface_manager.set_opendut_alternative_name(&interface).await?;
+        }
+        for (_, remove_gre_interface) in changes.to_be_removed {
+            let interface = self.network_interface_manager.find_interface(&remove_gre_interface.name).await?;
+            match interface {
+                Some(interface) => {
+                    self.network_interface_manager.delete_interface(&interface).await?;
+                }
+                None => {
+                    warn!("Could not find GRE interface '{}' for deletion.", remove_gre_interface.name);
+                }
+            }
+
+        }
+
         Ok(Success::default())
     }
 }
@@ -109,13 +169,18 @@ mod tests {
 
         let tasks: Vec<Box<dyn Task>> = vec![
             Box::new(CreateGreInterfaces {
-                parameter: parameter_present,
+                parameter: parameter_present.clone(),
                 network_interface_manager: Arc::clone(&fixture.network_interface_manager),
             })
         ];
 
         let result = runner::run(RunMode::Service, &tasks).await;
         assert!(result.is_ok());
+        
+        
+        let changes = GreInterfaceConfigurationChanges::determine(&parameter_present, fixture.network_interface_manager.clone()).await?;
+        assert!(changes.done());
+        
 
         Ok(())
     }
