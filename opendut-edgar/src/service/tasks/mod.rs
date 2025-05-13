@@ -1,3 +1,3 @@
 pub mod create_ethernet_bridge;
-mod create_gre_interfaces;
-mod manage_joined_interfaces;
+pub mod create_gre_interfaces;
+pub mod manage_joined_interfaces;

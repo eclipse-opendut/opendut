@@ -33,7 +33,10 @@ impl GreInterfaceConfig {
         let mut addr_bytes = self.local_ip.octets().to_vec();
         addr_bytes.extend(self.remote_ip.octets());
         
-        let encoded_addresses = base64::engine::general_purpose::STANDARD.encode(addr_bytes);
+        // https://git.kernel.org/pub/scm/network/iproute2/iproute2.git/tree/lib/utils.c?id=1f420318bda3cc62156e89e1b56d60cc744b48ad#n827
+        // documents that pretty much anything is allowed except "/", "\0" or whitespace
+        // using url safe base64 to avoid forward slash "/" 
+        let encoded_addresses = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(addr_bytes);
         let name = format!("gre-{}", encoded_addresses.replace("=", ""));
 
         NetworkInterfaceName::from_str(&name)
@@ -73,6 +76,16 @@ mod tests {
         };
         let name = gre_addresses.interface_name()?;
         assert!(name.name().starts_with("gre-"));
+        assert!(name.name().len() < 16);
+        
+        let illegal_chars = ["=", "/", "+"];
+        for illegal_char in illegal_chars.iter() {
+            assert!(!name.name().contains(illegal_char));
+        }
+        let illegal_end_chars = ["-", "_"];
+        for illegal_char in illegal_end_chars.iter() {
+            assert!(!name.name().ends_with(illegal_char));
+        }
         
         Ok(())
     }

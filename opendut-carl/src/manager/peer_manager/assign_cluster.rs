@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::net::{IpAddr, Ipv4Addr};
 use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
 use crate::resource::persistence::error::PersistenceError;
 use crate::resource::storage::ResourcesStorageApi;
@@ -7,8 +8,9 @@ use opendut_types::cluster::ClusterAssignment;
 use opendut_types::peer::configuration::{parameter, ParameterId, ParameterValue};
 use opendut_types::peer::configuration::{OldPeerConfiguration, ParameterTarget, PeerConfiguration};
 use opendut_types::peer::{PeerDescriptor, PeerId};
-use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
+use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName, NetworkInterfaceNameError};
 use tracing::debug;
+use opendut_types::peer::configuration::parameter::{GreInterfaceConfig, InterfaceJoinConfig};
 use crate::resource::api::resources::Resources;
 
 pub struct AssignClusterParams {
@@ -28,10 +30,62 @@ pub struct AssignClusterOptions {
 pub enum AssignClusterError {
     #[error("Assigning cluster for peer <{0}> failed, because a peer with that ID does not exist!")]
     PeerNotFound(PeerId),
+    #[error("Could not assign interface name.")]
+    InterfaceName { #[source] source: NetworkInterfaceNameError },
     #[error("Sending PeerConfiguration with ClusterAssignment to peer <{peer_id}> failed: {cause}")]
     SendingToPeerFailed { peer_id: PeerId, cause: String },
     #[error("Error while persisting ClusterAssignment for peer <{peer_id}>.")]
     Persistence { peer_id: PeerId, #[source] source: PersistenceError },
+    #[error("IPv6 not supported for GRE interface configuration.")]
+    Ipv6NotSupported,
+}
+
+fn require_ipv4_for_gre(ip_address: IpAddr) -> Result<Ipv4Addr, AssignClusterError> {
+    match ip_address {
+        IpAddr::V4(ip_address) => Ok(ip_address),
+        IpAddr::V6(_) => Err(AssignClusterError::Ipv6NotSupported),
+    }
+}
+
+fn determine_expected_gre_interface_config_parameters(peer_id: PeerId, cluster_assignment: &ClusterAssignment) -> Result<Vec<GreInterfaceConfig>, AssignClusterError> {
+    let leader_remote_ip = cluster_assignment.assignments
+        .iter()
+        .find(|assignment| assignment.peer_id == cluster_assignment.leader)
+        .map(|assignment| assignment.vpn_address)
+        .map(require_ipv4_for_gre)
+        .ok_or(AssignClusterError::PeerNotFound(cluster_assignment.leader))??;
+    let peer_vpn_address = cluster_assignment.assignments
+        .iter()
+        .find(|assignment| assignment.peer_id == peer_id)
+        .map(|assignment| assignment.vpn_address)
+        .map(require_ipv4_for_gre)
+        .ok_or(AssignClusterError::PeerNotFound(peer_id))??;
+
+    if peer_id == cluster_assignment.leader {
+        // Leader shall create GRE interfaces to bridge traffic to all peers
+        let gre_configs = cluster_assignment.assignments
+            .iter()
+            .filter(|assignment| assignment.peer_id != cluster_assignment.leader)
+            .map(|assignment| assignment.vpn_address)
+            .map(require_ipv4_for_gre)
+            .collect::<Result<Vec<_>, _>>()?
+            .into_iter()
+            .map(|remote_ip| GreInterfaceConfig {
+                local_ip: peer_vpn_address,
+                remote_ip,
+            })
+            .collect::<Vec<GreInterfaceConfig>>();
+
+        Ok(gre_configs)
+    } else {
+        // Other peers shall only send traffic to the leader
+        Ok(vec![
+            GreInterfaceConfig {
+                local_ip: peer_vpn_address,
+                remote_ip: leader_remote_ip,
+            }
+        ])
+    }
 }
 
 impl Resources<'_> {
@@ -39,6 +93,20 @@ impl Resources<'_> {
         let AssignClusterParams { peer_messaging_broker, peer_id, cluster_assignment, device_interfaces, options } = params;
 
         debug!("Assigning cluster to peer <{peer_id}>.");
+        let expected_gre_config_parameters = determine_expected_gre_interface_config_parameters(peer_id, &cluster_assignment)?;
+        let expected_gre_interface_names = expected_gre_config_parameters
+            .iter()
+            .map(|config| config.interface_name()).collect::<Result<Vec<_>, _>>()
+            .map_err(|source| AssignClusterError::InterfaceName { source })?;
+        let expected_joined_ethernet_device_interfaces = device_interfaces
+            .iter()
+            .filter(|interface| matches!(interface.configuration, NetworkInterfaceConfiguration::Ethernet))
+            .map(|device| device.name.clone())
+            .collect::<Vec<_>>();
+        let expected_joined_interface_names = expected_gre_interface_names
+            .into_iter()
+            .chain(expected_joined_ethernet_device_interfaces)
+            .collect::<Vec<_>>();
 
         let (old_peer_configuration, peer_configuration) = {
             let old_peer_configuration = OldPeerConfiguration {
@@ -75,11 +143,11 @@ impl Resources<'_> {
                     debug!("Configured network device interfaces: {:?}", peer_configuration.device_interfaces);
                 }
 
+                let ethernet_bridge = peer_descriptor.clone().network.bridge_name
+                    .unwrap_or(options.bridge_name_default);
                 // Ethernet bridge
                 {
-                    let ethernet_bridge = peer_descriptor.clone().network.bridge_name
-                        .unwrap_or(options.bridge_name_default);
-                    let bridge = parameter::EthernetBridge { name: ethernet_bridge };
+                    let bridge = parameter::EthernetBridge { name: ethernet_bridge.clone() };
                     let expected_bridge_id = bridge.parameter_identifier();
                     let absent_bridge_parameters = peer_configuration
                         .ethernet_bridges
@@ -94,6 +162,50 @@ impl Resources<'_> {
                     // there is only one bridge definition at the moment                    
                     peer_configuration.set(bridge, ParameterTarget::Present);
                 }
+
+                // GRE interfaces
+                {
+                    let expected_gre_config_ids = expected_gre_config_parameters.iter().map(|gre| gre.parameter_identifier()).collect::<HashSet<_>>();
+                    let absent_gre_config_parameters = peer_configuration
+                        .gre_interfaces
+                        .iter()
+                        .filter(|gre_config| !expected_gre_config_ids.contains(&gre_config.id))
+                        .cloned()
+                        .collect::<Vec<_>>();
+                    for absent_gre_config in absent_gre_config_parameters.into_iter() {
+                        peer_configuration.set(absent_gre_config.value, ParameterTarget::Absent);
+                    }
+                    for gre_config in expected_gre_config_parameters.into_iter() {
+                        peer_configuration.set(gre_config, ParameterTarget::Present);
+                    }
+                }
+
+                // Joined interfaces
+                // all ethernet interfaces + GRE interfaces -> bridge
+                {
+                    let expected_joined_interfaces = expected_joined_interface_names
+                        .iter()
+                        .map(|name| InterfaceJoinConfig { name: name.clone(), bridge: ethernet_bridge.clone() })
+                        .collect::<Vec<_>>();
+                    let expected_joined_interface_ids = expected_joined_interfaces
+                        .iter()
+                        .map(|config| config.parameter_identifier())
+                        .collect::<HashSet<_>>();
+                    let absent_joined_interface_parameters = peer_configuration
+                        .joined_interfaces
+                        .iter()
+                        .filter(|joined_interface| !expected_joined_interface_ids.contains(&joined_interface.id))
+                        .cloned()
+                        .collect::<Vec<_>>();
+                    for absent_joined_interface in absent_joined_interface_parameters.into_iter() {
+                        peer_configuration.set(absent_joined_interface.value, ParameterTarget::Absent);
+                    }
+                    for joined_interface_config in expected_joined_interfaces.into_iter() {
+                        peer_configuration.set(joined_interface_config, ParameterTarget::Present);
+                    }
+
+                }
+                
 
                 // Executors
                 {
@@ -115,6 +227,7 @@ impl Resources<'_> {
 
                 peer_configuration
             };
+            // store updated peer configuration
             self.insert(peer_id, Clone::clone(&peer_configuration))
                 .map_err(|source| AssignClusterError::Persistence { peer_id, source })?;
 

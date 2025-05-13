@@ -40,6 +40,15 @@ check_interface_exists() {
   fi
 }
 
+check_gre_interface_exists() {
+  RESULT=$(ip -json l show type gretap | jq -r '.[] | select(.altnames != null) | select(.altnames[0] | startswith("opendut"))')
+
+  if [ -z "$RESULT" ]; then
+    echo "GRE interface does not yet exist!"
+    return 1
+  fi
+}
+
 pre_flight_tasks() {
   if ! type opendut-cleo > /dev/null; then
     echo "Command 'opendut-cleo' not found."
@@ -132,11 +141,10 @@ fi
 
 
 BRIDGE="br-opendut"  # needs to match EDGAR's default
-GRE_INTERFACE="gre-opendut0"  # needs to match EDGAR's default prefix
 
 check_edgar_interfaces_exist() {
   check_interface_exists "$BRIDGE"
-  check_interface_exists "$GRE_INTERFACE"
+  check_gre_interface_exists
 }
 
 START_TIME="$(date +%s)"
@@ -145,14 +153,6 @@ while ! check_edgar_interfaces_exist; do
     echo "Waiting for the EDGAR-managed network interfaces to exist..."
     sleep 3
 done
-
-# Derive the bridge address from the existing address, by replacing '32' with '33'
-# eth0 and ip range 192.168.32.0/24 is the main interface of the docker container
-# We use 192.168.33.0/24 for the bridge interfaces
-# TODO: make these hardcoded network ranges configurable/transparent
-BRIDGE_ADDRESS=$(ip -json address show dev eth0 | jq --raw-output '.[0].addr_info[0].local' | sed --expression 's#32#33#')  # derive from existing address, by replacing '32' with '33'
-ip address add "$BRIDGE_ADDRESS/24" dev "$BRIDGE"
-ip address show dev "$BRIDGE"
 
 # create file to signal success to THEO (omitting newline with argument '-n')
 echo -n "Success" | tee > /opt/signal/success.txt

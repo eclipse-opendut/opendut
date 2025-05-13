@@ -58,8 +58,28 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
         let mut tasks: Vec<Box<dyn Task>> = vec![];
 
         if let NetworkInterfaceManagement::Enabled { network_interface_manager, can_manager: _ } = &network_interface_management {
-            for parameter in peer_configuration.ethernet_bridges.iter().cloned() {
+            let mut ethernet_parameters = peer_configuration.ethernet_bridges.clone();
+            ethernet_parameters.sort_by(|a, b| a.target.cmp(&b.target));
+            for parameter in ethernet_parameters {
                 tasks.push(Box::new(tasks::create_ethernet_bridge::CreateEthernetBridge {
+                    parameter,
+                    network_interface_manager: Arc::clone(network_interface_manager),
+                }));
+            }
+
+            let mut gre_parameters = peer_configuration.gre_interfaces.clone();
+            gre_parameters.sort_by(|a, b| a.target.cmp(&b.target));
+            for parameter in gre_parameters {
+                tasks.push(Box::new(tasks::create_gre_interfaces::ManageGreInterface {
+                    parameter,
+                    network_interface_manager: Arc::clone(network_interface_manager),
+                }));
+            }
+
+            let mut joined_interfaces = peer_configuration.joined_interfaces.clone();
+            joined_interfaces.sort_by(|a, b| a.target.cmp(&b.target));
+            for parameter in joined_interfaces {
+                tasks.push(Box::new(tasks::manage_joined_interfaces::ManageJoinedInterface {
                     parameter,
                     network_interface_manager: Arc::clone(network_interface_manager),
                 }));
@@ -74,13 +94,12 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
             .find(|bridge| bridge.target == ParameterTarget::Present); //we currently expect only one bridge to be Present (for one cluster)
 
         match maybe_bridge {
-            Some(bridge) => {
+            Some(_) => {
                 let _ = setup_cluster(
                     &old_peer_configuration.cluster_assignment,
                     peer_configuration.device_interfaces,
                     self_id,
                     network_interface_management,
-                    &bridge.value.name,
                 ).await;
             }
             None => {
@@ -112,7 +131,6 @@ async fn setup_cluster( //TODO make idempotent
     device_interfaces: Vec<Parameter<parameter::DeviceInterface>>,
     self_id: PeerId,
     network_interface_management: NetworkInterfaceManagement,
-    bridge_name: &NetworkInterfaceName,
 ) -> anyhow::Result<()> {
 
     match cluster_assignment {
@@ -120,22 +138,7 @@ async fn setup_cluster( //TODO make idempotent
             trace!("Received ClusterAssignment: {cluster_assignment:?}");
             info!("Was assigned to cluster <{}>", cluster_assignment.id);
 
-            if let NetworkInterfaceManagement::Enabled { network_interface_manager, can_manager } = &network_interface_management {
-                cluster_assignment::setup_ethernet_gre_interfaces(
-                    cluster_assignment,
-                    self_id,
-                    bridge_name,
-                    Arc::clone(network_interface_manager),
-                ).await
-                .inspect_err(|error| error!("Failed to configure Ethernet GRE interfaces: {error}"))?;
-
-                cluster_assignment::join_ethernet_interfaces_to_bridge(
-                    &device_interfaces,
-                    bridge_name,
-                    Arc::clone(network_interface_manager),
-                ).await
-                .inspect_err(|error| error!("Failed to join Ethernet interfaces to bridge: {error}"))?;
-
+            if let NetworkInterfaceManagement::Enabled { can_manager, .. } = &network_interface_management {
                 cluster_assignment::setup_can_interfaces(
                     cluster_assignment,
                     self_id,

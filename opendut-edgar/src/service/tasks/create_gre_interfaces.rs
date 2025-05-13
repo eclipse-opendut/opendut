@@ -38,6 +38,7 @@ impl Task for ManageGreInterface {
             (None, ParameterTarget::Present) => {
                 let name = self.parameter.value.interface_name()?;
                 let interface = self.network_interface_manager.create_gretap_v4_interface(&name, &self.parameter.value.local_ip, &self.parameter.value.remote_ip).await?;
+                self.network_interface_manager.set_interface_up(&interface).await?;  // TODO: check if it is up
                 self.network_interface_manager.set_opendut_alternative_name(&interface).await?;
             }
             (Some(_), ParameterTarget::Present) | (None, ParameterTarget::Absent) => {

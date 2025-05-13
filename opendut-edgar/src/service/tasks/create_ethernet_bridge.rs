@@ -51,6 +51,7 @@ impl Task for CreateEthernetBridge {
                     None => {
                         let bridge = self.network_interface_manager.create_empty_bridge(&self.parameter.value.name).await?;
                         self.network_interface_manager.set_opendut_alternative_name(&bridge).await?;
+                        self.network_interface_manager.set_interface_up(&bridge).await?;  // TODO: check if it is up
 
                         Ok(Success::default())
                     }

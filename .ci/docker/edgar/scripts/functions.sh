@@ -109,7 +109,7 @@ wait_for_edgar_to_create_gre_interfaces() {
       return 1
     fi
 
-    gre_interface_count=$(ip -json a | jq -r ".[] | select(.ifname | test(\"gre-opendut*\")) | select(.operstate!=\"DOWN\") | .ifname" 2>/dev/null | nl | awk '{print $1}' | tail -n1)
+    gre_interface_count=$(ip -json link show type gretap | jq -r ".[] | select(.ifname | test(\"gre-*\")) | select(.operstate!=\"DOWN\") | .ifname" 2>/dev/null | nl | awk '{print $1}' | tail -n1)
     re='^[0-9]+$'
     if [[ $gre_interface_count =~ $re ]] ; then
       # peer count is a number
