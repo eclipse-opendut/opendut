@@ -114,7 +114,7 @@ fn set_dut_bridge_ip_address_for_pinging() -> Result<(), Error> {
     
     for edgar_name in edgar_names.clone() {
         DockerCommand::new_exec(&edgar_name)
-            .arg("/opt/set-br-opendut-ip-address.sh")
+            .arg("/opt/set-dut-local-ip-address.sh")
             .expect_status("Failed to set dut bridge ip for EDGAR.")
             .map_err(|err| anyhow!("Failed to set dut bridge ip for EDGAR {}. Error: {}", edgar_name, err))?;
     }

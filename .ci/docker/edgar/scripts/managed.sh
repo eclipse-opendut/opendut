@@ -73,13 +73,15 @@ pre_flight_tasks() {
     ln -s /logs/netbird /var/log/netbird
   fi
 
-  # create dummy ethernet device
-  ip link add dut0 type dummy
+  # create virtual ethernet device
+  ip link add dut0 type veth peer name dut0local
   ip link set dev dut0 up
+  ip link set dev dut0local up
 
-  # add second dummy interface for testing
-  ip link add dut1 type dummy
+  # add second virtual interface for testing
+  ip link add dut1local type veth peer name dut1
   ip link set dev dut1 up
+  ip link set dev dut1local up
 
   # create dummy can devices
   ip link add dev vcan0 type vcan
@@ -99,6 +101,8 @@ pre_flight_tasks "$1"
 # Determine docker service name and respective role for EDGAR
 CONTAINER_IP="$(ip -4 addr show eth0 | grep -oP "(?<=inet ).*(?=/)")"
 CONTAINER_SERVICE_NAME="$(dig -x "${CONTAINER_IP}" +short | grep -Eo "edgar-[a-z0-9\-]+" | cut -d'-' -f'2-')"
+echo "export CONTAINER_SERVICE_NAME=$CONTAINER_SERVICE_NAME" >> ~/.bashrc
+echo "export PS1=\"\u@\h:\w (\$CONTAINER_SERVICE_NAME) # \"" >> ~/.bashrc
 
 # Apply peer configuration
 opendut-cleo apply "/opt/configurations/peer_descriptor_${CONTAINER_SERVICE_NAME}.yaml"
