@@ -15,11 +15,10 @@ clap = { workspace = true, features = ["derive", "string"] }
 flate2 = { workspace = true }
 fs-err = { workspace = true }
 fs_extra = { workspace = true }
-indoc = { workspace = true }
 predicates = { workspace = true }
 reqwest = { workspace = true, features = ["blocking", "json"] }
 shadow-rs = { workspace = true }
-serde = { workspace = true, features = ["derive"] }
+serde = { workspace = true }
 serde_json = { workspace = true }
 serde-spdx = { workspace = true }
 strum = { workspace = true, features = ["derive"] }

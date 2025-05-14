@@ -26,7 +26,6 @@ enum TaskCli {
     Coverage(tasks::coverage::CoverageCli),
     Distribution(tasks::distribution::DistributionCli),
     Doc(tasks::doc::DocCli),
-    Flash(tasks::flash::FlashCli),
     Licenses(tasks::licenses::LicensesCli),
     Test(tasks::test::TestCli),
     Venv(cicero::commands::venv::VenvCli),
@@ -55,7 +54,6 @@ fn main() -> crate::Result {
             }
         }
         TaskCli::Doc(implementation) => implementation.default_handling()?,
-        TaskCli::Flash(implementation) => implementation.default_handling()?,
         TaskCli::Licenses(implementation) => implementation.default_handling(PackageSelection::All)?,
         TaskCli::Test(implementation) => implementation.default_handling()?,
         TaskCli::Venv(implementation) => implementation.run()?,

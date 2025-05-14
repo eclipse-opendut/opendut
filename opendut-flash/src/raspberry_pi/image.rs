@@ -3,7 +3,7 @@ use serde::Deserialize;
 use std::ops::Not;
 use std::time::Duration;
 use std::{fs, time};
-use tracing::debug;
+use tracing::{debug, info};
 
 pub const OS_LIST_URL: &str = "https://downloads.raspberrypi.com/os_list_imagingutility_v4.json";
 pub const OS_LIST_ENTRY_OTHER: &str = "Raspberry Pi OS (other)";
@@ -13,11 +13,12 @@ pub const IMAGE_NAME: &str = "Raspberry Pi OS Lite (64-bit)";
 pub fn determine_up_to_date_image() -> anyhow::Result<String> {
     debug!("Determining OS image to use.");
 
-    let os_list_cache_file = super::temp_dir().join("os-index.json");
+    let os_list_cache_file = super::temp_dir()?.join("os-index.json");
 
     let os_list_cache_text =
         if os_list_cache_file.exists().not()
         || time::SystemTime::now().duration_since(os_list_cache_file.metadata()?.modified()?)? > Duration::from_secs(60 * 60 * 24 * 7) { //older than 1 week
+            debug!("Raspberry Pi OS list is missing or out-of-date. Downloading...");
             let os_list = reqwest::blocking::get(OS_LIST_URL)?
                 .text()?;
             fs::write(os_list_cache_file, &os_list)?;
@@ -41,7 +42,7 @@ pub fn determine_up_to_date_image() -> anyhow::Result<String> {
     let image = image.url
         .context("Entry for desired image does not contain a download URL.")?;
 
-    debug!("Selected OS image: {image}");
+    info!("Selected OS image: {image}");
 
     Ok(image)
 }

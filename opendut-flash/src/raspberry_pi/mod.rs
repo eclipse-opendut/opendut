@@ -5,13 +5,13 @@
 mod image;
 mod script;
 
-use crate::core::util::RunRequiringSuccess;
 use indoc::eprintdoc;
 use script::SETUP_COMPLETE_SCRIPT_PATH;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use tracing::debug;
+use anyhow::anyhow;
+use tracing::{debug, info};
 
 // NetworkManager uses 10.42.x.0/24 for WiFi hotspots by default, where the 'x' is incremented for each wlan-interface.
 // We assume that users don't have a WiFi dongle plugged in during setup, meaning there should only be wlan0, which will use x=0.
@@ -22,7 +22,9 @@ const USERNAME: &str = "pi";
 const PASSWORD: &str = "raspberry"; //temporary password for initial setup; if you change this, run `mkpasswd $NEW_PASSWORD` and put the hash into script::format_first_run_script
 
 
-/// Flash an SD card for a Raspberry Pi
+/// Flash an SD card for a Raspberry Pi, so that it spans a WiFi hotspot for setting it up further.
+///
+/// This requires Raspberry Pi Imager to be installed (`rpi-imager` should be available on the operating system PATH).
 #[derive(clap::Parser)]
 #[command(alias="rpi", alias="raspi")]
 pub struct RaspberryPiCli {
@@ -30,27 +32,27 @@ pub struct RaspberryPiCli {
     #[arg(long)]
     storage: String,
 
-    /// The hostname to set on the Raspberry Pi
+    /// The name of the WiFi (SSID) to use for the hotspot on the Raspberry Pi
     #[arg(long)]
-    hostname: String,
+    wifi_name: String,
 
-    /// The WiFi country code to use, e.g. US, DE, GB, FR.
+    /// The WiFi country code to use for the hotspot, e.g. US, DE, GB, FR.
     /// For a complete list, see: https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
     #[arg(long)]
     wifi_country: String,
 }
 impl RaspberryPiCli {
     pub fn run(self) -> anyhow::Result<()> {
-        let RaspberryPiCli { storage: storage_to_flash, hostname, wifi_country } = self;
+        let RaspberryPiCli { storage: storage_to_flash, wifi_name, wifi_country } = self;
 
         let image = image::determine_up_to_date_image()?;
 
-        let first_run_script_path = temp_dir().join("firstrun.sh");
+        let first_run_script_path = temp_dir()?.join("firstrun.sh");
 
         Self::template_first_run_script(
             &first_run_script_path,
             script::Params {
-                hostname: hostname.clone(),
+                wifi_name: wifi_name.clone(),
                 wifi_country,
             }
         )?;
@@ -59,7 +61,7 @@ impl RaspberryPiCli {
 
         eprintdoc!(r#"
 
-            When you boot the Raspberry Pi, it spans a WiFi hotspot with the name "{hostname}".
+            When you boot the Raspberry Pi, it spans a WiFi hotspot with the name "{wifi_name}".
             You can configure the Raspberry Pi via SSH by connecting to this hotspot and then running:
 
               ssh {USERNAME}@{SSH_ADDRESS}
@@ -74,7 +76,7 @@ impl RaspberryPiCli {
     }
 
     fn template_first_run_script(first_run_path: &Path, params: script::Params) -> anyhow::Result<()> {
-        debug!("Templating firstrun.sh to {first_run_path:?} for passing it to rpi-imager.");
+        debug!("Templating {first_run_path:?} for passing into rpi-imager.");
         fs::write(
             first_run_path,
             script::format_first_run_script(params)
@@ -82,21 +84,33 @@ impl RaspberryPiCli {
         Ok(())
     }
 
-    fn run_rpi_imager(image: &str, storage_to_flash: &str, first_run_script_file: &Path) -> crate::Result {
-        debug!("Running rpi-imager.");
-        Command::new("rpi-imager")
+    fn run_rpi_imager(image: &str, storage_to_flash: &str, first_run_script_file: &Path) -> anyhow::Result<()> {
+        info!("Running rpi-imager...");
+
+        let mut command = Command::new("rpi-imager");
+
+        command
             .arg("--cli")
             .arg("--first-run-script").arg(first_run_script_file)
             .arg(image)
-            .arg(storage_to_flash)
-            .run_requiring_success()?;
+            .arg(storage_to_flash);
 
-        Ok(())
+        let status = command.status()?;
+
+        if status.success() {
+            Ok(())
+        } else {
+            Err(anyhow!("Error while running {command:?}."))
+        }
     }
 }
 
-fn temp_dir() -> PathBuf {
-    std::env::temp_dir()
+fn temp_dir() -> anyhow::Result<PathBuf> {
+    let path = std::env::temp_dir()
         .join("opendut-flash")
-        .join("raspberry-pi")
+        .join("raspberry-pi");
+
+    fs::create_dir_all(&path)?;
+
+    Ok(path)
 }

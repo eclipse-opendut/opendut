@@ -8,7 +8,7 @@ pub(super) const SETUP_COMPLETE_SCRIPT_PATH: &str = "/opt/opendut-setup-complete
 
 
 pub struct Params {
-    pub hostname: String,
+    pub wifi_name: String,
     pub wifi_country: String,
 }
 
@@ -37,7 +37,7 @@ pub fn format_first_run_script(params: Params) -> String {
 }
 
 fn setup_mode_script(params: Params) -> String {
-    let Params { hostname, wifi_country } = params;
+    let Params { wifi_name, wifi_country } = params;
 
     formatdoc!(r#"
         #!/bin/sh
@@ -48,7 +48,7 @@ fn setup_mode_script(params: Params) -> String {
             sleep 1  # wlan0 interface needs a moment after setting WiFi country
 
             nmcli device wifi hotspot \
-                ssid {hostname} \
+                ssid {wifi_name} \
                 password {PASSWORD}
 
             if [ $? -eq 0 ]; then

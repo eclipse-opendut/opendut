@@ -3791,7 +3791,6 @@ dependencies = [
  "flate2",
  "fs-err",
  "fs_extra",
- "indoc",
  "predicates",
  "reqwest",
  "serde",
@@ -3906,6 +3905,20 @@ version = "0.7.0-alpha"
 dependencies = [
  "wasmtime",
  "wit-bindgen",
+]
+
+[[package]]
+name = "opendut-flash"
+version = "0.7.0-alpha"
+dependencies = [
+ "anyhow",
+ "clap",
+ "indoc",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
