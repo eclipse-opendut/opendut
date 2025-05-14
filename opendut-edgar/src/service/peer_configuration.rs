@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::fmt::Formatter;
 use std::net::IpAddr;
 use opendut_types::cluster::{ClusterAssignment, PeerClusterAssignment};
-use opendut_types::util::net::NetworkInterfaceName;
 use tracing::{debug, error, info, trace};
 use std::sync::Arc;
 use opendut_types::peer::configuration::{parameter, OldPeerConfiguration, Parameter, ParameterTarget, PeerConfiguration};

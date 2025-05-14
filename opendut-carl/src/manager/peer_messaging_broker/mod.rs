@@ -68,7 +68,7 @@ impl PeerMessagingBroker {
         downstream.send(Downstream {
             context,
             message: Some(message)
-        }).await.map_err(Error::DownstreamSend)?;
+        }).await.map_err(|error| Error::DownstreamSend(Box::new(error)))?;
         Ok(())
     }
 
@@ -85,7 +85,7 @@ impl PeerMessagingBroker {
         downstream.send(Downstream {
             context: None,
             message: Some(disconnect_message)
-        }).await.map_err(Error::DownstreamSend)?;
+        }).await.map_err(|error| Error::DownstreamSend(Box::new(error)))?;
 
         let peer_messaging_ref = PeerMessagingRef {
             downstream,
@@ -320,7 +320,7 @@ async fn handle_stream_message(
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("DownstreamSend Error: {0}")]
-    DownstreamSend(SendError<Downstream>),
+    DownstreamSend(Box<SendError<Downstream>>),
     #[error("PeerNotFound Error: {0}")]
     PeerNotFound(PeerId),
 }

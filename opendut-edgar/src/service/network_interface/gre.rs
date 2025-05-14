@@ -12,7 +12,7 @@ const GRE_INTERFACE_NAME_PREFIX: &str = "gre-opendut";
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Error while managing network interfaces: {0}")]
-    NetworkInterfaceError(#[from] network_interface::manager::Error),
+    NetworkInterfaceError(#[from] Box<network_interface::manager::Error>),
     #[error("{message}")]
     Other { message: String },
 }
@@ -35,12 +35,14 @@ pub async fn setup_interfaces(
 
 async fn remove_existing_interfaces(network_interface_manager: NetworkInterfaceManagerRef) -> Result<(), Error> {
 
-    let interfaces_to_remove = network_interface_manager.list_interfaces().await?
+    let interfaces_to_remove = network_interface_manager.list_interfaces().await
+        .map_err(|error| Error::NetworkInterfaceError(Box::new(error)))?
         .into_iter()
         .filter(|interface| interface.name.name().starts_with(GRE_INTERFACE_NAME_PREFIX));
 
     for interface in interfaces_to_remove {
-        network_interface_manager.delete_interface(&interface).await?;
+        network_interface_manager.delete_interface(&interface).await
+            .map_err(|error| Error::NetworkInterfaceError(Box::new(error)))?;
     }
 
     Ok(())
@@ -57,13 +59,21 @@ async fn create_interface(
     let interface_name = NetworkInterfaceName::try_from(format!("{}{}", GRE_INTERFACE_NAME_PREFIX, interface_index))
         .map_err(|cause| Error::Other { message: format!("Error while constructing GRE interface name: {cause}") })?;
 
-    let gre_interface = network_interface_manager.create_gretap_v4_interface(&interface_name, local_ip, remote_ip).await?;
+    let gre_interface = network_interface_manager.create_gretap_v4_interface(&interface_name, local_ip, remote_ip)
+        .await
+        .map_err(|error| Error::NetworkInterfaceError(Box::new(error)))?;
     debug!("Created GRE interface '{gre_interface}'.");
-    network_interface_manager.set_interface_up(&gre_interface).await?;
+    network_interface_manager.set_interface_up(&gre_interface)
+        .await
+        .map_err(|error| Error::NetworkInterfaceError(Box::new(error)))?;
     debug!("Set GRE interface '{interface_name}' to 'up'.");
 
-    let bridge = network_interface_manager.try_find_interface(bridge_name).await?;
-    network_interface_manager.join_interface_to_bridge(&gre_interface, &bridge).await?;
+    let bridge = network_interface_manager.try_find_interface(bridge_name)
+        .await
+        .map_err(|error| Error::NetworkInterfaceError(Box::new(error)))?;
+    network_interface_manager.join_interface_to_bridge(&gre_interface, &bridge)
+        .await
+        .map_err(|error| Error::NetworkInterfaceError(Box::new(error)))?;
 
     Ok(())
 }

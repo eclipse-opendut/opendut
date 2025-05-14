@@ -3,6 +3,7 @@ use rtnetlink::LinkGetRequest;
 
 pub trait ShowJoinedInterfaces {
     fn filter_interfaces_joined_to(self, index: u32) -> Self;
+    #[allow(unused)]
     fn filter_gre_interfaces(self) -> Self;
 
 }

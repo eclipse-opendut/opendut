@@ -1,6 +1,7 @@
 use crate::common::task::{Success, Task, TaskFulfilled};
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use async_trait::async_trait;
+use netlink_packet_route::link::LinkFlag;
 use opendut_types::peer::configuration::{parameter, Parameter, ParameterTarget};
 
 pub struct ManageGreInterface {
@@ -22,7 +23,15 @@ impl Task for ManageGreInterface {
             (Some(_), ParameterTarget::Absent) | (None, ParameterTarget::Present) => {
                 Ok(TaskFulfilled::No)
             }
-            (Some(_), ParameterTarget::Present) | (None, ParameterTarget::Absent) => {
+            (Some(interface), ParameterTarget::Present) => {
+                let interface_is_up = interface.link_flag.contains(&LinkFlag::Up);
+                if interface_is_up {
+                    Ok(TaskFulfilled::Yes)
+                } else {
+                    Ok(TaskFulfilled::No)
+                }
+            }
+            (None, ParameterTarget::Absent) => {
                 Ok(TaskFulfilled::Yes)
             }
         }        
@@ -38,10 +47,13 @@ impl Task for ManageGreInterface {
             (None, ParameterTarget::Present) => {
                 let name = self.parameter.value.interface_name()?;
                 let interface = self.network_interface_manager.create_gretap_v4_interface(&name, &self.parameter.value.local_ip, &self.parameter.value.remote_ip).await?;
-                self.network_interface_manager.set_interface_up(&interface).await?;  // TODO: check if it is up
+                self.network_interface_manager.set_interface_up(&interface).await?;
                 self.network_interface_manager.set_opendut_alternative_name(&interface).await?;
             }
-            (Some(_), ParameterTarget::Present) | (None, ParameterTarget::Absent) => {
+            (Some(interface), ParameterTarget::Present) => {
+                self.network_interface_manager.set_interface_up(&interface).await?;
+            }
+            (None, ParameterTarget::Absent) => {
                 // nothing to do
             }
         }

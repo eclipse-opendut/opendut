@@ -2,6 +2,7 @@ use crate::common::task::{Success, Task, TaskFulfilled};
 use crate::service::network_interface::manager::interface::NetlinkInterfaceKind;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use async_trait::async_trait;
+use netlink_packet_route::link::LinkFlag;
 use tracing::{warn};
 use opendut_types::peer::configuration::parameter;
 use opendut_types::peer::configuration::{Parameter, ParameterTarget};
@@ -24,7 +25,8 @@ impl Task for CreateEthernetBridge {
             ParameterTarget::Present => {
                 match interface {
                     Some(bridge) => {
-                        if NetlinkInterfaceKind::Bridge == bridge.kind {
+                        let interface_is_up = bridge.link_flag.contains(&LinkFlag::Up);
+                        if NetlinkInterfaceKind::Bridge == bridge.kind && interface_is_up {
                             Ok(TaskFulfilled::Yes)
                         } else {
                             Ok(TaskFulfilled::No)
@@ -51,12 +53,13 @@ impl Task for CreateEthernetBridge {
                     None => {
                         let bridge = self.network_interface_manager.create_empty_bridge(&self.parameter.value.name).await?;
                         self.network_interface_manager.set_opendut_alternative_name(&bridge).await?;
-                        self.network_interface_manager.set_interface_up(&bridge).await?;  // TODO: check if it is up
+                        self.network_interface_manager.set_interface_up(&bridge).await?;
 
                         Ok(Success::default())
                     }
                     Some(bridge) => {
                         if NetlinkInterfaceKind::Bridge == bridge.kind {
+                            self.network_interface_manager.set_interface_up(&bridge).await?;
                             Ok(Success::default())
                         } else {
                             Err(anyhow::Error::msg(format!("Another interface with that name exists but it has an unexpected interface kind: <{:?}>!", bridge.kind)))

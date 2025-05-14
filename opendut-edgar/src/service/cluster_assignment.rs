@@ -1,69 +1,11 @@
-use std::net::{IpAddr, Ipv4Addr};
-use std::sync::Arc;
 use tracing::debug;
 
 use crate::service::can_manager::CanManagerRef;
-use crate::service::network_interface;
-use crate::service::network_interface::gre;
-use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use opendut_types::cluster::{ClusterAssignment, PeerClusterAssignment};
 use opendut_types::peer::configuration::{parameter, Parameter, ParameterTarget};
 use opendut_types::peer::PeerId;
-use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceName};
+use opendut_types::util::net::NetworkInterfaceConfiguration;
 use parameter::DeviceInterface;
-
-#[tracing::instrument(skip_all, level="trace")]
-pub async fn setup_ethernet_gre_interfaces(
-    cluster_assignment: &ClusterAssignment,
-    self_id: PeerId,
-    bridge_name: &NetworkInterfaceName,
-    network_interface_manager: NetworkInterfaceManagerRef,
-) -> Result<(), Error> {
-    debug!("Setting up Ethernet GRE interfaces.");
-
-    let local_peer_assignment = cluster_assignment.assignments.iter().find(|assignment| {
-        assignment.peer_id == self_id
-    }).ok_or(Error::LocalPeerAssignmentNotFound { self_id })?;
-
-    let local_ip = local_peer_assignment.vpn_address;
-    let local_ip = require_ipv4_for_gre(local_ip)?;
-
-    let remote_ips = determine_remote_ips(cluster_assignment, self_id)?;
-    let remote_ips = remote_ips.into_iter()
-        .map(require_ipv4_for_gre)
-        .collect::<Result<Vec<_>, _>>()?;
-
-    gre::setup_interfaces(
-        &local_ip,
-        &remote_ips,
-        bridge_name,
-        Arc::clone(&network_interface_manager),
-    ).await
-    .map_err(Error::GreInterfaceSetupFailed)?;
-
-    Ok(())
-}
-
-#[tracing::instrument(skip_all, level="trace")]
-pub async fn join_ethernet_interfaces_to_bridge(
-    device_interfaces: &[Parameter<DeviceInterface>],
-    bridge_name: &NetworkInterfaceName,
-    network_interface_manager: NetworkInterfaceManagerRef,
-) -> Result<(), Error> {
-    debug!("Joining Ethernet interfaces to bridge '{bridge_name}'.");
-
-    let ethernet_interfaces = filter_ethernet_interfaces(device_interfaces.to_owned())?;
-
-    let ethernet_interfaces: Vec<DeviceInterface> = ethernet_interfaces.into_iter()
-        .filter(|parameter| parameter.target == ParameterTarget::Present)
-        .map(|parameter| parameter.value)
-        .collect();
-
-    join_device_interfaces_to_bridge(&ethernet_interfaces, bridge_name, Arc::clone(&network_interface_manager)).await
-        .map_err(Error::JoinDeviceInterfaceToBridgeFailed)?;
-
-    Ok(())
-}
 
 #[tracing::instrument(skip_all, level="trace")]
 pub async fn setup_can_interfaces(
@@ -132,13 +74,6 @@ pub async fn setup_can_interfaces(
     Ok(())
 }
 
-fn determine_remote_ips(cluster_assignment: &ClusterAssignment, self_id: PeerId) -> Result<Vec<IpAddr>, Error> {
-    let remote_assignments = determine_remote_assignments(cluster_assignment, self_id);
-    let remote_ips = remote_assignments?.iter().map(|remote_assignment| remote_assignment.vpn_address).collect();
-
-    Ok(remote_ips)
-}
-
 fn determine_remote_assignments(cluster_assignment: &ClusterAssignment, self_id: PeerId) -> Result<Vec<PeerClusterAssignment>, Error> {
     let is_leader = cluster_assignment.leader == self_id;
 
@@ -165,25 +100,6 @@ fn determine_leader_assignment(cluster_assignment: &ClusterAssignment) -> Result
     Ok(leader_assignment)
 }
 
-fn require_ipv4_for_gre(ip_address: IpAddr) -> Result<Ipv4Addr, Error> {
-    match ip_address {
-        IpAddr::V4(ip_address) => Ok(ip_address),
-        IpAddr::V6(_) => Err(Error::Ipv6NotSupported),
-    }
-}
-
-fn filter_ethernet_interfaces(
-    device_interfaces: Vec<Parameter<DeviceInterface>>
-) -> Result<Vec<Parameter<DeviceInterface>>, Error> {
-
-    let own_ethernet_interfaces = device_interfaces.iter()
-        .filter(|interface| interface.value.descriptor.configuration == NetworkInterfaceConfiguration::Ethernet)
-        .cloned()
-        .collect::<Vec<_>>();
-
-    Ok(own_ethernet_interfaces)
-}
-
 fn filter_can_interfaces(
     device_interfaces: Vec<Parameter<DeviceInterface>>
 ) -> Result<Vec<Parameter<DeviceInterface>>, Error> {
@@ -196,35 +112,14 @@ fn filter_can_interfaces(
     Ok(own_can_interfaces)
 }
 
-async fn join_device_interfaces_to_bridge(
-    device_interfaces: &Vec<DeviceInterface>,
-    bridge_name: &NetworkInterfaceName,
-    network_interface_manager: NetworkInterfaceManagerRef
-) -> Result<(), network_interface::manager::Error> {
-    let bridge = network_interface_manager.try_find_interface(bridge_name).await?;
-
-    for interface in device_interfaces {
-        let interface = network_interface_manager.try_find_interface(&interface.descriptor.name).await?;
-        network_interface_manager.join_interface_to_bridge(&interface, &bridge).await?;
-        debug!("Joined device interface {interface} to bridge {bridge}.");
-    }
-    Ok(())
-}
-
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Could not find PeerAssignment for this peer (<{self_id}>) in the ClusterAssignment.")]
     LocalPeerAssignmentNotFound { self_id: PeerId },
     #[error("Could not determine leader from ClusterAssignment.")]
     LeaderNotDeterminable,
-    #[error("IPv6 isn't yet supported for GRE interfaces.")]
-    Ipv6NotSupported,
-    #[error("GRE interface setup failed: {0}")]
-    GreInterfaceSetupFailed(gre::Error),
     #[error("Local CAN routing setup failed: {0}")]
     LocalCanRoutingSetupFailed(crate::service::can_manager::Error),
     #[error("Remote CAN routing setup failed: {0}")]
     RemoteCanRoutingSetupFailed(crate::service::can_manager::Error),
-    #[error("Joining device interface to bridge failed: {0}")]
-    JoinDeviceInterfaceToBridgeFailed(network_interface::manager::Error),
 }

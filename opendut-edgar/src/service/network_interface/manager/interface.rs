@@ -1,5 +1,5 @@
 use crate::service::network_interface::manager::vcan::VIRTUAL_CAN_INTERFACE_TYPE;
-use netlink_packet_route::link::{InfoData, InfoGreTap, InfoKind, LinkAttribute, LinkInfo, LinkMessage, Prop};
+use netlink_packet_route::link::{InfoData, InfoGreTap, InfoKind, LinkAttribute, LinkFlag, LinkInfo, LinkMessage, Prop};
 use netlink_packet_utils::nla::Nla;
 use opendut_types::util::net::{NetworkInterfaceName, NetworkInterfaceNameError};
 use std::fmt::Formatter;
@@ -18,6 +18,7 @@ pub struct Interface {
     pub address: Option<Ipv4Addr>,
     pub alternative_names: Vec<String>,
     pub alias: Option<String>,
+    pub link_flag: Vec<LinkFlag>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -103,7 +104,7 @@ impl TryFrom<LinkMessage> for Interface {
 
         let kind = match interface_kind {
             InfoKind::Bridge => { NetlinkInterfaceKind::Bridge }
-            InfoKind::GreTap => { determine_gre_interface(link_message)? }
+            InfoKind::GreTap => { determine_gre_interface(&link_message)? }
             InfoKind::Other(ref name) => {
                 if name.eq(VIRTUAL_CAN_INTERFACE_TYPE) {
                     NetlinkInterfaceKind::VCan
@@ -115,6 +116,7 @@ impl TryFrom<LinkMessage> for Interface {
             }
             _ => { NetlinkInterfaceKind::Other(interface_kind) }
         };
+        let link_flag = link_message.header.flags;
 
         Ok(Self {
             index,
@@ -124,6 +126,7 @@ impl TryFrom<LinkMessage> for Interface {
             address,
             alternative_names,
             alias,
+            link_flag,
         })
     }
 }
@@ -185,7 +188,7 @@ fn find_interface_alias(attributes: &[LinkAttribute]) -> Option<String> {
 
 
 
-fn determine_gre_interface(link_message: LinkMessage) -> Result<NetlinkInterfaceKind, NetlinkConversionError> {
+fn determine_gre_interface(link_message: &LinkMessage) -> Result<NetlinkInterfaceKind, NetlinkConversionError> {
     fn extract_address(info_gre_tap: &[InfoGreTap], kind: u16) -> Option<Ipv4Addr> {
         info_gre_tap.iter().find_map(|info_gre_tap|{
             if let InfoGreTap::Other(nla) = info_gre_tap {

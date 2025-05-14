@@ -102,7 +102,7 @@ pre_flight_tasks "$1"
 CONTAINER_IP="$(ip -4 addr show eth0 | grep -oP "(?<=inet ).*(?=/)")"
 CONTAINER_SERVICE_NAME="$(dig -x "${CONTAINER_IP}" +short | grep -Eo "edgar-[a-z0-9\-]+" | cut -d'-' -f'2-')"
 echo "export CONTAINER_SERVICE_NAME=$CONTAINER_SERVICE_NAME" >> ~/.bashrc
-echo "export PS1=\"\u@\h:\w (\$CONTAINER_SERVICE_NAME) # \"" >> ~/.bashrc
+echo 'export PS1="\u@\h:\w ($CONTAINER_SERVICE_NAME) # "' >> ~/.bashrc
 
 # Apply peer configuration
 opendut-cleo apply "/opt/configurations/peer_descriptor_${CONTAINER_SERVICE_NAME}.yaml"

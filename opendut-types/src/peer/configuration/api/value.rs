@@ -98,6 +98,9 @@ impl ParameterValue for parameter::InterfaceJoinConfig {
 
 #[cfg(test)]
 mod tests {
+    use std::net::Ipv4Addr;
+    use std::str::FromStr;
+    use crate::peer::configuration::parameter::GreInterfaceConfig;
     use super::*;
     use crate::peer::configuration::ParameterTarget;
     use crate::peer::executor::{ExecutorDescriptor, ExecutorId, ExecutorKind};
@@ -121,5 +124,18 @@ mod tests {
         let executor_target = peer_configuration.executors.first().unwrap();
         assert_eq!(executor_target.value, value);
         assert_eq!(executor_target.target, target);
+    }
+    
+    #[test]
+    fn test_parameter_hash_value() -> anyhow::Result<()> {
+        let foo = GreInterfaceConfig {
+            local_ip: Ipv4Addr::from_str("192.168.0.1")?,
+            remote_ip: Ipv4Addr::from_str("192.168.0.2")?,
+        };
+        let hash1 = parameter_value_hash(&foo);
+        let hash2 = parameter_value_hash(&foo);
+        assert_eq!(hash1, hash2);
+        
+        Ok(())
     }
 }

@@ -188,7 +188,7 @@ mod tests {
         local_address_nla.emit_value(buffer);
         let octets: [u8; 4] = buffer[0..4].try_into().unwrap();
         let result = Ipv4Addr::from(octets);
-        println!("{:?}", result);
+
         assert_eq!(result, expected_address);
     }
 }

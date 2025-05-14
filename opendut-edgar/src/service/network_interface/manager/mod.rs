@@ -18,7 +18,6 @@ pub mod interface;
 pub mod vcan;
 
 pub mod bridge;
-pub mod addresses;
 pub mod altname;
 
 pub type NetworkInterfaceManagerRef = Arc<NetworkInterfaceManager>;
@@ -27,6 +26,7 @@ pub struct NetworkInterfaceManager {
     pub(crate) handle: rtnetlink::Handle,
 }
 impl NetworkInterfaceManager {
+    #[allow(clippy::result_large_err)]
     pub fn create() -> Result<NetworkInterfaceManagerRef, Error> {
         let (connection, handle, _) = rtnetlink::new_connection()
             .map_err(|cause| Error::Connecting { cause })?;
@@ -191,6 +191,7 @@ impl NetworkInterfaceManager {
 
 }
 
+#[allow(clippy::result_large_err)]
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Failure while creating bridge '{name}': {cause}")]
@@ -205,10 +206,6 @@ pub enum Error {
     InterfaceNotFound { name: NetworkInterfaceName },
     #[error("Failure while listing interfaces: {cause}")]
     ListInterfaces { cause: Box<rtnetlink::Error> },
-    #[error("Failure while listing addresses: {cause}")]
-    ListAddresses { cause: Box<rtnetlink::Error> },
-    #[error("Failure while listing addresses: {cause}")]
-    DeleteAddress { name: NetworkInterfaceName, cause: Box<rtnetlink::Error> },
     #[error("Failure while setting interface {interface} to state 'up': {cause}")]
     SetInterfaceUp { interface: Interface, cause: Box<rtnetlink::Error> },
     #[error("Failure while setting interface {interface} to state 'down': {cause}")]

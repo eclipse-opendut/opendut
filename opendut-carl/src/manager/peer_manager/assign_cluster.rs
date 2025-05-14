@@ -256,7 +256,7 @@ mod tests {
     use crate::manager::peer_messaging_broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
     use crate::resource::manager::ResourceManager;
     use googletest::prelude::*;
-    use opendut_types::cluster::{ClusterAssignment, ClusterId};
+    use opendut_types::cluster::{ClusterAssignment, ClusterId, PeerClusterAssignment};
     use std::net::IpAddr;
     use std::str::FromStr;
     use std::sync::Arc;
@@ -274,7 +274,7 @@ mod tests {
         let resource_manager = ResourceManager::new_in_memory();
         let peer_messaging_broker = PeerMessagingBroker::new(
             Arc::clone(&resource_manager),
-            PeerMessagingBrokerOptions::load(&settings.config).unwrap(),
+            PeerMessagingBrokerOptions::load(&settings.config)?,
         ).await;
 
         let old_peer_configuration = OldPeerConfiguration {
@@ -301,8 +301,12 @@ mod tests {
 
         let cluster_assignment = ClusterAssignment {
             id: ClusterId::random(),
-            leader: PeerId::random(),
-            assignments: vec![],
+            leader: peer_id,
+            assignments: vec![PeerClusterAssignment {
+                peer_id,
+                vpn_address: IpAddr::V4(Ipv4Addr::from_str("192.168.1.1")?),
+                can_server_port: opendut_types::util::Port(51234),
+            }],
         };
 
 
