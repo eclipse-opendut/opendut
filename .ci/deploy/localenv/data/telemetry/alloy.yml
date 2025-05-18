@@ -4,7 +4,7 @@ discovery.docker "docker_logs_scrape" {
 
 	filter {
 		name   = "label"
-		values = ["logging=promtail"]
+		values = ["logging=alloy"]
 	}
 }
 

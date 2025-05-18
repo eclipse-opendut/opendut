@@ -39,14 +39,14 @@ services:
     networks:
       - opendutnet
 
- promtail:
-   image: grafana/promtail:2.9.6
-   container_name: promtail
+ alloy:
+   image: grafana/alloy:latest
+   container_name: alloy
    volumes:
-     - ./promtail.yml:/etc/promtail/docker-config.yaml
+     - ./alloy.yml:/etc/alloy/config.yaml
      - /var/lib/docker/containers:/var/lib/docker/containers:ro
      - /var/run/docker.sock:/var/run/docker.sock:ro
-   command: -config.file=/etc/promtail/docker-config.yaml
+   command: -config.file=/etc/alloy/config.yaml
    depends_on:
      - loki
    networks:

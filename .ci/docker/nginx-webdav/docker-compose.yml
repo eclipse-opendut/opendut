@@ -10,7 +10,7 @@ services:
     shm_size: "1gb"
     restart: unless-stopped
     labels:
-      - logging=promtail
+      - logging=alloy
       - logging_job=nginx-webdav
     networks:
       - opendutnet
