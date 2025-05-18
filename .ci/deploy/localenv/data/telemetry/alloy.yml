@@ -1,0 +1,310 @@
+discovery.docker "docker_logs_scrape" {
+	host             = "unix:///var/run/docker.sock"
+	refresh_interval = "5s"
+
+	filter {
+		name   = "label"
+		values = ["logging=promtail"]
+	}
+}
+
+loki.process "docker_logs_scrape" {
+	forward_to = [loki.write.default.receiver]
+
+	stage.match {
+		selector = "{job=~\"traefik\"}"
+
+		stage.static_labels {
+			values = {
+				level = "DEFAULT",
+			}
+		}
+
+		stage.json {
+			expressions = {
+				ClientAddr     = "ClientAddr",
+				RequestHost    = "RequestHost",
+				RequestPath    = "RequestPath",
+				ServiceName    = "ServiceName",
+				entryPointName = "entryPointName",
+				level          = "level",
+				message        = "msg",
+				time           = "time",
+			}
+		}
+
+		stage.template {
+			source   = "level"
+			template = "{{ ToUpper .Value }}"
+		}
+
+		stage.timestamp {
+			source = "time"
+			format = "RFC3339"
+		}
+
+		stage.labels {
+			values = {
+				ClientAddr     = null,
+				RequestHost    = null,
+				RequestPath    = null,
+				ServiceName    = null,
+				entryPointName = null,
+				level          = null,
+				message        = null,
+			}
+		}
+	}
+
+	stage.match {
+		selector = "{job=~\"netbird-coturn\"}"
+
+		stage.static_labels {
+			values = {
+				level = "DEFAULT",
+			}
+		}
+
+		stage.regex {
+			expression = "(?P<time>.+): \\((?P<thread>[0-9]+)\\): (?P<level>[A-Z]+):( session (?P<session>[0-9]+):)? (?P<message>.*)"
+		}
+
+		stage.timestamp {
+			source = "time"
+			format = "RFC3339"
+		}
+
+		stage.output {
+			source = "message"
+		}
+
+		stage.labels {
+			values = {
+				level   = null,
+				session = null,
+			}
+		}
+	}
+
+	stage.match {
+		selector = "{job=~\"netbird-management\"}"
+
+		stage.static_labels {
+			values = {
+				level = "DEFAULT",
+			}
+		}
+
+		stage.regex {
+			expression = "(?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z) (?P<level>[A-Z]+) (?P<message>.*)"
+		}
+
+		stage.timestamp {
+			source = "timestamp"
+			format = "RFC3339"
+		}
+
+		stage.template {
+			source   = "level"
+			template = "{{ regexReplaceAllLiteral \"ERRO\" .level \"ERROR\" }}"
+		}
+
+		stage.output {
+			source = "message"
+		}
+
+		stage.labels {
+			values = {
+				level = null,
+			}
+		}
+	}
+
+	stage.match {
+		selector = "{job=~\"keycloak\"}"
+
+		stage.static_labels {
+			values = {
+				level = "DEFAULT",
+			}
+		}
+
+		stage.regex {
+			expression = "(?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]+[A-Z]+)\\s+(?P<level>[A-Z]+)\\s+\\[(?P<category>[^\\]]+)\\] \\((?P<thread>[^\\)]+)\\) (?P<message>.*)"
+		}
+
+		stage.timestamp {
+			source = "timestamp"
+			format = "RFC3339"
+		}
+
+		stage.output {
+			source = "message"
+		}
+
+		stage.labels {
+			values = {
+				category = null,
+				level    = null,
+				thread   = null,
+			}
+		}
+	}
+
+	stage.match {
+		selector = "{job=~\"netbird-dashboard\"}"
+
+		stage.static_labels {
+			values = {
+				level = "DEBUG",
+			}
+		}
+
+		stage.labels {
+			values = {
+				level = null,
+			}
+		}
+	}
+
+	stage.match {
+		selector = "{job=~\"keycloak-init\"}"
+
+		stage.static_labels {
+			values = {
+				level = "DEBUG",
+			}
+		}
+
+		stage.regex {
+			expression = "^(?P<level>WARNING|INFO|DEBUG|ERROR|WARN)?(:\\s)*(?P<message>.+)"
+		}
+
+		stage.drop {
+			expression = "^\\s*$"
+		}
+
+		stage.template {
+			source   = "level"
+			template = "{{ regexReplaceAllLiteral \"WARNING\" .level \"WARN\" }}"
+		}
+
+		stage.output {
+			source = "message"
+		}
+
+		stage.labels {
+			values = {
+				level = null,
+			}
+		}
+	}
+
+	stage.match {
+		selector = "{job=~\"netbird-signal\"}"
+
+		stage.static_labels {
+			values = {
+				level = "DEFAULT",
+			}
+		}
+
+		stage.regex {
+			expression = "(?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z) (?P<level>[A-Z]+) (?P<location>[^:]+:\\d+): (?P<message>.*)"
+		}
+
+		stage.timestamp {
+			source = "timestamp"
+			format = "RFC3339"
+		}
+
+		stage.output {
+			source = "message"
+		}
+
+		stage.labels {
+			values = {
+				level    = null,
+				location = null,
+			}
+		}
+	}
+
+	stage.match {
+		selector = "{job=~\"keycloak-postgres\"}"
+
+		stage.multiline {
+			firstline = "^\\d{4}-\\d{2}-\\d{2}"
+			max_lines = 0
+		}
+
+		stage.regex {
+			expression = "^(?P<timestamp>[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]+ [A-Z]+) \\[[0-9]+\\] (?P<level>[A-Z]+):  (?P<message>.*)$"
+		}
+
+		stage.template {
+			source   = "level"
+			template = "{{ regexReplaceAllLiteral \"DETAIL|STATEMENT|DEBUG1|DEBUG2|DEBUG3|DEBUG4|DEBUG5|DEBUG\" .level \"DEBUG\" }}"
+		}
+
+		stage.template {
+			source   = "level"
+			template = "{{ regexReplaceAllLiteral \"INFO|NOTICE|LOG\" .level \"INFO\" }}"
+		}
+
+		stage.template {
+			source   = "level"
+			template = "{{ regexReplaceAllLiteral \"ERROR|FATAL|PANIC\" .level \"ERROR\" }}"
+		}
+
+		stage.timestamp {
+			source = "timestamp"
+			format = "RFC3339"
+		}
+
+		stage.output {
+			source = "message"
+		}
+
+		stage.labels {
+			values = {
+				level = null,
+			}
+		}
+	}
+}
+
+discovery.relabel "docker_logs_scrape" {
+	targets = []
+
+	rule {
+		source_labels = ["__meta_docker_container_name"]
+		regex         = "/(.*)"
+		target_label  = "container"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_log_stream"]
+		target_label  = "logstream"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_label_logging_job"]
+		target_label  = "job"
+	}
+}
+
+loki.source.docker "docker_logs_scrape" {
+	host             = "unix:///var/run/docker.sock"
+	targets          = discovery.docker.docker_logs_scrape.targets
+	forward_to       = [loki.process.docker_logs_scrape.receiver]
+	relabel_rules    = discovery.relabel.docker_logs_scrape.rules
+	refresh_interval = "5s"
+}
+
+loki.write "default" {
+	endpoint {
+		url = "http://loki:3100/loki/api/v1/push"
+	}
+	external_labels = {}
+}
