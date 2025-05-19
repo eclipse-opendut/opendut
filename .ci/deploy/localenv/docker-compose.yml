@@ -492,7 +492,7 @@ services:
 
   alloy:
     container_name: opendut-alloy
-    image: grafana/alloy:latest
+    image: grafana/alloy:v1.8.3
     restart: unless-stopped
     volumes:
       - ./data/telemetry/alloy.yml:/etc/alloy/config.yaml
