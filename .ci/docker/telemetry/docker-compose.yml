@@ -40,7 +40,7 @@ services:
       - opendutnet
 
  alloy:
-   image: grafana/alloy:latest
+   image: grafana/alloy:v1.8.3
    container_name: alloy
    volumes:
      - ./alloy.yml:/etc/alloy/config.yaml
