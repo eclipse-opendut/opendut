@@ -28,6 +28,7 @@ enum TaskCli {
     Doc(tasks::doc::DocCli),
     Licenses(tasks::licenses::LicensesCli),
     Test(tasks::test::TestCli),
+    IntegrationTest(tasks::integration_tests::IntegrationTestCli),
     Venv(cicero::commands::venv::VenvCli),
 
     Carl(packages::carl::CarlCli),
@@ -56,6 +57,7 @@ fn main() -> crate::Result {
         TaskCli::Doc(implementation) => implementation.default_handling()?,
         TaskCli::Licenses(implementation) => implementation.default_handling(PackageSelection::All)?,
         TaskCli::Test(implementation) => implementation.default_handling()?,
+        TaskCli::IntegrationTest(implementation) => implementation.default_handling()?,
         TaskCli::Venv(implementation) => implementation.run()?,
 
         TaskCli::Carl(implementation) => implementation.default_handling()?,

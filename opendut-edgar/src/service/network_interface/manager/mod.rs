@@ -229,24 +229,7 @@ mod tests {
     use tracing::debug;
 
     /// How to run integration tests in dev environment: 
-    /// 1. Build tests on host: 
-    /// `cargo test --package opendut-edgar --no-run`
-    ///   Executable unittests src/lib.rs (/home/user/projects/opendut/opendut/target/debug/deps/opendut_edgar-516f95c1be09be1f)
-    /// 2. Run edgar shell on opendut-vm: `cargo theo dev edgar-shell`
-    /// 3. Use test binary from host in edgar shell:
-    /// `export RUN_EDGAR_NETLINK_INTEGRATION_TESTS=true`
-    /// `/usr/local/opendut/bin/debug/deps/opendut_edgar-516f95c1be09be1f --include-ignored`
-    ///
-    /// Run integration tests in docker
-    /// 1 Build tests on host:
-    /// ```shell
-    /// TEST_BINARY=$(cargo test --package opendut-edgar --no-run --message-format=json -- --include-ignored | jq -r '. | select(.reason=="compiler-artifact") | select(.target.name=="opendut_edgar") | select( .executable != null ) | .executable' | xargs basename)
-    /// ```
-    /// 2. Run tests in container
-    /// ```shell
-    /// OPENDUT_EDGAR_REPLICAS=1 docker compose -f .ci/docker/edgar/docker-compose.yml run -v ${CARGO_TARGET_DIR:-target}/debug/deps/:/tmp/debug/  --rm --entrypoint="" leader sh -c "export RUST_LOG=info,opendut=debug; RUN_EDGAR_NETLINK_INTEGRATION_TESTS=true /tmp/debug/$TEST_BINARY --include-ignored --nocapture"
-    /// ```
-
+    /// cargo ci integration-test
 
     #[test_with::env(RUN_EDGAR_NETLINK_INTEGRATION_TESTS)]
     #[test_log::test(tokio::test)]

@@ -89,14 +89,13 @@ impl TryFrom<LinkMessage> for Interface {
         // ip -json -details link show dev <NAME> | jq .[0].linkinfo.info_data
         let interface_info_data = link_message.attributes.iter().find_map(|link_attribute| {
             if let LinkAttribute::LinkInfo(link_info) = link_attribute {
-                let result = link_info.iter().find_map(|link_info| {
+                link_info.iter().find_map(|link_info| {
                     if let LinkInfo::Data(kind) = link_info {
                         Some(kind.clone())
                     } else {
                         None
                     }
-                });
-                result
+                })
             } else {
                 None
             }

@@ -1,0 +1,14 @@
+services:
+
+# Used by CI: `cargo ci integration-test`
+
+  test:
+    container_name: edgar-leader  # defined DNS for the container
+    build:
+      context: ../../..
+      dockerfile: ./.ci/docker/edgar/Dockerfile
+    cap_add:
+      - NET_ADMIN
+    privileged: true
+    environment:
+      - RUST_BACKTRACE=1

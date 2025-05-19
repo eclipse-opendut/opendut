@@ -73,8 +73,7 @@ impl TheoEnvMap {
         fn read_pem_certificate() -> String {
             let ca_pem_file = PathBuf::project_path_buf().join("resources").join("development").join("tls").join("insecure-development-ca.pem");
             let pem_file = ca_pem_file.to_str().unwrap();
-            let pem_file = std::fs::read_to_string(pem_file).expect("Failed to insecure development ca pem file.").replace('\n', "\\n").trim_end().to_string();
-            pem_file
+            std::fs::read_to_string(pem_file).expect("Failed to insecure development ca pem file.").replace('\n', "\\n").trim_end().to_string()
         }
 
         let mut env_map = HashMap::new();
