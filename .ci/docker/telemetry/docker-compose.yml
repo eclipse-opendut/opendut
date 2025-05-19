@@ -43,7 +43,7 @@ services:
    image: grafana/alloy:v1.8.3
    container_name: alloy
    volumes:
-     - ./alloy.yml:/etc/alloy/config.yaml
+     - ./config.alloy:/etc/alloy/config.alloy
      - /var/lib/docker/containers:/var/lib/docker/containers:ro
      - /var/run/docker.sock:/var/run/docker.sock:ro
    command: -config.file=/etc/alloy/config.yaml
