@@ -495,7 +495,7 @@ services:
     image: grafana/alloy:v1.8.3
     restart: unless-stopped
     volumes:
-      - ./data/telemetry/alloy.yml:/etc/alloy/config.yaml
+      - ./data/telemetry/config.alloy:/etc/alloy/config.alloy
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - opendut_local
