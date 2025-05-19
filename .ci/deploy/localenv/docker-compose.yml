@@ -35,7 +35,7 @@ services:
       - POSTGRES_DB=keycloak
       - POSTGRES_HOST=postgres
     labels:
-      - logging=promtail
+      - logging=alloy
       - logging_job=keycloak-postgres
     networks:
       - opendut_local
@@ -74,7 +74,7 @@ services:
       - traefik.enable=true
       - "traefik.http.routers.keycloak.rule=Host(`auth.opendut.local`)"
       - "traefik.http.routers.keycloak.tls=true"
-      - logging=promtail
+      - logging=alloy
       - logging_job=keycloak
     networks:
       - opendut_local
@@ -107,7 +107,7 @@ services:
       - OPENDUT_USER_OPENDUT
       - NETBIRD_PASSWORD
     labels:
-      - logging=promtail
+      - logging=alloy
       - logging_job=keycloak-init
     networks:
       opendut_local:
@@ -152,7 +152,7 @@ services:
       - ./data/secrets/pki/:/pki
       - /var/run/docker.sock:/var/run/docker.sock
     labels:
-      - logging=promtail
+      - logging=alloy
       - logging_job=traefik
     networks:
       opendut_local:
@@ -195,7 +195,7 @@ services:
       - traefik.http.routers.netbird-dashboard.rule=Host(`netbird.opendut.local`)
       - traefik.http.routers.netbird-dashboard.tls=true
       - traefik.http.services.netbird-dashboard.loadbalancer.server.port=80
-      - logging=promtail
+      - logging=alloy
       - logging_job=netbird-dashboard
 
     networks:
@@ -213,7 +213,7 @@ services:
       - traefik.http.routers.netbird-signal.rule=Host(`signal.opendut.local`)
       - traefik.http.services.netbird-signal.loadbalancer.server.port=80
       - traefik.http.services.netbird-signal.loadbalancer.server.scheme=h2c
-      - logging=promtail
+      - logging=alloy
       - logging_job=netbird-signal
     networks:
       - opendut_local
@@ -290,7 +290,7 @@ services:
       - traefik.http.services.netbird-management.loadbalancer.server.port=80
       - traefik.http.services.netbird-management.loadbalancer.server.scheme=h2c
       # Logging
-      - logging=promtail
+      - logging=alloy
       - logging_job=netbird-management
     networks:
       - opendut_local
@@ -313,7 +313,7 @@ services:
       - TURN_PORT=3478
     network_mode: host  # only container using network host mode
     labels:
-      - logging=promtail
+      - logging=alloy
       - logging_job=netbird-coturn
     entrypoint: ["/coturn/entrypoint.sh"]
     # turnutils_uclient -T -p $TURN_PORT -u $TURN_USER -w $TURN_PASSWORD localhost
@@ -440,7 +440,7 @@ services:
       - traefik.http.routers.nginx-webdav.rule=Host(`nginx-webdav.opendut.local`)
       - traefik.http.routers.nginx-webdav.tls=true
       - traefik.http.services.nginx-webdav.loadbalancer.server.port=80
-      - logging=promtail
+      - logging=alloy
       - logging_job=nginx-webdav
 
     networks:
@@ -490,15 +490,15 @@ services:
     networks:
       - opendut_local
 
-  promtail:
-    container_name: opendut-promtail
-    image: grafana/promtail:2.9.6
+  alloy:
+    container_name: opendut-alloy
+    image: grafana/alloy:v1.8.3
     restart: unless-stopped
     volumes:
-      - ./data/telemetry/promtail.yml:/etc/promtail/docker-config.yaml
+      - ./data/telemetry/config.alloy:/etc/alloy/config.alloy
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    command: -config.file=/etc/promtail/docker-config.yaml
+      - opendut_local
     depends_on:
       - loki
     networks:

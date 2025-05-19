@@ -3,7 +3,7 @@ services:
   signal:
     image: netbirdio/signal:${NETBIRD_SIGNAL_VERSION}
     labels:
-      logging: "promtail"
+      logging: "alloy"
       logging_job: "netbird-signal"
     volumes:
       - netbird-signal:/var/lib/netbird
@@ -20,7 +20,7 @@ services:
       args:
         NETBIRD_MANAGEMENT_VERSION: ${NETBIRD_MANAGEMENT_VERSION}
     labels:
-      logging: "promtail"
+      logging: "alloy"
       logging_job: "netbird-management"
     volumes:
       - netbird-mgmt:/var/lib/netbird
@@ -68,7 +68,7 @@ services:
     environment:
       - "LEGO_CA_CERTIFICATES=/opendut-tls/insecure-development-ca.pem"
     labels:
-      logging: "promtail"
+      logging: "alloy"
       logging_job: "netbird-traefik"
 #    ports:
 #      - "127.0.0.1:8082:8080"
@@ -96,7 +96,7 @@ services:
         - PGROUP=$PGROUP
     user: $DOCKER_USER # ${UID}:${GID} run with user privileges
     labels:
-      logging: "promtail"
+      logging: "alloy"
       logging_job: "netbird-management-init"
     volumes:
       #- ./management/:/management
@@ -126,7 +126,7 @@ services:
     image: coturn/coturn:4.6.2
     hostname: netbird-coturn
     labels:
-      logging: "promtail"
+      logging: "alloy"
       logging_job: "netbird-coturn"
     volumes:
       - ./turnserver.conf:/etc/turnserver.conf:ro
@@ -154,7 +154,7 @@ services:
       - AUTH_REDIRECT_URI=
       - AUTH_SILENT_REDIRECT_URI=
     labels:
-      logging: "promtail"
+      logging: "alloy"
       logging_job: "netbird-dashboard"
     networks:
       opendutnet:

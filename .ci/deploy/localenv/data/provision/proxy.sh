@@ -15,7 +15,7 @@ else
   export VAGRANT_HTTP_PROXY=$PROXY
   export VAGRANT_HTTPS_PROXY=$PROXY
 
-  TESTENV_HOSTS="opendut.local,auth.opendut.local,loki,keycloak,prometheus,tempo,promtail,nginx-webdav,otel-collector,netbird-management,localhost:8080"
+  TESTENV_HOSTS="opendut.local,auth.opendut.local,loki,keycloak,prometheus,tempo,alloy,nginx-webdav,otel-collector,netbird-management,localhost:8080"
   # 192.168.56.0/24,192.168.32.0/24,192.168.33.0/24
   TESTENV_NETWORKS="192.168.0.0/16"
 
