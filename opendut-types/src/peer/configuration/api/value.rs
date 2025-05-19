@@ -66,6 +66,21 @@ impl ParameterValue for parameter::Executor {
     }
 }
 
+impl ParameterValue for parameter::GreInterfaces {
+    fn parameter_identifier(&self) -> ParameterId {
+        let repr = format!("{}", self);
+        let mut hasher = DefaultHasher::new(); //ID not stable across Rust releases
+        repr.hash(&mut hasher);
+        let id = hasher.finish();
+        let id = Uuid::new_v5(&OPENDUT_UUID_NAMESPACE, &id.to_le_bytes());
+
+        ParameterId(id)
+    }
+    fn peer_configuration_field(peer_configuration: &mut PeerConfiguration) -> &mut Vec<Parameter<Self>>  {
+        &mut peer_configuration.gre_interfaces
+    }
+}
+
 
 #[cfg(test)]
 mod tests {

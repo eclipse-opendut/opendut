@@ -33,6 +33,7 @@ conversion! {
             executors: value.executors.into_iter().map(From::from).collect(),
             ethernet_bridges: value.ethernet_bridges.into_iter().map(From::from).collect(),
             device_interfaces: value.device_interfaces.into_iter().map(From::from).collect(),
+            gre_interfaces: vec![],
         }
     }
 
@@ -41,6 +42,7 @@ conversion! {
             executors: value.executors.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
             ethernet_bridges: value.ethernet_bridges.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
             device_interfaces: value.device_interfaces.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
+            gre_interfaces: vec![],
         })
     }
 }

@@ -7,9 +7,7 @@ pub use cli::cli;
 mod common;
 mod setup;
 mod service;
-
 pub use fs_err as fs;
-
 
 ///For integration tests
 #[cfg(feature = "integration_testing")]

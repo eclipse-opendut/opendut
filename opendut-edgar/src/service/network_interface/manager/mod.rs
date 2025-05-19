@@ -1,23 +1,30 @@
-use std::fmt::{Debug, Formatter};
+use std::fmt::Debug;
 use std::io;
-use std::net::Ipv4Addr;
+use std::net::{Ipv4Addr};
 use std::sync::Arc;
 
-use anyhow::anyhow;
 use futures::TryStreamExt;
-use netlink_packet_route::link::{LinkAttribute, LinkMessage};
 use tokio::process::Command;
 use tracing::{debug, error, warn};
 
+use crate::service::network_interface::manager::vcan::VCan;
 use gretap::Gretap;
+use interface::Interface;
 use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
 
 mod gretap;
+mod list_joined_interfaces;
+pub mod interface;
+pub mod vcan;
+
+pub mod bridge;
+pub mod addresses;
+pub mod altname;
 
 pub type NetworkInterfaceManagerRef = Arc<NetworkInterfaceManager>;
 
 pub struct NetworkInterfaceManager {
-    handle: rtnetlink::Handle,
+    pub(crate) handle: rtnetlink::Handle,
 }
 impl NetworkInterfaceManager {
     pub fn create() -> Result<NetworkInterfaceManagerRef, Error> {
@@ -29,33 +36,18 @@ impl NetworkInterfaceManager {
     }
 
     pub async fn list_interfaces(&self) -> Result<Vec<Interface>, Error> {
-        fn interface_name_from(interface: LinkMessage) -> anyhow::Result<NetworkInterfaceName> {
-            let interface_name = interface.attributes.into_iter()
-                .find_map(|nla| match nla {
-                    LinkAttribute::IfName(name) => Some(name),
-                    _ => None,
-                })
-                .ok_or(anyhow!("No name attribute found."))?;
-            let interface_name = NetworkInterfaceName::try_from(interface_name)?;
-            Ok(interface_name)
-        }
-
         let interfaces = self.handle
             .link()
             .get()
             .execute()
             .try_collect::<Vec<_>>().await
-            .map_err(|cause| Error::ListInterfaces { cause })?
+            .map_err(|cause| Error::ListInterfaces { cause: cause.into() })?
             .into_iter()
-            .filter_map(|interface| {
-                let index = interface.header.index;
-                match interface_name_from(interface) {
-                    Ok(name) => Some(Interface { index, name }),
-                    Err(cause) => {
-                        warn!("Could not determine name of interface with index '{index}': {cause}");
-                        None
-                    }
-                }
+            .filter_map(|link_message| {
+                let index = link_message.header.index;
+                Interface::try_from(link_message)
+                    .inspect_err(|cause| warn!("Could not determine attributes of interface with index '{index}': {cause}"))
+                    .ok()
             })
             .collect::<Vec<_>>();
         Ok(interfaces)
@@ -78,6 +70,7 @@ impl NetworkInterfaceManager {
             .bridge(name.name())
             .execute().await
             .map_err(|cause| Error::BridgeCreation { name: name.clone(), cause: cause.into() })?;
+
         let interface = self.try_find_interface(name).await?;
         Ok(interface)
     }
@@ -160,16 +153,6 @@ impl NetworkInterfaceManager {
         Ok(())
     }
 
-    pub async fn join_interface_to_bridge(&self, interface: &Interface, bridge: &Interface) -> Result<(), Error> {
-        self.handle
-            .link()
-            .set(interface.index)
-            .controller(bridge.index)
-            .execute().await
-            .map_err(|cause| Error::JoinInterfaceToBridge { interface: interface.clone(), bridge: bridge.clone(), cause: cause.into() })?;
-        Ok(())
-    }
-
     pub async fn delete_interface(&self, interface: &Interface) -> Result<(), Error> {
         self.handle
             .link()
@@ -180,36 +163,32 @@ impl NetworkInterfaceManager {
     }
 
     pub async fn create_vcan_interface(&self, name: &NetworkInterfaceName) -> Result<Interface, Error> {
-        let output = Command::new("ip")
-                .arg("link")
-                .arg("add")
-                .arg("dev")
-                .arg(name.name())
-                .arg("type")
-                .arg("vcan")
-                .output()
-                .await
-                .map_err(|cause| Error::CommandLineProgramExecution { command: "cangw".to_string(), cause })?;
-        
-        if ! output.status.success() {
-            return Err(Error::VCanInterfaceCreation { name: name.clone(), cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim()) });
-        }
+        self.handle
+            .link()
+            .add()
+            .create_virtual_can_request(name.name())
+            .execute()
+            .await
+            .map_err(|error| Error::VCanInterfaceCreation { name: name.clone(), cause: error.to_string() })?;
+        let interface = self.try_find_interface(name).await?;
+        Ok(interface)
+    }
+
+    #[allow(unused)]
+    pub async fn create_dummy_ipv4_interface(&self, name: &NetworkInterfaceName) -> Result<Interface, Error> {
+        self.handle
+            .link()
+            .add()
+            .dummy(name.name())
+            .execute()
+            .await
+            .map_err(|error| Error::ModificationFailure { name: name.clone(), cause: error.to_string() })?;
 
         let interface = self.try_find_interface(name).await?;
         Ok(interface)
     }
     
-}
 
-#[derive(Clone, Debug)]
-pub struct Interface {
-    pub index: u32,
-    pub name: NetworkInterfaceName,
-}
-impl std::fmt::Display for Interface {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[{}: {}]", self.index, self.name)
-    }
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -225,7 +204,11 @@ pub enum Error {
     #[error("Interface with name '{name}' not found.")]
     InterfaceNotFound { name: NetworkInterfaceName },
     #[error("Failure while listing interfaces: {cause}")]
-    ListInterfaces { cause: rtnetlink::Error },
+    ListInterfaces { cause: Box<rtnetlink::Error> },
+    #[error("Failure while listing addresses: {cause}")]
+    ListAddresses { cause: Box<rtnetlink::Error> },
+    #[error("Failure while listing addresses: {cause}")]
+    DeleteAddress { name: NetworkInterfaceName, cause: Box<rtnetlink::Error> },
     #[error("Failure while setting interface {interface} to state 'up': {cause}")]
     SetInterfaceUp { interface: Interface, cause: Box<rtnetlink::Error> },
     #[error("Failure while setting interface {interface} to state 'down': {cause}")]
@@ -233,9 +216,52 @@ pub enum Error {
     #[error("Failure while joining interface {interface} to bridge {bridge}: {cause}")]
     JoinInterfaceToBridge { interface: Interface, bridge: Interface, cause: Box<rtnetlink::Error> },
     #[error("Failure while creating virtual CAN interface '{name}': {cause}")]
-    VCanInterfaceCreation { name: NetworkInterfaceName, cause: String},
+    VCanInterfaceCreation { name: NetworkInterfaceName, cause: String },
+    #[error("Failed to modify interface '{name}': {cause}")]
+    ModificationFailure { name: NetworkInterfaceName, cause: String},
     #[error("Failure during updating CAN interface '{name}': {cause}")]
     CanInterfaceUpdate { name: NetworkInterfaceName, cause: String},
     #[error("Failure while invoking command line program '{command}': {cause}")]
     CommandLineProgramExecution { command: String, cause: std::io::Error },
+}
+
+
+#[cfg(test)]
+mod tests {
+    use crate::service::network_interface::manager::NetworkInterfaceManager;
+    use tracing::debug;
+
+    /// How to run integration tests in dev environment: 
+    /// 1. Build tests on host: 
+    /// `cargo test --package opendut-edgar --no-run`
+    ///   Executable unittests src/lib.rs (/home/user/projects/opendut/opendut/target/debug/deps/opendut_edgar-516f95c1be09be1f)
+    /// 2. Run edgar shell on opendut-vm: `cargo theo dev edgar-shell`
+    /// 3. Use test binary from host in edgar shell:
+    /// `export RUN_EDGAR_NETLINK_INTEGRATION_TESTS=true`
+    /// `/usr/local/opendut/bin/debug/deps/opendut_edgar-516f95c1be09be1f --include-ignored`
+    ///
+    /// Run integration tests in docker
+    /// 1 Build tests on host:
+    /// ```shell
+    /// TEST_BINARY=$(cargo test --package opendut-edgar --no-run --message-format=json -- --include-ignored | jq -r '. | select(.reason=="compiler-artifact") | select(.target.name=="opendut_edgar") | select( .executable != null ) | .executable' | xargs basename)
+    /// ```
+    /// 2. Run tests in container
+    /// ```shell
+    /// OPENDUT_EDGAR_REPLICAS=1 docker compose -f .ci/docker/edgar/docker-compose.yml run -v ${CARGO_TARGET_DIR:-target}/debug/deps/:/tmp/debug/  --rm --entrypoint="" leader sh -c "export RUST_LOG=info,opendut=debug; RUN_EDGAR_NETLINK_INTEGRATION_TESTS=true /tmp/debug/$TEST_BINARY --include-ignored --nocapture"
+    /// ```
+
+
+    #[test_with::env(RUN_EDGAR_NETLINK_INTEGRATION_TESTS)]
+    #[test_log::test(tokio::test)]
+    async fn test_list_interfaces() -> anyhow::Result<()> {
+        let (connection, handle, _) = rtnetlink::new_connection()?;
+        tokio::spawn(connection);
+
+        let manager = NetworkInterfaceManager { handle };
+        let result = manager.list_interfaces().await?;
+        assert!(!result.is_empty());
+
+        debug!("Network interfaces: {:?}", result);
+        Ok(())
+    }
 }

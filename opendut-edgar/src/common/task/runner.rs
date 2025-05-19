@@ -1,11 +1,9 @@
-use std::time::Duration;
-
-use indicatif::{ProgressBar, ProgressStyle};
 use tracing::{debug, error, info};
 
 use crate::common::task::{Success, Task, TaskFulfilled};
+use crate::common::task::progress_bar::ProgressBarForCLI;
 
-pub async fn run(run_mode: RunMode, tasks: &[Box<dyn Task>]) -> anyhow::Result<()> {
+pub async fn run(run_mode: RunMode, tasks: &[Box<dyn Task>]) -> Result<(), TaskExecutionError> {
     if tasks.is_empty() {
         debug!("No tasks to run. Skipping.");
         return Ok(())
@@ -14,9 +12,16 @@ pub async fn run(run_mode: RunMode, tasks: &[Box<dyn Task>]) -> anyhow::Result<(
     let task_names_string = tasks.iter().map(|task| task.description()).collect::<Vec<_>>().join(", ");
     debug!("Running tasks: {task_names_string}");
 
-    run_tasks(tasks, run_mode).await;
+    if run_mode != RunMode::Service {
+        println!();
+    }
+    
+    run_tasks(tasks, run_mode).await?;
 
-    println!();
+    if run_mode != RunMode::Service {
+        println!();
+    }
+
     debug!("Completed running tasks: {task_names_string}");
     Ok(())
 }
@@ -24,25 +29,13 @@ pub async fn run(run_mode: RunMode, tasks: &[Box<dyn Task>]) -> anyhow::Result<(
 async fn run_tasks(
     tasks: &[Box<dyn Task>],
     run_mode: RunMode,
-) {
-    println!();
-
-    let progress_style = ProgressStyle::with_template(" {spinner:.dim}  {msg}").unwrap()
-        .tick_strings(&["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏", ""]);
+) -> Result<(), TaskExecutionError> {
+    let progress_style = ProgressBarForCLI::progress_style();
     for task in tasks {
-        let spinner = ProgressBar::new_spinner();
-        spinner.enable_steady_tick(Duration::from_millis(120));
-        spinner.set_style(progress_style.clone());
-        spinner.set_message(task.description());
-
-        let is_fulfilled = match task.check_fulfilled().await {
-            Ok(is_fulfilled) => is_fulfilled,
-            Err(cause) => {
-                print_outcome(task.description(), Outcome::Failed);
-                print_error("Error while determining system state:", Some(cause));
-                return;
-            }
-        };
+        let progress_bar_cli = ProgressBarForCLI::new(task.description(), run_mode, progress_style.clone());
+        let is_fulfilled = task.check_fulfilled()
+            .await
+            .map_err(|error| TaskExecutionError::DetermineSystemStateBefore { task_name: task.description(), error })?;
 
         let outcome = match is_fulfilled {
             TaskFulfilled::Yes => Outcome::Unchanged,
@@ -50,68 +43,97 @@ async fn run_tasks(
                 if run_mode == RunMode::SetupDryRun {
                     Outcome::DryRun
                 } else {
-                    let result = task.execute().await;
-                    spinner.finish_and_clear();
+                    let result = task.execute()
+                        .await;
+                    progress_bar_cli.finish_and_clear();
                     match result {
                         Ok(success) => Outcome::Changed(success),
-                        Err(cause) => {
-                            print_outcome(task.description(), Outcome::Failed);
-                            print_error("Error while executing:", Some(cause));
-                            return;
+                        Err(error) => {
+                            return Err(TaskExecutionError::DuringTaskExecution { task_name: task.description(), error });
                         }
                     }
                 }
             }
         };
-        spinner.finish_and_clear();
+        progress_bar_cli.finish_and_clear();
 
         if let Outcome::Changed(_) = outcome {
             match task.check_fulfilled().await {
                 Ok(fulfillment) => match fulfillment {
                     TaskFulfilled::Yes | TaskFulfilled::Unchecked => {}, //do nothing
                     TaskFulfilled::No => {
-                        print_outcome(task.description(), Outcome::Failed);
-                        print_error("Execution succeeded, but system state check indicated task still needing execution.", None);
-                        return;
+                        return Err(TaskExecutionError::UnfulfilledTask { task_name: task.description() });
                     }
                 }
-                Err(cause) => {
-                    print_outcome(task.description(), Outcome::Failed);
-                    print_error("Error while determining system state after execution:", Some(cause));
-                    return;
+                Err(error) => {
+                    return Err(TaskExecutionError::DetermineSystemStateAfter { task_name: task.description(), error });
                 }
             }
         };
-
-        print_outcome(task.description(), outcome)
-    }
-}
-
-fn print_error(context: impl AsRef<str>, error: Option<anyhow::Error>) {
-    let message = {
-        let mut message = String::new();
-        message.push_str(context.as_ref());
-        message.push('\n');
-
-        if let Some(error) = error {
-            let error = format!("{:#}", error);
-            for line in error.lines() {
-                message.push_str(line);
-                message.push('\n');
-            }
+        if run_mode != RunMode::Service {
+            print_outcome(task.description(), outcome)
         }
-        message
-    };
-    for line in message.lines() {
-        eprintln!("    {}", line);
     }
-    error!("{message}");
+    Ok(())
 }
+
+#[derive(Debug, thiserror::Error)]
+pub enum TaskExecutionError {
+    #[error("Error while determining system state: {error}")]
+    DetermineSystemStateBefore { task_name: String, error: anyhow::Error },
+    #[error("Error while executing a task: {error}")]
+    DuringTaskExecution { task_name: String, error: anyhow::Error },
+    #[error("Error while executing a task.")]
+    UnfulfilledTask { task_name: String },
+    #[error("Error while determining system state after execution: {error}")]
+    DetermineSystemStateAfter { task_name: String, error: anyhow::Error },
+}
+
+impl TaskExecutionError {
+    pub fn print_error(&self) {
+        let (task_name, error) = match self {
+            TaskExecutionError::DetermineSystemStateBefore { task_name, error } => {
+                (task_name, Some(error))
+            }
+            TaskExecutionError::DuringTaskExecution { task_name, error } => {
+                (task_name, Some(error))
+            }
+            TaskExecutionError::UnfulfilledTask { task_name } => {
+                (task_name, None)
+            }
+            TaskExecutionError::DetermineSystemStateAfter { task_name, error } => {
+                (task_name, Some(error))
+            }
+        };
+
+        let message = {
+            let mut message = String::new();
+            message.push_str(task_name);
+            message.push('\n');
+
+            if let Some(error) = error {
+                let error = format!("{:#}", error);
+                for line in error.lines() {
+                    message.push_str(line);
+                    message.push('\n');
+                }
+            }
+            message
+        };
+        for line in message.lines() {
+            eprintln!("    {}", line);
+        }
+        error!("{message}");
+        print_outcome(task_name.to_string(), Outcome::Failed);
+    }
+}
+
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum RunMode { Setup, SetupDryRun, Service }
 
-enum Outcome {
+#[derive(Debug)]
+pub enum Outcome {
     Changed(Success),
     DryRun,
     Unchanged,
@@ -151,3 +173,4 @@ fn print_outcome(task_name: String, outcome: Outcome) {
     println!("{}", message(&task_name, &outcome, console::user_attended()));
     info!("{}", message(&task_name, &outcome, false));
 }
+

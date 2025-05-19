@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use anyhow::Result;
 use async_trait::async_trait;
 use opendut_types::util::net::NetworkInterfaceName;
@@ -27,7 +26,8 @@ impl Task for CreateBridge {
         }
     }
     async fn execute(&self) -> Result<Success> {
-        crate::service::network_interface::bridge::create(&self.bridge_name, Arc::clone(&self.network_interface_manager)).await?;
+        let bridge = self.network_interface_manager.create_empty_bridge(&self.bridge_name).await?;
+        self.network_interface_manager.set_opendut_alternative_name(&bridge).await?;
 
         Ok(Success::default())
     }

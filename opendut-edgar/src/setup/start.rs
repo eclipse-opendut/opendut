@@ -104,7 +104,12 @@ pub async fn managed(dry_run: DryRun, no_confirm: bool, setup_string: String, mt
         DryRun::Yes => RunMode::SetupDryRun,
         DryRun::No => RunMode::Setup,
     };
-    runner::run(run_mode, &tasks).await
+    let result = runner::run(run_mode, &tasks).await;
+    if let Err(error) = result {
+        error.print_error();
+        // TODO: exit code
+    }
+    Ok(())
 }
 
 #[allow(clippy::box_default, clippy::too_many_arguments)]
@@ -148,7 +153,12 @@ pub async fn unmanaged(
         DryRun::Yes => RunMode::SetupDryRun,
         DryRun::No => RunMode::Setup,
     };
-    runner::run(run_mode, &tasks).await
+    let result = runner::run(run_mode, &tasks).await;
+    if let Err(error) = result {
+        error.print_error();
+        // TODO: exit code
+    }
+    Ok(())
 }
 
 

@@ -16,3 +16,7 @@ message EthernetBridge {
 message Executor {
   opendut.types.peer.executor.ExecutorDescriptor descriptor = 1;
 }
+
+message GreInterfaces {
+  opendut.types.util.NetworkInterfaceName name = 1;
+}

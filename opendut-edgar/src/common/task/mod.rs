@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 
 pub mod runner;
+mod progress_bar;
 
 #[async_trait]
 pub trait Task: Send + Sync {
@@ -25,7 +26,7 @@ pub enum TaskFulfilled {
     Unchecked,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Success {
     pub message: Option<String>,
 }

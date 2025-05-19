@@ -213,8 +213,6 @@ async fn join_device_interfaces_to_bridge(
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("(Re-)Creating the bridge failed: {0}")]
-    BridgeRecreationFailed(network_interface::manager::Error),
     #[error("Could not find PeerAssignment for this peer (<{self_id}>) in the ClusterAssignment.")]
     LocalPeerAssignmentNotFound { self_id: PeerId },
     #[error("Could not determine leader from ClusterAssignment.")]

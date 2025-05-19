@@ -7,7 +7,7 @@ use tracing::info;
 use url::Url;
 use uuid::Uuid;
 
-use crate::setup;
+use crate::{setup};
 use opendut_types::peer::PeerId;
 use opendut_types::util::net::NetworkInterfaceName;
 use opendut_types::vpn::netbird::SetupKey;

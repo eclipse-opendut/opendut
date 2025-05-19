@@ -17,6 +17,7 @@ pub struct PeerConfiguration {
     pub device_interfaces: Vec<Parameter<parameter::DeviceInterface>>,
     pub ethernet_bridges: Vec<Parameter<parameter::EthernetBridge>>,
     pub executors: Vec<Parameter<parameter::Executor>>,
+    pub gre_interfaces: Vec<Parameter<parameter::GreInterfaces>>,
     //TODO migrate more parameters
 }
 impl PeerConfiguration {

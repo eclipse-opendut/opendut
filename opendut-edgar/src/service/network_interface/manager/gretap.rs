@@ -53,7 +53,7 @@ impl Gretap for LinkAddRequest {
 }
 
 #[allow(dead_code)]
-enum InfoGreTap { // https://elixir.bootlin.com/linux/v6.5.3/source/include/uapi/linux/if_tunnel.h#L117
+pub(crate) enum InfoGreTap { // https://elixir.bootlin.com/linux/v6.5.3/source/include/uapi/linux/if_tunnel.h#L117
     Unspec,
     Link,
     IFlags(u16),
@@ -171,5 +171,24 @@ impl netlink_packet_utils::nla::Nla for InfoGreTap {
             Self::ErspanHwid => unimplemented!(),
             Self::Max => unimplemented!(),
         }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use std::net::Ipv4Addr;
+    use netlink_packet_utils::nla::{DefaultNla, Nla};
+
+    #[test]
+    fn test_nla_conversion() {
+        let expected_address = Ipv4Addr::new(100, 88, 207, 154);
+        let local_address_nla = DefaultNla::new(0x06, vec![100, 88, 207, 154]);
+        let buffer: &mut [u8; 4] = &mut [0; 4];
+        local_address_nla.emit_value(buffer);
+        let octets: [u8; 4] = buffer[0..4].try_into().unwrap();
+        let result = Ipv4Addr::from(octets);
+        println!("{:?}", result);
+        assert_eq!(result, expected_address);
     }
 }

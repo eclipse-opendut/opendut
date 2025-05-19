@@ -15,6 +15,7 @@ opendut-util = { workspace = true, features = ["crypto"] }
 anyhow = { workspace = true }
 async-trait = { workspace = true }
 backon = { workspace = true }
+bitflags = { workspace = true }
 cfg-if = { workspace = true }
 chrono = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
@@ -25,6 +26,7 @@ fs-err = { workspace = true }
 futures = { workspace = true }
 indicatif = { workspace = true }
 indoc = { workspace = true }
+# ipnet = { workspace = true }
 netlink-packet-route = { workspace = true }
 netlink-packet-utils = { workspace = true }
 nix = { workspace = true, features = ["user", "fs"] }
@@ -63,8 +65,11 @@ wasmtime-wasi = { workspace = true }
 assert_fs = { workspace = true }
 googletest = { workspace = true }
 predicates = { workspace = true }
+rand = { workspace = true }
 rstest = { workspace = true }
 tempfile = { workspace = true }
+test-with = { workspace = true }
+test-log = { workspace = true }
 
 [build-dependencies]
 shadow-rs = { workspace = true, default-features = true }
