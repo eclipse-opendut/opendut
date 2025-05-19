@@ -499,7 +499,6 @@ services:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - opendut_local
-    command: -config.file=/etc/alloy/config.alloy
     depends_on:
       - loki
     networks:
