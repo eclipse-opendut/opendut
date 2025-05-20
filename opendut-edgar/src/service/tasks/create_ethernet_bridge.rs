@@ -6,12 +6,95 @@ use netlink_packet_route::link::LinkFlag;
 use tracing::{warn};
 use opendut_types::peer::configuration::parameter;
 use opendut_types::peer::configuration::{Parameter, ParameterTarget};
+use crate::common::new_task::NewTask;
 use crate::service::network_interface::manager::altname::OPENDUT_ALTERNATIVE_INTERFACE_NAME_PREFIX;
 
 pub struct CreateEthernetBridge {
     pub parameter: Parameter<parameter::EthernetBridge>,
     pub network_interface_manager: NetworkInterfaceManagerRef,
 }
+
+#[async_trait]
+impl NewTask for CreateEthernetBridge {
+
+    fn description(&self) -> String {
+        format!("Create bridge '{}'", self.parameter.value.name)
+    }
+
+    async fn check_present(&self) -> anyhow::Result<TaskFulfilled> {
+        let interface = self.network_interface_manager.find_interface(&self.parameter.value.name).await?;
+        match interface {
+            Some(bridge) => {
+                let interface_is_up = bridge.link_flag.contains(&LinkFlag::Up);
+                if NetlinkInterfaceKind::Bridge == bridge.kind && interface_is_up {
+                    Ok(TaskFulfilled::Yes)
+                } else {
+                    Ok(TaskFulfilled::No)
+                }
+            },
+            None => Ok(TaskFulfilled::No),
+        }
+    }
+
+    async fn check_absent(&self) -> anyhow::Result<TaskFulfilled> {
+        let interface = self.network_interface_manager.find_interface(&self.parameter.value.name).await?;
+        match interface {
+            None => { Ok(TaskFulfilled::Yes) },
+            Some(_) => { Ok(TaskFulfilled::No) },
+        }
+    }
+
+    async fn make_absent(&self) -> anyhow::Result<Success> {
+        let interface = self.network_interface_manager.find_interface(&self.parameter.value.name).await?;
+
+        match interface {
+            None => {
+                Ok(Success::default())
+            }
+            Some(bridge) => {
+                if NetlinkInterfaceKind::Bridge == bridge.kind {
+                    let opendut_name = bridge.alternative_names.iter().find(|name| name.starts_with(OPENDUT_ALTERNATIVE_INTERFACE_NAME_PREFIX)).cloned();
+                    match opendut_name {
+                        None => {
+                            warn!("Refusing to delete network bridge <{}> that was not created by openDuT!", bridge.name.name());
+                        }
+                        Some(_name) => {
+                            self.network_interface_manager.delete_interface(&bridge).await?;
+                        }
+                    }
+                    Ok(Success::default())
+                } else {
+                    Err(anyhow::Error::msg(format!("Another interface with that name exists but it has an unexpected interface kind: <{:?}>!", bridge.kind)))
+                }
+
+            }
+        }
+    }
+
+    async fn make_present(&self) -> anyhow::Result<Success> {
+        let interface = self.network_interface_manager.find_interface(&self.parameter.value.name).await?;
+
+        match interface {
+            None => {
+                let bridge = self.network_interface_manager.create_empty_bridge(&self.parameter.value.name).await?;
+                self.network_interface_manager.set_opendut_alternative_name(&bridge).await?;
+                self.network_interface_manager.set_interface_up(&bridge).await?;
+
+                Ok(Success::default())
+            }
+            Some(bridge) => {
+                if NetlinkInterfaceKind::Bridge == bridge.kind {
+                    self.network_interface_manager.set_interface_up(&bridge).await?;
+                    Ok(Success::default())
+                } else {
+                    Err(anyhow::Error::msg(format!("Another interface with that name exists but it has an unexpected interface kind: <{:?}>!", bridge.kind)))
+                }
+
+            }
+        }
+    }
+}
+
 #[async_trait]
 impl Task for CreateEthernetBridge {
     fn description(&self) -> String {
@@ -19,78 +102,23 @@ impl Task for CreateEthernetBridge {
     }
 
     async fn check_fulfilled(&self) -> anyhow::Result<TaskFulfilled> {
-        let interface = self.network_interface_manager.find_interface(&self.parameter.value.name).await?;
-
         match self.parameter.target {
             ParameterTarget::Present => {
-                match interface {
-                    Some(bridge) => {
-                        let interface_is_up = bridge.link_flag.contains(&LinkFlag::Up);
-                        if NetlinkInterfaceKind::Bridge == bridge.kind && interface_is_up {
-                            Ok(TaskFulfilled::Yes)
-                        } else {
-                            Ok(TaskFulfilled::No)
-                        }
-                    },
-                    None => Ok(TaskFulfilled::No),
-                }
+                self.check_present().await
             },
             ParameterTarget::Absent => {
-                match interface {
-                    None => { Ok(TaskFulfilled::Yes) },
-                    Some(_) => { Ok(TaskFulfilled::No) },
-                }
+                self.check_absent().await
             }
         }
     }
 
     async fn execute(&self) -> anyhow::Result<Success> {
-        let interface = self.network_interface_manager.find_interface(&self.parameter.value.name).await?;
-
         match self.parameter.target {
             ParameterTarget::Present => {
-                match interface {
-                    None => {
-                        let bridge = self.network_interface_manager.create_empty_bridge(&self.parameter.value.name).await?;
-                        self.network_interface_manager.set_opendut_alternative_name(&bridge).await?;
-                        self.network_interface_manager.set_interface_up(&bridge).await?;
-
-                        Ok(Success::default())
-                    }
-                    Some(bridge) => {
-                        if NetlinkInterfaceKind::Bridge == bridge.kind {
-                            self.network_interface_manager.set_interface_up(&bridge).await?;
-                            Ok(Success::default())
-                        } else {
-                            Err(anyhow::Error::msg(format!("Another interface with that name exists but it has an unexpected interface kind: <{:?}>!", bridge.kind)))
-                        }
-
-                    }
-                }
+                self.make_present().await
             }
             ParameterTarget::Absent => {
-                match interface {
-                    None => {
-                        Ok(Success::default())
-                    }
-                    Some(bridge) => {
-                        if NetlinkInterfaceKind::Bridge == bridge.kind {
-                            let opendut_name = bridge.alternative_names.iter().find(|name| name.starts_with(OPENDUT_ALTERNATIVE_INTERFACE_NAME_PREFIX)).cloned();
-                            match opendut_name {
-                                None => {
-                                    warn!("Refusing to delete network bridge <{}> that was not created by openDuT!", bridge.name.name());
-                                }
-                                Some(_name) => {
-                                    self.network_interface_manager.delete_interface(&bridge).await?;
-                                }
-                            }
-                            Ok(Success::default())
-                        } else {
-                            Err(anyhow::Error::msg(format!("Another interface with that name exists but it has an unexpected interface kind: <{:?}>!", bridge.kind)))
-                        }
-
-                    }
-                }
+                self.make_absent().await
             }
         }
     }

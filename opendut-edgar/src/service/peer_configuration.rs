@@ -125,7 +125,7 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
 }
 
 #[tracing::instrument(skip_all)]
-async fn setup_cluster( //TODO make idempotent
+async fn setup_cluster( //TODO make CAN idempotent
     cluster_assignment: &Option<ClusterAssignment>,
     device_interfaces: Vec<Parameter<parameter::DeviceInterface>>,
     self_id: PeerId,
@@ -158,7 +158,7 @@ async fn setup_cluster( //TODO make idempotent
 }
 
 #[tracing::instrument(skip_all)]
-async fn setup_cluster_metrics( //TODO make idempotent
+async fn setup_cluster_metrics(
     peer_cluster_assignments: &[PeerClusterAssignment],
     self_id: PeerId,
     metrics_manager: NetworkMetricsManagerRef,

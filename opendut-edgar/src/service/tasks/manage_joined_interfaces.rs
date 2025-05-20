@@ -16,6 +16,7 @@ impl Task for ManageJoinedInterface {
     }
 
     async fn check_fulfilled(&self) -> anyhow::Result<TaskFulfilled> {
+        // TODO: check pre-requisite that bridge interface needs to be present
         let joined = self.network_interface_manager
             .find_interfaces_joined_to_bridge(&self.parameter.value.bridge).await?
             .into_iter()
