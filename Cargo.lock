@@ -759,9 +759,9 @@ dependencies = [
 
 [[package]]
 name = "cicero"
-version = "0.3.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6190b189fba3bf9d1cf01c66d2a3642b19b010b0d2360a2d4b8edcb3238e4f0f"
+checksum = "083ee1ff409f58f8f57ee654076c7e94f5890caf3e0ed8191115774f0adc41de"
 dependencies = [
  "anyhow",
  "cicero_commands",
@@ -774,26 +774,26 @@ dependencies = [
 
 [[package]]
 name = "cicero_commands"
-version = "0.3.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b910ebc9c1ad9d989981d756bf40a88420b4a3e52d8c3508c4217e38a667a3b1"
+checksum = "31a36f7f9f659c0dbcc96a3ae2fd91461e84f3fc8a4e22e01f001530f64101fe"
 dependencies = [
  "anyhow",
- "cargo_metadata",
  "cicero_core",
  "cicero_path",
  "cicero_path_core",
  "clap",
  "indoc",
+ "repo_path_lib",
  "tracing",
  "which 7.0.2",
 ]
 
 [[package]]
 name = "cicero_core"
-version = "0.3.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "db70446ffb79b752ca29514854e3a414f540ec12ff57812087dd6ed7d5bf99b3"
+checksum = "50575297f0d95200a5cbcb21e1c9c8c75b150c7f1786bebc7dee6dcadfee9d0a"
 dependencies = [
  "anyhow",
  "tracing",
@@ -801,9 +801,9 @@ dependencies = [
 
 [[package]]
 name = "cicero_path"
-version = "0.3.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "36b97d3aaa61cb825f1fa16d1ca1653a206aeac96f18bd1f5e08300722e6fd57"
+checksum = "c3c1c303784582b19a6fd60062d568882f2f5105aa0acc870568ec62808c5ad9"
 dependencies = [
  "cicero_path_core",
  "repo_path",
@@ -811,10 +811,11 @@ dependencies = [
 
 [[package]]
 name = "cicero_path_core"
-version = "0.3.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee442a5f0f8014e6ce01962917ff4bcd5d3704e4cfa604fefd7cc5a336306920"
+checksum = "325fd3efe99bff06dea493d6b6b579954c72430c8dad440ae611a1353fae6cda"
 dependencies = [
+ "cargo_metadata",
  "tracing",
 ]
 
@@ -5034,21 +5035,31 @@ checksum = "ba39f3699c378cd8970968dcbff9c43159ea4cfbd88d43c00b22f2ef10a435d2"
 
 [[package]]
 name = "repo_path"
-version = "1.1.0"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2587634f3f9817c2aa0ac2bdd80a139cfab19d384d96400826a0dac4e9532b69"
+checksum = "0936ec0f99246b22ea08159e330224d5d7e8bc0907989c7deee5b4c549ca02ee"
 dependencies = [
- "git2",
- "quote",
- "repo_path_lib",
- "syn 2.0.98",
+ "repo_path_macro",
 ]
 
 [[package]]
 name = "repo_path_lib"
-version = "1.1.0"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "959b23561b61ee422be767c27ef07469f32f235eb1c61d0f266c962e63706caa"
+checksum = "b1c49df9c62c5814a430b0cfb4e6d52cc2fe780f35790e035abf3ddab60445cc"
+
+[[package]]
+name = "repo_path_macro"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e9da3404779ae6efc9d7d2875ee8e8ef287cf57d902679d6e2712f2473d6a52d"
+dependencies = [
+ "libgit2-sys",
+ "proc-macro2",
+ "quote",
+ "repo_path_lib",
+ "syn 2.0.98",
+]
 
 [[package]]
 name = "reqwest"

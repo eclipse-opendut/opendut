@@ -60,7 +60,7 @@ cargo_metadata = "0.19.1"
 cargo_toml = "0.22.1"
 cfg-if = "1.0.0"
 chrono = { version = "0.4.39", default-features = false }
-cicero = "0.3.0"
+cicero = "0.4.1"
 clap = "4.5.28"
 clap_complete = "4.5.44"
 cli-table = "0.4"
