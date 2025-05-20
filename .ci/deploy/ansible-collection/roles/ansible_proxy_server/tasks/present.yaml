@@ -1,0 +1,32 @@
+- name: Create download dir for proxy server
+  file:
+    state: directory
+    dest: "{{ ansible_proxy_server_controller_proxy_dir }}"
+
+- name: Download proxy server onto Ansible Controller
+  unarchive:
+    src: "https://github.com/genotrance/px/releases/download/{{ ansible_proxy_server_pxproxy_version }}/px-{{ ansible_proxy_server_pxproxy_version }}-{{ ansible_proxy_server_pxproxy_target }}.tar.gz"
+    remote_src: true
+    dest: "{{ ansible_proxy_server_controller_proxy_dir }}"
+
+
+- name: Run px-proxy
+  shell: "{{ ansible_proxy_server_controller_proxy_executable }} --config={{ role_path }}/files/px-proxy.ini &"
+
+
+- name: Detect proxy server IP
+  shell: "ip -json address show | jq -r .[].addr_info[].local | grep 10.42.0."
+  register: _ansible_proxy_server_ip
+  ignore_errors: yes
+
+- fail:
+    msg: “Error while detecting proxy server IP. Make sure you're connected to the hotspot of the Raspberry Pi.”
+  when: _ansible_proxy_server_ip.rc != 0
+
+- name: Set ansible_proxy_server_ip fact
+  set_fact:
+    ansible_proxy_server_ip: "{{ _ansible_proxy_server_ip.stdout }}"
+
+- name: Set ansible_proxy_server_port fact
+  set_fact:
+    ansible_proxy_server_port: 3127  #from files/px-proxy.ini

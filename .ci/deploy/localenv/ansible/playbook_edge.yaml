@@ -121,6 +121,8 @@
 - name: Install Cannelloni
   hosts: edge
   gather_facts: false
+  tags:
+    - needs_internet
   vars:
     arch_map:
       x86_64: "manylinux_2_28-x64"
@@ -138,16 +140,34 @@
         state: stopped
       when: edgar_service_status.stat.exists
 
-    - name: Install can-utils
-      apt:
-        name: "can-utils"
-        state: present
+    - block:
+      - name: Activate Ansible Controller proxy
+        import_role:
+          name: eclipse_opendut.opendut.ansible_proxy_server
+        delegate_to: localhost
 
-    - name: Download and unpack Cannelloni
-      unarchive:
-        src: "https://github.com/eclipse-opendut/cannelloni-build/releases/download/v1.1.0/cannelloni_{{ arch_map[cpu_arch] }}_1.1.0.tar.gz"
-        remote_src: true
-        dest: "{{ cannelloni_dir }}"
+      - name: Install can-utils
+        apt:
+          name: "can-utils"
+          state: present
+        environment:
+          http_proxy: "http://{{ ansible_proxy_server_ip }}:{{ ansible_proxy_server_port }}/"
+
+      - name: Download and unpack Cannelloni
+        unarchive:
+          src: "https://github.com/eclipse-opendut/cannelloni-build/releases/download/v1.1.0/cannelloni_{{ arch_map[cpu_arch] }}_1.1.0.tar.gz"
+          remote_src: true
+          dest: "{{ cannelloni_dir }}"
+        environment:
+          https_proxy: "http://{{ ansible_proxy_server_ip }}:{{ ansible_proxy_server_port }}/"
+
+      always:
+        - name: Deactivate Ansible Controller proxy
+          import_role:
+            name: eclipse_opendut.opendut.ansible_proxy_server
+          vars:
+            ansible_proxy_server_state: "absent"
+          delegate_to: localhost
 
     - name: Copy Cannelloni into OS PATH
       shell:

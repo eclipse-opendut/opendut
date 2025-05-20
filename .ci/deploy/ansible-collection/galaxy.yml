@@ -1,0 +1,5 @@
+namespace: "eclipse_opendut"
+name: "opendut"
+version: "0.1.0"
+readme: "README.md"
+authors:

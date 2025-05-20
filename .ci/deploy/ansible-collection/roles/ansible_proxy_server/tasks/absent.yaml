@@ -1,0 +1,2 @@
+- name: Kill pxproxy processes
+  command: "killall {{ ansible_proxy_server_controller_proxy_executable }}"
