@@ -33,15 +33,14 @@ fn make_distribution_with_cargo() -> crate::Result {
 
 fn enumerate_distribution_tar_files(dist_path: PathBuf) -> Vec<String> {
     let paths = fs::read_dir(dist_path).unwrap();
-    let files = paths.into_iter()
+    paths.into_iter()
         .map(|path| { path.unwrap().path() })
         .filter(|path| {
             let file_name = path.file_name().unwrap().to_str().unwrap();
             file_name.contains("opendut") && file_name.contains(".tar.gz")
         })
         .map(|path| path.file_name().unwrap().to_str().unwrap().to_owned())
-        .collect::<Vec<_>>();
-    files
+        .collect::<Vec<_>>()
 }
 
 fn assert_exactly_one_distribution_of_each_component(expected_dist_files: &[&str], files: &[String]) -> crate::Result {

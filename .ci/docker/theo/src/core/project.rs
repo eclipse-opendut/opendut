@@ -162,8 +162,7 @@ impl ProjectRootDir for PathBuf {
 
 fn get_docker_group_id() -> String {
     let docker_getent_group = consume_output(Command::new("getent").arg("group").arg("docker").output()).expect("Failed to get docker group.");
-    let docker_group_id = docker_getent_group.split(':').nth(2).expect("Failed to get docker group id").to_string();
-    docker_group_id
+    docker_getent_group.split(':').nth(2).expect("Failed to get docker group id").to_string()
 }
 
 
