@@ -1,4 +1,4 @@
-FROM ubuntu:22.04 AS cannelloni-builder
+FROM ubuntu:24.04 AS cannelloni-builder
 ARG cannelloni_version=1.1.0
 
 RUN apt update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -11,11 +11,11 @@ RUN echo "0dcb9277b21f916f5646574b9b2229d3b8e97d5e99b935a4d0b7509a5f0ccdcd canne
 RUN tar --strip-components=1 -xvf cannelloni-${cannelloni_version}.tar.gz
 RUN cmake -DCMAKE_BUILD_TYPE=Release && make
 
-FROM cruizba/ubuntu-dind:jammy-26.0.1
+FROM cruizba/ubuntu-dind:noble-28.1.1
 
 RUN apt update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     tzdata ca-certificates \
-    iproute2 bind9-dnsutils iputils-ping fping iptables wireguard-tools tcpdump netcat \
+    iproute2 bind9-dnsutils iputils-ping fping iptables wireguard-tools tcpdump netcat-traditional \
     curl jq uuid-runtime less bridge-utils \
     python3 python3-requests python3-flask \
     python3-can can-utils libsctp1 vim

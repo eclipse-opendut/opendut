@@ -87,10 +87,7 @@ fn run_edgar_integration_test_binary_in_docker(edgar_test_binary: String) -> any
 }
 
 fn determine_test_binary_directory() -> anyhow::Result<String> {
-    let target_directory = repo_path!().join("target");
-    let target_directory = std::env::var("CARGO_TARGET_DIR")
-        .map(PathBuf::from)
-        .unwrap_or(target_directory);
+    let target_directory = cicero::path::target_dir();
     let test_binary_directory = target_directory.join("debug").join("deps");
     let test_binary_directory = test_binary_directory
         .into_os_string().into_string()
