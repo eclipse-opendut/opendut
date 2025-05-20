@@ -26,6 +26,12 @@ client.id = "opendut-lea-client"
 issuer.url = "https://keycloak.internal/realms/opendut/"
 scopes = "openid,profile,email"
 
+[persistence]
+enabled = true
+
+[persistence.database]
+file = "~/.config/opendut/carl/carl.db"
+
 [serve]
 ui.directory = "./opendut-lea/dist/"
 

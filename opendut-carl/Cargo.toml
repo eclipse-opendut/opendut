@@ -39,6 +39,7 @@ pem = { workspace = true, features = ["serde"] }
 prost = { workspace = true }
 redb = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
+shellexpand = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 shadow-formatted-version = { workspace = true }

@@ -219,6 +219,7 @@ impl PersistenceOptions {
                     return Err(LoadError::ParseValue { field, value, source: anyhow!("Path to the database file has to be specified!").into() });
                 }
 
+                let value = shellexpand::tilde(&value).to_string();
                 let path = PathBuf::from(&value);
                 if path.is_relative() {
                     return Err(LoadError::ParseValue { field, value, source: anyhow!("Path to the database file should be absolute!").into() });
