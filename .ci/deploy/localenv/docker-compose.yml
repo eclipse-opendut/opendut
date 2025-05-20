@@ -498,7 +498,6 @@ services:
       - ./data/telemetry/config.alloy:/etc/alloy/config.alloy
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - opendut_local
     depends_on:
       - loki
     networks:
