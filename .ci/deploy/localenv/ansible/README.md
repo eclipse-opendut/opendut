@@ -5,7 +5,7 @@
    sudo apt install ansible
    ```
 
-2. Define an inventory.yaml with parameters for your hosts, for example like so:
+2. Define an `inventory.yaml` with parameters for your hosts, for example like so:
     ```yaml
     backend:
       hosts:
@@ -29,13 +29,9 @@
         opendut-edge2:
           backend: opendut-backend1
           peer_id: "b4ade9ae-d2e4-46ac-84e5-2e7ef7aaca55"
-
-    all:
-      vars:
-        ansible_user: "root"
     ```
 
-3. Make sure you have entries in your SSH config for all the hosts declared in the inventory.yaml.
+3. Make sure you have entries in your SSH config for all the hosts declared in the `inventory.yaml`.
 
 4. Run the scripts like so:
    ```sh
