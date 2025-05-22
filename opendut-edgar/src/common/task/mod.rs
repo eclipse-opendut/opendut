@@ -8,16 +8,26 @@ pub trait Task: Send + Sync {
     /// Short description of the task, which is shown to the user.
     fn description(&self) -> String;
 
-    /// Called before task execution, to check whether the task needs to be executed.
-    /// And called after task execution, to check whether the task execution succeeded.
-    async fn check_fulfilled(&self) -> anyhow::Result<TaskFulfilled>;
+    /// Used to check whether calling [Self::make_present] is necessary.
+    /// And called afterward, to check whether [Self::make_present] was successful.
+    async fn check_present(&self) -> anyhow::Result<TaskStateFulfilled>;
 
-    /// Make changes to the host system.
-    async fn execute(&self) -> anyhow::Result<Success>;
+    /// Roll out the configuration described by this task to the host system.
+    async fn make_present(&self) -> anyhow::Result<Success>;
 }
 
+pub trait TaskAbsent: Task {
+    /// Used to check whether calling [Self::make_absent] is necessary.
+    /// And called afterward, to check whether [Self::make_absent] was successful.
+    async fn check_absent(&self) -> anyhow::Result<TaskStateFulfilled>;
+
+    /// Clean up the configuration described by this task from the host system.
+    async fn make_absent(&self) -> anyhow::Result<Success>;
+}
+
+
 #[derive(Debug, PartialEq, Eq)]
-pub enum TaskFulfilled {
+pub enum TaskStateFulfilled {
     ///Task does not need to be executed, or successfully changed the host system during its execution.
     Yes,
     ///Task needs to be executed, or did not successfully change the host system during its execution.

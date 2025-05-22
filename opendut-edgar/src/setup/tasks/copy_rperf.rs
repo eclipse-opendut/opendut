@@ -1,7 +1,7 @@
 use crate::fs;
 use anyhow::Result;
 use async_trait::async_trait;
-use crate::common::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskStateFulfilled};
 
 pub struct CopyRperf;
 
@@ -11,17 +11,17 @@ impl Task for CopyRperf {
         String::from("Copy the rperf distribution")
     }
 
-    async fn check_fulfilled(&self) -> Result<TaskFulfilled> {
+    async fn check_present(&self) -> Result<TaskStateFulfilled> {
         let rperf_path = crate::common::constants::rperf::executable_install_file();
 
         if rperf_path.exists() {
-            Ok(TaskFulfilled::Yes)
+            Ok(TaskStateFulfilled::Yes)
         } else {
-            Ok(TaskFulfilled::No)
+            Ok(TaskStateFulfilled::No)
         }
     }
     
-    async fn execute(&self) -> Result<Success> {
+    async fn make_present(&self) -> Result<Success> {
         let path_in_edgar_distribution = crate::setup::constants::rperf::path_in_edgar_distribution()?;
         let target_path = crate::common::constants::rperf::executable_install_file();
 

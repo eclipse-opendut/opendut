@@ -10,7 +10,7 @@ use tracing::debug;
 use opendut_types::util::net::Certificate;
 
 use crate::setup::{constants, util};
-use crate::common::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskStateFulfilled};
 use crate::setup::util::{CommandRunner, DefaultCommandRunner};
 
 pub struct WriteCaCertificate {
@@ -29,12 +29,12 @@ impl Task for WriteCaCertificate {
         String::from("Write CA Certificates")
     }
 
-    async fn check_fulfilled(&self) -> anyhow::Result<TaskFulfilled> {
+    async fn check_present(&self) -> anyhow::Result<TaskStateFulfilled> {
 
         if self.carl_ca_certificate_path.exists().not()
         || self.os_cert_store_ca_certificate_path.exists().not() {
             debug!("Previous certificate files don't exist. Task needs execution.");
-            return Ok(TaskFulfilled::No);
+            return Ok(TaskStateFulfilled::No);
         }
 
         let installed_carl_checksum_file = &self.checksum_carl_ca_certificate_file;
@@ -63,14 +63,14 @@ impl Task for WriteCaCertificate {
 
         if installed_carl_checksum == provided_certificate_checksum
         && installed_os_cert_store_checksum == provided_certificate_checksum {
-            Ok(TaskFulfilled::Yes)
+            Ok(TaskStateFulfilled::Yes)
         } else {
             debug!("Previous certificate checksum files exist, but do not match. Task needs execution.");
-            Ok(TaskFulfilled::No)
+            Ok(TaskStateFulfilled::No)
         }
     }
 
-    async fn execute(&self) -> anyhow::Result<Success> {
+    async fn make_present(&self) -> anyhow::Result<Success> {
         let carl_ca_certificate_path = &self.carl_ca_certificate_path;
 
         write_carl_certificate(&self.certificate, carl_ca_certificate_path, &self.checksum_carl_ca_certificate_file)?;
@@ -159,7 +159,7 @@ mod tests {
 
     use opendut_types::util::net::Certificate;
 
-    use crate::common::task::{Task, TaskFulfilled};
+    use crate::common::task::{Task, TaskStateFulfilled};
     use crate::setup::tasks::WriteCaCertificate;
     use crate::setup::util;
     use crate::setup::util::NoopCommandRunner;
@@ -185,9 +185,9 @@ mod tests {
             command_runner: Box::new(NoopCommandRunner),
         };
 
-        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::No);
-        task.execute().await?;
-        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::Yes);
+        assert_eq!(task.check_present().await?, TaskStateFulfilled::No);
+        task.make_present().await?;
+        assert_eq!(task.check_present().await?, TaskStateFulfilled::Yes);
 
         Ok(())
     }
@@ -222,7 +222,7 @@ mod tests {
             command_runner: Box::new(NoopCommandRunner),
         };
 
-        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::No);
+        assert_eq!(task.check_present().await?, TaskStateFulfilled::No);
 
         Ok(())
     }
@@ -258,7 +258,7 @@ mod tests {
         };
 
 
-        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::Yes);
+        assert_eq!(task.check_present().await?, TaskStateFulfilled::Yes);
 
         Ok(())
     }
@@ -287,7 +287,7 @@ mod tests {
             command_runner: Box::new(NoopCommandRunner),
         };
 
-        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::Yes);
+        assert_eq!(task.check_present().await?, TaskStateFulfilled::Yes);
 
         Ok(())
     }

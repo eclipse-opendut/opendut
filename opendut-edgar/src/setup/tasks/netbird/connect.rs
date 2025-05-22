@@ -7,7 +7,7 @@ use url::Url;
 
 use opendut_types::vpn::netbird::SetupKey;
 
-use crate::common::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskStateFulfilled};
 
 const UP_CHECK_RETRIES: usize = 50;
 const UP_CHECK_INTERVAL: Duration = Duration::from_millis(200);
@@ -23,16 +23,16 @@ impl Task for Connect {
     fn description(&self) -> String {
         String::from("NetBird - Connect")
     }
-    async fn check_fulfilled(&self) -> Result<TaskFulfilled> {
+    async fn check_present(&self) -> Result<TaskStateFulfilled> {
         let mut client = opendut_netbird_client_api::client::Client::connect().await?;
         let is_up = client.check_is_up().await?;
         if is_up {
-            Ok(TaskFulfilled::Yes)
+            Ok(TaskStateFulfilled::Yes)
         } else {
-            Ok(TaskFulfilled::No)
+            Ok(TaskStateFulfilled::No)
         }
     }
-    async fn execute(&self) -> Result<Success> {
+    async fn make_present(&self) -> Result<Success> {
         let mut client = opendut_netbird_client_api::client::Client::connect().await?;
 
         client.login(&self.setup_key, &self.management_url, self.mtu).await

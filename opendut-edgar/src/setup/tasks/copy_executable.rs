@@ -5,7 +5,7 @@ use std::process::Command;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use crate::setup::constants::{executable_install_path, PATH_dir, SYSTEMD_SERVICE_FILE_NAME};
-use crate::common::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskStateFulfilled};
 use crate::setup::util;
 
 pub struct CopyExecutable;
@@ -15,7 +15,7 @@ impl Task for CopyExecutable {
     fn description(&self) -> String {
         format!("Copy executable to \"{}\"", executable_install_path().unwrap().display())
     }
-    async fn check_fulfilled(&self) -> Result<TaskFulfilled> {
+    async fn check_present(&self) -> Result<TaskStateFulfilled> {
         let installed_path = executable_install_path()?;
         if installed_path.exists() {
             let installed_digest = util::checksum::file(installed_path)?;
@@ -23,12 +23,12 @@ impl Task for CopyExecutable {
             let unpacked_digest = util::checksum::file(unpacked_path)?;
 
             if installed_digest == unpacked_digest {
-                return Ok(TaskFulfilled::Yes);
+                return Ok(TaskStateFulfilled::Yes);
             }
         }
-        Ok(TaskFulfilled::No)
+        Ok(TaskStateFulfilled::No)
     }
-    async fn execute(&self) -> Result<Success> {
+    async fn make_present(&self) -> Result<Success> {
         let target_path = executable_install_path()?;
         fs::create_dir_all(target_path.parent().unwrap())?;
 

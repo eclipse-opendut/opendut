@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use opendut_types::peer::configuration::{parameter, Parameter, ParameterTarget};
-use crate::common::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskStateFulfilled};
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 
 pub struct ManageJoinedInterface {
@@ -15,7 +15,7 @@ impl Task for ManageJoinedInterface {
         format!("Manage interface '{}' join configuration.", self.parameter.value)
     }
 
-    async fn check_fulfilled(&self) -> anyhow::Result<TaskFulfilled> {
+    async fn check_present(&self) -> anyhow::Result<TaskStateFulfilled> {
         // TODO: check pre-requisite that bridge interface needs to be present
         let joined = self.network_interface_manager
             .find_interfaces_joined_to_bridge(&self.parameter.value.bridge).await?
@@ -24,15 +24,15 @@ impl Task for ManageJoinedInterface {
         
         match (joined, self.parameter.target) {
             (Some(_), ParameterTarget::Absent) | (None, ParameterTarget::Present) => {
-                Ok(TaskFulfilled::No)
+                Ok(TaskStateFulfilled::No)
             }
             (Some(_), ParameterTarget::Present) | (None, ParameterTarget::Absent) => {
-                Ok(TaskFulfilled::Yes)
+                Ok(TaskStateFulfilled::Yes)
             }
         }
     }
 
-    async fn execute(&self) -> anyhow::Result<Success> {
+    async fn make_present(&self) -> anyhow::Result<Success> {
         let joined = self.network_interface_manager
             .find_interfaces_joined_to_bridge(&self.parameter.value.bridge).await?
             .into_iter()

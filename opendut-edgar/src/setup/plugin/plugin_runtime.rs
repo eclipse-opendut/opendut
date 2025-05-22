@@ -115,12 +115,12 @@ impl Host for PluginState {
     }
 }
 
-impl From<TaskFulfilled> for crate::common::task::TaskFulfilled {
+impl From<TaskFulfilled> for crate::common::task::TaskStateFulfilled {
     fn from(value: TaskFulfilled) -> Self {
         match value {
-            TaskFulfilled::Yes => crate::common::task::TaskFulfilled::Yes,
-            TaskFulfilled::No => crate::common::task::TaskFulfilled::No,
-            TaskFulfilled::Unchecked => crate::common::task::TaskFulfilled::Unchecked,
+            TaskFulfilled::Yes => crate::common::task::TaskStateFulfilled::Yes,
+            TaskFulfilled::No => crate::common::task::TaskStateFulfilled::No,
+            TaskFulfilled::Unchecked => crate::common::task::TaskStateFulfilled::Unchecked,
         }
     }
 }

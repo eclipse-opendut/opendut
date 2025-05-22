@@ -1,4 +1,4 @@
-use crate::common::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskStateFulfilled};
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use async_trait::async_trait;
 use netlink_packet_route::link::LinkFlag;
@@ -16,28 +16,28 @@ impl Task for ManageGreInterface {
         format!("Manage GRE interface '{}'", self.parameter.value)
     }
 
-    async fn check_fulfilled(&self) -> anyhow::Result<TaskFulfilled> {
+    async fn check_present(&self) -> anyhow::Result<TaskStateFulfilled> {
         let interface_name = self.parameter.value.interface_name()?;
         let name = self.network_interface_manager.find_interface(&interface_name).await?;
         match (name, self.parameter.target) {
             (Some(_), ParameterTarget::Absent) | (None, ParameterTarget::Present) => {
-                Ok(TaskFulfilled::No)
+                Ok(TaskStateFulfilled::No)
             }
             (Some(interface), ParameterTarget::Present) => {
                 let interface_is_up = interface.link_flag.contains(&LinkFlag::Up);
                 if interface_is_up {
-                    Ok(TaskFulfilled::Yes)
+                    Ok(TaskStateFulfilled::Yes)
                 } else {
-                    Ok(TaskFulfilled::No)
+                    Ok(TaskStateFulfilled::No)
                 }
             }
             (None, ParameterTarget::Absent) => {
-                Ok(TaskFulfilled::Yes)
+                Ok(TaskStateFulfilled::Yes)
             }
         }        
     }
 
-    async fn execute(&self) -> anyhow::Result<Success> {
+    async fn make_present(&self) -> anyhow::Result<Success> {
         let interface_name = self.parameter.value.interface_name()?;
         let name = self.network_interface_manager.find_interface(&interface_name).await?;
         match (name, self.parameter.target) {

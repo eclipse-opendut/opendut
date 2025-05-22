@@ -6,7 +6,7 @@ use anyhow::{Context, Result};
 use async_trait::async_trait;
 use crate::setup::User;
 
-use crate::common::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskStateFulfilled};
 use crate::setup::util::EvaluateRequiringSuccess;
 
 fn passwd_file() -> PathBuf { PathBuf::from("/etc/passwd") }
@@ -21,7 +21,7 @@ impl Task for CreateUser {
         format!("Create User \"{}\"", self.service_user.name)
     }
 
-    async fn check_fulfilled(&self) -> Result<TaskFulfilled> {
+    async fn check_present(&self) -> Result<TaskStateFulfilled> {
         let passwd = fs::read_to_string(passwd_file())?;
 
         let user_exists = passwd.lines()
@@ -31,13 +31,13 @@ impl Task for CreateUser {
             });
 
         if user_exists {
-            Ok(TaskFulfilled::Yes)
+            Ok(TaskStateFulfilled::Yes)
         } else {
-            Ok(TaskFulfilled::No)
+            Ok(TaskStateFulfilled::No)
         }
     }
 
-    async fn execute(&self) -> Result<Success> {
+    async fn make_present(&self) -> Result<Success> {
         Command::new("useradd")
             .arg("--no-create-home")
             .arg(&self.service_user.name)

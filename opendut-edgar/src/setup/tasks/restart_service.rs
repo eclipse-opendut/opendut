@@ -3,7 +3,7 @@ use std::process::Command;
 use anyhow::Result;
 use async_trait::async_trait;
 use crate::setup::constants::SYSTEMD_SERVICE_FILE_NAME;
-use crate::common::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskStateFulfilled};
 use crate::setup::util::EvaluateRequiringSuccess;
 
 pub struct RestartService;
@@ -13,10 +13,10 @@ impl Task for RestartService {
     fn description(&self) -> String {
         String::from("(Re-)Start Service")
     }
-    async fn check_fulfilled(&self) -> Result<TaskFulfilled> {
-        Ok(TaskFulfilled::Unchecked)
+    async fn check_present(&self) -> Result<TaskStateFulfilled> {
+        Ok(TaskStateFulfilled::Unchecked)
     }
-    async fn execute(&self) -> Result<Success> {
+    async fn make_present(&self) -> Result<Success> {
         Command::new("systemctl")
             .arg("stop")
             .arg(SYSTEMD_SERVICE_FILE_NAME)

@@ -12,7 +12,7 @@ use opendut_types::util::net::NetworkInterfaceName;
 use crate::service::network_interface::gre;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use crate::setup::Leader;
-use crate::common::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskStateFulfilled};
 
 pub struct CreateGreInterfaces {
     pub network_interface_manager: NetworkInterfaceManagerRef,
@@ -25,10 +25,10 @@ impl Task for CreateGreInterfaces {
     fn description(&self) -> String {
         String::from("Create GRE interfaces for Peers")
     }
-    async fn check_fulfilled(&self) -> Result<TaskFulfilled> {
-        Ok(TaskFulfilled::Unchecked)
+    async fn check_present(&self) -> Result<TaskStateFulfilled> {
+        Ok(TaskStateFulfilled::Unchecked)
     }
-    async fn execute(&self) -> Result<Success> {
+    async fn make_present(&self) -> Result<Success> {
         let mut netbird_client = opendut_netbird_client_api::client::Client::connect().await?;
 
         let full_status = netbird_client.full_status().await

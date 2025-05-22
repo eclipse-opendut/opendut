@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use anyhow::{Result, bail};
 use async_trait::async_trait;
 use crate::setup::util::running_in_docker;
-use crate::common::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskStateFulfilled};
 
 pub struct LoadKernelModules{
     loaded_module_file: PathBuf,
@@ -20,15 +20,15 @@ impl Task for LoadKernelModules {
 
         format!("Load Kernel Modules {kernel_modules_str}")
     }
-    async fn check_fulfilled(&self) -> Result<TaskFulfilled> {
+    async fn check_present(&self) -> Result<TaskStateFulfilled> {
         for kernel_module in opendut_edgar_kernel_modules::required_kernel_modules() {
             if ! kernel_module.is_loaded(&self.loaded_module_file, &self.builtin_module_dir)? {
-                return Ok(TaskFulfilled::No)
+                return Ok(TaskStateFulfilled::No)
             }
         }
-        Ok(TaskFulfilled::Yes)
+        Ok(TaskStateFulfilled::Yes)
     }
-    async fn execute(&self) -> Result<Success> {
+    async fn make_present(&self) -> Result<Success> {
         if running_in_docker() {
             bail!("Cannot load kernel modules from within Docker. Modules must be loaded from the host.");
         }
@@ -58,7 +58,7 @@ mod tests {
     use assert_fs::TempDir;
     use indoc::indoc;
     use rstest::{fixture, rstest};
-    use crate::common::task::{Task, TaskFulfilled};
+    use crate::common::task::{Task, TaskStateFulfilled};
     use crate::setup::tasks::LoadKernelModules;
 
     #[rstest]
@@ -73,7 +73,7 @@ mod tests {
             builtin_module_dir: fixture.builtin_module_dir.to_path_buf(),
         };
 
-        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::No);
+        assert_eq!(task.check_present().await?, TaskStateFulfilled::No);
 
         fixture.loaded_module_file.write_str(indoc!(r"
             vcan 12288 0 - Live 0x0000000000000000
@@ -81,7 +81,7 @@ mod tests {
             can_gw 32768 0 - Live 0x0000000000000000
         "))?;
 
-        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::Yes);
+        assert_eq!(task.check_present().await?, TaskStateFulfilled::Yes);
         Ok(())
     }
 
@@ -96,14 +96,14 @@ mod tests {
             builtin_module_dir: fixture.builtin_module_dir.to_path_buf(),
         };
 
-        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::No);
+        assert_eq!(task.check_present().await?, TaskStateFulfilled::No);
         
         for module in ["vcan", "can_gw"] {
             let module_dir = fixture.builtin_module_dir.child(module);
             fs::create_dir_all(&module_dir)?;
         }
         
-        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::Yes);
+        assert_eq!(task.check_present().await?, TaskStateFulfilled::Yes);
         Ok(())
     }
     

@@ -4,7 +4,7 @@ use config::Config;
 
 use crate::common;
 use crate::common::settings;
-use crate::common::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskStateFulfilled};
 
 pub struct CheckCarlReachable;
 
@@ -13,10 +13,10 @@ impl Task for CheckCarlReachable {
     fn description(&self) -> String {
         String::from("Check CARL Reachable")
     }
-    async fn check_fulfilled(&self) -> Result<TaskFulfilled> {
-        Ok(TaskFulfilled::Unchecked)
+    async fn check_present(&self) -> Result<TaskStateFulfilled> {
+        Ok(TaskStateFulfilled::Unchecked)
     }
-    async fn execute(&self) -> Result<Success> {
+    async fn make_present(&self) -> Result<Success> {
         let settings = settings::load_with_overrides(Config::default())?;
 
         let _ = common::carl::connect(&settings.config).await

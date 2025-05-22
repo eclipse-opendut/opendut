@@ -1,6 +1,6 @@
 use tracing::{debug, error, info};
 
-use crate::common::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskStateFulfilled};
 use crate::common::task::progress_bar::ProgressBarForCLI;
 
 pub async fn run(run_mode: RunMode, tasks: &[Box<dyn Task>]) -> Result<(), TaskExecutionError> {
@@ -33,17 +33,17 @@ async fn run_tasks(
     let progress_style = ProgressBarForCLI::progress_style();
     for task in tasks {
         let progress_bar_cli = ProgressBarForCLI::new(task.description(), run_mode, progress_style.clone());
-        let is_fulfilled = task.check_fulfilled()
+        let is_fulfilled = task.check_present()
             .await
             .map_err(|error| TaskExecutionError::DetermineSystemStateBefore { task_name: task.description(), error })?;
 
         let outcome = match is_fulfilled {
-            TaskFulfilled::Yes => Outcome::Unchanged,
-            TaskFulfilled::No | TaskFulfilled::Unchecked => {
+            TaskStateFulfilled::Yes => Outcome::Unchanged,
+            TaskStateFulfilled::No | TaskStateFulfilled::Unchecked => {
                 if run_mode == RunMode::SetupDryRun {
                     Outcome::DryRun
                 } else {
-                    let result = task.execute()
+                    let result = task.make_present()
                         .await;
                     progress_bar_cli.finish_and_clear();
                     match result {
@@ -58,10 +58,10 @@ async fn run_tasks(
         progress_bar_cli.finish_and_clear();
 
         if let Outcome::Changed(_) = outcome {
-            match task.check_fulfilled().await {
+            match task.check_present().await {
                 Ok(fulfillment) => match fulfillment {
-                    TaskFulfilled::Yes | TaskFulfilled::Unchecked => {}, //do nothing
-                    TaskFulfilled::No => {
+                    TaskStateFulfilled::Yes | TaskStateFulfilled::Unchecked => {}, //do nothing
+                    TaskStateFulfilled::No => {
                         return Err(TaskExecutionError::UnfulfilledTask { task_name: task.description() });
                     }
                 }

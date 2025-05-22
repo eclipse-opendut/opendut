@@ -37,7 +37,7 @@ impl Task for SetupPluginStore {
         thread.join().expect("Failed to join thread for reading description")
     }
 
-    async fn check_fulfilled(&self) -> anyhow::Result<crate::common::task::TaskFulfilled> {
+    async fn check_present(&self) -> anyhow::Result<crate::common::task::TaskStateFulfilled> {
         let store = self.store.clone();
         let instance = self.instance.clone();
 
@@ -56,7 +56,7 @@ impl Task for SetupPluginStore {
         }
     }
 
-    async fn execute(&self) -> anyhow::Result<crate::common::task::Success> {
+    async fn make_present(&self) -> anyhow::Result<crate::common::task::Success> {
         let store = self.store.clone();
         let instance = self.instance.clone();
         

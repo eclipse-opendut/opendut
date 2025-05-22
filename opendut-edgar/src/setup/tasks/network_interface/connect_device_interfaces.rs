@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use opendut_types::util::net::NetworkInterfaceName;
 
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
-use crate::common::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskStateFulfilled};
 
 pub struct ConnectDeviceInterfaces {
     pub network_interface_manager: NetworkInterfaceManagerRef,
@@ -18,10 +18,10 @@ impl Task for ConnectDeviceInterfaces {
     fn description(&self) -> String {
         String::from("Connect Interfaces of Configured Test Devices")
     }
-    async fn check_fulfilled(&self) -> Result<TaskFulfilled> {
-        Ok(TaskFulfilled::Unchecked)
+    async fn check_present(&self) -> Result<TaskStateFulfilled> {
+        Ok(TaskStateFulfilled::Unchecked)
     }
-    async fn execute(&self) -> Result<Success> {
+    async fn make_present(&self) -> Result<Success> {
         let bridge = self.network_interface_manager.try_find_interface(&self.bridge_name).await?;
 
         for interface in &self.device_interfaces {

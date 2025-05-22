@@ -1,13 +1,12 @@
-use crate::common::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskAbsent, TaskStateFulfilled};
+use crate::service::network_interface::manager::altname::OPENDUT_ALTERNATIVE_INTERFACE_NAME_PREFIX;
 use crate::service::network_interface::manager::interface::NetlinkInterfaceKind;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use async_trait::async_trait;
 use netlink_packet_route::link::LinkFlag;
-use tracing::{warn};
 use opendut_types::peer::configuration::parameter;
 use opendut_types::peer::configuration::{Parameter, ParameterTarget};
-use crate::common::new_task::NewTask;
-use crate::service::network_interface::manager::altname::OPENDUT_ALTERNATIVE_INTERFACE_NAME_PREFIX;
+use tracing::warn;
 
 pub struct CreateEthernetBridge {
     pub parameter: Parameter<parameter::EthernetBridge>,
@@ -15,32 +14,70 @@ pub struct CreateEthernetBridge {
 }
 
 #[async_trait]
-impl NewTask for CreateEthernetBridge {
-
+impl Task for CreateEthernetBridge {
     fn description(&self) -> String {
         format!("Create bridge '{}'", self.parameter.value.name)
     }
 
-    async fn check_present(&self) -> anyhow::Result<TaskFulfilled> {
-        let interface = self.network_interface_manager.find_interface(&self.parameter.value.name).await?;
-        match interface {
-            Some(bridge) => {
-                let interface_is_up = bridge.link_flag.contains(&LinkFlag::Up);
-                if NetlinkInterfaceKind::Bridge == bridge.kind && interface_is_up {
-                    Ok(TaskFulfilled::Yes)
-                } else {
-                    Ok(TaskFulfilled::No)
+    async fn check_present(&self) -> anyhow::Result<TaskStateFulfilled> {
+        match self.parameter.target {
+            ParameterTarget::Present => {
+                let interface = self.network_interface_manager.find_interface(&self.parameter.value.name).await?;
+                match interface {
+                    Some(bridge) => {
+                        let interface_is_up = bridge.link_flag.contains(&LinkFlag::Up);
+                        if NetlinkInterfaceKind::Bridge == bridge.kind && interface_is_up {
+                            Ok(TaskStateFulfilled::Yes)
+                        } else {
+                            Ok(TaskStateFulfilled::No)
+                        }
+                    },
+                    None => Ok(TaskStateFulfilled::No),
                 }
             },
-            None => Ok(TaskFulfilled::No),
+            ParameterTarget::Absent => { //TODO decide present/absent in the runner rather than here
+                self.check_absent().await
+            }
         }
     }
 
-    async fn check_absent(&self) -> anyhow::Result<TaskFulfilled> {
+    async fn make_present(&self) -> anyhow::Result<Success> {
+        match self.parameter.target {
+            ParameterTarget::Present => {
+                let interface = self.network_interface_manager.find_interface(&self.parameter.value.name).await?;
+
+                match interface {
+                    None => {
+                        let bridge = self.network_interface_manager.create_empty_bridge(&self.parameter.value.name).await?;
+                        self.network_interface_manager.set_opendut_alternative_name(&bridge).await?;
+                        self.network_interface_manager.set_interface_up(&bridge).await?;
+
+                        Ok(Success::default())
+                    }
+                    Some(bridge) => {
+                        if NetlinkInterfaceKind::Bridge == bridge.kind {
+                            self.network_interface_manager.set_interface_up(&bridge).await?;
+                            Ok(Success::default())
+                        } else {
+                            Err(anyhow::Error::msg(format!("Another interface with that name exists but it has an unexpected interface kind: <{:?}>!", bridge.kind)))
+                        }
+
+                    }
+                }
+            }
+            ParameterTarget::Absent => { //TODO decide present/absent in the runner rather than here
+                self.make_absent().await
+            }
+        }
+    }
+}
+
+impl TaskAbsent for CreateEthernetBridge {
+    async fn check_absent(&self) -> anyhow::Result<TaskStateFulfilled> {
         let interface = self.network_interface_manager.find_interface(&self.parameter.value.name).await?;
         match interface {
-            None => { Ok(TaskFulfilled::Yes) },
-            Some(_) => { Ok(TaskFulfilled::No) },
+            None => { Ok(TaskStateFulfilled::Yes) },
+            Some(_) => { Ok(TaskStateFulfilled::No) },
         }
     }
 
@@ -70,72 +107,21 @@ impl NewTask for CreateEthernetBridge {
             }
         }
     }
-
-    async fn make_present(&self) -> anyhow::Result<Success> {
-        let interface = self.network_interface_manager.find_interface(&self.parameter.value.name).await?;
-
-        match interface {
-            None => {
-                let bridge = self.network_interface_manager.create_empty_bridge(&self.parameter.value.name).await?;
-                self.network_interface_manager.set_opendut_alternative_name(&bridge).await?;
-                self.network_interface_manager.set_interface_up(&bridge).await?;
-
-                Ok(Success::default())
-            }
-            Some(bridge) => {
-                if NetlinkInterfaceKind::Bridge == bridge.kind {
-                    self.network_interface_manager.set_interface_up(&bridge).await?;
-                    Ok(Success::default())
-                } else {
-                    Err(anyhow::Error::msg(format!("Another interface with that name exists but it has an unexpected interface kind: <{:?}>!", bridge.kind)))
-                }
-
-            }
-        }
-    }
 }
 
-#[async_trait]
-impl Task for CreateEthernetBridge {
-    fn description(&self) -> String {
-        format!("Create bridge '{}'", self.parameter.value.name)
-    }
-
-    async fn check_fulfilled(&self) -> anyhow::Result<TaskFulfilled> {
-        match self.parameter.target {
-            ParameterTarget::Present => {
-                self.check_present().await
-            },
-            ParameterTarget::Absent => {
-                self.check_absent().await
-            }
-        }
-    }
-
-    async fn execute(&self) -> anyhow::Result<Success> {
-        match self.parameter.target {
-            ParameterTarget::Present => {
-                self.make_present().await
-            }
-            ParameterTarget::Absent => {
-                self.make_absent().await
-            }
-        }
-    }
-}
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-    use rand::Rng;
-    use uuid::Uuid;
-    use opendut_types::peer::configuration::parameter;
-    use opendut_types::peer::configuration::ParameterId;
-    use opendut_types::util::net::NetworkInterfaceName;
+    use super::*;
     use crate::common::task::runner;
     use crate::service::network_interface::manager::NetworkInterfaceManager;
     use crate::setup::RunMode;
-    use super::*;
+    use opendut_types::peer::configuration::parameter;
+    use opendut_types::peer::configuration::ParameterId;
+    use opendut_types::util::net::NetworkInterfaceName;
+    use rand::Rng;
+    use std::sync::Arc;
+    use uuid::Uuid;
 
     #[test_with::env(RUN_EDGAR_NETLINK_INTEGRATION_TESTS)]
     #[test_log::test(tokio::test)]

@@ -3,7 +3,7 @@ use std::process::Command;
 use anyhow::Result;
 use async_trait::async_trait;
 use crate::setup::constants::netbird;
-use crate::common::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskStateFulfilled};
 use crate::setup::util::EvaluateRequiringSuccess;
 
 pub struct InstallService;
@@ -13,19 +13,19 @@ impl Task for InstallService {
     fn description(&self) -> String {
         String::from("NetBird - Install Service")
     }
-    async fn check_fulfilled(&self) -> Result<TaskFulfilled> {
+    async fn check_present(&self) -> Result<TaskStateFulfilled> {
         let output = Command::new("systemctl")
             .arg("cat")
             .arg("netbird")
             .output()?;
 
         if output.status.success() {
-            Ok(TaskFulfilled::Yes)
+            Ok(TaskStateFulfilled::Yes)
         } else {
-            Ok(TaskFulfilled::No)
+            Ok(TaskStateFulfilled::No)
         }
     }
-    async fn execute(&self) -> Result<Success> {
+    async fn make_present(&self) -> Result<Success> {
         let netbird = netbird::unpacked_executable()?;
 
         let _ = Command::new(netbird)

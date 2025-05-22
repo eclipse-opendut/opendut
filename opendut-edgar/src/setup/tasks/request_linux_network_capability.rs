@@ -3,7 +3,7 @@ use std::process::Command;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use crate::setup::constants;
-use crate::common::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskStateFulfilled};
 use crate::setup::util::EvaluateRequiringSuccess;
 
 /// The EDGAR Service needs to modify network interfaces.
@@ -15,7 +15,7 @@ impl Task for RequestLinuxNetworkCapability {
     fn description(&self) -> String {
         String::from("Linux Network Capability")
     }
-    async fn check_fulfilled(&self) -> Result<TaskFulfilled> {
+    async fn check_present(&self) -> Result<TaskStateFulfilled> {
         let getcap = which::which("getcap")
             .context(String::from("No command `getcap` found. Ensure your system provides this command."))?;
 
@@ -25,12 +25,12 @@ impl Task for RequestLinuxNetworkCapability {
             .context(format!("Error while determining Linux Capabilities of executable at: {}", constants::executable_install_path()?.display()))?;
 
         if output.stdout.is_empty() {
-            Ok(TaskFulfilled::No)
+            Ok(TaskStateFulfilled::No)
         } else {
-            Ok(TaskFulfilled::Yes)
+            Ok(TaskStateFulfilled::Yes)
         }
     }
-    async fn execute(&self) -> Result<Success> {
+    async fn make_present(&self) -> Result<Success> {
         let setcap = which::which("setcap")
             .context(String::from("No command `setcap` found. Ensure your system provides this command."))?;
 

@@ -4,7 +4,7 @@ use std::process::Command;
 
 use anyhow::{Context, Result};
 use async_trait::async_trait;
-use crate::common::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskStateFulfilled};
 use crate::setup::constants::executable_install_path;
 use crate::setup::constants::SYSTEMD_SERVICE_FILE_NAME;
 use crate::setup::{User, util};
@@ -61,19 +61,19 @@ impl Task for CreateServiceFile {
     fn description(&self) -> String {
         String::from("Create Service File")
     }
-    async fn check_fulfilled(&self) -> Result<TaskFulfilled> {
+    async fn check_present(&self) -> Result<TaskStateFulfilled> {
         let unpacked_systemd_checksum_file = &self.checksum_systemd_file;
         if unpacked_systemd_checksum_file.exists() {
             let systemd_installed_digest = fs::read(unpacked_systemd_checksum_file)?;
             let systemd_distribution_digest = util::checksum::string(systemd_file_content(&self.service_user))?;
 
             if systemd_installed_digest == systemd_distribution_digest {
-                return Ok(TaskFulfilled::Yes);
+                return Ok(TaskStateFulfilled::Yes);
             }
         }
-        Ok(TaskFulfilled::No)
+        Ok(TaskStateFulfilled::No)
     }
-    async fn execute(&self) -> Result<Success> {
+    async fn make_present(&self) -> Result<Success> {
         let out_path = &self.systemd_file_path;
         fs::create_dir_all(out_path.parent().unwrap())?;
         
@@ -113,7 +113,7 @@ mod tests {
     use assert_fs::TempDir;
 
     use crate::setup::constants::SYSTEMD_SERVICE_FILE_NAME;
-    use crate::common::task::{Task, TaskFulfilled};
+    use crate::common::task::{Task, TaskStateFulfilled};
     use crate::setup::tasks::CreateServiceFile;
     use crate::setup::User;
     use crate::setup::util::NoopCommandRunner;
@@ -133,9 +133,9 @@ mod tests {
             command_runner: Box::new(NoopCommandRunner),
         };
 
-        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::No);
-        task.execute().await?;
-        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::Yes);
+        assert_eq!(task.check_present().await?, TaskStateFulfilled::No);
+        task.make_present().await?;
+        assert_eq!(task.check_present().await?, TaskStateFulfilled::Yes);
 
         Ok(())
     }

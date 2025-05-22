@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use flate2::read::GzDecoder;
 
 use crate::setup::{constants, util};
-use crate::common::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskStateFulfilled};
 
 pub struct Unpack {
     from: PathBuf,
@@ -20,7 +20,7 @@ impl Task for Unpack {
     fn description(&self) -> String {
         String::from("NetBird - Unpack")
     }
-    async fn check_fulfilled(&self) -> Result<TaskFulfilled> {
+    async fn check_present(&self) -> Result<TaskStateFulfilled> {
 
         let unpacked_checksum_file = &self.checksum_unpack_file;
         if unpacked_checksum_file.exists() {
@@ -28,12 +28,12 @@ impl Task for Unpack {
             let distribution_digest = util::checksum::file(&self.from)?;
 
             if installed_digest == distribution_digest {
-                return Ok(TaskFulfilled::Yes);
+                return Ok(TaskStateFulfilled::Yes);
             }
         }
-        Ok(TaskFulfilled::No)
+        Ok(TaskStateFulfilled::No)
     }
-    async fn execute(&self) -> Result<Success> {
+    async fn make_present(&self) -> Result<Success> {
         let archive = File::open(&self.from)
             .context(format!("Failed to open NetBird distribution file at '{}'.", self.from.display()))?;
         let archive = GzDecoder::new(archive);
@@ -67,7 +67,7 @@ mod tests {
     use assert_fs::prelude::*;
     use assert_fs::TempDir;
     
-    use crate::common::task::{Task, TaskFulfilled};
+    use crate::common::task::{Task, TaskStateFulfilled};
     use crate::setup::tasks::netbird::Unpack;
     use crate::setup::util;
 
@@ -88,7 +88,7 @@ mod tests {
             checksum_unpack_file: checksum_file_path.to_path_buf(),
         };
 
-        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::No);
+        assert_eq!(task.check_present().await?, TaskStateFulfilled::No);
         
         checksum_file_path.write_binary(&util::checksum::file(from.path())?)?;
 
@@ -98,7 +98,7 @@ mod tests {
             checksum_unpack_file: checksum_file_path.to_path_buf(),
         };
 
-        assert_eq!(task.check_fulfilled().await?, TaskFulfilled::Yes);
+        assert_eq!(task.check_present().await?, TaskStateFulfilled::Yes);
 
         Ok(())
     }

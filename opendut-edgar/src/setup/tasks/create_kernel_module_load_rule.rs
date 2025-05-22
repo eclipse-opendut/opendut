@@ -5,7 +5,7 @@ use anyhow::{Context, Result};
 use async_trait::async_trait;
 use opendut_edgar_kernel_modules::{required_kernel_modules, KernelModule};
 
-use crate::common::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskStateFulfilled};
 use crate::setup::constants::KERNEL_MODULE_LOAD_RULE_PREFIX;
 
 // Returns the file path for the configuation file that causes the kernel module to be loaded during boot
@@ -44,18 +44,18 @@ impl Task for CreateKernelModuleLoadRule {
 
         format!("Create rules to load kernel modules {kernel_modules_str} at boot time")
     }
-    async fn check_fulfilled(&self) -> Result<TaskFulfilled> {
+    async fn check_present(&self) -> Result<TaskStateFulfilled> {
         for kernel_module in required_kernel_modules() {
             if !load_rule_file_path(&kernel_module).exists() {
-                return Ok(TaskFulfilled::No);
+                return Ok(TaskStateFulfilled::No);
             }
             if !kernel_module.params.is_empty() && !options_rule_file_path(&kernel_module).exists() {
-                return Ok(TaskFulfilled::No);
+                return Ok(TaskStateFulfilled::No);
             }
         }
-        Ok(TaskFulfilled::Yes)
+        Ok(TaskStateFulfilled::Yes)
     }
-    async fn execute(&self) -> Result<Success> {
+    async fn make_present(&self) -> Result<Success> {
         for kernel_module in required_kernel_modules() {
             let load_path = load_rule_file_path(&kernel_module);
             fs::create_dir_all(load_path.parent().unwrap())?;

@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
-use crate::common::task::{Success, Task, TaskFulfilled};
+use crate::common::task::{Success, Task, TaskStateFulfilled};
 use crate::setup::util::EvaluateRequiringSuccess;
 
 const UP_CHECK_RETRIES: usize = 50;
@@ -17,10 +17,10 @@ impl Task for RestartService {
     fn description(&self) -> String {
         String::from("NetBird - (Re-)Start Service")
     }
-    async fn check_fulfilled(&self) -> Result<TaskFulfilled> {
-        Ok(TaskFulfilled::Unchecked)
+    async fn check_present(&self) -> Result<TaskStateFulfilled> {
+        Ok(TaskStateFulfilled::Unchecked)
     }
-    async fn execute(&self) -> Result<Success> {
+    async fn make_present(&self) -> Result<Success> {
         let _ = Command::new("systemctl")
             .arg("restart")
             .arg("netbird")
