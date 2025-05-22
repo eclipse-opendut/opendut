@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 #[derive(Debug, thiserror::Error)]
 pub struct PersistenceError {
-    source: PersistenceErrorKind,
+    source: Box<PersistenceErrorKind>,
     context_messages: Vec<String>,
 }
 #[derive(Debug, thiserror::Error)]
@@ -35,12 +35,12 @@ impl PersistenceError {
         let identifier = identifier.map(|identifier| format!("{identifier:?}"));
         Self {
             context_messages: Vec::new(),
-            source: PersistenceErrorKind::Custom {
+            source: Box::new(PersistenceErrorKind::Custom {
                 resource_name: std::any::type_name::<R>(),
                 operation,
                 identifier,
                 source: cause.map(Into::into),
-            }
+            })
         }
     }
 
@@ -124,7 +124,7 @@ impl<T, E> MapErrToInner<T, E> for PersistenceResult<Result<T, E>> {
 impl From<prost::DecodeError> for PersistenceError {
     fn from(error: prost::DecodeError) -> Self {
         PersistenceError {
-            source: PersistenceErrorKind::ProtobufDecode(error),
+            source: Box::new(PersistenceErrorKind::ProtobufDecode(error)),
             context_messages: vec![],
         }
     }
@@ -132,7 +132,7 @@ impl From<prost::DecodeError> for PersistenceError {
 impl From<opendut_types::proto::ConversionError> for PersistenceError {
     fn from(error: opendut_types::proto::ConversionError) -> Self {
         PersistenceError {
-            source: PersistenceErrorKind::ProtobufConversion(error),
+            source: Box::new(PersistenceErrorKind::ProtobufConversion(error)),
             context_messages: vec![],
         }
     }
@@ -140,7 +140,7 @@ impl From<opendut_types::proto::ConversionError> for PersistenceError {
 impl From<redb::Error> for PersistenceError {
     fn from(error: redb::Error) -> Self {
         PersistenceError {
-            source: PersistenceErrorKind::KeyValueStore(error),
+            source: Box::new(PersistenceErrorKind::KeyValueStore(error)),
             context_messages: vec![],
         }
     }

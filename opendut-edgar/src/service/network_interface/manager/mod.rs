@@ -26,7 +26,6 @@ pub struct NetworkInterfaceManager {
     pub(crate) handle: rtnetlink::Handle,
 }
 impl NetworkInterfaceManager {
-    #[allow(clippy::result_large_err)]
     pub fn create() -> Result<NetworkInterfaceManagerRef, Error> {
         let (connection, handle, _) = rtnetlink::new_connection()
             .map_err(|cause| Error::Connecting { cause })?;
@@ -95,7 +94,7 @@ impl NetworkInterfaceManager {
             .set(interface.index)
             .up()
             .execute().await
-            .map_err(|cause| Error::SetInterfaceUp { interface: interface.clone(), cause: cause.into() })?;
+            .map_err(|cause| Error::SetInterfaceUp { interface: Box::new(interface.clone()), cause: cause.into() })?;
         Ok(())
     }
 
@@ -106,7 +105,7 @@ impl NetworkInterfaceManager {
             .set(interface.index)
             .down()
             .execute().await
-            .map_err(|cause| Error::SetInterfaceDown { interface: interface.clone(), cause: cause.into() })?;
+            .map_err(|cause| Error::SetInterfaceDown { interface: Box::new(interface.clone()), cause: cause.into() })?;
         Ok(())
     }
 
@@ -158,7 +157,7 @@ impl NetworkInterfaceManager {
             .link()
             .del(interface.index)
             .execute().await
-            .map_err(|cause| Error::DeleteInterface { interface: interface.clone(), cause: cause.into() })?;
+            .map_err(|cause| Error::DeleteInterface { interface: Box::new(interface.clone()), cause: cause.into() })?;
         Ok(())
     }
 
@@ -191,7 +190,6 @@ impl NetworkInterfaceManager {
 
 }
 
-#[allow(clippy::result_large_err)]
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Failure while creating bridge '{name}': {cause}")]
@@ -199,7 +197,7 @@ pub enum Error {
     #[error("Failed to establish connection to netlink: {cause}")]
     Connecting { cause: io::Error },
     #[error("Failure while deleting interface {interface}: {cause}")]
-    DeleteInterface { interface: Interface, cause: Box<rtnetlink::Error> },
+    DeleteInterface { interface: Box<Interface>, cause: Box<rtnetlink::Error> },
     #[error("Failure while creating gretap interface '{name}': {cause}")]
     GretapCreation { name: NetworkInterfaceName, cause: Box<rtnetlink::Error> },
     #[error("Interface with name '{name}' not found.")]
@@ -207,11 +205,11 @@ pub enum Error {
     #[error("Failure while listing interfaces: {cause}")]
     ListInterfaces { cause: Box<rtnetlink::Error> },
     #[error("Failure while setting interface {interface} to state 'up': {cause}")]
-    SetInterfaceUp { interface: Interface, cause: Box<rtnetlink::Error> },
+    SetInterfaceUp { interface: Box<Interface>, cause: Box<rtnetlink::Error> },
     #[error("Failure while setting interface {interface} to state 'down': {cause}")]
-    SetInterfaceDown { interface: Interface, cause: Box<rtnetlink::Error> },
+    SetInterfaceDown { interface: Box<Interface>, cause: Box<rtnetlink::Error> },
     #[error("Failure while joining interface {interface} to bridge {bridge}: {cause}")]
-    JoinInterfaceToBridge { interface: Interface, bridge: Interface, cause: Box<rtnetlink::Error> },
+    JoinInterfaceToBridge { interface: Box<Interface>, bridge: Box<Interface>, cause: Box<rtnetlink::Error> },
     #[error("Failure while creating virtual CAN interface '{name}': {cause}")]
     VCanInterfaceCreation { name: NetworkInterfaceName, cause: String },
     #[error("Failed to modify interface '{name}': {cause}")]

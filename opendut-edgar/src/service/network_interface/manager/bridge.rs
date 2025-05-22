@@ -38,7 +38,11 @@ impl NetworkInterfaceManager {
             .set(interface.index)
             .controller(bridge.index)
             .execute().await
-            .map_err(|cause| Error::JoinInterfaceToBridge { interface: interface.clone(), bridge: bridge.clone(), cause: cause.into() })?;
+            .map_err(|cause| Error::JoinInterfaceToBridge {
+                interface: Box::new(interface.clone()),
+                bridge: Box::new(bridge.clone()),
+                cause: cause.into()
+            })?;
         Ok(())
     }
 
