@@ -30,7 +30,7 @@ indoc = { workspace = true }
 netlink-packet-route = { workspace = true }
 netlink-packet-utils = { workspace = true }
 nix = { workspace = true, features = ["user", "fs"] }
-opentelemetry = { workspace = true, features = ["otel_unstable"] }
+opentelemetry = { workspace = true }
 opentelemetry_sdk = { workspace = true }
 ping-rs = { workspace = true }
 regex = { workspace = true }

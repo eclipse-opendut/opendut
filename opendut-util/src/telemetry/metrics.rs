@@ -2,10 +2,10 @@ use crate::telemetry::opentelemetry_types::Endpoint;
 use crate::telemetry::DEFAULT_METER_NAME;
 use opendut_auth::confidential::client::{ConfClientArcMutex, ConfidentialClientRef};
 use opentelemetry::metrics::MeterProvider;
-use opentelemetry_otlp::{MetricExporter, WithExportConfig, WithTonicConfig};
+use opentelemetry_otlp::{ExporterBuildError, MetricExporter, WithExportConfig, WithTonicConfig};
 use opentelemetry_sdk::metrics::PeriodicReader;
-use opentelemetry_sdk::metrics::{MetricError, SdkMeterProvider};
-use opentelemetry_sdk::{runtime, Resource};
+use opentelemetry_sdk::metrics::{SdkMeterProvider};
+use opentelemetry_sdk::{Resource};
 use simple_moving_average::{SumTreeSMA, SMA};
 use std::sync::Arc;
 use std::time::Duration;
@@ -20,7 +20,7 @@ pub(super) fn init_metrics(
     endpoint: &Endpoint,
     service_metadata_resource: Resource,
     metrics_interval: Duration
-) -> Result<SdkMeterProvider, MetricError> {
+) -> Result<SdkMeterProvider, ExporterBuildError> {
 
     let exporter = MetricExporter::builder()
         .with_tonic()
@@ -29,7 +29,7 @@ pub(super) fn init_metrics(
         .with_endpoint(Clone::clone(&endpoint.url))
         .build()?;
 
-    let reader = PeriodicReader::builder(exporter, runtime::Tokio)
+    let reader = PeriodicReader::builder(exporter)
         .with_interval(metrics_interval)
         .build();
 

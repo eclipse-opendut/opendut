@@ -9,7 +9,8 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use opentelemetry::{global, KeyValue};
-use opentelemetry::trace::{TraceError, TracerProvider};
+use opentelemetry::trace::{TracerProvider};
+use opentelemetry_sdk::trace::{SdkTracerProvider, TraceError};
 use opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 use opentelemetry_sdk::Resource;
@@ -82,7 +83,7 @@ pub async fn initialize_with_config(
                 })
         );
 
-    let meter_providers =
+    let (meter_providers, tracer_provider) =
         if let Opentelemetry::Enabled {
             collector_endpoint,
             service_name,
@@ -93,20 +94,18 @@ pub async fn initialize_with_config(
         } = opentelemetry_config {
             let confidential_client = ConfClientArcMutex(Arc::new(Mutex::new(confidential_client)));
 
-            let service_metadata_resource = Resource::new(vec![
-                KeyValue::new(
-                    opentelemetry_semantic_conventions::resource::SERVICE_NAME,
-                    service_name.to_owned()
-                ),
-                KeyValue::new(
-                    opentelemetry_semantic_conventions::resource::SERVICE_INSTANCE_ID,
-                    service_metadata.instance_id.to_owned()
-                ),
-                KeyValue::new(
-                    opentelemetry_semantic_conventions::resource::SERVICE_VERSION,
-                    service_metadata.version.to_owned()
-                ),
-            ]);
+            let service_metadata_resource = Resource::builder()
+                .with_service_name(service_name.to_owned())
+                .with_attributes(vec![
+                    KeyValue::new(
+                        opentelemetry_semantic_conventions::resource::SERVICE_INSTANCE_ID,
+                        service_metadata.instance_id.to_owned()
+                    ),
+                    KeyValue::new(
+                        opentelemetry_semantic_conventions::resource::SERVICE_VERSION,
+                        service_metadata.version.to_owned()
+                    ),
+                ]).build();
 
             let tracer_provider = traces::init_tracer(
                 confidential_client.clone(),
@@ -114,8 +113,9 @@ pub async fn initialize_with_config(
                 service_metadata_resource.clone(),
             ).expect("Failed to initialize tracer.");
 
+            let tracer = tracer_provider.tracer(DEFAULT_TRACER_NAME);
             let tracing_layer = tracing_opentelemetry::layer()
-                .with_tracer(tracer_provider.tracer(DEFAULT_TRACER_NAME));
+                .with_tracer(tracer);
 
             let logger_provider = logging::init_logger_provider(
                 confidential_client.clone(),
@@ -162,17 +162,17 @@ service_metadata: {service_metadata:?}",
 
             metrics::initialize_os_metrics_collection(cpu_collection_interval_ms, &meter_providers);
 
-            Some(meter_providers)
+            (Some(meter_providers), Some(tracer_provider))
         } else {
             tracing_subscriber
                 .try_init()?;
 
             trace!("Telemetry stack initialized without OpenTelemetry.");
 
-            None
+            (None, None)
         };
 
-    Ok(ShutdownHandle { meter_providers })
+    Ok(ShutdownHandle { meter_providers, tracer_provider })
 }
 
 
@@ -182,11 +182,18 @@ pub struct ShutdownHandle {
         NamedMeterProvider<NamedMeterProviderKindDefault>,
         NamedMeterProvider<NamedMeterProviderKindCpu>
     )>,
+    tracer_provider: Option<SdkTracerProvider>,
 }
 impl ShutdownHandle {
     pub fn shutdown(&mut self) {
         debug!("Shutting down telemetry stack.");
-        global::shutdown_tracer_provider();
+        match self.tracer_provider.as_ref() {
+            None => {}
+            Some(tracer_provider) => {
+                let _result = tracer_provider.shutdown()
+                    .inspect_err(|err| error!("Failed to shut down telemetry stack: {}", err));
+            }
+        }
     }
 }
 impl Drop for ShutdownHandle {

@@ -1,8 +1,8 @@
 use crate::telemetry::opentelemetry_types::Endpoint;
 use opendut_auth::confidential::client::{ConfClientArcMutex, ConfidentialClientRef};
-use opentelemetry_otlp::{LogExporter, WithExportConfig, WithTonicConfig};
-use opentelemetry_sdk::logs::{LogError, LoggerProvider};
-use opentelemetry_sdk::{runtime, Resource};
+use opentelemetry_otlp::{ExporterBuildError, LogExporter, WithExportConfig, WithTonicConfig};
+use opentelemetry_sdk::logs::{SdkLoggerProvider};
+use opentelemetry_sdk::Resource;
 use std::fmt::Debug;
 use std::path::PathBuf;
 
@@ -31,7 +31,7 @@ pub fn init_logger_provider(
     telemetry_interceptor: ConfClientArcMutex<Option<ConfidentialClientRef>>,
     endpoint: &Endpoint,
     service_metadata_resource: Resource,
-) -> Result<LoggerProvider, LogError> {
+) -> Result<SdkLoggerProvider, ExporterBuildError> {
 
     let exporter = LogExporter::builder()
         .with_tonic()
@@ -40,9 +40,9 @@ pub fn init_logger_provider(
         .with_endpoint(Clone::clone(&endpoint.url))
         .build()?;
 
-    let provider = LoggerProvider::builder()
+    let provider = SdkLoggerProvider::builder()
         .with_resource(service_metadata_resource)
-        .with_batch_exporter(exporter, runtime::Tokio)
+        .with_batch_exporter(exporter)
         .build();
 
     Ok(provider)
