@@ -93,7 +93,8 @@ mod tests {
             metadata: matches_pattern!(SpecificationMetadata {
                 id: eq(&uuid!("661f0c35-722e-4656-a7e7-6e976476b53b")),
                 name: eq("MyResource")
-            })
+            }),
+            ..
         }))?;
 
         Ok(())

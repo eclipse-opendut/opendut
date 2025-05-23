@@ -62,9 +62,11 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
                         value: eq(&parameter::EthernetBridge {
                             name: NetworkInterfaceName::try_from("br-opendut")?,
                         }),
+                        ..
                     })
                 ),
                 executors: empty(),
+                ..
             }));
             Ok::<_, anyhow::Error>(())
         };
@@ -156,6 +158,7 @@ async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_onl
                     })
                 ),
                 executors: empty(),
+                ..
             }));
             Ok::<_, anyhow::Error>(())
         };

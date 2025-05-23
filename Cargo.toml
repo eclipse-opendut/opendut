@@ -54,7 +54,7 @@ axum-server-dual-protocol = "0.7.0"
 backon = { version = "1.3.0" }
 base64 = "0.22.1"
 bitflags = "2.9.0"
-brotli = "7.0.0"
+brotli = "8.0.1"
 cargo_metadata = "0.19.1"
 cargo_toml = "0.22.1"
 cfg-if = "1.0.0"
@@ -62,7 +62,7 @@ chrono = { version = "0.4.39", default-features = false }
 cicero = "0.4.1"
 clap = "4.5.28"
 clap_complete = "4.5.44"
-cli-table = "0.4"
+cli-table = "0.5"
 
 # Waiting for yaml-rust2 dependency in config crate to be released: https://github.com/mehcode/config-rs/issues/563
 config = { git = "https://github.com/mehcode/config-rs", rev = "e3c1d0b452639478662a44f15ef6d5b6d969bf9b", default-features = false, features = ["toml", "yaml"] }
@@ -79,7 +79,7 @@ futures = "0.3.31"
 glob = "0.3.2"
 gloo-net = { version = "0.6.0" }
 gloo-timers = { version = "0.3.0" }
-googletest = { version = "0.13.0" }
+googletest = { version = "0.14.0" }
 home = "0.5.11"
 http = "1.2.0"
 http-body = "1.0.1"
@@ -98,7 +98,7 @@ mime = "0.3.17"
 mockall = "0.13.1"
 netlink-packet-route = "0.19.0"
 netlink-packet-utils = "0.5.2"
-nix = "0.29.0"
+nix = "0.30.1"
 oauth2 = { version = "5.0.0", default-features = false }
 openidconnect = { version = "4.0.0", default-features = false }
 openssl-sys = { version = "0.9.105", features = ["vendored"] }
@@ -170,7 +170,7 @@ wasmtime = { version= "29.0.1", features = ["component-model", "std", "runtime"]
 wasmtime-wasi = "29.0.1"
 which = "7.0.2"
 wit-bindgen = "0.39.0"
-zip = "2.4.1"
+zip = "4.0.0"
 
 
 [workspace.metadata.ci]

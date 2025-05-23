@@ -165,7 +165,8 @@ mod test {
                 name: eq(&peer.name),
                 id: eq(&peer.id),
                 status: eq(&PeerStatus::Disconnected),
-            })
+                ..
+            }),
         );
     }
 }
