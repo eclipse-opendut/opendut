@@ -3914,20 +3914,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "opendut-flash"
-version = "0.7.0-alpha"
-dependencies = [
- "anyhow",
- "clap",
- "indoc",
- "reqwest",
- "serde",
- "serde_json",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
 name = "opendut-integration-tests"
 version = "0.7.0-alpha"
 dependencies = [
