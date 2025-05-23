@@ -5,7 +5,8 @@ use std::process::Command;
 use wasmtime::component::__internal;
 use wasmtime::component::{Component, Linker, ResourceTable};
 use wasmtime::{Config, Engine, Store};
-use wasmtime_wasi::{DirPerms, FilePerms, WasiCtx, WasiCtxBuilder, WasiView};
+use wasmtime_wasi::{DirPerms, FilePerms};
+use wasmtime_wasi::p2::{IoView, WasiCtx, WasiCtxBuilder, WasiView};
 use tracing::{event, trace, Level};
 
 pub struct PluginRuntime {
@@ -23,7 +24,7 @@ impl PluginRuntime {
 
         let mut linker = Linker::new(&engine);
 
-        wasmtime_wasi::add_to_linker_sync(&mut linker).expect("Could not add wasi to linker");
+        wasmtime_wasi::p2::add_to_linker_sync(&mut linker).expect("Could not add wasi to linker");
 
         // Necessary if Interface defines Imports
         SetupPlugin::add_to_linker(&mut linker, |state: &mut PluginState| state)
@@ -68,12 +69,14 @@ impl PluginState {
 }
 
 impl WasiView for PluginState {
-    fn table(&mut self) -> &mut ResourceTable {
-        &mut self.table
-    }
-
     fn ctx(&mut self) -> &mut WasiCtx {
         &mut self.ctx
+    }
+}
+
+impl IoView for PluginState {
+    fn table(&mut self) -> &mut ResourceTable {
+        &mut self.table
     }
 }
 

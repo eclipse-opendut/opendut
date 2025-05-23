@@ -166,10 +166,10 @@ uuid = "1.13.1"
 walkdir = "2.5.0"
 wasm-bindgen-futures = "0.4.50"
 wasm-bindgen-test = "0.3.50"
-wasmtime = { version= "29.0.1", features = ["component-model", "std", "runtime"] }
-wasmtime-wasi = "29.0.1"
+wasmtime = { version= "33.0.0", features = ["component-model", "std", "runtime"] }
+wasmtime-wasi = "33.0.0"
 which = "7.0.2"
-wit-bindgen = "0.39.0"
+wit-bindgen = "0.42.1"
 zip = "4.0.0"
 
 
