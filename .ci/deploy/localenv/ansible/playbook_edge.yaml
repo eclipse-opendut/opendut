@@ -74,17 +74,9 @@
       aarch64: "aarch64-unknown-linux-gnu"
     edgar_download: "/tmp/opendut/edgar.tar.gz"
   tasks:
-    - name: Determine current date on ansible controller, assumes that it has a more accurate time than the edge hosts
-      # https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_delegation.html
-      # delegate_to: "localhost"  # expects 'ssh localhost' to work
-      local_action:
-        module: command
-        cmd: "date --rfc-3339=seconds"
-      register: _date_output
-      changed_when: false
-
-    - name: Set current date
-      command: "date --set='{{ _date_output.stdout }}'"
+    - name: Set correct date
+      import_role:
+        name: eclipse_opendut.opendut.controller_date
 
     - name: Determine CPU architecture
       command: "uname --machine"

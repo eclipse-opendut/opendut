@@ -1,0 +1,8 @@
+- name: Determine current date on Ansible Controller, under assumption that it is more accurate than edge hosts
+  delegate_to: "localhost"
+  command: "date --rfc-3339=seconds"
+  register: _date_output
+  changed_when: false
+
+- name: Set current date
+  command: "date --set='{{ _date_output.stdout }}'"
