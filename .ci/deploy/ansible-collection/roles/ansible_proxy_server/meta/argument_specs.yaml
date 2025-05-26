@@ -16,3 +16,10 @@ argument_specs:
         description: "The network port to run the server on."
         type: "int"
         required: false
+
+      ansible_proxy_server_forward_to_proxy:
+        description:
+          - "Optional address of a proxy server to forward communication to."
+          - "For example, when you run a proxy on your Ansible Controller to reach the internet, you would typically set this to 'localhost:3128'."
+        type: "str"
+        required: false

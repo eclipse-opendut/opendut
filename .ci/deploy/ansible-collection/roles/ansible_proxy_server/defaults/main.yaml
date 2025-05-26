@@ -9,3 +9,5 @@ ansible_proxy_server_pxproxy_target: "linux-glibc-x86_64"
 ansible_proxy_server_controller_pxproxy_config_file: "/tmp/opendut/px-proxy.ini"
 
 ansible_proxy_server_port: 3127
+ansible_proxy_server_forward_to_proxy: ""
+ansible_proxy_server_forward_to_proxy_formatted: ""

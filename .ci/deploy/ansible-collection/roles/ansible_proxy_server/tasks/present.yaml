@@ -11,6 +11,13 @@
     creates: "{{ ansible_proxy_server_controller_proxy_executable }}"
 
 
+- name: Set template text for forwarding proxy to localhost
+  set_fact:
+    ansible_proxy_server_forward_to_proxy_formatted: |
+      # forward to proxy on localhost
+      server = {{ ansible_proxy_server_forward_to_proxy }}
+  when: ansible_proxy_server_forward_to_proxy != ""
+
 - name: Template px-proxy configuration
   template:
     src: "{{ role_path }}/templates/px-proxy.ini.j2"
