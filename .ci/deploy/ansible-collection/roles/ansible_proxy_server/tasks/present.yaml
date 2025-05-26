@@ -8,6 +8,7 @@
     src: "https://github.com/genotrance/px/releases/download/{{ ansible_proxy_server_pxproxy_version }}/px-{{ ansible_proxy_server_pxproxy_version }}-{{ ansible_proxy_server_pxproxy_target }}.tar.gz"
     remote_src: true
     dest: "{{ ansible_proxy_server_controller_proxy_dir }}"
+    creates: "{{ ansible_proxy_server_controller_proxy_executable }}"
 
 
 - name: Run px-proxy
