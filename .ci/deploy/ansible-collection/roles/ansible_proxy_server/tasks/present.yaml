@@ -18,11 +18,12 @@
 - name: Detect proxy server IP
   shell: "ip -json address show | jq -r .[].addr_info[].local | grep 10.42.0."
   register: _ansible_proxy_server_ip
-  ignore_errors: yes
+  ignore_errors: true
 
-- fail:
+- name: Assert detection succeeded
+  assert:
+    that: _ansible_proxy_server_ip.rc == 0
     msg: “Error while detecting proxy server IP. Make sure you're connected to the hotspot of the Raspberry Pi.”
-  when: _ansible_proxy_server_ip.rc != 0
 
 - name: Set ansible_proxy_server_ip fact
   set_fact:
