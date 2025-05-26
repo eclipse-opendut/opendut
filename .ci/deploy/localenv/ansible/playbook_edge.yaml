@@ -17,7 +17,7 @@
   tasks:
     - name: Determine Backend IP
       set_fact:
-        backend_ip: "{{ hostvars[backend]['ip_for_edge_hosts_file'] }}"
+        backend_ip: "{{ backend_ip_override | default(hostvars[backend]['ip_for_edge_hosts_file']) }}"
 
     - name: Write /etc/hosts entry
       blockinfile:
