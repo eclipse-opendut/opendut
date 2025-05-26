@@ -10,7 +10,7 @@
 
 - name: Upload to backend
   copy:
-    src: "{{ inventory_dir }}/{{ apply_file }}"
+    src: "{{ inventory_dir }}/{{ cleo_apply_dir }}/{{ apply_file }}"
     dest: "{{ apply_dir }}"
 
 - name: Upload into CLEO container

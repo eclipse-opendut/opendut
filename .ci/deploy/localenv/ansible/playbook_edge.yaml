@@ -4,7 +4,7 @@
   hosts: backend
   gather_facts: false
   vars:
-    apply_file: "{{ inventory_dir }}/{{ ansible_host }}.yaml"
+    apply_file: "{{ inventory_dir }}/{{ cleo_apply_dir }}/{{ ansible_host }}.yaml"
   tasks:
     - name: Include cleo-apply playbook
       include_tasks: "tasks/edge/cleo_apply.yaml"
