@@ -11,3 +11,8 @@ argument_specs:
           - "present"
           - "absent"
         required: false
+
+      ansible_proxy_server_port:
+        description: "The network port to run the server on."
+        type: "int"
+        required: false

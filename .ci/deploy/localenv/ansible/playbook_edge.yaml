@@ -143,7 +143,7 @@
           name: "can-utils"
           state: present
         environment:
-          http_proxy: "http://{{ ansible_proxy_server_ip }}:{{ ansible_proxy_server_port }}/"
+          http_proxy: "{{ ansible_proxy_server_env }}"
 
       - name: Download and unpack Cannelloni
         unarchive:
@@ -151,7 +151,7 @@
           remote_src: true
           dest: "{{ cannelloni_dir }}"
         environment:
-          https_proxy: "http://{{ ansible_proxy_server_ip }}:{{ ansible_proxy_server_port }}/"
+          https_proxy: "{{ ansible_proxy_server_env }}"
 
       always:
         - name: Deactivate Ansible Controller proxy

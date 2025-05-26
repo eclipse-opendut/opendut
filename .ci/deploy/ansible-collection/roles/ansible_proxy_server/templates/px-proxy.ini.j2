@@ -1,6 +1,5 @@
 [proxy]
-# bind to a free port
-port = 3127
+port = {{ ansible_proxy_server_port }}
 listen = 10.42.0.0
 allow = 10.42.0.*
 gateway = 1

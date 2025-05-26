@@ -11,8 +11,13 @@
     creates: "{{ ansible_proxy_server_controller_proxy_executable }}"
 
 
+- name: Template px-proxy configuration
+  template:
+    src: "{{ role_path }}/templates/px-proxy.ini.j2"
+    dest: "{{ ansible_proxy_server_controller_pxproxy_config_file }}"
+
 - name: Run px-proxy
-  shell: "{{ ansible_proxy_server_controller_proxy_executable }} --config={{ role_path }}/files/px-proxy.ini &"
+  shell: "{{ ansible_proxy_server_controller_proxy_executable }} --config={{ ansible_proxy_server_controller_pxproxy_config_file }} &"
 
 
 - name: Detect proxy server IP
@@ -29,6 +34,6 @@
   set_fact:
     ansible_proxy_server_ip: "{{ _ansible_proxy_server_ip.stdout }}"
 
-- name: Set ansible_proxy_server_port fact
+- name: Set ansible_proxy_server_env fact
   set_fact:
-    ansible_proxy_server_port: 3127  #from files/px-proxy.ini
+    ansible_proxy_server_env: "http://{{ ansible_proxy_server_ip }}:{{ ansible_proxy_server_port }}/"
