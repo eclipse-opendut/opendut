@@ -132,26 +132,27 @@
         state: stopped
       when: edgar_service_status.stat.exists
 
-    - block:
-      - name: Activate Ansible Controller proxy
-        import_role:
-          name: eclipse_opendut.opendut.ansible_proxy_server
-        delegate_to: localhost
+    - name: Install CAN utilities via proxy
+      block:
+        - name: Activate Ansible Controller proxy
+          import_role:
+            name: eclipse_opendut.opendut.ansible_proxy_server
+          delegate_to: localhost
 
-      - name: Install can-utils
-        apt:
-          name: "can-utils"
-          state: present
-        environment:
-          http_proxy: "{{ ansible_proxy_server_env }}"
+        - name: Install can-utils
+          apt:
+            name: "can-utils"
+            state: present
+          environment:
+            http_proxy: "{{ ansible_proxy_server_env }}"
 
-      - name: Download and unpack Cannelloni
-        unarchive:
-          src: "https://github.com/eclipse-opendut/cannelloni-build/releases/download/v1.1.0/cannelloni_{{ arch_map[cpu_arch] }}_1.1.0.tar.gz"
-          remote_src: true
-          dest: "{{ cannelloni_dir }}"
-        environment:
-          https_proxy: "{{ ansible_proxy_server_env }}"
+        - name: Download and unpack Cannelloni
+          unarchive:
+            src: "https://github.com/eclipse-opendut/cannelloni-build/releases/download/v1.1.0/cannelloni_{{ arch_map[cpu_arch] }}_1.1.0.tar.gz"
+            remote_src: true
+            dest: "{{ cannelloni_dir }}"
+          environment:
+            https_proxy: "{{ ansible_proxy_server_env }}"
 
       always:
         - name: Deactivate Ansible Controller proxy
