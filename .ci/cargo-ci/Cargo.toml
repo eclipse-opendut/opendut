@@ -27,4 +27,4 @@ tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter", "ansi", "tracing-log"] }
 
 [build-dependencies]
-shadow-rs = { workspace = true }
+shadow-rs = { workspace = true, default-features = true }

@@ -1,4 +1,4 @@
-use shadow_rs::formatcp;
+use const_format::formatcp;
 use config::Config;
 use oauth2::RedirectUrl;
 use openidconnect::RegistrationUrl;

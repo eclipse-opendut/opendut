@@ -15,7 +15,7 @@ pub fn cargo() -> cargo_metadata::Metadata {
 
 pub fn repository_url() -> String {
     let carl_package: Package = cargo().workspace_packages().into_iter()
-        .find(|&package| package.name == "opendut-carl")
+        .find(|&package| package.name.as_ref() == "opendut-carl")
         .expect("Could not extract repository url for package opendut-carl from opendut-carl/Cargo.toml.").to_owned();
     carl_package.repository.unwrap()
 }

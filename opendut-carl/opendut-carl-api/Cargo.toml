@@ -36,11 +36,12 @@ opendut-util-core = { workspace = true }
 
 cfg-if = { workspace = true }
 config = { workspace = true, optional = true }
+const_format = { workspace = true }
 http = { workspace = true, optional = true }
 jsonwebtoken = { workspace = true, optional = true }
 leptos = { workspace = true, optional = true }
 prost = { workspace = true }
-shadow-rs = { workspace = true, default-features = false, optional = true, features = ["tzdb"] }
+shadow-rs = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, optional = true }
 tonic = { workspace = true }

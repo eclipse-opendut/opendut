@@ -1,7 +1,7 @@
 use config::Config;
 use oauth2::{AuthUrl, ClientId as OAuthClientId, ClientSecret as OAuthClientSecret, EndpointNotSet, EndpointSet, Scope as OAuthScope, TokenUrl};
 use oauth2::basic::BasicClient;
-use shadow_rs::formatcp;
+use const_format::formatcp;
 use url::Url;
 
 use crate::confidential::error::ConfidentialClientError;
