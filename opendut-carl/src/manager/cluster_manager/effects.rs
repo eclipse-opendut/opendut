@@ -18,7 +18,7 @@ async fn schedule_redeploying_clusters_when_all_peers_become_available(resource_
                 info!("Peer <{peer_id}> is now online with remote address <{remote_host}>. Checking if any clusters can now be deployed...");
 
                 let mut self_ref = self_ref.lock().await;
-                let result = self_ref.deploy_all_clusters_containing_newly_available_peer(peer_id).await;
+                let result = self_ref.rollout_all_clusters_containing_newly_available_peer(peer_id).await;
                 if let Err(error) = result {
                     error!("Error while attempting deployment of clusters in which newly available peer <{peer_id}> is contained:  \n{error}");
                 }

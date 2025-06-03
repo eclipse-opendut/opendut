@@ -126,7 +126,7 @@ impl ClusterManager {
             }
         }
 
-        if let Err(error) = self.deploy_cluster_if_all_peers_available(cluster_id).await {
+        if let Err(error) = self.rollout_cluster_if_all_peers_available(cluster_id).await {
             error!("Failed to deploy cluster <{cluster_id}> after storing cluster deployment, despite all peers being available, due to:\n  {error}");
         }
         Ok(cluster_id)
@@ -145,7 +145,7 @@ impl ClusterManager {
             .map_err(|source| ListClusterDeploymentsError { source })
     }
 
-    async fn deploy_all_clusters_containing_newly_available_peer(&mut self, peer_id: PeerId) -> anyhow::Result<()> {
+    async fn rollout_all_clusters_containing_newly_available_peer(&mut self, peer_id: PeerId) -> anyhow::Result<()> {
 
         let clusters_containing_devices_of_upped_peer = self.resource_manager.resources_mut(async |resources| {
 
@@ -178,30 +178,30 @@ impl ClusterManager {
             trace!("Devices of newly available peer <{peer_id}> are not used in any clusters. Not deploying any clusters.");
         } else {
             for cluster in clusters_containing_devices_of_upped_peer {
-                self.deploy_cluster_if_all_peers_available(cluster.id).await?;
+                self.rollout_cluster_if_all_peers_available(cluster.id).await?;
             }
         }
         Ok(())
     }
 
     #[tracing::instrument(skip(self), level="trace")]
-    pub async fn deploy_cluster_if_all_peers_available(&mut self, cluster_id: ClusterId) -> Result<(), DeployClusterError> {
+    pub async fn rollout_cluster_if_all_peers_available(&mut self, cluster_id: ClusterId) -> Result<(), RolloutClusterError> {
         let cluster_peer_states = self.resource_manager.resources(async |resources| {
             resources.list_cluster_peer_states(cluster_id).await
         }).await
         .map_err_to_inner(|source| ListClusterPeerStatesError::Persistence { cluster_id, source })
-        .map_err(|source| DeployClusterError::ListClusterPeerStates { cluster_id, source })?;
+        .map_err(|source| RolloutClusterError::ListClusterPeerStates { cluster_id, source })?;
 
         let cluster_deployable = cluster_peer_states.check_cluster_deployable();
 
         match cluster_deployable {
             ClusterDeployable::AllPeersAvailable => {
                 debug!("All peers of cluster <{cluster_id}> are now available. Deploying...");
-                self.deploy_cluster(cluster_id).await?;
+                self.rollout_cluster(cluster_id).await?;
             }
             ClusterDeployable::AlreadyDeployed => {
                 debug!("Cluster <{cluster_id}> is already deployed. Triggering new deployment anyway.");  // TODO: re-evaluate if we can do this differently
-                self.deploy_cluster(cluster_id).await?;
+                self.rollout_cluster(cluster_id).await?;
             }
             ClusterDeployable::NotAllPeersAvailable { unavailable_peers } => {
                 debug!(
@@ -218,23 +218,23 @@ impl ClusterManager {
 
 
     #[tracing::instrument(skip(self), level="debug")]
-    async fn deploy_cluster(&mut self, cluster_id: ClusterId) -> Result<(), DeployClusterError> {
+    async fn rollout_cluster(&mut self, cluster_id: ClusterId) -> Result<(), RolloutClusterError> {
 
         let cluster_config = self.resource_manager.get::<ClusterConfiguration>(cluster_id).await
-            .map_err(|source| DeployClusterError::Persistence { cluster_id, source })?
-            .ok_or(DeployClusterError::ClusterConfigurationNotFound(cluster_id))?;
+            .map_err(|source| RolloutClusterError::Persistence { cluster_id, source })?
+            .ok_or(RolloutClusterError::ClusterConfigurationNotFound(cluster_id))?;
 
         let cluster_name = cluster_config.name;
 
         let all_peers = self.resource_manager.list::<PeerDescriptor>().await
-            .map_err(|source| DeployClusterError::Persistence { cluster_id, source })?
+            .map_err(|source| RolloutClusterError::Persistence { cluster_id, source })?
             .into_values()
             .collect::<Vec<_>>();
 
 
         let member_interface_mapping = determine_member_interface_mapping(cluster_config.devices, all_peers, cluster_config.leader)
             .map_err(|cause| match cause {
-                DetermineMemberInterfaceMappingError::PeerForDeviceNotFound { device_id } => DeployClusterError::PeerForDeviceNotFound { device_id, cluster_id, cluster_name },
+                DetermineMemberInterfaceMappingError::PeerForDeviceNotFound { device_id } => RolloutClusterError::PeerForDeviceNotFound { device_id, cluster_id, cluster_name },
             })?;
 
         let member_ids = member_interface_mapping.keys().cloned().collect::<Vec<_>>();
@@ -244,7 +244,7 @@ impl ClusterManager {
                 .map_err(|cause| {
                     let message = format!("Failure while creating cluster <{cluster_id}> in VPN service.");
                     error!("{}\n  {cause}", message);
-                    DeployClusterError::Internal { cluster_id, cause: message }
+                    RolloutClusterError::Internal { cluster_id, cause: message }
                 })?;
 
             let peers_string = member_ids.iter().map(|peer| peer.to_string()).collect::<Vec<_>>().join(",");
@@ -255,7 +255,7 @@ impl ClusterManager {
 
         let can_server_ports = self.determine_can_server_ports(&member_ids, cluster_id)?;
 
-        let member_assignments: Vec<Result<PeerClusterAssignment, DeployClusterError>> = {
+        let member_assignments: Vec<Result<PeerClusterAssignment, RolloutClusterError>> = {
             let assignment_futures = std::iter::zip(member_ids, can_server_ports)
                 .map(|(peer_id, can_server_port)| {
                     self.resource_manager.get::<PeerConnectionState>(peer_id)
@@ -266,16 +266,16 @@ impl ClusterManager {
                                         Ok(remote_host)
                                     }
                                     Some(PeerConnectionState::Offline) => {
-                                        Err(DeployClusterError::Internal { cluster_id, cause: format!("Peer <{peer_id}> which is used in a cluster, should have a PeerConnectionState of 'Online'.") })
+                                        Err(RolloutClusterError::Internal { cluster_id, cause: format!("Peer <{peer_id}> which is used in a cluster, should have a PeerConnectionState of 'Online'.") })
                                     }
                                     None => {
-                                        Err(DeployClusterError::Internal { cluster_id, cause: format!("Peer <{peer_id}> which is used in a cluster, should have a PeerConnectionState associated.") })
+                                        Err(RolloutClusterError::Internal { cluster_id, cause: format!("Peer <{peer_id}> which is used in a cluster, should have a PeerConnectionState associated.") })
                                     }
                                 }
                                 Err(cause) => {
                                     let message = format!("Error while accessing persistence to read PeerConnectionState of peer <{peer_id}>");
                                     error!("{message}:\n  {cause}");
-                                    Err(DeployClusterError::Internal { cluster_id, cause: message })
+                                    Err(RolloutClusterError::Internal { cluster_id, cause: message })
                                 }
                             };
 
@@ -312,22 +312,22 @@ impl ClusterManager {
                 .map_err(|cause| {
                     let message = format!("Failure while assigning cluster <{cluster_id}> to peer <{member_id}>. Cause: {cause}"); // TODO
                     error!("{}\n  {cause}", message);
-                    DeployClusterError::Internal { cluster_id, cause: message }
+                    RolloutClusterError::Internal { cluster_id, cause: message }
                 })?;
             }
             Ok(())
         }).await
-        .map_err(|source| DeployClusterError::Persistence { cluster_id, source: source.context("Error when closing transaction while assigning peers to clusters") })??;
+        .map_err(|source| RolloutClusterError::Persistence { cluster_id, source: source.context("Error when closing transaction while assigning peers to clusters") })??;
 
         Ok(())
     }
 
-    fn determine_can_server_ports(&mut self, member_interface_mapping: &[PeerId], cluster_id: ClusterId) -> Result<Vec<Port>, DeployClusterError> {
+    fn determine_can_server_ports(&mut self, member_interface_mapping: &[PeerId], cluster_id: ClusterId) -> Result<Vec<Port>, RolloutClusterError> {
         let n_peers = u16::try_from(member_interface_mapping.len())
-            .map_err(|cause| DeployClusterError::DetermineCanServerPort { cluster_id, cause: cause.to_string() })?;
+            .map_err(|cause| RolloutClusterError::DetermineCanServerPort { cluster_id, cause: cause.to_string() })?;
 
         if self.options.can_server_port_range_start + n_peers >= self.options.can_server_port_range_end {
-            return Err(DeployClusterError::DetermineCanServerPort {
+            return Err(RolloutClusterError::DetermineCanServerPort {
                 cluster_id,
                 cause: format!(
                     "Failure while creating cluster <{}>. Port range [{}, {}) specified by 'can_server_port_range_start' \
@@ -481,7 +481,7 @@ pub mod error {
     }
 
     #[derive(thiserror::Error, Debug)]
-    pub enum DeployClusterError {
+    pub enum RolloutClusterError {
         #[error("Cluster <{0}> not found!")]
         ClusterConfigurationNotFound(ClusterId),
         #[error("A peer for device <{device_id}> of cluster '{cluster_name}' <{cluster_id}> not found.")]
@@ -539,7 +539,7 @@ mod test {
 
     use super::*;
 
-    mod deploy_cluster {
+    mod rollout_cluster {
         use super::*;
         use crate::manager::peer_manager::StorePeerDescriptorParams;
         use opendut_carl_api::carl::broker::stream_header;
@@ -548,7 +548,7 @@ mod test {
 
         #[rstest]
         #[tokio::test]
-        async fn deploy_cluster(
+        async fn rollout_cluster(
             peer_a: PeerFixture,
             peer_b: PeerFixture,
         ) -> anyhow::Result<()> {
@@ -588,7 +588,7 @@ mod test {
                 })
             }).await??;
 
-            assert_that!(fixture.testee.lock().await.deploy_cluster(cluster_id).await, ok(eq(&())));
+            assert_that!(fixture.testee.lock().await.rollout_cluster(cluster_id).await, ok(eq(&())));
 
 
             let assert_cluster_assignment_valid = |cluster_assignment: &ClusterAssignment| {
@@ -661,15 +661,14 @@ mod test {
         }
     }
 
-    #[rstest]
     #[tokio::test]
-    async fn deploy_should_fail_for_unknown_cluster() -> anyhow::Result<()> {
+    async fn rollout_should_fail_for_unknown_cluster() -> anyhow::Result<()> {
         let fixture = Fixture::create().await;
         let unknown_cluster = ClusterId::random();
 
-        let result = fixture.testee.lock().await.deploy_cluster(unknown_cluster).await;
+        let result = fixture.testee.lock().await.rollout_cluster(unknown_cluster).await;
 
-        let Err(DeployClusterError::ClusterConfigurationNotFound(cluster)) = result
+        let Err(RolloutClusterError::ClusterConfigurationNotFound(cluster)) = result
         else { panic!("Result is not a ClusterConfigurationNotFoundError.") };
 
         assert_eq!(cluster, unknown_cluster);
@@ -677,7 +676,7 @@ mod test {
         Ok(())
     }
 
-    #[rstest]
+    #[test]
     fn should_determine_member_interface_mapping() -> anyhow::Result<()> {
 
         fn device_and_interface(id: DeviceId, interface_name: NetworkInterfaceName) -> (DeviceDescriptor, NetworkInterfaceDescriptor) {
