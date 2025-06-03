@@ -38,11 +38,10 @@ pub fn create_http_service(settings: &Config) -> anyhow::Result<axum::Router<Htt
             ServeDir::new(&licenses_dir)
                 .fallback(ServeFile::new(licenses_dir.join("index.json")))
         )
-        .route("/api/cleo/:architecture/download", get(router::cleo::download_cleo))
-        .route("/api/edgar/:architecture/download", get(router::edgar::download_edgar))
+        .route("/api/cleo/{architecture}/download", get(router::cleo::download_cleo))
+        .route("/api/edgar/{architecture}/download", get(router::edgar::download_edgar))
         .route("/api/lea/config", get(router::lea_config))
-        .nest_service(
-            "/",
+        .fallback_service(
             ServeDir::new(&lea_dir)
                 .fallback(ServeFile::new(lea_index_html))
         );

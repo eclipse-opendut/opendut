@@ -5,7 +5,6 @@ use futures::Stream;
 use tokio_stream::StreamExt;
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::{Request, Response, Status};
-use tonic_web::CorsGrpcWeb;
 use tracing::trace;
 use opendut_carl_api::proto::services::observer_messaging_broker::observer_messaging_broker_server::ObserverMessagingBrokerServer;
 use opendut_carl_api::proto::services::observer_messaging_broker::observer_messaging_broker_server::{ObserverMessagingBroker as ObserverMessagingBrokerService};
@@ -28,8 +27,8 @@ impl ObserverMessagingBrokerFacade {
         }
     }
 
-    pub fn into_grpc_service(self) -> CorsGrpcWeb<ObserverMessagingBrokerServer<Self>> {
-        tonic_web::enable(ObserverMessagingBrokerServer::new(self))
+    pub fn into_grpc_service(self) -> super::web::CorsGrpcWeb<ObserverMessagingBrokerServer<Self>> {
+        super::web::enable(ObserverMessagingBrokerServer::new(self))
     }
 
 }

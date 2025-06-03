@@ -17,7 +17,7 @@ client = [
     "dep:tracing",
     "tokio",
     "tonic/default",
-    "tonic/tls",
+    "tonic/tls-aws-lc",
     "tonic-build/default",
 ]
 wasm-client = [

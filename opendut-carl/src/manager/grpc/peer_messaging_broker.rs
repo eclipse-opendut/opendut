@@ -15,7 +15,6 @@ use tokio_stream::wrappers::ReceiverStream;
 use tokio_stream::Stream;
 use tonic::metadata::MetadataMap;
 use tonic::{Request, Response, Status, Streaming};
-use tonic_web::CorsGrpcWeb;
 use tracing::{error, trace, warn};
 use uuid::Uuid;
 
@@ -27,8 +26,8 @@ impl PeerMessagingBrokerFacade {
     pub fn new(peer_messaging_broker: PeerMessagingBrokerRef) -> Self {
         Self { peer_messaging_broker }
     }
-    pub fn into_grpc_service(self) -> CorsGrpcWeb<PeerMessagingBrokerServer<Self>> {
-        tonic_web::enable(PeerMessagingBrokerServer::new(self))
+    pub fn into_grpc_service(self) -> super::web::CorsGrpcWeb<PeerMessagingBrokerServer<Self>> {
+        super::web::enable(PeerMessagingBrokerServer::new(self))
     }
 }
 

@@ -3,7 +3,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 use http::{HeaderValue, Request, Response};
-use tonic::body::BoxBody;
+use tonic::body::Body;
 use tonic::transport::Channel;
 use tower::Service;
 use tracing::error;
@@ -27,8 +27,8 @@ impl TonicAuthenticationService {
     }
 }
 
-impl Service<Request<BoxBody>> for TonicAuthenticationService {
-    type Response = Response<BoxBody>;
+impl Service<Request<Body>> for TonicAuthenticationService {
+    type Response = Response<Body>;
     type Error = Box<dyn std::error::Error + Send + Sync>;
     #[allow(clippy::type_complexity)]
     type Future = Pin<Box<dyn Future<Output=Result<Self::Response, Self::Error>>>>;
@@ -37,7 +37,7 @@ impl Service<Request<BoxBody>> for TonicAuthenticationService {
         self.inner.poll_ready(cx).map_err(Into::into)
     }
 
-    fn call(&mut self, mut request: Request<BoxBody>) -> Self::Future {
+    fn call(&mut self, mut request: Request<Body>) -> Self::Future {
         // Combining a tower Service with a tonic client panics #547
         // This is necessary because tonic internally uses `tower::buffer::Buffer`.
         // See https://github.com/tower-rs/tower/issues/547#issuecomment-767629149

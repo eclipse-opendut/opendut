@@ -9,7 +9,6 @@ use opendut_carl_api::proto::services::peer_manager::*;
 use opendut_types::cleo::CleoId;
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use tonic::{Request, Response, Status};
-use tonic_web::CorsGrpcWeb;
 use tracing::{error, trace};
 use url::Url;
 
@@ -50,8 +49,8 @@ impl PeerManagerFacade {
         }
     }
 
-    pub fn into_grpc_service(self) -> CorsGrpcWeb<PeerManagerServer<Self>> {
-        tonic_web::enable(PeerManagerServer::new(self))
+    pub fn into_grpc_service(self) -> super::web::CorsGrpcWeb<PeerManagerServer<Self>> {
+        super::web::enable(PeerManagerServer::new(self))
     }
 }
 

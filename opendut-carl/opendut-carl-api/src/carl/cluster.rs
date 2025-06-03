@@ -142,7 +142,7 @@ mod client {
     }
 
     impl<T> ClusterManager<T>
-        where T: tonic::client::GrpcService<tonic::body::BoxBody>,
+        where T: tonic::client::GrpcService<tonic::body::Body>,
               T::Error: Into<StdError>,
               T::ResponseBody: Body<Data=Bytes> + Send + 'static,
               <T::ResponseBody as Body>::Error: Into<StdError> + Send,
@@ -161,13 +161,13 @@ mod client {
                 F: tonic::service::Interceptor,
                 T::ResponseBody: Default,
                 T: tonic::codegen::Service<
-                    http::Request<tonic::body::BoxBody>,
+                    http::Request<tonic::body::Body>,
                     Response = http::Response<
-                        <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
+                        <T as tonic::client::GrpcService<tonic::body::Body>>::ResponseBody,
                     >,
                 >,
                 <T as tonic::codegen::Service<
-                    http::Request<tonic::body::BoxBody>,
+                    http::Request<tonic::body::Body>,
                 >>::Error: Into<StdError> + Send + Sync,
         {
             let inner_client = ClusterManagerClient::new(InterceptedService::new(inner, interceptor));

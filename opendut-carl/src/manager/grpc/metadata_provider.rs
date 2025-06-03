@@ -1,5 +1,4 @@
 use tonic::{Request, Response, Status};
-use tonic_web::CorsGrpcWeb;
 use tracing::trace;
 
 use opendut_carl_api::proto::services::metadata_provider::{VersionRequest, VersionResponse};
@@ -15,8 +14,8 @@ impl MetadataProviderFacade {
         Self { }
     }
 
-    pub fn into_grpc_service(self) -> CorsGrpcWeb<MetadataProviderServer<Self>> {
-        tonic_web::enable(MetadataProviderServer::new(self))
+    pub fn into_grpc_service(self) -> super::web::CorsGrpcWeb<MetadataProviderServer<Self>> {
+        super::web::enable(MetadataProviderServer::new(self))
     }
 }
 

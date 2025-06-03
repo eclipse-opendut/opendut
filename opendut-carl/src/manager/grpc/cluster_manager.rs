@@ -3,7 +3,6 @@ use opendut_carl_api::proto::services::cluster_manager::cluster_manager_server::
 use opendut_carl_api::proto::services::cluster_manager::*;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
 use tonic::{Request, Response, Status};
-use tonic_web::CorsGrpcWeb;
 use tracing::{error, trace};
 
 use crate::manager::cluster_manager::delete_cluster_deployment::DeleteClusterDeploymentParams;
@@ -27,8 +26,8 @@ impl ClusterManagerFacade {
         }
     }
 
-    pub fn into_grpc_service(self) -> CorsGrpcWeb<ClusterManagerServer<Self>> {
-        tonic_web::enable(ClusterManagerServer::new(self))
+    pub fn into_grpc_service(self) -> super::web::CorsGrpcWeb<ClusterManagerServer<Self>> {
+        super::web::enable(ClusterManagerServer::new(self))
     }
 }
 

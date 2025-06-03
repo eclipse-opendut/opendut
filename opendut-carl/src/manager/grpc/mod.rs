@@ -1,5 +1,4 @@
 use std::fmt::Display;
-
 pub use cluster_manager::ClusterManagerFacade;
 pub use metadata_provider::MetadataProviderFacade;
 pub use peer_manager::PeerManagerFacade;
@@ -45,3 +44,49 @@ macro_rules! extract {
 }
 
 pub(crate) use extract;
+
+
+mod web {
+    use std::task::{Context, Poll};
+    use tonic::body::Body;
+    use tonic::server::NamedService;
+    use tonic_web::GrpcWebService;
+    use tower::{Layer, Service};
+    use tower_http::cors::Cors;
+
+    pub fn enable<S>(service: S) -> CorsGrpcWeb<S>
+    where
+        S: Service<http::Request<Body>, Response = http::Response<Body>>,
+    {
+        let service = tower::layer::util::Stack::new(
+                tonic_web::GrpcWebLayer::new(),
+                tower_http::cors::CorsLayer::new(),
+            )
+            .layer(service);
+
+        CorsGrpcWeb(service)
+    }
+
+    #[derive(Debug, Clone)]
+    pub struct CorsGrpcWeb<S>(Cors<GrpcWebService<S>>);
+
+    impl<S> Service<http::Request<Body>> for CorsGrpcWeb<S>
+    where
+        S: Service<http::Request<Body>, Response = http::Response<Body>>,
+    {
+        type Response = S::Response;
+        type Error = S::Error;
+        type Future = <Cors<GrpcWebService<S>> as Service<http::Request<Body>>>::Future;
+
+        fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+            <Cors<GrpcWebService<S>> as Service<http::Request<Body>>>::poll_ready(&mut self.0, cx)
+        }
+        fn call(&mut self, req: http::Request<Body>) -> Self::Future {
+            self.0.call(req)
+        }
+    }
+
+    impl<S: NamedService> NamedService for CorsGrpcWeb<S> {
+        const NAME: &'static str = S::NAME;
+    }
+}
