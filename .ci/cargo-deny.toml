@@ -214,5 +214,5 @@ unknown-git = "warn"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
 # List of URLs for allowed Git repositories
 allow-git = [
-    "https://gitlab.com/opendut/leptos_oidc?branch=upgrade-leptos-0.7"
+    "https://gitlab.com/opendut/leptos_oidc.git?branch=upgrade-leptos-0.7"
 ]

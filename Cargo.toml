@@ -89,7 +89,7 @@ indoc = "2.0.6"
 ipnet = "2.11.0"
 jsonwebtoken = "9.3.0"
 leptos = { version = "0.7.5" }
-leptos_oidc = { git = "https://gitlab.com/opendut/leptos_oidc", branch = "upgrade-leptos-0.7" }
+leptos_oidc = { git = "https://gitlab.com/opendut/leptos_oidc.git", branch = "upgrade-leptos-0.7" }
 leptos_router = { version = "0.7.5" }
 leptos-use = { version = "0.15.5" }
 mime = "0.3.17"

@@ -3036,7 +3036,7 @@ dependencies = [
 [[package]]
 name = "leptos_oidc"
 version = "0.8.0"
-source = "git+https://gitlab.com/opendut/leptos_oidc?branch=upgrade-leptos-0.7#983aaf72c2c931fa132ec4043de644a4aa518ac9"
+source = "git+https://gitlab.com/opendut/leptos_oidc.git?branch=upgrade-leptos-0.7#983aaf72c2c931fa132ec4043de644a4aa518ac9"
 dependencies = [
  "chrono",
  "codee 0.2.0",
