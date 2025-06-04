@@ -45,7 +45,7 @@ tar = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 toml_edit = { workspace = true }
-tonic = { workspace = true, features = ["tls-aws-lc"] }
+tonic = { workspace = true, features = ["tls-ring"] }
 tracing = { workspace = true }
 tracing-opentelemetry = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }

@@ -18,7 +18,7 @@ confidential_client = [
     "tokio",
     "tonic/default",
     "tonic/transport",
-    "tonic/tls-aws-lc",
+    "tonic/tls-ring",
     "tracing",
     "opendut-types",
 ]
