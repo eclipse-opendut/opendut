@@ -87,6 +87,7 @@ fn clarify_license_information(package: SpdxItemPackages) -> SpdxItemPackages {
                 | "MIT OR Apache-2.0"
                 | "MIT OR Apache-2.0 OR BSD-1-Clause"
                 | "MIT OR Apache-2.0 OR Zlib"
+                | "MIT OR MIT AND Apache-2.0"
                 | "MIT OR Zlib OR Apache-2.0"
                 | "MIT-0 OR MIT OR Apache-2.0"
                 | "Zlib OR Apache-2.0 OR MIT"

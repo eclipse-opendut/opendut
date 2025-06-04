@@ -63,10 +63,7 @@ cicero = "0.4.1"
 clap = "4.5.28"
 clap_complete = "4.5.44"
 cli-table = "0.5"
-
-# Waiting for yaml-rust2 dependency in config crate to be released: https://github.com/mehcode/config-rs/issues/563
-config = { git = "https://github.com/mehcode/config-rs", rev = "e3c1d0b452639478662a44f15ef6d5b6d969bf9b", default-features = false, features = ["toml", "yaml"] }
-#config = { version = "0.14.0", default-features = false, features = ["toml", "yaml"] }
+config = { version = "0.15.11", default-features = false, features = ["toml", "yaml"] }
 console = "0.15.10"
 console_error_panic_hook = "0.1.7"
 const_format = "0.2"
