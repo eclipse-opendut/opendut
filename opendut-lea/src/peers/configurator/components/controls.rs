@@ -142,8 +142,8 @@ fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl In
         let _ = configuration.get().devices
             .into_iter()
             .filter(|device| device.get().contained_in_clusters.is_empty().not() )
-            .map(|device| for cluster_configuration in device.get().contained_in_clusters {
-                used_clusters.insert(cluster_configuration.id);
+            .map(|device| for cluster_descriptor in device.get().contained_in_clusters {
+                used_clusters.insert(cluster_descriptor.id);
             })
             .collect::<Vec<_>>();
 

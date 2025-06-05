@@ -92,6 +92,8 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
     let resource_manager = ResourceManager::load_from_config(&settings).await
         .context("Creating ResourceManager failed")?;
 
+    startup::migration::run(resource_manager.clone()).await?;
+
     if get_resource_manager_ref {
         return Ok(CreateResult::ResourceManagerRef(resource_manager));
     }

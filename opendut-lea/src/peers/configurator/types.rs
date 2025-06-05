@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use opendut_types::cluster::ClusterConfiguration;
+use opendut_types::cluster::ClusterDescriptor;
 use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorId};
 use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
 use opendut_types::peer::executor::{container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine}, ExecutorKind, ExecutorDescriptors, ResultsUrl};
@@ -98,7 +98,7 @@ pub struct UserDeviceConfiguration {
     pub description: UserInputValue,
     pub interface: Option<NetworkInterfaceId>,
     pub is_collapsed: bool,
-    pub contained_in_clusters: Vec<ClusterConfiguration>,
+    pub contained_in_clusters: Vec<ClusterDescriptor>,
 }
 
 impl TryFrom<UserPeerConfiguration> for PeerDescriptor {

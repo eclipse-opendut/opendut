@@ -1,8 +1,8 @@
-use pem::Pem;
-use crate::proto::{conversion, ConversionError, ConversionErrorBuilder, ConversionResult};
 use crate::proto::util::ip_address::Address;
+use crate::proto::{conversion, ConversionError, ConversionResult};
 use crate::util;
 use crate::util::net::NetworkInterfaceConfiguration;
+use pem::Pem;
 
 crate::include_proto!("opendut.types.util");
 

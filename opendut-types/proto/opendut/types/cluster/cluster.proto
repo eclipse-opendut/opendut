@@ -15,14 +15,14 @@ message ClusterName {
   string value = 1;
 }
 
-// ANCHOR: ClusterConfiguration
-message ClusterConfiguration {
+// ANCHOR: ClusterDescriptor
+message ClusterDescriptor {
   ClusterId id = 1;
   ClusterName name = 2;
   opendut.types.peer.PeerId leader = 3;
   repeated opendut.types.topology.DeviceId devices = 4;
 }
-// ANCHOR_END: ClusterConfiguration
+// ANCHOR_END: ClusterDescriptor
 
 message ClusterDeployment {
   ClusterId id = 1;

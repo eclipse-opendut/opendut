@@ -1,11 +1,11 @@
 use std::collections::HashSet;
-use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
+use opendut_types::cluster::{ClusterDescriptor, ClusterId, ClusterName};
 use opendut_types::peer::PeerId;
-use opendut_types::specs::cluster::ClusterConfigurationSpecificationV1;
+use opendut_types::specs::cluster::ClusterDescriptorSpecificationV1;
 use opendut_types::specs::SpecificationMetadata;
 use opendut_types::topology::{DeviceId};
 
-pub fn convert_document_to_cluster_configuration(specification_metadata: SpecificationMetadata, cluster: ClusterConfigurationSpecificationV1) -> crate::Result<ClusterConfiguration>  {
+pub fn convert_document_to_cluster_descriptor(specification_metadata: SpecificationMetadata, cluster: ClusterDescriptorSpecificationV1) -> crate::Result<ClusterDescriptor>  {
     let SpecificationMetadata { id, name } = specification_metadata;
     
     let id = ClusterId::from(id);
@@ -18,7 +18,7 @@ pub fn convert_document_to_cluster_configuration(specification_metadata: Specifi
         .map(DeviceId::from).
         collect::<HashSet<_>>();
 
-    let configuration = ClusterConfiguration {
+    let configuration = ClusterDescriptor {
         id,
         name,
         leader: PeerId::from(leader),
@@ -34,8 +34,8 @@ mod tests {
     use googletest::prelude::*;
     
     #[test]
-    fn should_convert_document_to_cluster_configuration() -> anyhow::Result<()> {
-        let cluster_configuration = ClusterConfiguration {
+    fn should_convert_document_to_cluster_descriptor() -> anyhow::Result<()> {
+        let cluster_descriptor = ClusterDescriptor {
             id: ClusterId::random(),
             name: ClusterName::try_from("FirstCluster")?,
             leader: PeerId::random(),
@@ -43,18 +43,18 @@ mod tests {
         };
         
         let specification_meta_data = SpecificationMetadata {
-            id: cluster_configuration.id.0,
-            name: cluster_configuration.name.value().to_owned(),
+            id: cluster_descriptor.id.0,
+            name: cluster_descriptor.name.value().to_owned(),
         };
         
-        let document = ClusterConfigurationSpecificationV1 {
-            leader_id: cluster_configuration.leader.uuid,
+        let document = ClusterDescriptorSpecificationV1 {
+            leader_id: cluster_descriptor.leader.uuid,
             devices: vec![],
         };
         
-        let result = convert_document_to_cluster_configuration(specification_meta_data, document).unwrap();
+        let result = convert_document_to_cluster_descriptor(specification_meta_data, document).unwrap();
 
-        assert_that!(result, eq(&cluster_configuration));
+        assert_that!(result, eq(&cluster_descriptor));
 
 
         Ok(())      

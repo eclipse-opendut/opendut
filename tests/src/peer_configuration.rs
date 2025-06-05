@@ -2,7 +2,7 @@ use crate::testing;
 use crate::testing::carl_client::TestCarlClient;
 use crate::testing::util;
 use googletest::prelude::*;
-use opendut_types::cluster::{ClusterAssignment, ClusterConfiguration, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
+use opendut_types::cluster::{ClusterAssignment, ClusterDescriptor, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
 use opendut_types::peer::configuration::{OldPeerConfiguration, Parameter, ParameterTarget, PeerConfiguration};
 use opendut_types::peer::configuration::parameter;
 use opendut_types::peer::PeerId;
@@ -44,7 +44,7 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
 
     let cluster_leader = peer_a.id;
     let cluster_devices = peer_a.topology.devices.iter().chain(peer_b.topology.devices.iter());
-    let cluster = store_cluster_configuration(cluster_leader, cluster_devices, &carl.client).await?;
+    let cluster = store_cluster_descriptor(cluster_leader, cluster_devices, &carl.client).await?;
 
     store_cluster_deployment(cluster.id, &carl.client).await?;
     //let result = store_cluster_deployment(cluster.id, &carl.client).await;
@@ -129,7 +129,7 @@ async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_onl
 
     let cluster_leader = peer_a.id;
     let cluster_devices = peer_a.topology.devices.iter().chain(peer_b.topology.devices.iter());
-    let cluster = store_cluster_configuration(cluster_leader, cluster_devices, &carl.client).await?;
+    let cluster = store_cluster_descriptor(cluster_leader, cluster_devices, &carl.client).await?;
 
     store_cluster_deployment(cluster.id, &carl.client).await?;
     receiver_a.expect_no_peer_configuration().await;
@@ -227,23 +227,23 @@ struct CarlFixture {
     port: Port,
 }
 
-async fn store_cluster_configuration(leader: PeerId, devices: impl Iterator<Item=&DeviceDescriptor>, carl_client: &TestCarlClient) -> anyhow::Result<ClusterConfiguration> {
+async fn store_cluster_descriptor(leader: PeerId, devices: impl Iterator<Item=&DeviceDescriptor>, carl_client: &TestCarlClient) -> anyhow::Result<ClusterDescriptor> {
     let cluster_id = ClusterId::random();
 
     let devices = HashSet::from_iter(
         devices.map(|device| device.id)
     );
 
-    let cluster_configuration = ClusterConfiguration {
+    let cluster_descriptor = ClusterDescriptor {
         id: cluster_id,
         name: ClusterName::try_from(format!("cluster-{cluster_id}"))?,
         leader,
         devices,
     };
 
-    carl_client.inner().await.cluster.store_cluster_configuration(cluster_configuration.clone()).await?;
+    carl_client.inner().await.cluster.store_cluster_descriptor(cluster_descriptor.clone()).await?;
 
-    Ok(cluster_configuration)
+    Ok(cluster_descriptor)
 }
 
 async fn store_cluster_deployment(cluster_id: ClusterId, carl_client: &TestCarlClient) -> anyhow::Result<()> {

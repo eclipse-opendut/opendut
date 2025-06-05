@@ -135,7 +135,7 @@ opendut-cleo await peer-online --peers-may-not-yet-exist \
 # Deploy cluster
 ############################################################
 if [ "$CONTAINER_SERVICE_NAME" == "leader" ]; then
-  opendut-cleo apply "/opt/configurations/cluster_configuration.yaml"
+  opendut-cleo apply "/opt/configurations/cluster_descriptor.yaml"
   opendut-cleo delete cluster-deployment "206e5d0d-029d-4b03-8789-e0ec46e5a6ba" || echo "i dont mind if it ain't there"
   opendut-cleo create cluster-deployment "206e5d0d-029d-4b03-8789-e0ec46e5a6ba"
 

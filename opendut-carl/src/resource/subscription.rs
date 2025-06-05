@@ -1,5 +1,5 @@
 use crate::resource::api::Resource;
-use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment};
+use opendut_types::cluster::{ClusterDescriptor, ClusterDeployment};
 use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
 use opendut_types::peer::state::PeerConnectionState;
 use opendut_types::peer::PeerDescriptor;
@@ -42,8 +42,10 @@ pub trait Subscribable: Resource {
 }
 macro_rules! impl_subscribable {
     ($resource:ty, $field:ident) => {
-        impl Subscribable for $resource {
-            fn resource_subscribers_field(resource_subscribers: &mut ResourceSubscriptionChannels) -> &broadcast::Sender<SubscriptionEvent<Self>>
+        impl $crate::resource::subscription::Subscribable for $resource {
+            fn resource_subscribers_field(
+                resource_subscribers: &mut $crate::resource::subscription::ResourceSubscriptionChannels
+            ) -> &tokio::sync::broadcast::Sender<$crate::resource::subscription::SubscriptionEvent<Self>>
             where Self: Sized {
                 let (sender, _) = &resource_subscribers.$field;
                 sender
@@ -51,23 +53,30 @@ macro_rules! impl_subscribable {
         }
     }
 }
-impl_subscribable!(ClusterConfiguration, cluster_configuration);
 impl_subscribable!(ClusterDeployment, cluster_deployment);
+impl_subscribable!(ClusterDescriptor, cluster_descriptor);
 impl_subscribable!(OldPeerConfiguration, old_peer_configuration);
 impl_subscribable!(PeerConfiguration, peer_configuration);
 impl_subscribable!(PeerDescriptor, peer_descriptor);
 impl_subscribable!(PeerConnectionState, peer_connection_state);
 
+mod deprecated {
+    #![expect(deprecated)]
+    impl_subscribable!(crate::startup::migration::ClusterConfiguration, _cluster_configuration); //TODO remove
+}
 
 pub type ResourceSubscriptionChannel<R> = (broadcast::Sender<SubscriptionEvent<R>>, broadcast::Receiver<SubscriptionEvent<R>>); //store both the sender and initial receiver, to prevent channel from closing
 
 pub struct ResourceSubscriptionChannels {
-    pub cluster_configuration: ResourceSubscriptionChannel<ClusterConfiguration>,
     pub cluster_deployment: ResourceSubscriptionChannel<ClusterDeployment>,
+    pub cluster_descriptor: ResourceSubscriptionChannel<ClusterDescriptor>,
     pub old_peer_configuration: ResourceSubscriptionChannel<OldPeerConfiguration>,
     pub peer_configuration: ResourceSubscriptionChannel<PeerConfiguration>,
     pub peer_descriptor: ResourceSubscriptionChannel<PeerDescriptor>,
     pub peer_connection_state: ResourceSubscriptionChannel<PeerConnectionState>,
+
+    #[deprecated] #[expect(deprecated)]
+    pub(crate) _cluster_configuration: ResourceSubscriptionChannel<crate::startup::migration::ClusterConfiguration>, //TODO remove (should be unused)
 }
 impl ResourceSubscriptionChannels {
     pub fn subscribe<R: Resource + Subscribable>(&mut self) -> Subscription<R> {
@@ -83,10 +92,19 @@ impl ResourceSubscriptionChannels {
     }
 
     pub fn is_empty(&self) -> bool {
-        let ResourceSubscriptionChannels { cluster_configuration, cluster_deployment, old_peer_configuration, peer_configuration, peer_descriptor, peer_connection_state } = self;
+        let ResourceSubscriptionChannels {
+            cluster_deployment,
+            cluster_descriptor,
+            old_peer_configuration,
+            peer_configuration,
+            peer_descriptor,
+            peer_connection_state,
+            #[expect(deprecated)]
+            _cluster_configuration,
+        } = self;
 
-        cluster_configuration.0.is_empty()
-        && cluster_deployment.0.is_empty()
+        cluster_deployment.0.is_empty()
+        && cluster_descriptor.0.is_empty()
         && old_peer_configuration.0.is_empty()
         && peer_configuration.0.is_empty()
         && peer_descriptor.0.is_empty()
@@ -97,20 +115,22 @@ impl Default for ResourceSubscriptionChannels {
     fn default() -> Self {
         let capacity = 100;
 
-        let cluster_configuration = broadcast::channel(capacity);
         let cluster_deployment = broadcast::channel(capacity);
+        let cluster_descriptor = broadcast::channel(capacity);
         let old_peer_configuration = broadcast::channel(capacity);
         let peer_configuration = broadcast::channel(capacity);
         let peer_descriptor = broadcast::channel(capacity);
         let peer_connection_state = broadcast::channel(capacity);
 
         Self {
-            cluster_configuration,
             cluster_deployment,
+            cluster_descriptor,
             old_peer_configuration,
             peer_configuration,
             peer_descriptor,
             peer_connection_state,
+            #[expect(deprecated)]
+            _cluster_configuration: broadcast::channel(1),
         }
     }
 }

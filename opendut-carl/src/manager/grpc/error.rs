@@ -19,12 +19,12 @@ impl<T, E: Error> LogApiErr for Result<T, E> {
 
 mod cluster_manager {
     use crate::manager::cluster_manager;
-    use opendut_carl_api::carl::cluster::{CreateClusterConfigurationError, DeleteClusterConfigurationError, DeleteClusterDeploymentError, StoreClusterDeploymentError};
+    use opendut_carl_api::carl::cluster::{CreateClusterDescriptorError, DeleteClusterDescriptorError, DeleteClusterDeploymentError, StoreClusterDeploymentError};
 
-    impl From<cluster_manager::CreateClusterConfigurationError> for CreateClusterConfigurationError {
-        fn from(value: cluster_manager::CreateClusterConfigurationError) -> Self {
+    impl From<cluster_manager::CreateClusterDescriptorError> for CreateClusterDescriptorError {
+        fn from(value: cluster_manager::CreateClusterDescriptorError) -> Self {
             match value {
-                cluster_manager::CreateClusterConfigurationError::Persistence { cluster_id, cluster_name, source: _ } => {
+                cluster_manager::CreateClusterDescriptorError::Persistence { cluster_id, cluster_name, source: _ } => {
                     Self::Internal {
                         cluster_id,
                         cluster_name,
@@ -35,16 +35,16 @@ mod cluster_manager {
         }
     }
 
-    impl From<cluster_manager::DeleteClusterConfigurationError> for DeleteClusterConfigurationError {
-        fn from(value: cluster_manager::DeleteClusterConfigurationError) -> Self {
+    impl From<cluster_manager::DeleteClusterDescriptorError> for DeleteClusterDescriptorError {
+        fn from(value: cluster_manager::DeleteClusterDescriptorError) -> Self {
             match value {
-                cluster_manager::DeleteClusterConfigurationError::ClusterDeploymentFound { cluster_id } =>
+                cluster_manager::DeleteClusterDescriptorError::ClusterDeploymentFound { cluster_id } =>
                     Self::ClusterDeploymentFound { cluster_id },
-                cluster_manager::DeleteClusterConfigurationError::ClusterConfigurationNotFound { cluster_id } =>
-                    Self::ClusterConfigurationNotFound { cluster_id },
-                cluster_manager::DeleteClusterConfigurationError::IllegalClusterState { cluster_id, cluster_name, actual_state, required_states } =>
+                cluster_manager::DeleteClusterDescriptorError::ClusterDescriptorNotFound { cluster_id } =>
+                    Self::ClusterDescriptorNotFound { cluster_id },
+                cluster_manager::DeleteClusterDescriptorError::IllegalClusterState { cluster_id, cluster_name, actual_state, required_states } =>
                     Self::IllegalClusterState { cluster_id, cluster_name, actual_state, required_states },
-                cluster_manager::DeleteClusterConfigurationError::Persistence { cluster_id, cluster_name, source: _ } => {
+                cluster_manager::DeleteClusterDescriptorError::Persistence { cluster_id, cluster_name, source: _ } => {
                     Self::Internal {
                         cluster_id,
                         cluster_name,

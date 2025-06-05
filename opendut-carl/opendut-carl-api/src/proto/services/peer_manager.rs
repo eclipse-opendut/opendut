@@ -1,10 +1,10 @@
-use opendut_types::peer::{PeerId, PeerName};
 use opendut_types::peer::state::PeerState;
-use opendut_types::{conversion, proto};
+use opendut_types::peer::{PeerId, PeerName};
 use opendut_types::proto::{ConversionError, ConversionErrorBuilder, ConversionResult};
 use opendut_types::topology::DeviceId;
+use opendut_types::{conversion, proto};
 
-use crate::carl::peer::{StorePeerDescriptorError, DeletePeerDescriptorError, GetPeerDescriptorError, ListPeerDescriptorsError, GetPeerStateError, ListPeerStatesError};
+use crate::carl::peer::{DeletePeerDescriptorError, GetPeerDescriptorError, GetPeerStateError, ListPeerDescriptorsError, ListPeerStatesError, StorePeerDescriptorError};
 
 tonic::include_proto!("opendut.carl.services.peer_manager");
 

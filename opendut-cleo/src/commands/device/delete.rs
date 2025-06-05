@@ -25,9 +25,9 @@ impl DeleteDeviceCli {
 
         { //block deleting, if device is used in cluster
             let clusters = carl.cluster
-                .list_cluster_configurations()
+                .list_cluster_descriptors()
                 .await
-                .map_err(|error| format!("Failed to list cluster configurations.\n  {}", error))?;
+                .map_err(|error| format!("Failed to list cluster descriptors.\n  {}", error))?;
 
             let mut devices_in_cluster: Vec<String> = vec![];
             for cluster in clusters {

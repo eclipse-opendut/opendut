@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use tracing::{debug, error};
 use opendut_carl_api::carl::ClientError;
 use opendut_carl_api::carl::cluster::StoreClusterDeploymentError;
-use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
+use opendut_types::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
 
 use crate::app::use_app_globals;
 use crate::clusters::components::CreateClusterButton;
@@ -24,7 +24,7 @@ pub fn ClustersOverview() -> impl IntoView {
         LocalResource::new(move || {
             let mut carl = carl.clone();
             async move {
-                carl.cluster.list_cluster_configurations().await
+                carl.cluster.list_cluster_descriptors().await
                     .expect("Failed to request the list of clusters")
             }
         })
@@ -146,11 +146,11 @@ pub fn ClustersOverview() -> impl IntoView {
 
             let deployed_clusters = deployed_clusters.await;
 
-            clusters.iter().cloned().map(|cluster_configuration| {
-                let cluster_id = cluster_configuration.id;
+            clusters.iter().cloned().map(|cluster_descriptor| {
+                let cluster_id = cluster_descriptor.id;
                 view! {
                     <Row
-                        cluster_configuration=RwSignal::new(cluster_configuration)
+                        cluster_descriptor=RwSignal::new(cluster_descriptor)
                         on_deploy=on_deploy(cluster_id)
                         on_undeploy=on_undeploy(cluster_id)
                         is_deployed = RwSignal::new(IsDeployed(deployed_clusters.contains(&cluster_id)))
@@ -206,7 +206,7 @@ pub struct IsDeployed(pub bool);
 
 #[component]
 fn Row<OnDeployFn, OnUndeployFn>(
-    cluster_configuration: RwSignal<ClusterConfiguration>,
+    cluster_descriptor: RwSignal<ClusterDescriptor>,
     on_deploy: OnDeployFn,
     on_undeploy: OnUndeployFn,
     is_deployed: RwSignal<IsDeployed>,
@@ -216,15 +216,15 @@ where
     OnUndeployFn: Fn() + 'static,
 {
 
-    let cluster_id = create_read_slice(cluster_configuration,
-        |cluster_configuration| {
-            cluster_configuration.id
+    let cluster_id = create_read_slice(cluster_descriptor,
+        |cluster_descriptor| {
+            cluster_descriptor.id
         }
     );
 
-    let cluster_name = create_read_slice(cluster_configuration,
-        |cluster_configuration| {
-            Clone::clone(&cluster_configuration.name).to_string()
+    let cluster_name = create_read_slice(cluster_descriptor,
+        |cluster_descriptor| {
+            Clone::clone(&cluster_descriptor.name).to_string()
         }
     );
 

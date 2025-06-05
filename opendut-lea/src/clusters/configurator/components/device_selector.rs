@@ -8,7 +8,7 @@ use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
 use opendut_types::util::net::NetworkInterfaceDescriptor;
 use crate::clusters::configurator::components::get_all_selected_devices;
-use crate::clusters::configurator::types::UserClusterConfiguration;
+use crate::clusters::configurator::types::UserClusterDescriptor;
 use crate::components::{ButtonColor, ButtonSize, ButtonState, CollapseButton, FontAwesomeIcon, IconButton};
 use crate::util::{Ior, NON_BREAKING_SPACE};
 use crate::util::net::UserNetworkInterfaceConfiguration;
@@ -18,12 +18,12 @@ pub type DeviceSelection = Ior<DeviceSelectionError, HashSet<DeviceId>>;
 
 #[component]
 pub fn DeviceSelector(
-    cluster_configuration: RwSignal<UserClusterConfiguration>,
+    cluster_descriptor: RwSignal<UserClusterDescriptor>,
     peers: ReadSignal<Vec<PeerDescriptor>>,
 ) -> impl IntoView {
 
     let (getter, setter) = create_slice(
-        cluster_configuration,
+        cluster_descriptor,
         |config| Clone::clone(&config.devices),
         |config, input| {
             config.devices = input;

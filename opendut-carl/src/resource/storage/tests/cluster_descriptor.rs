@@ -1,11 +1,11 @@
 use crate::resource::manager::ResourceManager;
-use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
+use opendut_types::cluster::{ClusterDescriptor, ClusterId, ClusterName};
 use opendut_types::peer::PeerId;
 use opendut_types::topology::DeviceId;
 use std::collections::HashSet;
 
 #[tokio::test]
-async fn should_persist_cluster_configuration() -> anyhow::Result<()> {
+async fn should_persist_cluster_descriptor() -> anyhow::Result<()> {
     let resource_manager = ResourceManager::new_in_memory();
 
     let peer = super::peer_descriptor::peer_descriptor()?;
@@ -15,21 +15,21 @@ async fn should_persist_cluster_configuration() -> anyhow::Result<()> {
         .map(|device| device.id)
         .collect::<Vec<_>>();
 
-    let testee = cluster_configuration(
+    let testee = cluster_descriptor(
         peer.id,
         cluster_devices.clone(),
     )?;
 
-    let result = resource_manager.get::<ClusterConfiguration>(testee.id).await?;
+    let result = resource_manager.get::<ClusterDescriptor>(testee.id).await?;
     assert!(result.is_none());
-    let result = resource_manager.list::<ClusterConfiguration>().await?;
+    let result = resource_manager.list::<ClusterDescriptor>().await?;
     assert!(result.is_empty());
 
     resource_manager.insert(testee.id, testee.clone()).await?;
 
-    let result = resource_manager.get::<ClusterConfiguration>(testee.id).await?;
+    let result = resource_manager.get::<ClusterDescriptor>(testee.id).await?;
     assert_eq!(result, Some(testee.clone()));
-    let result = resource_manager.list::<ClusterConfiguration>().await?;
+    let result = resource_manager.list::<ClusterDescriptor>().await?;
     assert_eq!(result.len(), 1);
     assert_eq!(result.values().next(), Some(&testee));
 
@@ -40,22 +40,22 @@ async fn should_persist_cluster_configuration() -> anyhow::Result<()> {
     };
     resource_manager.insert(testee.id, testee.clone()).await?;
 
-    let result = resource_manager.remove::<ClusterConfiguration>(testee.id).await?;
+    let result = resource_manager.remove::<ClusterDescriptor>(testee.id).await?;
     assert_eq!(result, Some(testee.clone()));
 
-    let result = resource_manager.get::<ClusterConfiguration>(testee.id).await?;
+    let result = resource_manager.get::<ClusterDescriptor>(testee.id).await?;
     assert!(result.is_none());
-    let result = resource_manager.list::<ClusterConfiguration>().await?;
+    let result = resource_manager.list::<ClusterDescriptor>().await?;
     assert!(result.is_empty());
 
-    let result = resource_manager.remove::<ClusterConfiguration>(testee.id).await?;
+    let result = resource_manager.remove::<ClusterDescriptor>(testee.id).await?;
     assert_eq!(result, None);
 
     Ok(())
 }
 
-pub fn cluster_configuration(leader_id: PeerId, devices: Vec<DeviceId>) -> anyhow::Result<ClusterConfiguration> {
-    Ok(ClusterConfiguration {
+pub fn cluster_descriptor(leader_id: PeerId, devices: Vec<DeviceId>) -> anyhow::Result<ClusterDescriptor> {
+    Ok(ClusterDescriptor {
         id: ClusterId::random(),
         name: ClusterName::try_from("cluster-name")?,
         leader: leader_id,

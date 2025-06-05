@@ -1,6 +1,6 @@
-use std::ops::Not;
-use crate::proto::{conversion, ConversionError, ConversionErrorBuilder, ConversionResult};
 use crate::proto::vpn::VpnPeerConfig;
+use crate::proto::{conversion, ConversionError, ConversionResult};
+use std::ops::Not;
 
 use super::util::{NetworkInterfaceDescriptor, NetworkInterfaceName};
 
@@ -317,9 +317,9 @@ mod tests {
     use std::net::IpAddr;
     use std::str::FromStr;
 
+    use super::*;
     use googletest::prelude::*;
     use uuid::Uuid;
-    use super::*;
 
     #[test]
     fn A_PeerId_should_be_convertable_to_its_proto_and_vice_versa() -> Result<()> {

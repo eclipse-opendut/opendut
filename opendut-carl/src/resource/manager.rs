@@ -106,16 +106,18 @@ impl ResourceManager {
         state: &mut RwLockWriteGuard<'_, State>,
     ) {
         let ResourceSubscriptionChannels {
-            mut cluster_configuration,
+            mut cluster_descriptor,
             mut cluster_deployment,
             mut old_peer_configuration,
             mut peer_configuration,
             mut peer_descriptor,
             mut peer_connection_state,
+            #[expect(deprecated)]
+            mut _cluster_configuration,
         } = relayed_subscription_events;
 
 
-        while let Ok(event) = cluster_configuration.1.try_recv() {
+        while let Ok(event) = cluster_descriptor.1.try_recv() {
             state.subscribers
                 .notify(event)
                 .expect("should successfully send notification about event during resource transaction");
@@ -178,7 +180,7 @@ mod test {
     use googletest::prelude::*;
 
     use super::*;
-    use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
+    use opendut_types::cluster::{ClusterDescriptor, ClusterId, ClusterName};
     use opendut_types::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorDescriptor, ExecutorDescriptors, ExecutorId, ExecutorKind};
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_types::topology::Topology;
@@ -227,7 +229,7 @@ mod test {
         };
 
         let cluster_resource_id = ClusterId::random();
-        let cluster_configuration = ClusterConfiguration {
+        let cluster_descriptor = ClusterDescriptor {
             id: cluster_resource_id,
             name: ClusterName::try_from("ClusterX032")?,
             leader: peer.id,
@@ -238,8 +240,8 @@ mod test {
         testee.insert(peer_resource_id, Clone::clone(&peer)).await?;
         assert_that!(testee.get::<PeerDescriptor>(peer_resource_id).await?, some(eq(&peer)));
 
-        testee.insert(cluster_resource_id, Clone::clone(&cluster_configuration)).await?;
-        assert_that!(testee.get::<ClusterConfiguration>(cluster_resource_id).await?, some(eq(&cluster_configuration)));
+        testee.insert(cluster_resource_id, Clone::clone(&cluster_descriptor)).await?;
+        assert_that!(testee.get::<ClusterDescriptor>(cluster_resource_id).await?, some(eq(&cluster_descriptor)));
 
         assert!(testee.list::<PeerDescriptor>().await?.get(&peer_resource_id).is_some());
 
@@ -252,10 +254,10 @@ mod test {
         assert_that!(testee.get::<PeerDescriptor>(peer_resource_id).await?, some(eq(&peer)));
 
         testee.resources(async |resources| {
-            resources.list::<ClusterConfiguration>()?
+            resources.list::<ClusterDescriptor>()?
                 .into_iter()
                 .for_each(|(_cluster_id, cluster)| {
-                    assert_that!(cluster, eq(&cluster_configuration));
+                    assert_that!(cluster, eq(&cluster_descriptor));
                 });
             PersistenceResult::Ok(())
         }).await??;

@@ -3,12 +3,12 @@ use leptos::prelude::*;
 use opendut_types::cluster::{IllegalClusterName, ClusterName};
 
 use crate::components::{UserInput, UserInputValue};
-use crate::clusters::configurator::types::UserClusterConfiguration;
+use crate::clusters::configurator::types::UserClusterDescriptor;
 
 #[component]
-pub fn ClusterNameInput(cluster_configuration: RwSignal<UserClusterConfiguration>) -> impl IntoView {
+pub fn ClusterNameInput(cluster_descriptor: RwSignal<UserClusterDescriptor>) -> impl IntoView {
 
-    let (getter, setter) = create_slice(cluster_configuration,
+    let (getter, setter) = create_slice(cluster_descriptor,
         |config| {
             Clone::clone(&config.name)
         },

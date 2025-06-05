@@ -26,5 +26,5 @@ pub enum ParseSpecificationError {
 #[derive(Clone, Copy, Debug, Deserialize, Display)]
 pub enum ResourceKind {
     PeerDescriptor,
-    ClusterConfiguration,
+    ClusterDescriptor,
 }

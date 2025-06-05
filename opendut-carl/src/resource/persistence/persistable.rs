@@ -1,7 +1,7 @@
 use crate::resource::api::Resource;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::TableDefinition;
-use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment};
+use opendut_types::cluster::{ClusterDescriptor, ClusterDeployment};
 use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
 use opendut_types::peer::state::PeerConnectionState;
 use opendut_types::peer::PeerDescriptor;
@@ -10,15 +10,15 @@ use prost::Message;
 use std::fmt::Debug;
 
 
-impl Persistable for ClusterConfiguration {
-    type Proto = opendut_types::proto::cluster::ClusterConfiguration;
-    const TABLE: &'static str = "cluster_configuration";
-    const STORAGE: StorageKind = StorageKind::Persistent;
-}
-
 impl Persistable for ClusterDeployment {
     type Proto = opendut_types::proto::cluster::ClusterDeployment;
     const TABLE: &'static str = "cluster_deployment";
+    const STORAGE: StorageKind = StorageKind::Persistent;
+}
+
+impl Persistable for ClusterDescriptor {
+    type Proto = opendut_types::proto::cluster::ClusterDescriptor;
+    const TABLE: &'static str = "cluster_descriptor";
     const STORAGE: StorageKind = StorageKind::Persistent;
 }
 

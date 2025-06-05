@@ -7,7 +7,7 @@ pub mod observer_messaging_broker;
 #[cfg(test)]
 mod testing {
     use crate::resource::manager::ResourceManagerRef;
-    use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
+    use opendut_types::cluster::{ClusterDescriptor, ClusterId, ClusterName};
     use opendut_types::peer::executor::ExecutorDescriptors;
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
     use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
@@ -82,7 +82,7 @@ mod testing {
 
     pub struct ClusterFixture {
         pub id: ClusterId,
-        pub configuration: ClusterConfiguration,
+        pub configuration: ClusterDescriptor,
         pub peer_a: PeerFixture,
         pub peer_b: PeerFixture,
     }
@@ -96,17 +96,17 @@ mod testing {
             resource_manager.insert(peer_b.id, peer_b.descriptor.clone()).await?;
 
             let cluster_id = ClusterId::random();
-            let cluster_configuration = ClusterConfiguration {
+            let cluster_descriptor = ClusterDescriptor {
                 id: cluster_id,
                 name: ClusterName::try_from(format!("Cluster-{cluster_id}"))?,
                 leader: peer_a.id,
                 devices: HashSet::from([peer_a.device_1, peer_a.device_2, peer_b.device_1]),
             };
-            resource_manager.insert(cluster_id, cluster_configuration.clone()).await?;
+            resource_manager.insert(cluster_id, cluster_descriptor.clone()).await?;
 
             Ok(ClusterFixture {
                 id: cluster_id,
-                configuration: cluster_configuration,
+                configuration: cluster_descriptor,
                 peer_a,
                 peer_b,
             })

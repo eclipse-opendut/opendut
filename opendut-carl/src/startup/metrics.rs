@@ -1,6 +1,6 @@
 use opentelemetry::global;
 use tracing::trace;
-use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment};
+use opendut_types::cluster::{ClusterDescriptor, ClusterDeployment};
 use opendut_types::peer::PeerDescriptor;
 use opendut_types::peer::state::PeerConnectionState;
 use crate::resource::manager::ResourceManagerRef;
@@ -31,7 +31,7 @@ pub fn initialize_metrics_collection(
         meter.u64_observable_gauge("configured_clusters")
             .with_callback(move |observer| {
                 let result = futures::executor::block_on(
-                    resource_manager.list::<ClusterConfiguration>()
+                    resource_manager.list::<ClusterDescriptor>()
                 );
 
                 match result {

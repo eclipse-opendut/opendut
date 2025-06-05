@@ -70,7 +70,7 @@ macro_rules! conversion {
 
             fn try_from(value: $Proto) -> $crate::proto::ConversionResult<Self> {
                 #[allow(unused)]
-                type ErrorBuilder = ConversionErrorBuilder<$Proto, $Model>;
+                type ErrorBuilder = $crate::proto::ConversionErrorBuilder<$Proto, $Model>;
                 type Model = $Model;
                 type Proto = $Proto;
 

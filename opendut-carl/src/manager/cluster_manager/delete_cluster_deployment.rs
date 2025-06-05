@@ -1,7 +1,7 @@
 use opendut_types::ShortName;
 use opendut_types::cluster::ClusterDisplay;
 use crate::settings::vpn::Vpn;
-use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId, ClusterName};
+use opendut_types::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId, ClusterName};
 use opendut_types::cluster::state::ClusterState;
 use crate::resource::api::resources::Resources;
 use crate::resource::persistence::error::PersistenceError;
@@ -22,7 +22,7 @@ impl Resources<'_> {
             self.remove::<ClusterDeployment>(cluster_id)
                 .map_err(|source| DeleteClusterDeploymentError::Persistence { cluster_id, cluster_name: None, source })?
                 .map(|deployment| {
-                    let configuration = self.get::<ClusterConfiguration>(cluster_id)
+                    let configuration = self.get::<ClusterDescriptor>(cluster_id)
                         .map_err(|source| DeleteClusterDeploymentError::Persistence { cluster_id, cluster_name: None, source })?;
                     Ok((deployment, configuration))
                 })

@@ -7,7 +7,7 @@ use futures::future::join_all;
 use futures::FutureExt;
 use tracing::{debug, error, trace, warn};
 
-use opendut_types::cluster::{ClusterAssignment, ClusterConfiguration, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
+use opendut_types::cluster::{ClusterAssignment, ClusterDescriptor, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
 use opendut_types::peer::state::PeerConnectionState;
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
@@ -20,11 +20,11 @@ use crate::resource::persistence::error::{MapErrToInner, PersistenceError, Persi
 use crate::resource::storage::ResourcesStorageApi;
 use crate::settings::vpn::Vpn;
 
-pub mod create_cluster_configuration;
-pub use create_cluster_configuration::*;
+pub mod create_cluster_descriptor;
+pub use create_cluster_descriptor::*;
 
-pub mod delete_cluster_configuration;
-pub use delete_cluster_configuration::*;
+pub mod delete_cluster_descriptor;
+pub use delete_cluster_descriptor::*;
 
 pub mod delete_cluster_deployment;
 #[allow(unused)]
@@ -78,16 +78,16 @@ impl ClusterManager {
     }
 
     #[tracing::instrument(skip(self), level="trace")]
-    pub async fn get_cluster_configuration(&self, cluster_id: ClusterId) -> Result<Option<ClusterConfiguration>, GetClusterConfigurationError> {
-        self.resource_manager.get::<ClusterConfiguration>(cluster_id).await
-            .map_err(|source| GetClusterConfigurationError { cluster_id, source })
+    pub async fn get_cluster_descriptor(&self, cluster_id: ClusterId) -> Result<Option<ClusterDescriptor>, GetClusterDescriptorError> {
+        self.resource_manager.get::<ClusterDescriptor>(cluster_id).await
+            .map_err(|source| GetClusterDescriptorError { cluster_id, source })
     }
 
     #[tracing::instrument(skip(self), level="trace")]
-    pub async fn list_cluster_configuration(&self) -> Result<Vec<ClusterConfiguration>, ListClusterConfigurationsError> {
-        self.resource_manager.list::<ClusterConfiguration>().await
+    pub async fn list_cluster_descriptor(&self) -> Result<Vec<ClusterDescriptor>, ListClusterDescriptorsError> {
+        self.resource_manager.list::<ClusterDescriptor>().await
             .map(|clusters| clusters.into_values().collect::<Vec<_>>())
-            .map_err(|source| ListClusterConfigurationsError { source })
+            .map_err(|source| ListClusterDescriptorsError { source })
     }
 
 
@@ -106,7 +106,7 @@ impl ClusterManager {
         match cluster_deployable {
             ClusterDeployable::AllPeersAvailable => {
                 self.resource_manager.resources_mut(async |resources| {
-                    let cluster_name = resources.get::<ClusterConfiguration>(cluster_id)
+                    let cluster_name = resources.get::<ClusterDescriptor>(cluster_id)
                         .map_err(|source| StoreClusterDeploymentError::Persistence { cluster_id, cluster_name: None, source })?
                         .map(|cluster| cluster.name)
                         .unwrap_or_else(|| ClusterName::try_from("unknown_cluster").unwrap());
@@ -157,11 +157,11 @@ impl ClusterManager {
                 .map(|device| device.id)
                 .collect::<Vec<_>>();
 
-            let cluster_configurations = resources.list::<ClusterConfiguration>()?;
+            let cluster_descriptors = resources.list::<ClusterDescriptor>()?;
 
-            let clusters_containing_devices_of_upped_peer = cluster_configurations.into_iter()
-                .filter(|(_, cluster_configuration)|
-                    cluster_configuration.devices.iter()
+            let clusters_containing_devices_of_upped_peer = cluster_descriptors.into_iter()
+                .filter(|(_, cluster_descriptor)|
+                    cluster_descriptor.devices.iter()
                         .any(|device| peer_devices.contains(device))
                 )
                 .filter_map(|(cluster_id, _)| { //filter out clusters without stored deployment
@@ -220,9 +220,9 @@ impl ClusterManager {
     #[tracing::instrument(skip(self), level="debug")]
     async fn rollout_cluster(&mut self, cluster_id: ClusterId) -> Result<(), RolloutClusterError> {
 
-        let cluster_config = self.resource_manager.get::<ClusterConfiguration>(cluster_id).await
+        let cluster_config = self.resource_manager.get::<ClusterDescriptor>(cluster_id).await
             .map_err(|source| RolloutClusterError::Persistence { cluster_id, source })?
-            .ok_or(RolloutClusterError::ClusterConfigurationNotFound(cluster_id))?;
+            .ok_or(RolloutClusterError::ClusterDescriptorNotFound(cluster_id))?;
 
         let cluster_name = cluster_config.name;
 
@@ -440,15 +440,15 @@ pub mod error {
     use opendut_types::cluster::ClusterDisplay;
 
     #[derive(thiserror::Error, Debug)]
-    #[error("ClusterConfiguration <{cluster_id}> could not be retrieved")]
-    pub struct GetClusterConfigurationError {
+    #[error("ClusterDescriptor <{cluster_id}> could not be retrieved")]
+    pub struct GetClusterDescriptorError {
         pub cluster_id: ClusterId,
         #[source] pub source: PersistenceError,
     }
 
     #[derive(thiserror::Error, Debug)]
-    #[error("Error while listing cluster configurations")]
-    pub struct ListClusterConfigurationsError {
+    #[error("Error while listing cluster descriptors")]
+    pub struct ListClusterDescriptorsError {
         pub source: PersistenceError,
     }
 
@@ -483,7 +483,7 @@ pub mod error {
     #[derive(thiserror::Error, Debug)]
     pub enum RolloutClusterError {
         #[error("Cluster <{0}> not found!")]
-        ClusterConfigurationNotFound(ClusterId),
+        ClusterDescriptorNotFound(ClusterId),
         #[error("A peer for device <{device_id}> of cluster '{cluster_name}' <{cluster_id}> not found.")]
         PeerForDeviceNotFound {
             device_id: DeviceId,
@@ -556,7 +556,7 @@ mod test {
 
             let leader_id = peer_a.id;
             let cluster_id = ClusterId::random();
-            let cluster_configuration = ClusterConfiguration {
+            let cluster_descriptor = ClusterDescriptor {
                 id: cluster_id,
                 name: ClusterName::try_from("MyAwesomeCluster").unwrap(),
                 leader: leader_id,
@@ -583,8 +583,8 @@ mod test {
 
 
             fixture.resource_manager.resources_mut(async |resources| {
-                resources.create_cluster_configuration(CreateClusterConfigurationParams {
-                    cluster_configuration,
+                resources.create_cluster_descriptor(CreateClusterDescriptorParams {
+                    cluster_descriptor,
                 })
             }).await??;
 
@@ -668,8 +668,8 @@ mod test {
 
         let result = fixture.testee.lock().await.rollout_cluster(unknown_cluster).await;
 
-        let Err(RolloutClusterError::ClusterConfigurationNotFound(cluster)) = result
-        else { panic!("Result is not a ClusterConfigurationNotFoundError.") };
+        let Err(RolloutClusterError::ClusterDescriptorNotFound(cluster)) = result
+        else { panic!("Result is not a ClusterDescriptorNotFoundError.") };
 
         assert_eq!(cluster, unknown_cluster);
 

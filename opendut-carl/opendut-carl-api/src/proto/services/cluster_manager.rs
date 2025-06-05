@@ -1,12 +1,12 @@
-use std::collections::HashMap;
-use opendut_types::cluster::{ClusterId, ClusterName};
-use opendut_types::cluster::state::ClusterState;
-use opendut_types::proto;
-use opendut_types::proto::{ConversionError, ConversionErrorBuilder};
-use opendut_types::conversion;
-use opendut_types::proto::ConversionResult;
 use crate::carl;
-use crate::carl::cluster::{CreateClusterConfigurationError, DeleteClusterConfigurationError, DeleteClusterDeploymentError, StoreClusterDeploymentError};
+use crate::carl::cluster::{CreateClusterDescriptorError, DeleteClusterDeploymentError, DeleteClusterDescriptorError, StoreClusterDeploymentError};
+use opendut_types::cluster::state::ClusterState;
+use opendut_types::cluster::{ClusterId, ClusterName};
+use opendut_types::conversion;
+use opendut_types::proto;
+use opendut_types::proto::ConversionResult;
+use opendut_types::proto::{ConversionError, ConversionErrorBuilder};
+use std::collections::HashMap;
 
 tonic::include_proto!("opendut.carl.services.cluster_manager");
 
@@ -57,31 +57,31 @@ conversion! {
     }
 }
 
-impl From<CreateClusterConfigurationError> for CreateClusterConfigurationFailure {
-    fn from(error: CreateClusterConfigurationError) -> Self {
+impl From<CreateClusterDescriptorError> for CreateClusterDescriptorFailure {
+    fn from(error: CreateClusterDescriptorError) -> Self {
         let proto_error = match error {
-            CreateClusterConfigurationError::Internal { cluster_id, cluster_name, cause } => {
-                create_cluster_configuration_failure::Error::Internal(CreateClusterConfigurationFailureInternal {
+            CreateClusterDescriptorError::Internal { cluster_id, cluster_name, cause } => {
+                create_cluster_descriptor_failure::Error::Internal(CreateClusterDescriptorFailureInternal {
                     cluster_id: Some(cluster_id.into()),
                     cluster_name: Some(cluster_name.into()),
                     cause
                 })
             }
         };
-        CreateClusterConfigurationFailure {
+        CreateClusterDescriptorFailure {
             error: Some(proto_error)
         }
     }
 }
 
-impl TryFrom<CreateClusterConfigurationFailure> for CreateClusterConfigurationError {
+impl TryFrom<CreateClusterDescriptorFailure> for CreateClusterDescriptorError {
     type Error = ConversionError;
-    fn try_from(failure: CreateClusterConfigurationFailure) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<CreateClusterConfigurationFailure, CreateClusterConfigurationError>;
+    fn try_from(failure: CreateClusterDescriptorFailure) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<CreateClusterDescriptorFailure, CreateClusterDescriptorError>;
         let error = failure.error
             .ok_or_else(|| ErrorBuilder::field_not_set("error"))?;
         let error = match error {
-            create_cluster_configuration_failure::Error::Internal(error) => {
+            create_cluster_descriptor_failure::Error::Internal(error) => {
                 error.try_into()?
             }
         };
@@ -89,72 +89,72 @@ impl TryFrom<CreateClusterConfigurationFailure> for CreateClusterConfigurationEr
     }
 }
 
-impl TryFrom<CreateClusterConfigurationFailureInternal> for CreateClusterConfigurationError {
+impl TryFrom<CreateClusterDescriptorFailureInternal> for CreateClusterDescriptorError {
     type Error = ConversionError;
-    fn try_from(failure: CreateClusterConfigurationFailureInternal) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<CreateClusterConfigurationFailureInternal, CreateClusterConfigurationError>;
+    fn try_from(failure: CreateClusterDescriptorFailureInternal) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<CreateClusterDescriptorFailureInternal, CreateClusterDescriptorError>;
         let cluster_id: ClusterId = failure.cluster_id
             .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
             .try_into()?;
         let cluster_name: ClusterName = failure.cluster_name
             .ok_or_else(|| ErrorBuilder::field_not_set("cluster_name"))?
             .try_into()?;
-        Ok(CreateClusterConfigurationError::Internal { cluster_id, cluster_name, cause: failure.cause })
+        Ok(CreateClusterDescriptorError::Internal { cluster_id, cluster_name, cause: failure.cause })
     }
 }
 
-impl From<DeleteClusterConfigurationError> for DeleteClusterConfigurationFailure {
-    fn from(error: DeleteClusterConfigurationError) -> Self {
+impl From<DeleteClusterDescriptorError> for DeleteClusterDescriptorFailure {
+    fn from(error: DeleteClusterDescriptorError) -> Self {
         let proto_error = match error {
-            DeleteClusterConfigurationError::ClusterConfigurationNotFound { cluster_id } => {
-                delete_cluster_configuration_failure::Error::ClusterConfigurationNotFound(DeleteClusterConfigurationFailureClusterConfigurationNotFound {
+            DeleteClusterDescriptorError::ClusterDescriptorNotFound { cluster_id } => {
+                delete_cluster_descriptor_failure::Error::ClusterDescriptorNotFound(DeleteClusterDescriptorFailureClusterDescriptorNotFound {
                     cluster_id: Some(cluster_id.into())
                 })
             }
-            DeleteClusterConfigurationError::IllegalClusterState { cluster_id, cluster_name, actual_state, required_states } => {
-                delete_cluster_configuration_failure::Error::IllegalClusterState(DeleteClusterConfigurationFailureIllegalClusterState {
+            DeleteClusterDescriptorError::IllegalClusterState { cluster_id, cluster_name, actual_state, required_states } => {
+                delete_cluster_descriptor_failure::Error::IllegalClusterState(DeleteClusterDescriptorFailureIllegalClusterState {
                     cluster_id: Some(cluster_id.into()),
                     cluster_name: Some(cluster_name.into()),
                     actual_state: Some(actual_state.into()),
                     required_states: required_states.into_iter().map(Into::into).collect(),
                 })
             }
-            DeleteClusterConfigurationError::Internal { cluster_id, cluster_name, cause } => {
-                delete_cluster_configuration_failure::Error::Internal(DeleteClusterConfigurationFailureInternal {
+            DeleteClusterDescriptorError::Internal { cluster_id, cluster_name, cause } => {
+                delete_cluster_descriptor_failure::Error::Internal(DeleteClusterDescriptorFailureInternal {
                     cluster_id: Some(cluster_id.into()),
                     cluster_name: cluster_name.map(Into::into),
                     cause
                 })
             }
-            DeleteClusterConfigurationError::ClusterDeploymentFound { cluster_id } => {
-                delete_cluster_configuration_failure::Error::ClusterDeploymentExists(DeleteClusterConfigurationFailureClusterDeploymentExists {
+            DeleteClusterDescriptorError::ClusterDeploymentFound { cluster_id } => {
+                delete_cluster_descriptor_failure::Error::ClusterDeploymentExists(DeleteClusterDescriptorFailureClusterDeploymentExists {
                     cluster_id: Some(cluster_id.into()),
                 })
             }
         };
-        DeleteClusterConfigurationFailure {
+        DeleteClusterDescriptorFailure {
             error: Some(proto_error)
         }
     }
 }
 
-impl TryFrom<DeleteClusterConfigurationFailure> for DeleteClusterConfigurationError {
+impl TryFrom<DeleteClusterDescriptorFailure> for DeleteClusterDescriptorError {
     type Error = ConversionError;
-    fn try_from(failure: DeleteClusterConfigurationFailure) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<DeleteClusterConfigurationFailure, DeleteClusterConfigurationError>;
+    fn try_from(failure: DeleteClusterDescriptorFailure) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<DeleteClusterDescriptorFailure, DeleteClusterDescriptorError>;
         let error = failure.error
             .ok_or_else(|| ErrorBuilder::field_not_set("error"))?;
         let error = match error {
-            delete_cluster_configuration_failure::Error::ClusterConfigurationNotFound(error) => {
+            delete_cluster_descriptor_failure::Error::ClusterDescriptorNotFound(error) => {
                 error.try_into()?
             }
-            delete_cluster_configuration_failure::Error::IllegalClusterState(error) => {
+            delete_cluster_descriptor_failure::Error::IllegalClusterState(error) => {
                 error.try_into()?
             }
-            delete_cluster_configuration_failure::Error::Internal(error) => {
+            delete_cluster_descriptor_failure::Error::Internal(error) => {
                 error.try_into()?
             }
-            delete_cluster_configuration_failure::Error::ClusterDeploymentExists(error) => {
+            delete_cluster_descriptor_failure::Error::ClusterDeploymentExists(error) => {
                 error.try_into()?
             }
         };
@@ -162,33 +162,33 @@ impl TryFrom<DeleteClusterConfigurationFailure> for DeleteClusterConfigurationEr
     }
 }
 
-impl TryFrom<DeleteClusterConfigurationFailureClusterConfigurationNotFound> for DeleteClusterConfigurationError {
+impl TryFrom<DeleteClusterDescriptorFailureClusterDescriptorNotFound> for DeleteClusterDescriptorError {
     type Error = ConversionError;
-    fn try_from(failure: DeleteClusterConfigurationFailureClusterConfigurationNotFound) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<DeleteClusterConfigurationFailureClusterConfigurationNotFound, DeleteClusterConfigurationError>;
+    fn try_from(failure: DeleteClusterDescriptorFailureClusterDescriptorNotFound) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<DeleteClusterDescriptorFailureClusterDescriptorNotFound, DeleteClusterDescriptorError>;
         let cluster_id: ClusterId = failure.cluster_id
             .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
             .try_into()?;
-        Ok(DeleteClusterConfigurationError::ClusterConfigurationNotFound { cluster_id })
+        Ok(DeleteClusterDescriptorError::ClusterDescriptorNotFound { cluster_id })
     }
 }
 
-impl TryFrom<DeleteClusterConfigurationFailureClusterDeploymentExists> for DeleteClusterConfigurationError {
+impl TryFrom<DeleteClusterDescriptorFailureClusterDeploymentExists> for DeleteClusterDescriptorError {
     type Error = ConversionError;
 
-    fn try_from(failure: DeleteClusterConfigurationFailureClusterDeploymentExists) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<DeleteClusterConfigurationFailureClusterDeploymentExists, DeleteClusterConfigurationError>;
+    fn try_from(failure: DeleteClusterDescriptorFailureClusterDeploymentExists) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<DeleteClusterDescriptorFailureClusterDeploymentExists, DeleteClusterDescriptorError>;
         let cluster_id: ClusterId = failure.cluster_id
             .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
             .try_into()?;
-        Ok(DeleteClusterConfigurationError::ClusterDeploymentFound { cluster_id })
+        Ok(DeleteClusterDescriptorError::ClusterDeploymentFound { cluster_id })
     }
 }
 
-impl TryFrom<DeleteClusterConfigurationFailureIllegalClusterState> for DeleteClusterConfigurationError {
+impl TryFrom<DeleteClusterDescriptorFailureIllegalClusterState> for DeleteClusterDescriptorError {
     type Error = ConversionError;
-    fn try_from(failure: DeleteClusterConfigurationFailureIllegalClusterState) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<DeleteClusterConfigurationFailureIllegalClusterState, DeleteClusterConfigurationError>;
+    fn try_from(failure: DeleteClusterDescriptorFailureIllegalClusterState) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<DeleteClusterDescriptorFailureIllegalClusterState, DeleteClusterDescriptorError>;
         let cluster_id: ClusterId = failure.cluster_id
             .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
             .try_into()?;
@@ -201,21 +201,21 @@ impl TryFrom<DeleteClusterConfigurationFailureIllegalClusterState> for DeleteClu
         let required_states = failure.required_states.into_iter()
             .map(proto::cluster::ClusterState::try_into)
             .collect::<Result<_, _>>()?;
-        Ok(DeleteClusterConfigurationError::IllegalClusterState { cluster_id, cluster_name, actual_state, required_states })
+        Ok(DeleteClusterDescriptorError::IllegalClusterState { cluster_id, cluster_name, actual_state, required_states })
     }
 }
 
-impl TryFrom<DeleteClusterConfigurationFailureInternal> for DeleteClusterConfigurationError {
+impl TryFrom<DeleteClusterDescriptorFailureInternal> for DeleteClusterDescriptorError {
     type Error = ConversionError;
-    fn try_from(failure: DeleteClusterConfigurationFailureInternal) -> Result<Self, Self::Error> {
-        type ErrorBuilder = ConversionErrorBuilder<DeleteClusterConfigurationFailureInternal, DeleteClusterConfigurationError>;
+    fn try_from(failure: DeleteClusterDescriptorFailureInternal) -> Result<Self, Self::Error> {
+        type ErrorBuilder = ConversionErrorBuilder<DeleteClusterDescriptorFailureInternal, DeleteClusterDescriptorError>;
         let cluster_id: ClusterId = failure.cluster_id
             .ok_or_else(|| ErrorBuilder::field_not_set("cluster_id"))?
             .try_into()?;
         let cluster_name: Option<ClusterName> = failure.cluster_name
             .map(TryInto::try_into)
             .transpose()?;
-        Ok(DeleteClusterConfigurationError::Internal { cluster_id, cluster_name, cause: failure.cause })
+        Ok(DeleteClusterDescriptorError::Internal { cluster_id, cluster_name, cause: failure.cause })
     }
 }
 

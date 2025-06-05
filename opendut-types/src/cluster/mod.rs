@@ -143,7 +143,7 @@ impl fmt::Display for ClusterName {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub struct ClusterConfiguration {
+pub struct ClusterDescriptor {
     pub id: ClusterId,
     pub name: ClusterName,
     pub leader: PeerId,
@@ -151,7 +151,7 @@ pub struct ClusterConfiguration {
 }
 
 #[derive(thiserror::Error, Clone, Debug)]
-pub enum IllegalClusterConfiguration {
+pub enum IllegalClusterDescriptor {
     #[error("{0}")]
     InvalidName(IllegalClusterName),
     #[error("At least two devices are required to form a cluster.")]

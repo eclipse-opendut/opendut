@@ -1,6 +1,6 @@
 pub mod apply;
-pub mod cluster_configuration;
 pub mod cluster_deployment;
+pub mod cluster_descriptor;
 pub mod device;
 pub mod peer;
 pub mod network_interface;

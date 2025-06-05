@@ -1,13 +1,13 @@
 use crate::resource::api::resources::Resources;
 use crate::resource::persistence::error::PersistenceError;
 use crate::resource::storage::ResourcesStorageApi;
-use opendut_types::cluster::{ClusterConfiguration, ClusterId};
+use opendut_types::cluster::{ClusterDescriptor, ClusterId};
 use opendut_types::peer::PeerDescriptor;
 
 
 impl Resources<'_> {
     pub async fn list_cluster_peers(&self, cluster_id: ClusterId) -> Result<Vec<PeerDescriptor>, ListClusterPeersError> {
-        let cluster_configuration = self.get::<ClusterConfiguration>(cluster_id)
+        let cluster_descriptor = self.get::<ClusterDescriptor>(cluster_id)
             .map_err(|source| ListClusterPeersError::Persistence { cluster_id, source })?
             .ok_or_else(|| ListClusterPeersError::ClusterNotFound(cluster_id))?;
 
@@ -15,7 +15,7 @@ impl Resources<'_> {
             .map_err(|source| ListClusterPeersError::Persistence { cluster_id, source })?;
 
         let cluster_peers = peers.into_values()
-            .filter(|peer| peer.topology.devices.iter().any(|device| cluster_configuration.devices.contains(&device.id)))
+            .filter(|peer| peer.topology.devices.iter().any(|device| cluster_descriptor.devices.contains(&device.id)))
             .collect();
 
         Ok(cluster_peers)

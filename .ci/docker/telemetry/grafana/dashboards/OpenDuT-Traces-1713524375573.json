@@ -119,7 +119,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "traceDuration {traceID=\"46e264c83ae0ea1e84a8707f19b74dda\", traceName=\"grpc::cluster_manager::list_cluster_configurations\", traceService=\"opendut-carl\"}"
+              "options": "traceDuration {traceID=\"46e264c83ae0ea1e84a8707f19b74dda\", traceName=\"grpc::cluster_manager::list_cluster_descriptors\", traceService=\"opendut-carl\"}"
             },
             "properties": [
               {

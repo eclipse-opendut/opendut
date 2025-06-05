@@ -43,9 +43,9 @@ impl DeletePeerCli {
                 .collect::<Vec<_>>();
 
             let clusters = carl.cluster
-                .list_cluster_configurations()
+                .list_cluster_descriptors()
                 .await
-                .map_err(|error| format!("Failed to list cluster configurations.\n  {}", error))?;
+                .map_err(|error| format!("Failed to list cluster descriptors.\n  {}", error))?;
 
             let mut clusters_with_configured_devices: HashSet<ClusterId> = HashSet::new();
             for cluster in clusters {

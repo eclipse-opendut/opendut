@@ -1,11 +1,11 @@
-use opendut_types::cluster::{ClusterConfiguration, ClusterId, ClusterName};
+use opendut_types::cluster::{ClusterDescriptor, ClusterId, ClusterName};
 
 use crate::clusters::configurator::components::{DeviceSelection, LeaderSelection};
 use crate::components::UserInputValue;
 
 #[derive(thiserror::Error, Clone, Debug)]
 #[allow(clippy::enum_variant_names)] // "all variants have the same prefix: `Invalid`"
-pub enum ClusterMisconfiguration { // TODO: Maybe replace with IllegalClusterConfiguration from opendut-types.
+pub enum ClusterMisconfiguration { // TODO: Maybe replace with IllegalClusterDescriptor from opendut-types.
     #[error("Invalid cluster name")]
     InvalidClusterName,
 
@@ -17,14 +17,14 @@ pub enum ClusterMisconfiguration { // TODO: Maybe replace with IllegalClusterCon
 }
 
 #[derive(Clone, Debug)]
-pub struct UserClusterConfiguration {
+pub struct UserClusterDescriptor {
     pub id: ClusterId,
     pub name: UserInputValue,
     pub devices: DeviceSelection,
     pub leader: LeaderSelection,
 }
 
-impl UserClusterConfiguration {
+impl UserClusterDescriptor {
 
     pub fn is_valid(&self) -> bool {
         self.name.is_right()
@@ -33,18 +33,18 @@ impl UserClusterConfiguration {
     }
 }
 
-impl TryFrom<UserClusterConfiguration> for ClusterConfiguration {
+impl TryFrom<UserClusterDescriptor> for ClusterDescriptor {
 
     type Error = ClusterMisconfiguration;
 
-    fn try_from(configuration: UserClusterConfiguration) -> Result<Self, Self::Error> {
+    fn try_from(configuration: UserClusterDescriptor) -> Result<Self, Self::Error> {
         let name = configuration.name
             .right_ok_or(ClusterMisconfiguration::InvalidClusterName)
             .and_then(|name| ClusterName::try_from(name)
                 .map_err(|_| ClusterMisconfiguration::InvalidClusterName))?;
         let devices = configuration.devices.right_ok_or(ClusterMisconfiguration::InvalidDeviceSelection)?;
         let leader = configuration.leader.right_ok_or(ClusterMisconfiguration::InvalidLeaderSelection)?;
-        Ok(ClusterConfiguration {
+        Ok(ClusterDescriptor {
             id: configuration.id,
             name,
             leader,

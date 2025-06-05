@@ -1,10 +1,9 @@
-use std::collections::{HashMap, HashSet};
-use opendut_types::conversion;
-use opendut_types::proto::ConversionErrorBuilder;
-use opendut_types::proto::ConversionResult;
-use opendut_types::proto::ConversionError;
 use crate::carl;
 use crate::carl::observer::WaitForPeersOnlineResponseStatus;
+use opendut_types::conversion;
+use opendut_types::proto::ConversionError;
+use opendut_types::proto::ConversionResult;
+use std::collections::{HashMap, HashSet};
 
 tonic::include_proto!("opendut.carl.services.observer_messaging_broker");
 

@@ -52,7 +52,7 @@ done
 # Collect details about CARL
 #################################################
 mkdir -p "$LOG_DIRECTORY"/cleo/
-CLEO_SUBCOMMANDS="cluster-configurations cluster-deployments peers devices"
+CLEO_SUBCOMMANDS="cluster-descriptors cluster-deployments peers devices"
 for COMMAND in $CLEO_SUBCOMMANDS
 do
   docker exec edgar-leader opendut-cleo list --output json "$COMMAND" > "$LOG_DIRECTORY"/cleo/opendut-cleo-"$COMMAND".json 2> "$LOG_DIRECTORY"/cleo/opendut-cleo-"$COMMAND".error.log

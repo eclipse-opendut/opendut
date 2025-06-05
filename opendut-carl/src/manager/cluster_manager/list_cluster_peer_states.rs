@@ -133,7 +133,7 @@ pub enum ListClusterPeerStatesError {
 mod tests {
     use super::*;
     use crate::resource::manager::{ResourceManager, ResourceManagerRef};
-    use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterName};
+    use opendut_types::cluster::{ClusterDescriptor, ClusterDeployment, ClusterName};
     use opendut_types::peer::executor::ExecutorDescriptors;
     use opendut_types::peer::state::PeerConnectionState;
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerNetworkDescriptor};
@@ -203,7 +203,7 @@ mod tests {
         let online_state = PeerConnectionState::Online { remote_host };
         let offline_state = PeerConnectionState::Offline;
 
-        let other_cluster = ClusterConfiguration {
+        let other_cluster = ClusterDescriptor {
             id: ClusterId::random(),
             name: ClusterName::try_from("BlockingCluster")?,
             leader: cluster.leader,
@@ -288,7 +288,7 @@ mod tests {
         resource_manager: ResourceManagerRef,
         peer_a: PeerDescriptor,
         peer_b: PeerDescriptor,
-        cluster: ClusterConfiguration,
+        cluster: ClusterDescriptor,
         remote_host: IpAddr,
     }
     impl Fixture {
@@ -304,7 +304,7 @@ mod tests {
             let peer_not_in_cluster = generate_peer_descriptor()?;
             resource_manager.insert(peer_not_in_cluster.id, peer_not_in_cluster.clone()).await?;
 
-            let cluster = ClusterConfiguration {
+            let cluster = ClusterDescriptor {
                 id: ClusterId::random(),
                 name: ClusterName::try_from("cluster")?,
                 leader: peer_a.id,

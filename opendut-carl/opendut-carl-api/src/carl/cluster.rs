@@ -8,7 +8,7 @@ use opendut_types::peer::state::PeerState;
 use opendut_types::ShortName;
 
 #[derive(thiserror::Error, Debug)]
-pub enum CreateClusterConfigurationError {
+pub enum CreateClusterDescriptorError {
     #[error("ClusterConfigration '{cluster_name}' <{cluster_id}> could not be created, due to internal errors:\n  {cause}")]
     Internal {
         cluster_id: ClusterId,
@@ -18,17 +18,17 @@ pub enum CreateClusterConfigurationError {
 }
 
 #[derive(thiserror::Error, Debug, PartialEq)]
-pub enum DeleteClusterConfigurationError {
-    #[error("ClusterConfiguration <{cluster_id}> could not be deleted, because a ClusterDeployment with that ID still exists!")]
+pub enum DeleteClusterDescriptorError {
+    #[error("ClusterDescriptor <{cluster_id}> could not be deleted, because a ClusterDeployment with that ID still exists!")]
     ClusterDeploymentFound {
         cluster_id: ClusterId
     },
-    #[error("ClusterConfiguration <{cluster_id}> could not be deleted, because a ClusterConfiguration with that ID does not exist!")]
-    ClusterConfigurationNotFound {
+    #[error("ClusterDescriptor <{cluster_id}> could not be deleted, because a ClusterDescriptor with that ID does not exist!")]
+    ClusterDescriptorNotFound {
         cluster_id: ClusterId
     },
     #[error(
-        "ClusterConfiguration '{cluster_name}' <{cluster_id}> cannot be deleted when cluster is in state '{actual_state}'! A ClusterConfiguration can be deleted when cluster is in state: {required_states}",
+        "ClusterDescriptor '{cluster_name}' <{cluster_id}> cannot be deleted when cluster is in state '{actual_state}'! A ClusterDescriptor can be deleted when cluster is in state: {required_states}",
         actual_state = actual_state.short_name(),
         required_states = ClusterState::short_names_joined(required_states),
     )]
@@ -38,7 +38,7 @@ pub enum DeleteClusterConfigurationError {
         actual_state: ClusterState,
         required_states: Vec<ClusterState>,
     },
-    #[error("ClusterConfiguration {cluster} deleted with internal errors:\n  {cause}", cluster=ClusterDisplay::new(cluster_name, cluster_id))]
+    #[error("ClusterDescriptor {cluster} deleted with internal errors:\n  {cause}", cluster=ClusterDisplay::new(cluster_name, cluster_id))]
     Internal {
         cluster_id: ClusterId,
         cluster_name: Option<ClusterName>,
@@ -47,15 +47,15 @@ pub enum DeleteClusterConfigurationError {
 }
 
 #[derive(thiserror::Error, Debug)]
-#[error("ClusterConfiguration <{cluster_id}> could not be retrieved:\n  {message}")]
-pub struct GetClusterConfigurationError {
+#[error("ClusterDescriptor <{cluster_id}> could not be retrieved:\n  {message}")]
+pub struct GetClusterDescriptorError {
     pub cluster_id: ClusterId,
     pub message: String
 }
 
 #[derive(thiserror::Error, Debug)]
 #[error("{message}")]
-pub struct ListClusterConfigurationsError {
+pub struct ListClusterDescriptorsError {
     pub message: String,
 }
 
@@ -130,7 +130,7 @@ pub enum ListClusterPeerStatesResponse {
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 mod client {
     use tonic::codegen::{Body, Bytes, http, InterceptedService, StdError};
-    use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
+    use opendut_types::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
     use crate::carl::{ClientError, extract};
     use crate::proto::services::cluster_manager;
     use crate::proto::services::cluster_manager::cluster_manager_client::ClusterManagerClient;
@@ -176,96 +176,96 @@ mod client {
             }
         }
 
-        pub async fn store_cluster_configuration(&mut self, configuration: ClusterConfiguration) -> Result<ClusterId, ClientError<CreateClusterConfigurationError>> {
+        pub async fn store_cluster_descriptor(&mut self, configuration: ClusterDescriptor) -> Result<ClusterId, ClientError<CreateClusterDescriptorError>> {
 
-            let request = tonic::Request::new(cluster_manager::CreateClusterConfigurationRequest {
-                cluster_configuration: Some(configuration.into()),
+            let request = tonic::Request::new(cluster_manager::CreateClusterDescriptorRequest {
+                cluster_descriptor: Some(configuration.into()),
             });
 
-            let response = self.inner.create_cluster_configuration(request).await?
+            let response = self.inner.create_cluster_descriptor(request).await?
                 .into_inner();
 
             match extract!(response.reply)? {
-                cluster_manager::create_cluster_configuration_response::Reply::Failure(failure) => {
-                    let error = CreateClusterConfigurationError::try_from(failure)?;
+                cluster_manager::create_cluster_descriptor_response::Reply::Failure(failure) => {
+                    let error = CreateClusterDescriptorError::try_from(failure)?;
                     Err(ClientError::UsageError(error))
                 }
-                cluster_manager::create_cluster_configuration_response::Reply::Success(success) => {
+                cluster_manager::create_cluster_descriptor_response::Reply::Success(success) => {
                     let peer_id = extract!(success.cluster_id)?;
                     Ok(peer_id)
                 }
             }
         }
 
-        pub async fn delete_cluster_configuration(&mut self, cluster_id: ClusterId) -> Result<ClusterConfiguration, ClientError<DeleteClusterConfigurationError>> {
+        pub async fn delete_cluster_descriptor(&mut self, cluster_id: ClusterId) -> Result<ClusterDescriptor, ClientError<DeleteClusterDescriptorError>> {
 
-            let request = tonic::Request::new(cluster_manager::DeleteClusterConfigurationRequest {
+            let request = tonic::Request::new(cluster_manager::DeleteClusterDescriptorRequest {
                 cluster_id: Some(cluster_id.into()),
             });
 
-            let response = self.inner.delete_cluster_configuration(request).await?
+            let response = self.inner.delete_cluster_descriptor(request).await?
                 .into_inner();
 
             match extract!(response.reply)? {
-                cluster_manager::delete_cluster_configuration_response::Reply::Failure(failure) => {
-                    let error = DeleteClusterConfigurationError::try_from(failure)?;
+                cluster_manager::delete_cluster_descriptor_response::Reply::Failure(failure) => {
+                    let error = DeleteClusterDescriptorError::try_from(failure)?;
                     Err(ClientError::UsageError(error))
                 }
-                cluster_manager::delete_cluster_configuration_response::Reply::Success(success) => {
-                    let cluster_id = extract!(success.cluster_configuration)?;
+                cluster_manager::delete_cluster_descriptor_response::Reply::Success(success) => {
+                    let cluster_id = extract!(success.cluster_descriptor)?;
                     Ok(cluster_id)
                 }
             }
         }
 
-        pub async fn get_cluster_configuration(&mut self, cluster_id: ClusterId) -> Result<ClusterConfiguration, GetClusterConfigurationError> {
-            let request = tonic::Request::new(cluster_manager::GetClusterConfigurationRequest {
+        pub async fn get_cluster_descriptor(&mut self, cluster_id: ClusterId) -> Result<ClusterDescriptor, GetClusterDescriptorError> {
+            let request = tonic::Request::new(cluster_manager::GetClusterDescriptorRequest {
                 id: Some(cluster_id.into()),
             });
 
-            match self.inner.get_cluster_configuration(request).await {
+            match self.inner.get_cluster_descriptor(request).await {
                 Ok(response) => {
                     let result = response.into_inner().result
-                        .ok_or(GetClusterConfigurationError { cluster_id, message: String::from("Response contains no result!") })?;
+                        .ok_or(GetClusterDescriptorError { cluster_id, message: String::from("Response contains no result!") })?;
                     match result {
-                        cluster_manager::get_cluster_configuration_response::Result::Failure(_) => {
-                            Err(GetClusterConfigurationError { cluster_id, message: String::from("Failed to get cluster configuration!") })
+                        cluster_manager::get_cluster_descriptor_response::Result::Failure(_) => {
+                            Err(GetClusterDescriptorError { cluster_id, message: String::from("Failed to get cluster descriptor!") })
                         }
-                        cluster_manager::get_cluster_configuration_response::Result::Success(cluster_manager::GetClusterConfigurationSuccess { configuration }) => {
+                        cluster_manager::get_cluster_descriptor_response::Result::Success(cluster_manager::GetClusterDescriptorSuccess { configuration }) => {
                             let configuration = configuration
-                                .ok_or(GetClusterConfigurationError { cluster_id, message: String::from("Response contains no cluster configuration!") })?;
-                            ClusterConfiguration::try_from(configuration)
-                                .map_err(|_| GetClusterConfigurationError { cluster_id, message: String::from("Conversion failed for cluster configurations!") })
+                                .ok_or(GetClusterDescriptorError { cluster_id, message: String::from("Response contains no cluster descriptor!") })?;
+                            ClusterDescriptor::try_from(configuration)
+                                .map_err(|_| GetClusterDescriptorError { cluster_id, message: String::from("Conversion failed for cluster descriptors!") })
                         }
                     }
                 },
                 Err(status) => {
-                    Err(GetClusterConfigurationError { cluster_id, message: format!("gRPC failure: {status}") })
+                    Err(GetClusterDescriptorError { cluster_id, message: format!("gRPC failure: {status}") })
                 }
             }
         }
 
-        pub async fn list_cluster_configurations(&mut self) -> Result<Vec<ClusterConfiguration>, ListClusterConfigurationsError> {
-            let request = tonic::Request::new(cluster_manager::ListClusterConfigurationsRequest {});
+        pub async fn list_cluster_descriptors(&mut self) -> Result<Vec<ClusterDescriptor>, ListClusterDescriptorsError> {
+            let request = tonic::Request::new(cluster_manager::ListClusterDescriptorsRequest {});
 
-            match self.inner.list_cluster_configurations(request).await {
+            match self.inner.list_cluster_descriptors(request).await {
                 Ok(response) => {
                     let result = response.into_inner().result
-                        .ok_or(ListClusterConfigurationsError { message: String::from("Response contains no result!") })?;
+                        .ok_or(ListClusterDescriptorsError { message: String::from("Response contains no result!") })?;
                     match result {
-                        cluster_manager::list_cluster_configurations_response::Result::Failure(_) => {
-                            Err(ListClusterConfigurationsError { message: String::from("Failed to list clusters!") })
+                        cluster_manager::list_cluster_descriptors_response::Result::Failure(_) => {
+                            Err(ListClusterDescriptorsError { message: String::from("Failed to list clusters!") })
                         }
-                        cluster_manager::list_cluster_configurations_response::Result::Success(cluster_manager::ListClusterConfigurationsSuccess { configurations }) => {
+                        cluster_manager::list_cluster_descriptors_response::Result::Success(cluster_manager::ListClusterDescriptorsSuccess { configurations }) => {
                             configurations.into_iter()
-                                .map(ClusterConfiguration::try_from)
-                                .collect::<Result<Vec<ClusterConfiguration>, _>>()
-                                .map_err(|_| ListClusterConfigurationsError { message: String::from("Conversion failed for list of cluster configurations!") })
+                                .map(ClusterDescriptor::try_from)
+                                .collect::<Result<Vec<ClusterDescriptor>, _>>()
+                                .map_err(|_| ListClusterDescriptorsError { message: String::from("Conversion failed for list of cluster descriptors!") })
                         }
                     }
                 },
                 Err(status) => {
-                    Err(ListClusterConfigurationsError { message: format!("gRPC failure: {status}") })
+                    Err(ListClusterDescriptorsError { message: format!("gRPC failure: {status}") })
                 }
             }
         }

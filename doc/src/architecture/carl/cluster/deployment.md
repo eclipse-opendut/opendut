@@ -4,7 +4,7 @@
 ## Cluster Creation
 
 ```
-{{#include ../../../../../opendut-types/proto/opendut/types/cluster/cluster.proto:ClusterConfiguration}}
+{{#include ../../../../../opendut-types/proto/opendut/types/cluster/cluster.proto:ClusterDescriptor}}
 ```
 
 ## Cluster Deployment

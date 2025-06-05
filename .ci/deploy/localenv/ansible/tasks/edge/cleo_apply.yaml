@@ -16,5 +16,5 @@
 - name: Upload into CLEO container
   command: "docker cp {{ apply_dir }}/{{ apply_file }} opendut-cleo:/tmp/{{ apply_file }}"
 
-- name: Apply peer/cluster configuration to CARL
+- name: Apply peer/cluster descriptor to CARL
   command: "docker exec opendut-cleo opendut-cleo apply /tmp/{{ apply_file }}"

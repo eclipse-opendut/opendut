@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use clap::{Parser, Subcommand, ValueEnum};
 use serde::Serialize;
 use uuid::Uuid;
-use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
+use opendut_types::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
 use crate::CreateResult;
@@ -64,7 +64,7 @@ enum DbCommand {
 }
 #[derive(Clone, ValueEnum)]
 enum ResourceKind {
-    ClusterConfiguration,
+    ClusterDescriptor,
     ClusterDeployment,
     OldPeerConfiguration,
     PeerConfiguration,
@@ -105,7 +105,7 @@ pub async fn cli() -> anyhow::Result<()> {
                     }
 
                     match resource_kind {
-                        ResourceKind::ClusterConfiguration => print(resource_manager.list::<ClusterConfiguration>().await?),
+                        ResourceKind::ClusterDescriptor => print(resource_manager.list::<ClusterDescriptor>().await?),
                         ResourceKind::ClusterDeployment => print(resource_manager.list::<ClusterDeployment>().await?),
                         ResourceKind::OldPeerConfiguration => print(resource_manager.list::<OldPeerConfiguration>().await?),
                         ResourceKind::PeerConfiguration => print(resource_manager.list::<PeerConfiguration>().await?),
@@ -114,8 +114,8 @@ pub async fn cli() -> anyhow::Result<()> {
                 }
                 DbCommand::Delete { resource_kind, id } => {
                     match resource_kind {
-                        ResourceKind::ClusterConfiguration => {
-                            resource_manager.remove::<ClusterConfiguration>(ClusterId::from(id)).await?;
+                        ResourceKind::ClusterDescriptor => {
+                            resource_manager.remove::<ClusterDescriptor>(ClusterId::from(id)).await?;
                         }
                         ResourceKind::ClusterDeployment => {
                             resource_manager.remove::<ClusterDeployment>(ClusterId::from(id)).await?;

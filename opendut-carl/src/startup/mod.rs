@@ -3,3 +3,4 @@ pub mod tls;
 pub mod grpc;
 pub mod http;
 pub mod cleo;
+pub mod migration;

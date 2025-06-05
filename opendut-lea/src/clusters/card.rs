@@ -19,8 +19,8 @@ pub fn ClustersCard() -> impl IntoView {
         let carl = globals.client.clone();
         async move {
             let mut carl = carl.clone();
-            let configured = carl.cluster.list_cluster_configurations().await
-                .expect("Failed to request the list of cluster configurations.")
+            let configured = carl.cluster.list_cluster_descriptors().await
+                .expect("Failed to request the list of cluster descriptors.")
                 .len();
             let deployed = carl.cluster.list_cluster_deployments().await
                 .expect("Failed to request the list of cluster deployments.")

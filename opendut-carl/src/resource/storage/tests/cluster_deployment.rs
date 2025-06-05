@@ -1,5 +1,5 @@
 use crate::resource::manager::ResourceManager;
-use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment};
+use opendut_types::cluster::{ClusterDescriptor, ClusterDeployment};
 use opendut_types::peer::PeerDescriptor;
 
 #[tokio::test]
@@ -12,14 +12,14 @@ async fn should_persist_cluster_deployment() -> anyhow::Result<()> {
     let peer_descriptor_unused = super::peer_descriptor::peer_descriptor()?;
     resource_manager.insert::<PeerDescriptor>(peer_descriptor_unused.id, peer_descriptor_unused.clone()).await?;
 
-    let cluster_configuration = super::cluster_configuration::cluster_configuration(
+    let cluster_descriptor = super::cluster_descriptor::cluster_descriptor(
         peer_descriptor.id,
         peer_descriptor.topology.devices.into_iter().map(|device| device.id).collect()
     )?;
-    resource_manager.insert::<ClusterConfiguration>(cluster_configuration.id, cluster_configuration.clone()).await?;
+    resource_manager.insert::<ClusterDescriptor>(cluster_descriptor.id, cluster_descriptor.clone()).await?;
 
     let testee = ClusterDeployment {
-        id: cluster_configuration.id,
+        id: cluster_descriptor.id,
     };
 
     let result = resource_manager.get::<ClusterDeployment>(testee.id).await?;

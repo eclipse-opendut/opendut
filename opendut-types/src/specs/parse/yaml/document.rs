@@ -84,12 +84,12 @@ fn parse_version(s: &str) -> Result<SpecificationVersion, ParseSpecificationErro
 
 fn parse_spec(kind: ResourceKind, version: SpecificationVersion, spec: Value) -> Result<Specification, ParseSpecificationError> {
     match (kind, version) {
-        (ResourceKind::ClusterConfiguration, SpecificationVersion::V1) => {
-            let spec = serde_yaml::from_value::<cluster::ClusterConfigurationSpecificationV1>(spec)
+        (ResourceKind::ClusterDescriptor, SpecificationVersion::V1) => {
+            let spec = serde_yaml::from_value::<cluster::ClusterDescriptorSpecificationV1>(spec)
                 .map_err(|cause| ParseSpecificationError::IllegalYamlSpecification { cause } )?;
-            Ok(Specification::ClusterConfigurationSpecification(cluster::ClusterConfigurationSpecification::V1(spec)))
+            Ok(Specification::ClusterDescriptorSpecification(cluster::ClusterDescriptorSpecification::V1(spec)))
         }
-        (ResourceKind::ClusterConfiguration, _) => {
+        (ResourceKind::ClusterDescriptor, _) => {
             Err(ParseSpecificationError::UnknownVersion { kind, version })
         }
         (ResourceKind::PeerDescriptor, SpecificationVersion::V1) => {
@@ -256,7 +256,7 @@ mod tests {
     #[test]
     pub fn test_try_from_cluster() -> Result<()> {
          let document_string = YamlSpecificationDocument::try_from_yaml_str(r#"
-            kind: ClusterConfiguration
+            kind: ClusterDescriptor
             version: v1
             metadata:
               id: eb89f630-d585-43b9-8934-4db469ce66c5

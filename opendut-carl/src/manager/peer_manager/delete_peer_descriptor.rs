@@ -142,7 +142,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn delete_cluster_configuration_when_cluster_is_not_deployed() -> anyhow::Result<()> {
+    async fn delete_cluster_descriptor_when_cluster_is_not_deployed() -> anyhow::Result<()> {
         // Arrange
         let resource_manager = ResourceManager::new_in_memory();
         let cluster = ClusterFixture::create(resource_manager.clone()).await?;

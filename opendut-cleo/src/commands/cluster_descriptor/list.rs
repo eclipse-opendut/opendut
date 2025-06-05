@@ -5,9 +5,9 @@ use opendut_types::cluster::{ClusterId, ClusterName};
 
 use crate::ListOutputFormat;
 
-/// List all cluster configurations
+/// List all cluster descriptors
 #[derive(clap::Parser)]
-pub struct ListClusterConfigurationsCli;
+pub struct ListClusterDescriptorsCli;
 
 #[derive(Table)]
 struct ClusterTable {
@@ -17,10 +17,10 @@ struct ClusterTable {
     id: ClusterId,
 }
 
-impl ListClusterConfigurationsCli {
+impl ListClusterDescriptorsCli {
     pub async fn execute(self, carl: &mut CarlClient, output: ListOutputFormat) -> crate::Result<()> {
-        let clusters = carl.cluster.list_cluster_configurations().await
-            .map_err(|error| format!("Could not list any cluster configurations.\n  {error}"))?;
+        let clusters = carl.cluster.list_cluster_descriptors().await
+            .map_err(|error| format!("Could not list any cluster descriptors.\n  {error}"))?;
 
         match output {
             ListOutputFormat::Table => {
@@ -33,7 +33,7 @@ impl ListClusterConfigurationsCli {
                     })
                     .collect::<Vec<_>>();
                 print_stdout(cluster_table.with_title())
-                    .expect("List of cluster configurations should be printable as table.");
+                    .expect("List of cluster descriptors should be printable as table.");
             }
             ListOutputFormat::Json => {
                 let json = serde_json::to_string(&clusters).unwrap();

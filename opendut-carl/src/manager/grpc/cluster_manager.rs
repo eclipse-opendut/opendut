@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 use opendut_carl_api::proto::services::cluster_manager::cluster_manager_server::{ClusterManager as ClusterManagerService, ClusterManagerServer};
 use opendut_carl_api::proto::services::cluster_manager::*;
-use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
+use opendut_types::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
 use tonic::{Request, Response, Status};
 use tracing::{error, trace};
 
 use crate::manager::cluster_manager::delete_cluster_deployment::DeleteClusterDeploymentParams;
-use crate::manager::cluster_manager::{ClusterManagerRef, ClusterPeerStates, CreateClusterConfigurationError, CreateClusterConfigurationParams, DeleteClusterConfigurationError, DeleteClusterConfigurationParams, DeleteClusterDeploymentError};
+use crate::manager::cluster_manager::{ClusterManagerRef, ClusterPeerStates, CreateClusterDescriptorError, CreateClusterDescriptorParams, DeleteClusterDescriptorError, DeleteClusterDescriptorParams, DeleteClusterDeploymentError};
 use crate::manager::grpc::error::LogApiErr;
 use crate::manager::grpc::extract;
 use crate::resource::manager::ResourceManagerRef;
@@ -34,113 +34,113 @@ impl ClusterManagerFacade {
 #[tonic::async_trait]
 impl ClusterManagerService for ClusterManagerFacade {
     #[tracing::instrument(skip_all, level="trace")]
-    async fn create_cluster_configuration(&self, request: Request<CreateClusterConfigurationRequest>) -> Result<Response<CreateClusterConfigurationResponse>, Status> {
+    async fn create_cluster_descriptor(&self, request: Request<CreateClusterDescriptorRequest>) -> Result<Response<CreateClusterDescriptorResponse>, Status> {
 
         let request = request.into_inner();
-        let cluster: ClusterConfiguration = extract!(request.cluster_configuration)?;
+        let cluster: ClusterDescriptor = extract!(request.cluster_descriptor)?;
 
-        trace!("Received request to create cluster configuration: {cluster:?}");
+        trace!("Received request to create cluster descriptor: {cluster:?}");
 
         let result =
             self.resource_manager.resources_mut(async |resources|
-                resources.create_cluster_configuration(CreateClusterConfigurationParams {
-                    cluster_configuration: cluster.clone(),
+                resources.create_cluster_descriptor(CreateClusterDescriptorParams {
+                    cluster_descriptor: cluster.clone(),
                 })
             ).await
-            .map_err_to_inner(|source| CreateClusterConfigurationError::Persistence {
+            .map_err_to_inner(|source| CreateClusterDescriptorError::Persistence {
                 cluster_id: cluster.id,
                 cluster_name: cluster.name,
-                source: source.context("Persistence error in transaction for creating cluster configuration"),
+                source: source.context("Persistence error in transaction for creating cluster descriptor"),
             })
             .log_api_err()
-                .map_err(opendut_carl_api::carl::cluster::CreateClusterConfigurationError::from);
+                .map_err(opendut_carl_api::carl::cluster::CreateClusterDescriptorError::from);
 
         let reply = match result {
-            Ok(cluster_id) => create_cluster_configuration_response::Reply::Success(
-                CreateClusterConfigurationSuccess {
+            Ok(cluster_id) => create_cluster_descriptor_response::Reply::Success(
+                CreateClusterDescriptorSuccess {
                     cluster_id: Some(cluster_id.into())
                 }
             ),
-            Err(error) => create_cluster_configuration_response::Reply::Failure(error.into())
+            Err(error) => create_cluster_descriptor_response::Reply::Failure(error.into())
         };
 
-        Ok(Response::new(CreateClusterConfigurationResponse {
+        Ok(Response::new(CreateClusterDescriptorResponse {
             reply: Some(reply)
         }))
     }
     #[tracing::instrument(skip_all, level="trace")]
-    async fn delete_cluster_configuration(&self, request: Request<DeleteClusterConfigurationRequest>) -> Result<Response<DeleteClusterConfigurationResponse>, Status> {
+    async fn delete_cluster_descriptor(&self, request: Request<DeleteClusterDescriptorRequest>) -> Result<Response<DeleteClusterDescriptorResponse>, Status> {
 
         let request = request.into_inner();
         let cluster_id: ClusterId = extract!(request.cluster_id)?;
 
-        trace!("Received request to delete cluster configuration for cluster <{cluster_id}>.");
+        trace!("Received request to delete cluster descriptor for cluster <{cluster_id}>.");
 
         let result =
             self.resource_manager.resources_mut(async |resources|
-                resources.delete_cluster_configuration(DeleteClusterConfigurationParams {
+                resources.delete_cluster_descriptor(DeleteClusterDescriptorParams {
                     cluster_id,
                 })
             ).await
-            .map_err_to_inner(|source| DeleteClusterConfigurationError::Persistence {
+            .map_err_to_inner(|source| DeleteClusterDescriptorError::Persistence {
                 cluster_id,
                 cluster_name: None,
-                source: source.context("Persistence error in transaction for deleting cluster configuration"),
+                source: source.context("Persistence error in transaction for deleting cluster descriptor"),
             })
             .log_api_err()
-            .map_err(opendut_carl_api::carl::cluster::DeleteClusterConfigurationError::from);
+            .map_err(opendut_carl_api::carl::cluster::DeleteClusterDescriptorError::from);
 
         let reply = match result {
-            Ok(cluster_configuration) => delete_cluster_configuration_response::Reply::Success(
-                DeleteClusterConfigurationSuccess {
-                    cluster_configuration: Some(cluster_configuration.into())
+            Ok(cluster_descriptor) => delete_cluster_descriptor_response::Reply::Success(
+                DeleteClusterDescriptorSuccess {
+                    cluster_descriptor: Some(cluster_descriptor.into())
                 }
             ),
-            Err(error) => delete_cluster_configuration_response::Reply::Failure(error.into()),
+            Err(error) => delete_cluster_descriptor_response::Reply::Failure(error.into()),
         };
 
-        Ok(Response::new(DeleteClusterConfigurationResponse {
+        Ok(Response::new(DeleteClusterDescriptorResponse {
             reply: Some(reply)
         }))
     }
     #[tracing::instrument(skip_all, level="trace")]
-    async fn get_cluster_configuration(&self, request: Request<GetClusterConfigurationRequest>) -> Result<Response<GetClusterConfigurationResponse>, Status> {
+    async fn get_cluster_descriptor(&self, request: Request<GetClusterDescriptorRequest>) -> Result<Response<GetClusterDescriptorResponse>, Status> {
 
         let request = request.into_inner();
         let cluster_id: ClusterId = extract!(request.id)?;
 
-        trace!("Received request to get cluster configuration for cluster <{cluster_id}>.");
+        trace!("Received request to get cluster descriptor for cluster <{cluster_id}>.");
 
-        let configuration = self.cluster_manager.lock().await.get_cluster_configuration(cluster_id).await
+        let configuration = self.cluster_manager.lock().await.get_cluster_descriptor(cluster_id).await
             .log_api_err()
             .map_err(|cause| Status::internal(cause.to_string()))?;
 
         let result = match configuration {
-            Some(configuration) => get_cluster_configuration_response::Result::Success(
-                GetClusterConfigurationSuccess {
+            Some(configuration) => get_cluster_descriptor_response::Result::Success(
+                GetClusterDescriptorSuccess {
                     configuration: Some(configuration.into())
                 }
             ),
-            None => get_cluster_configuration_response::Result::Failure(
-                GetClusterConfigurationFailure {}
+            None => get_cluster_descriptor_response::Result::Failure(
+                GetClusterDescriptorFailure {}
             )
         };
 
-        Ok(Response::new(GetClusterConfigurationResponse {
+        Ok(Response::new(GetClusterDescriptorResponse {
             result: Some(result)
         }))
     }
     #[tracing::instrument(skip_all, level="trace")]
-    async fn list_cluster_configurations(&self, _: Request<ListClusterConfigurationsRequest>) -> Result<Response<ListClusterConfigurationsResponse>, Status> {
-        trace!("Received request to list cluster configurations.");
+    async fn list_cluster_descriptors(&self, _: Request<ListClusterDescriptorsRequest>) -> Result<Response<ListClusterDescriptorsResponse>, Status> {
+        trace!("Received request to list cluster descriptors.");
 
-        let configurations = self.cluster_manager.lock().await.list_cluster_configuration().await
+        let configurations = self.cluster_manager.lock().await.list_cluster_descriptor().await
             .log_api_err()
             .map_err(|cause| Status::internal(cause.to_string()))?;
 
-        Ok(Response::new(ListClusterConfigurationsResponse {
-            result: Some(list_cluster_configurations_response::Result::Success(
-                ListClusterConfigurationsSuccess {
+        Ok(Response::new(ListClusterDescriptorsResponse {
+            result: Some(list_cluster_descriptors_response::Result::Success(
+                ListClusterDescriptorsSuccess {
                     configurations: configurations.into_iter().map(|configuration| configuration.into()).collect::<Vec<_>>()
                 }
             ))
@@ -194,9 +194,9 @@ impl ClusterManagerService for ClusterManagerFacade {
             .map_err(opendut_carl_api::carl::cluster::DeleteClusterDeploymentError::from);
 
         let reply = match result {
-            Ok(cluster_configuration) => delete_cluster_deployment_response::Reply::Success(
+            Ok(cluster_descriptor) => delete_cluster_deployment_response::Reply::Success(
                 DeleteClusterDeploymentSuccess {
-                    cluster_deployment: Some(cluster_configuration.into())
+                    cluster_deployment: Some(cluster_descriptor.into())
                 }
             ),
             Err(error) => delete_cluster_deployment_response::Reply::Failure(error.into()),

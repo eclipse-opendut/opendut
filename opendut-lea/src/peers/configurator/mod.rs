@@ -63,7 +63,7 @@ pub fn PeerConfigurator() -> impl IntoView {
             let mut carl = globals.client.clone();
             async move {
                 if let Ok(configuration) = carl.peers.get_peer_descriptor(peer_id).await {
-                    let clusters = carl.cluster.list_cluster_configurations().await
+                    let clusters = carl.cluster.list_cluster_descriptors().await
                         .unwrap_or(vec![]);
 
                     peer_configuration.update(|user_configuration| {
@@ -221,19 +221,19 @@ pub fn PeerConfigurator() -> impl IntoView {
 
     let cluster_columns = move || {
         let devices_in_peer = peer_configuration.get().devices.into_iter().map(|device| device.get().id).collect::<Vec<_>>();
-        let cluster_configuration = peer_configuration
+        let cluster_descriptor = peer_configuration
             .get().devices
             .into_iter()
             .flat_map(|device| device.get().contained_in_clusters)
             .collect::<Vec<_>>();
 
-        let cluster_configuration_without_duplicates = cluster_configuration
+        let cluster_descriptor_without_duplicates = cluster_descriptor
             .into_iter()
             .map(|configuration| (configuration.id, configuration))
             .collect::<HashMap<_,_>>();
 
         let devices_in_cluster = {
-            let mut devices_in_cluster = cluster_configuration_without_duplicates
+            let mut devices_in_cluster = cluster_descriptor_without_duplicates
                 .into_iter()
                 .map(|(cluster_id,cluster_config)| (cluster_id, cluster_config.name, cluster_config.devices))
                 .collect::<Vec<(_,_,_)>>();

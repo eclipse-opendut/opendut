@@ -7,10 +7,10 @@ import "opendut/types/peer/peer.proto";
 import "opendut/types/peer/state.proto";
 
 service ClusterManager {
-  rpc CreateClusterConfiguration(CreateClusterConfigurationRequest) returns (CreateClusterConfigurationResponse) {}
-  rpc DeleteClusterConfiguration(DeleteClusterConfigurationRequest) returns (DeleteClusterConfigurationResponse) {}
-  rpc GetClusterConfiguration(GetClusterConfigurationRequest) returns (GetClusterConfigurationResponse) {}
-  rpc ListClusterConfigurations(ListClusterConfigurationsRequest) returns (ListClusterConfigurationsResponse) {}
+  rpc CreateClusterDescriptor(CreateClusterDescriptorRequest) returns (CreateClusterDescriptorResponse) {}
+  rpc DeleteClusterDescriptor(DeleteClusterDescriptorRequest) returns (DeleteClusterDescriptorResponse) {}
+  rpc GetClusterDescriptor(GetClusterDescriptorRequest) returns (GetClusterDescriptorResponse) {}
+  rpc ListClusterDescriptors(ListClusterDescriptorsRequest) returns (ListClusterDescriptorsResponse) {}
 
   rpc StoreClusterDeployment(StoreClusterDeploymentRequest) returns (StoreClusterDeploymentResponse) {}
   rpc DeleteClusterDeployment(DeleteClusterDeploymentRequest) returns (DeleteClusterDeploymentResponse) {}
@@ -21,120 +21,120 @@ service ClusterManager {
 }
 
 //
-// CreateClusterConfiguration
+// CreateClusterDescriptor
 //
-message CreateClusterConfigurationRequest {
-  opendut.types.cluster.ClusterConfiguration cluster_configuration = 1;
+message CreateClusterDescriptorRequest {
+  opendut.types.cluster.ClusterDescriptor cluster_descriptor = 1;
 }
 
-message CreateClusterConfigurationResponse {
+message CreateClusterDescriptorResponse {
   oneof reply {
-    CreateClusterConfigurationFailure failure = 1;
-    CreateClusterConfigurationSuccess success = 2;
+    CreateClusterDescriptorFailure failure = 1;
+    CreateClusterDescriptorSuccess success = 2;
   }
 }
 
-message CreateClusterConfigurationSuccess {
+message CreateClusterDescriptorSuccess {
   opendut.types.cluster.ClusterId cluster_id = 1;
 }
 
-message CreateClusterConfigurationFailure {
+message CreateClusterDescriptorFailure {
   oneof error {
-    CreateClusterConfigurationFailureInternal internal = 2;
+    CreateClusterDescriptorFailureInternal internal = 2;
   }
 }
 
-message CreateClusterConfigurationFailureInternal {
+message CreateClusterDescriptorFailureInternal {
   opendut.types.cluster.ClusterId cluster_id = 1;
   opendut.types.cluster.ClusterName cluster_name = 2;
   string cause = 3;
 }
 
 //
-// DeleteClusterConfiguration
+// DeleteClusterDescriptor
 //
-message DeleteClusterConfigurationRequest {
+message DeleteClusterDescriptorRequest {
   opendut.types.cluster.ClusterId cluster_id = 1;
 }
 
-message DeleteClusterConfigurationResponse {
+message DeleteClusterDescriptorResponse {
   oneof reply {
-    DeleteClusterConfigurationSuccess success = 1;
-    DeleteClusterConfigurationFailure failure = 2;
+    DeleteClusterDescriptorSuccess success = 1;
+    DeleteClusterDescriptorFailure failure = 2;
   }
 }
 
-message DeleteClusterConfigurationSuccess {
-  opendut.types.cluster.ClusterConfiguration cluster_configuration = 1;
+message DeleteClusterDescriptorSuccess {
+  opendut.types.cluster.ClusterDescriptor cluster_descriptor = 1;
 }
 
-message DeleteClusterConfigurationFailure {
+message DeleteClusterDescriptorFailure {
   oneof error {
-    DeleteClusterConfigurationFailureClusterConfigurationNotFound cluster_configuration_not_found = 1;
-    DeleteClusterConfigurationFailureIllegalClusterState illegal_cluster_state = 2;
-    DeleteClusterConfigurationFailureInternal internal = 3;
-    DeleteClusterConfigurationFailureClusterDeploymentExists cluster_deployment_exists = 4;
+    DeleteClusterDescriptorFailureClusterDescriptorNotFound cluster_descriptor_not_found = 1;
+    DeleteClusterDescriptorFailureIllegalClusterState illegal_cluster_state = 2;
+    DeleteClusterDescriptorFailureInternal internal = 3;
+    DeleteClusterDescriptorFailureClusterDeploymentExists cluster_deployment_exists = 4;
   }
 }
 
-message DeleteClusterConfigurationFailureClusterConfigurationNotFound {
+message DeleteClusterDescriptorFailureClusterDescriptorNotFound {
   opendut.types.cluster.ClusterId cluster_id = 1;
 }
 
-message DeleteClusterConfigurationFailureIllegalClusterState {
+message DeleteClusterDescriptorFailureIllegalClusterState {
   opendut.types.cluster.ClusterId cluster_id = 1;
   opendut.types.cluster.ClusterName cluster_name = 2;
   opendut.types.cluster.ClusterState actual_state = 3;
   repeated opendut.types.cluster.ClusterState required_states = 4;
 }
 
-message DeleteClusterConfigurationFailureInternal {
+message DeleteClusterDescriptorFailureInternal {
   opendut.types.cluster.ClusterId cluster_id = 1;
   optional opendut.types.cluster.ClusterName cluster_name = 2;
   string cause = 3;
 }
 
-message DeleteClusterConfigurationFailureClusterDeploymentExists {
+message DeleteClusterDescriptorFailureClusterDeploymentExists {
   opendut.types.cluster.ClusterId cluster_id = 1;
 }
 
 //
-// GetClusterConfiguration
+// GetClusterDescriptor
 //
-message GetClusterConfigurationRequest {
+message GetClusterDescriptorRequest {
   opendut.types.cluster.ClusterId id = 1;
 }
 
-message GetClusterConfigurationResponse {
+message GetClusterDescriptorResponse {
   oneof result {
-    GetClusterConfigurationFailure failure = 1;
-    GetClusterConfigurationSuccess success = 15;
+    GetClusterDescriptorFailure failure = 1;
+    GetClusterDescriptorSuccess success = 15;
   }
 }
 
-message GetClusterConfigurationSuccess {
-  opendut.types.cluster.ClusterConfiguration configuration = 1;
+message GetClusterDescriptorSuccess {
+  opendut.types.cluster.ClusterDescriptor configuration = 1;
 }
 
-message GetClusterConfigurationFailure {}
+message GetClusterDescriptorFailure {}
 
 //
-// ListClusterConfigurations
+// ListClusterDescriptors
 //
-message ListClusterConfigurationsRequest {}
+message ListClusterDescriptorsRequest {}
 
-message ListClusterConfigurationsResponse {
+message ListClusterDescriptorsResponse {
   oneof result {
-    ListClusterConfigurationsFailure failure = 1;
-    ListClusterConfigurationsSuccess success = 15;
+    ListClusterDescriptorsFailure failure = 1;
+    ListClusterDescriptorsSuccess success = 15;
   }
 }
 
-message ListClusterConfigurationsSuccess {
-  repeated opendut.types.cluster.ClusterConfiguration configurations = 1;
+message ListClusterDescriptorsSuccess {
+  repeated opendut.types.cluster.ClusterDescriptor configurations = 1;
 }
 
-message ListClusterConfigurationsFailure {}
+message ListClusterDescriptorsFailure {}
 
 //
 // StoreClusterDeployment

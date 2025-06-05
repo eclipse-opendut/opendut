@@ -2,17 +2,17 @@ use leptos::prelude::*;
 use opendut_types::peer::PeerDescriptor;
 
 use crate::clusters::configurator::DeviceSelector;
-use crate::clusters::configurator::types::UserClusterConfiguration;
+use crate::clusters::configurator::types::UserClusterDescriptor;
 
 #[component]
 pub fn DevicesTab(
-    cluster_configuration: RwSignal<UserClusterConfiguration>,
+    cluster_descriptor: RwSignal<UserClusterDescriptor>,
     peers: ReadSignal<Vec<PeerDescriptor>>,
 ) -> impl IntoView {
 
     view! {
         <div>
-            <DeviceSelector cluster_configuration peers />
+            <DeviceSelector cluster_descriptor peers />
         </div>
     }
 }

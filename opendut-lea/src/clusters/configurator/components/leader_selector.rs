@@ -6,7 +6,7 @@ use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::topology::DeviceId;
 
 use crate::clusters::configurator::components::get_all_selected_devices;
-use crate::clusters::configurator::types::UserClusterConfiguration;
+use crate::clusters::configurator::types::UserClusterDescriptor;
 use crate::util::{Ior, NON_BREAKING_SPACE};
 
 pub type LeaderSelectionError = String;
@@ -14,16 +14,16 @@ pub type LeaderSelection = Ior<LeaderSelectionError, PeerId>;
 
 #[component]
 pub fn LeaderSelector(
-    cluster_configuration: RwSignal<UserClusterConfiguration>,
+    cluster_descriptor: RwSignal<UserClusterDescriptor>,
     peers: ReadSignal<Vec<PeerDescriptor>>,
 ) -> impl IntoView {
 
-    let getter_selected_devices = create_read_slice(cluster_configuration, |config| {
+    let getter_selected_devices = create_read_slice(cluster_descriptor, |config| {
         Clone::clone(&config.devices)
     });
 
     let (getter_leader, setter_leader) = create_slice(
-        cluster_configuration,
+        cluster_descriptor,
         |config| Clone::clone(&config.leader),
         |config, input| {
             config.leader = input;

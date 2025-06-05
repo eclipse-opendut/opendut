@@ -84,7 +84,7 @@ spec:
         - -T4
         - scanme.nmap.org
 ---
-kind: ClusterConfiguration
+kind: ClusterDescriptor
 version: v1
 metadata:
   id: f90ffd64-ae3f-4ed4-8867-a48587733352

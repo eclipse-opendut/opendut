@@ -8,7 +8,7 @@ use leptos::html::Div;
 use leptos::prelude::*;
 use leptos_use::on_click_outside;
 use tracing::trace;
-use opendut_types::cluster::ClusterConfiguration;
+use opendut_types::cluster::ClusterDescriptor;
 use opendut_types::peer::state::{PeerConnectionState, PeerState};
 use opendut_types::peer::PeerDescriptor;
 
@@ -48,13 +48,13 @@ pub fn PeersOverview() -> impl IntoView {
         })
     };
 
-    let configured_clusters: LocalResource<Vec<ClusterConfiguration>> = {
+    let configured_clusters: LocalResource<Vec<ClusterDescriptor>> = {
         let carl = globals.client.clone();
 
         LocalResource::new(move || {
             let mut carl = carl.clone();
             async move {
-                carl.cluster.list_cluster_configurations().await
+                carl.cluster.list_cluster_descriptors().await
                     .expect("Failed to request the list of peers.")
             }
         })
@@ -76,7 +76,7 @@ pub fn PeersOverview() -> impl IntoView {
                 <Row
                     peer_descriptor=RwSignal::new(peer_descriptor)
                     peer_state=RwSignal::new(peer_state)
-                    cluster_configuration=RwSignal::new(configured_clusters)
+                    cluster_descriptor=RwSignal::new(configured_clusters)
                 />
             }
         }).collect_view()
@@ -142,7 +142,7 @@ pub fn PeersOverview() -> impl IntoView {
 fn Row(
     peer_descriptor: RwSignal<PeerDescriptor>,
     peer_state: RwSignal<PeerState>,
-    cluster_configuration: RwSignal<Vec<ClusterConfiguration>>,
+    cluster_descriptor: RwSignal<Vec<ClusterDescriptor>>,
 ) -> impl IntoView {
 
     let peer_id = create_read_slice(peer_descriptor,
@@ -186,7 +186,7 @@ fn Row(
         let devices_in_peer = peer_descriptor.get().topology.devices.into_iter().map(|device| device.id).collect::<Vec<_>>();
 
         let devices_in_cluster = {
-            let mut devices_in_cluster = cluster_configuration.get().into_iter()
+            let mut devices_in_cluster = cluster_descriptor.get().into_iter()
                 .map(|cluster| (cluster.id, cluster.name, cluster.devices))
                 .collect::<Vec<(_,_,_)>>();
 

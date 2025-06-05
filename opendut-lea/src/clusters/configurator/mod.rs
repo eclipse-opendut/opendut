@@ -7,7 +7,7 @@ use crate::app::use_app_globals;
 use crate::clusters::configurator::components::{DeviceSelection, DeviceSelector, LeaderSelection};
 use crate::clusters::configurator::components::Controls;
 use crate::clusters::configurator::tabs::{DevicesTab, GeneralTab, LeaderTab, TabIdentifier};
-use crate::clusters::configurator::types::UserClusterConfiguration;
+use crate::clusters::configurator::types::UserClusterDescriptor;
 use crate::clusters::overview::IsDeployed;
 use crate::components::{use_active_tab, BasePageContainer, Breadcrumb, LoadingSpinner};
 use crate::components::UserInputValue;
@@ -27,8 +27,8 @@ pub fn ClusterConfigurator() -> impl IntoView {
             .and_then(|id| ClusterId::try_from(id.as_str()).ok())
     }).unwrap_or_else(ClusterId::random));
 
-    let cluster_configuration = RwSignal::new(
-        UserClusterConfiguration {
+    let cluster_descriptor = RwSignal::new(
+        UserClusterDescriptor {
             id: cluster_id.get_untracked(),
             name: UserInputValue::Left(String::from("Enter a valid cluster name.")),
             devices: DeviceSelection::Left(String::from("Select at least two devices.")),
@@ -44,9 +44,9 @@ pub fn ClusterConfigurator() -> impl IntoView {
             let mut carl = carl.clone();
 
             async move {
-                if let Ok(configuration) = carl.cluster.get_cluster_configuration(cluster_id).await {
-                    cluster_configuration.set(
-                        UserClusterConfiguration {
+                if let Ok(configuration) = carl.cluster.get_cluster_descriptor(cluster_id).await {
+                    cluster_descriptor.set(
+                        UserClusterDescriptor {
                             id: cluster_id,
                             name: UserInputValue::Right(configuration.name.value().to_owned()),
                             devices: DeviceSelection::Right(configuration.devices),
@@ -70,7 +70,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
             let peers = RwSignal::new(peer_descriptors.await).read_only();
 
             view! {
-                <LoadedClusterConfigurator cluster_configuration peers />
+                <LoadedClusterConfigurator cluster_descriptor peers />
             }
         })}
         </Transition>
@@ -79,12 +79,12 @@ pub fn ClusterConfigurator() -> impl IntoView {
 
 #[component]
 fn LoadedClusterConfigurator(
-    cluster_configuration: RwSignal<UserClusterConfiguration>,
+    cluster_descriptor: RwSignal<UserClusterDescriptor>,
     peers: ReadSignal<Vec<PeerDescriptor>>,
 ) -> impl IntoView {
     let globals = use_app_globals();
 
-    let cluster_id = Signal::derive(move || cluster_configuration.get().id);
+    let cluster_id = Signal::derive(move || cluster_descriptor.get().id);
 
     let breadcrumbs = Signal::derive(move || {
         let cluster_id = cluster_id.get().0.to_string();
@@ -129,7 +129,7 @@ fn LoadedClusterConfigurator(
             controls=move || {
                 view! {
                     <Controls
-                        cluster_configuration=cluster_configuration.read_only()
+                        cluster_descriptor=cluster_descriptor.read_only()
                         deployed_signal
                     />
                 }
@@ -152,13 +152,13 @@ fn LoadedClusterConfigurator(
             <fieldset prop:disabled=move || { deployed_signal.get().0 }>
                 <div class="container">
                     <div class=("is-hidden", move || TabIdentifier::General != active_tab.get())>
-                        <GeneralTab cluster_configuration />
+                        <GeneralTab cluster_descriptor />
                     </div>
                     <div class=("is-hidden", move || TabIdentifier::Devices != active_tab.get())>
-                        <DevicesTab cluster_configuration peers />
+                        <DevicesTab cluster_descriptor peers />
                     </div>
                     <div class=("is-hidden", move || TabIdentifier::Leader != active_tab.get())>
-                        <LeaderTab cluster_configuration peers />
+                        <LeaderTab cluster_descriptor peers />
                     </div>
                 </div>
             </fieldset>

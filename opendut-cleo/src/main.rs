@@ -92,8 +92,8 @@ enum Commands {
 
 #[derive(Subcommand)]
 enum ListResource {
-    #[command(alias="cluster-configuration")]
-    ClusterConfigurations(commands::cluster_configuration::list::ListClusterConfigurationsCli),
+    #[command(alias="cluster-descriptor", alias="cluster-configurations")]
+    ClusterDescriptors(commands::cluster_descriptor::list::ListClusterDescriptorsCli),
     #[command(alias="cluster-deployment")]
     ClusterDeployments(commands::cluster_deployment::list::ListClusterDeploymentsCli),
     #[command(alias="peer")]
@@ -106,7 +106,7 @@ enum ListResource {
 
 #[derive(clap::Args)]
 #[group(required=true, multiple = true)]
-struct ClusterConfigurationDevices {
+struct ClusterDescriptorDevices {
     #[arg(long, num_args = 0..)]
     device_names: Vec<DeviceName>,
     #[arg(long, num_args = 0..)]
@@ -127,8 +127,9 @@ pub enum NetworkInterfaceType {
 
 #[derive(Subcommand)]
 enum CreateResource {
-    ClusterConfiguration(commands::cluster_configuration::create::CreateClusterConfigurationCli),
     ClusterDeployment(commands::cluster_deployment::create::CreateClusterDeploymentCli),
+    #[command(alias="cluster-configuration")]
+    ClusterDescriptor(commands::cluster_descriptor::create::CreateClusterDescriptorCli),
     Peer(commands::peer::create::CreatePeerCli),
     ContainerExecutor(commands::executor::create::CreateContainerExecutorCli),
     NetworkInterface(commands::network_interface::create::CreateNetworkInterfaceCli),
@@ -139,7 +140,8 @@ enum CreateResource {
 
 #[derive(Subcommand)]
 enum DescribeResource {
-    ClusterConfiguration(commands::cluster_configuration::describe::DescribeClusterConfigurationCli),
+    #[command(alias="cluster-configuration")]
+    ClusterDescriptor(commands::cluster_descriptor::describe::DescribeClusterDescriptorCli),
     Peer(commands::peer::describe::DescribePeerCli),
     Device(commands::device::describe::DescribeDeviceCli),
 }
@@ -151,8 +153,9 @@ enum FindResource {
 
 #[derive(Subcommand)]
 enum DeleteResource {
-    ClusterConfiguration(commands::cluster_configuration::delete::DeleteClusterConfigurationCli),
     ClusterDeployment(commands::cluster_deployment::delete::DeleteClusterDeploymentCli),
+    #[command(alias="cluster-configuration")]
+    ClusterDescriptor(commands::cluster_descriptor::delete::DeleteClusterDescriptorCli),
     Peer(commands::peer::delete::DeletePeerCli),
     ContainerExecutor(commands::executor::delete::DeleteContainerExecutorCli),
     NetworkInterface(commands::network_interface::delete::DeleteNetworkInterfaceCli),
@@ -240,7 +243,7 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
         Commands::List { resource, output } => {
             let mut carl = create_carl_client(&settings.config).await;
             match resource {
-                ListResource::ClusterConfigurations(implementation) => {
+                ListResource::ClusterDescriptors(implementation) => {
                     implementation.execute(&mut carl, output).await?;
                 }
                 ListResource::ClusterDeployments(implementation) => {
@@ -263,7 +266,7 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
         }
         Commands::Create { resource, output } => {
             match *resource {
-                CreateResource::ClusterConfiguration(implementation) => {
+                CreateResource::ClusterDescriptor(implementation) => {
                     let mut carl = create_carl_client(&settings.config).await;
                     implementation.execute(&mut carl, output).await?;
                 }
@@ -303,7 +306,7 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
         Commands::Describe { resource, output } => {
             let mut carl = create_carl_client(&settings.config).await;
             match resource {
-                DescribeResource::ClusterConfiguration(implementation)=> {
+                DescribeResource::ClusterDescriptor(implementation)=> {
                     implementation.execute(&mut carl, output).await?
                 }
                 DescribeResource::Peer(implementation)=> {
@@ -317,7 +320,7 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
         Commands::Delete { resource} => {
             let mut carl = create_carl_client(&settings.config).await;
             match resource {
-                DeleteResource::ClusterConfiguration(implementation) => {
+                DeleteResource::ClusterDescriptor(implementation) => {
                     implementation.execute(&mut carl).await?;
                 }
                 DeleteResource::ClusterDeployment(implementation) => {

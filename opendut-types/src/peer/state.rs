@@ -25,9 +25,9 @@ pub enum PeerConnectionState {
 }
 
 /// The PeerMemberState tells if the peer is available or if it belongs to and is blocked by a cluster deployment.
-/// A peer may be associated in multiple cluster configurations, but it may only be used in one cluster deployment.
+/// A peer may be associated in multiple cluster descriptors, but it may only be used in one cluster deployment.
 /// The ClusterManager is responsible for this information.
-/// The peer member state (peers' cluster membership) is derived from ClusterDeployment, ClusterConfiguration and PeerDescriptor resources.
+/// The peer member state (peers' cluster membership) is derived from ClusterDeployment, ClusterDescriptor and PeerDescriptor resources.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum PeerMemberState {
     Available,

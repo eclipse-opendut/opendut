@@ -74,12 +74,12 @@ fn parse_version(s: &str) -> Result<SpecificationVersion, ParseSpecificationErro
 
 fn parse_spec(kind: ResourceKind, version: SpecificationVersion, spec: Value) -> Result<Specification, ParseSpecificationError> {
     match (kind, version) {
-        (ResourceKind::ClusterConfiguration, SpecificationVersion::V1) => {
-            let spec = serde_json::from_value::<specs::cluster::ClusterConfigurationSpecificationV1>(spec)
+        (ResourceKind::ClusterDescriptor, SpecificationVersion::V1) => {
+            let spec = serde_json::from_value::<specs::cluster::ClusterDescriptorSpecificationV1>(spec)
                 .map_err(|cause| ParseSpecificationError::IllegalJsonSpecification { cause } )?;
-            Ok(Specification::ClusterConfigurationSpecification(specs::cluster::ClusterConfigurationSpecification::V1(spec)))
+            Ok(Specification::ClusterDescriptorSpecification(specs::cluster::ClusterDescriptorSpecification::V1(spec)))
         }
-        (ResourceKind::ClusterConfiguration, _) => {
+        (ResourceKind::ClusterDescriptor, _) => {
             Err(ParseSpecificationError::UnknownVersion { kind, version })
         }
         (ResourceKind::PeerDescriptor, SpecificationVersion::V1) => {

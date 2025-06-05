@@ -2,16 +2,16 @@ use std::collections::HashSet;
 use std::ops::Not;
 
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::cluster::{ClusterConfiguration, ClusterId};
+use opendut_types::cluster::{ClusterDescriptor, ClusterId};
 use opendut_types::peer::PeerId;
 use opendut_types::topology::{DeviceDescriptor, DeviceId, DeviceName};
 
 use crate::parse::cluster::{ParseableClusterId, ParseableClusterName};
-use crate::{ClusterConfigurationDevices, CreateOutputFormat};
+use crate::{ClusterDescriptorDevices, CreateOutputFormat};
 
-/// Create a cluster configuration
+/// Create a cluster descriptor
 #[derive(clap::Parser)]
-pub struct CreateClusterConfigurationCli {
+pub struct CreateClusterDescriptorCli {
     ///Name of the cluster
     #[arg(short, long)]
     name: ParseableClusterName,
@@ -23,10 +23,10 @@ pub struct CreateClusterConfigurationCli {
     leader_id: PeerId,
     ///List of devices in cluster
     #[clap(flatten)]
-    devices: ClusterConfigurationDevices,
+    devices: ClusterDescriptorDevices,
 }
 
-impl CreateClusterConfigurationCli {
+impl CreateClusterDescriptorCli {
     pub async fn execute(
         self,
         carl: &mut CarlClient,
@@ -66,7 +66,7 @@ impl CreateClusterConfigurationCli {
                 .collect::<Vec<_>>();
 
             if device_errors.is_empty().not() {
-                return Err(format!("Could not create cluster configuration:\n  {}", device_errors.join("\n  ")));
+                return Err(format!("Could not create cluster descriptor:\n  {}", device_errors.join("\n  ")));
             }
         }
 
@@ -88,29 +88,29 @@ impl CreateClusterConfigurationCli {
         }
 
         if devices.len() < 2 {
-            return Err("Specify at least 2 devices per cluster configuration.".to_string());
+            return Err("Specify at least 2 devices per cluster descriptor.".to_string());
         }
 
         let device_ids = devices.clone().into_iter()
             .map(|device| device.id)
             .collect::<HashSet<_>>();
 
-        let configuration = ClusterConfiguration { 
+        let descriptor = ClusterDescriptor {
             id: cluster_id, 
             name: Clone::clone(&cluster_name), 
             leader, 
             devices: device_ids 
         };
         
-        create_cluster_configuration(configuration, carl, &output).await?;
+        create_cluster_descriptor(descriptor, carl, &output).await?;
 
         Ok(())
     }
 }
 
-pub async fn create_cluster_configuration(cluster: ClusterConfiguration, carl: &mut CarlClient, output: &CreateOutputFormat) -> crate::Result<()> {
-    carl.cluster.store_cluster_configuration(cluster.clone()).await
-        .map_err(|err| format!("Could not store cluster configuration. Make sure the application is running. Error: {}", err))?;
+pub async fn create_cluster_descriptor(cluster: ClusterDescriptor, carl: &mut CarlClient, output: &CreateOutputFormat) -> crate::Result<()> {
+    carl.cluster.store_cluster_descriptor(cluster.clone()).await
+        .map_err(|err| format!("Could not store cluster descriptor. Make sure the application is running. Error: {}", err))?;
     
     let devices = carl.peers.list_devices().await
         .map_err(|error| format!("Error while trying to list devices.\n  {}", error))?;
@@ -124,11 +124,11 @@ pub async fn create_cluster_configuration(cluster: ClusterConfiguration, carl: &
 
     match output {
         CreateOutputFormat::Text => {
-            println!("Successfully stored new cluster configuration.");
+            println!("Successfully stored new cluster descriptor.");
         
             println!("ClusterID: {}", cluster.id);
             println!("Name of the Cluster: {}", cluster.name);
-            println!("The following devices are part of the cluster configuration:");
+            println!("The following devices are part of the cluster descriptor:");
             for device_name in device_names.iter() {
                 println!("\x09{}", device_name);
             };

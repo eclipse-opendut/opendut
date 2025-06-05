@@ -1,5 +1,5 @@
 use crate::resource::api::id::ResourceId;
-use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
+use opendut_types::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
 use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
 use opendut_types::peer::state::PeerConnectionState;
 use opendut_types::peer::{PeerDescriptor, PeerId};
@@ -11,10 +11,10 @@ pub trait Resource: Any + Send + Sync + Debug + Clone {
     type Id: ResourceId<Self> + Clone + Hash + PartialEq + Eq + Debug;
 }
 
-impl Resource for ClusterConfiguration {
+impl Resource for ClusterDeployment {
     type Id = ClusterId;
 }
-impl Resource for ClusterDeployment {
+impl Resource for ClusterDescriptor {
     type Id = ClusterId;
 }
 impl Resource for OldPeerConfiguration {

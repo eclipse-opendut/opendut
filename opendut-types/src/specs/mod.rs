@@ -31,5 +31,5 @@ pub enum SpecificationVersion {
 #[derive(Debug)]
 pub enum Specification {
     PeerDescriptorSpecification(peer::PeerDescriptorSpecification),
-    ClusterConfigurationSpecification(cluster::ClusterConfigurationSpecification),
+    ClusterDescriptorSpecification(cluster::ClusterDescriptorSpecification),
 }

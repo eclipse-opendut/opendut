@@ -9,9 +9,9 @@ use serde::Serialize;
 use crate::DescribeOutputFormat;
 
 
-/// Describe a cluster configuration
+/// Describe a cluster descriptor
 #[derive(clap::Parser)]
-pub struct DescribeClusterConfigurationCli {
+pub struct DescribeClusterDescriptorCli {
     /// ID of the cluster
     #[arg()]
     id: ClusterId,
@@ -26,22 +26,22 @@ struct ClusterTable {
     devices: Vec<DeviceName>,
 }
 
-impl DescribeClusterConfigurationCli {
+impl DescribeClusterDescriptorCli {
     pub async fn execute(self, carl: &mut CarlClient, output: DescribeOutputFormat) -> crate::Result<()> {
         let cluster_id = self.id;
 
-        let clusters_configuration = carl.cluster.list_cluster_configurations().await
-            .map_err(|_| String::from("Failed to get list of cluster configurations!"))?;
+        let clusters_configuration = carl.cluster.list_cluster_descriptors().await
+            .map_err(|_| String::from("Failed to get list of cluster descriptors!"))?;
 
-        let cluster_configuration = clusters_configuration.into_iter()
-            .find(|cluster_configuration| cluster_configuration.id == cluster_id)
-            .ok_or(format!("Failed to find cluster configuration for ClusterID <{}>", cluster_id))?;
+        let cluster_descriptor = clusters_configuration.into_iter()
+            .find(|cluster_descriptor| cluster_descriptor.id == cluster_id)
+            .ok_or(format!("Failed to find cluster descriptor for ClusterID <{}>", cluster_id))?;
 
         let cluster_devices = {
             let devices = carl.peers.list_devices().await
                 .map_err(|_| String::from("Failed to get list of devices!"))?;
             devices.into_iter()
-                .filter(|device| cluster_configuration.devices.contains(&device.id))
+                .filter(|device| cluster_descriptor.devices.contains(&device.id))
                 .map(|devices| devices.name)
                 .collect::<Vec<_>>()
         };
@@ -58,9 +58,9 @@ impl DescribeClusterConfigurationCli {
         };
 
         let table = ClusterTable {
-            name: cluster_configuration.name,
+            name: cluster_descriptor.name,
             id: cluster_id,
-            leader: cluster_configuration.leader,
+            leader: cluster_descriptor.leader,
             peers: cluster_peers,
             devices: cluster_devices,
         };
@@ -68,7 +68,7 @@ impl DescribeClusterConfigurationCli {
         let text = match output {
             DescribeOutputFormat::Text => {
                 format!(indoc!("
-                Cluster Configuration: {}
+                Cluster Descriptor: {}
                   Id: {}
                   Leader: {}
                   Peers: [{:?}]

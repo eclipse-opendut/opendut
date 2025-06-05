@@ -1,10 +1,10 @@
-use opendut_carl_api::carl::cluster::DeleteClusterConfigurationError;
+use opendut_carl_api::carl::cluster::DeleteClusterDescriptorError;
 use opendut_carl_api::carl::{CarlClient, ClientError};
 use opendut_types::cluster::ClusterId;
 
-/// Delete a cluster configuration
+/// Delete a cluster descriptor
 #[derive(clap::Parser)]
-pub struct DeleteClusterConfigurationCli {
+pub struct DeleteClusterDescriptorCli {
     /// ID of the cluster
     #[arg()]
     id: ClusterId,
@@ -13,7 +13,7 @@ pub struct DeleteClusterConfigurationCli {
     error_when_missing: bool,
 }
 
-impl DeleteClusterConfigurationCli {
+impl DeleteClusterDescriptorCli {
     pub async fn execute(self, carl: &mut CarlClient) -> crate::Result<()> {
         let id = self.id;
 
@@ -24,14 +24,14 @@ impl DeleteClusterConfigurationCli {
             Err(format!("Cluster <{}> can not be deleted while it is deployed.", id))?
         };
         
-        match carl.cluster.delete_cluster_configuration(id).await {
-            Ok(cluster_configuration) => {
-                eprintln!("Deleted ClusterConfiguration {} <{}> successfully.", cluster_configuration.name, cluster_configuration.id);
+        match carl.cluster.delete_cluster_descriptor(id).await {
+            Ok(cluster_descriptor) => {
+                eprintln!("Deleted ClusterDescriptor {} <{}> successfully.", cluster_descriptor.name, cluster_descriptor.id);
                 Ok(())
             }
             Err(error) => match error {
-                ClientError::UsageError(DeleteClusterConfigurationError::ClusterConfigurationNotFound { .. }) => {
-                    eprintln!("No cluster configuration found with ID <{id}>.");
+                ClientError::UsageError(DeleteClusterDescriptorError::ClusterDescriptorNotFound { .. }) => {
+                    eprintln!("No cluster descriptor found with ID <{id}>.");
                     if self.error_when_missing {
                         Err(error)
                     } else {
@@ -40,6 +40,6 @@ impl DeleteClusterConfigurationCli {
                 }
                 other => Err(other),
             }
-        }.map_err(|error| format!("Failed to delete ClusterConfiguration with id <{id}>.\n  {error}"))
+        }.map_err(|error| format!("Failed to delete ClusterDescriptor with id <{id}>.\n  {error}"))
     }
 }

@@ -1,12 +1,12 @@
-use crate::commands::cluster_configuration::apply::convert_document_to_cluster_configuration;
-use crate::commands::cluster_configuration::create::create_cluster_configuration;
+use crate::commands::cluster_descriptor::apply::convert_document_to_cluster_descriptor;
+use crate::commands::cluster_descriptor::create::create_cluster_descriptor;
 use crate::commands::peer::apply::convert_document_to_peer_descriptor;
 use crate::commands::peer::create::create_peer;
 use crate::CreateOutputFormat;
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::cluster::ClusterConfiguration;
+use opendut_types::cluster::ClusterDescriptor;
 use opendut_types::peer::PeerDescriptor;
-use opendut_types::specs::cluster::ClusterConfigurationSpecification;
+use opendut_types::specs::cluster::ClusterDescriptorSpecification;
 use opendut_types::specs::parse::json::JsonSpecificationDocument;
 use opendut_types::specs::parse::yaml::YamlSpecificationFile;
 use opendut_types::specs::peer::PeerDescriptorSpecification;
@@ -76,8 +76,8 @@ impl ApplyCli {
             ResourceModel::PeerDescriptor(model) => {
                 create_peer(model, carl, &self.output).await?;
             }
-            ResourceModel::ClusterConfiguration(model) => {
-                create_cluster_configuration(model, carl, &self.output).await?;
+            ResourceModel::ClusterDescriptor(model) => {
+                create_cluster_descriptor(model, carl, &self.output).await?;
             }
         }
         Ok(())
@@ -125,7 +125,7 @@ fn parse_source(arg: &str) -> Result<Source, SourceParsingError> {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 enum ResourceModel {
     PeerDescriptor(PeerDescriptor),
-    ClusterConfiguration(ClusterConfiguration),
+    ClusterDescriptor(ClusterDescriptor),
 }
 
 fn convert_document_to_model(specification_document: SpecificationDocument) -> crate::Result<ResourceModel> {
@@ -136,11 +136,11 @@ fn convert_document_to_model(specification_document: SpecificationDocument) -> c
                 .map_err(|error| format!("Could not parse the provided specification for peer <{}>.\n  {}", peer_id, error))?;
             ResourceModel::PeerDescriptor(peer_descriptor)
         }
-        Specification::ClusterConfigurationSpecification(ClusterConfigurationSpecification::V1(cluster_configuration)) => {
-            let cluster_configuration_id = specification_document.metadata.id;
-            let cluster_configuration = convert_document_to_cluster_configuration(specification_document.metadata, cluster_configuration)
-                .map_err(|error| format!("Could not parse the provided specification for cluster configuration <{}>.\n {}", cluster_configuration_id, error))?;
-            ResourceModel::ClusterConfiguration(cluster_configuration)
+        Specification::ClusterDescriptorSpecification(ClusterDescriptorSpecification::V1(cluster_descriptor)) => {
+            let cluster_descriptor_id = specification_document.metadata.id;
+            let cluster_descriptor = convert_document_to_cluster_descriptor(specification_document.metadata, cluster_descriptor)
+                .map_err(|error| format!("Could not parse the provided specification for cluster descriptor <{}>.\n {}", cluster_descriptor_id, error))?;
+            ResourceModel::ClusterDescriptor(cluster_descriptor)
         }        
     };
     Ok(result)

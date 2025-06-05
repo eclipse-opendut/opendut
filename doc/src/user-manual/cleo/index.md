@@ -5,7 +5,7 @@ CLEO is a CLI tool to create/read/update/delete resources in CARL.
 By using a terminal you will be able to configure your resources via CLEO.
 
 CLEO can currently access the following resources:
-- Cluster configurations
+- Cluster descriptors
 - Cluster deployments 
 - Peers
 - Devices (DuTs)

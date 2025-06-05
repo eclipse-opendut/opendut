@@ -1,5 +1,5 @@
-use crate::proto::{conversion, ConversionError, ConversionErrorBuilder, ConversionResult};
 use crate::proto::topology::DeviceId;
+use crate::proto::{conversion, ConversionError, ConversionResult};
 
 crate::include_proto!("opendut.types.cluster");
 
@@ -37,8 +37,8 @@ conversion! {
 }
 
 conversion! {
-    type Model = crate::cluster::ClusterConfiguration;
-    type Proto = ClusterConfiguration;
+    type Model = crate::cluster::ClusterDescriptor;
+    type Proto = ClusterDescriptor;
 
     fn from(configuration: Model) -> Proto {
         Proto {
