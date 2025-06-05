@@ -107,10 +107,11 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
         }
     }
 
-    let mut executor_manager = executor_manager.lock().await;
-    executor_manager.terminate_executors();
-    executor_manager.create_new_executors(peer_configuration.executors);
-
+    {
+        let mut executor_manager = executor_manager.lock().await;
+        executor_manager.terminate_executors();
+        executor_manager.create_new_executors(peer_configuration.executors);
+    }
 
     if let Some(cluster_assignment) = old_peer_configuration.cluster_assignment {
         setup_cluster_metrics(
@@ -163,21 +164,13 @@ async fn setup_cluster_metrics(
     self_id: PeerId,
     metrics_manager: NetworkMetricsManagerRef,
 ) -> anyhow::Result<()> {
-
     debug!("Setting up cluster metrics.");
 
-    let remote_peers: HashMap<PeerId, IpAddr> = {
-        let local_peer_assignment = peer_cluster_assignments.iter()
-            .find(|assignment| assignment.peer_id == self_id)
-            .ok_or(cluster_assignment::Error::LocalPeerAssignmentNotFound { self_id })?;
-
-        let local_ip = local_peer_assignment.vpn_address;
-
+    let remote_peers: HashMap<PeerId, IpAddr> =
         peer_cluster_assignments.iter()
-            .filter(|assignment| assignment.vpn_address != local_ip)
+            .filter(|assignment| assignment.peer_id != self_id)
             .map(|assignment| (assignment.peer_id, assignment.vpn_address))
-            .collect()
-    };
+            .collect();
 
     metrics_manager.lock().await
         .set_remote_peers(remote_peers).await;

@@ -5,7 +5,6 @@ use std::time::Duration;
 use opendut_types::peer::PeerId;
 use opentelemetry::{global, KeyValue};
 use tokio::sync::Mutex;
-use tokio::time::sleep;
 use tracing::{error, trace};
 
 
@@ -22,8 +21,8 @@ pub async fn spawn_cluster_ping(peers: HashMap<PeerId, IpAddr>, ping_interval_ms
     let mut last_ping_was_successful = false;
 
     loop {
-        sleep(ping_interval_ms).await;
-        let timeout = Duration::from_secs(1); //TODO make configurable
+        tokio::time::sleep(ping_interval_ms).await;
+        let timeout = Duration::from_secs(3); //TODO make configurable
 
         for (peer_id, vpn_address) in &peers {
             let remote_address = vpn_address;
@@ -35,7 +34,7 @@ pub async fn spawn_cluster_ping(peers: HashMap<PeerId, IpAddr>, ping_interval_ms
                         .record(reply.rtt as f64, &[KeyValue::new("peer_ip_address", remote_address.to_string())]);
 
                     if last_ping_was_successful.not() {
-                        trace!("Reply from {}: bytes={} time={}ms TTL={}", reply.address, data.len(), reply.rtt, options.ttl);
+                        trace!("Pong from {}: bytes={} time={}ms TTL={}", reply.address, data.len(), reply.rtt, options.ttl);
                         last_ping_was_successful = true;
                     }
                 },

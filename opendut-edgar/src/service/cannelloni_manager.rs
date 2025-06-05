@@ -144,7 +144,6 @@ impl CannelloniManager {
             .arg(self.server_port.to_string())
             .stderr(Stdio::piped())
             .stdout(Stdio::piped());
-
     }
 }
 

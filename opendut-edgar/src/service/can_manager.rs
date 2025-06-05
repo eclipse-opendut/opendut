@@ -16,7 +16,7 @@ use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 
 pub type CanManagerRef = Arc<CanManager>;
 
-pub struct CanManager{
+pub struct CanManager {
     /*
         The cannelloni_termination_token is used to signal the CannelloniManagers, running in separate threads, to terminate. Once it is read as 'true' 
         by a CannelloniManager, it will terminate. 
@@ -40,23 +40,28 @@ impl CanManager {
 
     async fn check_can_route_exists(&self, src: &NetworkInterfaceName, dst: &NetworkInterfaceName, can_fd: bool, max_hops: u8) -> Result<bool, Error> {
         let output = Command::new("cangw")
-                .arg("-L")
-                .output()
-                .await
-                .map_err(|cause| Error::CommandLineProgramExecution { command: "cangw".to_string(), cause })?;
-        
+            .arg("-L")
+            .output()
+            .await
+            .map_err(|cause| Error::CommandLineProgramExecution { command: "cangw".to_string(), cause })?;
+
         // cangw -L returns non-zero exit code despite succeeding, so we don't check it here
-        
+
         let output_str = String::from_utf8_lossy(&output.stdout);
 
-        let re = Regex::new(r"(?m)^cangw -A -s ([^\n ]+) -d ([^\n ]+) ((?:-X )?)-e -l ([0-9[^\n ]]+) #.*$").unwrap();
+        let regex = Regex::new(r"(?m)^cangw -A -s ([^\n ]+) -d ([^\n ]+) ((?:-X )?)-e -l ([0-9[^\n ]]+) #.*$").unwrap();
 
-        for (_, [exist_src, exist_dst, can_fd_flag, exist_max_hops]) in re.captures_iter(&output_str).map(|c| c.extract()) {
+        let captures = regex.captures_iter(&output_str).map(|captures| captures.extract().1);
+
+        for [exist_src, exist_dst, can_fd_flag, exist_max_hops] in captures {
             let exist_can_fd = can_fd_flag.trim() == "-X";
-            if exist_src == src.to_string() && exist_dst == dst.to_string() && exist_can_fd == can_fd && exist_max_hops == max_hops.to_string(){
+
+            if exist_src == src.name()
+            && exist_dst == dst.name()
+            && exist_can_fd == can_fd
+            && exist_max_hops == max_hops.to_string() {
                 return Ok(true)
             }
-
         }
 
         Ok(false)
@@ -78,13 +83,14 @@ impl CanManager {
         } 
 
         let output= cmd.output().await
-                .map_err(|cause| Error::CommandLineProgramExecution { command: "cangw".to_string(), cause })?;
+            .map_err(|cause| Error::CommandLineProgramExecution { command: "cangw".to_string(), cause })?;
 
         if ! output.status.success() {
             return Err(Error::CanRouteCreation { 
                 src: src.clone(), 
                 dst: dst.clone(), 
-                cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim()) });
+                cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim())
+            });
         }
 
         if self.check_can_route_exists(src, dst, can_fd, max_hops).await? {
@@ -96,10 +102,10 @@ impl CanManager {
 
     async fn remove_all_can_routes(&self) -> Result<(), Error> {
         let output = Command::new("cangw")
-                    .arg("-F")
-                    .output()
-                    .await
-                    .map_err(|cause| Error::CommandLineProgramExecution { command: "cangw".to_string(), cause })?;
+            .arg("-F")
+            .output()
+            .await
+            .map_err(|cause| Error::CommandLineProgramExecution { command: "cangw".to_string(), cause })?;
 
         if ! output.status.success() {
             return Err(Error::CanRouteFlushing { cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim()) });
@@ -112,29 +118,28 @@ impl CanManager {
         bridge_name: &NetworkInterfaceName,
         local_can_interfaces: Vec<NetworkInterfaceDescriptor>,
     ) -> Result<(), Error> {
-    
-    
+
         self.create_can_bridge(bridge_name).await
             .map_err(|cause| Error::Other { message: format!("Error while creating CAN bridge: {cause}") })?;
-    
+
         self.remove_all_can_routes().await?;
-    
+
         for interface in local_can_interfaces {
             if let Err(cause) = self.update_can_interface(&interface).await {
                 error!("Error while updating CAN interface: {cause}");
             };
-            
+
             self.create_can_route(bridge_name, &interface.name, true, 2).await?;
             self.create_can_route(bridge_name, &interface.name, false, 2).await?;
             self.create_can_route(&interface.name, bridge_name, true, 2).await?;
             self.create_can_route(&interface.name, bridge_name, false, 2).await?;
         }
-    
+
         Ok(())
     }
     
     async fn create_can_bridge(&self, bridge_name: &NetworkInterfaceName) -> anyhow::Result<()> {
-    
+
         if self.network_interface_manager.find_interface(bridge_name).await?.is_none() {
             debug!("Creating CAN bridge '{bridge_name}'.");
             let bridge = self.network_interface_manager.create_vcan_interface(bridge_name).await?;
@@ -142,7 +147,7 @@ impl CanManager {
         } else {
             debug!("Not creating CAN bridge '{bridge_name}', because it already exists.");
         }
-    
+
         Ok(())
     }
 
@@ -153,7 +158,7 @@ impl CanManager {
                 error!("Error updating CAN interface - A possible reason might be, that a virtual CAN interface was used: {cause}");
             };
             self.network_interface_manager.set_interface_up(&network_interface).await?;
-            
+
         } else {
             error!("Cannot find CAN interface with name: '{}'.", interface.name);
         }
@@ -168,57 +173,56 @@ impl CanManager {
     pub async fn setup_remote_routing_client(&self, bridge_name: &NetworkInterfaceName, leader_ip: &IpAddr, leader_port: &Port) -> Result<(), Error> {
 
         self.terminate_cannelloni_managers().await;
-    
+
         let mut guarded_termination_token = self.cannelloni_termination_token.lock().unwrap();
         *guarded_termination_token = Arc::new(AtomicBool::new(false));
-        
+
         info!("Spawning cannelloni manager as client");
-    
+
         // TODO: The buffer timeout here should likely be configurable through CARL (cannot be 0)
         let mut cannelloni_manager = CannelloniManager::new (
-            false, 
-            bridge_name.clone(), 
-            *leader_port, 
-            *leader_ip, 
+            false,
+            bridge_name.clone(),
+            *leader_port,
+            *leader_ip,
             Duration::from_micros(1),
             guarded_termination_token.clone(),
         );
-    
+
         tokio::spawn(async move {
             cannelloni_manager.run().await;
         });
-    
+
         Ok(())
     }
-    
+
     pub async fn setup_remote_routing_server(&self, bridge_name: &NetworkInterfaceName, remote_assignments: &Vec<PeerClusterAssignment>) -> Result<(), Error>  {
 
         self.terminate_cannelloni_managers().await;
 
         let mut guarded_termination_token = self.cannelloni_termination_token.lock().unwrap();
         *guarded_termination_token = Arc::new(AtomicBool::new(false));
-        
-    
+
+
         for remote_assignment in remote_assignments {
-            info!("Spawning cannelloni manager as server for peer with IP {}", remote_assignment.vpn_address.to_string());
+            info!("Spawning cannelloni manager as server for peer with IP {}", remote_assignment.vpn_address);
     
             let mut cannelloni_manager = CannelloniManager::new(
-                true, 
-                bridge_name.clone(), 
-                remote_assignment.can_server_port, 
-                remote_assignment.vpn_address, 
+                true,
+                bridge_name.clone(),
+                remote_assignment.can_server_port,
+                remote_assignment.vpn_address,
                 Duration::from_micros(1),
                 guarded_termination_token.clone()
             );
-        
+
             tokio::spawn(async move {
                 cannelloni_manager.run().await;
             });
         }
-    
+
         Ok(())
     }
-
 }
 
 #[derive(Debug, thiserror::Error)]

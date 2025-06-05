@@ -52,16 +52,13 @@ pub async fn setup_can_interfaces(
     let server_port = local_peer_assignment.can_server_port;
 
     if is_leader {
-
         let remote_assignments = determine_remote_assignments(cluster_assignment, self_id)?;
         can_manager.setup_remote_routing_server(
             &can_bridge_name, 
             &remote_assignments
         ).await
         .map_err(Error::RemoteCanRoutingSetupFailed)?;
-
     } else {        
-
         let leader_assignment = determine_leader_assignment(cluster_assignment)?;
         can_manager.setup_remote_routing_client(
             &can_bridge_name, 
@@ -92,10 +89,10 @@ fn determine_remote_assignments(cluster_assignment: &ClusterAssignment, self_id:
 }
 
 fn determine_leader_assignment(cluster_assignment: &ClusterAssignment) -> Result<&PeerClusterAssignment, Error>{
-    let leader_assignment = cluster_assignment.assignments
-        .iter().find(|peer_assignment| 
+    let leader_assignment = cluster_assignment.assignments.iter()
+        .find(|peer_assignment| 
             peer_assignment.peer_id == cluster_assignment.leader
-            ).ok_or(Error::LeaderNotDeterminable)?;
+        ).ok_or(Error::LeaderNotDeterminable)?;
 
     Ok(leader_assignment)
 }
