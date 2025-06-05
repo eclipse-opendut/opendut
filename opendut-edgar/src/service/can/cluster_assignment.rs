@@ -1,6 +1,6 @@
 use tracing::debug;
 
-use crate::service::can_manager::CanManagerRef;
+use crate::service::can::can_manager::CanManagerRef;
 use opendut_types::cluster::{ClusterAssignment, PeerClusterAssignment};
 use opendut_types::peer::configuration::{parameter, Parameter, ParameterTarget};
 use opendut_types::peer::PeerId;
@@ -116,7 +116,7 @@ pub enum Error {
     #[error("Could not determine leader from ClusterAssignment.")]
     LeaderNotDeterminable,
     #[error("Local CAN routing setup failed: {0}")]
-    LocalCanRoutingSetupFailed(crate::service::can_manager::Error),
+    LocalCanRoutingSetupFailed(super::can_manager::Error),
     #[error("Remote CAN routing setup failed: {0}")]
-    RemoteCanRoutingSetupFailed(crate::service::can_manager::Error),
+    RemoteCanRoutingSetupFailed(super::can_manager::Error),
 }

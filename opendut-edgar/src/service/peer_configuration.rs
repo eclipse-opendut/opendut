@@ -2,14 +2,15 @@ use std::collections::HashMap;
 use std::fmt::Formatter;
 use std::net::IpAddr;
 use opendut_types::cluster::{ClusterAssignment, PeerClusterAssignment};
-use tracing::{debug, error, info, trace};
+use tracing::{debug, error};
 use std::sync::Arc;
-use opendut_types::peer::configuration::{parameter, OldPeerConfiguration, Parameter, ParameterTarget, PeerConfiguration};
+use opendut_types::peer::configuration::{parameter, OldPeerConfiguration, Parameter, PeerConfiguration};
 use opendut_types::peer::PeerId;
 use tokio::sync::mpsc;
 use crate::common::task::{runner, Task};
-use crate::service::{cluster_assignment, tasks};
-use crate::service::can_manager::CanManagerRef;
+use crate::service::tasks;
+use crate::service::can::cluster_assignment;
+use crate::service::can::can_manager::CanManagerRef;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use crate::service::test_execution::executor_manager::ExecutorManagerRef;
 use crate::setup::RunMode;
@@ -56,7 +57,7 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
     {
         let mut tasks: Vec<Box<dyn Task>> = vec![];
 
-        if let NetworkInterfaceManagement::Enabled { network_interface_manager, can_manager: _ } = &network_interface_management {
+        if let NetworkInterfaceManagement::Enabled { network_interface_manager, .. } = &network_interface_management {
             let mut ethernet_parameters = peer_configuration.ethernet_bridges.clone();
             ethernet_parameters.sort_by(|a, b| a.target.cmp(&b.target));
             for parameter in ethernet_parameters {
@@ -83,28 +84,22 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
                     network_interface_manager: Arc::clone(network_interface_manager),
                 }));
             }
+        } else {
+            debug!("Skipping changes to Ethernet interfaces, since network interface management is disabled.");
         }
 
         runner::run(RunMode::Service, &tasks).await?;
     }
 
-    {
-        let maybe_bridge = peer_configuration.ethernet_bridges.iter()
-            .find(|bridge| bridge.target == ParameterTarget::Present); //we currently expect only one bridge to be Present (for one cluster)
-
-        match maybe_bridge {
-            Some(_) => {
-                let _ = setup_cluster(
-                    &old_peer_configuration.cluster_assignment,
-                    peer_configuration.device_interfaces,
-                    self_id,
-                    network_interface_management,
-                ).await;
-            }
-            None => {
-                debug!("PeerConfiguration contained no info for bridge. Not setting up cluster.");
-            }
-        }
+    if let NetworkInterfaceManagement::Enabled { can_manager, .. } = &network_interface_management {
+        let _ = setup_can(
+            &old_peer_configuration.cluster_assignment,
+            peer_configuration.device_interfaces,
+            self_id,
+            Arc::clone(can_manager),
+        ).await;
+    } else {
+        debug!("Skipping changes to CAN interfaces, since network interface management is disabled.");
     }
 
     {
@@ -126,32 +121,25 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
 }
 
 #[tracing::instrument(skip_all)]
-async fn setup_cluster( //TODO make CAN idempotent
+async fn setup_can( //TODO make CAN idempotent
     cluster_assignment: &Option<ClusterAssignment>,
     device_interfaces: Vec<Parameter<parameter::DeviceInterface>>,
     self_id: PeerId,
-    network_interface_management: NetworkInterfaceManagement,
+    can_manager: CanManagerRef,
 ) -> anyhow::Result<()> {
 
     match cluster_assignment {
         Some(cluster_assignment) => {
-            trace!("Received ClusterAssignment: {cluster_assignment:?}");
-            info!("Was assigned to cluster <{}>", cluster_assignment.id);
-
-            if let NetworkInterfaceManagement::Enabled { can_manager, .. } = &network_interface_management {
-                cluster_assignment::setup_can_interfaces(
-                    cluster_assignment,
-                    self_id,
-                    &device_interfaces,
-                    Arc::clone(can_manager),
-                ).await
-                .inspect_err(|error| error!("Failed to configure CAN interfaces: {error}"))?;
-            } else {
-                debug!("Skipping changes to network interfaces after receiving ClusterAssignment, as this is disabled via configuration.");
-            }
+            cluster_assignment::setup_can_interfaces(
+                cluster_assignment,
+                self_id,
+                &device_interfaces,
+                can_manager,
+            ).await
+            .inspect_err(|error| error!("Failed to configure CAN interfaces: {error}"))?;
         }
         None => {
-            debug!("No ClusterAssignment in peer configuration.");
+            debug!("No ClusterAssignment in peer configuration, not setting up CAN.");
             //TODO teardown cluster, if configuration changed
         }
     }

@@ -11,7 +11,7 @@ use tracing::{debug, error, info};
 
 use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
 
-use crate::service::cannelloni_manager::CannelloniManager;
+use crate::service::can::cannelloni_manager::CannelloniManager;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 
 pub type CanManagerRef = Arc<CanManager>;

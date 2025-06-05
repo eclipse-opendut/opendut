@@ -24,7 +24,7 @@ use tracing_opentelemetry::OpenTelemetrySpanExt;
 use opendut_util::telemetry::opentelemetry_types;
 use crate::app_info;
 use crate::common::{carl, settings};
-use crate::service::can_manager::{CanManager, CanManagerRef};
+use crate::service::can::can_manager::CanManager;
 use crate::service::network_interface::manager::{NetworkInterfaceManager, NetworkInterfaceManagerRef};
 use crate::service::network_metrics::manager::NetworkMetricsManager;
 use crate::service::peer_configuration::{ApplyPeerConfigurationParams, NetworkInterfaceManagement};
@@ -99,7 +99,7 @@ pub async fn run_stream_receiver(
             let network_interface_management_enabled = settings.config.get::<bool>("network.interface.management.enabled")?;
             if network_interface_management_enabled {
                 let network_interface_manager: NetworkInterfaceManagerRef = NetworkInterfaceManager::create()?;
-                let can_manager: CanManagerRef = CanManager::create(Arc::clone(&network_interface_manager));
+                let can_manager = CanManager::create(Arc::clone(&network_interface_manager));
 
                 NetworkInterfaceManagement::Enabled { network_interface_manager, can_manager }
             } else {
