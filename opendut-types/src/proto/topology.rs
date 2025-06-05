@@ -1,6 +1,6 @@
 use crate::proto::{conversion, ConversionError, ConversionErrorBuilder, ConversionResult};
 
-include!(concat!(env!("OUT_DIR"), "/opendut.types.topology.rs"));
+crate::include_proto!("opendut.types.topology");
 
 
 conversion! {

@@ -7,7 +7,7 @@ use super::util::{NetworkInterfaceDescriptor, NetworkInterfaceName};
 pub mod configuration;
 pub mod executor;
 
-include!(concat!(env!("OUT_DIR"), "/opendut.types.peer.rs"));
+crate::include_proto!("opendut.types.peer");
 
 conversion! {
     type Model = crate::peer::PeerId;

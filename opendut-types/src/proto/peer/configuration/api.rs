@@ -1,6 +1,6 @@
 use crate::proto::{conversion, ConversionError, ConversionErrorBuilder, ConversionResult};
 
-include!(concat!(env!("OUT_DIR"), "/opendut.types.peer.configuration.api.rs"));
+crate::include_proto!("opendut.types.peer.configuration.api");
 
 
 conversion! {

@@ -4,7 +4,7 @@ use crate::proto::util::ip_address::Address;
 use crate::util;
 use crate::util::net::NetworkInterfaceConfiguration;
 
-include!(concat!(env!("OUT_DIR"), "/opendut.types.util.rs"));
+crate::include_proto!("opendut.types.util");
 
 impl From<uuid::Uuid> for Uuid {
     fn from(value: uuid::Uuid) -> Self {

@@ -1,7 +1,7 @@
 use crate::proto::{conversion, ConversionError, ConversionErrorBuilder, ConversionResult};
 use crate::proto::topology::DeviceId;
 
-include!(concat!(env!("OUT_DIR"), "/opendut.types.cluster.rs"));
+crate::include_proto!("opendut.types.cluster");
 
 
 conversion! {

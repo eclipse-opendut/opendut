@@ -100,3 +100,12 @@ macro_rules! conversion {
     }
 }
 pub(crate) use conversion; //makes macro available in module tree like a normal element
+
+
+/// Vendored from `tonic::include_proto`, since we don't have that as a dependency here
+#[macro_export]
+macro_rules! include_proto {
+    ($package: tt) => {
+        include!(concat!(env!("OUT_DIR"), concat!("/", $package, ".rs")));
+    };
+}
