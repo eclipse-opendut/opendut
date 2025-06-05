@@ -35,6 +35,7 @@ conversion! {
             device_interfaces: value.device_interfaces.into_iter().map(From::from).collect(),
             gre_interfaces: value.gre_interfaces.into_iter().map(From::from).collect(),
             joined_interfaces: value.joined_interfaces.into_iter().map(From::from).collect(),
+            remote_peer_connection_checks: value.remote_peer_connection_checks.into_iter().map(From::from).collect(),
         }
     }
 
@@ -45,6 +46,7 @@ conversion! {
             device_interfaces: value.device_interfaces.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
             gre_interfaces: value.gre_interfaces.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
             joined_interfaces: value.joined_interfaces.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
+            remote_peer_connection_checks: value.remote_peer_connection_checks.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
         })
     }
 }
@@ -183,7 +185,35 @@ conversion! {
             value,
         })
     }
+}
 
+conversion! {
+    type Model = crate::peer::configuration::Parameter<crate::peer::configuration::parameter::RemotePeerConnectionCheck>;
+    type Proto = PeerConfigurationParameterRemotePeerConnectionCheck;
+
+    fn from(model: Model) -> Proto {
+
+        let value: crate::proto::peer::configuration::parameter::RemotePeerConnectionCheck = model.value.clone().into();
+        let parameter = PeerConfigurationParameter::from(model);
+
+        Proto {
+            parameter: Some(parameter),
+            value: Some(value),
+        }
+    }
+
+    fn try_from(proto: Proto) -> ConversionResult<Model> {
+        let parameter = extract!(proto.parameter)?;
+
+        let value: crate::peer::configuration::parameter::RemotePeerConnectionCheck = extract!(proto.value)?.try_into()?;
+
+        Ok(Model {
+            id: extract!(parameter.id)?.try_into()?,
+            dependencies: parameter.dependencies.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
+            target: extract!(parameter.target)?.into(),
+            value,
+        })
+    }
 }
 
 

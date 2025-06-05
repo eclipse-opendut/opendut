@@ -95,6 +95,16 @@ impl ParameterValue for parameter::InterfaceJoinConfig {
     }
 }
 
+impl ParameterValue for parameter::RemotePeerConnectionCheck {
+    fn parameter_identifier(&self) -> ParameterId {
+        parameter_value_hash(self)
+    }
+
+    fn peer_configuration_field(peer_configuration: &mut PeerConfiguration) -> &mut Vec<Parameter<Self>> {
+        &mut peer_configuration.remote_peer_connection_checks
+    }
+}
+
 
 #[cfg(test)]
 mod tests {

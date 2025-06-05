@@ -4,6 +4,7 @@ package opendut.types.peer.configuration.parameter;
 
 import "opendut/types/util/net.proto";
 import "opendut/types/peer/executor/executor.proto";
+import "opendut/types/peer/peer.proto";
 
 message DeviceInterface {
   opendut.types.util.NetworkInterfaceDescriptor descriptor = 1;
@@ -25,4 +26,9 @@ message GreInterfaceConfig {
 message InterfaceJoinConfig {
   opendut.types.util.NetworkInterfaceName name = 1;
   opendut.types.util.NetworkInterfaceName bridge = 2;
+}
+
+message RemotePeerConnectionCheck {
+  opendut.types.peer.PeerId remote_peer_id = 1;
+  opendut.types.util.IpAddress remote_ip = 2;
 }

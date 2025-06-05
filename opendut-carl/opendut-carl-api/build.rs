@@ -16,6 +16,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             ".opendut.types",
             "opendut_types::proto"
         )
+        .type_attribute(".", "#[allow(clippy::all)]")
         .compile_protos(&protos, &includes)?;
 
     Ok(())

@@ -16,7 +16,7 @@ conversion! {
     fn try_from(value: Proto) -> ConversionResult<Model> {
         let descriptor = extract!(value.descriptor)?.try_into()?;
 
-        Ok(crate::peer::configuration::parameter::DeviceInterface {
+        Ok(Model {
             descriptor,
         })
     }
@@ -35,7 +35,7 @@ conversion! {
     fn try_from(value: Proto) -> ConversionResult<Model> {
         let name = extract!(value.name)?.try_into()?;
 
-        Ok(crate::peer::configuration::parameter::EthernetBridge {
+        Ok(Model {
             name,
         })
     }
@@ -55,7 +55,7 @@ conversion! {
         let descriptor = extract!(value.descriptor)?
             .try_into()?;
 
-        Ok(crate::peer::configuration::parameter::Executor {
+        Ok(Model {
             descriptor,
         })
     }
@@ -74,9 +74,11 @@ conversion! {
     
     fn try_from(value: Proto) -> ConversionResult<Model> {
         let local_ip = std::net::Ipv4Addr::try_from(extract!(value.local_ip)?)
-                    .map_err(|cause| ErrorBuilder::message(cause.to_string()))?;
+            .map_err(|cause| ErrorBuilder::message(cause.to_string()))?;
+
         let remote_ip = std::net::Ipv4Addr::try_from(extract!(value.remote_ip)?)
-                    .map_err(|cause| ErrorBuilder::message(cause.to_string()))?;
+            .map_err(|cause| ErrorBuilder::message(cause.to_string()))?;
+
         Ok(Model {
             local_ip,
             remote_ip,
@@ -101,6 +103,28 @@ conversion! {
         Ok(Model {
             name,
             bridge,
+        })
+    }
+}
+
+conversion! {
+    type Model = crate::peer::configuration::parameter::RemotePeerConnectionCheck;
+    type Proto = RemotePeerConnectionCheck;
+
+    fn from(value: Model) -> Proto {
+        Proto {
+            remote_peer_id: Some(value.remote_peer_id.into()),
+            remote_ip: Some(value.remote_ip.into()),
+        }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let remote_peer_id = extract!(value.remote_peer_id)?.try_into()?;
+        let remote_ip = extract!(value.remote_ip)?.try_into()?;
+
+        Ok(Model {
+            remote_peer_id,
+            remote_ip,
         })
     }
 }

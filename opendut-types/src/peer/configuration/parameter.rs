@@ -1,9 +1,10 @@
-use std::fmt::Formatter;
-use std::net::Ipv4Addr;
+use std::fmt::{Display, Formatter};
+use std::net::{IpAddr, Ipv4Addr};
 use std::str::FromStr;
 use base64::Engine;
 use serde::Serialize;
 use crate::peer::executor::ExecutorDescriptor;
+use crate::peer::PeerId;
 use crate::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName, NetworkInterfaceNameError};
 
 
@@ -22,7 +23,7 @@ pub struct GreInterfaceConfig {
     pub local_ip: Ipv4Addr,
     pub remote_ip: Ipv4Addr,
 }
-impl std::fmt::Display for GreInterfaceConfig {
+impl Display for GreInterfaceConfig {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}-{}", self.local_ip, self.remote_ip)
     }
@@ -50,7 +51,7 @@ pub struct InterfaceJoinConfig {
     pub bridge: NetworkInterfaceName,
 }
 
-impl std::fmt::Display for InterfaceJoinConfig {
+impl Display for InterfaceJoinConfig {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}-{}", self.name.name(), self.bridge.name())
     }
@@ -59,6 +60,18 @@ impl std::fmt::Display for InterfaceJoinConfig {
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
 pub struct Executor {
     pub descriptor: ExecutorDescriptor,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
+pub struct RemotePeerConnectionCheck {
+    pub remote_peer_id: PeerId,
+    pub remote_ip: IpAddr,
+}
+impl Display for RemotePeerConnectionCheck {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let Self { remote_peer_id: peer_id, remote_ip } = self;
+        write!(f, "{peer_id}: {remote_ip}")
+    }
 }
 
 

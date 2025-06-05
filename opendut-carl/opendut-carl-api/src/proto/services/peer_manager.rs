@@ -1,5 +1,3 @@
-#![expect(clippy::large_enum_variant)]
-
 use opendut_types::peer::{PeerId, PeerName};
 use opendut_types::peer::state::PeerState;
 use opendut_types::{conversion, proto};

@@ -10,7 +10,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "proto/"
     ];
 
-    prost_build::compile_protos(&protos, &includes)?;
+    prost_build::Config::new()
+        .type_attribute(".", "#[allow(clippy::all)]")
+        .compile_protos(&protos, &includes)?;
 
     Ok(())
 }

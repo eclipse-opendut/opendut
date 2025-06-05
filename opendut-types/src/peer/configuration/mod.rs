@@ -19,6 +19,7 @@ pub struct PeerConfiguration {
     pub executors: Vec<Parameter<parameter::Executor>>,
     pub gre_interfaces: Vec<Parameter<parameter::GreInterfaceConfig>>,
     pub joined_interfaces: Vec<Parameter<parameter::InterfaceJoinConfig>>,
+    pub remote_peer_connection_checks: Vec<Parameter<parameter::RemotePeerConnectionCheck>>,
     //TODO migrate more parameters
 }
 impl PeerConfiguration {
