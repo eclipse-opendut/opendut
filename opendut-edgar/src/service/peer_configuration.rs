@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::Formatter;
 use std::net::IpAddr;
-use opendut_types::cluster::{ClusterAssignment, PeerClusterAssignment};
+use opendut_types::cluster::ClusterAssignment;
 use tracing::{debug, error};
 use std::sync::Arc;
 use opendut_types::peer::configuration::{parameter, OldPeerConfiguration, Parameter, PeerConfiguration};
@@ -88,6 +88,19 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
             debug!("Skipping changes to Ethernet interfaces, since network interface management is disabled.");
         }
 
+        if let Some(cluster_assignment) = &old_peer_configuration.cluster_assignment { //TODO get info from new PeerConfiguration
+            let remote_peers: HashMap<PeerId, IpAddr> =
+                cluster_assignment.assignments.iter()
+                    .filter(|assignment| assignment.peer_id != self_id)
+                    .map(|assignment| (assignment.peer_id, assignment.vpn_address))
+                    .collect();
+
+            tasks.push(Box::new(tasks::setup_cluster_metrics::SetupClusterMetrics {
+                remote_peers,
+                metrics_manager,
+            }));
+        }
+
         runner::run(RunMode::Service, &tasks).await?;
     }
 
@@ -106,14 +119,6 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
         let mut executor_manager = executor_manager.lock().await;
         executor_manager.terminate_executors();
         executor_manager.create_new_executors(peer_configuration.executors);
-    }
-
-    if let Some(cluster_assignment) = old_peer_configuration.cluster_assignment {
-        setup_cluster_metrics(
-            &cluster_assignment.assignments,
-            self_id,
-            metrics_manager,
-        ).await?;
     }
 
     debug!("Peer configuration has been successfully applied.");
@@ -143,25 +148,5 @@ async fn setup_can( //TODO make CAN idempotent
             //TODO teardown cluster, if configuration changed
         }
     }
-    Ok(())
-}
-
-#[tracing::instrument(skip_all)]
-async fn setup_cluster_metrics(
-    peer_cluster_assignments: &[PeerClusterAssignment],
-    self_id: PeerId,
-    metrics_manager: NetworkMetricsManagerRef,
-) -> anyhow::Result<()> {
-    debug!("Setting up cluster metrics.");
-
-    let remote_peers: HashMap<PeerId, IpAddr> =
-        peer_cluster_assignments.iter()
-            .filter(|assignment| assignment.peer_id != self_id)
-            .map(|assignment| (assignment.peer_id, assignment.vpn_address))
-            .collect();
-
-    metrics_manager.lock().await
-        .set_remote_peers(remote_peers).await;
-
     Ok(())
 }
