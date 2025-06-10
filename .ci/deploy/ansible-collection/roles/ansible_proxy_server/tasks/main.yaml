@@ -1,1 +1,1 @@
-- include_tasks: "{{ ansible_proxy_server_state }}.yaml"
+- import_tasks: "{{ ansible_proxy_server_state }}.yaml"

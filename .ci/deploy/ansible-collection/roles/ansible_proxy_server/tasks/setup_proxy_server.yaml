@@ -1,0 +1,27 @@
+- name: Create download dir for proxy server
+  file:
+    state: directory
+    dest: "{{ ansible_proxy_server_controller_proxy_dir }}"
+
+- name: Download proxy server onto Ansible Controller
+  unarchive:
+    src: "https://github.com/genotrance/px/releases/download/{{ ansible_proxy_server_pxproxy_version }}/px-{{ ansible_proxy_server_pxproxy_version }}-{{ ansible_proxy_server_pxproxy_target }}.tar.gz"
+    remote_src: true
+    dest: "{{ ansible_proxy_server_controller_proxy_dir }}"
+    creates: "{{ ansible_proxy_server_controller_proxy_executable }}"
+
+
+- name: Set template text for forwarding proxy to localhost
+  set_fact:
+    ansible_proxy_server_forward_to_proxy_formatted: |
+      # forward to proxy on localhost
+      server = {{ ansible_proxy_server_forward_to_proxy }}
+  when: ansible_proxy_server_forward_to_proxy != ""
+
+- name: Template px-proxy configuration
+  template:
+    src: "{{ role_path }}/templates/px-proxy.ini.j2"
+    dest: "{{ ansible_proxy_server_controller_pxproxy_config_file }}"
+
+- name: Run px-proxy
+  shell: "{{ ansible_proxy_server_controller_proxy_executable }} --config={{ ansible_proxy_server_controller_pxproxy_config_file }} &"

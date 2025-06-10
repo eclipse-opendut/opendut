@@ -2,7 +2,6 @@ argument_specs:
   main:
     description:
       - Set up a proxy server on the Ansible Controller to give internet access to edge devices during playbook execution.
-      - This assumes that we're connected to the Raspberry Pi via a WiFi hotspot that the Raspberry Pi broadcasts. In NetworkManager's default configuration, it should give us an IP address of 10.42.0.x.
     options:
       ansible_proxy_server_state:
         description: "Whether to install the role or remove it."

@@ -135,7 +135,6 @@
         - name: Activate Ansible Controller proxy
           import_role:
             name: eclipse_opendut.opendut.ansible_proxy_server
-          delegate_to: localhost
 
         - name: Install can-utils
           apt:
@@ -158,7 +157,6 @@
             name: eclipse_opendut.opendut.ansible_proxy_server
           vars:
             ansible_proxy_server_state: "absent"
-          delegate_to: localhost
 
     - name: Copy Cannelloni into OS PATH
       shell:
