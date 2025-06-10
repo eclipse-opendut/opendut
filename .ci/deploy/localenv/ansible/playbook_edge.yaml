@@ -2,7 +2,6 @@
 ---
 - name: Create Peer configuration in CARL
   hosts: backend
-  gather_facts: false
   vars:
     apply_file: "{{ inventory_dir }}/{{ cleo_apply_dir }}/{{ ansible_host }}.yaml"
   tasks:
@@ -13,7 +12,6 @@
 
 - name: Create /etc/hosts entry for backend
   hosts: edge
-  gather_facts: false
   tasks:
     - name: Determine Backend IP
       set_fact:
@@ -37,7 +35,6 @@
 
 - name: Fetch CARL certificate for EDGAR download
   hosts: edge
-  gather_facts: false
   vars:
     ca_cert_dir: "/tmp/opendut/"
     ca_cert_download: "/tmp/opendut/{{ backend }}.pem"
@@ -66,7 +63,6 @@
 
 - name: Download EDGAR from CARL
   hosts: edge
-  gather_facts: false
   vars:
     arch_map:
       x86_64: "x86_64-unknown-linux-gnu"
@@ -112,7 +108,6 @@
 
 - name: Install Cannelloni
   hosts: edge
-  gather_facts: false
   tags:
     - needs_internet
   vars:
@@ -173,7 +168,6 @@
 
 - name: Retrieve Setup-String from CARL
   hosts: edge
-  gather_facts: false
   tasks:
     - name: Retrieve Setup-String from CARL
       delegate_to: "{{ backend }}"
@@ -188,7 +182,6 @@
 
 - name: Setup EDGARs
   hosts: edge
-  gather_facts: false
   vars:
     config_dir: "/etc/opendut/"
     config_file: "{{ config_dir }}/edgar.toml"

@@ -3,7 +3,6 @@
 - name: Roll out openDuT Backend
   # Setup steps as documented here: https://opendut.eclipse.dev/book/user-manual/carl/setup.html
   hosts: backend
-  gather_facts: false
   tasks:
     - name: Checkout openDuT repo
       git:
