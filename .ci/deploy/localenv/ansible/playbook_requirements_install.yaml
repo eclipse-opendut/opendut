@@ -1,0 +1,9 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Install Ansible requirements
+  hosts: all
+  tasks:
+    - name: Install collections and roles together  # We don't use community.general.ansible_galaxy_install, because it does not update when a change has been made to the local opendut collection (without incrementing the version)
+      command: "ansible-galaxy collection install --upgrade --requirements-file=requirements.yml"
+      run_once: true
+      delegate_to: localhost
