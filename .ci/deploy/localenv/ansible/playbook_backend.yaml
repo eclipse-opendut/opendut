@@ -1,5 +1,8 @@
 #!/usr/bin/env ansible-playbook
 ---
+- name: Install requirements
+  import_playbook: "playbook_requirements_install.yaml"
+
 - name: Roll out openDuT Backend
   # Setup steps as documented here: https://opendut.eclipse.dev/book/user-manual/carl/setup.html
   hosts: backend
