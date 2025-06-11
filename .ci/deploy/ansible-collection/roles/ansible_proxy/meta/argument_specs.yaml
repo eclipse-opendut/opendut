@@ -3,7 +3,7 @@ argument_specs:
     description:
       - Set up a proxy server on the Ansible Controller to give internet access to edge devices during playbook execution.
     options:
-      ansible_proxy_server_state:
+      ansible_proxy_state:
         description: "Whether to install the role or remove it."
         type: "str"
         choices:

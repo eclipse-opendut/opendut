@@ -1,5 +1,5 @@
 - name: Kill pxproxy process
-  command: "killall {{ ansible_proxy_server_controller_proxy_executable }}"
+  command: "killall {{ ansible_proxy_server_controller_executable }}"
   delegate_to: localhost
 
 - name: Kill SSH reverse tunnel process
