@@ -18,7 +18,7 @@ impl Task for SetupClusterMetrics {
     }
 
     async fn check_present(&self) -> anyhow::Result<TaskStateFulfilled> {
-        todo!()
+        Ok(TaskStateFulfilled::Unchecked)
     }
 
     async fn make_present(&self) -> anyhow::Result<Success> {
