@@ -105,7 +105,6 @@ impl DevCli {
                     println!("# Following configuration assumes services are running in docker on host.");
                     CarlConfiguration::testenv_on_host_config(netbird_api_key)
                 };
-                println!("{}", carl_config.config_env_variables());
                 println!("{}", carl_config.config_toml());
 
             }

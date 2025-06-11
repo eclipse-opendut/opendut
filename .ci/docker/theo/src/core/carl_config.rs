@@ -20,10 +20,6 @@ impl CarlConfiguration {
         include_str!("resources/carl.toml.tmpl").to_string()
     }
 
-    fn carl_environment_template() -> String {
-        include_str!("resources/carl.environment.tmpl").to_string()
-    }
-
     /// This configuration expects the Netbird service to be running in the opendut virtual machine.
     pub fn testenv_in_vm_config(netbird_api_key: String) -> Self {
         Self::new(
@@ -46,14 +42,6 @@ impl CarlConfiguration {
 
     pub fn config_toml(&self) -> String {
         let template = Self::carl_toml_template();
-
-        template.replace("{netbird_management_url}", &self.netbird_management_url)
-                .replace("{netbird_management_ca_path}", &self.netbird_management_ca_path)
-                .replace("{netbird_api_key}", &self.netbird_api_key)
-                .replace("{opentelemetry_collector_url}", &self.opentelemetry_collector_url)
-    }
-    pub fn config_env_variables(&self) -> String {
-        let template = Self::carl_environment_template();
 
         template.replace("{netbird_management_url}", &self.netbird_management_url)
                 .replace("{netbird_management_ca_path}", &self.netbird_management_ca_path)
