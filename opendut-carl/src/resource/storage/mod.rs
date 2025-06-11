@@ -219,7 +219,7 @@ impl PersistenceOptions {
                     return Err(LoadError::ParseValue { field, value, source: anyhow!("Path to the database file has to be specified!").into() });
                 }
 
-                let value = shellexpand::tilde(&value).to_string();
+                let value = expand_tilde(value);
                 let path = PathBuf::from(&value);
                 if path.is_relative() {
                     return Err(LoadError::ParseValue { field, value, source: anyhow!("Path to the database file should be absolute!").into() });
@@ -237,6 +237,7 @@ impl PersistenceOptions {
         }
     }
 }
+
 #[derive(Clone)]
 pub struct DatabaseConnectInfo {
     pub file: PathBuf,
@@ -254,4 +255,35 @@ pub trait ResourcesStorageApi {
 
     fn list<R>(&self) -> PersistenceResult<HashMap<R::Id, R>>
     where R: Resource + Persistable + Clone;
+}
+
+
+fn expand_tilde(path: String) -> String {
+    if path.contains("~") {
+        let home_dir = std::env::home_dir()
+            .expect("Could not determine home directory of user. Needed for expanding '~' in path.");
+        let home_dir = home_dir.to_str()
+            .expect("Could not convert home directory path to string.");
+
+        path.replace("~", home_dir)
+    } else {
+        path
+    }
+}
+
+#[cfg(test)]
+mod expand_tilde_tests {
+    use super::expand_tilde;
+
+    #[test]
+    fn should_expand_tilde() {
+        let home_dir = std::env::home_dir().unwrap();
+        let home_dir = home_dir.to_string_lossy();
+
+        let testee = String::from("~");
+        assert_eq!(expand_tilde(testee), home_dir);
+
+        let testee = String::from("~/test");
+        assert_eq!(expand_tilde(testee), format!("{home_dir}/test"));
+    }
 }
