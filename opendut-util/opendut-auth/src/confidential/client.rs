@@ -14,7 +14,7 @@ use tonic::metadata::MetadataValue;
 use tonic::service::Interceptor;
 use tracing::debug;
 use backon::Retryable;
-
+use tokio::runtime::Handle;
 use crate::confidential::config::{ConfidentialClientConfig, ConfidentialClientConfigData, ConfiguredClient};
 use crate::confidential::error::{ConfidentialClientError, WrappedRequestTokenError};
 use crate::confidential::reqwest_client::OidcReqwestClient;
@@ -193,17 +193,31 @@ impl ConfidentialClient {
 }
 
 #[derive(Clone)]
-pub struct ConfClientArcMutex<T: Clone + Send + Sync + 'static>(pub Arc<Mutex<T>>);
+pub struct ConfClientArcMutex<T: Clone + Send + Sync + 'static> {
+    pub mutex: Arc<Mutex<T>>,
+    pub handle: Handle,
+}
 
 impl Interceptor for ConfClientArcMutex<Option<ConfidentialClientRef>> {
     fn call(&mut self, mut request: Request<()>) -> Result<Request<()>, Status> {
 
-        let cloned_arc_mutex = Arc::clone(&self.0);
+        let cloned_arc_mutex = Arc::clone(&self.mutex);
 
         let operation = || {
             let mutex_guard = cloned_arc_mutex.try_lock()?;
-            Ok(mutex_guard)
+            match mutex_guard.as_ref() {
+                Some(confidential_client) => {
+                    let token = self.handle.block_on(async move {
+                        confidential_client.get_token().await
+                    });
+                    Ok(Some(token))
+                }
+                None => {
+                    Ok(None)
+                }
+            }
         };
+
         let mut retries = 0;
         let start = Instant::now();
         let backoff_result = operation
@@ -218,25 +232,12 @@ impl Interceptor for ConfClientArcMutex<Option<ConfidentialClientRef>> {
             .call();
 
         let token = match backoff_result {
-            Ok(mutex_guard) => {
-                let confidential_client= mutex_guard.clone();
-                /*
-                  This tokio task delegation is used to bridge sync with async code. Otherwise, the following error occurs:
-                  `Cannot start a runtime from within a runtime. This happens because a function (like `block_on`) attempted to block the current thread while the thread is being used to drive asynchronous tasks.`
-                  
-                  Code running inside `tokio::task::block_in_place` may use block_on to reenter the async context.
-                 */
+            Ok(token) => {
                 if retries > 0 {
                     let duration = Instant::now().saturating_duration_since(start);
                     eprintln!("Acquired lock on confidential client after <{}> retries and <{}> seconds.", retries, duration.as_secs());
                 }
-                tokio::task::block_in_place(move || {
-                    confidential_client.map(|client| {
-                        tokio::runtime::Handle::current().block_on(async move {
-                            client.get_token().await
-                        })
-                    })
-                })
+                token
             }
             Err(error) => {
                 eprintln!("Failed to acquire lock on the Confidential Client definitively. The following telemetry request will not be transmitted.");

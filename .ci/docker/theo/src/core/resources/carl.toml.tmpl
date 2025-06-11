@@ -46,5 +46,6 @@ auth.type = "personal-access-token"
 auth.secret = "{netbird_api_key}"
 
 [opentelemetry]
-enabled = true
-endpoint = "{opentelemetry_collector_url}"
+# disabled due to verify token issue in testenv: id token issued by a different provider, expected "https://keycloak.internal/realms/opendut" got "http://localhost:8081/realms/opendut"
+enabled = false
+collector.endpoint = "{opentelemetry_collector_url}"

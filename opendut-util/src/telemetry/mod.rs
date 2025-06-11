@@ -14,6 +14,7 @@ use opentelemetry_sdk::trace::{SdkTracerProvider, TraceError};
 use opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 use opentelemetry_sdk::Resource;
+use tokio::runtime::Handle;
 use tokio::sync::Mutex;
 use tracing::level_filters::LevelFilter;
 use tracing::{debug, error, trace};
@@ -92,7 +93,8 @@ pub async fn initialize_with_config(
             cpu_collection_interval_ms,
             confidential_client,
         } = opentelemetry_config {
-            let confidential_client = ConfClientArcMutex(Arc::new(Mutex::new(confidential_client)));
+            let handle = Handle::current();
+            let confidential_client = ConfClientArcMutex { mutex: Arc::new(Mutex::new(confidential_client)), handle };
 
             let service_metadata_resource = Resource::builder()
                 .with_service_name(service_name.to_owned())
