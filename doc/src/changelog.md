@@ -16,14 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Localenv: opendut-carl-postgres container removed, might need manual removal when updating.
 * CLEO: Deleting a resource which doesn't exist does not anymore produce an error code. 
   If you need the previous behaviour, use the `--error-when-missing` flag.
-* EDGAR: No longer re-creates the peer network configuration in case one peer in the cluster comes back online. #343
+* EDGAR: No longer re-creates the peer network configuration in case one peer in the cluster comes back online. [#343](https://github.com/eclipse-opendut/opendut/issues/343)
 
 * Monitoring: Scraping logs of Docker containers is now done with Grafana Alloy, since Promtail has been deprecated. (Thanks to [@brtmax](https://github.com/brtmax)!)
 
 ### Fixed
 * The web-UI now shows peers, clusters and devices sorted by name.
 * Deleting clusters in the web-UI works again.
-
+* Resolved issue where the telemetry logs where not transmitted because a lock on the Confidential Client could not be acquired. [#347](https://github.com/eclipse-opendut/opendut/issues/347)
 
 ## 0.6.0
 
