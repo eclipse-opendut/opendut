@@ -2,7 +2,11 @@
 
 cd /vagrant || { echo Could not change directory to /vagrant; exit 1; }
 
-docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/docker-compose.yml --env-file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/data/secrets/.env up --detach --build
+# first provision secrets
+docker compose --file "${OPENDUT_REPO_ROOT:-.}"/.ci/deploy/localenv/docker-compose.yml up --build provision-secrets
+
+# then start other containers
+docker compose --file "${OPENDUT_REPO_ROOT:-.}"/.ci/deploy/localenv/docker-compose.yml --env-file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/data/secrets/.env up --detach --build
 
 echo "All containers started. You may observe the containers by connecting to the VM:"
 echo "vagrant ssh"

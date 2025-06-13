@@ -5,16 +5,16 @@ ARG KEYCLOAK_VERSION
 
 FROM quay.io/keycloak/keycloak:$KEYCLOAK_VERSION as builder
 
+# Keycloak configuration options: https://www.keycloak.org/server/all-config
 # Configure postgres database vendor
 ENV KC_DB=postgres
-
+ENV KC_HEALTH_ENABLED=true
+ENV KC_METRICS_ENABLED=true
 ENV KC_FEATURES="token-exchange,scripts,preview"
 
 WORKDIR /opt/keycloak
 
-# If run the image in kubernetes, switch and active below line.
-# RUN /opt/keycloak/bin/kc.sh build --cache=ispn --cache-stack=kubernetes --health-enabled=true --metrics-enabled=true
-RUN /opt/keycloak/bin/kc.sh build --cache=ispn --health-enabled=true --metrics-enabled=true
+RUN /opt/keycloak/bin/kc.sh build
 
 
 FROM registry.access.redhat.com/ubi9 AS ubi-micro-build
@@ -37,6 +37,7 @@ FROM quay.io/keycloak/keycloak:$KEYCLOAK_VERSION
 LABEL image.version=$KEYCLOAK_VERSION
 
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
+
 USER root
 COPY --from=ubi-micro-build /mnt/rootfs/usr/bin/curl /usr/bin/curl
 COPY --from=ubi-micro-build /mnt/rootfs/usr/bin/jq /usr/bin/jq

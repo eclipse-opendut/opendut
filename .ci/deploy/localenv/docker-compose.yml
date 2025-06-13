@@ -46,7 +46,7 @@ services:
       context: ../../..
       dockerfile: ./.ci/deploy/localenv/data/keycloak/Dockerfile-keycloak-server
       args:
-        KEYCLOAK_VERSION: 22.0.2
+        KEYCLOAK_VERSION: 26.2.5
     #command: ['start', '--optimized']
     restart: unless-stopped
     depends_on:
@@ -65,8 +65,8 @@ services:
     - KC_HTTP_ENABLED=true
     - KC_METRICS_ENABLED=true
     - KC_HOSTNAME=auth.opendut.local
-    - KC_PROXY=edge # reencrypt
     - KC_PROXY_ADDRESS_FORWARDING=true
+    - KC_PROXY_HEADERS=xforwarded
     - KC_HOSTNAME_STRICT=false
     - KEYCLOAK_ADMIN=admin
     - KEYCLOAK_ADMIN_PASSWORD
@@ -85,7 +85,7 @@ services:
       context: ../../..
       dockerfile: .ci/deploy/localenv/data/keycloak/Dockerfile-keycloak-provision
       args:
-        KEYCLOAK_VERSION: 22.0.2
+        KEYCLOAK_VERSION: 26.2.5
     depends_on:
       keycloak:
         condition: service_started
@@ -324,7 +324,7 @@ services:
 
   carl:
     container_name: opendut-carl
-    image: "ghcr.io/eclipse-opendut/opendut-carl:${OPENDUT_CARL_IMAGE_VERSION:-0.6.0}"
+    image: "ghcr.io/eclipse-opendut/opendut-carl:${OPENDUT_CARL_IMAGE_VERSION:-canary-0.7.0}"
     command: ["/opt/opendut-carl/opendut-carl"]
     restart: unless-stopped
     depends_on:

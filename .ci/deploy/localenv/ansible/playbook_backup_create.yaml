@@ -8,7 +8,7 @@
 
     - name: Create backup
       block:
-        - name: Create backup directory
+        - name: Create backup directory (requires write privileges)
           include_tasks: tasks/backup/create_backup_directory.yaml
 
         - name: Stop containers that could write into the DB, to avoid inconsistent state
@@ -70,6 +70,10 @@
           file:
             state: absent
             path: "{{ backup_id_path }}"
+        - name: Rescue block shall not mark execution as successful
+          debug:
+            msg: Mark playbook execution as failed since the backup was not created
+          failed_when: true
 
     - name: Restart containers
       command: docker start {{ item }}

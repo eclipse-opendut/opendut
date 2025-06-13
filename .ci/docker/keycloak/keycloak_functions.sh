@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export KCADM_PATH=/opt/keycloak/bin/kcadm.sh
+
 wait_for_keycloak() {
   local timeout="${1:-600}"
   local sleep_time="${2:-5}"
@@ -22,7 +24,7 @@ wait_for_keycloak() {
   echo "Keycloak ready"
 }
 kcadm() { local cmd="$1" ; shift ; "$KCADM_PATH" "$cmd" --config /tmp/kcadm.config "$@" ; }
-kcauth() { kcadm config credentials config --server "$KEYCLOAK_URL" --realm master --user "$KEYCLOAK_ADMIN" --password "$KEYCLOAK_ADMIN_PASSWORD" ; }
+kcauth() { "$KCADM_PATH" config credentials --config /tmp/kcadm.config --server "$KEYCLOAK_URL" --realm master --user "$KEYCLOAK_ADMIN" --password "$KEYCLOAK_ADMIN_PASSWORD" ; }
 
 get_admin_oauth_token() {
   # for debugging: may be used to get an admin token

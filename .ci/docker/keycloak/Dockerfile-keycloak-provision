@@ -28,7 +28,11 @@ COPY ./.ci/docker/keycloak/provision.sh /provision.sh
 USER keycloak
 RUN curl --version
 RUN jq --version
+
+# TODO: CLEANUP
 RUN echo 'kcadm() { local cmd="$1" ; shift ; "$KCADM_PATH" "$cmd" --config /tmp/kcadm.config "$@" ; }' >> /opt/keycloak/.bashrc
 RUN echo 'kcauth() { kcadm config credentials config --server "$KEYCLOAK_URL" --realm master --user "$KEYCLOAK_ADMIN" --password "$KEYCLOAK_ADMIN_PASSWORD" ; }' >> /opt/keycloak/.bashrc
+# kcadm() { local cmd="$1" ; shift ; "$KCADM_PATH" "$cmd" --config /tmp/kcadm.config "$@" ; }
+# kcauth() { "$KCADM_PATH" config credentials --config /tmp/kcadm.config --server "$KEYCLOAK_URL" --realm master --user "$KEYCLOAK_ADMIN" --password "$KEYCLOAK_ADMIN_PASSWORD" ; }
 
 ENTRYPOINT [ "/provision.sh" ]

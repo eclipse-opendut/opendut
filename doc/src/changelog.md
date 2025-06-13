@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * EDGAR: No longer re-creates the peer network configuration in case one peer in the cluster comes back online. [#343](https://github.com/eclipse-opendut/opendut/issues/343)
 
 * Monitoring: Scraping logs of Docker containers is now done with Grafana Alloy, since Promtail has been deprecated. (Thanks to [@brtmax](https://github.com/brtmax)!)
+* Updated keycloak version in testenv and localenv to version `26.2.5`. Backup of the keycloak database is recommended.
 
 ### Fixed
 * The web-UI now shows peers, clusters and devices sorted by name.

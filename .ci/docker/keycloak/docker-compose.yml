@@ -7,7 +7,7 @@ services:
       context: ../../..
       dockerfile: ./.ci/docker/keycloak/Dockerfile-keycloak-server
       args:
-        KEYCLOAK_VERSION: 22.0.2
+        KEYCLOAK_VERSION: 26.2.5
     labels:
       logging: "alloy"
       logging_job: "keycloak"
@@ -43,7 +43,7 @@ services:
       context: ../../..
       dockerfile: ./.ci/docker/keycloak/Dockerfile-keycloak-provision
       args:
-        KEYCLOAK_VERSION: 22.0.2
+        KEYCLOAK_VERSION: 26.2.5
     labels:
       logging: "alloy"
       logging_job: "keycloak-init"

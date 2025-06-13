@@ -1,4 +1,4 @@
-ARG KEYCLOAK_VERSION=22.0.2
+ARG KEYCLOAK_VERSION=26.2.5
 
 FROM maven:3.9-eclipse-temurin-21 AS extension
 WORKDIR /src
