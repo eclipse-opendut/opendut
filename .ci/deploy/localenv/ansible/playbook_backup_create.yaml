@@ -1,8 +1,5 @@
-#!/usr/bin/env ansible-playbook
+#!./play
 ---
-- name: Install requirements
-  import_playbook: "playbook_requirements_install.yaml"
-
 - name: Create backup
   hosts: backend
   tasks:

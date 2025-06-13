@@ -1,0 +1,6 @@
+#!/bin/sh
+
+set -ex
+
+ansible-galaxy collection install --upgrade --requirements-file=requirements.yml
+ansible-playbook "$@"
