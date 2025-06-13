@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Deleting clusters in the web-UI works again.
 * Resolved issue where the telemetry logs where not transmitted because a lock on the Confidential Client could not be acquired. [#347](https://github.com/eclipse-opendut/opendut/issues/347)
 
-## 0.6.0
+## [0.6.0] - 2025-04-22
 
 ### Breaking Changes
 * The database backend was swapped out for a Key-Value Store.  

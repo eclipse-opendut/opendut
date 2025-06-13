@@ -3,7 +3,7 @@
 This is a checklist for the steps to take to create a release for public usage.
 
 * [ ] Ensure the changelog is up-to-date.
-* [ ] Change top-most changelog heading from "Unreleased" to the new version number.
+* [ ] Change top-most changelog heading from "Unreleased" to the new version number and add the current date.
 * [ ] Increment version number in workspace `Cargo.toml`.
 * [ ] Run `cargo ci check` to update all `Cargo.lock` files.
 * [ ] Increment the version of the CARL container used in CI/CD deployments (in the `.ci/` folder).
