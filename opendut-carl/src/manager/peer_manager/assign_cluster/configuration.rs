@@ -1,8 +1,7 @@
-use std::collections::HashSet;
 use std::net::{IpAddr, Ipv4Addr};
 use tracing::debug;
 use opendut_types::cluster::ClusterAssignment;
-use opendut_types::peer::configuration::{parameter, ParameterId, ParameterTarget, ParameterValue, PeerConfiguration};
+use opendut_types::peer::configuration::{parameter, PeerConfiguration};
 use opendut_types::peer::configuration::parameter::{GreInterfaceConfig, InterfaceJoinConfig};
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor};
@@ -37,20 +36,11 @@ pub(super) fn update_peer_configuration(
 
     // Network device interfaces
     {
-        let expected_network_device_ids = device_interfaces.iter().map(|device| { ParameterId(device.id.uuid) }).collect::<HashSet<ParameterId>>();
-        let absent_network_device_parameters = peer_configuration
-            .device_interfaces
-            .iter()
-            .filter(|device| !expected_network_device_ids.contains(&device.id))
-            .cloned()
-            .collect::<Vec<_>>();
-        for absent_device_interface in absent_network_device_parameters.into_iter() {
-            peer_configuration.set(absent_device_interface.value, ParameterTarget::Absent);
-        }
-        for device_interface in device_interfaces.into_iter() {
-            let device_interface = parameter::DeviceInterface { descriptor: device_interface };
-            peer_configuration.set(device_interface, ParameterTarget::Present);
-        }
+        let device_interfaces = device_interfaces.into_iter()
+            .map(|descriptor| parameter::DeviceInterface { descriptor });
+
+        peer_configuration.set_all_present(device_interfaces);
+
         debug!("Configured network device interfaces: {:?}", peer_configuration.device_interfaces);
     }
 
@@ -59,121 +49,33 @@ pub(super) fn update_peer_configuration(
     // Ethernet bridge
     {
         let bridge = parameter::EthernetBridge { name: ethernet_bridge.clone() };
-        let expected_bridge_id = bridge.parameter_identifier();
-        let absent_bridge_parameters = peer_configuration
-            .ethernet_bridges
-            .iter()
-            .filter(|bridge| expected_bridge_id != bridge.id)
-            .cloned()
-            .collect::<Vec<_>>();
-        // set old bridge to absent (e.g. after renaming)
-        for absent_bridge in absent_bridge_parameters.into_iter() {
-            peer_configuration.set(absent_bridge.value, ParameterTarget::Absent);
-        }
-        // there is only one bridge definition at the moment
-        peer_configuration.set(bridge, ParameterTarget::Present);
+
+        peer_configuration.set_all_present(vec![bridge]);
     }
 
     // GRE interfaces
     {
-        let expected_gre_config_ids = expected_gre_config_parameters.iter().map(|gre| gre.parameter_identifier()).collect::<HashSet<_>>();
-        let absent_gre_config_parameters = peer_configuration
-            .gre_interfaces
-            .iter()
-            .filter(|gre_config| !expected_gre_config_ids.contains(&gre_config.id))
-            .cloned()
-            .collect::<Vec<_>>();
-        for absent_gre_config in absent_gre_config_parameters.into_iter() {
-            peer_configuration.set(absent_gre_config.value, ParameterTarget::Absent);
-        }
-        for gre_config in expected_gre_config_parameters.into_iter() {
-            peer_configuration.set(gre_config, ParameterTarget::Present);
-        }
+        peer_configuration.set_all_present(expected_gre_config_parameters);
     }
 
     // Joined interfaces
     // all ethernet interfaces + GRE interfaces -> bridge
     {
-        let expected_joined_interfaces = expected_joined_interface_names
-            .iter()
+        let expected_joined_interfaces = expected_joined_interface_names.iter()
             .map(|name| InterfaceJoinConfig { name: name.clone(), bridge: ethernet_bridge.clone() })
             .collect::<Vec<_>>();
-        let expected_joined_interface_ids = expected_joined_interfaces
-            .iter()
-            .map(|config| config.parameter_identifier())
-            .collect::<HashSet<_>>();
-        let absent_joined_interface_parameters = peer_configuration
-            .joined_interfaces
-            .iter()
-            .filter(|joined_interface| !expected_joined_interface_ids.contains(&joined_interface.id))
-            .cloned()
-            .collect::<Vec<_>>();
-        for absent_joined_interface in absent_joined_interface_parameters.into_iter() {
-            peer_configuration.set(absent_joined_interface.value, ParameterTarget::Absent);
-        }
-        for joined_interface_config in expected_joined_interfaces.into_iter() {
-            peer_configuration.set(joined_interface_config, ParameterTarget::Present);
-        }
 
+        peer_configuration.set_all_present(expected_joined_interfaces)
     }
 
 
     // Executors
     {
-        let expected_executor_descriptor_ids = Clone::clone(&peer_descriptor.executors).executors.iter()
-            .map(|executor| ParameterId(executor.id.uuid)) //TODO this can't be good
-            .collect::<HashSet<_>>();
+        let executors = peer_descriptor.executors.executors.into_iter()
+            .map(|descriptor| parameter::Executor { descriptor });
 
-        let absent_executor_descriptor_parameters = peer_configuration
-            .executors
-            .iter()
-            .filter(|executor| !expected_executor_descriptor_ids.contains(&executor.id))
-            .cloned()
-            .collect::<Vec<_>>();
-
-        for absent_executors in absent_executor_descriptor_parameters.into_iter() {
-            peer_configuration.set(absent_executors.value, ParameterTarget::Absent);
-        }
-        for executor_descriptor in Clone::clone(&peer_descriptor.executors).executors.into_iter() {
-            let executor = parameter::Executor { descriptor: executor_descriptor };
-            peer_configuration.set(executor, ParameterTarget::Present);
-        }
+        peer_configuration.set_all_present(executors)
     }
-
-
-    // RemotePeerConnectionCheck
-    // { //FIXME
-    //     let remote_peers = vec![]; //TODO
-    //
-    //     let expected_present_parameters = remote_peers.into_iter()
-    //         .map(|(remote_peer_id, remote_ip)| {
-    //             parameter::RemotePeerConnectionCheck { remote_peer_id, remote_ip }
-    //         })
-    //         .collect::<Vec<_>>();
-    //
-    //     for connection_check in peer_configuration.remote_peer_connection_checks {
-    //         if expected_present_parameters.contains(&connection_check).not() {
-    //             peer_configuration.set(connection_check.value, ParameterTarget::Absent)
-    //         }
-    //     }
-    //
-    //
-    //
-    //     // let bridge = parameter::EthernetBridge { name: ethernet_bridge.clone() };
-    //     // let expected_bridge_id = bridge.parameter_identifier();
-    //     // let absent_bridge_parameters = peer_configuration
-    //     //     .ethernet_bridges
-    //     //     .iter()
-    //     //     .filter(|bridge| expected_bridge_id != bridge.id)
-    //     //     .cloned()
-    //     //     .collect::<Vec<_>>();
-    //     // // set old bridge to absent (e.g. after renaming)
-    //     // for absent_bridge in absent_bridge_parameters.into_iter() {
-    //     //     peer_configuration.set(absent_bridge.value, ParameterTarget::Absent);
-    //     // }
-    //     // // there is only one bridge definition at the moment
-    //     // peer_configuration.set(bridge, ParameterTarget::Present);
-    // }
 
     Ok(())
 }
