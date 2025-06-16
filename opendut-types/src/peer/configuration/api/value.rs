@@ -6,7 +6,7 @@ use std::fmt::Display;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use uuid::Uuid;
 
-pub trait ParameterValue: Any + Hash + Sized {
+pub trait ParameterValue: Any + Clone + PartialEq + Eq + Hash + Sized {
     /// Unique identifier, which is ideally stable, too.
     /// A naive implementation for a `self` implementing `Hash` could look like this:
     /// ```
@@ -15,7 +15,7 @@ pub trait ParameterValue: Any + Hash + Sized {
     /// # use opendut_types::peer::configuration::{Parameter, ParameterId, ParameterValue, PeerConfiguration};
     /// # use opendut_types::OPENDUT_UUID_NAMESPACE;
     ///
-    /// # #[derive(Hash)]
+    /// # #[derive(Clone, PartialEq, Eq, Hash)]
     /// # struct Something;
     ///
     /// # impl ParameterValue for Something {

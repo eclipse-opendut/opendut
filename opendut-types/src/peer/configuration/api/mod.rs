@@ -1,3 +1,4 @@
+use std::hash::{Hash, Hasher};
 use serde::Serialize;
 use uuid::Uuid;
 
@@ -11,6 +12,12 @@ pub struct Parameter<V: ParameterValue> {
     pub dependencies: Vec<ParameterId>,
     pub target: ParameterTarget,
     pub value: V,
+}
+
+impl<V: ParameterValue> Hash for Parameter<V> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.id.hash(state)
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize)]
