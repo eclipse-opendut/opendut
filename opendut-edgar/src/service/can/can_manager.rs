@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::net::IpAddr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -8,7 +9,7 @@ use regex::Regex;
 
 use tokio::process::Command;
 use tracing::{debug, error, info};
-
+use opendut_types::peer::PeerId;
 use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
 
 use crate::service::can::cannelloni_manager::CannelloniManager;
@@ -196,7 +197,11 @@ impl CanManager {
         Ok(())
     }
 
-    pub async fn setup_remote_routing_server(&self, bridge_name: &NetworkInterfaceName, remote_assignments: &Vec<PeerClusterAssignment>) -> Result<(), Error>  {
+    pub async fn setup_remote_routing_server(
+        &self,
+        bridge_name: &NetworkInterfaceName,
+        remote_assignments: HashMap<PeerId, PeerClusterAssignment>,
+    ) -> Result<(), Error>  {
 
         self.terminate_cannelloni_managers().await;
 
@@ -204,7 +209,7 @@ impl CanManager {
         *guarded_termination_token = Arc::new(AtomicBool::new(false));
 
 
-        for remote_assignment in remote_assignments {
+        for (_, remote_assignment) in remote_assignments {
             info!("Spawning cannelloni manager as server for peer with IP {}", remote_assignment.vpn_address);
     
             let mut cannelloni_manager = CannelloniManager::new(

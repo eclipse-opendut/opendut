@@ -77,16 +77,14 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
                     id: anything(),
                     leader: eq(&cluster_leader),
                     assignments: unordered_elements_are!(
-                        matches_pattern!(PeerClusterAssignment {
-                            peer_id: eq(&peer_a.id),
+                        (eq(&peer_a.id), matches_pattern!(PeerClusterAssignment {
                             vpn_address: eq(&IpAddr::from_str("127.0.0.1")?),
                             can_server_port: any!(eq(&Port(10000)), eq(&Port(10001))),
-                        }),
-                        matches_pattern!(PeerClusterAssignment {
-                            peer_id: eq(&peer_b.id),
+                        })),
+                        (eq(&peer_b.id), matches_pattern!(PeerClusterAssignment {
                             vpn_address: eq(&IpAddr::from_str("127.0.0.1")?),
                             can_server_port: any!(eq(&Port(10000)), eq(&Port(10001))),
-                        }),
+                        })),
                     ),
                 }))
             }));
@@ -169,16 +167,14 @@ async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_onl
                     id: anything(),
                     leader: eq(&cluster_leader),
                     assignments: unordered_elements_are!(
-                        matches_pattern!(PeerClusterAssignment {
-                            peer_id: eq(&peer_a.id),
+                        (eq(&peer_a.id), matches_pattern!(PeerClusterAssignment {
                             vpn_address: eq(&IpAddr::from_str("127.0.0.1")?),
                             can_server_port: any!(eq(&Port(10000)), eq(&Port(10001))),
-                        }),
-                        matches_pattern!(PeerClusterAssignment {
-                            peer_id: eq(&peer_b.id),
+                        })),
+                        (eq(&peer_b.id), matches_pattern!(PeerClusterAssignment {
                             vpn_address: eq(&IpAddr::from_str("127.0.0.1")?),
                             can_server_port: any!(eq(&Port(10000)), eq(&Port(10001))),
-                        }),
+                        })),
                     ),
                 }))
             }));

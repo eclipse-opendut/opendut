@@ -24,7 +24,14 @@ pub struct CannelloniManager{
 
 impl CannelloniManager {
 
-    pub fn new(is_server: bool, can_if_name: NetworkInterfaceName, server_port: Port, remote_ip: IpAddr, buffer_timeout: Duration, termination_request_token: Arc<AtomicBool>) -> Self {
+    pub fn new(
+        is_server: bool,
+        can_if_name: NetworkInterfaceName,
+        server_port: Port,
+        remote_ip: IpAddr,
+        buffer_timeout: Duration,
+        termination_request_token: Arc<AtomicBool>,
+    ) -> Self {
         Self {
             is_server,
             can_if_name,

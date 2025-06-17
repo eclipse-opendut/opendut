@@ -96,6 +96,7 @@ impl Resources<'_> {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
     use super::*;
     use crate::manager::peer_messaging_broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
     use crate::resource::manager::ResourceManager;
@@ -147,11 +148,12 @@ mod tests {
         let cluster_assignment = ClusterAssignment {
             id: ClusterId::random(),
             leader: peer_id,
-            assignments: vec![PeerClusterAssignment {
-                peer_id,
-                vpn_address: IpAddr::V4(Ipv4Addr::from_str("192.168.1.1")?),
-                can_server_port: opendut_types::util::Port(51234),
-            }],
+            assignments: HashMap::from_iter(vec![
+                (peer_id, PeerClusterAssignment {
+                    vpn_address: IpAddr::V4(Ipv4Addr::from_str("192.168.1.1")?),
+                    can_server_port: opendut_types::util::Port(51234),
+                })
+            ]),
         };
 
 

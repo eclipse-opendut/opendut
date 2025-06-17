@@ -82,30 +82,23 @@ pub(super) fn update_peer_configuration(
 
 
 pub(super) fn determine_expected_gre_interface_config_parameters(peer_id: PeerId, cluster_assignment: &ClusterAssignment) -> Result<Vec<GreInterfaceConfig>, AssignClusterError> {
-    let leader_remote_ip = cluster_assignment.assignments
-        .iter()
-        .find(|assignment| assignment.peer_id == cluster_assignment.leader)
+
+    let leader_remote_ip = cluster_assignment.leader_assignment()
         .map(|assignment| assignment.vpn_address)
         .map(require_ipv4_for_gre)
         .ok_or(AssignClusterError::PeerNotFound(cluster_assignment.leader))??;
-    let peer_vpn_address = cluster_assignment.assignments
-        .iter()
-        .find(|assignment| assignment.peer_id == peer_id)
-        .map(|assignment| assignment.vpn_address)
-        .map(require_ipv4_for_gre)
-        .ok_or(AssignClusterError::PeerNotFound(peer_id))??;
 
     if peer_id == cluster_assignment.leader {
         // Leader shall create GRE interfaces to bridge traffic to all peers
-        let gre_configs = cluster_assignment.assignments
-            .iter()
-            .filter(|assignment| assignment.peer_id != cluster_assignment.leader)
+        let remote_peer_assignments = cluster_assignment.non_leader_assignments();
+
+        let gre_configs = remote_peer_assignments.values()
             .map(|assignment| assignment.vpn_address)
             .map(require_ipv4_for_gre)
             .collect::<Result<Vec<_>, _>>()?
             .into_iter()
             .map(|remote_ip| GreInterfaceConfig {
-                local_ip: peer_vpn_address,
+                local_ip: leader_remote_ip,
                 remote_ip,
             })
             .collect::<Vec<GreInterfaceConfig>>();
@@ -113,6 +106,12 @@ pub(super) fn determine_expected_gre_interface_config_parameters(peer_id: PeerId
         Ok(gre_configs)
     } else {
         // Other peers shall only send traffic to the leader
+        let peer_vpn_address = cluster_assignment.assignments
+            .get(&peer_id)
+            .map(|assignment| assignment.vpn_address)
+            .map(require_ipv4_for_gre)
+            .ok_or(AssignClusterError::PeerNotFound(peer_id))??;
+
         Ok(vec![
             GreInterfaceConfig {
                 local_ip: peer_vpn_address,

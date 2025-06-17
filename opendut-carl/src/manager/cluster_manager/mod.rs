@@ -255,7 +255,7 @@ impl ClusterManager {
 
         let can_server_ports = self.determine_can_server_ports(&member_ids, cluster_id)?;
 
-        let member_assignments: Vec<Result<PeerClusterAssignment, RolloutClusterError>> = {
+        let member_assignments: Vec<Result<(PeerId, PeerClusterAssignment), RolloutClusterError>> = {
             let assignment_futures = std::iter::zip(member_ids, can_server_ports)
                 .map(|(peer_id, can_server_port)| {
                     self.resource_manager.get::<PeerConnectionState>(peer_id)
@@ -280,7 +280,7 @@ impl ClusterManager {
                             };
 
                             vpn_address.map(|vpn_address|
-                                PeerClusterAssignment { peer_id, vpn_address, can_server_port }
+                                (peer_id, PeerClusterAssignment { vpn_address, can_server_port })
                             )
                         })
                 })
@@ -288,7 +288,7 @@ impl ClusterManager {
 
             join_all(assignment_futures).await
         };
-        let member_assignments: Vec<PeerClusterAssignment> = member_assignments.into_iter().collect::<Result<_, _>>()?;
+        let member_assignments: HashMap<PeerId, PeerClusterAssignment> = member_assignments.into_iter().collect::<Result<_, _>>()?;
 
 
         let assign_cluster_options = AssignClusterOptions {
@@ -599,28 +599,24 @@ mod test {
                         leader: &leader_id,
                         assignments: any![
                             unordered_elements_are![
-                                &PeerClusterAssignment {
-                                    peer_id: peer_a.id,
+                                (&peer_a.id, &PeerClusterAssignment {
                                     vpn_address: peer_a.remote_host,
                                     can_server_port: Port(fixture.cluster_manager_options.can_server_port_range_start + 1),
-                                },
-                                &PeerClusterAssignment {
-                                    peer_id: peer_b.id,
+                                }),
+                                (&peer_b.id, &PeerClusterAssignment {
                                     vpn_address: peer_b.remote_host,
                                     can_server_port: Port(fixture.cluster_manager_options.can_server_port_range_start),
-                                },
+                                }),
                             ],
                             unordered_elements_are![
-                                &PeerClusterAssignment {
-                                    peer_id: peer_a.id,
+                                (&peer_a.id, &PeerClusterAssignment {
                                     vpn_address: peer_a.remote_host,
                                     can_server_port: Port(fixture.cluster_manager_options.can_server_port_range_start),
-                                },
-                                &PeerClusterAssignment {
-                                    peer_id: peer_b.id,
+                                }),
+                                (&peer_b.id, &PeerClusterAssignment {
                                     vpn_address: peer_b.remote_host,
                                     can_server_port: Port(fixture.cluster_manager_options.can_server_port_range_start + 1),
-                                },
+                                }),
                             ],
                         ]
                     })

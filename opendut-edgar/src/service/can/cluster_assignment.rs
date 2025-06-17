@@ -1,7 +1,7 @@
 use tracing::debug;
 
 use crate::service::can::can_manager::CanManagerRef;
-use opendut_types::cluster::{ClusterAssignment, PeerClusterAssignment};
+use opendut_types::cluster::ClusterAssignment;
 use opendut_types::peer::configuration::{parameter, Parameter, ParameterTarget};
 use opendut_types::peer::PeerId;
 use opendut_types::util::net::NetworkInterfaceConfiguration;
@@ -43,23 +43,25 @@ pub async fn setup_can_interfaces(
     ).await
     .map_err(Error::LocalCanRoutingSetupFailed)?;
 
-    let local_peer_assignment = cluster_assignment.assignments.iter().find(|assignment| {
-        assignment.peer_id == self_id
-    }).ok_or(Error::LocalPeerAssignmentNotFound { self_id })?;
+    let local_peer_assignment = cluster_assignment.assignments.get(&self_id)
+        .ok_or(Error::LocalPeerAssignmentNotFound { self_id })?;
 
     let is_leader = cluster_assignment.leader == self_id;
 
     let server_port = local_peer_assignment.can_server_port;
 
     if is_leader {
-        let remote_assignments = determine_remote_assignments(cluster_assignment, self_id)?;
+        let remote_assignments = cluster_assignment.non_leader_assignments();
+
         can_manager.setup_remote_routing_server(
             &can_bridge_name, 
-            &remote_assignments
+            remote_assignments
         ).await
         .map_err(Error::RemoteCanRoutingSetupFailed)?;
-    } else {        
-        let leader_assignment = determine_leader_assignment(cluster_assignment)?;
+    } else {
+        let leader_assignment = cluster_assignment.leader_assignment()
+            .ok_or(Error::LeaderNotDeterminable)?;
+
         can_manager.setup_remote_routing_client(
             &can_bridge_name, 
             &leader_assignment.vpn_address,
@@ -69,32 +71,6 @@ pub async fn setup_can_interfaces(
     }
 
     Ok(())
-}
-
-fn determine_remote_assignments(cluster_assignment: &ClusterAssignment, self_id: PeerId) -> Result<Vec<PeerClusterAssignment>, Error> {
-    let is_leader = cluster_assignment.leader == self_id;
-
-    let remote_peer_cluster_assignments = if is_leader {
-        cluster_assignment.assignments.iter()
-            .filter(|assignment| assignment.peer_id != self_id).cloned()
-            .collect::<Vec<PeerClusterAssignment>>()
-    }
-    else {
-        let leader_ip = determine_leader_assignment(cluster_assignment)?;
-
-        vec![leader_ip.clone()]
-    };
-
-    Ok(remote_peer_cluster_assignments)
-}
-
-fn determine_leader_assignment(cluster_assignment: &ClusterAssignment) -> Result<&PeerClusterAssignment, Error>{
-    let leader_assignment = cluster_assignment.assignments.iter()
-        .find(|peer_assignment| 
-            peer_assignment.peer_id == cluster_assignment.leader
-        ).ok_or(Error::LeaderNotDeterminable)?;
-
-    Ok(leader_assignment)
 }
 
 fn filter_can_interfaces(

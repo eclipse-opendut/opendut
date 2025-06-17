@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::proto::topology::DeviceId;
 use crate::proto::{conversion, ConversionError, ConversionResult};
 
@@ -157,10 +158,18 @@ conversion! {
     type Proto = ClusterAssignment;
 
     fn from(value: Model) -> Proto {
+        let assignments = value.assignments.into_iter()
+            .map(|(peer_id, model)| PeerClusterAssignment {
+                peer_id: Some(peer_id.into()),
+                vpn_address: Some(model.vpn_address.into()),
+                can_server_port: Some(model.can_server_port.into()),
+            })
+            .collect();
+
         Proto {
             id: Some(value.id.into()),
             leader: Some(value.leader.into()),
-            assignments: value.assignments.into_iter().map(Into::into).collect(),
+            assignments,
         }
     }
 
@@ -169,42 +178,28 @@ conversion! {
 
         let leader: crate::peer::PeerId = extract!(value.leader)?.try_into()?;
 
-        let assignments: Vec<crate::cluster::PeerClusterAssignment> = value.assignments
-            .into_iter()
-            .map(TryInto::try_into)
-            .collect::<Result<_, _>>()?;
+        let assignments: HashMap<crate::peer::PeerId, crate::cluster::PeerClusterAssignment> =
+            value.assignments.into_iter()
+                .map(|proto| {
+                    let peer_id: crate::peer::PeerId = extract!(proto.peer_id)?.try_into()?;
+
+                    let vpn_address: std::net::IpAddr = extract!(proto.vpn_address)?.try_into()?;
+                    let can_server_port: crate::util::Port = extract!(proto.can_server_port)?.try_into()?;
+
+                    Ok((
+                        peer_id,
+                        crate::cluster::PeerClusterAssignment {
+                            vpn_address,
+                            can_server_port,
+                        }
+                    ))
+                })
+                .collect::<Result<_, _>>()?;
 
         Ok(Model {
             id: cluster_id,
             leader,
             assignments,
-        })
-    }
-}
-
-conversion! {
-    type Model = crate::cluster::PeerClusterAssignment;
-    type Proto = PeerClusterAssignment;
-
-    fn from(value: Model) -> Proto {
-        Proto {
-            peer_id: Some(value.peer_id.into()),
-            vpn_address: Some(value.vpn_address.into()),
-            can_server_port: Some(value.can_server_port.into()),
-        }
-    }
-
-    fn try_from(value: Proto) -> ConversionResult<Model> {
-        let peer_id: crate::peer::PeerId = extract!(value.peer_id)?.try_into()?;
-
-        let vpn_address: std::net::IpAddr = extract!(value.vpn_address)?.try_into()?;
-
-        let can_server_port: crate::util::Port = extract!(value.can_server_port)?.try_into()?;
-
-        Ok(Model {
-            peer_id,
-            vpn_address,
-            can_server_port,
         })
     }
 }

@@ -90,9 +90,9 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
 
         if let Some(cluster_assignment) = &old_peer_configuration.cluster_assignment { //TODO get info from new PeerConfiguration
             let remote_peers: HashMap<PeerId, IpAddr> =
-                cluster_assignment.assignments.iter()
-                    .filter(|assignment| assignment.peer_id != self_id)
-                    .map(|assignment| (assignment.peer_id, assignment.vpn_address))
+                cluster_assignment.non_leader_assignments().into_iter()
+                    .filter(|(peer_id, _)| *peer_id != self_id)
+                    .map(|(peer_id, assignment)| (peer_id, assignment.vpn_address))
                     .collect();
 
             tasks.push(Box::new(tasks::setup_cluster_metrics::SetupClusterMetrics {
