@@ -29,7 +29,7 @@ async fn resave_cluster_configurations_as_cluster_descriptors(resource_manager: 
             info!("Running cluster configuration to descriptor migration.");
 
             for (cluster_id, cluster_configuration) in cluster_configurations {
-                resources.insert(cluster_id, cluster_configuration)?;
+                resources.insert::<ClusterDescriptor>(cluster_id, cluster_configuration.inner)?;
 
                 resources.remove::<ClusterConfiguration>(cluster_id)?;
             }
