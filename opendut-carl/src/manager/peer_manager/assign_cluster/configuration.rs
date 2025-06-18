@@ -86,6 +86,9 @@ pub(super) fn update_peer_configuration(
                 .collect::<Vec<_>>();
 
             peer_configuration.set_all_present(remote_peer_connection_checks);
+        } else {
+            // Clear other peers, in case the Leader has changed
+            peer_configuration.set_all_absent::<parameter::RemotePeerConnectionCheck>();
         }
     }
 

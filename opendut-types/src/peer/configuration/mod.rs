@@ -24,7 +24,7 @@ pub struct PeerConfiguration {
     //TODO migrate more parameters
 }
 impl PeerConfiguration {
-    /// Set all parameters of a type to be present/absent.
+    /// Set all parameters of a type to be present.
     /// Parameters that were previously in the PeerConfiguration,
     /// but aren't in the new list, will be set to absent.
     pub fn set_all_present<T: ParameterValue>(&mut self, values: impl IntoIterator<Item=T>) {
@@ -50,6 +50,19 @@ impl PeerConfiguration {
 
         for parameter in new_present_parameters {
             self.set_parameter(parameter);
+        }
+    }
+
+    /// Set all parameters of a type to be absent.
+    pub fn set_all_absent<T: ParameterValue>(&mut self) {
+        let parameters_to_set_absent = T::peer_configuration_field(self).clone();
+
+        for parameter in parameters_to_set_absent {
+            let absent_parameter = Parameter {
+                target: ParameterTarget::Absent,
+                ..parameter.clone()
+            };
+            self.set_parameter(absent_parameter);
         }
     }
 
@@ -87,6 +100,7 @@ mod tests {
     use crate::peer::executor::{ExecutorDescriptor, ExecutorId, ExecutorKind, ResultsUrl};
     use crate::util::net::NetworkInterfaceName;
     use super::*;
+    use googletest::prelude::*;
 
     mod set {
         use super::*;
@@ -144,7 +158,6 @@ mod tests {
 
     mod set_all_present {
         use super::*;
-        use googletest::prelude::*;
 
         #[test]
         fn should_mark_obsolete_parameters_as_absent_and_retain_or_set_other_parameters_as_present() -> anyhow::Result<()> {
@@ -189,6 +202,43 @@ mod tests {
                 matches_pattern!(Parameter {
                     value: eq(&absent_then_present),
                     target: eq(&ParameterTarget::Present),
+                    ..
+                }),
+            ]);
+
+            Ok(())
+        }
+    }
+
+    mod set_all_absent {
+        use super::*;
+
+        #[test]
+        fn should_mark_all_parameters_as_absent() -> anyhow::Result<()> {
+
+            fn parameter_value(id: &str) -> parameter::EthernetBridge {
+                parameter::EthernetBridge { name: NetworkInterfaceName::try_from(id).unwrap() }
+            }
+
+            let initially_present = parameter_value("1");
+            let initially_absent = parameter_value("2");
+
+            let mut testee = PeerConfiguration::default();
+
+            testee.set(initially_present.clone(), ParameterTarget::Present);
+            testee.set(initially_absent.clone(), ParameterTarget::Absent);
+
+            testee.set_all_absent::<parameter::EthernetBridge>();
+
+            assert_that!(testee.ethernet_bridges, unordered_elements_are![
+                matches_pattern!(Parameter {
+                    value: eq(&initially_present),
+                    target: eq(&ParameterTarget::Absent),
+                    ..
+                }),
+                matches_pattern!(Parameter {
+                    value: eq(&initially_absent),
+                    target: eq(&ParameterTarget::Absent),
                     ..
                 }),
             ]);
