@@ -551,7 +551,7 @@ mod tests {
         let resource_manager = ResourceManager::new_in_memory();
 
         let peer_id = PeerId::random();
-        let peer_descriptor = create_peer_descriptor();
+        let peer_descriptor = create_peer_descriptor(peer_id);
         resource_manager.insert(peer_id, peer_descriptor).await?;
 
         Ok(Fixture {

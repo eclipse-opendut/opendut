@@ -11,10 +11,12 @@ use crate::manager::peer_manager::{AssignClusterError, AssignClusterOptions};
 pub(super) fn update_peer_configuration(
     peer_configuration: &mut PeerConfiguration,
     peer_descriptor: PeerDescriptor,
-    expected_gre_config_parameters: Vec<GreInterfaceConfig>,
+    cluster_assignment: &ClusterAssignment,
     device_interfaces: Vec<NetworkInterfaceDescriptor>,
     options: AssignClusterOptions,
 ) -> Result<(), AssignClusterError> {
+
+    let expected_gre_config_parameters = determine_expected_gre_interface_config_parameters(peer_descriptor.id, cluster_assignment)?;
 
     let expected_joined_interface_names = {
         let expected_gre_interface_names = expected_gre_config_parameters
@@ -34,8 +36,7 @@ pub(super) fn update_peer_configuration(
             .collect::<Vec<_>>()
     };
 
-    // Network device interfaces
-    {
+    { // Network device interfaces
         let device_interfaces = device_interfaces.into_iter()
             .map(|descriptor| parameter::DeviceInterface { descriptor });
 
@@ -44,45 +45,55 @@ pub(super) fn update_peer_configuration(
         debug!("Configured network device interfaces: {:?}", peer_configuration.device_interfaces);
     }
 
-    let ethernet_bridge = peer_descriptor.clone().network.bridge_name
+    let ethernet_bridge = peer_descriptor.network.bridge_name
         .unwrap_or(options.bridge_name_default);
-    // Ethernet bridge
-    {
+
+    { // Ethernet bridge
         let bridge = parameter::EthernetBridge { name: ethernet_bridge.clone() };
 
         peer_configuration.set_all_present(vec![bridge]);
     }
 
     // GRE interfaces
-    {
-        peer_configuration.set_all_present(expected_gre_config_parameters);
-    }
+    peer_configuration.set_all_present(expected_gre_config_parameters);
 
-    // Joined interfaces
-    // all ethernet interfaces + GRE interfaces -> bridge
-    {
+    { // Joined interfaces (all ethernet interfaces + GRE interfaces -> bridge)
         let expected_joined_interfaces = expected_joined_interface_names.iter()
             .map(|name| InterfaceJoinConfig { name: name.clone(), bridge: ethernet_bridge.clone() })
             .collect::<Vec<_>>();
 
-        peer_configuration.set_all_present(expected_joined_interfaces)
+        peer_configuration.set_all_present(expected_joined_interfaces);
     }
 
-
-    // Executors
-    {
+    { // Executors
         let executors = peer_descriptor.executors.executors.into_iter()
             .map(|descriptor| parameter::Executor { descriptor });
 
-        peer_configuration.set_all_present(executors)
+        peer_configuration.set_all_present(executors);
+    }
+
+    { //Remote Peer Connection Checks
+        if cluster_assignment.leader == peer_descriptor.id {
+            let remote_peers = cluster_assignment.non_leader_assignments();
+
+            let remote_peer_connection_checks = remote_peers.into_iter()
+                .map(|(remote_peer_id, peer_cluster_assignment)| {
+                    parameter::RemotePeerConnectionCheck {
+                        remote_peer_id,
+                        remote_ip: peer_cluster_assignment.vpn_address,
+                    }
+                })
+                .collect::<Vec<_>>();
+
+            peer_configuration.set_all_present(remote_peer_connection_checks);
+        }
     }
 
     Ok(())
 }
 
 
-pub(super) fn determine_expected_gre_interface_config_parameters(peer_id: PeerId, cluster_assignment: &ClusterAssignment) -> Result<Vec<GreInterfaceConfig>, AssignClusterError> {
-
+fn determine_expected_gre_interface_config_parameters(peer_id: PeerId, cluster_assignment: &ClusterAssignment) -> Result<Vec<GreInterfaceConfig>, AssignClusterError> {
     let leader_remote_ip = cluster_assignment.leader_assignment()
         .map(|assignment| assignment.vpn_address)
         .map(require_ipv4_for_gre)

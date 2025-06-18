@@ -44,16 +44,7 @@ impl Resources<'_> {
 
         debug!("Assigning cluster to peer <{peer_id}>.");
 
-        let expected_gre_config_parameters = configuration::determine_expected_gre_interface_config_parameters(peer_id, &cluster_assignment)?;
-
-
         let (old_peer_configuration, peer_configuration) = {
-            let old_peer_configuration = OldPeerConfiguration {
-                cluster_assignment: Some(cluster_assignment),
-            };
-            self.insert(peer_id, Clone::clone(&old_peer_configuration))
-                .map_err(|source| AssignClusterError::Persistence { peer_id, source })?;
-
 
             let peer_descriptor = self.get::<PeerDescriptor>(peer_id)
                 .map_err(|source| AssignClusterError::Persistence { peer_id, source })?
@@ -66,13 +57,19 @@ impl Resources<'_> {
             configuration::update_peer_configuration(
                 &mut peer_configuration,
                 peer_descriptor,
-                expected_gre_config_parameters,
+                &cluster_assignment,
                 device_interfaces,
                 options
             )?;
 
             // store updated peer configuration
             self.insert(peer_id, Clone::clone(&peer_configuration))
+                .map_err(|source| AssignClusterError::Persistence { peer_id, source })?;
+
+            let old_peer_configuration = OldPeerConfiguration {
+                cluster_assignment: Some(cluster_assignment),
+            };
+            self.insert(peer_id, Clone::clone(&old_peer_configuration))
                 .map_err(|source| AssignClusterError::Persistence { peer_id, source })?;
 
             (old_peer_configuration, peer_configuration)
@@ -128,7 +125,7 @@ mod tests {
         };
         let peer_configuration = PeerConfiguration::default();
         resource_manager.resources_mut(async |resources| {
-            resources.insert(peer_id, create_peer_descriptor())?;
+            resources.insert(peer_id, create_peer_descriptor(peer_id))?;
             resources.insert(peer_id, Clone::clone(&old_peer_configuration))?;
             resources.insert(peer_id, Clone::clone(&peer_configuration))
         }).await??;
@@ -144,7 +141,6 @@ mod tests {
             }))
         );
 
-
         let cluster_assignment = ClusterAssignment {
             id: ClusterId::random(),
             leader: peer_id,
@@ -155,7 +151,6 @@ mod tests {
                 })
             ]),
         };
-
 
         resource_manager.resources_mut(async |resources|
             resources.assign_cluster(AssignClusterParams {
@@ -196,5 +191,4 @@ mod tests {
 
         Ok(())
     }
-
 }

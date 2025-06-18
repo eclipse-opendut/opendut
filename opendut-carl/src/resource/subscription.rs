@@ -215,7 +215,7 @@ mod tests {
     async fn should_not_notify_if_transaction_was_aborted() -> anyhow::Result<()> {
         let resource_manager = ResourceManager::new_in_memory();
         let id = PeerId::random();
-        let peer_descriptor = create_peer_descriptor();
+        let peer_descriptor = create_peer_descriptor(id);
         let mut subscription = resource_manager.subscribe::<PeerDescriptor>().await;
         assert!(resource_manager.get::<PeerDescriptor>(id).await?.is_none(), "Expected no connection state present!");
 
