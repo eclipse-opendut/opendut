@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::ops::{Deref, DerefMut};
 use serde::Serialize;
 use crate::cluster::ClusterAssignment;
 
@@ -15,26 +16,25 @@ pub struct OldPeerConfiguration {
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
 pub struct PeerConfiguration {
-    pub device_interfaces: Vec<Parameter<parameter::DeviceInterface>>,
-    pub ethernet_bridges: Vec<Parameter<parameter::EthernetBridge>>,
-    pub executors: Vec<Parameter<parameter::Executor>>,
-    pub gre_interfaces: Vec<Parameter<parameter::GreInterfaceConfig>>,
-    pub joined_interfaces: Vec<Parameter<parameter::InterfaceJoinConfig>>,
-    pub remote_peer_connection_checks: Vec<Parameter<parameter::RemotePeerConnectionCheck>>,
+    pub device_interfaces: ParameterField<parameter::DeviceInterface>,
+    pub ethernet_bridges: ParameterField<parameter::EthernetBridge>,
+    pub executors: ParameterField<parameter::Executor>,
+    pub gre_interfaces: ParameterField<parameter::GreInterfaceConfig>,
+    pub joined_interfaces: ParameterField<parameter::InterfaceJoinConfig>,
+    pub remote_peer_connection_checks: ParameterField<parameter::RemotePeerConnectionCheck>,
     //TODO migrate more parameters
 }
-impl PeerConfiguration {
+impl<V: ParameterValue> ParameterField<V> {
     /// Set all parameters of a type to be present.
     /// Parameters that were previously in the PeerConfiguration,
     /// but aren't in the new list, will be set to absent.
-    pub fn set_all_present<T: ParameterValue>(&mut self, values: impl IntoIterator<Item=T>) {
+    pub fn set_all_present(&mut self, values: impl IntoIterator<Item=V>) {
 
         let new_present_parameters = values.into_iter()
             .map(|value| Self::create_parameter(value, ParameterTarget::Present))
             .collect::<HashSet<_>>();
 
-        let previous_parameters = T::peer_configuration_field(self)
-            .iter_mut()
+        let previous_parameters = self.iter_mut()
             .map(|parameter_ref| parameter_ref.to_owned())
             .collect::<HashSet<_>>();
 
@@ -54,8 +54,8 @@ impl PeerConfiguration {
     }
 
     /// Set all parameters of a type to be absent.
-    pub fn set_all_absent<T: ParameterValue>(&mut self) {
-        let parameters_to_set_absent = T::peer_configuration_field(self).clone();
+    pub fn set_all_absent(&mut self) {
+        let parameters_to_set_absent = self.clone();
 
         for parameter in parameters_to_set_absent {
             let absent_parameter = Parameter {
@@ -67,15 +67,15 @@ impl PeerConfiguration {
     }
 
     /// Set an individual parameter to be present/absent
-    pub fn set<T: ParameterValue>(&mut self, value: T, target: ParameterTarget) {
+    pub fn set(&mut self, value: V, target: ParameterTarget) {
         let parameter = Self::create_parameter(value, target);
 
         self.set_parameter(parameter);
     }
 
 
-    fn set_parameter<T: ParameterValue>(&mut self, parameter: Parameter<T>) {
-        let parameters = T::peer_configuration_field(self);
+    fn set_parameter(&mut self, parameter: Parameter<V>) {
+        let parameters = self;
 
         parameters.retain(|existing_parameter| {
             existing_parameter.id != parameter.id
@@ -84,12 +84,49 @@ impl PeerConfiguration {
         parameters.push(parameter);
     }
 
-    fn create_parameter<T: ParameterValue>(value: T, target: ParameterTarget) -> Parameter<T> {
+    fn create_parameter(value: V, target: ParameterTarget) -> Parameter<V> {
         Parameter {
             id: value.parameter_identifier(),
             dependencies: vec![], //TODO
             target,
             value,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct ParameterField<V: ParameterValue> {
+    pub values: Vec<Parameter<V>>,
+}
+impl<V: ParameterValue> Default for ParameterField<V> {
+    fn default() -> Self {
+        Self { values: vec![] }
+    }
+}
+impl<V: ParameterValue> Deref for ParameterField<V> {
+    type Target = Vec<Parameter<V>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.values
+    }
+}
+impl<V: ParameterValue> DerefMut for ParameterField<V> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.values
+    }
+}
+impl<V: ParameterValue> IntoIterator for ParameterField<V> {
+    type Item = Parameter<V>;
+    type IntoIter = <Vec<Parameter<V>> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.values.into_iter()
+    }
+}
+impl<V: ParameterValue> FromIterator<Parameter<V>> for ParameterField<V> {
+    fn from_iter<T: IntoIterator<Item=Parameter<V>>>(iter: T) -> Self {
+        Self {
+            values: iter.into_iter().collect(),
         }
     }
 }
@@ -111,13 +148,13 @@ mod tests {
             let parameter_value = parameter::EthernetBridge { name: NetworkInterfaceName::try_from("br-opendut")? };
 
             let mut testee = PeerConfiguration::default();
-            testee.set(parameter_value.clone(), ParameterTarget::Present);
+            testee.ethernet_bridges.set(parameter_value.clone(), ParameterTarget::Present);
 
 
-            testee.set(parameter_value.clone(), ParameterTarget::Present);
+            testee.ethernet_bridges.set(parameter_value.clone(), ParameterTarget::Present);
             assert_eq!(testee.ethernet_bridges.len(), 1);
 
-            testee.set(parameter_value.clone(), ParameterTarget::Absent);
+            testee.ethernet_bridges.set(parameter_value.clone(), ParameterTarget::Absent);
             assert_eq!(testee.ethernet_bridges.len(), 1);
             assert_eq!(testee.ethernet_bridges[0].target, ParameterTarget::Absent);
 
@@ -137,7 +174,7 @@ mod tests {
             };
 
             let mut testee = PeerConfiguration::default();
-            testee.set(parameter_value.clone(), ParameterTarget::Present);
+            testee.executors.set(parameter_value.clone(), ParameterTarget::Present);
 
 
             let expected = None;
@@ -148,7 +185,7 @@ mod tests {
                 }
             };
 
-            testee.set(parameter_value, ParameterTarget::Present);
+            testee.executors.set(parameter_value, ParameterTarget::Present);
             assert_eq!(testee.executors.len(), 1);
             assert_eq!(testee.executors[0].value.descriptor.results_url, expected);
 
@@ -173,17 +210,17 @@ mod tests {
 
             let mut testee = PeerConfiguration::default();
 
-            testee.set(present_then_absent.clone(), ParameterTarget::Present);
-            testee.set(present_then_present.clone(), ParameterTarget::Present);
-            testee.set(absent_then_present.clone(), ParameterTarget::Absent);
+            testee.ethernet_bridges.set(present_then_absent.clone(), ParameterTarget::Present);
+            testee.ethernet_bridges.set(present_then_present.clone(), ParameterTarget::Present);
+            testee.ethernet_bridges.set(absent_then_present.clone(), ParameterTarget::Absent);
 
-            testee.set_all_present([
+            testee.ethernet_bridges.set_all_present([
                 present_then_present.clone(),
                 new_present.clone(),
                 absent_then_present.clone()
             ]);
 
-            assert_that!(testee.ethernet_bridges, unordered_elements_are![
+            assert_that!(testee.ethernet_bridges.values, unordered_elements_are![
                 matches_pattern!(Parameter {
                     value: eq(&present_then_absent),
                     target: eq(&ParameterTarget::Absent),
@@ -225,12 +262,12 @@ mod tests {
 
             let mut testee = PeerConfiguration::default();
 
-            testee.set(initially_present.clone(), ParameterTarget::Present);
-            testee.set(initially_absent.clone(), ParameterTarget::Absent);
+            testee.ethernet_bridges.set(initially_present.clone(), ParameterTarget::Present);
+            testee.ethernet_bridges.set(initially_absent.clone(), ParameterTarget::Absent);
 
-            testee.set_all_absent::<parameter::EthernetBridge>();
+            testee.ethernet_bridges.set_all_absent();
 
-            assert_that!(testee.ethernet_bridges, unordered_elements_are![
+            assert_that!(testee.ethernet_bridges.values, unordered_elements_are![
                 matches_pattern!(Parameter {
                     value: eq(&initially_present),
                     target: eq(&ParameterTarget::Absent),

@@ -107,7 +107,7 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
     if let NetworkInterfaceManagement::Enabled { can_manager, .. } = &network_interface_management {
         let _ = setup_can(
             &old_peer_configuration.cluster_assignment,
-            peer_configuration.device_interfaces,
+            peer_configuration.device_interfaces.values,
             self_id,
             Arc::clone(can_manager),
         ).await;
@@ -118,7 +118,7 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
     {
         let mut executor_manager = executor_manager.lock().await;
         executor_manager.terminate_executors();
-        executor_manager.create_new_executors(peer_configuration.executors);
+        executor_manager.create_new_executors(peer_configuration.executors.values);
     }
 
     debug!("Peer configuration has been successfully applied.");

@@ -1,5 +1,4 @@
-use crate::peer::configuration::{parameter, Parameter, ParameterId};
-use crate::peer::configuration::PeerConfiguration;
+use crate::peer::configuration::{parameter, ParameterId};
 use crate::OPENDUT_UUID_NAMESPACE;
 use std::any::Any;
 use std::fmt::Display;
@@ -12,7 +11,7 @@ pub trait ParameterValue: Any + Clone + PartialEq + Eq + Hash + Sized {
     /// ```
     /// # use std::hash::{DefaultHasher, Hash, Hasher};
     /// # use uuid::Uuid;
-    /// # use opendut_types::peer::configuration::{Parameter, ParameterId, ParameterValue, PeerConfiguration};
+    /// # use opendut_types::peer::configuration::{Parameter, ParameterField, ParameterId, ParameterValue, PeerConfiguration};
     /// # use opendut_types::OPENDUT_UUID_NAMESPACE;
     ///
     /// # #[derive(Clone, PartialEq, Eq, Hash)]
@@ -27,22 +26,15 @@ pub trait ParameterValue: Any + Clone + PartialEq + Eq + Hash + Sized {
     ///     let id = Uuid::new_v5(&OPENDUT_UUID_NAMESPACE, &id.to_le_bytes());
     ///     ParameterId(id)
     /// }
-    ///
-    /// # fn peer_configuration_field(peer_configuration: &mut PeerConfiguration) -> &mut Vec<Parameter<Self>> { todo!() }
     /// # }
     /// ```
     /// However, ideally you use a stable subset of your data, which is still unique.
     fn parameter_identifier(&self) -> ParameterId;
-
-    fn peer_configuration_field(peer_configuration: &mut PeerConfiguration) -> &mut Vec<Parameter<Self>>;
 }
 
 impl ParameterValue for parameter::DeviceInterface {
     fn parameter_identifier(&self) -> ParameterId {
         ParameterId(self.descriptor.id.uuid)
-    }
-    fn peer_configuration_field(peer_configuration: &mut PeerConfiguration) -> &mut Vec<Parameter<Self>>  {
-        &mut peer_configuration.device_interfaces
     }
 }
 impl ParameterValue for parameter::EthernetBridge {
@@ -54,16 +46,10 @@ impl ParameterValue for parameter::EthernetBridge {
         let id = Uuid::new_v5(&OPENDUT_UUID_NAMESPACE, &id.to_le_bytes());
         ParameterId(id)
     }
-    fn peer_configuration_field(peer_configuration: &mut PeerConfiguration) -> &mut Vec<Parameter<Self>> {
-        &mut peer_configuration.ethernet_bridges
-    }
 }
 impl ParameterValue for parameter::Executor {
     fn parameter_identifier(&self) -> ParameterId {
         ParameterId(self.descriptor.id.uuid)
-    }
-    fn peer_configuration_field(peer_configuration: &mut PeerConfiguration) -> &mut Vec<Parameter<Self>>  {
-        &mut peer_configuration.executors
     }
 }
 
@@ -80,28 +66,17 @@ impl ParameterValue for parameter::GreInterfaceConfig {
     fn parameter_identifier(&self) -> ParameterId {
         parameter_value_hash(self)
     }
-    fn peer_configuration_field(peer_configuration: &mut PeerConfiguration) -> &mut Vec<Parameter<Self>>  {
-        &mut peer_configuration.gre_interfaces
-    }
 }
 
 impl ParameterValue for parameter::InterfaceJoinConfig {
     fn parameter_identifier(&self) -> ParameterId {
         parameter_value_hash(self)
     }
-
-    fn peer_configuration_field(peer_configuration: &mut PeerConfiguration) -> &mut Vec<Parameter<Self>> {
-        &mut peer_configuration.joined_interfaces
-    }
 }
 
 impl ParameterValue for parameter::RemotePeerConnectionCheck {
     fn parameter_identifier(&self) -> ParameterId {
         parameter_value_hash(self)
-    }
-
-    fn peer_configuration_field(peer_configuration: &mut PeerConfiguration) -> &mut Vec<Parameter<Self>> {
-        &mut peer_configuration.remote_peer_connection_checks
     }
 }
 
@@ -127,7 +102,7 @@ mod tests {
             }
         };
         let target = ParameterTarget::Present;
-        peer_configuration.set(value.clone(), target);
+        peer_configuration.executors.set(value.clone(), target);
 
         assert_eq!(peer_configuration.executors.len(), 1);
 

@@ -3,7 +3,7 @@ use crate::testing::carl_client::TestCarlClient;
 use crate::testing::util;
 use googletest::prelude::*;
 use opendut_types::cluster::{ClusterAssignment, ClusterDescriptor, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
-use opendut_types::peer::configuration::{OldPeerConfiguration, Parameter, ParameterTarget, PeerConfiguration};
+use opendut_types::peer::configuration::{OldPeerConfiguration, Parameter, ParameterField, ParameterTarget, PeerConfiguration};
 use opendut_types::peer::configuration::parameter;
 use opendut_types::peer::PeerId;
 use opendut_types::topology::DeviceDescriptor;
@@ -54,18 +54,22 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
         let validate_peer_configuration = |peer_configuration: PeerConfiguration| {
             assert_that!(peer_configuration, matches_pattern!(PeerConfiguration {
                 device_interfaces: eq(&peer_configuration.device_interfaces),
-                ethernet_bridges: contains(
-                    matches_pattern!(Parameter {
-                        id: anything(),
-                        dependencies: empty(),
-                        target: eq(&ParameterTarget::Present),
-                        value: eq(&parameter::EthernetBridge {
-                            name: NetworkInterfaceName::try_from("br-opendut")?,
-                        }),
-                        ..
-                    })
-                ),
-                executors: empty(),
+                ethernet_bridges: matches_pattern!(ParameterField {
+                    values: contains(
+                        matches_pattern!(Parameter {
+                            id: anything(),
+                            dependencies: empty(),
+                            target: eq(&ParameterTarget::Present),
+                            value: eq(&parameter::EthernetBridge {
+                                name: NetworkInterfaceName::try_from("br-opendut")?,
+                            }),
+                            ..
+                        })
+                    ),
+                }),
+                executors: matches_pattern!(ParameterField {
+                    values: empty(),
+                }),
                 ..
             }));
             Ok::<_, anyhow::Error>(())
@@ -145,17 +149,21 @@ async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_onl
         let validate_peer_configuration = |peer_configuration: PeerConfiguration| {
             assert_that!(peer_configuration, matches_pattern!(PeerConfiguration {
                 device_interfaces: eq(&peer_configuration.device_interfaces),
-                ethernet_bridges: contains(
-                    matches_pattern!(Parameter {
-                        id: anything(),
-                        dependencies: empty(),
-                        target: eq(&ParameterTarget::Present),
-                        value: eq(&parameter::EthernetBridge {
-                            name: NetworkInterfaceName::try_from("br-opendut")?,
-                        }),
-                    })
-                ),
-                executors: empty(),
+                ethernet_bridges: matches_pattern!(ParameterField {
+                    values: contains(
+                        matches_pattern!(Parameter {
+                            id: anything(),
+                            dependencies: empty(),
+                            target: eq(&ParameterTarget::Present),
+                            value: eq(&parameter::EthernetBridge {
+                                name: NetworkInterfaceName::try_from("br-opendut")?,
+                            }),
+                        })
+                    )
+                }),
+                executors: matches_pattern!(ParameterField {
+                    values: empty()
+                }),
                 ..
             }));
             Ok::<_, anyhow::Error>(())
