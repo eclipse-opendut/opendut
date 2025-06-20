@@ -34,7 +34,7 @@ runs:
         toolchain: stable
         targets: x86_64-unknown-linux-gnu
     - name: Prepare Rust Toolchain Cache
-      uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 #4.2.0
+      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
       with:
         path: |
           ~/.rustup/toolchains
@@ -43,34 +43,34 @@ runs:
         key: rust-toolchain-${{ github.job }}-${{steps.toolchain.outputs.cachekey}}
 
     - name: Prepare Rust Dependency Cache
-      uses: Swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3 #2.7.7
+      uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
 
     - name: Install cargo-deny
-      uses: taiki-e/cache-cargo-install-action@f6e15f71e967ea23e30091f4d38ca6300f5c7760
+      uses: taiki-e/cache-cargo-install-action@5c9abe9a3f79d831011df7c47177debbeb320405 # v2.1.2
       with:
         tool: cargo-deny
       if: ${{ inputs.cargo-deny == 'true' || inputs.cargo-deny == 'yes' }}
 
     - name: Install cargo-sbom
-      uses: taiki-e/cache-cargo-install-action@f6e15f71e967ea23e30091f4d38ca6300f5c7760
+      uses: taiki-e/cache-cargo-install-action@5c9abe9a3f79d831011df7c47177debbeb320405 # v2.1.2
       with:
         tool: cargo-sbom
       if: ${{ inputs.cargo-sbom == 'true' || inputs.cargo-sbom == 'yes' }}
 
     - name: Install cargo-tarpaulin
-      uses: taiki-e/cache-cargo-install-action@f6e15f71e967ea23e30091f4d38ca6300f5c7760
+      uses: taiki-e/cache-cargo-install-action@5c9abe9a3f79d831011df7c47177debbeb320405 # v2.1.2
       with:
         tool: cargo-tarpaulin
       if: ${{ inputs.cargo-tarpaulin == 'true' || inputs.cargo-tarpaulin == 'yes' }}
 
     - name: Install Cross
-      uses: taiki-e/cache-cargo-install-action@f6e15f71e967ea23e30091f4d38ca6300f5c7760
+      uses: taiki-e/cache-cargo-install-action@5c9abe9a3f79d831011df7c47177debbeb320405 # v2.1.2
       with:
         tool: cross
       if: ${{ inputs.cargo-cross == 'true' || inputs.cargo-cross == 'yes' }}
 
     - name: Install Trunk
-      uses: taiki-e/cache-cargo-install-action@f6e15f71e967ea23e30091f4d38ca6300f5c7760
+      uses: taiki-e/cache-cargo-install-action@5c9abe9a3f79d831011df7c47177debbeb320405 # v2.1.2
       with:
         tool: trunk
       if: ${{ inputs.cargo-trunk == 'true' || inputs.cargo-trunk == 'yes' }}
