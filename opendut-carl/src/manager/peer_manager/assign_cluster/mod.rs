@@ -176,7 +176,8 @@ mod tests {
         let mut peer_configuration = PeerConfiguration::default();
         peer_configuration.ethernet_bridges.set(
             parameter::EthernetBridge { name: NetworkInterfaceName::try_from("br-opendut-1")? },
-            ParameterTarget::Present
+            ParameterTarget::Present,
+            vec![],
         );
 
         let received = receiver.recv().await.unwrap()

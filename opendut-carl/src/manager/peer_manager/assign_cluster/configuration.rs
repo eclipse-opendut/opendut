@@ -44,40 +44,43 @@ pub(super) fn update_peer_configuration(
         remote_peer_connection_checks
     } = peer_configuration;
 
-    { // Network device interfaces
+    let device_dependencies = { // Network device interfaces
         let expected_device_interfaces = expected_device_interfaces.into_iter()
             .map(|descriptor| parameter::DeviceInterface { descriptor });
 
-        device_interfaces.set_all_present(expected_device_interfaces);
+        let ids = device_interfaces.set_all_present(expected_device_interfaces, vec![]);
 
         debug!("Configured network device interfaces: {:?}", device_interfaces);
-    }
+        ids
+    };
 
     let ethernet_bridge = peer_descriptor.network.bridge_name
         .unwrap_or(options.bridge_name_default);
 
-    { // Ethernet bridge
+    let bridge_dependencies = { // Ethernet bridge
         let bridge = parameter::EthernetBridge { name: ethernet_bridge.clone() };
 
-        ethernet_bridges.set_all_present(vec![bridge]);
-    }
+        ethernet_bridges.set_all_present(vec![bridge], vec![])
+    };
 
     // GRE interfaces
-    gre_interfaces.set_all_present(expected_gre_config_parameters);
+    let gre_upstream_dependencies = device_dependencies.into_iter().chain(bridge_dependencies).collect::<Vec<_>>();
+    let gre_dependencies = gre_interfaces.set_all_present(expected_gre_config_parameters, gre_upstream_dependencies);
 
+    
     { // Joined interfaces (all ethernet interfaces + GRE interfaces -> bridge)
         let expected_joined_interfaces = expected_joined_interface_names.iter()
             .map(|name| InterfaceJoinConfig { name: name.clone(), bridge: ethernet_bridge.clone() })
             .collect::<Vec<_>>();
 
-        joined_interfaces.set_all_present(expected_joined_interfaces);
+        joined_interfaces.set_all_present(expected_joined_interfaces, gre_dependencies);
     }
 
     { // Executors
         let expected_executors = peer_descriptor.executors.executors.into_iter()
             .map(|descriptor| parameter::Executor { descriptor });
 
-        executors.set_all_present(expected_executors);
+        executors.set_all_present(expected_executors, vec![]);
     }
 
     { //Remote Peer Connection Checks
@@ -93,7 +96,7 @@ pub(super) fn update_peer_configuration(
                 })
                 .collect::<Vec<_>>();
 
-            remote_peer_connection_checks.set_all_present(expected_remote_peer_connection_checks);
+            remote_peer_connection_checks.set_all_present(expected_remote_peer_connection_checks, vec![]);
         } else {
             // Clear other peers, in case the Leader has changed
             remote_peer_connection_checks.set_all_absent();

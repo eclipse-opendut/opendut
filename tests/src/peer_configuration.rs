@@ -3,7 +3,7 @@ use crate::testing::carl_client::TestCarlClient;
 use crate::testing::util;
 use googletest::prelude::*;
 use opendut_types::cluster::{ClusterAssignment, ClusterDescriptor, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
-use opendut_types::peer::configuration::{OldPeerConfiguration, Parameter, ParameterField, ParameterId, ParameterTarget, PeerConfiguration};
+use opendut_types::peer::configuration::{OldPeerConfiguration, Parameter, ParameterField, ParameterTarget, PeerConfiguration};
 use opendut_types::peer::configuration::parameter;
 use opendut_types::peer::PeerId;
 use opendut_types::topology::DeviceDescriptor;

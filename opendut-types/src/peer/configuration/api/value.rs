@@ -102,7 +102,7 @@ mod tests {
             }
         };
         let target = ParameterTarget::Present;
-        peer_configuration.executors.set(value.clone(), target);
+        peer_configuration.executors.set(value.clone(), target, vec![]);
 
         assert_eq!(peer_configuration.executors.len(), 1);
 
