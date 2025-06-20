@@ -87,7 +87,7 @@ mod tests {
     use std::str::FromStr;
     use crate::peer::configuration::parameter::GreInterfaceConfig;
     use super::*;
-    use crate::peer::configuration::ParameterTarget;
+    use crate::peer::configuration::{ParameterTarget, PeerConfiguration};
     use crate::peer::executor::{ExecutorDescriptor, ExecutorId, ExecutorKind};
 
     #[test]
