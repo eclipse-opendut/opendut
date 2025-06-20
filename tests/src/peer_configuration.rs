@@ -3,7 +3,7 @@ use crate::testing::carl_client::TestCarlClient;
 use crate::testing::util;
 use googletest::prelude::*;
 use opendut_types::cluster::{ClusterAssignment, ClusterDescriptor, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
-use opendut_types::peer::configuration::{OldPeerConfiguration, Parameter, ParameterField, ParameterTarget, PeerConfiguration};
+use opendut_types::peer::configuration::{OldPeerConfiguration, Parameter, ParameterField, ParameterId, ParameterTarget, PeerConfiguration};
 use opendut_types::peer::configuration::parameter;
 use opendut_types::peer::PeerId;
 use opendut_types::topology::DeviceDescriptor;
@@ -52,10 +52,12 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
 
     {
         let validate_peer_configuration = |peer_configuration: PeerConfiguration| {
+            let bridge_id = peer_configuration.ethernet_bridges.clone().into_iter().next().unwrap().id;
             assert_that!(peer_configuration, matches_pattern!(PeerConfiguration {
                 device_interfaces: eq(&peer_configuration.device_interfaces),
                 ethernet_bridges: matches_pattern!(ParameterField {
-                    values: contains(
+                    values: has_entry(
+                        bridge_id,
                         matches_pattern!(Parameter {
                             id: anything(),
                             dependencies: empty(),
@@ -147,10 +149,12 @@ async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_onl
 
     {
         let validate_peer_configuration = |peer_configuration: PeerConfiguration| {
+            let bridge_id = peer_configuration.ethernet_bridges.clone().into_iter().next().unwrap().id;
             assert_that!(peer_configuration, matches_pattern!(PeerConfiguration {
                 device_interfaces: eq(&peer_configuration.device_interfaces),
                 ethernet_bridges: matches_pattern!(ParameterField {
-                    values: contains(
+                    values: has_entry(
+                        bridge_id,
                         matches_pattern!(Parameter {
                             id: anything(),
                             dependencies: empty(),

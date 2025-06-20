@@ -2,19 +2,17 @@ use tracing::debug;
 
 use crate::service::can::can_manager::CanManagerRef;
 use opendut_types::cluster::ClusterAssignment;
-use opendut_types::peer::configuration::{parameter, Parameter, ParameterTarget};
+use opendut_types::peer::configuration::{parameter, ParameterField, ParameterTarget};
 use opendut_types::peer::PeerId;
-use opendut_types::util::net::NetworkInterfaceConfiguration;
-use parameter::DeviceInterface;
 
 #[tracing::instrument(skip_all, level="trace")]
 pub async fn setup_can_interfaces(
     cluster_assignment: &ClusterAssignment,
     self_id: PeerId,
-    device_interfaces: &[Parameter<DeviceInterface>],
+    device_interfaces: ParameterField<parameter::DeviceInterface>,
     can_manager: CanManagerRef
 ) -> Result<(), Error> {
-    let can_interfaces = filter_can_interfaces(device_interfaces.to_owned())?;
+    let can_interfaces = device_interfaces.filter_can_devices();
 
     let can_interfaces = can_interfaces.into_iter()
         .filter(|parameter| parameter.target == ParameterTarget::Present)
@@ -71,18 +69,6 @@ pub async fn setup_can_interfaces(
     }
 
     Ok(())
-}
-
-fn filter_can_interfaces(
-    device_interfaces: Vec<Parameter<DeviceInterface>>
-) -> Result<Vec<Parameter<DeviceInterface>>, Error> {
-
-    let own_can_interfaces: Vec<_> = device_interfaces.iter()
-        .filter(|interface| matches!(interface.value.descriptor.configuration, NetworkInterfaceConfiguration::Can { .. }))
-        .cloned()
-        .collect::<Vec<_>>();
-
-    Ok(own_can_interfaces)
 }
 
 #[derive(Debug, thiserror::Error)]

@@ -1,10 +1,11 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::ops::{Deref, DerefMut};
 use serde::Serialize;
 use crate::cluster::ClusterAssignment;
 
 pub mod api;
 pub use crate::peer::configuration::api::*;
+use crate::util::net::NetworkInterfaceConfiguration;
 
 pub mod parameter;
 
@@ -24,6 +25,38 @@ pub struct PeerConfiguration {
     pub remote_peer_connection_checks: ParameterField<parameter::RemotePeerConnectionCheck>,
     //TODO migrate more parameters
 }
+
+pub enum ParameterVariant {
+    DeviceInterface(Box<Parameter<parameter::DeviceInterface>>),
+    EthernetBridge(Box<Parameter<parameter::EthernetBridge>>),
+    Executor(Box<Parameter<parameter::Executor>>),
+    GreInterface(Box<Parameter<parameter::GreInterfaceConfig>>),
+    JoinedInterface(Box<Parameter<parameter::InterfaceJoinConfig>>),
+    RemotePeerConnectionCheck(Box<Parameter<parameter::RemotePeerConnectionCheck>>),
+}
+
+impl PeerConfiguration {
+    pub fn all_parameters(&self) -> HashMap<ParameterId, ParameterVariant> {
+        let PeerConfiguration {
+            device_interfaces,
+            ethernet_bridges,
+            executors,
+            gre_interfaces,
+            joined_interfaces,
+            remote_peer_connection_checks
+        } = self.clone();
+
+        device_interfaces.values.into_iter()
+            .map(|(id, parameter) | { (id, ParameterVariant::DeviceInterface(Box::new(parameter))) })
+            .chain(ethernet_bridges.values.into_iter().map(|(id, parameter)| { (id, ParameterVariant::EthernetBridge(Box::new(parameter))) }))
+            .chain(executors.values.into_iter().map(|(id, parameter)| { (id, ParameterVariant::Executor(Box::new(parameter))) }))
+            .chain(gre_interfaces.values.into_iter().map(|(id, parameter)| { (id, ParameterVariant::GreInterface(Box::new(parameter))) }))
+            .chain(joined_interfaces.values.into_iter().map(|(id, parameter)| { (id, ParameterVariant::JoinedInterface(Box::new(parameter))) }))
+            .chain(remote_peer_connection_checks.values.into_iter().map(|(id, parameter)| { (id, ParameterVariant::RemotePeerConnectionCheck(Box::new(parameter))) }))
+            .collect()
+    }
+}
+
 impl<V: ParameterValue> ParameterField<V> {
     /// Set all parameters of a type to be present.
     /// Parameters that were previously in the PeerConfiguration,
@@ -35,7 +68,7 @@ impl<V: ParameterValue> ParameterField<V> {
             .collect::<HashSet<_>>();
 
         let previous_parameters = self.iter_mut()
-            .map(|parameter_ref| parameter_ref.to_owned())
+            .map(|(_id, parameter_ref)| parameter_ref.to_owned())
             .collect::<HashSet<_>>();
 
         let parameters_to_set_absent = previous_parameters.difference(&new_present_parameters);
@@ -75,13 +108,7 @@ impl<V: ParameterValue> ParameterField<V> {
 
 
     fn set_parameter(&mut self, parameter: Parameter<V>) {
-        let parameters = self;
-
-        parameters.retain(|existing_parameter| {
-            existing_parameter.id != parameter.id
-        });
-
-        parameters.push(parameter);
+        self.values.insert(parameter.id, parameter);
     }
 
     fn create_parameter(value: V, target: ParameterTarget) -> Parameter<V> {
@@ -94,17 +121,26 @@ impl<V: ParameterValue> ParameterField<V> {
     }
 }
 
+impl ParameterField<parameter::DeviceInterface> {
+    pub fn filter_can_devices(&self) -> Vec<Parameter<parameter::DeviceInterface>> {
+        self.iter()
+            .map(|(_id, parameter)| parameter.clone())
+            .filter(|interface| matches!(interface.value.descriptor.configuration, NetworkInterfaceConfiguration::Can { .. }))
+            .collect::<Vec<_>>()
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct ParameterField<V: ParameterValue> {
-    pub values: Vec<Parameter<V>>,
+    pub values: HashMap<ParameterId, Parameter<V>>,
 }
 impl<V: ParameterValue> Default for ParameterField<V> {
     fn default() -> Self {
-        Self { values: vec![] }
+        Self { values: HashMap::new() }
     }
 }
 impl<V: ParameterValue> Deref for ParameterField<V> {
-    type Target = Vec<Parameter<V>>;
+    type Target = HashMap<ParameterId, Parameter<V>>;
 
     fn deref(&self) -> &Self::Target {
         &self.values
@@ -120,13 +156,17 @@ impl<V: ParameterValue> IntoIterator for ParameterField<V> {
     type IntoIter = <Vec<Parameter<V>> as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.values.into_iter()
+        self.values.into_values()
+            .collect::<Vec<_>>()
+            .into_iter()
     }
 }
 impl<V: ParameterValue> FromIterator<Parameter<V>> for ParameterField<V> {
     fn from_iter<T: IntoIterator<Item=Parameter<V>>>(iter: T) -> Self {
         Self {
-            values: iter.into_iter().collect(),
+            values: iter.into_iter()
+                .map(|parameter| (parameter.id, parameter))
+                .collect(),
         }
     }
 }
@@ -156,7 +196,9 @@ mod tests {
 
             testee.ethernet_bridges.set(parameter_value.clone(), ParameterTarget::Absent);
             assert_eq!(testee.ethernet_bridges.len(), 1);
-            assert_eq!(testee.ethernet_bridges[0].target, ParameterTarget::Absent);
+            let id = parameter_value.parameter_identifier();
+            let first_ethernet_bridge = testee.ethernet_bridges.get(&id).unwrap();
+            assert_eq!(first_ethernet_bridge.target, ParameterTarget::Absent);
 
             Ok(())
         }
@@ -184,10 +226,11 @@ mod tests {
                     ..parameter_value.descriptor
                 }
             };
+            let id = parameter_value.parameter_identifier();
 
             testee.executors.set(parameter_value, ParameterTarget::Present);
             assert_eq!(testee.executors.len(), 1);
-            assert_eq!(testee.executors[0].value.descriptor.results_url, expected);
+            assert_eq!(testee.executors.get(&id).unwrap().value.descriptor.results_url, expected);
 
             Ok(())
         }
@@ -220,7 +263,7 @@ mod tests {
                 absent_then_present.clone()
             ]);
 
-            assert_that!(testee.ethernet_bridges.values, unordered_elements_are![
+            assert_that!(testee.ethernet_bridges.values.into_values().collect::<Vec<_>>(), unordered_elements_are![
                 matches_pattern!(Parameter {
                     value: eq(&present_then_absent),
                     target: eq(&ParameterTarget::Absent),
@@ -267,7 +310,7 @@ mod tests {
 
             testee.ethernet_bridges.set_all_absent();
 
-            assert_that!(testee.ethernet_bridges.values, unordered_elements_are![
+            assert_that!(testee.ethernet_bridges.values.into_values().collect::<Vec<_>>(), unordered_elements_are![
                 matches_pattern!(Parameter {
                     value: eq(&initially_present),
                     target: eq(&ParameterTarget::Absent),

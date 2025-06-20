@@ -3,7 +3,7 @@ use std::sync::Arc;
 use opendut_types::peer::{self, executor::{ExecutorDescriptor, ExecutorKind}};
 use tokio::sync::{watch::{self, Sender}, Mutex};
 use tracing::{debug, warn};
-use opendut_types::peer::configuration::parameter;
+use opendut_types::peer::configuration::{parameter, ParameterField};
 use crate::service::test_execution::container_manager::{ContainerManager, ContainerConfiguration};
 
 pub type ExecutorManagerRef = Arc<Mutex<ExecutorManager>>;
@@ -20,7 +20,7 @@ impl ExecutorManager {
         }))
     }
 
-    pub fn create_new_executors(&mut self, executors: Vec<peer::configuration::Parameter<parameter::Executor>>) {
+    pub fn create_new_executors(&mut self, executors: ParameterField<parameter::Executor>) {
         debug!("Creating executors.");
 
         let executors = executors.into_iter()

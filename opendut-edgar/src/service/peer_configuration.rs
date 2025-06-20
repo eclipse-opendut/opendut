@@ -4,7 +4,7 @@ use std::net::IpAddr;
 use opendut_types::cluster::ClusterAssignment;
 use tracing::{debug, error};
 use std::sync::Arc;
-use opendut_types::peer::configuration::{parameter, OldPeerConfiguration, Parameter, PeerConfiguration};
+use opendut_types::peer::configuration::{parameter, OldPeerConfiguration, ParameterField, PeerConfiguration};
 use opendut_types::peer::PeerId;
 use tokio::sync::mpsc;
 use crate::common::task::{runner, Task};
@@ -58,7 +58,7 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
         let mut tasks: Vec<Box<dyn Task>> = vec![];
 
         if let NetworkInterfaceManagement::Enabled { network_interface_manager, .. } = &network_interface_management {
-            let mut ethernet_parameters = peer_configuration.ethernet_bridges.clone();
+            let mut ethernet_parameters = peer_configuration.ethernet_bridges.clone().into_iter().collect::<Vec<_>>();
             ethernet_parameters.sort_by(|a, b| a.target.cmp(&b.target));
             for parameter in ethernet_parameters {
                 tasks.push(Box::new(tasks::create_ethernet_bridge::CreateEthernetBridge {
@@ -67,7 +67,7 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
                 }));
             }
 
-            let mut gre_parameters = peer_configuration.gre_interfaces.clone();
+            let mut gre_parameters = peer_configuration.gre_interfaces.clone().into_iter().collect::<Vec<_>>();
             gre_parameters.sort_by(|a, b| a.target.cmp(&b.target));
             for parameter in gre_parameters {
                 tasks.push(Box::new(tasks::create_gre_interfaces::ManageGreInterface {
@@ -76,7 +76,7 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
                 }));
             }
 
-            let mut joined_interfaces = peer_configuration.joined_interfaces.clone();
+            let mut joined_interfaces = peer_configuration.joined_interfaces.clone().into_iter().collect::<Vec<_>>();
             joined_interfaces.sort_by(|a, b| a.target.cmp(&b.target));
             for parameter in joined_interfaces {
                 tasks.push(Box::new(tasks::manage_joined_interfaces::ManageJoinedInterface {
@@ -107,7 +107,7 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
     if let NetworkInterfaceManagement::Enabled { can_manager, .. } = &network_interface_management {
         let _ = setup_can(
             &old_peer_configuration.cluster_assignment,
-            peer_configuration.device_interfaces.values,
+            peer_configuration.device_interfaces,
             self_id,
             Arc::clone(can_manager),
         ).await;
@@ -118,7 +118,7 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
     {
         let mut executor_manager = executor_manager.lock().await;
         executor_manager.terminate_executors();
-        executor_manager.create_new_executors(peer_configuration.executors.values);
+        executor_manager.create_new_executors(peer_configuration.executors);
     }
 
     debug!("Peer configuration has been successfully applied.");
@@ -128,7 +128,7 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
 #[tracing::instrument(skip_all)]
 async fn setup_can( //TODO make CAN idempotent
     cluster_assignment: &Option<ClusterAssignment>,
-    device_interfaces: Vec<Parameter<parameter::DeviceInterface>>,
+    device_interfaces: ParameterField<parameter::DeviceInterface>,
     self_id: PeerId,
     can_manager: CanManagerRef,
 ) -> anyhow::Result<()> {
@@ -138,7 +138,7 @@ async fn setup_can( //TODO make CAN idempotent
             cluster_assignment::setup_can_interfaces(
                 cluster_assignment,
                 self_id,
-                &device_interfaces,
+                device_interfaces,
                 can_manager,
             ).await
             .inspect_err(|error| error!("Failed to configure CAN interfaces: {error}"))?;

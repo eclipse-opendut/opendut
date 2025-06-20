@@ -106,9 +106,10 @@ mod tests {
 
         assert_eq!(peer_configuration.executors.len(), 1);
 
-        let executor_target = peer_configuration.executors.first().unwrap();
-        assert_eq!(executor_target.value, value);
-        assert_eq!(executor_target.target, target);
+        let all_executor_parameters = peer_configuration.executors.into_iter().collect::<Vec<_>>();
+        let executor_parameter = all_executor_parameters.first().unwrap();
+        assert_eq!(executor_parameter.value, value);
+        assert_eq!(executor_parameter.target, target);
     }
     
     #[test]
