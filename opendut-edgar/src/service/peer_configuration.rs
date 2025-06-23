@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::fmt::Formatter;
-use std::net::IpAddr;
 use opendut_types::cluster::ClusterAssignment;
 use tracing::{debug, error};
 use std::sync::Arc;
@@ -84,21 +83,22 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
                     network_interface_manager: Arc::clone(network_interface_manager),
                 }));
             }
+
+            {
+                let mut remote_peer_connection_checks = peer_configuration.remote_peer_connection_checks.clone().into_iter().collect::<Vec<_>>();
+                remote_peer_connection_checks.sort_by(|a, b| a.target.cmp(&b.target));
+
+                let remote_peers = remote_peer_connection_checks.into_iter()
+                    .map(|connection_check| (connection_check.value.remote_peer_id, connection_check.value.remote_ip))
+                    .collect::<HashMap<_, _>>(); //TODO split into multiple tasks
+
+                tasks.push(Box::new(tasks::setup_cluster_metrics::SetupClusterMetrics {
+                    remote_peers,
+                    metrics_manager,
+                }));
+            }
         } else {
             debug!("Skipping changes to Ethernet interfaces, since network interface management is disabled.");
-        }
-
-        if let Some(cluster_assignment) = &old_peer_configuration.cluster_assignment { //TODO get info from new PeerConfiguration
-            let remote_peers: HashMap<PeerId, IpAddr> =
-                cluster_assignment.non_leader_assignments().into_iter()
-                    .filter(|(peer_id, _)| *peer_id != self_id)
-                    .map(|(peer_id, assignment)| (peer_id, assignment.vpn_address))
-                    .collect();
-
-            tasks.push(Box::new(tasks::setup_cluster_metrics::SetupClusterMetrics {
-                remote_peers,
-                metrics_manager,
-            }));
         }
 
         runner::run(RunMode::Service, &tasks).await?;
