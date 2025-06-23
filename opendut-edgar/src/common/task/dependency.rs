@@ -1,0 +1,199 @@
+use opendut_types::peer::configuration::{ParameterId, ParameterVariant, PeerConfiguration};
+use serde::Serialize;
+use std::collections::{HashMap, HashSet};
+use std::hash::{Hash, Hasher};
+
+pub struct PeerConfigurationDependencyResolver {
+    open: HashMap<ParameterId, ParameterVariantWithDependencies>,  // parameters with dependencies that need to be completed
+    completed: HashMap<ParameterId, ParameterVariantWithDependencies>,  // parameters that have been executed successfully, initially empty
+    failed: HashMap<ParameterId, ParameterVariantWithDependencies>,  // parameters that have NOT been executed successfully, initially empty
+    current: Option<(ParameterId, ParameterVariantWithDependencies)>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+struct ParameterVariantWithDependencies {
+    pub id: ParameterId,
+    pub parameter: ParameterVariant,
+    pub dependencies: HashSet<ParameterId>,
+}
+
+impl Hash for ParameterVariantWithDependencies {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match &self.parameter {
+            ParameterVariant::DeviceInterface(parameter) => { parameter.id.hash(state) }
+            ParameterVariant::EthernetBridge(parameter) => { parameter.id.hash(state) }
+            ParameterVariant::Executor(parameter) => { parameter.id.hash(state) }
+            ParameterVariant::GreInterface(parameter) => { parameter.id.hash(state) }
+            ParameterVariant::JoinedInterface(parameter) => { parameter.id.hash(state) }
+            ParameterVariant::RemotePeerConnectionCheck(parameter) => { parameter.id.hash(state) }
+        }
+    }
+}
+
+
+impl PeerConfigurationDependencyResolver {
+    pub fn new(peer_configuration: PeerConfiguration) -> Self {
+        let all_parameters = peer_configuration.all_parameters()
+            .into_iter()
+            .map(|(id, parameter)| {
+                let dependencies = parameter.dependencies();
+                (id, ParameterVariantWithDependencies { id, parameter, dependencies })
+            }).collect::<HashMap<_, _>>();
+
+        Self { open: all_parameters, completed: Default::default(), failed: Default::default(), current: None }
+    }
+
+    /*
+        Using a variation of 
+        - depth-first traversal in post-order (see https://en.wikipedia.org/wiki/Tree_traversal#Depth-first_search)
+        - or Kahn's algorithm: https://en.wikipedia.org/wiki/Topological_sorting#Kahn's_algorithm
+     */
+
+    pub fn next_parameter(&mut self) -> Option<ParameterVariant>{
+        if let Some(current) = self.current.take() {
+            // assume the last parameter was completed successfully
+            self.completed.insert(current.0, current.1);
+        }
+        
+        let next = self.determine_next_parameter();
+        
+        if let Some(next_param) = next.clone() {
+            self.open.remove(&next_param.id);
+            self.current = Some((next_param.id, next_param)) 
+        }
+        
+        next.map(|parameter| { parameter.parameter })        
+    }
+    
+    fn determine_next_parameter(&mut self) -> Option<ParameterVariantWithDependencies> {
+        let candidates = self.open.values().filter_map(|parameter| {
+            if parameter.dependencies.is_empty() {
+                Some(parameter.clone())
+            } else {
+                let completed_ids = self.completed.keys().cloned().collect::<HashSet<_>>();
+
+                let unresolved_dependencies = parameter.dependencies.difference(&completed_ids).collect::<Vec<_>>();
+                if unresolved_dependencies.is_empty() {
+                    Some(parameter.clone())
+                } else {
+                    None
+                }
+            }
+        }).collect::<HashSet<_>>();
+
+        candidates
+            .into_iter()
+            .next()
+    }
+
+    pub fn mark_current_parameter_failed(&mut self) {
+        if let Some(current) = self.current.take() {
+            self.failed.insert(current.0, current.1);
+        }
+    }
+
+    pub fn done(&mut self) -> bool {
+        let cannot_choose_another_parameter = self.determine_next_parameter().is_none();
+        cannot_choose_another_parameter && self.current.is_none()
+    }
+
+    pub fn success(&mut self) -> bool {
+        self.open.is_empty() && self.failed.is_empty() && self.current.is_none()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use opendut_types::peer::configuration::{parameter, ParameterTarget};
+    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
+
+    struct PeerConfigurationDependencyResolverFixture {
+        resolver: PeerConfigurationDependencyResolver,
+        bridge_name: NetworkInterfaceName,
+        bridge_old_name: NetworkInterfaceName,
+    }
+    impl PeerConfigurationDependencyResolverFixture {
+        fn new() -> Self {
+            let bridge_old_name = NetworkInterfaceName::try_from("br-old").unwrap();
+            let bridge_name = NetworkInterfaceName::try_from("br-opendut").unwrap();
+            let parameter_bridge_old = parameter::EthernetBridge { name: bridge_old_name.clone() };
+            let parameter_bridge_new = parameter::EthernetBridge { name: bridge_name.clone() };
+            
+            let dut_name = NetworkInterfaceName::try_from("dut0").unwrap();
+            let dut_descriptor = NetworkInterfaceDescriptor {
+                id: NetworkInterfaceId::random(),
+                name: dut_name.clone(),
+                configuration: NetworkInterfaceConfiguration::Ethernet,
+            };
+            let parameter_eth_device = parameter::DeviceInterface { descriptor: dut_descriptor };
+            let parameter_join = parameter::InterfaceJoinConfig { name: dut_name, bridge: bridge_name.clone() };
+            
+            let mut config = PeerConfiguration::default();
+            // add old bridge as present and check if set_all_present adds a dependency to remove the old bridge before adding the new
+            config.ethernet_bridges.set(parameter_bridge_old.clone(), ParameterTarget::Present, vec![]);
+            let mut joined_interfaces_dependencies = config.ethernet_bridges.set_all_present(vec![parameter_bridge_new.clone()], vec![]);
+            
+            let device_dependency = config.device_interfaces.set(parameter_eth_device, ParameterTarget::Present, vec![]);
+
+            joined_interfaces_dependencies.push(device_dependency);
+            config.joined_interfaces.set(parameter_join, ParameterTarget::Present, joined_interfaces_dependencies);
+            
+            let resolver = PeerConfigurationDependencyResolver::new(config);
+
+            PeerConfigurationDependencyResolverFixture {
+                resolver,
+                bridge_name,
+                bridge_old_name,
+            }
+        }
+    }
+    
+    #[test]
+    fn determine_task_order_happy_flow() {
+        fn find_bridge_parameter_task_position(tasks: &Vec<ParameterVariant>, bridge_name: NetworkInterfaceName) -> Option<usize> {
+            tasks.iter().enumerate().find_map(|(pos, param)| {
+                if let ParameterVariant::EthernetBridge(bridge) = param {
+                    if bridge.value.name == bridge_name {
+                        return Some(pos)
+                    }
+                };
+                None
+            })
+        }
+        
+        let mut testee = PeerConfigurationDependencyResolverFixture::new();
+
+        
+        let mut tasks: Vec<ParameterVariant> = vec![];
+        let mut next = testee.resolver.next_parameter();
+        while let Some(next_parameter) = next.clone() {
+            tasks.push(next_parameter);            
+            next = testee.resolver.next_parameter();
+        }
+        assert_eq!(tasks.len(), 4);
+        assert!(testee.resolver.done());
+        assert!(testee.resolver.success());
+        let position_remove_old_bridge = find_bridge_parameter_task_position(&tasks, testee.bridge_old_name).expect("Expected bridge old parameter to be found in task list.");
+        let position_new_bridge = find_bridge_parameter_task_position(&tasks, testee.bridge_name).expect("Expected bridge new parameter to be found in task list.");
+        assert!(position_remove_old_bridge.lt(&position_new_bridge), "The task of removing the old bridge must precede the addition of a new bridge.");
+    }
+
+    #[test]
+    fn determine_task_order_when_one_task_fails() {
+        let mut testee = PeerConfigurationDependencyResolverFixture::new();
+        let mut tasks: Vec<ParameterVariant> = vec![];
+        let mut next = testee.resolver.next_parameter();
+        while let Some(next_parameter) = next.clone() {
+            if matches!(next_parameter, ParameterVariant::DeviceInterface { .. }) {
+                testee.resolver.mark_current_parameter_failed();
+            }
+            tasks.push(next_parameter);            
+            next = testee.resolver.next_parameter();
+        }
+        assert_eq!(tasks.len(), 3);
+        assert!(testee.resolver.done());
+        assert!(!testee.resolver.success());
+
+    }
+}

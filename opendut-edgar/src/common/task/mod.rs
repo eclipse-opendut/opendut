@@ -2,6 +2,8 @@ use async_trait::async_trait;
 
 pub mod runner;
 mod progress_bar;
+#[allow(dead_code)]  // TODO: use in task execution
+pub mod dependency;
 
 #[async_trait]
 pub trait Task: Send + Sync {

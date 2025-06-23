@@ -1,7 +1,7 @@
+use crate::cluster::ClusterAssignment;
+use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 use std::ops::{Deref, DerefMut};
-use serde::Serialize;
-use crate::cluster::ClusterAssignment;
 
 pub mod api;
 pub use crate::peer::configuration::api::*;
@@ -26,6 +26,7 @@ pub struct PeerConfiguration {
     //TODO migrate more parameters
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub enum ParameterVariant {
     DeviceInterface(Box<Parameter<parameter::DeviceInterface>>),
     EthernetBridge(Box<Parameter<parameter::EthernetBridge>>),
@@ -36,14 +37,14 @@ pub enum ParameterVariant {
 }
 
 impl ParameterVariant {
-    pub fn dependencies(&self) -> Vec<ParameterId> {
+    pub fn dependencies(&self) -> HashSet<ParameterId> {
         match self {
-            ParameterVariant::DeviceInterface(parameter) => { parameter.dependencies.clone() }
-            ParameterVariant::EthernetBridge(parameter) => { parameter.dependencies.clone() }
-            ParameterVariant::Executor(parameter) => { parameter.dependencies.clone() }
-            ParameterVariant::GreInterface(parameter) => { parameter.dependencies.clone() }
-            ParameterVariant::JoinedInterface(parameter) => { parameter.dependencies.clone() }
-            ParameterVariant::RemotePeerConnectionCheck(parameter) => { parameter.dependencies.clone() }
+            ParameterVariant::DeviceInterface(parameter) => { parameter.dependencies.iter().cloned().collect::<HashSet<_>>() }
+            ParameterVariant::EthernetBridge(parameter) => { parameter.dependencies.iter().cloned().collect::<HashSet<_>>() }
+            ParameterVariant::Executor(parameter) => { parameter.dependencies.iter().cloned().collect::<HashSet<_>>() }
+            ParameterVariant::GreInterface(parameter) => { parameter.dependencies.iter().cloned().collect::<HashSet<_>>() }
+            ParameterVariant::JoinedInterface(parameter) => { parameter.dependencies.iter().cloned().collect::<HashSet<_>>() }
+            ParameterVariant::RemotePeerConnectionCheck(parameter) => { parameter.dependencies.iter().cloned().collect::<HashSet<_>>() }
         }
     }
 }
@@ -86,16 +87,20 @@ impl<V: ParameterValue> ParameterField<V> {
 
         let parameters_to_set_absent = previous_parameters.difference(&new_present_parameters);
 
+        let mut dependency_on_absents= HashSet::<ParameterId>::new();
         for parameter in parameters_to_set_absent {
             let absent_parameter = Parameter {
                 target: ParameterTarget::Absent,
                 ..parameter.clone()
             };
-            self.set_parameter(absent_parameter);
+            let id = self.set_parameter(absent_parameter);
+            dependency_on_absents.insert(id);
         }
 
         let mut parameter_ids: Vec<ParameterId> = vec![];
-        for parameter in new_present_parameters {
+        for mut parameter in new_present_parameters {
+            let current_dependencies = parameter.dependencies.into_iter().collect::<HashSet<_>>();
+            parameter.dependencies = current_dependencies.union(&dependency_on_absents).cloned().collect::<Vec<_>>();
             let id = self.set_parameter(parameter);
             parameter_ids.push(id);
         }
@@ -194,9 +199,9 @@ impl<V: ParameterValue> FromIterator<Parameter<V>> for ParameterField<V> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::peer::executor::{ExecutorDescriptor, ExecutorId, ExecutorKind, ResultsUrl};
     use crate::util::net::NetworkInterfaceName;
-    use super::*;
     use googletest::prelude::*;
 
     mod set {
