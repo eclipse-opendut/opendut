@@ -746,13 +746,14 @@ dependencies = [
 
 [[package]]
 name = "cicero"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4f2d5e1f07d767e7e3f8a5aad8fed40426b2cf29334fac595216a50572df092a"
+checksum = "eaabf6f9a2a851374ed596fd74dbb8c6ae168862ceffbc93530b59c4885d7f09"
 dependencies = [
  "anyhow",
  "cicero_commands",
  "cicero_core",
+ "cicero_distribution",
  "cicero_path",
  "repo_path_lib",
  "tracing",
@@ -761,9 +762,9 @@ dependencies = [
 
 [[package]]
 name = "cicero_commands"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae66771465de3b10c4a7064fe3a35a0d89610fe5ae8cac3d4c8ee21da7be1855"
+checksum = "8ec10df5edf70df50e2face9de68602eda27120623e4bb0ac7b654c2be89ebf0"
 dependencies = [
  "anyhow",
  "cicero_core",
@@ -778,19 +779,41 @@ dependencies = [
 
 [[package]]
 name = "cicero_core"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfc3884ba5e5b5ae219ada11a7cd21b94c9cf623fe396f4cd80e89c3e14eea0a"
+checksum = "5f99ba76ad7bde7acb157aa029117e7323d6b2ca5315d897a50189cd92113fe7"
 dependencies = [
  "anyhow",
  "tracing",
 ]
 
 [[package]]
-name = "cicero_path"
-version = "0.5.0"
+name = "cicero_distribution"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a62f1500fd77e8da199e005efe8cb59d13c7c2c8b108dd44a638b32a3f927db"
+checksum = "cdb46904068e820c5bd9134e4ea3579506565480238b173b17030ae8868279c8"
+dependencies = [
+ "anyhow",
+ "cargo_metadata",
+ "cicero_path",
+ "cicero_path_core",
+ "flate2",
+ "fs-err",
+ "glob",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tar",
+ "thiserror 2.0.16",
+ "tracing",
+ "walkdir",
+]
+
+[[package]]
+name = "cicero_path"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ce4140e63a3662b4651088c149356f7b87a91ca4ec32202eccc4953e91e443f6"
 dependencies = [
  "cicero_path_core",
  "repo_path",
@@ -798,9 +821,9 @@ dependencies = [
 
 [[package]]
 name = "cicero_path_core"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "48f8bd235107015f6c3b78d7dc96f1c4abd0792de81aff976d53e6b79613ce83"
+checksum = "9a9f1c2a92659edaaf521e2de161eddf06e0b73512b210ef4aec3cb0559446f7"
 dependencies = [
  "cargo_metadata",
  "tracing",
@@ -2465,7 +2488,7 @@ dependencies = [
  "libc",
  "percent-encoding",
  "pin-project-lite",
- "socket2 0.6.0",
+ "socket2 0.5.10",
  "tokio",
  "tower-service",
  "tracing",
@@ -3109,7 +3132,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "07033963ba89ebaf1584d767badaa2e8fcec21aedea6b8c0346d487d49c28667"
 dependencies = [
  "cfg-if",
- "windows-targets 0.53.3",
+ "windows-targets 0.48.5",
 ]
 
 [[package]]
@@ -4711,7 +4734,7 @@ version = "0.13.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be769465445e8c1474e9c5dac2018218498557af32d9ed057325ec9a41ae81bf"
 dependencies = [
- "heck 0.5.0",
+ "heck 0.4.1",
  "itertools 0.14.0",
  "log",
  "multimap",
@@ -4792,7 +4815,7 @@ dependencies = [
  "quinn-udp",
  "rustc-hash 2.1.1",
  "rustls",
- "socket2 0.6.0",
+ "socket2 0.5.10",
  "thiserror 2.0.16",
  "tokio",
  "tracing",
@@ -4829,7 +4852,7 @@ dependencies = [
  "cfg_aliases",
  "libc",
  "once_cell",
- "socket2 0.6.0",
+ "socket2 0.5.10",
  "tracing",
  "windows-sys 0.60.2",
 ]
@@ -7689,7 +7712,7 @@ version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0978bf7171b3d90bac376700cb56d606feb40f251a475a5d6634613564460b22"
 dependencies = [
- "windows-sys 0.60.2",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]

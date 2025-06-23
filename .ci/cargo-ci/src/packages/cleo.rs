@@ -1,5 +1,4 @@
-use std::path::PathBuf;
-
+use crate::fs;
 use crate::{Arch, Package};
 use crate::core::types::parsing::package::PackageSelection;
 
@@ -18,7 +17,7 @@ pub struct CleoCli {
 
 #[derive(clap::Subcommand)]
 pub enum TaskCli {
-    Distribution(crate::tasks::distribution::DistributionCli),
+    Distribution(crate::tasks::distribution::DistributionCliWithFilter),
     Licenses(crate::tasks::licenses::LicensesCli),
     Run(crate::tasks::run::RunCli),
 
@@ -37,9 +36,16 @@ impl CleoCli {
                     build::build_release(target)?;
                 }
             }
-            TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target }) => {
+            TaskCli::Distribution(crate::tasks::distribution::DistributionCliWithFilter { target, filter }) => {
+                let filter = if filter.is_empty() {
+                    cicero::distribution::filter::DistributionFilter::Disabled
+                } else {
+                    cicero::distribution::filter::DistributionFilter::Enabled(filter)
+                };
+
                 for target in target.iter() {
-                    distribution::cleo_distribution(target)?;
+                    let out_file = crate::tasks::distribution::bundle::out_file(SELF_PACKAGE, target);
+                    distribution::cleo_distribution(target, &out_file, filter.clone())?;
                 }
             }
             TaskCli::Licenses(cli) => cli.default_handling(PackageSelection::Single(SELF_PACKAGE))?,
@@ -63,35 +69,45 @@ pub mod build {
     pub fn build_release(target: Arch) -> crate::Result {
         crate::tasks::build::distribution_build(SELF_PACKAGE, target)
     }
-    pub fn out_dir(target: Arch) -> PathBuf {
-        crate::tasks::build::out_dir(SELF_PACKAGE, target)
-    }
 }
 
 pub mod distribution {
-    use crate::tasks::distribution::copy_license_json::SkipGenerate;
+    use std::path::Path;
+    use cicero::distribution::{filter::DistributionFilter, Distribution, DistributionOptions};
     use super::*;
 
     #[tracing::instrument(skip_all)]
-    pub fn cleo_distribution(target: Arch) -> crate::Result {
-        use crate::tasks::distribution;
+    pub fn cleo_distribution(target: Arch, out_file: &Path, filter: DistributionFilter) -> crate::Result {
 
-        distribution::clean(SELF_PACKAGE, target)?;
+        let distribution = Distribution::new_with_options(
+            format!("opendut-cleo-{target}"),
+            DistributionOptions { filter: filter.clone() }, //TODO don't clone?
+        )?;
 
-        crate::tasks::build::distribution_build(SELF_PACKAGE, target)?;
+        distribution.add_file("opendut-cleo", |out_file| {
+            crate::tasks::build::distribution_build_with_out_path(SELF_PACKAGE, target, out_file)
+        })?;
 
-        distribution::collect_executables(SELF_PACKAGE, target)?;
+        distribution.dir("licenses")?
+            .add_file("opendut-cleo.licenses.json", |out_file| crate::tasks::licenses::json::export_json_with_out_path(SELF_PACKAGE, out_file))?;
 
-        distribution::copy_license_json::copy_license_json(SELF_PACKAGE, target, SkipGenerate::No)?;
+        let distribution_path =
+            if let DistributionFilter::Disabled = filter {
+                let distribution_path = distribution.bundle_as_tar_gz()?;
+                validate::validate_contents_of(&distribution_path, target)?;
+                distribution_path
+            } else {
+                distribution.bundle_as_dir()?
+            };
 
-        distribution::bundle::bundle_files(SELF_PACKAGE, target)?;
-
-        validate::validate_contents(target)?;
+        fs::create_dir_all(out_file.parent().unwrap())?;
+        fs::rename(distribution_path, out_file)?;
 
         Ok(())
     }
 
     pub mod validate {
+        use std::path::Path;
         use crate::fs::File;
 
         use assert_fs::prelude::*;
@@ -105,17 +121,22 @@ pub mod distribution {
 
         #[tracing::instrument(skip_all)]
         pub fn validate_contents(target: Arch) -> crate::Result {
+            let out_file = bundle::out_file(SELF_PACKAGE, target);
+            validate_contents_of(&out_file, target)
+        }
+
+        #[tracing::instrument(skip_all)]
+        pub fn validate_contents_of(path: &Path, target: Arch) -> crate::Result {
 
             let unpack_dir = {
                 let unpack_dir = assert_fs::TempDir::new()?;
-                let archive = bundle::out_file(SELF_PACKAGE, target);
-                let mut archive = tar::Archive::new(GzDecoder::new(File::open(archive)?));
+                let mut archive = tar::Archive::new(GzDecoder::new(File::open(path)?));
                 archive.set_preserve_permissions(true);
                 archive.unpack(&unpack_dir)?;
                 unpack_dir
             };
 
-            let cleo_dir = unpack_dir.child(SELF_PACKAGE.ident());
+            let cleo_dir = unpack_dir.child(format!("{SELF_PACKAGE}-{target}"));
             cleo_dir.assert(path::is_dir());
 
             let opendut_edgar_executable = cleo_dir.child(SELF_PACKAGE.ident());

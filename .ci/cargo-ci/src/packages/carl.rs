@@ -1,5 +1,5 @@
 use crate::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use anyhow::Context;
 use tracing::info;
 use crate::core::types::parsing::package::PackageSelection;
@@ -84,9 +84,6 @@ pub mod build {
     pub fn build_release(target: Arch) -> crate::Result {
         crate::tasks::build::distribution_build(SELF_PACKAGE, target)
     }
-    pub fn out_dir(target: Arch) -> PathBuf {
-        crate::tasks::build::out_dir(SELF_PACKAGE, target)
-    }
 }
 
 pub mod distribution {
@@ -120,6 +117,7 @@ pub mod distribution {
 
     mod cleo {
         use anyhow::Context;
+        use cicero::distribution::filter::DistributionFilter;
 
         use crate::tasks::distribution::bundle;
 
@@ -130,20 +128,21 @@ pub mod distribution {
 
             let cleo_out_dir = out_dir.join(Package::Cleo.ident());
             fs::create_dir_all(cleo_out_dir)?;
-            
+
             for arch in crate::packages::cleo::SUPPORTED_ARCHITECTURES {
-                crate::packages::cleo::distribution::cleo_distribution(arch.to_owned())?;
-                let cleo_build_dir = crate::tasks::distribution::out_arch_dir(arch.to_owned());
+                let tar_file_path = bundle::out_file(Package::Cleo, arch);
+                crate::packages::cleo::distribution::cleo_distribution(arch.to_owned(), &tar_file_path, DistributionFilter::Disabled)?;
+
+                let cleo_build_dir = crate::tasks::distribution::out_arch_dir(arch.to_owned()); //TODO
 
                 let cleo_arch_dir = out_dir.join(Package::Cleo.ident());
                 fs::create_dir_all(&cleo_arch_dir)?;
 
-                let tar_file_name = bundle::out_file(Package::Cleo, arch);
 
-                let cleo_tar_file_name = tar_file_name.file_name().context(format!("Could not extract file name {}", &tar_file_name.display()))?;
+                let cleo_tar_file_name = tar_file_path.file_name().context(format!("Could not extract file name {}", &tar_file_path.display()))?;
 
                 fs_extra::file::copy(
-                    cleo_build_dir.join(&tar_file_name),
+                    cleo_build_dir.join(&tar_file_path),
                     cleo_arch_dir.join(cleo_tar_file_name),
                     &fs_extra::file::CopyOptions::default()
                         .overwrite(true)

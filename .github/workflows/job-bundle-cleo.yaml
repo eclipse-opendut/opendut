@@ -34,24 +34,20 @@ jobs:
         uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
         with:
           name: "${{ matrix.package.name }}-${{ matrix.package.target }}-${{ github.sha }}"
-          path: "./target/ci/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/"
+          path: "./target/cicero/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/"
       - name: Download licenses
         uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935
         with:
           name: "licenses-${{ github.sha }}"
-          path: "./target/ci/licenses"
+          path: "./target/cicero/licenses"
       - name: Prepare Licenses
-        run: cargo ci opendut-cleo distribution-copy-license-json --skip-generate --target=${{ matrix.package.target }}
+        run: cargo ci opendut-cleo distribution --target=${{ matrix.package.target }}
       - name: Prepare Executables
-        run: chmod +x ./target/ci/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/${{ matrix.package.name }}
-      - name: Bundle
-        run: cargo ci opendut-cleo distribution-bundle-files --target=${{ matrix.package.target }}
-      - name: Validate distribution contents
-        run: cargo ci opendut-cleo distribution-validate-contents --target=${{ matrix.package.target }}
+        run: chmod +x ./target/cicero/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/${{ matrix.package.name }}
       - name: "Upload CLEO bundle artifact ${{ matrix.package.name }}-${{ matrix.package.target }}.tar.gz"
         uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8
         with:
           name: "${{ matrix.package.name }}-${{ matrix.package.target }}-${{ github.sha }}.tar.gz"
-          path: "./target/ci/distribution/${{ matrix.package.target }}/"
+          path: "./target/cicero/distribution/${{ matrix.package.target }}/"
           if-no-files-found: error
           retention-days: 1

@@ -1,12 +1,15 @@
+use cicero::distribution::filter::DistributionFilter;
 use clap::Parser;
 
 pub use fs_err as fs;
 use cicero::path::repo_path;
+use tracing::level_filters::LevelFilter;
 pub(crate) use core::constants;
 pub(crate) use core::metadata;
 pub(crate) use core::types::{self, Arch, Package, Result};
 pub(crate) use core::util;
 use crate::core::types::parsing::package::PackageSelection;
+use crate::tasks::distribution::bundle;
 
 mod core;
 pub mod packages;
@@ -39,7 +42,9 @@ enum TaskCli {
 }
 
 fn main() -> crate::Result {
-    cicero::init::tracing().init();
+    cicero::init::tracing()
+        .with_max_level(LevelFilter::DEBUG)
+        .init();
 
     std::env::set_current_dir(repo_path!())?;
 
@@ -51,7 +56,9 @@ fn main() -> crate::Result {
             for target in target.iter() {
                 packages::carl::distribution::carl_distribution(target)?;
                 packages::edgar::distribution::edgar_distribution(target)?;
-                packages::cleo::distribution::cleo_distribution(target)?;
+
+                let out_file = bundle::out_file(Package::Cleo, target);
+                packages::cleo::distribution::cleo_distribution(target, &out_file, DistributionFilter::Disabled)?;
             }
         }
         TaskCli::Doc(implementation) => implementation.default_handling()?,

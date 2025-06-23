@@ -101,9 +101,6 @@ pub mod build {
     pub fn build_release(target: Arch) -> crate::Result {
         crate::tasks::build::distribution_build(SELF_PACKAGE, target)
     }
-    pub fn out_dir(target: Arch) -> PathBuf {
-        crate::tasks::build::out_dir(SELF_PACKAGE, target)
-    }
 }
 
 pub mod distribution {

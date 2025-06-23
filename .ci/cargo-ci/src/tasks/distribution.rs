@@ -13,6 +13,17 @@ pub struct DistributionCli {
     pub target: TargetSelection,
 }
 
+/// Build and bundle a release distribution
+#[derive(Debug, clap::Parser)]
+#[command(alias="dist")]
+pub struct DistributionCliWithFilter {
+    #[arg(long, default_value_t)]
+    pub target: TargetSelection,
+    /// Build only certain sub-paths of the distribution, specified with Glob patterns (relative to the distribution root).
+    #[arg(long)]
+    pub filter: Vec<cicero::distribution::filter::Pattern>,
+}
+
 #[tracing::instrument(skip_all)]
 pub fn clean(package: Package, target: Arch) -> crate::Result {
     let package_dir = out_package_dir(package, target);
@@ -30,7 +41,7 @@ pub fn collect_executables(package: Package, target: Arch) -> crate::Result {
     fs::create_dir_all(&out_dir)?;
 
     fs::copy(
-        crate::tasks::build::out_dir(package, target),
+        crate::tasks::build::out_file(package, target),
         out_dir.join(package.ident()),
     )?;
     Ok(())

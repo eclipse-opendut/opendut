@@ -35,11 +35,11 @@ jobs:
           cargo-cross: true
 
       - name: Build
-        run: cargo ci opendut-cleo distribution-build --target=${{ matrix.package.target }}
+        run: cargo ci opendut-cleo distribution --target=${{ matrix.package.target }} --filter="opendut-cleo"
       - name: "Upload CLEO build artifact ${{ matrix.package.name }}-${{ matrix.package.target }}"
         uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8
         with:
           name: "${{ matrix.package.name }}-${{ matrix.package.target }}-${{ github.sha }}"
-          path: "./target/ci/cross/${{ matrix.package.target }}/release/${{ matrix.package.name }}"
+          path: "./target/ci/distribution/${{ matrix.package.target }}/${{ matrix.package.name }}/"
           if-no-files-found: error
           retention-days: 1

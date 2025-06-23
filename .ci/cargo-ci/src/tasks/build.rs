@@ -1,4 +1,5 @@
-use std::path::PathBuf;
+use crate::fs;
+use std::path::{Path, PathBuf};
 
 use crate::{constants, Package};
 use crate::core::commands::CROSS;
@@ -25,7 +26,22 @@ pub fn distribution_build(package: Package, target: Arch) -> crate::Result {
     Ok(())
 }
 
-pub fn out_dir(package: Package, target: Arch) -> PathBuf {
+#[tracing::instrument(skip_all)]
+pub fn distribution_build_with_out_path(package: Package, target: Arch, out: &Path) -> crate::Result {
+    distribution_build(package, target)?;
+
+    let source_file = out_file(package, target);
+    fs::create_dir_all(out.parent().unwrap())?;
+
+    fs::rename(
+        source_file,
+        out
+    )?;
+
+    Ok(())
+}
+
+pub fn out_file(package: Package, target: Arch) -> PathBuf {
     cross_target_dir().join(target.triple()).join("release").join(package.ident())
 }
 

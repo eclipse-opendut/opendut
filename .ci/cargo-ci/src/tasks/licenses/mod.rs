@@ -65,6 +65,7 @@ pub mod check {
 }
 
 pub mod json {
+    use std::path::Path;
     use std::process::Stdio;
     use tracing::info;
 
@@ -75,6 +76,15 @@ pub mod json {
         let out_file = out_file(package);
         fs::create_dir_all(out_file.parent().unwrap())?;
 
+        export_json_with_out_path(package, &out_file)?;
+
+        info!("Wrote licenses for package '{package}' to path: {}", out_file.display());
+
+        Ok(())
+    }
+
+    #[tracing::instrument(skip_all)]
+    pub fn export_json_with_out_path(package: Package, out_file: &Path) -> crate::Result {
         commands::CARGO_DENY.command()
             .arg("--exclude-dev")
             .arg("list")
@@ -82,10 +92,8 @@ pub mod json {
             .arg("--layout=crate")
             .arg("--format=json")
             .current_dir(repo_path!().join(package.ident()))
-            .stdout(Stdio::from(std::fs::File::create(&out_file)?))
+            .stdout(Stdio::from(std::fs::File::create(out_file)?))
             .run_requiring_success()?;
-
-        info!("Wrote licenses for package '{package}' to path: {}", out_file.display());
 
         Ok(())
     }
