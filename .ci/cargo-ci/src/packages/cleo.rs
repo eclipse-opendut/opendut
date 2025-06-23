@@ -1,5 +1,6 @@
 use cicero::distribution::build::{target, Target};
 
+use crate::fs;
 use crate::{Package, workspace};
 use crate::core::types::parsing::package::PackageSelection;
 
@@ -18,80 +19,72 @@ pub struct CleoCli {
 
 #[derive(clap::Subcommand)]
 pub enum TaskCli {
-    Distribution(crate::tasks::distribution::DistributionCli),
+    Distribution(crate::tasks::distribution::DistributionCliWithFilter),
     Licenses(crate::tasks::licenses::LicensesCli),
     Run(crate::tasks::run::RunCli),
-
-    DistributionBuild(crate::tasks::build::DistributionBuildCli),
-    DistributionCopyLicenseJson(crate::tasks::distribution::copy_license_json::DistributionCopyLicenseJsonCli),
-    DistributionBundleFiles(crate::tasks::distribution::bundle::DistributionBundleFilesCli),
-    DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli),
 }
 
 impl CleoCli {
     #[tracing::instrument(name="cleo", skip(self))]
     pub fn run(self) -> anyhow::Result<()> {
         match self.task {
-            TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target, release_build }) => {
-                build::build_release(target, release_build)?;
-            }
-            TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target, release_build }) => {
-                distribution::cleo_distribution(target, release_build)?;
+            TaskCli::Distribution(crate::tasks::distribution::DistributionCliWithFilter { target, release_build, filter, output_dir }) => {
+                let filter = if filter.is_empty() {
+                    cicero::distribution::filter::DistributionFilter::Disabled
+                } else {
+                    cicero::distribution::filter::DistributionFilter::Enabled(filter)
+                };
+
+                let out_file = match output_dir {
+                    Some(output_dir) => output_dir.join(crate::tasks::distribution::bundle::out_file_name(SELF_PACKAGE, target)),
+                    None => crate::tasks::distribution::bundle::out_file(SELF_PACKAGE, target),
+                };
+
+                distribution::cleo_distribution(target, &out_file, release_build, filter)?;
             }
             TaskCli::Licenses(cli) => cli.run(PackageSelection::Single(SELF_PACKAGE.clone()))?,
             TaskCli::Run(cli) => cli.run(SELF_PACKAGE)?,
-
-            TaskCli::DistributionCopyLicenseJson(cli) => cli.run(SELF_PACKAGE)?,
-            TaskCli::DistributionBundleFiles(cli) => cli.run(SELF_PACKAGE)?,
-            TaskCli::DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli { target }) => {
-                distribution::validate::validate_contents(target)?;
-            }
         };
         Ok(())
     }
 }
 
-pub mod build {
-    use super::*;
-
-    pub fn build_release(target: Target, release_build: bool) -> anyhow::Result<()> {
-        crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)
-    }
-}
 
 pub mod distribution {
-    use crate::tasks::distribution::copy_license_json::SkipGenerate;
     use super::*;
+    use std::path::Path;
+    use cicero::distribution::{Distribution, DistributionOptions, bundle::tar::TarBundler, filter::DistributionFilter};
 
-    #[tracing::instrument]
-    pub fn cleo_distribution(target: Target, release_build: bool) -> anyhow::Result<()> {
-        use crate::tasks::distribution;
+    #[tracing::instrument(skip_all)]
+    pub fn cleo_distribution(target: Target, out_file: &Path, release_build: bool, filter: DistributionFilter) -> anyhow::Result<()> {
 
-        crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)?;
+        let distribution = Distribution::new_with_options(
+            "opendut-cleo",
+            DistributionOptions { filter: filter.clone() },
+        )?;
 
-        cicero::cache::Output::from(
-            distribution::bundle::out_file(SELF_PACKAGE, target)
-        ).rebuild_on_change(
-            [crate::tasks::build::out_file(SELF_PACKAGE, target)],
-            || {
+        distribution.add_file("opendut-cleo", |out_file| {
+            crate::tasks::build::distribution_build_with_out_path(SELF_PACKAGE, target, out_file, release_build)
+        })?;
 
-                distribution::clean(SELF_PACKAGE, target)?;
+        distribution.dir("licenses")?
+            .add_file("opendut-cleo.licenses.json", |out_file| crate::tasks::licenses::json::export_json_with_out_path(SELF_PACKAGE, out_file))?;
 
-                distribution::collect_executables(SELF_PACKAGE, target)?;
+        if let DistributionFilter::Disabled = filter {
+            let distribution_path = distribution.bundle(TarBundler::default())?;
+            validate::validate_contents_of(&distribution_path)?;
 
-                distribution::copy_license_json::copy_license_json(SELF_PACKAGE, target, SkipGenerate::No)?;
-
-                distribution::bundle::bundle_files(SELF_PACKAGE, target, release_build)?;
-
-                validate::validate_contents(target)?;
-
-                Ok(())
-            })?;
+            if let Some(parent_dir) = out_file.parent() {
+                fs::create_dir_all(parent_dir)?;
+            }
+            fs::rename(distribution_path, out_file)?;
+        };
 
         Ok(())
     }
 
     pub mod validate {
+        use std::path::Path;
         use crate::fs::File;
 
         use assert_fs::prelude::*;
@@ -99,17 +92,15 @@ pub mod distribution {
         use predicates::path;
 
         use crate::core::util::file::ChildPathExt;
-        use crate::tasks::distribution::bundle;
 
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn validate_contents(target: Target) -> anyhow::Result<()> {
+        pub fn validate_contents_of(path: &Path) -> anyhow::Result<()> {
 
             let unpack_dir = {
                 let unpack_dir = assert_fs::TempDir::new()?;
-                let archive = bundle::out_file(SELF_PACKAGE, target);
-                let mut archive = tar::Archive::new(GzDecoder::new(File::open(archive)?));
+                let mut archive = tar::Archive::new(GzDecoder::new(File::open(path)?));
                 archive.set_preserve_permissions(true);
                 archive.unpack(&unpack_dir)?;
                 unpack_dir
@@ -118,15 +109,15 @@ pub mod distribution {
             let cleo_dir = unpack_dir.child(SELF_PACKAGE.name);
             cleo_dir.assert(path::is_dir());
 
-            let opendut_edgar_executable = cleo_dir.child(SELF_PACKAGE.name);
+            let executable = cleo_dir.child(SELF_PACKAGE.name);
             let licenses_dir = cleo_dir.child("licenses");
 
             cleo_dir.dir_contains_exactly_in_order(vec![
                 &licenses_dir,
-                &opendut_edgar_executable,
+                &executable,
             ]);
 
-            opendut_edgar_executable.assert_non_empty_file();
+            executable.assert_non_empty_file();
             licenses_dir.assert(path::is_dir());
 
             {   //validate licenses dir contents

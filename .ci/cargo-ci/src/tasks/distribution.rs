@@ -19,6 +19,26 @@ pub struct DistributionCli {
     pub release_build: bool,
 }
 
+/// Build and bundle a release distribution
+#[derive(Debug, clap::Parser)]
+#[command(alias="dist")]
+pub struct DistributionCliWithFilter {
+    #[arg(long, default_value_t)]
+    pub target: Target,
+
+    /// Build artifacts in release mode, with optimizations
+    #[arg(short='r', long="release")]
+    pub release_build: bool,
+
+    /// Build only certain sub-paths of the distribution, specified with Glob patterns (relative to the distribution root).
+    #[arg(long)]
+    pub filter: Vec<cicero::distribution::filter::Pattern>,
+
+    /// Directory to place the distribution in after bundling.
+    #[arg(long)]
+    pub output_dir: Option<PathBuf>,
+}
+
 #[tracing::instrument(skip_all)]
 pub fn clean(package: &Package, target: Target) -> anyhow::Result<()> {
     let package_dir = out_package_dir(package, target);
@@ -155,11 +175,14 @@ pub mod bundle {
     }
 
     pub fn out_file(package: &Package, target: Target) -> PathBuf {
+        out_arch_dir(target).join(out_file_name(package, target))
+    }
+
+    pub fn out_file_name(package: &Package, target: Target) -> String {
         let out_file_name_without_version = out_file_name_without_version(package, target);
         let version = crate::build::PKG_VERSION;
 
-        out_arch_dir(target)
-            .join(format!("{out_file_name_without_version}{version}.tar.gz"))
+        format!("{out_file_name_without_version}{version}.tar.gz")
     }
 
     fn out_file_name_without_version(package: &Package, target: Target) -> String {

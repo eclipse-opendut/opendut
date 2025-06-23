@@ -1,5 +1,6 @@
 use std::ops::Not;
-use std::path::PathBuf;
+use crate::fs;
+use std::path::{Path, PathBuf};
 
 use cicero::command_exit_ok::CommandExitOk;
 use cicero::distribution::build::Target;
@@ -36,6 +37,20 @@ pub fn distribution_build(package: &Package, target: Target, release_build: bool
     }
 
     command.status_exit_ok()?;
+    Ok(())
+}
+
+#[tracing::instrument(skip_all)]
+pub fn distribution_build_with_out_path(package: &Package, target: Target, out: &Path, release_build: bool) -> anyhow::Result<()> {
+    distribution_build(package, target, release_build)?;
+
+    let source_file = out_file(package, target);
+
+    if let Some(parent) = out.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    fs::rename(source_file, out)?;
     Ok(())
 }
 

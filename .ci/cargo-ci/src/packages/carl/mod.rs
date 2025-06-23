@@ -120,7 +120,7 @@ pub mod distribution {
     }
 
     mod cleo {
-        use anyhow::Context;
+        use cicero::distribution::filter::DistributionFilter;
 
         use crate::tasks::distribution::bundle;
 
@@ -128,30 +128,20 @@ pub mod distribution {
 
         #[tracing::instrument(skip_all)]
         pub fn get_cleo(out_dir: &Path, release_build: bool) -> anyhow::Result<()> {
+            let package = workspace::package::opendut_cleo;
 
-            let cleo_out_dir = out_dir.join(workspace::package::opendut_cleo.name);
+            let cleo_out_dir = out_dir.join(package.name);
             fs::create_dir_all(&cleo_out_dir)?;
 
-            let architectures = if release_build {
+            let targets = if release_build {
                 crate::packages::cleo::SUPPORTED_TARGETS.to_vec()
             } else {
                 vec![Target::default()]
             };
 
-            for arch in architectures {
-                crate::packages::cleo::distribution::cleo_distribution(arch.to_owned(), release_build)?;
-                let cleo_build_dir = crate::tasks::distribution::out_arch_dir(arch.to_owned());
-
-                let tar_file_name = bundle::out_file(&workspace::package::opendut_cleo, arch);
-
-                let cleo_tar_file_name = tar_file_name.file_name().context(format!("Could not extract file name {tar_file_name:?}"))?;
-
-                fs_extra::file::copy(
-                    cleo_build_dir.join(&tar_file_name),
-                    cleo_out_dir.join(cleo_tar_file_name),
-                    &fs_extra::file::CopyOptions::default()
-                        .overwrite(true)
-                )?;
+            for target in targets {
+                let out_file = cleo_out_dir.join(bundle::out_file_name(&package, target));
+                crate::packages::cleo::distribution::cleo_distribution(target, &out_file, release_build, DistributionFilter::Disabled)?;
             }
 
             Ok(())
