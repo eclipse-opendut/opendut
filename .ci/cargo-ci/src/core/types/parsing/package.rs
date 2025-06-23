@@ -7,17 +7,20 @@ use strum::IntoEnumIterator;
 use crate::core::types::Package;
 
 const PACKAGE_SELECTION_ALL: &str = "all";
+const PACKAGE_SELECTION_APPLICATIONS: &str = "apps";
 
 #[derive(Clone, Debug, Default)]
 pub enum PackageSelection {
     #[default]
     All,
+    Applications,
     Single(Package),
 }
 impl PackageSelection {
     pub fn iter(&self) -> Box<dyn Iterator<Item=Package>> {
         match self {
             PackageSelection::Single(package) => Box::new(iter::once(Clone::clone(package))),
+            PackageSelection::Applications => Box::new(Package::applications().into_iter()),
             PackageSelection::All => Box::new(Package::iter()),
         }
     }
@@ -25,8 +28,9 @@ impl PackageSelection {
 impl Display for PackageSelection {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            PackageSelection::Single(package) => write!(f, "{}", package),
-            PackageSelection::All => write!(f, "{}", PACKAGE_SELECTION_ALL),
+            PackageSelection::Single(package) => write!(f, "{package}"),
+            PackageSelection::Applications => write!(f, "{PACKAGE_SELECTION_APPLICATIONS}"),
+            PackageSelection::All => write!(f, "{PACKAGE_SELECTION_ALL}"),
         }
     }
 }
@@ -43,6 +47,7 @@ impl clap::ValueEnum for PackageSelection {
     fn to_possible_value(&self) -> Option<PossibleValue> {
         match self {
             PackageSelection::Single(package) => Some(PossibleValue::new(package.ident())),
+            PackageSelection::Applications => Some(PossibleValue::new(PACKAGE_SELECTION_APPLICATIONS)),
             PackageSelection::All => Some(PossibleValue::new(PACKAGE_SELECTION_ALL)),
         }
     }

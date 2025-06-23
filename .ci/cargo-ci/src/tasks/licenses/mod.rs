@@ -81,6 +81,7 @@ pub mod json {
             .arg("--config").arg(cargo_deny_toml())
             .arg("--layout=crate")
             .arg("--format=json")
+            .current_dir(repo_path!().join(package.ident()))
             .stdout(Stdio::from(std::fs::File::create(&out_file)?))
             .run_requiring_success()?;
 

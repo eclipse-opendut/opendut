@@ -34,6 +34,11 @@ impl Package {
             Package::IntegrationTests => "opendut-integration-tests",
         }.to_string()
     }
+
+    pub fn applications() -> Vec<Self> {
+        use Package::*;
+        vec![Carl, Cleo, Edgar, Lea]
+    }
 }
 
 impl Display for Package {

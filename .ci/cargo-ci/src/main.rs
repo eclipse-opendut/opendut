@@ -55,7 +55,7 @@ fn main() -> crate::Result {
             }
         }
         TaskCli::Doc(implementation) => implementation.default_handling()?,
-        TaskCli::Licenses(implementation) => implementation.default_handling(PackageSelection::All)?,
+        TaskCli::Licenses(implementation) => implementation.default_handling(PackageSelection::Applications)?,
         TaskCli::Test(implementation) => implementation.default_handling()?,
         TaskCli::IntegrationTest(implementation) => implementation.default_handling()?,
         TaskCli::Venv(implementation) => implementation.run()?,
