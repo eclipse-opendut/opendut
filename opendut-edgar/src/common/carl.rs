@@ -12,6 +12,9 @@ use opendut_carl_api::proto::services::peer_messaging_broker;
 use opendut_types::peer::PeerId;
 use opendut_util::project;
 
+
+/// Separate function which just opens a connection without extracting the version,
+/// since the separate metadata-request causes it to not be able to send between threads safely anymore.
 pub async fn connect(settings: &Config) -> anyhow::Result<CarlClient> {
     opendut_util::crypto::install_default_provider();
 
@@ -31,7 +34,6 @@ pub async fn connect(settings: &Config) -> anyhow::Result<CarlClient> {
     for retries_left in (0..retries).rev() {
         match CarlClient::create(&host, port, &ca_cert_path, &domain_name_override, settings).await {
             Ok(carl) => {
-                info!("Connected to CARL.");
                 return Ok(carl);
             }
             Err(cause) => {
@@ -67,4 +69,21 @@ pub async fn open_stream(
 
     info!("Peer messaging stream opened.");
     Ok((rx_inbound, tx_outbound))
+}
+
+pub async fn log_version_compatibility(carl: &mut CarlClient) -> anyhow::Result<()> {
+    use opendut_carl_api::carl::metadata::version_compatibility::*;
+
+    log_version_compatibility_with_carl(
+        VersionCompatibilityInfo {
+            own_version: crate::app_info::PKG_VERSION,
+            own_name: String::from("EDGAR"),
+            upgrade_hint: Some(String::from(
+                "You can update to the newest version of EDGAR by following the steps here: https://opendut.eclipse.dev/book/user-manual/edgar/setup.html"
+            )),
+        },
+        carl
+    ).await?;
+
+    Ok(())
 }

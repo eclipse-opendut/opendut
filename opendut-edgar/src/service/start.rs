@@ -21,6 +21,7 @@ use tokio::time::sleep;
 use tonic::Code;
 use tracing::{debug, error, info, trace, warn, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
+use opendut_carl_api::carl::CarlClient;
 use opendut_util::telemetry::opentelemetry_types;
 use crate::app_info;
 use crate::common::{carl, settings};
@@ -77,7 +78,9 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
     let (tx_peer_configuration, rx_peer_configuration) = mpsc::channel(100);
     crate::service::peer_configuration::spawn_peer_configurations_handler(rx_peer_configuration).await?;
 
-    run_stream_receiver(self_id, settings, tx_peer_configuration).await?;
+    let mut carl = carl::connect(&settings.config).await?;
+    carl::log_version_compatibility(&mut carl).await?;
+    run_stream_receiver(self_id, carl, settings, tx_peer_configuration).await?;
 
     metrics_shutdown_handle.shutdown();
 
@@ -86,6 +89,7 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
 
 pub async fn run_stream_receiver(
     self_id: PeerId,
+    mut carl: CarlClient,
     settings: LoadedConfig,
     tx_peer_configuration: mpsc::Sender<ApplyPeerConfigurationParams>,
 ) -> anyhow::Result<()> {
@@ -121,8 +125,6 @@ pub async fn run_stream_receiver(
     let remote_address = vpn::retrieve_remote_host(&settings).await?;
     
     let timeout_duration = Duration::from_millis(settings.config.get::<u64>("carl.disconnect.timeout.ms")?);
-
-    let mut carl = carl::connect(&settings.config).await?;
 
     let (mut rx_inbound, tx_outbound) = carl::open_stream(self_id, &remote_address, &mut carl).await?;
 

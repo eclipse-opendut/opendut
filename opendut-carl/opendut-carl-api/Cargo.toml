@@ -41,6 +41,7 @@ http = { workspace = true, optional = true }
 jsonwebtoken = { workspace = true, optional = true }
 leptos = { workspace = true, optional = true }
 prost = { workspace = true }
+semver = { workspace = true }
 shadow-rs = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, optional = true }

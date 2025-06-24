@@ -49,8 +49,11 @@ pub async fn spawn_edgar_with_peer_configuration_receiver(peer_id: PeerId, carl_
 
     let (tx_peer_configuration, rx_peer_configuration) = mpsc::channel(100);
     tokio::spawn(async move {
-        opendut_edgar::testing::service::start::run_stream_receiver(peer_id, edgar_config, tx_peer_configuration).await
-            .expect("EDGAR crashed")
+        let carl = opendut_edgar::testing::carl::connect(&edgar_config.config).await
+            .expect("Could not connect to CARL for spawning EDGAR");
+
+        opendut_edgar::testing::service::start::run_stream_receiver(peer_id, carl, edgar_config, tx_peer_configuration).await
+            .expect("EDGAR crashed");
     });
     Ok(PeerConfigurationReceiver { inner: rx_peer_configuration })
 }
