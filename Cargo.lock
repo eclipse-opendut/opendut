@@ -3723,6 +3723,7 @@ dependencies = [
  "prost",
  "protobuf-src",
  "rstest",
+ "semver",
  "shadow-rs",
  "thiserror 2.0.12",
  "tokio",

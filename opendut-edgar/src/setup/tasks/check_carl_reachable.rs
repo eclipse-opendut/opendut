@@ -1,10 +1,9 @@
-use anyhow::{Context, Result};
-use async_trait::async_trait;
-use config::Config;
-
 use crate::common;
 use crate::common::settings;
 use crate::common::task::{Success, Task, TaskStateFulfilled};
+use anyhow::{Context, Result};
+use async_trait::async_trait;
+use config::Config;
 
 pub struct CheckCarlReachable;
 
