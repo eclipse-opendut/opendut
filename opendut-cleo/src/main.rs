@@ -6,6 +6,7 @@ use clap_complete::Shell;
 use console::Style;
 use uuid::Uuid;
 use opendut_carl_api::carl::{CaCertInfo, CarlClient};
+use opendut_carl_api::carl::metadata::version_compatibility::VersionCompatibilityInfo;
 use opendut_types::topology::{DeviceId, DeviceName};
 use opendut_util::settings::{load_config, FileFormat, LoadedConfig};
 
@@ -209,10 +210,11 @@ enum DecodeSetupStringOutputFormat {
 
 #[tokio::main]
 async fn main() -> ExitCode {
-    let red = Style::new().red();
-    match execute().await {
+    let result = execute().await;
+    match result {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
+            let red = Style::new().red();
             eprintln!("{}", red.apply_to(error));
             ExitCode::FAILURE
         }
@@ -391,8 +393,21 @@ pub async fn create_carl_client(config: &config::Config) -> CarlClient {
         .expect("Configuration should contain a field for 'domain.name.override'.");
     let domain_name_override = domain_name_override.is_empty().not().then_some(domain_name_override);
 
-    CarlClient::create(host, port as u16, &ca_cert_info, &domain_name_override, config).await
-        .expect("Failed to create CARL client")
+    let mut carl_client = CarlClient::create(host, port as u16, &ca_cert_info, &domain_name_override, config).await
+        .expect("Failed to create CARL client");
+
+    let _ignore_errors = opendut_carl_api::carl::metadata::version_compatibility::log_version_compatibility_with_carl(
+        VersionCompatibilityInfo {
+            own_version: app_info::PKG_VERSION,
+            own_name: String::from("CLEO"),
+            upgrade_hint: Some(String::from(
+                "You can update CLEO by downloading the newest version from the openDuT web-UI."
+            )),
+        },
+        &mut carl_client,
+    ).await;
+
+    carl_client
 }
 
 pub async fn get_cleo_oidc_client_id(config: &config::Config) -> String {
