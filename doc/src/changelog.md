@@ -55,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * THEO: The test environment is now destroyed at the end, allowing subsequent runs.
 
 
-## 0.5.1
+## [0.5.1] - 2025-02-28
 
 ### Added
 * Backups include PKI and other credentials now
@@ -67,7 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Localenv deployment provisioning scripts persist PKI secrets on host now.
 
 
-## 0.5.0
+## [0.5.0] - 2025-02-12
 
 ### Added
 * Automation of the backend and edge rollout.
@@ -81,7 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Logs from third-party libraries don't get filtered out anymore.
 
 
-## 0.4.0
+## [0.4.0] - 2024-12-20
 
 <details>
 <summary>Breaking Changes</summary>
@@ -105,7 +105,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   This may have caused EDGAR to repeatedly delete and recreate these.
 
 
-## 0.3.1
+## [0.3.1] - 2024-11-15
 
 ### Fixed
 * Restarting EDGAR while a cluster is deployed doesn't lead to an invalid state anymore.
@@ -113,7 +113,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * EDGAR Setup now loads plugins correctly.
 
 
-## 0.3.0
+## [0.3.0] - 2024-10-28
 
 <details>
 <summary>Breaking Changes</summary>
@@ -135,7 +135,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Stopping an EDGAR that has a cluster deployed, does not undeploy the cluster, therefore blocking other EDGARs in the cluster.
 
 
-## 0.2.0
+## [0.2.0] - 2024-09-10
 
 <details>
 <summary>Breaking Changes</summary>
@@ -173,7 +173,7 @@ The value has to be your Keycloak's Admin URL.
 * Generating a Setup-String now works for peers which had previously been set up.
 
 
-## 0.1.0
+## [0.1.0] - 2024-06-05
 
 ### Added
 * Client credentials added to peer setup
