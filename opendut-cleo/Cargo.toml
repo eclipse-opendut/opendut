@@ -32,7 +32,6 @@ uuid = { workspace = true, features = ["v4"] }
 [dev-dependencies]
 anyhow = { workspace = true }
 googletest = { workspace = true }
-rstest = { workspace = true }
 
 [build-dependencies]
 shadow-rs = { workspace = true, default-features = true }

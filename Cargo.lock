@@ -3776,7 +3776,6 @@ dependencies = [
  "opendut-carl-api",
  "opendut-types",
  "opendut-util",
- "rstest",
  "serde",
  "serde_json",
  "serde_yaml",
