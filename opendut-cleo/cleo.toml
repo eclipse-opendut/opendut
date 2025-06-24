@@ -15,3 +15,6 @@ id = "opendut-cleo-client"
 issuer.url = "https://keycloak.internal/realms/opendut/"
 scopes = "openid,profile,email"
 secret = "<tbd>"
+
+[logging]
+stdout = true

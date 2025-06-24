@@ -26,6 +26,9 @@ shadow_formatted_version::from_shadow!(app_info);
 struct Args {
     #[command(subcommand)]
     command: Commands,
+    /// Enable more detailed logging.
+    #[arg(short, long)]
+    verbose: bool,
 }
 
 #[derive(Subcommand)]
@@ -224,16 +227,37 @@ async fn main() -> ExitCode {
 async fn execute() -> Result<()> {
     let cleo_config_hide_secrets_override = config::Config::builder()
         .set_override("network.oidc.client.secret", "redacted")
-        .map_err(|_error| "Failed to hide cleo secrets.")?
+        .map_err(|_| "Failed to hide CLEO secrets.")?
         .build()
-        .map_err(|_error| "Failed to hide cleo secrets.")?;
+        .map_err(|_| "Failed to hide CLEO secrets.")?;
 
     let settings = load_config("cleo", include_str!("../cleo.toml"), FileFormat::Toml, config::Config::default(), cleo_config_hide_secrets_override)
         .expect("Failed to load config"); // TODO: Point the user to the source of the error.
 
     let args = Args::parse();
 
+    let telemetry_shutdown_handle = if args.verbose {
+        use opendut_util::telemetry;
+
+        let config = telemetry::logging::LoggingConfig::load(&settings.config)
+            .map_err(|_| "Error while loading logging configuration.")?;
+
+        let shutdown_handle = telemetry::initialize_with_config(
+            config,
+            telemetry::opentelemetry_types::Opentelemetry::Disabled,
+        ).await
+            .map_err(|_| "Error while initializing logging.")?;
+
+        Some(shutdown_handle)
+    } else {
+        None
+    };
+
     execute_command(args.command, &settings).await?;
+
+    if let Some(mut shutdown_handle) = telemetry_shutdown_handle {
+        shutdown_handle.shutdown();
+    }
     Ok(())
 }
 
