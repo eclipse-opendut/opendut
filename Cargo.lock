@@ -3683,6 +3683,7 @@ dependencies = [
  "redb",
  "reqwest",
  "rstest",
+ "semver",
  "serde",
  "serde_json",
  "shadow-formatted-version",
