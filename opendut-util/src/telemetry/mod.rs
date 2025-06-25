@@ -6,6 +6,7 @@ pub mod metrics;
 use std::fmt::Debug;
 use std::fs::File;
 use std::io;
+use std::ops::Not;
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -191,7 +192,7 @@ service_metadata: {service_metadata:?}",
             (None, None)
         };
 
-    Ok(ShutdownHandle { meter_providers, tracer_provider })
+    Ok(ShutdownHandle { meter_providers, tracer_provider, has_been_shutdown: false })
 }
 
 
@@ -202,6 +203,7 @@ pub struct ShutdownHandle {
         NamedMeterProvider<NamedMeterProviderKindCpu>
     )>,
     tracer_provider: Option<SdkTracerProvider>,
+    has_been_shutdown: bool,
 }
 impl ShutdownHandle {
     pub fn shutdown(&mut self) {
@@ -213,10 +215,13 @@ impl ShutdownHandle {
                     .inspect_err(|err| error!("Failed to shut down telemetry stack: {}", err));
             }
         }
+        self.has_been_shutdown = true;
     }
 }
 impl Drop for ShutdownHandle {
     fn drop(&mut self) {
-        self.shutdown();
+        if self.has_been_shutdown.not() {
+            self.shutdown();
+        }
     }
 }
