@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 * CARL: A CLI has been added for viewing the contents of the database.
+* CLEO now has a `--verbose` flag to enable more detailed logging.
+* CARL, EDGAR and CLEO now log when there's version incompatibilities between them.
 
 ### Changed
 * Localenv: opendut-carl-postgres container removed, might need manual removal when updating.
