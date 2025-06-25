@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::net::IpAddr;
+use std::ops::Not;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -16,6 +17,7 @@ use tokio::sync::mpsc::error::SendError;
 use tokio::sync::{mpsc, RwLock};
 use tracing::{debug, error, info, trace, warn, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
+use opendut_carl_api::carl::broker::stream_header::PeerVersion;
 use crate::resource::persistence::error::PersistenceError;
 use crate::resource::manager::ResourceManagerRef;
 use crate::resource::storage::ResourcesStorageApi;
@@ -130,6 +132,9 @@ impl PeerMessagingBroker {
     ) -> Result<(mpsc::Sender<upstream::Message>, mpsc::Receiver<Downstream>), OpenError> {
 
         debug!("Peer <{peer_id}> opened stream from remote address {remote_host} with extra headers: {extra_headers:?}");
+        log_version_compatibility(peer_id, remote_host, extra_headers.client_version)
+            .inspect_err(|error| warn!("Failed to check version compatibility with newly connected peer <{peer_id}>: {error}"))
+            .ok();
 
         let (tx_inbound, mut rx_inbound) = mpsc::channel::<upstream::Message>(1024);
         let (tx_outbound, rx_outbound) = mpsc::channel::<Downstream>(1024);
@@ -365,6 +370,24 @@ impl PeerMessagingBrokerOptions {
             peer_disconnect_timeout,
         })
     }
+}
+
+fn log_version_compatibility(
+    peer_id: PeerId,
+    remote_host: IpAddr,
+    client_version: Option<PeerVersion>,
+) -> anyhow::Result<()> {
+    if let Some(client_version) = client_version {
+        let client_version = semver::Version::parse(&client_version.value)?;
+        let version_requirement = semver::VersionReq::parse(crate::app_info::PKG_VERSION)?;
+
+        if version_requirement.matches(&client_version).not() {
+            warn!("Peer <{peer_id}> newly connected from {remote_host} has incompatible version {client_version}. Should have version compatible with CARL's version ({version_requirement}).");
+        }
+    } else {
+        warn!("Peer <{peer_id}> newly connected from {remote_host} did not send a client version. Cannot check version compatibility.");
+    }
+    Ok(())
 }
 
 
