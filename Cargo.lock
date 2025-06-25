@@ -3593,7 +3593,7 @@ checksum = "a4895175b425cb1f87721b59f0f286c2092bd4af812243672510e1ac53e2e0ad"
 
 [[package]]
 name = "opendut-auth"
-version = "0.7.0"
+version = "0.8.0-alpha"
 dependencies = [
  "anyhow",
  "backon",
@@ -3625,7 +3625,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-auth-tests"
-version = "0.7.0"
+version = "0.8.0-alpha"
 dependencies = [
  "anyhow",
  "googletest",
@@ -3646,7 +3646,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-carl"
-version = "0.7.0"
+version = "0.8.0-alpha"
 dependencies = [
  "anyhow",
  "assert_fs",
@@ -3708,7 +3708,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-carl-api"
-version = "0.7.0"
+version = "0.8.0-alpha"
 dependencies = [
  "cfg-if",
  "config",
@@ -3738,7 +3738,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-ci"
-version = "0.7.0"
+version = "0.8.0-alpha"
 dependencies = [
  "anyhow",
  "assert_fs",
@@ -3763,7 +3763,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-cleo"
-version = "0.7.0"
+version = "0.8.0-alpha"
 dependencies = [
  "anyhow",
  "clap",
@@ -3791,7 +3791,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-edgar"
-version = "0.7.0"
+version = "0.8.0-alpha"
 dependencies = [
  "anyhow",
  "assert_fs",
@@ -3853,7 +3853,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-edgar-kernel-modules"
-version = "0.7.0"
+version = "0.8.0-alpha"
 dependencies = [
  "nix 0.30.1",
  "thiserror 2.0.12",
@@ -3862,7 +3862,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-edgar-plugin-api"
-version = "0.7.0"
+version = "0.8.0-alpha"
 dependencies = [
  "wasmtime",
  "wit-bindgen",
@@ -3870,7 +3870,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-integration-tests"
-version = "0.7.0"
+version = "0.8.0-alpha"
 dependencies = [
  "anyhow",
  "backon",
@@ -3888,7 +3888,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-lea"
-version = "0.7.0"
+version = "0.8.0-alpha"
 dependencies = [
  "chrono",
  "console_error_panic_hook",
@@ -3918,7 +3918,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-netbird-client-api"
-version = "0.7.0"
+version = "0.8.0-alpha"
 dependencies = [
  "cargo_metadata 0.20.0",
  "hyper-util",
@@ -3939,7 +3939,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-theo"
-version = "0.7.0"
+version = "0.8.0-alpha"
 dependencies = [
  "anyhow",
  "cargo_toml",
@@ -3958,7 +3958,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-types"
-version = "0.7.0"
+version = "0.8.0-alpha"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -3985,7 +3985,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-util"
-version = "0.7.0"
+version = "0.8.0-alpha"
 dependencies = [
  "config",
  "home",
@@ -4013,7 +4013,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-util-core"
-version = "0.7.0"
+version = "0.8.0-alpha"
 dependencies = [
  "anyhow",
  "thiserror 2.0.12",
@@ -4021,7 +4021,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-vpn"
-version = "0.7.0"
+version = "0.8.0-alpha"
 dependencies = [
  "async-trait",
  "opendut-types",
@@ -4030,7 +4030,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-vpn-netbird"
-version = "0.7.0"
+version = "0.8.0-alpha"
 dependencies = [
  "anyhow",
  "async-trait",

@@ -4,6 +4,10 @@ Notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+tbd.
+
 ## [0.7.0] - 2025-06-25
 
 ### Breaking Changes
@@ -26,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 * The web-UI now shows peers, clusters and devices sorted by name.
 * Deleting clusters in the web-UI works again.
-* Resolved issue where the telemetry logs where not transmitted because a lock on the Confidential Client could not be acquired. [#347](https://github.com/eclipse-opendut/opendut/issues/347)
+* Resolved issue where the telemetry logs were not transmitted because a lock on the Confidential Client could not be acquired. [#347](https://github.com/eclipse-opendut/opendut/issues/347)
 
 ## [0.6.0] - 2025-04-22
 
