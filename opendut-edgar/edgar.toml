@@ -33,8 +33,9 @@ enabled = true
 [vpn.disabled]
 remote.host = ""
 
-[logging]
-stdout = true
+[logging.pipe]
+enabled = true
+stream = "stdout"
 
 [opentelemetry]
 enabled = false

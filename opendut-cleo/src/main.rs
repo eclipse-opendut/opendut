@@ -240,7 +240,7 @@ async fn execute() -> Result<()> {
         use opendut_util::telemetry;
 
         let config = telemetry::logging::LoggingConfig::load(&settings.config)
-            .map_err(|_| "Error while loading logging configuration.")?;
+            .map_err(|error| format!("Error while loading logging configuration: {error}"))?;
 
         let shutdown_handle = telemetry::initialize_with_config(
             config,

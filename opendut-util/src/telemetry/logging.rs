@@ -5,23 +5,53 @@ use opentelemetry_sdk::logs::{SdkLoggerProvider};
 use opentelemetry_sdk::Resource;
 use std::fmt::Debug;
 use std::path::PathBuf;
+use serde::Deserialize;
 
 #[derive(Default)]
 pub struct LoggingConfig {
-    pub logging_stdout: bool,
+    pub pipe_logging: PipeLogging,
     pub file_logging: Option<PathBuf>,
 }
 
+#[derive(Default)]
+pub enum PipeLogging {
+    #[default]
+    Disabled,
+    Enabled { stream: PipeLoggingStream },
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all="lowercase")]
+pub enum PipeLoggingStream { Stdout, Stderr }
+
 impl LoggingConfig {
     pub fn load(config: &config::Config) -> Result<Self, LoggingConfigError> {
-        let field = String::from("logging.stdout");
-        let logging_stdout = config.get_bool(&field)
-            .map_err(|_cause| LoggingConfigError::ValueParseError {
-                field: field.clone(),
-            })?;
+
+        let pipe_logging_enabled = {
+            let field = String::from("logging.pipe.enabled");
+            config.get_bool(&field)
+                .map_err(|_cause| LoggingConfigError::ValueParseError {
+                    field,
+                })?
+        };
+
+        let pipe_logging =
+            if pipe_logging_enabled {
+                let stream = {
+                    let field = String::from("logging.pipe.stream");
+                    config.get::<PipeLoggingStream>(&field)
+                        .map_err(|_cause| LoggingConfigError::ValueParseError {
+                            field,
+                        })?
+                };
+
+                PipeLogging::Enabled { stream }
+            } else {
+                PipeLogging::Disabled
+            };
 
         Ok(LoggingConfig {
-            logging_stdout,
+            pipe_logging,
             file_logging: None,
         })
     }

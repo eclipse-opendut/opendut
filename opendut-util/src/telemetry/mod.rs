@@ -5,6 +5,7 @@ pub mod metrics;
 
 use std::fmt::Debug;
 use std::fs::File;
+use std::io;
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -24,7 +25,7 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use opendut_auth::confidential::client::{AuthError, ConfClientArcMutex};
 use opendut_auth::confidential::error::ConfidentialClientError;
-use crate::telemetry::logging::{LoggingConfig, LoggingConfigError};
+use crate::telemetry::logging::{LoggingConfig, LoggingConfigError, PipeLogging, PipeLoggingStream};
 use crate::telemetry::metrics::{NamedMeterProvider, NamedMeterProviderKindCpu, NamedMeterProviderKindDefault, NamedMeterProviders};
 use crate::telemetry::opentelemetry_types::{Opentelemetry, OpentelemetryConfigError};
 
@@ -67,22 +68,38 @@ pub async fn initialize_with_config(
                 .with_env_var("OPENDUT_LOG")
                 .from_env()?
                 .add_directive(Directive::from_str("opendut=trace")?)
-        ).with(
-            logging_config.logging_stdout
-                .then_some(tracing_subscriber::fmt::layer())
-        ).with(
-            logging_config.file_logging
-                .map(|log_file| {
-                    let log_file = File::options()
-                        .append(true)
-                        .create(true)
-                        .open(&log_file)
-                        .unwrap_or_else(|cause| panic!("Failed to open log file at '{}': {cause}", log_file.display()));
-
-                    tracing_subscriber::fmt::layer()
-                        .with_writer(log_file)
-                })
         );
+
+    let tracing_subscriber = tracing_subscriber.with(
+        if let PipeLogging::Enabled { stream: PipeLoggingStream::Stdout } = logging_config.pipe_logging {
+            Some(tracing_subscriber::fmt::layer())
+        } else {
+            None
+        }
+    ).with(
+        if let PipeLogging::Enabled { stream: PipeLoggingStream::Stderr } = logging_config.pipe_logging {
+            Some(
+                tracing_subscriber::fmt::layer()
+                    .with_writer(io::stderr)
+            )
+        } else {
+            None
+        }
+    );
+
+    let tracing_subscriber = tracing_subscriber.with(
+        logging_config.file_logging
+            .map(|log_file| {
+                let log_file = File::options()
+                    .append(true)
+                    .create(true)
+                    .open(&log_file)
+                    .unwrap_or_else(|cause| panic!("Failed to open log file at '{}': {cause}", log_file.display()));
+
+                tracing_subscriber::fmt::layer()
+                    .with_writer(log_file)
+            })
+    );
 
     let (meter_providers, tracer_provider) =
         if let Opentelemetry::Enabled {
