@@ -3,6 +3,7 @@ use std::net::IpAddr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
+use anyhow::bail;
 use opendut_types::cluster::PeerClusterAssignment;
 use opendut_types::util::Port;
 use regex::Regex;
@@ -126,9 +127,8 @@ impl CanManager {
         self.remove_all_can_routes().await?;
 
         for interface in local_can_interfaces {
-            if let Err(cause) = self.update_can_interface(&interface).await {
-                error!("Error while updating CAN interface: {cause}");
-            };
+            self.update_can_interface(&interface).await
+                .map_err(|cause| Error::Other { message: format!("Error while updating CAN interface: {cause}") })?;
 
             self.create_can_route(bridge_name, &interface.name, true, 2).await?;
             self.create_can_route(bridge_name, &interface.name, false, 2).await?;
@@ -161,7 +161,7 @@ impl CanManager {
             self.network_interface_manager.set_interface_up(&network_interface).await?;
 
         } else {
-            error!("Cannot find CAN interface with name: '{}'.", interface.name);
+            bail!("Cannot find CAN interface with name: '{}'.", interface.name);
         }
         
         Ok(())
