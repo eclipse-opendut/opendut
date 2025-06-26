@@ -4,9 +4,9 @@
    ```sh
    sudo apt install ansible
    ```
-2. Install the requirements by running this command in `.ci/deploy/localenv/ansible/`:
+2. Navigate into the Ansible directory:
    ```sh
-   ansible-galaxy collection install --upgrade -r requirements.yml
+   cd .ci/deploy/localenv/ansible/
    ```
 
 3. Define an `inventory.yaml` with parameters for your hosts, for example like so:
