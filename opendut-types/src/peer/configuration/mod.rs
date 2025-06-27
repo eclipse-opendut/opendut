@@ -26,7 +26,7 @@ pub struct PeerConfiguration {
     //TODO migrate more parameters
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize)]
 pub enum ParameterVariant {
     DeviceInterface(Box<Parameter<parameter::DeviceInterface>>),
     EthernetBridge(Box<Parameter<parameter::EthernetBridge>>),
@@ -45,6 +45,16 @@ impl ParameterVariant {
             ParameterVariant::GreInterface(parameter) => { parameter.dependencies.iter().cloned().collect::<HashSet<_>>() }
             ParameterVariant::JoinedInterface(parameter) => { parameter.dependencies.iter().cloned().collect::<HashSet<_>>() }
             ParameterVariant::RemotePeerConnectionCheck(parameter) => { parameter.dependencies.iter().cloned().collect::<HashSet<_>>() }
+        }
+    }
+    pub fn target(&self) -> ParameterTarget {
+        match self {
+            ParameterVariant::DeviceInterface(parameter) => parameter.target,
+            ParameterVariant::EthernetBridge(parameter) => parameter.target,
+            ParameterVariant::Executor(parameter) => parameter.target,
+            ParameterVariant::GreInterface(parameter) => parameter.target,
+            ParameterVariant::JoinedInterface(parameter) => parameter.target,
+            ParameterVariant::RemotePeerConnectionCheck(parameter) => parameter.target,
         }
     }
 }

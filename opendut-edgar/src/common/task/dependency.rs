@@ -164,12 +164,10 @@ mod tests {
         
         let mut testee = PeerConfigurationDependencyResolverFixture::new();
 
-        
+
         let mut tasks: Vec<ParameterVariant> = vec![];
-        let mut next = testee.resolver.next_parameter();
-        while let Some(next_parameter) = next.clone() {
+        while let Some(next_parameter) = testee.resolver.next_parameter() {
             tasks.push(next_parameter);            
-            next = testee.resolver.next_parameter();
         }
         assert_eq!(tasks.len(), 4);
         assert!(testee.resolver.done());
@@ -183,13 +181,11 @@ mod tests {
     fn determine_task_order_when_one_task_fails() {
         let mut testee = PeerConfigurationDependencyResolverFixture::new();
         let mut tasks: Vec<ParameterVariant> = vec![];
-        let mut next = testee.resolver.next_parameter();
-        while let Some(next_parameter) = next.clone() {
+        while let Some(next_parameter) = testee.resolver.next_parameter() {
             if matches!(next_parameter, ParameterVariant::DeviceInterface { .. }) {
                 testee.resolver.mark_current_parameter_failed();
             }
-            tasks.push(next_parameter);            
-            next = testee.resolver.next_parameter();
+            tasks.push(next_parameter);
         }
         assert_eq!(tasks.len(), 3);
         assert!(testee.resolver.done());

@@ -18,6 +18,8 @@ pub trait Task: Send + Sync {
     async fn make_present(&self) -> anyhow::Result<Success>;
 }
 
+// to avoid error that 'the trait `common::task::TaskAbsent` is not dyn compatible'
+#[async_trait]
 pub trait TaskAbsent: Task {
     /// Used to check whether calling [Self::make_absent] is necessary.
     /// And called afterward, to check whether [Self::make_absent] was successful.

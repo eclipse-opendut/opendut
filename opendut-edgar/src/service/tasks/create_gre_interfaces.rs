@@ -1,29 +1,33 @@
-use crate::common::task::{Success, Task, TaskStateFulfilled};
+use crate::common::task::{Success, Task, TaskAbsent, TaskStateFulfilled};
+use crate::service::network_interface::manager::interface::Interface;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use async_trait::async_trait;
 use netlink_packet_route::link::LinkFlag;
-use opendut_types::peer::configuration::{parameter, Parameter, ParameterTarget};
+use opendut_types::peer::configuration::parameter;
 
 pub struct ManageGreInterface {
-    pub parameter: Parameter<parameter::GreInterfaceConfig>,
+    pub parameter: parameter::GreInterfaceConfig,
     pub network_interface_manager: NetworkInterfaceManagerRef,
 }
 
+impl ManageGreInterface {
+    async fn find_interface(&self) -> anyhow::Result<Option<Interface>> {
+        let interface_name = self.parameter.interface_name()?;
+        let interface = self.network_interface_manager.find_interface(&interface_name).await?;
+        Ok(interface)
+    }
+}
 
 #[async_trait]
 impl Task for ManageGreInterface {
     fn description(&self) -> String {
-        format!("Manage GRE interface '{}'", self.parameter.value)
+        format!("Manage GRE interface '{}'", self.parameter)
     }
-
+   
     async fn check_present(&self) -> anyhow::Result<TaskStateFulfilled> {
-        let interface_name = self.parameter.value.interface_name()?;
-        let name = self.network_interface_manager.find_interface(&interface_name).await?;
-        match (name, self.parameter.target) {
-            (Some(_), ParameterTarget::Absent) | (None, ParameterTarget::Present) => {
-                Ok(TaskStateFulfilled::No)
-            }
-            (Some(interface), ParameterTarget::Present) => {
+        let name = self.find_interface().await?;
+        match name {
+            Some(interface) => {
                 let interface_is_up = interface.link_flag.contains(&LinkFlag::Up);
                 if interface_is_up {
                     Ok(TaskStateFulfilled::Yes)
@@ -31,31 +35,47 @@ impl Task for ManageGreInterface {
                     Ok(TaskStateFulfilled::No)
                 }
             }
-            (None, ParameterTarget::Absent) => {
-                Ok(TaskStateFulfilled::Yes)
+            None => {
+                Ok(TaskStateFulfilled::No)
             }
         }        
     }
 
     async fn make_present(&self) -> anyhow::Result<Success> {
-        let interface_name = self.parameter.value.interface_name()?;
-        let name = self.network_interface_manager.find_interface(&interface_name).await?;
-        match (name, self.parameter.target) {
-            (Some(name), ParameterTarget::Absent) => {
-                self.network_interface_manager.delete_interface(&name).await?;
-            }
-            (None, ParameterTarget::Present) => {
-                let name = self.parameter.value.interface_name()?;
-                let interface = self.network_interface_manager.create_gretap_v4_interface(&name, &self.parameter.value.local_ip, &self.parameter.value.remote_ip).await?;
+        let name = self.find_interface().await?;
+        match name {
+            None => {
+                let name = self.parameter.interface_name()?;
+                let interface = self.network_interface_manager.create_gretap_v4_interface(&name, &self.parameter.local_ip, &self.parameter.remote_ip).await?;
                 self.network_interface_manager.set_interface_up(&interface).await?;
                 self.network_interface_manager.set_opendut_alternative_name(&interface).await?;
             }
-            (Some(interface), ParameterTarget::Present) => {
+            Some(interface) => {
                 self.network_interface_manager.set_interface_up(&interface).await?;
             }
-            (None, ParameterTarget::Absent) => {
-                // nothing to do
+        }
+        Ok(Success::default())
+    }
+}
+
+#[async_trait]
+impl TaskAbsent for ManageGreInterface {
+    async fn check_absent(&self) -> anyhow::Result<TaskStateFulfilled> {
+        let name = self.find_interface().await?;
+        match name {
+            None => {
+                Ok(TaskStateFulfilled::Yes)
             }
+            Some(_) => {
+                Ok(TaskStateFulfilled::No)
+            }
+        }
+    }
+
+    async fn make_absent(&self) -> anyhow::Result<Success> {
+        let name = self.find_interface().await?;
+        if let Some(interface) = name {
+            self.network_interface_manager.delete_interface(&interface).await?;
         }
         Ok(Success::default())
     }
@@ -64,19 +84,17 @@ impl Task for ManageGreInterface {
 
 #[cfg(test)]
 mod tests {
-    use std::net::Ipv4Addr;
     use super::*;
-    use crate::common::task::runner;
     use crate::service::network_interface::manager::NetworkInterfaceManager;
-    use crate::setup::RunMode;
-    use opendut_types::peer::configuration::{ParameterId, ParameterTarget};
+    use crate::service::tasks::service_runner;
+    use opendut_types::peer::configuration::ParameterTarget;
+    use std::net::Ipv4Addr;
     use std::str::FromStr;
     use std::sync::Arc;
-    use uuid::Uuid;
 
     #[test_with::env(RUN_EDGAR_NETLINK_INTEGRATION_TESTS)]
     #[test_log::test(tokio::test)]
-    async fn test_create_gre_interfaces() -> anyhow::Result<()> {
+    async fn test_create_gre_interface() -> anyhow::Result<()> {
         // ARRANGE
         let fixture = Fixture::create();
         let parameter = parameter::GreInterfaceConfig {
@@ -84,25 +102,17 @@ mod tests {
             remote_ip: Ipv4Addr::from_str("192.168.0.2")?,
         };
         let expected_name = parameter.interface_name()?;
-        let parameter_present: Parameter<parameter::GreInterfaceConfig> = Parameter::<parameter::GreInterfaceConfig> {
-            id: ParameterId(Uuid::new_v4()),
-            dependencies: vec![],
-            target: ParameterTarget::Present,
-            value: parameter,
-        };
         let gre_interface = fixture.network_interface_manager.find_interface(&expected_name).await?;
         assert!(gre_interface.is_none(), "GRE interface unexpectedly present!");
 
         // ACT
-        let tasks: Vec<Box<dyn Task>> = vec![
-            Box::new(ManageGreInterface {
-                parameter: parameter_present.clone(),
-                network_interface_manager: Arc::clone(&fixture.network_interface_manager),
-            })
-        ];
+        let task: Box<dyn TaskAbsent> = Box::new(ManageGreInterface {
+            parameter,
+            network_interface_manager: Arc::clone(&fixture.network_interface_manager),
+        });
 
         // ASSERT
-        let result = runner::run(RunMode::Service, &tasks).await;
+        let result = service_runner::run_individual_task(task.as_ref(), ParameterTarget::Present).await;
         assert!(result.is_ok());
         let gre_interface = fixture.network_interface_manager.find_interface(&expected_name).await?;
         assert!(gre_interface.is_some(), "GRE interface not found!");

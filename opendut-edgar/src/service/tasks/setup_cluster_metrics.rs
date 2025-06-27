@@ -3,7 +3,7 @@ use std::net::IpAddr;
 use async_trait::async_trait;
 use tracing::debug;
 use opendut_types::peer::PeerId;
-use crate::common::task::{Success, Task, TaskStateFulfilled};
+use crate::common::task::{Success, Task, TaskAbsent, TaskStateFulfilled};
 use crate::service::network_metrics::manager::NetworkMetricsManagerRef;
 
 pub struct SetupClusterMetrics {
@@ -32,3 +32,13 @@ impl Task for SetupClusterMetrics {
 }
 
 //TODO impl TaskAbsent
+#[async_trait]
+impl TaskAbsent for SetupClusterMetrics {
+    async fn check_absent(&self) -> anyhow::Result<TaskStateFulfilled> {
+        todo!()
+    }
+
+    async fn make_absent(&self) -> anyhow::Result<Success> {
+        todo!()
+    }
+}
