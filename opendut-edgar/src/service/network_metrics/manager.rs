@@ -27,10 +27,14 @@ impl NetworkMetricsManager {
             rperf_backoff_max_elapsed_time,
         };
 
-        Ok(Arc::new(Mutex::new(Self {
+        Ok(Self::new(options))
+    }
+
+    pub fn new(options: NetworkMetricsOptions) -> NetworkMetricsManagerRef {
+        Arc::new(Mutex::new(Self {
             previous_spawn: None,
             options,
-        })))
+        }))
     }
 
     pub async fn set_remote_peers(&mut self, remote_peers: HashMap<PeerId, IpAddr>) {
@@ -90,10 +94,20 @@ pub type Spawner = Arc<Mutex<tokio::task::JoinSet<()>>>;
 
 
 #[derive(Clone, Debug)]
-struct NetworkMetricsOptions {
+pub struct NetworkMetricsOptions {
     ping_interval: Duration,
     target_bandwidth_kbit_per_second: u64,
     rperf_backoff_max_elapsed_time: Duration,
+}
+
+impl Default for NetworkMetricsOptions {
+    fn default() -> Self {
+        Self {
+            ping_interval: Duration::from_secs(30),
+            target_bandwidth_kbit_per_second: 100_000, // 100 Mbit/s
+            rperf_backoff_max_elapsed_time: Duration::from_secs(120),
+        }
+    }
 }
 
 #[derive(Debug)]

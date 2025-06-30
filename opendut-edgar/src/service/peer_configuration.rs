@@ -11,7 +11,7 @@ use std::fmt::Formatter;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tracing::{debug, error};
-
+use crate::common::task;
 use super::network_metrics::manager::NetworkMetricsManagerRef;
 
 #[derive(Debug)]
@@ -49,9 +49,17 @@ pub async fn spawn_peer_configurations_handler(mut rx_peer_configuration: mpsc::
 
 #[tracing::instrument(skip_all)]
 async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyhow::Result<()> {
-    let ApplyPeerConfigurationParams { self_id, peer_configuration, old_peer_configuration, network_interface_management, executor_manager, metrics_manager } = params;
+    let ApplyPeerConfigurationParams { 
+        self_id, peer_configuration, old_peer_configuration, 
+        network_interface_management, 
+        executor_manager, metrics_manager } = params;
 
-    let _results = tasks::service_runner::run_tasks(peer_configuration.clone(), network_interface_management.clone(), metrics_manager).await;
+    let resolver = tasks::task_resolver::ServiceTaskResolver::new(
+        peer_configuration.clone(),
+        network_interface_management.clone(),
+        Arc::clone(&metrics_manager),
+    );     
+    let _results = task::service_runner::run_tasks(peer_configuration.clone(), resolver).await;
     // TODO: Send feedback of results to CARL
 
     if let NetworkInterfaceManagement::Enabled { can_manager, .. } = &network_interface_management {

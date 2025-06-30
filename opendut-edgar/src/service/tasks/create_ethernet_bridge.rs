@@ -99,29 +99,26 @@ impl TaskAbsent for CreateEthernetBridge {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::common::task::runner;
+    use crate::service::can::can_manager::CanManager;
     use crate::service::network_interface::manager::NetworkInterfaceManager;
-    use crate::service::tasks::service_runner;
-    use crate::setup::RunMode;
-    use opendut_types::peer::configuration::{parameter, ParameterTarget};
+    use crate::service::network_metrics::manager::{NetworkMetricsManager, NetworkMetricsOptions};
+    use crate::service::peer_configuration::NetworkInterfaceManagement;
+    use crate::common::task::service_runner;
+    use opendut_types::peer::configuration::{parameter, ParameterTarget, PeerConfiguration};
     use opendut_types::util::net::NetworkInterfaceName;
     use rand::Rng;
     use std::sync::Arc;
+    use crate::service::tasks;
+    use crate::service::tasks::task_resolver::ServiceTaskResolver;
 
     #[test_with::env(RUN_EDGAR_NETLINK_INTEGRATION_TESTS)]
     #[test_log::test(tokio::test)]
     async fn create_bridge() -> anyhow::Result<()> {
         let fixture = Fixture::create();
-        let tasks: Vec<Box<dyn Task>> = vec![
-            Box::new(CreateEthernetBridge {
-                parameter: fixture.parameter,
-                network_interface_manager: Arc::clone(&fixture.network_interface_manager),
-            })
-        ];
         let result = fixture.network_interface_manager.find_interface(&fixture.bridge_name).await?;
         assert!(result.is_none());
 
-        runner::run(RunMode::Service, &tasks).await?;
+        let result = service_runner::run_tasks(fixture.peer_configuration, fixture.service_task_resolver).await;
 
         let bridge_interface = fixture.network_interface_manager.find_interface(&fixture.bridge_name).await?;
         assert!(bridge_interface.is_some());
@@ -175,7 +172,9 @@ mod tests {
     pub struct Fixture {
         bridge_name: NetworkInterfaceName,
         network_interface_manager: NetworkInterfaceManagerRef,
+        peer_configuration: PeerConfiguration,
         parameter: parameter::EthernetBridge,
+        service_task_resolver: ServiceTaskResolver,
     }
     impl Fixture {
 
@@ -198,10 +197,30 @@ mod tests {
                 name: bridge_name.clone(),
             };
 
+            let mut peer_configuration = PeerConfiguration::default();
+            peer_configuration.ethernet_bridges.set(
+                parameter.clone(),
+                ParameterTarget::Present,
+                vec![],
+            );
+            let can_manager = CanManager::create(Arc::clone(&network_interface_manager));
+            let network_interface_management = NetworkInterfaceManagement::Enabled {
+                network_interface_manager: network_interface_manager.clone(),
+                can_manager
+            };
+            let metrics_manager = NetworkMetricsManager::new(NetworkMetricsOptions::default());
+            let service_task_resolver = tasks::task_resolver::ServiceTaskResolver::new(
+                peer_configuration.clone(),
+                network_interface_management.clone(),
+                Arc::clone(&metrics_manager),
+            );
+
             Self {
                 bridge_name,
                 network_interface_manager,
+                peer_configuration,
                 parameter,
+                service_task_resolver,
             }
         }
     }
