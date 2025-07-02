@@ -46,7 +46,7 @@ impl EvaluateRequiringSuccess for Command {
         if output.status.success().not() {
             let mut error = format!("Error while running `{self:?}`:\n");
             if let Some(status) = &output.status.code() {
-                error += format!("  Status Code: {}\n", status).as_ref();
+                error += format!("  Status Code: {status}\n").as_ref();
             }
             if !output.stdout.is_empty() {
                 error += format!("  Stdout: {}\n", String::from_utf8(output.stdout.clone())?).as_str();

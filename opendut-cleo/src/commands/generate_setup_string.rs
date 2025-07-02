@@ -18,11 +18,11 @@ impl GenerateSetupStringCli {
             .peers
             .create_peer_setup(peer_id, cleo_oidc_client_id)
             .await
-            .map_err(|error| format!("Could not create setup string.\n  {}", error))?;
+            .map_err(|error| format!("Could not create setup string.\n  {error}"))?;
 
         match created_setup.encode() {
             Ok(setup_string) => {
-                println!("{}", setup_string);
+                println!("{setup_string}");
                 eprintln!("Setup-Strings may only be used to set up one host. For setting up multiple hosts, you should create a peer for each host.");
             }
             Err(_) => {

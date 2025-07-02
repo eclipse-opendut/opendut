@@ -16,7 +16,7 @@ struct ClusterTable {
 impl ListClusterDeploymentsCli {
     pub async fn execute(self, carl: &mut CarlClient, output: ListOutputFormat) -> crate::Result<()> {
         let clusters = carl.cluster.list_cluster_deployments().await
-            .map_err(|error| format!("Error while listing cluster deployments: {}", error))?;
+            .map_err(|error| format!("Error while listing cluster deployments: {error}"))?;
 
         match output {
             ListOutputFormat::Table => {
@@ -32,11 +32,11 @@ impl ListClusterDeploymentsCli {
             }
             ListOutputFormat::Json => {
                 let json = serde_json::to_string(&clusters).unwrap();
-                println!("{}", json);
+                println!("{json}");
             }
             ListOutputFormat::PrettyJson => {
                 let json = serde_json::to_string_pretty(&clusters).unwrap();
-                println!("{}", json);
+                println!("{json}");
             }
         }
 

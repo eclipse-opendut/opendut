@@ -241,7 +241,7 @@ impl ContainerManager {
 
         let results_file_url = results_url.join(
             format!("{}_{}.zip", chrono::offset::Local::now().format("%Y-%m-%d_%H-%M-%S"), self.config.name).as_str()
-        ).map_err(|cause| Error::Other { message: format!("Failed to construct URL for results directory: {}", cause) })?;
+        ).map_err(|cause| Error::Other { message: format!("Failed to construct URL for results directory: {cause}") })?;
 
         let response = self.webdav_client.put(zipped_data, results_file_url.clone())
             .await

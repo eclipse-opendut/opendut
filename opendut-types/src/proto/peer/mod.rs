@@ -173,7 +173,7 @@ conversion! {
         let carl: url::Url = extract!(value.carl)
             .and_then(|url|
                 url::Url::parse(&url.value)
-                    .map_err(|cause| ErrorBuilder::message(format!("Carl URL could not be parsed: {}", cause)))
+                    .map_err(|cause| ErrorBuilder::message(format!("Carl URL could not be parsed: {cause}")))
             )?;
 
         let ca: crate::util::net::Certificate = extract!(value.ca)

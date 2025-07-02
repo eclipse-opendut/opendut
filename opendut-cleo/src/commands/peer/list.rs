@@ -79,7 +79,7 @@ impl ListPeersCli {
             .peers
             .list_peer_descriptors()
             .await
-            .map_err(|error| format!("Could not list peers.\n  {}", error))?;
+            .map_err(|error| format!("Could not list peers.\n  {error}"))?;
         let all_peer_states = carl.peers.list_peer_states().await
             .map_err(|_| "Failed to list peer states!")?;
         
@@ -101,11 +101,11 @@ impl ListPeersCli {
             }
             ListOutputFormat::Json => {
                 let json = serde_json::to_string(&serializable_peers).unwrap();
-                println!("{}", json);
+                println!("{json}");
             }
             ListOutputFormat::PrettyJson => {
                 let json = serde_json::to_string_pretty(&serializable_peers).unwrap();
-                println!("{}", json);
+                println!("{json}");
             }
         }
         Ok(())

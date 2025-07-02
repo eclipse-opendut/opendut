@@ -41,7 +41,7 @@ fn main() -> Result {
         TaskCli::Dev(implementation) => { implementation.default_handling()? }
         TaskCli::NetbirdVersions => {
             let metadata = core::metadata::cargo_netbird_versions();
-            println!("Versions: {:?}", metadata);
+            println!("Versions: {metadata:?}");
         }
     };
     Ok(())

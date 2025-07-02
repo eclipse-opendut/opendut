@@ -30,8 +30,8 @@ pub fn show_error_if_unhealthy_containers_were_found() -> Result<(), Error> {
         println!("# No unhealthy containers found.");
         Ok(())
     } else {
-        println!("# Unhealthy containers: {:?}", unhealthy_containers);
-        Err(TheoError::UnhealthyContainersFound(format!("Found unhealthy docker containers: {:?}", unhealthy_containers)).into())
+        println!("# Unhealthy containers: {unhealthy_containers:?}");
+        Err(TheoError::UnhealthyContainersFound(format!("Found unhealthy docker containers: {unhealthy_containers:?}")).into())
     }
 }
 

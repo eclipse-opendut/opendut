@@ -26,14 +26,14 @@ pub fn ClusterNameInput(cluster_descriptor: RwSignal<UserClusterDescriptor>) -> 
                 match cause {
                     IllegalClusterName::TooShort { expected, actual, value } => {
                         if actual > 0 {
-                            UserInputValue::Both(format!("A cluster name must be at least {} characters long.", expected), value)
+                            UserInputValue::Both(format!("A cluster name must be at least {expected} characters long."), value)
                         }
                         else {
                             UserInputValue::Both("Enter a valid cluster name.".to_string(), value)
                         }
                     },
                     IllegalClusterName::TooLong { expected, value, .. } => {
-                        UserInputValue::Both(format!("A cluster name must be at most {} characters long.", expected), value)
+                        UserInputValue::Both(format!("A cluster name must be at most {expected} characters long."), value)
                     },
                     IllegalClusterName::InvalidStartEndCharacter { value } => {
                         UserInputValue::Both("The cluster name starts/ends with an invalid character. \

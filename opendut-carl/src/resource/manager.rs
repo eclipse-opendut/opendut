@@ -243,7 +243,7 @@ mod test {
         testee.insert(cluster_resource_id, Clone::clone(&cluster_descriptor)).await?;
         assert_that!(testee.get::<ClusterDescriptor>(cluster_resource_id).await?, some(eq(&cluster_descriptor)));
 
-        assert!(testee.list::<PeerDescriptor>().await?.get(&peer_resource_id).is_some());
+        assert!(testee.list::<PeerDescriptor>().await?.contains_key(&peer_resource_id));
 
         assert_that!(testee.get::<PeerDescriptor>(PeerId::random()).await?, none());
 

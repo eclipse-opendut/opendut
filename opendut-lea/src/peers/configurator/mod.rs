@@ -248,7 +248,7 @@ pub fn PeerConfigurator() -> impl IntoView {
             .filter(|(_, _, devices)| devices_in_peer.iter().any(|device| devices.contains(device)))
             .map(|(cluster_id, cluster_name, _)| {
                 let cluster_name = move || { cluster_name.to_string() };
-                let configurator_href = move || { format!("/clusters/{}/configure/general", cluster_id) };
+                let configurator_href = move || { format!("/clusters/{cluster_id}/configure/general") };
                 view! {
                     <a href={ configurator_href }>{ cluster_name }</a>
                 }

@@ -88,7 +88,7 @@ pub(crate) fn docker_inspect_network() -> crate::Result {
         .sort_by(|a, b| a.1.ipv4address.cmp(&b.1.ipv4address));
 
     let message = "OpenDuT docker network 'docker network inspect opendut_network'";
-    println!("# BEGIN {}", message);
+    println!("# BEGIN {message}");
     for (_key, value) in &sorted_addresses {
         let ip_address = value.ipv4address.to_string();
         let given_hostname = value.name.clone();
@@ -101,8 +101,8 @@ pub(crate) fn docker_inspect_network() -> crate::Result {
         let padding = std::cmp::max(0, 20 - ip_address.clone().len());
         let whitespace = " ".repeat(padding);
         let padded_ip_address = ip_address.clone() + &whitespace;
-        println!("{}  {}", padded_ip_address, hostname);
+        println!("{padded_ip_address}  {hostname}");
     }
-    println!("# END {}", message);
+    println!("# END {message}");
     Ok(())
 }

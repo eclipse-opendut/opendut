@@ -37,11 +37,11 @@ impl ListClusterDescriptorsCli {
             }
             ListOutputFormat::Json => {
                 let json = serde_json::to_string(&clusters).unwrap();
-                println!("{}", json);
+                println!("{json}");
             }
             ListOutputFormat::PrettyJson => {
                 let json = serde_json::to_string_pretty(&clusters).unwrap();
-                println!("{}", json);
+                println!("{json}");
             }
         }
         Ok(())

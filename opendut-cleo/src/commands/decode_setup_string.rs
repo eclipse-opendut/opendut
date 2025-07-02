@@ -18,7 +18,7 @@ impl DecodeSetupStringCli {
         let setup_string = *self.setup_string.0;
         let text = match self.output {
             DecodeSetupStringOutputFormat::Text => {
-                format!("{:#?}", setup_string)
+                format!("{setup_string:#?}")
             }
             DecodeSetupStringOutputFormat::Json => serde_json::to_string(&setup_string).unwrap(),
             DecodeSetupStringOutputFormat::PrettyJson => {

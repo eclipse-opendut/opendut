@@ -69,11 +69,11 @@ pub async fn create_peer(descriptor: PeerDescriptor, carl: &mut CarlClient, outp
         }
         CreateOutputFormat::Json => {
             let json = serde_json::to_string(&descriptor).unwrap();
-            println!("{}", json);
+            println!("{json}");
         }
         CreateOutputFormat::PrettyJson => {
             let json = serde_json::to_string_pretty(&descriptor).unwrap();
-            println!("{}", json);
+            println!("{json}");
         }
     }
     Ok(())

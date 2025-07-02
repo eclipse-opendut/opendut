@@ -32,7 +32,7 @@ impl Interceptor for AuthInterceptor {
                         Err(Status::unauthenticated("No access token present."))
                     }
                     Some(token) => {
-                        let bearer_token: tonic::metadata::MetadataValue<_> = format!("Bearer {}", token).parse()
+                        let bearer_token: tonic::metadata::MetadataValue<_> = format!("Bearer {token}").parse()
                             .map_err(|_err| Status::unauthenticated("could not parse token"))?;
                         request.metadata_mut().insert(http::header::AUTHORIZATION.as_str(), bearer_token);
                         Ok(request)

@@ -323,13 +323,13 @@ mod client {
                     match response.into_inner().reply {
                         Some(peer_manager::generate_peer_setup_response::Reply::Success(peer_manager::GeneratePeerSetupSuccess { setup, .. })) => {
                             setup
-                                .ok_or(CreateSetupError { message: format!("Failed to create setup-string for peer <{}>! Got no PeerSetup!", peer_id) })
+                                .ok_or(CreateSetupError { message: format!("Failed to create setup-string for peer <{peer_id}>! Got no PeerSetup!") })
                                 .and_then(|setup| PeerSetup::try_from(setup)
                                     .map_err(|cause| CreateSetupError { message: cause.to_string() })
                                 )
                         }
                         _ => {
-                            let error = CreateSetupError { message: format!("Failed to create setup-string for peer <{}>!", peer_id) };
+                            let error = CreateSetupError { message: format!("Failed to create setup-string for peer <{peer_id}>!") };
                             error!("{}", error);
                             Err(error)
                         }

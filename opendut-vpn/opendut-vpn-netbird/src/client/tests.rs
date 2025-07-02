@@ -1,6 +1,5 @@
 #![cfg(test)]
 
-///Verify compatibility with examples from here: https://docs.netbird.io/api
 
 use std::result::Result;
 
@@ -18,6 +17,7 @@ const RETRIES: u32 = 5;
 const TIMEOUT: Duration = Duration::from_secs(10000);
 const SETUP_KEY_EXPIRATION: Duration = Duration::from_millis(86400000);
 
+///Verify compatibility with examples from here: https://docs.netbird.io/api
 #[rstest]
 #[tokio::test]
 async fn delete_peer(fixture: Fixture) -> anyhow::Result<()> {
@@ -343,7 +343,7 @@ fn fixture() -> Fixture {
     let peer_netbird_group_name = netbird::GroupName::Peer(peer_id);
     let netbird_peer_id = netbird::PeerId(String::from("chacbco6lnnbn6cg5s90"));
     let netbird_peer_setup_key_name = netbird::setup_key_name_format(peer_id);
-    let netbird_cluster_policy_name = netbird::PolicyName::Cluster(cluster_id).into();
+    let netbird_cluster_policy_name = netbird::PolicyName::Cluster(cluster_id);
     Fixture {
         base_url,
         peer_id,
@@ -412,7 +412,7 @@ impl Fixture {
         F: Fn(Fixture, Request) -> Result<Response, RequestError> + Send + Sync
     {
         MockRequester {
-            fixture: Clone::clone(&self),
+            fixture: Clone::clone(self),
             handler,
         }
     }

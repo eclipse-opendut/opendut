@@ -18,7 +18,7 @@ impl DescribePeerCli {
         
         let peer_descriptor =
             carl.peers.get_peer_descriptor(peer_id).await.map_err(|_| {
-                format!("Failed to retrieve peer descriptor for peer <{}>", peer_id)
+                format!("Failed to retrieve peer descriptor for peer <{peer_id}>")
             })?;
 
         render_peer_descriptor(peer_descriptor, output);

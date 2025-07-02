@@ -439,8 +439,7 @@ mod tests {
             }
         };
 
-        let executor_result_url = executor.results_url.map(|url|
-            String::from(url)
+        let executor_result_url = executor.results_url.map(String::from
         );
 
         let executor_parameters = match executor.kind {

@@ -59,7 +59,7 @@ impl SetupCli {
                     }
                 }
 
-                println!("{}", environment_variables);
+                println!("{environment_variables}");
 
                 Ok(())
             }

@@ -458,7 +458,7 @@ mod test {
     impl Fixture {
         fn setup<F>(setup: F) -> Fixture
         where
-            F: FnOnce(&mut MockMockClient) -> ()
+            F: FnOnce(&mut MockMockClient)
         {
             let mut mock_client = MockMockClient::new();
             setup(&mut mock_client);

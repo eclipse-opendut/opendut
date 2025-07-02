@@ -29,7 +29,7 @@ impl TryFrom<&Config> for LoadableLeaIdentityProviderConfig {
             .map_err(|error| anyhow!("Failed to find configuration for `{}`. {}", LoadableLeaIdentityProviderConfig::ISSUER_URL, error))?;
 
         let issuer_url = Url::parse(&issuer)
-            .context(format!("Failed to parse OIDC issuer URL `{}`.", issuer))?;
+            .context(format!("Failed to parse OIDC issuer URL `{issuer}`."))?;
 
         let lea_raw_scopes = config.get_string(LoadableLeaIdentityProviderConfig::SCOPES)
             .map_err(|error| anyhow!("Failed to find configuration for `{}`. {}", LoadableLeaIdentityProviderConfig::SCOPES, error))?;

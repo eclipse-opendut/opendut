@@ -182,7 +182,7 @@ impl Client for DefaultClient {
 
         let response = self.requester.handle(request).await?;
 
-        parse_response_status(response, format!("NetBird group with ID <{:?}>", group_id)).await
+        parse_response_status(response, format!("NetBird group with ID <{group_id:?}>")).await
     }
 
     async fn list_setup_keys(&self) -> Result<Vec<netbird::SetupKey>, RequestError> {
@@ -326,7 +326,7 @@ impl Client for DefaultClient {
 
         let response = self.requester.handle(request).await?;
 
-        parse_response_status(response, format!("NetBird policy with ID <{:?}>", policy_id)).await
+        parse_response_status(response, format!("NetBird policy with ID <{policy_id:?}>")).await
     }
 
     #[tracing::instrument(skip(self), level="trace")]

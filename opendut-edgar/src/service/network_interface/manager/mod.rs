@@ -141,7 +141,7 @@ impl NetworkInterfaceManager {
             let output = ip_link_command
                 .output()
                 .await
-                .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{:?}", ip_link_command), cause })?;
+                .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{ip_link_command:?}"), cause })?;
 
             if !output.status.success() {
                 return Err(Error::CanInterfaceUpdate { name: network_interface_descriptor.name.clone(), cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim()) });

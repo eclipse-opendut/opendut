@@ -40,7 +40,7 @@ impl DockerCommand {
             .arg("ps")
             .arg("--quiet")
             .arg("--filter")
-            .arg(format!("name={}", name))
+            .arg(format!("name={name}"))
             .expect_output("Failed to check if docker container exists.")
             .map_err(|_error| false);
         match result {
@@ -68,7 +68,7 @@ impl DockerCommand {
     pub(crate) fn add_common_args(&mut self, compose_dir: &str) -> &mut Self {
         self.arg("compose")
             .arg("--file")
-            .arg(format!("./.ci/docker/{}/docker-compose.yml", compose_dir))
+            .arg(format!("./.ci/docker/{compose_dir}/docker-compose.yml"))
             .arg("--env-file")
             .arg(".env-theo")
             .arg("--env-file")
@@ -86,7 +86,7 @@ impl DockerCommand {
         match result {
             Ok(output) => { Ok(output) }
             Err(error) => {
-                Err(anyhow!(TheoError::DockerCommandFailed(format!("Failed to execute docker command. {}\nCause: {}", error_message, error))))
+                Err(anyhow!(TheoError::DockerCommandFailed(format!("Failed to execute docker command. {error_message}\nCause: {error}"))))
             }
         }
     }
@@ -95,7 +95,7 @@ impl DockerCommand {
         let command_status = self
             .command
             .status()
-            .map_err(|cause| anyhow!(TheoError::DockerCommandFailed(format!("{}. Cause: {}", error_message, cause))))?;
+            .map_err(|cause| anyhow!(TheoError::DockerCommandFailed(format!("{error_message}. Cause: {cause}"))))?;
 
         if command_status.success() {
             Ok(command_status.code().unwrap_or(1))

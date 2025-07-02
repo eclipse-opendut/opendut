@@ -90,12 +90,12 @@ impl CreateContainerExecutorCli {
         
 
         let mut peer_descriptor = carl.peers.get_peer_descriptor(peer_id).await
-            .map_err(|_| format!("Failed to get peer with ID <{}>.", peer_id))?;
+            .map_err(|_| format!("Failed to get peer with ID <{peer_id}>."))?;
 
         peer_descriptor.executors.executors.push(executor_descriptor);
 
         carl.peers.store_peer_descriptor(Clone::clone(&peer_descriptor)).await
-            .map_err(|error| format!("Failed to update peer <{}>.\n  {}", peer_id, error))?;
+            .map_err(|error| format!("Failed to update peer <{peer_id}>.\n  {error}"))?;
         let output_format = DescribeOutputFormat::from(output);
         crate::commands::peer::describe::render_peer_descriptor(peer_descriptor, output_format);
 

@@ -49,5 +49,5 @@ pub(crate) fn get_netbird_api_key() -> Result<String, TheoError> {
         .arg("/management/api_key")
         .output();
 
-    consume_output(command_status).map_err(|cause| TheoError::DockerCommandFailed(format!("Failed to get netbird api key from netbird_management_init container. Error: {}", cause)))
+    consume_output(command_status).map_err(|cause| TheoError::DockerCommandFailed(format!("Failed to get netbird api key from netbird_management_init container. Error: {cause}")))
 }

@@ -36,7 +36,7 @@ impl DeleteContainerExecutorCli {
         };
 
         carl.peers.store_peer_descriptor(peer).await
-            .map_err(|error| format!("Failed to delete container executor for peer.\n  {}", error))?;
+            .map_err(|error| format!("Failed to delete container executor for peer.\n  {error}"))?;
 
         Ok(())
     }

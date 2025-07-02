@@ -241,7 +241,7 @@ pub mod wasm {
             let host = url.host_str().unwrap_or("localhost");
             let port = url.port().unwrap_or(443_u16);
 
-            let client = tonic_web_wasm_client::Client::new(format!("{}://{}:{}", scheme, host, port));
+            let client = tonic_web_wasm_client::Client::new(format!("{scheme}://{host}:{port}"));
             let auth_interceptor = AuthInterceptor::new(auth);
 
             Ok(CarlClient {

@@ -28,7 +28,7 @@ where
                 }
             },
             Err(error) => {
-                panic!("Could not acquire Read Lock: {}", error);
+                panic!("Could not acquire Read Lock: {error}");
             }
         }
     }
@@ -54,7 +54,7 @@ where
                 Ok(())
             }
             Err(error) => {
-                Err(CacheError::WriteLockFailed(format!("{}", error)))
+                Err(CacheError::WriteLockFailed(error.to_string()))
             }
         }
     }
@@ -66,7 +66,7 @@ where
                 Ok(read_lock.get(key).cloned())
             }
             Err(error) => {
-                Err(CacheError::ReadLockFailed(format!("{}", error)))
+                Err(CacheError::ReadLockFailed(error.to_string()))
             }
         }
     }
@@ -78,7 +78,7 @@ where
                 Ok(())
             }
             Err(error) => {
-                Err(CacheError::WriteLockFailed(format!("{}", error)))
+                Err(CacheError::WriteLockFailed(error.to_string()))
             }
         }
     }

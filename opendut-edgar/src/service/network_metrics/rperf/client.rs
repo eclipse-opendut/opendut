@@ -151,7 +151,7 @@ async fn launch_rperf_client(
                     while let Ok(Some(line)) = stderr_lines.next_line().await {
                         if line.contains(" ERROR rperf") {
                             error!("Rperf Client STDERR: {}", line);
-                            return Err(RperfError::Other { message: format!("rperf client STDERR: {}", line) })
+                            return Err(RperfError::Other { message: format!("rperf client STDERR: {line}") })
                         } else {
                             trace!("Rperf Client STDERR: {}", line);
                         }

@@ -23,7 +23,7 @@ impl ListContainerExecutorCli {
         let peer = carl
             .peers.get_peer_descriptor(peer_id)
             .await
-            .map_err(|error| format!("Could not find peer.\n  {}", error))?;
+            .map_err(|error| format!("Could not find peer.\n  {error}"))?;
         let executor_table = filter_connected_peers(&peer);
 
         match output {
@@ -33,11 +33,11 @@ impl ListContainerExecutorCli {
             }
             ListOutputFormat::Json => {
                 let json = serde_json::to_string(&executor_table).unwrap();
-                println!("{}", json);
+                println!("{json}");
             }
             ListOutputFormat::PrettyJson => {
                 let json = serde_json::to_string_pretty(&executor_table).unwrap();
-                println!("{}", json);
+                println!("{json}");
             }
         }
         Ok(())

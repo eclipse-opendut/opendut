@@ -112,7 +112,7 @@ impl TaskExecutionError {
             message.push('\n');
 
             if let Some(error) = error {
-                let error = format!("{:#}", error);
+                let error = format!("{error:#}");
                 for line in error.lines() {
                     message.push_str(line);
                     message.push('\n');
@@ -121,7 +121,7 @@ impl TaskExecutionError {
             message
         };
         for line in message.lines() {
-            eprintln!("    {}", line);
+            eprintln!("    {line}");
         }
         error!("{message}");
         print_outcome(task_name.to_string(), Outcome::Failed);

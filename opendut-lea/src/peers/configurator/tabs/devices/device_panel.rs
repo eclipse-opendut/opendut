@@ -147,7 +147,7 @@ fn DeviceNameInput(
                 match cause {
                     IllegalDeviceName::TooShort { expected, actual, value } => {
                         if actual > 0 {
-                            UserInputValue::Both(format!("A device name must be at least {} characters long.", expected), value)
+                            UserInputValue::Both(format!("A device name must be at least {expected} characters long."), value)
 
                         }
                         else {
@@ -155,7 +155,7 @@ fn DeviceNameInput(
                         }
                     },
                     IllegalDeviceName::TooLong { expected, value, .. } => {
-                        UserInputValue::Both(format!("A device name must be at most {} characters long.", expected), value)
+                        UserInputValue::Both(format!("A device name must be at most {expected} characters long."), value)
                     },
                     IllegalDeviceName::InvalidStartEndCharacter { value } => {
                         UserInputValue::Both("The device name starts/ends with an invalid character. \

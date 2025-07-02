@@ -11,21 +11,21 @@ pub(crate) fn docker_compose_build(compose_dir: &str) -> Result<i32, Error> {
         // https://docs.docker.com/build/building/env-vars/
         // Show more output during the build progress
         .env("BUILDKIT_PROGRESS", "plain")
-        .expect_status(format!("Failed to execute docker compose build for directory: {}.", compose_dir).as_str())
+        .expect_status(format!("Failed to execute docker compose build for directory: {compose_dir}.").as_str())
 }
 
 pub fn docker_compose_up_expose_ports(compose_dir: &str, expose: bool) -> crate::Result {
     let mut command = DockerCommand::new();
     command.arg("compose")
         .arg("--file")
-        .arg(format!(".ci/docker/{}/docker-compose.yml", compose_dir));
+        .arg(format!(".ci/docker/{compose_dir}/docker-compose.yml"));
 
     if determine_if_ports_shall_be_exposed(expose) {
         command.arg("--file")
-            .arg(format!(".ci/docker/{}/expose_ports.yml", compose_dir))
+            .arg(format!(".ci/docker/{compose_dir}/expose_ports.yml"))
     } else {
         command.arg("--file")
-            .arg(format!(".ci/docker/{}/localhost_ports.yml", compose_dir))
+            .arg(format!(".ci/docker/{compose_dir}/localhost_ports.yml"))
     };
     command.arg("--env-file")
         .arg(".env-theo")
@@ -33,7 +33,7 @@ pub fn docker_compose_up_expose_ports(compose_dir: &str, expose: bool) -> crate:
         .arg(".env")
         .arg("up")
         .arg("--detach")
-        .expect_status(&format!("Failed to execute docker compose command for {}.", compose_dir))?;
+        .expect_status(&format!("Failed to execute docker compose command for {compose_dir}."))?;
     Ok(())
 }
 
@@ -46,7 +46,7 @@ pub(crate) fn docker_compose_down(compose_dir: &str, delete_volumes: bool) -> Re
     } else {
         command.arg("down");
     }
-    command.expect_status(format!("Failed to execute docker compose down for directory: {}.", compose_dir).as_str())
+    command.expect_status(format!("Failed to execute docker compose down for directory: {compose_dir}.").as_str())
 }
 
 pub(crate) fn docker_compose_network_create() -> Result<i32, Error> {

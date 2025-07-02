@@ -72,7 +72,7 @@ fn get_ci_package_version(manifest: &Manifest, package_name: &str) -> Option<Str
 }
 
 fn get_package_version(package_name: &str) -> String {
-    let package_toml_path = PathBuf::project_path_buf().join(format!("{}/Cargo.toml", package_name));
+    let package_toml_path = PathBuf::project_path_buf().join(format!("{package_name}/Cargo.toml"));
     let package_manifest = Manifest::from_path(package_toml_path).unwrap();
     package_manifest.package.unwrap().version.unwrap()
 }

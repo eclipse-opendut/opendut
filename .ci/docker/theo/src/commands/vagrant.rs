@@ -125,7 +125,7 @@ impl VagrantCli {
 pub fn running_in_opendut_vm() -> bool {
     let hostname = Command::new("hostname")
         .output()
-        .unwrap_or_else(|cause| panic!("Failed to execute hostname. {}", cause));
+        .unwrap_or_else(|cause| panic!("Failed to execute hostname. {cause}"));
     let hostname = String::from_utf8(hostname.stdout).expect("Could not determine hostname!");
     hostname.trim().contains(OPENDUT_VM_NAME)
 }

@@ -31,7 +31,7 @@ pub fn validate_token(issuer_remote_url: Url, access_token: &str, jwk: JsonWebKe
     let decoding_key = DecodingKey::from_rsa_components(&jwk.modulus, &jwk.exponent).expect("failed to create decoding key");
 
     let token = jsonwebtoken::decode::<Claims<MyAdditionalClaims>>(access_token, &decoding_key, &validation)
-        .map_err(|err| ValidationError::Failed(format!("failed to decode token: {}", err)))?;
+        .map_err(|err| ValidationError::Failed(format!("failed to decode token: {err}")))?;
 
     let username = match token.claims.preferred_username() {
         None => { return Err(ValidationError::Configuration("Missing preferred username".to_string())); }
@@ -63,7 +63,7 @@ pub async fn authorize_user(issuer_url: Url, issuer_remote_url: Url, access_toke
             fetch_and_cache_jwk_from_idp(&issuer_url, key_id, jwk_requester, cache).await?
         }
         Err(error) => {
-            return Err(ValidationError::Cache(format!("Failed to get cache entry: {}", error)));
+            return Err(ValidationError::Cache(format!("Failed to get cache entry: {error}")));
         }
     };
 
@@ -90,7 +90,7 @@ async fn fetch_and_cache_jwk_from_idp(issuer_url: &Url, key_id: String, jwk_requ
     let jwk_map = fetch_jwk_custom(issuer_jwk_url, jwk_requester).await?;
 
     if let Err(error) = cache.delete_all() {
-        return Err(ValidationError::Cache(format!("Failed to evict cache: {}", error)));
+        return Err(ValidationError::Cache(format!("Failed to evict cache: {error}")));
     }
 
     for (kid, jwk) in &jwk_map {
@@ -99,12 +99,12 @@ async fn fetch_and_cache_jwk_from_idp(issuer_url: &Url, key_id: String, jwk_requ
             last_cached: Utc::now().timestamp()
         };
         if let Err(error) = cache.insert(String::from(kid), jwk_cache_value) {
-            return Err(ValidationError::Cache(format!("Failed to store jwk: {}", error)));
+            return Err(ValidationError::Cache(format!("Failed to store jwk: {error}")));
         }
     };
 
     let json_web_key = match jwk_map.get(&key_id) {
-        None => { return Err(ValidationError::InvalidAlgorithm(format!("Could not find key id: {}", key_id))); }
+        None => { return Err(ValidationError::InvalidAlgorithm(format!("Could not find key id: {key_id}"))); }
         Some(jwk) => { jwk.clone() }
     };
     Ok(json_web_key)
@@ -112,7 +112,7 @@ async fn fetch_and_cache_jwk_from_idp(issuer_url: &Url, key_id: String, jwk_requ
 
 fn get_key_id(access_token: &str) -> Result<String, ValidationError> {
     let header = jsonwebtoken::decode_header(access_token)
-        .map_err(|error| ValidationError::Configuration(format!("Failed to decode header: {}", error)))?;
+        .map_err(|error| ValidationError::Configuration(format!("Failed to decode header: {error}")))?;
 
     // TODO: valid algorithms are determined by the issuer (fetch keycloak certificates / jwk)
     match header.alg {
@@ -129,7 +129,7 @@ fn get_key_id(access_token: &str) -> Result<String, ValidationError> {
 async fn fetch_jwk_custom(issuer_jwk_url: Url, jwk_requester: impl JwkRequester) -> Result<BTreeMap<String, JsonWebKey>, ValidationError> {
     let result = jwk_requester.fetch_jwk(issuer_jwk_url).await?;
     let json_web_key_set = serde_json::from_str::<OidcJsonWebKeySet>(result.as_str())
-        .map_err(|cause| ValidationError::Configuration(format!("Failed to parse json: {}", cause)))?;
+        .map_err(|cause| ValidationError::Configuration(format!("Failed to parse json: {cause}")))?;
     let jwk_map = json_web_key_set.keys.into_iter().map(|jwk| {
         (jwk.key_identifier.clone(), jwk)
     }).collect::<BTreeMap<_, _>>();
@@ -145,9 +145,9 @@ pub struct Jwk;
 impl JwkRequester for Jwk {
     async fn fetch_jwk(&self, issuer_jwk_url: Url) -> Result<String, ValidationError> {
         let response = reqwest::get(issuer_jwk_url.clone()).await //TODO pass CA or preconfigured client into here; currently requires SSL_CERT_FILE env to be set
-            .map_err(|cause| ValidationError::Configuration(format!("Failed to fetch IDP jwk URL from '{}': {}", issuer_jwk_url, cause)))?;
+            .map_err(|cause| ValidationError::Configuration(format!("Failed to fetch IDP jwk URL from '{issuer_jwk_url}': {cause}")))?;
         let result = response.text().await
-            .map_err(|cause| ValidationError::Configuration(format!("Failed to read IDP configuration URL from '{}': {}", issuer_jwk_url, cause)))?;
+            .map_err(|cause| ValidationError::Configuration(format!("Failed to read IDP configuration URL from '{issuer_jwk_url}': {cause}")))?;
         Ok(result)
     }
 }
@@ -174,7 +174,7 @@ mod tests {
     #[rstest]
     fn test_validate_token(fixture: Fixture) {
         let result = validate_token(fixture.issuer_url, TEST_TOKEN, fixture.jwk, false)
-            .map_err(|err| println!("Failed to get current user: {:?}", err));
+            .map_err(|err| println!("Failed to get current user: {err:?}"));
         assert!(result.is_ok());
     }
 
@@ -281,7 +281,7 @@ mod tests {
 
         let mut up_to_date_cache: CustomInMemoryCache<String, JwkCacheValue> = CustomInMemoryCache::new();
         let jwk_cache_value = JwkCacheValue {
-            jwk: Clone::clone(&jwk),
+            jwk: Clone::clone(jwk),
             last_cached: Utc::now().timestamp()
         };
         up_to_date_cache.insert(key_id.clone(), jwk_cache_value).expect("Could not cache jwk");
@@ -289,7 +289,7 @@ mod tests {
         let mut two_day_old_cache: CustomInMemoryCache<String, JwkCacheValue> = CustomInMemoryCache::new();
         let utc_two_days_ago = Utc::now().sub(Duration::days(2));
         let jwk_two_day_old_cache_value = JwkCacheValue {
-            jwk: Clone::clone(&jwk),
+            jwk: Clone::clone(jwk),
             last_cached: utc_two_days_ago.timestamp()
         };
         two_day_old_cache.insert(key_id.clone(), jwk_two_day_old_cache_value).expect("Could not cache jwk");

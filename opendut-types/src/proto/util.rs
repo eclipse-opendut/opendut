@@ -71,7 +71,7 @@ conversion! {
 
     fn try_from(value: Proto) -> ConversionResult<Model> {
         url::Url::parse(&value.value)
-            .map_err(|cause| ErrorBuilder::message(format!("Url could not be parsed: {}", cause)))
+            .map_err(|cause| ErrorBuilder::message(format!("Url could not be parsed: {cause}")))
     }
 }
 
@@ -121,7 +121,7 @@ conversion! {
         const IPV4_LENGTH: usize = 4; //bytes
 
         let octets: [u8; IPV4_LENGTH] = value.value[0..IPV4_LENGTH].try_into()
-            .map_err(|cause| ErrorBuilder::message(format!("IPv4 address could not be parsed, because it did not have the correct length ({IPV4_LENGTH} bytes): {}", cause)))?;
+            .map_err(|cause| ErrorBuilder::message(format!("IPv4 address could not be parsed, because it did not have the correct length ({IPV4_LENGTH} bytes): {cause}")))?;
 
         Ok(std::net::Ipv4Addr::from(octets))
     }
@@ -141,7 +141,7 @@ conversion! {
         const IPV6_LENGTH: usize = 16; //bytes
 
         let octets: [u8; IPV6_LENGTH] = value.value[0..IPV6_LENGTH].try_into()
-            .map_err(|cause| ErrorBuilder::message(format!("IPv6 address could not be parsed, because it did not have the correct length ({IPV6_LENGTH} bytes): {}", cause)))?;
+            .map_err(|cause| ErrorBuilder::message(format!("IPv6 address could not be parsed, because it did not have the correct length ({IPV6_LENGTH} bytes): {cause}")))?;
 
         Ok(std::net::Ipv6Addr::from(octets))
     }
@@ -220,11 +220,11 @@ conversion! {
                 network_interface_descriptor::Configuration::Can(can_config) => NetworkInterfaceConfiguration::Can { 
                     bitrate: can_config.bitrate, 
                     sample_point: can_config.sample_point.try_into()
-                        .map_err(|cause| ErrorBuilder::message(format!("Sample point could not be converted: {}", cause)))?,
+                        .map_err(|cause| ErrorBuilder::message(format!("Sample point could not be converted: {cause}")))?,
                     fd: can_config.flexible_data_rate, 
                     data_bitrate: can_config.data_bitrate, 
                     data_sample_point: can_config.data_sample_point.try_into()
-                        .map_err(|cause| ErrorBuilder::message(format!("Sample point could not be converted: {}", cause)))?,
+                        .map_err(|cause| ErrorBuilder::message(format!("Sample point could not be converted: {cause}")))?,
                 },
             };
 
@@ -331,7 +331,7 @@ conversion! {
             auth_config::Config::Enabled(auth_config) => {
                 let issuer_url = extract!(auth_config.issuer_url)
                     .and_then(|url| url::Url::parse(&url.value)
-                        .map_err(|cause| ErrorBuilder::message(format!("Authorization Provider Issuer URL could not be parsed: {}", cause)))
+                        .map_err(|cause| ErrorBuilder::message(format!("Authorization Provider Issuer URL could not be parsed: {cause}")))
                     )?;
 
                 let client_id: crate::util::net::ClientId = extract!(auth_config.client_id)?.try_into()?;

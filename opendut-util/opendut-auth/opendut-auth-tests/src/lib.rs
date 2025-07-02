@@ -78,13 +78,13 @@ mod auth_tests {
          * cargo test -- --include-ignored
          */
         let client: RegistrationClientRef = registration_client.await;
-        println!("{:?}", client);
+        println!("{client:?}");
         let resource_id = Id::random();
         let user_id = UserId { value: String::from("deleteTest") };
         let credentials = client.register_new_client_for_user(resource_id, user_id).await.unwrap();
         let (client_id, client_secret) = (credentials.client_id.value(), credentials.client_secret.value());
         assert_that!(client_id.len().gt(&10), eq(true));
-        println!("New client id: {}, secret: {}", client_id, client_secret);
+        println!("New client id: {client_id}, secret: {client_secret}");
         
         let client_list: Clients = client.list_clients().await.unwrap();
         let filtered_client_list = client_list.filter_clients_by_resource_id(resource_id);

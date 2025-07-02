@@ -185,7 +185,7 @@ pub fn try_write_certificate(name: &str, ca: Pem, user_type: SetupType) -> PathB
 
     let cleo_ca_certificate_dir = certificate_path.parent().unwrap();
     fs::create_dir_all(cleo_ca_certificate_dir)
-        .unwrap_or_else(|error| panic!("Unable to create path {:?}: {}", certificate_path, error));
+        .unwrap_or_else(|error| panic!("Unable to create path {certificate_path:?}: {error}"));
 
     fs::write(
         certificate_path.clone(),

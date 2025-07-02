@@ -112,7 +112,7 @@ mod test {
         let temp = TempDir::new().unwrap();
         let tar_file = temp.child("file.tar.gz");
 
-        let tar_gz = File::create(tar_file.to_path_buf()).unwrap();
+        let tar_gz = File::create(&tar_file).unwrap();
 
         let mut tar_gz = tar::Builder::new(
             GzEncoder::new(tar_gz, Compression::default())
@@ -122,9 +122,9 @@ mod test {
         fs::create_dir_all(&cleo_dir).expect("Unable to create dir.");
 
         let archived_file = cleo_dir.child("test.txt");
-        fs::write(archived_file.to_path_buf(), "TEST")?;
+        fs::write(&archived_file, "TEST")?;
 
-        tar_gz.append_dir_all(CLEO_IDENTIFIER, &cleo_dir.to_path_buf())?;
+        tar_gz.append_dir_all(CLEO_IDENTIFIER, &cleo_dir)?;
         tar_gz.into_inner()?.finish()?;
 
         let cert = match Pem::from_str(include_str!("../../../../resources/development/tls/insecure-development-ca.pem")) {
@@ -141,7 +141,7 @@ mod test {
 
         add_file_to_archive(
             &cert,
-            &tar_file.to_path_buf(),
+            &tar_file,
             &cleo_script,
         )?;
 

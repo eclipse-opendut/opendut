@@ -24,7 +24,7 @@ async fn await_peers_online(carl: &mut CarlClient, peer_ids: HashSet<PeerId>, ma
                         let conversion_result: Result<WaitForPeersOnlineResponse, ConversionError> = response.try_into();
                         match conversion_result {
                             Ok(response) => {
-                                println!("Response: {:?}", response);
+                                println!("Response: {response:?}");
                                 match response.status {
                                     WaitForPeersOnlineResponseStatus::WaitForPeersOnlineSuccess | WaitForPeersOnlineResponseStatus::WaitForPeersOnlineFailure { .. } => {
                                         break;
@@ -33,16 +33,16 @@ async fn await_peers_online(carl: &mut CarlClient, peer_ids: HashSet<PeerId>, ma
                                 }
                             }
                             Err(error) => {
-                                println!("Failed to decode message from server: {:?}", error);
+                                println!("Failed to decode message from server: {error:?}");
                             }
                         }
                     }
                     Ok(None) => {
                         println!("CARL disconnected!");
-                        return Err(format!("CARL disconnected while waiting for peers <{:?}> to come online!", peer_ids));
+                        return Err(format!("CARL disconnected while waiting for peers <{peer_ids:?}> to come online!"));
                     }
                     Err(error) => {
-                        println!("GRPC error status: {:?}", error);
+                        println!("GRPC error status: {error:?}");
                         tokio::time::sleep(Duration::from_secs(1)).await;
                     }
                 }

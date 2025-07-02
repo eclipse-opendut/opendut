@@ -27,7 +27,7 @@ impl RunRequiringSuccess for Command {
         } else {
             let mut error = format!("Error while running command: {self:?}\n");
             if let Some(status) = &status.code() {
-                error += format!("  Exited with status code {}.\n", status).as_ref();
+                error += format!("  Exited with status code {status}.\n").as_ref();
             }
             Err(anyhow!(error))
         }
@@ -76,14 +76,14 @@ pub mod file {
                 let expected = Some(entry.to_path_buf());
                 assert_eq!(
                     actual, expected.clone(),
-                    "Found '{:?}' as next path in alphabetical order, but expected '{:?}'.", actual, expected
+                    "Found '{actual:?}' as next path in alphabetical order, but expected '{expected:?}'." 
                 );
             }
 
             let actual = sub_paths.next();
             assert_eq!(
                 actual, None,
-                "Found path '{:?}' in directory, but expected no further paths.", actual
+                "Found path '{actual:?}' in directory, but expected no further paths."
             );
         }
     }

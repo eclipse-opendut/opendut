@@ -21,7 +21,7 @@ impl DeleteClusterDescriptorCli {
             .map_err(|_| String::from("Failed to get list of cluster deployments!"))?;
 
         if cluster_deployments.iter().any(|deployment| deployment.id == id) {
-            Err(format!("Cluster <{}> can not be deleted while it is deployed.", id))?
+            Err(format!("Cluster <{id}> can not be deleted while it is deployed."))?
         };
         
         match carl.cluster.delete_cluster_descriptor(id).await {

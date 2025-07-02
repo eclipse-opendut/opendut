@@ -168,9 +168,7 @@ impl<V: ParameterValue> ParameterField<V> {
 
 impl ParameterField<parameter::DeviceInterface> {
     pub fn filter_can_devices(&self) -> Vec<Parameter<parameter::DeviceInterface>> {
-        self.iter()
-            .map(|(_id, parameter)| parameter.clone())
-            .filter(|interface| matches!(interface.value.descriptor.configuration, NetworkInterfaceConfiguration::Can { .. }))
+        self.values().filter(|&interface| matches!(interface.value.descriptor.configuration, NetworkInterfaceConfiguration::Can { .. })).cloned()
             .collect::<Vec<_>>()
     }
 }

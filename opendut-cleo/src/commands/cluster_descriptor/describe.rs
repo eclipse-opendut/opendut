@@ -35,7 +35,7 @@ impl DescribeClusterDescriptorCli {
 
         let cluster_descriptor = clusters_configuration.into_iter()
             .find(|cluster_descriptor| cluster_descriptor.id == cluster_id)
-            .ok_or(format!("Failed to find cluster descriptor for ClusterID <{}>", cluster_id))?;
+            .ok_or(format!("Failed to find cluster descriptor for ClusterID <{cluster_id}>"))?;
 
         let cluster_devices = {
             let devices = carl.peers.list_devices().await

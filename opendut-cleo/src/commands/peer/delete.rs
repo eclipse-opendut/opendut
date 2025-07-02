@@ -34,7 +34,7 @@ impl DeletePeerCli {
                 }
                 other => Err(other)
             }
-            .map_err(|error| format!("Failed to get peer with ID <{}>.\n  {}", id, error))
+            .map_err(|error| format!("Failed to get peer with ID <{id}>.\n  {error}"))
         }?;
 
         { //block deleting, if device is used in cluster
@@ -45,7 +45,7 @@ impl DeletePeerCli {
             let clusters = carl.cluster
                 .list_cluster_descriptors()
                 .await
-                .map_err(|error| format!("Failed to list cluster descriptors.\n  {}", error))?;
+                .map_err(|error| format!("Failed to list cluster descriptors.\n  {error}"))?;
 
             let mut clusters_with_configured_devices: HashSet<ClusterId> = HashSet::new();
             for cluster in clusters {
@@ -62,9 +62,9 @@ impl DeletePeerCli {
         }
         
         carl.peers.delete_peer_descriptor(id).await
-            .map_err(|error| format!("Failed to delete peer with the id '{}'.\n  {}", id, error))?;
+            .map_err(|error| format!("Failed to delete peer with the id '{id}'.\n  {error}"))?;
 
-        println!("Deleted peer with the PeerID: {}", id);
+        println!("Deleted peer with the PeerID: {id}");
 
         Ok(())
     }

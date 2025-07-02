@@ -17,25 +17,25 @@ impl Display for WrappedClientRegistrationError {
 fn parse_client_registration_error(error: &ClientRegistrationError<CoreRegisterErrorResponseType, OidcClientError>) -> String {
     match error {
         ClientRegistrationError::Other(error) => {
-            format!("RegistrationClientError Other: {:?}", error)
+            format!("RegistrationClientError Other: {error:?}")
         }
         ClientRegistrationError::Parse(error) => {
-            format!("RegistrationClientError Parse: {:?}", error)
+            format!("RegistrationClientError Parse: {error:?}")
         }
         ClientRegistrationError::Request(error) => {
-            format!("RegistrationClientError Request: {:?}", error)
+            format!("RegistrationClientError Request: {error:?}")
         }
         ClientRegistrationError::Response(status, _body,  error) => {
-            format!("RegistrationClientError Response: {} Status: {}", error, status)
+            format!("RegistrationClientError Response: {error} Status: {status}")
         }
         ClientRegistrationError::Serialize(error) => {
-            format!("RegistrationClientError Serialize: {:?}", error)
+            format!("RegistrationClientError Serialize: {error:?}")
         }
         ClientRegistrationError::ServerResponse(error) => {
-            format!("RegistrationClientError ServerResponse: {:?}", error)
+            format!("RegistrationClientError ServerResponse: {error:?}")
         }
         _ => {
-            format!("RegistrationClientError Phantom: {:?}", error)
+            format!("RegistrationClientError Phantom: {error:?}")
         }
     }
 }

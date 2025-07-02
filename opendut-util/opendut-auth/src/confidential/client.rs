@@ -122,7 +122,7 @@ impl ConfidentialClient {
                     .with_max_delay(Duration::from_secs(120))
             )
             .notify(|err: &reqwest::Error, dur: Duration| {
-                eprintln!("Retrying connection to issuer. {:?} after {:?}", err, dur);
+                eprintln!("Retrying connection to issuer. {err:?} after {dur:?}");
             })
             .await;
 
@@ -227,7 +227,7 @@ impl Interceptor for ConfClientArcMutex<Option<ConfidentialClientRef>> {
             )
             .notify(|_, dur: Duration| {
                 retries += 1;
-                eprintln!("Failed to acquire lock on confidential client in telemetry request interceptor. Retrying to get access token after {:?}.", dur);
+                eprintln!("Failed to acquire lock on confidential client in telemetry request interceptor. Retrying to get access token after {dur:?}.");
             })
             .call();
 
@@ -241,7 +241,7 @@ impl Interceptor for ConfClientArcMutex<Option<ConfidentialClientRef>> {
             }
             Err(error) => {
                 eprintln!("Failed to acquire lock on the Confidential Client definitively. The following telemetry request will not be transmitted.");
-                eprintln!("Failed request: {:?}", request);
+                eprintln!("Failed request: {request:?}");
                 Some(Err(AuthError::FailedToLockConfidentialClient { message: "Unable to acquire lock on the Confidential Client".to_owned(), cause: error }))
             }
         };
@@ -256,7 +256,7 @@ impl Interceptor for ConfClientArcMutex<Option<ConfidentialClientRef>> {
                         request.metadata_mut().insert(http::header::AUTHORIZATION.as_str(), MetadataValue::from_str(&bearer_header).expect("Cannot create metadata value from bearer header"));
                         Ok(request)
                     }
-                    Err(error) => { Err(Status::unauthenticated(format!("{}", error))) }
+                    Err(error) => { Err(Status::unauthenticated(format!("{error}"))) }
                 }
             }
         }

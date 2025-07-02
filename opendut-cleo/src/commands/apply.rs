@@ -133,13 +133,13 @@ fn convert_document_to_model(specification_document: SpecificationDocument) -> c
         Specification::PeerDescriptorSpecification(PeerDescriptorSpecification::V1(peer)) => {
             let peer_id = specification_document.metadata.id;
             let peer_descriptor = convert_document_to_peer_descriptor(specification_document.metadata, peer)
-                .map_err(|error| format!("Could not parse the provided specification for peer <{}>.\n  {}", peer_id, error))?;
+                .map_err(|error| format!("Could not parse the provided specification for peer <{peer_id}>.\n  {error}"))?;
             ResourceModel::PeerDescriptor(peer_descriptor)
         }
         Specification::ClusterDescriptorSpecification(ClusterDescriptorSpecification::V1(cluster_descriptor)) => {
             let cluster_descriptor_id = specification_document.metadata.id;
             let cluster_descriptor = convert_document_to_cluster_descriptor(specification_document.metadata, cluster_descriptor)
-                .map_err(|error| format!("Could not parse the provided specification for cluster descriptor <{}>.\n {}", cluster_descriptor_id, error))?;
+                .map_err(|error| format!("Could not parse the provided specification for cluster descriptor <{cluster_descriptor_id}>.\n {error}"))?;
             ResourceModel::ClusterDescriptor(cluster_descriptor)
         }        
     };

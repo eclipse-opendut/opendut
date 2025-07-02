@@ -47,7 +47,7 @@ where A: Fn(NetworkInterfaceName, UserNetworkInterfaceConfiguration) + 'static {
             Err(cause) => {
                 match cause {
                     NetworkInterfaceNameError::TooLong { value, max } => {
-                        UserInputValue::Both(format!("A network interface name must be at most {} characters long.", max), value)
+                        UserInputValue::Both(format!("A network interface name must be at most {max} characters long."), value)
                     },
                     NetworkInterfaceNameError::Empty => {
                         UserInputValue::Left(String::from(NON_BREAKING_SPACE))

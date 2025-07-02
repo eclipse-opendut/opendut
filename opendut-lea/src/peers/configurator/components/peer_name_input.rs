@@ -26,14 +26,14 @@ pub fn PeerNameInput(peer_configuration: RwSignal<UserPeerConfiguration>) -> imp
                 match cause {
                     IllegalPeerName::TooShort { expected, actual, value } => {
                         if actual > 0 {
-                            UserInputValue::Both(format!("A peer name must be at least {} characters long.", expected), value)
+                            UserInputValue::Both(format!("A peer name must be at least {expected} characters long."), value)
                         }
                         else {
                             UserInputValue::Both("Enter a valid peer name.".to_string(), value)
                         }
                     },
                     IllegalPeerName::TooLong { expected, value, .. } => {
-                        UserInputValue::Both(format!("A peer name must be at most {} characters long.", expected), value)
+                        UserInputValue::Both(format!("A peer name must be at most {expected} characters long."), value)
                     },
                     IllegalPeerName::InvalidStartEndCharacter { value } => {
                         UserInputValue::Both("The peer name starts/ends with an invalid character. \

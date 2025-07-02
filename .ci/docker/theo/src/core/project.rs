@@ -59,7 +59,7 @@ impl TheoEnvMap {
         let group_name = match consume_output(Command::new("id").arg("--group").arg("--name").output()) {
             Ok(group_name) => { group_name }
             Err(error) => {
-                println!("Failed to get group name: {:?}. Using 'general' as fallback name for your group.", error);
+                println!("Failed to get group name: {error:?}. Using 'general' as fallback name for your group.");
                 "general".to_string()
             }
         };
@@ -96,7 +96,7 @@ impl TheoEnvMap {
         env_map.insert(TheoDynamicEnvVars::OpendutEdgarReplicas.to_string(), "4".to_string());
 
         if running_in_opendut_vm() {
-            println!("Running in virtual machine '{}'. Automatically exposing ports within the virtual machine!", OPENDUT_VM_NAME);
+            println!("Running in virtual machine '{OPENDUT_VM_NAME}'. Automatically exposing ports within the virtual machine!");
             env_map.insert(TheoDynamicEnvVars::OpendutExposePorts.to_string(), "true".to_string());
         } else {
             env_map.insert(TheoDynamicEnvVars::OpendutExposePorts.to_string(), "false".to_string());
@@ -109,7 +109,7 @@ impl TheoEnvMap {
 impl From<TheoEnvMap> for String {
     fn from(value: TheoEnvMap) -> Self {
         let mut result = value.0.into_iter()
-            .map(|(key, value)| format!("{}={}", key, value))
+            .map(|(key, value)| format!("{key}={value}"))
             .collect::<Vec<String>>();
         result.sort();
         result.join("\n")
@@ -183,7 +183,7 @@ pub(crate) fn dot_env_create_theo_specific_defaults() {
     let env_map_string: String = String::from(env_map.clone());
     let theo_env_file = PathBuf::project_path_buf().join(".env-theo");
 
-    std::fs::write(theo_env_file, format!("{}\n", env_map_string)).expect("Failed to write .env-theo file.");
+    std::fs::write(theo_env_file, format!("{env_map_string}\n")).expect("Failed to write .env-theo file.");
 }
 
 pub(crate) fn load_theo_environment_variables() {
@@ -208,18 +208,18 @@ pub(crate) fn load_environment_variables_from_dot_env_file() {
                 match error {
                     VarError::NotPresent => {
                         missing_env_vars = true;
-                        println!("Environment variable '{}' is not set. Using a default value '{}'.", env_key, env_value);
+                        println!("Environment variable '{env_key}' is not set. Using a default value '{env_value}'.");
                         let mut file = OpenOptions::new()
                             .append(true)
                             .open(env_file.clone())
                             .unwrap();
 
-                        if let Err(e) = writeln!(file, "{}={}", env_key, env_value) {
-                            eprintln!("Couldn't write to '.env' file: {}", e);
+                        if let Err(e) = writeln!(file, "{env_key}={env_value}") {
+                            eprintln!("Couldn't write to '.env' file: {e}");
                         }
                     }
                     VarError::NotUnicode(_) => {
-                        panic!("Environment variable '{}' is not unicode.", env_key);
+                        panic!("Environment variable '{env_key}' is not unicode.");
                     }
                 }
             }

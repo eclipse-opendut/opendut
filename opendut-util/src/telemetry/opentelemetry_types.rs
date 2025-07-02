@@ -23,7 +23,7 @@ impl Opentelemetry {
         let opentelemetry_enabled = config.get_bool("opentelemetry.enabled")
             .map_err(|cause| OpentelemetryConfigError::ValueParseError{
                 field: field.clone(),
-                cause: format!("{:?}", cause)
+                cause: format!("{cause:?}")
             })?;
 
         if opentelemetry_enabled {
@@ -32,12 +32,12 @@ impl Opentelemetry {
                 let url = config.get_string(&field)
                     .map_err(|cause| OpentelemetryConfigError::ValueParseError {
                         field: field.clone(),
-                        cause: format!("{:?}", cause)
+                        cause: format!("{cause:?}")
                     })?;
                 let url = Url::parse(&url)
                     .map_err(|cause| OpentelemetryConfigError::ValueParseError {
                         field,
-                        cause: format!("{:?}", cause)
+                        cause: format!("{cause:?}")
                     })?;
                 Endpoint { url }
             };
@@ -46,7 +46,7 @@ impl Opentelemetry {
                 config.get_string(&field)
                     .map_err(|cause| OpentelemetryConfigError::ValueParseError {
                         field: field.clone(),
-                        cause: format!("{:?}", cause)
+                        cause: format!("{cause:?}")
                     })?
             };
 
@@ -56,13 +56,13 @@ impl Opentelemetry {
                 let interval_i64 = config.get_int(&field)
                     .map_err(|cause| OpentelemetryConfigError::ValueParseError {
                         field: field.clone(),
-                        cause: format!("{:?}", cause)
+                        cause: format!("{cause:?}")
                     })?;
 
                 let interval_u64 = u64::try_from(interval_i64)
                     .map_err(|cause| OpentelemetryConfigError::ValueParseError {
                         field: field.clone(),
-                        cause: format!("{:?}", cause)
+                        cause: format!("{cause:?}")
                     })?;
 
                 Duration::from_millis(interval_u64)
@@ -74,13 +74,13 @@ impl Opentelemetry {
                 let interval_i64 = config.get_int(&field)
                     .map_err(|cause| OpentelemetryConfigError::ValueParseError {
                         field: field.clone(),
-                        cause: format!("{:?}", cause)
+                        cause: format!("{cause:?}")
                     })?;
 
                 let interval_u64 = u64::try_from(interval_i64)
                     .map_err(|cause| OpentelemetryConfigError::ValueParseError {
                         field: field.clone(),
-                        cause: format!("{:?}", cause)
+                        cause: format!("{cause:?}")
                     })?;
                 let interval = Duration::from_millis(interval_u64);
 

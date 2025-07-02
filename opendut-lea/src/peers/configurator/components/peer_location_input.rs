@@ -21,7 +21,7 @@ pub fn PeerLocationInput(peer_configuration: RwSignal<UserPeerConfiguration>) ->
             Err(cause) => {
                 match cause {
                     IllegalLocation::TooLong { expected, value, .. } => {
-                        UserInputValue::Both(format!("A peer location must be at most {} characters long.", expected), value)
+                        UserInputValue::Both(format!("A peer location must be at most {expected} characters long."), value)
                     },
                     IllegalLocation::InvalidStartEndCharacter { value } => {
                         UserInputValue::Both("The peer name starts/ends with an invalid character. \

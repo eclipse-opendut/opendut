@@ -21,7 +21,7 @@ pub async fn download_edgar(
     response.headers_mut()
         .append(
             header::CONTENT_DISPOSITION,
-            HeaderValue::from_str(&format!("attachment; filename=\"{}\"", file_name)).unwrap()
+            HeaderValue::from_str(&format!("attachment; filename=\"{file_name}\"")).unwrap()
         );
 
     response
@@ -64,7 +64,7 @@ mod test {
             .get(header::CONTENT_DISPOSITION)
             .unwrap();
 
-        let expected_header = format!("attachment; filename=\"{}\"", file_name);
+        let expected_header = format!("attachment; filename=\"{file_name}\"");
         assert_that!(header.to_str()?, eq(&expected_header));
 
         Ok(())

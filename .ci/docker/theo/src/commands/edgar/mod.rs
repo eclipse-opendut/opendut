@@ -78,7 +78,7 @@ fn start_edgar_in_docker() -> Result<i32, Error> {
 fn check_edgar_container_provisioning_done(container_name: &str) -> Result<bool, Error> {
     let exists = DockerCommand::container_exists(container_name);
     if !exists {
-        Err(TheoError::DockerCommandFailed(format!("EDGAR container '{}' has terminated or does not exists!", container_name)).into())
+        Err(TheoError::DockerCommandFailed(format!("EDGAR container '{container_name}' has terminated or does not exists!")).into())
     } else {
         check_edgar_provisioning_finished(container_name)
     }
@@ -88,7 +88,7 @@ fn check_edgar_provisioning_finished(container_name: &str) -> Result<bool, Error
     let command_output = DockerCommand::new_exec(container_name)
         .arg("cat")
         .arg("/opt/signal/result.txt")
-        .expect_output(format!("Failed to check if EDGAR {} was provisioned.", container_name).as_str());
+        .expect_output(format!("Failed to check if EDGAR {container_name} was provisioned.").as_str());
     match command_output {
         Ok(output) => {
             let status_code = output.status.code().unwrap_or(1) == 0;

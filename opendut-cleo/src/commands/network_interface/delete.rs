@@ -22,7 +22,7 @@ impl DeleteNetworkInterfaceCli {
         let mut peer = carl.peers
             .get_peer_descriptor(peer_id)
             .await
-            .map_err(|error| format!("Failed to get peer with the id '{}'.\n  {}", peer_id, error))?;
+            .map_err(|error| format!("Failed to get peer with the id '{peer_id}'.\n  {error}"))?;
 
         let network_interface_names = self.interfaces.into_iter()
             .map(NetworkInterfaceName::try_from)
@@ -54,7 +54,7 @@ impl DeleteNetworkInterfaceCli {
         };
 
         carl.peers.store_peer_descriptor(peer).await
-            .map_err(|error| format!("Failed to delete network interfaces for peer.\n  {}", error))?;
+            .map_err(|error| format!("Failed to delete network interfaces for peer.\n  {error}"))?;
 
         Ok(())
     }

@@ -41,13 +41,13 @@ impl CreateClusterDescriptorCli {
         let cluster_deployments = carl.cluster.list_cluster_deployments().await
             .map_err(|_| String::from("Failed to get list of cluster deployments!"))?;
         if cluster_deployments.into_iter().any(|cluster_deployment| cluster_deployment.id == cluster_id) {
-            Err(format!("Cluster <{}> can not be updated while it is deployed.", cluster_id))?
+            Err(format!("Cluster <{cluster_id}> can not be updated while it is deployed."))?
         };
 
         let leader = self.leader_id; //TODO: check if peer exists
 
         let all_devices = carl.peers.list_devices().await
-            .map_err(|error| format!("Error while listing devices.\n  {}", error))?;
+            .map_err(|error| format!("Error while listing devices.\n  {error}"))?;
 
         let user_specified_devices = {
             let mut devices = select_devices_by_ids(&self.devices.device_ids, &all_devices);
@@ -110,10 +110,10 @@ impl CreateClusterDescriptorCli {
 
 pub async fn create_cluster_descriptor(cluster: ClusterDescriptor, carl: &mut CarlClient, output: &CreateOutputFormat) -> crate::Result<()> {
     carl.cluster.store_cluster_descriptor(cluster.clone()).await
-        .map_err(|err| format!("Could not store cluster descriptor. Make sure the application is running. Error: {}", err))?;
+        .map_err(|err| format!("Could not store cluster descriptor. Make sure the application is running. Error: {err}"))?;
     
     let devices = carl.peers.list_devices().await
-        .map_err(|error| format!("Error while trying to list devices.\n  {}", error))?;
+        .map_err(|error| format!("Error while trying to list devices.\n  {error}"))?;
 
     let device_names = devices.into_iter()
         .filter(|device| {
@@ -130,16 +130,16 @@ pub async fn create_cluster_descriptor(cluster: ClusterDescriptor, carl: &mut Ca
             println!("Name of the Cluster: {}", cluster.name);
             println!("The following devices are part of the cluster descriptor:");
             for device_name in device_names.iter() {
-                println!("\x09{}", device_name);
+                println!("\x09{device_name}");
             };
         }
         CreateOutputFormat::Json => {
             let json = serde_json::to_string(&cluster).unwrap();
-            println!("{}", json);
+            println!("{json}");
         }
         CreateOutputFormat::PrettyJson => {
             let json = serde_json::to_string_pretty(&cluster).unwrap();
-            println!("{}", json);
+            println!("{json}");
         }
     }
     Ok(())
@@ -164,7 +164,7 @@ fn select_devices_by_ids(device_ids: &[DeviceId], devices_list: &[DeviceDescript
             devices_list.iter()
                 .find(|device| &device.id == device_id)
                 .cloned()
-                .ok_or(format!("Device '{}' not found", device_id))
+                .ok_or(format!("Device '{device_id}' not found"))
         })
         .collect()
 }
@@ -178,9 +178,9 @@ fn select_devices_by_names(device_names: &[DeviceName], devices_list: &[DeviceDe
                 .collect::<Vec<_>>();
 
             match devices.as_slice() {
-                [] => Err(format!("Device '{}' not found", device_name)),
+                [] => Err(format!("Device '{device_name}' not found")),
                 [device] => Ok(Clone::clone(device)),
-                _ => Err(format!("Multiple devices found for the name '{}'", device_name)),
+                _ => Err(format!("Multiple devices found for the name '{device_name}'")),
             }
         })
         .collect()

@@ -29,7 +29,7 @@ impl OidcReqwestClient {
                 match config.get_string(CONFIG_KEY_GENERIC_CA_CONTENT) {
                     Ok(ca_content) => {
                         let ca_certificate = Pem::from_str(&ca_content)
-                            .map_err(|error| OidcClientError::LoadCustomCA(format!("Could not parse CA from configuration. Error: {}", error)))?;
+                            .map_err(|error| OidcClientError::LoadCustomCA(format!("Could not parse CA from configuration. Error: {error}")))?;
                         Ok(Self { client: OidcReqwestClient::build_client(ca_certificate)? })
                     }
                     Err(_) => {

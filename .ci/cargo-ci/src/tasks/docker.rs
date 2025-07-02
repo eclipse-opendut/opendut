@@ -52,7 +52,7 @@ pub fn build_carl_docker_image(tag: Option<DockerTag>) -> crate::Result {
     let source = format!("org.opencontainers.image.source={}", crate::core::metadata::repository_url());
     let url = format!("org.opencontainers.image.url={}", carl_container_uri(&tag));
     let version = format!("org.opencontainers.image.version={}", crate::build::PKG_VERSION);
-    let created = format!("org.opencontainers.image.created={}", now);
+    let created = format!("org.opencontainers.image.created={now}");
     let revision = format!("org.opencontainers.image.revision={}", crate::build::COMMIT_HASH);
 
     Command::new("docker")

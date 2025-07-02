@@ -30,10 +30,10 @@ impl DeleteClusterDeploymentCli {
                 }
                 other => Err(other)
             }
-            .map_err(|error| format!("Could not delete cluster deployment for ClusterID '{}'.\n  {}", id, error))
+            .map_err(|error| format!("Could not delete cluster deployment for ClusterID '{id}'.\n  {error}"))
         }?;
 
-        println!("Deleted cluster deployment for ClusterID '{}'.", id);
+        println!("Deleted cluster deployment for ClusterID '{id}'.");
 
         Ok(())
     }

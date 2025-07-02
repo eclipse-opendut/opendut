@@ -40,7 +40,7 @@ impl TheoCommandExtensions for Command {
         } else {
             let mut error = format!("Error while running command: '{self:?}'");
             if let Some(status) = &status.code() {
-                error += format!("\n  Exited with status code {}.\n", status).as_ref();
+                error += format!("\n  Exited with status code {status}.\n").as_ref();
             }
             Err(anyhow!(error))
         }
@@ -74,11 +74,11 @@ impl TheoCommandExtensions for Command {
             match child.kill() {
                 Ok(_) => {}
                 Err(error) => {
-                    println!("Error terminating child: {}", error);
+                    println!("Error terminating child: {error}");
                 }
             }
         } else {
-            println!("Failed to execute '{:?}'.", self);
+            println!("Failed to execute '{self:?}'.");
         }
     }
 }

@@ -375,7 +375,7 @@ async fn execute_command(commands: Commands, settings: &LoadedConfig) -> Result<
             }
         }
         Commands::Config => {
-            println!("Active CLEO configuration: {:?}", settings);
+            println!("Active CLEO configuration: {settings:?}");
         }
         Commands::Completions { shell } => {
             let mut cmd = Args::command();

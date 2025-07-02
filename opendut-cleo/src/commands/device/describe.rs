@@ -21,7 +21,7 @@ impl DescribeDeviceCli {
             .map_err(|_| String::from("Failed to fetch list of devices."))?;
 
         let device = devices.into_iter().find(|device| device.id == device_id)
-            .ok_or(format!("Failed to find device for id <{}>", device_id))?;
+            .ok_or(format!("Failed to find device for id <{device_id}>"))?;
 
         let text = match output {
             DescribeOutputFormat::Text => {

@@ -53,14 +53,13 @@ mod licenses {
                 .await
                 .map_err(|cause| ApiError::HttpError {
                     message: format!(
-                        "Failed to request the licenses index file due to: {}",
-                        cause
+                        "Failed to request the licenses index file due to: {cause}"                        
                     ),
                 })?
                 .json::<LicensesIndexJson>()
                 .await
                 .map_err(|cause| ApiError::JsonParseError {
-                    message: format!("Failed to parse the licenses index file due to: {}", cause),
+                    message: format!("Failed to parse the licenses index file due to: {cause}"),
                 })?;
 
             [
@@ -76,12 +75,12 @@ mod licenses {
                 .send()
                 .await
                 .map_err(|cause| ApiError::HttpError {
-                    message: format!("Failed to request the licenses file due to: {}", cause),
+                    message: format!("Failed to request the licenses file due to: {cause}"),
                 })?
                 .json::<BTreeMap<String, LicenseJsonEntry>>()
                 .await
                 .map_err(|cause| ApiError::HttpError {
-                    message: format!("Failed to parse the licenses file due to: {}", cause),
+                    message: format!("Failed to parse the licenses file due to: {cause}"),
                 })?;
 
             let dependencies = licenses

@@ -52,7 +52,7 @@ impl NetworkInterfaceManager {
             .set(interface.index)
             .nocontroller()
             .execute().await
-            .map_err(|cause| Error::ModificationFailure { name: interface.name.clone(), cause: format!("Failed to remove controller from interface. {}", cause) })?;
+            .map_err(|cause| Error::ModificationFailure { name: interface.name.clone(), cause: format!("Failed to remove controller from interface. {cause}") })?;
         Ok(())
     }
 

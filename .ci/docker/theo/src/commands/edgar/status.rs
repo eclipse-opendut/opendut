@@ -20,7 +20,7 @@ impl std::fmt::Display for EdgarDeploymentStatus {
 }
 
 pub fn wait_until_all_edgar_peers_are(target_status: EdgarDeploymentStatus) -> crate::Result {
-    println!("STAGE: EDGAR {}", target_status);
+    println!("STAGE: EDGAR {target_status}");
 
     let timeout = Duration::from_secs(TIMEOUT_SECONDS);
     let start = std::time::Instant::now();
@@ -40,18 +40,18 @@ pub fn wait_until_all_edgar_peers_are(target_status: EdgarDeploymentStatus) -> c
             match target_status {
                 EdgarDeploymentStatus::Provisioned => {
                     if edgar::check_edgar_container_provisioning_done(&edgar_name)? {
-                        println!("EDGAR peer '{}' is provisioned.", edgar_name);
+                        println!("EDGAR peer '{edgar_name}' is provisioned.");
                         remaining_edgar_names.remove(&edgar_name);
                     }
                 }
                 EdgarDeploymentStatus::Ready => {
-                    println!("Checking if EDGAR peer '{}' is ready...", edgar_name);
+                    println!("Checking if EDGAR peer '{edgar_name}' is ready...");
                     let leader_arg = if edgar_name == EDGAR_LEADER_NAME { "leader" } else { "peer" };
                     DockerCommand::new_exec(&edgar_name)
                         .arg("/opt/wait_until_ready.sh")
                         .arg(leader_arg)
-                        .expect_status(&format!("Failed to check if EDGAR peer '{}' is ready.", edgar_name))?;
-                    println!("EDGAR peer '{}' is ready.", edgar_name);
+                        .expect_status(&format!("Failed to check if EDGAR peer '{edgar_name}' is ready."))?;
+                    println!("EDGAR peer '{edgar_name}' is ready.");
                     remaining_edgar_names.remove(&edgar_name);
                 }
             }

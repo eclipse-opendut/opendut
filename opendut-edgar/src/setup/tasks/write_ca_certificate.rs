@@ -98,14 +98,12 @@ fn write_carl_certificate(new_certificate: &Certificate, carl_ca_certificate_pat
 
     let carl_ca_certificate_dir = carl_ca_certificate_path.parent().unwrap();
     fs::create_dir_all(carl_ca_certificate_dir)
-        .context(format!("Unable to create path {:?}", carl_ca_certificate_dir))?;
+        .context(format!("Unable to create path {carl_ca_certificate_dir:?}"))?;
     
     fs::write(
         carl_ca_certificate_path,
         new_certificate.encode_as_string()
-    ).context(format!(
-        "Write CA certificate was not successful at location {:?}", carl_ca_certificate_path
-    ))?;
+    ).context(format!("Write CA certificate was not successful at location {carl_ca_certificate_path:?}"))?;
 
     let checksum = util::checksum::file(carl_ca_certificate_path)?;
     let checksum_unpack_file = checksum_carl_ca_certificate_file;
@@ -125,14 +123,13 @@ fn write_os_cert_store_certificate(
 
     let os_cert_store_ca_certificate_dir = os_cert_store_ca_certificate_path.parent().unwrap();
     fs::create_dir_all(os_cert_store_ca_certificate_dir)
-        .context(format!("Unable to create path {:?}", os_cert_store_ca_certificate_dir))?;
+        .context(format!("Unable to create path {os_cert_store_ca_certificate_dir:?}"))?;
 
     fs::copy(
         carl_ca_certificate_path,
         os_cert_store_ca_certificate_path,
     ).context(format!(
-        "Copying CA certificate from {:?} to {:?} was not possible.", carl_ca_certificate_path, os_cert_store_ca_certificate_path
-    ))?;
+        "Copying CA certificate from {carl_ca_certificate_path:?} to {os_cert_store_ca_certificate_path:?} was not possible."))?;
 
     let update_ca_certificates = which::which("update-ca-certificates")
         .context(String::from("No command `update-ca-certificates` found. Ensure your system provides this command."))?;

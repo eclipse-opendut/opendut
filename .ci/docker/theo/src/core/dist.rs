@@ -71,7 +71,7 @@ fn check_if_distribution_tar_exists_of_each_component(expected_dist_files: &[&st
 
 pub(crate) fn make_distribution_if_not_present() -> crate::Result {
     let dist_directory_path = PathBuf::project_path_buf()
-        .join(format!("target/ci/distribution/{}", TARGET_TRIPLE));
+        .join(format!("target/ci/distribution/{TARGET_TRIPLE}"));
     let expected_dist_files = vec!(
         //"opendut-cleo-linux-x86_64",
         "opendut-edgar-x86_64-unknown-linux-gnu",

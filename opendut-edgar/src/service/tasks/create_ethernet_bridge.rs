@@ -192,7 +192,7 @@ mod tests {
             let manager = NetworkInterfaceManager { handle };
             let network_interface_manager = Arc::new(manager);
             let suffix = Fixture::random_suffix();
-            let bridge_name = NetworkInterfaceName::try_from(format!("dut-br-{}", suffix)).unwrap();
+            let bridge_name = NetworkInterfaceName::try_from(format!("dut-br-{suffix}")).unwrap();
 
             let parameter = parameter::EthernetBridge {
                 name: bridge_name.clone(),

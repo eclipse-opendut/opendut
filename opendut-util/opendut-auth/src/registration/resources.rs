@@ -21,9 +21,9 @@ impl TryFrom<&Config> for ResourceHomeUrl {
     fn try_from(config: &Config) -> Result<Self, ResourceHomeUrlError> {
         let carl_url = {
             let host = config.get_string(KEY_NETWORK_REMOTE_HOST)
-                .map_err(|error| ResourceHomeUrlError(format!("Configuration value for '{}' should be set: {}", KEY_NETWORK_REMOTE_HOST, error)))?;
+                .map_err(|error| ResourceHomeUrlError(format!("Configuration value for '{KEY_NETWORK_REMOTE_HOST}' should be set: {error}")))?;
             let port = config.get_int(KEY_NETWORK_REMOTE_PORT)
-                .map_err(|error| ResourceHomeUrlError(format!("Configuration value for '{}' should be set: {}", KEY_NETWORK_REMOTE_PORT, error)))?;
+                .map_err(|error| ResourceHomeUrlError(format!("Configuration value for '{KEY_NETWORK_REMOTE_PORT}' should be set: {error}")))?;
             Url::parse(&format!("https://{host}:{port}"))
                 .map_err(|error| ResourceHomeUrlError(format!("Could not create CARL URL from given host '{host}' and {port}: {error}")))?
         };

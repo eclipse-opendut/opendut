@@ -91,7 +91,7 @@ async fn test_netbird_vpn_client() -> anyhow::Result<()> {
 
     for peer_info in netbird_group.peers {
         let error_message = format!("Could not delete peer: {:?}", peer_info.id);
-        println!("Deleting NetBird peer: {:?}", peer_info);
+        println!("Deleting NetBird peer: {peer_info:?}");
         client.delete_netbird_peer(&peer_info.id)
             .await
             .expect(&error_message);

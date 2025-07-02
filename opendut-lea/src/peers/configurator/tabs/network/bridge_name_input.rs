@@ -24,7 +24,7 @@ pub fn BridgeNameInput(peer_configuration: RwSignal<UserPeerConfiguration>) -> i
                         UserInputValue::Right(String::new())
                     }
                     NetworkInterfaceNameError::TooLong { value, max } => {
-                        UserInputValue::Both(format!("A bridge name must be at most {} characters long.", max), value)
+                        UserInputValue::Both(format!("A bridge name must be at most {max} characters long."), value)
                     },
                 }
             }

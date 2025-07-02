@@ -200,7 +200,7 @@ fn Row(
             .filter(|(_, _, devices)| devices_in_peer.clone().into_iter().any(|device| devices.contains(&device)))
             .map(|(clusterId, clusterName, _)| {
                 let cluster_name = move || { clusterName.to_string() };
-                let configurator_href = move || { format!("/clusters/{}/configure/general", clusterId) };
+                let configurator_href = move || { format!("/clusters/{clusterId}/configure/general") };
                 view! {
                     <a href={ configurator_href }>{ cluster_name }</a>
                 }

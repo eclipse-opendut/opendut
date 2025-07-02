@@ -15,19 +15,19 @@ impl DeleteDeviceCli {
         let device_to_delete = self.id;
 
         let mut peers = carl.peers.list_peer_descriptors().await
-            .map_err(|error| format!("Could not list peers.\n  {}", error))?;
+            .map_err(|error| format!("Could not list peers.\n  {error}"))?;
 
         let peer = peers.iter_mut().find(|peer| {
             peer.topology.devices
                 .iter()
                 .any(|device| device.id == device_to_delete)
-        }).ok_or(format!("Cannot find a peer with the device <{}>.", device_to_delete))?;
+        }).ok_or(format!("Cannot find a peer with the device <{device_to_delete}>."))?;
 
         { //block deleting, if device is used in cluster
             let clusters = carl.cluster
                 .list_cluster_descriptors()
                 .await
-                .map_err(|error| format!("Failed to list cluster descriptors.\n  {}", error))?;
+                .map_err(|error| format!("Failed to list cluster descriptors.\n  {error}"))?;
 
             let mut devices_in_cluster: Vec<String> = vec![];
             for cluster in clusters {
@@ -45,7 +45,7 @@ impl DeleteDeviceCli {
         peer.topology.devices.retain(|device| device.id != device_to_delete);
 
         carl.peers.store_peer_descriptor(Clone::clone(peer)).await
-            .map_err(|error| format!("Failed to delete peer.\n  {}", error))?;
+            .map_err(|error| format!("Failed to delete peer.\n  {error}"))?;
 
         Ok(())
     }

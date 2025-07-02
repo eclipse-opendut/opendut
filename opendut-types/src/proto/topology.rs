@@ -187,17 +187,15 @@ mod tests {
                         value: String::from("Some device"),
                     }),
                     interface: Some(NetworkInterfaceId {
-                        uuid: Some(network_interface_id1.clone().into()),
+                        uuid: Some(network_interface_id1.into()),
                     }),
                     tags: vec![
-                        Some(crate::proto::topology::DeviceTag {
+                        crate::proto::topology::DeviceTag {
                             value: String::from("tag-1"),
-                        })
-                        .unwrap(),
-                        Some(crate::proto::topology::DeviceTag {
+                        },
+                        crate::proto::topology::DeviceTag {
                             value: String::from("tag-2"),
-                        })
-                        .unwrap(),
+                        },
                     ],
                 },
                 DeviceDescriptor {
@@ -209,12 +207,11 @@ mod tests {
                         value: String::from("Some other device"),
                     }),
                     interface: Some(NetworkInterfaceId {
-                        uuid: Some(network_interface_id2.clone().into()),
+                        uuid: Some(network_interface_id2.into()),
                     }),
-                    tags: vec![Some(crate::proto::topology::DeviceTag {
+                    tags: vec![crate::proto::topology::DeviceTag {
                         value: String::from("tag-2"),
-                    })
-                    .unwrap()],
+                    }],
                 },
             ],
         };
@@ -224,7 +221,7 @@ mod tests {
             eq(&crate::topology::Topology::try_from(Clone::clone(&proto))?)
         )?;
 
-        verify_that!(proto, eq(&Topology::try_from(native)?))?;
+        verify_that!(proto, eq(&From::from(native)))?;
 
         Ok(())
     }
@@ -244,14 +241,12 @@ mod tests {
                     uuid: Some(Uuid::new_v4().into()),
                 }),
                 tags: vec![
-                    Some(crate::proto::topology::DeviceTag {
+                    crate::proto::topology::DeviceTag {
                         value: String::from("tag-1"),
-                    })
-                    .unwrap(),
-                    Some(crate::proto::topology::DeviceTag {
+                    },
+                    crate::proto::topology::DeviceTag {
                         value: String::from("tag-2"),
-                    })
-                    .unwrap(),
+                    },
                 ],
             }],
         };

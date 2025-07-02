@@ -34,8 +34,8 @@ impl Display for TargetSelection {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             TargetSelection::Default => write!(f, "{}", Arch::default()),
-            TargetSelection::Single(target) => write!(f, "{}", target),
-            TargetSelection::All => write!(f, "{}", TARGET_SELECTION_ALL),
+            TargetSelection::Single(target) => write!(f, "{target}"),
+            TargetSelection::All => write!(f, "{TARGET_SELECTION_ALL}"),
         }
     }
 }

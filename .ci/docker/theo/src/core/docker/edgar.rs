@@ -25,7 +25,7 @@ pub(crate) fn edgar_container_names() -> Result<HashSet<String>, Error> {
             Ok(result)
         }
         Err(error) => {
-            Err(anyhow!(TheoError::DockerCommandFailed(format!("Failed to get edgar container names. Cause: {}", error))))
+            Err(anyhow!(TheoError::DockerCommandFailed(format!("Failed to get edgar container names. Cause: {error}"))))
         }
     }
 }

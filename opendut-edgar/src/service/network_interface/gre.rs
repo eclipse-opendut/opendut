@@ -56,7 +56,7 @@ async fn create_interface(
     network_interface_manager: NetworkInterfaceManagerRef,
 ) -> Result<(), Error> {
 
-    let interface_name = NetworkInterfaceName::try_from(format!("{}{}", GRE_INTERFACE_NAME_PREFIX, interface_index))
+    let interface_name = NetworkInterfaceName::try_from(format!("{GRE_INTERFACE_NAME_PREFIX}{interface_index}"))
         .map_err(|cause| Error::Other { message: format!("Error while constructing GRE interface name: {cause}") })?;
 
     let gre_interface = network_interface_manager.create_gretap_v4_interface(&interface_name, local_ip, remote_ip)

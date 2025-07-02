@@ -40,12 +40,12 @@ impl RegistrationClientConfig {
 
     pub fn from_settings(settings: &Config, client: &ConfidentialClient) -> Result<Self, RegistrationClientError> {
         let device_redirect_url = RedirectUrl::new(DEVICE_REDIRECT_URL.to_string())
-            .map_err(|error| RegistrationClientError::InvalidConfiguration { error: format!("Failed to parse device redirect URL: {}", error) })?;
+            .map_err(|error| RegistrationClientError::InvalidConfiguration { error: format!("Failed to parse device redirect URL: {error}") })?;
         let client_home_base_url = ResourceHomeUrl::try_from(settings)
-            .map_err(|error| RegistrationClientError::InvalidConfiguration { error: format!("Failed to load client home base URL: {}", error) })?;
+            .map_err(|error| RegistrationClientError::InvalidConfiguration { error: format!("Failed to load client home base URL: {error}") })?;
         let registration_url = RegistrationUrl::from_url(
             client.config.issuer_url.join("clients-registrations/openid-connect")
-                .map_err(|error| RegistrationClientError::InvalidConfiguration { error: format!("Invalid registration endpoint URL: {}", error) })?
+                .map_err(|error| RegistrationClientError::InvalidConfiguration { error: format!("Invalid registration endpoint URL: {error}") })?
         );
         let issuer_remote_url: Url = settings.get_string(RegistrationClientConfig::ISSUER_REMOTE_URL)
             .map_err(|error| RegistrationClientError::InvalidConfiguration { 
@@ -53,7 +53,7 @@ impl RegistrationClientConfig {
             })?
             .parse()
             .map_err(|error| RegistrationClientError::InvalidConfiguration { 
-                error: format!("Failed to parse issuer remote URL: {}", error) 
+                error: format!("Failed to parse issuer remote URL: {error}") 
             })?;
         let issuer_admin_url: Url = settings.get_string(RegistrationClientConfig::ISSUER_ADMIN_URL)
             .map_err(|error| RegistrationClientError::InvalidConfiguration {
@@ -61,7 +61,7 @@ impl RegistrationClientConfig {
             })?
             .parse()
             .map_err(|error| RegistrationClientError::InvalidConfiguration {
-                error: format!("Failed to parse issuer admin URL: {}", error)
+                error: format!("Failed to parse issuer admin URL: {error}")
             })?;
         
         let peer_id = settings.get_string(RegistrationClientConfig::COMMON_PEER_ID).ok();

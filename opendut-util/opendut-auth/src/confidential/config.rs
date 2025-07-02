@@ -61,7 +61,7 @@ impl ConfidentialClientConfigData {
         let scopes = raw_scopes_no_quotations.split(',').collect::<Vec<_>>();
         for scope in scopes.clone() {
             if !scope.chars().all(|c| c.is_ascii_alphabetic() || c.is_ascii_digit()) {
-                panic!("Failed to parse comma-separated OIDC scopes for client_id='{}'. Scopes must only contain ASCII alphabetic characters or digits. Found: {:?}. Parsed as: {:?}", client_id, raw_scopes, scopes);
+                panic!("Failed to parse comma-separated OIDC scopes for client_id='{client_id}'. Scopes must only contain ASCII alphabetic characters or digits. Found: {raw_scopes:?}. Parsed as: {scopes:?}");
             }
         }
         scopes.into_iter().filter(|scope| !scope.is_empty()).map(|scope| OAuthScope::new(scope.to_string())).collect()
@@ -100,7 +100,7 @@ impl ConfidentialClientConfigData {
             .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to find configuration for `{}`.", ConfidentialClientConfigData::ISSUER_URL), cause: error.into() })?;
 
         let issuer_url = Url::parse(&issuer)
-            .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to parse issuer URL: `{}`.", issuer), cause: error.into() })?;
+            .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to parse issuer URL: `{issuer}`."), cause: error.into() })?;
         // TODO: add validation for issuer url to new type
         if issuer_url.as_str().ends_with('/') {
             let raw_scopes = settings.get_string(ConfidentialClientConfigData::SCOPES)
@@ -114,7 +114,7 @@ impl ConfidentialClientConfigData {
                 scopes,
             })
         } else {
-            Err(ConfidentialClientError::Other { message: format!("Issuer URL must end with a `/`. Found: {}", issuer_url) })
+            Err(ConfidentialClientError::Other { message: format!("Issuer URL must end with a `/`. Found: {issuer_url}") })
         }
     }
 }
