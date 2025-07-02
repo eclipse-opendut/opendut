@@ -1,24 +1,48 @@
-use std::collections::HashMap;
 use crate::common::task::dependency::PeerConfigurationDependencyResolver;
-use crate::common::task::{Success, TaskAbsent, TaskStateFulfilled};
-use opendut_types::peer::configuration::{ParameterTarget, ParameterVariant, PeerConfiguration};
 use crate::common::task::runner::{Outcome, TaskExecutionError};
 use crate::common::task::task_resolver::TaskResolver;
+use crate::common::task::{Success, TaskAbsent, TaskStateFulfilled};
+use opendut_types::peer::configuration::{ParameterId, ParameterTarget, ParameterVariant, PeerConfiguration};
+
+
+/*
+ * This module provides functionality to run tasks based on a peer configuration.
+ 
+ Service: PeerConfiguration -> ParameterVariant (variant, id, target) -> [ List of TaskAbsent ] -> Outcome
+ Setup: [ List of Task ] (only present used atm) -> Outcome
+ 
+ PeerConfigurationDependencyResolver: PeerConfiguration -> ParameterVariant
+ TaskResolver: ParameterVariant -> [ List of TaskAbsent ]
+ 
+ */
+
+pub struct CollectedResult {
+    pub(crate) items: Vec<ResultItem>,
+    pub success: bool,
+}
+
+#[allow(unused)]
+#[derive(Debug)]
+pub struct ResultItem {
+    pub id: ParameterId,
+    pub parameter: ParameterVariant,
+    pub outcome: Result<Outcome, TaskExecutionError>
+}
+
 
 pub async fn run_tasks(
     peer_configuration: PeerConfiguration,
     task_resolver: impl TaskResolver,
-) -> HashMap<ParameterVariant, Result<Outcome, TaskExecutionError>> {
+) -> CollectedResult {
     let mut resolver = PeerConfigurationDependencyResolver::new(peer_configuration.clone());
 
-    // TODO: change result to a vector, preserve parameter id
-    let mut results = HashMap::new();
+    let mut results = CollectedResult { items: vec![], success: false };
     while let Some(parameter) = resolver.next_parameter() {
         let target = parameter.target();
         let tasks = task_resolver.resolve_tasks(&parameter);
 
         let outcome_for_parameter = run_multiple_tasks(&tasks, target, &mut resolver).await;
-        results.insert(parameter, outcome_for_parameter);
+        results.items.push(ResultItem { id: parameter.id(), parameter, outcome: outcome_for_parameter });
 
     }
 
@@ -26,9 +50,10 @@ pub async fn run_tasks(
         let tasks = task.tasks;
         let target = task.parameter.target();
         let outcome_for_parameter = run_multiple_tasks(&tasks, target, &mut resolver).await;
-        results.insert(task.parameter, outcome_for_parameter);
+        results.items.push(ResultItem { id: task.parameter.id(), parameter: task.parameter, outcome: outcome_for_parameter });
     }
 
+    results.success = resolver.success();
     results
 }
 

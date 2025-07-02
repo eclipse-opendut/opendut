@@ -12,6 +12,7 @@ use std::sync::Arc;
 use tokio::sync::mpsc;
 use tracing::{debug, error};
 use crate::common::task;
+use crate::common::task::service_runner::CollectedResult;
 use super::network_metrics::manager::NetworkMetricsManagerRef;
 
 #[derive(Debug)]
@@ -40,8 +41,8 @@ impl std::fmt::Debug for NetworkInterfaceManagement {
 pub async fn spawn_peer_configurations_handler(mut rx_peer_configuration: mpsc::Receiver<ApplyPeerConfigurationParams>) -> anyhow::Result<()> {
     tokio::spawn(async move {
         while let Some(apply_peer_configuration_params) = rx_peer_configuration.recv().await {
-            apply_peer_configuration(apply_peer_configuration_params).await
-                .expect("Error while applying peer configuration.");
+            let _ = apply_peer_configuration(apply_peer_configuration_params).await
+                .inspect_err(|error| error!("Error while applying peer configuration: {error}"));
         }
     });
     Ok(())
@@ -58,8 +59,13 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
         peer_configuration.clone(),
         network_interface_management.clone(),
         Arc::clone(&metrics_manager),
-    );     
-    let _results = task::service_runner::run_tasks(peer_configuration.clone(), resolver).await;
+    );
+    let CollectedResult { items, success } = task::service_runner::run_tasks(peer_configuration.clone(), resolver).await;
+    if success {
+        debug!("Peer configuration tasks executed successfully: {items:?}");
+    } else {
+        return Err(anyhow::anyhow!("Failed to apply peer configuration tasks. Following tasks failed: {items:?}"));
+    }
     // TODO: Send feedback of results to CARL
 
     if let NetworkInterfaceManagement::Enabled { can_manager, .. } = &network_interface_management {

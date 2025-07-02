@@ -64,7 +64,7 @@ impl PeerConfigurationDependencyResolver {
         
         next.map(|parameter| { parameter.parameter })        
     }
-    
+
     fn determine_next_parameter(&mut self) -> Option<ParameterVariantWithDependencies> {
         let candidates = self.open.values().filter_map(|parameter| {
             if parameter.dependencies.is_empty() {
@@ -92,11 +92,6 @@ impl PeerConfigurationDependencyResolver {
         }
     }
 
-    pub fn done(&mut self) -> bool {
-        let cannot_choose_another_parameter = self.determine_next_parameter().is_none();
-        cannot_choose_another_parameter && self.current.is_none()
-    }
-
     pub fn success(&mut self) -> bool {
         self.open.is_empty() && self.failed.is_empty() && self.current.is_none()
     }
@@ -107,6 +102,13 @@ mod tests {
     use super::*;
     use opendut_types::peer::configuration::{parameter, ParameterTarget};
     use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
+
+    impl PeerConfigurationDependencyResolver {
+        pub fn done(&mut self) -> bool {
+            let cannot_choose_another_parameter = self.determine_next_parameter().is_none();
+            cannot_choose_another_parameter && self.current.is_none()
+        }
+    }
 
     struct PeerConfigurationDependencyResolverFixture {
         resolver: PeerConfigurationDependencyResolver,
@@ -148,10 +150,10 @@ mod tests {
             }
         }
     }
-    
+
     #[test]
     fn determine_task_order_happy_flow() {
-        fn find_bridge_parameter_task_position(tasks: &Vec<ParameterVariant>, bridge_name: NetworkInterfaceName) -> Option<usize> {
+        fn find_bridge_parameter_task_position(tasks: &[ParameterVariant], bridge_name: NetworkInterfaceName) -> Option<usize> {
             tasks.iter().enumerate().find_map(|(pos, param)| {
                 if let ParameterVariant::EthernetBridge(bridge) = param {
                     if bridge.value.name == bridge_name {

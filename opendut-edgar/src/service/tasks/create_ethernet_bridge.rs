@@ -119,6 +119,7 @@ mod tests {
         assert!(result.is_none());
 
         let result = service_runner::run_tasks(fixture.peer_configuration, fixture.service_task_resolver).await;
+        assert!(result.items.len().eq(&1));
 
         let bridge_interface = fixture.network_interface_manager.find_interface(&fixture.bridge_name).await?;
         assert!(bridge_interface.is_some());

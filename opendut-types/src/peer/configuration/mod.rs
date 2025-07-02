@@ -57,6 +57,16 @@ impl ParameterVariant {
             ParameterVariant::RemotePeerConnectionCheck(parameter) => parameter.target,
         }
     }
+    pub fn id(&self) -> ParameterId {
+        match self {
+            ParameterVariant::DeviceInterface(parameter) => parameter.id,
+            ParameterVariant::EthernetBridge(parameter) => parameter.id,
+            ParameterVariant::Executor(parameter) => parameter.id,
+            ParameterVariant::GreInterface(parameter) => parameter.id,
+            ParameterVariant::JoinedInterface(parameter) => parameter.id,
+            ParameterVariant::RemotePeerConnectionCheck(parameter) => parameter.id,
+        }
+    }
 }
 
 impl PeerConfiguration {
