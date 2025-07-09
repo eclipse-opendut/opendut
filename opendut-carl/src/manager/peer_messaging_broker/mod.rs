@@ -319,6 +319,7 @@ async fn handle_stream_message(
                 tx_outbound.send(Downstream { message: Some(message), context }).await
                     .inspect_err(|cause| warn!("Failed to send ping to peer <{peer_id}>:\n  {cause}"));
         },
+        upstream::Message::PeerConfigurationState(_) => {}
     }
 }
 

@@ -15,6 +15,7 @@ pub mod testing {
     pub use crate::common::settings;
     pub mod service {
         pub use crate::service::start;
+        pub use crate::service::peer_messaging_client;
         pub use crate::service::peer_configuration;
     }
     pub mod carl {

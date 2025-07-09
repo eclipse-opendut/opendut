@@ -78,7 +78,7 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
                             if matches!(message, upstream::Message::Ping(_)).not() {
                                 trace!("Received message from client <{}>: {:?}", peer_id, message);
                             }
-                            let result = tx_inbound.send(message).await;
+                            let result = tx_inbound.send(message.clone()).await;
                             if let Err(error) = result {
                                 error!("Error while sending message to client <{}>: {:?}. Closing outbound channel. Causing error: {}", peer_id, message, error);
                                 break

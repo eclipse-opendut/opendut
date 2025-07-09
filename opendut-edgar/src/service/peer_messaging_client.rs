@@ -1,0 +1,246 @@
+use std::sync::Arc;
+use std::time::Duration;
+use anyhow::anyhow;
+use opentelemetry::propagation::TextMapPropagator;
+use opentelemetry_sdk::propagation::TraceContextPropagator;
+use tokio::sync::mpsc;
+use tokio::sync::mpsc::Receiver;
+use tokio::time::sleep;
+use tonic::Code;
+use tracing::{debug, error, info, trace, warn, Span};
+use tracing_opentelemetry::OpenTelemetrySpanExt;
+use opendut_carl_api::carl::broker;
+use opendut_carl_api::carl::broker::Upstream;
+use opendut_carl_api::carl::CarlClient;
+use opendut_carl_api::proto::services::peer_messaging_broker;
+use opendut_types::peer::configuration::PeerConfigurationState;
+use opendut_types::peer::PeerId;
+use opendut_types::proto::ConversionError;
+use opendut_util::settings::LoadedConfig;
+use crate::common::carl;
+use crate::service::can::can_manager::CanManager;
+use crate::service::network_interface::manager::{NetworkInterfaceManager, NetworkInterfaceManagerRef};
+use crate::service::network_metrics::manager::{NetworkMetricsManager, NetworkMetricsManagerRef};
+use crate::service::peer_configuration::{ApplyPeerConfigurationParams, NetworkInterfaceManagement};
+use crate::service::test_execution::executor_manager::{ExecutorManager, ExecutorManagerRef};
+use crate::service::vpn;
+
+pub struct PeerMessagingClient {
+    carl: CarlClient,
+    handle_stream_info: HandleStreamInfo,
+    settings: LoadedConfig,
+    tx_peer_configuration: mpsc::Sender<ApplyPeerConfigurationParams>,
+}
+
+pub struct PeerMessagingClientChannels {
+    pub tx_outbound: mpsc::Sender<peer_messaging_broker::Upstream>,
+    pub rx_inbound: mpsc::Receiver<peer_messaging_broker::Downstream>,
+}
+
+pub struct HandleStreamInfo {
+    pub self_id: PeerId,
+    pub network_interface_management: NetworkInterfaceManagement,
+    pub executor_manager: ExecutorManagerRef,
+    pub metrics_manager: NetworkMetricsManagerRef,
+}
+
+impl PeerMessagingClient {
+    pub async fn create(
+       self_id: PeerId,
+       carl: CarlClient,
+       settings: LoadedConfig,
+       tx_peer_configuration: mpsc::Sender<ApplyPeerConfigurationParams>,
+    ) -> anyhow::Result<Self> {
+        info!("Started with ID <{self_id}> and configuration: {settings:?}");
+
+        let handle_stream_info = {
+            let executor_manager: ExecutorManagerRef = ExecutorManager::create();
+
+            let network_interface_management = {
+                let network_interface_management_enabled = settings.config.get::<bool>("network.interface.management.enabled")?;
+                if network_interface_management_enabled {
+                    let network_interface_manager: NetworkInterfaceManagerRef = NetworkInterfaceManager::create()?;
+                    let can_manager = CanManager::create(Arc::clone(&network_interface_manager));
+
+                    NetworkInterfaceManagement::Enabled { network_interface_manager, can_manager }
+                } else {
+                    NetworkInterfaceManagement::Disabled
+                }
+            };
+
+            let metrics_manager: NetworkMetricsManagerRef = NetworkMetricsManager::load(&settings)?;
+
+
+            HandleStreamInfo {
+                self_id,
+                network_interface_management,
+                executor_manager,
+                metrics_manager,
+            }
+        };
+
+        Ok(PeerMessagingClient {
+            carl,
+            handle_stream_info,
+            settings,
+            tx_peer_configuration,
+        })
+    }
+    
+    async fn spawn_peer_configuration_state_sender(&self, mut rx_peer_configuration_state: Receiver<PeerConfigurationState>, tx_outbound: Upstream) {
+        tokio::spawn(async move {
+            let message = rx_peer_configuration_state.recv().await;
+            match message {
+                None => {
+                    info!("Peer configuration state channel closed");
+                }
+                Some(_message) => {
+                    todo!()
+                }
+            }
+        });
+
+    }
+
+    pub async fn process_messages_loop(&mut self, rx_peer_configuration_state: Receiver<PeerConfigurationState>) -> anyhow::Result<()> {
+        let remote_address = vpn::retrieve_remote_host(&self.settings).await?;
+
+        let timeout_duration = Duration::from_millis(self.settings.config.get::<u64>("carl.disconnect.timeout.ms")?);
+
+        let (mut rx_inbound, tx_outbound) = carl::open_stream(self.handle_stream_info.self_id, &remote_address, &mut self.carl).await?;
+
+        self.spawn_peer_configuration_state_sender(rx_peer_configuration_state, tx_outbound.clone()).await;
+
+        loop {
+            let received = tokio::time::timeout(timeout_duration, rx_inbound.message()).await;
+
+            match received {
+                Ok(received) => match received {
+                    Ok(Some(downstream_message)) => {
+                        let message: Result<broker::DownstreamMessageContainer, ConversionError> = downstream_message.clone().try_into();
+                        match message {
+                            Ok(message) => {
+                                self.handle_stream_message(
+                                    message,
+                                    &tx_outbound,
+                                    &self.tx_peer_configuration,
+                                ).await?
+                            }
+                            Err(error) => {
+                                warn!("Received invalid message <{downstream_message:?}>. Conversion error: {error}");
+                            }
+                        }
+                    }
+                    Err(status) => {
+                        warn!("CARL sent a gRPC error status: {status}");
+
+                        match status.code() {
+                            Code::Ok | Code::AlreadyExists => continue, //ignore
+
+                            Code::DeadlineExceeded | Code::Unavailable => { //ignore, but delay reading the stream again, as this may result in rapid triggering of errors otherwise
+                                tokio::time::sleep(Duration::from_secs(1)).await;
+                                continue
+                            }
+
+                            Code::Aborted
+                            | Code::Cancelled
+                            | Code::DataLoss
+                            | Code::FailedPrecondition
+                            | Code::Internal
+                            | Code::InvalidArgument
+                            | Code::NotFound
+                            | Code::OutOfRange
+                            | Code::PermissionDenied
+                            | Code::ResourceExhausted
+                            | Code::Unimplemented
+                            | Code::Unauthenticated
+                            | Code::Unknown
+                            => panic!("Received potentially bad gRPC error: {status}"), //In production, SystemD will restart EDGAR with a delay. A crash is mainly more visible.
+                        }
+                    }
+                    Ok(None) => {
+                        info!("CARL disconnected!");
+                        break;
+                    }
+                }
+                Err(_) => {
+                    error!("No message from CARL within {} ms.", timeout_duration.as_millis());
+                    break;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    async fn handle_stream_message(
+        &self,
+        message: broker::DownstreamMessageContainer,
+        tx_outbound: &mpsc::Sender<peer_messaging_broker::Upstream>,
+        peer_configuration_sender: &mpsc::Sender<ApplyPeerConfigurationParams>,
+    ) -> anyhow::Result<()> {
+        let broker::DownstreamMessageContainer { message, context } = message;
+
+        if !matches!(message, broker::DownStreamMessage::Pong) {
+            trace!("Received message: {:?}", message);
+        }
+
+        match message {
+            broker::DownStreamMessage::Pong => {
+                sleep(Duration::from_secs(5)).await;
+                let message = peer_messaging_broker::Upstream {
+                    message: Some(peer_messaging_broker::upstream::Message::Ping(peer_messaging_broker::Ping {})),
+                    context: None
+                };
+                let _ignore_error =
+                    tx_outbound.send(message).await
+                        .inspect_err(|cause| debug!("Failed to send ping to CARL: {cause}"));
+            }
+            broker::DownStreamMessage::ApplyPeerConfiguration(message) => apply_peer_configuration_raw(message, context, &self.handle_stream_info, peer_configuration_sender).await?,
+            broker::DownStreamMessage::DisconnectNotice => {
+                return Err(anyhow!("CARL sent a disconnect notice. Shutting down now."))
+            }
+        }
+
+        Ok(())
+    }
+
+}
+
+async fn apply_peer_configuration_raw(
+    message: Box<broker::ApplyPeerConfiguration>,
+    context: Option<broker::TracingContext>,
+    handle_stream_info: &HandleStreamInfo,
+    peer_configuration_sender: &mpsc::Sender<ApplyPeerConfigurationParams>,
+) -> anyhow::Result<()> {
+
+    let broker::ApplyPeerConfiguration { old_configuration, configuration } = *message;
+
+
+    let span = Span::current();
+    set_parent_context(&span, context);
+    let _span = span.enter();
+
+    info!("Received OldPeerConfiguration: {old_configuration:?}");
+    info!("Received PeerConfiguration: {configuration:?}");
+
+    let apply_config_params = ApplyPeerConfigurationParams {
+        self_id: handle_stream_info.self_id,
+        peer_configuration: configuration,
+        old_peer_configuration: old_configuration,
+        network_interface_management: handle_stream_info.network_interface_management.clone(),
+        executor_manager: Arc::clone(&handle_stream_info.executor_manager),
+        metrics_manager: Arc::clone(&handle_stream_info.metrics_manager),
+    };
+    peer_configuration_sender.send(apply_config_params).await?;
+
+    Ok(())
+}
+
+fn set_parent_context(span: &Span, context: Option<broker::TracingContext>) {
+    if let Some(context) = context {
+        let propagator = TraceContextPropagator::new();
+        let parent_context = propagator.extract(&context.kv_map);
+        span.set_parent(parent_context);
+    }
+}

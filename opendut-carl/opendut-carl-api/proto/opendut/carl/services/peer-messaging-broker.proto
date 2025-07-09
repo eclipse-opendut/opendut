@@ -15,6 +15,7 @@ message Upstream {
   TracingContext context = 1;
   oneof message {
     Ping ping = 2;
+    opendut.types.peer.configuration.api.PeerConfigurationState peer_configuration_state = 3;
   }
 }
 

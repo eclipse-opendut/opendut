@@ -29,6 +29,21 @@ pub enum ParameterTarget {
     Present,
 }
 
+pub struct PeerConfigurationState {
+    pub parameter_states: Vec<PeerConfigurationParameterState>
+}
+
+pub struct PeerConfigurationParameterState {
+    pub id: ParameterId,
+    pub state: ParameterTargetState,
+}
+
+pub enum ParameterTargetState {
+    Absent,
+    Present,
+    WaitingForDependencies(Vec<ParameterId>),
+    Error(String),
+}
 
 #[cfg(test)]
 mod tests {

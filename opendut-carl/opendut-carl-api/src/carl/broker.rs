@@ -1,5 +1,8 @@
+use std::collections::HashMap;
 #[cfg(feature = "client")]
 pub use client::*;
+
+use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
 
 pub mod error {
     #[derive(thiserror::Error, Debug)]
@@ -9,6 +12,30 @@ pub mod error {
     #[derive(thiserror::Error, Debug)]
     #[error("{message}")]
     pub struct OpenStream { pub message: String }
+}
+
+#[derive(Debug)]
+pub struct ApplyPeerConfiguration {
+    pub old_configuration: OldPeerConfiguration,
+    pub configuration: PeerConfiguration,
+}
+
+#[derive(Debug)]
+pub struct DownstreamMessageContainer {
+    pub context: Option<TracingContext>,
+    pub message: DownStreamMessage,
+}
+
+#[derive(Debug)]
+pub struct TracingContext {
+    pub kv_map: HashMap<String, String>,
+}
+
+#[derive(Debug)]
+pub enum DownStreamMessage {
+    Pong,
+    ApplyPeerConfiguration(Box<ApplyPeerConfiguration>),
+    DisconnectNotice,
 }
 
 #[cfg(feature = "client")]

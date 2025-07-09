@@ -1,5 +1,5 @@
 use opendut_edgar::testing::service::peer_configuration::ApplyPeerConfigurationParams;
-use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
+use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration, PeerConfigurationState};
 use std::time::Duration;
 use tokio::sync::mpsc;
 use tokio::time::error::Elapsed;
@@ -7,6 +7,7 @@ use tokio::time::timeout;
 
 pub struct PeerConfigurationReceiver {
     pub inner: mpsc::Receiver<ApplyPeerConfigurationParams>,
+    pub tx_peer_configuration_state: mpsc::Sender<PeerConfigurationState>,
 }
 impl PeerConfigurationReceiver {
     pub async fn receive_peer_configuration(&mut self) -> anyhow::Result<(PeerConfiguration, OldPeerConfiguration)> {

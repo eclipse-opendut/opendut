@@ -4,7 +4,7 @@ use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use crate::service::tasks;
 use crate::service::test_execution::executor_manager::ExecutorManagerRef;
 use opendut_types::cluster::ClusterAssignment;
-use opendut_types::peer::configuration::{parameter, OldPeerConfiguration, ParameterField, PeerConfiguration};
+use opendut_types::peer::configuration::{parameter, OldPeerConfiguration, ParameterField, PeerConfiguration, PeerConfigurationState};
 use opendut_types::peer::PeerId;
 
 use std::fmt::Formatter;
@@ -38,7 +38,7 @@ impl std::fmt::Debug for NetworkInterfaceManagement {
     }
 }
 
-pub async fn spawn_peer_configurations_handler(mut rx_peer_configuration: mpsc::Receiver<ApplyPeerConfigurationParams>) -> anyhow::Result<()> {
+pub async fn spawn_peer_configurations_handler(mut rx_peer_configuration: mpsc::Receiver<ApplyPeerConfigurationParams>, _tx_peer_configuration_state: mpsc::Sender<PeerConfigurationState>) -> anyhow::Result<()> {
     tokio::spawn(async move {
         while let Some(apply_peer_configuration_params) = rx_peer_configuration.recv().await {
             let _ = apply_peer_configuration(apply_peer_configuration_params).await

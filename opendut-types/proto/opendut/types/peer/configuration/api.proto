@@ -65,8 +65,8 @@ message PeerConfigurationParameter {
 
 
 // Feedback sent from Peer to CARL, how far it has applied PeerConfiguration
-message PeerState {
-  repeated PeerConfigurationParameterStateExecutor executors = 1;
+message PeerConfigurationState {
+  repeated PeerConfigurationParameterState parameters = 1;
 }
 
 message PeerConfigurationParameterStateExecutor {

@@ -1,3 +1,4 @@
+use crate::peer::configuration::ParameterTargetState;
 use crate::proto::{conversion, ConversionError, ConversionResult};
 
 crate::include_proto!("opendut.types.peer.configuration.api");
