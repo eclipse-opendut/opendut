@@ -58,8 +58,17 @@ pub mod netbird {
             .map_err(|cause| anyhow!("Failed to determine absolute path where NetBird should be unpacked to, which is supposed to be at {path:?}: {cause}"))
     }
 
+    pub fn netbird_binary_file() -> PathBuf {
+        edgar_install_directory().join("netbird").join("netbird")
+    }
+
     pub fn default_checksum_unpack_file() -> PathBuf {
-        PathBuf::from("/opt/opendut/edgar/netbird.tar.gz.checksum")
+        edgar_install_directory().join("netbird.tar.gz.checksum")
+    }
+
+    // The directory where the accompanying installation files of the distribution are copied for comparison.
+    pub fn default_installation_companion_directory() -> PathBuf {
+        edgar_install_directory().join("install")
     }
 
     pub fn unpacked_executable() -> anyhow::Result<PathBuf> {
