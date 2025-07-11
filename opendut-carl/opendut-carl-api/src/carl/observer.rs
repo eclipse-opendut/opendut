@@ -46,10 +46,12 @@ pub struct WaitForPeersOnlineResponse {
 mod client {
     use std::collections::HashSet;
     use std::time::Duration;
-    use crate::carl::observer::error;
+    use crate::carl::observer::{error, WaitForPeersOnlineResponse};
     use crate::proto::services::observer_messaging_broker::observer_messaging_broker_client::ObserverMessagingBrokerClient;
     use opendut_types::peer::PeerId;
     use tonic::codegen::{Body, Bytes, InterceptedService, StdError};
+    use tonic::codegen::tokio_stream::StreamExt;
+    use crate::carl::GrpcStream;
 
     #[derive(Clone, Debug)]
     pub struct ObserverMessagingBroker<T> {
@@ -100,7 +102,13 @@ mod client {
           T::ResponseBody: Body<Data=Bytes> + Send + 'static,
           <T::ResponseBody as Body>::Error: Into<StdError> + Send,
     {
-        pub async fn wait_peers_online(&mut self, peer_ids: HashSet<PeerId>, max_observation_duration: Duration, peers_may_not_yet_exist: bool) -> Result<WaitForPeerOnlineResponseStream, error::OpenStream> {
+        pub async fn wait_peers_online(
+            &mut self,
+            peer_ids: HashSet<PeerId>,
+            max_observation_duration: Duration,
+            peers_may_not_yet_exist: bool,
+        ) -> Result<GrpcStream<WaitForPeersOnlineResponse>, error::OpenStream> {
+
             let request = crate::carl::observer::WaitForPeersOnlineRequest {
                 peer_ids,
                 max_observation_duration,
@@ -112,11 +120,13 @@ mod client {
                 .await
                 .map_err(|cause| error::OpenStream { message: format!("Error while opening stream: {cause}") })?;
 
-            let inbound = response.into_inner();
+            let inbound = response.into_inner()
+                .map(|result| result.and_then(|element| {
+                    WaitForPeersOnlineResponse::try_from(element)
+                        .map_err(|cause| tonic::Status::invalid_argument(format!("Error while converting stream message in wait_peers_online: {cause}")))
+                }));
 
-            Ok(inbound)
-
+            Ok(GrpcStream::from(inbound))
         }
     }
-
 }

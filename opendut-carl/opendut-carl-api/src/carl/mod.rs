@@ -98,6 +98,29 @@ cfg_if! {
         }
 
         pub(crate) use extract;
+
+
+
+        use std::pin::Pin;
+        use tonic::codegen::tokio_stream::Stream;
+
+        pub struct GrpcStream<T> {
+            inner: Box<dyn Stream<Item=Result<T, tonic::Status>> + Unpin>,
+        }
+        impl<T> GrpcStream<T> {
+            pub async fn message(&mut self) -> Result<Option<T>, tonic::Status> {
+                match std::future::poll_fn(|cx| Pin::new(&mut *self.inner).poll_next(cx)).await {
+                    Some(Ok(m)) => Ok(Some(m)),
+                    Some(Err(e)) => Err(e),
+                    None => Ok(None),
+                }
+            }
+        }
+        impl<T, S: Stream<Item=Result<T, tonic::Status>> + Unpin + 'static> From<S> for GrpcStream<T> {
+            fn from(value: S) -> Self {
+                Self { inner: Box::new(value) }
+            }
+        }
     }
 }
 

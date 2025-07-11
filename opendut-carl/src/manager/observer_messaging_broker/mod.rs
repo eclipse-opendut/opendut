@@ -33,7 +33,6 @@ impl ObserverMessagingBroker {
         Arc::new(Self {
             resource_manager,
             cluster_manager,
-
         })
     }
     

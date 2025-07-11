@@ -26,6 +26,7 @@ shadow-rs = { workspace = true, default-features = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 toml_edit = { workspace = true }
+tonic = { workspace = true }
 url = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
 

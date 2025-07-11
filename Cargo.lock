@@ -3785,6 +3785,7 @@ dependencies = [
  "thiserror 2.0.12",
  "tokio",
  "toml_edit",
+ "tonic",
  "url",
  "uuid",
 ]

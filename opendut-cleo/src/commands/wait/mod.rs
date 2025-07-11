@@ -1,9 +1,8 @@
 use std::collections::HashSet;
 use std::time::Duration;
 use opendut_carl_api::carl::CarlClient;
-use opendut_carl_api::carl::observer::{WaitForPeersOnlineResponse, WaitForPeersOnlineResponseStatus};
+use opendut_carl_api::carl::observer::WaitForPeersOnlineResponseStatus;
 use opendut_types::peer::PeerId;
-use opendut_types::proto::ConversionError;
 
 pub mod peer_online;
 pub mod cluster_peers_online;
@@ -21,20 +20,12 @@ async fn await_peers_online(carl: &mut CarlClient, peer_ids: HashSet<PeerId>, ma
             Ok(response_result) => {
                 match response_result {
                     Ok(Some(response)) => {
-                        let conversion_result: Result<WaitForPeersOnlineResponse, ConversionError> = response.try_into();
-                        match conversion_result {
-                            Ok(response) => {
-                                println!("Response: {response:?}");
-                                match response.status {
-                                    WaitForPeersOnlineResponseStatus::WaitForPeersOnlineSuccess | WaitForPeersOnlineResponseStatus::WaitForPeersOnlineFailure { .. } => {
-                                        break;
-                                    }
-                                    WaitForPeersOnlineResponseStatus::WaitForPeersOnlinePending => {}
-                                }
+                        println!("Response: {response:?}");
+                        match response.status {
+                            WaitForPeersOnlineResponseStatus::WaitForPeersOnlineSuccess | WaitForPeersOnlineResponseStatus::WaitForPeersOnlineFailure { .. } => {
+                                break;
                             }
-                            Err(error) => {
-                                println!("Failed to decode message from server: {error:?}");
-                            }
+                            WaitForPeersOnlineResponseStatus::WaitForPeersOnlinePending => {}
                         }
                     }
                     Ok(None) => {

@@ -72,5 +72,4 @@ impl ObserverMessagingBrokerService for ObserverMessagingBrokerFacade {
             Box::pin(outbound_stream) as Self::WaitForPeersOnlineStream
         ))
     }
-
 }
