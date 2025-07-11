@@ -28,7 +28,7 @@ pub struct DownstreamMessageContainer {
 
 #[derive(Debug)]
 pub struct TracingContext {
-    pub kv_map: HashMap<String, String>,
+    pub values: HashMap<String, String>,
 }
 
 #[derive(Debug)]

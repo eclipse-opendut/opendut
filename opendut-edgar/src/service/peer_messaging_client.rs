@@ -32,11 +32,6 @@ pub struct PeerMessagingClient {
     tx_peer_configuration: mpsc::Sender<ApplyPeerConfigurationParams>,
 }
 
-pub struct PeerMessagingClientChannels {
-    pub tx_outbound: mpsc::Sender<peer_messaging_broker::Upstream>,
-    pub rx_inbound: mpsc::Receiver<peer_messaging_broker::Downstream>,
-}
-
 pub struct HandleStreamInfo {
     pub self_id: PeerId,
     pub network_interface_management: NetworkInterfaceManagement,
@@ -87,7 +82,7 @@ impl PeerMessagingClient {
         })
     }
     
-    async fn spawn_peer_configuration_state_sender(&self, mut rx_peer_configuration_state: Receiver<PeerConfigurationState>, tx_outbound: Upstream) {
+    async fn spawn_peer_configuration_state_sender(&self, mut rx_peer_configuration_state: Receiver<PeerConfigurationState>, _tx_outbound: Upstream) {
         tokio::spawn(async move {
             let message = rx_peer_configuration_state.recv().await;
             match message {
@@ -240,7 +235,7 @@ async fn apply_peer_configuration_raw(
 fn set_parent_context(span: &Span, context: Option<broker::TracingContext>) {
     if let Some(context) = context {
         let propagator = TraceContextPropagator::new();
-        let parent_context = propagator.extract(&context.kv_map);
+        let parent_context = propagator.extract(&context.values);
         span.set_parent(parent_context);
     }
 }

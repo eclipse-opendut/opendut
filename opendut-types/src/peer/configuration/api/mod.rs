@@ -1,4 +1,5 @@
 use std::hash::{Hash, Hasher};
+use std::time::Instant;
 use serde::Serialize;
 use uuid::Uuid;
 
@@ -35,6 +36,7 @@ pub struct PeerConfigurationState {
 
 pub struct PeerConfigurationParameterState {
     pub id: ParameterId,
+    pub timestamp: Instant,
     pub state: ParameterTargetState,
 }
 

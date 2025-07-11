@@ -3970,6 +3970,7 @@ dependencies = [
  "pem",
  "prost",
  "prost-build",
+ "prost-types",
  "protobuf-src",
  "rstest",
  "serde",

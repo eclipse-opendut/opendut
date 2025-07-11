@@ -7,6 +7,7 @@ import "opendut/types/peer/executor/executor.proto";
 import "opendut/types/peer/configuration/parameter.proto";
 import "opendut/types/util/net.proto";
 import "opendut/types/util/uuid.proto";
+import "google/protobuf/timestamp.proto";
 
 message OldPeerConfiguration {
   optional opendut.types.cluster.ClusterAssignment cluster_assignment = 2;
@@ -69,13 +70,9 @@ message PeerConfigurationState {
   repeated PeerConfigurationParameterState parameters = 1;
 }
 
-message PeerConfigurationParameterStateExecutor {
-  PeerConfigurationParameterState state = 1;
-  opendut.types.peer.executor.ExecutorDescriptor executor = 2;
-}
-
 message PeerConfigurationParameterState {
   PeerConfigurationParameterId id = 1;
+  google.protobuf.Timestamp timestamp = 2;
   oneof state {
     PeerConfigurationParameterTargetPresent present = 11;
     PeerConfigurationParameterTargetAbsent absent = 12;

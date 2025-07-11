@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use opendut_types::conversion;
 use opendut_types::proto::ConversionError;
 use opendut_types::proto::ConversionResult;
@@ -83,13 +82,13 @@ conversion! {
     
     fn from(value: Model) -> Proto {
         TracingContext {
-            values: value.kv_map.into_iter().map(|(k, v)| (k, v)).collect(),
+            values: value.values,
         }
     }
 
     fn try_from(value: Proto) -> ConversionResult<Model> {
         Ok(Model {
-            kv_map: value.values.into_iter().collect::<HashMap<String, String>>(),
+            values: value.values,
         })
     }
 
