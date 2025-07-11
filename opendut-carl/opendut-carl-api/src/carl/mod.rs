@@ -105,7 +105,7 @@ cfg_if! {
         use tonic::codegen::tokio_stream::Stream;
 
         pub struct GrpcStream<T> {
-            inner: Box<dyn Stream<Item=Result<T, tonic::Status>> + Unpin>,
+            inner: Box<dyn Stream<Item=Result<T, tonic::Status>> + Send + Unpin>,
         }
         impl<T> GrpcStream<T> {
             pub async fn message(&mut self) -> Result<Option<T>, tonic::Status> {
@@ -116,7 +116,7 @@ cfg_if! {
                 }
             }
         }
-        impl<T, S: Stream<Item=Result<T, tonic::Status>> + Unpin + 'static> From<S> for GrpcStream<T> {
+        impl<T, S: Stream<Item=Result<T, tonic::Status>> + Send + Unpin + 'static> From<S> for GrpcStream<T> {
             fn from(value: S) -> Self {
                 Self { inner: Box::new(value) }
             }

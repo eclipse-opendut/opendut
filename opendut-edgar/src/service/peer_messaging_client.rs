@@ -15,7 +15,6 @@ use opendut_carl_api::carl::CarlClient;
 use opendut_carl_api::proto::services::peer_messaging_broker;
 use opendut_types::peer::configuration::PeerConfigurationState;
 use opendut_types::peer::PeerId;
-use opendut_types::proto::ConversionError;
 use opendut_util::settings::LoadedConfig;
 use crate::common::carl;
 use crate::service::can::can_manager::CanManager;
@@ -111,20 +110,12 @@ impl PeerMessagingClient {
 
             match received {
                 Ok(received) => match received {
-                    Ok(Some(downstream_message)) => {
-                        let message: Result<broker::DownstreamMessage, ConversionError> = downstream_message.clone().try_into();
-                        match message {
-                            Ok(message) => {
-                                self.handle_stream_message(
-                                    message,
-                                    &tx_outbound,
-                                    &self.tx_peer_configuration,
-                                ).await?
-                            }
-                            Err(error) => {
-                                warn!("Received invalid message <{downstream_message:?}>. Conversion error: {error}");
-                            }
-                        }
+                    Ok(Some(message)) => {
+                        self.handle_stream_message(
+                            message,
+                            &tx_outbound,
+                            &self.tx_peer_configuration,
+                        ).await?
                     }
                     Err(status) => {
                         warn!("CARL sent a gRPC error status: {status}");
