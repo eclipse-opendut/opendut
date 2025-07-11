@@ -51,7 +51,7 @@ mod client {
     use opendut_types::peer::PeerId;
     use tonic::codegen::{Body, Bytes, InterceptedService, StdError};
     use tonic::codegen::tokio_stream::StreamExt;
-    use crate::carl::GrpcStream;
+    use crate::carl::GrpcDownstream;
 
     #[derive(Clone, Debug)]
     pub struct ObserverMessagingBroker<T> {
@@ -107,7 +107,7 @@ mod client {
             peer_ids: HashSet<PeerId>,
             max_observation_duration: Duration,
             peers_may_not_yet_exist: bool,
-        ) -> Result<GrpcStream<WaitForPeersOnlineResponse>, error::OpenStream> {
+        ) -> Result<GrpcDownstream<WaitForPeersOnlineResponse>, error::OpenStream> {
 
             let request = crate::carl::observer::WaitForPeersOnlineRequest {
                 peer_ids,
@@ -126,7 +126,7 @@ mod client {
                         .map_err(|cause| tonic::Status::invalid_argument(format!("Error while converting stream message in wait_peers_online: {cause}")))
                 }));
 
-            Ok(GrpcStream::from(inbound))
+            Ok(GrpcDownstream::from(inbound))
         }
     }
 }

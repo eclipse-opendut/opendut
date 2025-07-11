@@ -104,11 +104,11 @@ cfg_if! {
         use std::pin::Pin;
         use tonic::codegen::tokio_stream::Stream;
 
-        pub struct GrpcStream<T> {
+        pub struct GrpcDownstream<T> {
             inner: Box<dyn Stream<Item=Result<T, tonic::Status>> + Send + Unpin>,
         }
-        impl<T> GrpcStream<T> {
-            pub async fn message(&mut self) -> Result<Option<T>, tonic::Status> {
+        impl<T> GrpcDownstream<T> {
+            pub async fn receive(&mut self) -> Result<Option<T>, tonic::Status> {
                 match std::future::poll_fn(|cx| Pin::new(&mut *self.inner).poll_next(cx)).await {
                     Some(Ok(m)) => Ok(Some(m)),
                     Some(Err(e)) => Err(e),
@@ -116,9 +116,29 @@ cfg_if! {
                 }
             }
         }
-        impl<T, S: Stream<Item=Result<T, tonic::Status>> + Send + Unpin + 'static> From<S> for GrpcStream<T> {
+        impl<T, S: Stream<Item=Result<T, tonic::Status>> + Send + Unpin + 'static> From<S> for GrpcDownstream<T> {
             fn from(value: S) -> Self {
                 Self { inner: Box::new(value) }
+            }
+        }
+
+
+        use tokio::sync::mpsc;
+        use tokio::sync::mpsc::error::SendError;
+        use crate::carl::broker::Upstream;
+        use crate::proto::services::peer_messaging_broker;
+
+        pub struct GrpcUpstream {
+            inner: mpsc::Sender<peer_messaging_broker::Upstream>,
+        }
+        impl GrpcUpstream {
+            pub async fn send<T: Into<peer_messaging_broker::upstream::Message>>(&self, payload: T) -> Result<(), SendError<T>> {
+                let payload = peer_messaging_broker::upstream::Message::from(payload);
+
+                self.inner.send(peer_messaging_broker::Upstream {
+                    message: Some(payload),
+                    context: None,
+                }).await
             }
         }
     }

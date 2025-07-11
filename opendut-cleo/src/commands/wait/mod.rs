@@ -14,7 +14,7 @@ async fn await_peers_online(carl: &mut CarlClient, peer_ids: HashSet<PeerId>, ma
     let request_timeout_duration = Duration::from_secs(5);
 
     loop {
-        let received = tokio::time::timeout(request_timeout_duration, response_stream.message()).await;
+        let received = tokio::time::timeout(request_timeout_duration, response_stream.receive()).await;
 
         match received {
             Ok(response_result) => {

@@ -259,3 +259,78 @@ impl From<peer_configuration_parameter::Target> for crate::peer::configuration::
         }
     }
 }
+
+
+conversion! {
+    type Model = crate::peer::configuration::PeerConfigurationState;
+    type Proto = PeerConfigurationState;
+
+    fn from(value: Model) -> Proto {
+        Proto {
+            parameters: value.parameter_states.into_iter()
+                .map(Into::into)
+                .collect(),
+        }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        Ok(Model {
+            parameter_states: value.parameters.into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+        })
+    }
+}
+
+conversion! {
+    type Model = crate::peer::configuration::PeerConfigurationParameterState;
+    type Proto = PeerConfigurationParameterState;
+
+    fn from(value: Model) -> Proto {
+        Proto {
+            id: Some(value.id.into()),
+            timestamp: Some(value.timestamp.into()), //TODO
+            state: Some(value.state.into()),
+        }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        Ok(Model {
+            id: extract!(value.id)?.try_into()?,
+            timestamp: extract!(value.timestamp)?.try_into()?, //TODO
+            state: extract!(value.state)?.try_into()?,
+        })
+    }
+}
+
+conversion! {
+    type Model = crate::peer::configuration::ParameterTargetState;
+    type Proto = peer_configuration_parameter_state::State;
+
+    fn from(value: Model) -> Proto {
+        match value {
+            Model::Absent => Proto::Absent(PeerConfigurationParameterTargetAbsent {}),
+            Model::Present => Proto::Present(PeerConfigurationParameterTargetPresent {}),
+            Model::WaitingForDependencies(incomplete_dependencies) => Proto::WaitingForDependencies(PeerConfigurationParameterTargetWaitingForDependencies {
+                incomplete_dependencies: incomplete_dependencies.into_iter()
+                    .map(Into::into)
+                    .collect::<Vec<_>>()
+            }),
+            Model::Error(error) => Proto::Error(PeerConfigurationParameterTargetError { error }) //TODO
+        }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let result = match value {
+            Proto::Present(PeerConfigurationParameterTargetPresent {}) => Model::Present,
+            Proto::Absent(PeerConfigurationParameterTargetAbsent {}) => Model::Absent,
+            Proto::WaitingForDependencies(PeerConfigurationParameterTargetWaitingForDependencies { incomplete_dependencies }) => Model::WaitingForDependencies(
+                incomplete_dependencies.into_iter()
+                    .map(TryInto::try_into)
+                    .collect::<Result<_, _>>()?
+            ),
+            Proto::Error(error) => Model::Error(error), //TODO
+        };
+        Ok(result)
+    }
+}

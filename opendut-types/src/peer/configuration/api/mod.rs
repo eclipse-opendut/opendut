@@ -30,16 +30,19 @@ pub enum ParameterTarget {
     Present,
 }
 
+#[derive(Debug)]
 pub struct PeerConfigurationState {
     pub parameter_states: Vec<PeerConfigurationParameterState>
 }
 
+#[derive(Debug)]
 pub struct PeerConfigurationParameterState {
     pub id: ParameterId,
     pub timestamp: Instant,
     pub state: ParameterTargetState,
 }
 
+#[derive(Debug)]
 pub enum ParameterTargetState {
     Absent,
     Present,

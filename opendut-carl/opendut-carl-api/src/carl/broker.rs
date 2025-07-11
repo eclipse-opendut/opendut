@@ -2,7 +2,7 @@ use std::collections::HashMap;
 #[cfg(feature = "client")]
 pub use client::*;
 
-use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
+use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration, PeerConfigurationState};
 
 pub mod error {
     #[derive(thiserror::Error, Debug)]
@@ -14,11 +14,19 @@ pub mod error {
     pub struct OpenStream { pub message: String }
 }
 
+
 #[derive(Debug)]
-pub struct ApplyPeerConfiguration {
-    pub old_configuration: OldPeerConfiguration,
-    pub configuration: PeerConfiguration,
+pub struct UpstreamMessage {
+    pub context: Option<TracingContext>,
+    pub payload: UpstreamMessagePayload,
 }
+
+#[derive(Debug)]
+pub enum UpstreamMessagePayload {
+    PeerConfigurationState(PeerConfigurationState),
+    Ping,
+}
+
 
 #[derive(Debug)]
 pub struct DownstreamMessage {
@@ -27,16 +35,23 @@ pub struct DownstreamMessage {
 }
 
 #[derive(Debug)]
-pub struct TracingContext {
-    pub values: HashMap<String, String>,
-}
-
-#[derive(Debug)]
 pub enum DownstreamMessagePayload {
     Pong,
     ApplyPeerConfiguration(Box<ApplyPeerConfiguration>),
     DisconnectNotice,
 }
+
+#[derive(Debug)]
+pub struct ApplyPeerConfiguration {
+    pub old_configuration: OldPeerConfiguration,
+    pub configuration: PeerConfiguration,
+}
+
+#[derive(Debug)]
+pub struct TracingContext {
+    pub values: HashMap<String, String>,
+}
+
 
 #[cfg(feature = "client")]
 mod client {
@@ -56,7 +71,7 @@ mod client {
     use opendut_types::peer::PeerId;
     use opendut_util_core::future::ExplicitSendFutureWrapper;
     use tonic::codegen::tokio_stream::StreamExt;
-    use crate::carl::GrpcStream;
+    use crate::carl::GrpcDownstream;
 
     #[derive(Clone, Debug)]
     pub struct PeerMessagingBroker<T> {
@@ -99,7 +114,7 @@ mod client {
         }
     }
 
-    pub type Downstream = GrpcStream<DownstreamMessage>;
+    pub type Downstream = GrpcDownstream<DownstreamMessage>;
     pub type Upstream = mpsc::Sender<peer_messaging_broker::Upstream>;
 
     impl<T> PeerMessagingBroker<T>
@@ -137,7 +152,7 @@ mod client {
                         .map_err(|cause| tonic::Status::invalid_argument(format!("Error while converting stream message in open_stream: {cause}")))
                 }));
 
-            Ok((GrpcStream::from(inbound), tx))
+            Ok((GrpcDownstream::from(inbound), tx))
         }
     }
 }

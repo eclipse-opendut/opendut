@@ -5,6 +5,42 @@ use opendut_types::proto::ConversionResult;
 tonic::include_proto!("opendut.carl.services.peer_messaging_broker");
 
 conversion! {
+    type Model = crate::carl::broker::UpstreamMessage;
+    type Proto = Upstream;
+
+    fn from(value: Model) -> Proto {
+        let context: Option<TracingContext> = value.context.map(|c| c.into());
+        let message = match value.payload {
+            crate::carl::broker::UpstreamMessagePayload::Ping => {
+                upstream::Message::Ping(Ping { })
+            },
+            crate::carl::broker::UpstreamMessagePayload::PeerConfigurationState(_) => todo!()
+        };
+
+        Upstream { context, message: Some(message) }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let context: Option<crate::carl::broker::TracingContext> = value.context
+            .map(crate::carl::broker::TracingContext::try_from)
+            .transpose()?;
+        let proto_message = extract!(value.message)?;
+        let payload = match proto_message {
+            upstream::Message::Ping(_) => {
+                crate::carl::broker::UpstreamMessagePayload::Ping
+            },
+            upstream::Message::PeerConfigurationState(state) => {
+                crate::carl::broker::UpstreamMessagePayload::PeerConfigurationState(
+                    state.try_into()?
+                )
+            },
+        };
+
+        Ok(Model { context, payload })
+    }
+}
+
+conversion! {
     type Model = crate::carl::broker::DownstreamMessage;
     type Proto = Downstream;
 

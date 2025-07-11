@@ -106,7 +106,7 @@ impl PeerMessagingClient {
         self.spawn_peer_configuration_state_sender(rx_peer_configuration_state, tx_outbound.clone()).await;
 
         loop {
-            let received = tokio::time::timeout(timeout_duration, rx_inbound.message()).await;
+            let received = tokio::time::timeout(timeout_duration, rx_inbound.receive()).await;
 
             match received {
                 Ok(received) => match received {
@@ -168,7 +168,7 @@ impl PeerMessagingClient {
         let broker::DownstreamMessage { payload: message, context } = message;
 
         if !matches!(message, broker::DownstreamMessagePayload::Pong) {
-            trace!("Received message: {:?}", message);
+            trace!("Received message: {message:?}");
         }
 
         match message {
@@ -190,7 +190,6 @@ impl PeerMessagingClient {
 
         Ok(())
     }
-
 }
 
 async fn apply_peer_configuration_raw(
@@ -200,12 +199,11 @@ async fn apply_peer_configuration_raw(
     peer_configuration_sender: &mpsc::Sender<ApplyPeerConfigurationParams>,
 ) -> anyhow::Result<()> {
 
-    let broker::ApplyPeerConfiguration { old_configuration, configuration } = *message;
-
-
     let span = Span::current();
     set_parent_context(&span, context);
     let _span = span.enter();
+
+    let broker::ApplyPeerConfiguration { old_configuration, configuration } = *message;
 
     info!("Received OldPeerConfiguration: {old_configuration:?}");
     info!("Received PeerConfiguration: {configuration:?}");
