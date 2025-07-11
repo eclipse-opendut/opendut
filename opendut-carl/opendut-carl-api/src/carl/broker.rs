@@ -21,9 +21,9 @@ pub struct ApplyPeerConfiguration {
 }
 
 #[derive(Debug)]
-pub struct DownstreamMessageContainer {
+pub struct DownstreamMessage {
     pub context: Option<TracingContext>,
-    pub message: DownStreamMessage,
+    pub payload: DownstreamMessagePayload,
 }
 
 #[derive(Debug)]
@@ -32,7 +32,7 @@ pub struct TracingContext {
 }
 
 #[derive(Debug)]
-pub enum DownStreamMessage {
+pub enum DownstreamMessagePayload {
     Pong,
     ApplyPeerConfiguration(Box<ApplyPeerConfiguration>),
     DisconnectNotice,
@@ -123,8 +123,7 @@ mod client {
                 }
 
                 ExplicitSendFutureWrapper::from(
-                    self.inner
-                        .open(request)
+                    self.inner.open(request)
                 )
                     .await
                     .map_err(|cause| error::OpenStream { message: format!("Error while opening stream: {cause}") })?
@@ -134,7 +133,6 @@ mod client {
 
             Ok((inbound, tx))
         }
-
     }
 }
 

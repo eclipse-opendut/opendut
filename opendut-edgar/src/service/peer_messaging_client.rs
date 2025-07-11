@@ -112,7 +112,7 @@ impl PeerMessagingClient {
             match received {
                 Ok(received) => match received {
                     Ok(Some(downstream_message)) => {
-                        let message: Result<broker::DownstreamMessageContainer, ConversionError> = downstream_message.clone().try_into();
+                        let message: Result<broker::DownstreamMessage, ConversionError> = downstream_message.clone().try_into();
                         match message {
                             Ok(message) => {
                                 self.handle_stream_message(
@@ -170,18 +170,18 @@ impl PeerMessagingClient {
 
     async fn handle_stream_message(
         &self,
-        message: broker::DownstreamMessageContainer,
+        message: broker::DownstreamMessage,
         tx_outbound: &mpsc::Sender<peer_messaging_broker::Upstream>,
         peer_configuration_sender: &mpsc::Sender<ApplyPeerConfigurationParams>,
     ) -> anyhow::Result<()> {
-        let broker::DownstreamMessageContainer { message, context } = message;
+        let broker::DownstreamMessage { payload: message, context } = message;
 
-        if !matches!(message, broker::DownStreamMessage::Pong) {
+        if !matches!(message, broker::DownstreamMessagePayload::Pong) {
             trace!("Received message: {:?}", message);
         }
 
         match message {
-            broker::DownStreamMessage::Pong => {
+            broker::DownstreamMessagePayload::Pong => {
                 sleep(Duration::from_secs(5)).await;
                 let message = peer_messaging_broker::Upstream {
                     message: Some(peer_messaging_broker::upstream::Message::Ping(peer_messaging_broker::Ping {})),
@@ -191,8 +191,8 @@ impl PeerMessagingClient {
                     tx_outbound.send(message).await
                         .inspect_err(|cause| debug!("Failed to send ping to CARL: {cause}"));
             }
-            broker::DownStreamMessage::ApplyPeerConfiguration(message) => apply_peer_configuration_raw(message, context, &self.handle_stream_info, peer_configuration_sender).await?,
-            broker::DownStreamMessage::DisconnectNotice => {
+            broker::DownstreamMessagePayload::ApplyPeerConfiguration(message) => apply_peer_configuration_raw(message, context, &self.handle_stream_info, peer_configuration_sender).await?,
+            broker::DownstreamMessagePayload::DisconnectNotice => {
                 return Err(anyhow!("CARL sent a disconnect notice. Shutting down now."))
             }
         }

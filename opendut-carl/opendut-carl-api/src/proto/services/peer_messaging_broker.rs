@@ -5,28 +5,25 @@ use opendut_types::proto::ConversionResult;
 tonic::include_proto!("opendut.carl.services.peer_messaging_broker");
 
 conversion! {
-    type Model = crate::carl::broker::DownstreamMessageContainer;
+    type Model = crate::carl::broker::DownstreamMessage;
     type Proto = Downstream;
 
     fn from(value: Model) -> Proto {
         let context: Option<TracingContext> = value.context.map(|c| c.into());
-        let message = match value.message {
-            crate::carl::broker::DownStreamMessage::Pong => {
+        let message = match value.payload {
+            crate::carl::broker::DownstreamMessagePayload::Pong => {
                 downstream::Message::Pong(Pong { })
             }
-            crate::carl::broker::DownStreamMessage::ApplyPeerConfiguration(apply) => {
-                let apply: ApplyPeerConfiguration = (*apply).into();
+            crate::carl::broker::DownstreamMessagePayload::ApplyPeerConfiguration(apply) => {
+                let apply = ApplyPeerConfiguration::from(*apply);
                 downstream::Message::ApplyPeerConfiguration(apply)
             }
-            crate::carl::broker::DownStreamMessage::DisconnectNotice => {
+            crate::carl::broker::DownstreamMessagePayload::DisconnectNotice => {
                 downstream::Message::DisconnectNotice(DisconnectNotice { })
             }
         };
 
-        Downstream {
-            context,
-            message: Some(message),
-        }
+        Downstream { context, message: Some(message) }
     }
 
     fn try_from(value: Proto) -> ConversionResult<Model> {
@@ -34,23 +31,20 @@ conversion! {
             .map(crate::carl::broker::TracingContext::try_from)
             .transpose()?;
         let proto_message = extract!(value.message)?;
-        let message = match proto_message {
+        let payload = match proto_message {
             downstream::Message::Pong(_) => {
-                crate::carl::broker::DownStreamMessage::Pong
+                crate::carl::broker::DownstreamMessagePayload::Pong
             }
             downstream::Message::ApplyPeerConfiguration(apply) => {
                 let apply_peer_configuration: crate::carl::broker::ApplyPeerConfiguration = apply.try_into()?;
-                crate::carl::broker::DownStreamMessage::ApplyPeerConfiguration(Box::new(apply_peer_configuration))
+                crate::carl::broker::DownstreamMessagePayload::ApplyPeerConfiguration(Box::new(apply_peer_configuration))
             }
             downstream::Message::DisconnectNotice(_) => {
-                crate::carl::broker::DownStreamMessage::DisconnectNotice
+                crate::carl::broker::DownstreamMessagePayload::DisconnectNotice
             }
         };
 
-        Ok(Model {
-            context,
-            message,
-        })
+        Ok(Model { context, payload })
     }
 }
 
@@ -59,7 +53,6 @@ conversion! {
     type Proto = ApplyPeerConfiguration;
     
     fn from(value: Model) -> Proto {
-        
         ApplyPeerConfiguration {
             old_configuration: Some(value.old_configuration.into()),
             configuration: Some(value.configuration.into()),
@@ -91,5 +84,4 @@ conversion! {
             values: value.values,
         })
     }
-
 }
