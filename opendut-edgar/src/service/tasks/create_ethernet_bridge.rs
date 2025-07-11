@@ -89,7 +89,6 @@ impl TaskAbsent for CreateEthernetBridge {
                 } else {
                     Err(anyhow::Error::msg(format!("Another interface with that name exists but it has an unexpected interface kind: <{:?}>!", bridge.kind)))
                 }
-
             }
         }
     }

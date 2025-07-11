@@ -14,7 +14,11 @@ pub struct ServiceTaskResolver {
 }
 
 impl ServiceTaskResolver {
-    pub fn new(peer_configuration: PeerConfiguration, network_interface_management: NetworkInterfaceManagement, metrics_manager: NetworkMetricsManagerRef) -> Self {
+    pub fn new(
+        peer_configuration: PeerConfiguration,
+        network_interface_management: NetworkInterfaceManagement,
+        metrics_manager: NetworkMetricsManagerRef,
+    ) -> Self {
         Self {
             peer_configuration,
             network_interface_management,
@@ -75,6 +79,6 @@ impl TaskResolver for ServiceTaskResolver {
             }]
         } else {
             vec![]
-        }        
+        }
     }
 }

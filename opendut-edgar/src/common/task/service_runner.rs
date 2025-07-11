@@ -1,20 +1,17 @@
+//! This module provides functionality to run tasks based on a peer configuration.
+//!
+//! Service: PeerConfiguration -> ParameterVariant (variant, id, target) -> [ List of TaskAbsent ] -> Outcome
+//! Setup: [ List of Task ] (only present used atm) -> Outcome
+//!
+//! PeerConfigurationDependencyResolver: PeerConfiguration -> ParameterVariant
+//! TaskResolver: ParameterVariant -> [ List of TaskAbsent ]
+
 use crate::common::task::dependency::PeerConfigurationDependencyResolver;
 use crate::common::task::runner::{Outcome, TaskExecutionError};
 use crate::common::task::task_resolver::TaskResolver;
 use crate::common::task::{Success, TaskAbsent, TaskStateFulfilled};
 use opendut_types::peer::configuration::{ParameterId, ParameterTarget, ParameterVariant, PeerConfiguration};
 
-
-/*
- * This module provides functionality to run tasks based on a peer configuration.
- 
- Service: PeerConfiguration -> ParameterVariant (variant, id, target) -> [ List of TaskAbsent ] -> Outcome
- Setup: [ List of Task ] (only present used atm) -> Outcome
- 
- PeerConfigurationDependencyResolver: PeerConfiguration -> ParameterVariant
- TaskResolver: ParameterVariant -> [ List of TaskAbsent ]
- 
- */
 
 pub struct CollectedResult {
     pub(crate) items: Vec<ResultItem>,
@@ -43,7 +40,6 @@ pub async fn run_tasks(
 
         let outcome_for_parameter = run_multiple_tasks(&tasks, target, &mut resolver).await;
         results.items.push(ResultItem { id: parameter.id(), parameter, outcome: outcome_for_parameter });
-
     }
 
     for task in task_resolver.additional_tasks() {

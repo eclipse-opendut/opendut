@@ -76,7 +76,7 @@ pub mod file {
                 let expected = Some(entry.to_path_buf());
                 assert_eq!(
                     actual, expected.clone(),
-                    "Found '{actual:?}' as next path in alphabetical order, but expected '{expected:?}'." 
+                    "Found '{actual:?}' as next path in alphabetical order, but expected '{expected:?}'."
                 );
             }
 
