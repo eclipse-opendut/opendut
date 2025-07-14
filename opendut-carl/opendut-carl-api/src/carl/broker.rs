@@ -67,11 +67,10 @@ mod client {
     use tonic::metadata::MetadataValue;
 
     use crate::carl::broker::{error, stream_header, DownstreamMessage};
-    use crate::proto::services::peer_messaging_broker;
     use opendut_types::peer::PeerId;
     use opendut_util_core::future::ExplicitSendFutureWrapper;
     use tonic::codegen::tokio_stream::StreamExt;
-    use crate::carl::GrpcDownstream;
+    use crate::carl::{GrpcDownstream, GrpcUpstream};
 
     #[derive(Clone, Debug)]
     pub struct PeerMessagingBroker<T> {
@@ -115,7 +114,7 @@ mod client {
     }
 
     pub type Downstream = GrpcDownstream<DownstreamMessage>;
-    pub type Upstream = mpsc::Sender<peer_messaging_broker::Upstream>;
+    pub type Upstream = GrpcUpstream;
 
     impl<T> PeerMessagingBroker<T>
     where T: tonic::client::GrpcService<tonic::body::Body>,
@@ -152,7 +151,7 @@ mod client {
                         .map_err(|cause| tonic::Status::invalid_argument(format!("Error while converting stream message in open_stream: {cause}")))
                 }));
 
-            Ok((GrpcDownstream::from(inbound), tx))
+            Ok((GrpcDownstream::from(inbound), GrpcUpstream::from(tx)))
         }
     }
 }

@@ -8,7 +8,6 @@ use tracing::{debug, info, warn};
 
 use opendut_carl_api::carl::broker::stream_header;
 use opendut_carl_api::carl::{broker, CaCertInfo, CarlClient};
-use opendut_carl_api::proto::services::peer_messaging_broker;
 use opendut_types::peer::PeerId;
 use opendut_util::project;
 
@@ -61,9 +60,9 @@ pub async fn open_stream(
     };
     let (rx_inbound, tx_outbound) = carl.broker.open_stream(self_id, remote_address, extra_headers).await?;
 
-    tx_outbound.send(peer_messaging_broker::Upstream {
-        message: Some(peer_messaging_broker::upstream::Message::Ping(peer_messaging_broker::Ping {})),
-        context: None
+    tx_outbound.send(broker::UpstreamMessage {
+        context: None,
+        payload: broker::UpstreamMessagePayload::Ping,
     }).await
         .map_err(|cause| broker::error::OpenStream { message: format!("Error while sending initial ping: {cause}") })?;
 

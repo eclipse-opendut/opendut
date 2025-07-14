@@ -1,6 +1,6 @@
-use std::hash::{Hash, Hasher};
-use std::time::Instant;
 use serde::Serialize;
+use std::hash::{Hash, Hasher};
+use std::time::SystemTime;
 use uuid::Uuid;
 
 mod value;
@@ -38,7 +38,7 @@ pub struct PeerConfigurationState {
 #[derive(Debug)]
 pub struct PeerConfigurationParameterState {
     pub id: ParameterId,
-    pub timestamp: Instant,
+    pub timestamp: SystemTime,
     pub state: ParameterTargetState,
 }
 
@@ -47,7 +47,23 @@ pub enum ParameterTargetState {
     Absent,
     Present,
     WaitingForDependencies(Vec<ParameterId>),
-    Error(String),
+    Error(ParameterTargetStateError),
+}
+
+#[derive(Debug)]
+pub enum ParameterTargetStateError {
+    CreatingFailed(ParameterTargetStateErrorCreatingFailed),
+    RemovingFailed(ParameterTargetStateErrorRemovingFailed),
+}
+
+#[derive(Debug)]
+pub enum ParameterTargetStateErrorCreatingFailed {
+    UnclassifiedError(String),
+}
+
+#[derive(Debug)]
+pub enum ParameterTargetStateErrorRemovingFailed {
+    UnclassifiedError(String),
 }
 
 #[cfg(test)]

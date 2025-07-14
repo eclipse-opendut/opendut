@@ -125,20 +125,20 @@ cfg_if! {
 
         use tokio::sync::mpsc;
         use tokio::sync::mpsc::error::SendError;
-        use crate::carl::broker::Upstream;
         use crate::proto::services::peer_messaging_broker;
 
+        #[derive(Debug, Clone)]
         pub struct GrpcUpstream {
             inner: mpsc::Sender<peer_messaging_broker::Upstream>,
         }
         impl GrpcUpstream {
-            pub async fn send<T: Into<peer_messaging_broker::upstream::Message>>(&self, payload: T) -> Result<(), SendError<T>> {
-                let payload = peer_messaging_broker::upstream::Message::from(payload);
-
-                self.inner.send(peer_messaging_broker::Upstream {
-                    message: Some(payload),
-                    context: None,
-                }).await
+            pub async fn send<T: Into<peer_messaging_broker::Upstream>>(&self, message: T) -> Result<(), SendError<peer_messaging_broker::Upstream>> {
+                self.inner.send(message.into()).await
+            }
+        }
+        impl From<mpsc::Sender<peer_messaging_broker::Upstream>> for GrpcUpstream {
+            fn from(value: mpsc::Sender<peer_messaging_broker::Upstream>) -> Self {
+                Self { inner: value }
             }
         }
     }

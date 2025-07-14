@@ -1,3 +1,4 @@
+use std::time::SystemTime;
 use crate::proto::{conversion, ConversionError, ConversionResult};
 
 crate::include_proto!("opendut.types.peer.configuration.api");
@@ -289,15 +290,17 @@ conversion! {
     fn from(value: Model) -> Proto {
         Proto {
             id: Some(value.id.into()),
-            timestamp: Some(value.timestamp.into()), //TODO
+            timestamp: Some(value.timestamp.into()),
             state: Some(value.state.into()),
         }
     }
 
     fn try_from(value: Proto) -> ConversionResult<Model> {
+        let timestamp = SystemTime::try_from(extract!(value.timestamp)?)
+            .map_err(|error| ErrorBuilder::message(error.to_string()))?;
         Ok(Model {
             id: extract!(value.id)?.try_into()?,
-            timestamp: extract!(value.timestamp)?.try_into()?, //TODO
+            timestamp,
             state: extract!(value.state)?.try_into()?,
         })
     }
@@ -316,7 +319,32 @@ conversion! {
                     .map(Into::into)
                     .collect::<Vec<_>>()
             }),
-            Model::Error(error) => Proto::Error(PeerConfigurationParameterTargetError { error }) //TODO
+            Model::Error(error) => {
+                match error {
+                    crate::peer::configuration::ParameterTargetStateError::CreatingFailed(creating_failed) => {
+                        match creating_failed {
+                            crate::peer::configuration::ParameterTargetStateErrorCreatingFailed::UnclassifiedError(message) => {
+                                Proto::Error(PeerConfigurationParameterTargetError {
+                                    error: Some(peer_configuration_parameter_target_error::Error::CreatingFailed(PeerConfigurationParameterTargetErrorCreatingFailed { 
+                                        error: Some(peer_configuration_parameter_target_error_creating_failed::Error::Unclassified(UnclassifiedError { message })) 
+                                    })),
+                                })
+                            }
+                        }
+                    }
+                    crate::peer::configuration::ParameterTargetStateError::RemovingFailed(removing_failed) => {
+                        match removing_failed {
+                            crate::peer::configuration::ParameterTargetStateErrorRemovingFailed::UnclassifiedError(message) => {
+                                Proto::Error(PeerConfigurationParameterTargetError {
+                                    error: Some(peer_configuration_parameter_target_error::Error::RemovingFailed(PeerConfigurationParameterTargetErrorRemovingFailed { 
+                                        error: Some(peer_configuration_parameter_target_error_removing_failed::Error::Unclassified(UnclassifiedError { message })) 
+                                    })),
+                                })
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -329,7 +357,31 @@ conversion! {
                     .map(TryInto::try_into)
                     .collect::<Result<_, _>>()?
             ),
-            Proto::Error(error) => Model::Error(error), //TODO
+            Proto::Error(error) => {
+                let error = extract!(error.error)?;
+                match error {
+                    peer_configuration_parameter_target_error::Error::CreatingFailed(error) => {
+                        let error = extract!(error.error)?;
+                        match error {
+                            peer_configuration_parameter_target_error_creating_failed::Error::Unclassified(details) => {
+                                Model::Error(crate::peer::configuration::ParameterTargetStateError::CreatingFailed(
+                                    crate::peer::configuration::ParameterTargetStateErrorCreatingFailed::UnclassifiedError(details.message)
+                                ))
+                            }
+                        }
+                    }
+                    peer_configuration_parameter_target_error::Error::RemovingFailed(error) => {
+                        let error = extract!(error.error)?;
+                        match error {
+                            peer_configuration_parameter_target_error_removing_failed::Error::Unclassified(details) => {
+                                Model::Error(crate::peer::configuration::ParameterTargetStateError::RemovingFailed(
+                                    crate::peer::configuration::ParameterTargetStateErrorRemovingFailed::UnclassifiedError(details.message)
+                                ))
+                            }
+                        }
+                    }
+                }
+            },
         };
         Ok(result)
     }

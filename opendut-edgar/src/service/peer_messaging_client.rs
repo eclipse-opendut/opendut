@@ -9,10 +9,9 @@ use tokio::time::sleep;
 use tonic::Code;
 use tracing::{debug, error, info, trace, warn, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
-use opendut_carl_api::carl::broker;
+use opendut_carl_api::carl::{broker, GrpcUpstream};
 use opendut_carl_api::carl::broker::Upstream;
 use opendut_carl_api::carl::CarlClient;
-use opendut_carl_api::proto::services::peer_messaging_broker;
 use opendut_types::peer::configuration::PeerConfigurationState;
 use opendut_types::peer::PeerId;
 use opendut_util::settings::LoadedConfig;
@@ -162,7 +161,7 @@ impl PeerMessagingClient {
     async fn handle_stream_message(
         &self,
         message: broker::DownstreamMessage,
-        tx_outbound: &mpsc::Sender<peer_messaging_broker::Upstream>,
+        tx_outbound: &GrpcUpstream,
         peer_configuration_sender: &mpsc::Sender<ApplyPeerConfigurationParams>,
     ) -> anyhow::Result<()> {
         let broker::DownstreamMessage { payload: message, context } = message;
@@ -174,9 +173,9 @@ impl PeerMessagingClient {
         match message {
             broker::DownstreamMessagePayload::Pong => {
                 sleep(Duration::from_secs(5)).await;
-                let message = peer_messaging_broker::Upstream {
-                    message: Some(peer_messaging_broker::upstream::Message::Ping(peer_messaging_broker::Ping {})),
-                    context: None
+                let message = broker::UpstreamMessage {
+                    payload: broker::UpstreamMessagePayload::Ping,
+                    context: None,
                 };
                 let _ignore_error =
                     tx_outbound.send(message).await
