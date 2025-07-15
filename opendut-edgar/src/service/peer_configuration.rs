@@ -38,7 +38,10 @@ impl std::fmt::Debug for NetworkInterfaceManagement {
     }
 }
 
-pub async fn spawn_peer_configurations_handler(mut rx_peer_configuration: mpsc::Receiver<ApplyPeerConfigurationParams>, _tx_peer_configuration_state: mpsc::Sender<PeerConfigurationState>) -> anyhow::Result<()> {
+pub async fn spawn_peer_configurations_handler(
+    mut rx_peer_configuration: mpsc::Receiver<ApplyPeerConfigurationParams>, 
+    _tx_peer_configuration_state: mpsc::Sender<PeerConfigurationState>
+) -> anyhow::Result<()> {
     tokio::spawn(async move {
         while let Some(apply_peer_configuration_params) = rx_peer_configuration.recv().await {
             let _ = apply_peer_configuration(apply_peer_configuration_params).await

@@ -30,19 +30,19 @@ pub enum ParameterTarget {
     Present,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PeerConfigurationState {
     pub parameter_states: Vec<PeerConfigurationParameterState>
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PeerConfigurationParameterState {
     pub id: ParameterId,
     pub timestamp: SystemTime,
     pub state: ParameterTargetState,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ParameterTargetState {
     Absent,
     Present,
@@ -50,18 +50,18 @@ pub enum ParameterTargetState {
     Error(ParameterTargetStateError),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ParameterTargetStateError {
     CreatingFailed(ParameterTargetStateErrorCreatingFailed),
     RemovingFailed(ParameterTargetStateErrorRemovingFailed),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ParameterTargetStateErrorCreatingFailed {
     UnclassifiedError(String),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ParameterTargetStateErrorRemovingFailed {
     UnclassifiedError(String),
 }

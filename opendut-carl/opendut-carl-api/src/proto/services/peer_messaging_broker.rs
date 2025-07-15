@@ -1,5 +1,5 @@
 use opendut_types::conversion;
-use opendut_types::proto::ConversionError;
+use opendut_types::proto::{ConversionError, ConversionErrorBuilder};
 use opendut_types::proto::ConversionResult;
 
 tonic::include_proto!("opendut.carl.services.peer_messaging_broker");
@@ -37,6 +37,28 @@ conversion! {
         };
 
         Ok(Model { context, payload })
+    }
+}
+
+conversion! {
+    type Model = opendut_types::peer::configuration::api::PeerConfigurationState;
+    type Proto = Upstream;
+
+    fn from(value: Model) -> Proto {
+        let state = opendut_types::proto::peer::configuration::api::PeerConfigurationState::from(value);
+        let message = upstream::Message::PeerConfigurationState(state);
+        Upstream {
+            context: None,
+            message: Some(message),
+        }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let proto_message = extract!(value.message)?;
+        match proto_message {
+            upstream::Message::PeerConfigurationState(state) => Ok(state.try_into()?),
+            _ => Err(ErrorBuilder::message("This is not a peer configuration state message.")),
+        }
     }
 }
 
