@@ -39,20 +39,22 @@ impl std::fmt::Debug for NetworkInterfaceManagement {
 }
 
 pub async fn spawn_peer_configurations_handler(
-    mut rx_peer_configuration: mpsc::Receiver<ApplyPeerConfigurationParams>, 
-    _tx_peer_configuration_state: mpsc::Sender<PeerConfigurationState>
+    mut rx_peer_configuration: mpsc::Receiver<ApplyPeerConfigurationParams>,
+    tx_peer_configuration_state: mpsc::Sender<PeerConfigurationState>
 ) -> anyhow::Result<()> {
     tokio::spawn(async move {
         while let Some(apply_peer_configuration_params) = rx_peer_configuration.recv().await {
-            let _ = apply_peer_configuration(apply_peer_configuration_params).await
-                .inspect_err(|error| error!("Error while applying peer configuration: {error}"));
+            let result = apply_peer_configuration(apply_peer_configuration_params).await;
+            let state = PeerConfigurationState::from(result);
+            let _ = tx_peer_configuration_state.send(state).await
+                .inspect_err(|err| error!("Failed to send peer configuration state to CARL. {err}"));
         }
     });
     Ok(())
 }
 
 #[tracing::instrument(skip_all)]
-async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyhow::Result<()> {
+async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> CollectedResult {
     let ApplyPeerConfigurationParams { 
         self_id, peer_configuration, old_peer_configuration, 
         network_interface_management, 
@@ -63,13 +65,13 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
         network_interface_management.clone(),
         Arc::clone(&metrics_manager),
     );
-    let CollectedResult { items, success } = task::service_runner::run_tasks(peer_configuration.clone(), resolver).await;
-    if success {
-        debug!("Peer configuration tasks executed successfully: {items:?}");
+    let result = task::service_runner::run_tasks(peer_configuration.clone(), resolver).await;
+    if result.success {
+        debug!("Peer configuration tasks executed successfully: {:?}", result.items);
     } else {
-        return Err(anyhow::anyhow!("Failed to apply peer configuration tasks. Following tasks failed: {items:?}"));
+        error!("Failed to apply peer configuration tasks. Following tasks failed: {:?}", result.items);
+        return result;
     }
-    // TODO: Send feedback of results to CARL
 
     if let NetworkInterfaceManagement::Enabled { can_manager, .. } = &network_interface_management {
         let _ = setup_can(
@@ -89,7 +91,7 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> anyho
     }
 
     debug!("Peer configuration has been successfully applied.");
-    Ok(())
+    result
 }
 
 #[tracing::instrument(skip_all)]

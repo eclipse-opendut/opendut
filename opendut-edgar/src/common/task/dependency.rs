@@ -14,7 +14,7 @@ pub struct PeerConfigurationDependencyResolver {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-struct ParameterVariantWithDependencies {
+pub struct ParameterVariantWithDependencies {
     pub id: ParameterId,
     pub parameter: ParameterVariant,
     pub dependencies: HashSet<ParameterId>,
@@ -97,6 +97,10 @@ impl PeerConfigurationDependencyResolver {
 
     pub fn success(&mut self) -> bool {
         self.open.is_empty() && self.failed.is_empty() && self.current.is_none()
+    }
+    
+    pub fn unfulfilled(&self) -> Vec<ParameterVariantWithDependencies> {
+        self.open.values().cloned().collect()
     }
 }
 

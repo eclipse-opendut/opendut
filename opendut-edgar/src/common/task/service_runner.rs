@@ -6,16 +6,75 @@
 //! PeerConfigurationDependencyResolver: PeerConfiguration -> ParameterVariant
 //! TaskResolver: ParameterVariant -> [ List of TaskAbsent ]
 
-use crate::common::task::dependency::PeerConfigurationDependencyResolver;
-use crate::common::task::runner::{Outcome, TaskExecutionError};
+use std::time::SystemTime;
+use crate::common::task::dependency::{ParameterVariantWithDependencies, PeerConfigurationDependencyResolver};
+use crate::common::task::runner::{TaskExecutionError};
 use crate::common::task::task_resolver::TaskResolver;
 use crate::common::task::{Success, TaskAbsent, TaskStateFulfilled};
-use opendut_types::peer::configuration::{ParameterId, ParameterTarget, ParameterVariant, PeerConfiguration};
+use opendut_types::peer::configuration::{ParameterId, ParameterTarget, ParameterTargetState, ParameterTargetStateError, ParameterTargetStateErrorCreatingFailed, ParameterTargetStateErrorRemovingFailed, ParameterVariant, PeerConfiguration, PeerConfigurationParameterState, PeerConfigurationState};
 
+#[derive(Debug)]
+pub enum Outcome {
+    Changed(Success),
+    Unchanged,
+    Failed,  // TODO: This should be removed, as it is not used in the current implementation.
+}
 
 pub struct CollectedResult {
     pub(crate) items: Vec<ResultItem>,
     pub success: bool,
+    unfulfilled_parameters: Vec<ParameterVariantWithDependencies>
+}
+
+impl From<CollectedResult> for PeerConfigurationState {
+    fn from(value: CollectedResult) -> Self {
+        let parameter_states = value.items.into_iter().map(|item| {
+            let target = item.parameter.target();
+            let state = match item.outcome {
+                Ok(outcome) => {
+                    match outcome {
+                        Outcome::Unchanged | Outcome::Changed(_) => {
+                            match target {
+                                ParameterTarget::Present => ParameterTargetState::Present,
+                                ParameterTarget::Absent => ParameterTargetState::Absent,
+                            }
+                        }
+                        Outcome::Failed => {
+                            match target {
+                                ParameterTarget::Present => ParameterTargetState::Error(
+                                    ParameterTargetStateError::CreatingFailed(ParameterTargetStateErrorCreatingFailed::UnclassifiedError("Task failed".into()))
+                                ),
+                                ParameterTarget::Absent => ParameterTargetState::Error(
+                                    ParameterTargetStateError::RemovingFailed(ParameterTargetStateErrorRemovingFailed::UnclassifiedError("Task failed".into()))
+                                ),
+                            }
+                        },
+                    }
+                }
+                Err(error) => {
+                    match target {
+                        ParameterTarget::Present => ParameterTargetState::Error(
+                            ParameterTargetStateError::CreatingFailed(ParameterTargetStateErrorCreatingFailed::UnclassifiedError(error.to_string()))
+                        ),
+                        ParameterTarget::Absent => ParameterTargetState::Error(
+                            ParameterTargetStateError::RemovingFailed(ParameterTargetStateErrorRemovingFailed::UnclassifiedError(error.to_string()))
+                        ),
+                    }
+                }
+            };
+
+            PeerConfigurationParameterState {
+                id: item.id,
+                timestamp: item.timestamp,
+                state,
+            }
+            
+        }).collect();
+        
+        PeerConfigurationState {
+            parameter_states,
+        }
+    }
 }
 
 #[allow(unused)]
@@ -23,7 +82,8 @@ pub struct CollectedResult {
 pub struct ResultItem {
     pub id: ParameterId,
     pub parameter: ParameterVariant,
-    pub outcome: Result<Outcome, TaskExecutionError>
+    pub outcome: Result<Outcome, TaskExecutionError>,
+    pub timestamp: SystemTime,
 }
 
 
@@ -33,23 +93,24 @@ pub async fn run_tasks(
 ) -> CollectedResult {
     let mut resolver = PeerConfigurationDependencyResolver::new(peer_configuration.clone());
 
-    let mut results = CollectedResult { items: vec![], success: false };
+    let mut results = CollectedResult { items: vec![], success: false, unfulfilled_parameters: vec![] };
     while let Some(parameter) = resolver.next_parameter() {
         let target = parameter.target();
         let tasks = task_resolver.resolve_tasks(&parameter);
 
         let outcome_for_parameter = run_multiple_tasks(&tasks, target, &mut resolver).await;
-        results.items.push(ResultItem { id: parameter.id(), parameter, outcome: outcome_for_parameter });
+        results.items.push(ResultItem { id: parameter.id(), parameter, outcome: outcome_for_parameter, timestamp: SystemTime::now() });
     }
 
     for task in task_resolver.additional_tasks() {
         let tasks = task.tasks;
         let target = task.parameter.target();
         let outcome_for_parameter = run_multiple_tasks(&tasks, target, &mut resolver).await;
-        results.items.push(ResultItem { id: task.parameter.id(), parameter: task.parameter, outcome: outcome_for_parameter });
+        results.items.push(ResultItem { id: task.parameter.id(), parameter: task.parameter, outcome: outcome_for_parameter, timestamp: SystemTime::now() });
     }
 
     results.success = resolver.success();
+    results.unfulfilled_parameters = resolver.unfulfilled();
     results
 }
 
@@ -114,7 +175,7 @@ async fn run_multiple_tasks(
         match result {
             Ok(outcome) => {
                 match outcome {
-                    Outcome::DryRun | Outcome::Unchanged => {
+                    Outcome::Unchanged => {
                         // if the task is unchanged, we continue to the next task
                         continue;
                     }
