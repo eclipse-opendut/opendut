@@ -100,7 +100,6 @@ cfg_if! {
         pub(crate) use extract;
 
 
-
         use std::pin::Pin;
         use tonic::codegen::tokio_stream::Stream;
 
@@ -122,25 +121,6 @@ cfg_if! {
             }
         }
 
-
-        use tokio::sync::mpsc;
-        use tokio::sync::mpsc::error::SendError;
-        use crate::proto::services::peer_messaging_broker;
-
-        #[derive(Debug, Clone)]
-        pub struct GrpcUpstream {
-            inner: mpsc::Sender<peer_messaging_broker::Upstream>,
-        }
-        impl GrpcUpstream {
-            pub async fn send<T: Into<peer_messaging_broker::Upstream>>(&self, message: T) -> Result<(), SendError<peer_messaging_broker::Upstream>> {
-                self.inner.send(message.into()).await
-            }
-        }
-        impl From<mpsc::Sender<peer_messaging_broker::Upstream>> for GrpcUpstream {
-            fn from(value: mpsc::Sender<peer_messaging_broker::Upstream>) -> Self {
-                Self { inner: value }
-            }
-        }
     }
 }
 
@@ -250,6 +230,25 @@ cfg_if! {
                     peers: PeersRegistrar::new(PeerManagerClient::new(Clone::clone(&auth_svc))),
                     observer: ObserverMessagingBroker::new(ObserverMessagingBrokerClient::new(Clone::clone(&auth_svc))),
                 })
+            }
+        }
+
+        use tokio::sync::mpsc;
+        use tokio::sync::mpsc::error::SendError;
+        use crate::proto::services::peer_messaging_broker;
+
+        #[derive(Debug, Clone)]
+        pub struct GrpcUpstream {
+            inner: mpsc::Sender<peer_messaging_broker::Upstream>,
+        }
+        impl GrpcUpstream {
+            pub async fn send<T: Into<peer_messaging_broker::Upstream>>(&self, message: T) -> Result<(), SendError<peer_messaging_broker::Upstream>> {
+                self.inner.send(message.into()).await
+            }
+        }
+        impl From<mpsc::Sender<peer_messaging_broker::Upstream>> for GrpcUpstream {
+            fn from(value: mpsc::Sender<peer_messaging_broker::Upstream>) -> Self {
+                Self { inner: value }
             }
         }
     }
