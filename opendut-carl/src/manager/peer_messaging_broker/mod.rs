@@ -8,7 +8,7 @@ use opendut_carl_api::carl::broker::stream_header;
 use opendut_carl_api::proto::services::peer_messaging_broker::{upstream, DisconnectNotice};
 use opendut_carl_api::proto::services::peer_messaging_broker::Pong;
 use opendut_carl_api::proto::services::peer_messaging_broker::{downstream, ApplyPeerConfiguration, Downstream, TracingContext};
-use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
+use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration, PeerConfigurationState};
 use opendut_types::peer::state::{PeerConnectionState};
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opentelemetry::propagation::TextMapPropagator;
@@ -159,7 +159,7 @@ impl PeerMessagingBroker {
                 loop {
                     let received = tokio::time::timeout(timeout_duration, rx_inbound.recv()).await;
                     match received {
-                        Ok(Some(message)) => handle_stream_message(message, peer_id, &tx_outbound).await,
+                        Ok(Some(message)) => handle_stream_message(message, peer_id, &tx_outbound, resource_manager.clone()).await,
                         Ok(None) => {
                             info!("Peer <{peer_id}> disconnected! Closing inbound channel.");
                             break;
@@ -310,7 +310,9 @@ async fn handle_stream_message(
     message: upstream::Message,
     peer_id: PeerId,
     tx_outbound: &mpsc::Sender<Downstream>,
+    resource_manager: ResourceManagerRef,
 ) {
+    // TODO: handle converting GRPC messages in facade
     match message {
         upstream::Message::Ping(_) => {
             let message = downstream::Message::Pong(Pong {});
@@ -319,7 +321,18 @@ async fn handle_stream_message(
                 tx_outbound.send(Downstream { message: Some(message), context }).await
                     .inspect_err(|cause| warn!("Failed to send ping to peer <{peer_id}>:\n  {cause}"));
         },
-        upstream::Message::PeerConfigurationState(_) => {}
+        upstream::Message::PeerConfigurationState(state) => {
+            let state_result = PeerConfigurationState::try_from(state);
+            if let Ok(state) = state_result {
+                info!("Received PeerConfigurationState from peer <{peer_id}>:\n  {state:#?}");
+                let _ignore_result = resource_manager.insert(peer_id, state).await
+                    .inspect_err(|cause| {
+                        warn!("Failed to insert PeerConfigurationState for peer <{peer_id}>:\n  {cause}");
+                    });
+            } else {
+                warn!("Received invalid PeerConfigurationState from peer <{peer_id}>: {state_result:?}");
+            }
+        }
     }
 }
 

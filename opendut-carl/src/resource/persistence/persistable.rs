@@ -2,7 +2,7 @@ use crate::resource::api::Resource;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::TableDefinition;
 use opendut_types::cluster::{ClusterDescriptor, ClusterDeployment};
-use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
+use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration, PeerConfigurationState};
 use opendut_types::peer::state::PeerConnectionState;
 use opendut_types::peer::PeerDescriptor;
 use opendut_types::proto::ConversionError;
@@ -31,6 +31,12 @@ impl Persistable for OldPeerConfiguration {
 impl Persistable for PeerConfiguration {
     type Proto = opendut_types::proto::peer::configuration::api::PeerConfiguration;
     const TABLE: &'static str = "peer_configuration";
+    /// Not persisted at the moment. A restart will cause a reconfiguration of all peers.
+    /// The assign_cluster() method in the ClusterManager evaluates the current peer descriptors of the cluster and sends new peer configurations to the peers.
+    /// It is called by the ClusterManager when a cluster deployment is created or when all peers of a cluster deployment are available.
+    /// -> subscription triggers following chain: schedule_redeploying_clusters_when_all_peers_become_available() -> rollout_all_clusters_containing_newly_available_peer() -> rollout_cluster_if_all_peers_available()
+    /// This is done to ensure that the cluster deployment is always up-to-date and that all peers are configured correctly.
+    /// It is intended to be stored in a persistent storage once the peer configuration is stable to avoid migration issues.
     const STORAGE: StorageKind = StorageKind::Volatile;
 }
 
@@ -44,6 +50,12 @@ impl Persistable for PeerDescriptor {
     type Proto = opendut_types::proto::peer::PeerDescriptor;
     const TABLE: &'static str = "peer_descriptor";
     const STORAGE: StorageKind = StorageKind::Persistent;
+}
+
+impl Persistable for PeerConfigurationState {
+    type Proto = opendut_types::proto::peer::configuration::api::PeerConfigurationState;
+    const TABLE: &'static str = "peer_configuration_state";
+    const STORAGE: StorageKind = StorageKind::Volatile;
 }
 
 

@@ -112,6 +112,7 @@ impl ResourceManager {
             mut peer_configuration,
             mut peer_descriptor,
             mut peer_connection_state,
+            mut peer_configuration_state,
             #[expect(deprecated)]
             mut _cluster_configuration,
         } = relayed_subscription_events;
@@ -148,6 +149,12 @@ impl ResourceManager {
         }
 
         while let Ok(event) = peer_connection_state.1.try_recv() {
+            state.subscribers
+                .notify(event)
+                .expect("should successfully send notification about event during resource transaction");
+        }
+
+        while let Ok(event) = peer_configuration_state.1.try_recv() {
             state.subscribers
                 .notify(event)
                 .expect("should successfully send notification about event during resource transaction");
