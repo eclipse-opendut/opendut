@@ -4,7 +4,6 @@ ansible_proxy_server_controller_dir: "/tmp/opendut/ansible-px-proxy/"
 ansible_proxy_server_controller_executable: "{{ ansible_proxy_server_controller_dir }}px"
 
 ansible_proxy_pxproxy_version: "v0.10.2"
-ansible_proxy_pxproxy_target: "linux-glibc-x86_64"
 
 ansible_proxy_controller_pxproxy_config_file: "/tmp/opendut/px-proxy.ini"
 

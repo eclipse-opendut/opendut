@@ -3,6 +3,33 @@
     state: directory
     dest: "{{ ansible_proxy_server_controller_dir }}"
 
+- name: Register OS and arch mapping for px-proxy releases
+  set_fact:
+    pxproxy_arch_map:
+      x86_64: "x86_64"
+    pxproxy_os_map:
+      "GNU/Linux": "linux-glibc"
+      "Darwin": "mac"
+    cacheable: true
+
+- name: Determine Host OS
+  command: "uname --operating-system"
+  register: _operating_system
+  changed_when: false
+
+- name: Determine Host Arch
+  command: "uname --machine"
+  register: _cpu_arch
+  changed_when: false
+
+- name: Set ansible_proxy_pxproxy_target fact
+  set_fact:
+    ansible_proxy_pxproxy_target: "{{ pxproxy_os_map[_operating_system.stdout] }}-{{ pxproxy_arch_map[_cpu_arch.stdout] }}"
+
+- name: Print effective ansible_proxy_pxproxy_target  # might be overridden via CLI, for example
+  debug:
+    var: ansible_proxy_pxproxy_target
+
 - name: Download proxy server onto Ansible Controller
   unarchive:
     src: "https://github.com/genotrance/px/releases/download/{{ ansible_proxy_pxproxy_version }}/px-{{ ansible_proxy_pxproxy_version }}-{{ ansible_proxy_pxproxy_target }}.tar.gz"
