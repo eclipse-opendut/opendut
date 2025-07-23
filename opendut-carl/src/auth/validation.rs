@@ -200,7 +200,7 @@ mod tests {
         ).await;
         
         assert!(result.is_ok());
-        assert!(cache.get(&fixture.key_id).is_ok())
+        assert!(cache.get(&fixture.key_id).is_ok());
     }
 
     #[rstest]
@@ -218,7 +218,7 @@ mod tests {
         ).await;
         
         assert!(result.is_ok());
-        assert!(fixture.up_to_date_cache.get(&fixture.key_id).is_ok())
+        assert!(fixture.up_to_date_cache.get(&fixture.key_id).is_ok());
     }
 
     #[rstest]
@@ -236,7 +236,7 @@ mod tests {
         ).await;
         
         assert!(result.is_ok());
-        assert!(fixture.two_day_old_cache.get(&fixture.key_id).is_ok())
+        assert!(fixture.two_day_old_cache.get(&fixture.key_id).is_ok());
     }
 
     struct MockJwk {

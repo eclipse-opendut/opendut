@@ -72,7 +72,7 @@ pub fn initialize_metrics_collection(
                             .filter(|(_, connection)| matches!(connection, PeerConnectionState::Online { .. }))
                             .collect::<Vec<_>>();
 
-                        observer.observe(online_peers.len() as u64, &[])
+                        observer.observe(online_peers.len() as u64, &[]);
                     }
                     Err(cause) => trace!("Error while loading metrics information from ResourceManager:\n  {cause}")
                 }

@@ -207,7 +207,7 @@ impl ClusterManager {
                 debug!(
                     "Not all peers of cluster <{cluster_id}> are available, so not deploying. Unavailable peers: {}",
                     unavailable_peers.iter()
-                        .map(|peer_id| peer_id.to_string())
+                        .map(ToString::to_string)
                         .collect::<Vec<_>>()
                         .join(", ")
                 );
@@ -237,7 +237,7 @@ impl ClusterManager {
                 DetermineMemberInterfaceMappingError::PeerForDeviceNotFound { device_id } => RolloutClusterError::PeerForDeviceNotFound { device_id, cluster_id, cluster_name },
             })?;
 
-        let member_ids = member_interface_mapping.keys().cloned().collect::<Vec<_>>();
+        let member_ids = member_interface_mapping.keys().copied().collect::<Vec<_>>();
 
         if let Vpn::Enabled { vpn_client } = &self.vpn {
             vpn_client.create_cluster(cluster_id, &member_ids).await
@@ -247,10 +247,10 @@ impl ClusterManager {
                     RolloutClusterError::Internal { cluster_id, cause: message }
                 })?;
 
-            let peers_string = member_ids.iter().map(|peer| peer.to_string()).collect::<Vec<_>>().join(",");
+            let peers_string = member_ids.iter().map(ToString::to_string).collect::<Vec<_>>().join(",");
             debug!("Created group for cluster <{cluster_id}> in VPN service, using peers: {peers_string}");
         } else {
-            debug!("VPN disabled. Not creating VPN group.")
+            debug!("VPN disabled. Not creating VPN group.");
         }
 
         let can_server_ports = self.determine_can_server_ports(&member_ids, cluster_id)?;
@@ -525,8 +525,6 @@ mod test {
     use rstest::{fixture, rstest};
     use tokio::sync::mpsc;
 
-    use opendut_carl_api::proto::services::peer_messaging_broker::downstream;
-    use opendut_carl_api::proto::services::peer_messaging_broker::Downstream;
     use opendut_types::cluster::ClusterName;
     use opendut_types::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorDescriptor, ExecutorDescriptors, ExecutorId, ExecutorKind};
     use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};

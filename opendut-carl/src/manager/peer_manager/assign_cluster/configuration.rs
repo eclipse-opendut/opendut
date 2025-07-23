@@ -21,7 +21,7 @@ pub(super) fn update_peer_configuration(
     let expected_joined_interface_names = {
         let expected_gre_interface_names =
             expected_gre_config_parameters.iter()
-                .map(|config| config.interface_name()).collect::<Result<Vec<_>, _>>()
+                .map(GreInterfaceConfig::interface_name).collect::<Result<Vec<_>, _>>()
                 .map_err(|source| AssignClusterError::InterfaceName { source })?;
 
         let expected_joined_ethernet_device_interfaces =

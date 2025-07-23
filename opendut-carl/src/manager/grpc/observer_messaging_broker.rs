@@ -41,8 +41,8 @@ impl ObserverMessagingBrokerFacade {
 
         let all_peer_ids = self.resource_manager.list::<PeerDescriptor>().await
             .map_err(|error| Status::internal(error.to_string()))?
-            .keys().cloned().collect::<HashSet<_>>();
-        let unknown_peers = peer_ids.difference(&all_peer_ids).cloned().collect::<Vec<_>>();
+            .keys().copied().collect::<HashSet<_>>();
+        let unknown_peers = peer_ids.difference(&all_peer_ids).copied().collect::<Vec<_>>();
         if unknown_peers.is_empty().not() {
             return Err(Status::invalid_argument(format!("Unknown peer IDs provided: <{unknown_peers:?}>.")))
         }

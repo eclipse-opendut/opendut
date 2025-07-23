@@ -6,7 +6,7 @@ use opendut_types::peer::PeerDescriptor;
 
 
 impl Resources<'_> {
-    pub async fn list_cluster_peers(&self, cluster_id: ClusterId) -> Result<Vec<PeerDescriptor>, ListClusterPeersError> {
+    pub fn list_cluster_peers(&self, cluster_id: ClusterId) -> Result<Vec<PeerDescriptor>, ListClusterPeersError> {
         let cluster_descriptor = self.get::<ClusterDescriptor>(cluster_id)
             .map_err(|source| ListClusterPeersError::Persistence { cluster_id, source })?
             .ok_or_else(|| ListClusterPeersError::ClusterNotFound(cluster_id))?;

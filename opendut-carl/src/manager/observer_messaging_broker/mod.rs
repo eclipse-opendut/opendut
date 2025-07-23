@@ -42,7 +42,7 @@ impl ObserverMessagingBroker {
         let mut observed_peer_connection_states = ObservePeersOnline::create(peer_ids.clone(), self.resource_manager.clone(), timeout_duration, max_observation_duration).await?;
 
         tokio::spawn(async move {
-            let response = observed_peer_connection_states.determine_response().await;
+            let response = observed_peer_connection_states.determine_response();
             if let WaitForPeersOnlineResponseStatus::WaitForPeersOnlineSuccess = response.status {
                 let _ignore = tx_outbound.send(response.into())
                     .await
@@ -54,7 +54,7 @@ impl ObserverMessagingBroker {
                         debug!("Observer of peers <{peer_ids:?}> has closed the connection.");
                         break;
                     }
-                    let response = observed_peer_connection_states.determine_response().await;
+                    let response = observed_peer_connection_states.determine_response();
                     let _ignore = tx_outbound.send(response.clone().into())
                         .await
                         .inspect_err(|cause| warn!("Failed to send response:\n  {cause}"));

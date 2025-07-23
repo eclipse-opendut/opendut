@@ -108,7 +108,7 @@ impl PersistenceOperation {
 
 pub type PersistenceResult<T> = Result<T, PersistenceError>;
 pub trait MapErrToInner<T, E> {
-    /// Collapse a PersistenceResult into the value inside of it.
+    /// Collapse a `PersistenceResult` into the value inside of it.
     /// The type of the inner value has to implement `From<PersistenceError>`,
     /// which means it will typically be a `Result` type itself.
     fn map_err_to_inner(self, function: impl FnOnce(PersistenceError) -> E) -> Result<T, E>;

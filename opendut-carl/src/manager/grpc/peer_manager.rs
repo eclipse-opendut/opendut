@@ -5,7 +5,7 @@ use opendut_auth::registration::resources::UserId;
 use opendut_carl_api::proto;
 use opendut_carl_api::proto::services;
 use opendut_carl_api::proto::services::peer_manager::peer_manager_server::{PeerManager as PeerManagerService, PeerManagerServer};
-use opendut_carl_api::proto::services::peer_manager::*;
+use opendut_carl_api::proto::services::peer_manager::{StorePeerDescriptorRequest, StorePeerDescriptorResponse, store_peer_descriptor_response, StorePeerDescriptorSuccess, DeletePeerDescriptorRequest, DeletePeerDescriptorResponse, DeletePeerDescriptorSuccess, delete_peer_descriptor_response, GetPeerDescriptorRequest, GetPeerDescriptorResponse, get_peer_descriptor_response, GetPeerDescriptorSuccess, ListPeerDescriptorsRequest, ListPeerDescriptorsResponse, list_peer_descriptors_response, ListPeerDescriptorsSuccess, GetPeerStateRequest, GetPeerStateResponse, get_peer_state_response, GetPeerStateSuccess, ListPeerStatesRequest, ListPeerStatesResponse, list_peer_states_response, ListPeerStatesSuccess, ListPeerStatesEntry, ListDevicesRequest, ListDevicesResponse, GeneratePeerSetupRequest, GeneratePeerSetupResponse, GenerateCleoSetupRequest, GenerateCleoSetupResponse, generate_cleo_setup_response, GenerateCleoSetupSuccess};
 use opendut_types::cleo::CleoId;
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use tonic::{Request, Response, Status};

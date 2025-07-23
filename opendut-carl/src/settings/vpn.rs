@@ -81,7 +81,6 @@ fn unknown_enum_variant(settings: &Config, key: &str) -> anyhow::Result<Vpn> {
     let value = settings.get_string(key)?;
     if value.trim().is_empty() {
         bail!("No configuration found for: {key}")
-    } else {
-        bail!("Unknown {key}: {value}")
     }
+    bail!("Unknown {key}: {value}")
 }

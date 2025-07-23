@@ -10,7 +10,7 @@ use crate::resource::persistence::error::PersistenceError;
 impl Resources<'_> {
     pub async fn list_cluster_peer_states(&self, cluster_id: ClusterId) -> Result<ClusterPeerStates, ListClusterPeerStatesError> {
 
-        let cluster_peers = self.list_cluster_peers(cluster_id).await
+        let cluster_peers = self.list_cluster_peers(cluster_id)
             .map_err(|source| ListClusterPeerStatesError::ListClusterPeers { cluster_id, source })?
             .into_iter()
             .map(|peer| peer.id)
@@ -67,7 +67,7 @@ impl ClusterPeerStates {
                     None
                 }
             })
-            .cloned()
+            .copied()
             .collect::<HashSet<_>>();
 
         ClusterPeerStates {
@@ -81,8 +81,8 @@ impl ClusterPeerStates {
     }
 
     pub fn check_cluster_deployable(&self) -> ClusterDeployable {
-        let unavailable_peers = self.blocked_peers.keys().cloned().collect::<HashSet<_>>()
-            .union(&self.offline_peers).cloned().collect::<HashSet<_>>();
+        let unavailable_peers = self.blocked_peers.keys().copied().collect::<HashSet<_>>()
+            .union(&self.offline_peers).copied().collect::<HashSet<_>>();
 
         if unavailable_peers.is_empty() {
             ClusterDeployable::AllPeersAvailable

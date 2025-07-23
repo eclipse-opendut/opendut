@@ -259,13 +259,13 @@ pub trait ResourcesStorageApi {
 
 
 fn expand_tilde(path: String) -> String {
-    if path.contains("~") {
+    if path.contains('~') {
         let home_dir = std::env::home_dir()
             .expect("Could not determine home directory of user. Needed for expanding '~' in path.");
         let home_dir = home_dir.to_str()
             .expect("Could not convert home directory path to string.");
 
-        path.replace("~", home_dir)
+        path.replace('~', home_dir)
     } else {
         path
     }

@@ -45,7 +45,7 @@ impl Resources<'_> {
                     .map_err(|source| DeletePeerDescriptorError::AuthRegistration { peer_id, peer_name: peer_name.clone(), source })?;
                 let deleted_client_ids =  deleted_clients.value().into_iter().map(|client| client.client_id).collect::<Vec<String>>();
                 debug!("Successfully deleted oidc clients for peer '{peer_name}' <{peer_id}>. OIDC client_ids='{}'.", deleted_client_ids.join(","));
-            };
+            }
 
             if let Vpn::Enabled { vpn_client } = params.vpn {
                 debug!("Deleting vpn peer <{peer_id}>.");

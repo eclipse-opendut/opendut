@@ -49,16 +49,13 @@ async fn remove_absent_peer_configuration_parameters_that_are_absent(resource_ma
                     // ensure those parameters are removed from the peer configuration
                     let _result = resource_manager.resources_mut(async |resources| {
                         let peer_configuration: Option<PeerConfiguration> = resources.get::<PeerConfiguration>(id)?;
-                        match peer_configuration {
-                            Some(mut peer_configuration) => {
-                                debug!("Removing absent peer configuration parameters for peer <{id}>: {parameter_ids_with_target_absent:?}");
-                                peer_configuration.remove_parameters(&parameter_ids_with_target_absent);
-                                resources.insert(id, peer_configuration)
-                            }
-                            None => {
-                                warn!("Could not find peer configuration for peer <{id}> to remove absent parameters. This might be due to the peer being removed before receiving an update from the peer.");
-                                PersistenceResult::Ok(())
-                            }
+                        if let Some(mut peer_configuration) = peer_configuration {
+                            debug!("Removing absent peer configuration parameters for peer <{id}>: {parameter_ids_with_target_absent:?}");
+                            peer_configuration.remove_parameters(&parameter_ids_with_target_absent);
+                            resources.insert(id, peer_configuration)
+                        } else {
+                            warn!("Could not find peer configuration for peer <{id}> to remove absent parameters. This might be due to the peer being removed before receiving an update from the peer.");
+                            PersistenceResult::Ok(())
                         }
                     }).await
                         .inspect_err(|cause| {

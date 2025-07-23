@@ -19,17 +19,17 @@ const PERMISSION_CODE_SCRIPT: u32 = 0o775;
 const PERMISSION_CODE_CA: u32 = 0o644;
 
 pub fn create_cleo_install_script(
-    ca: Pem,
+    ca: &Pem,
     carl_install_directory: &Path,
-    cleo_script: CleoScript,
+    cleo_script: &CleoScript,
 ) -> anyhow::Result<()> {
 
     for arch in CleoArch::arch_iterator() {
         let cleo_tar_file = carl_install_directory.join(CLEO_IDENTIFIER).join(format!("{}-{}.tar.gz", arch.distribution_name(), crate::app_info::PKG_VERSION));
         add_file_to_archive(
-            &ca,
+            ca,
             &cleo_tar_file,
-            &cleo_script,
+            cleo_script,
         )?;
     }
 
@@ -127,10 +127,8 @@ mod test {
         tar_gz.append_dir_all(CLEO_IDENTIFIER, &cleo_dir)?;
         tar_gz.into_inner()?.finish()?;
 
-        let cert = match Pem::from_str(include_str!("../../../../resources/development/tls/insecure-development-ca.pem")) {
-            Ok(cert) => { cert }
-            Err(_) => { panic!("Not a valid certificate!") }
-        };
+        let cert = Pem::from_str(include_str!("../../../../resources/development/tls/insecure-development-ca.pem"))
+            .expect("Not a valid certificate!"); 
 
         let cleo_script = CleoScript {
             carl_host: "carl".to_string(),

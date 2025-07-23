@@ -119,9 +119,9 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
 
         if !project::is_running_in_development() {
             startup::cleo::create_cleo_install_script(
-                ca_certificate,
+                &ca_certificate,
                 &carl_installation_directory.path,
-                startup::cleo::script::CleoScript::from_setting(&settings)
+                &startup::cleo::script::CleoScript::from_setting(&settings)
                     .expect("Could not read settings to extract CLEO script information.")
             ).expect("Could not create CLEO install script.");
         }
@@ -167,14 +167,13 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
         let is_grpc = request
             .headers()
             .get(axum::http::header::CONTENT_TYPE)
-            .map(|content_type|
+            .is_some_and(|content_type|
                 content_type
                     .as_bytes()
                     .starts_with(b"application/grpc")
-            )
-            .unwrap_or(false);
+            );
 
-        if is_grpc { 1 } else { 0 }
+        usize::from(is_grpc)
     })
     .map_request(|request: ::http::Request<hyper::body::Incoming>| -> ::http::Request<axum::body::Body> {
         request.map(axum::body::Body::new)

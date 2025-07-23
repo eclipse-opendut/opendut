@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use axum::routing::get;
 use config::Config;
 use tower_http::services::{ServeDir, ServeFile};
@@ -21,9 +22,10 @@ pub fn create_http_service(settings: &Config) -> anyhow::Result<axum::Router<Htt
         // Check if LEA can be served
         if lea_index_html.exists() {
             let lea_index_str = std::fs::read_to_string(&lea_index_html).expect("Failed to read LEA index.html");
-            if !lea_index_str.contains("bg.wasm") || !lea_index_str.contains("opendut-lea") {
-                panic!("LEA index.html does not contain wasm link! Check configuration serve.ui.directory={:?} points to the correct directory.", lea_dir.into_os_string());
-            }
+            assert!(
+                !(!lea_index_str.contains("bg.wasm") || !lea_index_str.contains("opendut-lea")), 
+                "LEA index.html does not contain wasm link! Check configuration serve.ui.directory={:?} points to the correct directory.", lea_dir.into_os_string()
+            );
         } else {
             panic!("Failed to check if LEA index.html exists in: {}", lea_index_html.display());
         }
@@ -58,7 +60,7 @@ pub fn create_http_state(
     let oidc_enabled = settings.get_bool("network.oidc.enabled").unwrap_or(false);
     let lea_idp_config = if oidc_enabled {
         let lea_idp_config = LoadableLeaIdentityProviderConfig::try_from(settings)
-            .expect("Failed to create LeaIdentityProviderConfig from settings.");
+            .map_err(|_| anyhow!("Failed to create LeaIdentityProviderConfig from settings."))?;
         info!("OIDC is enabled.");
         Some(lea_idp_config)
     } else {

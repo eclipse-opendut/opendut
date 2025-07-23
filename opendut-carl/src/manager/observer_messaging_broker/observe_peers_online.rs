@@ -73,7 +73,7 @@ impl ObservePeersOnline {
 
             }
             Err(error) => {
-                let peer_ids = self.peers.keys().cloned().collect::<HashSet<_>>();
+                let peer_ids = self.peers.keys().copied().collect::<HashSet<_>>();
                 trace!("Observer of peer <{peer_ids:?}> did not get any updates for {}ms. {}", self.timeout.as_millis(), error);
             }
         }
@@ -102,7 +102,7 @@ impl ObservePeersOnline {
         }
     }
 
-    pub async fn determine_response(&self) -> WaitForPeersOnlineResponse {
+    pub fn determine_response(&self) -> WaitForPeersOnlineResponse {
         let offline_peers = self.offline_peers();
         if offline_peers.is_empty() {
             WaitForPeersOnlineResponse {

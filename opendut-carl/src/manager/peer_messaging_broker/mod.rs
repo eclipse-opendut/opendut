@@ -106,7 +106,7 @@ impl PeerMessagingBroker {
                 PeerConnectionState::Online { .. } => {
                     let result = self.disconnect(peer_id).await;
                     match result {
-                        Ok(_) => {
+                        Ok(()) => {
                             tracing::log::trace!("Sent disconnect notice to online peer <{peer_id}>.");
                         }
                         Err(_) => {
@@ -168,7 +168,7 @@ impl PeerMessagingBroker {
                     }
 
                     let downstream_disconnected = peers.read().await.get(&peer_id)
-                        .map(|peer| &peer.disconnected).cloned()
+                        .map(|peer| &peer.disconnected).copied()
                         .unwrap_or_default();
                     if downstream_disconnected {
                         info!("Peer <{peer_id}> shall be disconnected!");
@@ -177,7 +177,7 @@ impl PeerMessagingBroker {
                 }
                 let channel_close_grace_time = tokio::time::timeout(timeout_duration, tx_outbound.closed()).await;
                 match channel_close_grace_time {
-                    Ok(_) => {
+                    Ok(()) => {
                         trace!("Peer channel flushed successfully.");
                     }
                     Err(_) => {
@@ -196,30 +196,24 @@ impl PeerMessagingBroker {
     async fn send_initial_peer_configuration(&self, peer_id: PeerId) -> Result<(), OpenError> {
         let old_peer_configuration = self.resource_manager.get::<OldPeerConfiguration>(peer_id).await
             .map_err(|source| OpenError::Persistence { peer_id, source })?;
-        let old_peer_configuration = match old_peer_configuration {
-            Some(old_peer_configuration) => {
-                debug!("Found an OldPeerConfiguration for newly connected peer <{peer_id}>. Re-sending this configuration:\n{old_peer_configuration:#?}");
-                old_peer_configuration
-            }
-            None => {
-                //OldPeerConfiguration is not persisted across CARL restarts
-                debug!("No OldPeerConfiguration found for newly connected peer <{peer_id}>. Sending empty configuration.");
-                OldPeerConfiguration::default()
-            }
+        let old_peer_configuration = if let Some(old_peer_configuration) = old_peer_configuration {
+            debug!("Found an OldPeerConfiguration for newly connected peer <{peer_id}>. Re-sending this configuration:\n{old_peer_configuration:#?}");
+            old_peer_configuration
+        } else {
+            //OldPeerConfiguration is not persisted across CARL restarts
+            debug!("No OldPeerConfiguration found for newly connected peer <{peer_id}>. Sending empty configuration.");
+            OldPeerConfiguration::default()
         };
 
         let peer_configuration = self.resource_manager.get::<PeerConfiguration>(peer_id).await
             .map_err(|source| OpenError::Persistence { peer_id, source })?;
-        let peer_configuration = match peer_configuration {
-            Some(peer_configuration) => {
-                debug!("Found a PeerConfiguration for newly connected peer <{peer_id}>. Re-sending this configuration.\n{peer_configuration:#?}");
-                peer_configuration
-            }
-            None => {
-                //PeerConfiguration is not persisted across CARL restarts
-                debug!("No PeerConfiguration found for newly connected peer <{peer_id}>. Sending empty configuration.");
-                PeerConfiguration::default()
-            }
+        let peer_configuration = if let Some(peer_configuration) = peer_configuration {
+            debug!("Found a PeerConfiguration for newly connected peer <{peer_id}>. Re-sending this configuration.\n{peer_configuration:#?}");
+            peer_configuration
+        } else {
+            //PeerConfiguration is not persisted across CARL restarts
+            debug!("No PeerConfiguration found for newly connected peer <{peer_id}>. Sending empty configuration.");
+            PeerConfiguration::default()
         };
 
         self.send_to_peer(peer_id, DownstreamMessagePayload::ApplyPeerConfiguration(

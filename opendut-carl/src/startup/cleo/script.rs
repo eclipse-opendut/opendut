@@ -11,9 +11,11 @@ pub struct CleoScript {
 
 impl CleoScript {
     pub fn from_setting(settings: &Config) -> anyhow::Result<Self> {
+        let carl_port = u16::try_from(settings.get_int("network.remote.port")?)
+            .map_err(|_| anyhow::anyhow!("Invalid port number."))?;
         Ok(Self {
             carl_host: settings.get_string("network.remote.host")?,
-            carl_port: settings.get_int("network.remote.port")? as u16,
+            carl_port,
             oidc_enabled: settings.get_bool("network.oidc.enabled")?,
             issuer_url: settings.get_string("network.oidc.client.issuer.url")?,
         })
