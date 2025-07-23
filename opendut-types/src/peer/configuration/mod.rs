@@ -89,6 +89,18 @@ impl PeerConfiguration {
             .chain(remote_peer_connection_checks.values.into_iter().map(|(id, parameter)| { (id, ParameterVariant::RemotePeerConnectionCheck(Box::new(parameter))) }))
             .collect()
     }
+
+    pub fn remove_parameters(
+        &mut self,
+        obsolete_parameter_ids: &HashSet<ParameterId>,
+    ) {
+        self.device_interfaces.retain(|id, _| !obsolete_parameter_ids.contains(id));
+        self.ethernet_bridges.retain(|id, _| !obsolete_parameter_ids.contains(id));
+        self.executors.retain(|id, _| !obsolete_parameter_ids.contains(id));
+        self.gre_interfaces.retain(|id, _| !obsolete_parameter_ids.contains(id));
+        self.joined_interfaces.retain(|id, _| !obsolete_parameter_ids.contains(id));
+        self.remote_peer_connection_checks.retain(|id, _| !obsolete_parameter_ids.contains(id));
+    }
 }
 
 impl<V: ParameterValue> ParameterField<V> {
