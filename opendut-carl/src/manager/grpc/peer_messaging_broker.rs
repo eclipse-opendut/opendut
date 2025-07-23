@@ -5,10 +5,9 @@ use std::str::FromStr;
 
 use crate::manager::peer_messaging_broker::{OpenError, PeerMessagingBrokerRef};
 use futures::StreamExt;
-use opendut_carl_api::carl::broker::stream_header;
+use opendut_carl_api::carl::broker::{stream_header, UpstreamMessage, UpstreamMessagePayload};
 use opendut_carl_api::carl::broker::stream_header::PeerVersion;
 use opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_broker_server::PeerMessagingBrokerServer;
-use opendut_carl_api::proto::services::peer_messaging_broker::upstream;
 use opendut_carl_api::proto::services::peer_messaging_broker::{Downstream, Upstream};
 use opendut_types::peer::PeerId;
 use tokio_stream::wrappers::ReceiverStream;
@@ -74,17 +73,26 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
             while let Some(result) = inbound.next().await {
                 match result {
                     Ok(upstream) => {
-                        if let Some(message) = upstream.message {
-                            if matches!(message, upstream::Message::Ping(_)).not() {
-                                trace!("Received message from client <{}>: {:?}", peer_id, message);
+                        let upstream_conversion_result = UpstreamMessage::try_from(upstream)
+                            .map_err(|cause| {
+                                error!("Error while converting upstream message from client <{}>: {cause}", peer_id);
+                                Status::invalid_argument(cause.to_string())
+                            });
+                        
+                        match upstream_conversion_result {
+                            Ok(message) => {
+                                if matches!(message.payload, UpstreamMessagePayload::Ping).not() {
+                                    trace!("Received message from client <{}>: {:?}", peer_id, message);
+                                }
+                                let result = tx_inbound.send(message.clone()).await;
+                                if let Err(error) = result {
+                                    error!("Error while sending message to client <{}>: {:?}. Closing outbound channel. Causing error: {}", peer_id, message, error);
+                                    break
+                                }
                             }
-                            let result = tx_inbound.send(message.clone()).await;
-                            if let Err(error) = result {
-                                error!("Error while sending message to client <{}>: {:?}. Closing outbound channel. Causing error: {}", peer_id, message, error);
-                                break
+                            Err(error) => {
+                                warn!("Ignoring invalid message from client <{}>: {:?}", peer_id, error);
                             }
-                        } else {
-                            warn!("Ignoring empty message from client <{}>: {:?}", peer_id, upstream);
                         }
                     }
                     Err(status) => {
@@ -96,7 +104,7 @@ impl opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_br
 
         let outbound = ReceiverStream::new(rx_outbound)
             .map(|downstream| {
-                Ok(downstream)
+                Ok(downstream.into())
             });
 
         Ok(Response::new(Box::pin(outbound)))

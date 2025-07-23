@@ -1,12 +1,12 @@
 use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
 use crate::resource::persistence::error::PersistenceError;
 use crate::resource::storage::ResourcesStorageApi;
-use opendut_carl_api::proto::services::peer_messaging_broker::{downstream, ApplyPeerConfiguration};
 use opendut_types::cluster::ClusterAssignment;
 use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName, NetworkInterfaceNameError};
 use tracing::debug;
+use opendut_carl_api::carl::broker::{ApplyPeerConfiguration, DownstreamMessagePayload};
 use crate::resource::api::resources::Resources;
 
 mod configuration;
@@ -77,10 +77,10 @@ impl Resources<'_> {
 
         peer_messaging_broker.send_to_peer(
             peer_id,
-            downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
-                old_configuration: Some(old_peer_configuration.into()),
-                configuration: Some(peer_configuration.into()),
-            }),
+            DownstreamMessagePayload::ApplyPeerConfiguration(Box::new(ApplyPeerConfiguration {
+                old_configuration: old_peer_configuration,
+                configuration: peer_configuration,
+            }))
         ).await
         .map_err(|cause| AssignClusterError::SendingToPeerFailed {
             peer_id,
@@ -132,13 +132,13 @@ mod tests {
 
         let (_, mut receiver) = peer_messaging_broker.open(peer_id, IpAddr::from_str("1.2.3.4")?, stream_header::ExtraHeaders::default()).await?;
         let received = receiver.recv().await.unwrap()
-            .message.unwrap();
+            .payload;
         assert_that!(
             received,
-            eq(&downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
-                old_configuration: Some(Clone::clone(&old_peer_configuration).into()),
-                configuration: Some(Clone::clone(&peer_configuration).into()),
-            }))
+            eq(&DownstreamMessagePayload::ApplyPeerConfiguration(Box::new(ApplyPeerConfiguration {
+                old_configuration: Clone::clone(&old_peer_configuration),
+                configuration: Clone::clone(&peer_configuration),
+            })))
         );
 
         let cluster_assignment = ClusterAssignment {
@@ -181,14 +181,16 @@ mod tests {
         );
 
         let received = receiver.recv().await.unwrap()
-            .message.unwrap();
+            .payload;
 
-        let downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
-            old_configuration, configuration
-        }) = received else { panic!() };
-
-        assert_that!(OldPeerConfiguration::try_from(old_configuration.unwrap())?, eq(&old_peer_configuration));
-        assert_that!(PeerConfiguration::try_from(configuration.unwrap())?, eq(&peer_configuration));
+        match received {
+            DownstreamMessagePayload::Pong => panic!("Expected ApplyPeerConfiguration, got Pong"),
+            DownstreamMessagePayload::DisconnectNotice => panic!("Expected ApplyPeerConfiguration, got DisconnectNotice"),
+            DownstreamMessagePayload::ApplyPeerConfiguration(peer_config) => {
+                assert_that!(peer_config.old_configuration, eq(&old_peer_configuration));
+                assert_that!(peer_config.configuration, eq(&peer_configuration));
+            }
+        }
 
         Ok(())
     }

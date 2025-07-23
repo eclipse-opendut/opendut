@@ -15,13 +15,13 @@ pub mod error {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UpstreamMessage {
     pub context: Option<TracingContext>,
     pub payload: UpstreamMessagePayload,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum UpstreamMessagePayload {
     PeerConfigurationState(PeerConfigurationState),
     Ping,
@@ -34,20 +34,20 @@ pub struct DownstreamMessage {
     pub payload: DownstreamMessagePayload,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum DownstreamMessagePayload {
     Pong,
     ApplyPeerConfiguration(Box<ApplyPeerConfiguration>),
     DisconnectNotice,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct ApplyPeerConfiguration {
     pub old_configuration: OldPeerConfiguration,
     pub configuration: PeerConfiguration,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TracingContext {
     pub values: HashMap<String, String>,
 }

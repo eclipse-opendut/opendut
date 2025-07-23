@@ -4,11 +4,8 @@ use std::ops::Not;
 use std::sync::Arc;
 use std::time::Duration;
 
-use opendut_carl_api::carl::broker::stream_header;
-use opendut_carl_api::proto::services::peer_messaging_broker::{upstream, DisconnectNotice};
-use opendut_carl_api::proto::services::peer_messaging_broker::Pong;
-use opendut_carl_api::proto::services::peer_messaging_broker::{downstream, ApplyPeerConfiguration, Downstream, TracingContext};
-use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration, PeerConfigurationState};
+use opendut_carl_api::carl::broker::{stream_header, ApplyPeerConfiguration, DownstreamMessage, DownstreamMessagePayload, TracingContext, UpstreamMessage, UpstreamMessagePayload};
+use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
 use opendut_types::peer::state::{PeerConnectionState};
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opentelemetry::propagation::TextMapPropagator;
@@ -33,7 +30,7 @@ pub struct PeerMessagingBroker {
     options: PeerMessagingBrokerOptions,
 }
 struct PeerMessagingRef {
-    downstream: mpsc::Sender<Downstream>,
+    downstream: mpsc::Sender<DownstreamMessage>,
     disconnected: bool,
 }
 
@@ -50,7 +47,7 @@ impl PeerMessagingBroker {
     }
 
     #[tracing::instrument(skip(self), level="trace")]
-    pub async fn send_to_peer(&self, peer_id: PeerId, message: downstream::Message) -> Result<(), Error> {
+    pub async fn send_to_peer(&self, peer_id: PeerId, message: DownstreamMessagePayload) -> Result<(), Error> {
         let downstream = {
             let peers = self.peers.read().await;
             peers.get(&peer_id)
@@ -67,9 +64,9 @@ impl PeerMessagingBroker {
             Some(context)
         };
 
-        downstream.send(Downstream {
+        downstream.send(DownstreamMessage {
             context,
-            message: Some(message)
+            payload: message,
         }).await.map_err(|error| Error::DownstreamSend(Box::new(error)))?;
         Ok(())
     }
@@ -82,11 +79,10 @@ impl PeerMessagingBroker {
                 .cloned()
         };
         let downstream = downstream.ok_or(Error::PeerNotFound(peer_id))?;
-        let disconnect_message = downstream::Message::DisconnectNotice(DisconnectNotice { });
 
-        downstream.send(Downstream {
+        downstream.send(DownstreamMessage {
             context: None,
-            message: Some(disconnect_message)
+            payload: DownstreamMessagePayload::DisconnectNotice,
         }).await.map_err(|error| Error::DownstreamSend(Box::new(error)))?;
 
         let peer_messaging_ref = PeerMessagingRef {
@@ -130,15 +126,15 @@ impl PeerMessagingBroker {
         peer_id: PeerId,
         remote_host: IpAddr,
         extra_headers: stream_header::ExtraHeaders,
-    ) -> Result<(mpsc::Sender<upstream::Message>, mpsc::Receiver<Downstream>), OpenError> {
+    ) -> Result<(mpsc::Sender<UpstreamMessage>, mpsc::Receiver<DownstreamMessage>), OpenError> {
 
         debug!("Peer <{peer_id}> opened stream from remote address {remote_host} with extra headers: {extra_headers:?}");
         log_version_compatibility(peer_id, remote_host, extra_headers.client_version)
             .inspect_err(|error| warn!("Failed to check version compatibility with newly connected peer <{peer_id}>: {error}"))
             .ok();
 
-        let (tx_inbound, mut rx_inbound) = mpsc::channel::<upstream::Message>(1024);
-        let (tx_outbound, rx_outbound) = mpsc::channel::<Downstream>(1024);
+        let (tx_inbound, mut rx_inbound) = mpsc::channel::<UpstreamMessage>(1024);
+        let (tx_outbound, rx_outbound) = mpsc::channel::<DownstreamMessage>(1024);
 
         let peer_messaging_ref = PeerMessagingRef {
             downstream: Clone::clone(&tx_outbound),
@@ -226,11 +222,11 @@ impl PeerMessagingBroker {
             }
         };
 
-        self.send_to_peer(peer_id, downstream::Message::ApplyPeerConfiguration(
-            ApplyPeerConfiguration {
-                old_configuration: Some(old_peer_configuration.into()),
-                configuration: Some(peer_configuration.into()),
-            }
+        self.send_to_peer(peer_id, DownstreamMessagePayload::ApplyPeerConfiguration(
+            Box::new(ApplyPeerConfiguration {
+                old_configuration: old_peer_configuration,
+                configuration: peer_configuration,
+            })
         )).await
             .map_err(|cause| OpenError::SendApplyPeerConfiguration { peer_id, cause: cause.to_string() })?;
         Ok(())
@@ -308,31 +304,24 @@ impl PeerMessagingBroker {
 }
 
 async fn handle_stream_message(
-    message: upstream::Message,
+    message: UpstreamMessage,
     peer_id: PeerId,
-    tx_outbound: &mpsc::Sender<Downstream>,
+    tx_outbound: &mpsc::Sender<DownstreamMessage>,
     resource_manager: ResourceManagerRef,
 ) {
-    // TODO: handle converting GRPC messages in facade
-    match message {
-        upstream::Message::Ping(_) => {
-            let message = downstream::Message::Pong(Pong {});
-            let context = None;
+    let UpstreamMessage { payload, context } = message;
+    match payload {
+        UpstreamMessagePayload::PeerConfigurationState(state) => {
+            info!("Received PeerConfigurationState from peer <{peer_id}>:\n  {state:#?}");
+            let _ignore_result = resource_manager.insert(peer_id, state).await
+                .inspect_err(|cause| {
+                    warn!("Failed to insert PeerConfigurationState for peer <{peer_id}>:\n  {cause}");
+                });
+        }
+        UpstreamMessagePayload::Ping => {
             let _ignore_result =
-                tx_outbound.send(Downstream { message: Some(message), context }).await
+                tx_outbound.send(DownstreamMessage { payload: DownstreamMessagePayload::Pong, context }).await
                     .inspect_err(|cause| warn!("Failed to send ping to peer <{peer_id}>:\n  {cause}"));
-        },
-        upstream::Message::PeerConfigurationState(state) => {
-            let state_result = PeerConfigurationState::try_from(state);
-            if let Ok(state) = state_result {
-                info!("Received PeerConfigurationState from peer <{peer_id}>:\n  {state:#?}");
-                let _ignore_result = resource_manager.insert(peer_id, state).await
-                    .inspect_err(|cause| {
-                        warn!("Failed to insert PeerConfigurationState for peer <{peer_id}>:\n  {cause}");
-                    });
-            } else {
-                warn!("Received invalid PeerConfigurationState from peer <{peer_id}>: {state_result:?}");
-            }
         }
     }
 }
@@ -340,7 +329,7 @@ async fn handle_stream_message(
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("DownstreamSend Error: {0}")]
-    DownstreamSend(Box<SendError<Downstream>>),
+    DownstreamSend(Box<SendError<DownstreamMessage>>),
     #[error("PeerNotFound Error: {0}")]
     PeerNotFound(PeerId),
 }
@@ -414,7 +403,6 @@ mod tests {
     use tokio::sync::mpsc;
     use tokio::sync::mpsc::Receiver;
 
-    use opendut_carl_api::proto::services::peer_messaging_broker::Ping;
     use crate::manager::peer_manager::tests::create_peer_descriptor;
     use super::*;
     use crate::resource::manager::ResourceManager;
@@ -451,15 +439,11 @@ mod tests {
         }
 
         { //Receive initial ApplyPeerConfiguration
-            let received = receiver.recv().await.unwrap().message.unwrap();
+            let received = receiver.recv().await.unwrap().payload;
 
             assert_that!(
                 received,
-                matches_pattern!(
-                    downstream::Message::ApplyPeerConfiguration(
-                        matches_pattern!(ApplyPeerConfiguration { .. })
-                    )
-                )
+                matches_pattern!(DownstreamMessagePayload::ApplyPeerConfiguration(_))
             );
         }
 
@@ -572,13 +556,13 @@ mod tests {
         Ok(())
     }
 
-    async fn do_ping(sender: &mpsc::Sender<upstream::Message>, receiver: &mut Receiver<Downstream>) {
-        sender.send(upstream::Message::Ping(Ping {})).await
+    async fn do_ping(sender: &mpsc::Sender<UpstreamMessage>, receiver: &mut Receiver<DownstreamMessage>) {
+        sender.send(UpstreamMessage { context: None, payload: UpstreamMessagePayload::Ping }).await
             .unwrap();
 
         let received = receiver.recv().await.unwrap();
 
-        assert_eq!(received.message, Some(downstream::Message::Pong(Pong {})));
+        assert_that!(received.payload, matches_pattern!(DownstreamMessagePayload::Pong));
     }
 
     struct Fixture {

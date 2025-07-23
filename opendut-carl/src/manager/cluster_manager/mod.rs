@@ -542,8 +542,7 @@ mod test {
     mod rollout_cluster {
         use super::*;
         use crate::manager::peer_manager::StorePeerDescriptorParams;
-        use opendut_carl_api::carl::broker::stream_header;
-        use opendut_carl_api::proto::services::peer_messaging_broker::ApplyPeerConfiguration;
+        use opendut_carl_api::carl::broker::{stream_header, DownstreamMessage, DownstreamMessagePayload};
         use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
 
         #[rstest]
@@ -633,24 +632,18 @@ mod test {
             Ok(())
         }
 
-        async fn peer_open(peer_id: PeerId, peer_remote_host: IpAddr, peer_messaging_broker: PeerMessagingBrokerRef) -> anyhow::Result<mpsc::Receiver<Downstream>> {
+        async fn peer_open(peer_id: PeerId, peer_remote_host: IpAddr, peer_messaging_broker: PeerMessagingBrokerRef) -> anyhow::Result<mpsc::Receiver<DownstreamMessage>> {
             let (_peer_tx, mut peer_rx) = peer_messaging_broker.open(peer_id, peer_remote_host, stream_header::ExtraHeaders::default()).await?;
             receive_peer_configuration_message(&mut peer_rx).await; //initial peer configuration after connect
             Ok(peer_rx)
         }
 
-        async fn receive_peer_configuration_message(peer_rx: &mut mpsc::Receiver<Downstream>) -> (OldPeerConfiguration, PeerConfiguration) {
+        async fn receive_peer_configuration_message(peer_rx: &mut mpsc::Receiver<DownstreamMessage>) -> (OldPeerConfiguration, PeerConfiguration) {
             let message = tokio::time::timeout(Duration::from_millis(500), peer_rx.recv()).await
-                .unwrap().unwrap().message.unwrap();
+                .unwrap().unwrap().payload;
 
-            if let downstream::Message::ApplyPeerConfiguration(ApplyPeerConfiguration {
-                old_configuration: Some(old_peer_configuration),
-                configuration: Some(peer_configuration),
-            }) = message {
-                (
-                    old_peer_configuration.try_into().unwrap(),
-                    peer_configuration.try_into().unwrap()
-                )
+            if let DownstreamMessagePayload::ApplyPeerConfiguration(peer_config) = message {
+                (peer_config.old_configuration, peer_config.configuration)
             } else {
                 panic!("Did not receive valid message. Received this instead: {message:?}")
             }
