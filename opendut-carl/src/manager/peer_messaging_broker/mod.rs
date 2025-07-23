@@ -117,6 +117,7 @@ impl PeerMessagingBroker {
                             error!("Failed to send disconnect notice to online peer <{peer_id}>.");
                         }
                     }
+                    // PeerConnectionState is removed once the peer stream is closed, see Self::remove_peer_impl()
                 }
             }
         }
