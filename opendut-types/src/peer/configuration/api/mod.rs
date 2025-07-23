@@ -35,11 +35,23 @@ pub struct PeerConfigurationState {
     pub parameter_states: Vec<PeerConfigurationParameterState>
 }
 
+impl PeerConfigurationState {
+    pub fn is_ready(&self) -> bool {
+        self.parameter_states.iter().all(PeerConfigurationParameterState::is_ready)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct PeerConfigurationParameterState {
     pub id: ParameterId,
     pub timestamp: SystemTime,
     pub state: ParameterTargetState,
+}
+
+impl PeerConfigurationParameterState {
+    pub fn is_ready(&self) -> bool {
+        matches!(self.state, ParameterTargetState::Present | ParameterTargetState::Absent)
+    }
 }
 
 #[derive(Debug, Clone)]
