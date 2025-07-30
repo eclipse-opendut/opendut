@@ -21,7 +21,7 @@ impl ManageGreInterface {
 #[async_trait]
 impl Task for ManageGreInterface {
     fn description(&self) -> String {
-        format!("Manage GRE interface '{}'", self.parameter)
+        format!("Manage GRE interface '{}' to '{}'", self.parameter.local_ip, self.parameter.remote_ip)
     }
    
     async fn check_present(&self) -> anyhow::Result<TaskStateFulfilled> {

@@ -23,11 +23,6 @@ pub struct GreInterfaceConfig {
     pub local_ip: Ipv4Addr,
     pub remote_ip: Ipv4Addr,
 }
-impl Display for GreInterfaceConfig {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}-{}", self.local_ip, self.remote_ip)
-    }
-}
 
 impl GreInterfaceConfig {
     pub fn interface_name(&self) -> Result<NetworkInterfaceName, NetworkInterfaceNameError> {
@@ -49,12 +44,6 @@ impl GreInterfaceConfig {
 pub struct InterfaceJoinConfig {
     pub name: NetworkInterfaceName,
     pub bridge: NetworkInterfaceName,
-}
-
-impl Display for InterfaceJoinConfig {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}-{}", self.name.name(), self.bridge.name())
-    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]

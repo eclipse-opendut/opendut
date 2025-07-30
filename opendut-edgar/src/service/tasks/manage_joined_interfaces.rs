@@ -23,7 +23,7 @@ impl ManageJoinedInterface {
 #[async_trait]
 impl Task for ManageJoinedInterface {
     fn description(&self) -> String {
-        format!("Manage interface '{}' join configuration.", self.parameter)
+        format!("Manage interface '{}' join to bridge '{}'", self.parameter.name, self.parameter.bridge)
     }
 
     async fn check_present(&self) -> anyhow::Result<TaskStateFulfilled> {

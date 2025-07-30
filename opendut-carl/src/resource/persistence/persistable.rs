@@ -37,6 +37,8 @@ impl Persistable for PeerConfiguration {
     /// -> subscription triggers following chain: `schedule_redeploying_clusters_when_all_peers_become_available()` -> `rollout_all_clusters_containing_newly_available_peer()` -> `rollout_cluster_if_all_peers_available()`
     /// This is done to ensure that the cluster deployment is always up-to-date and that all peers are configured correctly.
     /// It is intended to be stored in a persistent storage once the peer configuration is stable to avoid migration issues.
+    ///
+    /// If you want to persist this, make sure the hashing algorithm in the implementations of `ParameterValue` is stable across Rust releases.
     const STORAGE: StorageKind = StorageKind::Volatile;
 }
 
