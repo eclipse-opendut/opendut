@@ -7,6 +7,7 @@ use opendut_types::peer::{PeerDescriptor, PeerId, PeerName};
 use tracing::{debug, info, warn};
 use opendut_types::cluster::ClusterId;
 use opendut_types::peer::state::{PeerMemberState, PeerState};
+use crate::manager::peer_manager::list_peer_member_states::ListPeerMemberStatesError;
 use crate::resource::api::resources::Resources;
 use crate::resource::persistence::error::PersistenceError;
 
@@ -23,7 +24,11 @@ impl Resources<'_> {
         let peer_id = params.peer;
 
         let peer_member_states = self.list_peer_member_states()
-            .map_err(|source| DeletePeerDescriptorError::Persistence { peer_id, peer_name: None, source })?;
+            .map_err(|source| match source {
+                ListPeerMemberStatesError::Persistence { source } => {
+                    DeletePeerDescriptorError::Persistence { peer_id, peer_name: None, source }
+                },
+            })?;
         let peer_member_state = peer_member_states.get(&peer_id);
 
         if let Some(PeerMemberState::Blocked { by_cluster }) = peer_member_state {

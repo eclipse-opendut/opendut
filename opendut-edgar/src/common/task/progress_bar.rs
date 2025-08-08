@@ -15,7 +15,7 @@ impl ProgressBarForCLI {
             _ => {
                 let spinner = ProgressBar::new_spinner();
                 spinner.enable_steady_tick(Duration::from_millis(120));
-                spinner.set_style(style.clone());
+                spinner.set_style(style);
                 spinner.set_message(task_name);
                 Some(spinner)
             }

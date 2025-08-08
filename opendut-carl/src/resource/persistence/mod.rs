@@ -15,7 +15,7 @@ pub enum Db<'transaction> {
     ReadWrite(&'transaction mut redb::WriteTransaction),
 }
 impl Db<'_> {
-    pub(super) fn read_table(&self, table: TableDefinition) -> PersistenceResult<Option<ReadTable>> {
+    pub(super) fn read_table(&self, table: TableDefinition) -> PersistenceResult<Option<ReadTable<'_>>> {
         let open_result = match self {
             Db::Read(transaction) => transaction.open_table(table).map(ReadTable::Read),
             Db::ReadWrite(transaction) => transaction.open_table(table).map(ReadTable::ReadWrite),
@@ -30,7 +30,7 @@ impl Db<'_> {
         }
     }
 
-    pub(crate) fn read_write_table(&self, table: TableDefinition) -> PersistenceResult<ReadWriteTable> {
+    pub(crate) fn read_write_table(&self, table: TableDefinition) -> PersistenceResult<ReadWriteTable<'_>> {
         match self {
             Db::Read(_) => unimplemented!("Called `.read_write_table()` on a Db::Read() variant."),
             Db::ReadWrite(transaction) => Ok(transaction.open_table(table)?),
@@ -43,13 +43,13 @@ pub(super) enum ReadTable<'transaction> {
     ReadWrite(redb::Table<'transaction, Key, Value>),
 }
 impl ReadTable<'_> {
-    pub(crate) fn get(&self, key: &Key) -> redb::Result<Option<AccessGuard<Value>>> {
+    pub(crate) fn get(&self, key: &Key) -> redb::Result<Option<AccessGuard<'_, Value>>> {
         match self {
             ReadTable::Read(table) => table.get(key),
             ReadTable::ReadWrite(table) => table.get(key),
         }
     }
-    pub(crate) fn iter(&self) -> redb::Result<redb::Range<Key, Value>> {
+    pub(crate) fn iter(&self) -> redb::Result<redb::Range<'_, Key, Value>> {
         match self {
             ReadTable::Read(table) => table.iter(),
             ReadTable::ReadWrite(table) => table.iter(),

@@ -5,7 +5,7 @@ use opendut_types::peer::state::{PeerConnectionState, PeerState};
 use opendut_types::peer::PeerId;
 use std::collections::HashMap;
 use tracing::debug;
-
+use crate::manager::peer_manager::list_peer_member_states::ListPeerMemberStatesError;
 
 impl Resources<'_> {
     #[tracing::instrument(skip_all, level="trace")]
@@ -13,7 +13,10 @@ impl Resources<'_> {
 
         debug!("Querying all peer states.");
         let peer_states = (|| {
-            let peer_member_states = self.list_peer_member_states()?;
+            let peer_member_states = self.list_peer_member_states()
+                .map_err(|source| match source {
+                    ListPeerMemberStatesError::Persistence { source } => source,
+                })?;
             let peer_connection_states = self.list::<PeerConnectionState>()?;
 
             let peer_states = peer_member_states.into_iter()

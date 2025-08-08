@@ -8,14 +8,8 @@ use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::topology::DeviceId;
 use std::collections::HashMap;
 
-#[derive(thiserror::Error, Debug)]
-pub enum ListPeerMemberStatesError {
-    #[error("Failed to list peer member states.")]
-    Persistence { #[from] source: PersistenceError },
-}
-
 impl Resources<'_> {
-    pub fn list_peer_member_states(&self) -> Result<HashMap<PeerId, PeerMemberState>, PersistenceError> {
+    pub fn list_peer_member_states(&self) -> Result<HashMap<PeerId, PeerMemberState>, ListPeerMemberStatesError> {
         let deployed_clusters = cluster_manager::internal::list_deployed_clusters(self)?;
         let deployed_devices = deployed_clusters.into_iter()
             .flat_map(|deployed_cluster| {
@@ -52,6 +46,12 @@ impl Resources<'_> {
             }).collect::<HashMap<_, _>>();
         Ok(peer_member_states)
     }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ListPeerMemberStatesError {
+    #[error("Failed to list peer member states.")]
+    Persistence { #[from] source: PersistenceError },
 }
 
 #[derive(Debug)]

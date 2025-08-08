@@ -345,11 +345,6 @@ impl PeerManagerService for PeerManagerFacade {
     }
 }
 
-#[derive(thiserror::Error, Debug)]
-#[error("Error while loading PeerManagerFacadeOptions: {message}")]
-pub struct PeerManagerFacadeOptionsLoadError {
-    message: String,
-}
 
 #[cfg(test)]
 mod tests {

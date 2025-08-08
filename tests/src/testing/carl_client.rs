@@ -45,7 +45,7 @@ impl TestCarlClient {
         Ok(())
     }
 
-    pub async fn inner(&self) -> MutexGuard<CarlClient> {
+    pub async fn inner(&self) -> MutexGuard<'_, CarlClient> {
         self.client.lock().await
     }
 }
