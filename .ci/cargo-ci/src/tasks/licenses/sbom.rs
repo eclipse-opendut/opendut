@@ -110,6 +110,7 @@ fn clarify_license_information(package: SpdxItemPackages) -> SpdxItemPackages {
                 | "BSD-3-Clause"
                 | "BSD-3-Clause AND MIT"
                 | "BSL-1.0"
+                | "bzip2-1.0.6"
                 | "CC0-1.0"
                 | "ISC"
                 | "MIT"
@@ -289,15 +290,6 @@ fn rperf_spdx_package(cargo_metadata: &cargo_metadata::Metadata) -> SpdxItemPack
         supplier: None,
         valid_until_date: None,
     }
-}
-
-#[tracing::instrument(skip_all)]
-fn clean() -> crate::Result {
-    let sbom_dir = out_dir();
-    if sbom_dir.exists() {
-        fs::remove_dir_all(sbom_dir)?;
-    }
-    Ok(())
 }
 
 pub fn out_dir() -> PathBuf {

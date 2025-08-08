@@ -60,7 +60,7 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
                         bridge_id,
                         matches_pattern!(Parameter {
                             id: anything(),
-                            dependencies: empty(),
+                            dependencies: is_empty(),
                             target: eq(&ParameterTarget::Present),
                             value: eq(&parameter::EthernetBridge {
                                 name: NetworkInterfaceName::try_from("br-opendut")?,
@@ -70,7 +70,7 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
                     ),
                 }),
                 executors: matches_pattern!(ParameterField {
-                    values: empty(),
+                    values: is_empty(),
                 }),
                 ..
             }));
@@ -157,7 +157,7 @@ async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_onl
                         bridge_id,
                         matches_pattern!(Parameter {
                             id: anything(),
-                            dependencies: empty(),
+                            dependencies: is_empty(),
                             target: eq(&ParameterTarget::Present),
                             value: eq(&parameter::EthernetBridge {
                                 name: NetworkInterfaceName::try_from("br-opendut")?,
@@ -166,7 +166,7 @@ async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_onl
                     )
                 }),
                 executors: matches_pattern!(ParameterField {
-                    values: empty()
+                    values: is_empty()
                 }),
                 ..
             }));

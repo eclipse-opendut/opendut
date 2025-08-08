@@ -466,7 +466,7 @@ mod tests {
         verify_that!(list_reply.get_ref().reply,
             some(matches_pattern!(list_peer_descriptors_response::Reply::Success(
                 matches_pattern!(ListPeerDescriptorsSuccess {
-                    peers: empty()
+                    peers: is_empty()
                 })
             )))
         )?;
@@ -505,7 +505,7 @@ mod tests {
             list_reply.get_ref().reply,
             some(matches_pattern!(list_peer_descriptors_response::Reply::Success(
                 matches_pattern!(ListPeerDescriptorsSuccess {
-                    peers: empty()
+                    peers: is_empty()
                 })
             )))
         )?;
@@ -544,7 +544,7 @@ mod tests {
             list_reply.get_ref().reply,
             some(matches_pattern!(list_peer_descriptors_response::Reply::Success(
                 matches_pattern!(ListPeerDescriptorsSuccess {
-                    peers: empty()
+                    peers: is_empty()
                 })
             )))
         )?;

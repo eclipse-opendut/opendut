@@ -139,7 +139,7 @@ async fn find_group(fixture: Fixture) -> anyhow::Result<()> {
                         id: eq(&netbird::GroupId::from("ch8i4ug6lnn4g9hqv7m0")),
                         name: eq(&fixture.peer_netbird_group_name),
                         peers_count: eq(&0),
-                        peers: empty(),
+                        peers: is_empty(),
                     }
                 )
             )

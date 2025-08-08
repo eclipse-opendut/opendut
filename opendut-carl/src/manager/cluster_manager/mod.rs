@@ -719,7 +719,7 @@ mod test {
             unordered_elements_are![
                 (eq(&peer_1.id), unordered_elements_are![eq(&interface_a)]),
                 (eq(&peer_2.id), unordered_elements_are![eq(&interface_b), eq(&interface_c)]),
-                (eq(&peer_leader.id), empty()),
+                (eq(&peer_leader.id), is_empty()),
             ]
         );
         Ok(())
