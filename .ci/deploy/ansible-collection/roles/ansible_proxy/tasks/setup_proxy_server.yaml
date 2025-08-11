@@ -52,3 +52,4 @@
 
 - name: Run px-proxy
   shell: "{{ ansible_proxy_server_controller_executable }} --config={{ ansible_proxy_controller_pxproxy_config_file }} &"
+  run_once: true
