@@ -6,7 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-tbd.
+### Fixed
+
+* Increased the default MTU to 1542 Bytes to allow a VLAN tag by default.
+
 
 ## [0.7.0] - 2025-06-25
 

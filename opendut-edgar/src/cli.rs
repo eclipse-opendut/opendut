@@ -44,7 +44,7 @@ enum Commands {
         no_confirm: bool,
 
         /// Specify the Maximum Transfer Unit for network packages in bytes.
-        #[arg(long, global=true, default_value="1538")]
+        #[arg(long, global=true, default_value="1542")]
         mtu: u16,
     },
 }
