@@ -202,7 +202,7 @@
 
     - name: Run EDGAR Setup
       command:
-        cmd: "opendut-edgar/opendut-edgar setup --no-confirm managed {{ setup_string }}"
+        cmd: "opendut-edgar/opendut-edgar setup --mtu 1542 --no-confirm managed {{ setup_string }}"  #TODO unset MTU here when commit 214c0fbd1ab56b74f47bd4b34603bcdb431c8020 is released (as part of 0.7.1 or 0.8.0)
         chdir: "{{ edgar_unpack_dir }}"
       environment:
         OPENDUT_EDGAR_SERVICE_USER: root
