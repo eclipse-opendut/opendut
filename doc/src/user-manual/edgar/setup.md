@@ -111,7 +111,8 @@ When you configured everything and deployed the cluster, you can test the CAN co
 ## Self-Hosted Backend Server
 
 ### DNS
-If your backend server does not have a public DNS entry, you will need to adjust the `/etc/hosts/` file, by appending entries like this (using your server's IP address):
+If your backend server does not have a public DNS entry, you will need to adjust the `/etc/hosts` file,
+by appending entries like this (replace `123.456.789.101` with your server's IP address):
 ```
 123.456.789.101 opendut.local
 123.456.789.101 carl.opendut.local
@@ -121,6 +122,7 @@ If your backend server does not have a public DNS entry, you will need to adjust
 123.456.789.101 signal.opendut.local
 123.456.789.101 nginx-webdav.opendut.local
 123.456.789.101 opentelemetry.opendut.local
+123.456.789.101 monitoring.opendut.local
 ```
 
 Now the following command should complete without errors:
