@@ -1,8 +1,20 @@
 - name: Determine current date on Ansible Controller, under assumption that it is more accurate than edge hosts
   delegate_to: "localhost"
-  command: "date +%Y-%m-%dT%H:%M:%S%z"
+  command: "date +%s"
   register: _date_output
+  changed_when: false
+
+- name: Determine current date on target host is within threshold  # Avoid thrashing in case NTP is set up on the target host
+  shell: |
+    python3 -c "
+    value = {{ _date_output.stdout }} - $(date +%s)
+    threshold = {{ controller_date_dont_set_when_within_range_of_seconds }}
+    result = abs(value) > threshold
+    print(result)
+    "
+  register: _system_date_within_threshold
   changed_when: false
 
 - name: Set current date
   command: "date --set='{{ _date_output.stdout }}'"
+  when: _system_date_within_threshold.stdout == "True"
