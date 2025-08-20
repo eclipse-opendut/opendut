@@ -1,0 +1,4 @@
+/* Custom width of the content area */
+:root {
+    --content-max-width: 80%;
+}

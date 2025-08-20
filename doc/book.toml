@@ -3,3 +3,6 @@ title = "openDuT"
 
 [preprocessor.plantuml]
 plantuml-cmd="https://www.plantuml.com/plantuml"
+
+[output.html]
+additional-css = ["custom.css"]

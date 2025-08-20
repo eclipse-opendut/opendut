@@ -36,6 +36,8 @@
     - [Cluster](architecture/carl/cluster/index.md)
       - [Deployment](architecture/carl/cluster/deployment.md)
   - [EDGAR](architecture/edgar/index.md)
+  - [Network](architecture/network/index.md)
+    - [Packet traversal](architecture/network/packet-traversal.md)
   - [Deployment](architecture/deployment/index.md)
   - [Telemetry](architecture/telemetry/index.md)
 - [Changelog](changelog.md)
