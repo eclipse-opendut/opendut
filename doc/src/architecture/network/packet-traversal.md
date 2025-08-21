@@ -1,16 +1,17 @@
-# Packet traversal
+# Packet Traversal
 
-The following image depicts a ICMP packet traversing from ECU 1 to ECU 2, passing through the edge devices and the WireGuard tunnel. 
-The packet is fragmented due to the MTU size of the WireGuard tunnel, which is set to 1542 bytes at the WireGuard interface `wt0`.
+The following image and table show a large ICMP packet traversing from ECU 1 to ECU 2, passing through the edge devices and the WireGuard tunnel.
+The packet gets fragmented due to the MTU size of the WireGuard tunnel, which is set to 1542 bytes at the WireGuard interface `wt0`.
+
 
 ## Packet Traversal Example
 
-
 ![Packet traversal](img/openDuT-fragmentation.drawio.svg)
+
 
 ## Packet Traversal Table
 
-The following table shows the packet traversal from ECU 1 to ECU 2, including the time, source and destination IP addresses, protocol, frame size, interface names and additional information about the packets. 
+The table shows the packet traversal from ECU 1 to ECU 2, including the time, source and destination IP addresses, protocol, frame size, interface names and additional information about the packets.
 This example illustrates how the ICMP echo request is fragmented and reassembled as it traverses through the network interfaces and edge devices.
 
 | #  | Time     | Source      | Destination | Protocol  | Size | Device                                | Interface ID | Interface name | Info                                                                       |
