@@ -1,4 +1,4 @@
 /* Custom width of the content area */
 :root {
-    --content-max-width: 80%;
+    --content-max-width: max(750px, 80%);
 }
