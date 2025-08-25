@@ -1,0 +1,97 @@
+\documentclass{standalone}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+
+
+\tikzstyle{component} = [rounded corners, draw, minimum width=2cm, minimum height=1cm]
+\tikzstyle{block} = [rectangle, draw, align=center, fill=white, minimum width=30mm, minimum height=1cm]
+\tikzstyle{logo} = [circle, draw, fill=white!50, minimum size=6mm, inner sep=0pt]
+
+
+\newcommand{\logo}[2]{%
+  \node[logo] at (#1.north east) {\includegraphics[width=4mm]{logos/#2}};
+}
+
+
+\begin{document}
+\begin{tikzpicture}
+
+% Uncomment the following for debugging the image alignment, adds a background grid
+%\draw[help lines] (-5,-5) grid (15,5);
+
+% Background box, adds some padding around the main component box
+\path [fill=white!10] (-2,-5) rectangle (15,5);
+
+% Main component box
+\node[draw, thick, fill=white, rounded corners, minimum width=3cm, minimum height=9cm] (box) {};
+
+% Place OpenDuT logo inside the box, above nodes
+\node at ([yshift=3.2cm]box.center) {\includegraphics[width=2cm]{../../../../../resources/logos/logo_light.png}};
+
+% OpenDuT components
+\node[component, fill=green!10] (carl) at ([yshift=1.5cm]box.center) {CARL};
+\node[component, fill=green!10, below=2mm of carl] (edgar) {EDGAR};
+
+% 3rd party components used by OpenDuT
+\node[component, fill=orange!10, below=5mm of edgar] (netbird) {NetBird};
+\node[component, fill=orange!10, below=5mm of netbird] (keycloak) {Keycloak};
+
+% Docker daemon depicted with its logo
+\node[below=2mm of keycloak] (docker) {\includegraphics[width=8mm]{logos/docker-mark-blue.png}};
+
+% OTel collector
+\node[block, fill=blue!10, right=1cm of box] (otel) {OTEL Collector};
+
+% Grafana Alloy
+\node[block, yshift=-3cm, right=1cm of box] (alloy) {Grafana Alloy};
+
+% Grafana Tempo
+\node[block, yshift=2cm, right=55mm of box] (tempo) {Grafana Tempo\\(Traces)};
+
+% Prometheus
+\node[block, right=55mm of box] (prometheus) {Prometheus\\(Metrics)};
+
+% Grafana Loki
+\node[block, yshift=-2cm, right=55mm of box] (loki) {Grafana Loki \\ (Logs)};
+
+% Grafana
+\node[block, right=10cm of box] (grafana) {Grafana};
+
+
+% Arrows
+\draw[->, thick] (carl.east) -- (otel.north west);
+\draw[->, thick] (edgar.east) -- (otel.west);
+\draw[->, thick] (keycloak.south) -- (docker);
+
+\path[every node/.style={font=\sffamily\small}]
+  (docker.east) edge[->, thick] node [right,yshift=-2mm] {logs} (alloy.west)
+  (docker.east) edge[->, thick,bend right=10] node [right,xshift=2mm,yshift=4mm] {metrics} (otel.south west)
+;% end of path statement
+
+\draw[->, thick] (otel.east) -- (tempo.south west);
+\draw[->, thick] (otel.east) -- (loki.north west);
+
+\draw[->, thick] (alloy.east) -- (loki.west);
+\draw[->, thick] (otel.east) -- (prometheus.west);
+\draw[->, thick] (netbird.east) -- (prometheus.south west);
+
+\draw[->, thick] (tempo.east) -- (grafana.north west);
+\draw[->, thick] (prometheus.east) -- (grafana.west);
+\draw[->, thick] (loki.east) -- (grafana.south west);
+
+
+% Logos
+\logo{netbird}{netbird_logo.png}
+\logo{keycloak}{Keycloak_Logo.png}
+\logo{otel}{otel-collector_logo.png}
+\logo{alloy}{grafana_alloy_logo.png}
+\logo{tempo}{grafana-tempo_logo.png}
+\logo{grafana}{grafana_logo.png}
+\logo{loki}{grafana-loki_logo.png}
+\logo{prometheus}{prometheus_logo.png}
+
+
+
+\end{tikzpicture}
+
+\end{document}
