@@ -9,13 +9,13 @@ The following image shows an example setup using the [Grafana Stack](https://gra
 
 Components in this setup:
 
-* [OpenTelemetry Collector (OTEL Collector)](https://opentelemetry.io/docs/collector/configuration/): Collects logs, metrics, and traces from OpenDuT components and the Docker daemon.
+* [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/configuration/): Collects logs, metrics, and traces from OpenDuT components and the Docker daemon.
 * [Grafana Alloy](https://grafana.com/docs/alloy/latest/): Collects logs from the Docker daemon (e.g. NetBird, Keycloak and other components not depicted above).
 
 Databases used:
 
-* [Prometheus](https://prometheus.io/docs/introduction/overview/): Collects metrics from the Netbird management service and consumes all metrics from the OTEL Collector.
-* [Grafana Loki](https://grafana.com/docs/loki/latest/): Stores logs collected by the OTEL Collector and by Grafana Alloy.
+* [Prometheus](https://prometheus.io/docs/introduction/overview/): Collects metrics from the Netbird management service and consumes all metrics from the OTel Collector.
+* [Grafana Loki](https://grafana.com/docs/loki/latest/): Stores logs collected by the OTel Collector and by Grafana Alloy.
 * [Grafana Tempo](https://grafana.com/docs/tempo/latest/): Stores traces.
 
 Visualization: [Grafana](https://grafana.com/docs/grafana/latest/) uses these databases to present dashboards to the user.
