@@ -25,6 +25,7 @@ strum = { workspace = true, features = ["derive"] }
 tar = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter", "ansi", "tracing-log"] }
+walkdir = { workspace = true }
 
 [build-dependencies]
 shadow-rs = { workspace = true, default-features = true }
