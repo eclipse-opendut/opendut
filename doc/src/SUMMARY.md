@@ -39,5 +39,6 @@
   - [Network](architecture/network/index.md)
     - [Packet traversal](architecture/network/packet-traversal.md)
   - [Deployment](architecture/deployment/index.md)
+  - [Security](architecture/security/index.md)
   - [Telemetry](architecture/telemetry/index.md)
 - [Changelog](changelog.md)
