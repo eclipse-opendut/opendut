@@ -18,14 +18,9 @@ pub struct DistributionBuildCli {
 #[tracing::instrument(skip_all)]
 pub fn distribution_build(package: Package, target: Arch) -> crate::Result {
     CROSS.command()
-        .args([
-            "--package",
-            &package.ident(),
-            "--target-dir",
-            &cross_target_dir().display().to_string(), //explicitly set target-base-dir to fix unreliable caching behavior
-            "--target",
-            &target.triple(),
-        ])
+        .arg("--package").arg(package.ident())
+        .arg("--target-dir").arg(cross_target_dir().as_os_str()) //explicitly set target-base-dir to fix unreliable caching behavior
+        .arg("--target").arg(target.triple())
         .run_requiring_success()?;
     Ok(())
 }
