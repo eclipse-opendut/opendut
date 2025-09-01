@@ -11,7 +11,11 @@
       body {
         padding: 1rem;
         margin: auto;
-        max-width: 50rem;
+        max-width: 60rem;
+      }
+      :root {
+        --orange: #ff9500; /*from Eclipse logo*/
+        --light-orange: hsl(from var(--orange) h s calc(l + 30));
       }
     </style>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -24,16 +28,82 @@
     />
     <br>
     <br>
-    <p>
-      Test Electronic Control Units around the world in a transparent network.
-    </p>
-    <br>
-    <a class="button" href="https://projects.eclipse.org/projects/automotive.opendut">Eclipse Project</a>
-    <a class="button" href="book/index.html">Documentation</a>
-    <a class="button" href="https://github.com/eclipse-opendut/opendut/">Code</a>
-    <a class="button" href="https://github.com/eclipse-opendut/opendut/releases">Releases</a>
 
-    <hr>
+    <main class="content">
+      <h6>
+        Test Electronic Control Units around the world in a transparent network.
+      </h6>
+      <a class="button" href="https://projects.eclipse.org/projects/automotive.opendut">Eclipse Project</a>
+      <a class="button" href="book/index.html">Documentation</a>
+      <a class="button" href="https://github.com/eclipse-opendut/opendut/">Code</a>
+      <a class="button" href="https://github.com/eclipse-opendut/opendut/releases">Releases</a>
+
+
+      <h2>Features</h2>
+
+      <style>
+        .feature-grid {
+          display: grid;
+          gap: 1rem;
+
+          grid-template-columns: 1fr;
+        }
+        @media screen and (width >= 800px) {
+          .feature-grid {
+            grid-template-columns: 1fr 1fr;
+          }
+        }
+
+        .feature-cell {
+          background: var(--light-orange);
+          padding: 1rem 1.25rem;
+          border-radius: 0.5rem;
+        }
+      </style>
+      <div class="feature-grid">
+
+        <div class="feature-cell" id="connect-ecus-over-the-internet">
+          <h3>Connect ECUs over the Internet</h3>
+
+          <h4>Access remote ECUs</h4>
+          <ul>
+            <li>Build your testbench with ECUs from remote sites.
+            <li>Save on shipping costs and delays.
+          </ul>
+
+          <h4>Test at suppliers</h4>
+          <ul>
+            <li>Iterate on prototypes while they're still in the hands of your supplier.
+            <li>Detect bugs and vulnerabilities early on.
+          </ul>
+
+          <h4>Share limited ECUs</h4>
+          <ul>
+            <li>Reduce the number of expensive ECUs needed for development.
+            <li>Get the most out of early prototypes.
+          </ul>
+        </div>
+
+        <div class="feature-cell" id="software-defined-testbench">
+          <h3>Software-Defined Testbench</h3>
+
+          <h4>Dynamic wiring</h4>
+          <ul>
+            <li>Connect your ECUs without plugging physical wires.
+            <li>Hook ECUs into testbenches at the click of a button.
+          </ul>
+
+          <h4>Reproducible tests</h4>
+          <ul>
+            <li>Store your wiring in a file rather than a shelf.
+            <li>Recreate the setup from months ago in mere seconds.
+          </ul>
+        </div>
+
+      </div>
+    </main>
+
+    <hr/>
 
     <img
       id="funded_by_the_european_union"
