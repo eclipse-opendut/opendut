@@ -438,6 +438,7 @@ impl From<&ContainerCommand> for String {
     }
 }
 
+#[allow(clippy::infallible_try_from)] //ignored for API symmetry and possible future error states
 impl TryFrom<String> for ContainerCommand {
     type Error = IllegalContainerCommand;
 
@@ -450,6 +451,7 @@ impl TryFrom<String> for ContainerCommand {
     }
 }
 
+#[allow(clippy::infallible_try_from)] //ignored for API symmetry and possible future error states
 impl TryFrom<&str> for ContainerCommand {
     type Error = IllegalContainerCommand;
 
