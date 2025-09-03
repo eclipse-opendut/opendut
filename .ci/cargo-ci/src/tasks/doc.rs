@@ -214,7 +214,7 @@ pub mod homepage {
         )?;
 
         fs_extra::dir::copy(
-            repo_path!("opendut-homepage/"),
+            repo_path!("homepage/"),
             out_dir(),
             &fs_extra::dir::CopyOptions::default()
                 .overwrite(true)
