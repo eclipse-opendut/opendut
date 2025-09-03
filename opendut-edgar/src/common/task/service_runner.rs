@@ -17,7 +17,6 @@ use opendut_types::peer::configuration::{ParameterId, ParameterTarget, Parameter
 pub enum Outcome {
     Changed(Success),
     Unchanged,
-    Failed,  // TODO: This should be removed, as it is not used in the current implementation.
 }
 
 pub struct CollectedResult {
@@ -39,16 +38,6 @@ impl From<CollectedResult> for PeerConfigurationState {
                                 ParameterTarget::Absent => ParameterTargetState::Absent,
                             }
                         }
-                        Outcome::Failed => {
-                            match target {
-                                ParameterTarget::Present => ParameterTargetState::Error(
-                                    ParameterTargetStateError::CreatingFailed(ParameterTargetStateErrorCreatingFailed::UnclassifiedError("Task failed".into()))
-                                ),
-                                ParameterTarget::Absent => ParameterTargetState::Error(
-                                    ParameterTargetStateError::RemovingFailed(ParameterTargetStateErrorRemovingFailed::UnclassifiedError("Task failed".into()))
-                                ),
-                            }
-                        },
                     }
                 }
                 Err(error) => {
@@ -182,11 +171,6 @@ async fn run_multiple_tasks(
                     Outcome::Changed(success) => {
                         // if the task changed, we update the outcome for this parameter
                         outcome_for_parameter = Ok(Outcome::Changed(success));
-                    }
-                    Outcome::Failed => {
-                        outcome_for_parameter = Ok(Outcome::Failed);
-                        resolver.mark_current_parameter_failed();
-                        break; // no need to continue with other tasks for this parameter
                     }
                 }
             }
