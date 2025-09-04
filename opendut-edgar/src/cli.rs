@@ -1,5 +1,7 @@
 use std::collections::HashSet;
+use std::fs;
 use std::net::Ipv4Addr;
+use std::ops::Not;
 use std::str::FromStr;
 
 use clap::{Args, Parser, Subcommand};
@@ -74,6 +76,8 @@ enum SetupCommand {
         #[clap(flatten)]
         common: SetupRunCommonArgs,
     },
+    /// Prints the logs from previous setup runs.
+    Logs,
 }
 
 #[derive(Args)]
@@ -103,25 +107,16 @@ pub async fn cli() -> anyhow::Result<()> {
             ).await
         },
         Commands::Setup { command } => {
-            setup::start::init_logging().await?;
-
-            let user_command = std::env::args_os()
-                .collect::<Vec<_>>();
-            info!("EDGAR Setup started!");
-            info!("Setup command being executed: {:?}", user_command);
-
-            #[cfg(target_arch = "arm")]
-            {
-                println!("Running on ARMv7 / ARM32. Plugins cannot be used on this architecture.");
-                info!("Running on ARMv7 / ARM32. Plugins cannot be used on this architecture. For more information, see: https://github.com/bytecodealliance/wasmtime/issues/1173")
-            }
-
             match command {
                 SetupCommand::Managed { setup_string, common } => {
+                    setup_run_common_prelude().await?;
+
                     let SetupRunCommonArgs { dry_run, no_confirm, mtu } = common;
                     setup::start::managed(dry_run, no_confirm, setup_string, mtu).await?;
                 },
                 SetupCommand::Unmanaged { management_url, setup_key, leader, bridge, device_interfaces, common } => {
+                    setup_run_common_prelude().await?;
+
                     let setup_key = SetupKey { uuid: setup_key };
                     let ParseableLeader(leader) = leader;
                     let bridge = bridge.unwrap_or_else(crate::common::default_bridge_name);
@@ -129,11 +124,37 @@ pub async fn cli() -> anyhow::Result<()> {
                     let SetupRunCommonArgs { dry_run, no_confirm, mtu } = common;
                     setup::start::unmanaged(dry_run, no_confirm, management_url, setup_key, bridge, device_interfaces, leader, mtu).await?;
                 }
+                SetupCommand::Logs => {
+                    let logs = fs::read_to_string(setup::start::logging_file()?)?;
+
+                    if logs.is_empty().not() {
+                        print!("{logs}");
+                    } else {
+                        println!("No logs found."); //TODO test
+                    }
+                }
             };
             info!("EDGAR Setup finished!\n");
             Ok(())
         }
     }
+}
+
+async fn setup_run_common_prelude() -> anyhow::Result<()> {
+    setup::start::init_logging().await?;
+
+    let user_command = std::env::args_os()
+        .collect::<Vec<_>>();
+    info!("EDGAR Setup started!");
+    info!("Setup command being executed: {:?}", user_command);
+
+    #[cfg(target_arch = "arm")]
+    {
+        println!("Running on ARMv7 / ARM32. Plugins cannot be used on this architecture.");
+        info!("Running on ARMv7 / ARM32. Plugins cannot be used on this architecture. For more information, see: https://github.com/bytecodealliance/wasmtime/issues/1173")
+    }
+
+    Ok(())
 }
 
 #[derive(Clone, Debug)]

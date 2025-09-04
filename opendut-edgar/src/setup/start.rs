@@ -19,6 +19,7 @@ use opendut_util::telemetry;
 use opendut_util::telemetry::opentelemetry_types::Opentelemetry;
 use std::env;
 use std::ops::Not;
+use std::path::PathBuf;
 use opendut_util::telemetry::logging::PipeLogging;
 use crate::cli::DryRun;
 
@@ -164,10 +165,7 @@ pub async fn unmanaged(
 
 
 pub async fn init_logging() -> anyhow::Result<()> {
-
-    let mut log_file = env::current_exe()?;
-    log_file.set_file_name("setup.log");
-    let file_logging = Some(log_file);
+    let file_logging = Some(logging_file()?);
 
     let logging_config = telemetry::logging::LoggingConfig {
         pipe_logging: PipeLogging::Disabled,
@@ -178,6 +176,11 @@ pub async fn init_logging() -> anyhow::Result<()> {
     let _ = telemetry::initialize_with_config(logging_config, opentelemetry_config).await?;
 
     Ok(())
+}
+pub fn logging_file() -> anyhow::Result<PathBuf> {
+    let mut log_file = env::current_exe()?;
+    log_file.set_file_name("setup.log");
+    Ok(log_file)
 }
 
 fn determine_service_user_name() -> User {

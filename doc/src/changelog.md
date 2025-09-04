@@ -6,8 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-### Fixed
+### Added
+* EDGAR: Introduced `opendut-edgar setup logs` command for printing the setup logs.
 
+### Fixed
 * Increased the default MTU to 1542 Bytes to allow a VLAN tag by default.
 
 
