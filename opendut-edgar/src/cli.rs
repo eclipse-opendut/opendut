@@ -2,16 +2,17 @@ use std::collections::HashSet;
 use std::net::Ipv4Addr;
 use std::str::FromStr;
 
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 use tracing::info;
 use url::Url;
 use uuid::Uuid;
 
-use crate::{setup};
+pub use dry_run::DryRun;
+use crate::setup;
 use opendut_types::peer::PeerId;
 use opendut_types::util::net::NetworkInterfaceName;
 use opendut_types::vpn::netbird::SetupKey;
-use opendut_util::project;
+
 
 #[derive(Parser)]
 #[command(name = "opendut-edgar")]
@@ -32,30 +33,21 @@ enum Commands {
     },
     /// Prepare your system
     Setup {
-        #[command(subcommand, name="mode")]
-        setup_mode: SetupMode,
-
-        /// Run through all steps without changing the system
-        #[arg(long, global=true)]
-        dry_run: bool,
-
-        /// Continue execution without asking for confirmation.
-        #[arg(long, global=true)]
-        no_confirm: bool,
-
-        /// Specify the Maximum Transfer Unit for network packages in bytes.
-        #[arg(long, global=true, default_value="1542")]
-        mtu: u16,
+        #[command(subcommand)]
+        command: SetupCommand,
     },
 }
 
 #[derive(Subcommand)]
-enum SetupMode {
+enum SetupCommand {
     /// Prepare your system for running EDGAR Service
     Managed {
         // Setup String retrieved from LEA
         #[arg()]
         setup_string: String,
+
+        #[clap(flatten)]
+        common: SetupRunCommonArgs,
     },
     /// Setup your system for network routing without automatic management. This setup method will be removed in the future.
     Unmanaged {
@@ -78,7 +70,25 @@ enum SetupMode {
         /// Name of the bridge to use, maximum 15 characters long
         #[arg(long)]
         bridge: Option<NetworkInterfaceName>,
+
+        #[clap(flatten)]
+        common: SetupRunCommonArgs,
     },
+}
+
+#[derive(Args)]
+struct SetupRunCommonArgs {
+    /// Run through all steps without changing the system
+    #[arg(long, global=true)]
+    dry_run: DryRun,
+
+    /// Continue execution without asking for confirmation.
+    #[arg(long, global=true)]
+    no_confirm: bool,
+
+    /// Specify the Maximum Transfer Unit for network packages in bytes.
+    #[arg(long, global=true, default_value="1542")]
+    mtu: u16,
 }
 
 pub async fn cli() -> anyhow::Result<()> {
@@ -92,21 +102,13 @@ pub async fn cli() -> anyhow::Result<()> {
                 id_override,
             ).await
         },
-        Commands::Setup { setup_mode, dry_run, no_confirm, mtu } => {
+        Commands::Setup { command } => {
             setup::start::init_logging().await?;
 
-            let command = std::env::args_os()
+            let user_command = std::env::args_os()
                 .collect::<Vec<_>>();
             info!("EDGAR Setup started!");
-            info!("Setup command being executed: {:?}", command);
-
-            let dry_run = if dry_run { DryRun::Yes } else { DryRun::No };
-            let dry_run = force_dry_run_in_development(dry_run);
-
-            if dry_run.not() {
-                sudo::with_env(&["OPENDUT_EDGAR_"]) //Request before doing anything else, as it restarts the process when sudo is not present.
-                    .expect("Failed to request sudo privileges.");
-            }
+            info!("Setup command being executed: {:?}", user_command);
 
             #[cfg(target_arch = "arm")]
             {
@@ -114,15 +116,17 @@ pub async fn cli() -> anyhow::Result<()> {
                 info!("Running on ARMv7 / ARM32. Plugins cannot be used on this architecture. For more information, see: https://github.com/bytecodealliance/wasmtime/issues/1173")
             }
 
-            match setup_mode {
-                SetupMode::Managed { setup_string } => {
+            match command {
+                SetupCommand::Managed { setup_string, common } => {
+                    let SetupRunCommonArgs { dry_run, no_confirm, mtu } = common;
                     setup::start::managed(dry_run, no_confirm, setup_string, mtu).await?;
                 },
-                SetupMode::Unmanaged { management_url, setup_key, leader, bridge, device_interfaces } => {
+                SetupCommand::Unmanaged { management_url, setup_key, leader, bridge, device_interfaces, common } => {
                     let setup_key = SetupKey { uuid: setup_key };
                     let ParseableLeader(leader) = leader;
                     let bridge = bridge.unwrap_or_else(crate::common::default_bridge_name);
                     let device_interfaces = HashSet::from_iter(device_interfaces);
+                    let SetupRunCommonArgs { dry_run, no_confirm, mtu } = common;
                     setup::start::unmanaged(dry_run, no_confirm, management_url, setup_key, bridge, device_interfaces, leader, mtu).await?;
                 }
             };
@@ -149,27 +153,48 @@ impl FromStr for ParseableLeader {
     }
 }
 
-#[derive(PartialEq, Eq)]
-pub enum DryRun { Yes, No }
-impl DryRun {
-    pub fn not(&self) -> bool {
-        self == &DryRun::No
-    }
-}
 
-fn force_dry_run_in_development(dry_run: DryRun) -> DryRun {
-    if project::is_running_in_development() {
-        println!("{DEVELOPMENT_DRY_RUN_BANNER}");
-        info!("{DEVELOPMENT_DRY_RUN_BANNER}");
-        DryRun::Yes
-    } else {
-        dry_run
+mod dry_run {
+    use opendut_util::project;
+    use tracing::info;
+
+    #[derive(Clone, PartialEq, Eq)]
+    pub enum DryRun { Yes, No }
+    impl DryRun {
+        pub fn not(&self) -> bool {
+            self == &DryRun::No
+        }
+
+        fn force_dry_run_in_development(&mut self) {
+            if project::is_running_in_development() {
+                println!("{DEVELOPMENT_DRY_RUN_BANNER}");
+                info!("{DEVELOPMENT_DRY_RUN_BANNER}");
+                *self = DryRun::Yes;
+            }
+        }
     }
-}
-const DEVELOPMENT_DRY_RUN_BANNER: &str = r"
+    impl std::str::FromStr for DryRun {
+        type Err = anyhow::Error;
+
+        fn from_str(value: &str) -> Result<Self, Self::Err> {
+            let dry_run = bool::from_str(value)?;
+
+            let mut dry_run = if dry_run { DryRun::Yes } else { DryRun::No };
+            dry_run.force_dry_run_in_development();
+
+            if dry_run.not() {
+                sudo::with_env(&["OPENDUT_EDGAR_"]) //Request before doing anything else, as it restarts the process when sudo is not present.
+                    .expect("Failed to request sudo privileges.");
+            }
+            Ok(dry_run)
+        }
+    }
+
+    const DEVELOPMENT_DRY_RUN_BANNER: &str = r"
                 Running in
              Development mode
                    ----
           Activating --dry-run to
         prevent changes to the system.
         ";
+}
