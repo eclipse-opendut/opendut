@@ -42,62 +42,95 @@
       <h2>Features</h2>
 
       <style>
-        .feature-grid {
-          display: grid;
-          gap: 1rem;
-
-          grid-template-columns: 1fr;
-        }
-        @media screen and (width >= 800px) {
-          .feature-grid {
-            grid-template-columns: 1fr 1fr;
-          }
-        }
-
-        .feature-cell {
+        .feature-group {
           background: var(--light-orange);
-          padding: 1rem 1.25rem;
+          padding: 1rem 1.1rem;
+          margin: 1rem 0;
           border-radius: 0.5rem;
         }
-      </style>
-      <div class="feature-grid">
 
-        <div class="feature-cell" id="connect-ecus-over-the-internet">
+        .feature-block {
+          margin: 1rem;
+          display: grid;
+          grid-template-columns: 1fr;
+
+          img {
+            margin: auto; /*centered*/
+          }
+        }
+        @media screen and (width >= 800px) {
+          .feature-block {
+            grid-template-columns: 1fr 1fr;
+          }
+
+          .feature-block:nth-child(odd) img { /*display every other pictogram to the right*/
+            order: 1;
+          }
+        }
+      </style>
+      <div>
+
+        <div class="feature-group" id="connect-ecus-over-the-internet">
           <h3>Connect ECUs over the Internet</h3>
 
-          <h4>Access remote ECUs</h4>
-          <ul>
-            <li>Build your testbench with ECUs from remote sites.
-            <li>Save on shipping costs and delays.
-          </ul>
+          <div class="feature-block">
+            <img src="resources/features/access-remote-ecus.svg"/>
+            <div>
+              <h4>Access remote ECUs</h4>
+              <ul>
+                <li>Build your testbench with ECUs from remote sites.
+                <li>Save on shipping costs and delays.
+              </ul>
+            </div>
+          </div>
 
-          <h4>Test at suppliers</h4>
-          <ul>
-            <li>Iterate on prototypes while they're still in the hands of your supplier.
-            <li>Detect bugs and vulnerabilities early on.
-          </ul>
+          <div class="feature-block">
+            <img src="resources/features/test-at-suppliers.svg"/>
+            <div>
+              <h4>Test at suppliers</h4>
+              <ul>
+                <li>Iterate on prototypes while they're still in the hands of your supplier.
+                <li>Detect bugs and vulnerabilities early on.
+              </ul>
+            </div>
+          </div>
 
-          <h4>Share limited ECUs</h4>
-          <ul>
-            <li>Reduce the number of expensive ECUs needed for development.
-            <li>Get the most out of early prototypes.
-          </ul>
+          <div class="feature-block">
+            <img src="resources/features/share-limited-ecus.svg"/>
+            <div>
+              <h4>Share limited ECUs</h4>
+              <ul>
+                <li>Reduce the number of expensive ECUs needed for development.
+                <li>Get the most out of early prototypes.
+              </ul>
+            </div>
+          </div>
         </div>
 
-        <div class="feature-cell" id="software-defined-testbench">
+        <div class="feature-group" id="software-defined-testbench">
           <h3>Software-Defined Testbench</h3>
 
-          <h4>Dynamic wiring</h4>
-          <ul>
-            <li>Connect your ECUs without plugging physical wires.
-            <li>Hook ECUs into testbenches at the click of a button.
-          </ul>
+          <div class="feature-block">
+            <img src="resources/features/dynamic-wiring.svg"/>
+            <div>
+              <h4>Dynamic wiring</h4>
+              <ul>
+                <li>Connect your ECUs without plugging physical wires.
+                <li>Hook ECUs into testbenches at the click of a button.
+              </ul>
+            </div>
+          </div>
 
-          <h4>Reproducible tests</h4>
-          <ul>
-            <li>Store your wiring in a file rather than a shelf.
-            <li>Recreate the setup from months ago in mere seconds.
-          </ul>
+          <div class="feature-block">
+            <img src="resources/features/reproducible-tests.svg"/>
+            <div>
+              <h4>Reproducible tests</h4>
+              <ul>
+                <li>Store your wiring in a file rather than a shelf.
+                <li>Recreate the setup from months ago in mere seconds.
+              </ul>
+            </div>
+          </div>
         </div>
 
       </div>
