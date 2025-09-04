@@ -198,9 +198,9 @@ fn Row(
 
         let cluster_view_list: Vec<View<_>> = devices_in_cluster.into_iter()
             .filter(|(_, _, devices)| devices_in_peer.clone().into_iter().any(|device| devices.contains(&device)))
-            .map(|(clusterId, clusterName, _)| {
-                let cluster_name = move || { clusterName.to_string() };
-                let configurator_href = move || { format!("/clusters/{clusterId}/configure/general") };
+            .map(|(cluster_id, cluster_name, _)| {
+                let cluster_name = move || { cluster_name.to_string() };
+                let configurator_href = move || { format!("/clusters/{cluster_id}/configure/general") };
                 view! {
                     <a href={ configurator_href }>{ cluster_name }</a>
                 }

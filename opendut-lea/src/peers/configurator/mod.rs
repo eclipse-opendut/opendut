@@ -74,8 +74,8 @@ pub fn PeerConfigurator() -> impl IntoView {
                             let mut configured_clusters = vec![];
 
                             for cluster in &clusters {
-                                for deviceId in &cluster.devices {
-                                    if device.id == *deviceId {
+                                for device_id in &cluster.devices {
+                                    if device.id == *device_id {
                                         configured_clusters.push(cluster.clone());
                                     }
                                 }

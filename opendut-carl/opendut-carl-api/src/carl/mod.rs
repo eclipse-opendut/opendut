@@ -256,7 +256,6 @@ cfg_if! {
 
 #[cfg(feature = "wasm-client")]
 pub mod wasm {
-    use leptos::prelude::*;
     use tonic::codegen::InterceptedService;
 
     use opendut_auth::public::{AuthInterceptor, Authentication};
