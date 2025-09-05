@@ -8,6 +8,7 @@ members = [
     "opendut-edgar/opendut-edgar-kernel-modules",
     "opendut-edgar/plugin-api",
     "opendut-lea",
+    "opendut-lea/opendut-lea-core",
     "opendut-types",
     "opendut-util",
     "opendut-util/opendut-auth",
@@ -36,14 +37,15 @@ opendut-carl-api = { path = "opendut-carl/opendut-carl-api" }
 opendut-ci = { path = ".ci/cargo-ci" }
 opendut-edgar = { path = "opendut-edgar" }
 opendut-edgar-plugin-api = { path = "opendut-edgar/plugin-api" }
-opendut-netbird-client-api = { path = "opendut-edgar/netbird-client-api" }
 opendut-edgar-kernel-modules = { path = "opendut-edgar/opendut-edgar-kernel-modules" }
-opendut-vpn-netbird = { path = "opendut-vpn/opendut-vpn-netbird" }
+opendut-lea-core = { path = "opendut-lea/opendut-lea-core" }
+opendut-netbird-client-api = { path = "opendut-edgar/netbird-client-api" }
 opendut-types = { path = "opendut-types" }
 opendut-theo = { path = ".ci/docker/theo" }
 opendut-util = { path = "opendut-util" }
 opendut-util-core = { path = "opendut-util/opendut-util-core" }
 opendut-vpn = { path = "opendut-vpn" }
+opendut-vpn-netbird = { path = "opendut-vpn/opendut-vpn-netbird" }
 
 anyhow = "1.0.95"
 assert_fs = "1.1.2"

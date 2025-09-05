@@ -18,12 +18,12 @@ mod components;
 mod clusters;
 mod error;
 mod routing;
-mod util;
 mod licenses;
 mod nav;
 mod user;
 mod about;
 mod downloads;
+mod util;
 
 fn main() {
 

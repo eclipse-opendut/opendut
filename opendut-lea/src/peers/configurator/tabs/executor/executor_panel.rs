@@ -4,7 +4,7 @@ use strum::IntoEnumIterator;
 
 use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, IconButton, Toggled, UserInput, UserInputValue, VectorUserInput};
 use crate::peers::configurator::types::{EMPTY_CONTAINER_IMAGE_ERROR_MESSAGE, UserContainerEnv, UserPeerExecutor, UserPeerExecutorKind};
-use crate::util::NON_BREAKING_SPACE;
+use opendut_lea_core::NON_BREAKING_SPACE;
 
 #[component]
 pub fn ExecutorPanel<OnDeleteFn>(

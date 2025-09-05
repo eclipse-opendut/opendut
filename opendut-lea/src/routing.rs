@@ -7,7 +7,7 @@ use opendut_types::cluster::ClusterId;
 use opendut_types::peer::PeerId;
 
 use crate::components::BasePageContainer;
-use crate::util::url::UrlEncodable;
+use opendut_lea_core::url::UrlEncodable;
 pub use routes::AppRoutes;
 
 pub mod path {

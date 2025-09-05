@@ -2,7 +2,7 @@ use leptos::prelude::*;
 use leptos::reactive::wrappers::write::SignalSetter;
 use crate::components::inputs::{UserInputValidator, UserInputValue};
 
-use crate::util::NON_BREAKING_SPACE;
+use opendut_lea_core::NON_BREAKING_SPACE;
 
 const INPUT_VALIDATION_DEBOUNCE_MS: f64 = 300.0;
 

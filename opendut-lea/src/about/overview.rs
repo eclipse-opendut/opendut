@@ -2,7 +2,7 @@ use leptos::prelude::*;
 use crate::components::BasePageContainer;
 
 use shadow_rs::shadow;
-use crate::util::NON_BREAKING_SPACE;
+use opendut_lea_core::NON_BREAKING_SPACE;
 shadow!(build);
 
 #[component]

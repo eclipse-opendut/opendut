@@ -10,8 +10,8 @@ use opendut_types::util::net::NetworkInterfaceDescriptor;
 use crate::clusters::configurator::components::get_all_selected_devices;
 use crate::clusters::configurator::types::UserClusterDescriptor;
 use crate::components::{ButtonColor, ButtonSize, ButtonState, CollapseButton, FontAwesomeIcon, IconButton};
-use crate::util::{Ior, NON_BREAKING_SPACE};
-use crate::util::net::UserNetworkInterfaceConfiguration;
+use opendut_lea_core::{Ior, NON_BREAKING_SPACE};
+use opendut_lea_core::net::UserNetworkInterfaceConfiguration;
 
 pub type DeviceSelectionError = String;
 pub type DeviceSelection = Ior<DeviceSelectionError, HashSet<DeviceId>>;

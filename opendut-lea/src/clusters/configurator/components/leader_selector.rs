@@ -7,7 +7,7 @@ use opendut_types::topology::DeviceId;
 
 use crate::clusters::configurator::components::get_all_selected_devices;
 use crate::clusters::configurator::types::UserClusterDescriptor;
-use crate::util::{Ior, NON_BREAKING_SPACE};
+use opendut_lea_core::{Ior, NON_BREAKING_SPACE};
 
 pub type LeaderSelectionError = String;
 pub type LeaderSelection = Ior<LeaderSelectionError, PeerId>;

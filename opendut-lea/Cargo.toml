@@ -8,21 +8,18 @@ license.workspace = true
 [dependencies]
 opendut-carl-api = { workspace = true, features = ["wasm-client"] }
 opendut-auth = { workspace = true, features = ["public_client"] }
+opendut-lea-core = { workspace = true }
 opendut-types = { workspace = true }
 
-chrono = { workspace = true, features = ["clock", "wasmbind"] }
+
 console_error_panic_hook = { workspace = true }
 gloo-net = { workspace = true, features = ["json"]}
-jsonwebtoken = { workspace = true }
 leptos = { workspace = true, features = ["csr"] }
 leptos_oidc =  { workspace = true }
 leptos_router = { workspace = true }
 leptos-use = { workspace = true }
-reactive_stores = { workspace = true }
-reactive_stores_macro = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 shadow-rs = { workspace = true }
-slotmap = { workspace = true }
 strum = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }

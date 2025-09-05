@@ -11,7 +11,7 @@ use tracing::{debug, info, trace};
 
 use crate::components::toast::builder::ToastBuilder;
 use crate::components::toast::container::Container;
-use crate::util::Tick;
+use opendut_lea_core::Tick;
 
 mod notification;
 mod container;

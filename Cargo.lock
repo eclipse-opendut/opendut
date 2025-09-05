@@ -3928,22 +3928,18 @@ dependencies = [
 name = "opendut-lea"
 version = "0.8.0-alpha"
 dependencies = [
- "chrono",
  "console_error_panic_hook",
  "gloo-net",
- "jsonwebtoken",
  "leptos",
  "leptos-use",
  "leptos_oidc",
  "leptos_router",
  "opendut-auth",
  "opendut-carl-api",
+ "opendut-lea-core",
  "opendut-types",
- "reactive_stores",
- "reactive_stores_macro",
  "serde",
  "shadow-rs",
- "slotmap",
  "strum",
  "thiserror 2.0.16",
  "tracing",
@@ -3952,6 +3948,18 @@ dependencies = [
  "url",
  "uuid",
  "wasm-bindgen-futures",
+]
+
+[[package]]
+name = "opendut-lea-core"
+version = "0.8.0-alpha"
+dependencies = [
+ "chrono",
+ "leptos",
+ "leptos-use",
+ "opendut-types",
+ "slotmap",
+ "tracing",
 ]
 
 [[package]]
