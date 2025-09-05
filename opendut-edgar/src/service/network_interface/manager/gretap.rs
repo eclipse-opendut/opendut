@@ -1,10 +1,8 @@
 use std::mem::size_of;
 use std::net::Ipv4Addr;
-
+use byteorder::{ByteOrder, NativeEndian, WriteBytesExt};
 use rtnetlink::packet_route::link::{InfoData, InfoKind, LinkAttribute, LinkInfo};
-use rtnetlink::packet_utils::{Emitable, Parseable};
-use rtnetlink::packet_utils::byteorder::{ByteOrder, NativeEndian, WriteBytesExt};
-use rtnetlink::packet_utils::nla::NlaBuffer;
+use rtnetlink::packet_core::{Emitable, NlaBuffer, Parseable};
 use rtnetlink::LinkMessageBuilder;
 
 pub trait Gretap {
@@ -79,7 +77,7 @@ pub(crate) enum InfoGreTap { // https://elixir.bootlin.com/linux/v6.5.3/source/i
 	ErspanHwid,
 	Max,
 }
-impl rtnetlink::packet_utils::nla::Nla for InfoGreTap {
+impl rtnetlink::packet_core::Nla for InfoGreTap {
     fn value_len(&self) -> usize {
         match self {
             Self::Unspec => unimplemented!(),
@@ -176,7 +174,7 @@ impl rtnetlink::packet_utils::nla::Nla for InfoGreTap {
 #[cfg(test)]
 mod tests {
     use std::net::Ipv4Addr;
-    use rtnetlink::packet_utils::nla::{DefaultNla, Nla};
+    use rtnetlink::packet_core::{DefaultNla, Nla};
 
     #[test]
     fn test_nla_conversion() {
