@@ -1,4 +1,4 @@
-use opendut_lea_core::Ior;
+use crate::Ior;
 
 pub mod readonly_input;
 pub mod user_input;

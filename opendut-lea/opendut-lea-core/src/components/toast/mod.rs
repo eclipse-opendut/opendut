@@ -11,7 +11,7 @@ use tracing::{debug, info, trace};
 
 use crate::components::toast::builder::ToastBuilder;
 use crate::components::toast::container::Container;
-use opendut_lea_core::Tick;
+use crate::Tick;
 
 mod notification;
 mod container;
@@ -53,6 +53,27 @@ pub enum ToastContent {
         text: String
     }
 }
+
+impl From<String> for Toast {
+    fn from(value: String) -> Self {
+        let ticks = duration_as_ticks(&Toast::DEFAULT_LIFETIME, Toaster::UPDATE_INTERVAL_IN_MILLIS);
+        Toast {
+            kind: ToastKind::Info,
+            content: ToastContent::Simple { text: value },
+            timestamp: Local::now(),
+            max_ticks: ticks,
+            remaining_ticks: RwSignal::new(ticks),
+            keep: RwSignal::new(false),
+        }
+    }
+}
+
+impl From<&str> for Toast {
+    fn from(value: &str) -> Self {
+        From::from(String::from(value))
+    }
+}
+
 
 pub fn use_toaster() -> Arc<Toaster> {
     use_context::<Arc<Toaster>>()
@@ -125,26 +146,12 @@ impl Toaster {
     }
 }
 
+impl Default for Toaster {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 fn duration_as_ticks(duration: &Duration, interval_ms: u64) -> Tick {
     Tick::from(duration.as_millis() / interval_ms as u128)
-}
-
-impl From<String> for Toast {
-    fn from(value: String) -> Self {
-        let ticks = duration_as_ticks(&Toast::DEFAULT_LIFETIME, Toaster::UPDATE_INTERVAL_IN_MILLIS);
-        Toast {
-            kind: ToastKind::Info,
-            content: ToastContent::Simple { text: value },
-            timestamp: Local::now(),
-            max_ticks: ticks,
-            remaining_ticks: RwSignal::new(ticks),
-            keep: RwSignal::new(false),
-        }
-    }
-}
-
-impl From<&str> for Toast {
-    fn from(value: &str) -> Self {
-        From::from(String::from(value))
-    }
 }

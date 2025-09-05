@@ -4,8 +4,9 @@ use leptos_oidc::{LoginLink, LogoutLink};
 use opendut_auth::public::Authentication;
 
 use crate::app::use_app_globals;
-use crate::components::{AppGlobalsResource, BasePageContainer, Initialized, LoadingSpinner};
 use crate::routing;
+use crate::components::{AppGlobalsResource, Initialized};
+use crate::components::{BasePageContainer, LoadingSpinner};
 
 #[must_use]
 #[component(transparent)]

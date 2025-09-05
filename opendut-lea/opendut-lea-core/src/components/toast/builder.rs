@@ -67,3 +67,9 @@ impl From<ToastBuilder> for Toast {
         }
     }
 }
+
+impl Default for ToastBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}

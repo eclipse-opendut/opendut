@@ -2,7 +2,8 @@ use std::ops::Not;
 use leptos::either::Either;
 use leptos::prelude::*;
 use opendut_auth::public::Authentication;
-use crate::{app::{use_app_globals, AppGlobals, AppGlobalsError}, components::LoadingSpinner};
+use crate::components::LoadingSpinner;
+use crate::app::{use_app_globals, AppGlobals, AppGlobalsError};
 
 #[must_use]
 #[component(transparent)]

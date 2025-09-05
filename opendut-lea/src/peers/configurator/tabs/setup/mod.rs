@@ -1,6 +1,7 @@
 use leptos::prelude::*;
 
-use crate::components::{GenerateSetupStringForm, GenerateSetupStringKind, WarningMessage};
+use crate::components::WarningMessage;
+use crate::components::{GenerateSetupStringForm, GenerateSetupStringKind};
 use crate::peers::configurator::types::UserPeerConfiguration;
 
 #[component]

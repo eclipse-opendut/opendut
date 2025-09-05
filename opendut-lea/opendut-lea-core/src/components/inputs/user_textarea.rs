@@ -2,7 +2,7 @@ use leptos::prelude::*;
 use leptos::reactive::wrappers::write::SignalSetter;
 use crate::components::inputs::{UserInputValidator, UserInputValue};
 
-use opendut_lea_core::NON_BREAKING_SPACE;
+use crate::NON_BREAKING_SPACE;
 
 #[component]
 pub fn UserTextarea<A>(

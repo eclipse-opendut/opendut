@@ -1,11 +1,10 @@
 use std::sync::Arc;
 
 use leptos::prelude::*;
-
+use crate::components::{Toast, use_toaster, UserInputValue};
 use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceId};
 
 use crate::peers::configurator::types::{UserNetworkInterface, UserPeerConfiguration};
-use crate::components::{Toast, use_toaster, UserInputValue};
 
 
 #[component]

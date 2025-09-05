@@ -14,7 +14,6 @@ mod app;
 mod peers;
 mod api;
 mod dashboard;
-mod components;
 mod clusters;
 mod error;
 mod routing;
@@ -24,6 +23,7 @@ mod user;
 mod about;
 mod downloads;
 mod util;
+mod components;
 
 fn main() {
 

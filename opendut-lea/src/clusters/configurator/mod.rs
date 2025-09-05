@@ -1,5 +1,6 @@
 use leptos::prelude::*;
 use leptos_router::hooks::use_params_map;
+use crate::components::UserInputValue;
 use opendut_types::cluster::ClusterId;
 use opendut_types::peer::PeerDescriptor;
 
@@ -10,7 +11,6 @@ use crate::clusters::configurator::tabs::{DevicesTab, GeneralTab, LeaderTab, Tab
 use crate::clusters::configurator::types::UserClusterDescriptor;
 use crate::clusters::overview::IsDeployed;
 use crate::components::{use_active_tab, BasePageContainer, Breadcrumb, LoadingSpinner};
-use crate::components::UserInputValue;
 
 mod types;
 mod tabs;

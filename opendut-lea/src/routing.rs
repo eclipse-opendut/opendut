@@ -82,7 +82,8 @@ mod routes {
     use crate::user::{UserAuthenticationSignal, UserOverview};
     use crate::about::AboutOverview;
     use crate::downloads::Downloads;
-    use crate::components::{Initialized, AppGlobalsResource, LoadingSpinner};
+    use crate::components::{Initialized, AppGlobalsResource};
+    use crate::components::LoadingSpinner;
     use crate::components::auth::LoginPage;
 
     #[component]

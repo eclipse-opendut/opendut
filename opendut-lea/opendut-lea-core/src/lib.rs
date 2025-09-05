@@ -9,5 +9,7 @@
 //! reduce compile times. By moving code into a separate
 //! crate, we benefit from incremental compilation.
 
+pub mod components;
 mod util;
+
 pub use util::*;
