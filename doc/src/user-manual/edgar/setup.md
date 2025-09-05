@@ -161,38 +161,25 @@ If so, follow these steps:
    The order of the paths in the `plugins.txt` file determines the order of execution for the plugins.
 
 ## Troubleshooting
-- In case of issues during the managed setup, see:
+* In case of issues during the setup, see:
   ```shell
-  less opendut-edgar/setup.log
-  ```
-  If the setup completed, but EDGAR does not show up as Healthy in LEA/CLEO, see:
-  ```shell
-  journalctl -u opendut-edgar
-  ```
-  For troubleshooting the VPN connection, you may also want to check the NetBird logs:
-  ```shell
-  cat /var/lib/netbird/client.log
-  cat /var/lib/netbird/netbird.err
-  cat /var/lib/netbird/netbird.out
+  #Available with openDuT v0.8 or later
+  opendut-edgar setup logs | less
+  
+  #On older versions, you can look at the logs by running this in the unpacked opendut-edgar directory:
+  less setup.log
   ```
 
-- Sometimes it might be necessary to restart the EDGAR service:
-  ```shell
-  # Restart service
-  sudo systemctl restart opendut-edgar
-  # Check status
-  systemctl status opendut-edgar
-  ```
+* It might happen that the NetBird Client started by EDGAR is not able to connect, in that case re-run the EDGAR setup.
 
-- It might happen that the NetBird Client started by EDGAR is not able to connect, in that case re-run the EDGAR setup.
+* If this error appears: `ERROR opendut_edgar::service::cannelloni_manager: Failure while invoking command line program 'cannelloni': 'No such file or directory (os error 2)'.`  
+  Make sure, you've completed the [CAN Setup](#can-setup).
 
-- EDGAR might start with an old IP, different from command `sudo wg` would print. In that particular case
+* EDGAR might start with an old IP address, different from what the command `sudo wg` prints.
+  In that particular case
 stop netbird service and opendut-edgar service and re-run the setup. This might happen to all
 EDGARs. If this is not enough, and it keeps getting the old IP, it is necessary to set up all
 devices and clusters from scratch.
   ```shell
   sudo wg
   ```
-
-- If this error appears: `ERROR opendut_edgar::service::cannelloni_manager: Failure while invoking command line program 'cannelloni': 'No such file or directory (os error 2)'.`  
-  Make sure, you've completed the [CAN Setup](#can-setup).

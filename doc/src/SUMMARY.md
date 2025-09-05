@@ -7,6 +7,7 @@
     - [Setup](user-manual/carl/setup.md)
   - [EDGAR](user-manual/edgar/index.md)
     - [Setup](user-manual/edgar/setup.md)
+    - [Troubleshooting](user-manual/edgar/troubleshooting.md)
   - [CLEO](user-manual/cleo/index.md)
     - [Setup](user-manual/cleo/setup.md)
     - [Commands](user-manual/cleo/commands.md)
