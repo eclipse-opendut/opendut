@@ -18,11 +18,10 @@ mod components;
 
 #[component(transparent)]
 pub fn ClusterConfigurator() -> impl IntoView {
-
     let globals = use_app_globals();
     let params = use_params_map();
 
-    let cluster_id = Signal::derive(move || params.with(|params| {
+    let cluster_id = Memo::new(move |_| params.with(|params| {
         params.get("id")
             .and_then(|id| ClusterId::try_from(id.as_str()).ok())
     }).unwrap_or_else(ClusterId::random));
@@ -135,19 +134,19 @@ fn LoadedClusterConfigurator(
                 }
             }
         >
-                <div class="tabs">
-                    <ul>
-                        <li class=("is-active", move || TabIdentifier::General == active_tab.get())>
-                            <a href={ TabIdentifier::General.as_str() }>General</a>
-                        </li>
-                        <li class=("is-active", move || TabIdentifier::Devices == active_tab.get())>
-                            <a href={ TabIdentifier::Devices.as_str() }>Devices</a>
-                        </li>
-                        <li class=("is-active", move || TabIdentifier::Leader == active_tab.get())>
-                            <a href={ TabIdentifier::Leader.as_str() }>Leader</a>
-                        </li>
-                    </ul>
-                </div>
+            <div class="tabs">
+                <ul>
+                    <li class=("is-active", move || TabIdentifier::General == active_tab.get())>
+                        <a href={ TabIdentifier::General.as_str() }>General</a>
+                    </li>
+                    <li class=("is-active", move || TabIdentifier::Devices == active_tab.get())>
+                        <a href={ TabIdentifier::Devices.as_str() }>Devices</a>
+                    </li>
+                    <li class=("is-active", move || TabIdentifier::Leader == active_tab.get())>
+                        <a href={ TabIdentifier::Leader.as_str() }>Leader</a>
+                    </li>
+                </ul>
+            </div>
 
             <fieldset prop:disabled=move || { deployed_signal.get().0 }>
                 <div class="container">
