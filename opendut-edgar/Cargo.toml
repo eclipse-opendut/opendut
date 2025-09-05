@@ -26,9 +26,6 @@ fs-err = { workspace = true }
 futures = { workspace = true }
 indicatif = { workspace = true }
 indoc = { workspace = true }
-# ipnet = { workspace = true }
-netlink-packet-route = { workspace = true }
-netlink-packet-utils = { workspace = true }
 nix = { workspace = true, features = ["user", "fs"] }
 opentelemetry = { workspace = true }
 opentelemetry_sdk = { workspace = true }

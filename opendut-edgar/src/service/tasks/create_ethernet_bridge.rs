@@ -3,7 +3,7 @@ use crate::service::network_interface::manager::altname::OPENDUT_ALTERNATIVE_INT
 use crate::service::network_interface::manager::interface::NetlinkInterfaceKind;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use async_trait::async_trait;
-use netlink_packet_route::link::LinkFlag;
+use rtnetlink::packet_route::link::LinkFlags;
 use opendut_types::peer::configuration::parameter;
 use tracing::warn;
 
@@ -22,7 +22,7 @@ impl Task for CreateEthernetBridge {
         let interface = self.network_interface_manager.find_interface(&self.parameter.name).await?;
         match interface {
             Some(bridge) => {
-                let interface_is_up = bridge.link_flag.contains(&LinkFlag::Up);
+                let interface_is_up = bridge.link_flags.contains(LinkFlags::Up);
                 if NetlinkInterfaceKind::Bridge == bridge.kind && interface_is_up {
                     Ok(TaskStateFulfilled::Yes)
                 } else {

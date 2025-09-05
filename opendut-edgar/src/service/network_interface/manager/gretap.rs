@@ -1,17 +1,17 @@
 use std::mem::size_of;
 use std::net::Ipv4Addr;
 
-use netlink_packet_route::link::{InfoData, InfoKind, LinkAttribute, LinkInfo};
-use netlink_packet_utils::{Emitable, Parseable};
-use netlink_packet_utils::byteorder::{ByteOrder, NativeEndian, WriteBytesExt};
-use netlink_packet_utils::nla::NlaBuffer;
-use rtnetlink::LinkAddRequest;
+use rtnetlink::packet_route::link::{InfoData, InfoKind, LinkAttribute, LinkInfo};
+use rtnetlink::packet_utils::{Emitable, Parseable};
+use rtnetlink::packet_utils::byteorder::{ByteOrder, NativeEndian, WriteBytesExt};
+use rtnetlink::packet_utils::nla::NlaBuffer;
+use rtnetlink::LinkMessageBuilder;
 
 pub trait Gretap {
-    fn gretap_v4(self, name: impl Into<String>, local_ip: &Ipv4Addr, remote_ip: &Ipv4Addr) -> Self;
+    fn gretap_v4(self, local_ip: &Ipv4Addr, remote_ip: &Ipv4Addr) -> Self;
 }
-impl Gretap for LinkAddRequest {
-    fn gretap_v4(mut self, name: impl Into<String>, local_ip: &Ipv4Addr, remote_ip: &Ipv4Addr) -> Self {
+impl<T> Gretap for LinkMessageBuilder<T> {
+    fn gretap_v4(self, local_ip: &Ipv4Addr, remote_ip: &Ipv4Addr) -> Self {
 
         // Byte-values extracted from WireShark via nlmon-interface
         // and command `ip link add name <NAME> type gretap local <LOCAL_IP> remote <REMOTE_IP>`.
@@ -37,18 +37,16 @@ impl Gretap for LinkAddRequest {
             let mut buffer = vec![0u8; attribute.buffer_len()];
             attribute.emit(&mut buffer);
             let buffer = NlaBuffer::new(&buffer);
-            netlink_packet_route::link::InfoGreTap::parse(&buffer)
+            rtnetlink::packet_route::link::InfoGreTap::parse(&buffer)
                 .expect("GRE attribute should be parseable from constant") //if not, this is a bug in how we specify the attribute
         });
 
-        self.message_mut().attributes.extend(vec![
-            LinkAttribute::IfName(name.into()),
+        self.append_extra_attribute(
             LinkAttribute::LinkInfo(vec![
                 LinkInfo::Kind(InfoKind::GreTap),
                 LinkInfo::Data(InfoData::GreTap(attributes.to_vec())),
             ]),
-        ]);
-        self
+        )
     }
 }
 
@@ -81,7 +79,7 @@ pub(crate) enum InfoGreTap { // https://elixir.bootlin.com/linux/v6.5.3/source/i
 	ErspanHwid,
 	Max,
 }
-impl netlink_packet_utils::nla::Nla for InfoGreTap {
+impl rtnetlink::packet_utils::nla::Nla for InfoGreTap {
     fn value_len(&self) -> usize {
         match self {
             Self::Unspec => unimplemented!(),
@@ -178,7 +176,7 @@ impl netlink_packet_utils::nla::Nla for InfoGreTap {
 #[cfg(test)]
 mod tests {
     use std::net::Ipv4Addr;
-    use netlink_packet_utils::nla::{DefaultNla, Nla};
+    use rtnetlink::packet_utils::nla::{DefaultNla, Nla};
 
     #[test]
     fn test_nla_conversion() {

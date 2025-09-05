@@ -1,4 +1,5 @@
 use futures::TryStreamExt;
+use rtnetlink::{LinkBridge, LinkMessageBuilder};
 use tracing::warn;
 use opendut_types::util::net::NetworkInterfaceName;
 use crate::service::network_interface::manager::interface::Interface;
@@ -35,8 +36,12 @@ impl NetworkInterfaceManager {
     pub async fn join_interface_to_bridge(&self, interface: &Interface, bridge: &Interface) -> Result<(), Error> {
         self.handle
             .link()
-            .set(interface.index)
-            .controller(bridge.index)
+            .set(
+                LinkMessageBuilder::<LinkBridge>::default()
+                    .index(interface.index)
+                    .controller(bridge.index)
+                    .build()
+            )
             .execute().await
             .map_err(|cause| Error::JoinInterfaceToBridge {
                 interface: Box::new(interface.clone()),
@@ -49,14 +54,16 @@ impl NetworkInterfaceManager {
     pub async fn remove_interface_from_bridge(&self, interface: &Interface) -> Result<(), Error> {
         self.handle
             .link()
-            .set(interface.index)
-            .nocontroller()
+            .set(
+                LinkMessageBuilder::<LinkBridge>::default()
+                    .index(interface.index)
+                    .nocontroller()
+                    .build()
+            )
             .execute().await
             .map_err(|cause| Error::ModificationFailure { name: interface.name.clone(), cause: format!("Failed to remove controller from interface. {cause}") })?;
         Ok(())
     }
-
-
 }
 
 #[cfg(test)]

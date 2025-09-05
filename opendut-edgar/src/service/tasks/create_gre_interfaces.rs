@@ -2,7 +2,7 @@ use crate::common::task::{Success, Task, TaskAbsent, TaskStateFulfilled};
 use crate::service::network_interface::manager::interface::Interface;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use async_trait::async_trait;
-use netlink_packet_route::link::LinkFlag;
+use rtnetlink::packet_route::link::LinkFlags;
 use opendut_types::peer::configuration::parameter;
 
 pub struct ManageGreInterface {
@@ -28,7 +28,7 @@ impl Task for ManageGreInterface {
         let name = self.find_interface().await?;
         match name {
             Some(interface) => {
-                let interface_is_up = interface.link_flag.contains(&LinkFlag::Up);
+                let interface_is_up = interface.link_flags.contains(LinkFlags::Up);
                 if interface_is_up {
                     Ok(TaskStateFulfilled::Yes)
                 } else {

@@ -65,8 +65,10 @@ impl NetworkInterfaceManager {
     pub async fn create_empty_bridge(&self, name: &NetworkInterfaceName) -> Result<Interface, Error> {
         self.handle
             .link()
-            .add()
-            .bridge(name.name())
+            .add(
+                rtnetlink::LinkBridge::new(&name.name())
+                    .build()
+            )
             .execute().await
             .map_err(|cause| Error::BridgeCreation { name: name.clone(), cause: cause.into() })?;
 
@@ -79,8 +81,11 @@ impl NetworkInterfaceManager {
     pub async fn create_gretap_v4_interface(&self, name: &NetworkInterfaceName, local_ip: &Ipv4Addr, remote_ip: &Ipv4Addr) -> Result<Interface, Error> {
         self.handle
             .link()
-            .add()
-            .gretap_v4(name.name(), local_ip, remote_ip)
+            .add(
+                rtnetlink::LinkUnspec::new_with_name(&name.name())
+                    .gretap_v4(local_ip, remote_ip)
+                    .build()
+            )
             .execute().await
             .map_err(|cause| Error::GretapCreation { name: name.clone(), cause: cause.into() })?;
         let interface = self.try_find_interface(name).await?;
@@ -91,8 +96,11 @@ impl NetworkInterfaceManager {
         debug!("Set interface {} up.", interface.name);
         self.handle
             .link()
-            .set(interface.index)
-            .up()
+            .set(
+                rtnetlink::LinkUnspec::new_with_index(interface.index)
+                    .up()
+                    .build()
+            )
             .execute().await
             .map_err(|cause| Error::SetInterfaceUp { interface: Box::new(interface.clone()), cause: cause.into() })?;
         Ok(())
@@ -102,8 +110,11 @@ impl NetworkInterfaceManager {
         debug!("Set interface {} down.", interface.name);
         self.handle
             .link()
-            .set(interface.index)
-            .down()
+            .set(
+                rtnetlink::LinkUnspec::new_with_index(interface.index)
+                    .down()
+                    .build()
+            )
             .execute().await
             .map_err(|cause| Error::SetInterfaceDown { interface: Box::new(interface.clone()), cause: cause.into() })?;
         Ok(())
@@ -164,8 +175,11 @@ impl NetworkInterfaceManager {
     pub async fn create_vcan_interface(&self, name: &NetworkInterfaceName) -> Result<Interface, Error> {
         self.handle
             .link()
-            .add()
-            .create_virtual_can_request(name.name())
+            .add(
+                rtnetlink::LinkUnspec::new_with_name(&name.name())
+                    .vcan()
+                    .build()
+            )
             .execute()
             .await
             .map_err(|error| Error::VCanInterfaceCreation { name: name.clone(), cause: error.to_string() })?;
@@ -177,8 +191,10 @@ impl NetworkInterfaceManager {
     pub async fn create_dummy_ipv4_interface(&self, name: &NetworkInterfaceName) -> Result<Interface, Error> {
         self.handle
             .link()
-            .add()
-            .dummy(name.name())
+            .add(
+                rtnetlink::LinkDummy::new(&name.name())
+                    .build()
+            )
             .execute()
             .await
             .map_err(|error| Error::ModificationFailure { name: name.clone(), cause: error.to_string() })?;
@@ -186,8 +202,6 @@ impl NetworkInterfaceManager {
         let interface = self.try_find_interface(name).await?;
         Ok(interface)
     }
-    
-
 }
 
 #[derive(Debug, thiserror::Error)]

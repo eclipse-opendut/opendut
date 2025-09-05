@@ -1,4 +1,4 @@
-use netlink_packet_route::link::{InfoKind, LinkAttribute, LinkInfo};
+use rtnetlink::packet_route::link::{InfoKind, LinkAttribute, LinkInfo};
 use rtnetlink::LinkGetRequest;
 
 pub trait ShowJoinedInterfaces {

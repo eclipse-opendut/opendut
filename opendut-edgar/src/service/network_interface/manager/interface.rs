@@ -1,6 +1,6 @@
 use crate::service::network_interface::manager::vcan::VIRTUAL_CAN_INTERFACE_TYPE;
-use netlink_packet_route::link::{InfoData, InfoGreTap, InfoKind, LinkAttribute, LinkFlag, LinkInfo, LinkMessage, Prop};
-use netlink_packet_utils::nla::Nla;
+use rtnetlink::packet_route::link::{InfoData, InfoGreTap, InfoKind, LinkAttribute, LinkFlags, LinkInfo, LinkMessage, Prop};
+use rtnetlink::packet_utils::nla::Nla;
 use opendut_types::util::net::{NetworkInterfaceName, NetworkInterfaceNameError};
 use std::fmt::Formatter;
 use std::net::Ipv4Addr;
@@ -18,7 +18,7 @@ pub struct Interface {
     pub address: Option<Ipv4Addr>,
     pub alternative_names: Vec<String>,
     pub alias: Option<String>,
-    pub link_flag: Vec<LinkFlag>,
+    pub link_flags: LinkFlags,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -125,7 +125,7 @@ impl TryFrom<LinkMessage> for Interface {
             address,
             alternative_names,
             alias,
-            link_flag,
+            link_flags: link_flag,
         })
     }
 }
