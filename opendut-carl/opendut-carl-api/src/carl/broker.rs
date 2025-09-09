@@ -2,7 +2,7 @@ use std::collections::HashMap;
 #[cfg(feature = "client")]
 pub use client::*;
 
-use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration, PeerConfigurationState};
+use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration, PeerConfigurationState};
 
 pub mod error {
     #[derive(thiserror::Error, Debug)]
@@ -67,7 +67,7 @@ mod client {
     use tonic::metadata::MetadataValue;
 
     use crate::carl::broker::{error, stream_header, DownstreamMessage};
-    use opendut_types::peer::PeerId;
+    use opendut_model::peer::PeerId;
     use opendut_util_core::future::ExplicitSendFutureWrapper;
     use tonic::codegen::tokio_stream::StreamExt;
     use crate::carl::{GrpcDownstream, GrpcUpstream};

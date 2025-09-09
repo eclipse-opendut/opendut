@@ -7,7 +7,7 @@ use serde::Serialize;
 use shadow_rs::formatcp;
 use url::Url;
 use opendut_auth::confidential::config::ConfidentialClientConfigData;
-use opendut_types::lea::{LeaConfig, LeaIdentityProviderConfig};
+use opendut_model::lea::{LeaConfig, LeaIdentityProviderConfig};
 
 #[derive(Clone)]
 pub struct HttpState {

@@ -1,6 +1,6 @@
 use leptos::prelude::*;
-use opendut_types::peer::executor::container::Engine;
-use opendut_types::peer::executor::ExecutorId;
+use opendut_model::peer::executor::container::Engine;
+use opendut_model::peer::executor::ExecutorId;
 use crate::components::UserInputValue;
 use crate::peers::configurator::tabs::executor::executor_panel::ExecutorPanel;
 use crate::peers::configurator::types::{EMPTY_CONTAINER_IMAGE_ERROR_MESSAGE, UserPeerConfiguration, UserPeerExecutor, UserPeerExecutorKind};

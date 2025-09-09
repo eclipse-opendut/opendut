@@ -1,10 +1,10 @@
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 pub use client::*;
-use opendut_types::cluster::ClusterId;
-use opendut_types::peer::{PeerDisplay, PeerId, PeerName};
-use opendut_types::peer::state::PeerState;
-use opendut_types::ShortName;
-use opendut_types::topology::DeviceId;
+use opendut_model::cluster::ClusterId;
+use opendut_model::peer::{PeerDisplay, PeerId, PeerName};
+use opendut_model::peer::state::PeerState;
+use opendut_model::ShortName;
+use opendut_model::topology::DeviceId;
 
 #[derive(thiserror::Error, Debug)]
 pub enum StorePeerDescriptorError {
@@ -122,11 +122,11 @@ mod client {
     use std::collections::HashMap;
     use tonic::codegen::{Body, Bytes, http, InterceptedService, StdError};
     use tracing::error;
-    use opendut_types::cleo::CleoSetup;
+    use opendut_model::cleo::CleoSetup;
 
-    use opendut_types::peer::{PeerDescriptor, PeerId, PeerSetup};
-    use opendut_types::peer::state::PeerState;
-    use opendut_types::topology::DeviceDescriptor;
+    use opendut_model::peer::{PeerDescriptor, PeerId, PeerSetup};
+    use opendut_model::peer::state::PeerState;
+    use opendut_model::topology::DeviceDescriptor;
 
     use crate::carl::{ClientError, extract};
     use crate::carl::peer::{DeletePeerDescriptorError, GetPeerDescriptorError, GetPeerStateError, ListDevicesError, ListPeerDescriptorsError, ListPeerStatesError, StorePeerDescriptorError};

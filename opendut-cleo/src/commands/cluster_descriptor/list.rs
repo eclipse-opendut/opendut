@@ -1,7 +1,7 @@
 use cli_table::{print_stdout, Table, WithTitle};
 
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::cluster::{ClusterId, ClusterName};
+use opendut_model::cluster::{ClusterId, ClusterName};
 
 use crate::ListOutputFormat;
 

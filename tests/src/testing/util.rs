@@ -1,10 +1,10 @@
 use crate::testing::peer_configuration_listener::PeerConfigurationReceiver;
-use opendut_types::peer::PeerId;
-use opendut_types::util::Port;
+use opendut_model::peer::PeerId;
+use opendut_model::util::Port;
 use opendut_util::settings::LoadedConfig;
 use tokio::sync::mpsc;
 use tracing::info;
-use opendut_types::peer::configuration::PeerConfigurationState;
+use opendut_model::peer::configuration::PeerConfigurationState;
 
 pub fn spawn_carl() -> anyhow::Result<Port> {
     let carl_port = select_free_port();

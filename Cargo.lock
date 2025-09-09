@@ -3643,7 +3643,7 @@ dependencies = [
  "leptos",
  "leptos_oidc",
  "oauth2",
- "opendut-types",
+ "opendut-model",
  "opendut-util-core",
  "openidconnect",
  "pem",
@@ -3669,7 +3669,7 @@ dependencies = [
  "http",
  "oauth2",
  "opendut-auth",
- "opendut-types",
+ "opendut-model",
  "opendut-util-core",
  "openidconnect",
  "pem",
@@ -3706,7 +3706,7 @@ dependencies = [
  "opendut-auth",
  "opendut-auth-tests",
  "opendut-carl-api",
- "opendut-types",
+ "opendut-model",
  "opendut-util",
  "opendut-vpn",
  "opendut-vpn-netbird",
@@ -3756,7 +3756,7 @@ dependencies = [
  "jsonwebtoken",
  "leptos",
  "opendut-auth",
- "opendut-types",
+ "opendut-model",
  "opendut-util-core",
  "prost",
  "protobuf-src",
@@ -3813,7 +3813,7 @@ dependencies = [
  "googletest",
  "indoc",
  "opendut-carl-api",
- "opendut-types",
+ "opendut-model",
  "opendut-util",
  "serde",
  "serde_json",
@@ -3853,8 +3853,8 @@ dependencies = [
  "opendut-carl-api",
  "opendut-edgar-kernel-modules",
  "opendut-edgar-plugin-api",
+ "opendut-model",
  "opendut-netbird-client-api",
- "opendut-types",
  "opendut-util",
  "opentelemetry",
  "opentelemetry_sdk",
@@ -3917,7 +3917,7 @@ dependencies = [
  "opendut-carl",
  "opendut-carl-api",
  "opendut-edgar",
- "opendut-types",
+ "opendut-model",
  "opendut-util",
  "test-log",
  "tokio",
@@ -3937,7 +3937,7 @@ dependencies = [
  "opendut-auth",
  "opendut-carl-api",
  "opendut-lea-components",
- "opendut-types",
+ "opendut-model",
  "serde",
  "shadow-rs",
  "strum",
@@ -3957,9 +3957,37 @@ dependencies = [
  "chrono",
  "leptos",
  "leptos-use",
- "opendut-types",
+ "opendut-model",
  "slotmap",
  "tracing",
+]
+
+[[package]]
+name = "opendut-model"
+version = "0.8.0-alpha"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "brotli",
+ "glob",
+ "googletest",
+ "indoc",
+ "pem",
+ "prost",
+ "prost-build",
+ "prost-types",
+ "protobuf-src",
+ "rstest",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "sha1",
+ "strum",
+ "strum_macros 0.25.3",
+ "test-log",
+ "thiserror 2.0.16",
+ "url",
+ "uuid",
 ]
 
 [[package]]
@@ -3968,7 +3996,7 @@ version = "0.8.0-alpha"
 dependencies = [
  "cargo_metadata 0.22.0",
  "hyper-util",
- "opendut-types",
+ "opendut-model",
  "opendut-util",
  "prost",
  "prost-types",
@@ -4000,34 +4028,6 @@ dependencies = [
  "shadow-rs",
  "strum",
  "thiserror 2.0.16",
-]
-
-[[package]]
-name = "opendut-types"
-version = "0.8.0-alpha"
-dependencies = [
- "anyhow",
- "base64 0.22.1",
- "brotli",
- "glob",
- "googletest",
- "indoc",
- "pem",
- "prost",
- "prost-build",
- "prost-types",
- "protobuf-src",
- "rstest",
- "serde",
- "serde_json",
- "serde_yaml",
- "sha1",
- "strum",
- "strum_macros 0.25.3",
- "test-log",
- "thiserror 2.0.16",
- "url",
- "uuid",
 ]
 
 [[package]]
@@ -4071,7 +4071,7 @@ name = "opendut-vpn"
 version = "0.8.0-alpha"
 dependencies = [
  "async-trait",
- "opendut-types",
+ "opendut-model",
  "thiserror 2.0.16",
 ]
 
@@ -4084,7 +4084,7 @@ dependencies = [
  "googletest",
  "http",
  "mockall",
- "opendut-types",
+ "opendut-model",
  "opendut-util",
  "opendut-vpn",
  "reqwest",

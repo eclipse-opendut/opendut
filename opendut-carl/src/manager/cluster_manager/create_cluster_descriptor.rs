@@ -1,4 +1,4 @@
-use opendut_types::cluster::{ClusterDescriptor, ClusterId, ClusterName};
+use opendut_model::cluster::{ClusterDescriptor, ClusterId, ClusterName};
 use tracing::{debug, info};
 use crate::resource::api::resources::Resources;
 use crate::resource::persistence::error::PersistenceError;

@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 
 use leptos_router::hooks::use_navigate;
-use opendut_types::peer::PeerId;
+use opendut_model::peer::PeerId;
 
 use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
 use crate::routing::{navigate_to, WellKnownRoutes};

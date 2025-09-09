@@ -1,8 +1,8 @@
-use opendut_types::peer::state::PeerState;
-use opendut_types::peer::{PeerId, PeerName};
-use opendut_types::proto::{ConversionError, ConversionErrorBuilder, ConversionResult};
-use opendut_types::topology::DeviceId;
-use opendut_types::{conversion, proto};
+use opendut_model::peer::state::PeerState;
+use opendut_model::peer::{PeerId, PeerName};
+use opendut_model::proto::{ConversionError, ConversionErrorBuilder, ConversionResult};
+use opendut_model::topology::DeviceId;
+use opendut_model::{conversion, proto};
 
 use crate::carl::peer::{DeletePeerDescriptorError, GetPeerDescriptorError, GetPeerStateError, ListPeerDescriptorsError, ListPeerStatesError, StorePeerDescriptorError};
 

@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 
-use opendut_types::cluster::{IllegalClusterName, ClusterName};
+use opendut_model::cluster::{IllegalClusterName, ClusterName};
 
 use crate::components::{UserInput, UserInputValue};
 use crate::clusters::configurator::types::UserClusterDescriptor;

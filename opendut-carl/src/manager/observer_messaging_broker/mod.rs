@@ -5,7 +5,7 @@ use crate::manager::observer_messaging_broker::observe_peers_online::ObservePeer
 use crate::resource::manager::ResourceManagerRef;
 use crate::resource::persistence::error::PersistenceError;
 use opendut_carl_api::carl::observer::{WaitForPeersOnlineResponseStatus};
-use opendut_types::peer::PeerId;
+use opendut_model::peer::PeerId;
 use std::collections::HashSet;
 use std::sync::Arc;
 use std::time::Duration;

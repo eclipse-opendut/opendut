@@ -1,11 +1,11 @@
-use opendut_types::cluster::{ClusterDescriptor, ClusterId, ClusterName};
+use opendut_model::cluster::{ClusterDescriptor, ClusterId, ClusterName};
 
 use crate::clusters::configurator::components::{DeviceSelection, LeaderSelection};
 use crate::components::UserInputValue;
 
 #[derive(thiserror::Error, Clone, Debug)]
 #[allow(clippy::enum_variant_names)] // "all variants have the same prefix: `Invalid`"
-pub enum ClusterMisconfiguration { // TODO: Maybe replace with IllegalClusterDescriptor from opendut-types.
+pub enum ClusterMisconfiguration { // TODO: Maybe replace with IllegalClusterDescriptor from opendut-model.
     #[error("Invalid cluster name")]
     InvalidClusterName,
 

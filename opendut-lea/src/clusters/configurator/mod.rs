@@ -1,8 +1,8 @@
 use leptos::prelude::*;
 use leptos_router::hooks::use_params_map;
 use crate::components::UserInputValue;
-use opendut_types::cluster::ClusterId;
-use opendut_types::peer::PeerDescriptor;
+use opendut_model::cluster::ClusterId;
+use opendut_model::peer::PeerDescriptor;
 
 use crate::app::use_app_globals;
 use crate::clusters::configurator::components::{DeviceSelection, DeviceSelector, LeaderSelection};

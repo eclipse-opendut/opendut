@@ -1,4 +1,4 @@
-use opendut_types::cluster::*;
+use opendut_model::cluster::*;
 
 use super::*;
 

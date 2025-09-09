@@ -9,7 +9,7 @@ use tracing::{error, info};
 use url::Url;
 use opendut_auth::public::Authentication;
 use opendut_carl_api::carl::wasm::CarlClient;
-use opendut_types::lea::LeaConfig;
+use opendut_model::lea::LeaConfig;
 use crate::components::Toaster;
 use crate::components::AppGlobalsResource;
 use crate::nav::Navbar;

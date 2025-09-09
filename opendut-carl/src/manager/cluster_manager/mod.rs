@@ -7,12 +7,12 @@ use futures::future::join_all;
 use futures::FutureExt;
 use tracing::{debug, error, trace, warn};
 
-use opendut_types::cluster::{ClusterAssignment, ClusterDescriptor, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
-use opendut_types::peer::state::PeerConnectionState;
-use opendut_types::peer::{PeerDescriptor, PeerId};
-use opendut_types::topology::{DeviceDescriptor, DeviceId};
-use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
-use opendut_types::util::Port;
+use opendut_model::cluster::{ClusterAssignment, ClusterDescriptor, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
+use opendut_model::peer::state::PeerConnectionState;
+use opendut_model::peer::{PeerDescriptor, PeerId};
+use opendut_model::topology::{DeviceDescriptor, DeviceId};
+use opendut_model::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
+use opendut_model::util::Port;
 
 use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
 use crate::resource::manager::ResourceManagerRef;
@@ -437,7 +437,7 @@ enum DetermineMemberInterfaceMappingError {
 
 pub mod error {
     use super::*;
-    use opendut_types::cluster::ClusterDisplay;
+    use opendut_model::cluster::ClusterDisplay;
 
     #[derive(thiserror::Error, Debug)]
     #[error("ClusterDescriptor <{cluster_id}> could not be retrieved")]
@@ -525,11 +525,11 @@ mod test {
     use rstest::{fixture, rstest};
     use tokio::sync::mpsc;
 
-    use opendut_types::cluster::ClusterName;
-    use opendut_types::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorDescriptor, ExecutorDescriptors, ExecutorId, ExecutorKind};
-    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
-    use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
-    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceId, NetworkInterfaceName};
+    use opendut_model::cluster::ClusterName;
+    use opendut_model::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorDescriptor, ExecutorDescriptors, ExecutorId, ExecutorKind};
+    use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
+    use opendut_model::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
+    use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceId, NetworkInterfaceName};
 
     use crate::manager::peer_messaging_broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
     use crate::resource::manager::ResourceManager;
@@ -541,7 +541,7 @@ mod test {
         use super::*;
         use crate::manager::peer_manager::StorePeerDescriptorParams;
         use opendut_carl_api::carl::broker::{stream_header, DownstreamMessage, DownstreamMessagePayload};
-        use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
+        use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
 
         #[rstest]
         #[tokio::test]

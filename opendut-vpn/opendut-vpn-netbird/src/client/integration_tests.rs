@@ -8,8 +8,8 @@ use std::time::Duration;
 use reqwest::Url;
 use uuid::uuid;
 
-use opendut_types::cluster::ClusterId;
-use opendut_types::peer::PeerId;
+use opendut_model::cluster::ClusterId;
+use opendut_model::peer::PeerId;
 use opendut_util::project;
 use opendut_vpn::VpnManagementClient;
 

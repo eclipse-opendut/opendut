@@ -6,7 +6,7 @@ use reqwest::{Body, Certificate, Request, Response, Url};
 use serde::Serialize;
 use tracing::error;
 
-use opendut_types::peer::PeerId;
+use opendut_model::peer::PeerId;
 
 use crate::{netbird, routes};
 use crate::client::request_handler::{DefaultRequestHandler, RequestHandler, RequestHandlerConfig};

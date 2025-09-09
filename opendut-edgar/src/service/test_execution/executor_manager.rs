@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use opendut_types::peer::{self, executor::{ExecutorDescriptor, ExecutorKind}};
+use opendut_model::peer::{self, executor::{ExecutorDescriptor, ExecutorKind}};
 use tokio::sync::{watch::{self, Sender}, Mutex};
 use tracing::{debug, warn};
-use opendut_types::peer::configuration::{parameter, ParameterField};
+use opendut_model::peer::configuration::{parameter, ParameterField};
 use crate::service::test_execution::container_manager::{ContainerManager, ContainerConfiguration};
 
 pub type ExecutorManagerRef = Arc<Mutex<ExecutorManager>>;

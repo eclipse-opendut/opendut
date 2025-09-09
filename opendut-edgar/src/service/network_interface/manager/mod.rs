@@ -10,7 +10,7 @@ use tracing::{debug, error, warn};
 use crate::service::network_interface::manager::vcan::VCan;
 use gretap::Gretap;
 use interface::Interface;
-use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
+use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
 
 mod gretap;
 mod list_joined_interfaces;

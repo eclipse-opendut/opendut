@@ -1,10 +1,10 @@
 use leptos::prelude::*;
-use opendut_types::cluster::ClusterDescriptor;
-use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorId};
-use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
-use opendut_types::peer::executor::{container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine}, ExecutorKind, ExecutorDescriptors, ResultsUrl};
-use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
-use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
+use opendut_model::cluster::ClusterDescriptor;
+use opendut_model::peer::executor::{ExecutorDescriptor, ExecutorId};
+use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
+use opendut_model::peer::executor::{container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine}, ExecutorKind, ExecutorDescriptors, ResultsUrl};
+use opendut_model::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
+use opendut_model::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
 use crate::components::UserInputValue;
 use crate::components::UserNetworkInterfaceConfiguration;

@@ -1,8 +1,8 @@
 use crate::{CreateOutputFormat, DescribeOutputFormat};
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::peer::PeerId;
-use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag};
-use opendut_types::util::net::NetworkInterfaceName;
+use opendut_model::peer::PeerId;
+use opendut_model::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag};
+use opendut_model::util::net::NetworkInterfaceName;
 
 /// Create a device
 #[derive(clap::Parser)]

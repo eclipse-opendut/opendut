@@ -1,5 +1,5 @@
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::peer::PeerId;
+use opendut_model::peer::PeerId;
 
 /// Generate a Setup-String to setup a peer
 #[derive(clap::Parser)]

@@ -7,8 +7,8 @@ use anyhow::{anyhow, Context};
 use tracing::{debug, error, info};
 use url::Url;
 
-use opendut_types::peer::PeerId;
-use opendut_types::util::net::AuthConfig;
+use opendut_model::peer::PeerId;
+use opendut_model::util::net::AuthConfig;
 
 use crate::common::settings;
 use crate::setup::constants;
@@ -185,7 +185,7 @@ mod tests {
     use predicates::prelude::predicate;
     use uuid::uuid;
     use googletest::prelude::*;
-    use opendut_types::util::net::{ClientId, ClientSecret, OAuthScope};
+    use opendut_model::util::net::{ClientId, ClientSecret, OAuthScope};
 
     use super::*;
 

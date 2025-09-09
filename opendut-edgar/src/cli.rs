@@ -11,9 +11,9 @@ use uuid::Uuid;
 
 pub use dry_run::DryRun;
 use crate::setup;
-use opendut_types::peer::PeerId;
-use opendut_types::util::net::NetworkInterfaceName;
-use opendut_types::vpn::netbird::SetupKey;
+use opendut_model::peer::PeerId;
+use opendut_model::util::net::NetworkInterfaceName;
+use opendut_model::vpn::netbird::SetupKey;
 
 
 #[derive(Parser)]

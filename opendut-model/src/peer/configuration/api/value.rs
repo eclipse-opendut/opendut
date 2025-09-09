@@ -10,8 +10,8 @@ pub trait ParameterValue: Any + Clone + PartialEq + Eq + Hash + Sized {
     /// ```
     /// # use std::hash::{DefaultHasher, Hash, Hasher};
     /// # use uuid::Uuid;
-    /// # use opendut_types::peer::configuration::{Parameter, ParameterField, ParameterId, ParameterValue, PeerConfiguration};
-    /// # use opendut_types::OPENDUT_UUID_NAMESPACE;
+    /// # use opendut_model::peer::configuration::{Parameter, ParameterField, ParameterId, ParameterValue, PeerConfiguration};
+    /// # use opendut_model::OPENDUT_UUID_NAMESPACE;
     ///
     /// # #[derive(Clone, PartialEq, Eq, Hash)]
     /// # struct Something;

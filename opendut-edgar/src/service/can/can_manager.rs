@@ -4,14 +4,14 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use anyhow::bail;
-use opendut_types::cluster::PeerClusterAssignment;
-use opendut_types::util::Port;
+use opendut_model::cluster::PeerClusterAssignment;
+use opendut_model::util::Port;
 use regex::Regex;
 
 use tokio::process::Command;
 use tracing::{debug, error, info};
-use opendut_types::peer::PeerId;
-use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
+use opendut_model::peer::PeerId;
+use opendut_model::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
 
 use crate::service::can::cannelloni_manager::CannelloniManager;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;

@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use opendut_types::proto::util::VersionInfo;
+use opendut_model::proto::util::VersionInfo;
 use crate::routing;
 
 #[component]

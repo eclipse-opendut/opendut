@@ -1,10 +1,10 @@
 use std::net::{IpAddr, Ipv4Addr};
 use tracing::debug;
-use opendut_types::cluster::ClusterAssignment;
-use opendut_types::peer::configuration::{parameter, PeerConfiguration};
-use opendut_types::peer::configuration::parameter::{GreInterfaceConfig, InterfaceJoinConfig};
-use opendut_types::peer::{PeerDescriptor, PeerId};
-use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor};
+use opendut_model::cluster::ClusterAssignment;
+use opendut_model::peer::configuration::{parameter, PeerConfiguration};
+use opendut_model::peer::configuration::parameter::{GreInterfaceConfig, InterfaceJoinConfig};
+use opendut_model::peer::{PeerDescriptor, PeerId};
+use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor};
 use crate::manager::peer_manager::{AssignClusterError, AssignClusterOptions};
 
 

@@ -3,8 +3,8 @@ use std::ops::Not;
 
 use opendut_carl_api::carl::peer::GetPeerDescriptorError;
 use opendut_carl_api::carl::{CarlClient, ClientError};
-use opendut_types::cluster::ClusterId;
-use opendut_types::peer::PeerId;
+use opendut_model::cluster::ClusterId;
+use opendut_model::peer::PeerId;
 
 /// Delete a peer
 #[derive(clap::Parser)]

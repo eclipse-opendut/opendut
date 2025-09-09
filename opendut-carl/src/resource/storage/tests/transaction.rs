@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use crate::resource::storage::tests::peer_descriptor::peer_descriptor;
 use crate::resource::storage::ResourcesStorageApi;
 use googletest::prelude::*;
-use opendut_types::peer::PeerDescriptor;
+use opendut_model::peer::PeerDescriptor;
 use crate::resource::manager::ResourceManager;
 
 #[tokio::test]

@@ -6,7 +6,7 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-opendut-types = { workspace = true }
+opendut-model = { workspace = true }
 opendut-vpn = { workspace = true }
 opendut-util = { workspace = true, features = ["serde"] }
 

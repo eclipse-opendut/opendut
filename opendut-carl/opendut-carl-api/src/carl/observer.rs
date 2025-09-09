@@ -2,8 +2,8 @@ use std::collections::{HashMap, HashSet};
 use std::time::Duration;
 #[cfg(feature = "client")]
 pub use client::*;
-use opendut_types::peer::PeerId;
-use opendut_types::peer::state::PeerConnectionState;
+use opendut_model::peer::PeerId;
+use opendut_model::peer::state::PeerConnectionState;
 
 pub mod error {
     #[derive(thiserror::Error, Debug)]
@@ -48,7 +48,7 @@ mod client {
     use std::time::Duration;
     use crate::carl::observer::{error, WaitForPeersOnlineResponse};
     use crate::proto::services::observer_messaging_broker::observer_messaging_broker_client::ObserverMessagingBrokerClient;
-    use opendut_types::peer::PeerId;
+    use opendut_model::peer::PeerId;
     use tonic::codegen::{Body, Bytes, InterceptedService, StdError};
     use tonic::codegen::tokio_stream::StreamExt;
     use crate::carl::GrpcDownstream;

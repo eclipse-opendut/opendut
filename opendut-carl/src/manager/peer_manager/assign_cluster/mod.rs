@@ -1,10 +1,10 @@
 use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
 use crate::resource::persistence::error::PersistenceError;
 use crate::resource::storage::ResourcesStorageApi;
-use opendut_types::cluster::ClusterAssignment;
-use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
-use opendut_types::peer::{PeerDescriptor, PeerId};
-use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName, NetworkInterfaceNameError};
+use opendut_model::cluster::ClusterAssignment;
+use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
+use opendut_model::peer::{PeerDescriptor, PeerId};
+use opendut_model::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName, NetworkInterfaceNameError};
 use tracing::debug;
 use opendut_carl_api::carl::broker::{ApplyPeerConfiguration, DownstreamMessagePayload};
 use crate::resource::api::resources::Resources;
@@ -98,12 +98,12 @@ mod tests {
     use crate::manager::peer_messaging_broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
     use crate::resource::manager::ResourceManager;
     use googletest::prelude::*;
-    use opendut_types::cluster::{ClusterAssignment, ClusterId, PeerClusterAssignment};
+    use opendut_model::cluster::{ClusterAssignment, ClusterId, PeerClusterAssignment};
     use std::net::{IpAddr, Ipv4Addr};
     use std::str::FromStr;
     use std::sync::Arc;
     use opendut_carl_api::carl::broker::stream_header;
-    use opendut_types::peer::configuration::{parameter, ParameterTarget};
+    use opendut_model::peer::configuration::{parameter, ParameterTarget};
     use crate::manager::peer_manager::tests::create_peer_descriptor;
     use crate::manager::testing::PeerFixture;
 
@@ -147,7 +147,7 @@ mod tests {
             assignments: HashMap::from_iter(vec![
                 (peer_id, PeerClusterAssignment {
                     vpn_address: IpAddr::V4(Ipv4Addr::from_str("192.168.1.1")?),
-                    can_server_port: opendut_types::util::Port(51234),
+                    can_server_port: opendut_model::util::Port(51234),
                 })
             ]),
         };

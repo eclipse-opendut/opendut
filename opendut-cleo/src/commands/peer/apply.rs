@@ -1,10 +1,10 @@
-use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
-use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorDescriptors, ExecutorId, ExecutorKind, ResultsUrl};
-use opendut_types::peer::executor::container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine};
-use opendut_types::specs::peer::{DeviceSpecificationV1, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDescriptorSpecificationV1, ExecutorSpecificationV1, SpecificationEngineKind, SpecificationExecutorKind};
-use opendut_types::specs::SpecificationMetadata;
-use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag, Topology};
-use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
+use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
+use opendut_model::peer::executor::{ExecutorDescriptor, ExecutorDescriptors, ExecutorId, ExecutorKind, ResultsUrl};
+use opendut_model::peer::executor::container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine};
+use opendut_model::specs::peer::{DeviceSpecificationV1, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDescriptorSpecificationV1, ExecutorSpecificationV1, SpecificationEngineKind, SpecificationExecutorKind};
+use opendut_model::specs::SpecificationMetadata;
+use opendut_model::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag, Topology};
+use opendut_model::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
 pub fn convert_document_to_peer_descriptor(specification_metadata: SpecificationMetadata, peer: PeerDescriptorSpecificationV1) -> crate::Result<PeerDescriptor> {
     let SpecificationMetadata { id, name } = specification_metadata;
@@ -188,12 +188,12 @@ fn convert_executor_specification_to_descriptor(specification: ExecutorSpecifica
 mod tests {
     use super::*;
     use googletest::prelude::*;
-    use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorId, ExecutorKind, ResultsUrl};
-    use opendut_types::peer::executor::container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine};
-    use opendut_types::peer::executor::container::ContainerName::Empty;
-    use opendut_types::specs::peer::{DeviceSpecificationV1, ExecutorConfigurationSpecification, NetworkInterfaceConfigurationSpecification, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, TopologySpecificationV1, ExecutorSpecificationV1, NetworkDescriptorSpecificationV1, SpecificationEngineKind, SpecificationExecutorKind, SpecificationEnvVariable};
-    use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag};
-    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
+    use opendut_model::peer::executor::{ExecutorDescriptor, ExecutorId, ExecutorKind, ResultsUrl};
+    use opendut_model::peer::executor::container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine};
+    use opendut_model::peer::executor::container::ContainerName::Empty;
+    use opendut_model::specs::peer::{DeviceSpecificationV1, ExecutorConfigurationSpecification, NetworkInterfaceConfigurationSpecification, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, TopologySpecificationV1, ExecutorSpecificationV1, NetworkDescriptorSpecificationV1, SpecificationEngineKind, SpecificationExecutorKind, SpecificationEnvVariable};
+    use opendut_model::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, DeviceTag};
+    use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
     #[test]
     fn should_convert_document_to_peer_descriptor() -> anyhow::Result<()> {

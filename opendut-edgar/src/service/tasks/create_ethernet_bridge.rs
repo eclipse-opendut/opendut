@@ -4,7 +4,7 @@ use crate::service::network_interface::manager::interface::NetlinkInterfaceKind;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use async_trait::async_trait;
 use rtnetlink::packet_route::link::LinkFlags;
-use opendut_types::peer::configuration::parameter;
+use opendut_model::peer::configuration::parameter;
 use tracing::warn;
 
 pub struct CreateEthernetBridge {
@@ -103,8 +103,8 @@ mod tests {
     use crate::service::network_metrics::manager::{NetworkMetricsManager, NetworkMetricsOptions};
     use crate::service::peer_configuration::NetworkInterfaceManagement;
     use crate::common::task::service_runner;
-    use opendut_types::peer::configuration::{parameter, ParameterTarget, PeerConfiguration};
-    use opendut_types::util::net::NetworkInterfaceName;
+    use opendut_model::peer::configuration::{parameter, ParameterTarget, PeerConfiguration};
+    use opendut_model::util::net::NetworkInterfaceName;
     use rand::Rng;
     use std::sync::Arc;
     use crate::service::tasks;

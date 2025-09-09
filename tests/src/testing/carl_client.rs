@@ -3,9 +3,9 @@ use crate::testing::util;
 use anyhow::anyhow;
 use backon::Retryable;
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::peer::state::PeerConnectionState;
-use opendut_types::peer::PeerId;
-use opendut_types::util::Port;
+use opendut_model::peer::state::PeerConnectionState;
+use opendut_model::peer::PeerId;
+use opendut_model::util::Port;
 use tokio::sync::{Mutex, MutexGuard};
 
 pub struct TestCarlClient {

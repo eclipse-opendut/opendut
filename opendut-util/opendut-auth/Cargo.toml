@@ -20,7 +20,7 @@ confidential_client = [
     "tonic/transport",
     "tonic/tls-ring",
     "tracing",
-    "opendut-types",
+    "opendut-model",
 ]
 # registration_client requires confidential_client feature
 registration_client = [
@@ -37,7 +37,7 @@ public_client = [
 
 [dependencies]
 opendut-util-core = { workspace = true }
-opendut-types = { workspace = true, optional = true }
+opendut-model = { workspace = true, optional = true }
 
 anyhow = { workspace = true, optional = true }
 backon = { workspace = true }

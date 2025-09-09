@@ -3,8 +3,8 @@ use std::fmt::{Display, Formatter};
 
 use serde::{Deserialize, Serialize};
 
-use opendut_types::cluster::ClusterId;
-use opendut_types::peer::PeerId;
+use opendut_model::cluster::ClusterId;
+use opendut_model::peer::PeerId;
 
 #[derive(thiserror::Error, Debug)]
 #[error("Cannot create GroupName from '{value}':\n  {cause}")]

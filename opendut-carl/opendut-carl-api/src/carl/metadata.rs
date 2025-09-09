@@ -5,7 +5,7 @@ pub use client::*;
 mod client {
     use tonic::codegen::{Body, Bytes, http, InterceptedService, StdError};
 
-    use opendut_types::proto::util::VersionInfo;
+    use opendut_model::proto::util::VersionInfo;
 
     use crate::proto::services::metadata_provider;
     use crate::proto::services::metadata_provider::metadata_provider_client::MetadataProviderClient;

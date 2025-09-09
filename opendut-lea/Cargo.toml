@@ -9,7 +9,7 @@ license.workspace = true
 opendut-carl-api = { workspace = true, features = ["wasm-client"] }
 opendut-auth = { workspace = true, features = ["public_client"] }
 opendut-lea-components = { workspace = true }
-opendut-types = { workspace = true }
+opendut-model = { workspace = true }
 
 
 console_error_panic_hook = { workspace = true }

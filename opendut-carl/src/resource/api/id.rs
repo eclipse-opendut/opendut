@@ -1,9 +1,9 @@
 use crate::resource::api::Resource;
-use opendut_types::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
-use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration, PeerConfigurationState};
-use opendut_types::peer::state::PeerConnectionState;
-use opendut_types::peer::{PeerDescriptor, PeerId};
-use opendut_types::resources::Id;
+use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
+use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration, PeerConfigurationState};
+use opendut_model::peer::state::PeerConnectionState;
+use opendut_model::peer::{PeerDescriptor, PeerId};
+use opendut_model::resources::Id;
 
 
 pub trait ResourceId<R: Resource> {

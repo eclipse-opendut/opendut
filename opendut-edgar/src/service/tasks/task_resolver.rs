@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use opendut_types::peer::configuration::{ParameterVariant, PeerConfiguration};
+use opendut_model::peer::configuration::{ParameterVariant, PeerConfiguration};
 use crate::common::task::task_resolver::{AdditionalTasks, TaskResolver};
 use crate::common::task::TaskAbsent;
 use crate::service::network_metrics::manager::NetworkMetricsManagerRef;

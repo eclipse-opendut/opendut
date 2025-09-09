@@ -10,7 +10,7 @@ cfg_if! {
     if #[cfg(any(feature = "client", feature = "wasm-client"))] {
         use std::fmt::Display;
         use tonic::codegen::http::uri::InvalidUri;
-        use opendut_types::proto::ConversionError;
+        use opendut_model::proto::ConversionError;
 
         #[derive(thiserror::Error, Debug)]
         pub enum ClientError<A>

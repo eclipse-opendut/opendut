@@ -2,7 +2,7 @@ use crate::common::task::{Success, Task, TaskAbsent, TaskStateFulfilled};
 use crate::service::network_interface::manager::interface::Interface;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use async_trait::async_trait;
-use opendut_types::peer::configuration::parameter;
+use opendut_model::peer::configuration::parameter;
 
 pub struct ManageJoinedInterface {
     pub parameter: parameter::InterfaceJoinConfig,

@@ -18,9 +18,9 @@ impl JsonSpecificationDocument {
     /// # Example
     ///
     /// ```
-    /// # use opendut_types::specs::parse::json::JsonSpecificationDocument;
+    /// # use opendut_model::specs::parse::json::JsonSpecificationDocument;
     /// # use serde_json::json;
-    /// # fn main() -> Result<(), opendut_types::specs::parse::ParseSpecificationError> {
+    /// # fn main() -> Result<(), opendut_model::specs::parse::ParseSpecificationError> {
     /// let json = json!({
     ///   "kind": "PeerDescriptor",
     ///   "version": "v1",

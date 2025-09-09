@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 
 use network_interface_list::NetworkInterfaceList;
-use opendut_types::util::net::NetworkInterfaceId;
+use opendut_model::util::net::NetworkInterfaceId;
 
 use crate::peers::configurator::tabs::network::bridge_name_input::BridgeNameInput;
 use crate::peers::configurator::tabs::network::network_interface_input::NetworkInterfaceInput;

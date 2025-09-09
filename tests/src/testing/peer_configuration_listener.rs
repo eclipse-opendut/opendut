@@ -1,5 +1,5 @@
 use opendut_edgar::testing::service::peer_configuration::ApplyPeerConfigurationParams;
-use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration, PeerConfigurationState};
+use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration, PeerConfigurationState};
 use std::time::Duration;
 use tokio::sync::mpsc;
 use tokio::time::error::Elapsed;

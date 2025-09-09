@@ -11,7 +11,7 @@ use crate::common::task::dependency::{ParameterVariantWithDependencies, PeerConf
 use crate::common::task::runner::{TaskExecutionError};
 use crate::common::task::task_resolver::TaskResolver;
 use crate::common::task::{Success, TaskAbsent, TaskStateFulfilled};
-use opendut_types::peer::configuration::{ParameterId, ParameterTarget, ParameterTargetState, ParameterTargetStateError, ParameterTargetStateErrorCreatingFailed, ParameterTargetStateErrorRemovingFailed, ParameterVariant, PeerConfiguration, PeerConfigurationParameterState, PeerConfigurationState};
+use opendut_model::peer::configuration::{ParameterId, ParameterTarget, ParameterTargetState, ParameterTargetStateError, ParameterTargetStateErrorCreatingFailed, ParameterTargetStateErrorRemovingFailed, ParameterVariant, PeerConfiguration, PeerConfigurationParameterState, PeerConfigurationState};
 
 #[derive(Debug)]
 pub enum Outcome {

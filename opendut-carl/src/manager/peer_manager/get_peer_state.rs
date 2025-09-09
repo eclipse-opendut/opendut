@@ -1,8 +1,8 @@
 use crate::resource::api::resources::Resources;
 use crate::resource::persistence::error::PersistenceError;
 use crate::resource::storage::ResourcesStorageApi;
-use opendut_types::peer::state::{PeerConnectionState, PeerState};
-use opendut_types::peer::PeerId;
+use opendut_model::peer::state::{PeerConnectionState, PeerState};
+use opendut_model::peer::PeerId;
 use tracing::{debug, error, info};
 
 
@@ -50,8 +50,8 @@ mod tests {
     use crate::resource::manager::ResourceManager;
     use crate::settings::vpn::Vpn;
     use googletest::prelude::*;
-    use opendut_types::peer::state::{PeerConnectionState, PeerMemberState, PeerState};
-    use opendut_types::peer::{PeerDescriptor, PeerId};
+    use opendut_model::peer::state::{PeerConnectionState, PeerMemberState, PeerState};
+    use opendut_model::peer::{PeerDescriptor, PeerId};
 
     #[tokio::test]
     async fn should_get_peer_state_down() -> anyhow::Result<()> {

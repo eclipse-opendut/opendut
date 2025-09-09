@@ -1,8 +1,8 @@
 use opentelemetry::global;
 use tracing::trace;
-use opendut_types::cluster::{ClusterDescriptor, ClusterDeployment};
-use opendut_types::peer::PeerDescriptor;
-use opendut_types::peer::state::PeerConnectionState;
+use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment};
+use opendut_model::peer::PeerDescriptor;
+use opendut_model::peer::state::PeerConnectionState;
 use crate::resource::manager::ResourceManagerRef;
 
 pub fn initialize_metrics_collection(

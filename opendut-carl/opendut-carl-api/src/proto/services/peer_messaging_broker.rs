@@ -1,6 +1,6 @@
-use opendut_types::conversion;
-use opendut_types::proto::ConversionError;
-use opendut_types::proto::ConversionResult;
+use opendut_model::conversion;
+use opendut_model::proto::ConversionError;
+use opendut_model::proto::ConversionResult;
 
 tonic::include_proto!("opendut.carl.services.peer_messaging_broker");
 
@@ -41,11 +41,11 @@ conversion! {
 }
 
 conversion! {
-    type Model = opendut_types::peer::configuration::api::PeerConfigurationState;
+    type Model = opendut_model::peer::configuration::api::PeerConfigurationState;
     type Proto = Upstream;
 
     fn from(value: Model) -> Proto {
-        let state = opendut_types::proto::peer::configuration::api::PeerConfigurationState::from(value);
+        let state = opendut_model::proto::peer::configuration::api::PeerConfigurationState::from(value);
         let message = upstream::Message::PeerConfigurationState(state);
         Upstream {
             context: None,
@@ -118,8 +118,8 @@ conversion! {
     }
 
     fn try_from(value: Proto) -> ConversionResult<Model> {
-        let old_configuration = opendut_types::peer::configuration::OldPeerConfiguration::try_from(extract!(value.old_configuration)?)?;
-        let configuration = opendut_types::peer::configuration::PeerConfiguration::try_from(extract!(value.configuration)?)?;
+        let old_configuration = opendut_model::peer::configuration::OldPeerConfiguration::try_from(extract!(value.old_configuration)?)?;
+        let configuration = opendut_model::peer::configuration::PeerConfiguration::try_from(extract!(value.configuration)?)?;
         Ok(Model {
             old_configuration,
             configuration,

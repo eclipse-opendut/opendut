@@ -4,7 +4,7 @@ use config::Config;
 use tower_http::services::{ServeDir, ServeFile};
 use tracing::info;
 use opendut_auth::registration::resources::ResourceHomeUrl;
-use opendut_types::lea::LeaConfig;
+use opendut_model::lea::LeaConfig;
 use opendut_util::project;
 use crate::http::router;
 use crate::http::state::{CarlInstallDirectory, HttpState, LoadableLeaIdentityProviderConfig};

@@ -8,7 +8,7 @@ use tracing::{debug, info, warn};
 
 use opendut_carl_api::carl::broker::stream_header;
 use opendut_carl_api::carl::{broker, CaCertInfo, CarlClient};
-use opendut_types::peer::PeerId;
+use opendut_model::peer::PeerId;
 use opendut_util::project;
 
 

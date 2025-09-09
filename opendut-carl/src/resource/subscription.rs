@@ -1,8 +1,8 @@
 use crate::resource::api::Resource;
-use opendut_types::cluster::{ClusterDescriptor, ClusterDeployment};
-use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration, PeerConfigurationState};
-use opendut_types::peer::state::PeerConnectionState;
-use opendut_types::peer::PeerDescriptor;
+use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment};
+use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration, PeerConfigurationState};
+use opendut_model::peer::state::PeerConnectionState;
+use opendut_model::peer::PeerDescriptor;
 use tokio::sync::broadcast;
 
 
@@ -149,8 +149,8 @@ mod tests {
     use crate::resource::manager::{ResourceManager, ResourceManagerRef};
     use crate::resource::persistence::persistable::Persistable;
     use crate::resource::storage::ResourcesStorageApi;
-    use opendut_types::peer::state::PeerConnectionState;
-    use opendut_types::peer::PeerId;
+    use opendut_model::peer::state::PeerConnectionState;
+    use opendut_model::peer::PeerId;
     use std::net::IpAddr;
     use std::str::FromStr;
     use std::time::Duration;

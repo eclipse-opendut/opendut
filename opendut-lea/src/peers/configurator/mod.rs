@@ -8,8 +8,8 @@ use crate::routing::{navigate_to, WellKnownRoutes};
 use crate::util;
 use leptos::either::Either;
 use leptos::prelude::*;
-use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorKind};
-use opendut_types::peer::PeerId;
+use opendut_model::peer::executor::{ExecutorDescriptor, ExecutorKind};
+use opendut_model::peer::PeerId;
 use std::collections::HashMap;
 use leptos_router::hooks::{use_navigate, use_params_map};
 

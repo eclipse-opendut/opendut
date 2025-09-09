@@ -15,7 +15,7 @@ pub enum PersistenceErrorKind {
         #[source] source: Option<Cause>,
     },
     ProtobufDecode(#[source] prost::DecodeError),
-    ProtobufConversion(#[source] opendut_types::proto::ConversionError),
+    ProtobufConversion(#[source] opendut_model::proto::ConversionError),
     KeyValueStore(#[source] redb::Error),
 }
 impl PersistenceError {
@@ -129,8 +129,8 @@ impl From<prost::DecodeError> for PersistenceError {
         }
     }
 }
-impl From<opendut_types::proto::ConversionError> for PersistenceError {
-    fn from(error: opendut_types::proto::ConversionError) -> Self {
+impl From<opendut_model::proto::ConversionError> for PersistenceError {
+    fn from(error: opendut_model::proto::ConversionError) -> Self {
         PersistenceError {
             source: Box::new(PersistenceErrorKind::ProtobufConversion(error)),
             context_messages: vec![],

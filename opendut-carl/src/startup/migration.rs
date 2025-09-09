@@ -6,10 +6,10 @@ use tracing::{debug, info};
 use crate::resource::api::id::ResourceId;
 use crate::resource::api::Resource;
 use crate::resource::persistence::persistable::{Persistable, StorageKind};
-use opendut_types::cluster::{ClusterDescriptor, ClusterId};
-use opendut_types::conversion;
-use opendut_types::proto::{ConversionError, ConversionResult};
-use opendut_types::resources::Id;
+use opendut_model::cluster::{ClusterDescriptor, ClusterId};
+use opendut_model::conversion;
+use opendut_model::proto::{ConversionError, ConversionResult};
+use opendut_model::resources::Id;
 use crate::resource::manager::ResourceManagerRef;
 use crate::resource::persistence::error::PersistenceResult;
 
@@ -61,7 +61,7 @@ impl Resource for ClusterConfiguration {
 }
 
 impl Persistable for ClusterConfiguration {
-    type Proto = opendut_types::proto::cluster::ClusterDescriptor;
+    type Proto = opendut_model::proto::cluster::ClusterDescriptor;
     const TABLE: &'static str = "cluster_configuration";
     const STORAGE: StorageKind = StorageKind::Persistent;
 }
@@ -69,7 +69,7 @@ impl Persistable for ClusterConfiguration {
 
 conversion! {
     type Model = ClusterConfiguration;
-    type Proto = opendut_types::proto::cluster::ClusterDescriptor;
+    type Proto = opendut_model::proto::cluster::ClusterDescriptor;
 
     fn from(value: Model) -> Proto {
         value.inner.into()

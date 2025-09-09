@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::time::Duration;
 use opendut_carl_api::carl::CarlClient;
 use opendut_carl_api::carl::observer::WaitForPeersOnlineResponseStatus;
-use opendut_types::peer::PeerId;
+use opendut_model::peer::PeerId;
 
 pub mod peer_online;
 pub mod cluster_peers_online;

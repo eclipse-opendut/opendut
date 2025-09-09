@@ -4,7 +4,7 @@ use leptos::prelude::*;
 use leptos_router::hooks::use_navigate;
 use tracing::{debug, error};
 
-use opendut_types::cluster::ClusterDescriptor;
+use opendut_model::cluster::ClusterDescriptor;
 
 use crate::app::use_app_globals;
 use crate::clusters::configurator::types::UserClusterDescriptor;

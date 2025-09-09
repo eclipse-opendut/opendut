@@ -1,9 +1,9 @@
 use std::collections::HashSet;
-use opendut_types::cluster::{ClusterDescriptor, ClusterId, ClusterName};
-use opendut_types::peer::PeerId;
-use opendut_types::specs::cluster::ClusterDescriptorSpecificationV1;
-use opendut_types::specs::SpecificationMetadata;
-use opendut_types::topology::{DeviceId};
+use opendut_model::cluster::{ClusterDescriptor, ClusterId, ClusterName};
+use opendut_model::peer::PeerId;
+use opendut_model::specs::cluster::ClusterDescriptorSpecificationV1;
+use opendut_model::specs::SpecificationMetadata;
+use opendut_model::topology::{DeviceId};
 
 pub fn convert_document_to_cluster_descriptor(specification_metadata: SpecificationMetadata, cluster: ClusterDescriptorSpecificationV1) -> crate::Result<ClusterDescriptor>  {
     let SpecificationMetadata { id, name } = specification_metadata;

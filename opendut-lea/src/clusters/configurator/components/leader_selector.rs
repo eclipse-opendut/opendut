@@ -2,8 +2,8 @@ use std::collections::HashSet;
 
 use leptos::prelude::*;
 
-use opendut_types::peer::{PeerDescriptor, PeerId};
-use opendut_types::topology::DeviceId;
+use opendut_model::peer::{PeerDescriptor, PeerId};
+use opendut_model::topology::DeviceId;
 
 use crate::clusters::configurator::components::get_all_selected_devices;
 use crate::clusters::configurator::types::UserClusterDescriptor;

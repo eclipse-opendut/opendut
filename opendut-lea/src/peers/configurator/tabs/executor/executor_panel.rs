@@ -1,5 +1,5 @@
 use leptos::{either::Either, prelude::*};
-use opendut_types::peer::executor::{container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine, IllegalContainerImage}, ExecutorId, ResultsUrl};
+use opendut_model::peer::executor::{container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine, IllegalContainerImage}, ExecutorId, ResultsUrl};
 use strum::IntoEnumIterator;
 
 use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, IconButton, Toggled, UserInput, UserInputValue, VectorUserInput};

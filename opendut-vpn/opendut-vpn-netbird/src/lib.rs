@@ -9,9 +9,9 @@ use reqwest::Url;
 use tracing::{debug, error, trace, warn};
 
 pub use netbird::Token as NetbirdToken;
-use opendut_types::cluster::ClusterId;
-use opendut_types::peer::PeerId;
-use opendut_types::vpn::VpnPeerConfiguration;
+use opendut_model::cluster::ClusterId;
+use opendut_model::peer::PeerId;
+use opendut_model::vpn::VpnPeerConfiguration;
 use opendut_vpn::{CreateClusterError, CreatePeerError, CreateVpnPeerConfigurationError, DeleteClusterError, DeletePeerError, VpnManagementClient};
 
 use crate::client::{Client, DefaultClient};
@@ -279,7 +279,7 @@ impl VpnManagementClient for NetbirdManagementClient {
 
         Ok(VpnPeerConfiguration::Netbird {
             management_url: Clone::clone(&self.management_url),
-            setup_key: opendut_types::vpn::netbird::SetupKey::from(setup_key.key),
+            setup_key: opendut_model::vpn::netbird::SetupKey::from(setup_key.key),
         })
     }
 }
@@ -293,10 +293,10 @@ mod test {
     use time::OffsetDateTime;
     use uuid::uuid;
 
-    use opendut_types::cluster::ClusterId;
-    use opendut_types::peer::PeerId;
-    use opendut_types::vpn;
-    use opendut_types::vpn::VpnPeerConfiguration;
+    use opendut_model::cluster::ClusterId;
+    use opendut_model::peer::PeerId;
+    use opendut_model::vpn;
+    use opendut_model::vpn::VpnPeerConfiguration;
     use opendut_vpn::VpnManagementClient;
 
     use crate::{netbird, NetbirdManagementClient};

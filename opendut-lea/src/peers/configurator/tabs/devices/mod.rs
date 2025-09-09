@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use opendut_types::topology::DeviceId;
+use opendut_model::topology::DeviceId;
 
 use crate::components::UserInputValue;
 use crate::peers::configurator::tabs::devices::device_panel::DevicePanel;

@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 
-use opendut_types::peer::{IllegalPeerName, PeerName};
+use opendut_model::peer::{IllegalPeerName, PeerName};
 
 use crate::components::{UserInput, UserInputValue};
 use crate::peers::configurator::types::UserPeerConfiguration;

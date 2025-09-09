@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use opendut_types::peer::PeerDescriptor;
+use opendut_model::peer::PeerDescriptor;
 
 use crate::clusters::configurator::DeviceSelector;
 use crate::clusters::configurator::types::UserClusterDescriptor;

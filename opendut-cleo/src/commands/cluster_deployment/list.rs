@@ -1,6 +1,6 @@
 use cli_table::{print_stdout, Table, WithTitle};
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::cluster::{ClusterId};
+use opendut_model::cluster::{ClusterId};
 use crate::ListOutputFormat;
 
 /// List all cluster deployments

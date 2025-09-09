@@ -9,7 +9,7 @@ use opendut_carl_api::carl::broker::{stream_header, UpstreamMessage, UpstreamMes
 use opendut_carl_api::carl::broker::stream_header::PeerVersion;
 use opendut_carl_api::proto::services::peer_messaging_broker::peer_messaging_broker_server::PeerMessagingBrokerServer;
 use opendut_carl_api::proto::services::peer_messaging_broker::{Downstream, Upstream};
-use opendut_types::peer::PeerId;
+use opendut_model::peer::PeerId;
 use tokio_stream::wrappers::ReceiverStream;
 use tokio_stream::Stream;
 use tonic::metadata::MetadataMap;

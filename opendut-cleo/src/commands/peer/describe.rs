@@ -1,7 +1,7 @@
 use indoc::indoc;
 
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::peer::{PeerDescriptor, PeerId};
+use opendut_model::peer::{PeerDescriptor, PeerId};
 use crate::DescribeOutputFormat;
 
 /// Describe a peer

@@ -1,4 +1,4 @@
-use opendut_types::vpn::netbird::SetupKey;
+use opendut_model::vpn::netbird::SetupKey;
 use std::path::PathBuf;
 
 use tokio::net::UnixStream;

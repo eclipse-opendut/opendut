@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter};
 
 use serde::{Deserialize, Serialize};
 
-use opendut_types::cluster::ClusterId;
+use opendut_model::cluster::ClusterId;
 
 use crate::netbird::group::GroupId;
 

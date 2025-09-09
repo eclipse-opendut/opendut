@@ -1,9 +1,9 @@
 use tracing::debug;
 
 use crate::service::can::can_manager::CanManagerRef;
-use opendut_types::cluster::ClusterAssignment;
-use opendut_types::peer::configuration::{parameter, ParameterField, ParameterTarget};
-use opendut_types::peer::PeerId;
+use opendut_model::cluster::ClusterAssignment;
+use opendut_model::peer::configuration::{parameter, ParameterField, ParameterTarget};
+use opendut_model::peer::PeerId;
 
 #[tracing::instrument(skip_all, level="trace")]
 pub async fn setup_can_interfaces(

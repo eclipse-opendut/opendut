@@ -9,7 +9,7 @@ license.workspace = true
 [dependencies]
 opendut-auth = { workspace = true, features = ["registration_client"] }
 opendut-util-core = { workspace = true }
-opendut-types = { workspace = true }
+opendut-model = { workspace = true }
 
 anyhow = { workspace = true }
 rstest = { workspace = true }

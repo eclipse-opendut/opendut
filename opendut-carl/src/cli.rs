@@ -2,9 +2,9 @@ use std::collections::HashMap;
 use clap::{Parser, Subcommand, ValueEnum};
 use serde::Serialize;
 use uuid::Uuid;
-use opendut_types::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
-use opendut_types::peer::{PeerDescriptor, PeerId};
-use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
+use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
+use opendut_model::peer::{PeerDescriptor, PeerId};
+use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
 use crate::CreateResult;
 use crate::resource::api::Resource;
 

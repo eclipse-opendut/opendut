@@ -7,7 +7,7 @@ use anyhow::Context;
 use async_trait::async_trait;
 use tracing::debug;
 
-use opendut_types::util::net::Certificate;
+use opendut_model::util::net::Certificate;
 
 use crate::setup::{constants, util};
 use crate::common::task::{Success, Task, TaskStateFulfilled};
@@ -154,7 +154,7 @@ mod tests {
     use assert_fs::prelude::*;
     use assert_fs::TempDir;
 
-    use opendut_types::util::net::Certificate;
+    use opendut_model::util::net::Certificate;
 
     use crate::common::task::{Task, TaskStateFulfilled};
     use crate::setup::tasks::WriteCaCertificate;

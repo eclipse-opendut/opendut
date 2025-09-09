@@ -2,9 +2,9 @@ use std::collections::HashSet;
 use std::ops::Not;
 
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::cluster::{ClusterDescriptor, ClusterId};
-use opendut_types::peer::PeerId;
-use opendut_types::topology::{DeviceDescriptor, DeviceId, DeviceName};
+use opendut_model::cluster::{ClusterDescriptor, ClusterId};
+use opendut_model::peer::PeerId;
+use opendut_model::topology::{DeviceDescriptor, DeviceId, DeviceName};
 
 use crate::parse::cluster::{ParseableClusterId, ParseableClusterName};
 use crate::{ClusterDescriptorDevices, CreateOutputFormat};
@@ -191,8 +191,8 @@ fn select_devices_by_names(device_names: &[DeviceName], devices_list: &[DeviceDe
 mod test {
     use googletest::prelude::*;
 
-    use opendut_types::topology::{DeviceDescription, DeviceId, DeviceName};
-    use opendut_types::util::net::NetworkInterfaceId;
+    use opendut_model::topology::{DeviceDescription, DeviceId, DeviceName};
+    use opendut_model::util::net::NetworkInterfaceId;
 
     use super::*;
 

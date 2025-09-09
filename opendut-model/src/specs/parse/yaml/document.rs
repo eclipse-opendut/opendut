@@ -24,8 +24,8 @@ impl YamlSpecificationDocument {
     /// # Example
     ///
     /// ```
-    /// # use opendut_types::specs::parse::yaml::YamlSpecificationDocument;
-    /// # fn main() -> Result<(), opendut_types::specs::parse::ParseSpecificationError> {
+    /// # use opendut_model::specs::parse::yaml::YamlSpecificationDocument;
+    /// # fn main() -> Result<(), opendut_model::specs::parse::ParseSpecificationError> {
     /// let yaml = r#"
     /// kind: PeerDescriptor
     /// version: v1

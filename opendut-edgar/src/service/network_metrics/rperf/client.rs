@@ -4,7 +4,7 @@ use std::process::Stdio;
 use std::sync::Arc;
 use std::time::Duration;
 use backon::Retryable;
-use opendut_types::peer::PeerId;
+use opendut_model::peer::PeerId;
 use opentelemetry::{global, KeyValue};
 use opentelemetry::metrics::Gauge;
 use regex::Regex;

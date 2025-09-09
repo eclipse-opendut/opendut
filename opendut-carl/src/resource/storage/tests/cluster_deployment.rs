@@ -1,6 +1,6 @@
 use crate::resource::manager::ResourceManager;
-use opendut_types::cluster::{ClusterDescriptor, ClusterDeployment};
-use opendut_types::peer::PeerDescriptor;
+use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment};
+use opendut_model::peer::PeerDescriptor;
 
 #[tokio::test]
 async fn should_persist_cluster_deployment() -> anyhow::Result<()> {

@@ -3,8 +3,8 @@ use std::str::FromStr;
 use clap::ValueEnum;
 use indoc::formatdoc;
 
-use opendut_types::cleo::CleoSetup;
-use opendut_types::util::net::AuthConfig;
+use opendut_model::cleo::CleoSetup;
+use opendut_model::util::net::AuthConfig;
 use opendut_util::settings::SetupType;
 
 /// CLEO setup for authenticating against CARL
@@ -131,8 +131,8 @@ mod tests {
     use std::str::FromStr;
     use url::Url;
 
-    use opendut_types::cleo::{CleoId, CleoSetup};
-    use opendut_types::util::net::{AuthConfig, Certificate, ClientId, ClientSecret};
+    use opendut_model::cleo::{CleoId, CleoSetup};
+    use opendut_model::util::net::{AuthConfig, Certificate, ClientId, ClientSecret};
     use crate::commands::setup::prepare_cleo_configuration;
 
     #[test]

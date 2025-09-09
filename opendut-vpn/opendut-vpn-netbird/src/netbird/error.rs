@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use http::StatusCode;
 use reqwest::header::InvalidHeaderValue;
 
-use opendut_types::peer::PeerId;
+use opendut_model::peer::PeerId;
 
 use crate::netbird::group::GroupName;
 use crate::netbird::policies::PolicyName;

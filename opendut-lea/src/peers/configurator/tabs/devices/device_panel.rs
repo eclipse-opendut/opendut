@@ -1,7 +1,7 @@
 use leptos::either::Either;
 use leptos::prelude::*;
-use opendut_types::topology::{DeviceDescription, DeviceId, DeviceName, IllegalDeviceName};
-use opendut_types::util::net::NetworkInterfaceId;
+use opendut_model::topology::{DeviceDescription, DeviceId, DeviceName, IllegalDeviceName};
+use opendut_model::util::net::NetworkInterfaceId;
 use uuid::Uuid;
 use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, DoorhangerButton, FontAwesomeIcon, IconButton, ReadOnlyInput, Toggled, UserInput, UserInputValue, UserTextarea};
 use crate::peers::configurator::types::{EMPTY_DEVICE_NAME_ERROR_MESSAGE, UserDeviceConfiguration, UserPeerConfiguration};

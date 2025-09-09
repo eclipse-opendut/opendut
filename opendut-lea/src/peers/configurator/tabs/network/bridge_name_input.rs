@@ -1,7 +1,7 @@
 use crate::components::{UserInput, UserInputValue};
 use crate::peers::configurator::types::UserPeerConfiguration;
 use leptos::prelude::*;
-use opendut_types::util::net::{NetworkInterfaceName, NetworkInterfaceNameError};
+use opendut_model::util::net::{NetworkInterfaceName, NetworkInterfaceNameError};
 
 #[component]
 pub fn BridgeNameInput(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl IntoView {

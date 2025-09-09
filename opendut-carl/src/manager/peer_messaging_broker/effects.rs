@@ -2,8 +2,8 @@ use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
 use crate::resource::manager::{ResourceManagerRef, SubscriptionEvent};
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::storage::ResourcesStorageApi;
-use opendut_types::peer::configuration::{ParameterTargetState, PeerConfiguration, PeerConfigurationState};
-use opendut_types::peer::PeerDescriptor;
+use opendut_model::peer::configuration::{ParameterTargetState, PeerConfiguration, PeerConfigurationState};
+use opendut_model::peer::PeerDescriptor;
 use std::collections::HashSet;
 use tracing::{debug, error, trace, warn};
 

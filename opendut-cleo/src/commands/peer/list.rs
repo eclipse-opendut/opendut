@@ -4,8 +4,8 @@ use cli_table::{print_stdout, Table, WithTitle};
 use serde::Serialize;
 
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
-use opendut_types::peer::state::{PeerConnectionState, PeerState};
+use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName};
+use opendut_model::peer::state::{PeerConnectionState, PeerState};
 use crate::ListOutputFormat;
 
 /// List all peers
@@ -134,9 +134,9 @@ fn add_peer_status(
 mod test {
     use googletest::prelude::*;
 
-    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
-    use opendut_types::peer::executor::ExecutorDescriptors;
-    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
+    use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
+    use opendut_model::peer::executor::ExecutorDescriptors;
+    use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
     use super::*;
 

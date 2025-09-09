@@ -1,7 +1,7 @@
-use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerNetworkDescriptor};
-use opendut_types::peer::executor::ExecutorDescriptors;
-use opendut_types::topology::{DeviceDescriptor, DeviceId, DeviceName, Topology};
-use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
+use opendut_model::peer::{PeerDescriptor, PeerId, PeerName, PeerNetworkDescriptor};
+use opendut_model::peer::executor::ExecutorDescriptors;
+use opendut_model::topology::{DeviceDescriptor, DeviceId, DeviceName, Topology};
+use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 use crate::testing::carl_client::TestCarlClient;
 
 pub async fn store_peer_descriptor(carl_client: &TestCarlClient) -> anyhow::Result<PeerDescriptor> {

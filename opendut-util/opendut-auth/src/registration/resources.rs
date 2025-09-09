@@ -2,7 +2,7 @@ use config::Config;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-use opendut_types::resources;
+use opendut_model::resources;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ResourceHomeUrl(Url);

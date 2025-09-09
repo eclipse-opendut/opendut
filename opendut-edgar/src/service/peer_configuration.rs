@@ -3,9 +3,9 @@ use crate::service::can::cluster_assignment;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use crate::service::tasks;
 use crate::service::test_execution::executor_manager::ExecutorManagerRef;
-use opendut_types::cluster::ClusterAssignment;
-use opendut_types::peer::configuration::{parameter, OldPeerConfiguration, ParameterField, PeerConfiguration, PeerConfigurationState};
-use opendut_types::peer::PeerId;
+use opendut_model::cluster::ClusterAssignment;
+use opendut_model::peer::configuration::{parameter, OldPeerConfiguration, ParameterField, PeerConfiguration, PeerConfigurationState};
+use opendut_model::peer::PeerId;
 
 use std::fmt::Formatter;
 use std::sync::Arc;

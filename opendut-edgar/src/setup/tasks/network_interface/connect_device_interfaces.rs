@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use opendut_types::util::net::NetworkInterfaceName;
+use opendut_model::util::net::NetworkInterfaceName;
 
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use crate::common::task::{Success, Task, TaskStateFulfilled};

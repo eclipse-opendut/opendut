@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use opendut_types::peer::state::PeerConnectionState;
+use opendut_model::peer::state::PeerConnectionState;
 use crate::app::use_app_globals;
 use crate::peers::components::CreatePeerButton;
 use crate::routing;

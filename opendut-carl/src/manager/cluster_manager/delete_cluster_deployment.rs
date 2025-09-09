@@ -1,8 +1,8 @@
-use opendut_types::ShortName;
-use opendut_types::cluster::ClusterDisplay;
+use opendut_model::ShortName;
+use opendut_model::cluster::ClusterDisplay;
 use crate::settings::vpn::Vpn;
-use opendut_types::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId, ClusterName};
-use opendut_types::cluster::state::ClusterState;
+use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId, ClusterName};
+use opendut_model::cluster::state::ClusterState;
 use crate::resource::api::resources::Resources;
 use crate::resource::persistence::error::PersistenceError;
 use crate::resource::storage::ResourcesStorageApi;

@@ -1,4 +1,4 @@
-use opendut_types::peer::configuration::{ParameterId, ParameterVariant, PeerConfiguration};
+use opendut_model::peer::configuration::{ParameterId, ParameterVariant, PeerConfiguration};
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
@@ -107,8 +107,8 @@ impl PeerConfigurationDependencyResolver {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use opendut_types::peer::configuration::{parameter, ParameterTarget};
-    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
+    use opendut_model::peer::configuration::{parameter, ParameterTarget};
+    use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
     impl PeerConfigurationDependencyResolver {
         pub fn done(&mut self) -> bool {

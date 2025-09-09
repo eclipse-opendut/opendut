@@ -1,4 +1,4 @@
-use opendut_types::util::net::NetworkInterfaceConfiguration;
+use opendut_model::util::net::NetworkInterfaceConfiguration;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct UserNetworkInterfaceConfiguration {

@@ -1,8 +1,8 @@
 use async_trait::async_trait;
 
-use opendut_types::cluster::ClusterId;
-use opendut_types::peer::PeerId;
-use opendut_types::vpn::VpnPeerConfiguration;
+use opendut_model::cluster::ClusterId;
+use opendut_model::peer::PeerId;
+use opendut_model::vpn::VpnPeerConfiguration;
 
 #[async_trait]
 pub trait VpnManagementClient {

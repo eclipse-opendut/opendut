@@ -1,7 +1,7 @@
 use crate::components::{UserInput, UserInputValue};
 use crate::peers::configurator::types::UserPeerConfiguration;
 use leptos::prelude::*;
-use opendut_types::peer::{IllegalLocation, PeerLocation};
+use opendut_model::peer::{IllegalLocation, PeerLocation};
 
 #[component]
 pub fn PeerLocationInput(peer_configuration: RwSignal<UserPeerConfiguration>) -> impl IntoView {

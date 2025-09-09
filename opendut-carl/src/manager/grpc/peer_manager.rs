@@ -6,8 +6,8 @@ use opendut_carl_api::proto;
 use opendut_carl_api::proto::services;
 use opendut_carl_api::proto::services::peer_manager::peer_manager_server::{PeerManager as PeerManagerService, PeerManagerServer};
 use opendut_carl_api::proto::services::peer_manager::{StorePeerDescriptorRequest, StorePeerDescriptorResponse, store_peer_descriptor_response, StorePeerDescriptorSuccess, DeletePeerDescriptorRequest, DeletePeerDescriptorResponse, DeletePeerDescriptorSuccess, delete_peer_descriptor_response, GetPeerDescriptorRequest, GetPeerDescriptorResponse, get_peer_descriptor_response, GetPeerDescriptorSuccess, ListPeerDescriptorsRequest, ListPeerDescriptorsResponse, list_peer_descriptors_response, ListPeerDescriptorsSuccess, GetPeerStateRequest, GetPeerStateResponse, get_peer_state_response, GetPeerStateSuccess, ListPeerStatesRequest, ListPeerStatesResponse, list_peer_states_response, ListPeerStatesSuccess, ListPeerStatesEntry, ListDevicesRequest, ListDevicesResponse, GeneratePeerSetupRequest, GeneratePeerSetupResponse, GenerateCleoSetupRequest, GenerateCleoSetupResponse, generate_cleo_setup_response, GenerateCleoSetupSuccess};
-use opendut_types::cleo::CleoId;
-use opendut_types::peer::{PeerDescriptor, PeerId};
+use opendut_model::cleo::CleoId;
+use opendut_model::peer::{PeerDescriptor, PeerId};
 use tonic::{Request, Response, Status};
 use tracing::{error, trace};
 use url::Url;
@@ -357,11 +357,11 @@ mod tests {
     use crate::resource::manager::ResourceManager;
     use crate::settings::vpn::Vpn;
     use opendut_carl_api::proto::services;
-    use opendut_types::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorDescriptor, ExecutorDescriptors, ExecutorId, ExecutorKind};
-    use opendut_types::peer::{PeerLocation, PeerName, PeerNetworkDescriptor};
-    use opendut_types::proto;
-    use opendut_types::topology::Topology;
-    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
+    use opendut_model::peer::executor::{container::{ContainerCommand, ContainerImage, ContainerName, Engine}, ExecutorDescriptor, ExecutorDescriptors, ExecutorId, ExecutorKind};
+    use opendut_model::peer::{PeerLocation, PeerName, PeerNetworkDescriptor};
+    use opendut_model::proto;
+    use opendut_model::topology::Topology;
+    use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
     use super::*;
 

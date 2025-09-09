@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use opendut_carl_api::proto::services::cluster_manager::cluster_manager_server::{ClusterManager as ClusterManagerService, ClusterManagerServer};
 use opendut_carl_api::proto::services::cluster_manager::{CreateClusterDescriptorRequest, CreateClusterDescriptorResponse, create_cluster_descriptor_response, CreateClusterDescriptorSuccess, DeleteClusterDescriptorRequest, DeleteClusterDescriptorResponse, delete_cluster_descriptor_response, DeleteClusterDescriptorSuccess, GetClusterDescriptorRequest, GetClusterDescriptorResponse, get_cluster_descriptor_response, GetClusterDescriptorSuccess, GetClusterDescriptorFailure, ListClusterDescriptorsRequest, ListClusterDescriptorsResponse, list_cluster_descriptors_response, ListClusterDescriptorsSuccess, StoreClusterDeploymentRequest, StoreClusterDeploymentResponse, store_cluster_deployment_response, StoreClusterDeploymentSuccess, DeleteClusterDeploymentRequest, DeleteClusterDeploymentResponse, delete_cluster_deployment_response, DeleteClusterDeploymentSuccess, GetClusterDeploymentRequest, GetClusterDeploymentResponse, get_cluster_deployment_response, GetClusterDeploymentSuccess, GetClusterDeploymentFailure, ListClusterDeploymentsRequest, ListClusterDeploymentsResponse, list_cluster_deployments_response, ListClusterDeploymentsSuccess, ListClusterPeerStatesRequest, ListClusterPeerStatesResponse, list_cluster_peer_states_response, ListClusterPeerStatesSuccess};
-use opendut_types::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
+use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
 use tonic::{Request, Response, Status};
 use tracing::{error, trace};
 

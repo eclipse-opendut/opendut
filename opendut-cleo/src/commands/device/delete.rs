@@ -1,6 +1,6 @@
 use std::ops::Not;
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::topology::DeviceId;
+use opendut_model::topology::DeviceId;
 
 /// Delete a device
 #[derive(clap::Parser)]

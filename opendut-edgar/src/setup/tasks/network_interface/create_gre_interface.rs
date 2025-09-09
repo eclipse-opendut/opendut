@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use tracing::{debug, warn};
 
 use opendut_netbird_client_api::extension::LocalPeerStateExtension;
-use opendut_types::util::net::NetworkInterfaceName;
+use opendut_model::util::net::NetworkInterfaceName;
 
 use crate::service::network_interface::gre;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;

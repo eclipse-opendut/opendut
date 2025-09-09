@@ -1,9 +1,9 @@
 use indoc::indoc;
 
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::cluster::{ClusterId, ClusterName};
-use opendut_types::peer::{PeerId, PeerName};
-use opendut_types::topology::DeviceName;
+use opendut_model::cluster::{ClusterId, ClusterName};
+use opendut_model::peer::{PeerId, PeerName};
+use opendut_model::topology::DeviceName;
 use serde::Serialize;
 
 use crate::DescribeOutputFormat;

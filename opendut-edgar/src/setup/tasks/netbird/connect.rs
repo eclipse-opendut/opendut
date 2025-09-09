@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use tracing::debug;
 use url::Url;
 
-use opendut_types::vpn::netbird::SetupKey;
+use opendut_model::vpn::netbird::SetupKey;
 
 use crate::common::task::{Success, Task, TaskStateFulfilled};
 

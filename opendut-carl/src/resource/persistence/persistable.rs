@@ -1,35 +1,35 @@
 use crate::resource::api::Resource;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::TableDefinition;
-use opendut_types::cluster::{ClusterDescriptor, ClusterDeployment};
-use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration, PeerConfigurationState};
-use opendut_types::peer::state::PeerConnectionState;
-use opendut_types::peer::PeerDescriptor;
-use opendut_types::proto::ConversionError;
+use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment};
+use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration, PeerConfigurationState};
+use opendut_model::peer::state::PeerConnectionState;
+use opendut_model::peer::PeerDescriptor;
+use opendut_model::proto::ConversionError;
 use prost::Message;
 use std::fmt::Debug;
 
 
 impl Persistable for ClusterDeployment {
-    type Proto = opendut_types::proto::cluster::ClusterDeployment;
+    type Proto = opendut_model::proto::cluster::ClusterDeployment;
     const TABLE: &'static str = "cluster_deployment";
     const STORAGE: StorageKind = StorageKind::Persistent;
 }
 
 impl Persistable for ClusterDescriptor {
-    type Proto = opendut_types::proto::cluster::ClusterDescriptor;
+    type Proto = opendut_model::proto::cluster::ClusterDescriptor;
     const TABLE: &'static str = "cluster_descriptor";
     const STORAGE: StorageKind = StorageKind::Persistent;
 }
 
 impl Persistable for OldPeerConfiguration {
-    type Proto = opendut_types::proto::peer::configuration::api::OldPeerConfiguration;
+    type Proto = opendut_model::proto::peer::configuration::api::OldPeerConfiguration;
     const TABLE: &'static str = "old_peer_configuration";
     const STORAGE: StorageKind = StorageKind::Volatile;
 }
 
 impl Persistable for PeerConfiguration {
-    type Proto = opendut_types::proto::peer::configuration::api::PeerConfiguration;
+    type Proto = opendut_model::proto::peer::configuration::api::PeerConfiguration;
     const TABLE: &'static str = "peer_configuration";
     /// Not persisted at the moment. A restart will cause a reconfiguration of all peers.
     /// The `assign_cluster()` method in the `ClusterManager` evaluates the current peer descriptors of the cluster and sends new peer configurations to the peers.
@@ -43,19 +43,19 @@ impl Persistable for PeerConfiguration {
 }
 
 impl Persistable for PeerConnectionState {
-    type Proto = opendut_types::proto::peer::PeerConnectionState;
+    type Proto = opendut_model::proto::peer::PeerConnectionState;
     const TABLE: &'static str = "peer_connection_state";
     const STORAGE: StorageKind = StorageKind::Volatile;
 }
 
 impl Persistable for PeerDescriptor {
-    type Proto = opendut_types::proto::peer::PeerDescriptor;
+    type Proto = opendut_model::proto::peer::PeerDescriptor;
     const TABLE: &'static str = "peer_descriptor";
     const STORAGE: StorageKind = StorageKind::Persistent;
 }
 
 impl Persistable for PeerConfigurationState {
-    type Proto = opendut_types::proto::peer::configuration::api::PeerConfigurationState;
+    type Proto = opendut_model::proto::peer::configuration::api::PeerConfigurationState;
     const TABLE: &'static str = "peer_configuration_state";
     const STORAGE: StorageKind = StorageKind::Volatile;
 }

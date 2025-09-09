@@ -10,7 +10,7 @@ use rstest::{fixture, rstest};
 use serde_json::json;
 use uuid::uuid;
 
-use opendut_types::cluster::ClusterId;
+use opendut_model::cluster::ClusterId;
 
 use super::*;
 const RETRIES: u32 = 5;

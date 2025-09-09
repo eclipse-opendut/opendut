@@ -1,5 +1,5 @@
 use std::str::FromStr;
-use opendut_types::peer::PeerSetup;
+use opendut_model::peer::PeerSetup;
 use crate::{DecodeSetupStringOutputFormat};
 
 /// Decode the setup string of a peer

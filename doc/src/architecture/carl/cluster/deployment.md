@@ -4,14 +4,14 @@
 ## Cluster Creation
 
 ```
-{{#include ../../../../../opendut-types/proto/opendut/types/cluster/cluster.proto:ClusterDescriptor}}
+{{#include ../../../../../opendut-model/proto/opendut/types/cluster/cluster.proto:ClusterDescriptor}}
 ```
 
 ## Cluster Deployment
 
 ```
-{{#include ../../../../../opendut-types/proto/opendut/types/cluster/cluster.proto:ClusterAssignment}}
+{{#include ../../../../../opendut-model/proto/opendut/types/cluster/cluster.proto:ClusterAssignment}}
 ```
 ```
-{{#include ../../../../../opendut-types/proto/opendut/types/cluster/cluster.proto:PeerClusterAssignment}}
+{{#include ../../../../../opendut-model/proto/opendut/types/cluster/cluster.proto:PeerClusterAssignment}}
 ```

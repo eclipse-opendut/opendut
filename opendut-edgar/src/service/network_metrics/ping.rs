@@ -2,7 +2,7 @@ use std::net::IpAddr;
 use std::ops::Not;
 use std::{collections::HashMap, sync::Arc};
 use std::time::Duration;
-use opendut_types::peer::PeerId;
+use opendut_model::peer::PeerId;
 use opentelemetry::{global, KeyValue};
 use tokio::sync::Mutex;
 use tracing::{error, trace};

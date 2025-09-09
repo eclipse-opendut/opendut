@@ -1,8 +1,8 @@
 use crate::resource::api::id::ResourceId;
-use opendut_types::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
-use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration, PeerConfigurationState};
-use opendut_types::peer::state::PeerConnectionState;
-use opendut_types::peer::{PeerDescriptor, PeerId};
+use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
+use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration, PeerConfigurationState};
+use opendut_model::peer::state::PeerConnectionState;
+use opendut_model::peer::{PeerDescriptor, PeerId};
 use std::any::Any;
 use std::fmt::Debug;
 use std::hash::Hash;

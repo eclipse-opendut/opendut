@@ -7,11 +7,11 @@ pub mod observer_messaging_broker;
 #[cfg(test)]
 mod testing {
     use crate::resource::manager::ResourceManagerRef;
-    use opendut_types::cluster::{ClusterDescriptor, ClusterId, ClusterName};
-    use opendut_types::peer::executor::ExecutorDescriptors;
-    use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
-    use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
-    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
+    use opendut_model::cluster::{ClusterDescriptor, ClusterId, ClusterName};
+    use opendut_model::peer::executor::ExecutorDescriptors;
+    use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
+    use opendut_model::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
+    use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
     use std::collections::HashSet;
 
     pub struct PeerFixture {

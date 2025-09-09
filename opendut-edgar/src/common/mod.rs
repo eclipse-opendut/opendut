@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use opendut_types::util::net::NetworkInterfaceName;
+use opendut_model::util::net::NetworkInterfaceName;
 
 pub mod carl;
 pub mod settings;

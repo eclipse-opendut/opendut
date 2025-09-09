@@ -9,7 +9,7 @@ use tracing::trace;
 use opendut_carl_api::proto::services::observer_messaging_broker::observer_messaging_broker_server::ObserverMessagingBrokerServer;
 use opendut_carl_api::proto::services::observer_messaging_broker::observer_messaging_broker_server::{ObserverMessagingBroker as ObserverMessagingBrokerService};
 use opendut_carl_api::proto::services::observer_messaging_broker::{WaitForPeersOnlineRequest, WaitForPeersOnlineResponse};
-use opendut_types::peer::{PeerDescriptor, PeerId};
+use opendut_model::peer::{PeerDescriptor, PeerId};
 use crate::manager::observer_messaging_broker::ObserverMessagingBrokerRef;
 use crate::resource::manager::ResourceManagerRef;
 

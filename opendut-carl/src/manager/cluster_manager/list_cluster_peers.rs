@@ -1,8 +1,8 @@
 use crate::resource::api::resources::Resources;
 use crate::resource::persistence::error::PersistenceError;
 use crate::resource::storage::ResourcesStorageApi;
-use opendut_types::cluster::{ClusterDescriptor, ClusterId};
-use opendut_types::peer::PeerDescriptor;
+use opendut_model::cluster::{ClusterDescriptor, ClusterId};
+use opendut_model::peer::PeerDescriptor;
 
 
 impl Resources<'_> {

@@ -21,7 +21,7 @@ impl NetworkInterfaceManager {
 
 #[cfg(test)]
 mod tests {
-    use opendut_types::util::net::NetworkInterfaceName;
+    use opendut_model::util::net::NetworkInterfaceName;
     use super::*;
 
     #[test_with::env(RUN_EDGAR_NETLINK_INTEGRATION_TESTS)]

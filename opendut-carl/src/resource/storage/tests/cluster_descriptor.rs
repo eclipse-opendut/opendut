@@ -1,7 +1,7 @@
 use crate::resource::manager::ResourceManager;
-use opendut_types::cluster::{ClusterDescriptor, ClusterId, ClusterName};
-use opendut_types::peer::PeerId;
-use opendut_types::topology::DeviceId;
+use opendut_model::cluster::{ClusterDescriptor, ClusterId, ClusterName};
+use opendut_model::peer::PeerId;
+use opendut_model::topology::DeviceId;
 use std::collections::HashSet;
 
 #[tokio::test]

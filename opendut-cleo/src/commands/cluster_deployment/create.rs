@@ -1,6 +1,6 @@
 use crate::CreateOutputFormat;
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::cluster::{ClusterDeployment, ClusterId};
+use opendut_model::cluster::{ClusterDeployment, ClusterId};
 
 /// Create a cluster deployment
 #[derive(clap::Parser)]

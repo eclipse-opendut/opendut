@@ -1,7 +1,7 @@
 use crate::service::network_interface::manager::vcan::VIRTUAL_CAN_INTERFACE_TYPE;
 use rtnetlink::packet_route::link::{InfoData, InfoGreTap, InfoKind, LinkAttribute, LinkFlags, LinkInfo, LinkMessage, Prop};
 use rtnetlink::packet_core::Nla;
-use opendut_types::util::net::{NetworkInterfaceName, NetworkInterfaceNameError};
+use opendut_model::util::net::{NetworkInterfaceName, NetworkInterfaceNameError};
 use std::fmt::Formatter;
 use std::net::Ipv4Addr;
 

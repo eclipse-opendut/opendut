@@ -2,10 +2,10 @@ use crate::manager::cluster_manager;
 use crate::resource::api::resources::Resources;
 use crate::resource::persistence::error::PersistenceError;
 use crate::resource::storage::ResourcesStorageApi;
-use opendut_types::cluster::ClusterId;
-use opendut_types::peer::state::PeerMemberState;
-use opendut_types::peer::{PeerDescriptor, PeerId};
-use opendut_types::topology::DeviceId;
+use opendut_model::cluster::ClusterId;
+use opendut_model::peer::state::PeerMemberState;
+use opendut_model::peer::{PeerDescriptor, PeerId};
+use opendut_model::topology::DeviceId;
 use std::collections::HashMap;
 
 impl Resources<'_> {
@@ -66,7 +66,7 @@ mod tests {
     use super::*;
     use crate::manager::testing::ClusterFixture;
     use crate::resource::manager::ResourceManager;
-    use opendut_types::cluster::ClusterDeployment;
+    use opendut_model::cluster::ClusterDeployment;
     use std::collections::HashSet;
     use std::ops::Not;
 

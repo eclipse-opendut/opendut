@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 
 use crate::resource::persistence::error::PersistenceResult;
-use opendut_types::resources::Id;
+use opendut_model::resources::Id;
 use redb::{AccessGuard, ReadableTable, TableError, TypeName};
 use uuid::Uuid;
 

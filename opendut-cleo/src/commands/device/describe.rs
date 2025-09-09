@@ -1,7 +1,7 @@
 use indoc::indoc;
 
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::topology::DeviceId;
+use opendut_model::topology::DeviceId;
 
 use crate::DescribeOutputFormat;
 

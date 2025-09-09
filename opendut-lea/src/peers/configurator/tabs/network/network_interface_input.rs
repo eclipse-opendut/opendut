@@ -1,7 +1,7 @@
 use std::ops::Not;
 use leptos::either::Either;
 use leptos::prelude::*;
-use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceName, NetworkInterfaceNameError};
+use opendut_model::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceName, NetworkInterfaceNameError};
 
 use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, UserInput, UserInputValue};
 use crate::peers::configurator::types::UserNetworkInterface;

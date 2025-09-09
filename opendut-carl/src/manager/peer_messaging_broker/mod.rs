@@ -5,9 +5,9 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use opendut_carl_api::carl::broker::{stream_header, ApplyPeerConfiguration, DownstreamMessage, DownstreamMessagePayload, TracingContext, UpstreamMessage, UpstreamMessagePayload};
-use opendut_types::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
-use opendut_types::peer::state::{PeerConnectionState};
-use opendut_types::peer::{PeerDescriptor, PeerId};
+use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
+use opendut_model::peer::state::{PeerConnectionState};
+use opendut_model::peer::{PeerDescriptor, PeerId};
 use opentelemetry::propagation::TextMapPropagator;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 use tokio::sync::mpsc::error::SendError;

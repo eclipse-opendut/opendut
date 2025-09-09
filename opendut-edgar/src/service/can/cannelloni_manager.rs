@@ -6,8 +6,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tracing::{error, info};
-use opendut_types::util::net::NetworkInterfaceName;
-use opendut_types::util::Port;
+use opendut_model::util::net::NetworkInterfaceName;
+use opendut_model::util::Port;
 
 
 const MONITOR_INTERVAL_MS: u64 = 100;

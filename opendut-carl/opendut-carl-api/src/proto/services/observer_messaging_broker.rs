@@ -1,8 +1,8 @@
 use crate::carl;
 use crate::carl::observer::WaitForPeersOnlineResponseStatus;
-use opendut_types::conversion;
-use opendut_types::proto::ConversionError;
-use opendut_types::proto::ConversionResult;
+use opendut_model::conversion;
+use opendut_model::proto::ConversionError;
+use opendut_model::proto::ConversionResult;
 use std::collections::{HashMap, HashSet};
 
 tonic::include_proto!("opendut.carl.services.observer_messaging_broker");
@@ -12,7 +12,7 @@ conversion! {
     type Proto = WaitForPeersOnlineRequest;
     
     fn from(value: Model) -> Proto {
-        let peer_ids: Vec<opendut_types::proto::peer::PeerId> = value.peer_ids.into_iter().map(|id| id.into()).collect::<Vec<_>>();
+        let peer_ids: Vec<opendut_model::proto::peer::PeerId> = value.peer_ids.into_iter().map(|id| id.into()).collect::<Vec<_>>();
         let max_observation_duration = value.max_observation_duration.as_secs();
         WaitForPeersOnlineRequest {
             peer_ids,
@@ -22,7 +22,7 @@ conversion! {
     }
     fn try_from(value: Proto) -> ConversionResult<Model> {
         let peer_ids = value.peer_ids.into_iter()
-            .map(opendut_types::peer::PeerId::try_from).collect::<Result<HashSet<_>, ConversionError>>()?;
+            .map(opendut_model::peer::PeerId::try_from).collect::<Result<HashSet<_>, ConversionError>>()?;
         if value.max_observation_duration < Model::MIN_OBSERVATION_TIME_SECONDS || value.max_observation_duration > Model::MAX_OBSERVATION_TIME_SECONDS {
             return Err(ErrorBuilder::message(
                 format!("Requested observation duration of <{}> seconds is not allowed. Allowed range: {} to {} seconds.", value.max_observation_duration, Model::MIN_OBSERVATION_TIME_SECONDS, Model::MAX_OBSERVATION_TIME_SECONDS)
@@ -46,7 +46,7 @@ conversion! {
     fn from(value: Model) -> Proto {
         let peer_connection_states = value.peers.into_iter()
             .map(|(peer_id, peer_state)| (peer_id.uuid.to_string(), peer_state.into()))
-            .collect::<HashMap<String, opendut_types::proto::peer::PeerConnectionState>>();
+            .collect::<HashMap<String, opendut_model::proto::peer::PeerConnectionState>>();
         let status = match value.status {
             WaitForPeersOnlineResponseStatus::WaitForPeersOnlineSuccess => {
                 wait_for_peers_online_response::Status::Success(WaitForPeersOnlineSuccess {})
@@ -66,8 +66,8 @@ conversion! {
     
     fn try_from(value: Proto) -> ConversionResult<Model> {
         let peer_connection_states = value.peer_states.into_iter().map(|(peer_id, peer_connection_state)| {
-            let peer_id = opendut_types::peer::PeerId::try_from(peer_id.as_str());
-            let peer_state = opendut_types::peer::state::PeerConnectionState::try_from(peer_connection_state);
+            let peer_id = opendut_model::peer::PeerId::try_from(peer_id.as_str());
+            let peer_state = opendut_model::peer::state::PeerConnectionState::try_from(peer_connection_state);
             match (peer_id, peer_state) {
                 (Ok(peer_id), Ok(peer_state)) => {
                     Ok((peer_id, peer_state))

@@ -1,5 +1,5 @@
 use tracing::{error, info};
-use opendut_types::peer::state::PeerConnectionState;
+use opendut_model::peer::state::PeerConnectionState;
 use crate::manager::cluster_manager::ClusterManagerRef;
 use crate::resource::manager::{ResourceManagerRef, SubscriptionEvent};
 

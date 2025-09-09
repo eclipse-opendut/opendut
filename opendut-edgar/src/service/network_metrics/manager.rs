@@ -1,6 +1,6 @@
 use std::{collections::HashMap, net::IpAddr, ops::Not, sync::Arc, time::Duration};
 
-use opendut_types::peer::PeerId;
+use opendut_model::peer::PeerId;
 use opendut_util::{project, settings::LoadedConfig};
 use tokio::sync::Mutex;
 use tracing::{debug, error, trace};

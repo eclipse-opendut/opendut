@@ -1,8 +1,8 @@
-use opendut_types::peer::executor::{ExecutorDescriptor, ExecutorId};
+use opendut_model::peer::executor::{ExecutorDescriptor, ExecutorId};
 
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::peer::PeerId;
-use opendut_types::peer::executor::{container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine}, ExecutorKind, ResultsUrl};
+use opendut_model::peer::PeerId;
+use opendut_model::peer::executor::{container::{ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine}, ExecutorKind, ResultsUrl};
 
 use crate::{CreateOutputFormat, DescribeOutputFormat, EngineVariants};
 

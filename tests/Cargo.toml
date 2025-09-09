@@ -9,7 +9,7 @@ license.workspace = true
 opendut-carl = { workspace = true }
 opendut-carl-api = { workspace = true }
 opendut-edgar = { workspace = true, features = ["integration_testing"] }
-opendut-types = { workspace = true }
+opendut-model = { workspace = true }
 opendut-util = { workspace = true }
 
 anyhow = { workspace = true }

@@ -3,8 +3,8 @@ use leptos_router::NavigateOptions;
 use tracing::info;
 use ::url::Url;
 
-use opendut_types::cluster::ClusterId;
-use opendut_types::peer::PeerId;
+use opendut_model::cluster::ClusterId;
+use opendut_model::peer::PeerId;
 
 use crate::components::BasePageContainer;
 pub use routes::AppRoutes;
@@ -223,8 +223,8 @@ fn NotFound() -> impl IntoView {
 }
 
 mod url_encode {
-    use opendut_types::cluster::{IllegalClusterId, ClusterId};
-    use opendut_types::peer::{IllegalPeerId, PeerId};
+    use opendut_model::cluster::{IllegalClusterId, ClusterId};
+    use opendut_model::peer::{IllegalPeerId, PeerId};
 
     pub trait UrlEncodable {
         fn url_encode(&self) -> String;

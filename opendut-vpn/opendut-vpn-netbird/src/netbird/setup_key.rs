@@ -3,7 +3,7 @@ use std::fmt::{Debug, Formatter};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use opendut_types::peer::PeerId;
+use opendut_model::peer::PeerId;
 
 pub fn name_format(peer_id: PeerId) -> String {
     // Fixed format, do not change. Allows resolving EDGAR's NetBird peer without a mapping table.

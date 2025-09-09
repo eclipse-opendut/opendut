@@ -34,7 +34,7 @@ export TOKEN=$(curl \
 grpcurl \
     -proto $OPENDUT_REPO_ROOT/opendut-carl/opendut-carl-api/proto/opendut/carl/services/metadata-provider.proto \
     -import-path $OPENDUT_REPO_ROOT/opendut-carl/opendut-carl-api/proto/ \
-    -import-path $OPENDUT_REPO_ROOT/opendut-types/proto/ \
+    -import-path $OPENDUT_REPO_ROOT/opendut-model/proto/ \
     -expand-headers \
     -H 'Authorization: Bearer ${TOKEN}' \
     carl.opendut.local:443 \

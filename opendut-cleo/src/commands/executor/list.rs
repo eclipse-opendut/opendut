@@ -1,11 +1,11 @@
 use cli_table::{print_stdout, Table, WithTitle};
-use opendut_types::peer::executor::ExecutorDescriptor;
+use opendut_model::peer::executor::ExecutorDescriptor;
 use serde::Serialize;
 use uuid::Uuid;
 
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::peer::{PeerDescriptor, PeerId};
-use opendut_types::peer::executor::{container::{ContainerImage, Engine}, ExecutorKind};
+use opendut_model::peer::{PeerDescriptor, PeerId};
+use opendut_model::peer::executor::{container::{ContainerImage, Engine}, ExecutorKind};
 
 use crate::{ListOutputFormat};
 

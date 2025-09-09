@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::net::IpAddr;
 use async_trait::async_trait;
 use tracing::debug;
-use opendut_types::peer::PeerId;
+use opendut_model::peer::PeerId;
 use crate::common::task::{Success, Task, TaskAbsent, TaskStateFulfilled};
 use crate::service::network_metrics::manager::NetworkMetricsManagerRef;
 

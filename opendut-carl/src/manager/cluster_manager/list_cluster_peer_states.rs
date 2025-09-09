@@ -1,7 +1,7 @@
 use crate::manager::cluster_manager::ListClusterPeersError;
-use opendut_types::cluster::ClusterId;
-use opendut_types::peer::state::{PeerConnectionState, PeerMemberState, PeerState};
-use opendut_types::peer::PeerId;
+use opendut_model::cluster::ClusterId;
+use opendut_model::peer::state::{PeerConnectionState, PeerMemberState, PeerState};
+use opendut_model::peer::PeerId;
 use std::collections::{HashMap, HashSet};
 use crate::manager::peer_manager::list_peer_states::ListPeerStatesError;
 use crate::resource::api::resources::Resources;
@@ -133,13 +133,13 @@ pub enum ListClusterPeerStatesError {
 mod tests {
     use super::*;
     use crate::resource::manager::{ResourceManager, ResourceManagerRef};
-    use opendut_types::cluster::{ClusterDescriptor, ClusterDeployment, ClusterName};
-    use opendut_types::peer::executor::ExecutorDescriptors;
-    use opendut_types::peer::state::PeerConnectionState;
-    use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerNetworkDescriptor};
-    use opendut_types::topology::DeviceName;
-    use opendut_types::topology::{DeviceDescriptor, DeviceId, Topology};
-    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
+    use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment, ClusterName};
+    use opendut_model::peer::executor::ExecutorDescriptors;
+    use opendut_model::peer::state::PeerConnectionState;
+    use opendut_model::peer::{PeerDescriptor, PeerId, PeerName, PeerNetworkDescriptor};
+    use opendut_model::topology::DeviceName;
+    use opendut_model::topology::{DeviceDescriptor, DeviceId, Topology};
+    use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
     use std::collections::HashSet;
     use std::net::IpAddr;
     use std::str::FromStr;

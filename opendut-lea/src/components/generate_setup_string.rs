@@ -1,6 +1,6 @@
 use leptos::{either::Either, prelude::*};
 use crate::components::{use_toaster, ButtonColor, ButtonState, SimpleButton, Toast, WarningMessage};
-use opendut_types::peer::PeerId;
+use opendut_model::peer::PeerId;
 use crate::app::use_app_globals;
 use crate::user::UserAuthenticationSignal;
 

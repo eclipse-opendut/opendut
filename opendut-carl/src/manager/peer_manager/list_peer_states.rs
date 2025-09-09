@@ -1,8 +1,8 @@
 use crate::resource::api::resources::Resources;
 use crate::resource::persistence::error::{PersistenceError, PersistenceResult};
 use crate::resource::storage::ResourcesStorageApi;
-use opendut_types::peer::state::{PeerConnectionState, PeerState};
-use opendut_types::peer::PeerId;
+use opendut_model::peer::state::{PeerConnectionState, PeerState};
+use opendut_model::peer::PeerId;
 use std::collections::HashMap;
 use tracing::debug;
 use crate::manager::peer_manager::list_peer_member_states::ListPeerMemberStatesError;

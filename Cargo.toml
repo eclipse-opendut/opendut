@@ -9,7 +9,7 @@ members = [
     "opendut-edgar/plugin-api",
     "opendut-lea",
     "opendut-lea/opendut-lea-components",
-    "opendut-types",
+    "opendut-model",
     "opendut-util",
     "opendut-util/opendut-auth",
     "opendut-util/opendut-auth/opendut-auth-tests",
@@ -40,7 +40,7 @@ opendut-edgar-plugin-api = { path = "opendut-edgar/plugin-api" }
 opendut-edgar-kernel-modules = { path = "opendut-edgar/opendut-edgar-kernel-modules" }
 opendut-lea-components = { path = "opendut-lea/opendut-lea-components" }
 opendut-netbird-client-api = { path = "opendut-edgar/netbird-client-api" }
-opendut-types = { path = "opendut-types" }
+opendut-model = { path = "opendut-model" }
 opendut-theo = { path = ".ci/docker/theo" }
 opendut-util = { path = "opendut-util" }
 opendut-util-core = { path = "opendut-util/opendut-util-core" }

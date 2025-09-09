@@ -1,12 +1,12 @@
-use opendut_types::ShortName;
-use opendut_types::peer::PeerDisplay;
+use opendut_model::ShortName;
+use opendut_model::peer::PeerDisplay;
 use crate::resource::storage::ResourcesStorageApi;
 use crate::settings::vpn::Vpn;
 use opendut_auth::registration::client::RegistrationClientRef;
-use opendut_types::peer::{PeerDescriptor, PeerId, PeerName};
+use opendut_model::peer::{PeerDescriptor, PeerId, PeerName};
 use tracing::{debug, info, warn};
-use opendut_types::cluster::ClusterId;
-use opendut_types::peer::state::{PeerMemberState, PeerState};
+use opendut_model::cluster::ClusterId;
+use opendut_model::peer::state::{PeerMemberState, PeerState};
 use crate::manager::peer_manager::list_peer_member_states::ListPeerMemberStatesError;
 use crate::resource::api::resources::Resources;
 use crate::resource::persistence::error::PersistenceError;
@@ -118,7 +118,7 @@ pub enum DeletePeerDescriptorError {
 
 #[cfg(test)]
 mod tests {
-    use opendut_types::cluster::ClusterDeployment;
+    use opendut_model::cluster::ClusterDeployment;
     use crate::manager::testing::ClusterFixture;
     use crate::resource::manager::ResourceManager;
     use super::*;

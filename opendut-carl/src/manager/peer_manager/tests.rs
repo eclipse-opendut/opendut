@@ -1,7 +1,7 @@
-use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
-use opendut_types::peer::executor::ExecutorDescriptors;
-use opendut_types::topology::Topology;
-use opendut_types::util::net::NetworkInterfaceName;
+use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
+use opendut_model::peer::executor::ExecutorDescriptors;
+use opendut_model::topology::Topology;
+use opendut_model::util::net::NetworkInterfaceName;
 
 pub fn create_peer_descriptor(peer_id: PeerId) -> PeerDescriptor {
     PeerDescriptor {

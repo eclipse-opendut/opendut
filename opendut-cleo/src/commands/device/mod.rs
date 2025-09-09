@@ -7,7 +7,7 @@ pub mod list;
 use cli_table::{Table, WithTitle};
 use serde::Serialize;
 
-use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName};
+use opendut_model::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName};
 
 use crate::ListOutputFormat;
 

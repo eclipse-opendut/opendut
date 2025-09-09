@@ -18,8 +18,8 @@ impl YamlSpecificationFile {
     /// # Example
     ///
     /// ```
-    /// # use opendut_types::specs::parse::yaml::YamlSpecificationFile;
-    /// # fn main() -> Result<(), opendut_types::specs::parse::ParseSpecificationError> {
+    /// # use opendut_model::specs::parse::yaml::YamlSpecificationFile;
+    /// # fn main() -> Result<(), opendut_model::specs::parse::ParseSpecificationError> {
     /// let yaml = r#"
     /// ---
     /// kind: PeerDescriptor

@@ -1,6 +1,6 @@
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::peer::PeerId;
-use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
+use opendut_model::peer::PeerId;
+use opendut_model::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
 use crate::{CreateOutputFormat, DescribeOutputFormat, NetworkInterfaceType};
 

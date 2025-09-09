@@ -31,7 +31,7 @@ wasm-client = [
 
 [dependencies]
 opendut-auth = { workspace = true, optional = true }
-opendut-types = { workspace = true }
+opendut-model = { workspace = true }
 opendut-util-core = { workspace = true }
 
 cfg-if = { workspace = true }

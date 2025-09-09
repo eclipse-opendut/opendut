@@ -63,7 +63,7 @@ mod auth_tests {
     
     use opendut_auth::registration::client::{Clients, RegistrationClientRef};
     use opendut_auth::registration::resources::UserId;
-    use opendut_types::resources::Id;
+    use opendut_model::resources::Id;
 
     use crate::{registration_client};
 

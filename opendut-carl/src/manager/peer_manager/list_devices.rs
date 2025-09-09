@@ -1,7 +1,7 @@
 use crate::resource::api::resources::Resources;
 use crate::resource::storage::ResourcesStorageApi;
-use opendut_types::peer::PeerDescriptor;
-use opendut_types::topology::DeviceDescriptor;
+use opendut_model::peer::PeerDescriptor;
+use opendut_model::topology::DeviceDescriptor;
 use std::collections::HashMap;
 use tracing::{debug, info};
 use crate::resource::persistence::error::PersistenceError;

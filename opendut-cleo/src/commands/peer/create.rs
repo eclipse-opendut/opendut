@@ -2,9 +2,9 @@ use console::Style;
 
 use crate::{CreateOutputFormat};
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
-use opendut_types::peer::executor::{ExecutorDescriptors};
-use opendut_types::util::net::NetworkInterfaceName;
+use opendut_model::peer::{PeerDescriptor, PeerId, PeerLocation, PeerName, PeerNetworkDescriptor};
+use opendut_model::peer::executor::{ExecutorDescriptors};
+use opendut_model::util::net::NetworkInterfaceName;
 
 /// Create a peer
 #[derive(clap::Parser)]

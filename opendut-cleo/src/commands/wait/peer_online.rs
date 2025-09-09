@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::time::Duration;
 use crate::commands::wait::await_peers_online;
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::peer::PeerId;
+use opendut_model::peer::PeerId;
 
 /// Wait for a peer to come online
 #[derive(clap::Parser)]

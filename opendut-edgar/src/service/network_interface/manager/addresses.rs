@@ -2,7 +2,7 @@ use std::net::IpAddr;
 use futures::TryStreamExt;
 use netlink_packet_route::address::{AddressAttribute, AddressMessage};
 use netlink_packet_route::AddressFamily;
-use opendut_types::util::net::NetworkInterfaceName;
+use opendut_model::util::net::NetworkInterfaceName;
 use crate::service::network_interface::manager::interface::Interface;
 use crate::service::network_interface::manager::{Error, NetworkInterfaceManager};
 
@@ -108,7 +108,7 @@ impl NetworkInterfaceManager {
 #[cfg(test)]
 mod tests {
     use std::net::{IpAddr, Ipv4Addr};
-    use opendut_types::util::net::NetworkInterfaceName;
+    use opendut_model::util::net::NetworkInterfaceName;
     use crate::service::network_interface::manager::NetworkInterfaceManager;
 
     #[test_with::env(RUN_EDGAR_NETLINK_INTEGRATION_TESTS)]

@@ -2,7 +2,7 @@ use std::net::Ipv4Addr;
 use std::sync::Arc;
 use tracing::debug;
 
-use opendut_types::util::net::NetworkInterfaceName;
+use opendut_model::util::net::NetworkInterfaceName;
 
 use crate::service::network_interface;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;

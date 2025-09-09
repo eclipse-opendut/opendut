@@ -2,9 +2,9 @@ use crate::resource::api::resources::Resources;
 use crate::resource::persistence::error::PersistenceError;
 use crate::resource::storage::ResourcesStorageApi;
 use crate::settings::vpn::Vpn;
-use opendut_types::peer::state::PeerState;
-use opendut_types::peer::{PeerDescriptor, PeerId, PeerName};
-use opendut_types::ShortName;
+use opendut_model::peer::state::PeerState;
+use opendut_model::peer::{PeerDescriptor, PeerId, PeerName};
+use opendut_model::ShortName;
 use tracing::{debug, error, info, warn};
 
 pub struct StorePeerDescriptorParams {
@@ -92,10 +92,10 @@ mod tests {
     use crate::manager::testing::PeerFixture;
     use crate::resource::manager::ResourceManager;
     use googletest::prelude::*;
-    use opendut_types::peer::PeerNetworkDescriptor;
-    use opendut_types::topology::DeviceDescriptor;
-    use opendut_types::topology::{DeviceDescription, DeviceId, DeviceName, Topology};
-    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
+    use opendut_model::peer::PeerNetworkDescriptor;
+    use opendut_model::topology::DeviceDescriptor;
+    use opendut_model::topology::{DeviceDescription, DeviceId, DeviceName, Topology};
+    use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
     #[tokio::test]
     async fn should_update_expected_resources() -> anyhow::Result<()> {

@@ -9,7 +9,7 @@ pub use controls::Controls;
 pub use device_selector::{DeviceSelector, DeviceSelection};
 pub use cluster_name_input::ClusterNameInput;
 pub use leader_selector::{LeaderSelector, LeaderSelection};
-use opendut_types::topology::DeviceId;
+use opendut_model::topology::DeviceId;
 
 
 fn get_all_selected_devices(getter: Signal<DeviceSelection>) -> HashSet<DeviceId> {

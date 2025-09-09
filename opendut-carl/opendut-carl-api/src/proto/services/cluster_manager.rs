@@ -1,11 +1,11 @@
 use crate::carl;
 use crate::carl::cluster::{CreateClusterDescriptorError, DeleteClusterDeploymentError, DeleteClusterDescriptorError, StoreClusterDeploymentError};
-use opendut_types::cluster::state::ClusterState;
-use opendut_types::cluster::{ClusterId, ClusterName};
-use opendut_types::conversion;
-use opendut_types::proto;
-use opendut_types::proto::ConversionResult;
-use opendut_types::proto::{ConversionError, ConversionErrorBuilder};
+use opendut_model::cluster::state::ClusterState;
+use opendut_model::cluster::{ClusterId, ClusterName};
+use opendut_model::conversion;
+use opendut_model::proto;
+use opendut_model::proto::ConversionResult;
+use opendut_model::proto::{ConversionError, ConversionErrorBuilder};
 use std::collections::HashMap;
 
 tonic::include_proto!("opendut.carl.services.cluster_manager");
@@ -36,8 +36,8 @@ conversion! {
         let result = match result {
             list_cluster_peer_states_response::Result::Success(ListClusterPeerStatesSuccess { peer_states}) => {
                 let peer_states = peer_states.into_iter().map(|(peer_id, peer_state)| {
-                    let peer_id = opendut_types::peer::PeerId::try_from(peer_id.as_str());
-                    let peer_state = opendut_types::peer::state::PeerState::try_from(peer_state);
+                    let peer_id = opendut_model::peer::PeerId::try_from(peer_id.as_str());
+                    let peer_state = opendut_model::peer::state::PeerState::try_from(peer_state);
                     match (peer_id, peer_state) {
                         (Ok(peer_id), Ok(peer_state)) => {
                             Ok((peer_id, peer_state))

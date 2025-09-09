@@ -8,9 +8,9 @@ use leptos::html::Div;
 use leptos::prelude::*;
 use leptos_use::on_click_outside;
 use tracing::trace;
-use opendut_types::cluster::ClusterDescriptor;
-use opendut_types::peer::state::{PeerConnectionState, PeerState};
-use opendut_types::peer::PeerDescriptor;
+use opendut_model::cluster::ClusterDescriptor;
+use opendut_model::peer::state::{PeerConnectionState, PeerState};
+use opendut_model::peer::PeerDescriptor;
 
 #[component(transparent)]
 pub fn PeersOverview() -> impl IntoView {

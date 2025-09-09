@@ -1,8 +1,8 @@
 use crate::app_info;
 use crate::common::{carl, settings};
 use anyhow::Context;
-use opendut_types::peer::configuration::PeerConfigurationState;
-use opendut_types::peer::PeerId;
+use opendut_model::peer::configuration::PeerConfigurationState;
+use opendut_model::peer::PeerId;
 use opendut_util::telemetry;
 use opendut_util::telemetry::logging::LoggingConfig;
 use opendut_util::telemetry::opentelemetry_types;

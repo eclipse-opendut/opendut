@@ -1,6 +1,6 @@
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::peer::executor::{container::ContainerImage, ExecutorKind};
-use opendut_types::peer::PeerId;
+use opendut_model::peer::executor::{container::ContainerImage, ExecutorKind};
+use opendut_model::peer::PeerId;
 
 /// Delete a container executor
 #[derive(clap::Parser)]

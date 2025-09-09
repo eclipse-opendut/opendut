@@ -2,7 +2,7 @@
 target = "index.html"
 
 [watch]
-watch = ["src", "assets", "../opendut-carl/opendut-carl-api", "../opendut-types"]
+watch = ["src", "assets", "../opendut-carl/opendut-carl-api", "../opendut-model"]
 
 [serve]
 addresses = ["0.0.0.0"]

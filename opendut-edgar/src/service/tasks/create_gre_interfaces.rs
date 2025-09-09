@@ -3,7 +3,7 @@ use crate::service::network_interface::manager::interface::Interface;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use async_trait::async_trait;
 use rtnetlink::packet_route::link::LinkFlags;
-use opendut_types::peer::configuration::parameter;
+use opendut_model::peer::configuration::parameter;
 
 pub struct ManageGreInterface {
     pub parameter: parameter::GreInterfaceConfig,
@@ -87,7 +87,7 @@ mod tests {
     use super::*;
     use crate::service::network_interface::manager::NetworkInterfaceManager;
     use crate::common::task::service_runner;
-    use opendut_types::peer::configuration::ParameterTarget;
+    use opendut_model::peer::configuration::ParameterTarget;
     use std::net::Ipv4Addr;
     use std::str::FromStr;
     use std::sync::Arc;

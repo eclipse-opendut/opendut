@@ -8,7 +8,7 @@ use uuid::Uuid;
 use walkdir::WalkDir;
 use zip::{CompressionMethod, write::{FileOptionExtension, FileOptions, SimpleFileOptions}, ZipWriter};
 
-use opendut_types::peer::executor::{container::{CommandName, ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine}, ResultsUrl};
+use opendut_model::peer::executor::{container::{CommandName, ContainerCommand, ContainerCommandArgument, ContainerDevice, ContainerEnvironmentVariable, ContainerImage, ContainerName, ContainerPortSpec, ContainerVolume, Engine}, ResultsUrl};
 
 use crate::service::test_execution::webdav_client::{self, WebdavClient};
 

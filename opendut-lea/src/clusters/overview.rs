@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use tracing::{debug, error};
 use opendut_carl_api::carl::ClientError;
 use opendut_carl_api::carl::cluster::StoreClusterDeploymentError;
-use opendut_types::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
+use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
 
 use crate::app::use_app_globals;
 use crate::clusters::components::CreateClusterButton;

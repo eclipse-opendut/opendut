@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::time::Duration;
 use opendut_carl_api::carl::CarlClient;
 use opendut_carl_api::carl::cluster::{ListClusterPeerStatesResponse};
-use opendut_types::cluster::ClusterId;
+use opendut_model::cluster::ClusterId;
 use crate::commands::wait::await_peers_online;
 
 /// Wait for all peers in a cluster to come online

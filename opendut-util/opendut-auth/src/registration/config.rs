@@ -3,7 +3,7 @@ use config::Config;
 use oauth2::RedirectUrl;
 use openidconnect::RegistrationUrl;
 use url::Url;
-use opendut_types::util::net::{ClientCredentials, ClientId, ClientSecret};
+use opendut_model::util::net::{ClientCredentials, ClientId, ClientSecret};
 use crate::confidential::client::ConfidentialClient;
 use crate::registration::client::{DEVICE_REDIRECT_URL, RegistrationClientError};
 use crate::registration::resources::ResourceHomeUrl;

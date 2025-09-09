@@ -6,7 +6,7 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-opendut-types = { workspace = true }
+opendut-model = { workspace = true }
 
 hyper-util = { workspace = true, features = ["tokio"] }
 prost = { workspace = true, default-features = true }

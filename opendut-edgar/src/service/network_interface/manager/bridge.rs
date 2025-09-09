@@ -1,7 +1,7 @@
 use futures::TryStreamExt;
 use rtnetlink::{LinkBridge, LinkMessageBuilder};
 use tracing::warn;
-use opendut_types::util::net::NetworkInterfaceName;
+use opendut_model::util::net::NetworkInterfaceName;
 use crate::service::network_interface::manager::interface::Interface;
 use crate::service::network_interface::manager::{Error, NetworkInterfaceManager};
 use crate::service::network_interface::manager::list_joined_interfaces::ShowJoinedInterfaces;
@@ -69,7 +69,7 @@ impl NetworkInterfaceManager {
 #[cfg(test)]
 mod tests {
     use tracing::debug;
-    use opendut_types::util::net::NetworkInterfaceName;
+    use opendut_model::util::net::NetworkInterfaceName;
     use crate::service::network_interface::manager::NetworkInterfaceManager;
 
     #[test_with::env(RUN_EDGAR_NETLINK_INTEGRATION_TESTS)]

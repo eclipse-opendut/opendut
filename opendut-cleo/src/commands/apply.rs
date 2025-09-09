@@ -4,13 +4,13 @@ use crate::commands::peer::apply::convert_document_to_peer_descriptor;
 use crate::commands::peer::create::create_peer;
 use crate::CreateOutputFormat;
 use opendut_carl_api::carl::CarlClient;
-use opendut_types::cluster::ClusterDescriptor;
-use opendut_types::peer::PeerDescriptor;
-use opendut_types::specs::cluster::ClusterDescriptorSpecification;
-use opendut_types::specs::parse::json::JsonSpecificationDocument;
-use opendut_types::specs::parse::yaml::YamlSpecificationFile;
-use opendut_types::specs::peer::PeerDescriptorSpecification;
-use opendut_types::specs::{Specification, SpecificationDocument};
+use opendut_model::cluster::ClusterDescriptor;
+use opendut_model::peer::PeerDescriptor;
+use opendut_model::specs::cluster::ClusterDescriptorSpecification;
+use opendut_model::specs::parse::json::JsonSpecificationDocument;
+use opendut_model::specs::parse::yaml::YamlSpecificationFile;
+use opendut_model::specs::peer::PeerDescriptorSpecification;
+use opendut_model::specs::{Specification, SpecificationDocument};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
@@ -150,12 +150,12 @@ fn convert_document_to_model(specification_document: SpecificationDocument) -> c
 mod tests {
     use super::*;
     use googletest::prelude::*;
-    use opendut_types::peer::executor::ExecutorDescriptors;
-    use opendut_types::peer::{PeerDescriptor, PeerId, PeerName, PeerNetworkDescriptor};
-    use opendut_types::specs::peer::{NetworkDescriptorSpecificationV1, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDescriptorSpecification, PeerDescriptorSpecificationV1, TopologySpecificationV1};
-    use opendut_types::specs::{Specification, SpecificationDocument, SpecificationMetadata};
-    use opendut_types::topology::Topology;
-    use opendut_types::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
+    use opendut_model::peer::executor::ExecutorDescriptors;
+    use opendut_model::peer::{PeerDescriptor, PeerId, PeerName, PeerNetworkDescriptor};
+    use opendut_model::specs::peer::{NetworkDescriptorSpecificationV1, NetworkInterfaceDescriptorSpecificationV1, NetworkInterfaceKind, PeerDescriptorSpecification, PeerDescriptorSpecificationV1, TopologySpecificationV1};
+    use opendut_model::specs::{Specification, SpecificationDocument, SpecificationMetadata};
+    use opendut_model::topology::Topology;
+    use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
     #[test]
     fn should_convert_document_to_model() -> anyhow::Result<()> {

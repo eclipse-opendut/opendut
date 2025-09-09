@@ -1,6 +1,6 @@
 use crate::resource::persistence::error::{PersistenceError};
 use crate::resource::storage::ResourcesStorageApi;
-use opendut_types::cluster::{ClusterDescriptor, ClusterDeployment};
+use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment};
 use std::collections::{HashSet};
 
 pub mod internal {

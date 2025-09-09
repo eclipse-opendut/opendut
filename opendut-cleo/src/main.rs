@@ -7,7 +7,7 @@ use console::Style;
 use uuid::Uuid;
 use opendut_carl_api::carl::{CaCertInfo, CarlClient};
 use opendut_carl_api::carl::metadata::version_compatibility::VersionCompatibilityInfo;
-use opendut_types::topology::{DeviceId, DeviceName};
+use opendut_model::topology::{DeviceId, DeviceName};
 use opendut_util::settings::{load_config, FileFormat, LoadedConfig};
 
 mod commands;

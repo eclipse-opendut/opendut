@@ -1,6 +1,6 @@
 use opendut_carl_api::carl::cluster::DeleteClusterDescriptorError;
 use opendut_carl_api::carl::{CarlClient, ClientError};
-use opendut_types::cluster::ClusterId;
+use opendut_model::cluster::ClusterId;
 
 /// Delete a cluster descriptor
 #[derive(clap::Parser)]
