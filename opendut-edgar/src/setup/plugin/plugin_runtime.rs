@@ -5,8 +5,7 @@ use std::process::Command;
 use wasmtime::component::HasSelf;
 use wasmtime::component::{Component, Linker, ResourceTable};
 use wasmtime::{Config, Engine, Store};
-use wasmtime_wasi::{DirPerms, FilePerms};
-use wasmtime_wasi::p2::{IoView, WasiCtx, WasiCtxBuilder, WasiView};
+use wasmtime_wasi::{DirPerms, FilePerms, WasiCtx, WasiCtxBuilder, WasiCtxView, WasiView};
 use tracing::{event, trace, Level};
 
 pub struct PluginRuntime {
@@ -69,14 +68,11 @@ impl PluginState {
 }
 
 impl WasiView for PluginState {
-    fn ctx(&mut self) -> &mut WasiCtx {
-        &mut self.ctx
-    }
-}
-
-impl IoView for PluginState {
-    fn table(&mut self) -> &mut ResourceTable {
-        &mut self.table
+    fn ctx(&mut self) -> WasiCtxView<'_> {
+        WasiCtxView{
+            ctx: &mut self.ctx,
+            table: &mut self.table,
+        }
     }
 }
 
