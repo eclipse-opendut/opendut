@@ -168,7 +168,7 @@ wasmtime = { version= "36.0", features = ["component-model", "std", "runtime"] }
 wasmtime-wasi = "36.0"
 which = "8.0.0"
 wit-bindgen = "0.45"
-zip = "4.0.0"
+zip = "5.0.0"
 
 
 [workspace.metadata.ci]
@@ -190,10 +190,10 @@ rperf.version = "0.1.8"
 [workspace.metadata.cicero.commands.dependencies] #CLI tool crates used in CI (not libraries)
 cargo-bundle-licenses = "4.0.0"
 cargo-deny = "0.18.2"
-cargo-sbom = "0.9.1"
+cargo-sbom = "0.10.0"
 cargo-tarpaulin = "0.32.6"
 cross = "0.2.5"
-mdbook = "0.4.51"
+mdbook = "0.4.52"
 mdbook-plantuml = "0.8.0"
 trunk = "0.21.14"
 
