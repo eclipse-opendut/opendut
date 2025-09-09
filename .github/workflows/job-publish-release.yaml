@@ -35,14 +35,14 @@ jobs:
 
     - uses: ncipollo/release-action@6c75be85e571768fa31b40abf38de58ba0397db5
       name: "Create Versioned Release"
-      if: ${{ !startsWith( github.ref, 'refs/tags/canary' ) }}
+      if: ${{ !(contains( github.ref, 'alpha' ) || startsWith( github.ref, 'refs/tags/canary' )) }}
       with:
         artifacts: ${{ env.artifacts_pattern }}
         body: "See the changelog for more information: https://opendut.eclipse.dev/book/changelog.html"
 
     - uses: ncipollo/release-action@6c75be85e571768fa31b40abf38de58ba0397db5
       name: "Create Canary Release"
-      if: ${{ startsWith( github.ref, 'refs/tags/canary' ) }}
+      if: ${{ contains( github.ref, 'alpha' ) || startsWith( github.ref, 'refs/tags/canary' ) }}
       with:
         name: ${{ github.ref_name }}
         body: "Unstable release, intended for testing."
