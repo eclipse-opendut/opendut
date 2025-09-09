@@ -2,7 +2,7 @@ use crate::setup::plugin::setup_plugin::SetupPluginStore;
 use opendut_edgar_plugin_api::host::{Host, LogLevel, SetupPlugin, Success, TaskFulfilled};
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use wasmtime::component::__internal;
+use wasmtime::component::HasSelf;
 use wasmtime::component::{Component, Linker, ResourceTable};
 use wasmtime::{Config, Engine, Store};
 use wasmtime_wasi::{DirPerms, FilePerms};
@@ -27,7 +27,7 @@ impl PluginRuntime {
         wasmtime_wasi::p2::add_to_linker_sync(&mut linker).expect("Could not add wasi to linker");
 
         // Necessary if Interface defines Imports
-        SetupPlugin::add_to_linker(&mut linker, |state: &mut PluginState| state)
+        SetupPlugin::add_to_linker::<_, HasSelf<_>>(&mut linker, |state: &mut PluginState| state)
             .expect("Could not add PluginState to linker");
 
         Self { engine, linker }
@@ -83,9 +83,9 @@ impl IoView for PluginState {
 impl Host for PluginState {
     fn call_command(
         &mut self,
-        command: __internal::String,
-        args: __internal::Vec<__internal::String>,
-    ) -> Result<__internal::String, __internal::String> {
+        command: String,
+        args: Vec<String>,
+    ) -> Result<String, String> {
         trace!("Plugin executing command {command} with args {args:?}");
 
         let mut command = Command::new(command);
@@ -106,7 +106,7 @@ impl Host for PluginState {
         }
     }
     
-    fn log(&mut self, level:LogLevel, message:__internal::String) {
+    fn log(&mut self, level:LogLevel, message: String) {
         let path = self.path.display().to_string();
         match level {
             LogLevel::Trace => event!(Level::TRACE, plugin = path, message),
