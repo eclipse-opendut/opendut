@@ -1,14 +1,14 @@
 use leptos::prelude::*;
 use leptos_router::NavigateOptions;
 use tracing::info;
-use url::Url;
+use ::url::Url;
 
 use opendut_types::cluster::ClusterId;
 use opendut_types::peer::PeerId;
 
 use crate::components::BasePageContainer;
-use opendut_lea_core::url::UrlEncodable;
 pub use routes::AppRoutes;
+use url_encode::UrlEncodable;
 
 pub mod path {
     #![allow(non_upper_case_globals)]
@@ -211,7 +211,6 @@ pub fn navigate_to(route: WellKnownRoutes, use_navigate: impl Fn(&str, NavigateO
 
 #[component]
 fn NotFound() -> impl IntoView {
-
     view! {
         <BasePageContainer
             title="Not Found"
@@ -220,5 +219,43 @@ fn NotFound() -> impl IntoView {
         >
             <p class="subtitle">"The page you are looking for does not exist."</p>
         </BasePageContainer>
+    }
+}
+
+mod url_encode {
+    use opendut_types::cluster::{IllegalClusterId, ClusterId};
+    use opendut_types::peer::{IllegalPeerId, PeerId};
+
+    pub trait UrlEncodable {
+        fn url_encode(&self) -> String;
+    }
+
+    #[allow(unused)]
+    pub trait UrlDecodable<T, E> {
+        fn url_decode(encoded: &str) -> Result<T, E>;
+    }
+
+    impl UrlEncodable for ClusterId {
+        fn url_encode(&self) -> String {
+            self.to_string()
+        }
+    }
+
+    impl UrlDecodable<ClusterId, IllegalClusterId> for ClusterId {
+        fn url_decode(encoded: &str) -> Result<ClusterId, IllegalClusterId> {
+            ClusterId::try_from(encoded)
+        }
+    }
+
+    impl UrlEncodable for PeerId {
+        fn url_encode(&self) -> String {
+            self.to_string()
+        }
+    }
+
+    impl UrlDecodable<PeerId, IllegalPeerId> for PeerId {
+        fn url_decode(encoded: &str) -> Result<PeerId, IllegalPeerId> {
+            PeerId::try_from(encoded)
+        }
     }
 }

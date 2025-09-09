@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use crate::components::ButtonState;
+use crate::ButtonState;
 
 
 pub trait ButtonStateSignalProvider {

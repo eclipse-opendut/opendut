@@ -3,7 +3,7 @@ mod authenticated;
 mod generate_setup_string;
 mod util;
 
-pub use opendut_lea_core::components::*;
+pub use opendut_lea_components::*;
 
 pub use auth::LeaAuthenticated;
 pub use authenticated::{AppGlobalsResource, Initialized};

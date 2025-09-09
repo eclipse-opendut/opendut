@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use crate::components::{ButtonColor, ButtonState, FontAwesomeIcon};
+use crate::{ButtonColor, ButtonState, FontAwesomeIcon};
 
 #[component]
 pub fn SimpleButton<A>(

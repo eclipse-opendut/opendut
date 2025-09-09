@@ -1,4 +1,4 @@
-use crate::util::Ior::{Both, Left, Right};
+use self::Ior::{Both, Left, Right};
 
 /// Generic representation of an Inclusive-Or.
 /// Similar to [std::result::Result], but both values can occur at the same time.

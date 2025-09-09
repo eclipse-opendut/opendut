@@ -1,8 +1,8 @@
 use leptos::prelude::*;
 use tracing::trace;
 
-use crate::components::toast::notification::Notification;
-use crate::components::toast::ToastMap;
+use crate::toast::notification::Notification;
+use crate::toast::ToastMap;
 
 #[component]
 pub fn Container(

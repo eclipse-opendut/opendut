@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 
-use crate::components::{Breadcrumbs, Breadcrumb};
+use crate::{Breadcrumbs, Breadcrumb};
 
 #[component]
 pub fn BasePageContainer<C>(

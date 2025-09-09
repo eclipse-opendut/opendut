@@ -1,7 +1,7 @@
 use std::ops::Not;
 
 use leptos::prelude::*;
-use crate::components::toast::{Toast, ToastContent, ToastKind};
+use crate::toast::{Toast, ToastContent, ToastKind};
 
 #[component]
 pub fn Notification<OnRemove>(

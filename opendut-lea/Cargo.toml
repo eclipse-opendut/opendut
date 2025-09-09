@@ -8,7 +8,7 @@ license.workspace = true
 [dependencies]
 opendut-carl-api = { workspace = true, features = ["wasm-client"] }
 opendut-auth = { workspace = true, features = ["public_client"] }
-opendut-lea-core = { workspace = true }
+opendut-lea-components = { workspace = true }
 opendut-types = { workspace = true }
 
 

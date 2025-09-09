@@ -4,14 +4,15 @@ use leptos::either::Either;
 use leptos::prelude::*;
 use leptos::reactive::wrappers::write::SignalSetter;
 use tracing::warn;
+use opendut_lea_components::Ior;
 use opendut_types::peer::{PeerDescriptor, PeerId};
 use opendut_types::topology::{DeviceDescriptor, DeviceId};
 use opendut_types::util::net::NetworkInterfaceDescriptor;
 use crate::clusters::configurator::components::get_all_selected_devices;
 use crate::clusters::configurator::types::UserClusterDescriptor;
 use crate::components::{ButtonColor, ButtonSize, ButtonState, CollapseButton, FontAwesomeIcon, IconButton};
-use opendut_lea_core::{Ior, NON_BREAKING_SPACE};
-use opendut_lea_core::net::UserNetworkInterfaceConfiguration;
+use crate::components::NON_BREAKING_SPACE;
+use crate::components::UserNetworkInterfaceConfiguration;
 
 pub type DeviceSelectionError = String;
 pub type DeviceSelection = Ior<DeviceSelectionError, HashSet<DeviceId>>;

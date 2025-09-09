@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 use leptos::reactive::wrappers::write::SignalSetter;
-use crate::components::inputs::{UserInputValidator, UserInputValue};
+use crate::inputs::{UserInputValidator, UserInputValue};
 
 use crate::NON_BREAKING_SPACE;
 

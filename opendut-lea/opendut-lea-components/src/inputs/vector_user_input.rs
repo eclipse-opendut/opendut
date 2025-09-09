@@ -1,8 +1,9 @@
 use leptos::prelude::*;
 use leptos::reactive::wrappers::write::SignalSetter;
-use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, UserInputError};
-use crate::components::inputs::{UserInputValidator, UserInputValue};
-use crate::{Ior, NON_BREAKING_SPACE};
+use crate::util::ior::Ior;
+use crate::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, UserInputError};
+use crate::inputs::{UserInputValidator, UserInputValue};
+use crate::NON_BREAKING_SPACE;
 
 #[component]
 pub fn VectorUserInput<OnAddFn>(

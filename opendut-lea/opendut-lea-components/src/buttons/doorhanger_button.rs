@@ -1,9 +1,9 @@
 use leptos::prelude::*;
 use leptos::html::Div;
 use leptos_use::on_click_outside;
-use crate::components::{ButtonSize, IconButton};
-use crate::components::{ButtonColor, ButtonState, FontAwesomeIcon};
-use crate::components::doorhanger::{Doorhanger, DoorhangerAlignment};
+use crate::{ButtonSize, IconButton};
+use crate::{ButtonColor, ButtonState, FontAwesomeIcon};
+use crate::doorhanger::{Doorhanger, DoorhangerAlignment};
 
 #[component]
 pub fn DoorhangerButton(

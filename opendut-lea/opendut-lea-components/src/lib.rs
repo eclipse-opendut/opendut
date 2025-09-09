@@ -1,3 +1,15 @@
+//! This crate serves as a component library for opendut-lea.
+//!
+//! All components which are generic enough so that
+//! they could be used in another web-UI should
+//! be extracted into this library.
+//!
+//! The goal is a clearer seperation to help with
+//! structuring the code, but in particular also to
+//! reduce compile times. By moving code into a separate
+//! crate, we benefit from incremental compilation.
+
+
 pub use breadcrumbs::{Breadcrumb, Breadcrumbs};
 pub use buttons::button::SimpleButton;
 pub use buttons::confirmation_button::ConfirmationButton;
@@ -13,7 +25,9 @@ pub use loading_spinner::LoadingSpinner;
 pub use page::BasePageContainer;
 pub use toast::{use_toaster, Toast, ToastContent, ToastKind, Toaster};
 pub use warning_message::WarningMessage;
-pub use util::{ButtonStateSignalProvider, Toggled};
+pub use util::ior::Ior;
+pub use util::net::UserNetworkInterfaceConfiguration;
+pub use util::signal::{ButtonStateSignalProvider, Toggled};
 
 pub mod health;
 pub mod tooltip;
@@ -27,6 +41,8 @@ mod page;
 mod toast;
 mod warning_message;
 mod util;
+
+pub const NON_BREAKING_SPACE: &str = "\u{a0}";
 
 #[derive(Clone, Copy, Debug)]
 #[allow(dead_code)]

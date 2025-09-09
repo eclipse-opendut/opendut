@@ -1,8 +1,8 @@
 use leptos::prelude::*;
 use crate::components::BasePageContainer;
+use crate::components::NON_BREAKING_SPACE;
 
 use shadow_rs::shadow;
-use opendut_lea_core::NON_BREAKING_SPACE;
 shadow!(build);
 
 #[component]

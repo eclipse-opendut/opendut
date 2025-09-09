@@ -1,7 +1,7 @@
 use chrono::Local;
 use leptos::prelude::*;
-use crate::components::{Toast, ToastContent, Toaster, ToastKind};
-use crate::components::toast::duration_as_ticks;
+use crate::{Toast, ToastContent, Toaster, ToastKind};
+use crate::toast::duration_as_ticks;
 
 pub struct ToastBuilder {
     kind: Option<ToastKind>,

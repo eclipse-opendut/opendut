@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 use leptos::ev::MouseEvent;
 
-use crate::components::tooltip::Tooltip;
+use crate::tooltip::Tooltip;
 
 pub struct State {
     pub kind: StateKind,

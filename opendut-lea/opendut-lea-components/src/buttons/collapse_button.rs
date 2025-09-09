@@ -1,6 +1,6 @@
 use std::ops::Not;
 use leptos::prelude::*;
-use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
+use crate::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
 
 #[component]
 pub fn CollapseButton(

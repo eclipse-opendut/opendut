@@ -7,7 +7,7 @@ use opendut_types::topology::{DeviceDescription, DeviceDescriptor, DeviceId, Dev
 use opendut_types::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
 use crate::components::UserInputValue;
-use opendut_lea_core::net::UserNetworkInterfaceConfiguration;
+use crate::components::UserNetworkInterfaceConfiguration;
 
 pub const EMPTY_DEVICE_NAME_ERROR_MESSAGE: &str = "Enter a valid device name.";
 pub const EMPTY_CONTAINER_IMAGE_ERROR_MESSAGE: &str = "Enter a valid container image.";

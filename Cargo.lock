@@ -3936,7 +3936,7 @@ dependencies = [
  "leptos_router",
  "opendut-auth",
  "opendut-carl-api",
- "opendut-lea-core",
+ "opendut-lea-components",
  "opendut-types",
  "serde",
  "shadow-rs",
@@ -3951,7 +3951,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "opendut-lea-core"
+name = "opendut-lea-components"
 version = "0.8.0-alpha"
 dependencies = [
  "chrono",

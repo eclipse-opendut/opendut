@@ -9,9 +9,9 @@ use leptos_use::utils::Pausable;
 use slotmap::{DefaultKey, SlotMap};
 use tracing::{debug, info, trace};
 
-use crate::components::toast::builder::ToastBuilder;
-use crate::components::toast::container::Container;
-use crate::Tick;
+use crate::toast::builder::ToastBuilder;
+use crate::toast::container::Container;
+use crate::util::Tick;
 
 mod notification;
 mod container;

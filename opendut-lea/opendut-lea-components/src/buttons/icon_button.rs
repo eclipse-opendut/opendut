@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 
-use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon};
+use crate::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon};
 
 #[component]
 pub fn IconButton<A>(

@@ -5,8 +5,8 @@ use opendut_types::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, Ne
 
 use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, UserInput, UserInputValue};
 use crate::peers::configurator::types::UserNetworkInterface;
-use opendut_lea_core::net::UserNetworkInterfaceConfiguration;
-use opendut_lea_core::NON_BREAKING_SPACE;
+use crate::components::UserNetworkInterfaceConfiguration;
+use crate::components::NON_BREAKING_SPACE;
 
 #[component]
 pub fn NetworkInterfaceInput<A>(
