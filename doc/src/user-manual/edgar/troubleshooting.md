@@ -2,48 +2,48 @@
 
 ## Symptom Diagnosis
 
-### EDGAR Setup fails
+### Symptom: Setup fails
 Something failed before the EDGAR Service even started.  
-→ See [EDGAR Setup Troubleshooting](setup.md#troubleshooting).
+See [EDGAR Setup Troubleshooting](setup.md#troubleshooting).
 
-### EDGAR does not show up as online
+### Symptom: EDGAR does not show up as online
 The web-UI or CLI lists an EDGAR not as healthy.  
-→ See [Troubleshooting EDGAR offline](#troubleshooting-edgar).
+See [Troubleshooting EDGAR offline](#troubleshooting-edgar).
 
 
-### The connection does not work
+### Symptom: The connection does not work
 You cannot establish a connection with the ECU(s).
 
 #### Check the interfaces are configured correctly
 
 Run `ip link` and check that all of these interfaces exist:
 
-* `br-opendut`
+* `br-opendut`  
   EDGAR did not receive or roll out the configuration.  
-  → See [Troubleshooting EDGAR](#troubleshooting-edgar).
+  See [Troubleshooting EDGAR](#troubleshooting-edgar).
 
-* `wt0`
+* `wt0`  
   The WireGuard tunnel has not been set up correctly by NetBird.  
-  → See [Troubleshooting VPN connection](#troubleshooting-vpn-connection).
+  See [Troubleshooting VPN connection](#troubleshooting-vpn-connection).
 
 * If you configured an Ethernet interface:
-  * The Ethernet interface itself.
-    (Should show up with `master br-opendut` in the `ip link` output.)  
-    → See [Troubleshooting the ECUs](#troubleshooting-the-ecus).
-  * `gre-...` (ending in random letters and numbers)
-    (Should show up with `master br-opendut` in the `ip link` output.)  
-    → See [Troubleshooting configuration rollout](#troubleshooting-edgar).
+  * The Ethernet interface itself.  
+    Should show up with `master br-opendut` in the `ip link` output.  
+    See [Troubleshooting the ECUs](#troubleshooting-the-ecus).
+  * `gre-...` (ending in random letters and numbers)  
+    Should show up with `master br-opendut` in the `ip link` output.  
+    See [Troubleshooting configuration rollout](#troubleshooting-edgar).
 
 * If you configured a CAN interface:
   * The CAN interface itself.  
-    → See [Troubleshooting the ECUs](#troubleshooting-the-ecus).
+    See [Troubleshooting the ECUs](#troubleshooting-the-ecus).
   * `br-vcan-opendut`  
-    → See [Troubleshooting EDGAR](#troubleshooting-edgar).
+    See [Troubleshooting EDGAR](#troubleshooting-edgar).
 
-* `gre0`, `gretap0` and `erspan0`
+* `gre0`, `gretap0` and `erspan0`  
   The Generic Routing Encapsulation (GRE) has not been setup correctly.  
-  → See [Troubleshooting EDGAR](#troubleshooting-edgar).  
-  → If it is still not working, check if the `ip_gre` and `gre` kernel modules are available and can be loaded.
+  See [Troubleshooting EDGAR](#troubleshooting-edgar).  
+  If it is still not working, check if the `ip_gre` and `gre` kernel modules are available and can be loaded.
 
 #### Ping throughout the connection
 * Ping `wt0` as described in [Troubleshooting VPN connection](#troubleshooting-vpn-connection).
