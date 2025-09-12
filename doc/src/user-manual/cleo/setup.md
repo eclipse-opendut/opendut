@@ -26,9 +26,10 @@ Once downloaded, extract the files with the command `tar xvf opendut-cleo-{archi
 the folder which is the current work directory. You might want to use another directory of your choice.
 
 ## Setup via CLEO command (recommended)
-A setup string can be retrieved from LEA and used with the following command.
+A Setup-String can be retrieved from LEA and used with the following command.
+The command will prompt you for the Setup-String after you run it.
 
-    opendut-cleo setup <String> --persistent=<type>
+    opendut-cleo setup --persistent=<type>
 
 The persistent flag is optional. Without the flag, the needed environment variables will be printed out to the terminal.  
 If the persistent flag is set to `user` or without a value, a configuration file will be written to `~/.config/opendut/cleo/config.toml`,

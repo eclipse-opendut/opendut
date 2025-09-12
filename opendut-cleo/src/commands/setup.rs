@@ -7,12 +7,14 @@ use opendut_model::cleo::CleoSetup;
 use opendut_model::util::net::AuthConfig;
 use opendut_util::settings::SetupType;
 
+const READ_FROM_STDIN: &str = "-";
+
 /// CLEO setup for authenticating against CARL
 #[derive(clap::Parser)]
 pub struct SetupCli {
     ///CLEO Setup string
-    #[arg()]
-    setup_string: ParseableCleoSetupString,
+    #[arg(default_value=READ_FROM_STDIN)]
+    setup_string: String,
     ///Persist CLEO setup to file
     #[arg(value_enum, short, long, num_args = 0..=1)]
     persistent: Option<CleoSetupType>,
@@ -20,9 +22,22 @@ pub struct SetupCli {
 
 impl SetupCli {
     pub async fn execute(self) -> crate::Result<()> {
-        let setup_string = *self.setup_string.inner;
-        
-        match self.persistent {
+        let SetupCli { mut setup_string, persistent } = self;
+
+        if setup_string == READ_FROM_STDIN {
+            eprintln!("You can retrieve a Setup-String from the web-UI.");
+            eprintln!("Enter your Setup-String here:");
+
+            setup_string.clear();
+
+            std::io::stdin().read_line(&mut setup_string)
+                .map_err(|_| "Error while reading Setup-String.")?;
+
+            setup_string = setup_string.trim().to_owned();
+        }
+        let setup_string = *ParseableCleoSetupString::from_str(&setup_string)?.inner;
+
+        match persistent {
             Some(persistence_type) => {
                 let cleo_certificate_path = opendut_util::settings::try_write_certificate("cleo", setup_string.clone().ca.0, SetupType::from(persistence_type));
                 let new_settings_string = prepare_cleo_configuration(setup_string, &cleo_certificate_path);
@@ -125,6 +140,35 @@ fn prepare_cleo_configuration(setup_string: CleoSetup, cleo_ca_path: &Path) -> S
     new_settings.to_string()
 }
 
+
+#[derive(Clone, Debug)]
+struct ParseableCleoSetupString { inner: Box<CleoSetup> }
+impl FromStr for ParseableCleoSetupString {
+    type Err = String;
+    fn from_str(string: &str) -> Result<Self, Self::Err> {
+        CleoSetup::decode(string)
+            .map(|setup| ParseableCleoSetupString { inner: Box::new(setup) })
+            .map_err(|error| error.to_string())
+    }
+}
+
+#[derive(ValueEnum, Clone, Debug, Default)]
+pub enum CleoSetupType {
+    System,
+    #[default]
+    User
+}
+
+impl From<CleoSetupType> for SetupType {
+    fn from(value: CleoSetupType) -> Self {
+        match value {
+            CleoSetupType::User => SetupType::User,
+            CleoSetupType::System => SetupType::System,
+        }
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use std::path::Path;
@@ -186,32 +230,4 @@ TTGsEtITid1ogAECIQDAaFl90ZgS5cMrL3wCeatVKzVUmuJmB/VAmlLFFGzK0QIh
 ANJGc7AFk4fyFD/OezhwGHbWmo/S+bfeAiIh2Ss2FxKJ
 -----END RSA PUBLIC KEY-----
 ";
-}
-
-
-#[derive(Clone, Debug)]
-struct ParseableCleoSetupString { inner: Box<CleoSetup> }
-impl FromStr for ParseableCleoSetupString {
-    type Err = String;
-    fn from_str(string: &str) -> std::result::Result<Self, Self::Err> {
-        CleoSetup::decode(string)
-            .map(|setup| ParseableCleoSetupString { inner: Box::new(setup) })
-            .map_err(|error| error.to_string())
-    }
-}
-
-#[derive(ValueEnum, Clone, Debug, Default)]
-pub enum CleoSetupType {
-    System,
-    #[default]
-    User
-}
-
-impl From<CleoSetupType> for SetupType {
-    fn from(value: CleoSetupType) -> Self {
-        match value {
-            CleoSetupType::User => SetupType::User,
-            CleoSetupType::System => SetupType::System,
-        }
-    }
 }

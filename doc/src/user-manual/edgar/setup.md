@@ -53,9 +53,9 @@ If so, follow the steps in [Plugins](#plugins) before continuing.
 ### 6. Scripted Setup
 EDGAR comes with a scripted setup, which you can initiate by running:  
 ```shell
-./opendut-edgar setup managed <SETUP-STRING>
+./opendut-edgar setup managed
 ```  
-You can get the `<SETUP-STRING>` from LEA or CLEO after creating a Peer.
+It will prompt you for a Setup-String. You can get a Setup-String from LEA or CLEO after creating a Peer.
 
 This will configure your operating system and start the *EDGAR Service*, which will receive its configuration from *CARL*.
 

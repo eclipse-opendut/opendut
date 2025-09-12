@@ -3,7 +3,7 @@ use std::fs;
 use std::net::Ipv4Addr;
 use std::ops::Not;
 use std::str::FromStr;
-
+use anyhow::Context;
 use clap::{Args, Parser, Subcommand};
 use tracing::info;
 use url::Url;
@@ -15,6 +15,8 @@ use opendut_model::peer::PeerId;
 use opendut_model::util::net::NetworkInterfaceName;
 use opendut_model::vpn::netbird::SetupKey;
 
+
+const READ_FROM_STDIN: &str = "-";
 
 #[derive(Parser)]
 #[command(name = "opendut-edgar")]
@@ -45,7 +47,7 @@ enum SetupCommand {
     /// Prepare your system for running EDGAR Service
     Managed {
         // Setup String retrieved from LEA
-        #[arg()]
+        #[arg(default_value=READ_FROM_STDIN)]
         setup_string: String,
 
         #[clap(flatten)]
@@ -83,7 +85,7 @@ enum SetupCommand {
 #[derive(Args)]
 struct SetupRunCommonArgs {
     /// Run through all steps without changing the system
-    #[arg(long, global=true)]
+    #[arg(long, global=true, default_value="false")]
     dry_run: DryRun,
 
     /// Continue execution without asking for confirmation.
@@ -108,7 +110,19 @@ pub async fn cli() -> anyhow::Result<()> {
         },
         Commands::Setup { command } => {
             match command {
-                SetupCommand::Managed { setup_string, common } => {
+                SetupCommand::Managed { mut setup_string, common } => {
+                    if setup_string == READ_FROM_STDIN {
+                        eprintln!("You can retrieve a Setup-String from the web-UI.");
+                        eprintln!("Enter your Setup-String here:");
+
+                        setup_string.clear();
+
+                        std::io::stdin().read_line(&mut setup_string)
+                            .context("Error while reading Setup-String.")?;
+
+                        setup_string = setup_string.trim().to_owned();
+                    }
+
                     setup_run_common_prelude().await?;
 
                     let SetupRunCommonArgs { dry_run, no_confirm, mtu } = common;
