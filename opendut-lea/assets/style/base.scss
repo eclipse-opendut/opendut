@@ -32,8 +32,17 @@
 }
 
 .dut-base-page-title {
-  @extend .title;
+  @extend .title, .is-5;
   color: $text;
+  margin-bottom: 0;
+}
+
+.dut-base-page-subtitle {
+  @extend .subtitle, .is-4, .is-family-monospace, .pt-2;
+}
+
+.dut-base-page-subtitle:after {
+  content: "\00a0";
 }
 
 .dut-hr-title {

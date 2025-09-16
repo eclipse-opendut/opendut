@@ -293,9 +293,18 @@ pub fn PeerConfigurator() -> impl IntoView {
         })
     };
 
+    let subtitle = Signal::derive(move || {
+        if let UserInputValue::Right(name) = peer_configuration.get().name {
+            name
+        } else {
+            String::from(" ")
+        }
+    });
+
     view! {
         <BasePageContainer
             title="Configure Peer"
+            subtitle=subtitle
             breadcrumbs=breadcrumbs
             controls=view! { <Controls configuration=peer_configuration is_valid_peer_configuration=is_valid_peer_configuration.into() /> }
         >

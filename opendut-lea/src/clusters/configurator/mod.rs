@@ -121,9 +121,18 @@ fn LoadedClusterConfigurator(
         deployed_clusters.get().contains(&cluster_id.get())
     ));
 
+    let subtitle = Signal::derive(move || {
+        if let UserInputValue::Right(name) = cluster_descriptor.get().name {
+            name
+        } else {
+            String::from(" ")
+        }
+    });
+
     view! {
         <BasePageContainer
             title="Configure Cluster"
+            subtitle=subtitle
             breadcrumbs
             controls=move || {
                 view! {
