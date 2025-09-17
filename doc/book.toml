@@ -1,6 +1,9 @@
 [book]
 title = "openDuT"
 
+[build]
+create-missing = false #do not auto-create pages referenced in SUMMARY.md
+
 [preprocessor.plantuml]
 plantuml-cmd="https://www.plantuml.com/plantuml"
 
