@@ -81,6 +81,8 @@ pub mod run {
     pub fn run(passthrough: Vec<String>) -> crate::Result {
         install_requirements()?;
 
+        info!("Starting LEA. You can view the web-UI at: https://localhost:8080");
+
         TRUNK.command()
             .arg("watch")
             .args(passthrough)

@@ -1,4 +1,5 @@
 use std::process::Command;
+use tracing::info;
 
 /// Start the application
 #[derive(Clone, clap::Parser)]
@@ -11,6 +12,8 @@ pub struct RunCli {
 impl RunCli {
     #[tracing::instrument(name="run", skip(self))]
     pub fn default_handling(&self, package: crate::Package) -> crate::Result {
+        info!("Starting CARL. You can view the web-UI at: https://localhost:8080");
+
         Command::new("cargo")
             .args(["run", "--package", &package.ident(), "--"])
             .args(&self.passthrough)
