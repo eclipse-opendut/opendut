@@ -34,6 +34,7 @@
 - [Architecture](architecture/index.md)
   - [CARL](architecture/carl/index.md)
     - [Peer](architecture/carl/peer/index.md)
+      - [Configuration/State Loop](architecture/carl/peer/configuration-state-loop.md)
     - [Cluster](architecture/carl/cluster/index.md)
       - [Deployment](architecture/carl/cluster/deployment.md)
   - [EDGAR](architecture/edgar/index.md)
