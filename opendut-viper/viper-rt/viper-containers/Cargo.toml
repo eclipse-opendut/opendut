@@ -1,0 +1,19 @@
+[package]
+name = "viper-containers"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[features]
+default = []
+docker = ["dep:bollard"]
+mock = []
+
+[dependencies]
+async-trait = { workspace = true }
+bollard = { workspace = true, optional = true, default-features = true }
+futures = { workspace = true }
+
+[dev-dependencies]
+googletest = { workspace = true }

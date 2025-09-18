@@ -1,0 +1,16 @@
+[package]
+name = "viper-py"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[features]
+
+[dependencies]
+viper-pygen = { workspace = true }
+
+rustpython-vm = { workspace = true }
+indexmap = { workspace = true }
+
+[dev-dependencies]

@@ -1,0 +1,5 @@
+error: can only be applied to `impl`
+ --> tests/pygen/should_fail_on_enums.rs:4:1
+  |
+4 | enum Fubar {}
+  | ^^^^

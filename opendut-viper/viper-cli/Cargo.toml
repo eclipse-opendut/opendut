@@ -1,0 +1,28 @@
+[package]
+name = "viper-cli"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+default-run = "viper"
+
+[[bin]]
+name = "viper"
+path = "src/main.rs"
+
+[dependencies]
+viper-rt = { workspace = true, features = ["compile", "run", "file-source", "containers", "error"] }
+viper-py = { workspace = true }
+
+clap = { workspace = true, features = ["derive"] }
+console = { workspace = true }
+futures = { workspace = true }
+indicatif = { workspace = true }
+indoc = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"]}
+tokio-stream = { workspace = true }
+tokio-util = { workspace = true }
+tracing = {workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+serde = { workspace = true, features = ["derive"] }
+toml = { workspace = true }
