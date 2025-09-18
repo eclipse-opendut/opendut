@@ -1,6 +1,4 @@
-
 use std::sync::Arc;
-
 use gloo_net::http;
 use leptos::prelude::*;
 use leptos_oidc::{Auth, AuthParameters, AuthSignal};
@@ -13,6 +11,8 @@ use opendut_model::lea::LeaConfig;
 use crate::components::Toaster;
 use crate::components::AppGlobalsResource;
 use crate::nav::Navbar;
+use crate::nav::profile_sidebar::ProfileSidebar;
+use crate::nav::sidebar::Sidebar;
 use crate::routing::AppRoutes;
 use crate::user::{provide_authentication_signals_in_context, AuthenticationConfigSwitch};
 
@@ -119,10 +119,17 @@ pub fn LoadingApp() -> impl IntoView {
 
     provide_context(Arc::new(Toaster::new()));
 
+    let menu_visible = RwSignal::new(false);
+    let profile_visible = RwSignal::new(false);
+
     view! {
-        <Navbar app_globals />
-        <main class="container">
-            <AppRoutes app_globals />
-        </main>
+        <Navbar menu_visible profile_visible />
+        <div class="columns is-mobile m-0">
+            <Sidebar menu_visible />
+            <main class="container column pt-4">
+                <AppRoutes app_globals />
+            </main>
+            <ProfileSidebar app_globals profile_visible />
+        </div>
     }
 }

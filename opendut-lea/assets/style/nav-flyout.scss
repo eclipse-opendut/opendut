@@ -1,39 +1,54 @@
-.dut-nav-flyout {
-  @extend .dropdown;
+.dut-navbar {
+  @extend .navbar;
+  position: sticky;
+  top: 0;
+  left: 0;
+  background-color: hsla(0, 0%, 95.5%, 0.9);
+  height: 60px;
 }
 
-.dut-nav-flyout-container {
+.dut-logo {
+  max-height: 100% !important;
+  transition: transform 0.3s ease;
+  transform-origin: center;
+}
+
+.dut-logo:hover {
+  transform: scale(1.1);
+}
+
+.dut-menu {
   display: none;
 }
 
-.dut-nav-flyout.is-active > .dut-nav-flyout-container {
-  display: block;
-  position: absolute;
-  top: calc(100% + 4px);
-  z-index: 20;
-}
-
-.dut-nav-flyout-content {
-  @extend .dropdown-content;
-  display: flex !important;
+.dut-menu.is-active {
+  @extend .menu, .card;
+  display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: calc(100vh - 64px);
   width: 300px;
-  padding-left: 0.75rem;
-  padding-right: 0.75rem;
+  height: calc(100dvh - 60px);
+  position: fixed;
+  bottom: 0;
+  z-index: 10;
+  border-radius: 0;
 }
 
-.dut-nav-flyout-item {
-  @extend .dropdown-item;
-  cursor: pointer;
-  padding: 0.5rem 0.75rem;
+.dut-menu.is-active.is-left {
+  left: 0;
 }
 
-.dut-nav-flyout-item:hover {
-  background-color: hsl(0, 0%, 98%);
+.dut-menu.is-active.is-right {
+  right: 0;
 }
 
-.dut-nav-flyout-divider {
+.dut-menu-list {
+  @extend .menu-list;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dut-divider {
   @extend .dropdown-divider;
 }

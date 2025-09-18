@@ -24,11 +24,13 @@ pub mod path {
     pub const user: &str = "/user";
 }
 
+#[derive(Clone)]
 pub enum WellKnownRoutes {
     ClustersOverview,
     ClusterConfigurator { id: ClusterId },
-    PeerConfigurator { id: PeerId },
     PeersOverview,
+    PeerConfigurator { id: PeerId },
+    Downloads,
     ErrorPage { title: String, text: String, details: Option<String> },
 }
 
@@ -51,6 +53,10 @@ impl WellKnownRoutes {
             WellKnownRoutes::PeerConfigurator { id } => {
                 base.join(&format!("/peers/{}/configure/general", id.url_encode()))
                     .expect("PeerConfigurator route should be valid.")
+            },
+            WellKnownRoutes::Downloads => {
+                base.join(path::downloads)
+                    .expect("Downloads route should be valid.")
             },
             WellKnownRoutes::ErrorPage { title, text, details } => {
                 let mut url = base.join(path::error).unwrap();
