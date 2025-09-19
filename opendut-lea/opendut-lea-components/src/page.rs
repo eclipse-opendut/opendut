@@ -13,7 +13,6 @@ pub fn BasePageContainer<C>(
 where C: IntoView + 'static {
 
     view! {
-
         <div class="container is-fluid">
             <Breadcrumbs breadcrumbs />
             <div class="dut-base-page">
@@ -22,11 +21,11 @@ where C: IntoView + 'static {
                         <p class="dut-base-page-title mb-0">{ title }" "</p>
                         {
                             if !subtitle.read().is_empty() {
-                                view! {
+                                Some(view! {
                                     <p class="dut-base-page-subtitle mt-0">{ subtitle }</p>
-                                }.into_any()
+                                })
                             } else {
-                                view! {}.into_any()
+                                None
                             }
                         }
                     </div>
