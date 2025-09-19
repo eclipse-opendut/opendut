@@ -173,8 +173,6 @@ pub fn ClustersOverview() -> impl IntoView {
                 <CreateClusterButton />
             }
         >
-            <p>Clusters establish the communication between Peers and handle the lifecycle of the network.</p>
-
             <Suspense
                 fallback=LoadingSpinner
             >
