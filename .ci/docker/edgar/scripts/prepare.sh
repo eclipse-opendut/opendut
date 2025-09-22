@@ -5,7 +5,7 @@ trap die_with_error TERM
 
 
 if [ -n "$1" ] ; then
-  /opt/opendut-edgar/opendut-edgar setup --no-confirm unmanaged --setup-key "$NETBIRD_SETUP_KEY" --management-url "${NETBIRD_MANAGEMENT_API}" --leader=local
+  /opt/opendut-edgar/opendut-edgar setup unmanaged --no-confirm --setup-key "$NETBIRD_SETUP_KEY" --management-url "${NETBIRD_MANAGEMENT_API}" --leader=local
 
   while ! netbird status | grep IP; do
     echo "Waiting for netbird to start up..."
@@ -21,7 +21,7 @@ if [ -n "$1" ] ; then
   wait_for_netbird_peers_to_connect "$OPENDUT_EDGAR_REPLICAS"
   wait_for_wireguard_peers_to_connect "$OPENDUT_EDGAR_REPLICAS"
 
-  /opt/opendut-edgar/opendut-edgar setup --no-confirm unmanaged --setup-key "$NETBIRD_SETUP_KEY" --management-url "${NETBIRD_MANAGEMENT_API}" --leader=local
+  /opt/opendut-edgar/opendut-edgar setup unmanaged --no-confirm --setup-key "$NETBIRD_SETUP_KEY" --management-url "${NETBIRD_MANAGEMENT_API}" --leader=local
   echo setting bridge ip
   ip a a 192.168.100.1/24 dev br-opendut
 
@@ -34,7 +34,7 @@ else
 
   leader_ip=$(curl --silent http://edgar-leader:8000/leader_ip.txt)
   echo "Using leader leader_ip address $leader_ip"
-  /opt/opendut-edgar/opendut-edgar setup --no-confirm unmanaged --setup-key "$NETBIRD_SETUP_KEY" --management-url "${NETBIRD_MANAGEMENT_API}" --leader="$leader_ip"
+  /opt/opendut-edgar/opendut-edgar setup unmanaged --no-confirm --setup-key "$NETBIRD_SETUP_KEY" --management-url "${NETBIRD_MANAGEMENT_API}" --leader="$leader_ip"
 
   echo fetching bridge_ip
   bridge_ip=$(curl --silent http://edgar-leader:5000/)

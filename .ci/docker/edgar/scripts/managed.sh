@@ -112,7 +112,7 @@ PEER_ID=$(cleo_get_peer_id "$PEER_NAME")
 # Setup EDGAR
 PEER_SETUP_STRING=$(opendut-cleo generate-setup-string "$PEER_ID")
 echo "Setting up peer with Setup-String: $PEER_SETUP_STRING"
-opendut-edgar setup --no-confirm managed "$PEER_SETUP_STRING"
+opendut-edgar setup managed --no-confirm "$PEER_SETUP_STRING"
 
 
 ############################################################

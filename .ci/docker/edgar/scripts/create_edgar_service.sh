@@ -22,4 +22,4 @@ opendut-cleo create device --peer-id "$PEER_ID" --name "$PEER_NAME-device-$DEVIC
 
 # setup peer
 PEER_SETUP_STRING=$(opendut-cleo generate-setup-string "$PEER_ID")
-opendut-edgar setup --no-confirm managed "$PEER_SETUP_STRING"
+opendut-edgar setup managed --no-confirm "$PEER_SETUP_STRING"
