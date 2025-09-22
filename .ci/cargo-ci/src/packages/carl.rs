@@ -1,6 +1,7 @@
 use crate::fs;
 use std::path::{Path, PathBuf};
 use anyhow::Context;
+use tracing::info;
 use crate::core::types::parsing::package::PackageSelection;
 use crate::packages::carl::distribution::copy_license_json::copy_license_json;
 use crate::{Arch, Package};
@@ -48,6 +49,8 @@ impl CarlCli {
                     crate::packages::lea::build::build()
                         .context("Error while building LEA for CARL distribution") //ensure the LEA distribution exists and is up-to-date
                 })?;
+
+                info!("Starting CARL. You can view the web-UI at: https://localhost:8080");
                 cli.default_handling(SELF_PACKAGE)?
             }
 
