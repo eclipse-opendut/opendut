@@ -1,27 +1,13 @@
-FROM ubuntu:24.04 AS cannelloni-builder
+FROM cruizba/ubuntu-dind:noble-28.1.1
 ARG cannelloni_version=1.1.0
 
-RUN apt update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    ca-certificates wget build-essential cmake libsctp-dev
-
-RUN mkdir /tmp/cannelloni
-WORKDIR /tmp/cannelloni
-RUN wget https://github.com/mguentner/cannelloni/archive/refs/tags/v${cannelloni_version}.tar.gz -O cannelloni-${cannelloni_version}.tar.gz
-RUN echo "0dcb9277b21f916f5646574b9b2229d3b8e97d5e99b935a4d0b7509a5f0ccdcd cannelloni-${cannelloni_version}.tar.gz" | sha256sum --check --status
-RUN tar --strip-components=1 -xvf cannelloni-${cannelloni_version}.tar.gz
-RUN cmake -DCMAKE_BUILD_TYPE=Release && make
-
-FROM cruizba/ubuntu-dind:noble-28.1.1
-
-RUN apt update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     tzdata ca-certificates \
     iproute2 bind9-dnsutils iputils-ping fping iptables wireguard-tools tcpdump netcat-traditional \
     curl jq uuid-runtime less bridge-utils \
     python3 python3-requests python3-flask \
     python3-can can-utils libsctp1 vim
 
-COPY --from=cannelloni-builder /tmp/cannelloni/cannelloni /usr/local/bin/cannelloni
-COPY --from=cannelloni-builder /tmp/cannelloni/libcannelloni-common.so.0.0.1 /usr/local/lib/libcannelloni-common.so.0
 
 ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/lib"
 
@@ -30,6 +16,18 @@ RUN echo "01beb201d2045c5e548d012bde9b6ae6113392a57bbea7b3e81131aac995f77a /usr/
 RUN chmod +x /usr/bin/systemctl
 
 COPY ./.ci/docker/edgar/test_execution_container /opt/test_execution_container
+
+
+RUN mkdir /tmp/cannelloni
+WORKDIR /tmp/cannelloni
+RUN wget https://github.com/eclipse-opendut/cannelloni-build/releases/download/v${cannelloni_version}/cannelloni_manylinux_2_28-x64_${cannelloni_version}.tar.gz -O /tmp/cannelloni/cannelloni.tar.gz
+RUN echo "f98e4cad3a6d1df55423413ea52c676d2eb2ab3d783f25f720654f5797c83c44  cannelloni.tar.gz" | sha256sum --check --status
+RUN tar --strip-components=1 -xvf cannelloni.tar.gz
+
+RUN cp libcannelloni-common.so.0 /lib/
+RUN cp libsctp.so* /lib/
+RUN cp cannelloni /usr/local/bin/
+
 
 WORKDIR /opt
 RUN mkdir /opt/signal/ /logs/
