@@ -31,14 +31,18 @@ impl Task for SetupClusterMetrics {
     }
 }
 
-//TODO impl TaskAbsent
 #[async_trait]
 impl TaskAbsent for SetupClusterMetrics {
     async fn check_absent(&self) -> anyhow::Result<TaskStateFulfilled> {
-        todo!()
+        Ok(TaskStateFulfilled::Unchecked)
     }
 
     async fn make_absent(&self) -> anyhow::Result<Success> {
-        todo!()
+        debug!("Tearing down cluster metrics.");
+
+        self.metrics_manager.lock().await
+            .set_remote_peers(HashMap::new()).await;
+
+        Ok(Success::default())
     }
 }
