@@ -5,6 +5,10 @@ on:
       - '.ci/kubernetes/**'
       #- '.github/workflows/publish-helm-chart.yaml'
 
+defaults:
+  run:
+    shell: bash  # turns on pipefail in all run-blocks: https://github.com/actions/runner-images/issues/4459#issuecomment-1374859960
+
 env:
   REGISTRY: ghcr.io
 

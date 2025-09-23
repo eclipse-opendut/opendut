@@ -7,6 +7,10 @@ on:
         required: false
         type: string
 
+defaults:
+  run:
+    shell: bash  # turns on pipefail in all run-blocks: https://github.com/actions/runner-images/issues/4459#issuecomment-1374859960
+
 jobs:
   bundle-edgar:
     strategy:

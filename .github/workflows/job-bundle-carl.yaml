@@ -13,6 +13,10 @@ on:
         description: "The version of the CARL build"
         value: ${{ jobs.bundle-carl.outputs.OPENDUT_CARL_VERSION }}
 
+defaults:
+  run:
+    shell: bash  # turns on pipefail in all run-blocks: https://github.com/actions/runner-images/issues/4459#issuecomment-1374859960
+
 jobs:
   bundle-carl:
     strategy:
