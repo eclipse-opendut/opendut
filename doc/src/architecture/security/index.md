@@ -31,6 +31,31 @@ The following OpenID Connect (OIDC) flows are implemented:
   * OpenDuT-EDGAR
   * OpenDuT-CLEO
 
+### Client applications
+
+* OpenDuT-LEA (public client)
+* OpenDuT-CLEO (confidential client)
+* OpenDuT-EDGAR (confidential client)
+* OpenDuT-CARL (confidential client)
+* NetBird client: 
+  * setup key or device code flow during registration
+  * custom authentication for regular operation
+* OpenDuT-CARL is a client:
+  * to the Keycloak REST API (confidential client)
+  * to the NetBird Management API (bearer token obtained via client credentials grant)
+
+### Resource server
+
+* OpenDuT-CARL: 
+  * used by LEA and CLEO to manage peers and clusters
+  * used by EDGAR to report status and manage connected devices
+* NetBird Management:
+  * used by NetBird clients in EDGAR
+  * used by CARL to manage peers
+* OpenTelemetry Collector (used by OpenDuT components for telemetry export)
+* Keycloak Rest API:
+  * used by OpenDuT-CARL to register(create) and delete OAuth clients
+
 ### Typical User Interaction
 
 A typical workflow:
