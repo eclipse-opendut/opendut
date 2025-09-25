@@ -82,3 +82,49 @@ All interactions between components are authenticated and authorized, and all da
     * Monitor and log security events.
     * Secure storage and transmission of secrets.
 
+## Security Architecture Overview
+
+OpenDuT is designed with security as a foundational principle. To provide transparency and clarity about how security is achieved, this chapter presents the architectural views of the system using the C4 model. These diagrams and explanations help stakeholders understand the system’s structure, trust boundaries, and the flow of sensitive data.
+
+The C4 model is used to visualize the system at different levels of abstraction:
+- **Context View:** Shows the high-level relationships between OpenDuT, its users, and external systems.
+- **Container View:** Details the major building blocks (applications, services) that make up OpenDuT, including their responsibilities and interactions.
+- **Full container view:** Includes all components, including databases, third-party services and infrastructure, to provide a comprehensive picture of the system.
+
+By documenting these views, we aim to:
+- Clarify the security posture and design decisions of OpenDuT.
+- Identify and communicate trust boundaries and threat mitigations.
+- Support secure deployment, operation, and integration of the system.
+
+The following sections provide detailed diagrams and explanations for each architectural view, along with a summary of the threat model and key security practices.
+
+### Sensitive Data Flows
+
+- **Setup Strings:** Generated in LEA, transferred securely to peers, used to configure EDGAR. 
+  - The user may never transmit over insecure channels.
+  - Contain client ID and secret for EDGAR's OAuth2 client in Keycloak.
+  - Contain NetBird setup key for EDGAR's NetBird client.
+- **NetBird API Token:** Managed by CARL, used to authenticate with NetBird Management for peer operations.
+- **Credentials:** Managed by Keycloak, accessed by CARL and other components using secure OAuth2/OIDC flows.
+- **Telemetry and Logs:** Exported via OpenTelemetry Collector, protected by access controls and encrypted transport.
+
+### Patch and Update Management
+
+- **Regular Updates:** All components are updated and patched regularly to address security vulnerabilities.
+- **Automated Checks:** Security checks for vulnerable dependencies are part of the CI/CD pipeline.
+
+### Key Components
+- **Keycloak**: Manages authentication and authorization for users and components.
+- **Keycloak Database**: Stores user credentials and configuration securely.
+- **NetBird Management**: Handles secure peer-to-peer VPN tunnels.
+- **OTel Collector**: Exports telemetry data securely.
+- **CARL**: Orchestrates clusters, peers, and credentials.
+- **EDGAR**: Peer node responsible for network traffic and cluster connections.
+
+### Security Mechanisms
+- **Authentication**: OAuth2 flows managed by Keycloak.
+- **Authorization**: Role-based access control enforced by Keycloak.
+- **Data Protection**: TLS encryption for all communications and WireGuard for VPN tunnels.
+- **Telemetry**: Secure export of metrics, logs, and traces via OTel Collector.
+
+This view complements the Context and Container views by focusing specifically on security-related aspects of the architecture.

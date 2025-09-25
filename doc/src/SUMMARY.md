@@ -42,5 +42,8 @@
     - [Packet traversal](architecture/network/packet-traversal.md)
   - [Deployment](architecture/deployment/index.md)
   - [Security](architecture/security/index.md)
+    - [Context View](architecture/security/c4-context.md)
+    - [Container View](architecture/security/c4-container.md)
+    - [Container View (full)](architecture/security/c4-container-full.md)
   - [Telemetry](architecture/telemetry/index.md)
 - [Changelog](changelog.md)
