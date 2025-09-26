@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use anyhow::Error;
 use clap::{ArgAction, Parser};
 use strum::IntoEnumIterator;
@@ -8,7 +9,7 @@ use crate::core::docker::{show_error_if_unhealthy_containers_were_found, start_n
 use crate::core::docker::command::DockerCommand;
 use crate::core::docker::compose::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_network_delete, docker_compose_up_expose_ports};
 use crate::core::docker::services::{DockerCoreServices};
-use crate::core::project::load_theo_environment_variables;
+use crate::core::project::{load_theo_environment_variables, ProjectRootDir};
 
 /// Build and start test environment.
 #[derive(clap::Parser)]
@@ -64,38 +65,22 @@ impl TestenvCli {
                 Self::docker_compose_build_testenv_services()?;
             }
             TaskCli::Start { expose, skip_build, skip_firefox, skip_telemetry } => {
-                if !skip_build {
-                    Self::docker_compose_build_testenv_services()?;
+                // Check if localenv has been provisioned
+                if !PathBuf::project_path_buf().join("./.ci/deploy/localenv/data/secrets/.env").exists() {
+                    Self::provision_and_build_localenv()?;
                 }
-                // start services
-                if !skip_firefox {
-                    docker_compose_up_expose_ports(DockerCoreServices::Firefox.as_str(), expose)?;
-                }
-                docker_compose_up_expose_ports(DockerCoreServices::Keycloak.as_str(), expose)?;
-                crate::core::docker::keycloak::wait_for_keycloak_provisioned()?;
-                if !skip_telemetry {
-                    docker_compose_up_expose_ports(DockerCoreServices::Telemetry.as_str(), expose)?;
-                }
-                docker_compose_up_expose_ports(DockerCoreServices::NginxWebdav.as_str(), expose)?;
-                start_netbird(expose)?;
-                crate::core::docker::netbird::wait_for_netbird_api_key()?;
 
-                println!("Stopping CARL Traefik forward (if present).");
-                docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), false)?;
-
-                start_carl_in_docker()?;
+                Self::start_localenv_for_testenv()?;
                 show_error_if_unhealthy_containers_were_found()?;
 
-                println!("Go to OpenDuT Browser at http://localhost:3000/");
+                println!("Go to OpenDuT at https://carl.opendut.local/");
             }
             TaskCli::Stop => {
-                docker_compose_down(DockerCoreServices::Keycloak.as_str(), false)?;
-                docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), false)?;
-                docker_compose_down(DockerCoreServices::Carl.as_str(), false)?;
-                docker_compose_down(DockerCoreServices::Netbird.as_str(), false)?;
-                docker_compose_down(DockerCoreServices::Firefox.as_str(), false)?;
-                docker_compose_down(DockerCoreServices::Telemetry.as_str(), false)?;
-                docker_compose_down(DockerCoreServices::NginxWebdav.as_str(), false)?;
+                println!("Stopping localenv testenv...");
+                DockerCommand::new()
+                    .add_localenv_args()
+                    .arg("down")
+                    .expect_status("Failed to stop localenv")?;
             }
             TaskCli::Network => {
                 crate::core::network::docker_inspect_network()?;
@@ -143,14 +128,43 @@ impl TestenvCli {
         docker_compose_build(DockerCoreServices::NginxWebdav.as_str())?;
         Ok(())
     }
+
+    fn provision_and_build_localenv() -> Result<(), Error> {
+        println!("Provisioning secrets for localenv...");
+
+        // Provision secrets if needed
+        DockerCommand::new()
+            .add_localenv_args()
+            .arg("up")
+            .arg("provision-secrets")
+            .expect_status("Failed to provision localenv secrets")?;
+
+        // Build the localenv services
+        DockerCommand::new()
+            .add_localenv_args()
+            .arg("build")
+            .expect_status("Failed to build localenv services")?;
+
+        Ok(())
+    }
+
+    fn start_localenv_for_testenv() -> Result<(), Error> {
+        println!("Starting localenv in testenv mode (telemetry disabled)...");
+
+        DockerCommand::new()
+            .add_localenv_args_with_disabled_telemetry()
+            .arg("up")
+            .arg("--detach")
+            .expect_status("Failed to start localenv for testenv")?;
+
+        Ok(())
+    }
 }
 
 fn start_carl_in_docker() -> Result<i32, Error> {
     DockerCommand::new()
         .add_common_args(DockerCoreServices::Carl.as_str())
-        .add_netbird_api_key_to_env()?
         .arg("up")
         .arg("--detach")
         .expect_status("Failed to execute compose command for CARL.")
 }
-

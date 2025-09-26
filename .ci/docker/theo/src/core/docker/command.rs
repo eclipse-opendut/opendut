@@ -75,10 +75,23 @@ impl DockerCommand {
             .arg(".env")
     }
 
-    pub(crate) fn add_netbird_api_key_to_env(&mut self) -> Result<&mut Self, TheoError> {
-        let netbird_api_key = get_netbird_api_key()?;
-        self.env("NETBIRD_API_TOKEN", &netbird_api_key);
-        Ok(self)
+    pub(crate) fn add_localenv_args(&mut self) -> &mut Self {
+        self.arg("compose")
+            .arg("--file")
+            .arg("./.ci/deploy/localenv/docker-compose.yml")
+            .add_localenv_secrets_args()
+            .arg("--env-file")
+            .arg(".env")
+    }
+
+    pub(crate) fn add_localenv_secrets_args(&mut self) -> &mut Self {
+        self.arg("--env-file")
+            .arg("./.ci/deploy/localenv/data/secrets/.env")
+    }
+
+    pub(crate) fn add_localenv_args_with_disabled_telemetry(&mut self) -> &mut Self {
+        self.add_localenv_args()
+            .env("OPENDUT_TELEMETRY_ENABLED", "0")
     }
 
     pub(crate) fn expect_output(&mut self, error_message: &str) -> Result<Output, anyhow::Error> {

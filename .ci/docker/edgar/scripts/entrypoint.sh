@@ -21,6 +21,10 @@ main() {
 
 }
 
+# update certificates
+echo "Updating CA certificates"
+update-ca-certificates
+
 
 # symlink netbird to known binary path
 #OPENDUT_EDGAR_NETBIRD_BINARY=/opt/opendut/edgar/netbird/netbird

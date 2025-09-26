@@ -97,7 +97,7 @@ services:
     command: [ "sleep" ]
     # for fast update of provisioning the scripts are mounted as volumes
     volumes:
-      - ./../../docker/keycloak/keycloak_functions.sh:/keycloak_functions.sh
+      - ./data/keycloak/keycloak_functions.sh:/keycloak_functions.sh
       - ./data/keycloak/provision.sh:/provision.sh
     environment:
       - KCADM_PATH=/opt/keycloak/bin/kcadm.sh

@@ -73,7 +73,6 @@ impl DevCli {
             TaskCli::Shell => {
                 let mut command = DockerCommand::new();
                 command.add_common_args(DockerCoreServices::Dev.as_str());
-                command.add_netbird_api_key_to_env()?;
 
                 command
                     .arg("run")
@@ -87,7 +86,6 @@ impl DevCli {
             TaskCli::EdgarShell => {
                 DockerCommand::new()
                     .add_common_args(DockerCoreServices::Edgar.as_str())
-                    .add_netbird_api_key_to_env()?
                     .arg("run")
                     .arg("--rm")
                     //.arg("--entrypoint=\"\"")

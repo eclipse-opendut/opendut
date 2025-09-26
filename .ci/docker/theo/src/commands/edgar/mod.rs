@@ -69,7 +69,7 @@ fn start_edgar_in_docker() -> Result<i32, Error> {
     println!("Starting EDGAR cluster in docker.");
     DockerCommand::new()
         .add_common_args(DockerCoreServices::Edgar.as_str())
-        .add_netbird_api_key_to_env()?
+        .add_localenv_secrets_args()
         .arg("up")
         .arg("-d")
         .expect_status("Failed to start EDGAR cluster in Docker.")
