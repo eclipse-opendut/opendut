@@ -1,7 +1,0 @@
----
-version: "3.9"
-services:
-  traefik:
-    ports:
-      - "80:80"
-      - "443:443"

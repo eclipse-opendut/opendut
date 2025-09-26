@@ -6,6 +6,10 @@ x-common-healthcheck-params: &common-healthcheck-params
   start_period: 2m  # Probe failure during start will not be counted towards the maximum number of retries
   # start_interval: 5s  # This isn't yet supported on many hosts, as of 2025-01.
 
+x-telemetry-deploy-params: &telemetry-deploy-params
+  mode: replicated
+  replicas: ${OPENDUT_TELEMETRY_ENABLED:-1}
+
 name: opendut
 
 services:
@@ -435,6 +439,9 @@ services:
     healthcheck:
       <<: *common-healthcheck-params
       test: [ "CMD-SHELL", "curl --fail --silent --output /dev/null --noproxy '*' http://localhost || exit 1" ]
+    deploy:
+      mode: replicated
+      replicas: ${OPENDUT_INSECURE_WEBDAV_ENABLED:-0}
     labels:
       - traefik.enable=true
       - traefik.http.routers.nginx-webdav.rule=Host(`nginx-webdav.opendut.local`)
@@ -454,6 +461,8 @@ services:
     image: prom/prometheus:v2.51.1
     command: [ "--config.file=/etc/prometheus/prometheus.yml", "--web.enable-remote-write-receiver", "--enable-feature=exemplar-storage" ]
     restart: unless-stopped
+    deploy:
+      <<: *telemetry-deploy-params
     volumes:
       - ./data/telemetry/prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
@@ -464,6 +473,8 @@ services:
     image: grafana/tempo:2.4.1
     restart: unless-stopped
     command: [ "-config.file=/etc/tempo.yml" ]
+    deploy:
+      <<: *telemetry-deploy-params
     volumes:
       - ./data/telemetry/tempo.yml:/etc/tempo.yml
       - tempo-data:/tmp/tempo
@@ -478,6 +489,8 @@ services:
     container_name: opendut-loki
     image: grafana/loki:2.9.6
     restart: unless-stopped
+    deploy:
+      <<: *telemetry-deploy-params
     volumes:
       - ./data/telemetry/loki.yml:/etc/loki/loki.yml
       - loki-data:/loki
@@ -494,6 +507,8 @@ services:
     container_name: opendut-alloy
     image: grafana/alloy:v1.8.3
     restart: unless-stopped
+    deploy:
+      <<: *telemetry-deploy-params
     volumes:
       - ./data/telemetry/config.alloy:/etc/alloy/config.alloy
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
@@ -516,6 +531,7 @@ services:
       args:
         OTEL_COLLECTOR_VERSION: 0.97.0
     restart: unless-stopped
+    # Note: otel-collector is always enabled (no replicas config)
     environment:
       - "SSL_CERT_FILE=/pki/opendut-ca.pem"
     command: [ "--config=/etc/collector-gateway.yaml" ]
@@ -549,6 +565,8 @@ services:
     container_name: opendut-grafana
     image: grafana/grafana:10.4.1
     restart: unless-stopped
+    deploy:
+      <<: *telemetry-deploy-params
     depends_on:
       tempo:
         condition: service_healthy
@@ -584,6 +602,8 @@ services:
   grafana_users:
     container_name: opendut-grafana-users
     image: alpine:latest
+    deploy:
+      <<: *telemetry-deploy-params
     depends_on:
       grafana:
         condition: service_healthy

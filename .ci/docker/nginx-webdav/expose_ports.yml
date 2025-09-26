@@ -1,5 +1,0 @@
----
-services:
-  nginx-webdav:
-    ports:
-      - "8000:80"
