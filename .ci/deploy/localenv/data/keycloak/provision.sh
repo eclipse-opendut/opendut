@@ -52,7 +52,7 @@ main() {
   create_realm_role managerrole "$REALM_OPENDUT"
 
   # Create keycloak realm test users: username, password, group, role
-  create_user opendut "$OPENDUT_USER_OPENDUT" testgroup testrole "$REALM_OPENDUT"
+  create_user opendut "$OPENDUT_USER_OPENDUT_PASSWORD" testgroup testrole "$REALM_OPENDUT"
 
   # Create keycloak client for opendut CLIs CLEO/EDGAR
   create_secret_client "opendut-cleo-client" "$OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SECRET" "$REALM_OPENDUT"

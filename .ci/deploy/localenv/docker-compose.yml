@@ -108,7 +108,7 @@ services:
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_SECRET
       - OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SECRET
       - OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_SECRET
-      - OPENDUT_USER_OPENDUT
+      - OPENDUT_USER_OPENDUT_PASSWORD
       - NETBIRD_PASSWORD
     labels:
       - logging=alloy
@@ -608,13 +608,13 @@ services:
       grafana:
         condition: service_healthy
     environment:
-      - OPENDUT_USER_OPENDUT
+      - OPENDUT_USER_OPENDUT_PASSWORD
       - GF_SECURITY_ADMIN_PASSWORD
     command: >
       sh -c "apk --no-cache add curl && sleep 5 && curl -v --noproxy '*' -X POST -u admin:$GF_SECURITY_ADMIN_PASSWORD \
       -H \"Accept: application/json\" \
       -H \"Content-Type: application/json\" \
-      -d '{\"name\": \"openDuT\", \"login\": \"opendut\", \"password\": \"$OPENDUT_USER_OPENDUT\", \"OrgId\": 1}' \
+      -d '{\"name\": \"openDuT\", \"login\": \"opendut\", \"password\": \"$OPENDUT_USER_OPENDUT_PASSWORD\", \"OrgId\": 1}' \
       http://grafana:80/api/admin/users"
     networks:
       - opendut_local
