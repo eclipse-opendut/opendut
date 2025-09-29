@@ -1,8 +1,8 @@
 #!/bin/bash
 
-set -ex  # exit on error, print all commands
+set -e  # exit on error
+set -x  # print commands
 
-env
 opendut-cleo delete cluster-deployment "206e5d0d-029d-4b03-8789-e0ec46e5a6ba"
 opendut-cleo delete cluster-descriptor "206e5d0d-029d-4b03-8789-e0ec46e5a6ba"
 

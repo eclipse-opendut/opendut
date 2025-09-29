@@ -1,4 +1,4 @@
-FROM cruizba/ubuntu-dind:noble-28.1.1
+FROM cruizba/ubuntu-dind:noble-28.4.0
 ARG cannelloni_version=1.1.0
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \

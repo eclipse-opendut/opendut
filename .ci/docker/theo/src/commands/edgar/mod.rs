@@ -34,6 +34,7 @@ impl TestEdgarCli {
     pub(crate) fn default_handling(&self) -> crate::Result {
         match self.task {
             TaskCli::Start => {
+                println!("Stopping if EDGAR cluster is already running...");
                 stop_if_running()?;
 
                 load_edgar_kernel_modules()?;
@@ -67,12 +68,13 @@ fn load_edgar_kernel_modules() -> Result<(), Error> {
 
 fn start_edgar_in_docker() -> Result<i32, Error> {
     println!("Starting EDGAR cluster in docker.");
-    DockerCommand::new()
+    let mut command = DockerCommand::new();
+    command
         .add_common_args(DockerCoreServices::Edgar.as_str())
-        .add_localenv_secrets_args()
         .arg("up")
-        .arg("-d")
-        .expect_status("Failed to start EDGAR cluster in Docker.")
+        .arg("-d");
+    println!("Starting EDGAR cluster in docker: '{command:?}'");
+    command.expect_status("Failed to start EDGAR cluster in Docker.")
 }
 
 fn check_edgar_container_provisioning_done(container_name: &str) -> Result<bool, Error> {

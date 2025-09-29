@@ -69,6 +69,7 @@ impl DockerCommand {
         self.arg("compose")
             .arg("--file")
             .arg(format!("./.ci/docker/{compose_dir}/docker-compose.yml"))
+            .add_localenv_secrets_args()
             .arg("--env-file")
             .arg(".env-theo")
             .arg("--env-file")
