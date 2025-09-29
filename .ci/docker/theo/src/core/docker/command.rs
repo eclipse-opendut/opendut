@@ -5,7 +5,6 @@ use anyhow::{anyhow, Error};
 use std::io;
 use crate::core::command_ext::TheoCommandExtensions;
 use crate::core::docker::checks;
-use crate::core::docker::netbird::get_netbird_api_key;
 use crate::core::project::ProjectRootDir;
 use crate::core::TheoError;
 
@@ -76,13 +75,15 @@ impl DockerCommand {
             .arg(".env")
     }
 
+    pub(crate) fn add_common_project_env(&mut self) -> &mut Self {
+        self.arg("--env-file")
+            .arg(".env")
+    }
+
     pub(crate) fn add_localenv_args(&mut self) -> &mut Self {
         self.arg("compose")
             .arg("--file")
             .arg("./.ci/deploy/localenv/docker-compose.yml")
-            .add_localenv_secrets_args()
-            .arg("--env-file")
-            .arg(".env")
     }
 
     pub(crate) fn add_localenv_secrets_args(&mut self) -> &mut Self {

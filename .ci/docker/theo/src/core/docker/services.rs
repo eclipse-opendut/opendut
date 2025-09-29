@@ -3,16 +3,9 @@ use strum::EnumIter;
 
 #[derive(Debug, Clone, clap::ValueEnum, Serialize, EnumIter, PartialEq)]
 pub(crate) enum DockerCoreServices {
-    Network,
     Carl,
     CarlOnHost,
-    Dev,
-    Keycloak,
     Edgar,
-    Netbird,
-    Firefox,
-    Telemetry,
-    NginxWebdav,
 }
 
 impl DockerCoreServices {
@@ -20,14 +13,7 @@ impl DockerCoreServices {
         match self {
             DockerCoreServices::Carl => "carl",
             DockerCoreServices::CarlOnHost => "carl-on-host",
-            DockerCoreServices::Dev => "dev",
-            DockerCoreServices::Keycloak => "keycloak",
             DockerCoreServices::Edgar => "edgar",
-            DockerCoreServices::Netbird => "netbird",
-            DockerCoreServices::Network => "network",
-            DockerCoreServices::Firefox => "firefox",
-            DockerCoreServices::Telemetry => "telemetry",
-            DockerCoreServices::NginxWebdav => "nginx-webdav",
         }
     }
 }

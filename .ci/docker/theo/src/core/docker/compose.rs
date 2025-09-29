@@ -49,15 +49,6 @@ pub(crate) fn docker_compose_down(compose_dir: &str, delete_volumes: bool) -> Re
     command.expect_status(format!("Failed to execute docker compose down for directory: {compose_dir}.").as_str())
 }
 
-pub(crate) fn docker_compose_network_create() -> Result<i32, Error> {
-    DockerCommand::new()
-        .arg("compose")
-        .arg("--file")
-        .arg(format!("./.ci/docker/{}/docker-compose.yml", DockerCoreServices::Network))
-        .arg("up")
-        .arg("--force-recreate")
-        .expect_status("Failed to create docker network.")
-}
 
 pub(crate) fn docker_compose_network_delete(force: bool) -> Result<i32, Error> {
     let mut docker_command = DockerCommand::new();

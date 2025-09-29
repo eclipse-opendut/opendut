@@ -1,14 +1,15 @@
-use std::path::PathBuf;
 use anyhow::Error;
 use clap::{ArgAction, Parser};
+use std::path::PathBuf;
 use strum::IntoEnumIterator;
 
 use crate::commands::edgar::TestEdgarCli;
 use crate::core::dist::make_distribution_if_not_present;
-use crate::core::docker::{show_error_if_unhealthy_containers_were_found, start_netbird};
 use crate::core::docker::command::DockerCommand;
-use crate::core::docker::compose::{docker_compose_build, docker_compose_down, docker_compose_network_create, docker_compose_network_delete};
-use crate::core::docker::services::{DockerCoreServices};
+use crate::core::docker::compose::{docker_compose_build, docker_compose_down};
+use crate::core::docker::localenv::docker_localenv_shutdown;
+use crate::core::docker::services::DockerCoreServices;
+use crate::core::docker::show_error_if_unhealthy_containers_were_found;
 use crate::core::project::{load_theo_environment_variables, ProjectRootDir};
 
 /// Build and start test environment.
@@ -65,51 +66,53 @@ impl TestenvCli {
                 Self::docker_compose_build_testenv_services()?;
             }
             TaskCli::Start { expose, skip_build, skip_firefox, skip_telemetry } => {
-                // Check if localenv has been provisioned
+                // Check if localenv has been provisioned, TODO: might use docker volume instead?
                 if !PathBuf::project_path_buf().join("./.ci/deploy/localenv/data/secrets/.env").exists() {
                     Self::provision_and_build_localenv()?;
                 }
 
                 Self::start_localenv_for_testenv()?;
+                // TODO: wait until localenv is fully started?
                 show_error_if_unhealthy_containers_were_found()?;
 
                 println!("Go to OpenDuT at https://carl.opendut.local/");
             }
             TaskCli::Stop => {
                 println!("Stopping localenv testenv...");
-                DockerCommand::new()
-                    .add_localenv_args()
-                    .arg("down")
-                    .expect_status("Failed to stop localenv")?;
+                docker_localenv_shutdown(false)?;
             }
             TaskCli::Network => {
                 crate::core::network::docker_inspect_network()?;
                 show_error_if_unhealthy_containers_were_found()?;
             }
-            TaskCli::Destroy(service) => match &service.service {
-                Some(service) => {
-                    match service {
-                        DockerCoreServices::Network => docker_compose_network_delete(false)?,
-                        DockerCoreServices::Carl => docker_compose_down(DockerCoreServices::Carl.as_str(), true)?,
-                        DockerCoreServices::CarlOnHost => docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), true)?,
-                        DockerCoreServices::Dev => docker_compose_down(DockerCoreServices::Dev.as_str(), true)?,
-                        DockerCoreServices::Keycloak => docker_compose_down(DockerCoreServices::Keycloak.as_str(), true)?,
-                        DockerCoreServices::Edgar => docker_compose_down(DockerCoreServices::Edgar.as_str(), true)?,
-                        DockerCoreServices::Netbird => docker_compose_down(DockerCoreServices::Netbird.as_str(), true)?,
-                        DockerCoreServices::Firefox => docker_compose_down(DockerCoreServices::Firefox.as_str(), true)?,
-                        DockerCoreServices::Telemetry => docker_compose_down(DockerCoreServices::Telemetry.as_str(), true)?,
-                        DockerCoreServices::NginxWebdav => docker_compose_down(DockerCoreServices::NginxWebdav.as_str(), true)?,
-                    };
-                }
-                None => {
-                    println!("Destroying all services."); // omit docker network
-                    for docker_service in DockerCoreServices::iter().filter(|service| service.ne(&DockerCoreServices::Network)) {
-                        docker_compose_down(docker_service.as_str(), true)?;
+            TaskCli::Destroy(service) => {
+                match &service.service {
+                    Some(service) => {
+                        match service {
+                            DockerCoreServices::Carl => docker_compose_down(DockerCoreServices::Carl.as_str(), true)?,
+                            DockerCoreServices::CarlOnHost => docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), true)?,
+                            DockerCoreServices::Edgar => docker_compose_down(DockerCoreServices::Edgar.as_str(), true)?,
+                        };
                     }
-                    // delete docker network as last step
-                    docker_compose_network_delete(true)?;
+                    None => {
+                        println!("Destroying all services."); // omit docker network
+                        for docker_service in DockerCoreServices::iter() {
+                            docker_compose_down(docker_service.as_str(), true)?;
+                        }
+                    }
+
+                }
+                docker_localenv_shutdown(true)?;
+                // delete secrets
+                let secrets_path = PathBuf::project_path_buf().join("./.ci/deploy/localenv/data/secrets");
+                if secrets_path.exists() {
+                    std::fs::remove_dir_all(&secrets_path)?;
+                    println!("Deleted secrets at {:?}", &secrets_path);
+                } else {
+                    println!("No secrets found at {:?}", &secrets_path);
                 }
             }
+
             TaskCli::Edgar(cli) => {
                 cli.default_handling()?;
             }
@@ -120,12 +123,7 @@ impl TestenvCli {
     fn docker_compose_build_testenv_services() -> Result<(), Error> {
         make_distribution_if_not_present()?;
 
-        docker_compose_network_create()?;
-        docker_compose_build(DockerCoreServices::Firefox.as_str())?;
-        docker_compose_build(DockerCoreServices::Keycloak.as_str())?;
         docker_compose_build(DockerCoreServices::Carl.as_str())?;
-        docker_compose_build(DockerCoreServices::Netbird.as_str())?;
-        docker_compose_build(DockerCoreServices::NginxWebdav.as_str())?;
         Ok(())
     }
 
@@ -142,6 +140,7 @@ impl TestenvCli {
         // Build the localenv services
         DockerCommand::new()
             .add_localenv_args()
+            .add_common_project_env()
             .arg("build")
             .expect_status("Failed to build localenv services")?;
 
@@ -153,6 +152,7 @@ impl TestenvCli {
 
         DockerCommand::new()
             .add_localenv_args_with_disabled_telemetry()
+            .add_localenv_secrets_args()
             .arg("up")
             .arg("--detach")
             .expect_status("Failed to start localenv for testenv")?;
