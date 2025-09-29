@@ -39,7 +39,7 @@ enum TaskCli {
 }
 
 fn main() -> crate::Result {
-    cicero::init::tracing();
+    cicero::init::tracing().init();
 
     std::env::set_current_dir(repo_path!())?;
 
