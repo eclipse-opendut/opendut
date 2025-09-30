@@ -7,13 +7,19 @@ or any other machine, this guide will show all necessary steps, to get CARL up a
 
 ![Hosting Environment](../img/opendut-vm-edgar-test-setup.drawio.svg)
 
-1. Install Git, if not already installed and checkout OpenDuT repository
+1. Install Git, if not already installed and checkout the openDuT repository:
     ```shell
     git clone https://github.com/eclipse-opendut/opendut.git
     ```
-2. Install `docker.io` and `docker-compose-v2`
-3. Optional: Change the docker image location CARL should be pulled from in `.ci/deploy/localenv/docker-compose.yml`. By default,
-CARL is pulled from `ghcr.io`.
+
+2. Install Docker and Docker Compose v2, e.g. on Debian-based operating systems:
+   ```shell
+   sudo apt install docker.io docker-compose-v2
+   ```
+
+3. Optional: Change the docker image location CARL should be pulled from in `.ci/deploy/localenv/docker-compose.yml`.
+  By default, CARL is pulled from `ghcr.io`.
+
 4. Set `/etc/hosts` file:
 Add the following lines to the `/etc/hosts` file on the host system to access the services from the local network.
     ```shell
@@ -27,7 +33,8 @@ Add the following lines to the `/etc/hosts` file on the host system to access th
     192.168.56.9 opentelemetry.opendut.local
     192.168.56.9 monitoring.opendut.local
     ```
-5. Start the local test environment using docker compose.
+
+5. Start the local test environment using Docker Compose.
     ```shell
     # configure project path
     export OPENDUT_REPO_ROOT=$(git rev-parse --show-toplevel)
@@ -40,6 +47,7 @@ Add the following lines to the `/etc/hosts` file on the host system to access th
     The secrets which were created during the first `docker compose` command can be found in `.ci/deploy/localenv/data/secrets/.env`.
 
 If everything worked and is up and running, you can follow the [EDGAR Setup Guide](../edgar/setup.md).
+
 
 ## Shutdown the environment
 

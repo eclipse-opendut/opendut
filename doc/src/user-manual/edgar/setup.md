@@ -22,7 +22,7 @@ Alternatively, you can download directly to your target host with:
 ```sh
 curl https://$CARL_HOST/api/edgar/$ARCH/download --output opendut-edgar.tar.gz
 ```
-Replace `$CARL_HOST` with the domain where your CARL is hosted,  
+Replace `$CARL_HOST` with the domain where your CARL is hosted (e.g. `carl.opendut.local`),  
 and replace `$ARCH` with the appropriate CPU architecture.
 
 Available CPU architectures are:
@@ -91,6 +91,7 @@ Therefore, we have some dependencies.
   sudo cp libsctp.so* /lib/
   sudo cp cannelloni /usr/local/bin/
   ```
+  EDGAR will check during the scripted setup, whether these have been installed correctly.
 
 ### Testing
 When you configured everything and deployed the cluster, you can test the CAN connection between different EDGARs as follows:
