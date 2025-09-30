@@ -5,6 +5,7 @@ use anyhow::{anyhow, Error};
 use std::io;
 use crate::core::command_ext::TheoCommandExtensions;
 use crate::core::docker::checks;
+use crate::core::docker::localenv::LOCALENV_SECRETS_ENV_FILE;
 use crate::core::project::ProjectRootDir;
 use crate::core::TheoError;
 
@@ -88,7 +89,7 @@ impl DockerCommand {
 
     pub(crate) fn add_localenv_secrets_args(&mut self) -> &mut Self {
         self.arg("--env-file")
-            .arg("./.ci/deploy/localenv/data/secrets/.env")
+            .arg(LOCALENV_SECRETS_ENV_FILE)
     }
 
     pub(crate) fn add_localenv_args_with_disabled_telemetry(&mut self) -> &mut Self {

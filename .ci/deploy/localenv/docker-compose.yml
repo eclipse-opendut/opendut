@@ -20,7 +20,7 @@ services:
       dockerfile: ./.ci/deploy/localenv/data/provision/Dockerfile
     volumes:
       - provision-secrets-data:/provision
-      - ./data/secrets:/secrets
+      #- ./data/secrets:/secrets
       - backup:/backup
 
   keycloak-postgres:

@@ -7,7 +7,7 @@ use crate::commands::edgar::TestEdgarCli;
 use crate::core::dist::make_distribution_if_not_present;
 use crate::core::docker::command::DockerCommand;
 use crate::core::docker::compose::{docker_compose_build, docker_compose_down};
-use crate::core::docker::localenv::docker_localenv_shutdown;
+use crate::core::docker::localenv::{delete_localenv_secrets, docker_localenv_shutdown, LOCALENV_SECRETS_ENV_FILE, LOCALENV_SECRETS_PATH};
 use crate::core::docker::services::DockerCoreServices;
 use crate::core::docker::show_error_if_unhealthy_containers_were_found;
 use crate::core::project::{load_theo_environment_variables, ProjectRootDir};
@@ -67,7 +67,7 @@ impl TestenvCli {
             }
             TaskCli::Start { expose, skip_build, skip_firefox, skip_telemetry } => {
                 // Check if localenv has been provisioned, TODO: might use docker volume instead?
-                if !PathBuf::project_path_buf().join("./.ci/deploy/localenv/data/secrets/.env").exists() {
+                if !PathBuf::project_path_buf().join(LOCALENV_SECRETS_ENV_FILE).exists() {
                     Self::provision_and_build_localenv()?;
                 }
 
@@ -103,14 +103,7 @@ impl TestenvCli {
 
                 }
                 docker_localenv_shutdown(true)?;
-                // delete secrets
-                let secrets_path = PathBuf::project_path_buf().join("./.ci/deploy/localenv/data/secrets");
-                if secrets_path.exists() {
-                    std::fs::remove_dir_all(&secrets_path)?;
-                    println!("Deleted secrets at {:?}", &secrets_path);
-                } else {
-                    println!("No secrets found at {:?}", &secrets_path);
-                }
+                delete_localenv_secrets()?;
             }
 
             TaskCli::Edgar(cli) => {
@@ -143,6 +136,15 @@ impl TestenvCli {
             .add_common_project_env()
             .arg("build")
             .expect_status("Failed to build localenv services")?;
+
+        delete_localenv_secrets()?;
+        // copy secrets to host
+        DockerCommand::new()
+            .arg("cp")
+            .arg("opendut-provision-secrets")
+            .arg("/provision/")
+            .arg(LOCALENV_SECRETS_PATH)
+            .expect_status("Successfully copied localenv secrets.")?;
 
         Ok(())
     }

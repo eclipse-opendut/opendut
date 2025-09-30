@@ -8,6 +8,10 @@ create_password() {
   echo "$password"
 }
 
+# TODO: when /secrets no longer exists, add docker cp in documentation to achieve the same result
+# '/provision' - contains the created secrets in the docker volume
+# '/secrets'   - contains a synchronized copy of the created secrets available on the host system
+
 PROVISION_ROOT_DIR="/provision/"
 PROVISION_PKI_DIR="$PROVISION_ROOT_DIR/pki/"
 OPENDUT_PASSWORD_FILE="$PROVISION_ROOT_DIR/.env-pki"
@@ -47,7 +51,3 @@ fi
 chown -R carl:carl $PROVISION_ROOT_DIR
 chmod a=,u=rw $OPENDUT_PASSWORD_FILE
 chmod a=,u=rw $OPENDUT_ENV_FILE
-
-# '/provision' - contains the created secrets in the docker volume
-# '/secrets'   - contains a synchronized copy of the created secrets available on the host system
-rsync --archive --delete $PROVISION_ROOT_DIR/ /secrets/
