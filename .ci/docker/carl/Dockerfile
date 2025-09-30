@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 ARG VERSION
 ENV TARGET_TRIPLE=x86_64-unknown-linux-gnu
 
@@ -11,6 +11,7 @@ EXPOSE 8080
 
 COPY ./.ci/docker/carl/entrypoint.sh /opt/entrypoint.sh
 
+RUN userdel -r ubuntu
 RUN groupadd --gid 1000 carl
 RUN useradd --create-home --uid 1000 --gid carl --shell /bin/bash carl
 RUN mkdir -p /etc/opendut/tls && chown -R carl:carl /etc/opendut

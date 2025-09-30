@@ -1,6 +1,7 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 LABEL authors="av"
 
+RUN userdel -r ubuntu
 RUN groupadd --gid 1000 carl
 RUN useradd --create-home --uid 1000 --gid carl --shell /bin/bash carl
 
