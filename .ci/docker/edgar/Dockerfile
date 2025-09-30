@@ -5,7 +5,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     tzdata ca-certificates \
     iproute2 bind9-dnsutils iputils-ping fping iptables wireguard-tools tcpdump netcat-traditional \
     curl jq uuid-runtime less bridge-utils \
-    python3 python3-requests python3-flask \
+    python3 python3-requests \
     python3-can can-utils libsctp1 vim
 
 
