@@ -20,7 +20,6 @@ services:
       dockerfile: ./.ci/deploy/localenv/data/provision/Dockerfile
     volumes:
       - provision-secrets-data:/provision
-      #- ./data/secrets:/secrets
       - backup:/backup
 
   keycloak-postgres:
@@ -60,6 +59,8 @@ services:
     healthcheck:
       <<: *common-healthcheck-params
       test: [ "CMD-SHELL", "curl --fail --silent --output /dev/null --noproxy '*' http://localhost:8080/realms/provisioning-done || exit 1" ]
+    volumes:
+      - provision-secrets-data:/provision:ro
     environment:
     - JAVA_OPTS_APPEND=-Dkeycloak.profile.feature.upload_scripts=enabled
     - KC_DB_PASSWORD=$KEYCLOAK_POSTGRES_PASSWORD
@@ -99,7 +100,9 @@ services:
     volumes:
       - ./data/keycloak/keycloak_functions.sh:/keycloak_functions.sh
       - ./data/keycloak/provision.sh:/provision.sh
+      - provision-secrets-data:/provision:ro
     environment:
+      - SSL_CERT_FILE=/provision/pki/opendut-ca.pem  # used by curl
       - KCADM_PATH=/opt/keycloak/bin/kcadm.sh
       - KEYCLOAK_URL=http://keycloak:8080
       - KEYCLOAK_ADMIN=admin
@@ -139,7 +142,7 @@ services:
       - "--accesslog"
       - "--accesslog.format=json"
     environment:
-      - "LEGO_CA_CERTIFICATES=/pki/opendut-ca.pem"
+      - "LEGO_CA_CERTIFICATES=/provision/pki/opendut-ca.pem"
     ports:
       - "127.0.0.1:8080:8080"
       - "80:80"
@@ -153,7 +156,7 @@ services:
       test: ["CMD", "wget", "-q", "--proxy", "off", "--spider", "http://localhost:8080/ping"]
     volumes:
       - ./data/traefik/config:/etc/traefik/dynamic:ro
-      - ./data/secrets/pki/:/pki
+      - provision-secrets-data:/provision:ro
       - /var/run/docker.sock:/var/run/docker.sock
     labels:
       - logging=alloy
@@ -241,8 +244,7 @@ services:
       provision-secrets:
         condition: service_completed_successfully
     volumes:
-      - ./data/secrets/pki/:/pki/:ro
-      - ./data/secrets/pki/opendut-ca.pem:/usr/local/share/ca-certificates/opendut-ca.crt:ro
+      - provision-secrets-data:/provision:ro
       - ./data/netbird/config/:/config/:ro
       - backup:/var/lib/backup/
       - netbird-mgmt-data:/var/lib/netbird
@@ -252,9 +254,9 @@ services:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD
       # CURL
-      - CURL_CA_BUNDLE=/usr/local/share/ca-certificates/opendut-ca.crt
+      - CURL_CA_BUNDLE=/provision/pki/opendut-ca.pem
       # Netbird management is GO, GO uses SSL_CERT_FILE environment variable, see https://go.dev/src/crypto/x509/root_unix.go
-      - SSL_CERT_FILE=/usr/local/share/ca-certificates/opendut-ca.crt
+      - SSL_CERT_FILE=/provision/pki/opendut-ca.pem
       - KEYCLOAK_URL=https://auth.opendut.local
       - NETBIRD_MANAGEMENT_URL=https://netbird-api.opendut.local
       - NETBIRD_MANAGEMENT_DOMAIN=netbird.opendut.local
@@ -343,9 +345,7 @@ services:
       - ./data/carl/entrypoint.sh:/opt/entrypoint.sh
       - ./data/carl/carl_functions.sh:/opt/carl_functions.sh
       # CERTIFICATES
-      - ./data/secrets/pki/opendut-ca.pem:/etc/opendut/tls/ca.pem
-      - ./data/secrets/pki/deploy/carl.opendut.local.pem:/etc/opendut/tls/carl.pem
-      - ./data/secrets/pki/deploy/carl.opendut.local.key:/etc/opendut/tls/carl.key
+      - provision-secrets-data:/provision:ro
       - carl-config:/opt/opendut-carl/config/
       - carl_data:/var/lib/opendut/carl/
       - backup:/var/lib/backup/
@@ -354,14 +354,15 @@ services:
       - OPENDUT_CARL_NETWORK_REMOTE_HOST=carl.opendut.local
       - OPENDUT_CARL_NETWORK_REMOTE_PORT=443
       - OPENDUT_CARL_NETWORK_BIND_PORT=443
-      - OPENDUT_CARL_NETWORK_TLS_CA=/etc/opendut/tls/ca.pem
+      - OPENDUT_CARL_NETWORK_TLS_CA=/provision/pki/opendut-ca.pem
+      - OPENDUT_CARL_NETWORK_TLS_KEY=/provision/pki/deploy/carl.opendut.local.key
+      - OPENDUT_CARL_NETWORK_TLS_CERTIFICATE=/provision/pki/deploy/carl.opendut.local.pem
       # CURL
-      - CURL_CA_BUNDLE=/etc/opendut/tls/ca.pem
-      - SSL_CERT_FILE=/etc/opendut/tls/ca.pem
+      - CURL_CA_BUNDLE=/provision/pki/opendut-ca.pem
       # VPN
       - OPENDUT_CARL_VPN_ENABLED=true
       - OPENDUT_CARL_VPN_KIND=netbird
-      - OPENDUT_CARL_VPN_NETBIRD_CA=/etc/opendut/tls/ca.pem
+      - OPENDUT_CARL_VPN_NETBIRD_CA=/provision/pki/opendut-ca.pem
       - OPENDUT_CARL_VPN_NETBIRD_URL=https://netbird-api.opendut.local/api
       - OPENDUT_CARL_VPN_NETBIRD_AUTH_TYPE=personal-access-token
       # OpenTelemetry
@@ -418,10 +419,10 @@ services:
       - OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SECRET
       - OPENDUT_CLEO_NETWORK_OIDC_CLIENT_ISSUER_URL=https://auth.opendut.local/realms/opendut/
       - OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SCOPES=
-      - OPENDUT_CLEO_NETWORK_TLS_CA=/etc/opendut/tls/ca.pem
-      - SSL_CERT_FILE=/etc/opendut/tls/ca.pem
+      - OPENDUT_CLEO_NETWORK_TLS_CA=/provision/pki/opendut-ca.pem
+      - SSL_CERT_FILE=/provision/pki/opendut-ca.pem
     volumes:
-      - "./data/secrets/pki/opendut-ca.pem:/etc/opendut/tls/ca.pem"
+      - provision-secrets-data:/provision:ro
     networks:
       - opendut_local
 
@@ -524,7 +525,7 @@ services:
       - ./data/telemetry/otel-collector.yml:/etc/collector-gateway.yaml:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./data/secrets/pki/opendut-ca.pem:/pki/opendut-ca.pem:ro
+      - provision-secrets-data:/provision:ro
     build:
       context: ../../..
       dockerfile: ./.ci/deploy/localenv/data/telemetry/Dockerfile_otel-collector
@@ -533,7 +534,7 @@ services:
     restart: unless-stopped
     # Note: otel-collector is always enabled (no replicas config)
     environment:
-      - "SSL_CERT_FILE=/pki/opendut-ca.pem"
+      - "SSL_CERT_FILE=/provision/pki/opendut-ca.pem"
     command: [ "--config=/etc/collector-gateway.yaml" ]
     user: "0"  # root required to access docker socket
     depends_on:

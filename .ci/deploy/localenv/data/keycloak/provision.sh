@@ -71,6 +71,10 @@ main() {
   echo "0" > /opt/keycloak/data/provisioned
 }
 
+
+# update certificates
+# TODO: move update custom certificates to entrypoint
+
 main
 
 if [ -n "$1" ]; then

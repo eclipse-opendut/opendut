@@ -141,8 +141,7 @@ impl TestenvCli {
         // copy secrets to host
         DockerCommand::new()
             .arg("cp")
-            .arg("opendut-provision-secrets")
-            .arg("/provision/")
+            .arg("opendut-provision-secrets:/provision/")
             .arg(LOCALENV_SECRETS_PATH)
             .expect_status("Successfully copied localenv secrets.")?;
 

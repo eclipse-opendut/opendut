@@ -71,6 +71,7 @@ fn start_edgar_in_docker() -> Result<i32, Error> {
     let mut command = DockerCommand::new();
     command
         .add_common_args(DockerCoreServices::Edgar.as_str())
+        .add_localenv_secrets_args()
         .arg("up")
         .arg("-d");
     println!("Starting EDGAR cluster in docker: '{command:?}'");
@@ -163,6 +164,7 @@ fn delete_deployment_and_peers() -> Result<i32, Error> {
     println!("STAGE: Delete deployment and cleanup");
     DockerCommand::new()
         .add_common_args(DockerCoreServices::Edgar.as_str())
+        .add_localenv_secrets_args()
         .arg("run")
         .arg("--name=edgar-cleanup")
         .arg("--rm")

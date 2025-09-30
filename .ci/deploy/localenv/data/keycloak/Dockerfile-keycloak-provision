@@ -11,17 +11,16 @@ RUN dnf remove -y subscription-manager
 RUN dnf install --installroot /mnt/rootfs curl jq --releasever 9 --setopt install_weak_deps=false --nodocs -y; dnf --installroot /mnt/rootfs clean all
 #RUN find /mnt/rootfs -name '*jq*'
 
-# update custom certificates
-COPY ./.ci/deploy/localenv/data/secrets/pki/ /opendut-tls/
-RUN cp /opendut-tls/*-ca.pem /etc/pki/ca-trust/source/anchors/ && update-ca-trust
-
 
 FROM quay.io/keycloak/keycloak:$KEYCLOAK_VERSION
 USER root
 COPY --from=ubi-micro-build /mnt/rootfs/usr/bin/curl /usr/bin/curl
 COPY --from=ubi-micro-build /mnt/rootfs/usr/bin/jq /usr/bin/jq
 COPY --from=ubi-micro-build /mnt/rootfs/usr/lib64/ /usr/lib64/
-COPY --from=ubi-micro-build /etc/pki/ca-trust/extracted/ /etc/pki/ca-trust/extracted/
+
+# update custom certificates
+# 1. Copy certificates to /etc/pki/ca-trust/source/anchors/
+# 2. Run update-ca-trust, which will update trusted certificates in /etc/pki/ca-trust/extracted/
 
 COPY ./.ci/deploy/localenv/data/keycloak/keycloak_functions.sh /keycloak_functions.sh
 COPY ./.ci/deploy/localenv/data/keycloak/provision.sh /provision.sh

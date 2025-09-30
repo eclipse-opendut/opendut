@@ -1,5 +1,5 @@
 FROM ubuntu:24.04
-LABEL authors="av"
+LABEL authors="opendut.eclipse.dev"
 
 RUN userdel -r ubuntu
 RUN groupadd --gid 1000 carl
