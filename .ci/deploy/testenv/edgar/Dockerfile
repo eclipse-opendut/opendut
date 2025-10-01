@@ -8,8 +8,9 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     bridge-utils python3 python3-can can-utils libsctp1
 
 
-RUN curl --verbose https://raw.githubusercontent.com/gdraheim/docker-systemctl-replacement/b18d67e521f0d1cf1d705dbb8e0416bef23e377c/files/docker/systemctl3.py --output /usr/bin/systemctl
-RUN echo "01beb201d2045c5e548d012bde9b6ae6113392a57bbea7b3e81131aac995f77a /usr/bin/systemctl" | sha256sum --check --status
+ADD --checksum=sha256:01beb201d2045c5e548d012bde9b6ae6113392a57bbea7b3e81131aac995f77a \
+    https://raw.githubusercontent.com/gdraheim/docker-systemctl-replacement/b18d67e521f0d1cf1d705dbb8e0416bef23e377c/files/docker/systemctl3.py \
+    /usr/bin/systemctl
 RUN chmod +x /usr/bin/systemctl
 
 COPY ./.ci/deploy/testenv/edgar/test_execution_container /opt/test_execution_container
@@ -17,8 +18,9 @@ COPY ./.ci/deploy/testenv/edgar/test_execution_container /opt/test_execution_con
 
 RUN mkdir /tmp/cannelloni
 WORKDIR /tmp/cannelloni
-RUN wget https://github.com/eclipse-opendut/cannelloni-build/releases/download/v${cannelloni_version}/cannelloni_manylinux_2_28-x64_${cannelloni_version}.tar.gz -O /tmp/cannelloni/cannelloni.tar.gz
-RUN echo "f98e4cad3a6d1df55423413ea52c676d2eb2ab3d783f25f720654f5797c83c44  cannelloni.tar.gz" | sha256sum --check --status
+ADD --checksum=sha256:f98e4cad3a6d1df55423413ea52c676d2eb2ab3d783f25f720654f5797c83c44 \
+    https://github.com/eclipse-opendut/cannelloni-build/releases/download/v${cannelloni_version}/cannelloni_manylinux_2_28-x64_${cannelloni_version}.tar.gz \
+    /tmp/cannelloni/cannelloni.tar.gz
 RUN tar --strip-components=1 -xvf cannelloni.tar.gz
 
 RUN cp libcannelloni-common.so.0 /lib/
