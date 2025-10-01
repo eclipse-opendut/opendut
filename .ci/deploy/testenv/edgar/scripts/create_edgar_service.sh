@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 
-# simple script to create a peer and immediately start edgar as a service (connecting to CARL)
+# Simple script to create a peer and immediately start EDGAR as a service (connecting to CARL).
+# Can be used in `cargo theo dev edgar-shell`.
 
 source "$(dirname "$0")/functions.sh"
 extract_opendut_artifact opendut-edgar "true"
