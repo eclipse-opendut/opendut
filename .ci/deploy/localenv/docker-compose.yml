@@ -357,6 +357,8 @@ services:
       - OPENDUT_CARL_NETWORK_TLS_CA=/provision/pki/opendut-ca.pem
       - OPENDUT_CARL_NETWORK_TLS_KEY=/provision/pki/deploy/carl.opendut.local.key
       - OPENDUT_CARL_NETWORK_TLS_CERTIFICATE=/provision/pki/deploy/carl.opendut.local.pem
+      # Use custom certificate authority in CARL (Rust respects SSL_CERT_FILE), see TODO containing "currently requires SSL_CERT_FILE env to be set"
+      - SSL_CERT_FILE=/provision/pki/opendut-ca.pem
       # CURL
       - CURL_CA_BUNDLE=/provision/pki/opendut-ca.pem
       # VPN
