@@ -8,13 +8,7 @@
 }
 
 .dut-logo {
-  max-height: 100% !important;
-  transition: transform 0.3s ease;
-  transform-origin: center;
-}
-
-.dut-logo:hover {
-  transform: scale(1.1);
+  max-height: 100%;
 }
 
 .dut-menu {
