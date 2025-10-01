@@ -2,6 +2,7 @@ use std::process::{Command, Output};
 use std::ffi::OsStr;
 use std::path::PathBuf;
 use anyhow::{anyhow, Error};
+use tracing::debug;
 use std::io;
 use crate::core::command_ext::TheoCommandExtensions;
 use crate::core::docker::checks;
@@ -106,7 +107,17 @@ impl DockerCommand {
         }
     }
 
+    pub(crate) fn debug_log_executed_command(&self) {
+        let program = self.command.get_program().to_string_lossy();
+        let args = self.command.get_args()
+            .map(|a| a.to_string_lossy())
+            .collect::<Vec<_>>()
+            .join(" ");
+        debug!("Executing docker command: '{} {}'", program, args);
+    }
+
     pub(crate) fn expect_status(&mut self, error_message: &str) -> Result<i32, anyhow::Error> {
+        self.debug_log_executed_command();
         let command_status = self
             .command
             .status()

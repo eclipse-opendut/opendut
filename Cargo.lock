@@ -4036,6 +4036,8 @@ dependencies = [
  "shadow-rs",
  "strum",
  "thiserror 2.0.16",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

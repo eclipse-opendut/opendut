@@ -1,11 +1,10 @@
-use std::path::PathBuf;
-use clap::{Parser, Subcommand};
-
 use crate::commands::dev::DevCli;
 use crate::commands::testenv::TestenvCli;
 use crate::commands::vagrant::VagrantCli;
-use crate::core::{project, Result};
 use crate::core::project::ProjectRootDir;
+use crate::core::{project, Result};
+use clap::{Parser, Subcommand};
+use std::path::PathBuf;
 
 mod core;
 mod commands;
@@ -30,6 +29,11 @@ enum TaskCli {
 
 
 fn main() -> Result {
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_writer(std::io::stderr)
+        .init();
+
     let args = Cli::parse();
 
     PathBuf::project_dir_verify();
