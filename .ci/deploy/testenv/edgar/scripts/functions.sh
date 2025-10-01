@@ -175,9 +175,9 @@ extract_opendut_artifact() {
   REQUIRED="${2:-true}"
 
   if [ "$REQUIRED" = false ] ; then
-    echo "Skipping extraction of distribution archive for \'$NAME\'."
+    echo "Skipping extraction of distribution archive for $NAME."
   else
-    echo "Extracting distribution archive for \'$NAME\'."
+    echo "Extracting distribution archive for $NAME."
     OPENDUT_DIST_ARCHIVE_PATH=$(find "$OPENDUT_ARTIFACTS_DIR" -name "$NAME-x86_64-unknown-linux-gnu*.tar.gz" -print0 | tr '\0' '\n' | head)
     if [ -e "$OPENDUT_DIST_ARCHIVE_PATH" ]; then
       tar xf "$OPENDUT_DIST_ARCHIVE_PATH"
@@ -185,11 +185,11 @@ extract_opendut_artifact() {
       if [ -e "$OPENDUT_ARTIFACT_BINARY" ]; then
         ln -sf /opt/"$NAME"/"$NAME" /usr/local/opendut/bin/distribution/"$NAME"
       else
-        echo "Could not extract artifact binary \'$OPENDUT_ARTIFACT_BINARY\' from archive \'$OPENDUT_DIST_ARCHIVE_PATH\'."
+        echo "Could not extract artifact binary '$OPENDUT_ARTIFACT_BINARY' from archive '$OPENDUT_DIST_ARCHIVE_PATH'."
         exit 1
       fi
     else
-      echo "Could not find distribution archive for \'$NAME\'."
+      echo "Could not find distribution archive for $NAME."
       if [ "$REQUIRED" = true ] ; then
         exit 1
       fi
