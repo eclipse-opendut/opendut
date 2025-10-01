@@ -16,11 +16,12 @@ else
   TESTENV_NETBIRD_HOSTS="netbird-management,netbird-dashboard,netbird-signal,netbird-coturn"
   TESTENV_EDGAR_HOSTS="edgar-leader,edgar-*"
   TESTENV_HOSTS="$TESTENV_NETBIRD_HOSTS,keycloak,keycloak.internal,$TESTENV_EDGAR_HOSTS,carl,loki,tempo,prometheus,alloy,otel-collector,grafana,nginx-webdav"
+  LOCALENV_HOSTS="opendut.local"
   # 192.168.56.0/24,192.168.32.0/24,192.168.33.0/24
   TESTENV_NETWORKS="192.168.56.10,192.168.0.0/16"
 
-  export VAGRANT_NO_PROXY=localhost,127.0.0.1,$TESTENV_HOSTS,$TESTENV_NETWORKS
-  export no_proxy=localhost,127.0.0.1,$TESTENV_HOSTS,$TESTENV_NETWORKS
-  export NO_PROXY=localhost,127.0.0.1,$TESTENV_HOSTS,$TESTENV_NETWORKS
+  export VAGRANT_NO_PROXY=localhost,127.0.0.1,$TESTENV_HOSTS,$TESTENV_NETWORKS,$LOCALENV_HOSTS
+  export no_proxy=$VAGRANT_NO_PROXY
+  export NO_PROXY=$VAGRANT_NO_PROXY
 fi
 

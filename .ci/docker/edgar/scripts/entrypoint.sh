@@ -25,6 +25,8 @@ main() {
 echo "Updating CA certificates"
 update-ca-certificates
 
+# configure http proxy for Docker in Docker container (cruizba/ubuntu-dind)
+/opt/dind_proxy.sh
 
 # symlink netbird to known binary path
 #OPENDUT_EDGAR_NETBIRD_BINARY=/opt/opendut/edgar/netbird/netbird
