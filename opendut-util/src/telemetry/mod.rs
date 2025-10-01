@@ -174,9 +174,9 @@ pub async fn initialize_with_config(
                 .try_init()?;
 
             trace!("Telemetry stack initialized with OpenTelemetry, using configuration:
-endpoint:            {endpoint}
-service_name:        {service_name}
-service_metadata: {service_metadata:?}",
+                                                           endpoint:          {endpoint}
+                                                           service_name:      {service_name}
+                                                           service_metadata:  {service_metadata:?}",  //indented to be aligned in output logs
                 endpoint=collector_endpoint.url
             );
 
