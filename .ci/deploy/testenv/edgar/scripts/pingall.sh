@@ -66,7 +66,7 @@ wait_for_server_ready() {
   return 1
 }
 
-wait_for_server_ready netbird-coturn 3478
+#wait_for_server_ready opendut.local 3478 # TODO: localenv netbird-coturn is reachable by this, will be deleted after netbird upgrade
 wait_for_server_ready netbird-signal 80
 wait_for_server_ready netbird-management 443  # NetBird-API is also in this service
 

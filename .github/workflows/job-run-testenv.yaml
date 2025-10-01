@@ -71,8 +71,8 @@ jobs:
       - name: Collect container logs
         if: always()
         run: |
-          chmod +x .ci/docker/edgar/persist-edgar-logs.sh
-          .ci/docker/edgar/persist-edgar-logs.sh ./testenv-logs/docker/ | tee ./testenv-logs/theo/persist-edgar-logs.log
+          chmod +x .ci/deploy/testenv/edgar/persist-edgar-logs.sh
+          .ci/deploy/testenv/edgar/persist-edgar-logs.sh ./testenv-logs/docker/ | tee ./testenv-logs/theo/persist-edgar-logs.log
 
       - name: "Upload testenv logs"
         if: always()

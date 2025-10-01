@@ -63,10 +63,11 @@ impl TestenvCli {
 
         match self.task {
             TaskCli::Build => {
-                Self::docker_compose_build_testenv_services()?;
+                make_distribution_if_not_present()?;
+                Self::provision_and_build_localenv()?;
             }
             TaskCli::Start { expose, skip_build, skip_firefox, skip_telemetry } => {
-                // Check if localenv has been provisioned, TODO: might use docker volume instead?
+                // Check if localenv has been provisioned, TODO: consistent build/provision/start behavior
                 if !PathBuf::project_path_buf().join(LOCALENV_SECRETS_ENV_FILE).exists() {
                     Self::provision_and_build_localenv()?;
                 }
@@ -86,22 +87,7 @@ impl TestenvCli {
                 show_error_if_unhealthy_containers_were_found()?;
             }
             TaskCli::Destroy(service) => {
-                match &service.service {
-                    Some(service) => {
-                        match service {
-                            DockerCoreServices::Carl => docker_compose_down(DockerCoreServices::Carl.as_str(), true)?,
-                            DockerCoreServices::CarlOnHost => docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), true)?,
-                            DockerCoreServices::Edgar => docker_compose_down(DockerCoreServices::Edgar.as_str(), true)?,
-                        };
-                    }
-                    None => {
-                        println!("Destroying all services."); // omit docker network
-                        for docker_service in DockerCoreServices::iter() {
-                            docker_compose_down(docker_service.as_str(), true)?;
-                        }
-                    }
-
-                }
+                // TODO: cleanup testenv containers/volumes?
                 docker_localenv_shutdown(true)?;
                 delete_localenv_secrets()?;
             }
@@ -110,13 +96,6 @@ impl TestenvCli {
                 cli.default_handling()?;
             }
         }
-        Ok(())
-    }
-
-    fn docker_compose_build_testenv_services() -> Result<(), Error> {
-        make_distribution_if_not_present()?;
-
-        docker_compose_build(DockerCoreServices::Carl.as_str())?;
         Ok(())
     }
 

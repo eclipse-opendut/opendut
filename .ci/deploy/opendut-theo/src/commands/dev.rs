@@ -92,12 +92,12 @@ fn start_carl_traefik_forwarder() -> Result<i32, Error> {
     let mut command = DockerCommand::new();
     command.arg("compose")
         .arg("--file")
-        .arg(format!(".ci/docker/{}/docker-compose.yml", DockerCoreServices::CarlOnHost));
+        .arg(format!(".ci/deploy/testenv/{}/docker-compose.yml", DockerCoreServices::CarlOnHost));
 
     if running_in_opendut_vm() {
-        command.arg("--file").arg(format!(".ci/docker/{}/vm.yml", DockerCoreServices::CarlOnHost));
+        command.arg("--file").arg(format!(".ci/deploy/testenv/{}/vm.yml", DockerCoreServices::CarlOnHost));
     } else {
-        command.arg("--file").arg(format!(".ci/docker/{}/localhost.yml", DockerCoreServices::CarlOnHost));
+        command.arg("--file").arg(format!(".ci/deploy/testenv/{}/localhost.yml", DockerCoreServices::CarlOnHost));
     };
     command.arg("--env-file")
         .arg(".env-theo")

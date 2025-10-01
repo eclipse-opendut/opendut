@@ -17,7 +17,7 @@ members = [
     "opendut-vpn",
     "opendut-vpn/opendut-vpn-netbird",
     ".ci/cargo-ci",
-    ".ci/docker/theo",
+    ".ci/deploy/opendut-theo",
     "tests",
 ]
 resolver = "3"
@@ -41,7 +41,7 @@ opendut-edgar-kernel-modules = { path = "opendut-edgar/opendut-edgar-kernel-modu
 opendut-lea-components = { path = "opendut-lea/opendut-lea-components" }
 opendut-netbird-client-api = { path = "opendut-edgar/netbird-client-api" }
 opendut-model = { path = "opendut-model" }
-opendut-theo = { path = ".ci/docker/theo" }
+opendut-theo = { path = ".ci/deploy/opendut-theo" }
 opendut-util = { path = "opendut-util" }
 opendut-util-core = { path = "opendut-util/opendut-util-core" }
 opendut-vpn = { path = "opendut-vpn" }

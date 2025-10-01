@@ -69,7 +69,7 @@ impl DockerCommand {
     pub(crate) fn add_common_args(&mut self, compose_dir: &str) -> &mut Self {
         self.arg("compose")
             .arg("--file")
-            .arg(format!("./.ci/docker/{compose_dir}/docker-compose.yml"))
+            .arg(format!("./.ci/deploy/testenv/{compose_dir}/docker-compose.yml"))
             .arg("--env-file")
             .arg(".env-theo")
             .arg("--env-file")

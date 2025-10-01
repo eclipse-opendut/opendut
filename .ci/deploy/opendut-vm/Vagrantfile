@@ -96,11 +96,11 @@ Vagrant.configure("2") do |config|
   # Run Ansible from the Vagrant VM
   config.vm.provision "ansible_local" do |ansible|
     # ansible.compatibility_mode = "2.0"
-    ansible.playbook = "/vagrant/.ci/docker/vagrant/playbook.yml"
+    ansible.playbook = "/vagrant/.ci/deploy/opendut-vm/vagrant/playbook.yml"
     ansible.become = true
-    ansible.galaxy_role_file = "/vagrant/.ci/docker/vagrant/ansible-requirements.yml"
-    ansible.galaxy_roles_path = "/vagrant/.ci/docker/vagrant/local_roles/:/vagrant/.ci/docker/vagrant/downloaded_roles/"
-    ansible.galaxy_command = "ansible-galaxy install --role-file=%{role_file} --roles-path=/vagrant/.ci/docker/vagrant/downloaded_roles"
+    ansible.galaxy_role_file = "/vagrant/.ci/deploy/opendut-vm/ansible-requirements.yml"
+    ansible.galaxy_roles_path = "/vagrant/.ci/deploy/opendut-vm/local_roles/:/vagrant/.ci/deploy/opendut-vm/downloaded_roles/"
+    ansible.galaxy_command = "ansible-galaxy install --role-file=%{role_file} --roles-path=/vagrant/.ci/deploy/opendut-vm/downloaded_roles"
 
     # https://developer.hashicorp.com/vagrant/docs/provisioning/ansible_common
     ansible.tags = ENV["ANSIBLE_TAGS"] ||= "all"
@@ -117,7 +117,7 @@ Vagrant.configure("2") do |config|
 
   # start docker with script
   config.vm.provision "shell" do |script|
-    script.path = "./.ci/docker/vagrant/vagrant-entrypoint.sh"
+    script.path = "./.ci/deploy/opendut-vm/vagrant/vagrant-entrypoint.sh"
     script.args   = ""
   end
 

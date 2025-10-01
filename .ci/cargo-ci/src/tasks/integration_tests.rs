@@ -69,7 +69,7 @@ fn run_edgar_integration_test_binary_in_docker(edgar_test_binary: String) -> any
     docker
         .current_dir(repo_path!())
         .arg("compose")
-        .arg("--file").arg(".ci/docker/edgar/docker-edgar-integration-test.yml")
+        .arg("--file").arg(".ci/deploy/testenv/edgar/docker-edgar-integration-test.yml")
         .arg("run")
         .env("RUN_EDGAR_NETLINK_INTEGRATION_TESTS", "true")
         .env("RUST_LOG", "info,opendut=debug")

@@ -15,7 +15,7 @@ services:
       - "--log.level=DEBUG"
       - "--accesslog"
     volumes:
-      - "../../../resources/development/tls/:/etc/opendut/tls/:ro"
+      - "../../../resources/development/tls/:/etc/opendut/tls/:ro"  # TODO: use localenv provision volume
 
     networks:
       opendutnet:

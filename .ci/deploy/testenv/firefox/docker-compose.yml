@@ -3,8 +3,8 @@ version: "2.1"
 services:
   firefox:
     build:
-      context: ../../..
-      dockerfile: ./.ci/docker/firefox/Dockerfile
+      context: ../../../..
+      dockerfile: ./.ci/deploy/testenv/firefox/Dockerfile
     container_name: firefox
     security_opt:
       - seccomp:unconfined #optional
@@ -14,7 +14,7 @@ services:
       - TZ=Etc/UTC
       - TITLE=OpenDuT-Browser
       # dynamically provided
-      - OPENDUT_CUSTOM_CA1
+      - OPENDUT_CUSTOM_CA1 # TODO: remove
       - OPENDUT_CUSTOM_CA2
       - OPENDUT_HOSTS
 

@@ -26,7 +26,7 @@ impl TheoCommandExtensions for Command {
         command
             .current_dir(project_root_override.clone())
             .env("VAGRANT_DOTFILE_PATH", ".vagrant")
-            .env("VAGRANT_VAGRANTFILE", ".ci/docker/Vagrantfile")
+            .env("VAGRANT_VAGRANTFILE", ".ci/deploy/opendut-vm/Vagrantfile")
             .env(OPENDUT_REPO_ROOT, project_root_override);
         command
     }

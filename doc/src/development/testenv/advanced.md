@@ -7,7 +7,7 @@ Run vagrant commands directly instead of through THEO:
   ```
   export OPENDUT_REPO_ROOT=$(git rev-parse --show-toplevel)
   export VAGRANT_DOTFILE_PATH=$OPENDUT_REPO_ROOT/.vagrant
-  export VAGRANT_VAGRANTFILE=$OPENDUT_REPO_ROOT/.ci/docker/Vagrantfile
+  export VAGRANT_VAGRANTFILE=$OPENDUT_REPO_ROOT/.ci/deploy/opendut-vm/Vagrantfile
   vagrant up
   ```
 * provision vagrant with desktop environment
@@ -43,7 +43,7 @@ target/x86_64-pc-windows-gnu/release/opendut-theo.exe
 In case you are working behind a http proxy, you need additional steps to get the test environment up and running.
 The following steps pick up just _before_ you start up the virtual machine with `vagrant up`.
 A list of all domains used by the test environment is reflected in the proxy shell script:
-`.ci/docker/vagrant/proxy.sh`.
+`.ci/deploy/opendut-vm/vagrant/proxy.sh`.
 It is important to note that the proxy address used shall be accessible from the host while provisioning and within
 the virtual machine.
 
@@ -52,7 +52,7 @@ If you have a proxy server on your localhost you need to make this in two steps:
   * Configure vagrant to use the proxy localhost.
     ```shell
     # proxy configuration script, adjust to your needs
-    source .ci/docker/vagrant/proxy.sh http://localhost:3128
+    source .ci/deploy/opendut-vm/vagrant/proxy.sh http://localhost:3128
     ```
   * Install proxy plugin for vagrant
     ```shell
@@ -71,7 +71,7 @@ If you have a proxy server on your localhost you need to make this in two steps:
   * Redo the proxy configuration using the address of the host within the virtual machine's private network:
     ```shell
     # proxy configuration script, adjust to your needs
-    source .ci/docker/vagrant/proxy.sh http://192.168.56.1:3128
+    source .ci/deploy/opendut-vm/vagrant/proxy.sh http://192.168.56.1:3128
     ```
   * Reapply the configuration to the VM
     ```shell

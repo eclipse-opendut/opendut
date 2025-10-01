@@ -6,7 +6,7 @@ services:
     container_name: edgar-leader  # defined DNS for the container
     build:
       context: ../../..
-      dockerfile: ./.ci/docker/edgar/Dockerfile
+      dockerfile: ./.ci/deploy/testenv/edgar/Dockerfile
     cap_add:
       - NET_ADMIN
     privileged: true

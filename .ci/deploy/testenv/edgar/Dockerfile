@@ -15,7 +15,7 @@ RUN curl --verbose https://raw.githubusercontent.com/gdraheim/docker-systemctl-r
 RUN echo "01beb201d2045c5e548d012bde9b6ae6113392a57bbea7b3e81131aac995f77a /usr/bin/systemctl" | sha256sum --check --status
 RUN chmod +x /usr/bin/systemctl
 
-COPY ./.ci/docker/edgar/test_execution_container /opt/test_execution_container
+COPY ./.ci/deploy/testenv/edgar/test_execution_container /opt/test_execution_container
 
 
 RUN mkdir /tmp/cannelloni
@@ -31,8 +31,8 @@ RUN cp cannelloni /usr/local/bin/
 
 WORKDIR /opt
 RUN mkdir /opt/signal/ /logs/
-COPY ./.ci/docker/edgar/scripts/* /opt
-COPY ./.ci/docker/edgar/configurations/ /opt/configurations/
+COPY ./.ci/deploy/testenv/edgar/scripts/* /opt
+COPY ./.ci/deploy/testenv/edgar/configurations/ /opt/configurations/
 
 RUN mkdir -p /usr/local/opendut/bin/distribution /usr/local/opendut/bin/debug /opt/opendut/edgar/netbird/
 ENV PATH="${PATH}:/usr/local/opendut/bin/distribution/:/usr/local/opendut/bin/debug/:/opt/opendut/edgar/netbird/"

@@ -7,5 +7,5 @@ FROM ghcr.io/eclipse-opendut/firefox:135.0build2-0ubuntu0.24.04.1mt2-ls218
 
 COPY --from=builder /usr/bin/certutil /usr/bin/certutil
 
-COPY ./.ci/docker/firefox/cont-init.d/ /custom-cont-init.d
-COPY ./.ci/docker/firefox/custom-services.d/ /custom-services.d
+COPY ./.ci/deploy/testenv/firefox/cont-init.d/ /custom-cont-init.d
+COPY ./.ci/deploy/testenv/firefox/custom-services.d/ /custom-services.d

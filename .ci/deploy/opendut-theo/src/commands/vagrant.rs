@@ -93,7 +93,7 @@ impl VagrantCli {
             }
             TaskCli::Other => {
                 let project_root = PathBuf::project_path_buf();
-                let vagrant_file_path = project_root.join(".ci/docker/Vagrantfile");
+                let vagrant_file_path = project_root.join(".ci/deploy/opendut-vm/Vagrantfile");
                 let vagrant_dot_file_path = project_root.join(".vagrant");
                 println!("# export the following environment variables to run vagrant commands");
                 println!("# Be sure to run the commands from the repository root");

@@ -18,14 +18,14 @@ pub fn docker_compose_up_expose_ports(compose_dir: &str, expose: bool) -> crate:
     let mut command = DockerCommand::new();
     command.arg("compose")
         .arg("--file")
-        .arg(format!(".ci/docker/{compose_dir}/docker-compose.yml"));
+        .arg(format!(".ci/deploy/testenv/{compose_dir}/docker-compose.yml"));
 
     if determine_if_ports_shall_be_exposed(expose) {
         command.arg("--file")
-            .arg(format!(".ci/docker/{compose_dir}/expose_ports.yml"))
+            .arg(format!(".ci/deploy/testenv/{compose_dir}/expose_ports.yml"))
     } else {
         command.arg("--file")
-            .arg(format!(".ci/docker/{compose_dir}/localhost_ports.yml"))
+            .arg(format!(".ci/deploy/testenv/{compose_dir}/localhost_ports.yml"))
     };
     command.arg("--env-file")
         .arg(".env-theo")

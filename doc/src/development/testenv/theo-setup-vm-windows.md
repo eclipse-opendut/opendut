@@ -37,13 +37,13 @@ was added to the repository in order to make sure the bash scripts also keep the
     ```sh
     export OPENDUT_REPO_ROOT=$(git rev-parse --show-toplevel)
     export VAGRANT_DOTFILE_PATH=$OPENDUT_REPO_ROOT/.vagrant
-    export VAGRANT_VAGRANTFILE=$OPENDUT_REPO_ROOT/.ci/docker/Vagrantfile
+    export VAGRANT_VAGRANTFILE=$OPENDUT_REPO_ROOT/.ci/deploy/opendut-vm/Vagrantfile
     ```
     PowerShell:
     ```powershell
     $env:OPENDUT_REPO_ROOT=$(git rev-parse --show-toplevel)
     $env:VAGRANT_DOTFILE_PATH="$env:OPENDUT_REPO_ROOT/.vagrant"
-    $env:VAGRANT_VAGRANTFILE="$env:OPENDUT_REPO_ROOT/.ci/docker/Vagrantfile"
+    $env:VAGRANT_VAGRANTFILE="$env:OPENDUT_REPO_ROOT/.ci/deploy/opendut-vm/Vagrantfile"
     ```
 * Set up the vagrant box (following commands were tested in Git Bash and Powershell)
 ```sh

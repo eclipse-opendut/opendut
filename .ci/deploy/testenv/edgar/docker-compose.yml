@@ -5,13 +5,13 @@ services:
   leader:
     container_name: edgar-leader  # defined DNS for the container
     build:
-      context: ../../..
-      dockerfile: ./.ci/docker/edgar/Dockerfile
+      context: ../../../..
+      dockerfile: ./.ci/deploy/testenv/edgar/Dockerfile
     command: /opt/managed.sh leader
     #command: sleep infinity
     volumes:
-      - ../../../target/ci/distribution/x86_64-unknown-linux-gnu/:/opt/artifacts
-      - "../../../target/debug/:/usr/local/opendut/bin/debug/"
+      - ../../../../target/ci/distribution/x86_64-unknown-linux-gnu/:/opt/artifacts
+      - "../../../../target/debug/:/usr/local/opendut/bin/debug/"
       - opendut_provision-secrets-data:/provision:ro
     cap_add:
       - NET_ADMIN
@@ -52,13 +52,13 @@ services:
 
   peer:
     build:
-      context: ../../..
-      dockerfile: ./.ci/docker/edgar/Dockerfile
+      context: ../../../..
+      dockerfile: ./.ci/deploy/testenv/edgar/Dockerfile
     command: /opt/managed.sh
     #command: sleep infinity
     volumes:
-      - ../../../target/ci/distribution/x86_64-unknown-linux-gnu/:/opt/artifacts:ro
-      - "../../../target/debug/:/usr/local/opendut/bin/debug/:ro"
+      - ../../../../target/ci/distribution/x86_64-unknown-linux-gnu/:/opt/artifacts:ro
+      - "../../../../target/debug/:/usr/local/opendut/bin/debug/:ro"
       - opendut_provision-secrets-data:/provision:ro
     cap_add:
       - NET_ADMIN
