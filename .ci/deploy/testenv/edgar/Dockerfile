@@ -4,9 +4,8 @@ ARG cannelloni_version=1.1.0
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     tzdata ca-certificates \
     iproute2 bind9-dnsutils iputils-ping fping iptables wireguard-tools tcpdump netcat-traditional \
-    curl jq uuid-runtime less bridge-utils \
-    python3 python3-requests \
-    python3-can can-utils libsctp1 vim
+    curl jq uuid-runtime less vim \
+    bridge-utils python3 python3-can can-utils libsctp1
 
 
 ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/lib"
