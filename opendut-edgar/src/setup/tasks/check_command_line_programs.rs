@@ -11,7 +11,7 @@ pub struct CheckCommandLinePrograms;
 #[async_trait]
 impl Task for CheckCommandLinePrograms {
     fn description(&self) -> String {
-        String::from("Check availabilty of needed command line programs")
+        String::from("Check availability of needed command line programs")
     }
     async fn check_present(&self) -> Result<TaskStateFulfilled> {
         Ok(TaskStateFulfilled::Unchecked)
