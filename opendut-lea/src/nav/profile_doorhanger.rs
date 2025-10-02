@@ -1,7 +1,8 @@
 use leptos::html::Div;
 use leptos::prelude::*;
 use leptos_use::on_click_outside;
-use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, Doorhanger, DoorhangerAlignment, FontAwesomeIcon, IconButton, ProfilePictureColors};
+use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, Doorhanger, DoorhangerAlignment, FontAwesomeIcon, IconButton, IconText, ProfilePictureColors, ToggleSignal};
+use crate::routing;
 use crate::user::UserAuthenticationSignal;
 
 #[component]
@@ -12,10 +13,14 @@ pub fn ProfileDoorhanger() -> impl IntoView {
     let fullname = user.read().fullname();
     let username = user.read().username();
     let email = user.read().email();
+    let roles = user.read().roles();
+    let groups = user.read().groups();
 
     let fullname = Some(String::from("Vivian Berger"));
     let username = String::from("SaFend");
     let email = Some(String::from("salvatore.fendt@mercedes-benz.com"));
+    let roles = Some(String::from("admin, user"));
+    let groups = Some(String::from("MBTI, AI"));
 
     // Effect::new(move || {
     //     fullname = user.read().fullname();
@@ -42,25 +47,30 @@ pub fn ProfileDoorhanger() -> impl IntoView {
                             size=ButtonSize::Normal
                             state=ButtonState::default()
                             label="Open Profile"
-                            on_action=move || doorhanger_visible.set(true)
+                            on_action=move || doorhanger_visible.toggle()
                         />
                     }.into_any()
                 })
             >
                 <div class="columns m-0">
-                    <div class="column">
+                    <div class="column is-narrow">
                         <AlternativeProfilePicture fullname = fullname.clone().unwrap_or_default() />
                     </div>
                     <div class="column">
-                        <div class="is-flex">
+                        <div class="is-flex pb-2">
                             <p class="dut-fullname-text pr-2"> { fullname }</p>
                             <p class="dut-username-text"> { username } </p>
                         </div>
-                        <div class="is-flex is-align-content-center">
-                            <span class="icon pr-2">
-                                <i class=FontAwesomeIcon::Email.as_class() />
-                            </span>
-                            <span class="dut-email-text"> { email } </span>
+                        <div class="dut-profile-information">
+                            <IconText
+                                icon=FontAwesomeIcon::Email
+                                text=email.unwrap_or_default()
+                            />
+                            <IconText
+                                icon=FontAwesomeIcon::OpenPage
+                                text="My Profile"
+                                href=routing::path::user
+                            />
                         </div>
                     </div>
                 </div>
