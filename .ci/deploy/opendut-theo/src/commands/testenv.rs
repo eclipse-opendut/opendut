@@ -1,12 +1,11 @@
 use anyhow::Error;
 use clap::{ArgAction, Parser};
 use std::path::PathBuf;
-use strum::IntoEnumIterator;
-
+use tracing::debug;
 use crate::commands::edgar::TestEdgarCli;
 use crate::core::dist::make_distribution_if_not_present;
 use crate::core::docker::command::DockerCommand;
-use crate::core::docker::compose::{docker_compose_build, docker_compose_down};
+use crate::core::docker::compose::{docker_compose_down, docker_compose_up_expose_ports};
 use crate::core::docker::localenv::{delete_localenv_secrets, docker_localenv_shutdown, LOCALENV_SECRETS_ENV_FILE, LOCALENV_SECRETS_PATH};
 use crate::core::docker::services::DockerCoreServices;
 use crate::core::docker::show_error_if_unhealthy_containers_were_found;
@@ -44,16 +43,9 @@ pub enum TaskCli {
     /// Show Docker network.
     Network,
     /// Destroy test environment.
-    Destroy(DestroyArgs),
+    Destroy,
     /// Run EDGAR cluster creation.
     Edgar(TestEdgarCli),
-}
-
-#[derive(Parser, Debug)]
-#[clap(version)]
-pub struct DestroyArgs {
-    #[clap(short = 's', long)]
-    service: Option<DockerCoreServices>,
 }
 
 impl TestenvCli {
@@ -72,11 +64,18 @@ impl TestenvCli {
                     Self::provision_and_build_localenv()?;
                 }
 
-                Self::start_localenv_for_testenv()?;
-                // TODO: wait until localenv is fully started?
+                println!("Starting localenv in testenv mode (telemetry disabled)...");
+
+                start_localenv_in_docker(skip_telemetry)?;
+
+                if !skip_firefox {
+                    docker_compose_up_expose_ports(DockerCoreServices::Firefox.as_str(), expose)?;
+                }
+
                 show_error_if_unhealthy_containers_were_found()?;
 
-                println!("Go to OpenDuT at https://carl.opendut.local/");
+                println!("Secrets for localenv are loaded from '{}'", LOCALENV_SECRETS_ENV_FILE);
+                println!("Go to OpenDuT Browser at http://localhost:3000/");
             }
             TaskCli::Stop => {
                 println!("Stopping localenv testenv...");
@@ -86,8 +85,9 @@ impl TestenvCli {
                 crate::core::network::docker_inspect_network()?;
                 show_error_if_unhealthy_containers_were_found()?;
             }
-            TaskCli::Destroy(service) => {
-                // TODO: cleanup testenv containers/volumes?
+            TaskCli::Destroy => {
+                docker_compose_down(DockerCoreServices::Firefox.as_str(), true)?;
+                docker_compose_down(DockerCoreServices::Edgar.as_str(), true)?;
                 docker_localenv_shutdown(true)?;
                 delete_localenv_secrets()?;
             }
@@ -122,23 +122,25 @@ impl TestenvCli {
             .arg("cp")
             .arg("opendut-provision-secrets:/provision/")
             .arg(LOCALENV_SECRETS_PATH)
-            .expect_status("Successfully copied localenv secrets.")?;
+            .expect_status("Failed to copy localenv secrets.")?;
+        debug!("Copied secrets to host at {}", LOCALENV_SECRETS_PATH);
 
         Ok(())
     }
+}
 
-    fn start_localenv_for_testenv() -> Result<(), Error> {
-        println!("Starting localenv in testenv mode (telemetry disabled)...");
-
-        DockerCommand::new()
-            .add_localenv_args_with_disabled_telemetry()
-            .add_localenv_secrets_args()
-            .arg("up")
-            .arg("--detach")
-            .expect_status("Failed to start localenv for testenv")?;
-
-        Ok(())
+fn start_localenv_in_docker(skip_telemetry: bool) -> Result<i32, Error> {
+    let mut docker_command = DockerCommand::new();
+    docker_command
+        .add_localenv_args()
+        .add_localenv_secrets_args();
+    if skip_telemetry {
+        docker_command.localenv_disable_telemetry();
     }
+    docker_command
+        .arg("up")
+        .arg("--detach")
+        .expect_status("Failed to start localenv for testenv")
 }
 
 fn start_carl_in_docker() -> Result<i32, Error> {

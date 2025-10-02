@@ -1,11 +1,12 @@
 ---
-version: "2.1"
+# See also https://github.com/linuxserver/docker-firefox?tab=readme-ov-file#docker-compose-recommended-click-here-for-more-info
+
 services:
   firefox:
+    container_name: opendut-firefox
     build:
       context: ../../../..
       dockerfile: ./.ci/deploy/testenv/firefox/Dockerfile
-    container_name: firefox
     security_opt:
       - seccomp:unconfined #optional
     environment:
@@ -13,22 +14,21 @@ services:
       - PGID=1000
       - TZ=Etc/UTC
       - TITLE=OpenDuT-Browser
-      # dynamically provided
-      - OPENDUT_CUSTOM_CA1 # TODO: remove
-      - OPENDUT_CUSTOM_CA2
-      - OPENDUT_HOSTS
 
     volumes:
-      - opendut_firefox:/config
+      - opendut_firefox-profile:/config
+      - opendut_provision-secrets-data:/provision:ro
     shm_size: "1gb"
     #restart: unless-stopped
     networks:
-      - opendutnet
-
-networks:
-  opendutnet:
-    name: opendut_network
-    external: true  # Use a pre-existing network
+      - opendut_local
 
 volumes:
-  opendut_firefox:
+  opendut_firefox-profile:
+  opendut_provision-secrets-data:
+    external: true
+
+networks:
+  opendut_local:
+    name: opendut_local
+    external: true  # Use a pre-existing network

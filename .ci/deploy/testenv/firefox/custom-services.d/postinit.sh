@@ -16,8 +16,7 @@ FIREFOX_PROFILE_PATH=$(find /config/.mozilla/firefox/ -iname '*.default-release'
 # creates empty cert.db
 # certutil -N --empty-password -d sql:$FIREFOX_PROFILE_PATH
 certutil -L -d "$FIREFOX_PROFILE_PATH"
-certutil -A -n "custom_ca1" -t "CT,c" -i /usr/local/share/ca-certificates/opendut_custom_ca_OPENDUT_CUSTOM_CA1.crt -d "$FIREFOX_PROFILE_PATH"
-certutil -A -n "custom_ca2" -t "CT,c" -i /usr/local/share/ca-certificates/opendut_custom_ca_OPENDUT_CUSTOM_CA2.crt -d "$FIREFOX_PROFILE_PATH"
+certutil -A -n "localenv_ca" -t "CT,c" -i /provision/pki/opendut-ca.pem -d "$FIREFOX_PROFILE_PATH"
 
 chown -R "$PUID":"$PGID" /config/.mozilla/firefox/
 
@@ -26,10 +25,10 @@ if [ ! -e "/config/.firstrun" ]; then
   echo "First run, opening a bunch of sites"
   touch /config/.firstrun
   # abc is the user firefox runs as
-  su - abc -c 'DISPLAY=:1 firefox https://keycloak.internal'
-  su - abc -c 'DISPLAY=:1 firefox https://netbird-dashboard'
-  su - abc -c 'DISPLAY=:1 firefox https://carl'
-  su - abc -c 'DISPLAY=:1 firefox http://grafana'
+  su - abc -c 'DISPLAY=:1 firefox https://auth.opendut.local'
+  su - abc -c 'DISPLAY=:1 firefox https://netbird.opendut.local'
+  su - abc -c 'DISPLAY=:1 firefox https://carl.opendut.local'
+  echo "Opened initial sites"
 fi
 
 # keep running to avoid constant re-run

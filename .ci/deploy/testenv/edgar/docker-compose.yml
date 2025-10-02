@@ -106,5 +106,5 @@ volumes:
 
 networks:
   opendut_local:
-    name: local
+    name: opendut_local
     external: true  # Use a pre-existing network

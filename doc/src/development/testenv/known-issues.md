@@ -81,7 +81,7 @@ Failed to create new peer.
 ```
 This may be fixed by destroying the netbird service:
 ```shell
-cargo theo testenv destroy --service netbird
+cargo theo testenv destroy
 ```
 Afterward you may restart the netbird service:
 ```shell

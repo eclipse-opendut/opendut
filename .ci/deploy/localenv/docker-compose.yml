@@ -638,7 +638,7 @@ volumes:
 
 networks:
   opendut_local:
-    name: local
+    name: opendut_local
     ipam:
       driver: default
       config:

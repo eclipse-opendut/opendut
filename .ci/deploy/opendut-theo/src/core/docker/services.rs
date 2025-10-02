@@ -6,6 +6,7 @@ pub(crate) enum DockerCoreServices {
     Carl,
     CarlOnHost,
     Edgar,
+    Firefox,
 }
 
 impl DockerCoreServices {
@@ -14,6 +15,7 @@ impl DockerCoreServices {
             DockerCoreServices::Carl => "carl",
             DockerCoreServices::CarlOnHost => "carl-on-host",
             DockerCoreServices::Edgar => "edgar",
+            DockerCoreServices::Firefox => "firefox",
         }
     }
 }

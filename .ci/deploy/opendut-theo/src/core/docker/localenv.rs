@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use anyhow::Error;
+use tracing::debug;
 use crate::core::docker::DockerCommand;
 use crate::core::project::ProjectRootDir;
 
@@ -21,9 +22,9 @@ pub(crate) fn delete_localenv_secrets() -> Result<(), Error> {
     let secrets_path = PathBuf::project_path_buf().join(LOCALENV_SECRETS_PATH);
     if secrets_path.exists() {
         std::fs::remove_dir_all(&secrets_path)?;
-        println!("Deleted secrets at {:?}", &secrets_path);
+        debug!("Deleted secrets at {:?}", &secrets_path);
     } else {
-        println!("No secrets found at {:?}", &secrets_path);
+        debug!("No secrets found at {:?}", &secrets_path);
     }
     Ok(())
 }

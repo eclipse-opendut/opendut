@@ -44,18 +44,18 @@ enum DockerHostnames {
 impl DockerHostnames {
     fn as_str(&self) -> &'static str {
         match self {
-            DockerHostnames::Carl => "carl",
-            DockerHostnames::Keycloak => "keycloak",
-            DockerHostnames::NetbirdManagement => "netbird-management",
-            DockerHostnames::NetbirdDashboard => "netbird-dashboard",
+            DockerHostnames::Carl => "carl.opendut.local",
+            DockerHostnames::Keycloak => "auth.opendut.local",
+            DockerHostnames::NetbirdManagement => "netbird-api.opendut.local",
+            DockerHostnames::NetbirdDashboard => "netbird.opendut.local",
             DockerHostnames::Firefox => "firefox",
         }
     }
 }
 static CONTAINER_NAME_MAP: phf::Map<&'static str, DockerHostnames> = phf_map! {
-    "firefox" => DockerHostnames::Firefox,
-    "keycloak-keycloak-1" => DockerHostnames::Keycloak,
-    "carl-carl-1" => DockerHostnames::Carl,
+    "opendut-firefox" => DockerHostnames::Firefox,
+    "opendut-keycloak" => DockerHostnames::Keycloak,
+    "opendut-carl" => DockerHostnames::Carl,
     "netbird-management-1" => DockerHostnames::NetbirdManagement,
     "netbird-dashboard-1" => DockerHostnames::NetbirdDashboard,
 };
@@ -64,9 +64,10 @@ pub(crate) fn docker_inspect_network() -> crate::Result {
     let output = DockerCommand::new()
         .arg("network")
         .arg("inspect")
-        .arg("opendut_network")
+        .arg("opendut_local")
         .arg("--format")
         .arg("'{{json .Containers}}'")
+        .debug_log_executed_command()
         .output();
 
     let stdout = match consume_output(output) {
@@ -87,7 +88,7 @@ pub(crate) fn docker_inspect_network() -> crate::Result {
     sorted_addresses
         .sort_by(|a, b| a.1.ipv4address.cmp(&b.1.ipv4address));
 
-    let message = "OpenDuT docker network 'docker network inspect opendut_network'";
+    let message = "OpenDuT docker network 'docker network inspect opendut_local'";
     println!("# BEGIN {message}");
     for (_key, value) in &sorted_addresses {
         let ip_address = value.ipv4address.to_string();

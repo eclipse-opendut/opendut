@@ -48,18 +48,3 @@ pub(crate) fn docker_compose_down(compose_dir: &str, delete_volumes: bool) -> Re
     }
     command.expect_status(format!("Failed to execute docker compose down for directory: {compose_dir}.").as_str())
 }
-
-
-pub(crate) fn docker_compose_network_delete(force: bool) -> Result<i32, Error> {
-    let mut docker_command = DockerCommand::new();
-    let delete_command = docker_command
-        .arg("network")
-        .arg("rm")
-        .arg("opendut_network");
-
-    // ignore if the network does not exist, force deletion even if other containers are still attached
-    if force {
-        delete_command.arg("--force");
-    }
-    delete_command.expect_status("Failed to delete docker network.")
-}

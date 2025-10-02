@@ -92,7 +92,7 @@ impl DockerCommand {
             .arg(LOCALENV_SECRETS_ENV_FILE)
     }
 
-    pub(crate) fn add_localenv_args_with_disabled_telemetry(&mut self) -> &mut Self {
+    pub(crate) fn localenv_disable_telemetry(&mut self) -> &mut Self {
         self.add_localenv_args()
             .env("OPENDUT_TELEMETRY_ENABLED", "0")
     }
@@ -107,13 +107,14 @@ impl DockerCommand {
         }
     }
 
-    pub(crate) fn debug_log_executed_command(&self) {
+    pub(crate) fn debug_log_executed_command(&mut self) -> &mut Self {
         let program = self.command.get_program().to_string_lossy();
         let args = self.command.get_args()
             .map(|a| a.to_string_lossy())
             .collect::<Vec<_>>()
             .join(" ");
         debug!("Executing docker command: '{} {}'", program, args);
+        self
     }
 
     pub(crate) fn expect_status(&mut self, error_message: &str) -> Result<i32, anyhow::Error> {
