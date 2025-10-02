@@ -2,7 +2,7 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use anyhow::{anyhow, Error};
-
+use tracing::debug;
 use opendut_edgar_kernel_modules::{default_builtin_module_dir, default_module_file, required_kernel_modules};
 use status::EdgarDeploymentStatus;
 use crate::core::TheoError;
@@ -67,15 +67,14 @@ fn load_edgar_kernel_modules() -> Result<(), Error> {
 }
 
 fn start_edgar_in_docker() -> Result<i32, Error> {
-    println!("Starting EDGAR cluster in docker.");
+    debug!("Starting EDGAR cluster in docker.");
     let mut command = DockerCommand::new();
     command
         .add_common_args(DockerCoreServices::Edgar.as_str())
         .add_localenv_secrets_args()
         .arg("up")
-        .arg("-d");
-    println!("Starting EDGAR cluster in docker: '{command:?}'");
-    command.expect_status("Failed to start EDGAR cluster in Docker.")
+        .arg("-d")
+        .expect_status("Failed to start EDGAR cluster in Docker.")
 }
 
 fn check_edgar_container_provisioning_done(container_name: &str) -> Result<bool, Error> {

@@ -4,7 +4,7 @@ use clap::ArgAction;
 use crate::commands::vagrant::running_in_opendut_vm;
 use crate::core::carl_config::CarlConfiguration;
 use crate::core::docker::command::DockerCommand;
-use crate::core::docker::compose::docker_compose_down;
+use crate::core::docker::compose::{docker_compose_down, docker_compose_up_expose_ports};
 use crate::core::docker::services::DockerCoreServices;
 use crate::core::docker::{show_error_if_unhealthy_containers_were_found};
 use crate::core::project::load_theo_environment_variables;
@@ -43,7 +43,9 @@ impl DevCli {
         match self.task {
             TaskCli::Start { expose } => {
                 println!("Starting services...");
+                docker_compose_up_expose_ports(DockerCoreServices::Firefox.as_str(), expose)?;
 
+                // TODO: fix dev mode
                 println!("Stopping carl in container (if present).");
                 docker_compose_down(DockerCoreServices::Carl.as_str(), false)?;
 

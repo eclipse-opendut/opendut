@@ -2,7 +2,6 @@ use anyhow::Error;
 
 use crate::core::docker::determine_if_ports_shall_be_exposed;
 use crate::core::docker::command::DockerCommand;
-use crate::core::docker::services::DockerCoreServices;
 
 pub(crate) fn docker_compose_build(compose_dir: &str) -> Result<i32, Error> {
     DockerCommand::new()

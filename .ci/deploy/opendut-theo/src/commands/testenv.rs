@@ -1,15 +1,15 @@
-use anyhow::Error;
-use clap::{ArgAction, Parser};
-use std::path::PathBuf;
-use tracing::debug;
 use crate::commands::edgar::TestEdgarCli;
 use crate::core::dist::make_distribution_if_not_present;
 use crate::core::docker::command::DockerCommand;
 use crate::core::docker::compose::{docker_compose_down, docker_compose_up_expose_ports};
-use crate::core::docker::localenv::{delete_localenv_secrets, docker_localenv_shutdown, LOCALENV_SECRETS_ENV_FILE, LOCALENV_SECRETS_PATH};
+use crate::core::docker::localenv::{delete_localenv_secrets, docker_localenv_shutdown, TestenvCarlImage, LOCALENV_SECRETS_ENV_FILE, LOCALENV_SECRETS_PATH};
 use crate::core::docker::services::DockerCoreServices;
 use crate::core::docker::show_error_if_unhealthy_containers_were_found;
 use crate::core::project::{load_theo_environment_variables, ProjectRootDir};
+use anyhow::Error;
+use clap::ArgAction;
+use std::path::PathBuf;
+use tracing::debug;
 
 /// Build and start test environment.
 #[derive(clap::Parser)]
@@ -28,9 +28,6 @@ pub enum TaskCli {
         /// Expose firefox container port (3000), or set OPENDUT_EXPOSE_PORTS=true
         #[arg(long, short, action = ArgAction::SetTrue)]
         expose: bool,
-
-        #[arg(long, short, action = ArgAction::SetTrue)]
-        skip_build: bool,
 
         #[arg(long, action = ArgAction::SetTrue)]
         skip_firefox: bool,
@@ -58,13 +55,14 @@ impl TestenvCli {
                 make_distribution_if_not_present()?;
                 Self::provision_and_build_localenv()?;
             }
-            TaskCli::Start { expose, skip_build, skip_firefox, skip_telemetry } => {
+            TaskCli::Start { expose, skip_firefox, skip_telemetry } => {
                 // Check if localenv has been provisioned, TODO: consistent build/provision/start behavior
                 if !PathBuf::project_path_buf().join(LOCALENV_SECRETS_ENV_FILE).exists() {
                     Self::provision_and_build_localenv()?;
                 }
 
-                start_localenv_in_docker(skip_telemetry)?;
+                let carl_image = build_carl_docker_image_with_special_tag_for_testenv()?;
+                start_localenv_in_docker(skip_telemetry, carl_image)?;
 
                 if !skip_firefox {
                     docker_compose_up_expose_ports(DockerCoreServices::Firefox.as_str(), expose)?;
@@ -127,11 +125,14 @@ impl TestenvCli {
     }
 }
 
-fn start_localenv_in_docker(skip_telemetry: bool) -> Result<i32, Error> {
+fn start_localenv_in_docker(skip_telemetry: bool, carl_image: TestenvCarlImage) -> Result<i32, Error> {
     let mut docker_command = DockerCommand::new();
     docker_command
         .add_localenv_args()
-        .add_localenv_secrets_args();
+        .add_localenv_secrets_args()
+        .env("OPENDUT_DOCKER_IMAGE_HOST", carl_image.image_host)
+        .env("OPENDUT_DOCKER_IMAGE_NAMESPACE", carl_image.namespace)
+        .env("OPENDUT_CARL_IMAGE_VERSION", carl_image.tag);
     if skip_telemetry {
         debug!("Disabling telemetry for localenv in testenv mode.");
         docker_command.env("OPENDUT_LOCALENV_TELEMETRY_ENABLED", "0");
@@ -142,10 +143,22 @@ fn start_localenv_in_docker(skip_telemetry: bool) -> Result<i32, Error> {
         .expect_status("Failed to start localenv for testenv")
 }
 
-fn start_carl_in_docker() -> Result<i32, Error> {
-    DockerCommand::new()
-        .add_common_args(DockerCoreServices::Carl.as_str())
-        .arg("up")
-        .arg("--detach")
-        .expect_status("Failed to execute compose command for CARL.")
+
+fn build_carl_docker_image_with_special_tag_for_testenv() -> Result<TestenvCarlImage, Error> {
+    let carl_version = crate::core::metadata::get_package_version("opendut-carl");
+    let carl_docker_file = PathBuf::project_path_buf().join(".ci/docker/carl/Dockerfile");
+    let carl_image = TestenvCarlImage::new(&carl_version);
+
+    DockerCommand::new().arg("build")
+        .arg("-f")
+        .arg(&carl_docker_file)
+        .arg("--build-arg")
+        .arg(format!("VERSION={}", carl_version))
+        .arg("-t")
+        .arg(carl_image.full_image_name())
+        .arg(".")
+        .expect_status("Failed to build docker image")?;
+
+
+    Ok(carl_image)
 }

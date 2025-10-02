@@ -136,17 +136,6 @@ impl DockerCommand {
         Ok(())
     }
 
-    pub(crate) fn check_output_status(output: Result<Output, Error>) -> Result<bool, Error> {
-        match output {
-            Ok(output) => {
-                Ok(output.status.code().unwrap_or(1) == 0)
-            }
-            Err(error) => {
-                Err(error)
-            }
-        }
-    }
-
     pub(crate) fn enumerate_unhealthy_containers() -> Result<Vec<String>, Error> {
         let output = DockerCommand::new()
             .arg("ps")
