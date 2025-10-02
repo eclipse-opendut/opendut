@@ -1,8 +1,7 @@
 use leptos::html::Div;
 use leptos::prelude::*;
 use leptos_use::on_click_outside;
-use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, Doorhanger, DoorhangerAlignment, FontAwesomeIcon, IconButton};
-use tracing::log;
+use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, Doorhanger, DoorhangerAlignment, FontAwesomeIcon, IconButton, ProfilePictureColors};
 use crate::user::UserAuthenticationSignal;
 
 #[component]
@@ -14,7 +13,7 @@ pub fn ProfileDoorhanger() -> impl IntoView {
     let username = user.read().username();
     let email = user.read().email();
 
-    let fullname = Some(String::from("Salvatore Fendt"));
+    let fullname = Some(String::from("Vivian Berger"));
     let username = String::from("SaFend");
     let email = Some(String::from("salvatore.fendt@mercedes-benz.com"));
 
@@ -53,11 +52,16 @@ pub fn ProfileDoorhanger() -> impl IntoView {
                         <AlternativeProfilePicture fullname = fullname.clone().unwrap_or_default() />
                     </div>
                     <div class="column">
-                        <span class="is-flex">
+                        <div class="is-flex">
                             <p class="dut-fullname-text pr-2"> { fullname }</p>
                             <p class="dut-username-text"> { username } </p>
-                        </span>
-                        <p class="dut-email-text"> { email } </p>
+                        </div>
+                        <div class="is-flex is-align-content-center">
+                            <span class="icon pr-2">
+                                <i class=FontAwesomeIcon::Email.as_class() />
+                            </span>
+                            <span class="dut-email-text"> { email } </span>
+                        </div>
                     </div>
                 </div>
                 <div class="is-flex is-justify-content-end">
@@ -81,37 +85,29 @@ fn AlternativeProfilePicture(
     #[prop(into)] fullname: String
 ) -> impl IntoView {
 
-    let hsl_colors = vec![
-        "355, 76, 36",  // dark-red
-        "356, 83, 41",  // red
-        "31, 100, 48",  // orange
-        "41, 100, 53",  // yellow
-        "78, 51, 56",   // light-green
-        "146, 43, 30",  // dark-green
-        "173, 57, 73",  // light-blue
-        "217, 100, 56", // blue
-        "220, 54, 25",  // dark-blue
-        "294, 24, 53",  // purple
-        "334, 100, 50", // pink
-        "228, 21, 72",  // grey
-    ];
+    let hsl_colors = ProfilePictureColors::get_vec();
 
     let sum: u32 = fullname.chars().map(|c| c as u32).sum();
     let index = (sum % hsl_colors.len() as u32) as usize;
-    let color = hsl_colors[index];
-    log::info!("color: {color}");
-    log::info!("fullname: {fullname}");
+    let hsl = hsl_colors[index].get_hsl();
+    let h = hsl.0;
+    let s = hsl.1;
+    let l = hsl.2;
+
+    let text_color = format!("hsl({h},{s}%,{l}%)");
+    let background_color = format!("hsla({h},{s}%,{l}%, 0.1)");
 
     let initials = fullname
         .split_whitespace()
-        .filter_map(|word| word.get(0..1)).take(2)
+        .filter_map(|word| word.get(0..1))
+        .take(2)
         .collect::<String>()
         .to_uppercase();
 
     view! {
         <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
-            <circle cx="32" cy="32" r="32" fill=format!("hsla({color}, 0.1)") />
-            <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" font-size="24" fill=format!("hsl({color})")>
+            <circle cx="32" cy="32" r="32" fill=background_color />
+            <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" font-size="24" fill=text_color font-weight="500">
                 { initials }
             </text>
         </svg>
