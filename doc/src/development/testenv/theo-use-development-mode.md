@@ -25,8 +25,8 @@ OPENDUT_CARL_VPN_NETBIRD_AUTH_HEADER=Authorization
 ```
 * You may also use the toml configuration (also printed from the `carl-config` command) file in a special configuration file on your host at ``~/.config/opendut/carl/config.toml``.
 * Use the environment variables in the run configuration for CARL
-    * Run CARL on the **host**: `cargo ci carl run` 
-    * Run LEA on the **host**: `cargo ci lea run` 
+    * Run CARL on the **host**: `cargo carl` 
+    * Run LEA on the **host**: `cargo lea` 
 * Or start CARL in your IDE of choice and add the environment variables to the run configuration.
 
 ## Use CLEO
@@ -40,5 +40,5 @@ export OPENDUT_CLEO_NETWORK_CARL_HOST=localhost
 export OPENDUT_CLEO_NETWORK_CARL_PORT=8080
 # Environment variable to use keycloak in test environment
 export OPENDUT_CLEO_NETWORK_OIDC_CLIENT_ISSUER_URL=http://localhost:8081/realms/opendut/
-cargo ci cleo run -- list peers
+cargo cleo list peers
 ```
