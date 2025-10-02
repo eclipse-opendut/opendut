@@ -5,18 +5,16 @@ use std::ops::Not;
 use std::str::FromStr;
 use anyhow::Context;
 use clap::{Args, Parser, Subcommand};
-use tracing::info;
+use tracing::{debug, info};
 use url::Url;
 use uuid::Uuid;
 
 pub use dry_run::DryRun;
 use crate::setup;
-use opendut_model::peer::PeerId;
+use opendut_model::peer::{PeerId, PeerSetup};
 use opendut_model::util::net::NetworkInterfaceName;
 use opendut_model::vpn::netbird::SetupKey;
 
-
-const READ_FROM_STDIN: &str = "-";
 
 #[derive(Parser)]
 #[command(name = "opendut-edgar")]
@@ -47,8 +45,8 @@ enum SetupCommand {
     /// Prepare your system for running EDGAR Service
     Managed {
         // Setup String retrieved from LEA
-        #[arg(default_value=READ_FROM_STDIN)]
-        setup_string: String,
+        #[arg()]
+        setup_string: Option<String>,
 
         #[clap(flatten)]
         common: SetupRunCommonArgs,
@@ -110,23 +108,13 @@ pub async fn cli() -> anyhow::Result<()> {
         },
         Commands::Setup { command } => {
             match command {
-                SetupCommand::Managed { mut setup_string, common } => {
-                    if setup_string == READ_FROM_STDIN {
-                        eprintln!("You can retrieve a Setup-String from the web-UI.");
-                        eprintln!("Enter your Setup-String here:");
-
-                        setup_string.clear();
-
-                        std::io::stdin().read_line(&mut setup_string)
-                            .context("Error while reading Setup-String.")?;
-
-                        setup_string = setup_string.trim().to_owned();
-                    }
+                SetupCommand::Managed { setup_string, common } => {
+                    let peer_setup = parse_peer_setup(setup_string)?;
 
                     setup_run_common_prelude().await?;
 
                     let SetupRunCommonArgs { dry_run, no_confirm, mtu } = common;
-                    setup::start::managed(dry_run, no_confirm, setup_string, mtu).await?;
+                    setup::start::managed(dry_run, no_confirm, peer_setup, mtu).await?;
                 },
                 SetupCommand::Unmanaged { management_url, setup_key, leader, bridge, device_interfaces, common } => {
                     setup_run_common_prelude().await?;
@@ -151,6 +139,38 @@ pub async fn cli() -> anyhow::Result<()> {
             info!("EDGAR Setup finished!\n");
             Ok(())
         }
+    }
+}
+
+fn parse_peer_setup(setup_string_via_arg: Option<String>) -> anyhow::Result<PeerSetup> {
+
+    let setup_string =
+        if let Some(setup_string) = setup_string_via_arg {
+            setup_string
+        }
+        else {
+            if console::user_attended() {
+                eprintln!("You can retrieve a Setup-String from the web-UI.");
+                eprintln!("Enter your Setup-String here:");
+            } else {
+                debug!("Reading Setup-String from stdin.");
+            }
+
+            let mut setup_string = String::new();
+
+            std::io::stdin().read_line(&mut setup_string)
+                .context("Error while reading Setup-String.")?;
+
+            setup_string.trim().to_owned()
+        };
+
+    if setup_string.is_empty() {
+        bail!("The provided Setup-String was empty.");
+    } else {
+        let peer_setup = PeerSetup::decode(&setup_string)
+            .context("Failed to decode Setup-String.")?;
+
+        Ok(peer_setup)
     }
 }
 

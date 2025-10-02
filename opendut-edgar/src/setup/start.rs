@@ -1,7 +1,6 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use anyhow::Context;
 use tracing::info;
 use url::Url;
 
@@ -24,10 +23,7 @@ use opendut_util::telemetry::logging::PipeLogging;
 use crate::cli::DryRun;
 
 #[allow(clippy::box_default)]
-pub async fn managed(dry_run: DryRun, no_confirm: bool, setup_string: String, mtu: u16) -> anyhow::Result<()> {
-
-    let peer_setup = PeerSetup::decode(&setup_string)
-        .context("Failed to decode Setup-String.")?;
+pub async fn managed(dry_run: DryRun, no_confirm: bool, peer_setup: PeerSetup, mtu: u16) -> anyhow::Result<()> {
 
     let service_user = determine_service_user_name();
     info!("Using service user '{}'.", service_user.name);
