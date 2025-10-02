@@ -8,7 +8,7 @@ x-common-healthcheck-params: &common-healthcheck-params
 
 x-telemetry-deploy-params: &telemetry-deploy-params
   mode: replicated
-  replicas: ${OPENDUT_TELEMETRY_ENABLED:-1}
+  replicas: ${OPENDUT_LOCALENV_TELEMETRY_ENABLED:-1}
 
 name: opendut
 

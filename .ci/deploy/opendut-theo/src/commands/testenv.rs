@@ -64,8 +64,6 @@ impl TestenvCli {
                     Self::provision_and_build_localenv()?;
                 }
 
-                println!("Starting localenv in testenv mode (telemetry disabled)...");
-
                 start_localenv_in_docker(skip_telemetry)?;
 
                 if !skip_firefox {
@@ -135,7 +133,8 @@ fn start_localenv_in_docker(skip_telemetry: bool) -> Result<i32, Error> {
         .add_localenv_args()
         .add_localenv_secrets_args();
     if skip_telemetry {
-        docker_command.localenv_disable_telemetry();
+        debug!("Disabling telemetry for localenv in testenv mode.");
+        docker_command.env("OPENDUT_LOCALENV_TELEMETRY_ENABLED", "0");
     }
     docker_command
         .arg("up")

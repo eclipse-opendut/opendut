@@ -92,11 +92,6 @@ impl DockerCommand {
             .arg(LOCALENV_SECRETS_ENV_FILE)
     }
 
-    pub(crate) fn localenv_disable_telemetry(&mut self) -> &mut Self {
-        self.add_localenv_args()
-            .env("OPENDUT_TELEMETRY_ENABLED", "0")
-    }
-
     pub(crate) fn expect_output(&mut self, error_message: &str) -> Result<Output, anyhow::Error> {
         let result = self.command.output();
         match result {
