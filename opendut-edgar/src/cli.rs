@@ -1,9 +1,9 @@
 use std::collections::HashSet;
-use std::fs;
+use std::{env, fs};
 use std::net::Ipv4Addr;
 use std::ops::Not;
 use std::str::FromStr;
-use anyhow::Context;
+use anyhow::{bail, Context};
 use clap::{Args, Parser, Subcommand};
 use tracing::{debug, info};
 use url::Url;
@@ -14,6 +14,9 @@ use crate::setup;
 use opendut_model::peer::{PeerId, PeerSetup};
 use opendut_model::util::net::NetworkInterfaceName;
 use opendut_model::vpn::netbird::SetupKey;
+
+
+const SETUP_STRING_ENV: &str = "OPENDUT_EDGAR_SETUP_STRING";
 
 
 #[derive(Parser)]
@@ -145,8 +148,14 @@ pub async fn cli() -> anyhow::Result<()> {
 fn parse_peer_setup(setup_string_via_arg: Option<String>) -> anyhow::Result<PeerSetup> {
 
     let setup_string =
-        if let Some(setup_string) = setup_string_via_arg {
-            setup_string
+        if let Some(setup_string_via_arg) = setup_string_via_arg {
+            setup_string_via_arg
+        }
+        else if let Some(setup_string_via_env) = env::var_os(SETUP_STRING_ENV) {
+            match setup_string_via_env.into_string() {
+                Ok(setup_string_via_env) => setup_string_via_env,
+                Err(_os_string) => bail!("Error while reading from {SETUP_STRING_ENV} as UTF-8."),
+            }
         }
         else {
             if console::user_attended() {
@@ -159,13 +168,13 @@ fn parse_peer_setup(setup_string_via_arg: Option<String>) -> anyhow::Result<Peer
             let mut setup_string = String::new();
 
             std::io::stdin().read_line(&mut setup_string)
-                .context("Error while reading Setup-String.")?;
+                .context("Error while reading Setup-String from stdin.")?;
 
             setup_string.trim().to_owned()
         };
 
     if setup_string.is_empty() {
-        bail!("The provided Setup-String was empty.");
+        bail!("No Setup-String provided. You pass it via environment variable {SETUP_STRING_ENV}, command-line argument or stdin.");
     } else {
         let peer_setup = PeerSetup::decode(&setup_string)
             .context("Failed to decode Setup-String.")?;
@@ -177,7 +186,7 @@ fn parse_peer_setup(setup_string_via_arg: Option<String>) -> anyhow::Result<Peer
 async fn setup_run_common_prelude() -> anyhow::Result<()> {
     setup::start::init_logging().await?;
 
-    let user_command = std::env::args_os()
+    let user_command = env::args_os()
         .collect::<Vec<_>>();
     info!("EDGAR Setup started!");
     info!("Setup command being executed: {:?}", user_command);
