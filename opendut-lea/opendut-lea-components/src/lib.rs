@@ -27,8 +27,9 @@ pub use toast::{use_toaster, Toast, ToastContent, ToastKind, Toaster};
 pub use warning_message::WarningMessage;
 pub use util::ior::Ior;
 pub use util::net::UserNetworkInterfaceConfiguration;
-pub use util::signal::{ButtonStateSignalProvider, Toggled};
+pub use util::signal::{ButtonStateSignalProvider, Toggled, ToggleSignal};
 pub use doorhanger::{Doorhanger, DoorhangerAlignment};
+pub use icon_text::IconText;
 
 pub mod health;
 pub mod tooltip;
@@ -42,6 +43,7 @@ mod page;
 mod toast;
 mod warning_message;
 mod util;
+mod icon_text;
 
 pub const NON_BREAKING_SPACE: &str = "\u{a0}";
 
@@ -59,12 +61,15 @@ pub enum FontAwesomeIcon {
     Downloads,
     EllipsisVertical,
     Email,
+    OpenPage,
     Peers,
     Plus,
     Save,
     SignOut,
     TrashCan,
     User,
+    UserOutlined,
+    Users,
     XMark,
 }
 
@@ -83,12 +88,15 @@ impl FontAwesomeIcon {
             FontAwesomeIcon::Downloads => "fa-solid fa-download",
             FontAwesomeIcon::EllipsisVertical => "fa-solid fa-ellipsis-vertical",
             FontAwesomeIcon::Email => "fa-regular fa-envelope",
+            FontAwesomeIcon::OpenPage => "fa-solid fa-arrow-up-right-from-square",
             FontAwesomeIcon::Peers => "fa-solid fa-microchip",
             FontAwesomeIcon::Plus => "fa-solid fa-plus",
             FontAwesomeIcon::Save => "fa-solid fa-save",
             FontAwesomeIcon::SignOut => "fas fa-sign-out-alt",
             FontAwesomeIcon::TrashCan => "fa-solid fa-trash-can",
             FontAwesomeIcon::User => "fa-solid fa-user-large",
+            FontAwesomeIcon::UserOutlined => "fa-regular fa-user",
+            FontAwesomeIcon::Users =>"fa-solid fa-users",
             FontAwesomeIcon::XMark => "fa-solid fa-xmark",
         }
     }
@@ -186,7 +194,7 @@ impl ProfilePictureColors {
             Self::Brown => Hsl(20, 18, 44),
         }
     }
-    
+
     pub fn get_vec() -> Vec<Self> {
         vec![
             Self::DarkRed,
