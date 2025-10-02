@@ -58,6 +58,7 @@ pub enum FontAwesomeIcon {
     Dashboard,
     Downloads,
     EllipsisVertical,
+    Email,
     Peers,
     Plus,
     Save,
@@ -81,6 +82,7 @@ impl FontAwesomeIcon {
             FontAwesomeIcon::Dashboard => "fa-solid fa-gauge-high",
             FontAwesomeIcon::Downloads => "fa-solid fa-download",
             FontAwesomeIcon::EllipsisVertical => "fa-solid fa-ellipsis-vertical",
+            FontAwesomeIcon::Email => "fa-regular fa-envelope",
             FontAwesomeIcon::Peers => "fa-solid fa-microchip",
             FontAwesomeIcon::Plus => "fa-solid fa-plus",
             FontAwesomeIcon::Save => "fa-solid fa-save",
@@ -145,5 +147,61 @@ impl ButtonSize {
             ButtonSize::Medium => "is-medium",
             ButtonSize::Large => "is-large",
         }
+    }
+}
+
+pub struct Hsl(pub i32, pub i32, pub i32);
+
+pub enum ProfilePictureColors {
+    DarkRed,
+    Red,
+    Orange,
+    Yellow,
+    LightGreen,
+    DarkGreen,
+    LightBlue,
+    Blue,
+    DarkBlue,
+    Purple,
+    Pink,
+    Grey,
+    Brown
+}
+
+impl ProfilePictureColors {
+    pub fn get_hsl(&self) -> Hsl {
+        match self {
+            Self::DarkRed => Hsl(355, 76, 36),
+            Self::Red => Hsl(356, 83, 41),
+            Self::Orange => Hsl(31, 100, 48),
+            Self::Yellow => Hsl(41, 100, 53),
+            Self::LightGreen => Hsl(78, 51, 38),
+            Self::DarkGreen => Hsl(146, 43, 30),
+            Self::LightBlue => Hsl(173, 65, 40),
+            Self::Blue => Hsl(217, 100, 56),
+            Self::DarkBlue => Hsl(220, 54, 25),
+            Self::Purple => Hsl(294, 42, 42),
+            Self::Pink => Hsl(334, 100, 50),
+            Self::Grey => Hsl(0, 0, 35),
+            Self::Brown => Hsl(20, 18, 44),
+        }
+    }
+    
+    pub fn get_vec() -> Vec<Self> {
+        vec![
+            Self::DarkRed,
+            Self::Red,
+            Self::Orange,
+            Self::Yellow,
+            Self::LightGreen,
+            Self::DarkGreen,
+            Self::LightBlue,
+            Self::Blue,
+            Self::DarkBlue,
+            Self::Purple,
+            Self::Pink,
+            Self::Grey,
+            Self::Brown,
+        ]
     }
 }
