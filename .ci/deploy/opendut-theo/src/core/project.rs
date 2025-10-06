@@ -120,6 +120,7 @@ pub trait ProjectRootDir {
     fn project_dir() -> String;
     fn project_dir_verify();
     fn project_path_buf() -> PathBuf;
+    fn project_dist_path_buf() -> PathBuf;
 }
 
 fn git_repo_root() -> Result<String, TheoError> {
@@ -156,6 +157,10 @@ impl ProjectRootDir for PathBuf {
 
     fn project_path_buf() -> PathBuf {
         PathBuf::from(PathBuf::project_dir())
+    }
+
+    fn project_dist_path_buf() -> PathBuf {
+        PathBuf::from(PathBuf::project_dir()).join("target").join("ci").join("distribution")
     }
 }
 

@@ -4018,7 +4018,6 @@ version = "0.8.0-alpha"
 dependencies = [
  "anyhow",
  "cargo_toml",
- "chrono",
  "clap",
  "ctrlc",
  "dotenvy",

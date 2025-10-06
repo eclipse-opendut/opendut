@@ -2,7 +2,7 @@ use crate::commands::edgar::TestEdgarCli;
 use crate::core::dist::make_distribution_if_not_present;
 use crate::core::docker::command::DockerCommand;
 use crate::core::docker::compose::{docker_compose_down, docker_compose_up_expose_ports};
-use crate::core::docker::localenv::{delete_localenv_secrets, docker_localenv_shutdown, TestenvCarlImage, LOCALENV_SECRETS_ENV_FILE, LOCALENV_SECRETS_PATH};
+use crate::core::docker::localenv::{delete_localenv_secrets, docker_localenv_shutdown, TestenvCarlImage, LOCALENV_SECRETS_ENV_FILE, LOCALENV_SECRETS_PATH, LOCALENV_TELEMETRY_ENABLED};
 use crate::core::docker::services::DockerCoreServices;
 use crate::core::docker::show_error_if_unhealthy_containers_were_found;
 use crate::core::project::{load_theo_environment_variables, ProjectRootDir};
@@ -32,6 +32,7 @@ pub enum TaskCli {
         #[arg(long, action = ArgAction::SetTrue)]
         skip_firefox: bool,
 
+        /// Skip telemetry (set OPENDUT_LOCALENV_TELEMETRY_ENABLED=0)
         #[arg(long, action = ArgAction::SetTrue)]
         skip_telemetry: bool,
     },
@@ -56,12 +57,11 @@ impl TestenvCli {
                 Self::provision_and_build_localenv()?;
             }
             TaskCli::Start { expose, skip_firefox, skip_telemetry } => {
-                // Check if localenv has been provisioned, TODO: consistent build/provision/start behavior
                 if !PathBuf::project_path_buf().join(LOCALENV_SECRETS_ENV_FILE).exists() {
                     Self::provision_and_build_localenv()?;
                 }
 
-                let carl_image = build_carl_docker_image_with_special_tag_for_testenv()?;
+                let carl_image = TestenvCarlImage::create()?;
                 start_localenv_in_docker(skip_telemetry, carl_image)?;
 
                 if !skip_firefox {
@@ -96,12 +96,13 @@ impl TestenvCli {
     }
 
     fn provision_and_build_localenv() -> Result<(), Error> {
-        println!("Provisioning secrets for localenv...");
+        debug!("Provisioning secrets for localenv...");
 
         // Provision secrets if needed
         DockerCommand::new()
             .add_localenv_args()
             .arg("up")
+            .arg("--build")
             .arg("provision-secrets")
             .expect_status("Failed to provision localenv secrets")?;
 
@@ -135,30 +136,10 @@ fn start_localenv_in_docker(skip_telemetry: bool, carl_image: TestenvCarlImage) 
         .env("OPENDUT_CARL_IMAGE_VERSION", carl_image.tag);
     if skip_telemetry {
         debug!("Disabling telemetry for localenv in testenv mode.");
-        docker_command.env("OPENDUT_LOCALENV_TELEMETRY_ENABLED", "0");
+        docker_command.env(LOCALENV_TELEMETRY_ENABLED, "0");
     }
     docker_command
         .arg("up")
         .arg("--detach")
         .expect_status("Failed to start localenv for testenv")
-}
-
-
-fn build_carl_docker_image_with_special_tag_for_testenv() -> Result<TestenvCarlImage, Error> {
-    let carl_version = crate::core::metadata::get_package_version("opendut-carl");
-    let carl_docker_file = PathBuf::project_path_buf().join(".ci/docker/carl/Dockerfile");
-    let carl_image = TestenvCarlImage::new(&carl_version);
-
-    DockerCommand::new().arg("build")
-        .arg("-f")
-        .arg(&carl_docker_file)
-        .arg("--build-arg")
-        .arg(format!("VERSION={}", carl_version))
-        .arg("-t")
-        .arg(carl_image.full_image_name())
-        .arg(".")
-        .expect_status("Failed to build docker image")?;
-
-
-    Ok(carl_image)
 }

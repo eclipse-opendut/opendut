@@ -10,7 +10,6 @@ opendut-edgar-kernel-modules = { workspace = true }
 
 anyhow = { workspace = true }
 cargo_toml = { workspace = true }
-chrono = { workspace = true, features = ["clock"] }
 clap = { workspace = true, features = ["derive", "wrap_help", "env"] }
 ctrlc = { workspace = true }
 dotenvy = { workspace = true }

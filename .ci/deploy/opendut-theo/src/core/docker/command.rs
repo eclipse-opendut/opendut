@@ -21,9 +21,9 @@ impl DockerCommand {
         self
     }
     pub(crate) fn env<K, V>(&mut self, key: K, val: V) -> &mut Self
-        where
-            K: AsRef<OsStr>,
-            V: AsRef<OsStr>,
+    where
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>,
     {
         self.command.env(key, val);
         self
@@ -93,6 +93,7 @@ impl DockerCommand {
     }
 
     pub(crate) fn expect_output(&mut self, error_message: &str) -> Result<Output, anyhow::Error> {
+        self.debug_log_executed_command();
         let result = self.command.output();
         match result {
             Ok(output) => { Ok(output) }
