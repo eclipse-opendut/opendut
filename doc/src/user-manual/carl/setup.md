@@ -40,6 +40,10 @@ Add the following lines to the `/etc/hosts` file on the host system to access th
     export OPENDUT_REPO_ROOT=$(git rev-parse --show-toplevel)
     # start provisioning and create .env file
     docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/docker-compose.yml up --build provision-secrets
+    # delete old secrets, if they exist, ensuring they are not copied to a subdirectory
+    rm -rf ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/data/secrets/
+    # copy the created secrets to the host, ensuring they are readable for the current user
+    docker cp opendut-provision-secrets:/provision/ ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/data/secrets/
     # start the environment
     docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/docker-compose.yml --env-file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/data/secrets/.env up --detach --build
     ```
