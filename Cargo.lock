@@ -4066,6 +4066,7 @@ name = "opendut-util-core"
 version = "0.8.0-alpha"
 dependencies = [
  "anyhow",
+ "dotenvy",
  "thiserror 2.0.16",
 ]
 

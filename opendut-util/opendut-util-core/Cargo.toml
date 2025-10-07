@@ -8,6 +8,11 @@ license.workspace = true
 [dependencies]
 anyhow = { workspace = true }
 thiserror = { workspace = true }
+dotenvy = { workspace = true, optional = true }
+
+[features]
+default = []
+testing = ["dotenvy"]
 
 [lints]
 workspace = true

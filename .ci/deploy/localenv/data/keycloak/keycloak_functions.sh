@@ -26,20 +26,6 @@ wait_for_keycloak() {
 kcadm() { local cmd="$1" ; shift ; "$KCADM_PATH" "$cmd" --config /tmp/kcadm.config "$@" ; }
 kcauth() { "$KCADM_PATH" config credentials --config /tmp/kcadm.config --server "$KEYCLOAK_URL" --realm master --user "$KEYCLOAK_ADMIN" --password "$KEYCLOAK_ADMIN_PASSWORD" ; }
 
-get_admin_oauth_token() {
-  # for debugging: may be used to get an admin token
-  RESPONSE=$(curl --noproxy "*" --silent --data "client_id=admin-cli" --data "username=admin" --data "password=admin123456" --data "grant_type=password" "$KEYCLOAK_URL"/realms/master/protocol/openid-connect/token)
-  ADMIN_TOKEN=$(echo "$RESPONSE" | jq -r '.access_token')
-  echo "$ADMIN_TOKEN"
-}
-
-curl_keycloak_get() {
-  # for debugging: may be used to get any resource from keycloak
-  ADMIN_TOKEN="$(get_admin_oauth_token)"
-  ARGS="$1"
-
-  curl --noproxy "*" --header "Authorization: Bearer $ADMIN_TOKEN" "$KEYCLOAK_URL/$ARGS"
-}
 
 list_realms() {
   kcadm get realms 2>/dev/null | jq -r ".[].realm"

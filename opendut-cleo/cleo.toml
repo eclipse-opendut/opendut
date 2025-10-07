@@ -12,7 +12,7 @@ enabled = false
 
 [network.oidc.client]
 id = "opendut-cleo-client"
-issuer.url = "https://keycloak.internal/realms/opendut/"
+issuer.url = "https://auth.opendut.local/realms/opendut/"
 scopes = "openid,profile,email"
 secret = "<tbd>"
 

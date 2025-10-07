@@ -15,15 +15,15 @@ enabled = true
 
 [network.oidc.client]
 id = "opendut-carl-client"
-secret = "6754d533-9442-4ee6-952a-97e332eca38e"
+secret = "TODO: replace with localenv secret"
 issuer.url = "http://localhost:8081/realms/opendut/"
 issuer.admin.url = "http://localhost:8081/admin/realms/opendut/"
-issuer.remote.url = "https://keycloak.internal/realms/opendut/"
+issuer.remote.url = "https://auth.opendut.local/realms/opendut/"
 scopes = ""
 
 [network.oidc.lea]
 client.id = "opendut-lea-client"
-issuer.url = "https://keycloak.internal/realms/opendut/"
+issuer.url = "https://auth.opendut.local/realms/opendut/"
 scopes = "openid,profile,email"
 
 [persistence]
@@ -46,6 +46,6 @@ auth.type = "personal-access-token"
 auth.secret = "{netbird_api_key}"
 
 [opentelemetry]
-# disabled due to verify token issue in testenv: id token issued by a different provider, expected "https://keycloak.internal/realms/opendut" got "http://localhost:8081/realms/opendut"
+# disabled due to verify token issue in testenv: id token issued by a different provider, expected "https://auth.opendut.local/realms/opendut" got "http://localhost:8081/realms/opendut"
 enabled = false
 collector.endpoint = "{opentelemetry_collector_url}"

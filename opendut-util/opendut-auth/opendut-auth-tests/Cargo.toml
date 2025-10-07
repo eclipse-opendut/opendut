@@ -8,7 +8,7 @@ license.workspace = true
 
 [dependencies]
 opendut-auth = { workspace = true, features = ["registration_client"] }
-opendut-util-core = { workspace = true }
+opendut-util-core = { workspace = true, features = ["testing"] }
 opendut-model = { workspace = true }
 
 anyhow = { workspace = true }
@@ -25,3 +25,4 @@ serde_json = { workspace = true }
 
 [dev-dependencies]
 test-with = { workspace = true }
+opendut-util-core = { workspace = true, features = ["testing"] }

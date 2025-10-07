@@ -17,15 +17,15 @@ enabled = false
 id = "tbd"
 secret = "tbd"
 # issuer url that CARL uses
-issuer.url = "https://keycloak.internal/realms/opendut/"
+issuer.url = "https://auth.opendut.local/realms/opendut/"
 # issuer url that CARL tells the clients to use (required in test environment)
-issuer.remote.url = "https://keycloak.internal/realms/opendut/"
-issuer.admin.url = "https://keycloak.internal/admin/realms/opendut/"
+issuer.remote.url = "https://auth.opendut.local/realms/opendut/"
+issuer.admin.url = "https://auth.opendut.local/admin/realms/opendut/"
 scopes = ""
 
 [network.oidc.lea]
 client.id = "opendut-lea-client"
-issuer.url = "https://keycloak.internal/realms/opendut/"
+issuer.url = "https://auth.opendut.local/realms/opendut/"
 scopes = "openid,profile,email"
 
 [persistence]

@@ -11,9 +11,9 @@ Following features are included:
 * Start container `docker compose up -d`
 * Open remote session to firefox in docker your browser via [link](http://localhost:3000).
 * Open url in remote session:
-  * https://carl
-  * https://netbird-dashboard
-  * https://keycloak.internal
+  * https://carl.opendut.local
+  * https://netbird.opendut.local
+  * https://auth.opendut.local
 
 
 ## GitHub container registry

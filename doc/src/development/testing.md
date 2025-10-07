@@ -24,7 +24,7 @@ The tests assume that you run them in the virtual machine of the test environmen
 ```shell
 cargo theo vagrant ssh
 cargo theo testenv start --skip-telemetry
-export RUN_KEYCLOAK_INTEGRATION_TESTS=true
+export OPENDUT_RUN_KEYCLOAK_INTEGRATION_TESTS=true
 cargo ci check
 
 # explicitly run integration test only

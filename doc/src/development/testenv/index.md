@@ -66,14 +66,11 @@ It has all the necessary certificates pre-installed and is running in headless m
 You may use this **OpenDuT Browser** to access the services.
 
 * Open following address in your browser: http://localhost:3000
-* Usernames for test environment:
-  * LEA: opendut:opendut
-  * Keycloak: admin:admin123456
-  * Netbird: netbird:netbird
-  * Grafana: opendut:opendut (or for the Admin account: admin:admin)
+* Passwords of users in test environment are generated.
+  You can find them in the file `.ci/deploy/localenv/data/secrets/.env`.
 * Services with user interface:
-  * https://carl
-  * https://netbird-dashboard
-  * https://keycloak
-  * http://grafana
+  * https://carl.opendut.local
+  * https://netbird.opendut.local
+  * https://auth.opendut.local
+  * https://monitoring.opendut.local
 
