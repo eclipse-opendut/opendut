@@ -16,11 +16,15 @@ Make sure those network addresses are not occupied or in conflict with other net
   sudo apt install vagrant
   ```
   On most other Linux distributions, the package is called `vagrant`.
+  If the package is not available for your distribution, you may need to add a package repository as described here: https://developer.hashicorp.com/vagrant/install#linux
+
 * Install VirtualBox (see https://www.virtualbox.org)
   ```sh
   sudo apt install virtualbox
   ```
-* Create or check if an ssh key pair is present in `~/.ssh/id_rsa`
+  To get a version compatible with Vagrant, you may need to add the APT repository as described here: https://www.virtualbox.org/wiki/Linux_Downloads#Debian-basedLinuxdistributions
+
+* Create or check if an SSH key pair is present in `~/.ssh/id_rsa`
   ```sh
   mkdir -p ~/.ssh
   ssh-keygen -t rsa -b 4096 -C "opendut-vm" -f ~/.ssh/id_rsa
@@ -29,11 +33,11 @@ Make sure those network addresses are not occupied or in conflict with other net
 ## Setup virtual machine
 
 * Either via cargo:
-  ```
+  ```sh
   cargo theo vagrant up
   ```
 * Login to the virtual machine
-  ```
+  ```sh
   cargo theo vagrant ssh
   ```
 
@@ -52,6 +56,6 @@ Make sure those network addresses are not occupied or in conflict with other net
       ```
 
 * Start test environment
-  ```
+  ```sh
   cargo theo testenv start
   ```
