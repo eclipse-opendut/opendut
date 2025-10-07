@@ -45,7 +45,7 @@ impl DevCli {
                 println!("Starting services...");
                 docker_compose_up_expose_ports(DockerCoreServices::Firefox.as_str(), expose)?;
 
-                // TODO: fix dev mode
+                // TODO: fix dev mode, use localenv
                 println!("Stopping carl in container (if present).");
                 docker_compose_down(DockerCoreServices::Carl.as_str(), false)?;
 
@@ -72,14 +72,8 @@ impl DevCli {
                     .run()?;
             }
             TaskCli::CarlConfig => {
-                let netbird_api_key = "".to_string(); // TODO: extract Netbird API from .env
-                let carl_config = if running_in_opendut_vm() {
-                    println!("# Following configuration assumes services are running in virtual machine.");
-                    CarlConfiguration::testenv_in_vm_config(netbird_api_key)
-                } else {
-                    println!("# Following configuration assumes services are running in docker on host.");
-                    CarlConfiguration::testenv_on_host_config(netbird_api_key)
-                };
+                let netbird_api_key = "".to_string(); // TODO: extract Netbird API from localenv secrets
+                let carl_config = CarlConfiguration::generate(netbird_api_key);
                 println!("{}", carl_config.config_toml());
 
             }

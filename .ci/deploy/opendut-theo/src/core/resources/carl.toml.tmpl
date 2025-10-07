@@ -2,22 +2,22 @@
 [network]
 bind.host = "0.0.0.0"
 bind.port = 8080
-remote.host = "carl"
+remote.host = "carl.opendut.local"
 remote.port = 443
 
 [network.tls]
-certificate = "resources/development/tls/carl.pem"
-key = "resources/development/tls/carl.key"
-ca = "resources/development/tls/insecure-development-ca.pem"
+certificate = ".ci/deploy/localenv/data/secrets/pki/deploy/carl.opendut.local.pem"
+key = ".ci/deploy/localenv/data/secrets/pki/deploy/carl.opendut.local.key"
+ca = ".ci/deploy/localenv/data/secrets/pki/opendut-ca.pem"
 
 [network.oidc]
 enabled = true
 
 [network.oidc.client]
 id = "opendut-carl-client"
-secret = "TODO: replace with localenv secret"
-issuer.url = "http://localhost:8081/realms/opendut/"
-issuer.admin.url = "http://localhost:8081/admin/realms/opendut/"
+secret = "{localenv_devmode_carl_client_secret}"
+issuer.url = "https://auth.opendut.local/realms/opendut/"
+issuer.admin.url = "https://auth.opendut.local/admin/realms/opendut/"
 issuer.remote.url = "https://auth.opendut.local/realms/opendut/"
 scopes = ""
 
@@ -40,12 +40,12 @@ enabled = true
 kind = "netbird"
 
 [vpn.netbird]
-url = "{netbird_management_url}"
-ca = "{netbird_management_ca_path}"
+url = "https://netbird-api.opendut.local/api"
+ca = ".ci/deploy/localenv/data/secrets/pki/opendut-ca.pem"
 auth.type = "personal-access-token"
 auth.secret = "{netbird_api_key}"
 
 [opentelemetry]
 # disabled due to verify token issue in testenv: id token issued by a different provider, expected "https://auth.opendut.local/realms/opendut" got "http://localhost:8081/realms/opendut"
 enabled = false
-collector.endpoint = "{opentelemetry_collector_url}"
+collector.endpoint = "https://opentelemetry.opendut.local"

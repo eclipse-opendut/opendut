@@ -1,4 +1,4 @@
-# As TOML Configuration File
+# Traefik forward configuration when localenv is running in VM
 [tcp.routers]
   [tcp.routers.router1]
     service = "carl"
@@ -10,9 +10,9 @@
   [tcp.services.carl]
     [tcp.services.carl.loadBalancer]
     [[tcp.services.carl.loadBalancer.servers]]
-    address = "192.168.32.1:8080"
+    address = "192.168.56.1:8080"
 
 [[tls.certificates]]
-    certFile = "/etc/opendut/tls/carl.pem"
-    keyFile = "/etc/opendut/tls/carl.key"
+    certFile = "/provision/pki/deploy/carl.opendut.local.pem"
+    keyFile = "/provision/pki/deploy/carl.opendut.local.key"
     stores = ["default"]

@@ -22,6 +22,8 @@ pub struct TestenvCli {
 pub enum TaskCli {
     /// Build Docker containers.
     Build,
+    /// Provision secrets for localenv.
+    Provision,
     /// Start test environment.
     #[command(alias = "up")]
     Start {
@@ -54,15 +56,17 @@ impl TestenvCli {
         match self.task {
             TaskCli::Build => {
                 make_distribution_if_not_present()?;
-                Self::provision_and_build_localenv()?;
+                Self::build_localenv_containers()?;
+            }
+            TaskCli::Provision => {
+                Self::provision_localenv_secrets()?;
             }
             TaskCli::Start { expose, skip_firefox, skip_telemetry } => {
                 if !PathBuf::project_path_buf().join(LOCALENV_SECRETS_ENV_FILE).exists() {
-                    Self::provision_and_build_localenv()?;
+                    Self::build_localenv_containers()?;
                 }
 
-                let carl_image = TestenvCarlImage::create()?;
-                start_localenv_in_docker(skip_telemetry, carl_image)?;
+                start_localenv_in_docker(skip_telemetry)?;
 
                 if !skip_firefox {
                     docker_compose_up_expose_ports(DockerCoreServices::Firefox.as_str(), expose)?;
@@ -95,23 +99,14 @@ impl TestenvCli {
         Ok(())
     }
 
-    fn provision_and_build_localenv() -> Result<(), Error> {
+    fn provision_localenv_secrets() -> Result<(), Error> {
         debug!("Provisioning secrets for localenv...");
-
-        // Provision secrets if needed
         DockerCommand::new()
             .add_localenv_args()
             .arg("up")
             .arg("--build")
             .arg("provision-secrets")
             .expect_status("Failed to provision localenv secrets")?;
-
-        // Build the localenv services
-        DockerCommand::new()
-            .add_localenv_args()
-            .add_common_project_env()
-            .arg("build")
-            .expect_status("Failed to build localenv services")?;
 
         delete_localenv_secrets()?;
         // copy secrets to host
@@ -124,13 +119,26 @@ impl TestenvCli {
 
         Ok(())
     }
+
+    fn build_localenv_containers() -> Result<i32, Error> {
+        Self::provision_localenv_secrets()?;
+        debug!("Building localenv containers...");
+        DockerCommand::new()
+            .add_localenv_args()
+            .add_common_project_env()
+            .arg("build")
+            .expect_status("Failed to build localenv services")
+    }
 }
 
-fn start_localenv_in_docker(skip_telemetry: bool, carl_image: TestenvCarlImage) -> Result<i32, Error> {
+fn start_localenv_in_docker(skip_telemetry: bool) -> Result<i32, Error> {
+    let carl_image = TestenvCarlImage::create()?;
     let mut docker_command = DockerCommand::new();
     docker_command
         .add_localenv_args()
         .add_localenv_secrets_args()
+        .arg("--file")
+        .arg(".ci/deploy/testenv/carl-on-host/docker-compose.localenv.override.yml")  // dev mode
         .env("OPENDUT_DOCKER_IMAGE_HOST", carl_image.image_host)
         .env("OPENDUT_DOCKER_IMAGE_NAMESPACE", carl_image.namespace)
         .env("OPENDUT_CARL_IMAGE_VERSION", carl_image.tag);

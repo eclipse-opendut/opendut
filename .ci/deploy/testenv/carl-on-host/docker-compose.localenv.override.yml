@@ -1,8 +1,7 @@
 # forwards to carl running in developer IDE
-version: "3.9"
 
 services:
-  traefik-forwarder:
+  carl:
     image: docker.io/traefik:v2.10.4
     command:
       - --api.insecure=true
@@ -14,16 +13,24 @@ services:
       - "--providers.file.watch=true"
       - "--log.level=DEBUG"
       - "--accesslog"
+      - "--entryPoints.ping.address=:8082"
+      - "--ping=true"
+      - "--ping.entryPoint=ping"
+
     volumes:
-      - "../../../resources/development/tls/:/etc/opendut/tls/:ro"  # TODO: use localenv provision volume
+      - opendut_provision-secrets-data:/provision:ro
+      - ../testenv/carl-on-host/traefik_config_vm/:/etc/traefik/dynamic/:ro
+    healthcheck:
+      test: [ "CMD-SHELL", "echo healthcheck disabled" ]
 
     networks:
-      opendutnet:
-        ipv4_address: 192.168.32.200
-        aliases:
-          - carl
+      - opendut_local
+
+volumes:
+  opendut_provision-secrets-data:
+    external: true
 
 networks:
-  opendutnet:
-    name: opendut_network
+  opendut_local:
+    name: opendut_local
     external: true  # Use a pre-existing network
