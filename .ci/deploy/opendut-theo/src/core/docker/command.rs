@@ -2,11 +2,11 @@ use std::process::{Command, Output};
 use std::ffi::OsStr;
 use std::path::PathBuf;
 use anyhow::{anyhow, Error};
-use tracing::debug;
+use tracing::{trace};
 use std::io;
 use crate::core::command_ext::TheoCommandExtensions;
 use crate::core::docker::checks;
-use crate::core::docker::localenv::LOCALENV_SECRETS_ENV_FILE;
+use crate::core::localenv::LOCALENV_SECRETS_ENV_FILE;
 use crate::core::project::ProjectRootDir;
 use crate::core::TheoError;
 
@@ -109,7 +109,7 @@ impl DockerCommand {
             .map(|a| a.to_string_lossy())
             .collect::<Vec<_>>()
             .join(" ");
-        debug!("Executing docker command: '{} {}'", program, args);
+        trace!("Executing docker command: '{} {}'", program, args);
         self
     }
 

@@ -33,7 +33,7 @@ pub async fn localenv_reqwest_client() -> OidcReqwestClient {
         .expect("Could not load localenv CA");
     OidcReqwestClient::from_pem(pem)
         .map_err(|cause| anyhow!("Failed to create reqwest client. Error: {}", cause))
-        .unwrap()
+        .expect("Could not create localenv reqwest client")
 }
 
 #[fixture]

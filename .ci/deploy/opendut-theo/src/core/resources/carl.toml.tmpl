@@ -46,6 +46,5 @@ auth.type = "personal-access-token"
 auth.secret = "{netbird_api_key}"
 
 [opentelemetry]
-# disabled due to verify token issue in testenv: id token issued by a different provider, expected "https://auth.opendut.local/realms/opendut" got "http://localhost:8081/realms/opendut"
-enabled = false
+enabled = true
 collector.endpoint = "https://opentelemetry.opendut.local"

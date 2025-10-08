@@ -12,7 +12,6 @@ pub(crate) mod compose;
 pub(crate) mod edgar;
 pub(crate) mod command;
 pub(crate) mod services;
-pub(crate) mod localenv;
 
 /// The environment variable is managed by THEO.
 /// Within the VM it is set to true, outside the VM it defaults to false.

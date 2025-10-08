@@ -51,7 +51,7 @@ leptos_oidc =  { workspace = true, optional = true }
 openidconnect = { workspace = true, optional = true, default-features = false }
 oauth2 = { workspace = true, default-features = false, optional = true }
 pem = { workspace = true, optional = true, features = ["serde"] }
-reqwest = { workspace = true, default-features = false, features = ["blocking", "rustls-tls-native-roots"] }
+reqwest = { workspace = true, default-features = false, features = ["json", "blocking", "rustls-tls-native-roots"] }
 serde = { workspace = true, features = ["std", "derive"] }
 thiserror = { workspace = true }
 tokio = { workspace = true, optional = true, features = ["rt-multi-thread"] }

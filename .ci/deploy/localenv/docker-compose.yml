@@ -346,6 +346,7 @@ services:
       - ./data/carl/carl_functions.sh:/opt/carl_functions.sh
       # CERTIFICATES
       - provision-secrets-data:/provision:ro
+      # config directory used to store netbird api key
       - carl-config:/opt/opendut-carl/config/
       - carl_data:/var/lib/opendut/carl/
       - backup:/var/lib/backup/

@@ -1,16 +1,10 @@
-use crate::core::docker::DockerCommand;
-use crate::core::project::ProjectRootDir;
-use crate::core::util::file_modified_time_in_seconds;
-use crate::core::TARGET_TRIPLE;
-use anyhow::Error;
 use std::path::PathBuf;
-use tracing::debug;
-
-pub(crate) const LOCALENV_SECRETS_PATH: &str = "./.ci/deploy/localenv/data/secrets/";
-pub(crate) const LOCALENV_SECRETS_ENV_FILE: &str = "./.ci/deploy/localenv/data/secrets/.env";
-pub(crate) const LOCALENV_CARL_TESTENV_TAG: &str = "testenv-latest";
-pub(crate) const LOCALENV_TELEMETRY_ENABLED: &str = "OPENDUT_LOCALENV_TELEMETRY_ENABLED";
-
+use anyhow::Error;
+use crate::core::docker::command::DockerCommand;
+use crate::core::localenv::LOCALENV_CARL_TESTENV_TAG;
+use crate::core::project::ProjectRootDir;
+use crate::core::TARGET_TRIPLE;
+use crate::core::util::file_modified_time_in_seconds;
 
 pub struct TestenvCarlImage {
     pub image_host: String,
@@ -64,26 +58,4 @@ impl TestenvCarlImage {
     fn full_image_name(&self) -> String {
         format!("{}/{}/opendut-carl:{}", self.image_host, self.namespace, LOCALENV_CARL_TESTENV_TAG)
     }
-}
-
-pub(crate) fn docker_localenv_shutdown(delete_volumes: bool) -> Result<i32, Error> {
-    let mut command = DockerCommand::new();
-    command.add_localenv_args();
-    if delete_volumes {
-        command.arg("down").arg("--volumes");
-    } else {
-        command.arg("down");
-    }
-    command.expect_status("Failed to shutdown localenv services.")
-}
-
-pub(crate) fn delete_localenv_secrets() -> Result<(), Error> {
-    let secrets_path = PathBuf::project_path_buf().join(LOCALENV_SECRETS_PATH);
-    if secrets_path.exists() {
-        std::fs::remove_dir_all(&secrets_path)?;
-        debug!("Deleted secrets at {:?}", &secrets_path);
-    } else {
-        debug!("No secrets found at {:?}", &secrets_path);
-    }
-    Ok(())
 }

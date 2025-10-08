@@ -2,7 +2,8 @@
 
 services:
   carl:
-    image: docker.io/traefik:v2.10.4
+    image: docker.io/traefik:v3.5.3
+    container_name: opendut-carl-devmode
     command:
       - --api.insecure=true
       - --entrypoints.web.address=:80
@@ -21,7 +22,9 @@ services:
       - opendut_provision-secrets-data:/provision:ro
       - ../testenv/carl-on-host/traefik_config_vm/:/etc/traefik/dynamic/:ro
     healthcheck:
-      test: [ "CMD-SHELL", "echo healthcheck disabled" ]
+      interval: 5s
+      retries: 10
+      test: wget --proxy off --no-verbose --tries=1 --spider http://localhost:8082/ping
 
     networks:
       - opendut_local

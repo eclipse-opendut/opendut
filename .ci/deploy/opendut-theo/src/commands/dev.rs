@@ -1,12 +1,12 @@
-use anyhow::Error;
+use std::fs;
+use std::path::PathBuf;
+use anyhow::Context;
 use clap::ArgAction;
-
-use crate::commands::vagrant::running_in_opendut_vm;
+use home::home_dir;
 use crate::core::carl_config::CarlConfiguration;
 use crate::core::docker::command::DockerCommand;
-use crate::core::docker::compose::{docker_compose_down, docker_compose_up_expose_ports};
 use crate::core::docker::services::DockerCoreServices;
-use crate::core::docker::{show_error_if_unhealthy_containers_were_found};
+use crate::core::{localenv, TestenvMode};
 use crate::core::project::load_theo_environment_variables;
 
 /// Build and start development environment
@@ -40,25 +40,17 @@ impl DevCli {
         load_theo_environment_variables();
         DockerCommand::new().docker_checks()?;
 
+        let dev_mode = TestenvMode::CarlDeveloperIDE;
+
         match self.task {
             TaskCli::Start { expose } => {
-                println!("Starting services...");
-                docker_compose_up_expose_ports(DockerCoreServices::Firefox.as_str(), expose)?;
-
-                // TODO: fix dev mode, use localenv
-                println!("Stopping carl in container (if present).");
-                docker_compose_down(DockerCoreServices::Carl.as_str(), false)?;
-
-                start_carl_traefik_forwarder()?;
-
-                show_error_if_unhealthy_containers_were_found()?;
+                localenv::start(false, false, expose, &dev_mode)?;
             }
             TaskCli::Stop => {
-                docker_compose_down(DockerCoreServices::CarlOnHost.as_str(), false)?;
-                docker_compose_down(DockerCoreServices::Carl.as_str(), false)?;
+                localenv::stop()?;
             }
             TaskCli::Build => {
-
+                localenv::build_localenv_containers(&dev_mode)?;
             }
             TaskCli::EdgarShell => {
                 DockerCommand::new()
@@ -72,36 +64,23 @@ impl DevCli {
                     .run()?;
             }
             TaskCli::CarlConfig => {
-                let netbird_api_key = "".to_string(); // TODO: extract Netbird API from localenv secrets
-                let carl_config = CarlConfiguration::generate(netbird_api_key);
+                let carl_config = CarlConfiguration::generate();
+                let config_path = carl_temporary_config_path();
+                fs::write(carl_temporary_config_path(), carl_config.config_toml())
+                    .context("Failed to write carl config to temporary location.")?;
                 println!("{}", carl_config.config_toml());
-
+                println!("export OPENDUT_CARL_CUSTOM_CONFIG_PATH={}", config_path.display());
+                println!("Now you may run 'cargo carl' with this environment variable set.");
             }
         }
         Ok(())
     }
 }
 
-fn start_carl_traefik_forwarder() -> Result<i32, Error> {
-    println!("Starting traefik to forward data to carl running on host system.");
-
-    let mut command = DockerCommand::new();
-    command.arg("compose")
-        .arg("--file")
-        .arg(format!(".ci/deploy/testenv/{}/docker-compose.yml", DockerCoreServices::CarlOnHost));
-
-    if running_in_opendut_vm() {
-        command.arg("--file").arg(format!(".ci/deploy/testenv/{}/vm.yml", DockerCoreServices::CarlOnHost));
-    } else {
-        command.arg("--file").arg(format!(".ci/deploy/testenv/{}/localhost.yml", DockerCoreServices::CarlOnHost));
-    };
-    command.arg("--env-file")
-        .arg(".env-theo")
-        .arg("--env-file")
-        .arg(".env");
-
-    command
-        .arg("up")
-        .arg("--detach")
-        .expect_status("Failed to execute compose command for netbird traefik forwarder.")
+fn carl_temporary_config_path() -> PathBuf {
+    let config = home_dir().map(|path| path.join(".cache").join("opendut/carl/config.toml")).unwrap();
+    if let Some(parent) = config.parent() {
+        fs::create_dir_all(parent).expect("Failed to create carl config directory.");
+    }
+    config
 }

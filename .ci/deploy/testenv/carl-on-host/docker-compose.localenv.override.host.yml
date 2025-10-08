@@ -1,0 +1,11 @@
+# forwards to carl running in developer IDE
+
+services:
+  carl:
+    volumes:
+      - opendut_provision-secrets-data:/provision:ro
+      - ../testenv/carl-on-host/traefik_config_vm/:/etc/traefik/dynamic/:ro
+
+volumes:
+  opendut_provision-secrets-data:
+    external: true

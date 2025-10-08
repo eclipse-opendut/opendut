@@ -10,6 +10,11 @@ pub(crate) enum TheoError {
     Timeout(String),
 }
 
+pub enum TestenvMode {
+    CarlDistribution,
+    CarlDeveloperIDE,
+}
+
 pub(crate) const TARGET_TRIPLE: &str = "x86_64-unknown-linux-gnu";
 pub(crate) const OPENDUT_REPO_ROOT: &str = "OPENDUT_REPO_ROOT";
 
@@ -30,3 +35,4 @@ pub(crate) mod dist;
 pub(crate) mod network;
 pub(crate) mod command_ext;
 pub(crate) mod carl_config;
+pub(crate) mod localenv;
