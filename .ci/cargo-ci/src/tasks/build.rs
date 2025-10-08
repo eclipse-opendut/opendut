@@ -35,8 +35,9 @@ pub fn distribution_build(package: Package, target: Arch, release_build: bool) -
     command.run_requiring_success()
 }
 
-pub fn out_dir(package: Package, target: Arch) -> PathBuf {
-    cross_target_dir().join(target.triple()).join("release").join(package.ident())
+pub fn out_file(package: Package, target: Arch, release_build: bool) -> PathBuf {
+    let profile = if release_build { "release" } else { "debug" };
+    cross_target_dir().join(target.triple()).join(profile).join(package.ident())
 }
 
 fn cross_target_dir() -> PathBuf {

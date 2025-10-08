@@ -101,8 +101,8 @@ pub mod build {
     pub fn build_release(target: Arch, release_build: bool) -> crate::Result {
         crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)
     }
-    pub fn out_dir(target: Arch) -> PathBuf {
-        crate::tasks::build::out_dir(SELF_PACKAGE, target)
+    pub fn out_dir(target: Arch, release_build: bool) -> PathBuf {
+        crate::tasks::build::out_file(SELF_PACKAGE, target, release_build)
     }
 }
 
@@ -121,7 +121,7 @@ pub mod distribution {
 
         crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)?;
 
-        distribution::collect_executables(SELF_PACKAGE, target)?;
+        distribution::collect_executables(SELF_PACKAGE, target, release_build)?;
 
         netbird::netbird_client_distribution(target)?;
         
@@ -242,6 +242,9 @@ pub mod distribution {
             let rperf_binary = build_rperf(&temp_dir_path, &temp_dir_subpath, target)?;
 
             let out_file = out_file(SELF_PACKAGE, target);
+
+            dbg!(&rperf_binary.exists());
+
             fs::create_dir_all(out_file.parent().unwrap())?;
             fs::copy(&rperf_binary, &out_file)
                 .map_err(|cause| anyhow!("Error while copying from '{}' to '{}': {cause}", rperf_binary.display(), out_file.display()))?;
@@ -275,6 +278,7 @@ pub mod distribution {
         }
         fn build_rperf(target_directory: &Path, current_directory: &Path, target: Arch) -> Result<PathBuf, anyhow::Error>  {
             CROSS.command()
+                .arg("--release")
                 .arg("--all-features")
                 .arg("--target-dir").arg(target_directory)
                 .arg("--target").arg(target.triple())
@@ -283,7 +287,7 @@ pub mod distribution {
                 .run_requiring_success()?;
 
             let out_dir = target_directory.join(target.triple()).join("release").join("rperf");
-            debug!("The rperf was built to {}", out_dir.display());
+            debug!("The rperf distribution was built to {out_dir:?}");
             
             Ok(out_dir)
         }

@@ -74,7 +74,7 @@ pub mod distribution {
 
         crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)?;
 
-        distribution::collect_executables(SELF_PACKAGE, target)?;
+        distribution::collect_executables(SELF_PACKAGE, target, release_build)?;
 
         distribution::copy_license_json::copy_license_json(SELF_PACKAGE, target, SkipGenerate::No)?;
 
