@@ -78,7 +78,7 @@ pub fn Navbar(
                     />
                 </div>
             </div>
-            <div class="column is-narrow ml-auto">
+            <div class="column is-narrow ml-auto p-1">
                 // <IconButton
                 //     icon=profile_button_icon
                 //     color=ButtonColor::Light

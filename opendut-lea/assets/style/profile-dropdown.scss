@@ -11,3 +11,12 @@
   text-wrap: nowrap;
   font-size: 0.85rem;
 }
+
+.dut-profile-picture-button {
+  border-radius: 50%;
+}
+
+.dut-profile-picture-button:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
