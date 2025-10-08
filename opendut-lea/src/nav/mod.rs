@@ -1,6 +1,6 @@
 pub mod sidebar;
 pub mod profile_sidebar;
-mod profile_doorhanger;
+mod profile_dropdown;
 
 use leptos::html::Div;
 use leptos::prelude::*;
@@ -8,7 +8,7 @@ use leptos_use::on_click_outside;
 use crate::components::{ ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
 use crate::routing;
 use crate::components::navbar_button::NavbarButton;
-use crate::nav::profile_doorhanger::ProfileDoorhanger;
+use crate::nav::profile_dropdown::ProfileDropdown;
 use crate::routing::WellKnownRoutes;
 
 #[component]
@@ -87,7 +87,7 @@ pub fn Navbar(
                 //     label="User"
                 //     on_action=move || profile_visible.update(|is_visible| *is_visible = !*is_visible)
                 // />
-                <ProfileDoorhanger />
+                <ProfileDropdown />
             </div>
         </nav>
     }

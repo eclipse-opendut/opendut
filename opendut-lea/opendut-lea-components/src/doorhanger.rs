@@ -15,6 +15,7 @@ pub fn Doorhanger(
     #[prop(into)] visible: Signal<bool>,
     #[prop(into)] alignment: Signal<DoorhangerAlignment>,
     trigger: Trigger,
+    #[prop(default = true)] show_dog_ear: bool,
     children: Children
 ) -> impl IntoView {
 
@@ -32,13 +33,27 @@ pub fn Doorhanger(
         format!("top: {top}px")
     };
 
+    let dog_ear = if show_dog_ear {
+        Some(view! {
+            <div class="doorhanger-dog-ear" style=dog_ear_style></div>
+        })
+    } else {
+        None
+    };
+
+    let margin_above_container = if !show_dog_ear {
+        String::from("margin-top: 6px;")
+    } else {
+        String::new()
+    };
+
     view! {
         <div class={ doorhanger_classes } class=("is-active", move || visible.get())>
             <div node_ref=trigger_div class="doorhanger-trigger">
                 <div>{ trigger() }</div>
-                <div class="doorhanger-dog-ear" style=dog_ear_style></div>
+                { dog_ear }
             </div>
-            <div class="doorhanger-container">
+            <div class="doorhanger-container" style=margin_above_container>
                 <div class="doorhanger-content p-2">
                     { children() }
                 </div>

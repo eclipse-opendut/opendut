@@ -119,7 +119,9 @@ pub enum ButtonColor {
     Danger,
     Info,
     Light,
+    Primary,
     Success,
+    Warning,
     White,
 }
 
@@ -131,7 +133,9 @@ impl ButtonColor {
             ButtonColor::Danger => "is-danger",
             ButtonColor::Info => "is-info",
             ButtonColor::Light => "is-light",
+            ButtonColor::Primary => "is-primary",
             ButtonColor::Success => "is-success",
+            ButtonColor::Warning => "is-warning",
             ButtonColor::White => "is-white",
         }
     }
