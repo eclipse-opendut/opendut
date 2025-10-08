@@ -98,9 +98,9 @@ Vagrant.configure("2") do |config|
     # ansible.compatibility_mode = "2.0"
     ansible.playbook = "/vagrant/.ci/deploy/opendut-vm/vagrant/playbook.yml"
     ansible.become = true
-    ansible.galaxy_role_file = "/vagrant/.ci/deploy/opendut-vm/ansible-requirements.yml"
-    ansible.galaxy_roles_path = "/vagrant/.ci/deploy/opendut-vm/local_roles/:/vagrant/.ci/deploy/opendut-vm/downloaded_roles/"
-    ansible.galaxy_command = "ansible-galaxy install --role-file=%{role_file} --roles-path=/vagrant/.ci/deploy/opendut-vm/downloaded_roles"
+    ansible.galaxy_role_file = "/vagrant/.ci/deploy/opendut-vm/vagrant/ansible-requirements.yml"
+    ansible.galaxy_roles_path = "/vagrant/.ci/deploy/opendut-vm/vagrant/local_roles/:/vagrant/.ci/deploy/opendut-vm/vagrant/downloaded_roles/"
+    ansible.galaxy_command = "ansible-galaxy install --role-file=%{role_file} --roles-path=/vagrant/.ci/deploy/opendut-vm/vagrant/downloaded_roles"
 
     # https://developer.hashicorp.com/vagrant/docs/provisioning/ansible_common
     ansible.tags = ENV["ANSIBLE_TAGS"] ||= "all"
