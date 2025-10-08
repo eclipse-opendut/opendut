@@ -19,10 +19,7 @@ pub(crate) const LOCALENV_CARL_TESTENV_TAG: &str = "testenv-latest";
 pub(crate) const LOCALENV_TELEMETRY_ENABLED: &str = "OPENDUT_LOCALENV_TELEMETRY_ENABLED";
 
 pub(crate) fn start(skip_telemetry: bool, skip_firefox: bool, expose_ports: bool, mode: &TestenvMode) -> Result<(), Error> {
-    if !PathBuf::project_path_buf().join(LOCALENV_SECRETS_ENV_FILE).exists() {
-        build_localenv_containers(mode)?;
-    }
-
+    build_localenv_containers(mode)?;
     start_localenv(skip_telemetry, mode)?;
 
     if !skip_firefox {
