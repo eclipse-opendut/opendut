@@ -35,6 +35,7 @@ pub fn ProfileDropdown() -> impl IntoView {
         dropdown_visible.set(false)
     });
 
+
     view! {
         <div node_ref=profile_button_area>
             <Doorhanger
@@ -42,21 +43,25 @@ pub fn ProfileDropdown() -> impl IntoView {
                 alignment=DoorhangerAlignment::Left
                 trigger=Box::new(move || {
                     view! {
-                        <IconButton
-                            icon=FontAwesomeIcon::User
-                            color=ButtonColor::None
-                            size=ButtonSize::Normal
-                            state=ButtonState::default()
-                            label="Open Profile"
-                            on_action=move || dropdown_visible.toggle()
-                        />
+                        // <IconButton
+                        //     icon=FontAwesomeIcon::User
+                        //     color=ButtonColor::None
+                        //     size=ButtonSize::Normal
+                        //     state=ButtonState::default()
+                        //     label="Open Profile"
+                        //     on_action=move || dropdown_visible.toggle()
+                        // />
+
+                        <button class="button dut-profile-picture-button is-text p-0" on:click=move |_| dropdown_visible.toggle()>
+                            <ProfilePicture fullname = "default sk" size=ProfilePictureSize::Small />
+                        </button>
                     }.into_any()
                 })
                 show_dog_ear=false
             >
                 <div class="columns m-0">
                     <div class="column is-narrow">
-                        <AlternativeProfilePicture fullname = fullname.clone().unwrap_or_default() />
+                        <ProfilePicture fullname = fullname.clone().unwrap_or_default() size=ProfilePictureSize::Large />
                     </div>
                     <div class="column">
                         <div class="is-flex pb-2">
@@ -92,9 +97,26 @@ pub fn ProfileDropdown() -> impl IntoView {
     }
 }
 
+enum ProfilePictureSize {
+    Small,
+    Medium,
+    Large
+}
+
+impl ProfilePictureSize {
+    pub fn get_size(&self) -> u32 {
+        match self {
+            ProfilePictureSize::Small => 38,
+            ProfilePictureSize::Medium => 48,
+            ProfilePictureSize::Large => 64
+        }
+    }
+}
+
 #[component]
-fn AlternativeProfilePicture(
-    #[prop(into)] fullname: String
+fn ProfilePicture(
+    #[prop(into)] fullname: String,
+    size: ProfilePictureSize,
 ) -> impl IntoView {
 
     let hsl_colors = ProfilePictureColors::get_vec();
@@ -109,6 +131,8 @@ fn AlternativeProfilePicture(
     let text_color = format!("hsl({h},{s}%,{l}%)");
     let background_color = format!("hsla({h},{s}%,{l}%, 0.1)");
 
+    let size = size.get_size();
+
     let initials = fullname
         .split_whitespace()
         .filter_map(|word| word.get(0..1))
@@ -117,7 +141,7 @@ fn AlternativeProfilePicture(
         .to_uppercase();
 
     view! {
-        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+        <svg xmlns="http://www.w3.org/2000/svg" width=size height=size viewBox="0 0 64 64">
             <circle cx="32" cy="32" r="32" fill=background_color />
             <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" font-size="24" fill=text_color font-weight="500">
                 { initials }
