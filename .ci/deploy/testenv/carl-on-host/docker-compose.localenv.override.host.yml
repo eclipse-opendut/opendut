@@ -5,6 +5,8 @@ services:
     volumes:
       - opendut_provision-secrets-data:/provision:ro
       - ../testenv/carl-on-host/traefik_config_vm/:/etc/traefik/dynamic/:ro
+      # config directory used to store netbird api key
+      - carl-config:/opt/opendut-carl/config/
 
 volumes:
   opendut_provision-secrets-data:

@@ -3,7 +3,6 @@
 services:
   carl:
     image: docker.io/traefik:v3.5.3
-    container_name: opendut-carl-devmode
     command:
       - --api.insecure=true
       - --entrypoints.web.address=:80
@@ -21,6 +20,9 @@ services:
     volumes:
       - opendut_provision-secrets-data:/provision:ro
       - ../testenv/carl-on-host/traefik_config_vm/:/etc/traefik/dynamic/:ro
+      # config directory used to store netbird api key
+      - carl-config:/opt/opendut-carl/config/
+
     healthcheck:
       interval: 5s
       retries: 10
