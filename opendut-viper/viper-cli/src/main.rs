@@ -27,7 +27,10 @@ use crate::console::Event;
 use crate::param_config::{IncompleteBindingsError, ParameterToml};
 use crate::templates::SCRIPT_PY_TEMPLATE;
 
+
+/// Write reproducible tests for ECUs using Python syntax
 #[derive(clap::Parser)]
+#[command(version)]
 struct Cli {
     #[command(subcommand)]
     command: Command
@@ -35,8 +38,12 @@ struct Cli {
 
 #[derive(clap::Subcommand)]
 enum Command {
+    /// Create file structure for authoring tests in the current directory
     Init,
+
+    /// Execute tests in the current directory
     Run {
+        /// Load parameters from given file
         #[arg(long="params-from-file")]
         params_from_file: Option<String>,
     },
@@ -46,7 +53,7 @@ enum Command {
 async fn main() -> Result<(), Box<dyn Error>> {
 
     let subscriber = tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::new("none"))
+        .with_env_filter(EnvFilter::new("VIPER_LOG"))
         // .with_writer(std::io::stderr)
         .finish();
     tracing::subscriber::set_global_default(subscriber)?;
