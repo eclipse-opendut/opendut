@@ -1,12 +1,13 @@
 use leptos::html::Div;
 use leptos::prelude::*;
+use leptos_oidc::LogoutLink;
 use leptos_use::on_click_outside;
 use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, Doorhanger, DoorhangerAlignment, FontAwesomeIcon, IconButton, IconText, ProfilePictureColors, ToggleSignal};
 use crate::routing;
 use crate::user::UserAuthenticationSignal;
 
 #[component]
-pub fn ProfileDoorhanger() -> impl IntoView {
+pub fn ProfileDropdown() -> impl IntoView {
 
     let user = use_context::<UserAuthenticationSignal>().expect("UserAuthenticationSignal should be provided in the context.");
 
@@ -28,16 +29,16 @@ pub fn ProfileDoorhanger() -> impl IntoView {
     //     email = user.read().email();
     // });
 
-    let doorhanger_visible = RwSignal::new(false);
+    let dropdown_visible = RwSignal::new(false);
     let profile_button_area = NodeRef::<Div>::new();
     let _ = on_click_outside(profile_button_area, move |_| {
-        doorhanger_visible.set(false)
+        dropdown_visible.set(false)
     });
 
     view! {
         <div node_ref=profile_button_area>
             <Doorhanger
-                visible=doorhanger_visible.read_only()
+                visible=dropdown_visible.read_only()
                 alignment=DoorhangerAlignment::Left
                 trigger=Box::new(move || {
                     view! {
@@ -47,10 +48,11 @@ pub fn ProfileDoorhanger() -> impl IntoView {
                             size=ButtonSize::Normal
                             state=ButtonState::default()
                             label="Open Profile"
-                            on_action=move || doorhanger_visible.toggle()
+                            on_action=move || dropdown_visible.toggle()
                         />
                     }.into_any()
                 })
+                show_dog_ear=false
             >
                 <div class="columns m-0">
                     <div class="column is-narrow">
@@ -74,7 +76,7 @@ pub fn ProfileDoorhanger() -> impl IntoView {
                         </div>
                     </div>
                 </div>
-                <div class="is-flex is-justify-content-end">
+                <LogoutLink class="is-flex is-justify-content-end p-1">
                     <IconButton
                         icon=FontAwesomeIcon::SignOut
                         color=ButtonColor::White
@@ -84,7 +86,7 @@ pub fn ProfileDoorhanger() -> impl IntoView {
                         show_label=true
                         on_action=move || {}
                     />
-                </div>
+                </LogoutLink>
             </Doorhanger>
         </div>
     }
