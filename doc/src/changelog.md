@@ -21,6 +21,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * Containers belonging to the localenv are started at boot due to docker restart policy.
   * Migration: Destroy old opendut-vm: `cargo theo vagrant destroy` and re-create with `cargo theo vagrant up`.
 
+### Breaking changes
+There are breaking changes in the localenv deployment. Please read the instructions below to update your localenv deployment.
+* Stop the localenv deployment.
+```shell
+cd /data/opendut
+docker compose -f .ci/deploy/localenv/docker-compose.yml down
+```
+* Update git repository
+```shell
+git checkout development
+git pull
+```
+* Rename environment variable `OPENDUT_USER_OPENDUT` to `OPENDUT_USER_OPENDUT_PASSWORD` in the docker volume. 
+Update the `.env` file in the docker volume `opendut_provision-secrets-data`:
+```shell
+docker volume inspect opendut_provision-secrets-data | jq -r .[0].Mountpoint
+vim /var/lib/docker/volumes/opendut_provision-secrets-data/_data/.env
+```
+* Update secrets on host
+```shell
+rm -rf .ci/deploy/localenv/data/secrets/  # remove old secrets
+docker compose --file .ci/deploy/localenv/docker-compose.yml up --build provision-secrets
+docker cp opendut-provision-secrets:/provision/ .ci/deploy/localenv/data/secrets/
+# ensure this yields the correct passwords
+cat .ci/deploy/localenv/data/secrets/.env
+```
+
+* The docker network was renamed from `local` to `opendut_local`. This requires deleting the old network.
+```shell
+docker network ls
+docker network rm local
+```
+* Restart the localenv deployment
+```shell
+docker compose -f .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/data/secrets/.env up --detach
+```
+
 ## [0.7.0] - 2025-06-25
 
 ### Breaking Changes
@@ -38,6 +75,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * EDGAR: No longer re-creates the peer network configuration in case one peer in the cluster comes back online. [#343](https://github.com/eclipse-opendut/opendut/issues/343)
 
 * Monitoring: Scraping logs of Docker containers is now done with Grafana Alloy, since Promtail has been deprecated. (Thanks to [@brtmax](https://github.com/brtmax)!)
+```shell
+# ensure you remove the old promtail container
+docker stop opendut-promtail
+docker rm opendut-promtail
+```
 * Updated keycloak version in testenv and localenv to version `26.2.5`. Backup of the keycloak database is recommended.
 
 ### Fixed

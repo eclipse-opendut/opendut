@@ -12,10 +12,7 @@
         force: true  # Avoid "would clobber existing tag" error for canary-tag
 
     - name: Provision secrets and initially create volumes
-      command:
-        cmd: "docker compose --file .ci/deploy/localenv/docker-compose.yml up --build provision-secrets"
-        chdir: "{{ repo_dir }}"
-        creates: "{{ repo_dir }}/.ci/deploy/localenv/data/secrets/.env"
+      include_tasks: tasks/provision_secrets.yaml
 
     - name: Define common facts
       include_tasks: tasks/common_facts.yaml
