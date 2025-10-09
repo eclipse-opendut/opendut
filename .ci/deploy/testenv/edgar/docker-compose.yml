@@ -1,4 +1,5 @@
-version: "3.9"
+# Docker compose file for EDGAR test environment (deploys a cluster of EDGAR instances)
+# Used by `cargo theo testenv edgar start`
 
 services:
 

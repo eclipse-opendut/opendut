@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 * Increased the default MTU to 1542 Bytes to allow a VLAN tag by default.
 
+### Changed
+* Testenv: Utilizes the containers of the localenv deployment now.
+  * All names in testenv were changed to end with `.opendut.local`.
+  * Old testenv passwords are no longer valid. New passwords are now generated and loaded from `./.ci/deploy/localenv/data/secrets/.env`.
+  * Destroying the testenv will reset the passwords.
+  * Containers belonging to the localenv are started at boot due to docker restart policy.
+  * Migration: Destroy old opendut-vm: `cargo theo vagrant destroy` and re-create with `cargo theo vagrant up`.
 
 ## [0.7.0] - 2025-06-25
 
