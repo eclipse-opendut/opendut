@@ -117,23 +117,32 @@ pub mod distribution {
 
         let _ = netbird::map_target(target)?; //check target supported
 
-        distribution::clean(SELF_PACKAGE, target)?;
-
         crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)?;
 
-        distribution::collect_executables(SELF_PACKAGE, target, release_build)?;
+        cicero::distribution::cache::Output::from(
+            distribution::bundle::out_file(SELF_PACKAGE, target)
+        ).rebuild_on_change(
+            [crate::tasks::build::out_file(SELF_PACKAGE, target, release_build)],
+            || {
 
-        netbird::netbird_client_distribution(target)?;
-        
-        rperf::rperf_distribution(target)?;
-        
-        plugins::empty_plugins_dir(target)?;
+                distribution::clean(SELF_PACKAGE, target)?;
 
-        distribution::copy_license_json::copy_license_json(SELF_PACKAGE, target, SkipGenerate::No)?;
+                distribution::collect_executables(SELF_PACKAGE, target, release_build)?;
 
-        distribution::bundle::bundle_files(SELF_PACKAGE, target)?;
+                netbird::netbird_client_distribution(target)?; //TODO rebuild cache when this changes (we currently accept the risk of this being false, since the NetBird code does not change often)
 
-        validate::validate_contents(target)?;
+                rperf::rperf_distribution(target)?; //TODO rebuild cache when this changes (we currently accept the risk of this being false, since the Rperf code does not change often)
+
+                plugins::empty_plugins_dir(target)?;
+
+                distribution::copy_license_json::copy_license_json(SELF_PACKAGE, target, SkipGenerate::No)?;
+
+                distribution::bundle::bundle_files(SELF_PACKAGE, target)?;
+
+                validate::validate_contents(target)?;
+
+                Ok(())
+            })?;
 
         Ok(())
     }
