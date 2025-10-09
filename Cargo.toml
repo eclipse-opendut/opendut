@@ -121,6 +121,7 @@ regex = "1.11.1"
 reqwest = { version = "0.12.12", default-features = false, features = ["rustls-tls-native-roots"] }
 reqwest-middleware = "0.4.0"
 reqwest-retry = "0.7.0"
+ring = "=0.17.12" #TODO remove once 0.17.15 has been released; we downgraded, because 0.17.14 caused frequent rebuilds in `cargo ci` ( https://github.com/briansmith/ring/issues/2454 ) and 0.17.13 failed CROSS builds ( https://github.com/briansmith/ring/issues/2461 )
 rstest = "0.26.1"
 rtnetlink = "0.18.0"
 rustls = { version = "*", default-features = false, features = ["ring"] }
