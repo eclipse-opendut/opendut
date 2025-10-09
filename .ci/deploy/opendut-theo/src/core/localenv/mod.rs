@@ -60,7 +60,7 @@ fn start_localenv(skip_telemetry: bool, mode: &TestenvMode) -> Result<i32, Error
     docker_command
         .arg("up")
         .arg("--detach")
-        .expect_status("Failed to start localenv for testenv")
+        .expect_show_status("Failed to start localenv for testenv")
 }
 
 pub(crate) fn provision_localenv_secrets() -> Result<(), Error> {
@@ -70,7 +70,7 @@ pub(crate) fn provision_localenv_secrets() -> Result<(), Error> {
         .arg("up")
         .arg("--build")
         .arg("provision-secrets")
-        .expect_status("Failed to provision localenv secrets")?;
+        .expect_show_status("Failed to provision localenv secrets")?;
 
     delete_localenv_secrets()?;
     // copy secrets to host
@@ -78,7 +78,7 @@ pub(crate) fn provision_localenv_secrets() -> Result<(), Error> {
         .arg("cp")
         .arg("opendut-provision-secrets:/provision/")
         .arg(LOCALENV_SECRETS_PATH)
-        .expect_status("Failed to copy localenv secrets.")?;
+        .expect_show_status("Failed to copy localenv secrets.")?;
     debug!("Copied secrets to host at {}", LOCALENV_SECRETS_PATH);
 
     Ok(())
@@ -94,7 +94,7 @@ pub(crate) fn build_localenv_containers(mode: &TestenvMode) -> Result<i32, Error
         .add_localenv_args()
         .add_common_project_env()
         .arg("build")
-        .expect_status("Failed to build localenv services")
+        .expect_show_status("Failed to build localenv services")
 }
 
 pub(crate) fn destroy() -> Result<(), Error> {
@@ -118,7 +118,7 @@ fn shutdown(delete_volumes: bool) -> Result<i32, Error> {
     } else {
         command.arg("down");
     }
-    command.expect_status("Failed to shutdown localenv services.")
+    command.expect_show_status("Failed to shutdown localenv services.")
 }
 
 pub fn delete_localenv_secrets() -> Result<(), Error> {

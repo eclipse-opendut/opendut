@@ -50,7 +50,7 @@ pub fn wait_until_all_edgar_peers_are(target_status: EdgarDeploymentStatus) -> c
                     DockerCommand::new_exec(&edgar_name)
                         .arg("/opt/wait_until_ready.sh")
                         .arg(leader_arg)
-                        .expect_status(&format!("Failed to check if EDGAR peer '{edgar_name}' is ready."))?;
+                        .expect_show_status(&format!("Failed to check if EDGAR peer '{edgar_name}' is ready."))?;
                     println!("EDGAR peer '{edgar_name}' is ready.");
                     remaining_edgar_names.remove(&edgar_name);
                 }

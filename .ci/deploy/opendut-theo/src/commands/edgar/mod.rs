@@ -74,7 +74,7 @@ fn start_edgar_in_docker() -> Result<i32, Error> {
         .add_localenv_secrets_args()
         .arg("up")
         .arg("-d")
-        .expect_status("Failed to start EDGAR cluster in Docker.")
+        .expect_show_status("Failed to start EDGAR cluster in Docker.")
 }
 
 fn check_edgar_container_provisioning_done(container_name: &str) -> Result<bool, Error> {
@@ -117,7 +117,7 @@ fn set_dut_bridge_ip_address_for_pinging() -> Result<(), Error> {
     for edgar_name in edgar_names.clone() {
         DockerCommand::new_exec(&edgar_name)
             .arg("/opt/set-dut-local-ip-address.sh")
-            .expect_status("Failed to set dut bridge ip for EDGAR.")
+            .expect_show_status("Failed to set dut bridge ip for EDGAR.")
             .map_err(|err| anyhow!("Failed to set dut bridge ip for EDGAR {}. Error: {}", edgar_name, err))?;
     }
     Ok(())
@@ -128,7 +128,7 @@ fn check_edgar_leader_ping_all() -> Result<i32, Error> {
     println!("       Checking if all EDGAR peers respond to ping...");
     DockerCommand::new_exec(EDGAR_LEADER_NAME)
         .arg("/opt/pingall.sh")
-        .expect_status("Failed to check if all EDGAR peers respond to ping.")
+        .expect_show_status("Failed to check if all EDGAR peers respond to ping.")
 }
 
 fn check_edgar_ping_can() -> Result<i32, Error> {
@@ -142,7 +142,7 @@ fn check_edgar_ping_can() -> Result<i32, Error> {
         .arg("python3")
         .arg("/opt/pingall_can.py")
         .arg("responder")
-        .expect_status("Failed to start CAN ping responder on edgar-peer-1.")?;
+        .expect_show_status("Failed to start CAN ping responder on edgar-peer-1.")?;
 
     sleep(Duration::from_secs(10));
 
@@ -150,7 +150,7 @@ fn check_edgar_ping_can() -> Result<i32, Error> {
         .arg("python3")
         .arg("/opt/pingall_can.py")
         .arg("sender")
-        .expect_status("Failed to start CAN ping sender on edgar-peer-2.")
+        .expect_show_status("Failed to start CAN ping sender on edgar-peer-2.")
 }
 
 fn stop_if_running() -> crate::Result {
@@ -169,5 +169,5 @@ fn delete_deployment_and_peers() -> Result<i32, Error> {
         .arg("--rm")
         .arg("leader")
         .arg("/opt/delete_deployment.sh")
-        .expect_status("Failed to start EDGAR Cleanup container in Docker.")
+        .expect_show_status("Failed to start EDGAR Cleanup container in Docker.")
 }

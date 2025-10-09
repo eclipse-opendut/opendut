@@ -10,7 +10,7 @@ pub(crate) fn docker_compose_build(compose_dir: &str) -> Result<i32, Error> {
         // https://docs.docker.com/build/building/env-vars/
         // Show more output during the build progress
         .env("BUILDKIT_PROGRESS", "plain")
-        .expect_status(format!("Failed to execute docker compose build for directory: {compose_dir}.").as_str())
+        .expect_show_status(format!("Failed to execute docker compose build for directory: {compose_dir}.").as_str())
 }
 
 pub fn docker_compose_up_expose_ports(compose_dir: &str, expose: bool) -> crate::Result {
@@ -32,7 +32,7 @@ pub fn docker_compose_up_expose_ports(compose_dir: &str, expose: bool) -> crate:
         .arg(".env")
         .arg("up")
         .arg("--detach")
-        .expect_status(&format!("Failed to execute docker compose command for {compose_dir}."))?;
+        .expect_show_status(&format!("Failed to execute docker compose command for {compose_dir}."))?;
     Ok(())
 }
 
@@ -45,5 +45,5 @@ pub(crate) fn docker_compose_down(compose_dir: &str, delete_volumes: bool) -> Re
     } else {
         command.arg("down");
     }
-    command.expect_status(format!("Failed to execute docker compose down for directory: {compose_dir}.").as_str())
+    command.expect_show_status(format!("Failed to execute docker compose down for directory: {compose_dir}.").as_str())
 }

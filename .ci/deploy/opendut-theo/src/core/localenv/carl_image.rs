@@ -50,7 +50,7 @@ impl TestenvCarlImage {
             .arg("--build-arg").arg(format!("VERSION={}", self.carl_version))
             .arg("--tag").arg(self.full_image_name())
             .arg(".")
-            .expect_status("Failed to build docker image")?;
+            .expect_show_status("Failed to build docker image")?;
 
         Ok(())
     }

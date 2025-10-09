@@ -1,4 +1,4 @@
-use std::process::{Command, Output};
+use std::process::{Command, Output, Stdio};
 use std::ffi::OsStr;
 use std::path::PathBuf;
 use anyhow::{anyhow, Error};
@@ -113,8 +113,18 @@ impl DockerCommand {
         self
     }
 
-    pub(crate) fn expect_status(&mut self, error_message: &str) -> Result<i32, anyhow::Error> {
+    pub(crate) fn expect_show_status(&mut self, error_message: &str) -> Result<i32, Error> {
+        self.expect_status(error_message, true)
+    }
+
+    pub(crate) fn expect_status(&mut self, error_message: &str, show_output: bool) -> Result<i32, Error> {
         self.debug_log_executed_command();
+        if !show_output {
+            self.command
+                .stdout(Stdio::null())
+                .stderr(Stdio::null());
+        }
+
         let command_status = self
             .command
             .status()
