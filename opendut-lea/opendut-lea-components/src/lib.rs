@@ -162,6 +162,7 @@ impl ButtonSize {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct Hsl(pub i32, pub i32, pub i32);
 
 pub enum ProfilePictureColors {

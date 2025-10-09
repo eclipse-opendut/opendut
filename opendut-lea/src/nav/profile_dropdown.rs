@@ -2,7 +2,8 @@ use leptos::html::Div;
 use leptos::prelude::*;
 use leptos_oidc::LogoutLink;
 use leptos_use::on_click_outside;
-use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, Doorhanger, DoorhangerAlignment, FontAwesomeIcon, IconButton, IconText, ProfilePictureColors, ToggleSignal};
+use tracing::debug;
+use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, Doorhanger, DoorhangerAlignment, FontAwesomeIcon, Hsl, IconButton, IconText, ProfilePictureColors, ToggleSignal};
 use crate::routing;
 use crate::user::UserAuthenticationSignal;
 
@@ -10,24 +11,18 @@ use crate::user::UserAuthenticationSignal;
 pub fn ProfileDropdown() -> impl IntoView {
 
     let user = use_context::<UserAuthenticationSignal>().expect("UserAuthenticationSignal should be provided in the context.");
+    let fullname = Signal::derive(move || {
+       user.read().fullname().unwrap_or_else(|| String::from("Unknown User"))
+    });
 
-    let fullname = user.read().fullname();
-    let username = user.read().username();
-    let email = user.read().email();
-    let roles = user.read().roles();
-    let groups = user.read().groups();
+    // let fullname = RwSignal::new(String::from("Firstname Lastname"));
 
-    let fullname = Some(String::from("Vivian Berger"));
-    let username = String::from("SaFend");
-    let email = Some(String::from("salvatore.fendt@mercedes-benz.com"));
-    let roles = Some(String::from("admin, user"));
-    let groups = Some(String::from("MBTI, AI"));
-
-    // Effect::new(move || {
-    //     fullname = user.read().fullname();
-    //     username = user.read().username();
-    //     email = user.read().email();
-    // });
+    let username = Signal::derive(move || {
+        user.read().username()
+    });
+    let email = Signal::derive(move || {
+        user.read().email().unwrap_or_else(|| String::from("no email"))
+    });
 
     let dropdown_visible = RwSignal::new(false);
     let profile_button_area = NodeRef::<Div>::new();
@@ -35,33 +30,51 @@ pub fn ProfileDropdown() -> impl IntoView {
         dropdown_visible.set(false)
     });
 
+    let initials = Signal::derive(move || {
+        fullname.get()
+            .split_whitespace()
+            .filter_map(|word| word.get(0..1))
+            .take(2)
+            .collect::<String>()
+            .to_uppercase()
+    });
+    let hsl = Signal::derive(move || {
+        debug!("Recalculating hsl color.");
+        let hsl_colors = ProfilePictureColors::get_vec();
+        let sum: u32 = fullname.get().chars().map(|c| c as u32).sum();
+        let index = (sum % hsl_colors.len() as u32) as usize;
+        hsl_colors[index].get_hsl()
+    });
 
     view! {
         <div node_ref=profile_button_area>
             <Doorhanger
                 visible=dropdown_visible.read_only()
                 alignment=DoorhangerAlignment::Left
-                trigger=Box::new(move || {
-                    view! {
-                        // <IconButton
-                        //     icon=FontAwesomeIcon::User
-                        //     color=ButtonColor::None
-                        //     size=ButtonSize::Normal
-                        //     state=ButtonState::default()
-                        //     label="Open Profile"
-                        //     on_action=move || dropdown_visible.toggle()
-                        // />
+                trigger=Box::new({
+                    let initials = Clone::clone(&initials);
+                    move || {
+                        view! {
+                            // <IconButton
+                            //     icon=FontAwesomeIcon::User
+                            //     color=ButtonColor::None
+                            //     size=ButtonSize::Normal
+                            //     state=ButtonState::default()
+                            //     label="Open Profile"
+                            //     on_action=move || dropdown_visible.toggle()
+                            // />
 
-                        <button class="button dut-profile-picture-button is-text p-0" on:click=move |_| dropdown_visible.toggle()>
-                            <ProfilePicture fullname = "default sk" size=ProfilePictureSize::Small />
-                        </button>
-                    }.into_any()
+                            <button class="button dut-profile-picture-button is-text p-0" on:click=move |_| dropdown_visible.toggle()>
+                                <ProfilePicture initials size=ProfilePictureSize::Small hsl />
+                            </button>
+                        }.into_any()
+                    }
                 })
                 show_dog_ear=false
             >
                 <div class="columns m-0">
                     <div class="column is-narrow">
-                        <ProfilePicture fullname = fullname.clone().unwrap_or_default() size=ProfilePictureSize::Large />
+                        <ProfilePicture initials size=ProfilePictureSize::Large hsl />
                     </div>
                     <div class="column">
                         <div class="is-flex pb-2">
@@ -71,7 +84,7 @@ pub fn ProfileDropdown() -> impl IntoView {
                         <div class="dut-profile-information">
                             <IconText
                                 icon=FontAwesomeIcon::Email
-                                text=email.unwrap_or_default()
+                                text=email
                             />
                             <IconText
                                 icon=FontAwesomeIcon::OpenPage
@@ -99,7 +112,6 @@ pub fn ProfileDropdown() -> impl IntoView {
 
 enum ProfilePictureSize {
     Small,
-    Medium,
     Large
 }
 
@@ -107,7 +119,6 @@ impl ProfilePictureSize {
     pub fn get_size(&self) -> u32 {
         match self {
             ProfilePictureSize::Small => 38,
-            ProfilePictureSize::Medium => 48,
             ProfilePictureSize::Large => 64
         }
     }
@@ -115,35 +126,27 @@ impl ProfilePictureSize {
 
 #[component]
 fn ProfilePicture(
-    #[prop(into)] fullname: String,
+    #[prop(into)] initials: Signal<String>,
     size: ProfilePictureSize,
+    #[prop(into)] hsl: Signal<Hsl>,
 ) -> impl IntoView {
 
-    let hsl_colors = ProfilePictureColors::get_vec();
+    let h = move || hsl.read().0;
+    let s = move || hsl.read().1;
+    let l = move || hsl.read().2;
 
-    let sum: u32 = fullname.chars().map(|c| c as u32).sum();
-    let index = (sum % hsl_colors.len() as u32) as usize;
-    let hsl = hsl_colors[index].get_hsl();
-    let h = hsl.0;
-    let s = hsl.1;
-    let l = hsl.2;
-
-    let text_color = format!("hsl({h},{s}%,{l}%)");
-    let background_color = format!("hsla({h},{s}%,{l}%, 0.1)");
+    let text_color = move || {
+        debug!("Text color changed.");
+        format!("hsl({},{}%,{}%)", h(), s(), l())
+    };
+    let background_color = move || format!("hsla({},{}%,{}%, 0.1)", h(), s(), l());
 
     let size = size.get_size();
 
-    let initials = fullname
-        .split_whitespace()
-        .filter_map(|word| word.get(0..1))
-        .take(2)
-        .collect::<String>()
-        .to_uppercase();
-
     view! {
         <svg xmlns="http://www.w3.org/2000/svg" width=size height=size viewBox="0 0 64 64">
-            <circle cx="32" cy="32" r="32" fill=background_color />
-            <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" font-size="24" fill=text_color font-weight="500">
+            <circle cx="32" cy="32" r="32" fill= move || background_color />
+            <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" font-size="24" fill= move || text_color font-weight="500">
                 { initials }
             </text>
         </svg>

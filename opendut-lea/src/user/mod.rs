@@ -1,4 +1,3 @@
-use std::ops::Not;
 use leptos::context::provide_context;
 use leptos::prelude::{Effect, Get, RwSignal, Set};
 use leptos_oidc::{Algorithm, Auth, AuthSignal, TokenData};
@@ -11,13 +10,6 @@ use leptos_oidc::AuthenticatedData as LeptosOidcAuthenticatedData;
 pub const UNAUTHENTICATED_USER: &str = "unknown-user";
 mod overview;
 const DEFAULT_TOKEN_AUDIENCE: &str = "account";
-
-const DEFAULT_KEYCLOAK_ROLES: [&str; 4] = [
-    "offline_access",
-    "uma_authorization",
-    "managerrole",
-    "testrole",
-];
 
 #[derive(Debug, Clone, Default)]
 pub enum AuthenticationConfigSwitch {
@@ -124,46 +116,7 @@ impl UserAuthentication {
             _ => None
         }
     }
-    
-    pub fn roles(&self) -> Option<String> {
-        match self {
-            UserAuthentication::Authenticated(data) => {
-                if let Some(user) = data.token.as_ref() {
-                    let roles = user.claims.additional_claims.roles.iter()
-                        .filter(| role | {
-                            DEFAULT_KEYCLOAK_ROLES.contains(&role.as_str()).not()
-                        }).cloned()
-                        .collect::<Vec<_>>()
-                        .join(", ");
-                    Some(roles.to_string())
-                } else {
-                    Some(UNAUTHENTICATED_USER.to_string())
-                }
-            }
-            _ => None
-        }
-    }
-
-    pub fn groups(&self) -> Option<String> {
-        match self {
-            UserAuthentication::Authenticated(data) => {
-                if let Some(user) = data.token.as_ref() {
-                    let groups  = user.claims.additional_claims.groups.iter()
-                        .map(|group| {
-                            group.replace('/', "")
-                        })
-                        .collect::<Vec<_>>()
-                        .join(", ");
-                    Some(groups.to_string())
-                } else {
-                    Some(UNAUTHENTICATED_USER.to_string())
-                }
-            }
-            _ => None
-        }
-    }
 }
-
 
 pub(crate) fn provide_authentication_signals_in_context() -> AuthSignal {
     let auth = Auth::signal();

@@ -4,11 +4,11 @@ use opendut_lea_components::FontAwesomeIcon;
 use crate::routing;
 
 #[component]
-pub fn Sidebar(menu_visible: RwSignal<bool>) -> impl IntoView {
+pub fn Sidebar(menu_visible: RwSignal<bool>, hide_buttons: Signal<bool>) -> impl IntoView {
 
     view! {
         <aside class="dut-menu is-left column" class:is-active= move || menu_visible.get() >
-            <ul class="dut-menu-list">
+            <ul class="dut-menu-list" class:is-hidden= move || hide_buttons.get()>
                 <SidebarItem
                     icon= FontAwesomeIcon::Dashboard
                     label="Dashboard"
@@ -31,9 +31,9 @@ pub fn Sidebar(menu_visible: RwSignal<bool>) -> impl IntoView {
                 />
             </ul>
             <div class="px-2">
-                <div class="dut-divider" />
+                <div class="dut-divider" class:is-hidden= move || hide_buttons.get()/>
                 <ul class="menu-label">
-                    <li>
+                    <li class:is-hidden= move || hide_buttons.get()>
                         <a href=routing::path::about> About </a>
                     </li>
                     <li>
