@@ -1,5 +1,4 @@
 pub mod sidebar;
-pub mod profile_sidebar;
 mod profile_dropdown;
 
 use leptos::html::Div;
