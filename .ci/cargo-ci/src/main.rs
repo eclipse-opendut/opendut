@@ -47,11 +47,11 @@ fn main() -> crate::Result {
     match cli.task {
         TaskCli::Check(implementation) => implementation.default_handling()?,
         TaskCli::Coverage(implementation) => implementation.default_handling()?,
-        TaskCli::Distribution(tasks::distribution::DistributionCli { target }) => {
+        TaskCli::Distribution(tasks::distribution::DistributionCli { target, release_build }) => {
             for target in target.iter() {
-                packages::carl::distribution::carl_distribution(target)?;
-                packages::edgar::distribution::edgar_distribution(target)?;
-                packages::cleo::distribution::cleo_distribution(target)?;
+                packages::carl::distribution::carl_distribution(target, release_build)?;
+                packages::edgar::distribution::edgar_distribution(target, release_build)?;
+                packages::cleo::distribution::cleo_distribution(target, release_build)?;
             }
         }
         TaskCli::Doc(implementation) => implementation.default_handling()?,

@@ -54,14 +54,14 @@ impl EdgarCli {
     #[tracing::instrument(name="edgar", skip_all)]
     pub fn default_handling(self) -> crate::Result {
         match self.task {
-            TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target }) => {
+            TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target, release_build }) => {
                 for target in target.iter() {
-                    build::build_release(target)?;
+                    build::build_release(target, release_build)?;
                 }
             }
-            TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target }) => {
+            TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target, release_build }) => {
                 for target in target.iter() {
-                    distribution::edgar_distribution(target)?;
+                    distribution::edgar_distribution(target, release_build)?;
                 }
             }
             TaskCli::Licenses(cli) => cli.default_handling(PackageSelection::Single(SELF_PACKAGE))?,
@@ -98,8 +98,8 @@ impl EdgarCli {
 pub mod build {
     use super::*;
 
-    pub fn build_release(target: Arch) -> crate::Result {
-        crate::tasks::build::distribution_build(SELF_PACKAGE, target)
+    pub fn build_release(target: Arch, release_build: bool) -> crate::Result {
+        crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)
     }
     pub fn out_dir(target: Arch) -> PathBuf {
         crate::tasks::build::out_dir(SELF_PACKAGE, target)
@@ -112,14 +112,14 @@ pub mod distribution {
     use super::*;
 
     #[tracing::instrument]
-    pub fn edgar_distribution(target: Arch) -> crate::Result {
+    pub fn edgar_distribution(target: Arch, release_build: bool) -> crate::Result {
         use crate::tasks::distribution;
 
         let _ = netbird::map_target(target)?; //check target supported
 
         distribution::clean(SELF_PACKAGE, target)?;
 
-        crate::tasks::build::distribution_build(SELF_PACKAGE, target)?;
+        crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)?;
 
         distribution::collect_executables(SELF_PACKAGE, target)?;
 

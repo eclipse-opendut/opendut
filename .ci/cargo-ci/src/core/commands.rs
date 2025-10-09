@@ -12,8 +12,7 @@ pub static CROSS: Cli = Crate::new("cross")
     .into_cli()
     .with_base_command(&|mut command| {
         command
-            .arg("build")
-            .arg("--release");
+            .arg("build");
         command
     });
 

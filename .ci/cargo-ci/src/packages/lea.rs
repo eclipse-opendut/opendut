@@ -37,7 +37,10 @@ impl LeaCli {
     #[tracing::instrument(name="lea", skip(self))]
     pub fn default_handling(self) -> crate::Result {
         match self.task {
-            TaskCli::Build => build::build()?,
+            TaskCli::Build => {
+                let release_build = false;
+                build::build(release_build)?
+            },
             TaskCli::Run(cli) => run::run(cli.passthrough)?,
             TaskCli::Licenses(cli) => cli.default_handling(PackageSelection::Single(PACKAGE))?,
             TaskCli::DistributionBuild => distribution_build::distribution_build()?,
@@ -50,9 +53,8 @@ pub mod build {
     use super::*;
 
     #[tracing::instrument]
-    pub fn build() -> crate::Result {
-        let release = false;
-        build_impl(release, out_dir())
+    pub fn build(release_build: bool) -> crate::Result {
+        build_impl(release_build, out_dir())
     }
 
     pub fn out_dir() -> PathBuf {

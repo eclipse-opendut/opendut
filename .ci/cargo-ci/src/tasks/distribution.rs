@@ -9,8 +9,13 @@ use crate::types::parsing::target::TargetSelection;
 #[derive(Debug, clap::Parser)]
 #[command(alias="dist")]
 pub struct DistributionCli {
+    /// The operating system and CPU architecture to build for
     #[arg(long, default_value_t)]
     pub target: TargetSelection,
+
+    /// Build artifacts in release mode, with optimizations
+    #[arg(short='r', long="release")]
+    pub release_build: bool,
 }
 
 #[tracing::instrument(skip_all)]

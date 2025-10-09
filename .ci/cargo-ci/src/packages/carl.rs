@@ -33,20 +33,21 @@ impl CarlCli {
     #[tracing::instrument(name="carl", skip(self))]
     pub fn default_handling(self) -> crate::Result {
         match self.task {
-            TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target }) => {
+            TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target, release_build }) => {
                 for target in target.iter() {
-                    build::build_release(target)?;
+                    build::build_release(target, release_build)?;
                 }
             }
-            TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target }) => {
+            TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target, release_build }) => {
                 for target in target.iter() {
-                    distribution::carl_distribution(target)?;
+                    distribution::carl_distribution(target, release_build)?;
                 }
             }
             TaskCli::Licenses(cli) => cli.default_handling(PackageSelection::Single(SELF_PACKAGE))?,
             TaskCli::Run(cli) => {
                 tracing::info_span!("lea").in_scope(|| {
-                    crate::packages::lea::build::build()
+                    let release_build = false;
+                    crate::packages::lea::build::build(release_build)
                         .context("Error while building LEA for CARL distribution") //ensure the LEA distribution exists and is up-to-date
                 })?;
 
@@ -81,8 +82,8 @@ impl CarlCli {
 pub mod build {
     use super::*;
 
-    pub fn build_release(target: Arch) -> crate::Result {
-        crate::tasks::build::distribution_build(SELF_PACKAGE, target)
+    pub fn build_release(target: Arch, release_build: bool) -> crate::Result {
+        crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)
     }
     pub fn out_dir(target: Arch) -> PathBuf {
         crate::tasks::build::out_dir(SELF_PACKAGE, target)
@@ -95,20 +96,20 @@ pub mod distribution {
     use super::*;
 
     #[tracing::instrument]
-    pub fn carl_distribution(target: Arch) -> crate::Result {
+    pub fn carl_distribution(target: Arch, release_build: bool) -> crate::Result {
         use crate::tasks::distribution;
 
         let distribution_out_dir = distribution::out_package_dir(SELF_PACKAGE, target);
 
         distribution::clean(SELF_PACKAGE, target)?;
 
-        crate::tasks::build::distribution_build(SELF_PACKAGE, target)?;
+        crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)?;
 
         distribution::collect_executables(SELF_PACKAGE, target)?;
 
-        cleo::get_cleo(&distribution_out_dir)?;
-        edgar::get_edgar(&distribution_out_dir)?;
-        lea::get_lea(&distribution_out_dir)?;
+        cleo::get_cleo(&distribution_out_dir, release_build)?;
+        edgar::get_edgar(&distribution_out_dir, release_build)?;
+        lea::get_lea(&distribution_out_dir, release_build)?;
         copy_license_json::copy_license_json(target, SkipGenerate::No)?;
 
         distribution::bundle::bundle_files(SELF_PACKAGE, target)?;
@@ -126,13 +127,13 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn get_cleo(out_dir: &Path) -> crate::Result {
+        pub fn get_cleo(out_dir: &Path, release_build: bool) -> crate::Result {
 
             let cleo_out_dir = out_dir.join(Package::Cleo.ident());
             fs::create_dir_all(cleo_out_dir)?;
             
             for arch in crate::packages::cleo::SUPPORTED_ARCHITECTURES {
-                crate::packages::cleo::distribution::cleo_distribution(arch.to_owned())?;
+                crate::packages::cleo::distribution::cleo_distribution(arch.to_owned(), release_build)?;
                 let cleo_build_dir = crate::tasks::distribution::out_arch_dir(arch.to_owned());
 
                 let cleo_arch_dir = out_dir.join(Package::Cleo.ident());
@@ -162,13 +163,13 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn get_edgar(out_dir: &Path) -> crate::Result {
+        pub fn get_edgar(out_dir: &Path, release_build: bool) -> crate::Result {
 
             let edgar_out_dir = out_dir.join(Package::Edgar.ident());
             fs::create_dir_all(edgar_out_dir)?;
 
             for arch in crate::packages::edgar::SUPPORTED_ARCHITECTURES {
-                crate::packages::edgar::distribution::edgar_distribution(arch.to_owned())?;
+                crate::packages::edgar::distribution::edgar_distribution(arch.to_owned(), release_build)?;
                 let edgar_build_dir = crate::tasks::distribution::out_arch_dir(arch.to_owned());
 
                 let edgar_arch_dir = out_dir.join(Package::Edgar.ident());
@@ -194,9 +195,9 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn get_lea(out_dir: &Path) -> crate::Result {
+        pub fn get_lea(out_dir: &Path, release_build: bool) -> crate::Result {
 
-            crate::packages::lea::build::build()?;
+            crate::packages::lea::build::build(release_build)?;
             let lea_build_dir = crate::packages::lea::build::out_dir();
 
             let lea_out_dir = out_dir.join(Package::Lea.ident());
