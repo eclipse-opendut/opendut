@@ -3,10 +3,15 @@
   ansible.builtin.blockinfile:
     path: /etc/hosts
     block: |
-      192.168.32.200        carl
-      192.168.32.204        keycloak.internal
-      192.168.32.211        netbird-management
-      192.168.32.213        netbird-dashboard netbird-ui
+      192.168.56.10 opendut.local
+      192.168.56.10 auth.opendut.local
+      192.168.56.10 netbird.opendut.local
+      192.168.56.10 netbird-api.opendut.local
+      192.168.56.10 signal.opendut.local
+      192.168.56.10 carl.opendut.local
+      192.168.56.10 nginx-webdav.opendut.local
+      192.168.56.10 opentelemetry.opendut.local
+      192.168.56.10 monitoring.opendut.local
     marker: "# {mark} ANSIBLE MANAGED BLOCK of services"
 
 - name: Copy insecure development certificate authority
