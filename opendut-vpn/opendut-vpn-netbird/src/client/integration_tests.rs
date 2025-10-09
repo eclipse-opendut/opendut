@@ -18,17 +18,16 @@ use crate::client::{Client, DefaultClient};
 use crate::netbird::error::CreateClientError;
 
 /*
- * Designated to be run in the opendut-vm, requires netbird management service to be running.
- * API_KEY is fetched from the init container.
- docker exec -ti netbird-management_init-1 cat /management/api_key
+ * Designated to be run in the opendut-vm, requires keycloak and the netbird management service to be running.
+ * API_KEY is fetched from the init container. TODO: implement a more robust way to provide the key.
+ docker exec -ti opendut-carl cat /opt/opendut-carl/config/api_key
  export NETBIRD_INTEGRATION_API_TOKEN=<tbd>
- cargo test --package opendut-vpn-netbird test_foo --all-features -- --nocapture
+ cargo test --package opendut-vpn-netbird --all-features -- --nocapture
  
  * from HOST with netbird-management running in opendut-vm
  
  export NETBIRD_INTEGRATION_API_TOKEN=<tbd>
- export NETBIRD_INTEGRATION_API_URL=https://192.168.56.10/api
- cargo test --package opendut-vpn-netbird test_foo --all-features -- --nocapture
+ cargo test --package opendut-vpn-netbird --all-features -- --nocapture
  */
 
 #[test_with::env(NETBIRD_INTEGRATION_API_TOKEN)]
@@ -154,12 +153,12 @@ struct Fixture {
 }
 impl Default for Fixture {
     fn default() -> Self {
-        let management_url = std::env::var("NETBIRD_INTEGRATION_API_URL").unwrap_or("https://netbird-management/api/".to_string());
+        let management_url = std::env::var("NETBIRD_INTEGRATION_API_URL").unwrap_or("https://netbird-api.opendut.local/api/".to_string());
         let netbird_api_token = std::env::var("NETBIRD_INTEGRATION_API_TOKEN").expect("Could not get netbird api token!");
         let management_url = Url::parse(&management_url).unwrap();
         let authentication_token = NetbirdToken::new_personal_access(netbird_api_token);
         let timeout = Duration::from_millis(10000);
-        let ca = project::make_path_absolute("resources/development/tls/insecure-development-ca.pem").expect("Could not determine ca path.");
+        let ca = project::make_path_absolute(".ci/deploy/localenv/data/secrets/pki/opendut-ca.pem").expect("Could not determine ca path.");
 
         Self {
             management_url,
