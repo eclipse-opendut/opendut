@@ -14,7 +14,7 @@ use crate::routing::WellKnownRoutes;
 #[component]
 pub fn Navbar(
     menu_visible: RwSignal<bool>,
-    profile_visible: RwSignal<bool>
+    hide_buttons: Signal<bool>,
 ) -> impl IntoView {
 
     let menu_button_icon = Signal::derive(move || {
@@ -22,14 +22,6 @@ pub fn Navbar(
             FontAwesomeIcon::XMark
         } else {
             FontAwesomeIcon::Bars
-        }
-    });
-
-    let profile_button_icon = Signal::derive(move || {
-        if profile_visible.get() {
-            FontAwesomeIcon::XMark
-        } else {
-            FontAwesomeIcon::User
         }
     });
 
@@ -56,7 +48,7 @@ pub fn Navbar(
                     <img src="/logos/logo_onlight_wide.svg" alt="openDuT" />
                 </a>
             </div>
-            <div class="navbar-menu">
+            <div class="navbar-menu" class:is-hidden=move || hide_buttons.get()>
                 <div class="navbar-end">
                     <NavbarButton
                         icon=FontAwesomeIcon::Cluster
@@ -78,7 +70,7 @@ pub fn Navbar(
                     />
                 </div>
             </div>
-            <div class="column is-narrow ml-auto p-1">
+            <div class="column is-narrow ml-auto p-1" class:is-hidden=move || hide_buttons.get()>
                 // <IconButton
                 //     icon=profile_button_icon
                 //     color=ButtonColor::Light

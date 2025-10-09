@@ -14,7 +14,7 @@ use crate::nav::Navbar;
 use crate::nav::profile_sidebar::ProfileSidebar;
 use crate::nav::sidebar::Sidebar;
 use crate::routing::AppRoutes;
-use crate::user::{provide_authentication_signals_in_context, AuthenticationConfigSwitch};
+use crate::user::{provide_authentication_signals_in_context, AuthenticationConfigSwitch, UserAuthenticationSignal};
 
 #[derive(Clone, Debug)]
 pub struct AppGlobals {
@@ -122,10 +122,13 @@ pub fn LoadingApp() -> impl IntoView {
     let menu_visible = RwSignal::new(false);
     let profile_visible = RwSignal::new(false);
 
+    let user = use_context::<UserAuthenticationSignal>().expect("UserAuthenticationSignal should be provided in the context.");
+    let hide_buttons = Signal::derive(move || !user.read().is_authenticated().unwrap_or(false));
+
     view! {
-        <Navbar menu_visible profile_visible />
+        <Navbar menu_visible hide_buttons />
         <div class="columns is-mobile m-0">
-            <Sidebar menu_visible />
+            <Sidebar menu_visible hide_buttons />
             <main class="container column pt-4">
                 <AppRoutes app_globals />
             </main>
