@@ -63,6 +63,7 @@ pub struct DeviceSpecificationV1 {
     pub name: String,
     pub description: Option<String>,
     pub interface_id: Uuid,
+    #[serde(default)]
     pub tags: Vec<String>,
 }
 
