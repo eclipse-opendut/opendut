@@ -11,7 +11,6 @@ use opendut_model::lea::LeaConfig;
 use crate::components::Toaster;
 use crate::components::AppGlobalsResource;
 use crate::nav::Navbar;
-use crate::nav::profile_sidebar::ProfileSidebar;
 use crate::nav::sidebar::Sidebar;
 use crate::routing::AppRoutes;
 use crate::user::{provide_authentication_signals_in_context, AuthenticationConfigSwitch, UserAuthenticationSignal};
@@ -120,7 +119,6 @@ pub fn LoadingApp() -> impl IntoView {
     provide_context(Arc::new(Toaster::new()));
 
     let menu_visible = RwSignal::new(false);
-    let profile_visible = RwSignal::new(false);
 
     let user = use_context::<UserAuthenticationSignal>().expect("UserAuthenticationSignal should be provided in the context.");
     let hide_buttons = Signal::derive(move || !user.read().is_authenticated().unwrap_or(false));
@@ -132,7 +130,6 @@ pub fn LoadingApp() -> impl IntoView {
             <main class="container column pt-4">
                 <AppRoutes app_globals />
             </main>
-            <ProfileSidebar app_globals profile_visible />
         </div>
     }
 }

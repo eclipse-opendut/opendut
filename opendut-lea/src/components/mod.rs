@@ -6,7 +6,6 @@ pub mod navbar_button;
 
 pub use opendut_lea_components::*;
 
-pub use auth::LeaAuthenticated;
 pub use authenticated::{AppGlobalsResource, Initialized};
 pub use generate_setup_string::{GenerateSetupStringForm, GenerateSetupStringKind};
 pub use util::use_active_tab;
