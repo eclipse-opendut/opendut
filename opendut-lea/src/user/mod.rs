@@ -45,6 +45,7 @@ impl UserAuthentication {
             _ => { None }
         }
     }
+
     pub fn _has_group(&self, group: &str) -> Option<bool> {
         
         match self {
@@ -86,6 +87,34 @@ impl UserAuthentication {
             }
         };
         name.to_string()
+    }
+
+    pub fn fullname(&self) -> Option<String> {
+        match self {
+            UserAuthentication::Authenticated(data) => {
+                if let Some(user) = data.token.as_ref() {
+                    let name = &user.claims.name;
+                    Some(name.to_string())
+                } else {
+                    Some(UNAUTHENTICATED_USER.to_string())
+                }
+            }
+            _ => None
+        }
+    }
+
+    pub fn  email(&self) -> Option<String> {
+        match self {
+            UserAuthentication::Authenticated(data) => {
+                if let Some(user) = data.token.as_ref() {
+                    let email = &user.claims.email;
+                    Some(email.to_string())
+                } else {
+                    Some(UNAUTHENTICATED_USER.to_string())
+                }
+            }
+            _ => None
+        }
     }
 }
 

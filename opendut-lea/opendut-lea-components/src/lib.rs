@@ -28,6 +28,7 @@ pub use warning_message::WarningMessage;
 pub use util::ior::Ior;
 pub use util::net::UserNetworkInterfaceConfiguration;
 pub use util::signal::{ButtonStateSignalProvider, Toggled};
+pub use doorhanger::{Doorhanger, DoorhangerAlignment};
 
 pub mod health;
 pub mod tooltip;
@@ -60,6 +61,7 @@ pub enum FontAwesomeIcon {
     Peers,
     Plus,
     Save,
+    SignOut,
     TrashCan,
     User,
     XMark,
@@ -82,6 +84,7 @@ impl FontAwesomeIcon {
             FontAwesomeIcon::Peers => "fa-solid fa-microchip",
             FontAwesomeIcon::Plus => "fa-solid fa-plus",
             FontAwesomeIcon::Save => "fa-solid fa-save",
+            FontAwesomeIcon::SignOut => "fas fa-sign-out-alt",
             FontAwesomeIcon::TrashCan => "fa-solid fa-trash-can",
             FontAwesomeIcon::User => "fa-solid fa-user-large",
             FontAwesomeIcon::XMark => "fa-solid fa-xmark",
