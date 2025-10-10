@@ -5,9 +5,8 @@ pub mod metrics;
 
 use std::fmt::Debug;
 use std::fs::File;
-use std::io;
+use std::{env, io};
 use std::ops::Not;
-use std::str::FromStr;
 use std::sync::Arc;
 
 use opentelemetry::{global, KeyValue};
@@ -18,9 +17,7 @@ use opentelemetry_sdk::propagation::TraceContextPropagator;
 use opentelemetry_sdk::Resource;
 use tokio::runtime::Handle;
 use tokio::sync::Mutex;
-use tracing::level_filters::LevelFilter;
 use tracing::{debug, error, trace};
-use tracing_subscriber::filter::Directive;
 use tracing_subscriber::filter::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -30,6 +27,7 @@ use crate::telemetry::logging::{LoggingConfig, LoggingConfigError, PipeLogging, 
 use crate::telemetry::metrics::{NamedMeterProvider, NamedMeterProviderKindCpu, NamedMeterProviderKindDefault, NamedMeterProviders};
 use crate::telemetry::opentelemetry_types::{Opentelemetry, OpentelemetryConfigError};
 
+pub const LOG_FILTER_ENV: &str = "OPENDUT_LOG";
 pub const DEFAULT_METER_NAME: &str = "opendut_meter";
 pub const DEFAULT_TRACER_NAME: &str = "opendut_tracer";
 
@@ -64,11 +62,14 @@ pub async fn initialize_with_config(
 
     let tracing_subscriber = tracing_subscriber::registry()
         .with(
-            EnvFilter::builder()
-                .with_default_directive(LevelFilter::INFO.into())
-                .with_env_var("OPENDUT_LOG")
-                .from_env()?
-                .add_directive(Directive::from_str("opendut=trace")?)
+            if env::var_os(LOG_FILTER_ENV).is_some() {
+                EnvFilter::builder()
+                    .with_env_var(LOG_FILTER_ENV)
+                    .from_env()?
+            } else {
+                EnvFilter::builder()
+                    .parse("info,opendut=trace")?
+            }
         );
 
     let tracing_subscriber = tracing_subscriber.with(
