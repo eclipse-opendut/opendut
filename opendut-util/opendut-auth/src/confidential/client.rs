@@ -14,11 +14,13 @@ use tonic::metadata::MetadataValue;
 use tonic::service::Interceptor;
 use tracing::debug;
 use backon::Retryable;
+use reqwest_middleware::ClientWithMiddleware;
 use tokio::runtime::Handle;
 use crate::confidential::config::{ConfidentialClientConfig, ConfidentialClientConfigData, ConfiguredClient};
 use crate::confidential::error::{ConfidentialClientError, WrappedRequestTokenError};
 use crate::confidential::reqwest_client::OidcReqwestClient;
 use opendut_util_core::future::ExplicitSendFutureWrapper;
+use crate::confidential::middleware::OAuthMiddleware;
 use crate::TOKEN_GRACE_PERIOD;
 
 #[derive(Debug)]
@@ -78,7 +80,7 @@ impl ConfidentialClient {
                 debug!("OIDC configuration loaded: client_id='{}', issuer_url='{}'", client_config.client_id.as_str(), client_config.issuer_url.as_str());
                 let reqwest_client = OidcReqwestClient::from_config(settings).await
                     .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to create reqwest client."), cause: cause.into() })?;
-                let client = ConfidentialClient::from_client_config(client_config.clone(), reqwest_client).await?;
+                let client = ConfidentialClient::from_client_config(client_config.clone(), reqwest_client)?;
 
                 match client.check_connection(client_config).await {
                     Ok(_) => { Ok(Some(client)) }
@@ -92,7 +94,7 @@ impl ConfidentialClient {
         }
     }
 
-    pub async fn from_client_config(client_config: ConfidentialClientConfigData, reqwest_client: OidcReqwestClient) -> Result<ConfidentialClientRef, ConfidentialClientError> {
+    pub fn from_client_config(client_config: ConfidentialClientConfigData, reqwest_client: OidcReqwestClient) -> Result<ConfidentialClientRef, ConfidentialClientError> {
         let inner = client_config.get_client()?;
 
         let client = Self {
@@ -167,6 +169,13 @@ impl ConfidentialClient {
         Self::update_storage_token(&response, &mut state)?;
 
         Ok(Token { value: response.access_token().secret().to_string() })
+    }
+
+    pub fn build_client_with_middleware(confidential_client: ConfidentialClientRef) -> ClientWithMiddleware {
+        let inner = confidential_client.reqwest_client.client();
+        reqwest_middleware::ClientBuilder::new(inner)
+            .with(OAuthMiddleware::new(confidential_client))
+            .build()
     }
 
     pub async fn get_token(&self) -> Result<Token, AuthError> {

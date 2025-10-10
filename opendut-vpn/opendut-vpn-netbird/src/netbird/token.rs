@@ -5,7 +5,7 @@ use reqwest::header::InvalidHeaderValue;
 use serde::Deserialize;
 
 #[derive(Clone, Deserialize)]
-pub struct Token {
+pub struct NetbirdToken {
     pub(crate) r#type: TokenType,
     pub(crate) value: String
 }
@@ -15,7 +15,7 @@ pub enum TokenType {
     Bearer,
 }
 
-impl Token {
+impl NetbirdToken {
     pub fn new_personal_access(value: impl Into<String>) -> Self {
         Self {
             r#type: TokenType::PersonalAccess,
@@ -40,7 +40,7 @@ impl Token {
     }
 }
 
-impl Debug for Token {
+impl Debug for NetbirdToken {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self.r#type {
             TokenType::PersonalAccess => write!(f, "Token::PersonalAccess(****)"),

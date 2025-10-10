@@ -1,14 +1,14 @@
 use std::time::Duration;
 
+use crate::netbird::error::RequestError;
 use async_trait::async_trait;
 use http::Extensions;
 use reqwest::{Request, Response};
 use reqwest_middleware::{ClientBuilder, Middleware, Next};
-use reqwest_retry::{RetryTransientMiddleware};
 use reqwest_retry::policies::ExponentialBackoff;
+use reqwest_retry::RetryTransientMiddleware;
 use tracing::trace;
-
-use crate::netbird::error::RequestError;
+use crate::NetbirdToken;
 
 #[async_trait]
 pub trait RequestHandler {
@@ -18,11 +18,12 @@ pub trait RequestHandler {
 pub struct DefaultRequestHandler {
     inner: reqwest::Client,
     config: RequestHandlerConfig,
+    netbird_token: NetbirdToken,
 }
 
 impl DefaultRequestHandler {
-    pub fn new(inner: reqwest::Client, config: RequestHandlerConfig) -> Self {
-        Self { inner, config }
+    pub fn new(inner: reqwest::Client, config: RequestHandlerConfig, netbird_token: NetbirdToken) -> Self {
+        Self { inner, config, netbird_token }
     }
 }
 
@@ -36,6 +37,7 @@ impl RequestHandler for DefaultRequestHandler {
         trace!("Starting network request with timeout {} milliseconds.", timeout.as_millis());
         let retry_policy = ExponentialBackoff::builder().build_with_max_retries(self.config.retries);
         let client = ClientBuilder::new(self.inner.to_owned())
+            .with(AuthorizationHeaderMiddleware::new(self.netbird_token.clone()))
             .with(LoggingMiddleWare)
             .with(RetryTransientMiddleware::new_with_policy(retry_policy))
             .build();
@@ -75,3 +77,36 @@ impl Middleware for LoggingMiddleWare {
         Ok(resp)
     }
 }
+
+#[derive(Clone)]
+pub struct AuthorizationHeaderMiddleware {
+    api_token: NetbirdToken,
+}
+
+impl AuthorizationHeaderMiddleware {
+    pub fn new(api_token: NetbirdToken) -> Self {
+        Self { api_token }
+    }
+}
+
+#[async_trait::async_trait]
+impl Middleware for AuthorizationHeaderMiddleware {
+    async fn handle(
+        &self,
+        mut req: Request,
+        extensions: &mut Extensions,
+        next: Next<'_>
+    ) -> reqwest_middleware::Result<Response> {
+        println!("Inserting token into request: {:?}", self.api_token);
+        req.headers_mut().insert(
+            reqwest::header::AUTHORIZATION,
+            self.api_token.sensitive_header()
+                .map_err(|error| reqwest_middleware::Error::Middleware(anyhow::anyhow!(error)))?,
+        );
+        let resp = next.run(req, extensions).await?;
+
+        Ok(resp)
+    }
+}
+
+

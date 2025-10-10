@@ -8,7 +8,7 @@ use async_trait::async_trait;
 use reqwest::Url;
 use tracing::{debug, error, trace, warn};
 
-pub use netbird::Token as NetbirdToken;
+pub use netbird::NetbirdToken;
 use opendut_model::cluster::ClusterId;
 use opendut_model::peer::PeerId;
 use opendut_model::vpn::VpnPeerConfiguration;
@@ -42,13 +42,13 @@ impl NetbirdManagementClient {
 
 
     pub async fn create_client_and_delete_default_policy(configuration: NetbirdManagementClientConfiguration) -> Result<Self, CreateClientError> {
-        let client = NetbirdManagementClient::create(configuration)?;
+        let client = NetbirdManagementClient::create(configuration).await?;
         client.delete_default_policy_if_exists().await
             .map_err(CreateClientError::DeleteDefaultPolicy)?;
         Ok(client)
     }
 
-    fn create(configuration: NetbirdManagementClientConfiguration) -> Result<Self, CreateClientError> {
+    async fn create(configuration: NetbirdManagementClientConfiguration) -> Result<Self, CreateClientError> {
         let management_url = configuration.management_url;
         let management_ca_path = configuration.ca
             .ok_or_else(|| CreateClientError::InstantiationFailure { cause: String::from("No ca certificate provided.") })?;
@@ -68,7 +68,7 @@ impl NetbirdManagementClient {
             configuration.timeout,
             configuration.retries,
             configuration.setup_key_expiration,
-        )?);
+        ).await?);
         Ok(Self {
             management_url,
             inner,

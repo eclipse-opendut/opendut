@@ -3644,6 +3644,7 @@ name = "opendut-auth"
 version = "0.8.0-alpha"
 dependencies = [
  "anyhow",
+ "async-trait",
  "backon",
  "cfg-if",
  "chrono",
@@ -3659,6 +3660,7 @@ dependencies = [
  "openidconnect",
  "pem",
  "reqwest",
+ "reqwest-middleware",
  "rstest",
  "serde",
  "serde_json",
@@ -4100,8 +4102,10 @@ dependencies = [
  "googletest",
  "http",
  "mockall",
+ "opendut-auth",
  "opendut-model",
  "opendut-util",
+ "opendut-util-core",
  "opendut-vpn",
  "reqwest",
  "reqwest-middleware",

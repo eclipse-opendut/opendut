@@ -15,6 +15,18 @@ pub fn groups(base_url: Url) -> Url {
     join(base_url, "groups")
 }
 
+pub fn users(base_url: Url) -> Url {
+    join(base_url, "users")
+}
+
+pub fn user(base_url: Url, user_id: String) -> Url {
+    join(users(base_url), &user_id)
+}
+
+pub fn user_tokens(base_url: Url, user_id: String) -> Url {
+    join(user(base_url, user_id), "tokens")
+}
+
 pub fn group(base_url: Url, group_id: &netbird::GroupId) -> Url {
     join(groups(base_url), &group_id.0)
 }

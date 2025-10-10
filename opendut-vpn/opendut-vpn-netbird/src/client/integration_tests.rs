@@ -21,16 +21,14 @@ use crate::netbird::error::CreateClientError;
  * Designated to be run in the opendut-vm, requires keycloak and the netbird management service to be running.
  * API_KEY is fetched from the init container. TODO: implement a more robust way to provide the key.
  docker exec -ti opendut-carl cat /opt/opendut-carl/config/api_key
- export NETBIRD_INTEGRATION_API_TOKEN=<tbd>
- cargo test --package opendut-vpn-netbird --all-features -- --nocapture
- 
- * from HOST with netbird-management running in opendut-vm
- 
- export NETBIRD_INTEGRATION_API_TOKEN=<tbd>
+ export RUN_NETBIRD_INTEGRATION_TESTS=<tbd>
+ cargo test --package opendut-vpn-netbird --all-features -- --nocapture --include-ignored
+
+ export RUN_NETBIRD_INTEGRATION_TESTS=<tbd>
  cargo test --package opendut-vpn-netbird --all-features -- --nocapture
  */
 
-#[test_with::env(NETBIRD_INTEGRATION_API_TOKEN)]
+#[test_with::env(RUN_NETBIRD_INTEGRATION_TESTS)]
 #[test_log::test(tokio::test)]
 async fn test_netbird_management_client() {
     let Fixture { management_url, authentication_token, ca, timeout, retries, setup_key_expiration } = Fixture::default();
@@ -51,7 +49,7 @@ async fn test_netbird_management_client() {
     netbird_management_client.delete_peer(peer_id).await.expect("Could not delete NetBird peer");
 }
 
-#[test_with::env(NETBIRD_INTEGRATION_API_TOKEN)]
+#[test_with::env(RUN_NETBIRD_INTEGRATION_TESTS)]
 #[tokio::test]
 async fn test_netbird_vpn_client() -> anyhow::Result<()> {
     let Fixture { management_url, authentication_token, ca, timeout, retries, setup_key_expiration } = Fixture::default();
@@ -72,7 +70,7 @@ async fn test_netbird_vpn_client() -> anyhow::Result<()> {
         timeout,
         retries,
         setup_key_expiration,
-    ).expect("Should be able to create netbird client!");
+    ).await.expect("Should be able to create netbird client!");
 
     let peer_id = PeerId::random();
     let cluster_id = ClusterId::from(uuid!("999f8513-d7ab-43fe-9bf0-091abaff2a97"));
@@ -99,7 +97,7 @@ async fn test_netbird_vpn_client() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test_with::env(NETBIRD_INTEGRATION_API_TOKEN)]
+//#[test_with::env(RUN_NETBIRD_INTEGRATION_TESTS)]
 #[tokio::test]
 async fn test_netbird_vpn_client_list_keys() -> anyhow::Result<()> {
     let Fixture { management_url, authentication_token, ca, timeout, retries, setup_key_expiration } = Fixture::default();
@@ -134,7 +132,7 @@ async fn test_netbird_vpn_client_list_keys() -> anyhow::Result<()> {
         timeout,
         retries,
         setup_key_expiration,
-    ).expect("Should be able to create netbird client!");
+    ).await.expect("Should be able to create netbird client!");
 
     let keys_result = client.list_setup_keys().await;
     assert!(keys_result.is_ok());
@@ -154,7 +152,7 @@ struct Fixture {
 impl Default for Fixture {
     fn default() -> Self {
         let management_url = std::env::var("NETBIRD_INTEGRATION_API_URL").unwrap_or("https://netbird-api.opendut.local/api/".to_string());
-        let netbird_api_token = std::env::var("NETBIRD_INTEGRATION_API_TOKEN").expect("Could not get netbird api token!");
+        let netbird_api_token = std::env::var("RUN_NETBIRD_INTEGRATION_TESTS").unwrap_or("".to_string());
         let management_url = Url::parse(&management_url).unwrap();
         let authentication_token = NetbirdToken::new_personal_access(netbird_api_token);
         let timeout = Duration::from_millis(10000);

@@ -5,18 +5,22 @@ use http::{header, HeaderMap, Method};
 use reqwest::{Body, Certificate, Request, Response, Url};
 use serde::Serialize;
 use tracing::error;
-
+use opendut_auth::confidential::client::ConfidentialClient;
+use opendut_auth::confidential::{ClientId, ClientSecret};
+use opendut_auth::confidential::config::ConfidentialClientConfigData;
+use opendut_auth::confidential::reqwest_client::OidcReqwestClient;
 use opendut_model::peer::PeerId;
 
 use crate::{netbird, routes};
+use crate::client::auth::create_api_token;
 use crate::client::request_handler::{DefaultRequestHandler, RequestHandler, RequestHandlerConfig};
-use crate::netbird::error;
 use crate::netbird::error::{CreateClientError, CreateSetupKeyError, GetGroupError, GetPoliciesError, RequestError};
 
 mod request_handler;
 
 mod tests;
 mod integration_tests;
+mod auth;
 
 #[async_trait]
 pub trait Client {
@@ -67,26 +71,19 @@ impl CreateSetupKey {
 impl DefaultClient {
     const APPLICATION_JSON: &'static str = "application/json";
 
-    pub fn create(
+    pub async fn create(
         netbird_url: Url,
         ca: Option<&[u8]>,
-        token: Option<netbird::Token>,
+        token: Option<netbird::NetbirdToken>,
         requester: Option<Box<dyn RequestHandler + Send + Sync>>,
         timeout: Duration,
         retries: u32,
         setup_key_expiration: Duration,
     ) -> Result<Self, CreateClientError>
     {
-        let headers = {
-            let mut headers = HeaderMap::new();
-            headers.append(header::ACCEPT, DefaultClient::APPLICATION_JSON.parse().unwrap());
-            if let Some(ref token) = token {
-                let auth_header = token.sensitive_header()
-                    .map_err(error::CreateClientError::InvalidHeader)?;
-                headers.append(header::AUTHORIZATION, auth_header);
-            }
-            headers
-        };
+        let headers = HeaderMap::from_iter([
+            (header::ACCEPT, DefaultClient::APPLICATION_JSON.parse().unwrap()),
+        ]);
 
         let client = {
             let mut client = reqwest::Client::builder()
@@ -104,11 +101,29 @@ impl DefaultClient {
                 .build()
                 .expect("Failed to construct client.")
         };
+        let reqwest_client = OidcReqwestClient::from_client(client.clone());
+        opendut_util_core::testing::init_localenv_secrets();  // TODO: remove this line and properly pass secrets
+        let client_config = ConfidentialClientConfigData::new(
+            ClientId::new("netbird-backend".to_string()),
+            ClientSecret::new(
+                std::env::var("NETBIRD_MANAGEMENT_CLIENT_SECRET")
+                    .expect("NETBIRD_MANAGEMENT_CLIENT_SECRET environment variable not set in test environment")
+            ),
+            Url::parse("https://auth.opendut.local/realms/netbird/").unwrap(),
+            vec![],
+        );
+        let confidential_client = ConfidentialClient::from_client_config(client_config, reqwest_client)
+            .map_err(|cause| CreateClientError::InstantiationFailure { cause: format!("Failed to create confidential client:\n  {cause}") })?;
+
+        let auth_client = ConfidentialClient::build_client_with_middleware(confidential_client.clone());
+        // get self user id from NetBird
+        let netbird_token = create_api_token(auth_client.clone(), &netbird_url).await?;
 
         let requester = requester.unwrap_or_else(|| {
             Box::new(DefaultRequestHandler::new(
                 client,
                 RequestHandlerConfig::new(timeout, retries),
+                netbird_token,
             ))
         });
 
@@ -366,7 +381,7 @@ impl Client for DefaultClient {
     }
 }
 
-fn post_json_request(url: Url, body: impl Serialize) -> Result<Request, RequestError> {
+pub(crate) fn post_json_request(url: Url, body: impl Serialize) -> Result<Request, RequestError> {
     let mut request = Request::new(Method::POST, url);
 
     request.headers_mut()

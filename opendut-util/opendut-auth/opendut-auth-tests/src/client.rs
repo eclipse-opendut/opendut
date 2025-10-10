@@ -1,5 +1,8 @@
+use std::time::Duration;
 use oauth2::{ClientId, ClientSecret};
 use rstest::{fixture, rstest};
+use serde::Deserialize;
+use tokio::time::sleep;
 use url::Url;
 use opendut_auth::confidential::client::{ConfidentialClient, ConfidentialClientRef};
 use opendut_auth::confidential::config::ConfidentialClientConfigData;
@@ -20,8 +23,26 @@ async fn confidential_edgar_client(#[future] localenv_reqwest_client: OidcReqwes
     );
     let reqwest_client = localenv_reqwest_client.await;
 
-    ConfidentialClient::from_client_config(client_config, reqwest_client).await.unwrap()
+    ConfidentialClient::from_client_config(client_config, reqwest_client).unwrap()
 }
+
+#[fixture]
+async fn confidential_netbird_client(#[future] localenv_reqwest_client: OidcReqwestClient) -> ConfidentialClientRef {
+    opendut_util_core::testing::init_localenv_secrets();
+    let client_config = ConfidentialClientConfigData::new(
+        ClientId::new("netbird-backend".to_string()),
+        ClientSecret::new(
+            std::env::var("NETBIRD_MANAGEMENT_CLIENT_SECRET")
+                .expect("NETBIRD_MANAGEMENT_CLIENT_SECRET environment variable not set in test environment")
+        ),
+        Url::parse("https://auth.opendut.local/realms/netbird/").unwrap(),
+        vec![],
+    );
+    let reqwest_client = localenv_reqwest_client.await;
+
+    ConfidentialClient::from_client_config(client_config, reqwest_client).unwrap()
+}
+
 
 #[test_with::env(OPENDUT_RUN_KEYCLOAK_INTEGRATION_TESTS)]
 #[rstest]
@@ -34,4 +55,44 @@ async fn test_confidential_client_get_token(#[future] confidential_edgar_client:
      */
     let token = confidential_edgar_client.await.get_token().await.unwrap();
     assert!(token.value.len() > 100);
+}
+
+#[rstest]
+#[tokio::test]
+async fn test_confidential_client_get_token2(#[future] confidential_netbird_client: ConfidentialClientRef) {
+    /*
+     * This test is ignored because it requires a running keycloak server from the test environment.
+     * To run this test, execute the following command:
+     * cargo test --package opendut-auth --all-features -- --include-ignored
+     */
+    let client = confidential_netbird_client.await;
+    let token = client.get_token().await.expect("foo");
+    println!("Token {}", token);
+    let client = ConfidentialClient::build_client_with_middleware(client);
+    let url = "https://netbird-api.opendut.local/api/users";
+
+    #[derive(Deserialize)]
+    struct NetbirdUser {
+        id: String,
+        email: String,
+        name: String,
+    }
+
+    let users = client
+        .get(url)
+        .send()
+        .await.expect("foo")
+        .json::<Vec<NetbirdUser>>()
+        .await.expect("foo");
+    println!("Netbird users: {}", users.len());
+
+    sleep(Duration::from_millis(6 * 60 * 1000)).await;
+    let users = client
+        .get(url)
+        .send()
+        .await.expect("foo")
+        .json::<Vec<NetbirdUser>>()
+        .await.expect("foo");
+    println!("Netbird users: {}", users.len());
+
 }

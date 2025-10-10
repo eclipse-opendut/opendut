@@ -25,6 +25,7 @@ main() {
   # backend client NETBIRD_IDP_MGMT_CLIENT_ID, NETBIRD_IDP_MGMT_CLIENT_SECRET
   create_secret_client "netbird-backend" "$NETBIRD_MANAGEMENT_CLIENT_SECRET" "netbird"
   client__assign_service_account_role "netbird-backend" "realm-management" "view-users" "netbird"
+  add_client_scope_to_client "netbird-backend" "api" "netbird"
 
   # Create realm for opendut
   export REALM_OPENDUT="opendut"

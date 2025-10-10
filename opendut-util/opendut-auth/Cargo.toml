@@ -40,6 +40,7 @@ opendut-util-core = { workspace = true }
 opendut-model = { workspace = true, optional = true }
 
 anyhow = { workspace = true, optional = true }
+async-trait = { workspace = true }
 backon = { workspace = true }
 cfg-if = { workspace = true }
 chrono = { workspace = true, optional = true, default-features = false, features = ["clock", "serde", "wasmbind"] }
@@ -52,6 +53,7 @@ openidconnect = { workspace = true, optional = true, default-features = false }
 oauth2 = { workspace = true, default-features = false, optional = true }
 pem = { workspace = true, optional = true, features = ["serde"] }
 reqwest = { workspace = true, default-features = false, features = ["json", "blocking", "rustls-tls-native-roots"] }
+reqwest-middleware = { workspace = true }
 serde = { workspace = true, features = ["std", "derive"] }
 thiserror = { workspace = true }
 tokio = { workspace = true, optional = true, features = ["rt-multi-thread"] }

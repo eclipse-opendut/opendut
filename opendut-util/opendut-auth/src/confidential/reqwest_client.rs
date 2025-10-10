@@ -46,6 +46,10 @@ impl OidcReqwestClient {
             }
         }
     }
+    
+    pub fn from_client(client: reqwest::Client) -> Self {
+        Self { client }
+    }
 
     fn build_client(ca_certificate: Pem) -> anyhow::Result<reqwest::Client> {
         let reqwest_certificate = Certificate::from_pem(ca_certificate.to_string().as_bytes().iter().as_slice())

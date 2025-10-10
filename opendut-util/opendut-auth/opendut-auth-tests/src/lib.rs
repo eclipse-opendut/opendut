@@ -52,7 +52,6 @@ pub async fn confidential_carl_client(
     let reqwest_client = localenv_reqwest_client.await;
 
     ConfidentialClient::from_client_config(client_config, reqwest_client)
-        .await
         .unwrap()
 }
 
