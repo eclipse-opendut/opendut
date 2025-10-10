@@ -164,6 +164,7 @@ pub async fn init_logging() -> anyhow::Result<()> {
     let logging_config = telemetry::logging::LoggingConfig {
         pipe_logging: PipeLogging::Disabled,
         file_logging,
+        log_level_override: None,
     };
     let opentelemetry_config = Opentelemetry::Disabled;
     

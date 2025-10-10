@@ -12,7 +12,8 @@ opendut-util = { workspace = true }
 
 
 clap = { workspace = true, features = ["derive"] }
-clap_complete = { workspace = true}
+clap_complete = { workspace = true }
+clap-verbosity-flag = { workspace = true }
 cli-table = { workspace = true }
 config = { workspace = true }
 console = { workspace = true }
@@ -27,6 +28,7 @@ thiserror = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 toml_edit = { workspace = true }
 tonic = { workspace = true }
+tracing = { workspace = true }
 url = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
 
