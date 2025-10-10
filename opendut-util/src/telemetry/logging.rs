@@ -6,11 +6,13 @@ use opentelemetry_sdk::Resource;
 use std::fmt::Debug;
 use std::path::PathBuf;
 use serde::Deserialize;
+use tracing::level_filters::LevelFilter;
 
 #[derive(Default)]
 pub struct LoggingConfig {
     pub pipe_logging: PipeLogging,
     pub file_logging: Option<PathBuf>,
+    pub log_level_override: Option<LevelFilter>,
 }
 
 #[derive(Default)]
@@ -53,6 +55,7 @@ impl LoggingConfig {
         Ok(LoggingConfig {
             pipe_logging,
             file_logging: None,
+            log_level_override: None,
         })
     }
 }

@@ -18,7 +18,7 @@ use opentelemetry_sdk::Resource;
 use tokio::runtime::Handle;
 use tokio::sync::Mutex;
 use tracing::{debug, error, trace};
-use tracing_subscriber::filter::EnvFilter;
+use tracing_subscriber::filter::{Directive, EnvFilter};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use opendut_auth::confidential::client::{AuthError, ConfClientArcMutex};
@@ -62,11 +62,17 @@ pub async fn initialize_with_config(
 
     let tracing_subscriber = tracing_subscriber::registry()
         .with(
-            if env::var_os(LOG_FILTER_ENV).is_some() {
+            if let Some(log_level_override) = logging_config.log_level_override {
+                EnvFilter::builder()
+                    .with_default_directive(Directive::from(log_level_override))
+                    .parse("")?     //Pass empty String to use default directive unaltered
+            }
+            else if env::var_os(LOG_FILTER_ENV).is_some() {
                 EnvFilter::builder()
                     .with_env_var(LOG_FILTER_ENV)
                     .from_env()?
-            } else {
+            }
+            else {
                 EnvFilter::builder()
                     .parse("info,opendut=trace")?
             }

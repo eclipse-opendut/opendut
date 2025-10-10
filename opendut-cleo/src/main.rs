@@ -4,6 +4,7 @@ use std::process::ExitCode;
 use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::Shell;
 use console::Style;
+use tracing::metadata::LevelFilter;
 use uuid::Uuid;
 use opendut_carl_api::carl::{CaCertInfo, CarlClient};
 use opendut_carl_api::carl::metadata::version_compatibility::VersionCompatibilityInfo;
@@ -26,9 +27,8 @@ shadow_formatted_version::from_shadow!(app_info);
 struct Args {
     #[command(subcommand)]
     command: Commands,
-    /// Enable more detailed logging.
-    #[arg(short, long)]
-    verbose: bool,
+    #[command(flatten)]
+    verbosity: clap_verbosity_flag::Verbosity,
 }
 
 #[derive(Subcommand)]
@@ -236,28 +236,30 @@ async fn execute() -> Result<()> {
 
     let args = Args::parse();
 
-    let telemetry_shutdown_handle = if args.verbose {
+    let mut telemetry_shutdown_handle = {
         use opendut_util::telemetry;
 
-        let config = telemetry::logging::LoggingConfig::load(&settings.config)
+        let mut config = telemetry::logging::LoggingConfig::load(&settings.config)
             .map_err(|error| format!("Error while loading logging configuration: {error}"))?;
 
-        let shutdown_handle = telemetry::initialize_with_config(
+        config.log_level_override =
+            if args.verbosity.is_present() {
+                Some(LevelFilter::from(args.verbosity))
+            } else {
+                None
+            };
+
+        telemetry::initialize_with_config(
             config,
             telemetry::opentelemetry_types::Opentelemetry::Disabled,
         ).await
-            .map_err(|_| "Error while initializing logging.")?;
-
-        Some(shutdown_handle)
-    } else {
-        None
+            .map_err(|_| "Error while initializing logging.")?
     };
 
     execute_command(args.command, &settings).await?;
 
-    if let Some(mut shutdown_handle) = telemetry_shutdown_handle {
-        shutdown_handle.shutdown();
-    }
+    telemetry_shutdown_handle.shutdown();
+
     Ok(())
 }
 
