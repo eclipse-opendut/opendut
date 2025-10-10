@@ -1,5 +1,6 @@
 pub mod sidebar;
 pub mod profile_sidebar;
+mod profile_doorhanger;
 
 use leptos::html::Div;
 use leptos::prelude::*;
@@ -7,6 +8,7 @@ use leptos_use::on_click_outside;
 use crate::components::{ ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
 use crate::routing;
 use crate::components::navbar_button::NavbarButton;
+use crate::nav::profile_doorhanger::ProfileDoorhanger;
 use crate::routing::WellKnownRoutes;
 
 #[component]
@@ -34,11 +36,6 @@ pub fn Navbar(
     let menu_button_area = NodeRef::<Div>::new();
     let _ = on_click_outside(menu_button_area, move |_| {
         menu_visible.set(false)
-    });
-
-    let profile_button_area = NodeRef::<Div>::new();
-    let _ = on_click_outside(profile_button_area, move |_| {
-        profile_visible.set(false)
     });
 
     view! {
@@ -81,15 +78,16 @@ pub fn Navbar(
                     />
                 </div>
             </div>
-            <div class="column is-narrow ml-auto" node_ref=profile_button_area>
-                <IconButton
-                    icon=profile_button_icon
-                    color=ButtonColor::Light
-                    size=ButtonSize::Normal
-                    state=ButtonState::Enabled
-                    label="User"
-                    on_action=move || profile_visible.update(|is_visible| *is_visible = !*is_visible)
-                />
+            <div class="column is-narrow ml-auto">
+                // <IconButton
+                //     icon=profile_button_icon
+                //     color=ButtonColor::Light
+                //     size=ButtonSize::Normal
+                //     state=ButtonState::Enabled
+                //     label="User"
+                //     on_action=move || profile_visible.update(|is_visible| *is_visible = !*is_visible)
+                // />
+                <ProfileDoorhanger />
             </div>
         </nav>
     }

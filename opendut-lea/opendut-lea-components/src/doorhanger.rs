@@ -10,14 +10,6 @@ pub enum DoorhangerAlignment {
     Right,
 }
 
-#[allow(dead_code)]
-pub enum DoorhangerTriggerSize {
-    Small,
-    Normal,
-    Medium,
-    Large,
-}
-
 #[component]
 pub fn Doorhanger(
     #[prop(into)] visible: Signal<bool>,
