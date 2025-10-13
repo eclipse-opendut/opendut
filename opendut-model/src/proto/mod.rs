@@ -66,7 +66,7 @@ macro_rules! conversion {
         }
 
         impl TryFrom<$Proto> for $Model {
-            type Error = ConversionError;
+            type Error = $crate::proto::ConversionError;
 
             fn try_from(value: $Proto) -> $crate::proto::ConversionResult<Self> {
                 #[allow(unused)]

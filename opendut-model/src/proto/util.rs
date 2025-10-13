@@ -1,5 +1,5 @@
 use crate::proto::util::ip_address::Address;
-use crate::proto::{conversion, ConversionError, ConversionResult};
+use crate::proto::{conversion, ConversionResult};
 use crate::util;
 use crate::util::net::NetworkInterfaceConfiguration;
 use pem::Pem;

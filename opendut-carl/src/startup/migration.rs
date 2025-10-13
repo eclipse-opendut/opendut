@@ -8,7 +8,7 @@ use crate::resource::api::Resource;
 use crate::resource::persistence::persistable::{Persistable, StorageKind};
 use opendut_model::cluster::{ClusterDescriptor, ClusterId};
 use opendut_model::conversion;
-use opendut_model::proto::{ConversionError, ConversionResult};
+use opendut_model::proto::ConversionResult;
 use opendut_model::resources::Id;
 use crate::resource::manager::ResourceManagerRef;
 use crate::resource::persistence::error::PersistenceResult;

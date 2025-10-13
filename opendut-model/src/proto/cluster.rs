@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use crate::proto::topology::DeviceId;
-use crate::proto::{conversion, ConversionError, ConversionResult};
+use crate::proto::{conversion, ConversionResult};
 
 crate::include_proto!("opendut.types.cluster");
 

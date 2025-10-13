@@ -1,5 +1,5 @@
 use crate::proto::vpn::VpnPeerConfig;
-use crate::proto::{conversion, ConversionError, ConversionResult};
+use crate::proto::{conversion, ConversionResult};
 use std::ops::Not;
 
 use super::util::{NetworkInterfaceDescriptor, NetworkInterfaceName};
