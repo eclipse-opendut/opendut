@@ -7,7 +7,7 @@ use serde::Serialize;
 use tracing::error;
 use opendut_auth::confidential::client::ConfidentialClient;
 use opendut_auth::confidential::{ClientId, ClientSecret};
-use opendut_auth::confidential::config::ConfidentialClientConfigData;
+use opendut_auth::confidential::config::OidcConfidentialClientConfig;
 use opendut_auth::confidential::reqwest_client::OidcReqwestClient;
 use opendut_model::peer::PeerId;
 
@@ -103,7 +103,7 @@ impl DefaultClient {
         };
         let reqwest_client = OidcReqwestClient::from_client(client.clone());
         opendut_util_core::testing::init_localenv_secrets();  // TODO: remove this line and properly pass secrets
-        let client_config = ConfidentialClientConfigData::new(
+        let client_config = OidcConfidentialClientConfig::new(
             ClientId::new("netbird-backend".to_string()),
             ClientSecret::new(
                 std::env::var("NETBIRD_MANAGEMENT_CLIENT_SECRET")

@@ -16,7 +16,7 @@ use tracing::debug;
 use backon::Retryable;
 use reqwest_middleware::ClientWithMiddleware;
 use tokio::runtime::Handle;
-use crate::confidential::config::{ConfidentialClientConfig, ConfidentialClientConfigData, ConfiguredClient};
+use crate::confidential::config::{OidcClientConfig, OidcConfidentialClientConfig, ConfiguredClient};
 use crate::confidential::error::{ConfidentialClientError, WrappedRequestTokenError};
 use crate::confidential::reqwest_client::OidcReqwestClient;
 use opendut_util_core::future::ExplicitSendFutureWrapper;
@@ -27,7 +27,7 @@ use crate::TOKEN_GRACE_PERIOD;
 pub struct ConfidentialClient {
     inner: ConfiguredClient,
     pub reqwest_client: OidcReqwestClient,
-    pub config: ConfidentialClientConfigData,
+    pub config: OidcConfidentialClientConfig,
 
     state: RwLock<Option<TokenStorage>>,
 }
@@ -72,11 +72,11 @@ pub type ConfidentialClientRef = Arc<ConfidentialClient>;
 
 impl ConfidentialClient {
     pub async fn from_settings(settings: &Config) -> Result<Option<ConfidentialClientRef>, ConfidentialClientError> {
-        let client_config = ConfidentialClientConfig::from_settings(settings)
+        let client_config = OidcClientConfig::from_settings(settings)
             .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to load OIDC configuration"), cause: cause.into() })?;
 
         match client_config {
-            ConfidentialClientConfig::Confidential(client_config) => {
+            OidcClientConfig::Confidential(client_config) => {
                 debug!("OIDC configuration loaded: client_id='{}', issuer_url='{}'", client_config.client_id.as_str(), client_config.issuer_url.as_str());
                 let reqwest_client = OidcReqwestClient::from_config(settings).await
                     .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to create reqwest client."), cause: cause.into() })?;
@@ -87,14 +87,14 @@ impl ConfidentialClient {
                     Err(error) => { Err(error) }
                 }
             }
-            ConfidentialClientConfig::AuthenticationDisabled => {
+            OidcClientConfig::AuthenticationDisabled => {
                 debug!("OIDC is disabled.");
                 Ok(None)
             }
         }
     }
 
-    pub fn from_client_config(client_config: ConfidentialClientConfigData, reqwest_client: OidcReqwestClient) -> Result<ConfidentialClientRef, ConfidentialClientError> {
+    pub fn from_client_config(client_config: OidcConfidentialClientConfig, reqwest_client: OidcReqwestClient) -> Result<ConfidentialClientRef, ConfidentialClientError> {
         let inner = client_config.get_client()?;
 
         let client = Self {
@@ -105,7 +105,7 @@ impl ConfidentialClient {
         };
         Ok(Arc::new(client))
     }
-    async fn check_connection(&self, idp_config: ConfidentialClientConfigData) -> Result<(), ConfidentialClientError> {
+    async fn check_connection(&self, idp_config: OidcConfidentialClientConfig) -> Result<(), ConfidentialClientError> {
 
         let token_endpoint = idp_config.issuer_url.join("protocol/openid-connect/token")
             .map_err(|error| ConfidentialClientError::UrlParse { message: String::from("Failed to derive token url from issuer url: "), cause: error })?;

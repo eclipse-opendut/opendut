@@ -1,5 +1,7 @@
 use config::Config;
-use oauth2::{AuthUrl, ClientId as OAuthClientId, ClientSecret as OAuthClientSecret, EndpointNotSet, EndpointSet, Scope as OAuthScope, TokenUrl};
+use oauth2::{AuthUrl, EndpointNotSet, EndpointSet, TokenUrl};
+use oauth2::{ClientId as OAuthClientId, ClientSecret as OAuthClientSecret, Scope as OAuthScope};
+use oauth2::{ResourceOwnerPassword as OAuthResourceOwnerPassword, ResourceOwnerUsername as OAuthResourceOwnerUsername};
 use oauth2::basic::BasicClient;
 use const_format::formatcp;
 use url::Url;
@@ -21,17 +23,17 @@ pub type ConfiguredClient<
 >;
 
 #[derive(Clone, Debug)]
-pub enum ConfidentialClientConfig {
-    Confidential(ConfidentialClientConfigData),
+pub enum OidcClientConfig {
+    Confidential(OidcConfidentialClientConfig),
     AuthenticationDisabled,
 }
 
-impl ConfidentialClientConfig {
+impl OidcClientConfig {
     pub fn from_settings(settings: &Config) -> Result<Self, ConfidentialClientError> {
         let oidc_enabled = settings.get_bool(CONFIG_KEY_OIDC_ENABLED)
             .map_err(|cause| ConfidentialClientError::Configuration { message: format!("No configuration found for {CONFIG_KEY_OIDC_ENABLED}."), cause: cause.into() })?;
         if oidc_enabled {
-            Ok(Self::Confidential(ConfidentialClientConfigData::from_settings(settings)?))
+            Ok(Self::Confidential(OidcConfidentialClientConfig::from_settings(settings)?))
         } else {
             Ok(Self::AuthenticationDisabled)
         }
@@ -39,18 +41,28 @@ impl ConfidentialClientConfig {
 }
 
 #[derive(Clone, Debug)]
-pub struct ConfidentialClientConfigData {
+pub struct OidcConfidentialClientConfig {
     pub client_id: OAuthClientId,
     client_secret: OAuthClientSecret,
     pub issuer_url: Url,
     pub scopes: Vec<OAuthScope>,
 }
 
+#[derive(Clone, Debug)]
+pub struct OidcResourceOwnerConfidentialClientConfig {
+    pub client_id: OAuthClientId,
+    client_secret: OAuthClientSecret,
+    pub issuer_url: Url,
+    pub scopes: Vec<OAuthScope>,
+    username: OAuthResourceOwnerUsername,
+    password: OAuthResourceOwnerPassword,
+}
+
 
 pub const CONFIG_KEY_OIDC_ENABLED: &str = "network.oidc.enabled";
 const OIDC_CLIENT_CONFIG_PREFIX: &str = "network.oidc.client";
 
-impl ConfidentialClientConfigData {
+impl OidcConfidentialClientConfig {
     const CLIENT_ID: &'static str = formatcp!("{OIDC_CLIENT_CONFIG_PREFIX}.id");
     const CLIENT_SECRET: &'static str = formatcp!("{OIDC_CLIENT_CONFIG_PREFIX}.secret");
     const ISSUER_URL: &'static str = formatcp!("{OIDC_CLIENT_CONFIG_PREFIX}.issuer.url");
@@ -90,22 +102,22 @@ impl ConfidentialClientConfigData {
     }
 }
 
-impl ConfidentialClientConfigData {
+impl OidcConfidentialClientConfig {
     pub fn from_settings(settings: &Config) -> Result<Self, ConfidentialClientError> {
-        let client_id = settings.get_string(ConfidentialClientConfigData::CLIENT_ID)
-            .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to find configuration for `{}`.", ConfidentialClientConfigData::CLIENT_ID), cause: error.into() })?;
-        let client_secret = settings.get_string(ConfidentialClientConfigData::CLIENT_SECRET)
-            .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to find configuration for `{}`.", ConfidentialClientConfigData::CLIENT_SECRET), cause: error.into() })?;
-        let issuer = settings.get_string(ConfidentialClientConfigData::ISSUER_URL)
-            .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to find configuration for `{}`.", ConfidentialClientConfigData::ISSUER_URL), cause: error.into() })?;
+        let client_id = settings.get_string(OidcConfidentialClientConfig::CLIENT_ID)
+            .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to find configuration for `{}`.", OidcConfidentialClientConfig::CLIENT_ID), cause: error.into() })?;
+        let client_secret = settings.get_string(OidcConfidentialClientConfig::CLIENT_SECRET)
+            .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to find configuration for `{}`.", OidcConfidentialClientConfig::CLIENT_SECRET), cause: error.into() })?;
+        let issuer = settings.get_string(OidcConfidentialClientConfig::ISSUER_URL)
+            .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to find configuration for `{}`.", OidcConfidentialClientConfig::ISSUER_URL), cause: error.into() })?;
 
         let issuer_url = Url::parse(&issuer)
             .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to parse issuer URL: `{issuer}`."), cause: error.into() })?;
         // TODO: add validation for issuer url to new type
         if issuer_url.as_str().ends_with('/') {
-            let raw_scopes = settings.get_string(ConfidentialClientConfigData::SCOPES)
-                .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to find configuration for `{}`.", ConfidentialClientConfigData::SCOPES), cause: error.into() })?;
-            let scopes = ConfidentialClientConfigData::parse_scopes(&client_id, raw_scopes);
+            let raw_scopes = settings.get_string(OidcConfidentialClientConfig::SCOPES)
+                .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to find configuration for `{}`.", OidcConfidentialClientConfig::SCOPES), cause: error.into() })?;
+            let scopes = OidcConfidentialClientConfig::parse_scopes(&client_id, raw_scopes);
 
             Ok(Self {
                 client_id: OAuthClientId::new(client_id),
@@ -121,13 +133,13 @@ impl ConfidentialClientConfigData {
 
 #[cfg(test)]
 mod tests {
-    use crate::confidential::config::ConfidentialClientConfigData;
+    use crate::confidential::config::OidcConfidentialClientConfig;
 
     #[test]
     fn test_parse_scopes() {
         let client_id = "test_client_id";
         let raw_scopes = "scope1,scope2,scope3";
-        let scopes = ConfidentialClientConfigData::parse_scopes(client_id, raw_scopes.to_string());
+        let scopes = OidcConfidentialClientConfig::parse_scopes(client_id, raw_scopes.to_string());
         assert_eq!(scopes.len(), 3);
         assert_eq!(scopes[0].as_str(), "scope1");
         assert_eq!(scopes[1].as_str(), "scope2");
@@ -138,7 +150,7 @@ mod tests {
     fn test_parse_empty_scopes() {
         let client_id = "test_client_id";
         let raw_scopes = ",";
-        let scopes = ConfidentialClientConfigData::parse_scopes(client_id, raw_scopes.to_string());
+        let scopes = OidcConfidentialClientConfig::parse_scopes(client_id, raw_scopes.to_string());
         assert_eq!(scopes.len(), 0);
     }
 
@@ -146,7 +158,7 @@ mod tests {
     fn test_parse_empty_quoted_scopes() {
         let client_id = "test_client_id";
         let raw_scopes = "\"\"";
-        let scopes = ConfidentialClientConfigData::parse_scopes(client_id, raw_scopes.to_string());
+        let scopes = OidcConfidentialClientConfig::parse_scopes(client_id, raw_scopes.to_string());
         assert_eq!(scopes.len(), 0);
     }
 
@@ -155,7 +167,7 @@ mod tests {
     fn test_parse_invalid_scope_delimiter() {
         let client_id = "test_client_id";
         let raw_scopes = "foo asd";
-        let _ = ConfidentialClientConfigData::parse_scopes(client_id, raw_scopes.to_string());
+        let _ = OidcConfidentialClientConfig::parse_scopes(client_id, raw_scopes.to_string());
     }
 
     #[test]
@@ -163,14 +175,14 @@ mod tests {
     fn test_parse_invalid_scope_characters() {
         let client_id = "test_client_id";
         let raw_scopes = "foo!bar";
-        let _ = ConfidentialClientConfigData::parse_scopes(client_id, raw_scopes.to_string());
+        let _ = OidcConfidentialClientConfig::parse_scopes(client_id, raw_scopes.to_string());
     }
 
     #[test]
     fn test_parse_scopes_should_ignore_quotations() {
         let client_id = "test_client_id";
         let raw_scopes = "\"scope1\",\"scope2\",\"scope3\"";
-        let scopes = ConfidentialClientConfigData::parse_scopes(client_id, raw_scopes.to_string());
+        let scopes = OidcConfidentialClientConfig::parse_scopes(client_id, raw_scopes.to_string());
         assert_eq!(scopes.len(), 3);
         assert_eq!(scopes[0].as_str(), "scope1");
         assert_eq!(scopes[1].as_str(), "scope2");

@@ -5,14 +5,14 @@ use serde::Deserialize;
 use tokio::time::sleep;
 use url::Url;
 use opendut_auth::confidential::client::{ConfidentialClient, ConfidentialClientRef};
-use opendut_auth::confidential::config::ConfidentialClientConfigData;
+use opendut_auth::confidential::config::OidcConfidentialClientConfig;
 use opendut_auth::confidential::reqwest_client::OidcReqwestClient;
 use crate::localenv_reqwest_client;
 
 #[fixture]
 async fn confidential_edgar_client(#[future] localenv_reqwest_client: OidcReqwestClient) -> ConfidentialClientRef {
     opendut_util_core::testing::init_localenv_secrets();
-    let client_config = ConfidentialClientConfigData::new(
+    let client_config = OidcConfidentialClientConfig::new(
         ClientId::new("opendut-edgar-client".to_string()),
         ClientSecret::new(
             std::env::var("OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_SECRET")
@@ -29,7 +29,7 @@ async fn confidential_edgar_client(#[future] localenv_reqwest_client: OidcReqwes
 #[fixture]
 async fn confidential_netbird_client(#[future] localenv_reqwest_client: OidcReqwestClient) -> ConfidentialClientRef {
     opendut_util_core::testing::init_localenv_secrets();
-    let client_config = ConfidentialClientConfigData::new(
+    let client_config = OidcConfidentialClientConfig::new(
         ClientId::new("netbird-backend".to_string()),
         ClientSecret::new(
             std::env::var("NETBIRD_MANAGEMENT_CLIENT_SECRET")

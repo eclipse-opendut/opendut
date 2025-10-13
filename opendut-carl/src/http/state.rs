@@ -6,7 +6,7 @@ use config::Config;
 use serde::Serialize;
 use shadow_rs::formatcp;
 use url::Url;
-use opendut_auth::confidential::config::ConfidentialClientConfigData;
+use opendut_auth::confidential::config::OidcConfidentialClientConfig;
 use opendut_model::lea::{LeaConfig, LeaIdentityProviderConfig};
 
 #[derive(Clone)]
@@ -34,7 +34,7 @@ impl TryFrom<&Config> for LoadableLeaIdentityProviderConfig {
         let lea_raw_scopes = config.get_string(LoadableLeaIdentityProviderConfig::SCOPES)
             .map_err(|error| anyhow!("Failed to find configuration for `{}`. {}", LoadableLeaIdentityProviderConfig::SCOPES, error))?;
 
-        let scopes = ConfidentialClientConfigData::parse_scopes(&client_id, lea_raw_scopes).into_iter()
+        let scopes = OidcConfidentialClientConfig::parse_scopes(&client_id, lea_raw_scopes).into_iter()
             .map(|scope| scope.to_string())
             .collect::<Vec<_>>()
             .join(" ");  // Required by leptos_oidc

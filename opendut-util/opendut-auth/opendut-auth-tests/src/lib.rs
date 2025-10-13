@@ -10,7 +10,7 @@ use rstest::fixture;
 use url::Url;
 
 use opendut_auth::confidential::client::{ConfidentialClient, ConfidentialClientRef};
-use opendut_auth::confidential::config::ConfidentialClientConfigData;
+use opendut_auth::confidential::config::OidcConfidentialClientConfig;
 use opendut_auth::confidential::pem::PemFromConfig;
 use opendut_auth::confidential::reqwest_client::OidcReqwestClient;
 use opendut_auth::registration::client::{
@@ -43,7 +43,7 @@ pub async fn confidential_carl_client(
     opendut_util_core::testing::init_localenv_secrets();
     let issuer_url = "https://auth.opendut.local/realms/opendut/".to_string(); // This is the URL for the keycloak server in the test environment
 
-    let client_config = ConfidentialClientConfigData::new(
+    let client_config = OidcConfidentialClientConfig::new(
         ClientId::new("opendut-carl-client".to_string()),
         ClientSecret::new(expect_env_var("OPENDUT_CARL_NETWORK_OIDC_CLIENT_SECRET")),
         Url::parse(&issuer_url).unwrap(),
