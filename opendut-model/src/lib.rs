@@ -8,10 +8,11 @@ pub mod proto;
 pub mod resources;
 #[cfg(feature = "specs")]
 pub mod specs;
+#[cfg(feature = "test")]
+pub mod test;
 pub mod topology;
 pub mod util;
 pub mod vpn;
-
 
 pub trait ShortName {
     fn short_name(&self) -> &'static str;

@@ -1,9 +1,11 @@
+pub mod cleo;
 pub mod cluster;
 pub mod peer;
+#[cfg(feature="test")]
+pub mod test;
 pub mod topology;
 pub mod util;
 pub mod vpn;
-pub mod cleo;
 
 use std::marker::PhantomData;
 
