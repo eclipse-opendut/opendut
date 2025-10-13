@@ -10,8 +10,6 @@ anyhow = { workspace = true }
 thiserror = { workspace = true }
 dotenvy = { workspace = true, optional = true }
 
-ring = { workspace = true } #workaround for: https://github.com/briansmith/ring/issues/2454
-
 [features]
 default = []
 testing = ["dotenvy"]
