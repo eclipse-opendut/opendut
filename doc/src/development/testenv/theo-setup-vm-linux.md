@@ -16,13 +16,13 @@ Make sure those network addresses are not occupied or in conflict with other net
   sudo apt install vagrant
   ```
   On most other Linux distributions, the package is called `vagrant`.
-  If the package is not available for your distribution, you may need to add a package repository as described here: https://developer.hashicorp.com/vagrant/install#linux
+  If the package is not available for your distribution, you may need to add a package repository as described here: <https://developer.hashicorp.com/vagrant/install#linux>
 
 * Install VirtualBox (see https://www.virtualbox.org)
   ```sh
   sudo apt install virtualbox
   ```
-  To get a version compatible with Vagrant, you may need to add the APT repository as described here: https://www.virtualbox.org/wiki/Linux_Downloads#Debian-basedLinuxdistributions
+  To get a version compatible with Vagrant, you may need to add the APT repository as described here: <https://www.virtualbox.org/wiki/Linux_Downloads#Debian-basedLinuxdistributions>
 
 * Create or check if an SSH key pair is present in `~/.ssh/id_rsa`
   ```sh
