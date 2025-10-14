@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 * Increased the default MTU to 1542 Bytes to allow a VLAN tag by default.
+* CARL: Does not require `SSL_CERT_FILE` environment variable in deployment anymore.
 
 ### Changed
 * Testenv: Utilizes the containers of the localenv deployment now.
@@ -22,6 +23,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * Migration: Destroy old opendut-vm: `cargo theo vagrant destroy` and re-create with `cargo theo vagrant up`.
 
 ### Breaking changes
+
+#### Updated authentication method for NetBird
+The authentication method for NetBird has been changed to OAuth with API token creation. The following setting indicates this: `OPENDUT_CARL_VPN_NETBIRD_AUTH_TYPE=oauth-create-api-token`.
+This is only supported with a new CARL version. Don't forget to update the CARL version in your deployment.
+```shell
+OPENDUT_CARL_IMAGE_VERSION=0.8.0
+```
+
+#### Localenv deployment changes
 There are breaking changes in the localenv deployment. Please read the instructions below to update your localenv deployment.
 * Stop the localenv deployment.
 ```shell

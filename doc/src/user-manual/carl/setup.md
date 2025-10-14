@@ -22,16 +22,17 @@ or any other machine, this guide will show all necessary steps, to get CARL up a
 
 4. Set `/etc/hosts` file:
 Add the following lines to the `/etc/hosts` file on the host system to access the services from the local network.
+This assumes that the system, where OpenDuT was deployed, has the IP address `192.168.56.10`
     ```shell
-    192.168.56.9 opendut.local
-    192.168.56.9 auth.opendut.local
-    192.168.56.9 netbird.opendut.local
-    192.168.56.9 netbird-api.opendut.local
-    192.168.56.9 signal.opendut.local
-    192.168.56.9 carl.opendut.local
-    192.168.56.9 nginx-webdav.opendut.local
-    192.168.56.9 opentelemetry.opendut.local
-    192.168.56.9 monitoring.opendut.local
+    192.168.56.10 opendut.local
+    192.168.56.10 auth.opendut.local
+    192.168.56.10 netbird.opendut.local
+    192.168.56.10 netbird-api.opendut.local
+    192.168.56.10 signal.opendut.local
+    192.168.56.10 carl.opendut.local
+    192.168.56.10 nginx-webdav.opendut.local
+    192.168.56.10 opentelemetry.opendut.local
+    192.168.56.10 monitoring.opendut.local
     ```
 
 5. Start the local test environment using Docker Compose.
