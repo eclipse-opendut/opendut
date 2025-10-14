@@ -10,6 +10,7 @@ use crate::confidential::pem::PemFromConfig;
 
 #[derive(Debug, Clone)]
 pub struct OidcReqwestClient {}
+pub use reqwest::Client;
 
 const CONFIG_KEY_GENERIC_CA_CONTENT: &str = "network.tls.ca.content";
 const CONFIG_KEY_GENERIC_CA: &str = "network.tls.ca";

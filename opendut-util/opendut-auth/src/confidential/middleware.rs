@@ -2,6 +2,7 @@ use http::Extensions;
 use crate::confidential::client::ConfidentialClientRef;
 use reqwest::{Request, Response};
 use reqwest_middleware::{Middleware, Next};
+use tracing::error;
 
 #[derive(Clone)]
 pub struct OAuthMiddleware {
@@ -22,16 +23,20 @@ impl Middleware for OAuthMiddleware {
         extensions: &mut Extensions,
         next: Next<'_>
     ) -> reqwest_middleware::Result<Response> {
-        if let Ok(token) = self.confidential_client.get_token().await {
-            req.headers_mut().insert(
-                reqwest::header::AUTHORIZATION,
-                format!("Bearer {}", token.value).parse().unwrap(),
-            );
+        match self.confidential_client.get_token().await {
+            Ok(token) => {
+                req.headers_mut().insert(
+                    reqwest::header::AUTHORIZATION,
+                    format!("Bearer {}", token.value).parse().unwrap(),
+                );
+            }
+            Err(error) => {
+                error!("No authentication token available: {error}");
+            }
         }
         let resp = next.run(req, extensions).await?;
 
         Ok(resp)
     }
 }
-
 

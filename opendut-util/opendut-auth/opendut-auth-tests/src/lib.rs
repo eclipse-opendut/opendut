@@ -10,7 +10,8 @@ use rstest::fixture;
 use url::Url;
 
 use opendut_auth::confidential::client::{ConfidentialClient, ConfidentialClientRef};
-use opendut_auth::confidential::config::OidcConfidentialClientConfig;
+use opendut_auth::confidential::config::{OidcClientConfig, OidcConfidentialClientConfig};
+use opendut_auth::confidential::IssuerUrl;
 use opendut_auth::confidential::pem::PemFromConfig;
 use opendut_auth::confidential::reqwest_client::OidcReqwestClient;
 use opendut_auth::registration::client::{
@@ -19,9 +20,10 @@ use opendut_auth::registration::client::{
 use opendut_auth::registration::config::RegistrationClientConfig;
 use opendut_auth::registration::resources::ResourceHomeUrl;
 use opendut_util_core::project;
+use opendut_auth::confidential::reqwest_client::Client as ReqwestClient;
 
 #[fixture]
-pub async fn localenv_reqwest_client() -> OidcReqwestClient {
+pub async fn localenv_reqwest_client() -> ReqwestClient {
     let ca_path =
         project::make_path_absolute(".ci/deploy/localenv/data/secrets/pki/opendut-ca.pem")
             .expect("Could not resolve localenv CA")
@@ -38,21 +40,21 @@ pub async fn localenv_reqwest_client() -> OidcReqwestClient {
 
 #[fixture]
 pub async fn confidential_carl_client(
-    #[future] localenv_reqwest_client: OidcReqwestClient,
+    #[future] localenv_reqwest_client: ReqwestClient,
 ) -> ConfidentialClientRef {
     opendut_util_core::testing::init_localenv_secrets();
-    let issuer_url = "https://auth.opendut.local/realms/opendut/".to_string(); // This is the URL for the keycloak server in the test environment
+    let issuer_url = IssuerUrl::try_from("https://auth.opendut.local/realms/opendut/").unwrap(); // This is the URL for the keycloak server in the test environment
 
-    let client_config = OidcConfidentialClientConfig::new(
+    let client_config = OidcClientConfig::Confidential(OidcConfidentialClientConfig::new(
         ClientId::new("opendut-carl-client".to_string()),
         ClientSecret::new(expect_env_var("OPENDUT_CARL_NETWORK_OIDC_CLIENT_SECRET")),
-        Url::parse(&issuer_url).unwrap(),
+        issuer_url,
         vec![],
-    );
+    ));
     let reqwest_client = localenv_reqwest_client.await;
 
     ConfidentialClient::from_client_config(client_config, reqwest_client)
-        .unwrap()
+        .expect("Could not create confidential client for CARL.")
 }
 
 #[fixture]
@@ -63,10 +65,11 @@ pub async fn registration_client(
      * Issuer URL for keycloak needs to align with FRONTEND_URL in Keycloak realm setting.
      * Localhost address is always fine, though.
      */
-    let issuer_remote_url_string = "https://auth.opendut.local/realms/opendut/".to_string(); // works inside OpenDuT-VM
-    let issuer_remote_url = Url::parse(&issuer_remote_url_string).unwrap();
+    let issuer_url = IssuerUrl::try_from("https://auth.opendut.local/realms/opendut/").unwrap(); // works inside OpenDuT-VM
+    let issuer_remote_url = issuer_url.clone();
     let carl_idp_config = RegistrationClientConfig {
-        issuer_remote_url: issuer_remote_url.clone(),
+        issuer_url: issuer_url.clone(),
+        issuer_remote_url: issuer_url.clone(),
         peer_credentials: None,
         device_redirect_url: RedirectUrl::new(DEVICE_REDIRECT_URL.to_string()).unwrap(),
         client_home_base_url: ResourceHomeUrl::new(
@@ -74,12 +77,11 @@ pub async fn registration_client(
         ),
         registration_url: RegistrationUrl::from_url(
             issuer_remote_url
+                .value()
                 .join("clients-registrations/openid-connect")
                 .unwrap(),
         ),
-        issuer_admin_url: issuer_remote_url
-            .join("https://auth.opendut.local/admin/realms/opendut/")
-            .unwrap(),
+        issuer_admin_url: IssuerUrl::try_from("https://auth.opendut.local/realms/admin/").unwrap(),
     };
     let client = confidential_carl_client.await;
     RegistrationClient::new(carl_idp_config, client)
@@ -108,7 +110,6 @@ mod auth_tests {
          * cargo test -- --include-ignored
          */
         let client: RegistrationClientRef = registration_client.await;
-        println!("{client:?}");
         let resource_id = Id::random();
         let user_id = UserId {
             value: String::from("deleteTest"),

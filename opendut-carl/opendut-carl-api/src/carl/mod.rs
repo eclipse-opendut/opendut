@@ -147,7 +147,7 @@ cfg_if! {
 
         use tower::ServiceBuilder;
 
-        #[derive(Debug, Clone)]
+        #[derive(Clone)]
         pub struct CarlClient {
             pub broker: PeerMessagingBroker<TonicAuthenticationService>,
             pub cluster: ClusterManager<TonicAuthenticationService>,

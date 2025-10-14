@@ -14,7 +14,9 @@ use opendut_model::peer::PeerId;
 use opendut_model::vpn::VpnPeerConfiguration;
 use opendut_vpn::{CreateClusterError, CreatePeerError, CreateVpnPeerConfigurationError, DeleteClusterError, DeletePeerError, VpnManagementClient};
 
-use crate::client::{Client, DefaultClient, NetbirdAuthenticationMethod};
+pub use crate::client::auth::NetbirdAuthenticationMethod;
+
+use crate::client::{Client, DefaultClient};
 use crate::netbird::error::{CreateClientError, CreateSetupKeyError, GetGroupError, GetPoliciesError, RequestError};
 use crate::netbird::{GroupName, PolicyName};
 

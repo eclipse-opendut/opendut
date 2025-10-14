@@ -14,6 +14,7 @@ use tracing::error;
 use url::Url;
 use opendut_util_core::future::ExplicitSendFutureWrapper;
 use crate::confidential::client::{ConfidentialClient, ConfidentialClientRef};
+use crate::confidential::reqwest_client::async_http_client;
 use crate::registration::config::RegistrationClientConfig;
 use crate::registration::error::WrappedClientRegistrationError;
 use crate::registration::resources::{ResourceHomeUrl, UserId};
@@ -22,7 +23,6 @@ pub type RegistrationClientRef = Arc<RegistrationClient>;
 
 pub const DEVICE_REDIRECT_URL: &str = "http://localhost:12345/device";
 
-#[derive(Debug)]
 pub struct RegistrationClient {
     pub inner: ConfidentialClientRef,
     pub config: RegistrationClientConfig,
@@ -125,7 +125,7 @@ impl RegistrationClient {
                                 .collect())
                         )
                         .register_async(&registration_url, &move |request| {
-                            self.inner.reqwest_client.async_http_client(request)
+                            async_http_client(&self.inner.reqwest_client, request)
                         })
                 ).await;
 
@@ -148,11 +148,11 @@ impl RegistrationClient {
     }
     
     pub async fn list_clients(&self) -> Result<Clients, RegistrationClientError> {
-        let enumerate_clients_uri = self.config.issuer_admin_url.join("clients/")
+        let enumerate_clients_uri = self.config.issuer_admin_url.value().join("clients/")
             .map_err(|cause| RegistrationClientError::InvalidConfiguration { error: format!("Invalid admin api endpoint for issuer. {cause}") })?;
         let request = self.create_http_request_with_auth_token(&enumerate_clients_uri, http::Method::GET).await?;
 
-        let response = self.inner.reqwest_client.async_http_client(request).await;
+        let response = async_http_client(&self.inner.reqwest_client, request).await;
         match response {
             Ok(response) => {
                  let clients: Clients = serde_json::from_slice(response.body())
@@ -194,12 +194,12 @@ impl RegistrationClient {
 
     pub async fn delete_client(&self, client_id: &String) -> Result<HttpResponse, RegistrationClientError> {
         let client_uri = format!("clients/{client_id}");
-        let delete_client_url = self.config.issuer_admin_url.join(&client_uri)
+        let delete_client_url = self.config.issuer_admin_url.value().join(&client_uri)
             .map_err(|cause| RegistrationClientError::InvalidConfiguration { error: format!("Invalid admin api endpoint for issuer. {cause}") })?;
 
         let request = self.create_http_request_with_auth_token(&delete_client_url, http::Method::DELETE).await?;
 
-        self.inner.reqwest_client.async_http_client(request).await
+        async_http_client(&self.inner.reqwest_client, request).await
             .map_err(|error| RegistrationClientError::RequestError { error: error.to_string(), cause: error.into() })
     }
 

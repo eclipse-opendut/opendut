@@ -139,8 +139,8 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
                 let jwk_cache: CustomInMemoryCache<String, JwkCacheValue> = CustomInMemoryCache::new();
 
                 GrpcAuthenticationLayer::GrpcAuthLayerEnabled {
-                    issuer_url: oidc_client_ref.inner.issuer_url.clone(),
-                    issuer_remote_url: oidc_client_ref.config.issuer_remote_url.clone(),
+                    issuer_url: oidc_client_ref.inner.issuer_url.value().clone(),
+                    issuer_remote_url: oidc_client_ref.config.issuer_remote_url.value().clone(),
                     cache: jwk_cache,
                 }
             }

@@ -27,7 +27,7 @@ pub async fn generate_cleo_setup(params: GenerateCleoSetupParams) -> Result<Cleo
         Some(registration_client) => {
             let resource_id = cleo_id.into();
             debug!("Generating OIDC client for CLEO: <{cleo_id}>.");
-            let issuer_url = registration_client.config.issuer_remote_url.clone();
+            let issuer_url = registration_client.config.issuer_remote_url.value().clone();
             let client_credentials = registration_client.register_new_client_for_user(resource_id, params.user_id)
                 .await
                 .map_err(|cause| GenerateCleoSetupError::Internal { cause: cause.to_string() })?;

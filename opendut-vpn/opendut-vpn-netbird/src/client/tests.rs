@@ -11,7 +11,7 @@ use serde_json::json;
 use uuid::uuid;
 
 use opendut_model::cluster::ClusterId;
-
+use crate::NetbirdToken;
 use super::*;
 const RETRIES: u32 = 5;
 const TIMEOUT: Duration = Duration::from_secs(10000);
@@ -31,7 +31,7 @@ async fn delete_peer(fixture: Fixture) -> anyhow::Result<()> {
             .unwrap()))
     });
 
-    let client = DefaultClient::create(fixture.base_url(), None, None, Some(Box::new(requester)), TIMEOUT, RETRIES, SETUP_KEY_EXPIRATION).await?;
+    let client = DefaultClient::create(fixture.base_url(), None, fixture.authentication.clone(), Some(Box::new(requester)), TIMEOUT, RETRIES, SETUP_KEY_EXPIRATION).await?;
 
     let result = client.delete_netbird_peer(&netbird::PeerId::from("ah8cca16lmn67acg5s11")).await;
 
@@ -75,7 +75,7 @@ async fn create_group(fixture: Fixture) -> anyhow::Result<()> {
         Ok(Response::from(response))
     });
 
-    let client = DefaultClient::create(fixture.base_url(), None, None, Some(Box::new(requester)), TIMEOUT, RETRIES, SETUP_KEY_EXPIRATION).await?;
+    let client = DefaultClient::create(fixture.base_url(), None, fixture.authentication.clone(), Some(Box::new(requester)), TIMEOUT, RETRIES, SETUP_KEY_EXPIRATION).await?;
 
     let result = client.create_netbird_group(
         fixture.cluster_id().into(),
@@ -127,7 +127,7 @@ async fn find_group(fixture: Fixture) -> anyhow::Result<()> {
         Ok(Response::from(response))
     });
 
-    let client = DefaultClient::create(fixture.base_url(), None, None, Some(Box::new(requester)), TIMEOUT, RETRIES, SETUP_KEY_EXPIRATION).await?;
+    let client = DefaultClient::create(fixture.base_url(), None, fixture.authentication.clone(), Some(Box::new(requester)), TIMEOUT, RETRIES, SETUP_KEY_EXPIRATION).await?;
 
     let result = client.get_netbird_group(&fixture.peer_netbird_group_name).await;
 
@@ -161,7 +161,7 @@ async fn delete_group(fixture: Fixture) -> anyhow::Result<()> {
     }
     );
 
-    let client = DefaultClient::create(fixture.base_url(), None, None, Some(Box::new(requester)), TIMEOUT, RETRIES, SETUP_KEY_EXPIRATION).await?;
+    let client = DefaultClient::create(fixture.base_url(), None, fixture.authentication.clone(), Some(Box::new(requester)), TIMEOUT, RETRIES, SETUP_KEY_EXPIRATION).await?;
 
     let result = client.delete_netbird_group(&netbird::GroupId::from("aax77acflma44h075aa3")).await;
 
@@ -240,7 +240,7 @@ async fn create_a_setup_key(fixture: Fixture) -> anyhow::Result<()> {
         }
     });
 
-    let client = DefaultClient::create(fixture.base_url(), None, None, Some(Box::new(requester)), TIMEOUT, RETRIES, SETUP_KEY_EXPIRATION).await?;
+    let client = DefaultClient::create(fixture.base_url(), None, fixture.authentication.clone(), Some(Box::new(requester)), TIMEOUT, RETRIES, SETUP_KEY_EXPIRATION).await?;
 
     let result = client.generate_netbird_setup_key(fixture.peer_id()).await?;
 
@@ -316,7 +316,7 @@ async fn create_access_policy(fixture: Fixture) -> anyhow::Result<()> {
         Ok(Response::from(response))
     });
 
-    let client = DefaultClient::create(fixture.base_url(), None, None, Some(Box::new(requester)), TIMEOUT, RETRIES, SETUP_KEY_EXPIRATION).await?;
+    let client = DefaultClient::create(fixture.base_url(), None, fixture.authentication.clone(), Some(Box::new(requester)), TIMEOUT, RETRIES, SETUP_KEY_EXPIRATION).await?;
 
     let group = netbird::Group {
         id: fixture.netbird_group_id(),
@@ -346,6 +346,7 @@ fn fixture() -> Fixture {
     let netbird_cluster_policy_name = netbird::PolicyName::Cluster(cluster_id);
     Fixture {
         base_url,
+        authentication: NetbirdAuthenticationMethod::UseExistingApiToken(NetbirdToken::new_personal_access("test-token")),
         peer_id,
         cluster_id,
         netbird_group_id,
@@ -360,6 +361,7 @@ fn fixture() -> Fixture {
 #[derive(Clone)]
 struct Fixture {
     base_url: Url,
+    authentication: NetbirdAuthenticationMethod,
     peer_id: PeerId,
     cluster_id: ClusterId,
     netbird_group_id: netbird::GroupId,

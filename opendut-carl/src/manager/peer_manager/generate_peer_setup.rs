@@ -53,7 +53,7 @@ impl Resources<'_> {
             Some(registration_client) => {
                 let resource_id = peer_id.into();
                 debug!("Generating OIDC client for peer '{peer_name}' <{peer_id}>.");
-                let issuer_url = registration_client.config.issuer_remote_url.clone();
+                let issuer_url = registration_client.config.issuer_remote_url.value().clone();
                 let client_credentials = registration_client.register_new_client_for_user(resource_id, params.user_id)
                     .await
                     .map_err(|cause| GeneratePeerSetupError::Internal { peer_id, peer_name: Clone::clone(&peer_name), cause: cause.to_string() })?;

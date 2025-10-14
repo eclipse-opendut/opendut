@@ -51,9 +51,13 @@ kind = ""
 url = ""
 ca = ""
 auth.type = ""
-auth.issuer = ""
-auth.user = ""
 auth.secret = ""
+# only for OIDC
+auth.issuer = ""
+auth.username = "netbird"
+auth.password = ""
+auth.scopes = ""
+# retry requests to the NetBird API
 timeout.ms = 10000
 retries = 5
 setup.key.expiration.ms = 86400000

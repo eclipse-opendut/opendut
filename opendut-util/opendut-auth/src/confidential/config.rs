@@ -1,12 +1,13 @@
 use config::Config;
 use oauth2::{AuthUrl, EndpointNotSet, EndpointSet, TokenUrl};
-use oauth2::{ClientId as OAuthClientId, ClientSecret as OAuthClientSecret, Scope as OAuthScope};
-use oauth2::{ResourceOwnerPassword as OAuthResourceOwnerPassword, ResourceOwnerUsername as OAuthResourceOwnerUsername};
+pub use oauth2::{ClientId as OAuthClientId, ClientSecret as OAuthClientSecret, Scope as OAuthScope};
+pub use oauth2::{ResourceOwnerPassword as OAuthResourceOwnerPassword, ResourceOwnerUsername as OAuthResourceOwnerUsername};
 use oauth2::basic::BasicClient;
 use const_format::formatcp;
-use url::Url;
-
+use crate::confidential::authenticator::OidcAuthenticator;
+use crate::confidential::client::{AuthError, SharedTokenStorage, Token};
 use crate::confidential::error::ConfidentialClientError;
+use crate::confidential::IssuerUrl;
 
 pub type ConfiguredClient<
     HasAuthUrl = EndpointSet,
@@ -26,17 +27,58 @@ pub type ConfiguredClient<
 pub enum OidcClientConfig {
     Confidential(OidcConfidentialClientConfig),
     ResourceOwner(OidcResourceOwnerConfidentialClientConfig),
-    AuthenticationDisabled,
 }
 
 impl OidcClientConfig {
+    pub fn get_client(&self) -> Result<ConfiguredClient, ConfidentialClientError> {
+        match self {
+            OidcClientConfig::Confidential(confidential) => confidential.get_client(),
+            OidcClientConfig::ResourceOwner(resource_owner) => resource_owner.core_config.get_client(),
+        }
+    }
+    pub fn get_issuer(&self) -> &IssuerUrl {
+        match self {
+            OidcClientConfig::Confidential(confidential) => &confidential.issuer_url,
+            OidcClientConfig::ResourceOwner(resource_owner) => &resource_owner.core_config.issuer_url,
+        }
+    }
+
+    pub fn get_scopes(&self) -> &Vec<OAuthScope> {
+        match self {
+            OidcClientConfig::Confidential(confidential) => &confidential.scopes,
+            OidcClientConfig::ResourceOwner(resource_owner) => &resource_owner.core_config.scopes,
+        }
+    }
+
+    pub fn get_client_id(&self) -> &OAuthClientId {
+        match self {
+            OidcClientConfig::Confidential(confidential) => &confidential.client_id,
+            OidcClientConfig::ResourceOwner(resource_owner) => &resource_owner.core_config.client_id,
+        }
+    }
+
+    pub(crate) async fn fetch_token(&self, client: &ConfiguredClient, scopes: Vec<OAuthScope>,
+                       reqwest_client: &reqwest::Client, token_store: SharedTokenStorage) -> Result<Token, AuthError> {
+        match self {
+            OidcClientConfig::Confidential(confidential) => confidential.fetch_token(client, scopes, reqwest_client, token_store).await,
+            OidcClientConfig::ResourceOwner(resource_owner) => resource_owner.fetch_token(client, scopes, reqwest_client, token_store).await,
+        }
+    }
+}
+
+pub enum OidcConfigEnabled {
+    Yes(Box<OidcClientConfig>),
+    No,
+}
+
+impl OidcConfigEnabled {
     pub fn from_settings(settings: &Config) -> Result<Self, ConfidentialClientError> {
         let oidc_enabled = settings.get_bool(CONFIG_KEY_OIDC_ENABLED)
             .map_err(|cause| ConfidentialClientError::Configuration { message: format!("No configuration found for {CONFIG_KEY_OIDC_ENABLED}."), cause: cause.into() })?;
         if oidc_enabled {
-            Ok(Self::Confidential(OidcConfidentialClientConfig::from_settings(settings)?))
+            Ok(Self::Yes(Box::new(OidcClientConfig::Confidential(OidcConfidentialClientConfig::from_settings(settings)?))))
         } else {
-            Ok(Self::AuthenticationDisabled)
+            Ok(Self::No)
         }
     }
 }
@@ -45,45 +87,28 @@ impl OidcClientConfig {
 pub struct OidcConfidentialClientConfig {
     pub client_id: OAuthClientId,
     client_secret: OAuthClientSecret,
-    pub issuer_url: Url,
+    pub issuer_url: IssuerUrl,
     pub scopes: Vec<OAuthScope>,
 }
 
+/// OIDC configuration for confidential clients using Resource Owner Password Credentials Grant
 #[derive(Clone, Debug)]
 pub struct OidcResourceOwnerConfidentialClientConfig {
-    pub client_id: OAuthClientId,
-    client_secret: OAuthClientSecret,
-    pub issuer_url: Url,
-    pub scopes: Vec<OAuthScope>,
-    pub(crate) username: OAuthResourceOwnerUsername,
+    pub core_config: OidcConfidentialClientConfig,
+    pub username: OAuthResourceOwnerUsername,
     pub(crate) password: OAuthResourceOwnerPassword,
 }
 
 impl OidcResourceOwnerConfidentialClientConfig {
-    pub fn new(client_id: OAuthClientId, client_secret: OAuthClientSecret, issuer_url: Url, scopes: Vec<OAuthScope>, username: String, password: String) -> Self {
+    pub fn new(client_id: OAuthClientId, client_secret: OAuthClientSecret,
+               issuer_url: IssuerUrl, scopes: Vec<OAuthScope>,
+               username: String, password: String) -> Self {
+        let core_config = OidcConfidentialClientConfig::new(client_id, client_secret, issuer_url, scopes);
         Self {
-            client_id,
-            client_secret,
-            issuer_url,
-            scopes,
+            core_config,
             username: OAuthResourceOwnerUsername::new(username),
             password: OAuthResourceOwnerPassword::new(password),
         }
-    }
-    
-    // TODO: fix duplicate
-    pub fn get_client(&self) -> Result<ConfiguredClient, ConfidentialClientError> {
-        let auth_endpoint = self.issuer_url.join("protocol/openid-connect/auth")
-            .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to derive authorization url from issuer url."), cause: cause.into() })?;
-        let token_endpoint = self.issuer_url.join("protocol/openid-connect/token")
-            .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to derive token url from issuer url."), cause: cause.into() })?;
-
-        let client = BasicClient::new(self.client_id.clone())
-            .set_client_secret(self.client_secret.clone())
-            .set_auth_uri(AuthUrl::from_url(auth_endpoint))
-            .set_token_uri(TokenUrl::from_url(token_endpoint));
-
-        Ok(client)
     }
 }
 
@@ -107,7 +132,7 @@ impl OidcConfidentialClientConfig {
         }
         scopes.into_iter().filter(|scope| !scope.is_empty()).map(|scope| OAuthScope::new(scope.to_string())).collect()
     }
-    pub fn new(client_id: OAuthClientId, client_secret: OAuthClientSecret, issuer_url: Url, scopes: Vec<OAuthScope>) -> Self {
+    pub fn new(client_id: OAuthClientId, client_secret: OAuthClientSecret, issuer_url: IssuerUrl, scopes: Vec<OAuthScope>) -> Self {
         Self {
             client_id,
             client_secret,
@@ -117,9 +142,9 @@ impl OidcConfidentialClientConfig {
     }
 
     pub fn get_client(&self) -> Result<ConfiguredClient, ConfidentialClientError> {
-        let auth_endpoint = self.issuer_url.join("protocol/openid-connect/auth")
+        let auth_endpoint = self.issuer_url.value().join("protocol/openid-connect/auth")
             .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to derive authorization url from issuer url."), cause: cause.into() })?;
-        let token_endpoint = self.issuer_url.join("protocol/openid-connect/token")
+        let token_endpoint = self.issuer_url.value().join("protocol/openid-connect/token")
             .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to derive token url from issuer url."), cause: cause.into() })?;
 
         let client = BasicClient::new(self.client_id.clone())
@@ -140,23 +165,18 @@ impl OidcConfidentialClientConfig {
         let issuer = settings.get_string(OidcConfidentialClientConfig::ISSUER_URL)
             .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to find configuration for `{}`.", OidcConfidentialClientConfig::ISSUER_URL), cause: error.into() })?;
 
-        let issuer_url = Url::parse(&issuer)
+        let issuer_url = IssuerUrl::try_from(&issuer)
             .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to parse issuer URL: `{issuer}`."), cause: error.into() })?;
-        // TODO: add validation for issuer url to new type
-        if issuer_url.as_str().ends_with('/') {
-            let raw_scopes = settings.get_string(OidcConfidentialClientConfig::SCOPES)
-                .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to find configuration for `{}`.", OidcConfidentialClientConfig::SCOPES), cause: error.into() })?;
-            let scopes = OidcConfidentialClientConfig::parse_scopes(&client_id, raw_scopes);
+        let raw_scopes = settings.get_string(OidcConfidentialClientConfig::SCOPES)
+            .map_err(|error| ConfidentialClientError::Configuration { message: format!("Failed to find configuration for `{}`.", OidcConfidentialClientConfig::SCOPES), cause: error.into() })?;
+        let scopes = OidcConfidentialClientConfig::parse_scopes(&client_id, raw_scopes);
 
-            Ok(Self {
-                client_id: OAuthClientId::new(client_id),
-                client_secret: OAuthClientSecret::new(client_secret),
-                issuer_url,
-                scopes,
-            })
-        } else {
-            Err(ConfidentialClientError::Other { message: format!("Issuer URL must end with a `/`. Found: {issuer_url}") })
-        }
+        Ok(Self {
+            client_id: OAuthClientId::new(client_id),
+            client_secret: OAuthClientSecret::new(client_secret),
+            issuer_url,
+            scopes,
+        })
     }
 }
 

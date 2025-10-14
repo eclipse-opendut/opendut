@@ -1,46 +1,46 @@
-use std::time::Duration;
 use oauth2::{ClientId, ClientSecret};
 use rstest::{fixture, rstest};
 use serde::Deserialize;
-use tokio::time::sleep;
-use url::Url;
 use opendut_auth::confidential::client::{ConfidentialClient, ConfidentialClientRef};
-use opendut_auth::confidential::config::OidcConfidentialClientConfig;
-use opendut_auth::confidential::reqwest_client::OidcReqwestClient;
+use opendut_auth::confidential::config::{OidcClientConfig, OidcConfidentialClientConfig};
+use opendut_auth::confidential::IssuerUrl;
+use opendut_auth::confidential::reqwest_client::Client as ReqwestClient;
 use crate::localenv_reqwest_client;
 
 #[fixture]
-async fn confidential_edgar_client(#[future] localenv_reqwest_client: OidcReqwestClient) -> ConfidentialClientRef {
+async fn confidential_edgar_client(#[future] localenv_reqwest_client: ReqwestClient) -> ConfidentialClientRef {
     opendut_util_core::testing::init_localenv_secrets();
-    let client_config = OidcConfidentialClientConfig::new(
+    let client_config = OidcClientConfig::Confidential(OidcConfidentialClientConfig::new(
         ClientId::new("opendut-edgar-client".to_string()),
         ClientSecret::new(
             std::env::var("OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_SECRET")
                 .expect("OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_SECRET environment variable not set in test environment")
         ),
-        Url::parse("https://auth.opendut.local/realms/opendut/").unwrap(),
+        IssuerUrl::try_from("https://auth.opendut.local/realms/opendut/").unwrap(),
         vec![],
-    );
+    ));
     let reqwest_client = localenv_reqwest_client.await;
 
-    ConfidentialClient::from_client_config(client_config, reqwest_client).unwrap()
+    ConfidentialClient::from_client_config(client_config, reqwest_client)
+        .expect("Could not create confidential client for EDGAR.")
 }
 
 #[fixture]
-async fn confidential_netbird_client(#[future] localenv_reqwest_client: OidcReqwestClient) -> ConfidentialClientRef {
+async fn confidential_netbird_client(#[future] localenv_reqwest_client: ReqwestClient) -> ConfidentialClientRef {
     opendut_util_core::testing::init_localenv_secrets();
-    let client_config = OidcConfidentialClientConfig::new(
+    let reqwest_client = localenv_reqwest_client.await;
+    let client_config = OidcClientConfig::Confidential(OidcConfidentialClientConfig::new(
         ClientId::new("netbird-backend".to_string()),
         ClientSecret::new(
             std::env::var("NETBIRD_MANAGEMENT_CLIENT_SECRET")
                 .expect("NETBIRD_MANAGEMENT_CLIENT_SECRET environment variable not set in test environment")
         ),
-        Url::parse("https://auth.opendut.local/realms/netbird/").unwrap(),
+        IssuerUrl::try_from("https://auth.opendut.local/realms/netbird/").unwrap(),
         vec![],
-    );
-    let reqwest_client = localenv_reqwest_client.await;
+    ));
 
-    ConfidentialClient::from_client_config(client_config, reqwest_client).unwrap()
+    ConfidentialClient::from_client_config(client_config, reqwest_client)
+        .expect("Could not create confidential client for NetBird.")
 }
 
 
@@ -57,6 +57,7 @@ async fn test_confidential_client_get_token(#[future] confidential_edgar_client:
     assert!(token.value.len() > 100);
 }
 
+#[test_with::env(OPENDUT_RUN_KEYCLOAK_INTEGRATION_TESTS)]
 #[rstest]
 #[tokio::test]
 async fn test_confidential_client_get_token2(#[future] confidential_netbird_client: ConfidentialClientRef) {
@@ -71,28 +72,21 @@ async fn test_confidential_client_get_token2(#[future] confidential_netbird_clie
     let client = ConfidentialClient::build_client_with_middleware(client);
     let url = "https://netbird-api.opendut.local/api/users";
 
+    #[allow(dead_code)]
     #[derive(Deserialize)]
     struct NetbirdUser {
         id: String,
         email: String,
         name: String,
     }
-
     let users = client
         .get(url)
         .send()
-        .await.expect("foo")
+        .await
+        .expect("Failed to request NetBird users")
         .json::<Vec<NetbirdUser>>()
-        .await.expect("foo");
-    println!("Netbird users: {}", users.len());
+        .await
+        .expect("Failed to deserialize NetBird users");
 
-    sleep(Duration::from_millis(6 * 60 * 1000)).await;
-    let users = client
-        .get(url)
-        .send()
-        .await.expect("foo")
-        .json::<Vec<NetbirdUser>>()
-        .await.expect("foo");
-    println!("Netbird users: {}", users.len());
-
+    assert!(!users.is_empty());
 }

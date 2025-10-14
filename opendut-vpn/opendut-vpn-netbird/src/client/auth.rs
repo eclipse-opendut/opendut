@@ -23,9 +23,12 @@ struct CreateApiTokenResponse {
     plain_token: String,
 }
 
+#[derive(Clone)]
 pub enum NetbirdAuthenticationMethod {
+    /// Use OIDC to create a new API token for the user on each startup.
     CreateApiTokenWithOidc(OidcResourceOwnerConfidentialClientConfig),
     UseExistingApiToken(NetbirdToken),
+    Disabled,
 }
 
 pub(crate) async fn create_api_token(client: ClientWithMiddleware, username: &str, netbird_url: &Url) -> Result<NetbirdToken, CreateClientError> {

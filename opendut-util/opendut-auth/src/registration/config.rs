@@ -2,9 +2,9 @@ use const_format::formatcp;
 use config::Config;
 use oauth2::RedirectUrl;
 use openidconnect::RegistrationUrl;
-use url::Url;
 use opendut_model::util::net::{ClientCredentials, ClientId, ClientSecret};
 use crate::confidential::client::ConfidentialClient;
+use crate::confidential::IssuerUrl;
 use crate::registration::client::{DEVICE_REDIRECT_URL, RegistrationClientError};
 use crate::registration::resources::ResourceHomeUrl;
 
@@ -14,9 +14,9 @@ pub struct RegistrationClientConfig {
     pub device_redirect_url: RedirectUrl,
     pub client_home_base_url: ResourceHomeUrl,
     pub registration_url: RegistrationUrl,
-    pub issuer_url: Url,
-    pub issuer_remote_url: Url,
-    pub issuer_admin_url: Url,
+    pub issuer_url: IssuerUrl,
+    pub issuer_remote_url: IssuerUrl,
+    pub issuer_admin_url: IssuerUrl,
 }
 
 pub(crate) const AUTH_CLIENT_CONFIG_PREFIX: &str = "network.oidc.client";
@@ -45,22 +45,22 @@ impl RegistrationClientConfig {
         let client_home_base_url = ResourceHomeUrl::try_from(settings)
             .map_err(|error| RegistrationClientError::InvalidConfiguration { error: format!("Failed to load client home base URL: {error}") })?;
         let registration_url = RegistrationUrl::from_url(
-            client.issuer_url.join("clients-registrations/openid-connect")
+            client.issuer_url.value().join("clients-registrations/openid-connect")
                 .map_err(|error| RegistrationClientError::InvalidConfiguration { error: format!("Invalid registration endpoint URL: {error}") })?
         );
-        let issuer_remote_url: Url = settings.get_string(RegistrationClientConfig::ISSUER_REMOTE_URL)
+        let issuer_remote_url = settings.get_string(RegistrationClientConfig::ISSUER_REMOTE_URL)
             .map_err(|error| RegistrationClientError::InvalidConfiguration { 
                 error: format!("Failed to load registration URL from config field {}: {}", RegistrationClientConfig::ISSUER_REMOTE_URL, error) 
-            })?
-            .parse()
-            .map_err(|error| RegistrationClientError::InvalidConfiguration { 
+            })?;
+        let issuer_remote_url = IssuerUrl::try_from(issuer_remote_url.as_str())
+            .map_err(|error| RegistrationClientError::InvalidConfiguration {
                 error: format!("Failed to parse issuer remote URL: {error}") 
             })?;
-        let issuer_admin_url: Url = settings.get_string(RegistrationClientConfig::ISSUER_ADMIN_URL)
+        let issuer_admin_url = settings.get_string(RegistrationClientConfig::ISSUER_ADMIN_URL)
             .map_err(|error| RegistrationClientError::InvalidConfiguration {
                 error: format!("Failed to load registration URL from config field {}: {}", RegistrationClientConfig::ISSUER_ADMIN_URL, error)
-            })?
-            .parse()
+            })?;
+        let issuer_admin_url = IssuerUrl::try_from(issuer_admin_url.as_str())
             .map_err(|error| RegistrationClientError::InvalidConfiguration {
                 error: format!("Failed to parse issuer admin URL: {error}")
             })?;
@@ -82,18 +82,20 @@ impl RegistrationClientConfig {
             device_redirect_url,
             client_home_base_url,
             registration_url,
+            issuer_url: client.issuer_url.clone(),
             issuer_remote_url,
             issuer_admin_url,
         })
     }
     
     pub fn new(peer_credentials: Option<ClientCredentials>, device_redirect_url: RedirectUrl, client_home_base_url: ResourceHomeUrl, 
-               registration_url: RegistrationUrl, issuer_remote_url: Url, issuer_admin_url: Url) -> Self {
+               registration_url: RegistrationUrl, issuer_url: IssuerUrl, issuer_remote_url: IssuerUrl, issuer_admin_url: IssuerUrl) -> Self {
         Self {
             peer_credentials,
             device_redirect_url,
             client_home_base_url,
             registration_url,
+            issuer_url,
             issuer_remote_url,
             issuer_admin_url,
         }
