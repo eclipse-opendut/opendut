@@ -31,6 +31,7 @@ shadow_formatted_version::from_shadow!(app_info);
 mod auth;
 mod cli;
 pub use cli::cli;
+use opendut_auth::confidential::reqwest_client::OidcReqwestClient;
 
 mod http;
 mod manager;
@@ -155,11 +156,12 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
             .add_service(grpc_facades.peer_messaging_broker_facade.into_grpc_service())
             .add_service(grpc_facades.observer_messaging_broker_facade.into_grpc_service());
 
+        let reqwest_client = OidcReqwestClient::from_config(&settings).await?;
         routes_builder
             .routes()
             .into_axum_router()
             .layer(async_interceptor(move |request| {
-                Clone::clone(&grpc_auth_layer).auth_interceptor(request)
+                Clone::clone(&grpc_auth_layer).auth_interceptor(request, reqwest_client.clone())
             }))
     };
 

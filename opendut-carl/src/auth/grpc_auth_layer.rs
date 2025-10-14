@@ -19,7 +19,7 @@ pub enum GrpcAuthenticationLayer {
 }
 
 impl GrpcAuthenticationLayer {
-    pub async fn auth_interceptor(self, mut request: tonic::Request<()>) -> anyhow::Result<tonic::Request<()>, Status> {
+    pub async fn auth_interceptor(self, mut request: tonic::Request<()>, reqwest_client: reqwest::Client) -> anyhow::Result<tonic::Request<()>, Status> {
 
         match self {
             GrpcAuthenticationLayer::AuthDisabled => {
@@ -36,7 +36,7 @@ impl GrpcAuthenticationLayer {
                     }
                 };
 
-                match authorize_current_user(auth_header, issuer_url, issuer_remote_url, cache).await {
+                match authorize_current_user(auth_header, issuer_url, issuer_remote_url, cache, reqwest_client).await {
                     Ok(user) => {
                         request.extensions_mut().insert(user);
                         Ok(request)
@@ -51,11 +51,11 @@ impl GrpcAuthenticationLayer {
     }
 }
 
-async fn authorize_current_user(auth_token: &str, issuer_url: Url, issuer_remote_url: Url, cache: CustomInMemoryCache<String, JwkCacheValue>) -> Result<CurrentUser, ValidationError> {
+async fn authorize_current_user(auth_token: &str, issuer_url: Url, issuer_remote_url: Url, cache: CustomInMemoryCache<String, JwkCacheValue>, reqwest_client: reqwest::Client) -> Result<CurrentUser, ValidationError> {
     // decode token
     let token_part: Vec<&str> = auth_token.split(' ').collect();
     let token_part = token_part.get(1).unwrap();
 
-    let jwk_requester = Jwk;
+    let jwk_requester = Jwk(reqwest_client);
     authorize_user(issuer_url, issuer_remote_url, token_part, cache, jwk_requester, false).await
 }

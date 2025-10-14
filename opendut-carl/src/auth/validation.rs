@@ -128,23 +128,20 @@ fn get_key_id(access_token: &str) -> Result<String, ValidationError> {
 
 async fn fetch_jwk_custom(issuer_jwk_url: Url, jwk_requester: impl JwkRequester) -> Result<BTreeMap<String, JsonWebKey>, ValidationError> {
     let result = jwk_requester.fetch_jwk(issuer_jwk_url).await?;
-    let json_web_key_set = serde_json::from_str::<OidcJsonWebKeySet>(result.as_str())
-        .map_err(|cause| ValidationError::Configuration(format!("Failed to parse json: {cause}")))?;
-    let jwk_map = json_web_key_set.keys.into_iter().map(|jwk| {
-        (jwk.key_identifier.clone(), jwk)
-    }).collect::<BTreeMap<_, _>>();
-    Ok(jwk_map)
+    OidcJsonWebKeySet::parse(result.as_str())
 }
 
 pub trait JwkRequester {
     async fn fetch_jwk(&self, issuer_jwk_url: Url) -> Result<String, ValidationError>;
 }
 
-pub struct Jwk;
+pub struct Jwk(pub reqwest::Client);
 
 impl JwkRequester for Jwk {
     async fn fetch_jwk(&self, issuer_jwk_url: Url) -> Result<String, ValidationError> {
-        let response = reqwest::get(issuer_jwk_url.clone()).await //TODO pass CA or preconfigured client into here; currently requires SSL_CERT_FILE env to be set
+        let response = self.0.get(issuer_jwk_url.clone())
+            .send()
+            .await
             .map_err(|cause| ValidationError::Configuration(format!("Failed to fetch IDP jwk URL from '{issuer_jwk_url}': {cause}")))?;
         let result = response.text().await
             .map_err(|cause| ValidationError::Configuration(format!("Failed to read IDP configuration URL from '{issuer_jwk_url}': {cause}")))?;
@@ -272,10 +269,8 @@ mod tests {
         let issuer_url: Url = Url::parse(ISSUER_URL).unwrap();
         let issuer_remote_url: Url = Url::parse(ISSUER_URL).unwrap();
         
-        let json_web_key_set = serde_json::from_str::<OidcJsonWebKeySet>(JWK_RAW_DATA).unwrap();
-        let jwk_map = json_web_key_set.keys.into_iter().map(|jwk| {
-            (jwk.key_identifier.clone(), jwk)
-        }).collect::<BTreeMap<_, _>>();
+        let jwk_map = OidcJsonWebKeySet::parse(JWK_RAW_DATA).unwrap();
+            serde_json::from_str::<OidcJsonWebKeySet>(JWK_RAW_DATA).unwrap();
 
         let jwk = jwk_map.get(KEY_ID).expect("test could not get key_id from jwk map");
 

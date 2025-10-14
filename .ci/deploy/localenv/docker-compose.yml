@@ -253,9 +253,7 @@ services:
       # Keycloak user
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD
-      # CURL
-      - CURL_CA_BUNDLE=/provision/pki/opendut-ca.pem
-      # Netbird management is GO, GO uses SSL_CERT_FILE environment variable, see https://go.dev/src/crypto/x509/root_unix.go
+      # Pass custom certificates to GO applications (netbird management, https://go.dev/src/crypto/x509/root_unix.go) and curl
       - SSL_CERT_FILE=/provision/pki/opendut-ca.pem
       - KEYCLOAK_URL=https://auth.opendut.local
       - NETBIRD_MANAGEMENT_URL=https://netbird-api.opendut.local
@@ -358,10 +356,8 @@ services:
       - OPENDUT_CARL_NETWORK_TLS_CA=/provision/pki/opendut-ca.pem
       - OPENDUT_CARL_NETWORK_TLS_KEY=/provision/pki/deploy/carl.opendut.local.key
       - OPENDUT_CARL_NETWORK_TLS_CERTIFICATE=/provision/pki/deploy/carl.opendut.local.pem
-      # Use custom certificate authority in CARL (Rust respects SSL_CERT_FILE), see TODO containing "currently requires SSL_CERT_FILE env to be set"
-      - SSL_CERT_FILE=/provision/pki/opendut-ca.pem
       # CURL
-      - CURL_CA_BUNDLE=/provision/pki/opendut-ca.pem
+      - SSL_CERT_FILE=/provision/pki/opendut-ca.pem
       # VPN
       - OPENDUT_CARL_VPN_ENABLED=true
       - OPENDUT_CARL_VPN_KIND=netbird

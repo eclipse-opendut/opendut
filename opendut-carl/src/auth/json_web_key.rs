@@ -1,4 +1,6 @@
+use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
+use crate::auth::validation::ValidationError;
 
 #[derive(Debug, Clone)]
 pub struct JwkCacheValue {
@@ -24,4 +26,14 @@ pub struct JsonWebKey {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OidcJsonWebKeySet {
     pub(crate) keys: Vec<JsonWebKey>,
+}
+
+impl OidcJsonWebKeySet {
+    pub fn parse(json_web_key: &str) -> Result<BTreeMap<String, JsonWebKey>, ValidationError> {
+        let json_web_key_set = serde_json::from_str::<OidcJsonWebKeySet>(json_web_key)
+            .map_err(|cause| ValidationError::Configuration(format!("Failed to parse json: {cause}")))?;
+        Ok(json_web_key_set.keys.into_iter().map(|jwk| {
+            (jwk.key_identifier.clone(), jwk)
+        }).collect::<BTreeMap<_, _>>())
+    }
 }
