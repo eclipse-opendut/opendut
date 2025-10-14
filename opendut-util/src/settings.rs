@@ -64,17 +64,6 @@ pub fn load_config(name: &str, defaults: &str, defaults_format: FileFormat, over
 
     let mut config_files = Vec::new();
 
-    /*
-     Additionally look at the path given in the optional environment variable 'OPENDUT_{name}_CUSTOM_CONFIG_PATH'.
-     Just point the environment variable to the configuration file path:
-     - e.g. OPENDUT_CARL_CUSTOM_CONFIG_PATH=/path/to/config.yaml
-    */
-    let name_upper_case = name.to_uppercase();
-    let custom_config_path_env_key = format!("OPENDUT_{name_upper_case}_CUSTOM_CONFIG_PATH");
-    if let Ok(config_path) = std::env::var(custom_config_path_env_key) {
-        config_files.push(Some(PathBuf::from(config_path)));
-    }
-
     if project::is_running_in_development() {
         config_files.push(project::make_path_absolute(development_config).ok())
     }
@@ -88,6 +77,17 @@ pub fn load_config(name: &str, defaults: &str, defaults_format: FileFormat, over
         Err(_) => {
             config_files.push(home_dir().map(|path| path.join(".config").join(user_config)));
         }
+    }
+
+    /*
+     Additionally look at the path given in the optional environment variable 'OPENDUT_{name}_CUSTOM_CONFIG_PATH'.
+     Just point the environment variable to the configuration file path:
+     - e.g. OPENDUT_CARL_CUSTOM_CONFIG_PATH=/path/to/config.yaml
+    */
+    let name_upper_case = name.to_uppercase();
+    let custom_config_path_env_key = format!("OPENDUT_{name_upper_case}_CUSTOM_CONFIG_PATH");
+    if let Ok(config_path) = std::env::var(custom_config_path_env_key) {
+        config_files.push(Some(PathBuf::from(config_path)));
     }
 
     let (sources_used, sources_declared): (Vec<PathBuf>, Vec<PathBuf>) = config_files.into_iter()

@@ -16,7 +16,7 @@ async-trait = { workspace = true }
 anyhow = { workspace = true }
 http = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
-reqwest-middleware = { workspace = true, version = "1.0.0", features = ["json"] }
+reqwest-middleware = { workspace = true, features = ["json"] }
 reqwest-retry = { workspace = true}
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }

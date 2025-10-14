@@ -4,18 +4,12 @@ use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct CarlConfiguration {
-    netbird_api_key: String,
     carl_client_secret: String,
+    netbird_password: String,
+    netbird_management_client_secret: String,
 }
 
 impl CarlConfiguration {
-    fn new(netbird_api_key: String, carl_client_secret: String) -> Self {
-        Self {
-            netbird_api_key,
-            carl_client_secret,
-        }
-    }
-
     fn carl_toml_template() -> String {
         include_str!("resources/carl.toml.tmpl").to_string()
     }
@@ -24,21 +18,25 @@ impl CarlConfiguration {
         load_localenv_secrets();
         let carl_client_secret = std::env::var("OPENDUT_CARL_NETWORK_OIDC_CLIENT_SECRET")
             .unwrap_or_else(|_| panic!("Missing OPENDUT_CARL_NETWORK_OIDC_CLIENT_SECRET in {}", LOCALENV_SECRETS_ENV_FILE));
-        let netbird_api_key = std::env::var("NETBIRD_API_KEY")
-            .unwrap_or_else(|_| panic!("Missing NETBIRD_API_KEY in environment. Please set manually."));
+        let netbird_password = std::env::var("NETBIRD_PASSWORD")
+            .unwrap_or_else(|_| panic!("Missing NETBIRD_PASSWORD in environment. Please set manually."));
+        let netbird_management_client_secret = std::env::var("NETBIRD_MANAGEMENT_CLIENT_SECRET")
+            .unwrap_or_else(|_| panic!("Missing NETBIRD_MANAGEMENT_CLIENT_SECRET in {}", LOCALENV_SECRETS_ENV_FILE));
 
-        Self::new(
-            netbird_api_key,
+        Self {
             carl_client_secret,
-        )
+            netbird_password,
+            netbird_management_client_secret,
+        }
     }
 
     pub fn config_toml(&self) -> String {
         let template = Self::carl_toml_template();
 
         template
-            .replace("{netbird_api_key}", &self.netbird_api_key)
+            .replace("{localenv_devmode_netbird_password}", &self.netbird_password)
             .replace("{localenv_devmode_carl_client_secret}", &self.carl_client_secret)
+            .replace("{localenv_devmode_netbird_management_client_secret}", &self.netbird_management_client_secret)
     }
 }
 

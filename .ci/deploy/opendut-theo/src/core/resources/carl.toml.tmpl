@@ -44,6 +44,12 @@ url = "https://netbird-api.opendut.local/api"
 ca = ".ci/deploy/localenv/data/secrets/pki/opendut-ca.pem"
 auth.type = "oauth-create-api-token"
 auth.secret = ""
+auth.username = "netbird"
+auth.password = "{localenv_devmode_netbird_password}"
+auth.oidc.id = "netbird-backend"
+auth.oidc.issuer.url = "https://auth.opendut.local/realms/netbird/"
+auth.oidc.secret = "{localenv_devmode_netbird_management_client_secret}"
+auth.oidc.scopes = "api"
 
 [opentelemetry]
 enabled = true

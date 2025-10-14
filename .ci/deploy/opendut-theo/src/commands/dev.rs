@@ -1,13 +1,15 @@
+use clap::ArgAction;
 use std::fs;
 use std::path::PathBuf;
-use anyhow::Context;
-use clap::ArgAction;
+use std::process::Command;
+use anyhow::{anyhow, Context};
 use home::home_dir;
 use crate::core::carl_config::CarlConfiguration;
 use crate::core::docker::command::DockerCommand;
 use crate::core::docker::services::DockerCoreServices;
+use crate::core::command_ext::TheoCommandExtensions;
+use crate::core::project::{load_theo_environment_variables, ProjectRootDir};
 use crate::core::{localenv, TestenvMode};
-use crate::core::project::load_theo_environment_variables;
 
 /// Build and start development environment
 #[derive(clap::Parser)]
@@ -18,17 +20,15 @@ pub struct DevCli {
 
 #[derive(clap::Subcommand)]
 pub enum TaskCli {
-    /// Start dev containers.
+    /// Start localenv in dev mode (CARL container forwards to host).
     #[command(alias = "up")]
     Start {
         /// Expose firefox container port (3000), or set OPENDUT_EXPOSE_PORTS=true
         #[arg(long, short, action = ArgAction::SetTrue)]
         expose: bool,
     },
-    /// Stop dev containers.
-    Stop,
-    /// Build dev container.
-    Build,
+    /// Start CARL with developer configuration.
+    Carl,
     /// CARL environment run configuration for your IDE (different output in VM and host!).
     CarlConfig,
     /// EDGAR container.
@@ -46,18 +46,26 @@ impl DevCli {
             TaskCli::Start { expose } => {
                 localenv::start(false, false, expose, &dev_mode)?;
             }
-            TaskCli::Stop => {
-                localenv::stop()?;
-            }
-            TaskCli::Build => {
-                localenv::build_localenv_containers(&dev_mode)?;
+            TaskCli::Carl => {
+                // Create CARL developer config
+                let carl_config = CarlConfiguration::generate();
+                let config_path = carl_temporary_config_path();
+                fs::write(&config_path, carl_config.config_toml())
+                    .context("Failed to write carl config to temporary location.")?;
+
+                let carl_config_path = config_path.into_os_string().into_string()
+                    .map_err(|_| anyhow!("Failed to convert config path to string."))?;
+                Command::new("cargo")
+                    .current_dir(PathBuf::project_path_buf())
+                    .env("OPENDUT_CARL_CUSTOM_CONFIG_PATH", carl_config_path)
+                    .arg("carl")
+                    .run_requiring_success()?;
             }
             TaskCli::EdgarShell => {
                 DockerCommand::new()
                     .add_common_args(DockerCoreServices::Edgar.as_str())
                     .arg("run")
                     .arg("--rm")
-                    //.arg("--entrypoint=\"\"")
                     .arg("-it")
                     .arg("leader")
                     .arg("bash")
@@ -65,12 +73,7 @@ impl DevCli {
             }
             TaskCli::CarlConfig => {
                 let carl_config = CarlConfiguration::generate();
-                let config_path = carl_temporary_config_path();
-                fs::write(carl_temporary_config_path(), carl_config.config_toml())
-                    .context("Failed to write carl config to temporary location.")?;
                 println!("{}", carl_config.config_toml());
-                println!("export OPENDUT_CARL_CUSTOM_CONFIG_PATH={}", config_path.display());
-                println!("Now you may run 'cargo carl' with this environment variable set.");
             }
         }
         Ok(())
