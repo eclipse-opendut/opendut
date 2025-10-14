@@ -5,4 +5,6 @@ pub mod tonic_service;
 pub mod error;
 pub mod pem;
 pub mod middleware;
-pub use oauth2::{ClientId, ClientSecret};
+mod authenticator;
+// TODO: re-evaluate re-exports
+pub use oauth2::{ClientId, ClientSecret, ResourceOwnerUsername, ResourceOwnerPassword};

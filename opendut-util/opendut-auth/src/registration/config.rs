@@ -14,6 +14,7 @@ pub struct RegistrationClientConfig {
     pub device_redirect_url: RedirectUrl,
     pub client_home_base_url: ResourceHomeUrl,
     pub registration_url: RegistrationUrl,
+    pub issuer_url: Url,
     pub issuer_remote_url: Url,
     pub issuer_admin_url: Url,
 }
@@ -44,7 +45,7 @@ impl RegistrationClientConfig {
         let client_home_base_url = ResourceHomeUrl::try_from(settings)
             .map_err(|error| RegistrationClientError::InvalidConfiguration { error: format!("Failed to load client home base URL: {error}") })?;
         let registration_url = RegistrationUrl::from_url(
-            client.config.issuer_url.join("clients-registrations/openid-connect")
+            client.issuer_url.join("clients-registrations/openid-connect")
                 .map_err(|error| RegistrationClientError::InvalidConfiguration { error: format!("Invalid registration endpoint URL: {error}") })?
         );
         let issuer_remote_url: Url = settings.get_string(RegistrationClientConfig::ISSUER_REMOTE_URL)

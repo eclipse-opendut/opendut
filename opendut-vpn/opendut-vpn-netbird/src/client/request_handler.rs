@@ -97,7 +97,6 @@ impl Middleware for AuthorizationHeaderMiddleware {
         extensions: &mut Extensions,
         next: Next<'_>
     ) -> reqwest_middleware::Result<Response> {
-        println!("Inserting token into request: {:?}", self.api_token);
         req.headers_mut().insert(
             reqwest::header::AUTHORIZATION,
             self.api_token.sensitive_header()

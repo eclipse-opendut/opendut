@@ -16,24 +16,30 @@ use tracing::debug;
 use backon::Retryable;
 use reqwest_middleware::ClientWithMiddleware;
 use tokio::runtime::Handle;
-use crate::confidential::config::{OidcClientConfig, OidcConfidentialClientConfig, ConfiguredClient};
+use url::Url;
+use oauth2::Scope as OAuthScope;
+use crate::confidential::authenticator::OidcAuthenticator;
+use crate::confidential::config::{OidcClientConfig, OidcConfidentialClientConfig, ConfiguredClient, OidcResourceOwnerConfidentialClientConfig};
 use crate::confidential::error::{ConfidentialClientError, WrappedRequestTokenError};
 use crate::confidential::reqwest_client::OidcReqwestClient;
-use opendut_util_core::future::ExplicitSendFutureWrapper;
 use crate::confidential::middleware::OAuthMiddleware;
 use crate::TOKEN_GRACE_PERIOD;
 
-#[derive(Debug)]
 pub struct ConfidentialClient {
     inner: ConfiguredClient,
-    pub reqwest_client: OidcReqwestClient,
-    pub config: OidcConfidentialClientConfig,
+    pub reqwest_client: reqwest::Client,
+    pub issuer_url: Url,
+    scopes: Vec<OAuthScope>,
 
-    state: RwLock<Option<TokenStorage>>,
+    authenticator: Box<dyn OidcAuthenticator + Send + Sync>,
+
+    state: SharedTokenStorage,
 }
 
+pub(crate)  type SharedTokenStorage = Arc<RwLock<Option<TokenStorage>>>;
+
 #[derive(Debug, Clone)]
-struct TokenStorage {
+pub(crate) struct TokenStorage {
     pub access_token: AccessToken,
     pub expires_in: NaiveDateTime,
 }
@@ -80,13 +86,15 @@ impl ConfidentialClient {
                 debug!("OIDC configuration loaded: client_id='{}', issuer_url='{}'", client_config.client_id.as_str(), client_config.issuer_url.as_str());
                 let reqwest_client = OidcReqwestClient::from_config(settings).await
                     .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to create reqwest client."), cause: cause.into() })?;
+
                 let client = ConfidentialClient::from_client_config(client_config.clone(), reqwest_client)?;
 
                 match client.check_connection(client_config).await {
                     Ok(_) => { Ok(Some(client)) }
                     Err(error) => { Err(error) }
                 }
-            }
+            },
+            OidcClientConfig::ResourceOwner(_) => todo!(),
             OidcClientConfig::AuthenticationDisabled => {
                 debug!("OIDC is disabled.");
                 Ok(None)
@@ -94,24 +102,43 @@ impl ConfidentialClient {
         }
     }
 
-    pub fn from_client_config(client_config: OidcConfidentialClientConfig, reqwest_client: OidcReqwestClient) -> Result<ConfidentialClientRef, ConfidentialClientError> {
+    pub fn from_client_config(client_config: OidcConfidentialClientConfig, reqwest_client: reqwest::Client) -> Result<ConfidentialClientRef, ConfidentialClientError> {
         let inner = client_config.get_client()?;
+        let authenticator = Box::new(client_config.clone());
 
         let client = Self {
             inner,
             reqwest_client,
-            config: client_config,
+            issuer_url: client_config.issuer_url,
+            scopes: client_config.scopes,
+            authenticator,
             state: Default::default(),
         };
         Ok(Arc::new(client))
     }
+
+    pub fn from_client_config2(client_config: OidcResourceOwnerConfidentialClientConfig, reqwest_client: reqwest::Client) -> Result<ConfidentialClientRef, ConfidentialClientError> {
+        let inner = client_config.get_client()?;
+        let authenticator = Box::new(client_config.clone());
+
+        let client = Self {
+            inner,
+            reqwest_client,
+            issuer_url: client_config.issuer_url,
+            scopes: client_config.scopes,
+            authenticator,
+            state: Default::default(),
+        };
+        Ok(Arc::new(client))
+    }
+
     async fn check_connection(&self, idp_config: OidcConfidentialClientConfig) -> Result<(), ConfidentialClientError> {
 
         let token_endpoint = idp_config.issuer_url.join("protocol/openid-connect/token")
             .map_err(|error| ConfidentialClientError::UrlParse { message: String::from("Failed to derive token url from issuer url: "), cause: error })?;
 
         let operation = move || {
-            let client = self.reqwest_client.client.clone();
+            let client = self.reqwest_client.clone();
             let token_endpoint = token_endpoint.clone();
             async move {
                 client.get(token_endpoint.clone()).send().await
@@ -136,7 +163,7 @@ impl ConfidentialClient {
         }
     }
 
-    fn update_storage_token(response: &BasicTokenResponse, state: &mut RwLockWriteGuard<Option<TokenStorage>>) -> Result<Token, AuthError> {
+    pub(crate) fn update_storage_token(response: &BasicTokenResponse, state: &mut RwLockWriteGuard<Option<TokenStorage>>) -> Result<Token, AuthError> {
         let access_token = response.access_token().clone();
         let expires_in = match response.expires_in() {
             None => {
@@ -151,28 +178,8 @@ impl ConfidentialClient {
         Ok(Token { value: response.access_token().secret().to_string() })
     }
 
-    async fn fetch_token(&self) -> Result<Token, AuthError> {
-        let response = ExplicitSendFutureWrapper::from(
-                self.inner.exchange_client_credentials()
-                    .add_scopes(self.config.scopes.clone())
-                    .request_async(&|request| { self.reqwest_client.async_http_client(request) })
-            ).await
-            .map_err(|error| {
-                AuthError::FailedToGetToken {
-                    message: "Fetching authentication token failed!".to_string(),
-                    cause: WrappedRequestTokenError(error),
-                }
-            })?;
-
-        let mut state = self.state.write().await;
-
-        Self::update_storage_token(&response, &mut state)?;
-
-        Ok(Token { value: response.access_token().secret().to_string() })
-    }
-
     pub fn build_client_with_middleware(confidential_client: ConfidentialClientRef) -> ClientWithMiddleware {
-        let inner = confidential_client.reqwest_client.client();
+        let inner = confidential_client.reqwest_client.clone();
         reqwest_middleware::ClientBuilder::new(inner)
             .with(OAuthMiddleware::new(confidential_client))
             .build()
@@ -182,13 +189,13 @@ impl ConfidentialClient {
         let token_storage = self.state.read().await.clone();
         let access_token = match token_storage {
             None => {
-                self.fetch_token().await?
+                self.authenticator.fetch_token(&self.inner, self.scopes.clone(), &self.reqwest_client, self.state.clone()).await?
             }
             Some(token) => {
                 if Utc::now().naive_utc().lt(&token.expires_in.sub(TOKEN_GRACE_PERIOD)) {
                     Token { value: token.access_token.secret().to_string() }
                 } else {
-                    self.fetch_token().await?
+                    self.authenticator.fetch_token(&self.inner, self.scopes.clone(), &self.reqwest_client, self.state.clone()).await?
                 }
             }
         };

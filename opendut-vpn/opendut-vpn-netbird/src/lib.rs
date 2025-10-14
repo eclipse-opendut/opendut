@@ -14,7 +14,7 @@ use opendut_model::peer::PeerId;
 use opendut_model::vpn::VpnPeerConfiguration;
 use opendut_vpn::{CreateClusterError, CreatePeerError, CreateVpnPeerConfigurationError, DeleteClusterError, DeletePeerError, VpnManagementClient};
 
-use crate::client::{Client, DefaultClient};
+use crate::client::{Client, DefaultClient, NetbirdAuthenticationMethod};
 use crate::netbird::error::{CreateClientError, CreateSetupKeyError, GetGroupError, GetPoliciesError, RequestError};
 use crate::netbird::{GroupName, PolicyName};
 
@@ -26,7 +26,7 @@ type Inner = Box<dyn Client + Send + Sync>;
 
 pub struct NetbirdManagementClientConfiguration {
     pub management_url: Url,
-    pub authentication_token: Option<NetbirdToken>,
+    pub authentication: NetbirdAuthenticationMethod,
     pub ca: Option<PathBuf>,
     pub timeout: Duration,
     pub retries: u32,
@@ -63,7 +63,7 @@ impl NetbirdManagementClient {
         let inner = Box::new(DefaultClient::create(
             Clone::clone(&management_url),
             Some(management_ca.as_slice()),
-            configuration.authentication_token,
+            configuration.authentication,
             None,
             configuration.timeout,
             configuration.retries,

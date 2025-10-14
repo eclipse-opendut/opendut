@@ -7,8 +7,7 @@ use serde::Serialize;
 use tracing::error;
 use opendut_auth::confidential::client::ConfidentialClient;
 use opendut_auth::confidential::{ClientId, ClientSecret};
-use opendut_auth::confidential::config::OidcConfidentialClientConfig;
-use opendut_auth::confidential::reqwest_client::OidcReqwestClient;
+use opendut_auth::confidential::config::{OidcResourceOwnerConfidentialClientConfig};
 use opendut_model::peer::PeerId;
 
 use crate::{netbird, routes};
@@ -16,11 +15,12 @@ use crate::client::auth::create_api_token;
 use crate::client::request_handler::{DefaultRequestHandler, RequestHandler, RequestHandlerConfig};
 use crate::netbird::error::{CreateClientError, CreateSetupKeyError, GetGroupError, GetPoliciesError, RequestError};
 
+pub use crate::client::auth::NetbirdAuthenticationMethod;
 mod request_handler;
 
 mod tests;
 mod integration_tests;
-mod auth;
+pub mod auth;
 
 #[async_trait]
 pub trait Client {
@@ -74,7 +74,7 @@ impl DefaultClient {
     pub async fn create(
         netbird_url: Url,
         ca: Option<&[u8]>,
-        token: Option<netbird::NetbirdToken>,
+        authentication: NetbirdAuthenticationMethod,
         requester: Option<Box<dyn RequestHandler + Send + Sync>>,
         timeout: Duration,
         retries: u32,
@@ -101,23 +101,26 @@ impl DefaultClient {
                 .build()
                 .expect("Failed to construct client.")
         };
-        let reqwest_client = OidcReqwestClient::from_client(client.clone());
         opendut_util_core::testing::init_localenv_secrets();  // TODO: remove this line and properly pass secrets
-        let client_config = OidcConfidentialClientConfig::new(
+        match authentication {
+            NetbirdAuthenticationMethod::CreateApiTokenWithOidc(oidc_config) => {}
+            NetbirdAuthenticationMethod::UseExistingApiToken(token) => {}
+        }
+
+        let client_config = OidcResourceOwnerConfidentialClientConfig::new(
             ClientId::new("netbird-backend".to_string()),
-            ClientSecret::new(
-                std::env::var("NETBIRD_MANAGEMENT_CLIENT_SECRET")
-                    .expect("NETBIRD_MANAGEMENT_CLIENT_SECRET environment variable not set in test environment")
-            ),
+            ClientSecret::new(std::env::var("NETBIRD_MANAGEMENT_CLIENT_SECRET").expect("NETBIRD_MANAGEMENT_CLIENT_SECRET environment variable not set in test environment")),
             Url::parse("https://auth.opendut.local/realms/netbird/").unwrap(),
             vec![],
+            "netbird".to_string(),
+            std::env::var("NETBIRD_PASSWORD").expect("NETBIRD_PASSWORD environment variable not set in test environment"),
         );
-        let confidential_client = ConfidentialClient::from_client_config(client_config, reqwest_client)
+        let confidential_client = ConfidentialClient::from_client_config2(client_config, client.clone())
             .map_err(|cause| CreateClientError::InstantiationFailure { cause: format!("Failed to create confidential client:\n  {cause}") })?;
 
         let auth_client = ConfidentialClient::build_client_with_middleware(confidential_client.clone());
-        // get self user id from NetBird
-        let netbird_token = create_api_token(auth_client.clone(), &netbird_url).await?;
+        // get self user id from NetBird, TODO: pass netbird username
+        let netbird_token = create_api_token(auth_client.clone(), "netbird", &netbird_url).await?;
 
         let requester = requester.unwrap_or_else(|| {
             Box::new(DefaultRequestHandler::new(

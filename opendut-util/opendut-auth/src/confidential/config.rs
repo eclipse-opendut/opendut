@@ -25,6 +25,7 @@ pub type ConfiguredClient<
 #[derive(Clone, Debug)]
 pub enum OidcClientConfig {
     Confidential(OidcConfidentialClientConfig),
+    ResourceOwner(OidcResourceOwnerConfidentialClientConfig),
     AuthenticationDisabled,
 }
 
@@ -54,8 +55,36 @@ pub struct OidcResourceOwnerConfidentialClientConfig {
     client_secret: OAuthClientSecret,
     pub issuer_url: Url,
     pub scopes: Vec<OAuthScope>,
-    username: OAuthResourceOwnerUsername,
-    password: OAuthResourceOwnerPassword,
+    pub(crate) username: OAuthResourceOwnerUsername,
+    pub(crate) password: OAuthResourceOwnerPassword,
+}
+
+impl OidcResourceOwnerConfidentialClientConfig {
+    pub fn new(client_id: OAuthClientId, client_secret: OAuthClientSecret, issuer_url: Url, scopes: Vec<OAuthScope>, username: String, password: String) -> Self {
+        Self {
+            client_id,
+            client_secret,
+            issuer_url,
+            scopes,
+            username: OAuthResourceOwnerUsername::new(username),
+            password: OAuthResourceOwnerPassword::new(password),
+        }
+    }
+    
+    // TODO: fix duplicate
+    pub fn get_client(&self) -> Result<ConfiguredClient, ConfidentialClientError> {
+        let auth_endpoint = self.issuer_url.join("protocol/openid-connect/auth")
+            .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to derive authorization url from issuer url."), cause: cause.into() })?;
+        let token_endpoint = self.issuer_url.join("protocol/openid-connect/token")
+            .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to derive token url from issuer url."), cause: cause.into() })?;
+
+        let client = BasicClient::new(self.client_id.clone())
+            .set_client_secret(self.client_secret.clone())
+            .set_auth_uri(AuthUrl::from_url(auth_endpoint))
+            .set_token_uri(TokenUrl::from_url(token_endpoint));
+
+        Ok(client)
+    }
 }
 
 

@@ -7,7 +7,7 @@ use serde::Deserialize;
 #[derive(Clone, Deserialize)]
 pub struct NetbirdToken {
     pub(crate) r#type: TokenType,
-    pub(crate) value: String
+    value: String
 }
 #[derive(Clone, Deserialize)]
 pub enum TokenType {
@@ -19,12 +19,6 @@ impl NetbirdToken {
     pub fn new_personal_access(value: impl Into<String>) -> Self {
         Self {
             r#type: TokenType::PersonalAccess,
-            value: value.into(),
-        }
-    }
-    pub fn new_bearer(value: impl Into<String>) -> Self {
-        Self {
-            r#type: TokenType::Bearer,
             value: value.into(),
         }
     }

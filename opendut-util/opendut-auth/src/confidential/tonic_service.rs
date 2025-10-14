@@ -9,7 +9,7 @@ use tower::Service;
 use tracing::error;
 use crate::confidential::client::ConfidentialClient;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct TonicAuthenticationService {
     inner: Channel,
     confidential_client: Option<Arc<ConfidentialClient>>,
