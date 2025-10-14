@@ -367,7 +367,13 @@ services:
       - OPENDUT_CARL_VPN_KIND=netbird
       - OPENDUT_CARL_VPN_NETBIRD_CA=/provision/pki/opendut-ca.pem
       - OPENDUT_CARL_VPN_NETBIRD_URL=https://netbird-api.opendut.local/api
-      - OPENDUT_CARL_VPN_NETBIRD_AUTH_TYPE=personal-access-token
+      - OPENDUT_CARL_VPN_NETBIRD_AUTH_TYPE=oauth-create-api-token
+      - OPENDUT_CARL_VPN_NETBIRD_AUTH_USERNAME=netbird
+      - OPENDUT_CARL_VPN_NETBIRD_AUTH_PASSWORD=$NETBIRD_PASSWORD
+      - OPENDUT_CARL_VPN_NETBIRD_AUTH_OIDC_ID=netbird-backend
+      - OPENDUT_CARL_VPN_NETBIRD_AUTH_OIDC_ISSUER_URL=https://auth.opendut.local/realms/netbird/
+      - OPENDUT_CARL_VPN_NETBIRD_AUTH_OIDC_SECRET=$NETBIRD_MANAGEMENT_CLIENT_SECRET
+      - OPENDUT_CARL_VPN_NETBIRD_AUTH_OIDC_SCOPES="api"
       # OpenTelemetry
       - OPENDUT_CARL_OPENTELEMETRY_ENABLED=true
       - OPENDUT_CARL_OPENTELEMETRY_COLLECTOR_ENDPOINT=http://otel-collector:4317

@@ -42,8 +42,8 @@ kind = "netbird"
 [vpn.netbird]
 url = "https://netbird-api.opendut.local/api"
 ca = ".ci/deploy/localenv/data/secrets/pki/opendut-ca.pem"
-auth.type = "personal-access-token"
-auth.secret = "{netbird_api_key}"
+auth.type = "oauth-create-api-token"
+auth.secret = ""
 
 [opentelemetry]
 enabled = true

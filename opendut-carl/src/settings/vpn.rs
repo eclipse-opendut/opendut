@@ -49,8 +49,8 @@ pub async fn create(settings: &Config) -> anyhow::Result<Vpn> {
                             let password = settings.get::<Option<String>>("vpn.netbird.auth.password")?
                                 .ok_or_else(|| anyhow!("No configuration found for: vpn.netbird.auth.password"))?;
 
-                            let issuer_url = settings.get::<Option<String>>("vpn.netbird.auth.oidc.issuer")?
-                                .ok_or_else(|| anyhow!("No configuration found for: vpn.netbird.auth.oidc.issuer"))?;
+                            let issuer_url = settings.get::<Option<String>>("vpn.netbird.auth.oidc.issuer.url")?
+                                .ok_or_else(|| anyhow!("No configuration found for: vpn.netbird.auth.oidc.issuer.url"))?;
                             let client_id = settings.get::<Option<String>>("vpn.netbird.auth.oidc.id")?
                                 .ok_or_else(|| anyhow!("No configuration found for: vpn.netbird.auth.oidc.id"))?;
                             let client_secret = settings.get::<Option<String>>("vpn.netbird.auth.oidc.secret")?

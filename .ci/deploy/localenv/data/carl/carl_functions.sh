@@ -82,15 +82,3 @@ user_present() {
     return 1
   fi
 }
-get_netbird_api_token() {
-  USERS=$(users_list)
-  NETBIRD_USER_ID=$(echo "$USERS" | jq -r '.[] | select(.name=="netbird").id')
-
-  API_KEY_RESPONSE=$(curl -s -H "Authorization: Bearer $TOKEN" \
-       -H 'Content-Type application/json' \
-       -d "{\"user_id\": \"$NETBIRD_USER_ID\", \"name\": \"admin\", \"expires_in\": 365 }" \
-       "$NETBIRD_MANAGEMENT_URL"/api/users/"$NETBIRD_USER_ID"/tokens)
-
-  API_KEY=$(echo "$API_KEY_RESPONSE" | jq -r '.plain_token')
-  echo "$API_KEY"
-}
