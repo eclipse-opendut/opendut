@@ -5,12 +5,26 @@ use crate::{Breadcrumbs, Breadcrumb};
 #[component]
 pub fn BasePageContainer<C>(
     #[prop(into)] title: Signal<String>,
-    #[prop(into, optional)] subtitle: Signal<String>,
+    #[prop(into, optional)] subtitle: Option<Signal<String>>,
     #[prop(into)] breadcrumbs: Signal<Vec<Breadcrumb>>,
     controls: C,
     children: Children
 ) -> impl IntoView
 where C: IntoView + 'static {
+
+    Effect::new(move || {
+        let title = title.get();
+        let subtitle = subtitle.get().map(|subtitle| {
+            if subtitle.is_empty() {
+                String::new()
+            } else {
+                format!("- {subtitle}")
+            }
+        }).unwrap_or_default();
+
+        let page_title = move || format!("{} {}", title, subtitle);
+        leptos::leptos_dom::helpers::document().set_title(&page_title());
+    });
 
     view! {
         <div class="container is-fluid">
@@ -20,7 +34,7 @@ where C: IntoView + 'static {
                     <div class="column">
                         <p class="dut-base-page-title mb-0">{ title }" "</p>
                         {
-                            if !subtitle.read().is_empty() {
+                            if subtitle.read().is_some() {
                                 Some(view! {
                                     <p class="dut-base-page-subtitle mt-0">{ subtitle }</p>
                                 })

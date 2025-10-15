@@ -3006,21 +3006,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "leptos_meta"
-version = "0.8.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d489e38d3f541e9e43ecc2e3a815527840345a2afca629b3e23fcc1dd254578"
-dependencies = [
- "futures",
- "indexmap 2.11.0",
- "leptos",
- "or_poisoned",
- "send_wrapper",
- "wasm-bindgen",
- "web-sys",
-]
-
-[[package]]
 name = "leptos_oidc"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3962,7 +3947,6 @@ dependencies = [
  "gloo-net",
  "leptos",
  "leptos-use",
- "leptos_meta",
  "leptos_oidc",
  "leptos_router",
  "opendut-auth",
