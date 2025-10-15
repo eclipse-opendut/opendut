@@ -12,6 +12,7 @@ use std::time::Duration;
 use sysinfo::{Pid, ProcessesToUpdate, System};
 use tokio::sync::Mutex;
 use tokio::time::sleep;
+use tonic::transport::ClientTlsConfig;
 use tracing::trace;
 
 
@@ -19,13 +20,14 @@ pub(super) fn init_metrics(
     telemetry_interceptor: ConfClientArcMutex<Option<ConfidentialClientRef>>,
     endpoint: &Endpoint,
     service_metadata_resource: Resource,
-    metrics_interval: Duration
+    metrics_interval: Duration,
+    tls_config: ClientTlsConfig,
 ) -> Result<SdkMeterProvider, ExporterBuildError> {
 
     let exporter = MetricExporter::builder()
         .with_tonic()
+        .with_tls_config(tls_config)
         .with_interceptor(telemetry_interceptor)
-        .with_tls_config(tonic::transport::ClientTlsConfig::new().with_enabled_roots())
         .with_endpoint(Clone::clone(&endpoint.url))
         .build()?;
 

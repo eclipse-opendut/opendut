@@ -9,7 +9,6 @@ use tower::ServiceExt as _;
 use tracing::{debug, info};
 use uuid::Uuid;
 
-use opendut_auth::confidential::pem::PemFromConfig;
 use opendut_auth::registration::client::RegistrationClient;
 use opendut_auth::registration::resources::ResourceHomeUrl;
 use opendut_util::settings::LoadedConfig;
@@ -17,6 +16,8 @@ use opendut_util::telemetry::logging::LoggingConfig;
 use opendut_util::telemetry::opentelemetry_types;
 use opendut_util::telemetry::opentelemetry_types::Opentelemetry;
 use opendut_util::{project, telemetry};
+use opendut_util_core::pem::PemFromConfig;
+use opendut_util_core::reqwest_client::OidcReqwestClient;
 use auth::in_memory_cache::CustomInMemoryCache;
 
 use crate::auth::grpc_auth_layer::GrpcAuthenticationLayer;
@@ -31,7 +32,6 @@ shadow_formatted_version::from_shadow!(app_info);
 mod auth;
 mod cli;
 pub use cli::cli;
-use opendut_auth::confidential::reqwest_client::OidcReqwestClient;
 
 mod http;
 mod manager;
@@ -101,7 +101,8 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
 
     let carl_url = ResourceHomeUrl::try_from(&settings)?;
 
-    let ca_certificate = Pem::from_config_path("network.tls.ca", &settings).await?;
+    let ca_certificate = Pem::read_from_config(&settings)?
+        .expect("Could not find opendut certificate authority.");
 
     let oidc_registration_client = RegistrationClient::from_settings(&settings).await
         .expect("Failed to load oidc registration client!");
@@ -156,7 +157,7 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
             .add_service(grpc_facades.peer_messaging_broker_facade.into_grpc_service())
             .add_service(grpc_facades.observer_messaging_broker_facade.into_grpc_service());
 
-        let reqwest_client = OidcReqwestClient::from_config(&settings).await?;
+        let reqwest_client = OidcReqwestClient::from_config(&settings)?;
         routes_builder
             .routes()
             .into_axum_router()

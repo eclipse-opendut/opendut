@@ -14,7 +14,7 @@ use tracing::error;
 use url::Url;
 use opendut_util_core::future::ExplicitSendFutureWrapper;
 use crate::confidential::client::{ConfidentialClient, ConfidentialClientRef};
-use crate::confidential::reqwest_client::async_http_client;
+use crate::confidential::client::async_http_client;
 use crate::registration::config::RegistrationClientConfig;
 use crate::registration::error::WrappedClientRegistrationError;
 use crate::registration::resources::{ResourceHomeUrl, UserId};

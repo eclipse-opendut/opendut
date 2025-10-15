@@ -25,7 +25,7 @@ use opendut_auth::confidential::client::{AuthError, ConfClientArcMutex};
 use opendut_auth::confidential::error::ConfidentialClientError;
 use crate::telemetry::logging::{LoggingConfig, LoggingConfigError, PipeLogging, PipeLoggingStream};
 use crate::telemetry::metrics::{NamedMeterProvider, NamedMeterProviderKindCpu, NamedMeterProviderKindDefault, NamedMeterProviders};
-use crate::telemetry::opentelemetry_types::{Opentelemetry, OpentelemetryConfigError};
+use crate::telemetry::opentelemetry_types::{Opentelemetry, OpentelemetryConfig, OpentelemetryConfigError};
 
 pub const LOG_FILTER_ENV: &str = "OPENDUT_LOG";
 pub const DEFAULT_METER_NAME: &str = "opendut_meter";
@@ -110,14 +110,16 @@ pub async fn initialize_with_config(
     );
 
     let (meter_providers, tracer_provider) =
-        if let Opentelemetry::Enabled {
-            collector_endpoint,
-            service_name,
-            service_metadata,
-            metrics_interval_ms,
-            cpu_collection_interval_ms,
-            confidential_client,
-        } = opentelemetry_config {
+        if let Opentelemetry::Enabled(config) = opentelemetry_config {
+            let OpentelemetryConfig {
+                confidential_client,
+                collector_endpoint,
+                service_name,
+                service_metadata,
+                metrics_interval_ms,
+                cpu_collection_interval_ms,
+                client_tls_config,
+            } = *config;
             let handle = Handle::current();
             let confidential_client = ConfClientArcMutex { mutex: Arc::new(Mutex::new(confidential_client)), handle };
 
@@ -138,6 +140,7 @@ pub async fn initialize_with_config(
                 confidential_client.clone(),
                 &collector_endpoint,
                 service_metadata_resource.clone(),
+                client_tls_config.clone(),
             ).expect("Failed to initialize tracer.");
 
             let tracer = tracer_provider.tracer(DEFAULT_TRACER_NAME);
@@ -147,7 +150,8 @@ pub async fn initialize_with_config(
             let logger_provider = logging::init_logger_provider(
                 confidential_client.clone(),
                 &collector_endpoint,
-                service_metadata_resource.clone()
+                service_metadata_resource.clone(),
+                client_tls_config.clone(),
             ).expect("Failed to initialize logs.");
 
             let logger_layer = OpenTelemetryTracingBridge::new(&logger_provider);
@@ -158,7 +162,8 @@ pub async fn initialize_with_config(
                     confidential_client.clone(),
                     &collector_endpoint,
                     service_metadata_resource.clone(),
-                    metrics_interval_ms
+                    metrics_interval_ms,
+                    client_tls_config.clone(),
                 ).expect("Failed to initialize default metrics.")
             };
 
@@ -168,7 +173,8 @@ pub async fn initialize_with_config(
                     confidential_client,
                     &collector_endpoint,
                     service_metadata_resource.clone(),
-                    cpu_collection_interval_ms
+                    cpu_collection_interval_ms,
+                    client_tls_config,
                 ).expect("Failed to initialize CPU metrics.")
             };
 

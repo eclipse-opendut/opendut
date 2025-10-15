@@ -7,7 +7,7 @@ use backon::BlockingRetryable;
 use chrono::{NaiveDateTime, Utc};
 use config::Config;
 use oauth2::basic::BasicTokenResponse;
-use oauth2::{AccessToken, TokenResponse};
+use oauth2::{AccessToken, HttpRequest, HttpResponse, TokenResponse};
 use tokio::sync::{Mutex, RwLock, RwLockWriteGuard, TryLockError};
 use tonic::{Request, Status};
 use tonic::metadata::MetadataValue;
@@ -17,10 +17,10 @@ use backon::Retryable;
 use reqwest_middleware::ClientWithMiddleware;
 use tokio::runtime::Handle;
 use oauth2::Scope as OAuthScope;
+use opendut_util_core::reqwest_client::OidcReqwestClient;
 use crate::confidential::config::{OidcClientConfig, ConfiguredClient, OidcConfigEnabled};
-use crate::confidential::error::{ConfidentialClientError, WrappedRequestTokenError};
+use crate::confidential::error::{ConfidentialClientError, OidcClientError, WrappedRequestTokenError};
 use crate::confidential::IssuerUrl;
-use crate::confidential::reqwest_client::OidcReqwestClient;
 use crate::confidential::middleware::OAuthMiddleware;
 use crate::TOKEN_GRACE_PERIOD;
 
@@ -81,7 +81,7 @@ impl ConfidentialClient {
         match config_enabled {
             OidcConfigEnabled::Yes(config) => {
                 debug!("OIDC configuration loaded: client_id='{}', issuer_url='{}'", config.get_client_id().as_str(), config.get_issuer().value().as_str());
-                let reqwest_client = OidcReqwestClient::from_config(settings).await
+                let reqwest_client = OidcReqwestClient::from_config(settings)
                     .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to create reqwest client."), cause: cause.into() })?;
 
                 let client = ConfidentialClient::from_client_config(*config.clone(), reqwest_client)?;
@@ -257,4 +257,46 @@ impl Interceptor for ConfClientArcMutex<Option<ConfidentialClientRef>> {
             }
         }
     }
+}
+
+
+pub async fn async_http_client(
+    client: &reqwest::Client,
+    request: HttpRequest,
+) -> Result<HttpResponse, OidcClientError> {
+    let mut request_builder = client
+        .request(request.method().clone(), request.uri().to_string())
+        .body(request.body().clone());
+    for (name, value) in request.headers() {
+        request_builder = request_builder.header(name.as_str(), value.as_bytes());
+    }
+    let request = request_builder.build()
+        .map_err(|cause| {
+            OidcClientError::AuthReqwest { message: cause.to_string(), status: cause.status().unwrap_or_default().to_string(), inner: cause }
+        })?;
+    let response = client.execute(request).await
+        .map_err(|cause: reqwest::Error| {
+            OidcClientError::AuthReqwest { message: cause.to_string(), status: cause.status().unwrap_or_default().to_string(), inner: cause }
+        })?;
+    let status_code = response.status();
+    let headers = response.headers().to_owned();
+    let data = response.bytes().await
+        .map_err(|cause| {
+            OidcClientError::AuthReqwest { message: cause.to_string(), status: cause.status().unwrap_or_default().to_string(), inner: cause }
+        })?;
+
+    let returned_response = {
+        let mut returned_response = http::Response::builder()
+            .status(status_code);
+        for (name, value) in headers.iter() {
+            returned_response = returned_response.header(name, value);
+        }
+        returned_response
+            .body(data.to_vec())
+            .map_err(|cause| {
+                OidcClientError::Other(format!("Failed to build response body: {cause}"))
+            })?
+    };
+
+    Ok(returned_response)
 }

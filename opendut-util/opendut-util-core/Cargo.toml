@@ -7,11 +7,16 @@ license.workspace = true
 
 [dependencies]
 anyhow = { workspace = true }
-thiserror = { workspace = true }
+config = { workspace = true, optional = true }
 dotenvy = { workspace = true, optional = true }
+pem = { workspace = true }
+reqwest = { workspace = true, optional = true }
+thiserror = { workspace = true }
 
 [features]
-default = []
+default = ["settings"]
+settings = ["dep:config"]
+reqwest = ["dep:reqwest", "settings"]
 testing = ["dotenvy"]
 
 [lints]

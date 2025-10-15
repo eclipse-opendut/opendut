@@ -12,15 +12,15 @@ use url::Url;
 use opendut_auth::confidential::client::{ConfidentialClient, ConfidentialClientRef};
 use opendut_auth::confidential::config::{OidcClientConfig, OidcConfidentialClientConfig};
 use opendut_auth::confidential::IssuerUrl;
-use opendut_auth::confidential::pem::PemFromConfig;
-use opendut_auth::confidential::reqwest_client::OidcReqwestClient;
+use opendut_util_core::reqwest_client::OidcReqwestClient;
 use opendut_auth::registration::client::{
     DEVICE_REDIRECT_URL, RegistrationClient, RegistrationClientRef,
 };
 use opendut_auth::registration::config::RegistrationClientConfig;
 use opendut_auth::registration::resources::ResourceHomeUrl;
+use opendut_util_core::pem::PemFromConfig;
 use opendut_util_core::project;
-use opendut_auth::confidential::reqwest_client::Client as ReqwestClient;
+use opendut_util_core::reqwest_client::ReqwestClient;
 
 #[fixture]
 pub async fn localenv_reqwest_client() -> ReqwestClient {
@@ -31,7 +31,6 @@ pub async fn localenv_reqwest_client() -> ReqwestClient {
             .into_string()
             .unwrap();
     let pem = <Pem as PemFromConfig>::from_file_path(&ca_path)
-        .await
         .expect("Could not load localenv CA");
     OidcReqwestClient::from_pem(pem)
         .map_err(|cause| anyhow!("Failed to create reqwest client. Error: {}", cause))

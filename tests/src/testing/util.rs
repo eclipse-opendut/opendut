@@ -22,6 +22,7 @@ pub fn spawn_carl() -> anyhow::Result<Port> {
         // even if ~/.config/opendut/carl/config.toml is present with different values for the test environment in opendut-vm
         .set_override("network.tls.certificate", "resources/development/tls/insecure-development-carl.pem")?
         .set_override("network.tls.key", "resources/development/tls/insecure-development-carl.key")?
+        .set_override("network.tls.ca", "resources/development/tls/insecure-development-ca.pem")?
         .build()?;
     tokio::spawn(async {
         opendut_carl::create(

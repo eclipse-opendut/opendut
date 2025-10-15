@@ -6,6 +6,7 @@ use opentelemetry_sdk::Resource;
 use std::fmt::Debug;
 use std::path::PathBuf;
 use serde::Deserialize;
+use tonic::transport::ClientTlsConfig;
 use tracing::level_filters::LevelFilter;
 
 #[derive(Default)]
@@ -64,12 +65,13 @@ pub fn init_logger_provider(
     telemetry_interceptor: ConfClientArcMutex<Option<ConfidentialClientRef>>,
     endpoint: &Endpoint,
     service_metadata_resource: Resource,
+    tls_config: ClientTlsConfig,
 ) -> Result<SdkLoggerProvider, ExporterBuildError> {
 
     let exporter = LogExporter::builder()
         .with_tonic()
+        .with_tls_config(tls_config)
         .with_interceptor(telemetry_interceptor)
-        .with_tls_config(tonic::transport::ClientTlsConfig::new().with_enabled_roots())
         .with_endpoint(Clone::clone(&endpoint.url))
         .build()?;
 

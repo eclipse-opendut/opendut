@@ -3721,6 +3721,7 @@ dependencies = [
  "opendut-carl-api",
  "opendut-model",
  "opendut-util",
+ "opendut-util-core",
  "opendut-vpn",
  "opendut-vpn-netbird",
  "openidconnect",
@@ -4080,7 +4081,10 @@ name = "opendut-util-core"
 version = "0.8.0-alpha"
 dependencies = [
  "anyhow",
+ "config",
  "dotenvy",
+ "pem",
+ "reqwest",
  "thiserror 2.0.16",
 ]
 

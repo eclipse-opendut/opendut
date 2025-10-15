@@ -12,7 +12,7 @@ serde = ["dep:serde"]
 settings = ["dep:config", "dep:home"]
 
 [dependencies]
-opendut-util-core = { workspace = true }
+opendut-util-core = { workspace = true, features = ["reqwest"] }
 
 config = { workspace = true, optional = true }
 pem = { workspace = true }

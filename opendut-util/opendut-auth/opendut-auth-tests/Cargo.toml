@@ -25,4 +25,4 @@ serde_json = { workspace = true }
 
 [dev-dependencies]
 test-with = { workspace = true }
-opendut-util-core = { workspace = true, features = ["testing"] }
+opendut-util-core = { workspace = true, features = ["testing", "reqwest"] }

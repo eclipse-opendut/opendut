@@ -1,18 +1,24 @@
-use std::time::Duration;
-use url::Url;
 use opendut_auth::confidential::client::{ConfidentialClient, ConfidentialClientRef};
 use opendut_auth::confidential::error::ConfidentialClientError;
+use std::time::Duration;
+use pem::Pem;
+use tonic::transport::{Certificate, ClientTlsConfig};
+use url::Url;
+use opendut_util_core::pem::PemFromConfig;
+
+pub struct OpentelemetryConfig {
+    pub(crate) confidential_client: Option<ConfidentialClientRef>,
+    pub(crate) collector_endpoint: Endpoint,
+    pub(crate) service_name: String,
+    pub(crate) service_metadata: ServiceMetadata,
+    pub(crate) metrics_interval_ms: Duration,
+    pub(crate) cpu_collection_interval_ms: Duration,
+    pub(crate) client_tls_config: ClientTlsConfig,
+}
 
 #[derive(Default)]
 pub enum Opentelemetry {
-    Enabled {
-        confidential_client: Option<ConfidentialClientRef>,
-        collector_endpoint: Endpoint,
-        service_name: String,
-        service_metadata: ServiceMetadata,
-        metrics_interval_ms: Duration,
-        cpu_collection_interval_ms: Duration,
-    },
+    Enabled(Box<OpentelemetryConfig>),
     #[default]
     Disabled,
 }
@@ -101,14 +107,33 @@ impl Opentelemetry {
                     cause
                 })?;
 
-            Ok(Opentelemetry::Enabled {
+            let opendut_ca = Pem::read_from_config_with_env_fallback("network.tls.ca.content",
+                "opentelemetry.client.ca",
+                "network.tls.ca",
+                config
+            ).map_err(|cause| OpentelemetryConfigError::ValueParseError{
+                    field: String::from("opentelemetry.client.ca"),
+                    cause: format!("{cause:?}")
+                })?;
+
+            let mut client_tls_config = ClientTlsConfig::new()
+                .with_enabled_roots();
+            if let Some(opendut_ca) = opendut_ca {
+                let certificate = Certificate::from_pem(opendut_ca.contents());
+                client_tls_config = client_tls_config.ca_certificate(certificate);
+            } else {
+                client_tls_config = client_tls_config.with_native_roots();
+            }
+
+            Ok(Opentelemetry::Enabled(Box::new(OpentelemetryConfig {
                 confidential_client,
                 collector_endpoint,
                 service_name,
                 service_metadata,
                 metrics_interval_ms,
                 cpu_collection_interval_ms,
-            })
+                client_tls_config,
+            })))
         } else {
             Ok(Opentelemetry::Disabled)
         }

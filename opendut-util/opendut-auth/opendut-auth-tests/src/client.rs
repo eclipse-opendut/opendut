@@ -4,7 +4,7 @@ use serde::Deserialize;
 use opendut_auth::confidential::client::{ConfidentialClient, ConfidentialClientRef};
 use opendut_auth::confidential::config::{OidcClientConfig, OidcConfidentialClientConfig};
 use opendut_auth::confidential::IssuerUrl;
-use opendut_auth::confidential::reqwest_client::Client as ReqwestClient;
+use opendut_util_core::reqwest_client::ReqwestClient;
 use crate::localenv_reqwest_client;
 
 #[fixture]

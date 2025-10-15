@@ -152,7 +152,6 @@ impl JwkRequester for Jwk {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeMap;
     use std::ops::Sub;
     use chrono::{Duration, Utc};
     use googletest::{assert_that};

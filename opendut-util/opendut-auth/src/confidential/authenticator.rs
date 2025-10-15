@@ -1,10 +1,10 @@
-use async_trait::async_trait;
+use crate::confidential::client::async_http_client;
 use crate::confidential::client::{AuthError, ConfidentialClient, SharedTokenStorage, Token};
 use crate::confidential::config::{ConfiguredClient, OidcConfidentialClientConfig, OidcResourceOwnerConfidentialClientConfig};
 use crate::confidential::error::WrappedRequestTokenError;
-use crate::confidential::reqwest_client::async_http_client;
-use oauth2::Scope as OAuthScope;
+use async_trait::async_trait;
 use oauth2::TokenResponse;
+use oauth2::Scope as OAuthScope;
 use opendut_util_core::future::ExplicitSendFutureWrapper;
 
 

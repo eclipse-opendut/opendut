@@ -55,9 +55,13 @@ impl DevCli {
 
                 let carl_config_path = config_path.into_os_string().into_string()
                     .map_err(|_| anyhow!("Failed to convert config path to string."))?;
+
+                let localenv_root_ca = PathBuf::project_path_buf()
+                    .join(".ci/deploy/localenv/data/secrets/pki/opendut-ca.pem");
                 Command::new("cargo")
                     .current_dir(PathBuf::project_path_buf())
                     .env("OPENDUT_CARL_CUSTOM_CONFIG_PATH", carl_config_path)
+                    .env("SSL_CERT_FILE", &localenv_root_ca)
                     .arg("carl")
                     .run_requiring_success()?;
             }
