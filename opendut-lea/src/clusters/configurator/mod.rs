@@ -125,7 +125,7 @@ fn LoadedClusterConfigurator(
         if let UserInputValue::Right(name) = cluster_descriptor.get().name {
             name
         } else {
-            String::from(" ")
+            String::new()
         }
     });
 

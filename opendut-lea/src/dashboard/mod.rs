@@ -6,6 +6,8 @@ use crate::peers::PeersCard;
 #[component]
 pub fn Dashboard() -> impl IntoView {
 
+    leptos::leptos_dom::helpers::document().set_title("openDuT");
+
     view! {
         <div class="mt-6">
             <div class="columns is-full">

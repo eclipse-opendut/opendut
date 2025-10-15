@@ -7,8 +7,6 @@ use tracing_subscriber::fmt::format::Pretty;
 use tracing_subscriber::{filter, Layer};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-use leptos_meta::*;
-use leptos_router::hooks::use_location;
 use crate::app::LoadingApp;
 
 mod app;
@@ -51,21 +49,7 @@ fn main() {
 
     info!("LEA started.");
 
-    let location = use_location();
-    let title = match location.pathname.get().as_str() {
-        "clusters" => "Clusters - ",
-        "peers" => "Peers - ",
-        "downloads" => "Downloads - ",
-        "user" => "User - ",
-        "about" => "About - ",
-        "licenses" => "Licenses - ",
-        "error" => "Error - ",
-        "login" => "Login - ",
-        _ => ""
-    };
-
     mount_to_body(move || view! {
-        <Title text= move || format!("{title}openDuT") />
         <Router>
             <LoadingApp />
         </Router>

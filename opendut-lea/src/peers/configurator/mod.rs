@@ -297,7 +297,7 @@ pub fn PeerConfigurator() -> impl IntoView {
         if let UserInputValue::Right(name) = peer_configuration.get().name {
             name
         } else {
-            String::from(" ")
+            String::new()
         }
     });
 
