@@ -1,0 +1,29 @@
+.dut-toggle {
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+  background: $grey;
+  border-radius: 10px;
+  position: relative;
+  transition: 0.3s;
+  cursor: pointer;
+}
+
+.dut-toggle::before {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: 0.3s;
+}
+.dut-toggle.active {
+  background: $info;
+}
+.dut-toggle.active::before {
+  left: 22px;
+}
+

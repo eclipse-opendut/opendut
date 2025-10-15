@@ -5,11 +5,12 @@ use serde::{Deserialize, Serialize};
 use tracing::{debug, error};
 use opendut_carl_api::carl::ClientError;
 use opendut_carl_api::carl::cluster::StoreClusterDeploymentError;
+use opendut_lea_components::Toggle;
 use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
 
 use crate::app::use_app_globals;
 use crate::clusters::components::CreateClusterButton;
-use crate::components::{health, use_toaster, BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, LoadingSpinner, Toast};
+use crate::components::{health, use_toaster, BasePageContainer, Breadcrumb, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, LoadingSpinner, Toast};
 use crate::components::health::Health;
 
 #[component]
@@ -254,16 +255,11 @@ where
 
     view! {
         <tr>
-            <td class="has-text-centered">
-                <IconButton
-                    icon=FontAwesomeIcon::Check
-                    color=Signal::derive(move || match is_deployed.get().0 {
-                        false => ButtonColor::Light,
-                        true => ButtonColor::Success,
+            <td class="is-vcentered has-text-centered">
+                <Toggle
+                    is_active = Signal::derive(move || {
+                        is_deployed.get().0
                     })
-                    size=ButtonSize::Small
-                    state=ButtonState::Enabled
-                    label="Request Cluster to be deployed."
                     on_action = move || {
                         if is_deployed.get().0 { on_undeploy() } else { on_deploy() }
                     }
@@ -277,50 +273,6 @@ where
             </td>
             <td class="is-vcentered has-text-centered">
                 <div class="is-pulled-right">
-                    // <div class="dropdown is-right" class=("is-active", move || dropdown_active.get())>
-                    //     <div class="dropdown-trigger">
-                    //         <IconButton
-                    //             icon=FontAwesomeIcon::EllipsisVertical
-                    //             color=ButtonColor::White
-                    //             size=ButtonSize::Normal
-                    //             state=ButtonState::Enabled
-                    //             label="Show Cluster Action Menu"
-                    //             on_action=move || {
-                    //                 dropdown_active.update(|value| *value = !*value);
-                    //             }
-                    //         />
-                    //     </div>
-                    //     <div node_ref=dropdown class="dropdown-menu">
-                    //         <div class="dropdown-content">
-                    //             <button
-                    //                 class="button is-white is-fullwidth is-justify-content-flex-start"
-                    //                 aria-label="Deploy Cluster"
-                    //                 on:click=move |_| {
-                    //                     dropdown_active.set(false);
-                    //                     on_deploy();
-                    //                 }
-                    //             >
-                    //                 <span class="icon">
-                    //                     <i class="fa-solid fa-cloud-arrow-up"></i>
-                    //                 </span>
-                    //                 <span>"Deploy"</span>
-                    //             </button>
-                    //             <button
-                    //                 class="button is-white is-fullwidth is-justify-content-flex-start"
-                    //                 aria-label="Undeploy Cluster"
-                    //                 on:click=move |_| {
-                    //                     dropdown_active.set(false);
-                    //                     on_undeploy();
-                    //                 }
-                    //             >
-                    //                 <span class="icon">
-                    //                     <i class="fa-solid fa-cloud-arrow-down"></i>
-                    //                 </span>
-                    //                 <span>"Undeploy"</span>
-                    //             </button>
-                    //         </div>
-                    //     </div>
-                    // </div>
                 </div>
             </td>
         </tr>

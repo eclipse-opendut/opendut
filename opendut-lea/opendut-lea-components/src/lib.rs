@@ -30,6 +30,7 @@ pub use util::net::UserNetworkInterfaceConfiguration;
 pub use util::signal::{ButtonStateSignalProvider, Toggled, ToggleSignal};
 pub use doorhanger::{Doorhanger, DoorhangerAlignment};
 pub use icon_text::IconText;
+pub use toggle::Toggle;
 
 pub mod health;
 pub mod tooltip;
@@ -44,6 +45,7 @@ mod toast;
 mod warning_message;
 mod util;
 mod icon_text;
+mod toggle;
 
 pub const NON_BREAKING_SPACE: &str = "\u{a0}";
 
