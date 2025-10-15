@@ -50,6 +50,14 @@
     regexp: '^export CARGO_TARGET_DIR='
     line: "export CARGO_TARGET_DIR=/home/vagrant/rust-target"
 
+- name: Ensure cicero install directory is overridden in virtual machine
+  become: true
+  become_user: vagrant
+  ansible.builtin.lineinfile:
+    path: /home/vagrant/.bashrc
+    regexp: '^export CICERO_VENV_INSTALL_DIR='
+    line: "export CICERO_VENV_INSTALL_DIR=/home/vagrant/.cache/opendut/cicero/"
+
 - name: Include rust-target debug directory in PATH
   become: true
   become_user: vagrant
