@@ -42,7 +42,6 @@ pub fn Navbar(
                 />
             </div>
             <div class="navbar-brand dut-logo">
-                // <a class="" href=routing::path::dashboard><span class="dut-title is-3">"openDuT"</span></a>
                 <a class="navbar-item" href=routing::path::dashboard>
                     <img src="/logos/logo_onlight_wide.svg" alt="openDuT" />
                 </a>
@@ -70,14 +69,6 @@ pub fn Navbar(
                 </div>
             </div>
             <div class="column is-narrow ml-auto p-1" class:is-hidden=move || hide_buttons.get()>
-                // <IconButton
-                //     icon=profile_button_icon
-                //     color=ButtonColor::Light
-                //     size=ButtonSize::Normal
-                //     state=ButtonState::Enabled
-                //     label="User"
-                //     on_action=move || profile_visible.update(|is_visible| *is_visible = !*is_visible)
-                // />
                 <ProfileDropdown />
             </div>
         </nav>
