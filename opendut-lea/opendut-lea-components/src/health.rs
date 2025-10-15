@@ -35,7 +35,7 @@ pub fn Health(state: Signal<State>) -> impl IntoView {
     });
 
     view! {
-        <div>
+        <div class="is-flex is-justify-content-center">
             <div class=classes
                 on:click=move |_| {
                     set_tooltip_visible.set(true);

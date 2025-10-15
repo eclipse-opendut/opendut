@@ -148,6 +148,7 @@ pub fn ClustersOverview() -> impl IntoView {
 
             clusters.iter().cloned().map(|cluster_descriptor| {
                 let cluster_id = cluster_descriptor.id;
+
                 view! {
                     <Row
                         cluster_descriptor=RwSignal::new(cluster_descriptor)
@@ -185,6 +186,7 @@ pub fn ClustersOverview() -> impl IntoView {
                         <table class="table is-hoverable is-fullwidth">
                             <thead>
                                 <tr>
+                                    <th class="is-narrow">"Deploy"</th>
                                     <th class="is-narrow">"Health"</th>
                                     <th>"Name"</th>
                                     <th class="is-narrow">"Action"</th>
@@ -252,58 +254,73 @@ where
 
     view! {
         <tr>
-            <td class="is-vcentered">
+            <td class="has-text-centered">
+                <IconButton
+                    icon=FontAwesomeIcon::Check
+                    color=Signal::derive(move || match is_deployed.get().0 {
+                        false => ButtonColor::Light,
+                        true => ButtonColor::Success,
+                    })
+                    size=ButtonSize::Small
+                    state=ButtonState::Enabled
+                    label="Request Cluster to be deployed."
+                    on_action = move || {
+                        if is_deployed.get().0 { on_undeploy() } else { on_deploy() }
+                    }
+                />
+            </td>
+            <td class="is-vcentered has-text-centered">
                 <Health state=health_state />
             </td>
             <td class="is-vcentered">
                 <a href={ configurator_href } >{ cluster_name }</a>
             </td>
-            <td class="is-vcentered">
+            <td class="is-vcentered has-text-centered">
                 <div class="is-pulled-right">
-                    <div class="dropdown is-right" class=("is-active", move || dropdown_active.get())>
-                        <div class="dropdown-trigger">
-                            <IconButton
-                                icon=FontAwesomeIcon::EllipsisVertical
-                                color=ButtonColor::White
-                                size=ButtonSize::Normal
-                                state=ButtonState::Enabled
-                                label="Show Cluster Action Menu"
-                                on_action=move || {
-                                    dropdown_active.update(|value| *value = !*value);
-                                }
-                            />
-                        </div>
-                        <div node_ref=dropdown class="dropdown-menu">
-                            <div class="dropdown-content">
-                                <button
-                                    class="button is-white is-fullwidth is-justify-content-flex-start"
-                                    aria-label="Deploy Cluster"
-                                    on:click=move |_| {
-                                        dropdown_active.set(false);
-                                        on_deploy();
-                                    }
-                                >
-                                    <span class="icon">
-                                        <i class="fa-solid fa-cloud-arrow-up"></i>
-                                    </span>
-                                    <span>"Deploy"</span>
-                                </button>
-                                <button
-                                    class="button is-white is-fullwidth is-justify-content-flex-start"
-                                    aria-label="Undeploy Cluster"
-                                    on:click=move |_| {
-                                        dropdown_active.set(false);
-                                        on_undeploy();
-                                    }
-                                >
-                                    <span class="icon">
-                                        <i class="fa-solid fa-cloud-arrow-down"></i>
-                                    </span>
-                                    <span>"Undeploy"</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    // <div class="dropdown is-right" class=("is-active", move || dropdown_active.get())>
+                    //     <div class="dropdown-trigger">
+                    //         <IconButton
+                    //             icon=FontAwesomeIcon::EllipsisVertical
+                    //             color=ButtonColor::White
+                    //             size=ButtonSize::Normal
+                    //             state=ButtonState::Enabled
+                    //             label="Show Cluster Action Menu"
+                    //             on_action=move || {
+                    //                 dropdown_active.update(|value| *value = !*value);
+                    //             }
+                    //         />
+                    //     </div>
+                    //     <div node_ref=dropdown class="dropdown-menu">
+                    //         <div class="dropdown-content">
+                    //             <button
+                    //                 class="button is-white is-fullwidth is-justify-content-flex-start"
+                    //                 aria-label="Deploy Cluster"
+                    //                 on:click=move |_| {
+                    //                     dropdown_active.set(false);
+                    //                     on_deploy();
+                    //                 }
+                    //             >
+                    //                 <span class="icon">
+                    //                     <i class="fa-solid fa-cloud-arrow-up"></i>
+                    //                 </span>
+                    //                 <span>"Deploy"</span>
+                    //             </button>
+                    //             <button
+                    //                 class="button is-white is-fullwidth is-justify-content-flex-start"
+                    //                 aria-label="Undeploy Cluster"
+                    //                 on:click=move |_| {
+                    //                     dropdown_active.set(false);
+                    //                     on_undeploy();
+                    //                 }
+                    //             >
+                    //                 <span class="icon">
+                    //                     <i class="fa-solid fa-cloud-arrow-down"></i>
+                    //                 </span>
+                    //                 <span>"Undeploy"</span>
+                    //             </button>
+                    //         </div>
+                    //     </div>
+                    // </div>
                 </div>
             </td>
         </tr>
