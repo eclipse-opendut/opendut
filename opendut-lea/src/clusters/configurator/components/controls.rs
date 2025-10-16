@@ -8,7 +8,7 @@ use opendut_model::cluster::ClusterDescriptor;
 use crate::app::use_app_globals;
 use crate::clusters::components::DeleteClusterButton;
 use crate::clusters::configurator::types::UserClusterDescriptor;
-use crate::clusters::overview::IsDeployed;
+use crate::clusters::IsDeployed;
 use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Toast, use_toaster};
 
 #[component]

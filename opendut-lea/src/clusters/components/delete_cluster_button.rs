@@ -3,7 +3,7 @@ use leptos_router::hooks::use_navigate;
 use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon};
 use opendut_model::cluster::ClusterId;
 use crate::app::use_app_globals;
-use crate::clusters::overview::IsDeployed;
+use crate::clusters::IsDeployed;
 use crate::routing::{navigate_to, WellKnownRoutes};
 
 #[component]

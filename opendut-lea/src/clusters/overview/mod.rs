@@ -1,3 +1,5 @@
+mod row;
+
 use leptos::prelude::*;
 use leptos::html::Div;
 use leptos_use::on_click_outside;
@@ -6,10 +8,12 @@ use tracing::{debug, error};
 use opendut_carl_api::carl::ClientError;
 use opendut_carl_api::carl::cluster::StoreClusterDeploymentError;
 use opendut_lea_components::Toggle;
-use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
+use opendut_model::cluster::{ClusterDeployment, ClusterDescriptor, ClusterId};
 
 use crate::app::use_app_globals;
 use crate::clusters::components::{CreateClusterButton, DeleteClusterButton};
+use crate::clusters::IsDeployed;
+use crate::clusters::overview::row::Row;
 use crate::components::{health, use_toaster, BasePageContainer, Breadcrumb, LoadingSpinner, Toast};
 use crate::components::health::Health;
 
@@ -203,72 +207,5 @@ pub fn ClustersOverview() -> impl IntoView {
             }}
             </Suspense>
         </BasePageContainer>
-    }
-}
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub struct IsDeployed(pub bool);
-
-#[component]
-fn Row<OnDeployFn, OnUndeployFn>(
-    cluster_descriptor: RwSignal<ClusterDescriptor>,
-    on_deploy: OnDeployFn,
-    on_undeploy: OnUndeployFn,
-    is_deployed: RwSignal<IsDeployed>,
-) -> impl IntoView
-where
-    OnDeployFn: Fn() + 'static,
-    OnUndeployFn: Fn() + 'static,
-{
-
-    let cluster_id = create_read_slice(cluster_descriptor,
-        |cluster_descriptor| {
-            cluster_descriptor.id
-        }
-    );
-
-    let cluster_name = create_read_slice(cluster_descriptor,
-        |cluster_descriptor| {
-            Clone::clone(&cluster_descriptor.name).to_string()
-        }
-    );
-
-    let configurator_href = move || format!("/clusters/{}/configure/general", cluster_id.get());
-
-    let dropdown_active = RwSignal::new(false);
-    let dropdown = NodeRef::<Div>::new();
-
-    let _ = on_click_outside(dropdown, move |_| dropdown_active.set(false));
-
-    let health_state = Signal::derive(move || {
-        health::State { //TODO implement Cluster health in backend and display it here
-            kind: health::StateKind::Unknown,
-            text: String::from("Unknown"),
-        }
-    });
-
-    view! {
-        <tr>
-            <td class="is-vcentered has-text-centered">
-                <Toggle
-                    is_active = Signal::derive(move || {
-                        is_deployed.get().0
-                    })
-                    on_action = move || {
-                        if is_deployed.get().0 { on_undeploy() } else { on_deploy() }
-                    }
-                />
-            </td>
-            <td class="is-vcentered has-text-centered">
-                <Health state=health_state />
-            </td>
-            <td class="is-vcentered">
-                <a href={ configurator_href }>{ cluster_name }</a>
-            </td>
-            <td class="is-vcentered is-flex is-justify-content-center">
-                <div class="is-pulled-right">
-                    <DeleteClusterButton cluster_id deployed_signal=is_deployed />
-                </div>
-            </td>
-        </tr>
     }
 }

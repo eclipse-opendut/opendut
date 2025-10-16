@@ -9,7 +9,7 @@ use crate::clusters::configurator::components::{DeviceSelection, DeviceSelector,
 use crate::clusters::configurator::components::Controls;
 use crate::clusters::configurator::tabs::{DevicesTab, GeneralTab, LeaderTab, TabIdentifier};
 use types::UserClusterDescriptor;
-use crate::clusters::overview::IsDeployed;
+use crate::clusters::IsDeployed;
 use crate::components::{use_active_tab, BasePageContainer, Breadcrumb, LoadingSpinner};
 
 mod tabs;
