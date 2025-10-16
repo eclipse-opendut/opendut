@@ -33,15 +33,13 @@ where C: IntoView + 'static {
                 <div class="dut-base-page-header columns is-vcentered mb-0">
                     <div class="column">
                         <p class="dut-base-page-title mb-0">{ title }" "</p>
-                        {
-                            if subtitle.read().is_some() {
-                                Some(view! {
+                        { move || {
+                            subtitle.get().map(|subtitle| {
+                                view! {
                                     <p class="dut-base-page-subtitle mt-0">{ subtitle }</p>
-                                })
-                            } else {
-                                None
-                            }
-                        }
+                                }
+                            })
+                        }}
                     </div>
                     <div class="column is-narrow">
                         { controls }
