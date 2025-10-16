@@ -21,7 +21,7 @@
   transition: 0.3s;
 }
 .dut-toggle.active {
-  background: $info;
+  background: $success;
 }
 .dut-toggle.active::before {
   left: 22px;
