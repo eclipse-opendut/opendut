@@ -174,7 +174,7 @@ fn parse_peer_setup(setup_string_via_arg: Option<String>) -> anyhow::Result<Peer
         };
 
     if setup_string.is_empty() {
-        bail!("No Setup-String provided. You pass it via environment variable {SETUP_STRING_ENV}, command-line argument or stdin.");
+        bail!("No Setup-String provided. You can pass it via environment variable {SETUP_STRING_ENV}, command-line argument or stdin.");
     } else {
         let peer_setup = PeerSetup::decode(&setup_string)
             .context("Failed to decode Setup-String.")?;

@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 * EDGAR: Introduced `opendut-edgar setup logs` command for printing the setup logs.
-* EDGAR: `opendut-edgar setup managed` can now read the Setup-String from stdin and does so by default.
+* EDGAR: `opendut-edgar setup managed` can now read the Setup-String from stdin and does so when nothing is specified as argument,
+  as well as with the environment variable `OPENDUT_EDGAR_SETUP_STRING`.
 
 ### Fixed
 * Increased the default MTU to 1542 Bytes to allow a VLAN tag by default.
