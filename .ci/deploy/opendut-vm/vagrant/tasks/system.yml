@@ -42,6 +42,14 @@
     owner: vagrant
     group: vagrant
 
+- name: Create custom cache directory for cicero
+  file:
+    path: /home/vagrant/.cache/opendut/cicero/
+    state: directory
+    mode: 0755
+    owner: vagrant
+    group: vagrant
+
 - name: Ensure cargo target directory is overridden in virtual machine
   become: true
   become_user: vagrant
