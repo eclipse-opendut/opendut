@@ -106,7 +106,7 @@ where
                         size=ButtonSize::Small
                         state=ButtonState::Enabled
                         label="Delete Executor?"
-                        on_conform=move || {
+                        on_confirm=move || {
                             on_delete(executor.get_untracked().id)
                         }
                     />
@@ -673,7 +673,7 @@ fn ExecutorContainerEnvsInput(
                                     size=ButtonSize::Normal
                                     state=ButtonState::Enabled
                                     label="Delete Env?"
-                                    on_conform=move || {
+                                    on_confirm=move || {
                                         let name = match name_getter.get_untracked() {
                                             UserInputValue::Left(_) => String::new(),
                                             UserInputValue::Right(value) => value.to_owned(),

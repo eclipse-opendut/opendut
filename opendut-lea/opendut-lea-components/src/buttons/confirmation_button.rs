@@ -12,7 +12,7 @@ pub fn ConfirmationButton<OnConfirm>(
     #[prop(into)] size: Signal<ButtonSize>,
     #[prop(into)] state: Signal<ButtonState>,
     #[prop(into)] label: Signal<String>,
-    on_conform: OnConfirm,
+    on_confirm: OnConfirm,
 ) -> impl IntoView
 where OnConfirm: Fn() + Send + 'static {
 
@@ -55,7 +55,7 @@ where OnConfirm: Fn() + Send + 'static {
                                     aria-label=move || label.get()
                                     on:click=move |_| {
                                         doorhanger_visible.set(false);
-                                        on_conform();
+                                        on_confirm();
                                     }
                                 >
                                     <span class="icon">

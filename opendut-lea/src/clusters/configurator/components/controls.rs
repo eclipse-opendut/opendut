@@ -1,16 +1,15 @@
 use std::sync::Arc;
 
 use leptos::prelude::*;
-use leptos_router::hooks::use_navigate;
 use tracing::{debug, error};
 
 use opendut_model::cluster::ClusterDescriptor;
 
 use crate::app::use_app_globals;
+use crate::clusters::components::DeleteClusterButton;
 use crate::clusters::configurator::types::UserClusterDescriptor;
 use crate::clusters::overview::IsDeployed;
-use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, IconButton, Toast, use_toaster};
-use crate::routing::{navigate_to, WellKnownRoutes};
+use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Toast, use_toaster};
 
 #[component]
 pub fn Controls(cluster_descriptor: ReadSignal<UserClusterDescriptor>, deployed_signal: Signal<IsDeployed>) -> impl IntoView {
@@ -24,12 +23,16 @@ pub fn Controls(cluster_descriptor: ReadSignal<UserClusterDescriptor>, deployed_
             }
         });
 
+    let cluster_id = Signal::derive(move || {
+        cluster_descriptor.get().id
+    });
+
     view! {
         <div class="is-flex is-align-items-center">
             <p style="color: #C11B17; margin-right: 8px" >{info_text}</p>
             <div class="buttons">
-                <SaveClusterButton cluster_descriptor=cluster_descriptor deployed_signal/>
-                <DeleteClusterButton cluster_descriptor=cluster_descriptor deployed_signal/>
+                <SaveClusterButton cluster_descriptor deployed_signal/>
+                <DeleteClusterButton cluster_id deployed_signal/>
             </div>
         </div>
     }
@@ -106,54 +109,6 @@ fn SaveClusterButton(cluster_descriptor: ReadSignal<UserClusterDescriptor>, depl
             state=button_state
             label="Save Cluster"
             on_action
-        />
-    }
-}
-
-#[component]
-fn DeleteClusterButton(cluster_descriptor: ReadSignal<UserClusterDescriptor>, deployed_signal: Signal<IsDeployed>) -> impl IntoView {
-
-    let globals = use_app_globals();
-
-    let pending = RwSignal::new(false);
-
-    let button_state = Signal::derive(move || {
-        if deployed_signal.get().0 {
-            ButtonState::Disabled
-        } else if pending.get() {
-            ButtonState::Loading
-        } else {
-            ButtonState::Enabled
-        }
-    });
-
-    let use_navigate = use_navigate();
-    let on_conform = move || {
-        let use_navigate = use_navigate.clone();
-
-        cluster_descriptor.with_untracked(|config| {
-            let id = config.id.to_owned();
-            let mut carl = globals.client.clone();
-
-            leptos::task::spawn_local(async move {
-                pending.set(true);
-
-                let _ = carl.cluster.delete_cluster_descriptor(id).await; // TODO: Check the result and display a toast on failure.
-                navigate_to(WellKnownRoutes::ClustersOverview, use_navigate);
-
-                pending.set(false);
-            });
-        });
-    };
-
-    view! {
-        <ConfirmationButton
-            icon=FontAwesomeIcon::TrashCan
-            color=ButtonColor::Danger
-            size=ButtonSize::Normal
-            state=button_state
-            label="Remove Cluster?"
-            on_conform
         />
     }
 }

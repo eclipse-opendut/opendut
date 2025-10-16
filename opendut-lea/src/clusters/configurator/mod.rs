@@ -8,13 +8,13 @@ use crate::app::use_app_globals;
 use crate::clusters::configurator::components::{DeviceSelection, DeviceSelector, LeaderSelection};
 use crate::clusters::configurator::components::Controls;
 use crate::clusters::configurator::tabs::{DevicesTab, GeneralTab, LeaderTab, TabIdentifier};
-use crate::clusters::configurator::types::UserClusterDescriptor;
+use types::UserClusterDescriptor;
 use crate::clusters::overview::IsDeployed;
 use crate::components::{use_active_tab, BasePageContainer, Breadcrumb, LoadingSpinner};
 
-mod types;
 mod tabs;
 mod components;
+pub mod types;
 
 #[component(transparent)]
 pub fn ClusterConfigurator() -> impl IntoView {

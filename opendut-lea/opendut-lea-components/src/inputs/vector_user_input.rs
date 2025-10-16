@@ -147,7 +147,7 @@ where
                     size=ButtonSize::Normal
                     state=ButtonState::Enabled
                     label=delete_label.get()
-                    on_conform=move || {
+                    on_confirm=move || {
                         let value = match getter.get_untracked() {
                             UserInputValue::Left(_) => String::new(),
                             UserInputValue::Right(value) => value.to_owned(),

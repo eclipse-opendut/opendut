@@ -9,7 +9,7 @@ use opendut_lea_components::Toggle;
 use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
 
 use crate::app::use_app_globals;
-use crate::clusters::components::CreateClusterButton;
+use crate::clusters::components::{CreateClusterButton, DeleteClusterButton};
 use crate::components::{health, use_toaster, BasePageContainer, Breadcrumb, LoadingSpinner, Toast};
 use crate::components::health::Health;
 
@@ -263,8 +263,9 @@ where
             <td class="is-vcentered">
                 <a href={ configurator_href }>{ cluster_name }</a>
             </td>
-            <td class="is-vcentered has-text-centered">
+            <td class="is-vcentered is-flex is-justify-content-center">
                 <div class="is-pulled-right">
+                    <DeleteClusterButton cluster_id deployed_signal=is_deployed />
                 </div>
             </td>
         </tr>

@@ -92,7 +92,7 @@ where
                     size=ButtonSize::Small
                     state=ButtonState::Enabled
                     label="Delete Device?"
-                    on_conform={
+                    on_confirm={
                         move || on_delete(device_configuration.get_untracked().id)
                     }
                 />

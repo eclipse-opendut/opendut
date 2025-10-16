@@ -109,7 +109,7 @@ fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl In
 
     let pending = RwSignal::new(false);
 
-    let on_conform = move || {
+    let on_confirm = move || {
         let use_navigate = use_navigate.clone();
         let mut carl = globals.client.clone();
         let peer_id = configuration.get_untracked().id;
@@ -136,7 +136,7 @@ fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl In
 
 
     let delete_button = move || {
-        let on_conform = on_conform.clone();
+        let on_confirm = on_confirm.clone();
 
         let mut used_clusters: HashSet<ClusterId> = HashSet::new();
         let _ = configuration.get().devices
@@ -172,7 +172,7 @@ fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl In
                     size=ButtonSize::Normal
                     state=button_state
                     label="Remove Peer?"
-                    on_conform
+                    on_confirm
                 />
             }.into_any()
         }
