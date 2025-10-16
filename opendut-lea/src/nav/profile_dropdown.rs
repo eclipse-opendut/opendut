@@ -2,7 +2,6 @@ use leptos::html::Div;
 use leptos::prelude::*;
 use leptos_oidc::LogoutLink;
 use leptos_use::on_click_outside;
-use tracing::debug;
 use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, Doorhanger, DoorhangerAlignment, FontAwesomeIcon, Hsl, IconButton, IconText, ProfilePictureColors, ToggleSignal};
 use crate::routing;
 use crate::user::UserAuthenticationSignal;
@@ -14,8 +13,6 @@ pub fn ProfileDropdown() -> impl IntoView {
     let fullname = Signal::derive(move || {
        user.read().fullname().unwrap_or_else(|| String::from("Unknown User"))
     });
-
-    // let fullname = RwSignal::new(String::from("Firstname Lastname"));
 
     let username = Signal::derive(move || {
         user.read().username()
@@ -39,7 +36,6 @@ pub fn ProfileDropdown() -> impl IntoView {
             .to_uppercase()
     });
     let hsl = Signal::derive(move || {
-        debug!("Recalculating hsl color.");
         let hsl_colors = ProfilePictureColors::get_vec();
         let sum: u32 = fullname.get().chars().map(|c| c as u32).sum();
         let index = (sum % hsl_colors.len() as u32) as usize;
@@ -55,15 +51,6 @@ pub fn ProfileDropdown() -> impl IntoView {
                     let initials = Clone::clone(&initials);
                     move || {
                         view! {
-                            // <IconButton
-                            //     icon=FontAwesomeIcon::User
-                            //     color=ButtonColor::None
-                            //     size=ButtonSize::Normal
-                            //     state=ButtonState::default()
-                            //     label="Open Profile"
-                            //     on_action=move || dropdown_visible.toggle()
-                            // />
-
                             <button class="button dut-profile-picture-button is-text p-0" on:click=move |_| dropdown_visible.toggle()>
                                 <ProfilePicture initials size=ProfilePictureSize::Small hsl />
                             </button>
@@ -136,7 +123,6 @@ fn ProfilePicture(
     let l = move || hsl.read().2;
 
     let text_color = move || {
-        debug!("Text color changed.");
         format!("hsl({},{}%,{}%)", h(), s(), l())
     };
     let background_color = move || format!("hsla({},{}%,{}%, 0.1)", h(), s(), l());
