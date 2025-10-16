@@ -1,4 +1,4 @@
-# THEO Setup in Vagrant
+# Setup THEO on Linux in VM
 
 You may run all the containers in a virtual machine, using Vagrant.
 This is the recommended way to run the test environment.
@@ -29,6 +29,7 @@ Make sure those network addresses are not occupied or in conflict with other net
   mkdir -p ~/.ssh
   ssh-keygen -t rsa -b 4096 -C "opendut-vm" -f ~/.ssh/id_rsa
   ```
+  You can create a symlink to your existing key as well.
 
 ## Setup virtual machine
 
@@ -41,21 +42,3 @@ Make sure those network addresses are not occupied or in conflict with other net
   cargo theo vagrant ssh
   ```
 
-> **Warning**
-> Within the VM the rust target directory is overridden to `/home/vagrant/rust-target` to avoid hard linking issues.
-> When running cargo within the VM, output will be placed in this directory!
-
-* Ensure a distribution of openDuT is present
-    * By either creating one yourself (on the host)
-      ```sh
-      cargo ci distribution
-      ```
-    * Or by copying one to the target directory `target/ci/distribution/x86_64-unknown-linux-gnu/`
-      ```sh
-      mkdir -p target/ci/distribution/x86_64-unknown-linux-gnu/
-      ```
-
-* Start test environment
-  ```sh
-  cargo theo testenv start
-  ```

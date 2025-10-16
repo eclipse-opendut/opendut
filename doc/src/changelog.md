@@ -13,7 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 * Increased the default MTU to 1542 Bytes to allow a VLAN tag by default.
-* CARL: Does not require `SSL_CERT_FILE` environment variable in deployment anymore.
 * LEA: Fix configuration being reset when switching between UI tabs, while editing an already-saved cluster.
 
 ### Changed

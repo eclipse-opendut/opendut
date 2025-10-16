@@ -195,6 +195,7 @@ cargo-sbom = "0.10.0"
 cargo-tarpaulin = "0.32.6"
 cross = "0.2.5"
 mdbook = "0.4.52"
+mdbook-alerts = "0.8.0"
 mdbook-plantuml = "0.8.0"
 trunk = "0.21.14"
 

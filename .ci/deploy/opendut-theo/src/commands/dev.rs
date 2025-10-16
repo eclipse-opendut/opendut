@@ -68,6 +68,7 @@ impl DevCli {
             TaskCli::EdgarShell => {
                 DockerCommand::new()
                     .add_common_args(DockerCoreServices::Edgar.as_str())
+                    .add_localenv_secrets_args()
                     .arg("run")
                     .arg("--rm")
                     .arg("-it")

@@ -15,9 +15,10 @@ You can then open the UI by going to https://localhost:8080/ in your web browser
     ```sh
     cargo edgar service
     ```
-  Mind that this is in a somewhat broken state and may be removed in the future,  
-  as it's normally necessary to add the peer in CARL and then go through `edgar setup`.  
-  For a more realistic environment, see [test-environment](testenv/_chapter).
+> [!CAUTION]
+> Mind that this is in a somewhat broken state and may be removed in the future,  
+> as it's normally necessary to add the peer in CARL and then go through `edgar setup`.  
+> For a more realistic environment, see [test-environment](testenv/index.md).
 
 
 ## UI Development

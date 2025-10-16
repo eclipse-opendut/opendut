@@ -7,5 +7,7 @@ create-missing = false #do not auto-create pages referenced in SUMMARY.md
 [preprocessor.plantuml]
 plantuml-cmd="https://www.plantuml.com/plantuml"
 
+[preprocessor.alerts]
+
 [output.html]
 additional-css = ["custom.css"]

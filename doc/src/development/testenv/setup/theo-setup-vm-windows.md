@@ -1,4 +1,4 @@
-# Setup THEO on Windows
+# Setup THEO on Windows in VM
 
 This guide will help you set up THEO on Windows.
 

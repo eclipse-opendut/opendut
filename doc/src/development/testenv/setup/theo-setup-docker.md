@@ -1,4 +1,4 @@
-# THEO Setup in Docker
+# Setup THEO in Docker
 
 ## Requirements
 
@@ -27,19 +27,4 @@
    ```
   You may need to log out your user account and log back in for this to take effect.
 
-
-* Create a distribution of openDuT
-```sh
-cargo ci distribution
-```
-
-* Start containers
-```
-cargo theo testenv start
-```
-
-* Start edgar cluster
-```
-cargo theo testenv edgar start
-```
 
