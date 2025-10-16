@@ -119,6 +119,8 @@ pub enum IllegalDevicesError {
 
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 mod client {
+    use super::*;
+
     use std::collections::HashMap;
     use tonic::codegen::{Body, Bytes, http, InterceptedService, StdError};
     use tracing::error;
@@ -129,7 +131,6 @@ mod client {
     use opendut_model::topology::DeviceDescriptor;
 
     use crate::carl::{ClientError, extract};
-    use crate::carl::peer::{DeletePeerDescriptorError, GetPeerDescriptorError, GetPeerStateError, ListDevicesError, ListPeerDescriptorsError, ListPeerStatesError, StorePeerDescriptorError};
     use crate::proto::services::peer_manager;
     use crate::proto::services::peer_manager::peer_manager_client::PeerManagerClient;
 
