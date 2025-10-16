@@ -60,15 +60,13 @@ async fn test_confidential_client_get_token(#[future] confidential_edgar_client:
 #[test_with::env(OPENDUT_RUN_KEYCLOAK_INTEGRATION_TESTS)]
 #[rstest]
 #[tokio::test]
-async fn test_confidential_client_get_token2(#[future] confidential_netbird_client: ConfidentialClientRef) {
+async fn test_confidential_client_for_netbird(#[future] confidential_netbird_client: ConfidentialClientRef) {
     /*
      * This test is ignored because it requires a running keycloak server from the test environment.
      * To run this test, execute the following command:
      * cargo test --package opendut-auth --all-features -- --include-ignored
      */
     let client = confidential_netbird_client.await;
-    let token = client.get_token().await.expect("foo");
-    println!("Token {}", token);
     let client = ConfidentialClient::build_client_with_middleware(client);
     let url = "https://netbird-api.opendut.local/api/users";
 

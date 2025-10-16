@@ -80,7 +80,7 @@ pub async fn registration_client(
                 .join("clients-registrations/openid-connect")
                 .unwrap(),
         ),
-        issuer_admin_url: IssuerUrl::try_from("https://auth.opendut.local/realms/admin/").unwrap(),
+        issuer_admin_url: IssuerUrl::try_from("https://auth.opendut.local/admin/realms/opendut/").unwrap(),
     };
     let client = confidential_carl_client.await;
     RegistrationClient::new(carl_idp_config, client)

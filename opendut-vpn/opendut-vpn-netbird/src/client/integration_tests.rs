@@ -21,12 +21,12 @@ use crate::netbird::error::CreateClientError;
 
 /*
  * Designated to be run in the opendut-vm, requires keycloak and the netbird management service to be running.
- export RUN_NETBIRD_INTEGRATION_TESTS=true  # variable needs to be set to any value
+ export OPENDUT_RUN_NETBIRD_INTEGRATION_TESTS=true  # variable needs to be set to any value
  cargo test --package opendut-vpn-netbird --all-features -- --nocapture --include-ignored
 
  */
 
-#[test_with::env(RUN_NETBIRD_INTEGRATION_TESTS)]
+#[test_with::env(OPENDUT_RUN_NETBIRD_INTEGRATION_TESTS)]
 #[test_log::test(tokio::test)]
 async fn test_netbird_management_client() {
     let Fixture { management_url, authentication_method, ca, timeout, retries, setup_key_expiration } = Fixture::default();
@@ -47,7 +47,7 @@ async fn test_netbird_management_client() {
     netbird_management_client.delete_peer(peer_id).await.expect("Could not delete NetBird peer");
 }
 
-#[test_with::env(RUN_NETBIRD_INTEGRATION_TESTS)]
+#[test_with::env(OPENDUT_RUN_NETBIRD_INTEGRATION_TESTS)]
 #[tokio::test]
 async fn test_netbird_vpn_client() -> anyhow::Result<()> {
     let Fixture { management_url, authentication_method, ca, timeout, retries, setup_key_expiration } = Fixture::default();
@@ -95,7 +95,7 @@ async fn test_netbird_vpn_client() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test_with::env(RUN_NETBIRD_INTEGRATION_TESTS)]
+#[test_with::env(OPENDUT_RUN_NETBIRD_INTEGRATION_TESTS)]
 #[tokio::test]
 async fn test_netbird_vpn_client_list_keys() -> anyhow::Result<()> {
     let Fixture { management_url, authentication_method, ca, timeout, retries, setup_key_expiration } = Fixture::default();

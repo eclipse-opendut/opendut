@@ -1,7 +1,7 @@
 # Set up the test environment
 
-* in a virtual machine on [Windows](theo-setup-vm-windows.md)
 * in a virtual machine on [Linux](theo-setup-vm-linux.md)
+* in a virtual machine on [Windows](theo-setup-vm-windows.md)
 * on your host in [Docker](theo-setup-docker.md)
 
 ## Notes about the virtual machine
