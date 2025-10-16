@@ -1,16 +1,17 @@
 use leptos::prelude::*;
-use leptos_router::hooks::use_navigate;
-use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon};
+use tracing::error;
+use opendut_lea_components::{use_toaster, ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, Toast};
 use opendut_model::cluster::ClusterId;
 use crate::app::use_app_globals;
 use crate::clusters::IsDeployed;
-use crate::routing::{navigate_to, WellKnownRoutes};
 
 #[component]
-pub fn DeleteClusterButton(
+pub fn DeleteClusterButton<F>(
     cluster_id: Signal<ClusterId>,
-    #[prop(into)] deployed_signal: Signal<IsDeployed>
-) -> impl IntoView {
+    #[prop(into)] deployed_signal: Signal<IsDeployed>,
+    on_delete: F,
+) -> impl IntoView
+where F: Fn() + Clone + Send + 'static {
 
     let globals = use_app_globals();
 
@@ -26,17 +27,30 @@ pub fn DeleteClusterButton(
         }
     });
 
-    let use_navigate = use_navigate();
+    let toaster = use_toaster();
+
     let on_confirm = move || {
-        let use_navigate = use_navigate.clone();
+        let on_delete = on_delete.clone();
         let mut carl = globals.client.clone();
         let id = cluster_id.get();
+        let toaster = toaster.clone();
 
         leptos::task::spawn_local(async move {
             pending.set(true);
 
-            let _ = carl.cluster.delete_cluster_descriptor(id).await; // TODO: Check the result and display a toast on failure.
-            navigate_to(WellKnownRoutes::ClustersOverview, use_navigate);
+            let result = carl.cluster.delete_cluster_descriptor(id).await;
+
+            match result {
+                Ok(_) => on_delete(),
+                Err(error) => {
+                    error!("Failed to delete cluster <{id}>: {error}");
+                    toaster.toast(
+                        Toast::builder()
+                            .simple("Failed to delete cluster!")
+                            .error()
+                    );
+                }
+            }
 
             pending.set(false);
         });

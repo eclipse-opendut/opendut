@@ -1,21 +1,16 @@
 mod row;
 
 use leptos::prelude::*;
-use leptos::html::Div;
-use leptos_use::on_click_outside;
-use serde::{Deserialize, Serialize};
 use tracing::{debug, error};
 use opendut_carl_api::carl::ClientError;
 use opendut_carl_api::carl::cluster::StoreClusterDeploymentError;
-use opendut_lea_components::Toggle;
 use opendut_model::cluster::{ClusterDeployment, ClusterDescriptor, ClusterId};
 
 use crate::app::use_app_globals;
-use crate::clusters::components::{CreateClusterButton, DeleteClusterButton};
+use crate::clusters::components::CreateClusterButton;
 use crate::clusters::IsDeployed;
 use crate::clusters::overview::row::Row;
-use crate::components::{health, use_toaster, BasePageContainer, Breadcrumb, LoadingSpinner, Toast};
-use crate::components::health::Health;
+use crate::components::{use_toaster, BasePageContainer, Breadcrumb, LoadingSpinner, Toast};
 
 #[component]
 pub fn ClustersOverview() -> impl IntoView {
@@ -23,10 +18,13 @@ pub fn ClustersOverview() -> impl IntoView {
     let globals = use_app_globals();
     let carl = globals.client;
 
+    let refetch_cluster_descriptors = RwSignal::new(());
+
     let clusters = {
         let carl = carl.clone();
 
         LocalResource::new(move || {
+            refetch_cluster_descriptors.track();
             let mut carl = carl.clone();
             async move {
                 carl.cluster.list_cluster_descriptors().await
@@ -133,6 +131,10 @@ pub fn ClustersOverview() -> impl IntoView {
         }
     };
 
+    let on_delete = move || {
+        refetch_cluster_descriptors.notify();
+    };
+
     let deployed_clusters = LocalResource::new(move || async move {
         cluster_deployments.await.iter()
             .map(|cluster_deployment| cluster_deployment.id)
@@ -196,6 +198,7 @@ pub fn ClustersOverview() -> impl IntoView {
                                                 on_deploy=on_deploy(cluster_id)
                                                 on_undeploy=on_undeploy(cluster_id)
                                                 is_deployed = RwSignal::new(IsDeployed(deployed_clusters.contains(&cluster_id)))
+                                                on_delete
                                             />
                                         }
                                     }}

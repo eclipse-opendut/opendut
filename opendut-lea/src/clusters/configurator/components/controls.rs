@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use leptos::prelude::*;
+use leptos_router::hooks::use_navigate;
 use tracing::{debug, error};
 
 use opendut_model::cluster::ClusterDescriptor;
@@ -10,6 +11,7 @@ use crate::clusters::components::DeleteClusterButton;
 use crate::clusters::configurator::types::UserClusterDescriptor;
 use crate::clusters::IsDeployed;
 use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Toast, use_toaster};
+use crate::routing::{navigate_to, WellKnownRoutes};
 
 #[component]
 pub fn Controls(cluster_descriptor: ReadSignal<UserClusterDescriptor>, deployed_signal: Signal<IsDeployed>) -> impl IntoView {
@@ -27,12 +29,20 @@ pub fn Controls(cluster_descriptor: ReadSignal<UserClusterDescriptor>, deployed_
         cluster_descriptor.get().id
     });
 
+    let use_navigate = use_navigate();
+    let on_delete = {
+        let use_navigate = use_navigate.clone();
+        move || {
+            navigate_to(WellKnownRoutes::ClustersOverview, use_navigate.clone());
+        }
+    };
+
     view! {
         <div class="is-flex is-align-items-center">
             <p style="color: #C11B17; margin-right: 8px" >{info_text}</p>
             <div class="buttons">
                 <SaveClusterButton cluster_descriptor deployed_signal/>
-                <DeleteClusterButton cluster_id deployed_signal/>
+                <DeleteClusterButton cluster_id deployed_signal on_delete />
             </div>
         </div>
     }

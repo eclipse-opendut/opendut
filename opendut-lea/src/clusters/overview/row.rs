@@ -7,15 +7,17 @@ use crate::clusters::components::DeleteClusterButton;
 use crate::clusters::IsDeployed;
 
 #[component]
-pub(super) fn Row<OnDeployFn, OnUndeployFn>(
+pub fn Row<OnDeployFn, OnUndeployFn, OnDeleteFn>(
     cluster_descriptor: RwSignal<ClusterDescriptor>,
     on_deploy: OnDeployFn,
     on_undeploy: OnUndeployFn,
     is_deployed: RwSignal<IsDeployed>,
+    on_delete: OnDeleteFn,
 ) -> impl IntoView
 where
     OnDeployFn: Fn() + 'static,
     OnUndeployFn: Fn() + 'static,
+    OnDeleteFn: Fn() + Copy + Send + 'static,
 {
 
     let cluster_id = create_read_slice(cluster_descriptor,
@@ -64,7 +66,11 @@ where
             </td>
             <td class="is-vcentered is-flex is-justify-content-center">
                 <div class="is-pulled-right">
-                    <DeleteClusterButton cluster_id deployed_signal=is_deployed />
+                    <DeleteClusterButton
+                        cluster_id
+                        deployed_signal=is_deployed
+                        on_delete
+                    />
                 </div>
             </td>
         </tr>
