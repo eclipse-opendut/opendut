@@ -134,33 +134,17 @@ pub fn ClustersOverview() -> impl IntoView {
             .map(|cluster_deployment| cluster_deployment.id)
             .collect::<Vec<_>>()
     });
-    let rows = move || {
-        let on_deploy = on_deploy.clone();
-        let on_undeploy = on_undeploy.clone();
 
-        async move {
-            let mut clusters = clusters.await;
-            clusters.sort_by(|cluster_a, cluster_b|
-                cluster_a.name.value().to_lowercase()
-                    .cmp(&cluster_b.name.value().to_lowercase())
-            );
+    let rows = LocalResource::new(move || async move {
+        let mut clusters = clusters.await;
 
-            let deployed_clusters = deployed_clusters.await;
+        clusters.sort_by(|cluster_a, cluster_b|
+            cluster_a.name.value().to_lowercase()
+                .cmp(&cluster_b.name.value().to_lowercase())
+        );
 
-            clusters.iter().cloned().map(|cluster_descriptor| {
-                let cluster_id = cluster_descriptor.id;
-
-                view! {
-                    <Row
-                        cluster_descriptor = RwSignal::new(cluster_descriptor)
-                        on_deploy = on_deploy(cluster_id)
-                        on_undeploy = on_undeploy(cluster_id)
-                        is_deployed = RwSignal::new(IsDeployed(deployed_clusters.contains(&cluster_id)))
-                    />
-                }
-            }).collect::<Vec<_>>()
-        }
-    };
+        clusters
+    });
 
     let breadcrumbs = vec![
         Breadcrumb::new("Dashboard", "/"),
@@ -179,10 +163,13 @@ pub fn ClustersOverview() -> impl IntoView {
                 fallback=LoadingSpinner
             >
             {move || {
-                let rows = rows.clone();
+                let on_deploy = on_deploy.clone();
+                let on_undeploy = on_undeploy.clone();
 
                 Suspend::new(async move {
-                    let rows = rows().await;
+                    let rows = rows.await;
+                    let deployed_clusters = deployed_clusters.await;
+
                     view! {
                         <table class="table is-hoverable is-fullwidth">
                             <thead>
@@ -194,7 +181,21 @@ pub fn ClustersOverview() -> impl IntoView {
                                 </tr>
                             </thead>
                             <tbody>
-                                { rows }
+                                <For
+                                    each = move || rows.clone()
+                                    key = |cluster| cluster.id
+                                    children = { move |cluster_descriptor: ClusterDescriptor| {
+                                        let cluster_id = cluster_descriptor.id;
+                                        view! {
+                                            <Row
+                                                cluster_descriptor=RwSignal::new(cluster_descriptor)
+                                                on_deploy=on_deploy(cluster_id)
+                                                on_undeploy=on_undeploy(cluster_id)
+                                                is_deployed = RwSignal::new(IsDeployed(deployed_clusters.contains(&cluster_id)))
+                                            />
+                                        }
+                                    }}
+                                />
                             </tbody>
                         </table>
                     }
