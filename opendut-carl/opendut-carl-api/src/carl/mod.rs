@@ -5,6 +5,8 @@ pub mod cluster;
 pub mod metadata;
 pub mod peer;
 pub mod observer;
+#[cfg(feature="test")]
+pub mod test;
 
 cfg_if! {
     if #[cfg(any(feature = "client", feature = "wasm-client"))] {

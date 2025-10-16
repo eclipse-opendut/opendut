@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package opendut.carl.services.test_manager;
+
+import "opendut/types/test/suite/source.proto";
+
+service TestManager {
+  rpc StoreTestSuiteSourceDescriptor(StoreTestSuiteSourceDescriptorRequest) returns (StoreTestSuiteSourceDescriptorResponse) {}
+}
+
+
+//
+// StoreTestSuiteSourceDescriptorRequest
+//
+message StoreTestSuiteSourceDescriptorRequest {
+  opendut.types.test.suite.TestSuiteSourceDescriptor source = 1;
+}
+
+message StoreTestSuiteSourceDescriptorResponse {
+  oneof reply {
+    StoreTestSuiteSourceDescriptorSuccess success = 1;
+    StoreTestSuiteSourceDescriptorFailure failure = 2;
+  }
+}
+
+message StoreTestSuiteSourceDescriptorSuccess {
+  opendut.types.test.suite.TestSuiteSourceId source_id = 1;
+}
+
+message StoreTestSuiteSourceDescriptorFailure {
+  oneof error {
+    StoreTestSuiteSourceDescriptorFailureInternal internal = 1;
+  }
+}
+
+message StoreTestSuiteSourceDescriptorFailureInternal {
+  opendut.types.test.suite.TestSuiteSourceId source_id = 1;
+  opendut.types.test.suite.TestSuiteSourceName source_name = 2;
+  string cause = 3;
+}
