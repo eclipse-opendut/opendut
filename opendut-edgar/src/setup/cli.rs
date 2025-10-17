@@ -65,18 +65,23 @@ enum SetupCommand {
 }
 
 #[derive(Args)]
-struct SetupRunCommonArgs {
+pub(super) struct SetupRunCommonArgs {
     /// Run through all steps without changing the system
     #[arg(long, global=true, default_value="false")]
-    dry_run: DryRun,
+    pub dry_run: DryRun,
 
     /// Continue execution without asking for confirmation.
     #[arg(long, global=true)]
-    no_confirm: bool,
+    pub no_confirm: bool,
 
     /// Specify the Maximum Transfer Unit for network packages in bytes.
     #[arg(long, global=true, default_value="1542")]
-    mtu: u16,
+    pub mtu: u16,
+
+    /// EXPERT OPTION: Do not setup CAN on this host and skip checks for it.
+    /// Users need to know not to use CAN on this EDGAR, otherwise this can lead to undefined behavior and crashes.
+    #[arg(long, global=true)]
+    pub skip_can_setup: bool,
 }
 
 impl SetupCli {
@@ -87,8 +92,7 @@ impl SetupCli {
 
                 setup_run_common_prelude().await?;
 
-                let SetupRunCommonArgs { dry_run, no_confirm, mtu } = common;
-                setup::start::managed(dry_run, no_confirm, peer_setup, mtu).await?;
+                setup::start::managed(peer_setup, common).await?;
             },
             SetupCommand::Unmanaged { management_url, setup_key, leader, bridge, device_interfaces, common } => {
                 setup_run_common_prelude().await?;
@@ -97,8 +101,7 @@ impl SetupCli {
                 let ParseableLeader(leader) = leader;
                 let bridge = bridge.unwrap_or_else(crate::common::default_bridge_name);
                 let device_interfaces = HashSet::from_iter(device_interfaces);
-                let SetupRunCommonArgs { dry_run, no_confirm, mtu } = common;
-                setup::start::unmanaged(dry_run, no_confirm, management_url, setup_key, bridge, device_interfaces, leader, mtu).await?;
+                setup::start::unmanaged(management_url, setup_key, bridge, device_interfaces, leader, common).await?;
             }
             SetupCommand::Logs => {
                 let logs = fs::read_to_string(setup::start::logging_file()?)?;

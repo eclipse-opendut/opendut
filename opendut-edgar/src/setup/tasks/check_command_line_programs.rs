@@ -1,12 +1,15 @@
+use std::ops::Not;
 use anyhow::{Context, Result};
 use std::process::Command;
 use async_trait::async_trait;
 use crate::common::task::{Success, Task, TaskStateFulfilled};
-use crate::setup::constants::REQUIRED_COMMAND_LINE_PROGRAMS;
+use crate::setup::constants::{REQUIRED_COMMAND_LINE_PROGRAMS, REQUIRED_COMMAND_LINE_PROGRAMS_CAN};
 use crate::setup::util::EvaluateRequiringSuccess;
 
 
-pub struct CheckCommandLinePrograms;
+pub struct CheckCommandLinePrograms {
+    pub skip_can_setup: bool,
+}
 
 #[async_trait]
 impl Task for CheckCommandLinePrograms {
@@ -18,7 +21,18 @@ impl Task for CheckCommandLinePrograms {
     }
     async fn make_present(&self) -> Result<Success> {
 
-        for (command_line_program, arg) in REQUIRED_COMMAND_LINE_PROGRAMS.iter() {
+        let required_programs = {
+            let mut required_programs = vec![];
+            required_programs.extend(REQUIRED_COMMAND_LINE_PROGRAMS);
+
+            if self.skip_can_setup.not() {
+                required_programs.extend(REQUIRED_COMMAND_LINE_PROGRAMS_CAN);
+            }
+
+            required_programs
+        };
+
+        for (command_line_program, arg) in required_programs.iter() {
             let executable = which::which(command_line_program)
                 .context(format!(
                     "Command-line program `{command_line_program}` is required.\n\

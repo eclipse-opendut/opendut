@@ -4,15 +4,15 @@ use async_trait::async_trait;
 use crate::setup::util::running_in_docker;
 use crate::common::task::{Success, Task, TaskStateFulfilled};
 
-pub struct LoadKernelModules{
+pub struct LoadCanKernelModules {
     loaded_module_file: PathBuf,
     builtin_module_dir: PathBuf,
 }
 
 #[async_trait]
-impl Task for LoadKernelModules {
+impl Task for LoadCanKernelModules {
     fn description(&self) -> String {
-        let kernel_modules_str = opendut_edgar_kernel_modules::required_kernel_modules()
+        let kernel_modules_str = opendut_edgar_kernel_modules::required_can_kernel_modules()
             .into_iter()
             .map(|m| m.name)
             .collect::<Vec<String>>()
@@ -21,7 +21,7 @@ impl Task for LoadKernelModules {
         format!("Load Kernel Modules {kernel_modules_str}")
     }
     async fn check_present(&self) -> Result<TaskStateFulfilled> {
-        for kernel_module in opendut_edgar_kernel_modules::required_kernel_modules() {
+        for kernel_module in opendut_edgar_kernel_modules::required_can_kernel_modules() {
             if ! kernel_module.is_loaded(&self.loaded_module_file, &self.builtin_module_dir)? {
                 return Ok(TaskStateFulfilled::No)
             }
@@ -33,7 +33,7 @@ impl Task for LoadKernelModules {
             bail!("Cannot load kernel modules from within Docker. Modules must be loaded from the host.");
         }
 
-        for kernel_module in opendut_edgar_kernel_modules::required_kernel_modules() {
+        for kernel_module in opendut_edgar_kernel_modules::required_can_kernel_modules() {
             kernel_module.load()?;
         }
 
@@ -41,7 +41,7 @@ impl Task for LoadKernelModules {
     }
 }
 
-impl Default for LoadKernelModules {
+impl Default for LoadCanKernelModules {
     fn default() -> Self {
         Self {
             loaded_module_file: opendut_edgar_kernel_modules::default_module_file(),
@@ -59,7 +59,7 @@ mod tests {
     use indoc::indoc;
     use rstest::{fixture, rstest};
     use crate::common::task::{Task, TaskStateFulfilled};
-    use crate::setup::tasks::LoadKernelModules;
+    use crate::setup::tasks::LoadCanKernelModules;
 
     #[rstest]
     #[tokio::test]
@@ -68,7 +68,7 @@ mod tests {
             bridge 413696 1 br_netfilter, Live 0x0000000000000000
         "))?;
         
-        let task = LoadKernelModules {
+        let task = LoadCanKernelModules {
             loaded_module_file: fixture.loaded_module_file.to_path_buf(),
             builtin_module_dir: fixture.builtin_module_dir.to_path_buf(),
         };
@@ -91,7 +91,7 @@ mod tests {
         let bridge_dir = fixture.builtin_module_dir.child("bridge");
         fs::create_dir_all(bridge_dir)?;
         
-        let task = LoadKernelModules {
+        let task = LoadCanKernelModules {
             loaded_module_file: fixture.loaded_module_file.to_path_buf(),
             builtin_module_dir: fixture.builtin_module_dir.to_path_buf(),
         };

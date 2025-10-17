@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use async_trait::async_trait;
-use opendut_edgar_kernel_modules::{required_kernel_modules, KernelModule};
+use opendut_edgar_kernel_modules::{required_can_kernel_modules, KernelModule};
 
 use crate::common::task::{Success, Task, TaskStateFulfilled};
 use crate::setup::constants::KERNEL_MODULE_LOAD_RULE_PREFIX;
@@ -35,17 +35,17 @@ fn options_rule_file_content(kernel_module: &KernelModule) -> String {
 
 }
 
-pub struct CreateKernelModuleLoadRule;
+pub struct CreateCanKernelModuleLoadRule;
 
 #[async_trait]
-impl Task for CreateKernelModuleLoadRule {
+impl Task for CreateCanKernelModuleLoadRule {
     fn description(&self) -> String {
-        let kernel_modules_str = required_kernel_modules().into_iter().map(|m| m.name).collect::<Vec<String>>().join(", ");
+        let kernel_modules_str = required_can_kernel_modules().into_iter().map(|m| m.name).collect::<Vec<String>>().join(", ");
 
         format!("Create rules to load kernel modules {kernel_modules_str} at boot time")
     }
     async fn check_present(&self) -> Result<TaskStateFulfilled> {
-        for kernel_module in required_kernel_modules() {
+        for kernel_module in required_can_kernel_modules() {
             if !load_rule_file_path(&kernel_module).exists() {
                 return Ok(TaskStateFulfilled::No);
             }
@@ -56,7 +56,7 @@ impl Task for CreateKernelModuleLoadRule {
         Ok(TaskStateFulfilled::Yes)
     }
     async fn make_present(&self) -> Result<Success> {
-        for kernel_module in required_kernel_modules() {
+        for kernel_module in required_can_kernel_modules() {
             let load_path = load_rule_file_path(&kernel_module);
             fs::create_dir_all(load_path.parent().unwrap())?;
 

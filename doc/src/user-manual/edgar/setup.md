@@ -45,6 +45,7 @@ If this prints an error, it is likely that you downloaded the wrong CPU architec
 
 ### 4. CAN Setup
 If you want to use CAN, follow the steps in [CAN Setup](#can-setup) before continuing.
+If you do *not* want to use CAN, see [Setup without CAN](#setup-without-can) before continuing.
 
 ### 5. Plugins
 Depending on your target hardware, you might want to use plugins to perform additional setup steps.
@@ -60,6 +61,47 @@ It will prompt you for a Setup-String. You can get a Setup-String from LEA or CL
 This will configure your operating system and start the *EDGAR Service*, which will receive its configuration from *CARL*.
 
 ---
+
+## Self-Hosted Backend Server
+
+### DNS
+If your backend server does not have a public DNS entry, you will need to adjust the `/etc/hosts` file,
+by appending entries like this (replace `123.456.789.101` with your server's IP address):
+```
+123.456.789.101 opendut.local
+123.456.789.101 carl.opendut.local
+123.456.789.101 auth.opendut.local
+123.456.789.101 netbird.opendut.local
+123.456.789.101 netbird-api.opendut.local
+123.456.789.101 signal.opendut.local
+123.456.789.101 nginx-webdav.opendut.local
+123.456.789.101 opentelemetry.opendut.local
+123.456.789.101 monitoring.opendut.local
+```
+
+Now the following command should complete without errors:
+```
+ping carl.opendut.local
+```
+
+### Self-Signed Certificate with Unmanaged Setup
+If you plan to use the unmanaged setup and your NetBird server uses a self-signed certificate, follow these steps:
+
+1. Create the certificate directory on the OLU: `mkdir -p /usr/local/share/ca-certificates/`
+
+2. Copy your NetBird server certificate onto the OLU, for example, by running the following from outside the OLU:  
+   ```sh
+   scp certificate.crt root@10.10.4.1:/usr/local/share/ca-certificates/
+   ```  
+   Ensure that the certificate has a file extension of "crt".
+
+3. Run `update-ca-certificates` on the OLU.  
+   It should output "1 added", if everything works correctly.  
+
+4. Now the following commands should complete without errors:
+   ```
+   curl https://netbird-api.opendut.local
+   ```
 
 ## CAN Setup
 If you want to use CAN, it is mandatory to set the environment variable `OPENDUT_EDGAR_SERVICE_USER` as follows:
@@ -108,47 +150,16 @@ When you configured everything and deployed the cluster, you can test the CAN co
   root@host:~# candump -d can0
   can0  01A   [4]  01 02 03 04
   ```
+  
+## Setup without CAN
+> [!CAUTION]
+> Generally, you do want to setup CAN, since we don't currently support showing to the users, whether an EDGAR has CAN support or not.  
+> Therefore, if you don't set up CAN, you need to document for your users that they cannot use CAN on the given EDGAR.
+> If they do so anyways, undefined behavior and crashes will likely occur.
 
-## Self-Hosted Backend Server
+If you want to setup an EDGAR without CAN support even after reading the above warning,
+you can pass `--skip-can-setup` on the EDGAR CLI while running the EDGAR Setup.
 
-### DNS
-If your backend server does not have a public DNS entry, you will need to adjust the `/etc/hosts` file,
-by appending entries like this (replace `123.456.789.101` with your server's IP address):
-```
-123.456.789.101 opendut.local
-123.456.789.101 carl.opendut.local
-123.456.789.101 auth.opendut.local
-123.456.789.101 netbird.opendut.local
-123.456.789.101 netbird-api.opendut.local
-123.456.789.101 signal.opendut.local
-123.456.789.101 nginx-webdav.opendut.local
-123.456.789.101 opentelemetry.opendut.local
-123.456.789.101 monitoring.opendut.local
-```
-
-Now the following command should complete without errors:
-```
-ping carl.opendut.local
-```
-
-### Self-Signed Certificate with Unmanaged Setup
-If you plan to use the unmanaged setup and your NetBird server uses a self-signed certificate, follow these steps:
-
-1. Create the certificate directory on the OLU: `mkdir -p /usr/local/share/ca-certificates/`
-
-2. Copy your NetBird server certificate onto the OLU, for example, by running the following from outside the OLU:  
-   ```sh
-   scp certificate.crt root@10.10.4.1:/usr/local/share/ca-certificates/
-   ```  
-   Ensure that the certificate has a file extension of "crt".
-
-3. Run `update-ca-certificates` on the OLU.  
-   It should output "1 added", if everything works correctly.  
-
-4. Now the following commands should complete without errors:
-   ```
-   curl https://netbird-api.opendut.local
-   ```
 
 ## Plugins
 You can use plugins to perform additional setup steps. This guide assumes you already have a set of plugins you want to use.

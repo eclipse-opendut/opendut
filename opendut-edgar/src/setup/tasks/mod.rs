@@ -26,13 +26,12 @@ pub use request_linux_network_capability::RequestLinuxNetworkCapability;
 mod restart_service;
 pub use restart_service::RestartService;
 
-pub mod load_kernel_modules;
-pub use load_kernel_modules::LoadKernelModules;
+pub use can::load_kernel_modules::LoadCanKernelModules;
 
-pub mod create_kernel_module_load_rule;
-pub use create_kernel_module_load_rule::CreateKernelModuleLoadRule;
+pub use can::create_kernel_module_load_rule::CreateCanKernelModuleLoadRule;
 
 pub mod write_ca_certificate;
 pub use write_ca_certificate::WriteCaCertificate;
 
 pub mod copy_rperf;
+mod can;

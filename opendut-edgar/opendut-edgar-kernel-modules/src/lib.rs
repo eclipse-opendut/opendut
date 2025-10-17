@@ -74,7 +74,7 @@ impl KernelModule {
 }
 
 
-pub fn required_kernel_modules() -> Vec<KernelModule> {
+pub fn required_can_kernel_modules() -> Vec<KernelModule> {
     vec![
         KernelModule {
             name: "vcan".to_string(),

@@ -20,10 +20,15 @@ use std::env;
 use std::ops::Not;
 use std::path::PathBuf;
 use opendut_util::telemetry::logging::PipeLogging;
+use crate::setup::cli::SetupRunCommonArgs;
 use crate::setup::util::DryRun;
 
 #[allow(clippy::box_default)]
-pub async fn managed(dry_run: DryRun, no_confirm: bool, peer_setup: PeerSetup, mtu: u16) -> anyhow::Result<()> {
+pub(super) async fn managed(
+    peer_setup: PeerSetup,
+    common_args: SetupRunCommonArgs,
+) -> anyhow::Result<()> {
+    let SetupRunCommonArgs { dry_run, no_confirm, mtu, skip_can_setup } = common_args;
 
     let service_user = determine_service_user_name();
     info!("Using service user '{}'.", service_user.name);
@@ -54,16 +59,18 @@ pub async fn managed(dry_run: DryRun, no_confirm: bool, peer_setup: PeerSetup, m
 
     tasks.append(&mut vec![
         Box::new(tasks::WriteCaCertificate::with_certificate(peer_setup.ca)),
-        Box::new(tasks::CheckCommandLinePrograms),
+        Box::new(tasks::CheckCommandLinePrograms { skip_can_setup }),
         Box::new(tasks::CheckCarlReachable),
         Box::new(tasks::CopyExecutable),
         Box::new(tasks::copy_rperf::CopyRperf),
-
-        Box::new(tasks::LoadKernelModules::default()),
     ]);
 
-    if !running_in_docker() {
-        tasks.push(Box::new(tasks::CreateKernelModuleLoadRule))
+    if skip_can_setup.not() {
+        tasks.push(Box::new(tasks::LoadCanKernelModules::default()));
+
+        if !running_in_docker() {
+            tasks.push(Box::new(tasks::CreateCanKernelModuleLoadRule))
+        }
     }
 
     match peer_setup.vpn {
@@ -110,16 +117,16 @@ pub async fn managed(dry_run: DryRun, no_confirm: bool, peer_setup: PeerSetup, m
 }
 
 #[allow(clippy::box_default, clippy::too_many_arguments)]
-pub async fn unmanaged(
-    dry_run: DryRun,
-    no_confirm: bool,
+pub(super) async fn unmanaged(
     management_url: Url,
     setup_key: SetupKey,
     bridge_name: NetworkInterfaceName,
     device_interfaces: HashSet<NetworkInterfaceName>,
     leader: Leader,
-    mtu: u16,
+    common_args: SetupRunCommonArgs,
 ) -> anyhow::Result<()> {
+    let SetupRunCommonArgs { dry_run, no_confirm, mtu, skip_can_setup } = common_args;
+
     let should_run = no_confirm || user_confirmation(&dry_run)?;
     if should_run.not() {
         return Ok(());
@@ -132,7 +139,7 @@ pub async fn unmanaged(
     let _ = crate::setup::plugin::init::create_plugin_runtime(&mut tasks)?;
 
     tasks.append(&mut vec![
-        Box::new(tasks::CheckCommandLinePrograms),
+        Box::new(tasks::CheckCommandLinePrograms { skip_can_setup }),
         Box::new(tasks::netbird::Unpack::default()),
         Box::new(tasks::netbird::InstallService),
         Box::new(tasks::netbird::RestartService),
