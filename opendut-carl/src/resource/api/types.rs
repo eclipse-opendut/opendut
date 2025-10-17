@@ -6,6 +6,7 @@ use opendut_model::peer::{PeerDescriptor, PeerId};
 use std::any::Any;
 use std::fmt::Debug;
 use std::hash::Hash;
+use opendut_model::test::suite::{TestSuiteSourceDescriptor, TestSuiteSourceId};
 
 pub trait Resource: Any + Send + Sync + Debug + Clone {
     type Id: ResourceId<Self> + Clone + Hash + PartialEq + Eq + Debug;
@@ -32,4 +33,7 @@ impl Resource for PeerConnectionState {
 
 impl Resource for PeerConfigurationState {
     type Id = PeerId;
+}
+impl Resource for TestSuiteSourceDescriptor {
+    type Id = TestSuiteSourceId;
 }

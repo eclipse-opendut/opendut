@@ -4,7 +4,7 @@ use config::Config;
 use pem::Pem;
 use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_auth::registration::resources::ResourceHomeUrl;
-use crate::manager::grpc::{ClusterManagerFacade, MetadataProviderFacade, ObserverMessagingBrokerFacade, PeerManagerFacade, PeerMessagingBrokerFacade};
+use crate::manager::grpc::{ClusterManagerFacade, MetadataProviderFacade, ObserverMessagingBrokerFacade, PeerManagerFacade, PeerMessagingBrokerFacade, TestManagerFacade};
 use crate::resource::manager::ResourceManagerRef;
 use crate::startup;
 use crate::manager::cluster_manager::{ClusterManager, ClusterManagerOptions};
@@ -18,6 +18,7 @@ pub struct GrpcFacades {
     pub peer_manager_facade: PeerManagerFacade,
     pub peer_messaging_broker_facade: PeerMessagingBrokerFacade,
     pub observer_messaging_broker_facade: ObserverMessagingBrokerFacade,
+    pub test_manager_facade: TestManagerFacade,
 }
 
 impl GrpcFacades {
@@ -62,12 +63,17 @@ impl GrpcFacades {
         let observer_messaging_broker = ObserverMessagingBroker::new(Arc::clone(&resource_manager), Arc::clone(&cluster_manager));
         let observer_messaging_broker_facade = ObserverMessagingBrokerFacade::new(Arc::clone(&resource_manager), Arc::clone(&observer_messaging_broker));
 
+        let test_manager_facade = TestManagerFacade {
+            resource_manager: Arc::clone(&resource_manager),
+        };
+
         Ok(GrpcFacades {
             cluster_manager_facade,
             metadata_provider_facade,
             peer_manager_facade,
             peer_messaging_broker_facade,
             observer_messaging_broker_facade,
+            test_manager_facade,
         })
     }
 }

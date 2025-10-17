@@ -4,12 +4,14 @@ pub use metadata_provider::MetadataProviderFacade;
 pub use peer_manager::PeerManagerFacade;
 pub use peer_messaging_broker::PeerMessagingBrokerFacade;
 pub use observer_messaging_broker::ObserverMessagingBrokerFacade;
+pub use test_manager::TestManagerFacade;
 
 mod cluster_manager;
 mod metadata_provider;
 mod peer_manager;
 mod peer_messaging_broker;
 mod observer_messaging_broker;
+mod test_manager;
 mod error;
 
 pub trait ExtractOrInvalidArgument<A, B>

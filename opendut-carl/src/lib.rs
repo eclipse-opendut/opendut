@@ -155,7 +155,8 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
             .add_service(grpc_facades.metadata_provider_facade.into_grpc_service())
             .add_service(grpc_facades.peer_manager_facade.into_grpc_service())
             .add_service(grpc_facades.peer_messaging_broker_facade.into_grpc_service())
-            .add_service(grpc_facades.observer_messaging_broker_facade.into_grpc_service());
+            .add_service(grpc_facades.observer_messaging_broker_facade.into_grpc_service())
+            .add_service(grpc_facades.test_manager_facade.into_grpc_service());
 
         let reqwest_client = OidcReqwestClient::from_config(&settings)?;
         routes_builder

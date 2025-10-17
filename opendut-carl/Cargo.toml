@@ -8,11 +8,11 @@ repository.workspace = true
 
 [dependencies]
 opendut-auth = { workspace = true, features = ["registration_client"] }
-opendut-util-core = { workspace = true, features = ["reqwest"] }
-opendut-carl-api = { workspace = true }
+opendut-carl-api = { workspace = true, features = ["test"] }
 opendut-vpn-netbird = { workspace = true }
 opendut-model = { workspace = true }
 opendut-util = { workspace = true, features = ["crypto"] }
+opendut-util-core = { workspace = true, features = ["reqwest"] }
 opendut-vpn = { workspace = true }
 
 anyhow = { workspace = true }

@@ -4,7 +4,7 @@ use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration
 use opendut_model::peer::state::PeerConnectionState;
 use opendut_model::peer::{PeerDescriptor, PeerId};
 use opendut_model::resources::Id;
-
+use opendut_model::test::suite::{TestSuiteSourceDescriptor, TestSuiteSourceId};
 
 pub trait ResourceId<R: Resource> {
     fn into_id(self) -> Id;
@@ -65,5 +65,14 @@ impl ResourceId<PeerConfigurationState> for PeerId {
     }
     fn from_id(id: Id) -> Self {
         PeerId::from(id.value())
+    }
+}
+
+impl ResourceId<TestSuiteSourceDescriptor> for TestSuiteSourceId {
+    fn into_id(self) -> Id {
+        Id::from(self.uuid)
+    }
+    fn from_id(id: Id) -> Self {
+        TestSuiteSourceId::from(id.value())
     }
 }

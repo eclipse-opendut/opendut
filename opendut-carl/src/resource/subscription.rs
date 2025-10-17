@@ -4,7 +4,7 @@ use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration
 use opendut_model::peer::state::PeerConnectionState;
 use opendut_model::peer::PeerDescriptor;
 use tokio::sync::broadcast;
-
+use opendut_model::test::suite::TestSuiteSourceDescriptor;
 
 pub struct Subscription<R: Resource> {
     receiver: broadcast::Receiver<SubscriptionEvent<R>>,
@@ -60,6 +60,7 @@ impl_subscribable!(PeerConfiguration, peer_configuration);
 impl_subscribable!(PeerDescriptor, peer_descriptor);
 impl_subscribable!(PeerConnectionState, peer_connection_state);
 impl_subscribable!(PeerConfigurationState, peer_configuration_state);
+impl_subscribable!(TestSuiteSourceDescriptor, test_suite_source_descriptor);
 
 mod deprecated {
     #![expect(deprecated)]
@@ -76,6 +77,7 @@ pub struct ResourceSubscriptionChannels {
     pub peer_descriptor: ResourceSubscriptionChannel<PeerDescriptor>,
     pub peer_connection_state: ResourceSubscriptionChannel<PeerConnectionState>,
     pub peer_configuration_state: ResourceSubscriptionChannel<PeerConfigurationState>,
+    pub test_suite_source_descriptor: ResourceSubscriptionChannel<TestSuiteSourceDescriptor>,
 
     #[deprecated] #[expect(deprecated)]
     pub(crate) _cluster_configuration: ResourceSubscriptionChannel<crate::startup::migration::ClusterConfiguration>, //TODO remove (should be unused)
@@ -102,6 +104,7 @@ impl ResourceSubscriptionChannels {
             peer_descriptor,
             peer_connection_state,
             peer_configuration_state,
+            test_suite_source_descriptor,
             #[expect(deprecated)]
             _cluster_configuration,
         } = self;
@@ -113,6 +116,7 @@ impl ResourceSubscriptionChannels {
         && peer_descriptor.0.is_empty()
         && peer_connection_state.0.is_empty()
         && peer_configuration_state.0.is_empty()
+        && test_suite_source_descriptor.0.is_empty()
     }
 }
 impl Default for ResourceSubscriptionChannels {
@@ -126,6 +130,7 @@ impl Default for ResourceSubscriptionChannels {
         let peer_descriptor = broadcast::channel(capacity);
         let peer_connection_state = broadcast::channel(capacity);
         let peer_configuration_state = broadcast::channel(capacity);
+        let test_suite_source_descriptor = broadcast::channel(capacity);
 
         Self {
             cluster_deployment,
@@ -135,6 +140,7 @@ impl Default for ResourceSubscriptionChannels {
             peer_descriptor,
             peer_connection_state,
             peer_configuration_state,
+            test_suite_source_descriptor,
             #[expect(deprecated)]
             _cluster_configuration: broadcast::channel(1),
         }
