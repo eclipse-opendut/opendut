@@ -20,7 +20,7 @@ use std::env;
 use std::ops::Not;
 use std::path::PathBuf;
 use opendut_util::telemetry::logging::PipeLogging;
-use crate::cli::DryRun;
+use crate::setup::util::DryRun;
 
 #[allow(clippy::box_default)]
 pub async fn managed(dry_run: DryRun, no_confirm: bool, peer_setup: PeerSetup, mtu: u16) -> anyhow::Result<()> {

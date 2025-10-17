@@ -1,3 +1,7 @@
+pub mod checksum;
+mod dry_run;
+pub use dry_run::DryRun;
+
 use std::fs::File;
 use std::io;
 use std::io::Write;
@@ -83,31 +87,6 @@ pub fn create_file_and_ensure_it_can_only_be_read_or_modified_by_owner(target: &
     Ok(())
 }
 
-
-pub mod checksum {
-    use crate::fs::File;
-    use sha2::{Digest, Sha256};
-    use std::io;
-    use std::io::Read;
-    use std::path::Path;
-
-    pub fn file(path: impl AsRef<Path>) -> Result<Vec<u8>, io::Error> {
-        let file = File::open(path.as_ref())?;
-        sha256_digest(file)
-    }
-
-    pub fn string(string: impl AsRef<str>) -> Result<Vec<u8>, io::Error> {
-        let bytes = string.as_ref().as_bytes();
-        sha256_digest(bytes)
-    }
-
-    fn sha256_digest(mut reader: impl Read) -> Result<Vec<u8>, io::Error> {
-        let mut hasher = Sha256::new();
-        let _ = io::copy(&mut reader, &mut hasher)?;
-        let hash = hasher.finalize();
-        Ok(hash.to_vec())
-    }
-}
 
 pub fn running_in_docker() -> bool {
     Path::new("/.dockerenv").exists()

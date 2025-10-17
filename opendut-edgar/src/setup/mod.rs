@@ -2,6 +2,7 @@ use std::net::Ipv4Addr;
 
 pub use crate::common::task::runner::RunMode;
 
+pub mod cli;
 mod constants;
 
 pub mod start;
