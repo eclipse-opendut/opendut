@@ -18,7 +18,7 @@ fi
 docker ps --all > "$LOG_DIRECTORY"/docker-ps-all.log 2>&1
 
 # ignore telemetry containers: otel-collector, opendut-traefik, opendut-loki, opendut-netbird-coturn, opendut-grafana
-OPENDUT_DOCKER_CONTAINERS="$(docker ps --all --format='{{.Names}}' --filter "name=opendut-*" | grep -vE 'otel-collector|opendut-traefik|opendut-loki|opendut-netbird-coturn|opendut-grafana')"
+OPENDUT_DOCKER_CONTAINERS="$(docker ps --all --format='{{.Names}}' --filter "name=opendut-*" | grep -vE 'otel-collector|opendut-traefik|opendut-loki|opendut-netbird-coturn|opendut-grafana' || [[ $? == 1 ]])"
 for DOCKER_NAME in $OPENDUT_DOCKER_CONTAINERS; do
   echo "Logs for $DOCKER_NAME"
   docker logs "$DOCKER_NAME" > "$LOG_DIRECTORY"/docker-"$DOCKER_NAME".log 2>&1
@@ -53,7 +53,7 @@ done
 # Collect details about CARL
 # using opendut-cleo container of the localenv environment
 #################################################
-if docker ps -a --format '{{.Names}}' --filter "name=opendut-cleo" | grep -q "^opendut-cleo"; then
+if docker ps -a --format '{{.Names}}' --filter "name=opendut-cleo" | grep -q "^opendut-cleo" || false; then
   mkdir -p "$LOG_DIRECTORY"/cleo/
   CLEO_SUBCOMMANDS="cluster-descriptors cluster-deployments peers devices"
   for COMMAND in $CLEO_SUBCOMMANDS
@@ -68,4 +68,6 @@ if docker ps -a --format '{{.Names}}' --filter "name=opendut-cleo" | grep -q "^o
       docker exec opendut-cleo opendut-cleo describe --output json peer "$PEER" > "$LOG_DIRECTORY"/cleo/opendut-cleo-peer-"$PEER".json 2> "$LOG_DIRECTORY"/cleo/opendut-cleo-peer-"$PEER".error.log
     done
   fi
+else
+  echo "opendut-cleo container not found, skipping CARL logs collection"
 fi
