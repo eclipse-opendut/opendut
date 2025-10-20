@@ -3,9 +3,13 @@ syntax = "proto3";
 package opendut.carl.services.test_manager;
 
 import "opendut/types/test_suite/source.proto";
+import "opendut/types/cluster/cluster.proto";
 
 service TestManager {
   rpc StoreTestSuiteSourceDescriptor(StoreTestSuiteSourceDescriptorRequest) returns (StoreTestSuiteSourceDescriptorResponse) {}
+  rpc DeleteTestSuiteSourceDescriptor(DeleteTestSuiteSourceDescriptorRequest) returns (DeleteTestSuiteSourceDescriptorResponse) {}
+  rpc GetTestSuiteSourceDescriptor(GetTestSuiteSourceDescriptorRequest) returns (GetTestSuiteSourceDescriptorResponse) {}
+  rpc ListTestSuiteSourceDescriptors(ListTestSuiteSourceDescriptorsRequest) returns (ListTestSuiteSourceDescriptorsResponse) {}
 }
 
 
@@ -37,4 +41,108 @@ message StoreTestSuiteSourceDescriptorFailureInternal {
   opendut.types.test_suite.TestSuiteSourceId source_id = 1;
   opendut.types.test_suite.TestSuiteSourceName source_name = 2;
   string cause = 3;
+}
+
+
+//
+// DeleteTestSuiteSourceDescriptorRequest
+//
+message DeleteTestSuiteSourceDescriptorRequest {
+  opendut.types.test_suite.TestSuiteSourceId source_id = 1;
+}
+
+message DeleteTestSuiteSourceDescriptorResponse {
+  oneof reply {
+    DeleteTestSuiteSourceDescriptorSuccess success = 1;
+    DeleteTestSuiteSourceDescriptorFailure failure = 2;
+  }
+}
+
+message DeleteTestSuiteSourceDescriptorSuccess {
+  opendut.types.test_suite.TestSuiteSourceId source_id = 1;
+}
+
+message DeleteTestSuiteSourceDescriptorFailure {
+  oneof error {
+    DeleteTestSuiteSourceDescriptorFailureSourceNotFound source_not_found = 1;
+    DeleteTestSuiteSourceDescriptorFailureInternal internal = 4;
+    DeleteTestSuiteSourceDescriptorFailureDeploymentExists deployment_exists = 5;
+  }
+}
+
+message DeleteTestSuiteSourceDescriptorFailureSourceNotFound {
+  opendut.types.test_suite.TestSuiteSourceId source_id = 1;
+}
+
+message DeleteTestSuiteSourceDescriptorFailureInternal {
+  opendut.types.test_suite.TestSuiteSourceId source_id = 1;
+  optional opendut.types.test_suite.TestSuiteSourceName source_name = 2;
+  string cause = 3;
+}
+
+message DeleteTestSuiteSourceDescriptorFailureDeploymentExists {
+  opendut.types.test_suite.TestSuiteSourceId source_id = 1;
+  opendut.types.cluster.ClusterId cluster_id = 2;
+}
+
+
+//
+// GetTestSuiteSourceDescriptorRequest
+//
+message GetTestSuiteSourceDescriptorRequest {
+  opendut.types.test_suite.TestSuiteSourceId source_id = 1;
+}
+
+message GetTestSuiteSourceDescriptorResponse {
+  oneof reply {
+    GetTestSuiteSourceDescriptorSuccess success = 1;
+    GetTestSuiteSourceDescriptorFailure failure = 2;
+  }
+}
+
+message GetTestSuiteSourceDescriptorSuccess {
+  opendut.types.test_suite.TestSuiteSourceDescriptor descriptor = 1;
+}
+
+message GetTestSuiteSourceDescriptorFailure {
+  oneof error {
+    GetTestSuiteSourceDescriptorFailureSourceNotFound source_not_found = 1;
+    GetTestSuiteSourceDescriptorFailureInternal internal = 2;
+  }
+}
+
+message GetTestSuiteSourceDescriptorFailureSourceNotFound {
+  opendut.types.test_suite.TestSuiteSourceId source_id = 1;
+}
+
+message GetTestSuiteSourceDescriptorFailureInternal {
+  opendut.types.test_suite.TestSuiteSourceId source_id = 1;
+  string cause = 2;
+}
+
+
+//
+// ListTestSuiteSourceRequest
+//
+message ListTestSuiteSourceDescriptorsRequest {}
+
+message ListTestSuiteSourceDescriptorsResponse {
+  oneof reply {
+    ListTestSuiteSourceDescriptorsSuccess success = 1;
+    ListTestSuiteSourceDescriptorsFailure failure = 2;
+  }
+}
+
+message ListTestSuiteSourceDescriptorsSuccess {
+  repeated opendut.types.test_suite.TestSuiteSourceDescriptor sources = 1;
+}
+
+message ListTestSuiteSourceDescriptorsFailure {
+  oneof error {
+      ListTestSuiteSourceDescriptorsFailureInternal internal = 1;
+  }
+}
+
+message ListTestSuiteSourceDescriptorsFailureInternal {
+  string cause = 1;
 }

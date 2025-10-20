@@ -74,7 +74,7 @@ impl TestSuiteSourceName {
 #[derive(thiserror::Error, Clone, Debug)]
 pub enum IllegalTestSuiteSourceName {
     #[error(
-        "Peer name '{value}' is too short. Expected at least {expected} characters, got {actual}."
+        "Test suite source name '{value}' is too short. Expected at least {expected} characters, got {actual}."
     )]
     TooShort {
         value: String,
@@ -82,16 +82,16 @@ pub enum IllegalTestSuiteSourceName {
         actual: usize,
     },
     #[error(
-        "Peer name '{value}' is too long. Expected at most {expected} characters, got {actual}."
+        "Test suite source name '{value}' is too long. Expected at most {expected} characters, got {actual}."
     )]
     TooLong {
         value: String,
         expected: usize,
         actual: usize,
     },
-    #[error("Peer name '{value}' contains invalid characters.")]
+    #[error("Test suite source name '{value}' contains invalid characters.")]
     InvalidCharacter { value: String },
-    #[error("Peer name '{value}' contains invalid start or end characters.")]
+    #[error("Test suite source name '{value}' contains invalid start or end characters.")]
     InvalidStartEndCharacter { value: String },
 }
 
