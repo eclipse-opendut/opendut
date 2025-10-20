@@ -1,0 +1,9 @@
+The code in this directory is licensed under the Apache-2.0 license. See the LICENSE file at the root of this directory.
+
+However, we currently make use of a library under the LGPL-3.0-only license, which is incompatible with the Apache-2.0 license,
+meaning a binary built from this source code cannot be used under the terms of the Apache-2.0 terms.
+
+The code in this directory, as well as the LGPL-3.0-only library, is not necessary for executing openDuT and
+will remain that way until we have resolved the license issue.
+
+For more information, see: https://github.com/eclipse-opendut/opendut/issues/408
