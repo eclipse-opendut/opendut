@@ -169,7 +169,7 @@ wasmtime = { version= "36.0", features = ["component-model", "std", "runtime"] }
 wasmtime-wasi = "36.0"
 which = "8.0.0"
 wit-bindgen = "0.45"
-zip = "5.0.0"
+zip = "6.0.0"
 
 
 [workspace.metadata.ci]
