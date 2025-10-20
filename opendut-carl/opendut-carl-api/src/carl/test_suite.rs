@@ -1,7 +1,7 @@
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 pub use client::*;
 
-use opendut_model::test::suite::{TestSuiteSourceId, TestSuiteSourceName};
+use opendut_model::test_suite::{TestSuiteSourceId, TestSuiteSourceName};
 
 #[derive(thiserror::Error, Debug)]
 pub enum StoreTestSuiteSourceDescriptorError {
@@ -17,7 +17,7 @@ pub enum StoreTestSuiteSourceDescriptorError {
 mod client {
     use super::*;
     use tonic::codegen::{Body, Bytes, http, InterceptedService, StdError};
-    use opendut_model::test::suite::{TestSuiteSourceDescriptor, TestSuiteSourceId};
+    use opendut_model::test_suite::{TestSuiteSourceDescriptor, TestSuiteSourceId};
     use crate::carl::{extract, ClientError};
     use crate::proto::services::test_manager;
     use crate::proto::services::test_manager::test_manager_client::TestManagerClient;

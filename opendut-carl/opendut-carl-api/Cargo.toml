@@ -28,7 +28,7 @@ wasm-client = [
     "dep:tonic-web-wasm-client",
     "dep:tracing",
 ]
-test = ["opendut-model/test"]
+test_suite = ["opendut-model/test_suite"]
 
 [dependencies]
 opendut-auth = { workspace = true, optional = true }

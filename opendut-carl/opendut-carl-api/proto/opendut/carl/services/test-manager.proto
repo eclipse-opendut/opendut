@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package opendut.carl.services.test_manager;
 
-import "opendut/types/test/suite/source.proto";
+import "opendut/types/test_suite/source.proto";
 
 service TestManager {
   rpc StoreTestSuiteSourceDescriptor(StoreTestSuiteSourceDescriptorRequest) returns (StoreTestSuiteSourceDescriptorResponse) {}
@@ -13,7 +13,7 @@ service TestManager {
 // StoreTestSuiteSourceDescriptorRequest
 //
 message StoreTestSuiteSourceDescriptorRequest {
-  opendut.types.test.suite.TestSuiteSourceDescriptor source = 1;
+  opendut.types.test_suite.TestSuiteSourceDescriptor source = 1;
 }
 
 message StoreTestSuiteSourceDescriptorResponse {
@@ -24,7 +24,7 @@ message StoreTestSuiteSourceDescriptorResponse {
 }
 
 message StoreTestSuiteSourceDescriptorSuccess {
-  opendut.types.test.suite.TestSuiteSourceId source_id = 1;
+  opendut.types.test_suite.TestSuiteSourceId source_id = 1;
 }
 
 message StoreTestSuiteSourceDescriptorFailure {
@@ -34,7 +34,7 @@ message StoreTestSuiteSourceDescriptorFailure {
 }
 
 message StoreTestSuiteSourceDescriptorFailureInternal {
-  opendut.types.test.suite.TestSuiteSourceId source_id = 1;
-  opendut.types.test.suite.TestSuiteSourceName source_name = 2;
+  opendut.types.test_suite.TestSuiteSourceId source_id = 1;
+  opendut.types.test_suite.TestSuiteSourceName source_name = 2;
   string cause = 3;
 }

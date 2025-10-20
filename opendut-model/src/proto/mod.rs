@@ -1,8 +1,8 @@
 pub mod cleo;
 pub mod cluster;
 pub mod peer;
-#[cfg(feature="test")]
-pub mod test;
+#[cfg(feature="test_suite")]
+pub mod test_suite;
 pub mod topology;
 pub mod util;
 pub mod vpn;

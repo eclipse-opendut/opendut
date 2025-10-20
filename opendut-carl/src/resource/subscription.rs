@@ -4,7 +4,7 @@ use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration
 use opendut_model::peer::state::PeerConnectionState;
 use opendut_model::peer::PeerDescriptor;
 use tokio::sync::broadcast;
-use opendut_model::test::suite::TestSuiteSourceDescriptor;
+use opendut_model::test_suite::TestSuiteSourceDescriptor;
 
 pub struct Subscription<R: Resource> {
     receiver: broadcast::Receiver<SubscriptionEvent<R>>,

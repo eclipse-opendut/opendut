@@ -12,7 +12,7 @@ json = ["dep:serde_json"]
 yaml = ["dep:serde_yaml"]
 yaml-specs = ["specs", "yaml"]
 json-specs = ["specs", "json"]
-test = []
+test_suite = []
 
 [dependencies]
 base64 = { workspace = true }

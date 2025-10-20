@@ -1,11 +1,11 @@
 use crate::conversion;
 use crate::proto::ConversionResult;
 
-crate::include_proto!("opendut.types.test.suite");
+crate::include_proto!("opendut.types.test_suite");
 
 
 conversion! {
-    type Model = crate::test::suite::TestSuiteSourceId;
+    type Model = crate::test_suite::TestSuiteSourceId;
     type Proto = TestSuiteSourceId;
 
     fn from(value: Model) -> Proto {
@@ -21,7 +21,7 @@ conversion! {
 }
 
 conversion! {
-    type Model = crate::test::suite::TestSuiteSourceName;
+    type Model = crate::test_suite::TestSuiteSourceName;
     type Proto = TestSuiteSourceName;
 
     fn from(value: Model) -> Proto {
@@ -37,7 +37,7 @@ conversion! {
 }
 
 conversion! {
-    type Model = crate::test::suite::TestSuiteSourceDescriptor;
+    type Model = crate::test_suite::TestSuiteSourceDescriptor;
     type Proto = TestSuiteSourceDescriptor;
 
     fn from(value: Model) -> Proto {

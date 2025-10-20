@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package opendut.types.test.suite;
+package opendut.types.test_suite;
 
 import "opendut/types/util/net.proto";
 import "opendut/types/util/uuid.proto";
@@ -14,7 +14,7 @@ message TestSuiteSourceName {
 }
 
 message TestSuiteSourceDescriptor {
-  opendut.types.test.suite.TestSuiteSourceId id = 1;
-  opendut.types.test.suite.TestSuiteSourceName name = 2;
+  opendut.types.test_suite.TestSuiteSourceId id = 1;
+  opendut.types.test_suite.TestSuiteSourceName name = 2;
   opendut.types.util.Url url = 3;
 }

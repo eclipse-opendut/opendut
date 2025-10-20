@@ -5,7 +5,7 @@ tonic::include_proto!("opendut.carl.services.test_manager");
 
 
 conversion! {
-    type Model = crate::carl::test::StoreTestSuiteSourceDescriptorError;
+    type Model = crate::carl::test_suite::StoreTestSuiteSourceDescriptorError;
     type Proto = StoreTestSuiteSourceDescriptorFailure;
 
     fn from(value: Model) -> Proto {
