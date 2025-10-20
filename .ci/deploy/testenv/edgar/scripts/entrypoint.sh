@@ -8,10 +8,6 @@ source "$(dirname "$0")/functions.sh"
 main() {
   OPENDUT_REQUIRE_DIST="${1:-true}"
 
-  copy_custom_certificate_from_environment_variable "OPENDUT_CUSTOM_CA1"
-  copy_custom_certificate_from_environment_variable "OPENDUT_CUSTOM_CA2"
-  append_data_from_env_variable OPENDUT_HOSTS /etc/hosts
-
   export OPENDUT_ARTIFACTS_DIR=/opt/artifacts
   ls -la $OPENDUT_ARTIFACTS_DIR
 
@@ -28,17 +24,10 @@ update-ca-certificates
 # configure http proxy for Docker in Docker container (cruizba/ubuntu-dind)
 /opt/dind_proxy.sh
 
-# symlink netbird to known binary path
-#OPENDUT_EDGAR_NETBIRD_BINARY=/opt/opendut/edgar/netbird/netbird
-#if [ -e "$OPENDUT_EDGAR_NETBIRD_BINARY" ]; then
-#  ln -sf /opt/opendut/edgar/netbird/netbird /usr/local/bin/distribution/netbird
-#else
-#  echo "Could not find netbird binary in $OPENDUT_EDGAR_NETBIRD_BINARY."
-#  exit 1
-#fi
 
 if [ -n "$1" ]; then
   if [ "$1" == "bash" ]; then
+    # do not extract artifacts when run by `cargo theo dev edgar-shell`
     main "${OPENDUT_REQUIRE_DIST:-false}"
   else
     # run by ci, requires artifacts

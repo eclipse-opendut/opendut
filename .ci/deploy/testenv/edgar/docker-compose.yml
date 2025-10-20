@@ -17,6 +17,8 @@ services:
     cap_add:
       - NET_ADMIN
     environment:
+      # required by opentelemetry exporter (see opendut-util)
+      - SSL_CERT_FILE=/provision/pki/opendut-ca.pem
       # CLEO
       - OPENDUT_CLEO_NETWORK_CARL_HOST=carl.opendut.local
       - OPENDUT_CLEO_NETWORK_CARL_PORT=443
@@ -42,6 +44,7 @@ services:
       - OPENDUT_EDGAR_OPENTELEMETRY_COLLECTOR_ENDPOINT=http://otel-collector:4317
 
       # testenv
+      - OPENDUT_CARL_VERSION
       - OPENDUT_EDGAR_REPLICAS
       - OPENDUT_EDGAR_SERVICE_USER=root
       # Rust backtrace
@@ -64,6 +67,9 @@ services:
     cap_add:
       - NET_ADMIN
     environment:
+      # required by opentelemetry exporter (see opendut-util)
+      - SSL_CERT_FILE=/provision/pki/opendut-ca.pem
+
       # CLEO
       - OPENDUT_CLEO_NETWORK_CARL_HOST=carl.opendut.local
       - OPENDUT_CLEO_NETWORK_CARL_PORT=443
@@ -89,6 +95,7 @@ services:
       - OPENDUT_EDGAR_OPENTELEMETRY_COLLECTOR_ENDPOINT=http://otel-collector:4317
 
       # testenv
+      - OPENDUT_CARL_VERSION
       - OPENDUT_EDGAR_REPLICAS
       - OPENDUT_EDGAR_SERVICE_USER=root
       # Rust backtrace

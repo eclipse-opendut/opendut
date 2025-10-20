@@ -155,20 +155,6 @@ check_timeout() {
 }
 
 
-debug_show_peers_requesting_leader_ip() {
-  while true; do
-    lookups=$(grep leader_ip.txt logs.txt | nl | awk '{print $1}' | tail -n1)
-    num_lookups=${lookups:-0}
-    echo "${num_lookups} of ${OPENDUT_EDGAR_REPLICAS} peers fetched the leader_ip address."
-    if [ "${num_lookups}" == "${OPENDUT_EDGAR_REPLICAS}" ]; then
-      break
-    else
-      echo "Waiting for peers to fetch leader_ip address."
-      sleep 1
-    fi
-  done
-}
-
 
 extract_opendut_artifact() {
   NAME="$1"
@@ -178,7 +164,7 @@ extract_opendut_artifact() {
     echo "Skipping extraction of distribution archive for $NAME."
   else
     echo "Extracting distribution archive for $NAME."
-    OPENDUT_DIST_ARCHIVE_PATH=$(find "$OPENDUT_ARTIFACTS_DIR" -name "$NAME-x86_64-unknown-linux-gnu*.tar.gz" -print0 | tr '\0' '\n' | head)
+    OPENDUT_DIST_ARCHIVE_PATH="$OPENDUT_ARTIFACTS_DIR/$NAME-x86_64-unknown-linux-gnu-$OPENDUT_CARL_VERSION.tar.gz"
     if [ -e "$OPENDUT_DIST_ARCHIVE_PATH" ]; then
       tar xf "$OPENDUT_DIST_ARCHIVE_PATH"
       OPENDUT_ARTIFACT_BINARY="/opt/$NAME/$NAME"

@@ -11,7 +11,7 @@ use strum::{Display, EnumString, VariantNames};
 
 use crate::commands::vagrant::running_in_opendut_vm;
 use crate::core::{OPENDUT_REPO_ROOT, OPENDUT_VM_NAME, TheoError};
-use crate::core::metadata::cargo_netbird_versions;
+use crate::core::metadata::get_package_version;
 use crate::core::util::consume_output;
 
 #[derive(Debug, PartialEq, EnumString, VariantNames, Display)]
@@ -24,13 +24,7 @@ pub enum TheoDynamicEnvVars {
     DockerUser,
     DockerGid,
     OpendutRepoRoot,
-    NetbirdSignalVersion,
-    NetbirdManagementVersion,
-    NetbirdDashboardVersion,
     OpendutCarlVersion,
-    OpendutCustomCa1,
-    OpendutCustomCa2,
-    OpendutHosts,
     OpendutEdgarReplicas,
     OpendutExposePorts,
 }
@@ -68,13 +62,7 @@ impl TheoEnvMap {
         let git_repo_root = PathBuf::project_dir();
         let docker_user = format!("{}:{}", user_id.clone(), group_id.clone());
 
-        let metadata = cargo_netbird_versions();
-
-        fn read_pem_certificate() -> String {
-            let ca_pem_file = PathBuf::project_path_buf().join("resources").join("development").join("tls").join("insecure-development-ca.pem");
-            let pem_file = ca_pem_file.to_str().unwrap();
-            std::fs::read_to_string(pem_file).expect("Failed to insecure development ca pem file.").replace('\n', "\\n").trim_end().to_string()
-        }
+        let carl_version = get_package_version("opendut-carl");
 
         let mut env_map = HashMap::new();
         env_map.insert(TheoDynamicEnvVars::Puser.to_string(),
@@ -86,13 +74,7 @@ impl TheoEnvMap {
         env_map.insert(TheoDynamicEnvVars::DockerUser.to_string(), docker_user.clone());
         env_map.insert(TheoDynamicEnvVars::DockerGid.to_string(), docker_gid.clone());
         env_map.insert(TheoDynamicEnvVars::OpendutRepoRoot.to_string(), git_repo_root.clone());
-        env_map.insert(TheoDynamicEnvVars::NetbirdManagementVersion.to_string(), metadata.netbird.netbird_management_version.clone());
-        env_map.insert(TheoDynamicEnvVars::NetbirdSignalVersion.to_string(), metadata.netbird.netbird_signal_version.clone());
-        env_map.insert(TheoDynamicEnvVars::NetbirdDashboardVersion.to_string(), metadata.netbird.netbird_dashboard_version.clone());
-        env_map.insert(TheoDynamicEnvVars::OpendutCarlVersion.to_string(), metadata.carl_version.clone());
-        env_map.insert(TheoDynamicEnvVars::OpendutCustomCa1.to_string(), format!("\"{}\"", read_pem_certificate()));
-        env_map.insert(TheoDynamicEnvVars::OpendutCustomCa2.to_string(), format!("\"{}\"", read_pem_certificate()));
-        env_map.insert(TheoDynamicEnvVars::OpendutHosts.to_string(), "".to_string());
+        env_map.insert(TheoDynamicEnvVars::OpendutCarlVersion.to_string(), carl_version);
         env_map.insert(TheoDynamicEnvVars::OpendutEdgarReplicas.to_string(), "4".to_string());
 
         if running_in_opendut_vm() {

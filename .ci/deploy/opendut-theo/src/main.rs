@@ -23,8 +23,6 @@ enum TaskCli {
     Testenv(TestenvCli),
     Vagrant(VagrantCli),
     Dev(DevCli),
-    /// Show NetBird application versions.
-    NetbirdVersions,
 }
 
 
@@ -43,10 +41,6 @@ fn main() -> Result {
         TaskCli::Testenv(implementation) => { implementation.default_handling()? }
         TaskCli::Vagrant(implementation) => { implementation.default_handling()? }
         TaskCli::Dev(implementation) => { implementation.default_handling()? }
-        TaskCli::NetbirdVersions => {
-            let metadata = core::metadata::cargo_netbird_versions();
-            println!("Versions: {metadata:?}");
-        }
     };
     Ok(())
 }
