@@ -1,10 +1,11 @@
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 pub use client::*;
 use opendut_model::cluster::ClusterId;
-use opendut_model::peer::{PeerDisplay, PeerId, PeerName};
+use opendut_model::peer::{PeerId, PeerName};
 use opendut_model::peer::state::PeerState;
 use opendut_model::ShortName;
 use opendut_model::topology::DeviceId;
+use opendut_model::format::format_id_with_optional_name;
 
 #[derive(thiserror::Error, Debug)]
 pub enum StorePeerDescriptorError {
@@ -31,7 +32,7 @@ pub enum StorePeerDescriptorError {
 
 #[derive(thiserror::Error, PartialEq, Debug)]
 pub enum DeletePeerDescriptorError {
-    #[error("Peer <{peer_id}> could not be deleted, because a peer with that id does not exist!")]
+    #[error("Peer <{peer_id}> could not be deleted, because a peer with that ID does not exist!")]
     PeerNotFound {
         peer_id: PeerId,
     },
@@ -51,7 +52,7 @@ pub enum DeletePeerDescriptorError {
         actual_state: PeerState,
         required_states: Vec<PeerState>,
     },
-    #[error("Peer {peer} deleted with internal errors:\n  {cause}", peer=PeerDisplay::new(peer_name, peer_id))]
+    #[error("Peer {peer} deleted with internal errors:\n  {cause}", peer=format_id_with_optional_name(peer_id, peer_name))]
     Internal {
         peer_id: PeerId,
         peer_name: Option<PeerName>,

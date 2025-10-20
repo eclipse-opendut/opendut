@@ -1,5 +1,5 @@
 use opendut_model::ShortName;
-use opendut_model::peer::PeerDisplay;
+use opendut_model::format::{format_id_with_name, format_id_with_optional_name};
 use crate::resource::storage::ResourcesStorageApi;
 use crate::settings::vpn::Vpn;
 use opendut_auth::registration::client::RegistrationClientRef;
@@ -86,7 +86,7 @@ pub enum DeletePeerDescriptorError {
     },
     #[error(
         "Peer {peer} cannot be deleted in state '{actual_state}'! A peer can be deleted when: {required_states}",
-        peer = PeerDisplay::new(&Some(peer_name.to_owned()), peer_id),
+        peer = format_id_with_name(peer_id, peer_name),
         actual_state = actual_state.short_name(),
         required_states = PeerState::short_names_joined(required_states),
     )]
@@ -96,19 +96,19 @@ pub enum DeletePeerDescriptorError {
         actual_state: PeerState,
         required_states: Vec<PeerState>,
     },
-    #[error("Error when accessing persistence while deleting peer descriptor for peer {peer}", peer=PeerDisplay::new(peer_name, peer_id))]
+    #[error("Error when accessing persistence while deleting peer descriptor for peer {peer}", peer=format_id_with_optional_name(peer_id, peer_name))]
     Persistence {
         peer_id: PeerId,
         peer_name: Option<PeerName>,
         #[source] source: PersistenceError,
     },
-    #[error("Error when removing registration in authentication provider while deleting peer descriptor for peer {peer}", peer=PeerDisplay::new(&Some(peer_name.to_owned()), peer_id))]
+    #[error("Error when removing registration in authentication provider while deleting peer descriptor for peer {peer}", peer=format_id_with_name(peer_id, peer_name))]
     AuthRegistration {
         peer_id: PeerId,
         peer_name: PeerName,
         #[source] source: opendut_auth::registration::client::RegistrationClientError,
     },
-    #[error("Error when deleting peer in VPN management while deleting peer descriptor for peer {peer}", peer=PeerDisplay::new(&Some(peer_name.to_owned()), peer_id))]
+    #[error("Error when deleting peer in VPN management while deleting peer descriptor for peer {peer}", peer=format_id_with_name(peer_id, peer_name))]
     VpnClient {
         peer_id: PeerId,
         peer_name: PeerName,

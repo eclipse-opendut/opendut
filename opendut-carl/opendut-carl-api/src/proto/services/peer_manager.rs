@@ -113,7 +113,7 @@ impl TryFrom<StorePeerDescriptorFailureInternal> for StorePeerDescriptorError {
 }
 
 
-conversion!{
+conversion! {
     type Model = crate::carl::peer::DeletePeerDescriptorError;
     type Proto = DeletePeerDescriptorFailure;
     
