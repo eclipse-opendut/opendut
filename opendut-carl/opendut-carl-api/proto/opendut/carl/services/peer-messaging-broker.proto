@@ -2,10 +2,7 @@ syntax = "proto3";
 
 package opendut.carl.services.peer_messaging_broker;
 
-import "opendut/types/cluster/cluster.proto";
-import "opendut/types/peer/peer.proto";
 import "opendut/types/peer/configuration/api.proto";
-import "opendut/types/vpn/vpn.proto";
 
 service PeerMessagingBroker {
   rpc Open(stream Upstream) returns (stream Downstream);
