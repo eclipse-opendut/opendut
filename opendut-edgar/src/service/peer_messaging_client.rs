@@ -82,16 +82,18 @@ impl PeerMessagingClient {
     
     async fn spawn_peer_configuration_state_sender(&self, mut rx_peer_configuration_state: Receiver<PeerConfigurationState>, tx_outbound: Upstream) {
         tokio::spawn(async move {
-            let message = rx_peer_configuration_state.recv().await;
-            match message {
-                None => {
-                    info!("Peer configuration state channel closed");
-                }
-                Some(message) => {
-                    let _send_result = tx_outbound.send(message.clone()).await
-                        .inspect_err(|error| {
-                            error!("Failed to send PeerConfigurationState {message:?} to CARL. Encountered error was: {error}");
-                        });
+            loop {
+                let message = rx_peer_configuration_state.recv().await;
+                match message {
+                    None => {
+                        info!("Peer configuration state channel closed");
+                    }
+                    Some(message) => {
+                        let _send_result = tx_outbound.send(message.clone()).await
+                            .inspect_err(|error| {
+                                error!("Failed to send PeerConfigurationState {message:?} to CARL. Encountered error was: {error}");
+                            });
+                    }
                 }
             }
         });

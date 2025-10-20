@@ -18,3 +18,19 @@ Those tests are flagged as such using the crate [test-with](https://crates.io/cr
     ```
 
 See [Run OpenDuT integration tests](testenv/usage/integration-tests.md) for details.
+
+## Running tests with logging
+
+By default, log output is suppressed when running tests. 
+To see log output when running tests, mark your test with the `#[test_log::test]` attribute instead of the standard `#[test]` attribute, for example:
+    ```rust
+    #[test_log::test]
+    fn it_still_works() {
+      // ...
+    }
+    ```
+And set the environment variable `RUST_LOG` to the desired log level before running the tests.
+To see all log messages at the `debug` level and above, you can then run:
+    ```shell
+    RUST_LOG=debug cargo ci check
+    ```

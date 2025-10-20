@@ -177,7 +177,7 @@ async fn run_multiple_tasks(
             Err(error) => {
                 // if the task failed, we update the outcome for this parameter
                 outcome_for_parameter = Err(error);
-                resolver.mark_current_parameter_failed();
+                resolver.mark_current_parameter_as_failed();
                 break; // no need to continue with other tasks for this parameter
             }
         }

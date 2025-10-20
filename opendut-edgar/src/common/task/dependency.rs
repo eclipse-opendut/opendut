@@ -2,6 +2,7 @@ use opendut_model::peer::configuration::{ParameterId, ParameterVariant, PeerConf
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
+use tracing::debug;
 
 pub struct PeerConfigurationDependencyResolver {
     /// Parameters with dependencies that need to be completed.
@@ -50,13 +51,12 @@ impl PeerConfigurationDependencyResolver {
         Using a variation of 
         - depth-first traversal in post-order (see https://en.wikipedia.org/wiki/Tree_traversal#Depth-first_search)
         - or Kahn's algorithm: https://en.wikipedia.org/wiki/Topological_sorting#Kahn's_algorithm
-     */
 
+
+     */
     pub fn next_parameter(&mut self) -> Option<ParameterVariant>{
-        if let Some(current) = self.current.take() {
-            // assume the last parameter was completed successfully
-            self.completed.insert(current.0, current.1);
-        }
+        // assume the last parameter was completed successful and not marked as failed
+        self.mark_current_parameter_as_succeeded();
 
         let next = self.determine_next_parameter();
 
@@ -89,14 +89,29 @@ impl PeerConfigurationDependencyResolver {
             .next()
     }
 
-    pub fn mark_current_parameter_failed(&mut self) {
+    fn mark_current_parameter_as_succeeded(&mut self) {
+        if let Some(current) = self.current.take() {
+            self.completed.insert(current.0, current.1);
+        }
+        // if there is no current parameter, it could have been marked as failed previously
+    }
+
+    pub fn mark_current_parameter_as_failed(&mut self) {
         if let Some(current) = self.current.take() {
             self.failed.insert(current.0, current.1);
         }
     }
 
     pub fn success(&mut self) -> bool {
-        self.open.is_empty() && self.failed.is_empty() && self.current.is_none()
+        let outcome = self.open.is_empty() && self.failed.is_empty() && self.current.is_none();
+        debug!("Dependency resolver completed. Success: {}. Completed parameters: {}. Failed parameters: {}. Unfulfilled parameters: {}. Current parameter: {:?}",
+            outcome,
+            self.completed.len(),
+            self.failed.len(),
+            self.open.len(),
+            self.current,
+        );
+        outcome
     }
     
     pub fn unfulfilled(&self) -> Vec<ParameterVariantWithDependencies> {
@@ -188,13 +203,13 @@ mod tests {
         assert!(position_remove_old_bridge < position_new_bridge, "The task of removing the old bridge must precede the addition of a new bridge.");
     }
 
-    #[test]
+    #[test_log::test]
     fn determine_task_order_when_one_task_fails() {
         let mut testee = PeerConfigurationDependencyResolverFixture::new();
         let mut tasks: Vec<ParameterVariant> = vec![];
         while let Some(next_parameter) = testee.resolver.next_parameter() {
             if matches!(next_parameter, ParameterVariant::DeviceInterface { .. }) {
-                testee.resolver.mark_current_parameter_failed();
+                testee.resolver.mark_current_parameter_as_failed();
             }
             tasks.push(next_parameter);
         }

@@ -12,7 +12,7 @@ use tokio::sync::{Mutex, RwLock, RwLockWriteGuard, TryLockError};
 use tonic::{Request, Status};
 use tonic::metadata::MetadataValue;
 use tonic::service::Interceptor;
-use tracing::debug;
+use tracing::trace;
 use backon::Retryable;
 use reqwest_middleware::ClientWithMiddleware;
 use tokio::runtime::Handle;
@@ -80,7 +80,7 @@ impl ConfidentialClient {
 
         match config_enabled {
             OidcConfigEnabled::Yes(config) => {
-                debug!("OIDC configuration loaded: client_id='{}', issuer_url='{}'", config.get_client_id().as_str(), config.get_issuer().value().as_str());
+                trace!("OIDC configuration loaded: client_id='{}', issuer_url='{}'", config.get_client_id().as_str(), config.get_issuer().value().as_str());
                 let reqwest_client = OidcReqwestClient::from_config(settings)
                     .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to create reqwest client."), cause: cause.into() })?;
 
@@ -91,7 +91,7 @@ impl ConfidentialClient {
                 }
             }
             OidcConfigEnabled::No => {
-                debug!("OIDC is disabled.");
+                trace!("OIDC is disabled.");
                 Ok(None)
             }
         }
