@@ -4,9 +4,9 @@ When the user configures a Peer or a Cluster, LEA/CLEO sends us a `PeerDescripto
 
 To instruct EDGAR what configuration it should roll out, we send it a `PeerConfiguration`, which is derived from these `Descriptors` and additional information that CARL may have.
 
-EDGAR reports back a `PeerState` to indicate how far along it is in rolling out this `PeerConfiguration`, as well as its general health.
+EDGAR reports back a `PeerConfigurationState` to indicate how far along it is in rolling out this `PeerConfiguration`, as well as its general health.
 
-This `PeerState` is then compared to the `PeerConfiguration` to determine what configuration tasks are still in progress.
+This `PeerConfigurationState` is then compared to the `PeerConfiguration` to determine what configuration tasks are still in progress.
 Along with the peer's general health information, this is then reported to LEA/CLEO in a PeerStatusReport.
 
 ![Illustration how Descriptors, Configuration, State and StatusReport are sent between programs.](img/peer-state-configuration.svg)
@@ -22,11 +22,11 @@ Along with the peer's general health information, this is then reported to LEA/C
   * There will be Tasks, akin to EDGAR Setup, which can check whether a configuration parameter deployment is present/absent,
     and know how to apply or unapply this configuration.
 
-* EDGAR can report how far it has applied the PeerConfiguration as a `PeerState`.
-  The PeerState needs to be linkable to the PeerConfiguration.
+* EDGAR can report how far it has applied the PeerConfiguration as a `PeerConfigurationState`.
+  The PeerConfigurationState needs to be linkable to the PeerConfiguration.
 
 * UIs should get a report on the state of a peer (`PeerStatusReport`).
-  This PeerStatusReport needs to be derived from the PeerState.
+  This PeerStatusReport needs to be derived from the PeerConfigurationState.
 
 * It needs to be possible to designate dependencies between configuration parameters,
   as e.g. an interface cannot be joined to a bridge, if the bridge does not yet exist.
