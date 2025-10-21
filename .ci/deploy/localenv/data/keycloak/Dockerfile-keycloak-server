@@ -3,7 +3,7 @@
 
 ARG KEYCLOAK_VERSION
 
-FROM quay.io/keycloak/keycloak:$KEYCLOAK_VERSION as builder
+FROM quay.io/keycloak/keycloak:$KEYCLOAK_VERSION AS builder
 
 # Keycloak configuration options: https://www.keycloak.org/server/all-config
 # Configure postgres database vendor
