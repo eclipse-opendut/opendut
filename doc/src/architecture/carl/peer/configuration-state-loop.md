@@ -23,19 +23,33 @@ When a Parameter is "Present" in PeerConfiguration and "Absent" in EdgePeerConfi
 | absent            | absent  + OK               | ABSENT                 |
 | present           | absent  + OK               | CREATING               |
 | absent            | present + OK               | REMOVING               |
-| present           | absent  + error            | ERROR CreatingFailed   |
-| absent            | present + error            | ERROR RemovingFailed   |
+| present           | absent  + error            | CREATING + Error       |
+| absent            | present + error            | REMOVING + Error       |
 
-Configuration parameters missing at one side:
+Detected state unknown in EdgePeerConfigurationState:
 
-| PeerConfiguration | EdgePeerConfigurationState | PeerConfigurationState | Comment                                         |
-|-------------------|----------------------------|------------------------|-------------------------------------------------|
-| present           | not appear                 | CREATING               | backend expects it, edge hasn't reported it yet |
-| absent            | not appear                 | ABSENT                 | both sides agree it's absent                    |
-| not appear        | absent  + OK               | ABSENT                 | both sides agree it's absent                    |
-| not appear        | present + OK               | REMOVING               |
-| not appear        | present + error            | ERROR RemovingFailed   |
-| not appear        | absent  + error            | ERROR CreatingFailed   |
+| PeerConfiguration | EdgePeerConfigurationState | PeerConfigurationState            |
+|-------------------|----------------------------|-----------------------------------|
+| present           | unknown  + error           | CREATING + CheckFailed            |
+| absent            | unknown  + error           | REMOVING + CheckFailed            |
+| present           | unknown  + error           | CREATING + WaitingForDependencies |
+| absent            | unknown  + error           | REMOVING + WaitingForDependencies |
+
+
+Configuration parameter is missing at one side:
+
+| PeerConfiguration | EdgePeerConfigurationState | PeerConfigurationState | Comment                                              |
+|-------------------|----------------------------|------------------------|------------------------------------------------------|
+| present           | not appear                 | CREATING               | backend expects it, edge hasn't reported it yet      |
+| absent            | not appear                 | ABSENT                 | both sides agree it's absent                         |
+| not appear        | absent  + OK               | ABSENT                 | both sides agree it's absent                         |
+| not appear        | present + OK               | REMOVING               | 
+| not appear        | present + error            | REMOVING + Error       |
+| not appear        | absent  + error            | CREATING + Error       |
+| not appear        | unknown  + error           |                        |
+
+With the `PeerConfigurationState` we want to tell if the edge device has applied all required configuration tasks and is considered `ready`.
+
 
 ## Ideas behind this design
 
