@@ -12,7 +12,7 @@ pub mod unittest {
     #[derive(Debug, PyPayload)]
     pub struct TestCase {}
 
-    #[pyclass(flags(BASETYPE))]
+    #[pyclass(flags(BASETYPE))] // Enables inheritance
     #[viper_pygen::pygen]
     impl TestCase {
 

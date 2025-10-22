@@ -123,7 +123,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "#)
     );
 
-    let (_, parameters, suite) = viper.compile(&source, &mut emitter::drain()).await?.split();
+    let (_, parameters, suite) = viper.compile(&source, &mut emitter::drain(), None).await?.split();
 
     let mut bindings = ParameterBindings::from(parameters);
 

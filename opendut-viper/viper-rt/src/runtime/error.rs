@@ -14,6 +14,7 @@ use crate::runtime::RuntimeInstantiationError;
 use crate::source::SourceLocation;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use crate::runtime::types::compile::filter::FilterError;
 use crate::runtime::types::run::parameters::{BindParameterError, IncompleteParameterBindingsError};
 
 impl Error for CompilationError {}
@@ -27,6 +28,7 @@ impl Error for InvalidIdentifierError {}
 impl Error for InvalidSourceError {}
 impl Error for InvalidSourceLocationError {}
 impl Error for MetadataError {}
+impl Error for FilterError {}
 impl Error for ParameterError {}
 impl Error for PythonReflectionError {}
 impl Error for PythonRuntimeError {}
@@ -118,6 +120,7 @@ impl Display for InspectionError {
         match self {
             InspectionError::MetadataError(cause) => write!(f, "{cause}"),
             InspectionError::ParameterError(cause) => write!(f, "{cause}"),
+            InspectionError::FilterError(cause) => write!(f, "{cause}"),
         }
     }
 }
@@ -166,6 +169,19 @@ impl Display for MetadataError {
             }
             MetadataError::UnknownAttribute { attribute } => {
                 write!(f, "Metadata attribute '{attribute}' is unknown!")
+            }
+        }
+    }
+}
+
+impl Display for FilterError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FilterError::InvalidTestCaseIdentifier { name } => {
+                write!(f, "TestCase '{name}' not found.")
+            }
+            FilterError::InvalidTestIdentifier { name } => {
+                write!(f, "Test '{name}' not found.")
             }
         }
     }

@@ -1,10 +1,12 @@
 use crate::runtime::types::compile::metadata::MetadataError;
 use crate::runtime::types::compile::parameters::ParameterError;
+use crate::runtime::types::compile::filter::FilterError;
 
 #[derive(Debug)]
 pub enum InspectionError {
     MetadataError(MetadataError),
-    ParameterError(ParameterError)
+    ParameterError(ParameterError),
+    FilterError(FilterError)
 }
 
 impl InspectionError {
@@ -20,4 +22,8 @@ impl InspectionError {
     ) -> Self {
         Self::ParameterError(cause)
     }
+
+    pub(crate) fn new_invalid_filter_error(
+        cause: FilterError
+    ) -> Self { Self::FilterError(cause) }
 }
