@@ -59,9 +59,10 @@ impl ViperRuntime {
     pub async fn compile(
         &self,
         source: &types::source::Source,
-        emitter: &mut dyn emitter::EventEmitter<types::compile::event::CompileEvent>
+        emitter: &mut dyn emitter::EventEmitter<types::compile::event::CompileEvent>,
+        identifier_filter: Option<String>
     ) -> types::compile::error::CompileResult<types::compile::compilation::Compilation> {
-        compile::compile(source, &self.context, emitter).await
+        compile::compile(source, &self.context, emitter, identifier_filter).await
     }
 
     #[cfg(feature = "run")]

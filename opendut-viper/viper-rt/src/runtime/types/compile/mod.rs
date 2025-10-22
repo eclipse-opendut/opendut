@@ -6,3 +6,4 @@ pub mod inspect;
 pub mod metadata;
 pub mod parameters;
 pub mod suite;
+pub mod filter;

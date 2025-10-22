@@ -16,14 +16,15 @@ use tracing::{debug, error, info};
 pub async fn compile(
     source: &Source,
     context: &Context,
-    emitter: &mut dyn EventEmitter<CompileEvent>
+    emitter: &mut dyn EventEmitter<CompileEvent>,
+    identifier_filter: Option<String>,
 ) -> CompileResult<Compilation> {
 
     debug!("Compiling test suite '{}'.", source.identifier);
 
     emit::compilation_started(emitter, source).await?;
 
-    let compilation = compile_source(source, context).await;
+    let compilation = compile_source(source, context, identifier_filter).await;
 
     match &compilation {
         Ok(compilation) => {
@@ -42,12 +43,13 @@ pub async fn compile(
 pub async fn compile_source(
     source: &Source,
     context: &Context,
+    identifier_filter: Option<String>,
 ) -> CompileResult<Compilation> {
 
     let source_code = prepare_source_code(source, context).await?;
     let interpreter = create_interpreter();
     let py_module = compile_source_code(&source_code, &interpreter)?;
-    let (metadata, parameters, suite) =  inspect(source_code, py_module, interpreter)
+    let (metadata, parameters, suite) = inspect(source_code, py_module, interpreter, identifier_filter)
         .map_err(|error| CompilationError::new_inspection_failure_error(source, error))?;
 
     Ok(Compilation::new(metadata, parameters, suite))

@@ -2,6 +2,7 @@ mod templates;
 mod console;
 mod parse;
 mod param_config;
+mod filter;
 
 use std::collections::HashMap;
 use clap::Parser;
@@ -24,9 +25,9 @@ use viper_rt::source::loaders::SimpleFileSourceLoader;
 use viper_rt::source::Source;
 use viper_rt::ViperRuntime;
 use crate::console::Event;
+use crate::filter::{SuiteFilterError, SuiteIdentifierFilter};
 use crate::param_config::{IncompleteBindingsError, ParameterToml};
 use crate::templates::SCRIPT_PY_TEMPLATE;
-
 
 /// Write reproducible tests for ECUs using Python syntax
 #[derive(clap::Parser)]
@@ -46,6 +47,10 @@ enum Command {
         /// Load parameters from given file
         #[arg(long="params-from-file")]
         params_from_file: Option<String>,
+
+        /// Run given Test (suite::case::test)
+        #[arg()]
+        test_identifier_filter: Option<String>,
     },
 }
 
@@ -67,8 +72,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 std::process::exit(1);
             }
         }
-        Command::Run{ params_from_file } => {
-            if let Err(e) = build_and_run(params_from_file).await {
+        Command::Run{ params_from_file, test_identifier_filter } => {
+            if let Err(e) = build_and_run(params_from_file, test_identifier_filter).await {
                 eprintln!("Error running tests: {e}");
                 std::process::exit(1);
             }
@@ -107,7 +112,7 @@ fn create_project_structure() -> io::Result<()> {
     Ok(())
 }
 
-async fn build_and_run(params_from_file: Option<String>) -> Result<(), Box<dyn Error>> {
+async fn build_and_run(params_from_file: Option<String>, test_identifier_filter: Option<String>) -> Result<(), Box<dyn Error>> {
 
     let runtime = ViperRuntime::builder()
         .with_source_loader(SimpleFileSourceLoader)
@@ -115,6 +120,8 @@ async fn build_and_run(params_from_file: Option<String>) -> Result<(), Box<dyn E
         .build()?;
 
     let files = fs::read_dir("./src").unwrap();
+
+    let suite_identifier_filter = test_identifier_filter.as_ref().map(|filter| SuiteIdentifierFilter::parse(filter));
 
     let render_task = {
         let (sender, receiver) = tokio::sync::mpsc::channel::<Event>(64);
@@ -148,11 +155,16 @@ async fn build_and_run(params_from_file: Option<String>) -> Result<(), Box<dyn E
 
             let test_suite_identifier = TestSuiteIdentifier::try_from(file_name)?;
 
+            if let Some(filter) = &suite_identifier_filter
+                && filter.matches_suite(&test_suite_identifier).not() {
+                continue;
+            }
+
             let source = Source::try_from_path(test_suite_identifier, &path)?;
 
             let mut emitter = emitter::sink(new_compile_event_sink(&sender));
 
-            let (_, descriptors, suite) = runtime.compile(&source, &mut emitter).await?.split();
+            let (_, descriptors, suite) = runtime.compile(&source, &mut emitter, Clone::clone(&test_identifier_filter)).await?.split();
 
             let mut bindings = ParameterBindings::from(Clone::clone(&descriptors));
 
@@ -178,13 +190,18 @@ async fn build_and_run(params_from_file: Option<String>) -> Result<(), Box<dyn E
             test_suites.push(suite);
         }
 
+        if let Some(filter) = suite_identifier_filter
+            && let Some(suite_identifier_filter) = filter.suite_identifier
+            && test_suites.is_empty() {
+            return Err(Box::new(SuiteFilterError::new_unknown_test_suite_error(suite_identifier_filter)))
+        }
+
         sender.send(Event::RenderEvent).await?;
 
         let mut emitter = emitter::sink(new_run_event_sink(&sender));
         for suite in test_suites {
             let bindings = bindings_map.remove(suite.name());
             if let Some(complete_bindings) = bindings {
-
                 runtime.run(suite, complete_bindings, &mut emitter).await?;
             }
         }
