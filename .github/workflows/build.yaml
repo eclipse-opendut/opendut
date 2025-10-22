@@ -17,6 +17,7 @@ on:
       - canary
     paths-ignore:
       - ".ci/kubernetes/**"
+      - "doc/**"
 
 defaults:
   run:
