@@ -4,13 +4,38 @@ When the user configures a Peer or a Cluster, LEA/CLEO sends us a `PeerDescripto
 
 To instruct EDGAR what configuration it should roll out, we send it a `PeerConfiguration`, which is derived from these `Descriptors` and additional information that CARL may have.
 
-EDGAR reports back a `PeerConfigurationState` to indicate how far along it is in rolling out this `PeerConfiguration`, as well as its general health.
+EDGAR reports back a `EdgePeerConfigurationState` to indicate how far along it is in rolling out this `PeerConfiguration`, as well as its general health.
 
-This `PeerConfigurationState` is then compared to the `PeerConfiguration` to determine what configuration tasks are still in progress.
+This `EdgePeerConfigurationState` is then compared to the `PeerConfiguration` to determine what configuration tasks are still in progress.
 Along with the peer's general health information, this is then reported to LEA/CLEO in a PeerStatusReport.
 
 ![Illustration how Descriptors, Configuration, State and StatusReport are sent between programs.](img/peer-state-configuration.svg)
 
+
+## PeerConfigurationState
+
+To determine the `PeerConfigurationState` we need to compare the `PeerConfiguration` and `EdgePeerConfigurationState`.
+When a Parameter is "Present" in PeerConfiguration and "Absent" in EdgePeerConfigurationState, it is assumed to be "Creating", unless an error has been reported. This works similarly for "Removing", "Present" and "Absent".
+
+| PeerConfiguration | EdgePeerConfigurationState | PeerConfigurationState |
+|-------------------|----------------------------|------------------------|
+| present           | present + OK               | PRESENT                |
+| absent            | absent  + OK               | ABSENT                 |
+| present           | absent  + OK               | CREATING               |
+| absent            | present + OK               | REMOVING               |
+| present           | absent  + error            | ERROR CreatingFailed   |
+| absent            | present + error            | ERROR RemovingFailed   |
+
+Configuration parameters missing at one side:
+
+| PeerConfiguration | EdgePeerConfigurationState | PeerConfigurationState | Comment                                         |
+|-------------------|----------------------------|------------------------|-------------------------------------------------|
+| present           | not appear                 | CREATING               | backend expects it, edge hasn't reported it yet |
+| absent            | not appear                 | ABSENT                 | both sides agree it's absent                    |
+| not appear        | absent  + OK               | ABSENT                 | both sides agree it's absent                    |
+| not appear        | present + OK               | REMOVING               |
+| not appear        | present + error            | ERROR RemovingFailed   |
+| not appear        | absent  + error            | ERROR CreatingFailed   |
 
 ## Ideas behind this design
 
@@ -22,11 +47,11 @@ Along with the peer's general health information, this is then reported to LEA/C
   * There will be Tasks, akin to EDGAR Setup, which can check whether a configuration parameter deployment is present/absent,
     and know how to apply or unapply this configuration.
 
-* EDGAR can report how far it has applied the PeerConfiguration as a `PeerConfigurationState`.
-  The PeerConfigurationState needs to be linkable to the PeerConfiguration.
+* EDGAR can report how far it has applied the PeerConfiguration as a `EdgePeerConfigurationState`.
+  The EdgePeerConfigurationState needs to be linkable to the PeerConfiguration.
 
 * UIs should get a report on the state of a peer (`PeerStatusReport`).
-  This PeerStatusReport needs to be derived from the PeerConfigurationState.
+  This PeerStatusReport needs to be derived from the EdgePeerConfigurationState.
 
 * It needs to be possible to designate dependencies between configuration parameters,
   as e.g. an interface cannot be joined to a bridge, if the bridge does not yet exist.
