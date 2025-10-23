@@ -652,6 +652,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "cargo_metadata"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "981a6f317983eec002839b90fae7411a85621410ae591a9cab2ecf5cb5744873"
+dependencies = [
+ "camino",
+ "cargo-platform",
+ "semver",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.17",
+]
+
+[[package]]
 name = "cargo_toml"
 version = "0.22.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -766,7 +780,7 @@ version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4aa39a529267ba64ad4dd81e43c94b9fcbfc58c6442461a03418996cb2545b2f"
 dependencies = [
- "cargo_metadata",
+ "cargo_metadata 0.22.0",
  "tracing",
 ]
 
@@ -2833,10 +2847,31 @@ checksum = "5a87cc7a48537badeae96744432de36f4be2b4a34a05a5ef32e9dd8a1c169dde"
 dependencies = [
  "base64 0.22.1",
  "js-sys",
- "pem",
  "ring",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "jsonwebtoken"
+version = "10.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3d119c6924272d16f0ab9ce41f7aa0bfef9340c00b0bb7ca3dd3b263d4a9150b"
+dependencies = [
+ "base64 0.22.1",
+ "ed25519-dalek",
+ "getrandom 0.2.16",
+ "hmac",
+ "js-sys",
+ "p256",
+ "p384",
+ "pem",
+ "rand 0.8.5",
+ "rsa",
+ "serde",
+ "serde_json",
+ "sha2",
+ "signature",
  "simple_asn1",
 ]
 
@@ -3003,7 +3038,7 @@ checksum = "7797ff727c5b0b558faabe2bd784159b411803f56e384578d68471c699b85649"
 dependencies = [
  "chrono",
  "codee",
- "jsonwebtoken",
+ "jsonwebtoken 9.3.1",
  "leptos",
  "leptos-use",
  "leptos_router",
@@ -3695,7 +3730,7 @@ dependencies = [
  "http-body",
  "hyper",
  "indoc",
- "jsonwebtoken",
+ "jsonwebtoken 10.1.0",
  "mime",
  "opendut-auth",
  "opendut-auth-tests",
@@ -3748,7 +3783,7 @@ dependencies = [
  "glob",
  "googletest",
  "http",
- "jsonwebtoken",
+ "jsonwebtoken 10.1.0",
  "leptos",
  "opendut-auth",
  "opendut-model",
@@ -3774,7 +3809,7 @@ version = "0.8.0-alpha"
 dependencies = [
  "anyhow",
  "assert_fs",
- "cargo_metadata",
+ "cargo_metadata 0.23.0",
  "chrono",
  "cicero",
  "clap",
@@ -3991,7 +4026,7 @@ dependencies = [
 name = "opendut-netbird-client-api"
 version = "0.8.0-alpha"
 dependencies = [
- "cargo_metadata",
+ "cargo_metadata 0.23.0",
  "hyper-util",
  "opendut-model",
  "opendut-util",
