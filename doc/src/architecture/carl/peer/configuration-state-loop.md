@@ -14,41 +14,52 @@ Along with the peer's general health information, this is then reported to LEA/C
 
 ## PeerConfigurationState
 
-To determine the `PeerConfigurationState` we need to compare the `PeerConfiguration` and `EdgePeerConfigurationState`.
+With the `PeerConfigurationState` we want to tell if the edge device has applied all required configuration tasks and is considered `ready`.
+To determine the `PeerConfigurationState` we need to compare the `PeerConfiguration` and the `EdgePeerConfigurationState` (feedback of the edge device).
 When a Parameter is "Present" in PeerConfiguration and "Absent" in EdgePeerConfigurationState, it is assumed to be "Creating", unless an error has been reported. This works similarly for "Removing", "Present" and "Absent".
 
-| PeerConfiguration | EdgePeerConfigurationState | PeerConfigurationState |
-|-------------------|----------------------------|------------------------|
-| present           | present + OK               | PRESENT                |
-| absent            | absent  + OK               | ABSENT                 |
-| present           | absent  + OK               | CREATING               |
-| absent            | present + OK               | REMOVING               |
-| present           | absent  + error            | CREATING + Error       |
-| absent            | present + error            | REMOVING + Error       |
+| PeerConfiguration | EdgePeerConfigurationState | PeerConfigurationState | Review |
+|-------------------|----------------------------|------------------------|--------|
+| present           | present + OK               | PRESENT                | no     |
+| absent            | absent  + OK               | ABSENT                 | no     |
+| present           | absent  + OK               | CREATING               | no     |
+| absent            | present + OK               | REMOVING               | no     |
+| present           | absent  + error            | CREATING + Error       | yes    |
+| absent            | present + error            | REMOVING + Error       | yes    |
 
-Detected state unknown in EdgePeerConfigurationState:
+The last column indicates if this is a transitional state that can be expected to resolve itself (no), or if user intervention is likely required (yes).
 
-| PeerConfiguration | EdgePeerConfigurationState | PeerConfigurationState            |
-|-------------------|----------------------------|-----------------------------------|
-| present           | unknown  + error           | CREATING + CheckFailed            |
-| absent            | unknown  + error           | REMOVING + CheckFailed            |
-| present           | unknown  + error           | CREATING + WaitingForDependencies |
-| absent            | unknown  + error           | REMOVING + WaitingForDependencies |
+### Detected state unknown in EdgePeerConfigurationState
+
+The state might be unknown if e.g. a dependency for creating/removing the configuration parameter is not yet fulfilled.
+It is also unknown if an error occurred while checking the state.
+
+| PeerConfiguration | EdgePeerConfigurationState | PeerConfigurationState               | Review |
+|-------------------|----------------------------|--------------------------------------|--------|
+| present           | unknown  + error           | CHECKFAILED + Error                  | yes    |
+| absent            | unknown  + error           | CHECKFAILED + Error                  | yes    |
+| present           | unknown  + error           | INCARNATING + WaitingForDependencies | no     |
+| absent            | unknown  + error           | INCARNATING + WaitingForDependencies | no     |
 
 
-Configuration parameter is missing at one side:
+### Configuration parameter is missing at one side
 
-| PeerConfiguration | EdgePeerConfigurationState | PeerConfigurationState | Comment                                              |
-|-------------------|----------------------------|------------------------|------------------------------------------------------|
-| present           | not appear                 | CREATING               | backend expects it, edge hasn't reported it yet      |
-| absent            | not appear                 | ABSENT                 | both sides agree it's absent                         |
-| not appear        | absent  + OK               | ABSENT                 | both sides agree it's absent                         |
-| not appear        | present + OK               | REMOVING               | 
-| not appear        | present + error            | REMOVING + Error       |
-| not appear        | absent  + error            | CREATING + Error       |
-| not appear        | unknown  + error           |                        |
+| PeerConfiguration | EdgePeerConfigurationState | PeerConfigurationState | Comment                                                   | Review |
+|-------------------|----------------------------|------------------------|-----------------------------------------------------------|--------|
+| present           | not appear                 | INCARNATING            | backend expects it, edge hasn't reported it yet           | no     |
+| absent            | not appear                 | INCARNATING            | backend expects absent, edge hasn't checked/reported      | no     |
+| not appear        | absent  + OK               | ABSENT                 | both sides agree it's absent                              | no     |
+| not appear        | present + OK               | PRESENT                | backend doesn't expect, edge reports present              | maybe  |
+| not appear        | present + error            | REMOVING + Error       | error while removing obsolete parameter                   | yes    |
+| not appear        | absent  + error            | CHECKFAILED + Error    | error while checking/removing absent (obsolete) parameter | yes    |
+| not appear        | unknown  + error           | CHECKFAILED + Error    | check failed on an obsolete parameter                     | yes    |
 
-With the `PeerConfigurationState` we want to tell if the edge device has applied all required configuration tasks and is considered `ready`.
+Special states:
+* The INCARNATING state indicates that the backend expects a parameter, but the edge device has not yet checked or reported it. 
+  This is a transitional state, might have an error set and is not considered 'ready'.
+* The CHECKFAILED state indicates that an error occurred while checking the presence/absence of a configuration parameter.
+  This is considered a blocking error and requires user intervention.
+
 
 
 ## Ideas behind this design
