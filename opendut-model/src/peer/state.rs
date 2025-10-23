@@ -10,6 +10,7 @@ use crate::ShortName;
 pub struct PeerState {
     pub connection: PeerConnectionState,
     pub member: PeerMemberState,
+    // extend with PeerConfigurationState, derived from EdgePeerConfiguration and PeerConfiguration resources
 }
 
 /// A peer may be either offline or online.

@@ -13,7 +13,7 @@ use tracing_opentelemetry::OpenTelemetrySpanExt;
 use opendut_carl_api::carl::{broker, GrpcUpstream};
 use opendut_carl_api::carl::broker::Upstream;
 use opendut_carl_api::carl::CarlClient;
-use opendut_model::peer::configuration::PeerConfigurationState;
+use opendut_model::peer::configuration::EdgePeerConfigurationState;
 use opendut_model::peer::PeerId;
 use opendut_util::settings::LoadedConfig;
 use crate::common::carl;
@@ -81,7 +81,7 @@ impl PeerMessagingClient {
         })
     }
     
-    async fn spawn_peer_configuration_state_sender(&self, mut rx_peer_configuration_state: Receiver<PeerConfigurationState>, tx_outbound: Upstream) {
+    async fn spawn_peer_configuration_state_sender(&self, mut rx_peer_configuration_state: Receiver<EdgePeerConfigurationState>, tx_outbound: Upstream) {
         tokio::spawn(async move {
             loop {
                 let message = rx_peer_configuration_state.recv().await;
@@ -101,7 +101,7 @@ impl PeerMessagingClient {
 
     }
 
-    pub async fn process_messages_loop(&mut self, rx_peer_configuration_state: Receiver<PeerConfigurationState>) -> anyhow::Result<()> {
+    pub async fn process_messages_loop(&mut self, rx_peer_configuration_state: Receiver<EdgePeerConfigurationState>) -> anyhow::Result<()> {
         let remote_address = vpn::retrieve_remote_host(&self.settings).await?;
 
         let timeout_duration = Duration::from_millis(self.settings.config.get::<u64>("carl.disconnect.timeout.ms")?);

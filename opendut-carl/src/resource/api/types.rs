@@ -1,6 +1,6 @@
 use crate::resource::api::id::ResourceId;
 use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
-use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration, PeerConfigurationState};
+use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration, EdgePeerConfigurationState};
 use opendut_model::peer::state::PeerConnectionState;
 use opendut_model::peer::{PeerDescriptor, PeerId};
 use std::any::Any;
@@ -31,7 +31,7 @@ impl Resource for PeerConnectionState {
     type Id = PeerId;
 }
 
-impl Resource for PeerConfigurationState {
+impl Resource for EdgePeerConfigurationState {
     type Id = PeerId;
 }
 impl Resource for TestSuiteSourceDescriptor {

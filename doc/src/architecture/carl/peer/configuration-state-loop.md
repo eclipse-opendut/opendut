@@ -66,12 +66,13 @@ It is also unknown if an error occurred while checking/asserting the state.
    detected_state: Absent, present
    detected_error: CheckAbsentFailed, CheckPresentFailed -> detected state unknown
 
-CheckAbsentFailed, CheckPresentFailed, WaitingForDependencies, CreatingFailed, RemovingFailed
-
 Special states:
-* The INCARNATING state indicates that the backend expects a parameter, but the edge device has not yet checked or reported it. 
-  This is a transitional state, might have an error set and is not considered 'ready'.
-* The <drop> state indicates that this should be ignored, logged and no further action taken.
+* Final states: Present, Absent (configured as desired)
+* Transitional states: Creating, Removing, WaitingForDependencies
+* Error states: CreatingFailed, RemovingFailed, CheckPresentFailed, CheckAbsentFailed
+* The <drop> state indicates that this should be ignored, logged and not included in the `PeerConfigurationState`.
+
+If all parameters are in final states, the overall PeerConfigurationState is `ready`.
 
 
 ## Ideas behind this design

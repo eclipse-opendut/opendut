@@ -4,7 +4,7 @@ use opendut_model::util::Port;
 use opendut_util::settings::LoadedConfig;
 use tokio::sync::mpsc;
 use tracing::info;
-use opendut_model::peer::configuration::PeerConfigurationState;
+use opendut_model::peer::configuration::EdgePeerConfigurationState;
 
 pub fn spawn_carl() -> anyhow::Result<Port> {
     let carl_port = select_free_port();
@@ -46,7 +46,7 @@ pub async fn spawn_edgar_with_default_behavior(peer_id: PeerId, carl_port: Port)
 }
 
 pub async fn spawn_edgar_with_peer_configuration_receiver(peer_id: PeerId, carl_port: Port) -> anyhow::Result<PeerConfigurationReceiver> {
-    let (tx_peer_configuration_state, rx_peer_configuration_state) = mpsc::channel::<PeerConfigurationState>(100);
+    let (tx_peer_configuration_state, rx_peer_configuration_state) = mpsc::channel::<EdgePeerConfigurationState>(100);
 
     let edgar_config = load_edgar_config(carl_port, peer_id)?;
 

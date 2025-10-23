@@ -1,6 +1,6 @@
 use crate::resource::api::Resource;
 use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment};
-use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration, PeerConfigurationState};
+use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration, EdgePeerConfigurationState};
 use opendut_model::peer::state::PeerConnectionState;
 use opendut_model::peer::PeerDescriptor;
 use tokio::sync::broadcast;
@@ -59,7 +59,7 @@ impl_subscribable!(OldPeerConfiguration, old_peer_configuration);
 impl_subscribable!(PeerConfiguration, peer_configuration);
 impl_subscribable!(PeerDescriptor, peer_descriptor);
 impl_subscribable!(PeerConnectionState, peer_connection_state);
-impl_subscribable!(PeerConfigurationState, peer_configuration_state);
+impl_subscribable!(EdgePeerConfigurationState, peer_configuration_state);
 impl_subscribable!(TestSuiteSourceDescriptor, test_suite_source_descriptor);
 
 mod deprecated {
@@ -76,7 +76,7 @@ pub struct ResourceSubscriptionChannels {
     pub peer_configuration: ResourceSubscriptionChannel<PeerConfiguration>,
     pub peer_descriptor: ResourceSubscriptionChannel<PeerDescriptor>,
     pub peer_connection_state: ResourceSubscriptionChannel<PeerConnectionState>,
-    pub peer_configuration_state: ResourceSubscriptionChannel<PeerConfigurationState>,
+    pub peer_configuration_state: ResourceSubscriptionChannel<EdgePeerConfigurationState>,
     pub test_suite_source_descriptor: ResourceSubscriptionChannel<TestSuiteSourceDescriptor>,
 
     #[deprecated] #[expect(deprecated)]

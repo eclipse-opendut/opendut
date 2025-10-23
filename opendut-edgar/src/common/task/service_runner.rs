@@ -11,7 +11,7 @@ use crate::common::task::dependency::{ParameterVariantWithDependencies, PeerConf
 use crate::common::task::runner::{TaskExecutionError};
 use crate::common::task::task_resolver::TaskResolver;
 use crate::common::task::{Success, TaskAbsent, TaskStateFulfilled};
-use opendut_model::peer::configuration::{ParameterId, ParameterTarget, ParameterTargetState, ParameterTargetStateError, ParameterTargetStateErrorCreatingFailed, ParameterTargetStateErrorRemovingFailed, ParameterVariant, PeerConfiguration, PeerConfigurationParameterState, PeerConfigurationState};
+use opendut_model::peer::configuration::{ParameterId, ParameterTarget, ParameterTargetState, ParameterTargetStateError, ParameterTargetStateErrorCreatingFailed, ParameterTargetStateErrorRemovingFailed, ParameterVariant, PeerConfiguration, PeerConfigurationParameterState, EdgePeerConfigurationState};
 
 #[derive(Debug)]
 pub enum Outcome {
@@ -25,7 +25,7 @@ pub struct CollectedResult {
     unfulfilled_parameters: Vec<ParameterVariantWithDependencies>
 }
 
-impl From<CollectedResult> for PeerConfigurationState {
+impl From<CollectedResult> for EdgePeerConfigurationState {
     fn from(value: CollectedResult) -> Self {
         let parameter_states = value.items.into_iter().map(|item| {
             let target = item.parameter.target();
@@ -60,7 +60,7 @@ impl From<CollectedResult> for PeerConfigurationState {
             
         }).collect();
         
-        PeerConfigurationState {
+        EdgePeerConfigurationState {
             parameter_states,
         }
     }

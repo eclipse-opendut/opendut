@@ -4,7 +4,7 @@ use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use crate::service::tasks;
 use crate::service::test_execution::executor_manager::ExecutorManagerRef;
 use opendut_model::cluster::ClusterAssignment;
-use opendut_model::peer::configuration::{parameter, OldPeerConfiguration, ParameterField, PeerConfiguration, PeerConfigurationState};
+use opendut_model::peer::configuration::{parameter, OldPeerConfiguration, ParameterField, PeerConfiguration, EdgePeerConfigurationState};
 use opendut_model::peer::PeerId;
 
 use std::fmt::Formatter;
@@ -40,12 +40,12 @@ impl std::fmt::Debug for NetworkInterfaceManagement {
 
 pub async fn spawn_peer_configurations_handler(
     mut rx_peer_configuration: mpsc::Receiver<ApplyPeerConfigurationParams>,
-    tx_peer_configuration_state: mpsc::Sender<PeerConfigurationState>
+    tx_peer_configuration_state: mpsc::Sender<EdgePeerConfigurationState>
 ) -> anyhow::Result<()> {
     tokio::spawn(async move {
         while let Some(apply_peer_configuration_params) = rx_peer_configuration.recv().await {
             let result = apply_peer_configuration(apply_peer_configuration_params).await;
-            let state = PeerConfigurationState::from(result);
+            let state = EdgePeerConfigurationState::from(result);
             let _ = tx_peer_configuration_state.send(state).await
                 .inspect_err(|err| error!("Failed to send peer configuration state to CARL. {err}"));
         }

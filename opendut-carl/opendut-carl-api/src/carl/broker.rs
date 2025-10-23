@@ -2,7 +2,7 @@ use std::collections::HashMap;
 #[cfg(feature = "client")]
 pub use client::*;
 
-use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration, PeerConfigurationState};
+use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration, EdgePeerConfigurationState};
 
 pub mod error {
     #[derive(thiserror::Error, Debug)]
@@ -23,7 +23,7 @@ pub struct UpstreamMessage {
 
 #[derive(Debug, Clone)]
 pub enum UpstreamMessagePayload {
-    PeerConfigurationState(PeerConfigurationState),
+    PeerConfigurationState(EdgePeerConfigurationState),
     Ping,
 }
 

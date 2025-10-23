@@ -31,11 +31,11 @@ pub enum ParameterTarget {
 }
 
 #[derive(Debug, Clone)]
-pub struct PeerConfigurationState {
+pub struct EdgePeerConfigurationState {
     pub parameter_states: Vec<PeerConfigurationParameterState>
 }
 
-impl PeerConfigurationState {
+impl EdgePeerConfigurationState {
     pub fn is_ready(&self) -> bool {
         self.parameter_states.iter().all(PeerConfigurationParameterState::is_ready)
     }

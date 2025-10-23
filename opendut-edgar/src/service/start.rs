@@ -1,7 +1,7 @@
 use crate::app_info;
 use crate::common::{carl, settings};
 use anyhow::Context;
-use opendut_model::peer::configuration::PeerConfigurationState;
+use opendut_model::peer::configuration::EdgePeerConfigurationState;
 use opendut_model::peer::PeerId;
 use opendut_util::telemetry;
 use opendut_util::telemetry::logging::LoggingConfig;
@@ -52,7 +52,7 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
     };
 
     let (tx_peer_configuration, rx_peer_configuration) = mpsc::channel(100);
-    let (tx_peer_configuration_state, rx_peer_configuration_state) = mpsc::channel::<PeerConfigurationState>(100);
+    let (tx_peer_configuration_state, rx_peer_configuration_state) = mpsc::channel::<EdgePeerConfigurationState>(100);
     crate::service::peer_configuration::spawn_peer_configurations_handler(rx_peer_configuration, tx_peer_configuration_state).await?;
 
     let mut carl = carl::connect(&settings.config).await?;

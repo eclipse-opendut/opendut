@@ -58,40 +58,41 @@ message PeerConfigurationParameterRemotePeerConnectionCheck {
 message PeerConfigurationParameter {
    PeerConfigurationParameterId id = 1;
    repeated PeerConfigurationParameterId dependencies = 2;
-   oneof target {
-     PeerConfigurationParameterTargetPresent present = 11;
-     PeerConfigurationParameterTargetAbsent absent = 12;
+   oneof target_state {
+     PeerConfigurationParameterStateKindPresent present = 11;
+     PeerConfigurationParameterStateKindAbsent absent = 12;
    }
 }
 
 
 // Feedback sent from Peer to CARL, how far it has applied PeerConfiguration
-message PeerConfigurationState {
-  repeated PeerConfigurationParameterState parameters = 1;
+message EdgePeerConfigurationState {
+  repeated EdgePeerConfigurationParameterState parameters = 1;
 }
 
-message PeerConfigurationParameterState {
+message EdgePeerConfigurationParameterState {
   PeerConfigurationParameterId id = 1;
   google.protobuf.Timestamp timestamp = 2;
-  oneof state {
-    PeerConfigurationParameterTargetPresent present = 11;
-    PeerConfigurationParameterTargetAbsent absent = 12;
-    PeerConfigurationParameterTargetWaitingForDependencies waiting_for_dependencies = 13;
-    PeerConfigurationParameterTargetError error = 14;
+  // the detected state either when checking or after applying
+  oneof detected_state {
+    PeerConfigurationParameterStateKindPresent present = 11;
+    PeerConfigurationParameterStateKindAbsent absent = 12;
+    // the error encountered when trying to apply the parameter
+    PeerConfigurationParameterStateKindError error = 13;
   }
 }
 
 
-// Representation from CARL towards UI of the PeerState
-message PeerConfigurationParameterStatusReport {
+// Representation in CARL to determine the overall state of a configuration parameter and to show to the user
+message PeerConfigurationParameterState {
   PeerConfigurationParameterId id = 1;
-  oneof state {
-    PeerConfigurationParameterTargetPresent present = 11;
-    PeerConfigurationParameterTargetCreating creating = 12;
-    PeerConfigurationParameterTargetAbsent absent = 13;
-    PeerConfigurationParameterTargetRemoving removing = 14;
-    PeerConfigurationParameterTargetWaitingForDependencies waiting_for_dependencies = 15;
-    PeerConfigurationParameterTargetError error = 16;
+
+  oneof detected_state {
+    PeerConfigurationParameterStateKindPresent present = 11;
+    PeerConfigurationParameterStateKindCreating creating = 12;
+    PeerConfigurationParameterStateKindAbsent absent = 13;
+    PeerConfigurationParameterStateKindRemoving removing = 14;
+    PeerConfigurationParameterStateKindError error = 15;
   }
 }
 
@@ -101,30 +102,35 @@ message PeerConfigurationParameterId {
   opendut.types.util.Uuid uuid = 1;
 }
 
-message PeerConfigurationParameterTargetPresent {}
-message PeerConfigurationParameterTargetAbsent {}
-message PeerConfigurationParameterTargetCreating {}
-message PeerConfigurationParameterTargetRemoving {}
-message PeerConfigurationParameterTargetWaitingForDependencies {
-  repeated PeerConfigurationParameterId incomplete_dependencies = 1;
+message PeerConfigurationParameterStateKindPresent {}
+message PeerConfigurationParameterStateKindAbsent {}
+message PeerConfigurationParameterStateKindCreating {}
+message PeerConfigurationParameterStateKindRemoving {}
+
+// Errors
+message PeerConfigurationParameterStateKindErrorCreatingFailed {}
+message PeerConfigurationParameterStateKindErrorRemovingFailed {}
+message PeerConfigurationParameterStateKindErrorCheckPresentFailed {}
+message PeerConfigurationParameterStateKindErrorCheckAbsentFailed {}
+message PeerConfigurationParameterStateKindErrorWaitingForDependencies {}
+
+message PeerConfigurationParameterStateKindError {
+  oneof kind {
+    PeerConfigurationParameterStateKindErrorCreatingFailed creating_failed = 1;
+    PeerConfigurationParameterStateKindErrorRemovingFailed removing_failed = 2;
+    PeerConfigurationParameterStateKindErrorWaitingForDependencies waiting_for_dependencies = 3;
+    PeerConfigurationParameterStateKindErrorCheckPresentFailed check_present_failed = 4;
+    PeerConfigurationParameterStateKindErrorCheckAbsentFailed check_absent_failed = 5;
+  }
+  oneof cause {
+    UnclassifiedError unclassified = 20;
+  }
 }
 
-message PeerConfigurationParameterTargetError {
-  oneof error {
-    PeerConfigurationParameterTargetErrorCreatingFailed creating_failed = 1;
-    PeerConfigurationParameterTargetErrorRemovingFailed removing_failed = 2;
-  }
-}
-message PeerConfigurationParameterTargetErrorCreatingFailed {
-  oneof error {
-    UnclassifiedError unclassified = 1;
-  }
-}
-message PeerConfigurationParameterTargetErrorRemovingFailed {
-  oneof error {
-    UnclassifiedError unclassified = 1;
-  }
-}
 message UnclassifiedError {
   string message = 1;
+}
+
+message MissingDependenciesError {
+  repeated PeerConfigurationParameterId missing_dependencies = 1;
 }

@@ -2,7 +2,7 @@ use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
 use crate::resource::manager::{ResourceManagerRef, SubscriptionEvent};
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::storage::ResourcesStorageApi;
-use opendut_model::peer::configuration::{ParameterTargetState, PeerConfiguration, PeerConfigurationState};
+use opendut_model::peer::configuration::{ParameterTargetState, PeerConfiguration, EdgePeerConfigurationState};
 use opendut_model::peer::PeerDescriptor;
 use std::collections::HashSet;
 use tracing::{debug, error, trace, warn};
@@ -31,7 +31,7 @@ pub async fn disconnect_peer_when_removed(resource_manager: ResourceManagerRef, 
 /// Update the peer configuration by removing parameters that have been implemented and are no longer needed.
 /// These parameters, now considered redundant, serve no further purpose as their target is absent.
 async fn remove_absent_peer_configuration_parameters_that_are_absent(resource_manager: ResourceManagerRef) {
-    let mut peer_config_state_subscription = resource_manager.subscribe::<PeerConfigurationState>().await;
+    let mut peer_config_state_subscription = resource_manager.subscribe::<EdgePeerConfigurationState>().await;
 
     tokio::spawn(async move {
         loop {

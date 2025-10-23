@@ -263,7 +263,7 @@ impl From<peer_configuration_parameter::Target> for crate::peer::configuration::
 
 
 conversion! {
-    type Model = crate::peer::configuration::PeerConfigurationState;
+    type Model = crate::peer::configuration::EdgePeerConfigurationState;
     type Proto = PeerConfigurationState;
 
     fn from(value: Model) -> Proto {

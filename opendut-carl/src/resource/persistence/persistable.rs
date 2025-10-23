@@ -2,7 +2,7 @@ use crate::resource::api::Resource;
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::persistence::TableDefinition;
 use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment};
-use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration, PeerConfigurationState};
+use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration, EdgePeerConfigurationState};
 use opendut_model::peer::state::PeerConnectionState;
 use opendut_model::peer::PeerDescriptor;
 use opendut_model::proto::ConversionError;
@@ -54,7 +54,7 @@ impl Persistable for PeerDescriptor {
     const STORAGE: StorageKind = StorageKind::Persistent;
 }
 
-impl Persistable for PeerConfigurationState {
+impl Persistable for EdgePeerConfigurationState {
     type Proto = opendut_model::proto::peer::configuration::api::PeerConfigurationState;
     const TABLE: &'static str = "peer_configuration_state";
     const STORAGE: StorageKind = StorageKind::Volatile;

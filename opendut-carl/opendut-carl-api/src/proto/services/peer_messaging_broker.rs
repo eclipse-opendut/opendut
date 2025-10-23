@@ -40,7 +40,7 @@ conversion! {
 }
 
 conversion! {
-    type Model = opendut_model::peer::configuration::api::PeerConfigurationState;
+    type Model = opendut_model::peer::configuration::api::EdgePeerConfigurationState;
     type Proto = Upstream;
 
     fn from(value: Model) -> Proto {
