@@ -43,7 +43,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let includes = [proto_dir];
 
-    tonic_build::configure()
+    tonic_prost_build::configure()
         .build_server(false)
         .type_attribute(".", "#[allow(clippy::all)]")
         .compile_protos(&protos, &includes)?;

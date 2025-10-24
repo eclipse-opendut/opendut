@@ -1,3 +1,4 @@
+use std::ops::Not;
 use std::sync::Arc;
 use std::time::Duration;
 use anyhow::anyhow;
@@ -204,7 +205,7 @@ async fn apply_peer_configuration_raw(
 ) -> anyhow::Result<()> {
 
     let span = Span::current();
-    set_parent_context(&span, context);
+    set_parent_context(&span, context)?;
     let _span = span.enter();
 
     let broker::ApplyPeerConfiguration { old_configuration, configuration } = *message;
@@ -225,10 +226,13 @@ async fn apply_peer_configuration_raw(
     Ok(())
 }
 
-fn set_parent_context(span: &Span, context: Option<broker::TracingContext>) {
+fn set_parent_context(span: &Span, context: Option<broker::TracingContext>) -> anyhow::Result<()> {
     if let Some(context) = context {
         let propagator = TraceContextPropagator::new();
         let parent_context = propagator.extract(&context.values);
-        span.set_parent(parent_context);
+        if span.is_disabled().not() {
+            span.set_parent(parent_context)?;
+        }
     }
+    Ok(())
 }

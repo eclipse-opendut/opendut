@@ -19,7 +19,6 @@ where
     B: TryFrom<A>,
     B::Error: Display
 {
-    #[expect(clippy::result_large_err)] //cannot easily box this, as the gRPC traits expect tonic::Status directly
     fn extract_or_invalid_argument(self, field: impl Into<String> + Clone) -> Result<B, tonic::Status>;
 }
 

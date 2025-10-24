@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     unsafe {
@@ -7,11 +8,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let protos = glob::glob("proto/**/*.proto")?.collect::<Result<Vec<_>, _>>()?;
 
     let includes = [
-        "proto/",
-        "../../opendut-model/proto/",
+        PathBuf::from("proto/"),
+        PathBuf::from("../../opendut-model/proto/"),
     ];
 
-    tonic_build::configure()
+    tonic_prost_build::configure()
         .extern_path(
             ".opendut.types",
             "opendut_model::proto"
