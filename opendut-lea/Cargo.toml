@@ -30,7 +30,7 @@ uuid = { workspace = true, features = ["js"] }
 wasm-bindgen-futures = { workspace = true }
 
 [build-dependencies]
-shadow-rs = { workspace = true }
+shadow-rs = { workspace = true, default-features = true }
 
 [lints]
 workspace = true

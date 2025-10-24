@@ -43,7 +43,6 @@ jsonwebtoken = { workspace = true, optional = true }
 leptos = { workspace = true, optional = true }
 prost = { workspace = true }
 semver = { workspace = true }
-shadow-rs = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, optional = true }
 tonic = { workspace = true }
@@ -56,7 +55,6 @@ url = { workspace = true }
 glob = { workspace = true }
 protobuf-src = { workspace = true }
 tonic-build = { workspace = true }
-shadow-rs = { workspace = true, default-features = true }
 
 [dev-dependencies]
 googletest = { workspace = true }
