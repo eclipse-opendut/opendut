@@ -21,6 +21,15 @@ pub struct ParameterVariantWithDependencies {
     pub dependencies: HashSet<ParameterId>,
 }
 
+impl ParameterVariantWithDependencies {
+    pub fn unresolved_dependencies(&self, completed: &HashSet<ParameterId>) -> HashSet<ParameterId> {
+        self.dependencies
+            .difference(completed)
+            .cloned()
+            .collect()
+    }
+}
+
 impl Hash for ParameterVariantWithDependencies {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match &self.parameter {
@@ -68,14 +77,16 @@ impl PeerConfigurationDependencyResolver {
         next.map(|parameter| { parameter.parameter })        
     }
 
+    fn completed_ids(&self) -> HashSet<ParameterId> {
+        self.completed.keys().cloned().collect()
+    }
+
     fn determine_next_parameter(&mut self) -> Option<ParameterVariantWithDependencies> {
         let candidates = self.open.values().filter_map(|parameter| {
             if parameter.dependencies.is_empty() {
                 Some(parameter.clone())
             } else {
-                let completed_ids = self.completed.keys().cloned().collect::<HashSet<_>>();
-
-                let unresolved_dependencies = parameter.dependencies.difference(&completed_ids).collect::<Vec<_>>();
+                let unresolved_dependencies = parameter.unresolved_dependencies(&self.completed_ids());
                 if unresolved_dependencies.is_empty() {
                     Some(parameter.clone())
                 } else {
@@ -136,6 +147,7 @@ mod tests {
         resolver: PeerConfigurationDependencyResolver,
         bridge_name: NetworkInterfaceName,
         bridge_old_name: NetworkInterfaceName,
+        config: PeerConfiguration,
     }
     impl PeerConfigurationDependencyResolverFixture {
         fn new() -> Self {
@@ -161,14 +173,15 @@ mod tests {
             let device_dependency = config.device_interfaces.set(parameter_eth_device, ParameterTarget::Present, vec![]);
 
             joined_interfaces_dependencies.push(device_dependency);
-            config.joined_interfaces.set(parameter_join, ParameterTarget::Present, joined_interfaces_dependencies);
+            config.joined_interfaces.set(parameter_join.clone(), ParameterTarget::Present, joined_interfaces_dependencies.clone());
 
-            let resolver = PeerConfigurationDependencyResolver::new(config);
+            let resolver = PeerConfigurationDependencyResolver::new(config.clone());
 
             PeerConfigurationDependencyResolverFixture {
                 resolver,
                 bridge_name,
                 bridge_old_name,
+                config,
             }
         }
     }
@@ -216,5 +229,13 @@ mod tests {
         assert_eq!(tasks.len(), 3);
         assert!(testee.resolver.done());
         assert!(!testee.resolver.success());
+        let config = testee.config.joined_interfaces.clone();
+        let id = config.values().next().unwrap().id.clone();
+
+        assert!(
+            testee.resolver.open.contains_key(&id),
+            "The only unfulfilled parameter should be the joined interface that depends on the failed device interface."
+        );
+
     }
 }

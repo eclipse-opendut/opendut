@@ -6,6 +6,7 @@
 //! PeerConfigurationDependencyResolver: PeerConfiguration -> ParameterVariant
 //! TaskResolver: ParameterVariant -> [ List of TaskAbsent ]
 
+use std::collections::HashSet;
 use std::time::SystemTime;
 use crate::common::task::dependency::{ParameterVariantWithDependencies, PeerConfigurationDependencyResolver};
 use crate::common::task::runner::{TaskExecutionError};
@@ -27,7 +28,24 @@ pub struct CollectedResult {
 
 impl From<CollectedResult> for EdgePeerConfigurationState {
     fn from(value: CollectedResult) -> Self {
-        let parameter_states = value.items.into_iter().map(|item| {
+        let successful_parameter_ids = value.items.iter().flat_map(|item| {
+            if item.outcome.is_ok() {
+                Some(item.id)
+            } else {
+                None
+            }
+        }).collect::<HashSet<_>>();
+
+        fn make_error(kind: ParameterDetectedStateErrorKind, cause: impl ToString) -> ParameterEdgeDetectedStateKind {
+            ParameterEdgeDetectedStateKind::Error(
+                ParameterDetectedStateError {
+                    kind,
+                    cause: ParameterDetectedStateErrorCause::Unclassified(cause.to_string()),
+                }
+            )
+        }
+
+        let mut parameter_states: Vec<EdgePeerConfigurationParameterState> = value.items.into_iter().map(|item| {
             let target = item.parameter.target();
             let state = match item.outcome {
                 Ok(outcome) => {
@@ -41,19 +59,26 @@ impl From<CollectedResult> for EdgePeerConfigurationState {
                     }
                 }
                 Err(error) => {
-                    match target {
-                        ParameterTarget::Present => ParameterEdgeDetectedStateKind::Error(
-                            ParameterDetectedStateError {
-                                kind: ParameterDetectedStateErrorKind::CreatingFailed,
-                                cause: ParameterDetectedStateErrorCause::Unclassified(error.to_string())
+                    match error {
+                        TaskExecutionError::DetermineSystemStateBefore { task_name, error } | TaskExecutionError::DetermineSystemStateAfter { task_name, error } => {
+                            match target {
+                                ParameterTarget::Present => make_error(ParameterDetectedStateErrorKind::CheckPresentFailed, format!("Task '{task_name}' failed. Error {error}")),
+                                ParameterTarget::Absent => make_error(ParameterDetectedStateErrorKind::CheckAbsentFailed, format!("Task '{task_name}' failed. Error {error}")),
                             }
-                        ),
-                        ParameterTarget::Absent => ParameterEdgeDetectedStateKind::Error(
-                            ParameterDetectedStateError {
-                                kind: ParameterDetectedStateErrorKind::RemovingFailed,
-                                cause: ParameterDetectedStateErrorCause::Unclassified(error.to_string())
+                        }
+                        TaskExecutionError::DuringTaskExecution { task_name, error } => {
+                            match target {
+                                ParameterTarget::Present => make_error(ParameterDetectedStateErrorKind::CreatingFailed, format!("Task '{task_name}' failed. Error {error}")),
+                                ParameterTarget::Absent => make_error(ParameterDetectedStateErrorKind::RemovingFailed, format!("Task '{task_name}' failed. Error {error}")),
                             }
-                        ),
+                        }
+                        TaskExecutionError::UnfulfilledTask { task_name } => {
+                            let msg = format!("Task '{}' could not fulfill the parameter.", task_name);
+                            match target {
+                                ParameterTarget::Present => make_error(ParameterDetectedStateErrorKind::CreatingFailed, msg),
+                                ParameterTarget::Absent => make_error(ParameterDetectedStateErrorKind::RemovingFailed, msg),
+                            }
+                        }
                     }
                 }
             };
@@ -65,7 +90,24 @@ impl From<CollectedResult> for EdgePeerConfigurationState {
             }
             
         }).collect();
-        
+
+        let parameters_without_results = value.unfulfilled_parameters.into_iter().map(|parameter| {
+            let missing_dependencies = parameter.dependencies.difference(&successful_parameter_ids).cloned().collect::<Vec<_>>();
+            let state = ParameterEdgeDetectedStateKind::Error(
+                ParameterDetectedStateError {
+                    kind: ParameterDetectedStateErrorKind::WaitingForDependenciesFailed,
+                    cause: ParameterDetectedStateErrorCause::MissingDependencies(missing_dependencies)
+                }
+            );
+
+            EdgePeerConfigurationParameterState {
+                id: parameter.id,
+                timestamp: SystemTime::now(),
+                detected_state: state,
+            }
+        });
+        parameter_states.extend(parameters_without_results);
+
         EdgePeerConfigurationState {
             parameter_states,
         }
@@ -109,30 +151,23 @@ pub async fn run_tasks(
     results
 }
 
-async fn check_task(task: &dyn TaskAbsent, target: ParameterTarget) -> Result<TaskStateFulfilled, TaskExecutionError> {
+async fn check_task(task: &dyn TaskAbsent, target: ParameterTarget) -> anyhow::Result<TaskStateFulfilled> {
     match target {
-        ParameterTarget::Present => task.check_present()
-            .await
-            .map_err(|error| TaskExecutionError::DetermineSystemStateBefore { task_name: task.description(), error }),
-        ParameterTarget::Absent => task.check_absent()
-            .await
-            .map_err(|error| TaskExecutionError::DetermineSystemStateBefore { task_name: task.description(), error }),
+        ParameterTarget::Present => task.check_present().await,
+        ParameterTarget::Absent => task.check_absent().await,
     }
 }
 
-async fn make_task(task: &dyn TaskAbsent, target: ParameterTarget) -> Result<Success, TaskExecutionError> {
+async fn make_task(task: &dyn TaskAbsent, target: ParameterTarget) -> anyhow::Result<Success> {
     match target {
-        ParameterTarget::Present => task.make_present()
-            .await
-            .map_err(|error| TaskExecutionError::DuringTaskExecution { task_name: task.description(), error }),
-        ParameterTarget::Absent => task.make_absent()
-            .await
-            .map_err(|error| TaskExecutionError::DuringTaskExecution { task_name: task.description(), error }),
+        ParameterTarget::Present => task.make_present().await,
+        ParameterTarget::Absent => task.make_absent().await,
     }
 }
 
 pub(crate) async fn run_individual_task(task: &dyn TaskAbsent, target: ParameterTarget) -> Result<Outcome, TaskExecutionError> {
-    let is_fulfilled = check_task(task, target).await?;
+    let is_fulfilled = check_task(task, target).await
+        .map_err(|error| TaskExecutionError::DetermineSystemStateBefore { task_name: task.description(), error })?;
 
     let outcome = match is_fulfilled {
         TaskStateFulfilled::Yes => {
@@ -141,12 +176,14 @@ pub(crate) async fn run_individual_task(task: &dyn TaskAbsent, target: Parameter
         TaskStateFulfilled::No | TaskStateFulfilled::Unchecked => {
             make_task(task, target)
                 .await
+                .map_err(|error| TaskExecutionError::DuringTaskExecution { task_name: task.description(), error })
                 .map(Outcome::Changed)?
         }
     };
 
     if let Outcome::Changed(_) = outcome {
-        let fulfillment = check_task(task, target).await?;
+        let fulfillment = check_task(task, target).await
+            .map_err(|error| TaskExecutionError::DetermineSystemStateAfter { task_name: task.description(), error })?;
         match fulfillment {
             TaskStateFulfilled::Yes | TaskStateFulfilled::Unchecked => {}, // do nothing
             TaskStateFulfilled::No => {

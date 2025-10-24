@@ -86,7 +86,7 @@ impl TaskAbsent for ManageGreInterface {
 mod tests {
     use super::*;
     use crate::service::network_interface::manager::NetworkInterfaceManager;
-    use crate::common::task::service_runner;
+    use crate::service::service_runner;
     use opendut_model::peer::configuration::ParameterTarget;
     use std::net::Ipv4Addr;
     use std::str::FromStr;

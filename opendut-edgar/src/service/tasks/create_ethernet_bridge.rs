@@ -102,7 +102,7 @@ mod tests {
     use crate::service::network_interface::manager::NetworkInterfaceManager;
     use crate::service::network_metrics::manager::{NetworkMetricsManager, NetworkMetricsOptions};
     use crate::service::peer_configuration::NetworkInterfaceManagement;
-    use crate::common::task::service_runner;
+    use crate::service::service_runner;
     use opendut_model::peer::configuration::{parameter, ParameterTarget, PeerConfiguration};
     use opendut_model::util::net::NetworkInterfaceName;
     use rand::Rng;

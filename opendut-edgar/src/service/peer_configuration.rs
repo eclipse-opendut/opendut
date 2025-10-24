@@ -4,15 +4,15 @@ use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use crate::service::tasks;
 use crate::service::test_execution::executor_manager::ExecutorManagerRef;
 use opendut_model::cluster::ClusterAssignment;
-use opendut_model::peer::configuration::{parameter, OldPeerConfiguration, ParameterField, PeerConfiguration, EdgePeerConfigurationState};
+use opendut_model::peer::configuration::{parameter, EdgePeerConfigurationState, OldPeerConfiguration, ParameterField, PeerConfiguration};
 use opendut_model::peer::PeerId;
 
 use std::fmt::Formatter;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tracing::{debug, error};
-use crate::common::task;
-use crate::common::task::service_runner::CollectedResult;
+use crate::service;
+use crate::service::service_runner::CollectedResult;
 use super::network_metrics::manager::NetworkMetricsManagerRef;
 
 #[derive(Debug)]
@@ -65,7 +65,7 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> Colle
         network_interface_management.clone(),
         Arc::clone(&metrics_manager),
     );
-    let result = task::service_runner::run_tasks(peer_configuration.clone(), resolver).await;
+    let result = service::service_runner::run_tasks(peer_configuration.clone(), resolver).await;
     if result.success {
         debug!("Peer configuration tasks executed successfully: {:?}", result.items);
     } else {
