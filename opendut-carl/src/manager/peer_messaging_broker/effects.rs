@@ -2,7 +2,7 @@ use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
 use crate::resource::manager::{ResourceManagerRef, SubscriptionEvent};
 use crate::resource::persistence::error::PersistenceResult;
 use crate::resource::storage::ResourcesStorageApi;
-use opendut_model::peer::configuration::{ParameterTargetState, PeerConfiguration, EdgePeerConfigurationState};
+use opendut_model::peer::configuration::{PeerConfiguration, EdgePeerConfigurationState, ParameterEdgeDetectedStateKind};
 use opendut_model::peer::PeerDescriptor;
 use std::collections::HashSet;
 use tracing::{debug, error, trace, warn};
@@ -41,7 +41,7 @@ async fn remove_absent_peer_configuration_parameters_that_are_absent(resource_ma
                 
                 let parameter_ids_with_target_absent = value.parameter_states
                     .into_iter()
-                    .filter(|p| matches!(p.detected_state, ParameterTargetState::Absent))
+                    .filter(|p| matches!(p.detected_state, ParameterEdgeDetectedStateKind::Absent))
                     .map(|p| p.id)
                     .collect::<HashSet<_>>();
                 

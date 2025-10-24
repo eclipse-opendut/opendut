@@ -55,7 +55,7 @@ impl Persistable for PeerDescriptor {
 }
 
 impl Persistable for EdgePeerConfigurationState {
-    type Proto = opendut_model::proto::peer::configuration::api::PeerConfigurationState;
+    type Proto = opendut_model::proto::peer::configuration::api::EdgePeerConfigurationState;
     const TABLE: &'static str = "peer_configuration_state";
     const STORAGE: StorageKind = StorageKind::Volatile;
 }

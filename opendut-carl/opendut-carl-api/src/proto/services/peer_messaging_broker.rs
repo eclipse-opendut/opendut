@@ -13,7 +13,10 @@ conversion! {
             crate::carl::broker::UpstreamMessagePayload::Ping => {
                 upstream::Message::Ping(Ping { })
             },
-            crate::carl::broker::UpstreamMessagePayload::PeerConfigurationState(_) => todo!()
+            crate::carl::broker::UpstreamMessagePayload::EdgePeerConfigurationState(edge_peer_config_state) => {
+                let state = opendut_model::proto::peer::configuration::api::EdgePeerConfigurationState::from(edge_peer_config_state);
+                upstream::Message::EdgePeerConfigurationState(state)
+            }
         };
 
         Upstream { context, message: Some(message) }
@@ -28,8 +31,8 @@ conversion! {
             upstream::Message::Ping(_) => {
                 crate::carl::broker::UpstreamMessagePayload::Ping
             },
-            upstream::Message::PeerConfigurationState(state) => {
-                crate::carl::broker::UpstreamMessagePayload::PeerConfigurationState(
+            upstream::Message::EdgePeerConfigurationState(state) => {
+                crate::carl::broker::UpstreamMessagePayload::EdgePeerConfigurationState(
                     state.try_into()?
                 )
             },
@@ -44,8 +47,8 @@ conversion! {
     type Proto = Upstream;
 
     fn from(value: Model) -> Proto {
-        let state = opendut_model::proto::peer::configuration::api::PeerConfigurationState::from(value);
-        let message = upstream::Message::PeerConfigurationState(state);
+        let state = opendut_model::proto::peer::configuration::api::EdgePeerConfigurationState::from(value);
+        let message = upstream::Message::EdgePeerConfigurationState(state);
         Upstream {
             context: None,
             message: Some(message),
@@ -55,7 +58,7 @@ conversion! {
     fn try_from(value: Proto) -> ConversionResult<Model> {
         let proto_message = extract!(value.message)?;
         match proto_message {
-            upstream::Message::PeerConfigurationState(state) => Ok(state.try_into()?),
+            upstream::Message::EdgePeerConfigurationState(state) => Ok(state.try_into()?),
             _ => Err(ErrorBuilder::message("This is not a peer configuration state message.")),
         }
     }

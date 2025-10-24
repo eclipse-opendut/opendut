@@ -23,7 +23,7 @@ pub struct UpstreamMessage {
 
 #[derive(Debug, Clone)]
 pub enum UpstreamMessagePayload {
-    PeerConfigurationState(EdgePeerConfigurationState),
+    EdgePeerConfigurationState(EdgePeerConfigurationState),
     Ping,
 }
 

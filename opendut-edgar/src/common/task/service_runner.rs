@@ -11,7 +11,7 @@ use crate::common::task::dependency::{ParameterVariantWithDependencies, PeerConf
 use crate::common::task::runner::{TaskExecutionError};
 use crate::common::task::task_resolver::TaskResolver;
 use crate::common::task::{Success, TaskAbsent, TaskStateFulfilled};
-use opendut_model::peer::configuration::{ParameterId, ParameterTarget, ParameterTargetState, ParameterStateKindError, ParameterTargetStateErrorCreatingFailed, ParameterTargetStateErrorRemovingFailed, ParameterVariant, PeerConfiguration, PeerConfigurationParameterState, EdgePeerConfigurationState};
+use opendut_model::peer::configuration::{ParameterId, ParameterTarget, ParameterVariant, PeerConfiguration, EdgePeerConfigurationState, ParameterDetectedStateError, ParameterDetectedStateErrorKind, ParameterDetectedStateErrorCause, EdgePeerConfigurationParameterState, ParameterEdgeDetectedStateKind};
 
 #[derive(Debug)]
 pub enum Outcome {
@@ -34,25 +34,31 @@ impl From<CollectedResult> for EdgePeerConfigurationState {
                     match outcome {
                         Outcome::Unchanged | Outcome::Changed(_) => {
                             match target {
-                                ParameterTarget::Present => ParameterTargetState::Present,
-                                ParameterTarget::Absent => ParameterTargetState::Absent,
+                                ParameterTarget::Present => ParameterEdgeDetectedStateKind::Present,
+                                ParameterTarget::Absent => ParameterEdgeDetectedStateKind::Absent,
                             }
                         }
                     }
                 }
                 Err(error) => {
                     match target {
-                        ParameterTarget::Present => ParameterTargetState::Error(
-                            ParameterStateKindError::CreatingFailed(ParameterTargetStateErrorCreatingFailed::UnclassifiedError(error.to_string()))
+                        ParameterTarget::Present => ParameterEdgeDetectedStateKind::Error(
+                            ParameterDetectedStateError {
+                                kind: ParameterDetectedStateErrorKind::CreatingFailed,
+                                cause: ParameterDetectedStateErrorCause::Unclassified(error.to_string())
+                            }
                         ),
-                        ParameterTarget::Absent => ParameterTargetState::Error(
-                            ParameterStateKindError::RemovingFailed(ParameterTargetStateErrorRemovingFailed::UnclassifiedError(error.to_string()))
+                        ParameterTarget::Absent => ParameterEdgeDetectedStateKind::Error(
+                            ParameterDetectedStateError {
+                                kind: ParameterDetectedStateErrorKind::RemovingFailed,
+                                cause: ParameterDetectedStateErrorCause::Unclassified(error.to_string())
+                            }
                         ),
                     }
                 }
             };
 
-            PeerConfigurationParameterState {
+            EdgePeerConfigurationParameterState {
                 id: item.id,
                 timestamp: item.timestamp,
                 detected_state: state,

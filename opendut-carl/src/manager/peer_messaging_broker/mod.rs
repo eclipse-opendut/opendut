@@ -305,7 +305,7 @@ async fn handle_stream_message(
 ) {
     let UpstreamMessage { payload, context } = message;
     match payload {
-        UpstreamMessagePayload::PeerConfigurationState(state) => {
+        UpstreamMessagePayload::EdgePeerConfigurationState(state) => {
             info!("Received PeerConfigurationState from peer <{peer_id}>:\n  {state:#?}");
             let _ignore_result = resource_manager.insert(peer_id, state).await
                 .inspect_err(|cause| {
