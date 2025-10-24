@@ -11,7 +11,7 @@ use crate::common::task::dependency::{ParameterVariantWithDependencies, PeerConf
 use crate::common::task::runner::{TaskExecutionError};
 use crate::common::task::task_resolver::TaskResolver;
 use crate::common::task::{Success, TaskAbsent, TaskStateFulfilled};
-use opendut_model::peer::configuration::{ParameterId, ParameterTarget, ParameterTargetState, ParameterTargetStateError, ParameterTargetStateErrorCreatingFailed, ParameterTargetStateErrorRemovingFailed, ParameterVariant, PeerConfiguration, PeerConfigurationParameterState, EdgePeerConfigurationState};
+use opendut_model::peer::configuration::{ParameterId, ParameterTarget, ParameterTargetState, ParameterStateKindError, ParameterTargetStateErrorCreatingFailed, ParameterTargetStateErrorRemovingFailed, ParameterVariant, PeerConfiguration, PeerConfigurationParameterState, EdgePeerConfigurationState};
 
 #[derive(Debug)]
 pub enum Outcome {
@@ -43,10 +43,10 @@ impl From<CollectedResult> for EdgePeerConfigurationState {
                 Err(error) => {
                     match target {
                         ParameterTarget::Present => ParameterTargetState::Error(
-                            ParameterTargetStateError::CreatingFailed(ParameterTargetStateErrorCreatingFailed::UnclassifiedError(error.to_string()))
+                            ParameterStateKindError::CreatingFailed(ParameterTargetStateErrorCreatingFailed::UnclassifiedError(error.to_string()))
                         ),
                         ParameterTarget::Absent => ParameterTargetState::Error(
-                            ParameterTargetStateError::RemovingFailed(ParameterTargetStateErrorRemovingFailed::UnclassifiedError(error.to_string()))
+                            ParameterStateKindError::RemovingFailed(ParameterTargetStateErrorRemovingFailed::UnclassifiedError(error.to_string()))
                         ),
                     }
                 }
@@ -55,7 +55,7 @@ impl From<CollectedResult> for EdgePeerConfigurationState {
             PeerConfigurationParameterState {
                 id: item.id,
                 timestamp: item.timestamp,
-                state,
+                detected_state: state,
             }
             
         }).collect();

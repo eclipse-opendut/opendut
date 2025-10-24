@@ -86,22 +86,30 @@ message EdgePeerConfigurationParameterState {
 // Representation in CARL to determine the overall state of a configuration parameter and to show to the user
 message PeerConfigurationParameterState {
   PeerConfigurationParameterId id = 1;
+  google.protobuf.Timestamp timestamp = 2;
 
+  // ParameterDetectedStateKind
   oneof detected_state {
+    // final states
     PeerConfigurationParameterStateKindPresent present = 11;
-    PeerConfigurationParameterStateKindCreating creating = 12;
-    PeerConfigurationParameterStateKindAbsent absent = 13;
+    PeerConfigurationParameterStateKindAbsent absent = 12;
+    // transitional states
+    PeerConfigurationParameterStateKindCreating creating = 13;
     PeerConfigurationParameterStateKindRemoving removing = 14;
+    // error state
     PeerConfigurationParameterStateKindError error = 15;
   }
 }
-
+message PeerConfigurationState {
+  repeated PeerConfigurationParameterState parameters = 1;
+}
 
 // General messages
 message PeerConfigurationParameterId {
   opendut.types.util.Uuid uuid = 1;
 }
 
+// States
 message PeerConfigurationParameterStateKindPresent {}
 message PeerConfigurationParameterStateKindAbsent {}
 message PeerConfigurationParameterStateKindCreating {}
@@ -124,6 +132,7 @@ message PeerConfigurationParameterStateKindError {
   }
   oneof cause {
     UnclassifiedError unclassified = 20;
+    MissingDependenciesError missing_dependencies = 21;
   }
 }
 

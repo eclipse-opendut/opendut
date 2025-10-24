@@ -75,7 +75,7 @@ conversion! {
         Ok(Model {
             id: extract!(parameter.id)?.try_into()?,
             dependencies: parameter.dependencies.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
-            target: extract!(parameter.target)?.into(),
+            target: extract!(parameter.target_state)?.into(),
             value,
         })
     }
@@ -103,7 +103,7 @@ conversion! {
         Ok(Model {
             id: extract!(parameter.id)?.try_into()?,
             dependencies: parameter.dependencies.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
-            target: extract!(parameter.target)?.into(),
+            target: extract!(parameter.target_state)?.into(),
             value,
         })
     }
@@ -130,7 +130,7 @@ conversion! {
         Ok(Model {
             id: extract!(parameter.id)?.try_into()?,
             dependencies: parameter.dependencies.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
-            target: extract!(parameter.target)?.into(),
+            target: extract!(parameter.target_state)?.into(),
             value,
         })
     }
@@ -157,7 +157,7 @@ conversion! {
         Ok(Model {
             id: extract!(parameter.id)?.try_into()?,
             dependencies: parameter.dependencies.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
-            target: extract!(parameter.target)?.into(),
+            target: extract!(parameter.target_state)?.into(),
             value,
         })
     }
@@ -182,7 +182,7 @@ conversion! {
         Ok(Model {
             id: extract!(parameter.id)?.try_into()?,
             dependencies: parameter.dependencies.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
-            target: extract!(parameter.target)?.into(),
+            target: extract!(parameter.target_state)?.into(),
             value,
         })
     }
@@ -211,7 +211,7 @@ conversion! {
         Ok(Model {
             id: extract!(parameter.id)?.try_into()?,
             dependencies: parameter.dependencies.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
-            target: extract!(parameter.target)?.into(),
+            target: extract!(parameter.target_state)?.into(),
             value,
         })
     }
@@ -223,7 +223,7 @@ impl<V: crate::peer::configuration::ParameterValue> From<crate::peer::configurat
         Self {
             id: Some(value.id.into()),
             dependencies: value.dependencies.into_iter().map(Into::into).collect(),
-            target: Some(value.target.into()),
+            target_state: Some(value.target.into()),
         }
     }
 }
@@ -244,19 +244,19 @@ conversion! {
     }
 }
 
-impl From<crate::peer::configuration::ParameterTarget> for peer_configuration_parameter::Target {
+impl From<crate::peer::configuration::ParameterTarget> for peer_configuration_parameter::TargetState {
     fn from(value: crate::peer::configuration::ParameterTarget) -> Self {
         match value {
-            crate::peer::configuration::ParameterTarget::Present => peer_configuration_parameter::Target::Present(PeerConfigurationParameterTargetPresent {}),
-            crate::peer::configuration::ParameterTarget::Absent => peer_configuration_parameter::Target::Absent(PeerConfigurationParameterTargetAbsent {}),
+            crate::peer::configuration::ParameterTarget::Present => peer_configuration_parameter::TargetState::Present(PeerConfigurationParameterStateKindPresent {}),
+            crate::peer::configuration::ParameterTarget::Absent => peer_configuration_parameter::TargetState::Absent(PeerConfigurationParameterStateKindAbsent {}),
         }
     }
 }
-impl From<peer_configuration_parameter::Target> for crate::peer::configuration::ParameterTarget {
-    fn from(value: peer_configuration_parameter::Target) -> Self {
+impl From<peer_configuration_parameter::TargetState> for crate::peer::configuration::ParameterTarget {
+    fn from(value: peer_configuration_parameter::TargetState) -> Self {
         match value {
-            peer_configuration_parameter::Target::Present(_) => crate::peer::configuration::ParameterTarget::Present,
-            peer_configuration_parameter::Target::Absent(_) => crate::peer::configuration::ParameterTarget::Absent,
+            peer_configuration_parameter::TargetState::Present(_) => crate::peer::configuration::ParameterTarget::Present,
+            peer_configuration_parameter::TargetState::Absent(_) => crate::peer::configuration::ParameterTarget::Absent,
         }
     }
 }
@@ -264,7 +264,7 @@ impl From<peer_configuration_parameter::Target> for crate::peer::configuration::
 
 conversion! {
     type Model = crate::peer::configuration::EdgePeerConfigurationState;
-    type Proto = PeerConfigurationState;
+    type Proto = EdgePeerConfigurationState;
 
     fn from(value: Model) -> Proto {
         Proto {
@@ -284,14 +284,14 @@ conversion! {
 }
 
 conversion! {
-    type Model = crate::peer::configuration::PeerConfigurationParameterState;
-    type Proto = PeerConfigurationParameterState;
+    type Model = crate::peer::configuration::EdgePeerConfigurationParameterState;
+    type Proto = EdgePeerConfigurationParameterState;
 
     fn from(value: Model) -> Proto {
         Proto {
             id: Some(value.id.into()),
             timestamp: Some(value.timestamp.into()),
-            state: Some(value.state.into()),
+            detected_state: Some(value.detected_state.into()),
         }
     }
 
@@ -301,88 +301,148 @@ conversion! {
         Ok(Model {
             id: extract!(value.id)?.try_into()?,
             timestamp,
-            state: extract!(value.state)?.try_into()?,
+            detected_state: extract!(value.detected_state)?.try_into()?,
         })
     }
 }
 
 conversion! {
-    type Model = crate::peer::configuration::ParameterTargetState;
-    type Proto = peer_configuration_parameter_state::State;
+    type Model = crate::peer::configuration::ParameterEdgeDetectedStateKind;
+    type Proto = edge_peer_configuration_parameter_state::DetectedState;
 
     fn from(value: Model) -> Proto {
         match value {
-            Model::Absent => Proto::Absent(PeerConfigurationParameterTargetAbsent {}),
-            Model::Present => Proto::Present(PeerConfigurationParameterTargetPresent {}),
-            Model::WaitingForDependencies(incomplete_dependencies) => Proto::WaitingForDependencies(PeerConfigurationParameterTargetWaitingForDependencies {
-                incomplete_dependencies: incomplete_dependencies.into_iter()
-                    .map(Into::into)
-                    .collect::<Vec<_>>()
-            }),
+            Model::Present => { Proto::Present(PeerConfigurationParameterStateKindPresent {})}
+            Model::Absent => { Proto::Absent(PeerConfigurationParameterStateKindAbsent {})}
             Model::Error(error) => {
-                match error {
-                    crate::peer::configuration::ParameterTargetStateError::CreatingFailed(creating_failed) => {
-                        match creating_failed {
-                            crate::peer::configuration::ParameterTargetStateErrorCreatingFailed::UnclassifiedError(message) => {
-                                Proto::Error(PeerConfigurationParameterTargetError {
-                                    error: Some(peer_configuration_parameter_target_error::Error::CreatingFailed(PeerConfigurationParameterTargetErrorCreatingFailed { 
-                                        error: Some(peer_configuration_parameter_target_error_creating_failed::Error::Unclassified(UnclassifiedError { message })) 
-                                    })),
-                                })
-                            }
-                        }
-                    }
-                    crate::peer::configuration::ParameterTargetStateError::RemovingFailed(removing_failed) => {
-                        match removing_failed {
-                            crate::peer::configuration::ParameterTargetStateErrorRemovingFailed::UnclassifiedError(message) => {
-                                Proto::Error(PeerConfigurationParameterTargetError {
-                                    error: Some(peer_configuration_parameter_target_error::Error::RemovingFailed(PeerConfigurationParameterTargetErrorRemovingFailed { 
-                                        error: Some(peer_configuration_parameter_target_error_removing_failed::Error::Unclassified(UnclassifiedError { message })) 
-                                    })),
-                                })
-                            }
-                        }
-                    }
-                }
+                Proto::Error(error.into())
             }
         }
     }
 
     fn try_from(value: Proto) -> ConversionResult<Model> {
         let result = match value {
-            Proto::Present(PeerConfigurationParameterTargetPresent {}) => Model::Present,
-            Proto::Absent(PeerConfigurationParameterTargetAbsent {}) => Model::Absent,
-            Proto::WaitingForDependencies(PeerConfigurationParameterTargetWaitingForDependencies { incomplete_dependencies }) => Model::WaitingForDependencies(
-                incomplete_dependencies.into_iter()
-                    .map(TryInto::try_into)
-                    .collect::<Result<_, _>>()?
-            ),
+            Proto::Present(PeerConfigurationParameterStateKindPresent {}) => Model::Present,
+            Proto::Absent(PeerConfigurationParameterStateKindAbsent {}) => Model::Absent,
             Proto::Error(error) => {
-                let error = extract!(error.error)?;
-                match error {
-                    peer_configuration_parameter_target_error::Error::CreatingFailed(error) => {
-                        let error = extract!(error.error)?;
-                        match error {
-                            peer_configuration_parameter_target_error_creating_failed::Error::Unclassified(details) => {
-                                Model::Error(crate::peer::configuration::ParameterTargetStateError::CreatingFailed(
-                                    crate::peer::configuration::ParameterTargetStateErrorCreatingFailed::UnclassifiedError(details.message)
-                                ))
-                            }
-                        }
-                    }
-                    peer_configuration_parameter_target_error::Error::RemovingFailed(error) => {
-                        let error = extract!(error.error)?;
-                        match error {
-                            peer_configuration_parameter_target_error_removing_failed::Error::Unclassified(details) => {
-                                Model::Error(crate::peer::configuration::ParameterTargetStateError::RemovingFailed(
-                                    crate::peer::configuration::ParameterTargetStateErrorRemovingFailed::UnclassifiedError(details.message)
-                                ))
-                            }
-                        }
-                    }
-                }
+                Model::Error(error.try_into()?)
             },
         };
         Ok(result)
+    }
+}
+
+conversion! {
+    type Model = crate::peer::configuration::PeerConfigurationParameterState;
+    type Proto = PeerConfigurationParameterState;
+
+    fn from(value: Model) -> Proto {
+        Proto {
+            id: Some(value.id.into()),
+            timestamp: Some(value.timestamp.into()),
+            detected_state: Some(value.detected_state.into()),
+        }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let timestamp = SystemTime::try_from(extract!(value.timestamp)?)
+            .map_err(|error| ErrorBuilder::message(error.to_string()))?;
+        Ok(Model {
+            id: extract!(value.id)?.try_into()?,
+            timestamp,
+            detected_state: extract!(value.detected_state)?.try_into()?,
+        })
+    }
+}
+
+conversion! {
+    // state determined by CARL when comparing EdgePeerConfigurationParameterState with PeerConfigurationParameter
+    type Model = crate::peer::configuration::ParameterDetectedStateKind;
+    type Proto = peer_configuration_parameter_state::DetectedState;
+
+    fn from(value: Model) -> Proto {
+        match value {
+            Model::Absent => Proto::Absent(PeerConfigurationParameterStateKindAbsent {}),
+            Model::Present => Proto::Present(PeerConfigurationParameterStateKindPresent {}),
+            Model::Creating => Proto::Creating(PeerConfigurationParameterStateKindCreating {}),
+            Model::Removing => Proto::Removing(PeerConfigurationParameterStateKindRemoving {}),
+            Model::Error(error) => {
+                Proto::Error(error.into())
+            }
+        }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let result = match value {
+            Proto::Present(PeerConfigurationParameterStateKindPresent {}) => Model::Present,
+            Proto::Absent(PeerConfigurationParameterStateKindAbsent {}) => Model::Absent,
+            Proto::Creating(PeerConfigurationParameterStateKindCreating {}) => Model::Creating,
+            Proto::Removing(PeerConfigurationParameterStateKindRemoving {}) => Model::Removing,
+            Proto::Error(error) => {
+                Model::Error(error.try_into()?)
+            },
+        };
+        Ok(result)
+    }
+}
+
+conversion! {
+    type Model = crate::peer::configuration::ParameterDetectedStateError;
+    type Proto = PeerConfigurationParameterStateKindError;
+
+    fn from(value: Model) -> Proto {
+        let error_kind = match value.kind {
+            crate::peer::configuration::api::ParameterDetectedStateErrorKind::CreatingFailed => {
+                peer_configuration_parameter_state_kind_error::Kind::CreatingFailed(PeerConfigurationParameterStateKindErrorCreatingFailed {})
+            }
+            crate::peer::configuration::api::ParameterDetectedStateErrorKind::RemovingFailed => {
+                peer_configuration_parameter_state_kind_error::Kind::RemovingFailed(PeerConfigurationParameterStateKindErrorRemovingFailed {})
+            }
+            crate::peer::configuration::api::ParameterDetectedStateErrorKind::CheckPresentFailed => {
+                peer_configuration_parameter_state_kind_error::Kind::CheckPresentFailed(PeerConfigurationParameterStateKindErrorCheckPresentFailed {})
+            }
+            crate::peer::configuration::api::ParameterDetectedStateErrorKind::CheckAbsentFailed => {
+                peer_configuration_parameter_state_kind_error::Kind::CheckAbsentFailed(PeerConfigurationParameterStateKindErrorCheckAbsentFailed {})
+            }
+            crate::peer::configuration::api::ParameterDetectedStateErrorKind::WaitingForDependenciesFailed => {
+                peer_configuration_parameter_state_kind_error::Kind::WaitingForDependencies(PeerConfigurationParameterStateKindErrorWaitingForDependencies {})
+            }
+        };
+        let error_cause = match value.cause {
+            crate::peer::configuration::api::ParameterDetectedStateErrorCause::Unclassified(message) => {
+                peer_configuration_parameter_state_kind_error::Cause::Unclassified(UnclassifiedError { message })
+            }
+            crate::peer::configuration::api::ParameterDetectedStateErrorCause::MissingDependencies(missing_ids) => {
+                peer_configuration_parameter_state_kind_error::Cause::MissingDependencies(
+                    MissingDependenciesError { missing_dependencies: missing_ids.into_iter().map(Into::into).collect() }
+                )
+            }
+        };
+        PeerConfigurationParameterStateKindError { kind: Some(error_kind), cause: Some(error_cause)}
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let error_kind = match extract!(value.kind)? {
+            peer_configuration_parameter_state_kind_error::Kind::CreatingFailed(_) => crate::peer::configuration::api::ParameterDetectedStateErrorKind::CreatingFailed,
+            peer_configuration_parameter_state_kind_error::Kind::RemovingFailed(_) => crate::peer::configuration::api::ParameterDetectedStateErrorKind::RemovingFailed,
+            peer_configuration_parameter_state_kind_error::Kind::CheckPresentFailed(_) => crate::peer::configuration::api::ParameterDetectedStateErrorKind::CheckPresentFailed,
+            peer_configuration_parameter_state_kind_error::Kind::CheckAbsentFailed(_) => crate::peer::configuration::api::ParameterDetectedStateErrorKind::CheckAbsentFailed,
+            peer_configuration_parameter_state_kind_error::Kind::WaitingForDependencies(_) => crate::peer::configuration::api::ParameterDetectedStateErrorKind::CheckAbsentFailed,
+        };
+        let error_cause = match extract!(value.cause)? {
+            peer_configuration_parameter_state_kind_error::Cause::Unclassified(details) => {
+                crate::peer::configuration::api::ParameterDetectedStateErrorCause::Unclassified(details.message)
+            }
+            peer_configuration_parameter_state_kind_error::Cause::MissingDependencies(error) => {
+                let missing_ids = error.missing_dependencies.into_iter()
+                    .map(TryInto::try_into)
+                    .collect::<Result<_, _>>()?;
+                crate::peer::configuration::api::ParameterDetectedStateErrorCause::MissingDependencies(missing_ids)
+            }
+        };
+        Ok(crate::peer::configuration::api::ParameterDetectedStateError {
+            kind: error_kind,
+            cause: error_cause,
+        })
     }
 }

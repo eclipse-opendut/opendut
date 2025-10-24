@@ -41,7 +41,7 @@ async fn remove_absent_peer_configuration_parameters_that_are_absent(resource_ma
                 
                 let parameter_ids_with_target_absent = value.parameter_states
                     .into_iter()
-                    .filter(|p| matches!(p.state, ParameterTargetState::Absent))
+                    .filter(|p| matches!(p.detected_state, ParameterTargetState::Absent))
                     .map(|p| p.id)
                     .collect::<HashSet<_>>();
                 

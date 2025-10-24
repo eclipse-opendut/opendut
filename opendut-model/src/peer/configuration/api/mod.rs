@@ -31,41 +31,80 @@ pub enum ParameterTarget {
 }
 
 #[derive(Debug, Clone)]
-pub struct EdgePeerConfigurationState {
+pub struct PeerConfigurationState {
     pub parameter_states: Vec<PeerConfigurationParameterState>
 }
 
-impl EdgePeerConfigurationState {
+impl PeerConfigurationState {
     pub fn is_ready(&self) -> bool {
         self.parameter_states.iter().all(PeerConfigurationParameterState::is_ready)
     }
 }
 
+
 #[derive(Debug, Clone)]
 pub struct PeerConfigurationParameterState {
     pub id: ParameterId,
     pub timestamp: SystemTime,
-    pub state: ParameterTargetState,
+    pub detected_state: ParameterDetectedStateKind,
 }
 
 impl PeerConfigurationParameterState {
     pub fn is_ready(&self) -> bool {
-        matches!(self.state, ParameterTargetState::Present | ParameterTargetState::Absent)
+        matches!(self.detected_state, ParameterDetectedStateKind::Present | ParameterDetectedStateKind::Absent)
     }
 }
 
 #[derive(Debug, Clone)]
-pub enum ParameterTargetState {
-    Absent,
+pub enum ParameterDetectedStateKind {
     Present,
-    WaitingForDependencies(Vec<ParameterId>),
-    Error(ParameterTargetStateError),
+    Absent,
+    Creating,
+    Removing,
+    Error(ParameterDetectedStateError),
+}
+
+
+#[derive(Debug, Clone)]
+pub struct EdgePeerConfigurationState {
+    pub parameter_states: Vec<EdgePeerConfigurationParameterState>
+}
+
+/// State of a parameter on the edge peer side.
+#[derive(Debug, Clone)]
+pub struct EdgePeerConfigurationParameterState {
+    pub id: ParameterId,
+    pub timestamp: SystemTime,
+    pub detected_state: ParameterEdgeDetectedStateKind,
 }
 
 #[derive(Debug, Clone)]
-pub enum ParameterTargetStateError {
-    CreatingFailed(ParameterTargetStateErrorCreatingFailed),
-    RemovingFailed(ParameterTargetStateErrorRemovingFailed),
+pub enum ParameterEdgeDetectedStateKind {
+    Present,
+    Absent,
+    Error(ParameterDetectedStateError),
+}
+
+
+#[derive(Debug, Clone)]
+pub struct ParameterDetectedStateError {
+    pub kind: ParameterDetectedStateErrorKind,
+    pub cause: ParameterDetectedStateErrorCause,
+}
+
+#[derive(Debug, Clone)]
+pub enum ParameterDetectedStateErrorCause {
+    Unclassified(String),
+    MissingDependencies(Vec<ParameterId>),
+}
+
+#[derive(Debug, Clone)]
+pub enum ParameterDetectedStateErrorKind {
+    CreatingFailed,
+    RemovingFailed,
+    CheckPresentFailed,
+    CheckAbsentFailed,
+    WaitingForDependenciesFailed,
 }
 
 #[derive(Debug, Clone)]
