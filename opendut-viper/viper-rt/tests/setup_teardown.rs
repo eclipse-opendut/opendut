@@ -1,16 +1,21 @@
 use googletest::prelude::*;
 use indoc::indoc;
+use viper_rt::compile::{Compilation, CompileResult, IdentifierFilter};
 use viper_rt::events::emitter;
 use viper_rt::run::{Outcome, ParameterBindings, Report};
 use viper_rt::source::Source;
 use viper_rt::ViperRuntime;
+
+async fn compile_test(runtime: &ViperRuntime, source: &Source) -> CompileResult<Compilation> {
+    runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await
+}
 
 #[tokio::test]
 async fn test_setup_class() -> Result<()> {
 
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"# VIPER_VERSION = 1.0
             from viper import unittest
             
@@ -23,7 +28,7 @@ async fn test_setup_class() -> Result<()> {
                 def test_print(self):
                     print(self.text)
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
     report.cases[0].tests.iter().for_each(|test| {
@@ -45,7 +50,7 @@ async fn test_teardown_class() -> Result<()> {
 
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -65,7 +70,7 @@ async fn test_teardown_class() -> Result<()> {
                 def test_teardown_called(self):
                     print(calls)
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -84,7 +89,7 @@ async fn test_setup() -> Result<()> {
 
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -101,7 +106,7 @@ async fn test_setup() -> Result<()> {
                 def test_assert_2(self):
                     self.assertEquals(3, self.x)
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let result = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -115,7 +120,7 @@ async fn test_teardown() -> Result<()> {
 
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -131,7 +136,7 @@ async fn test_teardown() -> Result<()> {
                 def test_assert_2(self):
                     self.assertEquals(3, self.x)
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let result = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -145,7 +150,7 @@ async fn test_calls_order() -> Result<()> {
 
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"# VIPER_VERSION = 1.0
             from viper import unittest
 
@@ -199,7 +204,7 @@ async fn test_calls_order() -> Result<()> {
                 def test_result(self):
                     print(calls)
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 

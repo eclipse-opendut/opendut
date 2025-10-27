@@ -1,17 +1,22 @@
 use googletest::prelude::*;
 use indoc::indoc;
 use viper_rt::common::TestSuiteIdentifier;
+use viper_rt::compile::{Compilation, CompileResult, IdentifierFilter};
 use viper_rt::events::emitter;
 use viper_rt::run::{Outcome, ParameterBindings, Report};
 use viper_rt::source::Source;
 use viper_rt::ViperRuntime;
+
+async fn compile_test(runtime: &ViperRuntime, source: &Source) -> CompileResult<Compilation> {
+    runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await
+}
 
 #[tokio::test]
 async fn test_that_compile_and_run_properly_work() -> Result<()> {
 
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -21,7 +26,7 @@ async fn test_that_compile_and_run_properly_work() -> Result<()> {
                 def test_awesomeness(self):
                     print("Awesome!")
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     assert_that!(suite.test_cases(), len(eq(1)));
     assert_that!(suite.test_cases()[0].name(), eq(String::from("MyTestCase")));
@@ -56,7 +61,7 @@ async fn test_that_compile_and_run_work_for_a_file_source() -> Result<()> {
     let path = std::path::absolute(std::path::PathBuf::from("tests/minimal.py"))?;
     let source = Source::try_from_path(TestSuiteIdentifier::try_from("minimal")?, &path)?;
 
-    let suite = runtime.compile(&source, &mut emitter::drain()).await?.into_suite();
+    let suite = compile_test(&runtime, &source).await?.into_suite();
 
     assert_that!(runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await, ok(anything()));
 
@@ -68,7 +73,7 @@ async fn test_that_classes_are_ignored_derived_from_test_case() -> Result<()> {
 
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -81,7 +86,7 @@ async fn test_that_classes_are_ignored_derived_from_test_case() -> Result<()> {
                 def test_awesomeness(self):
                     print("Awesome!")
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     assert_that!(suite.test_cases(), len(eq(1)));
     assert_that!(suite.test_cases()[0].tests(), len(eq(1)));
@@ -96,7 +101,7 @@ async fn test_that_functions_not_prefixed_with_test_are_ignored() -> Result<()> 
 
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -112,7 +117,7 @@ async fn test_that_functions_not_prefixed_with_test_are_ignored() -> Result<()> 
                 def test_sadness(self):
                     print("Awesome!")
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     assert_that!(suite.test_cases(), len(eq(1)));
     assert_that!(suite.test_cases()[0].tests(), len(eq(2)));
@@ -127,7 +132,7 @@ async fn test_that_results_reflect_the_outcome_of_a_test() -> Result<()> {
 
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -136,7 +141,7 @@ async fn test_that_results_reflect_the_outcome_of_a_test() -> Result<()> {
                 def test_failure(self):
                     raise Exception("Boom!")
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -151,7 +156,7 @@ async fn test_that_stdout_and_stderr_are_captured() -> Result<()> {
 
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -166,7 +171,7 @@ async fn test_that_stdout_and_stderr_are_captured() -> Result<()> {
                 def test_nothing(self):
                     pass
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let result  = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -189,7 +194,7 @@ async fn test_that_compilation_fails_if_no_version_is_given() -> Result<()> {
 
     let runtime = ViperRuntime::default();
 
-    let result = runtime.compile(&Source::embedded(
+    let result = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             from viper import unittest
             
@@ -197,7 +202,7 @@ async fn test_that_compilation_fails_if_no_version_is_given() -> Result<()> {
                 def test_hello(self):
                     pass
         "#)
-    ), &mut emitter::drain()).await;
+    )).await;
 
     assert_that!(result.is_err(), eq(true));
 

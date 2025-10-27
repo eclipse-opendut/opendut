@@ -6,6 +6,7 @@ use httpmock::prelude::*;
 use httpmock::MockServer;
 use indoc::indoc;
 use viper_rt::common::TestSuiteIdentifier;
+use viper_rt::compile::IdentifierFilter;
 use viper_rt::events::emitter;
 use viper_rt::run::ParameterBindings;
 use viper_rt::source::loaders::HttpSourceLoader;
@@ -42,7 +43,7 @@ async fn test_that_HttpSourceLoader_fetches_a_testsuite_via_http() -> Result<()>
         &server.url("/testsuite.py")
     )?;
 
-    let suite = runtime.compile(&source, &mut emitter::drain())
+    let suite = runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default())
         .await?.into_suite();
 
     assert_that!(suite.test_cases(), len(eq(1)));
@@ -69,7 +70,8 @@ async fn test_that_HttpSourceLoader_does_not_support_none_http_urls() -> Result<
             TestSuiteIdentifier::try_from("awesome_tests")?,
             "ftp://example.com/testsuite.py"
         )?,
-        &mut emitter::drain()
+        &mut emitter::drain(),
+        &IdentifierFilter::default()
     ).await, err(anything()));
 
     assert_that!(runtime.compile(
@@ -77,7 +79,8 @@ async fn test_that_HttpSourceLoader_does_not_support_none_http_urls() -> Result<
             TestSuiteIdentifier::try_from("testsuite")?,
             "file:///testsuite.py"
         )?,
-        &mut emitter::drain()
+        &mut emitter::drain(),
+        &IdentifierFilter::default()
     ).await, err(anything()));
 
     Ok(())

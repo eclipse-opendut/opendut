@@ -1,9 +1,13 @@
 use googletest::prelude::*;
 use indoc::indoc;
-use viper_rt::compile::Metadata;
+use viper_rt::compile::{Compilation, CompileResult, IdentifierFilter, Metadata};
 use viper_rt::events::emitter;
 use viper_rt::source::Source;
 use viper_rt::ViperRuntime;
+
+async fn compile_test(runtime: &ViperRuntime, source: &Source) -> CompileResult<Compilation> {
+    runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await
+}
 
 #[tokio::test]
 async fn test_metadata() -> Result<()> {
@@ -13,7 +17,7 @@ async fn test_metadata() -> Result<()> {
 
     let runtime = ViperRuntime::default();
 
-    let (metadata, _, _) = runtime.compile(&Source::embedded(
+    let (metadata, _, _) = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import metadata
@@ -22,7 +26,7 @@ async fn test_metadata() -> Result<()> {
                 description = "Just a test",
             )
         "#)
-    ), &mut emitter::drain()).await?.split();
+    )).await?.split();
 
     assert_that!(metadata, matches_pattern!(
         Metadata {
@@ -42,24 +46,24 @@ async fn test_metadata_is_empty_or_absent() -> Result<()> {
 
     let runtime = ViperRuntime::default();
 
-    let (metadata, _, _) = runtime.compile(&Source::embedded(
+    let (metadata, _, _) = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import metadata
             
             METADATA = metadata.Metadata()
         "#)
-    ), &mut emitter::drain()).await?.split();
+    )).await?.split();
 
     assert_that!(metadata, eq(&Metadata::default()));
 
-    let (metadata, _, _) = runtime.compile(&Source::embedded(
+    let (metadata, _, _) = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import metadata
             
         "#)
-    ), &mut emitter::drain()).await?.split();
+    )).await?.split();
 
     assert_that!(metadata, eq(&Metadata::default()));
 
@@ -74,7 +78,7 @@ async fn test_compilation_fails_due_to_wrong_metadata_attributes() -> Result<()>
 
     let runtime = ViperRuntime::default();
 
-    let result = runtime.compile(&Source::embedded(
+    let result = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import metadata
@@ -83,7 +87,7 @@ async fn test_compilation_fails_due_to_wrong_metadata_attributes() -> Result<()>
                 fubar = "BOOOM",
             )
         "#)
-    ), &mut emitter::drain()).await;
+    )).await;
 
     assert_that!(result, err(anything()));
 
