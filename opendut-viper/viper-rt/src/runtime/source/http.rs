@@ -14,6 +14,7 @@ use reqwest::Response;
 /// use viper_rt::source::loaders::HttpSourceLoader;
 /// use viper_rt::source::Source;
 /// use viper_rt::ViperRuntime;
+/// use viper_rt::compile::IdentifierFilter;
 ///
 /// #[tokio::main]
 /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -41,7 +42,7 @@ use reqwest::Response;
 /// # let url = server.url("/testsuite.py");
 ///   let source = Source::try_from_url_str("example".try_into()?, &url)?;
 ///
-///   runtime.compile(&source, &mut emitter::drain()).await?;
+///   runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await?;
 ///
 /// #   mock.assert();
 /// #
