@@ -13,6 +13,7 @@ use crate::source::{Source};
 /// use viper_rt::run::ParameterBindings;
 /// use viper_rt::source::Source;
 /// use viper_rt::ViperRuntime;
+/// use viper_rt::compile::IdentifierFilter;
 /// use viper_rt::source::loaders::EmbeddedSourceLoader;
 ///
 /// #[tokio::main]
@@ -22,16 +23,20 @@ use crate::source::{Source};
 ///         .with_source_loader(EmbeddedSourceLoader)
 ///         .build()?;
 ///
-///     runtime.compile(&Source::embedded(
-///         indoc!(r#"
-///             ## VIPER_VERSION = 1.0
-///             from viper import unittest
-///             
-///             class MyTestCase(unittest.TestCase):
-///                 def test_awesomeness(self):
-///                     print("Awesome!")
-///         "#)
-///     ), &mut emitter::drain()).await?;
+///     runtime.compile(
+///         &Source::embedded(
+    ///         indoc!(r#"
+    ///             ## VIPER_VERSION = 1.0
+    ///             from viper import unittest
+    ///
+    ///             class MyTestCase(unittest.TestCase):
+    ///                 def test_awesomeness(self):
+    ///                     print("Awesome!")
+    ///         "#)
+    ///     ),
+///         &mut emitter::drain(),
+///         &IdentifierFilter::default(),
+///     ).await?;
 ///
 ///     Ok(())
 /// }

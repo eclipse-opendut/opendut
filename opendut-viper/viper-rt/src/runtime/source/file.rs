@@ -13,6 +13,7 @@ use crate::source::Source;
 /// use viper_rt::source::Source;
 /// use viper_rt::source::loaders::SimpleFileSourceLoader;
 /// use viper_rt::ViperRuntime;
+/// use viper_rt::compile::IdentifierFilter;
 ///
 /// #[tokio::main]
 /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -24,7 +25,7 @@ use crate::source::Source;
 ///     let path = absolute(PathBuf::from("tests/minimal.py"))?;
 ///     let source = Source::try_from_path("minimal".try_into()?, &path)?;
 ///
-///     runtime.compile(&source, &mut emitter::drain()).await?;
+///     runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await?;
 ///
 ///     Ok(())
 /// }

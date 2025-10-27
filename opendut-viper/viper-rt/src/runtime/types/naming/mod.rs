@@ -35,6 +35,7 @@ pub trait Identifier : Debug + Display {
 /// use viper_rt::source::Source;
 /// use viper_rt::events::emitter;
 /// use viper_rt::ViperRuntime;
+/// use viper_rt::compile::IdentifierFilter;
 ///
 /// #[tokio::main]
 /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -47,7 +48,7 @@ pub trait Identifier : Debug + Display {
 ///     let path = absolute(PathBuf::from("tests/minimal.py"))?;
 ///
 ///     let source = Source::try_from_path("minimal".try_into()?, &path)?;
-///     let suite = runtime.compile(&source, &mut emitter::drain()).await?.into_suite();
+///     let suite = runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await?.into_suite();
 ///
 ///     assert_eq!(suite.name(), "minimal");
 ///
@@ -83,6 +84,7 @@ impl TestSuiteIdentifier {
 /// use viper_rt::source::Source;
 /// use viper_rt::ViperRuntime;
 /// use viper_rt::events::emitter;
+/// use viper_rt::compile::IdentifierFilter;
 /// use indoc::indoc;
 ///
 /// #[tokio::main]
@@ -98,7 +100,7 @@ impl TestSuiteIdentifier {
 ///             pass
 ///     "#));
 ///
-///     let suite = runtime.compile(&source, &mut emitter::drain()).await?.into_suite();
+///     let suite = runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await?.into_suite();
 ///     let case = &suite.test_cases()[0];
 ///
 ///     assert_eq!(case.identifier(), "<embedded>::MyTestCase");
@@ -164,6 +166,7 @@ impl TestCaseIdentifier {
 /// use viper_rt::source::Source;
 /// use viper_rt::ViperRuntime;
 /// use viper_rt::events::emitter;
+/// use viper_rt::compile::IdentifierFilter;
 /// use indoc::indoc;
 ///
 /// #[tokio::main]
@@ -180,7 +183,7 @@ impl TestCaseIdentifier {
 ///                 pass
 ///     "#));
 ///
-///     let suite = runtime.compile(&source, &mut emitter::drain()).await?.into_suite();
+///     let suite = runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await?.into_suite();
 ///     let test = &suite.test_cases()[0].tests()[0];
 ///
 ///     assert_eq!(test.identifier(), "<embedded>::MyTestCase::test_awesomeness");

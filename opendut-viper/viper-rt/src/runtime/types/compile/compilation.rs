@@ -19,6 +19,7 @@ use std::fmt::Debug;
 /// # use viper_rt::run::{Report, Outcome, ParameterBindings};
 /// # use viper_rt::source::Source;
 /// # use viper_rt::ViperRuntime;
+/// # use viper_rt::compile::IdentifierFilter;
 /// #
 /// # #[tokio::main]
 /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -36,7 +37,7 @@ use std::fmt::Debug;
 /// #       "#)
 /// #   );
 /// #
-/// let compilation = viper.compile(&source, &mut emitter::drain()).await?;
+/// let compilation = viper.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await?;
 ///
 /// let metadata = compilation.metadata();
 /// let parameters = compilation.parameters();

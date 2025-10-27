@@ -34,6 +34,7 @@
 //! # use viper_rt::run::{Report, Outcome, ParameterBindings};
 //! # use viper_rt::source::Source;
 //! # use viper_rt::ViperRuntime;
+//! # use viper_rt::compile::IdentifierFilter;
 //! # use indoc::indoc;
 //! #
 //! # #[tokio::main]
@@ -58,7 +59,7 @@
 //! def fetch_opinion():                            # (10)
 //!     return True
 //! #     "#));
-//! #     let (_, _, suite) = viper.compile(&source, &mut emitter::drain()).await?.split();
+//! #     let (_, _, suite) = viper.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await?.split();
 //! #     let report = viper.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 //! #     assert!(report.is_success());
 //! #     Ok(())
@@ -85,6 +86,7 @@
 //! # use viper_rt::run::{Report, Outcome, ParameterBindings};
 //! # use viper_rt::source::Source;
 //! # use viper_rt::ViperRuntime;
+//! # use viper_rt::compile::IdentifierFilter;
 //! # use indoc::indoc;
 //! #
 //! # #[tokio::main]
@@ -106,7 +108,7 @@
 //!     def tearDownClass(cls): # (4)
 //!         pass
 //! #     "#));
-//! #     let (_, _, suite) = viper.compile(&source, &mut emitter::drain()).await?.split();
+//! #     let (_, _, suite) = viper.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await?.split();
 //! #     let report = viper.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 //! #     assert!(report.is_success());
 //! #     Ok(())
@@ -127,6 +129,7 @@
 //! # use viper_rt::run::{Report, Outcome, ParameterBindings};
 //! # use viper_rt::source::Source;
 //! # use viper_rt::ViperRuntime;
+//! # use viper_rt::compile::IdentifierFilter;
 //! # use indoc::indoc;
 //! #
 //! # #[tokio::main]
@@ -146,7 +149,7 @@
 //!         self.assertIsNone(None)     # Check if value is None
 //! #     "#));
 //! #
-//! #     let (_, _, suite) = viper.compile(&source, &mut emitter::drain()).await?.split();
+//! #     let (_, _, suite) = viper.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await?.split();
 //! #     let report = viper.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 //! #     assert!(report.is_success());
 //! #     Ok(())
@@ -162,6 +165,7 @@
 //! # use viper_rt::events::emitter;
 //! # use viper_rt::run::{Report, Outcome, ParameterBindings};
 //! # use viper_rt::compile::Metadata;
+//! # use viper_rt::compile::IdentifierFilter;
 //! # use viper_rt::source::Source;
 //! # use viper_rt::ViperRuntime;
 //! # use indoc::indoc;
@@ -179,7 +183,7 @@
 //!     description="Verifies the awesomeness of my software.",
 //! )
 //! #     "#));
-//! #     let (metadata, _, suite) = viper.compile(&source, &mut emitter::drain()).await?.split();
+//! #     let (metadata, _, suite) = viper.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await?.split();
 //! #     let report = viper.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 //! #     assert_that!(metadata, matches_pattern!(
 //! #         Metadata {
@@ -215,6 +219,7 @@
 //! # use viper_rt::run::{BindingValue , ParameterBindings, Report};
 //! # use viper_rt::source::Source;
 //! # use viper_rt::ViperRuntime;
+//! # use viper_rt::compile::IdentifierFilter;
 //! #
 //! # #[tokio::main]
 //! # async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -239,7 +244,7 @@
 //!             print(f"Hello {name}!")
 //! #     "#));
 //! #
-//! #     let (_, parameters, suite) = viper.compile(&source, &mut emitter::drain()).await?.split();
+//! #     let (_, parameters, suite) = viper.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await?.split();
 //! #     let mut bindings = ParameterBindings::from(parameters);
 //! #     bindings.bind(&ParameterName::try_from("name")?, BindingValue::TextValue(String::from("Alice")))?;
 //! #     bindings.bind(&ParameterName::try_from("age")?, BindingValue::NumberValue(34))?;
@@ -264,6 +269,7 @@
 //! # use viper_rt::compile::ParameterName;
 //! # use viper_rt::source::Source;
 //! # use viper_rt::ViperRuntime;
+//! # use viper_rt::compile::IdentifierFilter;
 //! # use indoc::indoc;
 //! #
 //! # #[tokio::main]
@@ -285,7 +291,7 @@
 //! #    def test_something(self):
 //! #        self.assertEquals(self.parameters.get(NAME), "Vivian")
 //! #     "#));
-//! #     let (_, parameters, suite) = viper.compile(&source, &mut emitter::drain()).await?.split();
+//! #     let (_, parameters, suite) = viper.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await?.split();
 //! #     let mut bindings = ParameterBindings::from(parameters);
 //! #     bindings.bind(&ParameterName::try_from("name")?, BindingValue::TextValue(String::from("Vivian")))?;
 //! #     let report = viper.run(suite, bindings.complete()?, &mut emitter::drain()).await?;
@@ -304,6 +310,7 @@
 //! # use viper_rt::compile::ParameterName;
 //! # use viper_rt::source::Source;
 //! # use viper_rt::ViperRuntime;
+//! # use viper_rt::compile::IdentifierFilter;
 //! # use indoc::indoc;
 //! #
 //! # #[tokio::main]
@@ -326,7 +333,7 @@
 //! #    def test_something(self):
 //! #        self.assertEquals(self.parameters.get(PORT), 8121)
 //! #     "#));
-//! #     let (_, parameters, suite) = viper.compile(&source, &mut emitter::drain()).await?.split();
+//! #     let (_, parameters, suite) = viper.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await?.split();
 //! #     let mut bindings = ParameterBindings::from(parameters);
 //! #     bindings.bind(&ParameterName::try_from("server-port")?, BindingValue::NumberValue(8121))?;
 //! #     let report = viper.run(suite, bindings.complete()?, &mut emitter::drain()).await?;
@@ -345,6 +352,7 @@
 //! # use viper_rt::compile::ParameterName;
 //! # use viper_rt::source::Source;
 //! # use viper_rt::ViperRuntime;
+//! # use viper_rt::compile::IdentifierFilter;
 //! # use indoc::indoc;
 //! #
 //! # #[tokio::main]
@@ -365,7 +373,7 @@
 //! #    def test_something(self):
 //! #        self.assertFalse(self.parameters.get(ENABLED))
 //! #     "#));
-//! #     let (_, parameters, suite) = viper.compile(&source, &mut emitter::drain()).await?.split();
+//! #     let (_, parameters, suite) = viper.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await?.split();
 //! #     let mut bindings = ParameterBindings::from(parameters);
 //! #     bindings.bind(&ParameterName::try_from("spcial-tests")?, BindingValue::BooleanValue(false))?;
 //! #     let report = viper.run(suite, bindings.complete()?, &mut emitter::drain()).await?;
@@ -390,6 +398,7 @@
 //! # use viper_rt::run::{Report, Outcome, ParameterBindings};
 //! # use viper_rt::source::Source;
 //! # use viper_rt::ViperRuntime;
+//! # use viper_rt::compile::IdentifierFilter;
 //! # use indoc::indoc;
 //! #
 //! # #[tokio::main]
@@ -408,7 +417,7 @@
 //!             baz=42,
 //!         )
 //! #     "#));
-//! #     let (_, _, suite) = viper.compile(&source, &mut emitter::drain()).await?.split();
+//! #     let (_, _, suite) = viper.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await?.split();
 //! #     let report = viper.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 //! #     assert!(report.is_success());
 //! #     Ok(())
@@ -426,6 +435,7 @@
 //! # use viper_rt::run::{Report, Outcome, ParameterBindings};
 //! # use viper_rt::source::Source;
 //! # use viper_rt::ViperRuntime;
+//! # use viper_rt::compile::IdentifierFilter;
 //! # use indoc::indoc;
 //! #
 //! # #[tokio::main]
@@ -443,7 +453,7 @@
 //!             "report/report.pdf",
 //!         )
 //! #     "#));
-//! #     let (_, _, suite) = viper.compile(&source, &mut emitter::drain()).await?.split();
+//! #     let (_, _, suite) = viper.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await?.split();
 //! #     let report = viper.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 //! #     assert!(report.is_success());
 //! #     Ok(())
@@ -470,6 +480,7 @@
 //! # use viper_rt::run::{Report, Outcome, ParameterBindings};
 //! # use viper_rt::source::Source;
 //! # use viper_rt::ViperRuntime;
+//! # use viper_rt::compile::IdentifierFilter;
 //! # use indoc::indoc;
 //! #
 //! # #[tokio::main]
@@ -493,7 +504,7 @@
 //!         exit_code = self.container.wait(container)
 //!         self.assertEquals(0, exit_code)
 //! #     "#));
-//! #     let (_, _, suite) = viper.compile(&source, &mut emitter::drain()).await?.split();
+//! #     let (_, _, suite) = viper.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await?.split();
 //! #     let _ = viper.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 //! #     Ok(())
 //! # }

@@ -8,6 +8,7 @@
 //! use viper_rt::run::{Report, Outcome, ParameterBindings};
 //! use viper_rt::source::Source;
 //! use viper_rt::ViperRuntime; 
+//! use viper_rt::compile::IdentifierFilter;
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -25,7 +26,7 @@
 //!         "#)
 //!     );
 //!
-//!     let (_, _, suite) = viper.compile(&source, &mut emitter::drain()).await?.split();
+//!     let (_, _, suite) = viper.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await?.split();
 //!
 //!     let report = viper.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 //!
@@ -129,13 +130,16 @@ pub mod compile {
             ApiVersion,
             SourceCode,
         },
+        compilation::{
+            Compilation,
+        },
         error::{
             CompilationError,
             CompilationErrorKind,
             CompileResult,
         },
-        compilation::{
-            Compilation,
+        filter::{
+            IdentifierFilter,
         },
         metadata::Metadata,
         parameters::{
