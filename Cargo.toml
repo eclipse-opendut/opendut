@@ -25,7 +25,6 @@ resolver = "3"
 [workspace.package]
 version = "0.8.0-alpha"
 edition = "2024"
-rust-version = "1.85"  # Minimum supported version
 license = "Apache-2.0"
 repository = "https://github.com/eclipse-opendut/opendut"
 

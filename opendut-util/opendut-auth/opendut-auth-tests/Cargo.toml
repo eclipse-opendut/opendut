@@ -3,7 +3,6 @@ name = "opendut-auth-tests"
 description = "opendut auth integration tests"
 version.workspace = true
 edition.workspace = true
-rust-version.workspace = true
 license.workspace = true
 
 [dependencies]

@@ -2,7 +2,6 @@
 name = "viper-rt"
 version = "0.1.0"
 edition.workspace = true
-rust-version.workspace = true
 license.workspace = true
 
 [features] # All crate features are documented in the `lib.rs` file.
