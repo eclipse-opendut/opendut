@@ -26,7 +26,7 @@ clap = { version = "4.5.31"}
 console = { version = "0.16.*" }
 futures = { version = "0.3.31", default-features = false }
 googletest = { version = "0.14.*" }
-httpmock = { version = "0.8.0-alpha.1" }
+httpmock = { version = "0.8.2" }
 indexmap = { version = "2.*" } # align with 'rustpython-vm'
 indicatif = { version = "0.18.*" }
 indoc = { version = "2.0.*" }
