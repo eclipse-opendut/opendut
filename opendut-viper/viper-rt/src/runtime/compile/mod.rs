@@ -3,7 +3,7 @@ mod inspect;
 mod prepare;
 mod py;
 
-use crate::compile::{Compilation, CompileEvent};
+use crate::compile::{Compilation, CompileEvent, IdentifierFilter};
 use crate::runtime::compile::inspect::inspect;
 use crate::runtime::compile::prepare::prepare_source_code;
 use crate::runtime::compile::py::{compile_source_code, create_interpreter};
@@ -17,7 +17,7 @@ pub async fn compile(
     source: &Source,
     context: &Context,
     emitter: &mut dyn EventEmitter<CompileEvent>,
-    identifier_filter: Option<String>,
+    identifier_filter: &IdentifierFilter,
 ) -> CompileResult<Compilation> {
 
     debug!("Compiling test suite '{}'.", source.identifier);
@@ -43,7 +43,7 @@ pub async fn compile(
 pub async fn compile_source(
     source: &Source,
     context: &Context,
-    identifier_filter: Option<String>,
+    identifier_filter: &IdentifierFilter,
 ) -> CompileResult<Compilation> {
 
     let source_code = prepare_source_code(source, context).await?;

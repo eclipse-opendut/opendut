@@ -17,7 +17,7 @@ use tokio_stream::wrappers::ReceiverStream;
 use tokio_util::sync::{PollSendError, PollSender};
 use tracing_subscriber::EnvFilter;
 use viper_rt::common::TestSuiteIdentifier;
-use viper_rt::compile::CompileEvent;
+use viper_rt::compile::{CompileEvent, IdentifierFilter};
 use viper_rt::containers::ContainerRuntime;
 use viper_rt::events::emitter;
 use viper_rt::run::{ParameterBindings, RunEvent};
@@ -122,6 +122,9 @@ async fn build_and_run(params_from_file: Option<String>, test_identifier_filter:
     let files = fs::read_dir("./src").unwrap();
 
     let suite_identifier_filter = test_identifier_filter.as_ref().map(|filter| SuiteIdentifierFilter::parse(filter));
+    let test_identifier_filter = test_identifier_filter
+        .map(|filter| IdentifierFilter::parse(&filter))
+        .unwrap_or_default();
 
     let render_task = {
         let (sender, receiver) = tokio::sync::mpsc::channel::<Event>(64);
@@ -164,7 +167,7 @@ async fn build_and_run(params_from_file: Option<String>, test_identifier_filter:
 
             let mut emitter = emitter::sink(new_compile_event_sink(&sender));
 
-            let (_, descriptors, suite) = runtime.compile(&source, &mut emitter, Clone::clone(&test_identifier_filter)).await?.split();
+            let (_, descriptors, suite) = runtime.compile(&source, &mut emitter, &test_identifier_filter).await?.split();
 
             let mut bindings = ParameterBindings::from(Clone::clone(&descriptors));
 

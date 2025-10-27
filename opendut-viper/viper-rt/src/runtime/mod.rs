@@ -1,3 +1,4 @@
+use crate::compile::IdentifierFilter;
 use crate::runtime::ctx::Context;
 
 use crate::runtime::options::{ViperBuilder, ViperOptions};
@@ -60,7 +61,7 @@ impl ViperRuntime {
         &self,
         source: &types::source::Source,
         emitter: &mut dyn emitter::EventEmitter<types::compile::event::CompileEvent>,
-        identifier_filter: Option<String>
+        identifier_filter: &IdentifierFilter,
     ) -> types::compile::error::CompileResult<types::compile::compilation::Compilation> {
         compile::compile(source, &self.context, emitter, identifier_filter).await
     }
