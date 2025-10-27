@@ -16,7 +16,7 @@ use viper_py::parameters::parameters::{PyBooleanParameterDescriptor, PyNumberPar
 use viper_py::unittest::unittest::TestCase as PyTestCase;
 use crate::runtime::types::compile::filter::{FilterError, IdentifierFilter};
 
-pub fn inspect(source_code: SourceCode, module: PyRef<PyModule>, interpreter: Interpreter, identifier_filter: Option<String>)
+pub fn inspect(source_code: SourceCode, module: PyRef<PyModule>, interpreter: Interpreter, identifier_filter: &IdentifierFilter)
     -> Result<(Metadata, ParameterDescriptors, TestSuite), InspectionError>
 {
     let SourceCode { identifier, code: _code, version } = source_code;
@@ -24,7 +24,7 @@ pub fn inspect(source_code: SourceCode, module: PyRef<PyModule>, interpreter: In
     Ok((metadata, parameters, TestSuite { identifier, version, interpreter, module, cases }))
 }
 
-fn traverse_code(test_suite_name: &TestSuiteIdentifier, py_module: &PyRef<PyModule>, interpreter: &Interpreter, identifier_filter: Option<String>)
+fn traverse_code(test_suite_name: &TestSuiteIdentifier, py_module: &PyRef<PyModule>, interpreter: &Interpreter, identifier_filter: &IdentifierFilter)
     -> Result<(Vec<TestCase>, Metadata, ParameterDescriptors), InspectionError>
 {
     let test_case_base_class = PyTestCase::static_type();
@@ -32,8 +32,6 @@ fn traverse_code(test_suite_name: &TestSuiteIdentifier, py_module: &PyRef<PyModu
     let mut metadata = Option::<Metadata>::None;
     let mut parameters = ParameterDescriptors::new();
     let mut test_cases = Vec::<TestCase>::new();
-
-    let identifier_filter = identifier_filter.map(|filter| IdentifierFilter::parse(&filter));
 
     for (key, value) in py_module.dict().into_iter() {
         if let Some(ty) = value.payload::<PyType>() {
@@ -44,11 +42,10 @@ fn traverse_code(test_suite_name: &TestSuiteIdentifier, py_module: &PyRef<PyModu
             let test_case_name = TestCaseIdentifier::new(test_suite_name, &test_case_name);
             let is_test_class = ty.bases.read().iter().any(|class| class.is(test_case_base_class));
             if is_test_class {
-                if let Some(filter) = &identifier_filter
-                    && filter.matches_case(&test_case_name).not() {
+                if identifier_filter.matches_case(&test_case_name).not() {
                     continue;
                 }
-                test_cases.push(make_test_case(ty, test_case_name, interpreter, &identifier_filter)?)
+                test_cases.push(make_test_case(ty, test_case_name, interpreter, identifier_filter)?)
             }
         }
         else if let Some(data) = value.payload::<PyMetadata>() {
@@ -72,16 +69,15 @@ fn traverse_code(test_suite_name: &TestSuiteIdentifier, py_module: &PyRef<PyModu
         }
     }
 
-    if let Some(filter) = identifier_filter
-        && let Some(case_identifier_filter) = filter.case_identifier
-        && test_cases.is_empty() {
-        return Err(InspectionError::new_invalid_filter_error(FilterError::new_unknown_test_case_error(case_identifier_filter)));
+    if let Some(case_identifier_filter) = &identifier_filter.case_identifier
+    && test_cases.is_empty() {
+        return Err(InspectionError::new_invalid_filter_error(FilterError::new_unknown_test_case_error(case_identifier_filter.to_owned())));
     }
 
     Ok((test_cases, metadata.unwrap_or_default(), parameters))
 }
 
-fn make_test_case(test_type: &PyType, test_case_name: TestCaseIdentifier, interpreter: &Interpreter, identifier_filter: &Option<IdentifierFilter>) -> Result<TestCase, InspectionError> {
+fn make_test_case(test_type: &PyType, test_case_name: TestCaseIdentifier, interpreter: &Interpreter, identifier_filter: &IdentifierFilter) -> Result<TestCase, InspectionError> {
     const FUNCTION_ATTRIBUTE_NAME: &str = "__func__";
     interpreter.enter(|vm| {
         let mut description: Option<String> = None;
@@ -98,8 +94,7 @@ fn make_test_case(test_type: &PyType, test_case_name: TestCaseIdentifier, interp
             if value.is_callable() {
                 if name.starts_with("test") {
                     let identifier = TestIdentifier::new(&test_case_name, &name);
-                    if let Some(filter) = &identifier_filter
-                        && filter.matches_test(&identifier).not() {
+                    if identifier_filter.matches_test(&identifier).not() {
                         continue;
                     }
                     tests.push(Test { identifier, function: value.clone() })
@@ -127,10 +122,9 @@ fn make_test_case(test_type: &PyType, test_case_name: TestCaseIdentifier, interp
             }
         }
 
-        if let Some(filter) = identifier_filter
-            && let Some(test_identifier_filter) = &filter.test_identifier
-            && tests.is_empty() {
-            return Err(InspectionError::new_invalid_filter_error(FilterError::new_unknown_test_error(test_identifier_filter.to_string())));
+        if let Some(test_identifier_filter) = &identifier_filter.test_identifier
+        && tests.is_empty() {
+            return Err(InspectionError::new_invalid_filter_error(FilterError::new_unknown_test_error(test_identifier_filter.to_owned())));
         }
 
         Ok(TestCase { identifier: test_case_name, description, setup_fn, teardown_fn, setup_class_fn, teardown_class_fn, tests })

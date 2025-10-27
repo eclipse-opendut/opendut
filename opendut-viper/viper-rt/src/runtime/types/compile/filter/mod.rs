@@ -3,7 +3,7 @@ pub use error::FilterError;
 
 use crate::common::{Identifier, TestCaseIdentifier, TestIdentifier};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct IdentifierFilter {
     pub case_identifier: Option<String>,
     pub test_identifier: Option<String>,
