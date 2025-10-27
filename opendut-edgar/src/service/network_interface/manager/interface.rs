@@ -190,13 +190,12 @@ fn find_interface_alias(attributes: &[LinkAttribute]) -> Option<String> {
 fn determine_gre_interface(link_message: &LinkMessage) -> Result<NetlinkInterfaceKind, NetlinkConversionError> {
     fn extract_address(info_gre_tap: &[InfoGreTap], kind: u16) -> Option<Ipv4Addr> {
         info_gre_tap.iter().find_map(|info_gre_tap|{
-            if let InfoGreTap::Other(nla) = info_gre_tap {
-                if nla.kind() == kind {
-                    let buffer: &mut [u8; 4] = &mut [0; 4];
-                    nla.emit_value(buffer);
-                    let octets: [u8; 4] = buffer[0..4].try_into().ok()?;
-                    return Some(Ipv4Addr::from(octets))
-                }
+            if let InfoGreTap::Other(nla) = info_gre_tap
+            && nla.kind() == kind {
+                let buffer: &mut [u8; 4] = &mut [0; 4];
+                nla.emit_value(buffer);
+                let octets: [u8; 4] = buffer[0..4].try_into().ok()?;
+                return Some(Ipv4Addr::from(octets))
             }
             None
         })

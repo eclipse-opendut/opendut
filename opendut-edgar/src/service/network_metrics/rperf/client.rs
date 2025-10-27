@@ -97,34 +97,35 @@ async fn launch_rperf_client(
                     while let Ok(Some(line)) = stdout_lines.next_line().await {
                         if line.contains("stream-average bytes per second") {
                             trace!("Rperf Client STDOUT: {}", line);
-                            if let Some(captures) = megabits_pattern.captures(&line) {
-                                if let Some(number) = captures.get(1) {
-                                    let number_str = number.as_str();
-                                    match operation {
-                                        RperfOperation::Send => match number_str.parse::<f64>() {
-                                            Ok(value) => {
-                                                megabits_second_send_mutex.lock().await
-                                                    .record(value, &[KeyValue::new("peer_ip_address", vpn_address.to_string())]);
-                                                debug!("Sending to {} in megabits/second: {}", vpn_address.to_string(), value);
-                                            },
-                                            Err(cause) => {
-                                                error!("Failed to parse rperf bandwidth: {}", cause);
-                                                return Err(RperfError::BandwidthParse { message: "Failed to parse rperf bandwidth".to_string(), cause });
-                                            }
+
+                            if let Some(captures) = megabits_pattern.captures(&line)
+                            && let Some(number) = captures.get(1) {
+                                let number_str = number.as_str();
+
+                                match operation {
+                                    RperfOperation::Send => match number_str.parse::<f64>() {
+                                        Ok(value) => {
+                                            megabits_second_send_mutex.lock().await
+                                                .record(value, &[KeyValue::new("peer_ip_address", vpn_address.to_string())]);
+                                            debug!("Sending to {} in megabits/second: {}", vpn_address.to_string(), value);
                                         },
-                                        RperfOperation::Receive => match number_str.parse::<f64>() {
-                                            Ok(value) => {
-                                                megabits_second_receive_mutex.lock().await
-                                                    .record(value, &[KeyValue::new("peer_ip_address", vpn_address.to_string())]);
-                                                debug!("Receiving from {} in megabits/second: {}", vpn_address.to_string(), value);
-                                            },
-                                            Err(cause) => {
-                                                error!("Failed to parse rperf bandwidth: {}", cause);
-                                                return Err(RperfError::BandwidthParse { message: "Failed to parse rperf bandwidth".to_string(), cause });
-                                            }
+                                        Err(cause) => {
+                                            error!("Failed to parse rperf bandwidth: {}", cause);
+                                            return Err(RperfError::BandwidthParse { message: "Failed to parse rperf bandwidth".to_string(), cause });
+                                        }
+                                    },
+                                    RperfOperation::Receive => match number_str.parse::<f64>() {
+                                        Ok(value) => {
+                                            megabits_second_receive_mutex.lock().await
+                                                .record(value, &[KeyValue::new("peer_ip_address", vpn_address.to_string())]);
+                                            debug!("Receiving from {} in megabits/second: {}", vpn_address.to_string(), value);
                                         },
-                                        RperfOperation::Default => {} //do nothing
-                                    }
+                                        Err(cause) => {
+                                            error!("Failed to parse rperf bandwidth: {}", cause);
+                                            return Err(RperfError::BandwidthParse { message: "Failed to parse rperf bandwidth".to_string(), cause });
+                                        }
+                                    },
+                                    RperfOperation::Default => {} //do nothing
                                 }
                             }
                         }

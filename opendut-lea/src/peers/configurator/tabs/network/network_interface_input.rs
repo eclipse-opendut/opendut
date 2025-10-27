@@ -213,31 +213,30 @@ where A: Fn(NetworkInterfaceName, UserNetworkInterfaceConfiguration) + 'static {
                     label = "Add network interface"
                     show_label = true
                     on_action = move || {
-                        if let UserInputValue::Right(value) = interface_name_getter.get_untracked() {
-                            if let Ok(name) = NetworkInterfaceName::try_from(value) {
-                                let configuration = match getter_type.get() {
-                                    InterfaceKind::Ethernet => {
-                                        NetworkInterfaceConfiguration::Ethernet
-                                    }
-                                    InterfaceKind::Can => {
-                                        let sample_point = sample_point_getter.get().right().unwrap();
-                                        let data_sample_point = data_sample_point_getter.get().right().unwrap();
-                                        let bitrate = bitrate_getter.get().right().unwrap();
-                                        let data_bitrate = data_bitrate_getter.get().right().unwrap();
+                        if let UserInputValue::Right(value) = interface_name_getter.get_untracked()
+                        && let Ok(name) = NetworkInterfaceName::try_from(value) {
+                            let configuration = match getter_type.get() {
+                                InterfaceKind::Ethernet => {
+                                    NetworkInterfaceConfiguration::Ethernet
+                                }
+                                InterfaceKind::Can => {
+                                    let sample_point = sample_point_getter.get().right().unwrap();
+                                    let data_sample_point = data_sample_point_getter.get().right().unwrap();
+                                    let bitrate = bitrate_getter.get().right().unwrap();
+                                    let data_bitrate = data_bitrate_getter.get().right().unwrap();
 
-                                        NetworkInterfaceConfiguration::Can {
-                                            bitrate: bitrate.parse::<u32>().unwrap() * 1000,
-                                            sample_point: CanSamplePoint::try_from(sample_point.parse::<f32>().unwrap()).unwrap(),
-                                            fd: can_fd_getter_type.get(),
-                                            data_bitrate: data_bitrate.parse::<u32>().unwrap() * 1000,
-                                            data_sample_point: CanSamplePoint::try_from(data_sample_point.parse::<f32>().unwrap()).unwrap(),
-                                        }
+                                    NetworkInterfaceConfiguration::Can {
+                                        bitrate: bitrate.parse::<u32>().unwrap() * 1000,
+                                        sample_point: CanSamplePoint::try_from(sample_point.parse::<f32>().unwrap()).unwrap(),
+                                        fd: can_fd_getter_type.get(),
+                                        data_bitrate: data_bitrate.parse::<u32>().unwrap() * 1000,
+                                        data_sample_point: CanSamplePoint::try_from(data_sample_point.parse::<f32>().unwrap()).unwrap(),
                                     }
-                                };
-                                let configuration = UserNetworkInterfaceConfiguration::from(configuration);
-                                on_action(name, configuration);
-                                interface_name_setter.set(UserInputValue::Right(String::new()));
-                            }
+                                }
+                            };
+                            let configuration = UserNetworkInterfaceConfiguration::from(configuration);
+                            on_action(name, configuration);
+                            interface_name_setter.set(UserInputValue::Right(String::new()));
                         }
                     }
                 />

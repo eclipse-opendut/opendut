@@ -87,11 +87,10 @@ impl ObservePeersOnline {
     }
     
     fn peer_online(&mut self, peer_id: PeerId, connection_state: PeerConnectionState) {
-        if let PeerConnectionState::Online { remote_host } = connection_state {
-            if let Entry::Occupied(mut entry) = self.peers.entry(peer_id) {
-                debug!("Observed peer <{peer_id}> is now online with remote address <{remote_host}>.");
-                entry.insert(connection_state);
-            }
+        if let PeerConnectionState::Online { remote_host } = connection_state
+        && let Entry::Occupied(mut entry) = self.peers.entry(peer_id) {
+            debug!("Observed peer <{peer_id}> is now online with remote address <{remote_host}>.");
+            entry.insert(connection_state);
         }
     }
 

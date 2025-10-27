@@ -38,11 +38,10 @@ impl Task for CreateGreInterfaces {
 
         let leader = {
             let mut leader = self.leader.clone();
-            if let Leader::Remote(remote_ip) = leader {
-                if remote_ip == local_ip {
-                    debug!("Address of Leader::Remote '{remote_ip}' is local address. Continuing as Leader::Local.");
-                    leader = Leader::Local;
-                }
+            if let Leader::Remote(remote_ip) = leader
+            && remote_ip == local_ip {
+                debug!("Address of Leader::Remote '{remote_ip}' is local address. Continuing as Leader::Local.");
+                leader = Leader::Local;
             }
             leader
         };

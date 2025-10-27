@@ -28,14 +28,12 @@ impl Resources<'_> {
                 })
                 .ok_or(DeleteClusterDeploymentError::ClusterDeploymentNotFound { cluster_id })??;
 
-        if let Some(cluster) = cluster {
-            if let Vpn::Enabled { vpn_client } = vpn {
-                vpn_client.delete_cluster(cluster_id).await
-                    .map_err(|source| DeleteClusterDeploymentError::VpnClient { cluster_id, cluster_name: cluster.name.clone(), source })?;
-            }
-
-            // TODO: unassign cluster for each peer
+        if let Some(cluster) = cluster
+        && let Vpn::Enabled { vpn_client } = vpn {
+            vpn_client.delete_cluster(cluster_id).await
+                .map_err(|source| DeleteClusterDeploymentError::VpnClient { cluster_id, cluster_name: cluster.name.clone(), source })?;
         }
+        // TODO: unassign cluster for each peer
 
         Ok(deployment)
     }
