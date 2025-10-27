@@ -2,7 +2,7 @@ use indoc::indoc;
 use std::error::Error;
 use std::ops::Not;
 use tracing::info;
-use viper_rt::compile::ParameterName;
+use viper_rt::compile::{IdentifierFilter, ParameterName};
 use viper_rt::containers::ContainerRuntime;
 use viper_rt::events::emitter;
 use viper_rt::run::{BindingValue, Outcome, ParameterBindings, Report};
@@ -123,7 +123,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "#)
     );
 
-    let (_, parameters, suite) = viper.compile(&source, &mut emitter::drain(), None).await?.split();
+    let (_, parameters, suite) = viper.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await?.split();
 
     let mut bindings = ParameterBindings::from(parameters);
 
