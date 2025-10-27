@@ -2,17 +2,22 @@ use googletest::prelude::*;
 use indoc::indoc;
 use std::fs;
 use tempfile::NamedTempFile;
+use viper_rt::compile::{Compilation, CompileResult, IdentifierFilter};
 use viper_rt::events::emitter;
 use viper_rt::run::{Outcome, ParameterBindings, Report};
 use viper_rt::source::Source;
 use viper_rt::ViperRuntime;
+
+async fn compile_test(runtime: &ViperRuntime, source: &Source) -> CompileResult<Compilation> {
+    runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await
+}
 
 #[tokio::test]
 async fn test_open_file() -> Result<()> {
 
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import file, unittest
@@ -22,7 +27,7 @@ async fn test_open_file() -> Result<()> {
                 def test_file_open(self):
                     f = open("tests/test.txt")
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -36,7 +41,7 @@ async fn test_open_file_that_does_not_exist() -> Result<()> {
 
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import file, unittest
@@ -46,7 +51,7 @@ async fn test_open_file_that_does_not_exist() -> Result<()> {
                 def test_file_open_fail(self):
                     f = open("tests/i_dont_exist.txt")
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -63,7 +68,7 @@ async fn test_iter_file() -> Result<()> {
 
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import file, unittest
@@ -79,7 +84,7 @@ async fn test_iter_file() -> Result<()> {
                     for line in f:
                         print(line)
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
     
@@ -96,7 +101,7 @@ async fn test_read_write() -> Result<()> {
     let tmp_file = NamedTempFile::new()?;
     let path = tmp_file.path().to_str().unwrap();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         format!(r#"# VIPER_VERSION = 1.0
 from viper import unittest
 
@@ -109,7 +114,7 @@ class MyTestCase(unittest.TestCase):
         tmp_file = open("{path}", "w+")
         tmp_file.write(content)
 "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -130,7 +135,7 @@ async fn test_readline_write() -> Result<()> {
     let tmp_file = NamedTempFile::new()?;
     let path = tmp_file.path().to_str().unwrap();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         format!(r#"# VIPER_VERSION = 1.0
 from viper import unittest
 
@@ -146,7 +151,7 @@ class MyTestCase(unittest.TestCase):
         tmp_file.write(secondReadline)
 
 "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -167,7 +172,7 @@ async fn test_readlines_write() -> Result<()> {
     let tmp_file = NamedTempFile::new()?;
     let path = tmp_file.path().to_str().unwrap();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         format!(r#"# VIPER_VERSION = 1.0
 from viper import unittest
 
@@ -181,7 +186,7 @@ class MyTestCase(unittest.TestCase):
         tmp_file.writelines(content)
 
 "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -202,7 +207,7 @@ async fn test_write() -> Result<()> {
     let tmp_file = NamedTempFile::new()?;
     let path = tmp_file.path().to_str().unwrap();
     
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         format!(r#"# VIPER_VERSION = 1.0
 from viper import unittest
 
@@ -212,7 +217,7 @@ class MyTestCase(unittest.TestCase):
         f = open("{path}", "w+")
         f.write("Hello, I'm a test input! :D")
 "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -233,7 +238,7 @@ async fn test_writelines() -> Result<()> {
     let tmp_file = NamedTempFile::new()?;
     let path = tmp_file.path().to_str().unwrap();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         format!(r#"# VIPER_VERSION = 1.0
 from viper import unittest
 
@@ -244,7 +249,7 @@ class MyTestCase(unittest.TestCase):
         f = open(path, "w+")
         f.writelines(["ABC", "DEF"])
 "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -262,7 +267,7 @@ async fn test_write_in_read_mode() -> Result<()> {
 
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import file, unittest
@@ -273,7 +278,7 @@ async fn test_write_in_read_mode() -> Result<()> {
                     f = open("tests/test.txt")
                     f.write("Test")
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -287,7 +292,7 @@ async fn test_read_in_write_mode() -> Result<()> {
 
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import file, unittest
@@ -298,7 +303,7 @@ async fn test_read_in_write_mode() -> Result<()> {
                     f = open("tests/test.txt", "w")
                     f.read()
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 

@@ -1,15 +1,20 @@
 use googletest::prelude::*;
 use indoc::indoc;
+use viper_rt::compile::{Compilation, CompileResult, IdentifierFilter};
 use viper_rt::events::emitter;
 use viper_rt::run::{Outcome, ParameterBindings, Report};
 use viper_rt::source::Source;
 use viper_rt::ViperRuntime;
 
+async fn compile_test(runtime: &ViperRuntime, source: &Source) -> CompileResult<Compilation> {
+    runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await
+}
+
 #[tokio::test]
 async fn test_assert_equals() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -22,7 +27,7 @@ async fn test_assert_equals() -> Result<()> {
                     self.assertEquals(None, None)
                     self.assertEquals([1,2,3], [1,2,3])
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -35,7 +40,7 @@ async fn test_assert_equals() -> Result<()> {
 async fn test_assert_equals_failure() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -53,7 +58,7 @@ async fn test_assert_equals_failure() -> Result<()> {
                 def test_assertNotEquals_with_lists(self):
                     self.assertEquals([1,2,3], [1,2,5])
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -70,7 +75,7 @@ async fn test_assert_equals_failure() -> Result<()> {
 async fn test_assert_not_equals() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -81,7 +86,7 @@ async fn test_assert_not_equals() -> Result<()> {
                     self.assertNotEquals(5, True)
                     self.assertNotEquals([1,2,3], [1,2,5])
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -94,7 +99,7 @@ async fn test_assert_not_equals() -> Result<()> {
 async fn test_assert_not_equals_failure() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -109,7 +114,7 @@ async fn test_assert_not_equals_failure() -> Result<()> {
                 def test_assertNotEquals_with_list(self):
                     self.assertNotEquals([1,2,3], [1,2,3])
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
     
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -126,7 +131,7 @@ async fn test_assert_not_equals_failure() -> Result<()> {
 async fn test_assert_true() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -137,7 +142,7 @@ async fn test_assert_true() -> Result<()> {
                     self.assertTrue(1 == 1)
                     self.assertTrue(1)
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -150,7 +155,7 @@ async fn test_assert_true() -> Result<()> {
 async fn test_assert_true_failure() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -162,7 +167,7 @@ async fn test_assert_true_failure() -> Result<()> {
                 def test_assertTrue_failure_with_expression(self):
                     self.assertTrue(1 == 2)
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -179,7 +184,7 @@ async fn test_assert_true_failure() -> Result<()> {
 async fn test_assert_false() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -188,7 +193,7 @@ async fn test_assert_false() -> Result<()> {
                 def test_assertFalse(self):
                     self.assertFalse(False)
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -201,7 +206,7 @@ async fn test_assert_false() -> Result<()> {
 async fn test_assert_false_failure() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -210,7 +215,7 @@ async fn test_assert_false_failure() -> Result<()> {
                 def test_assertFalse_failure(self):
                     self.assertFalse(True)
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -227,7 +232,7 @@ async fn test_assert_false_failure() -> Result<()> {
 async fn test_assert_is() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -238,7 +243,7 @@ async fn test_assert_is() -> Result<()> {
                     self.assertIs(None, None)
                     self.assertIs("Hallo", "Hallo")
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -251,7 +256,7 @@ async fn test_assert_is() -> Result<()> {
 async fn test_assert_is_failure() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -263,7 +268,7 @@ async fn test_assert_is_failure() -> Result<()> {
                 def test_assert_is_failure_with_bool(self):
                     self.assertIs(1, True)
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -281,7 +286,7 @@ async fn test_assert_is_failure() -> Result<()> {
 async fn test_assert_is_not() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -291,7 +296,7 @@ async fn test_assert_is_not() -> Result<()> {
                     self.assertIsNot(1, 2)
                     self.assertIsNot(1, True)
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -304,7 +309,7 @@ async fn test_assert_is_not() -> Result<()> {
 async fn test_assert_is_not_failure() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -313,7 +318,7 @@ async fn test_assert_is_not_failure() -> Result<()> {
                 def test_assert_is_not_failure(self):
                     self.assertIsNot(1, 1)
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -330,7 +335,7 @@ async fn test_assert_is_not_failure() -> Result<()> {
 async fn test_assert_is_none() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -339,7 +344,7 @@ async fn test_assert_is_none() -> Result<()> {
                 def test_assert_is_none(self):
                     self.assertIsNone(None)
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -352,7 +357,7 @@ async fn test_assert_is_none() -> Result<()> {
 async fn test_assert_is_none_failure() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -361,7 +366,7 @@ async fn test_assert_is_none_failure() -> Result<()> {
                 def test_assert_is_none_failure(self):
                     self.assertIsNone(0)
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -378,7 +383,7 @@ async fn test_assert_is_none_failure() -> Result<()> {
 async fn test_assert_is_not_none() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -387,7 +392,7 @@ async fn test_assert_is_not_none() -> Result<()> {
                 def test_assert_is_not_none(self):
                     self.assertIsNotNone(0)
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -400,7 +405,7 @@ async fn test_assert_is_not_none() -> Result<()> {
 async fn test_assert_is_not_none_failure() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -409,7 +414,7 @@ async fn test_assert_is_not_none_failure() -> Result<()> {
                 def test_assert_is_not_none_failure(self):
                     self.assertIsNotNone(None)
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -426,7 +431,7 @@ async fn test_assert_is_not_none_failure() -> Result<()> {
 async fn test_assert_in() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -437,7 +442,7 @@ async fn test_assert_in() -> Result<()> {
                     self.assertIn("Hello", "Hello World")
                     self.assertIn(1, [1,2,3])
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -450,7 +455,7 @@ async fn test_assert_in() -> Result<()> {
 async fn test_assert_in_failure() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -465,7 +470,7 @@ async fn test_assert_in_failure() -> Result<()> {
                 def test_assert_in_failure_with_list(self):
                     self.assertIn(4, [1,2,3])
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -482,7 +487,7 @@ async fn test_assert_in_failure() -> Result<()> {
 async fn test_assert_not_in() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -491,7 +496,7 @@ async fn test_assert_not_in() -> Result<()> {
                 def test_assert_not_in(self):
                     self.assertNotIn(7, [1,2,3]);
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -504,7 +509,7 @@ async fn test_assert_not_in() -> Result<()> {
 async fn test_assert_not_in_failure() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -513,7 +518,7 @@ async fn test_assert_not_in_failure() -> Result<()> {
                 def test_assert_not_in_failure(self):
                     self.assertNotIn(1, [1,2,3]);
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -530,7 +535,7 @@ async fn test_assert_not_in_failure() -> Result<()> {
 async fn test_assert_is_instance() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -541,7 +546,7 @@ async fn test_assert_is_instance() -> Result<()> {
                     self.assertIsInstance("Test", str)
                     self.assertIsInstance(3.14, float)
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -554,7 +559,7 @@ async fn test_assert_is_instance() -> Result<()> {
 async fn test_assert_is_instance_failure() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -569,7 +574,7 @@ async fn test_assert_is_instance_failure() -> Result<()> {
                 def test_assert_is_instance_failure_float_vs_int(self):
                     self.assertIsInstance(3.14, int)
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -586,7 +591,7 @@ async fn test_assert_is_instance_failure() -> Result<()> {
 async fn test_assert_is_not_instance() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -595,7 +600,7 @@ async fn test_assert_is_not_instance() -> Result<()> {
                 def test_assert_is_not_instance(self):
                     self.assertIsNotInstance(1, str)
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -608,7 +613,7 @@ async fn test_assert_is_not_instance() -> Result<()> {
 async fn test_assert_is_not_instance_failure() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -617,7 +622,7 @@ async fn test_assert_is_not_instance_failure() -> Result<()> {
                 def test_assert_is_not_instance_failure(self):
                     self.assertIsNotInstance(1, int)
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -634,7 +639,7 @@ async fn test_assert_is_not_instance_failure() -> Result<()> {
 async fn test_assert_greater() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -647,7 +652,7 @@ async fn test_assert_greater() -> Result<()> {
                     self.assertGreater("12345", "1234")
 
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -660,7 +665,7 @@ async fn test_assert_greater() -> Result<()> {
 async fn test_assert_greater_failure() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -678,7 +683,7 @@ async fn test_assert_greater_failure() -> Result<()> {
                 def test_assert_greater_failure_with_str(self):
                     self.assertGreater("123", "1234")
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -695,7 +700,7 @@ async fn test_assert_greater_failure() -> Result<()> {
 async fn test_assert_less() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -707,7 +712,7 @@ async fn test_assert_less() -> Result<()> {
                     self.assertLess(2.3, 2.4)
                     self.assertLess("123", "1234")
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -720,7 +725,7 @@ async fn test_assert_less() -> Result<()> {
 async fn test_assert_less_failure() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -738,7 +743,7 @@ async fn test_assert_less_failure() -> Result<()> {
                 def test_assert_less_failure_with_str(self):
                     self.assertLess("12345", "1234")
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -755,7 +760,7 @@ async fn test_assert_less_failure() -> Result<()> {
 async fn test_assert_greater_or_equal() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -766,7 +771,7 @@ async fn test_assert_greater_or_equal() -> Result<()> {
                     self.assertGreaterOrEqual('B', 'A')
                     self.assertGreaterOrEqual(2.4, 2.4)
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -779,7 +784,7 @@ async fn test_assert_greater_or_equal() -> Result<()> {
 async fn test_assert_greater_or_equal_failure() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -794,7 +799,7 @@ async fn test_assert_greater_or_equal_failure() -> Result<()> {
                 def test_assert_greater_or_equal_failure_with_str(self):
                     self.assertGreaterOrEqual("123", "1234")
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -811,7 +816,7 @@ async fn test_assert_greater_or_equal_failure() -> Result<()> {
 async fn test_assert_less_or_equal() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -823,7 +828,7 @@ async fn test_assert_less_or_equal() -> Result<()> {
                     self.assertLessOrEqual('A', 'B')
                     self.assertLessOrEqual("123", "1234")
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -836,7 +841,7 @@ async fn test_assert_less_or_equal() -> Result<()> {
 async fn test_assert_less_or_equal_failure() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -851,7 +856,7 @@ async fn test_assert_less_or_equal_failure() -> Result<()> {
                 def test_assert_less_or_equal_failure_with_str(self):
                     self.assertLessOrEqual("12345", "1234")
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -869,7 +874,7 @@ async fn test_assert_less_or_equal_failure() -> Result<()> {
 async fn test_fail() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let suite = runtime.compile(&Source::embedded(
+    let suite = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import unittest
@@ -879,7 +884,7 @@ async fn test_fail() -> Result<()> {
                 def test_fail(self):
                     unittest.fail("Hello, I'm an error!")
         "#)
-    ), &mut emitter::drain()).await?.into_suite();
+    )).await?.into_suite();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 

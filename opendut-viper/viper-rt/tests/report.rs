@@ -1,6 +1,7 @@
 use googletest::prelude::*;
 use indoc::indoc;
 use std::path::PathBuf;
+use viper_rt::compile::IdentifierFilter;
 use viper_rt::events::emitter;
 use viper_rt::run::{ParameterBindings, Report, ReportProperty, ReportPropertyValue};
 use viper_rt::source::Source;
@@ -14,24 +15,28 @@ async fn test_report_properties() -> Result<()> {
 
     let runtime = ViperRuntime::default();
 
-    let (_, _, suite) = runtime.compile(&Source::embedded(
-        indoc!(r#"
-            # VIPER_VERSION = 1.0
-            from viper import *
-            
-            class MyTestCase(unittest.TestCase):
-                def test_report_properties(self):
-                    self.report.property("number", 42)
-                    self.report.property("string", "Hello World")
-                    self.report.properties(
-                        kw_number=42,
-                        kw_string="Hello World"
-                    )
-                def test_report_properties_2(self):
-                    self.report.property("number", 73)
-                    self.report.property("string", "Bye Bye")
-        "#)
-    ), &mut emitter::drain()).await?.split();
+    let (_, _, suite) = runtime.compile(
+        &Source::embedded(
+            indoc!(r#"
+                # VIPER_VERSION = 1.0
+                from viper import *
+
+                class MyTestCase(unittest.TestCase):
+                    def test_report_properties(self):
+                        self.report.property("number", 42)
+                        self.report.property("string", "Hello World")
+                        self.report.properties(
+                            kw_number=42,
+                            kw_string="Hello World"
+                        )
+                    def test_report_properties_2(self):
+                        self.report.property("number", 73)
+                        self.report.property("string", "Bye Bye")
+            "#)
+        ),
+        &mut emitter::drain(),
+        &IdentifierFilter::default(),
+    ).await?.split();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 
@@ -59,20 +64,24 @@ async fn test_report_file_properties() -> Result<()> {
 
     let runtime = ViperRuntime::default();
 
-    let (_, _, suite) = runtime.compile(&Source::embedded(
-        indoc!(r#"
-            # VIPER_VERSION = 1.0
-            from viper import *
+    let (_, _, suite) = runtime.compile(
+        &Source::embedded(
+            indoc!(r#"
+                # VIPER_VERSION = 1.0
+                from viper import *
 
-            class MyTestCase(unittest.TestCase):
-                def test_report_properties(self):
-                    self.report.file("/a/b")
-                    self.report.files("/c/d/e/f", "/g/h/i/j")
-                def test_report_properties_2(self):
-                    self.report.file("/a/b")
-                    self.report.file("/c/d/e/f")
-        "#)
-    ), &mut emitter::drain()).await?.split();
+                class MyTestCase(unittest.TestCase):
+                    def test_report_properties(self):
+                        self.report.file("/a/b")
+                        self.report.files("/c/d/e/f", "/g/h/i/j")
+                    def test_report_properties_2(self):
+                        self.report.file("/a/b")
+                        self.report.file("/c/d/e/f")
+            "#)
+        ),
+        &mut emitter::drain(),
+        &IdentifierFilter::default(),
+    ).await?.split();
 
     let report = runtime.run(suite, ParameterBindings::new(), &mut emitter::drain()).await?;
 

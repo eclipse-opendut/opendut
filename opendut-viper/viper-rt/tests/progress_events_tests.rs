@@ -4,11 +4,15 @@ use indoc::indoc;
 use tokio_stream::wrappers::ReceiverStream;
 use tokio_util::sync::PollSender;
 use viper_rt::common::{TestCaseIdentifier, TestIdentifier};
-use viper_rt::compile::{CompilationError, CompilationErrorKind, CompilationSummary, CompileEvent, CompiledTest, CompiledTestCase, CompiledTestSuite};
-use viper_rt::events::emitter;
+use viper_rt::compile::{Compilation, CompilationError, CompilationErrorKind, CompilationSummary, CompileEvent, CompileResult, CompiledTest, CompiledTestCase, CompiledTestSuite, IdentifierFilter};
+use viper_rt::events::{emitter, EventEmitter};
 use viper_rt::run::{ParameterBindings, RunError, RunErrorKind, RunEvent, RunState, TestCaseRunState, TestRunState, TestSuiteRunState};
 use viper_rt::source::Source;
 use viper_rt::ViperRuntime;
+
+async fn compile_test(runtime: &ViperRuntime, source: &Source, emitter: &mut dyn EventEmitter<CompileEvent>) -> CompileResult<Compilation> {
+    runtime.compile(&source, emitter, &IdentifierFilter::default()).await
+}
 
 const EXAMPLE_CODE: &str = indoc!(r#"
     # VIPER_VERSION = 1.0
@@ -34,7 +38,7 @@ async fn test_that_compile_events_are_emitted() -> Result<()> {
 
     let (tx, rx) = tokio::sync::mpsc::channel::<CompileEvent>(64);
 
-    let _ = runtime.compile(&source, &mut emitter::sink(PollSender::new(tx))).await?.into_suite();
+    let _ = compile_test(&runtime, &source, &mut emitter::sink(PollSender::new(tx))).await?.into_suite();
 
     let events = ReceiverStream::new(rx)
         .collect::<Vec<_>>().await;
@@ -88,7 +92,7 @@ async fn test_that_run_events_are_emitted() -> Result<()> {
 
     let (tx, rx) = tokio::sync::mpsc::channel::<RunEvent>(64);
 
-    let suite = runtime.compile(&source, &mut emitter::drain()).await?.into_suite();
+    let suite = compile_test(&runtime, &source, &mut emitter::drain()).await?.into_suite();
 
     let suite_identifier = Clone::clone(suite.identifier());
     let case_1_identifier = Clone::clone(suite.test_cases()[0].identifier());
@@ -157,7 +161,7 @@ async fn test_that_compile_fails_when_event_emission_failed() -> Result<()> {
 
     let source = Source::embedded(EXAMPLE_CODE);
 
-    let result = runtime.compile(&source, &mut emitter::fail()).await;
+    let result = compile_test(&runtime, &source, &mut emitter::fail()).await;
 
     assert_that!(result.map_err(|e| *e), err(matches_pattern!(
         CompilationError {
@@ -176,7 +180,7 @@ async fn test_that_run_fails_when_event_emission_failed() -> Result<()> {
 
     let source = Source::embedded(EXAMPLE_CODE);
 
-    let suite = runtime.compile(&source, &mut emitter::drain()).await?.into_suite();
+    let suite = compile_test(&runtime, &source, &mut emitter::drain()).await?.into_suite();
 
     let result = runtime.run(suite, ParameterBindings::new(), &mut emitter::fail()).await;
 

@@ -1,10 +1,14 @@
 use googletest::prelude::*;
 use indoc::indoc;
-use viper_rt::compile::{ParameterDescriptor, ParameterInfo, ParameterName};
+use viper_rt::compile::{Compilation, CompileResult, IdentifierFilter, ParameterDescriptor, ParameterInfo, ParameterName};
 use viper_rt::events::emitter;
 use viper_rt::run::{BindingValue, ParameterBindings, Report};
 use viper_rt::source::Source;
 use viper_rt::ViperRuntime;
+
+async fn compile_test(runtime: &ViperRuntime, source: &Source) -> CompileResult<Compilation> {
+    runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await
+}
 
 #[tokio::test]
 async fn test_boolean_parameters() -> Result<()> {
@@ -14,7 +18,7 @@ async fn test_boolean_parameters() -> Result<()> {
 
     let runtime = ViperRuntime::default();
 
-    let (_, parameters, suite) = runtime.compile(&Source::embedded(
+    let (_, parameters, suite) = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import *
@@ -33,7 +37,7 @@ async fn test_boolean_parameters() -> Result<()> {
                     self.assertFalse(self.parameters.get(BAR))
                     self.assertTrue(self.parameters.get(FUBAR))
         "#)
-    ), &mut emitter::drain()).await?.split();
+    )).await?.split();
 
     {
         let parameters = parameters.iter().cloned().collect::<Vec<_>>();
@@ -81,7 +85,7 @@ async fn test_number_parameters() -> Result<()> {
 
     let runtime = ViperRuntime::default();
 
-    let (_, parameters, suite) = runtime.compile(&Source::embedded(
+    let (_, parameters, suite) = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import *
@@ -107,7 +111,7 @@ async fn test_number_parameters() -> Result<()> {
                     self.assertEquals(self.parameters.get(BAR), 2703)
                     self.assertEquals(self.parameters.get(FUBAR), 1207)
         "#)
-    ), &mut emitter::drain()).await?.split();
+    )).await?.split();
 
     {
         let parameters = parameters.iter().cloned().collect::<Vec<_>>();
@@ -161,7 +165,7 @@ async fn test_text_parameters() -> Result<()> {
 
     let runtime = ViperRuntime::default();
 
-    let (_, parameters, suite) = runtime.compile(&Source::embedded(
+    let (_, parameters, suite) = compile_test(&runtime, &Source::embedded(
         indoc!(r#"
             # VIPER_VERSION = 1.0
             from viper import *
@@ -183,7 +187,7 @@ async fn test_text_parameters() -> Result<()> {
                     self.assertEquals(self.parameters.get(NAME), "Elmar")
                     self.assertEquals(self.parameters.get(FUBAR), "Jessica")
         "#)
-    ), &mut emitter::drain()).await?.split();
+    )).await?.split();
 
     {
         let parameters = parameters.iter().cloned().collect::<Vec<_>>();
