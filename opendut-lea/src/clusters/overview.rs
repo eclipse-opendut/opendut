@@ -152,9 +152,9 @@ pub fn ClustersOverview() -> impl IntoView {
 
                 view! {
                     <Row
-                        cluster_descriptor=RwSignal::new(cluster_descriptor)
-                        on_deploy=on_deploy(cluster_id)
-                        on_undeploy=on_undeploy(cluster_id)
+                        cluster_descriptor = RwSignal::new(cluster_descriptor)
+                        on_deploy = on_deploy(cluster_id)
+                        on_undeploy = on_undeploy(cluster_id)
                         is_deployed = RwSignal::new(IsDeployed(deployed_clusters.contains(&cluster_id)))
                     />
                 }
@@ -236,7 +236,7 @@ where
     let dropdown_active = RwSignal::new(false);
     let dropdown = NodeRef::<Div>::new();
 
-    let _ = on_click_outside(dropdown, move |_| dropdown_active.set(false) );
+    let _ = on_click_outside(dropdown, move |_| dropdown_active.set(false));
 
     let health_state = Signal::derive(move || {
         if is_deployed.get().0 {
@@ -269,7 +269,7 @@ where
                 <Health state=health_state />
             </td>
             <td class="is-vcentered">
-                <a href={ configurator_href } >{ cluster_name }</a>
+                <a href={ configurator_href }>{ cluster_name }</a>
             </td>
             <td class="is-vcentered has-text-centered">
                 <div class="is-pulled-right">
