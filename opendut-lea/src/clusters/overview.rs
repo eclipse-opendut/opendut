@@ -239,17 +239,9 @@ where
     let _ = on_click_outside(dropdown, move |_| dropdown_active.set(false));
 
     let health_state = Signal::derive(move || {
-        if is_deployed.get().0 {
-            health::State {
-                kind: health::StateKind::Yellow,
-                text: String::from("Marked for deployment. Deployment-State unknown."),
-            }
-        }
-        else {
-            health::State {
-                kind: health::StateKind::Unknown,
-                text: String::from("Undeployed"),
-            }
+        health::State { //TODO implement Cluster health in backend and display it here
+            kind: health::StateKind::Unknown,
+            text: String::from("Unknown"),
         }
     });
 
