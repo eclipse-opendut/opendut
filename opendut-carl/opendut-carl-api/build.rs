@@ -14,7 +14,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     tonic_prost_build::configure()
         .extern_path(
-            ".opendut.types",
+            ".opendut.model",
             "opendut_model::proto"
         )
         .type_attribute(".", "#[allow(clippy::all)]")

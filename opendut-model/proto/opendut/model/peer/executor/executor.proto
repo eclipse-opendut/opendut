@@ -1,12 +1,12 @@
 syntax = "proto3";
 
-package opendut.types.peer.executor;
+package opendut.model.peer.executor;
 
-import "opendut/types/peer/executor/container.proto";
-import "opendut/types/util/uuid.proto";
+import "opendut/model/peer/executor/container.proto";
+import "opendut/model/util/uuid.proto";
 
 message ExecutorDescriptors {
-  repeated opendut.types.peer.executor.ExecutorDescriptor executors = 1;
+  repeated opendut.model.peer.executor.ExecutorDescriptor executors = 1;
 }
 
 message ExecutorDescriptor {
@@ -19,7 +19,7 @@ message ExecutorDescriptor {
 }
 
 message ExecutorId {
-  opendut.types.util.Uuid uuid = 1;
+  opendut.model.util.Uuid uuid = 1;
 }
 
 message Executable {}

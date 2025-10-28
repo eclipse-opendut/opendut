@@ -1,6 +1,6 @@
 use crate::proto::{conversion, ConversionError, ConversionErrorBuilder, ConversionResult};
 
-crate::include_proto!("opendut.types.topology");
+crate::include_proto!("opendut.model.topology");
 
 
 conversion! {

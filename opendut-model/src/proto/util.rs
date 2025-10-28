@@ -4,7 +4,7 @@ use crate::util;
 use crate::util::net::NetworkInterfaceConfiguration;
 use pem::Pem;
 
-crate::include_proto!("opendut.types.util");
+crate::include_proto!("opendut.model.util");
 
 impl From<uuid::Uuid> for Uuid {
     fn from(value: uuid::Uuid) -> Self {

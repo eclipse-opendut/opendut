@@ -1,7 +1,7 @@
 use std::time::SystemTime;
 use crate::proto::{conversion, ConversionResult};
 
-crate::include_proto!("opendut.types.peer.configuration.api");
+crate::include_proto!("opendut.model.peer.configuration.api");
 
 
 conversion! {

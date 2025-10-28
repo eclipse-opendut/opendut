@@ -1,6 +1,6 @@
 use crate::proto::{conversion, ConversionResult};
 
-crate::include_proto!("opendut.types.cleo");
+crate::include_proto!("opendut.model.cleo");
 
 
 conversion! {

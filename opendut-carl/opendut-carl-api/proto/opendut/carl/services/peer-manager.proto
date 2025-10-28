@@ -2,11 +2,11 @@ syntax = "proto3";
 
 package opendut.carl.services.peer_manager;
 
-import "opendut/types/topology/device.proto";
-import "opendut/types/peer/peer.proto";
-import "opendut/types/peer/state.proto";
-import "opendut/types/cleo/cleo.proto";
-import "opendut/types/cluster/cluster.proto";
+import "opendut/model/topology/device.proto";
+import "opendut/model/peer/peer.proto";
+import "opendut/model/peer/state.proto";
+import "opendut/model/cleo/cleo.proto";
+import "opendut/model/cluster/cluster.proto";
 
 service PeerManager {
   rpc StorePeerDescriptor(StorePeerDescriptorRequest) returns (StorePeerDescriptorResponse) {}
@@ -24,7 +24,7 @@ service PeerManager {
 // StorePeerDescriptorRequest
 //
 message StorePeerDescriptorRequest {
-  opendut.types.peer.PeerDescriptor peer = 1;
+  opendut.model.peer.PeerDescriptor peer = 1;
 }
 
 message StorePeerDescriptorResponse {
@@ -35,7 +35,7 @@ message StorePeerDescriptorResponse {
 }
 
 message StorePeerDescriptorSuccess {
-  opendut.types.peer.PeerId peer_id = 1;
+  opendut.model.peer.PeerId peer_id = 1;
 }
 
 message StorePeerDescriptorFailure {
@@ -47,21 +47,21 @@ message StorePeerDescriptorFailure {
 }
 
 message StorePeerDescriptorFailureIllegalPeerState {
-  opendut.types.peer.PeerId peer_id = 1;
-  opendut.types.peer.PeerName peer_name = 2;
-  opendut.types.peer.PeerState actual_state = 3;
-  repeated opendut.types.peer.PeerState required_states = 4;
+  opendut.model.peer.PeerId peer_id = 1;
+  opendut.model.peer.PeerName peer_name = 2;
+  opendut.model.peer.PeerState actual_state = 3;
+  repeated opendut.model.peer.PeerState required_states = 4;
 }
 
 message StorePeerDescriptorFailureIllegalDevices {
-    opendut.types.peer.PeerId peer_id = 1;
-    opendut.types.peer.PeerName peer_name = 2;
+    opendut.model.peer.PeerId peer_id = 1;
+    opendut.model.peer.PeerName peer_name = 2;
     IllegalDevicesError error = 3;
 }
 
 message StorePeerDescriptorFailureInternal {
-    opendut.types.peer.PeerId peer_id = 1;
-    opendut.types.peer.PeerName peer_name = 2;
+    opendut.model.peer.PeerId peer_id = 1;
+    opendut.model.peer.PeerName peer_name = 2;
     string cause = 3;
 }
 
@@ -69,7 +69,7 @@ message StorePeerDescriptorFailureInternal {
 // DeletePeerDescriptorRequest
 //
 message DeletePeerDescriptorRequest {
-  opendut.types.peer.PeerId peer_id = 1;
+  opendut.model.peer.PeerId peer_id = 1;
 }
 
 message DeletePeerDescriptorResponse {
@@ -80,7 +80,7 @@ message DeletePeerDescriptorResponse {
 }
 
 message DeletePeerDescriptorSuccess {
-  opendut.types.peer.PeerId peer_id = 1;
+  opendut.model.peer.PeerId peer_id = 1;
 }
 
 message DeletePeerDescriptorFailure {
@@ -93,32 +93,32 @@ message DeletePeerDescriptorFailure {
 }
 
 message DeletePeerDescriptorFailurePeerNotFound {
-  opendut.types.peer.PeerId peer_id = 1;
+  opendut.model.peer.PeerId peer_id = 1;
 }
 
 message DeletePeerDescriptorFailureIllegalPeerState {
-  opendut.types.peer.PeerId peer_id = 1;
-  opendut.types.peer.PeerName peer_name = 2;
-  opendut.types.peer.PeerState actual_state = 3;
-  repeated opendut.types.peer.PeerState required_states = 4;
+  opendut.model.peer.PeerId peer_id = 1;
+  opendut.model.peer.PeerName peer_name = 2;
+  opendut.model.peer.PeerState actual_state = 3;
+  repeated opendut.model.peer.PeerState required_states = 4;
 }
 
 message DeletePeerDescriptorFailureInternal {
-  opendut.types.peer.PeerId peer_id = 1;
-  optional opendut.types.peer.PeerName peer_name = 2;
+  opendut.model.peer.PeerId peer_id = 1;
+  optional opendut.model.peer.PeerName peer_name = 2;
   string cause = 3;
 }
 
 message DeletePeerDescriptorFailureDeploymentExists {
-  opendut.types.peer.PeerId peer_id = 1;
-  opendut.types.cluster.ClusterId cluster_id = 2;
+  opendut.model.peer.PeerId peer_id = 1;
+  opendut.model.cluster.ClusterId cluster_id = 2;
 }
 
 //
 // GetPeerDescriptorRequest
 //
 message GetPeerDescriptorRequest {
-  opendut.types.peer.PeerId peer_id = 1;
+  opendut.model.peer.PeerId peer_id = 1;
 }
 
 message GetPeerDescriptorResponse {
@@ -129,7 +129,7 @@ message GetPeerDescriptorResponse {
 }
 
 message GetPeerDescriptorSuccess {
-  opendut.types.peer.PeerDescriptor descriptor = 1;
+  opendut.model.peer.PeerDescriptor descriptor = 1;
 }
 
 message GetPeerDescriptorFailure {
@@ -140,11 +140,11 @@ message GetPeerDescriptorFailure {
 }
 
 message GetPeerDescriptorFailurePeerNotFound {
-  opendut.types.peer.PeerId peer_id = 1;
+  opendut.model.peer.PeerId peer_id = 1;
 }
 
 message GetPeerDescriptorFailureInternal {
-  opendut.types.peer.PeerId peer_id = 1;
+  opendut.model.peer.PeerId peer_id = 1;
   string cause = 2;
 }
 
@@ -161,7 +161,7 @@ message ListPeerDescriptorsResponse {
 }
 
 message ListPeerDescriptorsSuccess {
-  repeated opendut.types.peer.PeerDescriptor peers = 1;
+  repeated opendut.model.peer.PeerDescriptor peers = 1;
 }
 
 message ListPeerDescriptorsFailure {
@@ -178,7 +178,7 @@ message ListPeerDescriptorsFailureInternal {
 // GetPeerStateRequest
 //
 message GetPeerStateRequest {
-  opendut.types.peer.PeerId peer_id = 1;
+  opendut.model.peer.PeerId peer_id = 1;
 }
 
 message GetPeerStateResponse {
@@ -189,7 +189,7 @@ message GetPeerStateResponse {
 }
 
 message GetPeerStateSuccess {
-  opendut.types.peer.PeerState state = 1;
+  opendut.model.peer.PeerState state = 1;
 }
 
 message GetPeerStateFailure {
@@ -200,11 +200,11 @@ message GetPeerStateFailure {
 }
 
 message GetPeerStateFailurePeerNotFound {
-  opendut.types.peer.PeerId peer_id = 1;
+  opendut.model.peer.PeerId peer_id = 1;
 }
 
 message GetPeerStateFailureInternal {
-  opendut.types.peer.PeerId peer_id = 1;
+  opendut.model.peer.PeerId peer_id = 1;
   string cause = 2;
 }
 
@@ -224,8 +224,8 @@ message ListPeerStatesSuccess {
   repeated ListPeerStatesEntry peer_state_entries = 1;
 }
 message ListPeerStatesEntry {
-  opendut.types.peer.PeerId peer_id = 1;
-  opendut.types.peer.PeerState peer_state = 2;
+  opendut.model.peer.PeerId peer_id = 1;
+  opendut.model.peer.PeerState peer_state = 2;
 }
 
 message ListPeerStatesFailure {
@@ -242,7 +242,7 @@ message ListPeerStatesFailureInternal {
 // GeneratePeerSetupRequest
 //
 message GeneratePeerSetupRequest {
-  opendut.types.peer.PeerId peer = 1;
+  opendut.model.peer.PeerId peer = 1;
   string user_id = 2;
 }
 
@@ -254,8 +254,8 @@ message GeneratePeerSetupResponse {
 }
 
 message GeneratePeerSetupSuccess {
-  opendut.types.peer.PeerId peer = 1;
-  opendut.types.peer.PeerSetup setup = 2;
+  opendut.model.peer.PeerId peer = 1;
+  opendut.model.peer.PeerSetup setup = 2;
 }
 
 message GeneratePeerSetupFailure {
@@ -276,8 +276,8 @@ message GenerateCleoSetupResponse {
 }
 
 message GenerateCleoSetupSuccess {
-  opendut.types.cleo.CleoId cleo = 1;
-  opendut.types.cleo.CleoSetup setup = 2;
+  opendut.model.cleo.CleoId cleo = 1;
+  opendut.model.cleo.CleoSetup setup = 2;
 }
 
 message GenerateCleoSetupFailure {
@@ -289,7 +289,7 @@ message GenerateCleoSetupFailure {
 message ListDevicesRequest {}
 
 message ListDevicesResponse {
-  repeated opendut.types.topology.DeviceDescriptor devices = 1;
+  repeated opendut.model.topology.DeviceDescriptor devices = 1;
 }
 
 message IllegalDevicesError {
@@ -299,5 +299,5 @@ message IllegalDevicesError {
 }
 
 message IllegalDevicesErrorDeviceAlreadyExists {
-  opendut.types.topology.DeviceId device_id = 1;
+  opendut.model.topology.DeviceId device_id = 1;
 }

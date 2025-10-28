@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package opendut.carl.services.metadata_provider;
 
-import "opendut/types/util/metadata.proto";
+import "opendut/model/util/metadata.proto";
 
 service MetadataProvider {
   rpc Version(VersionRequest) returns (VersionResponse) {}
@@ -11,5 +11,5 @@ service MetadataProvider {
 message VersionRequest {}
 
 message VersionResponse {
-  opendut.types.util.VersionInfo version_info = 1;
+  opendut.model.util.VersionInfo version_info = 1;
 }

@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package opendut.model.peer.configuration.parameter;
+
+import "opendut/model/util/net.proto";
+import "opendut/model/peer/executor/executor.proto";
+import "opendut/model/peer/peer.proto";
+
+message DeviceInterface {
+  opendut.model.util.NetworkInterfaceDescriptor descriptor = 1;
+}
+
+message EthernetBridge {
+  opendut.model.util.NetworkInterfaceName name = 1;
+}
+
+message Executor {
+  opendut.model.peer.executor.ExecutorDescriptor descriptor = 1;
+}
+
+message GreInterfaceConfig {
+  opendut.model.util.IpV4Address local_ip = 1;
+  opendut.model.util.IpV4Address remote_ip = 2;
+}
+
+message InterfaceJoinConfig {
+  opendut.model.util.NetworkInterfaceName name = 1;
+  opendut.model.util.NetworkInterfaceName bridge = 2;
+}
+
+message RemotePeerConnectionCheck {
+  opendut.model.peer.PeerId remote_peer_id = 1;
+  opendut.model.util.IpAddress remote_ip = 2;
+}

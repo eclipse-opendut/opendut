@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package opendut.carl.services.peer_messaging_broker;
 
-import "opendut/types/peer/configuration/api.proto";
+import "opendut/model/peer/configuration/api.proto";
 
 service PeerMessagingBroker {
   rpc Open(stream Upstream) returns (stream Downstream);
@@ -12,7 +12,7 @@ message Upstream {
   TracingContext context = 1;
   oneof message {
     Ping ping = 2;
-    opendut.types.peer.configuration.api.EdgePeerConfigurationState edge_peer_configuration_state = 3;
+    opendut.model.peer.configuration.api.EdgePeerConfigurationState edge_peer_configuration_state = 3;
   }
 }
 
@@ -31,8 +31,8 @@ message DisconnectNotice {}
 
 
 message ApplyPeerConfiguration {
-  opendut.types.peer.configuration.api.OldPeerConfiguration old_configuration = 1;
-  opendut.types.peer.configuration.api.PeerConfiguration configuration = 2;
+  opendut.model.peer.configuration.api.OldPeerConfiguration old_configuration = 1;
+  opendut.model.peer.configuration.api.PeerConfiguration configuration = 2;
 }
 
 message TracingContext {

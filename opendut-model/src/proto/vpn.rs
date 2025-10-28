@@ -1,6 +1,6 @@
 use crate::proto::{conversion, ConversionResult};
 
-crate::include_proto!("opendut.types.vpn");
+crate::include_proto!("opendut.model.vpn");
 
 
 conversion! {

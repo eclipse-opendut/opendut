@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package opendut.model.peer;
+
+import "opendut/model/topology/topology.proto";
+import "opendut/model/util/net.proto";
+import "opendut/model/util/uuid.proto";
+import "opendut/model/vpn/vpn.proto";
+import "opendut/model/peer/executor/executor.proto";
+
+
+message PeerId {
+  opendut.model.util.Uuid uuid = 1;
+}
+
+message PeerName {
+  string value = 1;
+}
+
+message PeerLocation {
+  string value = 1;
+}
+
+message PeerNetworkDescriptor {
+  repeated opendut.model.util.NetworkInterfaceDescriptor interfaces = 1;
+  opendut.model.util.NetworkInterfaceName bridge_name = 2;
+}
+
+message PeerDescriptor {
+  opendut.model.peer.PeerId id = 1;
+  opendut.model.peer.PeerName name = 2;
+  opendut.model.peer.PeerLocation location = 3;
+  opendut.model.peer.PeerNetworkDescriptor network = 4;
+  opendut.model.topology.Topology topology = 5;
+  opendut.model.peer.executor.ExecutorDescriptors executors = 6;
+}
+
+message PeerSetup {
+  opendut.model.peer.PeerId id = 1;
+  opendut.model.util.Url carl = 5;
+  opendut.model.util.Certificate ca = 6;
+  opendut.model.util.AuthConfig auth_config = 7;
+
+  opendut.model.vpn.VpnPeerConfig vpn = 11;
+}

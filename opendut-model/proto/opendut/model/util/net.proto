@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package opendut.types.util;
+package opendut.model.util;
 
-import "opendut/types/util/uuid.proto";
+import "opendut/model/util/uuid.proto";
 
 message Url {
   string value = 1;
@@ -60,7 +60,7 @@ message NetworkInterfaceDescriptor {
 }
 
 message NetworkInterfaceId {
-  opendut.types.util.Uuid uuid = 1;
+  opendut.model.util.Uuid uuid = 1;
 }
 
 message AuthConfig {

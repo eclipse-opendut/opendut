@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package opendut.carl.services.test_manager;
 
-import "opendut/types/test_suite/source.proto";
-import "opendut/types/cluster/cluster.proto";
+import "opendut/model/test_suite/source.proto";
+import "opendut/model/cluster/cluster.proto";
 
 service TestManager {
   rpc StoreTestSuiteSourceDescriptor(StoreTestSuiteSourceDescriptorRequest) returns (StoreTestSuiteSourceDescriptorResponse) {}
@@ -17,7 +17,7 @@ service TestManager {
 // StoreTestSuiteSourceDescriptorRequest
 //
 message StoreTestSuiteSourceDescriptorRequest {
-  opendut.types.test_suite.TestSuiteSourceDescriptor source = 1;
+  opendut.model.test_suite.TestSuiteSourceDescriptor source = 1;
 }
 
 message StoreTestSuiteSourceDescriptorResponse {
@@ -28,7 +28,7 @@ message StoreTestSuiteSourceDescriptorResponse {
 }
 
 message StoreTestSuiteSourceDescriptorSuccess {
-  opendut.types.test_suite.TestSuiteSourceId source_id = 1;
+  opendut.model.test_suite.TestSuiteSourceId source_id = 1;
 }
 
 message StoreTestSuiteSourceDescriptorFailure {
@@ -38,8 +38,8 @@ message StoreTestSuiteSourceDescriptorFailure {
 }
 
 message StoreTestSuiteSourceDescriptorFailureInternal {
-  opendut.types.test_suite.TestSuiteSourceId source_id = 1;
-  opendut.types.test_suite.TestSuiteSourceName source_name = 2;
+  opendut.model.test_suite.TestSuiteSourceId source_id = 1;
+  opendut.model.test_suite.TestSuiteSourceName source_name = 2;
   string cause = 3;
 }
 
@@ -48,7 +48,7 @@ message StoreTestSuiteSourceDescriptorFailureInternal {
 // DeleteTestSuiteSourceDescriptorRequest
 //
 message DeleteTestSuiteSourceDescriptorRequest {
-  opendut.types.test_suite.TestSuiteSourceId source_id = 1;
+  opendut.model.test_suite.TestSuiteSourceId source_id = 1;
 }
 
 message DeleteTestSuiteSourceDescriptorResponse {
@@ -59,7 +59,7 @@ message DeleteTestSuiteSourceDescriptorResponse {
 }
 
 message DeleteTestSuiteSourceDescriptorSuccess {
-  opendut.types.test_suite.TestSuiteSourceId source_id = 1;
+  opendut.model.test_suite.TestSuiteSourceId source_id = 1;
 }
 
 message DeleteTestSuiteSourceDescriptorFailure {
@@ -71,18 +71,18 @@ message DeleteTestSuiteSourceDescriptorFailure {
 }
 
 message DeleteTestSuiteSourceDescriptorFailureSourceNotFound {
-  opendut.types.test_suite.TestSuiteSourceId source_id = 1;
+  opendut.model.test_suite.TestSuiteSourceId source_id = 1;
 }
 
 message DeleteTestSuiteSourceDescriptorFailureInternal {
-  opendut.types.test_suite.TestSuiteSourceId source_id = 1;
-  optional opendut.types.test_suite.TestSuiteSourceName source_name = 2;
+  opendut.model.test_suite.TestSuiteSourceId source_id = 1;
+  optional opendut.model.test_suite.TestSuiteSourceName source_name = 2;
   string cause = 3;
 }
 
 message DeleteTestSuiteSourceDescriptorFailureDeploymentExists {
-  opendut.types.test_suite.TestSuiteSourceId source_id = 1;
-  opendut.types.cluster.ClusterId cluster_id = 2;
+  opendut.model.test_suite.TestSuiteSourceId source_id = 1;
+  opendut.model.cluster.ClusterId cluster_id = 2;
 }
 
 
@@ -90,7 +90,7 @@ message DeleteTestSuiteSourceDescriptorFailureDeploymentExists {
 // GetTestSuiteSourceDescriptorRequest
 //
 message GetTestSuiteSourceDescriptorRequest {
-  opendut.types.test_suite.TestSuiteSourceId source_id = 1;
+  opendut.model.test_suite.TestSuiteSourceId source_id = 1;
 }
 
 message GetTestSuiteSourceDescriptorResponse {
@@ -101,7 +101,7 @@ message GetTestSuiteSourceDescriptorResponse {
 }
 
 message GetTestSuiteSourceDescriptorSuccess {
-  opendut.types.test_suite.TestSuiteSourceDescriptor descriptor = 1;
+  opendut.model.test_suite.TestSuiteSourceDescriptor descriptor = 1;
 }
 
 message GetTestSuiteSourceDescriptorFailure {
@@ -112,11 +112,11 @@ message GetTestSuiteSourceDescriptorFailure {
 }
 
 message GetTestSuiteSourceDescriptorFailureSourceNotFound {
-  opendut.types.test_suite.TestSuiteSourceId source_id = 1;
+  opendut.model.test_suite.TestSuiteSourceId source_id = 1;
 }
 
 message GetTestSuiteSourceDescriptorFailureInternal {
-  opendut.types.test_suite.TestSuiteSourceId source_id = 1;
+  opendut.model.test_suite.TestSuiteSourceId source_id = 1;
   string cause = 2;
 }
 
@@ -134,7 +134,7 @@ message ListTestSuiteSourceDescriptorsResponse {
 }
 
 message ListTestSuiteSourceDescriptorsSuccess {
-  repeated opendut.types.test_suite.TestSuiteSourceDescriptor sources = 1;
+  repeated opendut.model.test_suite.TestSuiteSourceDescriptor sources = 1;
 }
 
 message ListTestSuiteSourceDescriptorsFailure {

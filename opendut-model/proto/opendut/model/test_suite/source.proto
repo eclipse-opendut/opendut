@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package opendut.model.test_suite;
+
+import "opendut/model/util/net.proto";
+import "opendut/model/util/uuid.proto";
+
+message TestSuiteSourceId {
+  opendut.model.util.Uuid uuid = 1;
+}
+
+message TestSuiteSourceName {
+  string value = 1;
+}
+
+message TestSuiteSourceDescriptor {
+  opendut.model.test_suite.TestSuiteSourceId id = 1;
+  opendut.model.test_suite.TestSuiteSourceName name = 2;
+  opendut.model.util.Url url = 3;
+}

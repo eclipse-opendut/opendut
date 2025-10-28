@@ -1,7 +1,7 @@
 use crate::conversion;
 use crate::proto::ConversionResult;
 
-crate::include_proto!("opendut.types.test_suite");
+crate::include_proto!("opendut.model.test_suite");
 
 
 conversion! {

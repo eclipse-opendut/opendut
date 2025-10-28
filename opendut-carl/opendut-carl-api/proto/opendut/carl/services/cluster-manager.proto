@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package opendut.carl.services.cluster_manager;
 
-import "opendut/types/cluster/cluster.proto";
-import "opendut/types/peer/peer.proto";
-import "opendut/types/peer/state.proto";
+import "opendut/model/cluster/cluster.proto";
+import "opendut/model/peer/peer.proto";
+import "opendut/model/peer/state.proto";
 
 service ClusterManager {
   rpc CreateClusterDescriptor(CreateClusterDescriptorRequest) returns (CreateClusterDescriptorResponse) {}
@@ -24,7 +24,7 @@ service ClusterManager {
 // CreateClusterDescriptor
 //
 message CreateClusterDescriptorRequest {
-  opendut.types.cluster.ClusterDescriptor cluster_descriptor = 1;
+  opendut.model.cluster.ClusterDescriptor cluster_descriptor = 1;
 }
 
 message CreateClusterDescriptorResponse {
@@ -35,7 +35,7 @@ message CreateClusterDescriptorResponse {
 }
 
 message CreateClusterDescriptorSuccess {
-  opendut.types.cluster.ClusterId cluster_id = 1;
+  opendut.model.cluster.ClusterId cluster_id = 1;
 }
 
 message CreateClusterDescriptorFailure {
@@ -45,8 +45,8 @@ message CreateClusterDescriptorFailure {
 }
 
 message CreateClusterDescriptorFailureInternal {
-  opendut.types.cluster.ClusterId cluster_id = 1;
-  opendut.types.cluster.ClusterName cluster_name = 2;
+  opendut.model.cluster.ClusterId cluster_id = 1;
+  opendut.model.cluster.ClusterName cluster_name = 2;
   string cause = 3;
 }
 
@@ -54,7 +54,7 @@ message CreateClusterDescriptorFailureInternal {
 // DeleteClusterDescriptor
 //
 message DeleteClusterDescriptorRequest {
-  opendut.types.cluster.ClusterId cluster_id = 1;
+  opendut.model.cluster.ClusterId cluster_id = 1;
 }
 
 message DeleteClusterDescriptorResponse {
@@ -65,7 +65,7 @@ message DeleteClusterDescriptorResponse {
 }
 
 message DeleteClusterDescriptorSuccess {
-  opendut.types.cluster.ClusterDescriptor cluster_descriptor = 1;
+  opendut.model.cluster.ClusterDescriptor cluster_descriptor = 1;
 }
 
 message DeleteClusterDescriptorFailure {
@@ -78,31 +78,31 @@ message DeleteClusterDescriptorFailure {
 }
 
 message DeleteClusterDescriptorFailureClusterDescriptorNotFound {
-  opendut.types.cluster.ClusterId cluster_id = 1;
+  opendut.model.cluster.ClusterId cluster_id = 1;
 }
 
 message DeleteClusterDescriptorFailureIllegalClusterState {
-  opendut.types.cluster.ClusterId cluster_id = 1;
-  opendut.types.cluster.ClusterName cluster_name = 2;
-  opendut.types.cluster.ClusterState actual_state = 3;
-  repeated opendut.types.cluster.ClusterState required_states = 4;
+  opendut.model.cluster.ClusterId cluster_id = 1;
+  opendut.model.cluster.ClusterName cluster_name = 2;
+  opendut.model.cluster.ClusterState actual_state = 3;
+  repeated opendut.model.cluster.ClusterState required_states = 4;
 }
 
 message DeleteClusterDescriptorFailureInternal {
-  opendut.types.cluster.ClusterId cluster_id = 1;
-  optional opendut.types.cluster.ClusterName cluster_name = 2;
+  opendut.model.cluster.ClusterId cluster_id = 1;
+  optional opendut.model.cluster.ClusterName cluster_name = 2;
   string cause = 3;
 }
 
 message DeleteClusterDescriptorFailureClusterDeploymentExists {
-  opendut.types.cluster.ClusterId cluster_id = 1;
+  opendut.model.cluster.ClusterId cluster_id = 1;
 }
 
 //
 // GetClusterDescriptor
 //
 message GetClusterDescriptorRequest {
-  opendut.types.cluster.ClusterId id = 1;
+  opendut.model.cluster.ClusterId id = 1;
 }
 
 message GetClusterDescriptorResponse {
@@ -113,7 +113,7 @@ message GetClusterDescriptorResponse {
 }
 
 message GetClusterDescriptorSuccess {
-  opendut.types.cluster.ClusterDescriptor configuration = 1;
+  opendut.model.cluster.ClusterDescriptor configuration = 1;
 }
 
 message GetClusterDescriptorFailure {}
@@ -131,7 +131,7 @@ message ListClusterDescriptorsResponse {
 }
 
 message ListClusterDescriptorsSuccess {
-  repeated opendut.types.cluster.ClusterDescriptor configurations = 1;
+  repeated opendut.model.cluster.ClusterDescriptor configurations = 1;
 }
 
 message ListClusterDescriptorsFailure {}
@@ -140,7 +140,7 @@ message ListClusterDescriptorsFailure {}
 // StoreClusterDeployment
 //
 message StoreClusterDeploymentRequest {
-  opendut.types.cluster.ClusterDeployment cluster_deployment = 1;
+  opendut.model.cluster.ClusterDeployment cluster_deployment = 1;
 }
 
 message StoreClusterDeploymentResponse {
@@ -151,7 +151,7 @@ message StoreClusterDeploymentResponse {
 }
 
 message StoreClusterDeploymentSuccess {
-  opendut.types.cluster.ClusterId cluster_id = 1;
+  opendut.model.cluster.ClusterId cluster_id = 1;
 }
 
 message StoreClusterDeploymentFailure {
@@ -162,22 +162,22 @@ message StoreClusterDeploymentFailure {
 }
 
 message StoreClusterDeploymentFailureInternal {
-  opendut.types.cluster.ClusterId cluster_id = 1;
-  optional opendut.types.cluster.ClusterName cluster_name = 2;
+  opendut.model.cluster.ClusterId cluster_id = 1;
+  optional opendut.model.cluster.ClusterName cluster_name = 2;
   string cause = 3;
 }
 
 message StoreClusterDeploymentFailureIllegalPeerState {
-  opendut.types.cluster.ClusterId cluster_id = 1;
-  opendut.types.cluster.ClusterName cluster_name = 2;
-  repeated opendut.types.peer.PeerId invalid_peers = 3;
+  opendut.model.cluster.ClusterId cluster_id = 1;
+  opendut.model.cluster.ClusterName cluster_name = 2;
+  repeated opendut.model.peer.PeerId invalid_peers = 3;
 }
 
 //
 // DeleteClusterDeployment
 //
 message DeleteClusterDeploymentRequest {
-  opendut.types.cluster.ClusterId cluster_id = 1;
+  opendut.model.cluster.ClusterId cluster_id = 1;
 }
 
 message DeleteClusterDeploymentResponse {
@@ -188,7 +188,7 @@ message DeleteClusterDeploymentResponse {
 }
 
 message DeleteClusterDeploymentSuccess {
-  opendut.types.cluster.ClusterDeployment cluster_deployment = 1;
+  opendut.model.cluster.ClusterDeployment cluster_deployment = 1;
 }
 
 message DeleteClusterDeploymentFailure {
@@ -200,19 +200,19 @@ message DeleteClusterDeploymentFailure {
 }
 
 message DeleteClusterDeploymentFailureClusterDeploymentNotFound {
-  opendut.types.cluster.ClusterId cluster_id = 1;
+  opendut.model.cluster.ClusterId cluster_id = 1;
 }
 
 message DeleteClusterDeploymentFailureIllegalClusterState {
-  opendut.types.cluster.ClusterId cluster_id = 1;
-  opendut.types.cluster.ClusterName cluster_name = 2;
-  opendut.types.cluster.ClusterState actual_state = 3;
-  repeated opendut.types.cluster.ClusterState required_states = 4;
+  opendut.model.cluster.ClusterId cluster_id = 1;
+  opendut.model.cluster.ClusterName cluster_name = 2;
+  opendut.model.cluster.ClusterState actual_state = 3;
+  repeated opendut.model.cluster.ClusterState required_states = 4;
 }
 
 message DeleteClusterDeploymentFailureInternal {
-  opendut.types.cluster.ClusterId cluster_id = 1;
-  opendut.types.cluster.ClusterName cluster_name = 2;
+  opendut.model.cluster.ClusterId cluster_id = 1;
+  opendut.model.cluster.ClusterName cluster_name = 2;
   string cause = 3;
 }
 
@@ -220,7 +220,7 @@ message DeleteClusterDeploymentFailureInternal {
 // GetClusterDeployment
 //
 message GetClusterDeploymentRequest {
-  opendut.types.cluster.ClusterId id = 1;
+  opendut.model.cluster.ClusterId id = 1;
 }
 
 message GetClusterDeploymentResponse {
@@ -231,7 +231,7 @@ message GetClusterDeploymentResponse {
 }
 
 message GetClusterDeploymentSuccess {
-  optional opendut.types.cluster.ClusterDeployment deployment = 1;
+  optional opendut.model.cluster.ClusterDeployment deployment = 1;
 }
 
 message GetClusterDeploymentFailure {}
@@ -250,7 +250,7 @@ message ListClusterDeploymentsResponse {
 }
 
 message ListClusterDeploymentsSuccess {
-  repeated opendut.types.cluster.ClusterDeployment deployments = 1;
+  repeated opendut.model.cluster.ClusterDeployment deployments = 1;
 }
 
 message ListClusterDeploymentsFailure {}
@@ -260,7 +260,7 @@ message ListClusterDeploymentsFailure {}
 // ListClusterPeerStates
 //
 message ListClusterPeerStatesRequest {
-  opendut.types.cluster.ClusterId cluster_id = 1;
+  opendut.model.cluster.ClusterId cluster_id = 1;
 }
 
 message ListClusterPeerStatesResponse {
@@ -271,7 +271,7 @@ message ListClusterPeerStatesResponse {
 }
 
 message ListClusterPeerStatesSuccess {
-  map<string, opendut.types.peer.PeerState> peer_states = 1;
+  map<string, opendut.model.peer.PeerState> peer_states = 1;
 }
 
 message ListClusterPeerStatesFailure {

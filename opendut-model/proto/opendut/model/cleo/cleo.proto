@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package opendut.model.cleo;
+
+import "opendut/model/util/net.proto";
+import "opendut/model/util/uuid.proto";
+
+message CleoId {
+  opendut.model.util.Uuid uuid = 1;
+}
+
+message CleoSetup {
+  CleoId id = 1;
+  opendut.model.util.Url carl = 5;
+  opendut.model.util.Certificate ca = 6;
+  opendut.model.util.AuthConfig auth_config = 7;
+}

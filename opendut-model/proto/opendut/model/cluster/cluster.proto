@@ -1,14 +1,14 @@
 syntax = "proto3";
 
-package opendut.types.cluster;
+package opendut.model.cluster;
 
-import "opendut/types/util/uuid.proto";
-import "opendut/types/util/net.proto";
-import "opendut/types/peer/peer.proto";
-import "opendut/types/topology/device.proto";
+import "opendut/model/util/uuid.proto";
+import "opendut/model/util/net.proto";
+import "opendut/model/peer/peer.proto";
+import "opendut/model/topology/device.proto";
 
 message ClusterId {
-  opendut.types.util.Uuid uuid = 1;
+  opendut.model.util.Uuid uuid = 1;
 }
 
 message ClusterName {
@@ -19,8 +19,8 @@ message ClusterName {
 message ClusterDescriptor {
   ClusterId id = 1;
   ClusterName name = 2;
-  opendut.types.peer.PeerId leader = 3;
-  repeated opendut.types.topology.DeviceId devices = 4;
+  opendut.model.peer.PeerId leader = 3;
+  repeated opendut.model.topology.DeviceId devices = 4;
 }
 // ANCHOR_END: ClusterDescriptor
 
@@ -31,16 +31,16 @@ message ClusterDeployment {
 // ANCHOR: ClusterAssignment
 message ClusterAssignment {
   ClusterId id = 1;
-  opendut.types.peer.PeerId leader = 3;
+  opendut.model.peer.PeerId leader = 3;
   repeated PeerClusterAssignment assignments = 4;
 }
 // ANCHOR_END: ClusterAssignment
 
 // ANCHOR: PeerClusterAssignment
 message PeerClusterAssignment {
-  opendut.types.peer.PeerId peer_id = 1;
-  opendut.types.util.IpAddress vpn_address = 2;
-  opendut.types.util.Port can_server_port = 3;
+  opendut.model.peer.PeerId peer_id = 1;
+  opendut.model.util.IpAddress vpn_address = 2;
+  opendut.model.util.Port can_server_port = 3;
 }
 // ANCHOR_END: PeerClusterAssignment
 

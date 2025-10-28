@@ -1,9 +1,9 @@
 syntax = "proto3";
 
-package opendut.types.peer;
+package opendut.model.peer;
 
-import "opendut/types/cluster/cluster.proto";
-import "opendut/types/util/net.proto";
+import "opendut/model/cluster/cluster.proto";
+import "opendut/model/util/net.proto";
 
 message PeerState {
   PeerConnectionState connection = 1;
@@ -19,7 +19,7 @@ message PeerConnectionState {
 
 message PeerOffline { }
 message PeerOnline {
-  opendut.types.util.IpAddress remote_host = 1;
+  opendut.model.util.IpAddress remote_host = 1;
 }
 
 message PeerMemberState {
@@ -31,7 +31,7 @@ message PeerMemberState {
 
 message PeerMemberAvailable { }
 message PeerMemberBlocked {
-  opendut.types.cluster.ClusterId by_cluster = 1;
+  opendut.model.cluster.ClusterId by_cluster = 1;
 }
 
 
@@ -41,7 +41,7 @@ message PeerStateUp {
     PeerStateUpAvailable available = 1;
     PeerStateUpBlocked blocked = 2;
   }
-  opendut.types.util.IpAddress remote_host = 10;
+  opendut.model.util.IpAddress remote_host = 10;
 }
 
 message PeerStateUpAvailable {}
@@ -52,7 +52,7 @@ message PeerStateUpBlocked {
     PeerStateUpBlockedMember member = 2;
     PeerStateUpBlockedUndeploying undeploying = 3;
   }
-  opendut.types.cluster.ClusterId by_cluster = 10;
+  opendut.model.cluster.ClusterId by_cluster = 10;
 }
 
 message PeerStateUpBlockedDeploying {}

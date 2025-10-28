@@ -1,16 +1,16 @@
 syntax = "proto3";
 
-package opendut.types.peer.configuration.api;
+package opendut.model.peer.configuration.api;
 
-import "opendut/types/cluster/cluster.proto";
-import "opendut/types/peer/executor/executor.proto";
-import "opendut/types/peer/configuration/parameter.proto";
-import "opendut/types/util/net.proto";
-import "opendut/types/util/uuid.proto";
+import "opendut/model/cluster/cluster.proto";
+import "opendut/model/peer/executor/executor.proto";
+import "opendut/model/peer/configuration/parameter.proto";
+import "opendut/model/util/net.proto";
+import "opendut/model/util/uuid.proto";
 import "google/protobuf/timestamp.proto";
 
 message OldPeerConfiguration {
-  optional opendut.types.cluster.ClusterAssignment cluster_assignment = 2;
+  optional opendut.model.cluster.ClusterAssignment cluster_assignment = 2;
 }
 
 
@@ -27,32 +27,32 @@ message PeerConfiguration {
 
 message PeerConfigurationParameterExecutor {
   PeerConfigurationParameter parameter = 1;
-  opendut.types.peer.configuration.parameter.Executor value = 2;
+  opendut.model.peer.configuration.parameter.Executor value = 2;
 }
 
 message PeerConfigurationParameterEthernetBridge {
   PeerConfigurationParameter parameter = 1;
-  opendut.types.peer.configuration.parameter.EthernetBridge value = 2;
+  opendut.model.peer.configuration.parameter.EthernetBridge value = 2;
 }
 
 message PeerConfigurationParameterDeviceInterface {
   PeerConfigurationParameter parameter = 1;
-  opendut.types.peer.configuration.parameter.DeviceInterface value = 2;
+  opendut.model.peer.configuration.parameter.DeviceInterface value = 2;
 }
 
 message PeerConfigurationParameterGreInterfaceConfig {
   PeerConfigurationParameter parameter = 1;
-  opendut.types.peer.configuration.parameter.GreInterfaceConfig value = 2;
+  opendut.model.peer.configuration.parameter.GreInterfaceConfig value = 2;
 }
 
 message PeerConfigurationParameterInterfaceJoinConfig {
   PeerConfigurationParameter parameter = 1;
-  opendut.types.peer.configuration.parameter.InterfaceJoinConfig value = 2;
+  opendut.model.peer.configuration.parameter.InterfaceJoinConfig value = 2;
 }
 
 message PeerConfigurationParameterRemotePeerConnectionCheck {
   PeerConfigurationParameter parameter = 1;
-  opendut.types.peer.configuration.parameter.RemotePeerConnectionCheck value = 2;
+  opendut.model.peer.configuration.parameter.RemotePeerConnectionCheck value = 2;
 }
 
 message PeerConfigurationParameter {
@@ -106,7 +106,7 @@ message PeerConfigurationState {
 
 // General messages
 message PeerConfigurationParameterId {
-  opendut.types.util.Uuid uuid = 1;
+  opendut.model.util.Uuid uuid = 1;
 }
 
 // States

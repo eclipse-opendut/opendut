@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package opendut.carl.services.observer_messaging_broker;
 
-import "opendut/types/peer/peer.proto";
-import "opendut/types/peer/state.proto";
+import "opendut/model/peer/peer.proto";
+import "opendut/model/peer/state.proto";
 
 service ObserverMessagingBroker {
   rpc WaitForPeersOnline(WaitForPeersOnlineRequest) returns (stream WaitForPeersOnlineResponse);
@@ -13,13 +13,13 @@ service ObserverMessagingBroker {
 // WaitForPeer
 
 message WaitForPeersOnlineRequest {
-  repeated opendut.types.peer.PeerId peer_ids = 1;
+  repeated opendut.model.peer.PeerId peer_ids = 1;
   uint64 max_observation_duration = 2;
   bool peers_may_not_yet_exist = 3;
 }
 
 message WaitForPeersOnlineResponse {
-  map<string, opendut.types.peer.PeerConnectionState> peer_states = 1;
+  map<string, opendut.model.peer.PeerConnectionState> peer_states = 1;
   oneof status {
     WaitForPeersOnlineSuccess success = 10;  // request peer online
     WaitForPeersOnlineFailure failure = 11;  // gave up

@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package opendut.model.topology;
+
+import "opendut/model/util/uuid.proto";
+import "opendut/model/util/net.proto";
+
+message DeviceId {
+  opendut.model.util.Uuid uuid = 1;
+}
+
+message DeviceDescriptor {
+  opendut.model.topology.DeviceId id = 1;
+  opendut.model.topology.DeviceName name = 2;
+  opendut.model.topology.DeviceDescription description = 3;
+  opendut.model.util.NetworkInterfaceId interface = 4;
+  repeated opendut.model.topology.DeviceTag tags = 5;
+}
+
+message DeviceName {
+  string value = 1;
+}
+
+message DeviceDescription {
+  string value = 1;
+}
+
+message DeviceTag {
+  string value = 1;
+}

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package opendut.types.peer.executor;
+package opendut.model.peer.executor;
 
 message Engine {
   oneof inner {
