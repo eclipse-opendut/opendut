@@ -1,11 +1,16 @@
 [package]
 name = "opendut-theo"
+description = "Test Harness Environment Operator for OpenDUT"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
+[features]
+default = ["linux-kernel-modules"]
+linux-kernel-modules = ["opendut-edgar-kernel-modules"]
+
 [dependencies]
-opendut-edgar-kernel-modules = { workspace = true }
+opendut-edgar-kernel-modules = { workspace = true, optional = true }
 
 anyhow = { workspace = true }
 cargo_toml = { workspace = true }

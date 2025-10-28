@@ -3,7 +3,6 @@ use std::time::Duration;
 
 use anyhow::{anyhow, Error};
 use tracing::debug;
-use opendut_edgar_kernel_modules::{default_builtin_module_dir, default_module_file, required_can_kernel_modules};
 use status::EdgarDeploymentStatus;
 use crate::core::TheoError;
 use crate::core::docker::command::DockerCommand;
@@ -12,7 +11,8 @@ use crate::core::docker::edgar::{edgar_container_names, EDGAR_LEADER_NAME, EDGAR
 use crate::core::docker::services::DockerCoreServices;
 
 mod status;
-
+#[cfg(feature = "linux-kernel-modules")]
+mod linux_kernel_modules;
 
 #[derive(clap::Parser)]
 pub struct TestEdgarCli {
@@ -37,7 +37,8 @@ impl TestEdgarCli {
                 println!("Stopping if EDGAR cluster is already running...");
                 stop_if_running()?;
 
-                load_edgar_kernel_modules()?;
+                #[cfg(feature = "linux-kernel-modules")]
+                linux_kernel_modules::load_linux_kernel_modules_for_can()?;
                 docker_compose_build(DockerCoreServices::Edgar.as_str())?;
                 start_edgar_in_docker()?;
                 status::wait_until_all_edgar_peers_are(EdgarDeploymentStatus::Provisioned)?;
@@ -55,15 +56,6 @@ impl TestEdgarCli {
         }
         Ok(())
     }
-}
-
-fn load_edgar_kernel_modules() -> Result<(), Error> {
-    for kernel_module in required_can_kernel_modules() {
-        if !kernel_module.is_loaded(&default_module_file(), &default_builtin_module_dir())? {
-            kernel_module.load()?;
-        }
-    }
-    Ok(())
 }
 
 fn start_edgar_in_docker() -> Result<i32, Error> {
