@@ -10,7 +10,7 @@ use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
 
 use crate::app::use_app_globals;
 use crate::clusters::components::CreateClusterButton;
-use crate::components::{health, use_toaster, BasePageContainer, Breadcrumb, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, LoadingSpinner, Toast};
+use crate::components::{health, use_toaster, BasePageContainer, Breadcrumb, LoadingSpinner, Toast};
 use crate::components::health::Health;
 
 #[component]
