@@ -6,6 +6,8 @@ vm_memory = (ENV["OPENDUT_VM_MEMORY"] ||= "8192").to_i
 vm_cpus = (ENV["OPENDUT_VM_CPUS"] ||= "4").to_i
 vm_disk_size = (ENV["OPENDUT_VM_DISK_SIZE"] ||= "50").to_i
 vm_ntp_server = (ENV["OPENDUT_VM_NTP_SERVER"] ||= "").to_s
+vm_graphics_controller = (ENV["OPENDUT_VM_GRAPHICS_CONTROLLER"] ||= "VMSVGA").to_s
+vm_nested_hw_virtualization = (ENV["OPENDUT_VM_NESTED_HW_VIRTUALIZATION"] ||= "on").to_s
 
 machine = {
     :hostname => vm_name,
@@ -46,9 +48,10 @@ Vagrant.configure("2") do |config|
 
         # https://www.virtualbox.org/manual/ch08.html
         vb.customize ["modifyvm", :id, "--vram", "128"]
-        vb.customize ["modifyvm", :id, "--graphicscontroller", "VBoxSVGA"]
+        vb.customize ["modifyvm", :id, "--graphicscontroller", vm_graphics_controller] # default is VMSVGA for Linux guests, alternative: VBoxSVGA
         vb.customize ["modifyvm", :id, "--accelerate3d", "off"]
         vb.customize ["modifyvm", :id, "--accelerate2dvideo", "off"]
+        vb.customize ["modifyvm", :id, "--nested-hw-virt", vm_nested_hw_virtualization]
 
     end
 
