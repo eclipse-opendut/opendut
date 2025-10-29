@@ -9,6 +9,10 @@ vm_ntp_server = (ENV["OPENDUT_VM_NTP_SERVER"] ||= "").to_s
 vm_graphics_controller = (ENV["OPENDUT_VM_GRAPHICS_CONTROLLER"] ||= "VMSVGA").to_s
 vm_nested_hw_virtualization = (ENV["OPENDUT_VM_NESTED_HW_VIRTUALIZATION"] ||= "on").to_s
 
+vm_http_proxy = ENV["OPENDUT_VM_HTTP_PROXY"]
+custom_root_ca = ENV["CUSTOM_ROOT_CA"]
+disable_private_network = (ENV["OPENDUT_DISABLE_PRIVATE_NETWORK"] ||= "false").to_s == "true"
+
 machine = {
     :hostname => vm_name,
     :memory => vm_memory,
@@ -16,9 +20,6 @@ machine = {
     :ip => "192.168.56.10",
     :box_name => "ubuntu/jammy64",
 }
-
-custom_root_ca = ENV["CUSTOM_ROOT_CA"]
-disable_private_network = (ENV["OPENDUT_DISABLE_PRIVATE_NETWORK"] ||= "false").to_s == "true"
 
 Vagrant.configure("2") do |config|
 
@@ -30,6 +31,12 @@ Vagrant.configure("2") do |config|
 
     if !disable_private_network then
         config.vm.network "private_network", ip: machine[:ip]
+    end
+    # http proxy
+    if !vm_http_proxy.nil? then
+        config.proxy.http     = vm_http_proxy
+        config.proxy.https    = vm_http_proxy
+        config.proxy.no_proxy = "localhost,127.0.0.1,opendut.local,netbird-management,netbird-dashboard,netbird-signal,netbird-coturn,keycloak,edgar-leader,edgar-*,carl,loki,tempo,prometheus,alloy,otel-collector,grafana,nginx-webdav,192.168.56.10,192.168.0.0/16"
     end
 
     # default shared folder required by provisioner
