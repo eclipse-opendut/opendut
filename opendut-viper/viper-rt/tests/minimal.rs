@@ -43,9 +43,9 @@ async fn test_that_compile_and_run_properly_work() -> Result<()> {
     assert_that!(report.cases[0].outcome(), eq(Outcome::Success));
     assert_that!(report.outcome(), eq(Outcome::Success));
 
-    assert_that!(report.name, eq(&String::from("<embedded>")));
-    assert_that!(report.cases[0].name, eq(&String::from("<embedded>::MyTestCase")));
-    assert_that!(report.cases[0].tests[0].identifier, eq(&String::from("<embedded>::MyTestCase::test_awesomeness")));
+    assert_that!(report.name, eq(&String::from("_embedded_")));
+    assert_that!(report.cases[0].name, eq(&String::from("_embedded_::MyTestCase")));
+    assert_that!(report.cases[0].tests[0].identifier, eq(&String::from("_embedded_::MyTestCase::test_awesomeness")));
 
     Ok(())
 }

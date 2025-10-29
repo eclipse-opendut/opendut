@@ -30,7 +30,7 @@ pub fn compile_source_code(source_code: &SourceCode, py_interpreter: &Interprete
 }
 
 fn compile_source(source_code: &SourceCode, vm: &VirtualMachine) -> CompileResult<PyRef<PyCode>> {
-    vm.compile(&source_code.code, compiler::Mode::Exec, String::from("<embedded>"))
+    vm.compile(&source_code.code, compiler::Mode::Exec, String::from("_embedded_"))
         .map_err(|error| Box::new(CompilationError::new_python_compilation_error(Clone::clone(&source_code.identifier), error.to_string())))
 }
 
