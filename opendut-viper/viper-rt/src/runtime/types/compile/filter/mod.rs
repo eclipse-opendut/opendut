@@ -23,8 +23,10 @@ impl IdentifierFilter {
         match parts.len() {
             0 => Ok(Self::default()),
             1 => {
+                let suite_identifier = TestSuiteIdentifier::try_from(parts[0])?;
+
                 Ok(Self {
-                    suite_identifier: None,
+                    suite_identifier: Some(suite_identifier),
                     ..Default::default()
                 })
             }

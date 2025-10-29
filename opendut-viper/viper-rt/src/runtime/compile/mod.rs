@@ -12,6 +12,31 @@ use crate::runtime::emitter::EventEmitter;
 use crate::runtime::types::compile::error::{CompilationError, CompileResult};
 use crate::source::Source;
 use tracing::{debug, error, info};
+use crate::runtime::types::compile::filter::FilterError;
+
+pub async fn compile_tree<Emitter>(
+    sources: Vec<(Source, Emitter)>,
+    context: &Context,
+    identifier_filter: &IdentifierFilter
+) -> Result<Vec<CompileResult<Compilation>>, FilterError>
+where Emitter: EventEmitter<CompileEvent> + Send + 'static,
+{
+    let mut compilations = Vec::new();
+
+    for (source, mut emitter) in sources {
+        if identifier_filter.matches_suite(&source.identifier) {
+            let compilation = compile(&source, context, &mut emitter, identifier_filter).await;
+            compilations.push(compilation);
+        }
+    }
+
+    if let Some(suite_identifier_filter) = &identifier_filter.suite_identifier
+    && compilations.is_empty() {
+        return Err(FilterError::new_test_suite_not_found_error(suite_identifier_filter.to_string()));
+    }
+
+    Ok(compilations)
+}
 
 pub async fn compile(
     source: &Source,

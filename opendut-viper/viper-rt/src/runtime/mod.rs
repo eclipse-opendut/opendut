@@ -1,7 +1,7 @@
 use crate::compile::IdentifierFilter;
 use crate::runtime::ctx::Context;
-
 use crate::runtime::options::{ViperBuilder, ViperOptions};
+use crate::runtime::types::compile::filter::FilterError;
 use crate::source::loaders::EmbeddedSourceLoader;
 
 #[cfg(feature = "compile")]
@@ -54,6 +54,20 @@ impl ViperRuntime {
 
     pub fn builder() -> ViperBuilder {
         ViperBuilder::default()
+    }
+
+    #[cfg(feature = "compile")]
+    pub async fn compile_tree<Emitter>(
+        &self,
+        sources: Vec<(
+            types::source::Source,
+            Emitter,
+        )>,
+        identifier_filter: &IdentifierFilter,
+    ) -> Result<Vec<types::compile::error::CompileResult<types::compile::compilation::Compilation>>, FilterError>
+    where Emitter: emitter::EventEmitter<types::compile::event::CompileEvent> + Send + 'static,
+    {
+        compile::compile_tree(sources, &self.context, identifier_filter).await
     }
 
     #[cfg(feature = "compile")]
