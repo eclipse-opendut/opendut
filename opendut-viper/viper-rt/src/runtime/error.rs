@@ -177,10 +177,13 @@ impl Display for MetadataError {
 impl Display for FilterError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            FilterError::InvalidTestCaseIdentifier { name } => {
+            FilterError::TestSuiteNotFound { name } => {
+                write!(f, "Test suite '{name}' not found!")
+            }
+            FilterError::TestCaseNotFound { name } => {
                 write!(f, "TestCase '{name}' not found.")
             }
-            FilterError::InvalidTestIdentifier { name } => {
+            FilterError::TestNotFound { name } => {
                 write!(f, "Test '{name}' not found.")
             }
         }
