@@ -27,7 +27,7 @@ async fn test_running_specific_suite() -> Result<()> {
             )
         ],
         &identifier_filter,
-    ).await;
+    ).await?;
 
     for compilation_result in compilations {
         let (_, _, suite) = compilation_result?.split();

@@ -2,7 +2,6 @@ mod templates;
 mod console;
 mod parse;
 mod param_config;
-mod filter;
 
 use std::collections::HashMap;
 use clap::Parser;
@@ -25,7 +24,6 @@ use viper_rt::source::loaders::SimpleFileSourceLoader;
 use viper_rt::source::Source;
 use viper_rt::ViperRuntime;
 use crate::console::Event;
-use crate::filter::{SuiteFilterError, SuiteIdentifierFilter};
 use crate::param_config::{IncompleteBindingsError, ParameterToml};
 use crate::templates::SCRIPT_PY_TEMPLATE;
 
@@ -121,10 +119,10 @@ async fn build_and_run(params_from_file: Option<String>, test_identifier_filter:
 
     let files = fs::read_dir("./src").unwrap();
 
-    let suite_identifier_filter = test_identifier_filter.as_ref().map(|filter| SuiteIdentifierFilter::parse(filter));
-    let test_identifier_filter = test_identifier_filter
-        .map(|filter| IdentifierFilter::parse(&filter))
-        .unwrap_or_default();
+    let test_identifier_filter = match test_identifier_filter {
+        Some(filter) => IdentifierFilter::parse(&filter)?,
+        None => IdentifierFilter::default(),
+    };
 
     let render_task = {
         let (sender, receiver) = tokio::sync::mpsc::channel::<Event>(64);
@@ -133,10 +131,10 @@ async fn build_and_run(params_from_file: Option<String>, test_identifier_filter:
             let _ = console::render(ReceiverStream::new(receiver)).await;
         });
 
-        let mut test_suites = Vec::new();
-
         let parameter_toml = ParameterToml::load(&params_from_file)?;
 
+        let mut test_suites = Vec::new();
+        let mut sources_to_compile = Vec::new();
         let mut bindings_map = HashMap::new();
 
         for file in files {
@@ -158,16 +156,17 @@ async fn build_and_run(params_from_file: Option<String>, test_identifier_filter:
 
             let test_suite_identifier = TestSuiteIdentifier::try_from(file_name)?;
 
-            if let Some(filter) = &suite_identifier_filter
-                && filter.matches_suite(&test_suite_identifier).not() {
-                continue;
-            }
-
             let source = Source::try_from_path(test_suite_identifier, &path)?;
+            let emitter = emitter::sink(new_compile_event_sink(&sender));
 
-            let mut emitter = emitter::sink(new_compile_event_sink(&sender));
+            sources_to_compile.push((source, emitter));
+        }
 
-            let (_, descriptors, suite) = runtime.compile(&source, &mut emitter, &test_identifier_filter).await?.split();
+        let compilations = runtime.compile_tree(sources_to_compile, &test_identifier_filter).await?;
+
+        for compilation_result in compilations {
+
+            let (_, descriptors, suite) = compilation_result?.split();
 
             let mut bindings = ParameterBindings::from(Clone::clone(&descriptors));
 
@@ -191,12 +190,6 @@ async fn build_and_run(params_from_file: Option<String>, test_identifier_filter:
 
             bindings_map.insert(suite.name().to_string(), completed_bindings);
             test_suites.push(suite);
-        }
-
-        if let Some(filter) = suite_identifier_filter
-            && let Some(suite_identifier_filter) = filter.suite_identifier
-            && test_suites.is_empty() {
-            return Err(Box::new(SuiteFilterError::new_unknown_test_suite_error(suite_identifier_filter)))
         }
 
         sender.send(Event::RenderEvent).await?;
@@ -223,7 +216,7 @@ fn new_run_event_sink(sender: &Sender<Event>) -> impl Sink<RunEvent, Error = Pol
     )
 }
 
-fn new_compile_event_sink(sender: &Sender<Event>) -> impl Sink<CompileEvent, Error = PollSendError<Event>> + Unpin {
+fn new_compile_event_sink(sender: &Sender<Event>) -> impl Sink<CompileEvent, Error = PollSendError<Event>> + Unpin + use<> {
     Box::pin(
         PollSender::new(Clone::clone(sender))
             .with(|event| async { Ok(Event::CompileEvent(event))})
