@@ -50,8 +50,6 @@ fn main() -> crate::Result {
         TaskCli::Distribution(tasks::distribution::DistributionCli { target, release_build }) => {
             for target in target.iter() {
                 packages::carl::distribution::carl_distribution(target, release_build)?;
-                packages::edgar::distribution::edgar_distribution(target, release_build)?;
-                packages::cleo::distribution::cleo_distribution(target, release_build)?;
             }
         }
         TaskCli::Doc(implementation) => implementation.default_handling()?,
