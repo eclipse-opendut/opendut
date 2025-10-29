@@ -42,7 +42,7 @@ async fn test_running_specific_suite() -> Result<()> {
 async fn test_running_specific_case() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let filter = "<embedded>::MySucceedingTestCase";
+    let filter = "_embedded_::MySucceedingTestCase";
     let identifier_filter = IdentifierFilter::parse(filter)?;
 
     let suite = runtime.compile(
@@ -75,7 +75,7 @@ async fn test_running_specific_case() -> Result<()> {
 async fn test_running_specific_test() -> Result<()> {
     let runtime = ViperRuntime::default();
 
-    let filter = "<embedded>::MyTestCase::test_success";
+    let filter = "_embedded_::MyTestCase::test_success";
     let identifier_filter = IdentifierFilter::parse(filter)?;
 
     let suite = runtime.compile(

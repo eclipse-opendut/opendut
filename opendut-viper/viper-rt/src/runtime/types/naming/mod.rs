@@ -72,7 +72,7 @@ impl TestSuiteIdentifier {
     }
 
     pub(crate) fn new_embedded() -> Self {
-        Self { value: String::from("<embedded>") }
+        Self { value: String::from("_embedded_") }
     }
 }
 
@@ -102,7 +102,7 @@ impl TestSuiteIdentifier {
 ///     let suite = runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await?.into_suite();
 ///     let case = &suite.test_cases()[0];
 ///
-///     assert_eq!(case.identifier(), "<embedded>::MyTestCase");
+///     assert_eq!(case.identifier(), "_embedded_::MyTestCase");
 ///     assert_eq!(case.name(), "MyTestCase");
 ///
 ///     Ok(())
@@ -185,7 +185,7 @@ impl TestCaseIdentifier {
 ///     let suite = runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await?.into_suite();
 ///     let test = &suite.test_cases()[0].tests()[0];
 ///
-///     assert_eq!(test.identifier(), "<embedded>::MyTestCase::test_awesomeness");
+///     assert_eq!(test.identifier(), "_embedded_::MyTestCase::test_awesomeness");
 ///     assert_eq!(test.name(), "test_awesomeness");
 ///
 ///     Ok(())
