@@ -33,6 +33,7 @@ indoc = { version = "2.0.*" }
 pin-project-lite = { version = "0.2.*" }
 proc-macro2 = { version = "1.0.94" }
 quote = { version = "1.0.*" }
+repo_path = "1.2.3"
 reqwest = { version = "0.12.*", default-features = false }
 rustpython-vm = { version = "0.4.0" }
 serde = { version = "1.0.*" }

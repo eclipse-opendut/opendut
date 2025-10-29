@@ -35,6 +35,7 @@ viper-containers = { workspace = true, features = ["mock"] }
 googletest = { workspace = true }
 httpmock = { workspace = true }
 indoc = { workspace = true }
+repo_path = { workspace = true }
 tempfile = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"]}
 tokio-util = { workspace = true }
