@@ -186,6 +186,15 @@ impl Display for FilterError {
             FilterError::TestNotFound { name } => {
                 write!(f, "Test '{name}' not found.")
             }
+            FilterError::InvalidTestSuiteFilter { case } => {
+                write!(f, "Invalid test suite filter: {case}")
+            }
+            FilterError::InvalidTestCaseFilter { case } => {
+                write!(f, "Invalid test case filter: {case}")
+            }
+            FilterError::InvalidTestFilter { case } => {
+                write!(f, "Invalid test filter: {case}")
+            }
         }
     }
 }

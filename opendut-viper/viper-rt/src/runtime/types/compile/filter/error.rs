@@ -1,3 +1,5 @@
+use crate::runtime::types::naming::error::InvalidIdentifierError;
+
 #[derive(Debug)]
 pub enum FilterError {
     TestSuiteNotFound {
@@ -9,6 +11,15 @@ pub enum FilterError {
     TestNotFound {
         name: String
     },
+    InvalidTestSuiteFilter {
+        case: InvalidIdentifierError
+    },
+    InvalidTestCaseFilter {
+        case: InvalidIdentifierError
+    },
+    InvalidTestFilter {
+        case: InvalidIdentifierError
+    }
 }
 
 impl FilterError {
@@ -23,5 +34,17 @@ impl FilterError {
 
     pub(crate) fn new_test_not_found_error(name: String) -> Self {
         Self::TestNotFound { name }
+    }
+
+    pub(crate) fn new_invalid_test_suite_filter_error(case: InvalidIdentifierError) -> Self {
+        Self::InvalidTestSuiteFilter { case }
+    }
+
+    pub(crate) fn new_invalid_test_case_filter_error(case: InvalidIdentifierError) -> Self {
+        Self::InvalidTestCaseFilter { case }
+    }
+
+    pub(crate) fn new_invalid_test_filter_error(case: InvalidIdentifierError) -> Self {
+        Self::InvalidTestFilter { case }
     }
 }
