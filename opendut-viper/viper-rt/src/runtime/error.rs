@@ -118,9 +118,9 @@ impl Display for InvalidParameterNameError {
 impl Display for InspectionError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            InspectionError::MetadataError(cause) => write!(f, "{cause}"),
-            InspectionError::ParameterError(cause) => write!(f, "{cause}"),
-            InspectionError::FilterError(cause) => write!(f, "{cause}"),
+            InspectionError::Metadata(cause) => write!(f, "{cause}"),
+            InspectionError::Parameter(cause) => write!(f, "{cause}"),
+            InspectionError::Filter(cause) => write!(f, "{cause}"),
         }
     }
 }

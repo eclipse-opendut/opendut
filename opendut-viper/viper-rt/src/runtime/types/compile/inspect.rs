@@ -4,9 +4,9 @@ use crate::runtime::types::compile::filter::FilterError;
 
 #[derive(Debug)]
 pub enum InspectionError {
-    MetadataError(MetadataError),
-    ParameterError(ParameterError),
-    FilterError(FilterError)
+    Metadata(MetadataError),
+    Parameter(ParameterError),
+    Filter(FilterError)
 }
 
 impl InspectionError {
@@ -14,16 +14,16 @@ impl InspectionError {
     pub(crate) fn new_invalid_metadata_error(
         cause: MetadataError
     ) -> Self {
-        Self::MetadataError(cause)
+        Self::Metadata(cause)
     }
 
     pub(crate) fn new_invalid_parameter_error(
         cause: ParameterError
     ) -> Self {
-        Self::ParameterError(cause)
+        Self::Parameter(cause)
     }
 
     pub(crate) fn new_invalid_filter_error(
         cause: FilterError
-    ) -> Self { Self::FilterError(cause) }
+    ) -> Self { Self::Filter(cause) }
 }

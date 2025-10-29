@@ -71,18 +71,18 @@ impl IdentifierFilter {
             .unwrap_or(true)
     }
 
-    fn get_suite_identifier(parts: &Vec<&str>) -> Result<TestSuiteIdentifier, FilterError> {
+    fn get_suite_identifier(parts: &[&str]) -> Result<TestSuiteIdentifier, FilterError> {
         TestSuiteIdentifier::try_from(parts[0])
-            .map_err(|err| FilterError::new_invalid_test_suite_filter_error(err))
+            .map_err(FilterError::new_invalid_test_suite_filter_error)
     }
 
-    fn get_case_identifier(parts: &Vec<&str>) -> Result<TestCaseIdentifier, FilterError> {
+    fn get_case_identifier(parts: &[&str]) -> Result<TestCaseIdentifier, FilterError> {
         TestCaseIdentifier::try_from(parts[..2].join("::").to_string())
-            .map_err(|err| FilterError::new_invalid_test_case_filter_error(err))
+            .map_err(FilterError::new_invalid_test_case_filter_error)
     }
 
-    fn get_test_identifier(parts: &Vec<&str>) -> Result<TestIdentifier, FilterError> {
+    fn get_test_identifier(parts: &[&str]) -> Result<TestIdentifier, FilterError> {
         TestIdentifier::try_from(parts.join("::").to_string())
-            .map_err(|err| FilterError::new_invalid_test_filter_error(err))
+            .map_err(FilterError::new_invalid_test_filter_error)
     }
 }

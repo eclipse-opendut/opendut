@@ -95,10 +95,9 @@ async fn run_test_case(
     emit::test_case_started(emitter, Clone::clone(&identifier)).await?;
 
     interpreter.enter(|vm| {
-        if let Some(setup_class_fn) = &setup_class_fn {
-            if let Err(err) = setup_class_fn.call((ty.clone(), ), vm) {
-                print_error(err);
-            }
+        if let Some(setup_class_fn) = &setup_class_fn
+        && let Err(err) = setup_class_fn.call((ty.clone(), ), vm) {
+            print_error(err);
         }
     });
 
@@ -108,10 +107,9 @@ async fn run_test_case(
     }
 
     interpreter.enter(|vm| {
-        if let Some(teardown_class_fn) = teardown_class_fn {
-            if let Err(error) = teardown_class_fn.call((ty, ), vm) {
-                print_error(error);
-            }
+        if let Some(teardown_class_fn) = teardown_class_fn
+        && let Err(error) = teardown_class_fn.call((ty, ), vm) {
+            print_error(error);
         }
     });
 
@@ -156,10 +154,9 @@ async fn run_test(
             })
             .map_err(|cause| RunError::new_python_reflection_error(Clone::clone(&identifier), cause))?;
 
-        if let Some(setup_fn) = setup_fn {
-            if let Err(err) = setup_fn.call((Clone::clone(&instance), ), vm) { // TODO: Decide, what should happen when a setup function fails.
-                print_error(err);
-            }
+        if let Some(setup_fn) = setup_fn
+        && let Err(err) = setup_fn.call((Clone::clone(&instance), ), vm) { // TODO: Decide, what should happen when a setup function fails.
+            print_error(err);
         }
 
         vm.sys_module.set_attr("stdout", stdout, vm)

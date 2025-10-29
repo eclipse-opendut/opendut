@@ -181,11 +181,9 @@ impl ToTokens for ParsedAttribute {
 fn find_viper_attributes_or_default(attributes: &Vec<ParsedAttribute>) -> ViperAttributes {
 
     for attribute in attributes {
-        if let Ok(meta) = syn::parse2::<Meta>(attribute.clone().content) {
-
-            if ViperAttributes::peek(&meta) {
-                return ViperAttributes::parse(meta).unwrap_or_default()
-            }
+        if let Ok(meta) = syn::parse2::<Meta>(attribute.clone().content)
+        && ViperAttributes::peek(&meta) {
+            return ViperAttributes::parse(meta).unwrap_or_default()
         }
     }
     ViperAttributes::default()
@@ -196,14 +194,11 @@ fn find_doc_attributes(attributes: &Vec<ParsedAttribute>) -> Vec<String> {
     let mut doc_attributes = Vec::new();
 
     for attribute in attributes {
-        if let Ok(Meta::NameValue(name_value)) = syn::parse2::<Meta>(attribute.clone().content) {
-            if name_value.path.is_ident("doc") {
-                if let syn::Expr::Lit(expr_lit) = name_value.value {
-                    if let syn::Lit::Str(lit_str) = expr_lit.lit {
-                        doc_attributes.push(lit_str.value());
-                    }
-                }
-            }
+        if let Ok(Meta::NameValue(name_value)) = syn::parse2::<Meta>(attribute.clone().content)
+        && name_value.path.is_ident("doc")
+        && let syn::Expr::Lit(expr_lit) = &name_value.value
+        && let syn::Lit::Str(lit_str) = &expr_lit.lit {
+            doc_attributes.push(lit_str.value());
         }
     }
     doc_attributes
@@ -220,16 +215,16 @@ fn extract_type_from_option_or_result(ty: &syn::Type) -> Option<Ident> {
 
             match ident_str.as_str() {
                 "Option" | "OptionalArg" | "PyResult" | "Result" => {
-                    if let syn::PathArguments::AngleBracketed(generics) = &path_segment.arguments {
-                        if let Some(syn::GenericArgument::Type(syn::Type::Path(inner_path))) = generics.args.last() {
-                            return inner_path
-                                .path
-                                .segments
-                                .last()
-                                .map(|inner_ident| inner_ident.ident.clone());
-                        }
+                    if let syn::PathArguments::AngleBracketed(generics) = &path_segment.arguments
+                    && let Some(syn::GenericArgument::Type(syn::Type::Path(inner_path))) = generics.args.last() {
+                        inner_path
+                            .path
+                            .segments
+                            .last()
+                            .map(|inner_ident| inner_ident.ident.clone())
+                    } else {
+                        None
                     }
-                    None
                 }
                 _ => Some(path_segment.ident.clone()),
             }
