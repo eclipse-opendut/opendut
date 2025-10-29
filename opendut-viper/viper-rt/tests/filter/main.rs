@@ -10,7 +10,9 @@ use viper_rt::ViperRuntime;
 
 #[tokio::test]
 async fn test_running_specific_suite() -> Result<()> {
-    let runtime = ViperRuntime::default();
+    let runtime = ViperRuntime::builder()
+        .with_source_loader(viper_rt::source::loaders::SimpleFileSourceLoader)
+        .build()?;
 
     let filter = "success";
     let identifier_filter = IdentifierFilter::parse(filter)?;
