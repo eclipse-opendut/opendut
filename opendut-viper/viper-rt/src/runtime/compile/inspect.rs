@@ -71,7 +71,7 @@ fn traverse_code(test_suite_name: &TestSuiteIdentifier, py_module: &PyRef<PyModu
 
     if let Some(case_identifier_filter) = &identifier_filter.case_identifier
     && test_cases.is_empty() {
-        return Err(InspectionError::new_invalid_filter_error(FilterError::new_unknown_test_case_error(case_identifier_filter.to_owned())));
+        return Err(InspectionError::new_invalid_filter_error(FilterError::new_test_case_not_found_error(case_identifier_filter.to_string())));
     }
 
     Ok((test_cases, metadata.unwrap_or_default(), parameters))
@@ -124,7 +124,7 @@ fn make_test_case(test_type: &PyType, test_case_name: TestCaseIdentifier, interp
 
         if let Some(test_identifier_filter) = &identifier_filter.test_identifier
         && tests.is_empty() {
-            return Err(InspectionError::new_invalid_filter_error(FilterError::new_unknown_test_error(test_identifier_filter.to_owned())));
+            return Err(InspectionError::new_invalid_filter_error(FilterError::new_test_not_found_error(test_identifier_filter.to_string())));
         }
 
         Ok(TestCase { identifier: test_case_name, description, setup_fn, teardown_fn, setup_class_fn, teardown_class_fn, tests })
