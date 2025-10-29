@@ -40,8 +40,7 @@ pub trait Identifier : Debug + Display {
 /// #[tokio::main]
 /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ///
-///      use viper_rt::common::TestSuiteIdentifier;
-/// let runtime = ViperRuntime::builder()
+///     let runtime = ViperRuntime::builder()
 ///         .with_source_loader(SimpleFileSourceLoader)
 ///         .build()?;
 ///
