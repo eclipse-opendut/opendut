@@ -7,8 +7,9 @@
 </p>
 
 [![projects.eclipse.org](https://img.shields.io/badge/Eclipse_Project---?style=for-the-badge&logo=eclipseide&labelColor=%236C54C6&color=%235C5C5C)](https://projects.eclipse.org/projects/automotive.opendut)
-[![projects.eclipse.org](https://img.shields.io/github/actions/workflow/status/eclipse-opendut/opendut/build.yaml?branch=main&style=for-the-badge&logo=githubactions&label=main)](https://github.com/eclipse-opendut/opendut/actions?query=branch%3Amain)
-[![projects.eclipse.org](https://img.shields.io/github/actions/workflow/status/eclipse-opendut/opendut/build.yaml?branch=development&style=for-the-badge&logo=githubactions&label=development)](https://github.com/eclipse-opendut/opendut/actions?query=branch%3Adevelopment)
+[![Matrix](https://img.shields.io/matrix/automotive.opendut%3Amatrix.eclipse.org?style=for-the-badge&logo=matrix)](https://chat.eclipse.org/#/room/#automotive.opendut:matrix.eclipse.org)
+[![main branch](https://img.shields.io/github/actions/workflow/status/eclipse-opendut/opendut/build.yaml?branch=main&style=for-the-badge&logo=githubactions&label=main)](https://github.com/eclipse-opendut/opendut/actions?query=branch%3Amain)
+[![development branch](https://img.shields.io/github/actions/workflow/status/eclipse-opendut/opendut/build.yaml?branch=development&style=for-the-badge&logo=githubactions&label=development)](https://github.com/eclipse-opendut/opendut/actions?query=branch%3Adevelopment)
 
 # Eclipse openDuT
 
