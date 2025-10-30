@@ -6,9 +6,7 @@ use std::time::Duration;
 use anyhow::bail;
 use opendut_model::cluster::PeerClusterAssignment;
 use opendut_model::util::Port;
-use regex::Regex;
 
-use tokio::process::Command;
 use tracing::{debug, error, info};
 use opendut_model::peer::PeerId;
 use opendut_model::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
@@ -40,81 +38,6 @@ impl CanManager {
         })
     }
 
-    async fn check_can_route_exists(&self, src: &NetworkInterfaceName, dst: &NetworkInterfaceName, can_fd: bool, max_hops: u8) -> Result<bool, Error> {
-        let output = Command::new("cangw")
-            .arg("-L")
-            .output()
-            .await
-            .map_err(|cause| Error::CommandLineProgramExecution { command: "cangw".to_string(), cause })?;
-
-        // cangw -L returns non-zero exit code despite succeeding, so we don't check it here
-
-        let output_str = String::from_utf8_lossy(&output.stdout);
-
-        let regex = Regex::new(r"(?m)^cangw -A -s ([^\n ]+) -d ([^\n ]+) ((?:-X )?)-e -l ([0-9[^\n ]]+) #.*$").unwrap();
-
-        let captures = regex.captures_iter(&output_str).map(|captures| captures.extract().1);
-
-        for [exist_src, exist_dst, can_fd_flag, exist_max_hops] in captures {
-            let exist_can_fd = can_fd_flag.trim() == "-X";
-
-            if exist_src == src.name()
-            && exist_dst == dst.name()
-            && exist_can_fd == can_fd
-            && exist_max_hops == max_hops.to_string() {
-                return Ok(true)
-            }
-        }
-
-        Ok(false)
-    }
-
-    async fn create_can_route(&self, src: &NetworkInterfaceName, dst: &NetworkInterfaceName, can_fd: bool, max_hops: u8) -> Result<(), Error> {
-        let mut cmd = Command::new("cangw");
-        cmd.arg("-A")
-            .arg("-s")
-            .arg(src.name())
-            .arg("-d")
-            .arg(dst.name())
-            .arg("-e")
-            .arg("-l")
-            .arg(max_hops.to_string());
-
-        if can_fd {
-            cmd.arg("-X");
-        } 
-
-        let output= cmd.output().await
-            .map_err(|cause| Error::CommandLineProgramExecution { command: "cangw".to_string(), cause })?;
-
-        if ! output.status.success() {
-            return Err(Error::CanRouteCreation { 
-                src: src.clone(), 
-                dst: dst.clone(), 
-                cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim())
-            });
-        }
-
-        if self.check_can_route_exists(src, dst, can_fd, max_hops).await? {
-            Ok(())
-        } else {
-            Err(Error::CanRouteCreationNoCause { src: src.clone(), dst: dst.clone() })
-        }
-    }
-
-    async fn remove_all_can_routes(&self) -> Result<(), Error> {
-        let output = Command::new("cangw")
-            .arg("-F")
-            .output()
-            .await
-            .map_err(|cause| Error::CommandLineProgramExecution { command: "cangw".to_string(), cause })?;
-
-        if ! output.status.success() {
-            return Err(Error::CanRouteFlushing { cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim()) });
-        }
-        Ok(())
-    }
-
     pub async fn setup_local_routing(
         &self,
         bridge_name: &NetworkInterfaceName,
@@ -124,17 +47,6 @@ impl CanManager {
         self.create_can_bridge(bridge_name).await
             .map_err(|cause| Error::Other { message: format!("Error while creating CAN bridge: {cause}") })?;
 
-        self.remove_all_can_routes().await?;
-
-        for interface in local_can_interfaces {
-            self.update_can_interface(&interface).await
-                .map_err(|cause| Error::Other { message: format!("Error while updating CAN interface: {cause}") })?;
-
-            self.create_can_route(bridge_name, &interface.name, true, 2).await?;
-            self.create_can_route(bridge_name, &interface.name, false, 2).await?;
-            self.create_can_route(&interface.name, bridge_name, true, 2).await?;
-            self.create_can_route(&interface.name, bridge_name, false, 2).await?;
-        }
 
         Ok(())
     }

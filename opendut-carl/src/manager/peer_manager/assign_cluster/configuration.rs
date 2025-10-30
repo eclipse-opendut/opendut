@@ -41,7 +41,10 @@ pub(super) fn update_peer_configuration(
         executors,
         gre_interfaces,
         joined_interfaces,
-        remote_peer_connection_checks
+        remote_peer_connection_checks,
+        can_connections,
+        can_bridges,
+        can_local_routes,
     } = peer_configuration;
 
     let device_dependencies = { // Network device interfaces
