@@ -23,7 +23,9 @@ pub struct PeerConfiguration {
     pub gre_interfaces: ParameterField<parameter::GreInterfaceConfig>,
     pub joined_interfaces: ParameterField<parameter::InterfaceJoinConfig>,
     pub remote_peer_connection_checks: ParameterField<parameter::RemotePeerConnectionCheck>,
-    //TODO migrate more parameters
+    pub can_connections: ParameterField<parameter::CanConnection>,
+    pub can_bridges: ParameterField<parameter::CanBridge>,
+    pub can_local_routes: ParameterField<parameter::CanLocalRoute>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize)]
@@ -34,6 +36,9 @@ pub enum ParameterVariant {
     GreInterface(Box<Parameter<parameter::GreInterfaceConfig>>),
     JoinedInterface(Box<Parameter<parameter::InterfaceJoinConfig>>),
     RemotePeerConnectionCheck(Box<Parameter<parameter::RemotePeerConnectionCheck>>),
+    CanConnections(Box<Parameter<parameter::CanConnection>>),
+    CanBridges(Box<Parameter<parameter::CanBridge>>),
+    CanLocalRoutes(Box<Parameter<parameter::CanLocalRoute>>),
 }
 
 impl ParameterVariant {
@@ -45,6 +50,9 @@ impl ParameterVariant {
             ParameterVariant::GreInterface(parameter) => { parameter.dependencies.iter().cloned().collect::<HashSet<_>>() }
             ParameterVariant::JoinedInterface(parameter) => { parameter.dependencies.iter().cloned().collect::<HashSet<_>>() }
             ParameterVariant::RemotePeerConnectionCheck(parameter) => { parameter.dependencies.iter().cloned().collect::<HashSet<_>>() }
+            ParameterVariant::CanConnections(parameter) => { parameter.dependencies.iter().cloned().collect::<HashSet<_>>() }
+            ParameterVariant::CanBridges(parameter) => { parameter.dependencies.iter().cloned().collect::<HashSet<_>>() }
+            ParameterVariant::CanLocalRoutes(parameter) => { parameter.dependencies.iter().cloned().collect::<HashSet<_>>() }
         }
     }
     pub fn target(&self) -> ParameterTarget {
@@ -55,6 +63,9 @@ impl ParameterVariant {
             ParameterVariant::GreInterface(parameter) => parameter.target,
             ParameterVariant::JoinedInterface(parameter) => parameter.target,
             ParameterVariant::RemotePeerConnectionCheck(parameter) => parameter.target,
+            ParameterVariant::CanConnections(parameter) => parameter.target,
+            ParameterVariant::CanBridges(parameter) => parameter.target,
+            ParameterVariant::CanLocalRoutes(parameter) => parameter.target,
         }
     }
     pub fn id(&self) -> ParameterId {
@@ -65,6 +76,9 @@ impl ParameterVariant {
             ParameterVariant::GreInterface(parameter) => parameter.id,
             ParameterVariant::JoinedInterface(parameter) => parameter.id,
             ParameterVariant::RemotePeerConnectionCheck(parameter) => parameter.id,
+            ParameterVariant::CanConnections(parameter) => parameter.id,
+            ParameterVariant::CanBridges(parameter) => parameter.id,
+            ParameterVariant::CanLocalRoutes(parameter) => parameter.id,
         }
     }
 }
@@ -77,16 +91,21 @@ impl PeerConfiguration {
             executors,
             gre_interfaces,
             joined_interfaces,
-            remote_peer_connection_checks
+            remote_peer_connection_checks,
+            can_connections,
+            can_bridges,
+            can_local_routes,            
         } = self.clone();
 
-        device_interfaces.values.into_iter()
-            .map(|(id, parameter) | { (id, ParameterVariant::DeviceInterface(Box::new(parameter))) })
+        device_interfaces.values.into_iter().map(|(id, parameter) | { (id, ParameterVariant::DeviceInterface(Box::new(parameter))) })
             .chain(ethernet_bridges.values.into_iter().map(|(id, parameter)| { (id, ParameterVariant::EthernetBridge(Box::new(parameter))) }))
             .chain(executors.values.into_iter().map(|(id, parameter)| { (id, ParameterVariant::Executor(Box::new(parameter))) }))
             .chain(gre_interfaces.values.into_iter().map(|(id, parameter)| { (id, ParameterVariant::GreInterface(Box::new(parameter))) }))
             .chain(joined_interfaces.values.into_iter().map(|(id, parameter)| { (id, ParameterVariant::JoinedInterface(Box::new(parameter))) }))
             .chain(remote_peer_connection_checks.values.into_iter().map(|(id, parameter)| { (id, ParameterVariant::RemotePeerConnectionCheck(Box::new(parameter))) }))
+            .chain(can_connections.values.into_iter().map(|(id, parameter)| { (id, ParameterVariant::CanConnections(Box::new(parameter))) }))
+            .chain(can_bridges.values.into_iter().map(|(id, parameter)| { (id, ParameterVariant::CanBridges(Box::new(parameter))) }))
+            .chain(can_local_routes.values.into_iter().map(|(id, parameter)| { (id, ParameterVariant::CanLocalRoutes(Box::new(parameter))) }))
             .collect()
     }
 
@@ -100,6 +119,9 @@ impl PeerConfiguration {
         self.gre_interfaces.retain(|id, _| !obsolete_parameter_ids.contains(id));
         self.joined_interfaces.retain(|id, _| !obsolete_parameter_ids.contains(id));
         self.remote_peer_connection_checks.retain(|id, _| !obsolete_parameter_ids.contains(id));
+        self.can_connections.retain(|id, _| !obsolete_parameter_ids.contains(id));
+        self.can_bridges.retain(|id, _| !obsolete_parameter_ids.contains(id));
+        self.can_local_routes.retain(|id, _| !obsolete_parameter_ids.contains(id));
     }
 }
 

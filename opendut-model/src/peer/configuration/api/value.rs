@@ -56,43 +56,37 @@ impl ParameterValue for parameter::Executor {
 
 impl ParameterValue for parameter::GreInterfaceConfig {
     fn parameter_identifier(&self) -> ParameterId {
-        let parameter::GreInterfaceConfig { local_ip, remote_ip } = self;
-
-        let mut hasher = DefaultHasher::new(); //ID not stable across Rust releases
-        local_ip.hash(&mut hasher);
-        remote_ip.hash(&mut hasher);
-        let id = hasher.finish();
-
-        let id = Uuid::new_v5(&OPENDUT_UUID_NAMESPACE, &id.to_le_bytes());
-        ParameterId(id)
+        ParameterId::from_hashable(self)
     }
 }
 
 impl ParameterValue for parameter::InterfaceJoinConfig {
     fn parameter_identifier(&self) -> ParameterId {
-        let parameter::InterfaceJoinConfig { name, bridge } = self;
-
-        let mut hasher = DefaultHasher::new(); //ID not stable across Rust releases
-        name.hash(&mut hasher);
-        bridge.hash(&mut hasher);
-        let id = hasher.finish();
-
-        let id = Uuid::new_v5(&OPENDUT_UUID_NAMESPACE, &id.to_le_bytes());
-        ParameterId(id)
+        ParameterId::from_hashable(self)
     }
 }
 
 impl ParameterValue for parameter::RemotePeerConnectionCheck {
     fn parameter_identifier(&self) -> ParameterId {
-        let parameter::RemotePeerConnectionCheck { remote_peer_id, remote_ip } = self;
+        ParameterId::from_hashable(self)
+    }
+}
 
-        let mut hasher = DefaultHasher::new(); //ID not stable across Rust releases
-        remote_peer_id.hash(&mut hasher);
-        remote_ip.hash(&mut hasher);
-        let id = hasher.finish();
+impl ParameterValue for parameter::CanConnection {
+    fn parameter_identifier(&self) -> ParameterId {
+        ParameterId::from_hashable(self)
+    }
+}
 
-        let id = Uuid::new_v5(&OPENDUT_UUID_NAMESPACE, &id.to_le_bytes());
-        ParameterId(id)
+impl ParameterValue for parameter::CanLocalRoute {
+    fn parameter_identifier(&self) -> ParameterId {
+        ParameterId::from_hashable(self)
+    }
+}
+
+impl ParameterValue for parameter::CanBridge {
+    fn parameter_identifier(&self) -> ParameterId {
+        ParameterId::from_hashable(self)
     }
 }
 

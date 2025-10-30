@@ -6,7 +6,7 @@ use serde::Serialize;
 use crate::peer::executor::ExecutorDescriptor;
 use crate::peer::PeerId;
 use crate::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName, NetworkInterfaceNameError};
-
+use crate::util::Port;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
 pub struct DeviceInterface {
@@ -62,6 +62,28 @@ impl Display for RemotePeerConnectionCheck {
         write!(f, "{peer_id}: {remote_ip}")
     }
 }
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
+pub struct CanConnection {
+    pub remote_peer_id: PeerId,
+    pub remote_ip: IpAddr,
+    pub remote_port: Port,
+    pub local_port: Port,
+    /// starts a CAN server for other peers to connect to
+    pub local_is_server: bool,
+    pub buffer_timeout_microseconds: u64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
+pub struct CanBridge {
+    pub name: NetworkInterfaceName,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
+pub struct CanLocalRoute {
+    pub bridge_name: NetworkInterfaceName,
+    pub can_device_name: NetworkInterfaceName,
+}
+
 
 
 #[cfg(test)]

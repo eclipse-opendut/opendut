@@ -1,11 +1,11 @@
 use serde::Serialize;
-use std::hash::{Hash, Hasher};
+use std::hash::{DefaultHasher, Hash, Hasher};
 use std::time::SystemTime;
 use uuid::Uuid;
 
 mod value;
 pub use value::ParameterValue;
-
+use crate::OPENDUT_UUID_NAMESPACE;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct Parameter<V: ParameterValue> {
@@ -23,6 +23,16 @@ impl<V: ParameterValue> Hash for Parameter<V> {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize)]
 pub struct ParameterId(pub Uuid);
+
+impl ParameterId {
+    pub fn from_hashable<T: Hash>(value: &T) -> Self {
+        let mut hasher = DefaultHasher::new(); //ID not stable across Rust releases
+        value.hash(&mut hasher);
+        let id = hasher.finish();
+        let id = Uuid::new_v5(&OPENDUT_UUID_NAMESPACE, &id.to_le_bytes());
+        ParameterId(id)
+    }
+}
 
 #[derive(Clone, Copy, Debug, Ord, PartialOrd, PartialEq, Eq, Serialize)]
 pub enum ParameterTarget {
