@@ -38,6 +38,9 @@ conversion! {
             gre_interfaces: value.gre_interfaces.into_iter().map(From::from).collect(),
             joined_interfaces: value.joined_interfaces.into_iter().map(From::from).collect(),
             remote_peer_connection_checks: value.remote_peer_connection_checks.into_iter().map(From::from).collect(),
+            can_connections: value.can_connections.into_iter().map(From::from).collect(),
+            can_bridges: value.can_bridges.into_iter().map(From::from).collect(),
+            can_local_routes: value.can_local_routes.into_iter().map(From::from).collect(),
         }
     }
 
@@ -49,173 +52,98 @@ conversion! {
             gre_interfaces: value.gre_interfaces.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
             joined_interfaces: value.joined_interfaces.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
             remote_peer_connection_checks: value.remote_peer_connection_checks.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
+            can_connections: value.can_connections.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
+            can_bridges: value.can_bridges.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
+            can_local_routes: value.can_local_routes.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
         })
     }
 }
 
-conversion! {
-    type Model = crate::peer::configuration::Parameter<crate::peer::configuration::parameter::DeviceInterface>;
-    type Proto = PeerConfigurationParameterDeviceInterface;
+/// Macro to generate conversion implementations for peer configuration parameters
+/// re-uses conversion! macro internally
+/// # Arguments
+/// * `ModelParameter` - The type of the model parameter value
+/// * `ProtoParameter` - The type of the proto parameter message
+#[macro_export]
+macro_rules! parameter_conversion {
+    (
+        type ModelParameter = $ModelParameter:ty;
+        type ProtoParameter = $ProtoParameter:ty;
 
-    fn from(model: Model) -> Proto {
+    ) => {
+        conversion! {
+            type Model = $crate::peer::configuration::Parameter<$ModelParameter>;
+            type Proto = $ProtoParameter;
 
-        let value: crate::proto::peer::configuration::parameter::DeviceInterface = model.value.clone().into();
-        let parameter = PeerConfigurationParameter::from(model);
+            fn from(model: Model) -> Proto {
 
-        Proto {
-            parameter: Some(parameter),
-            value: Some(value),
+                let value = model.value.clone();
+                let parameter = PeerConfigurationParameter::from(model);
+
+                Proto {
+                    parameter: Some(parameter),
+                    value: Some(value.into()),
+                }
+            }
+            fn try_from(proto: Proto) -> ConversionResult<Model> {
+                let parameter = extract!(proto.parameter)?;
+                let value: $ModelParameter = extract!(proto.value)?.try_into()?;
+
+                Ok(Model {
+                    id: extract!(parameter.id)?.try_into()?,
+                    dependencies: parameter.dependencies.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
+                    target: extract!(parameter.target_state)?.into(),
+                    value,
+                })
+            }
         }
-    }
 
-    fn try_from(proto: Proto) -> ConversionResult<Model> {
-        let parameter = extract!(proto.parameter)?;
-
-        let value: crate::peer::configuration::parameter::DeviceInterface = extract!(proto.value)?.try_into()?;
-
-        Ok(Model {
-            id: extract!(parameter.id)?.try_into()?,
-            dependencies: parameter.dependencies.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
-            target: extract!(parameter.target_state)?.into(),
-            value,
-        })
-    }
-}
-conversion! {
-    type Model = crate::peer::configuration::Parameter<crate::peer::configuration::parameter::Executor>;
-    type Proto = PeerConfigurationParameterExecutor;
-
-    fn from(model: Model) -> Proto {
-
-        let value: crate::proto::peer::configuration::parameter::Executor = model.value.clone().into();
-        let parameter = PeerConfigurationParameter::from(model);
-
-        Proto {
-            parameter: Some(parameter),
-            value: Some(value),
-        }
-    }
-
-    fn try_from(proto: Proto) -> ConversionResult<Model> {
-        let parameter = extract!(proto.parameter)?;
-
-        let value: crate::peer::configuration::parameter::Executor = extract!(proto.value)?.try_into()?;
-
-        Ok(Model {
-            id: extract!(parameter.id)?.try_into()?,
-            dependencies: parameter.dependencies.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
-            target: extract!(parameter.target_state)?.into(),
-            value,
-        })
-    }
-}
-conversion! {
-    type Model = crate::peer::configuration::Parameter<crate::peer::configuration::parameter::EthernetBridge>;
-    type Proto = PeerConfigurationParameterEthernetBridge;
-
-    fn from(model: Model) -> Proto {
-        let descriptor: crate::proto::peer::configuration::parameter::EthernetBridge = model.value.clone().into();
-        let parameter = PeerConfigurationParameter::from(model);
-
-        Proto {
-            parameter: Some(parameter),
-            value: Some(descriptor),
-        }
-    }
-
-    fn try_from(proto: Proto) -> ConversionResult<Model> {
-        let parameter = extract!(proto.parameter)?;
-
-        let value: crate::peer::configuration::parameter::EthernetBridge = extract!(proto.value)?.try_into()?;
-
-        Ok(Model {
-            id: extract!(parameter.id)?.try_into()?,
-            dependencies: parameter.dependencies.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
-            target: extract!(parameter.target_state)?.into(),
-            value,
-        })
     }
 }
 
-conversion! {
-    type Model = crate::peer::configuration::Parameter<crate::peer::configuration::parameter::GreInterfaceConfig>;
-    type Proto = PeerConfigurationParameterGreInterfaceConfig;
-    
-    fn from(model: Model) -> Proto {
-        let descriptor: crate::proto::peer::configuration::parameter::GreInterfaceConfig = model.value.clone().into();
-        let parameter = PeerConfigurationParameter::from(model);
-        
-        Proto {
-            parameter: Some(parameter),
-            value: Some(descriptor),
-        }
-    }
-    
-    fn try_from(proto: Proto) -> ConversionResult<Model> {
-        let parameter = extract!(proto.parameter)?;
-        let value: crate::peer::configuration::parameter::GreInterfaceConfig = extract!(proto.value)?.try_into()?;
-
-        Ok(Model {
-            id: extract!(parameter.id)?.try_into()?,
-            dependencies: parameter.dependencies.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
-            target: extract!(parameter.target_state)?.into(),
-            value,
-        })
-    }
+parameter_conversion! {
+    type ModelParameter = crate::peer::configuration::parameter::DeviceInterface;
+    type ProtoParameter = PeerConfigurationParameterDeviceInterface;
 }
 
-conversion! {
-    type Model = crate::peer::configuration::Parameter<crate::peer::configuration::parameter::InterfaceJoinConfig>;
-    type Proto = PeerConfigurationParameterInterfaceJoinConfig;
-
-    fn from(model: Model) -> Proto {
-        let descriptor: crate::proto::peer::configuration::parameter::InterfaceJoinConfig = model.value.clone().into();
-        let parameter = PeerConfigurationParameter::from(model);
-        Proto {
-            parameter: Some(parameter),
-            value: Some(descriptor),
-        }
-    }
-    fn try_from(proto: Proto) -> ConversionResult<Model> {
-        let parameter = extract!(proto.parameter)?;
-        let value: crate::peer::configuration::parameter::InterfaceJoinConfig = extract!(proto.value)?.try_into()?;
-        
-        Ok(Model {
-            id: extract!(parameter.id)?.try_into()?,
-            dependencies: parameter.dependencies.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
-            target: extract!(parameter.target_state)?.into(),
-            value,
-        })
-    }
+parameter_conversion! {
+    type ModelParameter = crate::peer::configuration::parameter::EthernetBridge;
+    type ProtoParameter = PeerConfigurationParameterEthernetBridge;
 }
 
-conversion! {
-    type Model = crate::peer::configuration::Parameter<crate::peer::configuration::parameter::RemotePeerConnectionCheck>;
-    type Proto = PeerConfigurationParameterRemotePeerConnectionCheck;
+parameter_conversion! {
+    type ModelParameter = crate::peer::configuration::parameter::Executor;
+    type ProtoParameter = PeerConfigurationParameterExecutor;
+}
 
-    fn from(model: Model) -> Proto {
+parameter_conversion! {
+    type ModelParameter = crate::peer::configuration::parameter::GreInterfaceConfig;
+    type ProtoParameter = PeerConfigurationParameterGreInterfaceConfig;
+}
 
-        let value: crate::proto::peer::configuration::parameter::RemotePeerConnectionCheck = model.value.clone().into();
-        let parameter = PeerConfigurationParameter::from(model);
+parameter_conversion! {
+    type ModelParameter = crate::peer::configuration::parameter::InterfaceJoinConfig;
+    type ProtoParameter = PeerConfigurationParameterInterfaceJoinConfig;
+}
 
-        Proto {
-            parameter: Some(parameter),
-            value: Some(value),
-        }
-    }
+parameter_conversion! {
+    type ModelParameter = crate::peer::configuration::parameter::RemotePeerConnectionCheck;
+    type ProtoParameter = PeerConfigurationParameterRemotePeerConnectionCheck;
+}
 
-    fn try_from(proto: Proto) -> ConversionResult<Model> {
-        let parameter = extract!(proto.parameter)?;
+parameter_conversion! {
+    type ModelParameter = crate::peer::configuration::parameter::CanConnection;
+    type ProtoParameter = PeerConfigurationParameterCanConnection;
+}
 
-        let value: crate::peer::configuration::parameter::RemotePeerConnectionCheck = extract!(proto.value)?.try_into()?;
+parameter_conversion! {
+    type ModelParameter = crate::peer::configuration::parameter::CanBridge;
+    type ProtoParameter = PeerConfigurationParameterCanBridge;
+}
 
-        Ok(Model {
-            id: extract!(parameter.id)?.try_into()?,
-            dependencies: parameter.dependencies.into_iter().map(TryInto::try_into).collect::<Result<_, _>>()?,
-            target: extract!(parameter.target_state)?.into(),
-            value,
-        })
-    }
+parameter_conversion! {
+    type ModelParameter = crate::peer::configuration::parameter::CanLocalRoute;
+    type ProtoParameter = PeerConfigurationParameterCanLocalRoute;
 }
 
 
@@ -445,5 +373,37 @@ conversion! {
             kind: error_kind,
             cause: error_cause,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use uuid::Uuid;
+    use crate::peer::configuration::ParameterId;
+    use crate::proto::peer::configuration::api::{PeerConfigurationParameter, PeerConfigurationParameterCanLocalRoute, PeerConfigurationParameterStateKindPresent};
+    use crate::proto::peer::configuration::api::peer_configuration_parameter::TargetState;
+    use crate::proto::peer::configuration::parameter::CanLocalRoute;
+    use crate::proto::util::{NetworkInterfaceName};
+
+    #[test]
+    fn test_convert_can_local_route_proto_to_model() {
+        let can_bridge_name = "br-vcan-opendut".to_string();
+        let can_local_route = CanLocalRoute {
+            bridge_name: Some(NetworkInterfaceName { name: can_bridge_name.clone() }),
+            can_device_name: Some(NetworkInterfaceName { name: "can0".to_string() }),
+        };
+        let parameter = PeerConfigurationParameter {
+            id: Some(ParameterId(Uuid::new_v4()).into()),
+            dependencies: vec![],
+            target_state: Some(TargetState::Present(PeerConfigurationParameterStateKindPresent {})),
+        };
+        let can_local_route_proto = PeerConfigurationParameterCanLocalRoute { parameter: Some(parameter), value: Some(can_local_route) };
+
+        let can_local_route_model: crate::peer::configuration::Parameter<crate::peer::configuration::parameter::CanLocalRoute> =
+            can_local_route_proto.clone().try_into().expect("Conversion failed");
+        assert_eq!(can_local_route_model.value.bridge_name.name(), can_bridge_name);
+
+        let can_local_route_proto_converted_back: PeerConfigurationParameterCanLocalRoute = can_local_route_model.into();
+        assert_eq!(can_local_route_proto_converted_back, can_local_route_proto);
     }
 }

@@ -20,6 +20,9 @@ message PeerConfiguration {
   repeated PeerConfigurationParameterGreInterfaceConfig gre_interfaces = 4;
   repeated PeerConfigurationParameterInterfaceJoinConfig joined_interfaces = 5;
   repeated PeerConfigurationParameterRemotePeerConnectionCheck remote_peer_connection_checks = 6;
+  repeated PeerConfigurationParameterCanConnection can_connections = 7;
+  repeated PeerConfigurationParameterCanBridge can_bridges = 8;
+  repeated PeerConfigurationParameterCanLocalRoute can_local_routes = 9;
   //TODO migrate more parameters
 }
 
@@ -51,6 +54,21 @@ message PeerConfigurationParameterInterfaceJoinConfig {
 message PeerConfigurationParameterRemotePeerConnectionCheck {
   PeerConfigurationParameter parameter = 1;
   opendut.model.peer.configuration.parameter.RemotePeerConnectionCheck value = 2;
+}
+
+message PeerConfigurationParameterCanConnection {
+  PeerConfigurationParameter parameter = 1;
+  opendut.model.peer.configuration.parameter.CanConnection value = 2;
+}
+
+message PeerConfigurationParameterCanBridge {
+  PeerConfigurationParameter parameter = 1;
+  opendut.model.peer.configuration.parameter.CanBridge value = 2;
+}
+
+message PeerConfigurationParameterCanLocalRoute {
+  PeerConfigurationParameter parameter = 1;
+  opendut.model.peer.configuration.parameter.CanLocalRoute value = 2;
 }
 
 message PeerConfigurationParameter {

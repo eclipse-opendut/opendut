@@ -32,3 +32,22 @@ message RemotePeerConnectionCheck {
   opendut.model.peer.PeerId remote_peer_id = 1;
   opendut.model.util.IpAddress remote_ip = 2;
 }
+
+message CanConnection {
+  opendut.model.peer.PeerId remote_peer_id = 1;
+  opendut.model.util.IpAddress remote_ip = 2;
+  opendut.model.util.Port remote_port = 3;
+  opendut.model.util.Port local_port = 4;
+  bool local_is_server = 5;
+  uint64 buffer_timeout_microseconds = 6;
+
+}
+
+message CanBridge {
+  opendut.model.util.NetworkInterfaceName name = 1;
+}
+
+message CanLocalRoute {
+  opendut.model.util.NetworkInterfaceName bridge_name = 1;
+  opendut.model.util.NetworkInterfaceName can_device_name = 2;
+}
