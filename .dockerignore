@@ -1,14 +1,11 @@
 # ignore large files and directories that are not needed in the Docker image
 # this reduces docker build context size and reduces build times
-.git
-.gitignore
-# build related
-target/ci/cross
-target/debug
-target/release
-target/wasm32-unknown-unknown
-target/wasm-bindgen/
-target/x86_64*
-opendut-viper/target
+/.git
+/.gitignore
+# ignore all files in target directories
+/target/*
+# except for ci distribution artifacts, see https://docs.docker.com/build/concepts/context/#negating-matches
+!/target/ci/distribution/
+/opendut-viper/target
 # logs
-docker-logs*
+/docker-logs*
