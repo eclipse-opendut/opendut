@@ -114,16 +114,13 @@ conversion! {
     
     fn from(value: Model) -> Proto {
         ApplyPeerConfiguration {
-            old_configuration: Some(value.old_configuration.into()),
             configuration: Some(value.configuration.into()),
         }
     }
 
     fn try_from(value: Proto) -> ConversionResult<Model> {
-        let old_configuration = opendut_model::peer::configuration::OldPeerConfiguration::try_from(extract!(value.old_configuration)?)?;
         let configuration = opendut_model::peer::configuration::PeerConfiguration::try_from(extract!(value.configuration)?)?;
         Ok(Model {
-            old_configuration,
             configuration,
         })
     }

@@ -5,7 +5,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use opendut_carl_api::carl::broker::{stream_header, ApplyPeerConfiguration, DownstreamMessage, DownstreamMessagePayload, TracingContext, UpstreamMessage, UpstreamMessagePayload};
-use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
+use opendut_model::peer::configuration::PeerConfiguration;
 use opendut_model::peer::state::{PeerConnectionState};
 use opendut_model::peer::{PeerDescriptor, PeerId};
 use opentelemetry::propagation::TextMapPropagator;
@@ -194,17 +194,6 @@ impl PeerMessagingBroker {
     }
     
     async fn send_initial_peer_configuration(&self, peer_id: PeerId) -> Result<(), OpenError> {
-        let old_peer_configuration = self.resource_manager.get::<OldPeerConfiguration>(peer_id).await
-            .map_err(|source| OpenError::Persistence { peer_id, source })?;
-        let old_peer_configuration = if let Some(old_peer_configuration) = old_peer_configuration {
-            debug!("Found an OldPeerConfiguration for newly connected peer <{peer_id}>. Re-sending this configuration:\n{old_peer_configuration:#?}");
-            old_peer_configuration
-        } else {
-            //OldPeerConfiguration is not persisted across CARL restarts
-            debug!("No OldPeerConfiguration found for newly connected peer <{peer_id}>. Sending empty configuration.");
-            OldPeerConfiguration::default()
-        };
-
         let peer_configuration = self.resource_manager.get::<PeerConfiguration>(peer_id).await
             .map_err(|source| OpenError::Persistence { peer_id, source })?;
         let peer_configuration = if let Some(peer_configuration) = peer_configuration {
@@ -218,7 +207,6 @@ impl PeerMessagingBroker {
 
         self.send_to_peer(peer_id, DownstreamMessagePayload::ApplyPeerConfiguration(
             Box::new(ApplyPeerConfiguration {
-                old_configuration: old_peer_configuration,
                 configuration: peer_configuration,
             })
         )).await

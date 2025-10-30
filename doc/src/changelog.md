@@ -26,6 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking changes
 
+#### CARL API changes
+The CARL API (grpc + protobuf) has breaking changes:
+* Renamed `opendut.types` to `opendut.model`. This affects all clients using the protobuf definitions.
+* Renamed field `target` to `target_state` in `PeerConfigurationParameter` message to better distinguish from the `detected_state` field sent by EDGAR.
+
 #### Updated authentication method for NetBird
 The authentication method for NetBird has been changed to OAuth with API token creation. The following setting indicates this: `OPENDUT_CARL_VPN_NETBIRD_AUTH_TYPE=oauth-create-api-token`.
 This is only supported with a new CARL version. Don't forget to update the CARL version in your deployment.

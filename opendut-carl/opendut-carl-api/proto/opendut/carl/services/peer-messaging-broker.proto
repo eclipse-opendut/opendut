@@ -31,8 +31,7 @@ message DisconnectNotice {}
 
 
 message ApplyPeerConfiguration {
-  opendut.model.peer.configuration.api.OldPeerConfiguration old_configuration = 1;
-  opendut.model.peer.configuration.api.PeerConfiguration configuration = 2;
+  opendut.model.peer.configuration.api.PeerConfiguration configuration = 1;
 }
 
 message TracingContext {

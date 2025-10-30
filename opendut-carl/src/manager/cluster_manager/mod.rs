@@ -539,9 +539,9 @@ mod test {
 
     mod rollout_cluster {
         use super::*;
-        use crate::manager::peer_manager::StorePeerDescriptorParams;
         use opendut_carl_api::carl::broker::{stream_header, DownstreamMessage, DownstreamMessagePayload};
-        use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
+        use opendut_model::peer::configuration::PeerConfiguration;
+        use crate::manager::peer_manager::StorePeerDescriptorParams;
 
         #[rstest]
         #[tokio::test]
@@ -586,46 +586,21 @@ mod test {
             }).await??;
 
             assert_that!(fixture.testee.lock().await.rollout_cluster(cluster_id).await, ok(eq(&())));
+            
+            let can_port_count = fixture.testee.lock().await.can_server_port_counter;
+            expect_gt!(can_port_count, fixture.cluster_manager_options.can_server_port_range_start);
 
-
-            let assert_cluster_assignment_valid = |cluster_assignment: &ClusterAssignment| {
-                assert_that!(
-                    cluster_assignment,
-                    matches_pattern!(ClusterAssignment {
-                        id: &cluster_id,
-                        leader: &leader_id,
-                        assignments: any![
-                            unordered_elements_are![
-                                (&peer_a.id, &PeerClusterAssignment {
-                                    vpn_address: peer_a.remote_host,
-                                    can_server_port: Port(fixture.cluster_manager_options.can_server_port_range_start + 1),
-                                }),
-                                (&peer_b.id, &PeerClusterAssignment {
-                                    vpn_address: peer_b.remote_host,
-                                    can_server_port: Port(fixture.cluster_manager_options.can_server_port_range_start),
-                                }),
-                            ],
-                            unordered_elements_are![
-                                (&peer_a.id, &PeerClusterAssignment {
-                                    vpn_address: peer_a.remote_host,
-                                    can_server_port: Port(fixture.cluster_manager_options.can_server_port_range_start),
-                                }),
-                                (&peer_b.id, &PeerClusterAssignment {
-                                    vpn_address: peer_b.remote_host,
-                                    can_server_port: Port(fixture.cluster_manager_options.can_server_port_range_start + 1),
-                                }),
-                            ],
-                        ]
-                    })
-                );
+            let assert_peer_config_valid = |peer_config: &PeerConfiguration| {
+                assert_eq!(peer_config.device_interfaces.len(), 2);
+                // TODO: add more assertions here
             };
 
 
-            let (result, _result2) = receive_peer_configuration_message(&mut peer_a_rx).await;
-            assert_cluster_assignment_valid(&result.cluster_assignment.unwrap());
+            let peer_config = receive_peer_configuration_message(&mut peer_a_rx).await;
+            assert_peer_config_valid(&peer_config);
 
-            let (result, _result2) = receive_peer_configuration_message(&mut peer_b_rx).await;
-            assert_cluster_assignment_valid(&result.cluster_assignment.unwrap());
+            let peer_config = receive_peer_configuration_message(&mut peer_b_rx).await;
+            assert_peer_config_valid(&peer_config);
 
             Ok(())
         }
@@ -636,12 +611,12 @@ mod test {
             Ok(peer_rx)
         }
 
-        async fn receive_peer_configuration_message(peer_rx: &mut mpsc::Receiver<DownstreamMessage>) -> (OldPeerConfiguration, PeerConfiguration) {
+        async fn receive_peer_configuration_message(peer_rx: &mut mpsc::Receiver<DownstreamMessage>) -> PeerConfiguration {
             let message = tokio::time::timeout(Duration::from_millis(500), peer_rx.recv()).await
                 .unwrap().unwrap().payload;
 
             if let DownstreamMessagePayload::ApplyPeerConfiguration(peer_config) = message {
-                (peer_config.old_configuration, peer_config.configuration)
+                peer_config.configuration
             } else {
                 panic!("Did not receive valid message. Received this instead: {message:?}")
             }
