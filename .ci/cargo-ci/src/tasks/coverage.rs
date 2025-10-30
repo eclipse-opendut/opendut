@@ -26,10 +26,9 @@ pub fn coverage() -> crate::Result {
 
     CARGO_TARPAULIN.command()
         .args([
-            "--verbose",
             "--all-features",
             "--workspace",
-            "--timeout=30",
+            "--timeout=1800", // 30 minutes timeout, because VIPER compiles code during tests, which can take a long time in the CI/CD runner
             "--out", "xml", "html", "lcov",
             "--output-dir", out_dir.to_str().unwrap(),
         ])
