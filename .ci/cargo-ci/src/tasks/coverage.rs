@@ -58,7 +58,7 @@ pub fn clean() -> crate::Result {
     let out_dir = out_dir();
     if out_dir.exists() {
         fs::remove_dir_all(&out_dir)?;
-        debug!("Cleaned distribution directory at: {out_dir:?}");
+        debug!("Cleaned coverage output directory at: {out_dir:?}");
     }
     Ok(())
 }
