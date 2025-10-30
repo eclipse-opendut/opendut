@@ -2,10 +2,11 @@
 # this reduces docker build context size and reduces build times
 /.git
 /.gitignore
+
 # ignore all files in target directories
 /target/*
 # except for ci distribution artifacts, see https://docs.docker.com/build/concepts/context/#negating-matches
 !/target/ci/distribution/
-/opendut-viper/target
+
 # logs
 /docker-logs*

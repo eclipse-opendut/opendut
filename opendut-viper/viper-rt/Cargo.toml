@@ -24,7 +24,7 @@ viper-containers = { workspace = true, optional = true }
 async-trait = { workspace = true }
 futures = { workspace = true, features = ["executor"] }
 pin-project-lite = { workspace = true }
-reqwest = { workspace = true, features = ["rustls-tls-manual-roots"], optional = true }
+reqwest = { workspace = true, optional = true }
 rustpython-vm = { workspace = true, optional = true }
 tracing = { workspace = true }
 url = { workspace = true }

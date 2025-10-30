@@ -58,6 +58,19 @@ ignore = [
     { id = "RUSTSEC-2024-0384", reason = "`instant` library is unmaintained. No actual vulnerability known. Is depended on by the `reqwest-retry` crate, which does need to be updated. Tracked by issue #29." },
 
     { id = "RUSTSEC-2024-0436", reason = "`paste` library is unmaintained. No actual vulnerability known. Several of our dependencies currently use `paste`. Tracked by issue #336." },
+
+
+    { id = "RUSTSEC-2024-0375", reason = "`atty` library is unmaintained. A known vulnerability only affects Windows. Tracked by issue #410." },
+    { id = "RUSTSEC-2021-0145", reason = "`atty` library is vulnerable on Windows. Tracked by issue #410." },
+
+    { id = "RUSTSEC-2025-0081", reason = "`unic-*` crates are unmaintained. Tracked by issue #411." },
+    { id = "RUSTSEC-2025-0075", reason = "`unic-*` crates are unmaintained. Tracked by issue #411." },
+    { id = "RUSTSEC-2025-0080", reason = "`unic-*` crates are unmaintained. Tracked by issue #411." },
+    { id = "RUSTSEC-2025-0090", reason = "`unic-*` crates are unmaintained. Tracked by issue #411." },
+    { id = "RUSTSEC-2025-0083", reason = "`unic-*` crates are unmaintained. Tracked by issue #411." },
+    { id = "RUSTSEC-2025-0094", reason = "`unic-*` crates are unmaintained. Tracked by issue #411." },
+    { id = "RUSTSEC-2025-0100", reason = "`unic-*` crates are unmaintained. Tracked by issue #411." },
+    { id = "RUSTSEC-2025-0098", reason = "`unic-*` crates are unmaintained. Tracked by issue #411." },
 ]
 
 # This section is considered when running `cargo deny check licenses`
@@ -75,13 +88,17 @@ allow = [
     "BSL-1.0",
     "bzip2-1.0.6",
     "CC0-1.0",
+    "ISC",
     "MIT",
     "MIT-0",
     # "MPL-2.0",  # Banned for now, as it adds complications for how openDuT can be used (e.g. Apache-2.0 allows proprietary forks, MPL-2.0 does not). See this discussion for more nuance: https://github.com/eclipse-zenoh/zenoh/issues/765
-    "ISC",
+    "Python-2.0.1",
     "OpenSSL",
     "Unicode-3.0",
+    "Unicode-DFS-2016",
     "Zlib",
+
+    "LGPL-3.0", # Pulled in by RustPython, but incompatible with Apache-2.0. See: https://github.com/eclipse-opendut/opendut/issues/408
 ]
 # The confidence threshold for detecting a license from license text.
 # The higher the value, the more closely the license text must be to the
