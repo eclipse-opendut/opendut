@@ -10,7 +10,7 @@
 #####################################################
 #             Build, Binaries and Libs              #
 #####################################################
-target/
+/target/
 opendut-lea/dist/
 .vagrant/
 docker-logs/
