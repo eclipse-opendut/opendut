@@ -52,6 +52,9 @@ impl TaskResolver for ServiceTaskResolver {
                 ParameterVariant::RemotePeerConnectionCheck(_remote_peer_connection_check) => {
                     // TODO: Handle remote peer connection checks in its own tasks
                 }
+                ParameterVariant::CanConnections(_) => {}
+                ParameterVariant::CanBridges(_) => {}
+                ParameterVariant::CanLocalRoutes(_) => {}
             };
         }
 

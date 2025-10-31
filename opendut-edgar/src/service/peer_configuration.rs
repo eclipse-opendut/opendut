@@ -4,7 +4,7 @@ use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use crate::service::tasks;
 use crate::service::test_execution::executor_manager::ExecutorManagerRef;
 use opendut_model::cluster::ClusterAssignment;
-use opendut_model::peer::configuration::{parameter, EdgePeerConfigurationState, OldPeerConfiguration, ParameterField, PeerConfiguration};
+use opendut_model::peer::configuration::{parameter, EdgePeerConfigurationState, ParameterField, PeerConfiguration};
 use opendut_model::peer::PeerId;
 
 use std::fmt::Formatter;
@@ -19,7 +19,6 @@ use super::network_metrics::manager::NetworkMetricsManagerRef;
 pub struct ApplyPeerConfigurationParams {
     pub self_id: PeerId,
     pub peer_configuration: PeerConfiguration,
-    pub old_peer_configuration: OldPeerConfiguration,
     pub network_interface_management: NetworkInterfaceManagement,
     pub executor_manager: ExecutorManagerRef,
     pub metrics_manager: NetworkMetricsManagerRef,
@@ -56,7 +55,7 @@ pub async fn spawn_peer_configurations_handler(
 #[tracing::instrument(skip_all)]
 async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> CollectedResult {
     let ApplyPeerConfigurationParams { 
-        self_id, peer_configuration, old_peer_configuration, 
+        self_id, peer_configuration,
         network_interface_management, 
         executor_manager, metrics_manager } = params;
 
@@ -71,17 +70,6 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> Colle
     } else {
         error!("Failed to apply peer configuration tasks. Following tasks failed: {:?}", result.items);
         return result;
-    }
-
-    if let NetworkInterfaceManagement::Enabled { can_manager, .. } = &network_interface_management {
-        let _ = setup_can(
-            &old_peer_configuration.cluster_assignment,
-            peer_configuration.device_interfaces,
-            self_id,
-            Arc::clone(can_manager),
-        ).await;
-    } else {
-        debug!("Skipping changes to CAN interfaces, since network interface management is disabled.");
     }
 
     {

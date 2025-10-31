@@ -1,5 +1,5 @@
 use opendut_edgar::testing::service::peer_configuration::ApplyPeerConfigurationParams;
-use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration, EdgePeerConfigurationState};
+use opendut_model::peer::configuration::{PeerConfiguration, EdgePeerConfigurationState};
 use std::time::Duration;
 use tokio::sync::mpsc;
 use tokio::time::error::Elapsed;
@@ -10,12 +10,12 @@ pub struct PeerConfigurationReceiver {
     pub tx_peer_configuration_state: mpsc::Sender<EdgePeerConfigurationState>,
 }
 impl PeerConfigurationReceiver {
-    pub async fn receive_peer_configuration(&mut self) -> anyhow::Result<(PeerConfiguration, OldPeerConfiguration)> {
+    pub async fn receive_peer_configuration(&mut self) -> anyhow::Result<PeerConfiguration> {
         let result = timeout(Duration::from_secs(10), self.inner.recv()).await
             .expect("Timeout while expecting peer configuration")
             .expect("Channel closed prematurely.");
 
-        Ok((result.peer_configuration, result.old_peer_configuration))
+        Ok(result.peer_configuration)
     }
 
     pub async fn expect_no_peer_configuration(&mut self) {
