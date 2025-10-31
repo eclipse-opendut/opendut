@@ -6,8 +6,9 @@ license.workspace = true
 
 [features]
 crypto = ["dep:rustls"]
+project = []
 serde = ["dep:serde"]
-settings = ["dep:config", "dep:thiserror"]
+settings = ["project", "dep:config", "dep:thiserror"]
 telemetry = ["dep:opendut-util-telemetry"]
 
 [dependencies]

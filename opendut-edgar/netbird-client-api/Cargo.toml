@@ -19,7 +19,7 @@ tracing = { workspace = true }
 url = { workspace = true }
 
 [build-dependencies]
-opendut-util = { workspace = true }
+opendut-util = { workspace = true, features = ["project"] }
 
 cargo_metadata = { workspace = true }
 reqwest = { workspace = true, features = ["blocking"] }

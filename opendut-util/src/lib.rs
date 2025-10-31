@@ -6,7 +6,9 @@ pub use opendut_util_core::future;
 #[cfg(all(feature = "telemetry", not(target_arch = "wasm32")))]
 pub use opendut_util_telemetry as telemetry;
 
-pub mod project;
+#[cfg(feature = "project")]
+pub use opendut_util_core::project;
+
 
 #[cfg(feature = "serde")]
 pub mod serde;
