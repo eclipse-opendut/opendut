@@ -510,7 +510,7 @@ mod test {
     use googletest::prelude::*;
 
     #[test]
-    fn test_TestSuiteName_new() -> Result<()> {
+    fn test_TestSuiteIdentifier_new() -> Result<()> {
 
         let suite = TestSuiteIdentifier::new(String::from("awesome.py"));
 
@@ -522,7 +522,7 @@ mod test {
     }
 
     #[test]
-    fn test_TestCaseName_new() -> Result<()> {
+    fn test_TestCaseIdentifier_new() -> Result<()> {
 
         let suite = TestSuiteIdentifier::new(String::from("awesome.py"));
         let case = TestCaseIdentifier::new(&suite, "MyAwesomeTestCase");
@@ -536,7 +536,7 @@ mod test {
     }
 
     #[test]
-    fn test_TestName_new() -> Result<()> {
+    fn test_TestIdentifiers_new() -> Result<()> {
 
         let suite = TestSuiteIdentifier::new(String::from("awesome.py"));
         let case = TestCaseIdentifier::new(&suite, "MyAwesomeTestCase");
