@@ -10,7 +10,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "proto/"
     ];
 
-    prost_build::Config::new()
+    tonic_prost_build::Config::new()
         .type_attribute(".", "#[allow(clippy::all)]")
         .compile_protos(&protos, &includes)?;
 

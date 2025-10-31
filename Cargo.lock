@@ -4548,7 +4548,6 @@ dependencies = [
  "indoc",
  "pem",
  "prost",
- "prost-build",
  "prost-types",
  "protobuf-src",
  "rstest",
@@ -4560,6 +4559,7 @@ dependencies = [
  "strum_macros 0.25.3",
  "test-log",
  "thiserror 2.0.17",
+ "tonic-prost-build",
  "url",
  "uuid",
 ]

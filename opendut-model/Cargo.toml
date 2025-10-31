@@ -40,7 +40,7 @@ test-log = { workspace = true }
 
 [build-dependencies]
 glob = { workspace = true }
-prost-build = { workspace = true }
+tonic-prost-build = { workspace = true }
 protobuf-src = { workspace = true }
 
 [lints]
