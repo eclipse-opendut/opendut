@@ -7,7 +7,7 @@ license.workspace = true
 [dependencies]
 opendut-carl-api = { workspace = true, features = ["client"] }
 opendut-model = { workspace = true, features = ["yaml-specs", "json-specs"] }
-opendut-util = { workspace = true }
+opendut-util = { workspace = true, features = ["telemetry"] }
 
 
 clap = { workspace = true, features = ["derive"] }
@@ -18,6 +18,7 @@ config = { workspace = true }
 console = { workspace = true }
 glob = { workspace = true }
 indoc = { workspace = true }
+pem = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }

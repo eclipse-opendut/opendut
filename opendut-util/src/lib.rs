@@ -3,8 +3,8 @@ pub mod crypto;
 
 pub use opendut_util_core::future;
 
-#[cfg(not(target_arch = "wasm32"))]
-pub mod telemetry;
+#[cfg(all(feature = "telemetry", not(target_arch = "wasm32")))]
+pub use opendut_util_telemetry as telemetry;
 
 pub mod project;
 

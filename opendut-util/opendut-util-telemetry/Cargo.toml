@@ -1,0 +1,27 @@
+[package]
+name = "opendut-util-telemetry"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+opendut-auth = { workspace = true, features = ["confidential_client"] }
+opendut-util-core = { workspace = true }
+
+config = { workspace = true }
+opentelemetry = { workspace = true, features = ["logs", "trace"] }
+opentelemetry-otlp = { workspace = true, features = ["logs", "trace", "metrics", "tls-roots", "grpc-tonic"] }
+opentelemetry_sdk = { workspace = true, features = ["rt-tokio", "trace", "metrics", "logs", "spec_unstable_logs_enabled"] }
+opentelemetry-appender-tracing = { workspace = true }
+opentelemetry-semantic-conventions = { workspace = true, features = ["semconv_experimental"] }
+pem = { workspace = true }
+serde = { workspace = true }
+simple_moving_average = { workspace = true }
+sysinfo = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tonic = { workspace = true }
+tracing = { workspace = true }
+tracing-opentelemetry = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter", "fmt", "tracing-log"] }
+url = { workspace = true }

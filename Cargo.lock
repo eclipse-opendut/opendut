@@ -4388,6 +4388,7 @@ dependencies = [
  "opendut-carl-api",
  "opendut-model",
  "opendut-util",
+ "pem",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -4612,26 +4613,12 @@ name = "opendut-util"
 version = "0.8.0-alpha"
 dependencies = [
  "config",
- "home",
- "opendut-auth",
  "opendut-util-core",
- "opentelemetry",
- "opentelemetry-appender-tracing",
- "opentelemetry-otlp",
- "opentelemetry-semantic-conventions",
- "opentelemetry_sdk",
- "pem",
+ "opendut-util-telemetry",
  "rustls",
  "serde",
- "simple_moving_average",
- "sysinfo",
  "thiserror 2.0.17",
- "tokio",
- "tonic",
  "tracing",
- "tracing-opentelemetry",
- "tracing-subscriber",
- "url",
 ]
 
 [[package]]
@@ -4644,6 +4631,31 @@ dependencies = [
  "pem",
  "reqwest",
  "thiserror 2.0.17",
+]
+
+[[package]]
+name = "opendut-util-telemetry"
+version = "0.8.0-alpha"
+dependencies = [
+ "config",
+ "opendut-auth",
+ "opendut-util-core",
+ "opentelemetry",
+ "opentelemetry-appender-tracing",
+ "opentelemetry-otlp",
+ "opentelemetry-semantic-conventions",
+ "opentelemetry_sdk",
+ "pem",
+ "serde",
+ "simple_moving_average",
+ "sysinfo",
+ "thiserror 2.0.17",
+ "tokio",
+ "tonic",
+ "tracing",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
+ "url",
 ]
 
 [[package]]

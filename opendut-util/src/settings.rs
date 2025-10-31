@@ -1,10 +1,9 @@
+use std::env::home_dir;
 use std::fmt::Debug;
 use std::fs;
 use std::path::{PathBuf};
 
 pub use config::{Config, ConfigError, FileFormat};
-use home::home_dir;
-use pem::Pem;
 
 use crate::project;
 
@@ -160,38 +159,4 @@ pub fn write_config(name: &str, settings_string: &str, user_type: SetupType) {
 
     fs::write(&config_path, settings_string)
         .unwrap_or_else(|_| panic!("Could not write configuration file: {}", config_path.display()));
-}
-
-/// Write certificate to one of the following paths:
-///
-/// * A system configuration, write to `/etc/opendut/{name}-ca.pem`
-/// * A user configuration, write to `[XDG_DATA_HOME|~/.local/share]/opendut/{name}/ca.pem`
-///
-pub fn try_write_certificate(name: &str, ca: Pem, user_type: SetupType) -> PathBuf {
-
-    let certificate = match user_type {
-        SetupType::System => { format!("/etc/opendut/{name}-ca.pem") }
-        SetupType::User => { format!("opendut/{name}/ca.pem") }
-    };
-
-    let certificate_path = match std::env::var("XDG_DATA_HOME") {
-        Ok(xdg_data_home) => {
-            PathBuf::from(xdg_data_home).join(certificate)
-        }
-        Err(_) => {
-            home_dir().map(|path| path.join(".local/share").join(certificate)).unwrap()
-        }
-    };
-
-    let cleo_ca_certificate_dir = certificate_path.parent().unwrap();
-    fs::create_dir_all(cleo_ca_certificate_dir)
-        .unwrap_or_else(|error| panic!("Unable to create path {certificate_path:?}: {error}"));
-
-    fs::write(
-        certificate_path.clone(),
-        ca.to_string() //FIXME use shared certificate encode library
-    ).unwrap_or_else(|error| panic!(
-        "Write CA certificate was not successful at location {:?}: {}", &certificate_path, error
-    ));
-    certificate_path
 }

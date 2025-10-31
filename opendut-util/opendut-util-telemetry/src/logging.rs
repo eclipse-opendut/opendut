@@ -1,4 +1,4 @@
-use crate::telemetry::opentelemetry_types::Endpoint;
+use crate::opentelemetry_types::Endpoint;
 use opendut_auth::confidential::client::{ConfClientArcMutex, ConfidentialClientRef};
 use opentelemetry_otlp::{ExporterBuildError, LogExporter, WithExportConfig, WithTonicConfig};
 use opentelemetry_sdk::logs::{SdkLoggerProvider};

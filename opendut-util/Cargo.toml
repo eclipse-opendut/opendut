@@ -8,34 +8,20 @@ license.workspace = true
 default = ["settings"]
 crypto = ["dep:rustls"]
 serde = ["dep:serde"]
-settings = ["dep:config", "dep:home"]
+settings = ["dep:config", "dep:thiserror"]
+telemetry = ["dep:opendut-util-telemetry"]
 
 [dependencies]
 opendut-util-core = { workspace = true, features = ["reqwest"] }
+opendut-util-telemetry = { workspace = true, optional = true }
 
 config = { workspace = true, optional = true }
-pem = { workspace = true }
 serde = { workspace = true, optional = true }
-thiserror = { workspace = true }
 tracing = { workspace = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-home = { workspace = true, optional = true }
-opentelemetry = { workspace = true, features = ["logs", "trace"] }
-opentelemetry-otlp = { workspace = true, features = ["logs", "trace", "metrics", "tls-roots", "grpc-tonic"] }
-opentelemetry_sdk = { workspace = true, features = ["rt-tokio", "trace", "metrics", "logs", "spec_unstable_logs_enabled"] }
-opentelemetry-appender-tracing = { workspace = true }
-opentelemetry-semantic-conventions = { workspace = true, features = ["semconv_experimental"] }
-opendut-auth = { workspace = true, features = ["confidential_client"] }
 rustls = { workspace = true, optional = true }
-serde = { workspace = true }
-simple_moving_average = { workspace = true }
-sysinfo = { workspace = true }
-tokio = { workspace = true }
-tonic = { workspace = true }
-tracing-opentelemetry = { workspace = true }
-tracing-subscriber = { workspace = true, features = ["env-filter", "fmt", "tracing-log"] }
-url = { workspace = true }
+thiserror = { workspace = true, optional = true }
 
 [lints]
 workspace = true

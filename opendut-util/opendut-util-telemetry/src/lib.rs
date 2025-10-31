@@ -23,9 +23,9 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use opendut_auth::confidential::client::{AuthError, ConfClientArcMutex};
 use opendut_auth::confidential::error::ConfidentialClientError;
-use crate::telemetry::logging::{LoggingConfig, LoggingConfigError, PipeLogging, PipeLoggingStream};
-use crate::telemetry::metrics::{NamedMeterProvider, NamedMeterProviderKindCpu, NamedMeterProviderKindDefault, NamedMeterProviders};
-use crate::telemetry::opentelemetry_types::{Opentelemetry, OpentelemetryConfig, OpentelemetryConfigError};
+use crate::logging::{LoggingConfig, LoggingConfigError, PipeLogging, PipeLoggingStream};
+use crate::metrics::{NamedMeterProvider, NamedMeterProviderKindCpu, NamedMeterProviderKindDefault, NamedMeterProviders};
+use crate::opentelemetry_types::{Opentelemetry, OpentelemetryConfig, OpentelemetryConfigError};
 
 pub const LOG_FILTER_ENV: &str = "OPENDUT_LOG";
 pub const DEFAULT_METER_NAME: &str = "opendut_meter";

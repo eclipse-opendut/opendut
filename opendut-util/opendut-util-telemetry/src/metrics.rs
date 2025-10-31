@@ -1,5 +1,5 @@
-use crate::telemetry::opentelemetry_types::Endpoint;
-use crate::telemetry::DEFAULT_METER_NAME;
+use crate::opentelemetry_types::Endpoint;
+use crate::DEFAULT_METER_NAME;
 use opendut_auth::confidential::client::{ConfClientArcMutex, ConfidentialClientRef};
 use opentelemetry::metrics::MeterProvider;
 use opentelemetry_otlp::{ExporterBuildError, MetricExporter, WithExportConfig, WithTonicConfig};

@@ -1,4 +1,6 @@
-use std::path::Path;
+use std::env::home_dir;
+use std::fs;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use clap::ValueEnum;
 use indoc::formatdoc;
@@ -39,7 +41,7 @@ impl SetupCli {
 
         match persistent {
             Some(persistence_type) => {
-                let cleo_certificate_path = opendut_util::settings::try_write_certificate("cleo", setup_string.clone().ca.0, SetupType::from(persistence_type));
+                let cleo_certificate_path = try_write_certificate("cleo", setup_string.clone().ca.0, SetupType::from(persistence_type));
                 let new_settings_string = prepare_cleo_configuration(setup_string, &cleo_certificate_path);
                 opendut_util::settings::write_config("cleo", &new_settings_string, SetupType::User);
                 Ok(())
@@ -167,6 +169,42 @@ impl From<CleoSetupType> for SetupType {
         }
     }
 }
+
+
+/// Write certificate to one of the following paths:
+///
+/// * A system configuration, write to `/etc/opendut/{name}-ca.pem`
+/// * A user configuration, write to `[XDG_DATA_HOME|~/.local/share]/opendut/{name}/ca.pem`
+///
+pub fn try_write_certificate(name: &str, ca: pem::Pem, user_type: SetupType) -> PathBuf {
+
+    let certificate = match user_type {
+        SetupType::System => { format!("/etc/opendut/{name}-ca.pem") }
+        SetupType::User => { format!("opendut/{name}/ca.pem") }
+    };
+
+    let certificate_path = match std::env::var("XDG_DATA_HOME") {
+        Ok(xdg_data_home) => {
+            PathBuf::from(xdg_data_home).join(certificate)
+        }
+        Err(_) => {
+            home_dir().map(|path| path.join(".local/share").join(certificate)).unwrap()
+        }
+    };
+
+    let cleo_ca_certificate_dir = certificate_path.parent().unwrap();
+    fs::create_dir_all(cleo_ca_certificate_dir)
+        .unwrap_or_else(|error| panic!("Unable to create path {certificate_path:?}: {error}"));
+
+    fs::write(
+        certificate_path.clone(),
+        ca.to_string() //FIXME use shared certificate encode library
+    ).unwrap_or_else(|error| panic!(
+        "Write CA certificate was not successful at location {:?}: {}", &certificate_path, error
+    ));
+    certificate_path
+}
+
 
 
 #[cfg(test)]
