@@ -11,10 +11,10 @@ use uuid::Uuid;
 use opendut_auth::registration::client::RegistrationClient;
 use opendut_auth::registration::resources::ResourceHomeUrl;
 use opendut_util::settings::LoadedConfig;
-use opendut_util::telemetry::logging::LoggingConfig;
-use opendut_util::telemetry::opentelemetry_types;
-use opendut_util::telemetry::opentelemetry_types::Opentelemetry;
-use opendut_util::{project, telemetry};
+use opendut_telemetry::logging::LoggingConfig;
+use opendut_telemetry::opentelemetry_types;
+use opendut_telemetry::opentelemetry_types::Opentelemetry;
+use opendut_util::project;
 use opendut_util::pem::{Pem, PemFromConfig};
 use opendut_util::reqwest_client::OidcReqwestClient;
 use auth::in_memory_cache::CustomInMemoryCache;
@@ -70,7 +70,7 @@ pub async fn create(settings_override: config::Config, startup_options: StartupO
         };
         let opentelemetry = Opentelemetry::load(&settings.config, service_metadata).await?;
 
-        Some(telemetry::initialize_with_config(logging_config, opentelemetry).await?)
+        Some(opendut_telemetry::initialize_with_config(logging_config, opentelemetry).await?)
     } else {
         None
     };

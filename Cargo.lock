@@ -4278,6 +4278,7 @@ dependencies = [
  "opendut-auth-tests",
  "opendut-carl-api",
  "opendut-model",
+ "opendut-telemetry",
  "opendut-util",
  "opendut-vpn",
  "opendut-vpn-netbird",
@@ -4385,6 +4386,7 @@ dependencies = [
  "indoc",
  "opendut-carl-api",
  "opendut-model",
+ "opendut-telemetry",
  "opendut-util",
  "pem",
  "serde",
@@ -4428,6 +4430,7 @@ dependencies = [
  "opendut-edgar-plugin-api",
  "opendut-model",
  "opendut-netbird-client-api",
+ "opendut-telemetry",
  "opendut-util",
  "opentelemetry",
  "opentelemetry_sdk",
@@ -4584,6 +4587,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "opendut-telemetry"
+version = "0.8.0-alpha"
+dependencies = [
+ "config",
+ "opendut-auth",
+ "opendut-util-core",
+ "opentelemetry",
+ "opentelemetry-appender-tracing",
+ "opentelemetry-otlp",
+ "opentelemetry-semantic-conventions",
+ "opentelemetry_sdk",
+ "pem",
+ "serde",
+ "simple_moving_average",
+ "sysinfo",
+ "thiserror 2.0.17",
+ "tokio",
+ "tonic",
+ "tracing",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
+ "url",
+]
+
+[[package]]
 name = "opendut-theo"
 version = "0.8.0-alpha"
 dependencies = [
@@ -4610,7 +4638,6 @@ version = "0.8.0-alpha"
 dependencies = [
  "config",
  "opendut-util-core",
- "opendut-util-telemetry",
  "rustls",
  "serde",
  "thiserror 2.0.17",
@@ -4627,31 +4654,6 @@ dependencies = [
  "pem",
  "reqwest",
  "thiserror 2.0.17",
-]
-
-[[package]]
-name = "opendut-util-telemetry"
-version = "0.8.0-alpha"
-dependencies = [
- "config",
- "opendut-auth",
- "opendut-util-core",
- "opentelemetry",
- "opentelemetry-appender-tracing",
- "opentelemetry-otlp",
- "opentelemetry-semantic-conventions",
- "opentelemetry_sdk",
- "pem",
- "serde",
- "simple_moving_average",
- "sysinfo",
- "thiserror 2.0.17",
- "tokio",
- "tonic",
- "tracing",
- "tracing-opentelemetry",
- "tracing-subscriber",
- "url",
 ]
 
 [[package]]

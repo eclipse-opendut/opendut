@@ -13,10 +13,6 @@ pub use opendut_util_core::project;
 pub use opendut_util_core::reqwest_client;
 
 
-#[cfg(all(feature = "telemetry", not(target_arch = "wasm32")))]
-pub use opendut_util_telemetry as telemetry;
-
-
 #[cfg(feature = "serde")]
 pub mod serde;
 

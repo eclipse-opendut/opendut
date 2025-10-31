@@ -22,7 +22,7 @@ pub async fn launch_rperf_clients(
     target_bandwidth_kbit_per_second: u64,
     rperf_backoff_max_elapsed_time: Duration,
 ) {
-    let meter = global::meter(opendut_util::telemetry::DEFAULT_METER_NAME);
+    let meter = global::meter(opendut_telemetry::DEFAULT_METER_NAME);
 
     let megabits_second_send = meter.f64_gauge("megabits_second_send").build();
     let megabits_second_receive = meter.f64_gauge("megabits_second_receive").build();

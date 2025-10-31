@@ -14,12 +14,11 @@ use opendut_model::peer::PeerSetup;
 use opendut_model::util::net::NetworkInterfaceName;
 use opendut_model::vpn::netbird::SetupKey;
 use opendut_model::vpn::VpnPeerConfiguration;
-use opendut_util::telemetry;
-use opendut_util::telemetry::opentelemetry_types::Opentelemetry;
+use opendut_telemetry::opentelemetry_types::Opentelemetry;
 use std::env;
 use std::ops::Not;
 use std::path::PathBuf;
-use opendut_util::telemetry::logging::PipeLogging;
+use opendut_telemetry::logging::PipeLogging;
 use crate::setup::cli::SetupRunCommonArgs;
 use crate::setup::util::DryRun;
 
@@ -168,14 +167,14 @@ pub(super) async fn unmanaged(
 pub async fn init_logging() -> anyhow::Result<()> {
     let file_logging = Some(logging_file()?);
 
-    let logging_config = telemetry::logging::LoggingConfig {
+    let logging_config = opendut_telemetry::logging::LoggingConfig {
         pipe_logging: PipeLogging::Disabled,
         file_logging,
         log_level_override: None,
     };
     let opentelemetry_config = Opentelemetry::Disabled;
     
-    let _ = telemetry::initialize_with_config(logging_config, opentelemetry_config).await?;
+    let _ = opendut_telemetry::initialize_with_config(logging_config, opentelemetry_config).await?;
 
     Ok(())
 }

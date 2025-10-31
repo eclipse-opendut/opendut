@@ -8,7 +8,7 @@ use crate::resource::manager::ResourceManagerRef;
 pub fn initialize_metrics_collection(
     resource_manager: ResourceManagerRef,
 ) {
-    let meter = global::meter(opendut_util::telemetry::DEFAULT_METER_NAME);
+    let meter = global::meter(opendut_telemetry::DEFAULT_METER_NAME);
 
     {
         let resource_manager = resource_manager.clone();

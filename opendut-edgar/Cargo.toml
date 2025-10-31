@@ -10,7 +10,8 @@ opendut-edgar-kernel-modules = { workspace = true }
 opendut-edgar-plugin-api = { workspace = true, features = ["host"] }
 opendut-netbird-client-api = { workspace = true }
 opendut-model = { workspace = true }
-opendut-util = { workspace = true, features = ["crypto", "telemetry", "settings"] }
+opendut-telemetry = { workspace = true }
+opendut-util = { workspace = true, features = ["crypto", "settings"] }
 
 anyhow = { workspace = true }
 async-trait = { workspace = true }

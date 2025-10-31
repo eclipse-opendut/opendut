@@ -10,7 +10,7 @@ use tracing::{error, trace};
 
 pub async fn spawn_cluster_ping(peers: HashMap<PeerId, IpAddr>, ping_interval_ms: Duration) {
 
-    let meter = global::meter(opendut_util::telemetry::DEFAULT_METER_NAME);
+    let meter = global::meter(opendut_telemetry::DEFAULT_METER_NAME);
     let rtt = meter.f64_gauge("round_trip_time").build();
 
     let rtt_mutex = Arc::new(Mutex::new(rtt));

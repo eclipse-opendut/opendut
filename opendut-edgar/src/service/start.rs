@@ -3,10 +3,9 @@ use crate::common::{carl, settings};
 use anyhow::Context;
 use opendut_model::peer::configuration::EdgePeerConfigurationState;
 use opendut_model::peer::PeerId;
-use opendut_util::telemetry;
-use opendut_util::telemetry::logging::LoggingConfig;
-use opendut_util::telemetry::opentelemetry_types;
-use opendut_util::telemetry::opentelemetry_types::Opentelemetry;
+use opendut_telemetry::logging::LoggingConfig;
+use opendut_telemetry::opentelemetry_types;
+use opendut_telemetry::opentelemetry_types::Opentelemetry;
 use tokio::sync::mpsc;
 use crate::service::peer_messaging_client::PeerMessagingClient;
 
@@ -48,7 +47,7 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
         };
         let opentelemetry = Opentelemetry::load(&settings.config, service_metadata).await?;
 
-        telemetry::initialize_with_config(logging_config, opentelemetry).await?
+        opendut_telemetry::initialize_with_config(logging_config, opentelemetry).await?
     };
 
     let (tx_peer_configuration, rx_peer_configuration) = mpsc::channel(100);

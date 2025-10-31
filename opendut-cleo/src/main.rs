@@ -237,9 +237,7 @@ async fn execute() -> Result<()> {
     let args = Args::parse();
 
     let mut telemetry_shutdown_handle = {
-        use opendut_util::telemetry;
-
-        let mut config = telemetry::logging::LoggingConfig::load(&settings.config)
+        let mut config = opendut_telemetry::logging::LoggingConfig::load(&settings.config)
             .map_err(|error| format!("Error while loading logging configuration: {error}"))?;
 
         config.log_level_override =
@@ -249,9 +247,9 @@ async fn execute() -> Result<()> {
                 None
             };
 
-        telemetry::initialize_with_config(
+        opendut_telemetry::initialize_with_config(
             config,
-            telemetry::opentelemetry_types::Opentelemetry::Disabled,
+            opendut_telemetry::opentelemetry_types::Opentelemetry::Disabled,
         ).await
             .map_err(|_| "Error while initializing logging.")?
     };
