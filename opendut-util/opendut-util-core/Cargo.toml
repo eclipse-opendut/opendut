@@ -8,14 +8,13 @@ license.workspace = true
 anyhow = { workspace = true }
 config = { workspace = true, optional = true }
 dotenvy = { workspace = true, optional = true }
-pem = { workspace = true }
+pem = { workspace = true, optional = true }
 reqwest = { workspace = true, optional = true }
 thiserror = { workspace = true }
 
 [features]
-default = ["settings"]
-settings = ["dep:config"]
-reqwest = ["dep:reqwest", "settings"]
+reqwest = ["pem", "dep:reqwest"]
+pem = ["dep:config", "dep:pem"]
 testing = ["dotenvy"]
 
 [lints]

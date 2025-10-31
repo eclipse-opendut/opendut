@@ -6,7 +6,7 @@ use tempfile::TempDir;
 use flate2::Compression;
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
-use pem::Pem;
+use opendut_util::pem::Pem;
 
 pub mod script;
 
@@ -101,7 +101,6 @@ mod test {
     use flate2::Compression;
     use flate2::read::GzDecoder;
     use flate2::write::GzEncoder;
-    use pem::Pem;
     use predicates::path;
 
     use crate::http::router::arch::CLEO_IDENTIFIER;

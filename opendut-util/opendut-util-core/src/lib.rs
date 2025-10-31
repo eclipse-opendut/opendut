@@ -3,7 +3,7 @@ pub mod future;
 #[cfg(feature = "testing")]
 pub mod testing;
 
-#[cfg(all(feature = "settings", not(target_arch = "wasm32")))]
+#[cfg(all(feature = "pem", not(target_arch = "wasm32")))]
 pub mod pem;
 #[cfg(all(feature = "reqwest", not(target_arch = "wasm32")))]
 pub mod reqwest_client;

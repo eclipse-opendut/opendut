@@ -10,8 +10,7 @@ opendut-auth = { workspace = true, features = ["registration_client"] }
 opendut-carl-api = { workspace = true, features = ["test_suite"] }
 opendut-vpn-netbird = { workspace = true }
 opendut-model = { workspace = true }
-opendut-util = { workspace = true, features = ["crypto", "telemetry", "settings"] }
-opendut-util-core = { workspace = true, features = ["reqwest"] }
+opendut-util = { workspace = true, features = ["crypto", "pem", "reqwest", "telemetry", "settings"] }
 opendut-vpn = { workspace = true }
 
 anyhow = { workspace = true }
@@ -35,7 +34,6 @@ openidconnect = { workspace = true }
 openssl-sys = { workspace = true }
 opentelemetry = { workspace = true }
 opentelemetry_sdk = { workspace = true }
-pem = { workspace = true, features = ["serde"] }
 prost = { workspace = true }
 redb = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }

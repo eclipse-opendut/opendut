@@ -3,11 +3,18 @@ pub mod crypto;
 
 pub use opendut_util_core::future;
 
-#[cfg(all(feature = "telemetry", not(target_arch = "wasm32")))]
-pub use opendut_util_telemetry as telemetry;
+#[cfg(feature = "pem")]
+pub use opendut_util_core::pem;
 
 #[cfg(feature = "project")]
 pub use opendut_util_core::project;
+
+#[cfg(feature = "reqwest")]
+pub use opendut_util_core::reqwest_client;
+
+
+#[cfg(all(feature = "telemetry", not(target_arch = "wasm32")))]
+pub use opendut_util_telemetry as telemetry;
 
 
 #[cfg(feature = "serde")]

@@ -1,9 +1,9 @@
 use std::sync::Arc;
 use anyhow::Context;
 use config::Config;
-use pem::Pem;
 use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_auth::registration::resources::ResourceHomeUrl;
+use opendut_util::pem::Pem;
 use crate::manager::grpc::{ClusterManagerFacade, MetadataProviderFacade, ObserverMessagingBrokerFacade, PeerManagerFacade, PeerMessagingBrokerFacade, TestManagerFacade};
 use crate::resource::manager::ResourceManagerRef;
 use crate::startup;

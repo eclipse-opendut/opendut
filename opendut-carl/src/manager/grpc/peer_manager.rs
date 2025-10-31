@@ -1,5 +1,3 @@
-use pem::Pem;
-
 use opendut_auth::registration::client::RegistrationClientRef;
 use opendut_auth::registration::resources::UserId;
 use opendut_carl_api::proto;
@@ -11,7 +9,7 @@ use opendut_model::peer::{PeerDescriptor, PeerId};
 use tonic::{Request, Response, Status};
 use tracing::{error, trace};
 use url::Url;
-
+use opendut_util::pem::Pem;
 use crate::manager::grpc::extract;
 use crate::manager::peer_manager;
 use crate::manager::peer_manager::{DeletePeerDescriptorError, DeletePeerDescriptorParams, GenerateCleoSetupParams, GeneratePeerSetupError, GeneratePeerSetupParams, StorePeerDescriptorError, StorePeerDescriptorParams};

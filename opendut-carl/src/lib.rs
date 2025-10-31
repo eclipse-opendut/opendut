@@ -1,4 +1,3 @@
-use pem::Pem;
 use std::net::SocketAddr;
 use std::str::FromStr;
 use anyhow::Context;
@@ -16,8 +15,8 @@ use opendut_util::telemetry::logging::LoggingConfig;
 use opendut_util::telemetry::opentelemetry_types;
 use opendut_util::telemetry::opentelemetry_types::Opentelemetry;
 use opendut_util::{project, telemetry};
-use opendut_util_core::pem::PemFromConfig;
-use opendut_util_core::reqwest_client::OidcReqwestClient;
+use opendut_util::pem::{Pem, PemFromConfig};
+use opendut_util::reqwest_client::OidcReqwestClient;
 use auth::in_memory_cache::CustomInMemoryCache;
 
 use crate::auth::grpc_auth_layer::GrpcAuthenticationLayer;
