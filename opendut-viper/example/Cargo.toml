@@ -8,5 +8,5 @@ license.workspace = true
 viper-rt = { workspace = true, features = [ "error", "containers" ] }
 indoc = { workspace = true }
 tokio = { workspace = true, features = [ "rt-multi-thread", "macros" ] }
-tracing = {workspace = true }
+tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
