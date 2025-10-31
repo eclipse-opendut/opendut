@@ -105,10 +105,10 @@ mod tests {
     use crate::service::service_runner;
     use opendut_model::peer::configuration::{parameter, ParameterTarget, PeerConfiguration};
     use opendut_model::util::net::NetworkInterfaceName;
-    use rand::Rng;
     use std::sync::Arc;
     use crate::service::tasks;
     use crate::service::tasks::task_resolver::ServiceTaskResolver;
+    use crate::service::tasks::testing::NetworkInterfaceNameExt;
 
     #[test_with::env(RUN_EDGAR_NETLINK_INTEGRATION_TESTS)]
     #[test_log::test(tokio::test)]
@@ -178,20 +178,12 @@ mod tests {
     }
     impl Fixture {
 
-        pub fn random_suffix() -> String {
-            rand::rng()
-                .sample_iter(&rand::distr::Alphanumeric)
-                .take(7)
-                .map(char::from)
-                .collect()
-        }
         pub fn create() -> Self {
             let (connection, handle, _) = rtnetlink::new_connection().expect("Could not get rtnetlink handle.");
             tokio::spawn(connection);
             let manager = NetworkInterfaceManager { handle };
             let network_interface_manager = Arc::new(manager);
-            let suffix = Fixture::random_suffix();
-            let bridge_name = NetworkInterfaceName::try_from(format!("dut-br-{suffix}")).unwrap();
+            let bridge_name = NetworkInterfaceName::with_random_suffix("dut-br");
 
             let parameter = parameter::EthernetBridge {
                 name: bridge_name.clone(),

@@ -14,7 +14,7 @@ impl Task for LoadCanKernelModules {
     fn description(&self) -> String {
         let kernel_modules_str = opendut_edgar_kernel_modules::required_can_kernel_modules()
             .into_iter()
-            .map(|m| m.name)
+            .map(|m| m.name())
             .collect::<Vec<String>>()
             .join(", ");
 
@@ -102,6 +102,8 @@ mod tests {
             let module_dir = fixture.builtin_module_dir.child(module);
             fs::create_dir_all(&module_dir)?;
         }
+        let can_gw_parameters_file = fixture.builtin_module_dir.join("can_gw").join("parameters").join("max_hops");
+        fs::write(can_gw_parameters_file, "2")?;
         
         assert_eq!(task.check_present().await?, TaskStateFulfilled::Yes);
         Ok(())

@@ -389,8 +389,8 @@ mod tests {
     fn test_convert_can_local_route_proto_to_model() {
         let can_bridge_name = "br-vcan-opendut".to_string();
         let can_local_route = CanLocalRoute {
-            bridge_name: Some(NetworkInterfaceName { name: can_bridge_name.clone() }),
-            can_device_name: Some(NetworkInterfaceName { name: "can0".to_string() }),
+            can_source_device_name: Some(NetworkInterfaceName { name: can_bridge_name.clone() }),
+            can_destination_device_name: Some(NetworkInterfaceName { name: "can0".to_string() }),
         };
         let parameter = PeerConfigurationParameter {
             id: Some(ParameterId(Uuid::new_v4()).into()),
@@ -401,7 +401,7 @@ mod tests {
 
         let can_local_route_model: crate::peer::configuration::Parameter<crate::peer::configuration::parameter::CanLocalRoute> =
             can_local_route_proto.clone().try_into().expect("Conversion failed");
-        assert_eq!(can_local_route_model.value.bridge_name.name(), can_bridge_name);
+        assert_eq!(can_local_route_model.value.can_source_device_name.name(), can_bridge_name);
 
         let can_local_route_proto_converted_back: PeerConfigurationParameterCanLocalRoute = can_local_route_model.into();
         assert_eq!(can_local_route_proto_converted_back, can_local_route_proto);

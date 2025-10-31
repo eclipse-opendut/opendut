@@ -1,12 +1,13 @@
-use std::fmt::Display;
-use anyhow::anyhow;
-use async_trait::async_trait;
-use regex::Regex;
-use tokio::process::Command;
-use opendut_model::peer::configuration::parameter;
-use opendut_model::util::net::NetworkInterfaceName;
 use crate::common::task::{Success, Task, TaskAbsent, TaskStateFulfilled};
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
+use anyhow::anyhow;
+use async_trait::async_trait;
+use opendut_model::peer::configuration::parameter;
+use opendut_model::util::net::NetworkInterfaceName;
+use regex::Regex;
+use std::fmt::Display;
+use tokio::process::Command;
+use tracing::trace;
 
 pub struct CanLocalRoute {
     pub parameter: parameter::CanLocalRoute,
@@ -43,18 +44,18 @@ pub enum Error {
 #[async_trait]
 impl Task for CanLocalRoute {
     fn description(&self) -> String {
-        format!("Create local CAN route from '{}' to bridge '{}'.", self.parameter.can_device_name, self.parameter.bridge_name)
+        format!("Create local CAN route from '{}' to bridge '{}'.", self.parameter.can_destination_device_name, self.parameter.can_source_device_name)
     }
 
     async fn check_present(&self) -> anyhow::Result<TaskStateFulfilled> {
-        let can_device = self.network_interface_manager.find_interface(&self.parameter.can_device_name).await?;
-        let bridge = self.network_interface_manager.find_interface(&self.parameter.bridge_name).await?;
+        let source = self.network_interface_manager.find_interface(&self.parameter.can_source_device_name).await?;
+        let destination = self.network_interface_manager.find_interface(&self.parameter.can_destination_device_name).await?;
 
-        match (can_device, bridge) {
+        match (source, destination) {
             (Some(_), Some(_)) => {
                 let can_route_present = self.check_can_route_exists(
-                    &self.parameter.can_device_name,
-                    &self.parameter.bridge_name,
+                    &self.parameter.can_source_device_name,
+                    &self.parameter.can_destination_device_name,
                     self.can_fd,
                     CAN_MAX_HOPS,
                 ).await?;
@@ -70,14 +71,14 @@ impl Task for CanLocalRoute {
     }
 
     async fn make_present(&self) -> anyhow::Result<Success> {
-        let can_device = self.network_interface_manager.find_interface(&self.parameter.can_device_name).await?;
-        let bridge = self.network_interface_manager.find_interface(&self.parameter.bridge_name).await?;
+        let source = self.network_interface_manager.find_interface(&self.parameter.can_source_device_name).await?;
+        let destination = self.network_interface_manager.find_interface(&self.parameter.can_destination_device_name).await?;
 
-        match (can_device, bridge) {
-            (Some(can_device), Some(bridge)) => {
+        match (source, destination) {
+            (Some(source), Some(destination)) => {
                 self.create_can_route(
-                    &can_device.name,
-                    &bridge.name,
+                    &source.name,
+                    &destination.name,
                     self.can_fd,
                     CAN_MAX_HOPS,
                     CanRouteOperation::Create,
@@ -85,7 +86,7 @@ impl Task for CanLocalRoute {
 
                 Ok(Success::default())
             },
-            _ => Err(anyhow::Error::msg("Cannot create CAN local route because either CAN device or bridge does not exist.")),
+            _ => Err(anyhow::Error::msg("Cannot create CAN local route because either source or destination does not exist.")),
         }
     }
 }
@@ -94,8 +95,8 @@ impl Task for CanLocalRoute {
 impl TaskAbsent for CanLocalRoute {
     async fn check_absent(&self) -> anyhow::Result<TaskStateFulfilled> {
         let can_route_present = self.check_can_route_exists(
-            &self.parameter.can_device_name,
-            &self.parameter.bridge_name,
+            &self.parameter.can_source_device_name,
+            &self.parameter.can_destination_device_name,
             self.can_fd,
             CAN_MAX_HOPS,
         ).await?;
@@ -109,8 +110,8 @@ impl TaskAbsent for CanLocalRoute {
 
     async fn make_absent(&self) -> anyhow::Result<Success> {
         self.create_can_route(
-            &self.parameter.can_device_name,
-            &self.parameter.bridge_name,
+            &self.parameter.can_source_device_name,
+            &self.parameter.can_destination_device_name,
             self.can_fd,
             CAN_MAX_HOPS,
             CanRouteOperation::Delete,
@@ -131,6 +132,7 @@ impl CanLocalRoute {
         // cangw -L returns non-zero exit code despite succeeding, so we don't check it here
 
         let output_str = String::from_utf8_lossy(&output.stdout);
+        println!("cangw -L output:\n{}", output_str);
 
         let regex = Regex::new(r"(?m)^cangw -A -s ([^\n ]+) -d ([^\n ]+) ((?:-X )?)-e -l ([0-9[^\n ]]+) #.*$").unwrap();
 
@@ -170,6 +172,7 @@ impl CanLocalRoute {
             cmd.arg("-X");
         }
 
+        trace!("{operation:?} CAN route, executing command: {:?}", cmd);
         let output = cmd.output().await
             .map_err(|cause| anyhow!(Error::CommandLineProgramExecution { command: "cangw".to_string(), cause }))?;
 
@@ -184,5 +187,117 @@ impl CanLocalRoute {
             }))
         }
 
+    }
+}
+
+#[cfg(test)]
+pub(crate) mod tests {
+    use crate::service::network_interface::manager::{NetworkInterfaceManager, NetworkInterfaceManagerRef};
+    use opendut_model::peer::configuration::parameter;
+    use opendut_model::util::net::NetworkInterfaceName;
+    use std::sync::Arc;
+    use anyhow::anyhow;
+    use crate::common::task::{Task, TaskAbsent, TaskStateFulfilled};
+    use crate::service::tasks::testing::NetworkInterfaceNameExt;
+
+    pub struct Fixture {
+        network_interface_manager: NetworkInterfaceManagerRef,
+        parameter: parameter::CanLocalRoute,
+        vcan1_name: NetworkInterfaceName,
+        vcan2_name: NetworkInterfaceName,
+    }
+    impl Fixture {
+        pub async fn create() -> anyhow::Result<Self> {
+            let (connection, handle, _) = rtnetlink::new_connection().expect("Could not get rtnetlink handle.");
+            tokio::spawn(connection);
+            let manager = NetworkInterfaceManager { handle };
+            let network_interface_manager = Arc::new(manager);
+            let vcan1_name = NetworkInterfaceName::with_random_suffix("vcan1");
+            let vcan2_name = NetworkInterfaceName::with_random_suffix("vcan2");
+
+            let parameter = parameter::CanLocalRoute {
+                can_source_device_name: vcan1_name.clone(),
+                can_destination_device_name: vcan2_name.clone(),
+            };
+
+            // Verify that required CAN kernel modules are loaded
+            for kernel_module in opendut_edgar_kernel_modules::required_can_kernel_modules() {
+                if ! kernel_module.is_loaded(&opendut_edgar_kernel_modules::default_module_file(), &opendut_edgar_kernel_modules::default_builtin_module_dir())? {
+                    return Err(anyhow!("Required CAN kernel module '{}' is not loaded. Cannot run CAN local route tests.", kernel_module.name()))
+                }
+            }
+
+            Ok(Self {
+                network_interface_manager,
+                parameter,
+                vcan1_name,
+                vcan2_name,
+            })
+        }
+        async fn create_vcan_interfaces(&self) -> anyhow::Result<()> {
+            let vcan1_interface = self.network_interface_manager.create_vcan_interface(&self.vcan1_name).await?;
+            self.network_interface_manager.set_interface_up(&vcan1_interface).await?;
+            let vcan2_interface = self.network_interface_manager.create_vcan_interface(&self.vcan2_name).await?;
+            self.network_interface_manager.set_interface_up(&vcan2_interface).await?;
+
+            let found_vcan1 = self.network_interface_manager.find_interface(&self.vcan1_name).await?;
+            let found_vcan2 = self.network_interface_manager.find_interface(&self.vcan2_name).await?;
+            assert!(found_vcan1.is_some());
+            assert!(found_vcan2.is_some());
+            Ok(())
+        }
+    }
+    #[test_log::test(tokio::test)]
+    async fn test_can_local_route_description() {
+        let fixture = Fixture::create().await.expect("Could not create Fixture");
+        let task = super::CanLocalRoute {
+            parameter: fixture.parameter.clone(),
+            network_interface_manager: fixture.network_interface_manager.clone(),
+            can_fd: false,
+        };
+        let description = task.description();
+        assert_eq!(
+            description,
+            format!(
+                "Create local CAN route from '{}' to bridge '{}'.",
+                fixture.parameter.can_destination_device_name,
+                fixture.parameter.can_source_device_name
+            )
+        );
+    }
+
+    #[test_with::env(RUN_EDGAR_NETLINK_INTEGRATION_TESTS)]
+    #[test_log::test(tokio::test)]
+    async fn test_can_local_route_lifecycle() -> anyhow::Result<()> {
+        let fixture = Fixture::create().await.expect("Could not create Fixture");
+        fixture.create_vcan_interfaces().await?;
+
+        let task = super::CanLocalRoute {
+            parameter: fixture.parameter.clone(),
+            network_interface_manager: fixture.network_interface_manager.clone(),
+            can_fd: false,
+        };
+
+        // Ensure absent
+        if let Ok(present) = task.check_present().await
+            && present == TaskStateFulfilled::Yes {
+            task.make_absent().await?;
+        }
+
+        // Create CAN local route
+        task.make_present().await?;
+
+        // Verify present
+        let present = task.check_present().await?;
+        assert_eq!(present, TaskStateFulfilled::Yes);
+
+        // Remove CAN local route
+        task.make_absent().await?;
+
+        // Verify absent
+        let absent = task.check_absent().await?;
+        assert_eq!(absent, TaskStateFulfilled::Yes);
+
+        Ok(())
     }
 }

@@ -80,8 +80,8 @@ pub struct CanBridge {
 }
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
 pub struct CanLocalRoute {
-    pub bridge_name: NetworkInterfaceName,
-    pub can_device_name: NetworkInterfaceName,
+    pub can_source_device_name: NetworkInterfaceName,
+    pub can_destination_device_name: NetworkInterfaceName,
 }
 
 
