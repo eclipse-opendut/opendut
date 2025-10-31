@@ -33,12 +33,15 @@ impl ParameterVariantWithDependencies {
 impl Hash for ParameterVariantWithDependencies {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match &self.parameter {
-            ParameterVariant::DeviceInterface(parameter) => { parameter.id.hash(state) }
-            ParameterVariant::EthernetBridge(parameter) => { parameter.id.hash(state) }
-            ParameterVariant::Executor(parameter) => { parameter.id.hash(state) }
-            ParameterVariant::GreInterface(parameter) => { parameter.id.hash(state) }
-            ParameterVariant::JoinedInterface(parameter) => { parameter.id.hash(state) }
-            ParameterVariant::RemotePeerConnectionCheck(parameter) => { parameter.id.hash(state) }
+            ParameterVariant::DeviceInterface(parameter) => parameter.id.hash(state),
+            ParameterVariant::EthernetBridge(parameter) => parameter.id.hash(state),
+            ParameterVariant::Executor(parameter) => parameter.id.hash(state),
+            ParameterVariant::GreInterface(parameter) => parameter.id.hash(state),
+            ParameterVariant::JoinedInterface(parameter) => parameter.id.hash(state),
+            ParameterVariant::RemotePeerConnectionCheck(parameter) => parameter.id.hash(state),
+            ParameterVariant::CanConnections(parameter) => parameter.id.hash(state),
+            ParameterVariant::CanBridges(parameter) => parameter.id.hash(state),
+            ParameterVariant::CanLocalRoutes(parameter) => parameter.id.hash(state),
         }
     }
 }

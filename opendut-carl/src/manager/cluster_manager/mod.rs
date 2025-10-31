@@ -545,7 +545,7 @@ mod test {
 
         #[rstest]
         #[tokio::test]
-        async fn rollout_cluster(
+        async fn test_rollout_cluster(
             peer_a: PeerFixture,
             peer_b: PeerFixture,
         ) -> anyhow::Result<()> {

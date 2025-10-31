@@ -1,4 +1,5 @@
 use std::fmt::Display;
+use anyhow::anyhow;
 use async_trait::async_trait;
 use regex::Regex;
 use tokio::process::Command;
@@ -170,17 +171,17 @@ impl CanLocalRoute {
         }
 
         let output = cmd.output().await
-            .map_err(|cause| Error::CommandLineProgramExecution { command: "cangw".to_string(), cause })?;
+            .map_err(|cause| anyhow!(Error::CommandLineProgramExecution { command: "cangw".to_string(), cause }))?;
 
         if output.status.success() {
             Ok(())
         } else {
-            Err(Error::CanRouteCreation {
+            Err(anyhow!(Error::CanRouteCreation {
                 src: src.clone(),
                 dst: dst.clone(),
                 operation,
                 cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim())
-            })
+            }))
         }
 
     }

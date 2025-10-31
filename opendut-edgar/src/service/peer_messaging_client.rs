@@ -208,15 +208,13 @@ async fn apply_peer_configuration_raw(
     set_parent_context(&span, context)?;
     let _span = span.enter();
 
-    let broker::ApplyPeerConfiguration { old_configuration, configuration } = *message;
+    let broker::ApplyPeerConfiguration { configuration } = *message;
 
-    info!("Received OldPeerConfiguration: {old_configuration:?}");
     info!("Received PeerConfiguration: {configuration:?}");
 
     let apply_config_params = ApplyPeerConfigurationParams {
         self_id: handle_stream_info.self_id,
         peer_configuration: configuration,
-        old_peer_configuration: old_configuration,
         network_interface_management: handle_stream_info.network_interface_management.clone(),
         executor_manager: Arc::clone(&handle_stream_info.executor_manager),
         metrics_manager: Arc::clone(&handle_stream_info.metrics_manager),
