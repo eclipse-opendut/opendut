@@ -20,15 +20,13 @@ thiserror = { workspace = true }
 serde = { workspace = true, features = ["derive", "std"] }
 serde_json = { workspace = true, optional = true  }
 serde_yaml = { workspace = true, optional = true }
-sha1 = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
 url = { workspace = true, features = ["serde"] }
 uuid = { workspace = true, features = ["v4", "v5", "serde"] }
-pem = { workspace = true, features = ["serde"]}
+pem = { workspace = true, features = ["serde"] }
 prost = { workspace = true }
 # Only necessary if using Protobuf well-known types: e.g. google/protobuf/timestamp.proto
 prost-types = { workspace = true }
-strum_macros = "0.25.3"
 
 [dev-dependencies]
 anyhow = { workspace = true }
