@@ -13,6 +13,7 @@ reqwest = { workspace = true, optional = true }
 thiserror = { workspace = true }
 
 [features]
+future = []
 pem = ["dep:anyhow", "dep:config", "dep:pem"]
 project = ["dep:anyhow"]
 reqwest = ["pem", "dep:reqwest"]

@@ -1,6 +1,7 @@
 #[cfg(feature = "crypto")]
 pub mod crypto;
 
+#[cfg(feature = "future")]
 pub use opendut_util_core::future;
 
 #[cfg(feature = "pem")]

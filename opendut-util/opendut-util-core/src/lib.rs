@@ -1,3 +1,4 @@
+#[cfg(feature = "future")]
 pub mod future;
 
 #[cfg(feature = "project")]

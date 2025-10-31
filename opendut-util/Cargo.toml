@@ -6,6 +6,7 @@ license.workspace = true
 
 [features]
 crypto = ["dep:rustls"]
+future = ["opendut-util-core/future"]
 pem = ["opendut-util-core/pem"]
 project = ["opendut-util-core/project"]
 reqwest = ["opendut-util-core/reqwest"]
