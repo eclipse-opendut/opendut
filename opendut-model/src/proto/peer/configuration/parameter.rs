@@ -187,18 +187,18 @@ conversion! {
 
     fn from(value: Model) -> Proto {
         Proto {
-            bridge_name: Some(value.bridge_name.into()),
-            can_device_name: Some(value.can_device_name.into()),
+            can_source_device_name: Some(value.can_source_device_name.into()),
+            can_destination_device_name: Some(value.can_destination_device_name.into()),
         }
     }
 
     fn try_from(value: Proto) -> ConversionResult<Model> {
-        let bridge_name = extract!(value.bridge_name)?.try_into()?;
-        let can_device_name = extract!(value.can_device_name)?.try_into()?;
+        let can_source_device_name = extract!(value.can_source_device_name)?.try_into()?;
+        let can_destination_device_name = extract!(value.can_destination_device_name)?.try_into()?;
 
         Ok(Model {
-            bridge_name,
-            can_device_name,
+            can_source_device_name,
+            can_destination_device_name,
         })
     }
 }

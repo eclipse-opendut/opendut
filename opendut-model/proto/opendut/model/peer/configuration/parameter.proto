@@ -48,6 +48,6 @@ message CanBridge {
 }
 
 message CanLocalRoute {
-  opendut.model.util.NetworkInterfaceName bridge_name = 1;
-  opendut.model.util.NetworkInterfaceName can_device_name = 2;
+  opendut.model.util.NetworkInterfaceName can_source_device_name = 1;
+  opendut.model.util.NetworkInterfaceName can_destination_device_name = 2;
 }
