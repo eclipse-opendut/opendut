@@ -68,8 +68,8 @@ mod client {
 
     use crate::carl::broker::{error, stream_header, DownstreamMessage};
     use opendut_model::peer::PeerId;
-    use opendut_util_core::future::ExplicitSendFutureWrapper;
     use tonic::codegen::tokio_stream::StreamExt;
+    use opendut_util::future::ExplicitSendFutureWrapper;
     use crate::carl::{GrpcDownstream, GrpcUpstream};
 
     #[derive(Clone, Debug)]

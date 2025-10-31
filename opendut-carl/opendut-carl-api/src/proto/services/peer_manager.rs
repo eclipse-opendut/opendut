@@ -1,9 +1,8 @@
 use opendut_model::peer::state::PeerState;
 use opendut_model::peer::{PeerId, PeerName};
-use opendut_model::proto::{ConversionError, ConversionErrorBuilder, ConversionResult};
 use opendut_model::topology::DeviceId;
-use opendut_model::{conversion, proto};
-
+use opendut_util::conversion;
+use opendut_util::proto::{ConversionError, ConversionErrorBuilder, ConversionResult};
 use crate::carl::peer::{DeletePeerDescriptorError, GetPeerDescriptorError, GetPeerStateError, ListPeerDescriptorsError, ListPeerStatesError, StorePeerDescriptorError};
 
 tonic::include_proto!("opendut.carl.services.peer_manager");
@@ -75,7 +74,7 @@ impl TryFrom<StorePeerDescriptorFailureIllegalPeerState> for StorePeerDescriptor
             .ok_or_else(|| ErrorBuilder::field_not_set("actual_state"))?
             .try_into()?;
         let required_states = failure.required_states.into_iter()
-            .map(proto::peer::PeerState::try_into)
+            .map(opendut_model::proto::peer::PeerState::try_into)
             .collect::<Result<_, _>>()?;
         Ok(StorePeerDescriptorError::IllegalPeerState { peer_id, peer_name, actual_state, required_states })
     }
@@ -164,7 +163,7 @@ conversion! {
                 let peer_name = extract!(error.peer_name)?.try_into()?;
                 let actual_state = extract!(error.actual_state)?.try_into()?;
                 let required_states = error.required_states.into_iter()
-                    .map(proto::peer::PeerState::try_into)
+                    .map(opendut_model::proto::peer::PeerState::try_into)
                     .collect::<Result<_, _>>()?;
                 Ok(Model::IllegalPeerState {
                     peer_id,

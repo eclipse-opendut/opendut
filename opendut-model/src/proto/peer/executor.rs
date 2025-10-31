@@ -1,6 +1,7 @@
-use crate::proto::{conversion, ConversionResult};
+use opendut_util::conversion;
+use opendut_util::proto::ConversionResult;
 
-crate::include_proto!("opendut.model.peer.executor");
+opendut_util::include_proto!("opendut.model.peer.executor");
 
 
 conversion! {

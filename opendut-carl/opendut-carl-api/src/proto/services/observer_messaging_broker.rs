@@ -1,9 +1,8 @@
 use crate::carl;
 use crate::carl::observer::WaitForPeersOnlineResponseStatus;
-use opendut_model::conversion;
-use opendut_model::proto::ConversionError;
-use opendut_model::proto::ConversionResult;
 use std::collections::{HashMap, HashSet};
+use opendut_util::conversion;
+use opendut_util::proto::{ConversionError, ConversionResult};
 
 tonic::include_proto!("opendut.carl.services.observer_messaging_broker");
 

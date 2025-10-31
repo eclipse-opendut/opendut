@@ -1,11 +1,10 @@
-use crate::conversion;
-use crate::proto::ConversionResult;
+use opendut_util::conversion;
+use opendut_util::proto::ConversionResult;
 
-crate::include_proto!("opendut.model.test_suite");
-
+opendut_util::include_proto!("opendut.model.viper");
 
 conversion! {
-    type Model = crate::test_suite::TestSuiteSourceId;
+    type Model = crate::viper::TestSuiteSourceId;
     type Proto = TestSuiteSourceId;
 
     fn from(value: Model) -> Proto {
@@ -21,7 +20,7 @@ conversion! {
 }
 
 conversion! {
-    type Model = crate::test_suite::TestSuiteSourceName;
+    type Model = crate::viper::TestSuiteSourceName;
     type Proto = TestSuiteSourceName;
 
     fn from(value: Model) -> Proto {
@@ -37,7 +36,7 @@ conversion! {
 }
 
 conversion! {
-    type Model = crate::test_suite::TestSuiteSourceDescriptor;
+    type Model = crate::viper::TestSuiteSourceDescriptor;
     type Proto = TestSuiteSourceDescriptor;
 
     fn from(value: Model) -> Proto {

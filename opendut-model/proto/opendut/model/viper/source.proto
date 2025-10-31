@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package opendut.model.test_suite;
+package opendut.model.viper;
 
 import "opendut/model/util/net.proto";
 import "opendut/model/util/uuid.proto";

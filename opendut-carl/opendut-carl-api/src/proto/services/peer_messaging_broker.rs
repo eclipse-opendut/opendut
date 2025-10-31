@@ -1,5 +1,5 @@
-use opendut_model::conversion;
-use opendut_model::proto::ConversionResult;
+use opendut_util::conversion;
+use opendut_util::proto::ConversionResult;
 
 tonic::include_proto!("opendut.carl.services.peer_messaging_broker");
 

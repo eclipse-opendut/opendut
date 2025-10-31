@@ -6,7 +6,7 @@ use opendut_model::peer::{PeerDescriptor, PeerId};
 use std::any::Any;
 use std::fmt::Debug;
 use std::hash::Hash;
-use opendut_model::test_suite::{TestSuiteSourceDescriptor, TestSuiteSourceId};
+use opendut_model::viper::{TestSuiteSourceDescriptor, TestSuiteSourceId};
 
 pub trait Resource: Any + Send + Sync + Debug + Clone {
     type Id: ResourceId<Self> + Clone + Hash + PartialEq + Eq + Debug;

@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-use repo_path::repo_path;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     unsafe {
@@ -10,14 +9,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let includes = [
         PathBuf::from("proto/"),
-        repo_path!("opendut-model/proto/"),
     ];
 
-    tonic_prost_build::configure()
-        .extern_path(
-            ".opendut.model",
-            "::opendut_model::proto"
-        )
+    tonic_prost_build::Config::new()
         .type_attribute(".", "#[allow(clippy::all)]")
         .compile_protos(&protos, &includes)?;
 

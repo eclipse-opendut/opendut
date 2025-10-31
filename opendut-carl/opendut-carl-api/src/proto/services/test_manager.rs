@@ -1,12 +1,12 @@
-use opendut_model::conversion;
-use opendut_model::proto::ConversionResult;
-use opendut_model::test_suite::TestSuiteSourceName;
+use opendut_model::viper::TestSuiteSourceName;
+use opendut_util::conversion;
+use opendut_util::proto::ConversionResult;
 
 tonic::include_proto!("opendut.carl.services.test_manager");
 
 
 conversion! {
-    type Model = crate::carl::test_suite::StoreTestSuiteSourceDescriptorError;
+    type Model = crate::carl::viper::StoreTestSuiteSourceDescriptorError;
     type Proto = StoreTestSuiteSourceDescriptorFailure;
 
     fn from(value: Model) -> Proto {
@@ -44,7 +44,7 @@ conversion! {
 
 
 conversion! {
-    type Model = crate::carl::test_suite::DeleteTestSuiteSourceDescriptorError;
+    type Model = crate::carl::viper::DeleteTestSuiteSourceDescriptorError;
     type Proto = DeleteTestSuiteSourceDescriptorFailure;
 
     fn from(value: Model) -> Proto {
@@ -108,7 +108,7 @@ conversion! {
 
 
 conversion! {
-    type Model = crate::carl::test_suite::GetTestSuiteSourceDescriptorError;
+    type Model = crate::carl::viper::GetTestSuiteSourceDescriptorError;
     type Proto = GetTestSuiteSourceDescriptorFailure;
 
     fn from(value: Model) -> Proto {
@@ -152,7 +152,7 @@ conversion! {
 
 
 conversion! {
-    type Model = crate::carl::test_suite::ListTestSuiteSourceDescriptorsError;
+    type Model = crate::carl::viper::ListTestSuiteSourceDescriptorsError;
     type Proto = ListTestSuiteSourceDescriptorsFailure;
 
     fn from(value: Model) -> Proto {

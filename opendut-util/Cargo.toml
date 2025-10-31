@@ -9,6 +9,7 @@ crypto = ["dep:rustls"]
 future = ["opendut-util-core/future"]
 pem = ["opendut-util-core/pem"]
 project = ["opendut-util-core/project"]
+proto = ["dep:thiserror"]
 reqwest = ["opendut-util-core/reqwest"]
 serde = ["dep:serde"]
 settings = ["project", "dep:config", "dep:thiserror"]
@@ -17,6 +18,7 @@ settings = ["project", "dep:config", "dep:thiserror"]
 opendut-util-core = { workspace = true, optional = true }
 
 config = { workspace = true, optional = true }
+prost = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
 tracing = { workspace = true }
 

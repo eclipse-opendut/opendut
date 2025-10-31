@@ -1,13 +1,13 @@
 syntax = "proto3";
 
-package opendut.model.test_suite;
+package opendut.model.viper;
 
-import "opendut/model/test_suite/run.proto";
+import "opendut/model/viper/run.proto";
 import "opendut/model/cluster/cluster.proto";
 
 
 message TestSuiteRunDeployment {
-  opendut.model.test_suite.TestSuiteRunId id = 1;
+  opendut.model.viper.TestSuiteRunId id = 1;
   opendut.model.cluster.ClusterId cluster = 2;
   //TODO maybe introduce ID for each run
 }

@@ -8,8 +8,8 @@ pub mod proto;
 pub mod resources;
 #[cfg(feature = "specs")]
 pub mod specs;
-#[cfg(feature = "test_suite")]
-pub mod test_suite;
+#[cfg(feature = "viper")]
+pub mod viper;
 pub mod topology;
 pub mod util;
 pub mod vpn;

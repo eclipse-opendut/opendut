@@ -11,9 +11,11 @@ json = ["dep:serde_json"]
 yaml = ["dep:serde_yaml"]
 yaml-specs = ["specs", "yaml"]
 json-specs = ["specs", "json"]
-test_suite = []
+viper = ["dep:viper-rt"]
 
 [dependencies]
+opendut-util = { workspace = true, features = ["proto"] }
+
 base64 = { workspace = true }
 brotli = { workspace = true }
 thiserror = { workspace = true }
@@ -27,6 +29,7 @@ pem = { workspace = true, features = ["serde"] }
 prost = { workspace = true }
 # Only necessary if using Protobuf well-known types: e.g. google/protobuf/timestamp.proto
 prost-types = { workspace = true }
+viper-rt = { workspace = true, optional = true }
 
 [dev-dependencies]
 anyhow = { workspace = true }
@@ -38,8 +41,9 @@ test-log = { workspace = true }
 
 [build-dependencies]
 glob = { workspace = true }
-tonic-prost-build = { workspace = true }
+repo_path = { workspace = true }
 protobuf-src = { workspace = true }
+tonic-prost-build = { workspace = true }
 
 [lints]
 workspace = true

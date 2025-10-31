@@ -10,6 +10,9 @@ pub use opendut_util_core::pem;
 #[cfg(feature = "project")]
 pub use opendut_util_core::project;
 
+#[cfg(feature = "proto")]
+pub mod proto;
+
 #[cfg(feature = "reqwest")]
 pub use opendut_util_core::reqwest_client;
 

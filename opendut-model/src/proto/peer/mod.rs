@@ -1,13 +1,13 @@
 use crate::proto::vpn::VpnPeerConfig;
-use crate::proto::{conversion, ConversionResult};
+use opendut_util::proto::ConversionResult;
 use std::ops::Not;
-
+use opendut_util::conversion;
 use super::util::{NetworkInterfaceDescriptor, NetworkInterfaceName};
 
 pub mod configuration;
 pub mod executor;
 
-crate::include_proto!("opendut.model.peer");
+opendut_util::include_proto!("opendut.model.peer");
 
 conversion! {
     type Model = crate::peer::PeerId;

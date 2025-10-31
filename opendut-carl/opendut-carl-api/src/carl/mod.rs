@@ -5,14 +5,14 @@ pub mod cluster;
 pub mod metadata;
 pub mod peer;
 pub mod observer;
-#[cfg(feature="test_suite")]
-pub mod test_suite;
+#[cfg(feature="viper")]
+pub mod viper;
 
 cfg_if! {
     if #[cfg(any(feature = "client", feature = "wasm-client"))] {
         use std::fmt::Display;
         use tonic::codegen::http::uri::InvalidUri;
-        use opendut_model::proto::ConversionError;
+        use opendut_util::proto::ConversionError;
 
         #[derive(thiserror::Error, Debug)]
         pub enum ClientError<A>
@@ -140,15 +140,15 @@ cfg_if! {
         use crate::carl::peer::PeersRegistrar;
         use crate::carl::broker::PeerMessagingBroker;
         use crate::carl::observer::ObserverMessagingBroker;
-        #[cfg(feature="test_suite")]
-        use crate::carl::test_suite::TestManager;
+        #[cfg(feature="viper")]
+        use crate::carl::viper::TestManager;
 
         use crate::proto::services::cluster_manager::cluster_manager_client::ClusterManagerClient;
         use crate::proto::services::metadata_provider::metadata_provider_client::MetadataProviderClient;
         use crate::proto::services::peer_manager::peer_manager_client::PeerManagerClient;
         use crate::proto::services::peer_messaging_broker::peer_messaging_broker_client::PeerMessagingBrokerClient;
         use crate::proto::services::observer_messaging_broker::observer_messaging_broker_client::ObserverMessagingBrokerClient;
-        #[cfg(feature="test_suite")]
+        #[cfg(feature="viper")]
         use crate::proto::services::test_manager::test_manager_client::TestManagerClient;
 
         use tower::ServiceBuilder;
@@ -160,7 +160,7 @@ cfg_if! {
             pub metadata: MetadataProvider<TonicAuthenticationService>,
             pub peers: PeersRegistrar<TonicAuthenticationService>,
             pub observer: ObserverMessagingBroker<TonicAuthenticationService>,
-            #[cfg(feature="test_suite")]
+            #[cfg(feature="viper")]
             pub test_suite: TestManager<TonicAuthenticationService>,
         }
 
@@ -237,7 +237,7 @@ cfg_if! {
                     metadata: MetadataProvider::new(MetadataProviderClient::new(Clone::clone(&auth_svc))),
                     peers: PeersRegistrar::new(PeerManagerClient::new(Clone::clone(&auth_svc))),
                     observer: ObserverMessagingBroker::new(ObserverMessagingBrokerClient::new(Clone::clone(&auth_svc))),
-                    #[cfg(feature="test_suite")]
+                    #[cfg(feature="viper")]
                     test_suite: TestManager::new(TestManagerClient::new(Clone::clone(&auth_svc))),
                 })
             }
@@ -274,15 +274,15 @@ pub mod wasm {
     use crate::carl::InitializationError;
     use crate::carl::metadata::MetadataProvider;
     use crate::carl::peer::PeersRegistrar;
-    #[cfg(feature="test_suite")]
-    use crate::carl::test_suite::TestManager;
+    #[cfg(feature="viper")]
+    use crate::carl::viper::TestManager;
 
     #[derive(Debug, Clone)]
     pub struct CarlClient {
         pub cluster: ClusterManager<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
         pub metadata: MetadataProvider<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
         pub peers: PeersRegistrar<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
-        #[cfg(feature="test_suite")]
+        #[cfg(feature="viper")]
         pub test_suite: TestManager<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
     }
 
@@ -303,7 +303,7 @@ pub mod wasm {
                 cluster: ClusterManager::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
                 metadata: MetadataProvider::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
                 peers: PeersRegistrar::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
-                #[cfg(feature="test_suite")]
+                #[cfg(feature="viper")]
                 test_suite: TestManager::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
             })
         }

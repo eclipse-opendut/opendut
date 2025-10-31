@@ -5,10 +5,10 @@ use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment};
 use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration, EdgePeerConfigurationState};
 use opendut_model::peer::state::PeerConnectionState;
 use opendut_model::peer::PeerDescriptor;
-use opendut_model::proto::ConversionError;
+use opendut_util::proto::ConversionError;
 use prost::Message;
 use std::fmt::Debug;
-use opendut_model::test_suite::TestSuiteSourceDescriptor;
+use opendut_model::viper::TestSuiteSourceDescriptor;
 
 impl Persistable for ClusterDeployment {
     type Proto = opendut_model::proto::cluster::ClusterDeployment;
@@ -61,7 +61,7 @@ impl Persistable for EdgePeerConfigurationState {
 }
 
 impl Persistable for TestSuiteSourceDescriptor {
-    type Proto = opendut_model::proto::test_suite::TestSuiteSourceDescriptor;
+    type Proto = opendut_model::proto::viper::TestSuiteSourceDescriptor;
     const TABLE: &'static str = "test_suite_source_descriptor";
     const STORAGE: StorageKind = StorageKind::Persistent;
 }

@@ -2,7 +2,7 @@ use tonic::{Request, Response, Status};
 use tracing::{error, trace};
 use opendut_carl_api::proto::services::test_manager::{delete_test_suite_source_descriptor_response, get_test_suite_source_descriptor_response, list_test_suite_source_descriptors_response, store_test_suite_source_descriptor_response, DeleteTestSuiteSourceDescriptorRequest, DeleteTestSuiteSourceDescriptorResponse, DeleteTestSuiteSourceDescriptorSuccess, GetTestSuiteSourceDescriptorRequest, GetTestSuiteSourceDescriptorResponse, GetTestSuiteSourceDescriptorSuccess, ListTestSuiteSourceDescriptorsRequest, ListTestSuiteSourceDescriptorsResponse, ListTestSuiteSourceDescriptorsSuccess, StoreTestSuiteSourceDescriptorRequest, StoreTestSuiteSourceDescriptorResponse, StoreTestSuiteSourceDescriptorSuccess};
 use opendut_carl_api::proto::services::test_manager::test_manager_server::{TestManager as TestManagerService, TestManagerServer};
-use opendut_model::test_suite::{TestSuiteSourceDescriptor, TestSuiteSourceId};
+use opendut_model::viper::{TestSuiteSourceDescriptor, TestSuiteSourceId};
 use crate::manager::grpc::error::LogApiErr;
 use crate::manager::grpc::extract;
 use crate::resource::manager::ResourceManagerRef;
@@ -33,7 +33,7 @@ impl TestManagerService for TestManagerFacade {
         let result =
             self.resource_manager.insert(source.id, source.clone()).await
                 .log_api_err()
-                .map_err(|_: PersistenceError| opendut_carl_api::carl::test_suite::StoreTestSuiteSourceDescriptorError::Internal {
+                .map_err(|_: PersistenceError| opendut_carl_api::carl::viper::StoreTestSuiteSourceDescriptorError::Internal {
                     source_id: source.id,
                     source_name: source.name,
                     cause: String::from("Error when accessing persistence while storing test suite source descriptor"),
@@ -64,7 +64,7 @@ impl TestManagerService for TestManagerFacade {
         let result =
             self.resource_manager.remove::<TestSuiteSourceDescriptor>(source_id).await
                 .log_api_err()
-                .map_err(|_: PersistenceError| opendut_carl_api::carl::test_suite::DeleteTestSuiteSourceDescriptorError::Internal {
+                .map_err(|_: PersistenceError| opendut_carl_api::carl::viper::DeleteTestSuiteSourceDescriptorError::Internal {
                     source_id,
                     source_name: None,
                     cause: String::from("Error when accessing persistence while storing test suite source descriptor"),
@@ -95,7 +95,7 @@ impl TestManagerService for TestManagerFacade {
         let result =
             self.resource_manager.get::<TestSuiteSourceDescriptor>(source_id).await
                 .inspect_err(|error| error!("Error while getting test suite source descriptor from gRPC API: {error}"))
-                .map_err(|_: PersistenceError| opendut_carl_api::carl::test_suite::GetTestSuiteSourceDescriptorError::Internal {
+                .map_err(|_: PersistenceError| opendut_carl_api::carl::viper::GetTestSuiteSourceDescriptorError::Internal {
                     source_id,
                     cause: String::from("Error when accessing persistence while getting test suite source descriptor"),
                 });
@@ -108,7 +108,7 @@ impl TestManagerService for TestManagerFacade {
                     }
                 ),
                 None => get_test_suite_source_descriptor_response::Reply::Failure(
-                    opendut_carl_api::carl::test_suite::GetTestSuiteSourceDescriptorError::SourceNotFound { source_id }.into()
+                    opendut_carl_api::carl::viper::GetTestSuiteSourceDescriptorError::SourceNotFound { source_id }.into()
                 ),
             }
             Err(error) => get_test_suite_source_descriptor_response::Reply::Failure(error.into()),
@@ -126,7 +126,7 @@ impl TestManagerService for TestManagerFacade {
 
         let result = self.resource_manager.list::<TestSuiteSourceDescriptor>().await
             .inspect_err(|error| error!("Error while listing test suite source descriptors from gRPC API: {error}"))
-            .map_err(|_: PersistenceError| opendut_carl_api::carl::test_suite::ListTestSuiteSourceDescriptorsError::Internal {
+            .map_err(|_: PersistenceError| opendut_carl_api::carl::viper::ListTestSuiteSourceDescriptorsError::Internal {
                 cause: String::from("Error when accessing persistence while listing test suite source descriptors"),
             });
 

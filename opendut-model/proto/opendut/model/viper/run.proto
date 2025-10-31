@@ -1,15 +1,16 @@
 syntax = "proto3";
 
-package opendut.model.test_suite;
+package opendut.model.viper;
 
 import "opendut/model/util/uuid.proto";
-import "opendut/model/test_suite/source.proto";
+import "opendut/model/viper/source.proto";
+import "opendut/viper/rt/test_suite.proto";
 
 
 message TestSuiteRunDescriptor {
   TestSuiteRunId id = 1;
-  opendut.model.test_suite.TestSuiteSourceId source = 2;
-  TestSuiteName suite = 3;
+  opendut.model.viper.TestSuiteSourceId source = 2;
+  opendut.viper.rt.test_suite.TestSuiteIdentifier suite = 3;
   repeated TestSuiteRunParameter parameters = 4;
 }
 
@@ -19,10 +20,6 @@ message TestSuiteRunId {
 
 
 //TODO move below types into opendut-viper
-
-message TestSuiteName { //TODO move into more general place (together with VIPER model type)
-  string value = 1;
-}
 
 message TestSuiteRunParameter { //TODO separate Descriptor type for displaying parameter in UI (with min/max, default)
   string key = 1;

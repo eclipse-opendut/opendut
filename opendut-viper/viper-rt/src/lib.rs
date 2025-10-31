@@ -83,7 +83,8 @@
 //! # Writing tests
 //! Tests are written in Python and executed using Viper. For comprehensive guidance on writing effective tests,
 //! including best practices and examples, please refer to the [Test Writer Guide](crate::doc::test_writer_guide).
-//! 
+//!
+
 mod runtime;
 
 pub use runtime::{
@@ -166,6 +167,8 @@ pub mod compile {
         CompiledTest,
     };
 }
+
+pub mod proto;
 
 pub mod run {
     pub use crate::runtime::types::run::{

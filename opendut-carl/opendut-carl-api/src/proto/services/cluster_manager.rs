@@ -2,11 +2,10 @@ use crate::carl;
 use crate::carl::cluster::{CreateClusterDescriptorError, DeleteClusterDeploymentError, DeleteClusterDescriptorError, StoreClusterDeploymentError};
 use opendut_model::cluster::state::ClusterState;
 use opendut_model::cluster::{ClusterId, ClusterName};
-use opendut_model::conversion;
 use opendut_model::proto;
-use opendut_model::proto::ConversionResult;
-use opendut_model::proto::{ConversionError, ConversionErrorBuilder};
 use std::collections::HashMap;
+use opendut_util::conversion;
+use opendut_util::proto::{ConversionError, ConversionErrorBuilder, ConversionResult};
 
 tonic::include_proto!("opendut.carl.services.cluster_manager");
 

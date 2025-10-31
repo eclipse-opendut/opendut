@@ -1,8 +1,9 @@
 use std::collections::HashMap;
+use opendut_util::conversion;
+use opendut_util::proto::ConversionResult;
 use crate::proto::topology::DeviceId;
-use crate::proto::{conversion, ConversionResult};
 
-crate::include_proto!("opendut.model.cluster");
+opendut_util::include_proto!("opendut.model.cluster");
 
 
 conversion! {

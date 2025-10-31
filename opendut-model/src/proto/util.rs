@@ -1,10 +1,11 @@
 use crate::proto::util::ip_address::Address;
-use crate::proto::{conversion, ConversionResult};
 use crate::util;
 use crate::util::net::NetworkInterfaceConfiguration;
 use pem::Pem;
+use opendut_util::conversion;
+use opendut_util::proto::ConversionResult;
 
-crate::include_proto!("opendut.model.util");
+opendut_util::include_proto!("opendut.model.util");
 
 impl From<uuid::Uuid> for Uuid {
     fn from(value: uuid::Uuid) -> Self {

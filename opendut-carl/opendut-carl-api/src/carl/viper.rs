@@ -2,7 +2,7 @@
 pub use client::*;
 
 use opendut_model::cluster::ClusterId;
-use opendut_model::test_suite::{TestSuiteSourceId, TestSuiteSourceName};
+use opendut_model::viper::{TestSuiteSourceId, TestSuiteSourceName};
 use opendut_model::format::{format_id_with_name, format_id_with_optional_name};
 
 #[derive(thiserror::Error, Debug)]
@@ -60,7 +60,7 @@ pub enum ListTestSuiteSourceDescriptorsError {
 mod client {
     use super::*;
     use tonic::codegen::{Body, Bytes, http, InterceptedService, StdError};
-    use opendut_model::test_suite::{TestSuiteSourceDescriptor, TestSuiteSourceId};
+    use opendut_model::viper::{TestSuiteSourceDescriptor, TestSuiteSourceId};
     use crate::carl::{extract, ClientError};
     use crate::proto::services::test_manager;
     use crate::proto::services::test_manager::test_manager_client::TestManagerClient;
