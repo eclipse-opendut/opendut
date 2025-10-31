@@ -10,7 +10,7 @@ opendut-auth = { workspace = true, features = ["registration_client"] }
 opendut-carl-api = { workspace = true, features = ["test_suite"] }
 opendut-vpn-netbird = { workspace = true }
 opendut-model = { workspace = true }
-opendut-util = { workspace = true, features = ["crypto", "telemetry"] }
+opendut-util = { workspace = true, features = ["crypto", "telemetry", "settings"] }
 opendut-util-core = { workspace = true, features = ["reqwest"] }
 opendut-vpn = { workspace = true }
 
