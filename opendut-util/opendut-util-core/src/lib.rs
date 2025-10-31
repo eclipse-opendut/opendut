@@ -1,5 +1,8 @@
-pub mod project;
 pub mod future;
+
+#[cfg(feature = "project")]
+pub mod project;
+
 #[cfg(feature = "testing")]
 pub mod testing;
 

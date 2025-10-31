@@ -7,14 +7,14 @@ license.workspace = true
 [features]
 crypto = ["dep:rustls"]
 pem = ["opendut-util-core/pem"]
-project = []
+project = ["opendut-util-core/project"]
 reqwest = ["opendut-util-core/reqwest"]
 serde = ["dep:serde"]
 settings = ["project", "dep:config", "dep:thiserror"]
 telemetry = ["dep:opendut-util-telemetry"]
 
 [dependencies]
-opendut-util-core = { workspace = true }
+opendut-util-core = { workspace = true, optional = true }
 opendut-util-telemetry = { workspace = true, optional = true }
 
 config = { workspace = true, optional = true }

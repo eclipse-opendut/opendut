@@ -13,8 +13,9 @@ reqwest = { workspace = true, optional = true }
 thiserror = { workspace = true }
 
 [features]
-reqwest = ["pem", "dep:reqwest"]
 pem = ["dep:config", "dep:pem"]
+project = []
+reqwest = ["pem", "dep:reqwest"]
 testing = ["dotenvy"]
 
 [lints]
