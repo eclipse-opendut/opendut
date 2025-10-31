@@ -5,7 +5,7 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-anyhow = { workspace = true }
+anyhow = { workspace = true, optional = true }
 config = { workspace = true, optional = true }
 dotenvy = { workspace = true, optional = true }
 pem = { workspace = true, optional = true }
@@ -13,8 +13,8 @@ reqwest = { workspace = true, optional = true }
 thiserror = { workspace = true }
 
 [features]
-pem = ["dep:config", "dep:pem"]
-project = []
+pem = ["dep:anyhow", "dep:config", "dep:pem"]
+project = ["dep:anyhow"]
 reqwest = ["pem", "dep:reqwest"]
 testing = ["dotenvy"]
 
