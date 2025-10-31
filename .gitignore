@@ -13,7 +13,6 @@
 /target/
 opendut-lea/dist/
 .vagrant/
-docker-logs/
 /doc/book/
 /doc/src/mdbook-plantuml-img
 rustc-ice-*
@@ -23,6 +22,7 @@ rustc-ice-*
 #                Logs               #
 #####################################
 *.log
+/docker-logs*/
 
 # NetBird proto files get downloaded from the web.
 /opendut-edgar/netbird-client-api/proto/netbird-v*
