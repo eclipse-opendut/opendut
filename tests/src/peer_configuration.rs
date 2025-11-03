@@ -10,8 +10,6 @@ use opendut_model::topology::DeviceDescriptor;
 use opendut_model::util::net::NetworkInterfaceName;
 use opendut_model::util::Port;
 use std::collections::HashSet;
-use std::net::IpAddr;
-use std::str::FromStr;
 
 #[test_log::test(
     tokio::test(flavor = "multi_thread")

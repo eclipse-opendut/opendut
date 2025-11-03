@@ -99,7 +99,7 @@ mod tests {
         assert_eq!(task.check_present().await?, TaskStateFulfilled::No);
         
         for module in ["vcan", "can_gw"] {
-            let module_dir = fixture.builtin_module_dir.child(module);
+            let module_dir = fixture.builtin_module_dir.child(module).child("parameters");
             fs::create_dir_all(&module_dir)?;
         }
         let can_gw_parameters_file = fixture.builtin_module_dir.join("can_gw").join("parameters").join("max_hops");

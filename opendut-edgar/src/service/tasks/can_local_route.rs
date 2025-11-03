@@ -53,7 +53,7 @@ impl Task for CanLocalRoute {
 
         match (source, destination) {
             (Some(_), Some(_)) => {
-                let can_route_present = self.check_can_route_exists(
+                let can_route_present = check_can_route_exists(
                     &self.parameter.can_source_device_name,
                     &self.parameter.can_destination_device_name,
                     self.can_fd,
@@ -76,7 +76,7 @@ impl Task for CanLocalRoute {
 
         match (source, destination) {
             (Some(source), Some(destination)) => {
-                self.create_can_route(
+                modify_can_route(
                     &source.name,
                     &destination.name,
                     self.can_fd,
@@ -94,7 +94,7 @@ impl Task for CanLocalRoute {
 #[async_trait]
 impl TaskAbsent for CanLocalRoute {
     async fn check_absent(&self) -> anyhow::Result<TaskStateFulfilled> {
-        let can_route_present = self.check_can_route_exists(
+        let can_route_present = check_can_route_exists(
             &self.parameter.can_source_device_name,
             &self.parameter.can_destination_device_name,
             self.can_fd,
@@ -109,7 +109,7 @@ impl TaskAbsent for CanLocalRoute {
     }
 
     async fn make_absent(&self) -> anyhow::Result<Success> {
-        self.create_can_route(
+        modify_can_route(
             &self.parameter.can_source_device_name,
             &self.parameter.can_destination_device_name,
             self.can_fd,
@@ -121,72 +121,68 @@ impl TaskAbsent for CanLocalRoute {
     }
 }
 
-impl CanLocalRoute {
-    async fn check_can_route_exists(&self, src: &NetworkInterfaceName, dst: &NetworkInterfaceName, can_fd: bool, max_hops: u8) -> anyhow::Result<bool> {
-        let output = Command::new("cangw")
-            .arg("-L")
-            .output()
-            .await
-            .map_err(|cause| Error::CommandLineProgramExecution { command: "cangw".to_string(), cause })?;
+async fn check_can_route_exists(src: &NetworkInterfaceName, dst: &NetworkInterfaceName, can_fd: bool, max_hops: u8) -> anyhow::Result<bool> {
+    let output = Command::new("cangw")
+        .arg("-L")
+        .output()
+        .await
+        .map_err(|cause| Error::CommandLineProgramExecution { command: "cangw".to_string(), cause })?;
 
-        // cangw -L returns non-zero exit code despite succeeding, so we don't check it here
+    // cangw -L returns non-zero exit code despite succeeding, so we don't check it here
 
-        let output_str = String::from_utf8_lossy(&output.stdout);
-        println!("cangw -L output:\n{}", output_str);
+    let output_str = String::from_utf8_lossy(&output.stdout);
 
-        let regex = Regex::new(r"(?m)^cangw -A -s ([^\n ]+) -d ([^\n ]+) ((?:-X )?)-e -l ([0-9[^\n ]]+) #.*$").unwrap();
+    let regex = Regex::new(r"(?m)^cangw -A -s ([^\n ]+) -d ([^\n ]+) ((?:-X )?)-e -l ([0-9[^\n ]]+) #.*$").unwrap();
 
-        let captures = regex.captures_iter(&output_str).map(|captures| captures.extract().1);
+    let captures = regex.captures_iter(&output_str).map(|captures| captures.extract().1);
 
-        for [exist_src, exist_dst, can_fd_flag, exist_max_hops] in captures {
-            let exist_can_fd = can_fd_flag.trim() == "-X";
+    for [exist_src, exist_dst, can_fd_flag, exist_max_hops] in captures {
+        let exist_can_fd = can_fd_flag.trim() == "-X";
 
-            if exist_src == src.name()
-                && exist_dst == dst.name()
-                && exist_can_fd == can_fd
-                && exist_max_hops == max_hops.to_string() {
-                return Ok(true)
-            }
+        if exist_src == src.name()
+            && exist_dst == dst.name()
+            && exist_can_fd == can_fd
+            && exist_max_hops == max_hops.to_string() {
+            return Ok(true)
         }
-
-        Ok(false)
     }
 
-    async fn create_can_route(&self, src: &NetworkInterfaceName, dst: &NetworkInterfaceName, can_fd: bool, max_hops: u8, operation: CanRouteOperation) -> anyhow::Result<()> {
-        let operation_arg = match operation {
-            CanRouteOperation::Create => "-A",
-            CanRouteOperation::Delete => "-D",
-        };
+    Ok(false)
+}
 
-        let mut cmd = Command::new("cangw");
-        cmd.arg(operation_arg)
-            .arg("-s")
-            .arg(src.name())
-            .arg("-d")
-            .arg(dst.name())
-            .arg("-e")
-            .arg("-l")
-            .arg(max_hops.to_string());
+async fn modify_can_route(src: &NetworkInterfaceName, dst: &NetworkInterfaceName, can_fd: bool, max_hops: u8, operation: CanRouteOperation) -> anyhow::Result<()> {
+    let operation_arg = match operation {
+        CanRouteOperation::Create => "-A",
+        CanRouteOperation::Delete => "-D",
+    };
 
-        if can_fd {
-            cmd.arg("-X");
-        }
+    let mut cmd = Command::new("cangw");
+    cmd.arg(operation_arg)
+        .arg("-s")
+        .arg(src.name())
+        .arg("-d")
+        .arg(dst.name())
+        .arg("-e")
+        .arg("-l")
+        .arg(max_hops.to_string());
 
-        trace!("{operation:?} CAN route, executing command: {:?}", cmd);
-        let output = cmd.output().await
-            .map_err(|cause| anyhow!(Error::CommandLineProgramExecution { command: "cangw".to_string(), cause }))?;
+    if can_fd {
+        cmd.arg("-X");
+    }
 
-        if output.status.success() {
-            Ok(())
-        } else {
-            Err(anyhow!(Error::CanRouteCreation {
-                src: src.clone(),
-                dst: dst.clone(),
-                operation,
-                cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim())
-            }))
-        }
+    trace!("{operation:?} CAN route, executing command: {:?}", cmd);
+    let output = cmd.output().await
+        .map_err(|cause| anyhow!(Error::CommandLineProgramExecution { command: "cangw".to_string(), cause }))?;
 
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(anyhow!(Error::CanRouteCreation {
+            src: src.clone(),
+            dst: dst.clone(),
+            operation,
+            cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim())
+        }))
     }
 }
 
@@ -220,13 +216,6 @@ pub(crate) mod tests {
                 can_destination_device_name: vcan2_name.clone(),
             };
 
-            // Verify that required CAN kernel modules are loaded
-            for kernel_module in opendut_edgar_kernel_modules::required_can_kernel_modules() {
-                if ! kernel_module.is_loaded(&opendut_edgar_kernel_modules::default_module_file(), &opendut_edgar_kernel_modules::default_builtin_module_dir())? {
-                    return Err(anyhow!("Required CAN kernel module '{}' is not loaded. Cannot run CAN local route tests.", kernel_module.name()))
-                }
-            }
-
             Ok(Self {
                 network_interface_manager,
                 parameter,
@@ -234,6 +223,16 @@ pub(crate) mod tests {
                 vcan2_name,
             })
         }
+
+        fn verify_required_linux_kernel_modules_are_loaded(&self) -> anyhow::Result<()> {
+            for kernel_module in opendut_edgar_kernel_modules::required_can_kernel_modules() {
+                if ! kernel_module.is_loaded(&opendut_edgar_kernel_modules::default_module_file(), &opendut_edgar_kernel_modules::default_builtin_module_dir())? {
+                    return Err(anyhow!("Required CAN kernel module '{}' is not loaded. Cannot run CAN local route tests.", kernel_module.name()))
+                }
+            }
+            Ok(())
+        }
+
         async fn create_vcan_interfaces(&self) -> anyhow::Result<()> {
             let vcan1_interface = self.network_interface_manager.create_vcan_interface(&self.vcan1_name).await?;
             self.network_interface_manager.set_interface_up(&vcan1_interface).await?;
@@ -247,9 +246,13 @@ pub(crate) mod tests {
             Ok(())
         }
     }
+
+    #[test_with::env(RUN_EDGAR_NETLINK_INTEGRATION_TESTS)]
     #[test_log::test(tokio::test)]
-    async fn test_can_local_route_description() {
+    async fn test_can_local_route_description() -> anyhow::Result<()> {
         let fixture = Fixture::create().await.expect("Could not create Fixture");
+        fixture.verify_required_linux_kernel_modules_are_loaded()?;
+
         let task = super::CanLocalRoute {
             parameter: fixture.parameter.clone(),
             network_interface_manager: fixture.network_interface_manager.clone(),
@@ -264,6 +267,7 @@ pub(crate) mod tests {
                 fixture.parameter.can_source_device_name
             )
         );
+        Ok(())
     }
 
     #[test_with::env(RUN_EDGAR_NETLINK_INTEGRATION_TESTS)]
