@@ -4,13 +4,13 @@ use std::sync::Arc;
 
 use leptos::prelude::*;
 use leptos_router::hooks::use_navigate;
-use tracing::{debug, error, info};
+use tracing::{debug, error};
 use opendut_model::cluster::ClusterId;
 use opendut_model::peer::PeerDescriptor;
 use crate::app::use_app_globals;
-use crate::components::{use_toaster, ButtonColor, ButtonSize, ButtonState, ButtonStateSignalProvider, ConfirmationButton, DoorhangerButton, FontAwesomeIcon, IconButton, Toast};
+use crate::components::{use_toaster, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Toast};
+use crate::peers::components::DeletePeerButton;
 use crate::peers::configurator::types::UserPeerConfiguration;
-use crate::routing;
 use crate::routing::{navigate_to, WellKnownRoutes};
 
 #[component]
@@ -18,10 +18,33 @@ pub fn Controls(
     configuration: RwSignal<UserPeerConfiguration>,
     is_valid_peer_configuration: Signal<bool>,
 ) -> impl IntoView {
+
+    let peer_id = Signal::derive(move || {
+        configuration.get().id
+    });
+
+    let used_clusters_length = Signal::derive(move || {
+        let mut used_clusters: HashSet<ClusterId> = HashSet::new();
+        let _ = configuration.get().devices
+            .into_iter()
+            .filter(|device| device.get().contained_in_clusters.is_empty().not() )
+            .map(|device| for cluster_descriptor in device.get().contained_in_clusters {
+                used_clusters.insert(cluster_descriptor.id);
+            })
+            .collect::<Vec<_>>();
+
+        used_clusters.len()
+    });
+
+    let use_navigate = use_navigate();
+    let on_delete = { move || {
+        navigate_to(WellKnownRoutes::PeersOverview, use_navigate.clone())
+    }};
+
     view! {
         <div class="buttons">
             <SavePeerButton configuration is_valid_peer_configuration />
-            <DeletePeerButton configuration=configuration.read_only() />
+            <DeletePeerButton peer_id used_clusters_length on_delete />
         </div>
     }
 }
@@ -99,88 +122,5 @@ fn SavePeerButton(
             label="Save Peer"
             on_action
         />
-    }
-}
-
-#[component]
-fn DeletePeerButton(configuration: ReadSignal<UserPeerConfiguration>) -> impl IntoView {
-    let globals = use_app_globals();
-    let use_navigate = use_navigate();
-
-    let pending = RwSignal::new(false);
-
-    let on_confirm = move || {
-        let use_navigate = use_navigate.clone();
-        let mut carl = globals.client.clone();
-        let peer_id = configuration.get_untracked().id;
-
-        leptos::task::spawn_local(async move {
-            pending.set(true);
-
-            let result = carl.peers.delete_peer_descriptor(peer_id).await;
-            match result {
-                Ok(_) => {
-                    info!("Successfully deleted peer: {}", peer_id);
-                    navigate_to(WellKnownRoutes::PeersOverview, use_navigate);
-                }
-                Err(cause) => {
-                    error!("Failed to delete peer <{peer_id}>, due to error: {cause:?}");
-                }
-            }
-
-            pending.set(false);
-        });
-    };
-
-    let button_state = Signal::from(pending).derive_loading();
-
-
-    let delete_button = move || {
-        let on_confirm = on_confirm.clone();
-
-        let mut used_clusters: HashSet<ClusterId> = HashSet::new();
-        let _ = configuration.get().devices
-            .into_iter()
-            .filter(|device| device.get().contained_in_clusters.is_empty().not() )
-            .map(|device| for cluster_descriptor in device.get().contained_in_clusters {
-                used_clusters.insert(cluster_descriptor.id);
-            })
-            .collect::<Vec<_>>();
-
-        let used_clusters_length = used_clusters.len();
-
-        if used_clusters_length > 0 {
-            view! {
-                <DoorhangerButton
-                    icon=FontAwesomeIcon::TrashCan
-                    color=ButtonColor::Danger
-                    size=ButtonSize::Normal
-                    state=button_state
-                    label="Remove Peer?"
-                >
-                    <div style="white-space: nowrap">
-                        "Peer can not be removed while it is configured in "{used_clusters_length}
-                        <a class="has-text-link" href=routing::path::clusters_overview>" cluster(s)"</a>
-                    </div>
-                </DoorhangerButton>
-            }.into_any()
-        } else {
-            view! {
-                <ConfirmationButton
-                    icon=FontAwesomeIcon::TrashCan
-                    color=ButtonColor::Danger
-                    size=ButtonSize::Normal
-                    state=button_state
-                    label="Remove Peer?"
-                    on_confirm
-                />
-            }.into_any()
-        }
-    };
-
-    view! {
-        <div>
-            { delete_button }
-        </div>
     }
 }
