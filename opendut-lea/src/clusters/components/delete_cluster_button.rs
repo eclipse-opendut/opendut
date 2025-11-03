@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use tracing::error;
+use tracing::{error, info};
 use opendut_lea_components::{use_toaster, ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, Toast};
 use opendut_model::cluster::ClusterId;
 use crate::app::use_app_globals;
@@ -41,7 +41,15 @@ where F: Fn() + Clone + Send + 'static {
             let result = carl.cluster.delete_cluster_descriptor(id).await;
 
             match result {
-                Ok(_) => on_delete(),
+                Ok(_) => {
+                    info!("Successfully deleted cluster: {:?}", cluster_id);
+                    on_delete();
+                    toaster.toast(
+                        Toast::builder()
+                            .simple("Deleted cluster successfully.")
+                            .success()
+                    );
+                },
                 Err(error) => {
                     error!("Failed to delete cluster <{id}>: {error}");
                     toaster.toast(
