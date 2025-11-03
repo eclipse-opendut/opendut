@@ -19,6 +19,7 @@ pub mod vcan;
 
 pub mod bridge;
 pub mod altname;
+mod can;
 
 pub type NetworkInterfaceManagerRef = Arc<NetworkInterfaceManager>;
 

@@ -12,7 +12,7 @@ opendut-edgar-plugin-api = { workspace = true, features = ["host"] }
 opendut-netbird-client-api = { workspace = true }
 opendut-model = { workspace = true }
 opendut-telemetry = { workspace = true }
-opendut-util = { workspace = true, features = ["crypto", "settings"] }
+opendut-util = { workspace = true, features = ["crypto", "settings", "serde"] }
 
 anyhow = { workspace = true }
 async-trait = { workspace = true }
@@ -37,6 +37,8 @@ regex = { workspace = true }
 reqwest = { workspace = true }
 rtnetlink = { workspace = true }
 serde = { workspace = true, features = ["std", "derive"] }
+serde_json = { workspace = true }
+serde-this-or-that = { workspace = true }
 shadow-formatted-version = { workspace = true }
 shadow-rs = { workspace = true, default-features = true }
 sha2 = { workspace = true }
