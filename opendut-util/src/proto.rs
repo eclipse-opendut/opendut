@@ -44,17 +44,17 @@ impl<From, To> ConversionErrorBuilder<From, To> {
 /// Call like this:
 /// ```no_compile
 /// conversion! {
-//     type Model = crate::...;
-//     type Proto = ...;
-//
-//     fn from(value: Model) -> Proto {
-//         ...
-//     }
-//
-//     fn try_from(value: Proto) -> ConversionResult<Model> {
-//         ...
-//     }
-// }
+///     type Model = crate::...;
+///     type Proto = ...;
+///
+///     fn from(value: Model) -> Proto {
+///         ...
+///     }
+///
+///     fn try_from(value: Proto) -> ConversionResult<Model> {
+///         ...
+///     }
+/// }
 /// ```
 ///
 /// "Model" is the data type used throughout our Rust code.
