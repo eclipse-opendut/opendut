@@ -22,4 +22,6 @@ pub static MDBOOK: Cli = Crate::new("mdbook").into_cli()
         Crate::new("mdbook-plantuml"),
     ]);
 
-pub static TRUNK: Cli = Crate::new("trunk").with_install_args(&["--locked"]).into_cli();
+pub static TRUNK: Cli = Crate::new("trunk")
+    .with_install_args(&["--locked", "--no-default-features", "--features=rustls"])
+    .into_cli();
