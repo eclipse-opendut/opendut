@@ -27,8 +27,15 @@ pub fn ClustersOverview() -> impl IntoView {
             refetch_cluster_descriptors.track();
             let mut carl = carl.clone();
             async move {
-                carl.cluster.list_cluster_descriptors().await
-                    .expect("Failed to request the list of clusters")
+                let mut clusters = carl.cluster.list_cluster_descriptors().await
+                    .expect("Failed to request the list of clusters");
+
+                clusters.sort_by(|cluster_a, cluster_b|
+                    cluster_a.name.value().to_lowercase()
+                        .cmp(&cluster_b.name.value().to_lowercase())
+                );
+
+                clusters
             }
         })
     };
@@ -135,23 +142,6 @@ pub fn ClustersOverview() -> impl IntoView {
         refetch_cluster_descriptors.notify();
     };
 
-    let deployed_clusters = LocalResource::new(move || async move {
-        cluster_deployments.await.iter()
-            .map(|cluster_deployment| cluster_deployment.id)
-            .collect::<Vec<_>>()
-    });
-
-    let rows = LocalResource::new(move || async move {
-        let mut clusters = clusters.await;
-
-        clusters.sort_by(|cluster_a, cluster_b|
-            cluster_a.name.value().to_lowercase()
-                .cmp(&cluster_b.name.value().to_lowercase())
-        );
-
-        clusters
-    });
-
     let breadcrumbs = vec![
         Breadcrumb::new("Dashboard", "/"),
         Breadcrumb::new("Clusters", "/clusters")
@@ -165,30 +155,33 @@ pub fn ClustersOverview() -> impl IntoView {
                 <CreateClusterButton />
             }
         >
-            <Suspense
-                fallback=LoadingSpinner
-            >
-            {move || {
-                let on_deploy = on_deploy.clone();
-                let on_undeploy = on_undeploy.clone();
+            <table class="table is-hoverable is-fullwidth">
+                <thead>
+                    <tr>
+                        <th class="is-narrow">"Deploy"</th>
+                        <th class="is-narrow">"Health"</th>
+                        <th>"Name"</th>
+                        <th class="is-narrow">"Action"</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <Suspense
+                        fallback=LoadingSpinner
+                    >
+                    {move || {
+                        let on_deploy = on_deploy.clone();
+                        let on_undeploy = on_undeploy.clone();
 
-                Suspend::new(async move {
-                    let rows = rows.await;
-                    let deployed_clusters = deployed_clusters.await;
+                        Suspend::new(async move {
+                            let clusters = clusters.await;
+                            let deployed_clusters = cluster_deployments.await
+                                .iter()
+                                .map(|cluster_deployment| cluster_deployment.id)
+                                .collect::<Vec<_>>();
 
-                    view! {
-                        <table class="table is-hoverable is-fullwidth">
-                            <thead>
-                                <tr>
-                                    <th class="is-narrow">"Deploy"</th>
-                                    <th class="is-narrow">"Health"</th>
-                                    <th>"Name"</th>
-                                    <th class="is-narrow">"Action"</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                            view! {
                                 <For
-                                    each = move || rows.clone()
+                                    each = move || clusters.clone()
                                     key = |cluster| cluster.id
                                     children = { move |cluster_descriptor: ClusterDescriptor| {
                                         let cluster_id = cluster_descriptor.id;
@@ -203,12 +196,12 @@ pub fn ClustersOverview() -> impl IntoView {
                                         }
                                     }}
                                 />
-                            </tbody>
-                        </table>
-                    }
-                })
-            }}
-            </Suspense>
+                            }
+                        })
+                    }}
+                    </Suspense>
+                </tbody>
+            </table>
         </BasePageContainer>
     }
 }
