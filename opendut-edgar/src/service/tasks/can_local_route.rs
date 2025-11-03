@@ -196,13 +196,13 @@ pub(crate) mod tests {
     use crate::common::task::{Task, TaskAbsent, TaskStateFulfilled};
     use crate::service::tasks::testing::NetworkInterfaceNameExt;
 
-    pub struct Fixture {
-        network_interface_manager: NetworkInterfaceManagerRef,
+    pub struct FixtureVirtualCan {
+        pub(crate) network_interface_manager: NetworkInterfaceManagerRef,
         parameter: parameter::CanLocalRoute,
-        vcan1_name: NetworkInterfaceName,
+        pub(crate) vcan1_name: NetworkInterfaceName,
         vcan2_name: NetworkInterfaceName,
     }
-    impl Fixture {
+    impl FixtureVirtualCan {
         pub async fn create() -> anyhow::Result<Self> {
             let (connection, handle, _) = rtnetlink::new_connection().expect("Could not get rtnetlink handle.");
             tokio::spawn(connection);
@@ -224,7 +224,7 @@ pub(crate) mod tests {
             })
         }
 
-        fn verify_required_linux_kernel_modules_are_loaded(&self) -> anyhow::Result<()> {
+        pub(crate) fn verify_required_linux_kernel_modules_are_loaded(&self) -> anyhow::Result<()> {
             for kernel_module in opendut_edgar_kernel_modules::required_can_kernel_modules() {
                 if ! kernel_module.is_loaded(&opendut_edgar_kernel_modules::default_module_file(), &opendut_edgar_kernel_modules::default_builtin_module_dir())? {
                     return Err(anyhow!("Required CAN kernel module '{}' is not loaded. Cannot run CAN local route tests.", kernel_module.name()))
@@ -233,7 +233,7 @@ pub(crate) mod tests {
             Ok(())
         }
 
-        async fn create_vcan_interfaces(&self) -> anyhow::Result<()> {
+        pub(crate) async fn create_vcan_interfaces(&self) -> anyhow::Result<()> {
             let vcan1_interface = self.network_interface_manager.create_vcan_interface(&self.vcan1_name).await?;
             self.network_interface_manager.set_interface_up(&vcan1_interface).await?;
             let vcan2_interface = self.network_interface_manager.create_vcan_interface(&self.vcan2_name).await?;
@@ -250,7 +250,7 @@ pub(crate) mod tests {
     #[test_with::env(RUN_EDGAR_NETLINK_INTEGRATION_TESTS)]
     #[test_log::test(tokio::test)]
     async fn test_can_local_route_description() -> anyhow::Result<()> {
-        let fixture = Fixture::create().await.expect("Could not create Fixture");
+        let fixture = FixtureVirtualCan::create().await.expect("Could not create FixtureVirtualCan");
         fixture.verify_required_linux_kernel_modules_are_loaded()?;
 
         let task = super::CanLocalRoute {
@@ -273,7 +273,7 @@ pub(crate) mod tests {
     #[test_with::env(RUN_EDGAR_NETLINK_INTEGRATION_TESTS)]
     #[test_log::test(tokio::test)]
     async fn test_can_local_route_lifecycle() -> anyhow::Result<()> {
-        let fixture = Fixture::create().await.expect("Could not create Fixture");
+        let fixture = FixtureVirtualCan::create().await.expect("Could not create FixtureVirtualCan");
         fixture.create_vcan_interfaces().await?;
 
         let task = super::CanLocalRoute {
