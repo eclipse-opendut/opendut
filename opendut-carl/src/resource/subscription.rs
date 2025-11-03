@@ -4,6 +4,8 @@ use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration
 use opendut_model::peer::state::PeerConnectionState;
 use opendut_model::peer::PeerDescriptor;
 use tokio::sync::broadcast;
+
+#[cfg(feature = "viper")]
 use opendut_model::viper::TestSuiteSourceDescriptor;
 
 pub struct Subscription<R: Resource> {
@@ -60,6 +62,7 @@ impl_subscribable!(PeerConfiguration, peer_configuration);
 impl_subscribable!(PeerDescriptor, peer_descriptor);
 impl_subscribable!(PeerConnectionState, peer_connection_state);
 impl_subscribable!(EdgePeerConfigurationState, peer_configuration_state);
+#[cfg(feature = "viper")]
 impl_subscribable!(TestSuiteSourceDescriptor, test_suite_source_descriptor);
 
 mod deprecated {
@@ -77,6 +80,7 @@ pub struct ResourceSubscriptionChannels {
     pub peer_descriptor: ResourceSubscriptionChannel<PeerDescriptor>,
     pub peer_connection_state: ResourceSubscriptionChannel<PeerConnectionState>,
     pub peer_configuration_state: ResourceSubscriptionChannel<EdgePeerConfigurationState>,
+    #[cfg(feature = "viper")]
     pub test_suite_source_descriptor: ResourceSubscriptionChannel<TestSuiteSourceDescriptor>,
 
     #[deprecated] #[expect(deprecated)]
@@ -104,43 +108,41 @@ impl ResourceSubscriptionChannels {
             peer_descriptor,
             peer_connection_state,
             peer_configuration_state,
+            #[cfg(feature = "viper")]
             test_suite_source_descriptor,
             #[expect(deprecated)]
             _cluster_configuration,
         } = self;
 
-        cluster_deployment.0.is_empty()
-        && cluster_descriptor.0.is_empty()
-        && old_peer_configuration.0.is_empty()
-        && peer_configuration.0.is_empty()
-        && peer_descriptor.0.is_empty()
-        && peer_connection_state.0.is_empty()
-        && peer_configuration_state.0.is_empty()
-        && test_suite_source_descriptor.0.is_empty()
+        let result =
+            cluster_deployment.0.is_empty()
+            && cluster_descriptor.0.is_empty()
+            && old_peer_configuration.0.is_empty()
+            && peer_configuration.0.is_empty()
+            && peer_descriptor.0.is_empty()
+            && peer_connection_state.0.is_empty()
+            && peer_configuration_state.0.is_empty();
+
+        #[cfg(feature = "viper")]
+        let result = result && test_suite_source_descriptor.0.is_empty();
+
+        result
     }
 }
 impl Default for ResourceSubscriptionChannels {
     fn default() -> Self {
         let capacity = 100;
 
-        let cluster_deployment = broadcast::channel(capacity);
-        let cluster_descriptor = broadcast::channel(capacity);
-        let old_peer_configuration = broadcast::channel(capacity);
-        let peer_configuration = broadcast::channel(capacity);
-        let peer_descriptor = broadcast::channel(capacity);
-        let peer_connection_state = broadcast::channel(capacity);
-        let peer_configuration_state = broadcast::channel(capacity);
-        let test_suite_source_descriptor = broadcast::channel(capacity);
-
         Self {
-            cluster_deployment,
-            cluster_descriptor,
-            old_peer_configuration,
-            peer_configuration,
-            peer_descriptor,
-            peer_connection_state,
-            peer_configuration_state,
-            test_suite_source_descriptor,
+            cluster_deployment: broadcast::channel(capacity),
+            cluster_descriptor: broadcast::channel(capacity),
+            old_peer_configuration: broadcast::channel(capacity),
+            peer_configuration: broadcast::channel(capacity),
+            peer_descriptor: broadcast::channel(capacity),
+            peer_connection_state: broadcast::channel(capacity),
+            peer_configuration_state: broadcast::channel(capacity),
+            #[cfg(feature = "viper")]
+            test_suite_source_descriptor: broadcast::channel(capacity),
             #[expect(deprecated)]
             _cluster_configuration: broadcast::channel(1),
         }

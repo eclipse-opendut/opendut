@@ -5,9 +5,12 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[features]
+viper = ["opendut-carl-api/viper"]
+
 [dependencies]
 opendut-auth = { workspace = true, features = ["registration_client"] }
-opendut-carl-api = { workspace = true, features = ["viper"] } #TODO make VIPER optional
+opendut-carl-api = { workspace = true }
 opendut-vpn-netbird = { workspace = true }
 opendut-model = { workspace = true }
 opendut-telemetry = { workspace = true }

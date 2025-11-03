@@ -4,6 +4,8 @@ use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration
 use opendut_model::peer::state::PeerConnectionState;
 use opendut_model::peer::{PeerDescriptor, PeerId};
 use opendut_model::resources::Id;
+
+#[cfg(feature = "viper")]
 use opendut_model::viper::{TestSuiteSourceDescriptor, TestSuiteSourceId};
 
 pub trait ResourceId<R: Resource> {
@@ -68,6 +70,7 @@ impl ResourceId<EdgePeerConfigurationState> for PeerId {
     }
 }
 
+#[cfg(feature = "viper")]
 impl ResourceId<TestSuiteSourceDescriptor> for TestSuiteSourceId {
     fn into_id(self) -> Id {
         Id::from(self.uuid)

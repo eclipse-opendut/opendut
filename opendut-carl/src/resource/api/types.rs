@@ -6,6 +6,8 @@ use opendut_model::peer::{PeerDescriptor, PeerId};
 use std::any::Any;
 use std::fmt::Debug;
 use std::hash::Hash;
+
+#[cfg(feature = "viper")]
 use opendut_model::viper::{TestSuiteSourceDescriptor, TestSuiteSourceId};
 
 pub trait Resource: Any + Send + Sync + Debug + Clone {
@@ -34,6 +36,8 @@ impl Resource for PeerConnectionState {
 impl Resource for EdgePeerConfigurationState {
     type Id = PeerId;
 }
+
+#[cfg(feature = "viper")]
 impl Resource for TestSuiteSourceDescriptor {
     type Id = TestSuiteSourceId;
 }

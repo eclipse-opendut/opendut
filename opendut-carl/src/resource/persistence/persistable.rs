@@ -8,6 +8,8 @@ use opendut_model::peer::PeerDescriptor;
 use opendut_util::proto::ConversionError;
 use prost::Message;
 use std::fmt::Debug;
+
+#[cfg(feature = "viper")]
 use opendut_model::viper::TestSuiteSourceDescriptor;
 
 impl Persistable for ClusterDeployment {
@@ -60,6 +62,7 @@ impl Persistable for EdgePeerConfigurationState {
     const STORAGE: StorageKind = StorageKind::Volatile;
 }
 
+#[cfg(feature = "viper")]
 impl Persistable for TestSuiteSourceDescriptor {
     type Proto = opendut_model::proto::viper::TestSuiteSourceDescriptor;
     const TABLE: &'static str = "test_suite_source_descriptor";
