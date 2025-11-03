@@ -291,4 +291,3 @@ fn DeviceDescriptionInput(
         />
     }
 }
-
