@@ -71,7 +71,22 @@ fn clarify_license_information(package: SpdxItemPackages) -> SpdxItemPackages {
             license_declared: Some(String::from("NOASSERTION")),
             ..package
         }
-    } else {
+    }
+    else if package.name == "syn-ext" {
+        SpdxItemPackages {
+            license_concluded: Some(String::from("BSD-2-Clause")),
+            license_declared: Some(String::from("BSD-2-Clause")), //the crate does not specify the license in machine-parseable format, but as a LICENSE file: https://github.com/youknowone/syn-ext/blob/main/LICENSE
+            ..package
+        }
+    }
+    else if package.name == "rustpython-doc" {
+        SpdxItemPackages {
+            license_concluded: Some(String::from("Python-2.0.1")),
+            license_declared: Some(String::from("Python-2.0.1")), //the crate does not specify the license in machine-parseable format, but as a LICENSE file: https://github.com/RustPython/__doc__/blob/main/LICENSE
+            ..package
+        }
+    }
+    else {
         let license_concluded = package.license_concluded.as_ref().map(|license|
             // When selecting a license, choose Apache-2.0 where possible.
             // Otherwise, select the most permissive license.
@@ -83,6 +98,7 @@ fn clarify_license_information(package: SpdxItemPackages) -> SpdxItemPackages {
                 | "Apache-2.0 OR ISC OR MIT"
                 | "BSD-2-Clause OR Apache-2.0 OR MIT"
                 | "BSD-2-Clause OR MIT OR Apache-2.0"
+                | "BSD-3-Clause OR MIT OR Apache-2.0"
                 | "CC0-1.0 OR MIT-0 OR Apache-2.0"
                 | "MIT OR Apache-2.0"
                 | "MIT OR Apache-2.0 OR BSD-1-Clause"
@@ -103,6 +119,7 @@ fn clarify_license_information(package: SpdxItemPackages) -> SpdxItemPackages {
                 "Unlicense OR MIT" => "MIT",
                 "(Apache-2.0 OR MIT) AND BSD-3-Clause" => "Apache-2.0 AND BSD-3-Clause",
                 "(MIT OR Apache-2.0) AND Unicode-3.0" => "Apache-2.0 AND Unicode-3.0",
+                "(MIT OR Apache-2.0) AND Unicode-DFS-2016" => "Apache-2.0 AND Unicode-DFS-2016",
 
                 "Apache-2.0"
                 | "Apache-2.0 WITH LLVM-exception"
@@ -113,6 +130,7 @@ fn clarify_license_information(package: SpdxItemPackages) -> SpdxItemPackages {
                 | "bzip2-1.0.6"
                 | "CC0-1.0"
                 | "ISC"
+                | "LGPL-3.0"
                 | "MIT"
                 | "MIT AND Apache-2.0"
                 | "MIT AND BSD-3-Clause"
