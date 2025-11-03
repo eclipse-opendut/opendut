@@ -53,8 +53,13 @@ impl TaskResolver for ServiceTaskResolver {
                     // TODO: Handle remote peer connection checks in its own tasks
                 }
                 ParameterVariant::CanConnections(_) => {}
-                ParameterVariant::CanBridges(_) => {}
-                ParameterVariant::CanLocalRoutes(_) => {}
+                ParameterVariant::CanBridges(parameter) => {
+                    tasks.push(Box::new(tasks::can_virtual_device::CanCreateVirtualDevice { name: parameter.value.name.clone(), network_interface_manager }));
+                }
+                ParameterVariant::CanLocalRoutes(parameter) => {
+                    tasks.push(Box::new(tasks::can_local_route::CanLocalRoute { parameter: parameter.value.clone(), network_interface_manager: network_interface_manager.clone(), can_fd: false }));
+                    tasks.push(Box::new(tasks::can_local_route::CanLocalRoute { parameter: parameter.value.clone(), network_interface_manager, can_fd: true }));
+                }
             };
         }
 
