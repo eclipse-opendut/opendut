@@ -43,19 +43,16 @@ async fn test_boolean_parameters() -> Result<()> {
         let parameters = parameters.iter().cloned().collect::<Vec<_>>();
         assert_that!(parameters, container_eq([
             ParameterDescriptor::BooleanParameter {
-                key: String::from("FOO"),
                 name: ParameterName::try_from("foo")?,
                 info: ParameterInfo::default(),
                 default: None,
             },
             ParameterDescriptor::BooleanParameter {
-                key: String::from("BAR"),
                 name: ParameterName::try_from("bar")?,
                 info: ParameterInfo::default(),
                 default: None,
             },
             ParameterDescriptor::BooleanParameter {
-                key: String::from("FUBAR"),
                 name: ParameterName::try_from("fubar")?,
                 info: ParameterInfo { display_name: Some(String::from("The FUBAR")), description: Some(String::from("This is an awesome boolean parameter.")) },
                 default: Some(true),
@@ -117,7 +114,6 @@ async fn test_number_parameters() -> Result<()> {
         let parameters = parameters.iter().cloned().collect::<Vec<_>>();
         assert_that!(parameters, container_eq([
             ParameterDescriptor::NumberParameter {
-                key: String::from("FOO"),
                 name: ParameterName::try_from("foo")?,
                 info: ParameterInfo::default(),
                 default: None,
@@ -125,7 +121,6 @@ async fn test_number_parameters() -> Result<()> {
                 max: i64::MAX,
             },
             ParameterDescriptor::NumberParameter {
-                key: String::from("BAR"),
                 name: ParameterName::try_from("bar")?,
                 info: ParameterInfo::default(),
                 default: None,
@@ -133,7 +128,6 @@ async fn test_number_parameters() -> Result<()> {
                 max: i64::MAX,
             },
             ParameterDescriptor::NumberParameter {
-                key: String::from("FUBAR"),
                 name: ParameterName::try_from("fubar")?,
                 info: ParameterInfo { display_name: Some(String::from("The FUBAR")), description: Some(String::from("This is an awesome number parameter.")) },
                 default: Some(1207),
@@ -193,14 +187,12 @@ async fn test_text_parameters() -> Result<()> {
         let parameters = parameters.iter().cloned().collect::<Vec<_>>();
         assert_that!(parameters, container_eq([
             ParameterDescriptor::TextParameter {
-                key: String::from("NAME"),
                 name: ParameterName::try_from("name")?,
                 info: ParameterInfo::default(),
                 default: None,
                 max: u32::MAX,
             },
             ParameterDescriptor::TextParameter {
-                key: String::from("FUBAR"),
                 name: ParameterName::try_from("fubar")?,
                 info: ParameterInfo { display_name: Some(String::from("The FUBAR")), description: Some(String::from("This is an awesome text parameter.")) },
                 default: Some(String::from("Jessica")),

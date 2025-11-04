@@ -53,15 +53,15 @@ fn traverse_code(test_suite_name: &TestSuiteIdentifier, py_module: &PyRef<PyModu
                 .map_err(InspectionError::new_invalid_metadata_error)?);
         }
         else if let Some(parameter) = value.payload::<PyBooleanParameterDescriptor>() {
-            parameters.push(make_boolean_parameter(&key, parameter)
+            parameters.push(make_boolean_parameter(parameter)
                 .map_err(InspectionError::new_invalid_parameter_error)?);
         }
         else if let Some(parameter) = value.payload::<PyNumberParameterDescriptor>() {
-            parameters.push(make_number_parameter(&key, parameter)
+            parameters.push(make_number_parameter(parameter)
                 .map_err(InspectionError::new_invalid_parameter_error)?);
         }
         else if let Some(parameter) = value.payload::<PyTextParameterDescriptor>() {
-            parameters.push(make_text_parameter(&key, parameter)
+            parameters.push(make_text_parameter(parameter)
                 .map_err(InspectionError::new_invalid_parameter_error)?);
         }
         else if let Some(_parameter) = value.payload::<PyPeerInterfaceParameterDescriptor>() {
@@ -166,20 +166,16 @@ fn make_metadata(key: &PyObjectRef, _metadata: &PyMetadata) -> Result<Metadata, 
     Ok(metadata)
 }
 
-fn make_boolean_parameter(key: &PyObjectRef, parameter: &PyBooleanParameterDescriptor) -> Result<ParameterDescriptor, ParameterError> {
-    let key = key.downcast_ref::<PyStr>().expect("downcast to `PyStr` for parameter key").to_string();
+fn make_boolean_parameter(parameter: &PyBooleanParameterDescriptor) -> Result<ParameterDescriptor, ParameterError> {
     Ok(ParameterDescriptor::BooleanParameter {
-        key,
         name: Clone::clone(&parameter.name).try_into()?,
         info: ParameterInfo { display_name: Clone::clone(&parameter.display_name), description: Clone::clone(&parameter.description) },
         default: parameter.default,
     })
 }
 
-fn make_number_parameter(key: &PyObjectRef, parameter: &PyNumberParameterDescriptor) -> Result<ParameterDescriptor, ParameterError> {
-    let key = key.downcast_ref::<PyStr>().expect("downcast to `PyStr` for parameter key").to_string();
+fn make_number_parameter(parameter: &PyNumberParameterDescriptor) -> Result<ParameterDescriptor, ParameterError> {
     Ok(ParameterDescriptor::NumberParameter {
-        key,
         name: Clone::clone(&parameter.name).try_into()?,
         info: ParameterInfo { display_name: Clone::clone(&parameter.display_name), description: Clone::clone(&parameter.description) },
         default: parameter.default,
@@ -188,10 +184,8 @@ fn make_number_parameter(key: &PyObjectRef, parameter: &PyNumberParameterDescrip
     })
 }
 
-fn make_text_parameter(key: &PyObjectRef, parameter: &PyTextParameterDescriptor) -> Result<ParameterDescriptor, ParameterError> {
-    let key = key.downcast_ref::<PyStr>().expect("downcast to `PyStr` for parameter key").to_string();
+fn make_text_parameter(parameter: &PyTextParameterDescriptor) -> Result<ParameterDescriptor, ParameterError> {
     Ok(ParameterDescriptor::TextParameter {
-        key,
         name: Clone::clone(&parameter.name).try_into()?,
         info: ParameterInfo { display_name: Clone::clone(&parameter.display_name), description: Clone::clone(&parameter.description) },
         default: Clone::clone(&parameter.default),

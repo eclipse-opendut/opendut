@@ -283,14 +283,12 @@ mod tests {
         let mut descriptors = ParameterDescriptors::new();
 
         descriptors.push(ParameterDescriptor::BooleanParameter {
-            key: String::new(),
             name: ParameterName::try_from("some_boolean")?,
             info: ParameterInfo::default(),
             default: None,
         });
 
         descriptors.push(ParameterDescriptor::NumberParameter {
-            key: String::new(),
             name: ParameterName::try_from("some_number")?,
             info: ParameterInfo::default(),
             default: None,
@@ -299,7 +297,6 @@ mod tests {
         });
 
         descriptors.push(ParameterDescriptor::TextParameter {
-            key: String::new(),
             name: ParameterName::try_from("some_text")?,
             info: ParameterInfo::default(),
             default: None,
@@ -322,7 +319,6 @@ mod tests {
         let mut descriptors = ParameterDescriptors::new();
 
         descriptors.push(ParameterDescriptor::BooleanParameter {
-            key: String::new(),
             name: Clone::clone(&parameter),
             info: ParameterInfo::default(),
             default: None,
@@ -347,7 +343,6 @@ mod tests {
         let mut descriptors = ParameterDescriptors::new();
 
         descriptors.push(ParameterDescriptor::NumberParameter {
-            key: String::new(),
             name: Clone::clone(&parameter),
             info: ParameterInfo::default(),
             default: None,
@@ -374,7 +369,6 @@ mod tests {
         let mut descriptors = ParameterDescriptors::new();
 
         descriptors.push(ParameterDescriptor::TextParameter {
-            key: String::new(),
             name: Clone::clone(&parameter),
             info: ParameterInfo::default(),
             default: None,
@@ -398,7 +392,6 @@ mod tests {
         let mut descriptors = ParameterDescriptors::new();
 
         descriptors.push(ParameterDescriptor::TextParameter {
-            key: String::new(),
             name: ParameterName::try_from("foo")?,
             info: ParameterInfo::default(),
             default: None,
@@ -422,7 +415,6 @@ mod tests {
         let mut descriptors = ParameterDescriptors::new();
 
         descriptors.push(ParameterDescriptor::TextParameter {
-            key: String::new(),
             name: Clone::clone(&parameter),
             info: ParameterInfo::default(),
             default: None,
@@ -450,7 +442,6 @@ mod tests {
         let mut descriptors = ParameterDescriptors::new();
 
         descriptors.push(ParameterDescriptor::NumberParameter {
-            key: String::new(),
             name: Clone::clone(&parameter),
             info: ParameterInfo::default(),
             default: None,
@@ -489,7 +480,6 @@ mod tests {
         let mut descriptors = ParameterDescriptors::new();
 
         descriptors.push(ParameterDescriptor::TextParameter {
-            key: String::new(),
             name: Clone::clone(&parameter),
             info: ParameterInfo::default(),
             default: None,
@@ -518,14 +508,12 @@ mod tests {
         let mut descriptors = ParameterDescriptors::new();
 
         descriptors.push(ParameterDescriptor::BooleanParameter {
-            key: String::new(),
             name: Clone::clone(&parameter_a),
             info: ParameterInfo::default(),
             default: None,
         });
 
         descriptors.push(ParameterDescriptor::TextParameter {
-            key: String::new(),
             name: Clone::clone(&parameter_b),
             info: ParameterInfo::default(),
             default: None,
@@ -561,7 +549,6 @@ mod tests {
         let mut descriptors = ParameterDescriptors::new();
 
         descriptors.push(ParameterDescriptor::BooleanParameter {
-            key: String::new(),
             name: Clone::clone(&parameter),
             info: ParameterInfo::default(),
             default: None,
@@ -586,7 +573,6 @@ mod tests {
         let mut descriptors = ParameterDescriptors::new();
 
         descriptors.push(ParameterDescriptor::BooleanParameter {
-            key: String::new(),
             name: Clone::clone(&parameter),
             info: ParameterInfo::default(),
             default: Some(false),
@@ -609,7 +595,6 @@ mod tests {
         let mut descriptors = ParameterDescriptors::new();
 
         descriptors.push(ParameterDescriptor::BooleanParameter {
-            key: String::new(),
             name: Clone::clone(&parameter),
             info: ParameterInfo::default(),
             default: None,
@@ -632,7 +617,6 @@ mod tests {
         let mut descriptors = ParameterDescriptors::new();
 
         descriptors.push(ParameterDescriptor::TextParameter {
-            key: String::new(),
             name: Clone::clone(&parameter),
             default: Some(String::from("Hello World")),
             info: ParameterInfo::default(),
@@ -655,7 +639,6 @@ mod tests {
         let mut descriptors = ParameterDescriptors::new();
 
         descriptors.push(ParameterDescriptor::TextParameter {
-            key: String::new(),
             name: Clone::clone(&text_parameter),
             default: None,
             info: ParameterInfo::default(),
@@ -663,7 +646,6 @@ mod tests {
         });
 
         descriptors.push(ParameterDescriptor::NumberParameter {
-            key: String::new(),
             name: Clone::clone(&number_parameter),
             default: None,
             info: ParameterInfo::default(),
