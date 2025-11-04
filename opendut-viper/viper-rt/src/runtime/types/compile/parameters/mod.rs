@@ -160,17 +160,16 @@ impl Display for ParameterName {
 }
 
 /// A `ParameterDescriptor` describes a single parameter of a test suite.
-///
 #[derive(Clone, Debug, PartialEq)]
 pub enum ParameterDescriptor {
     BooleanParameter {
-        key: String,
+        /// Primary identifier for the parameter
         name: ParameterName,
         info: ParameterInfo,
         default: Option<bool>,
     },
     NumberParameter {
-        key: String,
+        /// Primary identifier for the parameter
         name: ParameterName,
         info: ParameterInfo,
         default: Option<i64>,
@@ -178,7 +177,7 @@ pub enum ParameterDescriptor {
         max: i64,
     },
     TextParameter {
-        key: String,
+        /// Primary identifier for the parameter
         name: ParameterName,
         info: ParameterInfo,
         default: Option<String>,
@@ -192,6 +191,7 @@ impl ParameterDescriptor {
     pub(crate) const NUMBER_PARAMETER_VALUE_TYPE_NAME: &'static str = "number";
     pub(crate) const TEXT_PARAMETER_VALUE_TYPE_NAME: &'static str = "text";
 
+    /// Primary identifier for the parameter
     pub fn name(&self) -> &ParameterName {
         match self {
             ParameterDescriptor::BooleanParameter { name, .. } => name,
@@ -217,8 +217,7 @@ impl ParameterDescriptor {
     }
 }
 
-/// The `ParameterInfo` provides additional information for a user about a parameter.
-///
+/// The `ParameterInfo` provides additional parameter information for displaying to a user.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct ParameterInfo {
     pub display_name: Option<String>,

@@ -18,10 +18,7 @@ message TestSuiteRunId {
   opendut.model.util.Uuid uuid = 1;
 }
 
-
-//TODO move below types into opendut-viper
-
-message TestSuiteRunParameter { //TODO separate Descriptor type for displaying parameter in UI (with min/max, default)
+message TestSuiteRunParameter {
   string key = 1;
   TestSuiteRunParameterValue value = 2;
 }

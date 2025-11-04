@@ -6,3 +6,38 @@ package opendut.viper.rt.test_suite;
 message TestSuiteIdentifier {
   string value = 1;
 }
+
+
+message TestSuiteParameterDescriptor {
+  oneof kind {
+    TestSuiteParameterDescriptorBoolean boolean = 1;
+    TestSuiteParameterDescriptorNumber number = 2;
+    TestSuiteParameterDescriptorText text = 3;
+  }
+}
+
+message TestSuiteParameterInfo {
+    optional string display_name = 1;
+    optional string description = 2;
+}
+
+message TestSuiteParameterDescriptorBoolean {
+  string name = 1;
+  TestSuiteParameterInfo info = 2;
+  optional bool default = 11;
+}
+
+message TestSuiteParameterDescriptorNumber {
+  string name = 1;
+  TestSuiteParameterInfo info = 2;
+  optional int64 default = 11;
+  int64 min = 12;
+  int64 max = 13;
+}
+
+message TestSuiteParameterDescriptorText {
+  string name = 1;
+  TestSuiteParameterInfo info = 2;
+  optional string default = 11;
+  uint32 max_length = 12;
+}
