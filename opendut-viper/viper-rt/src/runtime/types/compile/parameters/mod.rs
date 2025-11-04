@@ -182,7 +182,7 @@ pub enum ParameterDescriptor {
         name: ParameterName,
         info: ParameterInfo,
         default: Option<String>,
-        max: u16,
+        max: u32,
     }
 }
 

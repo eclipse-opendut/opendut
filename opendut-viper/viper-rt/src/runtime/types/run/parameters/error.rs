@@ -20,7 +20,7 @@ pub enum BindParameterError {
     TextValueOutOfRange {
         parameter_name: ParameterName,
         value: String,
-        max: u16
+        max: u32
     },
 }
 
@@ -47,7 +47,7 @@ impl BindParameterError {
         }
     }
 
-    pub fn new_text_value_out_of_range_error(name: impl Into<ParameterName>, value: impl Into<String>, max: u16) -> Self {
+    pub fn new_text_value_out_of_range_error(name: impl Into<ParameterName>, value: impl Into<String>, max: u32) -> Self {
         Self::TextValueOutOfRange {
             parameter_name: name.into(),
             value: value.into(),

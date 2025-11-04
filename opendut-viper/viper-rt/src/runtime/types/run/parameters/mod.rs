@@ -303,7 +303,7 @@ mod tests {
             name: ParameterName::try_from("some_text")?,
             info: ParameterInfo::default(),
             default: None,
-            max: u16::MAX,
+            max: u32::MAX,
         });
 
         let bindings = ParameterBindings::from(descriptors);
@@ -378,7 +378,7 @@ mod tests {
             name: Clone::clone(&parameter),
             info: ParameterInfo::default(),
             default: None,
-            max: u16::MAX,
+            max: u32::MAX,
         });
 
         let mut bindings = ParameterBindings::from(descriptors);
@@ -402,7 +402,7 @@ mod tests {
             name: ParameterName::try_from("foo")?,
             info: ParameterInfo::default(),
             default: None,
-            max: u16::MAX,
+            max: u32::MAX,
         });
 
         let mut bindings = ParameterBindings::from(descriptors);
@@ -426,7 +426,7 @@ mod tests {
             name: Clone::clone(&parameter),
             info: ParameterInfo::default(),
             default: None,
-            max: u16::MAX,
+            max: u32::MAX,
         });
 
         let mut bindings = ParameterBindings::from(descriptors);
@@ -529,7 +529,7 @@ mod tests {
             name: Clone::clone(&parameter_b),
             info: ParameterInfo::default(),
             default: None,
-            max: u16::MAX,
+            max: u32::MAX,
         });
 
         let mut bindings = ParameterBindings::from(descriptors);
@@ -636,7 +636,7 @@ mod tests {
             name: Clone::clone(&parameter),
             default: Some(String::from("Hello World")),
             info: ParameterInfo::default(),
-            max: u16::MAX,
+            max: u32::MAX,
         });
 
         let bindings = ParameterBindings::from(descriptors).complete()?;
@@ -659,7 +659,7 @@ mod tests {
             name: Clone::clone(&text_parameter),
             default: None,
             info: ParameterInfo::default(),
-            max: u16::MAX,
+            max: u32::MAX,
         });
 
         descriptors.push(ParameterDescriptor::NumberParameter {

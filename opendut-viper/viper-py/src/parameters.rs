@@ -8,7 +8,7 @@ pub trait ParameterValueProvider {
 
 #[pymodule]
 pub mod parameters {
-    use crate::parameters::{parse_pybool_to_bool, parse_pyint_to_i64, parse_pyint_to_u16, parse_pystr_to_string, ParameterValueProvider};
+    use crate::parameters::{parse_pybool_to_bool, parse_pyint_to_i64, parse_pyint_to_u32, parse_pystr_to_string, ParameterValueProvider};
     use rustpython_vm::builtins::{PyStr, PyTypeRef};
     use rustpython_vm::function::FuncArgs;
     use rustpython_vm::{pyclass, PyObjectRef, PyPayload, PyResult, VirtualMachine};
@@ -196,7 +196,7 @@ pub mod parameters {
     pub struct PyTextParameterDescriptor {
         pub name: String,
         pub default: Option<String>,
-        pub max: u16,
+        pub max: u32,
         pub display_name: Option<String>,
         pub description: Option<String>,
     }
@@ -214,7 +214,7 @@ pub mod parameters {
                 })?;
 
             let mut default: Option<String> = None;
-            let mut max = u16::MAX;
+            let mut max = u32::MAX;
             let mut display_name: Option<String> = None;
             let mut description: Option<String> = None;
 
@@ -225,7 +225,7 @@ pub mod parameters {
                             .expect("downcast to `PyInt` for `PyTextParameterDescriptor.default`"));
                     }
                     "max" => {
-                        max = parse_pyint_to_u16(value, vm)
+                        max = parse_pyint_to_u32(value, vm)
                             .expect("downcast to `PyInt` for `PyTextParameterDescriptor.max`");
                     }
                     "display_name" => {
@@ -269,11 +269,11 @@ fn parse_pystr_to_string(value: PyObjectRef, vm: &VirtualMachine) -> PyResult<St
     }
 }
 
-fn parse_pyint_to_u16(value: PyObjectRef, vm: &VirtualMachine) -> PyResult<u16> {
+fn parse_pyint_to_u32(value: PyObjectRef, vm: &VirtualMachine) -> PyResult<u32> {
     if let Some(pyint) = value.downcast_ref::<PyInt>() {
         let bigint = pyint.as_bigint();
-        let number = u16::try_from(bigint)
-            .expect("downcast from `BigInt` to `u16`");
+        let number = u32::try_from(bigint)
+            .expect("downcast from `BigInt` to `u32`");
         Ok(number)
     } else {
         Err(vm.new_type_error(String::from("downcast from `PyObjectRef` to `PyInt`")))

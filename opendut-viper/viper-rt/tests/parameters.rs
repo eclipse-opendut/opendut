@@ -197,7 +197,7 @@ async fn test_text_parameters() -> Result<()> {
                 name: ParameterName::try_from("name")?,
                 info: ParameterInfo::default(),
                 default: None,
-                max: u16::MAX,
+                max: u32::MAX,
             },
             ParameterDescriptor::TextParameter {
                 key: String::from("FUBAR"),
