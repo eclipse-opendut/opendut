@@ -84,25 +84,6 @@ Now the following command should complete without errors:
 ping carl.opendut.local
 ```
 
-### Self-Signed Certificate with Unmanaged Setup
-If you plan to use the unmanaged setup and your NetBird server uses a self-signed certificate, follow these steps:
-
-1. Create the certificate directory on the OLU: `mkdir -p /usr/local/share/ca-certificates/`
-
-2. Copy your NetBird server certificate onto the OLU, for example, by running the following from outside the OLU:  
-   ```sh
-   scp certificate.crt root@10.10.4.1:/usr/local/share/ca-certificates/
-   ```  
-   Ensure that the certificate has a file extension of "crt".
-
-3. Run `update-ca-certificates` on the OLU.  
-   It should output "1 added", if everything works correctly.  
-
-4. Now the following commands should complete without errors:
-   ```
-   curl https://netbird-api.opendut.local
-   ```
-
 ## CAN Setup
 If you want to use CAN, it is mandatory to set the environment variable `OPENDUT_EDGAR_SERVICE_USER` as follows:
 ```shell
