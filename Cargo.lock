@@ -4416,7 +4416,6 @@ dependencies = [
  "rstest",
  "rtnetlink",
  "serde",
- "serde-this-or-that",
  "serde_json",
  "sha2",
  "shadow-formatted-version",
@@ -6709,15 +6708,6 @@ dependencies = [
  "serde_json",
  "syn 2.0.108",
  "thiserror 1.0.69",
-]
-
-[[package]]
-name = "serde-this-or-that"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f90e7ee61f57b2b1a195326bf7ee88651d3d5e688f34bd5971110851764200bf"
-dependencies = [
- "serde",
 ]
 
 [[package]]

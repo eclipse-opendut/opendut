@@ -3,7 +3,6 @@ use std::net::IpAddr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use anyhow::bail;
 use opendut_model::cluster::PeerClusterAssignment;
 use opendut_model::util::Port;
 
@@ -61,21 +60,6 @@ impl CanManager {
             debug!("Not creating CAN bridge '{bridge_name}', because it already exists.");
         }
 
-        Ok(())
-    }
-
-    async fn update_can_interface(&self, interface: &NetworkInterfaceDescriptor) -> anyhow::Result<()> {
-        if let Some(network_interface) = self.network_interface_manager.find_interface(&interface.name).await? {
-            self.network_interface_manager.set_interface_down(&network_interface).await?;
-            if let Err(cause) = self.network_interface_manager.update_interface(interface.to_owned()).await {
-                error!("Error updating CAN interface - A possible reason might be, that a virtual CAN interface was used: {cause}");
-            };
-            self.network_interface_manager.set_interface_up(&network_interface).await?;
-
-        } else {
-            bail!("Cannot find CAN interface with name: '{}'.", interface.name);
-        }
-        
         Ok(())
     }
 

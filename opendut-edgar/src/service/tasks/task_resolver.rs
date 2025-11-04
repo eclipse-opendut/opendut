@@ -1,10 +1,10 @@
-use std::collections::HashMap;
-use opendut_model::peer::configuration::{ParameterVariant, PeerConfiguration};
 use crate::common::task::task_resolver::{AdditionalTasks, TaskResolver};
 use crate::common::task::TaskAbsent;
 use crate::service::network_metrics::manager::NetworkMetricsManagerRef;
 use crate::service::peer_configuration::NetworkInterfaceManagement;
 use crate::service::tasks;
+use opendut_model::peer::configuration::{ParameterVariant, PeerConfiguration};
+use std::collections::HashMap;
 
 
 pub struct ServiceTaskResolver {
@@ -34,8 +34,13 @@ impl TaskResolver for ServiceTaskResolver {
         if let NetworkInterfaceManagement::Enabled { network_interface_manager, .. } = &self.network_interface_management {
             let network_interface_manager = network_interface_manager.clone();
             match parameter {
-                ParameterVariant::DeviceInterface(_device_interface) => {
+                ParameterVariant::DeviceInterface(device_interface) => {
                     // TODO: Create task to check if device is present, if not, ignore it. Check parameters for CAN devices
+                    let parameter = device_interface.value.clone();
+                    let can_config_task = tasks::can_device_configuration::CanDeviceConfiguration::new(parameter.descriptor, network_interface_manager.clone());
+                    if let Ok(can_config_task) = can_config_task {
+                        tasks.push(Box::new(can_config_task));
+                    }
                 }
                 ParameterVariant::EthernetBridge(ethernet_bridge) => {
                     tasks.push(Box::new(tasks::create_ethernet_bridge::CreateEthernetBridge { parameter: ethernet_bridge.value.clone(), network_interface_manager }));

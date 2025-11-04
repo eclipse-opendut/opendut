@@ -1,5 +1,5 @@
 use std::process::Command;
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use opendut_model::util::net::NetworkInterfaceName;
 use crate::service::network_interface::manager::interface::NetlinkInterfaceKind;
 use crate::service::network_interface::manager::NetworkInterfaceManager;
@@ -11,11 +11,20 @@ struct LinkInfo {
     info_data: Option<LinkInfoData>,
 }
 
-#[derive(Deserialize)]
-struct BitTiming {
-    bitrate: u32,
-    #[serde(deserialize_with = "serde_this_or_that::as_f64")]
-    sample_point: f64,
+fn as_f32<'de, D>(deserializer: D) -> Result<f32, D::Error>
+where D: Deserializer<'de>
+{
+    let value = String::deserialize(deserializer)?;
+    let float = value.parse::<f32>()
+        .map_err(serde::de::Error::custom)?;
+    Ok(float)
+}
+
+#[derive(Clone, Copy, Deserialize, PartialEq, Debug)]
+pub struct BitTiming {
+    pub bitrate: u32,
+    #[serde(deserialize_with = "as_f32")]
+    pub sample_point: f32,
 }
 #[derive(Deserialize)]
 struct LinkInfoData {
@@ -24,7 +33,7 @@ struct LinkInfoData {
     #[serde(rename = "bittiming")]
     bit_timing: BitTiming,
     #[serde(rename = "data_bittiming")]
-    data_bit_timing: Option<BitTiming>
+    can_fd_bit_timing: Option<BitTiming>
 }
 #[derive(Deserialize)]
 struct IpLinkShowOutputForCan {
@@ -42,55 +51,58 @@ const IF_CONTROL_MODE_CAN_FD: &str = "FD";
 
 const IP_LINK_INFO_KIND_CAN: &str = "can";
 
+#[derive(Debug, PartialEq)]
 pub struct CanInterfaceConfiguration {
-    pub bitrate: u32,
-    pub fd: CanFd,
+    pub bit_timing: BitTiming,
+    pub fd: CanFD,
 }
 
-pub enum CanFd {
-    Enabled(CanFdConfiguration),
+#[derive(Debug, PartialEq)]
+pub enum CanFD {
+    Enabled(BitTiming),
     Disabled,
 }
 
-pub struct CanFdConfiguration {
-    data_bitrate: u32,
-    data_sample_point: f64,
-}
-
 impl NetworkInterfaceManager {
-    pub async fn can_device_configuration(&self, name: NetworkInterfaceName) -> anyhow::Result<CanInterfaceConfiguration> {
-        let interface = self.find_interface(&name).await?;
-        match interface {
-            None => {
-                return Err(anyhow::Error::msg(format!("CAN interface '{}' not found.", name.name())));
-            }
-            Some(interface) => {
-                match interface.kind {
-                    NetlinkInterfaceKind::Can(_) => {}
-                    _ => {
-                        return Err(anyhow::Error::msg(format!("Interface '{}' is not a CAN interface.", name.name())));
-                    }
-                }
+    pub async fn detect_can_device_configuration(&self, name: NetworkInterfaceName) -> anyhow::Result<CanInterfaceConfiguration> {
+        let interface = self.find_interface(&name).await?
+            .ok_or_else(|| anyhow::anyhow!("CAN interface '{}' not found", name) )?;
 
+        match interface.kind {
+            NetlinkInterfaceKind::Can(_) => {}
+            _ => {
+                return Err(anyhow::Error::msg(format!("Interface '{}' is not a CAN interface.", name.name())));
             }
         }
-
-        let command = Command::new("ip")
-            .args(["link", "-json", "-details", "show", "dev", &name.name()])
-            .output()?;
-
-        if !command.status.success() {
-            return Err(anyhow::Error::msg(format!("Failed to execute 'ip link show' command for device '{}'.", name.name())));
-        }
-        let output_str = String::from_utf8_lossy(&command.stdout);
-        let ip_link: Vec<IpLinkShowOutputForCan> = serde_json::from_str(&output_str)?;
-        if ip_link.is_empty() {
-            return Err(anyhow::Error::msg(format!("No output from 'ip link show' command for device '{}'.", name.name())));
-        }
-        let can_info = &ip_link[0];
-        let can_configuration = convert_link_info_to_can_configuration(name.clone(), &can_info.link_info)?;
+        let can_configuration = ip_link_show(name)?;
 
         Ok(can_configuration)
+    }
+}
+
+fn ip_link_show(name: NetworkInterfaceName) -> anyhow::Result<CanInterfaceConfiguration> {
+    let command = Command::new("ip")
+        .args(["link", "-json", "-details", "show", "dev", &name.name()])
+        .output()?;
+
+    if !command.status.success() {
+        return Err(anyhow::Error::msg(format!("Failed to execute 'ip link show' command for device '{}'.", name.name())));
+    }
+    let output_str = String::from_utf8_lossy(&command.stdout);
+    let can_config = extract_ip_link_can_configuration(name, &output_str)?;
+    Ok(can_config)
+}
+
+fn extract_ip_link_can_configuration(name: NetworkInterfaceName, ip_link_show: &str) -> anyhow::Result<CanInterfaceConfiguration> {
+    let ip_link_list: Vec<IpLinkShowOutputForCan> = serde_json::from_str(ip_link_show)?;
+    match ip_link_list.into_iter().next() {
+        None => {
+            Err(anyhow::Error::msg(format!("No output from 'ip link show' command for device '{}'.", name.name())))
+        }
+        Some(ip_link) => {
+            let can_configuration = convert_link_info_to_can_configuration(name.clone(), &ip_link.link_info)?;
+            Ok(can_configuration)
+        }
     }
 }
 
@@ -100,20 +112,17 @@ fn convert_link_info_to_can_configuration(name: NetworkInterfaceName, link_info:
     }
 
     let info_data = link_info.info_data.as_ref().ok_or_else(|| anyhow::Error::msg("Missing info_data in link_info"))?;
-    let bit_timing = &info_data.bit_timing;
+    let bit_timing = info_data.bit_timing;
     let control_mode = info_data.control_mode.clone().unwrap_or_default();
 
     let fd_configuration = if control_mode.contains(&IF_CONTROL_MODE_CAN_FD.to_string()) {
-        let data_bit_timing = info_data.data_bit_timing.as_ref().ok_or_else(|| anyhow::Error::msg("Missing data_bittiming for CAN FD interface"))?;
-        CanFd::Enabled(CanFdConfiguration {
-            data_bitrate: data_bit_timing.bitrate,
-            data_sample_point: data_bit_timing.sample_point,
-        })
+        let data_bit_timing = info_data.can_fd_bit_timing.ok_or_else(|| anyhow::Error::msg("Missing data_bittiming for CAN FD interface"))?;
+        CanFD::Enabled(data_bit_timing)
     } else {
-        CanFd::Disabled
+        CanFD::Disabled
     };
     Ok(CanInterfaceConfiguration {
-        bitrate: bit_timing.bitrate,
+        bit_timing,
         fd: fd_configuration,
     })
 }
@@ -145,7 +154,7 @@ mod tests {
             assert_eq!(bit_timing.bitrate, 1000000);
             assert_eq!(bit_timing.sample_point, 0.5);
             assert_eq!(control_mode.len(), 1);
-            let data_bit_timing = info_data.data_bit_timing.as_ref().expect("Missing data_bittiming");
+            let data_bit_timing = info_data.can_fd_bit_timing.as_ref().expect("Missing data_bittiming");
             assert_eq!(data_bit_timing.bitrate, 5000000);
             assert_eq!(data_bit_timing.sample_point, 0.5);
         }

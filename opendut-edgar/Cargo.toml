@@ -38,7 +38,6 @@ reqwest = { workspace = true }
 rtnetlink = { workspace = true }
 serde = { workspace = true, features = ["std", "derive"] }
 serde_json = { workspace = true }
-serde-this-or-that = { workspace = true }
 shadow-formatted-version = { workspace = true }
 shadow-rs = { workspace = true, default-features = true }
 sha2 = { workspace = true }
