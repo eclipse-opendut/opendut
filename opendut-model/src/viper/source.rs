@@ -3,60 +3,10 @@ use std::ops::Not;
 use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use url::Url;
-use uuid::Uuid;
+use crate::create_id_type;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct TestSuiteSourceId { pub uuid: Uuid }
 
-impl TestSuiteSourceId {
-    pub fn random() -> Self {
-        Self { uuid: Uuid::new_v4() }
-    }
-}
-
-impl From<Uuid> for TestSuiteSourceId {
-    fn from(uuid: Uuid) -> Self {
-        Self { uuid }
-    }
-}
-
-#[derive(thiserror::Error, Clone, Debug)]
-#[error("Illegal TestSuiteSourceId: {value}")]
-pub struct IllegalTestSuiteSourceId {
-    pub value: String,
-}
-
-impl TryFrom<&str> for TestSuiteSourceId {
-    type Error = IllegalTestSuiteSourceId;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        Uuid::parse_str(value).map(|uuid| Self { uuid }).map_err(|_| IllegalTestSuiteSourceId {
-            value: String::from(value),
-        })
-    }
-}
-
-impl TryFrom<String> for TestSuiteSourceId {
-    type Error = IllegalTestSuiteSourceId;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        TestSuiteSourceId::try_from(value.as_str())
-    }
-}
-
-impl fmt::Display for TestSuiteSourceId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.uuid)
-    }
-}
-
-impl FromStr for TestSuiteSourceId {
-    type Err = IllegalTestSuiteSourceId;
-
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        Self::try_from(value)
-    }
-}
+create_id_type!(TestSuiteSourceId);
 
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
