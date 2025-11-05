@@ -15,7 +15,7 @@ pub trait ResourceId<R: Resource> {
 
 impl ResourceId<ClusterDeployment> for ClusterId {
     fn into_id(self) -> Id {
-        Id::from(self.0)
+        Id::from(self.uuid)
     }
     fn from_id(id: Id) -> Self {
         ClusterId::from(id.value())
@@ -23,7 +23,7 @@ impl ResourceId<ClusterDeployment> for ClusterId {
 }
 impl ResourceId<ClusterDescriptor> for ClusterId {
     fn into_id(self) -> Id {
-        Id::from(self.0)
+        Id::from(self.uuid)
     }
 
     fn from_id(id: Id) -> Self {

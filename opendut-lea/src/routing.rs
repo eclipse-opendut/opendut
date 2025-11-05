@@ -229,7 +229,7 @@ fn NotFound() -> impl IntoView {
 }
 
 mod url_encode {
-    use opendut_model::cluster::{IllegalClusterId, ClusterId};
+    use opendut_model::cluster::ClusterId;
     use opendut_model::id::IllegalId;
     use opendut_model::peer::PeerId;
 
@@ -248,8 +248,8 @@ mod url_encode {
         }
     }
 
-    impl UrlDecodable<ClusterId, IllegalClusterId> for ClusterId {
-        fn url_decode(encoded: &str) -> Result<ClusterId, IllegalClusterId> {
+    impl UrlDecodable<ClusterId, IllegalId<ClusterId>> for ClusterId {
+        fn url_decode(encoded: &str) -> Result<ClusterId, IllegalId<ClusterId>> {
             ClusterId::try_from(encoded)
         }
     }

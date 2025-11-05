@@ -3,11 +3,10 @@ use std::collections::HashSet;
 use std::fmt;
 use std::fmt::Formatter;
 use std::ops::Not;
-use std::str::FromStr;
-use uuid::Uuid;
 
 pub use assignment::*;
 
+use crate::create_id_type;
 use crate::peer::PeerId;
 use crate::topology::DeviceId;
 
@@ -15,52 +14,8 @@ mod assignment;
 pub mod state;
 
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct ClusterId(pub Uuid);
+create_id_type!(ClusterId);
 
-impl ClusterId {
-    pub fn random() -> Self {
-        Self(Uuid::new_v4())
-    }
-}
-
-impl From<Uuid> for ClusterId {
-    fn from(value: Uuid) -> Self {
-        Self(value)
-    }
-}
-
-#[derive(thiserror::Error, Clone, Debug)]
-#[error("Illegal ClusterId: {value}")]
-pub struct IllegalClusterId {
-    pub value: String,
-}
-
-impl TryFrom<&str> for ClusterId {
-
-    type Error = IllegalClusterId;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        Uuid::parse_str(value)
-            .map(Self)
-            .map_err(|_| IllegalClusterId { value: String::from(value) })
-    }
-}
-
-impl fmt::Display for ClusterId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl FromStr for ClusterId {
-    type Err = IllegalClusterId;
-
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        Self::try_from(value)
-    }
-}
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ClusterName(pub(crate) String);

@@ -86,7 +86,7 @@ fn LoadedClusterConfigurator(
     let cluster_id = Signal::derive(move || cluster_descriptor.get().id);
 
     let breadcrumbs = Signal::derive(move || {
-        let cluster_id = cluster_id.get().0.to_string();
+        let cluster_id = cluster_id.get().uuid.to_string();
         vec![
             Breadcrumb::new("Dashboard", "/"),
             Breadcrumb::new("Clusters", "clusters"),

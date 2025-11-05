@@ -43,7 +43,7 @@ mod tests {
         };
         
         let specification_meta_data = SpecificationMetadata {
-            id: cluster_descriptor.id.0,
+            id: cluster_descriptor.id.uuid,
             name: cluster_descriptor.name.value().to_owned(),
         };
         
