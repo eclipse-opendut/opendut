@@ -1,56 +1,13 @@
-use std::fmt;
 use base64::Engine;
 use base64::prelude::BASE64_URL_SAFE;
 use serde::{Deserialize, Serialize};
 use url::Url;
-use uuid::Uuid;
+use crate::create_id_type;
 use crate::util::net::{AuthConfig, Certificate};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct CleoId(pub Uuid);
 
-impl CleoId {
-    pub fn random() -> Self {
-        Self(Uuid::new_v4())
-    }
-}
+create_id_type!(CleoId);
 
-impl From<Uuid> for CleoId{
-    fn from(value: Uuid) -> Self {
-        Self(value)
-    }
-}
-
-#[derive(thiserror::Error, Clone, Debug)]
-#[error("Illegal CleoId: {value}")]
-pub struct IllegalCleoId {
-    pub value: String,
-}
-
-impl TryFrom<&str> for CleoId {
-    type Error = IllegalCleoId;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        Uuid::parse_str(value).map(Self).map_err(|_| IllegalCleoId {
-            value: String::from(value),
-        })
-    }
-}
-
-impl TryFrom<String> for CleoId {
-    type Error = IllegalCleoId;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        CleoId::try_from(value.as_str())
-    }
-}
-
-impl fmt::Display for CleoId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CleoSetup {

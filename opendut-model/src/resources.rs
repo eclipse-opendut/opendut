@@ -35,7 +35,7 @@ impl From<PeerId> for Id {
 impl From<CleoId> for Id {
     fn from(value: CleoId) -> Self {
         Self {
-            value: value.0,
+            value: value.uuid,
         }
     }
 }
