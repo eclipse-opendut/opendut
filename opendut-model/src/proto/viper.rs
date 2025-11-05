@@ -1,5 +1,8 @@
+use std::collections::HashMap;
 use opendut_util::conversion;
 use opendut_util::proto::ConversionResult;
+use crate::proto::viper::test_suite_run_parameter_value::Kind;
+use crate::viper::TestSuiteRunParameterKey;
 
 opendut_util::include_proto!("opendut.model.viper");
 
@@ -58,5 +61,90 @@ conversion! {
             .try_into()?;
 
         Ok(Model { id, name, url })
+    }
+}
+
+
+conversion! {
+    type Model = crate::viper::TestSuiteRunDescriptor;
+    type Proto = TestSuiteRunDescriptor;
+
+    fn from(value: Model) -> Proto {
+        let parameters = value.parameters.into_iter()
+            .map(|(key, value)| {
+                TestSuiteRunParameter {
+                    key: key.inner,
+                    value: Some(value.into())
+                }
+            })
+            .collect::<Vec<_>>();
+
+        Proto {
+            id: Some(value.id.into()),
+            source: Some(value.source.into()),
+            suite: Some(value.suite.into()),
+            parameters,
+        }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let id = extract!(value.id)?
+            .try_into()?;
+
+        let source = extract!(value.source)?
+            .try_into()?;
+
+        let suite = extract!(value.suite)?
+            .try_into()?;
+
+        let parameters = value.parameters.into_iter()
+            .map(|parameter| {
+                let key = TestSuiteRunParameterKey { inner: parameter.key };
+                let value = extract!(parameter.value)?.try_into()?;
+
+                Ok((key, value))
+            })
+            .collect::<Result<HashMap<_, _>, _>>()?;
+
+        Ok(Model { id, source, suite, parameters })
+    }
+}
+
+conversion! {
+    type Model = crate::viper::TestSuiteRunId;
+    type Proto = TestSuiteRunId;
+
+    fn from(value: Model) -> Proto {
+        Proto {
+            uuid: Some(value.uuid.into())
+        }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        extract!(value.uuid)
+            .map(|uuid| Model { uuid: uuid.into() })
+    }
+}
+
+conversion! {
+    type Model = crate::viper::TestSuiteRunParameterValue;
+    type Proto = TestSuiteRunParameterValue;
+
+    fn from(value: Model) -> Proto {
+        let value = match value {
+            Model::Boolean(value) => test_suite_run_parameter_value::Kind::Boolean(value),
+            Model::Number(value) => test_suite_run_parameter_value::Kind::Number(value),
+            Model::Text(value) => test_suite_run_parameter_value::Kind::Text(value),
+        };
+        Proto { kind: Some(value) }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let value = match extract!(value.kind)? {
+            Kind::Boolean(value) => Model::Boolean(value),
+            Kind::Number(value) => Model::Number(value),
+            Kind::Text(value) => Model::Text(value),
+        };
+        Ok(value)
     }
 }

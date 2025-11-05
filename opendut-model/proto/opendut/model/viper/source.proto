@@ -5,7 +5,6 @@ package opendut.model.viper;
 import "opendut/model/util/net.proto";
 import "opendut/model/util/uuid.proto";
 
-//TODO move into opendut-viper
 
 message TestSuiteSourceDescriptor {
   TestSuiteSourceId id = 1;
