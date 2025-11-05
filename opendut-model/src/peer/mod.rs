@@ -5,8 +5,7 @@ use base64::Engine;
 use base64::prelude::BASE64_URL_SAFE;
 use serde::{Deserialize, Serialize};
 use url::Url;
-use uuid::Uuid;
-
+use crate::create_id_type;
 use crate::peer::executor::ExecutorDescriptors;
 use crate::topology::{DeviceDescriptor, Topology};
 use crate::util::net::{AuthConfig, Certificate, NetworkInterfaceDescriptor, NetworkInterfaceName};
@@ -16,59 +15,9 @@ pub mod state;
 pub mod executor;
 pub mod configuration;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct PeerId { pub uuid: Uuid }
 
-impl PeerId {
-    pub fn random() -> Self {
-        Self { uuid: Uuid::new_v4() }
-    }
-}
+create_id_type!(PeerId);
 
-impl From<Uuid> for PeerId {
-    fn from(uuid: Uuid) -> Self {
-        Self { uuid }
-    }
-}
-
-#[derive(thiserror::Error, Clone, Debug)]
-#[error("Illegal PeerId: {value}")]
-pub struct IllegalPeerId {
-    pub value: String,
-}
-
-impl TryFrom<&str> for PeerId {
-    type Error = IllegalPeerId;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        Uuid::parse_str(value).map(|uuid| Self { uuid }).map_err(|_| IllegalPeerId {
-            value: String::from(value),
-        })
-    }
-}
-
-impl TryFrom<String> for PeerId {
-    type Error = IllegalPeerId;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        PeerId::try_from(value.as_str())
-    }
-}
-
-impl fmt::Display for PeerId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.uuid)
-    }
-}
-
-impl FromStr for PeerId {
-    type Err = IllegalPeerId;
-
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        Self::try_from(value)
-    }
-}
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct PeerName(pub(crate) String);
