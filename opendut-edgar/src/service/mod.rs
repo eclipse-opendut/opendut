@@ -9,3 +9,4 @@ mod network_metrics;
 mod tasks;
 mod can;
 pub(crate) mod service_runner;
+pub mod process_manager;
