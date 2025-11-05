@@ -2,6 +2,7 @@ use uuid::{Uuid, uuid};
 
 pub mod cleo;
 pub mod cluster;
+pub mod id;
 pub mod lea;
 pub mod peer;
 pub mod proto;
@@ -13,6 +14,7 @@ pub mod viper;
 pub mod topology;
 pub mod util;
 pub mod vpn;
+
 
 pub trait ShortName {
     fn short_name(&self) -> &'static str;
