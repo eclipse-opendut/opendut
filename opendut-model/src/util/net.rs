@@ -4,7 +4,7 @@ use std::ops::Not;
 use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use url::Url;
-use uuid::Uuid;
+use crate::create_id_type;
 
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(transparent)]
@@ -175,24 +175,9 @@ impl fmt::Display for NetworkInterfaceDescriptor {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize, Hash)]
-#[serde(transparent)]
-pub struct NetworkInterfaceId { pub uuid: Uuid }
-impl NetworkInterfaceId {
-    pub fn random() -> Self {
-        Self { uuid: Uuid::new_v4() }
-    }
-}
-impl From<Uuid> for NetworkInterfaceId {
-    fn from(uuid: Uuid) -> Self {
-        Self { uuid }
-    }
-}
-impl fmt::Display for NetworkInterfaceId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.uuid)
-    }
-}
+
+create_id_type!(NetworkInterfaceId);
+
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ClientId(pub String);
