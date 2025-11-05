@@ -29,7 +29,7 @@ fs-err = { workspace = true }
 futures = { workspace = true }
 indicatif = { workspace = true }
 indoc = { workspace = true }
-nix = { workspace = true, features = ["user", "fs"] }
+nix = { workspace = true, features = ["user", "fs", "signal"] }
 opentelemetry = { workspace = true }
 opentelemetry_sdk = { workspace = true }
 ping-rs = { workspace = true }
