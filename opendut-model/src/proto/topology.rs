@@ -10,13 +10,13 @@ conversion! {
 
     fn from(value: Model) -> Proto {
         Proto {
-            uuid: Some(value.0.into()),
+            uuid: Some(value.uuid.into()),
         }
     }
 
     fn try_from(value: Proto) -> ConversionResult<Model> {
         extract!(value.uuid)
-            .map(|uuid| crate::topology::DeviceId(uuid.into()))
+            .map(|uuid| crate::topology::DeviceId { uuid: uuid.into() })
     }
 }
 impl From<uuid::Uuid> for DeviceId {

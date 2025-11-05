@@ -149,7 +149,7 @@ pub async fn create_cluster_descriptor(cluster: ClusterDescriptor, carl: &mut Ca
 fn select_duplicate_devices(devices: &[DeviceDescriptor]) -> Vec<DeviceDescriptor> {
     let mut devices = devices.to_vec();
 
-    devices.sort_by_key(|device| device.id.0);
+    devices.sort_by_key(|device| device.id.uuid);
 
     devices.chunk_by(|a, b| a == b)
         .filter(|chunk| chunk.len() > 1)

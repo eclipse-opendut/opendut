@@ -4,6 +4,7 @@ use std::str::FromStr;
 
 use crate::util::net::NetworkInterfaceId;
 use serde::{Deserialize, Serialize};
+use crate::create_id_type;
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Topology {
@@ -16,34 +17,19 @@ impl Topology {
     }
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct DeviceId(pub uuid::Uuid);
 
-impl DeviceId {
-    pub fn random() -> Self {
-        Self(uuid::Uuid::new_v4())
-    }
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct DeviceDescriptor {
+    pub id: DeviceId,
+    pub name: DeviceName,
+    pub description: Option<DeviceDescription>,
+    pub interface: NetworkInterfaceId,
+    pub tags: Vec<DeviceTag>,
 }
 
-impl fmt::Display for DeviceId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
 
-impl From<uuid::Uuid> for DeviceId {
-    fn from(value: uuid::Uuid) -> Self {
-        Self(value)
-    }
-}
-impl FromStr for DeviceId {
-    type Err = uuid::Error;
+create_id_type!(DeviceId);
 
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        uuid::Uuid::from_str(value).map(DeviceId)
-    }
-}
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct DeviceName(pub(crate) String);
@@ -271,13 +257,4 @@ impl FromStr for DeviceTag {
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         Self::try_from(value)
     }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub struct DeviceDescriptor {
-    pub id: DeviceId,
-    pub name: DeviceName,
-    pub description: Option<DeviceDescription>,
-    pub interface: NetworkInterfaceId,
-    pub tags: Vec<DeviceTag>,
 }

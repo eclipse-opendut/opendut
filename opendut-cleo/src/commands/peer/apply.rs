@@ -304,7 +304,7 @@ mod tests {
     #[test]
     fn should_convert_device_specification_to_descriptor() -> anyhow::Result<()> {
         let specification = DeviceSpecificationV1 {
-            id: DeviceId::random().0,
+            id: DeviceId::random().uuid,
             name: "device".to_string(),
             description: None,
             interface_id: NetworkInterfaceId::random().uuid,
@@ -404,7 +404,7 @@ mod tests {
         Ok(TopologySpecificationV1 {
             devices: vec![
                 DeviceSpecificationV1 {
-                    id: device.id.0,
+                    id: device.id.uuid,
                     name: device.name.to_string(),
                     description,
                     interface_id: device.interface.uuid,
