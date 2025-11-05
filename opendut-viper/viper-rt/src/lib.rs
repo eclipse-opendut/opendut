@@ -168,6 +168,7 @@ pub mod compile {
     };
 }
 
+#[cfg(feature = "proto")]
 pub mod proto;
 
 pub mod run {

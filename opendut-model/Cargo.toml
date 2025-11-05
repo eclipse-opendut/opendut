@@ -15,6 +15,7 @@ viper = ["dep:viper-rt"]
 
 [dependencies]
 opendut-util = { workspace = true, features = ["proto"] }
+viper-rt = { workspace = true, features = ["proto"], optional = true }
 
 base64 = { workspace = true }
 brotli = { workspace = true }
@@ -29,7 +30,6 @@ pem = { workspace = true, features = ["serde"] }
 prost = { workspace = true }
 # Only necessary if using Protobuf well-known types: e.g. google/protobuf/timestamp.proto
 prost-types = { workspace = true }
-viper-rt = { workspace = true, optional = true }
 
 [dev-dependencies]
 anyhow = { workspace = true }
