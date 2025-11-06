@@ -38,8 +38,10 @@ message CanConnection {
   opendut.model.util.IpAddress remote_ip = 2;
   opendut.model.util.Port remote_port = 3;
   opendut.model.util.Port local_port = 4;
-  bool local_is_server = 5;
-  uint64 buffer_timeout_microseconds = 6;
+  opendut.model.util.NetworkInterfaceName can_interface_name = 5;
+  bool local_is_server = 6;
+  // Additional configuration parameters
+  uint64 buffer_timeout_microseconds = 11;
 
 }
 
