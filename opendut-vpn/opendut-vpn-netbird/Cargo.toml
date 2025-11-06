@@ -1,5 +1,6 @@
 [package]
 name = "opendut-vpn-netbird"
+description = "Client library for talking to the NetBird VPN management service."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

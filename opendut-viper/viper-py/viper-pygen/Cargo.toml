@@ -1,5 +1,6 @@
 [package]
 name = "opendut-viper-pygen"
+description = "Library for generating Python stubs to support auto-completiong in VIPER."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

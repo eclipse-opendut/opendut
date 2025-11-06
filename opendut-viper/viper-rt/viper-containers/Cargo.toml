@@ -1,5 +1,6 @@
 [package]
 name = "opendut-viper-containers"
+description = "Library for executing containers as part of VIPER."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

@@ -1,5 +1,6 @@
 [package]
 name = "opendut-telemetry"
+description = "Library for logging, tracing and metrics, used by various openDuT services."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

@@ -1,5 +1,6 @@
 [package]
 name = "opendut-carl"
+description = "Backend service that coordinates the network connections."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

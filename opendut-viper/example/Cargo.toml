@@ -1,5 +1,6 @@
 [package]
 name = "opendut-viper-example"
+description = "Example code for using VIPER as a library."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

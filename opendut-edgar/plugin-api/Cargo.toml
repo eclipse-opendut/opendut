@@ -1,5 +1,6 @@
 [package]
 name = "opendut-edgar-plugin-api"
+description = "Library for plugins used in EDGAR to handle different hardware requirements."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

@@ -1,5 +1,6 @@
 [package]
 name = "opendut-netbird-client-api"
+description = "Library for talking to the NetBird Client, which runs next to EDGAR."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

@@ -1,5 +1,6 @@
 [package]
 name = "opendut-carl-api"
+description = "gRPC API for CARL, used by both, the UI and edge services."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

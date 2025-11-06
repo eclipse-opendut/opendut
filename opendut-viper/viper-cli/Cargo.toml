@@ -1,5 +1,6 @@
 [package]
 name = "opendut-viper-cli"
+description = "CLI for running VIPER tests ad-hoc."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

@@ -1,5 +1,6 @@
 [package]
 name = "opendut-auth"
+description = "Library for handling authentication in openDuT."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

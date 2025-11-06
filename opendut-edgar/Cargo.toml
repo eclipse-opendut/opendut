@@ -1,5 +1,6 @@
 [package]
 name = "opendut-edgar"
+description = "Edge service for hooking your ECU up to openDuT."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

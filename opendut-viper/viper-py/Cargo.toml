@@ -1,5 +1,6 @@
 [package]
 name = "opendut-viper-py"
+description = "Definition of VIPER's Python syntax."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

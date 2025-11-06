@@ -1,5 +1,6 @@
 [package]
 name = "opendut-vpn"
+description = "Client library for talking to the VPN management service."
 version.workspace = true
 edition.workspace = true
 license.workspace = true
