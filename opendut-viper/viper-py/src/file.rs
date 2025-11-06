@@ -27,7 +27,7 @@ pub mod file {
     }
 
     #[pyclass(with(Iterable, IterNext))]
-    #[viper_pygen::pygen]
+    #[opendut_viper_pygen::pygen]
     impl FileHandler {
 
         #[viper(skip)]

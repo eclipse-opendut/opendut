@@ -20,7 +20,7 @@ use rustpython_vm::{Interpreter, PyObjectRef, VirtualMachine};
 use std::cell::RefCell;
 use std::rc::Rc;
 use tracing::{debug, error, info};
-use viper_py::file::file::FileHandler;
+use opendut_viper_py::file::file::FileHandler;
 
 pub async fn run(
     suite: TestSuite,

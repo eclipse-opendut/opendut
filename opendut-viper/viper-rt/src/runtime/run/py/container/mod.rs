@@ -6,8 +6,8 @@ use real_proxy::RealProxy;
 use rustpython_vm::{PyPayload, PyRef, VirtualMachine};
 use std::rc::Rc;
 use opendut_viper_containers::ContainerRuntime;
-use viper_py::container::container::PyContainerRuntimeProxy;
-use viper_py::container::ContainerRuntimeProxy;
+use opendut_viper_py::container::container::PyContainerRuntimeProxy;
+use opendut_viper_py::container::ContainerRuntimeProxy;
 
 pub fn make_container_runtime_proxy_object(client: Option<&ContainerRuntime>, vm: &VirtualMachine) -> PyRef<PyContainerRuntimeProxy> {
     let proxy = client

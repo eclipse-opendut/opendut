@@ -36,7 +36,7 @@ pub mod container {
     }
 
     #[pyclass]
-    #[viper_pygen::pygen]
+    #[opendut_viper_pygen::pygen]
     impl PyContainerRuntimeProxy {
 
         #[viper(skip)]
@@ -111,7 +111,7 @@ pub mod container {
     }
 
     #[pyclass]
-    #[viper_pygen::pygen]
+    #[opendut_viper_pygen::pygen]
     impl PyContainerRuntimeImageProxy {
 
         #[viper(skip)]

@@ -1,6 +1,6 @@
 #![allow(unused_variables)]
 
-use viper_pygen::pygen;
+use opendut_viper_pygen::pygen;
 
 struct Fubar;
 

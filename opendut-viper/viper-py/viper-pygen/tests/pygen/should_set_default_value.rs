@@ -1,4 +1,4 @@
-use viper_pygen::pygen;
+use opendut_viper_pygen::pygen;
 
 struct Struct;
 

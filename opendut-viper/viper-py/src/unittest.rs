@@ -13,7 +13,7 @@ pub mod unittest {
     pub struct TestCase {}
 
     #[pyclass(flags(BASETYPE))] // Enables inheritance
-    #[viper_pygen::pygen]
+    #[opendut_viper_pygen::pygen]
     impl TestCase {
 
         /// Test that `a` and `b` are equal. If the values do not compare equal, the test will fail.

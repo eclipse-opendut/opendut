@@ -15,7 +15,7 @@ pub mod metadata {
     }
 
     #[pyclass]
-    #[viper_pygen::pygen]
+    #[opendut_viper_pygen::pygen]
     impl PyMetadata {
         
         #[pyslot]

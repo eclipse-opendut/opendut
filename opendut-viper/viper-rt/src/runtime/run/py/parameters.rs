@@ -2,8 +2,8 @@ use crate::compile::ParameterName;
 use crate::run::{BindingValue, Complete, ParameterBindings};
 use rustpython_vm::{PyObjectRef, PyPayload, PyRef, PyResult, VirtualMachine};
 use std::rc::Rc;
-use viper_py::parameters::parameters::PyParameterDict;
-use viper_py::parameters::ParameterValueProvider;
+use opendut_viper_py::parameters::parameters::PyParameterDict;
+use opendut_viper_py::parameters::ParameterValueProvider;
 
 pub fn make_parameters_dict(bindings: Rc<ParameterBindings<Complete>>, vm: &VirtualMachine) -> PyRef<PyParameterDict> {
     PyParameterDict::new(bindings).into_ref(&vm.ctx)

@@ -1,8 +1,8 @@
 use rustpython_vm::builtins::{PyBaseExceptionRef, PyListRef};
 use rustpython_vm::function::{KwArgs, OptionalArg};
 use rustpython_vm::{PyObjectRef, PyResult, VirtualMachine};
-use viper_py::container::container::PyContainerInspectInfo;
-use viper_py::container::ContainerRuntimeProxy;
+use opendut_viper_py::container::container::PyContainerInspectInfo;
+use opendut_viper_py::container::ContainerRuntimeProxy;
 
 pub struct NoopProxy;
 

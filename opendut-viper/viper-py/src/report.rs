@@ -22,7 +22,7 @@ pub mod report {
     }
 
     #[pyclass]
-    #[viper_pygen::pygen]
+    #[opendut_viper_pygen::pygen]
     impl PyReportProperties {
 
         #[viper(skip)]

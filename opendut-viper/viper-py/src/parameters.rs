@@ -23,7 +23,7 @@ pub mod parameters {
 
     /// Provides access to the parameter values of a test.
     #[pyclass]
-    #[viper_pygen::pygen]
+    #[opendut_viper_pygen::pygen]
     impl PyParameterDict {
 
         #[viper(skip)]

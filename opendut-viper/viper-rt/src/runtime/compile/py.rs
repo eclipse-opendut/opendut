@@ -39,7 +39,7 @@ fn inject_sys_modules(vm: &VirtualMachine) -> Result<(), PythonReflectionError> 
     const NAME_ATTRIBUTE_NAME: &str = "__name__";
     let sys_modules = vm.sys_module.get_attr(MODULES_ATTRIBUTE_NAME, vm)
         .map_err(|_| PythonReflectionError::new_no_such_attribute_error(MODULES_ATTRIBUTE_NAME))?;
-    let viper_module = viper_py::create_module(vm);
+    let viper_module = opendut_viper_py::create_module(vm);
     let module_name = viper_module.get_attr(NAME_ATTRIBUTE_NAME, vm)
         .map_err(|_| PythonReflectionError::new_no_such_attribute_error(NAME_ATTRIBUTE_NAME))?;
     let module_name = module_name

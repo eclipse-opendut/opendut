@@ -11,7 +11,7 @@ path = "src/main.rs"
 
 [dependencies]
 opendut-viper-rt = { workspace = true, features = ["compile", "run", "file-source", "containers", "error"] }
-viper-py = { workspace = true }
+opendut-viper-py = { workspace = true }
 
 clap = { workspace = true, features = ["derive"] }
 console = { workspace = true }

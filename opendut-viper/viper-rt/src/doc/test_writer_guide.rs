@@ -259,7 +259,7 @@
 //!
 //! Viper supports different parameter types to handle various kinds of test inputs:
 //!
-//! #### TextParameter ([Descriptor](viper_py::parameters::parameters::PyTextParameterDescriptor))
+//! #### TextParameter ([Descriptor](opendut_viper_py::parameters::parameters::PyTextParameterDescriptor))
 //!
 //! For text input values. Useful for configuring strings like names, messages, or identifiers in tests.
 //!
@@ -300,7 +300,7 @@
 //! # }
 //! ```
 //!
-//! #### NumberParameter ([Descriptor](viper_py::parameters::parameters::PyNumberParameterDescriptor))
+//! #### NumberParameter ([Descriptor](opendut_viper_py::parameters::parameters::PyNumberParameterDescriptor))
 //!
 //! For numeric input values. Commonly used to configure numeric settings like ports, counts, or numeric thresholds in tests.
 //!
@@ -342,7 +342,7 @@
 //! # }
 //! ```
 //!
-//! #### BooleanParameter ([Descriptor](viper_py::parameters::parameters::PyBooleanParameterDescriptor))
+//! #### BooleanParameter ([Descriptor](opendut_viper_py::parameters::parameters::PyBooleanParameterDescriptor))
 //!
 //! For defining boolean input values (true/false). Useful for controlling test behavior through flags and conditional test execution.
 //!

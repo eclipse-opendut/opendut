@@ -85,23 +85,23 @@ fn create_project_structure() -> io::Result<()> {
     fs::create_dir_all("src/viper")?;
 
     let mut container_py = File::create("src/viper/container.py")?;
-    container_py.write_all(viper_py::container::container::PyContainerRuntimeProxy::GENERATED_PYTHON_CODE.as_bytes())?;
-    container_py.write_all(viper_py::container::container::PyContainerRuntimeImageProxy::GENERATED_PYTHON_CODE.as_bytes())?;
+    container_py.write_all(opendut_viper_py::container::container::PyContainerRuntimeProxy::GENERATED_PYTHON_CODE.as_bytes())?;
+    container_py.write_all(opendut_viper_py::container::container::PyContainerRuntimeImageProxy::GENERATED_PYTHON_CODE.as_bytes())?;
 
     let mut file_py = File::create("src/viper/file.py")?;
-    file_py.write_all(viper_py::file::file::FileHandler::GENERATED_PYTHON_CODE.as_bytes())?;
+    file_py.write_all(opendut_viper_py::file::file::FileHandler::GENERATED_PYTHON_CODE.as_bytes())?;
 
     let mut metadata_py = File::create("src/viper/metadata.py")?;
-    metadata_py.write_all(viper_py::metadata::metadata::PyMetadata::GENERATED_PYTHON_CODE.as_bytes())?;
+    metadata_py.write_all(opendut_viper_py::metadata::metadata::PyMetadata::GENERATED_PYTHON_CODE.as_bytes())?;
 
     let mut parameter_py = File::create("src/viper/parameter.py")?;
-    parameter_py.write_all(viper_py::parameters::parameters::PyParameterDict::GENERATED_PYTHON_CODE.as_bytes())?;
+    parameter_py.write_all(opendut_viper_py::parameters::parameters::PyParameterDict::GENERATED_PYTHON_CODE.as_bytes())?;
 
     let mut report_py = File::create("src/viper/report.py")?;
-    report_py.write_all(viper_py::report::report::PyReportProperties::GENERATED_PYTHON_CODE.as_bytes())?;
+    report_py.write_all(opendut_viper_py::report::report::PyReportProperties::GENERATED_PYTHON_CODE.as_bytes())?;
 
     let mut unittest_py = File::create("src/viper/unittest.py")?;
-    unittest_py.write_all(viper_py::unittest::unittest::TestCase::GENERATED_PYTHON_CODE.as_bytes())?;
+    unittest_py.write_all(opendut_viper_py::unittest::unittest::TestCase::GENERATED_PYTHON_CODE.as_bytes())?;
 
     let mut script_py = File::create("src/script.py")?;
     script_py.write_all(SCRIPT_PY_TEMPLATE.as_bytes())?;

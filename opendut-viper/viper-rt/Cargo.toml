@@ -14,13 +14,13 @@ git-source = []
 http-source = ["dep:reqwest"]
 types = []
 proto = ["error"]
-py = ["types", "dep:viper-py", "dep:rustpython-vm"]
+py = ["types", "dep:opendut-viper-py", "dep:rustpython-vm"]
 compile = ["events", "types", "py"]
 run = ["compile"]
 
 [dependencies]
 opendut-util = { workspace = true, features = ["proto"] }
-viper-py = { workspace = true, optional = true }
+opendut-viper-py = { workspace = true, optional = true }
 opendut-viper-containers = { workspace = true, optional = true }
 
 async-trait = { workspace = true }

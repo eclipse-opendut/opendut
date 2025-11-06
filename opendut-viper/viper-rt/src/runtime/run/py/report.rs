@@ -2,8 +2,8 @@ use std::cell::RefCell;
 use std::path::PathBuf;
 use rustpython_vm::{PyPayload, PyRef, PyResult, VirtualMachine};
 use std::rc::Rc;
-use viper_py::report::report::PyReportProperties;
-use viper_py::report::ReportPropertiesCollector;
+use opendut_viper_py::report::report::PyReportProperties;
+use opendut_viper_py::report::ReportPropertiesCollector;
 use crate::run::{ReportProperty, ReportPropertyValue};
 
 pub fn make_report_properties(collector: Rc<RefCell<Vec<ReportProperty>>>, vm: &VirtualMachine) -> PyRef<PyReportProperties> {

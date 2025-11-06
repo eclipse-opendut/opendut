@@ -11,9 +11,9 @@ use rustpython_vm::builtins::{PyClassMethod, PyModule, PyStr, PyType};
 use rustpython_vm::class::StaticType;
 use rustpython_vm::{AsObject, Interpreter};
 use rustpython_vm::{PyObjectRef, PyRef};
-use viper_py::metadata::metadata::PyMetadata;
-use viper_py::parameters::parameters::{PyBooleanParameterDescriptor, PyNumberParameterDescriptor, PyPeerInterfaceParameterDescriptor, PyTextParameterDescriptor};
-use viper_py::unittest::unittest::TestCase as PyTestCase;
+use opendut_viper_py::metadata::metadata::PyMetadata;
+use opendut_viper_py::parameters::parameters::{PyBooleanParameterDescriptor, PyNumberParameterDescriptor, PyPeerInterfaceParameterDescriptor, PyTextParameterDescriptor};
+use opendut_viper_py::unittest::unittest::TestCase as PyTestCase;
 use crate::runtime::types::compile::filter::{FilterError, IdentifierFilter};
 
 pub fn inspect(source_code: SourceCode, module: PyRef<PyModule>, interpreter: Interpreter, identifier_filter: &IdentifierFilter)

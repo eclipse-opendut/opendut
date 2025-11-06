@@ -4672,6 +4672,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "opendut-viper-py"
+version = "0.1.0"
+dependencies = [
+ "indexmap 2.12.0",
+ "opendut-viper-pygen",
+ "rustpython-vm",
+]
+
+[[package]]
+name = "opendut-viper-pygen"
+version = "0.1.0"
+dependencies = [
+ "indoc",
+ "proc-macro2",
+ "quote",
+ "rustpython-vm",
+ "syn 2.0.108",
+ "trybuild",
+]
+
+[[package]]
+name = "opendut-viper-pygen-example"
+version = "0.1.0"
+dependencies = [
+ "indoc",
+ "opendut-viper-pygen",
+]
+
+[[package]]
 name = "opendut-viper-rt"
 version = "0.1.0"
 dependencies = [
@@ -4683,6 +4712,7 @@ dependencies = [
  "indoc",
  "opendut-util",
  "opendut-viper-containers",
+ "opendut-viper-py",
  "pin-project-lite",
  "prost",
  "protobuf-src",
@@ -4697,7 +4727,6 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "url",
- "viper-py",
 ]
 
 [[package]]
@@ -8348,6 +8377,7 @@ dependencies = [
  "futures",
  "indicatif",
  "indoc",
+ "opendut-viper-py",
  "opendut-viper-rt",
  "serde",
  "tokio",
@@ -8356,7 +8386,6 @@ dependencies = [
  "toml 0.9.8",
  "tracing",
  "tracing-subscriber",
- "viper-py",
 ]
 
 [[package]]
@@ -8368,35 +8397,6 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
-]
-
-[[package]]
-name = "viper-py"
-version = "0.1.0"
-dependencies = [
- "indexmap 2.12.0",
- "rustpython-vm",
- "viper-pygen",
-]
-
-[[package]]
-name = "viper-pygen"
-version = "0.1.0"
-dependencies = [
- "indoc",
- "proc-macro2",
- "quote",
- "rustpython-vm",
- "syn 2.0.108",
- "trybuild",
-]
-
-[[package]]
-name = "viper-pygen-example"
-version = "0.1.0"
-dependencies = [
- "indoc",
- "viper-pygen",
 ]
 
 [[package]]

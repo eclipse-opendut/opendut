@@ -2,7 +2,7 @@ use rustpython_vm::*;
 
 #[pymodule]
 pub mod container {
-    use viper_pygen::pygen;
+    use opendut_viper_pygen::pygen;
     use rustpython_vm::*;
 
     #[pyattr]
