@@ -8,7 +8,7 @@ license.workspace = true
 default = ["error"]
 error = []
 events = []
-containers = ["dep:viper-containers", "viper-containers/docker"]
+containers = ["dep:opendut-viper-containers", "opendut-viper-containers/docker"]
 file-source = []
 git-source = []
 http-source = ["dep:reqwest"]
@@ -21,7 +21,7 @@ run = ["compile"]
 [dependencies]
 opendut-util = { workspace = true, features = ["proto"] }
 viper-py = { workspace = true, optional = true }
-viper-containers = { workspace = true, optional = true }
+opendut-viper-containers = { workspace = true, optional = true }
 
 async-trait = { workspace = true }
 futures = { workspace = true, features = ["executor"] }
@@ -39,7 +39,7 @@ protobuf-src = { workspace = true }
 tonic-prost-build = { workspace = true }
 
 [dev-dependencies]
-viper-containers = { workspace = true, features = ["mock"] }
+opendut-viper-containers = { workspace = true, features = ["mock"] }
 
 googletest = { workspace = true }
 httpmock = { workspace = true }

@@ -232,7 +232,7 @@ pub mod source {
 
 #[cfg(feature = "containers")]
 pub mod containers {
-    pub use viper_containers::{
+    pub use opendut_viper_containers::{
         ContainerRuntime,
         ContainerRuntimeError,
     };

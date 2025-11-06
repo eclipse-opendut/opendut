@@ -4662,6 +4662,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "opendut-viper-containers"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "bollard",
+ "futures",
+ "googletest",
+]
+
+[[package]]
 name = "opendut-viper-rt"
 version = "0.1.0"
 dependencies = [
@@ -4672,6 +4682,7 @@ dependencies = [
  "httpmock",
  "indoc",
  "opendut-util",
+ "opendut-viper-containers",
  "pin-project-lite",
  "prost",
  "protobuf-src",
@@ -4686,7 +4697,6 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "url",
- "viper-containers",
  "viper-py",
 ]
 
@@ -8347,16 +8357,6 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "viper-py",
-]
-
-[[package]]
-name = "viper-containers"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "bollard",
- "futures",
- "googletest",
 ]
 
 [[package]]

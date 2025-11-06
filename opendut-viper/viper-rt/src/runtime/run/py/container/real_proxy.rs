@@ -2,7 +2,7 @@ use rustpython_vm::builtins::{PyList, PyListRef, PyStr};
 use rustpython_vm::function::OptionalArg::Present;
 use rustpython_vm::function::{KwArgs, OptionalArg};
 use rustpython_vm::{PyObjectRef, PyResult, VirtualMachine};
-use viper_containers::{ContainerRuntime, ContainerRuntimeError, ContainerStateStatus, CreateContainerConfig, VolumeMountConfig};
+use opendut_viper_containers::{ContainerRuntime, ContainerRuntimeError, ContainerStateStatus, CreateContainerConfig, VolumeMountConfig};
 use viper_py::container::container::{PyContainerInspectInfo, PyContainerState, PyContainerStateStatus};
 use viper_py::container::ContainerRuntimeProxy;
 

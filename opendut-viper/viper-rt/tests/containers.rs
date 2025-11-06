@@ -2,7 +2,7 @@
 
 use googletest::prelude::*;
 use indoc::indoc;
-use viper_containers::{CreateContainerConfig, MockClientInvocation, VolumeMountConfig};
+use opendut_viper_containers::{CreateContainerConfig, MockClientInvocation, VolumeMountConfig};
 use opendut_viper_rt::compile::IdentifierFilter;
 use opendut_viper_rt::containers::ContainerRuntime;
 use opendut_viper_rt::events::emitter;

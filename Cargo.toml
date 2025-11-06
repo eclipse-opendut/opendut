@@ -55,7 +55,7 @@ opendut-util-core = { path = "opendut-util/opendut-util-core" }
 viper-py = { path = "opendut-viper/viper-py", default-features = false }
 viper-pygen = { path = "opendut-viper/viper-py/viper-pygen", default-features = false }
 opendut-viper-rt = { path = "opendut-viper/viper-rt", default-features = false }
-viper-containers = { path = "opendut-viper/viper-rt/viper-containers", default-features = false }
+opendut-viper-containers = { path = "opendut-viper/viper-rt/viper-containers", default-features = false }
 opendut-vpn = { path = "opendut-vpn" }
 opendut-vpn-netbird = { path = "opendut-vpn/opendut-vpn-netbird" }
 
