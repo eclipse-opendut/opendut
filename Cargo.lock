@@ -4663,7 +4663,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-viper-cli"
-version = "0.1.0"
+version = "0.8.0-alpha"
 dependencies = [
  "clap",
  "console",
@@ -4683,7 +4683,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-viper-containers"
-version = "0.1.0"
+version = "0.8.0-alpha"
 dependencies = [
  "async-trait",
  "bollard",
@@ -4693,7 +4693,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-viper-example"
-version = "0.1.0"
+version = "0.8.0-alpha"
 dependencies = [
  "indoc",
  "opendut-viper-rt",
@@ -4704,7 +4704,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-viper-py"
-version = "0.1.0"
+version = "0.8.0-alpha"
 dependencies = [
  "indexmap 2.12.0",
  "opendut-viper-pygen",
@@ -4713,7 +4713,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-viper-pygen"
-version = "0.1.0"
+version = "0.8.0-alpha"
 dependencies = [
  "indoc",
  "proc-macro2",
@@ -4725,7 +4725,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-viper-pygen-example"
-version = "0.1.0"
+version = "0.8.0-alpha"
 dependencies = [
  "indoc",
  "opendut-viper-pygen",
@@ -4733,7 +4733,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-viper-rt"
-version = "0.1.0"
+version = "0.8.0-alpha"
 dependencies = [
  "async-trait",
  "futures",
