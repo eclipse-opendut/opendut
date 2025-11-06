@@ -1,141 +1,97 @@
+use crate::service::process_manager::{AsyncProcessId, AsyncProcessManagerExt, AsyncProcessManagerRef};
+use opendut_model::peer::configuration::parameter::CanConnection;
+use opendut_model::peer::configuration::{ParameterId, ParameterValue};
 use std::collections::HashMap;
-use std::net::IpAddr;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
-use opendut_model::cluster::PeerClusterAssignment;
-use opendut_model::util::Port;
+use std::process::Stdio;
+use std::sync::Arc;
+use tokio::sync::Mutex;
+use tokio::process::Command;
 
-use tracing::{debug, error, info};
-use opendut_model::peer::PeerId;
-use opendut_model::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName};
+pub type CanManagerRef = Arc<Mutex<CanManager>>;
 
-use crate::service::can::cannelloni_manager::CannelloniManager;
-use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
+pub trait CanManagerExt {
+    fn new_shared() -> Self;
+}
 
-pub type CanManagerRef = Arc<CanManager>;
+impl CanManagerExt for CanManagerRef {
+    fn new_shared() -> CanManagerRef {
+        let process_manager = AsyncProcessManagerRef::new_shared();
+        Arc::new(Mutex::new(CanManager::create(process_manager)))
+    }
+}
 
 pub struct CanManager {
-    /*
-        The cannelloni_termination_token is used to signal the CannelloniManagers, running in separate threads, to terminate. Once it is read as 'true' 
-        by a CannelloniManager, it will terminate. 
-        The idea is that, with every Cluster Assignment pushed from CARL, a new AtomicBool ('false') is created that is shared between all newly started 
-        CannelloniManagers and the CanManager. 
-        Once a new Cluster Assignment is pushed, the CanManager sets the AtomicBool to 'true' and forgets it by replacing the content of 
-        cannelloni_termination_token with a new AtomicBool, to be used for the new generation of CannelloniManagers.
-        The old generation of CannelloniManagers can now read the old AtomicBool and terminate accordingly.
-     */
-    cannelloni_termination_token: Mutex<Arc<AtomicBool>>,
-    network_interface_manager: NetworkInterfaceManagerRef,
+    process_manager: AsyncProcessManagerRef,
+    process_map: HashMap<ParameterId, AsyncProcessId>,
 }
 
 impl CanManager {
-    pub fn create(network_interface_manager: NetworkInterfaceManagerRef) -> CanManagerRef {
-        Arc::new(Self {
-            cannelloni_termination_token: Mutex::new(Arc::new(AtomicBool::new(false))),
-            network_interface_manager
-        })
+    fn create(process_manager: AsyncProcessManagerRef) -> Self {
+        Self {
+            process_manager,
+            process_map: Default::default(),
+        }
     }
 
-    pub async fn setup_local_routing(
-        &self,
-        bridge_name: &NetworkInterfaceName,
-        local_can_interfaces: Vec<NetworkInterfaceDescriptor>,
-    ) -> Result<(), Error> {
-
-        self.create_can_bridge(bridge_name).await
-            .map_err(|cause| Error::Other { message: format!("Error while creating CAN bridge: {cause}") })?;
-
+    pub async fn spawn_process(&mut self, parameter: &CanConnection) -> anyhow::Result<()> {
+        let id = parameter.parameter_identifier();
+        let mut cmd = Command::new("cannelloni");
+        Self::fill_cannelloni_cmd(&parameter, &mut cmd);
+        let mut process_manager = self.process_manager.lock().await;
+        let process_id = process_manager.spawn("foo", &mut cmd).await?;
+        self.process_map.insert(id.clone(), process_id);
 
         Ok(())
     }
-    
-    async fn create_can_bridge(&self, bridge_name: &NetworkInterfaceName) -> anyhow::Result<()> {
 
-        if self.network_interface_manager.find_interface(bridge_name).await?.is_none() {
-            debug!("Creating CAN bridge '{bridge_name}'.");
-            let bridge = self.network_interface_manager.create_vcan_interface(bridge_name).await?;
-            self.network_interface_manager.set_interface_up(&bridge).await?;
+    pub async fn process_is_running(&mut self, parameter: &CanConnection) -> anyhow::Result<bool> {
+        let id = parameter.parameter_identifier();
+        if let Some(process_id) = self.process_map.get(&id) {
+            let mut process_manager = self.process_manager.lock().await;
+            Ok(process_manager.process_is_running(process_id))
         } else {
-            debug!("Not creating CAN bridge '{bridge_name}', because it already exists.");
+            Ok(false)
         }
-
-        Ok(())
     }
 
-    async fn terminate_cannelloni_managers(&self) {
-        self.cannelloni_termination_token.lock().unwrap().store(true, Ordering::Relaxed);
-    }
-    
-    pub async fn setup_remote_routing_client(&self, bridge_name: &NetworkInterfaceName, leader_ip: &IpAddr, leader_port: &Port) -> Result<(), Error> {
-
-        self.terminate_cannelloni_managers().await;
-
-        let mut guarded_termination_token = self.cannelloni_termination_token.lock().unwrap();
-        *guarded_termination_token = Arc::new(AtomicBool::new(false));
-
-        info!("Spawning cannelloni manager as client");
-
-        // TODO: The buffer timeout here should likely be configurable through CARL (cannot be 0)
-        let mut cannelloni_manager = CannelloniManager::new (
-            false,
-            bridge_name.clone(),
-            *leader_port,
-            *leader_ip,
-            Duration::from_micros(1),
-            guarded_termination_token.clone(),
-        );
-
-        tokio::spawn(async move {
-            cannelloni_manager.run().await;
-        });
-
-        Ok(())
-    }
-
-    pub async fn setup_remote_routing_server(
-        &self,
-        bridge_name: &NetworkInterfaceName,
-        remote_assignments: HashMap<PeerId, PeerClusterAssignment>,
-    ) -> Result<(), Error>  {
-
-        self.terminate_cannelloni_managers().await;
-
-        let mut guarded_termination_token = self.cannelloni_termination_token.lock().unwrap();
-        *guarded_termination_token = Arc::new(AtomicBool::new(false));
-
-
-        for (_, remote_assignment) in remote_assignments {
-            info!("Spawning cannelloni manager as server for peer with IP {}", remote_assignment.vpn_address);
-    
-            let mut cannelloni_manager = CannelloniManager::new(
-                true,
-                bridge_name.clone(),
-                remote_assignment.can_server_port,
-                remote_assignment.vpn_address,
-                Duration::from_micros(1),
-                guarded_termination_token.clone()
-            );
-
-            tokio::spawn(async move {
-                cannelloni_manager.run().await;
-            });
+    pub async fn terminate_process(&mut self, parameter: &CanConnection) -> anyhow::Result<()> {
+        let id = parameter.parameter_identifier();
+        let mut process_manager = self.process_manager.lock().await;
+        if let Some(process_id) = self.process_map.remove(&id) {
+            process_manager.terminate(process_id).await?;
         }
-
         Ok(())
     }
-}
 
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("Failure while invoking command line program '{command}': {cause}")]
-    CommandLineProgramExecution { command: String, cause: std::io::Error },
-    #[error("Failure while creating CAN route '{src}' -> '{dst}': {cause}")]
-    CanRouteCreation { src: NetworkInterfaceName, dst: NetworkInterfaceName, cause: String },
-    #[error("Failure while creating CAN route '{src}' -> '{dst}'")]
-    CanRouteCreationNoCause { src: NetworkInterfaceName, dst: NetworkInterfaceName},
-    #[error("Failure while flushing existing CAN routes: {cause}")]
-    CanRouteFlushing { cause: String },
-    #[error("{message}")]
-    Other { message: String },
+    /*
+     cannelloni with SCTP transport for CAN bus tunneling
+
+     With SCTP it is possible to use cannelloni over lossy connections where packet loss and re-ordering is very likely.
+     The SCTP implementation uses the server-client model (for now). One instance binds on a fixed port and the other instance (client) connects to it.
+
+     https://github.com/mguentner/cannelloni?tab=readme-ov-file#sctp
+     */
+    fn fill_cannelloni_cmd(parameter: &CanConnection, cmd: &mut Command) {
+        let instance_type = if parameter.local_is_server {"s"} else {"c"}; // act as server or client
+        let port_arg = if parameter.local_is_server {"-l"} else {"-r"};  // listening port or remote port
+        let port = if parameter.local_is_server {
+            parameter.local_port
+        } else {
+            parameter.remote_port
+        };
+
+        cmd.arg("-I")
+            .arg(parameter.can_interface_name.name())
+            .arg("-S")  // enable SCTP transport
+            .arg(instance_type)
+            .arg("-t")  // buffer timeout
+            .arg(parameter.buffer_timeout_microseconds.to_string())
+            .arg("-R")  // remote IP address
+            .arg(parameter.remote_ip.to_string())
+            .arg(port_arg)
+            .arg(port.to_string())
+            .stderr(Stdio::piped())
+            .stdout(Stdio::piped());
+    }
+
 }

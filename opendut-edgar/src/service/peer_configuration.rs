@@ -1,10 +1,8 @@
 use crate::service::can::can_manager::CanManagerRef;
-use crate::service::can::cluster_assignment;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use crate::service::tasks;
 use crate::service::test_execution::executor_manager::ExecutorManagerRef;
-use opendut_model::cluster::ClusterAssignment;
-use opendut_model::peer::configuration::{parameter, EdgePeerConfigurationState, ParameterField, PeerConfiguration};
+use opendut_model::peer::configuration::{EdgePeerConfigurationState, PeerConfiguration};
 use opendut_model::peer::PeerId;
 
 use std::fmt::Formatter;
@@ -82,28 +80,3 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> Colle
     result
 }
 
-#[tracing::instrument(skip_all)]
-async fn setup_can( //TODO make CAN idempotent
-    cluster_assignment: &Option<ClusterAssignment>,
-    device_interfaces: ParameterField<parameter::DeviceInterface>,
-    self_id: PeerId,
-    can_manager: CanManagerRef,
-) -> anyhow::Result<()> {
-
-    match cluster_assignment {
-        Some(cluster_assignment) => {
-            cluster_assignment::setup_can_interfaces(
-                cluster_assignment,
-                self_id,
-                device_interfaces,
-                can_manager,
-            ).await
-            .inspect_err(|error| error!("Failed to configure CAN interfaces: {error}"))?;
-        }
-        None => {
-            debug!("No ClusterAssignment in peer configuration, not setting up CAN.");
-            //TODO teardown cluster, if configuration changed
-        }
-    }
-    Ok(())
-}

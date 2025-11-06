@@ -17,7 +17,7 @@ use opendut_model::peer::configuration::EdgePeerConfigurationState;
 use opendut_model::peer::PeerId;
 use opendut_util::settings::LoadedConfig;
 use crate::common::carl;
-use crate::service::can::can_manager::CanManager;
+use crate::service::can::can_manager::{CanManagerRef, CanManagerExt};
 use crate::service::network_interface::manager::{NetworkInterfaceManager, NetworkInterfaceManagerRef};
 use crate::service::network_metrics::manager::{NetworkMetricsManager, NetworkMetricsManagerRef};
 use crate::service::peer_configuration::{ApplyPeerConfigurationParams, NetworkInterfaceManagement};
@@ -54,7 +54,7 @@ impl PeerMessagingClient {
                 let network_interface_management_enabled = settings.config.get::<bool>("network.interface.management.enabled")?;
                 if network_interface_management_enabled {
                     let network_interface_manager: NetworkInterfaceManagerRef = NetworkInterfaceManager::create()?;
-                    let can_manager = CanManager::create(Arc::clone(&network_interface_manager));
+                    let can_manager = CanManagerRef::new_shared();
 
                     NetworkInterfaceManagement::Enabled { network_interface_manager, can_manager }
                 } else {

@@ -31,7 +31,7 @@ impl TaskResolver for ServiceTaskResolver {
     fn resolve_tasks(&self, parameter: &ParameterVariant) -> Vec<Box<dyn TaskAbsent>> {
         let mut tasks: Vec<Box<dyn TaskAbsent>> = vec![];
 
-        if let NetworkInterfaceManagement::Enabled { network_interface_manager, .. } = &self.network_interface_management {
+        if let NetworkInterfaceManagement::Enabled { network_interface_manager, can_manager } = &self.network_interface_management {
             let network_interface_manager = network_interface_manager.clone();
             match parameter {
                 ParameterVariant::DeviceInterface(device_interface) => {
@@ -57,7 +57,9 @@ impl TaskResolver for ServiceTaskResolver {
                 ParameterVariant::RemotePeerConnectionCheck(_remote_peer_connection_check) => {
                     // TODO: Handle remote peer connection checks in its own tasks
                 }
-                ParameterVariant::CanConnections(_) => {}
+                ParameterVariant::CanConnections(parameter) => {
+                    tasks.push(Box::new(tasks::can_connection::CanConnection { parameter: parameter.value.clone(), can_manager: can_manager.clone() }));
+                }
                 ParameterVariant::CanBridges(parameter) => {
                     tasks.push(Box::new(tasks::can_virtual_device::CanCreateVirtualDevice { name: parameter.value.name.clone(), network_interface_manager }));
                 }

@@ -204,7 +204,7 @@ pub struct AsyncProcessManager {
 }
 
 impl AsyncProcessManager {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             processes: HashMap::new(),
             next_id: 0,
@@ -424,8 +424,8 @@ impl AsyncProcessManager {
     }
 
     /// Check if a process is still running
-    pub fn process_is_running(&mut self, id: AsyncProcessId) -> bool {
-        if let Some(process) = self.processes.get_mut(&id) {
+    pub fn process_is_running(&mut self, id: &AsyncProcessId) -> bool {
+        if let Some(process) = self.processes.get_mut(id) {
             match process.child.try_wait() {
                 Ok(Some(_)) => {
                     debug!("Async process '{}' has exited", process.name);
@@ -483,14 +483,14 @@ mod tests {
         // Spawn a long-running process
         let id = manager.spawn("sleep", Command::new("sleep").arg("10")).await.unwrap();
 
-        assert!(manager.process_is_running(id));
+        assert!(manager.process_is_running(&id));
         assert_eq!(manager.len(), 1);
 
         // Terminate it
         manager.terminate(id).await.unwrap();
 
         tokio::time::sleep(Duration::from_millis(200)).await;
-        assert!(!manager.process_is_running(id));
+        assert!(!manager.process_is_running(&id));
         assert_eq!(manager.len(), 0);
     }
 

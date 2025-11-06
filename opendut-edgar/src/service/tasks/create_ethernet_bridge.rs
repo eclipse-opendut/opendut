@@ -98,7 +98,7 @@ impl TaskAbsent for CreateEthernetBridge {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::service::can::can_manager::CanManager;
+    use crate::service::can::can_manager::{CanManagerRef, CanManagerExt};
     use crate::service::network_interface::manager::NetworkInterfaceManager;
     use crate::service::network_metrics::manager::{NetworkMetricsManager, NetworkMetricsOptions};
     use crate::service::peer_configuration::NetworkInterfaceManagement;
@@ -195,7 +195,7 @@ mod tests {
                 ParameterTarget::Present,
                 vec![],
             );
-            let can_manager = CanManager::create(Arc::clone(&network_interface_manager));
+            let can_manager = CanManagerRef::new_shared();
             let network_interface_management = NetworkInterfaceManagement::Enabled {
                 network_interface_manager: network_interface_manager.clone(),
                 can_manager
