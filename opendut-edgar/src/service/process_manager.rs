@@ -3,6 +3,7 @@ use std::sync::Arc;
 use tokio::process::{Child, Command};
 use tokio::sync::{mpsc, Mutex};
 use tokio::time::Duration;
+use std::process::Stdio;
 use tracing::{debug, error, info, warn};
 
 /// A unique identifier for a managed async process
@@ -26,6 +27,23 @@ pub enum RestartPolicy {
     OnFailure,
 }
 
+/// Configuration for process output handling
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OutputConfig {
+    /// Capture stdout and stderr for logging when the process exits
+    Capture,
+    /// Inherit stdout and stderr from parent process
+    Inherit,
+    /// Discard all output (redirect to /dev/null)
+    Discard,
+}
+
+impl Default for OutputConfig {
+    fn default() -> Self {
+        Self::Capture
+    }
+}
+
 /// Configuration for a managed process with restart capability
 #[derive(Clone)]
 pub struct ProcessConfig {
@@ -33,6 +51,7 @@ pub struct ProcessConfig {
     command_builder: Arc<dyn Fn() -> Command + Send + Sync>,
     restart_policy: RestartPolicy,
     restart_delay: Duration,
+    output_config: OutputConfig,
 }
 
 impl ProcessConfig {
@@ -42,6 +61,7 @@ impl ProcessConfig {
             command_builder: Arc::new(command_builder),
             restart_policy: RestartPolicy::Never,
             restart_delay: Duration::from_secs(1),
+            output_config: OutputConfig::default(),
         }
     }
 
@@ -55,8 +75,31 @@ impl ProcessConfig {
         self
     }
 
+    pub fn with_output_config(mut self, config: OutputConfig) -> Self {
+        self.output_config = config;
+        self
+    }
+
     fn build_command(&self) -> Command {
-        (self.command_builder)()
+        let mut command = (self.command_builder)();
+
+        // Configure stdout and stderr based on output config
+        match self.output_config {
+            OutputConfig::Capture => {
+                command.stdout(Stdio::piped());
+                command.stderr(Stdio::piped());
+            }
+            OutputConfig::Inherit => {
+                command.stdout(Stdio::inherit());
+                command.stderr(Stdio::inherit());
+            }
+            OutputConfig::Discard => {
+                command.stdout(Stdio::null());
+                command.stderr(Stdio::null());
+            }
+        }
+
+        command
     }
 }
 
