@@ -69,6 +69,7 @@ pub struct CanConnection {
     pub remote_ip: IpAddr,
     pub remote_port: Port,
     pub local_port: Port,
+    pub can_interface_name: NetworkInterfaceName,
     /// starts a CAN server for other peers to connect to
     pub local_is_server: bool,
     pub buffer_timeout_microseconds: u64,
