@@ -4550,6 +4550,7 @@ dependencies = [
  "googletest",
  "indoc",
  "opendut-util",
+ "opendut-viper-rt",
  "pem",
  "prost",
  "prost-types",
@@ -4565,7 +4566,6 @@ dependencies = [
  "tonic-prost-build",
  "url",
  "uuid",
- "viper-rt",
 ]
 
 [[package]]
@@ -4659,6 +4659,35 @@ dependencies = [
  "pem",
  "reqwest",
  "thiserror 2.0.17",
+]
+
+[[package]]
+name = "opendut-viper-rt"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "futures",
+ "glob",
+ "googletest",
+ "httpmock",
+ "indoc",
+ "opendut-util",
+ "pin-project-lite",
+ "prost",
+ "protobuf-src",
+ "repo_path",
+ "reqwest",
+ "rustpython-vm",
+ "tempfile",
+ "tokio",
+ "tokio-stream",
+ "tokio-util",
+ "tonic-prost-build",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+ "viper-containers",
+ "viper-py",
 ]
 
 [[package]]
@@ -8309,6 +8338,7 @@ dependencies = [
  "futures",
  "indicatif",
  "indoc",
+ "opendut-viper-rt",
  "serde",
  "tokio",
  "tokio-stream",
@@ -8317,7 +8347,6 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "viper-py",
- "viper-rt",
 ]
 
 [[package]]
@@ -8335,10 +8364,10 @@ name = "viper-example"
 version = "0.1.0"
 dependencies = [
  "indoc",
+ "opendut-viper-rt",
  "tokio",
  "tracing",
  "tracing-subscriber",
- "viper-rt",
 ]
 
 [[package]]
@@ -8368,35 +8397,6 @@ version = "0.1.0"
 dependencies = [
  "indoc",
  "viper-pygen",
-]
-
-[[package]]
-name = "viper-rt"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "futures",
- "glob",
- "googletest",
- "httpmock",
- "indoc",
- "opendut-util",
- "pin-project-lite",
- "prost",
- "protobuf-src",
- "repo_path",
- "reqwest",
- "rustpython-vm",
- "tempfile",
- "tokio",
- "tokio-stream",
- "tokio-util",
- "tonic-prost-build",
- "tracing",
- "tracing-subscriber",
- "url",
- "viper-containers",
- "viper-py",
 ]
 
 [[package]]

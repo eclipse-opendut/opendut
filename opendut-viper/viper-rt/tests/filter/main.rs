@@ -1,17 +1,17 @@
 use googletest::prelude::*;
 use indoc::indoc;
 use repo_path::repo_path;
-use viper_rt::common::TestSuiteIdentifier;
-use viper_rt::compile::IdentifierFilter;
-use viper_rt::events::emitter;
-use viper_rt::run::{Outcome, ParameterBindings, Report};
-use viper_rt::source::Source;
-use viper_rt::ViperRuntime;
+use opendut_viper_rt::common::TestSuiteIdentifier;
+use opendut_viper_rt::compile::IdentifierFilter;
+use opendut_viper_rt::events::emitter;
+use opendut_viper_rt::run::{Outcome, ParameterBindings, Report};
+use opendut_viper_rt::source::Source;
+use opendut_viper_rt::ViperRuntime;
 
 #[tokio::test]
 async fn test_running_specific_suite() -> Result<()> {
     let runtime = ViperRuntime::builder()
-        .with_source_loader(viper_rt::source::loaders::SimpleFileSourceLoader)
+        .with_source_loader(opendut_viper_rt::source::loaders::SimpleFileSourceLoader)
         .build()?;
 
     let filter = "success";

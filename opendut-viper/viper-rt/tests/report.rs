@@ -1,11 +1,11 @@
 use googletest::prelude::*;
 use indoc::indoc;
 use std::path::PathBuf;
-use viper_rt::compile::IdentifierFilter;
-use viper_rt::events::emitter;
-use viper_rt::run::{ParameterBindings, Report, ReportProperty, ReportPropertyValue};
-use viper_rt::source::Source;
-use viper_rt::ViperRuntime;
+use opendut_viper_rt::compile::IdentifierFilter;
+use opendut_viper_rt::events::emitter;
+use opendut_viper_rt::run::{ParameterBindings, Report, ReportProperty, ReportPropertyValue};
+use opendut_viper_rt::source::Source;
+use opendut_viper_rt::ViperRuntime;
 
 #[tokio::test]
 async fn test_report_properties() -> Result<()> {

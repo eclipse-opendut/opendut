@@ -6,8 +6,8 @@ use std::collections::HashMap;
 use std::error::Error;
 use futures::{Stream, StreamExt};
 use indicatif::{MultiProgress, ProgressBar};
-use viper_rt::run::{RunEvent, TestSuiteRunState};
-use viper_rt::compile::{CompilationSummary, CompileEvent};
+use opendut_viper_rt::run::{RunEvent, TestSuiteRunState};
+use opendut_viper_rt::compile::{CompilationSummary, CompileEvent};
 
 #[derive(Debug)]
 #[allow(clippy::enum_variant_names)]

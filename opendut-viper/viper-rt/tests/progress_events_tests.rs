@@ -3,12 +3,12 @@ use googletest::prelude::*;
 use indoc::indoc;
 use tokio_stream::wrappers::ReceiverStream;
 use tokio_util::sync::PollSender;
-use viper_rt::common::{TestCaseIdentifier, TestIdentifier};
-use viper_rt::compile::{Compilation, CompilationError, CompilationErrorKind, CompilationSummary, CompileEvent, CompileResult, CompiledTest, CompiledTestCase, CompiledTestSuite, IdentifierFilter};
-use viper_rt::events::{emitter, EventEmitter};
-use viper_rt::run::{ParameterBindings, RunError, RunErrorKind, RunEvent, RunState, TestCaseRunState, TestRunState, TestSuiteRunState};
-use viper_rt::source::Source;
-use viper_rt::ViperRuntime;
+use opendut_viper_rt::common::{TestCaseIdentifier, TestIdentifier};
+use opendut_viper_rt::compile::{Compilation, CompilationError, CompilationErrorKind, CompilationSummary, CompileEvent, CompileResult, CompiledTest, CompiledTestCase, CompiledTestSuite, IdentifierFilter};
+use opendut_viper_rt::events::{emitter, EventEmitter};
+use opendut_viper_rt::run::{ParameterBindings, RunError, RunErrorKind, RunEvent, RunState, TestCaseRunState, TestRunState, TestSuiteRunState};
+use opendut_viper_rt::source::Source;
+use opendut_viper_rt::ViperRuntime;
 
 async fn compile_test(runtime: &ViperRuntime, source: &Source, emitter: &mut dyn EventEmitter<CompileEvent>) -> CompileResult<Compilation> {
     runtime.compile(&source, emitter, &IdentifierFilter::default()).await

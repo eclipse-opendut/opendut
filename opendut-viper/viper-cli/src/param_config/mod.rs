@@ -2,8 +2,8 @@ mod error;
 
 use std::collections::HashMap;
 use serde::Deserialize;
-use viper_rt::compile::{ParameterDescriptor, ParameterName};
-use viper_rt::run::{BindParameterError, BindingValue, Incomplete, ParameterBindings};
+use opendut_viper_rt::compile::{ParameterDescriptor, ParameterName};
+use opendut_viper_rt::run::{BindParameterError, BindingValue, Incomplete, ParameterBindings};
 
 pub use error::{
     IncompleteBindingsError,

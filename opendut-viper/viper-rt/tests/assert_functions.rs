@@ -1,10 +1,10 @@
 use googletest::prelude::*;
 use indoc::indoc;
-use viper_rt::compile::{Compilation, CompileResult, IdentifierFilter};
-use viper_rt::events::emitter;
-use viper_rt::run::{Outcome, ParameterBindings, Report};
-use viper_rt::source::Source;
-use viper_rt::ViperRuntime;
+use opendut_viper_rt::compile::{Compilation, CompileResult, IdentifierFilter};
+use opendut_viper_rt::events::emitter;
+use opendut_viper_rt::run::{Outcome, ParameterBindings, Report};
+use opendut_viper_rt::source::Source;
+use opendut_viper_rt::ViperRuntime;
 
 async fn compile_test(runtime: &ViperRuntime, source: &Source) -> CompileResult<Compilation> {
     runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await

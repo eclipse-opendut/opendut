@@ -5,13 +5,13 @@ use googletest::prelude::*;
 use httpmock::prelude::*;
 use httpmock::MockServer;
 use indoc::indoc;
-use viper_rt::common::TestSuiteIdentifier;
-use viper_rt::compile::IdentifierFilter;
-use viper_rt::events::emitter;
-use viper_rt::run::ParameterBindings;
-use viper_rt::source::loaders::HttpSourceLoader;
-use viper_rt::source::Source;
-use viper_rt::ViperRuntime;
+use opendut_viper_rt::common::TestSuiteIdentifier;
+use opendut_viper_rt::compile::IdentifierFilter;
+use opendut_viper_rt::events::emitter;
+use opendut_viper_rt::run::ParameterBindings;
+use opendut_viper_rt::source::loaders::HttpSourceLoader;
+use opendut_viper_rt::source::Source;
+use opendut_viper_rt::ViperRuntime;
 
 #[tokio::test]
 async fn test_that_HttpSourceLoader_fetches_a_testsuite_via_http() -> Result<()> {

@@ -1,11 +1,11 @@
 use googletest::prelude::*;
 use indoc::indoc;
-use viper_rt::common::TestSuiteIdentifier;
-use viper_rt::compile::{Compilation, CompileResult, IdentifierFilter};
-use viper_rt::events::emitter;
-use viper_rt::run::{Outcome, ParameterBindings, Report};
-use viper_rt::source::Source;
-use viper_rt::ViperRuntime;
+use opendut_viper_rt::common::TestSuiteIdentifier;
+use opendut_viper_rt::compile::{Compilation, CompileResult, IdentifierFilter};
+use opendut_viper_rt::events::emitter;
+use opendut_viper_rt::run::{Outcome, ParameterBindings, Report};
+use opendut_viper_rt::source::Source;
+use opendut_viper_rt::ViperRuntime;
 
 async fn compile_test(runtime: &ViperRuntime, source: &Source) -> CompileResult<Compilation> {
     runtime.compile(&source, &mut emitter::drain(), &IdentifierFilter::default()).await
@@ -55,7 +55,7 @@ async fn test_that_compile_and_run_properly_work() -> Result<()> {
 async fn test_that_compile_and_run_work_for_a_file_source() -> Result<()> {
 
     let runtime = ViperRuntime::builder()
-        .with_source_loader(viper_rt::source::loaders::SimpleFileSourceLoader)
+        .with_source_loader(opendut_viper_rt::source::loaders::SimpleFileSourceLoader)
         .build()?;
 
     let path = std::path::absolute(std::path::PathBuf::from("tests/minimal.py"))?;

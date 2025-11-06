@@ -25,7 +25,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         builder.extern_path(
             ".opendut.viper.rt",
-            "::viper_rt::proto"
+            "::opendut_viper_rt::proto"
         );
 
         includes

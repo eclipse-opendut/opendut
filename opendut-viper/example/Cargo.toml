@@ -5,7 +5,7 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-viper-rt = { workspace = true, features = [ "error", "containers" ] }
+opendut-viper-rt = { workspace = true, features = [ "error", "containers" ] }
 indoc = { workspace = true }
 tokio = { workspace = true, features = [ "rt-multi-thread", "macros" ] }
 tracing = { workspace = true }

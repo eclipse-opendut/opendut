@@ -60,7 +60,7 @@ impl IntoIterator for ParameterDescriptors {
 ///
 /// # Examples
 /// ```
-/// use viper_rt::compile::ParameterName;
+/// use opendut_viper_rt::compile::ParameterName;
 ///
 /// let parameter_name = ParameterName::try_from("awesome_parameter").expect("Valid parameter name");
 /// ```
@@ -71,7 +71,7 @@ impl IntoIterator for ParameterDescriptors {
 ///
 /// **Must not be empty:**
 /// ```should_panic
-/// # use viper_rt::compile::ParameterName;
+/// # use opendut_viper_rt::compile::ParameterName;
 /// #
 /// ParameterName::try_from("").unwrap();
 /// ```
@@ -79,11 +79,11 @@ impl IntoIterator for ParameterDescriptors {
 /// **Must only contain legal characters:**
 ///
 /// ```should_panic
-/// # use viper_rt::compile::ParameterName;
+/// # use opendut_viper_rt::compile::ParameterName;
 /// ParameterName::try_from("Hello World").unwrap();
 /// ```
 /// ```should_panic
-/// # use viper_rt::compile::ParameterName;
+/// # use opendut_viper_rt::compile::ParameterName;
 /// ParameterName::try_from("Hello%World").unwrap();
 /// ```
 /// See [`ALLOWED_CHARACTERS`] for all allowed characters.

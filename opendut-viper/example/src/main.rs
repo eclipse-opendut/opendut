@@ -2,13 +2,13 @@ use indoc::indoc;
 use std::error::Error;
 use std::ops::Not;
 use tracing::info;
-use viper_rt::compile::{IdentifierFilter, ParameterName};
-use viper_rt::containers::ContainerRuntime;
-use viper_rt::events::emitter;
-use viper_rt::run::{BindingValue, Outcome, ParameterBindings, Report};
-use viper_rt::source::loaders::EmbeddedSourceLoader;
-use viper_rt::source::Source;
-use viper_rt::ViperRuntime;
+use opendut_viper_rt::compile::{IdentifierFilter, ParameterName};
+use opendut_viper_rt::containers::ContainerRuntime;
+use opendut_viper_rt::events::emitter;
+use opendut_viper_rt::run::{BindingValue, Outcome, ParameterBindings, Report};
+use opendut_viper_rt::source::loaders::EmbeddedSourceLoader;
+use opendut_viper_rt::source::Source;
+use opendut_viper_rt::ViperRuntime;
 
 #[tokio::main()]
 async fn main() -> Result<(), Box<dyn Error>> {

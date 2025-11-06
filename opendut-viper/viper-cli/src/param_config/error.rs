@@ -1,5 +1,5 @@
 use std::fmt::{Display, Formatter};
-use viper_rt::run::{BindParameterError, IncompleteParameterBindingsError};
+use opendut_viper_rt::run::{BindParameterError, IncompleteParameterBindingsError};
 
 #[derive(Debug)]
 pub struct ParameterTomlError {

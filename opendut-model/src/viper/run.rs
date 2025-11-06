@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use viper_rt::common::TestSuiteIdentifier;
+use opendut_viper_rt::common::TestSuiteIdentifier;
 use crate::create_id_type;
 use crate::viper::TestSuiteSourceId;
 

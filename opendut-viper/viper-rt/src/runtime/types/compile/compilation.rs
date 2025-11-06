@@ -15,11 +15,11 @@ use std::fmt::Debug;
 /// Alternatively, a `Compilation` can be split to take ownership of the parts:
 /// ```
 /// # use indoc::indoc;
-/// # use viper_rt::events::emitter;
-/// # use viper_rt::run::{Report, Outcome, ParameterBindings};
-/// # use viper_rt::source::Source;
-/// # use viper_rt::ViperRuntime;
-/// # use viper_rt::compile::IdentifierFilter;
+/// # use opendut_viper_rt::events::emitter;
+/// # use opendut_viper_rt::run::{Report, Outcome, ParameterBindings};
+/// # use opendut_viper_rt::source::Source;
+/// # use opendut_viper_rt::ViperRuntime;
+/// # use opendut_viper_rt::compile::IdentifierFilter;
 /// #
 /// # #[tokio::main]
 /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {

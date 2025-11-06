@@ -1,8 +1,8 @@
 use std::error::Error;
 use console::style;
 use indicatif::{ProgressBar, ProgressStyle};
-use viper_rt::common::Identifier;
-use viper_rt::compile::CompilationSummary;
+use opendut_viper_rt::common::Identifier;
+use opendut_viper_rt::compile::CompilationSummary;
 use crate::console::{summary, RenderState};
 
 pub fn initial_render(render_state: &mut RenderState) -> Result<(), Box<dyn Error>> {

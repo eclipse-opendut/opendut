@@ -30,11 +30,11 @@
 //!
 //! Here's an example:
 //! ```
-//! # use viper_rt::events::emitter;
-//! # use viper_rt::run::{Report, Outcome, ParameterBindings};
-//! # use viper_rt::source::Source;
-//! # use viper_rt::ViperRuntime;
-//! # use viper_rt::compile::IdentifierFilter;
+//! # use opendut_viper_rt::events::emitter;
+//! # use opendut_viper_rt::run::{Report, Outcome, ParameterBindings};
+//! # use opendut_viper_rt::source::Source;
+//! # use opendut_viper_rt::ViperRuntime;
+//! # use opendut_viper_rt::compile::IdentifierFilter;
 //! # use indoc::indoc;
 //! #
 //! # #[tokio::main]
@@ -82,11 +82,11 @@
 //! In addition to the test methods, you can also define `setUp`/`setUpClass` and `tearDown`/`tearDownClass` methods.
 //!
 //! ```
-//! # use viper_rt::events::emitter;
-//! # use viper_rt::run::{Report, Outcome, ParameterBindings};
-//! # use viper_rt::source::Source;
-//! # use viper_rt::ViperRuntime;
-//! # use viper_rt::compile::IdentifierFilter;
+//! # use opendut_viper_rt::events::emitter;
+//! # use opendut_viper_rt::run::{Report, Outcome, ParameterBindings};
+//! # use opendut_viper_rt::source::Source;
+//! # use opendut_viper_rt::ViperRuntime;
+//! # use opendut_viper_rt::compile::IdentifierFilter;
 //! # use indoc::indoc;
 //! #
 //! # #[tokio::main]
@@ -125,11 +125,11 @@
 //!
 //! The example blow shows the common assertions:
 //! ```
-//! # use viper_rt::events::emitter;
-//! # use viper_rt::run::{Report, Outcome, ParameterBindings};
-//! # use viper_rt::source::Source;
-//! # use viper_rt::ViperRuntime;
-//! # use viper_rt::compile::IdentifierFilter;
+//! # use opendut_viper_rt::events::emitter;
+//! # use opendut_viper_rt::run::{Report, Outcome, ParameterBindings};
+//! # use opendut_viper_rt::source::Source;
+//! # use opendut_viper_rt::ViperRuntime;
+//! # use opendut_viper_rt::compile::IdentifierFilter;
 //! # use indoc::indoc;
 //! #
 //! # #[tokio::main]
@@ -162,12 +162,12 @@
 //! relevant documentation. See [here](crate::compile::Metadata) for a full list of fields.
 //!
 //! ```
-//! # use viper_rt::events::emitter;
-//! # use viper_rt::run::{Report, Outcome, ParameterBindings};
-//! # use viper_rt::compile::Metadata;
-//! # use viper_rt::compile::IdentifierFilter;
-//! # use viper_rt::source::Source;
-//! # use viper_rt::ViperRuntime;
+//! # use opendut_viper_rt::events::emitter;
+//! # use opendut_viper_rt::run::{Report, Outcome, ParameterBindings};
+//! # use opendut_viper_rt::compile::Metadata;
+//! # use opendut_viper_rt::compile::IdentifierFilter;
+//! # use opendut_viper_rt::source::Source;
+//! # use opendut_viper_rt::ViperRuntime;
 //! # use indoc::indoc;
 //! # use googletest::prelude::*;
 //! #
@@ -213,13 +213,13 @@
 //! Here's an example:
 //!
 //! ```
-//! # use viper_rt::events::emitter;
+//! # use opendut_viper_rt::events::emitter;
 //! # use indoc::indoc;
-//! # use viper_rt::compile::ParameterName;
-//! # use viper_rt::run::{BindingValue , ParameterBindings, Report};
-//! # use viper_rt::source::Source;
-//! # use viper_rt::ViperRuntime;
-//! # use viper_rt::compile::IdentifierFilter;
+//! # use opendut_viper_rt::compile::ParameterName;
+//! # use opendut_viper_rt::run::{BindingValue , ParameterBindings, Report};
+//! # use opendut_viper_rt::source::Source;
+//! # use opendut_viper_rt::ViperRuntime;
+//! # use opendut_viper_rt::compile::IdentifierFilter;
 //! #
 //! # #[tokio::main]
 //! # async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -264,12 +264,12 @@
 //! For text input values. Useful for configuring strings like names, messages, or identifiers in tests.
 //!
 //! ```
-//! # use viper_rt::events::emitter;
-//! # use viper_rt::run::{Report, Outcome, ParameterBindings, BindingValue};
-//! # use viper_rt::compile::ParameterName;
-//! # use viper_rt::source::Source;
-//! # use viper_rt::ViperRuntime;
-//! # use viper_rt::compile::IdentifierFilter;
+//! # use opendut_viper_rt::events::emitter;
+//! # use opendut_viper_rt::run::{Report, Outcome, ParameterBindings, BindingValue};
+//! # use opendut_viper_rt::compile::ParameterName;
+//! # use opendut_viper_rt::source::Source;
+//! # use opendut_viper_rt::ViperRuntime;
+//! # use opendut_viper_rt::compile::IdentifierFilter;
 //! # use indoc::indoc;
 //! #
 //! # #[tokio::main]
@@ -305,12 +305,12 @@
 //! For numeric input values. Commonly used to configure numeric settings like ports, counts, or numeric thresholds in tests.
 //!
 //! ```
-//! # use viper_rt::events::emitter;
-//! # use viper_rt::run::{Report, Outcome, ParameterBindings, BindingValue};
-//! # use viper_rt::compile::ParameterName;
-//! # use viper_rt::source::Source;
-//! # use viper_rt::ViperRuntime;
-//! # use viper_rt::compile::IdentifierFilter;
+//! # use opendut_viper_rt::events::emitter;
+//! # use opendut_viper_rt::run::{Report, Outcome, ParameterBindings, BindingValue};
+//! # use opendut_viper_rt::compile::ParameterName;
+//! # use opendut_viper_rt::source::Source;
+//! # use opendut_viper_rt::ViperRuntime;
+//! # use opendut_viper_rt::compile::IdentifierFilter;
 //! # use indoc::indoc;
 //! #
 //! # #[tokio::main]
@@ -347,12 +347,12 @@
 //! For defining boolean input values (true/false). Useful for controlling test behavior through flags and conditional test execution.
 //!
 //! ```
-//! # use viper_rt::events::emitter;
-//! # use viper_rt::run::{Report, Outcome, ParameterBindings, BindingValue};
-//! # use viper_rt::compile::ParameterName;
-//! # use viper_rt::source::Source;
-//! # use viper_rt::ViperRuntime;
-//! # use viper_rt::compile::IdentifierFilter;
+//! # use opendut_viper_rt::events::emitter;
+//! # use opendut_viper_rt::run::{Report, Outcome, ParameterBindings, BindingValue};
+//! # use opendut_viper_rt::compile::ParameterName;
+//! # use opendut_viper_rt::source::Source;
+//! # use opendut_viper_rt::ViperRuntime;
+//! # use opendut_viper_rt::compile::IdentifierFilter;
 //! # use indoc::indoc;
 //! #
 //! # #[tokio::main]
@@ -394,11 +394,11 @@
 //! at once using `self.report.properties()` ([kwargs](https://book.pythontips.com/en/latest/args_and_kwargs.html)).
 //!
 //! ```
-//! # use viper_rt::events::emitter;
-//! # use viper_rt::run::{Report, Outcome, ParameterBindings};
-//! # use viper_rt::source::Source;
-//! # use viper_rt::ViperRuntime;
-//! # use viper_rt::compile::IdentifierFilter;
+//! # use opendut_viper_rt::events::emitter;
+//! # use opendut_viper_rt::run::{Report, Outcome, ParameterBindings};
+//! # use opendut_viper_rt::source::Source;
+//! # use opendut_viper_rt::ViperRuntime;
+//! # use opendut_viper_rt::compile::IdentifierFilter;
 //! # use indoc::indoc;
 //! #
 //! # #[tokio::main]
@@ -431,11 +431,11 @@
 //! attach files individually using `self.report.file()` or multiple files at once using `self.report.files()`.
 //!
 //! ```
-//! # use viper_rt::events::emitter;
-//! # use viper_rt::run::{Report, Outcome, ParameterBindings};
-//! # use viper_rt::source::Source;
-//! # use viper_rt::ViperRuntime;
-//! # use viper_rt::compile::IdentifierFilter;
+//! # use opendut_viper_rt::events::emitter;
+//! # use opendut_viper_rt::run::{Report, Outcome, ParameterBindings};
+//! # use opendut_viper_rt::source::Source;
+//! # use opendut_viper_rt::ViperRuntime;
+//! # use opendut_viper_rt::compile::IdentifierFilter;
 //! # use indoc::indoc;
 //! #
 //! # #[tokio::main]
@@ -476,11 +476,11 @@
 //! Here's an example:
 //!
 //! ```
-//! # use viper_rt::events::emitter;
-//! # use viper_rt::run::{Report, Outcome, ParameterBindings};
-//! # use viper_rt::source::Source;
-//! # use viper_rt::ViperRuntime;
-//! # use viper_rt::compile::IdentifierFilter;
+//! # use opendut_viper_rt::events::emitter;
+//! # use opendut_viper_rt::run::{Report, Outcome, ParameterBindings};
+//! # use opendut_viper_rt::source::Source;
+//! # use opendut_viper_rt::ViperRuntime;
+//! # use opendut_viper_rt::compile::IdentifierFilter;
 //! # use indoc::indoc;
 //! #
 //! # #[tokio::main]

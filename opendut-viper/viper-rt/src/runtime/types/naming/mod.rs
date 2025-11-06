@@ -31,11 +31,11 @@ pub trait Identifier : Debug + Display {
 /// # Example
 /// ```
 /// use std::path::{absolute, PathBuf};
-/// use viper_rt::source::loaders::SimpleFileSourceLoader;
-/// use viper_rt::source::Source;
-/// use viper_rt::events::emitter;
-/// use viper_rt::ViperRuntime;
-/// use viper_rt::compile::IdentifierFilter;
+/// use opendut_viper_rt::source::loaders::SimpleFileSourceLoader;
+/// use opendut_viper_rt::source::Source;
+/// use opendut_viper_rt::events::emitter;
+/// use opendut_viper_rt::ViperRuntime;
+/// use opendut_viper_rt::compile::IdentifierFilter;
 ///
 /// #[tokio::main]
 /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -80,10 +80,10 @@ impl TestSuiteIdentifier {
 ///
 /// # Example
 /// ```
-/// use viper_rt::source::Source;
-/// use viper_rt::ViperRuntime;
-/// use viper_rt::events::emitter;
-/// use viper_rt::compile::IdentifierFilter;
+/// use opendut_viper_rt::source::Source;
+/// use opendut_viper_rt::ViperRuntime;
+/// use opendut_viper_rt::events::emitter;
+/// use opendut_viper_rt::compile::IdentifierFilter;
 /// use indoc::indoc;
 ///
 /// #[tokio::main]
@@ -162,10 +162,10 @@ impl TestCaseIdentifier {
 ///
 /// # Example
 /// ```
-/// use viper_rt::source::Source;
-/// use viper_rt::ViperRuntime;
-/// use viper_rt::events::emitter;
-/// use viper_rt::compile::IdentifierFilter;
+/// use opendut_viper_rt::source::Source;
+/// use opendut_viper_rt::ViperRuntime;
+/// use opendut_viper_rt::events::emitter;
+/// use opendut_viper_rt::compile::IdentifierFilter;
 /// use indoc::indoc;
 ///
 /// #[tokio::main]

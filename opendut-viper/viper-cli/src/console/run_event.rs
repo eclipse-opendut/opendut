@@ -3,8 +3,8 @@ use std::error::Error;
 use std::time::Duration;
 use console::style;
 use indicatif::{ProgressBar, ProgressStyle};
-use viper_rt::common::{Identifier, TestCaseIdentifier, TestIdentifier};
-use viper_rt::run::{RunEvent, RunState, TestSuiteRunState};
+use opendut_viper_rt::common::{Identifier, TestCaseIdentifier, TestIdentifier};
+use opendut_viper_rt::run::{RunEvent, RunState, TestSuiteRunState};
 use crate::console::RenderState;
 
 pub fn render_run_event(
