@@ -47,6 +47,11 @@ jobs:
     with:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
+  integration-test:
+    uses: ./.github/workflows/job-integration-test.yaml
+    with:
+      runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
+
   build-carl:
     uses: ./.github/workflows/job-build-carl.yaml
     with:
