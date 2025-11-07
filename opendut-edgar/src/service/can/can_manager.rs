@@ -22,7 +22,7 @@ impl CanManagerExt for CanManagerRef {
 
 pub struct CanManager {
     process_manager: AsyncProcessManagerRef,
-    process_map: HashMap<ParameterId, AsyncProcessId>,
+    process_map: Mutex<HashMap<ParameterId, AsyncProcessId>>,
 }
 
 impl CanManager {
@@ -33,31 +33,40 @@ impl CanManager {
         }
     }
 
-    pub async fn spawn_process(&mut self, parameter: &CanConnection) -> anyhow::Result<()> {
+    pub async fn spawn_process(&self, parameter: &CanConnection) -> anyhow::Result<()> {
         let id = parameter.parameter_identifier();
         let mut cmd = Command::new("cannelloni");
         Self::fill_cannelloni_cmd(&parameter, &mut cmd);
         let mut process_manager = self.process_manager.lock().await;
-        let process_id = process_manager.spawn("foo", &mut cmd).await?;
-        self.process_map.insert(id.clone(), process_id);
+        let name = if parameter.local_is_server {
+            format!("cannelloni-server-{}", parameter.local_port)
+        } else {
+            format!("cannelloni-to-leader-peer-{}", parameter.remote_peer_id)
+        };
+        let process_id = process_manager.spawn(name, &mut cmd).await?;
+
+        let mut processes = self.process_map.lock().await;
+        processes.insert(id, process_id);
 
         Ok(())
     }
 
-    pub async fn process_is_running(&mut self, parameter: &CanConnection) -> anyhow::Result<bool> {
+    pub async fn process_is_running(&self, parameter: &CanConnection) -> bool {
         let id = parameter.parameter_identifier();
-        if let Some(process_id) = self.process_map.get(&id) {
+        let processes = self.process_map.lock().await;
+        if let Some(process_id) = processes.get(&id) {
             let mut process_manager = self.process_manager.lock().await;
-            Ok(process_manager.process_is_running(process_id))
+            process_manager.process_is_running(process_id)
         } else {
-            Ok(false)
+            false
         }
     }
 
-    pub async fn terminate_process(&mut self, parameter: &CanConnection) -> anyhow::Result<()> {
+    pub async fn terminate_process(&self, parameter: &CanConnection) -> anyhow::Result<()> {
         let id = parameter.parameter_identifier();
-        let mut process_manager = self.process_manager.lock().await;
-        if let Some(process_id) = self.process_map.remove(&id) {
+        let mut processes = self.process_map.lock().await;
+        if let Some(process_id) = processes.remove(&id) {
+            let mut process_manager = self.process_manager.lock().await;
             process_manager.terminate(process_id).await?;
         }
         Ok(())
