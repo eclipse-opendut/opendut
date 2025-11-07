@@ -1,10 +1,14 @@
 use std::collections::HashMap;
 use opendut_util::conversion;
 use opendut_util::proto::ConversionResult;
-use crate::proto::viper::test_suite_run_parameter_value::Kind;
 use crate::viper::TestSuiteRunParameterKey;
 
 opendut_util::include_proto!("opendut.model.viper");
+
+
+//
+// TestSuiteSource
+//
 
 conversion! {
     type Model = crate::viper::TestSuiteSourceId;
@@ -64,6 +68,11 @@ conversion! {
     }
 }
 
+
+
+//
+// TestSuiteRun
+//
 
 conversion! {
     type Model = crate::viper::TestSuiteRunDescriptor;
@@ -141,10 +150,37 @@ conversion! {
 
     fn try_from(value: Proto) -> ConversionResult<Model> {
         let value = match extract!(value.kind)? {
-            Kind::Boolean(value) => Model::Boolean(value),
-            Kind::Number(value) => Model::Number(value),
-            Kind::Text(value) => Model::Text(value),
+            test_suite_run_parameter_value::Kind::Boolean(value) => Model::Boolean(value),
+            test_suite_run_parameter_value::Kind::Number(value) => Model::Number(value),
+            test_suite_run_parameter_value::Kind::Text(value) => Model::Text(value),
         };
         Ok(value)
+    }
+}
+
+
+//
+// TestSuiteRunDeployment
+//
+
+conversion! {
+    type Model = crate::viper::TestSuiteRunDeployment;
+    type Proto = TestSuiteRunDeployment;
+
+    fn from(value: Model) -> Proto {
+        Proto {
+            id: Some(value.id.into()),
+            cluster: Some(value.cluster.into()),
+        }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let id = extract!(value.id)?
+            .try_into()?;
+
+        let cluster = extract!(value.cluster)?
+            .try_into()?;
+
+        Ok(Model { id, cluster })
     }
 }
