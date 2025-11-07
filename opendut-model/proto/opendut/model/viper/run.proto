@@ -7,23 +7,23 @@ import "opendut/model/viper/source.proto";
 import "opendut/viper/rt/test_suite.proto";
 
 
-message TestSuiteRunDescriptor {
-  TestSuiteRunId id = 1;
-  opendut.model.viper.TestSuiteSourceId source = 2;
-  opendut.viper.rt.test_suite.TestSuiteIdentifier suite = 3;
-  repeated TestSuiteRunParameter parameters = 4;
+message ViperRunDescriptor {
+  ViperRunId id = 1;
+  opendut.model.viper.ViperSourceId source = 2;
+  opendut.viper.rt.test_suite.ViperTestSuiteIdentifier suite = 3;
+  repeated ViperRunParameter parameters = 4;
 }
 
-message TestSuiteRunId {
+message ViperRunId {
   opendut.model.util.Uuid uuid = 1;
 }
 
-message TestSuiteRunParameter {
+message ViperRunParameter {
   string key = 1;
-  TestSuiteRunParameterValue value = 2;
+  ViperRunParameterValue value = 2;
 }
 
-message TestSuiteRunParameterValue {
+message ViperRunParameterValue {
   oneof kind {
     bool boolean = 1;
     int64 number = 2;

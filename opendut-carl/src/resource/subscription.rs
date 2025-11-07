@@ -6,7 +6,7 @@ use opendut_model::peer::PeerDescriptor;
 use tokio::sync::broadcast;
 
 #[cfg(feature = "viper")]
-use opendut_model::viper::{TestSuiteRunDeployment, TestSuiteRunDescriptor, TestSuiteSourceDescriptor};
+use opendut_model::viper::{ViperRunDeployment, ViperRunDescriptor, ViperSourceDescriptor};
 
 pub struct Subscription<R: Resource> {
     receiver: broadcast::Receiver<SubscriptionEvent<R>>,
@@ -63,11 +63,11 @@ impl_subscribable!(PeerDescriptor, peer_descriptor);
 impl_subscribable!(PeerConnectionState, peer_connection_state);
 impl_subscribable!(EdgePeerConfigurationState, peer_configuration_state);
 #[cfg(feature = "viper")]
-impl_subscribable!(TestSuiteSourceDescriptor, test_suite_source_descriptor);
+impl_subscribable!(ViperSourceDescriptor, test_suite_source_descriptor);
 #[cfg(feature = "viper")]
-impl_subscribable!(TestSuiteRunDescriptor, test_suite_run_descriptor);
+impl_subscribable!(ViperRunDescriptor, test_suite_run_descriptor);
 #[cfg(feature = "viper")]
-impl_subscribable!(TestSuiteRunDeployment, test_suite_run_deployment);
+impl_subscribable!(ViperRunDeployment, test_suite_run_deployment);
 
 mod deprecated {
     #![expect(deprecated)]
@@ -84,9 +84,9 @@ pub struct ResourceSubscriptionChannels {
     pub peer_descriptor: ResourceSubscriptionChannel<PeerDescriptor>,
     pub peer_connection_state: ResourceSubscriptionChannel<PeerConnectionState>,
     pub peer_configuration_state: ResourceSubscriptionChannel<EdgePeerConfigurationState>,
-    #[cfg(feature = "viper")] pub test_suite_source_descriptor: ResourceSubscriptionChannel<TestSuiteSourceDescriptor>,
-    #[cfg(feature = "viper")] pub test_suite_run_descriptor: ResourceSubscriptionChannel<TestSuiteRunDescriptor>,
-    #[cfg(feature = "viper")] pub test_suite_run_deployment: ResourceSubscriptionChannel<TestSuiteRunDeployment>,
+    #[cfg(feature = "viper")] pub test_suite_source_descriptor: ResourceSubscriptionChannel<ViperSourceDescriptor>,
+    #[cfg(feature = "viper")] pub test_suite_run_descriptor: ResourceSubscriptionChannel<ViperRunDescriptor>,
+    #[cfg(feature = "viper")] pub test_suite_run_deployment: ResourceSubscriptionChannel<ViperRunDeployment>,
 
     #[deprecated] #[expect(deprecated)]
     pub(crate) _cluster_configuration: ResourceSubscriptionChannel<crate::startup::migration::ClusterConfiguration>, //TODO remove (should be unused)

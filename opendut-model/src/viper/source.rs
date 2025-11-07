@@ -6,13 +6,13 @@ use url::Url;
 use crate::create_id_type;
 
 
-create_id_type!(TestSuiteSourceId);
+create_id_type!(ViperSourceId);
 
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub struct TestSuiteSourceName(pub(crate) String);
+pub struct ViperSourceName(pub(crate) String);
 
-impl TestSuiteSourceName {
+impl ViperSourceName {
     pub const MIN_LENGTH: usize = 4;
     pub const MAX_LENGTH: usize = 64;
 
@@ -22,7 +22,7 @@ impl TestSuiteSourceName {
 }
 
 #[derive(thiserror::Error, Clone, Debug)]
-pub enum IllegalTestSuiteSourceName {
+pub enum IllegalViperSourceName {
     #[error(
         "Test suite source name '{value}' is too short. Expected at least {expected} characters, got {actual}."
     )]
@@ -45,58 +45,58 @@ pub enum IllegalTestSuiteSourceName {
     InvalidStartEndCharacter { value: String },
 }
 
-impl From<TestSuiteSourceName> for String {
-    fn from(value: TestSuiteSourceName) -> Self {
+impl From<ViperSourceName> for String {
+    fn from(value: ViperSourceName) -> Self {
         value.0
     }
 }
 
-impl TryFrom<String> for TestSuiteSourceName {
-    type Error = IllegalTestSuiteSourceName;
+impl TryFrom<String> for ViperSourceName {
+    type Error = IllegalViperSourceName;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         let length = value.len();
         if length < Self::MIN_LENGTH {
-            Err(IllegalTestSuiteSourceName::TooShort {
+            Err(IllegalViperSourceName::TooShort {
                 value,
                 expected: Self::MIN_LENGTH,
                 actual: length,
             })
         } else if length > Self::MAX_LENGTH {
-            Err(IllegalTestSuiteSourceName::TooLong {
+            Err(IllegalViperSourceName::TooLong {
                 value,
                 expected: Self::MAX_LENGTH,
                 actual: length,
             })
         } else if crate::util::invalid_start_and_end_of_a_name(&value) {
-            Err(IllegalTestSuiteSourceName::InvalidStartEndCharacter { value })
+            Err(IllegalViperSourceName::InvalidStartEndCharacter { value })
         } else if value
             .chars()
             .any(|c| crate::util::valid_characters_in_name(&c).not())
         {
-            Err(IllegalTestSuiteSourceName::InvalidCharacter { value })
+            Err(IllegalViperSourceName::InvalidCharacter { value })
         } else {
             Ok(Self(value))
         }
     }
 }
 
-impl TryFrom<&str> for TestSuiteSourceName {
-    type Error = IllegalTestSuiteSourceName;
+impl TryFrom<&str> for ViperSourceName {
+    type Error = IllegalViperSourceName;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        TestSuiteSourceName::try_from(value.to_owned())
+        ViperSourceName::try_from(value.to_owned())
     }
 }
 
-impl fmt::Display for TestSuiteSourceName {
+impl fmt::Display for ViperSourceName {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }
 }
 
-impl FromStr for TestSuiteSourceName {
-    type Err = IllegalTestSuiteSourceName;
+impl FromStr for ViperSourceName {
+    type Err = IllegalViperSourceName;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         Self::try_from(value)
@@ -105,8 +105,8 @@ impl FromStr for TestSuiteSourceName {
 
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct TestSuiteSourceDescriptor {
-    pub id: TestSuiteSourceId,
-    pub name: TestSuiteSourceName,
+pub struct ViperSourceDescriptor {
+    pub id: ViperSourceId,
+    pub name: ViperSourceName,
     pub url: Url,
 }

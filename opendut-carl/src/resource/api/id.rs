@@ -6,7 +6,7 @@ use opendut_model::peer::{PeerDescriptor, PeerId};
 use opendut_model::resources::Id;
 
 #[cfg(feature = "viper")]
-use opendut_model::viper::{TestSuiteRunDeployment, TestSuiteRunDescriptor, TestSuiteRunId, TestSuiteSourceDescriptor, TestSuiteSourceId};
+use opendut_model::viper::{ViperRunDeployment, ViperRunDescriptor, ViperRunId, ViperSourceDescriptor, ViperSourceId};
 
 pub trait ResourceId<R: Resource> {
     fn into_id(self) -> Id;
@@ -71,31 +71,31 @@ impl ResourceId<EdgePeerConfigurationState> for PeerId {
 }
 
 #[cfg(feature = "viper")]
-impl ResourceId<TestSuiteSourceDescriptor> for TestSuiteSourceId {
+impl ResourceId<ViperSourceDescriptor> for ViperSourceId {
     fn into_id(self) -> Id {
         Id::from(self.uuid)
     }
     fn from_id(id: Id) -> Self {
-        TestSuiteSourceId::from(id.value())
+        ViperSourceId::from(id.value())
     }
 }
 
 #[cfg(feature = "viper")]
-impl ResourceId<TestSuiteRunDescriptor> for TestSuiteRunId {
+impl ResourceId<ViperRunDescriptor> for ViperRunId {
     fn into_id(self) -> Id {
         Id::from(self.uuid)
     }
     fn from_id(id: Id) -> Self {
-        TestSuiteRunId::from(id.value())
+        ViperRunId::from(id.value())
     }
 }
 
 #[cfg(feature = "viper")]
-impl ResourceId<TestSuiteRunDeployment> for TestSuiteRunId {
+impl ResourceId<ViperRunDeployment> for ViperRunId {
     fn into_id(self) -> Id {
         Id::from(self.uuid)
     }
     fn from_id(id: Id) -> Self {
-        TestSuiteRunId::from(id.value())
+        ViperRunId::from(id.value())
     }
 }

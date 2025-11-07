@@ -6,16 +6,16 @@ import "opendut/model/util/net.proto";
 import "opendut/model/util/uuid.proto";
 
 
-message TestSuiteSourceDescriptor {
-  TestSuiteSourceId id = 1;
-  TestSuiteSourceName name = 2;
+message ViperSourceDescriptor {
+  ViperSourceId id = 1;
+  ViperSourceName name = 2;
   opendut.model.util.Url url = 3;
 }
 
-message TestSuiteSourceId {
+message ViperSourceId {
   opendut.model.util.Uuid uuid = 1;
 }
 
-message TestSuiteSourceName {
+message ViperSourceName {
   string value = 1;
 }

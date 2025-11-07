@@ -8,426 +8,426 @@ import "opendut/model/viper/run.proto";
 import "opendut/model/viper/source.proto";
 
 service TestManager {
-  rpc StoreTestSuiteSourceDescriptor(StoreTestSuiteSourceDescriptorRequest) returns (StoreTestSuiteSourceDescriptorResponse) {}
-  rpc DeleteTestSuiteSourceDescriptor(DeleteTestSuiteSourceDescriptorRequest) returns (DeleteTestSuiteSourceDescriptorResponse) {}
-  rpc GetTestSuiteSourceDescriptor(GetTestSuiteSourceDescriptorRequest) returns (GetTestSuiteSourceDescriptorResponse) {}
-  rpc ListTestSuiteSourceDescriptors(ListTestSuiteSourceDescriptorsRequest) returns (ListTestSuiteSourceDescriptorsResponse) {}
+  rpc StoreViperSourceDescriptor(StoreViperSourceDescriptorRequest) returns (StoreViperSourceDescriptorResponse) {}
+  rpc DeleteViperSourceDescriptor(DeleteViperSourceDescriptorRequest) returns (DeleteViperSourceDescriptorResponse) {}
+  rpc GetViperSourceDescriptor(GetViperSourceDescriptorRequest) returns (GetViperSourceDescriptorResponse) {}
+  rpc ListViperSourceDescriptors(ListViperSourceDescriptorsRequest) returns (ListViperSourceDescriptorsResponse) {}
 
-  rpc StoreTestSuiteRunDescriptor(StoreTestSuiteRunDescriptorRequest) returns (StoreTestSuiteRunDescriptorResponse) {}
-  rpc DeleteTestSuiteRunDescriptor(DeleteTestSuiteRunDescriptorRequest) returns (DeleteTestSuiteRunDescriptorResponse) {}
-  rpc GetTestSuiteRunDescriptor(GetTestSuiteRunDescriptorRequest) returns (GetTestSuiteRunDescriptorResponse) {}
-  rpc ListTestSuiteRunDescriptors(ListTestSuiteRunDescriptorsRequest) returns (ListTestSuiteRunDescriptorsResponse) {}
+  rpc StoreViperRunDescriptor(StoreViperRunDescriptorRequest) returns (StoreViperRunDescriptorResponse) {}
+  rpc DeleteViperRunDescriptor(DeleteViperRunDescriptorRequest) returns (DeleteViperRunDescriptorResponse) {}
+  rpc GetViperRunDescriptor(GetViperRunDescriptorRequest) returns (GetViperRunDescriptorResponse) {}
+  rpc ListViperRunDescriptors(ListViperRunDescriptorsRequest) returns (ListViperRunDescriptorsResponse) {}
 
-  rpc StoreTestSuiteRunDeployment(StoreTestSuiteRunDeploymentRequest) returns (StoreTestSuiteRunDeploymentResponse) {}
-  rpc DeleteTestSuiteRunDeployment(DeleteTestSuiteRunDeploymentRequest) returns (DeleteTestSuiteRunDeploymentResponse) {}
-  rpc GetTestSuiteRunDeployment(GetTestSuiteRunDeploymentRequest) returns (GetTestSuiteRunDeploymentResponse) {}
-  rpc ListTestSuiteRunDeployments(ListTestSuiteRunDeploymentsRequest) returns (ListTestSuiteRunDeploymentsResponse) {}
+  rpc StoreViperRunDeployment(StoreViperRunDeploymentRequest) returns (StoreViperRunDeploymentResponse) {}
+  rpc DeleteViperRunDeployment(DeleteViperRunDeploymentRequest) returns (DeleteViperRunDeploymentResponse) {}
+  rpc GetViperRunDeployment(GetViperRunDeploymentRequest) returns (GetViperRunDeploymentResponse) {}
+  rpc ListViperRunDeployments(ListViperRunDeploymentsRequest) returns (ListViperRunDeploymentsResponse) {}
 }
 
 
-///////////////////////////////
-// TestSuiteSourceDescriptor //
-///////////////////////////////
+///////////////////////////
+// ViperSourceDescriptor //
+///////////////////////////
 
 //
-// StoreTestSuiteSourceDescriptorRequest
+// StoreViperSourceDescriptorRequest
 //
-message StoreTestSuiteSourceDescriptorRequest {
-  opendut.model.viper.TestSuiteSourceDescriptor source = 1;
+message StoreViperSourceDescriptorRequest {
+  opendut.model.viper.ViperSourceDescriptor source = 1;
 }
 
-message StoreTestSuiteSourceDescriptorResponse {
+message StoreViperSourceDescriptorResponse {
   oneof reply {
-    StoreTestSuiteSourceDescriptorSuccess success = 1;
-    StoreTestSuiteSourceDescriptorFailure failure = 2;
+    StoreViperSourceDescriptorSuccess success = 1;
+    StoreViperSourceDescriptorFailure failure = 2;
   }
 }
 
-message StoreTestSuiteSourceDescriptorSuccess {
-  opendut.model.viper.TestSuiteSourceId source_id = 1;
+message StoreViperSourceDescriptorSuccess {
+  opendut.model.viper.ViperSourceId source_id = 1;
 }
 
-message StoreTestSuiteSourceDescriptorFailure {
+message StoreViperSourceDescriptorFailure {
   oneof error {
-    StoreTestSuiteSourceDescriptorFailureInternal internal = 1;
+    StoreViperSourceDescriptorFailureInternal internal = 1;
   }
 }
 
-message StoreTestSuiteSourceDescriptorFailureInternal {
-  opendut.model.viper.TestSuiteSourceId source_id = 1;
-  opendut.model.viper.TestSuiteSourceName source_name = 2;
+message StoreViperSourceDescriptorFailureInternal {
+  opendut.model.viper.ViperSourceId source_id = 1;
+  opendut.model.viper.ViperSourceName source_name = 2;
   string cause = 3;
 }
 
 
 //
-// DeleteTestSuiteSourceDescriptorRequest
+// DeleteViperSourceDescriptorRequest
 //
-message DeleteTestSuiteSourceDescriptorRequest {
-  opendut.model.viper.TestSuiteSourceId source_id = 1;
+message DeleteViperSourceDescriptorRequest {
+  opendut.model.viper.ViperSourceId source_id = 1;
 }
 
-message DeleteTestSuiteSourceDescriptorResponse {
+message DeleteViperSourceDescriptorResponse {
   oneof reply {
-    DeleteTestSuiteSourceDescriptorSuccess success = 1;
-    DeleteTestSuiteSourceDescriptorFailure failure = 2;
+    DeleteViperSourceDescriptorSuccess success = 1;
+    DeleteViperSourceDescriptorFailure failure = 2;
   }
 }
 
-message DeleteTestSuiteSourceDescriptorSuccess {
-  opendut.model.viper.TestSuiteSourceId source_id = 1;
+message DeleteViperSourceDescriptorSuccess {
+  opendut.model.viper.ViperSourceId source_id = 1;
 }
 
-message DeleteTestSuiteSourceDescriptorFailure {
+message DeleteViperSourceDescriptorFailure {
   oneof error {
-    DeleteTestSuiteSourceDescriptorFailureSourceNotFound source_not_found = 1;
-    DeleteTestSuiteSourceDescriptorFailureInternal internal = 4;
-    DeleteTestSuiteSourceDescriptorFailureDeploymentExists deployment_exists = 5;
+    DeleteViperSourceDescriptorFailureSourceNotFound source_not_found = 1;
+    DeleteViperSourceDescriptorFailureInternal internal = 4;
+    DeleteViperSourceDescriptorFailureDeploymentExists deployment_exists = 5;
   }
 }
 
-message DeleteTestSuiteSourceDescriptorFailureSourceNotFound {
-  opendut.model.viper.TestSuiteSourceId source_id = 1;
+message DeleteViperSourceDescriptorFailureSourceNotFound {
+  opendut.model.viper.ViperSourceId source_id = 1;
 }
 
-message DeleteTestSuiteSourceDescriptorFailureInternal {
-  opendut.model.viper.TestSuiteSourceId source_id = 1;
-  optional opendut.model.viper.TestSuiteSourceName source_name = 2;
+message DeleteViperSourceDescriptorFailureInternal {
+  opendut.model.viper.ViperSourceId source_id = 1;
+  optional opendut.model.viper.ViperSourceName source_name = 2;
   string cause = 3;
 }
 
-message DeleteTestSuiteSourceDescriptorFailureDeploymentExists {
-  opendut.model.viper.TestSuiteSourceId source_id = 1;
+message DeleteViperSourceDescriptorFailureDeploymentExists {
+  opendut.model.viper.ViperSourceId source_id = 1;
   opendut.model.cluster.ClusterId cluster_id = 2;
 }
 
 
 //
-// GetTestSuiteSourceDescriptorRequest
+// GetViperSourceDescriptorRequest
 //
-message GetTestSuiteSourceDescriptorRequest {
-  opendut.model.viper.TestSuiteSourceId source_id = 1;
+message GetViperSourceDescriptorRequest {
+  opendut.model.viper.ViperSourceId source_id = 1;
 }
 
-message GetTestSuiteSourceDescriptorResponse {
+message GetViperSourceDescriptorResponse {
   oneof reply {
-    GetTestSuiteSourceDescriptorSuccess success = 1;
-    GetTestSuiteSourceDescriptorFailure failure = 2;
+    GetViperSourceDescriptorSuccess success = 1;
+    GetViperSourceDescriptorFailure failure = 2;
   }
 }
 
-message GetTestSuiteSourceDescriptorSuccess {
-  opendut.model.viper.TestSuiteSourceDescriptor descriptor = 1;
+message GetViperSourceDescriptorSuccess {
+  opendut.model.viper.ViperSourceDescriptor descriptor = 1;
 }
 
-message GetTestSuiteSourceDescriptorFailure {
+message GetViperSourceDescriptorFailure {
   oneof error {
-    GetTestSuiteSourceDescriptorFailureSourceNotFound source_not_found = 1;
-    GetTestSuiteSourceDescriptorFailureInternal internal = 2;
+    GetViperSourceDescriptorFailureSourceNotFound source_not_found = 1;
+    GetViperSourceDescriptorFailureInternal internal = 2;
   }
 }
 
-message GetTestSuiteSourceDescriptorFailureSourceNotFound {
-  opendut.model.viper.TestSuiteSourceId source_id = 1;
+message GetViperSourceDescriptorFailureSourceNotFound {
+  opendut.model.viper.ViperSourceId source_id = 1;
 }
 
-message GetTestSuiteSourceDescriptorFailureInternal {
-  opendut.model.viper.TestSuiteSourceId source_id = 1;
+message GetViperSourceDescriptorFailureInternal {
+  opendut.model.viper.ViperSourceId source_id = 1;
   string cause = 2;
 }
 
 
 //
-// ListTestSuiteSourceRequest
+// ListViperSourceRequest
 //
-message ListTestSuiteSourceDescriptorsRequest {}
+message ListViperSourceDescriptorsRequest {}
 
-message ListTestSuiteSourceDescriptorsResponse {
+message ListViperSourceDescriptorsResponse {
   oneof reply {
-    ListTestSuiteSourceDescriptorsSuccess success = 1;
-    ListTestSuiteSourceDescriptorsFailure failure = 2;
+    ListViperSourceDescriptorsSuccess success = 1;
+    ListViperSourceDescriptorsFailure failure = 2;
   }
 }
 
-message ListTestSuiteSourceDescriptorsSuccess {
-  repeated opendut.model.viper.TestSuiteSourceDescriptor sources = 1;
+message ListViperSourceDescriptorsSuccess {
+  repeated opendut.model.viper.ViperSourceDescriptor sources = 1;
 }
 
-message ListTestSuiteSourceDescriptorsFailure {
+message ListViperSourceDescriptorsFailure {
   oneof error {
-      ListTestSuiteSourceDescriptorsFailureInternal internal = 1;
+      ListViperSourceDescriptorsFailureInternal internal = 1;
   }
 }
 
-message ListTestSuiteSourceDescriptorsFailureInternal {
+message ListViperSourceDescriptorsFailureInternal {
   string cause = 1;
 }
 
 
 
-////////////////////////////
-// TestSuiteRunDescriptor //
-////////////////////////////
+////////////////////////
+// ViperRunDescriptor //
+////////////////////////
 
 //
-// StoreTestSuiteRunDescriptorRequest
+// StoreViperRunDescriptorRequest
 //
-message StoreTestSuiteRunDescriptorRequest {
-  opendut.model.viper.TestSuiteRunDescriptor run = 1;
+message StoreViperRunDescriptorRequest {
+  opendut.model.viper.ViperRunDescriptor run = 1;
 }
 
-message StoreTestSuiteRunDescriptorResponse {
+message StoreViperRunDescriptorResponse {
   oneof reply {
-    StoreTestSuiteRunDescriptorSuccess success = 1;
-    StoreTestSuiteRunDescriptorFailure failure = 2;
+    StoreViperRunDescriptorSuccess success = 1;
+    StoreViperRunDescriptorFailure failure = 2;
   }
 }
 
-message StoreTestSuiteRunDescriptorSuccess {
-  opendut.model.viper.TestSuiteRunId run_id = 1;
+message StoreViperRunDescriptorSuccess {
+  opendut.model.viper.ViperRunId run_id = 1;
 }
 
-message StoreTestSuiteRunDescriptorFailure {
+message StoreViperRunDescriptorFailure {
   oneof error {
-    StoreTestSuiteRunDescriptorFailureInternal internal = 1;
+    StoreViperRunDescriptorFailureInternal internal = 1;
   }
 }
 
-message StoreTestSuiteRunDescriptorFailureInternal {
-  opendut.model.viper.TestSuiteRunId run_id = 1;
+message StoreViperRunDescriptorFailureInternal {
+  opendut.model.viper.ViperRunId run_id = 1;
   string cause = 2;
 }
 
 
 //
-// DeleteTestSuiteRunDescriptorRequest
+// DeleteViperRunDescriptorRequest
 //
-message DeleteTestSuiteRunDescriptorRequest {
-  opendut.model.viper.TestSuiteRunId run_id = 1;
+message DeleteViperRunDescriptorRequest {
+  opendut.model.viper.ViperRunId run_id = 1;
 }
 
-message DeleteTestSuiteRunDescriptorResponse {
+message DeleteViperRunDescriptorResponse {
   oneof reply {
-    DeleteTestSuiteRunDescriptorSuccess success = 1;
-    DeleteTestSuiteRunDescriptorFailure failure = 2;
+    DeleteViperRunDescriptorSuccess success = 1;
+    DeleteViperRunDescriptorFailure failure = 2;
   }
 }
 
-message DeleteTestSuiteRunDescriptorSuccess {
-  opendut.model.viper.TestSuiteRunId run_id = 1;
+message DeleteViperRunDescriptorSuccess {
+  opendut.model.viper.ViperRunId run_id = 1;
 }
 
-message DeleteTestSuiteRunDescriptorFailure {
+message DeleteViperRunDescriptorFailure {
   oneof error {
-    DeleteTestSuiteRunDescriptorFailureRunNotFound run_not_found = 1;
-    DeleteTestSuiteRunDescriptorFailureInternal internal = 4;
-    DeleteTestSuiteRunDescriptorFailureDeploymentExists deployment_exists = 5;
+    DeleteViperRunDescriptorFailureRunNotFound run_not_found = 1;
+    DeleteViperRunDescriptorFailureInternal internal = 4;
+    DeleteViperRunDescriptorFailureDeploymentExists deployment_exists = 5;
   }
 }
 
-message DeleteTestSuiteRunDescriptorFailureRunNotFound {
-  opendut.model.viper.TestSuiteRunId run_id = 1;
+message DeleteViperRunDescriptorFailureRunNotFound {
+  opendut.model.viper.ViperRunId run_id = 1;
 }
 
-message DeleteTestSuiteRunDescriptorFailureInternal {
-  opendut.model.viper.TestSuiteRunId run_id = 1;
+message DeleteViperRunDescriptorFailureInternal {
+  opendut.model.viper.ViperRunId run_id = 1;
   string cause = 2;
 }
 
-message DeleteTestSuiteRunDescriptorFailureDeploymentExists {
-  opendut.model.viper.TestSuiteRunId run_id = 1;
+message DeleteViperRunDescriptorFailureDeploymentExists {
+  opendut.model.viper.ViperRunId run_id = 1;
   opendut.model.cluster.ClusterId cluster_id = 2;
 }
 
 
 //
-// GetTestSuiteRunDescriptorRequest
+// GetViperRunDescriptorRequest
 //
-message GetTestSuiteRunDescriptorRequest {
-  opendut.model.viper.TestSuiteRunId run_id = 1;
+message GetViperRunDescriptorRequest {
+  opendut.model.viper.ViperRunId run_id = 1;
 }
 
-message GetTestSuiteRunDescriptorResponse {
+message GetViperRunDescriptorResponse {
   oneof reply {
-    GetTestSuiteRunDescriptorSuccess success = 1;
-    GetTestSuiteRunDescriptorFailure failure = 2;
+    GetViperRunDescriptorSuccess success = 1;
+    GetViperRunDescriptorFailure failure = 2;
   }
 }
 
-message GetTestSuiteRunDescriptorSuccess {
-  opendut.model.viper.TestSuiteRunDescriptor descriptor = 1;
+message GetViperRunDescriptorSuccess {
+  opendut.model.viper.ViperRunDescriptor descriptor = 1;
 }
 
-message GetTestSuiteRunDescriptorFailure {
+message GetViperRunDescriptorFailure {
   oneof error {
-    GetTestSuiteRunDescriptorFailureRunNotFound run_not_found = 1;
-    GetTestSuiteRunDescriptorFailureInternal internal = 2;
+    GetViperRunDescriptorFailureRunNotFound run_not_found = 1;
+    GetViperRunDescriptorFailureInternal internal = 2;
   }
 }
 
-message GetTestSuiteRunDescriptorFailureRunNotFound {
-  opendut.model.viper.TestSuiteRunId run_id = 1;
+message GetViperRunDescriptorFailureRunNotFound {
+  opendut.model.viper.ViperRunId run_id = 1;
 }
 
-message GetTestSuiteRunDescriptorFailureInternal {
-  opendut.model.viper.TestSuiteRunId run_id = 1;
+message GetViperRunDescriptorFailureInternal {
+  opendut.model.viper.ViperRunId run_id = 1;
   string cause = 2;
 }
 
 
 //
-// ListTestSuiteRunRequest
+// ListViperRunRequest
 //
-message ListTestSuiteRunDescriptorsRequest {}
+message ListViperRunDescriptorsRequest {}
 
-message ListTestSuiteRunDescriptorsResponse {
+message ListViperRunDescriptorsResponse {
   oneof reply {
-    ListTestSuiteRunDescriptorsSuccess success = 1;
-    ListTestSuiteRunDescriptorsFailure failure = 2;
+    ListViperRunDescriptorsSuccess success = 1;
+    ListViperRunDescriptorsFailure failure = 2;
   }
 }
 
-message ListTestSuiteRunDescriptorsSuccess {
-  repeated opendut.model.viper.TestSuiteRunDescriptor runs = 1;
+message ListViperRunDescriptorsSuccess {
+  repeated opendut.model.viper.ViperRunDescriptor runs = 1;
 }
 
-message ListTestSuiteRunDescriptorsFailure {
+message ListViperRunDescriptorsFailure {
   oneof error {
-      ListTestSuiteRunDescriptorsFailureInternal internal = 1;
+      ListViperRunDescriptorsFailureInternal internal = 1;
   }
 }
 
-message ListTestSuiteRunDescriptorsFailureInternal {
+message ListViperRunDescriptorsFailureInternal {
   string cause = 1;
 }
 
 
-////////////////////////////
-// TestSuiteRunDeployment //
-////////////////////////////
+////////////////////////
+// ViperRunDeployment //
+////////////////////////
 
 //
-// StoreTestSuiteRunDeploymentRequest
+// StoreViperRunDeploymentRequest
 //
-message StoreTestSuiteRunDeploymentRequest {
-  opendut.model.viper.TestSuiteRunDeployment run = 1;
+message StoreViperRunDeploymentRequest {
+  opendut.model.viper.ViperRunDeployment run = 1;
 }
 
-message StoreTestSuiteRunDeploymentResponse {
+message StoreViperRunDeploymentResponse {
   oneof reply {
-    StoreTestSuiteRunDeploymentSuccess success = 1;
-    StoreTestSuiteRunDeploymentFailure failure = 2;
+    StoreViperRunDeploymentSuccess success = 1;
+    StoreViperRunDeploymentFailure failure = 2;
   }
 }
 
-message StoreTestSuiteRunDeploymentSuccess {
-  opendut.model.viper.TestSuiteRunId run_id = 1;
+message StoreViperRunDeploymentSuccess {
+  opendut.model.viper.ViperRunId run_id = 1;
 }
 
-message StoreTestSuiteRunDeploymentFailure {
+message StoreViperRunDeploymentFailure {
   oneof error {
-    StoreTestSuiteRunDeploymentFailureInternal internal = 1;
+    StoreViperRunDeploymentFailureInternal internal = 1;
   }
 }
 
-message StoreTestSuiteRunDeploymentFailureInternal {
-  opendut.model.viper.TestSuiteRunId run_id = 1;
+message StoreViperRunDeploymentFailureInternal {
+  opendut.model.viper.ViperRunId run_id = 1;
   string cause = 2;
 }
 
 
 //
-// DeleteTestSuiteRunDeploymentRequest
+// DeleteViperRunDeploymentRequest
 //
-message DeleteTestSuiteRunDeploymentRequest {
-  opendut.model.viper.TestSuiteRunId run_id = 1;
+message DeleteViperRunDeploymentRequest {
+  opendut.model.viper.ViperRunId run_id = 1;
 }
 
-message DeleteTestSuiteRunDeploymentResponse {
+message DeleteViperRunDeploymentResponse {
   oneof reply {
-    DeleteTestSuiteRunDeploymentSuccess success = 1;
-    DeleteTestSuiteRunDeploymentFailure failure = 2;
+    DeleteViperRunDeploymentSuccess success = 1;
+    DeleteViperRunDeploymentFailure failure = 2;
   }
 }
 
-message DeleteTestSuiteRunDeploymentSuccess {
-  opendut.model.viper.TestSuiteRunId run_id = 1;
+message DeleteViperRunDeploymentSuccess {
+  opendut.model.viper.ViperRunId run_id = 1;
 }
 
-message DeleteTestSuiteRunDeploymentFailure {
+message DeleteViperRunDeploymentFailure {
   oneof error {
-    DeleteTestSuiteRunDeploymentFailureRunNotFound run_not_found = 1;
-    DeleteTestSuiteRunDeploymentFailureInternal internal = 4;
+    DeleteViperRunDeploymentFailureRunNotFound run_not_found = 1;
+    DeleteViperRunDeploymentFailureInternal internal = 4;
   }
 }
 
-message DeleteTestSuiteRunDeploymentFailureRunNotFound {
-  opendut.model.viper.TestSuiteRunId run_id = 1;
+message DeleteViperRunDeploymentFailureRunNotFound {
+  opendut.model.viper.ViperRunId run_id = 1;
 }
 
-message DeleteTestSuiteRunDeploymentFailureInternal {
-  opendut.model.viper.TestSuiteRunId run_id = 1;
+message DeleteViperRunDeploymentFailureInternal {
+  opendut.model.viper.ViperRunId run_id = 1;
   string cause = 2;
 }
 
 
 //
-// GetTestSuiteRunDeploymentRequest
+// GetViperRunDeploymentRequest
 //
-message GetTestSuiteRunDeploymentRequest {
-  opendut.model.viper.TestSuiteRunId run_id = 1;
+message GetViperRunDeploymentRequest {
+  opendut.model.viper.ViperRunId run_id = 1;
 }
 
-message GetTestSuiteRunDeploymentResponse {
+message GetViperRunDeploymentResponse {
   oneof reply {
-    GetTestSuiteRunDeploymentSuccess success = 1;
-    GetTestSuiteRunDeploymentFailure failure = 2;
+    GetViperRunDeploymentSuccess success = 1;
+    GetViperRunDeploymentFailure failure = 2;
   }
 }
 
-message GetTestSuiteRunDeploymentSuccess {
-  opendut.model.viper.TestSuiteRunDeployment deployment = 1;
+message GetViperRunDeploymentSuccess {
+  opendut.model.viper.ViperRunDeployment deployment = 1;
 }
 
-message GetTestSuiteRunDeploymentFailure {
+message GetViperRunDeploymentFailure {
   oneof error {
-    GetTestSuiteRunDeploymentFailureRunNotFound run_not_found = 1;
-    GetTestSuiteRunDeploymentFailureInternal internal = 2;
+    GetViperRunDeploymentFailureRunNotFound run_not_found = 1;
+    GetViperRunDeploymentFailureInternal internal = 2;
   }
 }
 
-message GetTestSuiteRunDeploymentFailureRunNotFound {
-  opendut.model.viper.TestSuiteRunId run_id = 1;
+message GetViperRunDeploymentFailureRunNotFound {
+  opendut.model.viper.ViperRunId run_id = 1;
 }
 
-message GetTestSuiteRunDeploymentFailureInternal {
-  opendut.model.viper.TestSuiteRunId run_id = 1;
+message GetViperRunDeploymentFailureInternal {
+  opendut.model.viper.ViperRunId run_id = 1;
   string cause = 2;
 }
 
 
 //
-// ListTestSuiteRunRequest
+// ListViperRunRequest
 //
-message ListTestSuiteRunDeploymentsRequest {}
+message ListViperRunDeploymentsRequest {}
 
-message ListTestSuiteRunDeploymentsResponse {
+message ListViperRunDeploymentsResponse {
   oneof reply {
-    ListTestSuiteRunDeploymentsSuccess success = 1;
-    ListTestSuiteRunDeploymentsFailure failure = 2;
+    ListViperRunDeploymentsSuccess success = 1;
+    ListViperRunDeploymentsFailure failure = 2;
   }
 }
 
-message ListTestSuiteRunDeploymentsSuccess {
-  repeated opendut.model.viper.TestSuiteRunDeployment runs = 1;
+message ListViperRunDeploymentsSuccess {
+  repeated opendut.model.viper.ViperRunDeployment runs = 1;
 }
 
-message ListTestSuiteRunDeploymentsFailure {
+message ListViperRunDeploymentsFailure {
   oneof error {
-      ListTestSuiteRunDeploymentsFailureInternal internal = 1;
+      ListViperRunDeploymentsFailureInternal internal = 1;
   }
 }
 
-message ListTestSuiteRunDeploymentsFailureInternal {
+message ListViperRunDeploymentsFailureInternal {
   string cause = 1;
 }

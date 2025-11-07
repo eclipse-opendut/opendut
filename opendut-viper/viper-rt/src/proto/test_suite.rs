@@ -7,7 +7,7 @@ opendut_util::include_proto!("opendut.viper.rt.test_suite");
 
 conversion! {
     type Model = crate::runtime::types::naming::TestSuiteIdentifier;
-    type Proto = TestSuiteIdentifier;
+    type Proto = ViperTestSuiteIdentifier;
 
     fn from(value: Model) -> Proto {
         Proto {
@@ -25,20 +25,20 @@ conversion! {
 
 conversion! {
     type Model = crate::runtime::types::compile::parameters::ParameterDescriptor;
-    type Proto = TestSuiteParameterDescriptor;
+    type Proto = ViperParameterDescriptor;
 
     fn from(value: Model) -> Proto {
-        use test_suite_parameter_descriptor::Kind;
+        use viper_parameter_descriptor::Kind;
 
         let kind = match value {
             Model::BooleanParameter { name, info, default } =>
-                Kind::Boolean(TestSuiteParameterDescriptorBoolean {
+                Kind::Boolean(ViperParameterDescriptorBoolean {
                     name: name.into(),
                     info: Some(info.into()),
                     default,
                 }),
             Model::NumberParameter { name, info, default, min, max } =>
-                Kind::Number(TestSuiteParameterDescriptorNumber {
+                Kind::Number(ViperParameterDescriptorNumber {
                     name: name.into(),
                     info: Some(info.into()),
                     default,
@@ -46,7 +46,7 @@ conversion! {
                     max,
                 }),
             Model::TextParameter { name, info, default, max } =>
-                Kind::Text(TestSuiteParameterDescriptorText {
+                Kind::Text(ViperParameterDescriptorText {
                     name: name.into(),
                     info: Some(info.into()),
                     default,
@@ -58,10 +58,10 @@ conversion! {
     }
 
     fn try_from(value: Proto) -> ConversionResult<Model> {
-        use test_suite_parameter_descriptor::Kind;
+        use viper_parameter_descriptor::Kind;
 
         let model = match extract!(value.kind)? {
-            Kind::Boolean(TestSuiteParameterDescriptorBoolean { name, info, default }) =>
+            Kind::Boolean(ViperParameterDescriptorBoolean { name, info, default }) =>
                 Model::BooleanParameter {
                     name: name.try_into()
                         .map_err(|cause| ErrorBuilder::message(format!("Error while converting ParameterName from Protobuf: {cause}")))?,
@@ -69,7 +69,7 @@ conversion! {
                         .try_into()?,
                     default,
                 },
-            Kind::Number(TestSuiteParameterDescriptorNumber { name, info, default, min, max }) =>
+            Kind::Number(ViperParameterDescriptorNumber { name, info, default, min, max }) =>
                 Model::NumberParameter {
                     name: name.try_into()
                         .map_err(|cause| ErrorBuilder::message(format!("Error while converting ParameterName from ProtoBuf: {cause}")))?,
@@ -79,7 +79,7 @@ conversion! {
                     min,
                     max,
                 },
-            Kind::Text(TestSuiteParameterDescriptorText { name, info, default, max_length }) =>
+            Kind::Text(ViperParameterDescriptorText { name, info, default, max_length }) =>
                 Model::TextParameter {
                     name: name.try_into()
                         .map_err(|cause| ErrorBuilder::message(format!("Error while converting ParameterName from ProtoBuf: {cause}")))?,
@@ -97,7 +97,7 @@ conversion! {
 
 conversion! {
     type Model = crate::runtime::types::compile::parameters::ParameterInfo;
-    type Proto = TestSuiteParameterInfo;
+    type Proto = ViperParameterInfo;
 
     fn from(value: Model) -> Proto {
         Proto {

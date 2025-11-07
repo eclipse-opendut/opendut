@@ -1,18 +1,18 @@
 use std::collections::HashMap;
 use opendut_util::conversion;
 use opendut_util::proto::ConversionResult;
-use crate::viper::TestSuiteRunParameterKey;
+use crate::viper::ViperRunParameterKey;
 
 opendut_util::include_proto!("opendut.model.viper");
 
 
 //
-// TestSuiteSource
+// ViperSource
 //
 
 conversion! {
-    type Model = crate::viper::TestSuiteSourceId;
-    type Proto = TestSuiteSourceId;
+    type Model = crate::viper::ViperSourceId;
+    type Proto = ViperSourceId;
 
     fn from(value: Model) -> Proto {
         Proto {
@@ -27,8 +27,8 @@ conversion! {
 }
 
 conversion! {
-    type Model = crate::viper::TestSuiteSourceName;
-    type Proto = TestSuiteSourceName;
+    type Model = crate::viper::ViperSourceName;
+    type Proto = ViperSourceName;
 
     fn from(value: Model) -> Proto {
         Proto {
@@ -43,8 +43,8 @@ conversion! {
 }
 
 conversion! {
-    type Model = crate::viper::TestSuiteSourceDescriptor;
-    type Proto = TestSuiteSourceDescriptor;
+    type Model = crate::viper::ViperSourceDescriptor;
+    type Proto = ViperSourceDescriptor;
 
     fn from(value: Model) -> Proto {
         Proto {
@@ -71,17 +71,17 @@ conversion! {
 
 
 //
-// TestSuiteRun
+// ViperRun
 //
 
 conversion! {
-    type Model = crate::viper::TestSuiteRunDescriptor;
-    type Proto = TestSuiteRunDescriptor;
+    type Model = crate::viper::ViperRunDescriptor;
+    type Proto = ViperRunDescriptor;
 
     fn from(value: Model) -> Proto {
         let parameters = value.parameters.into_iter()
             .map(|(key, value)| {
-                TestSuiteRunParameter {
+                ViperRunParameter {
                     key: key.inner,
                     value: Some(value.into())
                 }
@@ -108,7 +108,7 @@ conversion! {
 
         let parameters = value.parameters.into_iter()
             .map(|parameter| {
-                let key = TestSuiteRunParameterKey { inner: parameter.key };
+                let key = ViperRunParameterKey { inner: parameter.key };
                 let value = extract!(parameter.value)?.try_into()?;
 
                 Ok((key, value))
@@ -120,8 +120,8 @@ conversion! {
 }
 
 conversion! {
-    type Model = crate::viper::TestSuiteRunId;
-    type Proto = TestSuiteRunId;
+    type Model = crate::viper::ViperRunId;
+    type Proto = ViperRunId;
 
     fn from(value: Model) -> Proto {
         Proto {
@@ -136,23 +136,23 @@ conversion! {
 }
 
 conversion! {
-    type Model = crate::viper::TestSuiteRunParameterValue;
-    type Proto = TestSuiteRunParameterValue;
+    type Model = crate::viper::ViperRunParameterValue;
+    type Proto = ViperRunParameterValue;
 
     fn from(value: Model) -> Proto {
         let value = match value {
-            Model::Boolean(value) => test_suite_run_parameter_value::Kind::Boolean(value),
-            Model::Number(value) => test_suite_run_parameter_value::Kind::Number(value),
-            Model::Text(value) => test_suite_run_parameter_value::Kind::Text(value),
+            Model::Boolean(value) => viper_run_parameter_value::Kind::Boolean(value),
+            Model::Number(value) => viper_run_parameter_value::Kind::Number(value),
+            Model::Text(value) => viper_run_parameter_value::Kind::Text(value),
         };
         Proto { kind: Some(value) }
     }
 
     fn try_from(value: Proto) -> ConversionResult<Model> {
         let value = match extract!(value.kind)? {
-            test_suite_run_parameter_value::Kind::Boolean(value) => Model::Boolean(value),
-            test_suite_run_parameter_value::Kind::Number(value) => Model::Number(value),
-            test_suite_run_parameter_value::Kind::Text(value) => Model::Text(value),
+            viper_run_parameter_value::Kind::Boolean(value) => Model::Boolean(value),
+            viper_run_parameter_value::Kind::Number(value) => Model::Number(value),
+            viper_run_parameter_value::Kind::Text(value) => Model::Text(value),
         };
         Ok(value)
     }
@@ -160,12 +160,12 @@ conversion! {
 
 
 //
-// TestSuiteRunDeployment
+// ViperRunDeployment
 //
 
 conversion! {
-    type Model = crate::viper::TestSuiteRunDeployment;
-    type Proto = TestSuiteRunDeployment;
+    type Model = crate::viper::ViperRunDeployment;
+    type Proto = ViperRunDeployment;
 
     fn from(value: Model) -> Proto {
         Proto {
