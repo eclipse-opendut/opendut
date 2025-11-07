@@ -6,7 +6,7 @@ use opendut_model::peer::{PeerDescriptor, PeerId};
 use opendut_model::resources::Id;
 
 #[cfg(feature = "viper")]
-use opendut_model::viper::{TestSuiteSourceDescriptor, TestSuiteSourceId};
+use opendut_model::viper::{TestSuiteRunDescriptor, TestSuiteRunId, TestSuiteSourceDescriptor, TestSuiteSourceId};
 
 pub trait ResourceId<R: Resource> {
     fn into_id(self) -> Id;
@@ -77,5 +77,15 @@ impl ResourceId<TestSuiteSourceDescriptor> for TestSuiteSourceId {
     }
     fn from_id(id: Id) -> Self {
         TestSuiteSourceId::from(id.value())
+    }
+}
+
+#[cfg(feature = "viper")]
+impl ResourceId<TestSuiteRunDescriptor> for TestSuiteRunId {
+    fn into_id(self) -> Id {
+        Id::from(self.uuid)
+    }
+    fn from_id(id: Id) -> Self {
+        TestSuiteRunId::from(id.value())
     }
 }

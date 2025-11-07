@@ -5,6 +5,10 @@ use opendut_util::proto::ConversionResult;
 tonic::include_proto!("opendut.carl.services.test_manager");
 
 
+//
+// TestSuiteSourceDescriptor
+//
+
 conversion! {
     type Model = crate::carl::viper::StoreTestSuiteSourceDescriptorError;
     type Proto = StoreTestSuiteSourceDescriptorFailure;
@@ -41,7 +45,6 @@ conversion! {
         Ok(error)
     }
 }
-
 
 conversion! {
     type Model = crate::carl::viper::DeleteTestSuiteSourceDescriptorError;
@@ -106,7 +109,6 @@ conversion! {
     }
 }
 
-
 conversion! {
     type Model = crate::carl::viper::GetTestSuiteSourceDescriptorError;
     type Proto = GetTestSuiteSourceDescriptorFailure;
@@ -150,7 +152,6 @@ conversion! {
     }
 }
 
-
 conversion! {
     type Model = crate::carl::viper::ListTestSuiteSourceDescriptorsError;
     type Proto = ListTestSuiteSourceDescriptorsFailure;
@@ -173,6 +174,178 @@ conversion! {
 
         match error {
             list_test_suite_source_descriptors_failure::Error::Internal(error) => {
+                let cause = error.cause;
+                Ok(Model::Internal {
+                    cause,
+                })
+            }
+        }
+    }
+}
+
+
+//
+// TestSuiteRunDescriptor
+//
+
+conversion! {
+    type Model = crate::carl::viper::StoreTestSuiteRunDescriptorError;
+    type Proto = StoreTestSuiteRunDescriptorFailure;
+
+    fn from(value: Model) -> Proto {
+        let error = match value {
+            Model::Internal { run_id, cause } => {
+                store_test_suite_run_descriptor_failure::Error::Internal(
+                    StoreTestSuiteRunDescriptorFailureInternal {
+                        run_id: Some(run_id.into()),
+                        cause,
+                    }
+                )
+            }
+        };
+
+        Proto { error: Some(error) }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let error = match extract!(value.error)? {
+            store_test_suite_run_descriptor_failure::Error::Internal(
+                StoreTestSuiteRunDescriptorFailureInternal { run_id, cause }
+            ) => {
+                Model::Internal {
+                    run_id: extract!(run_id)?.try_into()?,
+                    cause,
+                }
+            }
+        };
+
+        Ok(error)
+    }
+}
+
+conversion! {
+    type Model = crate::carl::viper::DeleteTestSuiteRunDescriptorError;
+    type Proto = DeleteTestSuiteRunDescriptorFailure;
+
+    fn from(value: Model) -> Proto {
+        let proto_error = match value {
+            Model::RunNotFound { run_id } => {
+                delete_test_suite_run_descriptor_failure::Error::RunNotFound(DeleteTestSuiteRunDescriptorFailureRunNotFound {
+                    run_id: Some(run_id.into())
+                })
+            }
+            Model::Internal { run_id, cause } => {
+                delete_test_suite_run_descriptor_failure::Error::Internal(DeleteTestSuiteRunDescriptorFailureInternal {
+                    run_id: Some(run_id.into()),
+                    cause
+                })
+            }
+            Model::ClusterDeploymentExists { run_id, cluster_id } => {
+                delete_test_suite_run_descriptor_failure::Error::DeploymentExists(DeleteTestSuiteRunDescriptorFailureDeploymentExists {
+                    run_id: Some(run_id.into()),
+                    cluster_id: Some(cluster_id.into()),
+                })
+            }
+        };
+        Proto {
+            error: Some(proto_error)
+        }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let error = extract!(value.error)?;
+
+        match error {
+            delete_test_suite_run_descriptor_failure::Error::RunNotFound(error) => {
+                let run_id = extract!(error.run_id)?.try_into()?;
+                Ok(Model::RunNotFound { run_id })
+            }
+            delete_test_suite_run_descriptor_failure::Error::Internal(error) => {
+                let run_id = extract!(error.run_id)?.try_into()?;
+                let cause = error.cause;
+                Ok(Model::Internal {
+                    run_id,
+                    cause,
+                })
+            }
+            delete_test_suite_run_descriptor_failure::Error::DeploymentExists(error) => {
+                let run_id = extract!(error.run_id)?.try_into()?;
+                let cluster_id = extract!(error.cluster_id)?.try_into()?;
+
+                Ok(Model::ClusterDeploymentExists {
+                    run_id,
+                    cluster_id,
+                })
+            }
+        }
+    }
+}
+
+conversion! {
+    type Model = crate::carl::viper::GetTestSuiteRunDescriptorError;
+    type Proto = GetTestSuiteRunDescriptorFailure;
+
+    fn from(value: Model) -> Proto {
+        let proto_error = match value {
+            Model::RunNotFound { run_id } => {
+                get_test_suite_run_descriptor_failure::Error::RunNotFound(GetTestSuiteRunDescriptorFailureRunNotFound {
+                    run_id: Some(run_id.into())
+                })
+            }
+            Model::Internal { run_id, cause } => {
+                get_test_suite_run_descriptor_failure::Error::Internal(GetTestSuiteRunDescriptorFailureInternal {
+                    run_id: Some(run_id.into()),
+                    cause
+                })
+            }
+        };
+        Proto {
+            error: Some(proto_error)
+        }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let error = extract!(value.error)?;
+
+        match error {
+            get_test_suite_run_descriptor_failure::Error::RunNotFound(error) => {
+                let run_id = extract!(error.run_id)?.try_into()?;
+                Ok(Model::RunNotFound { run_id })
+            }
+            get_test_suite_run_descriptor_failure::Error::Internal(error) => {
+                let run_id = extract!(error.run_id)?.try_into()?;
+                let cause = error.cause;
+                Ok(Model::Internal {
+                    run_id,
+                    cause,
+                })
+            }
+        }
+    }
+}
+
+conversion! {
+    type Model = crate::carl::viper::ListTestSuiteRunDescriptorsError;
+    type Proto = ListTestSuiteRunDescriptorsFailure;
+
+    fn from(value: Model) -> Proto {
+        let proto_error = match value {
+            Model::Internal { cause } => {
+                list_test_suite_run_descriptors_failure::Error::Internal(ListTestSuiteRunDescriptorsFailureInternal {
+                    cause
+                })
+            }
+        };
+        Proto {
+            error: Some(proto_error)
+        }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let error = extract!(value.error)?;
+
+        match error {
+            list_test_suite_run_descriptors_failure::Error::Internal(error) => {
                 let cause = error.cause;
                 Ok(Model::Internal {
                     cause,

@@ -115,6 +115,8 @@ impl ResourceManager {
             mut peer_configuration_state,
             #[cfg(feature = "viper")]
             mut test_suite_source_descriptor,
+            #[cfg(feature = "viper")]
+            mut test_suite_run_descriptor,
             #[expect(deprecated)]
             mut _cluster_configuration,
         } = relayed_subscription_events;
@@ -164,6 +166,13 @@ impl ResourceManager {
 
         #[cfg(feature = "viper")]
         while let Ok(event) = test_suite_source_descriptor.1.try_recv() {
+            state.subscribers
+                .notify(event)
+                .expect("should successfully send notification about event during resource transaction");
+        }
+
+        #[cfg(feature = "viper")]
+        while let Ok(event) = test_suite_run_descriptor.1.try_recv() {
             state.subscribers
                 .notify(event)
                 .expect("should successfully send notification about event during resource transaction");

@@ -8,7 +8,7 @@ use std::fmt::Debug;
 use std::hash::Hash;
 
 #[cfg(feature = "viper")]
-use opendut_model::viper::{TestSuiteSourceDescriptor, TestSuiteSourceId};
+use opendut_model::viper::{TestSuiteRunDescriptor, TestSuiteRunId, TestSuiteSourceDescriptor, TestSuiteSourceId};
 
 pub trait Resource: Any + Send + Sync + Debug + Clone {
     type Id: ResourceId<Self> + Clone + Hash + PartialEq + Eq + Debug;
@@ -40,4 +40,9 @@ impl Resource for EdgePeerConfigurationState {
 #[cfg(feature = "viper")]
 impl Resource for TestSuiteSourceDescriptor {
     type Id = TestSuiteSourceId;
+}
+
+#[cfg(feature = "viper")]
+impl Resource for TestSuiteRunDescriptor {
+    type Id = TestSuiteRunId;
 }

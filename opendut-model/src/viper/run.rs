@@ -4,6 +4,7 @@ use crate::create_id_type;
 use crate::viper::TestSuiteSourceId;
 
 
+#[derive(Clone, Debug)]
 pub struct TestSuiteRunDescriptor {
     pub id: TestSuiteRunId,
     pub source: TestSuiteSourceId,
@@ -15,9 +16,10 @@ pub struct TestSuiteRunDescriptor {
 create_id_type!(TestSuiteRunId);
 
 
-#[derive(PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct TestSuiteRunParameterKey { pub inner: String }
 
+#[derive(Clone, Debug)]
 pub enum TestSuiteRunParameterValue {
     Boolean(bool),
     Number(i64),

@@ -1,8 +1,9 @@
 use tonic::{Request, Response, Status};
 use tracing::{error, trace};
 use opendut_carl_api::proto::services::test_manager::{delete_test_suite_source_descriptor_response, get_test_suite_source_descriptor_response, list_test_suite_source_descriptors_response, store_test_suite_source_descriptor_response, DeleteTestSuiteSourceDescriptorRequest, DeleteTestSuiteSourceDescriptorResponse, DeleteTestSuiteSourceDescriptorSuccess, GetTestSuiteSourceDescriptorRequest, GetTestSuiteSourceDescriptorResponse, GetTestSuiteSourceDescriptorSuccess, ListTestSuiteSourceDescriptorsRequest, ListTestSuiteSourceDescriptorsResponse, ListTestSuiteSourceDescriptorsSuccess, StoreTestSuiteSourceDescriptorRequest, StoreTestSuiteSourceDescriptorResponse, StoreTestSuiteSourceDescriptorSuccess};
+use opendut_carl_api::proto::services::test_manager::{delete_test_suite_run_descriptor_response, get_test_suite_run_descriptor_response, list_test_suite_run_descriptors_response, store_test_suite_run_descriptor_response, DeleteTestSuiteRunDescriptorRequest, DeleteTestSuiteRunDescriptorResponse, DeleteTestSuiteRunDescriptorSuccess, GetTestSuiteRunDescriptorRequest, GetTestSuiteRunDescriptorResponse, GetTestSuiteRunDescriptorSuccess, ListTestSuiteRunDescriptorsRequest, ListTestSuiteRunDescriptorsResponse, ListTestSuiteRunDescriptorsSuccess, StoreTestSuiteRunDescriptorRequest, StoreTestSuiteRunDescriptorResponse, StoreTestSuiteRunDescriptorSuccess};
 use opendut_carl_api::proto::services::test_manager::test_manager_server::{TestManager as TestManagerService, TestManagerServer};
-use opendut_model::viper::{TestSuiteSourceDescriptor, TestSuiteSourceId};
+use opendut_model::viper::{TestSuiteRunDescriptor, TestSuiteRunId, TestSuiteSourceDescriptor, TestSuiteSourceId};
 use crate::manager::grpc::error::LogApiErr;
 use crate::manager::grpc::extract;
 use crate::resource::manager::ResourceManagerRef;
@@ -20,6 +21,10 @@ impl TestManagerFacade {
 
 #[tonic::async_trait]
 impl TestManagerService for TestManagerFacade {
+
+    //
+    // TestSuiteSourceDescriptor
+    //
 
     #[tracing::instrument(skip_all, level="trace")]
     async fn store_test_suite_source_descriptor(&self, request: Request<StoreTestSuiteSourceDescriptorRequest>) -> Result<Response<StoreTestSuiteSourceDescriptorResponse>, Status> {
@@ -144,6 +149,137 @@ impl TestManagerService for TestManagerFacade {
         };
 
         Ok(Response::new(ListTestSuiteSourceDescriptorsResponse {
+            reply: Some(response)
+        }))
+    }
+
+
+
+    //
+    // TestSuiteRunDescriptor
+    //
+
+    #[tracing::instrument(skip_all, level="trace")]
+    async fn store_test_suite_run_descriptor(&self, request: Request<StoreTestSuiteRunDescriptorRequest>) -> Result<Response<StoreTestSuiteRunDescriptorResponse>, Status> {
+
+        let request = request.into_inner();
+        let run: TestSuiteRunDescriptor = extract!(request.run)?;
+
+        trace!("Received request to store test suite run descriptor: {run:?}");
+
+
+        let result =
+            self.resource_manager.insert(run.id, run.clone()).await
+                .log_api_err()
+                .map_err(|_: PersistenceError| opendut_carl_api::carl::viper::StoreTestSuiteRunDescriptorError::Internal {
+                    run_id: run.id,
+                    cause: String::from("Error when accessing persistence while storing test suite run descriptor"),
+                });
+
+        let reply = match result {
+            Ok(()) => store_test_suite_run_descriptor_response::Reply::Success(
+                StoreTestSuiteRunDescriptorSuccess {
+                    run_id: Some(run.id.into()),
+                }
+            ),
+            Err(error) => store_test_suite_run_descriptor_response::Reply::Failure(error.into()),
+        };
+
+        Ok(Response::new(StoreTestSuiteRunDescriptorResponse {
+            reply: Some(reply),
+        }))
+    }
+
+    #[tracing::instrument(skip_all, level="trace")]
+    async fn delete_test_suite_run_descriptor(&self, request: Request<DeleteTestSuiteRunDescriptorRequest>) -> Result<Response<DeleteTestSuiteRunDescriptorResponse>, Status> {
+
+        let request = request.into_inner();
+        let run_id: TestSuiteRunId = extract!(request.run_id)?;
+
+        trace!("Received request to delete test suite run descriptor for run <{run_id}>.");
+
+        let result =
+            self.resource_manager.remove::<TestSuiteRunDescriptor>(run_id).await
+                .log_api_err()
+                .map_err(|_: PersistenceError| opendut_carl_api::carl::viper::DeleteTestSuiteRunDescriptorError::Internal {
+                    run_id,
+                    cause: String::from("Error when accessing persistence while storing test suite run descriptor"),
+                });
+
+        let response = match result {
+            Ok(_) => delete_test_suite_run_descriptor_response::Reply::Success(
+                DeleteTestSuiteRunDescriptorSuccess {
+                    run_id: Some(run_id.into())
+                }
+            ),
+            Err(error) => delete_test_suite_run_descriptor_response::Reply::Failure(error.into()),
+        };
+
+        Ok(Response::new(DeleteTestSuiteRunDescriptorResponse {
+            reply: Some(response),
+        }))
+    }
+
+    #[tracing::instrument(skip_all, level="trace")]
+    async fn get_test_suite_run_descriptor(&self, request: Request<GetTestSuiteRunDescriptorRequest>) -> Result<Response<GetTestSuiteRunDescriptorResponse>, Status> {
+
+        let request = request.into_inner();
+        let run_id: TestSuiteRunId = extract!(request.run_id)?;
+
+        trace!("Received request to get test suite run descriptor for run <{run_id}>.");
+
+        let result =
+            self.resource_manager.get::<TestSuiteRunDescriptor>(run_id).await
+                .inspect_err(|error| error!("Error while getting test suite run descriptor from gRPC API: {error}"))
+                .map_err(|_: PersistenceError| opendut_carl_api::carl::viper::GetTestSuiteRunDescriptorError::Internal {
+                    run_id,
+                    cause: String::from("Error when accessing persistence while getting test suite run descriptor"),
+                });
+
+        let response = match result {
+            Ok(descriptor) => match descriptor {
+                Some(descriptor) => get_test_suite_run_descriptor_response::Reply::Success(
+                    GetTestSuiteRunDescriptorSuccess {
+                        descriptor: Some(descriptor.into())
+                    }
+                ),
+                None => get_test_suite_run_descriptor_response::Reply::Failure(
+                    opendut_carl_api::carl::viper::GetTestSuiteRunDescriptorError::RunNotFound { run_id }.into()
+                ),
+            }
+            Err(error) => get_test_suite_run_descriptor_response::Reply::Failure(error.into()),
+        };
+
+        Ok(Response::new(GetTestSuiteRunDescriptorResponse {
+            reply: Some(response)
+        }))
+    }
+
+    #[tracing::instrument(skip_all, level="trace")]
+    async fn list_test_suite_run_descriptors(&self, _: Request<ListTestSuiteRunDescriptorsRequest>) -> Result<Response<ListTestSuiteRunDescriptorsResponse>, Status> {
+
+        trace!("Received request to list test suite run descriptors.");
+
+        let result = self.resource_manager.list::<TestSuiteRunDescriptor>().await
+            .inspect_err(|error| error!("Error while listing test suite run descriptors from gRPC API: {error}"))
+            .map_err(|_: PersistenceError| opendut_carl_api::carl::viper::ListTestSuiteRunDescriptorsError::Internal {
+                cause: String::from("Error when accessing persistence while listing test suite run descriptors"),
+            });
+
+        let response = match result {
+            Ok(runs) => {
+                let runs = runs.into_values()
+                    .map(From::from)
+                    .collect::<Vec<_>>();
+
+                list_test_suite_run_descriptors_response::Reply::Success(
+                    ListTestSuiteRunDescriptorsSuccess { runs }
+                )
+            }
+            Err(error) => list_test_suite_run_descriptors_response::Reply::Failure(error.into())
+        };
+
+        Ok(Response::new(ListTestSuiteRunDescriptorsResponse {
             reply: Some(response)
         }))
     }

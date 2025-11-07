@@ -2,8 +2,9 @@
 pub use client::*;
 
 use opendut_model::cluster::ClusterId;
-use opendut_model::viper::{TestSuiteSourceId, TestSuiteSourceName};
+use opendut_model::viper::{TestSuiteRunId, TestSuiteSourceId, TestSuiteSourceName};
 use opendut_model::format::{format_id_with_name, format_id_with_optional_name};
+
 
 #[derive(thiserror::Error, Debug)]
 pub enum StoreTestSuiteSourceDescriptorError {
@@ -56,11 +57,60 @@ pub enum ListTestSuiteSourceDescriptorsError {
 }
 
 
+#[derive(thiserror::Error, Debug)]
+pub enum StoreTestSuiteRunDescriptorError {
+    #[error("Test suite run <{run_id}> could not be created, due to internal errors:\n  {cause}")]
+    Internal {
+        run_id: TestSuiteRunId,
+        cause: String
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum DeleteTestSuiteRunDescriptorError {
+    #[error("Test suite run <{run_id}> could not be deleted, because a run with that ID does not exist!")]
+    RunNotFound {
+        run_id: TestSuiteRunId,
+    },
+    #[error("Test suite run <{run_id}> could not be deleted, because a cluster deployment <{cluster_id}> using this run still exists!")]
+    ClusterDeploymentExists {
+        run_id: TestSuiteRunId,
+        cluster_id: ClusterId,
+    },
+    #[error("Test suite run <{run_id}> deleted with internal errors:\n  {cause}")]
+    Internal {
+        run_id: TestSuiteRunId,
+        cause: String,
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum GetTestSuiteRunDescriptorError {
+    #[error("A test suite run with ID <{run_id}> could not be found!")]
+    RunNotFound {
+        run_id: TestSuiteRunId
+    },
+    #[error("An internal error occurred searching for a test suite run with ID <{run_id}>:\n  {cause}")]
+    Internal {
+        run_id: TestSuiteRunId,
+        cause: String
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ListTestSuiteRunDescriptorsError {
+    #[error("An internal error occurred computing the list of test suite runs:\n  {cause}")]
+    Internal {
+        cause: String
+    }
+}
+
+
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 mod client {
     use super::*;
     use tonic::codegen::{Body, Bytes, http, InterceptedService, StdError};
-    use opendut_model::viper::{TestSuiteSourceDescriptor, TestSuiteSourceId};
+    use opendut_model::viper::{TestSuiteRunDescriptor, TestSuiteRunId, TestSuiteSourceDescriptor, TestSuiteSourceId};
     use crate::carl::{extract, ClientError};
     use crate::proto::services::test_manager;
     use crate::proto::services::test_manager::test_manager_client::TestManagerClient;
@@ -104,6 +154,7 @@ mod client {
                 inner: inner_client
             }
         }
+
 
         pub async fn store_test_suite_source_descriptor(&mut self, descriptor: TestSuiteSourceDescriptor) -> Result<TestSuiteSourceId, ClientError<StoreTestSuiteSourceDescriptorError>> {
 
@@ -184,6 +235,92 @@ mod client {
                 test_manager::list_test_suite_source_descriptors_response::Reply::Success(success) => {
                     Ok(success.sources.into_iter()
                         .map(TestSuiteSourceDescriptor::try_from)
+                        .collect::<Result<Vec<_>, _>>()?
+                    )
+                }
+            }
+        }
+
+
+        pub async fn store_test_suite_run_descriptor(&mut self, descriptor: TestSuiteRunDescriptor) -> Result<TestSuiteRunId, ClientError<StoreTestSuiteRunDescriptorError>> {
+
+            let request = tonic::Request::new(test_manager::StoreTestSuiteRunDescriptorRequest {
+                run: Some(descriptor.into()),
+            });
+
+            let response = self.inner.store_test_suite_run_descriptor(request).await?
+                .into_inner();
+
+            match extract!(response.reply)? {
+                test_manager::store_test_suite_run_descriptor_response::Reply::Failure(failure) => {
+                    let error = StoreTestSuiteRunDescriptorError::try_from(failure)?;
+                    Err(ClientError::UsageError(error))
+                }
+                test_manager::store_test_suite_run_descriptor_response::Reply::Success(success) => {
+                    let run_id = extract!(success.run_id)?;
+                    Ok(run_id)
+                }
+            }
+        }
+
+
+        pub async fn delete_test_suite_run_descriptor(&mut self, run_id: TestSuiteRunId) -> Result<TestSuiteRunId, ClientError<DeleteTestSuiteRunDescriptorError>> {
+
+            let request = tonic::Request::new(test_manager::DeleteTestSuiteRunDescriptorRequest {
+                run_id: Some(run_id.into()),
+            });
+
+            let response = self.inner.delete_test_suite_run_descriptor(request).await?
+                .into_inner();
+
+            match extract!(response.reply)? {
+                test_manager::delete_test_suite_run_descriptor_response::Reply::Failure(failure) => {
+                    let error = DeleteTestSuiteRunDescriptorError::try_from(failure)?;
+                    Err(ClientError::UsageError(error))
+                }
+                test_manager::delete_test_suite_run_descriptor_response::Reply::Success(success) => {
+                    let run_id = extract!(success.run_id)?;
+                    Ok(run_id)
+                }
+            }
+        }
+
+        pub async fn get_test_suite_run_descriptor(&mut self, run_id: TestSuiteRunId) -> Result<TestSuiteRunDescriptor, ClientError<GetTestSuiteRunDescriptorError>> {
+
+            let request = tonic::Request::new(test_manager::GetTestSuiteRunDescriptorRequest {
+                run_id: Some(run_id.into()),
+            });
+
+            let response = self.inner.get_test_suite_run_descriptor(request).await?
+                .into_inner();
+
+            match extract!(response.reply)? {
+                test_manager::get_test_suite_run_descriptor_response::Reply::Failure(failure) => {
+                    let error = GetTestSuiteRunDescriptorError::try_from(failure)?;
+                    Err(ClientError::UsageError(error))
+                }
+                test_manager::get_test_suite_run_descriptor_response::Reply::Success(success) => {
+                    let peer_descriptor = extract!(success.descriptor)?;
+                    Ok(peer_descriptor)
+                }
+            }
+        }
+
+        pub async fn list_test_suite_run_descriptors(&mut self) -> Result<Vec<TestSuiteRunDescriptor>, ClientError<ListTestSuiteRunDescriptorsError>> {
+
+            let request = tonic::Request::new(test_manager::ListTestSuiteRunDescriptorsRequest {});
+
+            let response = self.inner.list_test_suite_run_descriptors(request).await?
+                .into_inner();
+
+            match extract!(response.reply)? {
+                test_manager::list_test_suite_run_descriptors_response::Reply::Failure(failure) => {
+                    let error = ListTestSuiteRunDescriptorsError::try_from(failure)?;
+                    Err(ClientError::UsageError(error))
+                }
+                test_manager::list_test_suite_run_descriptors_response::Reply::Success(success) => {
+                    Ok(success.runs.into_iter()
+                        .map(TestSuiteRunDescriptor::try_from)
                         .collect::<Result<Vec<_>, _>>()?
                     )
                 }
