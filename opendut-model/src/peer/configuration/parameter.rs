@@ -79,6 +79,9 @@ pub struct CanConnection {
 pub struct CanBridge {
     pub name: NetworkInterfaceName,
 }
+
+/// Defines a local CAN route between two interfaces.
+/// For bidirectional CAN message forwarding, two `CanLocalRoute` entries are needed.
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
 pub struct CanLocalRoute {
     pub can_source_device_name: NetworkInterfaceName,

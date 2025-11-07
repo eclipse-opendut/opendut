@@ -4,6 +4,7 @@ use crate::common::task::{Success, Task, TaskAbsent, TaskStateFulfilled};
 use crate::service::network_interface::manager::can::{BitTiming, CanFD, CanInterfaceConfiguration};
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor};
+use crate::service::network_interface::manager::interface::{Interface, NetlinkInterfaceKind};
 
 pub struct CanDeviceConfiguration {
     pub can_config: CanInterfaceConfiguration,
@@ -59,6 +60,10 @@ impl Task for CanDeviceConfiguration {
     }
 
     async fn check_present(&self) -> anyhow::Result<TaskStateFulfilled> {
+        let interface = self.find_interface().await?;
+        if interface.kind == NetlinkInterfaceKind::VCan {
+            return Ok(TaskStateFulfilled::Yes);  // Virtual CAN interfaces are assumed to always match the desired configuration.
+        }
         // This assumes the device exists otherwise an error is returned.
         let detected_can_config = self.network_interface_manager
             .detect_can_device_configuration(self.network_interface_descriptor.name.clone())
@@ -72,10 +77,7 @@ impl Task for CanDeviceConfiguration {
     }
 
     async fn make_present(&self) -> anyhow::Result<Success> {
-        let interface = self.network_interface_manager.find_interface(&self.network_interface_descriptor.name.clone())
-            .await?
-            .ok_or_else(|| anyhow!("Cannot find network interface with name {}", self.network_interface_descriptor.name.clone()))?;
-
+        let interface = self.find_interface().await?;
         self.network_interface_manager.set_interface_down(&interface).await?;
         if let Err(cause) = self.network_interface_manager.update_interface(self.network_interface_descriptor.clone()).await {
             error!("Error updating CAN interface - A possible reason might be, that a virtual CAN interface was used: {cause}");
@@ -83,6 +85,15 @@ impl Task for CanDeviceConfiguration {
         self.network_interface_manager.set_interface_up(&interface).await?;
 
         Ok(Success::default())
+    }
+}
+
+impl CanDeviceConfiguration {
+    async fn find_interface(&self) -> anyhow::Result<Interface> {
+        let interface = self.network_interface_manager.find_interface(&self.network_interface_descriptor.name.clone())
+            .await?
+            .ok_or_else(|| anyhow!("Cannot find network interface with name {}", self.network_interface_descriptor.name.clone()))?;
+        Ok(interface)
     }
 }
 

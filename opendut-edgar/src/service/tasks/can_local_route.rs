@@ -7,7 +7,7 @@ use opendut_model::util::net::NetworkInterfaceName;
 use regex::Regex;
 use std::fmt::Display;
 use tokio::process::Command;
-use tracing::trace;
+use tracing::{debug, trace};
 
 pub struct CanLocalRoute {
     pub parameter: parameter::CanLocalRoute,
@@ -44,7 +44,7 @@ pub enum Error {
 #[async_trait]
 impl Task for CanLocalRoute {
     fn description(&self) -> String {
-        format!("Create local CAN route from '{}' to bridge '{}'.", self.parameter.can_destination_device_name, self.parameter.can_source_device_name)
+        format!("Create local CAN route from source '{}' to destination '{}'.", self.parameter.can_destination_device_name, self.parameter.can_source_device_name)
     }
 
     async fn check_present(&self) -> anyhow::Result<TaskStateFulfilled> {
@@ -84,6 +84,7 @@ impl Task for CanLocalRoute {
                     CanRouteOperation::Create,
                 ).await?;
 
+                debug!("Created CAN local route from '{}' to '{}'.", source.name, destination.name);
                 Ok(Success::default())
             },
             _ => Err(anyhow::Error::msg("Cannot create CAN local route because either source or destination does not exist.")),

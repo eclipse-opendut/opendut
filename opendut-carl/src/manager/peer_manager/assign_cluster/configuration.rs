@@ -1,10 +1,11 @@
 use std::net::{IpAddr, Ipv4Addr};
+use std::str::FromStr;
 use tracing::debug;
 use opendut_model::cluster::ClusterAssignment;
 use opendut_model::peer::configuration::{parameter, PeerConfiguration};
 use opendut_model::peer::configuration::parameter::{GreInterfaceConfig, InterfaceJoinConfig};
 use opendut_model::peer::{PeerDescriptor, PeerId};
-use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor};
+use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
 use crate::manager::peer_manager::{AssignClusterError, AssignClusterOptions};
 
 
@@ -47,6 +48,11 @@ pub(super) fn update_peer_configuration(
         can_local_routes,
     } = peer_configuration;
 
+    let can_device_names = expected_device_interfaces.iter()
+        .filter(|descriptor| matches!(descriptor.configuration, NetworkInterfaceConfiguration::Can { .. }))
+        .map(|device_interfaces| device_interfaces.name.clone())
+        .collect::<Vec<_>>();
+    let can_enabled = !can_device_names.is_empty();
     let device_dependencies = { // Network device interfaces
         let expected_device_interfaces = expected_device_interfaces.into_iter()
             .map(|descriptor| parameter::DeviceInterface { descriptor });
@@ -56,6 +62,73 @@ pub(super) fn update_peer_configuration(
         debug!("Configured network device interfaces: {:?}", device_interfaces);
         ids
     };
+
+    if can_enabled {
+        // CAN bridge
+        let can_bridge = NetworkInterfaceName::from_str("br-vcan-opendut").unwrap();
+        let expected_can_bridges = vec![parameter::CanBridge {
+            name: can_bridge.clone(),
+        }];
+        let can_dependencies = can_bridges.set_all_present(expected_can_bridges, device_dependencies.clone());
+
+        // CAN connections
+        if cluster_assignment.leader == peer_descriptor.id {
+            let remote_peers = cluster_assignment.non_leader_assignments();
+            let expected_can_connections = remote_peers.into_iter()
+                .map(|(remote_peer_id, peer_cluster_assignment)| {
+                    parameter::CanConnection {
+                        can_interface_name: can_bridge.clone(),
+                        local_is_server: true,
+                        remote_peer_id,
+                        remote_ip: peer_cluster_assignment.vpn_address,
+                        remote_port: peer_cluster_assignment.can_server_port,
+                        local_port: peer_cluster_assignment.can_server_port,
+                        buffer_timeout_microseconds: 100,
+                    }
+                });
+            can_connections.set_all_present(expected_can_connections, can_dependencies.clone());
+        } else {
+            let leader = cluster_assignment.leader_assignment();
+            match leader {
+                Some(leader_assignment) => {
+                    let can_connection = parameter::CanConnection {
+                        can_interface_name: can_bridge.clone(),
+                        local_is_server: false,
+                        remote_peer_id: cluster_assignment.leader,
+                        remote_ip: leader_assignment.vpn_address,
+                        remote_port: leader_assignment.can_server_port,
+                        local_port: leader_assignment.can_server_port,
+                        buffer_timeout_microseconds: 100,
+                    };
+                    let expected_can_connections = vec![can_connection];
+                    can_connections.set_all_present(expected_can_connections, can_dependencies.clone());
+                }
+                None => {
+                    return Err(AssignClusterError::PeerNotFound(cluster_assignment.leader));
+                }
+            }
+        }
+
+        // CAN local routes
+        let mut expected_can_local_routes = vec![];
+        for can_device in &can_device_names {
+            expected_can_local_routes.push(parameter::CanLocalRoute {
+                can_source_device_name: can_device.clone(),
+                can_destination_device_name: can_bridge.clone(),
+            });
+            expected_can_local_routes.push(parameter::CanLocalRoute {
+                can_source_device_name: can_bridge.clone(),
+                can_destination_device_name: can_device.clone(),
+            });
+        }
+        can_local_routes.set_all_present(expected_can_local_routes, can_dependencies.clone());
+
+    } else {
+        // Clear CAN-related configurations if no CAN interfaces are expected
+        can_connections.set_all_absent();
+        can_bridges.set_all_absent();
+        can_local_routes.set_all_absent();
+    }
 
     let ethernet_bridge = peer_descriptor.network.bridge_name
         .unwrap_or(options.bridge_name_default);

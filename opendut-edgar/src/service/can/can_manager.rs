@@ -36,10 +36,10 @@ impl CanManager {
     pub async fn spawn_process(&self, parameter: &CanConnection) -> anyhow::Result<()> {
         let id = parameter.parameter_identifier();
         let mut cmd = Command::new("cannelloni");
-        Self::fill_cannelloni_cmd(&parameter, &mut cmd);
+        Self::fill_cannelloni_cmd(parameter, &mut cmd);
         let mut process_manager = self.process_manager.lock().await;
         let name = if parameter.local_is_server {
-            format!("cannelloni-server-{}", parameter.local_port)
+            format!("cannelloni-server-on-port-{}", parameter.local_port)
         } else {
             format!("cannelloni-to-leader-peer-{}", parameter.remote_peer_id)
         };
