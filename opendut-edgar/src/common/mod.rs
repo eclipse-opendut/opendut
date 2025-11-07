@@ -10,10 +10,6 @@ pub fn default_bridge_name() -> NetworkInterfaceName {
     NetworkInterfaceName::from_str("br-opendut").unwrap()
 }
 
-pub fn default_can_bridge_name() -> NetworkInterfaceName {
-    NetworkInterfaceName::from_str("br-vcan-opendut").unwrap()
-}
-
 pub mod constants {
     use std::path::PathBuf;
 
