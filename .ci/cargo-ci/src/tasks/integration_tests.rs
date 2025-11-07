@@ -5,6 +5,8 @@ use serde::Deserialize;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use tracing::debug;
+use crate::core::commands::CROSS;
+use crate::core::types::Arch;
 
 /// Run integration tests of EDGAR
 #[derive(Debug, clap::Parser)]
@@ -88,7 +90,7 @@ fn run_edgar_integration_test_binary_in_docker(edgar_test_binary: String) -> any
 
 fn determine_test_binary_directory() -> anyhow::Result<String> {
     let target_directory = cicero::path::target_dir();
-    let test_binary_directory = target_directory.join("debug").join("deps");
+    let test_binary_directory = target_directory.join(Arch::X86_64.triple()).join("debug").join("deps");
     let test_binary_directory = test_binary_directory
         .into_os_string().into_string()
         .map_err(|_| anyhow!("Test target directory could not be determined!"))?;
@@ -97,8 +99,9 @@ fn determine_test_binary_directory() -> anyhow::Result<String> {
 
 
 fn create_edgar_integration_test_binary() -> anyhow::Result<String> {
-    let mut command = Command::new("cargo");
-    let cargo_build_integration_test = command.arg("test")
+    let mut command = CROSS.command();
+    let cargo_build_integration_test = command
+        .arg("test")
         .arg("--package").arg("opendut-edgar")
         .arg("--no-run")
         .arg("--message-format=json")

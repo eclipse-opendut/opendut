@@ -287,6 +287,7 @@ pub mod distribution {
         }
         fn build_rperf(target_directory: &Path, current_directory: &Path, target: Arch) -> Result<PathBuf, anyhow::Error>  {
             CROSS.command()
+                .arg("build")
                 .arg("--release")
                 .arg("--all-features")
                 .arg("--target-dir").arg(target_directory)

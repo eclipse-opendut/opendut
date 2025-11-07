@@ -24,6 +24,7 @@ pub fn distribution_build(package: Package, target: Arch, release_build: bool) -
     let mut command = CROSS.command();
 
     command
+        .arg("build")
         .arg("--package").arg(package.ident())
         .arg("--target-dir").arg(cross_target_dir().as_os_str()) //explicitly set target-base-dir to fix unreliable caching behavior
         .arg("--target").arg(target.triple());
