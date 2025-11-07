@@ -2,6 +2,7 @@ use clap::Parser;
 
 pub use fs_err as fs;
 use cicero::path::repo_path;
+use tracing_subscriber::EnvFilter;
 pub(crate) use core::constants;
 pub(crate) use core::metadata;
 pub(crate) use core::types::{self, Arch, Package, Result};
@@ -39,7 +40,12 @@ enum TaskCli {
 }
 
 fn main() -> crate::Result {
-    cicero::init::tracing().init();
+    cicero::init::tracing()
+        .with_env_filter(
+            EnvFilter::builder()
+                .parse("info,opendut=trace")?
+        )
+        .init();
 
     std::env::set_current_dir(repo_path!())?;
 
