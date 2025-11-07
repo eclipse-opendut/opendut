@@ -263,7 +263,7 @@ pub(crate) mod tests {
         assert_eq!(
             description,
             format!(
-                "Create local CAN route from '{}' to bridge '{}'.",
+                "Create local CAN route from source '{}' to destination '{}'.",
                 fixture.parameter.can_destination_device_name,
                 fixture.parameter.can_source_device_name
             )
