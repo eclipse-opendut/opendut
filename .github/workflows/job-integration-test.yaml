@@ -21,5 +21,8 @@ jobs:
       - name: Rust setup
         uses: ./.github/actions/rust-setup
 
+      - name: Install kernel modules
+        uses: ./.github/actions/install-kernel-modules
+
       - name: Run integration test
         run: cargo ci integration-test
