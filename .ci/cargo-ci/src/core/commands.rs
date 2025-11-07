@@ -8,13 +8,7 @@ pub static CARGO_SBOM: Cli = Crate::new("cargo-sbom").into_cli();
 
 pub static CARGO_TARPAULIN: Cli = Crate::new("cargo-tarpaulin").into_cli();
 
-pub static CROSS: Cli = Crate::new("cross")
-    .into_cli()
-    .with_base_command(&|mut command| {
-        command
-            .arg("build");
-        command
-    });
+pub static CROSS: Cli = Crate::new("cross").into_cli();
 
 pub static MDBOOK: Cli = Crate::new("mdbook").into_cli()
     .with_crate_dependencies(&[
