@@ -588,7 +588,7 @@ mod test {
             assert_that!(fixture.testee.lock().await.rollout_cluster(cluster_id).await, ok(eq(&())));
             
             let can_port_count = fixture.testee.lock().await.can_server_port_counter;
-            expect_gt!(can_port_count, fixture.cluster_manager_options.can_server_port_range_start);
+            assert!(can_port_count > fixture.cluster_manager_options.can_server_port_range_start);
 
             let assert_peer_config_valid = |peer_config: &PeerConfiguration| {
                 assert_eq!(peer_config.device_interfaces.len(), 2);
