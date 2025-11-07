@@ -1,6 +1,6 @@
 use crate::common::task::{Success, Task, TaskAbsent, TaskStateFulfilled};
 use crate::service::can::can_manager::CanManagerRef;
-use opendut_model::peer::configuration::{parameter, ParameterValue};
+use opendut_model::peer::configuration::parameter;
 
 pub struct CanConnection {
     pub parameter: parameter::CanConnection,
@@ -14,10 +14,7 @@ impl Task for CanConnection {
     }
 
     async fn check_present(&self) -> anyhow::Result<TaskStateFulfilled> {
-        let mut can_manager = self.can_manager.lock().await;
-        let is_running = can_manager.process_is_running(&self.parameter).await?;
-
-        if is_running {
+        if self.is_running().await {
             Ok(TaskStateFulfilled::Yes)
         } else {
             Ok(TaskStateFulfilled::No)
@@ -25,20 +22,40 @@ impl Task for CanConnection {
     }
 
     async fn make_present(&self) -> anyhow::Result<Success> {
-        let id = self.parameter.parameter_identifier();
-
-
-        Ok(Success::message(format!("CAN connection to {} established", self.parameter.remote_peer_id)))
+        if !self.is_running().await {
+            let can_manager = self.can_manager.lock().await;
+            can_manager.spawn_process(&self.parameter).await?;
+            Ok(Success::message(format!("CAN connection to {} established", self.parameter.remote_peer_id)))
+        } else {
+            Ok(Success::message(format!("CAN connection to {} was already running", self.parameter.remote_peer_id)))
+        }
     }
 }
 
 #[async_trait::async_trait]
 impl TaskAbsent for CanConnection {
     async fn check_absent(&self) -> anyhow::Result<TaskStateFulfilled> {
-        todo!()
+        if self.is_running().await {
+            Ok(TaskStateFulfilled::No)
+        } else {
+            Ok(TaskStateFulfilled::Yes)
+        }
     }
 
     async fn make_absent(&self) -> anyhow::Result<Success> {
-        todo!()
+        if self.is_running().await {
+            let can_manager = self.can_manager.lock().await;
+            can_manager.terminate_process(&self.parameter).await?;
+            Ok(Success::message(format!("CAN connection to {} terminated", self.parameter.remote_peer_id)))
+        } else {
+            Ok(Success::message(format!("CAN connection to {} was not running", self.parameter.remote_peer_id)))
+        }
+    }
+}
+
+impl CanConnection {
+    async fn is_running(&self) -> bool {
+        let can_manager = self.can_manager.lock().await;
+        can_manager.process_is_running(&self.parameter).await
     }
 }
