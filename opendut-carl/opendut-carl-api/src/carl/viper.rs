@@ -6,6 +6,10 @@ use opendut_model::viper::{TestSuiteRunId, TestSuiteSourceId, TestSuiteSourceNam
 use opendut_model::format::{format_id_with_name, format_id_with_optional_name};
 
 
+//
+// TestSuiteSourceDescriptor
+//
+
 #[derive(thiserror::Error, Debug)]
 pub enum StoreTestSuiteSourceDescriptorError {
     #[error("Test suite source {source} could not be created, due to internal errors:\n  {cause}", source=format_id_with_name(source_id, source_name))]
@@ -57,6 +61,10 @@ pub enum ListTestSuiteSourceDescriptorsError {
 }
 
 
+//
+// TestSuiteRunDescriptor
+//
+
 #[derive(thiserror::Error, Debug)]
 pub enum StoreTestSuiteRunDescriptorError {
     #[error("Test suite run <{run_id}> could not be created, due to internal errors:\n  {cause}")]
@@ -100,6 +108,54 @@ pub enum GetTestSuiteRunDescriptorError {
 #[derive(thiserror::Error, Debug)]
 pub enum ListTestSuiteRunDescriptorsError {
     #[error("An internal error occurred computing the list of test suite runs:\n  {cause}")]
+    Internal {
+        cause: String
+    }
+}
+
+
+//
+// TestSuiteRunDeployment
+//
+
+#[derive(thiserror::Error, Debug)]
+pub enum StoreTestSuiteRunDeploymentError {
+    #[error("Test suite run deployment <{run_id}> could not be created, due to internal errors:\n  {cause}")]
+    Internal {
+        run_id: TestSuiteRunId,
+        cause: String
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum DeleteTestSuiteRunDeploymentError {
+    #[error("Test suite run deployment <{run_id}> could not be deleted, because a run deployment with that ID does not exist!")]
+    RunDeploymentNotFound {
+        run_id: TestSuiteRunId,
+    },
+    #[error("Test suite run deployment <{run_id}> deleted with internal errors:\n  {cause}")]
+    Internal {
+        run_id: TestSuiteRunId,
+        cause: String,
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum GetTestSuiteRunDeploymentError {
+    #[error("A test suite run deployment with ID <{run_id}> could not be found!")]
+    RunDeploymentNotFound {
+        run_id: TestSuiteRunId
+    },
+    #[error("An internal error occurred searching for a test suite run deployment with ID <{run_id}>:\n  {cause}")]
+    Internal {
+        run_id: TestSuiteRunId,
+        cause: String
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ListTestSuiteRunDeploymentsError {
+    #[error("An internal error occurred computing the list of test suite run deployments:\n  {cause}")]
     Internal {
         cause: String
     }

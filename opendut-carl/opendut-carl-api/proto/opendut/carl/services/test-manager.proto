@@ -3,6 +3,7 @@ syntax = "proto3";
 package opendut.carl.services.test_manager;
 
 import "opendut/model/cluster/cluster.proto";
+import "opendut/model/viper/deployment.proto";
 import "opendut/model/viper/run.proto";
 import "opendut/model/viper/source.proto";
 
@@ -16,6 +17,11 @@ service TestManager {
   rpc DeleteTestSuiteRunDescriptor(DeleteTestSuiteRunDescriptorRequest) returns (DeleteTestSuiteRunDescriptorResponse) {}
   rpc GetTestSuiteRunDescriptor(GetTestSuiteRunDescriptorRequest) returns (GetTestSuiteRunDescriptorResponse) {}
   rpc ListTestSuiteRunDescriptors(ListTestSuiteRunDescriptorsRequest) returns (ListTestSuiteRunDescriptorsResponse) {}
+
+  rpc StoreTestSuiteRunDeployment(StoreTestSuiteRunDeploymentRequest) returns (StoreTestSuiteRunDeploymentResponse) {}
+  rpc DeleteTestSuiteRunDeployment(DeleteTestSuiteRunDeploymentRequest) returns (DeleteTestSuiteRunDeploymentResponse) {}
+  rpc GetTestSuiteRunDeployment(GetTestSuiteRunDeploymentRequest) returns (GetTestSuiteRunDeploymentResponse) {}
+  rpc ListTestSuiteRunDeployments(ListTestSuiteRunDeploymentsRequest) returns (ListTestSuiteRunDeploymentsResponse) {}
 }
 
 
@@ -292,5 +298,136 @@ message ListTestSuiteRunDescriptorsFailure {
 }
 
 message ListTestSuiteRunDescriptorsFailureInternal {
+  string cause = 1;
+}
+
+
+////////////////////////////
+// TestSuiteRunDeployment //
+////////////////////////////
+
+//
+// StoreTestSuiteRunDeploymentRequest
+//
+message StoreTestSuiteRunDeploymentRequest {
+  opendut.model.viper.TestSuiteRunDeployment run = 1;
+}
+
+message StoreTestSuiteRunDeploymentResponse {
+  oneof reply {
+    StoreTestSuiteRunDeploymentSuccess success = 1;
+    StoreTestSuiteRunDeploymentFailure failure = 2;
+  }
+}
+
+message StoreTestSuiteRunDeploymentSuccess {
+  opendut.model.viper.TestSuiteRunId run_id = 1;
+}
+
+message StoreTestSuiteRunDeploymentFailure {
+  oneof error {
+    StoreTestSuiteRunDeploymentFailureInternal internal = 1;
+  }
+}
+
+message StoreTestSuiteRunDeploymentFailureInternal {
+  opendut.model.viper.TestSuiteRunId run_id = 1;
+  string cause = 2;
+}
+
+
+//
+// DeleteTestSuiteRunDeploymentRequest
+//
+message DeleteTestSuiteRunDeploymentRequest {
+  opendut.model.viper.TestSuiteRunId run_id = 1;
+}
+
+message DeleteTestSuiteRunDeploymentResponse {
+  oneof reply {
+    DeleteTestSuiteRunDeploymentSuccess success = 1;
+    DeleteTestSuiteRunDeploymentFailure failure = 2;
+  }
+}
+
+message DeleteTestSuiteRunDeploymentSuccess {
+  opendut.model.viper.TestSuiteRunId run_id = 1;
+}
+
+message DeleteTestSuiteRunDeploymentFailure {
+  oneof error {
+    DeleteTestSuiteRunDeploymentFailureRunNotFound run_not_found = 1;
+    DeleteTestSuiteRunDeploymentFailureInternal internal = 4;
+  }
+}
+
+message DeleteTestSuiteRunDeploymentFailureRunNotFound {
+  opendut.model.viper.TestSuiteRunId run_id = 1;
+}
+
+message DeleteTestSuiteRunDeploymentFailureInternal {
+  opendut.model.viper.TestSuiteRunId run_id = 1;
+  string cause = 2;
+}
+
+
+//
+// GetTestSuiteRunDeploymentRequest
+//
+message GetTestSuiteRunDeploymentRequest {
+  opendut.model.viper.TestSuiteRunId run_id = 1;
+}
+
+message GetTestSuiteRunDeploymentResponse {
+  oneof reply {
+    GetTestSuiteRunDeploymentSuccess success = 1;
+    GetTestSuiteRunDeploymentFailure failure = 2;
+  }
+}
+
+message GetTestSuiteRunDeploymentSuccess {
+  opendut.model.viper.TestSuiteRunDeployment deployment = 1;
+}
+
+message GetTestSuiteRunDeploymentFailure {
+  oneof error {
+    GetTestSuiteRunDeploymentFailureRunNotFound run_not_found = 1;
+    GetTestSuiteRunDeploymentFailureInternal internal = 2;
+  }
+}
+
+message GetTestSuiteRunDeploymentFailureRunNotFound {
+  opendut.model.viper.TestSuiteRunId run_id = 1;
+}
+
+message GetTestSuiteRunDeploymentFailureInternal {
+  opendut.model.viper.TestSuiteRunId run_id = 1;
+  string cause = 2;
+}
+
+
+//
+// ListTestSuiteRunRequest
+//
+message ListTestSuiteRunDeploymentsRequest {}
+
+message ListTestSuiteRunDeploymentsResponse {
+  oneof reply {
+    ListTestSuiteRunDeploymentsSuccess success = 1;
+    ListTestSuiteRunDeploymentsFailure failure = 2;
+  }
+}
+
+message ListTestSuiteRunDeploymentsSuccess {
+  repeated opendut.model.viper.TestSuiteRunDeployment runs = 1;
+}
+
+message ListTestSuiteRunDeploymentsFailure {
+  oneof error {
+      ListTestSuiteRunDeploymentsFailureInternal internal = 1;
+  }
+}
+
+message ListTestSuiteRunDeploymentsFailureInternal {
   string cause = 1;
 }

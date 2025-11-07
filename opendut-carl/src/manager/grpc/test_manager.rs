@@ -2,8 +2,9 @@ use tonic::{Request, Response, Status};
 use tracing::{error, trace};
 use opendut_carl_api::proto::services::test_manager::{delete_test_suite_source_descriptor_response, get_test_suite_source_descriptor_response, list_test_suite_source_descriptors_response, store_test_suite_source_descriptor_response, DeleteTestSuiteSourceDescriptorRequest, DeleteTestSuiteSourceDescriptorResponse, DeleteTestSuiteSourceDescriptorSuccess, GetTestSuiteSourceDescriptorRequest, GetTestSuiteSourceDescriptorResponse, GetTestSuiteSourceDescriptorSuccess, ListTestSuiteSourceDescriptorsRequest, ListTestSuiteSourceDescriptorsResponse, ListTestSuiteSourceDescriptorsSuccess, StoreTestSuiteSourceDescriptorRequest, StoreTestSuiteSourceDescriptorResponse, StoreTestSuiteSourceDescriptorSuccess};
 use opendut_carl_api::proto::services::test_manager::{delete_test_suite_run_descriptor_response, get_test_suite_run_descriptor_response, list_test_suite_run_descriptors_response, store_test_suite_run_descriptor_response, DeleteTestSuiteRunDescriptorRequest, DeleteTestSuiteRunDescriptorResponse, DeleteTestSuiteRunDescriptorSuccess, GetTestSuiteRunDescriptorRequest, GetTestSuiteRunDescriptorResponse, GetTestSuiteRunDescriptorSuccess, ListTestSuiteRunDescriptorsRequest, ListTestSuiteRunDescriptorsResponse, ListTestSuiteRunDescriptorsSuccess, StoreTestSuiteRunDescriptorRequest, StoreTestSuiteRunDescriptorResponse, StoreTestSuiteRunDescriptorSuccess};
+use opendut_carl_api::proto::services::test_manager::{delete_test_suite_run_deployment_response, get_test_suite_run_deployment_response, list_test_suite_run_deployments_response, store_test_suite_run_deployment_response, DeleteTestSuiteRunDeploymentRequest, DeleteTestSuiteRunDeploymentResponse, DeleteTestSuiteRunDeploymentSuccess, GetTestSuiteRunDeploymentRequest, GetTestSuiteRunDeploymentResponse, GetTestSuiteRunDeploymentSuccess, ListTestSuiteRunDeploymentsRequest, ListTestSuiteRunDeploymentsResponse, ListTestSuiteRunDeploymentsSuccess, StoreTestSuiteRunDeploymentRequest, StoreTestSuiteRunDeploymentResponse, StoreTestSuiteRunDeploymentSuccess};
 use opendut_carl_api::proto::services::test_manager::test_manager_server::{TestManager as TestManagerService, TestManagerServer};
-use opendut_model::viper::{TestSuiteRunDescriptor, TestSuiteRunId, TestSuiteSourceDescriptor, TestSuiteSourceId};
+use opendut_model::viper::{TestSuiteRunDeployment, TestSuiteRunDescriptor, TestSuiteRunId, TestSuiteSourceDescriptor, TestSuiteSourceId};
 use crate::manager::grpc::error::LogApiErr;
 use crate::manager::grpc::extract;
 use crate::resource::manager::ResourceManagerRef;
@@ -280,6 +281,136 @@ impl TestManagerService for TestManagerFacade {
         };
 
         Ok(Response::new(ListTestSuiteRunDescriptorsResponse {
+            reply: Some(response)
+        }))
+    }
+
+
+    //
+    // TestSuiteRunDeployment
+    //
+
+    #[tracing::instrument(skip_all, level="trace")]
+    async fn store_test_suite_run_deployment(&self, request: Request<StoreTestSuiteRunDeploymentRequest>) -> Result<Response<StoreTestSuiteRunDeploymentResponse>, Status> {
+
+        let request = request.into_inner();
+        let run: TestSuiteRunDeployment = extract!(request.run)?;
+
+        trace!("Received request to store test suite run deployment: {run:?}");
+
+
+        let result =
+            self.resource_manager.insert(run.id, run.clone()).await
+                .log_api_err()
+                .map_err(|_: PersistenceError| opendut_carl_api::carl::viper::StoreTestSuiteRunDeploymentError::Internal {
+                    run_id: run.id,
+                    cause: String::from("Error when accessing persistence while storing test suite run deployment"),
+                });
+
+        let reply = match result {
+            Ok(()) => store_test_suite_run_deployment_response::Reply::Success(
+                StoreTestSuiteRunDeploymentSuccess {
+                    run_id: Some(run.id.into()),
+                }
+            ),
+            Err(error) => store_test_suite_run_deployment_response::Reply::Failure(error.into()),
+        };
+
+        Ok(Response::new(StoreTestSuiteRunDeploymentResponse {
+            reply: Some(reply),
+        }))
+    }
+
+    #[tracing::instrument(skip_all, level="trace")]
+    async fn delete_test_suite_run_deployment(&self, request: Request<DeleteTestSuiteRunDeploymentRequest>) -> Result<Response<DeleteTestSuiteRunDeploymentResponse>, Status> {
+
+        let request = request.into_inner();
+        let run_id: TestSuiteRunId = extract!(request.run_id)?;
+
+        trace!("Received request to delete test suite run deployment for run <{run_id}>.");
+
+        let result =
+            self.resource_manager.remove::<TestSuiteRunDeployment>(run_id).await
+                .log_api_err()
+                .map_err(|_: PersistenceError| opendut_carl_api::carl::viper::DeleteTestSuiteRunDeploymentError::Internal {
+                    run_id,
+                    cause: String::from("Error when accessing persistence while storing test suite run deployment"),
+                });
+
+        let response = match result {
+            Ok(_) => delete_test_suite_run_deployment_response::Reply::Success(
+                DeleteTestSuiteRunDeploymentSuccess {
+                    run_id: Some(run_id.into())
+                }
+            ),
+            Err(error) => delete_test_suite_run_deployment_response::Reply::Failure(error.into()),
+        };
+
+        Ok(Response::new(DeleteTestSuiteRunDeploymentResponse {
+            reply: Some(response),
+        }))
+    }
+
+    #[tracing::instrument(skip_all, level="trace")]
+    async fn get_test_suite_run_deployment(&self, request: Request<GetTestSuiteRunDeploymentRequest>) -> Result<Response<GetTestSuiteRunDeploymentResponse>, Status> {
+
+        let request = request.into_inner();
+        let run_id: TestSuiteRunId = extract!(request.run_id)?;
+
+        trace!("Received request to get test suite run deployment for run <{run_id}>.");
+
+        let result =
+            self.resource_manager.get::<TestSuiteRunDeployment>(run_id).await
+                .inspect_err(|error| error!("Error while getting test suite run deployment from gRPC API: {error}"))
+                .map_err(|_: PersistenceError| opendut_carl_api::carl::viper::GetTestSuiteRunDeploymentError::Internal {
+                    run_id,
+                    cause: String::from("Error when accessing persistence while getting test suite run deployment"),
+                });
+
+        let response = match result {
+            Ok(deployment) => match deployment {
+                Some(deployment) => get_test_suite_run_deployment_response::Reply::Success(
+                    GetTestSuiteRunDeploymentSuccess {
+                        deployment: Some(deployment.into())
+                    }
+                ),
+                None => get_test_suite_run_deployment_response::Reply::Failure(
+                    opendut_carl_api::carl::viper::GetTestSuiteRunDeploymentError::RunDeploymentNotFound { run_id }.into()
+                ),
+            }
+            Err(error) => get_test_suite_run_deployment_response::Reply::Failure(error.into()),
+        };
+
+        Ok(Response::new(GetTestSuiteRunDeploymentResponse {
+            reply: Some(response)
+        }))
+    }
+
+    #[tracing::instrument(skip_all, level="trace")]
+    async fn list_test_suite_run_deployments(&self, _: Request<ListTestSuiteRunDeploymentsRequest>) -> Result<Response<ListTestSuiteRunDeploymentsResponse>, Status> {
+
+        trace!("Received request to list test suite run deployments.");
+
+        let result = self.resource_manager.list::<TestSuiteRunDeployment>().await
+            .inspect_err(|error| error!("Error while listing test suite run deployments from gRPC API: {error}"))
+            .map_err(|_: PersistenceError| opendut_carl_api::carl::viper::ListTestSuiteRunDeploymentsError::Internal {
+                cause: String::from("Error when accessing persistence while listing test suite run deployments"),
+            });
+
+        let response = match result {
+            Ok(runs) => {
+                let runs = runs.into_values()
+                    .map(From::from)
+                    .collect::<Vec<_>>();
+
+                list_test_suite_run_deployments_response::Reply::Success(
+                    ListTestSuiteRunDeploymentsSuccess { runs }
+                )
+            }
+            Err(error) => list_test_suite_run_deployments_response::Reply::Failure(error.into())
+        };
+
+        Ok(Response::new(ListTestSuiteRunDeploymentsResponse {
             reply: Some(response)
         }))
     }

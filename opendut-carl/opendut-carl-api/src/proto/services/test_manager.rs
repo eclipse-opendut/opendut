@@ -354,3 +354,160 @@ conversion! {
         }
     }
 }
+
+
+//
+// TestSuiteRunDeployment
+//
+
+conversion! {
+    type Model = crate::carl::viper::StoreTestSuiteRunDeploymentError;
+    type Proto = StoreTestSuiteRunDeploymentFailure;
+
+    fn from(value: Model) -> Proto {
+        let error = match value {
+            Model::Internal { run_id, cause } => {
+                store_test_suite_run_deployment_failure::Error::Internal(
+                    StoreTestSuiteRunDeploymentFailureInternal {
+                        run_id: Some(run_id.into()),
+                        cause,
+                    }
+                )
+            }
+        };
+
+        Proto { error: Some(error) }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let error = match extract!(value.error)? {
+            store_test_suite_run_deployment_failure::Error::Internal(
+                StoreTestSuiteRunDeploymentFailureInternal { run_id, cause }
+            ) => {
+                Model::Internal {
+                    run_id: extract!(run_id)?.try_into()?,
+                    cause,
+                }
+            }
+        };
+
+        Ok(error)
+    }
+}
+
+conversion! {
+    type Model = crate::carl::viper::DeleteTestSuiteRunDeploymentError;
+    type Proto = DeleteTestSuiteRunDeploymentFailure;
+
+    fn from(value: Model) -> Proto {
+        let proto_error = match value {
+            Model::RunDeploymentNotFound { run_id } => {
+                delete_test_suite_run_deployment_failure::Error::RunNotFound(DeleteTestSuiteRunDeploymentFailureRunNotFound {
+                    run_id: Some(run_id.into())
+                })
+            }
+            Model::Internal { run_id, cause } => {
+                delete_test_suite_run_deployment_failure::Error::Internal(DeleteTestSuiteRunDeploymentFailureInternal {
+                    run_id: Some(run_id.into()),
+                    cause
+                })
+            }
+        };
+        Proto {
+            error: Some(proto_error)
+        }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let error = extract!(value.error)?;
+
+        match error {
+            delete_test_suite_run_deployment_failure::Error::RunNotFound(error) => {
+                let run_id = extract!(error.run_id)?.try_into()?;
+                Ok(Model::RunDeploymentNotFound { run_id })
+            }
+            delete_test_suite_run_deployment_failure::Error::Internal(error) => {
+                let run_id = extract!(error.run_id)?.try_into()?;
+                let cause = error.cause;
+                Ok(Model::Internal {
+                    run_id,
+                    cause,
+                })
+            }
+        }
+    }
+}
+
+conversion! {
+    type Model = crate::carl::viper::GetTestSuiteRunDeploymentError;
+    type Proto = GetTestSuiteRunDeploymentFailure;
+
+    fn from(value: Model) -> Proto {
+        let proto_error = match value {
+            Model::RunDeploymentNotFound { run_id } => {
+                get_test_suite_run_deployment_failure::Error::RunNotFound(GetTestSuiteRunDeploymentFailureRunNotFound {
+                    run_id: Some(run_id.into())
+                })
+            }
+            Model::Internal { run_id, cause } => {
+                get_test_suite_run_deployment_failure::Error::Internal(GetTestSuiteRunDeploymentFailureInternal {
+                    run_id: Some(run_id.into()),
+                    cause
+                })
+            }
+        };
+        Proto {
+            error: Some(proto_error)
+        }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let error = extract!(value.error)?;
+
+        match error {
+            get_test_suite_run_deployment_failure::Error::RunNotFound(error) => {
+                let run_id = extract!(error.run_id)?.try_into()?;
+                Ok(Model::RunDeploymentNotFound { run_id })
+            }
+            get_test_suite_run_deployment_failure::Error::Internal(error) => {
+                let run_id = extract!(error.run_id)?.try_into()?;
+                let cause = error.cause;
+                Ok(Model::Internal {
+                    run_id,
+                    cause,
+                })
+            }
+        }
+    }
+}
+
+conversion! {
+    type Model = crate::carl::viper::ListTestSuiteRunDeploymentsError;
+    type Proto = ListTestSuiteRunDeploymentsFailure;
+
+    fn from(value: Model) -> Proto {
+        let proto_error = match value {
+            Model::Internal { cause } => {
+                list_test_suite_run_deployments_failure::Error::Internal(ListTestSuiteRunDeploymentsFailureInternal {
+                    cause
+                })
+            }
+        };
+        Proto {
+            error: Some(proto_error)
+        }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        let error = extract!(value.error)?;
+
+        match error {
+            list_test_suite_run_deployments_failure::Error::Internal(error) => {
+                let cause = error.cause;
+                Ok(Model::Internal {
+                    cause,
+                })
+            }
+        }
+    }
+}
