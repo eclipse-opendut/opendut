@@ -96,10 +96,10 @@ jobs:
       runs-on: "${{ vars.OPENDUT_GH_RUNNER_LARGE || '[\"ubuntu-latest\"]' }}"
 
   status-check:
-    needs: [ legal, test ]
+    needs: [ legal, test, integration-test ]
     runs-on: "${{ fromJson(vars.OPENDUT_GH_RUNNER_SMALL || '[\"ubuntu-latest\"]') }}"
     steps:
-    - run: echo "All jobs required for the status check have been completed."
+    - run: echo "Minimum required jobs for merging the pull request have completed."
 
   run-testenv:
     uses: ./.github/workflows/job-run-testenv.yaml
