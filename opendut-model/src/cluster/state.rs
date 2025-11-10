@@ -2,17 +2,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::ShortName;
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub enum ClusterState {
+    #[default]
     Undeployed,
     Deploying,
     Deployed(DeployedClusterState),
-}
-
-impl Default for ClusterState {
-    fn default() -> Self {
-        Self::Undeployed
-    }
 }
 
 impl ShortName for ClusterState {
@@ -28,14 +23,9 @@ impl ShortName for ClusterState {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub enum DeployedClusterState {
+    #[default]
     Unhealthy,
     Healthy,
-}
-
-impl Default for DeployedClusterState {
-    fn default() -> Self {
-        Self::Unhealthy
-    }
 }
