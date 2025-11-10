@@ -161,6 +161,14 @@ impl PeerMessagingClient {
             }
         }
 
+        // Shutdown processes of the can manager if enabled
+        match self.handle_stream_info.network_interface_management.clone() {
+            NetworkInterfaceManagement::Enabled { can_manager, .. } => {
+                let can_manager = can_manager.lock().await;
+                can_manager.shutdown().await;
+            }
+            NetworkInterfaceManagement::Disabled => {}
+        }
         Ok(())
     }
 

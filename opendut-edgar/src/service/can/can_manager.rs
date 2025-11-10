@@ -1,9 +1,10 @@
-use crate::service::process_manager::{AsyncProcessId, AsyncProcessManagerExt, AsyncProcessManagerRef};
+use crate::service::process_manager::{AsyncProcessId, AsyncProcessManager, AsyncProcessManagerExt, AsyncProcessManagerRef, OutputConfig, ProcessConfig, RestartPolicy};
 use opendut_model::peer::configuration::parameter::CanConnection;
 use opendut_model::peer::configuration::{ParameterId, ParameterValue};
 use std::collections::HashMap;
 use std::process::Stdio;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::sync::Mutex;
 use tokio::process::Command;
 
@@ -34,19 +35,29 @@ impl CanManager {
     }
 
     pub async fn spawn_process(&self, parameter: &CanConnection) -> anyhow::Result<()> {
-        let id = parameter.parameter_identifier();
-        let mut cmd = Command::new("cannelloni");
-        Self::fill_cannelloni_cmd(parameter, &mut cmd);
-        let mut process_manager = self.process_manager.lock().await;
         let name = if parameter.local_is_server {
             format!("cannelloni-server-on-port-{}", parameter.local_port)
         } else {
             format!("cannelloni-to-leader-peer-{}", parameter.remote_peer_id)
         };
-        let process_id = process_manager.spawn(name, &mut cmd).await?;
+        // Create process with restart policy
+        let command_parameter = parameter.clone();
+        let config = ProcessConfig::new(
+            name,
+            move || {
+                let mut cmd = Command::new("cannelloni");
+                Self::fill_cannelloni_cmd(&command_parameter, &mut cmd);
+                cmd
+            }
+        )
+            .with_restart_policy(RestartPolicy::Always)
+            .with_restart_delay(Duration::from_secs(5))
+            .with_output_config(OutputConfig::Capture);
 
+        let process_id = AsyncProcessManager::spawn_with_restart(self.process_manager.clone(), config).await?;
+        let parameter_id = parameter.parameter_identifier();
         let mut processes = self.process_map.lock().await;
-        processes.insert(id, process_id);
+        processes.insert(parameter_id, process_id);
 
         Ok(())
     }
@@ -70,6 +81,13 @@ impl CanManager {
             process_manager.terminate(process_id).await?;
         }
         Ok(())
+    }
+
+    pub async fn shutdown(&self) {
+        let mut process_manager = self.process_manager.lock().await;
+        if !process_manager.is_empty() {
+            process_manager.shutdown().await;
+        }
     }
 
     /*
