@@ -24,6 +24,7 @@ pub enum RestartPolicy {
     /// Always restart the process when it terminates
     Always,
     /// Restart only if the process exits with an error (non-zero exit code)
+    #[allow(unused)]
     OnFailure,
 }
 
@@ -33,8 +34,10 @@ pub enum OutputConfig {
     /// Capture stdout and stderr for logging when the process exits
     Capture,
     /// Inherit stdout and stderr from parent process
+    #[allow(unused)]
     Inherit,
     /// Discard all output (redirect to /dev/null)
+    #[allow(unused)]
     Discard,
 }
 
@@ -209,28 +212,6 @@ impl AsyncProcessManager {
             processes: HashMap::new(),
             next_id: 0,
         }
-    }
-
-    /// Spawn a new external async process without restart
-    pub async fn spawn(&mut self, name: impl Into<String>, command: &mut Command) -> anyhow::Result<AsyncProcessId> {
-        let name = name.into();
-        debug!("Spawning async process '{}'", name);
-
-        let child = command.spawn()?;
-        let pid = child.id();
-        let process_id = AsyncProcessId::new(self.next_id);
-        self.next_id += 1;
-
-        info!("Spawned async process '{}' with PID: {:?} (AsyncProcessId: {:?})", name, pid, process_id);
-
-        self.processes.insert(process_id, ManagedAsyncProcess {
-            name,
-            child,
-            config: None,
-            shutdown_tx: None,
-        });
-
-        Ok(process_id)
     }
 
     /// Spawn a process with automatic restart capability
@@ -442,11 +423,6 @@ impl AsyncProcessManager {
         }
     }
 
-    /// Get the number of active processes
-    pub fn len(&self) -> usize {
-        self.processes.len()
-    }
-
     /// Check if there are no active processes
     pub fn is_empty(&self) -> bool {
         self.processes.is_empty()
@@ -475,39 +451,6 @@ impl AsyncProcessManagerExt for AsyncProcessManagerRef {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[tokio::test]
-    async fn test_spawn_and_terminate() {
-        let mut manager = AsyncProcessManager::new();
-
-        // Spawn a long-running process
-        let id = manager.spawn("sleep", Command::new("sleep").arg("10")).await.unwrap();
-
-        assert!(manager.process_is_running(&id));
-        assert_eq!(manager.len(), 1);
-
-        // Terminate it
-        manager.terminate(id).await.unwrap();
-
-        tokio::time::sleep(Duration::from_millis(200)).await;
-        assert!(!manager.process_is_running(&id));
-        assert_eq!(manager.len(), 0);
-    }
-
-    #[tokio::test]
-    async fn test_shutdown_all() {
-        let mut manager = AsyncProcessManager::new();
-
-        // Spawn multiple processes
-        let _id1 = manager.spawn("sleep1", Command::new("sleep").arg("10")).await.unwrap();
-        let _id2 = manager.spawn("sleep2", Command::new("sleep").arg("10")).await.unwrap();
-
-        assert_eq!(manager.len(), 2);
-
-        manager.shutdown().await;
-
-        assert_eq!(manager.len(), 0);
-    }
 
     #[tokio::test]
     async fn test_restart_on_failure() {
