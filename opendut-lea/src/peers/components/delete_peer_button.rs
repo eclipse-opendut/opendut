@@ -1,10 +1,9 @@
 use leptos::{component, view, IntoView};
 use leptos::prelude::*;
 use tracing::{error, info};
-use opendut_lea_components::{use_toaster, ButtonColor, ButtonSize, ButtonStateSignalProvider, ConfirmationButton, DoorhangerButton, FontAwesomeIcon, Toast};
+use opendut_lea_components::{use_toaster, ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, Toast};
 use opendut_model::peer::PeerId;
 use crate::app::use_app_globals;
-use crate::routing;
 
 #[component]
 pub fn DeletePeerButton<F>(
@@ -18,7 +17,15 @@ where F: Fn() + Clone + Send + 'static {
 
     let pending = RwSignal::new(false);
 
-    let button_state = Signal::from(pending).derive_loading();
+    let button_state = Signal::derive(move || {
+        if  used_clusters_length.get() > 0 {
+            ButtonState::Disabled
+        } else if pending.get() {
+            ButtonState::Loading
+        } else {
+            ButtonState::Enabled
+        }
+    });
 
     let toaster = use_toaster();
 
@@ -57,41 +64,14 @@ where F: Fn() + Clone + Send + 'static {
         });
     };
 
-    let delete_button = move || {
-        let on_confirm = on_confirm.clone();
-
-        if used_clusters_length.get() > 0 {
-            view! {
-                <DoorhangerButton
-                    icon=FontAwesomeIcon::TrashCan
-                    color=ButtonColor::Danger
-                    size=ButtonSize::Normal
-                    state=button_state
-                    label="Remove Peer?"
-                >
-                    <div style="white-space: nowrap">
-                        "Peer can not be removed while it is configured in "{used_clusters_length}
-                        <a class="has-text-link" href=routing::path::clusters_overview>" cluster(s)"</a>
-                    </div>
-                </DoorhangerButton>
-            }.into_any()
-        } else {
-            view! {
-                <ConfirmationButton
-                    icon=FontAwesomeIcon::TrashCan
-                    color=ButtonColor::Danger
-                    size=ButtonSize::Normal
-                    state=button_state
-                    label="Remove Peer?"
-                    on_confirm
-                />
-            }.into_any()
-        }
-    };
-
     view! {
-        <div>
-            { delete_button }
-        </div>
+        <ConfirmationButton
+            icon=FontAwesomeIcon::TrashCan
+            color=ButtonColor::Danger
+            size=ButtonSize::Normal
+            state=button_state
+            label="Remove Peer?"
+            on_confirm
+        />
     }
 }
