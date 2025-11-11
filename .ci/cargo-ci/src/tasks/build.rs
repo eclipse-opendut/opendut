@@ -28,7 +28,7 @@ pub fn distribution_build(package: Package, target: Arch, release_build: bool) -
         .arg("--target-dir").arg(cross_target_dir().as_os_str()) //explicitly set target-base-dir to fix unreliable caching behavior
         .arg("--target").arg(target.triple());
 
-    if release_build || option_env!("CI").is_some() { //always perform release builds in CI runner
+    if release_build {
         command.arg("--release");
     }
 

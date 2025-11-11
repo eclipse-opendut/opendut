@@ -35,7 +35,7 @@ jobs:
           cargo-cross: true
 
       - name: Build
-        run: cargo ci opendut-cleo distribution-build --target=${{ matrix.package.target }}
+        run: cargo ci opendut-cleo distribution-build --release --target=${{ matrix.package.target }}
       - name: "Upload CLEO build artifact ${{ matrix.package.name }}-${{ matrix.package.target }}"
         uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8
         with:
