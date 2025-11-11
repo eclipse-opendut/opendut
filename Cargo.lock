@@ -730,37 +730,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cargo-util-schemas"
-version = "0.8.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7dc1a6f7b5651af85774ae5a34b4e8be397d9cf4bc063b7e6dbd99a841837830"
-dependencies = [
- "semver",
- "serde",
- "serde-untagged",
- "serde-value",
- "thiserror 2.0.17",
- "toml 0.8.23",
- "unicode-xid",
- "url",
-]
-
-[[package]]
-name = "cargo_metadata"
-version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c3f56c207c76c07652489840ff98687dcf213de178ac0974660d6fefeaf5ec6"
-dependencies = [
- "camino",
- "cargo-platform",
- "cargo-util-schemas",
- "semver",
- "serde",
- "serde_json",
- "thiserror 2.0.17",
-]
-
-[[package]]
 name = "cargo_metadata"
 version = "0.23.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -848,11 +817,12 @@ dependencies = [
 
 [[package]]
 name = "cicero"
-version = "0.5.2"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec5049f79e56696daafb598c08a47846b04197d6ac7b820f8d21b1d2fe36837a"
+checksum = "0895d17e1ff88eb252123da6904f94dff531e1e8e52f879761851a94145a2f42"
 dependencies = [
  "anyhow",
+ "cicero_cache",
  "cicero_commands",
  "cicero_core",
  "cicero_distribution",
@@ -863,10 +833,26 @@ dependencies = [
 ]
 
 [[package]]
-name = "cicero_commands"
-version = "0.5.2"
+name = "cicero_cache"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df69da9cbe206fcfb2c4ca7b74854244950449b1b75d254f6f1214b74cfdeadf"
+checksum = "d785e60f6550fe3670e26639e46e1aaee08873176d7cf20023577a6bdd2c4893"
+dependencies = [
+ "anyhow",
+ "cicero_path_core",
+ "fs-err",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.17",
+ "tracing",
+ "walkdir",
+]
+
+[[package]]
+name = "cicero_commands"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "721ba8012080ed9426f0b98dc8b66c9a030eff05ac5b229b58e96a258319df15"
 dependencies = [
  "anyhow",
  "cicero_core",
@@ -881,28 +867,26 @@ dependencies = [
 
 [[package]]
 name = "cicero_core"
-version = "0.5.2"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b34023a1f10fd016117fbea67c2149517bd2e704ada7d462e2b8bccc90d9be95"
+checksum = "43474f7a0c997424a2aa757ad3d864e46cd244da5064ed8f1dfb61b75efcca2d"
 dependencies = [
  "anyhow",
- "tracing",
 ]
 
 [[package]]
 name = "cicero_distribution"
-version = "0.5.2"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87a3f8ebd055b69d3c02588bfbbcea7db8552a0afc96e75fc4f7ec5f803d1f26"
+checksum = "712da79f06f50b2d7ac7cf6d5023702cf5cd409e9fe99863334d07aa38e839a3"
 dependencies = [
  "anyhow",
- "cargo_metadata 0.22.0",
+ "cargo_metadata",
+ "cicero_cache",
  "cicero_path",
  "cicero_path_core",
  "fs-err",
  "glob",
- "serde",
- "serde_json",
  "sha2",
  "thiserror 2.0.17",
  "tracing",
@@ -911,9 +895,9 @@ dependencies = [
 
 [[package]]
 name = "cicero_path"
-version = "0.5.2"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b60477ca279f0a51f55c3d4e3a164c255234b0bdb5d21d5cebd73af1d76ec230"
+checksum = "6120edab438c802c57617b37248307808d37c9d2f2fb72b5c66ff66744ba5de3"
 dependencies = [
  "cicero_path_core",
  "repo_path",
@@ -921,11 +905,11 @@ dependencies = [
 
 [[package]]
 name = "cicero_path_core"
-version = "0.5.2"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4aa39a529267ba64ad4dd81e43c94b9fcbfc58c6442461a03418996cb2545b2f"
+checksum = "c45f84da12ae3f3c01382e15f67ba36047a1415bc55f6492cca1c4264295d8ab"
 dependencies = [
- "cargo_metadata 0.22.0",
+ "cargo_metadata",
  "tracing",
 ]
 
@@ -1954,17 +1938,6 @@ name = "erased"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a1731451909bde27714eacba19c2566362a7f35224f52b153d3f42cf60f72472"
-
-[[package]]
-name = "erased-serde"
-version = "0.4.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "259d404d09818dec19332e31d94558aeb442fea04c817006456c24b5460bbd4b"
-dependencies = [
- "serde",
- "serde_core",
- "typeid",
-]
 
 [[package]]
 name = "errno"
@@ -4351,7 +4324,7 @@ version = "0.8.0-alpha"
 dependencies = [
  "anyhow",
  "assert_fs",
- "cargo_metadata 0.23.0",
+ "cargo_metadata",
  "chrono",
  "cicero",
  "clap",
@@ -4572,7 +4545,7 @@ dependencies = [
 name = "opendut-netbird-client-api"
 version = "0.8.0-alpha"
 dependencies = [
- "cargo_metadata 0.23.0",
+ "cargo_metadata",
  "hyper-util",
  "opendut-model",
  "opendut-util",
@@ -6737,18 +6710,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde-untagged"
-version = "0.1.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f9faf48a4a2d2693be24c6289dbe26552776eb7737074e6722891fadbe6c5058"
-dependencies = [
- "erased-serde",
- "serde",
- "serde_core",
- "typeid",
-]
-
-[[package]]
 name = "serde-value"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8096,12 +8057,6 @@ dependencies = [
  "quote",
  "syn 2.0.108",
 ]
-
-[[package]]
-name = "typeid"
-version = "1.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc7d623258602320d5c55d1bc22793b57daff0ec7efc270ea7d55ce1d5f5471c"
 
 [[package]]
 name = "typenum"

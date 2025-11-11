@@ -119,7 +119,7 @@ pub mod distribution {
 
         crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)?;
 
-        cicero::distribution::cache::Output::from(
+        cicero::cache::Output::from(
             distribution::bundle::out_file(SELF_PACKAGE, target)
         ).rebuild_on_change(
             [crate::tasks::build::out_file(SELF_PACKAGE, target, release_build)],
