@@ -3,7 +3,6 @@ use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 use crate::service::tasks;
 use crate::service::test_execution::executor_manager::ExecutorManagerRef;
 use opendut_model::peer::configuration::{EdgePeerConfigurationState, PeerConfiguration};
-use opendut_model::peer::PeerId;
 
 use std::fmt::Formatter;
 use std::sync::Arc;
@@ -15,7 +14,6 @@ use super::network_metrics::manager::NetworkMetricsManagerRef;
 
 #[derive(Debug)]
 pub struct ApplyPeerConfigurationParams {
-    pub self_id: PeerId,
     pub peer_configuration: PeerConfiguration,
     pub network_interface_management: NetworkInterfaceManagement,
     pub executor_manager: ExecutorManagerRef,
@@ -53,7 +51,7 @@ pub async fn spawn_peer_configurations_handler(
 #[tracing::instrument(skip_all)]
 async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> CollectedResult {
     let ApplyPeerConfigurationParams { 
-        self_id, peer_configuration,
+        peer_configuration,
         network_interface_management, 
         executor_manager, metrics_manager } = params;
 
