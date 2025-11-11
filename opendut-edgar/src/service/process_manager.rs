@@ -4,7 +4,11 @@ use tokio::process::{Child, Command};
 use tokio::sync::{mpsc, Mutex};
 use tokio::time::Duration;
 use std::process::Stdio;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, trace, error, info, warn};
+use tokio::io::BufReader;
+use tokio::io::AsyncBufReadExt;
+use tokio::task;
+
 
 /// A unique identifier for a managed async process
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -29,9 +33,10 @@ pub enum RestartPolicy {
 }
 
 /// Configuration for process output handling
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum OutputConfig {
     /// Capture stdout and stderr for logging when the process exits
+    #[default]
     Capture,
     /// Inherit stdout and stderr from parent process
     #[allow(unused)]
@@ -41,11 +46,6 @@ pub enum OutputConfig {
     Discard,
 }
 
-impl Default for OutputConfig {
-    fn default() -> Self {
-        Self::Capture
-    }
-}
 
 /// Configuration for a managed process with restart capability
 #[derive(Clone)]
@@ -192,6 +192,32 @@ impl ManagedAsyncProcess {
             }
         }
     }
+
+    /// Drain stdout and stderr asynchronously to avoid deadlock when buffer is full
+    fn spawn_output_drainers(&mut self) {
+        if let Some(config) = &self.config && let OutputConfig::Capture = config.output_config {
+            if let Some(stdout) = self.child.stdout.take() {
+                let name = self.name.clone();
+                task::spawn(async move {
+                    let reader = BufReader::new(stdout);
+                    let mut lines = reader.lines();
+                    while let Ok(Some(line)) = lines.next_line().await {
+                        trace!("{} stdout: {}", name, line);
+                    }
+                });
+            }
+            if let Some(stderr) = self.child.stderr.take() {
+                let name = self.name.clone();
+                task::spawn(async move {
+                    let reader = BufReader::new(stderr);
+                    let mut lines = reader.lines();
+                    while let Ok(Some(line)) = lines.next_line().await {
+                        error!("{} stderr: {}", name, line);
+                    }
+                });
+            }
+        }
+    }
 }
 
 impl Drop for ManagedAsyncProcess {
@@ -215,7 +241,7 @@ impl AsyncProcessManager {
     }
 
     /// Spawn a process with automatic restart capability
-    pub async fn spawn_with_restart(
+    pub async fn spawn(
         manager_ref: Arc<Mutex<Self>>,
         config: ProcessConfig,
     ) -> anyhow::Result<AsyncProcessId> {
@@ -236,12 +262,14 @@ impl AsyncProcessManager {
 
             let (shutdown_tx, shutdown_rx) = mpsc::channel(1);
 
-            manager.processes.insert(process_id, ManagedAsyncProcess {
+            let mut managed_process = ManagedAsyncProcess {
                 name: name.clone(),
                 child,
                 config: Some(config.clone()),
                 shutdown_tx: Some(shutdown_tx),
-            });
+            };
+            managed_process.spawn_output_drainers();
+            manager.processes.insert(process_id, managed_process);
 
             // Start monitoring if restart policy is set
             if restart_policy != RestartPolicy::Never {
@@ -289,23 +317,6 @@ impl AsyncProcessManager {
                         match process.child.try_wait() {
                             Ok(Some(status)) => {
                                 info!("Process '{}' exited with status: {}", name, status);
-
-                                // Log stdout/stderr if available
-                                if let Some(mut stdout) = process.child.stdout.take() {
-                                    use tokio::io::AsyncReadExt;
-                                    let mut output = String::new();
-                                    if stdout.read_to_string(&mut output).await.is_ok() && !output.is_empty() {
-                                        debug!("Process '{}' stdout: {}", name, output);
-                                    }
-                                }
-
-                                if let Some(mut stderr) = process.child.stderr.take() {
-                                    use tokio::io::AsyncReadExt;
-                                    let mut output = String::new();
-                                    if stderr.read_to_string(&mut output).await.is_ok() && !output.is_empty() {
-                                        error!("Process '{}' stderr: {}", name, output);
-                                    }
-                                }
 
                                 // Decide if we should restart
                                 match restart_policy {
@@ -360,7 +371,6 @@ impl AsyncProcessManager {
                             }
                         }
                     }
-
                 } else {
                     // Wait before checking again
                     tokio::time::sleep(Duration::from_millis(MONITOR_INTERVAL_MS)).await;
@@ -468,7 +478,7 @@ mod tests {
         .with_restart_policy(RestartPolicy::OnFailure)
         .with_restart_delay(Duration::from_millis(100));
 
-        let id = AsyncProcessManager::spawn_with_restart(manager.clone(), config).await.unwrap();
+        let id = AsyncProcessManager::spawn(manager.clone(), config).await.unwrap();
 
         // Wait for the process to fail and restart a few times
         tokio::time::sleep(Duration::from_millis(500)).await;
@@ -492,7 +502,7 @@ mod tests {
         .with_restart_policy(RestartPolicy::Always)
         .with_restart_delay(Duration::from_millis(100));
 
-        let id = AsyncProcessManager::spawn_with_restart(manager.clone(), config).await.unwrap();
+        let id = AsyncProcessManager::spawn(manager.clone(), config).await.unwrap();
 
         // Wait for the process to exit and restart a few times
         tokio::time::sleep(Duration::from_millis(500)).await;
