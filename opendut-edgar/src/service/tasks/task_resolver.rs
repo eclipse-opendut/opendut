@@ -37,7 +37,7 @@ impl TaskResolver for ServiceTaskResolver {
                 ParameterVariant::DeviceInterface(device_interface) => {
                     // TODO: Create task to check if device is present, if not, ignore it. Check parameters for CAN devices
                     let parameter = device_interface.value.clone();
-                    let can_config_task = tasks::can_device_configuration::CanDeviceConfiguration::new(parameter.descriptor, network_interface_manager.clone());
+                    let can_config_task = tasks::can_device_configuration::CanDeviceConfiguration::create(parameter.descriptor, network_interface_manager.clone());
                     if let Ok(can_config_task) = can_config_task {
                         tasks.push(Box::new(can_config_task));
                     }

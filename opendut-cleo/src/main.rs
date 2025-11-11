@@ -127,6 +127,7 @@ pub enum EngineVariants {
 pub enum NetworkInterfaceType {
     Ethernet,
     Can,
+    Vcan,
 }
 
 #[derive(Subcommand)]

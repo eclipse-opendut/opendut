@@ -202,6 +202,7 @@ conversion! {
                     data_sample_point: data_sample_point.sample_point_times_1000()
                 }
             ),
+            NetworkInterfaceConfiguration::Vcan => network_interface_descriptor::Configuration::Vcan(VcanInterfaceConfiguration {}),
         };
 
         Proto {
@@ -218,15 +219,16 @@ conversion! {
 
         let configuration = match extract!(value.configuration)? {
                 network_interface_descriptor::Configuration::Ethernet(_) => NetworkInterfaceConfiguration::Ethernet,
-                network_interface_descriptor::Configuration::Can(can_config) => NetworkInterfaceConfiguration::Can { 
-                    bitrate: can_config.bitrate, 
+                network_interface_descriptor::Configuration::Can(can_config) => NetworkInterfaceConfiguration::Can {
+                    bitrate: can_config.bitrate,
                     sample_point: can_config.sample_point.try_into()
                         .map_err(|cause| ErrorBuilder::message(format!("Sample point could not be converted: {cause}")))?,
-                    fd: can_config.flexible_data_rate, 
-                    data_bitrate: can_config.data_bitrate, 
+                    fd: can_config.flexible_data_rate,
+                    data_bitrate: can_config.data_bitrate,
                     data_sample_point: can_config.data_sample_point.try_into()
                         .map_err(|cause| ErrorBuilder::message(format!("Sample point could not be converted: {cause}")))?,
                 },
+                network_interface_descriptor::Configuration::Vcan(_) => NetworkInterfaceConfiguration::Vcan,
             };
 
         Ok(Model {

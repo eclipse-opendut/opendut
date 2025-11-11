@@ -40,6 +40,16 @@ message NetworkInterfaceName {
   string name = 1;
 }
 
+message NetworkInterfaceDescriptor {
+  NetworkInterfaceId id = 4;
+  NetworkInterfaceName name = 1;
+  oneof configuration {
+    EthernetInterfaceConfiguration ethernet = 2;
+    CanInterfaceConfiguration can = 3;
+    VcanInterfaceConfiguration vcan = 5;
+  }
+}
+
 message EthernetInterfaceConfiguration {}
 
 message CanInterfaceConfiguration {
@@ -50,14 +60,7 @@ message CanInterfaceConfiguration {
   uint32 data_sample_point = 5;
 }
 
-message NetworkInterfaceDescriptor {
-  NetworkInterfaceId id = 4;
-  NetworkInterfaceName name = 1;
-  oneof configuration {
-    EthernetInterfaceConfiguration ethernet = 2;
-    CanInterfaceConfiguration can = 3;
-  }
-}
+message VcanInterfaceConfiguration {}
 
 message NetworkInterfaceId {
   opendut.model.util.Uuid uuid = 1;

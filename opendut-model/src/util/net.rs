@@ -146,18 +146,27 @@ pub enum NetworkInterfaceConfiguration {
         /// CAN FD Sample Point between 0.0 and 1.0
         data_sample_point: CanSamplePoint,
     },
+    Vcan,
 }
+impl NetworkInterfaceConfiguration {
+    /// Interface is either CAN or VCAN.
+    pub fn is_can_like(&self) -> bool {
+        matches!(self, Self::Can { .. } | Self::Vcan)
+    }
+}
+
 impl fmt::Display for NetworkInterfaceConfiguration {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             NetworkInterfaceConfiguration::Ethernet => write!(f, "Ethernet"),
-            NetworkInterfaceConfiguration::Can { 
-                bitrate, 
-                sample_point, 
-                fd, 
-                data_bitrate, 
-                data_sample_point 
+            NetworkInterfaceConfiguration::Can {
+                bitrate,
+                sample_point,
+                fd,
+                data_bitrate,
+                data_sample_point
             } => write!(f, "CAN [bitrate: {bitrate}, sample point: {sample_point}, fd: {fd}, data bitrate: {data_bitrate}, data sample point: {data_sample_point}]"),
+            NetworkInterfaceConfiguration::Vcan => write!(f, "VCAN"),
         }
         
     }

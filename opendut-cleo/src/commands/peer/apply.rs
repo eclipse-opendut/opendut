@@ -76,6 +76,7 @@ fn convert_network_specification_to_descriptor(specification: NetworkInterfaceDe
                 None => Err(String::from("Parameters for the can interface were not provided."))?,
             }
         }
+        NetworkInterfaceKind::Vcan => NetworkInterfaceConfiguration::Vcan,
     };
 
     let network_descriptor = NetworkInterfaceDescriptor {
@@ -205,12 +206,9 @@ mod tests {
         };
         
         let interface_kind = match peer.network.interfaces[0].configuration {
-            NetworkInterfaceConfiguration::Ethernet => {
-                NetworkInterfaceKind::Ethernet
-            }
-            NetworkInterfaceConfiguration::Can { .. } => {
-                NetworkInterfaceKind::Can
-            }
+            NetworkInterfaceConfiguration::Ethernet => NetworkInterfaceKind::Ethernet,
+            NetworkInterfaceConfiguration::Can { .. } => NetworkInterfaceKind::Can,
+            NetworkInterfaceConfiguration::Vcan => NetworkInterfaceKind::Vcan,
         };
 
         let executors = peer.executors.executors.clone().into_iter()
@@ -251,7 +249,8 @@ mod tests {
                 fd: false,
                 data_bitrate: 0,
                 data_sample_point: CanSamplePoint::try_from(0.7)?,
-            }
+            },
+            NetworkInterfaceKind::Vcan => NetworkInterfaceConfiguration::Vcan,
         };
         
         let descriptor = NetworkInterfaceDescriptor {

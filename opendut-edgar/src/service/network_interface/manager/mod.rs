@@ -122,44 +122,65 @@ impl NetworkInterfaceManager {
     }
 
     pub async fn update_interface(&self, network_interface_descriptor: NetworkInterfaceDescriptor) -> Result<(), Error> {
-        if let NetworkInterfaceConfiguration::Can { bitrate, sample_point, fd, data_bitrate, data_sample_point } = network_interface_descriptor.configuration {
-            debug!("Update interface {interface} with bitrate: {bitrate}, sample-point: {sample_point}, fd: {fd}, data_bitrate: {data_bitrate}, data_sample_point: {data_sample_point}", interface=network_interface_descriptor.name);
-            
-            let mut ip_link_command = Command::new("ip");
-            ip_link_command.arg("link")
-                .arg("set")
-                .arg(network_interface_descriptor.name.name())
-                .arg("type")
-                .arg("can")
-                .arg("bitrate")
-                .arg(bitrate.to_string())
-                .arg("sample-point")
-                .arg(sample_point.sample_point().to_string());
+        match network_interface_descriptor.configuration {
+            NetworkInterfaceConfiguration::Can { bitrate, sample_point, fd, data_bitrate, data_sample_point } => {
+                debug!("Update CAN interface {interface} with bitrate: {bitrate}, sample-point: {sample_point}, fd: {fd}, data_bitrate: {data_bitrate}, data_sample_point: {data_sample_point}", interface=network_interface_descriptor.name);
 
-            if fd {
-                ip_link_command
-                    .arg("dbitrate")
-                    .arg(data_bitrate.to_string())
-                    .arg("dsample-point")
-                    .arg(data_sample_point.sample_point().to_string())
-                    .arg("fd")
-                    .arg("on");
-            } else {
-                ip_link_command
-                    .arg("fd")
-                    .arg("off");
+                let mut ip_link_command = Command::new("ip");
+                ip_link_command.arg("link")
+                    .arg("set")
+                    .arg(network_interface_descriptor.name.name())
+                    .arg("type")
+                    .arg("can")
+                    .arg("bitrate")
+                    .arg(bitrate.to_string())
+                    .arg("sample-point")
+                    .arg(sample_point.sample_point().to_string());
+
+                if fd {
+                    ip_link_command
+                        .arg("dbitrate")
+                        .arg(data_bitrate.to_string())
+                        .arg("dsample-point")
+                        .arg(data_sample_point.sample_point().to_string())
+                        .arg("fd")
+                        .arg("on");
+                } else {
+                    ip_link_command
+                        .arg("fd")
+                        .arg("off");
+                }
+
+                let output = ip_link_command
+                    .output()
+                    .await
+                    .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{ip_link_command:?}"), cause })?;
+
+                if !output.status.success() {
+                    return Err(Error::CanInterfaceUpdate { name: network_interface_descriptor.name.clone(), cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim()) });
+                }
             }
+            NetworkInterfaceConfiguration::Vcan => {
+                debug!("Update VCAN interface {interface}...", interface=network_interface_descriptor.name);
 
-            let output = ip_link_command
-                .output()
-                .await
-                .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{ip_link_command:?}"), cause })?;
+                let mut ip_link_command = Command::new("ip");
+                ip_link_command.arg("link")
+                    .arg("set")
+                    .arg(network_interface_descriptor.name.name())
+                    .arg("type")
+                    .arg("vcan");
 
-            if !output.status.success() {
-                return Err(Error::CanInterfaceUpdate { name: network_interface_descriptor.name.clone(), cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim()) });
+                let output = ip_link_command
+                    .output()
+                    .await
+                    .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{ip_link_command:?}"), cause })?;
+
+                if !output.status.success() {
+                    return Err(Error::CanInterfaceUpdate { name: network_interface_descriptor.name.clone(), cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim()) });
+                }
             }
-
-        };
+            NetworkInterfaceConfiguration::Ethernet => {} //do nothing
+        }
 
         Ok(())
     }

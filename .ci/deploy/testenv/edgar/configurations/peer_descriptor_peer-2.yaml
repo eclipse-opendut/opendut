@@ -13,22 +13,10 @@ spec:
         kind: ethernet
       - id: 25c2d873-35c6-4f32-b4c1-dba0e9dc1c52
         name: vcan0
-        kind: can
-        parameters:
-          bitrate-kbps: 500
-          sample-point: 0.7
-          fd: false
-          data-bitrate-kbps: 2000
-          data-sample-point: 0.7
+        kind: vcan
       - id: 1aad3ce5-0e84-41c3-98b2-3e4055b4727d
         name: vcan1
-        kind: can
-        parameters:
-          bitrate-kbps: 500
-          sample-point: 0.7
-          fd: false
-          data-bitrate-kbps: 2000
-          data-sample-point: 0.7
+        kind: vcan
 
   topology:
     devices:

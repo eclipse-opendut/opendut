@@ -38,6 +38,7 @@ pub struct NetworkInterfaceDescriptorSpecificationV1 {
 pub enum NetworkInterfaceKind {
     Ethernet,
     Can,
+    Vcan,
 }
 
 #[derive(Debug, Deserialize)]

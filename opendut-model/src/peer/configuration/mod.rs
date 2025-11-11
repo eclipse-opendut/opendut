@@ -5,7 +5,6 @@ use std::ops::{Deref, DerefMut};
 
 pub mod api;
 pub use crate::peer::configuration::api::*;
-use crate::util::net::NetworkInterfaceConfiguration;
 
 pub mod parameter;
 
@@ -200,13 +199,6 @@ impl<V: ParameterValue> ParameterField<V> {
     }
 }
 
-impl ParameterField<parameter::DeviceInterface> {
-    pub fn filter_can_devices(&self) -> Vec<Parameter<parameter::DeviceInterface>> {
-        self.values().filter(|&interface| matches!(interface.value.descriptor.configuration, NetworkInterfaceConfiguration::Can { .. })).cloned()
-            .collect::<Vec<_>>()
-    }
-}
-
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct ParameterField<V: ParameterValue> {
     pub values: HashMap<ParameterId, Parameter<V>>,
@@ -335,11 +327,11 @@ mod tests {
             testee.ethernet_bridges.set(absent_then_present.clone(), ParameterTarget::Absent, vec![]);
 
             testee.ethernet_bridges.set_all_present([
-                present_then_present.clone(),
-                new_present.clone(),
-                absent_then_present.clone()
-            ],
-    vec![]
+                    present_then_present.clone(),
+                    new_present.clone(),
+                    absent_then_present.clone()
+                ],
+                vec![]
             );
 
             assert_that!(testee.ethernet_bridges.values.into_values().collect::<Vec<_>>(), unordered_elements_are![

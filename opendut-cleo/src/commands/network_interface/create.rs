@@ -41,6 +41,7 @@ impl CreateNetworkInterfaceCli {
                 data_bitrate: 2000000,
                 data_sample_point: CanSamplePoint::try_from(0.7).unwrap(),
             },
+            NetworkInterfaceType::Vcan => NetworkInterfaceConfiguration::Vcan,
         };
 
         if peer_interface_names.contains(&interface_name) {

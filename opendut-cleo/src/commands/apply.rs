@@ -162,12 +162,9 @@ mod tests {
         let peer = generate_peer_descriptor()?;
         
         let interface_kind = match peer.network.interfaces[0].configuration {
-            NetworkInterfaceConfiguration::Ethernet => {
-                NetworkInterfaceKind::Ethernet
-            }
-            NetworkInterfaceConfiguration::Can { .. } => {
-                NetworkInterfaceKind::Can
-            }
+            NetworkInterfaceConfiguration::Ethernet => NetworkInterfaceKind::Ethernet,
+            NetworkInterfaceConfiguration::Can { .. } => NetworkInterfaceKind::Can,
+            NetworkInterfaceConfiguration::Vcan => NetworkInterfaceKind::Vcan,
         };
         
         let network = get_interface_specification(peer.clone(), interface_kind)?;

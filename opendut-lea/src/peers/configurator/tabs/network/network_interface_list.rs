@@ -152,6 +152,17 @@ fn Row(
                     data_sample_point.to_string()
                 )
             }
+            NetworkInterfaceConfiguration::Vcan => {
+                (
+                    network_configuration_id,
+                    user_network_interface.configuration.display_name(),
+                    "-".to_string(),
+                    "-".to_string(),
+                    "-".to_string(),
+                    "-".to_string(),
+                    "-".to_string()
+                )
+            }
         }
     };
 

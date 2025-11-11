@@ -49,7 +49,7 @@ pub(super) fn update_peer_configuration(
     } = peer_configuration;
 
     let can_device_names = expected_device_interfaces.iter()
-        .filter(|descriptor| matches!(descriptor.configuration, NetworkInterfaceConfiguration::Can { .. }))
+        .filter(|descriptor| descriptor.configuration.is_can_like())
         .map(|device_interfaces| device_interfaces.name.clone())
         .collect::<Vec<_>>();
     let can_enabled = !can_device_names.is_empty();

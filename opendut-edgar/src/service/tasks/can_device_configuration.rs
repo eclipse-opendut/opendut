@@ -13,7 +13,7 @@ pub struct CanDeviceConfiguration {
 }
 
 impl CanDeviceConfiguration {
-    pub fn new(
+    pub fn create(
         network_interface_descriptor: NetworkInterfaceDescriptor,
         network_interface_manager: NetworkInterfaceManagerRef,
     ) -> anyhow::Result<Self> {
@@ -42,7 +42,8 @@ impl CanDeviceConfiguration {
                     }
                 }
             },
-            _ => return Err(anyhow::anyhow!("Network interface descriptor does not contain CAN configuration.")),
+            NetworkInterfaceConfiguration::Vcan => return Err(anyhow::anyhow!("Network interface descriptor does not contain CAN configuration, but rather VCAN, which's interface cannot be configured.")),
+            NetworkInterfaceConfiguration::Ethernet => return Err(anyhow::anyhow!("Network interface descriptor does not contain CAN configuration.")),
         };
 
         Ok(Self {

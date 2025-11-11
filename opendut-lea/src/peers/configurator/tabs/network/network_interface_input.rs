@@ -63,7 +63,8 @@ where A: Fn(NetworkInterfaceName, UserNetworkInterfaceConfiguration) + 'static {
 
     let button_state = Signal::derive(move || {
         match getter_type.get() {
-            InterfaceKind::Ethernet => {
+            InterfaceKind::Ethernet
+            | InterfaceKind::Vcan => {
                 if interface_name_getter.get().is_left() || interface_name_getter.get().is_both() {
                     ButtonState::Disabled
                 } else {
@@ -201,6 +202,19 @@ where A: Fn(NetworkInterfaceName, UserNetworkInterfaceConfiguration) + 'static {
                             />
                             " CAN "
                         </label>
+                        <label class="radio">
+                            <input
+                                type="radio"
+                                name="interfaceType"
+                                checked = move || {
+                                    matches!(getter_type.get(), InterfaceKind::Vcan)
+                                }
+                                on:click = move |_| {
+                                    setter_type.set(InterfaceKind::Vcan)
+                                }
+                            />
+                            " VCAN "
+                        </label>
                     </div>
                 </div>
             </div>
@@ -232,6 +246,9 @@ where A: Fn(NetworkInterfaceName, UserNetworkInterfaceConfiguration) + 'static {
                                         data_bitrate: data_bitrate.parse::<u32>().unwrap() * 1000,
                                         data_sample_point: CanSamplePoint::try_from(data_sample_point.parse::<f32>().unwrap()).unwrap(),
                                     }
+                                }
+                                InterfaceKind::Vcan => {
+                                    NetworkInterfaceConfiguration::Vcan
                                 }
                             };
                             let configuration = UserNetworkInterfaceConfiguration::from(configuration);
@@ -288,6 +305,7 @@ fn sample_points_validator(input: String) -> UserInputValue {
 enum InterfaceKind {
     Ethernet,
     Can,
+    Vcan,
 }
 
 

@@ -52,6 +52,7 @@ async fn should_persist_peer_descriptor() -> anyhow::Result<()> {
 pub fn peer_descriptor() -> anyhow::Result<PeerDescriptor> {
     let network_interface_id1 = NetworkInterfaceId::random();
     let network_interface_id2 = NetworkInterfaceId::random();
+    let network_interface_id3 = NetworkInterfaceId::random();
 
     Ok(PeerDescriptor {
         id: PeerId::random(),
@@ -74,6 +75,11 @@ pub fn peer_descriptor() -> anyhow::Result<PeerDescriptor> {
                         data_bitrate: 33333,
                         data_sample_point: CanSamplePoint::try_from(0.444)?,
                     },
+                },
+                NetworkInterfaceDescriptor {
+                    id: network_interface_id3,
+                    name: NetworkInterfaceName::try_from("vcan0")?,
+                    configuration: NetworkInterfaceConfiguration::Vcan,
                 },
             ],
             bridge_name: Some(NetworkInterfaceName::try_from("br0")?),
@@ -98,6 +104,16 @@ pub fn peer_descriptor() -> anyhow::Result<PeerDescriptor> {
                     tags: vec![
                         DeviceTag::try_from("tag2")?,
                         DeviceTag::try_from("tag3")?,
+                    ],
+                },
+                DeviceDescriptor {
+                    id: DeviceId::random(),
+                    name: DeviceName::try_from("device3")?,
+                    description: Some(DeviceDescription::try_from("device3-description")?),
+                    interface: network_interface_id3,
+                    tags: vec![
+                        DeviceTag::try_from("tag1")?,
+                        DeviceTag::try_from("tag2")?,
                     ],
                 },
             ],

@@ -9,7 +9,8 @@ impl UserNetworkInterfaceConfiguration {
     pub fn display_name(&self) -> String {
         match self.inner {
             NetworkInterfaceConfiguration::Ethernet => String::from("Ethernet"),
-            NetworkInterfaceConfiguration::Can { .. } => String::from("CAN")
+            NetworkInterfaceConfiguration::Can { .. } => String::from("CAN"),
+            NetworkInterfaceConfiguration::Vcan => String::from("VCAN"),
         }
     }
 }
