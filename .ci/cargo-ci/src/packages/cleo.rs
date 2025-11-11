@@ -72,7 +72,7 @@ pub mod distribution {
     use crate::tasks::distribution::copy_license_json::SkipGenerate;
     use super::*;
 
-    #[tracing::instrument(skip_all)]
+    #[tracing::instrument]
     pub fn cleo_distribution(target: Arch, release_build: bool) -> crate::Result {
         use crate::tasks::distribution;
 
