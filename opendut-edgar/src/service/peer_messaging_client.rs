@@ -221,7 +221,6 @@ async fn apply_peer_configuration_raw(
     info!("Received PeerConfiguration: {configuration:?}");
 
     let apply_config_params = ApplyPeerConfigurationParams {
-        self_id: handle_stream_info.self_id,
         peer_configuration: configuration,
         network_interface_management: handle_stream_info.network_interface_management.clone(),
         executor_manager: Arc::clone(&handle_stream_info.executor_manager),
