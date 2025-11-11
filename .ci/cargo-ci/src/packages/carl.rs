@@ -131,8 +131,14 @@ pub mod distribution {
 
             let cleo_out_dir = out_dir.join(Package::Cleo.ident());
             fs::create_dir_all(cleo_out_dir)?;
+
+            let architectures = if release_build {
+                crate::packages::cleo::SUPPORTED_ARCHITECTURES.to_vec()
+            } else {
+                vec![Arch::default()]
+            };
             
-            for arch in crate::packages::cleo::SUPPORTED_ARCHITECTURES {
+            for arch in architectures {
                 crate::packages::cleo::distribution::cleo_distribution(arch.to_owned(), release_build)?;
                 let cleo_build_dir = crate::tasks::distribution::out_arch_dir(arch.to_owned());
 
@@ -168,7 +174,13 @@ pub mod distribution {
             let edgar_out_dir = out_dir.join(Package::Edgar.ident());
             fs::create_dir_all(edgar_out_dir)?;
 
-            for arch in crate::packages::edgar::SUPPORTED_ARCHITECTURES {
+            let architectures = if release_build {
+                crate::packages::edgar::SUPPORTED_ARCHITECTURES.to_vec()
+            } else {
+                vec![Arch::default()]
+            };
+
+            for arch in architectures {
                 crate::packages::edgar::distribution::edgar_distribution(arch.to_owned(), release_build)?;
                 let edgar_build_dir = crate::tasks::distribution::out_arch_dir(arch.to_owned());
 
