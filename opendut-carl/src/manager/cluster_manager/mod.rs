@@ -540,7 +540,7 @@ mod test {
     mod rollout_cluster {
         use super::*;
         use opendut_carl_api::carl::broker::{stream_header, DownstreamMessage, DownstreamMessagePayload};
-        use opendut_model::peer::configuration::PeerConfiguration;
+        use opendut_model::peer::configuration::{parameter, PeerConfiguration};
         use crate::manager::peer_manager::StorePeerDescriptorParams;
 
         #[rstest]
@@ -590,17 +590,43 @@ mod test {
             let can_port_count = fixture.testee.lock().await.can_server_port_counter;
             assert!(can_port_count > fixture.cluster_manager_options.can_server_port_range_start);
 
-            // TODO: add more assertions here
-            let assert_peer_config_valid = |peer_config: &PeerConfiguration| {
-                assert_eq!(peer_config.device_interfaces.len(), 2);
+            let assert_peer_config_valid = |peer_fixture: &PeerFixture, peer_config: &PeerConfiguration| {
+                assert_eq!(peer_config.device_interfaces.len(), 1);
+                assert_eq!(peer_config.executors.len(), 1);
+                assert_eq!(peer_config.ethernet_bridges.len(), 1);
+                assert_eq!(peer_config.gre_interfaces.len(), 1, "For each ethernet device interface there should be a GRE interface.");
+                assert_eq!(peer_config.joined_interfaces.len(), 2, "Joined interfaces should contain the GRE interface and the ethernet interface.");
+
+                let bridge_name = peer_fixture.descriptor.network.bridge_name.clone().unwrap();
+                let join_configs = peer_config.joined_interfaces.values().cloned().map(|item| item.value).collect::<Vec<_>>();
+                let gre = NetworkInterfaceName::try_from("gre-AQEBAQEBAQE").unwrap();
+                let eth0 = NetworkInterfaceName::try_from("eth0").unwrap();
+                assert_that!(join_configs, unordered_elements_are![
+                    &parameter::InterfaceJoinConfig {
+                        name: gre,
+                        bridge: bridge_name.clone(),
+                    },
+                    &parameter::InterfaceJoinConfig {
+                        name: eth0,
+                        bridge: bridge_name,
+                    }
+                ]);
+
+                // no CAN device specified in peer fixtures
+                assert_eq!(peer_config.can_connections.len(), 0);
+                assert_eq!(peer_config.can_bridges.len(), 0);
+                assert_eq!(peer_config.can_local_routes.len(), 0);
+
 
             };
 
-            //let peer_config = receive_peer_configuration_message(&mut peer_a_rx).await;
-            //assert_peer_config_valid(&peer_config);
+            let peer_config_a = receive_peer_configuration_message(&mut peer_a_rx).await;
+            assert_peer_config_valid(&peer_a, &peer_config_a);
+            assert_eq!(peer_config_a.remote_peer_connection_checks.len(), 1, "Only the leader should have remote peer connection checks.");
 
-            //let peer_config = receive_peer_configuration_message(&mut peer_b_rx).await;
-            //assert_peer_config_valid(&peer_config);
+            let peer_config_b = receive_peer_configuration_message(&mut peer_b_rx).await;
+            assert_peer_config_valid(&peer_b, &peer_config_b);
+            assert_eq!(peer_config_b.remote_peer_connection_checks.len(), 0, "Follower should not do any connection checks.");
 
             Ok(())
         }
