@@ -182,6 +182,13 @@ impl ResourceManager {
                 .expect("should successfully send notification about event during resource transaction");
         }
     }
+
+    #[deprecated(since="0.8.0")]
+    pub(crate) async fn perform_database_upgrade(&self) -> anyhow::Result<bool> {
+        let mut state = self.state.write().await;
+        #[allow(deprecated)]
+        state.storage.perform_database_upgrade().await
+    }
 }
 
 

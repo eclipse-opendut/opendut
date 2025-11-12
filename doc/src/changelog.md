@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 When upgrading between versions of CARL, do not skip versions,
 since migrations are only provided from one version to the next.
+Always create a database backup before upgrading CARL.
 
 
 ## Unreleased
@@ -21,6 +22,9 @@ since migrations are only provided from one version to the next.
 * LEA: Fix configuration being reset when switching between UI tabs, while editing an already-saved cluster.
 
 ### Changed
+* We use a newer database format.
+  When running the new version of CARL for the first time, it will upgrade the database format.
+  Be sure to create a database backup before upgrading, as you should anyways.
 * Testenv: Utilizes the containers of the localenv deployment now.
   * All names in testenv were changed to end with `.opendut.local`.
   * Old testenv passwords are no longer valid. New passwords are now generated and loaded from `./.ci/deploy/localenv/data/secrets/.env`.
