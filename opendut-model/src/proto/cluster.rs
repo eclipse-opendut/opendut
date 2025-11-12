@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use opendut_util::conversion;
 use opendut_util::proto::ConversionResult;
 use crate::proto::topology::DeviceId;
@@ -151,57 +150,6 @@ conversion! {
                 Ok(Model::Deployed(inner))
             }
         }
-    }
-}
-
-conversion! {
-    type Model = crate::cluster::ClusterAssignment;
-    type Proto = ClusterAssignment;
-
-    fn from(value: Model) -> Proto {
-        let assignments = value.assignments.into_iter()
-            .map(|(peer_id, model)| PeerClusterAssignment {
-                peer_id: Some(peer_id.into()),
-                vpn_address: Some(model.vpn_address.into()),
-                can_server_port: Some(model.can_server_port.into()),
-            })
-            .collect();
-
-        Proto {
-            id: Some(value.id.into()),
-            leader: Some(value.leader.into()),
-            assignments,
-        }
-    }
-
-    fn try_from(value: Proto) -> ConversionResult<Model> {
-        let cluster_id: crate::cluster::ClusterId = extract!(value.id)?.try_into()?;
-
-        let leader: crate::peer::PeerId = extract!(value.leader)?.try_into()?;
-
-        let assignments: HashMap<crate::peer::PeerId, crate::cluster::PeerClusterAssignment> =
-            value.assignments.into_iter()
-                .map(|proto| {
-                    let peer_id: crate::peer::PeerId = extract!(proto.peer_id)?.try_into()?;
-
-                    let vpn_address: std::net::IpAddr = extract!(proto.vpn_address)?.try_into()?;
-                    let can_server_port: crate::util::Port = extract!(proto.can_server_port)?.try_into()?;
-
-                    Ok((
-                        peer_id,
-                        crate::cluster::PeerClusterAssignment {
-                            vpn_address,
-                            can_server_port,
-                        }
-                    ))
-                })
-                .collect::<Result<_, _>>()?;
-
-        Ok(Model {
-            id: cluster_id,
-            leader,
-            assignments,
-        })
     }
 }
 

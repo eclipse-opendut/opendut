@@ -1,12 +1,11 @@
 use std::net::{IpAddr, Ipv4Addr};
 use std::str::FromStr;
 use tracing::debug;
-use opendut_model::cluster::ClusterAssignment;
 use opendut_model::peer::configuration::{parameter, PeerConfiguration};
 use opendut_model::peer::configuration::parameter::{GreInterfaceConfig, InterfaceJoinConfig};
 use opendut_model::peer::{PeerDescriptor, PeerId};
 use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
-use crate::manager::peer_manager::{AssignClusterError, AssignClusterOptions};
+use crate::manager::peer_manager::{AssignClusterError, AssignClusterOptions, ClusterAssignment};
 
 
 pub(super) fn update_peer_configuration(

@@ -1,7 +1,9 @@
+mod assignment;
+mod configuration;
+
 use crate::manager::peer_messaging_broker::PeerMessagingBrokerRef;
 use crate::resource::persistence::error::PersistenceError;
 use crate::resource::storage::ResourcesStorageApi;
-use opendut_model::cluster::ClusterAssignment;
 use opendut_model::peer::configuration::PeerConfiguration;
 use opendut_model::peer::{PeerDescriptor, PeerId};
 use opendut_model::util::net::{NetworkInterfaceDescriptor, NetworkInterfaceName, NetworkInterfaceNameError};
@@ -9,7 +11,8 @@ use tracing::debug;
 use opendut_carl_api::carl::broker::{ApplyPeerConfiguration, DownstreamMessagePayload};
 use crate::resource::api::resources::Resources;
 
-mod configuration;
+
+pub(in crate::manager) use assignment::{ClusterAssignment, PeerClusterAssignment};
 
 pub struct AssignClusterParams {
     pub peer_messaging_broker: PeerMessagingBrokerRef,
@@ -91,7 +94,7 @@ mod tests {
     use crate::manager::peer_messaging_broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
     use crate::resource::manager::ResourceManager;
     use googletest::prelude::*;
-    use opendut_model::cluster::{ClusterAssignment, ClusterId, PeerClusterAssignment};
+    use opendut_model::cluster::ClusterId;
     use std::net::{IpAddr, Ipv4Addr};
     use std::str::FromStr;
     use std::sync::Arc;

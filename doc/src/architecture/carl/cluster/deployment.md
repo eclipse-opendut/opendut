@@ -6,12 +6,3 @@
 ```
 {{#include ../../../../../opendut-model/proto/opendut/model/cluster/cluster.proto:ClusterDescriptor}}
 ```
-
-## Cluster Deployment
-
-```
-{{#include ../../../../../opendut-model/proto/opendut/model/cluster/cluster.proto:ClusterAssignment}}
-```
-```
-{{#include ../../../../../opendut-model/proto/opendut/model/cluster/cluster.proto:PeerClusterAssignment}}
-```

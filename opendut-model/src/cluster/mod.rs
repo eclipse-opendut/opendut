@@ -4,13 +4,10 @@ use std::fmt;
 use std::fmt::Formatter;
 use std::ops::Not;
 
-pub use assignment::*;
-
 use crate::create_id_type;
 use crate::peer::PeerId;
 use crate::topology::DeviceId;
 
-mod assignment;
 pub mod state;
 
 

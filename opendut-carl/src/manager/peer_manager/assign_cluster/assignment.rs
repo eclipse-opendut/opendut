@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use std::net::IpAddr;
 use serde::Serialize;
-use crate::cluster::ClusterId;
-use crate::peer::PeerId;
-use crate::util::Port;
+use opendut_model::cluster::ClusterId;
+use opendut_model::peer::PeerId;
+use opendut_model::util::Port;
 
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]

@@ -7,7 +7,7 @@ use futures::future::join_all;
 use futures::FutureExt;
 use tracing::{debug, error, trace, warn};
 
-use opendut_model::cluster::{ClusterAssignment, ClusterDescriptor, ClusterDeployment, ClusterId, ClusterName, PeerClusterAssignment};
+use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId, ClusterName};
 use opendut_model::peer::state::PeerConnectionState;
 use opendut_model::peer::{PeerDescriptor, PeerId};
 use opendut_model::topology::{DeviceDescriptor, DeviceId};
@@ -39,7 +39,7 @@ pub use list_cluster_peers::*;
 pub mod list_deployed_clusters;
 mod effects;
 
-use crate::manager::peer_manager::{AssignClusterOptions, AssignClusterParams};
+use crate::manager::peer_manager::{AssignClusterOptions, AssignClusterParams, ClusterAssignment, PeerClusterAssignment};
 pub use list_deployed_clusters::*;
 
 pub type ClusterManagerRef = Arc<Mutex<ClusterManager>>;

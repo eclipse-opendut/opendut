@@ -28,22 +28,6 @@ message ClusterDeployment {
   ClusterId id = 1;
 }
 
-// ANCHOR: ClusterAssignment
-message ClusterAssignment {
-  ClusterId id = 1;
-  opendut.model.peer.PeerId leader = 3;
-  repeated PeerClusterAssignment assignments = 4;
-}
-// ANCHOR_END: ClusterAssignment
-
-// ANCHOR: PeerClusterAssignment
-message PeerClusterAssignment {
-  opendut.model.peer.PeerId peer_id = 1;
-  opendut.model.util.IpAddress vpn_address = 2;
-  opendut.model.util.Port can_server_port = 3;
-}
-// ANCHOR_END: PeerClusterAssignment
-
 message ClusterState {
   oneof inner {
     ClusterStateUndeployed undeployed = 1;
