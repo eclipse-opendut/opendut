@@ -10,7 +10,8 @@ use tracing::{debug, error, warn};
 use crate::service::network_interface::manager::vcan::Vcan;
 use gretap::Gretap;
 use interface::Interface;
-use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
+use opendut_model::util::net::NetworkInterfaceName;
+use crate::service::network_interface::manager::can::{BitTiming, CanFD, CanInterfaceConfiguration};
 
 mod gretap;
 mod list_joined_interfaces;
@@ -121,65 +122,46 @@ impl NetworkInterfaceManager {
         Ok(())
     }
 
-    pub async fn update_interface(&self, network_interface_descriptor: NetworkInterfaceDescriptor) -> Result<(), Error> {
-        match network_interface_descriptor.configuration {
-            NetworkInterfaceConfiguration::Can { bitrate, sample_point, fd, data_bitrate, data_sample_point } => {
-                debug!("Update CAN interface {interface} with bitrate: {bitrate}, sample-point: {sample_point}, fd: {fd}, data_bitrate: {data_bitrate}, data_sample_point: {data_sample_point}", interface=network_interface_descriptor.name);
+    pub async fn update_can_interface(&self, interface_name: &NetworkInterfaceName, can_config: &CanInterfaceConfiguration) -> Result<(), Error> {
+        let CanInterfaceConfiguration { bit_timing, fd } = can_config;
+        let BitTiming { bitrate, sample_point } = bit_timing;
 
-                let mut ip_link_command = Command::new("ip");
-                ip_link_command.arg("link")
-                    .arg("set")
-                    .arg(network_interface_descriptor.name.name())
-                    .arg("type")
-                    .arg("can")
-                    .arg("bitrate")
-                    .arg(bitrate.to_string())
-                    .arg("sample-point")
-                    .arg(sample_point.sample_point().to_string());
+        debug!("Update CAN interface {interface_name} with bitrate: {bitrate}, sample-point: {sample_point}");
 
-                if fd {
-                    ip_link_command
-                        .arg("dbitrate")
-                        .arg(data_bitrate.to_string())
-                        .arg("dsample-point")
-                        .arg(data_sample_point.sample_point().to_string())
-                        .arg("fd")
-                        .arg("on");
-                } else {
-                    ip_link_command
-                        .arg("fd")
-                        .arg("off");
-                }
+        let mut ip_link_command = Command::new("ip");
+        ip_link_command.arg("link")
+            .arg("set")
+            .arg(interface_name.name())
+            .arg("type")
+            .arg("can")
+            .arg("bitrate")
+            .arg(bitrate.to_string())
+            .arg("sample-point")
+            .arg(sample_point.to_string());
 
-                let output = ip_link_command
-                    .output()
-                    .await
-                    .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{ip_link_command:?}"), cause })?;
+        if let CanFD::Enabled(BitTiming { bitrate: data_bitrate, sample_point: data_sample_point }) = fd {
+            debug!("Update CAN interface {interface_name} with fd: 'enabled', data_bitrate: {data_bitrate}, data_sample_point: {data_sample_point}");
 
-                if !output.status.success() {
-                    return Err(Error::CanInterfaceUpdate { name: network_interface_descriptor.name.clone(), cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim()) });
-                }
-            }
-            NetworkInterfaceConfiguration::Vcan => {
-                debug!("Update VCAN interface {interface}...", interface=network_interface_descriptor.name);
+            ip_link_command
+                .arg("dbitrate")
+                .arg(data_bitrate.to_string())
+                .arg("dsample-point")
+                .arg(data_sample_point.to_string())
+                .arg("fd")
+                .arg("on");
+        } else {
+            ip_link_command
+                .arg("fd")
+                .arg("off");
+        }
 
-                let mut ip_link_command = Command::new("ip");
-                ip_link_command.arg("link")
-                    .arg("set")
-                    .arg(network_interface_descriptor.name.name())
-                    .arg("type")
-                    .arg("vcan");
+        let output = ip_link_command
+            .output()
+            .await
+            .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{ip_link_command:?}"), cause })?;
 
-                let output = ip_link_command
-                    .output()
-                    .await
-                    .map_err(|cause| Error::CommandLineProgramExecution { command: format!("{ip_link_command:?}"), cause })?;
-
-                if !output.status.success() {
-                    return Err(Error::CanInterfaceUpdate { name: network_interface_descriptor.name.clone(), cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim()) });
-                }
-            }
-            NetworkInterfaceConfiguration::Ethernet => {} //do nothing
+        if !output.status.success() {
+            return Err(Error::CanInterfaceUpdate { name: interface_name.clone(), cause: format!("{:?}", String::from_utf8_lossy(&output.stderr).trim()) });
         }
 
         Ok(())

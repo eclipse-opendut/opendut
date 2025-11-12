@@ -5,7 +5,10 @@ use crate::service::peer_configuration::NetworkInterfaceManagement;
 use crate::service::tasks;
 use opendut_model::peer::configuration::{ParameterVariant, PeerConfiguration};
 use std::collections::HashMap;
-
+use opendut_model::peer::configuration::parameter::DeviceInterface;
+use opendut_model::util::net::NetworkInterfaceConfiguration;
+use crate::service::network_interface::manager::can::{BitTiming, CanFD, CanInterfaceConfiguration};
+use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 
 pub struct ServiceTaskResolver {
     peer_configuration: PeerConfiguration,
@@ -35,12 +38,7 @@ impl TaskResolver for ServiceTaskResolver {
             let network_interface_manager = network_interface_manager.clone();
             match parameter {
                 ParameterVariant::DeviceInterface(device_interface) => {
-                    // TODO: Create task to check if device is present, if not, ignore it. Check parameters for CAN devices
-                    let parameter = device_interface.value.clone();
-                    let can_config_task = tasks::can_device_configuration::CanDeviceConfiguration::create(parameter.descriptor, network_interface_manager.clone());
-                    if let Ok(can_config_task) = can_config_task {
-                        tasks.push(Box::new(can_config_task));
-                    }
+                    resolve_device_interface_tasks(&device_interface.value, network_interface_manager, &mut tasks);
                 }
                 ParameterVariant::EthernetBridge(ethernet_bridge) => {
                     tasks.push(Box::new(tasks::create_ethernet_bridge::CreateEthernetBridge { parameter: ethernet_bridge.value.clone(), network_interface_manager }));
@@ -94,6 +92,52 @@ impl TaskResolver for ServiceTaskResolver {
             }]
         } else {
             vec![]
+        }
+    }
+}
+
+fn resolve_device_interface_tasks(
+    device_interface: &DeviceInterface,
+    network_interface_manager: NetworkInterfaceManagerRef,
+    tasks: &mut Vec<Box<dyn TaskAbsent>>,
+) {
+    match device_interface.descriptor.configuration.clone() {
+        NetworkInterfaceConfiguration::Ethernet => {
+            // TODO: Create task to check if device is present, if not, ignore it.
+        }
+        NetworkInterfaceConfiguration::Can { bitrate, sample_point, fd, data_bitrate, data_sample_point } => {
+            // TODO: Create task to check if device is present, if not, ignore it.
+
+            let can_config = CanInterfaceConfiguration {
+                bit_timing: BitTiming {
+                    bitrate,
+                    sample_point: sample_point.sample_point(),
+                },
+                fd: if fd {
+                    CanFD::Enabled(
+                        BitTiming {
+                            bitrate: data_bitrate,
+                            sample_point: data_sample_point.sample_point(),
+                        }
+                    )
+                } else {
+                    CanFD::Disabled
+                },
+            };
+
+            let can_config_task = tasks::can_device_configuration::CanDeviceConfiguration {
+                interface_name: device_interface.descriptor.name.clone(),
+                can_config,
+                network_interface_manager,
+            };
+
+            tasks.push(Box::new(can_config_task));
+        }
+        NetworkInterfaceConfiguration::Vcan => {
+            tasks.push(Box::new(tasks::can_virtual_device::CanCreateVirtualDevice {
+                name: device_interface.descriptor.name.clone(),
+                network_interface_manager
+            }));
         }
     }
 }
