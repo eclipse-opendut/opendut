@@ -3,10 +3,10 @@ use rtnetlink::LinkMessageBuilder;
 
 pub const VIRTUAL_CAN_INTERFACE_TYPE: &str = "vcan";
 
-pub trait VCan {
+pub trait Vcan {
     fn vcan(self) -> Self;
 }
-impl<T> VCan for LinkMessageBuilder<T> {
+impl<T> Vcan for LinkMessageBuilder<T> {
     fn vcan(self) -> Self {
         self.append_extra_attribute(
             LinkAttribute::LinkInfo(vec![

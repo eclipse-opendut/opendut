@@ -19,7 +19,7 @@ impl Task for CanCreateVirtualDevice {
         match interface {
             Some(vcan) => {
                 let interface_is_up = vcan.link_flags.contains(rtnetlink::packet_route::link::LinkFlags::Up);
-                if vcan.kind == crate::service::network_interface::manager::interface::NetlinkInterfaceKind::VCan && interface_is_up {
+                if vcan.kind == crate::service::network_interface::manager::interface::NetlinkInterfaceKind::Vcan && interface_is_up {
                     Ok(TaskStateFulfilled::Yes)
                 } else {
                     Ok(TaskStateFulfilled::No)
@@ -41,7 +41,7 @@ impl Task for CanCreateVirtualDevice {
                 Ok(Success::default())
             }
             Some(vcan) => {
-                if vcan.kind == crate::service::network_interface::manager::interface::NetlinkInterfaceKind::VCan {
+                if vcan.kind == crate::service::network_interface::manager::interface::NetlinkInterfaceKind::Vcan {
                     self.network_interface_manager.set_interface_up(&vcan).await?;
                     Ok(Success::default())
                 } else {

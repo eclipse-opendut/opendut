@@ -7,7 +7,7 @@ use futures::TryStreamExt;
 use tokio::process::Command;
 use tracing::{debug, error, warn};
 
-use crate::service::network_interface::manager::vcan::VCan;
+use crate::service::network_interface::manager::vcan::Vcan;
 use gretap::Gretap;
 use interface::Interface;
 use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceName};
@@ -204,7 +204,7 @@ impl NetworkInterfaceManager {
             )
             .execute()
             .await
-            .map_err(|error| Error::VCanInterfaceCreation { name: name.clone(), cause: error.to_string() })?;
+            .map_err(|error| Error::VcanInterfaceCreation { name: name.clone(), cause: error.to_string() })?;
         let interface = self.try_find_interface(name).await?;
         Ok(interface)
     }
@@ -247,7 +247,7 @@ pub enum Error {
     #[error("Failure while joining interface {interface} to bridge {bridge}: {cause}")]
     JoinInterfaceToBridge { interface: Box<Interface>, bridge: Box<Interface>, cause: Box<rtnetlink::Error> },
     #[error("Failure while creating virtual CAN interface '{name}': {cause}")]
-    VCanInterfaceCreation { name: NetworkInterfaceName, cause: String },
+    VcanInterfaceCreation { name: NetworkInterfaceName, cause: String },
     #[error("Failed to modify interface '{name}': {cause}")]
     ModificationFailure { name: NetworkInterfaceName, cause: String},
     #[error("Failure during updating CAN interface '{name}': {cause}")]

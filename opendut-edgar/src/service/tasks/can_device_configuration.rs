@@ -62,7 +62,7 @@ impl Task for CanDeviceConfiguration {
 
     async fn check_present(&self) -> anyhow::Result<TaskStateFulfilled> {
         let interface = self.find_interface().await?;
-        if interface.kind == NetlinkInterfaceKind::VCan {
+        if interface.kind == NetlinkInterfaceKind::Vcan {
             return Ok(TaskStateFulfilled::Yes);  // Virtual CAN interfaces are assumed to always match the desired configuration.
         }
         // This assumes the device exists otherwise an error is returned.

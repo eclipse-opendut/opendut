@@ -28,7 +28,7 @@ pub enum NetlinkInterfaceKind {
         local: Ipv4Addr,
         remote: Ipv4Addr,
     },
-    VCan,
+    Vcan,
     Can(Option<InfoData>),
     Other(InfoKind),
 }
@@ -106,7 +106,7 @@ impl TryFrom<LinkMessage> for Interface {
             InfoKind::GreTap => { determine_gre_interface(&link_message)? }
             InfoKind::Other(ref name) => {
                 if name.eq(VIRTUAL_CAN_INTERFACE_TYPE) {
-                    NetlinkInterfaceKind::VCan
+                    NetlinkInterfaceKind::Vcan
                 } else if name.eq(&CAN_INTERFACE_TYPE) {
                     NetlinkInterfaceKind::Can(interface_info_data)                
                 } else {
