@@ -88,6 +88,7 @@ impl PeerMessagingClient {
                 match message {
                     None => {
                         info!("Peer configuration state channel closed");
+                        break  // exit the loop and end the EdgePeerConfigurationState sender task
                     }
                     Some(message) => {
                         let _send_result = tx_outbound.send(message.clone()).await
