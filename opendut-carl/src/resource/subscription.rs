@@ -69,11 +69,6 @@ impl_subscribable!(ViperRunDescriptor, test_suite_run_descriptor);
 #[cfg(feature = "viper")]
 impl_subscribable!(ViperRunDeployment, test_suite_run_deployment);
 
-mod deprecated {
-    #![expect(deprecated)]
-    impl_subscribable!(crate::startup::migration::ClusterConfiguration, _cluster_configuration); //TODO remove
-}
-
 pub type ResourceSubscriptionChannel<R> = (broadcast::Sender<SubscriptionEvent<R>>, broadcast::Receiver<SubscriptionEvent<R>>); //store both the sender and initial receiver, to prevent channel from closing
 
 pub struct ResourceSubscriptionChannels {
@@ -87,9 +82,6 @@ pub struct ResourceSubscriptionChannels {
     #[cfg(feature = "viper")] pub test_suite_source_descriptor: ResourceSubscriptionChannel<ViperSourceDescriptor>,
     #[cfg(feature = "viper")] pub test_suite_run_descriptor: ResourceSubscriptionChannel<ViperRunDescriptor>,
     #[cfg(feature = "viper")] pub test_suite_run_deployment: ResourceSubscriptionChannel<ViperRunDeployment>,
-
-    #[deprecated] #[expect(deprecated)]
-    pub(crate) _cluster_configuration: ResourceSubscriptionChannel<crate::startup::migration::ClusterConfiguration>, //TODO remove (should be unused)
 }
 impl ResourceSubscriptionChannels {
     pub fn subscribe<R: Resource + Subscribable>(&mut self) -> Subscription<R> {
@@ -116,8 +108,6 @@ impl ResourceSubscriptionChannels {
             #[cfg(feature = "viper")] test_suite_source_descriptor,
             #[cfg(feature = "viper")] test_suite_run_descriptor,
             #[cfg(feature = "viper")] test_suite_run_deployment,
-            #[expect(deprecated)]
-            _cluster_configuration,
         } = self;
 
         let result =
@@ -153,8 +143,6 @@ impl Default for ResourceSubscriptionChannels {
             #[cfg(feature = "viper")] test_suite_source_descriptor: broadcast::channel(capacity),
             #[cfg(feature = "viper")] test_suite_run_descriptor: broadcast::channel(capacity),
             #[cfg(feature = "viper")] test_suite_run_deployment: broadcast::channel(capacity),
-            #[expect(deprecated)]
-            _cluster_configuration: broadcast::channel(1),
         }
     }
 }

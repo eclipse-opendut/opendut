@@ -116,8 +116,6 @@ impl ResourceManager {
             #[cfg(feature = "viper")] mut test_suite_source_descriptor,
             #[cfg(feature = "viper")] mut test_suite_run_descriptor,
             #[cfg(feature = "viper")] mut test_suite_run_deployment,
-            #[expect(deprecated)]
-            mut _cluster_configuration,
         } = relayed_subscription_events;
 
 
