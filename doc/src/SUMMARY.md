@@ -40,7 +40,6 @@
     - [Peer](architecture/carl/peer/index.md)
       - [Configuration/State Loop](architecture/carl/peer/configuration-state-loop.md)
     - [Cluster](architecture/carl/cluster/index.md)
-      - [Deployment](architecture/carl/cluster/deployment.md)
   - [EDGAR](architecture/edgar/index.md)
   - [Network](architecture/network/index.md)
     - [Packet traversal](architecture/network/packet-traversal.md)

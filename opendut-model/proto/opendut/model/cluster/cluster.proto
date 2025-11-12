@@ -15,14 +15,12 @@ message ClusterName {
   string value = 1;
 }
 
-// ANCHOR: ClusterDescriptor
 message ClusterDescriptor {
   ClusterId id = 1;
   ClusterName name = 2;
   opendut.model.peer.PeerId leader = 3;
   repeated opendut.model.topology.DeviceId devices = 4;
 }
-// ANCHOR_END: ClusterDescriptor
 
 message ClusterDeployment {
   ClusterId id = 1;
