@@ -3,9 +3,9 @@ use crate::testing::carl_client::TestCarlClient;
 use crate::testing::util;
 use googletest::prelude::*;
 use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId, ClusterName};
-use opendut_model::peer::configuration::{Parameter, ParameterField, ParameterTarget, PeerConfiguration};
+use opendut_model::peer::configuration::{Parameter, ParameterField, ParameterTarget, ParameterValue, PeerConfiguration};
 use opendut_model::peer::configuration::parameter;
-use opendut_model::peer::PeerId;
+use opendut_model::peer::{PeerDescriptor, PeerId};
 use opendut_model::topology::DeviceDescriptor;
 use opendut_model::util::net::NetworkInterfaceName;
 use opendut_model::util::Port;
@@ -43,24 +43,37 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
     let cluster = store_cluster_descriptor(cluster_leader, cluster_devices, &carl.client).await?;
 
     store_cluster_deployment(cluster.id, &carl.client).await?;
-    //let result = store_cluster_deployment(cluster.id, &carl.client).await;
-    //assert!(result.is_ok(), "Storing the same cluster deployment twice should not be a problem.");
+    let result = store_cluster_deployment(cluster.id, &carl.client).await;
+
+    assert!(result.is_ok(), "Storing the same cluster deployment twice should not be a problem. Peer configuration will be sent twice.");
+    let _peer_configuration_a_first = receiver_a.receive_peer_configuration().await?;
+    let _peer_configuration_b_first = receiver_b.receive_peer_configuration().await?;
 
     {
-        let validate_peer_configuration = |peer_configuration: PeerConfiguration| {
-            let bridge_id = peer_configuration.ethernet_bridges.clone().into_iter().next().unwrap().id;
+        let validate_peer_configuration = |peer_descriptor: PeerDescriptor, peer_configuration: PeerConfiguration| {
+            let bridge = parameter::EthernetBridge { name: NetworkInterfaceName::try_from("br-opendut").expect("Could not construct interface name.") };
+            let ethernet_device = parameter::DeviceInterface { descriptor: peer_descriptor.network.interfaces.first().cloned().unwrap() };
             assert_that!(peer_configuration, matches_pattern!(PeerConfiguration {
-                device_interfaces: eq(&peer_configuration.device_interfaces),
-                ethernet_bridges: matches_pattern!(ParameterField {
+                device_interfaces: matches_pattern!(ParameterField {
                     values: has_entry(
-                        bridge_id,
+                        ethernet_device.parameter_identifier(),
                         matches_pattern!(Parameter {
                             id: anything(),
                             dependencies: is_empty(),
                             target: eq(&ParameterTarget::Present),
-                            value: eq(&parameter::EthernetBridge {
-                                name: NetworkInterfaceName::try_from("br-opendut")?,
-                            }),
+                            value: eq(&ethernet_device),
+                            ..
+                        })
+                    ),
+                }),
+                ethernet_bridges: matches_pattern!(ParameterField {
+                    values: has_entry(
+                        bridge.parameter_identifier(),
+                        matches_pattern!(Parameter {
+                            id: anything(),
+                            dependencies: is_empty(),
+                            target: eq(&ParameterTarget::Present),
+                            value: eq(&bridge),
                             ..
                         })
                     ),
@@ -68,18 +81,30 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
                 executors: matches_pattern!(ParameterField {
                     values: is_empty(),
                 }),
+                // CAN connection related parameters should be empty in this test
+                can_connections: matches_pattern!(ParameterField {
+                    values: is_empty(),
+                }),
+                can_bridges: matches_pattern!(ParameterField {
+                    values: is_empty(),
+                }),
+                can_local_routes: matches_pattern!(ParameterField {
+                    values: is_empty(),
+                }),
                 ..
             }));
             Ok::<_, anyhow::Error>(())
         };
 
-        // TODO: validate remote_ip, remote_port of CAN connections
-
         let peer_configuration_a = receiver_a.receive_peer_configuration().await?;
-        validate_peer_configuration(peer_configuration_a)?;
+        validate_peer_configuration(peer_a, peer_configuration_a.clone())?;
 
         let peer_configuration_b = receiver_b.receive_peer_configuration().await?;
-        validate_peer_configuration(peer_configuration_b)?;
+        validate_peer_configuration(peer_b, peer_configuration_b.clone())?;
+
+        // TODO: compare peer configuration parameters without considering the order
+        //assert_eq!(peer_configuration_a_first, peer_configuration_a);
+        //assert_eq!(peer_configuration_b_first, peer_configuration_b);
 
         receiver_a.expect_no_peer_configuration().await;
         receiver_b.expect_no_peer_configuration().await;
