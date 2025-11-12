@@ -1,6 +1,6 @@
 use crate::resource::api::Resource;
 use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment};
-use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration, EdgePeerConfigurationState};
+use opendut_model::peer::configuration::{PeerConfiguration, EdgePeerConfigurationState};
 use opendut_model::peer::state::PeerConnectionState;
 use opendut_model::peer::PeerDescriptor;
 use tokio::sync::broadcast;
@@ -57,7 +57,6 @@ macro_rules! impl_subscribable {
 }
 impl_subscribable!(ClusterDeployment, cluster_deployment);
 impl_subscribable!(ClusterDescriptor, cluster_descriptor);
-impl_subscribable!(OldPeerConfiguration, old_peer_configuration);
 impl_subscribable!(PeerConfiguration, peer_configuration);
 impl_subscribable!(PeerDescriptor, peer_descriptor);
 impl_subscribable!(PeerConnectionState, peer_connection_state);
@@ -74,7 +73,6 @@ pub type ResourceSubscriptionChannel<R> = (broadcast::Sender<SubscriptionEvent<R
 pub struct ResourceSubscriptionChannels {
     pub cluster_deployment: ResourceSubscriptionChannel<ClusterDeployment>,
     pub cluster_descriptor: ResourceSubscriptionChannel<ClusterDescriptor>,
-    pub old_peer_configuration: ResourceSubscriptionChannel<OldPeerConfiguration>,
     pub peer_configuration: ResourceSubscriptionChannel<PeerConfiguration>,
     pub peer_descriptor: ResourceSubscriptionChannel<PeerDescriptor>,
     pub peer_connection_state: ResourceSubscriptionChannel<PeerConnectionState>,
@@ -100,7 +98,6 @@ impl ResourceSubscriptionChannels {
         let ResourceSubscriptionChannels {
             cluster_deployment,
             cluster_descriptor,
-            old_peer_configuration,
             peer_configuration,
             peer_descriptor,
             peer_connection_state,
@@ -113,7 +110,6 @@ impl ResourceSubscriptionChannels {
         let result =
             cluster_deployment.0.is_empty()
             && cluster_descriptor.0.is_empty()
-            && old_peer_configuration.0.is_empty()
             && peer_configuration.0.is_empty()
             && peer_descriptor.0.is_empty()
             && peer_connection_state.0.is_empty()
@@ -135,7 +131,6 @@ impl Default for ResourceSubscriptionChannels {
         Self {
             cluster_deployment: broadcast::channel(capacity),
             cluster_descriptor: broadcast::channel(capacity),
-            old_peer_configuration: broadcast::channel(capacity),
             peer_configuration: broadcast::channel(capacity),
             peer_descriptor: broadcast::channel(capacity),
             peer_connection_state: broadcast::channel(capacity),

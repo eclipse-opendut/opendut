@@ -4,7 +4,7 @@ use serde::Serialize;
 use uuid::Uuid;
 use opendut_model::cluster::{ClusterDescriptor, ClusterDeployment, ClusterId};
 use opendut_model::peer::{PeerDescriptor, PeerId};
-use opendut_model::peer::configuration::{OldPeerConfiguration, PeerConfiguration};
+use opendut_model::peer::configuration::PeerConfiguration;
 use crate::CreateResult;
 use crate::resource::api::Resource;
 
@@ -66,7 +66,6 @@ enum DbCommand {
 enum ResourceKind {
     ClusterDescriptor,
     ClusterDeployment,
-    OldPeerConfiguration,
     PeerConfiguration,
     PeerDescriptor,
 }
@@ -107,7 +106,6 @@ pub async fn cli() -> anyhow::Result<()> {
                     match resource_kind {
                         ResourceKind::ClusterDescriptor => print(resource_manager.list::<ClusterDescriptor>().await?),
                         ResourceKind::ClusterDeployment => print(resource_manager.list::<ClusterDeployment>().await?),
-                        ResourceKind::OldPeerConfiguration => print(resource_manager.list::<OldPeerConfiguration>().await?),
                         ResourceKind::PeerConfiguration => print(resource_manager.list::<PeerConfiguration>().await?),
                         ResourceKind::PeerDescriptor => print(resource_manager.list::<PeerDescriptor>().await?),
                     }?;
@@ -119,9 +117,6 @@ pub async fn cli() -> anyhow::Result<()> {
                         }
                         ResourceKind::ClusterDeployment => {
                             resource_manager.remove::<ClusterDeployment>(ClusterId::from(id)).await?;
-                        }
-                        ResourceKind::OldPeerConfiguration => {
-                            resource_manager.remove::<OldPeerConfiguration>(PeerId::from(id)).await?;
                         }
                         ResourceKind::PeerConfiguration => {
                             resource_manager.remove::<PeerConfiguration>(PeerId::from(id)).await?;

@@ -1,4 +1,3 @@
-use crate::cluster::ClusterAssignment;
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 use std::ops::{Deref, DerefMut};
@@ -7,12 +6,6 @@ pub mod api;
 pub use crate::peer::configuration::api::*;
 
 pub mod parameter;
-
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
-pub struct OldPeerConfiguration {
-    pub cluster_assignment: Option<ClusterAssignment>,
-    // Please add new fields into PeerConfiguration instead.
-}
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
 pub struct PeerConfiguration {

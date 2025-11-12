@@ -6,27 +6,6 @@ opendut_util::include_proto!("opendut.model.peer.configuration.api");
 
 
 conversion! {
-    type Model = crate::peer::configuration::OldPeerConfiguration;
-    type Proto = OldPeerConfiguration;
-
-    fn from(value: Model) -> Proto {
-        Proto {
-            cluster_assignment: value.cluster_assignment.map(|assignment| assignment.into()),
-        }
-    }
-
-    fn try_from(value: Proto) -> ConversionResult<Model> {
-        let cluster_assignment = value.cluster_assignment
-            .map(TryInto::try_into)
-            .transpose()?;
-
-        Ok(Model {
-            cluster_assignment,
-        })
-    }
-}
-
-conversion! {
     type Model = crate::peer::configuration::PeerConfiguration;
     type Proto = PeerConfiguration;
 
