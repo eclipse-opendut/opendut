@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use serde::Serialize;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::time::SystemTime;
@@ -7,12 +8,23 @@ mod value;
 pub use value::ParameterValue;
 use crate::OPENDUT_UUID_NAMESPACE;
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, Eq, Serialize)]
 pub struct Parameter<V: ParameterValue> {
     pub id: ParameterId,
     pub dependencies: Vec<ParameterId>,
     pub target: ParameterTarget,
     pub value: V,
+}
+
+impl<V: ParameterValue> PartialEq for Parameter<V> {
+    fn eq(&self, other: &Self) -> bool {
+        let other_fields_are_equal = self.id == other.id && self.target == other.target && self.value == other.value;
+        // Parameters with same dependencies in different order should be equal
+        let dependencies = self.dependencies.iter().collect::<HashSet<_>>();
+        let other_dependencies = other.dependencies.iter().collect::<HashSet<_>>();
+
+        other_fields_are_equal && dependencies == other_dependencies
+    }
 }
 
 impl<V: ParameterValue> Hash for Parameter<V> {
@@ -129,7 +141,8 @@ pub enum ParameterTargetStateErrorRemovingFailed {
 
 #[cfg(test)]
 mod tests {
-    use crate::peer::configuration::ParameterTarget;
+    use crate::peer::configuration::{parameter, ParameterTarget, ParameterValue};
+    use crate::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
     #[test]
     fn test_sort_parameter_target() {
@@ -137,5 +150,36 @@ mod tests {
         example_set.sort();
         assert!(example_set.starts_with(&[ParameterTarget::Absent]));        
         assert!(example_set.ends_with(&[ParameterTarget::Present]));        
+    }
+
+    #[test]
+    fn parameters_with_same_dependencies_in_different_order_should_be_equal() -> anyhow::Result<()> {
+        use crate::peer::configuration::{Parameter, ParameterId, ParameterTarget};
+        let ethernet = parameter::DeviceInterface { descriptor: NetworkInterfaceDescriptor {
+            id: NetworkInterfaceId::random(),
+            name: NetworkInterfaceName::try_from("eth0")?,
+            configuration: NetworkInterfaceConfiguration::Ethernet,
+        }};
+        let bridge = parameter::EthernetBridge { name: NetworkInterfaceName::try_from("br-opendut")? };
+
+        let dep1 = ParameterId::from_hashable(&ethernet);
+        let dep2 = ParameterId::from_hashable(&bridge);
+
+        let parameter_a = Parameter {
+            id: ethernet.parameter_identifier(),
+            dependencies: vec![dep1, dep2],
+            target: ParameterTarget::Present,
+            value: ethernet.clone(),
+        };
+
+        let parameter_b = Parameter {
+            id: ethernet.parameter_identifier(),
+            dependencies: vec![dep2, dep1],
+            target: ParameterTarget::Present,
+            value: ethernet.clone(),
+        };
+
+        assert_eq!(parameter_a, parameter_b, "Parameters with same dependencies in different order should be equal");
+        Ok(())
     }
 }
