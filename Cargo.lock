@@ -4470,6 +4470,7 @@ dependencies = [
  "opendut-edgar",
  "opendut-model",
  "opendut-util",
+ "serde_json",
  "test-log",
  "tokio",
  "tracing",

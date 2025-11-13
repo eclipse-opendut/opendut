@@ -10,6 +10,7 @@ use opendut_model::topology::DeviceDescriptor;
 use opendut_model::util::net::NetworkInterfaceName;
 use opendut_model::util::Port;
 use std::collections::HashSet;
+use tracing::info;
 
 #[test_log::test(
     tokio::test(flavor = "multi_thread")
@@ -46,8 +47,8 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
     let result = store_cluster_deployment(cluster.id, &carl.client).await;
 
     assert!(result.is_ok(), "Storing the same cluster deployment twice should not be a problem. Peer configuration will be sent twice.");
-    let _peer_configuration_a_first = receiver_a.receive_peer_configuration().await?;
-    let _peer_configuration_b_first = receiver_b.receive_peer_configuration().await?;
+    let peer_configuration_a_first = receiver_a.receive_peer_configuration().await?;
+    let peer_configuration_b_first = receiver_b.receive_peer_configuration().await?;
 
     {
         let validate_peer_configuration = |peer_descriptor: PeerDescriptor, peer_configuration: PeerConfiguration| {
@@ -96,15 +97,24 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
             Ok::<_, anyhow::Error>(())
         };
 
-        let peer_configuration_a = receiver_a.receive_peer_configuration().await?;
-        validate_peer_configuration(peer_a, peer_configuration_a.clone())?;
+        let peer_configuration_a_second = receiver_a.receive_peer_configuration().await?;
+        validate_peer_configuration(peer_a, peer_configuration_a_second.clone())?;
 
-        let peer_configuration_b = receiver_b.receive_peer_configuration().await?;
-        validate_peer_configuration(peer_b, peer_configuration_b.clone())?;
+        let peer_configuration_b_second = receiver_b.receive_peer_configuration().await?;
+        validate_peer_configuration(peer_b, peer_configuration_b_second.clone())?;
 
-        // TODO: compare peer configuration parameters without considering the order
-        //assert_eq!(peer_configuration_a_first, peer_configuration_a);
-        //assert_eq!(peer_configuration_b_first, peer_configuration_b);
+        // compare peer configuration parameters of subsequent sends
+        let a_first = serde_json::to_string(&peer_configuration_a_first)?;
+        let a_second = serde_json::to_string(&peer_configuration_a_second)?;
+        info!("Peer configuration a_first: {}", a_first);
+        info!("Peer configuration a_second: {}", a_second);
+        let b_first = serde_json::to_string(&peer_configuration_b_first)?;
+        let b_second = serde_json::to_string(&peer_configuration_b_second)?;
+        info!("Peer configuration b_first: {}", b_first);
+        info!("Peer configuration b_second: {}", b_second);
+
+        assert_eq!(peer_configuration_a_first, peer_configuration_a_second, "Peer A received peer configuration that does not match on repeated send.");
+        assert_eq!(peer_configuration_b_first, peer_configuration_b_second, "Peer B received peer configuration that does not match on repeated send.");
 
         receiver_a.expect_no_peer_configuration().await;
         receiver_b.expect_no_peer_configuration().await;
