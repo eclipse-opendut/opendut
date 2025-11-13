@@ -1,6 +1,6 @@
 use std::process::Command;
 use serde::{Deserialize, Deserializer};
-use opendut_model::util::net::NetworkInterfaceName;
+use opendut_model::util::net::{CanSamplePoint, NetworkInterfaceName};
 use crate::service::network_interface::manager::interface::NetlinkInterfaceKind;
 use crate::service::network_interface::manager::NetworkInterfaceManager;
 
@@ -55,6 +55,27 @@ const IP_LINK_INFO_KIND_CAN: &str = "can";
 pub struct CanInterfaceConfiguration {
     pub bit_timing: BitTiming,
     pub fd: CanFD,
+}
+
+impl CanInterfaceConfiguration {
+    pub fn new(bitrate: u32, sample_point: CanSamplePoint, fd: bool, data_bitrate: u32, data_sample_point: CanSamplePoint) -> Self {
+        CanInterfaceConfiguration {
+            bit_timing: BitTiming {
+                bitrate,
+                sample_point: sample_point.sample_point(),
+            },
+            fd: if fd {
+                CanFD::Enabled(
+                    BitTiming {
+                        bitrate: data_bitrate,
+                        sample_point: data_sample_point.sample_point(),
+                    }
+                )
+            } else {
+                CanFD::Disabled
+            },
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]

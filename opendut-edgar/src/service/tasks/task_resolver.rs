@@ -7,7 +7,7 @@ use opendut_model::peer::configuration::{ParameterVariant, PeerConfiguration};
 use std::collections::HashMap;
 use opendut_model::peer::configuration::parameter::DeviceInterface;
 use opendut_model::util::net::NetworkInterfaceConfiguration;
-use crate::service::network_interface::manager::can::{BitTiming, CanFD, CanInterfaceConfiguration};
+use crate::service::network_interface::manager::can::CanInterfaceConfiguration;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
 
 pub struct ServiceTaskResolver {
@@ -108,23 +108,7 @@ fn resolve_device_interface_tasks(
         NetworkInterfaceConfiguration::Can { bitrate, sample_point, fd, data_bitrate, data_sample_point } => {
             // TODO: Create task to check if device is present, if not, ignore it.
 
-            let can_config = CanInterfaceConfiguration {
-                bit_timing: BitTiming {
-                    bitrate,
-                    sample_point: sample_point.sample_point(),
-                },
-                fd: if fd {
-                    CanFD::Enabled(
-                        BitTiming {
-                            bitrate: data_bitrate,
-                            sample_point: data_sample_point.sample_point(),
-                        }
-                    )
-                } else {
-                    CanFD::Disabled
-                },
-            };
-
+            let can_config = CanInterfaceConfiguration::new(bitrate, sample_point, fd, data_bitrate, data_sample_point);
             let can_config_task = tasks::can_device_configuration::CanDeviceConfiguration {
                 interface_name: device_interface.descriptor.name.clone(),
                 can_config,
