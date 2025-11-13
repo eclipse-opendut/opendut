@@ -10,7 +10,7 @@ use opendut_model::topology::DeviceDescriptor;
 use opendut_model::util::net::NetworkInterfaceName;
 use opendut_model::util::Port;
 use std::collections::HashSet;
-use std::net::Ipv4Addr;
+use std::net::{IpAddr, Ipv4Addr};
 use std::str::FromStr;
 use tracing::info;
 
@@ -58,8 +58,8 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
 
     let peer_configuration_a_second = receiver_a.receive_peer_configuration().await?;
     let peer_configuration_b_second = receiver_b.receive_peer_configuration().await?;
-    validate_peer_configuration(peer_a, peer_configuration_a_second.clone())?;
-    validate_peer_configuration(peer_b, peer_configuration_b_second.clone())?;
+    validate_peer_configuration(peer_a, Some(peer_b.id), peer_configuration_a_second.clone())?;
+    validate_peer_configuration(peer_b, None, peer_configuration_b_second.clone())?;
 
     {
         // compare peer configuration parameters of subsequent sends
@@ -84,7 +84,7 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
     Ok(())
 }
 
-fn validate_peer_configuration(peer_descriptor: PeerDescriptor, peer_configuration: PeerConfiguration) -> anyhow::Result<()> {
+fn validate_peer_configuration(peer_descriptor: PeerDescriptor, check_remote_peer_id: Option<PeerId>, peer_configuration: PeerConfiguration) -> anyhow::Result<()> {
     let bridge = parameter::EthernetBridge { name: NetworkInterfaceName::try_from("br-opendut").expect("Could not construct interface name.") };
     let ethernet_descriptor = peer_descriptor.network.interfaces.first().cloned().expect("Peer has no network interfaces.");
     let ethernet = parameter::DeviceInterface { descriptor: ethernet_descriptor.clone() };
@@ -100,6 +100,34 @@ fn validate_peer_configuration(peer_descriptor: PeerDescriptor, peer_configurati
         name: ethernet_descriptor.name,
         bridge: bridge.name.clone(),
     };
+    match check_remote_peer_id {
+        Some(remote_peer_id) => {
+            // leader does remote peer connection check
+            let remote_peer_check = parameter::RemotePeerConnectionCheck {
+                remote_peer_id,
+                remote_ip: IpAddr::V4(Ipv4Addr::from_str("127.0.0.1")?),
+            };
+            assert_that!(peer_configuration.remote_peer_connection_checks, matches_pattern!(ParameterField {
+                values: has_entry(
+                    remote_peer_check.parameter_identifier(),
+                    matches_pattern!(Parameter {
+                        id: eq(&remote_peer_check.parameter_identifier()),
+                        dependencies: is_empty(),
+                        target: eq(&ParameterTarget::Present),
+                        value: eq(&remote_peer_check),
+                        ..
+                    })
+                ),
+            }) );
+        }
+        None => {
+            // other peers do not perform remote peer connection checks
+            assert_that!(peer_configuration.remote_peer_connection_checks, matches_pattern!(ParameterField {
+                values: is_empty(),
+            }));
+        }
+    }
+
     assert_that!(peer_configuration, matches_pattern!(PeerConfiguration {
                 device_interfaces: matches_pattern!(ParameterField {
                     values: has_entry(
@@ -158,7 +186,6 @@ fn validate_peer_configuration(peer_descriptor: PeerDescriptor, peer_configurati
                         })),
                     ),
                 }),
-                // TODO: remote_peer_connection_checks
                 // CAN connection related parameters should be empty in this test
                 can_connections: matches_pattern!(ParameterField {
                     values: is_empty(),
@@ -214,10 +241,10 @@ async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_onl
     {
         // ASSERT
         let peer_configuration_a = receiver_a.receive_peer_configuration().await?;
-        validate_peer_configuration(peer_a, peer_configuration_a)?;
+        validate_peer_configuration(peer_a, Some(peer_b.id), peer_configuration_a)?;
 
         let peer_configuration_b = receiver_b.receive_peer_configuration().await?;
-        validate_peer_configuration(peer_b, peer_configuration_b)?;
+        validate_peer_configuration(peer_b, None, peer_configuration_b)?;
 
         receiver_a.expect_no_peer_configuration().await;
         receiver_b.expect_no_peer_configuration().await;
