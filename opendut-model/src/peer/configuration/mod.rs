@@ -1,6 +1,6 @@
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
-use std::ops::{Deref, DerefMut};
+use std::ops::{Deref, DerefMut, Not};
 
 pub mod api;
 pub use crate::peer::configuration::api::*;
@@ -126,12 +126,14 @@ impl<V: ParameterValue> ParameterField<V> {
         let new_present_parameters = values.into_iter()
             .map(|value| Self::create_parameter(value, ParameterTarget::Present, dependencies.clone()))
             .collect::<HashSet<_>>();
-
-        let previous_parameters = self.iter_mut()
-            .map(|(_id, parameter_ref)| parameter_ref.to_owned())
+        let new_present_ids = new_present_parameters.iter()
+            .map(|p| p.id)
             .collect::<HashSet<_>>();
 
-        let parameters_to_set_absent = previous_parameters.difference(&new_present_parameters);
+        let parameters_to_set_absent = self.iter_mut()
+            .map(|(_id, parameter_ref)| parameter_ref.to_owned())
+            .filter(|obsolete_parameter| new_present_ids.contains(&obsolete_parameter.id).not())
+            .collect::<HashSet<_>>();
 
         let mut dependency_on_absents= HashSet::<ParameterId>::new();
         for parameter in parameters_to_set_absent {
@@ -145,7 +147,7 @@ impl<V: ParameterValue> ParameterField<V> {
 
         let mut parameter_ids: Vec<ParameterId> = vec![];
         for mut parameter in new_present_parameters {
-            let current_dependencies = parameter.dependencies.into_iter().collect::<HashSet<_>>();
+            let current_dependencies = parameter.dependencies.clone().into_iter().collect::<HashSet<_>>();
             parameter.dependencies = current_dependencies.union(&dependency_on_absents).cloned().collect::<Vec<_>>();
             let id = self.set_parameter(parameter);
             parameter_ids.push(id);
@@ -303,7 +305,7 @@ mod tests {
 
         #[test]
         fn should_mark_obsolete_parameters_as_absent_and_retain_or_set_other_parameters_as_present() -> anyhow::Result<()> {
-
+            // ARRANGE
             fn parameter_value(id: &str) -> parameter::EthernetBridge {
                 parameter::EthernetBridge { name: NetworkInterfaceName::try_from(id).unwrap() }
             }
@@ -319,6 +321,7 @@ mod tests {
             testee.ethernet_bridges.set(present_then_present.clone(), ParameterTarget::Present, vec![]);
             testee.ethernet_bridges.set(absent_then_present.clone(), ParameterTarget::Absent, vec![]);
 
+            // ACT
             testee.ethernet_bridges.set_all_present([
                     present_then_present.clone(),
                     new_present.clone(),
@@ -327,25 +330,30 @@ mod tests {
                 vec![]
             );
 
+            // ASSERT
             assert_that!(testee.ethernet_bridges.values.into_values().collect::<Vec<_>>(), unordered_elements_are![
                 matches_pattern!(Parameter {
                     value: eq(&present_then_absent),
                     target: eq(&ParameterTarget::Absent),
+                    dependencies: eq(&vec![]),  // removing something should not have dependencies
                     ..
                 }),
                 matches_pattern!(Parameter {
                     value: eq(&present_then_present),
                     target: eq(&ParameterTarget::Present),
+                    dependencies: eq(&vec![present_then_absent.parameter_identifier()]),
                     ..
                 }),
                 matches_pattern!(Parameter {
                     value: eq(&new_present),
                     target: eq(&ParameterTarget::Present),
+                    dependencies: eq(&vec![present_then_absent.parameter_identifier()]),
                     ..
                 }),
                 matches_pattern!(Parameter {
                     value: eq(&absent_then_present),
                     target: eq(&ParameterTarget::Present),
+                    dependencies: eq(&vec![present_then_absent.parameter_identifier()]),
                     ..
                 }),
             ]);
