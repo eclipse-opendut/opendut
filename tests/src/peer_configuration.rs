@@ -10,6 +10,8 @@ use opendut_model::topology::DeviceDescriptor;
 use opendut_model::util::net::NetworkInterfaceName;
 use opendut_model::util::Port;
 use std::collections::HashSet;
+use std::net::Ipv4Addr;
+use std::str::FromStr;
 use tracing::info;
 
 #[test_log::test(
@@ -43,26 +45,70 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
     let cluster_devices = peer_a.topology.devices.iter().chain(peer_b.topology.devices.iter());
     let cluster = store_cluster_descriptor(cluster_leader, cluster_devices, &carl.client).await?;
 
+    // ACT
     store_cluster_deployment(cluster.id, &carl.client).await?;
-    let result = store_cluster_deployment(cluster.id, &carl.client).await;
 
-    assert!(result.is_ok(), "Storing the same cluster deployment twice should not be a problem. Peer configuration will be sent twice.");
+    // THEN
+    let result_second_store = store_cluster_deployment(cluster.id, &carl.client).await;
+
+    // ASSERT
+    assert!(result_second_store.is_ok(), "Storing the same cluster deployment twice should not be a problem. Peer configuration will be sent twice.");
     let peer_configuration_a_first = receiver_a.receive_peer_configuration().await?;
     let peer_configuration_b_first = receiver_b.receive_peer_configuration().await?;
 
+    let peer_configuration_a_second = receiver_a.receive_peer_configuration().await?;
+    let peer_configuration_b_second = receiver_b.receive_peer_configuration().await?;
+    validate_peer_configuration(peer_a, peer_configuration_a_second.clone())?;
+    validate_peer_configuration(peer_b, peer_configuration_b_second.clone())?;
+
     {
-        let validate_peer_configuration = |peer_descriptor: PeerDescriptor, peer_configuration: PeerConfiguration| {
-            let bridge = parameter::EthernetBridge { name: NetworkInterfaceName::try_from("br-opendut").expect("Could not construct interface name.") };
-            let ethernet_device = parameter::DeviceInterface { descriptor: peer_descriptor.network.interfaces.first().cloned().unwrap() };
-            assert_that!(peer_configuration, matches_pattern!(PeerConfiguration {
+        // compare peer configuration parameters of subsequent sends
+        let a_first = serde_json::to_string(&peer_configuration_a_first)?;
+        let a_second = serde_json::to_string(&peer_configuration_a_second)?;
+        info!("Peer configuration a_first: {}", a_first);
+        info!("Peer configuration a_second: {}", a_second);
+        let b_first = serde_json::to_string(&peer_configuration_b_first)?;
+        let b_second = serde_json::to_string(&peer_configuration_b_second)?;
+        info!("Peer configuration b_first: {}", b_first);
+        info!("Peer configuration b_second: {}", b_second);
+
+        assert_eq!(peer_configuration_a_first, peer_configuration_a_second, "Peer A received peer configuration that does not match on repeated send.");
+        assert_eq!(peer_configuration_b_first, peer_configuration_b_second, "Peer B received peer configuration that does not match on repeated send.");
+
+    }
+    {
+        receiver_a.expect_no_peer_configuration().await;
+        receiver_b.expect_no_peer_configuration().await;
+    }
+
+    Ok(())
+}
+
+fn validate_peer_configuration(peer_descriptor: PeerDescriptor, peer_configuration: PeerConfiguration) -> anyhow::Result<()> {
+    let bridge = parameter::EthernetBridge { name: NetworkInterfaceName::try_from("br-opendut").expect("Could not construct interface name.") };
+    let ethernet_descriptor = peer_descriptor.network.interfaces.first().cloned().expect("Peer has no network interfaces.");
+    let ethernet = parameter::DeviceInterface { descriptor: ethernet_descriptor.clone() };
+    let gre_interface = parameter::GreInterfaceConfig {
+        local_ip: Ipv4Addr::from_str("127.0.0.1")?,
+        remote_ip: Ipv4Addr::from_str("127.0.0.1")?,
+    };
+    let interface_join_gre = parameter::InterfaceJoinConfig {
+        name: gre_interface.interface_name()?,
+        bridge: bridge.name.clone(),
+    };
+    let interface_join_ethernet = parameter::InterfaceJoinConfig {
+        name: ethernet_descriptor.name,
+        bridge: bridge.name.clone(),
+    };
+    assert_that!(peer_configuration, matches_pattern!(PeerConfiguration {
                 device_interfaces: matches_pattern!(ParameterField {
                     values: has_entry(
-                        ethernet_device.parameter_identifier(),
+                        ethernet.parameter_identifier(),
                         matches_pattern!(Parameter {
                             id: anything(),
                             dependencies: is_empty(),
                             target: eq(&ParameterTarget::Present),
-                            value: eq(&ethernet_device),
+                            value: eq(&ethernet),
                             ..
                         })
                     ),
@@ -82,6 +128,37 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
                 executors: matches_pattern!(ParameterField {
                     values: is_empty(),
                 }),
+                gre_interfaces: matches_pattern!(ParameterField {
+                    values: has_entry(
+                        gre_interface.parameter_identifier(),
+                        matches_pattern!(Parameter {
+                            id: anything(),
+                            dependencies: unordered_elements_are!(eq(&ethernet.parameter_identifier()), eq(&bridge.parameter_identifier())),
+                            target: eq(&ParameterTarget::Present),
+                            value: eq(&gre_interface),
+                            ..
+                        })
+                    ),
+                }),
+                joined_interfaces: matches_pattern!(ParameterField {
+                    values: unordered_elements_are!(
+                        (eq(&interface_join_gre.parameter_identifier()), matches_pattern!(Parameter {
+                            id: &interface_join_gre.parameter_identifier(),
+                            dependencies: unordered_elements_are!(eq(&gre_interface.parameter_identifier()), eq(&bridge.parameter_identifier())),
+                            target: eq(&ParameterTarget::Present),
+                            value: eq(&interface_join_gre),
+                            ..
+                        })),
+                        (eq(&interface_join_ethernet.parameter_identifier()), matches_pattern!(Parameter {
+                            id: &interface_join_ethernet.parameter_identifier(),
+                            dependencies: unordered_elements_are!(eq(&gre_interface.parameter_identifier()), eq(&bridge.parameter_identifier())),
+                            target: eq(&ParameterTarget::Present),
+                            value: eq(&interface_join_ethernet),
+                            ..
+                        })),
+                    ),
+                }),
+                // TODO: remote_peer_connection_checks
                 // CAN connection related parameters should be empty in this test
                 can_connections: matches_pattern!(ParameterField {
                     values: is_empty(),
@@ -94,31 +171,6 @@ async fn carl_should_send_peer_configurations_in_happy_flow() -> anyhow::Result<
                 }),
                 ..
             }));
-            Ok::<_, anyhow::Error>(())
-        };
-
-        let peer_configuration_a_second = receiver_a.receive_peer_configuration().await?;
-        validate_peer_configuration(peer_a, peer_configuration_a_second.clone())?;
-
-        let peer_configuration_b_second = receiver_b.receive_peer_configuration().await?;
-        validate_peer_configuration(peer_b, peer_configuration_b_second.clone())?;
-
-        // compare peer configuration parameters of subsequent sends
-        let a_first = serde_json::to_string(&peer_configuration_a_first)?;
-        let a_second = serde_json::to_string(&peer_configuration_a_second)?;
-        info!("Peer configuration a_first: {}", a_first);
-        info!("Peer configuration a_second: {}", a_second);
-        let b_first = serde_json::to_string(&peer_configuration_b_first)?;
-        let b_second = serde_json::to_string(&peer_configuration_b_second)?;
-        info!("Peer configuration b_first: {}", b_first);
-        info!("Peer configuration b_second: {}", b_second);
-
-        assert_eq!(peer_configuration_a_first, peer_configuration_a_second, "Peer A received peer configuration that does not match on repeated send.");
-        assert_eq!(peer_configuration_b_first, peer_configuration_b_second, "Peer B received peer configuration that does not match on repeated send.");
-
-        receiver_a.expect_no_peer_configuration().await;
-        receiver_b.expect_no_peer_configuration().await;
-    }
     Ok(())
 }
 
@@ -132,7 +184,7 @@ async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_onl
     let peer_a = testing::peer_descriptor::store_peer_descriptor(&carl.client).await?;
 
     let mut receiver_a = util::spawn_edgar_with_peer_configuration_receiver(peer_a.id, carl.port).await?;
-    carl.client.await_peer_up(peer_a.id).await?;
+    carl.client.await_peer_up(peer_a.id).await?; // Peer A comes online
     {
         let peer_configuration_a = receiver_a.receive_peer_configuration().await?;
         assert_eq!(peer_configuration_a, fixture.empty_peer_configuration);
@@ -141,54 +193,31 @@ async fn carl_should_send_cluster_related_peer_configuration_if_a_peer_comes_onl
 
     let peer_b = testing::peer_descriptor::store_peer_descriptor(&carl.client).await?;
 
-    let cluster_leader = peer_a.id;
-    let cluster_devices = peer_a.topology.devices.iter().chain(peer_b.topology.devices.iter());
-    let cluster = store_cluster_descriptor(cluster_leader, cluster_devices, &carl.client).await?;
-
-    store_cluster_deployment(cluster.id, &carl.client).await?;
-    receiver_a.expect_no_peer_configuration().await;
-
-
-    let mut receiver_b = util::spawn_edgar_with_peer_configuration_receiver(peer_b.id, carl.port).await?;
-    carl.client.await_peer_up(peer_b.id).await?;
+    // ACT
     {
+        let cluster_leader = peer_a.id;
+        let cluster_devices = peer_a.topology.devices.iter().chain(peer_b.topology.devices.iter());
+        let cluster = store_cluster_descriptor(cluster_leader, cluster_devices, &carl.client).await?;
+        store_cluster_deployment(cluster.id, &carl.client).await?;
+    }
+    // ASSERT
+    receiver_a.expect_no_peer_configuration().await;  // No configuration sent yet
+
+    // ACT
+    let mut receiver_b = util::spawn_edgar_with_peer_configuration_receiver(peer_b.id, carl.port).await?;
+    {
+        carl.client.await_peer_up(peer_b.id).await?; // Peer B comes online later
         let peer_configuration_b = receiver_b.receive_peer_configuration().await?;
         assert_eq!(peer_configuration_b, fixture.empty_peer_configuration);
     }
 
     {
-        let validate_peer_configuration = |peer_configuration: PeerConfiguration| {
-            let bridge_id = peer_configuration.ethernet_bridges.clone().into_iter().next().unwrap().id;
-            assert_that!(peer_configuration, matches_pattern!(PeerConfiguration {
-                device_interfaces: eq(&peer_configuration.device_interfaces),
-                ethernet_bridges: matches_pattern!(ParameterField {
-                    values: has_entry(
-                        bridge_id,
-                        matches_pattern!(Parameter {
-                            id: anything(),
-                            dependencies: is_empty(),
-                            target: eq(&ParameterTarget::Present),
-                            value: eq(&parameter::EthernetBridge {
-                                name: NetworkInterfaceName::try_from("br-opendut")?,
-                            }),
-                        })
-                    )
-                }),
-                executors: matches_pattern!(ParameterField {
-                    values: is_empty()
-                }),
-                ..
-            }));
-            Ok::<_, anyhow::Error>(())
-        };
-
-        // TODO: validate remote_ip, remote_port of CAN connections
-
+        // ASSERT
         let peer_configuration_a = receiver_a.receive_peer_configuration().await?;
-        validate_peer_configuration(peer_configuration_a)?;
+        validate_peer_configuration(peer_a, peer_configuration_a)?;
 
         let peer_configuration_b = receiver_b.receive_peer_configuration().await?;
-        validate_peer_configuration(peer_configuration_b)?;
+        validate_peer_configuration(peer_b, peer_configuration_b)?;
 
         receiver_a.expect_no_peer_configuration().await;
         receiver_b.expect_no_peer_configuration().await;

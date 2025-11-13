@@ -139,7 +139,7 @@ pub(super) fn update_peer_configuration(
     };
 
     // GRE interfaces
-    let gre_upstream_dependencies = device_dependencies.into_iter().chain(bridge_dependencies).collect::<Vec<_>>();
+    let gre_upstream_dependencies = device_dependencies.into_iter().chain(bridge_dependencies.clone()).collect::<Vec<_>>();
     let gre_dependencies = gre_interfaces.set_all_present(expected_gre_config_parameters, gre_upstream_dependencies);
 
     
@@ -148,7 +148,8 @@ pub(super) fn update_peer_configuration(
             .map(|name| InterfaceJoinConfig { name: name.clone(), bridge: ethernet_bridge.clone() })
             .collect::<Vec<_>>();
 
-        joined_interfaces.set_all_present(expected_joined_interfaces, gre_dependencies);
+        let joined_interfaces_upstream_dependencies = gre_dependencies.into_iter().chain(bridge_dependencies).collect::<Vec<_>>();
+        joined_interfaces.set_all_present(expected_joined_interfaces, joined_interfaces_upstream_dependencies);
     }
 
     { // Executors
