@@ -191,7 +191,7 @@ wasm-bindgen-test = "0.3.50"
 wasmtime = { version= "38.0", features = ["component-model", "std", "runtime"] }
 wasmtime-wasi = "38.0"
 which = "8.0.0"
-wit-bindgen = "0.46"
+wit-bindgen = "0.47"
 zip = "6.0.0"
 
 
