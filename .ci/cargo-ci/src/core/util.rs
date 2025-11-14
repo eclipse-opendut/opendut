@@ -4,15 +4,6 @@ use anyhow::anyhow;
 
 use assert_fs::assert::PathAssert;
 
-use crate::core::types::Arch;
-
-#[tracing::instrument]
-pub fn install_toolchain(arch: Arch) -> crate::Result {
-    Command::new("rustup")
-        .args(["target", "add", &arch.triple()])
-        .run_requiring_success()
-}
-
 
 pub trait RunRequiringSuccess {
     fn run_requiring_success(&mut self) -> crate::Result;

@@ -5,7 +5,6 @@ use std::path::PathBuf;
 
 use crate::core::commands::TRUNK;
 use crate::fs;
-use crate::Arch;
 
 use crate::core::types::parsing::package::PackageSelection;
 use crate::util::RunRequiringSuccess;
@@ -81,8 +80,6 @@ pub mod run {
 
     #[tracing::instrument(skip_all)]
     pub fn run(passthrough: Vec<String>) -> crate::Result {
-        install_requirements()?;
-
         info!("Starting LEA. You can view the web-UI at: https://localhost:8080");
 
         TRUNK.command()
@@ -94,20 +91,11 @@ pub mod run {
     }
 }
 
-#[tracing::instrument]
-fn install_requirements() -> crate::Result {
-    crate::util::install_toolchain(Arch::Wasm)?;
-
-    Ok(())
-}
-
 pub fn self_dir() -> PathBuf {
     repo_path!("opendut-lea/")
 }
 
 fn build_impl(release: bool, out_dir: PathBuf) -> crate::Result {
-    install_requirements()?;
-
     let working_dir = self_dir();
 
     fs::create_dir_all(&out_dir)?;
