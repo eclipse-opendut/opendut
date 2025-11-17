@@ -99,8 +99,12 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
             </td>
             <td class="is-vcentered">
                 <div class="is-flex">
-                    <DeletePeerButton peer_id used_clusters_length on_delete />
-                    <div class="dropdown is-right" class=("is-active", move || dropdown_active.get())>
+                    <DeletePeerButton 
+                        peer_id used_clusters_length 
+                        button_color=ButtonColor::TextDanger 
+                        on_delete 
+                    />
+                    <div class="dropdown is-right pl-2" class=("is-active", move || dropdown_active.get())>
                         <div class="dropdown-trigger">
                             <IconButton
                                 icon=FontAwesomeIcon::EllipsisVertical

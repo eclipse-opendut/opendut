@@ -38,12 +38,18 @@ pub fn Controls(cluster_descriptor: ReadSignal<UserClusterDescriptor>, deployed_
     };
 
     view! {
-        <div class="is-flex is-align-items-center">
-            <p style="color: #C11B17; margin-right: 8px" >{info_text}</p>
-            <div class="buttons">
-                <SaveClusterButton cluster_descriptor deployed_signal/>
-                <DeleteClusterButton cluster_id deployed_signal on_delete />
-            </div>
+        <div class="is-flex">
+            <SaveClusterButton
+                cluster_descriptor
+                deployed_signal
+            />
+            <div class="px-1" />
+            <DeleteClusterButton
+                cluster_id
+                deployed_signal
+                button_color=ButtonColor::Danger
+                on_delete
+            />
         </div>
     }
 }

@@ -1,6 +1,6 @@
 use leptos::html::Div;
 use leptos::prelude::*;
-use opendut_lea_components::{health, Toggle};
+use opendut_lea_components::{health, ButtonColor, Toggle};
 use opendut_lea_components::health::Health;
 use opendut_model::cluster::ClusterDescriptor;
 use crate::clusters::components::DeleteClusterButton;
@@ -69,6 +69,7 @@ where
                     <DeleteClusterButton
                         cluster_id
                         deployed_signal=is_deployed
+                        button_color=ButtonColor::TextDanger
                         on_delete
                     />
                 </div>

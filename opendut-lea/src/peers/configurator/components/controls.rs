@@ -42,9 +42,18 @@ pub fn Controls(
     }};
 
     view! {
-        <div class="buttons">
-            <SavePeerButton configuration is_valid_peer_configuration />
-            <DeletePeerButton peer_id used_clusters_length on_delete />
+        <div class="is-flex">
+            <SavePeerButton
+                configuration
+                is_valid_peer_configuration
+            />
+            <div class="px-1" />
+            <DeletePeerButton
+                peer_id
+                used_clusters_length
+                button_color=ButtonColor::Danger
+                on_delete
+            />
         </div>
     }
 }
