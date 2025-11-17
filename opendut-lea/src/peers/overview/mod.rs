@@ -110,7 +110,7 @@ pub fn PeersOverview() -> impl IntoView {
                                             <th class="is-narrow">"Health"</th>
                                             <th>"Name"</th>
                                             <th>"Configured in Clusters"</th>
-                                            <th class="is-narrow">"Action"</th>
+                                            <th class="is-narrow has-text-centered">"Action"</th>
                                         </tr>
                                     </thead>
                                     <tbody>
