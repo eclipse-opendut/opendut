@@ -19,7 +19,6 @@ message PeerConfiguration {
   repeated PeerConfigurationParameterCanConnection can_connections = 7;
   repeated PeerConfigurationParameterCanBridge can_bridges = 8;
   repeated PeerConfigurationParameterCanLocalRoute can_local_routes = 9;
-  //TODO migrate more parameters
 }
 
 message PeerConfigurationParameterExecutor {

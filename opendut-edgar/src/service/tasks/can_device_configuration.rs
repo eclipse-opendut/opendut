@@ -1,5 +1,4 @@
-use anyhow::anyhow;
-use tracing::error;
+use anyhow::{anyhow, bail, Context};
 use crate::common::task::{Success, Task, TaskAbsent, TaskStateFulfilled};
 use crate::service::network_interface::manager::can::CanInterfaceConfiguration;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
@@ -20,8 +19,8 @@ impl Task for CanDeviceConfiguration {
 
     async fn check_present(&self) -> anyhow::Result<TaskStateFulfilled> {
         let interface = self.find_interface().await?;
-        if interface.kind == NetlinkInterfaceKind::Vcan { //TODO treat as error, if we make it impossible for this to be CAN interface upfront
-            return Ok(TaskStateFulfilled::Yes);  // Virtual CAN interfaces are assumed to always match the desired configuration.
+        if interface.kind == NetlinkInterfaceKind::Vcan {
+            bail!("Only non-virtual CAN interfaces should be configured.");  // Virtual CAN interfaces are assumed to always match the desired configuration.
         }
         // This assumes the device exists otherwise an error is returned.
         let detected_can_config = self.network_interface_manager
@@ -39,9 +38,9 @@ impl Task for CanDeviceConfiguration {
         let interface = self.find_interface().await?;
         self.network_interface_manager.set_interface_down(&interface).await?;
 
-        if let Err(cause) = self.network_interface_manager.update_can_interface(&self.interface_name, &self.can_config).await { //TODO make this a hard error
-            error!("Error updating CAN interface - A possible reason might be, that a virtual CAN interface was used: {cause}");
-        };
+        self.network_interface_manager.update_can_interface(&self.interface_name, &self.can_config).await
+            .context("Error while updating CAN interface configuration. A possible reason is that a VCAN interface was used, but it was configured as a regular CAN interface.")?;
+
         self.network_interface_manager.set_interface_up(&interface).await?;
 
         Ok(Success::default())
