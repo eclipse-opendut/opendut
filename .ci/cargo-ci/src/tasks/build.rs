@@ -42,5 +42,8 @@ pub fn out_file(package: Package, target: Arch, release_build: bool) -> PathBuf 
 }
 
 fn cross_target_dir() -> PathBuf {
-    constants::target_dir().join("cross")
+    let cargo_target_dir = std::env::var("CARGO_TARGET_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| constants::target_dir());
+    cargo_target_dir.join("cross")
 }
