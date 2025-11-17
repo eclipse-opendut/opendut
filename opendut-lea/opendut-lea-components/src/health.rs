@@ -1,6 +1,4 @@
 use leptos::prelude::*;
-use leptos::ev::MouseEvent;
-
 use crate::tooltip::Tooltip;
 
 pub struct State {
