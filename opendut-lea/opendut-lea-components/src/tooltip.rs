@@ -21,19 +21,17 @@ impl TooltipDirection {
 #[component]
 pub fn Tooltip(
     #[prop(into)] text: Signal<String>,
-    #[prop(default=TooltipDirection::Left)] direction: TooltipDirection,
-    #[prop(optional, into)] is_hidden: Option<Signal<bool>>,
+    #[prop(into, default=Signal::from(TooltipDirection::Left))] direction: Signal<TooltipDirection>,
+    #[prop(into, default=Signal::from(false))] is_hidden: Signal<bool>,
     children: Children
 ) -> impl IntoView {
 
-    let is_hidden = move || is_hidden.as_ref().map(|is_hidden| is_hidden.get()).unwrap_or(false);
-
     view! {
-        <div class=format!("tooltip {}", direction.as_class())>
+        <div class=format!("tooltip {}", direction.with(TooltipDirection::as_class))>
             <div class="tooltip-trigger">
                 { children() }
             </div>
-            <div class="tooltip-container" style=move || if is_hidden() { "display: none" } else { "" }>
+            <div class="tooltip-container" style=move || if is_hidden.get() { "display: none" } else { "" }>
                 <div class="tooltip-content">
                     <div class="tooltip-item">
                         { text }
