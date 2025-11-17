@@ -103,10 +103,16 @@ fn resolve_device_interface_tasks(
 ) {
     match device_interface.descriptor.configuration.clone() {
         NetworkInterfaceConfiguration::Ethernet => {
-            // TODO: Create task to check if device is present, if not, ignore it.
+            tasks.push(Box::new(tasks::require_interface_up::RequireInterfaceUp {
+                interface: device_interface.descriptor.name.clone(),
+                network_interface_manager,
+            }));
         }
         NetworkInterfaceConfiguration::Can { bitrate, sample_point, fd, data_bitrate, data_sample_point } => {
-            // TODO: Create task to check if device is present, if not, ignore it.
+            tasks.push(Box::new(tasks::require_interface_up::RequireInterfaceUp {
+                interface: device_interface.descriptor.name.clone(),
+                network_interface_manager: network_interface_manager.clone(),
+            }));
 
             let can_config = CanInterfaceConfiguration::new(bitrate, sample_point, fd, data_bitrate, data_sample_point);
             let can_config_task = tasks::can_device_configuration::CanDeviceConfiguration {
