@@ -107,7 +107,6 @@ fn LoadedClusterConfigurator(
         })
     };
 
-
     let deployed_clusters = Signal::derive(move || {
         match cluster_deployments.get() {
             Some(deployed_clusters) => {
