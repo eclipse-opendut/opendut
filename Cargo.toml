@@ -199,15 +199,15 @@ zip = "6.0.0"
 cannelloni.version = "1.1.0"  # mind that this version string is partially hard-coded in the repo
 
 # download netbird client release from here
-netbird.repository = "https://github.com/eclipse-opendut/netbird-build"
+netbird.repository = "https://github.com/netbirdio/netbird"
 # with the following version
-netbird.version = "0.28.9-a2f1d0dd1405c1c219454b0c74bd6fdf19297205"
+netbird.version = "0.59.13"
 # and use the protobuf definition for the netbird client service daemon from here (possible separate location to be configured)
-netbird.protobuf = "https://github.com/eclipse-opendut/netbird-build/releases/download/v0.28.9-a2f1d0dd1405c1c219454b0c74bd6fdf19297205/daemon.proto"
+netbird.protobuf = "https://raw.githubusercontent.com/netbirdio/netbird/refs/tags/v0.59.13/client/proto/daemon.proto"
 
-netbird-signal.version="0.28.9"       # docker container version for netbirdio/signal:     NETBIRD_SIGNAL_VERSION
-netbird-management.version="0.28.9"   # docker container version for netbirdio/management: NETBIRD_MANAGEMENT_VERSION
-netbird-dashboard.version="v2.5.0"    # docker container version for netbirdio/dashboard:  NETBIRD_DASHBOARD_VERSION
+netbird-signal.version="0.59.13"       # docker container version for netbirdio/signal:     NETBIRD_SIGNAL_VERSION
+netbird-management.version="0.59.13"   # docker container version for netbirdio/management: NETBIRD_MANAGEMENT_VERSION
+netbird-dashboard.version="v2.21.0"    # docker container version for netbirdio/dashboard:  NETBIRD_DASHBOARD_VERSION
 
 rperf.version = "0.1.8"
 
