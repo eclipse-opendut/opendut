@@ -15,7 +15,7 @@ where F: Fn() + 'static {
                 on:click=move |_| on_action()
             />
             {
-                text.is_some().then(|| {
+                text.map(|text| {
                     view! {
                         <span class="pl-2">{ text }</span>
                     }
