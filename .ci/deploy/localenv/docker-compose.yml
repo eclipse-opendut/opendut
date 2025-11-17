@@ -125,6 +125,8 @@ services:
       - OPENDUT_EDGAR_NETWORK_OIDC_CLIENT_SECRET
       - OPENDUT_USER_OPENDUT_PASSWORD
       - NETBIRD_PASSWORD
+      - OPENDUT_DOMAIN_NETBIRD
+      - OPENDUT_DOMAIN_CARL
     labels:
       - logging=alloy
       - logging_job=keycloak-init
@@ -574,6 +576,7 @@ services:
     # Note: otel-collector is always enabled (no replicas config)
     environment:
       - "SSL_CERT_FILE=${OPENDUT_CERT_CA_PATH}"
+      - OPENDUT_DOMAIN_AUTH
     command: [ "--config=/etc/collector-gateway.yaml" ]
     user: "0"  # root required to access docker socket
     depends_on:

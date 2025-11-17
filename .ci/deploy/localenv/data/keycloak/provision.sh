@@ -13,13 +13,13 @@ main() {
   create_realm netbird
   create_user netbird "$NETBIRD_PASSWORD" "" "" "netbird"
   # frontend client NETBIRD_AUTH_CLIENT_ID
-  create_public_client "netbird-client" '"https://netbird.opendut.local/*"' "netbird"
+  create_public_client "netbird-client" "https://${OPENDUT_DOMAIN_NETBIRD}/*" "netbird"
   create_client_scope "api" "default" "netbird"
   client_scope_add_audience "api" "Audience for NetBird Management API" "netbird-client" "netbird"
   add_client_scope_to_client "netbird-client" "api" "netbird"
 
   # CLI client for provisioning netbird API
-  create_public_client_with_direct_access "netbird-mgmt-cli" '"https://netbird.opendut.local/*"' "netbird" "https://netbird.opendut.local"
+  create_public_client_with_direct_access "netbird-mgmt-cli" "https://${OPENDUT_DOMAIN_NETBIRD}/*" "netbird" "https://${OPENDUT_DOMAIN_NETBIRD}"
   add_client_scope_to_client "netbird-mgmt-cli" "api" "netbird"
 
   # backend client NETBIRD_IDP_MGMT_CLIENT_ID, NETBIRD_IDP_MGMT_CLIENT_SECRET
@@ -32,7 +32,7 @@ main() {
   create_realm "$REALM_OPENDUT"
 
   # Create keycloak client for opendut-lea
-  create_public_client "opendut-lea-client" '"https://carl.opendut.local/*"' "$REALM_OPENDUT"
+  create_public_client "opendut-lea-client" "https://${OPENDUT_DOMAIN_CARL}/*" "$REALM_OPENDUT"
 
   # groups scope
   GROUP_SCOPE_NAME="groups"

@@ -195,6 +195,7 @@ create_public_client() {
     echo "ERROR: No realm provided for public client."
     return 1
   fi
+  echo "Given redirect url for public client $CLIENT_REDIRECT_URI"
 
   CLIENT_EXISTS=$(get_client_id "${CLIENT_NAME}" "${CLIENT_REALM}")
   if [ -z "$CLIENT_EXISTS" ]; then
@@ -207,7 +208,7 @@ create_public_client() {
         "standardFlowEnabled": true,
         "fullScopeAllowed": true,
         "webOrigins": ["*"],
-        "redirectUris": [$CLIENT_REDIRECT_URI],
+        "redirectUris": ["$CLIENT_REDIRECT_URI"],
         "attributes": {
           "access.token.lifespan": "300",
           "post.logout.redirect.uris": "+"
@@ -227,7 +228,7 @@ create_public_client_with_direct_access() {
   CLIENT_NAME="$1"
   CLIENT_REDIRECT_URI="$2"
   CLIENT_REALM="${3:-$REALM}"
-  CLIENT_ROOT_URL="${4:-https://netbird-dashboard}"
+  CLIENT_ROOT_URL="$4"
 
   if [ -z "$CLIENT_REALM" ]; then
     echo "ERROR: No realm provided for public client with direct access."
@@ -259,7 +260,7 @@ create_public_client_with_direct_access() {
         "alwaysDisplayInConsole": false,
         "rootUrl": "$CLIENT_ROOT_URL",
         "baseUrl": "$CLIENT_ROOT_URL",
-        "redirectUris": [$CLIENT_REDIRECT_URI],
+        "redirectUris": ["$CLIENT_REDIRECT_URI"],
         "webOrigins": [
           "*"
         ]

@@ -54,7 +54,8 @@ extensions:
     endpoint: :55679
   #
   oidc:
-    issuer_url: https://auth.opendut.local/realms/opendut
+    # https://opentelemetry.io/docs/collector/configuration/#environment-variables
+    issuer_url: https://${OPENDUT_DOMAIN_AUTH}/realms/opendut
     audience: account
 
 service:
