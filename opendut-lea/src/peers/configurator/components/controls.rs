@@ -7,6 +7,7 @@ use leptos_router::hooks::use_navigate;
 use tracing::{debug, error};
 use opendut_model::cluster::ClusterId;
 use opendut_model::peer::PeerDescriptor;
+
 use crate::app::use_app_globals;
 use crate::components::{use_toaster, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, Toast};
 use crate::peers::components::DeletePeerButton;
@@ -63,6 +64,7 @@ fn SavePeerButton(
     configuration: RwSignal<UserPeerConfiguration>,
     is_valid_peer_configuration: Signal<bool>,
 ) -> impl IntoView {
+
     let globals = use_app_globals();
     let toaster = use_toaster();
 
@@ -74,6 +76,16 @@ fn SavePeerButton(
     );
 
     let pending = RwSignal::new(false);
+
+    let button_state = Signal::derive(move || {
+        if pending.get() {
+            ButtonState::Loading
+        } else if is_valid_peer_configuration.get() {
+            ButtonState::Enabled
+        } else {
+            ButtonState::Disabled
+        }
+    });
 
     let on_action = move || {
         let toaster = Arc::clone(&toaster);
@@ -111,16 +123,6 @@ fn SavePeerButton(
             pending.set(false);
         })
     };
-
-    let button_state = Signal::derive(move || {
-        if pending.get() {
-            ButtonState::Loading
-        } else if is_valid_peer_configuration.get() {
-            ButtonState::Enabled
-        } else {
-            ButtonState::Disabled
-        }
-    });
 
     view! {
         <IconButton
