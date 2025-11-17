@@ -10,6 +10,7 @@ use crate::clusters::IsDeployed;
 pub fn DeleteClusterButton<F>(
     cluster_id: Signal<ClusterId>,
     #[prop(into)] deployed_signal: Signal<IsDeployed>,
+    #[prop(into)] button_color: Signal<ButtonColor>,
     on_delete: F,
 ) -> impl IntoView
 where F: Fn() + Clone + Send + 'static {
@@ -76,7 +77,7 @@ where F: Fn() + Clone + Send + 'static {
         >
             <ConfirmationButton
                 icon=FontAwesomeIcon::TrashCan
-                color=ButtonColor::Danger
+                color=button_color
                 size=ButtonSize::Normal
                 state=button_state
                 label="Remove Cluster?"
