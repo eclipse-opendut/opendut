@@ -19,8 +19,6 @@ pub enum StateKind {
 #[component]
 pub fn Health(state: Signal<State>) -> impl IntoView {
 
-    let (tooltip_visible, set_tooltip_visible) = signal(false);
-
     let classes = move || state.with(|state| {
         match state.kind {
             StateKind::Unknown => "health-light",
@@ -30,29 +28,15 @@ pub fn Health(state: Signal<State>) -> impl IntoView {
         }
     });
 
-    let tool_tip_text = move || state.with(|state| {
+    let tool_tip_text = Signal::derive(move || state.with(|state| {
         Clone::clone(&state.text)
-    });
+    }));
 
     view! {
         <div class="is-flex is-justify-content-center">
-            <div class=classes
-                on:click=move |_| {
-                    set_tooltip_visible.set(true);
-                }
-                on:mouseenter=move |_: MouseEvent| {
-                    set_tooltip_visible.set(true);
-                }
-                on:mouseleave=move |_: MouseEvent| {
-                    set_tooltip_visible.set(false)
-                }
-            >
-            </div>
-            <div class="height-0">
-                <Tooltip visible=tooltip_visible>
-                    <span>{ tool_tip_text }</span>
-                </Tooltip>
-            </div>
+            <Tooltip text=tool_tip_text>
+                <div class=classes />
+            </Tooltip>
         </div>
     }
 }

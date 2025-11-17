@@ -2,11 +2,25 @@
   @extend .dropdown;
 }
 
+.tooltip-tigger {
+  @extend .dropdown-trigger !optional;
+}
+
 .tooltip-container {
   @extend .dropdown-menu;
-  min-width: auto;
+  display: none;
 }
 
 .tooltip-content {
   @extend .dropdown-content;
+  width: max-content;
+  max-width: 250px;
+}
+
+.tooltip-item {
+  @extend .dropdown-item;
+}
+
+.tooltip:hover .tooltip-container {
+  display: flex;
 }
