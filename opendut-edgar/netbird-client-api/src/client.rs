@@ -52,7 +52,7 @@ impl Client {
         let request = tonic::Request::new(LoginRequest {
             setup_key: setup_key.uuid.to_string(),
             management_url: management_url.to_string(),
-            wg_iface_mtu: Some(i32::from(mtu)),
+            mtu: Some(i64::from(mtu)),
             ..Default::default()
         });
         let _ = self.inner.login(request).await?; //ignore response, only relevant for login without Setup Key
@@ -62,7 +62,9 @@ impl Client {
     }
 
     pub async fn up(&mut self) -> Result<()> {
-        let request = tonic::Request::new(UpRequest {});
+        let request = tonic::Request::new(UpRequest {
+            ..Default::default()
+        });
         let _ = self.inner.up(request).await?;
 
         debug!("Successfully set NetBird Client to 'up'.");
@@ -72,6 +74,7 @@ impl Client {
     pub async fn full_status(&mut self) -> Result<FullStatus> {
         let request = tonic::Request::new(StatusRequest {
             get_full_peer_status: true,
+            ..Default::default()
         });
 
         let response = self.inner.status(request).await?;
