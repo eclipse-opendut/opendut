@@ -67,7 +67,7 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
             devices_in_cluster.sort_by(|(_, name_a, _), (_, name_b, _)|
                 name_a.to_string().cmp(&name_b.to_string())
             );
-            used_clusters_length.set(devices_in_cluster.len());
+
             devices_in_cluster
         };
 
@@ -80,6 +80,8 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
                     <a href={ configurator_href }>{ cluster_name }</a>
                 }
             }).collect();
+
+        used_clusters_length.set(cluster_view_list.len());
 
         util::view::join_with_comma_spans(cluster_view_list)
     };
