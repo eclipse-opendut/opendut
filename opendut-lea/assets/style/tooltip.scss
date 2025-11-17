@@ -24,3 +24,7 @@
 .tooltip:hover .tooltip-container {
   display: flex;
 }
+
+.tooltip.is-right .tooltip-container {
+  justify-content: end;
+}
