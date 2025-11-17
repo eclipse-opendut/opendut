@@ -45,39 +45,37 @@ where OnConfirm: Fn() + Send + 'static {
                     }.into_any()
                 })
             >
-                <div class="columns">
-                    <div class="column">
-                        <p class="is-size-6 has-text-weight-semibold mb-2">{ text }</p>
-                        <div class="columns is-gapless is-mobile">
-                            <div class="column mr-2">
-                                <IconButton
-                                    icon=FontAwesomeIcon::Check
-                                    color=ButtonColor::Success
-                                    size=ButtonSize::Normal
-                                    state=ButtonState::Enabled
-                                    label="Yes"
-                                    show_label=true
-                                    is_outlined=true
-                                    on_action= move || {
-                                        doorhanger_visible.set(false);
-                                        on_confirm();
-                                    }
-                                />
-                            </div>
-                            <div class="column">
-                                <IconButton
-                                    icon=FontAwesomeIcon::XMark
-                                    color=ButtonColor::Danger
-                                    size=ButtonSize::Normal
-                                    state=ButtonState::Enabled
-                                    label="No"
-                                    show_label=true
-                                    is_outlined=true
-                                    on_action= move || {
-                                        doorhanger_visible.set(false);
-                                    }
-                                />
-                            </div>
+                <div class="is-flex is-flex-direction-column p-1">
+                    <p class="is-size-6 has-text-weight-semibold pb-2">{ text }</p>
+                    <div class="columns is-gapless is-mobile m-0">
+                        <div class="column mr-2">
+                            <IconButton
+                                icon=FontAwesomeIcon::Check
+                                color=ButtonColor::Success
+                                size=ButtonSize::Normal
+                                state=ButtonState::Enabled
+                                label="Yes"
+                                show_label=true
+                                is_outlined=true
+                                on_action= move || {
+                                    doorhanger_visible.set(false);
+                                    on_confirm();
+                                }
+                            />
+                        </div>
+                        <div class="column">
+                            <IconButton
+                                icon=FontAwesomeIcon::XMark
+                                color=ButtonColor::Danger
+                                size=ButtonSize::Normal
+                                state=ButtonState::Enabled
+                                label="No"
+                                show_label=true
+                                is_outlined=true
+                                on_action= move || {
+                                    doorhanger_visible.set(false);
+                                }
+                            />
                         </div>
                     </div>
                 </div>
