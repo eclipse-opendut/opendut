@@ -118,7 +118,7 @@ mod tests {
         assert!(result.is_none());
 
         let result = service_runner::run_tasks(fixture.peer_configuration, fixture.service_task_resolver).await;
-        assert!(result.items.len().eq(&1));
+        assert_eq!(result.items.len(), 1);
 
         let bridge_interface = fixture.network_interface_manager.find_interface(&fixture.bridge_name).await?;
         assert!(bridge_interface.is_some());
@@ -179,10 +179,9 @@ mod tests {
     impl Fixture {
 
         pub fn create() -> Self {
-            let (connection, handle, _) = rtnetlink::new_connection().expect("Could not get rtnetlink handle.");
-            tokio::spawn(connection);
-            let manager = NetworkInterfaceManager { handle };
-            let network_interface_manager = Arc::new(manager);
+            let network_interface_manager = NetworkInterfaceManager::create()
+                .expect("Failed to spawn NetworkInterfaceManager.");
+
             let bridge_name = NetworkInterfaceName::with_random_suffix("dut-br");
 
             let parameter = parameter::EthernetBridge {

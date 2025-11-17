@@ -126,7 +126,7 @@ fn create_edgar_integration_test_binary() -> anyhow::Result<String> {
     let test_binary = test_binary
         .file_name()
         .map(|file| file.to_string_lossy().to_string())
-        .ok_or(anyhow!("Could not find test binary!"))?;
+        .ok_or(anyhow!("EDGAR test binary does not have a file name!"))?;
 
     Ok(test_binary)
 }
