@@ -1,6 +1,7 @@
 use leptos::prelude::*;
 use tracing::{error, info};
 use opendut_lea_components::{use_toaster, ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, Toast};
+use opendut_lea_components::tooltip::{Tooltip, TooltipDirection};
 use opendut_model::cluster::ClusterId;
 use crate::app::use_app_globals;
 use crate::clusters::IsDeployed;
@@ -14,7 +15,6 @@ pub fn DeleteClusterButton<F>(
 where F: Fn() + Clone + Send + 'static {
 
     let globals = use_app_globals();
-
     let pending = RwSignal::new(false);
 
     let button_state = Signal::derive(move || {
@@ -64,14 +64,24 @@ where F: Fn() + Clone + Send + 'static {
         });
     };
 
+    let hide_tooltip = Signal::derive(move || {
+        !matches!(button_state.get(), ButtonState::Disabled)
+    });
+
     view! {
-        <ConfirmationButton
-            icon=FontAwesomeIcon::TrashCan
-            color=ButtonColor::Danger
-            size=ButtonSize::Normal
-            state=button_state
-            label="Remove Cluster?"
-            on_confirm
-        />
+        <Tooltip
+            text="Cluster can not be deleted while it is deployed."
+            direction=TooltipDirection::Right
+            is_hidden=hide_tooltip
+        >
+            <ConfirmationButton
+                icon=FontAwesomeIcon::TrashCan
+                color=ButtonColor::Danger
+                size=ButtonSize::Normal
+                state=button_state
+                label="Remove Cluster?"
+                on_confirm
+            />
+        </Tooltip>
     }
 }
