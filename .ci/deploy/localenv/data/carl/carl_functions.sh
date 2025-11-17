@@ -41,7 +41,7 @@ wait_for_netbird_user_to_be_synced_from_keycloak() {
 }
 
 users_list() {
-  USERS=$(curl --silent -H "Authorization: Bearer $TOKEN" "$NETBIRD_MANAGEMENT_URL"/api/users)
+  USERS=$(curl --silent -H "Authorization: Bearer $TOKEN" "$NETBIRD_MANAGEMENT_URL"/api/users) #FIXME TOKEN is empty
   # shellcheck disable=SC2181
   if [[ -z "$USERS" || $? -ne 0 ]]; then
     echo ""
@@ -53,7 +53,7 @@ users_list() {
 get_user_oauth_token() {
   # requires public client and client with password grant enabled, directAccessGrantsEnabled=true
   RESPONSE=$(curl -s -d "client_id=netbird-mgmt-cli" -d "username=netbird" -d "password=$NETBIRD_PASSWORD" -d "grant_type=password" "$KEYCLOAK_URL"/realms/netbird/protocol/openid-connect/token)
-  TOKEN=$(echo "$RESPONSE" | jq -r '.access_token')
+  TOKEN=$(echo "$RESPONSE" | jq -r '.access_token') #FIXME this is broken, because "404 page not found" is returned
   echo "$TOKEN"
 }
 

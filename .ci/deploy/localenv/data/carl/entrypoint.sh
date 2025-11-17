@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x #TODO remove
+
 source /opt/carl_functions.sh
 
 echo "OpenDuT-CARL init script for local test environment"

@@ -11,7 +11,7 @@ main() {
 
   # https://docs.netbird.io/selfhosted/identity-providers#keycloak
   create_realm netbird
-  create_user netbird "$NETBIRD_PASSWORD" "" "" "netbird"
+  create_user netbird "$NETBIRD_PASSWORD" "" "" "netbird"  #TODO this should create the `netbird` user in Keycloak; does it not work? How is this related to the NetBird upgrade?
   # frontend client NETBIRD_AUTH_CLIENT_ID
   create_public_client "netbird-client" '"https://netbird.opendut.local/*"' "netbird"
   create_client_scope "api" "default" "netbird"
