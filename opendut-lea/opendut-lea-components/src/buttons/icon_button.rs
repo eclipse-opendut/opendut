@@ -9,15 +9,24 @@ pub fn IconButton<A>(
     #[prop(into)] size: Signal<ButtonSize>,
     #[prop(into)] state: Signal<ButtonState>,
     #[prop(into)] label: Signal<String>,
-    #[prop(into, default = Signal::from(false))] show_label: Signal<bool>,
+    #[prop(into, default=Signal::from(false))] show_label: Signal<bool>,
+    #[prop(into, default=Signal::from(false))] is_outlined: Signal<bool>,
     on_action: A,
 ) -> impl IntoView
 where A: Fn() + 'static {
 
+    let button_class = move || {
+        format!("button {} {} {} {}",
+            color.with(ButtonColor::as_class),
+            state.with(ButtonState::as_class),
+            size.with(ButtonSize::as_class),
+            if is_outlined.get() { "is-outlined "} else { "" }
+        )
+    };
+
     view! {
         <button
-            class=move || format!("button {} {}", color.with(ButtonColor::as_class), size.with(ButtonSize::as_class))
-            class=("is-hidden", move || matches!(state.get(), ButtonState::Hidden))
+            class=button_class
             disabled=move || matches!(state.get(), ButtonState::Disabled | ButtonState::Loading)
             aria-label=move || label.get()
             on:click=move |event| {
@@ -26,19 +35,12 @@ where A: Fn() + 'static {
             }
         >
             <span class="icon">
-                <i class=move || {
-                    if matches!(state.get(), ButtonState::Loading) {
-                        format!("{} fa-spin", FontAwesomeIcon::CircleNotch.as_class())
-                    }
-                    else {
-                        String::from(icon.with(FontAwesomeIcon::as_class))
-                    }
-                }/>
+                <i class=icon.with(FontAwesomeIcon::as_class)/>
             </span>
             {
                 show_label.get().then(|| {
                     view! {
-                        <span>{ label.get() }</span>
+                        <span>{ label }</span>
                     }
                 })
             }

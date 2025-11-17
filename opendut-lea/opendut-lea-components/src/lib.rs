@@ -114,6 +114,16 @@ pub enum ButtonState {
     Hidden,
 }
 
+impl ButtonState {
+    pub fn as_class(&self) -> &'static str {
+        match self {
+            ButtonState::Loading => "is-loading",
+            ButtonState::Hidden => "is-hidden",
+            _ => ""
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 #[allow(dead_code)]
 pub enum ButtonColor {

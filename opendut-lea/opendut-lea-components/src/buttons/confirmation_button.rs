@@ -50,31 +50,33 @@ where OnConfirm: Fn() + Send + 'static {
                         <p class="is-size-6 has-text-weight-semibold mb-2">{ text }</p>
                         <div class="columns is-gapless is-mobile">
                             <div class="column mr-2">
-                                <button
-                                    class="button is-success is-outlined mb-0"
-                                    aria-label=move || label.get()
-                                    on:click=move |_| {
+                                <IconButton
+                                    icon=FontAwesomeIcon::Check
+                                    color=ButtonColor::Success
+                                    size=ButtonSize::Normal
+                                    state=ButtonState::Enabled
+                                    label="Yes"
+                                    show_label=true
+                                    is_outlined=true
+                                    on_action= move || {
                                         doorhanger_visible.set(false);
                                         on_confirm();
                                     }
-                                >
-                                    <span class="icon">
-                                        <i class="fa-solid fa-check"></i>
-                                    </span>
-                                    <span>"Yes"</span>
-                                </button>
+                                />
                             </div>
                             <div class="column">
-                                <button
-                                    class="button is-danger is-outlined mb-0"
-                                    aria-label="Cancel Delete Cluster"
-                                    on:click=move |_| doorhanger_visible.update(|visible| *visible = !*visible)
-                                >
-                                    <span class="icon">
-                                        <i class="fa-solid fa-xmark"></i>
-                                    </span>
-                                    <span>"No"</span>
-                                </button>
+                                <IconButton
+                                    icon=FontAwesomeIcon::XMark
+                                    color=ButtonColor::Danger
+                                    size=ButtonSize::Normal
+                                    state=ButtonState::Enabled
+                                    label="No"
+                                    show_label=true
+                                    is_outlined=true
+                                    on_action= move || {
+                                        doorhanger_visible.set(false);
+                                    }
+                                />
                             </div>
                         </div>
                     </div>
