@@ -22,10 +22,10 @@
     - name: Force update CARL image  # With canary releases, we may re-use the same tag, which normally results in the new image not being pulled.
       # environment file might contain custom image version for CARL
       command:
-        cmd: "docker compose --file .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/data/secrets/.env pull --policy=always carl"
+        cmd: "docker compose --file .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/data/secrets/.env --env-file .ci/deploy/localenv/.env.development pull --policy=always carl"
         chdir: "{{ repo_dir }}"
 
     - name: Start containers
       command:
-        cmd: "docker compose --file .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/data/secrets/.env up --detach --build"
+        cmd: "docker compose --file .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/data/secrets/.env --env-file .ci/deploy/localenv/.env.development up --detach --build"
         chdir: "{{ repo_dir }}"
