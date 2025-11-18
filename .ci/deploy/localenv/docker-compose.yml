@@ -112,6 +112,7 @@ services:
       - ./data/keycloak/keycloak_functions.sh:/keycloak_functions.sh
       - ./data/keycloak/provision.sh:/provision.sh
       - provision-secrets-data:/provision:ro
+      - shared-pki:/pki
     environment:
       - SSL_CERT_FILE=${OPENDUT_CERT_CA_PATH}  # used by curl
       - KCADM_PATH=/opt/keycloak/bin/kcadm.sh
@@ -280,6 +281,7 @@ services:
       - backup:/var/lib/backup/
       - netbird-mgmt-data:/var/lib/netbird
       - netbird-mgmt-config:/etc/netbird/
+      - shared-pki:/pki
     environment:
       # Keycloak user
       - KEYCLOAK_ADMIN=admin
@@ -379,7 +381,7 @@ services:
       - carl-config:/opt/opendut-carl/config/
       - carl_data:/var/lib/opendut/carl/
       - backup:/var/lib/backup/
-      - shared-pki:/pki
+      - shared-pki:/pki:ro
     environment:
       # Network
       - OPENDUT_CARL_NETWORK_REMOTE_HOST=${OPENDUT_DOMAIN_CARL}
@@ -404,7 +406,7 @@ services:
       - OPENDUT_CARL_VPN_NETBIRD_AUTH_OIDC_SCOPES="api"
       # OpenTelemetry
       - OPENDUT_CARL_OPENTELEMETRY_ENABLED=true
-      - OPENDUT_CARL_OPENTELEMETRY_COLLECTOR_ENDPOINT=${OPENDUT_OPENTELEMETRY_CARL_COLLECTOR_ENDPOINT}
+      - OPENDUT_CARL_OPENTELEMETRY_COLLECTOR_ENDPOINT=http://otel-collector:4317
       # OIDC
       - OPENDUT_CARL_NETWORK_OIDC_ENABLED=true
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ID=opendut-carl-client
@@ -460,6 +462,7 @@ services:
       - SSL_CERT_FILE=${OPENDUT_CERT_CA_PATH}
     volumes:
       - provision-secrets-data:/provision:ro
+      - shared-pki:/pki:ro
     networks:
       - opendut_local
 
@@ -561,6 +564,7 @@ services:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - provision-secrets-data:/provision:ro
+      - shared-pki:/pki:ro
     build:
       context: ../../..
       dockerfile: ./.ci/deploy/localenv/data/telemetry/Dockerfile_otel-collector
