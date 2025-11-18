@@ -5,6 +5,7 @@ use pem::Pem;
 use tonic::transport::{Certificate, ClientTlsConfig};
 use url::Url;
 use opendut_util_core::pem::PemFromConfig;
+use std::fmt::Debug;
 
 pub struct OpentelemetryConfig {
     pub(crate) confidential_client: Option<ConfidentialClientRef>,
@@ -16,7 +17,29 @@ pub struct OpentelemetryConfig {
     pub(crate) client_tls_config: ClientTlsConfig,
 }
 
-#[derive(Default)]
+impl PartialEq for OpentelemetryConfig {
+    fn eq(&self, other: &Self) -> bool {
+        self.collector_endpoint == other.collector_endpoint &&
+        self.service_name == other.service_name &&
+        self.service_metadata == other.service_metadata &&
+        self.metrics_interval_ms == other.metrics_interval_ms &&
+        self.cpu_collection_interval_ms == other.cpu_collection_interval_ms
+    }
+}
+
+impl Debug for OpentelemetryConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("OpentelemetryConfig")
+            .field("collector_endpoint", &self.collector_endpoint)
+            .field("service_name", &self.service_name)
+            .field("service_metadata", &self.service_metadata)
+            .field("metrics_interval_ms", &self.metrics_interval_ms)
+            .field("cpu_collection_interval_ms", &self.cpu_collection_interval_ms)
+            .finish()
+    }
+}
+
+#[derive(Default, Debug, PartialEq)]
 pub enum Opentelemetry {
     Enabled(Box<OpentelemetryConfig>),
     #[default]
@@ -40,10 +63,10 @@ impl Opentelemetry {
                         field: field.clone(),
                         cause: format!("{cause:?}")
                     })?;
-                let url = Url::parse(&url)
-                    .map_err(|cause| OpentelemetryConfigError::ValueParseError {
+                let url = Url::parse_without_quotes(&url)
+                    .map_err(|cause| OpentelemetryConfigError::InvalidValueError {
                         field,
-                        cause: format!("{cause:?}")
+                        message: format!("Failed to parse url from given string: '{url}'. Error: {cause:?}")
                     })?;
                 Endpoint { url }
             };
@@ -140,6 +163,20 @@ impl Opentelemetry {
     }
 }
 
+pub trait UrlWithoutQuotes {
+    fn parse_without_quotes(url: &str) -> Result<Url, url::ParseError>;
+}
+
+impl UrlWithoutQuotes for Url {
+    fn parse_without_quotes(url: &str) -> Result<Url, url::ParseError> {
+        let url_str = url
+            .trim_matches('"')
+            .trim_matches('\'');
+        Url::parse(url_str)
+    }
+}
+
+
 #[derive(Debug, thiserror::Error)]
 pub enum OpentelemetryConfigError {
     #[error("Failed to parse configuration from field: '{field}'. Cause: {cause}")]
@@ -159,13 +196,79 @@ pub enum OpentelemetryConfigError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct ServiceMetadata {
     pub instance_id: String,
     pub version: String,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Endpoint {
     pub url: Url,
+}
+
+
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+    use url::Url;
+    use crate::opentelemetry_types::{Endpoint, Opentelemetry, OpentelemetryConfig, ServiceMetadata, UrlWithoutQuotes};
+
+    #[test]
+    fn should_parse_url_without_quotes() -> anyhow::Result<()> {
+        let url = "http://otel-collector:4317";
+
+        let url = Url::parse_without_quotes(url)?;
+        assert!(url.as_str().starts_with("http://otel-collector:4317"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_parse_url_with_quotes() -> anyhow::Result<()> {
+        let url = "'http://otel-collector:4317'";
+
+        let url = Url::parse_without_quotes(url)?;
+        assert!(url.as_str().starts_with("http://otel-collector:4317"));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_open_telemetry_config_load() -> anyhow::Result<()> {
+        let otel_collector = "http://otel-collector:4317";
+        let instance_name = "instance-1";
+        let test_service_name = "test-service";
+        let test_service_version = "v1.0.0";
+        let url = Url::parse(otel_collector).expect("Could not parse ote.l est URL");
+
+        let config = config::Config::builder()
+            .set_override("opentelemetry.enabled", "true")?
+            .set_override("opentelemetry.service.name", test_service_name)?
+            .set_override("opentelemetry.collector.endpoint", otel_collector)?
+            .set_override("opentelemetry.metrics.interval.ms", "1000")?
+            .set_override("opentelemetry.metrics.cpu.collection.interval.ms", "1000")?
+            .set_override("network.oidc.enabled", "false")?
+            .build()?;
+
+        let otel = Opentelemetry::load(&config, ServiceMetadata {
+            instance_id: String::from(instance_name),
+            version: String::from(test_service_version),
+        }).await?;
+        let expected = Opentelemetry::Enabled(Box::new(OpentelemetryConfig {
+            confidential_client: None,
+            collector_endpoint: Endpoint { url },
+            service_name: test_service_name.to_string(),
+            service_metadata: ServiceMetadata { instance_id: instance_name.to_string(), version: test_service_version.to_string() },
+            metrics_interval_ms: Duration::from_secs(1),
+            cpu_collection_interval_ms: Duration::from_secs(1),
+            client_tls_config: Default::default(),
+        }));
+
+        assert_eq!(otel, expected);
+
+        Ok(())
+
+    }
+
 }
