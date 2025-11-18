@@ -15,16 +15,20 @@ pub enum CleoArch {
 }
 impl CleoArch {
     pub fn distribution_name(&self) -> String {
-        match self {
-            CleoArch::X86_64 => "opendut-cleo-x86_64-unknown-linux-gnu",
-            CleoArch::Armhf => "opendut-cleo-armv7-unknown-linux-gnueabihf",
-            CleoArch::Arm64 => "opendut-cleo-aarch64-unknown-linux-gnu",
-        }.to_string()
+        format!("opendut-cleo-{}", self.triple())
     }
 
     pub fn arch_iterator() -> Iter<'static, CleoArch> {
         static CLEO_ARCH: [CleoArch; 3] = [CleoArch::X86_64, CleoArch::Armhf, CleoArch::Arm64];
         CLEO_ARCH.iter()
+    }
+
+    pub fn triple(&self) -> &'static str {
+        match self {
+            CleoArch::X86_64 => "x86_64-unknown-linux-gnu",
+            CleoArch::Armhf => "armv7-unknown-linux-gnueabihf",
+            CleoArch::Arm64 => "aarch64-unknown-linux-gnu",
+        }
     }
 }
 

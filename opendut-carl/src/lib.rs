@@ -1,4 +1,5 @@
 use std::net::SocketAddr;
+use std::ops::Not;
 use std::str::FromStr;
 use anyhow::Context;
 use tonic::service::Routes;
@@ -118,7 +119,7 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
         let carl_installation_directory = CarlInstallDirectory::determine()
             .expect("Could not determine installation directory.");
 
-        if !project::is_running_in_development() {
+        if project::is_running_in_development().not() {
             startup::cleo::create_cleo_install_script(
                 &ca_certificate,
                 &carl_installation_directory.path,

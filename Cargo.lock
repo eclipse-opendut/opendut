@@ -4239,6 +4239,7 @@ dependencies = [
  "clap",
  "config",
  "flate2",
+ "fs-err",
  "futures",
  "googletest",
  "http",

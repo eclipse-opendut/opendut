@@ -27,6 +27,7 @@ chrono = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 config = { workspace = true }
 flate2 = { workspace = true }
+fs-err = { workspace = true }
 futures = { workspace = true }
 googletest = { workspace = true }
 http = { workspace = true }

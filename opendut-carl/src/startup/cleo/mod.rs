@@ -1,4 +1,4 @@
-use std::fs::File;
+use fs_err::File;
 use std::path::{Path, PathBuf};
 
 use anyhow::Context;
@@ -6,6 +6,7 @@ use tempfile::TempDir;
 use flate2::Compression;
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
+use tracing::debug;
 use opendut_util::pem::Pem;
 
 pub mod script;
@@ -25,18 +26,31 @@ pub fn create_cleo_install_script(
 ) -> anyhow::Result<()> {
 
     for arch in CleoArch::arch_iterator() {
-        let cleo_tar_file = carl_install_directory.join(CLEO_IDENTIFIER).join(format!("{}-{}.tar.gz", arch.distribution_name(), crate::app_info::PKG_VERSION));
-        add_file_to_archive(
-            ca,
-            &cleo_tar_file,
-            cleo_script,
-        )?;
+        let cleo_tar_file = carl_install_directory
+            .join(CLEO_IDENTIFIER)
+            .join(format!("{}-{}.tar.gz", arch.distribution_name(), crate::app_info::PKG_VERSION));
+
+        if cleo_tar_file.exists() {
+            add_certificate_file_into_archive(
+                ca,
+                &cleo_tar_file,
+                cleo_script,
+            )?;
+        } else {
+            let message = format!("No CLEO distribution found for architecture '{}', while adding certificates into CLEO distributions.", arch.triple());
+
+            #[cfg(not(debug_assertions))]
+            bail!("{message}"); //treat as error in production
+
+            #[cfg(debug_assertions)]
+            debug!("{message} Skipping.");
+        }
     }
 
     Ok(())
 }
 
-fn add_file_to_archive(
+fn add_certificate_file_into_archive(
     ca: &Pem,
     cleo_tar_file: &Path,
     cleo_script: &CleoScript,
@@ -52,8 +66,7 @@ fn add_file_to_archive(
     let tar_gz = File::create(cleo_tar_file)
         .context(format!("Could not create path '{}' for CLEO archive.", cleo_tar_file.display()))?;
 
-    let enc = GzEncoder::new(tar_gz, Compression::default());
-    let mut tar = tar::Builder::new(enc);
+    let mut tar = tar::Builder::new(GzEncoder::new(tar_gz, Compression::default()));
 
     tar.append_dir_all("", unpack_dir)?;
     tar.append_custom_data(
@@ -90,8 +103,7 @@ impl AppendCustomData for tar::Builder<GzEncoder<File>> {
 mod test {
     use super::*;
 
-    use std::fs;
-    use std::fs::File;
+    use fs_err as fs;
     use std::str::FromStr;
     use assert_fs::assert::PathAssert;
 
@@ -108,10 +120,10 @@ mod test {
     #[tokio::test()]
     async fn creating_cleo_install_script_succeeds() -> anyhow::Result<()> {
 
-        let temp = TempDir::new().unwrap();
+        let temp = TempDir::new()?;
         let tar_file = temp.child("file.tar.gz");
 
-        let tar_gz = File::create(&tar_file).unwrap();
+        let tar_gz = File::create(tar_file.path())?;
 
         let mut tar_gz = tar::Builder::new(
             GzEncoder::new(tar_gz, Compression::default())
@@ -127,7 +139,7 @@ mod test {
         tar_gz.into_inner()?.finish()?;
 
         let cert = Pem::from_str(include_str!("../../../../resources/development/tls/insecure-development-ca.pem"))
-            .expect("Not a valid certificate!"); 
+            .expect("Not a valid certificate!");
 
         let cleo_script = CleoScript {
             carl_host: "carl".to_string(),
@@ -136,7 +148,7 @@ mod test {
             issuer_url: "https://keycloak/realms/opendut/".to_string(),
         };
 
-        add_file_to_archive(
+        add_certificate_file_into_archive(
             &cert,
             &tar_file,
             &cleo_script,
@@ -147,7 +159,9 @@ mod test {
         let unpack_dir = {
             let unpack_dir = temp.child("unpack_dir");
             unpack_dir.create_dir_all()?;
-            let mut archive = tar::Archive::new(GzDecoder::new(File::open(tar_file)?));
+            let mut archive = tar::Archive::new(GzDecoder::new(
+                File::open(tar_file.path())?
+            ));
             archive.unpack(&unpack_dir)?;
             unpack_dir
         };
