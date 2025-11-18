@@ -18,6 +18,17 @@ services:
     build:
       context: ../../..
       dockerfile: ./.ci/deploy/localenv/data/provision/Dockerfile
+    environment:
+      - LEGO_CA_CERTIFICATES=${OPENDUT_CERT_CA_PATH}
+      - OPENDUT_DOMAIN_SUFFIX
+      - OPENDUT_DOMAIN_CARL
+      - OPENDUT_DOMAIN_AUTH
+      - OPENDUT_DOMAIN_NETBIRD
+      - OPENDUT_DOMAIN_NETBIRD_API
+      - OPENDUT_DOMAIN_SIGNAL
+      - OPENDUT_DOMAIN_NGINX_WEBDAV
+      - OPENDUT_DOMAIN_OPENTELEMETRY
+      - OPENDUT_DOMAIN_MONITORING
     volumes:
       - provision-secrets-data:/provision
       - backup:/backup
@@ -69,7 +80,7 @@ services:
     - KC_HEALTH_ENABLED=true
     - KC_HTTP_ENABLED=true
     - KC_METRICS_ENABLED=true
-    - KC_HOSTNAME=auth.opendut.local
+    - KC_HOSTNAME=${OPENDUT_DOMAIN_AUTH}
     - KC_PROXY_ADDRESS_FORWARDING=true
     - KC_PROXY_HEADERS=xforwarded
     - KC_HOSTNAME_STRICT=false
@@ -77,7 +88,7 @@ services:
     - KEYCLOAK_ADMIN_PASSWORD
     labels:
       - traefik.enable=true
-      - "traefik.http.routers.keycloak.rule=Host(`auth.opendut.local`)"
+      - "traefik.http.routers.keycloak.rule=Host(`${OPENDUT_DOMAIN_AUTH}`)"
       - "traefik.http.routers.keycloak.tls=true"
       - logging=alloy
       - logging_job=keycloak
@@ -102,7 +113,7 @@ services:
       - ./data/keycloak/provision.sh:/provision.sh
       - provision-secrets-data:/provision:ro
     environment:
-      - SSL_CERT_FILE=/provision/pki/opendut-ca.pem  # used by curl
+      - SSL_CERT_FILE=${OPENDUT_CERT_CA_PATH}  # used by curl
       - KCADM_PATH=/opt/keycloak/bin/kcadm.sh
       - KEYCLOAK_URL=http://keycloak:8080
       - KEYCLOAK_ADMIN=admin
@@ -117,13 +128,14 @@ services:
       - logging=alloy
       - logging_job=keycloak-init
     networks:
-      opendut_local:
+      - opendut_local
 
   # Public web entrypoint exposed to end users
   traefik:
     container_name: opendut-traefik
-    image: docker.io/traefik:v3.5.3
+    image: docker.io/traefik:v3.6.1
     restart: unless-stopped
+    #entrypoint: ["/etc/traefik/dynamic/traefik-entrypoint-wrapper.sh"]
     command:
       - --api.insecure=true
       - --providers.docker
@@ -142,7 +154,23 @@ services:
       - "--accesslog"
       - "--accesslog.format=json"
     environment:
-      - "LEGO_CA_CERTIFICATES=/provision/pki/opendut-ca.pem"
+      - LEGO_CA_CERTIFICATES=${OPENDUT_CERT_CA_PATH}
+      - OPENDUT_AUTH_NETWORK_TLS_KEY
+      - OPENDUT_AUTH_NETWORK_TLS_CERTIFICATE
+      - OPENDUT_SIGNAL_NETWORK_TLS_CERTIFICATE
+      - OPENDUT_SIGNAL_NETWORK_TLS_KEY
+      - OPENDUT_NETBIRD_API_NETWORK_TLS_CERTIFICATE
+      - OPENDUT_NETBIRD_API_NETWORK_TLS_KEY
+      - OPENDUT_NETBIRD_NETWORK_TLS_CERTIFICATE
+      - OPENDUT_NETBIRD_NETWORK_TLS_KEY
+      - OPENDUT_NGINX_WEBDAV_NETWORK_TLS_CERTIFICATE
+      - OPENDUT_NGINX_WEBDAV_NETWORK_TLS_KEY
+      - OPENDUT_MONITORING_NETWORK_TLS_CERTIFICATE
+      - OPENDUT_MONITORING_NETWORK_TLS_KEY
+      - OPENDUT_OPENTELEMETRY_NETWORK_TLS_CERTIFICATE
+      - OPENDUT_OPENTELEMETRY_NETWORK_TLS_KEY
+      - OPENDUT_CARL_NETWORK_TLS_CERTIFICATE
+      - OPENDUT_CARL_NETWORK_TLS_KEY
     ports:
       - "127.0.0.1:8080:8080"
       - "80:80"
@@ -155,23 +183,26 @@ services:
       #test: ["CMD", "traefik", "healthcheck", "--ping"]
       test: ["CMD", "wget", "-q", "--proxy", "off", "--spider", "http://localhost:8080/ping"]
     volumes:
-      - ./data/traefik/config:/etc/traefik/dynamic:ro
+      - ./data/traefik/config:/etc/traefik/dynamic
       - provision-secrets-data:/provision:ro
       - /var/run/docker.sock:/var/run/docker.sock
+      - shared-pki:/pki:ro
     labels:
       - logging=alloy
       - logging_job=traefik
     networks:
       opendut_local:
         aliases:
-          - opendut.local
-          - netbird.opendut.local
-          - netbird-api.opendut.local
-          - auth.opendut.local
-          - signal.opendut.local
-          - opentelemetry.opendut.local
+          - ${OPENDUT_DOMAIN_SUFFIX}
+          - ${OPENDUT_DOMAIN_NETBIRD}
+          - ${OPENDUT_DOMAIN_NETBIRD_API}
+          - ${OPENDUT_DOMAIN_AUTH}
+          - ${OPENDUT_DOMAIN_SIGNAL}
+          - ${OPENDUT_DOMAIN_OPENTELEMETRY}
+          - ${OPENDUT_DOMAIN_CARL}
+          #- ${OPENDUT_DOMAIN_NGINX_WEBDAV}  # Do not expose since this service is not secured
 
-# vaguely derived from: https://github.com/netbirdio/netbird/blob/main/infrastructure_files/docker-compose.yml.tmpl.traefik
+  # vaguely derived from: https://github.com/netbirdio/netbird/blob/main/infrastructure_files/docker-compose.yml.tmpl.traefik
   netbird-dashboard:
     container_name: opendut-netbird-dashboard
     image: netbirdio/dashboard:v2.5.0
@@ -183,23 +214,23 @@ services:
         condition: service_healthy
     environment:
       # Endpoints
-      - NETBIRD_MGMT_API_ENDPOINT=https://netbird-api.opendut.local
-      - NETBIRD_MGMT_GRPC_API_ENDPOINT=https://netbird-api.opendut.local
+      - NETBIRD_MGMT_API_ENDPOINT=https://${OPENDUT_DOMAIN_NETBIRD_API}
+      - NETBIRD_MGMT_GRPC_API_ENDPOINT=https://${OPENDUT_DOMAIN_NETBIRD_API}
       # OIDC
       - AUTH_AUDIENCE=netbird-client
       - AUTH_CLIENT_ID=netbird-client
       - AUTH_CLIENT_SECRET=
-      - AUTH_AUTHORITY=https://auth.opendut.local/realms/netbird
+      - AUTH_AUTHORITY=https://${OPENDUT_DOMAIN_AUTH}/realms/netbird
       - USE_AUTH0=false
       - AUTH_SUPPORTED_SCOPES=openid profile email offline_access api
       - AUTH_REDIRECT_URI=
       - AUTH_SILENT_REDIRECT_URI=
     healthcheck:
       <<: *common-healthcheck-params
-      test: [ "CMD-SHELL", "curl --fail --silent --output /dev/null --noproxy '*' http://localhost || exit 1" ]
+      test: [ "CMD-SHELL", curl --fail --silent --output /dev/null --noproxy '*' http://localhost || exit 1 ]
     labels:
       - traefik.enable=true
-      - traefik.http.routers.netbird-dashboard.rule=Host(`netbird.opendut.local`)
+      - traefik.http.routers.netbird-dashboard.rule=Host(`${OPENDUT_DOMAIN_NETBIRD}`)
       - traefik.http.routers.netbird-dashboard.tls=true
       - traefik.http.services.netbird-dashboard.loadbalancer.server.port=80
       - logging=alloy
@@ -217,7 +248,7 @@ services:
       - netbird-signal:/var/lib/netbird
     labels:
       - traefik.enable=true
-      - traefik.http.routers.netbird-signal.rule=Host(`signal.opendut.local`)
+      - traefik.http.routers.netbird-signal.rule=Host(`${OPENDUT_DOMAIN_SIGNAL}`)
       - traefik.http.services.netbird-signal.loadbalancer.server.port=80
       - traefik.http.services.netbird-signal.loadbalancer.server.scheme=h2c
       - logging=alloy
@@ -254,24 +285,24 @@ services:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD
       # Pass custom certificates to GO applications (netbird management, https://go.dev/src/crypto/x509/root_unix.go) and curl
-      - SSL_CERT_FILE=/provision/pki/opendut-ca.pem
-      - KEYCLOAK_URL=https://auth.opendut.local
-      - NETBIRD_MANAGEMENT_URL=https://netbird-api.opendut.local
-      - NETBIRD_MANAGEMENT_DOMAIN=netbird.opendut.local
-      - KEYCLOAK_REALM_URL=https://auth.opendut.local/realms/netbird/.well-known/openid-configuration
+      - SSL_CERT_FILE=${OPENDUT_CERT_CA_PATH}
+      - KEYCLOAK_URL=https://${OPENDUT_DOMAIN_AUTH}
+      - NETBIRD_MANAGEMENT_URL=https://${OPENDUT_DOMAIN_NETBIRD_API}
+      - NETBIRD_MANAGEMENT_DOMAIN=${OPENDUT_DOMAIN_NETBIRD}
+      - KEYCLOAK_REALM_URL=https://${OPENDUT_DOMAIN_AUTH}/realms/netbird/.well-known/openid-configuration
       # URLs
-      - NETBIRD_SIGNAL_STUN_URL=signal.opendut.local:443
-      - NETBIRD_SIGNAL_DOMAIN=signal.opendut.local
+      - NETBIRD_SIGNAL_STUN_URL=${OPENDUT_DOMAIN_SIGNAL}:443
+      - NETBIRD_SIGNAL_DOMAIN=${OPENDUT_DOMAIN_SIGNAL}
       - NETBIRD_SIGNAL_PROTOCOL=http
       - NETBIRD_SIGNAL_PORT=443
-      - TURN_DOMAIN=opendut.local
+      - TURN_DOMAIN=${OPENDUT_DOMAIN_SUFFIX}
       - TURN_USER=self
       - TURN_PASSWORD
       - TURN_PORT=3478
       - NETBIRD_DATASTORE_ENC_KEY
-      - NETBIRD_ISSUER_URL=https://auth.opendut.local/realms/netbird
-      - NETBIRD_ISSUER_DOMAIN=auth.opendut.local
-      - NETBIRD_ISSUER_ADMIN_URL=https://auth.opendut.local/admin/realms/netbird
+      - NETBIRD_ISSUER_URL=https://${OPENDUT_DOMAIN_AUTH}/realms/netbird
+      - NETBIRD_ISSUER_DOMAIN=${OPENDUT_DOMAIN_AUTH}
+      - NETBIRD_ISSUER_ADMIN_URL=https://${OPENDUT_DOMAIN_AUTH}/admin/realms/netbird
       - NETBIRD_MANAGEMENT_CLIENT_ID=netbird-backend
       - NETBIRD_MANAGEMENT_CLIENT_SECRET
       - NETBIRD_MANAGEMENT_DEVICE_ID=netbird-client
@@ -283,12 +314,12 @@ services:
     labels:
       - traefik.enable=true
       # Netbird API REST endpoint
-      - traefik.http.routers.netbird-api.rule=Host(`netbird-api.opendut.local`) && PathPrefix(`/api`)
+      - traefik.http.routers.netbird-api.rule=Host(`${OPENDUT_DOMAIN_NETBIRD_API}`) && PathPrefix(`/api`)
       - traefik.http.routers.netbird-api.service=netbird-api
       - traefik.http.routers.netbird-api.tls=true
       - traefik.http.services.netbird-api.loadbalancer.server.port=80
       # Netbird API GRPC endpoint
-      - traefik.http.routers.netbird-management.rule=Host(`netbird-api.opendut.local`) && PathPrefix(`/management.ManagementService/`)
+      - traefik.http.routers.netbird-management.rule=Host(`${OPENDUT_DOMAIN_NETBIRD_API}`) && PathPrefix(`/management.ManagementService/`)
       - traefik.http.routers.netbird-management.service=netbird-management
       - traefik.http.routers.netbird-management.tls=true
       - traefik.http.services.netbird-management.loadbalancer.server.port=80
@@ -306,12 +337,12 @@ services:
     # https://github.com/coturn/coturn/tree/master/docker/coturn#why-so-many-ports-opened
     image: coturn/coturn:4.6.2
     restart: unless-stopped
-    domainname: opendut.local
+    domainname: ${OPENDUT_DOMAIN_SUFFIX}
     volumes:
       - ./data/coturn/:/coturn/:ro
     environment:
-      - TURN_REALM=opendut.local
-      - TURN_DOMAIN=opendut.local
+      - TURN_REALM=${OPENDUT_DOMAIN_SUFFIX}
+      - TURN_DOMAIN=${OPENDUT_DOMAIN_SUFFIX}
       - TURN_USER=self
       - TURN_PASSWORD
       - TURN_PORT=3478
@@ -348,60 +379,61 @@ services:
       - carl-config:/opt/opendut-carl/config/
       - carl_data:/var/lib/opendut/carl/
       - backup:/var/lib/backup/
+      - shared-pki:/pki
     environment:
       # Network
-      - OPENDUT_CARL_NETWORK_REMOTE_HOST=carl.opendut.local
+      - OPENDUT_CARL_NETWORK_REMOTE_HOST=${OPENDUT_DOMAIN_CARL}
       - OPENDUT_CARL_NETWORK_REMOTE_PORT=443
       - OPENDUT_CARL_NETWORK_BIND_PORT=443
-      - OPENDUT_CARL_NETWORK_TLS_CA=/provision/pki/opendut-ca.pem
-      - OPENDUT_CARL_NETWORK_TLS_KEY=/provision/pki/deploy/carl.opendut.local.key
-      - OPENDUT_CARL_NETWORK_TLS_CERTIFICATE=/provision/pki/deploy/carl.opendut.local.pem
+      - OPENDUT_CARL_NETWORK_TLS_CA=${OPENDUT_CERT_CA_PATH}
+      - OPENDUT_CARL_NETWORK_TLS_KEY
+      - OPENDUT_CARL_NETWORK_TLS_CERTIFICATE
       # CURL
-      - SSL_CERT_FILE=/provision/pki/opendut-ca.pem
+      - SSL_CERT_FILE=${OPENDUT_CERT_CA_PATH}
       # VPN
       - OPENDUT_CARL_VPN_ENABLED=true
       - OPENDUT_CARL_VPN_KIND=netbird
-      - OPENDUT_CARL_VPN_NETBIRD_CA=/provision/pki/opendut-ca.pem
-      - OPENDUT_CARL_VPN_NETBIRD_URL=https://netbird-api.opendut.local/api
+      - OPENDUT_CARL_VPN_NETBIRD_CA=${OPENDUT_CERT_CA_PATH}
+      - OPENDUT_CARL_VPN_NETBIRD_URL=https://${OPENDUT_DOMAIN_NETBIRD_API}/api
       - OPENDUT_CARL_VPN_NETBIRD_AUTH_TYPE=oauth-create-api-token
       - OPENDUT_CARL_VPN_NETBIRD_AUTH_USERNAME=netbird
       - OPENDUT_CARL_VPN_NETBIRD_AUTH_PASSWORD=$NETBIRD_PASSWORD
       - OPENDUT_CARL_VPN_NETBIRD_AUTH_OIDC_ID=netbird-backend
-      - OPENDUT_CARL_VPN_NETBIRD_AUTH_OIDC_ISSUER_URL=https://auth.opendut.local/realms/netbird/
+      - OPENDUT_CARL_VPN_NETBIRD_AUTH_OIDC_ISSUER_URL=https://${OPENDUT_DOMAIN_AUTH}/realms/netbird/
       - OPENDUT_CARL_VPN_NETBIRD_AUTH_OIDC_SECRET=$NETBIRD_MANAGEMENT_CLIENT_SECRET
       - OPENDUT_CARL_VPN_NETBIRD_AUTH_OIDC_SCOPES="api"
       # OpenTelemetry
       - OPENDUT_CARL_OPENTELEMETRY_ENABLED=true
-      - OPENDUT_CARL_OPENTELEMETRY_COLLECTOR_ENDPOINT=http://otel-collector:4317
+      - OPENDUT_CARL_OPENTELEMETRY_COLLECTOR_ENDPOINT=${OPENDUT_OPENTELEMETRY_CARL_COLLECTOR_ENDPOINT}
       # OIDC
       - OPENDUT_CARL_NETWORK_OIDC_ENABLED=true
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ID=opendut-carl-client
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_SECRET
-      - OPENDUT_CARL_NETWORK_OIDC_LEA_ISSUER_URL=https://auth.opendut.local/realms/opendut/
-      - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_URL=https://auth.opendut.local/realms/opendut/
-      - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_REMOTE_URL=https://auth.opendut.local/realms/opendut/
-      - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_ADMIN_URL=https://auth.opendut.local/admin/realms/opendut/
+      - OPENDUT_CARL_NETWORK_OIDC_LEA_ISSUER_URL=https://${OPENDUT_DOMAIN_AUTH}/realms/opendut/
+      - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_URL=https://${OPENDUT_DOMAIN_AUTH}/realms/opendut/
+      - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_REMOTE_URL=https://${OPENDUT_DOMAIN_AUTH}/realms/opendut/
+      - OPENDUT_CARL_NETWORK_OIDC_CLIENT_ISSUER_ADMIN_URL=https://${OPENDUT_DOMAIN_AUTH}/admin/realms/opendut/
       - OPENDUT_CARL_NETWORK_OIDC_CLIENT_SCOPES=
       # Persistence
       - OPENDUT_CARL_PERSISTENCE_ENABLED=true
       - OPENDUT_CARL_PERSISTENCE_DATABASE_FILE=/var/lib/opendut/carl/data/opendut.db
-
-      - KEYCLOAK_URL=https://auth.opendut.local/
-      - NETBIRD_MANAGEMENT_URL=https://netbird-api.opendut.local
+      - KEYCLOAK_URL=https://${OPENDUT_DOMAIN_AUTH}/
+      - NETBIRD_MANAGEMENT_URL=https://${OPENDUT_DOMAIN_NETBIRD_API}
       - NETBIRD_PASSWORD
+      
     # https://docs.docker.com/reference/dockerfile/#healthcheck
     healthcheck:
       <<: *common-healthcheck-params
-      test: [ "CMD-SHELL", "curl --fail --silent --resolve carl.opendut.local:443:127.0.0.1 --output /dev/null --noproxy '*' --insecure https://carl.opendut.local || exit 1" ]
+      # --resolve expects HOST:PORT:ADDRESS (without scheme). Using localhost here for internal loopback.
+      # If you want to test the external domain with cert passthrough, replace localhost with ${OPENDUT_DOMAIN_CARL} and keep --insecure if cert mismatch.
+      test: [ "CMD-SHELL", "curl --fail --silent --resolve localhost:443:127.0.0.1 --output /dev/null --noproxy '*' --insecure https://localhost || exit 1" ]
     labels:
       - traefik.enable=true
-      - traefik.tcp.routers.carl.rule=HostSNI(`carl.opendut.local`)
+      - traefik.tcp.routers.carl.rule=HostSNI(`${OPENDUT_DOMAIN_CARL}`)
       - traefik.tcp.routers.carl.tls.passthrough=true
       - traefik.tcp.services.carl.loadbalancer.server.port=443
     networks:
-      opendut_local:
-        aliases:
-          - carl.opendut.local
+      - opendut_local
 
   cleo:
     container_name: opendut-cleo
@@ -416,16 +448,16 @@ services:
         condition: service_completed_successfully
     environment:
       # CLEO
-      - OPENDUT_CLEO_NETWORK_CARL_HOST=carl.opendut.local
+      - OPENDUT_CLEO_NETWORK_CARL_HOST=${OPENDUT_DOMAIN_CARL}
       - OPENDUT_CLEO_NETWORK_CARL_PORT=443
-      - OPENDUT_CLEO_NETWORK_TLS_DOMAIN_NAME_OVERRIDE=carl.opendut.local  # default developer certificate is only valid for localhost
+      - OPENDUT_CLEO_NETWORK_TLS_DOMAIN_NAME_OVERRIDE=${OPENDUT_DOMAIN_CARL}  # default developer certificate is only valid for localhost
       - OPENDUT_CLEO_NETWORK_OIDC_ENABLED=true
       - OPENDUT_CLEO_NETWORK_OIDC_CLIENT_ID=opendut-cleo-client
       - OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SECRET
-      - OPENDUT_CLEO_NETWORK_OIDC_CLIENT_ISSUER_URL=https://auth.opendut.local/realms/opendut/
+      - OPENDUT_CLEO_NETWORK_OIDC_CLIENT_ISSUER_URL=https://${OPENDUT_DOMAIN_AUTH}/realms/opendut/
       - OPENDUT_CLEO_NETWORK_OIDC_CLIENT_SCOPES=
-      - OPENDUT_CLEO_NETWORK_TLS_CA=/provision/pki/opendut-ca.pem
-      - SSL_CERT_FILE=/provision/pki/opendut-ca.pem
+      - OPENDUT_CLEO_NETWORK_TLS_CA=${OPENDUT_CERT_CA_PATH}
+      - SSL_CERT_FILE=${OPENDUT_CERT_CA_PATH}
     volumes:
       - provision-secrets-data:/provision:ro
     networks:
@@ -450,16 +482,14 @@ services:
       replicas: ${OPENDUT_INSECURE_WEBDAV_ENABLED:-0}
     labels:
       - traefik.enable=true
-      - traefik.http.routers.nginx-webdav.rule=Host(`nginx-webdav.opendut.local`)
+      - traefik.http.routers.nginx-webdav.rule=Host(`${OPENDUT_DOMAIN_NGINX_WEBDAV}`)
       - traefik.http.routers.nginx-webdav.tls=true
       - traefik.http.services.nginx-webdav.loadbalancer.server.port=80
       - logging=alloy
       - logging_job=nginx-webdav
 
     networks:
-      opendut_local:
-        aliases:
-          - nginx-webdav.opendut.local
+      - opendut_local
 
 
   prometheus:
@@ -535,11 +565,11 @@ services:
       context: ../../..
       dockerfile: ./.ci/deploy/localenv/data/telemetry/Dockerfile_otel-collector
       args:
-        OTEL_COLLECTOR_VERSION: 0.97.0
+        OTEL_COLLECTOR_VERSION: 0.139.0
     restart: unless-stopped
     # Note: otel-collector is always enabled (no replicas config)
     environment:
-      - "SSL_CERT_FILE=/provision/pki/opendut-ca.pem"
+      - "SSL_CERT_FILE=${OPENDUT_CERT_CA_PATH}"
     command: [ "--config=/etc/collector-gateway.yaml" ]
     user: "0"  # root required to access docker socket
     depends_on:
@@ -554,13 +584,13 @@ services:
     labels:
       - traefik.enable=true
       # OpenTelemetry GRPC endpoint
-      - traefik.http.routers.otel-collector-grpc.rule=Host(`opentelemetry.opendut.local`)
+      - traefik.http.routers.otel-collector-grpc.rule=Host(`${OPENDUT_DOMAIN_OPENTELEMETRY}`)
       - traefik.http.routers.otel-collector-grpc.tls=true
       - traefik.http.routers.otel-collector-grpc.service=otel-collector-grpc
       - traefik.http.services.otel-collector-grpc.loadbalancer.server.port=4317
       - traefik.http.services.otel-collector-grpc.loadbalancer.server.scheme=h2c
       # Health check endpoint
-      - traefik.http.routers.otel-collector-health.rule=Host(`opentelemetry.opendut.local`) && PathPrefix(`/health`)
+      - traefik.http.routers.otel-collector-health.rule=Host(`${OPENDUT_DOMAIN_OPENTELEMETRY}`) && PathPrefix(`/health`)
       - traefik.http.routers.otel-collector-health.tls=true
       - traefik.http.routers.otel-collector-health.service=otel-collector-health
       - traefik.http.services.otel-collector-health.loadbalancer.server.port=13133
@@ -584,7 +614,7 @@ services:
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
       - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
       # https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#override-configuration-with-environment-variables
-      - GF_USERS_HOME_PAGE=https://monitoring.opendut.local/dashboards
+      - GF_USERS_HOME_PAGE=https://${OPENDUT_DOMAIN_MONITORING}/dashboards
       - GF_USERS_VIEWERS_CAN_EDIT=true
       - GF_SECURITY_ADMIN_PASSWORD
       - GF_SECURITY_SECRET_KEY
@@ -599,7 +629,7 @@ services:
       - grafana-storage:/var/lib/grafana
     labels:
       - traefik.enable=true
-      - traefik.http.routers.grafana.rule=Host(`monitoring.opendut.local`)
+      - traefik.http.routers.grafana.rule=Host(`${OPENDUT_DOMAIN_MONITORING}`)
       - traefik.http.routers.grafana.tls=true
       - traefik.http.services.grafana.loadbalancer.server.port=80
     networks:
@@ -638,6 +668,12 @@ volumes:
   provision-secrets-data:
   backup:
   carl_data:
+  shared-pki:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${SHARED_HOST_DIR}
 
 networks:
   opendut_local:

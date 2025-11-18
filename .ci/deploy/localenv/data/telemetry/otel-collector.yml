@@ -37,15 +37,10 @@ exporters:
     endpoint: tempo:4317
     tls:
       insecure: true
-  loki:
-    endpoint: "http://loki:3100/loki/api/v1/push"
+  otlphttp/logs:
+    endpoint: "http://loki:3100/otlp"
     tls:
       insecure: true
-    headers:
-      "X-Scope-OrgID": "tenant1"
-    default_labels_enabled:
-      exporter: true
-      job: true
 
 extensions:
   # healthcheck endpoint: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/extension/healthcheckextension/README.md
@@ -76,4 +71,4 @@ service:
     logs:
       receivers: [ otlp ]
       processors: [ batch, resource, attributes ]
-      exporters: [ debug, loki ]
+      exporters: [ debug, otlphttp/logs ]

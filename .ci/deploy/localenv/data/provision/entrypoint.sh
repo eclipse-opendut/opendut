@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 create_password() {
   length="${1:-32}"

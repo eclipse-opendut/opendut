@@ -6,6 +6,8 @@
 /edgar.toml
 .env*
 .ci/deploy/localenv/data/secrets/
+## keep the local development environment file
+!.ci/deploy/localenv/.env.development
 
 #####################################################
 #             Build, Binaries and Libs              #
@@ -52,3 +54,4 @@ ehthumbs.db
 Thumbs.db
 .directory
 .direnv
+

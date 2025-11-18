@@ -6,7 +6,8 @@
 # ignore all files in target directories
 /target/*
 # except for ci distribution artifacts, see https://docs.docker.com/build/concepts/context/#negating-matches
-!/target/ci/distribution/
+# used by CI to build distribution images (.ci/docker/carl/Dockerfile) and testenv EDGAR cluster (.ci/deploy/testenv/edgar/docker-compose.yml)
+!target/ci/distribution/x86_64-unknown-linux-gnu/
 
 # logs
 /docker-logs*

@@ -2,24 +2,22 @@ tls:
   stores:
     default:
       defaultCertificate:
-        certFile: /provision/pki/deploy/opendut.local.pem
-        keyFile: /provision/pki/deploy/opendut.local.key
+        certFile: '{{ env "OPENDUT_CARL_NETWORK_TLS_CERTIFICATE" }}'
+        keyFile: '{{ env "OPENDUT_CARL_NETWORK_TLS_KEY" }}'
   certificates:
-    - certFile: /provision/pki/deploy/auth.opendut.local.pem
-      keyFile: /provision/pki/deploy/auth.opendut.local.key
-    - certFile: /provision/pki/deploy/opendut.local.pem
-      keyFile: /provision/pki/deploy/opendut.local.key
-    - certFile: /provision/pki/deploy/netbird.opendut.local.pem
-      keyFile: /provision/pki/deploy/netbird.opendut.local.key
-    - certFile: /provision/pki/deploy/netbird-api.opendut.local.pem
-      keyFile: /provision/pki/deploy/netbird-api.opendut.local.key
-    - certFile: /provision/pki/deploy/signal.opendut.local.pem
-      keyFile: /provision/pki/deploy/signal.opendut.local.key
-    - certFile: /provision/pki/deploy/carl.opendut.local.pem
-      keyFile: /provision/pki/deploy/carl.opendut.local.key
-    - certFile: /provision/pki/deploy/nginx-webdav.opendut.local.pem
-      keyFile: /provision/pki/deploy/nginx-webdav.opendut.local.key
-    - certFile: /provision/pki/deploy/opentelemetry.opendut.local.pem
-      keyFile: /provision/pki/deploy/opentelemetry.opendut.local.key
-    - certFile: /provision/pki/deploy/monitoring.opendut.local.pem
-      keyFile: /provision/pki/deploy/monitoring.opendut.local.key
+    - certFile: '{{ env "OPENDUT_AUTH_NETWORK_TLS_CERTIFICATE" }}'
+      keyFile: '{{ env "OPENDUT_AUTH_NETWORK_TLS_KEY" }}'
+    - certFile: '{{ env "OPENDUT_SIGNAL_NETWORK_TLS_CERTIFICATE" }}'
+      keyFile: '{{ env "OPENDUT_SIGNAL_NETWORK_TLS_KEY" }}'
+    - certFile: '{{ env "OPENDUT_NETBIRD_API_NETWORK_TLS_CERTIFICATE" }}'
+      keyFile: '{{ env "OPENDUT_NETBIRD_API_NETWORK_TLS_KEY" }}'
+    - certFile: '{{ env "OPENDUT_NETBIRD_NETWORK_TLS_CERTIFICATE" }}'
+      keyFile: '{{ env "OPENDUT_NETBIRD_NETWORK_TLS_KEY" }}'
+    - certFile: '{{ env "OPENDUT_NGINX_WEBDAV_NETWORK_TLS_CERTIFICATE" }}'
+      keyFile: '{{ env "OPENDUT_NGINX_WEBDAV_NETWORK_TLS_KEY" }}'
+    - certFile: '{{ env "OPENDUT_MONITORING_NETWORK_TLS_CERTIFICATE" }}'
+      keyFile: '{{ env "OPENDUT_MONITORING_NETWORK_TLS_KEY" }}'
+    - certFile: '{{ env "OPENDUT_OPENTELEMETRY_NETWORK_TLS_CERTIFICATE" }}'
+      keyFile: '{{ env "OPENDUT_OPENTELEMETRY_NETWORK_TLS_KEY" }}'
+    - certFile: '{{ env "OPENDUT_CARL_NETWORK_TLS_CERTIFICATE" }}'
+      keyFile: '{{ env "OPENDUT_CARL_NETWORK_TLS_KEY" }}'

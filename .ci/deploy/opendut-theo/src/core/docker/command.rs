@@ -85,6 +85,8 @@ impl DockerCommand {
         self.arg("compose")
             .arg("--file")
             .arg("./.ci/deploy/localenv/docker-compose.yml")
+            .arg("--env-file")
+            .arg("./.ci/deploy/localenv/.env.development")
     }
 
     pub(crate) fn add_localenv_secrets_args(&mut self) -> &mut Self {

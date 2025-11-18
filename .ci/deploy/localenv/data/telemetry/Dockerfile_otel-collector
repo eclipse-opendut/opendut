@@ -1,10 +1,10 @@
-ARG OTEL_COLLECTOR_VERSION=0.97.0
+ARG OTEL_COLLECTOR_VERSION=0.139.0
 
 FROM otel/opentelemetry-collector-contrib:$OTEL_COLLECTOR_VERSION
 
 # https://github.com/tarampampam/curl-docker
 #  curl static binary file in a scratch docker image
-COPY --from=ghcr.io/tarampampam/curl:8.6.0 /bin/curl /bin/curl
+COPY --from=ghcr.io/tarampampam/curl:8.16.0 /bin/curl /bin/curl
 
 # Docs: <https://docs.docker.com/engine/reference/builder/#healthcheck>
 HEALTHCHECK --interval=5s --timeout=2s --retries=2 --start-period=2s CMD [ \
