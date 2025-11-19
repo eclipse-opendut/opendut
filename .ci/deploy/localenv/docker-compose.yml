@@ -112,7 +112,7 @@ services:
       - ./data/keycloak/keycloak_functions.sh:/keycloak_functions.sh
       - ./data/keycloak/provision.sh:/provision.sh
       - provision-secrets-data:/provision:ro
-      - ${SHARED_CERTS_HOST_DIR}:${SHARED_CERTS}:ro
+      - ${SHARED_CERTS_HOST_DIR}:${SHARED_CERTS_MOUNT_DIR}:ro
     environment:
       - SSL_CERT_FILE=${OPENDUT_CERT_CA_PATH}  # used by curl
       - KCADM_PATH=/opt/keycloak/bin/kcadm.sh
@@ -189,7 +189,7 @@ services:
       - ./data/traefik/config:/etc/traefik/dynamic
       - provision-secrets-data:/provision:ro
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${SHARED_CERTS_HOST_DIR}:${SHARED_CERTS}:ro
+      - ${SHARED_CERTS_HOST_DIR}:${SHARED_CERTS_MOUNT_DIR}:ro
     labels:
       - logging=alloy
       - logging_job=traefik
@@ -283,7 +283,7 @@ services:
       - backup:/var/lib/backup/
       - netbird-mgmt-data:/var/lib/netbird
       - netbird-mgmt-config:/etc/netbird/
-      - ${SHARED_CERTS_HOST_DIR}:${SHARED_CERTS}:ro
+      - ${SHARED_CERTS_HOST_DIR}:${SHARED_CERTS_MOUNT_DIR}:ro
     environment:
       # Keycloak user
       - KEYCLOAK_ADMIN=admin
@@ -383,7 +383,7 @@ services:
       - carl-config:/opt/opendut-carl/config/
       - carl_data:/var/lib/opendut/carl/
       - backup:/var/lib/backup/
-      - ${SHARED_CERTS_HOST_DIR}:${SHARED_CERTS}:ro
+      - ${SHARED_CERTS_HOST_DIR}:${SHARED_CERTS_MOUNT_DIR}:ro
     environment:
       # Network
       - OPENDUT_CARL_NETWORK_REMOTE_HOST=${OPENDUT_DOMAIN_CARL}
@@ -464,7 +464,7 @@ services:
       - SSL_CERT_FILE=${OPENDUT_CERT_CA_PATH}
     volumes:
       - provision-secrets-data:/provision:ro
-      - ${SHARED_CERTS_HOST_DIR}:${SHARED_CERTS}:ro
+      - ${SHARED_CERTS_HOST_DIR}:${SHARED_CERTS_MOUNT_DIR}:ro
     networks:
       - opendut_local
 
@@ -566,7 +566,7 @@ services:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - provision-secrets-data:/provision:ro
-      - ${SHARED_CERTS_HOST_DIR}:${SHARED_CERTS}:ro
+      - ${SHARED_CERTS_HOST_DIR}:${SHARED_CERTS_MOUNT_DIR}:ro
     build:
       context: ../../..
       dockerfile: ./.ci/deploy/localenv/data/telemetry/Dockerfile_otel-collector

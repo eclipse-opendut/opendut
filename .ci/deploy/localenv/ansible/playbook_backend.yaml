@@ -6,10 +6,20 @@
   tasks:
     - name: Checkout openDuT repo
       git:
-        repo: "https://github.com/eclipse-opendut/opendut/"
+        repo: "{{ opendut_repo_url | default('https://github.com/eclipse-opendut/opendut/') }}"
         dest: "{{ repo_dir }}"
         version: "{{ opendut_version_ref }}"
         force: true  # Avoid "would clobber existing tag" error for canary-tag
+
+    - name: Define compose environment path
+      set_fact:
+        opendut_compose_environment_path: "{{ repo_dir }}/.ci/deploy/localenv/.env.deployment"
+
+    - name: Store host specific compose environment file
+      copy:
+        dest: "{{ opendut_compose_environment_path }}"
+        mode: 0644
+        content: "{{ opendut_compose_environment_config }}"
 
     - name: Provision secrets and initially create volumes
       include_tasks: tasks/provision_secrets.yaml
@@ -22,10 +32,10 @@
     - name: Force update CARL image  # With canary releases, we may re-use the same tag, which normally results in the new image not being pulled.
       # environment file might contain custom image version for CARL
       command:
-        cmd: "docker compose --file .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/data/secrets/.env --env-file .ci/deploy/localenv/.env.development pull --policy=always carl"
+        cmd: "docker compose --file .ci/deploy/localenv/docker-compose.yml --env-file {{ opendut_compose_environment_path }} --env-file .ci/deploy/localenv/data/secrets/.env pull --policy=always carl"
         chdir: "{{ repo_dir }}"
 
     - name: Start containers
       command:
-        cmd: "docker compose --file .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/data/secrets/.env --env-file .ci/deploy/localenv/.env.development up --detach --build"
+        cmd: "docker compose --file .ci/deploy/localenv/docker-compose.yml --env-file {{ opendut_compose_environment_path }} --env-file .ci/deploy/localenv/data/secrets/.env up --detach --build"
         chdir: "{{ repo_dir }}"
