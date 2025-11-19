@@ -40,38 +40,34 @@ target/x86_64-pc-windows-gnu/release/opendut-theo.exe
 ```
 
 ## Proxy configuration
-In case you are working behind a http proxy, you need additional steps to get the test environment up and running.
+In case you are working behind an http proxy, you need additional steps to get the test environment up and running.
 The following steps pick up just _before_ you start up the virtual machine with `vagrant up`.
-A list of all domains used by the test environment is reflected in the proxy shell script:
-`.ci/deploy/opendut-vm/vagrant/proxy.sh`.
-It is important to note that the proxy address used shall be accessible from the host while provisioning and within
-the virtual machine.
+A list of all domains used by the test environment is reflected in the `Vagrantfile`, see field `vm_default_no_proxy` in `.ci/deploy/opendut-vm/Vagrantfile`.
+It is important to note that the proxy address has to be accessible from the host while provisioning the virtual machine and within the virtual machine.
 
 If you have a proxy server on your localhost you need to make this in two steps:
 * Use proxy on your localhost
-  * Configure vagrant to use the proxy localhost.
-    ```shell
-    # proxy configuration script, adjust to your needs
-    source .ci/deploy/opendut-vm/vagrant/proxy.sh http://localhost:3128
+  * Start the VM without provisioning it. 
+    This should create the vagrant network interface with network range 192.168.56.0/24.
     ```
+    export HTTP_PROXY=http://localhost:3128
+    export HTTPS_PROXY=http://localhost:3128
+    vagrant up --no-provision
+    ```
+* Use proxy on private network address 192.168.56.1
   * Install proxy plugin for vagrant
     ```shell
     vagrant plugin install vagrant-proxyconf
     ```
-  * Then starting the VM without provisioning it. 
-    This should create the vagrant network interface with network range 192.168.56.0/24.
+  * Configure vagrant to use the proxy localhost by creating a `.env` file in the root of the repository with the following content:
+    ```shell
+    OPENDUT_VM_HTTP_PROXY=http://192.168.56.1:3128
+    OPENDUT_VM_HTTPS_PROXY=http://192.168.56.1:3128
+    #OPENDUT_VM_NO_PROXY=my-corporate-opendut-test-domain.local <-- optional, if you want to test other domains
     ```
-    vagrant up --no-provision
-    ```
-* Use proxy on private network address 192.168.56.1
   * Make sure this address is allowing access to the internet:
     ```
     curl --max-time 2 --connect-timeout 1 --proxy http://192.168.56.1:3128 google.de
-    ```
-  * Redo the proxy configuration using the address of the host within the virtual machine's private network:
-    ```shell
-    # proxy configuration script, adjust to your needs
-    source .ci/deploy/opendut-vm/vagrant/proxy.sh http://192.168.56.1:3128
     ```
   * Reapply the configuration to the VM
     ```shell
@@ -81,37 +77,8 @@ If you have a proxy server on your localhost you need to make this in two steps:
     ==> opendut-vm: Configuring proxy for Docker...
     ==> opendut-vm: Configuring proxy environment variables...
     ==> opendut-vm: Configuring proxy for Git...
-    ==> opendut-vm: Machine not provisioned because `--no-provision` is specified.
     ```
 
-* Unset all proxy configuration for testing purposes (non-permanent setting in the shell)
-    ```shell
-    unset http_proxy https_proxy no_proxy HTTP_PROXY HTTPS_PROXY NO_PROXY
-    ```
-
-* You may also set the docker proxy configuration in your environment manually:
-  * `~/.docker/config.json`
-    ```json
-    {
-      "proxies": {
-        "default": {
-          "httpProxy": "http://x.x.x.x:3128",
-          "httpsProxy": "http://x.x.x.x:3128",
-          "noProxy": "localhost,127.0.0.1,netbird-management,netbird-dashboard,netbird-signal,netbird-coturn,keycloak,edgar-leader,edgar-*,carl,192.168.0.0/16"
-        }
-      }
-    }
-    ```
-  * `/etc/docker/daemon.json`
-    ```json
-    {
-      "proxies": {
-        "http-proxy": "http://x.x.x.x:3128",
-        "https-proxy": "http://x.x.x.x:3128",
-        "no-proxy": "localhost,127.0.0.1,netbird-management,netbird-dashboard,netbird-signal,netbird-coturn,keycloak,edgar-leader,edgar-*,carl,192.168.0.0/16"
-      }
-    }
-    ```
 
 ## Custom root certificate authority
 This section shall provide information on how to

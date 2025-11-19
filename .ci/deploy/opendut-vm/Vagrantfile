@@ -8,10 +8,14 @@ vm_disk_size = (ENV["OPENDUT_VM_DISK_SIZE"] ||= "50").to_i
 vm_ntp_server = (ENV["OPENDUT_VM_NTP_SERVER"] ||= "").to_s
 vm_graphics_controller = (ENV["OPENDUT_VM_GRAPHICS_CONTROLLER"] ||= "VMSVGA").to_s
 vm_nested_hw_virtualization = (ENV["OPENDUT_VM_NESTED_HW_VIRTUALIZATION"] ||= "on").to_s
+vm_ip = (ENV["OPENDUT_VM_IP"] ||= "192.168.56.10").to_s
+vm_box_name = (ENV["OPENDUT_VM_IP"] ||= "ubuntu/jammy64").to_s
 
+# proxy settings
+vm_default_no_proxy = "localhost,127.0.0.1,opendut.local,netbird-management,netbird-dashboard,netbird-signal,netbird-coturn,keycloak,edgar-leader,edgar-*,carl,loki,tempo,prometheus,alloy,otel-collector,grafana,nginx-webdav,192.168.56.10,192.168.0.0/16"
 vm_http_proxy = ENV["OPENDUT_VM_HTTP_PROXY"]
 vm_https_proxy = (ENV["OPENDUT_VM_HTTPS_PROXY"] ||= ENV["OPENDUT_VM_HTTP_PROXY"])
-vm_no_proxy = (ENV["OPENDUT_VM_NO_PROXY"] ||= "localhost,127.0.0.1,opendut.local,netbird-management,netbird-dashboard,netbird-signal,netbird-coturn,keycloak,edgar-leader,edgar-*,carl,loki,tempo,prometheus,alloy,otel-collector,grafana,nginx-webdav,192.168.56.10,192.168.0.0/16")
+vm_no_proxy = (ENV["OPENDUT_VM_NO_PROXY"] ||= "opendut.local") + "," + vm_default_no_proxy
 custom_root_ca = ENV["CUSTOM_ROOT_CA"]
 disable_private_network = (ENV["OPENDUT_DISABLE_PRIVATE_NETWORK"] ||= "false").to_s == "true"
 
@@ -19,8 +23,8 @@ machine = {
     :hostname => vm_name,
     :memory => vm_memory,
     :cpu => vm_cpus,
-    :ip => "192.168.56.10",
-    :box_name => "ubuntu/jammy64",
+    :ip => vm_ip,
+    :box_name => vm_box_name,
 }
 
 Vagrant.configure("2") do |config|

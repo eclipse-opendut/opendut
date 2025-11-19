@@ -61,4 +61,4 @@ vagrant ssh
 
 ## Additional notes
 You may want to configure an http proxy or a custom certificate authority. 
-Details are in the **Advance usage** section.
+Details are in the **Advanced usage** section.

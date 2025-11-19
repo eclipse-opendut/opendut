@@ -14,6 +14,7 @@ There are some important adaptions made to the virtual machine that you should b
 
 This is done to avoid issues with hardlinks when cargo is run on a filesystem that does not support them (like vboxsf, the VirtualBox shared folder filesystem).
 There is one exception to this. The distribution build with `cargo-ci` is placed in a subdirectory of the project, namely `target/ci/distribution`.
+The temporary files of cargo-cross are still placed in `/home/vagrant/rust-target`, but the final build artifacts are copied to `target/ci/distribution` within the project directory.
 This should be fine since cargo-cross is building everything in docker anyway.
 
 Furthermore, we use cicero for installing project dependencies like trunk and cargo-cross.
