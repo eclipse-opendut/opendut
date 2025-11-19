@@ -136,7 +136,7 @@ services:
   # Public web entrypoint exposed to end users
   traefik:
     container_name: opendut-traefik
-    image: docker.io/traefik:v3.6.1
+    image: docker.io/traefik:v3.6.2
     restart: unless-stopped
     #entrypoint: ["/etc/traefik/dynamic/traefik-entrypoint-wrapper.sh"]
     command:

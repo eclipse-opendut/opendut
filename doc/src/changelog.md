@@ -31,6 +31,7 @@ Always create a database backup before upgrading CARL.
   * Destroying the testenv will reset the passwords.
   * Containers belonging to the localenv are started at boot due to docker restart policy.
   * Migration: Destroy old opendut-vm: `cargo theo vagrant destroy` and re-create with `cargo theo vagrant up`.
+  * Allow to overwrite domains (`.opendut.local`) in localenv by setting inventory variable `opendut_compose_environment_config`.
 
 ### Breaking changes
 
