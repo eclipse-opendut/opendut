@@ -156,11 +156,7 @@ If so, follow these steps:
 ## Troubleshooting
 * In case of issues during the setup, see:
   ```shell
-  #Available with openDuT v0.8 or later
   opendut-edgar setup logs | less
-  
-  #On older versions, you can look at the logs by running this in the unpacked opendut-edgar directory:
-  less setup.log
   ```
 
 * It might happen that the NetBird Client started by EDGAR is not able to connect, in that case re-run the EDGAR setup.

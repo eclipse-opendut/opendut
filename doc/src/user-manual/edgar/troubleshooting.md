@@ -66,10 +66,14 @@ Run `ip link` and check that all of these interfaces exist:
 ## Troubleshooting
 
 ### Troubleshooting EDGAR
-* If the setup completed, but EDGAR does not show up as Healthy in LEA/CLEO, see:
+* If the setup completed, but EDGAR does not show up as Healthy in LEA/CLEO, see the service logs:
   ```shell
   journalctl -u opendut-edgar
   ```
+
+  You can configure the log level of EDGAR via the environment variable `OPENDUT_LOG`, by setting it in the SystemD file.  
+  For example, to only show INFO logging and above, set it as `OPENDUT_LOG=info`.  
+  For more fine-grained control, see the documentation here: <https://docs.rs/tracing-subscriber/latest/tracing_subscriber/filter/struct.EnvFilter.html#directives>
 
 * Sometimes it helps to restart the EDGAR service:
   ```shell

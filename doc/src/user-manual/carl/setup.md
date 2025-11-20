@@ -68,9 +68,13 @@ docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/docker-compose
 ```
 
 ## Configuration
-- If you followed the setup guide for CARL, there is no need to manually create this `carl.toml` file.
-- To configure CARL, you can create a configuration file under `/etc/opendut/carl.toml`.  
-The possible configuration values and their defaults can be seen here:  
+- You can configure the log level of CARL via the environment variable `OPENDUT_LOG`.  
+  For example, to only show INFO logging and above, set it as `OPENDUT_LOG=info`.  
+  For more fine-grained control, see the documentation here: <https://docs.rs/tracing-subscriber/latest/tracing_subscriber/filter/struct.EnvFilter.html#directives>
+- The general configuration of CARL can be set via environment variables or by manually creating a configuration file under `/etc/opendut/carl.toml`.  
+  The environment variables use the TOML keys in the configuration file, joined by underscores and in capital letters.
+  For example, to configure the `network.bind.host` use the environment variable `NETWORK_BIND_HOST`.  
+  The possible configuration values and their defaults can be seen here:  
 ```toml
 {{#include ../../../../opendut-carl/carl.toml}}
 ```

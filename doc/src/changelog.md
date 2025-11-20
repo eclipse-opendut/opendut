@@ -12,19 +12,44 @@ Always create a database backup before upgrading CARL.
 ## Unreleased
 
 ### Added
+* VIPER: Initial code for a test execution engine has been included.  
+  It evaluates Python syntax and runs in a sandboxed environment.
+  An initial CLI and basic testing capabilities have been included, which allow for running scripts locally.
+  The next steps are to integrate it into openDuT itself, to allow sourcing test code, parametrizing it in LEA & CLEO and finally execute test runs in EDGAR.  
+  See [issue #357](https://github.com/eclipse-opendut/opendut/issues/357) for more information. 
+* Localenv: Allow to overwrite domain names (`.opendut.local`) by setting the Ansible inventory variable `opendut_compose_environment_config`.
+* Network interfaces can now be configured explicitly as VCAN.  
+  VCAN interfaces will be auto-created, if they are missing on the target device.
 * EDGAR: Introduced `opendut-edgar setup logs` command for printing the setup logs.
 * EDGAR: `opendut-edgar setup managed` can now read the Setup-String from stdin and does so when nothing is specified as argument,
   as well as with the environment variable `OPENDUT_EDGAR_SETUP_STRING`.
 * EDGAR: There is a new expert flag `--skip-can-setup` for the EDGAR Setup for hardware where installing CAN support is not possible.
+* EDGAR: A troubleshooting guide was added into the documentation: https://opendut.eclipse.dev/book/user-manual/edgar/troubleshooting.html
+* EDGAR: Enable Setup plugin support on ARM32.
+* LEA: Show name of Peer or Cluster in the title of the respective configuration views.
+* LEA: Rework top bar to include openDuT logo, navigation buttons and a display for the logged-in user.
+* LEA: The hamburger menu now highlights the selected page.
+* LEA: Browser tabs now show a favicon and more useful titles, allowing the tabs to be distinguished.
+* LEA: Clusters are now deployed by flipping a toggle switch, which also shows the currently requested state.
+  This frees up the traffic light from showing the actual cluster health, once we implement that.
+* LEA: There is now a delete-button in the overviews for Peers and Clusters.
+* CLEO: It is now possible to control the log level by passing multiple `--verbose` flags.
+
 
 ### Fixed
 * Increased the default MTU to 1542 Bytes to allow a VLAN tag by default.
-* LEA: Fix configuration being reset when switching between UI tabs, while editing an already-saved cluster.
+* LEA: Fix cluster configuration being reset when switching between UI tabs, while editing an already-saved cluster.
+* EDGAR: Setup now works when started from the already-installed EDGAR binary. This allows easily connecting the EDGAR to a different CARL.+
+* It is now possible to control the log level of openDuT code via the environment variable `OPENDUT_LOG`, as intended.
+* CLEO: When specifying a peer via `opendut-cleo apply`, the `tags` heading is now optional when the device has no tags.
 
 ### Changed
 * We use a newer database format.
   When running the new version of CARL for the first time, it will upgrade the database format.
   Be sure to create a database backup before upgrading, as you should anyways.
+* EDGAR: When a peer joins or leaves the cluster, the connections between the other peers are not anymore recreated,
+  which avoids potentially problematic network interrupts.
+* EDGAR: Rename service user from `opendut` to `opendut_service`.
 * Localenv: Set retention of logs/metrics/traces to 7 days.
 * Testenv: Utilizes the containers of the localenv deployment now.
   * All names in testenv were changed to end with `.opendut.local`.
@@ -32,7 +57,6 @@ Always create a database backup before upgrading CARL.
   * Destroying the testenv will reset the passwords.
   * Containers belonging to the localenv are started at boot due to docker restart policy.
   * Migration: Destroy old opendut-vm: `cargo theo vagrant destroy` and re-create with `cargo theo vagrant up`.
-  * Allow to overwrite domains (`.opendut.local`) in localenv by setting inventory variable `opendut_compose_environment_config`.
 
 ### Breaking changes
 
@@ -49,24 +73,24 @@ OPENDUT_CARL_IMAGE_VERSION=0.8.0
 ```
 
 #### Localenv deployment changes
-There are breaking changes in the localenv deployment. Please read the instructions below to update your localenv deployment.
-* Stop the localenv deployment.
+There are breaking changes in the Localenv deployment. Please read the instructions below to update your Localenv deployment.
+* Stop the Localenv deployment:
 ```shell
 cd /data/opendut
 docker compose -f .ci/deploy/localenv/docker-compose.yml down
 ```
-* Update git repository
+* Update Git repository:
 ```shell
 git checkout development
 git pull
 ```
-* Rename environment variable `OPENDUT_USER_OPENDUT` to `OPENDUT_USER_OPENDUT_PASSWORD` in the docker volume. 
-Update the `.env` file in the docker volume `opendut_provision-secrets-data`:
+* Rename environment variable `OPENDUT_USER_OPENDUT` to `OPENDUT_USER_OPENDUT_PASSWORD` in the Docker volume. 
+Update the `.env` file in the Docker volume `opendut_provision-secrets-data`:
 ```shell
-docker volume inspect opendut_provision-secrets-data | jq -r .[0].Mountpoint
-vim /var/lib/docker/volumes/opendut_provision-secrets-data/_data/.env
+docker volume inspect opendut_provision-secrets-data | jq -r .[0].Mountpoint  #shows directory with .env file
+vim /var/lib/docker/volumes/opendut_provision-secrets-data/_data/.env         #edit this .env file
 ```
-* Update secrets on host
+* Update secrets on host:
 ```shell
 rm -rf .ci/deploy/localenv/data/secrets/  # remove old secrets
 docker compose --file .ci/deploy/localenv/docker-compose.yml up --build provision-secrets
@@ -75,7 +99,7 @@ docker cp opendut-provision-secrets:/provision/ .ci/deploy/localenv/data/secrets
 cat .ci/deploy/localenv/data/secrets/.env
 ```
 
-* The docker network was renamed from `local` to `opendut_local`. This requires deleting the old network.
+* The Docker network was renamed from `local` to `opendut_local`. This requires deleting the old network.
 ```shell
 docker network ls
 docker network rm local
