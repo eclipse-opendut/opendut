@@ -39,7 +39,9 @@ Always create a database backup before upgrading CARL.
 ### Fixed
 * Increased the default MTU to 1542 Bytes to allow a VLAN tag by default.
 * LEA: Fix cluster configuration being reset when switching between UI tabs, while editing an already-saved cluster.
-* EDGAR: Setup now works when started from the already-installed EDGAR binary. This allows easily connecting the EDGAR to a different CARL.+
+* EDGAR: Setup now works when started from the already-installed EDGAR binary. 
+  This allows easily connecting the EDGAR to a different CARL. 
+  See [issue #373](https://github.com/eclipse-opendut/opendut/issues/373).
 * It is now possible to control the log level of openDuT code via the environment variable `OPENDUT_LOG`, as intended.
 * CLEO: When specifying a peer via `opendut-cleo apply`, the `tags` heading is now optional when the device has no tags.
 
@@ -50,7 +52,8 @@ Always create a database backup before upgrading CARL.
 * EDGAR: When a peer joins or leaves the cluster, the connections between the other peers are not anymore recreated,
   which avoids potentially problematic network interrupts.
 * EDGAR: Rename service user from `opendut` to `opendut_service`.
-* Localenv: Set retention of logs/metrics/traces to 7 days.
+* Localenv: Set retention of logs/metrics/traces to 7 days by default (168h). Definition of retention in days is not yet possible due to Grafana Tempo.
+  This can be increased by setting Ansible inventory variable `OPENDUT_TELEMETRY_RETENTION_TIME=336h`.
 * Testenv: Utilizes the containers of the localenv deployment now.
   * All names in testenv were changed to end with `.opendut.local`.
   * Old testenv passwords are no longer valid. New passwords are now generated and loaded from `./.ci/deploy/localenv/data/secrets/.env`.

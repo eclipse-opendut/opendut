@@ -1,5 +1,5 @@
 # Validate config with:
-# loki -config.file=/etc/loki/loki.yml -print-config-stderr
+# loki -config.file=/etc/loki/loki.yml -print-config-stderr -config.expand-env=true
 auth_enabled: false
 
 server:
@@ -17,10 +17,6 @@ common:
     kvstore:
       store: inmemory
 
-chunk_store_config:
-  # If the requested time range is outside the allowed range, the request will not fail, but will be modified to only query data within the allowed time range.
-  max_query_lookback: 7d
-
 compactor:
   working_directory: /loki/compactor
   shared_store: filesystem
@@ -32,7 +28,9 @@ compactor:
 # https://grafana.com/docs/loki/latest/operations/storage/retention/
 limits_config:
   # Retention period to apply to stored data, only applies if retention_enabled=true in the compactor section.
-  retention_period: 7d  # default is 0 (no retention)
+  retention_period: "${OPENDUT_TELEMETRY_RETENTION_TIME:-168h}"  # default is 0 (no retention)
+  # If the requested time range is outside the allowed range, the request will not fail, but will be modified to only query data within the allowed time range.
+  max_query_lookback: "${OPENDUT_TELEMETRY_RETENTION_TIME:-168h}"
 
 schema_config:
   configs:

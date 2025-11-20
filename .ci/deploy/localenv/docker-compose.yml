@@ -138,7 +138,6 @@ services:
     container_name: opendut-traefik
     image: docker.io/traefik:v3.6.2
     restart: unless-stopped
-    #entrypoint: ["/etc/traefik/dynamic/traefik-entrypoint-wrapper.sh"]
     command:
       - --api.insecure=true
       - --providers.docker
@@ -505,7 +504,7 @@ services:
       - "--web.enable-remote-write-receiver"
       - "--enable-feature=exemplar-storage"
       # https://prometheus.io/docs/prometheus/latest/storage/#operational-aspects
-      - "--storage.tsdb.retention.time=7d"
+      - "--storage.tsdb.retention.time=${OPENDUT_TELEMETRY_RETENTION_TIME:-168h}"
     restart: unless-stopped
     deploy:
       <<: *telemetry-deploy-params
@@ -518,7 +517,7 @@ services:
     container_name: opendut-tempo
     image: grafana/tempo:2.4.1
     restart: unless-stopped
-    command: [ "-config.file=/etc/tempo.yml" ]
+    command: [ "-config.file=/etc/tempo.yml", "-config.expand-env=true" ]
     deploy:
       <<: *telemetry-deploy-params
     volumes:

@@ -1,3 +1,4 @@
+# Test config: ./tempo -config.file=/etc/tempo.yml -config.expand-env=true
 stream_over_http_enabled: true
 server:
   http_listen_port: 3200
@@ -23,7 +24,8 @@ ingester:
 compactor:
   compaction:
     # Optional. Duration to keep blocks. Default is 14 days (336h).
-    block_retention: 168h  # 7 days
+    # Does not support defining retention in days (e.g. 7d), yet as of grafana/tempo:2.4.1.
+    block_retention: "${OPENDUT_TELEMETRY_RETENTION_TIME:-168h}"
 
 metrics_generator:
   processor:
