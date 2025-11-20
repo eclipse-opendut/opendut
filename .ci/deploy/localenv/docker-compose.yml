@@ -500,7 +500,12 @@ services:
   prometheus:
     container_name: opendut-prometheus
     image: prom/prometheus:v2.51.1
-    command: [ "--config.file=/etc/prometheus/prometheus.yml", "--web.enable-remote-write-receiver", "--enable-feature=exemplar-storage" ]
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.enable-remote-write-receiver"
+      - "--enable-feature=exemplar-storage"
+      # https://prometheus.io/docs/prometheus/latest/storage/#operational-aspects
+      - "--storage.tsdb.retention.time=7d"
     restart: unless-stopped
     deploy:
       <<: *telemetry-deploy-params

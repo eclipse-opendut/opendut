@@ -22,7 +22,8 @@ ingester:
 
 compactor:
   compaction:
-    block_retention: 120h
+    # Optional. Duration to keep blocks. Default is 14 days (336h).
+    block_retention: 168h  # 7 days
 
 metrics_generator:
   processor:

@@ -25,6 +25,7 @@ Always create a database backup before upgrading CARL.
 * We use a newer database format.
   When running the new version of CARL for the first time, it will upgrade the database format.
   Be sure to create a database backup before upgrading, as you should anyways.
+* Localenv: Set retention of logs/metrics/traces to 7 days.
 * Testenv: Utilizes the containers of the localenv deployment now.
   * All names in testenv were changed to end with `.opendut.local`.
   * Old testenv passwords are no longer valid. New passwords are now generated and loaded from `./.ci/deploy/localenv/data/secrets/.env`.

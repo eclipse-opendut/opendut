@@ -23,11 +23,12 @@ compactor:
   shared_store: filesystem
   retention_enabled: true
   compaction_interval: 10m
-  retention_delete_delay: 1m
+  retention_delete_delay: 2h
   retention_delete_worker_count: 150
 
+# https://grafana.com/docs/loki/latest/operations/storage/retention/
 limits_config:
-  retention_period: 24h
+  retention_period: 168h  # default is 0 (no retention)
 
 schema_config:
   configs:
