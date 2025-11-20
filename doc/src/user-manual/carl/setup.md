@@ -46,10 +46,11 @@ This assumes that the system, where OpenDuT was deployed, has the IP address `19
     # copy the created secrets to the host, ensuring they are readable for the current user
     docker cp opendut-provision-secrets:/provision/ ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/data/secrets/
     # start the environment
-    docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/docker-compose.yml --env-file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/data/secrets/.env up --detach --build
+    docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/.env.development --env-file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/data/secrets/.env up --detach --build
     ```
     In this step secrets are going to be created and all containers are getting started. \
     The secrets which were created during the first `docker compose` command can be found in `.ci/deploy/localenv/data/secrets/.env`.
+    Domain names are configured in environment file `.env.development`.
 
 If everything worked and is up and running, you can follow the [EDGAR Setup Guide](../edgar/setup.md).
 
