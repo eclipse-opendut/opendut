@@ -89,7 +89,7 @@ impl Resources<'_> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use std::collections::{HashMap, HashSet};
     use super::*;
     use crate::manager::peer_messaging_broker::{PeerMessagingBroker, PeerMessagingBrokerOptions};
     use crate::resource::manager::ResourceManager;
@@ -159,7 +159,7 @@ mod tests {
         peer_configuration.ethernet_bridges.set(
             parameter::EthernetBridge { name: NetworkInterfaceName::try_from("br-opendut-1")? },
             ParameterTarget::Present,
-            vec![],
+            HashSet::new(),
         );
 
         let received = receiver.recv().await.unwrap()

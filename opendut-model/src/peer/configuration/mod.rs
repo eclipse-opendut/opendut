@@ -36,15 +36,15 @@ pub enum ParameterVariant {
 impl ParameterVariant {
     pub fn dependencies(&self) -> HashSet<ParameterId> {
         match self {
-            ParameterVariant::DeviceInterface(parameter) => { parameter.dependencies.iter().cloned().collect::<HashSet<_>>() }
-            ParameterVariant::EthernetBridge(parameter) => { parameter.dependencies.iter().cloned().collect::<HashSet<_>>() }
-            ParameterVariant::Executor(parameter) => { parameter.dependencies.iter().cloned().collect::<HashSet<_>>() }
-            ParameterVariant::GreInterface(parameter) => { parameter.dependencies.iter().cloned().collect::<HashSet<_>>() }
-            ParameterVariant::JoinedInterface(parameter) => { parameter.dependencies.iter().cloned().collect::<HashSet<_>>() }
-            ParameterVariant::RemotePeerConnectionCheck(parameter) => { parameter.dependencies.iter().cloned().collect::<HashSet<_>>() }
-            ParameterVariant::CanConnections(parameter) => { parameter.dependencies.iter().cloned().collect::<HashSet<_>>() }
-            ParameterVariant::CanBridges(parameter) => { parameter.dependencies.iter().cloned().collect::<HashSet<_>>() }
-            ParameterVariant::CanLocalRoutes(parameter) => { parameter.dependencies.iter().cloned().collect::<HashSet<_>>() }
+            ParameterVariant::DeviceInterface(parameter) => { parameter.dependencies.clone() }
+            ParameterVariant::EthernetBridge(parameter) => { parameter.dependencies.clone() }
+            ParameterVariant::Executor(parameter) => { parameter.dependencies.clone() }
+            ParameterVariant::GreInterface(parameter) => { parameter.dependencies.clone() }
+            ParameterVariant::JoinedInterface(parameter) => { parameter.dependencies.clone() }
+            ParameterVariant::RemotePeerConnectionCheck(parameter) => { parameter.dependencies.clone() }
+            ParameterVariant::CanConnections(parameter) => { parameter.dependencies.clone() }
+            ParameterVariant::CanBridges(parameter) => { parameter.dependencies.clone() }
+            ParameterVariant::CanLocalRoutes(parameter) => { parameter.dependencies.clone() }
         }
     }
     pub fn target(&self) -> ParameterTarget {
@@ -121,7 +121,7 @@ impl<V: ParameterValue> ParameterField<V> {
     /// Set all parameters of a type to be present.
     /// Parameters that were previously in the PeerConfiguration,
     /// but aren't in the new list, will be set to absent.
-    pub fn set_all_present(&mut self, values: impl IntoIterator<Item=V>, dependencies: Vec<ParameterId>) -> Vec<ParameterId> {
+    pub fn set_all_present(&mut self, values: impl IntoIterator<Item=V>, dependencies: HashSet<ParameterId>) -> HashSet<ParameterId> {
 
         let new_present_parameters = values.into_iter()
             .map(|value| Self::create_parameter(value, ParameterTarget::Present, dependencies.clone()))
@@ -145,12 +145,12 @@ impl<V: ParameterValue> ParameterField<V> {
             dependency_on_absents.insert(id);
         }
 
-        let mut parameter_ids: Vec<ParameterId> = vec![];
+        let mut parameter_ids: HashSet<ParameterId> = HashSet::new();
         for mut parameter in new_present_parameters {
-            let current_dependencies = parameter.dependencies.clone().into_iter().collect::<HashSet<_>>();
-            parameter.dependencies = current_dependencies.union(&dependency_on_absents).cloned().collect::<Vec<_>>();
+            let current_dependencies = parameter.dependencies;
+            parameter.dependencies = current_dependencies.union(&dependency_on_absents).cloned().collect::<HashSet<_>>();
             let id = self.set_parameter(parameter);
-            parameter_ids.push(id);
+            parameter_ids.insert(id);
         }
         parameter_ids
     }
@@ -172,7 +172,7 @@ impl<V: ParameterValue> ParameterField<V> {
     }
 
     /// Set an individual parameter to be present/absent
-    pub fn set(&mut self, value: V, target: ParameterTarget, dependencies: Vec<ParameterId>) -> ParameterId {
+    pub fn set(&mut self, value: V, target: ParameterTarget, dependencies: HashSet<ParameterId>) -> ParameterId {
         let parameter = Self::create_parameter(value, target, dependencies);
         self.set_parameter(parameter)
     }
@@ -184,7 +184,7 @@ impl<V: ParameterValue> ParameterField<V> {
         id
     }
 
-    fn create_parameter(value: V, target: ParameterTarget, dependencies: Vec<ParameterId>) -> Parameter<V> {
+    fn create_parameter(value: V, target: ParameterTarget, dependencies: HashSet<ParameterId>) -> Parameter<V> {
         Parameter {
             id: value.parameter_identifier(),
             dependencies,
@@ -252,13 +252,13 @@ mod tests {
             let parameter_value = parameter::EthernetBridge { name: NetworkInterfaceName::try_from("br-opendut")? };
 
             let mut testee = PeerConfiguration::default();
-            testee.ethernet_bridges.set(parameter_value.clone(), ParameterTarget::Present, vec![]);
+            testee.ethernet_bridges.set(parameter_value.clone(), ParameterTarget::Present, HashSet::new());
 
 
-            testee.ethernet_bridges.set(parameter_value.clone(), ParameterTarget::Present, vec![]);
+            testee.ethernet_bridges.set(parameter_value.clone(), ParameterTarget::Present, HashSet::new());
             assert_eq!(testee.ethernet_bridges.len(), 1);
 
-            testee.ethernet_bridges.set(parameter_value.clone(), ParameterTarget::Absent, vec![]);
+            testee.ethernet_bridges.set(parameter_value.clone(), ParameterTarget::Absent, HashSet::new());
             assert_eq!(testee.ethernet_bridges.len(), 1);
             let id = parameter_value.parameter_identifier();
             let first_ethernet_bridge = testee.ethernet_bridges.get(&id).unwrap();
@@ -280,7 +280,7 @@ mod tests {
             };
 
             let mut testee = PeerConfiguration::default();
-            testee.executors.set(parameter_value.clone(), ParameterTarget::Present, vec![]);
+            testee.executors.set(parameter_value.clone(), ParameterTarget::Present, HashSet::new());
 
 
             let expected = None;
@@ -292,7 +292,7 @@ mod tests {
             };
             let id = parameter_value.parameter_identifier();
 
-            testee.executors.set(parameter_value, ParameterTarget::Present, vec![]);
+            testee.executors.set(parameter_value, ParameterTarget::Present, HashSet::new());
             assert_eq!(testee.executors.len(), 1);
             assert_eq!(testee.executors.get(&id).unwrap().value.descriptor.results_url, expected);
 
@@ -317,9 +317,9 @@ mod tests {
 
             let mut testee = PeerConfiguration::default();
 
-            testee.ethernet_bridges.set(present_then_absent.clone(), ParameterTarget::Present, vec![]);
-            testee.ethernet_bridges.set(present_then_present.clone(), ParameterTarget::Present, vec![]);
-            testee.ethernet_bridges.set(absent_then_present.clone(), ParameterTarget::Absent, vec![]);
+            testee.ethernet_bridges.set(present_then_absent.clone(), ParameterTarget::Present, HashSet::new());
+            testee.ethernet_bridges.set(present_then_present.clone(), ParameterTarget::Present, HashSet::new());
+            testee.ethernet_bridges.set(absent_then_present.clone(), ParameterTarget::Absent, HashSet::new());
 
             // ACT
             testee.ethernet_bridges.set_all_present([
@@ -327,7 +327,7 @@ mod tests {
                     new_present.clone(),
                     absent_then_present.clone()
                 ],
-                vec![]
+                HashSet::new()
             );
 
             // ASSERT
@@ -335,25 +335,25 @@ mod tests {
                 matches_pattern!(Parameter {
                     value: eq(&present_then_absent),
                     target: eq(&ParameterTarget::Absent),
-                    dependencies: eq(&vec![]),  // removing something should not have dependencies
+                    dependencies: eq(&HashSet::new()),  // removing something should not have dependencies
                     ..
                 }),
                 matches_pattern!(Parameter {
                     value: eq(&present_then_present),
                     target: eq(&ParameterTarget::Present),
-                    dependencies: eq(&vec![present_then_absent.parameter_identifier()]),
+                    dependencies: eq(&HashSet::from_iter(vec![present_then_absent.parameter_identifier()])),
                     ..
                 }),
                 matches_pattern!(Parameter {
                     value: eq(&new_present),
                     target: eq(&ParameterTarget::Present),
-                    dependencies: eq(&vec![present_then_absent.parameter_identifier()]),
+                    dependencies: eq(&HashSet::from_iter(vec![present_then_absent.parameter_identifier()])),
                     ..
                 }),
                 matches_pattern!(Parameter {
                     value: eq(&absent_then_present),
                     target: eq(&ParameterTarget::Present),
-                    dependencies: eq(&vec![present_then_absent.parameter_identifier()]),
+                    dependencies: eq(&HashSet::from_iter(vec![present_then_absent.parameter_identifier()])),
                     ..
                 }),
             ]);
@@ -377,8 +377,8 @@ mod tests {
 
             let mut testee = PeerConfiguration::default();
 
-            testee.ethernet_bridges.set(initially_present.clone(), ParameterTarget::Present, vec![]);
-            testee.ethernet_bridges.set(initially_absent.clone(), ParameterTarget::Absent, vec![]);
+            testee.ethernet_bridges.set(initially_present.clone(), ParameterTarget::Present, HashSet::new());
+            testee.ethernet_bridges.set(initially_absent.clone(), ParameterTarget::Absent, HashSet::new());
 
             testee.ethernet_bridges.set_all_absent();
 

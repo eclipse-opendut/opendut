@@ -170,12 +170,12 @@ mod tests {
 
             let mut config = PeerConfiguration::default();
             // add old bridge as present and check if set_all_present adds a dependency to remove the old bridge before adding the new
-            config.ethernet_bridges.set(parameter_bridge_old.clone(), ParameterTarget::Present, vec![]);
-            let mut joined_interfaces_dependencies = config.ethernet_bridges.set_all_present(vec![parameter_bridge_new.clone()], vec![]);
+            config.ethernet_bridges.set(parameter_bridge_old.clone(), ParameterTarget::Present, HashSet::new());
+            let mut joined_interfaces_dependencies = config.ethernet_bridges.set_all_present(vec![parameter_bridge_new.clone()], HashSet::new());
 
-            let device_dependency = config.device_interfaces.set(parameter_eth_device, ParameterTarget::Present, vec![]);
+            let device_dependency = config.device_interfaces.set(parameter_eth_device, ParameterTarget::Present, HashSet::new());
 
-            joined_interfaces_dependencies.push(device_dependency);
+            joined_interfaces_dependencies.insert(device_dependency);
             config.joined_interfaces.set(parameter_join.clone(), ParameterTarget::Present, joined_interfaces_dependencies.clone());
 
             let resolver = PeerConfigurationDependencyResolver::new(config.clone());
@@ -191,7 +191,7 @@ mod tests {
 
     #[test]
     fn determine_task_order_happy_flow() {
-        fn find_bridge_parameter_task_position(tasks: &[ParameterVariant], bridge_name: NetworkInterfaceName) -> Option<usize> {
+        fn find_bridge_parameter_task_position(tasks: &HashSet<ParameterVariant>, bridge_name: NetworkInterfaceName) -> Option<usize> {
             tasks.iter().enumerate().find_map(|(pos, param)| {
                 if let ParameterVariant::EthernetBridge(bridge) = param {
                     if bridge.value.name == bridge_name {
@@ -205,9 +205,9 @@ mod tests {
         let mut testee = PeerConfigurationDependencyResolverFixture::new();
 
 
-        let mut tasks: Vec<ParameterVariant> = vec![];
+        let mut tasks: HashSet<ParameterVariant> = HashSet::new();
         while let Some(next_parameter) = testee.resolver.next_parameter() {
-            tasks.push(next_parameter);            
+            tasks.insert(next_parameter);
         }
         assert_eq!(tasks.len(), 4);
         assert!(testee.resolver.done());
@@ -222,12 +222,12 @@ mod tests {
     #[test_log::test]
     fn determine_task_order_when_one_task_fails() {
         let mut testee = PeerConfigurationDependencyResolverFixture::new();
-        let mut tasks: Vec<ParameterVariant> = vec![];
+        let mut tasks: HashSet<ParameterVariant> = HashSet::new();
         while let Some(next_parameter) = testee.resolver.next_parameter() {
             if matches!(next_parameter, ParameterVariant::DeviceInterface { .. }) {
                 testee.resolver.mark_current_parameter_as_failed();
             }
-            tasks.push(next_parameter);
+            tasks.insert(next_parameter);
         }
         assert_eq!(tasks.len(), 3);
         assert!(testee.resolver.done());

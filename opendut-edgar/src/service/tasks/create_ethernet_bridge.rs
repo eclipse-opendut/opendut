@@ -97,6 +97,7 @@ impl TaskAbsent for CreateEthernetBridge {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
     use super::*;
     use crate::service::can::can_manager::{CanManagerRef, CanManagerExt};
     use crate::service::network_interface::manager::NetworkInterfaceManager;
@@ -192,7 +193,7 @@ mod tests {
             peer_configuration.ethernet_bridges.set(
                 parameter.clone(),
                 ParameterTarget::Present,
-                vec![],
+                HashSet::new(),
             );
             let can_manager = CanManagerRef::new_shared();
             let network_interface_management = NetworkInterfaceManagement::Enabled {

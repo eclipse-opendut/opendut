@@ -93,6 +93,7 @@ impl ParameterValue for parameter::CanBridge {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
     use super::*;
     use crate::peer::configuration::{ParameterTarget, PeerConfiguration};
     use crate::peer::executor::{ExecutorDescriptor, ExecutorId, ExecutorKind};
@@ -109,7 +110,7 @@ mod tests {
             }
         };
         let target = ParameterTarget::Present;
-        peer_configuration.executors.set(value.clone(), target, vec![]);
+        peer_configuration.executors.set(value.clone(), target, HashSet::new());
 
         assert_eq!(peer_configuration.executors.len(), 1);
 

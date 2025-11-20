@@ -8,23 +8,12 @@ mod value;
 pub use value::ParameterValue;
 use crate::OPENDUT_UUID_NAMESPACE;
 
-#[derive(Clone, Debug, Eq, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct Parameter<V: ParameterValue> {
     pub id: ParameterId,
-    pub dependencies: Vec<ParameterId>,
+    pub dependencies: HashSet<ParameterId>,
     pub target: ParameterTarget,
     pub value: V,
-}
-
-impl<V: ParameterValue> PartialEq for Parameter<V> {
-    fn eq(&self, other: &Self) -> bool {
-        let other_fields_are_equal = self.id == other.id && self.target == other.target && self.value == other.value;
-        // Parameters with same dependencies in different order should be equal
-        let dependencies = self.dependencies.iter().collect::<HashSet<_>>();
-        let other_dependencies = other.dependencies.iter().collect::<HashSet<_>>();
-
-        other_fields_are_equal && dependencies == other_dependencies
-    }
 }
 
 impl<V: ParameterValue> Hash for Parameter<V> {
@@ -141,6 +130,7 @@ pub enum ParameterTargetStateErrorRemovingFailed {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
     use crate::peer::configuration::{parameter, ParameterTarget, ParameterValue};
     use crate::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
 
@@ -167,14 +157,14 @@ mod tests {
 
         let parameter_a = Parameter {
             id: ethernet.parameter_identifier(),
-            dependencies: vec![dep1, dep2],
+            dependencies: HashSet::from_iter(vec![dep1, dep2]),
             target: ParameterTarget::Present,
             value: ethernet.clone(),
         };
 
         let parameter_b = Parameter {
             id: ethernet.parameter_identifier(),
-            dependencies: vec![dep2, dep1],
+            dependencies: HashSet::from_iter(vec![dep2, dep1]),
             target: ParameterTarget::Present,
             value: ethernet.clone(),
         };
