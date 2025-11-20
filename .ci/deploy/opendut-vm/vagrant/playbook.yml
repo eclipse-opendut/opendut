@@ -3,6 +3,8 @@
 - name: playbook
   hosts: all
   vars:
+    docker_daemon_options:
+      min-api-version: "1.25"  # requires docker v29, until this is resolved: https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/44279
   pre_tasks:
   - name: Host configuration /etc/hosts, certificate authority
     import_tasks: tasks/system.yml
