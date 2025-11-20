@@ -9,7 +9,7 @@ since migrations are only provided from one version to the next.
 Always create a database backup before upgrading CARL.
 
 
-## Unreleased
+## [0.8.0] - 2025-11-20
 
 ### Added
 * VIPER: Initial code for a test execution engine has been included.  

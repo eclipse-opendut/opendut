@@ -362,7 +362,7 @@ services:
 
   carl:
     container_name: opendut-carl
-    image: "${OPENDUT_DOCKER_IMAGE_HOST:-ghcr.io}/${OPENDUT_DOCKER_IMAGE_NAMESPACE:-eclipse-opendut}/opendut-carl:${OPENDUT_CARL_IMAGE_VERSION:-0.7.0}"
+    image: "${OPENDUT_DOCKER_IMAGE_HOST:-ghcr.io}/${OPENDUT_DOCKER_IMAGE_NAMESPACE:-eclipse-opendut}/opendut-carl:${OPENDUT_CARL_IMAGE_VERSION:-0.8.0}"
     command: ["/opt/opendut-carl/opendut-carl"]
     restart: unless-stopped
     depends_on:
