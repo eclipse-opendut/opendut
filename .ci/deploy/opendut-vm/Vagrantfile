@@ -9,7 +9,7 @@ vm_ntp_server = (ENV["OPENDUT_VM_NTP_SERVER"] ||= "").to_s
 vm_graphics_controller = (ENV["OPENDUT_VM_GRAPHICS_CONTROLLER"] ||= "VMSVGA").to_s
 vm_nested_hw_virtualization = (ENV["OPENDUT_VM_NESTED_HW_VIRTUALIZATION"] ||= "on").to_s
 vm_ip = (ENV["OPENDUT_VM_IP"] ||= "192.168.56.10").to_s
-vm_box_name = (ENV["OPENDUT_VM_IP"] ||= "ubuntu/jammy64").to_s
+vm_box_name = (ENV["OPENDUT_VM_BOX_NAME"] ||= "ubuntu/jammy64").to_s
 
 # proxy settings
 vm_default_no_proxy = "localhost,127.0.0.1,opendut.local,netbird-management,netbird-dashboard,netbird-signal,netbird-coturn,keycloak,edgar-leader,edgar-*,carl,loki,tempo,prometheus,alloy,otel-collector,grafana,nginx-webdav,192.168.56.10,192.168.0.0/16"
