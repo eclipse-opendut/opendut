@@ -1,23 +1,23 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-vm_name = (ENV["OPENDUT_VM_NAME"] ||= "opendut-vm").to_s
-vm_memory = (ENV["OPENDUT_VM_MEMORY"] ||= "8192").to_i
-vm_cpus = (ENV["OPENDUT_VM_CPUS"] ||= "4").to_i
-vm_disk_size = (ENV["OPENDUT_VM_DISK_SIZE"] ||= "50").to_i
-vm_ntp_server = (ENV["OPENDUT_VM_NTP_SERVER"] ||= "").to_s
-vm_graphics_controller = (ENV["OPENDUT_VM_GRAPHICS_CONTROLLER"] ||= "VMSVGA").to_s
-vm_nested_hw_virtualization = (ENV["OPENDUT_VM_NESTED_HW_VIRTUALIZATION"] ||= "on").to_s
-vm_ip = (ENV["OPENDUT_VM_IP"] ||= "192.168.56.10").to_s
-vm_box_name = (ENV["OPENDUT_VM_BOX_NAME"] ||= "ubuntu/jammy64").to_s
+vm_name = (ENV["OPENDUT_VM_NAME"] || "opendut-vm").to_s
+vm_memory = (ENV["OPENDUT_VM_MEMORY"] || "8192").to_i
+vm_cpus = (ENV["OPENDUT_VM_CPUS"] || "4").to_i
+vm_disk_size = (ENV["OPENDUT_VM_DISK_SIZE"] || "60").to_i
+vm_ntp_server = (ENV["OPENDUT_VM_NTP_SERVER"] || "").to_s
+vm_graphics_controller = (ENV["OPENDUT_VM_GRAPHICS_CONTROLLER"] || "VMSVGA").to_s
+vm_nested_hw_virtualization = (ENV["OPENDUT_VM_NESTED_HW_VIRTUALIZATION"] || "on").to_s
+vm_ip = (ENV["OPENDUT_VM_IP"] || "192.168.56.10").to_s
+vm_box_name = (ENV["OPENDUT_VM_BOX_NAME"] || "ubuntu/jammy64").to_s
 
 # proxy settings
 vm_default_no_proxy = "localhost,127.0.0.1,opendut.local,netbird-management,netbird-dashboard,netbird-signal,netbird-coturn,keycloak,edgar-leader,edgar-*,carl,loki,tempo,prometheus,alloy,otel-collector,grafana,nginx-webdav,192.168.56.10,192.168.0.0/16"
 vm_http_proxy = ENV["OPENDUT_VM_HTTP_PROXY"]
-vm_https_proxy = (ENV["OPENDUT_VM_HTTPS_PROXY"] ||= ENV["OPENDUT_VM_HTTP_PROXY"])
-vm_no_proxy = (ENV["OPENDUT_VM_NO_PROXY"] ||= "opendut.local") + "," + vm_default_no_proxy
+vm_https_proxy = (ENV["OPENDUT_VM_HTTPS_PROXY"] || ENV["OPENDUT_VM_HTTP_PROXY"])
+vm_no_proxy = (ENV["OPENDUT_VM_NO_PROXY"] || "opendut.local") + "," + vm_default_no_proxy
 custom_root_ca = ENV["CUSTOM_ROOT_CA"]
-disable_private_network = (ENV["OPENDUT_DISABLE_PRIVATE_NETWORK"] ||= "false").to_s == "true"
+disable_private_network = (ENV["OPENDUT_DISABLE_PRIVATE_NETWORK"] || "false").to_s == "true"
 
 machine = {
     :hostname => vm_name,
@@ -33,6 +33,8 @@ Vagrant.configure("2") do |config|
     config.vm.hostname = machine[:hostname]
     if Vagrant.has_plugin?("vagrant-disksize")
         config.disksize.size = vm_disk_size.to_s + 'GB'
+    else
+      abort("ERROR: The 'vagrant-disksize' plugin is required. Please install it with 'vagrant plugin install vagrant-disksize'.")
     end
 
     if !disable_private_network then
@@ -63,7 +65,7 @@ TERMINAL_OUTPUT
         vb.cpus = machine[:cpu]
         vb.memory = machine[:memory]
 
-        vb.gui = (ENV["SHOW_GUI"] ||= "false").to_s == "true"
+        vb.gui = (ENV["SHOW_GUI"] || "false").to_s == "true"
 
         # https://www.virtualbox.org/manual/ch08.html
         vb.customize ["modifyvm", :id, "--vram", "128"]
@@ -125,10 +127,10 @@ TERMINAL_OUTPUT
     ansible.galaxy_command = "ansible-galaxy install --role-file=%{role_file} --roles-path=/vagrant/.ci/deploy/opendut-vm/vagrant/downloaded_roles"
 
     # https://developer.hashicorp.com/vagrant/docs/provisioning/ansible_common
-    ansible.tags = ENV["ANSIBLE_TAGS"] ||= "all"
-    ansible.skip_tags = ENV["ANSIBLE_SKIP_TAGS"] ||= "desktop,firefox"
-    ansible.verbose = ENV["ANSIBLE_VERBOSE"] ||= ""     # do not enable verbose by default
-    # ansible.verbose = ENV["ANSIBLE_VERBOSE"] ||= "v"  # enables verbose mode by default
+    ansible.tags = ENV["ANSIBLE_TAGS"] || "all"
+    ansible.skip_tags = ENV["ANSIBLE_SKIP_TAGS"] || "desktop,firefox"
+    ansible.verbose = ENV["ANSIBLE_VERBOSE"] || ""     # do not enable verbose by default
+    # ansible.verbose = ENV["ANSIBLE_VERBOSE"] || "v"  # enables verbose mode by default
     ansible.extra_vars = {
         "opendut_repo_root" => "/vagrant",
         "opendut_vm_ntp_server" => vm_ntp_server,
