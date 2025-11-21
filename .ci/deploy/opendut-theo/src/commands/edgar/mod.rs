@@ -87,11 +87,12 @@ fn check_edgar_provisioning_finished(container_name: &str) -> Result<bool, Error
         Ok(output) => {
             let status_code = output.status.code().unwrap_or(1) == 0;
             if status_code  {
-                let message = String::from_utf8(output.stdout)?;
-                if message.eq("Success") {
+                let stdout = String::from_utf8(output.stdout)?;
+                let stderr = String::from_utf8(output.stderr)?;
+                if stdout.eq("Success") {
                     Ok(true)
                 } else {
-                    Err(anyhow!("EDGAR provisioning failed for peer: {}. Check 'docker logs {}'.", message, container_name))
+                    Err(anyhow!("EDGAR provisioning failed for a peer. Check 'docker logs {}'. Stdout: {} Stderr: {}", container_name, stdout, stderr))
                 }
             } else {
                 Ok(false)
