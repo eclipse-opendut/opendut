@@ -78,6 +78,7 @@ pub async fn create(settings_override: config::Config, startup_options: StartupO
 
     let result = run(settings, startup_options.return_resource_manager_ref).await?;
 
+    info!("CARL is terminating...");
     if let Some(mut telemetry_handle) = telemetry_handle {
         telemetry_handle.shutdown();
     }

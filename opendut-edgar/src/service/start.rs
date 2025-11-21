@@ -7,6 +7,7 @@ use opendut_telemetry::logging::LoggingConfig;
 use opendut_telemetry::opentelemetry_types;
 use opendut_telemetry::opentelemetry_types::Opentelemetry;
 use tokio::sync::mpsc;
+use tracing::info;
 use crate::service::peer_messaging_client::PeerMessagingClient;
 
 const BANNER: &str = r"
@@ -59,6 +60,7 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
     let mut peer_messaging_client = PeerMessagingClient::create(self_id, carl, settings, tx_peer_configuration).await?;
     peer_messaging_client.process_messages_loop(rx_peer_configuration_state).await?;
 
+    info!("EDGAR is terminating...");
     metrics_shutdown_handle.shutdown();
 
     Ok(())
