@@ -62,17 +62,17 @@ jobs:
 
       - name: Start test environment
         run: |
-          ./opendut-theo/opendut-theo testenv start --skip-firefox --skip-telemetry | tee ./testenv-logs/theo/testenv-start.log
+          ./opendut-theo/opendut-theo testenv start --skip-firefox --skip-telemetry 2>&1 | tee ./testenv-logs/theo/testenv-start.log
 
       - name: Start edgar cluster
         run: |
-          ./opendut-theo/opendut-theo testenv edgar start | tee ./testenv-logs/theo/testenv-edgar-start.log
+          ./opendut-theo/opendut-theo testenv edgar start 2>&1 | tee ./testenv-logs/theo/testenv-edgar-start.log
 
       - name: Collect container logs
         if: always()
         run: |
           chmod +x .ci/deploy/testenv/edgar/persist-edgar-logs.sh
-          .ci/deploy/testenv/edgar/persist-edgar-logs.sh ./testenv-logs/docker/ | tee ./testenv-logs/theo/persist-edgar-logs.log
+          .ci/deploy/testenv/edgar/persist-edgar-logs.sh ./testenv-logs/docker/ 2>&1 | tee ./testenv-logs/theo/persist-edgar-logs.log
 
       - name: "Upload testenv logs"
         if: always()
