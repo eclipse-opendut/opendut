@@ -14,7 +14,7 @@ use std::marker::PhantomData;
 #[macro_export]
 macro_rules! create_id_type {
     ($type_name:ident) => {
-        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, ::serde::Serialize, ::serde::Deserialize)]
+        #[derive(Clone, Copy, PartialEq, Eq, Hash, ::serde::Serialize, ::serde::Deserialize)]
         #[serde(transparent)]
         pub struct $type_name {
             pub uuid: ::uuid::Uuid,
@@ -30,6 +30,12 @@ macro_rules! create_id_type {
         impl ::std::fmt::Display for $type_name {
             fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
                 write!(f, "{}", self.uuid)
+            }
+        }
+
+        impl ::std::fmt::Debug for $type_name {
+            fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+                write!(f, "{}<{}>", stringify!($type_name), self.uuid)
             }
         }
 
@@ -88,7 +94,6 @@ impl<T: 'static> Debug for IllegalId<T> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::str::FromStr;
 
     create_id_type!(ExampleId);
