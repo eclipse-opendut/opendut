@@ -95,6 +95,8 @@ impl ClusterManager {
     pub async fn store_cluster_deployment(&mut self, deployment: ClusterDeployment) -> Result<ClusterId, StoreClusterDeploymentError> {
         let cluster_id = deployment.id;
 
+        debug!("Storing ClusterDeployment for cluster <{cluster_id}>.");
+
         let cluster_peers =
             self.resource_manager.resources(async |resources| {
                 resources.list_cluster_peer_states(cluster_id).await
@@ -184,7 +186,7 @@ impl ClusterManager {
         Ok(())
     }
 
-    #[tracing::instrument(skip(self), level="trace")]
+    #[tracing::instrument(skip_all, level="trace")]
     pub async fn rollout_cluster_if_all_peers_available(&mut self, cluster_id: ClusterId) -> Result<(), RolloutClusterError> {
         let cluster_peer_states = self.resource_manager.resources(async |resources| {
             resources.list_cluster_peer_states(cluster_id).await
@@ -217,7 +219,7 @@ impl ClusterManager {
     }
 
 
-    #[tracing::instrument(skip(self), level="debug")]
+    #[tracing::instrument(skip_all, level="debug")]
     async fn rollout_cluster(&mut self, cluster_id: ClusterId) -> Result<(), RolloutClusterError> {
 
         let cluster_config = self.resource_manager.get::<ClusterDescriptor>(cluster_id).await

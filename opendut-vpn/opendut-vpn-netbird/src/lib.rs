@@ -97,7 +97,7 @@ impl NetbirdManagementClient {
 #[async_trait]
 impl VpnManagementClient for NetbirdManagementClient {
 
-    #[tracing::instrument(skip(self), level="trace")]
+    #[tracing::instrument(skip_all, level="trace")]
     async fn create_cluster(&self, cluster_id: ClusterId, peers: &[PeerId]) -> Result<(), CreateClusterError> {
 
         match self.delete_cluster(cluster_id).await {
