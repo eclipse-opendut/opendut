@@ -191,12 +191,10 @@ mod tests {
 
     #[test]
     fn determine_task_order_happy_flow() {
-        fn find_bridge_parameter_task_position(tasks: &HashSet<ParameterVariant>, bridge_name: NetworkInterfaceName) -> Option<usize> {
+        fn find_bridge_parameter_task_position(tasks: &[ParameterVariant], bridge_name: NetworkInterfaceName) -> Option<usize> {
             tasks.iter().enumerate().find_map(|(pos, param)| {
-                if let ParameterVariant::EthernetBridge(bridge) = param {
-                    if bridge.value.name == bridge_name {
-                        return Some(pos)
-                    }
+                if let ParameterVariant::EthernetBridge(bridge) = param && bridge.value.name == bridge_name {
+                    return Some(pos)
                 };
                 None
             })
@@ -205,16 +203,16 @@ mod tests {
         let mut testee = PeerConfigurationDependencyResolverFixture::new();
 
 
-        let mut tasks: HashSet<ParameterVariant> = HashSet::new();
+        let mut tasks_in_execution_order: Vec<ParameterVariant> = vec![];
         while let Some(next_parameter) = testee.resolver.next_parameter() {
-            tasks.insert(next_parameter);
+            tasks_in_execution_order.push(next_parameter);
         }
-        assert_eq!(tasks.len(), 4);
+        assert_eq!(tasks_in_execution_order.len(), 4);
         assert!(testee.resolver.done());
         assert!(testee.resolver.success());
-        let position_remove_old_bridge = find_bridge_parameter_task_position(&tasks, testee.bridge_old_name)
+        let position_remove_old_bridge = find_bridge_parameter_task_position(&tasks_in_execution_order, testee.bridge_old_name)
             .expect("Expected bridge old parameter to be found in task list.");
-        let position_new_bridge = find_bridge_parameter_task_position(&tasks, testee.bridge_name)
+        let position_new_bridge = find_bridge_parameter_task_position(&tasks_in_execution_order, testee.bridge_name)
             .expect("Expected bridge new parameter to be found in task list.");
         assert!(position_remove_old_bridge < position_new_bridge, "The task of removing the old bridge must precede the addition of a new bridge.");
     }
@@ -222,18 +220,18 @@ mod tests {
     #[test_log::test]
     fn determine_task_order_when_one_task_fails() {
         let mut testee = PeerConfigurationDependencyResolverFixture::new();
-        let mut tasks: HashSet<ParameterVariant> = HashSet::new();
+        let mut tasks_in_execution_order: Vec<ParameterVariant> = vec![];
         while let Some(next_parameter) = testee.resolver.next_parameter() {
             if matches!(next_parameter, ParameterVariant::DeviceInterface { .. }) {
                 testee.resolver.mark_current_parameter_as_failed();
             }
-            tasks.insert(next_parameter);
+            tasks_in_execution_order.push(next_parameter);
         }
-        assert_eq!(tasks.len(), 3);
+        assert_eq!(tasks_in_execution_order.len(), 3);
         assert!(testee.resolver.done());
         assert!(!testee.resolver.success());
         let config = testee.config.joined_interfaces.clone();
-        let id = config.values().next().unwrap().id.clone();
+        let id = config.values().next().expect("Expected one interface join config.").id;
 
         assert!(
             testee.resolver.open.contains_key(&id),
