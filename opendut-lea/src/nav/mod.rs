@@ -61,6 +61,12 @@ pub fn Navbar(
                         path=routing::path::peers_overview
                     />
                     <NavbarButton
+                        icon=FontAwesomeIcon::Link
+                        label="Sources"
+                        route=WellKnownRoutes::SourcesOverview
+                        path=routing::path::sources_overview
+                    />
+                    <NavbarButton
                         icon=FontAwesomeIcon::Downloads
                         label="Downloads"
                         route=WellKnownRoutes::Downloads

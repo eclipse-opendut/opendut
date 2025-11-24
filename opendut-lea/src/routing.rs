@@ -23,7 +23,7 @@ pub mod path {
     pub const peers_overview: &str = "/peers";
     pub const user: &str = "/user";
     #[cfg(feature = "viper")]
-    pub const sources: &str = "/sources";
+    pub const sources_overview: &str = "/sources";
 }
 
 #[derive(Clone)]
@@ -62,7 +62,7 @@ impl WellKnownRoutes {
             },
             #[cfg(feature = "viper")]
             WellKnownRoutes::SourcesOverview => {
-                base.join(path::sources)
+                base.join(path::sources_overview)
                     .expect("SourcesOverview route should be valid.")
             }
             #[cfg(feature = "viper")]
@@ -157,7 +157,7 @@ mod routes {
                         #[cfg(feature = "viper")]
                         view! { <Initialized app_globals><crate::sources::SourcesOverview/></Initialized> }
                         #[cfg(not(feature = "viper"))]
-                        view! { <h1>Disabled</h1> }
+                        NotFound
                     }
                     condition=opendut_user
                     fallback=LoadingSpinner

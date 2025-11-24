@@ -25,6 +25,11 @@ pub fn Sidebar(menu_visible: RwSignal<bool>, hide_buttons: Signal<bool>) -> impl
                     route=routing::path::peers_overview
                 />
                 <SidebarItem
+                    icon= FontAwesomeIcon::Link
+                    label="Sources"
+                    route=routing::path::sources_overview
+                />
+                <SidebarItem
                     icon= FontAwesomeIcon::Downloads
                     label="Downloads"
                     route=routing::path::downloads
