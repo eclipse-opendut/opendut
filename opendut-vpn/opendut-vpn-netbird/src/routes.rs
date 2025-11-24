@@ -3,33 +3,15 @@ use reqwest::Url;
 use crate::netbird;
 use crate::netbird::SetupKeyId;
 
-pub fn setup_key(base_url: Url, setup_key_id: &SetupKeyId) -> Url {
-    join(setup_keys(base_url), setup_key_id.0.as_str())
-}
-
-pub fn setup_keys(base_url: Url) -> Url {
-    join(base_url, "setup-keys")
-}
 
 pub fn groups(base_url: Url) -> Url {
     join(base_url, "groups")
 }
 
-pub fn users(base_url: Url) -> Url {
-    join(base_url, "users")
-}
-
-pub fn user(base_url: Url, user_id: String) -> Url {
-    join(users(base_url), &user_id)
-}
-
-pub fn user_tokens(base_url: Url, user_id: String) -> Url {
-    join(user(base_url, user_id), "tokens")
-}
-
 pub fn group(base_url: Url, group_id: &netbird::GroupId) -> Url {
     join(groups(base_url), &group_id.0)
 }
+
 
 pub fn peers(base_url: Url) -> Url {
     join(base_url, "peers")
@@ -39,6 +21,7 @@ pub fn peer(base_url: Url, peer_id: &netbird::PeerId) -> Url {
     join(peers(base_url), &peer_id.0)
 }
 
+
 pub fn policies(base_url: Url) -> Url {
     join(base_url, "policies")
 }
@@ -46,6 +29,30 @@ pub fn policies(base_url: Url) -> Url {
 pub fn policy(base_url: Url, policy_id: &netbird::PolicyId) -> Url {
     join(policies(base_url), &policy_id.0)
 }
+
+
+pub fn setup_keys(base_url: Url) -> Url {
+    join(base_url, "setup-keys")
+}
+
+pub fn setup_key(base_url: Url, setup_key_id: &SetupKeyId) -> Url {
+    join(setup_keys(base_url), setup_key_id.0.as_str())
+}
+
+
+pub fn users(base_url: Url) -> Url {
+    join(base_url, "users")
+}
+
+pub fn user(base_url: Url, user_id: String) -> Url {
+    join(users(base_url), &user_id)
+}
+
+
+pub fn user_tokens(base_url: Url, user_id: String) -> Url {
+    join(user(base_url, user_id), "tokens")
+}
+
 
 fn join(mut base_url: Url, path: &str) -> Url {
     base_url.path_segments_mut()

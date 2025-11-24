@@ -212,8 +212,8 @@ impl VpnManagementClient for NetbirdManagementClient {
                 .await
                 .map_err(|error| DeletePeerError::DeletionFailure { peer_id, error: error.into() })?;
         }
-        // delete setup key that was linked to peer self group
-        self.inner.delete_setup_key(peer_id).await
+        // revoke setup key that was linked to peer self group
+        self.inner.revoke_setup_key(peer_id).await
             .map_err(|error| DeletePeerError::DeletionFailure { peer_id, error: error.into() })?;
 
         self.inner.delete_netbird_group(&self_group.id)
@@ -490,7 +490,7 @@ mod test {
             async fn generate_netbird_setup_key(&self, peer_id: PeerId) -> std::result::Result<netbird::SetupKey, CreateSetupKeyError>;
             async fn list_setup_keys(&self) -> std::result::Result<Vec<netbird::SetupKey>, RequestError>;
             async fn get_setup_key(&self, peer_id: PeerId) -> std::result::Result<Vec<SetupKey>, RequestError>;
-            async fn delete_setup_key(&self, peer_id: PeerId) -> std::result::Result<Vec<SetupKey>, RequestError>;
+            async fn revoke_setup_key(&self, peer_id: PeerId) -> std::result::Result<Vec<SetupKey>, RequestError>;
         }
     }
 }

@@ -199,15 +199,14 @@ async fn create_a_setup_key(fixture: Fixture) -> anyhow::Result<()> {
                 let request: serde_json::Value = serde_json::from_slice(request).unwrap();
 
                 let expectation = json!({
-                        "name": fixture.peer_setup_key_name(),
-                        "type": "reusable",
-                        "expires_in": 86400,
-                        "revoked": false,
-                        "auto_groups": [
-                            fixture.netbird_group_id()
-                        ],
-                        "usage_limit": 0,
-                    });
+                    "name": fixture.peer_setup_key_name(),
+                    "type": "reusable",
+                    "expires_in": 86400,
+                    "auto_groups": [
+                        fixture.netbird_group_id()
+                    ],
+                    "usage_limit": 0,
+                });
 
                 assert_that!(request, eq(&expectation));
 

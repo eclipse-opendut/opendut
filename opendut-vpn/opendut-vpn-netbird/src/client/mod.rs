@@ -28,7 +28,7 @@ pub trait Client {
     async fn delete_netbird_group(&self, group_id: &netbird::GroupId) -> Result<(), RequestError>;
     async fn list_setup_keys(&self) -> Result<Vec<netbird::SetupKey>, RequestError>;
     async fn get_setup_key(&self, peer_id: PeerId) -> Result<Vec<netbird::SetupKey>, RequestError>;
-    async fn delete_setup_key(&self, peer_id: PeerId) -> Result<Vec<netbird::SetupKey>, RequestError>;
+    async fn revoke_setup_key(&self, peer_id: PeerId) -> Result<Vec<netbird::SetupKey>, RequestError>;
     #[allow(unused)] //Currently unused, but expected to be needed again
     async fn get_netbird_peer(&self, peer_id: &netbird::PeerId) -> Result<netbird::Peer, RequestError>;
     async fn delete_netbird_peer(&self, peer_id: &netbird::PeerId) -> Result<(), RequestError>;
@@ -42,29 +42,6 @@ pub struct DefaultClient {
     netbird_url: Url,
     setup_key_expiration: Duration,
     requester: Box<dyn RequestHandler + Send + Sync>,
-}
-
-#[derive(Serialize)]
-struct CreateSetupKey {
-    name: String,
-    r#type: netbird::SetupKeyType,
-    expires_in: u64, //seconds
-    revoked: bool,
-    auto_groups: Vec<String>,
-    usage_limit: u64,
-}
-
-impl CreateSetupKey {
-    pub fn deleted(name: String) -> Self {
-        CreateSetupKey {
-            name,
-            r#type: netbird::SetupKeyType::Reusable,
-            expires_in: 0,
-            revoked: true,
-            auto_groups: vec![],
-            usage_limit: 0,
-        }
-    }
 }
 
 impl DefaultClient {
@@ -219,16 +196,32 @@ impl Client for DefaultClient {
         Ok(found_setup_keys)
     }
 
-    async fn delete_setup_key(&self, peer_id: PeerId) -> Result<Vec<netbird::SetupKey>, RequestError> {
+    async fn revoke_setup_key(&self, peer_id: PeerId) -> Result<Vec<netbird::SetupKey>, RequestError> {
         let found_setup_keys = self.get_setup_key(peer_id).await?;
+
+        let body = {
+            #[derive(Clone, Serialize)]
+            struct UpdateSetupKey {
+                revoked: bool,
+                auto_groups: Vec<String>,
+            }
+
+            UpdateSetupKey {
+                revoked: true,
+                auto_groups: vec![], //field is required, but we don't actually use it
+            }
+        };
+
         for setup_key in found_setup_keys.iter() {
             let url = routes::setup_key(Clone::clone(&self.netbird_url), &setup_key.id);
-            let body = CreateSetupKey::deleted(setup_key.name.to_string());
-            let request = put_json_request(url, body)?;
+
+            let request = put_json_request(url, body.clone())?;
+
             let response = self.requester.handle(request).await?;
             response.error_for_status()
                 .map_err(RequestError::IllegalStatus)?;
         }
+
         Ok(found_setup_keys)
     }
 
@@ -352,13 +345,19 @@ impl Client for DefaultClient {
         let url = routes::setup_keys(self.netbird_url.clone());
 
         let body = {
-            
+            #[derive(Serialize)]
+            struct CreateSetupKey {
+                name: String,
+                r#type: netbird::SetupKeyType,
+                expires_in: u64, //seconds
+                auto_groups: Vec<String>,
+                usage_limit: u64,
+            }
 
             CreateSetupKey {
                 name: netbird::setup_key_name_format(peer_id),
                 r#type: netbird::SetupKeyType::Reusable,
                 expires_in: self.setup_key_expiration.as_secs(),
-                revoked: false,
                 auto_groups: vec![
                     peer_group.id.0
                 ],
