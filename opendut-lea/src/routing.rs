@@ -22,6 +22,8 @@ pub mod path {
     pub const licenses: &str = "/licenses";
     pub const peers_overview: &str = "/peers";
     pub const user: &str = "/user";
+    #[cfg(feature = "viper")]
+    pub const sources: &str = "/sources";
 }
 
 #[derive(Clone)]
@@ -30,6 +32,10 @@ pub enum WellKnownRoutes {
     ClusterConfigurator { id: ClusterId },
     PeersOverview,
     PeerConfigurator { id: PeerId },
+    #[cfg(feature = "viper")]
+    SourcesOverview,
+    #[cfg(feature = "viper")]
+    SourcesConfigurator { id: opendut_model::viper::ViperSourceId },
     Downloads,
     ErrorPage { title: String, text: String, details: Option<String> },
 }
@@ -54,6 +60,16 @@ impl WellKnownRoutes {
                 base.join(&format!("/peers/{}/configure/general", id.url_encode()))
                     .expect("PeerConfigurator route should be valid.")
             },
+            #[cfg(feature = "viper")]
+            WellKnownRoutes::SourcesOverview => {
+                base.join(path::sources)
+                    .expect("SourcesOverview route should be valid.")
+            }
+            #[cfg(feature = "viper")]
+            WellKnownRoutes::SourcesConfigurator { id } => {
+                base.join(&format!("/sources/{}/configure/general", id.url_encode()))
+                    .expect("SourcesConfigurator route should be valid.")
+            }
             WellKnownRoutes::Downloads => {
                 base.join(path::downloads)
                     .expect("Downloads route should be valid.")
@@ -130,6 +146,19 @@ mod routes {
                 <ProtectedRoute
                     path=path!("/peers/:id/configure/:tab")
                     view=move || view! { <Initialized app_globals><PeerConfigurator/></Initialized> }
+                    condition=opendut_user
+                    fallback=LoadingSpinner
+                    redirect_path=|| "/login"
+                />
+
+                <ProtectedRoute
+                    path=path!("/sources")
+                    view=move || {
+                        #[cfg(feature = "viper")]
+                        view! { <Initialized app_globals><crate::sources::SourcesOverview/></Initialized> }
+                        #[cfg(not(feature = "viper"))]
+                        view! { <h1>Disabled</h1> }
+                    }
                     condition=opendut_user
                     fallback=LoadingSpinner
                     redirect_path=|| "/login"
@@ -263,6 +292,13 @@ mod url_encode {
     impl UrlDecodable<PeerId, IllegalId<PeerId>> for PeerId {
         fn url_decode(encoded: &str) -> Result<PeerId, IllegalId<PeerId>> {
             PeerId::try_from(encoded)
+        }
+    }
+
+    #[cfg(feature = "viper")]
+    impl UrlEncodable for opendut_model::viper::ViperSourceId {
+        fn url_encode(&self) -> String {
+            self.to_string()
         }
     }
 }

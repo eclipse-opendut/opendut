@@ -23,6 +23,8 @@ mod downloads;
 mod util;
 mod components;
 mod nav;
+#[cfg(feature = "viper")]
+mod sources;
 
 fn main() {
 
