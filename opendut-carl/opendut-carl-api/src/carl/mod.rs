@@ -161,7 +161,7 @@ cfg_if! {
             pub peers: PeersRegistrar<TonicAuthenticationService>,
             pub observer: ObserverMessagingBroker<TonicAuthenticationService>,
             #[cfg(feature="viper")]
-            pub test_suite: TestManager<TonicAuthenticationService>,
+            pub viper: TestManager<TonicAuthenticationService>,
         }
 
         pub enum CaCertInfo {
@@ -238,7 +238,7 @@ cfg_if! {
                     peers: PeersRegistrar::new(PeerManagerClient::new(Clone::clone(&auth_svc))),
                     observer: ObserverMessagingBroker::new(ObserverMessagingBrokerClient::new(Clone::clone(&auth_svc))),
                     #[cfg(feature="viper")]
-                    test_suite: TestManager::new(TestManagerClient::new(Clone::clone(&auth_svc))),
+                    viper: TestManager::new(TestManagerClient::new(Clone::clone(&auth_svc))),
                 })
             }
         }
@@ -283,7 +283,7 @@ pub mod wasm {
         pub metadata: MetadataProvider<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
         pub peers: PeersRegistrar<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
         #[cfg(feature="viper")]
-        pub test_suite: TestManager<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
+        pub viper: TestManager<InterceptedService<tonic_web_wasm_client::Client, AuthInterceptor>>,
     }
 
     impl CarlClient {
@@ -304,7 +304,7 @@ pub mod wasm {
                 metadata: MetadataProvider::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
                 peers: PeersRegistrar::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
                 #[cfg(feature="viper")]
-                test_suite: TestManager::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
+                viper: TestManager::with_interceptor(Clone::clone(&client), Clone::clone(&auth_interceptor)),
             })
         }
     }
