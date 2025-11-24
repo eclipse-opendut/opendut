@@ -1,7 +1,9 @@
 use leptos::html::Div;
 use leptos::prelude::*;
 use leptos_use::on_click_outside;
+use opendut_lea_components::ButtonColor;
 use opendut_model::viper::ViperSourceDescriptor;
+use crate::sources::components::DeleteSourceButton;
 
 #[component]
 pub(crate) fn Row<OnDeleteFn>(
@@ -44,9 +46,13 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
             <td class="is-vcentered">
                 <a href={ source_url }> { source_url } </a>
             </td>
-            <td class="is-vcentered">
-                <div class="is-flex">
-                // Todo: Delete Button
+            <td class="is-vcentered is-flex is-justify-content-center">
+                <div class="is-pulled-right">
+                    <DeleteSourceButton
+                        source_id
+                        button_color=ButtonColor::TextDanger
+                        on_delete
+                    />
                 </div>
             </td>
         </tr>
