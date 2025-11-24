@@ -35,7 +35,7 @@ impl TestenvCarlImage {
 
             Ok(carl_image)
         } else {
-            Err(anyhow::anyhow!("Carl distribution not found at {:?}. Please run 'cargo make distribution' first.", carl_dist_path))
+            Err(anyhow::anyhow!("Carl distribution not found at {:?}. Please run 'cargo ci distribution' first.", carl_dist_path))
         }
     }
 

@@ -143,6 +143,8 @@ services:
       - --providers.docker
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
+      - --entrypoints.ping.address=:8081
+      - --ping.entryPoint=ping
       - --ping=true
       - --providers.docker.exposedByDefault=false
       # Redirect to HTTPS
@@ -174,7 +176,8 @@ services:
       - OPENDUT_CARL_NETWORK_TLS_CERTIFICATE
       - OPENDUT_CARL_NETWORK_TLS_KEY
     ports:
-      - "127.0.0.1:8080:8080"
+      - "8081:8081"            # /ping endpoint
+      - "127.0.0.1:8080:8080"  # Traefik dashboard, only on localhost, do not expose publicly
       - "80:80"
       - "443:443"
     depends_on:
@@ -183,7 +186,7 @@ services:
     healthcheck:
       <<: *common-healthcheck-params
       #test: ["CMD", "traefik", "healthcheck", "--ping"]
-      test: ["CMD", "wget", "-q", "--proxy", "off", "--spider", "http://localhost:8080/ping"]
+      test: ["CMD", "wget", "-q", "--proxy", "off", "--spider", "http://localhost:8081/ping"]
     volumes:
       - ./data/traefik/config:/etc/traefik/dynamic
       - provision-secrets-data:/provision:ro
