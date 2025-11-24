@@ -8,8 +8,7 @@ license.workspace = true
 [dependencies]
 opendut-auth = { workspace = true, features = ["confidential_client"] }
 opendut-model = { workspace = true }
-opendut-util = { workspace = true, features = ["serde"] }
-opendut-util-core = { workspace = true, features = ["testing"] }
+opendut-util = { workspace = true, features = ["project", "serde", "testing"] }
 opendut-vpn = { workspace = true }
 
 async-trait = { workspace = true }

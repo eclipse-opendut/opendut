@@ -17,7 +17,7 @@ future = []
 pem = ["dep:anyhow", "dep:config", "dep:pem"]
 project = ["dep:anyhow"]
 reqwest = ["pem", "dep:reqwest"]
-testing = ["dotenvy"]
+testing = ["project", "dep:dotenvy"]
 
 [lints]
 workspace = true

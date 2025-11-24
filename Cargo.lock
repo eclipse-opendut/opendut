@@ -4758,7 +4758,6 @@ dependencies = [
  "opendut-auth",
  "opendut-model",
  "opendut-util",
- "opendut-util-core",
  "opendut-vpn",
  "reqwest",
  "reqwest-middleware",

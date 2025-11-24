@@ -149,7 +149,7 @@ struct Fixture {
 }
 impl Default for Fixture {
     fn default() -> Self {
-        opendut_util_core::testing::init_localenv_secrets();
+        opendut_util::testing::init_localenv_secrets();
 
         let client_config = OidcResourceOwnerConfidentialClientConfig::new(
             OAuthClientId::new("netbird-backend".to_string()),

@@ -22,3 +22,7 @@ pub mod serde;
 
 #[cfg(all(feature = "settings", not(target_arch = "wasm32")))]
 pub mod settings;
+
+
+#[cfg(feature = "testing")]
+pub use opendut_util_core::testing;

@@ -14,6 +14,7 @@ proto = ["dep:thiserror"]
 reqwest = ["opendut-util-core/reqwest"]
 serde = ["dep:serde"]
 settings = ["project", "dep:config", "dep:thiserror"]
+testing = ["opendut-util-core/testing"]
 
 [dependencies]
 opendut-util-core = { workspace = true, optional = true }
