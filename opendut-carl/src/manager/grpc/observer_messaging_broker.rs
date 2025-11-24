@@ -62,7 +62,7 @@ impl ObserverMessagingBrokerService for ObserverMessagingBrokerFacade {
             self.check_peer_ids_exist_and_nonempty(&request.peer_ids).await?;
         }
 
-        trace!("Received request to wait for following peers to be online <{:?}>.", request.peer_ids);
+        trace!("Received request to wait for following peers to be online: {:?}", request.peer_ids);
         let rx_outbound = self.observer_messaging_broker.wait_for_peers_online(request.peer_ids, request.max_observation_duration).await
             .map_err(|cause| Status::internal(cause.to_string()))?;
         let outbound_stream = ReceiverStream::new(rx_outbound)

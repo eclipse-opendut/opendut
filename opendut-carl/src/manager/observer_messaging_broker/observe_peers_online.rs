@@ -74,7 +74,7 @@ impl ObservePeersOnline {
             }
             Err(error) => {
                 let peer_ids = self.peers.keys().copied().collect::<HashSet<_>>();
-                trace!("Observer of peer <{peer_ids:?}> did not get any updates for {}ms. {}", self.timeout.as_millis(), error);
+                trace!("Observer of peers {peer_ids:?} did not get any updates for {:?}: {}", self.timeout, error);
             }
         }
     }

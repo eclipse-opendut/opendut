@@ -277,7 +277,7 @@ impl VpnManagementClient for NetbirdManagementClient {
                 }
             })?;
 
-        debug!("Successfully generated vpn configuration for peer <{peer_id}>.");
+        debug!("Successfully generated VPN configuration for peer <{peer_id}>.");
 
         Ok(VpnPeerConfiguration::Netbird {
             management_url: Clone::clone(&self.management_url),

@@ -34,14 +34,18 @@ impl RequestHandler for DefaultRequestHandler {
         let timeout = request.timeout_mut()
             .get_or_insert(self.config.timeout);
 
-        trace!("Starting network request with timeout {} milliseconds.", timeout.as_millis());
+        trace!("Starting network request with timeout {timeout:?}.");
         let retry_policy = ExponentialBackoff::builder().build_with_max_retries(self.config.retries);
+
         let client = ClientBuilder::new(self.inner.to_owned())
             .with(AuthorizationHeaderMiddleware::new(self.netbird_token.clone()))
             .with(LoggingMiddleWare)
             .with(RetryTransientMiddleware::new_with_policy(retry_policy))
             .build();
-        let result = client.execute(request).await.map_err(RequestError::RequestMiddleware);
+
+        let result = client.execute(request).await
+            .map_err(RequestError::RequestMiddleware);
+
         trace!("Network request completed.");
 
         result
