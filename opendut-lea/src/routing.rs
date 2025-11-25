@@ -150,12 +150,23 @@ mod routes {
                     fallback=LoadingSpinner
                     redirect_path=|| "/login"
                 />
-
                 <ProtectedRoute
                     path=path!("/sources")
                     view=move || {
                         #[cfg(feature = "viper")]
                         view! { <Initialized app_globals><crate::sources::SourcesOverview/></Initialized> }
+                        #[cfg(not(feature = "viper"))]
+                        NotFound
+                    }
+                    condition=opendut_user
+                    fallback=LoadingSpinner
+                    redirect_path=|| "/login"
+                />
+                <ProtectedRoute
+                    path=path!("/sources/:id/configure/general")
+                    view=move || {
+                        #[cfg(feature = "viper")]
+                        view! { <Initialized app_globals><crate::sources::SourceConfigurator/></Initialized> }
                         #[cfg(not(feature = "viper"))]
                         NotFound
                     }
