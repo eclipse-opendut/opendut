@@ -46,8 +46,16 @@ impl CarlCli {
             TaskCli::Licenses(cli) => cli.default_handling(PackageSelection::Single(SELF_PACKAGE))?,
             TaskCli::Run(cli) => {
                 tracing::info_span!("lea").in_scope(|| {
+                    let passthrough =
+                        if cli.features.contains(&String::from("viper")) {
+                            info!("Running with VIPER enabled.");
+                            vec![String::from("--features=viper")]
+                        } else {
+                            vec![]
+                        };
+
                     let release_build = false;
-                    crate::packages::lea::build::build(release_build)
+                    crate::packages::lea::build::build(release_build, passthrough)
                         .context("Error while building LEA for CARL distribution") //ensure the LEA distribution exists and is up-to-date
                 })?;
 
@@ -209,7 +217,8 @@ pub mod distribution {
         #[tracing::instrument(skip_all)]
         pub fn get_lea(out_dir: &Path, release_build: bool) -> crate::Result {
 
-            crate::packages::lea::build::build(release_build)?;
+            let passthrough = vec![];
+            crate::packages::lea::build::build(release_build, passthrough)?;
             let lea_build_dir = crate::packages::lea::build::out_dir();
 
             let lea_out_dir = out_dir.join(Package::Lea.ident());

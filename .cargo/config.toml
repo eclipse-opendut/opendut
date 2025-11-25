@@ -8,3 +8,6 @@ carl = "ci carl run --"
 edgar = "ci edgar run --"
 lea = "ci lea run --"
 theo = "ci theo run --"
+
+carl-viper = "ci carl run --features=viper --"
+lea-viper = "ci lea run --features=viper --"
