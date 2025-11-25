@@ -65,7 +65,7 @@ conversion! {
     fn try_from(setup_key: Proto) -> ConversionResult<Model> {
         let value = setup_key.value;
 
-        let result = crate::vpn::netbird::SetupKey::new(value);
+        let result = crate::vpn::netbird::SetupKey::from(value);
 
         Ok(result)
     }

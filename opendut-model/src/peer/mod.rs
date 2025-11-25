@@ -297,7 +297,6 @@ pub struct PeerSetupDecodeError {
 mod tests {
     use googletest::prelude::*;
     use pem::Pem;
-    use uuid::Uuid;
 
     use crate::vpn::netbird::SetupKey;
 
@@ -318,7 +317,7 @@ mod tests {
             },
             vpn: VpnPeerConfiguration::Netbird {
                 management_url: Url::parse("https://netbird.opendut.local/api")?,
-                setup_key: SetupKey::new("d79c202f-bbbf-4997-844e-678f27606e1c"),
+                setup_key: SetupKey::from("d79c202f-bbbf-4997-844e-678f27606e1c"),
             },
         };
 

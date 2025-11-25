@@ -11,7 +11,6 @@ use std::str::FromStr;
 use std::{env, fs};
 use tracing::{debug, info};
 use url::Url;
-use uuid::Uuid;
 use crate::setup::util::DryRun;
 
 const SETUP_STRING_ENV: &str = "OPENDUT_EDGAR_SETUP_STRING";
@@ -43,7 +42,7 @@ enum SetupCommand {
 
         /// Setup Key retrieved from the VPN management UI
         #[arg(long)]
-        setup_key: Uuid,
+        setup_key: String,
 
         /// Whether this EDGAR should act as the leader of this network or use another EDGAR for routing (specify "local" or the IP address of the routing EDGAR respectively)
         #[arg(long, value_name="local|IP_ADDRESS")]
@@ -94,11 +93,10 @@ impl SetupCli {
 
                 setup::start::managed(peer_setup, common).await?;
             },
-            // TODO: migrate UUID setup key to SetupKey type
             SetupCommand::Unmanaged { management_url, setup_key, leader, bridge, device_interfaces, common } => {
                 setup_run_common_prelude().await?;
 
-                let setup_key = SetupKey { value: setup_key.to_string() };
+                let setup_key = SetupKey::from(setup_key);
                 let ParseableLeader(leader) = leader;
                 let bridge = bridge.unwrap_or_else(crate::common::default_bridge_name);
                 let device_interfaces = HashSet::from_iter(device_interfaces);

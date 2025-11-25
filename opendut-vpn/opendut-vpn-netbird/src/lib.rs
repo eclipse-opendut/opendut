@@ -281,7 +281,7 @@ impl VpnManagementClient for NetbirdManagementClient {
 
         Ok(VpnPeerConfiguration::Netbird {
             management_url: Clone::clone(&self.management_url),
-            setup_key: opendut_model::vpn::netbird::SetupKey::new(setup_key.key),
+            setup_key: opendut_model::vpn::netbird::SetupKey::from(setup_key.key),
         })
     }
 }

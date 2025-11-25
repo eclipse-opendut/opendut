@@ -14,20 +14,20 @@ pub enum VpnPeerConfiguration {
 
 pub mod netbird {
     use serde::{Deserialize, Serialize};
-    use uuid::Uuid;
 
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(transparent)]
     pub struct SetupKey { pub value: String }
-    impl SetupKey {
-        pub fn new(value: impl Into<String>) -> Self {
-            Self { value: value.into() }
+
+    impl From<String> for SetupKey {
+        fn from(value: String) -> Self {
+            Self { value }
         }
     }
 
-    impl From<Uuid> for SetupKey {
-        fn from(value: Uuid) -> Self {
-            Self { value: value.to_string() }
+    impl From<&str> for SetupKey {
+        fn from(value: &str) -> Self {
+            Self { value: value.into() }
         }
     }
 }
