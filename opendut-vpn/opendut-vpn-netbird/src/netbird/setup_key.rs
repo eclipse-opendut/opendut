@@ -14,7 +14,7 @@ pub fn name_format(peer_id: PeerId) -> String {
 #[derive(Clone, Debug, Deserialize)]
 pub struct SetupKey {
     pub id: SetupKeyId,
-    pub key: Uuid,
+    pub key: String,
     pub name: String,
     pub expires: Timestamp,
     pub r#type: Type,

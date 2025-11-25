@@ -59,13 +59,13 @@ conversion! {
     type Proto = SetupKey;
 
     fn from(value: Model) -> Proto {
-        Proto { uuid: Some(value.uuid.into()) }
+        Proto { value: value.value }
     }
 
-    fn try_from(value: Proto) -> ConversionResult<Model> {
-        let uuid: uuid::Uuid = extract!(value.uuid)?.into();
+    fn try_from(setup_key: Proto) -> ConversionResult<Model> {
+        let value = setup_key.value;
 
-        let result = crate::vpn::netbird::SetupKey::from(uuid);
+        let result = crate::vpn::netbird::SetupKey::new(value);
 
         Ok(result)
     }

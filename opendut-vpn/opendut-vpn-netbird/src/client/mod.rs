@@ -184,6 +184,9 @@ impl Client for DefaultClient {
         let response = self.requester.handle(request).await?;
 
         let setup_keys = response.json::<Vec<netbird::SetupKey>>().await
+            .inspect_err(|error| {
+                error!("Failed to deserialize setup key response due to error: {:?}", error) }
+            )
             .map_err(RequestError::JsonDeserialization)?;
 
         Ok(setup_keys)

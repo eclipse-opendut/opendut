@@ -11,8 +11,9 @@ Always create a database backup before upgrading CARL.
 
 ## Unreleased
 
-tbd.
-
+### Changed
+* Netbird: Update NetBird to version 0.60.2.
+* API: Change NetBird SetupKey from UUID to String (breaking change).
 
 ## [0.8.0] - 2025-11-20
 

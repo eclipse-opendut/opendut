@@ -1,7 +1,6 @@
 syntax = "proto3";
 
 import "opendut/model/util/net.proto";
-import "opendut/model/util/uuid.proto";
 
 package opendut.model.vpn;
 
@@ -20,5 +19,5 @@ message VpnPeerConfigNetbird {
 }
 
 message SetupKey {
-  opendut.model.util.Uuid uuid = 1;
+  string value = 1;
 }

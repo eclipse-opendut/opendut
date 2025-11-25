@@ -95,8 +95,8 @@ async fn test_netbird_vpn_client() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test_with::env(OPENDUT_RUN_NETBIRD_INTEGRATION_TESTS)]
-#[tokio::test]
+//#[test_with::env(OPENDUT_RUN_NETBIRD_INTEGRATION_TESTS)]
+#[test_log::test(tokio::test)]
 async fn test_netbird_vpn_client_list_keys() -> anyhow::Result<()> {
     let Fixture { management_url, authentication_method, ca, timeout, retries, setup_key_expiration } = Fixture::default();
     let management_ca = {
@@ -133,7 +133,7 @@ async fn test_netbird_vpn_client_list_keys() -> anyhow::Result<()> {
     ).await.expect("Should be able to create netbird client!");
 
     let keys_result = client.list_setup_keys().await;
-    assert!(keys_result.is_ok());
+    assert!(keys_result.is_ok(), "Could not list setup keys due to error: {:?}", keys_result.err());
     
     Ok(())
 }

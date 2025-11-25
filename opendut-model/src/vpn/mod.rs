@@ -18,16 +18,16 @@ pub mod netbird {
 
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(transparent)]
-    pub struct SetupKey { pub uuid: Uuid }
+    pub struct SetupKey { pub value: String }
     impl SetupKey {
-        pub fn random() -> Self {
-            Self { uuid: Uuid::new_v4() }
+        pub fn new(value: impl Into<String>) -> Self {
+            Self { value: value.into() }
         }
     }
 
     impl From<Uuid> for SetupKey {
         fn from(value: Uuid) -> Self {
-            Self { uuid: value }
+            Self { value: value.to_string() }
         }
     }
 }

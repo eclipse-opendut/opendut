@@ -50,14 +50,14 @@ impl Client {
 
     pub async fn login(&mut self, setup_key: &SetupKey, management_url: &Url, mtu: u16) -> Result<()> {
         let request = tonic::Request::new(LoginRequest {
-            setup_key: setup_key.uuid.to_string(),
+            setup_key: setup_key.value.to_string(),
             management_url: management_url.to_string(),
             mtu: Some(i64::from(mtu)),
             ..Default::default()
         });
         let _ = self.inner.login(request).await?; //ignore response, only relevant for login without Setup Key
 
-        debug!("Logged NetBird Client into NetBird Management Service at '{}' with Setup-Key '{}'.", management_url, setup_key.uuid);
+        debug!("Logged NetBird Client into NetBird Management Service at '{}' with Setup-Key '{}'.", management_url, setup_key.value);
         Ok(())
     }
 

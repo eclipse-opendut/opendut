@@ -281,7 +281,7 @@ impl VpnManagementClient for NetbirdManagementClient {
 
         Ok(VpnPeerConfiguration::Netbird {
             management_url: Clone::clone(&self.management_url),
-            setup_key: opendut_model::vpn::netbird::SetupKey::from(setup_key.key),
+            setup_key: opendut_model::vpn::netbird::SetupKey::new(setup_key.key),
         })
     }
 }
@@ -398,7 +398,7 @@ mod test {
         };
         let setup_key = netbird::SetupKey {
             id: netbird::SetupKeyId(String::from("some-id")),
-            key: uuid!("4626c02a-bee7-4468-91c3-73c47fd0116c"),
+            key: "4626c02a-bee7-4468-91c3-73c47fd0116c".to_string(),
             name: netbird::setup_key_name_format(peer_id),
             expires: netbird::SetupKeyTimeStamp { inner: OffsetDateTime::now_utc() },
             r#type: netbird::SetupKeyType::Reusable,
@@ -445,7 +445,7 @@ mod test {
             ok(matches_pattern!(VpnPeerConfiguration::Netbird {
                 management_url: eq(&Url::parse("https://localhost/api/").unwrap()),
                 setup_key: matches_pattern!(vpn::netbird::SetupKey {
-                    uuid: eq(&setup_key.key)
+                    value: eq(&setup_key.key)
                 }),
             })
         ));

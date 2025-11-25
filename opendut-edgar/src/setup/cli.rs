@@ -94,10 +94,11 @@ impl SetupCli {
 
                 setup::start::managed(peer_setup, common).await?;
             },
+            // TODO: migrate UUID setup key to SetupKey type
             SetupCommand::Unmanaged { management_url, setup_key, leader, bridge, device_interfaces, common } => {
                 setup_run_common_prelude().await?;
 
-                let setup_key = SetupKey { uuid: setup_key };
+                let setup_key = SetupKey { value: setup_key.to_string() };
                 let ParseableLeader(leader) = leader;
                 let bridge = bridge.unwrap_or_else(crate::common::default_bridge_name);
                 let device_interfaces = HashSet::from_iter(device_interfaces);
