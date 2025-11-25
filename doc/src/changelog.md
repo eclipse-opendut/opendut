@@ -101,7 +101,7 @@ vim /var/lib/docker/volumes/opendut_provision-secrets-data/_data/.env         #e
 * Update secrets on host:
 ```shell
 rm -rf .ci/deploy/localenv/data/secrets/  # remove old secrets
-docker compose --file .ci/deploy/localenv/docker-compose.yml up --build provision-secrets
+docker compose --file .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/.env.development up --build provision-secrets
 docker cp opendut-provision-secrets:/provision/ .ci/deploy/localenv/data/secrets/
 # ensure this yields the correct passwords
 cat .ci/deploy/localenv/data/secrets/.env
@@ -114,7 +114,7 @@ docker network rm local
 ```
 * Restart the localenv deployment
 ```shell
-docker compose -f .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/data/secrets/.env up --detach
+docker compose -f .ci/deploy/localenv/docker-compose.yml --env-file .ci/deploy/localenv/data/secrets/.env --env-file .ci/deploy/localenv/.env.development up --detach
 ```
 
 ## [0.7.0] - 2025-06-25
