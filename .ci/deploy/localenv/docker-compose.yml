@@ -210,7 +210,7 @@ services:
   # vaguely derived from: https://github.com/netbirdio/netbird/blob/main/infrastructure_files/docker-compose.yml.tmpl.traefik
   netbird-dashboard:
     container_name: opendut-netbird-dashboard
-    image: netbirdio/dashboard:v2.5.0
+    image: netbirdio/dashboard:v2.22.2
     restart: unless-stopped
     depends_on:
       traefik:
@@ -247,7 +247,7 @@ services:
   # Signal
   netbird-signal:
     container_name: opendut-netbird-signal
-    image: netbirdio/signal:0.28.9
+    image: netbirdio/signal:0.60.2  # https://hub.docker.com/r/netbirdio/management/tags
     restart: unless-stopped
     volumes:
       - netbird-signal:/var/lib/netbird
@@ -268,7 +268,7 @@ services:
       context: ../../..
       dockerfile: ./.ci/deploy/localenv/data/netbird/Dockerfile_management
       args:
-        NETBIRD_MANAGEMENT_VERSION: "0.28.9"
+        NETBIRD_MANAGEMENT_VERSION: "0.60.2"  # https://hub.docker.com/r/netbirdio/management/tags
     restart: unless-stopped
     depends_on:
       traefik:
@@ -341,7 +341,7 @@ services:
     container_name: opendut-netbird-coturn
     # https://hub.docker.com/r/coturn/coturn/tags
     # https://github.com/coturn/coturn/tree/master/docker/coturn#why-so-many-ports-opened
-    image: coturn/coturn:4.6.2
+    image: coturn/coturn:4.7.0
     restart: unless-stopped
     domainname: ${OPENDUT_DOMAIN_SUFFIX}
     volumes:
