@@ -36,7 +36,6 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
     let dropdown = NodeRef::<Div>::new();
 
     let _ = on_click_outside(dropdown, move |_| dropdown_active.set(false) );
-    let used_clusters_length = RwSignal::new(0);
 
     view! {
         <tr>
@@ -44,7 +43,7 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
                 <a href={ configurator_href }> { source_name } </a>
             </td>
             <td class="is-vcentered">
-                <a href={ source_url }> { source_url } </a>
+                <a href=source_url.get()> { source_url } </a>
             </td>
             <td class="is-vcentered is-flex is-justify-content-center">
                 <div class="is-pulled-right">

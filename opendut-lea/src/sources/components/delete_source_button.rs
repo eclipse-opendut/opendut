@@ -1,7 +1,6 @@
 use leptos::prelude::*;
 use tracing::{error, info};
 use opendut_lea_components::{use_toaster, ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, Toast};
-use opendut_lea_components::tooltip::Tooltip;
 use opendut_model::viper::ViperSourceId;
 use crate::app::use_app_globals;
 
