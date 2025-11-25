@@ -49,14 +49,14 @@ keycloak_client_in_realm_netbird_is_present() {
   if [ -n "$CLIENTS" ]; then
     KEYCLOAK_CLIENT=$(echo "$CLIENTS" | jq -r ".[] | select(.clientId==\"$CLIENT_ID\")" 2>/dev/null)
     if [ -z "$KEYCLOAK_CLIENT" ]; then
-      echo "Keycloak client \'$CLIENT_ID\' is not present"
+      printf "Keycloak client '${CLIENT_ID}' is not present"
       return 1
     else
-      echo "Keycloak client \'$CLIENT_ID\' is present"
+      printf "Keycloak client '${CLIENT_ID}' is present"
       return 0
     fi
   else
-    echo "Keycloak client \'$CLIENT_ID\' is not present"
+    printf "Keycloak client '${CLIENT_ID}' is not present"
     return 1
   fi
 }
@@ -145,12 +145,6 @@ get_user_oauth_token() {
   echo "$TOKEN"
 }
 
-get_client_oauth_token() {
-    RESPONSE=$(curl -s -d "client_id=netbird-mgmt-cli" -d client_secret="5185e4ca-9436-11ee-b56d-2701aec9048e" -d "grant_type=client_credentials" $KEYCLOAK_URL/realms/netbird/protocol/openid-connect/token)
-    TOKEN=$(echo "$RESPONSE" | jq -r '.access_token')
-    echo "$TOKEN"
-}
-
 netbird_auth() {
   # ignore "Declare and assign separately to avoid masking return values."
   # shellcheck disable=SC2155
@@ -176,22 +170,6 @@ wait_for_keycloak_client_auth_successful() {
     echo "Waiting for authentication to be available... sleeping $sleep_time seconds"
     sleep "$sleep_time"
   done
-}
-
-netbird_api_token_test() {
-  TOKEN="${1}"
-  RESULT=$(curl --fail --silent -H "Authorization: Token $TOKEN" $NETBIRD_MANAGEMENT_URL/api/groups)
-  # shellcheck disable=SC2181
-  if [ $? -ne 0 ]; then
-    echo "NetBird API token is not valid. Failed to retrieve groups: $RESULT"
-    curl --fail -H "Authorization: Token $TOKEN" $NETBIRD_MANAGEMENT_URL/api/groups
-    return 1
-  fi
-  if [ -z "$RESULT" ]; then
-    echo "NetBird API token is not valid. Failed to retrieve groups. Result is empty"
-    return 1
-  fi
-  echo "NetBird API token is valid"
 }
 
 group_list() {
