@@ -40,10 +40,10 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
     view! {
         <tr>
             <td class="is-vcentered">
-                <a href={ configurator_href }> { source_name } </a>
+                <a href=configurator_href> { source_name } </a>
             </td>
             <td class="is-vcentered">
-                <a href=source_url.get()> { source_url } </a>
+                <a href=source_url> { source_url } </a>
             </td>
             <td class="is-vcentered is-flex is-justify-content-center">
                 <div class="is-pulled-right">

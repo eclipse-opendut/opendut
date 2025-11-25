@@ -62,7 +62,7 @@ where
                 <Health state=health_state />
             </td>
             <td class="is-vcentered">
-                <a href={ configurator_href }>{ cluster_name }</a>
+                <a href=configurator_href> { cluster_name } </a>
             </td>
             <td class="is-vcentered is-flex is-justify-content-center">
                 <div class="is-pulled-right">

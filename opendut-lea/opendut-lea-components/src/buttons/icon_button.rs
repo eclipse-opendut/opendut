@@ -35,7 +35,7 @@ where A: Fn() + 'static {
             }
         >
             <span class="icon">
-                <i class=icon.with(FontAwesomeIcon::as_class)/>
+                <i class=move || icon.with(FontAwesomeIcon::as_class)/>
             </span>
             {
                 show_label.get().then(|| {

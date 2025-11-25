@@ -92,7 +92,7 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
                 <Health state=health_state />
             </td>
             <td class="is-vcentered">
-                <a href={ configurator_href } >{ peer_name }</a>
+                <a href=configurator_href> { peer_name } </a>
             </td>
             <td class="is-vcentered">
                 { cluster_columns }

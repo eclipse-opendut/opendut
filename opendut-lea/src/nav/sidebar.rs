@@ -7,7 +7,7 @@ use crate::routing;
 pub fn Sidebar(menu_visible: RwSignal<bool>, hide_buttons: Signal<bool>) -> impl IntoView {
 
     view! {
-        <aside class="dut-menu is-left column" class:is-active= move || menu_visible.get() >
+        <aside class="dut-menu is-left column" class:is-active=move || menu_visible.get()>
             <ul class="dut-menu-list" class:is-hidden= move || hide_buttons.get()>
                 <SidebarItem
                     icon= FontAwesomeIcon::Dashboard
