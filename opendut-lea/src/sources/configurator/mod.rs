@@ -43,7 +43,7 @@ pub fn SourceConfigurator() -> impl IntoView {
             UserSourceConfiguration {
                 id: source_id,
                 name: UserInputValue::Left(UserInputError::from("Enter a valid source name.")),
-                url: UserInputValue::Left(UserInputError::from("Enter a valid source URL.")),
+                url: UserInputValue::Left(UserInputError::from("Enter a valid source url.")),
                 is_new: true,
             }
         );
