@@ -6,10 +6,7 @@ edition.workspace = true
 license.workspace = true
 
 [features]
-viper = [
-    "opendut-carl-api/viper",
-    "opendut-model/viper",
-]
+viper = []
 
 [dependencies]
 opendut-carl-api = { workspace = true, features = ["wasm-client"] }
