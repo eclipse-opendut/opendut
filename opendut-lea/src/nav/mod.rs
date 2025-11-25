@@ -60,12 +60,17 @@ pub fn Navbar(
                         route=WellKnownRoutes::PeersOverview
                         path=routing::path::peers_overview
                     />
-                    <NavbarButton
-                        icon=FontAwesomeIcon::Link
-                        label="Sources"
-                        route=WellKnownRoutes::SourcesOverview
-                        path=routing::path::sources_overview
-                    />
+                    {
+                        #[cfg(feature = "viper")]
+                        view! {
+                            <NavbarButton
+                                icon=FontAwesomeIcon::Link
+                                label="Sources"
+                                route=WellKnownRoutes::SourcesOverview
+                                path=routing::path::sources_overview
+                            />
+                        }
+                    }
                     <NavbarButton
                         icon=FontAwesomeIcon::Downloads
                         label="Downloads"

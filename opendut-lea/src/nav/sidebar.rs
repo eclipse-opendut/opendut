@@ -24,11 +24,16 @@ pub fn Sidebar(menu_visible: RwSignal<bool>, hide_buttons: Signal<bool>) -> impl
                     label="Peers"
                     route=routing::path::peers_overview
                 />
-                <SidebarItem
-                    icon= FontAwesomeIcon::Link
-                    label="Sources"
-                    route=routing::path::sources_overview
-                />
+                {
+                    #[cfg(feature = "viper")]
+                    view!{
+                        <SidebarItem
+                            icon= FontAwesomeIcon::Link
+                            label="Sources"
+                            route=routing::path::sources_overview
+                        />
+                    }
+                }
                 <SidebarItem
                     icon= FontAwesomeIcon::Downloads
                     label="Downloads"
