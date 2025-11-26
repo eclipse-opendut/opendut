@@ -43,12 +43,12 @@ pub(crate) struct TokenStorage {
 
 #[derive(thiserror::Error, Debug)]
 pub enum AuthError {
-    #[error("FailedToGetToken: {message} cause: {cause}.")]
-    FailedToGetToken { message: String, cause: WrappedRequestTokenError },
-    #[error("ExpirationFieldMissing: {message}.")]
-    ExpirationFieldMissing { message: String },
-    #[error("FailedToUpdateToken: {message} cause: {cause}.")]
-    FailedToLockConfidentialClient { message: String, cause: TryLockError },
+    #[error("Fetching authentication token failed. Cause: {source}")]
+    FailedToGetToken { source: WrappedRequestTokenError },
+    #[error("No expires_in field in authentication response")]
+    ExpirationFieldMissing,
+    #[error("Unable to acquire lock on the Confidential Client. Cause: {source}")]
+    FailedToLockConfidentialClient { source: TryLockError },
 }
 
 #[derive(Clone)]
@@ -147,7 +147,7 @@ impl ConfidentialClient {
         let access_token = response.access_token().clone();
         let expires_in = match response.expires_in() {
             None => {
-                return Err(AuthError::ExpirationFieldMissing { message: "No expires_in in response.".to_string() });
+                return Err(AuthError::ExpirationFieldMissing);
             }
             Some(expiry_duration) => { Utc::now().naive_utc() + expiry_duration }
         };
@@ -235,10 +235,10 @@ impl Interceptor for ConfClientArcMutex<Option<ConfidentialClientRef>> {
                 }
                 token
             }
-            Err(error) => {
+            Err(source) => {
                 eprintln!("Failed to acquire lock on the Confidential Client definitively. The following telemetry request will not be transmitted.");
                 eprintln!("Failed request: {request:?}");
-                Some(Err(AuthError::FailedToLockConfidentialClient { message: "Unable to acquire lock on the Confidential Client".to_owned(), cause: error }))
+                Some(Err(AuthError::FailedToLockConfidentialClient { source }))
             }
         };
 

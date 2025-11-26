@@ -24,11 +24,8 @@ impl OidcAuthenticator for OidcConfidentialClientConfig {
                 .add_scopes(scopes)
                 .request_async(&|request| { async_http_client(reqwest_client, request) })
         ).await
-            .map_err(|error| {
-                AuthError::FailedToGetToken {
-                    message: "Fetching authentication token failed!".to_string(),
-                    cause: WrappedRequestTokenError(error),
-                }
+            .map_err(|error| AuthError::FailedToGetToken {
+                source: WrappedRequestTokenError(error),
             })?;
 
         let mut state = token_store.write().await;
@@ -47,11 +44,8 @@ impl OidcAuthenticator for OidcResourceOwnerConfidentialClientConfig {
                 .add_scopes(scopes)
                 .request_async(&|request| { async_http_client(reqwest_client, request) })
         ).await
-            .map_err(|error| {
-                AuthError::FailedToGetToken {
-                    message: "Fetching authentication token failed!".to_string(),
-                    cause: WrappedRequestTokenError(error),
-                }
+            .map_err(|error| AuthError::FailedToGetToken {
+                source: WrappedRequestTokenError(error),
             })?;
 
         let mut state = token_store.write().await;
