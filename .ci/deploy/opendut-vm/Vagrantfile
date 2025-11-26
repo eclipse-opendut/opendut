@@ -10,6 +10,7 @@ vm_graphics_controller = (ENV["OPENDUT_VM_GRAPHICS_CONTROLLER"] || "VMSVGA").to_
 vm_nested_hw_virtualization = (ENV["OPENDUT_VM_NESTED_HW_VIRTUALIZATION"] || "on").to_s
 vm_ip = (ENV["OPENDUT_VM_IP"] || "192.168.56.10").to_s
 vm_box_name = (ENV["OPENDUT_VM_BOX_NAME"] || "ubuntu/jammy64").to_s
+vm_ssh_key_path = (ENV["OPENDUT_VM_SSH_KEY_PATH"] || "#{Dir.home}/.ssh/id_rsa.pub").to_s
 
 # proxy settings
 vm_default_no_proxy = "localhost,127.0.0.1,opendut.local,netbird-management,netbird-dashboard,netbird-signal,netbird-coturn,keycloak,edgar-leader,edgar-*,carl,loki,tempo,prometheus,alloy,otel-collector,grafana,nginx-webdav,192.168.56.10,192.168.0.0/16"
@@ -77,10 +78,11 @@ TERMINAL_OUTPUT
     end
 
     # add ssh key
-    if !File.file?("#{Dir.home}/.ssh/id_rsa.pub")
+    if !File.file?(vm_ssh_key_path)
         puts "No SSH key found."
         puts "Run e.g. 'mkdir -p ~/.ssh; ssh-keygen -t rsa -b 4096 -C 'opendut-vm' -f ~/.ssh/id_rsa' to generate one."
     end
+    config.vm.provision "file", source: vm_ssh_key_path, destination: "/home/vagrant/.ssh/authorized_keys2"
 
     # automatically change directory to the repository root
     config.ssh.extra_args = ["-t", "cd /vagrant; bash --login"]
@@ -100,19 +102,6 @@ TERMINAL_OUTPUT
         end
     end
 
-    config.vm.provision "shell" do |s|
-    ssh_pub_key = File.readlines("#{Dir.home}/.ssh/id_rsa.pub").first.strip
-    s.inline = <<-SHELL
-      if grep -sq "#{ssh_pub_key}" /home/vagrant/.ssh/authorized_keys; then
-        echo "SSH keys already provisioned."
-        exit 0;
-      else
-        echo '#{ssh_pub_key}' >> /home/vagrant/.ssh/authorized_keys
-        mkdir -p /root/.ssh
-        echo '#{ssh_pub_key}' >> /root/.ssh/authorized_keys
-      fi
-    SHELL
-    end
     # Set the name of the VM. See: http://stackoverflow.com/a/17864388/100134
     config.vm.define machine[:hostname] do |box|
     end
