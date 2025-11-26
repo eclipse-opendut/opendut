@@ -24,6 +24,8 @@ pub mod path {
     pub const user: &str = "/user";
     #[cfg(feature = "viper")]
     pub const sources_overview: &str = "/sources";
+    #[cfg(feature = "viper")]
+    pub const tests_overview: &str = "/tests";
 }
 
 #[derive(Clone)]
@@ -35,7 +37,11 @@ pub enum WellKnownRoutes {
     #[cfg(feature = "viper")]
     SourcesOverview,
     #[cfg(feature = "viper")]
-    SourcesConfigurator { id: opendut_model::viper::ViperSourceId },
+    SourceConfigurator { id: opendut_model::viper::ViperSourceId },
+    #[cfg(feature = "viper")]
+    TestsOverview,
+    #[cfg(feature = "viper")]
+    TestConfigurator { id: opendut_model::viper::ViperRunId },
     Downloads,
     ErrorPage { title: String, text: String, details: Option<String> },
 }
@@ -66,9 +72,19 @@ impl WellKnownRoutes {
                     .expect("SourcesOverview route should be valid.")
             }
             #[cfg(feature = "viper")]
-            WellKnownRoutes::SourcesConfigurator { id } => {
+            WellKnownRoutes::SourceConfigurator { id } => {
                 base.join(&format!("/sources/{}/configure/general", id.url_encode()))
                     .expect("SourcesConfigurator route should be valid.")
+            }
+            #[cfg(feature = "viper")]
+            WellKnownRoutes::TestsOverview => {
+                base.join(path::tests_overview)
+                    .expect("TestsOverview route should be valid.")
+            }
+            #[cfg(feature = "viper")]
+            WellKnownRoutes::TestConfigurator { id } => {
+                base.join(&format!("/tests/{}/configure/general", id.url_encode()))
+                    .expect("TestConfigurator route should be valid.")
             }
             WellKnownRoutes::Downloads => {
                 base.join(path::downloads)
@@ -167,6 +183,30 @@ mod routes {
                     view=move || {
                         #[cfg(feature = "viper")]
                         view! { <Initialized app_globals><crate::sources::SourceConfigurator/></Initialized> }
+                        #[cfg(not(feature = "viper"))]
+                        NotFound
+                    }
+                    condition=opendut_user
+                    fallback=LoadingSpinner
+                    redirect_path=|| "/login"
+                />
+                <ProtectedRoute
+                    path=path!("/tests")
+                    view=move || {
+                        #[cfg(feature = "viper")]
+                        view! { <Initialized app_globals><crate::tests::TestsOverview/></Initialized> }
+                        #[cfg(not(feature = "viper"))]
+                        NotFound
+                    }
+                    condition=opendut_user
+                    fallback=LoadingSpinner
+                    redirect_path=|| "/login"
+                />
+                <ProtectedRoute
+                    path=path!("/tests/:id/configure/:tab")
+                    view=move || {
+                        #[cfg(feature = "viper")]
+                        view! { <Initialized app_globals><crate::tests::TestConfigurator/></Initialized> }
                         #[cfg(not(feature = "viper"))]
                         NotFound
                     }
@@ -308,6 +348,13 @@ mod url_encode {
 
     #[cfg(feature = "viper")]
     impl UrlEncodable for opendut_model::viper::ViperSourceId {
+        fn url_encode(&self) -> String {
+            self.to_string()
+        }
+    }
+
+    #[cfg(feature = "viper")]
+    impl UrlEncodable for opendut_model::viper::ViperRunId {
         fn url_encode(&self) -> String {
             self.to_string()
         }

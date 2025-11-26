@@ -34,6 +34,16 @@ pub fn Sidebar(menu_visible: RwSignal<bool>, hide_buttons: Signal<bool>) -> impl
                         />
                     }
                 }
+                {
+                    #[cfg(feature = "viper")]
+                    view!{
+                        <SidebarItem
+                            icon= FontAwesomeIcon::Code
+                            label="Tests"
+                            route=routing::path::tests_overview
+                        />
+                    }
+                }
                 <SidebarItem
                     icon= FontAwesomeIcon::Downloads
                     label="Downloads"

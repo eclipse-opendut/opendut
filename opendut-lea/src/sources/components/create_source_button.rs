@@ -18,7 +18,7 @@ pub fn CreateSourceButton() -> impl IntoView {
             state=ButtonState::Enabled
             label="Create source"
             on_action=move || {
-                navigate_to(WellKnownRoutes::SourcesConfigurator {
+                navigate_to(WellKnownRoutes::SourceConfigurator {
                     id: ViperSourceId::random()
                 }, use_navigate.clone());
             }

@@ -71,6 +71,17 @@ pub fn Navbar(
                             />
                         }
                     }
+                    {
+                        #[cfg(feature = "viper")]
+                        view! {
+                            <NavbarButton
+                                icon=FontAwesomeIcon::Code
+                                label="Tests"
+                                route=WellKnownRoutes::TestsOverview
+                                path=routing::path::tests_overview
+                            />
+                        }
+                    }
                     <NavbarButton
                         icon=FontAwesomeIcon::Downloads
                         label="Downloads"
