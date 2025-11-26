@@ -1,8 +1,10 @@
 use leptos::html::Div;
 use leptos::prelude::*;
 use leptos_use::on_click_outside;
+use opendut_lea_components::ButtonColor;
 use opendut_model::viper::ViperRunDescriptor;
 use crate::app::use_app_globals;
+use crate::tests::components::DeleteTestButton;
 
 #[component]
 pub(crate) fn Row<OnDeleteFn>(
@@ -78,12 +80,11 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
             </td>
             <td class="is-vcentered is-flex is-justify-content-center">
                 <div class="is-pulled-right">
-                    // Todo: Implement component `DeleteTestButton`
-                    // <DeleteTestButton
-                    //     test_id
-                    //     button_color=ButtonColor::TextDanger
-                    //     on_delete
-                    // />
+                    <DeleteTestButton
+                        test_id
+                        button_color=ButtonColor::TextDanger
+                        on_delete
+                    />
                 </div>
             </td>
         </tr>

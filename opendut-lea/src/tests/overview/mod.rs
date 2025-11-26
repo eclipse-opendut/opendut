@@ -4,6 +4,7 @@ use leptos::prelude::*;
 use opendut_lea_components::{BasePageContainer, Breadcrumb, LoadingSpinner};
 use opendut_model::viper::ViperRunDescriptor;
 use crate::app::use_app_globals;
+use crate::tests::components::CreateTestButton;
 use crate::tests::overview::row::Row;
 
 #[component(transparent)]
@@ -44,7 +45,7 @@ pub fn TestsOverview() -> impl IntoView {
         <BasePageContainer
             title="Tests"
             breadcrumbs
-            controls=view! {} // Todo: CreateTestButton
+            controls=view! { <CreateTestButton /> }
         >
         <div class="mt-4">
                 <Transition
