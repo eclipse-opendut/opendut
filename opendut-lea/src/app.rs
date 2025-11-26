@@ -10,8 +10,7 @@ use opendut_carl_api::carl::wasm::CarlClient;
 use opendut_model::lea::LeaConfig;
 use crate::components::Toaster;
 use crate::components::AppGlobalsResource;
-use crate::nav::Navbar;
-use crate::nav::sidebar::Sidebar;
+use crate::nav::{Navbar, Sidebar};
 use crate::routing::AppRoutes;
 use crate::user::{provide_authentication_signals_in_context, AuthenticationConfigSwitch, UserAuthenticationSignal};
 

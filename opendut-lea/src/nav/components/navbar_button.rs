@@ -17,9 +17,9 @@ pub fn NavbarButton(
 
     view! {
         <div
-            class="navbar-item px-0 mx-1"
-            class:is-active= is_active
-            class:is-tab= is_active
+            class="navbar-item px-0 mx-2"
+            class:is-active=is_active
+            class:is-tab=is_active
         >
             <IconButton
                 icon
@@ -35,14 +35,6 @@ pub fn NavbarButton(
                     );
                 }
             />
-
-
-                // <span class="icon-text has-text-dark">
-                //     <span class="icon">
-                //         <i class=icon.get().as_class()></i>
-                //     </span>
-                //     <span>{label}</span>
-                // </span>
         </div>
     }
 }

@@ -2,7 +2,6 @@ pub mod auth;
 mod authenticated;
 mod generate_setup_string;
 mod util;
-pub mod navbar_button;
 
 pub use opendut_lea_components::*;
 
