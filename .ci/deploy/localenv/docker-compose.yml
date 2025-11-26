@@ -361,7 +361,9 @@ services:
     healthcheck:
       <<: *common-healthcheck-params
       test: ["CMD-SHELL", "turnutils_uclient -T -p $$TURN_PORT -u $$TURN_USER -w $$TURN_PASSWORD localhost"]
-
+    deploy:
+      mode: replicated
+      replicas: ${OPENDUT_COTURN_ENABLED:-1}
 
   carl:
     container_name: opendut-carl

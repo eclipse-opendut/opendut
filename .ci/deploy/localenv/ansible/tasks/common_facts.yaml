@@ -11,5 +11,14 @@
 - name: Define environment files for docker compose
   set_fact:
     opendut_env_files:
-      - "{{ docker_volumes[opendut_secrets_volume] }}/.env"
       - "{{ repo_dir }}/.ci/deploy/localenv/data/secrets/.env"
+
+- name: Define variable for generated env file in secrets volume
+  set_fact:
+    opendut_env_secret_file: "{{ docker_volumes[opendut_secrets_volume] }}/.env"
+  when: docker_volumes[opendut_secrets_volume] is defined
+
+- name: Add env file in secrets volume to docker compose opendut_env_files
+  set_fact:
+    opendut_env_files: "{{ opendut_env_files + [ opendut_env_secret_file ] }}"
+  when: docker_volumes[opendut_secrets_volume] is defined
