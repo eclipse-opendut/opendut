@@ -2,6 +2,7 @@ pub mod auth;
 mod authenticated;
 mod generate_setup_string;
 mod util;
+pub mod tabs;
 
 pub use opendut_lea_components::*;
 

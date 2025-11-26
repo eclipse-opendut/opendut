@@ -27,7 +27,7 @@ pub use toast::{use_toaster, Toast, ToastContent, ToastKind, Toaster};
 pub use warning_message::WarningMessage;
 pub use util::ior::Ior;
 pub use util::net::UserNetworkInterfaceConfiguration;
-pub use util::signal::{ButtonStateSignalProvider, Toggled, ToggleSignal};
+pub use util::signal::{ButtonStateSignalProvider, ToggleSignal, Toggled};
 pub use doorhanger::{Doorhanger, DoorhangerAlignment};
 pub use icon_text::IconText;
 pub use toggle::Toggle;
