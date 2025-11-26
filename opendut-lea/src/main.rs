@@ -25,6 +25,7 @@ mod components;
 mod nav;
 #[cfg(feature = "viper")]
 mod sources;
+mod tests;
 
 fn main() {
 
