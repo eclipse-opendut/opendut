@@ -25,7 +25,7 @@ pub enum TaskCli {
     /// Compile and bundle LEA for development
     Build(BuildCli),
     /// Start a development server which watches for file changes.
-    Run(crate::tasks::run::RunCli),
+    Run(BuildCli),
     Licenses(crate::tasks::licenses::LicensesCli),
 
     /// Compile and bundle LEA for distribution
@@ -34,6 +34,7 @@ pub enum TaskCli {
 
 #[derive(clap::Args)]
 pub struct BuildCli {
+    /// Additional parameters to pass through to the started program
     #[arg(raw = true)]
     passthrough: Vec<String>
 }
@@ -46,7 +47,7 @@ impl LeaCli {
                 let release_build = false;
                 build::build(release_build, passthrough)?
             },
-            TaskCli::Run(cli) => run::run(cli.passthrough)?,
+            TaskCli::Run(BuildCli { passthrough }) => run::run(passthrough)?,
             TaskCli::Licenses(cli) => cli.default_handling(PackageSelection::Single(PACKAGE))?,
             TaskCli::DistributionBuild(BuildCli { passthrough }) => {
                 distribution_build::distribution_build(passthrough)?

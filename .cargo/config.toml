@@ -10,4 +10,4 @@ lea = "ci lea run --"
 theo = "ci theo run --"
 
 carl-viper = "ci carl run --features=viper --"
-lea-viper = "ci lea run --features=viper --"
+lea-viper = "ci lea run -- --features=viper"
