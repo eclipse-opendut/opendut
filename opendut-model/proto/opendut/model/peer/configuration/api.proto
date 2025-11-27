@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package opendut.model.peer.configuration.api;
 
-import "opendut/model/cluster/cluster.proto";
 import "opendut/model/peer/configuration/parameter.proto";
 import "opendut/model/util/uuid.proto";
 import "google/protobuf/timestamp.proto";

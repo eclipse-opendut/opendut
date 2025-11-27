@@ -3,7 +3,6 @@ syntax = "proto3";
 package opendut.model.cluster;
 
 import "opendut/model/util/uuid.proto";
-import "opendut/model/util/net.proto";
 import "opendut/model/peer/peer.proto";
 import "opendut/model/topology/device.proto";
 
