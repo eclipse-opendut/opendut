@@ -90,6 +90,7 @@ conversion! {
 
         Proto {
             id: Some(value.id.into()),
+            name: Some(value.name.into()),
             source: Some(value.source.into()),
             suite: Some(value.suite.into()),
             parameters,
@@ -98,6 +99,9 @@ conversion! {
 
     fn try_from(value: Proto) -> ConversionResult<Model> {
         let id = extract!(value.id)?
+            .try_into()?;
+
+        let name = extract!(value.name)?
             .try_into()?;
 
         let source = extract!(value.source)?
@@ -115,7 +119,7 @@ conversion! {
             })
             .collect::<Result<HashMap<_, _>, _>>()?;
 
-        Ok(Model { id, source, suite, parameters })
+        Ok(Model { id, name, source, suite, parameters })
     }
 }
 
@@ -132,6 +136,22 @@ conversion! {
     fn try_from(value: Proto) -> ConversionResult<Model> {
         extract!(value.uuid)
             .map(|uuid| Model { uuid: uuid.into() })
+    }
+}
+
+conversion! {
+    type Model = crate::viper::ViperRunName;
+    type Proto = ViperRunName;
+
+    fn from(value: Model) -> Proto {
+        Proto {
+            value: value.0
+        }
+    }
+
+    fn try_from(value: Proto) -> ConversionResult<Model> {
+        Model::try_from(value.value)
+            .map_err(|cause| ErrorBuilder::message(cause.to_string()))
     }
 }
 
