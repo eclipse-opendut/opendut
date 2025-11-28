@@ -17,6 +17,7 @@ opendut-lea/dist/
 .vagrant/
 /doc/book/
 /doc/src/mdbook-plantuml-img
+/doc/.mdbook-plantuml-cache
 rustc-ice-*
 .cache_ggshield
 

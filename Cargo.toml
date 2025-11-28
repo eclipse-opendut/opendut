@@ -217,9 +217,9 @@ cargo-deny = "0.18.2"
 cargo-sbom = "0.10.0"
 cargo-tarpaulin = "0.34.1"
 cross = "0.2.5"
-mdbook = "0.4.52"
-mdbook-alerts = "0.8.0"
-mdbook-plantuml = "0.8.0"
+mdbook = "0.4.*"
+mdbook-alerts = "0.8.*"
+mdbook-plantuml = "=1.0.0-rc.1"
 trunk = "0.21.14"
 
 [workspace.lints.clippy]
