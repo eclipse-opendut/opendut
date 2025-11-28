@@ -1,16 +1,14 @@
-use opendut_model::vpn::netbird::SetupKey;
 use std::path::PathBuf;
 
 use tokio::net::UnixStream;
 use tonic::transport::{Channel, Endpoint, Uri};
 use tracing::{debug, error, info};
-use url::Url;
 
 use hyper_util::rt::TokioIo;
 
 use crate::error::{Error, Result};
 use crate::proto::daemon::daemon_service_client::DaemonServiceClient;
-use crate::proto::daemon::{DownRequest, FullStatus, LoginRequest, StatusRequest, UpRequest};
+use crate::proto::daemon::{DownRequest, FullStatus, StatusRequest};
 
 pub fn socket_path() -> PathBuf {
     PathBuf::from("/var/run/netbird.sock")
@@ -46,29 +44,6 @@ impl Client {
                 Err(cause)
             }
         }
-    }
-
-    pub async fn login(&mut self, setup_key: &SetupKey, management_url: &Url, mtu: u16) -> Result<()> {
-        let request = tonic::Request::new(LoginRequest {
-            setup_key: setup_key.value.to_string(),
-            management_url: management_url.to_string(),
-            mtu: Some(i64::from(mtu)),
-            ..Default::default()
-        });
-        let _ = self.inner.login(request).await?; //ignore response, only relevant for login without Setup Key
-
-        debug!("Logged NetBird Client into NetBird Management Service at '{}' with Setup-Key '{}'.", management_url, setup_key.value);
-        Ok(())
-    }
-
-    pub async fn up(&mut self) -> Result<()> {
-        let request = tonic::Request::new(UpRequest {
-            ..Default::default()
-        });
-        let _ = self.inner.up(request).await?;
-
-        debug!("Successfully set NetBird Client to 'up'.");
-        Ok(())
     }
 
     pub async fn full_status(&mut self) -> Result<FullStatus> {

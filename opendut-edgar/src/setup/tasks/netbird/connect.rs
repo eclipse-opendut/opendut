@@ -1,13 +1,17 @@
+use std::ops::Not;
+use std::process;
+use std::process::Command;
 use std::time::Duration;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, bail, Result};
 use async_trait::async_trait;
-use tracing::debug;
+use tracing::{debug, info};
 use url::Url;
 
 use opendut_model::vpn::netbird::SetupKey;
 
 use crate::common::task::{Success, Task, TaskStateFulfilled};
+use crate::setup::constants;
 
 const UP_CHECK_RETRIES: usize = 50;
 const UP_CHECK_INTERVAL: Duration = Duration::from_millis(200);
@@ -33,13 +37,27 @@ impl Task for Connect {
         }
     }
     async fn make_present(&self) -> Result<Success> {
+
+        {
+            let process::Output { status, stdout, stderr } =
+                Command::new(constants::netbird::unpacked_executable()?.as_os_str())
+                    .arg("up")
+                    .arg("--management-url").arg(self.management_url.as_str())
+                    .arg("--setup-key").arg(&self.setup_key.value)
+                    .arg("--mtu").arg(&self.mtu.to_string())
+                    .output()?;
+
+            let message = format_command_output(stdout, stderr)?;
+
+            if status.success() {
+                info!("Successfully ran `netbird up` command: {message}");
+            } else {
+                bail!("Error while running `netbird up` command: {message}");
+            }
+        }
+
+
         let mut client = opendut_netbird_client_api::client::Client::connect().await?;
-
-        client.login(&self.setup_key, &self.management_url, self.mtu).await
-            .context("Error during NetBird-Login")?;
-
-        client.up().await
-            .context("Error during NetBird-Up")?;
 
         for _ in 1..=UP_CHECK_RETRIES {
             let is_up = client.check_is_up().await?;
@@ -51,4 +69,20 @@ impl Task for Connect {
         }
         Err(anyhow!("Connection to NetBird Management Service at '{}' was not up after {}*{} ms.", self.management_url, UP_CHECK_RETRIES, UP_CHECK_INTERVAL.as_millis()))
     }
+}
+
+fn format_command_output(stdout: Vec<u8>, stderr: Vec<u8>) -> Result<String> {
+    let mut result = String::new();
+
+    if stdout.is_empty().not() {
+        let stdout = String::from_utf8(stdout)?;
+        result.push_str("\nstdout:\n");
+        result.push_str(&stdout);
+    }
+    if stderr.is_empty().not() {
+        let stderr = String::from_utf8(stderr)?;
+        result.push_str("\nstderr:\n");
+        result.push_str(&stderr);
+    }
+    Ok(result)
 }
