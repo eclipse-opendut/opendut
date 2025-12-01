@@ -301,16 +301,42 @@ services:
       - NETBIRD_SIGNAL_DOMAIN=${OPENDUT_DOMAIN_SIGNAL}
       - NETBIRD_SIGNAL_PROTOCOL=http
       - NETBIRD_SIGNAL_PORT=443
+      # TURN server settings, to be removed
       - TURN_DOMAIN=${OPENDUT_DOMAIN_SUFFIX}
+      - TURN_PORT=3478
       - TURN_USER=self
       - TURN_PASSWORD
-      - TURN_PORT=3478
+      # Relay server settings
+      - NETBIRD_RELAY_DOMAIN=${OPENDUT_DOMAIN_NETBIRD_RELAY}
+      - NETBIRD_RELAY_PORT=443
+      - NETBIRD_RELAY_ENDPOINT=rels://$NETBIRD_RELAY_DOMAIN:443
+      - NETBIRD_RELAY_AUTH_SECRET # TODO: create new secret during provisioning
+      # Store
+      - NETBIRD_STORE_CONFIG_ENGINE=sqlite
+      # OpenDuT specific setting, we disable default policy to avoid auto allowing all traffic
+      - NETBIRD_MGMT_DISABLE_DEFAULT_POLICY=true
+      # HttpConfig
+      - NETBIRD_MGMT_API_PORT=80
+      - NETBIRD_MGMT_API_CERT_FILE=""
+      - NETBIRD_MGMT_API_CERT_KEY_FILE=""
       - NETBIRD_DATASTORE_ENC_KEY
-      - NETBIRD_ISSUER_URL=https://${OPENDUT_DOMAIN_AUTH}/realms/netbird
-      - NETBIRD_ISSUER_DOMAIN=${OPENDUT_DOMAIN_AUTH}
-      - NETBIRD_ISSUER_ADMIN_URL=https://${OPENDUT_DOMAIN_AUTH}/admin/realms/netbird
-      - NETBIRD_MANAGEMENT_CLIENT_ID=netbird-backend
-      - NETBIRD_MANAGEMENT_CLIENT_SECRET
+      -
+      - #NETBIRD_ISSUER_URL=https://${OPENDUT_DOMAIN_AUTH}/realms/netbird
+      - #NETBIRD_ISSUER_DOMAIN=${OPENDUT_DOMAIN_AUTH}
+      - #NETBIRD_ISSUER_ADMIN_URL=https://${OPENDUT_DOMAIN_AUTH}/admin/realms/netbird
+      # Authorization / Identity Provider
+      - NETBIRD_AUTH_AUTHORITY=https://${OPENDUT_DOMAIN_AUTH}/realms/netbird
+      - NETBIRD_AUTH_AUDIENCE=""
+      - NETBIRD_AUTH_USER_ID_CLAIM=""
+      - NETBIRD_AUTH_JWT_CERTS=https://${OPENDUT_DOMAIN_AUTH}/realms/netbird/protocol/openid-connect/certs
+      - NETBIRD_MGMT_IDP_SIGNKEY_REFRESH=false
+      - NETBIRD_AUTH_OIDC_CONFIGURATION_ENDPOINT=https://${OPENDUT_DOMAIN_AUTH}/realms/netbird/.well-known/openid-configuration
+      - NETBIRD_MGMT_IDP=keycloak
+      - NETBIRD_AUTH_TOKEN_ENDPOINT=https://${OPENDUT_DOMAIN_AUTH}/realms/netbird/protocol/openid-connect/token
+      - NETBIRD_IDP_MGMT_CLIENT_ID=netbird-backend
+      - NETBIRD_IDP_MGMT_CLIENT_SECRET=NETBIRD_MANAGEMENT_CLIENT_SECRET  # TODO: rename environment variable in provisioning script
+      - 'BLUB={ "AdminEndpoint": "https://keycloak/admin/realms/netbird" }"'
+      -
       - NETBIRD_MANAGEMENT_DEVICE_ID=netbird-client
       - NETBIRD_PASSWORD
 

@@ -8,9 +8,6 @@
     }
   ],
   "TURNConfig": {
-    "TimeBasedCredentials": false,
-    "CredentialsTTL": "12h0m0s",
-    "Secret": "secret",
     "Turns": [
       {
         "Proto": "udp",
@@ -18,34 +15,53 @@
         "Username": "$TURN_USER",
         "Password": "$TURN_PASSWORD"
       }
-    ]
+    ],
+    "CredentialsTTL": "12h",
+    "Secret": "secret",
+    "TimeBasedCredentials": false
+  },
+  "Relay": {
+    "Addresses": ["$NETBIRD_RELAY_ENDPOINT"],
+    "CredentialsTTL": "24h",
+    "Secret": "$NETBIRD_RELAY_AUTH_SECRET"
   },
   "Signal": {
-    "Proto": "http",
+    "Proto": "$NETBIRD_SIGNAL_PROTOCOL",
     "URI": "$NETBIRD_SIGNAL_DOMAIN:$NETBIRD_SIGNAL_PORT",
     "Username": "",
-    "Password": ""
+    "Password": null
   },
-  "Datadir": "/var/lib/netbird/",
+  "ReverseProxy": {
+    "TrustedHTTPProxies": [],
+    "TrustedHTTPProxiesCount": 0,
+    "TrustedPeers": [
+      "0.0.0.0/0"
+    ]
+  },
+  "DisableDefaultPolicy": $NETBIRD_MGMT_DISABLE_DEFAULT_POLICY,
+  "Datadir": "",
   "DataStoreEncryptionKey": "$NETBIRD_DATASTORE_ENC_KEY",
+  "StoreConfig": {
+    "Engine": "$NETBIRD_STORE_CONFIG_ENGINE"
+  },
   "HttpConfig": {
-    "LetsEncryptDomain": "",
-    "CertFile": "",
-    "CertKey": "",
-    "AuthAudience": "$NETBIRD_MANAGEMENT_DEVICE_ID",
-    "AuthIssuer": "$NETBIRD_ISSUER_URL",
-    "AuthUserIDClaim": "",
-    "AuthKeysLocation": "$NETBIRD_ISSUER_URL/protocol/openid-connect/certs",
-    "OIDCConfigEndpoint": "$NETBIRD_ISSUER_URL/.well-known/openid-configuration",
-    "IdpSignKeyRefreshEnabled": false
+    "Address": "0.0.0.0:$NETBIRD_MGMT_API_PORT",
+    "AuthIssuer": "$NETBIRD_AUTH_AUTHORITY",
+    "AuthAudience": "$NETBIRD_AUTH_AUDIENCE",
+    "AuthKeysLocation": "$NETBIRD_AUTH_JWT_CERTS",
+    "AuthUserIDClaim": "$NETBIRD_AUTH_USER_ID_CLAIM",
+    "CertFile":"$NETBIRD_MGMT_API_CERT_FILE",
+    "CertKey":"$NETBIRD_MGMT_API_CERT_KEY_FILE",
+    "IdpSignKeyRefreshEnabled": $NETBIRD_MGMT_IDP_SIGNKEY_REFRESH,
+    "OIDCConfigEndpoint":"$NETBIRD_AUTH_OIDC_CONFIGURATION_ENDPOINT"
   },
   "IdpManagerConfig": {
-    "ManagerType": "keycloak",
+    "ManagerType": "$NETBIRD_MGMT_IDP",
     "ClientConfig": {
-      "Issuer": "$NETBIRD_ISSUER_URL",
-      "TokenEndpoint": "$NETBIRD_ISSUER_URL/protocol/openid-connect/token",
-      "ClientID": "$NETBIRD_MANAGEMENT_CLIENT_ID",
-      "ClientSecret": "$NETBIRD_MANAGEMENT_CLIENT_SECRET",
+      "Issuer": "$NETBIRD_AUTH_AUTHORITY",
+      "TokenEndpoint": "$NETBIRD_AUTH_TOKEN_ENDPOINT",
+      "ClientID": "$NETBIRD_IDP_MGMT_CLIENT_ID",
+      "ClientSecret": "$NETBIRD_IDP_MGMT_CLIENT_SECRET",
       "GrantType": "client_credentials"
     },
     "ExtraConfig": {
@@ -86,8 +102,5 @@
         "http://localhost:53000"
       ]
     }
-  },
-  "StoreConfig": {
-    "Engine": ""
   }
 }
