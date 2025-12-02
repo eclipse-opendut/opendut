@@ -36,7 +36,7 @@ public_client = [
 ]
 
 [dependencies]
-opendut-util-core = { workspace = true, features = ["future", "reqwest"] }
+opendut-util-core = { workspace = true, features = ["future", "project", "reqwest"] }
 opendut-model = { workspace = true, optional = true }
 
 anyhow = { workspace = true, optional = true }
