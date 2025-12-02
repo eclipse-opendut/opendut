@@ -27,6 +27,7 @@ done
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_SUFFIX}"
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_AUTH}"
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_NETBIRD}"
+/scripts/generate-certificate.sh "${OPENDUT_DOMAIN_NETBIRD_RELAY}"
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_NETBIRD_API}"
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_SIGNAL}"
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_CARL}"

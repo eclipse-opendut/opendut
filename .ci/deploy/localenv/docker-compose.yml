@@ -6,6 +6,15 @@ x-common-healthcheck-params: &common-healthcheck-params
   start_period: 2m  # Probe failure during start will not be counted towards the maximum number of retries
   # start_interval: 5s  # This isn't yet supported on many hosts, as of 2025-01.
 
+# common restart and logging settings
+x-default: &default
+  restart: 'unless-stopped'
+  logging:
+    driver: 'json-file'
+    options:
+      max-size: '100m'
+      max-file: '2'
+
 x-telemetry-deploy-params: &telemetry-deploy-params
   mode: replicated
   replicas: ${OPENDUT_LOCALENV_TELEMETRY_ENABLED:-1}
@@ -25,6 +34,7 @@ services:
       - OPENDUT_DOMAIN_AUTH
       - OPENDUT_DOMAIN_NETBIRD
       - OPENDUT_DOMAIN_NETBIRD_API
+      - OPENDUT_DOMAIN_NETBIRD_RELAY
       - OPENDUT_DOMAIN_SIGNAL
       - OPENDUT_DOMAIN_NGINX_WEBDAV
       - OPENDUT_DOMAIN_OPENTELEMETRY
@@ -205,6 +215,7 @@ services:
           - ${OPENDUT_DOMAIN_SIGNAL}
           - ${OPENDUT_DOMAIN_OPENTELEMETRY}
           - ${OPENDUT_DOMAIN_CARL}
+          - ${OPENDUT_DOMAIN_NETBIRD_RELAY}
           #- ${OPENDUT_DOMAIN_NGINX_WEBDAV}  # Do not expose since this service is not secured
 
   # vaguely derived from: https://github.com/netbirdio/netbird/blob/main/infrastructure_files/docker-compose.yml.tmpl.traefik
@@ -309,7 +320,7 @@ services:
       # Relay server settings
       - NETBIRD_RELAY_DOMAIN=${OPENDUT_DOMAIN_NETBIRD_RELAY}
       - NETBIRD_RELAY_PORT=443
-      - NETBIRD_RELAY_ENDPOINT=rels://$NETBIRD_RELAY_DOMAIN:443
+      - NETBIRD_RELAY_ENDPOINT=rels://$OPENDUT_DOMAIN_NETBIRD_RELAY:443
       - NETBIRD_RELAY_AUTH_SECRET # TODO: create new secret during provisioning
       # Store
       - NETBIRD_STORE_CONFIG_ENGINE=sqlite
@@ -317,11 +328,11 @@ services:
       - NETBIRD_MGMT_DISABLE_DEFAULT_POLICY=true
       # HttpConfig
       - NETBIRD_MGMT_API_PORT=80
-      - NETBIRD_MGMT_API_CERT_FILE=""
-      - NETBIRD_MGMT_API_CERT_KEY_FILE=""
+      - NETBIRD_MGMT_API_CERT_FILE=
+      - NETBIRD_MGMT_API_CERT_KEY_FILE=
       - NETBIRD_DATASTORE_ENC_KEY
       # Authorization / Identity Provider (see https://docs.netbird.io/selfhosted/identity-providers#keycloak)
-      - NETBIRD_AUTH_DEVICE_AUTH_PROVIDER="hosted"
+      - NETBIRD_AUTH_DEVICE_AUTH_PROVIDER=hosted
       - NETBIRD_AUTH_AUTHORITY=https://${OPENDUT_DOMAIN_AUTH}/realms/netbird
       - NETBIRD_AUTH_OIDC_CONFIGURATION_ENDPOINT=https://${OPENDUT_DOMAIN_AUTH}/realms/netbird/.well-known/openid-configuration
       - NETBIRD_AUTH_JWT_CERTS=https://${OPENDUT_DOMAIN_AUTH}/realms/netbird/protocol/openid-connect/certs
@@ -335,10 +346,10 @@ services:
       - NETBIRD_AUTH_AUDIENCE=netbird-client
       - NETBIRD_AUTH_PKCE_AUDIENCE=netbird-client
       - NETBIRD_AUTH_DEVICE_AUTH_CLIENT_ID=netbird-client
-      - NETBIRD_AUTH_SUPPORTED_SCOPES="openid profile email offline_access api"
+      - NETBIRD_AUTH_SUPPORTED_SCOPES=openid profile email offline_access api
       - NETBIRD_AUTH_PKCE_REDIRECT_URLS=http://localhost:53000
       - NETBIRD_AUTH_PKCE_USE_ID_TOKEN=false
-      - NETBIRD_AUTH_USER_ID_CLAIM=""
+      - NETBIRD_AUTH_USER_ID_CLAIM=
       - NETBIRD_MGMT_IDP_SIGNKEY_REFRESH=false
       - NETBIRD_MGMT_IDP=keycloak
       - NETBIRD_AUTH_PKCE_DISABLE_PROMPT_LOGIN=false
@@ -398,6 +409,23 @@ services:
     deploy:
       mode: replicated
       replicas: ${OPENDUT_COTURN_ENABLED:-1}
+
+  # Relay
+  netbird-relay:
+    <<: *default
+    container_name: opendut-netbird-relay
+    image: netbirdio/relay:0.60.2
+    environment:
+      - NB_LOG_LEVEL=info
+      - NB_LISTEN_ADDRESS=:33080
+      - NB_EXPOSED_ADDRESS=rels://$OPENDUT_DOMAIN_NETBIRD_RELAY:443  # same as NETBIRD_RELAY_ENDPOINT
+      - NB_AUTH_SECRET=$NETBIRD_RELAY_AUTH_SECRET
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.netbird-relay.rule=Host(`$OPENDUT_DOMAIN_NETBIRD_RELAY`) # && PathPrefix(`/relay`)
+      - traefik.http.services.netbird-relay.loadbalancer.server.port=33080
+    networks:
+      - opendut_local
 
   carl:
     container_name: opendut-carl

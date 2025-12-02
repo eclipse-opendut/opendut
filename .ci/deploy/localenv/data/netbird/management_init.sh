@@ -1,13 +1,13 @@
 #!/bin/bash
 
+set -e # Exit on error
+
 echo "Management init script for local test environment"
 
 source /netbird-api-functions.sh
 
-if [ ! -e "/etc/netbird/management.json" ]; then
-  echo "Management configuration file missing. Creating a new one."
-  envsubst </config/management.json.tmpl | jq . >/etc/netbird/management.json
-fi
+echo "Creating /etc/netbird/management.json from template"
+envsubst </config/management.json.tmpl | jq . >/etc/netbird/management.json
 
 wait_for_keycloak_client_auth_successful 600 5 || exit 1
 echo "Keycloak ready"
