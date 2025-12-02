@@ -95,7 +95,7 @@ async fn test_netbird_vpn_client() -> anyhow::Result<()> {
     Ok(())
 }
 
-//#[test_with::env(OPENDUT_RUN_NETBIRD_INTEGRATION_TESTS)]
+#[test_with::env(OPENDUT_RUN_NETBIRD_INTEGRATION_TESTS)]
 #[test_log::test(tokio::test)]
 async fn test_netbird_vpn_client_list_keys() -> anyhow::Result<()> {
     let Fixture { management_url, authentication_method, ca, timeout, retries, setup_key_expiration } = Fixture::default();
