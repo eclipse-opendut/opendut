@@ -320,24 +320,32 @@ services:
       - NETBIRD_MGMT_API_CERT_FILE=""
       - NETBIRD_MGMT_API_CERT_KEY_FILE=""
       - NETBIRD_DATASTORE_ENC_KEY
-      -
-      - #NETBIRD_ISSUER_URL=https://${OPENDUT_DOMAIN_AUTH}/realms/netbird
-      - #NETBIRD_ISSUER_DOMAIN=${OPENDUT_DOMAIN_AUTH}
-      - #NETBIRD_ISSUER_ADMIN_URL=https://${OPENDUT_DOMAIN_AUTH}/admin/realms/netbird
-      # Authorization / Identity Provider
+      # Authorization / Identity Provider (see https://docs.netbird.io/selfhosted/identity-providers#keycloak)
+      - NETBIRD_AUTH_DEVICE_AUTH_PROVIDER="hosted"
       - NETBIRD_AUTH_AUTHORITY=https://${OPENDUT_DOMAIN_AUTH}/realms/netbird
-      - NETBIRD_AUTH_AUDIENCE=""
-      - NETBIRD_AUTH_USER_ID_CLAIM=""
-      - NETBIRD_AUTH_JWT_CERTS=https://${OPENDUT_DOMAIN_AUTH}/realms/netbird/protocol/openid-connect/certs
-      - NETBIRD_MGMT_IDP_SIGNKEY_REFRESH=false
       - NETBIRD_AUTH_OIDC_CONFIGURATION_ENDPOINT=https://${OPENDUT_DOMAIN_AUTH}/realms/netbird/.well-known/openid-configuration
-      - NETBIRD_MGMT_IDP=keycloak
+      - NETBIRD_AUTH_JWT_CERTS=https://${OPENDUT_DOMAIN_AUTH}/realms/netbird/protocol/openid-connect/certs
       - NETBIRD_AUTH_TOKEN_ENDPOINT=https://${OPENDUT_DOMAIN_AUTH}/realms/netbird/protocol/openid-connect/token
+      - NETBIRD_AUTH_PKCE_AUTHORIZATION_ENDPOINT=https://${OPENDUT_DOMAIN_AUTH}/realms/netbird/protocol/openid-connect/auth
+
+      - NETBIRD_AUTH_DEVICE_AUTH_USE_ID_TOKEN=false
+      - NETBIRD_AUTH_DEVICE_AUTH_SCOPE=openid
+      - NETBIRD_AUTH_DEVICE_AUTH_AUDIENCE
+      - NETBIRD_AUTH_CLIENT_ID=netbird-client
+      - NETBIRD_AUTH_AUDIENCE=netbird-client
+      - NETBIRD_AUTH_PKCE_AUDIENCE=netbird-client
+      - NETBIRD_AUTH_DEVICE_AUTH_CLIENT_ID=netbird-client
+      - NETBIRD_AUTH_SUPPORTED_SCOPES="openid profile email offline_access api"
+      - NETBIRD_AUTH_PKCE_REDIRECT_URLS=http://localhost:53000
+      - NETBIRD_AUTH_PKCE_USE_ID_TOKEN=false
+      - NETBIRD_AUTH_USER_ID_CLAIM=""
+      - NETBIRD_MGMT_IDP_SIGNKEY_REFRESH=false
+      - NETBIRD_MGMT_IDP=keycloak
+      - NETBIRD_AUTH_PKCE_DISABLE_PROMPT_LOGIN=false
+      - NETBIRD_AUTH_PKCE_LOGIN_FLAG=0
       - NETBIRD_IDP_MGMT_CLIENT_ID=netbird-backend
-      - NETBIRD_IDP_MGMT_CLIENT_SECRET=NETBIRD_MANAGEMENT_CLIENT_SECRET  # TODO: rename environment variable in provisioning script
-      - 'BLUB={ "AdminEndpoint": "https://keycloak/admin/realms/netbird" }"'
-      -
-      - NETBIRD_MANAGEMENT_DEVICE_ID=netbird-client
+      - NETBIRD_IDP_MGMT_CLIENT_SECRET=$NETBIRD_MANAGEMENT_CLIENT_SECRET  # TODO: rename environment variable in provisioning script
+      # used in entrypoint to check if user is present in keycloak
       - NETBIRD_PASSWORD
 
     healthcheck:

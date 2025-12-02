@@ -34,6 +34,7 @@ if [ ! -e "$OPENDUT_PASSWORD_FILE" ]; then
   echo TURN_PASSWORD="$(create_password)" >> $OPENDUT_ENV_FILE
   echo NETBIRD_MANAGEMENT_CLIENT_SECRET="$(create_password)" >> $OPENDUT_ENV_FILE
   echo NETBIRD_PASSWORD="$(create_password 16)" >> $OPENDUT_ENV_FILE
+  echo NETBIRD_RELAY_AUTH_SECRET="$(create_password)" >> $OPENDUT_ENV_FILE
 
   # CARL / Keycloak
   echo OPENDUT_CARL_NETWORK_OIDC_CLIENT_SECRET="$(create_password)" >> $OPENDUT_ENV_FILE
