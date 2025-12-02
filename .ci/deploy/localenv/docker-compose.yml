@@ -177,6 +177,8 @@ services:
       - OPENDUT_NETBIRD_API_NETWORK_TLS_KEY
       - OPENDUT_NETBIRD_NETWORK_TLS_CERTIFICATE
       - OPENDUT_NETBIRD_NETWORK_TLS_KEY
+      - OPENDUT_NETBIRD_RELAY_NETWORK_TLS_CERTIFICATE
+      - OPENDUT_NETBIRD_RELAY_NETWORK_TLS_KEY
       - OPENDUT_NGINX_WEBDAV_NETWORK_TLS_CERTIFICATE
       - OPENDUT_NGINX_WEBDAV_NETWORK_TLS_KEY
       - OPENDUT_MONITORING_NETWORK_TLS_CERTIFICATE
@@ -320,7 +322,7 @@ services:
       # Relay server settings
       - NETBIRD_RELAY_DOMAIN=${OPENDUT_DOMAIN_NETBIRD_RELAY}
       - NETBIRD_RELAY_PORT=443
-      - NETBIRD_RELAY_ENDPOINT=rels://$OPENDUT_DOMAIN_NETBIRD_RELAY:443
+      - NETBIRD_RELAY_ENDPOINT=rels://$OPENDUT_DOMAIN_NETBIRD_RELAY:443/relay
       - NETBIRD_RELAY_AUTH_SECRET # TODO: create new secret during provisioning
       # Store
       - NETBIRD_STORE_CONFIG_ENGINE=sqlite
@@ -420,9 +422,14 @@ services:
       - NB_LISTEN_ADDRESS=:33080
       - NB_EXPOSED_ADDRESS=rels://$OPENDUT_DOMAIN_NETBIRD_RELAY:443  # same as NETBIRD_RELAY_ENDPOINT
       - NB_AUTH_SECRET=$NETBIRD_RELAY_AUTH_SECRET
+      - SSL_CERT_FILE=${OPENDUT_CERT_CA_PATH}
+    #healthcheck: does not support healthcheck, https://github.com/netbirdio/netbird/issues/4399
+    #  <<: *common-healthcheck-params
+    #  test: wget --proxy off --no-verbose --tries=1 --spider http://localhost:33080/relay || exit 1
     labels:
       - traefik.enable=true
       - traefik.http.routers.netbird-relay.rule=Host(`$OPENDUT_DOMAIN_NETBIRD_RELAY`) # && PathPrefix(`/relay`)
+      - traefik.http.routers.netbird-relay.tls=true
       - traefik.http.services.netbird-relay.loadbalancer.server.port=33080
     networks:
       - opendut_local

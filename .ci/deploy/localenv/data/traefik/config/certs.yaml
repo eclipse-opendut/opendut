@@ -13,6 +13,8 @@ tls:
       keyFile: '{{ env "OPENDUT_NETBIRD_API_NETWORK_TLS_KEY" }}'
     - certFile: '{{ env "OPENDUT_NETBIRD_NETWORK_TLS_CERTIFICATE" }}'
       keyFile: '{{ env "OPENDUT_NETBIRD_NETWORK_TLS_KEY" }}'
+    - certFile: '{{ env "OPENDUT_NETBIRD_RELAY_NETWORK_TLS_CERTIFICATE" }}'
+      keyFile: '{{ env "OPENDUT_NETBIRD_RELAY_NETWORK_TLS_KEY" }}'
     - certFile: '{{ env "OPENDUT_NGINX_WEBDAV_NETWORK_TLS_CERTIFICATE" }}'
       keyFile: '{{ env "OPENDUT_NGINX_WEBDAV_NETWORK_TLS_KEY" }}'
     - certFile: '{{ env "OPENDUT_MONITORING_NETWORK_TLS_CERTIFICATE" }}'
