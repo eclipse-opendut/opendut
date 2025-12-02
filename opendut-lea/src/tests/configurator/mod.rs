@@ -2,11 +2,12 @@ use std::collections::HashMap;
 use leptos::prelude::*;
 use leptos_router::hooks::{use_navigate, use_params_map};
 use opendut_lea_components::{BasePageContainer, Breadcrumb, UserInputError, UserInputValue};
+use opendut_lea_components::tabs::Tabs;
 use opendut_model::viper::{ViperRunId, ViperRunParameterValue};
 use crate::app::use_app_globals;
-use crate::components::tabs::{Tab, TabIdentifier, TabState, ConfiguratorTabs};
+use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
-use crate::tests::configurator::tabs::{GeneralTab, ParameterTab};
+use crate::tests::configurator::tabs::{GeneralTab, ParameterTab, TabIdentifier};
 use crate::tests::configurator::types::UserTestConfiguration;
 
 mod tabs;
@@ -103,9 +104,10 @@ pub fn TestConfigurator() -> impl IntoView {
     });
 
     let tabs = vec![
-        Tab::new(TabIdentifier::General, String::from("General"), TabState::Normal, || view! {<GeneralTab />}.into_any()),
-        Tab::new(TabIdentifier::Parameters, String::from("Parameters"), TabState::Normal, || view! {<ParameterTab />}.into_any()),
+        opendut_lea_components::tabs::Tab { title: String::from("General"), href: String::from("general") },
+        opendut_lea_components::tabs::Tab { title: String::from("Parameters"), href: String::from("parameters") },
     ];
+    let active_tab = use_active_tab::<TabIdentifier>();
 
     view! {
         <BasePageContainer
@@ -114,7 +116,12 @@ pub fn TestConfigurator() -> impl IntoView {
             breadcrumbs
             controls=view! { }
         >
-            <ConfiguratorTabs tabs />
+            <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
+                { move || match active_tab.get() {
+                    TabIdentifier::General => view! { <GeneralTab /> }.into_any(),
+                    TabIdentifier::Parameters => view! { <ParameterTab /> }.into_any(),
+                }}
+            </Tabs>
         </BasePageContainer>
     }
 }

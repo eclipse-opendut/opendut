@@ -34,6 +34,7 @@ pub use toggle::Toggle;
 
 pub mod health;
 pub mod tooltip;
+pub mod tabs;
 
 mod buttons;
 mod breadcrumbs;
