@@ -1,7 +1,6 @@
 use clap::Parser;
 
 pub use fs_err as fs;
-use cicero::path::repo_path;
 use tracing_subscriber::EnvFilter;
 pub(crate) use core::constants;
 pub(crate) use core::metadata;
@@ -46,8 +45,6 @@ fn main() -> crate::Result {
                 .parse("info,opendut=trace")?
         )
         .init();
-
-    std::env::set_current_dir(repo_path!())?;
 
     let cli = RootCli::parse();
     match cli.task {
