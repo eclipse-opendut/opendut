@@ -3,6 +3,7 @@
 Welcome to the openDuT community. We appreciate contributions and suggestions.  
 Start here for info on how to contribute and help improve the project.
 
+
 ## How to Contribute
 
 When contributing, please observe the [Eclipse Community Code of Conduct](./CODE_OF_CONDUCT.md).
@@ -23,13 +24,16 @@ Before creating the request, please ensure the following:
 
 After opening your request, we will also check these in addition to a technical review.
 
+
 ## Contact
 
-Contact the project developers via the project's "dev" list, raise an issue or start a discussion.
+Contact the project developers via chat, the project's "dev" mailing list or raise an issue.
 
+* Chat: https://chat.eclipse.org/#/room/#automotive.opendut:matrix.eclipse.org
 * Dev list: https://www.eclipse.org/mailman/listinfo/opendut-dev
 * Issues: https://github.com/eclipse-opendut/opendut/issues
-* Discussions: https://github.com/eclipse-opendut/opendut/discussions
 
-The Eclipse openDuT project has a monthly call and everyone in the community is welcome to join.
-See [Eclipse openDuT Calls (tbd.)](https://example.com)
+The Eclipse openDuT project has a call every second Wednesday between 15:30 and 16:30 UTC.
+Everyone in the community is welcome to join!  
+See the Eclipse SDV Community Calendar for the exact dates and joining instructions.
+The calendar can be found here: https://sdv.eclipse.org/get-engaged/
