@@ -45,8 +45,8 @@ pub fn TestConfigurator() -> impl IntoView {
             UserTestConfiguration {
                 id: test_id,
                 name: UserInputValue::Left(UserInputError::from("Enter a valid test name.")),
-                source: UserInputValue::Left(String::from("Enter a valid test name.")),
-                suite: UserInputValue::Left(String::from("Enter a valid test name.")),
+                source: UserInputValue::Left(String::from("Select a test source.")),
+                suite: UserInputValue::Left(String::from("Enter a test suite.")),
                 parameters: HashMap::new(),
                 is_new: true,
             }
@@ -87,7 +87,7 @@ pub fn TestConfigurator() -> impl IntoView {
         (test_configuration, test_configuration_resource, is_valid_test_configuration)
     };
 
-    let test_id = Memo::new(move |_| params.with(|params| {
+    let _test_id = Memo::new(move |_| params.with(|params| {
         params.get("id")
             .and_then(|id| ViperRunId::try_from(id.as_str()).ok())
     }).unwrap_or_else(ViperRunId::random));
@@ -118,7 +118,7 @@ pub fn TestConfigurator() -> impl IntoView {
         >
             <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
                 { move || match active_tab.get() {
-                    TabIdentifier::General => view! { <GeneralTab /> }.into_any(),
+                    TabIdentifier::General => view! { <GeneralTab test_configuration /> }.into_any(),
                     TabIdentifier::Parameters => view! { <ParameterTab /> }.into_any(),
                 }}
             </Tabs>
