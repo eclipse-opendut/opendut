@@ -1,10 +1,10 @@
-mod test_source_selector;
-mod test_suite_selector;
-mod test_parameter_selector;
+mod source_selector;
+mod suite_selector;
+mod parameter_selector;
 mod test_name_input;
 mod controls;
 
 pub use controls::Controls;
 pub use test_name_input::TestNameInput;
-pub use test_source_selector::TestSourceSelector;
-pub use test_suite_selector::TestSuiteSelector;
+pub use source_selector::TestSourceSelector;
+pub use suite_selector::TestSuiteSelector;
