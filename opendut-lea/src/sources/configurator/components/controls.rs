@@ -85,19 +85,19 @@ fn SaveSourceButton(
                             debug!("Successfully stored source: {source_id}");
                             toaster.toast(
                                 Toast::builder()
-                                    .simple("Successfully stored peer configuration.")
+                                    .simple("Successfully stored source configuration.")
                                     .success(),
                             );
                             setter.set(false);
                         }
                         Err(cause) => {
-                            error!("Failed to create peer <{source_id}>, due to error: {cause:?}");
-                            toaster.toast(Toast::builder().simple("Failed to store peer!").error());
+                            error!("Failed to create source <{source_id}>, due to error: {cause:?}");
+                            toaster.toast(Toast::builder().simple("Failed to store source!").error());
                         }
                     }
                 }
                 Err(error) => {
-                    error!("Failed to dispatch create peer action, due to misconfiguration!\n  {error}");
+                    error!("Failed to dispatch create source action, due to misconfiguration!\n  {error}");
                 }
             };
 
@@ -111,7 +111,7 @@ fn SaveSourceButton(
             color=ButtonColor::Info
             size=ButtonSize::Normal
             state=button_state
-            label="Save Peer"
+            label="Save Source"
             on_action
         />
     }
