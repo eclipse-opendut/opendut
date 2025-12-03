@@ -7,6 +7,7 @@ use opendut_model::viper::{ViperRunId, ViperRunParameterValue};
 use crate::app::use_app_globals;
 use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
+use crate::tests::configurator::components::Controls;
 use crate::tests::configurator::tabs::{GeneralTab, ParameterTab, TabIdentifier};
 use crate::tests::configurator::types::UserTestConfiguration;
 
@@ -114,7 +115,7 @@ pub fn TestConfigurator() -> impl IntoView {
             title="Configure Test"
             subtitle=String::new() // Todo: Set subtitle (name)
             breadcrumbs
-            controls=view! { }
+            controls=view! { <Controls configuration=test_configuration is_valid_test_configuration=is_valid_test_configuration.into() /> }
         >
             <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
                 { move || match active_tab.get() {
