@@ -15,7 +15,7 @@ use opendut_util::settings::LoadedConfig;
 use opendut_telemetry::logging::LoggingConfig;
 use opendut_telemetry::opentelemetry_types;
 use opendut_telemetry::opentelemetry_types::Opentelemetry;
-use opendut_util::project;
+use opendut_util::{pem, project};
 use opendut_util::pem::{Pem, PemFromConfig};
 use opendut_util::reqwest_client::OidcReqwestClient;
 use auth::in_memory_cache::CustomInMemoryCache;
@@ -102,11 +102,11 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
 
     let carl_url = ResourceHomeUrl::try_from(&settings)?;
 
-    let ca_certificate = Pem::read_from_config(&settings)?
-        .expect("Could not find opendut certificate authority.");
+    let ca_certificate = Pem::read_from_config_keys_with_env_fallback(&[pem::config_keys::DEFAULT_NETWORK_TLS_CA], &settings)?
+        .expect("Could not find openDuT certificate authority.");
 
     let oidc_registration_client = RegistrationClient::from_settings(&settings).await
-        .expect("Failed to load oidc registration client!");
+        .expect("Failed to load OIDC registration client!");
 
     let grpc_facades = startup::grpc::GrpcFacades::create(
         resource_manager,

@@ -128,12 +128,14 @@ cfg_if! {
 
 cfg_if! {
     if #[cfg(feature = "client")] {
-        use std::path::PathBuf;
-        
         use tracing::{debug, info};
+        use tonic::transport::Identity;
+        use tower::ServiceBuilder;
 
         use opendut_auth::confidential::client::ConfidentialClient;
         use opendut_auth::confidential::tonic_service::TonicAuthenticationService;
+        use opendut_util::pem::Pem;
+        use opendut_util::client_auth::ClientAuth;
 
         use crate::carl::cluster::ClusterManager;
         use crate::carl::metadata::MetadataProvider;
@@ -151,7 +153,6 @@ cfg_if! {
         #[cfg(feature="viper")]
         use crate::proto::services::test_manager::test_manager_client::TestManagerClient;
 
-        use tower::ServiceBuilder;
 
         #[derive(Clone)]
         pub struct CarlClient {
@@ -164,38 +165,27 @@ cfg_if! {
             pub viper: TestManager<TonicAuthenticationService>,
         }
 
-        pub enum CaCertInfo {
-            Path(PathBuf),
-            Content(String),
-        }
-
         impl CarlClient {
 
             pub async fn create(
-                host: impl Into<String>,
+                host: &str,
                 port: u16,
-                ca_cert_info: &CaCertInfo,
+                ca_cert: &Pem,
+                client_auth: &ClientAuth,
                 domain_name_override: &Option<String>,
                 settings: &config::Config,
             ) -> Result<CarlClient, InitializationError> {
 
-                let address = format!("https://{}:{}", host.into(), port);
+                let address = format!("https://{host}:{port}");
 
                 let tls_config = {
-                    let ca_cert = match ca_cert_info {
-                        CaCertInfo::Path(ca_cert_path) => {
-                            debug!("Using TLS CA certificate: {}", ca_cert_path.display());
-                            &std::fs::read_to_string(ca_cert_path)
-                                .map_err(|cause| InitializationError::TlsConfiguration { message: format!("Failed to read CA certificate from path '{}'", ca_cert_path.display()), cause: cause.into() })?
-                        }
-                        CaCertInfo::Content(content) => {
-                            debug!("Using TLS CA certificate from configuration file");
-                            content
-                        }
-                    };
-
                     let mut config = tonic::transport::ClientTlsConfig::new()
-                        .ca_certificate(tonic::transport::Certificate::from_pem(ca_cert));
+                        .ca_certificate(tonic::transport::Certificate::from_pem(ca_cert.to_string()));
+
+                    if let ClientAuth::Enabled { cert, key } = client_auth {
+                        debug!("Configuring mTLS client authentication...");
+                        config = config.identity(Identity::from_pem(cert.to_string(), key.to_string()));
+                    }
 
                     if let Some(domain_name_override) = domain_name_override {
                         debug!("Using override for verified domain name of '{domain_name_override}'.");
@@ -205,40 +195,35 @@ cfg_if! {
                 };
 
                 let endpoint = tonic::transport::Channel::from_shared(address.clone())
-                    .map_err(|cause| InitializationError::InvalidUri {
-                        uri: address.clone(),
-                        cause,
-                    })?
+                    .map_err(|cause| InitializationError::InvalidUri { uri: address.clone(), cause })?
                     .tls_config(tls_config)
                     .map_err(|cause| InitializationError::TlsConfiguration { message: String::from("Failed to initialize secure channel with specified TLS configuration"), cause: cause.into() })?;
 
                 let oidc_client = ConfidentialClient::from_settings(settings).await
                     .map_err(|cause| InitializationError::OidcConfiguration { message: String::from("Failed to initialize OIDC authentication manager"), cause: cause.into() })?;
-                match oidc_client {
-                    None => {}
-                    Some(ref client) => {
-                        client.check_login().await
-                        .map_err(|cause| InitializationError::ConnectError { address: address.clone(), cause: cause.into() })?;
-                    }
-                }
 
+                if let Some(oidc_client) = &oidc_client {
+                    oidc_client.check_login().await
+                        .map_err(|cause| InitializationError::ConnectError { address: address.clone(), cause: cause.into() })?;
+                }
                 debug!("Set up endpoint for connection to CARL at '{address}'.");
+
                 let channel = endpoint.connect().await
                     .map_err(|cause| InitializationError::ConnectError { address: address.clone(), cause: cause.into() })?;
                 info!("Connected to CARL at '{address}'.");
 
-                let auth_svc = ServiceBuilder::new()
+                let auth_service = ServiceBuilder::new()
                     .layer_fn(|channel| TonicAuthenticationService::new(channel, oidc_client.clone()))
                     .service(channel);
 
                 Ok(CarlClient {
-                    broker: PeerMessagingBroker::new(PeerMessagingBrokerClient::new(Clone::clone(&auth_svc))),
-                    cluster: ClusterManager::new(ClusterManagerClient::new(Clone::clone(&auth_svc))),
-                    metadata: MetadataProvider::new(MetadataProviderClient::new(Clone::clone(&auth_svc))),
-                    peers: PeersRegistrar::new(PeerManagerClient::new(Clone::clone(&auth_svc))),
-                    observer: ObserverMessagingBroker::new(ObserverMessagingBrokerClient::new(Clone::clone(&auth_svc))),
+                    broker: PeerMessagingBroker::new(PeerMessagingBrokerClient::new(Clone::clone(&auth_service))),
+                    cluster: ClusterManager::new(ClusterManagerClient::new(Clone::clone(&auth_service))),
+                    metadata: MetadataProvider::new(MetadataProviderClient::new(Clone::clone(&auth_service))),
+                    peers: PeersRegistrar::new(PeerManagerClient::new(Clone::clone(&auth_service))),
+                    observer: ObserverMessagingBroker::new(ObserverMessagingBrokerClient::new(Clone::clone(&auth_service))),
                     #[cfg(feature="viper")]
-                    viper: TestManager::new(TestManagerClient::new(Clone::clone(&auth_svc))),
+                    viper: TestManager::new(TestManagerClient::new(Clone::clone(&auth_service))),
                 })
             }
         }

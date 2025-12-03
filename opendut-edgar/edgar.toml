@@ -12,7 +12,15 @@ connect.interval.ms = 5000
 
 [network.tls]
 ca = "/etc/opendut/tls/ca.pem"
+# ca.content can be used to pass certificate text directly
 domain.name.override = ""
+
+[network.tls.client.auth] #mTLS
+enabled = false
+certificate = "/etc/opendut/tls/client-auth.pem"
+# certificate.content can be used to pass certificate text directly
+key = "/etc/opendut/tls/client-auth.key"
+# key.content can be used to pass certificate text directly
 
 [network.oidc]
 enabled = false

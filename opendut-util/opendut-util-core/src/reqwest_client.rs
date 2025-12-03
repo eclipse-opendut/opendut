@@ -1,8 +1,7 @@
 use anyhow::anyhow;
 use config::Config;
-use pem::Pem;
 use reqwest::Certificate;
-use crate::pem::PemFromConfig;
+use crate::pem::{self, Pem, PemFromConfig};
 
 #[derive(Debug, Clone)]
 pub struct OidcReqwestClient {}
@@ -11,7 +10,14 @@ pub use reqwest::{Client as ReqwestClient};
 
 impl OidcReqwestClient {
     pub fn from_config(config: &Config) -> anyhow::Result<ReqwestClient> {
-        let opendut_ca = Pem::read_from_config(config)?;
+        let opendut_ca = Pem::read_from_config_keys_with_env_fallback(
+            &[
+                pem::config_keys::OIDC_CLIENT_CA,
+                pem::config_keys::DEFAULT_NETWORK_TLS_CA,
+            ],
+            config
+        )?;
+
         Self::build_client(opendut_ca)
     }
 

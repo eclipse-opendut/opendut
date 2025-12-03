@@ -2,18 +2,20 @@ use std::net::IpAddr;
 use std::ops::Not;
 use std::time::Duration;
 
-use anyhow::bail;
+use anyhow::{bail, Context};
 use config::Config;
 use tracing::{debug, info, warn};
 
 use opendut_carl_api::carl::broker::stream_header;
-use opendut_carl_api::carl::{broker, CaCertInfo, CarlClient};
+use opendut_carl_api::carl::{broker, CarlClient};
 use opendut_model::peer::PeerId;
-use opendut_util::project;
+use opendut_util::client_auth::ClientAuth;
+use opendut_util::pem::{self, Pem, PemFromConfig};
 
 
 /// Separate function which just opens a connection without extracting the version,
 /// since the separate metadata-request causes it to not be able to send between threads safely anymore.
+#[tracing::instrument(skip_all)]
 pub async fn connect(settings: &Config) -> anyhow::Result<CarlClient> {
     opendut_util::crypto::install_default_provider();
 
@@ -21,17 +23,23 @@ pub async fn connect(settings: &Config) -> anyhow::Result<CarlClient> {
 
     let host = settings.get_string("network.carl.host")?;
     let port = u16::try_from(settings.get_int("network.carl.port")?)?;
-    let ca_cert_path = CaCertInfo::Path(
-        project::make_path_absolute(settings.get_string("network.tls.ca")?)?
-    );
-    let domain_name_override = settings.get_string("network.tls.domain.name.override")?;
-    let domain_name_override = domain_name_override.is_empty().not().then_some(domain_name_override);
+
+    let ca_cert = Pem::read_from_config_keys_with_env_fallback(&[pem::config_keys::DEFAULT_NETWORK_TLS_CA], settings)?
+        .context("No CA certificate found in configured locations")?;
+
+    let client_auth = ClientAuth::load_from_config(settings)
+        .context("Error while loading configuration for client authentication")?;
+
+    let domain_name_override = {
+        let domain_name_override = settings.get_string("network.tls.domain.name.override")?;
+        domain_name_override.is_empty().not().then_some(domain_name_override)
+    };
 
     let retries = settings.get_int("network.connect.retries")?;
     let interval = Duration::from_millis(u64::try_from(settings.get_int("network.connect.interval.ms")?)?);
 
     for retries_left in (0..retries).rev() {
-        match CarlClient::create(&host, port, &ca_cert_path, &domain_name_override, settings).await {
+        match CarlClient::create(&host, port, &ca_cert, &client_auth, &domain_name_override, settings).await {
             Ok(carl) => {
                 return Ok(carl);
             }

@@ -15,7 +15,6 @@ opentelemetry-otlp = { workspace = true, features = ["logs", "trace", "metrics",
 opentelemetry_sdk = { workspace = true, features = ["rt-tokio", "trace", "metrics", "logs", "spec_unstable_logs_enabled"] }
 opentelemetry-appender-tracing = { workspace = true }
 opentelemetry-semantic-conventions = { workspace = true, features = ["semconv_experimental"] }
-pem = { workspace = true }
 serde = { workspace = true }
 simple_moving_average = { workspace = true }
 sysinfo = { workspace = true }

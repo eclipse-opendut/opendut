@@ -7,6 +7,7 @@ use indoc::formatdoc;
 
 use opendut_model::cleo::CleoSetup;
 use opendut_model::util::net::AuthConfig;
+use opendut_util::pem::Pem;
 use opendut_util::settings::SetupType;
 
 const READ_FROM_STDIN: &str = "-";
@@ -176,7 +177,7 @@ impl From<CleoSetupType> for SetupType {
 /// * A system configuration, write to `/etc/opendut/{name}-ca.pem`
 /// * A user configuration, write to `[XDG_DATA_HOME|~/.local/share]/opendut/{name}/ca.pem`
 ///
-pub fn try_write_certificate(name: &str, ca: pem::Pem, user_type: SetupType) -> PathBuf {
+pub fn try_write_certificate(name: &str, ca: Pem, user_type: SetupType) -> PathBuf {
 
     let certificate = match user_type {
         SetupType::System => { format!("/etc/opendut/{name}-ca.pem") }

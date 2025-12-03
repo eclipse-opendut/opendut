@@ -1,14 +1,15 @@
 use std::ops::Not;
-use std::path::PathBuf;
 use std::process::ExitCode;
 use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::Shell;
 use console::Style;
 use tracing::metadata::LevelFilter;
 use uuid::Uuid;
-use opendut_carl_api::carl::{CaCertInfo, CarlClient};
+use opendut_carl_api::carl::CarlClient;
 use opendut_carl_api::carl::metadata::version_compatibility::VersionCompatibilityInfo;
 use opendut_model::topology::{DeviceId, DeviceName};
+use opendut_util::pem::{self, Pem, PemFromConfig};
+use opendut_util::client_auth::ClientAuth;
 use opendut_util::settings::{load_config, FileFormat, LoadedConfig};
 
 mod commands;
@@ -405,20 +406,20 @@ pub async fn create_carl_client(config: &config::Config) -> CarlClient {
     let port = config.get_int("network.carl.port")
         .expect("Configuration should contain a valid port number to connect to CARL");
 
-    let ca_cert_info = match config.get_string("network.tls.ca.content") {
-        Ok(content_string) => CaCertInfo::Content(content_string),
-        Err(_) => {
-            let path = config.get_string("network.tls.ca")
-                .expect("Configuration should contain a valid path to a CA certificate to connect to CARL.");
-            CaCertInfo::Path(PathBuf::from(path))
-        },
+    let ca_cert = Pem::read_from_config_keys_with_env_fallback(&[pem::config_keys::DEFAULT_NETWORK_TLS_CA], config)
+        .expect("Error while reading CA certificate.")
+        .expect("None of the configured CA certificate configuration keys provided a certificate.");
+
+    let client_auth = ClientAuth::load_from_config(config)
+        .expect("Error while loading configuration for client authentication");
+
+    let domain_name_override = {
+        let domain_name_override = config.get_string("network.tls.domain.name.override")
+            .expect("Configuration should contain a field for 'domain.name.override'.");
+        domain_name_override.is_empty().not().then_some(domain_name_override)
     };
 
-    let domain_name_override = config.get_string("network.tls.domain.name.override")
-        .expect("Configuration should contain a field for 'domain.name.override'.");
-    let domain_name_override = domain_name_override.is_empty().not().then_some(domain_name_override);
-
-    let mut carl_client = CarlClient::create(host, port as u16, &ca_cert_info, &domain_name_override, config).await
+    let mut carl_client = CarlClient::create(&host, port as u16, &ca_cert, &client_auth, &domain_name_override, config).await
         .expect("Failed to create CARL client");
 
     let _ignore_errors = opendut_carl_api::carl::metadata::version_compatibility::log_version_compatibility_with_carl(

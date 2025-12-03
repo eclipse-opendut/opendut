@@ -11,10 +11,11 @@ dotenvy = { workspace = true, optional = true }
 pem = { workspace = true, optional = true }
 reqwest = { workspace = true, optional = true }
 thiserror = { workspace = true }
+tracing = { workspace = true, optional = true }
 
 [features]
 future = []
-pem = ["dep:anyhow", "dep:config", "dep:pem"]
+pem = ["dep:anyhow", "dep:config", "dep:pem", "dep:tracing"]
 project = ["dep:anyhow"]
 reqwest = ["pem", "dep:reqwest"]
 testing = ["project", "dep:dotenvy"]

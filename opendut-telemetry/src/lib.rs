@@ -53,6 +53,7 @@ pub enum Error {
     ConfidentialClientError { #[from] cause: ConfidentialClientError },
 }
 
+#[tracing::instrument(name="opentelemetry_initialize", skip_all)]
 pub async fn initialize_with_config(
     logging_config: LoggingConfig,
     opentelemetry_config: Opentelemetry,

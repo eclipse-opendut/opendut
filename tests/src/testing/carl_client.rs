@@ -13,6 +13,7 @@ pub struct TestCarlClient {
 }
 impl TestCarlClient {
 
+    #[tracing::instrument(name="test_edgar_connect", skip_all)]
     pub async fn connect(carl_port: Port) -> anyhow::Result<Self> {
         let peer_id = PeerId::random();
 

@@ -19,6 +19,7 @@ client = [
     "tonic/channel",
     "tonic/tls-ring",
     "dep:tonic-prost-build",
+    "opendut-util/pem",
 ]
 wasm-client = [
     "codegen",
@@ -35,6 +36,7 @@ opendut-auth = { workspace = true, optional = true }
 opendut-model = { workspace = true }
 opendut-util = { workspace = true, features = ["future", "proto"] }
 
+anyhow = { workspace = true, optional = true }
 cfg-if = { workspace = true }
 config = { workspace = true, optional = true }
 const_format = { workspace = true }

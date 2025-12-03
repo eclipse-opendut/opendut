@@ -1,10 +1,9 @@
 use opendut_auth::confidential::client::{ConfidentialClient, ConfidentialClientRef};
 use opendut_auth::confidential::error::ConfidentialClientError;
 use std::time::Duration;
-use pem::Pem;
 use tonic::transport::{Certificate, ClientTlsConfig};
 use url::Url;
-use opendut_util_core::pem::PemFromConfig;
+use opendut_util_core::pem::{self, Pem, PemFromConfig};
 use std::fmt::Debug;
 
 pub struct OpentelemetryConfig {
@@ -130,14 +129,16 @@ impl Opentelemetry {
                     cause
                 })?;
 
-            let opendut_ca = Pem::read_from_config_with_env_fallback("network.tls.ca.content",
-                "opentelemetry.client.ca",
-                "network.tls.ca",
+            let opendut_ca = Pem::read_from_config_keys_with_env_fallback(
+                &[
+                    pem::config_keys::OPENTELEMETRY_CLIENT_CA,
+                    pem::config_keys::DEFAULT_NETWORK_TLS_CA,
+                ],
                 config
             ).map_err(|cause| OpentelemetryConfigError::ValueParseError{
-                    field: String::from("opentelemetry.client.ca"),
-                    cause: format!("{cause:?}")
-                })?;
+                field: String::from("opentelemetry.client.ca"),
+                cause: format!("{cause:?}")
+            })?;
 
             let mut client_tls_config = ClientTlsConfig::new()
                 .with_enabled_roots();

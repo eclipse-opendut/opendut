@@ -44,7 +44,7 @@ impl Task for Connect {
                     .arg("up")
                     .arg("--management-url").arg(self.management_url.as_str())
                     .arg("--setup-key").arg(&self.setup_key.value)
-                    .arg("--mtu").arg(&self.mtu.to_string())
+                    .arg("--mtu").arg(self.mtu.to_string())
                     .output()?;
 
             let message = format_command_output(stdout, stderr)?;

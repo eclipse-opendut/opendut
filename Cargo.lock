@@ -4239,6 +4239,7 @@ dependencies = [
 name = "opendut-carl-api"
 version = "0.9.0-alpha"
 dependencies = [
+ "anyhow",
  "cfg-if",
  "config",
  "const_format",
@@ -4310,7 +4311,6 @@ dependencies = [
  "opendut-model",
  "opendut-telemetry",
  "opendut-util",
- "pem",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -4526,7 +4526,6 @@ dependencies = [
  "opentelemetry-otlp",
  "opentelemetry-semantic-conventions",
  "opentelemetry_sdk",
- "pem",
  "serde",
  "simple_moving_average",
  "sysinfo",
@@ -4564,6 +4563,7 @@ dependencies = [
 name = "opendut-util"
 version = "0.9.0-alpha"
 dependencies = [
+ "anyhow",
  "config",
  "opendut-util-core",
  "prost",
@@ -4583,6 +4583,7 @@ dependencies = [
  "pem",
  "reqwest",
  "thiserror 2.0.17",
+ "tracing",
 ]
 
 [[package]]

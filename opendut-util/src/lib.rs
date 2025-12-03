@@ -1,3 +1,6 @@
+#[cfg(feature = "client-auth")]
+pub mod client_auth;
+
 #[cfg(feature = "crypto")]
 pub mod crypto;
 
@@ -22,7 +25,6 @@ pub mod serde;
 
 #[cfg(all(feature = "settings", not(target_arch = "wasm32")))]
 pub mod settings;
-
 
 #[cfg(feature = "testing")]
 pub use opendut_util_core::testing;

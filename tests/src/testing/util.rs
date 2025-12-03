@@ -6,6 +6,7 @@ use tokio::sync::mpsc;
 use tracing::info;
 use opendut_model::peer::configuration::EdgePeerConfigurationState;
 
+#[tracing::instrument(name="test_spawn_carl")]
 pub fn spawn_carl() -> anyhow::Result<Port> {
     let carl_port = select_free_port();
     info!("Running test with CARL port {carl_port}.");
@@ -24,6 +25,7 @@ pub fn spawn_carl() -> anyhow::Result<Port> {
         .set_override("network.tls.key", "resources/development/tls/insecure-development-carl.key")?
         .set_override("network.tls.ca", "resources/development/tls/insecure-development-ca.pem")?
         .build()?;
+
     tokio::spawn(async {
         opendut_carl::create(
             carl_config_override,
