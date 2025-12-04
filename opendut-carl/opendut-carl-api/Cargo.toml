@@ -37,7 +37,6 @@ opendut-model = { workspace = true }
 opendut-util = { workspace = true, features = ["future", "proto"] }
 
 anyhow = { workspace = true, optional = true }
-cfg-if = { workspace = true }
 config = { workspace = true, optional = true }
 const_format = { workspace = true }
 http = { workspace = true, optional = true }

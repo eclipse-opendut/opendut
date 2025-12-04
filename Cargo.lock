@@ -4240,7 +4240,6 @@ name = "opendut-carl-api"
 version = "0.9.0-alpha"
 dependencies = [
  "anyhow",
- "cfg-if",
  "config",
  "const_format",
  "glob",
