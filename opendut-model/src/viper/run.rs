@@ -3,9 +3,9 @@ use std::fmt;
 use std::ops::Not;
 use std::str::FromStr;
 use serde::{Deserialize, Serialize};
-use opendut_viper_rt::common::TestSuiteIdentifier;
 use crate::create_id_type;
 use crate::viper::ViperSourceId;
+use super::ViperTestSuiteIdentifier;
 
 
 #[derive(Clone, Debug)]
@@ -13,7 +13,7 @@ pub struct ViperRunDescriptor {
     pub id: ViperRunId,
     pub name: ViperRunName,
     pub source: ViperSourceId,
-    pub suite: TestSuiteIdentifier,
+    pub suite: ViperTestSuiteIdentifier,
     pub parameters: HashMap<ViperRunParameterKey, ViperRunParameterValue>,
 }
 
