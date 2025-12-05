@@ -12,6 +12,7 @@
     - [Setup](user-manual/cleo/setup.md)
     - [Commands](user-manual/cleo/commands.md)
     - [How to combine CLEO and jq](user-manual/cleo/jq.md)
+  - [Configuration](user-manual/configuration.md)
   - [Test Execution](user-manual/test-execution.md)
 - [Developer Manual](development/index.md)
   - [Getting Started](development/getting-started.md)
