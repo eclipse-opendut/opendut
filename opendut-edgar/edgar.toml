@@ -27,6 +27,7 @@ id = "opendut-edgar-client"
 issuer.url = "https://auth.opendut.local/realms/opendut/"
 scopes = "openid,profile,email"
 secret = "<tbd>"
+ca = ""
 
 
 [network.interface.management]
@@ -46,6 +47,14 @@ stream = "stdout"
 enabled = false
 collector.endpoint = ""
 service.name = "opendut-edgar"
+
+[opentelemetry.tls]
+ca = ""
+
+[opentelemetry.tls.client.auth] #mTLS
+enabled = false
+certificate = ""
+key = ""
 
 [opentelemetry.metrics]
 interval.ms = 60000

@@ -12,25 +12,27 @@ use tracing::{debug, error, trace, warn};
 /// Constants for configuration keys used throughout the codebase.
 pub mod config_keys {
     pub const DEFAULT_NETWORK_TLS_CA: &str = "network.tls.ca";
+    pub const DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED: &str = "network.tls.client.auth.enabled";
+    pub const DEFAULT_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE: &str = "network.tls.client.auth.certificate";
+    pub const DEFAULT_NETWORK_TLS_CLIENT_AUTH_KEY: &str = "network.tls.client.auth.key";
     pub const OIDC_CLIENT_CA: &str = "network.oidc.client.ca";
-    pub const OPENTELEMETRY_CLIENT_CA: &str = "opentelemetry.client.ca";
-    pub const NETWORK_TLS_CLIENT_AUTH_CERT: &str = "network.tls.client.auth.certificate";
-    pub const NETWORK_TLS_CLIENT_AUTH_KEY: &str = "network.tls.client.auth.key";
+    pub const OPENTELEMETRY_TLS_CA: &str = "opentelemetry.tls.ca";
+    pub const OPENTELEMETRY_TLS_CLIENT_AUTH_CERTIFICATE: &str = "opentelemetry.tls.client.auth.certificate";
+    pub const OPENTELEMETRY_TLS_CLIENT_AUTH_KEY: &str = "opentelemetry.tls.client.auth.key";
 }
 
 pub trait PemFromConfig {
 
-    /// The configuration keys are checked in order, each time checking:
-    /// - Whether the configuration value can be parsed as a PEM.
-    ///   If so, read the PEM directly from that variable.
-    /// - Whether a file is present at the path described by the configuration key.
-    ///   If so, read the PEM from this file.
+    /// Check whether the configuration key specifies:
+    /// - a text that can be parsed as a PEM. If so, read the PEM directly from that.
+    /// - an existing file path. If so, read the PEM from the path.
     ///
-    /// The first configuration key that yields a certificate is what gets returned.
-    /// If none match, then `Ok(None)` is returned.
-    fn read_from_config_keys_with_env_fallback(
-        config_keys: &[&str],
-        config: &Config
+    /// Do the same for the fallback_config_key.
+    /// If none of these checks yield a certificate, `Ok(None)` is returned.
+    fn read_from_configured_path_or_content(
+        config_key: &str,
+        fallback_config_key: Option<&str>,
+        config: &Config,
     ) -> anyhow::Result<Option<Pem>>;
 
     fn from_file_path(relative_file_path: &str) -> anyhow::Result<Pem>;
@@ -38,12 +40,21 @@ pub trait PemFromConfig {
 
 impl PemFromConfig for Pem {
 
-    fn read_from_config_keys_with_env_fallback(
-        config_keys: &[&str],
+    fn read_from_configured_path_or_content(
+        config_key: &str,
+        fallback_config_key: Option<&str>,
         config: &Config,
     ) -> anyhow::Result<Option<Pem>> {
 
-        for config_key in config_keys {
+        let config_keys = {
+            let mut config_keys = vec![config_key];
+            if let Some(fallback_config_key) = fallback_config_key {
+                config_keys.push(fallback_config_key);
+            }
+            config_keys
+        };
+
+        for config_key in &config_keys {
             if let Some(pem) = read_pem_from_config_key(config_key, config)? {
                 return Ok(Some(pem));
             }
@@ -133,8 +144,9 @@ mod tests {
     fn should_read_pem_from_generic_ca() -> anyhow::Result<()> {
         let config = create_test_config(config_keys::DEFAULT_NETWORK_TLS_CA, root_ca_path());
 
-        let pem = Pem::read_from_config_keys_with_env_fallback(
-            &[config_keys::DEFAULT_NETWORK_TLS_CA],
+        let pem = Pem::read_from_configured_path_or_content(
+            config_keys::DEFAULT_NETWORK_TLS_CA,
+            None,
             &config
         )?;
         assert!(pem.is_some());
@@ -145,8 +157,9 @@ mod tests {
     fn should_read_pem_from_client_ca() -> anyhow::Result<()> {
         let config = create_test_config(config_keys::OIDC_CLIENT_CA, root_ca_path());
 
-        let pem = Pem::read_from_config_keys_with_env_fallback(
-            &[config_keys::OIDC_CLIENT_CA],
+        let pem = Pem::read_from_configured_path_or_content(
+            config_keys::OIDC_CLIENT_CA,
+            None,
             &config
         )?;
         assert!(pem.is_some());
@@ -159,8 +172,9 @@ mod tests {
             .expect("Could not read root CA file for test");
 
         let config = create_test_config(&config_keys::DEFAULT_NETWORK_TLS_CA, content);
-        let pem = Pem::read_from_config_keys_with_env_fallback(
-            &[config_keys::DEFAULT_NETWORK_TLS_CA],
+        let pem = Pem::read_from_configured_path_or_content(
+            config_keys::DEFAULT_NETWORK_TLS_CA,
+            None,
             &config
         )?;
         assert!(pem.is_some());
@@ -222,4 +236,5 @@ mod tests {
         fs::read_to_string(root_ca_path())
             .expect("Failed to read test certificate")
     }
+
 }

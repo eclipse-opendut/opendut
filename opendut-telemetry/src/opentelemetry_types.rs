@@ -1,7 +1,7 @@
 use opendut_auth::confidential::client::{ConfidentialClient, ConfidentialClientRef};
 use opendut_auth::confidential::error::ConfidentialClientError;
 use std::time::Duration;
-use tonic::transport::{Certificate, ClientTlsConfig};
+use tonic::transport::{Certificate, ClientTlsConfig, Identity};
 use url::Url;
 use opendut_util_core::pem::{self, Pem, PemFromConfig};
 use std::fmt::Debug;
@@ -49,7 +49,7 @@ impl Opentelemetry {
     pub async fn load(config: &config::Config, service_metadata: ServiceMetadata) -> Result<Self, OpentelemetryConfigError> {
         let field = String::from("opentelemetry.enabled");
         let opentelemetry_enabled = config.get_bool("opentelemetry.enabled")
-            .map_err(|cause| OpentelemetryConfigError::ValueParseError{
+            .map_err(|cause| OpentelemetryConfigError::ValueParseError {
                 field: field.clone(),
                 cause: format!("{cause:?}")
             })?;
@@ -69,6 +69,7 @@ impl Opentelemetry {
                     })?;
                 Endpoint { url }
             };
+
             let service_name = {
                 let field = String::from("opentelemetry.service.name");
                 config.get_string(&field)
@@ -123,31 +124,76 @@ impl Opentelemetry {
                 }
                 interval
             };
+
             let confidential_client = ConfidentialClient::from_settings(config).await
-                .map_err(|cause| OpentelemetryConfigError::ConfidentialClientError{
+                .map_err(|cause| OpentelemetryConfigError::ConfidentialClientError {
                     message: String::from("Could not create AuthenticationManager"),
                     cause
                 })?;
 
-            let opendut_ca = Pem::read_from_config_keys_with_env_fallback(
-                &[
-                    pem::config_keys::OPENTELEMETRY_CLIENT_CA,
-                    pem::config_keys::DEFAULT_NETWORK_TLS_CA,
-                ],
-                config
-            ).map_err(|cause| OpentelemetryConfigError::ValueParseError{
-                field: String::from("opentelemetry.client.ca"),
-                cause: format!("{cause:?}")
-            })?;
 
-            let mut client_tls_config = ClientTlsConfig::new()
-                .with_enabled_roots();
-            if let Some(opendut_ca) = opendut_ca {
-                let certificate = Certificate::from_pem(opendut_ca.contents());
-                client_tls_config = client_tls_config.ca_certificate(certificate);
-            } else {
-                client_tls_config = client_tls_config.with_native_roots();
-            }
+            let client_tls_config = {
+
+                let mut client_tls_config = ClientTlsConfig::new()
+                    .with_enabled_roots();
+
+                let load_pem = |config_key, fallback_config_key| {
+                    Pem::read_from_configured_path_or_content(config_key, Some(fallback_config_key), config)
+                        .map_err(|cause| OpentelemetryConfigError::ValueParseError {
+                            field: [config_key, fallback_config_key].join(" | "), //somewhat hacky way to display both config fields
+                            cause: format!("{cause:?}")
+                        })
+                };
+
+                {
+                    let opendut_ca = load_pem(
+                        pem::config_keys::OPENTELEMETRY_TLS_CA,
+                        pem::config_keys::DEFAULT_NETWORK_TLS_CA,
+                    )?;
+
+                    if let Some(opendut_ca) = opendut_ca {
+                        let certificate = Certificate::from_pem(opendut_ca.to_string());
+                        client_tls_config = client_tls_config.ca_certificate(certificate);
+                    } else {
+                        client_tls_config = client_tls_config.with_native_roots();
+                    }
+                }
+
+                {
+                    let enabled = {
+                        let field = "opentelemetry.tls.client.auth.enabled";
+
+                        config.get_bool(field)
+                            .map_err(|cause| OpentelemetryConfigError::ValueParseError {
+                                field: field.to_owned(),
+                                cause: format!("{cause:?}")
+                            })?
+                    };
+
+                    if enabled {
+                        let mtls_certificate = load_pem(
+                            pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_CERTIFICATE,
+                            pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE,
+                        )?.ok_or_else(|| OpentelemetryConfigError::ValueParseError {
+                            field: format!("{} | {}", pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_CERTIFICATE, pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE),
+                            cause: String::from("None of the configured fields provided a valid mTLS client authentication certificate."),
+                        })?;
+
+                        let mtls_key = load_pem(
+                            pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_KEY,
+                            pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_KEY,
+                        )?.ok_or_else(|| OpentelemetryConfigError::ValueParseError {
+                            field: format!("{} | {}", pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_CERTIFICATE, pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE),
+                            cause: String::from("None of the configured fields provided a valid mTLS client authentication key."),
+                        })?;
+
+                        let identity = Identity::from_pem(mtls_certificate.to_string(), mtls_key.to_string());
+                        client_tls_config = client_tls_config.identity(identity);
+                    }
+                }
+
+                client_tls_config
+            };
 
             Ok(Opentelemetry::Enabled(Box::new(OpentelemetryConfig {
                 confidential_client,
@@ -236,7 +282,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_open_telemetry_config_load() -> anyhow::Result<()> {
+    async fn should_load_opentelemetry_configuration() -> anyhow::Result<()> {
         let otel_collector = "http://otel-collector:4317";
         let instance_name = "instance-1";
         let test_service_name = "test-service";
@@ -249,6 +295,7 @@ mod tests {
             .set_override("opentelemetry.collector.endpoint", otel_collector)?
             .set_override("opentelemetry.metrics.interval.ms", "1000")?
             .set_override("opentelemetry.metrics.cpu.collection.interval.ms", "1000")?
+            .set_override("opentelemetry.tls.client.auth.enabled", "false")?
             .set_override("network.oidc.enabled", "false")?
             .build()?;
 
@@ -269,7 +316,5 @@ mod tests {
         assert_eq!(otel, expected);
 
         Ok(())
-
     }
-
 }
