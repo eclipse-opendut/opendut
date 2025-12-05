@@ -68,6 +68,7 @@ docker compose --file ${OPENDUT_REPO_ROOT:-.}/.ci/deploy/localenv/docker-compose
 ```
 
 ## Configuration
+#TODO shorten
 - You can configure the log level of CARL via the environment variable `OPENDUT_LOG`.  
   For example, to only show INFO logging and above, set it as `OPENDUT_LOG=info`.  
   For more fine-grained control, see the documentation here: <https://docs.rs/tracing-subscriber/latest/tracing_subscriber/filter/struct.EnvFilter.html#directives>
