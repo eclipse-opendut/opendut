@@ -7,11 +7,8 @@ remote.port = 8080
 [network.tls]
 enabled = true
 certificate = "/etc/opendut/tls/carl.pem"
-# certificate.content can be used to pass certificate text directly
 key = "/etc/opendut/tls/carl.key"
-# key.content can be used to pass certificate text directly
 ca = "/etc/opendut/tls/ca.pem"
-# ca.content can be used to pass certificate text directly
 
 [network.oidc]
 enabled = false

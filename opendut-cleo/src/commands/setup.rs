@@ -53,7 +53,7 @@ impl SetupCli {
                 let ca_content = setup_string.ca.encode_as_string();
                 let mut environment_variables = formatdoc!("
                     OPENDUT_CLEO_NETWORK_TLS_DOMAIN_NAME_OVERRIDE={carl_host}
-                    OPENDUT_CLEO_NETWORK_TLS_CA_CONTENT=\"{ca_content}\"
+                    OPENDUT_CLEO_NETWORK_TLS_CA=\"{ca_content}\"
                     OPENDUT_CLEO_NETWORK_CARL_HOST={carl_host}
                     OPENDUT_CLEO_NETWORK_CARL_PORT={carl_port}
                 ");

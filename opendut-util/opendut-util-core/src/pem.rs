@@ -2,7 +2,6 @@ pub use pem::Pem;
 
 use std::fs::File;
 use std::io::Read;
-use std::ops::Not;
 use std::path::PathBuf;
 use std::str::FromStr;
 use crate::project;
@@ -22,7 +21,7 @@ pub mod config_keys {
 pub trait PemFromConfig {
 
     /// The configuration keys are checked in order, each time checking:
-    /// - Whether a configuration key with ".content" appended is present.
+    /// - Whether the configuration value can be parsed as a PEM.
     ///   If so, read the PEM directly from that variable.
     /// - Whether a file is present at the path described by the configuration key.
     ///   If so, read the PEM from this file.
@@ -43,48 +42,11 @@ impl PemFromConfig for Pem {
         config_keys: &[&str],
         config: &Config,
     ) -> anyhow::Result<Option<Pem>> {
-        fn try_load_pem_from_file(config_key: &str, config: &Config) -> Option<Pem> {
-            config.get_string(config_key)
-                .ok()
-                .filter(|string| string.is_empty().not())
-                .and_then(|path| project::make_path_absolute(&path).ok())
-                .and_then(|path| {
-                    read_pem_from_file_path(&path)
-                        .inspect_err(|cause| error!("Error while reading PEM from {path:?}: {cause}"))
-                        .ok()
-                })
-        }
-
-        fn load_pem_from_config_content(config_key: &str, config: &Config) -> anyhow::Result<Option<Pem>> {
-            let pem_content = config.get_string(config_key).ok();
-
-            if let Some(content) = pem_content {
-                if content.is_empty() {
-                    Ok(None)
-                } else {
-                    let pem = Pem::from_str(&content)
-                        .context(format!("Could not parse PEM from configuration key '{config_key}'"))?;
-                    Ok(Some(pem))
-                }
-            } else {
-                Ok(None)
-            }
-        }
 
         for config_key in config_keys {
-            let content_config_key = format!("{config_key}.content");
-
-            match load_pem_from_config_content(&content_config_key, config)? {
-                Some(pem) => {
-                    debug!("Using PEM loaded from configuration key: {content_config_key}");
-                    return Ok(Some(pem));
-                }
-                None =>
-                    if let Some(pem) = try_load_pem_from_file(config_key, config) {
-                        debug!("Using PEM loaded from configuration key: {config_key}");
-                        return Ok(Some(pem));
-                    }
-            };
+            if let Some(pem) = read_pem_from_config_key(config_key, config)? {
+                return Ok(Some(pem));
+            }
         }
 
         warn!("No TLS keys found in configured locations: {config_keys:?}");
@@ -99,6 +61,46 @@ impl PemFromConfig for Pem {
     }
 }
 
+fn read_pem_from_config_key(config_key: &str, config: &Config) -> anyhow::Result<Option<Pem>> {
+
+    fn try_load_pem_from_file_path(config_value: &str, config_key: &str) -> Option<Pem> {
+        let path = project::make_path_absolute(config_value)
+            .ok()?;
+
+        read_pem_from_file_path(&path)
+            .inspect_err(|cause| error!("Error while reading PEM from path {path:?} configured via configuration key '{config_key}': {cause}"))
+            .ok()
+    }
+
+    let result =
+        match config.get_string(config_key).ok() {
+            None => None,
+            Some(config_value) if config_value.is_empty() => None,
+            Some(config_value) => {
+                match Pem::from_str(&config_value) {
+                    Ok(pem) => {
+                        debug!("Using PEM loaded from text value of configuration key: {config_key}");
+                        Some(pem)
+                    }
+                    Err(cause) => {
+                        if config_value.starts_with("-----BEGIN") { //very likely that user wanted to specify PEM, so return error directly
+                            return Err(cause)
+                                .context("Failed to load text value as PEM, which was configured in configuration key '{config_key}'");
+                        }
+                        else if let Some(pem) = try_load_pem_from_file_path(&config_value, config_key) {
+                            debug!("Using PEM loaded from file path defined in configuration key: {config_key}");
+                            Some(pem)
+                        }
+                        else {
+                            None
+                        }
+                    }
+                }
+            }
+        };
+
+    Ok(result)
+}
 
 
 fn read_pem_from_file_path(path: &PathBuf) -> anyhow::Result<Pem> {
@@ -115,7 +117,7 @@ fn read_pem_from_file_path(path: &PathBuf) -> anyhow::Result<Pem> {
     let pem = Pem::try_from(buffer.as_slice())
         .context(format!("Could not parse PEM from file: {path:?}"))?;
 
-    trace!("Pem loaded from file: {path:?}");
+    trace!("PEM loaded from file: {path:?}");
 
     Ok(pem)
 }
@@ -123,27 +125,14 @@ fn read_pem_from_file_path(path: &PathBuf) -> anyhow::Result<Pem> {
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+    use repo_path::repo_path;
     use super::*;
 
-    fn root_ca_path() -> String {
-        let path = project::make_path_absolute("resources/development/tls/insecure-development-ca.pem")
-            .expect("Could not make path for custom CA");
-        assert!(path.exists());
-        path.into_os_string().into_string()
-            .expect("Could not determine path for custom root CA")
-    }
-
-    fn create_test_config(key: &str, value: impl Into<String>) -> Config {
-        Config::builder()
-            .set_override(key, value.into())
-            .expect("Could not set config")
-            .build()
-            .expect("Could not build test configuration")
-    }
-
     #[test]
-    fn test_read_pem_from_generic_ca() -> anyhow::Result<()> {
+    fn should_read_pem_from_generic_ca() -> anyhow::Result<()> {
         let config = create_test_config(config_keys::DEFAULT_NETWORK_TLS_CA, root_ca_path());
+
         let pem = Pem::read_from_config_keys_with_env_fallback(
             &[config_keys::DEFAULT_NETWORK_TLS_CA],
             &config
@@ -153,8 +142,9 @@ mod tests {
     }
 
     #[test]
-    fn test_read_pem_from_client_ca() -> anyhow::Result<()> {
+    fn should_read_pem_from_client_ca() -> anyhow::Result<()> {
         let config = create_test_config(config_keys::OIDC_CLIENT_CA, root_ca_path());
+
         let pem = Pem::read_from_config_keys_with_env_fallback(
             &[config_keys::OIDC_CLIENT_CA],
             &config
@@ -164,19 +154,72 @@ mod tests {
     }
 
     #[test]
-    fn test_read_pem_from_client_ca_content() -> anyhow::Result<()> {
-        let content = std::fs::read_to_string(root_ca_path())
+    fn should_read_pem_from_client_ca_content() -> anyhow::Result<()> {
+        let content = fs::read_to_string(root_ca_path())
             .expect("Could not read root CA file for test");
 
-        let original_config_key = config_keys::DEFAULT_NETWORK_TLS_CA;
-        let content_config_key = format!("{original_config_key}.content");
-
-        let config = create_test_config(&content_config_key, content);
+        let config = create_test_config(&config_keys::DEFAULT_NETWORK_TLS_CA, content);
         let pem = Pem::read_from_config_keys_with_env_fallback(
-            &[original_config_key],
+            &[config_keys::DEFAULT_NETWORK_TLS_CA],
             &config
         )?;
         assert!(pem.is_some());
         Ok(())
+    }
+
+    #[test]
+    fn should_read_pem_from_configured_text_value() -> anyhow::Result<()> {
+        let pem_sample = root_ca_content();
+
+        let config = create_test_config(config_keys::DEFAULT_NETWORK_TLS_CA, &pem_sample);
+
+        let result = read_pem_from_config_key(config_keys::DEFAULT_NETWORK_TLS_CA, &config)?;
+
+        assert_eq!(result, Some(pem::parse(pem_sample)?));
+        Ok(())
+    }
+
+    #[test]
+    fn should_error_when_provided_with_a_malformed_pem_value() -> anyhow::Result<()> {
+        let pem_sample = root_ca_content()
+            .replace("MII", "WOOHOO");
+
+        let config = create_test_config(config_keys::DEFAULT_NETWORK_TLS_CA, pem_sample);
+
+        let result = read_pem_from_config_key(config_keys::DEFAULT_NETWORK_TLS_CA, &config);
+
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn should_read_pem_from_configured_file_path() -> anyhow::Result<()> {
+        let pem_path = root_ca_path();
+
+        let config = create_test_config(config_keys::DEFAULT_NETWORK_TLS_CA, &pem_path);
+
+        let result = read_pem_from_config_key(config_keys::DEFAULT_NETWORK_TLS_CA, &config)?;
+
+        assert_eq!(result, Some(pem::parse(root_ca_content())?));
+        Ok(())
+    }
+
+
+    fn create_test_config(key: &str, value: impl Into<String>) -> Config {
+        Config::builder()
+            .set_override(key, value.into())
+            .expect("Could not set config")
+            .build()
+            .expect("Could not build test configuration")
+    }
+
+    fn root_ca_path() -> String {
+        repo_path!("resources/development/tls/insecure-development-ca.pem")
+            .to_str().unwrap().to_string()
+    }
+
+    fn root_ca_content() -> String {
+        fs::read_to_string(root_ca_path())
+            .expect("Failed to read test certificate")
     }
 }

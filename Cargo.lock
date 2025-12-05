@@ -4580,6 +4580,7 @@ dependencies = [
  "config",
  "dotenvy",
  "pem",
+ "repo_path",
  "reqwest",
  "thiserror 2.0.17",
  "tracing",
