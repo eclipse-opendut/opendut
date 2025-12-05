@@ -60,6 +60,7 @@ pub mod check {
         commands::CARGO_DENY.command()
             .arg("check")
             .arg("--config").arg(cargo_deny_toml())
+            .current_dir(repo_path!())
             .run_requiring_success()
     }
 }
