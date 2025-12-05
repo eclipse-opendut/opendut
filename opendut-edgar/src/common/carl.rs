@@ -24,7 +24,7 @@ pub async fn connect(settings: &Config) -> anyhow::Result<CarlClient> {
     let host = settings.get_string("network.carl.host")?;
     let port = u16::try_from(settings.get_int("network.carl.port")?)?;
 
-    let ca_cert = Pem::read_from_config_keys_with_env_fallback(&[pem::config_keys::DEFAULT_NETWORK_TLS_CA], settings)?
+    let ca_cert = Pem::read_from_configured_path_or_content(pem::config_keys::DEFAULT_NETWORK_TLS_CA, None, settings)?
         .context("No CA certificate found in configured locations")?;
 
     let client_auth = ClientAuth::load_from_config(settings)

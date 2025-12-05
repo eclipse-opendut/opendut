@@ -11,12 +11,12 @@ pub enum ClientAuth {
 impl ClientAuth {
     pub fn load_from_config(config: &Config) -> anyhow::Result<Self> {
 
-        if config.get_bool("network.tls.client.auth.enabled")? {
+        if config.get_bool(pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED)? {
 
-            let cert = Pem::read_from_config_keys_with_env_fallback(&[pem::config_keys::NETWORK_TLS_CLIENT_AUTH_CERT], config)?
+            let cert = Pem::read_from_configured_path_or_content(pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE, None, config)?
                 .context("No client authentication certificate found in configured locations.")?;
 
-            let key = Pem::read_from_config_keys_with_env_fallback(&[pem::config_keys::NETWORK_TLS_CLIENT_AUTH_KEY], config)?
+            let key = Pem::read_from_configured_path_or_content(pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_KEY, None, config)?
                 .context("No client authentication key found in configured locations.")?;
 
             Ok(Self::Enabled { cert, key })

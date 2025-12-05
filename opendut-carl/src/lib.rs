@@ -102,7 +102,7 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
 
     let carl_url = ResourceHomeUrl::try_from(&settings)?;
 
-    let ca_certificate = Pem::read_from_config_keys_with_env_fallback(&[pem::config_keys::DEFAULT_NETWORK_TLS_CA], &settings)?
+    let ca_certificate = Pem::read_from_configured_path_or_content(pem::config_keys::DEFAULT_NETWORK_TLS_CA, None, &settings)?
         .expect("Could not find openDuT certificate authority.");
 
     let oidc_registration_client = RegistrationClient::from_settings(&settings).await

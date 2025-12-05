@@ -406,7 +406,7 @@ pub async fn create_carl_client(config: &config::Config) -> CarlClient {
     let port = config.get_int("network.carl.port")
         .expect("Configuration should contain a valid port number to connect to CARL");
 
-    let ca_cert = Pem::read_from_config_keys_with_env_fallback(&[pem::config_keys::DEFAULT_NETWORK_TLS_CA], config)
+    let ca_cert = Pem::read_from_configured_path_or_content(pem::config_keys::DEFAULT_NETWORK_TLS_CA, None, config)
         .expect("Error while reading CA certificate.")
         .expect("None of the configured CA certificate configuration keys provided a certificate.");
 

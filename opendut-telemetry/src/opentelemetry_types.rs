@@ -1,7 +1,7 @@
 use opendut_auth::confidential::client::{ConfidentialClient, ConfidentialClientRef};
 use opendut_auth::confidential::error::ConfidentialClientError;
 use std::time::Duration;
-use tonic::transport::{Certificate, ClientTlsConfig};
+use tonic::transport::{Certificate, ClientTlsConfig, Identity};
 use url::Url;
 use opendut_util_core::pem::{self, Pem, PemFromConfig};
 use std::fmt::Debug;
@@ -69,6 +69,7 @@ impl Opentelemetry {
                     })?;
                 Endpoint { url }
             };
+
             let service_name = {
                 let field = String::from("opentelemetry.service.name");
                 config.get_string(&field)
@@ -123,31 +124,60 @@ impl Opentelemetry {
                 }
                 interval
             };
+
             let confidential_client = ConfidentialClient::from_settings(config).await
                 .map_err(|cause| OpentelemetryConfigError::ConfidentialClientError{
                     message: String::from("Could not create AuthenticationManager"),
                     cause
                 })?;
 
-            let opendut_ca = Pem::read_from_config_keys_with_env_fallback(
-                &[
-                    pem::config_keys::OPENTELEMETRY_CLIENT_CA,
-                    pem::config_keys::DEFAULT_NETWORK_TLS_CA,
-                ],
-                config
-            ).map_err(|cause| OpentelemetryConfigError::ValueParseError{
-                field: String::from("opentelemetry.client.ca"),
-                cause: format!("{cause:?}")
-            })?;
+            let client_tls_config = {
 
-            let mut client_tls_config = ClientTlsConfig::new()
-                .with_enabled_roots();
-            if let Some(opendut_ca) = opendut_ca {
-                let certificate = Certificate::from_pem(opendut_ca.contents());
-                client_tls_config = client_tls_config.ca_certificate(certificate);
-            } else {
-                client_tls_config = client_tls_config.with_native_roots();
-            }
+                let mut client_tls_config = ClientTlsConfig::new()
+                    .with_enabled_roots();
+
+                let load_pem = |config_key, fallback_config_key| {
+                    Pem::read_from_configured_path_or_content(config_key, Some(fallback_config_key), config)
+                        .map_err(|cause| OpentelemetryConfigError::ValueParseError {
+                            field: [config_key, fallback_config_key].join(" | "), //somewhat hacky way to display both config fields
+                            cause: format!("{cause:?}")
+                        })
+                };
+
+                {
+                    let opendut_ca = load_pem(
+                        pem::config_keys::OPENTELEMETRY_TLS_CA,
+                        pem::config_keys::DEFAULT_NETWORK_TLS_CA,
+                    )?;
+
+                    if let Some(opendut_ca) = opendut_ca {
+                        let certificate = Certificate::from_pem(opendut_ca.to_string());
+                        client_tls_config = client_tls_config.ca_certificate(certificate);
+                    } else {
+                        client_tls_config = client_tls_config.with_native_roots();
+                    }
+                }
+
+                {
+                    if config.get_bool("network.tls.client.auth.enabled")? { } //TODO
+
+                    let mtls_certificate = load_pem(
+                        pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_CERTIFICATE,
+                        pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE,
+                    )?;
+                    let mtls_key = load_pem(
+                        pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_KEY,
+                        pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_KEY,
+                    )?;
+
+                    if let Some((certificate, key)) = mtls_certificate.zip(mtls_key) {
+                        let identity = Identity::from_pem(certificate.to_string(), key.to_string());
+                        client_tls_config = client_tls_config.identity(identity);
+                    }
+                }
+
+                client_tls_config
+            };
 
             Ok(Opentelemetry::Enabled(Box::new(OpentelemetryConfig {
                 confidential_client,

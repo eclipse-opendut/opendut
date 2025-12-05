@@ -10,11 +10,9 @@ pub use reqwest::{Client as ReqwestClient};
 
 impl OidcReqwestClient {
     pub fn from_config(config: &Config) -> anyhow::Result<ReqwestClient> {
-        let opendut_ca = Pem::read_from_config_keys_with_env_fallback(
-            &[
-                pem::config_keys::OIDC_CLIENT_CA,
-                pem::config_keys::DEFAULT_NETWORK_TLS_CA,
-            ],
+        let opendut_ca = Pem::read_from_configured_path_or_content(
+            pem::config_keys::OIDC_CLIENT_CA,
+            Some(pem::config_keys::DEFAULT_NETWORK_TLS_CA),
             config
         )?;
 
