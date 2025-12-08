@@ -45,6 +45,7 @@ fn clippy() -> crate::Result {
         .args([
             "clippy",
             "--workspace",
+            "--all-features",
         ])
         .run_requiring_success()
 }

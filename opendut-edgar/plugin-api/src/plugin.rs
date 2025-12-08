@@ -24,7 +24,7 @@ pub mod bindings {
     }
 }
 
-impl crate::plugin::bindings::exports::edgar::setup::task::Success {
+impl task::Success {
     pub fn new() -> Self {
         Self {
             message: None
@@ -33,6 +33,12 @@ impl crate::plugin::bindings::exports::edgar::setup::task::Success {
 
     pub fn message(message: impl Into<String>) -> Self {
         Self { message: Some(message.into()) }
+    }
+}
+
+impl Default for task::Success {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
