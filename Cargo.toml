@@ -134,7 +134,7 @@ quote = { version = "1.0.*" }
 rand = "0.9.1"
 reactive_stores = "0.2.5"
 reactive_stores_macro = "0.2.6"
-redb = "2.6.3"
+redb = "3.1.0"
 regex = "1.11.1"
 repo_path = "1"
 reqwest = { version = "0.12.12", default-features = false, features = ["rustls-tls-native-roots"] }

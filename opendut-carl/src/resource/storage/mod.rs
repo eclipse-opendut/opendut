@@ -14,6 +14,7 @@ use std::fmt::Display;
 use std::fs;
 use std::ops::Not;
 use std::path::PathBuf;
+use redb::ReadableDatabase;
 use tracing::{debug, info};
 
 #[cfg(test)]
@@ -39,9 +40,7 @@ impl ResourceStorage {
                     info!("Database file at {file:?} does not exist. Creating an empty database.");
                 }
 
-                let db = redb::Database::builder()
-                    .create_with_file_format_v3(true)
-                    .create(file)
+                let db = redb::Database::create(file)
                     .map_err(|source| ConnectError::DatabaseCreate { file: file.to_owned(), source })?;
                 debug!("Database file opened from: {file:?}");
                 db
@@ -114,13 +113,6 @@ impl ResourceStorage {
         }
 
         Ok((result, relayed_subscription_events))
-    }
-
-
-    #[deprecated(since="0.8.0")]
-    pub(crate) async fn perform_database_upgrade(&mut self) -> anyhow::Result<bool> {
-        let performed_upgrade = self.db.upgrade()?;
-        Ok(performed_upgrade)
     }
 }
 
