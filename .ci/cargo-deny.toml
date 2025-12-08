@@ -71,6 +71,8 @@ ignore = [
     { id = "RUSTSEC-2025-0094", reason = "`unic-*` crates are unmaintained. Tracked by issue #411." },
     { id = "RUSTSEC-2025-0100", reason = "`unic-*` crates are unmaintained. Tracked by issue #411." },
     { id = "RUSTSEC-2025-0098", reason = "`unic-*` crates are unmaintained. Tracked by issue #411." },
+
+    { id = "RUSTSEC-2025-0134", reason = "`rustls-pemfile` library is unmaintained. No actual vulnerability known and the advisory says that it is just a thin wrapper at this point. Is depended on by the `axum-server` library in version 0.7.x, which is what we're currently pinned to by axum-server-dual-protocol v0.7.0. Tracked by issue #426." },
 ]
 
 # This section is considered when running `cargo deny check licenses`
