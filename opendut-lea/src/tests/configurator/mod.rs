@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use leptos::prelude::*;
 use leptos_router::hooks::{use_navigate, use_params_map};
-use opendut_lea_components::{BasePageContainer, Breadcrumb, UserInputError, UserInputValue};
+use opendut_lea_components::{BasePageContainer, Breadcrumb, LoadingSpinner, UserInputError, UserInputValue};
 use opendut_lea_components::tabs::{Tab, Tabs};
 use opendut_model::viper::{ViperRunId, ViperRunParameterValue};
 use crate::app::use_app_globals;
@@ -88,11 +88,6 @@ pub fn TestConfigurator() -> impl IntoView {
         (test_configuration, test_configuration_resource, is_valid_test_configuration)
     };
 
-    let _test_id = Memo::new(move |_| params.with(|params| {
-        params.get("id")
-            .and_then(|id| ViperRunId::try_from(id.as_str()).ok())
-    }).unwrap_or_else(ViperRunId::random));
-
     let test_id_string = create_read_slice(test_configuration, |config| config.id.to_string());
 
     let breadcrumbs = Signal::derive(move || {
@@ -112,12 +107,13 @@ pub fn TestConfigurator() -> impl IntoView {
         }
     });
 
-    let tabs = vec![
+    let tabs = Signal::derive(move || vec![
         Tab { title: String::from("General"), href: TabIdentifier::General.as_str().to_owned() },
         Tab { title: String::from("Source"), href: TabIdentifier::Source.as_str().to_owned() },
         Tab { title: String::from("Suite"), href: TabIdentifier::Suite.as_str().to_owned() },
         Tab { title: String::from("Parameters"), href: TabIdentifier::Parameters.as_str().to_owned() },
-    ];
+    ]);
+
     let active_tab = use_active_tab::<TabIdentifier>();
 
     view! {
@@ -127,14 +123,26 @@ pub fn TestConfigurator() -> impl IntoView {
             breadcrumbs
             controls=view! { <Controls configuration=test_configuration is_valid_test_configuration=is_valid_test_configuration.into() /> }
         >
-            <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
-                { move || match active_tab.get() {
-                    TabIdentifier::General => view! { <GeneralTab test_configuration /> }.into_any(),
-                    TabIdentifier::Source => view! { <SourceTab test_configuration /> }.into_any(),
-                    TabIdentifier::Suite => view! { <SuiteTab test_configuration /> }.into_any(),
-                    TabIdentifier::Parameters => view! { <ParameterTab /> }.into_any(),
-                }}
-            </Tabs>
+            <Suspense
+                fallback=move || view! { <LoadingSpinner /> }
+            >
+                {
+                    move || Suspend::new(async move {
+                        test_configuration_resource.await;
+
+                        view! {
+                            <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
+                                { move || match active_tab.get() {
+                                    TabIdentifier::General => view! { <GeneralTab test_configuration /> }.into_any(),
+                                    TabIdentifier::Source => view! { <SourceTab test_configuration /> }.into_any(),
+                                    TabIdentifier::Suite => view! { <SuiteTab test_configuration /> }.into_any(),
+                                    TabIdentifier::Parameters => view! { <ParameterTab /> }.into_any(),
+                                }}
+                            </Tabs>
+                        }
+                    })
+                }
+            </Suspense>
         </BasePageContainer>
     }
 }
