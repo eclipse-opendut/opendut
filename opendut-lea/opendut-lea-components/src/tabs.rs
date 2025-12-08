@@ -31,8 +31,8 @@ pub fn Tabs(
                     key=|tab| Clone::clone(&tab.title)
                     children=move |tab| {
 
-                        let title = Clone::clone(&tab.title);
-                        let is_active = move || title.to_lowercase() == active_tab.get().to_lowercase();
+                        let href = Clone::clone(&tab.href);
+                        let is_active = move || href.to_lowercase() == active_tab.get().to_lowercase();
 
                         view! {
                             <li class=("is-active", is_active)>
