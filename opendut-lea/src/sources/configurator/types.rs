@@ -6,7 +6,7 @@ use opendut_model::viper::{ViperSourceDescriptor, ViperSourceId, ViperSourceName
 pub enum SourceMisconfigurationError {
     #[error("Invalid source name")]
     InvalidSourceName,
-    #[error("Invalid source url")]
+    #[error("Invalid source URL")]
     InvalidSourceUrl,
 }
 

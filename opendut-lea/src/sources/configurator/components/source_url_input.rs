@@ -18,7 +18,7 @@ pub fn SourceUrlInput(source_configuration: RwSignal<UserSourceConfiguration>) -
     let validator = |input: String| {
         match Url::parse(&input) {
             Ok(_) => { UserInputValue::Right(input) }
-            Err(_) => { UserInputValue::Both("Enter a valid source url.".to_string(), input) }
+            Err(_) => { UserInputValue::Both("Enter a valid source URL.".to_string(), input) }
         }
     };
 
@@ -26,7 +26,7 @@ pub fn SourceUrlInput(source_configuration: RwSignal<UserSourceConfiguration>) -
         <UserInput
             getter=getter
             setter=setter
-            label="Source Url"
+            label="Source URL"
             placeholder="https://example.com"
             validator=validator
         />

@@ -66,7 +66,7 @@ pub fn SourcesOverview() -> impl IntoView {
                                     <thead>
                                         <tr>
                                             <th>"Name"</th>
-                                            <th>"Url"</th>
+                                            <th>"URL"</th>
                                             <th class="is-narrow has-text-centered">"Action"</th>
                                         </tr>
                                     </thead>
