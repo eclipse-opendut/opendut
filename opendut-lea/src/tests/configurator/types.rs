@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use opendut_lea_components::UserInputValue;
-use opendut_model::viper::{ViperRunDescriptor, ViperRunId, ViperRunName, ViperRunParameterKey, ViperRunParameterValue, ViperSourceId};
+use opendut_model::viper::{ViperRunDescriptor, ViperRunId, ViperRunName, ViperRunParameterKey, ViperRunParameterValue, ViperSourceId, ViperTestSuiteIdentifier};
 
 #[derive(thiserror::Error, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum TestMisconfiguration {
@@ -60,8 +60,8 @@ impl TryFrom<UserTestConfiguration> for ViperRunDescriptor {
             .suite
             .right_ok_or(TestMisconfiguration::InvalidSuite)
             .and_then(|suite_id| {
-                todo!();
-                // Parse into TestSuiteIdentifier
+                ViperTestSuiteIdentifier::try_from(suite_id)
+                    .map_err(|_| TestMisconfiguration::InvalidSuite)
             })?;
 
         let mut parameters = HashMap::new();
