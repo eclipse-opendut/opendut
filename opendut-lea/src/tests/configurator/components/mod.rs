@@ -1,8 +1,8 @@
-mod source_selector;
 mod suite_selector;
 mod parameter_selector;
 mod test_name_input;
 mod controls;
+mod source_selector;
 
 pub use controls::Controls;
 pub use test_name_input::TestNameInput;

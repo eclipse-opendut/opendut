@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 use opendut_lea_components::ReadOnlyInput;
-use crate::tests::configurator::components::{TestNameInput, TestSourceSelector, TestSuiteSelector};
+use crate::tests::configurator::components::TestNameInput;
 use crate::tests::configurator::types::UserTestConfiguration;
 
 #[component]
@@ -15,12 +15,6 @@ pub fn GeneralTab(test_configuration: RwSignal<UserTestConfiguration>) -> impl I
                 value=test_id
             />
             <TestNameInput
-                test_configuration
-            />
-            <TestSourceSelector
-                test_configuration
-            />
-            <TestSuiteSelector
                 test_configuration
             />
         </div>

@@ -2,13 +2,13 @@ use std::collections::HashMap;
 use leptos::prelude::*;
 use leptos_router::hooks::{use_navigate, use_params_map};
 use opendut_lea_components::{BasePageContainer, Breadcrumb, UserInputError, UserInputValue};
-use opendut_lea_components::tabs::Tabs;
+use opendut_lea_components::tabs::{Tab, Tabs};
 use opendut_model::viper::{ViperRunId, ViperRunParameterValue};
 use crate::app::use_app_globals;
 use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
 use crate::tests::configurator::components::Controls;
-use crate::tests::configurator::tabs::{GeneralTab, ParameterTab, TabIdentifier};
+use crate::tests::configurator::tabs::{GeneralTab, ParameterTab, SourceTab, SuiteTab, TabIdentifier};
 use crate::tests::configurator::types::UserTestConfiguration;
 
 mod tabs;
@@ -113,8 +113,10 @@ pub fn TestConfigurator() -> impl IntoView {
     });
 
     let tabs = vec![
-        opendut_lea_components::tabs::Tab { title: String::from("General"), href: String::from("general") },
-        opendut_lea_components::tabs::Tab { title: String::from("Parameters"), href: String::from("parameters") },
+        Tab { title: String::from("General"), href: TabIdentifier::General.as_str().to_owned() },
+        Tab { title: String::from("Source"), href: TabIdentifier::Source.as_str().to_owned() },
+        Tab { title: String::from("Suite"), href: TabIdentifier::Suite.as_str().to_owned() },
+        Tab { title: String::from("Parameters"), href: TabIdentifier::Parameters.as_str().to_owned() },
     ];
     let active_tab = use_active_tab::<TabIdentifier>();
 
@@ -128,6 +130,8 @@ pub fn TestConfigurator() -> impl IntoView {
             <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
                 { move || match active_tab.get() {
                     TabIdentifier::General => view! { <GeneralTab test_configuration /> }.into_any(),
+                    TabIdentifier::Source => view! { <SourceTab test_configuration /> }.into_any(),
+                    TabIdentifier::Suite => view! { <SuiteTab test_configuration /> }.into_any(),
                     TabIdentifier::Parameters => view! { <ParameterTab /> }.into_any(),
                 }}
             </Tabs>
