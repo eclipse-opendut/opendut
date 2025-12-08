@@ -23,7 +23,7 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
 
     let test_name = create_read_slice(test_descriptor,
         |test_descriptor| {
-            test_descriptor.id.to_string() // Todo: Replace by name
+            test_descriptor.name.to_string()
         }
     );
 
@@ -45,7 +45,7 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
 
     let test_source = Signal::derive(move || {
         test_source_descriptor.read().as_ref()
-            .map(|descriptor| (descriptor.name.to_string(), descriptor.url.to_string()))
+            .map(|descriptor| descriptor.name.to_string())
     });
 
     let test_suite = create_read_slice(test_descriptor,
@@ -55,6 +55,7 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
     );
 
     let configurator_href = move || { format!("/tests/{}/configure/general", test_id.get()) };
+    let source_configurator_href = move || { format!("/sources/{}/configure/general", test_source_id.get()) };
 
     let dropdown_active = RwSignal::new(false);
     let dropdown = NodeRef::<Div>::new();
@@ -67,10 +68,10 @@ where OnDeleteFn: Fn() + Copy + Send + 'static, {
                 <a href=configurator_href> { test_name } </a>
             </td>
             { move ||
-                test_source.get().map(|(source_name, source_url)| {
+                test_source.get().map(|source_name| {
                     view! {
                         <td class="is-vcentered">
-                            <a href=source_url> { source_name } </a>
+                            <a href=source_configurator_href> { source_name } </a>
                         </td>
                     }
                 })
