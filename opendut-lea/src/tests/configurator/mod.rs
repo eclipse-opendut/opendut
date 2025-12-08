@@ -104,6 +104,14 @@ pub fn TestConfigurator() -> impl IntoView {
         ]
     });
 
+    let subtitle = Signal::derive(move || {
+        if let UserInputValue::Right(name) = test_configuration.get().name {
+            name
+        } else {
+            String::new()
+        }
+    });
+
     let tabs = vec![
         opendut_lea_components::tabs::Tab { title: String::from("General"), href: String::from("general") },
         opendut_lea_components::tabs::Tab { title: String::from("Parameters"), href: String::from("parameters") },
@@ -113,7 +121,7 @@ pub fn TestConfigurator() -> impl IntoView {
     view! {
         <BasePageContainer
             title="Configure Test"
-            subtitle=String::new() // Todo: Set subtitle (name)
+            subtitle
             breadcrumbs
             controls=view! { <Controls configuration=test_configuration is_valid_test_configuration=is_valid_test_configuration.into() /> }
         >
