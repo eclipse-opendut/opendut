@@ -47,10 +47,8 @@ pub fn TestSourceSelector(test_configuration: RwSignal<UserTestConfiguration>) -
 
             if sources.is_empty() {
                 setter.set(UserInputValue::Left(String::from("No sources available.")));
-            } else {
-                if matches!(getter.get(), UserInputValue::Left(_)) {
-                    setter.set(UserInputValue::Left(String::from("Select a source.")));
-                }
+            } else if matches!(getter.get(), UserInputValue::Left(_)) {
+                setter.set(UserInputValue::Left(String::from("Select a source.")));
             }
 
             sources

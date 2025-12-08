@@ -3,6 +3,7 @@ use opendut_lea_components::UserInputValue;
 use opendut_model::viper::{ViperRunDescriptor, ViperRunId, ViperRunName, ViperRunParameterKey, ViperRunParameterValue, ViperSourceId, ViperTestSuiteIdentifier};
 
 #[derive(thiserror::Error, Clone, Debug, Eq, PartialEq, Hash)]
+#[allow(clippy::enum_variant_names)]
 pub enum TestMisconfiguration {
     #[error("Invalid test name")]
     InvalidName,
