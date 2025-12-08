@@ -29,10 +29,11 @@ pub fn TestsOverview() -> impl IntoView {
     };
 
     let tests_table_rows = LocalResource::new(move || async move {
-        let registered_tests = registered_tests.await;
-
-        // Todo: Sort registered_tests.
-
+        let mut registered_tests = registered_tests.await;
+        registered_tests.sort_by(|test_a, test_b| {
+            test_a.name.value().to_lowercase()
+                .cmp(&test_b.name.value().to_lowercase())
+        });
         registered_tests
     });
 
