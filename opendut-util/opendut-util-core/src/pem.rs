@@ -2,7 +2,7 @@ pub use pem::Pem;
 
 use std::fs::File;
 use std::io::Read;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use crate::project;
 use anyhow::Context;
@@ -35,7 +35,7 @@ pub trait PemFromConfig {
         config: &Config,
     ) -> anyhow::Result<Option<Pem>>;
 
-    fn from_file_path(relative_file_path: &str) -> anyhow::Result<Pem>;
+    fn from_file_path(relative_file_path: &Path) -> anyhow::Result<Pem>;
 }
 
 impl PemFromConfig for Pem {
@@ -64,9 +64,9 @@ impl PemFromConfig for Pem {
         Ok(None)
     }
 
-    fn from_file_path(relative_file_path: &str) -> anyhow::Result<Pem> {
+    fn from_file_path(relative_file_path: &Path) -> anyhow::Result<Pem> {
         let pem_file_path = project::make_path_absolute(relative_file_path)
-            .context(format!("Could not determine path for PEM file: {relative_file_path}"))?;
+            .context(format!("Could not determine path for PEM file: {relative_file_path:?}"))?;
 
         read_pem_from_file_path(&pem_file_path)
     }
@@ -236,5 +236,4 @@ mod tests {
         fs::read_to_string(root_ca_path())
             .expect("Failed to read test certificate")
     }
-
 }

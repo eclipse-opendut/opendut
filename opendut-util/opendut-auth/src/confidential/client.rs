@@ -17,7 +17,7 @@ use backon::Retryable;
 use reqwest_middleware::ClientWithMiddleware;
 use tokio::runtime::Handle;
 use oauth2::Scope as OAuthScope;
-use opendut_util_core::reqwest_client::OidcReqwestClient;
+use opendut_util_core::reqwest_client;
 use crate::confidential::config::{OidcClientConfig, ConfiguredClient, OidcConfigEnabled};
 use crate::confidential::error::{ConfidentialClientError, OidcClientError, WrappedRequestTokenError};
 use crate::confidential::IssuerUrl;
@@ -81,7 +81,7 @@ impl ConfidentialClient {
         match config_enabled {
             OidcConfigEnabled::Yes(config) => {
                 trace!("OIDC configuration loaded: client_id='{}', issuer_url='{}'", config.get_client_id().as_str(), config.get_issuer().value().as_str());
-                let reqwest_client = OidcReqwestClient::from_config(settings)
+                let reqwest_client = reqwest_client::oidc::create_from_config(settings)
                     .map_err(|cause| ConfidentialClientError::Configuration { message: String::from("Failed to create reqwest client."), cause: cause.into() })?;
 
                 let client = ConfidentialClient::from_client_config(*config.clone(), reqwest_client)?;

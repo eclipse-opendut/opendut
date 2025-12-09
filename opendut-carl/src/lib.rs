@@ -15,9 +15,8 @@ use opendut_util::settings::LoadedConfig;
 use opendut_telemetry::logging::LoggingConfig;
 use opendut_telemetry::opentelemetry_types;
 use opendut_telemetry::opentelemetry_types::Opentelemetry;
-use opendut_util::{pem, project};
+use opendut_util::{pem, project, reqwest_client};
 use opendut_util::pem::{Pem, PemFromConfig};
-use opendut_util::reqwest_client::OidcReqwestClient;
 use auth::in_memory_cache::CustomInMemoryCache;
 
 use crate::auth::grpc_auth_layer::GrpcAuthenticationLayer;
@@ -161,7 +160,7 @@ async fn run(settings: LoadedConfig, get_resource_manager_ref: bool) -> anyhow::
         #[cfg(feature = "viper")]
         routes_builder.add_service(grpc_facades.test_manager_facade.into_grpc_service());
 
-        let reqwest_client = OidcReqwestClient::from_config(&settings)?;
+        let reqwest_client = reqwest_client::oidc::create_from_config(&settings)?;
         routes_builder
             .routes()
             .into_axum_router()

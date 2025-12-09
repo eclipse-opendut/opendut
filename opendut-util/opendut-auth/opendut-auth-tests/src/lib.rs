@@ -3,16 +3,14 @@ mod client;
 
 use anyhow::anyhow;
 use oauth2::{ClientId, ClientSecret, RedirectUrl};
-use opendut_util_core::expect_env_var;
+use opendut_util_core::{expect_env_var, reqwest_client};
 use openidconnect::RegistrationUrl;
 use pem::Pem;
-use rstest::fixture;
 use url::Url;
 
 use opendut_auth::confidential::client::{ConfidentialClient, ConfidentialClientRef};
 use opendut_auth::confidential::config::{OidcClientConfig, OidcConfidentialClientConfig};
 use opendut_auth::confidential::IssuerUrl;
-use opendut_util_core::reqwest_client::OidcReqwestClient;
 use opendut_auth::registration::client::{
     DEVICE_REDIRECT_URL, RegistrationClient, RegistrationClientRef,
 };
@@ -22,25 +20,22 @@ use opendut_util_core::pem::PemFromConfig;
 use opendut_util_core::project;
 use opendut_util_core::reqwest_client::ReqwestClient;
 
-#[fixture]
 pub async fn localenv_reqwest_client() -> ReqwestClient {
     let ca_path =
         project::make_path_absolute(".ci/deploy/localenv/data/secrets/pki/opendut-ca.pem")
-            .expect("Could not resolve localenv CA")
-            .into_os_string()
-            .into_string()
-            .unwrap();
+            .expect("Could not resolve localenv CA");
+
     let pem = <Pem as PemFromConfig>::from_file_path(&ca_path)
         .expect("Could not load localenv CA");
-    OidcReqwestClient::from_pem(pem)
+
+    reqwest_client::oidc::create_with_ca(pem)
         .map_err(|cause| anyhow!("Failed to create reqwest client. Error: {}", cause))
         .expect("Could not create localenv reqwest client")
 }
 
-#[fixture]
-pub async fn confidential_carl_client(
-    #[future] localenv_reqwest_client: ReqwestClient,
-) -> ConfidentialClientRef {
+pub async fn confidential_carl_client() -> ConfidentialClientRef {
+    let localenv_reqwest_client = localenv_reqwest_client().await;
+
     opendut_util_core::testing::init_localenv_secrets();
     let issuer_url = IssuerUrl::try_from("https://auth.opendut.local/realms/opendut/").unwrap(); // This is the URL for the keycloak server in the test environment
 
@@ -50,16 +45,13 @@ pub async fn confidential_carl_client(
         issuer_url,
         vec![],
     ));
-    let reqwest_client = localenv_reqwest_client.await;
 
-    ConfidentialClient::from_client_config(client_config, reqwest_client)
+    ConfidentialClient::from_client_config(client_config, localenv_reqwest_client)
         .expect("Could not create confidential client for CARL.")
 }
 
-#[fixture]
-pub async fn registration_client(
-    #[future] confidential_carl_client: ConfidentialClientRef,
-) -> RegistrationClientRef {
+pub async fn registration_client() -> RegistrationClientRef {
+    let confidential_carl_client = confidential_carl_client().await;
     /*
      * Issuer URL for keycloak needs to align with FRONTEND_URL in Keycloak realm setting.
      * Localhost address is always fine, though.
@@ -82,33 +74,29 @@ pub async fn registration_client(
         ),
         issuer_admin_url: IssuerUrl::try_from("https://auth.opendut.local/admin/realms/opendut/").unwrap(),
     };
-    let client = confidential_carl_client.await;
-    RegistrationClient::new(carl_idp_config, client)
+    RegistrationClient::new(carl_idp_config, confidential_carl_client)
 }
 
 #[cfg(test)]
 mod auth_tests {
-    use googletest::assert_that;
-    use googletest::matchers::eq;
-    use rstest::rstest;
+    use super::*;
+
+    use googletest::prelude::*;
 
     use opendut_auth::registration::client::{Clients, RegistrationClientRef};
     use opendut_auth::registration::resources::UserId;
     use opendut_model::resources::Id;
 
-    use crate::registration_client;
-
     #[test_with::env(OPENDUT_RUN_KEYCLOAK_INTEGRATION_TESTS)]
-    #[rstest]
     #[tokio::test]
-    async fn test_register_new_oidc_client(#[future] registration_client: RegistrationClientRef) {
+    async fn test_register_new_oidc_client() {
         /*
          * This test is ignored because it requires a running keycloak server from the test environment.
          * To run this test, execute the following command in opendut-vm:
          * export OPENDUT_RUN_KEYCLOAK_INTEGRATION_TESTS=true
          * cargo test -- --include-ignored
          */
-        let client: RegistrationClientRef = registration_client.await;
+        let client: RegistrationClientRef = registration_client().await;
         let resource_id = Id::random();
         let user_id = UserId {
             value: String::from("deleteTest"),
@@ -139,12 +127,11 @@ mod auth_tests {
     }
 
     #[test_with::env(OPENDUT_RUN_KEYCLOAK_INTEGRATION_TESTS)]
-    #[rstest]
     #[tokio::test]
-    async fn test_register_oidc_client_twice(#[future] registration_client: RegistrationClientRef) {
+    async fn test_register_oidc_client_twice() {
         const EXPECTED_CLIENT_COUNT: usize = 1;
 
-        let client: RegistrationClientRef = registration_client.await;
+        let client: RegistrationClientRef = registration_client().await;
         let resource_id = Id::random();
         let user_id = UserId {
             value: String::from("deleteTest"),
@@ -175,16 +162,15 @@ mod auth_tests {
     /*
     use opendut_auth::registration::resources::ResourceHomeUrl;
 
-    #[rstest]
     #[tokio::test]
     #[ignore]
-    async fn delete_all_oidc_clients(#[future] registration_client: RegistrationClientRef) {
+    async fn delete_all_oidc_clients() {
         /*
          * This test is ignored because it requires a running keycloak server from the test environment.
          * To run this test, execute the following command: cargo test -- --include-ignored
          */
-        let registration_client: RegistrationClientRef = registration_client.await;
-        println!("{:?}", registration_client);
+        let registration_client: RegistrationClientRef = registration_client().await;
+
         let client_list: Clients = registration_client.list_clients().await.unwrap();
         let path = ResourceHomeUrl::new(registration_client.config.client_home_base_url.value().join("/resources/").unwrap());
         let filtered_client_list = client_list.filter_carl_clients(&path);

@@ -4124,7 +4124,6 @@ dependencies = [
  "opendut-util-core",
  "openidconnect",
  "pem",
- "rstest",
  "serde",
  "serde_json",
  "test-with",

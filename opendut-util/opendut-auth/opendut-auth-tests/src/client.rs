@@ -1,14 +1,11 @@
 use oauth2::{ClientId, ClientSecret};
-use rstest::{fixture, rstest};
 use serde::Deserialize;
 use opendut_auth::confidential::client::{ConfidentialClient, ConfidentialClientRef};
 use opendut_auth::confidential::config::{OidcClientConfig, OidcConfidentialClientConfig};
 use opendut_auth::confidential::IssuerUrl;
-use opendut_util_core::reqwest_client::ReqwestClient;
 use crate::localenv_reqwest_client;
 
-#[fixture]
-async fn confidential_edgar_client(#[future] localenv_reqwest_client: ReqwestClient) -> ConfidentialClientRef {
+async fn confidential_edgar_client() -> ConfidentialClientRef {
     opendut_util_core::testing::init_localenv_secrets();
     let client_config = OidcClientConfig::Confidential(OidcConfidentialClientConfig::new(
         ClientId::new("opendut-edgar-client".to_string()),
@@ -19,16 +16,15 @@ async fn confidential_edgar_client(#[future] localenv_reqwest_client: ReqwestCli
         IssuerUrl::try_from("https://auth.opendut.local/realms/opendut/").unwrap(),
         vec![],
     ));
-    let reqwest_client = localenv_reqwest_client.await;
+    let reqwest_client = localenv_reqwest_client().await;
 
     ConfidentialClient::from_client_config(client_config, reqwest_client)
         .expect("Could not create confidential client for EDGAR.")
 }
 
-#[fixture]
-async fn confidential_netbird_client(#[future] localenv_reqwest_client: ReqwestClient) -> ConfidentialClientRef {
+async fn confidential_netbird_client() -> ConfidentialClientRef {
     opendut_util_core::testing::init_localenv_secrets();
-    let reqwest_client = localenv_reqwest_client.await;
+    let reqwest_client = localenv_reqwest_client().await;
     let client_config = OidcClientConfig::Confidential(OidcConfidentialClientConfig::new(
         ClientId::new("netbird-backend".to_string()),
         ClientSecret::new(
@@ -45,28 +41,26 @@ async fn confidential_netbird_client(#[future] localenv_reqwest_client: ReqwestC
 
 
 #[test_with::env(OPENDUT_RUN_KEYCLOAK_INTEGRATION_TESTS)]
-#[rstest]
 #[tokio::test]
-async fn test_confidential_client_get_token(#[future] confidential_edgar_client: ConfidentialClientRef) {
+async fn test_confidential_client_get_token() {
     /*
      * This test is ignored because it requires a running keycloak server from the test environment.
      * To run this test, execute the following command:
      * cargo test --package opendut-auth --all-features -- --include-ignored
      */
-    let token = confidential_edgar_client.await.get_token().await.unwrap();
+    let token = confidential_edgar_client().await.get_token().await.unwrap();
     assert!(token.value.len() > 100);
 }
 
 #[test_with::env(OPENDUT_RUN_KEYCLOAK_INTEGRATION_TESTS)]
-#[rstest]
 #[tokio::test]
-async fn test_confidential_client_for_netbird(#[future] confidential_netbird_client: ConfidentialClientRef) {
+async fn test_confidential_client_for_netbird() {
     /*
      * This test is ignored because it requires a running keycloak server from the test environment.
      * To run this test, execute the following command:
      * cargo test --package opendut-auth --all-features -- --include-ignored
      */
-    let client = confidential_netbird_client.await;
+    let client = confidential_netbird_client().await;
     let client = ConfidentialClient::build_client_with_middleware(client);
     let url = "https://netbird-api.opendut.local/api/users";
 
