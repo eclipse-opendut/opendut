@@ -161,7 +161,7 @@ impl Opentelemetry {
 
                 {
                     let enabled = {
-                        let field = "opentelemetry.tls.client.auth.enabled";
+                        let field = pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_ENABLED;
 
                         config.get_bool(field)
                             .map_err(|cause| OpentelemetryConfigError::ValueParseError {

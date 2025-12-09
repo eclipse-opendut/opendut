@@ -23,6 +23,15 @@ issuer.remote.url = "https://auth.opendut.local/realms/opendut/"
 issuer.admin.url = "https://auth.opendut.local/admin/realms/opendut/"
 scopes = ""
 
+[network.oidc.client.tls]
+ca = ""
+
+[network.oidc.client.tls.client.auth] #mTLS
+enabled = false
+certificate = ""
+key = ""
+
+
 [network.oidc.lea]
 client.id = "opendut-lea-client"
 issuer.url = "https://auth.opendut.local/realms/opendut/"

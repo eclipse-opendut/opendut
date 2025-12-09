@@ -24,6 +24,7 @@ pub fn spawn_carl() -> anyhow::Result<Port> {
         .set_override("network.tls.certificate", "resources/development/tls/insecure-development-carl.pem")?
         .set_override("network.tls.key", "resources/development/tls/insecure-development-carl.key")?
         .set_override("network.tls.ca", "resources/development/tls/insecure-development-ca.pem")?
+        .set_override("network.tls.client.auth.enabled", false)?
         .build()?;
 
     tokio::spawn(async {

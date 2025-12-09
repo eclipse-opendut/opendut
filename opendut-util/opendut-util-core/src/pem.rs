@@ -11,14 +11,20 @@ use tracing::{debug, error, trace, warn};
 
 /// Constants for configuration keys used throughout the codebase.
 pub mod config_keys {
-    pub const DEFAULT_NETWORK_TLS_CA: &str = "network.tls.ca";
-    pub const DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED: &str = "network.tls.client.auth.enabled";
+    pub const DEFAULT_NETWORK_TLS_CA: &str =                      "network.tls.ca";
+    pub const DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED: &str =     "network.tls.client.auth.enabled";
     pub const DEFAULT_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE: &str = "network.tls.client.auth.certificate";
-    pub const DEFAULT_NETWORK_TLS_CLIENT_AUTH_KEY: &str = "network.tls.client.auth.key";
-    pub const OIDC_CLIENT_CA: &str = "network.oidc.client.ca";
-    pub const OPENTELEMETRY_TLS_CA: &str = "opentelemetry.tls.ca";
+    pub const DEFAULT_NETWORK_TLS_CLIENT_AUTH_KEY: &str =         "network.tls.client.auth.key";
+
+    pub const OIDC_TLS_CA: &str =                      "network.oidc.client.tls.ca";
+    pub const OIDC_TLS_CLIENT_AUTH_ENABLED: &str =     "network.oidc.client.tls.client.auth.enabled";
+    pub const OIDC_TLS_CLIENT_AUTH_CERTIFICATE: &str = "network.oidc.client.tls.client.auth.certificate";
+    pub const OIDC_TLS_CLIENT_AUTH_KEY: &str =         "network.oidc.client.tls.client.auth.key";
+
+    pub const OPENTELEMETRY_TLS_CA: &str =                      "opentelemetry.tls.ca";
+    pub const OPENTELEMETRY_TLS_CLIENT_AUTH_ENABLED: &str =     "opentelemetry.tls.client.auth.enabled";
     pub const OPENTELEMETRY_TLS_CLIENT_AUTH_CERTIFICATE: &str = "opentelemetry.tls.client.auth.certificate";
-    pub const OPENTELEMETRY_TLS_CLIENT_AUTH_KEY: &str = "opentelemetry.tls.client.auth.key";
+    pub const OPENTELEMETRY_TLS_CLIENT_AUTH_KEY: &str =         "opentelemetry.tls.client.auth.key";
 }
 
 pub trait PemFromConfig {
@@ -155,10 +161,10 @@ mod tests {
 
     #[test]
     fn should_read_pem_from_client_ca() -> anyhow::Result<()> {
-        let config = create_test_config(config_keys::OIDC_CLIENT_CA, root_ca_path());
+        let config = create_test_config(config_keys::OIDC_TLS_CA, root_ca_path());
 
         let pem = Pem::read_from_configured_path_or_content(
-            config_keys::OIDC_CLIENT_CA,
+            config_keys::OIDC_TLS_CA,
             None,
             &config
         )?;

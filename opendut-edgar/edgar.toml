@@ -27,7 +27,14 @@ id = "opendut-edgar-client"
 issuer.url = "https://auth.opendut.local/realms/opendut/"
 scopes = "openid,profile,email"
 secret = "<tbd>"
+
+[network.oidc.client.tls]
 ca = ""
+
+[network.oidc.client.tls.client.auth] #mTLS
+enabled = false
+certificate = ""
+key = ""
 
 
 [network.interface.management]
