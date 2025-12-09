@@ -3,7 +3,7 @@ use leptos::prelude::*;
 use leptos_router::hooks::{use_navigate, use_params_map};
 use opendut_lea_components::{BasePageContainer, Breadcrumb, LoadingSpinner, UserInputError, UserInputValue};
 use opendut_lea_components::tabs::{Tab, Tabs};
-use opendut_model::viper::{ViperRunId, ViperRunParameterValue};
+use opendut_model::viper::{ViperRunDescriptor, ViperRunId, ViperRunParameterValue};
 use crate::app::use_app_globals;
 use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
@@ -48,6 +48,7 @@ pub fn TestConfigurator() -> impl IntoView {
                 name: UserInputValue::Left(UserInputError::from("Enter a valid test name.")),
                 source: UserInputValue::Left(String::from("Select a test source.")),
                 suite: UserInputValue::Left(String::from("Enter a test suite.")),
+                cluster: UserInputValue::Left(String::from("Enter a cluster.")),
                 parameters: HashMap::new(),
                 is_new: true,
             }
@@ -58,20 +59,23 @@ pub fn TestConfigurator() -> impl IntoView {
             async move {
                 if let Ok(configuration) = carl.viper.get_viper_run_descriptor(test_id).await {
                     test_configuration.update(|user_configuration| {
-                        user_configuration.name = UserInputValue::Right(configuration.name.value().to_string());
-                        user_configuration.source = UserInputValue::Right(configuration.source.to_string());
-                        user_configuration.suite = UserInputValue::Right(configuration.suite.to_string());
+                        let ViperRunDescriptor { id: _, name, source, suite, cluster, parameters } = configuration;
 
-                        let mut parameters: HashMap<String, UserInputValue> = HashMap::new();
+                        user_configuration.name = UserInputValue::Right(name.value().to_string());
+                        user_configuration.source = UserInputValue::Right(source.to_string());
+                        user_configuration.suite = UserInputValue::Right(suite.to_string());
+                        user_configuration.cluster = UserInputValue::Right(cluster.to_string());
 
-                        for (key, value) in configuration.parameters {
+                        let mut configured_parameters: HashMap<String, UserInputValue> = HashMap::new();
+
+                        for (key, value) in parameters { //TODO this loop doesn't do anything?
 
                             let value = match value {
                                 ViperRunParameterValue::Boolean(boolean) => boolean.to_string(),
                                 ViperRunParameterValue::Number(number) => number.to_string(),
                                 ViperRunParameterValue::Text(text) => text,
                             };
-                            parameters.insert(
+                            configured_parameters.insert(
                                 key.inner,
                                 UserInputValue::Right(value)
                             );

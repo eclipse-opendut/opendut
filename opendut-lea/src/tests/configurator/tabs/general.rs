@@ -1,7 +1,9 @@
 use leptos::prelude::*;
 use opendut_lea_components::ReadOnlyInput;
 use crate::tests::configurator::components::TestNameInput;
+use crate::tests::configurator::components::ClusterSelector;
 use crate::tests::configurator::types::UserTestConfiguration;
+
 
 #[component]
 pub fn GeneralTab(test_configuration: RwSignal<UserTestConfiguration>) -> impl IntoView {
@@ -15,6 +17,9 @@ pub fn GeneralTab(test_configuration: RwSignal<UserTestConfiguration>) -> impl I
                 value=test_id
             />
             <TestNameInput
+                test_configuration
+            />
+            <ClusterSelector
                 test_configuration
             />
         </div>

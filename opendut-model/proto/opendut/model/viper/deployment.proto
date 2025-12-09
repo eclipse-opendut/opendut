@@ -3,11 +3,9 @@ syntax = "proto3";
 package opendut.model.viper;
 
 import "opendut/model/viper/run.proto";
-import "opendut/model/cluster/cluster.proto";
 
 
 message ViperRunDeployment {
   opendut.model.viper.ViperRunId id = 1;
-  opendut.model.cluster.ClusterId cluster = 2;
   //TODO maybe introduce ID for each run
 }

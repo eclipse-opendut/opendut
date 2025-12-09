@@ -1,16 +1,19 @@
 use std::collections::HashMap;
 use opendut_lea_components::UserInputValue;
+use opendut_model::cluster::ClusterId;
 use opendut_model::viper::{ViperRunDescriptor, ViperRunId, ViperRunName, ViperRunParameterKey, ViperRunParameterValue, ViperSourceId, ViperTestSuiteIdentifier};
 
 #[derive(thiserror::Error, Clone, Debug, Eq, PartialEq, Hash)]
-#[allow(clippy::enum_variant_names)]
+#[allow(clippy::enum_variant_names)] // "all variants have the same prefix: `Invalid`"
 pub enum TestMisconfiguration {
     #[error("Invalid test name")]
     InvalidName,
-    #[error("Invalid source id")]
+    #[error("Invalid source ID")]
     InvalidSourceId,
     #[error("Invalid test suite")]
     InvalidSuite,
+    #[error("Invalid cluster ID")]
+    InvalidClusterId,
     #[error("Invalid test parameter key")]
     InvalidParameterKey,
     #[error("Invalid test parameter value")]
@@ -23,6 +26,7 @@ pub struct UserTestConfiguration {
     pub name: UserInputValue,
     pub source: UserInputValue,
     pub suite: UserInputValue,
+    pub cluster: UserInputValue,
     pub parameters: HashMap<String, UserInputValue>,
     pub is_new: bool,
 }
@@ -30,10 +34,13 @@ pub struct UserTestConfiguration {
 impl UserTestConfiguration {
 
     pub fn is_valid(&self) -> bool {
-        self.name.is_right()
-            && self.source.is_right()
-            && self.suite.is_right()
-            && self.parameters.iter().all(|(_,v)| v.is_right())
+        let UserTestConfiguration { id: _, name, source, suite, cluster, parameters, is_new: _ } = self;
+
+        name.is_right()
+            && source.is_right()
+            && suite.is_right()
+            && cluster.is_right()
+            && parameters.iter().all(|(_, value)| value.is_right())
     }
 }
 
@@ -65,6 +72,14 @@ impl TryFrom<UserTestConfiguration> for ViperRunDescriptor {
                     .map_err(|_| TestMisconfiguration::InvalidSuite)
             })?;
 
+        let cluster = configuration
+            .cluster
+            .right_ok_or(TestMisconfiguration::InvalidClusterId)
+            .and_then(|cluster_id| {
+                ClusterId::try_from(cluster_id)
+                    .map_err(|_| TestMisconfiguration::InvalidClusterId)
+            })?;
+
         let mut parameters = HashMap::new();
 
         for (key_input, value_input) in configuration.parameters {
@@ -85,6 +100,7 @@ impl TryFrom<UserTestConfiguration> for ViperRunDescriptor {
             name,
             source,
             suite,
+            cluster,
             parameters,
         })
     }
@@ -93,11 +109,14 @@ impl TryFrom<UserTestConfiguration> for ViperRunDescriptor {
 fn parse_parameter_value(raw: &str) -> ViperRunParameterValue {
     if raw.eq_ignore_ascii_case("true") {
         ViperRunParameterValue::Boolean(true)
-    } else if raw.eq_ignore_ascii_case("false") {
+    }
+    else if raw.eq_ignore_ascii_case("false") {
         ViperRunParameterValue::Boolean(false)
-    } else if let Ok(num) = raw.parse::<i64>() {
+    }
+    else if let Ok(num) = raw.parse::<i64>() {
         ViperRunParameterValue::Number(num)
-    } else {
+    }
+    else {
         ViperRunParameterValue::Text(raw.to_owned())
     }
 }

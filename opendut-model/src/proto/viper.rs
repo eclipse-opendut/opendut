@@ -93,6 +93,7 @@ conversion! {
             name: Some(value.name.into()),
             source: Some(value.source.into()),
             suite: Some(value.suite.into()),
+            cluster: Some(value.cluster.into()),
             parameters,
         }
     }
@@ -110,6 +111,9 @@ conversion! {
         let suite = extract!(value.suite)?
             .try_into()?;
 
+        let cluster = extract!(value.cluster)?
+            .try_into()?;
+
         let parameters = value.parameters.into_iter()
             .map(|parameter| {
                 let key = ViperRunParameterKey { inner: parameter.key };
@@ -119,7 +123,7 @@ conversion! {
             })
             .collect::<Result<HashMap<_, _>, _>>()?;
 
-        Ok(Model { id, name, source, suite, parameters })
+        Ok(Model { id, name, source, suite, cluster, parameters })
     }
 }
 
@@ -190,7 +194,6 @@ conversion! {
     fn from(value: Model) -> Proto {
         Proto {
             id: Some(value.id.into()),
-            cluster: Some(value.cluster.into()),
         }
     }
 
@@ -198,9 +201,6 @@ conversion! {
         let id = extract!(value.id)?
             .try_into()?;
 
-        let cluster = extract!(value.cluster)?
-            .try_into()?;
-
-        Ok(Model { id, cluster })
+        Ok(Model { id })
     }
 }

@@ -3,6 +3,7 @@ use std::fmt;
 use std::ops::Not;
 use std::str::FromStr;
 use serde::{Deserialize, Serialize};
+use crate::cluster::ClusterId;
 use crate::create_id_type;
 use crate::viper::ViperSourceId;
 use super::ViperTestSuiteIdentifier;
@@ -14,6 +15,7 @@ pub struct ViperRunDescriptor {
     pub name: ViperRunName,
     pub source: ViperSourceId,
     pub suite: ViperTestSuiteIdentifier,
+    pub cluster: ClusterId,
     pub parameters: HashMap<ViperRunParameterKey, ViperRunParameterValue>,
 }
 
@@ -36,7 +38,7 @@ impl ViperRunName {
 #[derive(thiserror::Error, Clone, Debug)]
 pub enum IllegalViperRunName {
     #[error(
-        "Viper run name '{value}' is too short. Expected at least {expected} characters, got {actual}."
+        "VIPER run name '{value}' is too short. Expected at least {expected} characters, got {actual}."
     )]
     TooShort {
         value: String,
@@ -44,16 +46,16 @@ pub enum IllegalViperRunName {
         actual: usize,
     },
     #[error(
-        "Viper run name '{value}' is too long. Expected at most {expected} characters, got {actual}."
+        "VIPER run name '{value}' is too long. Expected at most {expected} characters, got {actual}."
     )]
     TooLong {
         value: String,
         expected: usize,
         actual: usize,
     },
-    #[error("Viper run name '{value}' contains invalid characters.")]
+    #[error("VIPER run name '{value}' contains invalid characters.")]
     InvalidCharacter { value: String },
-    #[error("Viper run name '{value}' contains invalid start or end characters.")]
+    #[error("VIPER run name '{value}' contains invalid start or end characters.")]
     InvalidStartEndCharacter { value: String },
 }
 
@@ -68,26 +70,31 @@ impl TryFrom<String> for ViperRunName {
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         let length = value.len();
+
         if length < Self::MIN_LENGTH {
             Err(IllegalViperRunName::TooShort {
                 value,
                 expected: Self::MIN_LENGTH,
                 actual: length,
             })
-        } else if length > Self::MAX_LENGTH {
+        }
+        else if length > Self::MAX_LENGTH {
             Err(IllegalViperRunName::TooLong {
                 value,
                 expected: Self::MAX_LENGTH,
                 actual: length,
             })
-        } else if crate::util::invalid_start_and_end_of_a_name(&value) {
+        }
+        else if crate::util::invalid_start_and_end_of_a_name(&value) {
             Err(IllegalViperRunName::InvalidStartEndCharacter { value })
-        } else if value
+        }
+        else if value
             .chars()
-            .any(|c| crate::util::valid_characters_in_name(&c).not())
+            .any(|character| crate::util::valid_characters_in_name(&character).not())
         {
             Err(IllegalViperRunName::InvalidCharacter { value })
-        } else {
+        }
+        else {
             Ok(Self(value))
         }
     }
