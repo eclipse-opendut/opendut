@@ -71,6 +71,14 @@ enabled = false
 collector.endpoint = ""
 service.name = "opendut-carl"
 
+[opentelemetry.tls]
+ca = ""
+
+[opentelemetry.tls.client.auth] #mTLS
+enabled = false
+certificate = ""
+key = ""
+
 [opentelemetry.metrics]
 interval.ms = 60000
 cpu.collection.interval.ms = 5000
