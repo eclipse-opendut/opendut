@@ -121,7 +121,7 @@ pub fn TestConfigurator() -> impl IntoView {
             Tab {
                 title: String::from("Source"),
                 href: TabIdentifier::Source.as_str().to_owned(),
-                is_error: Signal::derive(move || test_configuration.read().source.is_right()),
+                is_error: Signal::derive(move || !test_configuration.read().source.is_right()),
             },
             Tab {
                 title: String::from("Suite"),
