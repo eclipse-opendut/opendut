@@ -113,26 +113,25 @@ pub fn TestConfigurator() -> impl IntoView {
 
     let tabs = Signal::derive(move || {
         vec![
-            Tab {
-                title: String::from("General"),
-                href: TabIdentifier::General.as_str().to_owned(),
-                is_error: Signal::derive(move || !test_configuration.read().name.is_right()),
-            },
-            Tab {
-                title: String::from("Source"),
-                href: TabIdentifier::Source.as_str().to_owned(),
-                is_error: Signal::derive(move || !test_configuration.read().source.is_right()),
-            },
-            Tab {
-                title: String::from("Suite"),
-                href: TabIdentifier::Suite.as_str().to_owned(),
-                is_error: Signal::derive(move || test_configuration.read().suite.is_right()),
-            },
-            Tab {
-                title: String::from("Parameters"),
-                href: TabIdentifier::Parameters.as_str().to_owned(),
-                is_error: Signal::from(false),
-            },
+            Tab::from_title_and_href(
+                String::from("General"),
+                TabIdentifier::General.as_str().to_owned()
+            ).with_is_error(Signal::derive(move || !test_configuration.read().name.is_right())),
+
+            Tab::from_title_and_href(
+                String::from("Source"),
+                TabIdentifier::Source.as_str().to_owned()
+            ).with_is_error(Signal::derive(move || !test_configuration.read().source.is_right())),
+
+            Tab::from_title_and_href(
+                String::from("Suite"),
+                TabIdentifier::Suite.as_str().to_owned()
+            ).with_is_error(Signal::derive(move || !test_configuration.read().suite.is_right())),
+
+            Tab::from_title_and_href(
+                String::from("Parameters"),
+                TabIdentifier::Parameters.as_str().to_owned()
+            ),
         ]
     });
 
