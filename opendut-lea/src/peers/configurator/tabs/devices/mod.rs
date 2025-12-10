@@ -3,7 +3,8 @@ use opendut_model::topology::DeviceId;
 
 use crate::components::UserInputValue;
 use crate::peers::configurator::tabs::devices::device_panel::DevicePanel;
-use crate::peers::configurator::types::{EMPTY_DEVICE_NAME_ERROR_MESSAGE, UserDeviceConfiguration, UserPeerConfiguration};
+use crate::peers::configurator::types::devices::UserDeviceConfiguration;
+use crate::peers::configurator::types::{UserPeerConfiguration, EMPTY_DEVICE_NAME_ERROR_MESSAGE};
 
 mod device_panel;
 

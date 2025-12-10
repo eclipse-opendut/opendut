@@ -3,9 +3,8 @@ use std::sync::Arc;
 use leptos::prelude::*;
 use crate::components::{Toast, use_toaster, UserInputValue};
 use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceId};
-
-use crate::peers::configurator::types::{UserNetworkInterface, UserPeerConfiguration};
-
+use crate::peers::configurator::types::network::UserNetworkInterface;
+use crate::peers::configurator::types::UserPeerConfiguration;
 
 #[component]
 pub fn NetworkInterfaceList(

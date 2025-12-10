@@ -4,7 +4,8 @@ use opendut_model::topology::{DeviceDescription, DeviceId, DeviceName, IllegalDe
 use opendut_model::util::net::NetworkInterfaceId;
 use uuid::Uuid;
 use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, DoorhangerButton, FontAwesomeIcon, IconButton, ReadOnlyInput, Toggled, UserInput, UserInputValue, UserTextarea};
-use crate::peers::configurator::types::{EMPTY_DEVICE_NAME_ERROR_MESSAGE, UserDeviceConfiguration, UserPeerConfiguration};
+use crate::peers::configurator::types::devices::UserDeviceConfiguration;
+use crate::peers::configurator::types::{UserPeerConfiguration, EMPTY_DEVICE_NAME_ERROR_MESSAGE};
 use crate::routing;
 
 #[component]

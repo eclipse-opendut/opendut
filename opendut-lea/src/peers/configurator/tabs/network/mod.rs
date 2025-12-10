@@ -5,7 +5,8 @@ use opendut_model::util::net::NetworkInterfaceId;
 
 use crate::peers::configurator::tabs::network::bridge_name_input::BridgeNameInput;
 use crate::peers::configurator::tabs::network::network_interface_input::NetworkInterfaceInput;
-use crate::peers::configurator::types::{UserNetworkInterface, UserPeerConfiguration};
+use crate::peers::configurator::types::network::UserNetworkInterface;
+use crate::peers::configurator::types::UserPeerConfiguration;
 
 mod bridge_name_input;
 mod network_interface_input;
