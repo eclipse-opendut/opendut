@@ -260,35 +260,33 @@ pub fn PeerConfigurator() -> impl IntoView {
         let setup_tab_disabled = setup_disabled.get();
 
         let mut tabs = vec![
-            Tab {
-                title: String::from("General"),
-                href: TabIdentifier::General.as_str().to_owned(),
-                is_error: Signal::derive(move || !peer_configuration.read().valid_general_tab())
-            },
-            Tab {
-                title: String::from("Network"),
-                href: TabIdentifier::Network.as_str().to_owned(),
-                is_error: Signal::derive(move || !peer_configuration.read().network.bridge_name.is_right())
-            },
-            Tab {
-                title: String::from("Devices"),
-                href: TabIdentifier::Devices.as_str().to_owned(),
-                is_error: Signal::derive(move || !peer_configuration.read().valid_devices_tab())
-            },
-            Tab {
-                title: String::from("Executor"),
-                href: TabIdentifier::Executor.as_str().to_owned(),
-                is_error: Signal::derive(move || !peer_configuration.read().valid_executor_tab())
-            },
+            Tab::from_title_and_href(
+                String::from("General"),
+                TabIdentifier::General.as_str().to_owned()
+            ).with_is_error(Signal::derive(move || !peer_configuration.read().valid_general_tab())),
+            
+            Tab::from_title_and_href(
+                String::from("Network"),
+                TabIdentifier::Network.as_str().to_owned()
+            ).with_is_error(Signal::derive(move || !peer_configuration.read().network.bridge_name.is_right())),
+            
+            Tab::from_title_and_href(
+                String::from("Devices"),
+                TabIdentifier::Devices.as_str().to_owned()
+            ).with_is_error(Signal::derive(move || !peer_configuration.read().valid_devices_tab())),
+            
+            Tab::from_title_and_href(
+                String::from("Executor"),
+                TabIdentifier::Executor.as_str().to_owned()
+            ).with_is_error(Signal::derive(move || !peer_configuration.read().valid_executor_tab())),
         ];
 
         if !setup_tab_disabled {
             tabs.push(
-                Tab {
-                    title: String::from("Setup"),
-                    href: TabIdentifier::Setup.as_str().to_owned(),
-                    is_error: Signal::from(false)
-                }
+                Tab::from_title_and_href(
+                    String::from("Setup"),
+                    TabIdentifier::Setup.as_str().to_owned()
+                )
             )
         }
         tabs
@@ -310,13 +308,21 @@ pub fn PeerConfigurator() -> impl IntoView {
 
                 view! {
                     <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
-                        { move || match active_tab.get() {
-                            TabIdentifier::General => view! { <GeneralTab peer_configuration /> }.into_any(),
-                            TabIdentifier::Network => view! { <NetworkTab peer_configuration /> }.into_any(),
-                            TabIdentifier::Devices => view! { <DevicesTab peer_configuration /> }.into_any(),
-                            TabIdentifier::Executor => view! { <ExecutorTab peer_configuration /> }.into_any(),
-                            TabIdentifier::Setup => view! { <SetupTab peer_configuration=peer_configuration.read_only() /> }.into_any()
-                        }}
+                        <div class=("is-hidden", move || TabIdentifier::General != active_tab.get())>
+                            <GeneralTab peer_configuration=peer_configuration />
+                        </div>
+                        <div class=("is-hidden", move || TabIdentifier::Network != active_tab.get())>
+                            <NetworkTab peer_configuration=peer_configuration />
+                        </div>
+                        <div class=("is-hidden", move || TabIdentifier::Devices != active_tab.get())>
+                            <DevicesTab peer_configuration=peer_configuration />
+                        </div>
+                        <div class=("is-hidden", move || TabIdentifier::Executor != active_tab.get())>
+                            <ExecutorTab peer_configuration=peer_configuration />
+                        </div>
+                        <div class=("is-hidden", move || TabIdentifier::Setup != active_tab.get())>
+                            <SetupTab peer_configuration=peer_configuration.read_only() />
+                        </div>
                     </Tabs>
                 }
             })}

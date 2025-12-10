@@ -28,7 +28,7 @@ pub fn Controls(
         let mut used_clusters: HashSet<ClusterId> = HashSet::new();
         let _ = configuration.get().devices
             .into_iter()
-            .filter(|device| device.get().contained_in_clusters.is_empty().not() )
+            .filter(|device| device.get().contained_in_clusters.is_empty().not())
             .map(|device| for cluster_descriptor in device.get().contained_in_clusters {
                 used_clusters.insert(cluster_descriptor.id);
             })

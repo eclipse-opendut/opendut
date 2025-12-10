@@ -129,21 +129,20 @@ fn LoadedClusterConfigurator(
 
     let tabs = Signal::derive(move || {
         vec![
-            Tab {
-                title: String::from("General"),
-                href: TabIdentifier::General.as_str().to_owned(),
-                is_error: Signal::derive(move || !cluster_descriptor.read().name.is_right())
-            },
-            Tab {
-                title: String::from("Devices"),
-                href: TabIdentifier::Devices.as_str().to_owned(),
-                is_error: Signal::derive(move || !cluster_descriptor.read().devices.is_right())
-            },
-            Tab {
-                title: String::from("Leader"),
-                href: TabIdentifier::Leader.as_str().to_owned(),
-                is_error: Signal::derive(move || !cluster_descriptor.read().leader.is_right())
-            }
+            Tab::from_title_and_href(
+                String::from("General"), 
+                TabIdentifier::General.as_str().to_owned()
+            ).with_is_error(Signal::derive(move || !cluster_descriptor.read().name.is_right())),
+            
+            Tab::from_title_and_href(
+                String::from("Devices"),
+                TabIdentifier::Devices.as_str().to_owned()
+            ).with_is_error(Signal::derive(move || !cluster_descriptor.read().devices.is_right())),
+            
+            Tab::from_title_and_href(
+                String::from("Leader"),
+                TabIdentifier::Leader.as_str().to_owned()
+            ).with_is_error(Signal::derive(move || !cluster_descriptor.read().leader.is_right())),
         ]
     });
 
