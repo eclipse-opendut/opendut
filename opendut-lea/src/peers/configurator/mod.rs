@@ -235,18 +235,6 @@ pub fn PeerConfigurator() -> impl IntoView {
         }
     };
 
-
-    let setup_tab_classes = move || {
-        let mut classes = Vec::<&'static str>::new();
-        if TabIdentifier::Setup == active_tab.get() {
-            classes.push("is-active");
-        }
-        if setup_disabled.get() {
-            classes.push("is-hidden");
-        }
-        classes.join(" ")
-    };
-
     let breadcrumbs = {
         let active_tab = Clone::clone(&active_tab);
         Signal::derive(move || {
@@ -268,6 +256,44 @@ pub fn PeerConfigurator() -> impl IntoView {
         }
     });
 
+    let tabs = Signal::derive(move || {
+        let setup_tab_disabled = setup_disabled.get();
+
+        let mut tabs = vec![
+            Tab {
+                title: String::from("General"),
+                href: TabIdentifier::General.as_str().to_owned(),
+                is_error: Signal::derive(move || !peer_configuration.read().valid_general_tab())
+            },
+            Tab {
+                title: String::from("Network"),
+                href: TabIdentifier::Network.as_str().to_owned(),
+                is_error: Signal::derive(move || !peer_configuration.read().network.bridge_name.is_right())
+            },
+            Tab {
+                title: String::from("Devices"),
+                href: TabIdentifier::Devices.as_str().to_owned(),
+                is_error: Signal::derive(move || !peer_configuration.read().valid_devices_tab())
+            },
+            Tab {
+                title: String::from("Executor"),
+                href: TabIdentifier::Executor.as_str().to_owned(),
+                is_error: Signal::derive(move || !peer_configuration.read().valid_executor_tab())
+            },
+        ];
+
+        if !setup_tab_disabled {
+            tabs.push(
+                Tab {
+                    title: String::from("Setup"),
+                    href: TabIdentifier::Setup.as_str().to_owned(),
+                    is_error: Signal::from(false)
+                }
+            )
+        }
+        tabs
+    });
+
     view! {
         <BasePageContainer
             title="Configure Peer"
@@ -279,50 +305,19 @@ pub fn PeerConfigurator() -> impl IntoView {
             <Suspense
                 fallback=move || view! { <p><i class="fa-solid fa-circle-notch fa-spin"></i></p> } // TODO: Display errors
             >
-            {move || Suspend::new(async move {
+            { move || Suspend::new(async move {
                 peer_configuration_resource.await;
 
                 view! {
-                    <div class="tabs">
-                        <ul>
-                            <li class=("is-active", move || TabIdentifier::General == active_tab.get())>
-                                <a href={ TabIdentifier::General.as_str() }>
-                                    <span>General</span>
-                                    // An icon could indicate a misconfiguration on a tab
-                                    // <span class="icon is-small has-text-danger"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i></span>
-                                </a>
-                            </li>
-                            <li class=("is-active", move || TabIdentifier::Network == active_tab.get())>
-                                <a href={ TabIdentifier::Network.as_str() }>Network</a>
-                            </li>
-                            <li class=("is-active", move || TabIdentifier::Devices == active_tab.get())>
-                                <a href={ TabIdentifier::Devices.as_str() }>Devices</a>
-                            </li>
-                            <li class=("is-active", move || TabIdentifier::Executor == active_tab.get())>
-                                <a href={ TabIdentifier::Executor.as_str() }>Executor</a>
-                            </li>
-                            <li class=setup_tab_classes>
-                                <a href={ TabIdentifier::Setup.as_str() }>Setup</a>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="container">
-                        <div class=("is-hidden", move || TabIdentifier::General != active_tab.get())>
-                            <GeneralTab peer_configuration=peer_configuration />
-                        </div>
-                        <div class=("is-hidden", move || TabIdentifier::Network != active_tab.get())>
-                            <NetworkTab peer_configuration=peer_configuration />
-                        </div>
-                        <div class=("is-hidden", move || TabIdentifier::Devices != active_tab.get())>
-                            <DevicesTab peer_configuration=peer_configuration />
-                        </div>
-                        <div class=("is-hidden", move || TabIdentifier::Executor != active_tab.get())>
-                            <ExecutorTab peer_configuration=peer_configuration />
-                        </div>
-                        <div class=("is-hidden", move || TabIdentifier::Setup != active_tab.get())>
-                            <SetupTab peer_configuration=peer_configuration.read_only() />
-                        </div>
-                    </div>
+                    <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
+                        { move || match active_tab.get() {
+                            TabIdentifier::General => view! { <GeneralTab peer_configuration /> }.into_any(),
+                            TabIdentifier::Network => view! { <NetworkTab peer_configuration /> }.into_any(),
+                            TabIdentifier::Devices => view! { <DevicesTab peer_configuration /> }.into_any(),
+                            TabIdentifier::Executor => view! { <ExecutorTab peer_configuration /> }.into_any(),
+                            TabIdentifier::Setup => view! { <SetupTab peer_configuration=peer_configuration.read_only() /> }.into_any()
+                        }}
+                    </Tabs>
                 }
             })}
             </Suspense>
