@@ -12,6 +12,7 @@ pub mod devices;
 pub mod executor;
 pub mod general;
 pub mod network;
+pub mod validation;
 
 pub const EMPTY_DEVICE_NAME_ERROR_MESSAGE: &str = "Enter a valid device name.";
 pub const EMPTY_CONTAINER_IMAGE_ERROR_MESSAGE: &str = "Enter a valid container image.";

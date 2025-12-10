@@ -3,7 +3,6 @@ use crate::components::use_active_tab;
 use crate::components::{BasePageContainer, Breadcrumb, UserInputError, UserInputValue};
 use crate::peers::configurator::components::Controls;
 use crate::peers::configurator::tabs::{DevicesTab, ExecutorTab, GeneralTab, NetworkTab, SetupTab, TabIdentifier};
-use crate::peers::configurator::types::{UserContainerEnv, UserDeviceConfiguration, UserNetworkInterface, UserPeerConfiguration, UserPeerExecutor, UserPeerExecutorKind, UserPeerNetwork};
 use crate::routing::{navigate_to, WellKnownRoutes};
 use crate::util;
 use leptos::either::Either;
@@ -177,44 +176,7 @@ pub fn PeerConfigurator() -> impl IntoView {
 
         let is_valid_peer_configuration = Memo::new(move |_| {
             peer_configuration.with(|peer_configuration| {
-                peer_configuration.name.is_right()
-                    && peer_configuration.location.is_right()
-                && peer_configuration.devices.iter().all(|device_configuration| {
-                    device_configuration.with(|device_configuration| {
-                        device_configuration.name.is_right()
-                        && device_configuration.interface.is_some()
-                    })
-                })
-                && peer_configuration.executors.iter().all(|executor| {
-                    executor.with(|executor| {
-                        let UserPeerExecutor { id: _, kind, results_url, is_collapsed: _ } = executor;
-
-                        let kind_is_valid = match kind {
-                            UserPeerExecutorKind::Container {
-                                engine: _,
-                                name,
-                                image,
-                                volumes,
-                                devices,
-                                envs,
-                                ports,
-                                command,
-                                args,
-                            } => {
-                                name.is_right()
-                                    && image.is_right()
-                                    && volumes.iter().all(|volume| volume.with(|volume| volume.is_right()))
-                                    && devices.iter().all(|device| device.with(|device| device.is_right()))
-                                    && envs.iter().all(|env| env.with(|env| env.name.is_right()))
-                                    && ports.iter().all(|port| port.with(|port| port.is_right()))
-                                    && command.is_right()
-                                    && args.iter().all(|arg| arg.with(|arg| arg.is_right()))
-                            }
-                        };
-
-                        kind_is_valid && results_url.is_right()
-                    })
-                })
+                peer_configuration.is_valid()
             })
         });
 
