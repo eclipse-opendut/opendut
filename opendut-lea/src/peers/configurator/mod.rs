@@ -257,38 +257,34 @@ pub fn PeerConfigurator() -> impl IntoView {
     });
 
     let tabs = Signal::derive(move || {
-        let setup_tab_disabled = setup_disabled.get();
 
-        let mut tabs = vec![
+        let tabs = vec![
             Tab::from_title_and_href(
                 String::from("General"),
                 TabIdentifier::General.as_str().to_owned()
             ).with_is_error(Signal::derive(move || !peer_configuration.read().valid_general_tab())),
-            
+
             Tab::from_title_and_href(
                 String::from("Network"),
                 TabIdentifier::Network.as_str().to_owned()
             ).with_is_error(Signal::derive(move || !peer_configuration.read().network.bridge_name.is_right())),
-            
+
             Tab::from_title_and_href(
                 String::from("Devices"),
                 TabIdentifier::Devices.as_str().to_owned()
             ).with_is_error(Signal::derive(move || !peer_configuration.read().valid_devices_tab())),
-            
+
             Tab::from_title_and_href(
                 String::from("Executor"),
                 TabIdentifier::Executor.as_str().to_owned()
             ).with_is_error(Signal::derive(move || !peer_configuration.read().valid_executor_tab())),
+
+            Tab::from_title_and_href(
+                String::from("Setup"),
+                TabIdentifier::Setup.as_str().to_owned()
+            ).with_is_hidden(setup_disabled),
         ];
 
-        if !setup_tab_disabled {
-            tabs.push(
-                Tab::from_title_and_href(
-                    String::from("Setup"),
-                    TabIdentifier::Setup.as_str().to_owned()
-                )
-            )
-        }
         tabs
     });
 
