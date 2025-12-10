@@ -1,19 +1,11 @@
 use leptos::prelude::*;
-
-// #[derive(Debug, Clone, Copy, Default)]
-// pub enum TabState {
-//     #[default]
-//     Normal,
-//     Success,
-//     Warning,
-//     Error,
-// }
+use crate::FontAwesomeIcon;
 
 #[derive(Clone)]
 pub struct Tab {
     pub title: String,
     pub href: String,
-    // pub state: TabState,
+    pub is_error: Signal<bool>,
 }
 
 #[component]
@@ -33,11 +25,17 @@ pub fn Tabs(
 
                         let href = Clone::clone(&tab.href);
                         let is_active = move || href.to_lowercase() == active_tab.get().to_lowercase();
+                        let is_error = move || tab.is_error.get();
 
                         view! {
                             <li class=("is-active", is_active)>
                                 <a href=tab.href>
-                                    { Clone::clone(&tab.title) }
+                                    <div class="icon-text">
+                                        <span class="icon has-text-danger" class:is-hidden=move || !is_error()>
+                                            <i class=FontAwesomeIcon::CircleExclamation.as_class()></i>
+                                        </span>
+                                        <span>{ tab.title }</span>
+                                    </div>
                                 </a>
                             </li>
                         }

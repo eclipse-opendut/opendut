@@ -111,12 +111,30 @@ pub fn TestConfigurator() -> impl IntoView {
         }
     });
 
-    let tabs = Signal::derive(move || vec![
-        Tab { title: String::from("General"), href: TabIdentifier::General.as_str().to_owned() },
-        Tab { title: String::from("Source"), href: TabIdentifier::Source.as_str().to_owned() },
-        Tab { title: String::from("Suite"), href: TabIdentifier::Suite.as_str().to_owned() },
-        Tab { title: String::from("Parameters"), href: TabIdentifier::Parameters.as_str().to_owned() },
-    ]);
+    let tabs = Signal::derive(move || {
+        vec![
+            Tab {
+                title: String::from("General"),
+                href: TabIdentifier::General.as_str().to_owned(),
+                is_error: Signal::derive(move || !matches!(test_configuration.read().name, UserInputValue::Right(_))),
+            },
+            Tab {
+                title: String::from("Source"),
+                href: TabIdentifier::Source.as_str().to_owned(),
+                is_error: Signal::derive(move || !matches!(test_configuration.read().source, UserInputValue::Right(_))),
+            },
+            Tab {
+                title: String::from("Suite"),
+                href: TabIdentifier::Suite.as_str().to_owned(),
+                is_error: Signal::derive(move || !matches!(test_configuration.read().suite, UserInputValue::Right(_))),
+            },
+            Tab {
+                title: String::from("Parameters"),
+                href: TabIdentifier::Parameters.as_str().to_owned(),
+                is_error: Signal::from(false),
+            },
+        ]
+    });
 
     let active_tab = use_active_tab::<TabIdentifier>();
 
