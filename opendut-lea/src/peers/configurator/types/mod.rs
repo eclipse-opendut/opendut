@@ -10,7 +10,6 @@ use crate::peers::configurator::types::network::UserPeerNetwork;
 
 pub mod devices;
 pub mod executor;
-pub mod general;
 pub mod network;
 pub mod validation;
 
