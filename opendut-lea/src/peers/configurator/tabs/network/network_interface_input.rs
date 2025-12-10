@@ -4,9 +4,9 @@ use leptos::prelude::*;
 use opendut_model::util::net::{CanSamplePoint, NetworkInterfaceConfiguration, NetworkInterfaceName, NetworkInterfaceNameError};
 
 use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, UserInput, UserInputValue};
-use crate::peers::configurator::types::UserNetworkInterface;
 use crate::components::UserNetworkInterfaceConfiguration;
 use crate::components::NON_BREAKING_SPACE;
+use crate::peers::configurator::types::network::UserNetworkInterface;
 
 #[component]
 pub fn NetworkInterfaceInput<A>(

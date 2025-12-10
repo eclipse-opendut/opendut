@@ -3,8 +3,9 @@ use opendut_model::peer::executor::{container::{ContainerCommand, ContainerComma
 use strum::IntoEnumIterator;
 
 use crate::components::{ButtonColor, ButtonSize, ButtonState, ConfirmationButton, FontAwesomeIcon, IconButton, Toggled, UserInput, UserInputValue, VectorUserInput};
-use crate::peers::configurator::types::{EMPTY_CONTAINER_IMAGE_ERROR_MESSAGE, UserContainerEnv, UserPeerExecutor, UserPeerExecutorKind};
 use crate::components::NON_BREAKING_SPACE;
+use crate::peers::configurator::types::EMPTY_CONTAINER_IMAGE_ERROR_MESSAGE;
+use crate::peers::configurator::types::executor::{UserContainerEnv, UserPeerExecutor, UserPeerExecutorKind};
 
 #[component]
 pub fn ExecutorPanel<OnDeleteFn>(

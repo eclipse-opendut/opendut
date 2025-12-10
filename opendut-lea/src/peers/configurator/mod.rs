@@ -12,6 +12,11 @@ use opendut_model::peer::executor::{ExecutorDescriptor, ExecutorKind};
 use opendut_model::peer::PeerId;
 use std::collections::HashMap;
 use leptos_router::hooks::{use_navigate, use_params_map};
+use opendut_lea_components::tabs::{Tab, Tabs};
+use crate::peers::configurator::types::devices::UserDeviceConfiguration;
+use crate::peers::configurator::types::executor::{UserContainerEnv, UserPeerExecutor, UserPeerExecutorKind};
+use crate::peers::configurator::types::network::{UserNetworkInterface, UserPeerNetwork};
+use crate::peers::configurator::types::UserPeerConfiguration;
 
 mod components;
 mod tabs;
