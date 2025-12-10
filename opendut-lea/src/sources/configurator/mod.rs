@@ -5,8 +5,10 @@ mod tabs;
 use leptos::prelude::*;
 use leptos_router::hooks::{use_navigate, use_params_map};
 use opendut_lea_components::{BasePageContainer, Breadcrumb, LoadingSpinner, UserInputError, UserInputValue};
+use opendut_lea_components::tabs::{Tab, Tabs};
 use opendut_model::viper::ViperSourceId;
 use crate::app::use_app_globals;
+use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
 use crate::sources::configurator::components::Controls;
 use crate::sources::configurator::tabs::{GeneralTab, TabIdentifier};
@@ -89,6 +91,24 @@ pub fn SourceConfigurator() -> impl IntoView {
         }
     });
 
+    let tabs = Signal::derive(move || {
+        vec![
+            Tab {
+                title: String::from("General"),
+                href: TabIdentifier::General.as_str().to_owned(),
+                is_error: Signal::derive(move || {
+                    let config = source_configuration.get();
+                    let has_valid_name = matches!(config.name, UserInputValue::Right(_));
+                    let has_valid_url  = matches!(config.url,  UserInputValue::Right(_));
+
+                    !(has_valid_name && has_valid_url)
+                })
+            }
+        ]
+    });
+    
+    let active_tab = use_active_tab::<TabIdentifier>();
+    
     view! {
         <BasePageContainer
             title="Configure Source"
@@ -99,24 +119,19 @@ pub fn SourceConfigurator() -> impl IntoView {
             <Suspense
                 fallback=move || view! { <LoadingSpinner /> }
             >
-            {move || Suspend::new(async move {
-                source_configuration_resource.await;
+                {
+                    move || Suspend::new(async move {
+                        source_configuration_resource.await;
 
-                view! {
-                    <div class="tabs">
-                        <ul>
-                            <li class="is-active">
-                                <a href=TabIdentifier::General.as_str()>
-                                    General
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="container">
-                        <GeneralTab source_configuration />
-                    </div>
+                        view! {
+                            <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
+                                { move || match active_tab.get() {
+                                    TabIdentifier::General => view! { <GeneralTab source_configuration /> }
+                                }}
+                            </Tabs>
+                        }
+                    })
                 }
-            })}
             </Suspense>
         </BasePageContainer>
     }

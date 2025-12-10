@@ -179,7 +179,7 @@ mod routes {
                     redirect_path=|| "/login"
                 />
                 <ProtectedRoute
-                    path=path!("/sources/:id/configure/general")
+                    path=path!("/sources/:id/configure/:tab")
                     view=move || {
                         #[cfg(feature = "viper")]
                         view! { <Initialized app_globals><crate::sources::SourceConfigurator/></Initialized> }
