@@ -1,5 +1,6 @@
 use leptos::prelude::*;
 use leptos_router::hooks::use_params_map;
+use opendut_lea_components::tabs::{Tab, Tabs};
 use crate::components::UserInputValue;
 use opendut_model::cluster::ClusterId;
 use opendut_model::peer::PeerDescriptor;
@@ -94,8 +95,6 @@ fn LoadedClusterConfigurator(
         ]
     });
 
-    let active_tab = use_active_tab::<TabIdentifier>();
-
     let cluster_deployments = {
         let carl = globals.client.clone();
         LocalResource::new(move || {
@@ -128,10 +127,32 @@ fn LoadedClusterConfigurator(
         }
     });
 
+    let tabs = Signal::derive(move || {
+        vec![
+            Tab {
+                title: String::from("General"),
+                href: TabIdentifier::General.as_str().to_owned(),
+                is_error: Signal::derive(move || !cluster_descriptor.read().name.is_right())
+            },
+            Tab {
+                title: String::from("Devices"),
+                href: TabIdentifier::Devices.as_str().to_owned(),
+                is_error: Signal::derive(move || !cluster_descriptor.read().devices.is_right())
+            },
+            Tab {
+                title: String::from("Leader"),
+                href: TabIdentifier::Leader.as_str().to_owned(),
+                is_error: Signal::derive(move || !cluster_descriptor.read().leader.is_right())
+            }
+        ]
+    });
+
+    let active_tab = use_active_tab::<TabIdentifier>();
+
     view! {
         <BasePageContainer
             title="Configure Cluster"
-            subtitle=subtitle
+            subtitle
             breadcrumbs
             controls=move || {
                 view! {
@@ -142,33 +163,15 @@ fn LoadedClusterConfigurator(
                 }
             }
         >
-            <div class="tabs">
-                <ul>
-                    <li class=("is-active", move || TabIdentifier::General == active_tab.get())>
-                        <a href={ TabIdentifier::General.as_str() }>General</a>
-                    </li>
-                    <li class=("is-active", move || TabIdentifier::Devices == active_tab.get())>
-                        <a href={ TabIdentifier::Devices.as_str() }>Devices</a>
-                    </li>
-                    <li class=("is-active", move || TabIdentifier::Leader == active_tab.get())>
-                        <a href={ TabIdentifier::Leader.as_str() }>Leader</a>
-                    </li>
-                </ul>
-            </div>
-
-            <fieldset prop:disabled=move || { deployed_signal.get().0 }>
-                <div class="container">
-                    <div class=("is-hidden", move || TabIdentifier::General != active_tab.get())>
-                        <GeneralTab cluster_descriptor />
-                    </div>
-                    <div class=("is-hidden", move || TabIdentifier::Devices != active_tab.get())>
-                        <DevicesTab cluster_descriptor peers />
-                    </div>
-                    <div class=("is-hidden", move || TabIdentifier::Leader != active_tab.get())>
-                        <LeaderTab cluster_descriptor peers />
-                    </div>
-                </div>
-            </fieldset>
+            <Tabs tabs active_tab=Signal::derive(move || active_tab.get().as_str())>
+                <fieldset prop:disabled=move || { deployed_signal.get().0 }>
+                    { move || match active_tab.get() {
+                        TabIdentifier::General => view! { <GeneralTab cluster_descriptor /> }.into_any(),
+                        TabIdentifier::Devices => view! { <DevicesTab cluster_descriptor peers /> }.into_any(),
+                        TabIdentifier::Leader => view! { <LeaderTab cluster_descriptor peers /> }.into_any()
+                    }}
+                </fieldset>
+            </Tabs>
         </BasePageContainer>
     }
 }
