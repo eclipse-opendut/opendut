@@ -98,8 +98,8 @@ pub fn SourceConfigurator() -> impl IntoView {
                 href: TabIdentifier::General.as_str().to_owned(),
                 is_error: Signal::derive(move || {
                     let config = source_configuration.get();
-                    let has_valid_name = matches!(config.name, UserInputValue::Right(_));
-                    let has_valid_url  = matches!(config.url,  UserInputValue::Right(_));
+                    let has_valid_name = config.name.is_right();
+                    let has_valid_url  = config.url.is_right();
 
                     !(has_valid_name && has_valid_url)
                 })
