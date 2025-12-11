@@ -86,3 +86,57 @@ fn format_command_output(stdout: Vec<u8>, stderr: Vec<u8>) -> Result<String> {
     }
     Ok(result)
 }
+
+
+fn add_fields_into_json_object_string(
+    fields: Vec<(&str, serde_json::Value)>,
+    config: &str,
+) -> Result<String> {
+    let mut json: serde_json::Value = serde_json::from_str(config)?;
+
+    for (key, value) in fields.into_iter() {
+        json[key] = value;
+    }
+    Ok(json.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn should_insert_field_into_json_object() -> Result<()> {
+        let config = sample_config();
+        let field = vec![
+            ("field1", json!("value1")),
+            ("field2", json!(1234)),
+        ];
+
+        let result = add_fields_into_json_object_string(field, &config)?;
+
+        assert_eq!(
+            result,
+            json!({
+                "WgIface": "wt0",
+                "WgIfaceMtu": 1280,
+                "WgPort": 51820,
+                "field1": "value1",
+                "field2": 1234,
+            }).to_string()
+        );
+
+        Ok(())
+    }
+
+
+    /// Snippet with similar structure to NetBird config.json
+    fn sample_config() -> String {
+        json!({
+            "WgIface": "wt0",
+            "WgIfaceMtu": 1280,
+            "WgPort": 51820,
+        })
+        .to_string()
+    }
+}
