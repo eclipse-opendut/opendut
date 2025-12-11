@@ -125,6 +125,7 @@ impl TestCaseIdentifier {
         Ok(Self::new_unchecked(suite.as_str(), name))
     }
 
+    #[allow(dead_code)]
     pub(crate) fn new(suite: &TestSuiteIdentifier, name: &str) -> Self {
 
         assert!(name.is_empty().not(), "The name for a test-case must not be empty");
@@ -209,6 +210,7 @@ impl TestIdentifier {
         Ok(Self::new_unchecked(case.suite_str(), case.name(), name))
     }
 
+    #[allow(dead_code)]
     pub(crate) fn new(case: &TestCaseIdentifier, name: &str) -> Self {
 
         assert!(name.is_empty().not(), "The name for a test must not be empty");

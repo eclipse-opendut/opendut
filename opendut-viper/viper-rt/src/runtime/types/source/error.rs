@@ -10,6 +10,7 @@ pub enum InvalidSourceError {
     UnknownViperVersion(String),
 }
 
+#[allow(dead_code)]
 impl InvalidSourceError {
 
     pub(crate) fn new_empty_source_error() -> Self {

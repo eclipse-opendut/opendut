@@ -9,6 +9,7 @@ pub enum MetadataError {
     },
 }
 
+#[allow(dead_code)]
 impl MetadataError {
 
     pub(crate) fn new_wrong_attribute_type_error(

@@ -59,6 +59,7 @@ pub enum CompilationErrorKind {
     }
 }
 
+#[allow(dead_code)]
 impl CompilationError {
 
     pub(crate) fn new(identifier: TestSuiteIdentifier, kind: CompilationErrorKind) -> Self {

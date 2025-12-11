@@ -1,3 +1,5 @@
+#![cfg(feature = "events")]
+
 use googletest::prelude::*;
 use indoc::indoc;
 use opendut_viper_rt::compile::{Compilation, CompileResult, IdentifierFilter, ParameterDescriptor, ParameterInfo, ParameterName};

@@ -1,6 +1,7 @@
 pub mod code;
 pub mod compilation;
 pub mod error;
+#[cfg(feature = "events")]
 pub mod event;
 pub mod inspect;
 pub mod metadata;

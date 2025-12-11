@@ -1,3 +1,5 @@
+#![cfg(feature = "events")]
+
 use futures::StreamExt;
 use googletest::prelude::*;
 use indoc::indoc;

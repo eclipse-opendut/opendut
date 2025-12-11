@@ -20,6 +20,7 @@ mod timeout;
 mod error;
 
 pub struct ViperRuntime {
+    #[allow(dead_code)]
     context: Context,
 }
 
@@ -27,7 +28,7 @@ impl Default for ViperRuntime {
     /// Creates a `ViperRuntime` with default [`ViperOptions`].
     /// 
     /// **Note:** The runtime contains an [`EmbeddedSourceLoader`] to load embedded sources.
-    /// 
+    #[allow(clippy::needless_update)]
     fn default() -> Self {
         let options = ViperOptions {
             source_loaders: vec![Box::new(EmbeddedSourceLoader)],
@@ -40,12 +41,13 @@ impl Default for ViperRuntime {
 
 impl ViperRuntime {
 
-    pub fn new(options: ViperOptions) -> Result<Self, RuntimeInstantiationError> {
+    pub fn new(_options: ViperOptions) -> Result<Self, RuntimeInstantiationError> {
         Ok(Self {
             context: Context {
-                source_loaders: options.source_loaders,
+                #[cfg(feature = "compile")]
+                source_loaders: _options.source_loaders,
                 #[cfg(feature = "containers")]
-                container_runtime: options.container_runtime,
+                container_runtime: _options.container_runtime,
             },
         })
     }

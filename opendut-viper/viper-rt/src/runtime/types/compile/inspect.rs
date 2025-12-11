@@ -9,6 +9,7 @@ pub enum InspectionError {
     Filter(FilterError)
 }
 
+#[allow(dead_code)]
 impl InspectionError {
 
     pub(crate) fn new_invalid_metadata_error(

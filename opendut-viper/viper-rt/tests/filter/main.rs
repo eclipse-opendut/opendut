@@ -1,3 +1,5 @@
+#![cfg(feature = "events")]
+
 use googletest::prelude::*;
 use indoc::indoc;
 use repo_path::repo_path;

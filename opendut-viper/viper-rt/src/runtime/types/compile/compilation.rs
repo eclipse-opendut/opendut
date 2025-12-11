@@ -59,7 +59,7 @@ pub struct Compilation {
 }
 
 impl Compilation {
-
+    #[allow(dead_code)]
     pub(crate) fn new(metadata: Metadata, parameters: ParameterDescriptors, suite: TestSuite) -> Self {
         Self { metadata, parameters, suite }
     }

@@ -36,6 +36,7 @@ pub enum RunErrorKind {
     },
 }
 
+#[allow(dead_code)]
 impl RunError {
 
     pub(crate) fn new(

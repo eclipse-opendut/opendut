@@ -22,6 +22,7 @@ pub enum FilterError {
     }
 }
 
+#[allow(dead_code)]
 impl FilterError {
 
     pub(crate) fn new_test_suite_not_found_error(name: String) -> Self {

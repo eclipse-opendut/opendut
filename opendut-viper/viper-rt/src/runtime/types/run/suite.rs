@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 #[cfg(feature = "py")]
 use rustpython_vm as vm;
 
