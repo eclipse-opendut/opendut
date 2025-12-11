@@ -199,11 +199,11 @@ zip = "6.0.0"
 cannelloni.version = "1.1.0"  # mind that this version string is partially hard-coded in the repo
 
 # download netbird client release from here
-netbird.repository = "https://github.com/netbirdio/netbird"
+netbird.repository = "https://github.com/eclipse-opendut/netbird-build"
 # with the following version
-netbird.version = "0.60.2"
+netbird.version = "0.60.2-131136439764a67187b7fbfadef1215b5cc66780"
 # and use the protobuf definition for the netbird client service daemon from here (possible separate location to be configured)
-netbird.protobuf = "https://raw.githubusercontent.com/netbirdio/netbird/refs/tags/v0.60.2/client/proto/daemon.proto"
+netbird.protobuf = "https://github.com/eclipse-opendut/netbird-build/releases/download/v0.60.2-131136439764a67187b7fbfadef1215b5cc66780/daemon.proto"
 
 
 rperf.version = "0.1.8"
