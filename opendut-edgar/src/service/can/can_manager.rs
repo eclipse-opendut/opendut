@@ -5,8 +5,8 @@ use std::collections::HashMap;
 use std::process::Stdio;
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::sync::Mutex;
 use tokio::process::Command;
+use tokio::sync::Mutex;
 
 pub type CanManagerRef = Arc<Mutex<CanManager>>;
 
@@ -54,7 +54,7 @@ impl CanManager {
             .with_restart_delay(Duration::from_secs(5))
             .with_output_config(OutputConfig::Capture);
 
-        let process_id = AsyncProcessManager::spawn(self.process_manager.clone(), config).await?;
+        let process_id = AsyncProcessManager::spawn_process(self.process_manager.clone(), config).await?;
         let parameter_id = parameter.parameter_identifier();
         let mut processes = self.process_map.lock().await;
         processes.insert(parameter_id, process_id);

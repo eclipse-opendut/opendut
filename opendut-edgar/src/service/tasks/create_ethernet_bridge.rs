@@ -99,16 +99,16 @@ impl TaskAbsent for CreateEthernetBridge {
 mod tests {
     use std::collections::HashSet;
     use super::*;
-    use crate::service::can::can_manager::{CanManagerRef, CanManagerExt};
+    use crate::service::can::can_manager::{CanManagerExt, CanManagerRef};
     use crate::service::network_interface::manager::NetworkInterfaceManager;
     use crate::service::network_metrics::manager::{NetworkMetricsManager, NetworkMetricsOptions};
     use crate::service::peer_configuration::NetworkInterfaceManagement;
-    use crate::service::service_runner;
+    use crate::service::tasks::runner::service_runner;
     use opendut_model::peer::configuration::{parameter, ParameterTarget, PeerConfiguration};
     use opendut_model::util::net::NetworkInterfaceName;
     use std::sync::Arc;
-    use crate::service::tasks;
-    use crate::service::tasks::task_resolver::ServiceTaskResolver;
+    use crate::service::tasks::runner;
+    use crate::service::tasks::runner::task_resolver::ServiceTaskResolver;
     use crate::service::tasks::testing::NetworkInterfaceNameExt;
 
     #[test_with::env(RUN_EDGAR_NETLINK_INTEGRATION_TESTS)]
@@ -201,7 +201,7 @@ mod tests {
                 can_manager
             };
             let metrics_manager = NetworkMetricsManager::new(NetworkMetricsOptions::default());
-            let service_task_resolver = tasks::task_resolver::ServiceTaskResolver::new(
+            let service_task_resolver = runner::task_resolver::ServiceTaskResolver::new(
                 peer_configuration.clone(),
                 network_interface_management.clone(),
                 Arc::clone(&metrics_manager),

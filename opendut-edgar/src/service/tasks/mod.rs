@@ -1,4 +1,4 @@
-pub(crate) mod task_resolver;
+pub mod runner;
 
 #[cfg(test)]
 pub(crate) mod testing;

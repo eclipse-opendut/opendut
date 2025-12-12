@@ -1,6 +1,5 @@
 use crate::service::can::can_manager::CanManagerRef;
 use crate::service::network_interface::manager::NetworkInterfaceManagerRef;
-use crate::service::tasks;
 use crate::service::test_execution::executor_manager::ExecutorManagerRef;
 use opendut_model::peer::configuration::{EdgePeerConfigurationState, PeerConfiguration};
 
@@ -8,8 +7,8 @@ use std::fmt::Formatter;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tracing::{debug, error};
-use crate::service;
-use crate::service::service_runner::CollectedResult;
+use crate::service::tasks::runner;
+use crate::service::tasks::runner::service_runner::CollectedResult;
 use super::network_metrics::manager::NetworkMetricsManagerRef;
 
 #[derive(Debug)]
@@ -55,12 +54,12 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> Colle
         network_interface_management, 
         executor_manager, metrics_manager } = params;
 
-    let resolver = tasks::task_resolver::ServiceTaskResolver::new(
+    let resolver = runner::task_resolver::ServiceTaskResolver::new(
         peer_configuration.clone(),
         network_interface_management.clone(),
         Arc::clone(&metrics_manager),
     );
-    let result = service::service_runner::run_tasks(peer_configuration.clone(), resolver).await;
+    let result = runner::service_runner::run_tasks(peer_configuration.clone(), resolver).await;
     if result.success {
         debug!("Peer configuration tasks executed successfully: {:?}", result.items);
     } else {
