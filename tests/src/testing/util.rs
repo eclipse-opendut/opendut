@@ -1,3 +1,5 @@
+use std::net::IpAddr;
+use std::str::FromStr;
 use crate::testing::peer_configuration_listener::PeerConfigurationReceiver;
 use opendut_model::peer::PeerId;
 use opendut_model::util::Port;
@@ -62,7 +64,10 @@ pub async fn spawn_edgar_with_peer_configuration_receiver(peer_id: PeerId, carl_
         let mut peer_messaging_client = opendut_edgar::testing::service::peer_messaging_client::PeerMessagingClient::create(peer_id, carl, edgar_config, tx_peer_configuration)
             .await
             .expect("Could not create EDGAR peer messaging client");
-        peer_messaging_client.process_messages_loop(rx_peer_configuration_state).await
+        peer_messaging_client.process_messages_loop(
+            rx_peer_configuration_state,
+            IpAddr::from_str("127.0.0.1").unwrap()
+        ).await
             .expect("Could not communicate with CARL. EDGAR test instance.");
     });
     Ok(PeerConfigurationReceiver { inner: rx_peer_configuration, tx_peer_configuration_state })

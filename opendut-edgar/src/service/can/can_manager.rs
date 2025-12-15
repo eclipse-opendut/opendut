@@ -10,16 +10,6 @@ use tokio::sync::Mutex;
 
 pub type CanManagerRef = Arc<Mutex<CanManager>>;
 
-pub trait CanManagerExt {
-    fn new_shared() -> Self;
-}
-
-impl CanManagerExt for CanManagerRef {
-    fn new_shared() -> CanManagerRef {
-        let process_manager = AsyncProcessManagerRef::new_shared();
-        Arc::new(Mutex::new(CanManager::create(process_manager)))
-    }
-}
 
 pub struct CanManager {
     process_manager: AsyncProcessManagerRef,
@@ -27,11 +17,13 @@ pub struct CanManager {
 }
 
 impl CanManager {
-    fn create(process_manager: AsyncProcessManagerRef) -> Self {
-        Self {
+    pub fn create() -> CanManagerRef {
+        let process_manager = AsyncProcessManagerRef::new_shared();
+
+        Arc::new(Mutex::new(Self {
             process_manager,
             process_map: Default::default(),
-        }
+        }))
     }
 
     pub async fn spawn_process(&self, parameter: &CanConnection) -> anyhow::Result<()> {
@@ -120,5 +112,4 @@ impl CanManager {
             .stderr(Stdio::piped())
             .stdout(Stdio::piped());
     }
-
 }

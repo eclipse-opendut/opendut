@@ -1,3 +1,4 @@
+use std::net::IpAddr;
 use std::ops::Not;
 use std::sync::Arc;
 use std::time::Duration;
@@ -17,12 +18,12 @@ use opendut_model::peer::configuration::EdgePeerConfigurationState;
 use opendut_model::peer::PeerId;
 use opendut_util::settings::LoadedConfig;
 use crate::common::carl;
-use crate::service::can::can_manager::{CanManagerRef, CanManagerExt};
+use crate::service::can::can_manager::CanManager;
 use crate::service::network_interface::manager::{NetworkInterfaceManager, NetworkInterfaceManagerRef};
 use crate::service::network_metrics::manager::{NetworkMetricsManager, NetworkMetricsManagerRef};
 use crate::service::peer_configuration::{ApplyPeerConfigurationParams, NetworkInterfaceManagement};
 use crate::service::test_execution::executor_manager::{ExecutorManager, ExecutorManagerRef};
-use crate::service::vpn;
+
 
 pub struct PeerMessagingClient {
     carl: CarlClient,
@@ -54,7 +55,7 @@ impl PeerMessagingClient {
                 let network_interface_management_enabled = settings.config.get::<bool>("network.interface.management.enabled")?;
                 if network_interface_management_enabled {
                     let network_interface_manager: NetworkInterfaceManagerRef = NetworkInterfaceManager::create()?;
-                    let can_manager = CanManagerRef::new_shared();
+                    let can_manager = CanManager::create();
 
                     NetworkInterfaceManagement::Enabled { network_interface_manager, can_manager }
                 } else {
@@ -102,8 +103,7 @@ impl PeerMessagingClient {
 
     }
 
-    pub async fn process_messages_loop(&mut self, rx_peer_configuration_state: Receiver<EdgePeerConfigurationState>) -> anyhow::Result<()> {
-        let remote_address = vpn::retrieve_remote_host(&self.settings).await?;
+    pub async fn process_messages_loop(&mut self, rx_peer_configuration_state: Receiver<EdgePeerConfigurationState>, remote_address: IpAddr) -> anyhow::Result<()> {
 
         let timeout_duration = Duration::from_millis(self.settings.config.get::<u64>("carl.disconnect.timeout.ms")?);
 
@@ -218,8 +218,6 @@ async fn apply_peer_configuration_raw(
     let _span = span.enter();
 
     let broker::ApplyPeerConfiguration { configuration } = *message;
-
-    info!("Received PeerConfiguration: {configuration:?}");
 
     let apply_config_params = ApplyPeerConfigurationParams {
         peer_configuration: configuration,

@@ -9,6 +9,7 @@ use opendut_telemetry::opentelemetry_types::Opentelemetry;
 use tokio::sync::mpsc;
 use tracing::info;
 use crate::service::peer_messaging_client::PeerMessagingClient;
+use crate::service::vpn;
 
 const BANNER: &str = r"
                          _____     _______
@@ -57,8 +58,10 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
 
     let mut carl = carl::connect(&settings.config).await?;
     carl::log_version_compatibility(&mut carl).await?;
+
+    let remote_address = vpn::retrieve_remote_host(&settings).await?;
     let mut peer_messaging_client = PeerMessagingClient::create(self_id, carl, settings, tx_peer_configuration).await?;
-    peer_messaging_client.process_messages_loop(rx_peer_configuration_state).await?;
+    peer_messaging_client.process_messages_loop(rx_peer_configuration_state, remote_address).await?;
 
     info!("EDGAR is terminating...");
     metrics_shutdown_handle.shutdown();

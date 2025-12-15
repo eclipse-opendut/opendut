@@ -73,17 +73,22 @@ impl TaskResolver for ServiceTaskResolver {
 
     fn additional_tasks(&self) -> Vec<AdditionalTasks> {
 
-        let mut remote_peer_connection_checks = self.peer_configuration.remote_peer_connection_checks.clone().into_iter().collect::<Vec<_>>();
+        let mut remote_peer_connection_checks = self.peer_configuration.remote_peer_connection_checks.clone()
+            .into_iter().collect::<Vec<_>>();
         remote_peer_connection_checks.sort_by(|a, b| a.target.cmp(&b.target));
 
         let remote_peers = remote_peer_connection_checks.into_iter()
             .map(|connection_check| (connection_check.value.remote_peer_id, connection_check.value.remote_ip))
             .collect::<HashMap<_, _>>(); //TODO split into multiple tasks
+
         let connection_check_task: Box<dyn TaskAbsent> = Box::new(tasks::setup_cluster_metrics::SetupClusterMetrics {
             remote_peers,
             metrics_manager: self.metrics_manager.clone(),
         });
-        let connection_check_parameters = self.peer_configuration.remote_peer_connection_checks.clone().into_iter().collect::<Vec<_>>();
+
+        let connection_check_parameters = self.peer_configuration.remote_peer_connection_checks.clone()
+            .into_iter().collect::<Vec<_>>();
+
         if let Some(parameter) = connection_check_parameters.first() {
             let variant = ParameterVariant::RemotePeerConnectionCheck(Box::new(parameter.clone()));
             vec![AdditionalTasks {

@@ -41,7 +41,7 @@ pub async fn spawn_peer_configurations_handler(
             let result = apply_peer_configuration(apply_peer_configuration_params).await;
             let state = EdgePeerConfigurationState::from(result);
             let _ = tx_peer_configuration_state.send(state).await
-                .inspect_err(|err| error!("Failed to send peer configuration state to CARL. {err}"));
+                .inspect_err(|cause| error!("Failed to send peer configuration state to CARL: {cause}"));
         }
     });
     Ok(())
@@ -52,7 +52,8 @@ async fn apply_peer_configuration(params: ApplyPeerConfigurationParams) -> Colle
     let ApplyPeerConfigurationParams { 
         peer_configuration,
         network_interface_management, 
-        executor_manager, metrics_manager } = params;
+        executor_manager, metrics_manager
+    } = params;
 
     let resolver = runner::task_resolver::ServiceTaskResolver::new(
         peer_configuration.clone(),
