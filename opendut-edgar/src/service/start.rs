@@ -1,3 +1,4 @@
+use std::time::Duration;
 use crate::app_info;
 use crate::common::{carl, settings};
 use anyhow::Context;
@@ -9,7 +10,7 @@ use opendut_telemetry::opentelemetry_types::Opentelemetry;
 use tokio::sync::mpsc;
 use tracing::info;
 use crate::service::peer_messaging_client::PeerMessagingClient;
-use crate::service::vpn;
+use crate::service::vpn::VpnProcess;
 
 const BANNER: &str = r"
                          _____     _______
@@ -52,6 +53,12 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
         opendut_telemetry::initialize_with_config(logging_config, opentelemetry).await?
     };
 
+    let vpn = VpnProcess::spawn_from_config(&settings).await?;
+
+    tokio::time::sleep(Duration::from_secs(10)).await; //FIXME something requests the current VPN remote address, which fails when the service isn't currently available
+
+
+
     let (tx_peer_configuration, rx_peer_configuration) = mpsc::channel(100);
     let (tx_peer_configuration_state, rx_peer_configuration_state) = mpsc::channel::<EdgePeerConfigurationState>(100);
     crate::service::peer_configuration::spawn_peer_configurations_handler(rx_peer_configuration, tx_peer_configuration_state).await?;
@@ -59,13 +66,18 @@ pub async fn create_with_telemetry(settings_override: config::Config) -> anyhow:
     let mut carl = carl::connect(&settings.config).await?;
     carl::log_version_compatibility(&mut carl).await?;
 
-    let remote_address = vpn::retrieve_remote_host(&settings).await?;
+    let remote_address = vpn.retrieve_remote_host(&settings).await?;
+
     let mut peer_messaging_client = PeerMessagingClient::create(self_id, carl, settings, tx_peer_configuration).await?;
     peer_messaging_client.process_messages_loop(rx_peer_configuration_state, remote_address).await?;
 
-    info!("EDGAR is terminating...");
-    metrics_shutdown_handle.shutdown();
+    {
+        info!("EDGAR is terminating...");
 
+        vpn.terminate().await?;
+
+        metrics_shutdown_handle.shutdown();
+    }
     Ok(())
 }
 

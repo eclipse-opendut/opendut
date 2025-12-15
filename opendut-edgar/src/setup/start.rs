@@ -80,8 +80,8 @@ pub(super) async fn managed(
             info!("VPN is configured for NetBird in PeerSetup. Running NetBird-related tasks.");
             tasks.append(&mut vec![
                 Box::new(tasks::netbird::Unpack::default()),
-                Box::new(tasks::netbird::InstallService),
-                Box::new(tasks::netbird::RestartService),
+                // Box::new(tasks::netbird::InstallService), //TODO remove task implementation
+                // Box::new(tasks::netbird::RestartService),
                 Box::new(tasks::netbird::Connect { management_url, setup_key, mtu }),
             ]);
         }
@@ -108,6 +108,7 @@ pub(super) async fn managed(
         DryRun::No => RunMode::Setup,
     };
     let result = runner::run(run_mode, &tasks).await;
+
     if let Err(error) = result {
         error.print_error();
         // TODO: exit code

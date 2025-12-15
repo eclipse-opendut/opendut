@@ -17,7 +17,7 @@ pub struct Client {
 }
 
 impl Client {
-    pub async fn connect() -> Result<Self> {
+    pub async fn connect() -> Result<Self> { //TODO this should perform a few retries, if the Netbird process isn't ready yet
         let path = format!("unix://{}", socket_path().display());
 
         debug!("Connecting to NetBird Client process via Unix domain socket at '{path}'...");

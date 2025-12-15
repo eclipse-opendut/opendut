@@ -1,41 +1,65 @@
-use std::net::IpAddr;
+mod netbird;
+use netbird::NetbirdProcess;
 
-use anyhow::anyhow;
-use opendut_netbird_client_api::extension::LocalPeerStateExtension;
+use std::net::IpAddr;
+use anyhow::Context;
 use opendut_util::settings::LoadedConfig;
 use serde::Deserialize;
-use tracing::debug;
 
 use crate::common::settings;
 
-#[derive(Debug, Deserialize)]
-#[serde(rename_all="kebab-case")]
-pub struct VpnConfig {
-    pub enabled: bool,
+
+#[must_use]
+pub enum VpnProcess {
+    Netbird(NetbirdProcess),
+    Disabled,
+}
+impl VpnProcess {
+    pub async fn spawn_from_config(settings: &LoadedConfig) -> anyhow::Result<Self> {
+        let vpn_config = VpnConfig::load_from_config(settings)?;
+
+        if vpn_config.enabled {
+            Self::spawn_as_netbird().await
+        } else {
+            Ok(Self::Disabled)
+        }
+    }
+
+    pub async fn spawn_as_netbird() -> anyhow::Result<Self> {
+        let netbird = NetbirdProcess::spawn().await?;
+        Ok(Self::Netbird(netbird))
+    }
+
+    pub async fn retrieve_remote_host(&self, settings: &LoadedConfig) -> anyhow::Result<IpAddr> {
+        match self {
+            VpnProcess::Netbird(netbird) => {
+                netbird.retrieve_remote_host().await
+            }
+            VpnProcess::Disabled => {
+                let field = settings::key::vpn::disabled::remote::host;
+                let address = settings.config.get::<IpAddr>(field)
+                    .context("Configuration value '{field}' must be a valid IP address")?;
+                Ok(address)
+            }
+        }
+    }
+
+    pub async fn terminate(self) -> anyhow::Result<()> {
+        match self {
+            Self::Netbird(netbird) => netbird.terminate().await,
+            Self::Disabled => Ok(()), //do nothing
+        }
+    }
 }
 
-
-pub async fn retrieve_remote_host(settings: &LoadedConfig) -> anyhow::Result<IpAddr> {
-    let vpn_config = settings.config.get::<VpnConfig>(settings::key::vpn::table)?;
-
-    let address = if vpn_config.enabled {
-        debug!("Determining remote IP address of host in VPN network.");
-        let mut client = opendut_netbird_client_api::client::Client::connect().await?;
-
-        let status = client.full_status().await?;
-        
-        debug!("Netbird local peer state {:?}", status.local_peer_state);
-        debug!("Netbird management state {:?}", status.management_state);
-        debug!("Netbird signal state {:?}", status.signal_state);
-
-        let host = status.local_peer_state
-            .ok_or(anyhow!("NetBird Client did not return a local peer state. May not be logged in. Re-run `edgar setup` to fix this."))?
-            .local_ip()?;
-
-        IpAddr::from(host)
-    } else {
-        settings.config.get::<IpAddr>(settings::key::vpn::disabled::remote::host)
-            .map_err(|cause| anyhow!("Configuration value '{field}' must be a valid IP address: {cause}", field=settings::key::vpn::disabled::remote::host))?
-    };
-    Ok(address)
+#[derive(Debug, Deserialize)]
+#[serde(rename_all="kebab-case")]
+struct VpnConfig {
+    pub enabled: bool,
+}
+impl VpnConfig {
+    pub fn load_from_config(settings: &LoadedConfig) -> anyhow::Result<Self> {
+        settings.config.get::<VpnConfig>(settings::key::vpn::table)
+            .context("Error while VPN configuration")
+    }
 }

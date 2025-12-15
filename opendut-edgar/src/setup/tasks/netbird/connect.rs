@@ -11,6 +11,7 @@ use url::Url;
 use opendut_model::vpn::netbird::SetupKey;
 
 use crate::common::task::{Success, Task, TaskStateFulfilled};
+use crate::service::vpn::VpnProcess;
 use crate::setup::constants;
 
 const UP_CHECK_RETRIES: usize = 50;
@@ -27,16 +28,14 @@ impl Task for Connect {
     fn description(&self) -> String {
         String::from("NetBird - Connect")
     }
+
     async fn check_present(&self) -> Result<TaskStateFulfilled> {
-        let mut client = opendut_netbird_client_api::client::Client::connect().await?;
-        let is_up = client.check_is_up().await?;
-        if is_up {
-            Ok(TaskStateFulfilled::Yes)
-        } else {
-            Ok(TaskStateFulfilled::No)
-        }
+        Ok(TaskStateFulfilled::Unchecked) //do unconditionally, since we need to spawn the NetBird process to be able to check whether it is up
     }
+
     async fn make_present(&self) -> Result<Success> {
+
+        let netbird = VpnProcess::spawn_as_netbird().await?; //temporarily spawn NetBird process to be able to trigger its login routine
 
         {
             let process::Output { status, stdout, stderr } =
@@ -63,10 +62,14 @@ impl Task for Connect {
             let is_up = client.check_is_up().await?;
             if is_up {
                 debug!("NetBird Client reports that it is logged in and up.");
+
+                netbird.terminate().await?; //only needed during Setup to login; will be started anew in EDGAR Service
                 return Ok(Success::default())
             }
             tokio::time::sleep(UP_CHECK_INTERVAL).await
         }
+
+        netbird.terminate().await?;
         Err(anyhow!("Connection to NetBird Management Service at '{}' was not up after {}*{} ms.", self.management_url, UP_CHECK_RETRIES, UP_CHECK_INTERVAL.as_millis()))
     }
 }
