@@ -25,11 +25,13 @@ tbd.
   For more details, see: https://opendut.eclipse.dev/book/user-manual/configuration.html#tls-certificates
 
 ### Changed
-* Netbird: Update NetBird to version 0.60.2.
 * Replace Coturn with NetBird Relay server.
   The relay server uses port 443, making the openDuT backend fully hostable with just port 443 exposed.
   Remove `opendut-netbird-coturn` container when upgrading.
-* API: Change NetBird SetupKey from UUID to String (breaking change).
+
+### Breaking changes
+* Update NetBird to version 0.60.2.
+* CARL-API: Change NetBird SetupKey from UUID to String.
 
 
 ## [0.8.0] - 2025-11-20
