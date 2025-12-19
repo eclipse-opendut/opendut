@@ -28,6 +28,7 @@ tbd.
 * Netbird: Update NetBird to version 0.60.2.
 * Replace Coturn with NetBird Relay server.
   The relay server uses port 443, making the openDuT backend fully hostable with just port 443 exposed.
+  Remove `opendut-netbird-coturn` container when upgrading.
 * API: Change NetBird SetupKey from UUID to String (breaking change).
 
 
