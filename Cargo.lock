@@ -4079,7 +4079,7 @@ checksum = "384b8ab6d37215f3c5301a95a4accb5d64aa607f1fcb26a11b5303878451b4fe"
 
 [[package]]
 name = "opendut-auth"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4113,7 +4113,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-auth-tests"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "anyhow",
  "googletest",
@@ -4133,7 +4133,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-carl"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "anyhow",
  "assert_fs",
@@ -4196,7 +4196,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-carl-api"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "anyhow",
  "config",
@@ -4227,7 +4227,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-ci"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "anyhow",
  "assert_fs",
@@ -4253,7 +4253,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-cleo"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "anyhow",
  "clap",
@@ -4285,7 +4285,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-edgar"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "anyhow",
  "assert_fs",
@@ -4349,7 +4349,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-edgar-kernel-modules"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "nix 0.30.1",
  "thiserror 2.0.17",
@@ -4358,7 +4358,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-edgar-plugin-api"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "wasmtime",
  "wit-bindgen 0.47.0",
@@ -4366,7 +4366,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-integration-tests"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "anyhow",
  "backon",
@@ -4385,7 +4385,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-lea"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "console_error_panic_hook",
  "gloo-net",
@@ -4411,7 +4411,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-lea-components"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "chrono",
  "leptos",
@@ -4423,7 +4423,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-model"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -4452,7 +4452,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-netbird-client-api"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "cargo_metadata",
  "hyper-util",
@@ -4474,7 +4474,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-telemetry"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "anyhow",
  "config",
@@ -4499,7 +4499,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-theo"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "anyhow",
  "cargo_toml",
@@ -4520,7 +4520,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-util"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "anyhow",
  "config",
@@ -4534,7 +4534,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-util-core"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "anyhow",
  "config",
@@ -4548,7 +4548,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-viper-cli"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "clap",
  "console",
@@ -4568,7 +4568,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-viper-containers"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "async-trait",
  "bollard",
@@ -4578,7 +4578,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-viper-example"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "indoc",
  "opendut-viper-rt",
@@ -4589,7 +4589,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-viper-py"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "indexmap 2.12.1",
  "opendut-viper-pygen",
@@ -4598,7 +4598,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-viper-pygen"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "indoc",
  "proc-macro2",
@@ -4610,7 +4610,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-viper-pygen-example"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "indoc",
  "opendut-viper-pygen",
@@ -4618,7 +4618,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-viper-rt"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "async-trait",
  "futures",
@@ -4647,7 +4647,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-vpn"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "async-trait",
  "opendut-model",
@@ -4656,7 +4656,7 @@ dependencies = [
 
 [[package]]
 name = "opendut-vpn-netbird"
-version = "0.9.0"
+version = "0.10.0-alpha"
 dependencies = [
  "anyhow",
  "async-trait",
