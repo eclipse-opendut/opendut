@@ -41,8 +41,6 @@ COPY --from=ubi-micro-build /mnt/rootfs /
 # If any themes
 # COPY themes/<nice-themes> /opt/keycloak/themes/<nice-themes>
 
-# https://github.com/keycloak/keycloak/issues/19185#issuecomment-1480763024
-RUN sed -i '/disabledAlgorithms/ s/ SHA1,//' /etc/crypto-policies/back-ends/java.config
 USER keycloak
 
 RUN /opt/keycloak/bin/kc.sh show-config
