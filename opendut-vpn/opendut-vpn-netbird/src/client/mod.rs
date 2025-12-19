@@ -28,7 +28,7 @@ pub trait Client {
     async fn delete_netbird_group(&self, group_id: &netbird::GroupId) -> Result<(), RequestError>;
     async fn list_setup_keys(&self) -> Result<Vec<netbird::SetupKey>, RequestError>;
     async fn get_setup_keys_for_peer(&self, peer_id: PeerId) -> Result<Vec<netbird::SetupKey>, RequestError>;
-    async fn revoke_setup_key(&self, peer_id: PeerId) -> Result<Vec<netbird::SetupKey>, RequestError>;
+    async fn delete_setup_keys_for_peer(&self, peer_id: PeerId) -> Result<Vec<netbird::SetupKey>, RequestError>;
     #[allow(unused)] //Currently unused, but expected to be needed again
     async fn get_netbird_peer(&self, peer_id: &netbird::PeerId) -> Result<netbird::Peer, RequestError>;
     async fn delete_netbird_peer(&self, peer_id: &netbird::PeerId) -> Result<(), RequestError>;
@@ -55,8 +55,8 @@ impl DefaultClient {
         timeout: Duration,
         retries: u32,
         setup_key_expiration: Duration,
-    ) -> Result<Self, CreateClientError>
-    {
+    ) -> Result<Self, CreateClientError> {
+
         let headers = HeaderMap::from_iter([
             (header::ACCEPT, DefaultClient::APPLICATION_JSON.parse().unwrap()),
         ]);
@@ -199,28 +199,16 @@ impl Client for DefaultClient {
         Ok(found_setup_keys)
     }
 
-    async fn revoke_setup_key(&self, peer_id: PeerId) -> Result<Vec<netbird::SetupKey>, RequestError> {
+    async fn delete_setup_keys_for_peer(&self, peer_id: PeerId) -> Result<Vec<netbird::SetupKey>, RequestError> {
         let found_setup_keys = self.get_setup_keys_for_peer(peer_id).await?;
-
-        let body = {
-            #[derive(Clone, Serialize)]
-            struct UpdateSetupKey {
-                revoked: bool,
-                auto_groups: Vec<String>,
-            }
-
-            UpdateSetupKey {
-                revoked: true,
-                auto_groups: vec![], //field is required, but we don't actually use it
-            }
-        };
 
         for setup_key in found_setup_keys.iter() {
             let url = routes::setup_key(Clone::clone(&self.netbird_url), &setup_key.id);
 
-            let request = put_json_request(url, body.clone())?;
+            let request = Request::new(Method::DELETE, url);
 
             let response = self.requester.handle(request).await?;
+
             response.error_for_status()
                 .map_err(RequestError::IllegalStatus)?;
         }
@@ -384,20 +372,6 @@ impl Client for DefaultClient {
 
 pub(crate) fn post_json_request(url: Url, body: impl Serialize) -> Result<Request, RequestError> {
     let mut request = Request::new(Method::POST, url);
-
-    request.headers_mut()
-        .insert(header::CONTENT_TYPE, DefaultClient::APPLICATION_JSON.parse().unwrap());
-
-    let body = serde_json::to_vec(&body)
-        .map_err(RequestError::JsonSerialization)?;
-
-    *request.body_mut() = Some(Body::from(body));
-
-    Ok(request)
-}
-
-fn put_json_request(url: Url, body: impl Serialize) -> Result<Request, RequestError> {
-    let mut request = Request::new(Method::PUT, url);
 
     request.headers_mut()
         .insert(header::CONTENT_TYPE, DefaultClient::APPLICATION_JSON.parse().unwrap());
