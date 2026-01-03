@@ -2,7 +2,7 @@ use leptos::html::Div;
 use leptos::prelude::*;
 use opendut_lea_components::{health, ButtonColor, Toggle};
 use opendut_lea_components::health::Health;
-use opendut_lea_components::tooltip::{Tooltip, TooltipDirection};
+use opendut_lea_components::tooltip::{Tooltip};
 use opendut_model::cluster::ClusterDescriptor;
 use crate::clusters::components::DeleteClusterButton;
 use crate::clusters::IsDeployed;
