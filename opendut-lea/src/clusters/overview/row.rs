@@ -2,6 +2,7 @@ use leptos::html::Div;
 use leptos::prelude::*;
 use opendut_lea_components::{health, ButtonColor, Toggle};
 use opendut_lea_components::health::Health;
+use opendut_lea_components::tooltip::{Tooltip, TooltipDirection};
 use opendut_model::cluster::ClusterDescriptor;
 use crate::clusters::components::DeleteClusterButton;
 use crate::clusters::IsDeployed;
@@ -15,8 +16,8 @@ pub fn Row<OnDeployFn, OnUndeployFn, OnDeleteFn>(
     on_delete: OnDeleteFn,
 ) -> impl IntoView
 where
-    OnDeployFn: Fn() + 'static,
-    OnUndeployFn: Fn() + 'static,
+    OnDeployFn: Fn() + Send + 'static,
+    OnUndeployFn: Fn() + Send + 'static,
     OnDeleteFn: Fn() + Copy + Send + 'static,
 {
 
@@ -46,17 +47,30 @@ where
         }
     });
 
+    let tooltip_text = Signal::derive(move || {
+        if is_deployed.get().0 {
+            "Deployment requested".to_string()
+        } else {
+            "Undeployed".to_string()
+        }
+    });
+
     view! {
         <tr>
             <td class="is-vcentered has-text-centered">
-                <Toggle
-                    is_active = Signal::derive(move || {
-                        is_deployed.get().0
-                    })
-                    on_action = move || {
-                        if is_deployed.get().0 { on_undeploy() } else { on_deploy() }
-                    }
-                />
+                <Tooltip
+                    text=tooltip_text
+                    direction=TooltipDirection::Down
+                >
+                    <Toggle
+                        is_active = Signal::derive(move || {
+                            is_deployed.get().0
+                        })
+                        on_action = move || {
+                            if is_deployed.get().0 { on_undeploy() } else { on_deploy() }
+                        }
+                    />
+                </Tooltip>
             </td>
             <td class="is-vcentered has-text-centered">
                 <Health state=health_state />
