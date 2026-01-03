@@ -60,7 +60,6 @@ where
             <td class="is-vcentered has-text-centered">
                 <Tooltip
                     text=tooltip_text
-                    direction=TooltipDirection::Down
                 >
                     <Toggle
                         is_active = Signal::derive(move || {
