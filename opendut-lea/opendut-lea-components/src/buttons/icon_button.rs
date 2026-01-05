@@ -11,16 +11,23 @@ pub fn IconButton<A>(
     #[prop(into)] label: Signal<String>,
     #[prop(into, default=Signal::from(false))] show_label: Signal<bool>,
     #[prop(into, default=Signal::from(false))] is_outlined: Signal<bool>,
+    #[prop(into, default=Signal::from(false))] skip_stop_propagation: Signal<bool>,
     on_action: A,
 ) -> impl IntoView
-where A: Fn() + 'static {
-
+where
+    A: Fn() + 'static,
+{
     let button_class = move || {
-        format!("button {} {} {} {}",
+        format!(
+            "button {} {} {} {}",
             color.with(ButtonColor::as_class),
             state.with(ButtonState::as_class),
             size.with(ButtonSize::as_class),
-            if is_outlined.get() { "is-outlined "} else { "" }
+            if is_outlined.get() {
+                "is-outlined "
+            } else {
+                ""
+            }
         )
     };
 
@@ -30,8 +37,12 @@ where A: Fn() + 'static {
             disabled=move || matches!(state.get(), ButtonState::Disabled | ButtonState::Loading)
             aria-label=move || label.get()
             on:click=move |event| {
-                event.stop_propagation();
-                on_action();
+                if skip_stop_propagation.get() {
+                    on_action();
+                } else {
+                    event.stop_propagation();
+                    on_action();
+                }
             }
         >
             <span class="icon">
