@@ -60,6 +60,7 @@ pub mod check {
         commands::CARGO_DENY.command()
             .arg("check")
             .arg("--config").arg(cargo_deny_toml())
+            .arg("--allow=no-license-field") //As of cargo-deny v0.18.9, there was no way to ignore this lint in the deny.toml, so we set it here. The lint gave warnings for some transitive dependencies, where we cannot immediately do anything about it. Cargo-deny should also fall back to reading the license from the license file in the source code of those crates, according to this: https://embarkstudios.github.io/cargo-deny/checks/licenses/diags.html#no-license-field
             .current_dir(repo_path!())
             .run_requiring_success()
     }

@@ -8,6 +8,10 @@ When upgrading between versions of CARL, do not skip versions,
 since migrations are only provided from one version to the next.
 Always create a database backup before upgrading CARL.
 
+## Unreleased
+
+tbd.
+
 
 ## [0.9.0] - 2025-12-19
 
@@ -21,10 +25,13 @@ Always create a database backup before upgrading CARL.
   For more details, see: https://opendut.eclipse.dev/book/user-manual/configuration.html#tls-certificates
 
 ### Changed
-* Netbird: Update NetBird to version 0.60.2.
 * Replace Coturn with NetBird Relay server.
   The relay server uses port 443, making the openDuT backend fully hostable with just port 443 exposed.
-* API: Change NetBird SetupKey from UUID to String (breaking change).
+  Remove `opendut-netbird-coturn` container when upgrading.
+
+### Breaking changes
+* Update NetBird to version 0.60.2.
+* CARL-API: Change NetBird SetupKey from UUID to String.
 
 
 ## [0.8.0] - 2025-11-20

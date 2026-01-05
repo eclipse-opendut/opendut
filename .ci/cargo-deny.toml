@@ -44,8 +44,14 @@ allow = [
     "Unicode-3.0",
     "Unicode-DFS-2016",
     "Zlib",
-
-    "LGPL-3.0", # Pulled in by RustPython, but incompatible with Apache-2.0. See: https://github.com/eclipse-opendut/opendut/issues/408
+]
+exceptions = [
+    # Malachite is pulled in by RustPython, but incompatible with Apache-2.0. See: https://github.com/eclipse-opendut/opendut/issues/408
+    { crate = "malachite",        allow = ["LGPL-3.0-only"] },
+    { crate = "malachite-base",   allow = ["LGPL-3.0-only"] },
+    { crate = "malachite-bigint", allow = ["LGPL-3.0-only"] },
+    { crate = "malachite-nz",     allow = ["LGPL-3.0-only"] },
+    { crate = "malachite-q",      allow = ["LGPL-3.0-only"] },
 ]
 
 [[licenses.clarify]]
