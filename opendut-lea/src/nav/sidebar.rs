@@ -1,28 +1,27 @@
+use crate::routing;
 use leptos::prelude::*;
 use leptos_router::hooks::use_location;
 use opendut_lea_components::FontAwesomeIcon;
-use crate::routing;
 
 #[component]
 pub fn Sidebar(menu_visible: RwSignal<bool>, hide_buttons: Signal<bool>) -> impl IntoView {
-
     view! {
         <aside class="dut-menu is-left column" class:is-active=move || menu_visible.get()>
             <ul class="dut-menu-list" class:is-hidden= move || hide_buttons.get()>
                 <SidebarItem
                     icon= FontAwesomeIcon::Dashboard
                     label="Dashboard"
-                    route=routing::path::dashboard
+                    path=routing::path::dashboard
                 />
                 <SidebarItem
                     icon= FontAwesomeIcon::Cluster
                     label="Clusters"
-                    route=routing::path::clusters_overview
+                    path=routing::path::clusters_overview
                 />
                 <SidebarItem
                     icon= FontAwesomeIcon::Peers
                     label="Peers"
-                    route=routing::path::peers_overview
+                    path=routing::path::peers_overview
                 />
                 {
                     #[cfg(feature = "viper")]
@@ -30,7 +29,7 @@ pub fn Sidebar(menu_visible: RwSignal<bool>, hide_buttons: Signal<bool>) -> impl
                         <SidebarItem
                             icon= FontAwesomeIcon::Link
                             label="Sources"
-                            route=routing::path::sources_overview
+                            path=routing::path::sources_overview
                         />
                     }
                 }
@@ -40,14 +39,14 @@ pub fn Sidebar(menu_visible: RwSignal<bool>, hide_buttons: Signal<bool>) -> impl
                         <SidebarItem
                             icon= FontAwesomeIcon::Code
                             label="Tests"
-                            route=routing::path::tests_overview
+                            path=routing::path::tests_overview
                         />
                     }
                 }
                 <SidebarItem
                     icon= FontAwesomeIcon::Downloads
                     label="Downloads"
-                    route=routing::path::downloads
+                    path=routing::path::downloads
                 />
             </ul>
             <div class="px-2">
@@ -69,15 +68,15 @@ pub fn Sidebar(menu_visible: RwSignal<bool>, hide_buttons: Signal<bool>) -> impl
 pub fn SidebarItem(
     #[prop(into)] icon: Signal<FontAwesomeIcon>,
     #[prop(into)] label: Signal<String>,
-    #[prop(into)] route: Signal<String>,
+    #[prop(into)] path: Signal<String>,
 ) -> impl IntoView {
 
     let location = use_location();
-    let is_active = move |path: &str| location.pathname.get() == path;
+    let is_active = move || location.pathname.get() == path.get();
 
     view! {
         <li>
-            <a class:is-active= move || is_active(route.read().as_str()) href=route.get()>
+            <a class:is-active=is_active href=path.get()>
                 <i class=icon.get().as_class() />
                 <span class="ml-2 is-size-6"> {label} </span>
             </a>
