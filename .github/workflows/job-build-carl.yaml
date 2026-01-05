@@ -28,8 +28,6 @@ jobs:
         uses: ./.github/actions/install-arm-gcc
       - name: Rust setup
         uses: ./.github/actions/rust-setup
-        with:
-          cargo-cross: true
 
       - name: Build
         run: cargo ci opendut-carl distribution-build --release --target=${{ matrix.package.target }}
