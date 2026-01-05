@@ -40,6 +40,7 @@ runs:
           ~/.rustup/toolchains
           ~/.rustup/update-hashes
           ~/.rustup/settings.toml
+          ~/work/opendut/opendut/.cargo-venv/
         key: rust-toolchain-${{ github.job }}-${{steps.toolchain.outputs.cachekey}}
 
     - name: Prepare Rust Dependency Cache
