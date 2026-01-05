@@ -42,7 +42,6 @@ pub enum WellKnownRoutes {
     TestsOverview,
     #[cfg(feature = "viper")]
     TestConfigurator { id: opendut_model::viper::ViperTestId },
-    Downloads,
     ErrorPage { title: String, text: String, details: Option<String> },
 }
 
@@ -86,10 +85,6 @@ impl WellKnownRoutes {
                 base.join(&format!("/tests/{}/configure/general", id.url_encode()))
                     .expect("TestConfigurator route should be valid.")
             }
-            WellKnownRoutes::Downloads => {
-                base.join(path::downloads)
-                    .expect("Downloads route should be valid.")
-            },
             WellKnownRoutes::ErrorPage { title, text, details } => {
                 let mut url = base.join(path::error).unwrap();
                 {

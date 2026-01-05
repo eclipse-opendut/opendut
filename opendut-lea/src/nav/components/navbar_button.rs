@@ -1,25 +1,22 @@
 use leptos::prelude::*;
-
-use leptos_router::hooks::{use_location, use_navigate};
+use leptos_router::hooks::use_location;
 use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
-use crate::routing::{navigate_to, WellKnownRoutes};
 
 #[component]
 pub fn NavbarButton(
     #[prop(into)] icon: Signal<FontAwesomeIcon>,
     #[prop(into)] label: Signal<String>,
-    #[prop(into)] route: Signal<WellKnownRoutes>,
     #[prop(into)] path: Signal<String>,
 ) -> impl IntoView {
-    let navigate = use_navigate();
     let location = use_location();
     let is_active = move || location.pathname.get() == path.get();
 
     view! {
-        <div
+        <a
             class="navbar-item px-0 mx-2"
             class:is-active=is_active
             class:is-tab=is_active
+            href=path.get()
         >
             <IconButton
                 icon
@@ -28,13 +25,9 @@ pub fn NavbarButton(
                 state=ButtonState::Enabled
                 label
                 show_label=true
-                on_action=move || {
-                    navigate_to(
-                        route.get(),
-                        Clone::clone(&navigate)
-                    );
-                }
+                skip_stop_propagation=true
+                on_action=||{}
             />
-        </div>
+        </a>
     }
 }

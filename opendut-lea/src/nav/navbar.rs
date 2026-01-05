@@ -1,17 +1,12 @@
+use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
+use crate::nav::components::{NavbarButton, ProfileDropdown};
+use crate::routing;
 use leptos::html::Div;
 use leptos::prelude::*;
 use leptos_use::on_click_outside;
-use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
-use crate::routing;
-use crate::nav::components::{NavbarButton, ProfileDropdown};
-use crate::routing::WellKnownRoutes;
 
 #[component]
-pub fn Navbar(
-    menu_visible: RwSignal<bool>,
-    hide_buttons: Signal<bool>,
-) -> impl IntoView {
-
+pub fn Navbar(menu_visible: RwSignal<bool>, hide_buttons: Signal<bool>) -> impl IntoView {
     let menu_button_icon = Signal::derive(move || {
         if menu_visible.get() {
             FontAwesomeIcon::XMark
@@ -21,9 +16,7 @@ pub fn Navbar(
     });
 
     let menu_button_area = NodeRef::<Div>::new();
-    let _ = on_click_outside(menu_button_area, move |_| {
-        menu_visible.set(false)
-    });
+    let _ = on_click_outside(menu_button_area, move |_| menu_visible.set(false));
 
     view! {
         <nav class="dut-navbar columns is-vcentered is-mobile pr-3 m-0">
@@ -47,13 +40,11 @@ pub fn Navbar(
                     <NavbarButton
                         icon=FontAwesomeIcon::Cluster
                         label="Clusters"
-                        route=WellKnownRoutes::ClustersOverview
                         path=routing::path::clusters_overview
                     />
                     <NavbarButton
                         icon=FontAwesomeIcon::Peers
                         label="Peers"
-                        route=WellKnownRoutes::PeersOverview
                         path=routing::path::peers_overview
                     />
                     {
@@ -62,7 +53,6 @@ pub fn Navbar(
                             <NavbarButton
                                 icon=FontAwesomeIcon::Link
                                 label="Sources"
-                                route=WellKnownRoutes::SourcesOverview
                                 path=routing::path::sources_overview
                             />
                         }
@@ -73,7 +63,6 @@ pub fn Navbar(
                             <NavbarButton
                                 icon=FontAwesomeIcon::Code
                                 label="Tests"
-                                route=WellKnownRoutes::TestsOverview
                                 path=routing::path::tests_overview
                             />
                         }
@@ -81,7 +70,6 @@ pub fn Navbar(
                     <NavbarButton
                         icon=FontAwesomeIcon::Downloads
                         label="Downloads"
-                        route=WellKnownRoutes::Downloads
                         path=routing::path::downloads
                     />
                 </div>
