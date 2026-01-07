@@ -35,7 +35,7 @@ wait_for_netbird_user_to_be_synced_from_keycloak() {
     if user_present "$user_name"; then
       break
     fi
-    echo "Waiting for user $user_name to become available..."
+    echo "Waiting for user <${user_name}> to become available..."
     sleep "$sleep_time"
   done
 }
@@ -66,19 +66,23 @@ user_present() {
   USER_NAME="$1"
 
   netbird_auth
+  if [ -z "$TOKEN" ] || [ "$TOKEN" == "null" ]; then
+    echo "Could not fetch token for keycloak client_id='netbird-mgmt-cli' username='netbird'."
+    return 1
+  fi
   USERS=$(users_list)
   if [ -n "$USERS" ]; then
     NETBIRD_USER_ID=$(echo "$USERS" | jq -r ".[] | select(.name==\"$USER_NAME\").id" 2>/dev/null)
     if [ -z "$NETBIRD_USER_ID" ]; then
-      echo "$USERS"
-      echo "NetBird user $USER_NAME is not present"
+      echo -e "Found the following users:\n${USERS}"
+      echo "NetBird user <${USER_NAME}> is not present."
       return 1
     else
-      echo "NetBird user $USER_NAME is present"
+      echo "NetBird user <${USER_NAME}> is present."
       return 0
     fi
   else
-    echo "NetBird user $USER_NAME is not present"
+    echo "NetBird user <${USER_NAME}> is not present."
     return 1
   fi
 }
