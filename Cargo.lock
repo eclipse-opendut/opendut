@@ -4595,6 +4595,7 @@ dependencies = [
 name = "opendut-netbird-client-api"
 version = "0.10.0-alpha"
 dependencies = [
+ "backon",
  "cargo_metadata",
  "hyper-util",
  "opendut-model",

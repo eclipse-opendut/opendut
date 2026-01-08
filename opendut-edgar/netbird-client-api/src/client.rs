@@ -1,5 +1,6 @@
 use std::path::PathBuf;
-
+use std::time::Duration;
+use backon::{ExponentialBuilder, Retryable};
 use tonic::transport::Channel;
 use tracing::{debug, error, info};
 
@@ -17,12 +18,27 @@ pub struct Client {
 }
 
 impl Client {
-    pub async fn connect() -> Result<Self> { //TODO this should perform a few retries, if the Netbird process isn't ready yet
+    pub async fn connect() -> Result<Self> {
         let path = format!("unix://{}", socket_path().display());
 
         debug!("Connecting to NetBird Client process via Unix domain socket at '{path}'...");
 
-        match DaemonServiceClient::connect(path.clone()).await {
+        let connect = || {
+            DaemonServiceClient::connect(path.clone())
+        };
+
+        let connect_result = connect
+            .retry(
+                ExponentialBuilder::default()
+                    .without_max_times() //continue retrying indefinitely
+                    .with_max_delay(Duration::from_secs(60))
+            )
+            .notify(|cause: &tonic::transport::Error, sleep_duration: Duration| {
+                debug!("Trying to connect to NetBird client after waiting {sleep_duration:?}. Had failed to connect due to: {cause}");
+            })
+            .await;
+
+        match connect_result {
             Ok(client) => {
                 info!("Connected to NetBird Client process via Unix domain socket at '{path}'.");
                 Ok(Self { inner: client })
