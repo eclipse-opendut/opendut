@@ -58,4 +58,4 @@ done
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_MONITORING}" "intermediate-ca" "deploy-intermediate"
 
 # Create a client certificate derived from intermediate CA
-/scripts/generate-client-certificate.sh "client-intermediate-test" "intermediate-ca"
+/scripts/generate-client-certificate.sh "client-intermediate-test" "intermediate-ca" "deploy-intermediate"

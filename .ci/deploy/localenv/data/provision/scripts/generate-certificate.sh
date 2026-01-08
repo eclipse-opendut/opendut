@@ -51,7 +51,9 @@ openssl x509 -req -in "$CERT_PATH".csr -CA "$CA_PATH".pem -CAkey "$CA_PATH".key 
 cp "$CERT_PATH".pem "$CERT_DEPLOY_PATH".pem
 if [ "$OPENDUT_CERT_CA_NAME" != "$OPENDUT_ROOT_CA_NAME" ]; then
   # append intermediate certificate (certificate chain)
-  cat "$CA_PATH".pem >> "$CLIENT_DEPLOY_PATH".pem
+  cat "$CA_PATH".pem >> "$CERT_DEPLOY_PATH".pem
+else
+  echo "Not appending intermediate certificate."
 fi
 # Extract private key
 openssl rsa -in "$CERT_PATH".key -passin file:"$OPENDUT_PASSWORD_FILE" -out "$CERT_DEPLOY_PATH".key

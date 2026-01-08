@@ -22,6 +22,7 @@ docker stop opendut-custom-provision
 '
 CLIENT_NAME="${1:-$OPENDUT_CERT_CA_NAME-auth-client}"
 OPENDUT_CERT_CA_NAME="${2:-opendut-ca}"
+DEPLOY_DIRECTORY="${3:-deploy}"
 
 PROVISION_ROOT_DIR="/provision/"
 OPENDUT_ROOT_CA_NAME="opendut-ca"
@@ -32,7 +33,8 @@ CA_PATH="$PROVISION_PKI_DIR/$OPENDUT_CERT_CA_NAME"
 ROOT_CA_PATH="$PROVISION_PKI_DIR/$OPENDUT_ROOT_CA_NAME"
 
 CLIENT_CERT_PATH="$PROVISION_PKI_DIR/$CLIENT_NAME"
-CLIENT_DEPLOY_PATH="$PROVISION_PKI_DIR/deploy/$CLIENT_NAME"
+mkdir -p "$PROVISION_PKI_DIR/$DEPLOY_DIRECTORY"
+CLIENT_DEPLOY_PATH="$PROVISION_PKI_DIR/$DEPLOY_DIRECTORY/$CLIENT_NAME"
 
 # Create certificate signing request (CSR) and private key for the client
 openssl req -new -sha512 -passout file:"$OPENDUT_PASSWORD_FILE" -out "$CLIENT_CERT_PATH".csr -newkey rsa:4096 -keyout "$CLIENT_CERT_PATH".key -subj "/CN=$CLIENT_NAME/C=XX/ST=Some-State/O=ExampleOrg"
