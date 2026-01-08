@@ -5,7 +5,7 @@ pub mod peer_manager;
 pub mod observer_messaging_broker;
 
 #[cfg(test)]
-mod testing {
+pub(crate) mod testing {
     use crate::resource::manager::ResourceManagerRef;
     use opendut_model::cluster::{ClusterDescriptor, ClusterId, ClusterName};
     use opendut_model::peer::executor::ExecutorDescriptors;
@@ -13,6 +13,15 @@ mod testing {
     use opendut_model::topology::{DeviceDescription, DeviceDescriptor, DeviceId, DeviceName, Topology};
     use opendut_model::util::net::{NetworkInterfaceConfiguration, NetworkInterfaceDescriptor, NetworkInterfaceId, NetworkInterfaceName};
     use std::collections::HashSet;
+    use opendut_util::pem::{read_pem_from_buffer, Pem};
+
+    pub fn get_cert() -> Pem {
+        let pems = read_pem_from_buffer(CERTIFICATE_AUTHORITY_STRING, "insecure-development-ca.pem").expect("Not a valid certificate!");
+        pems.first().cloned().expect("Could not extract root CA").clone()
+    }
+
+    const CERTIFICATE_AUTHORITY_STRING: &str = include_str!("../../../resources/development/tls/insecure-development-ca.pem");
+
 
     pub struct PeerFixture {
         pub id: PeerId,

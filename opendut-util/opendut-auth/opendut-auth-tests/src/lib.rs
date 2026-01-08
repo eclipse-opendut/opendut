@@ -25,10 +25,10 @@ pub async fn localenv_reqwest_client() -> ReqwestClient {
         project::make_path_absolute(".ci/deploy/localenv/data/secrets/pki/opendut-ca.pem")
             .expect("Could not resolve localenv CA");
 
-    let pem = <Pem as PemFromConfig>::from_file_path(&ca_path)
+    let pems = <Pem as PemFromConfig>::from_file_path(&ca_path)
         .expect("Could not load localenv CA");
 
-    reqwest_client::oidc::create_with_ca(pem)
+    reqwest_client::oidc::create_with_ca(pems)
         .map_err(|cause| anyhow!("Failed to create reqwest client. Error: {}", cause))
         .expect("Could not create localenv reqwest client")
 }

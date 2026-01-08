@@ -406,9 +406,8 @@ pub async fn create_carl_client(config: &config::Config) -> CarlClient {
     let port = config.get_int("network.carl.port")
         .expect("Configuration should contain a valid port number to connect to CARL");
 
-    let ca_cert = Pem::read_from_configured_path_or_content(pem::config_keys::DEFAULT_NETWORK_TLS_CA, None, config)
-        .expect("Error while reading CA certificate.")
-        .expect("None of the configured CA certificate configuration keys provided a certificate.");
+    let ca_certs = Pem::read_from_configured_path_or_content(pem::config_keys::DEFAULT_NETWORK_TLS_CA, None, config)
+        .expect("Error while reading CA certificate.");
 
     let client_auth = ClientAuth::load_from_config(config)
         .expect("Error while loading configuration for client authentication");
@@ -419,7 +418,7 @@ pub async fn create_carl_client(config: &config::Config) -> CarlClient {
         domain_name_override.is_empty().not().then_some(domain_name_override)
     };
 
-    let mut carl_client = CarlClient::create(&host, port as u16, &ca_cert, &client_auth, &domain_name_override, config).await
+    let mut carl_client = CarlClient::create(&host, port as u16, &ca_certs, &client_auth, &domain_name_override, config).await
         .expect("Failed to create CARL client");
 
     let _ignore_errors = opendut_carl_api::carl::metadata::version_compatibility::log_version_compatibility_with_carl(

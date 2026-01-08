@@ -1,15 +1,15 @@
 use anyhow::Context;
 use pem::Pem;
-pub use reqwest::{Client as ReqwestClient};
+pub use reqwest::Client as ReqwestClient;
 use reqwest::Identity;
 
 pub mod oidc {
+    use super::{construct_reqwest_identity_from_two_pems, ReqwestClient};
+    use crate::pem::{self, Pem, PemFromConfig};
     use anyhow::{anyhow, Context};
     use config::Config;
     use reqwest::{Certificate, Identity};
     use tracing::debug;
-    use crate::pem::{self, Pem, PemFromConfig};
-    use super::{construct_reqwest_identity_from_two_pems, ReqwestClient};
 
     #[tracing::instrument(name="oidc_client_create", skip_all)]
     pub fn create_from_config(config: &Config) -> anyhow::Result<ReqwestClient> {
@@ -21,21 +21,28 @@ pub mod oidc {
 
         let identity =
             if config.get_bool(pem::config_keys::NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH_ENABLED)? {
-                let certificate = Pem::read_from_configured_path_or_content(
+                let certificates = Pem::read_from_configured_path_or_content(
                     pem::config_keys::NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH_CERTIFICATE,
                     Some(pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE),
                     config
-                )?.context("No certificate found for mTLS client authentication in OIDC")?;
+                )?;
+                if certificates.is_empty() {
+                    return Err(anyhow!("No certificate found for mTLS client authentication in OIDC"))
+                }
 
                 let key = Pem::read_from_configured_path_or_content(
                     pem::config_keys::NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH_KEY,
                     Some(pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_KEY),
                     config
-                )?.context("No key found for mTLS client authentication in OIDC")?;
-
-                let identity = construct_reqwest_identity_from_two_pems(certificate, key)?;
-
-                Some(identity)
+                )?.first().cloned();
+                match key {
+                    None => {
+                        return Err(anyhow!("No key found for mTLS client authentication in OIDC"))
+                    }
+                    Some(key) => {
+                        Some(construct_reqwest_identity_from_two_pems(certificates, key)?)
+                    }
+                }
             } else {
                 None
             };
@@ -43,13 +50,13 @@ pub mod oidc {
         build_client(opendut_ca, identity)
     }
 
-    pub fn create_with_ca(ca_certificate: Pem) -> anyhow::Result<ReqwestClient> {
-        build_client(Some(ca_certificate), None)
+    pub fn create_with_ca(ca_certificates: Vec<Pem>) -> anyhow::Result<ReqwestClient> {
+        build_client(ca_certificates, None)
     }
 
 
-    fn build_client(
-        ca_certificate: Option<Pem>,
+    pub(crate) fn build_client(
+        ca_certificates: Vec<Pem>,
         client_auth_identity: Option<Identity>,
     ) -> anyhow::Result<ReqwestClient> {
 
@@ -57,7 +64,7 @@ pub mod oidc {
             .redirect(reqwest::redirect::Policy::none())
             .tls_built_in_root_certs(true);
 
-        if let Some(ca_certificate) = ca_certificate {
+        for ca_certificate in ca_certificates  {
             debug!("Constructing reqwest client with CA certificate provided.");
             let reqwest_certificate = Certificate::from_pem(ca_certificate.to_string().as_bytes())
                 .map_err(|cause| anyhow!(cause.to_string()))?;
@@ -79,10 +86,13 @@ pub mod oidc {
 /// so we join them by simply putting them underneath each other,
 /// which the PEM format allows. See, for example:
 /// https://stackoverflow.com/questions/68340665/pem-file-has-two-certificates-what-does-it-mean
-fn construct_reqwest_identity_from_two_pems(certificate: Pem, key: Pem) -> anyhow::Result<Identity> {
-    let pem = [certificate.to_string(), key.to_string()].join("\n");
+/// Certificate order matters: client certificate must be the first in the list or else rustls will raise an error: `keys may not be consistent: KeyMismatch`
+fn construct_reqwest_identity_from_two_pems(certificates: Vec<Pem>, key: Pem) -> anyhow::Result<Identity> {
+    let mut pems: Vec<String> = certificates.into_iter().map(|cert| cert.to_string()).collect();
+    pems.push(key.to_string());
+    let concatenated_pems = pems.join("\n");
 
-    Identity::from_pem(pem.as_bytes())
+    Identity::from_pem(concatenated_pems.as_bytes())
         .context("Error while constructing reqwest identity from manually joined PEM file")
 }
 
@@ -98,10 +108,10 @@ mod tests {
         let cert = repo_path!("resources/development/tls/insecure-development-ca.pem");
         let key = repo_path!("resources/development/tls/insecure-development-ca.key");
 
-        let cert = Pem::from_file_path(&cert)?;
-        let key = Pem::from_file_path(&key)?;
+        let certs = Pem::from_file_path(&cert)?;
+        let key = Pem::from_file_path(&key)?.first().cloned().expect("Could not get private key");
 
-        let result = construct_reqwest_identity_from_two_pems(cert, key);
+        let result = construct_reqwest_identity_from_two_pems(certs, key);
 
         assert!(result.is_ok());
         Ok(())

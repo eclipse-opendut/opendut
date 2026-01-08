@@ -4,7 +4,7 @@ use tower::ServiceBuilder;
 
 use opendut_auth::confidential::client::ConfidentialClient;
 use opendut_auth::confidential::tonic_service::TonicAuthenticationService;
-use opendut_util::pem::Pem;
+use opendut_util::pem::{join_pem_objects, Pem};
 use opendut_util::client_auth::ClientAuth;
 
 use crate::carl::cluster::ClusterManager;
@@ -42,21 +42,23 @@ impl CarlClient {
     pub async fn create(
         host: &str,
         port: u16,
-        ca_cert: &Pem,
+        ca_certs: &[Pem],
         client_auth: &ClientAuth,
         domain_name_override: &Option<String>,
         settings: &config::Config,
     ) -> Result<CarlClient, InitializationError> {
 
         let address = format!("https://{host}:{port}");
+        let joined_ca_certs = join_pem_objects(ca_certs);
 
         let tls_config = {
             let mut config = tonic::transport::ClientTlsConfig::new()
-                .ca_certificate(tonic::transport::Certificate::from_pem(ca_cert.to_string()));
+                .ca_certificate(tonic::transport::Certificate::from_pem(joined_ca_certs));
 
-            if let ClientAuth::Enabled { cert, key } = client_auth {
+            if let ClientAuth::Enabled { certs, key } = client_auth {
                 debug!("Configuring mTLS client authentication...");
-                config = config.identity(Identity::from_pem(cert.to_string(), key.to_string()));
+                let client_certs = join_pem_objects(certs);
+                config = config.identity(Identity::from_pem(client_certs, key.to_string()));
             }
 
             if let Some(domain_name_override) = domain_name_override {

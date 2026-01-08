@@ -104,7 +104,6 @@ mod test {
     use super::*;
 
     use fs_err as fs;
-    use std::str::FromStr;
     use assert_fs::assert::PathAssert;
 
     use assert_fs::fixture::PathChild;
@@ -114,8 +113,8 @@ mod test {
     use flate2::read::GzDecoder;
     use flate2::write::GzEncoder;
     use predicates::path;
-
     use crate::http::router::arch::CLEO_IDENTIFIER;
+    use crate::manager::testing::get_cert;
 
     #[tokio::test()]
     async fn creating_cleo_install_script_succeeds() -> anyhow::Result<()> {
@@ -138,8 +137,7 @@ mod test {
         tar_gz.append_dir_all(CLEO_IDENTIFIER, &cleo_dir)?;
         tar_gz.into_inner()?.finish()?;
 
-        let cert = Pem::from_str(include_str!("../../../../resources/development/tls/insecure-development-ca.pem"))
-            .expect("Not a valid certificate!");
+        let cert = get_cert();
 
         let cleo_script = CleoScript {
             carl_host: "carl".to_string(),

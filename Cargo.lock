@@ -4555,6 +4555,7 @@ dependencies = [
  "pem",
  "repo_path",
  "reqwest",
+ "test-log",
  "thiserror 2.0.17",
  "tracing",
 ]

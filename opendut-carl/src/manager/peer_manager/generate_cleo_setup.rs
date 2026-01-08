@@ -55,8 +55,7 @@ pub enum GenerateCleoSetupError {
 #[cfg(test)]
 mod tests {
     use googletest::prelude::*;
-    use std::str::FromStr;
-
+    use crate::manager::testing::get_cert;
     use super::*;
 
     #[tokio::test]
@@ -77,12 +76,4 @@ mod tests {
         Ok(())
     }
 
-    pub fn get_cert() -> Pem {
-        match Pem::from_str(CERTIFICATE_AUTHORITY_STRING) {
-            Ok(cert) => { cert }
-            Err(_) => { panic!("Not a valid certificate!") }
-        }
-    }
-
-    const CERTIFICATE_AUTHORITY_STRING: &str = include_str!("../../../../resources/development/tls/insecure-development-ca.pem");
 }

@@ -3,9 +3,8 @@ pub use pem::Pem;
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
 use crate::project;
-use anyhow::Context;
+use anyhow::{anyhow, Context};
 use config::Config;
 use tracing::{debug, error, trace, warn};
 
@@ -39,18 +38,20 @@ pub trait PemFromConfig {
         config_key: &str,
         fallback_config_key: Option<&str>,
         config: &Config,
-    ) -> anyhow::Result<Option<Pem>>;
+    ) -> anyhow::Result<Vec<Pem>>;
 
-    fn from_file_path(relative_file_path: &Path) -> anyhow::Result<Pem>;
+    fn from_file_path(relative_file_path: &Path) -> anyhow::Result<Vec<Pem>>;
 }
 
 impl PemFromConfig for Pem {
 
+    /// Read PEM certificate or key from config value (provided as plaintext value or file path)
+    /// First try to read PEM with given config_key, then use the fallback_config_key.
     fn read_from_configured_path_or_content(
         config_key: &str,
         fallback_config_key: Option<&str>,
         config: &Config,
-    ) -> anyhow::Result<Option<Pem>> {
+    ) -> anyhow::Result<Vec<Pem>> {
 
         let config_keys = {
             let mut config_keys = vec![config_key];
@@ -59,18 +60,21 @@ impl PemFromConfig for Pem {
             }
             config_keys
         };
-
-        for config_key in &config_keys {
-            if let Some(pem) = read_pem_from_config_key(config_key, config)? {
-                return Ok(Some(pem));
+        let pem = config_keys.iter().find_map(|config_key| {
+            read_pem_from_config_key(config_key, config).ok()
+        });
+        match pem {
+            None => {
+                warn!("No TLS key/certificate found in configured locations: {config_keys:?}");
+                Ok(Vec::new())
+            }
+            Some(pem_objects) => {
+                Ok(pem_objects)
             }
         }
-
-        warn!("No TLS keys found in configured locations: {config_keys:?}");
-        Ok(None)
     }
 
-    fn from_file_path(relative_file_path: &Path) -> anyhow::Result<Pem> {
+    fn from_file_path(relative_file_path: &Path) -> anyhow::Result<Vec<Pem>> {
         let pem_file_path = project::make_path_absolute(relative_file_path)
             .context(format!("Could not determine path for PEM file: {relative_file_path:?}"))?;
 
@@ -78,12 +82,10 @@ impl PemFromConfig for Pem {
     }
 }
 
-fn read_pem_from_config_key(config_key: &str, config: &Config) -> anyhow::Result<Option<Pem>> {
+fn read_pem_from_config_key(config_key: &str, config: &Config) -> anyhow::Result<Vec<Pem>> {
 
-    fn try_load_pem_from_file_path(config_value: &str, config_key: &str) -> Option<Pem> {
-        let path = project::make_path_absolute(config_value)
-            .ok()?;
-
+    fn try_load_pem_from_file_path(config_value: &str, config_key: &str) -> anyhow::Result<Vec<Pem>> {
+        let path = project::make_path_absolute(config_value)?;
         read_pem_from_file_path(&path)
             .inspect_err(|cause| {
                 let mut error_message = cause.to_string();
@@ -93,42 +95,43 @@ fn read_pem_from_config_key(config_key: &str, config: &Config) -> anyhow::Result
                 }
                 error!("Error while reading PEM from path {path:?} configured via configuration key '{config_key}': {error_message}")
             })
-            .ok()
     }
 
-    let result =
-        match config.get_string(config_key).ok() {
-            None => None,
-            Some(config_value) if config_value.is_empty() => None,
-            Some(config_value) => {
-                match Pem::from_str(&config_value) {
-                    Ok(pem) => {
-                        debug!("Using PEM loaded from text value of configuration key: {config_key}");
-                        Some(pem)
+    match config.get_string(config_key).ok() {
+        None => Err(anyhow!("No PEM found in configuration key: {config_key}")),
+        Some(config_value) if config_value.is_empty() => Err(anyhow!("No PEM found in configuration key: {config_key}")),
+        Some(config_value) => {
+            match read_pem_from_buffer(config_value.as_bytes(), &format!("config key={}", config_key)) {
+                Ok(pems) => {
+                    debug!("Using PEM loaded from text value of configuration key: {config_key}, number of PEM object(s): {}", pems.len());
+                    Ok(pems)
+                }
+                Err(cause) => {
+                    if config_value.starts_with("-----BEGIN") { //very likely that user wanted to specify PEM, so return error directly
+                        Err(cause)
+                            .context("Failed to load text value as PEM, which was configured in configuration key.")
                     }
-                    Err(cause) => {
-                        if config_value.starts_with("-----BEGIN") { //very likely that user wanted to specify PEM, so return error directly
-                            return Err(cause)
-                                .context("Failed to load text value as PEM, which was configured in configuration key '{config_key}'");
-                        }
-                        else if let Some(pem) = try_load_pem_from_file_path(&config_value, config_key) {
-                            debug!("Using PEM loaded from file path defined in configuration key: {config_key}");
-                            Some(pem)
-                        }
-                        else {
-                            None
-                        }
+                    else if let Ok(pem) = try_load_pem_from_file_path(&config_value, config_key) {
+                        debug!("Using PEM loaded from file path defined in configuration key: {config_key}");
+                        Ok(pem)
+                    }
+                    else {
+                        Err(anyhow!("No PEM found in configuration key: {config_key}"))
                     }
                 }
             }
-        };
-
-    Ok(result)
+        }
+    }
 }
 
 
-fn read_pem_from_file_path(path: &PathBuf) -> anyhow::Result<Pem> {
-    trace!("Attempting to load PEM from file: {path:?}");
+pub fn join_pem_objects(pems: &[Pem]) -> String {
+    pems.iter().map(|cert| cert.to_string().replace("\r\n", "\n")).collect::<Vec<_>>().join("")
+}
+
+
+fn read_pem_from_file_path(path: &PathBuf) -> anyhow::Result<Vec<Pem>> {
+    trace!("Attempting to load PEM from file={}", path.display());
 
     let mut file = File::open(path)
         .context(format!("Could not open PEM from file: {path:?}"))?;
@@ -138,12 +141,19 @@ fn read_pem_from_file_path(path: &PathBuf) -> anyhow::Result<Pem> {
     file.read_to_end(&mut buffer)
         .context(format!("Could not read PEM from file: {path:?}"))?;
 
-    let pem = Pem::try_from(buffer.as_slice())
-        .context(format!("Could not parse PEM from file: {path:?}"))?;
+    read_pem_from_buffer(buffer.as_slice(), &format!("file={}", path.display()))
+}
 
-    trace!("PEM loaded from file: {path:?}");
-
-    Ok(pem)
+pub fn read_pem_from_buffer<B: AsRef<[u8]>>(input: B, source: &str) -> anyhow::Result<Vec<Pem>> {
+    let pem = pem::parse_many(input)
+        .context(format!("Could not parse PEM from {source}"))?;
+    if pem.is_empty() {
+        Err(anyhow!("No PEM found found in {source}"))
+    } else {
+        let num = pem.len();
+        trace!("Loaded {num} PEM object(s) from {source}");
+        Ok(pem)
+    }
 }
 
 
@@ -153,7 +163,7 @@ mod tests {
     use repo_path::repo_path;
     use super::*;
 
-    #[test]
+    #[test_log::test]
     fn should_read_pem_from_generic_ca() -> anyhow::Result<()> {
         let config = create_test_config(config_keys::DEFAULT_NETWORK_TLS_CA, root_ca_path());
 
@@ -162,11 +172,11 @@ mod tests {
             None,
             &config
         )?;
-        assert!(pem.is_some());
+        assert!(!pem.is_empty());
         Ok(())
     }
 
-    #[test]
+    #[test_log::test]
     fn should_read_pem_from_client_ca() -> anyhow::Result<()> {
         let config = create_test_config(config_keys::NETWORK_OIDC_CLIENT_TLS_CA, root_ca_path());
 
@@ -175,38 +185,38 @@ mod tests {
             None,
             &config
         )?;
-        assert!(pem.is_some());
+        assert!(!pem.is_empty());
         Ok(())
     }
 
-    #[test]
+    #[test_log::test]
     fn should_read_pem_from_client_ca_content() -> anyhow::Result<()> {
         let content = fs::read_to_string(root_ca_path())
             .expect("Could not read root CA file for test");
 
-        let config = create_test_config(&config_keys::DEFAULT_NETWORK_TLS_CA, content);
+        let config = create_test_config(config_keys::DEFAULT_NETWORK_TLS_CA, content);
         let pem = Pem::read_from_configured_path_or_content(
             config_keys::DEFAULT_NETWORK_TLS_CA,
             None,
             &config
         )?;
-        assert!(pem.is_some());
+        assert!(!pem.is_empty());
         Ok(())
     }
 
-    #[test]
+    #[test_log::test]
     fn should_read_pem_from_configured_text_value() -> anyhow::Result<()> {
         let pem_sample = root_ca_content();
 
         let config = create_test_config(config_keys::DEFAULT_NETWORK_TLS_CA, &pem_sample);
 
-        let result = read_pem_from_config_key(config_keys::DEFAULT_NETWORK_TLS_CA, &config)?;
+        let result = read_pem_from_config_key(config_keys::DEFAULT_NETWORK_TLS_CA, &config)?.first().cloned();
 
         assert_eq!(result, Some(pem::parse(pem_sample)?));
         Ok(())
     }
 
-    #[test]
+    #[test_log::test]
     fn should_error_when_provided_with_a_malformed_pem_value() -> anyhow::Result<()> {
         let pem_sample = root_ca_content()
             .replace("MII", "WOOHOO");
@@ -219,18 +229,44 @@ mod tests {
         Ok(())
     }
 
-    #[test]
+    #[test_log::test]
     fn should_read_pem_from_configured_file_path() -> anyhow::Result<()> {
         let pem_path = root_ca_path();
 
         let config = create_test_config(config_keys::DEFAULT_NETWORK_TLS_CA, &pem_path);
 
-        let result = read_pem_from_config_key(config_keys::DEFAULT_NETWORK_TLS_CA, &config)?;
+        let result = read_pem_from_config_key(config_keys::DEFAULT_NETWORK_TLS_CA, &config)?.first().cloned();
 
         assert_eq!(result, Some(pem::parse(root_ca_content())?));
         Ok(())
     }
 
+    #[test_log::test]
+    fn should_read_certificate_chain() -> anyhow::Result<()> {
+        let content = certificate_chain_content();
+        let certificates = read_pem_from_buffer(content.as_bytes(), "test-certificate-chain")?;
+        assert!(!certificates.is_empty());
+        assert_eq!(certificates.len(), 2);
+        Ok(())
+    }
+
+    #[test_log::test]
+    fn single_pem_is_not_equal_to_chain() -> anyhow::Result<()> {
+        let content = certificate_chain_content();
+        let pem = pem::parse(content.as_bytes())?;
+        let parsed_content = pem.contents();
+        assert!(parsed_content.len().lt(&content.len()));
+        Ok(())
+    }
+
+    #[test_log::test]
+    fn many_pem_is_equal_to_certificate_chain() -> anyhow::Result<()> {
+        let content = certificate_chain_content();
+        let certificates = read_pem_from_buffer(content.as_bytes(), "test-certificate-chain")?;
+        let all = join_pem_objects(&certificates);
+        assert_eq!(all, content);
+        Ok(())
+    }
 
     fn create_test_config(key: &str, value: impl Into<String>) -> Config {
         Config::builder()
@@ -248,5 +284,10 @@ mod tests {
     fn root_ca_content() -> String {
         fs::read_to_string(root_ca_path())
             .expect("Failed to read test certificate")
+    }
+
+    fn certificate_chain_content() -> String {
+        let path = repo_path!("resources/development/tls/pem-test-loading-a-chain.pem").to_str().unwrap().to_string();
+        fs::read_to_string(&path).expect("Failed to read test certificate chain")
     }
 }

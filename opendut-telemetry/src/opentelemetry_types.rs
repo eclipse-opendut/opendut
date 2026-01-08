@@ -148,18 +148,12 @@ impl Opentelemetry {
                 };
 
                 {
-                    let opendut_ca = load_pem(
+                    let opendut_cas = load_pem(
                         pem::config_keys::OPENTELEMETRY_TLS_CA,
                         pem::config_keys::DEFAULT_NETWORK_TLS_CA,
-                    )?;
-
-                    if let Some(opendut_ca) = opendut_ca {
-                        let certificate = Certificate::from_pem(opendut_ca.to_string());
-                        debug!("Creating OpenTelemetry client with CA certificate provided.");
-                        client_tls_config = client_tls_config.ca_certificate(certificate);
-                    } else {
-                        client_tls_config = client_tls_config.with_native_roots();
-                    }
+                    )?.iter().map(|cert| Certificate::from_pem(cert.to_string())).collect::<Vec<_>>();
+                    debug!("Creating OpenTelemetry client with CA certificates provided.");
+                    client_tls_config = client_tls_config.ca_certificates(opendut_cas).with_native_roots();
                 }
 
                 {
@@ -174,23 +168,27 @@ impl Opentelemetry {
                     };
 
                     if mtls_enabled {
-                        let mtls_certificate = load_pem(
+                        let mtls_certificates = load_pem(
                             pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_CERTIFICATE,
                             pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE,
-                        )?.ok_or_else(|| OpentelemetryConfigError::ValueParseError {
-                            field: format!("{} | {}", pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_CERTIFICATE, pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE),
-                            cause: String::from("None of the configured fields provided a valid mTLS client authentication certificate."),
+                        ).map_err(|error| OpentelemetryConfigError::ClientAuthentication {
+                            message: String::from("None of the configured fields provided a valid mTLS client authentication certificate."),
+                            cause: error.to_string(),
                         })?;
 
                         let mtls_key = load_pem(
                             pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_KEY,
                             pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_KEY,
-                        )?.ok_or_else(|| OpentelemetryConfigError::ValueParseError {
-                            field: format!("{} | {}", pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_CERTIFICATE, pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE),
-                            cause: String::from("None of the configured fields provided a valid mTLS client authentication key."),
+                        ).map_err(|error| OpentelemetryConfigError::ClientAuthentication {
+                            message: String::from("None of the configured fields provided a valid mTLS client authentication key."),
+                            cause: error.to_string(),
+                        })?.first().cloned().ok_or(OpentelemetryConfigError::ClientAuthentication {
+                            message: String::from("None of the configured fields provided a valid mTLS client authentication key."),
+                            cause: "error".to_string(),
                         })?;
+                        let all_certs = mtls_certificates.iter().map(|cert| cert.to_string()).collect::<Vec<_>>().join("\n");
 
-                        let identity = Identity::from_pem(mtls_certificate.to_string(), mtls_key.to_string());
+                        let identity = Identity::from_pem(all_certs, mtls_key.to_string());
                         debug!("Creating OpenTelemetry client with mTLS client auth identity provided.");
                         client_tls_config = client_tls_config.identity(identity);
                     }
@@ -244,6 +242,11 @@ pub enum OpentelemetryConfigError {
     ConfidentialClientError {
         message: String,
         cause: ConfidentialClientError,
+    },
+    #[error("{message}, cause: '{cause}")]
+    ClientAuthentication {
+        message: String,
+        cause: String,
     }
 }
 

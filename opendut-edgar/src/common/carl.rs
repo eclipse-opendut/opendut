@@ -24,8 +24,8 @@ pub async fn connect(settings: &Config) -> anyhow::Result<CarlClient> {
     let host = settings.get_string("network.carl.host")?;
     let port = u16::try_from(settings.get_int("network.carl.port")?)?;
 
-    let ca_cert = Pem::read_from_configured_path_or_content(pem::config_keys::DEFAULT_NETWORK_TLS_CA, None, settings)?
-        .context("No CA certificate found in configured locations")?;
+    let ca_certs = Pem::read_from_configured_path_or_content(pem::config_keys::DEFAULT_NETWORK_TLS_CA, None, settings)
+        .context("No CA certificates found in configured locations")?;
 
     let client_auth = ClientAuth::load_from_config(settings)
         .context("Error while loading configuration for client authentication")?;
@@ -39,7 +39,7 @@ pub async fn connect(settings: &Config) -> anyhow::Result<CarlClient> {
     let interval = Duration::from_millis(u64::try_from(settings.get_int("network.connect.interval.ms")?)?);
 
     for retries_left in (0..retries).rev() {
-        match CarlClient::create(&host, port, &ca_cert, &client_auth, &domain_name_override, settings).await {
+        match CarlClient::create(&host, port, &ca_certs, &client_auth, &domain_name_override, settings).await {
             Ok(carl) => {
                 return Ok(carl);
             }
