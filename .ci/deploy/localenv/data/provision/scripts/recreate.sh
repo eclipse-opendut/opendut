@@ -25,6 +25,10 @@ for v in "${required_vars[@]}"; do
 	fi
 done
 
+# Create intermediate certificate authority
+/scripts/generate-intermediate-ca.sh "intermediate-ca"
+
+# Create server certificates
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_SUFFIX}"
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_AUTH}"
 /scripts/generate-certificate.sh "${OPENDUT_DOMAIN_NETBIRD}"
@@ -40,3 +44,18 @@ done
 /scripts/generate-client-certificate.sh "opendut-auth-client"
 /scripts/generate-client-certificate.sh "opendut-browser-client"
 /scripts/generate-client-certificate.sh "edgar-leader"
+
+# Create CARL certificate from intermediate CA (for testing) and store in different directory (/provision/pki/deploy-intermediate)
+/scripts/generate-certificate.sh "${OPENDUT_DOMAIN_SUFFIX}" "intermediate-ca" "deploy-intermediate"
+/scripts/generate-certificate.sh "${OPENDUT_DOMAIN_AUTH}" "intermediate-ca" "deploy-intermediate"
+/scripts/generate-certificate.sh "${OPENDUT_DOMAIN_NETBIRD}" "intermediate-ca" "deploy-intermediate"
+/scripts/generate-certificate.sh "${OPENDUT_DOMAIN_NETBIRD_RELAY}" "intermediate-ca" "deploy-intermediate"
+/scripts/generate-certificate.sh "${OPENDUT_DOMAIN_NETBIRD_API}" "intermediate-ca" "deploy-intermediate"
+/scripts/generate-certificate.sh "${OPENDUT_DOMAIN_SIGNAL}" "intermediate-ca" "deploy-intermediate"
+/scripts/generate-certificate.sh "${OPENDUT_DOMAIN_CARL}" "intermediate-ca" "deploy-intermediate"
+/scripts/generate-certificate.sh "${OPENDUT_DOMAIN_NGINX_WEBDAV}" "intermediate-ca" "deploy-intermediate"
+/scripts/generate-certificate.sh "${OPENDUT_DOMAIN_OPENTELEMETRY}" "intermediate-ca" "deploy-intermediate"
+/scripts/generate-certificate.sh "${OPENDUT_DOMAIN_MONITORING}" "intermediate-ca" "deploy-intermediate"
+
+# Create a client certificate derived from intermediate CA
+/scripts/generate-client-certificate.sh "client-intermediate-test" "intermediate-ca"
