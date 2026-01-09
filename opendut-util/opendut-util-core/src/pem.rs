@@ -11,6 +11,10 @@ use tracing::{debug, error, trace, warn};
 /// Constants for configuration keys used throughout the codebase.
 pub mod config_keys {
     pub const DEFAULT_NETWORK_TLS_CA: &str =                      "network.tls.ca";
+    pub const DEFAULT_NETWORK_TLS_CERTIFICATE: &str =              "network.tls.certificate";
+    pub const DEFAULT_NETWORK_TLS_KEY: &str =                      "network.tls.key";
+    pub const DEFAULT_NETWORK_TLS_SERVER_AUTH_CA: &str =           "network.tls.server.auth.ca";
+
     pub const DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED: &str =     "network.tls.client.auth.enabled";
     pub const DEFAULT_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE: &str = "network.tls.client.auth.certificate";
     pub const DEFAULT_NETWORK_TLS_CLIENT_AUTH_KEY: &str =         "network.tls.client.auth.key";
@@ -112,7 +116,7 @@ fn read_pem_from_config_key(config_key: &str, config: &Config) -> anyhow::Result
                             .context("Failed to load text value as PEM, which was configured in configuration key.")
                     }
                     else if let Ok(pem) = try_load_pem_from_file_path(&config_value, config_key) {
-                        debug!("Using PEM loaded from file path defined in configuration key: {config_key}");
+                        debug!("Using PEM loaded from file path defined in configuration key: {config_key}={config_value}, number of PEM object(s): {}.", pem.len());
                         Ok(pem)
                     }
                     else {

@@ -20,5 +20,5 @@ enabled = false
 remote.host = "127.0.0.1"
 
 [opentelemetry]
-enabled = true
+enabled = false
 collector.endpoint = "http://localhost:4317"

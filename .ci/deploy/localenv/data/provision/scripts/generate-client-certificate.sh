@@ -70,7 +70,7 @@ fi
 # Extract private key
 openssl rsa -in "$CLIENT_CERT_PATH".key -passin file:"$OPENDUT_PASSWORD_FILE" -out "$CLIENT_DEPLOY_PATH".key
 
-# Convert to PKCS#12 format for import in clients that require it (e.g., browsers)
+# Convert to PKCS#12 format for import in clients that require it (e.g., browsers), store with empty password (passing no password is not allowed)
 openssl pkcs12 -export -in "$CLIENT_CERT_PATH".pem -inkey "$CLIENT_CERT_PATH".key -out "$CLIENT_DEPLOY_PATH".p12 -name "$CLIENT_NAME" -passin file:"$OPENDUT_PASSWORD_FILE" -passout pass:
 
 rm "$CLIENT_CERT_PATH".csr

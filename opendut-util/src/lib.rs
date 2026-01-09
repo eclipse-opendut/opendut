@@ -28,3 +28,5 @@ pub mod settings;
 
 #[cfg(feature = "testing")]
 pub use opendut_util_core::testing;
+
+pub mod error;

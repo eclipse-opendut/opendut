@@ -1,5 +1,6 @@
 use std::error::Error;
 use tracing::error;
+use opendut_util::error::render_error_message;
 
 pub(super) trait LogApiErr {
     fn log_api_err(self) -> Self;
@@ -7,13 +8,10 @@ pub(super) trait LogApiErr {
 
 impl<T, E: Error> LogApiErr for Result<T, E> {
     fn log_api_err(self) -> Self {
-        self.inspect_err(|error|
-            if let Some(source) = error.source() {
-                error!("Error during API call: {error}:\n  {source}");
-            } else {
-                error!("Error during API call: {error}");
-            }
-        )
+        self.inspect_err(|error| {
+            let error_message = render_error_message(error, "Error during API call.");
+            error!(error_message);
+        })
     }
 }
 

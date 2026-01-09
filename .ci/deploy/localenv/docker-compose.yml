@@ -155,7 +155,7 @@ services:
   # Public web entrypoint exposed to end users
   traefik:
     container_name: opendut-traefik
-    image: docker.io/traefik:v3.6.2
+    image: docker.io/traefik:v3.6.6
     restart: unless-stopped
     command:
       - --api.insecure=true
@@ -430,6 +430,7 @@ services:
     container_name: opendut-carl
     image: "${OPENDUT_DOCKER_IMAGE_HOST:-ghcr.io}/${OPENDUT_DOCKER_IMAGE_NAMESPACE:-eclipse-opendut}/opendut-carl:${OPENDUT_CARL_IMAGE_VERSION:-0.9.0}"
     command: ["/opt/opendut-carl/opendut-carl"]
+    #command: ["strace", "/opt/opendut-carl/opendut-carl"]
     restart: unless-stopped
     depends_on:
       traefik:

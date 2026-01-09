@@ -11,6 +11,8 @@ services:
 
   traefik-internal:
     container_name: opendut-traefik-no-mtls
+    environment:
+      - OPENDUT_TRAEFIK_CLIENT_AUTH_TYPE=NoClientCert  # disable mTLS
     extends:
       file: ./docker-compose.yml
       service: traefik
@@ -19,6 +21,15 @@ services:
     ports: !override
       - "127.0.0.1:8082:8080"  # 2nd Traefik dashboard, only on localhost, do not expose publicly
 
+  carl:
+    environment:
+      # network.tls.server.auth
+      - OPENDUT_CARL_NETWORK_TLS_SERVER_AUTH_ENABLED=true  # enable mTLS
+      - OPENDUT_CARL_NETWORK_TLS_SERVER_AUTH_CA
+
+    # TODO: implement another healthcheck that sidesteps mTLS requirement
+    healthcheck:
+      test: [ "CMD-SHELL", "exit 0" ]
 
   netbird-management:
     labels:

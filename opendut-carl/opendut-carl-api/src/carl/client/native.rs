@@ -49,11 +49,12 @@ impl CarlClient {
     ) -> Result<CarlClient, InitializationError> {
 
         let address = format!("https://{host}:{port}");
-        let joined_ca_certs = join_pem_objects(ca_certs);
+        let certs = ca_certs.iter().map(|cert| tonic::transport::Certificate::from_pem(cert.to_string())).collect::<Vec<_>>();
+        debug!("Loaded {} CA certificates for TLS connection to CARL.", certs.len());
 
         let tls_config = {
             let mut config = tonic::transport::ClientTlsConfig::new()
-                .ca_certificate(tonic::transport::Certificate::from_pem(joined_ca_certs));
+                .ca_certificates(certs);
 
             if let ClientAuth::Enabled { certs, key } = client_auth {
                 debug!("Configuring mTLS client authentication...");

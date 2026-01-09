@@ -143,7 +143,6 @@ reqwest-retry = "0.8.0"
 rstest = "0.26.1"
 rtnetlink = "0.18.0"
 rustls = { version = "*", default-features = false, features = ["ring"] }
-rustls-pki-types = { version = "*" }
 rustpython-vm = { version = "0.4.0" }
 semver = "1.0"
 serde = { version = "1.0", default-features = false }

@@ -44,8 +44,9 @@ pub async fn connect(settings: &Config) -> anyhow::Result<CarlClient> {
                 return Ok(carl);
             }
             Err(cause) => {
+                let error = opendut_util::error::render_error_message(&cause, "Encountered the following error.");
+                warn!("Could not connect to CARL at '{host}:{port}'. Retrying in {interval} ms. {retries_left} retries left. {error}", interval=interval.as_millis());
                 if retries_left > 0 {
-                    warn!("Could not connect to CARL at '{host}:{port}'. Retrying in {interval} ms. {retries_left} retries left.\n  {cause}", interval=interval.as_millis());
                     tokio::time::sleep(interval).await;
                 }
             }
