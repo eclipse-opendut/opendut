@@ -8,6 +8,7 @@
 .ci/deploy/localenv/data/secrets/
 ## keep the local development environment file
 !.ci/deploy/localenv/.env.development
+.ci/deploy/localenv/docker-compose.override.yml
 
 #####################################################
 #             Build, Binaries and Libs              #

@@ -2,7 +2,7 @@ use std::process::{Command, Output, Stdio};
 use std::ffi::OsStr;
 use std::path::PathBuf;
 use anyhow::{anyhow, Error};
-use tracing::{trace};
+use tracing::{trace, warn};
 use std::io;
 use crate::core::command_ext::TheoCommandExtensions;
 use crate::core::docker::checks;
@@ -85,14 +85,23 @@ impl DockerCommand {
         self.arg("compose")
             .arg("--file")
             .arg("./.ci/deploy/localenv/docker-compose.yml");
-        // Optionally include override file if present
-        let override_path = PathBuf::project_path_buf().join("./.ci/deploy/localenv/docker-compose.override.yml");
-        if override_path.exists() {
-            self.arg("--file").arg(override_path);
-        }
 
+        // Base environment file for localenv
         self.arg("--env-file")
-            .arg("./.ci/deploy/localenv/.env.development")
+            .arg("./.ci/deploy/localenv/.env.development");
+
+        // Optionally include override file if present
+        let compose_override_path = PathBuf::project_path_buf().join("./.ci/deploy/localenv/docker-compose.override.yml");
+        if compose_override_path.exists() {
+            warn!("Using localenv docker-compose service override file at: {:?}", compose_override_path);
+            self.arg("--file").arg(compose_override_path);
+        }
+        let env_override_path = PathBuf::project_path_buf().join("./.ci/deploy/localenv/.env.override");
+        if env_override_path.exists() {
+            warn!("Using localenv docker-compose override environment file at: {:?}", env_override_path);
+            self.arg("--env-file").arg(env_override_path);
+        }
+        self
     }
 
     pub(crate) fn add_localenv_secrets_args(&mut self) -> &mut Self {
