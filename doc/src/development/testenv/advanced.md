@@ -131,3 +131,14 @@ The current time in the virtual machine is wrong and timesync won't happen with 
 OPENDUT_VM_NTP_SERVER=time.yourcorp.com
 ```
 * And provision the virtual machine: `cargo theo vagrant provision`
+
+## Test a different version of openDuT components
+
+By default, the test environment expects a distribution of openDuT components that matches the version of the repository you are working on.
+If you want to test another version of openDuT components, you can set the following environment variables in the `.env` file:
+```shell
+OPENDUT_CARL_IMAGE_VERSION=0.9.0-alpha
+```
+This will make the test environment load the specified version of the CARL distribution.
+Make sure that the specified version is already built or downloaded here: `target/ci/distribution/x86_64-unknown-linux-gnu`.
+If you use this feature, a warning will be printed when starting the test environment.

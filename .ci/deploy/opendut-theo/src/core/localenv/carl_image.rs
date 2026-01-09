@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use anyhow::Error;
+use tracing::{info, warn};
 use crate::core::docker::command::DockerCommand;
 use crate::core::localenv::LOCALENV_CARL_TESTENV_TAG;
 use crate::core::project::ProjectRootDir;
@@ -16,7 +17,14 @@ pub struct TestenvCarlImage {
 
 impl TestenvCarlImage {
     pub fn create() -> Result<Self, Error> {
-        let carl_version = crate::core::metadata::get_package_version("opendut-carl");
+        let carl_version_override = std::env::var("OPENDUT_CARL_IMAGE_VERSION").ok();
+        let carl_version = if let Some(carl_version) = carl_version_override {
+            warn!("Using custom CARL version provided via environment variable OPENDUT_CARL_IMAGE_VERSION: {}", carl_version);
+            carl_version
+        } else {
+            info!("Using CARL version from cargo metadata. Set OPENDUT_CARL_IMAGE_VERSION to override.");
+            crate::core::metadata::get_package_version("opendut-carl")
+        };
         let carl_dist_path = PathBuf::project_dist_path_buf().join(TARGET_TRIPLE).join(format!("opendut-carl-{TARGET_TRIPLE}-{carl_version}.tar.gz"));
         if carl_dist_path.exists() {
             let carl_dist_file_timestamp = file_modified_time_in_seconds(&carl_dist_path)?;
