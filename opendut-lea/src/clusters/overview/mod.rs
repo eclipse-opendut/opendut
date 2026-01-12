@@ -4,6 +4,7 @@ use leptos::prelude::*;
 use tracing::{debug, error};
 use opendut_carl_api::carl::ClientError;
 use opendut_carl_api::carl::cluster::StoreClusterDeploymentError;
+use opendut_lea_components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
 use opendut_model::cluster::{ClusterDeployment, ClusterDescriptor, ClusterId};
 
 use crate::app::use_app_globals;
@@ -152,7 +153,19 @@ pub fn ClustersOverview() -> impl IntoView {
             title="Clusters"
             breadcrumbs=breadcrumbs
             controls=view! {
-                <CreateClusterButton />
+                <div class="buttons">
+                    <CreateClusterButton />
+                    <IconButton
+                        icon=FontAwesomeIcon::ArrowsRotate
+                        color=ButtonColor::Light
+                        size=ButtonSize::Normal
+                        state=ButtonState::Enabled
+                        label="Refresh table of clusters"
+                        on_action=move || {
+                            refetch_cluster_descriptors.notify();
+                        }
+                    />
+                </div>
             }
         >
             <table class="table is-hoverable is-fullwidth">
@@ -168,7 +181,7 @@ pub fn ClustersOverview() -> impl IntoView {
                     <Suspense
                         fallback=LoadingSpinner
                     >
-                    {move || {
+                    { move || {
                         let on_deploy = on_deploy.clone();
                         let on_undeploy = on_undeploy.clone();
 

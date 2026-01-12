@@ -11,6 +11,7 @@ use opendut_model::peer::executor::{ExecutorDescriptor, ExecutorKind};
 use opendut_model::peer::PeerId;
 use std::collections::HashMap;
 use leptos_router::hooks::{use_navigate, use_params_map};
+use opendut_lea_components::LoadingSpinner;
 use opendut_lea_components::tabs::{Tab, Tabs};
 use crate::peers::configurator::types::devices::UserDeviceConfiguration;
 use crate::peers::configurator::types::executor::{UserContainerEnv, UserPeerExecutor, UserPeerExecutorKind};
@@ -297,7 +298,7 @@ pub fn PeerConfigurator() -> impl IntoView {
         >
         <div> {cluster_columns} </div>
             <Suspense
-                fallback=move || view! { <p><i class="fa-solid fa-circle-notch fa-spin"></i></p> } // TODO: Display errors
+                fallback=LoadingSpinner // TODO: Display errors
             >
             { move || Suspend::new(async move {
                 peer_configuration_resource.await;
