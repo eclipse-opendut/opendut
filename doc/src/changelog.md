@@ -21,8 +21,8 @@ tbd.
 * The openDuT backend containers can now be run on ARM64.
 * EDGAR: Persist into configuration file when configuration values are set via environment variables during EDGAR Setup.
 * LEA: Show for each UI tab when there are configuration errors within.
-* Certificates and keys are now loaded in a consistent fashion, allowing more flexible configuration.
-  For more details, see: https://opendut.eclipse.dev/book/user-manual/configuration.html#tls-certificates
+* Certificates and keys are now loaded in a consistent fashion, allowing more flexible configuration.  
+  For more details, see: <https://opendut.eclipse.dev/book/user-manual/configuration.html#tls-certificates>
 
 ### Changed
 * Replace Coturn with NetBird Relay server.
@@ -49,7 +49,7 @@ tbd.
 * EDGAR: `opendut-edgar setup managed` can now read the Setup-String from stdin and does so when nothing is specified as argument,
   as well as with the environment variable `OPENDUT_EDGAR_SETUP_STRING`.
 * EDGAR: There is a new expert flag `--skip-can-setup` for the EDGAR Setup for hardware where installing CAN support is not possible.
-* EDGAR: A troubleshooting guide was added into the documentation: https://opendut.eclipse.dev/book/user-manual/edgar/troubleshooting.html
+* EDGAR: A troubleshooting guide was added into the documentation: <https://opendut.eclipse.dev/book/user-manual/edgar/troubleshooting.html>
 * EDGAR: Enable Setup plugin support on ARM32.
 * LEA: Show name of Peer or Cluster in the title of the respective configuration views.
 * LEA: Rework top bar to include openDuT logo, navigation buttons and a display for the logged-in user.
