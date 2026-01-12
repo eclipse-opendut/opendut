@@ -116,17 +116,17 @@ pub fn TestConfigurator() -> impl IntoView {
             Tab::from_title_and_href(
                 String::from("General"),
                 TabIdentifier::General.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !test_configuration.read().name.is_right())),
+            ).with_is_error(Signal::derive(move || !test_configuration.read().valid_general_tab())),
 
             Tab::from_title_and_href(
                 String::from("Source"),
                 TabIdentifier::Source.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !test_configuration.read().source.is_right())),
+            ).with_is_error(Signal::derive(move || !test_configuration.read().valid_source_tab())),
 
             Tab::from_title_and_href(
                 String::from("Suite"),
                 TabIdentifier::Suite.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !test_configuration.read().suite.is_right())),
+            ).with_is_error(Signal::derive(move || !test_configuration.read().valid_suite_tab())),
 
             Tab::from_title_and_href(
                 String::from("Parameters"),

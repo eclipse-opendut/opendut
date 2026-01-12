@@ -1,3 +1,5 @@
+pub mod validation;
+
 use std::collections::HashMap;
 use opendut_lea_components::UserInputValue;
 use opendut_model::cluster::ClusterId;
@@ -29,19 +31,6 @@ pub struct UserTestConfiguration {
     pub cluster: UserInputValue,
     pub parameters: HashMap<String, UserInputValue>,
     pub is_new: bool,
-}
-
-impl UserTestConfiguration {
-
-    pub fn is_valid(&self) -> bool {
-        let UserTestConfiguration { id: _, name, source, suite, cluster, parameters, is_new: _ } = self;
-
-        name.is_right()
-            && source.is_right()
-            && suite.is_right()
-            && cluster.is_right()
-            && parameters.iter().all(|(_, value)| value.is_right())
-    }
 }
 
 impl TryFrom<UserTestConfiguration> for ViperTestDescriptor {

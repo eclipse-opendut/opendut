@@ -267,7 +267,7 @@ pub fn PeerConfigurator() -> impl IntoView {
             Tab::from_title_and_href(
                 String::from("Network"),
                 TabIdentifier::Network.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !peer_configuration.read().network.bridge_name.is_right())),
+            ).with_is_error(Signal::derive(move || !peer_configuration.read().valid_network_tab())),
 
             Tab::from_title_and_href(
                 String::from("Devices"),

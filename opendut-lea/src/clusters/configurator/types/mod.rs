@@ -1,3 +1,5 @@
+pub mod validation;
+
 use opendut_model::cluster::{ClusterDescriptor, ClusterId, ClusterName};
 
 use crate::clusters::configurator::components::{DeviceSelection, LeaderSelection};
@@ -22,15 +24,6 @@ pub struct UserClusterDescriptor {
     pub name: UserInputValue,
     pub devices: DeviceSelection,
     pub leader: LeaderSelection,
-}
-
-impl UserClusterDescriptor {
-
-    pub fn is_valid(&self) -> bool {
-        self.name.is_right()
-            && self.devices.is_right()
-            && self.leader.is_right()
-    }
 }
 
 impl TryFrom<UserClusterDescriptor> for ClusterDescriptor {

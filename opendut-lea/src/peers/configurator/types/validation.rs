@@ -14,6 +14,10 @@ impl UserPeerConfiguration {
             && self.location.is_right()
     }
 
+    pub fn valid_network_tab(&self) -> bool {
+        self.network.bridge_name.is_right()
+    }
+
     pub fn valid_devices_tab(&self) -> bool {
         self.devices.iter().all(|device_configuration| {
             let device_configuration = device_configuration.get();

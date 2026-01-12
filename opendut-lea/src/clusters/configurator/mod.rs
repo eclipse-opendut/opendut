@@ -15,7 +15,7 @@ use crate::components::{use_active_tab, BasePageContainer, Breadcrumb, LoadingSp
 
 mod tabs;
 mod components;
-pub mod types;
+mod types;
 
 #[component(transparent)]
 pub fn ClusterConfigurator() -> impl IntoView {
@@ -132,17 +132,17 @@ fn LoadedClusterConfigurator(
             Tab::from_title_and_href(
                 String::from("General"), 
                 TabIdentifier::General.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !cluster_descriptor.read().name.is_right())),
+            ).with_is_error(Signal::derive(move || !cluster_descriptor.read().valid_general_tab())),
             
             Tab::from_title_and_href(
                 String::from("Devices"),
                 TabIdentifier::Devices.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !cluster_descriptor.read().devices.is_right())),
+            ).with_is_error(Signal::derive(move || !cluster_descriptor.read().valid_devices_tab())),
             
             Tab::from_title_and_href(
                 String::from("Leader"),
                 TabIdentifier::Leader.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || !cluster_descriptor.read().leader.is_right())),
+            ).with_is_error(Signal::derive(move || !cluster_descriptor.read().valid_leader_tab())),
         ]
     });
 
