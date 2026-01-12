@@ -11,6 +11,7 @@ vm_nested_hw_virtualization = (ENV["OPENDUT_VM_NESTED_HW_VIRTUALIZATION"] || "on
 vm_ip = (ENV["OPENDUT_VM_IP"] || "192.168.56.10").to_s
 vm_box_name = (ENV["OPENDUT_VM_BOX_NAME"] || "ubuntu/jammy64").to_s
 vm_ssh_key_path = (ENV["OPENDUT_VM_SSH_KEY_PATH"] || "#{Dir.home}/.ssh/id_rsa.pub").to_s
+vm_bridged_interface = ENV["OPENDUT_VM_BRIDGED_INTERFACE"]
 
 # proxy settings
 vm_default_no_proxy = "localhost,127.0.0.1,opendut.local,netbird-management,netbird-dashboard,netbird-signal,netbird-relay,netbird-coturn,keycloak,edgar-leader,edgar-*,carl,loki,tempo,prometheus,alloy,otel-collector,grafana,nginx-webdav,192.168.56.10,192.168.0.0/16"
@@ -60,6 +61,11 @@ TERMINAL_OUTPUT
     # normal user is allowed to forward ports > 1024, restrict host_ip to localhost only (avoids publishing to all interfaces)
     config.vm.network :forwarded_port, guest: 3000, host: 3000, host_ip: "127.0.0.1"
     config.vm.network :forwarded_port, guest: 8081, host: 8081, host_ip: "127.0.0.1"
+
+    # Bridge an Ethernet interface from the host system into the VM, if the respective variable is set
+    if vm_bridged_interface.nil? == false
+      config.vm.network "public_network", bridge: vm_bridged_interface
+    end
 
     config.vm.provider "virtualbox" do |vb|
         vb.name = machine[:hostname]
@@ -133,6 +139,5 @@ TERMINAL_OUTPUT
     script.path = "./.ci/deploy/opendut-vm/vagrant/vagrant-entrypoint.sh"
     script.args   = ""
   end
-
 
 end
