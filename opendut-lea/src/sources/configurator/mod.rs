@@ -96,7 +96,7 @@ pub fn SourceConfigurator() -> impl IntoView {
             Tab::from_title_and_href(
                 String::from("General"),
                 TabIdentifier::General.as_str().to_owned()
-            ).with_is_error(Signal::derive(move || source_configuration.read().is_valid())),
+            ).with_is_error(Signal::derive(move || !source_configuration.read().is_valid())),
         ]
     });
     

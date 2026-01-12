@@ -85,8 +85,6 @@ pub fn TestSourceSelector(test_configuration: RwSignal<UserTestConfiguration>) -
                         key=|source| source.id
                         children=move |source| {
                             let source_id = source.id;
-                            let source_href = move || format!("/sources/{}/configure/general", source_id);
-
                             let is_selected = is_selected(Clone::clone(&source_id));
 
                             view! {
@@ -112,9 +110,7 @@ pub fn TestSourceSelector(test_configuration: RwSignal<UserTestConfiguration>) -
                                         </div>
                                     </td>
                                     <td>
-                                        <a href=source_href>
-                                            { source.name.to_string() }
-                                        </a>
+                                        { source.name.to_string() }
                                     </td>
                                     <td>
                                         { source.url.to_string() }

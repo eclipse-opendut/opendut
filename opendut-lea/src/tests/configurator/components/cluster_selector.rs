@@ -76,6 +76,7 @@ pub fn ClusterSelector(test_configuration: RwSignal<UserTestConfiguration>) -> i
                     <tr>
                         <th></th>
                         <th>Name</th>
+                        <th>Cluster ID</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -84,8 +85,6 @@ pub fn ClusterSelector(test_configuration: RwSignal<UserTestConfiguration>) -> i
                         key=|cluster| cluster.id
                         children=move |cluster| {
                             let cluster_id = cluster.id;
-                            let cluster_href = move || format!("/cluster/{}/configure/general", cluster_id);
-
                             let is_selected = is_selected(Clone::clone(&cluster_id));
 
                             view! {
@@ -111,9 +110,10 @@ pub fn ClusterSelector(test_configuration: RwSignal<UserTestConfiguration>) -> i
                                         </div>
                                     </td>
                                     <td>
-                                        <a href=cluster_href>
-                                            { cluster.name.to_string() }
-                                        </a>
+                                        { cluster.name.to_string() }
+                                    </td>
+                                    <td>
+                                        { cluster_id.to_string() }
                                     </td>
                                 </tr>
                             }
