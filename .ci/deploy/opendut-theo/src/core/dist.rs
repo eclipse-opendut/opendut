@@ -1,6 +1,6 @@
 use std::fs;
 use std::io::ErrorKind;
-use std::ops::Index;
+use std::ops::{Index, Not};
 use std::path::PathBuf;
 use std::process::Command;
 use anyhow::anyhow;
@@ -78,8 +78,9 @@ pub(crate) fn make_distribution_if_not_present() -> crate::Result {
         "opendut-carl-x86_64-unknown-linux-gnu",
     );
 
-    if !dist_directory_path.exists() {
-        println!("Distribution directory does not exist. Building distribution.");
+    if dist_directory_path.exists().not()
+    || fs::read_dir(&dist_directory_path)?.next().is_none() {
+        println!("Distribution directory does not exist or is empty. Building distribution.");
         make_distribution_with_cargo()?;
     }
 
