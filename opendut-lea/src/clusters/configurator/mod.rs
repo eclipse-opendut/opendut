@@ -167,7 +167,14 @@ fn LoadedClusterConfigurator(
                     { move || match active_tab.get() {
                         TabIdentifier::General => view! { <GeneralTab cluster_descriptor /> }.into_any(),
                         TabIdentifier::Devices => view! { <DevicesTab cluster_descriptor peers /> }.into_any(),
-                        TabIdentifier::Leader => view! { <LeaderTab cluster_descriptor peers /> }.into_any()
+                        TabIdentifier::Leader => {
+                            view! {
+                                <LeaderTab
+                                    cluster_descriptor
+                                    peers
+                                    is_disabled=Signal::derive(move || deployed_signal.get().0) />
+                            }.into_any()
+                        }
                     }}
                 </fieldset>
             </Tabs>

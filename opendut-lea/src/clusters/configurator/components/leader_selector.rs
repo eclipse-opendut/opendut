@@ -16,6 +16,7 @@ pub type LeaderSelection = Ior<LeaderSelectionError, PeerId>;
 pub fn LeaderSelector(
     cluster_descriptor: RwSignal<UserClusterDescriptor>,
     peers: ReadSignal<Vec<PeerDescriptor>>,
+    is_disabled: Signal<bool>,
 ) -> impl IntoView {
 
     let getter_selected_devices = create_read_slice(cluster_descriptor, |config| {
@@ -80,10 +81,12 @@ pub fn LeaderSelector(
     });
 
     let is_leader = move |peer: PeerId| {
-        match getter_leader.get() {
-            LeaderSelection::Right(leader) => peer == leader,
-            LeaderSelection::Left(_) | LeaderSelection::Both(_, _) => false,
-        }
+        Signal::derive(move || {
+            match getter_leader.get() {
+                LeaderSelection::Right(leader) => peer == leader,
+                LeaderSelection::Left(_) | LeaderSelection::Both(_, _) => false,
+            }
+        })
     };
 
     view! {
@@ -92,10 +95,10 @@ pub fn LeaderSelector(
             <table class="table is-fullwidth">
                 <thead>
                     <tr>
+                        <th>Leader</th>
                         <th>Name</th>
                         <th>Peer ID</th>
                         <th>Location</th>
-                        <th>Leader</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -103,8 +106,32 @@ pub fn LeaderSelector(
                         each=move || peers.get()
                         key=|peer| peer.id
                         children=move |peer| {
+                            let peer_id = peer.id;
+                            let is_leader = is_leader(peer_id);
+
                             view! {
-                                <tr>
+                                <tr
+                                    class:has-background-link-light=move || is_leader.get()
+                                    style=move || if is_disabled.get() {"cursor: not-allowed; opacity: 0.8;"} else {"cursor: pointer;"}
+                                    on:click=move |_| {
+                                        if is_disabled.get() { return }
+                                        setter_leader.set(LeaderSelection::Right(peer.id));
+                                    }
+                                >
+                                    <td class="is-narrow has-text-centered">
+                                        <div class="control">
+                                            <label class="radio">
+                                                <input
+                                                    type="radio"
+                                                    name="answer"
+                                                    prop:checked=is_leader
+                                                    on:click=move |_| {
+                                                        setter_leader.set(LeaderSelection::Right(peer.id));
+                                                    }
+                                                />
+                                            </label>
+                                        </div>
+                                    </td>
                                     <td>
                                         { peer.name.to_string() }
                                     </td>
@@ -113,20 +140,6 @@ pub fn LeaderSelector(
                                     </td>
                                     <td>
                                         { peer.location.clone().unwrap_or_default().to_string() }
-                                    </td>
-                                    <td class="is-narrow" style="text-align: center">
-                                        <div class="control">
-                                            <label class="radio">
-                                                <input
-                                                    type = "radio"
-                                                    name = "answer"
-                                                    checked = is_leader(peer.id)
-                                                    on:click = move |_| {
-                                                        setter_leader.set(LeaderSelection::Right(peer.id));
-                                                    }
-                                                />
-                                            </label>
-                                        </div>
                                     </td>
                                 </tr>
                             }
