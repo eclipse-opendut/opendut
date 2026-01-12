@@ -74,9 +74,9 @@ pub fn TestSourceSelector(test_configuration: RwSignal<UserTestConfiguration>) -
             <table class="table is-fullwidth">
                 <thead>
                     <tr>
+                        <th></th>
                         <th>Name</th>
                         <th>URL</th>
-                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -97,15 +97,7 @@ pub fn TestSourceSelector(test_configuration: RwSignal<UserTestConfiguration>) -
                                         setter.set(UserInputValue::Right(source_id.to_string()));
                                     }
                                 >
-                                    <td>
-                                        <a href=source_href>
-                                            { source.name.to_string() }
-                                        </a>
-                                    </td>
-                                    <td>
-                                        { source.url.to_string() }
-                                    </td>
-                                    <td class="is-narrow" style="text-align: center">
+                                    <td class="is-narrow">
                                         <div class="control">
                                             <label class="radio">
                                                 <input
@@ -118,6 +110,14 @@ pub fn TestSourceSelector(test_configuration: RwSignal<UserTestConfiguration>) -
                                                 />
                                             </label>
                                         </div>
+                                    </td>
+                                    <td>
+                                        <a href=source_href>
+                                            { source.name.to_string() }
+                                        </a>
+                                    </td>
+                                    <td>
+                                        { source.url.to_string() }
                                     </td>
                                 </tr>
                             }

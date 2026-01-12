@@ -8,7 +8,7 @@ use crate::app::use_app_globals;
 use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
 use crate::tests::configurator::components::Controls;
-use crate::tests::configurator::tabs::{GeneralTab, ParameterTab, SourceTab, SuiteTab, TabIdentifier};
+use crate::tests::configurator::tabs::{ClusterTab, GeneralTab, SourceTab, SuiteTab, TabIdentifier};
 use crate::tests::configurator::types::UserTestConfiguration;
 
 mod tabs;
@@ -129,9 +129,9 @@ pub fn TestConfigurator() -> impl IntoView {
             ).with_is_error(Signal::derive(move || !test_configuration.read().valid_suite_tab())),
 
             Tab::from_title_and_href(
-                String::from("Parameters"),
-                TabIdentifier::Parameters.as_str().to_owned()
-            ),
+                String::from("Cluster"),
+                TabIdentifier::Cluster.as_str().to_owned()
+            ).with_is_error(Signal::derive(move || !test_configuration.read().valid_cluster_tab())),
         ]
     });
 
@@ -157,7 +157,7 @@ pub fn TestConfigurator() -> impl IntoView {
                                     TabIdentifier::General => view! { <GeneralTab test_configuration /> }.into_any(),
                                     TabIdentifier::Source => view! { <SourceTab test_configuration /> }.into_any(),
                                     TabIdentifier::Suite => view! { <SuiteTab test_configuration /> }.into_any(),
-                                    TabIdentifier::Parameters => view! { <ParameterTab /> }.into_any(),
+                                    TabIdentifier::Cluster => view! { <ClusterTab test_configuration /> }.into_any(),
                                 }}
                             </Tabs>
                         }
