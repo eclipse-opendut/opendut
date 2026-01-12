@@ -31,9 +31,9 @@ pub fn Tooltip(
             <div class="tooltip-trigger">
                 { children() }
             </div>
-            <div class="tooltip-container" style=move || if is_hidden.get() { "display: none" } else { "" }>
-                <div class="tooltip-content">
-                    <div class="tooltip-item">
+            <div class="tooltip-container" class:is-hidden=move || is_hidden.get()>
+                <div class="tooltip-content p-0">
+                    <div class="tooltip-item p-3">
                         { text }
                     </div>
                 </div>
