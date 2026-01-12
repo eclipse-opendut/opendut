@@ -1,7 +1,7 @@
 mod row;
 
 use leptos::prelude::*;
-use opendut_lea_components::{BasePageContainer, Breadcrumb, LoadingSpinner};
+use opendut_lea_components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, LoadingSpinner};
 use opendut_model::viper::ViperSourceDescriptor;
 use crate::app::use_app_globals;
 use crate::sources::components::CreateSourceButton;
@@ -49,7 +49,19 @@ pub fn SourcesOverview() -> impl IntoView {
             title="Sources"
             breadcrumbs=breadcrumbs
             controls=view! {
-                <CreateSourceButton />
+                <div class="buttons">
+                    <CreateSourceButton />
+                    <IconButton
+                        icon=FontAwesomeIcon::ArrowsRotate
+                        color=ButtonColor::Light
+                        size=ButtonSize::Normal
+                        state=ButtonState::Enabled
+                        label="Refresh table of peers"
+                        on_action=move || {
+                            refetch_registered_sources.notify();
+                        }
+                    />
+                </div>
             }
         >
             <table class="table is-hoverable is-fullwidth">

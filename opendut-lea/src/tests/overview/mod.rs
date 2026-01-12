@@ -1,7 +1,7 @@
 mod row;
 
 use leptos::prelude::*;
-use opendut_lea_components::{BasePageContainer, Breadcrumb, LoadingSpinner};
+use opendut_lea_components::{BasePageContainer, Breadcrumb, ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton, LoadingSpinner};
 use opendut_model::viper::ViperTestDescriptor;
 use crate::app::use_app_globals;
 use crate::tests::components::CreateTestButton;
@@ -46,7 +46,21 @@ pub fn TestsOverview() -> impl IntoView {
         <BasePageContainer
             title="Tests"
             breadcrumbs
-            controls=view! { <CreateTestButton /> }
+            controls=view! {
+                <div class="buttons">
+                    <CreateTestButton />
+                    <IconButton
+                        icon=FontAwesomeIcon::ArrowsRotate
+                        color=ButtonColor::Light
+                        size=ButtonSize::Normal
+                        state=ButtonState::Enabled
+                        label="Refresh table of peers"
+                        on_action=move || {
+                            refetch_registered_tests.notify();
+                        }
+                    />
+                </div>
+            }
         >
             <table class="table is-hoverable is-fullwidth">
                 <thead>
