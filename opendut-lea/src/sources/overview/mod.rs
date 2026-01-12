@@ -52,47 +52,44 @@ pub fn SourcesOverview() -> impl IntoView {
                 <CreateSourceButton />
             }
         >
-
-        <div class="mt-4">
-                <Transition
-                    fallback=LoadingSpinner
-                >
-                    {move || {
-                        Suspend::new(async move {
-                            let sources_table_rows = sources_table_rows.await;
-
-                            view! {
-                                <table class="table is-hoverable is-fullwidth">
-                                    <thead>
-                                        <tr>
-                                            <th>"Name"</th>
-                                            <th>"URL"</th>
-                                            <th class="is-narrow has-text-centered">"Action"</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <For
-                                            each = move || sources_table_rows.clone()
-                                            key = |source| source.id
-                                            children = { move |source_descriptor| {
-                                                let on_delete = move || {
-                                                    refetch_registered_sources.notify();
-                                                };
-                                                view! {
-                                                    <Row
-                                                        source_descriptor=RwSignal::new(source_descriptor)
-                                                        on_delete
-                                                    />
-                                                }
-                                            }}
-                                        />
-                                    </tbody>
-                                </table>
-                            }
-                        })
-                    }}
-                </Transition>
-            </div>
+            <table class="table is-hoverable is-fullwidth">
+                <thead>
+                    <tr>
+                        <th>"Name"</th>
+                        <th>"URL"</th>
+                        <th class="is-narrow has-text-centered">"Action"</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <Suspense
+                        fallback=LoadingSpinner
+                    >
+                        { move || {
+                            Suspend::new(async move {
+                                let sources_table_rows = sources_table_rows.await;
+                                
+                                view! {
+                                    <For
+                                        each = move || sources_table_rows.clone()
+                                        key = |source| source.id
+                                        children = { move |source_descriptor| {
+                                            let on_delete = move || {
+                                                refetch_registered_sources.notify();
+                                            };
+                                            view! {
+                                                <Row
+                                                    source_descriptor=RwSignal::new(source_descriptor)
+                                                    on_delete
+                                                />
+                                            }
+                                        }}
+                                    />
+                                }
+                            })
+                        }}
+                    </Suspense>
+                </tbody>
+            </table>
         </BasePageContainer>
     }
 }

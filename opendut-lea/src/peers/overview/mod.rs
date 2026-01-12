@@ -74,7 +74,7 @@ pub fn PeersOverview() -> impl IntoView {
         Breadcrumb::new("Peers", "/peers")
     ];
 
-    view!{
+    view! {
         <BasePageContainer
             title="Peers"
             breadcrumbs=breadcrumbs
@@ -94,50 +94,48 @@ pub fn PeersOverview() -> impl IntoView {
                 </div>
             }
         >
-            <div class="mt-4">
-                <Transition
-                    fallback=LoadingSpinner
-                >
-                    {move || {
-                        Suspend::new(async move {
-                            let peers_table_rows = peers_table_rows.await;
-                            let configured_clusters = configured_clusters.await;
+            <table class="table is-hoverable is-fullwidth">
+                <thead>
+                    <tr>
+                        <th class="is-narrow">"Health"</th>
+                        <th>"Name"</th>
+                        <th>"Configured in Clusters"</th>
+                        <th class="is-narrow has-text-centered">"Action"</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <Suspense
+                        fallback=LoadingSpinner
+                    >
+                        { move || {
+                            Suspend::new(async move {
+                                let peers_table_rows = peers_table_rows.await;
+                                let configured_clusters = configured_clusters.await;
 
-                            view! {
-                                <table class="table is-hoverable is-fullwidth">
-                                    <thead>
-                                        <tr>
-                                            <th class="is-narrow">"Health"</th>
-                                            <th>"Name"</th>
-                                            <th>"Configured in Clusters"</th>
-                                            <th class="is-narrow has-text-centered">"Action"</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <For
-                                            each = move || peers_table_rows.clone()
-                                            key = |(peer, _)| peer.id
-                                            children = { move |(peer_descriptor, peer_state)| {
-                                                let on_delete = move || {
-                                                    refetch_registered_peers.notify();
-                                                };
-                                                view! {
-                                                    <Row
-                                                        peer_descriptor=RwSignal::new(peer_descriptor)
-                                                        peer_state=RwSignal::new(peer_state)
-                                                        cluster_descriptor=RwSignal::new(configured_clusters.clone())
-                                                        on_delete
-                                                    />
-                                                }
-                                            }}
-                                        />
-                                    </tbody>
-                                </table>
-                            }
-                        })
-                    }}
-                </Transition>
-            </div>
+                                view! {
+                                    <For
+                                        each = move || peers_table_rows.clone()
+                                        key = |(peer, _)| peer.id
+                                        children = { move |(peer_descriptor, peer_state)| {
+                                            let on_delete = move || {
+                                                refetch_registered_peers.notify();
+                                            };
+                                            view! {
+                                                <Row
+                                                    peer_descriptor=RwSignal::new(peer_descriptor)
+                                                    peer_state=RwSignal::new(peer_state)
+                                                    cluster_descriptor=RwSignal::new(configured_clusters.clone())
+                                                    on_delete
+                                                />
+                                            }
+                                        }}
+                                    />
+                                }
+                            })
+                        }}
+                    </Suspense>
+                </tbody>
+            </table>
         </BasePageContainer>
     }
 }

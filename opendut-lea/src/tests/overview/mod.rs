@@ -48,47 +48,45 @@ pub fn TestsOverview() -> impl IntoView {
             breadcrumbs
             controls=view! { <CreateTestButton /> }
         >
-        <div class="mt-4">
-                <Transition
-                    fallback=LoadingSpinner
-                >
-                    {move || {
-                        Suspend::new(async move {
-                            let tests_table_rows = tests_table_rows.await;
+            <table class="table is-hoverable is-fullwidth">
+                <thead>
+                    <tr>
+                        <th>"Name"</th>
+                        <th>"Source"</th>
+                        <th>"Suite"</th>
+                        <th class="is-narrow has-text-centered">"Action"</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <Suspense
+                        fallback=LoadingSpinner
+                    >
+                        { move || {
+                            Suspend::new(async move {
+                                let tests_table_rows = tests_table_rows.await;
 
-                            view! {
-                                <table class="table is-hoverable is-fullwidth">
-                                    <thead>
-                                        <tr>
-                                            <th>"Name"</th>
-                                            <th>"Source"</th>
-                                            <th>"Suite"</th>
-                                            <th class="is-narrow has-text-centered">"Action"</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <For
-                                            each = move || tests_table_rows.clone()
-                                            key = |test| test.id
-                                            children = { move |test_descriptor| {
-                                                let on_delete = move || {
-                                                    refetch_registered_tests.notify();
-                                                };
-                                                view! {
-                                                    <Row
-                                                        test_descriptor=RwSignal::new(test_descriptor)
-                                                        on_delete
-                                                    />
-                                                }
-                                            }}
-                                        />
-                                    </tbody>
-                                </table>
-                            }
-                        })
-                    }}
-                </Transition>
-            </div>
+                                view! {
+                                    <For
+                                        each = move || tests_table_rows.clone()
+                                        key = |test| test.id
+                                        children = { move |test_descriptor| {
+                                            let on_delete = move || {
+                                                refetch_registered_tests.notify();
+                                            };
+                                            view! {
+                                                <Row
+                                                    test_descriptor=RwSignal::new(test_descriptor)
+                                                    on_delete
+                                                />
+                                            }
+                                        }}
+                                    />
+                                }
+                            })
+                        }}
+                    </Suspense>
+                </tbody>
+            </table>
         </BasePageContainer>
     }
 }
