@@ -153,7 +153,7 @@ impl Opentelemetry {
                         pem::config_keys::DEFAULT_NETWORK_TLS_CA,
                     )?.iter().map(|cert| Certificate::from_pem(cert.to_string())).collect::<Vec<_>>();
                     debug!("Creating OpenTelemetry client with CA certificates provided.");
-                    client_tls_config = client_tls_config.ca_certificates(opendut_cas).with_native_roots();
+                    client_tls_config = client_tls_config.ca_certificates(opendut_cas);
                 }
 
                 {
