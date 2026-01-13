@@ -1,0 +1,19 @@
+# copy this file to .ci/deploy/testenv/edgar/docker-compose.override.yml to enable mTLS for EDGAR and CLEO services
+
+x-edgar-mtls-params: &edgar-mtls-params
+  environment:
+    # EDGAR
+    - OPENDUT_EDGAR_NETWORK_TLS_CLIENT_AUTH_ENABLED=true  # enable mTLS
+    - OPENDUT_EDGAR_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE=/provision/pki/deploy-intermediate/carl-client-cert.pem
+    - OPENDUT_EDGAR_NETWORK_TLS_CLIENT_AUTH_KEY=/provision/pki/deploy-intermediate/carl-client-cert.key
+    # CLEO
+    - OPENDUT_CLEO_NETWORK_TLS_CLIENT_AUTH_ENABLED=true  # enable mTLS
+    - OPENDUT_CLEO_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE=/provision/pki/deploy-intermediate/client-intermediate-test.pem
+    - OPENDUT_CLEO_NETWORK_TLS_CLIENT_AUTH_KEY=/provision/pki/deploy-intermediate/client-intermediate-test.key
+
+services:
+
+  leader:
+    <<: *edgar-mtls-params
+  peer:
+    <<: *edgar-mtls-params

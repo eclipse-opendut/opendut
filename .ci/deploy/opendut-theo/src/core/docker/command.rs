@@ -6,6 +6,7 @@ use tracing::{trace, warn};
 use std::io;
 use crate::core::command_ext::TheoCommandExtensions;
 use crate::core::docker::checks;
+use crate::core::docker::services::DockerCoreServices;
 use crate::core::localenv::LOCALENV_SECRETS_ENV_FILE;
 use crate::core::project::ProjectRootDir;
 use crate::core::TheoError;
@@ -79,6 +80,16 @@ impl DockerCommand {
     pub(crate) fn add_common_project_env(&mut self) -> &mut Self {
         self.arg("--env-file")
             .arg(".env")
+    }
+
+    pub(crate) fn add_testenv_edgar_args(&mut self) -> &mut Self {
+        self.add_common_args(DockerCoreServices::Edgar.as_str());
+        let compose_override_path = PathBuf::project_path_buf().join("./.ci/deploy/testenv/edgar/docker-compose.override.yml");
+        if compose_override_path.exists() {
+            warn!("Using testenv docker-compose override file for EDGAR at: {:?}", compose_override_path);
+            self.arg("--file").arg(compose_override_path);
+        }
+        self
     }
 
     pub(crate) fn add_localenv_args(&mut self) -> &mut Self {

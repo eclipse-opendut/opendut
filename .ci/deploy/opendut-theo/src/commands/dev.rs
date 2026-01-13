@@ -6,7 +6,6 @@ use anyhow::{anyhow, Context};
 use home::home_dir;
 use crate::core::carl_config::CarlConfiguration;
 use crate::core::docker::command::DockerCommand;
-use crate::core::docker::services::DockerCoreServices;
 use crate::core::command_ext::TheoCommandExtensions;
 use crate::core::project::{load_theo_environment_variables, ProjectRootDir};
 use crate::core::{localenv, TestenvMode};
@@ -67,7 +66,7 @@ impl DevCli {
             }
             TaskCli::EdgarShell => {
                 DockerCommand::new()
-                    .add_common_args(DockerCoreServices::Edgar.as_str())
+                    .add_testenv_edgar_args()
                     .add_localenv_secrets_args()
                     .arg("run")
                     .arg("--rm")

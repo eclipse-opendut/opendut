@@ -8,7 +8,9 @@
 .ci/deploy/localenv/data/secrets/
 ## keep the local development environment file
 !.ci/deploy/localenv/.env.development
+# Explicitly ignore the override file for docker-compose in localenv and testenv
 .ci/deploy/localenv/docker-compose.override.yml
+.ci/deploy/testenv/edgar/docker-compose.override.yml
 
 #####################################################
 #             Build, Binaries and Libs              #
