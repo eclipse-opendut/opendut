@@ -19,9 +19,9 @@ and the openDuT cluster can be provisioned for the user.
 
 ![opendut-functional-diagram.svg](img/opendut-functional-diagram.svg)
 
-openDuT uses NetBird technology and provides its own NetBird server, including a TURN server in CARL and NetBird clients in the EDGARs.
+openDuT uses NetBird technology and provides its own NetBird server in the backend, and NetBird clients in the EDGARs.
 The NetBird clients of the clustered EDGARs automatically build a WireGuard network in star topology.
-If a direct connection between two EDGARs is not possible, the tunnel is routed through the TURN server in CARL.
+If a direct connection between two EDGARs is not possible, the tunnel is routed through the relay server in CARL.
 
 ![edgar-gre-bridging.excalidraw.svg](img/edgar-bridging.excalidraw.svg)
 
