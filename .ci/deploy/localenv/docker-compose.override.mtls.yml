@@ -1,5 +1,6 @@
 # Docker Compose override file for local environment deployment
 # This file can be used to customize or extend the default docker-compose.yml configuration. 
+# copy this file to .ci/deploy/localenv/docker-compose.override.yml to enable mTLS for CARL
 
 services:
 

@@ -86,7 +86,7 @@ pre_flight_tasks() {
   if [ "$1" == "leader" ]; then
     /usr/local/bin/start-docker.sh
     echo "Building Docker image for Nmap test"
-    docker build --tag "nmap-test" /opt/test_execution_container
+    docker build --network=host --tag "nmap-test" /opt/test_execution_container
   fi
 }
 
