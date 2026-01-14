@@ -339,7 +339,7 @@ services:
       - NETBIRD_RELAY_DOMAIN=${OPENDUT_DOMAIN_NETBIRD_RELAY}
       - NETBIRD_RELAY_PORT=443
       - NETBIRD_RELAY_ENDPOINT=rels://$OPENDUT_DOMAIN_NETBIRD_RELAY:443/relay
-      - NETBIRD_RELAY_AUTH_SECRET # TODO: create new secret during provisioning
+      - NETBIRD_RELAY_AUTH_SECRET
       # Store
       - NETBIRD_STORE_CONFIG_ENGINE=sqlite
       # OpenDuT specific setting, we disable default policy to avoid auto allowing all traffic

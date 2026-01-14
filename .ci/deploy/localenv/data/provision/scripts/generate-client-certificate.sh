@@ -61,6 +61,7 @@ fi
 # Store client certificate and key for deployment without password protection
 cp "$CLIENT_CERT_PATH".pem "$CLIENT_DEPLOY_PATH".pem
 openssl x509 -in "$CLIENT_CERT_PATH".pem -out "$CLIENT_DEPLOY_PATH".crt -outform PEM
+
 if [ "$OPENDUT_CERT_CA_NAME" != "$OPENDUT_ROOT_CA_NAME" ]; then
   # append intermediate certificate (certificate chain)
   cat "$CA_PATH".pem >> "$CLIENT_DEPLOY_PATH".pem
@@ -71,7 +72,7 @@ fi
 openssl rsa -in "$CLIENT_CERT_PATH".key -passin file:"$OPENDUT_PASSWORD_FILE" -out "$CLIENT_DEPLOY_PATH".key
 
 # Convert to PKCS#12 format for import in clients that require it (e.g., browsers), store with empty password (passing no password is not allowed)
-openssl pkcs12 -export -in "$CLIENT_CERT_PATH".pem -inkey "$CLIENT_CERT_PATH".key -out "$CLIENT_DEPLOY_PATH".p12 -name "$CLIENT_NAME" -passin file:"$OPENDUT_PASSWORD_FILE" -passout pass:
+openssl pkcs12 -export -in "$CLIENT_DEPLOY_PATH".pem -inkey "$CLIENT_CERT_PATH".key -out "$CLIENT_DEPLOY_PATH".p12 -name "$CLIENT_NAME" -passin file:"$OPENDUT_PASSWORD_FILE" -passout pass:
 
 rm "$CLIENT_CERT_PATH".csr
 rm "$CLIENT_CERT_PATH".v3.ext

@@ -27,7 +27,11 @@ EOF
 openssl x509 -req -in "$CERT_PATH".csr -CA "$CA_PATH".pem -CAkey "$CA_PATH".key -passin file:"$OPENDUT_PASSWORD_FILE" -CAcreateserial -outform PEM -out "$CERT_PATH".pem -days 9999 -sha256 -extfile "$CERT_PATH".v3.ext
 
 # copy certificate to deployed path
+cp "$CERT_PATH".pem "$CERT_DEPLOY_PATH".crt
+
+# append root CA to create certificate chain
 cp "$CERT_PATH".pem "$CERT_DEPLOY_PATH".pem
+cat "$CA_PATH".pem >> "$CERT_DEPLOY_PATH".pem
 # extract private key
 openssl rsa -in "$CERT_PATH".key -passin file:"$OPENDUT_PASSWORD_FILE" -out "$CERT_DEPLOY_PATH".key
 
