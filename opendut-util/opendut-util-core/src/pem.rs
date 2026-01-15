@@ -49,7 +49,7 @@ pub trait PemFromConfig {
 
 impl PemFromConfig for Pem {
 
-    /// Read PEM certificate or key from config value (provided as plaintext value or file path)
+    /// Read PEM certificate or key from config value (provided as plaintext value or file path).
     /// First try to read PEM with given config_key, then use the fallback_config_key.
     fn read_from_configured_path_or_content(
         config_key: &str,

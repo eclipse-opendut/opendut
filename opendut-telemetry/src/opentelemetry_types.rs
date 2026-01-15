@@ -5,7 +5,8 @@ use tonic::transport::{Certificate, ClientTlsConfig, Identity};
 use url::Url;
 use opendut_util_core::pem::{self, Pem, PemFromConfig};
 use std::fmt::Debug;
-use tracing::debug;
+use config::Config;
+use tracing::{debug, trace};
 
 pub struct OpentelemetryConfig {
     pub(crate) confidential_client: Option<ConfidentialClientRef>,
@@ -157,17 +158,16 @@ impl Opentelemetry {
                 }
 
                 {
-                    let mtls_enabled = {
-                        let field = pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_ENABLED;
+                    fn opentelemetry_client_auth_enabled(config: &Config) -> bool {
+                        let default_client_auth_enabled = config.get_bool(pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED).unwrap_or(false);
+                        let opentelemetry_client_auth_enabled_result = config.get_bool(pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_ENABLED);
+                        opentelemetry_client_auth_enabled_result.unwrap_or_else(|error| {
+                            trace!("Could not read config key '{}' for Opentelemetry mTLS. Falling back to default value '{}'. Error: {:?}", pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_ENABLED, default_client_auth_enabled, error);
+                            default_client_auth_enabled
+                        })
+                    }
 
-                        config.get_bool(field)
-                            .map_err(|cause| OpentelemetryConfigError::ValueParseError {
-                                field: field.to_owned(),
-                                cause: format!("{cause:?}")
-                            })?
-                    };
-
-                    if mtls_enabled {
+                    if opentelemetry_client_auth_enabled(config) {
                         let mtls_certificates = load_pem(
                             pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_CERTIFICATE,
                             pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE,

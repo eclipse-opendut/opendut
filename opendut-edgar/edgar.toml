@@ -32,7 +32,7 @@ secret = "<tbd>"
 ca = ""
 
 [network.oidc.client.tls.client.auth] #mTLS
-enabled = false
+enabled = "use default defined in network.tls.client.auth, otherwise set this to 'true' or 'false'"
 certificate = ""
 key = ""
 
