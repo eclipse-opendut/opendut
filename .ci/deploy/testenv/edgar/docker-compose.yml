@@ -48,7 +48,7 @@ x-default-edgar-params: &default-edgar-params
     # Rust backtrace
     - RUST_BACKTRACE=1
   networks:
-    - opendut_local
+    - opendut_peers
   privileged: true
   cap_add:
     - NET_ADMIN
@@ -59,6 +59,13 @@ x-default-edgar-params: &default-edgar-params
   sysctls:
     - net.ipv4.conf.all.src_valid_mark=1
     - net.ipv4.conf.all.rp_filter=2
+  extra_hosts:
+    - "carl.opendut.local:192.168.32.1"
+    - "auth.opendut.local:192.168.32.1"
+    - "netbird.opendut.local:192.168.32.1"
+    - "netbird-api.opendut.local:192.168.32.1"
+    - "signal.opendut.local:192.168.32.1"
+    - "opentelemetry.opendut.local:192.168.32.1"
 
 services:
 
@@ -82,6 +89,10 @@ volumes:
     external: true
 
 networks:
-  opendut_local:
-    name: opendut_local
-    external: true  # Use a pre-existing network
+  opendut_peers:
+    name: opendut_peers
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.38.0/24
+          ip_range: 192.168.38.0/24

@@ -24,7 +24,7 @@ ping_all_netbird_peers() {
 
 ping_all_dut_bridges() {
   REQUIRED_SUCCESS="$1"
-  IPS=$(wg show all endpoints | grep -Eo '192.168.32.[0-9]+' | sed -e 's#32#33#')
+  IPS=$(wg show all endpoints | grep -Eo '192.168.38.[0-9]+' | sed -e 's#38#39#')
 
   if [ -z "$IPS" ]; then #abort if no IPs returned
     echo "Failed to determine IP addresses to ping."
