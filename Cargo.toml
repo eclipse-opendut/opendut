@@ -192,6 +192,7 @@ wasmtime = { version = "38.0", features = ["component-model", "std", "runtime"] 
 wasmtime-wasi = "38.0"
 which = "8.0.0"
 wit-bindgen = "0.47"
+x509-parser = "0.18.0"
 zip = "6.0.0"
 
 

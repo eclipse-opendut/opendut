@@ -58,6 +58,11 @@ impl CarlClient {
 
             if let ClientAuth::Enabled { certs, key } = client_auth {
                 debug!("Configuring mTLS client authentication...");
+                let client_certificate = certs.first().cloned().ok_or(InitializationError::TlsClientConfiguration {
+                    message: String::from("No client certificate found for mTLS client authentication.")
+                })?;
+                let name = pem::read_certificate_subject(&client_certificate);
+                debug!("Using CARL client certificate with subject '<{name:?}>'.");
                 let client_certs = join_pem_objects(certs);
                 config = config.identity(Identity::from_pem(client_certs, key.to_string()));
             }
@@ -105,6 +110,7 @@ impl CarlClient {
 
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::error::SendError;
+use opendut_util::pem;
 use crate::proto::services::peer_messaging_broker;
 
 #[derive(Debug, Clone)]

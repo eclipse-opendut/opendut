@@ -9,17 +9,13 @@ pub mod oidc {
     use anyhow::{anyhow, Context};
     use config::Config;
     use reqwest::{Certificate, Identity};
-    use tracing::{debug, trace};
+    use tracing::debug;
+    use crate::config::ConfigExt;
 
     /// Determines whether OIDC client authentication is enabled,
     /// based on the specific OIDC setting or falling back to the default setting.
     pub(crate) fn oidc_client_auth_enabled(config: &Config) -> bool {
-        let default_client_auth_enabled = config.get_bool(pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED).unwrap_or(false);
-        let oidc_client_auth_enabled_result = config.get_bool(pem::config_keys::NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH_ENABLED);
-        oidc_client_auth_enabled_result.unwrap_or_else(|config_error| {
-            trace!("Could not read OIDC client auth enabled setting due to invalid value, config error: {}. Falling back to default client auth enabled setting: {}", config_error, default_client_auth_enabled);
-            default_client_auth_enabled
-        })
+        config.get_bool_with_fallback(pem::config_keys::NETWORK_OIDC_CLIENT_TLS_CLIENT_AUTH_ENABLED, pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED)
     }
 
     #[tracing::instrument(name="oidc_client_create", skip_all)]
@@ -99,6 +95,11 @@ pub mod oidc {
 /// https://stackoverflow.com/questions/68340665/pem-file-has-two-certificates-what-does-it-mean
 /// Certificate order matters: client certificate must be the first in the list or else rustls will raise an error: `keys may not be consistent: KeyMismatch`
 fn construct_reqwest_identity_from_two_pems(certificates: Vec<Pem>, key: Pem) -> anyhow::Result<Identity> {
+    let client_certificate = certificates.first().cloned()
+        .context("No client certificate found when constructing reqwest identity from two PEMs")?;
+    let name = crate::pem::read_certificate_subject(&client_certificate)
+        .unwrap_or_else(|_| "unknown".to_string());
+    tracing::debug!("Constructing reqwest identity for client certificate with subject: {}", name);
     let mut pems: Vec<String> = certificates.into_iter().map(|cert| cert.to_string()).collect();
     pems.push(key.to_string());
     let concatenated_pems = pems.join("\n");

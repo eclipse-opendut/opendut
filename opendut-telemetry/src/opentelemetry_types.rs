@@ -6,7 +6,7 @@ use url::Url;
 use opendut_util_core::pem::{self, Pem, PemFromConfig};
 use std::fmt::Debug;
 use config::Config;
-use tracing::{debug, trace};
+use opendut_util_core::config::ConfigExt;
 
 pub struct OpentelemetryConfig {
     pub(crate) confidential_client: Option<ConfidentialClientRef>,
@@ -47,6 +47,14 @@ pub enum Opentelemetry {
     Disabled,
 }
 
+/// This macro prints startup messages to the console with a consistent prefix before tracing and logging are initialized during OpenTelemetry startup.
+macro_rules! startup_message {
+    ($($arg:tt)*) => {
+        println!("[OpenDUT Telemetry] {}", format!($($arg)*));
+    }
+}
+
+
 impl Opentelemetry {
     #[tracing::instrument(name="opentelemetry_load_from_config", skip_all)]
     pub async fn load(config: &config::Config, service_metadata: ServiceMetadata) -> Result<Self, OpentelemetryConfigError> {
@@ -57,6 +65,7 @@ impl Opentelemetry {
                 cause: format!("{cause:?}")
             })?;
 
+        startup_message!("Loading configuration. OpenTelemetry enabled: {opentelemetry_enabled}.");
         if opentelemetry_enabled {
             let collector_endpoint = {
                 let field = String::from("opentelemetry.collector.endpoint");
@@ -153,18 +162,13 @@ impl Opentelemetry {
                         pem::config_keys::OPENTELEMETRY_TLS_CA,
                         pem::config_keys::DEFAULT_NETWORK_TLS_CA,
                     )?.iter().map(|cert| Certificate::from_pem(cert.to_string())).collect::<Vec<_>>();
-                    debug!("Creating OpenTelemetry client with CA certificates provided.");
+                    startup_message!("OpenTelemetry client TLS configuration: {} certificate authorities loaded.", opendut_cas.len());
                     client_tls_config = client_tls_config.ca_certificates(opendut_cas);
                 }
 
                 {
                     fn opentelemetry_client_auth_enabled(config: &Config) -> bool {
-                        let default_client_auth_enabled = config.get_bool(pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED).unwrap_or(false);
-                        let opentelemetry_client_auth_enabled_result = config.get_bool(pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_ENABLED);
-                        opentelemetry_client_auth_enabled_result.unwrap_or_else(|error| {
-                            trace!("Could not read config key '{}' for Opentelemetry mTLS. Falling back to default value '{}'. Error: {:?}", pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_ENABLED, default_client_auth_enabled, error);
-                            default_client_auth_enabled
-                        })
+                        config.get_bool_with_fallback(pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_ENABLED, pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED)
                     }
 
                     if opentelemetry_client_auth_enabled(config) {
@@ -187,10 +191,13 @@ impl Opentelemetry {
                             cause: "error".to_string(),
                         })?;
                         let all_certs = mtls_certificates.iter().map(|cert| cert.to_string()).collect::<Vec<_>>().join("\n");
-
+                        let end_user_certificate = mtls_certificates.first().cloned().expect("No certificate found for mTLS client authentication in OpenTelemetry");
+                        let name = pem::read_certificate_subject(&end_user_certificate);
                         let identity = Identity::from_pem(all_certs, mtls_key.to_string());
-                        debug!("Creating OpenTelemetry client with mTLS client auth identity provided.");
+                        startup_message!("Client authentication (mTLS) enabled. Client certificate subject <{:?}>.", name);
                         client_tls_config = client_tls_config.identity(identity);
+                    } else {
+                        startup_message!("Client authentication (mTLS) disabled.");
                     }
                 }
 

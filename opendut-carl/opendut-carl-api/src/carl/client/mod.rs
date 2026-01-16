@@ -61,6 +61,8 @@ pub enum InitializationError {
     OidcConfiguration { message: String, cause: Box<dyn std::error::Error + Send + Sync> },
     #[error("{message}: {cause}")]
     TlsConfiguration { message: String, cause: Box<dyn std::error::Error + Send + Sync> },
+    #[error("{message}")]
+    TlsClientConfiguration { message: String },
     #[error("Error while connecting to CARL at '{address}': {cause}")]
     ConnectError { address: String, cause: Box<dyn std::error::Error + Send + Sync> },
 }

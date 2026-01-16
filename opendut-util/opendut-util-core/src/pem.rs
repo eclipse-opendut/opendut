@@ -160,6 +160,18 @@ pub fn read_pem_from_buffer<B: AsRef<[u8]>>(input: B, source: &str) -> anyhow::R
     }
 }
 
+pub fn read_certificate_subject(pem: &Pem) -> anyhow::Result<String> {
+    let cert = x509_parser::pem::Pem::iter_from_buffer(pem.to_string().as_bytes())
+        .next()
+        .expect("No PEM found in first certificate of test chain.")
+        .context("Could not parse first PEM of test chain.")?;
+    let name = cert
+        .parse_x509()?
+        .subject
+        .to_string();
+    Ok(name)
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -251,6 +263,17 @@ mod tests {
         let certificates = read_pem_from_buffer(content.as_bytes(), "test-certificate-chain")?;
         assert!(!certificates.is_empty());
         assert_eq!(certificates.len(), 2);
+        Ok(())
+    }
+
+    #[test_log::test]
+    fn should_read_end_certificate_chain() -> anyhow::Result<()> {
+        let content = certificate_chain_content();
+        let certificates = read_pem_from_buffer(content.as_bytes(), "test-certificate-chain")?;
+        let first = certificates.first().cloned().expect("No certificate found in test PEM chain.");
+
+        let certificate_subject_name = read_certificate_subject(&first)?;
+        assert_eq!(certificate_subject_name, "CN=carl.opendut.local, C=XX, ST=Some-State, O=ExampleOrg");
         Ok(())
     }
 

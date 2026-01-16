@@ -22,8 +22,9 @@ impl TestenvCarlImage {
             warn!("Using custom CARL version provided via environment variable OPENDUT_CARL_IMAGE_VERSION: {}", carl_version);
             carl_version
         } else {
-            info!("Using CARL version from cargo metadata. Set OPENDUT_CARL_IMAGE_VERSION to override.");
-            crate::core::metadata::get_package_version("opendut-carl")
+            let carl_version = crate::core::metadata::get_package_version("opendut-carl");
+            info!("Using CARL version={carl_version} from cargo metadata. Set OPENDUT_CARL_IMAGE_VERSION to override.");
+            carl_version
         };
         let carl_dist_path = PathBuf::project_dist_path_buf().join(TARGET_TRIPLE).join(format!("opendut-carl-{TARGET_TRIPLE}-{carl_version}.tar.gz"));
         if carl_dist_path.exists() {

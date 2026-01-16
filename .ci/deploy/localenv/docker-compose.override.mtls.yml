@@ -8,7 +8,12 @@ services:
     environment:
       - OPENDUT_TRAEFIK_CLIENT_AUTH_TYPE=RequireAndVerifyClientCert  # enable mTLS
     networks: !override
-    - opendut_local
+      opendut_local:
+        aliases:
+          - ${OPENDUT_DOMAIN_CARL}
+          - ${OPENDUT_DOMAIN_OPENTELEMETRY}
+          - ${OPENDUT_DOMAIN_SUFFIX}
+
 
   traefik-internal:
     container_name: opendut-traefik-no-mtls
@@ -21,12 +26,26 @@ services:
     # override the ports to avoid conflict with the first Traefik instance
     ports: !override
       - "127.0.0.1:8082:8080"  # 2nd Traefik dashboard, only on localhost, do not expose publicly
+    networks:
+      opendut_local:
+        aliases:
+          # no mTLS support at the moment
+          - ${OPENDUT_DOMAIN_NETBIRD}
+          - ${OPENDUT_DOMAIN_NETBIRD_API}
+          - ${OPENDUT_DOMAIN_SIGNAL}
+          - ${OPENDUT_DOMAIN_NETBIRD_RELAY}
+          # required by NetBird management and otel-collector to fetch OIDC certificate from server without mTLS
+          - ${OPENDUT_DOMAIN_AUTH}
 
   carl:
     environment:
       # network.tls.server.auth
-      - OPENDUT_CARL_NETWORK_TLS_SERVER_AUTH_ENABLED=true  # enable mTLS
+      - OPENDUT_CARL_NETWORK_TLS_SERVER_AUTH_ENABLED=true  # enable mTLS checks for clients connecting to CARL
       - OPENDUT_CARL_NETWORK_TLS_SERVER_AUTH_CA
+      # mTLS required to connect to OpenTelemetry collector and Keycloak as client
+      - OPENDUT_CARL_NETWORK_TLS_CLIENT_AUTH_ENABLED=true
+      - OPENDUT_CARL_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE=/provision/pki/deploy/opendut-auth-client.pem
+      - OPENDUT_CARL_NETWORK_TLS_CLIENT_AUTH_KEY=/provision/pki/deploy/opendut-auth-client.key
 
     # TODO: implement another healthcheck that sidesteps mTLS requirement
     healthcheck:

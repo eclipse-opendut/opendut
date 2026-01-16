@@ -5,10 +5,11 @@ edition.workspace = true
 license.workspace = true
 
 [features]
+config = ["dep:config"]
 future = []
-pem = ["project", "dep:anyhow", "dep:config", "dep:pem", "dep:tracing"]
+pem = ["project", "dep:anyhow", "dep:config", "dep:pem", "dep:tracing", "dep:x509-parser"]
 project = ["dep:anyhow"]
-reqwest = ["pem", "dep:reqwest"]
+reqwest = ["pem", "dep:reqwest", "config"]
 testing = ["project", "dep:dotenvy"]
 
 [dependencies]
@@ -19,6 +20,7 @@ pem = { workspace = true, optional = true }
 reqwest = { workspace = true, optional = true }
 thiserror = { workspace = true }
 tracing = { workspace = true, optional = true }
+x509-parser = { workspace = true, optional = true }
 
 [dev-dependencies]
 repo_path = { workspace = true }
