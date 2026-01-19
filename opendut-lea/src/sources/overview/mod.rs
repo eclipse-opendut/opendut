@@ -14,7 +14,7 @@ pub fn SourcesOverview() -> impl IntoView {
 
     let refetch_registered_sources = RwSignal::new(());
 
-    let registered_sources: LocalResource<Vec<ViperSourceDescriptor>> = {
+    let sources: LocalResource<Vec<ViperSourceDescriptor>> = {
         let carl = globals.client.clone();
 
         LocalResource::new(move || {
@@ -23,21 +23,18 @@ pub fn SourcesOverview() -> impl IntoView {
             let mut carl = carl.clone();
 
             async move {
-                carl.viper.list_viper_source_descriptors().await
-                    .expect("Failed to request the list of sources")
+                let mut sources = carl.viper.list_viper_source_descriptors().await
+                    .expect("Failed to request the list of sources");
+
+                sources.sort_by(|source_a, source_b| {
+                    source_a.name.value().to_lowercase()
+                        .cmp(&source_b.name.value().to_lowercase())
+                });
+
+                sources
             }
         })
     };
-
-    let sources_table_rows = LocalResource::new(move || async move {
-        let mut registered_sources = registered_sources.await;
-        registered_sources.sort_by(|source_a, source_b| {
-            source_a.name.value().to_lowercase()
-                .cmp(&source_b.name.value().to_lowercase())
-        });
-
-        registered_sources
-    });
 
     let breadcrumbs = vec![
         Breadcrumb::new("Dashboard", "/"),
@@ -78,7 +75,7 @@ pub fn SourcesOverview() -> impl IntoView {
                     >
                         { move || {
                             Suspend::new(async move {
-                                let sources_table_rows = sources_table_rows.await;
+                                let sources_table_rows = sources.await;
                                 
                                 view! {
                                     <For

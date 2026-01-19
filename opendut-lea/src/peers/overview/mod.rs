@@ -15,19 +15,25 @@ use crate::peers::overview::row::Row;
 pub fn PeersOverview() -> impl IntoView {
 
     let globals = use_app_globals();
+    let carl = globals.client;
 
     let refetch_registered_peers = RwSignal::new(());
 
     let registered_peers: LocalResource<Vec<(PeerDescriptor, PeerState)>> = {
-        let carl = globals.client.clone();
+        let carl = carl.clone();
 
         LocalResource::new(move || {
             refetch_registered_peers.track();
-
+            
             let mut carl = carl.clone();
             async move {
-                let peers = carl.peers.list_peer_descriptors().await
+                let mut peers = carl.peers.list_peer_descriptors().await
                     .expect("Failed to request the list of peers.");
+                
+                peers.sort_by(|peer_a, peer_b| {
+                    peer_a.name.value().to_lowercase()
+                        .cmp(&peer_b.name.value().to_lowercase())
+                });
 
                 let mut peer_states = carl.peers.list_peer_states().await
                     .expect("Failed to request the list of peer states.");
@@ -48,7 +54,7 @@ pub fn PeersOverview() -> impl IntoView {
     };
 
     let configured_clusters: LocalResource<Vec<ClusterDescriptor>> = {
-        let carl = globals.client.clone();
+        let carl = carl.clone();
 
         LocalResource::new(move || {
             let mut carl = carl.clone();
@@ -58,17 +64,7 @@ pub fn PeersOverview() -> impl IntoView {
             }
         })
     };
-
-    let peers_table_rows = LocalResource::new(move || async move {
-        let mut registered_peers = registered_peers.await;
-        registered_peers.sort_by(|(peer_a, _), (peer_b, _)|
-            peer_a.name.value().to_lowercase()
-                .cmp(&peer_b.name.value().to_lowercase())
-        );
-
-        registered_peers
-    });
-
+    
     let breadcrumbs = vec![
         Breadcrumb::new("Dashboard", "/"),
         Breadcrumb::new("Peers", "/peers")
@@ -109,7 +105,7 @@ pub fn PeersOverview() -> impl IntoView {
                     >
                         { move || {
                             Suspend::new(async move {
-                                let peers_table_rows = peers_table_rows.await;
+                                let peers_table_rows = registered_peers.await;
                                 let configured_clusters = configured_clusters.await;
 
                                 view! {

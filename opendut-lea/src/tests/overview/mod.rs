@@ -13,7 +13,7 @@ pub fn TestsOverview() -> impl IntoView {
     let globals = use_app_globals();
     let refetch_registered_tests = RwSignal::new(());
 
-    let registered_tests: LocalResource<Vec<ViperTestDescriptor>> = {
+    let tests: LocalResource<Vec<ViperTestDescriptor>> = {
         let carl = globals.client.clone();
 
         LocalResource::new(move || {
@@ -22,20 +22,18 @@ pub fn TestsOverview() -> impl IntoView {
             let mut carl = carl.clone();
 
             async move {
-                carl.viper.list_viper_test_descriptors().await
-                    .expect("Failed to request the list of tests / run descriptors.")
+                let mut tests = carl.viper.list_viper_test_descriptors().await
+                    .expect("Failed to request the list of tests / run descriptors.");
+
+                tests.sort_by(|test_a, test_b| {
+                    test_a.name.value().to_lowercase()
+                        .cmp(&test_b.name.value().to_lowercase())
+                });
+
+                tests
             }
         })
     };
-
-    let tests_table_rows = LocalResource::new(move || async move {
-        let mut registered_tests = registered_tests.await;
-        registered_tests.sort_by(|test_a, test_b| {
-            test_a.name.value().to_lowercase()
-                .cmp(&test_b.name.value().to_lowercase())
-        });
-        registered_tests
-    });
 
     let breadcrumbs = vec![
         Breadcrumb::new("Dashboard", "/"),
@@ -77,7 +75,7 @@ pub fn TestsOverview() -> impl IntoView {
                     >
                         { move || {
                             Suspend::new(async move {
-                                let tests_table_rows = tests_table_rows.await;
+                                let tests_table_rows = tests.await;
 
                                 view! {
                                     <For

@@ -26,6 +26,7 @@ pub fn ClustersOverview() -> impl IntoView {
 
         LocalResource::new(move || {
             refetch_cluster_descriptors.track();
+
             let mut carl = carl.clone();
             async move {
                 let mut clusters = carl.cluster.list_cluster_descriptors().await
@@ -56,7 +57,6 @@ pub fn ClustersOverview() -> impl IntoView {
             }
         })
     };
-
 
     let on_deploy = {
         let carl = carl.clone();
