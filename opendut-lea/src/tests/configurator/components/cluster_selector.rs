@@ -1,8 +1,8 @@
 use leptos::prelude::*;
-use opendut_lea_components::{SelectionTable, SelectionTableRow, UserInputValue};
+use opendut_lea_components::{SelectionTable, SelectionTableRow};
 use opendut_model::cluster::ClusterDescriptor;
 use crate::app::use_app_globals;
-use crate::tests::configurator::types::UserTestConfiguration;
+use crate::tests::configurator::types::{ClusterSelection, UserTestConfiguration};
 
 #[component]
 pub fn ClusterSelector(test_configuration: RwSignal<UserTestConfiguration>) -> impl IntoView {
@@ -40,19 +40,19 @@ pub fn ClusterSelector(test_configuration: RwSignal<UserTestConfiguration>) -> i
 
             let rows = clusters.iter().map(|cluster_descriptor| {
                 let ClusterDescriptor { id, name, .. } = cluster_descriptor;
-                let id = id.to_string();
-                let name = name.to_string();
+                let id = id.to_owned();
+                let name = name.value().to_owned();
 
                 SelectionTableRow {
                     id: Clone::clone(&id),
-                    cells: vec![name, id]
+                    cells: vec![name, id.to_string()]
                 }
             }).collect::<Vec<_>>();
 
             if clusters.is_empty() {
-                setter.set(UserInputValue::Left(String::from("No clusters available.")));
-            } else if matches!(getter.get(), UserInputValue::Left(_)) {
-                setter.set(UserInputValue::Left(String::from("Select a cluster.")));
+                setter.set(ClusterSelection::Left(String::from("No clusters available.")));
+            } else if matches!(getter.get(), ClusterSelection::Left(_)) {
+                setter.set(ClusterSelection::Left(String::from("Select a cluster.")));
             }
 
             rows

@@ -1,9 +1,15 @@
 pub mod validation;
 
 use std::collections::HashMap;
-use opendut_lea_components::UserInputValue;
+use opendut_lea_components::{Ior, UserInputValue};
 use opendut_model::cluster::ClusterId;
 use opendut_model::viper::{ViperTestDescriptor, ViperTestId, ViperTestName, ViperTestParameterKey, ViperTestParameterValue, ViperSourceId, ViperTestSuiteIdentifier};
+
+pub type SourceSelectionError = String;
+pub type SourceSelection = Ior<SourceSelectionError, ViperSourceId>;
+
+pub type ClusterSelectionError = String;
+pub type ClusterSelection = Ior<ClusterSelectionError, ClusterId>;
 
 #[derive(thiserror::Error, Clone, Debug, Eq, PartialEq, Hash)]
 #[allow(clippy::enum_variant_names)] // "all variants have the same prefix: `Invalid`"
@@ -26,9 +32,9 @@ pub enum TestMisconfiguration {
 pub struct UserTestConfiguration {
     pub id: ViperTestId,
     pub name: UserInputValue,
-    pub source: UserInputValue,
+    pub source: SourceSelection,
     pub suite: UserInputValue,
-    pub cluster: UserInputValue,
+    pub cluster: ClusterSelection,
     pub parameters: HashMap<String, UserInputValue>,
     pub is_new: bool,
 }

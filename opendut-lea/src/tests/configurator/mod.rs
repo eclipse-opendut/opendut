@@ -9,7 +9,7 @@ use crate::components::use_active_tab;
 use crate::routing::{navigate_to, WellKnownRoutes};
 use crate::tests::configurator::components::Controls;
 use crate::tests::configurator::tabs::{ClusterTab, GeneralTab, SourceTab, SuiteTab, TabIdentifier};
-use crate::tests::configurator::types::UserTestConfiguration;
+use crate::tests::configurator::types::{ClusterSelection, SourceSelection, UserTestConfiguration};
 
 mod tabs;
 mod types;
@@ -46,9 +46,9 @@ pub fn TestConfigurator() -> impl IntoView {
             UserTestConfiguration {
                 id: test_id,
                 name: UserInputValue::Left(UserInputError::from("Enter a valid test name.")),
-                source: UserInputValue::Left(String::from("Select a test source.")),
+                source: SourceSelection::Left(String::from("Select a test source.")),
                 suite: UserInputValue::Left(String::from("Enter a test suite.")),
-                cluster: UserInputValue::Left(String::from("Enter a cluster.")),
+                cluster: ClusterSelection::Left(String::from("Enter a cluster.")),
                 parameters: HashMap::new(),
                 is_new: true,
             }
@@ -61,10 +61,10 @@ pub fn TestConfigurator() -> impl IntoView {
                     test_configuration.update(|user_configuration| {
                         let ViperTestDescriptor { id: _, name, source, suite, cluster, parameters } = configuration;
 
-                        user_configuration.name = UserInputValue::Right(name.value().to_string());
-                        user_configuration.source = UserInputValue::Right(source.to_string());
+                        user_configuration.name = UserInputValue::Right(name.value().to_owned());
+                        user_configuration.source = SourceSelection::Right(source);
                         user_configuration.suite = UserInputValue::Right(suite.to_string());
-                        user_configuration.cluster = UserInputValue::Right(cluster.to_string());
+                        user_configuration.cluster = ClusterSelection::Right(cluster);
 
                         let mut configured_parameters: HashMap<String, UserInputValue> = HashMap::new();
 

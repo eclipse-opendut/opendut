@@ -1,13 +1,13 @@
 use std::collections::HashSet;
 
 use leptos::prelude::*;
-
+use opendut_lea_components::{SelectionTable, SelectionTableRow};
 use opendut_model::peer::{PeerDescriptor, PeerId};
 use opendut_model::topology::DeviceId;
 
 use crate::clusters::configurator::components::get_all_selected_devices;
 use crate::clusters::configurator::types::UserClusterDescriptor;
-use crate::components::{Ior, NON_BREAKING_SPACE};
+use crate::components::Ior;
 
 pub type LeaderSelectionError = String;
 pub type LeaderSelection = Ior<LeaderSelectionError, PeerId>;
@@ -23,7 +23,7 @@ pub fn LeaderSelector(
         Clone::clone(&config.devices)
     });
 
-    let (getter_leader, setter_leader) = create_slice(
+    let (getter, setter) = create_slice(
         cluster_descriptor,
         |config| Clone::clone(&config.leader),
         |config, input| {
@@ -32,14 +32,6 @@ pub fn LeaderSelector(
     );
 
     let selected_devices = move || get_all_selected_devices(getter_selected_devices);
-
-    let help_text = move || {
-        getter_leader.with(|selection| match selection {
-            LeaderSelection::Right(_) => String::from(NON_BREAKING_SPACE),
-            LeaderSelection::Left(error) => error.to_owned(),
-            LeaderSelection::Both(error, _) => error.to_owned(),
-        })
-    };
 
     let peers = Signal::derive(move || {
         let selected_devices = selected_devices();
@@ -59,10 +51,10 @@ pub fn LeaderSelector(
                 }
 
                 if selected_devices.len() < 2 {
-                    setter_leader.set(LeaderSelection::Left(String::from("Please select at least two devices first.")));
+                    setter.set(LeaderSelection::Left(String::from("Please select at least two devices first.")));
                 }
                 else {
-                    let leader_not_selected = match getter_leader.get() {
+                    let leader_not_selected = match getter.get() {
                         LeaderSelection::Left(_) | LeaderSelection::Both(_, _) => true,
                         LeaderSelection::Right(leader) => {
                             // Deselecting a previously selected peer leader in case all devices belonging to the peer were also deselected
@@ -71,82 +63,38 @@ pub fn LeaderSelector(
                     };
 
                     if leader_not_selected {
-                        setter_leader.set(LeaderSelection::Left(String::from("Select a leader.")));
+                        setter.set(LeaderSelection::Left(String::from("Select a leader.")));
                     }
                 }
 
                 !peer_devices.is_disjoint(&selected_devices)
+            }).map(|peer_descriptor| {
+                let PeerDescriptor { id, name, location, .. } = peer_descriptor;
+                let name = name.value().to_owned();
+                let location = location.unwrap_or_default().to_string();
+
+                SelectionTableRow {
+                    id: Clone::clone(&id),
+                    cells: vec![name, id.to_string(), location]
+                }
             })
             .collect::<Vec<_>>()
     });
 
-    let is_leader = move |peer: PeerId| {
-        Signal::derive(move || {
-            match getter_leader.get() {
-                LeaderSelection::Right(leader) => peer == leader,
-                LeaderSelection::Left(_) | LeaderSelection::Both(_, _) => false,
-            }
-        })
-    };
+    let header = vec![
+        String::from("Leader"),
+        String::from("Name"),
+        String::from("Peer ID"),
+        String::from("Location"),
+    ];
 
     view! {
-        <p class="help has-text-danger"> { help_text } </p>
-        <div class="table-container mt-2">
-            <table class="table is-fullwidth">
-                <thead>
-                    <tr>
-                        <th>Leader</th>
-                        <th>Name</th>
-                        <th>Peer ID</th>
-                        <th>Location</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <For
-                        each=move || peers.get()
-                        key=|peer| peer.id
-                        children=move |peer| {
-                            let peer_id = peer.id;
-                            let is_leader = is_leader(peer_id);
-
-                            view! {
-                                <tr
-                                    class:has-background-link-light=move || is_leader.get()
-                                    style=move || if is_disabled.get() {"cursor: not-allowed; opacity: 0.8;"} else {"cursor: pointer;"}
-                                    on:click=move |_| {
-                                        if is_disabled.get() { return }
-                                        setter_leader.set(LeaderSelection::Right(peer.id));
-                                    }
-                                >
-                                    <td class="is-narrow has-text-centered">
-                                        <div class="control">
-                                            <label class="radio">
-                                                <input
-                                                    type="radio"
-                                                    name="answer"
-                                                    prop:checked=is_leader
-                                                    on:click=move |_| {
-                                                        setter_leader.set(LeaderSelection::Right(peer.id));
-                                                    }
-                                                />
-                                            </label>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        { peer.name.to_string() }
-                                    </td>
-                                    <td>
-                                        { peer.id.to_string() }
-                                    </td>
-                                    <td>
-                                        { peer.location.clone().unwrap_or_default().to_string() }
-                                    </td>
-                                </tr>
-                            }
-                        }
-                    />
-                </tbody>
-            </table>
-        </div>
+        <SelectionTable
+            header
+            rows=peers
+            getter
+            setter
+            is_disabled
+        />
     }
 }

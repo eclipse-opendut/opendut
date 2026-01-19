@@ -1,8 +1,8 @@
 use leptos::prelude::*;
-use opendut_lea_components::{SelectionTable, SelectionTableRow, UserInputValue};
+use opendut_lea_components::{SelectionTable, SelectionTableRow};
 use opendut_model::viper::ViperSourceDescriptor;
 use crate::app::use_app_globals;
-use crate::tests::configurator::types::UserTestConfiguration;
+use crate::tests::configurator::types::{SourceSelection, UserTestConfiguration};
 
 #[component]
 pub fn TestSourceSelector(test_configuration: RwSignal<UserTestConfiguration>) -> impl IntoView {
@@ -39,7 +39,7 @@ pub fn TestSourceSelector(test_configuration: RwSignal<UserTestConfiguration>) -
 
             let rows = sources.iter().map(|source_descriptor| {
                 let ViperSourceDescriptor { id, name, url } = source_descriptor;
-                let id = id.to_string();
+                let id = id.to_owned();
                 let name = name.to_string();
                 let url = url.to_string();
 
@@ -50,9 +50,9 @@ pub fn TestSourceSelector(test_configuration: RwSignal<UserTestConfiguration>) -
             }).collect::<Vec<_>>();
 
             if sources.is_empty() {
-                setter.set(UserInputValue::Left(String::from("No sources available.")));
-            } else if matches!(getter.get(), UserInputValue::Left(_)) {
-                setter.set(UserInputValue::Left(String::from("Select a source.")));
+                setter.set(SourceSelection::Left(String::from("No sources available.")));
+            } else if matches!(getter.get(), SourceSelection::Left(_)) {
+                setter.set(SourceSelection::Left(String::from("Select a source.")));
             }
 
             rows
