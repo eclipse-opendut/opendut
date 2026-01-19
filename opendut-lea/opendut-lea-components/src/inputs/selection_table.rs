@@ -1,35 +1,30 @@
+use std::hash::Hash;
 use leptos::prelude::*;
-use crate::{UserInputValue, NON_BREAKING_SPACE};
+use crate::{Ior, NON_BREAKING_SPACE};
 
 #[derive(Clone, Debug)]
-pub struct SelectionTableRow {
-    pub id: String,
+pub struct SelectionTableRow<Id> {
+    pub id: Id,
     pub cells: Vec<String>,
 }
 
 #[component]
-pub fn SelectionTable(
+pub fn SelectionTable<Id>(
     #[prop(into)] header: Signal<Vec<String>>,
-    #[prop(into)] rows: Signal<Vec<SelectionTableRow>>,
-    getter: Signal<UserInputValue>,
-    setter: SignalSetter<UserInputValue>,
-) -> impl IntoView {
+    #[prop(into)] rows: Signal<Vec<SelectionTableRow<Id>>>,
+    getter: Signal<Ior<String, Id>>,
+    setter: SignalSetter<Ior<String, Id>>,
+    #[prop(into, default=Signal::from(false))] is_disabled: Signal<bool>,
+) -> impl IntoView
+where
+    Id: Clone + Eq + ToString + Send + Sync + Hash + 'static,
+{
 
     let help_text = move || {
         getter.with(|selection| match selection {
-            UserInputValue::Left(error) => error.to_owned(),
-            UserInputValue::Right(_) => String::from(NON_BREAKING_SPACE),
-            UserInputValue::Both(error, _) => error.to_owned(),
-        })
-    };
-
-    let is_selected = move |id: String| {
-        Signal::derive(move || {
-            let getter = getter.get();
-            match getter {
-                UserInputValue::Right(selected) => id == selected,
-                UserInputValue::Left(_) | UserInputValue::Both(_, _) => false,
-            }
+            Ior::Left(error) => error.to_owned(),
+            Ior::Right(_) => String::from(NON_BREAKING_SPACE),
+            Ior::Both(error, _) => error.to_owned(),
         })
     };
 
@@ -57,18 +52,28 @@ pub fn SelectionTable(
                         children=move |row| {
 
                             let SelectionTableRow { id: row_id, cells } = row;
-                            let is_selected = is_selected(Clone::clone(&row_id));
+                            let is_selected = {
+                                let row_id = Clone::clone(&row_id);
+                                Signal::derive(move || {
+                                    let getter = getter.get();
+                                    match getter {
+                                        Ior::Right(selected) => row_id == selected,
+                                        Ior::Left(_) | Ior::Both(_, _) => false,
+                                    }
+                                })
+                            };
 
                             view! {
                                 <tr
                                     class:has-background-link-light=move || is_selected.get()
-                                    style="cursor: pointer;"
+                                    style=move || if is_disabled.get() {"cursor: not-allowed; opacity: 0.8;"} else {"cursor: pointer;"}
                                     on:click=move |_| {
+                                        if is_disabled.get() { return }
                                         let row_id = Clone::clone(&row_id);
-                                        setter.set(UserInputValue::Right(row_id));
+                                        setter.set(Ior::Right(row_id));
                                     }
                                 >
-                                    <td class="is-narrow">
+                                    <td class="is-narrow has-text-centered">
                                         <div class="control">
                                             <label class="radio">
                                                 <input
