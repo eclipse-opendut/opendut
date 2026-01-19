@@ -167,11 +167,15 @@ impl Opentelemetry {
                 }
 
                 {
-                    fn opentelemetry_client_auth_enabled(config: &Config) -> bool {
+                    fn opentelemetry_client_auth_enabled(config: &Config) -> Result<bool, OpentelemetryConfigError> {
                         config.get_bool_with_fallback(pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_ENABLED, pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED)
+                            .map_err(|error| OpentelemetryConfigError::InvalidValueError {
+                                field: [pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_ENABLED, pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_ENABLED].join(" | "),
+                                message: format!("Failed to parse config due to error: {}", error)
+                            })
                     }
 
-                    if opentelemetry_client_auth_enabled(config) {
+                    if opentelemetry_client_auth_enabled(config)? {
                         let mtls_certificates = load_pem(
                             pem::config_keys::OPENTELEMETRY_TLS_CLIENT_AUTH_CERTIFICATE,
                             pem::config_keys::DEFAULT_NETWORK_TLS_CLIENT_AUTH_CERTIFICATE,
@@ -309,7 +313,8 @@ mod tests {
             .set_override("opentelemetry.collector.endpoint", otel_collector)?
             .set_override("opentelemetry.metrics.interval.ms", "1000")?
             .set_override("opentelemetry.metrics.cpu.collection.interval.ms", "1000")?
-            .set_override("opentelemetry.tls.client.auth.enabled", "false")?
+            .set_override("opentelemetry.tls.client.auth.enabled", "unset")?
+            .set_override("network.tls.client.auth.enabled", "false")?
             .set_override("network.oidc.enabled", "false")?
             .build()?;
 

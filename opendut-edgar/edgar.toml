@@ -32,7 +32,7 @@ secret = "<tbd>"
 ca = ""
 
 [network.oidc.client.tls.client.auth] #mTLS
-enabled = "use default defined in network.tls.client.auth, otherwise set this to 'true' or 'false'"
+enabled = "unset"  # use default defined in network.tls.client.auth, otherwise set this to 'true' or 'false'
 certificate = ""
 key = ""
 
@@ -59,7 +59,7 @@ service.name = "opendut-edgar"
 ca = ""
 
 [opentelemetry.tls.client.auth] #mTLS
-enabled = "use default defined in network.tls.client.auth, otherwise set this to 'true' or 'false'"
+enabled = "unset"  # use default defined in network.tls.client.auth, otherwise set this to 'true' or 'false'
 certificate = ""
 key = ""
 
