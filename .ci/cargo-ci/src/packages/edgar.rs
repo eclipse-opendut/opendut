@@ -2,13 +2,13 @@ use crate::fs;
 use std::path::PathBuf;
 
 use anyhow::anyhow;
+use cicero::distribution::build::Target;
 use tracing::debug;
 
-use crate::{Arch, Package};
+use crate::Package;
 use crate::core::types::parsing::package::PackageSelection;
-use crate::core::types::parsing::target::TargetSelection;
 
-pub const SUPPORTED_ARCHITECTURES: [Arch; 3] = [Arch::X86_64, Arch::Armhf, Arch::Arm64];
+pub const SUPPORTED_TARGETS: [Target; 3] = [Target::x86_64_unknown_linux_gnu, Target::armv7_unknown_linux_gnueabihf, Target::aarch64_unknown_linux_gnu];
 
 const SELF_PACKAGE: Package = Package::Edgar;
 
@@ -33,17 +33,17 @@ pub enum TaskCli {
     /// Intended for parallelization in CI/CD.
     DistributionNetbirdClient {
         #[arg(long, default_value_t)]
-        target: TargetSelection,
+        target: Target,
     },
     #[command(hide=true)]
     DistributionRperf {
         #[arg(long, default_value_t)]
-        target: TargetSelection,
+        target: Target,
     },
     #[command(hide=true)]
     DistributionPluginsDir {
         #[arg(long, default_value_t)]
-        target: TargetSelection,
+        target: Target,
     },
     DistributionCopyLicenseJson(crate::tasks::distribution::copy_license_json::DistributionCopyLicenseJsonCli),
     DistributionBundleFiles(crate::tasks::distribution::bundle::DistributionBundleFilesCli),
@@ -55,39 +55,27 @@ impl EdgarCli {
     pub fn default_handling(self) -> crate::Result {
         match self.task {
             TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target, release_build }) => {
-                for target in target.iter() {
-                    build::build_release(target, release_build)?;
-                }
+                build::build_release(target, release_build)?;
             }
             TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target, release_build }) => {
-                for target in target.iter() {
-                    distribution::edgar_distribution(target, release_build)?;
-                }
+                distribution::edgar_distribution(target, release_build)?;
             }
             TaskCli::Licenses(cli) => cli.default_handling(PackageSelection::Single(SELF_PACKAGE))?,
             TaskCli::Run(cli) => cli.default_handling(SELF_PACKAGE)?,
 
             TaskCli::DistributionNetbirdClient { target } => {
-                for target in target.iter() {
-                    distribution::netbird::netbird_client_distribution(target)?;
-                }
+                distribution::netbird::netbird_client_distribution(target)?;
             }
             TaskCli::DistributionRperf { target } => {
-                for target in target.iter() {
-                    distribution::rperf::rperf_distribution(target)?;
-                }
+                distribution::rperf::rperf_distribution(target)?;
             }
             TaskCli::DistributionPluginsDir { target } => {
-                for target in target.iter() {
-                    distribution::plugins::empty_plugins_dir(target)?
-                }
+                distribution::plugins::empty_plugins_dir(target)?
             }
             TaskCli::DistributionCopyLicenseJson(cli) => cli.default_handling(SELF_PACKAGE)?,
             TaskCli::DistributionBundleFiles(cli) => cli.default_handling(SELF_PACKAGE)?,
             TaskCli::DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli { target }) => {
-                for target in target.iter() {
-                    distribution::validate::validate_contents(target)?;
-                }
+                distribution::validate::validate_contents(target)?;
             }
         };
         Ok(())
@@ -98,10 +86,10 @@ impl EdgarCli {
 pub mod build {
     use super::*;
 
-    pub fn build_release(target: Arch, release_build: bool) -> crate::Result {
+    pub fn build_release(target: Target, release_build: bool) -> crate::Result {
         crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)
     }
-    pub fn out_dir(target: Arch) -> PathBuf {
+    pub fn out_dir(target: Target) -> PathBuf {
         crate::tasks::build::out_file(SELF_PACKAGE, target)
     }
 }
@@ -112,7 +100,7 @@ pub mod distribution {
     use super::*;
 
     #[tracing::instrument]
-    pub fn edgar_distribution(target: Arch, release_build: bool) -> crate::Result {
+    pub fn edgar_distribution(target: Target, release_build: bool) -> crate::Result {
         use crate::tasks::distribution;
 
         let _ = netbird::map_target(target)?; //check target supported
@@ -153,7 +141,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn netbird_client_distribution(target: Arch) -> crate::Result {
+        pub fn netbird_client_distribution(target: Target) -> crate::Result {
             //Modelled after documentation here: https://docs.netbird.io/how-to/getting-started#binary-install
 
             let metadata = crate::metadata::cargo();
@@ -196,18 +184,17 @@ pub mod distribution {
             Ok(())
         }
 
-        pub(super) fn map_target(target: Arch) -> anyhow::Result<&'static str> {
-            assert!(SUPPORTED_ARCHITECTURES.contains(&target));
+        pub(super) fn map_target(target: Target) -> anyhow::Result<&'static str> {
+            assert!(SUPPORTED_TARGETS.contains(&target));
 
             match target {
-                Arch::X86_64 => Ok("amd64"),
-                Arch::Arm64 => Ok("arm64"),
-                Arch::Armhf => Ok("armv6"),
+                Target::x86_64_unknown_linux_gnu => Ok("amd64"),
+                Target::aarch64_unknown_linux_gnu => Ok("arm64"),
+                Target::armv7_unknown_linux_gnueabihf => Ok("armv6"),
                 other => bail!(
-                    "Building a distribution for EDGAR isn't currently supported for '{}'.\n\
+                    "Building a distribution for EDGAR isn't currently supported for '{other}'.\n\
                     Supported targets are: {}",
-                    other.triple(),
-                    SUPPORTED_ARCHITECTURES.map(|arch| arch.triple()).join(", "),
+                    SUPPORTED_TARGETS.map(|target| target.to_string()).join(", "),
                 ),
             }
         }
@@ -216,7 +203,7 @@ pub mod distribution {
             crate::constants::target_dir().join("netbird")
         }
 
-        pub fn out_file(package: Package, target: Arch) -> PathBuf {
+        pub fn out_file(package: Package, target: Target) -> PathBuf {
             crate::tasks::distribution::out_package_dir(package, target).join("install").join("netbird.tar.gz")
         }
     }
@@ -230,7 +217,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn rperf_distribution(target: Arch) -> crate::Result {
+        pub fn rperf_distribution(target: Target) -> crate::Result {
             let metadata = crate::metadata::cargo();
             let version = metadata.workspace_metadata["ci"]["rperf"]["version"].as_str()
                 .ok_or(anyhow!("Rperf version not defined."))?;
@@ -285,18 +272,18 @@ pub mod distribution {
             
             Ok(temp_dir_subpath)
         }
-        fn build_rperf(target_directory: &Path, current_directory: &Path, target: Arch) -> Result<PathBuf, anyhow::Error>  {
+        fn build_rperf(target_directory: &Path, current_directory: &Path, target: Target) -> Result<PathBuf, anyhow::Error>  {
             CROSS.command()
                 .arg("build")
                 .arg("--release")
                 .arg("--all-features")
                 .arg("--target-dir").arg(target_directory)
-                .arg("--target").arg(target.triple())
+                .arg("--target").arg(target.to_string())
                 .env("RUSTFLAGS", "-Awarnings") //ignore warnings from rperf source code
                 .current_dir(current_directory)
                 .run_requiring_success()?;
 
-            let out_dir = target_directory.join(target.triple()).join("release").join("rperf");
+            let out_dir = target_directory.join(target.to_string()).join("release").join("rperf");
             debug!("The rperf distribution was built to {out_dir:?}");
             
             Ok(out_dir)
@@ -305,7 +292,7 @@ pub mod distribution {
             crate::constants::target_dir().join("rperf")
         }
 
-        pub fn out_file(package: Package, target: Arch) -> PathBuf {
+        pub fn out_file(package: Package, target: Target) -> PathBuf {
             crate::tasks::distribution::out_package_dir(package, target).join("install").join("rperf")
         }
     }
@@ -315,7 +302,7 @@ pub mod distribution {
         use crate::tasks::distribution::out_package_dir;
         use super::*;
 
-        pub fn empty_plugins_dir(target: Arch) -> crate::Result {
+        pub fn empty_plugins_dir(target: Target) -> crate::Result {
             let plugins_dir = out_package_dir(SELF_PACKAGE, target).join("plugins");
             fs::create_dir_all(&plugins_dir)?;
 
@@ -339,7 +326,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn validate_contents(target: Arch) -> crate::Result {
+        pub fn validate_contents(target: Target) -> crate::Result {
 
             let unpack_dir = {
                 let unpack_dir = assert_fs::TempDir::new()?;

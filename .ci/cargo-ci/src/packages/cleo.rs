@@ -1,9 +1,11 @@
 use std::path::PathBuf;
 
-use crate::{Arch, Package};
+use cicero::distribution::build::Target;
+
+use crate::Package;
 use crate::core::types::parsing::package::PackageSelection;
 
-pub const SUPPORTED_ARCHITECTURES: [Arch; 3] = [Arch::X86_64, Arch::Armhf, Arch::Arm64];
+pub const SUPPORTED_TARGETS: [Target; 3] = [Target::x86_64_unknown_linux_gnu, Target::armv7_unknown_linux_gnueabihf, Target::aarch64_unknown_linux_gnu];
 
 const SELF_PACKAGE: Package = Package::Cleo;
 
@@ -33,14 +35,10 @@ impl CleoCli {
     pub fn default_handling(self) -> crate::Result {
         match self.task {
             TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target, release_build }) => {
-                for target in target.iter() {
-                    build::build_release(target, release_build)?;
-                }
+                build::build_release(target, release_build)?;
             }
             TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target, release_build }) => {
-                for target in target.iter() {
-                    distribution::cleo_distribution(target, release_build)?;
-                }
+                distribution::cleo_distribution(target, release_build)?;
             }
             TaskCli::Licenses(cli) => cli.default_handling(PackageSelection::Single(SELF_PACKAGE))?,
             TaskCli::Run(cli) => cli.default_handling(SELF_PACKAGE)?,
@@ -48,9 +46,7 @@ impl CleoCli {
             TaskCli::DistributionCopyLicenseJson(cli) => cli.default_handling(SELF_PACKAGE)?,
             TaskCli::DistributionBundleFiles(cli) => cli.default_handling(SELF_PACKAGE)?,
             TaskCli::DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli { target }) => {
-                for target in target.iter() {
-                    distribution::validate::validate_contents(target)?;
-                }
+                distribution::validate::validate_contents(target)?;
             }
         };
         Ok(())
@@ -60,10 +56,10 @@ impl CleoCli {
 pub mod build {
     use super::*;
 
-    pub fn build_release(target: Arch, release_build: bool) -> crate::Result {
+    pub fn build_release(target: Target, release_build: bool) -> crate::Result {
         crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)
     }
-    pub fn out_dir(target: Arch) -> PathBuf {
+    pub fn out_dir(target: Target) -> PathBuf {
         crate::tasks::build::out_file(SELF_PACKAGE, target)
     }
 }
@@ -73,7 +69,7 @@ pub mod distribution {
     use super::*;
 
     #[tracing::instrument]
-    pub fn cleo_distribution(target: Arch, release_build: bool) -> crate::Result {
+    pub fn cleo_distribution(target: Target, release_build: bool) -> crate::Result {
         use crate::tasks::distribution;
 
         crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)?;
@@ -113,7 +109,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn validate_contents(target: Arch) -> crate::Result {
+        pub fn validate_contents(target: Target) -> crate::Result {
 
             let unpack_dir = {
                 let unpack_dir = assert_fs::TempDir::new()?;

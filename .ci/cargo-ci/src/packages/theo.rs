@@ -1,4 +1,6 @@
-use crate::{Arch, Package};
+use cicero::distribution::build::Target;
+
+use crate::Package;
 use crate::core::types::parsing::package::PackageSelection;
 
 const SELF_PACKAGE: Package = Package::Theo;
@@ -29,14 +31,10 @@ impl TheoCli {
     pub fn default_handling(self) -> crate::Result {
         match self.task {
             TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target, release_build }) => {
-                for target in target.iter() {
-                    build::build_release(target, release_build)?;
-                }
+                build::build_release(target, release_build)?;
             }
             TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target, release_build }) => {
-                for target in target.iter() {
-                    distribution::theo_distribution(target, release_build)?;
-                }
+                distribution::theo_distribution(target, release_build)?;
             }
             TaskCli::Licenses(cli) => cli.default_handling(PackageSelection::Single(SELF_PACKAGE))?,
             TaskCli::Run(cli) => cli.default_handling(SELF_PACKAGE)?,
@@ -44,9 +42,7 @@ impl TheoCli {
             TaskCli::DistributionCopyLicenseJson(cli) => cli.default_handling(SELF_PACKAGE)?,
             TaskCli::DistributionBundleFiles(cli) => cli.default_handling(SELF_PACKAGE)?,
             TaskCli::DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli { target }) => {
-                for target in target.iter() {
-                    distribution::validate::validate_contents(target)?;
-                }
+                distribution::validate::validate_contents(target)?;
             }
         };
         Ok(())
@@ -56,7 +52,7 @@ impl TheoCli {
 pub mod build {
     use super::*;
 
-    pub fn build_release(target: Arch, release_build: bool) -> crate::Result {
+    pub fn build_release(target: Target, release_build: bool) -> crate::Result {
         crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)
     }
 }
@@ -67,7 +63,7 @@ pub mod distribution {
     use super::*;
 
     #[tracing::instrument(skip_all)]
-    pub fn theo_distribution(target: Arch, release_build: bool) -> crate::Result {
+    pub fn theo_distribution(target: Target, release_build: bool) -> crate::Result {
         use crate::tasks::distribution;
 
         distribution::clean(SELF_PACKAGE, target)?;
@@ -98,7 +94,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument]
-        pub fn validate_contents(target: Arch) -> crate::Result {
+        pub fn validate_contents(target: Target) -> crate::Result {
 
             let unpack_dir = {
                 let unpack_dir = assert_fs::TempDir::new()?;

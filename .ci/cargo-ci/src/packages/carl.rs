@@ -2,9 +2,10 @@ use crate::fs;
 use std::path::{Path, PathBuf};
 use anyhow::Context;
 use tracing::info;
+use cicero::distribution::build::Target;
 use crate::core::types::parsing::package::PackageSelection;
 use crate::packages::carl::distribution::copy_license_json::copy_license_json;
-use crate::{Arch, Package};
+use crate::Package;
 
 const SELF_PACKAGE: Package = Package::Carl;
 
@@ -34,14 +35,10 @@ impl CarlCli {
     pub fn default_handling(self) -> crate::Result {
         match self.task {
             TaskCli::DistributionBuild(crate::tasks::build::DistributionBuildCli { target, release_build }) => {
-                for target in target.iter() {
-                    build::build_release(target, release_build)?;
-                }
+                build::build_release(target, release_build)?;
             }
             TaskCli::Distribution(crate::tasks::distribution::DistributionCli { target, release_build }) => {
-                for target in target.iter() {
-                    distribution::carl_distribution(target, release_build)?;
-                }
+                distribution::carl_distribution(target, release_build)?;
             }
             TaskCli::Licenses(cli) => cli.default_handling(PackageSelection::Single(SELF_PACKAGE))?,
             TaskCli::Run(cli) => {
@@ -64,17 +61,13 @@ impl CarlCli {
             }
 
             TaskCli::DistributionCopyLicenseJson(implementation) => {
-                for target in implementation.target.iter() {
-                    copy_license_json(target, implementation.skip_generate.into())?;
-                }
+                copy_license_json(implementation.target, implementation.skip_generate.into())?;
             }
             TaskCli::DistributionBundleFiles(implementation) => {
                 implementation.default_handling(SELF_PACKAGE)?;
             }
             TaskCli::DistributionValidateContents(crate::tasks::distribution::validate::DistributionValidateContentsCli { target }) => {
-                for target in target.iter() {
-                    distribution::validate::validate_contents(target)?;
-                }
+                distribution::validate::validate_contents(target)?;
             }
             TaskCli::Docker(crate::tasks::docker::DockerCli { tag, publish }) => {
                 crate::tasks::docker::build_carl_docker_image(tag.clone())?;
@@ -90,10 +83,10 @@ impl CarlCli {
 pub mod build {
     use super::*;
 
-    pub fn build_release(target: Arch, release_build: bool) -> crate::Result {
+    pub fn build_release(target: Target, release_build: bool) -> crate::Result {
         crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)
     }
-    pub fn out_dir(target: Arch) -> PathBuf {
+    pub fn out_dir(target: Target) -> PathBuf {
         crate::tasks::build::out_file(SELF_PACKAGE, target)
     }
 }
@@ -104,7 +97,7 @@ pub mod distribution {
     use super::*;
 
     #[tracing::instrument]
-    pub fn carl_distribution(target: Arch, release_build: bool) -> crate::Result {
+    pub fn carl_distribution(target: Target, release_build: bool) -> crate::Result {
         use crate::tasks::distribution;
 
         let distribution_out_dir = distribution::out_package_dir(SELF_PACKAGE, target);
@@ -141,9 +134,9 @@ pub mod distribution {
             fs::create_dir_all(cleo_out_dir)?;
 
             let architectures = if release_build {
-                crate::packages::cleo::SUPPORTED_ARCHITECTURES.to_vec()
+                crate::packages::cleo::SUPPORTED_TARGETS.to_vec()
             } else {
-                vec![Arch::default()]
+                vec![Target::default()]
             };
             
             for arch in architectures {
@@ -183,9 +176,9 @@ pub mod distribution {
             fs::create_dir_all(edgar_out_dir)?;
 
             let architectures = if release_build {
-                crate::packages::edgar::SUPPORTED_ARCHITECTURES.to_vec()
+                crate::packages::edgar::SUPPORTED_TARGETS.to_vec()
             } else {
-                vec![Arch::default()]
+                vec![Target::default()]
             };
 
             for arch in architectures {
@@ -246,7 +239,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn copy_license_json(target: Arch, skip_generate: SkipGenerate) -> crate::Result {
+        pub fn copy_license_json(target: Target, skip_generate: SkipGenerate) -> crate::Result {
 
             match skip_generate {
                 SkipGenerate::Yes => info!("Skipping generation of licenses, as requested. Directly attempting to copy to target location."),
@@ -301,7 +294,7 @@ pub mod distribution {
         use super::*;
 
         #[tracing::instrument(skip_all)]
-        pub fn validate_contents(target: Arch) -> crate::Result {
+        pub fn validate_contents(target: Target) -> crate::Result {
 
             let unpack_dir = {
                 let unpack_dir = assert_fs::TempDir::new()?;

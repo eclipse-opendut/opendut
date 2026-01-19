@@ -833,14 +833,16 @@ dependencies = [
 
 [[package]]
 name = "cicero"
-version = "0.7.1"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "225133ed368f9d17af4dd681f96aeb705483bbbd61bb3323f63cef25fffaaa6b"
+checksum = "4ee9089e9d549277ec4285254ebfd9e8c9d67caea20f6a68c5baa088a51c51d0"
 dependencies = [
  "cicero_cache",
  "cicero_commands",
  "cicero_core",
+ "cicero_distribution",
  "cicero_path",
+ "clap",
  "repo_path_lib",
  "tracing",
  "tracing-subscriber",
@@ -848,9 +850,9 @@ dependencies = [
 
 [[package]]
 name = "cicero_cache"
-version = "0.7.1"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c8004d3d3042d4181e5020b994da1e495c51e8db2f7431005cc3546990d62f3"
+checksum = "fbab52ba365d2201341e2cf273fca050954302051fe5d7c6e8a391e80272cdca"
 dependencies = [
  "cicero_core",
  "cicero_path_core",
@@ -864,11 +866,12 @@ dependencies = [
 
 [[package]]
 name = "cicero_commands"
-version = "0.7.1"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22c8378ccdeb197b13f2e662163328809d6840488be662b184353c9ba2c2d77e"
+checksum = "693ad0df81f83a8ce45a36c30714fec66cd2f5758c7bafdf4392142e77377eb9"
 dependencies = [
  "cicero_core",
+ "cicero_macro",
  "cicero_path",
  "cicero_path_core",
  "clap",
@@ -880,18 +883,52 @@ dependencies = [
 
 [[package]]
 name = "cicero_core"
-version = "0.7.1"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6f3c4e274153ca14843d8b5ffa7ff6b77c54dcb976514eb6d06c1c3ceb57f1d"
+checksum = "f2368e881c87be1c3c632f1bed7c87f2648c6278989aa86b99593a7803563d9e"
 dependencies = [
  "anyhow",
 ]
 
 [[package]]
-name = "cicero_path"
-version = "0.7.1"
+name = "cicero_distribution"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6b0a4721b434220fff9c983f85953f6d045bba20341e0e0b450ea2386dd241ea"
+checksum = "fb8866a42a2c7369c8864f134fd2ef2949b0e82c009b5aa7e19ea1c37d1859f3"
+dependencies = [
+ "cargo_metadata",
+ "cicero_cache",
+ "cicero_core",
+ "cicero_macro",
+ "cicero_path",
+ "cicero_path_core",
+ "clap",
+ "fs-err",
+ "glob",
+ "sha2",
+ "thiserror 2.0.17",
+ "tracing",
+ "walkdir",
+]
+
+[[package]]
+name = "cicero_macro"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4759d236067e34ee7aa3901ac70230493a513cb9036ffd6af90fcc06ee1674af"
+dependencies = [
+ "cicero_core",
+ "current_platform",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.114",
+]
+
+[[package]]
+name = "cicero_path"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0436fe9a5dea955c629df4a92a15efbbe6090abcf9bb94aa1a870bfbdd271fcf"
 dependencies = [
  "cicero_path_core",
  "repo_path",
@@ -899,9 +936,9 @@ dependencies = [
 
 [[package]]
 name = "cicero_path_core"
-version = "0.7.1"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3439a1c039d5c23ba1058ff5c9507aa3f5536323021095c29adcc22c2b781f76"
+checksum = "0665119e6eb25bf6a419401fc0854d3038cfbf3e069bd5d3d0e2cb72c341fe76"
 dependencies = [
  "cargo_metadata",
  "tracing",
@@ -1458,6 +1495,12 @@ dependencies = [
  "nix 0.30.1",
  "windows-sys 0.61.2",
 ]
+
+[[package]]
+name = "current_platform"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a74858bcfe44b22016cb49337d7b6f04618c58e5dbfdef61b06b8c434324a0bc"
 
 [[package]]
 name = "curve25519-dalek"

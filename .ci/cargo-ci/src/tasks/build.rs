@@ -1,10 +1,10 @@
 use std::ops::Not;
 use std::path::PathBuf;
 
+use cicero::distribution::build::Target;
+
 use crate::{constants, Package};
 use crate::core::commands::CROSS;
-use crate::types::Arch;
-use crate::core::types::parsing::target::TargetSelection;
 use crate::util::RunRequiringSuccess;
 
 
@@ -13,7 +13,7 @@ use crate::util::RunRequiringSuccess;
 #[command(hide=true)]
 pub struct DistributionBuildCli {
     #[arg(long, default_value_t)]
-    pub target: TargetSelection,
+    pub target: Target,
 
     /// Build artifacts in release mode, with optimizations
     #[arg(short='r', long="release")]
@@ -21,14 +21,14 @@ pub struct DistributionBuildCli {
 }
 
 #[tracing::instrument(skip_all)]
-pub fn distribution_build(package: Package, target: Arch, release_build: bool) -> crate::Result {
+pub fn distribution_build(package: Package, target: Target, release_build: bool) -> crate::Result {
     let mut command = CROSS.command();
 
     command
         .arg("build")
         .arg("--package").arg(package.ident())
         .arg("--target-dir").arg(cross_target_dir().as_os_str()) //explicitly set target-base-dir to fix unreliable caching behavior
-        .arg("--target").arg(target.triple())
+        .arg("--target").arg(target.to_string())
         .arg("--release");
 
     if release_build.not() {
@@ -38,8 +38,8 @@ pub fn distribution_build(package: Package, target: Arch, release_build: bool) -
     command.run_requiring_success()
 }
 
-pub fn out_file(package: Package, target: Arch) -> PathBuf {
-    cross_target_dir().join(target.triple()).join("release").join(package.ident())
+pub fn out_file(package: Package, target: Target) -> PathBuf {
+    cross_target_dir().join(target.to_string()).join("release").join(package.ident())
 }
 
 fn cross_target_dir() -> PathBuf {

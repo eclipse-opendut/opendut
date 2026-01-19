@@ -4,7 +4,7 @@ pub use fs_err as fs;
 use tracing_subscriber::EnvFilter;
 pub(crate) use core::constants;
 pub(crate) use core::metadata;
-pub(crate) use core::types::{self, Arch, Package, Result};
+pub(crate) use core::types::{Package, Result};
 pub(crate) use core::util;
 use crate::core::types::parsing::package::PackageSelection;
 
@@ -51,9 +51,7 @@ fn main() -> crate::Result {
         TaskCli::Check(implementation) => implementation.default_handling()?,
         TaskCli::Coverage(implementation) => implementation.default_handling()?,
         TaskCli::Distribution(tasks::distribution::DistributionCli { target, release_build }) => {
-            for target in target.iter() {
-                packages::carl::distribution::carl_distribution(target, release_build)?;
-            }
+            packages::carl::distribution::carl_distribution(target, release_build)?;
         }
         TaskCli::Doc(implementation) => implementation.default_handling()?,
         TaskCli::Licenses(implementation) => implementation.default_handling(PackageSelection::Applications)?,

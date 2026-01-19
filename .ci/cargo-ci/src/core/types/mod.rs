@@ -1,8 +1,6 @@
-mod arch;
 mod package;
 pub mod parsing;
 
-pub use arch::Arch;
 pub use package::Package;
 
 /// Result generally used for tasks.

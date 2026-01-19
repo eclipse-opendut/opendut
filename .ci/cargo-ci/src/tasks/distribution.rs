@@ -1,10 +1,10 @@
 use crate::fs;
 use std::path::PathBuf;
+use cicero::distribution::build::Target;
 use flate2::Compression;
 use tracing::debug;
 
-use crate::{Arch, constants, Package};
-use crate::types::parsing::target::TargetSelection;
+use crate::{constants, Package};
 
 /// Build and bundle a release distribution
 #[derive(Debug, clap::Parser)]
@@ -12,7 +12,7 @@ use crate::types::parsing::target::TargetSelection;
 pub struct DistributionCli {
     /// The operating system and CPU architecture to build for
     #[arg(long, default_value_t)]
-    pub target: TargetSelection,
+    pub target: Target,
 
     /// Build artifacts in release mode, with optimizations
     #[arg(short='r', long="release")]
@@ -20,7 +20,7 @@ pub struct DistributionCli {
 }
 
 #[tracing::instrument(skip_all)]
-pub fn clean(package: Package, target: Arch) -> crate::Result {
+pub fn clean(package: Package, target: Target) -> crate::Result {
     let package_dir = out_package_dir(package, target);
     if package_dir.exists() {
         fs::remove_dir_all(&package_dir)?;
@@ -30,7 +30,7 @@ pub fn clean(package: Package, target: Arch) -> crate::Result {
 }
 
 #[tracing::instrument(skip_all)]
-pub fn collect_executables(package: Package, target: Arch) -> crate::Result {
+pub fn collect_executables(package: Package, target: Target) -> crate::Result {
 
     let out_dir = out_package_dir(package, target);
     fs::create_dir_all(&out_dir)?;
@@ -53,7 +53,7 @@ pub mod copy_license_json {
     #[command(hide=true)]
     pub struct DistributionCopyLicenseJsonCli {
         #[arg(long, default_value_t)]
-        pub target: TargetSelection,
+        pub target: Target,
 
         #[arg(long)]
         /// Skip the generation of the license files and attempt to copy them directly.
@@ -61,10 +61,7 @@ pub mod copy_license_json {
     }
     impl DistributionCopyLicenseJsonCli {
         pub fn default_handling(&self, package: Package) -> crate::Result {
-            for target in self.target.iter() {
-                copy_license_json(package, target, self.skip_generate.into())?;
-            }
-            Ok(())
+            copy_license_json(package, self.target, self.skip_generate.into())
         }
     }
 
@@ -77,7 +74,7 @@ pub mod copy_license_json {
     }
 
     #[tracing::instrument(skip_all)]
-    pub fn copy_license_json(package: Package, target: Arch, skip_generate: SkipGenerate) -> crate::Result {
+    pub fn copy_license_json(package: Package, target: Target, skip_generate: SkipGenerate) -> crate::Result {
 
         match skip_generate {
             SkipGenerate::Yes => info!("Skipping generation of licenses, as requested. Directly attempting to copy to target location."),
@@ -92,7 +89,7 @@ pub mod copy_license_json {
 
         Ok(())
     }
-    pub fn out_file(package: Package, target: Arch) -> PathBuf {
+    pub fn out_file(package: Package, target: Target) -> PathBuf {
         out_package_dir(package, target)
             .join("licenses")
             .join(crate::tasks::licenses::json::out_file_name(package))
@@ -108,20 +105,17 @@ pub mod bundle {
     #[command(hide=true)]
     pub struct DistributionBundleFilesCli {
         #[arg(long, default_value_t)]
-        target: TargetSelection,
+        target: Target,
     }
     impl DistributionBundleFilesCli {
         pub fn default_handling(&self, package: Package) -> crate::Result {
             let release_build = true; //this CLI is only used in CI
-            for target in self.target.iter() {
-                bundle_files(package, target, release_build)?;
-            }
-            Ok(())
+            bundle_files(package, self.target, release_build)
         }
     }
 
     #[tracing::instrument(skip_all)]
-    pub fn bundle_files(package: Package, target: Arch, release_build: bool) -> crate::Result {
+    pub fn bundle_files(package: Package, target: Target, release_build: bool) -> crate::Result {
         use flate2::write::GzEncoder;
 
         let in_dir = out_package_dir(package, target);
@@ -160,7 +154,7 @@ pub mod bundle {
         Ok(())
     }
 
-    pub fn out_file(package: Package, target: Arch) -> PathBuf {
+    pub fn out_file(package: Package, target: Target) -> PathBuf {
         let out_file_name_without_version = out_file_name_without_version(package, target);
         let version = crate::build::PKG_VERSION;
 
@@ -168,9 +162,8 @@ pub mod bundle {
             .join(format!("{out_file_name_without_version}{version}.tar.gz"))
     }
 
-    fn out_file_name_without_version(package: Package, target: Arch) -> String {
+    fn out_file_name_without_version(package: Package, target: Target) -> String {
         let package = package.ident();
-        let target = target.triple();
         format!("{package}-{target}-")
     }
 }
@@ -184,7 +177,7 @@ pub mod validate {
     #[command(hide=true)]
     pub struct DistributionValidateContentsCli {
         #[arg(long, default_value_t)]
-        pub target: TargetSelection,
+        pub target: Target,
     }
 }
 
@@ -192,11 +185,11 @@ pub fn out_dir() -> PathBuf {
     constants::target_dir().join("distribution")
 }
 
-pub fn out_arch_dir(target: Arch) -> PathBuf {
-    out_dir().join(target.triple())
+pub fn out_arch_dir(target: Target) -> PathBuf {
+    out_dir().join(target.to_string())
 }
 
-pub fn out_package_dir(package: Package, target: Arch) -> PathBuf {
+pub fn out_package_dir(package: Package, target: Target) -> PathBuf {
     out_arch_dir(target).join(package.ident())
 }
 

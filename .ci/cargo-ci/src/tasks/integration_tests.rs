@@ -1,12 +1,12 @@
 use crate::core::util::RunRequiringSuccess;
 use anyhow::anyhow;
+use cicero::distribution::build::Target;
 use cicero::path::repo_path;
 use serde::Deserialize;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use tracing::debug;
 use crate::core::commands::CROSS;
-use crate::core::types::Arch;
 
 /// Run integration tests of EDGAR
 #[derive(Debug, clap::Parser)]
@@ -90,7 +90,7 @@ fn run_edgar_integration_test_binary_in_docker(edgar_test_binary: String) -> any
 
 fn determine_test_binary_directory() -> anyhow::Result<String> {
     let target_directory = cicero::path::target_dir();
-    let test_binary_directory = target_directory.join(Arch::X86_64.triple()).join("debug").join("deps");
+    let test_binary_directory = target_directory.join(Target::x86_64_unknown_linux_gnu.to_string()).join("debug").join("deps");
     let test_binary_directory = test_binary_directory
         .into_os_string().into_string()
         .map_err(|_| anyhow!("Test target directory could not be determined!"))?;
