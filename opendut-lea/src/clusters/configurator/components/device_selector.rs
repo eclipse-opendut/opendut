@@ -49,7 +49,7 @@ pub fn DeviceSelector(
     ) -> impl IntoView {
         let mut view_per_device = peer_descriptors.into_iter()
             .flat_map(|peer| {
-                let PeerDescriptor { id: peer_id, location, network, topology, .. } = peer;
+                let PeerDescriptor { id: peer_id, name: peer_name, location, network, topology, .. } = peer;
 
                 topology.devices.into_iter().map({
                     let selected_devices = selected_devices.clone();
@@ -71,6 +71,7 @@ pub fn DeviceSelector(
                                 <td>
                                     {device_name.clone()}
                                 </td>
+                                <td> { peer_name.to_string() } </td>
                                 <td>{location.clone().unwrap_or_default().to_string()}</td>
                                 <td class="is-narrow">
                                     <IconButton
@@ -110,6 +111,7 @@ pub fn DeviceSelector(
                     <tr>
                         <th></th>
                         <th>Name</th>
+                        <th>Peer</th>
                         <th>Peer Location</th>
                         <th></th>
                     </tr>
