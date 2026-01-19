@@ -4392,7 +4392,6 @@ dependencies = [
  "backon",
  "bitflags",
  "byteorder",
- "cfg-if",
  "chrono",
  "clap",
  "config",

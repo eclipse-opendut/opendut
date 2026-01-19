@@ -19,7 +19,6 @@ async-trait = { workspace = true }
 backon = { workspace = true }
 bitflags = { workspace = true }
 byteorder = { workspace = true }
-cfg-if = { workspace = true }
 chrono = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 config = { workspace = true }

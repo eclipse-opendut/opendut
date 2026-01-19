@@ -11,24 +11,23 @@ use std::path::Path;
 use std::process::{Command, Output};
 
 use anyhow::{anyhow, bail, Context};
-use cfg_if::cfg_if;
 use crate::fs;
 use crate::setup::User;
 
-pub trait CommandRunner: Send + Sync {
-    fn run(&self, command: &mut Command) -> anyhow::Result<Output>;
+#[derive(Clone, Copy)]
+pub enum CommandRunner {
+    Default,
+    #[cfg(test)]
+    Noop,
 }
-pub struct DefaultCommandRunner;
-impl CommandRunner for DefaultCommandRunner {
-    fn run(&self, command: &mut Command) -> anyhow::Result<Output> {
-        command.evaluate_requiring_success()
-    }
-}
-cfg_if! {
-     if #[cfg(test)] {
-        pub struct NoopCommandRunner;
-        impl CommandRunner for NoopCommandRunner {
-            fn run(&self, _command: &mut Command) -> anyhow::Result<Output> {
+impl CommandRunner {
+    pub fn run(&self, command: &mut Command) -> anyhow::Result<Output> {
+        match self {
+            CommandRunner::Default => {
+                command.evaluate_requiring_success()
+            }
+            #[cfg(test)]
+            CommandRunner::Noop => {
                 //do nothing
                 Ok(Output {
                     status: std::process::ExitStatus::default(),
@@ -37,7 +36,7 @@ cfg_if! {
                 })
             }
         }
-     }
+    }
 }
 
 pub(crate) trait EvaluateRequiringSuccess {

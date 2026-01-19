@@ -8,7 +8,7 @@ use crate::common::task::{Success, Task, TaskStateFulfilled};
 use crate::setup::constants::executable_install_path;
 use crate::setup::constants::SYSTEMD_SERVICE_FILE_NAME;
 use crate::setup::{User, util};
-use crate::setup::util::{CommandRunner, DefaultCommandRunner};
+use crate::setup::util::CommandRunner;
 
 pub fn default_systemd_file_path() -> PathBuf {
     PathBuf::from(format!("/etc/systemd/system/{SYSTEMD_SERVICE_FILE_NAME}"))
@@ -53,7 +53,7 @@ pub struct CreateServiceFile {
     pub service_user: User,
     pub systemd_file_path: PathBuf,
     pub checksum_systemd_file: PathBuf,
-    pub command_runner: Box<dyn CommandRunner>,
+    pub command_runner: CommandRunner,
 }
 
 #[async_trait]
@@ -102,21 +102,16 @@ impl CreateServiceFile {
             service_user,
             systemd_file_path: default_systemd_file_path(),
             checksum_systemd_file: default_checksum_systemd_file_path(),
-            command_runner: Box::new(DefaultCommandRunner),
+            command_runner: CommandRunner::Default,
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use assert_fs::prelude::*;
     use assert_fs::TempDir;
-
-    use crate::setup::constants::SYSTEMD_SERVICE_FILE_NAME;
-    use crate::common::task::{Task, TaskStateFulfilled};
-    use crate::setup::tasks::CreateServiceFile;
-    use crate::setup::User;
-    use crate::setup::util::NoopCommandRunner;
 
     #[tokio::test]
    async fn should_check_task_is_fulfilled() -> anyhow::Result<()> {
@@ -130,7 +125,7 @@ mod tests {
             service_user: User { name: "testUser".to_string() },
             systemd_file_path: systemd_file_path.to_path_buf(),
             checksum_systemd_file: checksum_systemd_file_path.to_path_buf(),
-            command_runner: Box::new(NoopCommandRunner),
+            command_runner: CommandRunner::Noop,
         };
 
         assert_eq!(task.check_present().await?, TaskStateFulfilled::No);
