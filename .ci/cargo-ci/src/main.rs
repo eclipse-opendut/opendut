@@ -42,7 +42,7 @@ fn main() -> crate::Result {
     cicero::init::tracing()
         .with_env_filter(
             EnvFilter::builder()
-                .parse("info,opendut=trace")?
+                .parse("info,opendut=trace,cicero=trace")?
         )
         .init();
 

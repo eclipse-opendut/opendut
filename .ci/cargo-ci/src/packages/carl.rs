@@ -93,8 +93,8 @@ pub mod build {
     pub fn build_release(target: Arch, release_build: bool) -> crate::Result {
         crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)
     }
-    pub fn out_dir(target: Arch, release_build: bool) -> PathBuf {
-        crate::tasks::build::out_file(SELF_PACKAGE, target, release_build)
+    pub fn out_dir(target: Arch) -> PathBuf {
+        crate::tasks::build::out_file(SELF_PACKAGE, target)
     }
 }
 
@@ -113,7 +113,7 @@ pub mod distribution {
 
         crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)?;
 
-        distribution::collect_executables(SELF_PACKAGE, target, release_build)?;
+        distribution::collect_executables(SELF_PACKAGE, target)?;
 
         cleo::get_cleo(&distribution_out_dir, release_build)?;
         edgar::get_edgar(&distribution_out_dir, release_build)?;

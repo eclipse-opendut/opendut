@@ -101,8 +101,8 @@ pub mod build {
     pub fn build_release(target: Arch, release_build: bool) -> crate::Result {
         crate::tasks::build::distribution_build(SELF_PACKAGE, target, release_build)
     }
-    pub fn out_dir(target: Arch, release_build: bool) -> PathBuf {
-        crate::tasks::build::out_file(SELF_PACKAGE, target, release_build)
+    pub fn out_dir(target: Arch) -> PathBuf {
+        crate::tasks::build::out_file(SELF_PACKAGE, target)
     }
 }
 
@@ -122,12 +122,12 @@ pub mod distribution {
         cicero::cache::Output::from(
             distribution::bundle::out_file(SELF_PACKAGE, target)
         ).rebuild_on_change(
-            [crate::tasks::build::out_file(SELF_PACKAGE, target, release_build)],
+            [crate::tasks::build::out_file(SELF_PACKAGE, target)],
             || {
 
                 distribution::clean(SELF_PACKAGE, target)?;
 
-                distribution::collect_executables(SELF_PACKAGE, target, release_build)?;
+                distribution::collect_executables(SELF_PACKAGE, target)?;
 
                 netbird::netbird_client_distribution(target)?; //TODO rebuild cache when this changes (we currently accept the risk of this being false, since the NetBird code does not change often)
 

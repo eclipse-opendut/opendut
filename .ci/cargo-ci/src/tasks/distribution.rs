@@ -30,13 +30,13 @@ pub fn clean(package: Package, target: Arch) -> crate::Result {
 }
 
 #[tracing::instrument(skip_all)]
-pub fn collect_executables(package: Package, target: Arch, release_build: bool) -> crate::Result {
+pub fn collect_executables(package: Package, target: Arch) -> crate::Result {
 
     let out_dir = out_package_dir(package, target);
     fs::create_dir_all(&out_dir)?;
 
     fs::copy(
-        crate::tasks::build::out_file(package, target, release_build),
+        crate::tasks::build::out_file(package, target),
         out_dir.join(package.ident()),
     )?;
     Ok(())

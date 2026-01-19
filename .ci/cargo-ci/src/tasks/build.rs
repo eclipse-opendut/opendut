@@ -1,3 +1,4 @@
+use std::ops::Not;
 use std::path::PathBuf;
 
 use crate::{constants, Package};
@@ -27,22 +28,18 @@ pub fn distribution_build(package: Package, target: Arch, release_build: bool) -
         .arg("build")
         .arg("--package").arg(package.ident())
         .arg("--target-dir").arg(cross_target_dir().as_os_str()) //explicitly set target-base-dir to fix unreliable caching behavior
-        .arg("--target").arg(target.triple());
+        .arg("--target").arg(target.triple())
+        .arg("--release");
 
-    /*
-        Optional release profile, since `shadow-rs` will update timestamps in release builds and subsequently breaks caching of distributions.
-        https://github.com/baoyachi/shadow-rs?tab=readme-ov-file#buildpattern
-     */
-    if release_build {
-        command.arg("--release");
+    if release_build.not() {
+        command.env("CARGO_SUPPRESS_SHADOW_REBUILD", "true"); //environment variables need to be prefixed with "CARGO_" to be passed through: https://github.com/cross-rs/cross/wiki/Configuration#environment-variable-passthrough
     }
 
     command.run_requiring_success()
 }
 
-pub fn out_file(package: Package, target: Arch, release_build: bool) -> PathBuf {
-    let profile = if release_build { "release" } else { "debug" };
-    cross_target_dir().join(target.triple()).join(profile).join(package.ident())
+pub fn out_file(package: Package, target: Arch) -> PathBuf {
+    cross_target_dir().join(target.triple()).join("release").join(package.ident())
 }
 
 fn cross_target_dir() -> PathBuf {
