@@ -1,6 +1,6 @@
 use leptos::prelude::*;
-use opendut_lea_components::{UserInputValue, NON_BREAKING_SPACE};
-use opendut_model::viper::ViperSourceId;
+use opendut_lea_components::{SelectionTable, SelectionTableRow, UserInputValue};
+use opendut_model::viper::ViperSourceDescriptor;
 use crate::app::use_app_globals;
 use crate::tests::configurator::types::UserTestConfiguration;
 
@@ -30,14 +30,6 @@ pub fn TestSourceSelector(test_configuration: RwSignal<UserTestConfiguration>) -
         }
     );
 
-    let help_text = move || {
-        getter.with(|selection| match selection {
-            UserInputValue::Left(error) => error.to_owned(),
-            UserInputValue::Right(_) => String::from(NON_BREAKING_SPACE),
-            UserInputValue::Both(error, _) => error.to_owned(),
-        })
-    };
-
     let sources = Signal::derive(move || {
         if let Some(mut sources) = registered_sources.get() {
             sources.sort_by(|source_a, source_b| {
@@ -45,82 +37,42 @@ pub fn TestSourceSelector(test_configuration: RwSignal<UserTestConfiguration>) -
                     .cmp(&source_b.name.value().to_lowercase())
             });
 
+            let rows = sources.iter().map(|source_descriptor| {
+                let ViperSourceDescriptor { id, name, url } = source_descriptor;
+                let id = id.to_string();
+                let name = name.to_string();
+                let url = url.to_string();
+
+                SelectionTableRow {
+                    id,
+                    cells: vec![name, url]
+                }
+            }).collect::<Vec<_>>();
+
             if sources.is_empty() {
                 setter.set(UserInputValue::Left(String::from("No sources available.")));
             } else if matches!(getter.get(), UserInputValue::Left(_)) {
                 setter.set(UserInputValue::Left(String::from("Select a source.")));
             }
 
-            sources
+            rows
         } else {
             Vec::new()
         }
     });
 
-    let is_selected = move |source: ViperSourceId| {
-        let source = Clone::clone(&source);
-        Signal::derive(move || {
-            let getter = getter.get();
-            match getter {
-                UserInputValue::Right(selected) => source.to_string() == selected,
-                UserInputValue::Left(_) | UserInputValue::Both(_, _) => false,
-            }
-        })
-    };
+    let header = vec![
+        String::new(),
+        String::from("Name"),
+        String::from("URL")
+    ];
 
     view! {
-        <p class="help has-text-danger"> { help_text } </p>
-        <div class="table-container mt-2">
-            <table class="table is-fullwidth">
-                <thead>
-                    <tr>
-                        <th></th>
-                        <th>Name</th>
-                        <th>URL</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <For
-                        each=move || sources.get()
-                        key=|source| source.id
-                        children=move |source| {
-                            let source_id = source.id;
-                            let is_selected = is_selected(Clone::clone(&source_id));
-
-                            view! {
-                                <tr
-                                    class:has-background-link-light=move || is_selected.get()
-                                    style="cursor: pointer;"
-                                    on:click=move |_| {
-                                        setter.set(UserInputValue::Right(source_id.to_string()));
-                                    }
-                                >
-                                    <td class="is-narrow">
-                                        <div class="control">
-                                            <label class="radio">
-                                                <input
-                                                    type="radio"
-                                                    name="selected-source"
-                                                    prop:checked=is_selected
-                                                    on:click=move |_| {
-                                                        setter.set(UserInputValue::Right(source_id.to_string()));
-                                                    }
-                                                />
-                                            </label>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        { source.name.to_string() }
-                                    </td>
-                                    <td>
-                                        { source.url.to_string() }
-                                    </td>
-                                </tr>
-                            }
-                        }
-                    />
-                </tbody>
-            </table>
-        </div>
+        <SelectionTable
+            header
+            rows=sources
+            getter
+            setter
+        />
     }
 }

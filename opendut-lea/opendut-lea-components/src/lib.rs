@@ -18,6 +18,7 @@ pub use buttons::icon_button::IconButton;
 pub use buttons::collapse_button::CollapseButton;
 pub use inputs::{UserInputError, UserInputValue};
 pub use inputs::readonly_input::ReadOnlyInput;
+pub use inputs::selection_table::{SelectionTable, SelectionTableRow};
 pub use inputs::user_input::UserInput;
 pub use inputs::user_select::{UserSelect, SelectionOption};
 pub use inputs::user_textarea::UserTextarea;
