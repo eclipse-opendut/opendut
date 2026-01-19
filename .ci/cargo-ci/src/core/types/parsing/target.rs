@@ -6,13 +6,11 @@ use strum::IntoEnumIterator;
 
 use crate::Arch;
 
-const TARGET_SELECTION_ALL: &str = "all";
 
 #[derive(Clone, Debug, Default)]
 pub enum TargetSelection {
     #[default]
     Default,
-    All,
     Single(Arch),
 }
 impl TargetSelection {
@@ -24,9 +22,6 @@ impl TargetSelection {
             TargetSelection::Default => Box::new(
                 iter::once(Arch::default())
             ),
-            TargetSelection::All => Box::new(
-                Arch::iter()
-            ),
         }
     }
 }
@@ -35,7 +30,6 @@ impl Display for TargetSelection {
         match self {
             TargetSelection::Default => write!(f, "{}", Arch::default()),
             TargetSelection::Single(target) => write!(f, "{target}"),
-            TargetSelection::All => write!(f, "{TARGET_SELECTION_ALL}"),
         }
     }
 }
@@ -44,7 +38,6 @@ impl clap::ValueEnum for TargetSelection {
     fn value_variants<'a>() -> &'a [TargetSelection] {
         let variants = Arch::iter()
             .map(TargetSelection::Single)
-            .chain(iter::once(TargetSelection::All))
             .collect::<Vec<TargetSelection>>();
 
         Box::leak(variants.into())
@@ -53,7 +46,6 @@ impl clap::ValueEnum for TargetSelection {
         match self {
             TargetSelection::Default => None,
             TargetSelection::Single(target) => Some(PossibleValue::new(target.triple())),
-            TargetSelection::All => Some(PossibleValue::new(TARGET_SELECTION_ALL)),
         }
     }
 }
